@@ -14,3 +14,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: check-self-contained
         run: sh scripts/check-self-contained.sh
+
+  ir-schema:
+    name: "Gate 2: IR schema + round-trip"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install jsonschema
+        run: python3 -m pip install --user jsonschema
+      - name: check-ir-schema
+        run: sh scripts/check-ir-schema.sh

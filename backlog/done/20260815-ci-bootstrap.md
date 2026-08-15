@@ -35,3 +35,9 @@ schema/round-trip gate (own card, blocked on the emitter) and the held-out
 acceptance job (needs the private held-out repo). This branch is a
 PROPOSAL: `.github/` is a protected path — the maintainer merges
 (fast-forward).
+
+Addendum at merge (maintainer review): the branch was restacked onto the
+schema merge and gates.yml gained the gate-2 job (`check-ir-schema.sh`,
+with a jsonschema install step on the runner), so the first Actions run
+executes both gates — the review's correction that CI must not lag the
+gate set.
