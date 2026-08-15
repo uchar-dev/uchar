@@ -147,7 +147,7 @@ row it belongs to. Discriminator enums are listed under their node.
 | `RegelSpraakModel` | container: declarations + diagnostics + transpiler input | — | split | — | normative declarations stay; the `ir.Resolved*` lists and backend helpers (rule-fired bookkeeping facts, inconsistency-flag insertion, engine loop-guards, rule-name prefixing) leave the IR type |
 | `Objecttype` | entity type: attributes, kenmerken, temporal/dimension facets | §13.3.3/.6/.7 | core | 11 | reify `Attribuut` and `Kenmerk` as first-class nodes; the parallel per-name side-maps are the v0 shape row 11's "out of the side tables" delta targets |
 | — `KenmerkSoort` | BIJVOEGLIJK, BEZITTELIJK, ZELFSTANDIG | §3.5 | dialect (presentation) | 2 | same boolean membership; phrasing tag only — the row-2 pattern again |
-| `Parameter` | global typed value, possibly a timeline | §13.3.8 | core | 11 | — |
+| `Parameter` | global typed value, possibly a timeline | §13.3.8 | core | 11 | v1 parameters carry the full timeline facet (granularity + count + name); v0 records only a bare granularity |
 | `Feittype` / `Rol` | relation type with symbolic roles + cardinality | §13.3.9 | core | 4 | data already symbolic; fix the navigation contract (reference-field assumption) |
 | `Granulariteit` | DAG, WEEK, MAAND, KWARTAAL, JAAR | §13.3.6 | core | 11 | — |
 | `Tijdlijn` | named timeline: granularity, count, variable start | §13.3.6.10, §9.9 | core | 11 | — |

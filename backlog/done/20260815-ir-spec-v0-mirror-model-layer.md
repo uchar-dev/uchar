@@ -44,3 +44,12 @@ no-silent-rewrite rule; reported here rather than hidden). Verified by
 three adversarial reviewers (source fidelity, spec discipline, rights);
 all findings fixed, none remain. This branch is a PROPOSAL: spec/IR-SPEC.md
 is a protected path — the maintainer merges.
+
+Review addendum (maintainer review, 2026-08-15): the Parameter timeline
+delta is now also recorded in the CONSTRUCTS.md inventory row (review
+item 2); WF-008 and WF-010 are explicitly marked use-time/expression-layer
+forward references (item 4); the timeline name-normalization is marked as
+mirrored v0 morphology with an OPEN design question (item 5); the header's
+authority pointer to the private toolchain now names its own removal at
+Phase-1 exit (item 3). Item 1 (the row-26 CONSTRUCTS edit beyond the
+card's may-touch set) is accepted with this merge.

@@ -4,8 +4,10 @@
 else is skeleton. Authority for undocumented behaviour still lives in
 `regelspraak-java` (pinned commit `b85dff3`): the spec-§-citing javadoc of
 `ir/` and `model/`, and the decision records in
-`docs/grammar-divergences.md`. Every `§…` reference is a section number of
-the RegelSpraak language specification — numbers only; no text from it is
+`docs/grammar-divergences.md`; that authority pointer leaves this header at
+Phase-1 exit, when this document graduates into the self-containedness gate
+and must read stand-alone. Every `§…` reference is a section number of the
+RegelSpraak language specification — numbers only; no text from it is
 reproduced here. This document's own sections are cited as `ch. N`.*
 
 ## Method: mirror, then diverge
@@ -246,7 +248,9 @@ false`, `decimals = 0` (no precision ceiling; §13.3.3 form (c)). The
   normalizes to the whole form (v0 behaviour, kept and specified).
 - **WF-008** Two `Enumeration` types are compatible only when they name the
   same declaring domain; value-set equality does not create compatibility.
-  (v0 behaviour at use-time, lifted into the type identity rule.)
+  (v0 behaviour at use-time, lifted into the type identity rule.) This is a
+  *use-time* rule recorded with the type it governs; its verifier check
+  belongs to the expression layer — forward reference, **OPEN**.
 
 Orderability: `Number` and `Date` are orderable; `Text`, `Boolean`, and
 `Enumeration` are equality-only. This is deliberate (an ordered use of a
@@ -348,9 +352,11 @@ Worked examples (expected values exact):
   through a unit that does not exist; an unreadable factor warns and
   drops. **Delta (promotion).**
 - **WF-010** Restatement (in any layer) between non-convertible units is
-  ill-formed. A unit-less operand meets a unit-bearing operand only where
-  the operator table of the expression layer explicitly allows it
-  (forward reference; specified with that layer — **OPEN**).
+  ill-formed. Like WF-008 this is a *use-time* rule — it constrains the
+  layers where restatement occurs, and its check lands with the expression
+  layer. A unit-less operand meets a unit-bearing operand only where the
+  operator table of the expression layer explicitly allows it (forward
+  reference; specified with that layer — **OPEN**).
 
 ### 2.6 FactType and Role
 
@@ -430,6 +436,13 @@ A named period grid.
 
 v0 name: `Tijdlijn`. Granularity is one of `day`, `week`, `month`,
 `quarter`, `year` — deliberately no sub-day granularity (mirrored).
+
+*v0 mirror note:* the name-matching rule above (whitespace collapse,
+case-insensitivity, stripping one leading Dutch article) is v0 morphology
+mirrored into an identity rule. **OPEN (same family as the best-effort
+role-plural matching, ch. 2.6):** whether v1 keeps source-language
+morphology inside a core identity rule at all, or moves it to the frontend
+so the core sees only resolved names.
 
 - **WF-015** All references to a timeline name MUST resolve (WF-003), and —
   with WF-001 — there is exactly one declaration per normalized name, so
@@ -511,9 +524,9 @@ row closed.
 | WF-005 | timeline facet: count ≥ 1; named adoption total and consistent | OPEN | OPEN | OPEN |
 | WF-006 | enumeration domain: ≥ 1 value, values unique | OPEN | OPEN | OPEN |
 | WF-007 | number precision is exactly one of whole / fixed / unbounded | OPEN | OPEN | OPEN |
-| WF-008 | enumeration compatibility = same declaring domain | OPEN | OPEN | OPEN |
+| WF-008 | enumeration compatibility = same declaring domain (use-time; expression layer) | OPEN | OPEN | OPEN |
 | WF-009 | unit conversions reduce: no cycles, no unknown targets, positive rational factors | OPEN | OPEN | OPEN |
-| WF-010 | no restatement between non-convertible units | OPEN | OPEN | OPEN |
+| WF-010 | no restatement between non-convertible units (use-time; expression layer) | OPEN | OPEN | OPEN |
 | WF-011 | fact-type arity: reciprocal = 1 role, else ≥ 2 (>2 OPEN) | OPEN | OPEN | OPEN |
 | WF-012 | role names unambiguous within a fact type (incl. plurals) | OPEN | OPEN | OPEN |
 | WF-013 | reciprocal role is to-one; other roles carry explicit cardinality | OPEN | OPEN | OPEN |
