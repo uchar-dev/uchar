@@ -1,0 +1,16 @@
+# The uchar gate set, run on every change (WAY-OF-WORKING.md section 6;
+# the gate list lives in CLAUDE.md and grows monotonically).
+name: gates
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  self-contained:
+    name: "Gate 1: self-containedness"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: check-self-contained
+        run: sh scripts/check-self-contained.sh
