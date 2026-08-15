@@ -38,16 +38,21 @@ Out of scope: <explicit>
 ```
 
 Claim = `git mv backlog/new/X.md backlog/doing/X.md` in the card's first
-commit. Done = the PR moves the card to `done/` and appends a short
+commit. Done = the merge moves the card to `done/` and appends a short
 `Result:` note (what landed, what was deliberately left).
 
 ## 3. Branches, worktrees, merging
 
 - One card = one branch `card/<slug>` = one worktree
   (`git worktree add ../wt/<slug> -b card/<slug>` from the main checkout).
-- Merge to `main` via PR; never commit to `main` directly.
-- Protected paths (`CLAUDE.md`) may appear in a diff as a *proposal*; the
-  maintainer merges those PRs after review.
+- Merge to `main` fast-forward only (`git merge --ff-only card/<slug>`;
+  rebase the branch first if `main` moved), then push; never commit to
+  `main` directly. There is one maintainer, so no PR requirement: the
+  remote is backup and CI, not review infrastructure. History stays
+  linear — no merge commits.
+- Protected paths (`CLAUDE.md`): the card branch stays unmerged as a
+  *proposal*; the maintainer reviews and merges it (also fast-forward), or
+  instructs the session to.
 
 ## 4. Session lifecycle
 
@@ -56,8 +61,9 @@ commit. Done = the PR moves the card to `done/` and appends a short
 2. Work the card. When adding a gate: show it red, then green.
 3. Report honestly: what passed (with real output), what is a marker or gap,
    what stayed out of scope. A green subset is not green.
-4. End: PR with the card moved to `done/`. Update `spec/PLAN.md` only if the
-   plan's scope itself changed; touch `CLAUDE.md` only if an invariant
+4. End: fast-forward merge with the card moved to `done/`; for protected
+   paths, leave the branch as the proposal. Update `spec/PLAN.md` only if
+   the plan's scope itself changed; touch `CLAUDE.md` only if an invariant
    changed.
 
 ## 5. Source material: the private repositories
