@@ -1,0 +1,10 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is penninggerechtigd kenmerk (bijvoeglijk);
+    het aantal aangemelde vondsten Numeriek (niet-negatief geheel getal);
+
+Parameter de vondstdrempel : Numeriek (geheel getal)
+
+Regel Kenmerktoekenning jutter penninggerechtigd
+    geldig altijd
+        Een Jutter is penninggerechtigd
+        indien zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel.
