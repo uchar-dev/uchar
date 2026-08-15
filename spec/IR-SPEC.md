@@ -523,6 +523,17 @@ priority. Layer marks: every node in this chapter is `layer: core`, with
 two exceptions — RuleGroup (ch. 3.9) and the `RuleVersion.presentation`
 tag (ch. 3.1), both `layer: dialect(regelspraak)`.
 
+**Versioning (applies to every *named* form).** Rule, Allocation,
+ObjectCreation, FactCreation, Consistency, and Uniqueness all share one
+shape: `{name, versions}` with `versions` ≥ 1 in declaration order. The
+`name` sits on the form; everything else — including `validity` and
+`condition` — sits on each version, so a version is the form's full body.
+The field tables in ch. 3.2–3.6 therefore describe *one version's body*;
+ch. 3.1 shows the pattern in full. Day-kind definitions, start-point
+determinations, and rule groups are unversioned. *v0 mirror note:* v0
+flattens every versioned form into per-version entries under the `" #i"`
+name suffix; the migration of ch. 3.1 (strip and group) applies uniformly.
+
 ### 3.1 Rule (assignment and characteristic attribution)
 
 One node covers computing an attribute and attributing a characteristic
@@ -567,7 +578,9 @@ the literal true — mirrored.)
 - **WF-020** Rule names MUST be unique (case-insensitive) across all rule
   forms in a model. *v0 mirror note:* uniqueness in v0 is a by-product of
   the name-suffix scheme; nothing checks it. **Delta (promotion).**
-- **WF-021** The validity windows of one rule's versions MUST NOT overlap.
+- **WF-021** The validity windows of one named form's versions MUST NOT
+  overlap — the rule holds for every versioned form of this chapter, not
+  only Rule.
   Gaps are allowed — on a date no version covers, the rule simply does not
   apply. *v0 mirror note:* v0 already diagnoses overlap as a resolver
   **error** at build time, while still emitting both versions; v1 lifts the
@@ -601,7 +614,8 @@ unconditional validity, a comparison condition.
 
 Distribute a source amount over related recipients. v0 name:
 `ResolvedVerdeling`; semantics as recurrence equations in
-`RUNTIME-SEMANTICS.md` ch. 4.
+`RUNTIME-SEMANTICS.md` ch. 4. Versioned per the chapter rule; the table
+below (minus `name`) is one version's body.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -645,7 +659,8 @@ was demoted); such hybrids disappear with the method value.
 ### 3.3 Object creation
 
 A subject creates an object of a declared type and initialises members.
-v0 name: `ResolvedObjectCreatie` (+ `Toekenning`).
+v0 name: `ResolvedObjectCreatie` (+ `Toekenning`). Versioned per the
+chapter rule; the table below (minus `name`) is one version's body.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -672,6 +687,8 @@ constant; false = §13.4.6.3 attribute-value form).
 
 Create a relation instance linking a subject to targets reached along a
 navigation path. v0 name: `ResolvedFeitCreatie` (+ `Tussenstap`).
+Versioned per the chapter rule; the table below (minus `name`) is one
+version's body.
 
 **Delta (tracked, `CONSTRUCTS.md` rows 4/22 — the heaviest v0 leak):** v0
 encodes the creation as bean reference-fields: `zetVeld` (the field set in
@@ -707,7 +724,8 @@ backend, out of the IR (the Phase-3 forcing move).
 
 An assertion that must hold; a violation is observable on the §9.5
 inconsistency channel — declarative, not "fire on the negation"
-(`CONSTRUCTS.md` row 19). v0 name: `ResolvedConsistentie`.
+(`CONSTRUCTS.md` row 19). v0 name: `ResolvedConsistentie`. Versioned per
+the chapter rule; the table below (minus `name`) is one version's body.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -727,7 +745,8 @@ inconsistency channel — declarative, not "fire on the negation"
 
 One construct for single-type and union (`verenigd met`) uniqueness
 (`CONSTRUCTS.md` row 20). v0 names: `ResolvedUniciteit` +
-`ResolvedUniciteitUnie` (+ `Bron`).
+`ResolvedUniciteitUnie` (+ `Bron`). Versioned per the chapter rule; the
+table below (minus `name`) is one version's body.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -860,7 +879,7 @@ row closed.
 | WF-018 | parameter datatype resolves; timeline facet well-formed | OPEN | OPEN | OPEN |
 | WF-019 | serialization preserves declaration order | `scripts/check-ir-schema.sh` (byte-identical round-trip) | OPEN (current case has only singleton lists — no order witness) | OPEN |
 | WF-020 | rule names unique across all rule forms (ci) | OPEN | OPEN | OPEN |
-| WF-021 | one rule's version validity windows do not overlap | OPEN | OPEN | OPEN |
+| WF-021 | a named form's version validity windows do not overlap | OPEN | OPEN | OPEN |
 | WF-022 | rule target resolves; characteristic value is the constant true | OPEN | `corpus/golden/jutterswet-penningdrempel/` | OPEN |
 | WF-023 | assignment typing (family, units, labels, sign, precision gate) | OPEN | OPEN | OPEN |
 | WF-024 | allocation method is one of the three real methods (no COMPLEX) | OPEN | OPEN | OPEN |

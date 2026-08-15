@@ -45,3 +45,10 @@ uniqueness keys marked OPEN per row 20, RuleGroup fixpoint pointer to
 RUNTIME-SEMANTICS ch. 5). The golden case is cited as instantiating the
 v0 mirror form of ch. 3.1. This branch is a PROPOSAL: spec/IR-SPEC.md is
 a protected path — the maintainer merges (fast-forward).
+
+Addendum at merge (maintainer review): the version hole closed via option
+1 — every named form (Rule, Allocation, ObjectCreation, FactCreation,
+Consistency, Uniqueness) now shares the {name, versions >= 1} shape,
+stated once as the chapter's versioning rule with the per-form tables as
+one version's body; WF-021 generalised to all versioned forms. Day-kind,
+start-point, and rule group remain unversioned as before.
