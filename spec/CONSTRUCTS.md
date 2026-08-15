@@ -85,7 +85,7 @@ row it belongs to. Discriminator enums are listed under their node.
 | `TekstReeks` (+ `Deel`: `Letterlijk`, `Ingevoegd`) | text interpolation | §5.4 | sugar | 31 | desugars to concatenation |
 | `Binair` | binary arithmetic | §13.4.16 | core | 1 | see `BinOp` |
 | — `BinOp` | PLUS, MIN, MAAL, GEDEELD_DOOR, TOT_DE_MACHT | §13.4.16 | core | 1 | kernel operator set |
-| — `BinOp` (variants) | VERMINDERD_MET, GEDEELD_DOOR_ABS, PERCENTAGE_VAN | §13.4.16 | dialect/sugar | 1, 18 | VERMINDERD_MET differs only in empty-handling — its lowering depends on the row-18 decision; the other two desugar (abs, ×1/100) |
+| — `BinOp` (variants) | VERMINDERD_MET, GEDEELD_DOOR_ABS, PERCENTAGE_VAN | §13.4.16 | dialect/sugar | 1, 18 | VERMINDERD_MET differs only in empty-handling — its lowering depends on the row-18 decision; GEDEELD_DOOR_ABS is dialect (a defined collapse point, RUNTIME-SEMANTICS ch. 2.2); PERCENTAGE_VAN desugars (×1/100) |
 | `Functie` | one overloaded node: aggregations, scalar builtins, date/time functions | §13.4.17 | core | 1 | v1 splits aggregation-with-source vs builtin call; drop the Drools accumulate framing |
 | — `FunctieKind` (aggregations) | SOM, TOTAAL, AANTAL, MINIMUM, MAXIMUM, EERSTE, LAATSTE | §13.4.17 | core | 1 | TOTAAL is **not** sugar for SOM: same fold, observably different empty-source identity (som = empty unless fallback; totaal = 0 unconditionally, §4.20 — RUNTIME-SEMANTICS ch. 1.2) |
 | — `FunctieKind` (scalar/text) | WORTEL, ABSOLUTE_WAARDE, CONCATENATIE | §13.4.17 | core | 1 | builtin calls |

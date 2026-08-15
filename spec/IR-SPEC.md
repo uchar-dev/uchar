@@ -1,14 +1,16 @@
 # uchar IR — Specification
 
-*Status: v0.2 — the model layer (ch. 2) and the rule layer (ch. 3) are
-normative **draft**; everything else is skeleton. Authority for undocumented behaviour still lives in
+*Status: v0.3 — the model layer (ch. 2), the rule layer (ch. 3), and the
+expression and condition layer (ch. 4) are normative **draft**; everything
+else is skeleton. Authority for undocumented behaviour still lives in
 `regelspraak-java` (pinned commit `b85dff3`): the spec-§-citing javadoc of
 `ir/` and `model/`, and the decision records in
 `docs/grammar-divergences.md`; that authority pointer leaves this header at
 Phase-1 exit, when this document graduates into the self-containedness gate
 and must read stand-alone. Every `§…` reference is a section number of the
 RegelSpraak language specification — numbers only; no text from it is
-reproduced here. This document's own sections are cited as `ch. N`.*
+reproduced here (construct keywords, such as the sum-fallback clause named
+in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
 
 ## Method: mirror, then diverge
 
@@ -48,8 +50,8 @@ reproduced here. This document's own sections are cited as `ch. N`.*
 
 1. **Scope and conformance** *(skeleton)*
 2. **The model layer** — normative draft (since v0.1).
-3. **The rule layer** — **this release.**
-4. **The expression and condition layer** *(skeleton)*
+3. **The rule layer** — normative draft (since v0.2).
+4. **The expression and condition layer** — **this release.**
 5. **Time** *(skeleton)*
 6. **Defaults and defeasibility** *(Phase 4)*
 7. **Serialization** *(lands with `spec/schema/`)*
@@ -850,14 +852,205 @@ version constraint.
 
 ---
 
+## 4. The expression and condition layer
+
+Expressions compute typed values; conditions decide. Types are the ch. 2.4
+datatypes; evaluation semantics — emptiness, exact arithmetic, rounding —
+are `RUNTIME-SEMANTICS.md` ch. 1–2, whose worked examples bind the meaning
+of every operator named here. Layer marks: core, with exactly five inline
+dialect exceptions — the date-builtin library and the three dialect
+predicate kinds (ch. 4.3/4.5), the abs-division operator (ch. 4.2), the
+dimension forms `DimensionCellRead` and `dimensionSelection` (ch. 4.3, row
+28), and the whole-period qualifier (ch. 4.5). Every node carries a source
+reference; **pending delta
+(tracked, `CONSTRUCTS.md` row 3):** today that is the v0 `bron` string —
+the structured source reference (`file, line, column, snippet`) lands with
+the cross-repo source-anchoring card and will change the wire format and
+the schema when it does.
+
+### 4.1 Literals and references
+
+| Node | Fields | Notes |
+|---|---|---|
+| Literal | `value`, `type`, `source` | **Delta (row 27):** v0 carries the unparsed source string as the value; v1 carries a typed value |
+| AttributeReference | `attribute`, `subjectType`, `path` (role steps), `type`, `source` | **Delta (row 4):** v0 splits navigation over `navigatieRol` + `navigatiePad` + a `set` flag (with the invariant that a non-empty path implies a role) and keeps the transpiler-facing `onderwerpBron`; v1 unifies into one explicit path of role steps, with result cardinality derived from the declared role cardinalities. *Migration:* mechanical merge of the three fields |
+| ParameterReference | `parameter` (name ref), `type`, `source` | the v0 wire form is already symbolic (the emitter writes the name) — the "embed the model object" wart is in-memory only |
+| VariableReference | `name`, `type`, `source` | a rule-local let-binding (§13.4.2.10); binding is frontend scope resolution |
+| ContextValue | `name` ∈ evaluation-date, evaluation-year | **Delta (row 25):** split from v0's `Constante` grab-bag; the pronoun referents that shared that node are surface forms the frontend resolves away |
+
+### 4.2 Operators
+
+**Binary** (`op`, `left`, `right`, `type`, `source`). The operator set,
+with layer marks per `CONSTRUCTS.md` ch. 2.1: plus, min, maal,
+gedeeld-door, tot-de-macht — core kernel; verminderd-met — core with its
+own empty rule (`RUNTIME-SEMANTICS.md` ch. 1.2; its fate is tied to the
+row-18 decision); gedeeld-door-abs — dialect (a defined collapse point,
+ch. 2.2 there); percentage-van — sugar over kernel arithmetic, mirrored as
+an operator. *v0 mirror note:* a typing failure degrades the node's `type`
+to the unknown sentinel rather than erroring the node away — with WF-035
+the sentinel disappears from well-formed v1 IR.
+
+**Rounding** (`base`, `mode`, `decimals`, `type`, `source`) — the five
+modes of `RUNTIME-SEMANTICS.md` ch. 2.5; the type carries the rounded
+precision (the WF-023/ch. 2.4 gate leans on this). **Clamp** (`base`,
+`minimum?`, `maximum?`) — sugar verdict (row 1), mirrored as a node; at
+least one bound present. **TextComposition** (`parts`: literal chunks and
+embedded expressions) — sugar verdict (row 31), mirrored; empty coerces to
+`""` per `RUNTIME-SEMANTICS.md` ch. 1.2.
+
+### 4.3 Aggregation and builtin calls
+
+**Delta (tracked, `CONSTRUCTS.md` row 1):** v0's single overloaded
+`Functie` node splits in v1 into two nodes.
+
+**Aggregation** — folds over object instances or dimension cells:
+
+| Field | Meaning |
+|---|---|
+| `kind` | sum, total, count, minimum, maximum, first, last |
+| `arguments` | one set-valued operand (instance fold), or ≥ 2 listed operands (value fold / §5.8.1 union count) |
+| `elementType` | the instance type ranged over (instance folds) |
+| `filter` | Condition? — the die/dat-subselection or a temporal (gedurende) restriction |
+| `emptyFallback` | expression? — **sum only**: the §5.8.2 "of … als die er niet zijn" clause |
+| `dimensionSelection` | ? — **sum/min/max only**: fold over an ordered label selection instead of instances (dialect, row 28) |
+| `type`, `source` | — |
+
+Empty-source results differ per kind — the som/totaal split and the
+no-fallback rule for min/max/first/last are `RUNTIME-SEMANTICS.md`
+ch. 1.2, mirrored in the matrix (row on TOTAAL, `CONSTRUCTS.md` ch. 2.1).
+
+**BuiltinCall** — scalar, text, and date builtins with plain arguments:
+wortel, absolute-waarde (core kernel); concatenatie (text fold);
+tijdsduur/absolute-tijdsduur (two date operands, result unit declared);
+tijdsevenredig-deel and aantal-dagen-in (each carrying a `granularity`
+bucket ∈ month/year); eerste-paasdag, datum-met, datumtijd-met, and the
+seven date/time part extractors — the date library is
+`layer: dialect(regelspraak)` (row on date builtins, `CONSTRUCTS.md`
+ch. 2.1); semantics in `RUNTIME-SEMANTICS.md` ch. 2–3.
+
+*v0 mirror notes:* one node carries the union of all facets, with two
+convenience constructors defaulting the rest; the accumulate-pattern
+framing in its documentation is the known leak (row 1). A v0 count whose
+subject happens to name a declared "aantal …" parameter is re-read as a
+ParameterReference by the frontend — surface disambiguation, not IR.
+*Migration:* split by kind category; facets carry over one-to-one.
+
+**DimensionCellRead** (`attribute`, `labels`, `type`, `source`) — dialect
+(row 28): a single-cell read of a dimensioned attribute; every dimension
+pinned (WF-040); no storage layout implied.
+
+### 4.4 Unresolved
+
+**Unresolved** is the honest-inexpressibility marker (row 16, permanent
+contract): an expression variant carrying its declared-unknown type and
+the source slice, and a condition variant carrying the source slice. A
+well-formed IR MAY contain Unresolved nodes; what it may never do is hide
+them (WF-044). **Delta (row 16):** v1 adds a structured `reason` (the
+four-way taxonomy of `CONSTRUCTS.md` ch. 4: structural, declared-names
+refusal, spec-underdetermined, safety refusal) — **OPEN** until the
+negatief corpus fixes the taxonomy's values.
+
+### 4.5 Conditions
+
+| Node | Fields | Notes |
+|---|---|---|
+| Comparison | `op`, `left`, `right`, `wholePeriod?`, `source` | operator set: ordering, equality, date ordering (ch. 2.2 inventory); v1 may unify date ordering under typed ordering — carried as-is in the mirror |
+| Predicate | `kind` ∈ empty, filled, elfproef, exact-digits (`digits`), day-kind (`dayKind`), `operand`, `negated`, `wholePeriod?`, `source` | empty/filled are core kernel (three-valued rules in `RUNTIME-SEMANTICS.md` ch. 1.2); the other three are dialect builtins |
+| CharacteristicCheck | `characteristic`, `navigation?` (to-one role), `negated`, `wholePeriod?`, `source` | **Delta (`CONSTRUCTS.md` ch. 2.2):** v0's `eigenaar` pattern-steering field (a Drools attachment hint set only on fact-creation guards) is dropped |
+| RoleMembership | `factType`, `role` (the role the subject plays), `negated`, `source` | **Delta (row 5):** one existential node replaces v0's near-side (`Rollidmaatschap`, with its filler-type lookup hint) and far-side (`VerreRollidmaatschap`, with the literal `backref` bean field and the top-level-only restriction — both dropped). *Migration:* near-side → the named role; far-side → the subject-side role of the relation |
+| Compound | `quantifier` ∈ all, none, the, at-least (`threshold`), at-most (`threshold`), exactly (`threshold`), `parts`, `source` | all/none/the are kernel; the counting forms are sugar (count-and-compare, row on `Kwantor`, `CONSTRUCTS.md` ch. 2.2) — mirrored as quantifiers |
+| TimeWindow | `from?`, `to?`, `toInclusive`, `source` | from inclusive, to exclusive unless `toInclusive`; never both absent |
+| RuleStatusCheck | `rule`, `inconsistent`, `source` | the row-30 split verdict: "is gevuurd" is a v1 non-goal, "is inconsistent" waits on the §9.5 channel — mirrored here because v0 dumps carry it; its v1 admissibility is **OPEN** with row 30 |
+| Unresolved | `source` | ch. 4.4 |
+
+The **whole-period qualifier** (`year-or-month`, `negated`) attaches to
+Comparison, Predicate, and CharacteristicCheck only —
+`layer: dialect(regelspraak)`, lowering onto timeline algebra (row 29;
+`RUNTIME-SEMANTICS.md` ch. 3).
+
+### 4.6 Well-formedness
+
+- **WF-034** Every reference in an expression or condition MUST resolve:
+  attributes (with their full navigation path), parameters, variables,
+  characteristics, roles and fact types, aggregation element types,
+  dimension names and labels, day kinds, and referenced rules. *v0 mirror
+  note:* fail-soft throughout — unresolved references degrade to the
+  unknown-typed sentinel or an Unresolved node, warned at best. **Delta
+  (promotion):** in v1, "could not resolve" is either an explicit
+  Unresolved node (honest) or ill-formed IR (a dangling reference in a
+  structured node) — never a sentinel type inside an otherwise-structured
+  node; the unknown datatype does not exist in v1 (ch. 2.4).
+- **WF-035** Operator typing (mirror of the v0 error set): numeric
+  operators' operands MUST be number-like; power operands MUST
+  additionally be unitless; a date ± duration MUST use a time unit or
+  declared day kind; additive operands MUST have compatible units (both
+  unitless or both present and convertible — WF-010); a clamp's base and
+  bounds MUST be numeric, and at least one bound MUST be present (that
+  last clause is structural in v0's grammar, not a typing error —
+  promoted into the rule).
+- **WF-036** Comparison and predicate typing (mirror): ordering operands
+  MUST be number-like with compatible units; date-ordering operands MUST
+  be dates — mixed precision is deliberately *allowed* there (a v0
+  asymmetry kept as found; whether v1 keeps it is **OPEN**); equality
+  operands MUST share the family — same enumeration domain, same date
+  precision, compatible units; an elfproef operand MUST be text or a
+  whole number without unit; exact-digits MUST have a text operand and a
+  whole digit count (v0 does not check positivity — mirrored; a ≥ 1
+  tightening is a candidate); a day-kind predicate operand MUST be a
+  date. A unitless literal adopts its sibling's unit before the check
+  (mirrored convenience).
+- **WF-037** Aggregation shape: facet validity per kind MUST hold —
+  `emptyFallback` only on sum; `dimensionSelection` only on sum/min/max;
+  `granularity` only on tijdsevenredig-deel and aantal-dagen-in (builtin
+  side); an instance fold MUST carry `elementType`, a value fold MUST
+  carry ≥ 2 arguments; builtin arities MUST follow the ch. 4.3 catalogue
+  (one operand for the scalar and extractor kinds, two dates for
+  tijdsduur, the component list for date construction). *v0 mirror note:*
+  the single node makes every combination representable, and v0 even
+  populates the element type on multi-operand min/max value folds whose
+  first operand is an attribute reference — an artifact the v1 split
+  removes; v1 makes the invalid combinations ill-formed. **Delta
+  (promotion).**
+- **WF-038** Aggregation operand typing (mirror): numeric folds' operands
+  MUST be numeric with compatible units; date folds' (first/last)
+  operands MUST be dates of equal precision; a totaal operand that is
+  non-temporal MUST carry a rate unit per time unit; eerste-paasdag MUST
+  take a whole, unitless year; the sub-day part extractors MUST take a
+  millisecond-precision date; a sum's `emptyFallback` MUST be numeric.
+- **WF-039** A written enumeration label MUST belong to the declared
+  domain; a numeric literal MUST satisfy the target's sign restriction
+  (mirror; also invoked from WF-023).
+- **WF-040** A DimensionCellRead MUST pin every declared dimension of its
+  attribute exactly once; a `dimensionSelection`'s labels MUST resolve
+  against the dimension's declared order. *v0 mirror note:* the pinning
+  is the node's documented contract and the labels are pre-expanded at
+  build (unresolvable selections become Unresolved markers); v1 turns
+  both into checks. **Delta (promotion).** (Row 28; the v0 restriction of
+  selections to the subject's own single-dimension attributes is frontend
+  maturity, not IR scope — noted, not normative.)
+- **WF-041** A counting quantifier's `threshold` MUST be ≥ 1 (mirror of
+  the v0 error).
+- **WF-042** A TimeWindow MUST have at least one bound, and its bounds
+  MUST be date expressions (mirror; v0 checks date-ness only — either
+  precision is admitted, unchecked against the operand).
+- **WF-043** A whole-period qualifier MUST sit on a time-dependent
+  operand (mirror: v0 errors and emits Unresolved).
+- **WF-044** (consumer conformance) A consumer MUST surface Unresolved
+  nodes in its output or coverage report; silently lowering or dropping
+  one is non-conforming. This is the unsolved-state harness guard
+  (`PLAN.md` §8) written as a rule; its check is behavioural (CI), not
+  structural.
+
+---
+
 ## WF index
 
-Format per rule: statement (in ch. 2–3), verifier check, golden case,
+Format per rule: statement (in ch. 2–4), verifier check, golden case,
 negatief case. `OPEN` = the artifact does not exist yet; an `OPEN` entry is
 tracked debt under the spec discipline, and the Phase-1 exit requires every
 row closed.
 
-| ID | Statement (see ch. 2–3) | Verifier check | Golden | Negatief |
+| ID | Statement (see ch. 2–4) | Verifier check | Golden | Negatief |
 |---|---|---|---|---|
 | WF-001 | top-level names unique per namespace (ci) | OPEN | OPEN | OPEN |
 | WF-002 | member names unique per kind within an object type (ci) | OPEN | OPEN | OPEN |
@@ -892,6 +1085,17 @@ row closed.
 | WF-031 | one definition per day kind; condition present (recursion OPEN) | OPEN | OPEN | OPEN |
 | WF-032 | start point: variable-start timeline, day-precision member, one per pair | OPEN | OPEN | OPEN |
 | WF-033 | (dialect) rule-group members resolve; recursive group has guarded creation | OPEN | OPEN | OPEN |
+| WF-034 | every expression/condition reference resolves (no unknown-type sentinel) | OPEN | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) | OPEN |
+| WF-035 | operator typing (numeric, unitless power, date±time-unit, unit compatibility, clamp) | OPEN | OPEN | OPEN |
+| WF-036 | comparison/predicate typing (ordering, precision, family, domain, builtin operands) | OPEN | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) | OPEN |
+| WF-037 | aggregation/builtin shape: facet validity and arity per kind | OPEN | OPEN | OPEN |
+| WF-038 | aggregation operand typing (units, precision, rate for totaal, year for paasdag) | OPEN | OPEN | OPEN |
+| WF-039 | enum label in domain; literal sign restriction | OPEN | OPEN | OPEN |
+| WF-040 | dimension cell pins every dimension; selection labels resolve in order | OPEN | OPEN | OPEN |
+| WF-041 | counting-quantifier threshold ≥ 1 | OPEN | OPEN | OPEN |
+| WF-042 | time window: ≥ 1 bound; day-precision date bounds | OPEN | OPEN | OPEN |
+| WF-043 | whole-period qualifier only on a time-dependent operand | OPEN | OPEN | OPEN |
+| WF-044 | (consumer) Unresolved surfaces, never silently lowered | behavioural (CI harness guard) — OPEN | OPEN | OPEN |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is
@@ -900,4 +1104,8 @@ overwrite/merge elsewhere); the v1 model layer closes exactly that gap.
 **Rule layer (WF-020..033):** v0 is mixed — typing, version overlap, and
 several creation checks are genuine resolver errors (mirrored as WF
 rules), while resolution failures are fail-soft warn-and-drop or silent
-degradation (promoted). Every rule above cites its v0 behaviour inline.
+degradation (promoted). **Expression layer (WF-034..044):** the typing
+rules are v0 resolver errors, mirrored; reference resolution and facet
+validity are promotions (v0 degrades to sentinels or relies on the single
+overloaded node); WF-044 is the unsolved-state harness guard written as a
+conformance rule. Every rule above cites its v0 behaviour inline.
