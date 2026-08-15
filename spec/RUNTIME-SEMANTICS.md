@@ -7,7 +7,8 @@ still lives in `regelspraak-java` (pinned commit `b85dff3`):
 Drools back-ends call — and the decision records in
 `docs/grammar-divergences.md`; that pointer leaves at Phase-1 exit. Every
 `§…` reference is a section number of the RegelSpraak language
-specification — numbers only, no text from it is reproduced. This
+specification — numbers only, no text from it is reproduced (construct
+keywords, such as the fallback clause quoted in ch. 1.2, excepted). This
 document's own chapters are cited as `ch. N`.*
 
 Every chapter states its semantics as equations and tables plus worked
@@ -113,9 +114,11 @@ apart is a ch. 3 obligation.
 
 **Assignment.** Writing empty is a real write when it changes state (the
 fixpoint machinery of ch. 5 compares old and new value; empty-over-empty
-is a no-op, empty-over-value is a change). The initialisation form writes
-only when the target is empty (§9.6) — specified as a defeasible default in
-ch. 7 (`CONSTRUCTS.md` row 7).
+is a no-op, empty-over-value is a change). Worked example: target holds 5,
+computed value leeg → the write happens, target becomes leeg; target leeg,
+computed leeg → no-op. The initialisation form writes only when the target
+is empty (§9.6) — specified as a defeasible default in ch. 7
+(`CONSTRUCTS.md` row 7).
 
 ### 1.3 The distilled invariant (v0)
 

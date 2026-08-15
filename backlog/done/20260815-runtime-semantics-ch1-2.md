@@ -46,3 +46,11 @@ precedent. Deliberately left: ch. 3-8 (skeletons updated with obligations
 recorded here); freezing the emptiness decision (maintainer call). This
 branch is a PROPOSAL: spec/RUNTIME-SEMANTICS.md is a protected path — the
 maintainer merges (fast-forward).
+
+Review addendum (maintainer review at merge): the TOTAAL/SOM inventory note
+in CONSTRUCTS.md corrected (not sugar — observably different empty-source
+identity) and the ch. 2.4 candidate WF recorded on matrix row 2, both
+maintainer-instructed edits beyond the card's may-touch set; the header's
+no-reproduction sentence now excepts construct keywords (maintainer kept
+the quoted fallback clause); the empty-assignment clause gained its worked
+example.
