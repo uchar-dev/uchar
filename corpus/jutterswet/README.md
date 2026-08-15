@@ -1,52 +1,40 @@
 # De Jutterswet — het casusmateriaal van het uchar-corpus
 
 Op het eiland Scholde geldt de Wet op de jutterspenning: de **Jutterswet**.
-Scholde en zijn inwoners zijn verzonnen — eigen werk van de maintainer,
-afkomstig uit het *calculemus*-cursusmateriaal — en de casus is daarmee
-rechtenvrij per constructie. De valkuilen zijn dat niet: de Jutterswet
-spiegelt artikel voor artikel het British Nationality Act-experiment (Sergot,
-Sadri, Kowalski, Kriwaczek, Hammond & Cory, "The British Nationality Act as a
-Logic Program", *CACM* 29(5), 1986). Die afstamming geeft het corpus
-vergelijkingsmateriaal in vier decennia logisch-programmeren- en
-ASP-literatuur — precies wat de differential square van Phase 3 nodig heeft.
+Scholde en zijn inwoners zijn verzonnen — eigen werk van de maintainer — en
+de casus is daarmee rechtenvrij per constructie. De valkuilen zijn dat
+niet: de Jutterswet spiegelt artikel voor artikel het British Nationality
+Act-experiment (Sergot, Sadri, Kowalski, Kriwaczek, Hammond & Cory, "The
+British Nationality Act as a Logic Program", *CACM* 29(5), 1986). Die
+afstamming geeft het corpus vergelijkingsmateriaal in vier decennia
+logisch-programmeren- en ASP-literatuur — precies wat de differential
+square van Phase 3 nodig heeft.
 
-## De wet (v0)
+## Bestanden
 
-1. **Art. 1 (verkrijging).** Erkend jutter is degene die na inwerkingtreding
-   van deze wet op Scholde geboren is uit ten minste één ouder die op dat
-   tijdstip erkend jutter of vast ingezetene van Scholde is.
-2. **Art. 2 (strandvondeling).** Wie als pasgeborene aangetroffen wordt op
-   het strand van Scholde, wordt voor de toepassing van artikel 1 geacht
-   daaraan te voldoen, zolang het tegendeel niet blijkt.
-3. **Art. 3 (penningrecht).** Recht op de jutterspenning heeft de erkende
-   jutter van onbesproken juttersgedrag die in het penningjaar ten minste
-   twaalf vondsten bij de strandvoogd heeft aangemeld.
-4. **Art. 4 (uitsluiting).** Geen recht op de penning heeft degene aan wie
-   krachtens de Strandvonderijverordening 1837 een raapvergunning is
-   geweigerd.
-5. **Art. 5 (hardheid).** De strandvoogd kan in bijzondere gevallen
-   artikel 3 toepassen als ware "twaalf" vervangen door "zes".
+| Bestand | Inhoud |
+|---|---|
+| `wet-v0.md` | De oorspronkelijke wet (vijf artikelen; in werking 1 januari 2020) |
+| `wet-v2.md` | Geconsolideerde tekst na de Eerste wijzigingsverordening (art. 4 gelaagd + art. 4bis; 1 januari 2022) |
+| `wet-v3.md` | Geconsolideerde tekst na de Tweede wijzigingsverordening (art. 6 afstand; 1 januari 2024) |
+| `versiegeschiedenis.md` | De versies v0–v3 met data en leeswijzers — waaronder v1, de vondeling-lezing die de wetstekst niet wijzigt |
+| `dossiers.md` | Negen dossiers: feiten, rechtsvraag, bedoelde uitkomst per versie, valkuilen |
 
-**De dossiers** (de kiem van de scenariotoetsen):
-
-- **Ade** — geboren op Scholde na inwerkingtreding; moeder vast ingezetene.
-- **Brecht** — dertien vondsten in het penningjaar aangemeld; één anonieme
-  klacht over wrakroof.
-- **Norre** — als pasgeborene aangetroffen op het strand; ouders onbekend.
-
-De cursus laat de wet evolueren: v1 (vondeling-reparatie), v2 (gelaagde
-uitzonderingen rond art. 4, in gecompileerde én gelaagde representatie), v3
-(temporalisering — verwerft/bezit/verliest — plus een herzieningsartikel).
-Die versiegeschiedenis is corpusmateriaal voor regelversies, geldigheid en
-amendementen.
+De versiegeschiedenis is zelf corpusmateriaal voor regelversies, geldigheid
+en amendementen; de data zijn door dit corpus vastgelegd.
 
 ## Semantische dekking
 
 Wat de wet v0–v3 al van nature toetst: defeasible defaults (art. 2 "zolang
-het tegendeel niet blijkt"), uitzonderingsladders (art. 4/5), de twee soorten
-negatie, discretionaire begrippen als eerlijke `Onopgelost`-grens
-("onbesproken juttersgedrag", "bijzondere gevallen"), verwijzing naar een
-andere regeling (de Strandvonderijverordening 1837), en tijd (v3).
+het tegendeel niet blijkt"), uitzonderingsladders (art. 4 gelaagd, art.
+4bis, art. 5), de twee soorten negatie en de open/gesloten-wereldkeuze per
+predicaat (de v1-lezing), discretionaire en open begrippen als eerlijke
+`Onopgelost`-grens ("onbesproken juttersgedrag", "bijzondere gevallen", in
+drie gradaties geijkt door Feiko/Gesa/Okko), verwijzing naar een andere
+regeling (de Strandvonderijverordening 1837), temporalisering met
+verwervings- en verliesgronden, persistentie en peildatum-aannames (v3), en
+een bewust opengelaten leemte (herziening van een art. 2-erkenning — het
+dossier "Norre, twee jaar later").
 
 Wat het eiland erbij krijgt om de volledige IR-oppervlakte te dekken
 (Phase-1-corpuswerk):
@@ -62,6 +50,7 @@ Wat het eiland erbij krijgt om de volledige IR-oppervlakte te dekken
 | Uniciteit, consistentie | vondstnummers uniek per penningjaar; aanmelddatum binnen het penningjaar |
 | Object-/feitcreatie | het penningbesluit als gecreëerd object; de aanmelding als feitcreatie |
 | Beslistabellen | de hardheidstoets van art. 5 als beslistabel |
+| Terugwerkende kracht / kennistijd | een later raadsbesluit dat terugwerkt tot het begin van het lopende penningjaar |
 
 ## Tweede casus: een echte regeling
 
