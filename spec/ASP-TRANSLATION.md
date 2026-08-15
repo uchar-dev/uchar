@@ -110,10 +110,14 @@ geboren_op_scholde(douwe). na_inwerkingtreding(douwe).
 ouder(douwe, ade).
 ```
 
-`tegendeel.lp` — the "Norre, twee jaar later" variant:
+`tegendeel.lp` — the proven-contrary variant. Deliberately *not* the
+corpus dossier "Norre, twee jaar later": that dossier asks whether an
+already acquired status is lost when the presumption falls afterwards;
+this variant only puts the contrary on the table at evaluation time, so
+the default never fires:
 
 ```prolog
-% Norre, twee jaar later: de ouders zijn gevonden en kwalificeren aantoonbaar niet.
+% Tegendeel aangetoond op het evaluatiemoment: geen ouder kwalificeert.
 aangetoond_geen_ouder_kwalificeert(norre).
 ```
 
@@ -140,12 +144,13 @@ voldoet_aan_art_1(K) :-
 
 Executed with the clingo 5.8.2 binary (`clingo <files>`; any clingo ≥ 5
 works). The program is stratified, so each run has exactly one stable
-model (`Models: 1`). Answer sets verbatim; solver statistics trimmed.
+model (`Models: 1`). Answer sets verbatim; solver statistics and timing
+lines trimmed — timings vary run to run and pin nothing.
 
 **Run 1 — base:** `clingo jutterswet.lp dossiers.lp`
 
 ```
-Answer: 1 (Time: 0.001s)
+Answer: 1
 erkend_jutter(norre) erkend_jutter(ade) erkend_jutter(douwe)
 SATISFIABLE
 ```
@@ -156,7 +161,7 @@ Ade via art. 1 on established facts; Douwe via art. 1 through Ade's
 **Run 2 — proven contrary:** `clingo jutterswet.lp dossiers.lp tegendeel.lp`
 
 ```
-Answer: 1 (Time: 0.001s)
+Answer: 1
 erkend_jutter(ade) erkend_jutter(douwe)
 SATISFIABLE
 ```
@@ -169,7 +174,7 @@ the deliberately open herziening question of the corpus — not asked here.)
 `clingo jutterswet.lp art2-naief.lp dossiers.lp`
 
 ```
-Answer: 1 (Time: 0.001s)
+Answer: 1
 erkend_jutter(norre) erkend_jutter(ade) erkend_jutter(douwe)
 SATISFIABLE
 ```
