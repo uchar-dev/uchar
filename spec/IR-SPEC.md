@@ -1,7 +1,7 @@
 # uchar IR — Specification
 
-*Status: v0.1 — the model layer (ch. 2) is normative **draft**; everything
-else is skeleton. Authority for undocumented behaviour still lives in
+*Status: v0.2 — the model layer (ch. 2) and the rule layer (ch. 3) are
+normative **draft**; everything else is skeleton. Authority for undocumented behaviour still lives in
 `regelspraak-java` (pinned commit `b85dff3`): the spec-§-citing javadoc of
 `ir/` and `model/`, and the decision records in
 `docs/grammar-divergences.md`; that authority pointer leaves this header at
@@ -47,8 +47,8 @@ reproduced here. This document's own sections are cited as `ch. N`.*
 ## Document structure
 
 1. **Scope and conformance** *(skeleton)*
-2. **The model layer** — **this release.**
-3. **The rule layer** *(skeleton)*
+2. **The model layer** — normative draft (since v0.1).
+3. **The rule layer** — **this release.**
 4. **The expression and condition layer** *(skeleton)*
 5. **Time** *(skeleton)*
 6. **Defaults and defeasibility** *(Phase 4)*
@@ -93,8 +93,9 @@ string; v1 makes the name-identity rules explicit (WF-001…WF-003).
 
 - **WF-019** Declaration order is significant and MUST be preserved by
   serialization; consumers MUST NOT reorder (label sets and unit resolution
-  are order-sensitive in the source language). The round-trip check of the
-  serialization chapter (ch. 7) will enforce this — **OPEN**.
+  are order-sensitive in the source language). Enforced by gate 2
+  (`scripts/check-ir-schema.sh`, byte-identical round-trip); a corpus case
+  with genuinely reorderable content is still **OPEN**.
 
 ### 2.1 Names and identity
 
@@ -508,14 +509,336 @@ timeline name.
 
 ---
 
+## 3. The rule layer
+
+The rule layer holds the executable forms: assignment, allocation, object
+and fact creation, consistency, uniqueness, day-kind definitions,
+start-point determinations, and (dialect) rule groups. Rule forms reference
+model-layer declarations by name (WF-003 applies throughout); their
+operational meaning — forward chaining to a fixpoint, freshness,
+idempotence — is `RUNTIME-SEMANTICS.md` ch. 5. List order is preserved by
+serialization (WF-019) but carries no execution semantics: the evaluation
+model is order-independent, and nothing in this chapter introduces a
+priority. Layer marks: every node in this chapter is `layer: core`, with
+two exceptions — RuleGroup (ch. 3.9) and the `RuleVersion.presentation`
+tag (ch. 3.1), both `layer: dialect(regelspraak)`.
+
+### 3.1 Rule (assignment and characteristic attribution)
+
+One node covers computing an attribute and attributing a characteristic
+(PLAN §9, decision 4). A **Rule** names a target and carries one or more
+**versions**:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | string | rule identity |
+| `versions` | list of RuleVersion, ≥ 1 | in declaration order |
+
+**RuleVersion**:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `validity` | Validity | which evaluation dates this version governs (ch. 3.10) |
+| `target` | attribute reference | the written member: an attribute, or a characteristic |
+| `value` | expression | the computed value; for a characteristic target: the boolean constant true (v0 mirror; Phase 4 generalises this into the default model) |
+| `condition` | Condition? | absent = unconditional |
+| `initialisation` | boolean | write-only-if-empty (§9.6) — the defeasible default of `CONSTRUCTS.md` row 7; semantics in `RUNTIME-SEMANTICS.md` ch. 7 |
+| `presentation` | `calculation` \| `equation` | dialect tag: which surface form (§13.4.4/.9) produced it; no semantic difference |
+
+v0 name: `ResolvedRegel` with `Soort` ∈ {GELIJKSTELLING, BEREKENING,
+INITIALISATIE, KENMERKTOEKENNING}. **Delta (tracked, `CONSTRUCTS.md`
+row 2):** v0 flattens a multi-version rule into separate entries whose
+names carry a `" #i"` suffix (1-based); v1 makes versions explicit
+structure under one name. The suffix rides *every* rule form built from a
+versioned rule (allocations, creations, consistency, uniqueness alike) —
+not day-kind definitions, start points, or groups. *Migration:* group v0
+entries of any form by stripping the suffix; a single-version rule becomes
+one version. **Delta (row 2 /
+decision 4):** GELIJKSTELLING and BEREKENING collapse into the
+`presentation` tag (v0 distinguishes them only by which surface token was
+used); INITIALISATIE becomes the `initialisation` flag; KENMERKTOEKENNING
+becomes a characteristic-typed `target` — the "target-kind flag" of
+`CONSTRUCTS.md` row 2 is realised as the target's member kind (attribute
+vs characteristic reference), needing no separate boolean; ch. 3.3's
+MemberInit keeps an explicit flag only because its member is a bare name.
+(v0 marks it with the tag, types the target boolean, and fixes `value` to
+the literal true — mirrored.)
+
+- **WF-020** Rule names MUST be unique (case-insensitive) across all rule
+  forms in a model. *v0 mirror note:* uniqueness in v0 is a by-product of
+  the name-suffix scheme; nothing checks it. **Delta (promotion).**
+- **WF-021** The validity windows of one rule's versions MUST NOT overlap.
+  Gaps are allowed — on a date no version covers, the rule simply does not
+  apply. *v0 mirror note:* v0 already diagnoses overlap as a resolver
+  **error** at build time, while still emitting both versions; v1 lifts the
+  same condition into IR well-formedness (an overlapping dump is
+  ill-formed), matching the fail-fast vintage discipline
+  (`RUNTIME-SEMANTICS.md` ch. 8).
+- **WF-022** A version's `target` MUST resolve to a declared attribute or
+  characteristic of the subject type, reachable over the declared
+  navigation; a characteristic target's `value` MUST be the boolean
+  constant true. *v0 mirror note:* v0 is fail-soft here too — an
+  unresolvable target degrades to an unknown-typed marker and the typing
+  check silently skips it; only the *typing* of a resolved target errors
+  (that is WF-023). The characteristic-value shape is constructed, not
+  checked. **Delta (promotion).**
+- **WF-023** Assignment typing: the value's type MUST be assignable to the
+  target's declared type — same family, compatible units, enumeration
+  labels from the target's domain, sign constraint respected, and the
+  precision gate of `RUNTIME-SEMANTICS.md` ch. 2.4 (including its
+  candidate rule: a possibly non-terminating value passes explicit
+  rounding before a bounded write). *v0 mirror note:* enforced as resolver
+  errors via the §6/Tabel 61 typing tables — except for characteristic
+  attribution, where v0 skips the check (harmless today: the value is a
+  constructed constant).
+
+The corpus case `corpus/golden/jutterswet-penningdrempel/` instantiates
+this node in its **v0 mirror form** (a flat entry with the
+KENMERKTOEKENNING tag): one rule, one version, characteristic target,
+unconditional validity, a comparison condition.
+
+### 3.2 Allocation
+
+Distribute a source amount over related recipients. v0 name:
+`ResolvedVerdeling`; semantics as recurrence equations in
+`RUNTIME-SEMANTICS.md` ch. 4.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | string | — |
+| `sourceType`, `sourceAttribute` | type ref, string | the amount being distributed |
+| `targetType`, `targetAttribute` | type ref, string | each recipient's share |
+| `method` | `equalShares` \| `proportional` \| `ordered` | §9.7.2 |
+| `ratioAttribute` | string? | weight; present iff proportional, or ordered with a proportional tie-break |
+| `maximumAttribute` | string? | per-recipient cap (§9.7.3); requires a ratio |
+| `roundingDecimals` | integer? | floor each share at n decimals (§9.7.4) |
+| `remainderAttribute` | string? | source attribute receiving the undistributed rest (§9.7.5) |
+| `orderingAttribute` | string? | ordered only: the sort key |
+| `descending` | boolean | ordered only |
+| `condition` | Condition? | — |
+| `validity` | Validity | — |
+
+**Delta (tracked, `CONSTRUCTS.md` row 17):** v0's fourth method value
+`COMPLEX` — the donor's unhandled-form placeholder — is not admissible IR;
+what v0 marked COMPLEX is ill-formed in v1 (WF-024). *v0 mirror note:* v0
+can also carry ordering fields alongside COMPLEX (set before the method
+was demoted); such hybrids disappear with the method value.
+
+- **WF-024** `method` MUST be one of the three real methods.
+- **WF-025** Field validity per method: `ratioAttribute` present iff the
+  method is proportional or ordered-with-proportional-tie;
+  `maximumAttribute` only together with a ratio; `orderingAttribute` (and
+  `descending`) only for ordered, and the ordering key's type MUST be
+  orderable; share-assignment typing per WF-023 applied to
+  target ← source. *v0 mirror note:* v0 enforces the typing as an error
+  and demotes the rest to COMPLEX. **Delta (promotion)** for the demotion
+  paths.
+- **WF-026** At most one allocation MAY write a given (type, attribute)
+  target. *v0 mirror note:* two allocations on one target are
+  agenda-order-dependent and v0's exec backend refuses them as a
+  principled skip. **Delta (promotion, row 17).**
+- A declared `roundingDecimals` or `maximumAttribute` without a
+  `remainderAttribute` silently discards the rest; producers SHOULD
+  declare the remainder target (v0 warns — kept advisory, the legal
+  meaning may genuinely be "the rest lapses").
+
+### 3.3 Object creation
+
+A subject creates an object of a declared type and initialises members.
+v0 name: `ResolvedObjectCreatie` (+ `Toekenning`).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | string | — |
+| `createdType` | type ref | — |
+| `subject` | type ref | the creating subject |
+| `initialisations` | list of MemberInit | declaration order |
+| `condition` | Condition? | — |
+| `validity` | Validity | — |
+
+**MemberInit**: `member` (string), `value` (expression), `characteristic`
+(boolean — v0 `kenmerk`: true = §13.4.6.4 characteristic-value form, the
+member names a declared characteristic and the value is a boolean
+constant; false = §13.4.6.3 attribute-value form).
+
+- **WF-027** Every `member` MUST be a declared attribute or characteristic
+  of `createdType`; a characteristic initialisation's value MUST be a
+  boolean constant. *v0 mirror note:* both are resolver errors, but v0
+  still appends the offending initialisation after diagnosing — v1 makes
+  the form itself ill-formed. **Delta (promotion of the append).**
+  Assignment typing per WF-023 applies per initialisation.
+
+### 3.4 Fact creation
+
+Create a relation instance linking a subject to targets reached along a
+navigation path. v0 name: `ResolvedFeitCreatie` (+ `Tussenstap`).
+
+**Delta (tracked, `CONSTRUCTS.md` rows 4/22 — the heaviest v0 leak):** v0
+encodes the creation as bean reference-fields: `zetVeld` (the field set in
+the consequence), `joinVeld` (the field joined in the condition), and
+per-hop `Tussenstap.veld` + `viaOuderVeld` (which side holds the field).
+v1 re-expresses the same content symbolically:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | string | — |
+| `factType` | fact-type ref | the relation being created |
+| `anchorRole`, `targetRole` | role refs into `factType` | which role the anchor fills, which the target |
+| `anchor` | type ref | the iterated subject |
+| `path` | list of PathStep | how targets are reached from the anchor; empty = one hop |
+| `condition` | Condition? | guard on anchor or target |
+| `validity` | Validity | — |
+
+**PathStep**: `factType` (ref), `role` (ref), `direction` (`toOne` \|
+`toMany`) — a symbolic hop over an existing relation. *Migration:* v0's
+`zetVeld`/`joinVeld`/`veld` are derivable from the role bindings by the
+backend's own role→field mapping; the derivation moves down into the
+backend, out of the IR (the Phase-3 forcing move).
+
+- **WF-028** `factType`, both roles, and every path step MUST resolve
+  (WF-003); the path MUST actually reach the target type; the created
+  relation MUST differ from the relation of the final hop. *v0 mirror
+  note:* v0 enforces all of this fail-soft — seven distinct
+  warning-and-drop reasons; an emitted v0 record is always fully
+  resolved. **Delta (promotion):** in v1 the ill-formed variants are
+  verifier errors, not silent drops.
+
+### 3.5 Consistency
+
+An assertion that must hold; a violation is observable on the §9.5
+inconsistency channel — declarative, not "fire on the negation"
+(`CONSTRUCTS.md` row 19). v0 name: `ResolvedConsistentie`.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | string | — |
+| `subject` | type ref | the asserted-about type |
+| `assertion` | Condition | must hold for every instance |
+| `validity` | Validity | — |
+
+- **WF-029** The assertion MUST have a single subject type. *v0 mirror
+  note:* v0 additionally restricts the assertion's *shape* (comparisons,
+  empty/filled predicates, and all-quantified compounds of those;
+  everything else warned-and-dropped) — that is backend maturity, not IR
+  scope: v1 admits the general condition form and the coverage obligation
+  of `CONSTRUCTS.md` row 19 stands.
+
+### 3.6 Uniqueness
+
+One construct for single-type and union (`verenigd met`) uniqueness
+(`CONSTRUCTS.md` row 20). v0 names: `ResolvedUniciteit` +
+`ResolvedUniciteitUnie` (+ `Bron`).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | string | — |
+| `sources` | list of Source, ≥ 1 | one = single-type; more = union |
+| `scope` | navigation ref? | absent = global; present = unique per scope owner |
+| `validity` | Validity | — |
+
+**Source**: `objectType` (ref), `keys` (list of attribute names, ≥ 1 — a
+multi-attribute key is jointly unique by positional concatenation, §5.7).
+Semantics note (mirrored): an empty key value never collides (§8.1.6).
+
+**Delta (row 20):** v0's `scopeVeld` — a bean reference-field name — is
+replaced by a symbolic scope navigation (role reference), same move as
+ch. 3.4. *Migration:* derivable via the backend's role→field mapping.
+
+- **WF-030** Every source's keys MUST resolve to declared attributes; all
+  sources MUST agree on key arity and per-position datatype kind
+  (including unit, for numeric keys). *v0 mirror note:* v0 checks
+  arity/kind for the union form (warn-and-drop) and nothing for the
+  single form. **Delta (promotion).** **OPEN** (`CONSTRUCTS.md` row 20):
+  whether a time-dependent attribute is admissible as a key — v0's
+  backends decline temporal keys; the spec must decide, not inherit the
+  refusal.
+
+### 3.7 Day-kind definition
+
+The predicate that defines a declared DayKind (model layer, ch. 2.9): a
+condition over "the day". v0 name: `ResolvedDagsoort`.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `dayKind` | day-kind ref | the declared name (ch. 2.9) |
+| `condition` | Condition | over the day; may reference other day kinds |
+| `validity` | Validity | — |
+
+- **WF-031** The reference MUST resolve to a declared DayKind; the
+  condition MUST be present; there MUST be exactly one definition per
+  DayKind. *v0 mirror note:* a missing condition is warn-and-drop; a
+  duplicate definition warns and appends with first-wins lookup.
+  **Delta (promotion).** **OPEN:** whether mutually recursive day-kind
+  definitions are admissible (v0 neither checks nor documents this) —
+  decided with the stratification chapter.
+
+### 3.8 Start-point determination
+
+The anchor metadata for a variable-start timeline: which member of which
+type carries the per-object start date. The *write* of that member is an
+ordinary Rule (ch. 3.1) — the determination itself carries no condition
+and no validity (they ride the write rule). v0 name: `ResolvedStartpunt`.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `timeline` | timeline ref | — |
+| `objectType` | type ref | — |
+| `member` | string | the synthetic day-precision date attribute |
+
+- **WF-032** The timeline MUST be declared with `variableStart` (the
+  converse of WF-016 — an anchor for a fixed-start timeline is
+  ill-formed; v0 warns and lowers anyway: **delta, promotion**); the
+  member MUST be a day-precision Date, and so must the deriving
+  expression of the anchor's write rule (v0 errors on both, the latter
+  non-aborting; in v1 the latter is WF-023 typing applied to that rule);
+  at most one determination per (objectType, timeline) — v0 deduplicates
+  silently, v1 makes the duplicate ill-formed.
+
+### 3.9 RuleGroup — `layer: dialect(regelspraak)`
+
+Namespacing over member rules plus a recursion marker (§9.10, documented
+extension; stays out of the core per PLAN §9, decision 5). v0 name:
+`ResolvedRegelGroep`.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | string | — |
+| `recursive` | boolean | the §9.10 marker |
+| `members` | list of rule names | written order |
+
+Members are ordinary rules; the group adds no execution semantics. The
+`recursive` marker's meaning awaits the neutral fixpoint semantics of
+`RUNTIME-SEMANTICS.md` ch. 5 (tracked in `CONSTRUCTS.md` row 14 — or it
+is a non-goal); until then it is carried, not interpreted.
+
+- **WF-033** (dialect) Every member name MUST resolve to a rule form in
+  the model; a `recursive` group MUST contain at least one object-creation
+  member, and every object-creation member of a recursive group MUST be
+  conditional (an unguarded creation in a recursive group cannot
+  terminate). *v0 mirror note:* containment is a v0 error; the unguarded
+  case only warns. **Delta (promotion)** for the guard.
+
+### 3.10 Validity
+
+The shared validity-window value (v0 name: `Geldigheid`): `from` (date?)
+and `to` (date?), both inclusive, an absent bound open; both absent =
+always. Year shorthands ("vanaf 2024" = from 2024-01-01) are frontend
+sugar, widened before the IR. Selection semantics (which version governs
+an evaluation date) are `RUNTIME-SEMANTICS.md` ch. 8. *v0 mirror note:* a
+malformed bound is a frontend error — v0 skips the whole version, so a
+Validity in emitted IR is always well-formed; WF-021 adds the cross-
+version constraint.
+
+---
+
 ## WF index
 
-Format per rule: statement (in ch. 2), verifier check, golden case,
+Format per rule: statement (in ch. 2–3), verifier check, golden case,
 negatief case. `OPEN` = the artifact does not exist yet; an `OPEN` entry is
 tracked debt under the spec discipline, and the Phase-1 exit requires every
 row closed.
 
-| ID | Statement (see ch. 2) | Verifier check | Golden | Negatief |
+| ID | Statement (see ch. 2–3) | Verifier check | Golden | Negatief |
 |---|---|---|---|---|
 | WF-001 | top-level names unique per namespace (ci) | OPEN | OPEN | OPEN |
 | WF-002 | member names unique per kind within an object type (ci) | OPEN | OPEN | OPEN |
@@ -535,10 +858,27 @@ row closed.
 | WF-016 | variable-start timeline is anchored (rule-layer check) | OPEN (cross-layer) | OPEN | OPEN |
 | WF-017 | day-kind spellings shadow no built-in unit and no other day-kind | OPEN | OPEN | OPEN |
 | WF-018 | parameter datatype resolves; timeline facet well-formed | OPEN | OPEN | OPEN |
-| WF-019 | serialization preserves declaration order | OPEN (round-trip gate, ch. 7) | OPEN | OPEN |
+| WF-019 | serialization preserves declaration order | `scripts/check-ir-schema.sh` (byte-identical round-trip) | OPEN (current case has only singleton lists — no order witness) | OPEN |
+| WF-020 | rule names unique across all rule forms (ci) | OPEN | OPEN | OPEN |
+| WF-021 | one rule's version validity windows do not overlap | OPEN | OPEN | OPEN |
+| WF-022 | rule target resolves; characteristic value is the constant true | OPEN | `corpus/golden/jutterswet-penningdrempel/` | OPEN |
+| WF-023 | assignment typing (family, units, labels, sign, precision gate) | OPEN | OPEN | OPEN |
+| WF-024 | allocation method is one of the three real methods (no COMPLEX) | OPEN | OPEN | OPEN |
+| WF-025 | allocation fields valid per method; ordering key orderable; share typing | OPEN | OPEN | OPEN |
+| WF-026 | at most one allocation per written target | OPEN | OPEN | OPEN |
+| WF-027 | object-creation members declared on the created type; characteristic init boolean | OPEN | OPEN | OPEN |
+| WF-028 | fact creation fully symbolic and resolvable; path reaches target; new ≠ traversed relation | OPEN | OPEN | OPEN |
+| WF-029 | consistency assertion has a single subject | OPEN | OPEN | OPEN |
+| WF-030 | uniqueness sources: keys resolve; arity and datatype kind agree | OPEN | OPEN | OPEN |
+| WF-031 | one definition per day kind; condition present (recursion OPEN) | OPEN | OPEN | OPEN |
+| WF-032 | start point: variable-start timeline, day-precision member, one per pair | OPEN | OPEN | OPEN |
+| WF-033 | (dialect) rule-group members resolve; recursive group has guarded creation | OPEN | OPEN | OPEN |
 
-Promotion summary (v0 → v1), for the migration record: v0 enforces **none**
-of these as errors — its model layer is fail-soft by design (seven warning
-sites, zero error sites, silent overwrite/merge elsewhere). The v1 model
-layer closes exactly that gap; every promotion above cites its v0
-behaviour inline.
+Promotion summary (v0 → v1), for the migration record. **Model layer
+(WF-001..019):** v0 enforces none of these as errors — that layer is
+fail-soft by design (seven warning sites, zero error sites, silent
+overwrite/merge elsewhere); the v1 model layer closes exactly that gap.
+**Rule layer (WF-020..033):** v0 is mixed — typing, version overlap, and
+several creation checks are genuine resolver errors (mirrored as WF
+rules), while resolution failures are fail-soft warn-and-drop or silent
+degradation (promoted). Every rule above cites its v0 behaviour inline.

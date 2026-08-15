@@ -125,7 +125,7 @@ row it belongs to. Discriminator enums are listed under their node.
 | Node | Meaning (own words) | Spec § | Verdict (v1) | Row | Delta / notes |
 |---|---|---|---|---|---|
 | `ResolvedRegel` | assignment/derivation rule: target ← expression, guarded, versioned | §13.4.4/.9 | core | 2 | version selection explicit, no name mangling; drop then/when framing |
-| — `Soort` | GELIJKSTELLING, BEREKENING, INITIALISATIE, KENMERKTOEKENNING | §13.4.4/.9 | split | 2, 7 | first two merge (presentation tag); INITIALISATIE → defeasible default; KENMERKTOEKENNING stays as target-kind flag |
+| — `Soort` | GELIJKSTELLING, BEREKENING, INITIALISATIE, KENMERKTOEKENNING | §13.4.4/.9 | split | 2, 7 | first two merge (presentation tag); INITIALISATIE → defeasible default; KENMERKTOEKENNING → the target's member kind (attribute vs characteristic reference — IR-SPEC ch. 3.1), no separate flag |
 | `ResolvedVerdeling` | allocation over recipients (method, cap, rounding, remainder) | §13.4.10, §9.7 | core | 17 | recurrence-equation semantics; ordering keys are domain, not engine |
 | — `Methode` | GELIJKE_DELEN, NAAR_RATO, OP_VOLGORDE | §9.7.2 | core | 17 | — |
 | — `Methode.COMPLEX` | donor placeholder for unhandled forms | — | non-goal | 17 | verifier error in v1, never an IR value |
