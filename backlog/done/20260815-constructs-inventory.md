@@ -20,3 +20,20 @@ May touch: `spec/CONSTRUCTS.md`, `backlog/`
 
 Out of scope: normative `IR-SPEC.md` content; changes to `regelspraak-java`;
 corpus files; `spec/PLAN.md` (unless scope itself changes).
+
+Result: `spec/CONSTRUCTS.md` completed: a 37-row scope matrix (the 18
+existing rows refreshed with mined findings, 19 new rows), the full node
+inventory of `regelspraak-java` @ `b85dff3` (12 `Expr` subtypes, 9 `Conditie`
+subtypes, every `Resolved*` form + `Geldigheid`, the model layer incl. the
+`Datatype` sum), the coverage-manifest mechanism with its marker/skip
+families mapped to matrix rows, and the ~24-site `Onopgelost` production
+inventory in four categories (feeding the row-16 delta: structured reasons).
+Verified by three adversarial reviewers: completeness vs source (no missing
+subtype or top-level form), consistency vs `spec/PLAN.md` §9 (all decided
+positions honoured; the one found contradiction — `Dimensie` core vs dialect
+— resolved as an explicit declaration/use split in row 28), rights
+(publishable: no reproduced specification text, no machine-local paths).
+Deliberately left: per-builtin semantics (Phase 1), the scenario→corpus-schema
+mapping (corpus workstream), exhaustive FEEL function enumeration (row 15
+keeps decision tables as frontend sugar). Verdicts are session proposals for
+maintainer review.
