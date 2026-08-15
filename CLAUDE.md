@@ -7,7 +7,8 @@ representation for machine-executable law, plus its corpus, reference
 interpreter, and engine backends. **The specification is the product;
 implementations are its proof.** The full programme, phases, and rationale:
 `spec/PLAN.md` — read it before any non-trivial task. The founding review:
-`spec/IR-REVIEW.md`.
+`spec/IR-REVIEW.md`. How sessions operate day to day — pace, parallelism,
+backlog, worktrees, the self-containedness gate: `WAY-OF-WORKING.md`.
 
 ## The repository is the state
 
@@ -28,6 +29,7 @@ Sessions may propose diffs to these; only the maintainer merges them:
   `spec/verifier/` (once it exists)
 - `corpus/golden/anchor/` (hand-written cases with absolute expected values)
 - `.github/` (CI configuration, CODEOWNERS)
+- `scripts/` (gate scripts), `WAY-OF-WORKING.md`, and this file
 
 Mechanism: `.github/CODEOWNERS` plus branch protection (note: on the free org
 plan branch protection requires a public repo). A change to a protected path
@@ -65,8 +67,17 @@ without maintainer review must not land.
 ## Gate set
 
 Grows monotonically; nothing that entered may regress; a green subset is not
-green. Current gates: none yet — the first gate lands with the JSON schema
-(validate every corpus IR file + round-trip). Standing harness guards once
+green. Current gates:
+
+1. `scripts/check-self-contained.sh` — artifact zones (`corpus/golden`,
+   `corpus/negatief`, `spec/schema`, `spec/verifier`, `ref`, `backends`)
+   carry no machine-local paths or private-repo references, and corpus data
+   is free of TOKA material. Working prose (plan, backlog, reviews) may
+   reference the private source repos during development — see
+   `WAY-OF-WORKING.md` §5–6.
+
+The next gate lands with the JSON schema (validate every corpus IR file +
+round-trip). Standing harness guards once
 the corpus runs in CI: oracle (interpreter replay passes), no-op (an identity
 transpiler must fail), unsolved-state (`Onopgelost` surfaces in output, never
 vanishes).
