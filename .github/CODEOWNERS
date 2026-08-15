@@ -1,0 +1,6 @@
+# Protected paths (see CLAUDE.md and spec/PLAN.md §8): maintainer review required.
+# Effective once branch protection with "require review from code owners" is
+# enabled (on the free org plan that requires a public repo).
+/spec/                  @yhavinga
+/corpus/golden/anchor/  @yhavinga
+/.github/               @yhavinga
