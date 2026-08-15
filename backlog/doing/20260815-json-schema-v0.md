@@ -19,3 +19,7 @@ May touch: `spec/schema/` and `scripts/` (protected paths — proposal; the
 maintainer merges), `backlog/`
 
 Out of scope: v1 deviations (the schema mirrors v0 first); `spec/verifier/`.
+
+Unblocked 2026-08-15: the emitter merged in regelspraak-java (main
+b85dff3 → c51652a); the dump-producing pin is c51652a. Review citations
+remain pinned at b85dff3 (contained in that history).
