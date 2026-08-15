@@ -59,7 +59,7 @@ identify what is being mirrored.
 | 23 | Day-kind definitions (dagsoorten) | §9.8, §3.12 | core | kernel | — | a named pure predicate over dates is engine-neutral and small; the unit-spelling recognition ("5 werkdagen") stays dialect |
 | 24 | Local variables (let-bindings, "Daarbij geldt") | §13.4.2.10 | core | kernel | — | DMN's boxed context is the same construct; scoping rules become WF conditions |
 | 25 | Evaluation-context globals (rekendatum/rekenjaar) | §4.2, §5.3 | core | kernel | split v0's `Constante` grab-bag: the evaluation-date globals are a kernel context reference; subject/pronoun referents ("hij", "de dag") are surface forms the frontend resolves away | the single-axis decision (row 12 / PLAN §9 (2)) names exactly this axis |
-| 26 | Units and unit algebra | §13.3.5 | core | kernel | — | composite/rate units, conversion factors, and unit systems are engine-neutral in v0; keep |
+| 26 | Units and unit algebra | §13.3.5 | core | kernel | factors become true rationals; only the exact num/den restatement form is specified | composite/rate units, conversion factors, and unit systems are engine-neutral in v0; keep the algebra, drop the pre-rounded single-ratio form |
 | 27 | Datatype refinements | §13.3.3/.4 | core | kernel | `Percentage` = `Numeriek` with an implicit `%` unit (dialect tag); `DatumInDagen`/`DatumTijd` = one date type parameterised by granularity; `Datatype.Onbekend` leaves the v1 sum (fail-fast — `Onopgelost` is the honest marker, not an "unknown type"); literals become typed values, not raw strings | FEEL's two duration kinds (calendar-sensitive months vs exact days) inform the date-arithmetic chapter; ambiguous calendar arithmetic fails fast (Catala) rather than guessing |
 | 28 | Dimensioned attributes + dimension selection | §13.3.7, §3.6 | split | kernel (in dialect) | keep pre-expanded label lists (good, engine-neutral); drop the map-get lowering from the node contract | the `Dimensie` declaration itself (an ordered label domain) is core, like `Enumeratie`; the dialect part is its *use* on attributes — cell read (`DimensieCel`, every dimension pinned = WF condition) and aggregation selection |
 | 29 | Whole-period qualifier ("gedurende het gehele jaar") | §8.2 | dialect | lowers to timeline algebra | — | specified as a temporal operator lowering onto RUNTIME-SEMANTICS ch. 3, not per-backend markers |
@@ -147,7 +147,7 @@ row it belongs to. Discriminator enums are listed under their node.
 | `RegelSpraakModel` | container: declarations + diagnostics + transpiler input | — | split | — | normative declarations stay; the `ir.Resolved*` lists and backend helpers (rule-fired bookkeeping facts, inconsistency-flag insertion, engine loop-guards, rule-name prefixing) leave the IR type |
 | `Objecttype` | entity type: attributes, kenmerken, temporal/dimension facets | §13.3.3/.6/.7 | core | 11 | reify `Attribuut` and `Kenmerk` as first-class nodes; the parallel per-name side-maps are the v0 shape row 11's "out of the side tables" delta targets |
 | — `KenmerkSoort` | BIJVOEGLIJK, BEZITTELIJK, ZELFSTANDIG | §3.5 | dialect (presentation) | 2 | same boolean membership; phrasing tag only — the row-2 pattern again |
-| `Parameter` | global typed value, possibly a timeline | §13.3.8 | core | 11 | — |
+| `Parameter` | global typed value, possibly a timeline | §13.3.8 | core | 11 | v1 parameters carry the full timeline facet (granularity + count + name); v0 records only a bare granularity |
 | `Feittype` / `Rol` | relation type with symbolic roles + cardinality | §13.3.9 | core | 4 | data already symbolic; fix the navigation contract (reference-field assumption) |
 | `Granulariteit` | DAG, WEEK, MAAND, KWARTAAL, JAAR | §13.3.6 | core | 11 | — |
 | `Tijdlijn` | named timeline: granularity, count, variable start | §13.3.6.10, §9.9 | core | 11 | — |
@@ -161,7 +161,7 @@ row it belongs to. Discriminator enums are listed under their node.
 | — `DatumInDagen`, `DatumTijd` | date at day vs millisecond granularity | §13.3.3.6 | core | 27 | unify: one date type parameterised by granularity |
 | — `Enumeratie` | enumeration domain (name + values) | §13.3.4.2 | core | 27, 36 | domain identity a real reference, not a name string |
 | — `Onbekend` | resolver error-recovery type | — | non-goal | 27 | leaves the v1 sum; fail-fast |
-| `Eenheid` / `Eenheidstelsel` | units, rate/product units, conversion; unit systems | §13.3.5 | core | 26 | — |
+| `Eenheid` / `Eenheidstelsel` | units, rate/product units, conversion; unit systems | §13.3.5 | core | 26 | conversion factors become true rationals; only the exact num/den restatement form is specified (v0's pre-rounded DECIMAL64 single ratio is dropped) |
 | `Parameterset` (+ `WaardeInterval`) | deployed vintage values, peildatum-selected, fail-fast | — | data-plane | 11 | specified in RUNTIME-SEMANTICS ch. 8, not a language-IR node |
 | `Rationaal` | numeric-literal parse helper | §13.2.5 | non-goal | — | frontend utility, not IR |
 | `Severity` (ERROR, WARNING, INFO) / `Diagnostic` | tooling diagnostics | — | non-goal | — | build-time tooling, not IR |
