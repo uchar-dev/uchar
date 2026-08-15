@@ -14,7 +14,7 @@ set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
 ZONES='corpus/golden corpus/negatief spec/schema spec/verifier ref backends'
-EXCEPTIONS=':(exclude)ref/README.md :(exclude)spec/schema/README.md'
+EXCEPTIONS=':(exclude)ref/README.md'
 PRIVATE='(/users/|/home/|~/|regelspraak-java|regelspraakruntime|calculemus)'
 
 status=0

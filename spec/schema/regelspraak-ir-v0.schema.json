@@ -1,0 +1,2818 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uchar.dev/schema/regelspraak-ir-v0.schema.json",
+  "title": "regelspraak-ir-v0",
+  "description": "Structural schema for the 'regelspraak-ir-v0' format: the faithful engine-neutral JSON dump of the reference frontend's fully resolved model (mirror-then-diverge; see spec/IR-SPEC.md). Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Section citations (e.g. §13.3.3) point into the source language spec by number only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formaat",
+    "objecttypen",
+    "domeinen",
+    "parameters",
+    "eenheidstelsels",
+    "feittypen",
+    "dimensies",
+    "tijdlijnen",
+    "dagsoorten",
+    "dagsoortPerEenheid",
+    "regels",
+    "resolvedRegels",
+    "resolvedDagsoorten",
+    "objectCreaties",
+    "verdelingen",
+    "consistenties",
+    "uniciteiten",
+    "uniciteitUnies",
+    "feitCreaties",
+    "resolvedStartpunten",
+    "regelGroepen",
+    "diagnostics"
+  ],
+  "properties": {
+    "formaat": {
+      "const": "regelspraak-ir-v0"
+    },
+    "objecttypen": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/Objecttype"
+      }
+    },
+    "domeinen": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/datatype"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/Parameter"
+      }
+    },
+    "eenheidstelsels": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/Eenheidstelsel"
+      }
+    },
+    "feittypen": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/Feittype"
+      }
+    },
+    "dimensies": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/Dimensie"
+      }
+    },
+    "tijdlijnen": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Tijdlijn"
+      }
+    },
+    "dagsoorten": {
+      "type": "array",
+      "items": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "dagsoortPerEenheid": {
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "regels": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Regel"
+      }
+    },
+    "resolvedRegels": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ResolvedRegel"
+      }
+    },
+    "resolvedDagsoorten": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ResolvedDagsoort"
+      }
+    },
+    "objectCreaties": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ResolvedObjectCreatie"
+      }
+    },
+    "verdelingen": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ResolvedVerdeling"
+      }
+    },
+    "consistenties": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ResolvedConsistentie"
+      }
+    },
+    "uniciteiten": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ResolvedUniciteit"
+      }
+    },
+    "uniciteitUnies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ResolvedUniciteitUnie"
+      }
+    },
+    "feitCreaties": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ResolvedFeitCreatie"
+      }
+    },
+    "resolvedStartpunten": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ResolvedStartpunt"
+      }
+    },
+    "regelGroepen": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ResolvedRegelGroep"
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Diagnostic"
+      }
+    }
+  },
+  "$defs": {
+    "Numeriek": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "geheel",
+        "decimalen",
+        "teken",
+        "eenheid"
+      ],
+      "properties": {
+        "node": {
+          "const": "Numeriek"
+        },
+        "geheel": {
+          "type": "boolean"
+        },
+        "decimalen": {
+          "type": "integer"
+        },
+        "teken": {
+          "enum": [
+            "ONBEPAALD",
+            "NEGATIEF",
+            "NIET_NEGATIEF",
+            "POSITIEF",
+            null
+          ]
+        },
+        "eenheid": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Eenheid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "Percentage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "geheel",
+        "decimalen",
+        "eenheid"
+      ],
+      "properties": {
+        "node": {
+          "const": "Percentage"
+        },
+        "geheel": {
+          "type": "boolean"
+        },
+        "decimalen": {
+          "type": "integer"
+        },
+        "eenheid": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Eenheid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "Tekst": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node"
+      ],
+      "properties": {
+        "node": {
+          "const": "Tekst"
+        }
+      }
+    },
+    "Booleaan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node"
+      ],
+      "properties": {
+        "node": {
+          "const": "Booleaan"
+        }
+      }
+    },
+    "DatumInDagen": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node"
+      ],
+      "properties": {
+        "node": {
+          "const": "DatumInDagen"
+        }
+      }
+    },
+    "DatumTijd": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node"
+      ],
+      "properties": {
+        "node": {
+          "const": "DatumTijd"
+        }
+      }
+    },
+    "Enumeratie": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "domein",
+        "waarden"
+      ],
+      "properties": {
+        "node": {
+          "const": "Enumeratie"
+        },
+        "domein": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "waarden": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "Onbekend": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "reden"
+      ],
+      "properties": {
+        "node": {
+          "const": "Onbekend"
+        },
+        "reden": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "datatype": {
+      "description": "A RegelSpraak datatype (§13.3.3), discriminated on 'node'.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Numeriek"
+        },
+        {
+          "$ref": "#/$defs/Percentage"
+        },
+        {
+          "$ref": "#/$defs/Tekst"
+        },
+        {
+          "$ref": "#/$defs/Booleaan"
+        },
+        {
+          "$ref": "#/$defs/DatumInDagen"
+        },
+        {
+          "$ref": "#/$defs/DatumTijd"
+        },
+        {
+          "$ref": "#/$defs/Enumeratie"
+        },
+        {
+          "$ref": "#/$defs/Onbekend"
+        }
+      ]
+    },
+    "Eenheid": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "afkorting",
+        "stelsel",
+        "canoniek",
+        "factorNaarCanoniek",
+        "noemer"
+      ],
+      "properties": {
+        "node": {
+          "const": "Eenheid"
+        },
+        "afkorting": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "stelsel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "canoniek": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "factorNaarCanoniek": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "noemer": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Eenheid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "description": "A unit: abbreviation, declaring system, canonical unit and conversion factor; 'noemer' is the denominator unit of a composite rate (§13.3.3.2), else null."
+    },
+    "Literal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "waarde",
+        "type",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "Literal"
+        },
+        "waarde": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/datatype"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "TekstReeks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "delen",
+        "type",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "TekstReeks"
+        },
+        "delen": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TekstReeksDeel"
+          }
+        },
+        "type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/datatype"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Binair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "op",
+        "links",
+        "rechts",
+        "type",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "Binair"
+        },
+        "op": {
+          "enum": [
+            "PLUS",
+            "MIN",
+            "VERMINDERD_MET",
+            "MAAL",
+            "GEDEELD_DOOR",
+            "GEDEELD_DOOR_ABS",
+            "TOT_DE_MACHT",
+            "PERCENTAGE_VAN"
+          ]
+        },
+        "links": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rechts": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/datatype"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Functie": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "kind",
+        "argumenten",
+        "elementObjecttype",
+        "leegwaarde",
+        "filter",
+        "dimensieSelectie",
+        "type",
+        "bron",
+        "granulariteit"
+      ],
+      "properties": {
+        "node": {
+          "const": "Functie"
+        },
+        "kind": {
+          "enum": [
+            "SOM",
+            "TOTAAL",
+            "AANTAL",
+            "MINIMUM",
+            "MAXIMUM",
+            "EERSTE",
+            "LAATSTE",
+            "WORTEL",
+            "ABSOLUTE_WAARDE",
+            "CONCATENATIE",
+            "TIJDSDUUR",
+            "ABSOLUTE_TIJDSDUUR",
+            "EERSTE_PAASDAG",
+            "TIJDSEVENREDIG_DEEL",
+            "AANTAL_DAGEN_IN",
+            "JAAR_UIT",
+            "MAAND_UIT",
+            "DAG_UIT",
+            "UUR_UIT",
+            "MINUUT_UIT",
+            "SECONDE_UIT",
+            "MILLISECONDE_UIT",
+            "DATUM_MET",
+            "DATUMTIJD_MET"
+          ]
+        },
+        "argumenten": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/expr"
+          }
+        },
+        "elementObjecttype": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "leegwaarde": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "filter": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/conditie"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dimensieSelectie": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DimensieSelectie"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/datatype"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "granulariteit": {
+          "enum": [
+            "DAG",
+            "WEEK",
+            "MAAND",
+            "KWARTAAL",
+            "JAAR",
+            null
+          ]
+        }
+      }
+    },
+    "Afgerond": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "basis",
+        "modus",
+        "decimalen",
+        "type",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "Afgerond"
+        },
+        "basis": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "modus": {
+          "enum": [
+            "NAAR_BENEDEN",
+            "NAAR_BOVEN",
+            "REKENKUNDIG",
+            "RICHTING_NUL",
+            "WEG_VAN_NUL"
+          ]
+        },
+        "decimalen": {
+          "type": "integer"
+        },
+        "type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/datatype"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Begrensd": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "basis",
+        "minimum",
+        "maximum",
+        "type",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "Begrensd"
+        },
+        "basis": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "minimum": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "maximum": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/datatype"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "AttribuutRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "attribuut",
+        "objecttype",
+        "onderwerpBron",
+        "navigatieRol",
+        "type",
+        "bron",
+        "set",
+        "navigatiePad"
+      ],
+      "properties": {
+        "node": {
+          "const": "AttribuutRef"
+        },
+        "attribuut": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "objecttype": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "onderwerpBron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "navigatieRol": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/datatype"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "set": {
+          "type": "boolean"
+        },
+        "navigatiePad": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "DimensieCel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "attribuut",
+        "labels",
+        "type",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "DimensieCel"
+        },
+        "attribuut": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/datatype"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "ParameterRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "parameter",
+        "type",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "ParameterRef"
+        },
+        "parameter": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/datatype"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "VariabeleRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "naam",
+        "type",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "VariabeleRef"
+        },
+        "naam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/datatype"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Constante": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "naam",
+        "type",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "Constante"
+        },
+        "naam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/datatype"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "ExprOnopgelost": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "type",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "Onopgelost"
+        },
+        "type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/datatype"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "description": "An expression the resolver could not resolve; surfaces as an explicit marker."
+    },
+    "expr": {
+      "description": "A resolved expression (§13.4), discriminated on 'node'.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Literal"
+        },
+        {
+          "$ref": "#/$defs/TekstReeks"
+        },
+        {
+          "$ref": "#/$defs/Binair"
+        },
+        {
+          "$ref": "#/$defs/Functie"
+        },
+        {
+          "$ref": "#/$defs/Afgerond"
+        },
+        {
+          "$ref": "#/$defs/Begrensd"
+        },
+        {
+          "$ref": "#/$defs/AttribuutRef"
+        },
+        {
+          "$ref": "#/$defs/DimensieCel"
+        },
+        {
+          "$ref": "#/$defs/ParameterRef"
+        },
+        {
+          "$ref": "#/$defs/VariabeleRef"
+        },
+        {
+          "$ref": "#/$defs/Constante"
+        },
+        {
+          "$ref": "#/$defs/ExprOnopgelost"
+        }
+      ]
+    },
+    "Letterlijk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "tekst"
+      ],
+      "properties": {
+        "node": {
+          "const": "Letterlijk"
+        },
+        "tekst": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Ingevoegd": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "expr"
+      ],
+      "properties": {
+        "node": {
+          "const": "Ingevoegd"
+        },
+        "expr": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "TekstReeksDeel": {
+      "description": "A part of a text sequence: a literal fragment or an interpolated expression.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Letterlijk"
+        },
+        {
+          "$ref": "#/$defs/Ingevoegd"
+        }
+      ]
+    },
+    "DimensieSelectie": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "dimensie",
+        "labels",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "DimensieSelectie"
+        },
+        "dimensie": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Vergelijking": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "op",
+        "links",
+        "rechts",
+        "periode",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "Vergelijking"
+        },
+        "op": {
+          "enum": [
+            "KLEINER",
+            "KLEINER_OF_GELIJK",
+            "GROTER",
+            "GROTER_OF_GELIJK",
+            "GELIJK",
+            "ONGELIJK",
+            "EERDER",
+            "EERDER_OF_GELIJK",
+            "LATER",
+            "LATER_OF_GELIJK"
+          ]
+        },
+        "links": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rechts": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "periode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GeheelPeriode"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Predicaat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "soort",
+        "operand",
+        "dagsoort",
+        "negatie",
+        "cijfers",
+        "periode",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "Predicaat"
+        },
+        "soort": {
+          "enum": [
+            "LEEG",
+            "GEVULD",
+            "ELFPROEF",
+            "NUMERIEK_MET_EXACT",
+            "DAGSOORT"
+          ]
+        },
+        "operand": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dagsoort": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "negatie": {
+          "type": "boolean"
+        },
+        "cijfers": {
+          "type": "integer"
+        },
+        "periode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GeheelPeriode"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Kenmerk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "kenmerk",
+        "navigatie",
+        "negatie",
+        "eigenaar",
+        "periode",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "Kenmerk"
+        },
+        "kenmerk": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "navigatie": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "negatie": {
+          "type": "boolean"
+        },
+        "eigenaar": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "periode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GeheelPeriode"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Rollidmaatschap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "rol",
+        "anderTeFiller",
+        "negatie",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "Rollidmaatschap"
+        },
+        "rol": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "anderTeFiller": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "negatie": {
+          "type": "boolean"
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "VerreRollidmaatschap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "filler",
+        "backref",
+        "negatie",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "VerreRollidmaatschap"
+        },
+        "filler": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "backref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "negatie": {
+          "type": "boolean"
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Periode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "vanaf",
+        "tot",
+        "totInclusief",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "Periode"
+        },
+        "vanaf": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tot": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "totInclusief": {
+          "type": "boolean"
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Samengesteld": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "kwantor",
+        "drempel",
+        "onderdelen",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "Samengesteld"
+        },
+        "kwantor": {
+          "enum": [
+            "DE",
+            "ALLE",
+            "GEEN",
+            "TEN_MINSTE",
+            "TEN_HOOGSTE",
+            "PRECIES"
+          ]
+        },
+        "drempel": {
+          "type": "integer"
+        },
+        "onderdelen": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/conditie"
+          }
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Regelversie": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "regel",
+        "inconsistent",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "Regelversie"
+        },
+        "regel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "inconsistent": {
+          "type": "boolean"
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "ConditieOnopgelost": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "Onopgelost"
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "description": "A condition the resolver could not resolve; surfaces as an explicit marker."
+    },
+    "conditie": {
+      "description": "A resolved condition, discriminated on 'node'.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Vergelijking"
+        },
+        {
+          "$ref": "#/$defs/Predicaat"
+        },
+        {
+          "$ref": "#/$defs/Kenmerk"
+        },
+        {
+          "$ref": "#/$defs/Rollidmaatschap"
+        },
+        {
+          "$ref": "#/$defs/VerreRollidmaatschap"
+        },
+        {
+          "$ref": "#/$defs/Periode"
+        },
+        {
+          "$ref": "#/$defs/Samengesteld"
+        },
+        {
+          "$ref": "#/$defs/Regelversie"
+        },
+        {
+          "$ref": "#/$defs/ConditieOnopgelost"
+        }
+      ]
+    },
+    "GeheelPeriode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "jaar",
+        "niet"
+      ],
+      "properties": {
+        "node": {
+          "const": "GeheelPeriode"
+        },
+        "jaar": {
+          "type": "boolean"
+        },
+        "niet": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Geldigheid": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "vanaf",
+        "tot"
+      ],
+      "properties": {
+        "node": {
+          "const": "Geldigheid"
+        },
+        "vanaf": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tot": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "description": "A validity window; 'vanaf'/'tot' are ISO dates or null for open-ended."
+    },
+    "Objecttype": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "naam",
+        "attributen",
+        "attribuutMeervoud",
+        "attribuutDimensies",
+        "attribuutGranulariteit",
+        "attribuutTijdlijnAantal",
+        "attribuutTijdlijnNaam",
+        "kenmerken",
+        "kenmerkSoorten",
+        "kenmerkGranulariteit",
+        "kenmerkTijdlijnAantal",
+        "bezield",
+        "meervoud"
+      ],
+      "properties": {
+        "node": {
+          "const": "Objecttype"
+        },
+        "naam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "attributen": {
+          "type": "object",
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/datatype"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "attribuutMeervoud": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "attribuutDimensies": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "attribuutGranulariteit": {
+          "type": "object",
+          "additionalProperties": {
+            "enum": [
+              "DAG",
+              "WEEK",
+              "MAAND",
+              "KWARTAAL",
+              "JAAR",
+              null
+            ]
+          }
+        },
+        "attribuutTijdlijnAantal": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "attribuutTijdlijnNaam": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "kenmerken": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "kenmerkSoorten": {
+          "type": "object",
+          "additionalProperties": {
+            "enum": [
+              "BIJVOEGLIJK",
+              "BEZITTELIJK",
+              "ZELFSTANDIG",
+              null
+            ]
+          }
+        },
+        "kenmerkGranulariteit": {
+          "type": "object",
+          "additionalProperties": {
+            "enum": [
+              "DAG",
+              "WEEK",
+              "MAAND",
+              "KWARTAAL",
+              "JAAR",
+              null
+            ]
+          }
+        },
+        "kenmerkTijdlijnAantal": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "bezield": {
+          "type": "boolean"
+        },
+        "meervoud": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Parameter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "naam",
+        "datatype",
+        "granulariteit"
+      ],
+      "properties": {
+        "node": {
+          "const": "Parameter"
+        },
+        "naam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "datatype": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/datatype"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "granulariteit": {
+          "enum": [
+            "DAG",
+            "WEEK",
+            "MAAND",
+            "KWARTAAL",
+            "JAAR",
+            null
+          ]
+        }
+      }
+    },
+    "Eenheidstelsel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "naam",
+        "eenheden",
+        "aliassen"
+      ],
+      "properties": {
+        "node": {
+          "const": "Eenheidstelsel"
+        },
+        "naam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "eenheden": {
+          "type": "object",
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Eenheid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "aliassen": {
+          "type": "object",
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Eenheid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "Feittype": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "naam",
+        "wederkerig",
+        "rollen"
+      ],
+      "properties": {
+        "node": {
+          "const": "Feittype"
+        },
+        "naam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "wederkerig": {
+          "type": "boolean"
+        },
+        "rollen": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Rol"
+          }
+        }
+      }
+    },
+    "Rol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "naam",
+        "objecttypeNaam",
+        "meervoud",
+        "meervoudig"
+      ],
+      "properties": {
+        "node": {
+          "const": "Rol"
+        },
+        "naam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "objecttypeNaam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "meervoud": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "meervoudig": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Dimensie": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "naam",
+        "naamMeervoud",
+        "voorzetsel",
+        "waarden"
+      ],
+      "properties": {
+        "node": {
+          "const": "Dimensie"
+        },
+        "naam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "naamMeervoud": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "voorzetsel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "waarden": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "Tijdlijn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "naam",
+        "variabelStartpunt",
+        "granulariteit",
+        "aantal"
+      ],
+      "properties": {
+        "node": {
+          "const": "Tijdlijn"
+        },
+        "naam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "variabelStartpunt": {
+          "type": "boolean"
+        },
+        "granulariteit": {
+          "enum": [
+            "DAG",
+            "WEEK",
+            "MAAND",
+            "KWARTAAL",
+            "JAAR",
+            null
+          ]
+        },
+        "aantal": {
+          "type": "integer"
+        }
+      }
+    },
+    "Regel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "naam",
+        "soort"
+      ],
+      "properties": {
+        "node": {
+          "const": "Regel"
+        },
+        "naam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "soort": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "ResolvedRegel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "naam",
+        "soort",
+        "doel",
+        "waarde",
+        "voorwaarde",
+        "geldigheid"
+      ],
+      "properties": {
+        "node": {
+          "const": "ResolvedRegel"
+        },
+        "naam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "soort": {
+          "enum": [
+            "GELIJKSTELLING",
+            "BEREKENING",
+            "INITIALISATIE",
+            "KENMERKTOEKENNING",
+            null
+          ]
+        },
+        "doel": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "waarde": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "voorwaarde": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/conditie"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "geldigheid": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Geldigheid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "ResolvedDagsoort": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "naam",
+        "voorwaarde",
+        "geldigheid"
+      ],
+      "properties": {
+        "node": {
+          "const": "ResolvedDagsoort"
+        },
+        "naam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "voorwaarde": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/conditie"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "geldigheid": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Geldigheid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "Toekenning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "attribuut",
+        "waarde",
+        "kenmerk"
+      ],
+      "properties": {
+        "node": {
+          "const": "Toekenning"
+        },
+        "attribuut": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "waarde": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "kenmerk": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ResolvedObjectCreatie": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "naam",
+        "nieuwType",
+        "subject",
+        "toekenningen",
+        "voorwaarde",
+        "geldigheid"
+      ],
+      "properties": {
+        "node": {
+          "const": "ResolvedObjectCreatie"
+        },
+        "naam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nieuwType": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "subject": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "toekenningen": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Toekenning"
+          }
+        },
+        "voorwaarde": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/conditie"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "geldigheid": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Geldigheid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "ResolvedVerdeling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "naam",
+        "bronType",
+        "bronAttribuut",
+        "doelType",
+        "doelAttribuut",
+        "methode",
+        "ratoAttribuut",
+        "maximumAttribuut",
+        "afrondingDecimalen",
+        "restantAttribuut",
+        "groepeerAttribuut",
+        "afnemend",
+        "voorwaarde",
+        "geldigheid"
+      ],
+      "properties": {
+        "node": {
+          "const": "ResolvedVerdeling"
+        },
+        "naam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "bronType": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "bronAttribuut": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "doelType": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "doelAttribuut": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "methode": {
+          "enum": [
+            "GELIJKE_DELEN",
+            "NAAR_RATO",
+            "OP_VOLGORDE",
+            "COMPLEX",
+            null
+          ]
+        },
+        "ratoAttribuut": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "maximumAttribuut": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "afrondingDecimalen": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "restantAttribuut": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "groepeerAttribuut": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "afnemend": {
+          "type": "boolean"
+        },
+        "voorwaarde": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/conditie"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "geldigheid": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Geldigheid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "ResolvedConsistentie": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "naam",
+        "subject",
+        "assertie",
+        "bron",
+        "line",
+        "geldigheid"
+      ],
+      "properties": {
+        "node": {
+          "const": "ResolvedConsistentie"
+        },
+        "naam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "subject": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "assertie": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/conditie"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "line": {
+          "type": "integer"
+        },
+        "geldigheid": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Geldigheid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "ResolvedUniciteit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "naam",
+        "subject",
+        "sleutels",
+        "scopeVeld",
+        "bron",
+        "geldigheid"
+      ],
+      "properties": {
+        "node": {
+          "const": "ResolvedUniciteit"
+        },
+        "naam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "subject": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sleutels": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "scopeVeld": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "geldigheid": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Geldigheid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "UniciteitUnieBron": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "type",
+        "sleutels"
+      ],
+      "properties": {
+        "node": {
+          "const": "Bron"
+        },
+        "type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sleutels": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "ResolvedUniciteitUnie": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "naam",
+        "bronnen",
+        "bron",
+        "geldigheid"
+      ],
+      "properties": {
+        "node": {
+          "const": "ResolvedUniciteitUnie"
+        },
+        "naam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "bronnen": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/UniciteitUnieBron"
+          }
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "geldigheid": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Geldigheid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "Tussenstap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "type",
+        "veld",
+        "viaOuderVeld"
+      ],
+      "properties": {
+        "node": {
+          "const": "Tussenstap"
+        },
+        "type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "veld": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "viaOuderVeld": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ResolvedFeitCreatie": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "naam",
+        "anker",
+        "doel",
+        "zetVeld",
+        "joinVeld",
+        "tussenstappen",
+        "voorwaarde",
+        "geldigheid"
+      ],
+      "properties": {
+        "node": {
+          "const": "ResolvedFeitCreatie"
+        },
+        "naam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "anker": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "doel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "zetVeld": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "joinVeld": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tussenstappen": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Tussenstap"
+          }
+        },
+        "voorwaarde": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/conditie"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "geldigheid": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Geldigheid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "ResolvedStartpunt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "tijdlijn",
+        "objecttype",
+        "lid"
+      ],
+      "properties": {
+        "node": {
+          "const": "ResolvedStartpunt"
+        },
+        "tijdlijn": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "objecttype": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "lid": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "ResolvedRegelGroep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "naam",
+        "recursief",
+        "leden",
+        "bron",
+        "line"
+      ],
+      "properties": {
+        "node": {
+          "const": "ResolvedRegelGroep"
+        },
+        "naam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "recursief": {
+          "type": "boolean"
+        },
+        "leden": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "line": {
+          "type": "integer"
+        }
+      }
+    },
+    "Diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "severity",
+        "message",
+        "line"
+      ],
+      "properties": {
+        "node": {
+          "const": "Diagnostic"
+        },
+        "severity": {
+          "enum": [
+            "ERROR",
+            "WARNING",
+            "INFO",
+            null
+          ]
+        },
+        "message": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "line": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

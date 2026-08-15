@@ -75,9 +75,13 @@ green. Current gates:
    is free of TOKA material. Working prose (plan, backlog, reviews) may
    reference the private source repos during development — see
    `WAY-OF-WORKING.md` §5–6.
+2. `scripts/check-ir-schema.sh` — the schema file is metaschema-valid;
+   every `corpus/golden/**/ir.json` validates against
+   `spec/schema/regelspraak-ir-v0.schema.json` and round-trips
+   byte-identically; an unpopulated corpus is reported explicitly, never
+   silently green.
 
-The next gate lands with the JSON schema (validate every corpus IR file +
-round-trip). Standing harness guards once
+Standing harness guards once
 the corpus runs in CI: oracle (interpreter replay passes), no-op (an identity
 transpiler must fail), unsolved-state (`Onopgelost` surfaces in output, never
 vanishes).
