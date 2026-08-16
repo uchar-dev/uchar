@@ -256,10 +256,14 @@ terms this exercises:
   cases over input facts (refused-and-not-herroepen, or
   refused-and-herroepen-and-vervallen). Over complete inputs the two are
   equivalent by construction: unfolding layer 1 into layer 0 gives
-  `uitgesloten ⟺ geweigerd ∧ ¬(herroepen ∧ ¬vervallen)`, whose
-  distribution is precisely the two compiled cases. The equivalence is
-  additionally *shown* under clingo by a difference test (run 3): any
-  subject on which the two disagreed would surface as `verschil/1`.
+  `uitgesloten ⟺ geweigerd ∧ ¬(herroepen ∧ ¬vervallen)`, which
+  distributes to `(geweigerd ∧ ¬herroepen) ∨ (geweigerd ∧ vervallen)` —
+  logically equivalent to the two compiled cases (the compiled second
+  case adds the `herroepen` conjunct, disjoint-normalising the same
+  Boolean function; the extra region is absorbed by the first case).
+  The equivalence is additionally *shown* under clingo by a difference
+  test (run 3): any subject on which the two disagreed would surface as
+  `verschil/1`.
 - **Art. 4bis is a parallel ground, not a ladder rung.** "Evenmin"
   attaches a second, independent exclusion next to art. 4; it is
   translated as a separate `not geschorst_raapvergunning` in the art. 3
