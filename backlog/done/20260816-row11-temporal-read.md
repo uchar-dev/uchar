@@ -23,3 +23,17 @@ pointer to the decision), `backlog/**`.
 Out of scope: the node design itself (IR-SPEC/schema/verifier/ref —
 the cut implementation card); any RegelSpraak surface syntax (frontend,
 pin-bump territory).
+
+Result: the decision is recorded at every site where the OPEN lived —
+RUNTIME-SEMANTICS ch. 3.3 (decided: a core temporal-read node; the
+vintage read keeps read's leeg-on-gap totality with ch. 8's fail-fast
+in the data plane), the ch. 3.12 row, CONSTRUCTS row 11, and the
+ASP-TRANSLATION finding-4 pointer (in ASP the node is a plain join).
+The implementation card is cut executable: the wire-entry choice
+(additive v0 extension vs format bump) is its first step, and the
+golden witness is a hand-written anchor case — anchor/ is hand-written
+by charter — so gate 5 replays without waiting for the pin bump; the
+emitter follows via the pin-bump conformance PR. Verification (1 lens)
+found 2 majors (the fail-fast/leeg-on-gap conflict unreconciled; the
+implementation card unsatisfiable under its own schema policy) — both
+fixed before the merge.
