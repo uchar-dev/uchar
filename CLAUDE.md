@@ -90,11 +90,15 @@ green. Current gates:
    `corpus/golden/**/case*.json` validates against it and sits beside
    an `ir.json`; an empty case set is reported explicitly, never
    silently green.
+5. `scripts/check-oracle.sh` — the reference interpreter (`ref/`) builds
+   and replays every `corpus/golden/**/case*.json` with exact expectation
+   match (the oracle guard of PLAN §8); goldens without a case file are
+   listed explicitly; an empty case set is a failure, never silently
+   green.
 
-Standing harness guards once
-the corpus runs in CI: oracle (interpreter replay passes), no-op (an identity
-transpiler must fail), unsolved-state (`Onopgelost` surfaces in output, never
-vanishes).
+Standing harness guards still to land: no-op (an identity transpiler must
+fail), unsolved-state (`Onopgelost` surfaces in output, never vanishes —
+`ref/` already faults on reaching one, WF-044).
 
 ## Repo relationships
 

@@ -47,3 +47,18 @@ jobs:
         run: opam install -y yojson
       - name: check-verifier
         run: opam exec -- sh scripts/check-verifier.sh
+
+  oracle:
+    name: "Gate 5: oracle (ref/ replays the corpus)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5"
+      - name: install yojson + zarith
+        run: opam install -y yojson zarith
+      - name: check-oracle
+        run: opam exec -- sh scripts/check-oracle.sh
+      - name: ref/ unit tests (worked examples of RUNTIME-SEMANTICS ch. 1-2, 4.6)
+        run: opam exec -- dune build @ref/runtest

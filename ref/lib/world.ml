@@ -1,0 +1,102 @@
+(* The fact base: instances with attributes, characteristics and role
+   links, plus the §9.5 error channel. Names are matched through the
+   verifier's normalisation (Ir_v0.Checks.norm) so ref/ and the verifier
+   cannot drift on name identity.
+
+   Writes implement ch. 5.1 clause 2 (idempotence): the computed value is
+   collapsed to the target's declared representation first (ch. 2.4 write
+   boundary — a value that does not fit the declared decimals is a fault,
+   never an implicit rounding), then compared; only a real change counts. *)
+
+module SMap = Map.Make (String)
+
+let norm = Ir_v0.Checks.norm
+
+type instance = {
+  label : string;
+  otype : string; (* declared object-type name, as in the document *)
+  attrs : Value.t SMap.t; (* keyed by norm name; absent = empty *)
+  chars : SMap.key list; (* characteristics currently true (norm names) *)
+  links : string list SMap.t; (* norm role name -> linked labels *)
+}
+
+type error_fact = { rule : string; subject : string }
+
+type t = {
+  instances : instance SMap.t; (* by label *)
+  order : string list; (* case declaration order, for determinism *)
+  channel : error_fact list; (* §9.5: idempotent inserts, insertion order *)
+}
+
+let empty = { instances = SMap.empty; order = []; channel = [] }
+
+let add_instance w inst =
+  if SMap.mem inst.label w.instances then
+    Value.fault "duplicate instance label %S" inst.label
+  else
+    { w with instances = SMap.add inst.label inst w.instances; order = w.order @ [ inst.label ] }
+
+let get w label =
+  match SMap.find_opt label w.instances with
+  | Some i -> i
+  | None -> Value.fault "unknown instance label %S" label
+
+let of_type w otype =
+  List.filter_map
+    (fun l ->
+      let i = get w l in
+      if norm i.otype = norm otype then Some i else None)
+    w.order
+
+let attr i name = Option.value (SMap.find_opt (norm name) i.attrs) ~default:Value.Empty
+let has_char i name = List.mem (norm name) i.chars
+let links i role_key = Option.value (SMap.find_opt (norm role_key) i.links) ~default:[]
+
+(* --- the write boundary (ch. 2.4) -------------------------------------- *)
+
+(* collapse a computed value to the target attribute's declared
+   representation: restate into the declared unit; verify the declared
+   decimals hold the value exactly (no implicit rounding anywhere — a
+   non-representable bounded write faults, surfacing the ch. 2.4 static
+   error dynamically) *)
+let collapse ~at (decl : Ir_v0.Ast.datatype option) (v : Value.t) =
+  match (v, decl) with
+  | Empty, _ -> Value.Empty
+  | Num (q, u), Some (Numeriek { decimalen; eenheid; _ } | Percentage { decimalen; eenheid; _ }) ->
+      let target_u = match eenheid with Some e -> Value.Unit e | None -> Value.Unitless in
+      let q = Arith.restate_into target_u q u in
+      let scaled = Q.mul q (Q.of_bigint (Z.pow (Z.of_int 10) decimalen)) in
+      if Z.equal (Q.den scaled) Z.one then Value.Num (q, target_u)
+      else
+        Value.fault
+          "%s: value %s does not fit the declared %d decimals — an explicit rounding is \
+           mandatory (ch. 2.4)"
+          at (Q.to_string q) decimalen
+  | _ -> v
+
+let update w inst = { w with instances = SMap.add inst.label inst w.instances }
+
+(* returns (world, changed); empty-over-empty is a no-op,
+   empty-over-value is a change (ch. 1.2g) *)
+let write_attr w ~label ~attr:name ~decl v =
+  let i = get w label in
+  let v = collapse ~at:(label ^ "." ^ name) decl v in
+  let old = attr i name in
+  if Arith.equal old v then (w, false)
+  else (update w { i with attrs = SMap.add (norm name) v i.attrs }, true)
+
+(* characteristics are monotone within one evaluation (ch. 5.3):
+   default false, only ever set true *)
+let set_char w ~label ~char =
+  let i = get w label in
+  if has_char i char then (w, false)
+  else (update w { i with chars = norm char :: i.chars }, true)
+
+(* §9.5: one error fact per rule × subject, however often re-evaluated *)
+let insert_error w ~rule ~subject =
+  let f = { rule; subject } in
+  if List.mem f w.channel then w else { w with channel = w.channel @ [ f ] }
+
+let channel_has w ~rule =
+  let r = norm rule in
+  List.exists (fun f -> norm f.rule = r || norm (Ir_v0.Checks.strip_version f.rule) = r) w.channel

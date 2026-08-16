@@ -44,5 +44,13 @@ A golden may carry one or more `case*.json` files — the evaluation data
 half of the case (inputs, parameter values, evaluation date, expected
 outcomes) in the `uchar-case-v0` format (`spec/schema/`, gate 4). The
 expectation values trace to the worked examples of
-`spec/RUNTIME-SEMANTICS.md`; the reference interpreter replays them as
-its test suite (the oracle guard) once `ref/` exists.
+`spec/RUNTIME-SEMANTICS.md`; the reference interpreter (`ref/`) replays
+every case file exactly — gate 5, the oracle guard of the plan's §8.
+
+Only `jutterswet-penningjaar` has no case file yet: its content is
+timeline declarations, and a meaningful expectation needs the timeline
+algebra of `spec/RUNTIME-SEMANTICS.md` ch. 3 in `ref/` first. Gate 5
+lists it as not replayed rather than counting it green. The
+`jutterswet-vondsttelling` case exercises the count-over-a-role wart,
+the contributor-skipping rule (an empty gewicht is skipped, ch. 1.2),
+and the declared empty-source fallback ("of 0 als die er niet zijn").

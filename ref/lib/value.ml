@@ -1,0 +1,127 @@
+(* The value domain of the reference interpreter (RUNTIME-SEMANTICS ch. 1.1):
+   an exact rational, a text, a boolean, a date (day or millisecond
+   precision), an enumeration value — or empty, the distinguished absence of
+   a value. Empty is not zero, not the empty string, not false, and distinct
+   from Onopgelost (an unresolvable construct, which faults evaluation).
+
+   Numbers carry their unit; unit algebra lives in Arith (ch. 2.6).
+
+   Adopted reading, recorded: date equality follows the numeric equality
+   rules of ch. 1.2 (a day-precision date is a day count), not the
+   non-numeric text/enum/boolean rules of §5 Tabel 38. *)
+
+type unit_ =
+  | Unitless
+  | Unit of Ir_v0.Ast.eenheid
+      (* a declared unit, possibly a rate (noemer set) *)
+  | Product of Ir_v0.Ast.eenheid * Ir_v0.Ast.eenheid
+      (* opaque product unit, ch. 2.6 *)
+
+type t =
+  | Empty
+  | Num of Q.t * unit_
+  | Text of string
+  | Bool of bool
+  | Date of int (* civil days since 1970-01-01 *)
+  | Date_time of int (* milliseconds since 1970-01-01T00:00:00 *)
+  | Enum of string
+
+(* A fault aborts the evaluation observably (hard runtime error, ch. 1.4
+   point 4; Onopgelost, WF-044; a non-representable bounded write). *)
+exception Fault of string
+
+let fault fmt = Printf.ksprintf (fun s -> raise (Fault s)) fmt
+
+(* --- civil-date conversion (proleptic Gregorian) ----------------------- *)
+
+let days_from_civil ~y ~m ~d =
+  let y = if m <= 2 then y - 1 else y in
+  (* era arithmetic needs floor division; OCaml (/) truncates toward zero *)
+  let era = (if y >= 0 then y else y - 399) / 400 in
+  let yoe = y - (era * 400) in
+  let mp = (m + 9) mod 12 in
+  let doy = (((153 * mp) + 2) / 5) + d - 1 in
+  let doe = (yoe * 365) + (yoe / 4) - (yoe / 100) + doy in
+  (era * 146097) + doe - 719468
+
+let civil_from_days z =
+  let z = z + 719468 in
+  let era = (if z >= 0 then z else z - 146096) / 146097 in
+  let doe = z - (era * 146097) in
+  let yoe = (doe - (doe / 1460) + (doe / 36524) - (doe / 146096)) / 365 in
+  let y = yoe + (era * 400) in
+  let doy = doe - ((365 * yoe) + (yoe / 4) - (yoe / 100)) in
+  let mp = ((5 * doy) + 2) / 153 in
+  let d = doy - (((153 * mp) + 2) / 5) + 1 in
+  let m = if mp < 10 then mp + 3 else mp - 9 in
+  ((if m <= 2 then y + 1 else y), m, d)
+
+let date_of_iso s =
+  match String.split_on_char '-' s with
+  | [ y; m; d ] -> (
+      match (int_of_string_opt y, int_of_string_opt m, int_of_string_opt d) with
+      | Some y, Some m, Some d -> Date (days_from_civil ~y ~m ~d)
+      | _ -> fault "malformed date lexeme %S" s)
+  | _ -> fault "malformed date lexeme %S" s
+
+let iso_of_date z =
+  let y, m, d = civil_from_days z in
+  Printf.sprintf "%04d-%02d-%02d" y m d
+
+(* --- number lexemes ---------------------------------------------------- *)
+
+(* Exact decimal ("12.34", comma tolerated) or rational ("a/b") lexeme to a
+   rational; the wire and the case format never carry floats. *)
+let q_of_lexeme s =
+  let s = String.map (fun c -> if c = ',' then '.' else c) s in
+  match String.index_opt s '/' with
+  | Some _ -> ( try Q.of_string s with _ -> fault "malformed number lexeme %S" s)
+  | None -> (
+      match String.index_opt s '.' with
+      | None -> ( try Q.of_string s with _ -> fault "malformed number lexeme %S" s)
+      | Some i ->
+          let whole = String.sub s 0 i in
+          let frac = String.sub s (i + 1) (String.length s - i - 1) in
+          let neg = String.length whole > 0 && whole.[0] = '-' in
+          let digits = (if neg then String.sub whole 1 (String.length whole - 1) else whole) ^ frac in
+          if digits = "" || String.exists (fun c -> c < '0' || c > '9') digits then
+            fault "malformed number lexeme %S" s
+          else
+            let num = Z.of_string digits in
+            let num = if neg then Z.neg num else num in
+            Q.make num (Z.pow (Z.of_int 10) (String.length frac)))
+
+(* Render a rational as a decimal lexeme when it terminates (reduced
+   denominator has no prime factors besides 2 and 5, ch. 2.1); as "a/b"
+   otherwise. *)
+let lexeme_of_q q =
+  let num = Q.num q and den = Q.den q in
+  let twos =
+    let rec strip n k = if Z.equal (Z.rem n (Z.of_int 2)) Z.zero then strip (Z.divexact n (Z.of_int 2)) (k + 1) else (n, k) in
+    strip den 0
+  in
+  let rest2, e2 = twos in
+  let rest, e5 =
+    let rec strip n k = if Z.equal (Z.rem n (Z.of_int 5)) Z.zero then strip (Z.divexact n (Z.of_int 5)) (k + 1) else (n, k) in
+    strip rest2 0
+  in
+  if not (Z.equal rest Z.one) then Q.to_string q
+  else
+    let d = max e2 e5 in
+    let scaled = Z.mul num (Z.divexact (Z.pow (Z.of_int 10) d) den) in
+    if d = 0 then Z.to_string scaled
+    else
+      let s = Z.to_string (Z.abs scaled) in
+      let s = if String.length s <= d then String.make (d + 1 - String.length s) '0' ^ s else s in
+      let cut = String.length s - d in
+      (if Z.sign scaled < 0 then "-" else "")
+      ^ String.sub s 0 cut ^ "." ^ String.sub s cut d
+
+let to_string = function
+  | Empty -> "leeg"
+  | Num (q, _) -> lexeme_of_q q
+  | Text s -> Printf.sprintf "%S" s
+  | Bool b -> if b then "waar" else "onwaar"
+  | Date z -> iso_of_date z
+  | Date_time ms -> Printf.sprintf "@%dms" ms
+  | Enum s -> s
