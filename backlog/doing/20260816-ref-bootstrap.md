@@ -23,9 +23,12 @@ Acceptance:
   examples as unit tests.
 - All existing gates stay green; CI gets a gate-5 job.
 
-May touch: `ref/**` (new), `dune-workspace` (new, root),
-`scripts/check-oracle.sh` (new), `.github/workflows/gates.yml`,
-`CLAUDE.md` (gate list), `backlog/**`,
+May touch: `ref/**` (new), `dune-workspace` (new, root), `.gitignore`
+(root `_build/`), `scripts/check-oracle.sh` (new),
+`scripts/check-self-contained.sh` (only dropping the `ref/README.md`
+exception — the graduation the gate itself prescribes for a zone's first
+real delivery), `.github/workflows/gates.yml`, `CLAUDE.md` (gate list),
+`backlog/**`,
 `corpus/golden/jutterswet-vondsttelling/case*.json` (new, only if that
 golden evaluates time-free), `corpus/golden/README.md` (case table note),
 `spec/verifier/dune-project` + `spec/verifier/lib/dune` (build metadata

@@ -399,6 +399,27 @@ let () =
   (* evaluation order 2020, 2021, leeg (the empty key last) *)
   check "WV-4.6-h-leeg-laatst" (List.map fst s = [ "a"; "c"; "b" ])
 
+(* --- verification-round regressions ------------------------------------- *)
+
+let () =
+  (* ch. 1.2d asymmetry for two empties routes on the static kind:
+     numeric → waar, non-numeric (§5 Tabel 38) → onwaar *)
+  check "verify-eq-static-numeric" (Arith.compare_op ~static_numeric:true Gelijk leeg leeg = true);
+  check "verify-eq-static-nonnum" (Arith.compare_op ~static_numeric:false Gelijk leeg leeg = false);
+  check "verify-neq-static-nonnum"
+    (Arith.compare_op ~static_numeric:false Ongelijk leeg leeg = false);
+  (* strict lexeme validation: no silent +inf or 0 *)
+  expect_fault "verify-lexeme-zero-den" (fun () -> Value.q_of_lexeme "1/0");
+  expect_fault "verify-lexeme-empty" (fun () -> Value.q_of_lexeme "");
+  expect_fault "verify-lexeme-junk" (fun () -> Value.q_of_lexeme "abc");
+  check "verify-lexeme-neg-dec" (Q.equal (Value.q_of_lexeme "-0.5") (q "-1/2"));
+  (* unit factors read as the intended decimal, not the nearest double *)
+  check "verify-wire-factor-cent" (Q.equal (Arith.q_of_wire_number 0.01) (q "1/100"));
+  check "verify-wire-factor-int" (Q.equal (Arith.q_of_wire_number 1000.0) (q "1000"));
+  (* an astronomic exponent faults instead of escaping as Z.Overflow *)
+  expect_fault "verify-pow-overflow" (fun () ->
+      Arith.pow_ (n "2") (Value.Num (Q.of_string "100000000000000000000", Value.Unitless)))
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

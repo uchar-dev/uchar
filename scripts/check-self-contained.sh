@@ -8,13 +8,14 @@
 #
 # The exception list covers placeholder READMEs in still-empty zones; it only
 # shrinks — sweeping a README clean and dropping its entry is part of the
-# zone's first real delivery. Planned graduation into ZONES at Phase-1 exit:
+# zone's first real delivery. The list is empty since ref/ graduated with
+# its first real delivery. Planned graduation into ZONES at Phase-1 exit:
 # spec/IR-SPEC.md, spec/RUNTIME-SEMANTICS.md.
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
 ZONES='corpus/golden corpus/negatief spec/schema spec/verifier ref backends'
-EXCEPTIONS=':(exclude)ref/README.md'
+EXCEPTIONS=''
 PRIVATE='(/users/|/home/|~/|regelspraak-java|regelspraakruntime|calculemus)'
 
 status=0

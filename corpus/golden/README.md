@@ -51,6 +51,10 @@ Only `jutterswet-penningjaar` has no case file yet: its content is
 timeline declarations, and a meaningful expectation needs the timeline
 algebra of `spec/RUNTIME-SEMANTICS.md` ch. 3 in `ref/` first. Gate 5
 lists it as not replayed rather than counting it green. The
-`jutterswet-vondsttelling` case exercises the count-over-a-role wart,
-the contributor-skipping rule (an empty gewicht is skipped, ch. 1.2),
-and the declared empty-source fallback ("of 0 als die er niet zijn").
+`jutterswet-vondsttelling` case exercises the count-over-a-role wart
+(the weightless vondst still counts) and the declared empty-source
+fallback ("of 0 als die er niet zijn", both for a jutter without
+vondsten and for one whose only vondst has no gewicht). Note that a
+*sum* cannot observably distinguish contributor-skipping from
+coalescing-to-0 — that distinction is pinned by the min/max unit tests
+of `ref/test/` (WV-1.2e), not by this case.

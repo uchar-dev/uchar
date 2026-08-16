@@ -71,23 +71,44 @@ let iso_of_date z =
 (* --- number lexemes ---------------------------------------------------- *)
 
 (* Exact decimal ("12.34", comma tolerated) or rational ("a/b") lexeme to a
-   rational; the wire and the case format never carry floats. *)
+   rational; the wire and the case format never carry floats. Validation is
+   strict: Q.of_string alone would let "" become 0 and "1/0" become +inf
+   silently — both fault here instead. *)
 let q_of_lexeme s =
   let s = String.map (fun c -> if c = ',' then '.' else c) s in
+  let digits d = d <> "" && String.for_all (fun c -> c >= '0' && c <= '9') d in
+  let split_sign d =
+    if String.length d > 0 && d.[0] = '-' then (true, String.sub d 1 (String.length d - 1))
+    else (false, d)
+  in
   match String.index_opt s '/' with
-  | Some _ -> ( try Q.of_string s with _ -> fault "malformed number lexeme %S" s)
+  | Some i ->
+      let num = String.sub s 0 i in
+      let den = String.sub s (i + 1) (String.length s - i - 1) in
+      let neg, num_body = split_sign num in
+      if not (digits num_body && digits den) then fault "malformed number lexeme %S" s
+      else
+        let d = Z.of_string den in
+        if Z.equal d Z.zero then fault "zero denominator in number lexeme %S" s
+        else
+          let n = Z.of_string num_body in
+          Q.make (if neg then Z.neg n else n) d
   | None -> (
       match String.index_opt s '.' with
-      | None -> ( try Q.of_string s with _ -> fault "malformed number lexeme %S" s)
+      | None ->
+          let neg, body = split_sign s in
+          if not (digits body) then fault "malformed number lexeme %S" s
+          else
+            let n = Z.of_string body in
+            Q.of_bigint (if neg then Z.neg n else n)
       | Some i ->
           let whole = String.sub s 0 i in
           let frac = String.sub s (i + 1) (String.length s - i - 1) in
-          let neg = String.length whole > 0 && whole.[0] = '-' in
-          let digits = (if neg then String.sub whole 1 (String.length whole - 1) else whole) ^ frac in
-          if digits = "" || String.exists (fun c -> c < '0' || c > '9') digits then
-            fault "malformed number lexeme %S" s
+          let neg, whole_body = split_sign whole in
+          let body = whole_body ^ frac in
+          if (not (digits frac)) || not (digits body) then fault "malformed number lexeme %S" s
           else
-            let num = Z.of_string digits in
+            let num = Z.of_string body in
             let num = if neg then Z.neg num else num in
             Q.make num (Z.pow (Z.of_int 10) (String.length frac)))
 

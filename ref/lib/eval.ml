@@ -259,12 +259,40 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
 
 (* --- condition evaluation ---------------------------------------------- *)
 
+(* the static type an expression node carries on the wire *)
+let expr_typ : expr -> datatype option = function
+  | Literal { typ; _ }
+  | Tekst_reeks { typ; _ }
+  | Binair { typ; _ }
+  | Functie { typ; _ }
+  | Afgerond { typ; _ }
+  | Begrensd { typ; _ }
+  | Attribuut_ref { typ; _ }
+  | Dimensie_cel { typ; _ }
+  | Parameter_ref { typ; _ }
+  | Variabele_ref { typ; _ }
+  | Constante { typ; _ }
+  | Expr_onopgelost { typ; _ } ->
+      typ
+
+(* the ch. 1.2d empty-equality asymmetry routes on the declared operand
+   kind — two empty runtime values cannot reveal it (Arith.compare_op) *)
+let static_numeric l r =
+  let kind e =
+    match expr_typ e with
+    | Some (Numeriek _ | Percentage _ | Datum_in_dagen | Datum_tijd) -> Some true
+    | Some (Tekst | Booleaan | Enumeratie _) -> Some false
+    | Some (Datatype_onbekend _) | None -> None
+  in
+  match kind l with Some b -> Some b | None -> kind r
+
 let rec eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
   match c with
   | Vergelijking { op; links; rechts; periode = None; _ } ->
-      let l = eval_expr env world self ~err (req "Vergelijking.links" links) in
-      let r = eval_expr env world self ~err (req "Vergelijking.rechts" rechts) in
-      Arith.compare_op op l r
+      let le = req "Vergelijking.links" links and re = req "Vergelijking.rechts" rechts in
+      let l = eval_expr env world self ~err le in
+      let r = eval_expr env world self ~err re in
+      Arith.compare_op ?static_numeric:(static_numeric le re) op l r
   | Vergelijking _ -> Value.fault "whole-period comparison is ch. 3 scope"
   | Predicaat { soort = Leeg; operand; negatie; _ } ->
       let v = eval_expr env world self ~err (req "Predicaat.operand" operand) in

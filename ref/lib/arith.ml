@@ -21,10 +21,20 @@ let show_unit = function
   | Unit e -> unit_name e
   | Product (a, b) -> unit_name a ^ "*" ^ unit_name b
 
+(* The wire carries the canonical factor as a JSON number, which the
+   loader hands us as a float. The intended value is the *decimal* the
+   author wrote (0.01, 1000), not the nearest binary double — Q.of_float
+   of 0.01 would poison every conversion with a 2^-n tail. Recover the
+   decimal via the shortest round-tripping decimal form; a factor with no
+   short decimal reading faults rather than degrading silently. *)
+let q_of_wire_number f =
+  let s = Printf.sprintf "%.15g" f in
+  if String.exists (fun c -> c = 'e' || c = 'E') s || float_of_string s <> f then
+    fault "unit conversion factor %h has no short decimal reading" f
+  else Value.q_of_lexeme s
+
 let factor (e : Ir_v0.Ast.eenheid) =
-  (* wire carries the canonical factor as a JSON number; every declared
-     factor is an exact small decimal, and Q.of_float is exact on floats *)
-  match e.factor_naar_canoniek with None -> Q.one | Some f -> Q.of_float f
+  match e.factor_naar_canoniek with None -> Q.one | Some f -> q_of_wire_number f
 
 let convertible a b = Ir_v0.Checks.units_convertible a b
 
@@ -234,12 +244,17 @@ let pow_ l r =
   | Empty, _ | _, Empty -> Empty (* base and runtime exponent both propagate *)
   | _ ->
       let lq, _ = num_exn "tot de macht" l and rq, _ = num_exn "tot de macht" r in
+      let to_int_exp z =
+        match Z.to_int z with
+        | e -> e
+        | exception Z.Overflow -> fault "exponent %s is out of range" (Z.to_string z)
+      in
       if Z.equal (Q.den rq) Z.one then
-        let e = Z.to_int (Q.num rq) in
+        let e = to_int_exp (Q.num rq) in
         let p q n = Q.make (Z.pow (Q.num q) n) (Z.pow (Q.den q) n) in
         Num ((if e >= 0 then p lq e else Q.inv (p lq (-e))), Unitless)
       else
-        let a = Z.to_int (Z.abs (Q.num rq)) and b = Z.to_int (Q.den rq) in
+        let a = to_int_exp (Z.abs (Q.num rq)) and b = to_int_exp (Q.den rq) in
         let base = Q.make (Z.pow (Q.num lq) a) (Z.pow (Q.den lq) a) in
         let base = if Z.sign (Q.num rq) < 0 then Q.inv base else base in
         (match root_exact base b with
@@ -292,18 +307,30 @@ let scalar_cmp l r =
   | _ -> fault "unordered comparison: %s vs %s" (to_string l) (to_string r)
 
 let eq_non_numeric l r =
-  (* §5 Tabel 38: any empty operand → false; exact value equality else *)
+  (* §5 Tabel 38: any empty operand → false; exact value equality else.
+     Enum identity goes through the verifier's normalisation, like every
+     other declared name. *)
   match (l, r) with
   | Empty, _ | _, Empty -> false
   | Text a, Text b -> String.equal a b
   | Bool a, Bool b -> Bool.equal a b
-  | Enum a, Enum b -> String.equal a b
+  | Enum a, Enum b -> String.equal (Ir_v0.Checks.norm a) (Ir_v0.Checks.norm b)
   | _ -> fault "mixed-type equality: %s vs %s" (to_string l) (to_string r)
 
-let compare_op (op : Ir_v0.Ast.vergelijk_op) l r =
+(* [static_numeric] carries the comparison's statically declared kind:
+   the ch. 1.2d empty-equality asymmetry (leeg = leeg is waar numerically,
+   onwaar non-numerically) is decided by the operand *types*, which two
+   empty runtime values cannot reveal. Absent static information, two
+   empties follow the numeric rule. *)
+let compare_op ?static_numeric (op : Ir_v0.Ast.vergelijk_op) l r =
   let ordering cmp =
     (* any empty operand → false *)
     match (l, r) with Empty, _ | _, Empty -> false | _ -> cmp (scalar_cmp l r) 0
+  in
+  let numeric =
+    match static_numeric with
+    | Some b -> b
+    | None -> ( match (l, r) with Empty, Empty -> true | _ -> is_numeric_pair l r)
   in
   match op with
   | Kleiner | Eerder -> ordering ( < )
@@ -311,7 +338,7 @@ let compare_op (op : Ir_v0.Ast.vergelijk_op) l r =
   | Groter | Later -> ordering ( > )
   | Groter_of_gelijk | Later_of_gelijk -> ordering ( >= )
   | Gelijk ->
-      if is_numeric_pair l r || (l = Empty && r = Empty) then
+      if numeric then
         (* numeric equality: true iff both empty, else value equality *)
         match (l, r) with
         | Empty, Empty -> true
@@ -319,7 +346,7 @@ let compare_op (op : Ir_v0.Ast.vergelijk_op) l r =
         | _ -> scalar_cmp l r = 0
       else eq_non_numeric l r
   | Ongelijk ->
-      if is_numeric_pair l r || (l = Empty && r = Empty) then
+      if numeric then
         (* true iff exactly one empty, else value inequality *)
         match (l, r) with
         | Empty, Empty -> false
@@ -409,5 +436,5 @@ let equal a b =
   | Bool a, Bool b -> Bool.equal a b
   | Date a, Date b -> Int.equal a b
   | Date_time a, Date_time b -> Int.equal a b
-  | Enum a, Enum b -> String.equal a b
+  | Enum a, Enum b -> String.equal (Ir_v0.Checks.norm a) (Ir_v0.Checks.norm b)
   | _ -> false
