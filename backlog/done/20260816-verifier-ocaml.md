@@ -32,3 +32,14 @@ obligation, added to this contract at delivery), `backlog/`.
 Out of scope: the `ref/` interpreter itself; WF rules needing typing or
 cross-layer data absent from v0 dumps (their index cells stay OPEN with
 the reason); schema changes.
+
+Result: spec/verifier/ landed as a dune project: typed AST + strict
+loader of the full regelspraak-ir-v0 wire format (reusable by ref/),
+and checks for 38 WF rules; gate 3 wired in scripts/ and CI; 38
+negatief cases; the WF index rewritten to match the implementation
+(WF-008/010/019/023/028/044 OPEN with reasons). Verified by three
+adversarial reviewers (1 blocker — unitless-literal unit adoption —
+plus 7 minors, all fixed; two loader narrowings documented as
+deliberate). Deliberately left: per-rule golden witnesses (accrue with
+the corpus), the OPEN rules above, and deep-nesting path-building
+performance (documented).
