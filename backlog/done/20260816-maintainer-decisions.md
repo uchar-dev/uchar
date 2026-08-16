@@ -41,3 +41,22 @@ already exhibits) and the two stale "row 30 is OPEN" strings
 Out of scope: behaviour changes in `ref/` or the verifier (the decided
 v1 deltas take effect with the v1 schema work, tracked in CONSTRUCTS);
 `spec/IR-SPEC.md`; corpus changes.
+
+Result: all six decisions recorded. RUNTIME-SEMANTICS: ch. 1.4 decided
+(mirror + whitelist frozen; empty-as-unknown non-goal; numeric-zero
+division → §9.5 channel in v1), ch. 4.4 both allocation holes decided,
+ch. 4.6 erratum corrected to two errors, ch. 5.6 row 30 decided as a
+dialect-only fixpoint predicate. CONSTRUCTS rows 18/30 updated; rows
+10/36 moved to planned kernel design at Phase 5 (full-Catala goal).
+PLAN v5 with change note; §9(7)/(9)/(10) decided — schemas ship as code
+under Apache-2.0. LICENSE + LICENSE-CC-BY-4.0 canonical (byte-verified
+against upstream). Root README: license split added, status refreshed;
+NB the first commit of this card accidentally rewrote the existing
+README away — restored in the verification round. Verification (2
+adversarial opus lenses) found 1 blocker (three stray ch. 1.4 OPEN
+cross-references, one contradicting the freeze) + 2 majors (stale
+erratum comment/loose assertion in ref/test; README license overlap on
+spec/verifier) — all fixed; WV-4.6-e now pins two errors. Deliberately
+left: effectuating the decided v1 deltas in verifier/ref (lands with
+the v1 schema work); the gap-vs-absent timeline residual stays open
+under ch. 3.12.
