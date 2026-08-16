@@ -25,3 +25,17 @@ cases here), `spec/IR-SPEC.md` (protected; WF-index golden cells only),
 Out of scope: statute-text authoring (the kwantitatief card); negatief
 cases; anchor cases with absolute expected values; schema changes;
 source anchoring.
+
+Result: four goldens landed (vondsttelling: roles + count/sum + kg + sum
+fallback; berging: proportional allocation with maximum, floor, rest +
+a real unit-conversion chain; vondstnummer: uniqueness + date-ordering
+consistency; penningjaar: named timeline + facet adoption + yearly
+parameters), each byte-identical re-emitted from the pinned toolchain,
+gates 1-3 green; corpus/golden/README.md traces every case to its
+wet-v4 article with three honest coverage notes; 20 WF-index golden
+cells filled (WF-013 deliberately left OPEN - needs a reciprocal fact
+type; WF-019 now witnessed by multi-element lists). Side effect: the
+vondsttelling case exposed a verifier false positive, fixed by the
+separate verifier-rolebron card. Deliberately left: stormvloed double
+count and penningjaar-scoped telling (need timeline/day-kind machinery
+in rules), anchor cases, negatief additions.
