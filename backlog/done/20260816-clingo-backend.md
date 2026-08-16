@@ -39,3 +39,32 @@ Out of scope: the Drools leg of the differential square (pin-bump
 territory); role-binding IR changes (the Phase-3 "relations
 first-class" refactor is spec work, a later card); any change to
 `spec/**` or `ref/**` semantics.
+
+Result: delivered — the differential square has its second executor.
+backends/clingo translates the full corpus subset (characteristic
+attribution, computations, #count/#sum folds with the body-join
+contributor skip, the proportional allocation with cap/floor/remainder
+in scaled integer arithmetic, consistency/uniqueness as inconsistent/2,
+the year-bucket temporal total, NAF for negated reads — sound by
+WF-045/046) and gate 6 replays all 7 cases against the same absolute
+expectations gate 5 pins: ref ≡ Clingo over the corpus, anchored, never
+parity-only. Shown red (broken expectation → exit 1; no clingo → exit
+2) then green; CI installs clingo via apt (the pip wheel ships no CLI —
+a verification lens caught the broken job before it ever ran).
+Verification (3 lenses) also forced: a wider scale guard (cap/remainder
+scales), generated fail-fast constraints so clingo goes UNSAT exactly
+where ref faults or where integer truncation would silently diverge
+from floor (negative/empty allocation operands — both reproduced), and
+honest claims (the connecting-role derivation is shared ch. 4.1
+semantics pending the relations-first-class refactor; clingo's 32-bit
+integers bound the exact encoding, reproduced via cents-scaled money).
+Recorded findings feeding CONSTRUCTS/Phase 3: (1) the ch. 1.2d
+equality/inequality empty asymmetry has no absence-based ASP encoding —
+faulted until a case demands an explicit leeg encoding (row 18
+adjacent); (2) the negative-weight v0 hole now fails loud on both legs
+but with different shapes (ref computes the unclamped mirror value,
+clingo refuses) — resolved when the decided v1 clamp lands; (3) bignum
+or rational ASP encoding is follow-up for realistic monetary
+magnitudes; (4) the temporal total is translated for the year bucket
+only. Deliberately left: the Drools leg (pin bump); the
+relations-first-class refactor (spec card).
