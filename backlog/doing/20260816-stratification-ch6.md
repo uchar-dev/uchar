@@ -19,9 +19,12 @@ discipline).
 
 May touch: `spec/RUNTIME-SEMANTICS.md` (ch. 6), `spec/IR-SPEC.md` (WF
 index), `spec/verifier/**`, `corpus/negatief/**`,
-`corpus/golden/README.md`, `ref/lib/eval.ml`, `backlog/**`. Protected
-paths throughout — merge under the standing mandate only after green
-gates plus adversarial verification.
+`corpus/golden/README.md`, `spec/CONSTRUCTS.md` (row 6 delivery note),
+`ref/lib/eval.ml`, `ref/README.md` (staging → strata paragraph),
+`ref/test/test_ref.ml` (the ch. 6.4 worked examples as unit tests, per
+this card's acceptance), `backlog/**`. Protected paths throughout —
+merge under the standing mandate only after green gates plus
+adversarial verification.
 
 Out of scope: the ASP-side stratification story (ASP-TRANSLATION.md
 already sketches it); ch. 7 defaults.

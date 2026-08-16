@@ -526,10 +526,12 @@ let evaluate env world =
     Array.iteri
       (fun ci (f : Ir_v0.Checks.dep_form) ->
         List.iter
-          (fun (node, negative) ->
+          (fun (node, kind) ->
             List.iter
               (fun pi ->
-                let need = strata.(pi) + if negative then 1 else 0 in
+                let need =
+                  strata.(pi) + match kind with Ir_v0.Checks.Dep_pos -> 0 | _ -> 1
+                in
                 if strata.(ci) < need then begin
                   strata.(ci) <- need;
                   changed := true

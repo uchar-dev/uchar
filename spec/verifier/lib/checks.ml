@@ -1433,12 +1433,17 @@ let n_char ot k = "char:" ^ norm ot ^ ":" ^ norm k
 let n_chan rule = "chan:" ^ norm (strip_version rule)
 let n_pop ot = "pop:" ^ norm ot
 
+(* Edge kinds (RUNTIME-SEMANTICS ch. 6.1): positive; stratum-strict (a
+   non-characteristic read by a form with irrevocable writes); negative
+   (stratum-strict AND forbidden on any cycle, WF-046). *)
+type dep_edge = Dep_pos | Dep_strict | Dep_neg
+
 type dep_form = {
   df_at : string;
   df_name : string;
   df_recursive_creation : bool;
   df_writes : string list;
-  df_reads : (string * bool) list; (* node, negative? *)
+  df_reads : (string * dep_edge) list;
 }
 
 (* [subject] resolves owner-less characteristic reads *)
@@ -1448,7 +1453,7 @@ let rec dep_expr ~subject acc (e : expr) =
       match typ with
       | Some (Datatype_onbekend _) ->
           acc (* the fold-source role wart; the fold adds the population read *)
-      | _ -> (n_attr ot a, false) :: acc)
+      | _ -> (n_attr ot a, Dep_pos) :: acc)
   | Attribuut_ref _ | Literal _ | Parameter_ref _ | Variabele_ref _ | Constante _
   | Expr_onopgelost _ ->
       acc
@@ -1462,7 +1467,7 @@ let rec dep_expr ~subject acc (e : expr) =
   | Binair { links; rechts; _ } -> dep_opt ~subject (dep_opt ~subject acc links) rechts
   | Functie { argumenten; element_objecttype; leegwaarde; filter; _ } ->
       let acc =
-        match element_objecttype with Some el -> (n_pop el, false) :: acc | None -> acc
+        match element_objecttype with Some el -> (n_pop el, Dep_pos) :: acc | None -> acc
       in
       let acc = List.fold_left (dep_expr ~subject) acc argumenten in
       let acc = dep_opt ~subject acc leegwaarde in
@@ -1480,9 +1485,11 @@ and dep_cond ~subject ~neg acc (c : conditie) =
       dep_opt ~subject (dep_opt ~subject acc links) rechts
   | Predicaat { operand; _ } -> dep_opt ~subject acc operand
   | Kenmerk_check { kenmerk = Some k; eigenaar; negatie; _ } -> (
-      let negative = neg <> negatie in
+      (* once negative, conservatively negative — double negation does
+         not cancel (ch. 6.1) *)
+      let kind = if neg || negatie then Dep_neg else Dep_pos in
       match (match eigenaar with Some _ as e -> e | None -> subject) with
-      | Some ot -> (n_char ot k, negative) :: acc
+      | Some ot -> (n_char ot k, kind) :: acc
       | None -> acc)
   | Kenmerk_check _ -> acc
   | Rollidmaatschap _ | Verre_rollidmaatschap _ -> acc
@@ -1490,22 +1497,34 @@ and dep_cond ~subject ~neg acc (c : conditie) =
   | Samengesteld { kwantor; onderdelen; _ } ->
       let neg' =
         match kwantor with
-        | Geen -> not neg
-        | Ten_hoogste | Precies -> true (* negation-like: conservative, ch. 6.1 *)
+        | Geen | Ten_hoogste | Precies -> true (* negation-like: conservative, ch. 6.1 *)
         | De | Alle | Ten_minste -> neg
       in
       List.fold_left (fun acc c -> dep_cond ~subject ~neg:neg' acc c) acc onderdelen
-  | Regelversie { regel = Some r; _ } -> (n_chan r, true) :: acc
+  | Regelversie { regel = Some r; _ } -> (n_chan r, Dep_neg) :: acc
   | Regelversie _ -> acc
   | Conditie_onopgelost _ -> acc
 
 let dep_forms ctx : dep_form list =
   let recursive_members =
     List.concat_map
-      (fun g -> if g.recursief then List.map norm (some_names g.leden) else [])
+      (fun g -> if g.recursief then List.map (fun n -> norm (strip_version n)) (some_names g.leden) else [])
       ctx.doc.regel_groepen
   in
   let cond ~subject c = match c with Some c -> dep_cond ~subject ~neg:false [] c | None -> [] in
+  (* a form with irrevocable writes (characteristic attribution, channel
+     deposit, creation) must sit strictly above the producers of every
+     non-characteristic value it reads — a transient it acted on would
+     persist (ch. 6.1). Positive characteristic reads stay positive
+     (monotone-safe). *)
+  let strict_unless_char reads =
+    List.map
+      (fun (node, kind) ->
+        if kind = Dep_pos && not (String.length node >= 5 && String.sub node 0 5 = "char:") then
+          (node, Dep_strict)
+        else (node, kind))
+      reads
+  in
   let regels =
     List.mapi
       (fun i (r : resolved_regel) ->
@@ -1517,8 +1536,9 @@ let dep_forms ctx : dep_form list =
               [ (if r.rr_soort = Some Kenmerktoekenning then n_char ot a else n_attr ot a) ]
             in
             let subject = Some ot in
+            let reads = dep_opt ~subject (cond ~subject r.rr_voorwaarde) r.waarde in
             let reads =
-              dep_opt ~subject (cond ~subject r.rr_voorwaarde) r.waarde
+              if r.rr_soort = Some Kenmerktoekenning then strict_unless_char reads else reads
             in
             Some { df_at = at; df_name = name; df_recursive_creation = false; df_writes = writes; df_reads = reads }
         | _ -> None)
@@ -1537,10 +1557,10 @@ let dep_forms ctx : dep_form list =
           @ (match v.restant_attribuut with Some a -> [ n_attr bt a ] | None -> [])
         in
         let reads =
-          (n_pop dt, false)
-          :: (match v.bron_attribuut with Some a -> [ (n_attr bt a, false) ] | None -> [])
+          (n_pop dt, Dep_pos)
+          :: (match v.bron_attribuut with Some a -> [ (n_attr bt a, Dep_pos) ] | None -> [])
           @ List.filter_map
-              (fun a -> Option.map (fun a -> (n_attr dt a, false)) a)
+              (fun a -> Option.map (fun a -> (n_attr dt a, Dep_pos)) a)
               [ v.rato_attribuut; v.maximum_attribuut; v.groepeer_attribuut ]
           @ cond ~subject:v.bron_type v.vd_voorwaarde
         in
@@ -1557,7 +1577,7 @@ let dep_forms ctx : dep_form list =
           df_name = name;
           df_recursive_creation = false;
           df_writes = [ n_chan name ];
-          df_reads = cond ~subject:c.cons_subject c.assertie;
+          df_reads = strict_unless_char (cond ~subject:c.cons_subject c.assertie);
         })
       ctx.doc.consistenties
   in
@@ -1572,7 +1592,8 @@ let dep_forms ctx : dep_form list =
           df_name = name;
           df_recursive_creation = false;
           df_writes = [ n_chan name ];
-          df_reads = List.map (fun k -> (n_attr subj (Option.value k ~default:""), false)) u.sleutels;
+          df_reads =
+            List.map (fun k -> (n_attr subj (Option.value k ~default:""), Dep_strict)) u.sleutels;
         })
       ctx.doc.uniciteiten
   in
@@ -1593,15 +1614,16 @@ let dep_forms ctx : dep_form list =
                o.toekenningen
         in
         let reads =
-          List.fold_left
-            (fun acc (t : toekenning) -> dep_opt ~subject acc t.toe_waarde)
-            (cond ~subject o.oc_voorwaarde)
-            o.toekenningen
+          strict_unless_char
+            (List.fold_left
+               (fun acc (t : toekenning) -> dep_opt ~subject acc t.toe_waarde)
+               (cond ~subject o.oc_voorwaarde)
+               o.toekenningen)
         in
         {
           df_at = at;
           df_name = name;
-          df_recursive_creation = List.mem (norm name) recursive_members;
+          df_recursive_creation = List.mem (norm (strip_version name)) recursive_members;
           df_writes = writes;
           df_reads = reads;
         })
@@ -1617,7 +1639,7 @@ let dep_forms ctx : dep_form list =
           df_name = name;
           df_recursive_creation = false;
           df_writes = (match f.fc_doel with Some d -> [ n_pop d ] | None -> []);
-          df_reads = cond ~subject:f.anker f.fc_voorwaarde;
+          df_reads = strict_unless_char (cond ~subject:f.anker f.fc_voorwaarde);
         })
       ctx.doc.feit_creaties
   in
@@ -1632,9 +1654,9 @@ let wf045_046 ctx =
   Array.iteri
     (fun ci f ->
       List.iter
-        (fun (node, negedge) ->
+        (fun (node, kind) ->
           List.iter
-            (fun pi -> if not (List.mem (ci, negedge) succ.(pi)) then succ.(pi) <- (ci, negedge) :: succ.(pi))
+            (fun pi -> if not (List.mem (ci, kind) succ.(pi)) then succ.(pi) <- (ci, kind) :: succ.(pi))
             (Hashtbl.find_all writers node))
         f.df_reads)
     forms;
@@ -1681,8 +1703,8 @@ let wf045_046 ctx =
   Array.iteri
     (fun pi _ ->
       List.iter
-        (fun (ci, negedge) ->
-          if negedge && reaches ci pi then
+        (fun (ci, kind) ->
+          if kind = Dep_neg && reaches ci pi then
             viol46 :=
               v "WF-046" forms.(ci).df_at
                 (Printf.sprintf

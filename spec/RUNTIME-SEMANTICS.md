@@ -1289,14 +1289,33 @@ Each rule form reads and writes nodes:
 | object creation | the attributes and characteristics its toekenningen set on the created type; population(created type) | condition and toekenning-value reads on the anchor |
 | relation creation | population(target-role filler type) | condition and field reads on the anchor |
 
-Edges run producer → consumer: from every form that writes a node to
-every form that reads it. An edge is **negative** when the read is a
-negated characteristic test (ch. 5.3), a characteristic read under a
-negation-like quantifier (*geen*, *ten hoogste*, *precies* — their truth
-can be lost by a later monotone write), or a channel test (regelversie,
-ch. 5.6); all other reads are positive. A doubly negated characteristic
-read is treated conservatively as negative. Parameters and input-only
-nodes (nodes no form writes) contribute no edges.
+Edges run producer → consumer — from every form that writes a node to
+every form that reads it — in three kinds:
+
+- **positive**, the default: reads by attribute-writing forms
+  (assignment, initialisation, allocation), and positive characteristic
+  reads anywhere. Attribute writes are revocable — idempotent and
+  re-evaluated under freshness (ch. 5.1) — so a transient self-corrects
+  within a stratum, and a positive characteristic read is monotone-safe
+  (it can only still become true).
+- **stratum-strict**: any non-characteristic read (attribute values,
+  emptiness and gevuld predicates, comparisons) by a form whose write is
+  *irrevocable* — a characteristic attribution (monotone, ch. 5.3), a
+  consistency or uniqueness (channel facts are never retracted,
+  ch. 5.6), or a creation. Such a form must evaluate strictly above the
+  producers of what it reads: a transient it acted on would persist.
+  Within a WF-045-admissible recursive-creation cycle the strictness is
+  discharged by the one-generation-per-instance progression (ch. 5.5)
+  rather than a stratum boundary.
+- **negative**: a negated characteristic read, a characteristic read
+  under a negation-like quantifier (*geen*, *ten hoogste*, *precies* —
+  their truth can be lost by a later monotone write), or a channel test
+  (regelversie, ch. 5.6). Once negative, conservatively negative — a
+  double negation does not cancel. Negative edges are stratum-strict
+  *and* forbidden on any cycle (WF-046).
+
+Parameters and input-only nodes (nodes no form writes) contribute no
+edges.
 
 *Scope narrowing, recorded:* relation membership read by a condition
 (rollidmaatschap) is treated as input — relation creation contributes a
@@ -1304,6 +1323,13 @@ population edge to its target-role filler type, but finer
 relation-level nodes are deliberately not modelled until a corpus case
 demands them. Day-kind definitions read only input dates and contribute
 no edges.
+
+*Recorded residuals (ch. 7 territory, mirrored):* a condition-guarded
+attribute write whose condition later turns false keeps its written
+value — the mirror has no retraction — so conditions on
+attribute-writing forms read positively here; and §9.5 deposits from
+arithmetic transients within a stratum persist (idempotent inserts,
+never retracted). Both await the default model of ch. 7.
 
 ### 6.2 Acyclicity (WF-045)
 
@@ -1327,9 +1353,14 @@ bounds execution with a fire cap; WF-045 makes the refusal structural.
 **WF-046.** No dependency cycle — including a WF-045-admissible one —
 may carry a negative edge. Equivalently: **strata exist**. Assign every
 form the smallest stratum such that along every positive edge the
-consumer's stratum is at least the producer's, and along every negative
-edge strictly greater; WF-045 + WF-046 guarantee the assignment exists,
-and the verifier rejects a program where it does not.
+consumer's stratum is at least the producer's, and along every
+stratum-strict or negative edge strictly greater (strictness on a
+WF-045-admissible creation cycle is discharged by the generation
+progression, ch. 6.1, not by a boundary). WF-046 alone guarantees the
+assignment exists — no negative edge on a cycle is exactly the
+stratifiability condition; WF-045 separately makes the within-stratum
+fixpoint unique. The verifier rejects a program where the assignment
+does not exist.
 
 Evaluation by strata generalises ch. 5.3's single boundary: for k = 0,
 1, …, the forms of stratum ≤ k evaluate to their fixpoint before any
@@ -1354,9 +1385,17 @@ many strata as the chain is deep.
   puts the consistency at its reads' stratum and the reading rule
   strictly higher (channel edge); ch. 5.6's fixpoint (one error fact,
   both dossiers flagged) follows by construction.
-- A four-deep negation chain (the art. 4 ladder read in
-  `ASP-TRANSLATION.md` ch. 6) takes four strata; v0's single boundary
-  cannot express it — precisely the case WF-046 exists for.
+- A four-deep negation chain (the shape of the art. 4 ladder read in
+  `ASP-TRANSLATION.md` ch. 6): k1 from an input comparison, k2 indien
+  niet k1, k3 indien niet k2, k4 indien niet k3 — strata 0, 1, 2, 3;
+  input x = 0 yields {k1 onwaar, k2 waar, k3 onwaar, k4 waar}, x = 1
+  the complement. v0's single boundary cannot express it — precisely
+  the case WF-046 exists for.
+- An emptiness test on a *derived* attribute by a characteristic rule
+  ("gemarkeerd indien a leeg is", a computed elsewhere) is a
+  stratum-strict edge: the reader sits above the writer, and the
+  outcome is independent of rule order — the transient emptiness is
+  unobservable.
 - Ill-formed: `a ← b + 1` and `b ← a + 1` on one object type is a
   WF-045 cycle through no creation (negatief case
   `wf045-cyclic-attribute-dependency`). A recursive creation whose

@@ -1115,7 +1115,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-043 | whole-period qualifier only on a time-dependent operand | gate 3 | OPEN | `wf043-wholeperiod-nontemporal` |
 | WF-044 | (consumer) Unresolved surfaces, never silently lowered | behavioural (CI harness guard) — OPEN | OPEN | OPEN |
 | WF-045 | dependency graph acyclic (creation recursion excepted) | gate 3 | `jutterswet-vondsttelling` | `wf045-cyclic-attribute-dependency` |
-| WF-046 | no negative edge on a dependency cycle (strata exist) | gate 3 | `jutterswet-vondsttelling` | `wf046-negated-read-in-recursive-cycle` |
+| WF-046 | no negative edge on a dependency cycle (strata exist) | gate 3 | OPEN — no golden carries a negative edge yet; the ch. 6.4 pair needs a re-emitted negation golden (`ref/` tests cover the accept path meanwhile) | `wf046-negated-read-in-recursive-cycle` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

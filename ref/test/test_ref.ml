@@ -598,6 +598,83 @@ let () =
   check "WV-6.4-b-d1" (World.has_char (World.get final "d1") "onder verscherpt toezicht");
   check "WV-6.4-b-d2" (World.has_char (World.get final "d2") "onder verscherpt toezicht")
 
+(* WV-6.4-d: the four-deep negation chain — strata 0..3; x=0 yields
+   {onwaar, waar, onwaar, waar}, x=1 the complement. Rules listed in
+   deliberately wrong order to prove the layering, not the listing,
+   decides. *)
+let () =
+  let kc name = 
+    Ir_v0.Ast.Kenmerk_check
+      { kenmerk = Some name; navigatie = None; negatie = true; eigenaar = Some "Aanvraag"; periode = None; bron = None }
+  in
+  let kt name char cond =
+    rr name Kenmerktoekenning
+      (Some (aref char "Aanvraag" Booleaan))
+      (Some (litv "waar" Booleaan))
+      (Some cond)
+  in
+  let doc =
+    {
+      empty_doc with
+      objecttypen = [ ot "Aanvraag" [ ("x", Some num0) ] [ "k1"; "k2"; "k3"; "k4" ] ];
+      resolved_regels =
+        [
+          kt "trap4" "k4" (kc "k3");
+          kt "trap3" "k3" (kc "k2");
+          kt "trap2" "k2" (kc "k1");
+          kt "trap1" "k1"
+            (Vergelijking
+               {
+                 op = Groter_of_gelijk;
+                 links = Some (aref "x" "Aanvraag" num0);
+                 rechts = Some (litv "1" num0);
+                 periode = None;
+                 bron = None;
+               });
+        ];
+    }
+  in
+  let run x =
+    let final = Eval.evaluate (env_of doc) (World.add_instance World.empty (inst "a" "Aanvraag" [ ("x", n x) ])) in
+    let a = World.get final "a" in
+    (World.has_char a "k1", World.has_char a "k2", World.has_char a "k3", World.has_char a "k4")
+  in
+  check "WV-6.4-d-x0" (run "0" = (false, true, false, true));
+  check "WV-6.4-d-x1" (run "1" = (true, false, true, false))
+
+(* WV-6.4-e: an emptiness test on a derived attribute is a stratum-strict
+   edge — the outcome is rule-order-independent (the verification round's
+   counterexample, locked) *)
+let () =
+  let writer =
+    rr "zet a" Gelijkstelling (Some (aref "a" "Ding" num0)) (Some (litv "5" num0)) None
+  in
+  let reader =
+    rr "markeer" Kenmerktoekenning
+      (Some (aref "gemarkeerd" "Ding" Booleaan))
+      (Some (litv "waar" Booleaan))
+      (Some
+         (Predicaat
+            {
+              soort = Leeg;
+              operand = Some (aref "a" "Ding" num0);
+              dagsoort = None;
+              negatie = false;
+              cijfers = 0;
+              periode = None;
+              bron = None;
+            }))
+  in
+  let run rules =
+    let doc =
+      { empty_doc with objecttypen = [ ot "Ding" [ ("a", Some num0) ] [ "gemarkeerd" ] ]; resolved_regels = rules }
+    in
+    let final = Eval.evaluate (env_of doc) (World.add_instance World.empty (inst "x" "Ding" [])) in
+    World.has_char (World.get final "x") "gemarkeerd"
+  in
+  check "WV-6.4-e-writer-first" (run [ writer; reader ] = false);
+  check "WV-6.4-e-reader-first" (run [ reader; writer ] = false)
+
 (* WV-6.4-c: a dependency cycle reaching ref/ is a fault (the verifier
    rejects it as WF-045; ref/ fails fast rather than diverging) *)
 let () =
