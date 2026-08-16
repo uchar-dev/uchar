@@ -888,7 +888,7 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 |---|---|
 | Multi-period grids (`count` ≥ 2): all reads and writes | refused (mirrored); OPEN — specify producers or restrict `count` = 1 |
 | Bucketing by day/week/quarter | absent (mirrored); OPEN with the grid decision |
-| Point-in-time read (the "op dat tijdstip" node) | **decided (v1)**: `read(tl, d)` becomes a core IR node (ch. 3.3, row 11); design lands with the implementation card |
+| Point-in-time read (the "op dat tijdstip" node) | **landed (v1 extension)**: `read(tl, d)` is `IR-SPEC.md` ch. 4.3a (`TemporalRead`, WF-049; ch. 3.3, row 11), anchor-witnessed and replayed by both executors |
 | Timeline arithmetic beyond plus/min (verminderd-met, maal, division, percentage) | refused (mirrored); OPEN — per-period lifting of ch. 1.2 rules is the candidate |
 | Scalar broadcast into timeline arithmetic / unconditional temporal characteristic | refused (mirrored); OPEN — both need a time domain for unbounded segments |
 | min/max/eerste/laatste over timelines | refused (mirrored); OPEN — the two readings (per-period vs over-time) must be defined apart |

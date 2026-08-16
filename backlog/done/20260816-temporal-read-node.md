@@ -30,11 +30,39 @@ green (the anchor ir.json validates and round-trips; the extended case
 schema is metaschema-valid).
 
 May touch: `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md` (ch. 3.3
-status), `spec/CONSTRUCTS.md` (row 11), `spec/schema/**`,
-`spec/verifier/**`, `corpus/golden/anchor/**`, `corpus/negatief/**`,
-`ref/**`, `backends/clingo/**` (added with gate 6, see above),
-`backlog/**`.
+status + the §3.12 summary row), `spec/CONSTRUCTS.md` (row 11),
+`spec/ASP-TRANSLATION.md` (the finding-4 landing note),
+`spec/schema/**`, `spec/verifier/**`, `corpus/golden/anchor/**`,
+`corpus/negatief/**`, `ref/**`, `backends/clingo/**` (added with
+gate 6, see above), `backlog/**`.
 
 Out of scope: RegelSpraak surface syntax and the emitter (pin-bump
 territory); the Drools lowering; ch. 8's Parameterset data format
 beyond what the anchor case needs.
+
+Result: landed in full, on the wire-entry discipline the
+relations-first-class card recorded. `TemporalRead` (IR-SPEC ch. 4.3a,
+WF-049 with three negatiefs: non-temporal basis, datetime index,
+type/element mismatch) rides the expr union as an extension node; the
+uchar-case-v0 format gained the full-timeline value variant
+(grid-aligned, ordered, non-overlapping — ref-loader cross-checks);
+ref/ implements the node on Timeline.read verbatim (empty index →
+leeg), clingo as a segment-containment join (tl/5, param_tl/4) where
+gap and empty index are leeg-as-absence. The anchor witness
+(anchor/jutterswet-aanmeldquotum, asOfDate null — the read indexes a
+non-evaluation-date instant) exercises the attribute read, the
+parameter vintage read, the gap year, and the empty index, replayed
+exactly by gates 5 and 6. Adversarial verification (three opus
+lenses): one major, fixed before merge — clingo silently read leeg
+where ref faults on a convention mismatch (read without the full
+timeline in the case; total over a full timeline); clingo now carries
+mirroring translation faults, so "executors fault, never guess" holds
+for both. Also fixed: the missing element-type negatief, the stale
+§3.12 summary row, and the may-touch omissions (ASP-TRANSLATION.md;
+backends/clingo joined with gate 6, which postdates the card's
+cutting — that scope note landed with the implementation commit, not
+the claim commit, recorded here honestly). Deliberately left: the
+temporal-characteristic operand (OPEN — no characteristic-timeline
+case format); TOTAAL over a case-supplied full timeline (both
+executors fault); the emitter surface (pin-bump); ch. 8's Parameterset
+session-start coverage check (data plane, its own card).
