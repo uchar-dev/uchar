@@ -37,3 +37,25 @@ only: a `public_name` so `ref/` can link `ir_v0` across projects).
 Out of scope: timeline algebra (ch. 3) in `ref/`; a penningjaar case (needs
 timelines); ch. 6 stratification; any code change to `spec/verifier/`;
 any change to `spec/RUNTIME-SEMANTICS.md`.
+
+Result: delivered in full, plus a verification round. ref/ stands as an
+OCaml dune project (root workspace; ir_v0 linked via public name
+uchar-ir-v0; check-verifier.sh untouched thanks to --root isolation):
+value domain, ch. 1 empty discipline + ch. 2 exact arithmetic/rounding/
+units, the ch. 4.2 allocation recurrence as a pure function, the ch. 5
+fixpoint session with v0's single negation boundary, and the
+uchar-case-v0 loader with its cross-checks. Gate 5 shown red, then
+green: 6 cases replay exactly; the penningjaar golden is listed as
+not-replayed (needs ch. 3). New corpus case: jutterswet-vondsttelling
+(count-over-role wart, empty-source fallback). Unit tests: ch. 1-2
+worked examples verbatim + the ch. 4.6 allocation examples. CI gained
+the gate-5 job; CLAUDE.md gate list extended; gate 1 graduated
+ref/README.md out of its exception list. Verification (3 adversarial
+opus lenses) found 3 majors + 2 minors, all fixed with regression
+tests: static routing of the ch. 1.2d equality asymmetry, exact decimal
+reading of unit factors, strict number-lexeme validation, exponent
+overflow as a fault, enum identity via norm. Deliberately left: ch. 3
+timelines and ch. 6 stratification (cards cut in backlog/new/);
+"is gevuurd" (row 30 OPEN). Erratum candidate flagged for the
+maintainer, document untouched: the ch. 4.6 cap-degrade example says
+"one §9.5 error" where ch. 4.3 + 5.6 imply one per degraded cap (two).
