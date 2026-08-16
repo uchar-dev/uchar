@@ -22,9 +22,9 @@
           "items": { "$ref": "#/$defs/instance" }
         },
         "parameters": {
-          "description": "Parameter name (as declared) to value, in the parameter's declared unit.",
+          "description": "Parameter name (as declared) to value, in the parameter's declared unit. A granular parameter may carry its full timeline (the timeline variant).",
           "type": "object",
-          "additionalProperties": { "$ref": "#/$defs/value" }
+          "additionalProperties": { "oneOf": [ { "$ref": "#/$defs/value" }, { "$ref": "#/$defs/timelineValue" } ] }
         }
       }
     },
@@ -47,9 +47,9 @@
         },
         "objectType": { "type": "string", "minLength": 1 },
         "attributes": {
-          "description": "Attribute name (as declared) to value, in the attribute's declared unit. Absence means empty (leeg); an input never carries an explicit empty.",
+          "description": "Attribute name (as declared) to value, in the attribute's declared unit. Absence means empty (leeg); an input never carries an explicit empty. A temporal attribute carries either the asOfDate-bucket scalar or its full timeline (the timeline variant) — never both meanings at once.",
           "type": "object",
-          "additionalProperties": { "$ref": "#/$defs/value" }
+          "additionalProperties": { "oneOf": [ { "$ref": "#/$defs/value" }, { "$ref": "#/$defs/timelineValue" } ] }
         },
         "roles": {
           "description": "Role name (as declared) to the labels of the linked instances; a to-one role carries exactly one label.",
@@ -101,6 +101,24 @@
           "properties": { "enumeration": { "type": "string", "minLength": 1 } }
         }
       ]
+    },
+    "timelineValue": {
+      "description": "A full timeline: day-precision segments, from inclusive, to exclusive, ordered and non-overlapping, aligned to the declaration's granularity grid; absence between segments is a gap (leeg on read). The ref loader owns the cross-checks.",
+      "type": "object", "additionalProperties": false, "required": ["timeline"],
+      "properties": {
+        "timeline": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["from", "to", "value"],
+            "properties": {
+              "from": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+              "to": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+              "value": { "$ref": "#/$defs/value" }
+            }
+          }
+        }
+      }
     },
     "expectation": {
       "oneOf": [

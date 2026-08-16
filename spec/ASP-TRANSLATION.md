@@ -211,6 +211,10 @@ the statute's intent, reproduced under stable-model semantics.
    the first corpus-driven demand on row 11, decided 2026-08-16:
    `read(tl, d)` becomes a core IR node (`RUNTIME-SEMANTICS.md` ch. 3.3);
    in ASP the node is a plain join against the segment relation.
+   *Landed:* `backends/clingo` translates `TemporalRead` exactly so —
+   `tl(Inst, A, From, To, V), From <= D, D < To` (and `param_tl/4` for
+   the vintage read); a gap or an empty index is an unbound join, leeg
+   as absence.
 5. **Closed-world inputs vs open world facts** (row 18, boundary noted).
    `#defined` documents which inputs may be absent, but absence still
    means false; the corpus's "world facts are open" register needs the

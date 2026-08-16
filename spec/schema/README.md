@@ -42,9 +42,10 @@ nullable only where the format actually emits `null`. `$id`:
 property the v0 emitter never produces — currently `verbindendeRol` on
 `ResolvedVerdeling`, `bronRol` on `Functie`, and the symbolic
 fact-creation fields (`feittype`/`ankerRol`/`doelRol`/`joinRol`,
-`Tussenstap.rolBinding`), all carrying the `RolBinding` node. When
-present they are written whole, never null; the loaders admit exactly
-these keys and nothing else. Mirror purity holds per file: an emitter
+`Tussenstap.rolBinding`), all carrying the `RolBinding` node, and the
+`TemporalRead` expression node (the row-11 point read). When present
+they are written whole, never null; the loaders admit exactly these
+keys and nothing else. Mirror purity holds per file: an emitter
 dump carries none of them, a hand-written anchor case may carry them,
 and the same schema validates both. The `regelspraak-ir-v1` bump is
 reserved for the non-additive cleanup (renames; dropping the superseded
@@ -93,6 +94,14 @@ Conventions, deliberate:
   only assert them true.
 - One instance per label; role links point at labels; a to-one role
   carries exactly one label.
+- A temporal attribute or granular parameter may carry the **timeline
+  variant**: day-precision segments (from inclusive, to exclusive),
+  ordered, non-overlapping, aligned to the declared granularity grid;
+  absence between segments is a gap. The scalar convention (the
+  asOfDate-bucket value serving the temporal total) coexists per
+  attribute — an attribute carries one convention or the other, and the
+  executors fault when a construct needs the one the case did not
+  supply.
 
 Two deliberate narrowings relative to the donor conformance layer this
 format was mined from: a case has **no rule scope** — evaluation is

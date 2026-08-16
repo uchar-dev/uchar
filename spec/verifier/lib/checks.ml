@@ -951,7 +951,8 @@ let typ_of_expr = function
   | Literal { typ; _ } | Tekst_reeks { typ; _ } | Binair { typ; _ }
   | Functie { typ; _ } | Afgerond { typ; _ } | Begrensd { typ; _ }
   | Attribuut_ref { typ; _ } | Dimensie_cel { typ; _ } | Parameter_ref { typ; _ }
-  | Variabele_ref { typ; _ } | Constante { typ; _ } | Expr_onopgelost { typ; _ } -> typ
+  | Variabele_ref { typ; _ } | Constante { typ; _ } | Expr_onopgelost { typ; _ }
+  | Temporal_read { typ; _ } -> typ
 
 (* Is this expression a time-dependent operand (for WF-043)? *)
 let expr_temporal ctx = function
@@ -1349,6 +1350,70 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
   | Variabele_ref _ -> [] (* binding sites are not serialized in v0 — OPEN *)
   | Constante _ -> []
   | Expr_onopgelost _ -> [] (* honest marker; WF-044 is behavioural *)
+  | Temporal_read { basis; datum; typ; _ } ->
+      (* WF-049: the point-in-time read (extension node, row 11) *)
+      let basis_checks =
+        match basis with
+        | Attribuut_ref
+            { attribuut = Some a; objecttype = Some otn; navigatie_rol = None;
+              navigatie_pad = []; set = false; _ } -> (
+            match objecttype ctx otn with
+            | None -> [] (* resolution is the walk's WF-034, below *)
+            | Some ot ->
+                (if attr_temporal ot a then []
+                 else
+                   [ v "WF-049" (sub "basis")
+                       ("temporal read of '" ^ a ^ "', which is not a temporal attribute of '"
+                      ^ otn ^ "'") ])
+                @ (match subject with
+                  | Some st when norm st <> norm otn ->
+                      [ v "WF-049" (sub "basis")
+                          ("the read's timeline belongs to '" ^ otn
+                         ^ "', not the subject type '" ^ st ^ "'") ]
+                  | _ -> [])
+                @
+                (* the node's type is the timeline's element datatype *)
+                (match (typ, find_ci ot.attributen a) with
+                | Some t, Some (Some decl) when t <> decl ->
+                    [ v "WF-049" (sub "type")
+                        "the read's type must equal the timeline's element datatype" ]
+                | None, _ ->
+                    [ v "WF-049" (sub "type") "the read carries no type (extension node: required)" ]
+                | _ -> []))
+        | Parameter_ref { parameter = Some p; _ } -> (
+            match find_ci ctx.doc.parameters p with
+            | None -> [] (* WF-034 below *)
+            | Some par ->
+                (if par.par_granulariteit <> None then []
+                 else
+                   [ v "WF-049" (sub "basis")
+                       ("temporal read of parameter '" ^ p ^ "', which is not granular") ])
+                @ (match (typ, par.par_datatype) with
+                  | Some t, Some decl when t <> decl ->
+                      [ v "WF-049" (sub "type")
+                          "the read's type must equal the timeline's element datatype" ]
+                  | None, _ ->
+                      [ v "WF-049" (sub "type") "the read carries no type (extension node: required)" ]
+                  | _ -> []))
+        | _ ->
+            [ v "WF-049" (sub "basis")
+                "the read's basis must be an own temporal attribute reference or a granular \
+                 parameter reference (a temporal characteristic operand is OPEN)" ]
+      in
+      let datum_checks =
+        match typ_of_expr datum with
+        | Some Datum_in_dagen -> []
+        | Some d ->
+            [ v "WF-049" (sub "datum")
+                ("the read's date operand is " ^ datatype_kind d
+               ^ ", must be a day-precision date") ]
+        | None ->
+            [ v "WF-049" (sub "datum")
+                "the read's date operand carries no type (extension node: day precision required)" ]
+      in
+      basis_checks @ datum_checks
+      @ walk_expr ctx ~subject (sub "basis") basis
+      @ walk_expr ctx ~subject (sub "datum") datum
 
 and walk_cond ctx ~subject at (c : conditie) : violation list =
   let sub p = at ^ "/" ^ p in
@@ -1598,6 +1663,11 @@ let rec dep_expr ~subject acc (e : expr) =
   | Begrensd { basis; minimum; maximum; _ } ->
       dep_opt ~subject (dep_opt ~subject (dep_opt ~subject acc basis) minimum) maximum
   | Dimensie_cel { attribuut; _ } -> dep_opt ~subject acc attribuut
+  | Temporal_read { basis; datum; _ } ->
+      (* the read consumes its timeline reference and its date operand;
+         the basis is an attribute/parameter reference whose own case
+         adds the right edge *)
+      dep_expr ~subject (dep_expr ~subject acc basis) datum
 
 and dep_opt ~subject acc = function Some e -> dep_expr ~subject acc e | None -> acc
 

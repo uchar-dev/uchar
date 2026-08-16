@@ -31,6 +31,12 @@ spec bug.
   the body join; consistency and uniqueness derive `inconsistent/2`
   facts (the §9.5 channel); dates are civil day numbers; the temporal
   total folds the asOfDate year bucket (factor 1).
+- The temporal read (`TemporalRead`, IR-SPEC ch. 4.3a) is a
+  segment-containment join: case timelines become `tl(Inst, A, From,
+  To, V)` / `param_tl(P, From, To, V)` facts over civil day numbers,
+  and the read is `From <= D, D < To`. A gap or an empty date index
+  leaves the body unbound — leeg as absence, exactly ref/'s
+  leeg-on-gap and empty-index rules.
 - Constructs outside the corpus-exercised subset fault the translator —
   fail fast, never a silent SKIP.
 

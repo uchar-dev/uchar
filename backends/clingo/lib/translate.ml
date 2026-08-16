@@ -110,7 +110,7 @@ let lexeme_decimals lex =
 let total_factor (g : granulariteit) =
   match g with Jaar -> 1 | _ -> fault "temporal total: only year granularity is exercised"
 
-let expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
+let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   match e with
   | Literal { waarde; typ; _ } -> (
       let lex = req "Literal.waarde" waarde in
@@ -147,7 +147,7 @@ let expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
       let role =
         match bron_rol with
         | Some rb ->
-            let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; as_of = None } in
+            let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None } in
             role_canonical (Eval.bound_role env rb)
         | None -> req "fold role" attribuut
       in
@@ -164,7 +164,7 @@ let expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
           fault "som without the 0 fallback needs an explicit non-empty guard; no corpus case yet");
       (* the connecting role: the node's explicit binding when present,
          else derived the same way ref/ derives it *)
-      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; as_of = None } in
+      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None } in
       let role_name =
         role_canonical
           (match bron_rol with
@@ -187,6 +187,38 @@ let expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
       ( [ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ],
         term,
         pow10 (attr_decimals ctx ~otype:aot ~attr:a) )
+  | Temporal_read { basis; datum; typ = _; bron = _ } -> (
+      (* ch. 3.3 read(tl, d): join the segment relation on containment.
+         A gap or an empty date leaves the body underivable — leeg as
+         absence, exactly ref/'s leeg-on-gap and empty-index rules. *)
+      let db, dt, ds = expr_term ctx ~subject ~subject_ot datum in
+      if ds <> 1 then fault "temporal-read date operand must be an unscaled day term";
+      let v = fresh ctx "R" in
+      let f = fresh ctx "F" and t = fresh ctx "T" in
+      match basis with
+      | Attribuut_ref
+          { attribuut = Some a; objecttype = Some otn; navigatie_rol = None;
+            navigatie_pad = []; set = false; _ }
+        when Ir_v0.Checks.norm otn = Ir_v0.Checks.norm subject_ot ->
+          if not (attr_temporal ctx ~otype:otn ~attr:a) then
+            fault "temporal read of %S, which is not a temporal attribute" a;
+          ( db
+            @ [ Printf.sprintf "tl(%s,%s,%s,%s,%s), %s <= %s, %s < %s" subject (str a) f t v f
+                  dt dt t ],
+            v,
+            pow10 (attr_decimals ctx ~otype:otn ~attr:a) )
+      | Parameter_ref { parameter = Some p; _ } -> (
+          match Ir_v0.Checks.find_ci ctx.doc.parameters p with
+          | Some { par_granulariteit = None; _ } ->
+              fault "temporal read of parameter %S, which is not granular" p
+          | Some pr ->
+              ( db
+                @ [ Printf.sprintf "param_tl(%s,%s,%s,%s), %s <= %s, %s < %s" (str p) f t v f
+                      dt dt t ],
+                v,
+                pow10 (decimals_of_datatype pr.par_datatype) )
+          | None -> fault "unknown parameter %S" p)
+      | _ -> fault "unsupported temporal-read basis shape")
   | _ -> fault "expression kind not translated (no corpus case exercises it)"
 
 (* harmonise two scaled terms for comparison *)
@@ -266,7 +298,7 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
   let ba = req "bronAttribuut" v.bron_attribuut and da = req "doelAttribuut" v.doel_attribuut in
   let rato = req "ratoAttribuut (proportional)" v.rato_attribuut in
   let name = Option.value v.vd_naam ~default:"verdeling" in
-  let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; as_of = None } in
+  let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None } in
   let role =
     role_canonical
       (match v.verbindende_rol with
@@ -369,6 +401,15 @@ let translate_case ctx (case : Case.t) =
         i.attrs;
       List.iter (fun k -> emit ctx "heeft(%s,%s)." (str_raw label) (str k)) i.chars;
       Eval.SMap.iter
+        (fun aname (tl : Uchar_ref.Timeline.t) ->
+          let d = attr_decimals ctx ~otype:i.otype ~attr:aname in
+          List.iter
+            (fun (s : Uchar_ref.Timeline.segment) ->
+              emit ctx "tl(%s,%s,%d,%d,%d)." (str_raw label) (str aname) s.s_van s.s_tot
+                (scaled_of_value ~decimals:d s.s_waarde))
+            tl)
+        i.tls;
+      Eval.SMap.iter
         (fun key targets ->
           let canonical = role_canonical (Case.resolve_role doc ~otype:i.otype ~key) in
           List.iter
@@ -384,7 +425,19 @@ let translate_case ctx (case : Case.t) =
           let d = decimals_of_datatype p.par_datatype in
           emit ctx "param(%s,%d)." (str pname) (scaled_of_value ~decimals:d v)
       | None -> fault "unknown parameter %S" pname)
-    case.params
+    case.params;
+  Eval.SMap.iter
+    (fun pname (tl : Uchar_ref.Timeline.t) ->
+      match Ir_v0.Checks.find_ci doc.parameters pname with
+      | Some p ->
+          let d = decimals_of_datatype p.par_datatype in
+          List.iter
+            (fun (s : Uchar_ref.Timeline.segment) ->
+              emit ctx "param_tl(%s,%d,%d,%d)." (str pname) s.s_van s.s_tot
+                (scaled_of_value ~decimals:d s.s_waarde))
+            tl
+      | None -> fault "unknown parameter %S" pname)
+    case.param_tls
 
 (* --- the program --------------------------------------------------------- *)
 
@@ -395,7 +448,7 @@ let translate (doc : document) (case : Case.t) : string =
   let ctx = { doc; buf = Buffer.create 4096; fresh = 0 } in
   emit ctx "%% generated by backends/clingo from regelspraak-ir-v0 + uchar-case-v0.";
   emit ctx "#defined val/3. #defined heeft/2. #defined rol/3. #defined param/2.";
-  emit ctx "#defined inconsistent/2.";
+  emit ctx "#defined inconsistent/2. #defined tl/5. #defined param_tl/4.";
   List.iter (translate_regel ctx) doc.resolved_regels;
   List.iteri (translate_verdeling ctx) doc.verdelingen;
   List.iteri (translate_consistentie ctx) doc.consistenties;

@@ -18,6 +18,10 @@ type instance = {
   attrs : Value.t SMap.t; (* keyed by norm name; absent = empty *)
   chars : SMap.key list; (* characteristics currently true (norm names) *)
   links : string list SMap.t; (* norm role name -> linked labels *)
+  tls : Timeline.t SMap.t;
+      (* full case-supplied timelines of temporal attributes (norm name);
+         disjoint from [attrs] — a temporal attribute carries either the
+         asOfDate-bucket scalar there or its full timeline here *)
 }
 
 type error_fact = { rule : string; subject : string }
@@ -51,6 +55,7 @@ let of_type w otype =
 let attr i name = Option.value (SMap.find_opt (norm name) i.attrs) ~default:Value.Empty
 let has_char i name = List.mem (norm name) i.chars
 let links i role_key = Option.value (SMap.find_opt (norm role_key) i.links) ~default:[]
+let timeline i name = SMap.find_opt (norm name) i.tls
 
 (* --- the write boundary (ch. 2.4) -------------------------------------- *)
 

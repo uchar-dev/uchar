@@ -23,6 +23,7 @@ let norm = Ir_v0.Checks.norm
 type env = {
   doc : document;
   params : Value.t SMap.t; (* by norm name *)
+  param_tls : Timeline.t SMap.t; (* granular parameters' full timelines (norm name) *)
   as_of : string option; (* ISO date; None = time-free session *)
 }
 
@@ -241,6 +242,43 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       Value.fault "Onopgelost reached in evaluation: this rule fails observably (WF-044)"
   | Dimensie_cel _ | Variabele_ref _ | Constante _ ->
       Value.fault "expression kind not implemented in this card"
+  | Temporal_read { basis; datum; typ = _; bron = _ } -> (
+      (* ch. 3.3, the point-in-time read: read(tl, d). The basis is never
+         evaluated as a scalar (that is the refused shape); it names the
+         timeline. An empty date index reads to leeg; a gap reads to leeg
+         (ch. 3.1); a case that supplies only the asOfDate-bucket scalar
+         cannot serve a read — fault, never a guess. *)
+      match eval_expr env world self ~err datum with
+      | Value.Empty -> Value.Empty
+      | Value.Date d -> (
+          match basis with
+          | Attribuut_ref
+              { attribuut = Some a; objecttype = Some otn; navigatie_rol = None;
+                navigatie_pad = []; set = false; _ }
+            when norm otn = norm self.otype ->
+              if not (Ir_v0.Checks.attr_temporal (objecttype env otn) a) then
+                Value.fault "temporal read of %S, which is not a temporal attribute" a;
+              (match World.timeline self a with
+              | Some tl -> Timeline.read tl d
+              | None ->
+                  Value.fault
+                    "the temporal read of %S needs the full timeline; the case supplies none \
+                     (the asOfDate-bucket scalar cannot serve a point read)"
+                    a)
+          | Parameter_ref { parameter = Some p; _ } -> (
+              (match Ir_v0.Checks.find_ci env.doc.parameters p with
+              | Some { par_granulariteit = Some _; _ } -> ()
+              | Some _ -> Value.fault "temporal read of parameter %S, which is not granular" p
+              | None -> Value.fault "unknown parameter %S" p);
+              match SMap.find_opt (norm p) env.param_tls with
+              | Some tl -> Timeline.read tl d
+              | None ->
+                  Value.fault
+                    "the temporal read of parameter %S needs its timeline in the case" p)
+          | _ -> Value.fault "unsupported temporal-read basis shape")
+      | v ->
+          Value.fault "temporal-read date operand is %s, must be a day-precision date"
+            (Value.to_string v))
 
 and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leegwaarde ~filter
     ~dimensie_selectie ~granulariteit ~bron_rol =
@@ -262,6 +300,11 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
         | Some (Some g) -> g
         | _ -> Value.fault "temporal attribute %S without a granularity" a
       in
+      if World.timeline self a <> None then
+        Value.fault
+          "the temporal total of %S over a case-supplied full timeline is not exercised by any \
+           corpus case; the asOfDate-bucket convention carries the total"
+          a;
       match env.as_of with
       | None ->
           Value.fault
@@ -362,7 +405,8 @@ let expr_typ : expr -> datatype option = function
   | Parameter_ref { typ; _ }
   | Variabele_ref { typ; _ }
   | Constante { typ; _ }
-  | Expr_onopgelost { typ; _ } ->
+  | Expr_onopgelost { typ; _ }
+  | Temporal_read { typ; _ } ->
       typ
 
 (* the ch. 1.2d empty-equality asymmetry routes on the declared operand

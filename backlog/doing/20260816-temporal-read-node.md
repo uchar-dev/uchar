@@ -22,12 +22,17 @@ in `spec/schema/uchar-case-v0.schema.json`. The emitter follows later
 via a pin-bump conformance PR; that lands outside this card.
 
 Acceptance: every new WF rule has a verifier check + negatief case +
-the anchor golden as witness; gate 5 replays the anchor case through
-the node; gates 1–4 green (the anchor ir.json validates and
-round-trips; the extended case schema is metaschema-valid).
+the anchor golden as witness; gates 5 **and 6** replay the anchor case
+through the node (gate 6 postdates this card's cutting: the corpus is
+differential, so the Clingo translator must carry the read — a segment
+relation joined on containment — or the gate set regresses); gates 1–4
+green (the anchor ir.json validates and round-trips; the extended case
+schema is metaschema-valid).
 
-May touch: `spec/IR-SPEC.md`, `spec/schema/**`, `spec/verifier/**`,
-`corpus/golden/anchor/**` (new), `corpus/negatief/**`, `ref/**`,
+May touch: `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md` (ch. 3.3
+status), `spec/CONSTRUCTS.md` (row 11), `spec/schema/**`,
+`spec/verifier/**`, `corpus/golden/anchor/**`, `corpus/negatief/**`,
+`ref/**`, `backends/clingo/**` (added with gate 6, see above),
 `backlog/**`.
 
 Out of scope: RegelSpraak surface syntax and the emitter (pin-bump

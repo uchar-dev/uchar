@@ -493,9 +493,14 @@ ch. 5.7's fail-fast vintage discipline is a division of labour: the
 read keeps its ch. 3.1 leeg-on-gap totality, and ch. 8's fail-fast
 lives in the data plane — the Parameterset must cover the evaluation
 window (a gap or overlap is a session-start error, raised before any
-read). The node design, its WF rules, and its artifacts land with the
-implementation card; the RegelSpraak surface follows spec-first via a
-pin bump.
+read). **Landed (2026-08-16):** the node is `IR-SPEC.md` ch. 4.3a
+(`TemporalRead`, WF-049), with the full-timeline case value variant in
+`uchar-case-v0`, the ref/ implementation on this chapter's `read`, and
+the Clingo translation as a segment-containment join; an empty date
+index reads to leeg (ch. 1.2 propagation). The anchor witness is
+`corpus/golden/anchor/jutterswet-aanmeldquotum`. The RegelSpraak
+surface follows spec-first via a pin bump; a temporal *characteristic*
+operand stays OPEN with the case format.
 
 ### 3.4 Cut-merge arithmetic — the period-coalescing rule (§5.1.4)
 

@@ -1,10 +1,11 @@
 # uchar IR — Specification
 
-*Status: v0.5 — the model layer (ch. 2), the rule layer (ch. 3), and the
+*Status: v0.6 — the model layer (ch. 2), the rule layer (ch. 3), and the
 expression and condition layer (ch. 4) are normative **draft**; everything
 else is skeleton. New in v0.5: the wire-entry discipline for v1 constructs
 (Method) and the symbolic role bindings (ch. 2.6, 3.2, 3.4, 4.3;
-WF-047/048; WF-028's check). Authority for undocumented behaviour still lives in
+WF-047/048; WF-028's check). New in v0.6: the temporal-read node
+(ch. 4.3a, WF-049 — the decided row-11 point read). Authority for undocumented behaviour still lives in
 `regelspraak-java` (pinned commit `b85dff3`): the spec-§-citing javadoc of
 `ir/` and `model/`, and the decision records in
 `docs/grammar-divergences.md`; that authority pointer leaves this header at
@@ -38,7 +39,8 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   reserved for the non-additive cleanup — renames, and dropping the v0
   fields the extensions supersede (`zetVeld`/`joinVeld` and kin). Current
   extension fields: `verbindendeRol` (ch. 3.2), `bronRol` (ch. 4.3), the
-  symbolic fact-creation fields (ch. 3.4).
+  symbolic fact-creation fields (ch. 3.4); current extension node:
+  `TemporalRead` (ch. 4.3a).
 
 ## Conventions (binding)
 
@@ -1001,6 +1003,40 @@ ParameterReference by the frontend — surface disambiguation, not IR.
 (row 28): a single-cell read of a dimensioned attribute; every dimension
 pinned (WF-040); no storage layout implied.
 
+### 4.3a TemporalRead — the point-in-time read
+
+`layer: core`; an **extension node** per the Method (wire node
+`TemporalRead`; never emitter-produced — the decided row-11 delta,
+`RUNTIME-SEMANTICS.md` ch. 3.3). The primitive `read(tl, d)` of the
+timeline algebra, exposed to the rule author: the value a timeline
+carries at a day-precision instant that need not be the evaluation date
+(the art. 1 shape — "the value at the child's birth" — and ch. 8's
+vintage read).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `basis` | expression | names the timeline: an own temporal attribute reference, or a granular parameter reference. Never evaluated as a scalar (that is the refused ch. 3.3 shape) |
+| `datum` | expression | the day-precision date index |
+| `type` | datatype | the timeline's element datatype; required, non-null |
+| `source` | — | v0 wire `bron` |
+
+Semantics (`RUNTIME-SEMANTICS.md` ch. 3.1/3.3): the value of the
+segment containing the index; **leeg on a gap**; an **empty date index
+reads to leeg** (emptiness propagates, ch. 1.2). The data plane owns
+ch. 8's fail-fast (Parameterset coverage is a session-start check, not
+part of the read). A case serves a read only with the **full timeline**
+value variant (`uchar-case-v0`); the asOfDate-bucket scalar convention
+of the temporal total cannot serve a point read — executors fault,
+never guess.
+
+- **WF-049** The `basis` MUST be a navigation-free reference to a
+  declared temporal attribute of the subject type or to a granular
+  parameter (a temporal *characteristic* operand is **OPEN** — the case
+  format carries no characteristic timelines yet); the `datum` operand
+  MUST carry the day-precision date type (millisecond precision is
+  ill-formed); the node's `type` MUST equal the timeline's element
+  datatype.
+
 ### 4.4 Unresolved
 
 **Unresolved** is the honest-inexpressibility marker (row 16, permanent
@@ -1179,6 +1215,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-046 | no negative edge on a dependency cycle (strata exist) | gate 3 | `jutterswet-penningjaar` (the negated aanmeldplichtig reading — a negative edge, verifier-clean, oracle-replayed) | `wf046-negated-read-in-recursive-cycle` |
 | WF-047 | role binding resolves; fillers agree with the use site; written source denotes the bound role | gate 3 | `anchor/jutterswet-bergingstoezicht` (two fact types over one pair; allocation and fold bound, replayed by gates 5–6) | `wf047-dangling-role-binding` (resolution) + `wf047-bound-role-fills-source` (filler agreement) |
 | WF-048 | bindingless allocation/instance fold: connecting relation uniquely derivable | gate 3 (contexts with a statically known fold subject; a subjectless context — none exists in v0 dumps, whose folds sit under a typed rule target — is left to the executors' runtime fault) | `jutterswet-berging` + `jutterswet-vondsttelling` (bindingless, uniquely derivable) | `wf048-ambiguous-connecting-relation` |
+| WF-049 | temporal read: basis temporal (attribute/granular parameter), day-precision date, element type | gate 3 | `anchor/jutterswet-aanmeldquotum` (attribute + parameter reads; hit, gap→leeg, empty date→leeg; replayed by gates 5–6) | `wf049-read-of-nontemporal` (basis) + `wf049-read-at-datetime` (date operand) |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

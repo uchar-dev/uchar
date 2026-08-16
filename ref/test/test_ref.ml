@@ -133,6 +133,7 @@ let mini_world v =
       attrs = (match v with None -> World.SMap.empty | Some v -> World.SMap.singleton "a" v);
       chars = [];
       links = World.SMap.empty;
+      tls = World.SMap.empty;
     }
 
 let () =
@@ -491,9 +492,11 @@ let inst label otype attrs : World.instance =
     attrs = List.fold_left (fun m (k, v) -> World.SMap.add k v m) World.SMap.empty attrs;
     chars = [];
     links = World.SMap.empty;
+    tls = World.SMap.empty;
   }
 
-let env_of doc : Eval.env = { doc; params = Eval.SMap.empty; as_of = None }
+let env_of doc : Eval.env =
+  { doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None }
 
 (* WV-6.4-a (= the ch. 5.3 pair): producer/consumer across one negative
    edge — {waar, onwaar} at inkomen 50, {onwaar, waar} at 200, never the

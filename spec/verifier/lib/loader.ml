@@ -371,6 +371,16 @@ let rec expr path j : expr =
   | "VariabeleRef" ->
       check_keys path kvs [ "node"; "naam"; "type"; "bron" ];
       Variabele_ref { naam = str_opt (path / "naam") (f "naam"); typ = typ (); bron = bron () }
+  | "TemporalRead" ->
+      (* extension node (v1, row 11): all fields required, none nullable *)
+      check_keys path kvs [ "node"; "basis"; "datum"; "type"; "bron" ];
+      Temporal_read
+        {
+          basis = expr (path / "basis") (f "basis");
+          datum = expr (path / "datum") (f "datum");
+          typ = typ ();
+          bron = bron ();
+        }
   | "Constante" ->
       check_keys path kvs [ "node"; "naam"; "type"; "bron" ];
       Constante { naam = str_opt (path / "naam") (f "naam"); typ = typ (); bron = bron () }

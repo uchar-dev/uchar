@@ -12,6 +12,7 @@ let () =
           {
             Uchar_ref.Eval.doc;
             params = case.params;
+            param_tls = case.param_tls;
             as_of = case.as_of;
           }
         in

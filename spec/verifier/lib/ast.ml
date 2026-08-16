@@ -127,6 +127,11 @@ type expr =
   | Variabele_ref of { naam : string option; typ : datatype option; bron : string option }
   | Constante of { naam : string option; typ : datatype option; bron : string option }
   | Expr_onopgelost of { typ : datatype option; bron : string option }
+  (* Extension node (v1, row 11): the ch. 3.3 point-in-time read —
+     read(tl, d). [basis] references the timeline (an own temporal
+     attribute or a granular parameter); [datum] is a day-precision date
+     expression. Never emitter-produced; strict, no nullable children. *)
+  | Temporal_read of { basis : expr; datum : expr; typ : datatype option; bron : string option }
 
 and tekst_deel =
   | Letterlijk of { tekst : string option }

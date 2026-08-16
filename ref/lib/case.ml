@@ -32,6 +32,7 @@ type t = {
   as_of : string option;
   world : World.t;
   params : Value.t SMap.t;
+  param_tls : Timeline.t SMap.t; (* granular parameters' full timelines *)
   expected : expectation list;
 }
 
@@ -76,6 +77,53 @@ let value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t =
   | _, Some _ -> fail "%s: value variant %S does not match the declared datatype" at variant
   | _, None -> fail "%s: value variant %S against an unknown datatype" at variant
 
+(* Is this value JSON the timeline variant? *)
+let is_timeline_json j =
+  match j with `Assoc [ ("timeline", _) ] -> true | _ -> false
+
+(* The full-timeline value variant: ordered, non-overlapping, day-precision
+   segments aligned to the declaration's granularity grid; segment values
+   are scalars of the element datatype. From inclusive, to exclusive;
+   absence between segments is a gap (leeg on read, ch. 3.1). *)
+let timeline_of_json ~at ~(gran : granulariteit) (decl : datatype option) (j : Yojson.Safe.t) :
+    Timeline.t =
+  let segs =
+    match j with
+    | `Assoc [ ("timeline", `List l) ] -> l
+    | _ -> fail "%s: malformed timeline value" at
+  in
+  if segs = [] then fail "%s: a timeline value carries at least one segment" at;
+  let day_of ~what sj =
+    match Value.date_of_iso (str sj) with
+    | Value.Date d -> d
+    | _ -> fail "%s: malformed %s date" at what
+  in
+  let aligned d =
+    let van, _ = Timeline.bucket gran d in
+    van = d
+  in
+  let parsed =
+    List.map
+      (fun sj ->
+        let kvs = obj sj in
+        let van = day_of ~what:"from" (field kvs "from") in
+        let tot = day_of ~what:"to" (field kvs "to") in
+        if tot <= van then fail "%s: segment 'to' must lie after 'from'" at;
+        if not (aligned van && aligned tot) then
+          fail "%s: segment boundaries must sit on the declared granularity grid" at;
+        { Timeline.s_van = van; s_tot = tot; s_waarde = value_of_json ~at decl (field kvs "value") })
+      segs
+  in
+  let rec check_order = function
+    | a :: (b : Timeline.segment) :: rest ->
+        if a.Timeline.s_tot > b.s_van then
+          fail "%s: timeline segments must be ordered and non-overlapping" at;
+        check_order (b :: rest)
+    | _ -> ()
+  in
+  check_order parsed;
+  parsed
+
 (* --- cross-checked loading --------------------------------------------- *)
 
 let find_objecttype (doc : document) name =
@@ -112,14 +160,20 @@ let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
   let label = str (field kvs "label") in
   let otype_name = str (field kvs "objectType") in
   let ot = find_objecttype doc otype_name in
-  let attrs =
+  let attrs, tls =
     List.fold_left
-      (fun acc (name, vj) ->
+      (fun (attrs, tls) (name, vj) ->
         match Ir_v0.Checks.find_ci ot.attributen name with
         | Some decl ->
-            SMap.add (norm name) (value_of_json ~at:(label ^ "." ^ name) decl vj) acc
+            let at = label ^ "." ^ name in
+            if is_timeline_json vj then (
+              match Ir_v0.Checks.find_ci ot.attribuut_granulariteit name with
+              | Some (Some gran) ->
+                  (attrs, SMap.add (norm name) (timeline_of_json ~at ~gran decl vj) tls)
+              | _ -> fail "%s: a timeline value on a non-temporal attribute" at)
+            else (SMap.add (norm name) (value_of_json ~at decl vj) attrs, tls)
         | None -> fail "attribute %S is not declared on %S" name otype_name)
-      SMap.empty
+      (SMap.empty, SMap.empty)
       (obj (field kvs "attributes"))
   in
   let chars =
@@ -145,7 +199,7 @@ let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
       SMap.empty
       (obj (field kvs "roles"))
   in
-  { label; otype = otype_name; attrs; chars; links }
+  { label; otype = otype_name; attrs; chars; links; tls }
 
 let check_role_targets (doc : document) (world : World.t) =
   SMap.iter
@@ -229,14 +283,20 @@ let load_file (doc : document) path : t =
     | _ -> fail "instances: expected a list"
   in
   check_role_targets doc world;
-  let params =
+  let params, param_tls =
     List.fold_left
-      (fun acc (name, vj) ->
+      (fun (params, ptls) (name, vj) ->
         match Ir_v0.Checks.find_ci doc.parameters name with
         | Some p ->
-            SMap.add (norm name) (value_of_json ~at:("parameter " ^ name) p.par_datatype vj) acc
+            let at = "parameter " ^ name in
+            if is_timeline_json vj then (
+              match p.par_granulariteit with
+              | Some gran ->
+                  (params, SMap.add (norm name) (timeline_of_json ~at ~gran p.par_datatype vj) ptls)
+              | None -> fail "%s: a timeline value on a non-granular parameter" at)
+            else (SMap.add (norm name) (value_of_json ~at p.par_datatype vj) params, ptls)
         | None -> fail "parameter %S is not declared" name)
-      SMap.empty
+      (SMap.empty, SMap.empty)
       (obj (field input "parameters"))
   in
   let expected =
@@ -245,7 +305,7 @@ let load_file (doc : document) path : t =
     | _ -> fail "expected: expected a list"
   in
   if expected = [] then fail "empty expectation list";
-  { as_of; world; params; expected }
+  { as_of; world; params; param_tls; expected }
 
 (* --- expectation checking ---------------------------------------------- *)
 
