@@ -259,14 +259,37 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
   let pot_scale = pow10 (attr_decimals ctx ~otype:bt ~attr:ba) in
   let target_scale = pow10 (attr_decimals ctx ~otype:dt ~attr:da) in
   let floor_scale = pow10 (Option.value v.afronding_decimalen ~default:0) in
-  if pot_scale <> target_scale || floor_scale <> target_scale then
-    fault "allocation scale mismatch (pot %d, target %d, floor %d): only the aligned form is translated"
-      pot_scale target_scale floor_scale;
+  let cap_scale =
+    match v.maximum_attribuut with
+    | Some cap -> pow10 (attr_decimals ctx ~otype:dt ~attr:cap)
+    | None -> target_scale
+  in
+  let rest_scale =
+    match v.restant_attribuut with
+    | Some ra -> pow10 (attr_decimals ctx ~otype:bt ~attr:ra)
+    | None -> pot_scale
+  in
+  if
+    pot_scale <> target_scale || floor_scale <> target_scale || cap_scale <> target_scale
+    || rest_scale <> pot_scale
+  then
+    fault
+      "allocation scale mismatch (pot %d, target %d, floor %d, cap %d, rest %d): only the \
+       aligned form is translated"
+      pot_scale target_scale floor_scale cap_scale rest_scale;
   let p = Printf.sprintf "vd%d_" i in
   (* eligible recipients: filled weight; the weightless are excluded and
      surface on the channel (ch. 4.4) *)
   emit ctx "%sgewicht(X,W) :- rol(B,%s,X), is_a(B,%s), val(X,%s,W)." p (str role) (str bt)
     (str rato);
+  (* fail-fast constraints, mirrored on ref/'s faults: integer division
+     is floor only on non-negative operands, and an empty pot is the
+     ch. 4.4 v0 hole ref/ faults on — make clingo fail identically
+     instead of silently diverging *)
+  emit ctx ":- is_a(B,%s), val(B,%s,A), A < 0." (str bt) (str ba);
+  emit ctx ":- %sgewicht(_,W), W < 0." p;
+  emit ctx "%sheeft_pot(B) :- is_a(B,%s), val(B,%s,_)." p (str bt) (str ba);
+  emit ctx ":- is_a(B,%s), rol(B,%s,_), not %sheeft_pot(B)." (str bt) (str role) p;
   emit ctx "inconsistent(%s,X) :- rol(B,%s,X), is_a(B,%s), not %sheeft_gewicht(X)." (str name)
     (str role) (str bt) p;
   emit ctx "%sheeft_gewicht(X) :- %sgewicht(X,_)." p p;

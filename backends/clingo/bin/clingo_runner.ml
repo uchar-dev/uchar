@@ -33,6 +33,11 @@ let () =
         | Unix.WEXITED 127 ->
             prerr_endline "CLINGO NOT FOUND on PATH";
             exit 2
+        | Unix.WEXITED 20 ->
+            prerr_endline
+              "clingo: UNSATISFIABLE — a generated fail-fast constraint fired (negative or \
+               empty allocation operand, ch. 4.4) or the input is not stratified";
+            exit 1
         | Unix.WEXITED c ->
             Printf.eprintf "clingo exited %d:\n%s\n" c out;
             exit 1

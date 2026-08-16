@@ -34,9 +34,26 @@ spec bug.
 - Constructs outside the corpus-exercised subset fault the translator —
   fail fast, never a silent SKIP.
 
-The backend reuses the loader (`uchar-ir-v0`) and, for IO only, the
-case loading and value lexing of `uchar-ref`; nothing of the reference
-evaluator's semantics is linked — the semantics run in clingo.
+The backend reuses the loader (`uchar-ir-v0`) and the case loading and
+value lexing of `uchar-ref` (IO). One piece of genuine semantics is
+deliberately shared, recorded: the connecting-role derivation
+(`Eval.connecting_role`, the ch. 4.1 wart — the IR does not name the
+role, so both executors must derive it identically until the Phase-3
+relations-first-class refactor puts the role binding in the IR). All
+evaluation semantics run in clingo; the hand-written absolute
+expectations keep a shared-derivation bug from ever passing silently.
+
+Recorded limitations:
+
+- Clingo integers are 32-bit and wrap silently; the scaled encoding is
+  exact only while every value and intermediate product stays within
+  ±2³¹ (the allocation forms A×W before dividing). A mismatch fails
+  loud against the absolute expectations, but a bignum/rational
+  encoding is follow-up work for realistic monetary magnitudes.
+- Negative or empty allocation operands make the generated program
+  UNSATISFIABLE by explicit constraints — clingo then fails exactly
+  where `ref/` faults (ch. 4.4), instead of silently diverging by the
+  truncation/floor difference.
 
 ## Run
 

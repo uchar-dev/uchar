@@ -74,6 +74,6 @@ jobs:
       - name: install yojson + zarith
         run: opam install -y yojson zarith
       - name: install clingo
-        run: python3 -m pip install --user clingo && clingo --version
+        run: sudo apt-get update && sudo apt-get install -y clingo && clingo --version
       - name: check-clingo
         run: opam exec -- sh scripts/check-clingo.sh
