@@ -394,8 +394,12 @@ read(tl, d) = the value of the segment with van ≤ d < tot,  if one exists
 - Two representations of "empty here" exist and are **observationally
   equivalent** under `read`: a gap, and an explicit leeg-valued segment
   (only the contributor-skipping rule of ch. 3.5 emits the latter).
-  Semantics are defined over `read`; no operation in this chapter may
-  distinguish the two representations. *v0 mirror note (residual):* v0's
+  Semantics are defined over `read`; no *value-producing* operation in
+  this chapter may distinguish the two representations. (The
+  change-detection rule below is the one representation-sensitive
+  comparison — it compares segment lists, not read-functions; that is
+  what makes it a data-plane rule, not a semantics.) *v0 mirror note
+  (residual):* v0's
   temporal total distinguishes an absent timeline (leeg result) from a
   present-but-segmentless one (0) — see ch. 3.6.
 - Segment-wise equality — same `van`, same `tot`, numerically equal or
@@ -571,7 +575,7 @@ With p1 = {jan: 40}, p2 = {mrt: 20}: jan = 40, **feb = leeg**, mrt = 20;
 the same with the fallback clause: jan = 40, **feb = 0**, mrt = 20. With
 no contributors at all: the empty timeline, fallback or not. Cross-unit:
 contributors in €/mnd summed into a €/jr target, jan p1 = 50, p2 = 10 →
-jan = (50 + 10) × 12 = **720** (restate after the in-unit sum).
+each contributor restated before the fold: 50×12 + 10×12 = **720**.
 
 *v0 mirror note (scope):* only **som** and the scalar-collapsing totaal
 (ch. 3.6) exist over timelines. Minimum, maximum, eerste, and laatste
@@ -620,13 +624,17 @@ Worked examples (absolute, `ref/` tests verbatim; per-month timeline):
   6-month segment of 10 remains → **60,00**, never a negative count.
 - gedurende "> 1000" over value timeline {3 mnd: 1200, 2 mnd: 800}:
   clipped to the 1200-months → 1200×3 = **3600,00** (not 5200).
-- gedurende a characteristic true on [2023-07-01, 2024-02-01), value 10
-  in 2023 and 11 in 2024 → 6×10 + 1×11 = **71,00**; the negated form
-  (complement) → 6×10 + 5×11 = **115,00**.
+- value timeline 10 on [2023-01-01, 2024-01-01) and 11 on
+  [2024-01-01, 2024-07-01); characteristic true on
+  [2023-07-01, 2024-02-01). gedurende the characteristic → 6×10 (jul–dec
+  2023) + 1×11 (jan 2024) = **71,00**; the negated form (complement,
+  within the value timeline's span) → 6×10 (jan–jun 2023) + 5×11
+  (feb–jun 2024) = **115,00**.
 - gedurende "≠ 1000" where the tested timeline has leeg periods: leeg
   **satisfies** ≠ against a filled bound (the ch. 1.2 inequality
-  asymmetry, applied per period): value 100 over jan–jun, tested timeline
-  ≠ 1000 everywhere it is leeg → **500,00**.
+  asymmetry, applied per period): value 100 on [2024-01-01, 2024-07-01);
+  tested timeline 1000 on [2024-01-01, 2024-02-01), leeg elsewhere → ≠
+  1000 holds feb–jun → 5×100 = **500,00**.
 
 *v0 mirror note:* the totaal of a multi-period timeline is refused with
 the grid (ch. 3.2), never mis-weighted as single-period.
@@ -814,16 +822,33 @@ idempotent (ch. 5).
   finite segment list (the time-domain obstacle, as in ch. 3.4's
   broadcast — genuinely under-determined, **OPEN**); (b) a non-`altijd`
   validity window: the ch. 3.10 axis question, OPEN with it; (c) a
-  negated, navigated, or disjunctive condition whose true-periods v0
-  cannot bound — the conjunctive and at-least-one compounds of own
-  single-period characteristics are the v0-lowered set. For (c) the
-  timeline algebra of this chapter *does* define the semantics
-  (complement and union of true-period sets are well-defined); v1
-  specifies them — **delta (promotion of a refusal into semantics)**:
-  the true-periods of a negated characteristic are the complement of its
-  true-periods **within the span the write is clipped to** (ch. 3.10's
-  clip; unbounded complement hits the same time-domain obstacle and
-  stays OPEN outside a clip).
+  condition whose true-periods v0 cannot bound — a negated or navigated
+  characteristic, or a compound containing one; the v0-lowered set is
+  the conjunctive and at-least-one compounds of *own single-period*
+  characteristics (intersection and union of true-period sets — a pure
+  at-least-one disjunction lowers in v0 already; no delta there). Of
+  the refused cases, v1 supplies semantics for exactly one — **delta
+  (promotion of a refusal into semantics)**: the true-periods of a
+  **negated** characteristic are the complement of its true-periods
+  **within the span the write is clipped to** (ch. 3.10's clip); an
+  unbounded complement hits the same time-domain obstacle as (a) and
+  stays OPEN outside a clip, and the *navigated* case stays OPEN with
+  no semantics claimed.
+
+Worked examples (`ref/` tests verbatim):
+
+- *Monotone characteristic write.* Condition: the subject's
+  characteristic `recht` holds on [2024-03-01, 2024-09-01). Written
+  target characteristic: holds on exactly [2024-03-01, 2024-09-01),
+  false everywhere else — no complement is seeded.
+- *Negated characteristic under a clip (the delta).* Window
+  [2024-01-01, 2025-01-01), `recht` as above, condition "niet recht" →
+  written true-periods [2024-01-01, 2024-03-01) ∪
+  [2024-09-01, 2025-01-01).
+- *Idempotence.* The target already holds {[2024-03-01, 2024-09-01)}
+  and the rule computes the same segment list → segment-wise equal → the
+  write is a no-op; computing {[2024-03-01, 2024-10-01)} instead → not
+  equal → a real write (the fixpoint machinery of ch. 5 sees a change).
 - **Anchored targets** compose with the producers via the anchored grid
   (ch. 3.2); v0 additionally refuses the temporal-sum-over-a-set producer
   on an anchored target (a set fold across per-object grids) — recorded,
@@ -844,10 +869,9 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Scalar broadcast into timeline arithmetic / unconditional temporal characteristic | refused (mirrored); OPEN — both need a time domain for unbounded segments |
 | min/max/eerste/laatste over timelines | refused (mirrored); OPEN — the two readings (per-period vs over-time) must be defined apart |
 | §8.4.3 period condition on a temporal target | **specified (delta): the clip, ch. 3.10** |
-| Negated/navigated/disjunctive temporal-characteristic conditions | **specified (delta) within a clipped span, ch. 3.11**; unbounded complement OPEN |
+| Negated temporal-characteristic condition | **specified (delta) within a clipped span, ch. 3.11**; unbounded complement OPEN; the navigated case stays refused/OPEN |
 | Version-validity window on a temporal write | OPEN — the ch. 8 axis decision |
 | Date-valued whole-period comparison | refused (mirrored) |
-| Temporal keys in uniqueness | OPEN at WF-030 (rule layer), noted here for the row-11 file |
 | Gap-vs-absent timeline observability (temporal total: 0 vs leeg) | mirrored residual; part of the ch. 1.4 OPEN decision |
 | Sorted/non-overlapping input invariant | delta candidate (WF rule, data plane), ch. 3.1 |
 | Non-terminating pro-rata stored at 16 digits | v0 residual (normative: exact fraction), ch. 3.7 |
