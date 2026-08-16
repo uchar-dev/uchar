@@ -1,7 +1,7 @@
 # uchar IR — Runtime semantics
 
-*Status: ch. 1–3 are normative **draft** (v0 mirror with tracked deltas and
-OPEN decisions); ch. 4–8 are skeleton. Authority for undocumented behaviour
+*Status: ch. 1–5 are normative **draft** (v0 mirror with tracked deltas and
+OPEN decisions); ch. 6–8 are skeleton. Authority for undocumented behaviour
 still lives in `regelspraak-java` (pinned commit `b85dff3`):
 `runtime/RegelSpraakRuntime.java` — the single shared implementation both
 Drools back-ends call — and the decision records in
@@ -878,14 +878,310 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 
 ---
 
+## 4. Allocation (verdeling)
+
+An allocation distributes one source amount over related recipients. Its
+semantics are stated here as **recurrence equations over recipient
+groups** — one closed definition all three methods instantiate — never as
+"one helper call". Everything is v0 mirror with tracked deltas; the
+chapter's edge-rule table and refusals close the row-17 obligations of
+`CONSTRUCTS.md`.
+
+### 4.1 The form and its recipients
+
+An allocation names a source `(sourceType, sourceAttribute)` — the pot —
+and a target `(targetType, targetAttribute)` — each recipient's share
+(`IR-SPEC.md` ch. 3.2). The **recipient set** of one source instance is:
+every `targetType` instance related to it through the connecting
+relation. *v0 mirror note:* v0 derives that relation as the unique fact
+type relating `targetType` to `sourceType`; no such fact type, or more
+than one, refuses the allocation (marker/skip). **Delta (candidate WF
+rule, rule layer):** v1 should name the connecting role explicitly in the
+IR — the same symbolic-role move as `CONSTRUCTS.md` rows 4/22 — so
+"which relation" is declared, not inferred; recorded here, decided with
+the row-22 delta.
+
+### 4.2 The distribution equations
+
+All three methods are instances of one recurrence over an ordered
+partition `G_1 … G_m` of the recipient set:
+
+```
+pot_1 = A                                     (the source amount)
+for each group G_k in order:
+    raw_i     = pot_k × weight_i / Σ_{j∈G_k} weight_j        (weighted)
+              | pot_k / |G_k|                                (unweighted)
+    share_i   = max(0, floor_d(min(raw_i, max_i)))           (cap, then floor,
+                                                              then clamp)
+    pot_{k+1} = max(0, pot_k − Σ_{i∈G_k} share_i)
+rest = A − Σ_all share_i
+```
+
+with `min(x, leeg) = x` (no cap), `floor_d` = round toward −∞ at the
+declared decimals (identity when no rounding is declared), and negative
+weights counting as 0.
+
+- **Equal shares**: one group, all recipients, unweighted; no cap
+  (ill-formed with one, ch. 4.5). `share_i = A / n`.
+- **Proportional (naar rato)**: one group, the recipients whose weight is
+  **filled** — an empty-weight recipient is excluded and receives no
+  share (it stays leeg, never 0), and the exclusion surfaces as a §9.5
+  error (ch. 5.6); when the eligible weights sum to 0 there is no
+  distribution at all (nothing written, no division by zero).
+- **Ordered (op volgorde)**: groups are the equal-key classes of the
+  ordering attribute, ascending or descending as declared, an **empty key
+  sorting last** (no error — mirrored); each group divides the pot *as it
+  stands at that group's entry* (ties are simultaneous, not sequentially
+  depleted), unweighted or — with the declared tie-break weight —
+  weighted; the recurrence's `max(0, …)` clauses make an exhausted pot
+  give later groups **0** (a real 0, never leeg).
+
+### 4.3 The modalities
+
+- **Maximum** (per-recipient cap): `min(raw_i, max_i)`, before rounding.
+  The capped surplus is **not redistributed and not iterated** — it falls
+  into the rest. An **empty or negative** cap degrades to *uncapped* and
+  surfaces a §9.5 error; a **zero** cap is valid (the recipient gets 0).
+  A cap requires a weighted split (ch. 4.5).
+- **Rounding**: floor at the declared decimals, applied per share
+  **after** the cap; in the ordered method it applies inside the
+  recurrence, so depletion carries capped-and-floored shares forward.
+- **Remainder**: `rest = A − Σ share_i`, written to the declared source
+  attribute. It is a derived value, recomputed whenever the share set
+  changes (a late-created recipient corrects it — ch. 5's freshness);
+  excluded recipients contribute nothing to Σ. Absent a declared
+  remainder target, an under-distributed rest is silently gone —
+  producers SHOULD declare it (WF-025's advisory clause; the legal
+  meaning may genuinely be "the rest lapses").
+
+### 4.4 Empty and edge rules
+
+| Case | Behaviour |
+|---|---|
+| zero recipients | nothing written, no error |
+| empty source amount | **ordered:** no distribution (mirrors the §9.7.6 discipline). **equal/proportional:** v0 has no guard here — a mirror **hole** (the implementation faults). **Delta (candidate):** v1 makes "empty pot ⇒ no distribution" uniform across methods; recorded, not yet a WF rule |
+| one recipient's weight empty | excluded from the split (share stays leeg) + §9.5 error; the others still receive |
+| all eligible weights 0 | no distribution (nothing written) |
+| a negative weight | counts as 0: claims nothing, cannot inflate others beyond the pot |
+| cap empty / negative | uncapped + §9.5 error (never a negative share) |
+| empty ordering key | sorts last, no error |
+| pot exhausted before a group | that group's shares are 0 (real 0, not leeg) |
+
+### 4.5 Well-formedness and refusals
+
+WF-024 (no `COMPLEX` — the v0 placeholder for unrecognised forms is not
+admissible IR), WF-025 (field validity per method: ratio iff weighted
+split; cap only with a ratio — v0 demotes a capped equal-shares to
+COMPLEX, strict reading of §9.7.3; ordering key orderable), WF-026 (at
+most one allocation per written target). *v0 mirror note on WF-026:* the
+two backends genuinely **diverge** on a duplicate-target model — one
+lowers both allocations (last agenda order wins), the other refuses the
+pair — which is precisely why v1 promotes the case to ill-formed rather
+than picking a winner.
+
+### 4.6 Worked examples (absolute; `ref/` tests verbatim)
+
+- Equal shares: 90 over 3 → **30, 30, 30**; 1000 over 2 → **500, 500**.
+- Proportional: 120 over weights 1:2:3 → **20, 40, 60**; a fourth,
+  weightless recipient stays **leeg**.
+- Proportional + floor + rest: 1001 over 3:2, whole euros → raw 600,6 /
+  400,4 → **600, 400**, rest **1**.
+- Proportional + cap + rest: 1200 over 3:1:2, cap 300 each → raw
+  600/200/400 → **300, 200, 300**, rest **400** (surplus not
+  redistributed).
+- Cap degrade: 1200 over 3:2:1, caps {leeg, −5, 300} → the leeg and
+  negative caps degrade to uncapped → **600, 400, 200** + one §9.5
+  error.
+- Ordered depletion: 1200; keys (age) 20, 20, 22 ascending; tie-break
+  weights 3:1 in the age-20 group → group {20}: 900 and 300 (both from
+  the full 1200); pot exhausted → age 22 gets **0**; rest **0**.
+  Descending: age 22 alone takes **1200**, the others **0**.
+- The full recurrence (cap + floor + depletion): 1800; groups by
+  ascending age {22}, {39, 39}, {66, 66}; tie weights 3/2/1/3/1; caps
+  500/500/500/250/250; floor at 0 decimals →
+  22: raw 1800×3/3, cap **500** (pot → 1300);
+  39s: raw 2/3×1300 = 866,67 → cap **500**, and 1/3×1300 = 433,33 →
+  floor **433** (pot → 367);
+  66s: raw 3/4×367 = 275,25 → cap **250**, and 1/4×367 = 91,75 → floor
+  **91**; rest = 1800 − 1774 = **26**.
+
+---
+
+## 5. The evaluation model
+
+A rule set does not run; it **holds**. The meaning of a model over a fact
+base is the least fixpoint of its equations: every rule's target equals
+its computed value, given every other rule's targets. This chapter states
+the operational reading — forward chaining to that fixpoint — and the two
+clauses that make it work, plus what is and is not order-independent.
+Everything is v0 mirror with tracked deltas.
+
+### 5.1 A berekening is an equation
+
+Two clauses turn one-shot rule firing into an equation that holds at the
+fixpoint:
+
+1. **Freshness.** A rule is re-evaluated whenever any value it *reads*
+   changes — its condition's operands and its value expression's inputs
+   alike. A chained computation (`prijs = toeslag − korting`) therefore
+   recomputes when a sibling rule later delivers `toeslag`; without this
+   clause it would have computed once against leeg and gone stale.
+2. **Idempotence.** A write happens only when it *changes* the target:
+   scalar change per the ch. 1.2 assignment rule (empty-over-empty is a
+   no-op, value comparison numerical), timeline change per segment-wise
+   equality (ch. 3.1). The computed value is collapsed to the target's
+   representation (ch. 2.4 write boundary) *before* the comparison —
+   comparing across representations would never find equality and loop
+   forever.
+
+Together: re-evaluate on every input change, write only real changes, and
+the system quiesces exactly when every equation holds. *v0 mirror note:*
+the two backends realise freshness differently (declared read-sets on
+patterns vs class-level reactivity); the semantics above are the
+engine-neutral contract both satisfy, and the reference interpreter may
+simply iterate to the fixpoint.
+
+Worked example (absolute): `basistarief ← leeftijd`, `prijs ←
+basistarief + 5`, input `leeftijd = 42` → **prijs = 47** at the fixpoint
+regardless of which rule the engine tries first (a stale evaluation
+order would have left 5). Chain with three rules and an initialisation:
+inputs make rule B compute `100 − 0,20 × 200 = 60` and rule C
+`max(0, 60 − 10) = 50` → **50**, while the initialisation's default 25
+loses (ch. 5.4).
+
+### 5.2 Confluence — what is order-independent, and what is not
+
+The generated system is **confluent by construction**: every attribute
+has a single writer (WF-026 generalises this discipline for allocations),
+and the read-dependency graph between attributes is acyclic, so the
+fixpoint is unique — rule order, activation order, and fact-insertion
+order do not matter. *v0 mirror note:* v0 warns on a circular reference
+at build time and bounds execution with a fire cap (ch. 5.5); **delta
+(candidate WF rule):** v1 promotes acyclicity of the attribute
+dependency graph to well-formedness — with the deliberate exception of
+creation recursion (ch. 5.5). The mirrored **exceptions** to
+order-independence, each recorded:
+
+- the ~1-ULP order dependence in mixed-unit chained arithmetic (a
+  restatement-before-exact-add double rounding at v0's 16-digit store) —
+  accepted and documented in v0, subsumed in v1 by the exact model of
+  ch. 2 (the reference interpreter has no such dependence; backends must
+  agree on the corpus after rounding);
+- two allocations on one target (ill-formed, WF-026; the v0 backends
+  diverge — ch. 4.5);
+- the ordered allocation's internal depletion order — order-dependent by
+  *definition*, and therefore fully specified by ch. 4.2's recurrence
+  rather than left to the engine.
+
+### 5.3 Negation at the fixpoint
+
+Characteristics are **monotone** within one evaluation: default false,
+only ever set true (the temporal analogue: ch. 3.11's no-complement
+rule). A condition that reads a **negated** characteristic is therefore
+sound only when evaluated *after* every producer of that characteristic
+— and the producers' own input chains — have quiesced: a negation
+consumer that fires in the transient window derives from "not yet true",
+and its write persists. The evaluation model requires: **negated reads
+of derived characteristics evaluate at the fixpoint of the positive
+part.** *v0 mirror note:* v0 realises exactly one such boundary (it
+sinks negation consumers below the entire positive computation — the
+"salience −1" of the founding review); that is sound precisely when one
+level suffices, i.e. when the negation dependencies are stratifiable
+with a single negative stratum. The general condition — stratification
+as IR well-formedness, covering nested and chained negation — is ch. 6
+(`CONSTRUCTS.md` row 6; the ASP hand exercises show the strata being
+read off the statute text).
+
+### 5.4 Initialisation
+
+An initialisation (§9.6) writes **only when the target is empty** — a
+guard on the fact base, not an ordering device. Consequences, all
+order-independent: a computed value from an ordinary rule **wins** over
+an initialisation whichever fires first (computed-first: the
+initialisation no longer matches; initialisation-first: the unguarded
+computation overwrites); a target supplied with the input facts is left
+standing; an initialisation alone fills the empty target. Worked example
+(absolute): initialisation 25 beside the ch. 5.1 chain → **50**; the
+initialisation alone → **25**. Phase 4 restates this guard as the
+defeasible default it is (`CONSTRUCTS.md` row 7); the operational
+account above is what it must reproduce.
+
+### 5.5 Creation in the loop
+
+An object creation must be a function of the **fact base**, not of the
+fire count: re-evaluating it against the same facts may not mint a
+duplicate. The idempotence contract (v0 realises it with two guards —
+a linked-instance check where the created object references its
+subject, else a per-(rule, subject) creation marker): **one creation per
+rule per subject** unless the fact base itself changed the question.
+Relation creation (fact creation) is naturally idempotent — creating an
+already-present link is a no-op write.
+
+**Recursive creation** (the dialect rule group, `IR-SPEC.md` ch. 3.9)
+deliberately breaks the acyclicity of ch. 5.2 in one controlled way: a
+creation whose output feeds its own condition advances **exactly one
+generation per instance**, and the chain runs to its fixpoint within
+the single evaluation. Termination is the author's obligation — every
+creation in a recursive group MUST be conditional (WF-033) — and the
+runtime's: a bounded fire budget turns a non-terminating set into a
+**fault**, never a silent truncation. Worked example (absolute): a
+chain "person aged n creates a linked person aged n + 1, while n < 5"
+from age 1 terminates with **5 instances**, both v0 backends, no cap
+hit.
+
+### 5.6 The error channel, operationally
+
+§9.5 inconsistencies are **facts on a channel**, not exceptions: the
+computation degrades locally (ch. 1.2's error-empty rules) and the error
+surfaces beside the result. Operational clauses, mirrored:
+
+- Producers: violated consistency assertions, uniqueness violations
+  (a duplicate non-empty key), the allocation degrades of ch. 4.3/4.4,
+  division by empty (dividend filled), a negative radicand, an empty
+  variable-start anchor (ch. 3.2).
+- Inserts are **idempotent** (one error fact per rule × subject, however
+  often re-evaluated) and **validity-gated**: a version whose window
+  excludes the evaluation date raises nothing (the version simply does
+  not apply — ch. 3.10's gate).
+- The channel is **readable**: "regelversie X is inconsistent" is an
+  existential test over the channel for X — it has no subject of its
+  own, so one flag makes the reading rule applicable to every instance
+  of *its* subject. Reading makes the channel part of the dependency
+  graph: a channel-reading rule is downstream of every producer for X
+  (ch. 5.2/5.3 apply). An unknown rule name in the test is ill-formed
+  (`CONSTRUCTS.md` row 30's split verdict; v0 declines it).
+- "regelversie X **is gevuurd**" is declined at the pinned v0 commit
+  and remains a v1 **non-goal** per row 30 (no observable execution
+  record). *Mirror note:* the toolchain has since implemented an opt-in
+  firing marker past the pin — the row-30 verdict is the maintainer's
+  to reconfirm at the next pin bump; this spec does not adopt it.
+
+### 5.7 The evaluation session
+
+The operational happy path both backends share, and the shape `ref/`
+implements:
+
+1. fix the **evaluation date** (one date; the single axis of PLAN §9,
+   decision 2 — absent when the model is time-free);
+2. bind **parameter values** for that date (vintage selection is
+   fail-fast — a gap or overlap is an error, never a default; specified
+   in ch. 8);
+3. insert the **input facts**;
+4. evaluate to the **fixpoint** (ch. 5.1–5.5; a bounded budget turns
+   divergence into a fault);
+5. read the **end state**: all instances with their attributes,
+   characteristics, created objects and relations, and the error
+   channel. Engine-internal control facts (creation markers and kin) are
+   not part of the observable outcome.
+
+Onopgelost nodes take no part in evaluation and must survive into the
+report (WF-044); an engine that reaches one fails that rule's evaluation
+observably rather than guessing.
+
+---
+
 ## Chapters (planned)
 
-4. **Allocation (verdeling).** Equal shares, pro-rata, and ordered group
-   depletion as recurrence equations over groups — not "one helper call" —
-   including maximum, rounding-floor, and the undistributed remainder.
-5. **The evaluation model.** Forward chaining to fixpoint; freshness and
-   idempotence of writes (the change-detection rule ch. 1.2 relies on);
-   what "a berekening is an equation" means operationally.
 6. **Stratification.** Negation over derived characteristics requires
    stratification — a well-formedness condition on the IR (with a WF
    rule), not an engine agenda trick.
