@@ -1,6 +1,6 @@
 # PLAN — Toward a Normative, Engine-Neutral IR for Machine-Executable Law
 
-*Status: draft v4 · 2026-08-15 · lives in the `uchar` monorepo · companion to
+*Status: draft v5 · 2026-08-16 · lives in the `uchar` monorepo · companion to
 `IR-REVIEW.md` (same directory).*
 
 *Changes in v4 relative to v3: adds §5 (where things live: the monorepo and
@@ -11,6 +11,13 @@ explicit in Phase 1; hardens §8 (held-out split physically elsewhere,
 enforcement mechanism for protected files, corpus-synthesis circularity,
 session-end bookkeeping); extends §9 with the corpus-provenance decision and
 two new open decisions (license, visibility).*
+
+*Changes in v5 relative to v4: §9 decisions 7, 9 and 10 are taken (empty
+frozen to the mirror + whitelist; Apache-2.0 + CC-BY-4.0; public at latest
+at the Phase-1 exit); full-Catala expressibility becomes the Phase-5 goal
+(general folds and function values planned core, `CONSTRUCTS.md` rows
+10/36); the allocation edge holes and the row-30 "is gevuurd" verdict are
+decided in `RUNTIME-SEMANTICS.md`.*
 
 ## 1. Vision and background
 
@@ -379,7 +386,9 @@ exposed — exactly the feedback a second frontend is for.
 Known fits and frictions from the analysis: ConflictError maps well onto
 §9.5; money/rationals/dates/durations fit our exact arithmetic; scopes with
 rebound inputs are real design work (object type + object creation +
-navigation); general folds and function values will remain a subset; and on
+navigation); general folds and function values are planned kernel
+additions, designed at this phase — full-Catala expressibility is the goal,
+not a subset stance (`CONSTRUCTS.md` rows 10/36); and on
 time the mismatch runs the other way — our IR is richer (timelines, vintages)
 than Catala, which handles law versions mainly at source level. Catala's
 evaluation model is weaker than our fixpoint forward-chaining, and compiling
@@ -512,21 +521,25 @@ behavioural difference, one semantic node with a presentation tag for
 verbalisation; two nodes without a meaning difference are surface syntax
 sneaking into the core. (5) The §9.10 rule group stays in the RegelSpraak
 dialect, out of the core. (6) Metamodel names go language-neutral/English;
-declared domain names stay as-authored. (7) "Empty = 0" is opened as a design
-question in the spec, with the cases where empty must *not* be zero, before
-it is frozen as behaviour.
+declared domain names stay as-authored. (7) **Decided (2026-08-16):** the
+empty-value discipline is frozen to the documented mirror with its coalesce
+whitelist (`RUNTIME-SEMANTICS.md` ch. 1.2–1.4); empty-as-unknown is a
+non-goal; numeric-zero division routes to the §9.5 channel in v1; the
+open/closed-world split is expressed through Phase-4 defaults, not operator
+behaviour.
 
 New in v4. (8) **Decided:** the published corpus is rights-free by
 construction — the Jutterswet (plus its quantitative extensions) replaces
 TOKA as the golden corpus, and one statute-based case (art. 11 Auteurswet;
 candidate: zorgtoeslag) joins for realism; no ©-Belastingdienst material
-enters the uchar repos. Two decisions remain genuinely open: (9) the license
-— likely a code license for verifier/interpreter/backends and a documentation
-license for spec and corpus text (e.g. Apache-2.0 + CC-BY), to be chosen
-before the repo goes public; until then all rights reserved. (10) visibility
-timing — public from day one versus private until the Phase-1 exit; note that
-branch protection on the free org plan requires a public repo, so §8's
-enforcement mechanism argues for public early.
+enters the uchar repos. (9) **Decided
+(2026-08-16):** Apache-2.0 for code (verifier, reference interpreter,
+backends, gate scripts) and CC-BY-4.0 for the specification and corpus
+text; the license files live at the repository root. (10) **Decided
+(2026-08-16):** public at latest at the Phase-1 exit — §8's enforcement
+mechanism (branch protection requires a public repo on the free org plan)
+argues for flipping early, and the rights hygiene (gate 1, the TOKA
+tripwire) is in place.
 
 ## 10. Rough effort
 

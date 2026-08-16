@@ -132,11 +132,17 @@ is empty (§9.6) — specified as a defeasible default in ch. 7
 > aantal over an empty *collection* is a different thing: the identity
 > element of a dedicated rule over sets, not empty-*value* coalescing.)
 
-### 1.4 OPEN — the "empty = 0" design decision (PLAN §9, decision 7)
+### 1.4 Decided — the "empty = 0" design decision (PLAN §9, decision 7)
 
-Ch. 1.2 is the **mirror**, not the frozen decision. Whether a missing value
-is *zero* or *unknown* is a substantive legal choice. The spec keeps it
-open until the maintainer freezes it, with these inputs on the table:
+**Decided (maintainer, 2026-08-16):** the ch. 1.2 mirror, with the
+ch. 1.3 coalesce whitelist, is frozen as the v1 semantics.
+Empty-as-unknown (FEEL-style null propagation) is a non-goal. The
+open/closed-world split is not expressed in operator behaviour:
+legislation fills missing values explicitly through the Phase-4 default
+layer (ch. 7, `CONSTRUCTS.md` row 7). And v1 routes division by a
+genuine numeric zero into the §9.5 channel, uniform with division by
+empty — a tracked delta against v0's hard fault. The inputs that were
+on the table, kept as the decision's rationale:
 
 1. **The must-not-be-zero list** (from the mirror itself): verminderd-met's
    left operand; an empty *divisor* under a non-empty dividend (leeg ÷
@@ -163,8 +169,9 @@ open until the maintainer freezes it, with these inputs on the table:
    yield empty *plus* an observable §9.5 inconsistency (the Fout pattern —
    the value degrades, the error surfaces). Division by a genuine numeric
    zero is a hard runtime error in v0 (and a literal `1/0` is rejected at
-   parse time). OPEN: whether v1 routes numeric-zero division into the
-   same inconsistency channel or keeps it a hard fault.
+   parse time). Decided: v1 routes numeric-zero division into the same
+   inconsistency channel; the v0 hard fault and the parse-time rejection
+   remain the mirror.
 
 ---
 
@@ -218,7 +225,8 @@ the fractional-exponent domain or mandates a decimal-precision minimum.
 | wortel | principal square root; mandatory explicit rounding follows (§13.4.17.13) | √9 = 3; √2 afgerond op 2 (rekenkundig) = 1,41 |
 | absolute waarde | magnitude; type (unit, precision, sign) passes through | \|−3/7\| = 3/7 |
 
-Division by numeric zero: hard fault (ch. 1.4 point 4). A rational literal
+Division by numeric zero: hard fault in v0; decided for v1: it routes
+into the §9.5 channel (ch. 1.4 point 4). A rational literal
 with denominator zero is rejected at parse time.
 
 ### 2.3 Result precision (static typing)
@@ -969,13 +977,13 @@ boundary.
 | Case | Behaviour |
 |---|---|
 | zero recipients | nothing written, no error |
-| empty source amount | **ordered:** no distribution (mirrors the §9.7.6 discipline). **equal/proportional:** v0 has no guard here — a mirror **hole** (the implementation faults). **Delta (candidate):** v1 makes "empty pot ⇒ no distribution" uniform across methods; recorded, not yet a WF rule |
+| empty source amount | **ordered:** no distribution (mirrors the §9.7.6 discipline). **equal/proportional:** v0 has no guard here — a mirror **hole** (the implementation faults). **Delta (decided, v1):** "empty pot ⇒ no distribution" is uniform across methods; the rule-layer artifacts land with the v1 schema |
 | weight empty — proportional | excluded from the split (share stays leeg) + §9.5 error; the others still receive |
 | weight empty — ordered tie-break | assigned a real **0** + §9.5 error (ch. 4.2) |
 | all eligible weights 0 — proportional | no distribution (nothing written) |
 | all weights 0 in an ordered tie group | every member assigned **0** (ch. 4.2) |
 | a negative weight — ordered tie-break | counts as 0: claims nothing, cannot inflate others beyond the pot |
-| a negative weight — proportional | **v0 hole**: unclamped — it enters the weight sum and the product, so a negative share and over-distribution past the pot are possible. **OPEN:** v1 either rejects negative weights as ill-formed data or adopts the ordered method's clamp uniformly; the ch. 4.2 recurrence deliberately does not bless the v0 behaviour |
+| a negative weight — proportional | **v0 hole**: unclamped — it enters the weight sum and the product, so a negative share and over-distribution past the pot are possible. **Decided (v1):** the ordered method's clamp is adopted uniformly — a negative weight counts as 0 + §9.5 error; the ch. 4.2 recurrence deliberately does not bless the v0 behaviour |
 | cap empty / negative | uncapped + §9.5 error (never a negative share) |
 | empty ordering key | sorts last, no error |
 | pot exhausted before a group | that group's shares are 0 (real 0, not leeg) |
@@ -1003,8 +1011,9 @@ than picking a winner.
   600/200/400 → **300, 200, 300**, rest **400** (surplus not
   redistributed).
 - Cap degrade: 1200 over 3:2:1, caps {leeg, −5, 300} → the leeg and
-  negative caps degrade to uncapped → **600, 400, 200** + one §9.5
-  error.
+  negative caps degrade to uncapped → **600, 400, 200** + two §9.5
+  errors (one per degraded cap — the rule × subject discipline of
+  ch. 5.6).
 - Ordered depletion: 1200; keys (age) 20, 20, 22 ascending; tie-break
   weights 3:1 in the age-20 group → group {20}: 900 and 300 (both from
   the full 1200); pot exhausted → age 22 gets **0**; rest **0**.
@@ -1195,9 +1204,12 @@ surfaces beside the result. Operational clauses, mirrored:
   consequence (a no-change write still counts as "fired"; only a
   reference to a non-instrumentable target declines). The pinned
   *decision records* still describe it as declined — they are stale, and
-  `CONSTRUCTS.md` row 30's non-goal verdict rests on them. **OPEN (row
-  30, maintainer):** whether v1 admits an execution-record predicate at
-  all; this spec records the mirror and decides nothing.
+  `CONSTRUCTS.md` row 30's non-goal verdict rests on them. **Decided (row
+  30):** v1 admits it only as a declarative model predicate — "the
+  condition of X holds at the fixpoint" — in the RegelSpraak dialect,
+  never the core; no execution record exists in the model. Edge cases
+  where the pin's firing-marker lowering diverges from the fixpoint
+  reading route to differential triage.
 
 Worked example (channel read, `ref/` test verbatim): consistency rule
 "controle saldo" asserts saldo ≥ 0 over Rekeninghouder; a second rule
