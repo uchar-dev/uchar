@@ -1,12 +1,14 @@
 # ASP translation
 
-*Status: hand exercise (Phase-1 early start of the Phase-3 deliverable, per
-`PLAN.md` §6: "start the hand translation of one representative rule during
-Phase 1"). Scope: Jutterswet art. 1 (verkrijging) and the art. 2 default
-(strandvondeling), in the v1 reading of
-`corpus/jutterswet/versiegeschiedenis.md`. The systematic translation of
-the core IR is the Phase-3 deliverable; this chapter records the first
-contact between the IR's constructs and a semantically alien target, and
+*Status: hand exercises (Phase-1 early start of the Phase-3 deliverable,
+per `PLAN.md` §6: "start the hand translation of one representative rule
+during Phase 1"). Scope: exercise 1 (ch. 1–5) — Jutterswet art. 1
+(verkrijging) and the art. 2 default (strandvondeling), in the v1 reading
+of `corpus/jutterswet/versiegeschiedenis.md`; exercise 2 (ch. 6) — the
+wet-v2 layered exclusion (art. 4 gelaagd + art. 4bis), where
+stratification becomes load-bearing. The systematic translation of the
+core IR is the Phase-3 deliverable; this document records the first
+contacts between the IR's constructs and a semantically alien target, and
 feeds its findings into the delta column of `CONSTRUCTS.md`.*
 
 ## 1. Source and IR view
@@ -210,9 +212,242 @@ the statute's intent, reproduced under stable-model semantics.
    means false; the corpus's "world facts are open" register needs the
    row-18 empty/unknown decision before this translation can respect it.
 
-## 6. Deliberately out of scope
+## 6. Hand exercise 2: the art. 4 exception ladder
 
-Art. 3–5 (the penning side, the exception ladder, hardheid), art. 6 and
-the v3 temporalisation, quantitative machinery, and any systematic
-core-IR-to-ASP mapping — all Phase-3 work. This chapter grows with each
-hand exercise until that systematic mapping replaces it.
+Source: `corpus/jutterswet/wet-v2.md` — art. 3 (penningrecht), art. 4
+(uitsluiting, gelaagd: "dit geldt niet indien …; dat laatste geldt weer
+niet indien …"), art. 4bis (schorsing). The test case is the Marrit
+dossier (`corpus/jutterswet/dossiers.md`) — the only dossier that walks
+the whole ladder — plus four synthetic single-difference variants. In IR
+terms this exercises:
+
+| IR construct | Where it appears here | `CONSTRUCTS.md` row |
+|---|---|---|
+| Negation over a derived characteristic | "recht" negatively depends on the derived "uitgesloten" | 6 |
+| Exception layering (exception-on-exception) | the art. 4 ladder itself | 8 |
+| Stratification as a WF condition | the four-stratum negative dependency chain below | 6 |
+| Parallel exclusion grounds | art. 4bis "evenmin" next to the art. 4 ladder | 8, 19 |
+| Numeric comparison in a condition | "ten minste twaalf vondsten" | 1 |
+
+### 6.1 The translation, construct by construct
+
+- **The ladder is layered negation-as-failure over *derived* exception
+  predicates** — the standard abnormality pattern. Each textual layer
+  becomes one rule; each "geldt niet indien" becomes one `not` over the
+  next layer's head:
+
+  - layer 0: excluded on a refused raapvergunning, *unless* the layer-1
+    exception holds;
+  - layer 1: the exception holds when the refusal is herroepen, *unless*
+    the layer-2 exception holds;
+  - layer 2: the herroeping is vervallen (an input fact; deeper layers
+    would continue the same pattern).
+
+  Contrast exercise 1: there the single-layer art. 2 default negated an
+  *input* predicate, and stratification was trivially given. Here the
+  negated predicates are **derived**, so stratification does real work.
+- **The negative dependency chain is stratified by construction**:
+  `recht_op_penning` ← ¬`uitgesloten` ← ¬`uitzondering_art4` ←
+  ¬`uitzondering_herroeping`, four strata, no cycle through negation.
+  This is exactly the condition `CONSTRUCTS.md` row 6 promotes to a WF
+  rule: the text's "geldt niet / geldt weer niet" nesting *is* the
+  stratification order, read off the statute.
+- **The compiled representation** flattens the ladder into classical
+  cases over input facts (refused-and-not-herroepen, or
+  refused-and-herroepen-and-vervallen). Over complete inputs the two are
+  equivalent by construction: unfolding layer 1 into layer 0 gives
+  `uitgesloten ⟺ geweigerd ∧ ¬(herroepen ∧ ¬vervallen)`, whose
+  distribution is precisely the two compiled cases. The equivalence is
+  additionally *shown* under clingo by a difference test (run 3): any
+  subject on which the two disagreed would surface as `verschil/1`.
+- **Art. 4bis is a parallel ground, not a ladder rung.** "Evenmin"
+  attaches a second, independent exclusion next to art. 4; it is
+  translated as a separate `not geschorst_raapvergunning` in the art. 3
+  rule, deliberately *not* as a case of `uitgesloten` — a suspension is
+  not subject to the herroeping ladder.
+- **"Ten minste twaalf vondsten"** is a plain arithmetic guard
+  (`N >= 12`); the art. 5 hardheid variant (twaalf → zes) is out of
+  scope here (ch. 7).
+
+### 6.2 The programs
+
+`ladder.lp` — the layered representation:
+
+```prolog
+% Jutterswet wet-v2, art. 3 + art. 4 (gelaagd) + art. 4bis — clingo.
+
+% Art. 3 (penningrecht): recht op de jutterspenning heeft de erkende jutter
+% van onbesproken juttersgedrag met ten minste twaalf aangemelde vondsten.
+recht_op_penning(P) :-
+    erkend_jutter(P),
+    onbesproken_juttersgedrag(P),
+    aantal_vondsten(P, N), N >= 12,
+    not uitgesloten(P),
+    not geschorst_raapvergunning(P).
+
+% Art. 4 (uitsluiting, gelaagd) — de tekststructuur een-op-een:
+% hoofdregel:            geen recht bij een geweigerde raapvergunning,
+% uitzondering:          dit geldt niet indien de weigering is herroepen,
+% uitzondering daarop:   dat laatste geldt weer niet indien de herroeping
+%                        is vervallen.
+uitgesloten(P) :-
+    raapvergunning_geweigerd(P),
+    not uitzondering_art4(P).
+
+uitzondering_art4(P) :-
+    weigering_herroepen(P),
+    not uitzondering_herroeping(P).
+
+uitzondering_herroeping(P) :-
+    herroeping_vervallen(P).
+
+#show recht_op_penning/1.
+#show uitgesloten/1.
+
+% Invoerpredicaten (mogen leeg zijn zonder waarschuwing).
+#defined erkend_jutter/1. #defined onbesproken_juttersgedrag/1.
+#defined aantal_vondsten/2. #defined raapvergunning_geweigerd/1.
+#defined weigering_herroepen/1. #defined herroeping_vervallen/1.
+#defined geschorst_raapvergunning/1.
+```
+
+`gecompileerd.lp` — the compiled representation plus the difference test:
+
+```prolog
+% De gecompileerde lezing van art. 4: de ladder platgerekend tot twee
+% klassieke gevallen over invoerfeiten (weigering zonder herroeping, of
+% weigering met vervallen herroeping).
+uitgesloten_c(P) :-
+    raapvergunning_geweigerd(P),
+    not weigering_herroepen(P).
+uitgesloten_c(P) :-
+    raapvergunning_geweigerd(P),
+    weigering_herroepen(P),
+    herroeping_vervallen(P).
+
+% Divergentietoets: een verschil tussen de gelaagde en de gecompileerde
+% representatie zou hier zichtbaar worden.
+verschil(P) :- uitgesloten(P), not uitgesloten_c(P).
+verschil(P) :- uitgesloten_c(P), not uitgesloten(P).
+#show verschil/1.
+#defined uitgesloten/1. #defined uitgesloten_c/1.
+```
+
+`marrit.lp` — the corpus dossier:
+
+```prolog
+% Marrit (corpus/jutterswet/dossiers.md): erkend jutter; veertien vondsten;
+% onbesproken juttersgedrag uitdrukkelijk vastgesteld; twee jaar geleden een
+% raapvergunning geweigerd; vorig jaar de weigering herroepen; over verval
+% van de herroeping is niets vastgesteld.
+erkend_jutter(marrit).
+onbesproken_juttersgedrag(marrit).
+aantal_vondsten(marrit, 14).
+raapvergunning_geweigerd(marrit).
+weigering_herroepen(marrit).
+```
+
+`varianten.lp` — the ladder rung by rung:
+
+```prolog
+% De ladder laagsgewijs: vier synthetische varianten van hetzelfde dossier.
+% w: alleen weigering.               wh: weigering, herroepen.
+% whv: weigering, herroepen, vervallen.   s: geschorst (art. 4bis).
+erkend_jutter(w).   onbesproken_juttersgedrag(w).   aantal_vondsten(w, 14).
+raapvergunning_geweigerd(w).
+
+erkend_jutter(wh).  onbesproken_juttersgedrag(wh).  aantal_vondsten(wh, 14).
+raapvergunning_geweigerd(wh). weigering_herroepen(wh).
+
+erkend_jutter(whv). onbesproken_juttersgedrag(whv). aantal_vondsten(whv, 14).
+raapvergunning_geweigerd(whv). weigering_herroepen(whv).
+herroeping_vervallen(whv).
+
+erkend_jutter(s).   onbesproken_juttersgedrag(s).   aantal_vondsten(s, 14).
+geschorst_raapvergunning(s).
+```
+
+### 6.3 Runs and expected results
+
+Executed with the clingo 5.8.2 binary; stratified, so every run has
+exactly one stable model. Answer sets verbatim, timing trimmed (ch. 4
+convention).
+
+**Run 1 — Marrit:** `clingo ladder.lp marrit.lp`
+
+```
+Answer: 1
+recht_op_penning(marrit)
+SATISFIABLE
+```
+
+Recht — the weigering would exclude, the herroeping lifts the exclusion,
+and of verval nothing is established: the layer-1 exception stands. The
+v0 statute (flat art. 4) would have excluded her; the layered v2 text
+exists to decide this dossier correctly, and does.
+
+**Run 2 — the ladder rung by rung:** `clingo ladder.lp varianten.lp`
+
+```
+Answer: 1
+recht_op_penning(wh) uitgesloten(w) uitgesloten(whv)
+SATISFIABLE
+```
+
+`w` (weigering alone) → uitgesloten, no recht; `wh` (herroepen) →
+recht; `whv` (herroeping vervallen) → uitgesloten again, no recht; `s`
+(geschorst, art. 4bis) → no recht *without* being `uitgesloten` — the
+parallel ground blocks art. 3 directly and never touches the ladder.
+
+**Run 3 — the difference test:**
+`clingo ladder.lp gecompileerd.lp marrit.lp varianten.lp`
+
+```
+Answer: 1
+recht_op_penning(wh) recht_op_penning(marrit) uitgesloten(w) uitgesloten(whv)
+SATISFIABLE
+```
+
+`verschil/1` is absent over all five subjects: the layered and compiled
+representations agree, as the ch. 6.1 unfolding argument says they must.
+
+### 6.4 Findings (fed into `CONSTRUCTS.md`)
+
+1. **Exception-on-exception is layered NAF over derived exception
+   predicates** (rows 6/8). One rule per textual layer, one `not` per
+   "geldt niet"; the pattern extends to any depth without touching
+   earlier layers. The compiled form needs the full DNF recomputed at
+   every amendment — the layered form is the amendable one, which is
+   precisely why wet-v2 is written that way.
+2. **Stratification is now load-bearing** (row 6). Exercise 1's only
+   negation sat on an input predicate; here a four-stratum negative
+   chain over *derived* predicates decides every outcome. The WF
+   condition row 6 promises ("negation over derived characteristics
+   requires stratification") is checkable on the IR as acyclicity of the
+   negative dependency graph — the statute's own nesting supplies the
+   strata.
+3. **What the ladder demands of the Phase-4 default model** (row 8): a
+   priority *chain* (rule < exception < exception-on-exception), not
+   just pairwise defaults — Catala's exception trees express exactly
+   this nesting, and the stable-model reading here gives the same
+   answers. No conflict arises anywhere in the ladder (the layers are
+   linearly ordered), so the §9.5 inconsistency channel is not
+   exercised; over-determination needs *unordered* simultaneous
+   exceptions, which this statute deliberately avoids.
+4. **Parallel grounds compose by conjunction of NAFs** (rows 8/19).
+   "Evenmin" (art. 4bis) is a second independent blocker, not a ladder
+   rung: `not uitgesloten, not geschorst`. Keeping it out of
+   `uitgesloten` preserves the ladder's meaning (a suspension cannot be
+   "herroepen" away).
+5. **The two representations diverge in structure, not in models** —
+   and only the layered one mirrors the statute's amendment history. For
+   the IR this is an argument to make exception layering first-class
+   (row 8) rather than compiling it away in the frontend: the compiled
+   form erases exactly the structure a later amendment needs.
+
+## 7. Deliberately out of scope
+
+Art. 5 (hardheid), art. 6, the v3 temporalisation, quantitative
+machinery beyond the art. 3 threshold, and any systematic core-IR-to-ASP
+mapping — all Phase-3 work. This document grows with each hand exercise
+until that systematic mapping replaces it.
