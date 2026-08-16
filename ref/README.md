@@ -59,5 +59,6 @@ faults with file/position context — never a silent fallback.
   timeline algebra (ch. 3), navigation paths, dimension cells, filters,
   variable/constant refs, object and fact creation, day kinds, scoped
   uniqueness, uniqueness unions, rule groups, the "is gevuurd" test
-  (row 30 of the constructs matrix is OPEN), and vintage-selected
+  (row 30: decided as a dialect-only fixpoint predicate, not yet
+  implemented), and vintage-selected
   parameters (ch. 8).

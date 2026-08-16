@@ -86,8 +86,9 @@ recorded as such.
 | leeg / gevuld predicates | absence — including a failed to-one navigation — **is** leeg = waar | "de leeftijd van zijn partner is leeg" is waar for a partnerless person |
 
 Note the deliberate asymmetry: numeric equality treats two empties as
-equal; non-numeric equality does not. Both are mirrored; whether v1 keeps
-the asymmetry is part of the OPEN decision in ch. 1.4.
+equal; non-numeric equality does not. Both are mirrored, and the ch. 1.4
+decision keeps them: the equality rules where empty carries meaning are
+on its must-preserve list.
 
 **Aggregations**
 
@@ -611,8 +612,9 @@ segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
 - An existing but **segmentless** timeline totals to **0** (the identity
   of a sum over nothing); an **absent** timeline (the member itself leeg)
   totals to **leeg**. *v0 mirror note:* this gap-vs-absent distinction is
-  the ch. 3.1 residual, mirrored as found; whether v1 keeps it is part of
-  the ch. 1.4 OPEN decision.
+  the ch. 3.1 residual, mirrored as found; whether v1 keeps it stays open
+  with the ch. 3.12 timeline decisions — the ch. 1.4 freeze covers the
+  scalar discipline, not this temporal residual.
 - **Period selection ("gedurende …")** is clipping, not re-bucketing: the
   value timeline is intersected with the selecting condition's
   true-periods (a boolean timeline: a characteristic's true-periods, its
@@ -880,7 +882,7 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Negated temporal-characteristic condition | **specified (delta) within a clipped span, ch. 3.11**; unbounded complement OPEN; the navigated case stays refused/OPEN |
 | Version-validity window on a temporal write | OPEN — the ch. 8 axis decision |
 | Date-valued whole-period comparison | refused (mirrored) |
-| Gap-vs-absent timeline observability (temporal total: 0 vs leeg) | mirrored residual; part of the ch. 1.4 OPEN decision |
+| Gap-vs-absent timeline observability (temporal total: 0 vs leeg) | mirrored residual; stays OPEN here — the ch. 1.4 freeze covers the scalar discipline, not this temporal residual |
 | Sorted/non-overlapping input invariant | delta candidate (WF rule, data plane), ch. 3.1 |
 | Non-terminating pro-rata stored at 16 digits | v0 residual (normative: exact fraction), ch. 3.7 |
 

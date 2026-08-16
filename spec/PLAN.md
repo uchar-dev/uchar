@@ -534,8 +534,9 @@ TOKA as the golden corpus, and one statute-based case (art. 11 Auteurswet;
 candidate: zorgtoeslag) joins for realism; no ©-Belastingdienst material
 enters the uchar repos. (9) **Decided
 (2026-08-16):** Apache-2.0 for code (verifier, reference interpreter,
-backends, gate scripts) and CC-BY-4.0 for the specification and corpus
-text; the license files live at the repository root. (10) **Decided
+backends, gate scripts — and the JSON schemas, which ship as functional
+artifacts) and CC-BY-4.0 for the specification and corpus text; the
+license files live at the repository root. (10) **Decided
 (2026-08-16):** public at latest at the Phase-1 exit — §8's enforcement
 mechanism (branch protection requires a public repo on the free org plan)
 argues for flipping early, and the rights hygiene (gate 1, the TOKA

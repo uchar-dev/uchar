@@ -32,7 +32,11 @@ line bumped with a one-line v5 change note.
 
 May touch: `spec/RUNTIME-SEMANTICS.md`, `spec/CONSTRUCTS.md`,
 `spec/PLAN.md`, `LICENSE` (new), `LICENSE-CC-BY-4.0` (new), `README.md`
-(new, root), `backlog/**`.
+(rewrite of the existing root README: license section + status refresh,
+prior content restored), `backlog/**`; in `ref/` only decision-locking
+text: the WV-4.6-e erratum comment + assertion (= 2, behaviour ref/
+already exhibits) and the two stale "row 30 is OPEN" strings
+(`ref/test/test_ref.ml`, `ref/lib/eval.ml`, `ref/README.md`).
 
 Out of scope: behaviour changes in `ref/` or the verifier (the decided
 v1 deltas take effect with the v1 schema work, tracked in CONSTRUCTS);

@@ -325,10 +325,9 @@ let () =
   in
   assigned "WV-4.6-d" s [ ("a", Some "300"); ("b", Some "200"); ("c", Some "300") ];
   check "WV-4.6-d-rest" (rest_is r "400");
-  (* 4.6-e cap degrade: empty and negative caps degrade to uncapped.
-     The prose says "one §9.5 error"; ch. 4.3 + ch. 5.6 (one fact per
-     rule × subject) imply one per degraded cap, i.e. two — flagged as an
-     erratum candidate; the test requires at least one. *)
+  (* 4.6-e cap degrade: empty and negative caps degrade to uncapped,
+     with two §9.5 errors — one per degraded cap (the decided ch. 4.6
+     erratum; ch. 4.3 + ch. 5.6's rule × subject discipline). *)
   let errs = ref 0 in
   let s, _ =
     alloc ~err:(fun ~id:_ _ -> incr errs) Naar_rato "1200"
@@ -339,7 +338,7 @@ let () =
       ]
   in
   assigned "WV-4.6-e" s [ ("a", Some "600"); ("b", Some "400"); ("c", Some "200") ];
-  check "WV-4.6-e-err" (!errs >= 1);
+  check "WV-4.6-e-err" (!errs = 2);
   (* 4.6-f ordered depletion, ascending then descending *)
   let recs () =
     [

@@ -319,7 +319,8 @@ let rec eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
   | Regelversie { regel; inconsistent = true; _ } ->
       World.channel_has world ~rule:(req "Regelversie.regel" regel)
   | Regelversie { inconsistent = false; _ } ->
-      Value.fault "'is gevuurd' is not implemented (CONSTRUCTS row 30 is OPEN)"
+      Value.fault
+        "'is gevuurd' is not implemented (row 30: decided as a dialect-only fixpoint predicate)"
   | Rollidmaatschap _ | Verre_rollidmaatschap _ | Periode_conditie _ ->
       Value.fault "condition kind not implemented in this card"
   | Conditie_onopgelost _ -> Value.fault "Onopgelost condition reached in evaluation (WF-044)"
