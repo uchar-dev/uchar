@@ -18,3 +18,15 @@ May touch: `spec/ASP-TRANSLATION.md`, `spec/CONSTRUCTS.md` (notes only),
 `backlog/`.
 
 Out of scope: v3 temporalisation; backends/clingo code; corpus admission.
+
+Result: ASP-TRANSLATION.md ch. 6 landed: the art. 4 ladder as layered
+NAF over derived exception predicates (four strata), the compiled
+representation, and a clingo difference test; Marrit → recht, the
+w/wh/whv/s variants behave per the statute; verschil/1 never derives
+(also swept over all 8 input combinations by verification). Findings
+fed into CONSTRUCTS rows 6/8: stratification is now load-bearing and
+checkable as acyclicity; the Phase-4 model needs a priority chain;
+"evenmin" grounds compose outside the ladder; keep layering
+first-class. Verified by two adversarial reviewers (0 blockers, 1
+minor — fixed). Deliberately left: art. 5 hardheid, v3
+temporalisation (ch. 7).
