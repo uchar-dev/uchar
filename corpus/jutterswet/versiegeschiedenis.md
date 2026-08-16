@@ -2,7 +2,7 @@
 
 *De wet is fictie; de data hieronder zijn door dit corpus vastgelegd zodat
 de regelversie-, geldigheids- en vintage-machinerie iets concreets heeft om
-op te staan. De versienummers v0–v3 benoemen zowel wetsteksten als
+op te staan. De versienummers v0–v4 benoemen zowel wetsteksten als
 lezingen: niet elke versie wijzigt de tekst.*
 
 ## v0 — de oorspronkelijke wet (in werking 1 januari 2020)
@@ -126,18 +126,25 @@ Semantische dekking die deze versie toevoegt:
   vondstdrempel" — met de jaarlijkse drempel levert dat de
   beslistabel-invulling die de hardheidstoets nodig heeft.
 
-**Vaststellingsbesluiten onder art. 7** (corpusdata; de waarden zijn
-data-plane materiaal voor de vintage-machinerie, geen wetstekst):
+**Drempel en bedrag per penningjaar** (corpusdata; de waarden zijn
+data-plane materiaal voor de vintage-machinerie, geen wetstekst). Voor
+het eerste penningjaar kan art. 7 zichzelf nog niet dragen — de
+vaststellingstermijn (vóór 1 december 2024) verstrijkt vóór de
+inwerkingtreding — dus de waarden voor 2025 staan als overgangsrecht in
+de wijzigingsverordening zelf; het eerste reguliere besluit onder
+art. 7 betreft 2026:
 
-| Besluit van | Penningjaar | Vondstdrempel | Penningbedrag |
-|---|---|---|---|
-| 26 november 2024 | 2025 | 12 | € 250 |
-| 25 november 2025 | 2026 | 14 | € 275 |
+| Grondslag | Vastgesteld | Penningjaar | Vondstdrempel | Penningbedrag |
+|---|---|---|---|---|
+| overgangsrecht Derde wijzigingsverordening | 10 november 2024 | 2025 | 12 | € 250 |
+| vaststellingsbesluit onder art. 7 | 25 november 2025 | 2026 | 14 | € 275 |
 
-De dossiers spelen onder drempel 12: Marrit (veertien) en Brecht
-(dertien) halen haar; Feiko, Gesa en Okko staan er met twaalf precies
-op — en de halve drempel van art. 5 is dan zes, het oude
-hardheidsgetal.
+Het bergingsmaximum van art. 9 is géén jaarparameter maar een door de
+strandvoogd per berger, bij de aanvang van de berging, vastgestelde
+waarde — een gesloten registergegeven in de zin van de v1-lezing. De
+dossiers spelen onder drempel 12: Marrit (veertien) en Brecht (dertien)
+halen haar; Feiko, Gesa en Okko staan er met twaalf precies op — en de
+halve drempel van art. 5 is dan zes, het oude hardheidsgetal.
 
 ## Verder
 

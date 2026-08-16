@@ -8,8 +8,12 @@ vondstdrempel"; na artikel 3 worden de artikelen 3a, 3b en 3c ingevoegd;
 in artikel 5 wordt "als ware «twaalf» vervangen door «zes»" vervangen
 door "als ware de vondstdrempel vervangen door de helft daarvan"; na
 artikel 6 worden de artikelen 7, 8 en 9 ingevoegd. De artikelen 1, 2, 4,
-4bis en 6 zijn ongewijzigd ten opzichte van v3. De vaststellingsbesluiten
-onder artikel 7 staan in `versiegeschiedenis.md`.*
+4bis en 6 zijn ongewijzigd ten opzichte van v3. De wijzigingsverordening
+bevat overgangsrecht: in afwijking van artikel 7 gelden voor het
+penningjaar 2025 een vondstdrempel van twaalf en een penningbedrag van
+tweehonderdvijftig euro, bij de verordening zelf vastgesteld. De
+vaststellingsbesluiten onder artikel 7 staan in
+`versiegeschiedenis.md`.*
 
 **Art. 1 (verkrijging).** Erkend jutter is degene die na inwerkingtreding
 van deze wet op Scholde geboren is uit ten minste één ouder die op dat
@@ -66,7 +70,9 @@ in euro's uitgekeerd.
 **Art. 9 (gezamenlijke berging).** Bergen twee of meer jutters
 gezamenlijk één zaak, dan wordt de opbrengst van de berging in euro's
 over de bergers verdeeld naar rato van ieders aandeel in het geborgen
-gewicht, met voor iedere berger ten hoogste diens bergingsmaximum, en
-ieder aandeel afgerond op hele euro's naar beneden. Wat door het maximum
-of de afronding onverdeeld blijft, valt toe aan het eilandfonds. Is geen
-gewicht per berger vastgesteld, dan wordt in gelijke delen verdeeld.
+gewicht, met voor iedere berger ten hoogste het bergingsmaximum dat de
+strandvoogd bij de aanvang van de berging voor hem heeft vastgesteld,
+en ieder aandeel afgerond op hele euro's naar beneden. Wat door het
+maximum of de afronding onverdeeld blijft, valt toe aan het
+eilandfonds. Is geen gewicht per berger vastgesteld, dan wordt in
+gelijke delen verdeeld.
