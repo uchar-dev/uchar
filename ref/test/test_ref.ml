@@ -419,6 +419,211 @@ let () =
   expect_fault "verify-pow-overflow" (fun () ->
       Arith.pow_ (n "2") (Value.Num (Q.of_string "100000000000000000000", Value.Unitless)))
 
+(* --- ch. 6.4: evaluation by strata (worked examples, hand-built docs) --- *)
+
+let empty_doc : Ir_v0.Ast.document =
+  {
+    objecttypen = [];
+    domeinen = [];
+    parameters = [];
+    eenheidstelsels = [];
+    feittypen = [];
+    dimensies = [];
+    tijdlijnen = [];
+    dagsoorten = [];
+    dagsoort_per_eenheid = [];
+    regels = [];
+    resolved_regels = [];
+    resolved_dagsoorten = [];
+    object_creaties = [];
+    verdelingen = [];
+    consistenties = [];
+    uniciteiten = [];
+    uniciteit_unies = [];
+    feit_creaties = [];
+    resolved_startpunten = [];
+    regel_groepen = [];
+    diagnostics = [];
+  }
+
+let ot name attrs kenmerken : string * Ir_v0.Ast.objecttype =
+  ( name,
+    {
+      ot_naam = Some name;
+      attributen = attrs;
+      attribuut_meervoud = [];
+      attribuut_dimensies = [];
+      attribuut_granulariteit = [];
+      attribuut_tijdlijn_aantal = [];
+      attribuut_tijdlijn_naam = [];
+      kenmerken = List.map (fun k -> Some k) kenmerken;
+      kenmerk_soorten = [];
+      kenmerk_granulariteit = [];
+      kenmerk_tijdlijn_aantal = [];
+      bezield = false;
+      meervoud = None;
+    } )
+
+let num0 : Ir_v0.Ast.datatype = Numeriek { geheel = true; decimalen = 0; teken = None; eenheid = None }
+
+let aref attr otn typ : Ir_v0.Ast.expr =
+  Attribuut_ref
+    {
+      attribuut = Some attr;
+      objecttype = Some otn;
+      onderwerp_bron = None;
+      navigatie_rol = None;
+      typ = Some typ;
+      bron = None;
+      set = false;
+      navigatie_pad = [];
+    }
+
+let litv lex typ : Ir_v0.Ast.expr = Literal { waarde = Some lex; typ = Some typ; bron = None }
+
+let rr name soort doel waarde cond : Ir_v0.Ast.resolved_regel =
+  { rr_naam = Some name; rr_soort = Some soort; doel; waarde; rr_voorwaarde = cond; rr_geldigheid = None }
+
+let inst label otype attrs : World.instance =
+  {
+    label;
+    otype;
+    attrs = List.fold_left (fun m (k, v) -> World.SMap.add k v m) World.SMap.empty attrs;
+    chars = [];
+    links = World.SMap.empty;
+  }
+
+let env_of doc : Eval.env = { doc; params = Eval.SMap.empty; as_of = None }
+
+(* WV-6.4-a (= the ch. 5.3 pair): producer/consumer across one negative
+   edge — {waar, onwaar} at inkomen 50, {onwaar, waar} at 200, never the
+   transient {waar, waar} *)
+let () =
+  let doc =
+    {
+      empty_doc with
+      objecttypen = [ ot "Jutter" [ ("inkomen", Some num0) ] [ "vrijgesteld"; "bijdrageplichtig" ] ];
+      resolved_regels =
+        [
+          rr "vrijstelling" Kenmerktoekenning
+            (Some (aref "vrijgesteld" "Jutter" Booleaan))
+            (Some (litv "waar" Booleaan))
+            (Some
+               (Vergelijking
+                  {
+                    op = Kleiner;
+                    links = Some (aref "inkomen" "Jutter" num0);
+                    rechts = Some (litv "100" num0);
+                    periode = None;
+                    bron = None;
+                  }));
+          rr "bijdrageplicht" Kenmerktoekenning
+            (Some (aref "bijdrageplichtig" "Jutter" Booleaan))
+            (Some (litv "waar" Booleaan))
+            (Some
+               (Kenmerk_check
+                  {
+                    kenmerk = Some "vrijgesteld";
+                    navigatie = None;
+                    negatie = true;
+                    eigenaar = Some "Jutter";
+                    periode = None;
+                    bron = None;
+                  }));
+        ];
+    }
+  in
+  let run inkomen =
+    let w = World.add_instance World.empty (inst "j" "Jutter" [ ("inkomen", n inkomen) ]) in
+    let final = Eval.evaluate (env_of doc) w in
+    let j = World.get final "j" in
+    (World.has_char j "vrijgesteld", World.has_char j "bijdrageplichtig")
+  in
+  check "WV-6.4-a-50" (run "50" = (true, false));
+  check "WV-6.4-a-200" (run "200" = (false, true))
+
+(* WV-6.4-b (= the ch. 5.6 channel read): one error fact, both dossiers
+   flagged — the reading rule sits strictly above the consistency *)
+let () =
+  let doc =
+    {
+      empty_doc with
+      objecttypen =
+        [
+          ot "Rekeninghouder" [ ("saldo", Some num0) ] [];
+          ot "Dossier" [] [ "onder verscherpt toezicht" ];
+        ];
+      consistenties =
+        [
+          {
+            cons_naam = Some "controle saldo";
+            cons_subject = Some "Rekeninghouder";
+            assertie =
+              Some
+                (Vergelijking
+                   {
+                     op = Groter_of_gelijk;
+                     links = Some (aref "saldo" "Rekeninghouder" num0);
+                     rechts = Some (litv "0" num0);
+                     periode = None;
+                     bron = None;
+                   });
+            cons_bron = None;
+            cons_line = 0;
+            cons_geldigheid = None;
+          };
+        ];
+      resolved_regels =
+        [
+          rr "verscherpt toezicht" Kenmerktoekenning
+            (Some (aref "onder verscherpt toezicht" "Dossier" Booleaan))
+            (Some (litv "waar" Booleaan))
+            (Some (Regelversie { regel = Some "controle saldo"; inconsistent = true; bron = None }));
+        ];
+    }
+  in
+  let w =
+    List.fold_left
+      (fun w i -> World.add_instance w i)
+      World.empty
+      [
+        inst "h1" "Rekeninghouder" [ ("saldo", n "-5") ];
+        inst "h2" "Rekeninghouder" [ ("saldo", n "10") ];
+        inst "d1" "Dossier" [];
+        inst "d2" "Dossier" [];
+      ]
+  in
+  let final = Eval.evaluate (env_of doc) w in
+  check "WV-6.4-b-one-fact" (List.length final.channel = 1);
+  check "WV-6.4-b-d1" (World.has_char (World.get final "d1") "onder verscherpt toezicht");
+  check "WV-6.4-b-d2" (World.has_char (World.get final "d2") "onder verscherpt toezicht")
+
+(* WV-6.4-c: a dependency cycle reaching ref/ is a fault (the verifier
+   rejects it as WF-045; ref/ fails fast rather than diverging) *)
+let () =
+  let plus l r : Ir_v0.Ast.expr =
+    Binair { op = Plus; links = Some l; rechts = Some r; typ = Some num0; bron = None }
+  in
+  let doc =
+    {
+      empty_doc with
+      objecttypen = [ ot "Ding" [ ("a", Some num0); ("b", Some num0) ] [] ];
+      resolved_regels =
+        [
+          rr "bereken a" Berekening
+            (Some (aref "a" "Ding" num0))
+            (Some (plus (aref "b" "Ding" num0) (litv "1" num0)))
+            None;
+          rr "bereken b" Berekening
+            (Some (aref "b" "Ding" num0))
+            (Some (plus (aref "a" "Ding" num0) (litv "1" num0)))
+            None;
+        ];
+    }
+  in
+  let w = World.add_instance World.empty (inst "x" "Ding" []) in
+  expect_fault "WV-6.4-c-cycle-fault" (fun () -> Eval.evaluate (env_of doc) w)
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

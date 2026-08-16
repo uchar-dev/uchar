@@ -1417,6 +1417,282 @@ let expression_layer ctx =
         | None -> [])
       (List.mapi (fun i r -> (i, r)) ctx.doc.feit_creaties)
 
+(* ===================================================================== *)
+(* WF-045 / WF-046 — the dependency graph (RUNTIME-SEMANTICS ch. 6).
+   Nodes: attribute, characteristic, channel (rule name), population
+   (object type), identified up to normalisation. Edges run producer ->
+   consumer; a negated/negation-quantified characteristic read and a
+   regelversie channel test are negative edges. WF-045: the graph minus
+   the object-creation members of recursive rule groups is acyclic.
+   WF-046: no cycle in the full graph carries a negative edge.
+   Recorded narrowings (ch. 6.1): relation membership reads are treated
+   as input; day-kind definitions contribute no edges. *)
+
+let n_attr ot a = "attr:" ^ norm ot ^ ":" ^ norm a
+let n_char ot k = "char:" ^ norm ot ^ ":" ^ norm k
+let n_chan rule = "chan:" ^ norm (strip_version rule)
+let n_pop ot = "pop:" ^ norm ot
+
+type dep_form = {
+  df_at : string;
+  df_name : string;
+  df_recursive_creation : bool;
+  df_writes : string list;
+  df_reads : (string * bool) list; (* node, negative? *)
+}
+
+(* [subject] resolves owner-less characteristic reads *)
+let rec dep_expr ~subject acc (e : expr) =
+  match e with
+  | Attribuut_ref { attribuut = Some a; objecttype = Some ot; typ; _ } -> (
+      match typ with
+      | Some (Datatype_onbekend _) ->
+          acc (* the fold-source role wart; the fold adds the population read *)
+      | _ -> (n_attr ot a, false) :: acc)
+  | Attribuut_ref _ | Literal _ | Parameter_ref _ | Variabele_ref _ | Constante _
+  | Expr_onopgelost _ ->
+      acc
+  | Tekst_reeks { delen; _ } ->
+      List.fold_left
+        (fun acc -> function
+          | Letterlijk _ -> acc
+          | Ingevoegd { expr = Some e } -> dep_expr ~subject acc e
+          | Ingevoegd { expr = None } -> acc)
+        acc delen
+  | Binair { links; rechts; _ } -> dep_opt ~subject (dep_opt ~subject acc links) rechts
+  | Functie { argumenten; element_objecttype; leegwaarde; filter; _ } ->
+      let acc =
+        match element_objecttype with Some el -> (n_pop el, false) :: acc | None -> acc
+      in
+      let acc = List.fold_left (dep_expr ~subject) acc argumenten in
+      let acc = dep_opt ~subject acc leegwaarde in
+      (match filter with Some c -> dep_cond ~subject ~neg:false acc c | None -> acc)
+  | Afgerond { basis; _ } -> dep_opt ~subject acc basis
+  | Begrensd { basis; minimum; maximum; _ } ->
+      dep_opt ~subject (dep_opt ~subject (dep_opt ~subject acc basis) minimum) maximum
+  | Dimensie_cel { attribuut; _ } -> dep_opt ~subject acc attribuut
+
+and dep_opt ~subject acc = function Some e -> dep_expr ~subject acc e | None -> acc
+
+and dep_cond ~subject ~neg acc (c : conditie) =
+  match c with
+  | Vergelijking { links; rechts; _ } ->
+      dep_opt ~subject (dep_opt ~subject acc links) rechts
+  | Predicaat { operand; _ } -> dep_opt ~subject acc operand
+  | Kenmerk_check { kenmerk = Some k; eigenaar; negatie; _ } -> (
+      let negative = neg <> negatie in
+      match (match eigenaar with Some _ as e -> e | None -> subject) with
+      | Some ot -> (n_char ot k, negative) :: acc
+      | None -> acc)
+  | Kenmerk_check _ -> acc
+  | Rollidmaatschap _ | Verre_rollidmaatschap _ -> acc
+  | Periode_conditie { vanaf; tot; _ } -> dep_opt ~subject (dep_opt ~subject acc vanaf) tot
+  | Samengesteld { kwantor; onderdelen; _ } ->
+      let neg' =
+        match kwantor with
+        | Geen -> not neg
+        | Ten_hoogste | Precies -> true (* negation-like: conservative, ch. 6.1 *)
+        | De | Alle | Ten_minste -> neg
+      in
+      List.fold_left (fun acc c -> dep_cond ~subject ~neg:neg' acc c) acc onderdelen
+  | Regelversie { regel = Some r; _ } -> (n_chan r, true) :: acc
+  | Regelversie _ -> acc
+  | Conditie_onopgelost _ -> acc
+
+let dep_forms ctx : dep_form list =
+  let recursive_members =
+    List.concat_map
+      (fun g -> if g.recursief then List.map norm (some_names g.leden) else [])
+      ctx.doc.regel_groepen
+  in
+  let cond ~subject c = match c with Some c -> dep_cond ~subject ~neg:false [] c | None -> [] in
+  let regels =
+    List.mapi
+      (fun i (r : resolved_regel) ->
+        let at = Printf.sprintf "/resolvedRegels/%d" i in
+        let name = Option.value r.rr_naam ~default:at in
+        match r.doel with
+        | Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }) ->
+            let writes =
+              [ (if r.rr_soort = Some Kenmerktoekenning then n_char ot a else n_attr ot a) ]
+            in
+            let subject = Some ot in
+            let reads =
+              dep_opt ~subject (cond ~subject r.rr_voorwaarde) r.waarde
+            in
+            Some { df_at = at; df_name = name; df_recursive_creation = false; df_writes = writes; df_reads = reads }
+        | _ -> None)
+      ctx.doc.resolved_regels
+    |> List.filter_map (fun x -> x)
+  in
+  let verdelingen =
+    List.mapi
+      (fun i (v : resolved_verdeling) ->
+        let at = Printf.sprintf "/verdelingen/%d" i in
+        let name = Option.value v.vd_naam ~default:at in
+        let bt = Option.value v.bron_type ~default:"" in
+        let dt = Option.value v.doel_type ~default:"" in
+        let writes =
+          (match v.doel_attribuut with Some a -> [ n_attr dt a ] | None -> [])
+          @ (match v.restant_attribuut with Some a -> [ n_attr bt a ] | None -> [])
+        in
+        let reads =
+          (n_pop dt, false)
+          :: (match v.bron_attribuut with Some a -> [ (n_attr bt a, false) ] | None -> [])
+          @ List.filter_map
+              (fun a -> Option.map (fun a -> (n_attr dt a, false)) a)
+              [ v.rato_attribuut; v.maximum_attribuut; v.groepeer_attribuut ]
+          @ cond ~subject:v.bron_type v.vd_voorwaarde
+        in
+        { df_at = at; df_name = name; df_recursive_creation = false; df_writes = writes; df_reads = reads })
+      ctx.doc.verdelingen
+  in
+  let consistenties =
+    List.mapi
+      (fun i (c : resolved_consistentie) ->
+        let at = Printf.sprintf "/consistenties/%d" i in
+        let name = Option.value c.cons_naam ~default:at in
+        {
+          df_at = at;
+          df_name = name;
+          df_recursive_creation = false;
+          df_writes = [ n_chan name ];
+          df_reads = cond ~subject:c.cons_subject c.assertie;
+        })
+      ctx.doc.consistenties
+  in
+  let uniciteiten =
+    List.mapi
+      (fun i (u : resolved_uniciteit) ->
+        let at = Printf.sprintf "/uniciteiten/%d" i in
+        let name = Option.value u.uni_naam ~default:at in
+        let subj = Option.value u.uni_subject ~default:"" in
+        {
+          df_at = at;
+          df_name = name;
+          df_recursive_creation = false;
+          df_writes = [ n_chan name ];
+          df_reads = List.map (fun k -> (n_attr subj (Option.value k ~default:""), false)) u.sleutels;
+        })
+      ctx.doc.uniciteiten
+  in
+  let creaties =
+    List.mapi
+      (fun i (o : resolved_object_creatie) ->
+        let at = Printf.sprintf "/objectCreaties/%d" i in
+        let name = Option.value o.oc_naam ~default:at in
+        let nt = Option.value o.nieuw_type ~default:"" in
+        let subject = o.oc_subject in
+        let writes =
+          (n_pop nt)
+          :: List.filter_map
+               (fun (t : toekenning) ->
+                 Option.map
+                   (fun a -> if t.toe_kenmerk then n_char nt a else n_attr nt a)
+                   t.toe_attribuut)
+               o.toekenningen
+        in
+        let reads =
+          List.fold_left
+            (fun acc (t : toekenning) -> dep_opt ~subject acc t.toe_waarde)
+            (cond ~subject o.oc_voorwaarde)
+            o.toekenningen
+        in
+        {
+          df_at = at;
+          df_name = name;
+          df_recursive_creation = List.mem (norm name) recursive_members;
+          df_writes = writes;
+          df_reads = reads;
+        })
+      ctx.doc.object_creaties
+  in
+  let feit_creaties =
+    List.mapi
+      (fun i (f : resolved_feit_creatie) ->
+        let at = Printf.sprintf "/feitCreaties/%d" i in
+        let name = Option.value f.fc_naam ~default:at in
+        {
+          df_at = at;
+          df_name = name;
+          df_recursive_creation = false;
+          df_writes = (match f.fc_doel with Some d -> [ n_pop d ] | None -> []);
+          df_reads = cond ~subject:f.anker f.fc_voorwaarde;
+        })
+      ctx.doc.feit_creaties
+  in
+  regels @ verdelingen @ consistenties @ uniciteiten @ creaties @ feit_creaties
+
+let wf045_046 ctx =
+  let forms = Array.of_list (dep_forms ctx) in
+  let nforms = Array.length forms in
+  let writers = Hashtbl.create 16 in
+  Array.iteri (fun i f -> List.iter (fun n -> Hashtbl.add writers n i) f.df_writes) forms;
+  let succ = Array.make nforms [] in
+  Array.iteri
+    (fun ci f ->
+      List.iter
+        (fun (node, negedge) ->
+          List.iter
+            (fun pi -> if not (List.mem (ci, negedge) succ.(pi)) then succ.(pi) <- (ci, negedge) :: succ.(pi))
+            (Hashtbl.find_all writers node))
+        f.df_reads)
+    forms;
+  (* WF-045: the graph minus recursive-creation forms must be acyclic *)
+  let skip i = forms.(i).df_recursive_creation in
+  let color = Array.make nforms 0 in
+  let viol45 = ref [] in
+  let rec dfs path i =
+    if skip i then ()
+    else
+      match color.(i) with
+      | 1 ->
+          let rec take acc = function
+            | [] -> acc
+            | j :: _ when j = i -> j :: acc
+            | j :: rest -> take (j :: acc) rest
+          in
+          let cyc = take [] path in
+          let names = String.concat " -> " (List.map (fun j -> forms.(j).df_name) (cyc @ [ i ])) in
+          viol45 :=
+            v "WF-045" forms.(i).df_at ("dependency cycle through no recursive creation: " ^ names)
+            :: !viol45
+      | 2 -> ()
+      | _ ->
+          color.(i) <- 1;
+          List.iter (fun (j, _) -> dfs (i :: path) j) succ.(i);
+          color.(i) <- 2
+  in
+  Array.iteri (fun i _ -> if color.(i) = 0 then dfs [] i) forms;
+  (* WF-046: a negative edge p->c on a cycle of the full graph, i.e. p
+     reachable from c *)
+  let reaches src dst =
+    let seen = Array.make nforms false in
+    let rec go i =
+      if seen.(i) then false
+      else begin
+        seen.(i) <- true;
+        i = dst || List.exists (fun (j, _) -> go j) succ.(i)
+      end
+    in
+    go src
+  in
+  let viol46 = ref [] in
+  Array.iteri
+    (fun pi _ ->
+      List.iter
+        (fun (ci, negedge) ->
+          if negedge && reaches ci pi then
+            viol46 :=
+              v "WF-046" forms.(ci).df_at
+                (Printf.sprintf
+                   "negative dependency edge on a cycle: %s reads, negated, what %s produces while %s is reachable from it (no strata exist)"
+                   forms.(ci).df_name forms.(pi).df_name forms.(pi).df_name)
+              :: !viol46)
+        succ.(pi))
+    forms;
+  List.rev !viol45 @ List.sort_uniq compare (List.rev !viol46)
+
 (* ======================================================================= *)
 
 let all (doc : document) : violation list =
@@ -1426,4 +1702,5 @@ let all (doc : document) : violation list =
       wf007_model ctx; wf009 ctx; wf011 ctx; wf012 ctx; wf013 ctx; wf014 ctx;
       wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf020 ctx; wf021 ctx;
       wf022 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf029 ctx;
-      wf030 ctx; wf031 ctx; wf032 ctx; wf033 ctx; expression_layer ctx ]
+      wf030 ctx; wf031 ctx; wf032 ctx; wf033 ctx; wf045_046 ctx;
+      expression_layer ctx ]

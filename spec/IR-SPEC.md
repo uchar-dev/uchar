@@ -1,6 +1,6 @@
 # uchar IR — Specification
 
-*Status: v0.3 — the model layer (ch. 2), the rule layer (ch. 3), and the
+*Status: v0.4 — the model layer (ch. 2), the rule layer (ch. 3), and the
 expression and condition layer (ch. 4) are normative **draft**; everything
 else is skeleton. Authority for undocumented behaviour still lives in
 `regelspraak-java` (pinned commit `b85dff3`): the spec-§-citing javadoc of
@@ -1041,6 +1041,17 @@ Comparison, Predicate, and CharacteristicCheck only —
   one is non-conforming. This is the unsolved-state harness guard
   (`PLAN.md` §8) written as a rule; its check is behavioural (CI), not
   structural.
+- **WF-045** The rule-form dependency graph — over attribute,
+  characteristic, channel and population nodes
+  (`RUNTIME-SEMANTICS.md` ch. 6.1) — MUST be acyclic after removing the
+  object-creation members of recursive rule groups: a dependency cycle
+  is admissible only when it passes through recursive creation
+  (ch. 6.2; mirror: v0 warns at build time and caps firing).
+- **WF-046** No dependency cycle — including a WF-045-admissible one —
+  may carry a negative edge (a negated or negation-quantified
+  characteristic read, or a regelversie channel test): evaluation
+  strata MUST exist (`RUNTIME-SEMANTICS.md` ch. 6.3). v0's single
+  agenda boundary is the two-stratum special case.
 
 ---
 
@@ -1103,6 +1114,8 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-042 | time window: ≥ 1 bound; bounds are dates, either precision | gate 3 | OPEN | `wf042-empty-window` |
 | WF-043 | whole-period qualifier only on a time-dependent operand | gate 3 | OPEN | `wf043-wholeperiod-nontemporal` |
 | WF-044 | (consumer) Unresolved surfaces, never silently lowered | behavioural (CI harness guard) — OPEN | OPEN | OPEN |
+| WF-045 | dependency graph acyclic (creation recursion excepted) | gate 3 | `jutterswet-vondsttelling` | `wf045-cyclic-attribute-dependency` |
+| WF-046 | no negative edge on a dependency cycle (strata exist) | gate 3 | `jutterswet-vondsttelling` | `wf046-negated-read-in-recursive-cycle` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

@@ -1088,9 +1088,9 @@ and the read-dependency graph between attributes is acyclic, so the
 fixpoint is unique — rule order, activation order, and fact-insertion
 order do not matter. *v0 mirror note:* v0 warns on a circular reference
 at build time and bounds execution with a fire cap (ch. 5.5); **delta
-(candidate WF rule):** v1 promotes acyclicity of the attribute
-dependency graph to well-formedness — with the deliberate exception of
-creation recursion (ch. 5.5). The mirrored **exceptions** to
+(promoted):** WF-045 (ch. 6.2) makes acyclicity of the dependency graph
+well-formedness — with the deliberate exception of creation recursion
+(ch. 5.5). The mirrored **exceptions** to
 order-independence, each recorded:
 
 - the ~1-ULP order dependence in mixed-unit chained arithmetic (a
@@ -1254,11 +1254,120 @@ instances plus nothing else.
 
 ---
 
+## 6. Stratification
+
+A rule set holds as one system of equations (ch. 5); this chapter
+states the well-formedness that makes its fixpoint well-defined in the
+presence of negation and creation: the dependency graph, acyclicity
+(WF-045), and stratified negation (WF-046). This is the declared
+replacement for v0's single agenda boundary — the "salience −1" of the
+founding review (ch. 5.3): stratification is a property of the IR,
+checked by the verifier, never an engine agenda trick. The ASP hand
+exercises (`ASP-TRANSLATION.md` ch. 6) read the same strata off the
+statute text.
+
+### 6.1 The dependency graph
+
+Value nodes, identified up to name normalisation:
+
+- **attribute** — object type × attribute;
+- **characteristic** — object type × characteristic;
+- **channel** — rule name (version-stripped): the §9.5 error entries the
+  named rule can deposit (ch. 5.6);
+- **population** — object type: the instance set an instance fold
+  (`IR-SPEC.md` ch. 4.3) or an allocation's recipient derivation reads,
+  and object creation grows.
+
+Each rule form reads and writes nodes:
+
+| Form | Writes | Reads |
+|---|---|---|
+| assignment / initialisation | its target attribute | every attribute and characteristic its value expression and condition reference — a navigated reference reads the referenced type's node; population(element type) per instance fold |
+| characteristic attribution | its target characteristic | idem |
+| allocation | target attribute; declared remainder attribute | source amount; ratio, maximum and ordering attributes; condition reads; population(target type) |
+| consistency / uniqueness | channel(own name) | assertion operands / key attributes |
+| object creation | the attributes and characteristics its toekenningen set on the created type; population(created type) | condition and toekenning-value reads on the anchor |
+| relation creation | population(target-role filler type) | condition and field reads on the anchor |
+
+Edges run producer → consumer: from every form that writes a node to
+every form that reads it. An edge is **negative** when the read is a
+negated characteristic test (ch. 5.3), a characteristic read under a
+negation-like quantifier (*geen*, *ten hoogste*, *precies* — their truth
+can be lost by a later monotone write), or a channel test (regelversie,
+ch. 5.6); all other reads are positive. A doubly negated characteristic
+read is treated conservatively as negative. Parameters and input-only
+nodes (nodes no form writes) contribute no edges.
+
+*Scope narrowing, recorded:* relation membership read by a condition
+(rollidmaatschap) is treated as input — relation creation contributes a
+population edge to its target-role filler type, but finer
+relation-level nodes are deliberately not modelled until a corpus case
+demands them. Day-kind definitions read only input dates and contribute
+no edges.
+
+### 6.2 Acyclicity (WF-045)
+
+**WF-045.** The dependency graph MUST be acyclic after removing every
+object-creation form that is a member of a recursive rule group
+(`IR-SPEC.md` ch. 3.9): a dependency cycle is admissible **only** when
+it passes through such a form. That is ch. 5.5's one controlled
+exception — recursive creation advances exactly one generation per
+instance; WF-033 guards the author's termination obligation and the
+runtime's bounded budget makes divergence a fault — promoted from the
+ch. 5.2 delta to well-formedness. With WF-045 (and the single-writer
+allocation discipline of WF-026) the fixpoint of the positive part is
+unique: rule order, activation order and insertion order do not matter
+(ch. 5.2).
+
+*v0 mirror note:* v0 warns on a circular reference at build time and
+bounds execution with a fire cap; WF-045 makes the refusal structural.
+
+### 6.3 Stratified negation (WF-046)
+
+**WF-046.** No dependency cycle — including a WF-045-admissible one —
+may carry a negative edge. Equivalently: **strata exist**. Assign every
+form the smallest stratum such that along every positive edge the
+consumer's stratum is at least the producer's, and along every negative
+edge strictly greater; WF-045 + WF-046 guarantee the assignment exists,
+and the verifier rejects a program where it does not.
+
+Evaluation by strata generalises ch. 5.3's single boundary: for k = 0,
+1, …, the forms of stratum ≤ k evaluate to their fixpoint before any
+form of stratum k + 1 fires. A negated characteristic is then read only
+after every producer — and the producers' own input chains — have
+quiesced, so a monotone write cannot contradict it later; a channel
+test reads a complete channel for the named rule. v0's single boundary
+is the two-stratum special case; nested and chained negation get as
+many strata as the chain is deep.
+
+### 6.4 Worked examples (ref/ tests verbatim)
+
+- The ch. 5.3 pair — producer "een Jutter is vrijgesteld indien zijn
+  inkomen kleiner is dan 100", consumer "een Jutter is
+  bijdrageplichtig indien hij niet vrijgesteld is" — takes two strata:
+  producer 0, consumer 1 (one negative edge). Input inkomen = 50: at
+  stratum 0's fixpoint vrijgesteld is waar; stratum 1 reads the settled
+  negation → bijdrageplichtig onwaar. Input inkomen = 200: {onwaar,
+  waar}. Never the transient {waar, waar}.
+- The ch. 5.6 channel read — consistency "controle saldo" and the
+  Dossier rule reading "regelversie controle saldo is inconsistent" —
+  puts the consistency at its reads' stratum and the reading rule
+  strictly higher (channel edge); ch. 5.6's fixpoint (one error fact,
+  both dossiers flagged) follows by construction.
+- A four-deep negation chain (the art. 4 ladder read in
+  `ASP-TRANSLATION.md` ch. 6) takes four strata; v0's single boundary
+  cannot express it — precisely the case WF-046 exists for.
+- Ill-formed: `a ← b + 1` and `b ← a + 1` on one object type is a
+  WF-045 cycle through no creation (negatief case
+  `wf045-cyclic-attribute-dependency`). A recursive creation whose
+  condition negates a characteristic derived from its own output is a
+  WF-045-admissible cycle carrying a negative edge — a WF-046
+  violation (negatief case `wf046-negated-read-in-recursive-cycle`).
+
+---
+
 ## Chapters (planned)
 
-6. **Stratification.** Negation over derived characteristics requires
-   stratification — a well-formedness condition on the IR (with a WF
-   rule), not an engine agenda trick.
 7. **Defaults.** Initialisation as an explicitly defeasible default (§9.6,
    ch. 1.2 assignment rule); from Phase 4: the adopted default calculus
    (priorities, conflict detection, the inconsistency channel).

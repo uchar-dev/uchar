@@ -51,10 +51,12 @@ faults with file/position context — never a silent fallback.
   approximations are implementation detail, not reference semantics.
 - **The write boundary** rejects a value that does not fit the target's
   declared decimals (no implicit rounding anywhere, ch. 2.4).
-- **Staging** realises v0's single negation boundary (ch. 5.3): the
-  positive part quiesces, negation consumers join, consistency and
-  uniqueness fire, channel readers run last with the checks re-fired
-  once. General stratification is ch. 6 and not yet implemented.
+- **Strata** (ch. 6.3): evaluation runs stratum by stratum, computed
+  from the same dependency graph the verifier checks for WF-045/046
+  (the loader library's `dep_forms` — shared by construction, so ref/
+  and the verifier cannot drift); negated characteristic reads and
+  channel reads sit strictly above their producers. A dependency cycle
+  reaching ref/ is a fault, never divergence.
 - **Not implemented in this bootstrap** (each faults with context):
   timeline algebra (ch. 3), navigation paths, dimension cells, filters,
   variable/constant refs, object and fact creation, day kinds, scoped

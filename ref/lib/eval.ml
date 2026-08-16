@@ -325,19 +325,6 @@ let rec eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       Value.fault "condition kind not implemented in this card"
   | Conditie_onopgelost _ -> Value.fault "Onopgelost condition reached in evaluation (WF-044)"
 
-(* --- staging predicates (the ch. 5.3 single boundary) ------------------ *)
-
-let rec cond_reads_negation = function
-  | Kenmerk_check { negatie = true; _ } -> true
-  | Samengesteld { onderdelen; _ } -> List.exists cond_reads_negation onderdelen
-  | _ -> false
-
-let rec cond_reads_channel = function
-  | Regelversie _ -> true
-  | Samengesteld { onderdelen; _ } -> List.exists cond_reads_channel onderdelen
-  | _ -> false
-
-let on_cond p (r : resolved_regel) = match r.rr_voorwaarde with Some c -> p c | None -> false
 let rule_name (r : resolved_regel) = Option.value r.rr_naam ~default:"<naamloos>"
 
 (* --- rule forms --------------------------------------------------------- *)
@@ -512,47 +499,94 @@ let evaluate env world =
     Value.fault "object/fact creation is not implemented in this card";
   if env.doc.uniciteit_unies <> [] then Value.fault "uniqueness unions not implemented in this card";
   if env.doc.regel_groepen <> [] then Value.fault "rule groups are not implemented in this card";
-  let rules = env.doc.resolved_regels in
-  let channel_readers = List.filter (on_cond cond_reads_channel) rules in
-  let negation_consumers =
-    List.filter (fun r -> on_cond cond_reads_negation r && not (on_cond cond_reads_channel r)) rules
+  (* Strata (ch. 6.3), computed from the same dependency graph the
+     verifier checks (Ir_v0.Checks.dep_forms — shared by construction,
+     so ref/ and WF-045/046 cannot drift). Every form gets the smallest
+     stratum that puts it at or above its positive producers and
+     strictly above its negative ones; failure to converge is a
+     dependency cycle the verifier should have rejected. *)
+  let dforms = Ir_v0.Checks.dep_forms { doc = env.doc } in
+  let n = List.length dforms in
+  let arr = Array.of_list dforms in
+  let strata = Array.make n 0 in
+  let writers node =
+    List.concat
+      (List.mapi
+         (fun i (f : Ir_v0.Checks.dep_form) ->
+           if List.mem node f.df_writes then [ i ] else [])
+         dforms)
   in
-  let positives =
-    List.filter
-      (fun r -> not (on_cond cond_reads_negation r) && not (on_cond cond_reads_channel r))
-      rules
-  in
-  let pass rules world =
+  let changed = ref true in
+  let rounds = ref 0 in
+  while !changed do
+    incr rounds;
+    if !rounds > n + 2 then
+      Value.fault "no evaluation strata exist — a dependency cycle (WF-045/046) reached ref/";
+    changed := false;
+    Array.iteri
+      (fun ci (f : Ir_v0.Checks.dep_form) ->
+        List.iter
+          (fun (node, negative) ->
+            List.iter
+              (fun pi ->
+                let need = strata.(pi) + if negative then 1 else 0 in
+                if strata.(ci) < need then begin
+                  strata.(ci) <- need;
+                  changed := true
+                end)
+              (writers node))
+          f.df_reads)
+      arr
+  done;
+  let stratum_by_at = Hashtbl.create 16 in
+  Array.iteri (fun i (f : Ir_v0.Checks.dep_form) -> Hashtbl.replace stratum_by_at f.df_at i) arr;
+  let stratum_of at = match Hashtbl.find_opt stratum_by_at at with Some i -> strata.(i) | None -> 0 in
+  let kmax = Array.fold_left max 0 strata in
+  let rule_stratum i = stratum_of (Printf.sprintf "/resolvedRegels/%d" i) in
+  let verdeling_stratum i = stratum_of (Printf.sprintf "/verdelingen/%d" i) in
+  let cons_stratum i = stratum_of (Printf.sprintf "/consistenties/%d" i) in
+  let uni_stratum i = stratum_of (Printf.sprintf "/uniciteiten/%d" i) in
+  let indexed l = List.mapi (fun i x -> (i, x)) l in
+  let pass ~k world =
     let world, c1 =
       List.fold_left
-        (fun (w, ch) r ->
-          let w, c = run_rule env w r in
-          (w, ch || c))
-        (world, false) rules
+        (fun (w, ch) (i, r) ->
+          if rule_stratum i > k then (w, ch)
+          else
+            let w, c = run_rule env w r in
+            (w, ch || c))
+        (world, false)
+        (indexed env.doc.resolved_regels)
     in
     let world, c2 =
       List.fold_left
-        (fun (w, ch) v ->
-          let w, c = run_verdeling env w v in
-          (w, ch || c))
-        (world, false) env.doc.verdelingen
+        (fun (w, ch) (i, v) ->
+          if verdeling_stratum i > k then (w, ch)
+          else
+            let w, c = run_verdeling env w v in
+            (w, ch || c))
+        (world, false)
+        (indexed env.doc.verdelingen)
     in
     (world, c1 || c2)
   in
-  let checks world =
-    let world = List.fold_left (run_consistentie env) world env.doc.consistenties in
-    List.fold_left (run_uniciteit env) world env.doc.uniciteiten
-  in
   let budget = 10_000 in
-  (* 1. the positive part quiesces *)
-  let world = fixpoint ~budget (pass positives) world in
-  (* 2. negation consumers join at the positive fixpoint (ch. 5.3) *)
-  let world =
-    if negation_consumers = [] then world
-    else fixpoint ~budget (pass (positives @ negation_consumers)) world
-  in
-  (* 3. consistency + uniqueness at the computed fixpoint *)
-  let world = checks world in
-  (* 4. channel readers run to a fixpoint, checks re-fire once (single
-        stratum; the general form is ch. 6) *)
-  if channel_readers = [] then world else checks (fixpoint ~budget (pass rules) world)
+  (* for k = 0, 1, …: the forms of stratum <= k evaluate to their
+     fixpoint before any form of stratum k+1 fires (ch. 6.3); the
+     consistency and uniqueness forms of stratum k fire once at that
+     fixpoint — their channel facts are idempotent (ch. 5.6) *)
+  let world = ref world in
+  for k = 0 to kmax do
+    world := fixpoint ~budget (pass ~k) !world;
+    world :=
+      List.fold_left
+        (fun w (i, c) -> if cons_stratum i = k then run_consistentie env w c else w)
+        !world
+        (indexed env.doc.consistenties);
+    world :=
+      List.fold_left
+        (fun w (i, u) -> if uni_stratum i = k then run_uniciteit env w u else w)
+        !world
+        (indexed env.doc.uniciteiten)
+  done;
+  !world
