@@ -1,0 +1,10 @@
+Tijdlijn het penningjaar heeft tijdvakken van een jaar startend op dag 1 van maand 1;
+
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het aantal aangemelde vondsten Numeriek (niet-negatief geheel getal) voor elke penningjaar;
+
+Parameter de vondstdrempel : Numeriek (geheel getal) voor elk jaar
+Parameter het penningbedrag : Numeriek (geheel getal) met eenheid € voor elk jaar

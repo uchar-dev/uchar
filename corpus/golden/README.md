@@ -1,0 +1,28 @@
+# Golden corpus
+
+One directory per case: `bron.rgs` (the RegelSpraak source, authored
+against the Jutterswet — `corpus/jutterswet/`) and `ir.json` (its
+`regelspraak-ir-v0` dump). Admission: gate 2 (schema-valid, byte-identical
+round-trip) and gate 3 (verifier-clean) — see `corpus/README.md` for the
+rights policy and `spec/IR-SPEC.md` for the WF index the cases witness.
+
+| Case | Jutterswet basis | Exercises |
+|---|---|---|
+| `jutterswet-penningdrempel` | art. 3 jo. 7 (de vondstdrempel) | characteristic attribution, parameter reference, comparison |
+| `jutterswet-vondsttelling` | art. 3a–3b (aanmelding en telling) | fact type + roles, count over a role, sum over a navigated attribute, kg units |
+| `jutterswet-berging` | art. 9 (gezamenlijke berging) | allocation: proportional by weight, per-recipient maximum, floor rounding, undistributed rest; unit systems (€, kg) |
+| `jutterswet-vondstnummer` | art. 3a (vondstnummer en aanmelding) | uniqueness over a key; consistency with a date-ordering comparison |
+| `jutterswet-penningjaar` | art. 3b jo. 7 (het penningjaar; jaarlijkse vaststelling) | named timeline + facet adoption, timeline attribute, yearly parameters |
+
+Coverage notes:
+
+- `jutterswet-vondstnummer` renders art. 3a's timing discipline as "de
+  aanmelddatum is niet eerder dan de vondstdag"; the article's exact
+  clause — aanmelding in the *penningjaar* of the vondstdag — needs a
+  function-valued comparison (year-of) that the v0 consistency form
+  cannot express. Recorded as a v0 limit (`spec/CONSTRUCTS.md` row 19),
+  not silently approximated away.
+- The v0 count-over-a-role encoding (a pseudo attribute reference naming
+  the role, sentinel-typed) is deliberate v0 shape; the WF-034 index
+  cell records the verifier exception, and `jutterswet-vondsttelling`
+  is its witness.

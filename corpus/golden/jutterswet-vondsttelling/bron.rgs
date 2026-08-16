@@ -1,0 +1,22 @@
+Eenheidsysteem Gewicht
+    het kilogram (mv: kilogrammen) kg
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het aantal aangemelde vondsten Numeriek (niet-negatief geheel getal);
+    het aangemeld gewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht (mv: gewichten) Numeriek (getal met 2 decimalen) met eenheid kg;
+
+Feittype vondstaanmelding
+    de aanmelder Jutter
+    de vondst (mv: vondsten) Vondst
+Eén aanmelder heeft meerdere vondsten
+
+Regel aantal aangemelde vondsten
+    geldig altijd
+        Het aantal aangemelde vondsten van een Jutter moet berekend worden als het aantal vondsten van de Jutter.
+
+Regel aangemeld gewicht
+    geldig altijd
+        Het aangemeld gewicht van een Jutter moet berekend worden als de som van het gewicht van alle vondsten van de Jutter.

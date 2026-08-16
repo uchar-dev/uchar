@@ -1,0 +1,27 @@
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
+Eenheidsysteem Gewicht
+    het kilogram (mv: kilogrammen) kg
+
+Objecttype de Berging (mv: Bergingen)
+    de opbrengst Numeriek (geheel getal) met eenheid €;
+    de onverdeelde rest Numeriek (geheel getal) met eenheid €;
+
+Objecttype de Berger (mv: Bergers) (bezield)
+    het bergingsaandeel (mv: bergingsaandelen) Numeriek (geheel getal) met eenheid €;
+    het geborgen gewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+    het bergingsmaximum Numeriek (geheel getal) met eenheid €;
+
+Feittype bergingsdeelname
+    de berging Berging
+    de berger (mv: bergers) Berger
+Eén berging heeft meerdere bergers
+
+Regel verdeel de opbrengst van een berging
+    geldig altijd
+        De opbrengst van een berging wordt verdeeld over de bergingsaandelen van alle bergers van de berging, waarbij wordt verdeeld:
+        - naar rato van het geborgen gewicht,
+        - met een maximum van het bergingsmaximum,
+        - afgerond op 0 decimalen naar beneden.
+        Als onverdeelde rest blijft de onverdeelde rest van de berging over.

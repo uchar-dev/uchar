@@ -1,0 +1,12 @@
+Objecttype de Vondst (mv: Vondsten)
+    het vondstnummer (mv: vondstnummers) Numeriek (positief geheel getal);
+    de vondstdag Datum in dagen;
+    de aanmelddatum Datum in dagen;
+
+Regel eenmalig vondstnummer
+    geldig altijd
+        De vondstnummers van alle Vondsten moeten uniek zijn.
+
+Regel aanmelding niet voor de vondstdag
+    geldig altijd
+        De aanmelddatum van een Vondst moet later of gelijk zijn aan de vondstdag van de Vondst.
