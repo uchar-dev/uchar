@@ -917,9 +917,12 @@ for each group G_k in order:
 rest = A − Σ_all share_i
 ```
 
-with `min(x, leeg) = x` (no cap), `floor_d` = round toward −∞ at the
-declared decimals (identity when no rounding is declared), and negative
-weights counting as 0.
+with `min(x, leeg) = x` (no cap) and `floor_d` = round toward −∞ at the
+declared decimals (identity when no rounding is declared). *v0 residual
+(same class as ch. 2.1/3.7):* v0 computes the share divisions at 16
+significant digits; the exact fractions above are normative, and
+backends must agree on the corpus after the floor and the write
+boundary.
 
 - **Equal shares**: one group, all recipients, unweighted; no cap
   (ill-formed with one, ch. 4.5). `share_i = A / n`.
@@ -933,8 +936,14 @@ weights counting as 0.
   sorting last** (no error — mirrored); each group divides the pot *as it
   stands at that group's entry* (ties are simultaneous, not sequentially
   depleted), unweighted or — with the declared tie-break weight —
-  weighted; the recurrence's `max(0, …)` clauses make an exhausted pot
-  give later groups **0** (a real 0, never leeg).
+  weighted. In the weighted tie-break, a **negative weight counts as 0**
+  and an **empty weight counts as 0** (the member is assigned a real 0,
+  plus the §9.5 error of ch. 4.3); a tie group whose weights sum to 0
+  assigns **0 to every member** (the recurrence's 0/0 case, defined, not
+  crashed). The `max(0, …)` clauses make an exhausted pot give later
+  groups **0** (a real 0, never leeg). These clamps are
+  **ordered-method-only** — the proportional method has its own, harder
+  rules above and in ch. 4.4.
 
 ### 4.3 The modalities
 
@@ -951,8 +960,9 @@ weights counting as 0.
   changes (a late-created recipient corrects it — ch. 5's freshness);
   excluded recipients contribute nothing to Σ. Absent a declared
   remainder target, an under-distributed rest is silently gone —
-  producers SHOULD declare it (WF-025's advisory clause; the legal
-  meaning may genuinely be "the rest lapses").
+  producers SHOULD declare it (the remainder advisory of `IR-SPEC.md`
+  ch. 3.2 — deliberately a SHOULD, no WF number: the legal meaning may
+  genuinely be "the rest lapses").
 
 ### 4.4 Empty and edge rules
 
@@ -960,9 +970,12 @@ weights counting as 0.
 |---|---|
 | zero recipients | nothing written, no error |
 | empty source amount | **ordered:** no distribution (mirrors the §9.7.6 discipline). **equal/proportional:** v0 has no guard here — a mirror **hole** (the implementation faults). **Delta (candidate):** v1 makes "empty pot ⇒ no distribution" uniform across methods; recorded, not yet a WF rule |
-| one recipient's weight empty | excluded from the split (share stays leeg) + §9.5 error; the others still receive |
-| all eligible weights 0 | no distribution (nothing written) |
-| a negative weight | counts as 0: claims nothing, cannot inflate others beyond the pot |
+| weight empty — proportional | excluded from the split (share stays leeg) + §9.5 error; the others still receive |
+| weight empty — ordered tie-break | assigned a real **0** + §9.5 error (ch. 4.2) |
+| all eligible weights 0 — proportional | no distribution (nothing written) |
+| all weights 0 in an ordered tie group | every member assigned **0** (ch. 4.2) |
+| a negative weight — ordered tie-break | counts as 0: claims nothing, cannot inflate others beyond the pot |
+| a negative weight — proportional | **v0 hole**: unclamped — it enters the weight sum and the product, so a negative share and over-distribution past the pot are possible. **OPEN:** v1 either rejects negative weights as ill-formed data or adopts the ordered method's clamp uniformly; the ch. 4.2 recurrence deliberately does not bless the v0 behaviour |
 | cap empty / negative | uncapped + §9.5 error (never a negative share) |
 | empty ordering key | sorts last, no error |
 | pot exhausted before a group | that group's shares are 0 (real 0, not leeg) |
@@ -1004,6 +1017,13 @@ than picking a winner.
   floor **433** (pot → 367);
   66s: raw 3/4×367 = 275,25 → cap **250**, and 1/4×367 = 91,75 → floor
   **91**; rest = 1800 − 1774 = **26**.
+- Edge rows of ch. 4.4, as observable outputs: a source with **no
+  recipients** writes nothing (also no rest); ordered with tie weights
+  {3, −1} over 1200 in one group → the negative weight counts as 0 →
+  **1200, 0**; an ordered tie group with weights {0, 0} over 1200 →
+  **0, 0** and the pot carries to the next group; ordered over keys
+  {2020, leeg, 2021} ascending → evaluation order 2020, 2021, leeg (the
+  empty key last).
 
 ---
 
@@ -1073,6 +1093,14 @@ order-independence, each recorded:
   *definition*, and therefore fully specified by ch. 4.2's recurrence
   rather than left to the engine.
 
+Worked example (order-independence made concrete): the ch. 5.1 chain
+(`basistarief ← leeftijd`, `prijs ← basistarief + 5`, `leeftijd` = 42)
+evaluated computation-first and reader-first: computation-first sets
+`basistarief` = 42, then `prijs` = 47; reader-first computes `prijs` =
+leeg-coalesced 5, then `basistarief` = 42 arrives, freshness re-fires the
+reader, `prijs` = 47 — **the same fixpoint {42, 47}** either way; the
+transient 5 is unobservable in the end state.
+
 ### 5.3 Negation at the fixpoint
 
 Characteristics are **monotone** within one evaluation: default false,
@@ -1091,6 +1119,16 @@ with a single negative stratum. The general condition — stratification
 as IR well-formedness, covering nested and chained negation — is ch. 6
 (`CONSTRUCTS.md` row 6; the ASP hand exercises show the strata being
 read off the statute text).
+
+Worked example (`ref/` test verbatim): producer "een Jutter is
+vrijgesteld indien zijn inkomen kleiner is dan 100"; consumer "een
+Jutter is bijdrageplichtig indien hij niet vrijgesteld is". Input:
+inkomen = 50. Required fixpoint: **vrijgesteld waar, bijdrageplichtig
+onwaar**. The transient-window failure this clause excludes: the
+consumer evaluated before the producer sees "not yet vrijgesteld", sets
+bijdrageplichtig true, and the monotone write persists — {waar, waar},
+wrong. With inkomen = 200: **vrijgesteld onwaar, bijdrageplichtig
+waar** (the negation legitimately holds at the fixpoint).
 
 ### 5.4 Initialisation
 
@@ -1122,7 +1160,8 @@ deliberately breaks the acyclicity of ch. 5.2 in one controlled way: a
 creation whose output feeds its own condition advances **exactly one
 generation per instance**, and the chain runs to its fixpoint within
 the single evaluation. Termination is the author's obligation — every
-creation in a recursive group MUST be conditional (WF-033) — and the
+**object-creation member** of a recursive group MUST be conditional
+(WF-033; relation creations need no guard, being idempotent) — and the
 runtime's: a bounded fire budget turns a non-terminating set into a
 **fault**, never a silent truncation. Worked example (absolute): a
 chain "person aged n creates a linked person aged n + 1, while n < 5"
@@ -1150,11 +1189,25 @@ surfaces beside the result. Operational clauses, mirrored:
   graph: a channel-reading rule is downstream of every producer for X
   (ch. 5.2/5.3 apply). An unknown rule name in the test is ill-formed
   (`CONSTRUCTS.md` row 30's split verdict; v0 declines it).
-- "regelversie X **is gevuurd**" is declined at the pinned v0 commit
-  and remains a v1 **non-goal** per row 30 (no observable execution
-  record). *Mirror note:* the toolchain has since implemented an opt-in
-  firing marker past the pin — the row-30 verdict is the maintainer's
-  to reconfirm at the next pin bump; this spec does not adopt it.
+- "regelversie X **is gevuurd**": *mirror note, corrected against the
+  pinned code* — the pin **does** lower it, as an existential over an
+  opt-in firing marker inserted unconditionally at the top of X's
+  consequence (a no-change write still counts as "fired"; only a
+  reference to a non-instrumentable target declines). The pinned
+  *decision records* still describe it as declined — they are stale, and
+  `CONSTRUCTS.md` row 30's non-goal verdict rests on them. **OPEN (row
+  30, maintainer):** whether v1 admits an execution-record predicate at
+  all; this spec records the mirror and decides nothing.
+
+Worked example (channel read, `ref/` test verbatim): consistency rule
+"controle saldo" asserts saldo ≥ 0 over Rekeninghouder; a second rule
+sets the characteristic "onder verscherpt toezicht" on every Dossier
+"indien regelversie controle saldo inconsistent is". Input: houders
+{h1: saldo −5, h2: saldo 10}, dossiers {d1, d2}. Fixpoint: **one**
+error fact (controle saldo, h1) — re-evaluation inserts no duplicate —
+and, the flag existing, **both** d1 and d2 carry the characteristic:
+the reading rule has no subject of its own and applies to every
+instance of *its* subject type.
 
 ### 5.7 The evaluation session
 
@@ -1177,6 +1230,13 @@ implements:
 Onopgelost nodes take no part in evaluation and must survive into the
 report (WF-044); an engine that reaches one fails that rule's evaluation
 observably rather than guessing.
+
+Worked trace (`ref/` test verbatim, over the penningdrempel golden):
+evaluation date absent (the model is time-free); parameters
+{vondstdrempel: 12}; inputs {Jutter j1: aantal aangemelde vondsten 14;
+Jutter j2: aantal aangemelde vondsten 3}. Fixpoint after one pass: j1
+**penninggerechtigd**, j2 not; no channel entries; end state = the two
+instances plus nothing else.
 
 ---
 
