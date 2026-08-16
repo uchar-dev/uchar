@@ -19,4 +19,4 @@ Regel aantal aangemelde vondsten
 
 Regel aangemeld gewicht
     geldig altijd
-        Het aangemeld gewicht van een Jutter moet berekend worden als de som van het gewicht van alle vondsten van de Jutter.
+        Het aangemeld gewicht van een Jutter moet berekend worden als de som van het gewicht van alle vondsten van de Jutter of 0 als die er niet zijn.

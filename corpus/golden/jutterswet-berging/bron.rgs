@@ -3,6 +3,7 @@ Eenheidsysteem Munt
 
 Eenheidsysteem Gewicht
     het kilogram (mv: kilogrammen) kg
+    de ton (mv: tonnen) t = 1000 kg
 
 Objecttype de Berging (mv: Bergingen)
     de opbrengst Numeriek (geheel getal) met eenheid €;

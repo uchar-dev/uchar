@@ -162,6 +162,14 @@
           "canoniek": "kg",
           "factorNaarCanoniek": 1,
           "noemer": null
+        },
+        "t": {
+          "node": "Eenheid",
+          "afkorting": "t",
+          "stelsel": "Gewicht",
+          "canoniek": "kg",
+          "factorNaarCanoniek": 1000,
+          "noemer": null
         }
       },
       "aliassen": {
@@ -179,6 +187,22 @@
           "stelsel": "Gewicht",
           "canoniek": "kg",
           "factorNaarCanoniek": 1,
+          "noemer": null
+        },
+        "ton": {
+          "node": "Eenheid",
+          "afkorting": "t",
+          "stelsel": "Gewicht",
+          "canoniek": "kg",
+          "factorNaarCanoniek": 1000,
+          "noemer": null
+        },
+        "tonnen": {
+          "node": "Eenheid",
+          "afkorting": "t",
+          "stelsel": "Gewicht",
+          "canoniek": "kg",
+          "factorNaarCanoniek": 1000,
           "noemer": null
         }
       }

@@ -16,6 +16,17 @@ rights policy and `spec/IR-SPEC.md` for the WF index the cases witness.
 
 Coverage notes:
 
+- `jutterswet-vondsttelling` exercises the count/sum *shape* of
+  art. 3a–3b only: the penningjaar scoping of the telling and the
+  stormvloeddag double count are not rendered (they need the timeline
+  and day-kind machinery a later case adds), and the gewicht-som rule
+  exists to exercise SOM, units, and the empty-source fallback — art. 3a
+  records the gewicht but mandates no sum.
+- `jutterswet-berging` parks the undistributed rest on the Berging
+  itself, where art. 9 sends it to the eilandfonds: the v0 remainder
+  target is an attribute of the allocation *source*, and no eilandfonds
+  object exists in the case — a deliberate, recorded modelling
+  approximation, not a faithful render of the destination.
 - `jutterswet-vondstnummer` renders art. 3a's timing discipline as "de
   aanmelddatum is niet eerder dan de vondstdag"; the article's exact
   clause — aanmelding in the *penningjaar* of the vondstdag — needs a

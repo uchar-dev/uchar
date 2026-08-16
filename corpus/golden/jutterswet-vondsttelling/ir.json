@@ -268,7 +268,18 @@
           }
         ],
         "elementObjecttype": "Vondst",
-        "leegwaarde": null,
+        "leegwaarde": {
+          "node": "Literal",
+          "waarde": "0",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "0"
+        },
         "filter": null,
         "dimensieSelectie": null,
         "type": {
@@ -285,7 +296,7 @@
             "noemer": null
           }
         },
-        "bron": "de som van het gewicht van alle vondsten van de Jutter",
+        "bron": "de som van het gewicht van alle vondsten van de Jutter of 0 als die er niet zijn",
         "granulariteit": null
       },
       "voorwaarde": null,
