@@ -17,7 +17,8 @@ Acceptance: no stray row-11 OPEN left in RUNTIME-SEMANTICS or
 CONSTRUCTS; all five gates green; implementation card in backlog/new/.
 
 May touch: `spec/RUNTIME-SEMANTICS.md` (ch. 3.3/3.12 verdicts only),
-`spec/CONSTRUCTS.md` (row 11), `backlog/**`.
+`spec/CONSTRUCTS.md` (row 11), `spec/ASP-TRANSLATION.md` (the finding-4
+pointer to the decision), `backlog/**`.
 
 Out of scope: the node design itself (IR-SPEC/schema/verifier/ref —
 the cut implementation card); any RegelSpraak surface syntax (frontend,

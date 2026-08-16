@@ -201,12 +201,13 @@ the statute's intent, reproduced under stable-model semantics.
    ladder of wet-v2), layering will need the standard
    exception-predicate pattern and stratification becomes the load-bearing
    WF condition (row 6) — that is the natural next hand exercise.
-4. **"Op dat tijdstip" did not translate** (row 11, recorded gap). The
+4. **"Op dat tijdstip" did not translate** (row 11 — since decided). The
    parent must qualify *at the child's birth* ; this program collapses
    that to an atemporal `kwalificeert/1`, exactly as the boolean corpus
    dossiers do. The timeline machinery is required to say it honestly —
-   the first corpus-driven demand on row 11, recorded rather than silently
-   dropped.
+   the first corpus-driven demand on row 11, decided 2026-08-16:
+   `read(tl, d)` becomes a core IR node (`RUNTIME-SEMANTICS.md` ch. 3.3);
+   in ASP the node is a plain join against the segment relation.
 5. **Closed-world inputs vs open world facts** (row 18, boundary noted).
    `#defined` documents which inputs may be absent, but absence still
    means false; the corpus's "world facts are open" register needs the
