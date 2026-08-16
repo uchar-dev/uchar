@@ -1536,8 +1536,116 @@ date 2026-03-15; Parameterset `penningbedrag` = [2025: 4, 2026: 5]
   class as the standing harness guards (no-op, unsolved-state) still
   to land, recorded here rather than silently absent.
 
+## 7. Defaults and defeasibility (design — the Phase-4 gate)
+
+*Status: normative **design**. This chapter fixes the model, its
+outcomes, and its lowering targets; the wire shape, WF artifacts
+(numbers WF-050/051 reserved, `IR-SPEC.md` ch. 6), executor
+implementations, and corpus witnesses land with the Phase-4
+implementation cards, sized per construct. Until they do, every worked
+outcome below is pinned prose — binding on the implementation, not yet
+machine-checked.*
+
+### 7.1 The model: one ladder of prioritised defaults per target
+
+Adopted direction (`PLAN.md` Phase 4, `IR-REVIEW.md`): Catala's default
+calculus — prioritised defaults with explicit conflict detection —
+specialised by what the ASP hand-exercises established
+(`ASP-TRANSLATION.md` ch. 5 finding 3, ch. 6; `CONSTRUCTS.md` rows
+7/8):
+
+- A **default** is a pair (justification, consequence) aimed at one
+  target (an attribute write or a characteristic attribution).
+- Defaults on one target organise as a **ladder** — a totally ordered
+  priority *chain*, not a set of pairwise preferences: rung *n*
+  applies when its justification holds *unless* rung *n+1*'s
+  justification holds (the art. 4 "geldt niet indien … dat laatste
+  geldt weer niet indien …" shape, verbatim). The ladder is
+  **first-class IR structure**: compiling it away into a DNF of
+  conjunctions would erase exactly the layers that legal amendments
+  edit (the exercise-2 finding).
+- **Parallel grounds** (art. 4bis "evenmin") are separate defaults
+  *outside* any ladder, composing conjunctively: each ground stands on
+  its own, none overrides another.
+- The base rule a ladder qualifies is simply its lowest rung.
+
+### 7.2 Outcomes: under- versus over-determination
+
+The two failure directions stay distinct (row 8, the Catala
+EmptyError/ConflictError split), mapped onto this IR's own discipline:
+
+- **Under-determination** — no rung of any ladder on the target fires:
+  the target stays **leeg**. This is ordinary ch. 1.2 emptiness, not an
+  error and not a channel fact: RegelSpraak's empty discipline wins
+  over Catala's EmptyError (the frozen ch. 1.4 decision), and honest
+  inexpressibility stays with `Onopgelost` (WF-044) — a default never
+  masks an Unresolved node (row 7, the OpenFisca lesson).
+- **Over-determination** — two *unordered* defaults (parallel grounds,
+  or defaults from distinct unordered ladders) fire on one target with
+  conflicting consequences: the target is **not written** (it stays as
+  the non-default layers left it — leeg when nothing else wrote it)
+  and one **§9.5 channel fact** (ch. 5.6 semantics: idempotent,
+  rule × subject) records the conflict. A *linear* ladder can never
+  conflict — higher rungs displace lower ones by construction — so the
+  channel is exercised exactly by unordered simultaneity (the
+  exercise-2 finding).
+
+### 7.3 Initialisation is the lowest rung
+
+The §9.6 initialisation (ch. 5.4) *is* a default: justification "the
+target is empty at the fact base", consequence its value — restated as
+the ladder rung **below every computing rule** on the same target. The
+ch. 5.4 operational account (empty-guard, order-independent outcomes)
+is exactly what this rung must reproduce; its worked example is
+binding: initialisation 25 beside the ch. 5.1 computation chain →
+**50**; the initialisation alone → **25**. Nothing about ch. 5.4's
+semantics changes — Phase 4 changes its *justification* from mechanism
+(a guard) to declaration (a default), so that the Drools lowering can
+derive the guard instead of embodying it.
+
+### 7.4 What defeasibility is *not*
+
+- **Rule-version selection is temporal, not defeasible** (ch. 8.2
+  gating; WF-021 keeps the windows disjoint). A later version does not
+  "override" an earlier one at the same date — they never co-apply.
+  Keeping these mechanisms apart is normative; conflating them is how
+  salience leaked into v0.
+- **Stratified negation is not priority.** The ladder's "unless" is
+  negation over a *derived* justification and therefore enters the
+  ch. 6 dependency graph as a negative edge (the exercise-2 four-stratum
+  chain); WF-045/046 apply unchanged. Priorities MUST NOT smuggle in
+  unstratified negation: a ladder whose rungs cyclically depend on the
+  ladder's own output is ill-formed by the existing rules — no new
+  mechanism, and no salience-like escape hatch.
+- **Strict-versus-defeasible tagging and cross-rule override**
+  (LegalRuleML) are recorded refinements, not v1-design scope.
+
+### 7.5 The lowering table (each row a derivation, not a mechanism)
+
+| Declared (ch. 7) | ASP (`backends/clingo`) | Drools (`regelspraak-java`) | Replaces |
+|---|---|---|---|
+| ladder rung *n* | one rule with `not exception_{n+1}` over the derived layer predicate (`ASP-TRANSLATION.md` ch. 6.1, verbatim) | generated guard on the next layer's condition | the salience −1 trick — becomes derivable output |
+| initialisation rung | NAF over "target derivable by any computing rule" | the empty-guard of ch. 5.4 | the hard-coded guard |
+| parallel grounds | conjunction of independent NAFs outside the ladder | independent rules | agenda ordering |
+| conflict detection | both heads derivable ∧ consequences differ → `inconsistent/2` | §9.5 channel insert | silent last-writer-wins |
+
+### 7.6 Worked examples (absolute; binding on the Phase-4 cards)
+
+1. **The art. 4 ladder** (the Marrit dossier and its four
+   single-difference variants, `ASP-TRANSLATION.md` ch. 6.2): refused
+   raapvergunning → excluded (rung 0); refusal herroepen → not
+   excluded (rung 1 displaces rung 0); herroeping vervallen → excluded
+   again (rung 2 displaces rung 1); each variant's absolute outcome as
+   the hand-runs pin them. These become golden cases verbatim when the
+   ladder node lands.
+2. **Initialisation**: the ch. 5.4 pair (50 with the chain, 25 alone),
+   unchanged.
+3. **Conflict**: two parallel unordered defaults writing 10 and 20 to
+   one empty target → the target stays **leeg**, the channel carries
+   exactly one fact for the pair; the same two defaults ordered as a
+   ladder → the higher rung's value, no channel fact.
+
 ## Chapters (planned)
 
-7. **Defaults.** Initialisation as an explicitly defeasible default (§9.6,
-   ch. 1.2 assignment rule); from Phase 4: the adopted default calculus
-   (priorities, conflict detection, the inconsistency channel).
+*(none — chapters 1–8 are drafted; ch. 7 awaits its Phase-4 wire and
+artifacts as noted in its status line)*

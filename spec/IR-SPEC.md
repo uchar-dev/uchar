@@ -71,7 +71,7 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
 3. **The rule layer** — normative draft (since v0.2).
 4. **The expression and condition layer** — **this release.**
 5. **Time** *(skeleton)*
-6. **Defaults and defeasibility** *(Phase 4)*
+6. **Defaults and defeasibility** *(design: `RUNTIME-SEMANTICS.md` ch. 7; wire and artifacts land Phase 4 — see the ch. 6 stub before the WF index)*
 7. **Serialization** *(lands with `spec/schema/`)*
 8. **Well-formedness rules** — the WF index, at the end of this document.
 9. **The RegelSpraak dialect** *(skeleton)*
@@ -1149,6 +1149,24 @@ Comparison, Predicate, and CharacteristicCheck only —
   characteristic read, or a regelversie channel test): evaluation
   strata MUST exist (`RUNTIME-SEMANTICS.md` ch. 6.3). v0's single
   agenda boundary is the two-stratum special case.
+
+---
+
+## 6. Defaults and defeasibility *(stub)*
+
+The model is designed in `RUNTIME-SEMANTICS.md` ch. 7: one first-class
+**ladder** of prioritised defaults per target (rung *n* unless rung
+*n+1*), parallel grounds outside ladders, initialisation as the lowest
+rung, under-determination = leeg, over-determination = the §9.5
+channel. The kernel node (working name `DefaultLadder`), its wire shape
+(per the Method's extension discipline), executor implementations, and
+corpus witnesses land with the Phase-4 implementation cards. **Reserved
+WF numbers** (statements in ch. 7, artifacts OPEN until then): WF-050 —
+ladder well-formedness (≥ 1 rung, one target, resolvable
+justifications); WF-051 — a ladder's implicit negations enter the ch. 6
+dependency graph of `RUNTIME-SEMANTICS.md` as negative edges and
+WF-045/046 apply unchanged (no priority-shaped escape from
+stratification). Do not assign WF-050/051 to anything else.
 
 ---
 
