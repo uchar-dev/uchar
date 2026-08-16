@@ -483,10 +483,19 @@ finding 4; `CONSTRUCTS.md` row 11): Jutterswet art. 1 needs the value of
 read at an instant that is not the evaluation date. That is doubly
 inexpressible in v0: there is no point read at all, and no way to name a
 non-rekendatum instant. The algebra above already defines the needed
-primitive (`read(tl, d)` with `d` any date expression); **OPEN**
-(ch. 3.12): whether v1 exposes it as an IR node (a temporal-read
-expression carrying a timeline operand and a date operand) — the first
-corpus-driven demand on row 11 — or keeps timelines collapse-only.
+primitive (`read(tl, d)` with `d` any date expression). **Decided
+(maintainer, 2026-08-16, row 11):** v1 exposes it as a core IR node — a
+temporal-read expression carrying a timeline operand and a date
+operand — on the principle that the IR must carry every source-language
+primitive; art. 1 and the ch. 8 vintage read (a parameter timeline read
+at the evaluation date) become expressible. The reconciliation with
+ch. 5.7's fail-fast vintage discipline is a division of labour: the
+read keeps its ch. 3.1 leeg-on-gap totality, and ch. 8's fail-fast
+lives in the data plane — the Parameterset must cover the evaluation
+window (a gap or overlap is a session-start error, raised before any
+read). The node design, its WF rules, and its artifacts land with the
+implementation card; the RegelSpraak surface follows spec-first via a
+pin bump.
 
 ### 3.4 Cut-merge arithmetic — the period-coalescing rule (§5.1.4)
 
@@ -874,7 +883,7 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 |---|---|
 | Multi-period grids (`count` ≥ 2): all reads and writes | refused (mirrored); OPEN — specify producers or restrict `count` = 1 |
 | Bucketing by day/week/quarter | absent (mirrored); OPEN with the grid decision |
-| Point-in-time read (the "op dat tijdstip" node) | OPEN — expose `read(tl, d)` as an IR node, or stay collapse-only (row 11) |
+| Point-in-time read (the "op dat tijdstip" node) | **decided (v1)**: `read(tl, d)` becomes a core IR node (ch. 3.3, row 11); design lands with the implementation card |
 | Timeline arithmetic beyond plus/min (verminderd-met, maal, division, percentage) | refused (mirrored); OPEN — per-period lifting of ch. 1.2 rules is the candidate |
 | Scalar broadcast into timeline arithmetic / unconditional temporal characteristic | refused (mirrored); OPEN — both need a time domain for unbounded segments |
 | min/max/eerste/laatste over timelines | refused (mirrored); OPEN — the two readings (per-period vs over-time) must be defined apart |
