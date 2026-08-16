@@ -1,0 +1,25 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-03-15",
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "penningbedrag": { "timeline": [
+        { "from": "2025-01-01", "to": "2026-01-01", "value": { "number": "4" } },
+        { "from": "2026-01-01", "to": "2027-01-01", "value": { "number": "5" } }
+      ] }
+    }
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "huidig penningbedrag", "value": { "number": "5" } },
+    { "kind": "consistent" }
+  ]
+}

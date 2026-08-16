@@ -1421,12 +1421,113 @@ many strata as the chain is deep.
 
 ---
 
+## 8. Time selection
+
+### 8.1 The single axis
+
+One evaluation session carries **one date** (ch. 5.7 step 1): the
+**evaluation date** — v0 surface name *Rekendatum*, wire name `asOfDate`
+in `uchar-case-v0`. It is simultaneously the valuation date, the
+calculation date, and the vintage selector: the single time axis of
+`PLAN.md` §9, decision 2, accepted v1 scope. A time-free session
+carries none (`asOfDate` null), and every construct that needs the date
+faults when it is absent — never a default "today".
+
+**Extension point (named, not designed):** a second, knowledge-time
+axis — "what did we believe the rules/data were on date k" (retroactive
+legislation) — would enter as a *second* session parameter next to the
+evaluation date, selecting among rule versions and parameter timelines
+*as known at k*, while the evaluation date keeps indexing the object
+timelines. Nothing in this chapter may assume the two coincide
+structurally; that is the whole extension point. Adding the axis is a
+session-shape change (ch. 5.7 step 1), not a re-foundation of the
+timeline algebra.
+
+### 8.2 Gating versus indexing
+
+The evaluation date acts in exactly two ways, and the distinction is
+normative:
+
+- **It gates.** A versioned form applies only when the date falls in
+  its validity window (ch. 5.7; `IR-SPEC.md` ch. 3.10), and the
+  ch. 3.10 period condition tests the date against a window. Gating
+  decides *whether* a rule participates.
+- **It indexes only through the read.** No construct implicitly turns a
+  timeline into "its value today": the only bridges from a timeline to
+  a scalar are the dedicated collapses (ch. 3.6, 3.9) and the explicit
+  point read (ch. 3.3, `IR-SPEC.md` ch. 4.3a). The evaluation date is
+  available to expressions solely as the v0 execution-date constant —
+  `Constante` named `Rekendatum` (day precision; its sibling
+  `Rekenjaar`, a whole number, is not yet exercised by any corpus case
+  and executors fault on it, recorded).
+
+### 8.3 The vintage read
+
+Selecting a parameter's vintage **is not a separate mechanism**: it is
+the ch. 4.3a temporal read of a granular parameter with the evaluation
+date as index — `read(tl_p, Rekendatum)`. The read itself keeps its
+ch. 3.1 totality (a gap reads to leeg; an empty index reads to leeg);
+everything fail-fast about vintages lives one layer down, in the data
+plane (ch. 8.4), where it is checked **before any rule fires**. This is
+the decided division of labour of ch. 3.3.
+
+### 8.4 The Parameterset and the session-start coverage check
+
+The **Parameterset** is the data plane of granular parameters: per
+parameter its full timeline, supplied by the session (in the corpus:
+the `uchar-case-v0` timeline value variant on a parameter). Its
+well-formedness is data-plane, not IR well-formedness — no WF number;
+the checks live in the loaders and at session start, like the case
+loader's cross-checks:
+
+- **Load-time (per timeline, ch. 3.1 shape):** day-precision segments,
+  ordered, non-overlapping, aligned to the declared granularity grid —
+  an overlap is a load error, never a later surprise.
+- **Session-start (coverage):** for every granular parameter the
+  document reads at the evaluation date (a ch. 8.3 vintage read), the
+  session MUST carry an evaluation date, the Parameterset MUST carry
+  that parameter's timeline, and the timeline MUST cover the
+  evaluation date (the single-axis evaluation window is that one day).
+  A violation is a **session-start error**, raised before any rule
+  fires — a missing vintage never surfaces as a mid-evaluation leeg.
+
+The two conventions of the case format stay strictly apart (ch. 3.6,
+`spec/schema/README.md`): the asOfDate-bucket scalar serves the
+temporal total; the full timeline serves reads. An executor that needs
+the one and finds the other faults — never guesses (the ch. 4.3a
+rule) — and both executors implement the session-start check
+identically (`ref/` at evaluation entry; the ASP backend at
+translation time, before emitting a program).
+
+Point reads at a *non*-evaluation-date index (the art. 1 shape,
+ch. 3.3) are deliberately **outside** this check: their index is
+data-dependent, so gap-to-leeg is their meaning (the anchor case
+`jutterswet-aanmeldquotum` pins it); the session-start check covers
+exactly the reads whose index is the session's own date, where a gap
+is a configuration error, not a data condition.
+
+### 8.5 Worked example (absolute; the anchor case verbatim)
+
+Document: granular parameter `penningbedrag` (year granularity, whole
+number); rule: *het huidig penningbedrag van een Jutter* = the
+temporal read of `penningbedrag` at `Rekendatum`. Session: evaluation
+date 2026-03-15; Parameterset `penningbedrag` = [2025: 4, 2026: 5]
+(year segments).
+
+- Coverage check: the document vintage-reads `penningbedrag`; the date
+  is present; the timeline covers 2026-03-15 → the session starts.
+- The read: the 2026 segment → **5**; every Jutter's `huidig
+  penningbedrag` is 5 (`corpus/golden/anchor/jutterswet-penningvintage`,
+  replayed by gates 5 and 6).
+- The uncovered variant (same document, evaluation date 2028-03-15, or
+  the timeline absent): the session-start check fails before any rule
+  fires — both executors report the missing coverage; nothing is
+  evaluated. This variant cannot sit in the golden corpus (a golden
+  must replay green); it is pinned here and exercised in the card's
+  verification record.
+
 ## Chapters (planned)
 
 7. **Defaults.** Initialisation as an explicitly defeasible default (§9.6,
    ch. 1.2 assignment rule); from Phase 4: the adopted default calculus
    (priorities, conflict detection, the inconsistency channel).
-8. **Time selection.** The single axis (valuation = calculation = vintage
-   selection); fail-fast vintage semantics (gap and overlap are errors,
-   never silent defaults); the named extension point for a knowledge-time
-   axis. Parameter value data (`Parameterset`) is specified here.

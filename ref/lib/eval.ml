@@ -240,6 +240,16 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
            delen)
   | Expr_onopgelost _ ->
       Value.fault "Onopgelost reached in evaluation: this rule fails observably (WF-044)"
+  | Constante { naam = Some n; _ } when norm n = norm "Rekendatum" -> (
+      (* ch. 8.2: the execution-date constant — the only expression-level
+         access to the evaluation date *)
+      match env.as_of with
+      | Some d -> Value.date_of_iso d
+      | None ->
+          Value.fault
+            "the Rekendatum constant needs an evaluation date; the case carries asOfDate null")
+  | Constante { naam = Some n; _ } when norm n = norm "Rekenjaar" ->
+      Value.fault "the Rekenjaar constant is not exercised by any corpus case (ch. 8.2)"
   | Dimensie_cel _ | Variabele_ref _ | Constante _ ->
       Value.fault "expression kind not implemented in this card"
   | Temporal_read { basis; datum; typ = _; bron = _ } -> (
@@ -631,6 +641,96 @@ let run_uniciteit env world (u : resolved_uniciteit) =
 
 (* --- the session (ch. 5.7) --------------------------------------------- *)
 
+(* ch. 8.4: the Parameterset session-start coverage check. Every granular
+   parameter the document reads at the evaluation date (a ch. 8.3 vintage
+   read: TemporalRead of a ParameterRef indexed by Rekendatum) must have
+   a timeline in the session that covers that date — checked before any
+   rule fires; a missing vintage is a configuration error, never a
+   mid-evaluation leeg. Point reads at data-dependent indices are
+   deliberately outside this check (ch. 8.4). Shared with the ASP
+   backend, which runs it at translation time: data-plane validation,
+   not evaluation semantics. *)
+let vintage_read_params (doc : document) : string list =
+  let acc = ref [] in
+  let rec expr (e : expr) =
+    match e with
+    | Temporal_read
+        { basis = Parameter_ref { parameter = Some p; _ };
+          datum = Constante { naam = Some n; _ }; _ }
+      when norm n = norm "Rekendatum" ->
+        if not (List.exists (fun q -> norm q = norm p) !acc) then acc := p :: !acc
+    | Temporal_read { basis; datum; _ } ->
+        expr basis;
+        expr datum
+    | Literal _ | Attribuut_ref _ | Parameter_ref _ | Variabele_ref _ | Constante _
+    | Expr_onopgelost _ ->
+        ()
+    | Tekst_reeks { delen; _ } ->
+        List.iter (function Ingevoegd { expr = Some e } -> expr e | _ -> ()) delen
+    | Binair { links; rechts; _ } -> opt links; opt rechts
+    | Functie { argumenten; leegwaarde; filter; _ } ->
+        List.iter expr argumenten;
+        opt leegwaarde;
+        copt filter
+    | Afgerond { basis; _ } -> opt basis
+    | Begrensd { basis; minimum; maximum; _ } -> opt basis; opt minimum; opt maximum
+    | Dimensie_cel { attribuut; _ } -> opt attribuut
+  and opt = function Some e -> expr e | None -> ()
+  and cond (c : conditie) =
+    match c with
+    | Vergelijking { links; rechts; _ } -> opt links; opt rechts
+    | Predicaat { operand; _ } -> opt operand
+    | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _ | Regelversie _
+    | Conditie_onopgelost _ ->
+        ()
+    | Periode_conditie { vanaf; tot; _ } -> opt vanaf; opt tot
+    | Samengesteld { onderdelen; _ } -> List.iter cond onderdelen
+  and copt = function Some c -> cond c | None -> ()
+  in
+  List.iter
+    (fun (r : resolved_regel) ->
+      opt r.doel;
+      opt r.waarde;
+      copt r.rr_voorwaarde)
+    doc.resolved_regels;
+  List.iter (fun (v : resolved_verdeling) -> copt v.vd_voorwaarde) doc.verdelingen;
+  List.iter (fun (c : resolved_consistentie) -> copt c.assertie) doc.consistenties;
+  List.iter (fun (d : resolved_dagsoort) -> copt d.rd_voorwaarde) doc.resolved_dagsoorten;
+  List.iter (fun (fc : resolved_feit_creatie) -> copt fc.fc_voorwaarde) doc.feit_creaties;
+  List.iter
+    (fun (oc : resolved_object_creatie) ->
+      List.iter (fun (t : toekenning) -> opt t.toe_waarde) oc.toekenningen;
+      copt oc.oc_voorwaarde)
+    doc.object_creaties;
+  !acc
+
+let parameterset_check env =
+  List.iter
+    (fun p ->
+      match env.as_of with
+      | None ->
+          Value.fault
+            "session start: the document vintage-reads parameter %S, but the session carries \
+             no evaluation date (asOfDate is null) — ch. 8.4"
+            p
+      | Some d -> (
+          let day =
+            match Value.date_of_iso d with Value.Date z -> z | _ -> assert false
+          in
+          match SMap.find_opt (norm p) env.param_tls with
+          | None ->
+              Value.fault
+                "session start: the document vintage-reads parameter %S, but the Parameterset \
+                 carries no timeline for it — ch. 8.4"
+                p
+          | Some tl ->
+              if Timeline.read tl day = Value.Empty then
+                Value.fault
+                  "session start: the Parameterset timeline of %S does not cover the \
+                   evaluation date %s — ch. 8.4"
+                  p d))
+    (vintage_read_params env.doc)
+
 let fixpoint ~budget step world =
   let rec go n world =
     if n > budget then
@@ -646,6 +746,7 @@ let evaluate env world =
     Value.fault "object/fact creation is not implemented in this card";
   if env.doc.uniciteit_unies <> [] then Value.fault "uniqueness unions not implemented in this card";
   if env.doc.regel_groepen <> [] then Value.fault "rule groups are not implemented in this card";
+  parameterset_check env;
   (* Strata (ch. 6.3), computed from the same dependency graph the
      verifier checks (Ir_v0.Checks.dep_forms — shared by construction,
      so ref/ and WF-045/046 cannot drift). Every form gets the smallest

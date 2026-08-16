@@ -37,6 +37,12 @@ spec bug.
   and the read is `From <= D, D < To`. A gap or an empty date index
   leaves the body unbound — leeg as absence, exactly ref/'s
   leeg-on-gap and empty-index rules.
+- The `Rekendatum` constant is the session's evaluation date as a
+  program constant (ch. 8.2), and the ch. 8.4 session-start
+  Parameterset coverage check runs before a program is emitted — the
+  shared data-plane validation of `uchar-ref` (like the case loader),
+  so an uncovered vintage read faults identically in both executors
+  instead of ever reaching clingo.
 - Constructs outside the corpus-exercised subset fault the translator —
   fail fast, never a silent SKIP.
 
