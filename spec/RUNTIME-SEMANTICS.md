@@ -1546,7 +1546,7 @@ implementation cards, sized per construct. Until they do, every worked
 outcome below is pinned prose — binding on the implementation, not yet
 machine-checked.*
 
-### 7.1 The model: one ladder of prioritised defaults per target
+### 7.1 The model: the ladder, and fall-through as its semantics
 
 Adopted direction (`PLAN.md` Phase 4, `IR-REVIEW.md`): Catala's default
 calculus — prioritised defaults with explicit conflict detection —
@@ -1556,67 +1556,123 @@ specialised by what the ASP hand-exercises established
 
 - A **default** is a pair (justification, consequence) aimed at one
   target (an attribute write or a characteristic attribution).
-- Defaults on one target organise as a **ladder** — a totally ordered
-  priority *chain*, not a set of pairwise preferences: rung *n*
-  applies when its justification holds *unless* rung *n+1*'s
-  justification holds (the art. 4 "geldt niet indien … dat laatste
-  geldt weer niet indien …" shape, verbatim). The ladder is
-  **first-class IR structure**: compiling it away into a DNF of
-  conjunctions would erase exactly the layers that legal amendments
-  edit (the exercise-2 finding).
-- **Parallel grounds** (art. 4bis "evenmin") are separate defaults
-  *outside* any ladder, composing conjunctively: each ground stands on
-  its own, none overrides another.
-- The base rule a ladder qualifies is simply its lowest rung.
+- Defaults on one target organise as a **ladder**: a totally ordered
+  priority chain of rungs. The ladder is **one writer** evaluating to
+  **one outcome**, top-down: the ladder's outcome is the consequence of
+  the **highest rung whose justification holds and whose consequence
+  evaluates gevuld**; a rung whose justification fails, or whose
+  consequence evaluates leeg, **falls through** to the next lower rung
+  (Catala's own fall-through). At most one rung supplies the outcome,
+  so a single ladder can never conflict — as a property of the
+  semantics, not a claim about authors.
+- If at least one justification held but every justified rung fell
+  through on leeg, the ladder's outcome is **leeg** and is written as
+  such (an ordinary ch. 1.2g write); if no justification held at all,
+  the ladder **does not write**. Input facts are **not** a rung: they
+  are the initial fact base the ladder's write meets under ch. 1.2g.
+- The **base rule** is a rung like any other; the initialisation rung,
+  when present, sits below it (ch. 7.3). The textual nesting of
+  art. 4 — "geldt niet indien …, dat laatste geldt weer niet indien …"
+  — is surface form: the frontend desugars each nested layer to a
+  self-contained justification (conjoining its enclosing layer's), so
+  rungs carry independent conditions and top-down fall-through decides.
+  The ladder stays **first-class IR structure**: compiling it into a
+  DNF would erase exactly the layers legal amendments edit (the
+  exercise-2 finding).
+- **Parallel grounds** (art. 4bis "evenmin") are *separate ladders*,
+  each on its own target, composing conjunctively downstream (each
+  ground guards its consumer independently). Multiple ladders on **the
+  same** target are admissible only as **declared-unordered** parallel
+  defaults — the IR makes priority explicit (rungs in one ladder) or
+  explicitly absent (separate ladders on one target); there is no
+  implicit order between ladders. That declared absence is exactly the
+  over-determination surface of ch. 7.2.
+- **Single-writer, reconciled (ch. 5.2):** the ladder *is* the
+  sanctioned form of "many grounds, one target". WF-026's single-writer
+  principle lifts from "one rule per target" to "one ladder — or one
+  declared-unordered ladder group — per target"; because a ladder
+  evaluates as one writer to one outcome, ch. 5.2's confluence argument
+  carries over unchanged, and the declared-unordered group is the one
+  place it deliberately does not (ch. 7.2's channel is the price, paid
+  loudly).
 
 ### 7.2 Outcomes: under- versus over-determination
 
 The two failure directions stay distinct (row 8, the Catala
-EmptyError/ConflictError split), mapped onto this IR's own discipline:
+EmptyError/ConflictError shape), mapped onto this IR's own discipline:
 
-- **Under-determination** — no rung of any ladder on the target fires:
-  the target stays **leeg**. This is ordinary ch. 1.2 emptiness, not an
-  error and not a channel fact: RegelSpraak's empty discipline wins
-  over Catala's EmptyError (the frozen ch. 1.4 decision), and honest
-  inexpressibility stays with `Onopgelost` (WF-044) — a default never
-  masks an Unresolved node (row 7, the OpenFisca lesson).
-- **Over-determination** — two *unordered* defaults (parallel grounds,
-  or defaults from distinct unordered ladders) fire on one target with
-  conflicting consequences: the target is **not written** (it stays as
-  the non-default layers left it — leeg when nothing else wrote it)
-  and one **§9.5 channel fact** (ch. 5.6 semantics: idempotent,
-  rule × subject) records the conflict. A *linear* ladder can never
-  conflict — higher rungs displace lower ones by construction — so the
-  channel is exercised exactly by unordered simultaneity (the
-  exercise-2 finding).
+- **Under-determination** — no ladder on the target produces a gevuld
+  outcome: the target ends **leeg** (written or untouched per ch. 7.1).
+  **Decided here (a tracked deviation from Catala, `CONSTRUCTS.md`
+  row 8):** Catala's catchable ∅ (EmptyError) maps to ordinary leeg,
+  consistent in spirit with the ch. 1.4 empty-as-value decision but
+  decided in this chapter, not by it. *Within* a ladder, Catala's
+  ∅-fallback survives structurally as fall-through; *across*
+  compositions it does not — a Catala frontend must compile
+  enclosing-default fallback into ladder structure, never into an
+  error bit. That reconciliation is a recorded Phase-5 obligation.
+  Honest inexpressibility stays with `Onopgelost` (WF-044) — a default
+  never masks an Unresolved node (row 7, the OpenFisca lesson).
+- **Over-determination** — two ladders of one **declared-unordered
+  group** on one target both produce gevuld outcomes and the values
+  differ: the group **does not write** (the target keeps what the fact
+  base holds — its input value, or leeg) and one **§9.5 channel fact**
+  records the conflict, keyed per ch. 5.6 as rule × subject with the
+  group's target form as the rule name. Equal values are no conflict
+  (idempotence, ch. 5.1). A single ladder cannot reach this outcome
+  (ch. 7.1); the channel is exercised exactly by declared-unordered
+  simultaneity — and a linear ladder never pays it (the exercise-2
+  finding, now by construction).
+- **Characteristic targets** obey ch. 5.3's monotonicity: a ladder on a
+  characteristic computes one attribution *decision* at the fixpoint of
+  its justification strata — it never writes per rung, and a higher
+  rung whose meaning is "not excluded" simply makes the ladder derive
+  nothing (no retraction exists to need). Over-determination cannot
+  arise on a characteristic (there is only one non-default value);
+  under-determination is the ordinary absent characteristic.
 
 ### 7.3 Initialisation is the lowest rung
 
 The §9.6 initialisation (ch. 5.4) *is* a default: justification "the
-target is empty at the fact base", consequence its value — restated as
-the ladder rung **below every computing rule** on the same target. The
-ch. 5.4 operational account (empty-guard, order-independent outcomes)
-is exactly what this rung must reproduce; its worked example is
-binding: initialisation 25 beside the ch. 5.1 computation chain →
-**50**; the initialisation alone → **25**. Nothing about ch. 5.4's
-semantics changes — Phase 4 changes its *justification* from mechanism
-(a guard) to declaration (a default), so that the Drools lowering can
-derive the guard instead of embodying it.
+target is empty in the input facts", consequence its value — the rung
+below the base rule. The fall-through semantics reproduces ch. 5.4's
+operational account case by case: a computing rung with a holding
+condition and a gevuld outcome supplies the value (computed wins — 50
+in the ch. 5.1 chain example); a computing rung that evaluates **leeg
+falls through**, so the initialisation still fills the empty target
+(25 — exactly ch. 5.4's "the initialisation still matches"); an
+input-supplied target fails the initialisation's own justification and
+is left standing; the initialisation alone fills the empty target
+(25). The worked pair of ch. 5.4 is binding unchanged. Phase 4 changes
+the *justification* from mechanism (a guard) to declaration (the
+lowest rung), so the Drools lowering derives the guard instead of
+embodying it.
 
-### 7.4 What defeasibility is *not*
+### 7.4 What defeasibility is *not* — and what it must not break
 
 - **Rule-version selection is temporal, not defeasible** (ch. 8.2
   gating; WF-021 keeps the windows disjoint). A later version does not
   "override" an earlier one at the same date — they never co-apply.
   Keeping these mechanisms apart is normative; conflating them is how
   salience leaked into v0.
-- **Stratified negation is not priority.** The ladder's "unless" is
-  negation over a *derived* justification and therefore enters the
-  ch. 6 dependency graph as a negative edge (the exercise-2 four-stratum
-  chain); WF-045/046 apply unchanged. Priorities MUST NOT smuggle in
-  unstratified negation: a ladder whose rungs cyclically depend on the
-  ladder's own output is ill-formed by the existing rules — no new
-  mechanism, and no salience-like escape hatch.
+- **Stratification extends to displacement, it is not replaced by
+  priority.** A rung's fall-through reads the justifications and
+  consequences of the rungs *above* it: those reads join the ch. 6
+  dependency graph as **negative edges** regardless of whether they
+  test characteristics or attributes — an **extension of the ch. 6.1
+  edge classes** (which today carry only negated characteristic reads
+  and channel tests) that lands together with the ladder node. This is
+  precisely the debt ch. 6.1's residual note ("conditions on
+  attribute-writing forms read positively here … await the default
+  model of ch. 7") assigns to this chapter: the ladder is where a
+  condition's failure becomes observable displacement, so the ladder's
+  edges carry the negativity. WF-045/046's *principles* — no negative
+  edge on any cycle; strata exist — apply to the extended graph;
+  WF-051 states exactly that. A ladder whose rungs cyclically depend
+  on the ladder's own output is thereby ill-formed — no salience-like
+  escape hatch. (Within one session evaluation there is still no
+  retraction: the ladder decides once, at the fixpoint of its
+  justification strata, per ch. 5.3's staging.)
 - **Strict-versus-defeasible tagging and cross-rule override**
   (LegalRuleML) are recorded refinements, not v1-design scope.
 
@@ -1624,26 +1680,32 @@ derive the guard instead of embodying it.
 
 | Declared (ch. 7) | ASP (`backends/clingo`) | Drools (`regelspraak-java`) | Replaces |
 |---|---|---|---|
-| ladder rung *n* | one rule with `not exception_{n+1}` over the derived layer predicate (`ASP-TRANSLATION.md` ch. 6.1, verbatim) | generated guard on the next layer's condition | the salience −1 trick — becomes derivable output |
-| initialisation rung | NAF over "target derivable by any computing rule" | the empty-guard of ch. 5.4 | the hard-coded guard |
-| parallel grounds | conjunction of independent NAFs outside the ladder | independent rules | agenda ordering |
-| conflict detection | both heads derivable ∧ consequences differ → `inconsistent/2` | §9.5 channel insert | silent last-writer-wins |
+| ladder rung *n* | one rule with `not applied_m` for each higher rung *m* (over derived layer predicates; the nested art. 4 chain of `ASP-TRANSLATION.md` ch. 6.1 is its desugared special case) | generated guard from the higher rungs' conditions | the salience −1 trick — becomes derivable output |
+| fall-through on leeg | the rung's head is underivable when its consequence body is — absence composes | consequence-null guard | nothing (v0 cannot express it) |
+| initialisation rung | NAF over the input fact | the empty-guard of ch. 5.4 | the hard-coded guard |
+| declared-unordered group | both heads derivable ∧ values differ → `inconsistent/2`, no `val/3` | §9.5 channel insert, no write | silent last-writer-wins |
 
 ### 7.6 Worked examples (absolute; binding on the Phase-4 cards)
 
 1. **The art. 4 ladder** (the Marrit dossier and its four
-   single-difference variants, `ASP-TRANSLATION.md` ch. 6.2): refused
-   raapvergunning → excluded (rung 0); refusal herroepen → not
-   excluded (rung 1 displaces rung 0); herroeping vervallen → excluded
-   again (rung 2 displaces rung 1); each variant's absolute outcome as
-   the hand-runs pin them. These become golden cases verbatim when the
-   ladder node lands.
-2. **Initialisation**: the ch. 5.4 pair (50 with the chain, 25 alone),
-   unchanged.
-3. **Conflict**: two parallel unordered defaults writing 10 and 20 to
-   one empty target → the target stays **leeg**, the channel carries
-   exactly one fact for the pair; the same two defaults ordered as a
-   ladder → the higher rung's value, no channel fact.
+   single-difference variants, `ASP-TRANSLATION.md` ch. 6.2), after
+   desugaring to self-contained justifications: refused → excluded
+   (base rung); refused ∧ herroepen → the higher rung derives
+   "exception", the ladder's decision is *not excluded*; refused ∧
+   herroepen ∧ vervallen → the top rung wins, *excluded* again. Each
+   dossier variant's absolute outcome as the hand-runs pin them
+   (`ASP-TRANSLATION.md` ch. 6.3 runs match). These become golden
+   cases verbatim when the ladder node lands.
+2. **Initialisation**: the ch. 5.4 pair (50 with the chain, 25 alone)
+   unchanged, **plus** the fall-through case pinned: a computing rung
+   whose outcome is leeg over an empty target with initialisation 25 →
+   **25**, never leeg.
+3. **Conflict**: a declared-unordered group writing 10 and 20 to one
+   empty target → the target stays **leeg**, the channel carries one
+   fact (target form × subject); the same two defaults ordered as a
+   ladder → **20 is the outcome iff it is the higher rung** and no
+   channel fact; the same group both writing 10 → **10**, no conflict
+   (equal values).
 
 ## Chapters (planned)
 

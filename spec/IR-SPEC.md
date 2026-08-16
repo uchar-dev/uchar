@@ -1154,19 +1154,26 @@ Comparison, Predicate, and CharacteristicCheck only —
 
 ## 6. Defaults and defeasibility *(stub)*
 
-The model is designed in `RUNTIME-SEMANTICS.md` ch. 7: one first-class
-**ladder** of prioritised defaults per target (rung *n* unless rung
-*n+1*), parallel grounds outside ladders, initialisation as the lowest
-rung, under-determination = leeg, over-determination = the §9.5
-channel. The kernel node (working name `DefaultLadder`), its wire shape
-(per the Method's extension discipline), executor implementations, and
-corpus witnesses land with the Phase-4 implementation cards. **Reserved
-WF numbers** (statements in ch. 7, artifacts OPEN until then): WF-050 —
-ladder well-formedness (≥ 1 rung, one target, resolvable
-justifications); WF-051 — a ladder's implicit negations enter the ch. 6
-dependency graph of `RUNTIME-SEMANTICS.md` as negative edges and
-WF-045/046 apply unchanged (no priority-shaped escape from
-stratification). Do not assign WF-050/051 to anything else.
+The model is designed in `RUNTIME-SEMANTICS.md` ch. 7: a first-class
+**ladder** of prioritised defaults per target evaluating top-down with
+**fall-through** (the highest rung whose justification holds and whose
+consequence is gevuld supplies the one outcome; a single ladder cannot
+conflict), initialisation as the lowest rung, priority either explicit
+(rungs) or explicitly absent (a declared-unordered ladder group on one
+target — the only over-determination surface, routed to the §9.5
+channel); under-determination is leeg (a tracked Catala deviation,
+`CONSTRUCTS.md` row 8). The kernel node (working name `DefaultLadder`),
+its wire shape (per the Method's extension discipline), executor
+implementations, and corpus witnesses land with the Phase-4
+implementation cards. **Reserved WF numbers** (statements in ch. 7,
+artifacts OPEN until then): WF-050 — ladder/group well-formedness
+(≥ 1 rung, one target per ladder, resolvable justifications; priority
+explicit or explicitly absent, never implicit); WF-051 — displacement
+reads (a rung's dependence on the rungs above it) join the ch. 6
+dependency graph as negative edges — an extension of the ch. 6.1 edge
+classes landing with the ladder node — and the WF-045/046 principles
+apply to the extended graph. Do not assign WF-050/051 to anything
+else.
 
 ---
 
