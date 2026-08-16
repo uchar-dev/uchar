@@ -24,3 +24,16 @@ jobs:
         run: python3 -m pip install --user jsonschema
       - name: check-ir-schema
         run: sh scripts/check-ir-schema.sh
+
+  verifier:
+    name: "Gate 3: IR verifier"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5"
+      - name: install yojson
+        run: opam install -y yojson
+      - name: check-verifier
+        run: opam exec -- sh scripts/check-verifier.sh

@@ -23,7 +23,8 @@ check has a passing golden and a failing negatief case; the WF index in
 May touch: `spec/verifier/` (protected — merge mandate),
 `corpus/negatief/`, `scripts/` (protected), `.github/` (protected),
 `spec/IR-SPEC.md` (protected; WF index + conventions cells only),
-`backlog/`.
+`CLAUDE.md` (protected; the gate list grows by gate 3 — constitutional
+obligation, added to this contract at delivery), `backlog/`.
 
 Out of scope: the `ref/` interpreter itself; WF rules needing typing or
 cross-layer data absent from v0 dumps (their index cells stay OPEN with

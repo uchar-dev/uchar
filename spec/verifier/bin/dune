@@ -1,0 +1,3 @@
+(executable
+ (name verifier)
+ (libraries ir_v0 yojson))

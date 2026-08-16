@@ -1049,53 +1049,59 @@ Comparison, Predicate, and CharacteristicCheck only —
 Format per rule: statement (in ch. 2–4), verifier check, golden case,
 negatief case. `OPEN` = the artifact does not exist yet; an `OPEN` entry is
 tracked debt under the spec discipline, and the Phase-1 exit requires every
-row closed.
+row closed. "gate 3" = implemented in `spec/verifier/` and run by
+`scripts/check-verifier.sh` over every golden and negatief case; a
+parenthesis names the clause the v0 wire format cannot carry (that clause
+stays OPEN with the reason). Negatief cases live in
+`corpus/negatief/wf###-<slug>/`; the directory name declares the violated
+rule and gate 3 requires the verifier to reject the case for exactly that
+rule.
 
 | ID | Statement (see ch. 2–4) | Verifier check | Golden | Negatief |
 |---|---|---|---|---|
-| WF-001 | top-level names unique per namespace (ci) | OPEN | OPEN | OPEN |
-| WF-002 | member names unique per kind within an object type (ci) | OPEN | OPEN | OPEN |
-| WF-003 | every model-layer name reference resolves | OPEN | OPEN | OPEN |
-| WF-004 | dimensioned attribute: non-empty, duplicate-free, resolving dimension list | OPEN | OPEN | OPEN |
-| WF-005 | timeline facet: count ≥ 1; named adoption total and consistent | OPEN | OPEN | OPEN |
-| WF-006 | enumeration domain: ≥ 1 value, values unique | OPEN | OPEN | OPEN |
-| WF-007 | number precision is exactly one of whole / fixed / unbounded | OPEN | OPEN | OPEN |
-| WF-008 | enumeration compatibility = same declaring domain (use-time; expression layer) | OPEN | OPEN | OPEN |
-| WF-009 | unit conversions reduce: no cycles, no unknown targets, positive rational factors | OPEN | OPEN | OPEN |
-| WF-010 | no restatement between non-convertible units (use-time; expression layer) | OPEN | OPEN | OPEN |
-| WF-011 | fact-type arity: reciprocal = 1 role, else ≥ 2 (>2 OPEN) | OPEN | OPEN | OPEN |
-| WF-012 | role names unambiguous within a fact type (incl. plurals) | OPEN | OPEN | OPEN |
-| WF-013 | reciprocal role is to-one; other roles carry explicit cardinality | OPEN | OPEN | OPEN |
-| WF-014 | dimension labels non-empty, duplicate-free, ordered | OPEN | OPEN | OPEN |
-| WF-015 | one timeline declaration per normalized name; references resolve | OPEN | OPEN | OPEN |
-| WF-016 | variable-start timeline is anchored (rule-layer check) | OPEN (cross-layer) | OPEN | OPEN |
-| WF-017 | day-kind spellings shadow no built-in unit and no other day-kind | OPEN | OPEN | OPEN |
-| WF-018 | parameter datatype resolves; timeline facet well-formed | OPEN | OPEN | OPEN |
+| WF-001 | top-level names unique per namespace (ci) | gate 3 | OPEN | `wf001-duplicate-parameter` |
+| WF-002 | member names unique per kind within an object type (ci) | gate 3 | OPEN | `wf002-duplicate-kenmerk` |
+| WF-003 | every model-layer name reference resolves | gate 3 (partial: sentinel datatypes, enum domains, role fillers, named timelines; a reference v0 *dropped* is invisible in the dump) | OPEN | `wf003-unresolved-domain` |
+| WF-004 | dimensioned attribute: non-empty, duplicate-free, resolving dimension list | gate 3 | OPEN | `wf004-duplicate-dimension` |
+| WF-005 | timeline facet: count ≥ 1; named adoption total and consistent | gate 3 (attributes; characteristic and parameter facets are under-represented in v0 — ch. 2.10) | OPEN | `wf005-count-zero` |
+| WF-006 | enumeration domain: ≥ 1 value, values unique | gate 3 | OPEN | `wf006-duplicate-enum-value` |
+| WF-007 | number precision is exactly one of whole / fixed / unbounded | gate 3 | OPEN | `wf007-whole-with-decimals` |
+| WF-008 | enumeration compatibility = same declaring domain (use-time; expression layer) | OPEN (no corpus witness with two enum operands yet) | OPEN | OPEN |
+| WF-009 | unit conversions reduce: no cycles, no unknown targets, positive rational factors | gate 3 (positivity and termination; exactness is not representable in v0's float factor) | OPEN | `wf009-conversion-cycle` |
+| WF-010 | no restatement between non-convertible units (use-time; expression layer) | OPEN (v0 has no restatement node to anchor the check) | OPEN | OPEN |
+| WF-011 | fact-type arity: reciprocal = 1 role, else ≥ 2 (>2 OPEN) | gate 3 | OPEN | `wf011-one-role` |
+| WF-012 | role names unambiguous within a fact type (incl. plurals) | gate 3 | OPEN | `wf012-ambiguous-roles` |
+| WF-013 | reciprocal role is to-one; other roles carry explicit cardinality | gate 3 (first clause; declared-vs-defaulted cardinality has no provenance in v0) | OPEN | `wf013-reciprocal-many` |
+| WF-014 | dimension labels non-empty, duplicate-free, ordered | gate 3 | OPEN | `wf014-empty-labels` |
+| WF-015 | one timeline declaration per normalized name; references resolve | gate 3 | OPEN | `wf015-timeline-collision` |
+| WF-016 | variable-start timeline is anchored (rule-layer check) | gate 3 (existence of the determination; the anchor-write typing is WF-032/WF-023) | OPEN | `wf016-unanchored-variable-start` |
+| WF-017 | day-kind spellings shadow no built-in unit and no other day-kind | gate 3 (day-kind names vs built-ins; duration-spelling collisions are pre-filtered by v0 before emission) | OPEN | `wf017-daykind-shadows-builtin` |
+| WF-018 | parameter datatype resolves; timeline facet well-formed | gate 3 (datatype clause; the facet clause carries the WF-005 caveat) | OPEN | `wf018-parameter-onbekend` |
 | WF-019 | serialization preserves declaration order | `scripts/check-ir-schema.sh` (byte-identical round-trip) | OPEN (current case has only singleton lists — no order witness) | OPEN |
-| WF-020 | rule names unique across all rule forms (ci) | OPEN | OPEN | OPEN |
-| WF-021 | a named form's version validity windows do not overlap | OPEN | OPEN | OPEN |
-| WF-022 | rule target resolves; characteristic value is the constant true | OPEN | `corpus/golden/jutterswet-penningdrempel/` | OPEN |
-| WF-023 | assignment typing (family, units, labels, sign, precision gate) | OPEN | OPEN | OPEN |
-| WF-024 | allocation method is one of the three real methods (no COMPLEX) | OPEN | OPEN | OPEN |
-| WF-025 | allocation fields valid per method; ordering key orderable; share typing | OPEN | OPEN | OPEN |
-| WF-026 | at most one allocation per written target | OPEN | OPEN | OPEN |
-| WF-027 | object-creation members declared on the created type; characteristic init boolean | OPEN | OPEN | OPEN |
-| WF-028 | fact creation fully symbolic and resolvable; path reaches target; new ≠ traversed relation | OPEN | OPEN | OPEN |
-| WF-029 | consistency assertion has a single subject | OPEN | OPEN | OPEN |
-| WF-030 | uniqueness sources: keys resolve; arity and datatype kind agree | OPEN | OPEN | OPEN |
-| WF-031 | one definition per day kind; condition present (recursion OPEN) | OPEN | OPEN | OPEN |
-| WF-032 | start point: variable-start timeline, day-precision member, one per pair | OPEN | OPEN | OPEN |
-| WF-033 | (dialect) rule-group members resolve; recursive group has guarded creation | OPEN | OPEN | OPEN |
-| WF-034 | every expression/condition reference resolves (no unknown-type sentinel) | OPEN | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) | OPEN |
-| WF-035 | operator typing (numeric, unitless power, date±time-unit, unit compatibility, clamp) | OPEN | OPEN | OPEN |
-| WF-036 | comparison/predicate typing (ordering, precision, family, domain, builtin operands) | OPEN | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) | OPEN |
-| WF-037 | aggregation/builtin shape: facet validity and arity per kind | OPEN | OPEN | OPEN |
-| WF-038 | aggregation operand typing (units, precision, rate for totaal, year for paasdag) | OPEN | OPEN | OPEN |
-| WF-039 | enum label in domain; literal sign restriction | OPEN | OPEN | OPEN |
-| WF-040 | dimension cell pins every dimension; selection labels resolve in order | OPEN | OPEN | OPEN |
-| WF-041 | counting-quantifier threshold ≥ 1 | OPEN | OPEN | OPEN |
-| WF-042 | time window: ≥ 1 bound; bounds are dates, either precision | OPEN | OPEN | OPEN |
-| WF-043 | whole-period qualifier only on a time-dependent operand | OPEN | OPEN | OPEN |
+| WF-020 | rule names unique across all rule forms (ci) | gate 3 (via the v0 " #i" strip-and-group migration reading) | OPEN | `wf020-crossform-collision` |
+| WF-021 | a named form's version validity windows do not overlap | gate 3 | OPEN | `wf021-version-overlap` |
+| WF-022 | rule target resolves; characteristic value is the constant true | gate 3 | `corpus/golden/jutterswet-penningdrempel/` | `wf022-target-unresolvable` |
+| WF-023 | assignment typing (family, units, labels, sign, precision gate) | OPEN (needs expression-shape analysis beyond the serialized types) | OPEN | OPEN |
+| WF-024 | allocation method is one of the three real methods (no COMPLEX) | gate 3 | OPEN | `wf024-complex` |
+| WF-025 | allocation fields valid per method; ordering key orderable; share typing | gate 3 (field validity and orderability; share typing is WF-023) | OPEN | `wf025-max-without-ratio` |
+| WF-026 | at most one allocation per written target | gate 3 | OPEN | `wf026-two-allocations-one-target` |
+| WF-027 | object-creation members declared on the created type; characteristic init boolean | gate 3 | OPEN | `wf027-ghost-member` |
+| WF-028 | fact creation fully symbolic and resolvable; path reaches target; new ≠ traversed relation | OPEN (the relational content is bean-field-encoded in v0 — the row-22 delta must land first) | OPEN | OPEN |
+| WF-029 | consistency assertion has a single subject | gate 3 | OPEN | `wf029-no-subject` |
+| WF-030 | uniqueness sources: keys resolve; arity and datatype kind agree | gate 3 | OPEN | `wf030-arity-mismatch` |
+| WF-031 | one definition per day kind; condition present (recursion OPEN) | gate 3 | OPEN | `wf031-missing-condition` |
+| WF-032 | start point: variable-start timeline, day-precision member, one per pair | gate 3 | OPEN | `wf032-fixed-start-anchor` |
+| WF-033 | (dialect) rule-group members resolve; recursive group has guarded creation | gate 3 | OPEN | `wf033-unguarded-recursive` |
+| WF-034 | every expression/condition reference resolves (no unknown-type sentinel) | gate 3 (partial: sentinel types and parameter/day-kind/element-type/own-member references; variable bindings and navigation paths are not serialized in v0) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) | `wf034-dangling-parameter` |
+| WF-035 | operator typing (numeric, unitless power, date±time-unit, unit compatibility, clamp) | gate 3 (over serialized operand types; the date±duration clause is OPEN) | OPEN | `wf035-power-with-unit` |
+| WF-036 | comparison/predicate typing (ordering, precision, family, domain, builtin operands) | gate 3 (over serialized operand types) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) | `wf036-order-number-vs-text` |
+| WF-037 | aggregation/builtin shape: facet validity and arity per kind | gate 3 (fixed-arity kinds; date-construction arity OPEN) | OPEN | `wf037-fallback-on-minimum` |
+| WF-038 | aggregation operand typing (units, precision, rate for totaal, year for paasdag) | gate 3 (paasdag, sub-day extractors, sum fallback; the totaal rate clause and fold unit-compatibility are OPEN) | OPEN | `wf038-paasdag-text` |
+| WF-039 | enum label in domain; literal sign restriction | gate 3 | OPEN | `wf039-negative-under-nonneg` |
+| WF-040 | dimension cell pins every dimension; selection labels resolve in order | gate 3 | OPEN | `wf040-unpinned-cell` |
+| WF-041 | counting-quantifier threshold ≥ 1 | gate 3 | OPEN | `wf041-threshold-zero` |
+| WF-042 | time window: ≥ 1 bound; bounds are dates, either precision | gate 3 | OPEN | `wf042-empty-window` |
+| WF-043 | whole-period qualifier only on a time-dependent operand | gate 3 | OPEN | `wf043-wholeperiod-nontemporal` |
 | WF-044 | (consumer) Unresolved surfaces, never silently lowered | behavioural (CI harness guard) — OPEN | OPEN | OPEN |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
