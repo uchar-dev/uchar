@@ -81,6 +81,18 @@ Conventions, deliberate:
 - One instance per label; role links point at labels; a to-one role
   carries exactly one label.
 
+Two deliberate narrowings relative to the donor conformance layer this
+format was mined from: a case has **no rule scope** — evaluation is
+whole-model (in the donor, scope changes nothing about what fires; it
+only steers coverage bookkeeping) — and the evaluation date is a whole
+**date**, never a datetime.
+
+Division of labour: JSON Schema (gate 4) checks structure only.
+Cross-item invariants — label uniqueness, role targets naming existing
+labels, names resolving against the sibling `ir.json`, calendar
+validity of dates beyond the lexical pattern — are the **`ref/` case
+loader's** checks, fail-fast, like the verifier's for the IR itself.
+
 The expectation values are pinned against the normative worked examples
 of `spec/RUNTIME-SEMANTICS.md`; machine replay of the cases is the
 reference interpreter's oracle guard and lands with `ref/`.

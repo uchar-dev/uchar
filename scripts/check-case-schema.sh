@@ -38,13 +38,14 @@ while IFS= read -r f; do
     fi
 done < "$list"
 
-# shellcheck disable=SC2086
-$RUN - "$SCHEMA" $(cat "$list") <<'PY' || status=1
+$RUN - "$SCHEMA" "$list" <<'PY' || status=1
 import sys, json
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import best_match, SchemaError
 
-schema_path, files = sys.argv[1], sys.argv[2:]
+schema_path, list_path = sys.argv[1], sys.argv[2]
+with open(list_path, encoding="utf-8") as fh:
+    files = [line.rstrip("\n") for line in fh if line.strip()]
 with open(schema_path, encoding="utf-8") as fh:
     schema = json.load(fh)
 try:
