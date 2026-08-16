@@ -95,6 +95,11 @@ green. Current gates:
    match (the oracle guard of PLAN §8); goldens without a case file are
    listed explicitly; an empty case set is a failure, never silently
    green.
+6. `scripts/check-clingo.sh` — the differential: `backends/clingo`
+   translates every corpus case to ASP-Core-2 and clingo's stable model
+   must match the same absolute expectations gate 5 pins for `ref/`
+   (ref ≡ Clingo over the corpus, anchored to hand-written values); an
+   empty case set is a failure, never silently green.
 
 Standing harness guards still to land: no-op (an identity transpiler must
 fail), unsolved-state (`Onopgelost` surfaces in output, never vanishes —

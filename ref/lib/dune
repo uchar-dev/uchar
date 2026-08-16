@@ -1,3 +1,4 @@
 (library
  (name uchar_ref)
+ (public_name uchar-ref)
  (libraries uchar-ir-v0 yojson zarith))

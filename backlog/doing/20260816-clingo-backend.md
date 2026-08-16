@@ -30,7 +30,10 @@ is still carrying an assumption").
 
 May touch: `backends/clingo/**`, `scripts/check-clingo.sh` (new),
 `.github/workflows/gates.yml`, `CLAUDE.md` (gate list), `backlog/**`,
-`corpus/golden/README.md` (a differential note if needed).
+`corpus/golden/README.md` (a differential note if needed),
+`ref/dune-project` + `ref/lib/dune` (build metadata only: a
+`public_name` so the backend can link ref's IO layer — case loading and
+value lexing; no evaluator semantics are linked).
 
 Out of scope: the Drools leg of the differential square (pin-bump
 territory); role-binding IR changes (the Phase-3 "relations

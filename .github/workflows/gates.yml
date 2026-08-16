@@ -62,3 +62,18 @@ jobs:
         run: opam exec -- sh scripts/check-oracle.sh
       - name: ref/ unit tests (worked examples of RUNTIME-SEMANTICS ch. 1-2, 4.6)
         run: opam exec -- dune build @ref/runtest
+
+  clingo:
+    name: "Gate 6: differential (ref = Clingo over the corpus)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5"
+      - name: install yojson + zarith
+        run: opam install -y yojson zarith
+      - name: install clingo
+        run: python3 -m pip install --user clingo && clingo --version
+      - name: check-clingo
+        run: opam exec -- sh scripts/check-clingo.sh
