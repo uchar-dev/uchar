@@ -20,3 +20,18 @@ May touch: `spec/RUNTIME-SEMANTICS.md` (protected — merge mandate),
 
 Out of scope: ch. 6 (stratification — ch. 5 may name the constraint),
 ch. 7 (defaults), ch. 8 (time selection); verifier changes; corpus.
+
+Result: ch. 4 (allocation as one recurrence over recipient groups; the
+three methods as instances; cap/floor/remainder; the empty/edge table
+with the v0 negative-weight and empty-source holes recorded honestly)
+and ch. 5 (equation semantics: freshness + idempotence; confluence with
+its three mirrored exceptions; negation at the fixpoint; the
+initialisation guard; creation idempotence and recursive-group
+termination; the error channel operationally; the session shape) landed
+as normative draft. Verified by three adversarial reviewers (3
+blockers, 8 minors - all fixed). Notable corrected mirror: "is
+gevuurd" IS lowered at the pin (opt-in firing marker); the pinned
+decision records and CONSTRUCTS row 30's rationale are stale -
+maintainer re-verdict flagged as OPEN, nothing decided. Deliberately
+left: ch. 6 stratification (constraint named), ch. 7 defaults, ch. 8
+time selection.
