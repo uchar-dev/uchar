@@ -42,10 +42,11 @@ nullable only where the format actually emits `null`. `$id`:
 property the v0 emitter never produces — currently `verbindendeRol` on
 `ResolvedVerdeling`, `bronRol` on `Functie`, and the symbolic
 fact-creation fields (`feittype`/`ankerRol`/`doelRol`/`joinRol`,
-`Tussenstap.rolBinding`), all carrying the `RolBinding` node, and the
-`TemporalRead` expression node (the row-11 point read). When present
-they are written whole, never null; the loaders admit exactly these
-keys and nothing else. Mirror purity holds per file: an emitter
+`Tussenstap.rolBinding`), all carrying the `RolBinding` node, the
+`TemporalRead` expression node (the row-11 point read), and the
+top-level `defaultLadders` list (the Phase-4 characteristic ladder).
+When present they are written whole, never null; the loaders admit
+exactly these keys and nothing else. Mirror purity holds per file: an emitter
 dump carries none of them, a hand-written anchor case may carry them,
 and the same schema validates both. The `regelspraak-ir-v1` bump is
 reserved for the non-additive cleanup (renames; dropping the superseded

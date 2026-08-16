@@ -384,6 +384,25 @@ type diagnostic = {
 
 (* --- the document ------------------------------------------------------ *)
 
+(* Extension form (v1, Phase 4 first cut): the characteristic default
+   ladder of RUNTIME-SEMANTICS ch. 7 — rungs in descending priority,
+   each deciding to attribute (true) or not (false). Never
+   emitter-produced. *)
+type rung = {
+  rung_besluit : bool;
+  rung_voorwaarde : conditie;
+  rung_bron : string option;
+}
+
+type default_ladder = {
+  dl_naam : string option;
+  dl_onderwerp : string; (* subject object type *)
+  dl_kenmerk : string; (* target characteristic *)
+  rungs : rung list; (* descending priority: highest first *)
+  dl_bron : string option;
+  dl_geldigheid : geldigheid option;
+}
+
 type document = {
   objecttypen : (string * objecttype) list;
   domeinen : (string * datatype option) list;
@@ -406,4 +425,5 @@ type document = {
   resolved_startpunten : resolved_startpunt list;
   regel_groepen : resolved_regel_groep list;
   diagnostics : diagnostic list;
+  default_ladders : default_ladder list; (* extension: absent = [] *)
 }

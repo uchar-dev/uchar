@@ -1,11 +1,13 @@
 # uchar IR — Specification
 
-*Status: v0.6 — the model layer (ch. 2), the rule layer (ch. 3), and the
+*Status: v0.7 — the model layer (ch. 2), the rule layer (ch. 3), and the
 expression and condition layer (ch. 4) are normative **draft**; everything
 else is skeleton. New in v0.5: the wire-entry discipline for v1 constructs
 (Method) and the symbolic role bindings (ch. 2.6, 3.2, 3.4, 4.3;
 WF-047/048; WF-028's check). New in v0.6: the temporal-read node
-(ch. 4.3a, WF-049 — the decided row-11 point read). Authority for undocumented behaviour still lives in
+(ch. 4.3a, WF-049 — the decided row-11 point read). New in v0.7: the
+characteristic default ladder (ch. 6.1, WF-050/051 — the Phase-4 first
+cut). Authority for undocumented behaviour still lives in
 `regelspraak-java` (pinned commit `b85dff3`): the spec-§-citing javadoc of
 `ir/` and `model/`, and the decision records in
 `docs/grammar-divergences.md`; that authority pointer leaves this header at
@@ -39,8 +41,9 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   reserved for the non-additive cleanup — renames, and dropping the v0
   fields the extensions supersede (`zetVeld`/`joinVeld` and kin). Current
   extension fields: `verbindendeRol` (ch. 3.2), `bronRol` (ch. 4.3), the
-  symbolic fact-creation fields (ch. 3.4); current extension node:
-  `TemporalRead` (ch. 4.3a).
+  symbolic fact-creation fields (ch. 3.4); current extension nodes and
+  forms: `TemporalRead` (ch. 4.3a), the `defaultLadders` list
+  (ch. 6.1).
 
 ## Conventions (binding)
 
@@ -71,7 +74,7 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
 3. **The rule layer** — normative draft (since v0.2).
 4. **The expression and condition layer** — **this release.**
 5. **Time** *(skeleton)*
-6. **Defaults and defeasibility** *(design: `RUNTIME-SEMANTICS.md` ch. 7; wire and artifacts land Phase 4 — see the ch. 6 stub before the WF index)*
+6. **Defaults and defeasibility** — the characteristic ladder is normative (ch. 6.1, Phase-4 first cut); the rest is design in `RUNTIME-SEMANTICS.md` ch. 7.
 7. **Serialization** *(lands with `spec/schema/`)*
 8. **Well-formedness rules** — the WF index, at the end of this document.
 9. **The RegelSpraak dialect** *(skeleton)*
@@ -1152,31 +1155,57 @@ Comparison, Predicate, and CharacteristicCheck only —
 
 ---
 
-## 6. Defaults and defeasibility *(stub)*
+## 6. Defaults and defeasibility
 
-The model is designed in `RUNTIME-SEMANTICS.md` ch. 7: a first-class
-**ladder** of prioritised defaults per target evaluating top-down with
+The model is `RUNTIME-SEMANTICS.md` ch. 7: a first-class **ladder** of
+prioritised defaults per target evaluating top-down with
 **fall-through** — the highest rung that *decides* wins (attribute
 target: justification holds and the consequence evaluates gevuld, leeg
 falls through; characteristic target: a justified rung always decides,
 attribute or do-not-attribute), so a single ladder cannot conflict and
 a ladder never writes leeg — initialisation as the lowest rung,
-priority either explicit
-(rungs) or explicitly absent (a declared-unordered ladder group on one
-target — the only over-determination surface, routed to the §9.5
-channel); under-determination is leeg (a tracked Catala deviation,
-`CONSTRUCTS.md` row 8). The kernel node (working name `DefaultLadder`),
-its wire shape (per the Method's extension discipline), executor
-implementations, and corpus witnesses land with the Phase-4
-implementation cards. **Reserved WF numbers** (statements in ch. 7,
-artifacts OPEN until then): WF-050 — ladder/group well-formedness
-(≥ 1 rung, one target per ladder, resolvable justifications; priority
-explicit or explicitly absent, never implicit); WF-051 — displacement
-reads (a rung's dependence on the rungs above it) join the ch. 6
-dependency graph as negative edges — an extension of the ch. 6.1 edge
-classes landing with the ladder node — and the WF-045/046 principles
-apply to the extended graph. Do not assign WF-050/051 to anything
-else.
+priority either explicit (rungs) or explicitly absent (a
+declared-unordered ladder group on one target — the only
+over-determination surface, routed to the §9.5 channel);
+under-determination is leeg (a tracked Catala deviation,
+`CONSTRUCTS.md` row 8).
+
+### 6.1 The characteristic ladder (Phase-4 first cut, landed)
+
+`layer: core`; an **extension form** per the Method: an optional
+top-level list `defaultLadders` of `DefaultLadder` nodes — never
+emitter-produced.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | string? | v0 wire `naam` |
+| `subject` | type ref | v0 wire `onderwerp`: the iterated subject type |
+| `characteristic` | string | v0 wire `kenmerk`: the target characteristic |
+| `rungs` | non-empty list of Rung | **descending** priority: highest first |
+| `source`, `validity` | — | v0 wire `bron`, `geldigheid` |
+
+**Rung**: `decision` (v0 wire `besluit`, boolean — attribute vs
+do-not-attribute), `justification` (v0 wire `voorwaarde`, a condition),
+`source`. Semantics: `RUNTIME-SEMANTICS.md` ch. 7.1 — per subject the
+highest justified rung decides; on a characteristic every justified
+rung decides; a false decision derives nothing and displaces.
+
+- **WF-050** A ladder MUST carry at least one rung; its subject and
+  target characteristic MUST resolve; at most one ladder per
+  (subject, characteristic) target — the declared-unordered group
+  (ch. 7.2 there) is a later, additive slice, and until it lands
+  implicit multiplicity is ill-formed.
+- **WF-051** A rung's displacement reads join the ch. 6 dependency
+  graph of `RUNTIME-SEMANTICS.md` as **negative edges** (the ch. 6.1
+  edge-class extension); no dependency cycle may pass through a
+  ladder — strata must exist. The WF-045/046 principles apply to the
+  extended graph (a violating document typically trips those too;
+  WF-051 names the ladder-specific rule).
+
+Still design-only (`RUNTIME-SEMANTICS.md` ch. 7; artifacts land with
+later Phase-4 cards): attribute-target ladders and leeg fall-through,
+the declared-unordered group and its §9.5 conflict path, the
+initialisation rung, and the speculative-deposit guard.
 
 ---
 
@@ -1244,6 +1273,8 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-047 | role binding resolves; fillers agree with the use site; written source denotes the bound role | gate 3 | `anchor/jutterswet-bergingstoezicht` (two fact types over one pair; allocation and fold bound, replayed by gates 5–6) | `wf047-dangling-role-binding` (resolution) + `wf047-bound-role-fills-source` (filler agreement) |
 | WF-048 | bindingless allocation/instance fold: connecting relation uniquely derivable | gate 3 (contexts with a statically known fold subject; a subjectless context — none exists in v0 dumps, whose folds sit under a typed rule target — is left to the executors' runtime fault) | `jutterswet-berging` + `jutterswet-vondsttelling` (bindingless, uniquely derivable) | `wf048-ambiguous-connecting-relation` |
 | WF-049 | temporal read: basis temporal (attribute/granular parameter), day-precision date, element type | gate 3 | `anchor/jutterswet-aanmeldquotum` (attribute + parameter reads; hit, gap→leeg, empty date→leeg; replayed by gates 5–6) | `wf049-read-of-nontemporal` (basis) + `wf049-read-at-datetime` (date operand) + `wf049-type-not-element` (element type) |
+| WF-050 | characteristic ladder: ≥ 1 rung; subject and characteristic resolve; one ladder per target | gate 3 (characteristic form; the attribute/group clauses are design-only, ch. 6.1) | `anchor/jutterswet-uitsluiting` (the art. 4 ladder, four cases replayed by gates 5–6) | `wf050-empty-ladder` + `wf050-two-ladders-one-target` |
+| WF-051 | no dependency cycle through a ladder (displacement reads are negative edges) | gate 3 (over the extended dep_forms graph, shared with ref/'s strata) | `anchor/jutterswet-uitsluiting` (the ladder sits below its negated consumer — strata exist, oracle-replayed) | `wf051-ladder-reads-own-target` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

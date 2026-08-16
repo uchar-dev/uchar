@@ -332,6 +332,31 @@ let translate_regel ctx (r : resolved_regel) =
           | _ -> fault "rule kind not translated")
       | _ -> fault "unsupported rule target")
 
+(* the characteristic default ladder (RUNTIME-SEMANTICS ch. 7, IR-SPEC
+   ch. 6): the ch. 7.5 decides_m lowering — one decides predicate per
+   rung (justification body; on a characteristic every justified rung
+   decides), and an attribution head only for besluit-true rungs,
+   guarded by `not decides_m` for every higher rung. Sound NAF: the
+   ladder's displacement edges are WF-051 negative edges. *)
+let translate_ladder ctx i (l : default_ladder) =
+  (match l.dl_geldigheid with
+  | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
+      fault "ladder validity windows are not translated yet"
+  | _ -> ());
+  let subject = "S" in
+  let base = Printf.sprintf "is_a(%s,%s)" subject (str l.dl_onderwerp) in
+  let d n = Printf.sprintf "dl%d_decides_%d(%s)" i n subject in
+  List.iteri
+    (fun n (r : rung) ->
+      let atoms = cond_atoms ctx ~subject ~subject_ot:l.dl_onderwerp r.rung_voorwaarde in
+      head_body ctx (d n) (base :: atoms);
+      if r.rung_besluit then
+        let displaced = List.init n (fun m -> "not " ^ d m) in
+        head_body ctx
+          (Printf.sprintf "heeft(%s,%s)" subject (str l.dl_kenmerk))
+          ((d n :: displaced) @ [ base ]))
+    l.rungs
+
 (* allocation, proportional with cap/floor/remainder (RUNTIME-SEMANTICS
    ch. 4.2), in integer arithmetic. Scale bookkeeping: raw = pot×w/Σw
    carries the pot's scale (the weight scale cancels); the floor at the
@@ -501,6 +526,7 @@ let translate (doc : document) (case : Case.t) : string =
   emit ctx "#defined inconsistent/2. #defined tl/5. #defined param_tl/4.";
   List.iter (translate_regel ctx) doc.resolved_regels;
   List.iteri (translate_verdeling ctx) doc.verdelingen;
+  List.iteri (translate_ladder ctx) doc.default_ladders;
   List.iteri (translate_consistentie ctx) doc.consistenties;
   List.iter (translate_uniciteit ctx) doc.uniciteiten;
   translate_case ctx case;

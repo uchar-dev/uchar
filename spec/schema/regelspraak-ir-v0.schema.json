@@ -33,6 +33,13 @@
     "formaat": {
       "const": "regelspraak-ir-v0"
     },
+    "defaultLadders": {
+      "description": "Extension list (v1, Phase 4 first cut): characteristic default ladders per spec/RUNTIME-SEMANTICS.md ch. 7. Optional; the v0 emitter never produces it.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/DefaultLadder"
+      }
+    },
     "objecttypen": {
       "type": "object",
       "additionalProperties": {
@@ -1971,6 +1978,86 @@
           }
         }
       }
+    },
+    "Rung": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "besluit",
+        "voorwaarde",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "Rung"
+        },
+        "besluit": {
+          "type": "boolean"
+        },
+        "voorwaarde": {
+          "$ref": "#/$defs/conditie"
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "DefaultLadder": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "naam",
+        "onderwerp",
+        "kenmerk",
+        "rungs",
+        "bron",
+        "geldigheid"
+      ],
+      "properties": {
+        "node": {
+          "const": "DefaultLadder"
+        },
+        "naam": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "onderwerp": {
+          "type": "string"
+        },
+        "kenmerk": {
+          "type": "string"
+        },
+        "rungs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Rung"
+          }
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "geldigheid": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Geldigheid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "description": "Extension node (v1, Phase 4): the characteristic default ladder — rungs in descending priority; the highest justified rung decides (besluit true = attribute, false = do-not-attribute)."
     },
     "RolBinding": {
       "type": "object",

@@ -602,6 +602,26 @@ let run_verdeling env world (v : resolved_verdeling) =
               (w, ch || ch2))
   end
 
+(* ch. 7.1, the characteristic ladder: per subject, the highest justified
+   rung decides — attribute (set the characteristic) or do-not-attribute
+   (derive nothing); rungs below the deciding one are displaced. The
+   strata machinery (WF-051's negative displacement edges) has already
+   put every justification producer strictly below the ladder. *)
+let run_ladder env world (l : default_ladder) =
+  let name = Option.value l.dl_naam ~default:"ladder" in
+  if not (applies env l.dl_geldigheid) then (world, false)
+  else
+    over_subjects world ~otype:l.dl_onderwerp ~rule:name (fun w self cond_err ->
+        let rec decide = function
+          | [] -> (w, false)
+          | (r : rung) :: rest ->
+              if eval_cond env w self ~err:cond_err r.rung_voorwaarde then
+                if r.rung_besluit then World.set_char w ~label:self.label ~char:l.dl_kenmerk
+                else (w, false)
+              else decide rest
+        in
+        decide l.rungs)
+
 (* consistency and uniqueness fire at the computed fixpoint; violations
    are idempotent channel facts (ch. 5.6) *)
 let run_consistentie env world (c : resolved_consistentie) =
@@ -794,6 +814,7 @@ let evaluate env world =
   let kmax = Array.fold_left max 0 strata in
   let rule_stratum i = stratum_of (Printf.sprintf "/resolvedRegels/%d" i) in
   let verdeling_stratum i = stratum_of (Printf.sprintf "/verdelingen/%d" i) in
+  let ladder_stratum i = stratum_of (Printf.sprintf "/defaultLadders/%d" i) in
   let cons_stratum i = stratum_of (Printf.sprintf "/consistenties/%d" i) in
   let uni_stratum i = stratum_of (Printf.sprintf "/uniciteiten/%d" i) in
   let indexed l = List.mapi (fun i x -> (i, x)) l in
@@ -818,7 +839,17 @@ let evaluate env world =
         (world, false)
         (indexed env.doc.verdelingen)
     in
-    (world, c1 || c2)
+    let world, c3 =
+      List.fold_left
+        (fun (w, ch) (i, l) ->
+          if ladder_stratum i > k then (w, ch)
+          else
+            let w, c = run_ladder env w l in
+            (w, ch || c))
+        (world, false)
+        (indexed env.doc.default_ladders)
+    in
+    (world, c1 || c2 || c3)
   in
   let budget = 10_000 in
   (* for k = 0, 1, …: the forms of stratum <= k evaluate to their

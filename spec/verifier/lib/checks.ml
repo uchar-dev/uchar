@@ -1603,6 +1603,16 @@ let expression_layer ctx =
               (Printf.sprintf "/feitCreaties/%d/voorwaarde" i) c
         | None -> [])
       (List.mapi (fun i r -> (i, r)) ctx.doc.feit_creaties)
+  @ List.concat_map
+      (fun (i, (l : default_ladder)) ->
+        List.concat
+          (List.mapi
+             (fun j (r : rung) ->
+               walk_cond ctx ~subject:(Some l.dl_onderwerp)
+                 (Printf.sprintf "/defaultLadders/%d/rungs/%d/voorwaarde" i j)
+                 r.rung_voorwaarde)
+             l.rungs))
+      (List.mapi (fun i l -> (i, l)) ctx.doc.default_ladders)
 
 (* ===================================================================== *)
 (* WF-045 / WF-046 — the dependency graph (RUNTIME-SEMANTICS ch. 6).
@@ -1835,7 +1845,30 @@ let dep_forms ctx : dep_form list =
         })
       ctx.doc.feit_creaties
   in
-  regels @ verdelingen @ consistenties @ uniciteiten @ creaties @ feit_creaties
+  let ladders =
+    (* ch. 7.4/WF-051: every rung-justification read is a displacement
+       read — a negative edge toward the ladder's write, regardless of
+       what it tests. The ladder writes its target characteristic. *)
+    List.mapi
+      (fun i (l : default_ladder) ->
+        let at = Printf.sprintf "/defaultLadders/%d" i in
+        let name = Option.value l.dl_naam ~default:at in
+        let reads =
+          List.concat_map
+            (fun (r : rung) ->
+              dep_cond ~subject:(Some l.dl_onderwerp) ~neg:false [] r.rung_voorwaarde)
+            l.rungs
+        in
+        {
+          df_at = at;
+          df_name = name;
+          df_recursive_creation = false;
+          df_writes = [ n_char l.dl_onderwerp l.dl_kenmerk ];
+          df_reads = List.map (fun (node, _) -> (node, Dep_neg)) reads;
+        })
+      ctx.doc.default_ladders
+  in
+  regels @ verdelingen @ consistenties @ uniciteiten @ creaties @ feit_creaties @ ladders
 
 let wf045_046 ctx =
   let forms = Array.of_list (dep_forms ctx) in
@@ -2056,6 +2089,78 @@ let wf028 ctx =
              created_checks @ chain_checks)
        ctx.doc.feit_creaties)
 
+(* WF-050: characteristic-ladder well-formedness (IR-SPEC ch. 6): at
+   least one rung; the subject object type and target characteristic
+   resolve; at most one ladder per (subject, characteristic) target in
+   this format (the declared-unordered group is a later slice). *)
+let wf050 ctx =
+  let targets = Hashtbl.create 4 in
+  List.concat
+    (List.mapi
+       (fun i (l : default_ladder) ->
+         let at = Printf.sprintf "/defaultLadders/%d" i in
+         (if l.rungs = [] then [ v "WF-050" at "a ladder carries at least one rung" ] else [])
+         @ (match objecttype ctx l.dl_onderwerp with
+           | None ->
+               [ v "WF-050" at
+                   ("ladder subject '" ^ l.dl_onderwerp ^ "' is not a declared object type") ]
+           | Some ot ->
+               if mem_ci (some_names ot.kenmerken) l.dl_kenmerk then []
+               else
+                 [ v "WF-050" at
+                     ("ladder target '" ^ l.dl_kenmerk
+                    ^ "' is not a declared characteristic of '" ^ l.dl_onderwerp ^ "'") ])
+         @
+         let key = norm l.dl_onderwerp ^ ":" ^ norm l.dl_kenmerk in
+         if Hashtbl.mem targets key then
+           [ v "WF-050" at
+               ("a second ladder on target '" ^ l.dl_onderwerp ^ "." ^ l.dl_kenmerk
+              ^ "' — this format carries at most one (the declared-unordered group is a \
+                 later slice)") ]
+         else (
+           Hashtbl.add targets key ();
+           []))
+       ctx.doc.default_ladders)
+
+(* WF-051: no dependency cycle may pass through a ladder — its
+   displacement edges are negative (dep_forms above), so any such cycle
+   also violates WF-046; this check names the ladder-specific rule. *)
+let wf051 ctx =
+  let forms = Array.of_list (dep_forms ctx) in
+  let nf = Array.length forms in
+  let writers = Hashtbl.create 16 in
+  Array.iteri (fun i (f : dep_form) -> List.iter (fun n -> Hashtbl.add writers n i) f.df_writes) forms;
+  let succ = Array.make nf [] in
+  Array.iteri
+    (fun ci (f : dep_form) ->
+      List.iter
+        (fun (node, _) -> List.iter (fun pi -> succ.(pi) <- ci :: succ.(pi)) (Hashtbl.find_all writers node))
+        f.df_reads)
+    forms;
+  let reaches src dst =
+    let seen = Array.make nf false in
+    let rec go i =
+      List.exists (fun j -> j = dst || (not seen.(j) && (seen.(j) <- true; go j))) succ.(i)
+    in
+    go src
+  in
+  List.concat
+    (List.mapi
+       (fun i (l : default_ladder) ->
+         let at = Printf.sprintf "/defaultLadders/%d" i in
+         match
+           Array.to_list forms
+           |> List.mapi (fun fi f -> (fi, f))
+           |> List.find_opt (fun ((_ : int), (f : dep_form)) -> f.df_at = at)
+         with
+         | Some (fi, _) when reaches fi fi ->
+             [ v "WF-051" at
+                 ("a dependency cycle passes through ladder '"
+                 ^ Option.value l.dl_naam ~default:at
+                 ^ "' — its displacement reads are negative edges; no strata exist") ]
+         | _ -> [])
+       ctx.doc.default_ladders)
+
 let all (doc : document) : violation list =
   let ctx = { doc } in
   List.concat
@@ -2064,4 +2169,4 @@ let all (doc : document) : violation list =
       wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf020 ctx; wf021 ctx;
       wf022 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf032 ctx; wf033 ctx; wf045_046 ctx;
-      wf047_048_verdelingen ctx; expression_layer ctx ]
+      wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; expression_layer ctx ]

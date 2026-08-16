@@ -829,10 +829,40 @@ let diagnostic path j : diagnostic =
 
 (* --- the document ------------------------------------------------------- *)
 
+(* Extension form (Phase 4 first cut): the characteristic default
+   ladder. Strict: no nullable children beyond naam/bron/geldigheid. *)
+let rung path j : rung =
+  let kvs = obj path j in
+  expect_node path kvs "Rung";
+  check_keys path kvs [ "node"; "besluit"; "voorwaarde"; "bron" ];
+  {
+    rung_besluit = bool_ (path / "besluit") (field path kvs "besluit");
+    rung_voorwaarde = conditie (path / "voorwaarde") (field path kvs "voorwaarde");
+    rung_bron = str_opt (path / "bron") (field path kvs "bron");
+  }
+
+let default_ladder path j : default_ladder =
+  let kvs = obj path j in
+  expect_node path kvs "DefaultLadder";
+  check_keys path kvs
+    [ "node"; "naam"; "onderwerp"; "kenmerk"; "rungs"; "bron"; "geldigheid" ];
+  let f name = field path kvs name in
+  {
+    dl_naam = str_opt (path / "naam") (f "naam");
+    dl_onderwerp = str (path / "onderwerp") (f "onderwerp");
+    dl_kenmerk = str (path / "kenmerk") (f "kenmerk");
+    rungs =
+      List.mapi
+        (fun i x -> rung (path / "rungs" / string_of_int i) x)
+        (list_ (path / "rungs") (f "rungs"));
+    dl_bron = str_opt (path / "bron") (f "bron");
+    dl_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
+  }
+
 let document (j : json) : document =
   let path = "" in
   let kvs = obj path j in
-  check_keys path kvs
+  check_keys path kvs ~ext:[ "defaultLadders" ]
     [ "formaat"; "objecttypen"; "domeinen"; "parameters"; "eenheidstelsels";
       "feittypen"; "dimensies"; "tijdlijnen"; "dagsoorten"; "dagsoortPerEenheid";
       "regels"; "resolvedRegels"; "resolvedDagsoorten"; "objectCreaties";
@@ -867,6 +897,13 @@ let document (j : json) : document =
     resolved_startpunten = arr "resolvedStartpunten" resolved_startpunt;
     regel_groepen = arr "regelGroepen" resolved_regel_groep;
     diagnostics = arr "diagnostics" diagnostic;
+    default_ladders =
+      (match List.assoc_opt "defaultLadders" kvs with
+      | Some j ->
+          List.mapi
+            (fun i x -> default_ladder (path / "defaultLadders" / string_of_int i) x)
+            (list_ (path / "defaultLadders") j)
+      | None -> []);
   }
 
 let load_file (filename : string) : document =

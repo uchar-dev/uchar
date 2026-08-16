@@ -445,6 +445,7 @@ let empty_doc : Ir_v0.Ast.document =
     resolved_startpunten = [];
     regel_groepen = [];
     diagnostics = [];
+    default_ladders = [];
   }
 
 let ot name attrs kenmerken : string * Ir_v0.Ast.objecttype =
