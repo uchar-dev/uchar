@@ -1713,6 +1713,7 @@ gevuld value; characteristic target: always — the boolean decision).
 |---|---|---|---|
 | ladder rung *n* | its outcome rule carries `not decides_m` for each higher rung *m* (the nested art. 4 chain of `ASP-TRANSLATION.md` ch. 6.1 is the desugared characteristic special case) | generated guard from the higher rungs' `decides` conditions | the salience −1 trick — becomes derivable output |
 | fall-through on leeg (attribute) | `decides_n` is underivable when the consequence body is — absence composes | consequence-null guard | nothing (v0 cannot express it) |
+| speculative rung evaluation (ch. 7.1) | channel deposits of a rung's arithmetic are **guarded derivations** — the `inconsistent/2` rule for a rung's transient carries `decides_n` in its body (ASP has no retraction; the guard is the speculation) | evaluate the deciding rung only | v0's persist-always transients (the ch. 6.1 residual (b), here scoped) |
 | initialisation rung | NAF over the input fact | the empty-guard of ch. 5.4 | the hard-coded guard |
 | declared-unordered group | both `decides` ∧ decisions differ → `inconsistent/2`, no `val/3` | §9.5 channel insert, no write | silent last-writer-wins |
 
