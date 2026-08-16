@@ -73,5 +73,5 @@ faults with file/position context — never a silent fallback.
   grids, navigation paths, dimension cells, filters, variable/constant
   refs, object and fact creation, scoped uniqueness, uniqueness unions,
   rule groups, the "is gevuurd" test (row 30: decided as a dialect-only
-  fixpoint predicate, not yet implemented), and parameter-set data
-  beyond the single-vintage binding (ch. 8).
+  fixpoint predicate, not yet implemented), and any reading of a
+  granular parameter — vintage selection is ch. 8 scope.
