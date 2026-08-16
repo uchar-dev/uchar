@@ -47,10 +47,20 @@ expectation values trace to the worked examples of
 `spec/RUNTIME-SEMANTICS.md`; the reference interpreter (`ref/`) replays
 every case file exactly — gate 5, the oracle guard of the plan's §8.
 
-Only `jutterswet-penningjaar` has no case file yet: its content is
-timeline declarations, and a meaningful expectation needs the timeline
-algebra of `spec/RUNTIME-SEMANTICS.md` ch. 3 in `ref/` first. Gate 5
-lists it as not replayed rather than counting it green. The
+`jutterswet-penningjaar` carries the timeline declarations plus two
+characteristic rules: the drempel comparison over the year-granular
+attribute and vintage-selected parameter, and a negated reading
+("aanmeldplichtig indien niet penninggerechtigd") — the corpus's first
+negative dependency edge, witnessing WF-046's accept path (ch. 6). Its
+two cases pin the vintage effect: the same count of 13 is
+penninggerechtigd under the 2025 drempel (12) and not under the 2026
+drempel (14). Case convention for temporal data, recorded: a
+`uchar-case-v0` value for a timeline-valued attribute or a year-granular
+parameter is the value of the bucket/vintage containing `asOfDate` —
+the format carries no multi-segment timelines yet, so a vintage *gap*
+(fail-fast, ch. 5.7/8) is expressible only as an unbound parameter,
+which faults the runner rather than being an expectation; full
+parameter-set data is ch. 8 (`Parameterset`) scope. The
 `jutterswet-vondsttelling` case exercises the count-over-a-role wart
 (the weightless vondst still counts) and the declared empty-source
 fallback ("of 0 als die er niet zijn", both for a jutter without

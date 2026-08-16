@@ -57,10 +57,18 @@ faults with file/position context — never a silent fallback.
   and the verifier cannot drift); negated characteristic reads and
   channel reads sit strictly above their producers. A dependency cycle
   reaching ref/ is a fault, never divergence.
-- **Not implemented in this bootstrap** (each faults with context):
-  timeline algebra (ch. 3), navigation paths, dimension cells, filters,
-  variable/constant refs, object and fact creation, day kinds, scoped
-  uniqueness, uniqueness unions, rule groups, the "is gevuurd" test
-  (row 30: decided as a dialect-only fixpoint predicate, not yet
-  implemented), and vintage-selected
-  parameters (ch. 8).
+- **Timelines** (ch. 3): `lib/timeline.ml` carries the algebra — read,
+  calendar and anchored buckets with the month-end clamp, cut-merge
+  (period-coalescing), temporal summation (contributor-skipping), and
+  the temporal total with clipping — tested against the ch. 3 worked
+  examples verbatim. Evaluation reads a temporal attribute at the
+  evaluation date (the case carries that bucket's value; the ch. 3.10
+  gate faults a time-free read), and a year-granular parameter binds as
+  the `asOfDate` vintage, fail-fast when unbound.
+- **Not implemented** (each faults with context): temporal writes and
+  pro-rata bucket producers (ch. 3.7/3.11), day kinds, multi-period
+  grids, navigation paths, dimension cells, filters, variable/constant
+  refs, object and fact creation, scoped uniqueness, uniqueness unions,
+  rule groups, the "is gevuurd" test (row 30: decided as a dialect-only
+  fixpoint predicate, not yet implemented), and parameter-set data
+  beyond the single-vintage binding (ch. 8).

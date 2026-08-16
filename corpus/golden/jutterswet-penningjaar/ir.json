@@ -22,8 +22,14 @@
       "attribuutTijdlijnNaam": {
         "aantal aangemelde vondsten": "penningjaar"
       },
-      "kenmerken": [],
-      "kenmerkSoorten": {},
+      "kenmerken": [
+        "penninggerechtigd",
+        "aanmeldplichtig"
+      ],
+      "kenmerkSoorten": {
+        "penninggerechtigd": "BIJVOEGLIJK",
+        "aanmeldplichtig": "BIJVOEGLIJK"
+      },
       "kenmerkGranulariteit": {},
       "kenmerkTijdlijnAantal": {},
       "bezield": true,
@@ -119,8 +125,126 @@
   ],
   "dagsoorten": [],
   "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [],
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "Kenmerktoekenning penninggerechtigd",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "Kenmerktoekenning aanmeldplichtig",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "Kenmerktoekenning penninggerechtigd",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "penninggerechtigd",
+        "objecttype": "Jutter",
+        "onderwerpBron": "Een Jutter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Jutter is penninggerechtigd",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "GROTER_OF_GELIJK",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "aantal aangemelde vondsten",
+          "objecttype": "Jutter",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "zijn aantal aangemelde vondsten",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "ParameterRef",
+          "parameter": "vondstdrempel",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de vondstdrempel"
+        },
+        "periode": null,
+        "bron": "zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "Kenmerktoekenning aanmeldplichtig",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "aanmeldplichtig",
+        "objecttype": "Jutter",
+        "onderwerpBron": "Een Jutter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Jutter is aanmeldplichtig",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Kenmerk",
+        "kenmerk": "penninggerechtigd",
+        "navigatie": null,
+        "negatie": true,
+        "eigenaar": null,
+        "periode": null,
+        "bron": "hij niet penninggerechtigd is"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
   "resolvedDagsoorten": [],
   "objectCreaties": [],
   "verdelingen": [],

@@ -20,7 +20,8 @@ golden replayed (no longer in the not-replayed list); `dune build
 
 May touch: `ref/**`, `corpus/golden/jutterswet-penningjaar/**`,
 `corpus/golden/README.md`, `backlog/**`; a new timeline golden directory
-if chosen.
+if chosen; `spec/IR-SPEC.md` (only the WF-046 golden-witness cell, which
+this card's negation golden fills).
 
 Out of scope: ch. 6 stratification; ch. 8 beyond what year-granular
 parameter binding needs; dagsoorten (ch. 3.8) unless a case demands it.

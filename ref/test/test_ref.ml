@@ -701,6 +701,132 @@ let () =
   let w = World.add_instance World.empty (inst "x" "Ding" []) in
   expect_fault "WV-6.4-c-cycle-fault" (fun () -> Eval.evaluate (env_of doc) w)
 
+(* --- ch. 3: timeline algebra (worked examples verbatim) ----------------- *)
+
+let day s = match Value.date_of_iso s with Value.Date z -> z | _ -> assert false
+let seg van tot v : Timeline.segment = { s_van = day van; s_tot = day tot; s_waarde = v }
+let seg_leeg van tot : Timeline.segment = { s_van = day van; s_tot = day tot; s_waarde = leeg }
+
+let tl_shape name (tl : Timeline.t) expected =
+  check name
+    (List.length tl = List.length expected
+    && List.for_all2
+         (fun (s : Timeline.segment) (van, tot, v) ->
+           s.s_van = day van && s.s_tot = day tot
+           &&
+           match (s.s_waarde, v) with
+           | Value.Empty, None -> true
+           | actual, Some lex -> Arith.equal actual (n lex)
+           | _ -> false)
+         tl expected)
+
+(* WV-1.2f: the two timeline empty rules side by side *)
+let () =
+  let a = [ seg_leeg "2024-01-01" "2024-02-01" ] in
+  let b = [ seg "2024-01-01" "2024-02-01" (n "4") ] in
+  tl_shape "WV-1.2f-tl-1" (Timeline.plus a b) [ ("2024-01-01", "2024-02-01", Some "4") ];
+  tl_shape "WV-1.2f-tl-2" (Timeline.som [ a; b ]) [ ("2024-01-01", "2024-02-01", Some "4") ];
+  let bb = [ seg_leeg "2024-01-01" "2024-02-01" ] in
+  tl_shape "WV-1.2f-tl-3" (Timeline.plus a bb) [ ("2024-01-01", "2024-02-01", Some "0") ];
+  tl_shape "WV-1.2f-tl-4" (Timeline.som [ a; bb ]) [ ("2024-01-01", "2024-02-01", None) ];
+  tl_shape "WV-1.2f-tl-4-fallback"
+    (Timeline.som ~fallback:(n "0") [ a; bb ])
+    [ ("2024-01-01", "2024-02-01", Some "0") ]
+
+(* WV-3.4: cut-merge — the period-coalescing rule *)
+let () =
+  let a = [ seg "2024-01-01" "2024-07-01" (n "100") ] in
+  let b = [ seg "2024-04-01" "2024-10-01" (n "30") ] in
+  tl_shape "WV-3.4-a" (Timeline.plus a b)
+    [
+      ("2024-01-01", "2024-04-01", Some "100");
+      ("2024-04-01", "2024-07-01", Some "130");
+      ("2024-07-01", "2024-10-01", Some "30");
+    ];
+  let a = [ seg "2024-01-01" "2024-02-01" (n "1") ] in
+  let b = [ seg "2024-03-01" "2024-04-01" (n "2") ] in
+  tl_shape "WV-3.4-b" (Timeline.plus a b)
+    [
+      ("2024-01-01", "2024-02-01", Some "1");
+      ("2024-02-01", "2024-03-01", Some "0");
+      ("2024-03-01", "2024-04-01", Some "2");
+    ]
+
+(* WV-3.5: temporal summation — the contributor-skipping rule *)
+let () =
+  let p1 = [ seg "2024-01-01" "2024-02-01" (n "50"); seg "2024-02-01" "2024-03-01" (n "60") ] in
+  let p2 = [ seg "2024-02-01" "2024-03-01" (n "10"); seg "2024-03-01" "2024-04-01" (n "10") ] in
+  tl_shape "WV-3.5-a" (Timeline.som [ p1; p2 ])
+    [
+      ("2024-01-01", "2024-02-01", Some "50");
+      ("2024-02-01", "2024-03-01", Some "70");
+      ("2024-03-01", "2024-04-01", Some "10");
+    ];
+  let p1 = [ seg "2024-01-01" "2024-02-01" (n "40") ] in
+  let p2 = [ seg "2024-03-01" "2024-04-01" (n "20") ] in
+  tl_shape "WV-3.5-b" (Timeline.som [ p1; p2 ])
+    [
+      ("2024-01-01", "2024-02-01", Some "40");
+      ("2024-02-01", "2024-03-01", None);
+      ("2024-03-01", "2024-04-01", Some "20");
+    ];
+  tl_shape "WV-3.5-b-fallback"
+    (Timeline.som ~fallback:(n "0") [ p1; p2 ])
+    [
+      ("2024-01-01", "2024-02-01", Some "40");
+      ("2024-02-01", "2024-03-01", Some "0");
+      ("2024-03-01", "2024-04-01", Some "20");
+    ];
+  check "WV-3.5-c-empty-set" (Timeline.som ~fallback:(n "0") [] = []);
+  (* cross-unit: €/mnd contributors into a €/jr target — restated before
+     the fold: 50×12 + 10×12 = 720 *)
+  let eur_mnd = { eur with noemer = Some mnd } in
+  let eur_jr = { eur with noemer = Some jr } in
+  let q1 = [ seg "2024-01-01" "2024-02-01" (nu eur_mnd "50") ] in
+  let q2 = [ seg "2024-01-01" "2024-02-01" (nu eur_mnd "10") ] in
+  (match Timeline.som ~target_unit:(Value.Unit eur_jr) [ q1; q2 ] with
+  | [ { s_waarde = Value.Num (v, Value.Unit u); _ } ] ->
+      check "WV-3.5-d-720" (Q.equal v (q "720") && u.noemer = Some jr)
+  | _ -> check "WV-3.5-d-720" false)
+
+(* WV-3.6: the temporal total *)
+let () =
+  let month = Ir_v0.Ast.Maand in
+  let tl =
+    [ seg "2023-01-01" "2024-01-01" (n "10.00"); seg "2024-01-01" "2024-07-01" (n "11.00") ]
+  in
+  expect_num "WV-3.6-a" (Timeline.totaal month tl) "186";
+  let degenerate =
+    [ seg "2024-01-01" "2024-01-01" (n "99"); { s_van = day "2024-06-01"; s_tot = day "2024-05-01"; s_waarde = n "7" }; seg "2024-01-01" "2024-07-01" (n "10") ]
+  in
+  expect_num "WV-3.6-b" (Timeline.totaal month degenerate) "60";
+  (* gedurende "> 1000" clips to the 1200 months *)
+  let vals = [ seg "2024-01-01" "2024-04-01" (n "1200"); seg "2024-04-01" "2024-06-01" (n "800") ] in
+  let span = List.map (fun (s : Timeline.segment) -> (s.s_van, s.s_tot)) vals in
+  let tp = Timeline.true_periods_of vals ~span (fun v -> Arith.compare_op Groter v (n "1000")) in
+  expect_num "WV-3.6-c" (Timeline.totaal month (Timeline.clip vals tp)) "3600";
+  (* gedurende a characteristic, and its negated complement *)
+  let vals = [ seg "2023-01-01" "2024-01-01" (n "10"); seg "2024-01-01" "2024-07-01" (n "11") ] in
+  let span = [ (day "2023-01-01", day "2024-07-01") ] in
+  let char_true = [ (day "2023-07-01", day "2024-02-01") ] in
+  expect_num "WV-3.6-d" (Timeline.totaal month (Timeline.clip vals char_true)) "71";
+  expect_num "WV-3.6-e" (Timeline.totaal month (Timeline.clip vals (Timeline.complement char_true ~span))) "115";
+  (* gedurende "≠ 1000": leeg satisfies ≠ against a filled bound *)
+  let vals = [ seg "2024-01-01" "2024-07-01" (n "100") ] in
+  let tested = [ seg "2024-01-01" "2024-02-01" (n "1000") ] in
+  let span = [ (day "2024-01-01", day "2024-07-01") ] in
+  let tp = Timeline.true_periods_of tested ~span (fun v -> Arith.compare_op Ongelijk v (n "1000")) in
+  expect_num "WV-3.6-f" (Timeline.totaal month (Timeline.clip vals tp)) "500"
+
+(* WV-3.2: anchored month walls clamp from the anchor, never from the
+   previous wall *)
+let () =
+  let anchor = day "2024-01-31" in
+  let wall k = Timeline.anchored_wall Maand ~anchor k in
+  check "WV-3.2-anchored"
+    (wall 0 = day "2024-01-31" && wall 1 = day "2024-02-29" && wall 2 = day "2024-03-31"
+    && wall 3 = day "2024-04-30")
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

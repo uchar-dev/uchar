@@ -1,0 +1,39 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-03-15",
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": { "aantal aangemelde vondsten": { "number": "14" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": { "aantal aangemelde vondsten": { "number": "3" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": { "aantal aangemelde vondsten": { "number": "13" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": { "vondstdrempel": { "number": "14" }, "penningbedrag": { "number": "275" } }
+  },
+  "expected": [
+    { "kind": "characteristicPresent", "label": "J1", "characteristic": "penninggerechtigd" },
+    { "kind": "characteristicAbsent", "label": "J1", "characteristic": "aanmeldplichtig" },
+    { "kind": "characteristicAbsent", "label": "J2", "characteristic": "penninggerechtigd" },
+    { "kind": "characteristicPresent", "label": "J2", "characteristic": "aanmeldplichtig" },
+    { "kind": "characteristicAbsent", "label": "J3", "characteristic": "penninggerechtigd" },
+    { "kind": "characteristicPresent", "label": "J3", "characteristic": "aanmeldplichtig" },
+    { "kind": "consistent" }
+  ]
+}

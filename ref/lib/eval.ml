@@ -143,8 +143,9 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
   | Parameter_ref { parameter; _ } -> (
       let name = req "ParameterRef.parameter" parameter in
       (match Ir_v0.Checks.find_ci env.doc.parameters name with
-      | Some { par_granulariteit = Some _; _ } ->
-          Value.fault "parameter %S carries a granularity; vintage selection is ch. 8 scope" name
+      | Some { par_granulariteit = Some _; _ } when env.as_of = None ->
+          (* vintage selection is date-indexed and fail-fast (ch. 5.7/8) *)
+          Value.fault "parameter %S is granular; vintage selection needs an evaluation date" name
       | Some _ -> ()
       | None -> Value.fault "unknown parameter %S" name);
       match SMap.find_opt (norm name) env.params with
@@ -158,7 +159,14 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       let ot = req "AttribuutRef.objecttype" ot in
       if norm ot <> norm self.otype then
         Value.fault "navigation from %S to %S is not implemented in this card" self.otype ot
-      else World.attr self name
+      else begin
+        (* the ch. 3.10 gate: a temporal attribute is read at the
+           evaluation date (the case carries that bucket's value); a
+           time-free session cannot read it *)
+        if Ir_v0.Checks.attr_temporal (objecttype env ot) name && env.as_of = None then
+          Value.fault "temporal attribute %S needs an evaluation date (ch. 3.10)" name;
+        World.attr self name
+      end
   | Attribuut_ref _ ->
       Value.fault "unsupported AttribuutRef shape (navigation/set/sentinel outside a fold)"
   | Binair { op; links; rechts; _ } -> (
