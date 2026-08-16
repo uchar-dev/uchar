@@ -79,10 +79,36 @@ let connecting_role env ~from_type ~to_type =
   | [] -> Value.fault "no fact type relates %S to %S" from_type to_type
   | _ -> Value.fault "more than one fact type relates %S to %S" from_type to_type
 
-(* linked instances of [to_type] seen from [self]; the case may key the
-   link under the role's name or its plural — try both *)
-let linked env world (self : World.instance) ~to_type =
-  let role = connecting_role env ~from_type:self.otype ~to_type in
+(* the explicit role binding (v1 extension, IR-SPEC ch. 2.6): resolve the
+   named role of the named fact type. The verifier (WF-047) guarantees
+   resolution on verifier-clean input; a dangling binding still faults. *)
+let bound_role env (rb : rol_binding) =
+  match
+    List.find_opt (fun (n, _) -> norm n = norm rb.rb_feittype) env.doc.feittypen
+  with
+  | None -> Value.fault "role binding names unknown fact type %S" rb.rb_feittype
+  | Some (_, (ft : feittype)) -> (
+      match
+        List.find_opt
+          (fun (r : rol) ->
+            match r.rol_naam with Some n -> norm n = norm rb.rb_rol | None -> false)
+          ft.rollen
+      with
+      | Some r -> r
+      | None ->
+          Value.fault "role binding names unknown role %S of fact type %S" rb.rb_rol
+            rb.rb_feittype)
+
+(* linked instances of [to_type] seen from [self]; the connecting role
+   comes from the explicit [binding] when the node carries one, and from
+   the type-pair derivation otherwise. The case may key the link under
+   the role's name or its plural — try both. *)
+let linked ?binding env world (self : World.instance) ~to_type =
+  let role =
+    match binding with
+    | Some rb -> bound_role env rb
+    | None -> connecting_role env ~from_type:self.otype ~to_type
+  in
   let keys = List.filter_map (fun k -> k) [ role.rol_meervoud; role.rol_naam ] in
   let labels =
     List.fold_left (fun acc k -> if acc = [] then World.links self k else acc) [] keys
@@ -201,9 +227,9 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       let v = eval_expr env world self ~err (req "Begrensd.basis" basis) in
       let bound = function None -> Value.Empty | Some b -> eval_expr env world self ~err b in
       Arith.clamp ~min_:(bound minimum) ~max_:(bound maximum) v
-  | Functie { kind; argumenten; element_objecttype; leegwaarde; filter; dimensie_selectie; granulariteit; typ = _; bron = _ } ->
+  | Functie { kind; argumenten; element_objecttype; leegwaarde; filter; dimensie_selectie; granulariteit; bron_rol; typ = _; bron = _ } ->
       eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leegwaarde ~filter
-        ~dimensie_selectie ~granulariteit
+        ~dimensie_selectie ~granulariteit ~bron_rol
   | Tekst_reeks { delen; _ } ->
       Arith.concat
         (List.map
@@ -217,7 +243,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       Value.fault "expression kind not implemented in this card"
 
 and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leegwaarde ~filter
-    ~dimensie_selectie ~granulariteit =
+    ~dimensie_selectie ~granulariteit ~bron_rol =
   if filter <> None then Value.fault "aggregation filter not implemented in this card";
   if dimensie_selectie <> None then Value.fault "dimension selection not implemented in this card";
   if granulariteit <> None then Value.fault "granularity-bucketed aggregation not implemented in this card";
@@ -256,12 +282,22 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
   let contributors () =
     match (element_objecttype, argumenten) with
     | Some el, [ Attribuut_ref { attribuut; typ = Some (Datatype_onbekend _); _ } ] ->
-        (* the row-1 wart: the fold source argument names a role *)
-        let (_ : rol) = role_by_name env ~self_type:self.otype ~name:(req "fold source" attribuut) in
-        `Instances (linked env world self ~to_type:el)
+        (* the row-1 wart: the fold source argument names a role; with an
+           explicit binding the name check is the verifier's (WF-047) *)
+        (match bron_rol with
+        | Some _ -> ()
+        | None ->
+            let (_ : rol) =
+              role_by_name env ~self_type:self.otype ~name:(req "fold source" attribuut)
+            in
+            ());
+        `Instances (linked ?binding:bron_rol env world self ~to_type:el)
     | Some el, [ Attribuut_ref { attribuut; set = true; _ } ] ->
         let name = req "fold attribute" attribuut in
-        `Values (List.map (fun i -> World.attr i name) (linked env world self ~to_type:el))
+        `Values
+          (List.map
+             (fun i -> World.attr i name)
+             (linked ?binding:bron_rol env world self ~to_type:el))
     | None, args -> `Values (List.map (eval_expr env world self ~err) args)
     | Some _, _ -> Value.fault "unsupported instance-fold source shape"
   in
@@ -453,7 +489,7 @@ let run_verdeling env world (v : resolved_verdeling) =
         in
         if not cond_ok then (w, false)
         else
-          let recipients = linked env w src ~to_type:doel_type in
+          let recipients = linked ?binding:v.verbindende_rol env w src ~to_type:doel_type in
           let recs =
             List.map
               (fun (i : World.instance) ->

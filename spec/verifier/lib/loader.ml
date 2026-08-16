@@ -35,17 +35,29 @@ let field path kvs name =
   | Some v -> v
   | None -> fail path ("missing field '" ^ name ^ "'")
 
-(* Exact key-set check: unknown and missing keys are both load errors. *)
-let check_keys path kvs expected =
+(* Exact key-set check: unknown and missing keys are both load errors.
+   [ext] lists the node's extension fields (v1 deltas riding the v0 wire,
+   IR-SPEC § Method): admitted when present, never required — the pinned
+   v0 emitter does not produce them. Anything else stays a load error. *)
+let check_keys ?(ext = []) path kvs expected =
   let actual = List.map fst kvs in
   List.iter
     (fun k ->
-      if not (List.mem k expected) then fail path ("unknown field '" ^ k ^ "'"))
+      if not (List.mem k expected || List.mem k ext) then
+        fail path ("unknown field '" ^ k ^ "'"))
     actual;
   List.iter
     (fun k ->
       if not (List.mem k actual) then fail path ("missing field '" ^ k ^ "'"))
     expected
+
+(* Decode an extension field when present; absence is None, an explicit
+   null is a load error (an extension field is written whole or not at
+   all). *)
+let ext_field path kvs name (f : string -> json -> 'a) : 'a option =
+  match List.assoc_opt name kvs with
+  | Some j -> Some (f (path / name) j)
+  | None -> None
 
 let node_kind path kvs =
   match field path kvs "node" with
@@ -112,6 +124,17 @@ let granulariteit_tbl =
   [ ("DAG", Dag); ("WEEK", Week); ("MAAND", Maand); ("KWARTAAL", Kwartaal); ("JAAR", Jaar) ]
 
 let granulariteit_opt = enum_opt "Granulariteit" granulariteit_tbl
+
+(* The symbolic role binding (extension node, IR-SPEC ch. 2.6): both
+   fields are plain strings — a binding is written whole or not at all. *)
+let rol_binding path j : rol_binding =
+  let kvs = obj path j in
+  expect_node path kvs "RolBinding";
+  check_keys path kvs [ "node"; "feittype"; "rol" ];
+  {
+    rb_feittype = str (path / "feittype") (field path kvs "feittype");
+    rb_rol = str (path / "rol") (field path kvs "rol");
+  }
 
 let teken_opt =
   enum_opt "Teken"
@@ -276,7 +299,7 @@ let rec expr path j : expr =
           bron = bron ();
         }
   | "Functie" ->
-      check_keys path kvs
+      check_keys path kvs ~ext:[ "bronRol" ]
         [ "node"; "kind"; "argumenten"; "elementObjecttype"; "leegwaarde";
           "filter"; "dimensieSelectie"; "type"; "bron"; "granulariteit" ];
       Functie
@@ -295,6 +318,7 @@ let rec expr path j : expr =
           typ = typ ();
           bron = bron ();
           granulariteit = granulariteit_opt (path / "granulariteit") (f "granulariteit");
+          bron_rol = ext_field path kvs "bronRol" rol_binding;
         }
   | "Afgerond" ->
       check_keys path kvs [ "node"; "basis"; "modus"; "decimalen"; "type"; "bron" ];
@@ -649,7 +673,7 @@ let resolved_object_creatie path j : resolved_object_creatie =
 let resolved_verdeling path j : resolved_verdeling =
   let kvs = obj path j in
   expect_node path kvs "ResolvedVerdeling";
-  check_keys path kvs
+  check_keys path kvs ~ext:[ "verbindendeRol" ]
     [ "node"; "naam"; "bronType"; "bronAttribuut"; "doelType"; "doelAttribuut";
       "methode"; "ratoAttribuut"; "maximumAttribuut"; "afrondingDecimalen";
       "restantAttribuut"; "groepeerAttribuut"; "afnemend"; "voorwaarde"; "geldigheid" ];
@@ -669,6 +693,7 @@ let resolved_verdeling path j : resolved_verdeling =
     afnemend = bool_ (path / "afnemend") (f "afnemend");
     vd_voorwaarde = opt (path / "voorwaarde") conditie (f "voorwaarde");
     vd_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
+    verbindende_rol = ext_field path kvs "verbindendeRol" rol_binding;
   }
 
 let resolved_consistentie path j : resolved_consistentie =
@@ -726,17 +751,18 @@ let resolved_uniciteit_unie path j : resolved_uniciteit_unie =
 let tussenstap path j : tussenstap =
   let kvs = obj path j in
   expect_node path kvs "Tussenstap";
-  check_keys path kvs [ "node"; "type"; "veld"; "viaOuderVeld" ];
+  check_keys path kvs ~ext:[ "rolBinding" ] [ "node"; "type"; "veld"; "viaOuderVeld" ];
   {
     ts_type = str_opt (path / "type") (field path kvs "type");
     veld = str_opt (path / "veld") (field path kvs "veld");
     via_ouder_veld = bool_ (path / "viaOuderVeld") (field path kvs "viaOuderVeld");
+    ts_rol = ext_field path kvs "rolBinding" rol_binding;
   }
 
 let resolved_feit_creatie path j : resolved_feit_creatie =
   let kvs = obj path j in
   expect_node path kvs "ResolvedFeitCreatie";
-  check_keys path kvs
+  check_keys path kvs ~ext:[ "feittype"; "ankerRol"; "doelRol"; "joinRol" ]
     [ "node"; "naam"; "anker"; "doel"; "zetVeld"; "joinVeld"; "tussenstappen";
       "voorwaarde"; "geldigheid" ];
   let f name = field path kvs name in
@@ -752,6 +778,10 @@ let resolved_feit_creatie path j : resolved_feit_creatie =
         (list_ (path / "tussenstappen") (f "tussenstappen"));
     fc_voorwaarde = opt (path / "voorwaarde") conditie (f "voorwaarde");
     fc_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
+    fc_feittype = ext_field path kvs "feittype" str;
+    anker_rol = ext_field path kvs "ankerRol" str;
+    doel_rol = ext_field path kvs "doelRol" str;
+    join_rol = ext_field path kvs "joinRol" rol_binding;
   }
 
 let resolved_startpunt path j : resolved_startpunt =

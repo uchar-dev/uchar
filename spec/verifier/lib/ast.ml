@@ -66,6 +66,11 @@ type datatype =
 (* The whole-period qualifier tag riding Vergelijking/Predicaat/Kenmerk. *)
 type geheel_periode = { gp_jaar : bool; gp_niet : bool }
 
+(* A symbolic role binding — the v1 extension of IR-SPEC ch. 2.6: one
+   declared role of one declared fact type, named instead of derived.
+   Extension fields carrying it are absent in every v0 emitter dump. *)
+type rol_binding = { rb_feittype : string; rb_rol : string }
+
 type expr =
   | Literal of { waarde : string option; typ : datatype option; bron : string option }
   | Tekst_reeks of { delen : tekst_deel list; typ : datatype option; bron : string option }
@@ -86,6 +91,7 @@ type expr =
       typ : datatype option;
       bron : string option;
       granulariteit : granulariteit option;
+      bron_rol : rol_binding option; (* extension: the fold-source role *)
     }
   | Afgerond of {
       basis : expr option;
@@ -294,6 +300,7 @@ type resolved_verdeling = {
   afnemend : bool;
   vd_voorwaarde : conditie option;
   vd_geldigheid : geldigheid option;
+  verbindende_rol : rol_binding option; (* extension: the recipient role *)
 }
 
 type resolved_consistentie = {
@@ -330,6 +337,7 @@ type tussenstap = {
   ts_type : string option;
   veld : string option;
   via_ouder_veld : bool;
+  ts_rol : rol_binding option; (* extension: the hop, named symbolically *)
 }
 
 type resolved_feit_creatie = {
@@ -341,6 +349,12 @@ type resolved_feit_creatie = {
   tussenstappen : tussenstap list;
   fc_voorwaarde : conditie option;
   fc_geldigheid : geldigheid option;
+  (* extension (all-or-nothing, WF-028): the created relation and the
+     roles its two ends fill, plus the join hop reaching the target *)
+  fc_feittype : string option;
+  anker_rol : string option;
+  doel_rol : string option;
+  join_rol : rol_binding option;
 }
 
 type resolved_startpunt = {

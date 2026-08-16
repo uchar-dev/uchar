@@ -141,24 +141,36 @@ let expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
       ( [ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ],
         v,
         pow10 (attr_decimals ctx ~otype:ot ~attr:a) )
-  | Functie { kind = Aantal; argumenten = [ Attribuut_ref { attribuut; typ = Some (Datatype_onbekend _); _ } ]; element_objecttype = Some _; _ } ->
+  | Functie { kind = Aantal; argumenten = [ Attribuut_ref { attribuut; typ = Some (Datatype_onbekend _); _ } ]; element_objecttype = Some _; bron_rol; _ } ->
       (* the row-1 wart: the fold source names a role; count the linked
-         instances *)
-      let role = req "fold role" attribuut in
+         instances. An explicit binding overrides the written name. *)
+      let role =
+        match bron_rol with
+        | Some rb ->
+            let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; as_of = None } in
+            role_canonical (Eval.bound_role env rb)
+        | None -> req "fold role" attribuut
+      in
       let v = fresh ctx "C" in
       ( [ Printf.sprintf "%s = #count { X%s : rol(%s,%s,X%s) }" v v subject (str role) v ],
         v,
         1 )
-  | Functie { kind = Som; argumenten = [ Attribuut_ref { attribuut; set = true; _ } ]; element_objecttype = Some el; leegwaarde; _ } ->
+  | Functie { kind = Som; argumenten = [ Attribuut_ref { attribuut; set = true; _ } ]; element_objecttype = Some el; leegwaarde; bron_rol; _ } ->
       let a = req "fold attribute" attribuut in
       (match leegwaarde with
       | Some (Literal { waarde = Some "0"; _ }) -> ()
       | Some _ -> fault "som fallback other than 0 is not translated yet"
       | None ->
           fault "som without the 0 fallback needs an explicit non-empty guard; no corpus case yet");
-      (* the connecting role, derived the same way ref/ derives it *)
+      (* the connecting role: the node's explicit binding when present,
+         else derived the same way ref/ derives it *)
       let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; as_of = None } in
-      let role_name = role_canonical (Eval.connecting_role env ~from_type:subject_ot ~to_type:el) in
+      let role_name =
+        role_canonical
+          (match bron_rol with
+          | Some rb -> Eval.bound_role env rb
+          | None -> Eval.connecting_role env ~from_type:subject_ot ~to_type:el)
+      in
       let v = fresh ctx "S" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
       ( [ Printf.sprintf "%s = #sum { %s,%s : rol(%s,%s,%s), val(%s,%s,%s) }" v g x subject
@@ -255,7 +267,12 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
   let rato = req "ratoAttribuut (proportional)" v.rato_attribuut in
   let name = Option.value v.vd_naam ~default:"verdeling" in
   let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; as_of = None } in
-  let role = role_canonical (Eval.connecting_role env ~from_type:bt ~to_type:dt) in
+  let role =
+    role_canonical
+      (match v.verbindende_rol with
+      | Some rb -> Eval.bound_role env rb
+      | None -> Eval.connecting_role env ~from_type:bt ~to_type:dt)
+  in
   let pot_scale = pow10 (attr_decimals ctx ~otype:bt ~attr:ba) in
   let target_scale = pow10 (attr_decimals ctx ~otype:dt ~attr:da) in
   let floor_scale = pow10 (Option.value v.afronding_decimalen ~default:0) in

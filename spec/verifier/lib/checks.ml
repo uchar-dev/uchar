@@ -999,6 +999,87 @@ let aggregation_source_check ctx at = function
                 ("'" ^ a ^ "' is neither a member of '" ^ otn ^ "' nor a declared role") ])
   | _ -> []
 
+(* --- WF-047 / WF-048: symbolic role bindings (v1 extension) -------------- *)
+
+(* The ch. 4.1 type-pair derivation, mirrored from the executors: the
+   two-role fact types relating [from_type] to [to_type] (either way). *)
+let connecting_candidates ctx ~from_type ~to_type =
+  List.filter_map
+    (fun (fn, (ft : feittype)) ->
+      match ft.rollen with
+      | [ a; b ] ->
+          let ot r = Option.value r.rol_objecttype_naam ~default:"" in
+          if
+            (norm (ot a) = norm from_type && norm (ot b) = norm to_type)
+            || (norm (ot b) = norm from_type && norm (ot a) = norm to_type)
+          then Some fn
+          else None
+      | _ -> None)
+    ctx.doc.feittypen
+
+(* Resolve a binding to (fact type, bound role, opposite role). Only the
+   declared role name binds — the plural is presentation (WF-047). *)
+let resolve_binding ctx (rb : rol_binding) =
+  match find_ci ctx.doc.feittypen rb.rb_feittype with
+  | None -> Error ("role binding names undeclared fact type '" ^ rb.rb_feittype ^ "'")
+  | Some (ft : feittype) -> (
+      match ft.rollen with
+      | [ a; b ] -> (
+          let matches r =
+            match r.rol_naam with Some n -> norm n = norm rb.rb_rol | None -> false
+          in
+          match (matches a, matches b) with
+          | true, false -> Ok (ft, a, b)
+          | false, true -> Ok (ft, b, a)
+          | true, true ->
+              Error
+                ("role name '" ^ rb.rb_rol ^ "' is ambiguous within fact type '"
+               ^ rb.rb_feittype ^ "'")
+          | false, false ->
+              Error
+                ("role binding names no declared role '" ^ rb.rb_rol ^ "' of fact type '"
+               ^ rb.rb_feittype ^ "' (the plural does not bind)"))
+      | _ ->
+          Error
+            ("role binding into fact type '" ^ rb.rb_feittype
+           ^ "', which does not have exactly two roles"))
+
+(* WF-047: the binding resolves and its fillers agree with the node's
+   declared source/target types (skip a side the node leaves unnamed). *)
+let wf047_binding ctx at (rb : rol_binding) ~bound_filler ~other_filler =
+  match resolve_binding ctx rb with
+  | Error e -> [ v "WF-047" at e ]
+  | Ok (_, bound, other) ->
+      let agree what (r : rol) = function
+        | None -> []
+        | Some expected ->
+            let filler = Option.value r.rol_objecttype_naam ~default:"" in
+            if norm filler = norm expected then []
+            else
+              [ v "WF-047" at
+                  (Printf.sprintf "the %s role '%s' fills '%s', but the node names '%s'" what
+                     (Option.value r.rol_naam ~default:"?")
+                     filler expected) ]
+      in
+      agree "bound" bound bound_filler @ agree "opposite" other other_filler
+
+(* WF-048: a bindingless allocation or instance fold is well-formed only
+   if the connecting relation is uniquely derivable from the type pair —
+   the ch. 4.1 runtime fault, lifted to well-formedness. *)
+let wf048_derivable ctx at ~from_type ~to_type ~site =
+  match connecting_candidates ctx ~from_type ~to_type with
+  | [ _ ] -> []
+  | [] ->
+      [ v "WF-048" at
+          (Printf.sprintf "bindingless %s: no fact type relates '%s' to '%s'" site from_type
+             to_type) ]
+  | l ->
+      [ v "WF-048" at
+          (Printf.sprintf
+             "bindingless %s: %d fact types relate '%s' to '%s' — not uniquely derivable; \
+              name the connecting relation with an explicit role binding"
+             site (List.length l) from_type to_type) ]
+
 let rec walk_expr ctx ~subject at (e : expr) : violation list =
   let sub p = at ^ "/" ^ p in
   let typ_checks =
@@ -1149,6 +1230,47 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
                | Attribuut_ref _, Some _ -> aggregation_source_check ctx p a
                | _ -> walk_expr ctx ~subject p a)
              f.argumenten)
+      (* WF-047/048: the fold-source role binding (v1 extension) *)
+      @ (let fold_source =
+           match (f.element_objecttype, f.argumenten) with
+           | ( Some el,
+               [ Attribuut_ref
+                   { attribuut; typ = Some (Datatype_onbekend _);
+                     navigatie_rol = None; navigatie_pad = []; _ } ] ) ->
+               Some (el, `Role_name attribuut)
+           | ( Some el,
+               [ Attribuut_ref { set = true; navigatie_rol = None; navigatie_pad = []; _ } ] )
+             ->
+               Some (el, `Member)
+           | _ -> None
+         in
+         match (fold_source, f.bron_rol) with
+         | None, None -> []
+         | None, Some _ ->
+             [ v "WF-047" (sub "bronRol")
+                 "a fold-source role binding on a node that is not an instance fold over a \
+                  relation" ]
+         | Some (el, written), Some rb -> (
+             wf047_binding ctx (sub "bronRol") rb ~bound_filler:(Some el) ~other_filler:subject
+             @
+             (* the written v0 source (the row-1 wart) must denote the
+                bound role — one relation, not two spellings of two *)
+             match (resolve_binding ctx rb, written) with
+             | Ok (_, bound, _), `Role_name (Some w)
+               when not
+                      ((match bound.rol_naam with Some n -> norm n = norm w | None -> false)
+                      || match bound.rol_meervoud with
+                         | Some m -> norm m = norm w
+                         | None -> false) ->
+                 [ v "WF-047" (sub "bronRol")
+                     (Printf.sprintf "the written fold source '%s' does not denote the bound role '%s'"
+                        w
+                        (Option.value bound.rol_naam ~default:"?")) ]
+             | _ -> [])
+         | Some (el, _), None -> (
+             match subject with
+             | Some st -> wf048_derivable ctx at ~from_type:st ~to_type:el ~site:"instance fold"
+             | None -> []))
   | Afgerond { basis; _ } ->
       (match basis with Some e -> walk_expr ctx ~subject (sub "basis") e | None -> [])
   | Begrensd { basis; minimum; maximum; _ } ->
@@ -1717,12 +1839,159 @@ let wf045_046 ctx =
 
 (* ======================================================================= *)
 
+(* WF-047/048 on the allocation: the recipient-role binding agrees with
+   the declared (bronType, doelType); a bindingless allocation must be
+   uniquely derivable. *)
+let wf047_048_verdelingen ctx =
+  List.concat
+    (List.mapi
+       (fun i (r : resolved_verdeling) ->
+         let at = Printf.sprintf "/verdelingen/%d" i in
+         match r.verbindende_rol with
+         | Some rb ->
+             wf047_binding ctx (at ^ "/verbindendeRol") rb ~bound_filler:r.doel_type
+               ~other_filler:r.bron_type
+         | None -> (
+             match (r.bron_type, r.doel_type) with
+             | Some bt, Some dt ->
+                 wf048_derivable ctx at ~from_type:bt ~to_type:dt ~site:"allocation"
+             | _ -> []))
+       ctx.doc.verdelingen)
+
+(* WF-028 over the symbolic creation form (v1 extension). A bean-field-only
+   v0 record stays uncheckable (its relational content is not on the wire);
+   once any symbolic field is present the form is all-or-nothing, every
+   binding resolves, the ends agree, and the join chain reaches the target
+   through a relation that differs from the created one. *)
+let wf028 ctx =
+  List.concat
+    (List.mapi
+       (fun i (fc : resolved_feit_creatie) ->
+         let at = Printf.sprintf "/feitCreaties/%d" i in
+         let any_symbolic =
+           fc.fc_feittype <> None || fc.anker_rol <> None || fc.doel_rol <> None
+           || fc.join_rol <> None
+           || List.exists (fun (t : tussenstap) -> t.ts_rol <> None) fc.tussenstappen
+         in
+         if not any_symbolic then []
+         else
+           let missing =
+             List.filter_map
+               (fun (n, p) -> if p then None else Some n)
+               [ ("feittype", fc.fc_feittype <> None);
+                 ("ankerRol", fc.anker_rol <> None);
+                 ("doelRol", fc.doel_rol <> None);
+                 ("joinRol", fc.join_rol <> None) ]
+             @ List.concat
+                 (List.mapi
+                    (fun j (t : tussenstap) ->
+                      if t.ts_rol = None then
+                        [ Printf.sprintf "tussenstappen/%d/rolBinding" j ]
+                      else [])
+                    fc.tussenstappen)
+           in
+           if missing <> [] then
+             [ v "WF-028" at
+                 ("symbolic fact creation is all-or-nothing; missing: "
+                 ^ String.concat ", " missing) ]
+           else
+             let ftn = Option.get fc.fc_feittype in
+             let anker_rol = Option.get fc.anker_rol in
+             let doel_rol = Option.get fc.doel_rol in
+             let join = Option.get fc.join_rol in
+             let filler (r : rol) = Option.value r.rol_objecttype_naam ~default:"" in
+             let created_checks =
+               match find_ci ctx.doc.feittypen ftn with
+               | None -> [ v "WF-028" at ("created fact type '" ^ ftn ^ "' is not declared") ]
+               | Some (ft : feittype) -> (
+                   match ft.rollen with
+                   | [ a; b ] ->
+                       let pick name =
+                         let m r =
+                           match r.rol_naam with
+                           | Some n -> norm n = norm name
+                           | None -> false
+                         in
+                         match (m a, m b) with
+                         | true, false -> Ok a
+                         | false, true -> Ok b
+                         | true, true ->
+                             Error ("role '" ^ name ^ "' is ambiguous within '" ^ ftn ^ "'")
+                         | false, false ->
+                             Error ("'" ^ name ^ "' is not a role of '" ^ ftn ^ "'")
+                       in
+                       let end_check what name expected =
+                         match pick name with
+                         | Error e -> [ v "WF-028" at e ]
+                         | Ok r -> (
+                             match expected with
+                             | Some t when norm (filler r) <> norm t ->
+                                 [ v "WF-028" at
+                                     (Printf.sprintf "%s '%s' fills '%s', but the node names '%s'"
+                                        what name (filler r) t) ]
+                             | _ -> [])
+                       in
+                       (if norm anker_rol = norm doel_rol then
+                          [ v "WF-028" at "ankerRol and doelRol must be distinct roles" ]
+                        else [])
+                       @ end_check "ankerRol" anker_rol fc.anker
+                       @ end_check "doelRol" doel_rol fc.fc_doel
+                   | _ ->
+                       [ v "WF-028" at
+                           ("created fact type '" ^ ftn ^ "' does not have exactly two roles") ])
+             in
+             let chain_checks =
+               (* anchor -[tussenstappen]-> ... -[joinRol]-> target; each
+                  binding names the role the hop's far side fills *)
+               let step at_step cur rb =
+                 match resolve_binding ctx rb with
+                 | Error e -> Error [ v "WF-028" at_step e ]
+                 | Ok (_, bound, other) -> (
+                     match cur with
+                     | Some cur when norm (filler other) <> norm cur ->
+                         Error
+                           [ v "WF-028" at_step
+                               (Printf.sprintf
+                                  "hop over '%s': the near side fills '%s', but the chain stands \
+                                   at '%s'"
+                                  rb.rb_feittype (filler other) cur) ]
+                     | _ -> Ok (Some (filler bound)))
+               in
+               let rec go j cur = function
+                 | [] -> (
+                     match step (at ^ "/joinRol") cur join with
+                     | Error vs -> vs
+                     | Ok reached ->
+                         (match (reached, fc.fc_doel) with
+                         | Some r, Some d when norm r <> norm d ->
+                             [ v "WF-028" at
+                                 (Printf.sprintf "the join chain reaches '%s', not the target '%s'"
+                                    r d) ]
+                         | _ -> [])
+                         @
+                         if norm join.rb_feittype = norm ftn then
+                           [ v "WF-028" at
+                               "the created relation must differ from the relation of the final \
+                                hop" ]
+                         else [])
+                 | (t : tussenstap) :: rest -> (
+                     match
+                       step (Printf.sprintf "%s/tussenstappen/%d" at j) cur (Option.get t.ts_rol)
+                     with
+                     | Error vs -> vs
+                     | Ok reached -> go (j + 1) reached rest)
+               in
+               go 0 fc.anker fc.tussenstappen
+             in
+             created_checks @ chain_checks)
+       ctx.doc.feit_creaties)
+
 let all (doc : document) : violation list =
   let ctx = { doc } in
   List.concat
     [ wf001 ctx; wf002 ctx; wf003 ctx; wf004 ctx; wf005 ctx; wf006 ctx;
       wf007_model ctx; wf009 ctx; wf011 ctx; wf012 ctx; wf013 ctx; wf014 ctx;
       wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf020 ctx; wf021 ctx;
-      wf022 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf029 ctx;
-      wf030 ctx; wf031 ctx; wf032 ctx; wf033 ctx; wf045_046 ctx;
-      expression_layer ctx ]
+      wf022 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
+      wf029 ctx; wf030 ctx; wf031 ctx; wf032 ctx; wf033 ctx; wf045_046 ctx;
+      wf047_048_verdelingen ctx; expression_layer ctx ]
