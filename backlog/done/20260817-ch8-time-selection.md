@@ -37,3 +37,27 @@ ContextValue row, if its wire shape needs the extension discipline),
 Out of scope: the second (knowledge-time) axis beyond naming the
 extension point; multi-period grids (`count` ≥ 2, §3.12 OPEN);
 granularity conversion; the emitter (pin-bump).
+
+Result: landed in full. RUNTIME-SEMANTICS ch. 8 is normative: the
+single axis with its named knowledge-time extension point (8.1),
+gating-versus-indexing (8.2 — the Rekendatum constant is the only
+expression-level access to the date), the vintage read as the ch. 4.3a
+node indexed by Rekendatum (8.3), and the Parameterset data plane with
+the session-start coverage check (8.4; no WF number — data plane, like
+the case loader's cross-checks; explicitly static-and-conservative:
+gating and instance count do not exempt a missing vintage). Both
+executors evaluate Rekendatum (Rekenjaar faults, recorded) and share
+one `parameterset_check` — ref at evaluation entry, clingo before
+emitting a program — so the three red variants (2028 gap, absent
+timeline, null asOfDate) fault byte-identically in both. The anchor
+`jutterswet-penningvintage` is worked example 8.5 verbatim, replayed
+by gates 5 and 6. Adversarial verification (two opus lenses): no
+blockers/majors; fixed before merge: the overlap-phase inconsistency
+(ch. 3.3 and 5.7 now state the 8.4 phasing: overlap = load error,
+coverage gap = session-start error), the diverging red-variant
+enumerations, and the conservative-check design made explicit spec
+text instead of accidental behaviour. Deliberately left: an
+expected-fault case form for a standing red-path regression guard
+(recorded in 8.5 as open debt of the harness-guard class); Rekenjaar;
+the ContextValue v1 split (row 25) stays a pending delta — the v0
+Constante carries the mirror.

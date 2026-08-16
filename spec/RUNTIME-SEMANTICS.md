@@ -492,8 +492,8 @@ at the evaluation date) become expressible. The reconciliation with
 ch. 5.7's fail-fast vintage discipline is a division of labour: the
 read keeps its ch. 3.1 leeg-on-gap totality, and ch. 8's fail-fast
 lives in the data plane — the Parameterset must cover the evaluation
-window (a gap or overlap is a session-start error, raised before any
-read). **Landed (2026-08-16):** the node is `IR-SPEC.md` ch. 4.3a
+window (an overlap is a load error, a coverage gap a session-start
+error — the ch. 8.4 phasing — both raised before any read). **Landed (2026-08-16):** the node is `IR-SPEC.md` ch. 4.3a
 (`TemporalRead`, WF-049), with the full-timeline case value variant in
 `uchar-case-v0`, the ref/ implementation on this chapter's `read`, and
 the Clingo translation as a segment-containment join; an empty date
@@ -1247,8 +1247,8 @@ implements:
 1. fix the **evaluation date** (one date; the single axis of PLAN §9,
    decision 2 — absent when the model is time-free);
 2. bind **parameter values** for that date (vintage selection is
-   fail-fast — a gap or overlap is an error, never a default; specified
-   in ch. 8);
+   fail-fast — an overlap is a load error, a coverage gap a
+   session-start error, never a default; the phasing is ch. 8.4);
 3. insert the **input facts**;
 4. evaluate to the **fixpoint** (ch. 5.1–5.5; a bounded budget turns
    divergence into a fault);
@@ -1490,6 +1490,12 @@ loader's cross-checks:
   evaluation date (the single-axis evaluation window is that one day).
   A violation is a **session-start error**, raised before any rule
   fires — a missing vintage never surfaces as a mid-evaluation leeg.
+  The check is **static and conservative** by design: it covers every
+  vintage read the document carries, whether or not ch. 8.2's gating
+  would activate the carrying rule version at this date, and whether
+  or not any instance exists for it to fire over — an inactive
+  version's missing vintage is still a configuration error. The check
+  can therefore only be too strict, never silently too lenient.
 
 The two conventions of the case format stay strictly apart (ch. 3.6,
 `spec/schema/README.md`): the asOfDate-bucket scalar serves the
@@ -1519,12 +1525,16 @@ date 2026-03-15; Parameterset `penningbedrag` = [2025: 4, 2026: 5]
 - The read: the 2026 segment → **5**; every Jutter's `huidig
   penningbedrag` is 5 (`corpus/golden/anchor/jutterswet-penningvintage`,
   replayed by gates 5 and 6).
-- The uncovered variant (same document, evaluation date 2028-03-15, or
-  the timeline absent): the session-start check fails before any rule
-  fires — both executors report the missing coverage; nothing is
-  evaluated. This variant cannot sit in the golden corpus (a golden
-  must replay green); it is pinned here and exercised in the card's
-  verification record.
+- The red variants (same document): evaluation date 2028-03-15 (gap),
+  the timeline absent, or `asOfDate` null — each fails the
+  session-start check before any rule fires, and both executors report
+  the same missing coverage; nothing is evaluated. These variants
+  cannot sit in the golden corpus (a golden must replay green); they
+  are pinned here and exercised in the card's verification record. A
+  standing regression guard for the red path needs an expected-fault
+  case form the harness does not have yet — open debt of the same
+  class as the standing harness guards (no-op, unsolved-state) still
+  to land, recorded here rather than silently absent.
 
 ## Chapters (planned)
 
