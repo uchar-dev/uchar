@@ -1,0 +1,3 @@
+(library
+ (name uchar_ref)
+ (libraries uchar-ir-v0 yojson zarith))

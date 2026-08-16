@@ -1,3 +1,4 @@
 (library
  (name ir_v0)
+ (public_name uchar-ir-v0)
  (libraries yojson))

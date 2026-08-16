@@ -27,8 +27,10 @@ May touch: `ref/**` (new), `dune-workspace` (new, root),
 `scripts/check-oracle.sh` (new), `.github/workflows/gates.yml`,
 `CLAUDE.md` (gate list), `backlog/**`,
 `corpus/golden/jutterswet-vondsttelling/case*.json` (new, only if that
-golden evaluates time-free), `corpus/golden/README.md` (case table note).
+golden evaluates time-free), `corpus/golden/README.md` (case table note),
+`spec/verifier/dune-project` + `spec/verifier/lib/dune` (build metadata
+only: a `public_name` so `ref/` can link `ir_v0` across projects).
 
 Out of scope: timeline algebra (ch. 3) in `ref/`; a penningjaar case (needs
-timelines); ch. 6 stratification; any change to `spec/verifier/` itself;
+timelines); ch. 6 stratification; any code change to `spec/verifier/`;
 any change to `spec/RUNTIME-SEMANTICS.md`.
