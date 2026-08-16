@@ -1,7 +1,7 @@
 # uchar IR — Runtime semantics
 
-*Status: ch. 1–2 are normative **draft** (v0 mirror with tracked deltas and
-OPEN decisions); ch. 3–8 are skeleton. Authority for undocumented behaviour
+*Status: ch. 1–3 are normative **draft** (v0 mirror with tracked deltas and
+OPEN decisions); ch. 4–8 are skeleton. Authority for undocumented behaviour
 still lives in `regelspraak-java` (pinned commit `b85dff3`):
 `runtime/RegelSpraakRuntime.java` — the single shared implementation both
 Drools back-ends call — and the decision records in
@@ -109,8 +109,9 @@ temporal sum of §5.8.2 skips empty operands and yields an empty period only
 when *all* operands are empty there (fallback clause applicable). Worked
 example — in a period where A = leeg and B = 4: §5.1.4 A + B = 4; §5.8.2
 som(A, B) = 4; in a period where both are leeg: §5.1.4 gives 0, §5.8.2
-gives leeg (or the fallback). The two rules coexist in v0; naming them
-apart is a ch. 3 obligation.
+gives leeg (or the fallback). The two rules coexist in v0; ch. 3 names
+them apart as the **period-coalescing rule** (ch. 3.4) and the
+**contributor-skipping rule** (ch. 3.5).
 
 **Assignment.** Writing empty is a real write when it changes state (the
 fixpoint machinery of ch. 5 compares old and new value; empty-over-empty
@@ -348,11 +349,513 @@ ch. 3.
 
 ---
 
+## 3. Timeline algebra
+
+A time-dependent member or parameter does not hold one value; it holds a
+**timeline**: a piecewise-constant partial function from days to values.
+This chapter specifies the timeline value itself, its period grids, the
+operations over it, and how rules produce it. Two different empty rules
+run through the algebra; ch. 1.2 recorded them, this chapter names them:
+the **period-coalescing rule** (§5.1.4 arithmetic, empty period = 0,
+ch. 3.4) and the **contributor-skipping rule** (§5.8.2 summation, empty
+contributors skipped, ch. 3.5). Everything here is v0 mirror with tracked
+deltas; the v0 refusals and the chapter's OPEN decisions are collected in
+ch. 3.12.
+
+### 3.1 The timeline value
+
+A timeline value is a finite set of **segments**. Each segment is a
+half-open day interval `[van, tot)` — `van` inclusive, `tot` exclusive —
+carrying one constant value of the member's element type, or carrying
+**leeg**. Days covered by no segment (**gaps**, including all days before
+the first and after the last segment) also read as leeg. The normative
+reading function:
+
+```
+read(tl, d) = the value of the segment with van ≤ d < tot,  if one exists
+            = leeg,                                          otherwise
+```
+
+- A **boolean timeline** (a time-dependent characteristic) is represented
+  by its true-periods only: the segments are the periods where the
+  characteristic holds, days outside them read false. Its segments carry
+  no value payload.
+- Granularity and period count are properties of the *declaration* (the
+  `TimelineFacet`, `IR-SPEC.md` ch. 2.2), never of the value: a segment
+  does not know its grid.
+- Well-formed timeline values are sorted ascending by `van` and
+  non-overlapping. *v0 mirror note:* every v0 producer emits sorted,
+  non-overlapping segments, but v0 *reads* tolerate unsorted and
+  overlapping input (first covering segment wins) — the input invariant
+  is unstated there. **Delta (candidate WF rule, data plane):** overlap
+  and disorder in timeline data are ill-formed; `read` never depends on
+  segment order. Zero-length and reversed intervals (`tot` ≤ `van`)
+  contribute nothing anywhere in this chapter.
+- Two representations of "empty here" exist and are **observationally
+  equivalent** under `read`: a gap, and an explicit leeg-valued segment
+  (only the contributor-skipping rule of ch. 3.5 emits the latter).
+  Semantics are defined over `read`; no operation in this chapter may
+  distinguish the two representations. *v0 mirror note (residual):* v0's
+  temporal total distinguishes an absent timeline (leeg result) from a
+  present-but-segmentless one (0) — see ch. 3.6.
+- Segment-wise equality — same `van`, same `tot`, numerically equal or
+  both-leeg value — is the change-detection rule for timeline writes (the
+  temporal analogue of the scalar rule in ch. 1.2 Assignment; evaluation
+  model: ch. 5).
+
+### 3.2 Period grids, buckets, and variable starting points
+
+The five granularities (`day`, `week`, `month`, `quarter`, `year`) serve
+two distinct jobs, with different v0 support:
+
+1. **Weighting** (the temporal total, ch. 3.6) counts *whole* granularity
+   units between two dates: days, weeks, months, quarters = whole months
+   ÷ 3, years. All five granularities weight.
+2. **Bucketing** (producers that emit one segment per calendar period:
+   ch. 3.7, 3.8, 3.9) uses calendar-aligned walls: a month bucket runs
+   from the first of the month to the first of the next; a year bucket
+   from 1 January to 1 January. Only **month and year buckets exist** —
+   the source language's bucketing operators are grammatically restricted
+   to "de maand"/"het jaar", and v0 implements exactly that. Bucketing by
+   day, week, or quarter is not defined (ch. 3.12).
+
+Bucket lengths are actual calendar lengths, leap-aware: February 2024 has
+29 days, 2025 has 365. There is no 360-day convention anywhere.
+
+**Multi-period grids** (`count` ≥ 2, "voor elke 3 maanden"): declared and
+carried in the model layer (WF-005), but **no operation over them is
+defined** — v0 refuses every read of and write to a multi-period timeline
+(the coverage-manifest family "multi-period temporal writes"; the refusal
+reason is that the producer semantics — how a value spreads over an
+N-unit period — are genuinely under-specified in the source language).
+**OPEN** (ch. 3.12): v1 either specifies the multi-period producers or
+restricts `count` to 1 at the type level.
+
+**Variable starting points** (§9.9). A variable-start timeline buckets
+per object at its **anchor** — the value of the synthetic day-precision
+date attribute that the start-point determination names (`IR-SPEC.md`
+ch. 3.8) and that an ordinary rule writes. Anchored buckets are
+
+```
+[ anchor + k·unit,  anchor + (k+1)·unit )      for every integer k
+```
+
+— periods exist before as well as after the anchor, and **every wall is
+computed directly from the anchor** (never by incrementing the previous
+wall), so a month-end anchor clamps consistently. Worked example: anchor
+2024-01-31, month grid → walls 2024-01-31, 2024-02-29 (leap clamp),
+2024-03-31, 2024-04-30, … — the third wall is the 31st again, which
+cursor-incrementing from the clamped 29th would have lost. Date-plus-unit
+arithmetic clamps to the last valid day of the target month (ch. 3.8).
+
+A missing start-point determination is ill-formed (WF-016/WF-032); an
+anchor that is *leeg at evaluation time* yields the empty timeline for
+every anchored producer, and the anchor rule's own §6.8 error surfaces on
+the §9.5 channel (v0 mirror: a companion rule raises it).
+
+### 3.3 Reading a timeline — and the point-read gap
+
+`read(tl, d)` (ch. 3.1) is the primitive every operation below is built
+from. But **v0 exposes no point-in-time read to the rule author**: a
+time-dependent attribute or parameter in a scalar context is refused (the
+"§8.2 list-in-scalar" marker family), and the evaluation date (rekendatum)
+only *gates* rules — version validity, the ch. 3.10 period condition — it
+never *indexes* a timeline to a value. The only ways a timeline becomes a
+scalar are the dedicated collapses: the temporal total (ch. 3.6) and the
+whole-period predicate (ch. 3.9).
+
+This is the recorded "op dat tijdstip" gap (`ASP-TRANSLATION.md` ch. 5,
+finding 4; `CONSTRUCTS.md` row 11): Jutterswet art. 1 needs the value of
+"erkend jutter of vast ingezetene" **at the child's birth** — a point
+read at an instant that is not the evaluation date. That is doubly
+inexpressible in v0: there is no point read at all, and no way to name a
+non-rekendatum instant. The algebra above already defines the needed
+primitive (`read(tl, d)` with `d` any date expression); **OPEN**
+(ch. 3.12): whether v1 exposes it as an IR node (a temporal-read
+expression carrying a timeline operand and a date operand) — the first
+corpus-driven demand on row 11 — or keeps timelines collapse-only.
+
+### 3.4 Cut-merge arithmetic — the period-coalescing rule (§5.1.4)
+
+Binary arithmetic over two timelines `a ⊕ b` is defined per period over
+the **cut set** (knip): the sorted union of both operands' segment
+boundaries.
+
+```
+cuts(a, b)  =  sort ( { van, tot of every segment of a and of b } )
+(a ⊕ b) on [c_i, c_i+1)  =  coalesce(read(a, c_i)) ⊕ coalesce(read(b, c_i))
+                            where coalesce(leeg) = 0
+```
+
+- The result exists only between the first and last cut — outside the
+  union's span it is a gap. *Inside* the span, a period where both
+  operands are leeg yields **0**, not leeg: that is the
+  **period-coalescing rule**, ch. 1.2's §5.1.4 row, and the exact
+  counterpart of the ch. 3.5 rule.
+- Adjacent result segments with equal values are coalesced into one.
+- Units follow ch. 2.6: the computation runs in the left operand's unit
+  (each right operand restated by its exact factor), and the result is
+  restated **once** to the target's unit.
+- Granularity: every operand's declared granularity must be
+  coarser-or-equal to the target's; the result's segment boundaries are
+  the cut set itself — event-driven, not re-bucketed onto the target's
+  calendar grid.
+
+Worked example — `a` = 100 on [2024-01-01, 2024-07-01), `b` = 30 on
+[2024-04-01, 2024-10-01), `a + b`:
+
+| period | a | b | result |
+|---|---|---|---|
+| [2024-01-01, 2024-04-01) | 100 | leeg→0 | 100 |
+| [2024-04-01, 2024-07-01) | 100 | 30 | 130 |
+| [2024-07-01, 2024-10-01) | leeg→0 | 30 | 30 |
+
+Worked example (interior gap coalesces to 0) — `a` = 1 on [jan, feb),
+`b` = 2 on [mrt, apr), `a + b`: [jan, feb) = 1, **[feb, mrt) = 0**
+(both leeg, coalesced to 0 + 0), [mrt, apr) = 2. Before jan and from apr
+on: gap (leeg).
+
+*v0 mirror note (scope):* only **plus and min** exist as timeline
+arithmetic in v0. Verminderd-met, maal, division, and percentage-van over
+two timelines are refused (marker/skip) — so verminderd-met's
+left-propagation rule (ch. 1.2) has **no per-period counterpart** in v0;
+the period-coalescing rule knows only the plus/min coalescing behaviour.
+A scalar operand mixed into timeline arithmetic (broadcast) is also
+refused. Both are OPEN in ch. 3.12; the natural liftings (per-period
+application of the ch. 1.2 scalar rules; broadcast as an
+everywhere-constant timeline) are candidates, not specified behaviour —
+broadcast in particular needs a time domain for the constant (an
+unbounded segment), the same obstacle as the unconditional temporal
+characteristic (ch. 3.11).
+
+### 3.5 Temporal summation — the contributor-skipping rule (§5.8.2)
+
+The temporal sum over N timeline contributors (the operands of a temporal
+som, or the element timelines of a to-many navigation) folds per period
+over the cut set of **all** contributors:
+
+```
+som(t_1 … t_N) on [c_i, c_i+1)
+  = Σ { read(t_k, c_i) | read(t_k, c_i) ≠ leeg }   if ≥ 1 contributor non-leeg
+  = leeg                                            if all N are leeg — unless
+    the declared fallback clause ("… of 0 als die er niet zijn")
+    substitutes 0
+```
+
+This is the **contributor-skipping rule**: a leeg contributor is
+skipped, never counted as 0 — the timeline instance of the ch. 1.2
+aggregation discipline, and the named opposite of ch. 3.4's
+period-coalescing rule. Further clauses:
+
+- **Zero contributors** (an empty to-many set) yield the **empty
+  timeline** — even under the fallback clause: with no contributor there
+  is no cut set to bound any period, so there is nothing to substitute 0
+  on. (Empty *set* ≠ all-empty *values*; the fallback speaks only about
+  the latter.)
+- All-leeg periods that the fallback does not fill are emitted as
+  explicit leeg segments (the one producer that does, ch. 3.1); adjacent
+  equal segments — equal-leeg included — coalesce.
+- Each contributor is restated to the target's unit **before** the fold
+  (exact factors, ch. 2.6).
+
+Worked examples (absolute; the staggered-contributor set): contributor
+p1 = {jan: 50, feb: 60}, p2 = {feb: 10, mrt: 10}, per month:
+
+| month | p1 | p2 | som |
+|---|---|---|---|
+| jan | 50 | leeg (skipped) | 50 |
+| feb | 60 | 10 | 70 |
+| mrt | leeg (skipped) | 10 | 10 |
+
+With p1 = {jan: 40}, p2 = {mrt: 20}: jan = 40, **feb = leeg**, mrt = 20;
+the same with the fallback clause: jan = 40, **feb = 0**, mrt = 20. With
+no contributors at all: the empty timeline, fallback or not. Cross-unit:
+contributors in €/mnd summed into a €/jr target, jan p1 = 50, p2 = 10 →
+jan = (50 + 10) × 12 = **720** (restate after the in-unit sum).
+
+*v0 mirror note (scope):* only **som** and the scalar-collapsing totaal
+(ch. 3.6) exist over timelines. Minimum, maximum, eerste, and laatste
+over a timeline are refused in v0 — the recorded refusal reason is that
+"the minimum of a timeline" is ambiguous between a per-period fold over
+contributors and an over-time fold over one timeline's periods. **OPEN**
+(ch. 3.12): v1 must either define both readings apart or keep the
+refusal; it may not inherit the ambiguity.
+
+### 3.6 Collapse to a scalar — the temporal total
+
+"Het totaal van" a timeline over time collapses it to one scalar:
+
+```
+totaal(tl) = Σ over segments s of tl:  value(s) × whole-units(van_s, tot_s)
+```
+
+where `whole-units` counts whole declared-granularity units between the
+segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
+
+- A leeg-valued segment contributes 0 (a dedicated rule of this collapse,
+  in the family of ch. 1.2's totaal row — the collapse is a total, not a
+  som). A segment shorter than one whole unit contributes 0 by the
+  whole-units count.
+- An existing but **segmentless** timeline totals to **0** (the identity
+  of a sum over nothing); an **absent** timeline (the member itself leeg)
+  totals to **leeg**. *v0 mirror note:* this gap-vs-absent distinction is
+  the ch. 3.1 residual, mirrored as found; whether v1 keeps it is part of
+  the ch. 1.4 OPEN decision.
+- **Period selection ("gedurende …")** is clipping, not re-bucketing: the
+  value timeline is intersected with the selecting condition's
+  true-periods (a boolean timeline: a characteristic's true-periods, its
+  complement under negation, or the true-periods of a comparison over a
+  timeline), and the clipped timeline is then totalled.
+- **Units.** The rate obligation of WF-038 is satisfied *structurally*
+  here: the timeline's granularity is the "per time unit", so a plain
+  `€`-valued per-month timeline totals to `€` by value × month-count. An
+  explicit rate unit (`€/mnd`) is what the *non-temporal* totaal operand
+  requires; the temporal collapse must not be misread as requiring it.
+
+Worked examples (absolute, `ref/` tests verbatim; per-month timeline):
+
+- segments 2023-01-01..2024-01-01 = 10,00 and 2024-01-01..2024-07-01 =
+  11,00 → totaal = 12×10 + 6×11 = **186,00**.
+- degenerate segments (zero-length or reversed) are skipped: only a
+  6-month segment of 10 remains → **60,00**, never a negative count.
+- gedurende "> 1000" over value timeline {3 mnd: 1200, 2 mnd: 800}:
+  clipped to the 1200-months → 1200×3 = **3600,00** (not 5200).
+- gedurende a characteristic true on [2023-07-01, 2024-02-01), value 10
+  in 2023 and 11 in 2024 → 6×10 + 1×11 = **71,00**; the negated form
+  (complement) → 6×10 + 5×11 = **115,00**.
+- gedurende "≠ 1000" where the tested timeline has leeg periods: leeg
+  **satisfies** ≠ against a filled bound (the ch. 1.2 inequality
+  asymmetry, applied per period): value 100 over jan–jun, tested timeline
+  ≠ 1000 everywhere it is leeg → **500,00**.
+
+*v0 mirror note:* the totaal of a multi-period timeline is refused with
+the grid (ch. 3.2), never mis-weighted as single-period.
+
+### 3.7 Pro-rata — the time-proportional part
+
+Ch. 2.8 gave the equation; the full algebra, per bucket of the target's
+grid (month or year, ch. 3.2 — anchored buckets for a variable-start
+target, ch. 3.2):
+
+```
+deel on bucket B = read(base, start(B)) × trueDays(B) / days(B)
+```
+
+- `days(B)` = the bucket's actual calendar day count (leap-aware: 28, 29,
+  365, 366 — never 360).
+- `trueDays(B)` = the day count of the intersection of the selecting
+  condition's true-periods with `B`, half-open, summed over all true
+  intervals touching `B`.
+- `read(base, start(B))` — the base must be constant across the bucket,
+  guaranteed by requiring the base's granularity coarser-or-equal to the
+  target's. A base that is **leeg at the bucket start emits no segment**
+  for that bucket (a gap, not a 0); a bucket with `trueDays` = 0 emits
+  nothing.
+- A rate-unit base is restated **first**, by its exact factor
+  (`€/jr` base for a per-month target: ÷ 12 exactly), then prorated.
+- The fraction is exact and is **never auto-rounded** to the target's
+  declared decimals — rounding happens only at an explicit rounding or
+  the assignment gate (ch. 2.4). *v0 mirror note (residual, same class as
+  ch. 2.1):* v0 stores a non-terminating pro-rata at 16 significant
+  digits (DECIMAL64); the exact fraction is normative, the store is the
+  v0 approximation; backends must agree on the corpus after rounding.
+
+Worked examples (absolute): base per year €12 (2024) / €18 (2025),
+condition true [2024-01-01, 2025-02-08), monthly target: twelve months of
+€12, jan 2025 = €18, **feb 2025 = 18 × 7/28 = 4,50** (7 true days of 28;
+2025 is no leap year), nothing from March on — and the twelve 2024
+buckets stay twelve separate segments: bucketing producers do **not**
+coalesce adjacent equal buckets (ch. 3.1 normalisation asymmetry,
+mirrored). Yearly target, base €18, 38 true days in 2025 → 18 × 38/365 =
+**684/365** exact (≈ 1,873972…, only an explicit rounding collapses it).
+Rate base 120 €/jr into a monthly target → 10 €/mnd; 5 €/jr → **5/12
+€/mnd** exact (v0: 0,4166666666666667 at its 16-digit store — the exact
+division by 12, never a pre-rounded ×0,0833 reciprocal).
+
+### 3.8 Day counting and day-kind durations
+
+**aantal dagen in (de maand / het jaar).** Buckets a condition's
+true-periods on the calendar grid and emits, per touched bucket, one
+segment `[start(B), next(B))` whose value is the true-day count in `B`
+(multiple true intervals in one bucket sum). Empty buckets emit nothing.
+The operator's stated bucket ("de maand"/"het jaar") must equal the
+target's granularity. Worked example (absolute): true on
+[2024-01-01, 2024-01-02) and [2024-01-10, 2024-02-14) → **jan = 1 + 22 =
+23**, **feb = 13**, two segments.
+
+**tijdsduur van A tot B** counts *whole* declared units between two
+dates, signed (negative when B < A); quarters = whole months ÷ 3; any
+leeg operand → leeg, never 0 (ch. 1.2). The absolute variant drops the
+sign.
+
+**Duration in a day-kind** ("de tijdsduur van A tot B in werkdagen")
+counts the days d with `A < d ≤ B` — **start exclusive, end inclusive**
+(the "A itself does not count" rule) — that satisfy the day-kind's
+defining predicate; signed by operand order; leeg operand → leeg. Worked
+examples (absolute; day-kind = 25/26 December): 20-12 tot 31-12 → **2**;
+25-12 tot 26-12 → **1** (the 25th is the excluded start); reversed →
+**−2**, absolute variant **+2**; equal dates → **0**.
+
+**Date plus N day-kind days** steps one calendar day at a time, counting
+only matching days; the result is the Nth matching day. The start date
+itself never counts; N = 0 or leeg N returns the start date unchanged
+(even when that date is not itself a matching day); negative N walks
+backward; a leeg date propagates. An unsatisfiable day-kind definition is
+a hard fault (the walk is bounded), never an endless loop. Worked
+examples (absolute; day-kind = 25/26 December): 20-12 + 2 → **26-12**;
+25-12 + 1 → **26-12**; 26-12-2024 + 1 → **25-12-2025**; 20-12 + 0 →
+**20-12**; 27-12 − 1 → **26-12**; 25-12-2024 − 1 → **26-12-2023**.
+
+**Date ± whole calendar units** clamps to the month end: 2024-01-31 + 1
+maand = **2024-02-29** (leap), 2025-01-31 + 1 maand = **2025-02-28**; a
+quarter is three months: 2024-01-01 + 1 kwartaal = **2024-04-01**. A
+fractional count truncates toward zero. (Empty rules: ch. 1.2 — a leeg
+date propagates, a leeg duration counts as 0.) One date-builtin pin that
+becomes a `ref/` test: eerste paasdag van 2024 = **2024-03-31**.
+
+### 3.9 The whole-period qualifier (§8.2)
+
+"gedurende de gehele maand / het gehele jaar" turns a per-instant
+condition into a per-bucket one and folds it to a single boolean:
+
+```
+geheel(tl, grid, toets) = for EVERY bucket B touched by tl:
+                            satisfied-days(B, toets) ≥ threshold(B)
+threshold(B) = days(B)          for every toets except the leeg test
+             = touched-days(B)  for the leeg test
+```
+
+- A value test (ordering, equality, filled, characteristic-holds) demands
+  satisfaction on **every day of each touched bucket**: a gap day, a leeg
+  day, or a partial-coverage bucket fails it — "at every moment of the
+  whole period" is literal.
+- The **leeg test** is the one exception: a gap day is itself
+  leeg-satisfying, so only the *touched* days need be leeg — a timeline
+  leeg throughout its touched buckets passes.
+- A timeline with **no segments at all touches no bucket and passes
+  vacuously** (the qualifier's negation then fails). A leeg comparison
+  bound makes the test false, never a fault. Negation complements the
+  folded result.
+- Over a to-many navigation the fold is conjunctive — every element's
+  timeline must pass — and an **empty set passes vacuously**; a failed
+  to-one navigation contributes a null timeline, which passes vacuously
+  (the ch. 1.2 leeg-navigation discipline, lifted).
+- Date-valued whole-period comparisons (eerder/later over a date
+  timeline) are refused in v0 — recorded, not specified (ch. 3.12).
+
+Worked examples (absolute; value timeline per year, tested ≥ 10):
+value 12 on the whole of 2024 → all 366 days of the touched bucket
+satisfy → **waar**. Value 12 on [2024-01-01, 2024-07-01) only → the 2024
+bucket is touched for 182 days but has 366 → **onwaar** (a July moment
+carries no value); the negated form → waar. Same half-year timeline
+under the **leeg** test → touched days must be leeg, but they carry 12 →
+**onwaar**.
+
+### 3.10 Period conditions and the §8.4.3 clip
+
+A **period condition** (`TimeWindow`, `IR-SPEC.md` ch. 4.5) restricts a
+rule to a date window. Two cases:
+
+**Scalar target — the evaluation-date gate (v0 behaviour, mirrored).**
+The rule applies iff the evaluation date lies in the window: `vanaf`
+inclusive, `tot` exclusive, "tot en met" inclusive; an absent bound is
+open; an unset evaluation date never matches; a leeg bound never matches.
+Worked example: window [2024-01-01, 2025-01-01), evaluation date
+2024-12-31 → applies; 2025-01-01 → does not; the "tot en met 2024-12-31"
+form still applies on 2024-12-31. *v0 mirror note (backend maturity, not
+IR scope):* v0's backends lower only literal or own-scalar-attribute
+bounds and refuse the rest, and refuse the condition under counting
+quantifiers; the IR admits any date expression (WF-042).
+
+**Temporal target — the clip (v1 semantics, delta).** When the rule's
+target is time-dependent, gating all-or-nothing on the evaluation date is
+the wrong axis: the window speaks about the *timeline*, not about the
+evaluation moment. v1 specifies the **clip**: the produced timeline is
+intersected with the window,
+
+```
+written(tl, window) = tl restricted to [vanaf, tot)
+```
+
+and the write proceeds with the clipped timeline. Worked example: the
+rule computes {2024: 10, 2025: 12} yearly; window [2025-01-01, open) →
+written value {2025: 12}; days in 2024 stay whatever another version or
+producer gives them — a gap, absent other writers. **Delta (tracked,
+`CONSTRUCTS.md` rows 11/29):** v0 refuses this case outright (the
+manifest family "period-comparison clipping, §8.4.3"); v1 supplies the
+clip semantics above, and `ref/` implements them first. The analogous
+interaction with a rule *version's* validity window is **not** decided
+here: a validity window on a temporal write mixes the version-selection
+axis with the timeline axis, and belongs to the single-axis decision of
+ch. 8 (PLAN §9, decision 2) — OPEN there, recorded in ch. 3.12.
+
+### 3.11 Temporal writes
+
+A rule with a time-dependent target writes a **whole timeline at once**,
+per subject: the periodization comes from the value expression's
+producer, never from evaluating a scalar rule "once per period". The
+producers, each specified above: the per-bucket counters (ch. 3.8), the
+pro-rata (ch. 3.7), cut-merge arithmetic (ch. 3.4), the temporal sum
+(ch. 3.5) — and, for a time-dependent **characteristic**, the condition
+itself: the written value is the condition's true-period timeline (the
+target holds exactly where the condition holds, false elsewhere — the
+monotone reading; no complement is seeded). A write replaces the target's
+previous timeline; whether that is a change is decided by segment-wise
+equality (ch. 3.1), which is what makes rewriting to a fixpoint
+idempotent (ch. 5).
+
+- A **scalar value into a temporal target** is refused in v0 (no
+  broadcast — ch. 3.4's OPEN); a **temporal value in a scalar slot** is
+  refused except through the specified collapses (ch. 3.3). Neither
+  boundary is ever crossed by silent coercion.
+- **Temporal characteristic, refused cases (v0):** the manifest family
+  "temporal kenmerktoekenning with indeterminate write-producer" —
+  (a) an *unconditional* temporal characteristic: "always true" has no
+  finite segment list (the time-domain obstacle, as in ch. 3.4's
+  broadcast — genuinely under-determined, **OPEN**); (b) a non-`altijd`
+  validity window: the ch. 3.10 axis question, OPEN with it; (c) a
+  negated, navigated, or disjunctive condition whose true-periods v0
+  cannot bound — the conjunctive and at-least-one compounds of own
+  single-period characteristics are the v0-lowered set. For (c) the
+  timeline algebra of this chapter *does* define the semantics
+  (complement and union of true-period sets are well-defined); v1
+  specifies them — **delta (promotion of a refusal into semantics)**:
+  the true-periods of a negated characteristic are the complement of its
+  true-periods **within the span the write is clipped to** (ch. 3.10's
+  clip; unbounded complement hits the same time-domain obstacle and
+  stays OPEN outside a clip).
+- **Anchored targets** compose with the producers via the anchored grid
+  (ch. 3.2); v0 additionally refuses the temporal-sum-over-a-set producer
+  on an anchored target (a set fold across per-object grids) — recorded,
+  OPEN.
+
+### 3.12 v0 refusals and open decisions (summary)
+
+The chapter's tracked debt, in one place. "Refused (mirrored)" = v0
+markers/skips it and this spec records the refusal; "OPEN" = v1 must
+decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
+
+| Subject | Status |
+|---|---|
+| Multi-period grids (`count` ≥ 2): all reads and writes | refused (mirrored); OPEN — specify producers or restrict `count` = 1 |
+| Bucketing by day/week/quarter | absent (mirrored); OPEN with the grid decision |
+| Point-in-time read (the "op dat tijdstip" node) | OPEN — expose `read(tl, d)` as an IR node, or stay collapse-only (row 11) |
+| Timeline arithmetic beyond plus/min (verminderd-met, maal, division, percentage) | refused (mirrored); OPEN — per-period lifting of ch. 1.2 rules is the candidate |
+| Scalar broadcast into timeline arithmetic / unconditional temporal characteristic | refused (mirrored); OPEN — both need a time domain for unbounded segments |
+| min/max/eerste/laatste over timelines | refused (mirrored); OPEN — the two readings (per-period vs over-time) must be defined apart |
+| §8.4.3 period condition on a temporal target | **specified (delta): the clip, ch. 3.10** |
+| Negated/navigated/disjunctive temporal-characteristic conditions | **specified (delta) within a clipped span, ch. 3.11**; unbounded complement OPEN |
+| Version-validity window on a temporal write | OPEN — the ch. 8 axis decision |
+| Date-valued whole-period comparison | refused (mirrored) |
+| Temporal keys in uniqueness | OPEN at WF-030 (rule layer), noted here for the row-11 file |
+| Gap-vs-absent timeline observability (temporal total: 0 vs leeg) | mirrored residual; part of the ch. 1.4 OPEN decision |
+| Sorted/non-overlapping input invariant | delta candidate (WF rule, data plane), ch. 3.1 |
+| Non-terminating pro-rata stored at 16 digits | v0 residual (normative: exact fraction), ch. 3.7 |
+
+---
+
 ## Chapters (planned)
 
-3. **Timeline algebra.** Segments, cut-merge, granularity and multi-unit
-   periods, variable starting points, pro-rata; the §5.1.4-vs-§5.8.2 empty
-   split of ch. 1.2 named and specified.
 4. **Allocation (verdeling).** Equal shares, pro-rata, and ordered group
    depletion as recurrence equations over groups — not "one helper call" —
    including maximum, rounding-floor, and the undistributed remainder.
