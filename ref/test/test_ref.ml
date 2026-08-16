@@ -277,6 +277,8 @@ let shares_of = function
 
 let no_alloc_err = fun ~id:_ (_ : string) -> ()
 
+let rest_is r want = match r with Some x -> Q.equal x (q want) | None -> false
+
 let alloc ?(err = no_alloc_err) methode ?(afnemend = false) ?decimals pot recs =
   shares_of (Alloc.allocate methode ~afnemend ~decimals ~pot:(n pot) ~err recs)
 
@@ -295,7 +297,7 @@ let () =
   (* 4.6-a equal shares *)
   let s, r = alloc Gelijke_delen "90" [ rcp "a"; rcp "b"; rcp "c" ] in
   assigned "WV-4.6-a1" s [ ("a", Some "30"); ("b", Some "30"); ("c", Some "30") ];
-  check "WV-4.6-a1-rest" (r = Some Q.zero);
+  check "WV-4.6-a1-rest" (rest_is r "0");
   let s, _ = alloc Gelijke_delen "1000" [ rcp "a"; rcp "b" ] in
   assigned "WV-4.6-a2" s [ ("a", Some "500"); ("b", Some "500") ];
   (* 4.6-b proportional; a weightless fourth stays leeg *)
@@ -311,7 +313,7 @@ let () =
     alloc Naar_rato ~decimals:0 "1001" [ rcp ~weight:(n "3") "a"; rcp ~weight:(n "2") "b" ]
   in
   assigned "WV-4.6-c" s [ ("a", Some "600"); ("b", Some "400") ];
-  check "WV-4.6-c-rest" (r = Some Q.one);
+  check "WV-4.6-c-rest" (rest_is r "1");
   (* 4.6-d proportional + cap + rest (the berging shape) *)
   let s, r =
     alloc Naar_rato ~decimals:0 "1200"
@@ -322,7 +324,7 @@ let () =
       ]
   in
   assigned "WV-4.6-d" s [ ("a", Some "300"); ("b", Some "200"); ("c", Some "300") ];
-  check "WV-4.6-d-rest" (r = Some (q "400"));
+  check "WV-4.6-d-rest" (rest_is r "400");
   (* 4.6-e cap degrade: empty and negative caps degrade to uncapped.
      The prose says "one §9.5 error"; ch. 4.3 + ch. 5.6 (one fact per
      rule × subject) imply one per degraded cap, i.e. two — flagged as an
@@ -348,7 +350,7 @@ let () =
   in
   let s, r = alloc Op_volgorde "1200" (recs ()) in
   assigned "WV-4.6-f-asc" s [ ("a", Some "900"); ("b", Some "300"); ("c", Some "0") ];
-  check "WV-4.6-f-asc-rest" (r = Some Q.zero);
+  check "WV-4.6-f-asc-rest" (rest_is r "0");
   let s, _ = alloc Op_volgorde ~afnemend:true "1200" (recs ()) in
   assigned "WV-4.6-f-desc" s [ ("c", Some "1200"); ("a", Some "0"); ("b", Some "0") ];
   (* 4.6-g the full recurrence: cap + floor + depletion over 1800 *)
@@ -370,7 +372,7 @@ let () =
       ("p66a", Some "250");
       ("p66b", Some "91");
     ];
-  check "WV-4.6-g-rest" (r = Some (q "26"));
+  check "WV-4.6-g-rest" (rest_is r "26");
   (* 4.6-h edge rows *)
   check "WV-4.6-h-empty" (alloc Naar_rato "100" [] = ([], None));
   let s, _ =
