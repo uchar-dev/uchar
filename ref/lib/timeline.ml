@@ -25,8 +25,10 @@ let normalise (segs : t) : t =
   List.filter (fun s -> s.s_tot > s.s_van) segs
   |> List.sort (fun a b -> compare a.s_van b.s_van)
 
+(* read never depends on segment order (ch. 3.1): scan the normalised
+   list, so even ill-formed overlapping input reads deterministically *)
 let read (tl : t) (d : int) : Value.t =
-  match List.find_opt (fun s -> s.s_van <= d && d < s.s_tot) tl with
+  match List.find_opt (fun s -> s.s_van <= d && d < s.s_tot) (normalise tl) with
   | Some s -> s.s_waarde
   | None -> Empty
 
@@ -153,7 +155,10 @@ let som ?fallback ?(target_unit = Value.Unitless) (tls : t list) : t =
 
 (* --- ch. 3.6: the temporal total ---------------------------------------- *)
 
-(* clip a value timeline to the periods where [true_periods] holds *)
+(* clip a value timeline to the periods where [true_periods] holds;
+   adjacent equal fragments coalesce so a boundary that merely splits a
+   bucket cannot make the whole-units count undercount (the totaal folds
+   whole segments) *)
 let clip (tl : t) (true_periods : (int * int) list) : t =
   List.concat_map
     (fun s ->
@@ -163,7 +168,7 @@ let clip (tl : t) (true_periods : (int * int) list) : t =
           if t > v then Some { s with s_van = v; s_tot = t } else None)
         true_periods)
     tl
-  |> normalise
+  |> coalesce
 
 (* the true-periods of a per-period predicate over a tested timeline,
    evaluated over the cut set of tested ∪ span (the ch. 1.2 comparison

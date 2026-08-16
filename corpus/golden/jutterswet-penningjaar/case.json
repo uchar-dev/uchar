@@ -20,18 +20,21 @@
       {
         "label": "J3",
         "objectType": "Jutter",
-        "attributes": { "aantal aangemelde vondsten": { "number": "13" } },
+        "attributes": {},
         "roles": {},
         "characteristics": []
       }
     ],
-    "parameters": { "vondstdrempel": { "number": "14" }, "penningbedrag": { "number": "275" } }
+    "parameters": { "vondstdrempel": { "number": "12" } }
   },
   "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "totaal aangemelde vondsten", "value": { "number": "14" } },
     { "kind": "characteristicPresent", "label": "J1", "characteristic": "penninggerechtigd" },
     { "kind": "characteristicAbsent", "label": "J1", "characteristic": "aanmeldplichtig" },
+    { "kind": "attributeValue", "label": "J2", "attribute": "totaal aangemelde vondsten", "value": { "number": "3" } },
     { "kind": "characteristicAbsent", "label": "J2", "characteristic": "penninggerechtigd" },
     { "kind": "characteristicPresent", "label": "J2", "characteristic": "aanmeldplichtig" },
+    { "kind": "attributeEmpty", "label": "J3", "attribute": "totaal aangemelde vondsten" },
     { "kind": "characteristicAbsent", "label": "J3", "characteristic": "penninggerechtigd" },
     { "kind": "characteristicPresent", "label": "J3", "characteristic": "aanmeldplichtig" },
     { "kind": "consistent" }

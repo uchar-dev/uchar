@@ -7,14 +7,19 @@ Objecttype de Jutter (mv: Jutters) (bezield)
     is penninggerechtigd kenmerk (bijvoeglijk);
     is aanmeldplichtig kenmerk (bijvoeglijk);
     het aantal aangemelde vondsten Numeriek (niet-negatief geheel getal) voor elke penningjaar;
+    het totaal aangemelde vondsten Numeriek (geheel getal);
 
-Parameter de vondstdrempel : Numeriek (geheel getal) voor elk jaar
+Parameter de vondstdrempel : Numeriek (geheel getal)
 Parameter het penningbedrag : Numeriek (geheel getal) met eenheid € voor elk jaar
+
+Regel totaal aangemelde vondsten
+    geldig altijd
+        Het totaal aangemelde vondsten van een Jutter moet berekend worden als het totaal van zijn aantal aangemelde vondsten.
 
 Regel Kenmerktoekenning penninggerechtigd
     geldig altijd
         Een Jutter is penninggerechtigd
-        indien zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel.
+        indien zijn totaal aangemelde vondsten groter of gelijk is aan de vondstdrempel.
 
 Regel Kenmerktoekenning aanmeldplichtig
     geldig altijd

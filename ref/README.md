@@ -61,10 +61,13 @@ faults with file/position context — never a silent fallback.
   calendar and anchored buckets with the month-end clamp, cut-merge
   (period-coalescing), temporal summation (contributor-skipping), and
   the temporal total with clipping — tested against the ch. 3 worked
-  examples verbatim. Evaluation reads a temporal attribute at the
-  evaluation date (the case carries that bucket's value; the ch. 3.10
-  gate faults a time-free read), and a year-granular parameter binds as
-  the `asOfDate` vintage, fail-fast when unbound.
+  examples verbatim. Evaluation crosses the timeline/scalar boundary
+  only through the mirrored collapse: the temporal total folds the
+  `asOfDate` bucket's value the case carries (ch. 3.6, leeg for an
+  absent timeline). A temporal attribute, temporal characteristic or
+  granular parameter in any other scalar position is refused (ch. 3.3 —
+  the §8.2 marker family), as are temporal write targets (ch. 3.11):
+  never a silent coercion.
 - **Not implemented** (each faults with context): temporal writes and
   pro-rata bucket producers (ch. 3.7/3.11), day kinds, multi-period
   grids, navigation paths, dimension cells, filters, variable/constant

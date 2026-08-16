@@ -818,6 +818,14 @@ let () =
   let tp = Timeline.true_periods_of tested ~span (fun v -> Arith.compare_op Ongelijk v (n "1000")) in
   expect_num "WV-3.6-f" (Timeline.totaal month (Timeline.clip vals tp)) "500"
 
+(* verification-round regression: a true-period boundary that merely
+   splits a bucket must not make the total undercount — clip coalesces
+   adjacent equal fragments *)
+let () =
+  let vals = [ seg "2024-01-01" "2024-02-01" (n "100") ] in
+  let tp = [ (day "2024-01-01", day "2024-01-15"); (day "2024-01-15", day "2024-02-01") ] in
+  expect_num "verify-clip-coalesce" (Timeline.totaal Maand (Timeline.clip vals tp)) "100"
+
 (* WV-3.2: anchored month walls clamp from the anchor, never from the
    previous wall *)
 let () =

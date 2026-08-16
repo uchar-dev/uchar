@@ -11,6 +11,13 @@
           "decimalen": 0,
           "teken": "NIET_NEGATIEF",
           "eenheid": null
+        },
+        "totaal aangemelde vondsten": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
         }
       },
       "attribuutMeervoud": {},
@@ -48,7 +55,7 @@
         "teken": "ONBEPAALD",
         "eenheid": null
       },
-      "granulariteit": "JAAR"
+      "granulariteit": null
     },
     "penningbedrag": {
       "node": "Parameter",
@@ -128,6 +135,11 @@
   "regels": [
     {
       "node": "Regel",
+      "naam": "totaal aangemelde vondsten",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
       "naam": "Kenmerktoekenning penninggerechtigd",
       "soort": "regel"
     },
@@ -138,6 +150,70 @@
     }
   ],
   "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "totaal aangemelde vondsten",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "totaal aangemelde vondsten",
+        "objecttype": "Jutter",
+        "onderwerpBron": "een Jutter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het totaal aangemelde vondsten van een Jutter",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "TOTAAL",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "aantal aangemelde vondsten",
+            "objecttype": "Jutter",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            },
+            "bron": "zijn aantal aangemelde vondsten",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": "Jutter",
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "het totaal van zijn aantal aangemelde vondsten",
+        "granulariteit": null
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
     {
       "node": "ResolvedRegel",
       "naam": "Kenmerktoekenning penninggerechtigd",
@@ -168,7 +244,7 @@
         "op": "GROTER_OF_GELIJK",
         "links": {
           "node": "AttribuutRef",
-          "attribuut": "aantal aangemelde vondsten",
+          "attribuut": "totaal aangemelde vondsten",
           "objecttype": "Jutter",
           "onderwerpBron": "zijn",
           "navigatieRol": null,
@@ -176,10 +252,10 @@
             "node": "Numeriek",
             "geheel": true,
             "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
+            "teken": "ONBEPAALD",
             "eenheid": null
           },
-          "bron": "zijn aantal aangemelde vondsten",
+          "bron": "zijn totaal aangemelde vondsten",
           "set": false,
           "navigatiePad": []
         },
@@ -196,7 +272,7 @@
           "bron": "de vondstdrempel"
         },
         "periode": null,
-        "bron": "zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel"
+        "bron": "zijn totaal aangemelde vondsten groter of gelijk is aan de vondstdrempel"
       },
       "geldigheid": {
         "node": "Geldigheid",

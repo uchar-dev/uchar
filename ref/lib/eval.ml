@@ -55,6 +55,9 @@ let attr_decl env ~otype ~attr =
   | Some dt -> dt
   | None -> Value.fault "unknown attribute %S on %S" attr otype
 
+let kenmerk_temporal (ot : objecttype) name =
+  List.exists (fun (k, _) -> norm k = norm name) ot.kenmerk_granulariteit
+
 (* the unique fact type connecting two object types; deriving it — rather
    than naming the role in the IR — is the recorded v0 wart of ch. 4.1,
    mirrored here for both allocation recipients and instance folds *)
@@ -143,9 +146,10 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
   | Parameter_ref { parameter; _ } -> (
       let name = req "ParameterRef.parameter" parameter in
       (match Ir_v0.Checks.find_ci env.doc.parameters name with
-      | Some { par_granulariteit = Some _; _ } when env.as_of = None ->
-          (* vintage selection is date-indexed and fail-fast (ch. 5.7/8) *)
-          Value.fault "parameter %S is granular; vintage selection needs an evaluation date" name
+      | Some { par_granulariteit = Some _; _ } ->
+          (* v0 refuses a granular parameter in a scalar slot (the §8.2
+             marker family); how a rule reads a vintage is ch. 8 scope *)
+          Value.fault "parameter %S is granular; reading a vintage in a rule is ch. 8 scope" name
       | Some _ -> ()
       | None -> Value.fault "unknown parameter %S" name);
       match SMap.find_opt (norm name) env.params with
@@ -160,11 +164,15 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       if norm ot <> norm self.otype then
         Value.fault "navigation from %S to %S is not implemented in this card" self.otype ot
       else begin
-        (* the ch. 3.10 gate: a temporal attribute is read at the
-           evaluation date (the case carries that bucket's value); a
-           time-free session cannot read it *)
-        if Ir_v0.Checks.attr_temporal (objecttype env ot) name && env.as_of = None then
-          Value.fault "temporal attribute %S needs an evaluation date (ch. 3.10)" name;
+        (* ch. 3.3, mirrored: no point-in-time read exists — a temporal
+           attribute in a scalar slot is refused; the only bridges are
+           the dedicated collapses (the temporal total handles its own
+           argument in eval_functie) *)
+        if Ir_v0.Checks.attr_temporal (objecttype env ot) name then
+          Value.fault
+            "temporal attribute %S in a scalar context is refused (ch. 3.3; no point-in-time \
+             read exists — the collapses are the only bridges)"
+            name;
         World.attr self name
       end
   | Attribuut_ref _ ->
@@ -212,7 +220,37 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
     ~dimensie_selectie ~granulariteit =
   if filter <> None then Value.fault "aggregation filter not implemented in this card";
   if dimensie_selectie <> None then Value.fault "dimension selection not implemented in this card";
-  if granulariteit <> None then Value.fault "temporal aggregation is ch. 3 scope";
+  if granulariteit <> None then Value.fault "granularity-bucketed aggregation not implemented in this card";
+  match (kind, argumenten) with
+  | ( Totaal,
+      [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; navigatie_rol = None; navigatie_pad = []; _ } ] )
+    when norm aot = norm self.otype
+         && Ir_v0.Checks.attr_temporal (objecttype env aot) a -> (
+      (* ch. 3.6, the temporal total — the one v0-mirrored bridge from a
+         timeline to a scalar. The case carries the asOfDate bucket's
+         value (corpus/golden/README.md); the collapse folds that
+         one-bucket timeline: value × whole-units of its own grid. *)
+      let ot_decl = objecttype env aot in
+      let gran =
+        match Ir_v0.Checks.find_ci ot_decl.attribuut_granulariteit a with
+        | Some (Some g) -> g
+        | _ -> Value.fault "temporal attribute %S without a granularity" a
+      in
+      match env.as_of with
+      | None ->
+          Value.fault
+            "the temporal total of %S needs the evaluation date: the case carries the asOfDate \
+             bucket's value"
+            a
+      | Some d -> (
+          match World.attr self a with
+          | Value.Empty -> Value.Empty (* absent timeline totals to leeg (ch. 3.6) *)
+          | v ->
+              let day = match Value.date_of_iso d with Value.Date z -> z | _ -> assert false in
+              let van, tot = Timeline.bucket gran day in
+              Timeline.totaal gran [ { Timeline.s_van = van; s_tot = tot; s_waarde = v } ]))
+  | _ ->
+  (* non-temporal aggregation *)
   (* contributors: an instance fold over a role (element_objecttype set),
      or listed operand expressions *)
   let contributors () =
@@ -312,7 +350,10 @@ let rec eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       if negatie then not is_filled else is_filled
   | Predicaat _ -> Value.fault "predicate kind not implemented in this card"
   | Kenmerk_check { kenmerk; navigatie = None; negatie; _ } ->
-      let has = World.has_char self (req "KenmerkCheck.kenmerk" kenmerk) in
+      let k = req "KenmerkCheck.kenmerk" kenmerk in
+      if kenmerk_temporal (objecttype env self.otype) k then
+        Value.fault "temporal characteristic %S in a scalar condition is refused (ch. 3.3)" k;
+      let has = World.has_char self k in
       if negatie then not has else has
   | Kenmerk_check _ -> Value.fault "navigated characteristic check not implemented in this card"
   | Samengesteld { kwantor; drempel; onderdelen; _ } -> (
@@ -361,6 +402,16 @@ let run_rule env world (r : resolved_regel) =
     match r.doel with
     | Some (Attribuut_ref { attribuut; objecttype = Some ot; _ }) ->
         let attr = req "doel.attribuut" attribuut in
+        (* ch. 3.11: temporal targets are not implemented — refuse, never
+           silently coerce a scalar into a timeline *)
+        (match r.rr_soort with
+        | Some Kenmerktoekenning ->
+            if kenmerk_temporal (objecttype env ot) attr then
+              Value.fault "temporal characteristic %S: temporal writes are not implemented" attr
+        | _ ->
+            if Ir_v0.Checks.attr_temporal (objecttype env ot) attr then
+              Value.fault "temporal attribute %S as a target: temporal writes are not implemented"
+                attr);
         over_subjects world ~otype:ot ~rule:(rule_name r) (fun w self err ->
             let fire =
               match r.rr_voorwaarde with Some c -> eval_cond env w self ~err c | None -> true

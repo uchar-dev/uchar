@@ -47,20 +47,24 @@ expectation values trace to the worked examples of
 `spec/RUNTIME-SEMANTICS.md`; the reference interpreter (`ref/`) replays
 every case file exactly — gate 5, the oracle guard of the plan's §8.
 
-`jutterswet-penningjaar` carries the timeline declarations plus two
-characteristic rules: the drempel comparison over the year-granular
-attribute and vintage-selected parameter, and a negated reading
-("aanmeldplichtig indien niet penninggerechtigd") — the corpus's first
-negative dependency edge, witnessing WF-046's accept path (ch. 6). Its
-two cases pin the vintage effect: the same count of 13 is
-penninggerechtigd under the 2025 drempel (12) and not under the 2026
-drempel (14). Case convention for temporal data, recorded: a
-`uchar-case-v0` value for a timeline-valued attribute or a year-granular
-parameter is the value of the bucket/vintage containing `asOfDate` —
-the format carries no multi-segment timelines yet, so a vintage *gap*
-(fail-fast, ch. 5.7/8) is expressible only as an unbound parameter,
-which faults the runner rather than being an expectation; full
-parameter-set data is ch. 8 (`Parameterset`) scope. The
+`jutterswet-penningjaar` carries the timeline declarations plus three
+rules: the temporal total (the one v0-mirrored bridge from a timeline
+to a scalar, `RUNTIME-SEMANTICS.md` ch. 3.6), the drempel comparison
+over that scalar total, and a negated reading ("aanmeldplichtig indien
+niet penninggerechtigd") — the corpus's first negative dependency edge,
+witnessing WF-046's accept path (ch. 6). Its case observes the collapse
+itself (totaal 14 and 3), the absent-timeline rule (a jutter without
+the temporal attribute totals to leeg, so the ordering comparison is
+false), and the non-transient negation outcomes. Case convention for
+temporal data, recorded: a `uchar-case-v0` value for a timeline-valued
+attribute is the value of the `asOfDate` bucket — the format carries no
+multi-segment timelines yet. Deliberately absent, recorded: a temporal
+attribute or a year-granular parameter read in a scalar condition is
+*refused* (ch. 3.3, the §8.2 marker family — v0's backends refuse it
+and `ref/` faults identically), so a vintage-selection case (a
+2025/2026 drempel flip) is not expressible until ch. 8 specifies how a
+rule reads a vintage; parameter-set data is ch. 8 (`Parameterset`)
+scope. The
 `jutterswet-vondsttelling` case exercises the count-over-a-role wart
 (the weightless vondst still counts) and the declared empty-source
 fallback ("of 0 als die er niet zijn", both for a jutter without
