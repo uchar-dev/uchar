@@ -56,3 +56,31 @@ corpus.
 
 Corpus IR files land under `corpus/golden/**/ir.json` and are picked up
 automatically once they exist.
+
+## The case schema (`uchar-case-v0.schema.json`)
+
+A golden case's *data* half: `case*.json` beside the `ir.json` carries the
+input world (labelled instances with attributes, label-based role links,
+characteristics asserted true), the parameter values, the single
+evaluation date (`asOfDate`, null for a time-free case), and the expected
+outcomes — an attribute's value, an attribute explicitly empty, a
+characteristic present or absent, or the consistency verdict. The
+reference interpreter (`ref/`) consumes these files as its test suite;
+gate 4 (`scripts/check-case-schema.sh`) validates them.
+
+Conventions, deliberate:
+
+- **Numbers are exact lexemes** (decimal-with-dot or `a/b` rational),
+  carried as strings — never JSON floats. The comparison contract is
+  exact numeric equality, scale-insensitive.
+- **Values are unit-normalised** to the referenced declaration's unit
+  before they enter the file; a case file carries no unit spellings.
+- **Absence means empty** on input; only an expectation can *assert*
+  emptiness (`attributeEmpty`). Characteristics start false; input can
+  only assert them true.
+- One instance per label; role links point at labels; a to-one role
+  carries exactly one label.
+
+The expectation values are pinned against the normative worked examples
+of `spec/RUNTIME-SEMANTICS.md`; machine replay of the cases is the
+reference interpreter's oracle guard and lands with `ref/`.

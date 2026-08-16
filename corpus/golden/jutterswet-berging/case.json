@@ -1,0 +1,53 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B1",
+        "objectType": "Berging",
+        "attributes": { "opbrengst": { "number": "1200" } },
+        "roles": { "bergers": ["W", "H", "D"] },
+        "characteristics": []
+      },
+      {
+        "label": "W",
+        "objectType": "Berger",
+        "attributes": {
+          "geborgen gewicht": { "number": "3.00" },
+          "bergingsmaximum": { "number": "300" }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "H",
+        "objectType": "Berger",
+        "attributes": {
+          "geborgen gewicht": { "number": "1.00" },
+          "bergingsmaximum": { "number": "300" }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "D",
+        "objectType": "Berger",
+        "attributes": {
+          "geborgen gewicht": { "number": "2.00" },
+          "bergingsmaximum": { "number": "300" }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "W", "attribute": "bergingsaandeel", "value": { "number": "300" } },
+    { "kind": "attributeValue", "label": "H", "attribute": "bergingsaandeel", "value": { "number": "200" } },
+    { "kind": "attributeValue", "label": "D", "attribute": "bergingsaandeel", "value": { "number": "300" } },
+    { "kind": "attributeValue", "label": "B1", "attribute": "onverdeelde rest", "value": { "number": "400" } },
+    { "kind": "consistent" }
+  ]
+}

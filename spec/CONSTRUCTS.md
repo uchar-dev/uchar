@@ -70,7 +70,7 @@ identify what is being mirrored.
 | 34 | Money discipline | Catala; OpenFisca | core (via rows 26/27 + rounding) | no new kernel node | — | decision: no dedicated money type; a unit-typed exact numeric plus mandated rounding (`Afgerond`, §6.1.2 assignment gate) covers it. Rounding mode is legal semantics, never display |
 | 35 | Parameter scales / brackets (marginal rates) | OpenFisca | later(v2) | kernel if adopted | — | central to tax law but absent from RegelSpraak; expressible today as rules/decision tables. A first-class scale node waits until a frontend demands it — adopt, don't invent |
 | 36 | Sum types with exhaustive match | Catala | later(Phase 5) | kernel if adopted | — | enumeration domains (no payload) are already core via row 27; payload-carrying variants + compile-time-total match come with the Catala frontend |
-| 37 | Scenario / conformance-test format | `regelspraak-java` extension | non-goal (for the IR) | — | — | v0's `ResolvedScenario` tree is a test-harness IR, not executable law. It is the donor for the corpus case schema (inputs, expected outcomes, the explicit-empty value slot); its label-based role values feed row 4 |
+| 37 | Scenario / conformance-test format | `regelspraak-java` extension | non-goal (for the IR) | — | — | v0's `ResolvedScenario` tree is a test-harness IR, not executable law. It is the donor for the corpus case schema — delivered as `uchar-case-v0` (`spec/schema/uchar-case-v0.schema.json`, gate 4): inputs, expected outcomes, the explicit-empty value slot, label-based role values (which also feed row 4) |
 
 ## 2. Node inventory (v0, `regelspraak-java` @ `b85dff3`)
 

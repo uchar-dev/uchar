@@ -85,6 +85,11 @@ green. Current gates:
    `corpus/negatief/<wf###-slug>/ir.json` is rejected, citing the WF
    rule its directory name declares; an empty negatief corpus is a
    failure, never silently green.
+4. `scripts/check-case-schema.sh` — the case schema
+   (`spec/schema/uchar-case-v0.schema.json`) is metaschema-valid; every
+   `corpus/golden/**/case*.json` validates against it and sits beside
+   an `ir.json`; an empty case set is reported explicitly, never
+   silently green.
 
 Standing harness guards once
 the corpus runs in CI: oracle (interpreter replay passes), no-op (an identity

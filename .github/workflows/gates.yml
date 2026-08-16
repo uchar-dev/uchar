@@ -25,6 +25,16 @@ jobs:
       - name: check-ir-schema
         run: sh scripts/check-ir-schema.sh
 
+  case-schema:
+    name: "Gate 4: corpus case files"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install jsonschema
+        run: python3 -m pip install --user jsonschema
+      - name: check-case-schema
+        run: sh scripts/check-case-schema.sh
+
   verifier:
     name: "Gate 3: IR verifier"
     runs-on: ubuntu-latest

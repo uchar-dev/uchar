@@ -1,0 +1,32 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "vondstnummer": { "number": "7" },
+          "vondstdag": { "date": "2025-03-01" },
+          "aanmelddatum": { "date": "2025-03-05" }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "vondstnummer": { "number": "8" },
+          "vondstdag": { "date": "2025-03-02" },
+          "aanmelddatum": { "date": "2025-03-02" }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [ { "kind": "consistent" } ]
+}

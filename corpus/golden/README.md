@@ -37,3 +37,12 @@ Coverage notes:
   the role, sentinel-typed) is deliberate v0 shape; the WF-034 index
   cell records the verifier exception, and `jutterswet-vondsttelling`
   is its witness.
+
+## Case files
+
+A golden may carry one or more `case*.json` files — the evaluation data
+half of the case (inputs, parameter values, evaluation date, expected
+outcomes) in the `uchar-case-v0` format (`spec/schema/`, gate 4). The
+expectation values trace to the worked examples of
+`spec/RUNTIME-SEMANTICS.md`; the reference interpreter replays them as
+its test suite (the oracle guard) once `ref/` exists.
