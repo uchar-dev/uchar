@@ -1,0 +1,44 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B1",
+        "objectType": "Berging",
+        "attributes": { "opbrengst": { "number": "100" } },
+        "roles": { "bergers": ["J1", "J2"] },
+        "characteristics": []
+      },
+      {
+        "label": "B2",
+        "objectType": "Berging",
+        "attributes": { "opbrengst": { "number": "40" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Berger",
+        "attributes": { "geborgen gewicht": { "number": "60" } },
+        "roles": { "bewaakte bergingen": ["B1", "B2"] },
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Berger",
+        "attributes": { "geborgen gewicht": { "number": "40" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "bergingsaandeel", "value": { "number": "60" } },
+    { "kind": "attributeValue", "label": "J2", "attribute": "bergingsaandeel", "value": { "number": "40" } },
+    { "kind": "attributeValue", "label": "J1", "attribute": "toezichtopbrengst", "value": { "number": "140" } },
+    { "kind": "attributeValue", "label": "J2", "attribute": "toezichtopbrengst", "value": { "number": "0" } },
+    { "kind": "consistent" }
+  ]
+}
