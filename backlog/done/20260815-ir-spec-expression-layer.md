@@ -43,3 +43,9 @@ sync: the BinOp variants note now marks GEDEELD_DOOR_ABS dialect (defined
 collapse point) rather than lumping it under desugar. This branch is a
 PROPOSAL: spec/IR-SPEC.md is a protected path — the maintainer merges
 (fast-forward).
+
+Addendum at merge (maintainer review): the WF-042 index cell brought in
+line with the corrected body (bounds are dates, either precision), and
+the Method paragraph's stale "Resolver --ir, to be built" updated to name
+the emitting toolchain commit. Ch. 7's skeleton lag ("lands with
+spec/schema/") noted as pre-existing, left for the serialization chapter.

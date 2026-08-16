@@ -15,7 +15,8 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
 ## Method: mirror, then diverge
 
 - **v0** is the faithful JSON dump of `regelspraak-java`'s in-memory IR
-  (`Resolver --ir`, to be built) at a pinned commit — warts included.
+  (`Resolver --ir`, emitting since the toolchain commit `c51652a`) at a
+  pinned commit — warts included.
 - **v1** is what this document specifies: it deviates from v0 deliberately
   where the founding review (`IR-REVIEW.md`) flagged Drools leakage
   (bean-field names → role bindings, salience → declared stratification,
@@ -1093,7 +1094,7 @@ row closed.
 | WF-039 | enum label in domain; literal sign restriction | OPEN | OPEN | OPEN |
 | WF-040 | dimension cell pins every dimension; selection labels resolve in order | OPEN | OPEN | OPEN |
 | WF-041 | counting-quantifier threshold ≥ 1 | OPEN | OPEN | OPEN |
-| WF-042 | time window: ≥ 1 bound; day-precision date bounds | OPEN | OPEN | OPEN |
+| WF-042 | time window: ≥ 1 bound; bounds are dates, either precision | OPEN | OPEN | OPEN |
 | WF-043 | whole-period qualifier only on a time-dependent operand | OPEN | OPEN | OPEN |
 | WF-044 | (consumer) Unresolved surfaces, never silently lowered | behavioural (CI harness guard) — OPEN | OPEN | OPEN |
 
