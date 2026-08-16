@@ -1191,16 +1191,21 @@ highest justified rung decides; on a characteristic every justified
 rung decides; a false decision derives nothing and displaces.
 
 - **WF-050** A ladder MUST carry at least one rung; its subject and
-  target characteristic MUST resolve; at most one ladder per
-  (subject, characteristic) target — the declared-unordered group
-  (ch. 7.2 there) is a later, additive slice, and until it lands
-  implicit multiplicity is ill-formed.
-- **WF-051** A rung's displacement reads join the ch. 6 dependency
-  graph of `RUNTIME-SEMANTICS.md` as **negative edges** (the ch. 6.1
-  edge-class extension); no dependency cycle may pass through a
-  ladder — strata must exist. The WF-045/046 principles apply to the
-  extended graph (a violating document typically trips those too;
-  WF-051 names the ladder-specific rule).
+  target characteristic MUST resolve; a ladder's target MUST have no
+  other writer — no second ladder, and no characteristic-attribution
+  rule on the same (subject, characteristic): an unordered plain
+  writer would silently defeat a do-not-attribute decision (the
+  ch. 7.1 single-writer lift). Multiplicity without the later explicit
+  group marking (the declared-unordered group of ch. 7.2 there, a
+  later additive slice) is ill-formed until that slice lands.
+- **WF-051** Every rung-justification read joins the ch. 6 dependency
+  graph of `RUNTIME-SEMANTICS.md` as a **negative edge** toward the
+  ladder's write (ch. 7.4 there: displacement makes every
+  justification decision-bearing — the ch. 6.1 edge-class extension);
+  no dependency cycle may pass through a ladder — strata must exist.
+  The WF-045/046 principles apply to the extended graph (a violating
+  document typically trips those too; WF-051 names the ladder-specific
+  rule).
 
 Still design-only (`RUNTIME-SEMANTICS.md` ch. 7; artifacts land with
 later Phase-4 cards): attribute-target ladders and leeg fall-through,
@@ -1273,7 +1278,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-047 | role binding resolves; fillers agree with the use site; written source denotes the bound role | gate 3 | `anchor/jutterswet-bergingstoezicht` (two fact types over one pair; allocation and fold bound, replayed by gates 5–6) | `wf047-dangling-role-binding` (resolution) + `wf047-bound-role-fills-source` (filler agreement) |
 | WF-048 | bindingless allocation/instance fold: connecting relation uniquely derivable | gate 3 (contexts with a statically known fold subject; a subjectless context — none exists in v0 dumps, whose folds sit under a typed rule target — is left to the executors' runtime fault) | `jutterswet-berging` + `jutterswet-vondsttelling` (bindingless, uniquely derivable) | `wf048-ambiguous-connecting-relation` |
 | WF-049 | temporal read: basis temporal (attribute/granular parameter), day-precision date, element type | gate 3 | `anchor/jutterswet-aanmeldquotum` (attribute + parameter reads; hit, gap→leeg, empty date→leeg; replayed by gates 5–6) | `wf049-read-of-nontemporal` (basis) + `wf049-read-at-datetime` (date operand) + `wf049-type-not-element` (element type) |
-| WF-050 | characteristic ladder: ≥ 1 rung; subject and characteristic resolve; one ladder per target | gate 3 (characteristic form; the attribute/group clauses are design-only, ch. 6.1) | `anchor/jutterswet-uitsluiting` (the art. 4 ladder, four cases replayed by gates 5–6) | `wf050-empty-ladder` + `wf050-two-ladders-one-target` |
+| WF-050 | characteristic ladder: ≥ 1 rung; subject and characteristic resolve; the target has no other writer | gate 3 (characteristic form; the attribute/group clauses are design-only, ch. 6.1) | `anchor/jutterswet-uitsluiting` (the art. 4 ladder, four cases replayed by gates 5–6) | `wf050-empty-ladder` + `wf050-two-ladders-one-target` + `wf050-ladder-beside-rule` |
 | WF-051 | no dependency cycle through a ladder (displacement reads are negative edges) | gate 3 (over the extended dep_forms graph, shared with ref/'s strata) | `anchor/jutterswet-uitsluiting` (the ladder sits below its negated consumer — strata exist, oracle-replayed) | `wf051-ladder-reads-own-target` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer

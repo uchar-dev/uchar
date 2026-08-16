@@ -1,0 +1,206 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {},
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "vergunning geweigerd",
+        "weigering herroepen",
+        "herroeping vervallen",
+        "uitgesloten",
+        "penninggerechtigd"
+      ],
+      "kenmerkSoorten": {
+        "vergunning geweigerd": "BIJVOEGLIJK",
+        "weigering herroepen": "BIJVOEGLIJK",
+        "herroeping vervallen": "BIJVOEGLIJK",
+        "uitgesloten": "BIJVOEGLIJK",
+        "penninggerechtigd": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "uitgesloten bij aanwijzing",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "uitsluiting van het penningrecht",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "uitgesloten bij aanwijzing",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "uitgesloten",
+        "objecttype": "Jutter",
+        "onderwerpBron": "Een Jutter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Jutter is uitgesloten",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Kenmerk",
+        "kenmerk": "vergunning geweigerd",
+        "navigatie": null,
+        "negatie": false,
+        "eigenaar": null,
+        "periode": null,
+        "bron": "zijn raapvergunning is geweigerd"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": [],
+  "defaultLadders": [
+    {
+      "node": "DefaultLadder",
+      "naam": "uitsluiting van het penningrecht",
+      "onderwerp": "Jutter",
+      "kenmerk": "uitgesloten",
+      "rungs": [
+        {
+          "node": "Rung",
+          "besluit": true,
+          "voorwaarde": {
+            "node": "Samengesteld",
+            "kwantor": "ALLE",
+            "drempel": 0,
+            "onderdelen": [
+              {
+                "node": "Kenmerk",
+                "kenmerk": "vergunning geweigerd",
+                "navigatie": null,
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "zijn raapvergunning is geweigerd"
+              },
+              {
+                "node": "Kenmerk",
+                "kenmerk": "weigering herroepen",
+                "navigatie": null,
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "de weigering is herroepen"
+              },
+              {
+                "node": "Kenmerk",
+                "kenmerk": "herroeping vervallen",
+                "navigatie": null,
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "de herroeping is vervallen"
+              }
+            ],
+            "bron": "de weigering is herroepen maar de herroeping is vervallen"
+          },
+          "bron": "art. 4, derde laag"
+        },
+        {
+          "node": "Rung",
+          "besluit": false,
+          "voorwaarde": {
+            "node": "Samengesteld",
+            "kwantor": "ALLE",
+            "drempel": 0,
+            "onderdelen": [
+              {
+                "node": "Kenmerk",
+                "kenmerk": "vergunning geweigerd",
+                "navigatie": null,
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "zijn raapvergunning is geweigerd"
+              },
+              {
+                "node": "Kenmerk",
+                "kenmerk": "weigering herroepen",
+                "navigatie": null,
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "de weigering is herroepen"
+              }
+            ],
+            "bron": "de weigering is herroepen"
+          },
+          "bron": "art. 4, tweede laag"
+        },
+        {
+          "node": "Rung",
+          "besluit": true,
+          "voorwaarde": {
+            "node": "Kenmerk",
+            "kenmerk": "vergunning geweigerd",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "zijn raapvergunning is geweigerd"
+          },
+          "bron": "art. 4, eerste laag"
+        }
+      ],
+      "bron": "art. 4",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ]
+}

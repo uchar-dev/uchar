@@ -2112,14 +2112,35 @@ let wf050 ctx =
                     ^ "' is not a declared characteristic of '" ^ l.dl_onderwerp ^ "'") ])
          @
          let key = norm l.dl_onderwerp ^ ":" ^ norm l.dl_kenmerk in
-         if Hashtbl.mem targets key then
+         (if Hashtbl.mem targets key then
+            [ v "WF-050" at
+                ("a second ladder on target '" ^ l.dl_onderwerp ^ "." ^ l.dl_kenmerk
+               ^ "' — this format carries at most one (the declared-unordered group is a \
+                  later slice)") ]
+          else (
+            Hashtbl.add targets key ();
+            []))
+         @
+         (* the ch. 7.1 single-writer lift: a plain characteristic-
+            attribution rule beside the ladder would silently defeat a
+            do-not-attribute decision *)
+         if
+           List.exists
+             (fun (r : resolved_regel) ->
+               r.rr_soort = Some Kenmerktoekenning
+               &&
+               match r.doel with
+               | Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }) ->
+                   norm ot = norm l.dl_onderwerp && norm a = norm l.dl_kenmerk
+               | _ -> false)
+             ctx.doc.resolved_regels
+         then
            [ v "WF-050" at
-               ("a second ladder on target '" ^ l.dl_onderwerp ^ "." ^ l.dl_kenmerk
-              ^ "' — this format carries at most one (the declared-unordered group is a \
-                 later slice)") ]
-         else (
-           Hashtbl.add targets key ();
-           []))
+               ("a characteristic-attribution rule also writes ladder target '"
+              ^ l.dl_onderwerp ^ "." ^ l.dl_kenmerk
+              ^ "' — an unordered plain writer would silently defeat a do-not-attribute \
+                 decision") ]
+         else [])
        ctx.doc.default_ladders)
 
 (* WF-051: no dependency cycle may pass through a ladder — its

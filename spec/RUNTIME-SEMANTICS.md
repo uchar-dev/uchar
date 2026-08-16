@@ -1687,12 +1687,16 @@ embodying it.
   Keeping these mechanisms apart is normative; conflating them is how
   salience leaked into v0.
 - **Stratification extends to displacement, it is not replaced by
-  priority.** A rung's fall-through reads the justifications and
-  consequences of the rungs *above* it: those reads join the ch. 6
-  dependency graph as **negative edges** regardless of whether they
-  test characteristics or attributes — an **extension of the ch. 6.1
-  edge classes** (which today carry only negated characteristic reads
-  and channel tests) that lands together with the ladder node. This is
+  priority.** Which rung decides depends on *every* rung's
+  justification — a read serves its own rung and the displacement of
+  every rung below it alike — so **all rung-justification reads join
+  the ch. 6 dependency graph as negative edges** toward the ladder's
+  write, regardless of whether they test characteristics or attributes
+  (the conservative reading: the ladder decides once, at the fixpoint
+  of all its justification producers). This is an **extension of the
+  ch. 6.1 edge classes** (which today carry only negated
+  characteristic reads and channel tests) that lands together with the
+  ladder node. This is
   precisely the debt ch. 6.1's residual note ("conditions on
   attribute-writing forms read positively here … await the default
   model of ch. 7") assigns to this chapter: the ladder is where a
@@ -1746,5 +1750,6 @@ gevuld value; characteristic target: always — the boolean decision).
 
 ## Chapters (planned)
 
-*(none — chapters 1–8 are drafted; ch. 7 awaits its Phase-4 wire and
-artifacts as noted in its status line)*
+*(none — chapters 1–8 are drafted; ch. 7's characteristic ladder is
+landed, its remaining slices await their Phase-4 cards as noted in its
+status line)*
