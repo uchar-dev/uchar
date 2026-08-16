@@ -412,8 +412,9 @@ Method) is the symbolic reference those chapters bind with:
 
 - **WF-047** A role binding MUST resolve: the fact type is declared, the
   role names exactly one of its roles (case-insensitive over the declared
-  name), and the fact type has exactly two roles (a binding into a
-  reciprocal fact type is **OPEN** — no use site admits one yet). At each
+  name), and the fact type has exactly two roles — a binding into a
+  reciprocal (one-role) fact type is thereby **rejected** for now; no use
+  site admits one, and the restriction is revisited when one does. At each
   use site the bound role's filler type and the opposite role's filler
   type MUST agree with the types the node declares (the site chapters
   state which side is bound: ch. 3.2, 4.3), and where the v0 form also
@@ -1157,7 +1158,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-025 | allocation fields valid per method; ordering key orderable; share typing | gate 3 (field validity and orderability; share typing is WF-023) | `jutterswet-berging` | `wf025-max-without-ratio` |
 | WF-026 | at most one allocation per written target | gate 3 | `jutterswet-berging` | `wf026-two-allocations-one-target` |
 | WF-027 | object-creation members declared on the created type; characteristic init boolean | gate 3 | OPEN | `wf027-ghost-member` |
-| WF-028 | symbolic fact creation all-or-nothing and resolvable; join chain reaches target; new ≠ final hop | gate 3 (symbolic extension form; a bean-field-only v0 record stays uncheckable — recorded) | OPEN (the executable witness lands with the creation-execution card) | `wf028-half-symbolic-creation` |
+| WF-028 | symbolic fact creation all-or-nothing and resolvable; join chain reaches target; new ≠ final hop | gate 3 (symbolic extension form; a bean-field-only v0 record stays uncheckable — recorded) | OPEN (the executable witness lands with the creation-execution card) | `wf028-half-symbolic-creation` (all-or-nothing) + `wf028-create-along-final-hop` (the full chain walk) |
 | WF-029 | consistency assertion has a single subject | gate 3 | `jutterswet-vondstnummer` | `wf029-no-subject` |
 | WF-030 | uniqueness sources: keys resolve; arity and datatype kind agree | gate 3 | `jutterswet-vondstnummer` | `wf030-arity-mismatch` |
 | WF-031 | one definition per day kind; condition present (recursion OPEN) | gate 3 | OPEN | `wf031-missing-condition` |
@@ -1176,8 +1177,8 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-044 | (consumer) Unresolved surfaces, never silently lowered | behavioural (CI harness guard) — OPEN | OPEN | OPEN |
 | WF-045 | dependency graph acyclic (creation recursion excepted) | gate 3 | `jutterswet-vondsttelling` | `wf045-cyclic-attribute-dependency` |
 | WF-046 | no negative edge on a dependency cycle (strata exist) | gate 3 | `jutterswet-penningjaar` (the negated aanmeldplichtig reading — a negative edge, verifier-clean, oracle-replayed) | `wf046-negated-read-in-recursive-cycle` |
-| WF-047 | role binding resolves; fillers agree with the use site; written source denotes the bound role | gate 3 | `anchor/jutterswet-bergingstoezicht` (two fact types over one pair; allocation and fold bound, replayed by gates 5–6) | `wf047-dangling-role-binding` |
-| WF-048 | bindingless allocation/instance fold: connecting relation uniquely derivable | gate 3 | `jutterswet-berging` + `jutterswet-vondsttelling` (bindingless, uniquely derivable) | `wf048-ambiguous-connecting-relation` |
+| WF-047 | role binding resolves; fillers agree with the use site; written source denotes the bound role | gate 3 | `anchor/jutterswet-bergingstoezicht` (two fact types over one pair; allocation and fold bound, replayed by gates 5–6) | `wf047-dangling-role-binding` (resolution) + `wf047-bound-role-fills-source` (filler agreement) |
+| WF-048 | bindingless allocation/instance fold: connecting relation uniquely derivable | gate 3 (contexts with a statically known fold subject; a subjectless context — none exists in v0 dumps, whose folds sit under a typed rule target — is left to the executors' runtime fault) | `jutterswet-berging` + `jutterswet-vondsttelling` (bindingless, uniquely derivable) | `wf048-ambiguous-connecting-relation` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

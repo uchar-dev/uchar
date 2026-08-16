@@ -141,7 +141,7 @@ let expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
       ( [ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ],
         v,
         pow10 (attr_decimals ctx ~otype:ot ~attr:a) )
-  | Functie { kind = Aantal; argumenten = [ Attribuut_ref { attribuut; typ = Some (Datatype_onbekend _); _ } ]; element_objecttype = Some _; bron_rol; _ } ->
+  | Functie { kind = Aantal; argumenten = [ Attribuut_ref { attribuut; typ = Some (Datatype_onbekend _); navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some _; bron_rol; _ } ->
       (* the row-1 wart: the fold source names a role; count the linked
          instances. An explicit binding overrides the written name. *)
       let role =
@@ -155,7 +155,7 @@ let expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
       ( [ Printf.sprintf "%s = #count { X%s : rol(%s,%s,X%s) }" v v subject (str role) v ],
         v,
         1 )
-  | Functie { kind = Som; argumenten = [ Attribuut_ref { attribuut; set = true; _ } ]; element_objecttype = Some el; leegwaarde; bron_rol; _ } ->
+  | Functie { kind = Som; argumenten = [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some el; leegwaarde; bron_rol; _ } ->
       let a = req "fold attribute" attribuut in
       (match leegwaarde with
       | Some (Literal { waarde = Some "0"; _ }) -> ()

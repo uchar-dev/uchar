@@ -280,8 +280,14 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
   (* contributors: an instance fold over a role (element_objecttype set),
      or listed operand expressions *)
   let contributors () =
+    (* fold-source shapes are navigation-free — the same narrowing the
+       verifier's WF-047/048 detection uses; a navigated source falls to
+       the fail-fast arm below *)
     match (element_objecttype, argumenten) with
-    | Some el, [ Attribuut_ref { attribuut; typ = Some (Datatype_onbekend _); _ } ] ->
+    | ( Some el,
+        [ Attribuut_ref
+            { attribuut; typ = Some (Datatype_onbekend _);
+              navigatie_rol = None; navigatie_pad = []; _ } ] ) ->
         (* the row-1 wart: the fold source argument names a role; with an
            explicit binding the name check is the verifier's (WF-047) *)
         (match bron_rol with
@@ -292,7 +298,9 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
             in
             ());
         `Instances (linked ?binding:bron_rol env world self ~to_type:el)
-    | Some el, [ Attribuut_ref { attribuut; set = true; _ } ] ->
+    | ( Some el,
+        [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]
+      ) ->
         let name = req "fold attribute" attribuut in
         `Values
           (List.map
