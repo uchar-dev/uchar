@@ -37,6 +37,19 @@ enum-valued fields are constrained to their exact constant sets; fields are
 nullable only where the format actually emits `null`. `$id`:
 `https://uchar.dev/schema/regelspraak-ir-v0.schema.json`.
 
+**Extension fields** (the decided wire-entry discipline, `../IR-SPEC.md`
+§ Method): a v1 construct enters the wire additively, as an *optional*
+property the v0 emitter never produces — currently `verbindendeRol` on
+`ResolvedVerdeling`, `bronRol` on `Functie`, and the symbolic
+fact-creation fields (`feittype`/`ankerRol`/`doelRol`/`joinRol`,
+`Tussenstap.rolBinding`), all carrying the `RolBinding` node. When
+present they are written whole, never null; the loaders admit exactly
+these keys and nothing else. Mirror purity holds per file: an emitter
+dump carries none of them, a hand-written anchor case may carry them,
+and the same schema validates both. The `regelspraak-ir-v1` bump is
+reserved for the non-additive cleanup (renames; dropping the superseded
+bean fields).
+
 ## Gate: `../../scripts/check-ir-schema.sh`
 
 The repo's second CI gate. It performs three checks:

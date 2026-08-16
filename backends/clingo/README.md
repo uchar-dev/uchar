@@ -35,13 +35,16 @@ spec bug.
   fail fast, never a silent SKIP.
 
 The backend reuses the loader (`uchar-ir-v0`) and the case loading and
-value lexing of `uchar-ref` (IO). One piece of genuine semantics is
-deliberately shared, recorded: the connecting-role derivation
-(`Eval.connecting_role`, the ch. 4.1 wart — the IR does not name the
-role, so both executors must derive it identically until the Phase-3
-relations-first-class refactor puts the role binding in the IR). All
-evaluation semantics run in clingo; the hand-written absolute
-expectations keep a shared-derivation bug from ever passing silently.
+value lexing of `uchar-ref` (IO). The connecting role of an allocation
+or fold comes from the node's explicit `RolBinding` when the document
+carries one (the relations-first-class delta, WF-047/048); only for
+bindingless v0 dumps does the backend still share the type-pair
+derivation with `uchar-ref` (`Eval.connecting_role`, the recorded
+ch. 4.1 wart — WF-048 guarantees it is unique there, and it retires
+with the v1 format bump). Both routes end in the same
+`role_canonical` convention the case facts use. All evaluation
+semantics run in clingo; the hand-written absolute expectations keep a
+shared-derivation bug from ever passing silently.
 
 Recorded limitations:
 

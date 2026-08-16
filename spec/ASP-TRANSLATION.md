@@ -192,6 +192,9 @@ the statute's intent, reproduced under stable-model semantics.
    is variable sharing; the v0 reference-field vocabulary has no
    translation target. The symbolic `RolBinding` delta is not just
    cleaner — for this backend it is the only thing that *can* exist.
+   *Landed (2026-08-16):* the binding rides the wire (`IR-SPEC.md`
+   ch. 2.6, WF-047/048) and `backends/clingo` reads the `rol/3` join
+   role from it, deriving only for bindingless v0 dumps.
 2. **The top-level-only restriction is a Drools artefact** (row 5,
    confirmation). The existential lives in any rule body at any depth.
 3. **The single-layer default is one NAF over a declared contrary**

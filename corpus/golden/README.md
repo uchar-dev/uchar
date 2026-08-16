@@ -5,6 +5,9 @@ against the Jutterswet — `corpus/jutterswet/`) and `ir.json` (its
 `regelspraak-ir-v0` dump). Admission: gate 2 (schema-valid, byte-identical
 round-trip) and gate 3 (verifier-clean) — see `corpus/README.md` for the
 rights policy and `spec/IR-SPEC.md` for the WF index the cases witness.
+The `anchor/` subdirectory holds the hand-written cases with absolute
+expected values (no `bron.rgs`; extension fields admitted) — its own
+README carries the charter.
 
 | Case | Jutterswet basis | Exercises |
 |---|---|---|

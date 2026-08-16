@@ -1,11 +1,12 @@
 # The temporal-read node: design + artifacts (row 11, decided)
 
 Goal: implement the decided point-in-time read as a v1 core node.
-First decision inside this card: how the node enters the wire — an
-additive extension of the regelspraak-ir-v0 schema (the loader accepts
-the node, the emitter simply never produces it yet; the schema README
-records the mirror-purity note) versus a bumped format version; decide
-and record before designing. Then: the expression node in
+The wire-entry question is **already decided** (2026-08-16, with the
+relations-first-class card): v1 constructs enter as additive, optional
+extensions of regelspraak-ir-v0 — `spec/IR-SPEC.md` § Method and
+`spec/schema/README.md` record the discipline; this card rides it (the
+read is a new extension *node* in the expr union, the loaders accept
+it, the emitter never produces it yet). Then: the expression node in
 `spec/IR-SPEC.md` (a temporal read: timeline operand — a temporal
 attribute, temporal characteristic, or granular parameter — plus a
 day-precision date operand; result = the element type, leeg on a gap

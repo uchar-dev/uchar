@@ -912,13 +912,15 @@ An allocation names a source `(sourceType, sourceAttribute)` — the pot —
 and a target `(targetType, targetAttribute)` — each recipient's share
 (`IR-SPEC.md` ch. 3.2). The **recipient set** of one source instance is:
 every `targetType` instance related to it through the connecting
-relation. *v0 mirror note:* v0 derives that relation as the unique fact
-type relating `targetType` to `sourceType`; no such fact type, or more
-than one, refuses the allocation (marker/skip). **Delta (candidate WF
-rule, rule layer):** v1 should name the connecting role explicitly in the
-IR — the same symbolic-role move as `CONSTRUCTS.md` rows 4/22 — so
-"which relation" is declared, not inferred; recorded here, decided with
-the row-22 delta.
+relation. **Decided (2026-08-16, WF-047/048):** the connecting relation
+is named explicitly — the `connectingRole` binding of `IR-SPEC.md`
+ch. 3.2 (v0 wire `verbindendeRol`, an extension field), the same
+symbolic-role move as `CONSTRUCTS.md` rows 4/22; executors consume the
+binding when present. *v0 mirror note:* a bindingless form derives the
+relation as the unique fact type relating `targetType` to `sourceType`
+— admissible only while that derivation is unique (WF-048; v0 refused
+the non-unique case as marker/skip, and the executors fault on it). In
+v1 the binding is required and the derivation retires.
 
 ### 4.2 The distribution equations
 
@@ -1296,7 +1298,7 @@ Each rule form reads and writes nodes:
 | allocation | target attribute; declared remainder attribute | source amount; ratio, maximum and ordering attributes; condition reads; population(target type) |
 | consistency / uniqueness | channel(own name) | assertion operands / key attributes |
 | object creation | the attributes and characteristics its toekenningen set on the created type; population(created type) | condition and toekenning-value reads on the anchor |
-| relation creation | population(target-role filler type) | condition and field reads on the anchor |
+| relation creation | population(target-role filler type) | condition reads on the anchor and the join-chain traversal (role hops, `IR-SPEC.md` ch. 3.4) |
 
 Edges run producer → consumer — from every form that writes a node to
 every form that reads it — in three kinds:

@@ -1,8 +1,10 @@
 # uchar IR — Specification
 
-*Status: v0.4 — the model layer (ch. 2), the rule layer (ch. 3), and the
+*Status: v0.5 — the model layer (ch. 2), the rule layer (ch. 3), and the
 expression and condition layer (ch. 4) are normative **draft**; everything
-else is skeleton. Authority for undocumented behaviour still lives in
+else is skeleton. New in v0.5: the wire-entry discipline for v1 constructs
+(Method) and the symbolic role bindings (ch. 2.6, 3.2, 3.4, 4.3;
+WF-047/048; WF-028's check). Authority for undocumented behaviour still lives in
 `regelspraak-java` (pinned commit `b85dff3`): the spec-§-citing javadoc of
 `ir/` and `model/`, and the decision records in
 `docs/grammar-divergences.md`; that authority pointer leaves this header at
@@ -24,6 +26,19 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
 - Every deviation is a tracked delta with a migration note, indexed in the
   delta column of `CONSTRUCTS.md` — never a silent rewrite. The delta list
   doubles as the Phase 0–4 roadmap.
+- **Wire entry of v1 constructs (decided 2026-08-16).** A v1 construct
+  enters the wire as an **additive, optional extension** of
+  `regelspraak-ir-v0`: the schema admits it as an optional field or node
+  (never `required`, never null — written whole or not at all), the
+  loaders accept it, and the pinned v0 emitter never produces it. Every
+  extension field is marked as such at its definition and tracked in the
+  `CONSTRUCTS.md` delta column like any deviation; hand-written anchor
+  cases (`corpus/golden/anchor/`) are its golden witnesses until the
+  emitter follows via a pin bump. The `regelspraak-ir-v1` format bump is
+  reserved for the non-additive cleanup — renames, and dropping the v0
+  fields the extensions supersede (`zetVeld`/`joinVeld` and kin). Current
+  extension fields: `verbindendeRol` (ch. 3.2), `bronRol` (ch. 4.3), the
+  symbolic fact-creation fields (ch. 3.4).
 
 ## Conventions (binding)
 
@@ -387,6 +402,32 @@ bean-field names appear here; the bean-field leakage lives in the v0
 *navigation contract* and the rule-layer encodings, whose replacement by
 symbolic role bindings is `CONSTRUCTS.md` rows 4/22 (rule-layer chapters).
 
+A **RoleBinding** (wire node `RolBinding`; an extension node per the
+Method) is the symbolic reference those chapters bind with:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `factType` | string | v0 wire `feittype`: a declared fact type, by name |
+| `role` | string | v0 wire `rol`: one of its roles, by **declared role name** — the plural is presentation and does not bind |
+
+- **WF-047** A role binding MUST resolve: the fact type is declared, the
+  role names exactly one of its roles (case-insensitive over the declared
+  name), and the fact type has exactly two roles (a binding into a
+  reciprocal fact type is **OPEN** — no use site admits one yet). At each
+  use site the bound role's filler type and the opposite role's filler
+  type MUST agree with the types the node declares (the site chapters
+  state which side is bound: ch. 3.2, 4.3), and where the v0 form also
+  carries a written role name (the row-1 fold source), that name MUST
+  denote the bound role.
+- **WF-048** A node that navigates the connecting relation *without* a
+  binding — a bindingless allocation (ch. 3.2) or instance fold
+  (ch. 4.3) — is well-formed only if **exactly one** two-role fact type
+  relates its type pair: the ch. 4.1 runtime derivation fault of
+  `RUNTIME-SEMANTICS.md` lifted to well-formedness. Every emitted v0
+  document satisfies this (the v0 resolver enforces the same unique
+  derivability at build time). In v1 the binding becomes required and
+  WF-048 retires with the format bump.
+
 Role-name matching is case-insensitive, over the declared name and the
 declared plural. *v0 mirror note:* when no plural is declared, v0 admits a
 best-effort synthesized plural (`+s`/`+en`) at use sites; a declared
@@ -634,6 +675,7 @@ below (minus `name`) is one version's body.
 | `descending` | boolean | ordered only |
 | `condition` | Condition? | — |
 | `validity` | Validity | — |
+| `connectingRole` | RoleBinding? | **extension field** (v0 wire `verbindendeRol`): the connecting relation, with the **recipient role bound** — the bound role's filler is `targetType`, the opposite role's filler is `sourceType` (WF-047). Absent, the relation must be uniquely derivable from the type pair (WF-048); `RUNTIME-SEMANTICS.md` ch. 4.1 |
 
 **Delta (tracked, `CONSTRUCTS.md` row 17):** v0's fourth method value
 `COMPLEX` — the donor's unhandled-form placeholder — is not admissible IR;
@@ -705,20 +747,37 @@ v1 re-expresses the same content symbolically:
 | `factType` | fact-type ref | the relation being created |
 | `anchorRole`, `targetRole` | role refs into `factType` | which role the anchor fills, which the target |
 | `anchor` | type ref | the iterated subject |
-| `path` | list of PathStep | how targets are reached from the anchor; empty = one hop |
+| `path` | non-empty list of PathStep | how targets are reached from the anchor; the final step is the join that reaches the target type |
 | `condition` | Condition? | guard on anchor or target |
 | `validity` | Validity | — |
 
-**PathStep**: `factType` (ref), `role` (ref), `direction` (`toOne` \|
-`toMany`) — a symbolic hop over an existing relation. *Migration:* v0's
+**PathStep**: a RoleBinding (ch. 2.6) — a symbolic hop over an existing
+relation, binding **the role the hop's far side fills**; the near side
+fills the opposite role, so direction is implied and the earlier
+sketch's separate `direction` field is dropped (cardinality is the
+bound role's declared `many`). *Migration:* v0's
 `zetVeld`/`joinVeld`/`veld` are derivable from the role bindings by the
 backend's own role→field mapping; the derivation moves down into the
 backend, out of the IR (the Phase-3 forcing move).
 
-- **WF-028** `factType`, both roles, and every path step MUST resolve
-  (WF-003); the path MUST actually reach the target type; the created
-  relation MUST differ from the relation of the final hop. *v0 mirror
-  note:* v0 enforces all of this fail-soft — seven distinct
+The symbolic content rides the v0 wire as **extension fields** on
+`ResolvedFeitCreatie` (per the Method), alongside the bean fields they
+supersede: `feittype` (the created relation), `ankerRol` and `doelRol`
+(the roles its two ends fill, by declared name), `joinRol` (the
+RoleBinding of the hop that reaches the target), and per `Tussenstap` a
+`rolBinding` (its hop). The join chain reads: anchor → `tussenstappen`
+in order → `joinRol` → target.
+
+- **WF-028** The symbolic form is **all-or-nothing**: once any symbolic
+  field is present, all MUST be. `feittype` resolves to a declared
+  two-role fact type; `ankerRol` and `doelRol` are distinct roles of it
+  whose fillers are the anchor resp. target type; every hop's binding
+  resolves (ch. 2.6) with its near side matching the chain's current
+  type; the chain MUST reach the target type; and the created relation
+  MUST differ from the relation of the final hop. A bean-field-only v0
+  record stays uncheckable (its relational content is not symbolic on
+  the wire) — recorded, not silently green. *v0 mirror note:* v0
+  enforces the resolution clauses fail-soft — seven distinct
   warning-and-drop reasons; an emitted v0 record is always fully
   resolved. **Delta (promotion):** in v1 the ill-formed variants are
   verifier errors, not silent drops.
@@ -914,6 +973,7 @@ embedded expressions) — sugar verdict (row 31), mirrored; empty coerces to
 | `filter` | Condition? — the die/dat-subselection or a temporal (gedurende) restriction |
 | `emptyFallback` | expression? — **sum only**: the §5.8.2 "of … als die er niet zijn" clause |
 | `dimensionSelection` | ? — **sum/min/max only**: fold over an ordered label selection instead of instances (dialect, row 28) |
+| `sourceRole` | RoleBinding? — **extension field** (v0 wire `bronRol`), instance folds only: the connecting relation, with **the role whose filler instances form the folded set bound**; the opposite role's filler is the fold's subject type (WF-047). Absent, WF-048's unique derivability applies; a binding on a non-fold is ill-formed (WF-047) |
 | `type`, `source` | — |
 
 Empty-source results differ per kind — the som/totaal split and the
@@ -1097,7 +1157,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-025 | allocation fields valid per method; ordering key orderable; share typing | gate 3 (field validity and orderability; share typing is WF-023) | `jutterswet-berging` | `wf025-max-without-ratio` |
 | WF-026 | at most one allocation per written target | gate 3 | `jutterswet-berging` | `wf026-two-allocations-one-target` |
 | WF-027 | object-creation members declared on the created type; characteristic init boolean | gate 3 | OPEN | `wf027-ghost-member` |
-| WF-028 | fact creation fully symbolic and resolvable; path reaches target; new ≠ traversed relation | OPEN (the relational content is bean-field-encoded in v0 — the row-22 delta must land first) | OPEN | OPEN |
+| WF-028 | symbolic fact creation all-or-nothing and resolvable; join chain reaches target; new ≠ final hop | gate 3 (symbolic extension form; a bean-field-only v0 record stays uncheckable — recorded) | OPEN (the executable witness lands with the creation-execution card) | `wf028-half-symbolic-creation` |
 | WF-029 | consistency assertion has a single subject | gate 3 | `jutterswet-vondstnummer` | `wf029-no-subject` |
 | WF-030 | uniqueness sources: keys resolve; arity and datatype kind agree | gate 3 | `jutterswet-vondstnummer` | `wf030-arity-mismatch` |
 | WF-031 | one definition per day kind; condition present (recursion OPEN) | gate 3 | OPEN | `wf031-missing-condition` |
@@ -1116,6 +1176,8 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-044 | (consumer) Unresolved surfaces, never silently lowered | behavioural (CI harness guard) — OPEN | OPEN | OPEN |
 | WF-045 | dependency graph acyclic (creation recursion excepted) | gate 3 | `jutterswet-vondsttelling` | `wf045-cyclic-attribute-dependency` |
 | WF-046 | no negative edge on a dependency cycle (strata exist) | gate 3 | `jutterswet-penningjaar` (the negated aanmeldplichtig reading — a negative edge, verifier-clean, oracle-replayed) | `wf046-negated-read-in-recursive-cycle` |
+| WF-047 | role binding resolves; fillers agree with the use site; written source denotes the bound role | gate 3 | `anchor/jutterswet-bergingstoezicht` (two fact types over one pair; allocation and fold bound, replayed by gates 5–6) | `wf047-dangling-role-binding` |
+| WF-048 | bindingless allocation/instance fold: connecting relation uniquely derivable | gate 3 | `jutterswet-berging` + `jutterswet-vondsttelling` (bindingless, uniquely derivable) | `wf048-ambiguous-connecting-relation` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is
