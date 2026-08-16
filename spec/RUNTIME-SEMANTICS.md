@@ -1557,19 +1557,43 @@ specialised by what the ASP hand-exercises established
 - A **default** is a pair (justification, consequence) aimed at one
   target (an attribute write or a characteristic attribution).
 - Defaults on one target organise as a **ladder**: a totally ordered
-  priority chain of rungs. The ladder is **one writer** evaluating to
-  **one outcome**, top-down: the ladder's outcome is the consequence of
-  the **highest rung whose justification holds and whose consequence
-  evaluates gevuld**; a rung whose justification fails, or whose
-  consequence evaluates leeg, **falls through** to the next lower rung
-  (Catala's own fall-through). At most one rung supplies the outcome,
-  so a single ladder can never conflict — as a property of the
-  semantics, not a claim about authors.
-- If at least one justification held but every justified rung fell
-  through on leeg, the ladder's outcome is **leeg** and is written as
-  such (an ordinary ch. 1.2g write); if no justification held at all,
-  the ladder **does not write**. Input facts are **not** a rung: they
-  are the initial fact base the ladder's write meets under ch. 1.2g.
+  priority chain of rungs. The ladder is **one writer** computing **one
+  decision**, top-down: the **highest rung that decides** supplies it,
+  and every lower rung is displaced. What "decides" means differs by
+  target kind, and the distinction is normative:
+  - **attribute target:** a rung decides when its justification holds
+    *and* its consequence evaluates **gevuld**; a justified rung whose
+    consequence evaluates leeg **falls through** (Catala's fall-through
+    — this is what makes ch. 5.4 reproducible, ch. 7.3);
+  - **characteristic target:** a rung's consequence is the boolean
+    **decision itself** — attribute or do-not-attribute — and a
+    justified rung therefore *always* decides (there is no leeg
+    boolean); a do-not-attribute decision displaces lower rungs and
+    makes the ladder derive nothing, which is not a retraction
+    (ch. 5.3's monotone write regime is untouched — the ladder decides
+    once, then at most one attribution happens).
+
+  At most one rung decides, so a single ladder can never conflict — a
+  property of the semantics, not a claim about authors.
+- If no rung decides, the ladder **writes nothing**: the target keeps
+  what the fact base holds — its input value, or leeg. A ladder never
+  writes leeg; consequently "deliberately assign leeg" is not
+  expressible as a rung (a recorded design limit: it needs an
+  ordinary, ladderless rule), and the fall-through deliberately does
+  **not** distinguish "rung inapplicable" from "rung applicable with
+  an empty value" — both fall through. *v0 mirror note (tracked with
+  the Phase-4 desugaring):* an unguarded v0 computation writes a
+  computed leeg over an input value (ch. 1.2g); once desugared into a
+  ladder that case shifts to "input left standing" — a deliberate,
+  pinned delta, not drift. Input facts are **not** a rung: they are
+  the fact base the ladder's write meets under ch. 1.2g.
+- Rung evaluation is **speculative** until a rung decides: a
+  fallen-through rung's arithmetic channel deposits (a division by
+  leeg inside a consequence that then falls through, ch. 1.2) do
+  **not** persist — only the deciding rung's evaluation deposits on
+  the §9.5 channel. This scopes the ch. 6.1 residual (b): transient
+  deposits keep persisting in ordinary evaluation (the v0 mirror); the
+  ladder is the one sanctioned speculative context.
 - The **base rule** is a rung like any other; the initialisation rung,
   when present, sits below it (ch. 7.3). The textual nesting of
   art. 4 — "geldt niet indien …, dat laatste geldt weer niet indien …"
@@ -1601,8 +1625,9 @@ specialised by what the ASP hand-exercises established
 The two failure directions stay distinct (row 8, the Catala
 EmptyError/ConflictError shape), mapped onto this IR's own discipline:
 
-- **Under-determination** — no ladder on the target produces a gevuld
-  outcome: the target ends **leeg** (written or untouched per ch. 7.1).
+- **Under-determination** — no rung of any ladder on the target
+  decides: nothing is written and the target ends as the fact base
+  holds it — leeg absent an input value (ch. 7.1).
   **Decided here (a tracked deviation from Catala, `CONSTRUCTS.md`
   row 8):** Catala's catchable ∅ (EmptyError) maps to ordinary leeg,
   consistent in spirit with the ch. 1.4 empty-as-value decision but
@@ -1614,22 +1639,24 @@ EmptyError/ConflictError shape), mapped onto this IR's own discipline:
   Honest inexpressibility stays with `Onopgelost` (WF-044) — a default
   never masks an Unresolved node (row 7, the OpenFisca lesson).
 - **Over-determination** — two ladders of one **declared-unordered
-  group** on one target both produce gevuld outcomes and the values
-  differ: the group **does not write** (the target keeps what the fact
-  base holds — its input value, or leeg) and one **§9.5 channel fact**
+  group** on one target both decide and the decisions differ: the
+  group **does not write** (the target keeps what the fact base
+  holds — its input value, or leeg) and one **§9.5 channel fact**
   records the conflict, keyed per ch. 5.6 as rule × subject with the
-  group's target form as the rule name. Equal values are no conflict
-  (idempotence, ch. 5.1). A single ladder cannot reach this outcome
-  (ch. 7.1); the channel is exercised exactly by declared-unordered
-  simultaneity — and a linear ladder never pays it (the exercise-2
-  finding, now by construction).
-- **Characteristic targets** obey ch. 5.3's monotonicity: a ladder on a
-  characteristic computes one attribution *decision* at the fixpoint of
-  its justification strata — it never writes per rung, and a higher
-  rung whose meaning is "not excluded" simply makes the ladder derive
-  nothing (no retraction exists to need). Over-determination cannot
-  arise on a characteristic (there is only one non-default value);
-  under-determination is the ordinary absent characteristic.
+  group's target form as the rule name. That fact is an *end-state
+  observation* (ch. 5.7 step 5): the ch. 5.6 regelversie read tests
+  rule names, not target forms, so no existing condition reads a
+  conflict fact — whether a rule may is **OPEN** for the Phase-4
+  cards. Equal decisions are no conflict (idempotence, ch. 5.1). A
+  single ladder cannot reach this outcome (ch. 7.1); the channel is
+  exercised exactly by declared-unordered simultaneity — and a linear
+  ladder never pays it (the exercise-2 finding, now by construction).
+- **Characteristic targets**: the ladder computes its one boolean
+  decision at the fixpoint of its justification strata (ch. 7.1);
+  do-not-attribute means the ladder derives nothing. On a
+  declared-unordered characteristic group, differing decisions
+  (attribute vs do-not-attribute) are over-determination like any
+  other; under-determination is the ordinary absent characteristic.
 
 ### 7.3 Initialisation is the lowest rung
 
@@ -1678,24 +1705,29 @@ embodying it.
 
 ### 7.5 The lowering table (each row a derivation, not a mechanism)
 
+One derived predicate carries the whole table: `decides_m` — rung *m*'s
+justification holds ∧ (attribute target: its consequence body derives a
+gevuld value; characteristic target: always — the boolean decision).
+
 | Declared (ch. 7) | ASP (`backends/clingo`) | Drools (`regelspraak-java`) | Replaces |
 |---|---|---|---|
-| ladder rung *n* | one rule with `not applied_m` for each higher rung *m* (over derived layer predicates; the nested art. 4 chain of `ASP-TRANSLATION.md` ch. 6.1 is its desugared special case) | generated guard from the higher rungs' conditions | the salience −1 trick — becomes derivable output |
-| fall-through on leeg | the rung's head is underivable when its consequence body is — absence composes | consequence-null guard | nothing (v0 cannot express it) |
+| ladder rung *n* | its outcome rule carries `not decides_m` for each higher rung *m* (the nested art. 4 chain of `ASP-TRANSLATION.md` ch. 6.1 is the desugared characteristic special case) | generated guard from the higher rungs' `decides` conditions | the salience −1 trick — becomes derivable output |
+| fall-through on leeg (attribute) | `decides_n` is underivable when the consequence body is — absence composes | consequence-null guard | nothing (v0 cannot express it) |
 | initialisation rung | NAF over the input fact | the empty-guard of ch. 5.4 | the hard-coded guard |
-| declared-unordered group | both heads derivable ∧ values differ → `inconsistent/2`, no `val/3` | §9.5 channel insert, no write | silent last-writer-wins |
+| declared-unordered group | both `decides` ∧ decisions differ → `inconsistent/2`, no `val/3` | §9.5 channel insert, no write | silent last-writer-wins |
 
 ### 7.6 Worked examples (absolute; binding on the Phase-4 cards)
 
 1. **The art. 4 ladder** (the Marrit dossier and its four
    single-difference variants, `ASP-TRANSLATION.md` ch. 6.2), after
-   desugaring to self-contained justifications: refused → excluded
-   (base rung); refused ∧ herroepen → the higher rung derives
-   "exception", the ladder's decision is *not excluded*; refused ∧
-   herroepen ∧ vervallen → the top rung wins, *excluded* again. Each
-   dossier variant's absolute outcome as the hand-runs pin them
-   (`ASP-TRANSLATION.md` ch. 6.3 runs match). These become golden
-   cases verbatim when the ladder node lands.
+   desugaring to self-contained justifications — a characteristic
+   ladder, so every justified rung decides (ch. 7.1): refused → the
+   base rung decides *excluded*; refused ∧ herroepen → the middle rung
+   decides *do-not-attribute* and displaces the base (Marrit: not
+   excluded, recht); refused ∧ herroepen ∧ vervallen → the top rung
+   decides *excluded* again. Each dossier variant's absolute outcome as
+   the hand-runs pin them (`ASP-TRANSLATION.md` ch. 6.3 runs match).
+   These become golden cases verbatim when the ladder node lands.
 2. **Initialisation**: the ch. 5.4 pair (50 with the chain, 25 alone)
    unchanged, **plus** the fall-through case pinned: a computing rung
    whose outcome is leeg over an empty target with initialisation 25 →

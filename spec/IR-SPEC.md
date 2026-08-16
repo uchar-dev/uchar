@@ -1156,9 +1156,12 @@ Comparison, Predicate, and CharacteristicCheck only —
 
 The model is designed in `RUNTIME-SEMANTICS.md` ch. 7: a first-class
 **ladder** of prioritised defaults per target evaluating top-down with
-**fall-through** (the highest rung whose justification holds and whose
-consequence is gevuld supplies the one outcome; a single ladder cannot
-conflict), initialisation as the lowest rung, priority either explicit
+**fall-through** — the highest rung that *decides* wins (attribute
+target: justification holds and the consequence evaluates gevuld, leeg
+falls through; characteristic target: a justified rung always decides,
+attribute or do-not-attribute), so a single ladder cannot conflict and
+a ladder never writes leeg — initialisation as the lowest rung,
+priority either explicit
 (rungs) or explicitly absent (a declared-unordered ladder group on one
 target — the only over-determination surface, routed to the §9.5
 channel); under-determination is leeg (a tracked Catala deviation,
