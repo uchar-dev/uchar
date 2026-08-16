@@ -1054,8 +1054,8 @@ row closed. "gate 3" = implemented in `spec/verifier/` and run by
 parenthesis names the clause the v0 wire format cannot carry (that clause
 stays OPEN with the reason). Negatief cases live in
 `corpus/negatief/wf###-<slug>/`; the directory name declares the violated
-rule and gate 3 requires the verifier to reject the case for exactly that
-rule.
+rule and gate 3 requires the verifier to reject the case citing that rule
+(incidental extra violations are allowed).
 
 | ID | Statement (see ch. 2–4) | Verifier check | Golden | Negatief |
 |---|---|---|---|---|

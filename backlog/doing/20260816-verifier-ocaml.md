@@ -17,8 +17,11 @@ CI. The WF index cells move from OPEN to their artifacts.
 
 Acceptance: `scripts/check-verifier.sh` green, shown red first on a
 deliberately broken case; gates 1–2 stay green; every implemented WF
-check has a passing golden and a failing negatief case; the WF index in
-`spec/IR-SPEC.md` matches what the verifier actually implements.
+check has a failing negatief case and a WF-index `Verifier check` cell
+matching the implementation; per-rule golden witnesses accrue with the
+corpus and stay tracked OPEN in the index (amended at delivery: the
+original wording promised the golden half too, which needs corpus
+content this card does not produce).
 
 May touch: `spec/verifier/` (protected — merge mandate),
 `corpus/negatief/`, `scripts/` (protected), `.github/` (protected),

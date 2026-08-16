@@ -4,7 +4,14 @@
    declares (the schema is additionalProperties:false with every property
    required), every node object must carry the expected "node"
    discriminator, and every enum value must be a known member. Any
-   deviation raises [Error] with the JSON path — never a silent default. *)
+   deviation raises [Error] with the JSON path — never a silent default.
+
+   Two deliberate narrowings relative to bare JSON Schema, both fail-fast:
+   integer fields accept only canonical integer lexemes (a float-shaped
+   "2.0" or an integer beyond native range is a load error, matching the
+   byte-identical round-trip discipline of gate 2, which already pins the
+   canonical emitter form); and paths are built eagerly, which is
+   quadratic only on pathologically deep (100k+ nesting) documents. *)
 
 open Ast
 

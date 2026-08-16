@@ -82,7 +82,7 @@ green. Current gates:
    silently green.
 3. `scripts/check-verifier.sh` — the OCaml verifier (`spec/verifier/`)
    builds; every `corpus/golden/**/ir.json` is verifier-clean; every
-   `corpus/negatief/<wf###-slug>/ir.json` is rejected for exactly the WF
+   `corpus/negatief/<wf###-slug>/ir.json` is rejected, citing the WF
    rule its directory name declares; an empty negatief corpus is a
    failure, never silently green.
 

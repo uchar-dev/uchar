@@ -6,9 +6,10 @@
 #   2. every corpus/golden/**/ir.json is verifier-clean (exit 0);
 #   3. every corpus/negatief/<case>/ir.json is rejected (non-zero exit) AND
 #      the verifier reports the WF rule the case declares in its directory
-#      name (convention: wf###-<slug>, e.g. wf001-duplicate-objecttype).
-#      A negatief corpus without cases is reported explicitly, never
-#      silently green.
+#      name (convention: wf###-<slug>, e.g. wf001-duplicate-parameter).
+#      Additional incidental violations are allowed; a case that passes, or
+#      fails only for other rules, turns the gate red. A negatief corpus
+#      without cases is reported explicitly, never silently green.
 #
 # With explicit file arguments it runs the verifier against those files and
 # prints the reports (handy for a dump outside the repo).
@@ -51,18 +52,23 @@ fi
 status=0
 
 # check 2: golden dumps are verifier-clean.
+list=$(mktemp) || exit 2
+trap 'rm -f "$list"' EXIT
+
 n_golden=0
-for f in $(find corpus/golden -name ir.json 2>/dev/null | sort); do
+find corpus/golden -name ir.json 2>/dev/null | sort > "$list"
+while IFS= read -r f; do
     n_golden=$((n_golden + 1))
     if ! out=$("$BIN" "$f" 2>&1); then
         printf 'FAIL: golden case %s is not verifier-clean:\n%s\n' "$f" "$out" >&2
         status=1
     fi
-done
+done < "$list"
 
 # check 3: negatief cases are rejected for the declared rule.
 n_neg=0
-for f in $(find corpus/negatief -name ir.json 2>/dev/null | sort); do
+find corpus/negatief -name ir.json 2>/dev/null | sort > "$list"
+while IFS= read -r f; do
     n_neg=$((n_neg + 1))
     dir=$(basename "$(dirname "$f")")
     id=$(printf '%s' "$dir" | sed -n 's/^wf0*\([0-9][0-9]*\)-.*/\1/p')
@@ -81,7 +87,7 @@ for f in $(find corpus/negatief -name ir.json 2>/dev/null | sort); do
             "$f" "$expect" "$out" >&2
         status=1
     fi
-done
+done < "$list"
 
 if [ "$n_golden" -eq 0 ] && [ "$n_neg" -eq 0 ]; then
     echo 'check-verifier: build OK; 0 corpus files (corpus not yet populated)'

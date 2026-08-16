@@ -127,6 +127,18 @@ let units_compatible a b =
   | Some x, Some y -> units_convertible x y
   | _ -> false
 
+(* WF-035/036 mirrored convenience (IR-SPEC ch. 4.6): a unitless numeric
+   literal adopts its sibling's unit before any unit-compatibility check. *)
+let is_unitless_numeric_literal = function
+  | Some (Literal { typ = Some (Numeriek { eenheid = None; _ }); _ })
+  | Some (Literal { typ = Some (Percentage { eenheid = None; _ }); _ }) -> true
+  | _ -> false
+
+let units_compatible_adopting lexpr rexpr a b =
+  is_unitless_numeric_literal lexpr
+  || is_unitless_numeric_literal rexpr
+  || units_compatible a b
+
 (* Numeric literal lexeme sign (Dutch decimal comma; raw source string). *)
 let lexeme_negative s =
   let s = String.trim s in
@@ -1017,7 +1029,7 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
            when unit_of l <> None || unit_of r <> None ->
              [ v "WF-035" at "power operands must be unitless" ]
          | (Plus | Min), Some l, Some r when is_number_like l && is_number_like r ->
-             if not (units_compatible (unit_of l) (unit_of r)) then
+             if not (units_compatible_adopting links rechts (unit_of l) (unit_of r)) then
                [ v "WF-035" at "additive operands have incompatible units" ]
              else []
          | _ -> [])
@@ -1213,8 +1225,8 @@ and walk_cond ctx ~subject at (c : conditie) : violation list =
                 [ v "WF-036" (sub "rechts") ("ordering operand is " ^ datatype_kind r) ]
               else [])
            @ (if is_number_like l && is_number_like r
-                 && not (units_compatible (unit_of l) (unit_of r)) then
-                [ v "WF-036" at "ordering operands have incompatible units" ]
+                 && not (units_compatible_adopting links rechts (unit_of l) (unit_of r))
+              then [ v "WF-036" at "ordering operands have incompatible units" ]
               else [])
        | `Date, Some l, Some r ->
            List.concat_map
@@ -1230,7 +1242,7 @@ and walk_cond ctx ~subject at (c : conditie) : violation list =
            | Datum_in_dagen, Datum_tijd | Datum_tijd, Datum_in_dagen ->
                [ v "WF-036" at "equality across date precisions" ]
            | a, b when is_number_like a && is_number_like b ->
-               if not (units_compatible (unit_of a) (unit_of b)) then
+               if not (units_compatible_adopting links rechts (unit_of a) (unit_of b)) then
                  [ v "WF-036" at "equality operands have incompatible units" ]
                else []
            | a, b when datatype_kind a <> datatype_kind b
@@ -1318,8 +1330,8 @@ let expression_layer ctx =
         | Some (Attribuut_ref { objecttype; _ }) -> objecttype
         | _ -> None
       in
-      (match r.doel with Some e -> walk_expr ctx ~subject (at ^ "/doel") e | None -> [])
-      @ (match r.waarde with Some e -> walk_expr ctx ~subject (at ^ "/waarde") e | None -> [])
+      (* The target lvalue is WF-022's job, not part of the WF-034 walk. *)
+      (match r.waarde with Some e -> walk_expr ctx ~subject (at ^ "/waarde") e | None -> [])
       @ (match r.rr_voorwaarde with
          | Some c -> walk_cond ctx ~subject (at ^ "/voorwaarde") c
          | None -> []))
