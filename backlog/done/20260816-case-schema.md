@@ -27,3 +27,16 @@ list), `corpus/golden/` (case files + README), `spec/CONSTRUCTS.md`
 
 Out of scope: `ref/`; machine replay of expectations (the oracle guard
 lands with `ref/`); the scenario surface syntax.
+
+Result: uchar-case-v0 landed: the schema (six expectation kinds,
+exact-lexeme numbers, unit-normalised values, explicit-empty as an
+expectation only), five case files over three goldens (penningdrempel
+per the ch. 5.7 trace; berging per the ch. 4.6 recurrence; vondstnummer
+consistent/date-violation/duplicate-number), gate 4 red-then-green with
+CI job, docs in the schema and golden READMEs, row-37 note updated.
+Two deliberate narrowings vs the donor recorded (no rule scope;
+date-only evaluation date); cross-item invariants assigned to the ref/
+case loader. Verified by two adversarial reviewers (0 blockers, 5
+minors - all fixed). Deliberately left: machine replay (the ref/
+oracle guard); case files for vondsttelling and penningjaar (need
+temporal/aggregation replay semantics first).
