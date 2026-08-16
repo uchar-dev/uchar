@@ -17,3 +17,8 @@ May touch: `spec/verifier/lib/checks.ml` (protected — merge mandate),
 `spec/IR-SPEC.md` (protected; WF-034 cells only), `backlog/`.
 
 Out of scope: loader; other WF rules; corpus.
+
+Result: aggregation source arguments (elementObjecttype present) now
+resolve against declared roles and tolerate the systematic v0 sentinel;
+WF-034 index cell records the exception. Witnessed by the vondsttelling
+golden (landed by the goldens card); existing corpus verdicts unchanged.

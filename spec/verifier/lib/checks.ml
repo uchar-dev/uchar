@@ -971,6 +971,34 @@ let scalar_one_arg_kinds =
 
 let aggregation_kinds = [ Som; Totaal; Aantal; Minimum; Maximum; Eerste; Laatste ]
 
+(* Does [name] match a declared role's name or plural (ci)? *)
+let is_role_name ctx name =
+  List.exists
+    (fun (_, ft) ->
+      List.exists
+        (fun r ->
+          (match r.rol_naam with Some n -> norm n = norm name | None -> false)
+          || match r.rol_meervoud with Some n -> norm n = norm name | None -> false)
+        ft.rollen)
+    ctx.doc.feittypen
+
+(* The v0 instance-fold source wart (`CONSTRUCTS.md` row 1): a count/fold
+   over a fact-type relation encodes its source as a pseudo-AttribuutRef
+   naming a ROLE (usually the plural), typed with the unknown sentinel.
+   Legitimate v0; the row-1 split removes the encoding in v1. Such an
+   argument is checked here instead of by the generic walk. *)
+let aggregation_source_check ctx at = function
+  | Attribuut_ref { attribuut = Some a; objecttype = Some otn;
+                    navigatie_rol = None; navigatie_pad = []; _ } -> (
+      match objecttype ctx otn with
+      | None -> [ v "WF-034" at ("object type '" ^ otn ^ "' is not declared") ]
+      | Some ot ->
+          if has_attr ot a || has_kenmerk ot a || is_role_name ctx a then []
+          else
+            [ v "WF-034" at
+                ("'" ^ a ^ "' is neither a member of '" ^ otn ^ "' nor a declared role") ])
+  | _ -> []
+
 let rec walk_expr ctx ~subject at (e : expr) : violation list =
   let sub p = at ^ "/" ^ p in
   let typ_checks =
@@ -1115,7 +1143,11 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
          | None -> [])
       @ List.concat
           (List.mapi
-             (fun i a -> walk_expr ctx ~subject (Printf.sprintf "%s/argumenten/%d" at i) a)
+             (fun i a ->
+               let p = Printf.sprintf "%s/argumenten/%d" at i in
+               match a, f.element_objecttype with
+               | Attribuut_ref _, Some _ -> aggregation_source_check ctx p a
+               | _ -> walk_expr ctx ~subject p a)
              f.argumenten)
   | Afgerond { basis; _ } ->
       (match basis with Some e -> walk_expr ctx ~subject (sub "basis") e | None -> [])
