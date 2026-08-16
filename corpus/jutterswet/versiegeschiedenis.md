@@ -86,9 +86,62 @@ De Tweede wijzigingsverordening voegt art. 6 (afstand) in. Tekst:
   weigeren te concluderen) is een ontwerpkeuze die de wet niet gemaakt
   heeft. Deze leemte is bewust onderdeel van het corpus.
 
+## v4 — de kwantitatieve uitbreiding (in werking 1 januari 2025)
+
+De Derde wijzigingsverordening (vastgesteld 10 november 2024) geeft het
+eiland zijn rekenwerk. Tekst: `wet-v4.md`. De wijziging in één oogopslag:
+art. 3 en 5 ruilen het vaste "twaalf" in voor de door de eilandraad
+vastgestelde **vondstdrempel** (art. 5: de helft daarvan); nieuw zijn
+art. 3a (aanmelding, gewicht in kilogrammen, vondstnummer), 3b (telling;
+stormvloeddag telt dubbel), 3c (stormvloeddag), 7 (jaarlijkse
+vaststelling van drempel en penningbedrag), 8 (penningbesluit en
+uitkering in euro's) en 9 (gezamenlijke berging: verdeling naar rato van
+gewicht, met per berger een maximum, afronding op hele euro's naar
+beneden, en de onverdeelde rest naar het eilandfonds; zonder vastgesteld
+gewicht gelijke delen).
+
+Semantische dekking die deze versie toevoegt:
+
+- **Parameters met vintages, fail-fast.** Drempel en bedrag gelden per
+  penningjaar en alleen indien tijdig vastgesteld; art. 7 zegt met
+  zoveel woorden dat een gemiste vaststelling *niet* stilzwijgend
+  doorloopt en dat de wet geen vervangende waarde kent — een gat in de
+  vintagereeks is een fout, nooit een default.
+- **Feitcreatie en registers.** De aanmelding (art. 3a) is het gesloten
+  organisatieregister uit de v1-lezing; het vondstnummer is uniek
+  *binnen een penningjaar* (uniciteit met samengestelde sleutel), en de
+  aanmelding hoort in het penningjaar van de vondstdag (consistentie).
+- **Aggregatie met dagsoort.** De telling van art. 3b is een som over
+  aanmeldingen waarin een stormvloeddag-vondst dubbel telt — aggregatie,
+  dagsoortpredicaat en voorwaardelijke weging in één bepaling.
+- **Eenheden.** Gewicht in kilogrammen, bedragen in euro's; de
+  verdeling van art. 9 rekent gewichtsverhoudingen om naar een
+  geldbedrag.
+- **Verdeling in alle modaliteiten.** Art. 9 combineert naar rato,
+  per-ontvanger-maximum, afronding-naar-beneden en de onverdeelde rest,
+  met gelijke delen als terugvalmethode.
+- **Objectcreatie.** Het penningbesluit van art. 8 is een gecreëerd
+  object met jaar en bedrag.
+- **Hardheid als beslistabel.** Art. 5 werkt nu op "de helft van de
+  vondstdrempel" — met de jaarlijkse drempel levert dat de
+  beslistabel-invulling die de hardheidstoets nodig heeft.
+
+**Vaststellingsbesluiten onder art. 7** (corpusdata; de waarden zijn
+data-plane materiaal voor de vintage-machinerie, geen wetstekst):
+
+| Besluit van | Penningjaar | Vondstdrempel | Penningbedrag |
+|---|---|---|---|
+| 26 november 2024 | 2025 | 12 | € 250 |
+| 25 november 2025 | 2026 | 14 | € 275 |
+
+De dossiers spelen onder drempel 12: Marrit (veertien) en Brecht
+(dertien) halen haar; Feiko, Gesa en Okko staan er met twaalf precies
+op — en de halve drempel van art. 5 is dan zes, het oude
+hardheidsgetal.
+
 ## Verder
 
 Latere wijzigingen — waaronder een raadsbesluit met terugwerkende kracht
 tot het begin van het lopende penningjaar — worden aan dit corpus
 toegevoegd zodra de machinerie voor terugwerking en kennistijd ze nodig
-heeft, samen met de kwantitatieve uitbreidingen uit `README.md`.
+heeft.

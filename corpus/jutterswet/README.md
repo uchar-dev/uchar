@@ -17,7 +17,8 @@ square van Phase 3 nodig heeft.
 | `wet-v0.md` | De oorspronkelijke wet (vijf artikelen; in werking 1 januari 2020) |
 | `wet-v2.md` | Geconsolideerde tekst na de Eerste wijzigingsverordening (art. 4 gelaagd + art. 4bis; 1 januari 2022) |
 | `wet-v3.md` | Geconsolideerde tekst na de Tweede wijzigingsverordening (art. 6 afstand; 1 januari 2024) |
-| `versiegeschiedenis.md` | De versies v0–v3 met data en leeswijzers — waaronder v1, de vondeling-lezing die de wetstekst niet wijzigt |
+| `wet-v4.md` | Geconsolideerde tekst na de Derde wijzigingsverordening (de kwantitatieve uitbreiding: art. 3a–3c, 7–9, vondstdrempel; 1 januari 2025) |
+| `versiegeschiedenis.md` | De versies v0–v4 met data en leeswijzers — waaronder v1, de vondeling-lezing die de wetstekst niet wijzigt, en de vaststellingsbesluiten onder art. 7 |
 | `dossiers.md` | Negen dossiers: feiten, rechtsvraag, bedoelde uitkomst per versie, valkuilen |
 
 De versiegeschiedenis is zelf corpusmateriaal voor regelversies, geldigheid
@@ -36,21 +37,21 @@ verwervings- en verliesgronden, persistentie en peildatum-aannames (v3), en
 een bewust opengelaten leemte (herziening van een art. 2-erkenning — het
 dossier "Norre, twee jaar later").
 
-Wat het eiland erbij krijgt om de volledige IR-oppervlakte te dekken
-(Phase-1-corpuswerk):
+De kwantitatieve uitbreiding is sinds v4 (`wet-v4.md`) wetstekst; de
+routekaart hieronder wijst per constructie de dragende artikelen aan:
 
-| Te dekken constructie | Jutterswet-uitbreiding |
+| Constructie | Jutterswet-artikel(en) |
 |---|---|
-| Parameters + vintages | penningbedrag en vondstdrempel, jaarlijks herzien door de eilandraad |
-| Aggregaties, feittypen/rollen | vondsten aangemeld bij de strandvoogd; "het aantal vondsten van de jutter in het penningjaar" |
-| Verdeling (alle modaliteiten) | opbrengst van een gezamenlijke berging verdeeld over de bergers — naar rato, met maximum, afronding en onverdeelde rest |
-| Eenheden en dimensies | vondstgewicht in kg, opbrengst in €, vondsten per kwartaal of vondstsoort |
-| Tijdlijnen + variabel startpunt | vast ingezetenschap als tijdlijn; erkenningsdatum als startpunt |
-| Dagsoorten | stormvloeddag (vondsten op een stormvloeddag tellen dubbel) |
-| Uniciteit, consistentie | vondstnummers uniek per penningjaar; aanmelddatum binnen het penningjaar |
-| Object-/feitcreatie | het penningbesluit als gecreëerd object; de aanmelding als feitcreatie |
-| Beslistabellen | de hardheidstoets van art. 5 als beslistabel |
-| Terugwerkende kracht / kennistijd | een later raadsbesluit dat terugwerkt tot het begin van het lopende penningjaar |
+| Parameters + vintages (fail-fast) | art. 7 (vondstdrempel en penningbedrag, jaarlijks; geen vervangende waarde) + de vaststellingsbesluiten in `versiegeschiedenis.md` |
+| Aggregaties, feittypen/rollen | art. 3a–3b (aanmelding bij de strandvoogd; de telling over het penningjaar) |
+| Verdeling (alle modaliteiten) | art. 9 (naar rato van gewicht, per-berger-maximum, afronding naar beneden, rest naar het eilandfonds; gelijke delen als terugval) |
+| Eenheden | art. 3a (kilogrammen), art. 7–9 (euro's) |
+| Tijdlijnen | art. 3b (het penningjaar als kalenderjaar); variabel startpunt (erkenningsdatum, vast ingezetenschap) blijft v3-lezingsmateriaal |
+| Dagsoorten | art. 3b–3c (stormvloeddag telt dubbel) |
+| Uniciteit, consistentie | art. 3a (vondstnummer eenmalig per penningjaar; aanmelding in het penningjaar van de vondstdag) |
+| Object-/feitcreatie | art. 8 (het penningbesluit), art. 3a (de aanmelding) |
+| Beslistabellen | art. 5 nieuwe stijl (de halve vondstdrempel) |
+| Terugwerkende kracht / kennistijd | nog niet gedekt — een later raadsbesluit met terugwerking volgt met de kennistijd-machinerie |
 
 ## Tweede casus: een echte regeling
 
