@@ -80,6 +80,34 @@ let connecting_role env ~from_type ~to_type =
   | [] -> Value.fault "no fact type relates %S to %S" from_type to_type
   | _ -> Value.fault "more than one fact type relates %S to %S" from_type to_type
 
+(* the unique fact type relating [from_type] to [to_type], with its
+   name and both roles — (fact-type name, role to_type fills, role
+   from_type fills). None when no fact type relates them (the linkless
+   creation shape); a fault when more than one does — v0 silently
+   dropped the back-link there, execution refuses to guess (recorded
+   delta, ch. 5.5). Shared with the ASP backend. *)
+let connecting_pair env ~from_type ~to_type =
+  let candidates =
+    List.filter_map
+      (fun (ftn, (ft : feittype)) ->
+        match ft.rollen with
+        | [ a; b ] ->
+            let ot r = Option.value r.rol_objecttype_naam ~default:"" in
+            if norm (ot a) = norm from_type && norm (ot b) = norm to_type then Some (ftn, b, a)
+            else if norm (ot b) = norm from_type && norm (ot a) = norm to_type then
+              Some (ftn, a, b)
+            else None
+        | _ -> None)
+      env.doc.feittypen
+  in
+  match candidates with
+  | [] -> None
+  | [ p ] -> Some p
+  | _ ->
+      Value.fault "more than one fact type relates %S to %S; the created object's back-link is \
+                   ambiguous (ch. 5.5)"
+        from_type to_type
+
 (* the explicit role binding (v1 extension, IR-SPEC ch. 2.6): resolve the
    named role of the named fact type. The verifier (WF-047) guarantees
    resolution on verifier-clean input; a dangling binding still faults. *)
@@ -664,6 +692,87 @@ let run_feit_creatie env world (fc : resolved_feit_creatie) =
             (w, false) targets)
   end
 
+(* ch. 5.5, non-recursive object creation: for each subject whose
+   condition holds, mint a deterministic instance of the created type,
+   apply the member initialisations (values evaluated on the subject;
+   characteristic constants), and link new object and subject over the
+   uniquely-derivable connecting relation — both ends. The idempotence
+   contract, mirrored from the pinned runtime: a 1:1 shape (the
+   created-side role is to-one) guards on the absence of an already
+   linked instance in the INPUT world — a case-supplied linked instance
+   blocks the creation (the snapshot narrowing is a recorded delta:
+   v0's guard is a live fact-base negation) — while the to-many and
+   linkless shapes guard per (rule × subject) through the
+   deterministic label. *)
+let run_object_creatie env ~world0 world (oc : resolved_object_creatie) =
+  if not (applies env oc.oc_geldigheid) then (world, false)
+  else begin
+    let name = Option.value oc.oc_naam ~default:"<objectcreatie>" in
+    let nieuw = req "ObjectCreatie.nieuwType" oc.nieuw_type in
+    let subject = req "ObjectCreatie.subject" oc.oc_subject in
+    let pair = connecting_pair env ~from_type:subject ~to_type:nieuw in
+    over_subjects world ~otype:subject ~rule:name (fun w self err ->
+        let fire =
+          match oc.oc_voorwaarde with Some c -> eval_cond env w self ~err c | None -> true
+        in
+        if not fire then (w, false)
+        else begin
+          let label = Printf.sprintf "%s::%s" name self.label in
+          let blocked =
+            match pair with
+            | Some (_, new_role, _) when not new_role.rol_meervoudig -> (
+                match SMap.find_opt self.label world0.World.instances with
+                | Some i0 -> role_links world0 i0 new_role <> []
+                | None -> false)
+            | _ -> false
+          in
+          if blocked || SMap.mem label w.World.instances then (w, false)
+          else begin
+            let w =
+              World.add_instance w
+                { World.label; otype = nieuw; attrs = SMap.empty; chars = [];
+                  links = SMap.empty; tls = SMap.empty }
+            in
+            let w =
+              List.fold_left
+                (fun w (t : toekenning) ->
+                  let m = req "Toekenning.attribuut" t.toe_attribuut in
+                  if t.toe_kenmerk then (
+                    match t.toe_waarde with
+                    | Some (Literal { waarde = Some "waar"; _ }) ->
+                        fst (World.set_char w ~label ~char:m)
+                    | Some (Literal { waarde = Some "onwaar"; _ }) -> w
+                    | _ ->
+                        Value.fault
+                          "characteristic initialisation of %S is not a boolean constant (WF-027)"
+                          m)
+                  else
+                    let v = eval_expr env w self ~err (req "Toekenning.waarde" t.toe_waarde) in
+                    fst
+                      (World.write_attr w ~label ~attr:m
+                         ~decl:(attr_decl env ~otype:nieuw ~attr:m)
+                         v))
+                w oc.toekenningen
+            in
+            let w =
+              match pair with
+              | None -> w
+              | Some (_, new_role, subj_role) ->
+                  let w, _ =
+                    World.add_link w ~label:self.label ~keys:(role_keys new_role)
+                      ~many:new_role.rol_meervoudig ~target:label
+                  in
+                  let w, _ =
+                    World.add_link w ~label ~keys:(role_keys subj_role)
+                      ~many:subj_role.rol_meervoudig ~target:self.label
+                  in
+                  w
+            in
+            (w, true)
+          end
+        end)
+  end
+
 (* ch. 7.1/7.2, the ladder group on one target (a singleton group is
    the plain ladder): each member decides independently — highest rung
    that decides wins, with fall-through and speculative deposits per
@@ -897,11 +1006,11 @@ let fixpoint ~budget step world =
   go 0 world
 
 let evaluate env world =
-  if env.doc.object_creaties <> [] then
-    Value.fault "object creation is not implemented; no corpus case exercises it";
   if env.doc.uniciteit_unies <> [] then Value.fault "uniqueness unions not implemented in this card";
   if env.doc.regel_groepen <> [] then Value.fault "rule groups are not implemented in this card";
   parameterset_check env;
+  (* the input-world snapshot the 1:1 creation guard reads (ch. 5.5) *)
+  let world0 = world in
   (* Strata (ch. 6.3), computed from the same dependency graph the
      verifier checks (Ir_v0.Checks.dep_forms — shared by construction,
      so ref/ and WF-045/046 cannot drift). Every form gets the smallest
@@ -951,6 +1060,7 @@ let evaluate env world =
   let verdeling_stratum i = stratum_of (Printf.sprintf "/verdelingen/%d" i) in
   let ladder_stratum i = stratum_of (Printf.sprintf "/defaultLadders/%d" i) in
   let fc_stratum i = stratum_of (Printf.sprintf "/feitCreaties/%d" i) in
+  let oc_stratum i = stratum_of (Printf.sprintf "/objectCreaties/%d" i) in
   let cons_stratum i = stratum_of (Printf.sprintf "/consistenties/%d" i) in
   let uni_stratum i = stratum_of (Printf.sprintf "/uniciteiten/%d" i) in
   let indexed l = List.mapi (fun i x -> (i, x)) l in
@@ -1022,7 +1132,17 @@ let evaluate env world =
         (world, false)
         (indexed env.doc.feit_creaties)
     in
-    (world, c1 || c2 || c3 || c4)
+    let world, c5 =
+      List.fold_left
+        (fun (w, ch) (i, oc) ->
+          if oc_stratum i > k then (w, ch)
+          else
+            let w, c = run_object_creatie env ~world0 w oc in
+            (w, ch || c))
+        (world, false)
+        (indexed env.doc.object_creaties)
+    in
+    (world, c1 || c2 || c3 || c4 || c5)
   in
   let budget = 10_000 in
   (* for k = 0, 1, …: the forms of stratum <= k evaluate to their

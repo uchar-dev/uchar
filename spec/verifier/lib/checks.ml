@@ -1837,7 +1837,15 @@ let dep_forms ctx : dep_form list =
         let subject = o.oc_subject in
         let writes =
           (n_pop nt)
-          :: List.filter_map
+          :: (match subject with
+             | Some st -> (
+                 (* the back-link (ch. 5.5): a uniquely-derivable
+                    connecting relation is written on both ends *)
+                 match connecting_candidates ctx ~from_type:st ~to_type:nt with
+                 | [ fn ] -> [ n_rel fn ]
+                 | _ -> [])
+             | None -> [])
+          @ List.filter_map
                (fun (t : toekenning) ->
                  Option.map
                    (fun a -> if t.toe_kenmerk then n_char nt a else n_attr nt a)
@@ -1846,10 +1854,16 @@ let dep_forms ctx : dep_form list =
         in
         let reads =
           strict_unless_char
-            (List.fold_left
-               (fun acc (t : toekenning) -> dep_opt ~subject acc t.toe_waarde)
-               (cond ~subject o.oc_voorwaarde)
-               o.toekenningen)
+            ((* iterating the subject population is a read (ch. 6.1):
+                it orders creation-after-creation, and a creation whose
+                subject is its own created type becomes a WF-045 cycle
+                instead of a diverging fixpoint or an unbounded
+                grounding *)
+             (match subject with Some st -> [ (n_pop st, Dep_pos) ] | None -> [])
+            @ List.fold_left
+                (fun acc (t : toekenning) -> dep_opt ~subject acc t.toe_waarde)
+                (cond ~subject o.oc_voorwaarde)
+                o.toekenningen)
         in
         {
           df_at = at;

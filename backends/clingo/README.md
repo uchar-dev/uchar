@@ -32,6 +32,15 @@ spec bug.
 - Negated characteristic reads are negation-as-failure — sound because
   WF-045/046 guarantee stratifiability; the verifier is thereby also
   the guard that a document is clingo-suitable.
+- Object creation (IR-SPEC ch. 3.3; ch. 5.5, non-recursive) mints the
+  created instance as a deterministic function term `ocN(Subject)` —
+  set semantics carries the per-(rule × subject) idempotence, exactly
+  the reference interpreter's deterministic label. Member
+  initialisations are `val`/`heeft` heads on the term; the
+  uniquely-derivable connecting relation lands both `rol/3` ends; the
+  1:1 linked-instance guard is `not inputrol/3` over the case links
+  only (ch. 5.5's input-snapshot narrowing). An ambiguous connecting
+  relation faults the translation, as in `ref/`.
 - Fact creation (IR-SPEC ch. 3.4; ch. 5.5) derives `rol/3`: the join
   chain (anchor → tussenstappen → joinRol → target) becomes a body
   join over `rol/3`, and the head lands the created relation's links —

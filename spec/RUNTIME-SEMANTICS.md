@@ -1179,6 +1179,34 @@ duplicate. The idempotence contract (v0 realises it with two guards —
 a linked-instance check where the created object references its
 subject, else a per-(rule, subject) creation marker): **one creation per
 rule per subject** unless the fact base itself changed the question.
+Executed (non-recursive): for each subject whose condition holds, a
+deterministic instance of the created type is minted, the member
+initialisations apply (values evaluated on the subject; a
+characteristic constant sets the mark), and new object and subject are
+linked over the **uniquely-derivable** connecting relation, both ends.
+The 1:1 shape (a to-one created-side role) realises the
+linked-instance guard: an already linked instance — a case-supplied
+one included — blocks the creation; the executed guard reads the
+**input world** (a snapshot: v0's live fact-base negation is narrowed,
+recorded — cross-form blocking through links laid during evaluation is
+not mirrored). The to-many and linkless shapes realise the marker as
+the deterministic mint itself. More than one connecting relation is a
+**fault** — v0 silently drops the back-link there ("onopgelost
+terugkoppeling"); execution refuses to guess (recorded delta, the red
+witness `corpus/rood/ambiguous-backlink`).
+
+Worked example (absolute; the anchor `jutterswet-penninguitgifte`
+verbatim): every penninggerechtigde jutter gets a created Penning
+(bedrag = the jutter's vondstwaarde; the characteristic `uitgereikt`
+set) and, over a 1:1 relation, a created Dossier. Folds from the
+subject read the mint: **1** penning totalling **12**, **1** dossier;
+an ineligible jutter reads **0/0/0**; a consistency over every Penning
+witnesses the characteristic on the created instance. The guards,
+observable: a jutter who already holds an input-penning (bedrag 5,
+not uitgereikt) gets a second one — **2** penningen totalling **12**,
+input and mint mixing in one fold, and the un-marked input penning
+turns the case **inconsistent** — while the input-dossier on the 1:1
+relation blocks: **1** dossier, the linked-instance guard pinned.
 Relation creation (fact creation) is naturally idempotent — creating an
 already-present link is a no-op write. For each anchor whose condition
 holds, the join chain (anchor → path steps → join hop, `IR-SPEC.md`
@@ -1324,7 +1352,7 @@ Each rule form reads and writes nodes:
 | characteristic attribution | its target characteristic | idem |
 | allocation | target attribute; declared remainder attribute | source amount; ratio, maximum and ordering attributes; condition reads; population(target type) |
 | consistency / uniqueness | channel(own name) | assertion operands / key attributes |
-| object creation | the attributes and characteristics its toekenningen set on the created type; population(created type) | condition and toekenning-value reads on the anchor |
+| object creation | the attributes and characteristics its toekenningen set on the created type; population(created type); relation(the uniquely-derivable connecting fact type — the back-link, ch. 5.5) | condition and toekenning-value reads on the anchor; population(subject type) — iterating the subjects is a read: it orders creation-after-creation, and a self-typed creation becomes a WF-045 cycle instead of a diverging fixpoint or an unbounded grounding |
 | relation creation | population(target-role filler type); relation(created fact type) | condition reads on the anchor; relation(each hop of the join-chain traversal, `IR-SPEC.md` ch. 3.4) |
 
 Edges run producer → consumer — from every form that writes a node to

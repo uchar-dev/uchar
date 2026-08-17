@@ -9,10 +9,18 @@ module Value = Uchar_ref.Value
 let fault = Value.fault
 
 type atom = { name : string; args : arg list }
-and arg = A_str of string | A_int of int
 
-(* atoms as clingo prints them: name("string",-3,...) — our strings
-   carry no quotes or escapes *)
+and arg =
+  | A_str of string
+  | A_int of int
+  | A_term of string
+      (* an uninterpreted function term — a created instance
+         (translate's ocN(Subject) minting); opaque here, so it can
+         never match a case label in an expectation *)
+
+(* atoms as clingo prints them: name("string",-3,oc0("A1"),...) — our
+   strings carry no quotes or escapes; a function-term argument is cut
+   at the top-level comma (parenthesis-depth and quote aware) *)
 let parse_atom (s : string) : atom =
   match String.index_opt s '(' with
   | None -> { name = s; args = [] }
@@ -29,12 +37,25 @@ let parse_atom (s : string) : atom =
             args := A_str (String.sub body (!pos + 1) (close - !pos - 1)) :: !args;
             pos := close + 1
         | _ ->
-            let stop = match String.index_from_opt body !pos ',' with Some c -> c | None -> n in
-            let lex = String.trim (String.sub body !pos (stop - !pos)) in
+            let stop = ref !pos and depth = ref 0 and in_str = ref false in
+            while
+              !stop < n
+              && not (body.[!stop] = ',' && !depth = 0 && not !in_str)
+            do
+              (match body.[!stop] with
+              | '"' -> in_str := not !in_str
+              | '(' when not !in_str -> incr depth
+              | ')' when not !in_str -> decr depth
+              | _ -> ());
+              incr stop
+            done;
+            let lex = String.trim (String.sub body !pos (!stop - !pos)) in
             (match int_of_string_opt lex with
             | Some v -> args := A_int v :: !args
-            | None -> fault "unparsable clingo term %S in %S" lex s);
-            pos := stop);
+            | None ->
+                if String.contains lex '(' then args := A_term lex :: !args
+                else fault "unparsable clingo term %S in %S" lex s);
+            pos := !stop);
         if !pos < n && body.[!pos] = ',' then incr pos
       done;
       { name; args = List.rev !args }
