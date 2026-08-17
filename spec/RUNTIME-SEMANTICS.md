@@ -1554,11 +1554,12 @@ The declared-unordered group and the §9.5 conflict path are the anchor
 7.6.3's outcomes — differing grounds → no write + one channel fact,
 equal grounds → one write and no conflict, input kept standing under a
 conflict, the characteristic conflict — machine-checked through both
-executors; the wire marking is `ongeordend`, IR-SPEC ch. 6.1). Still
-design-only: the v0 desugaring of existing rule forms into ladders,
-and rule-readability of the conflict fact (OPEN). Worked outcomes for
-those remain pinned prose — binding on the implementation, not yet
-machine-checked.*
+executors; the wire marking is `ongeordend`, IR-SPEC ch. 6.1). The v0
+desugaring is ch. 7.7, machine-checked by the
+`jutterswet-waardering-v0vorm` anchor (ref replays the v0 forms
+natively, the ASP backend the desugared ladder — the gate-6
+differential witnesses the lowering). Only rule-readability of the
+conflict fact stays OPEN.*
 
 ### 7.1 The model: the ladder, and fall-through as its semantics
 
@@ -1758,8 +1759,47 @@ gevuld value; characteristic target: always — the boolean decision).
    channel fact; the same group both writing 10 → **10**, no conflict
    (equal values).
 
+### 7.7 The v0 desugaring
+
+How the existing v0 rule forms read as ladders — the lowering that
+retires ch. 5.4's guard as mechanism (ch. 7.3) and lets a backend
+serve the old forms through the new machinery:
+
+| v0 form(s) on one (type, attribute) target | Ladder reading |
+|---|---|
+| one version-free computing rule (Gelijkstelling/Berekening) | one rung: justification = its condition (an unconditional rule gets the vacuously true empty-ALLE), consequence = its value |
+| plus at most one **unconditional**, version-free Initialisatie | plus the ch. 7.3 initialisation rung (lowest) |
+
+Outside the desugaring's domain — left as v0 forms, faulted by a
+consumer that cannot carry them, never guessed: **conditional
+initialisations** (their justification would need the input-emptiness
+guard conjoined, which is not a writable condition — WF-051 forbids
+reading the own target), **versioned forms** (version selection is
+temporal, ch. 7.4 — folding windows into justifications would conflate
+the two mechanisms), and **multiple computing rules on one target**
+(their v0 meaning is agenda order — exactly what the ladder exists to
+replace; ordering them needs authorial intent, not a transformation).
+A single characteristic attribution is trivially its own one-rung
+ladder — recorded, not transformed.
+
+**The pinned delta, and the mirror hole it repairs.** In the confluent
+domain — the computing rule evaluates gevuld or does not fire — the
+two readings agree, and that agreement is machine-checked: the anchor
+`corpus/golden/anchor/jutterswet-waardering-v0vorm` carries the v0
+forms, `ref/` replays them **natively** (ch. 5.4 semantics) while the
+ASP backend translates the **desugared** document (`Ir_v0.Desugar`,
+the table above, through the ch. 6.1 ladder machinery) — gate 6
+demands both readings coincide. Outside it, a computing rule that
+evaluates **leeg** beside an initialisation is *divergent* in the v0
+reading: the empty write (ch. 1.2g) and the refill alternate and no
+fixpoint exists — `ref/` faults on the pass budget; the ladder reading
+*defines* the case (fall-through; input left standing, ch. 7.1). The
+desugaring therefore repairs a hole rather than preserving it; no case
+can pin the v0 side of that delta (a fault is not an expectation), so
+it is pinned here as prose and exercised in the card's verification
+record.
+
 ## Chapters (planned)
 
-*(none — chapters 1–8 are drafted; ch. 7's ladder — both target kinds
-and the unordered group — is landed; the v0 desugaring awaits its card
-as noted in its status line)*
+*(none — chapters 1–8 are drafted and ch. 7 is complete: both target
+kinds, the unordered group, and the v0 desugaring are landed)*

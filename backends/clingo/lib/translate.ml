@@ -633,6 +633,13 @@ let translate_case ctx (case : Case.t) =
 (* --- the program --------------------------------------------------------- *)
 
 let translate (doc : document) (case : Case.t) : string =
+  (* the ch. 7.7 v0 desugaring: initialisation-plus-computation pairs
+     read as ladders here, so the ladder machinery (including the
+     defeasible input) carries them — while ref/ replays the v0 forms
+     natively. Gate 6's differential thereby witnesses the desugaring
+     itself. Forms outside the desugaring's domain stay as they are
+     and fault below like before. *)
+  let doc = Ir_v0.Desugar.document doc in
   if doc.object_creaties <> [] || doc.feit_creaties <> [] then fault "creation not translated";
   if doc.uniciteit_unies <> [] || doc.regel_groepen <> [] then
     fault "uniqueness unions / rule groups not translated";

@@ -1,0 +1,38 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "M",
+        "objectType": "Jutter",
+        "attributes": {
+          "basisbedrag": {
+            "number": "50"
+          },
+          "waardering": {
+            "number": "40"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "erkend"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "M",
+      "attribute": "waardering",
+      "value": {
+        "number": "50"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

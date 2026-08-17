@@ -52,7 +52,12 @@ spec bug.
   pairwise conflict rule depositing `inconsistent/2` keyed by the
   target form, and outcome heads plus the defeasible input both
   guarded on the conflict — a conflicting group derives no `val`, so
-  the input value stands, exactly ref/'s no-write. On an attribute ladder
+  the input value stands, exactly ref/'s no-write.
+- v0's initialisation-plus-computation pairs are read through the
+  ch. 7.7 desugaring (`Ir_v0.Desugar`) before translation, so the
+  ladder machinery carries them — while `ref/` replays the v0 forms
+  natively; the gate-6 differential thereby witnesses the desugaring
+  itself. On an attribute ladder
   the consequence bindings sit inside `decides_n`, so a leeg
   consequence leaves it underivable — the gevuld gate for free — and
   the input value of a ladder target enters as `inputval/3`, standing

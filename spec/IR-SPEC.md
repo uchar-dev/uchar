@@ -76,7 +76,7 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
 3. **The rule layer** — normative draft (since v0.2).
 4. **The expression and condition layer** — **this release.**
 5. **Time** *(skeleton)*
-6. **Defaults and defeasibility** — the ladder is normative in both target kinds (ch. 6.1); the declared-unordered group and the v0 desugaring are design in `RUNTIME-SEMANTICS.md` ch. 7.
+6. **Defaults and defeasibility** — the ladder is normative in both target kinds, with unordered groups (ch. 6.1); the v0 desugaring is `RUNTIME-SEMANTICS.md` ch. 7.7.
 7. **Serialization** *(lands with `spec/schema/`)*
 8. **Well-formedness rules** — the WF index, at the end of this document.
 9. **The RegelSpraak dialect** *(skeleton)*
@@ -1227,9 +1227,11 @@ speculative (only the deciding rung's channel deposits persist).
   principles apply to the extended graph (a violating document
   typically trips those too; WF-051 names the ladder-specific rule).
 
-Still design-only (`RUNTIME-SEMANTICS.md` ch. 7): the v0 desugaring of
-existing rule forms into ladders, and rule-readability of the conflict
-fact (OPEN).
+The v0 desugaring of existing rule forms into ladders is
+`RUNTIME-SEMANTICS.md` ch. 7.7 (implemented as `Ir_v0.Desugar`, the
+ASP backend's reading; witnessed differentially by the
+`jutterswet-waardering-v0vorm` anchor). Rule-readability of the
+conflict fact stays OPEN.
 
 ---
 
