@@ -1549,9 +1549,14 @@ anchor `corpus/golden/anchor/jutterswet-vondstwaardering` (worked
 example 7.6.2's outcomes — computed wins, fall-through to
 initialisation on a computed leeg, input left standing, a deciding
 rung overwriting input — machine-checked through both executors).
-Still design-only, landing with later Phase-4 cards: the
-declared-unordered group and the §9.5 conflict path (7.6.3), and the
-v0 desugaring of existing rule forms into ladders. Worked outcomes for
+The declared-unordered group and the §9.5 conflict path are the anchor
+`corpus/golden/anchor/jutterswet-toelagegronden` (worked example
+7.6.3's outcomes — differing grounds → no write + one channel fact,
+equal grounds → one write and no conflict, input kept standing under a
+conflict, the characteristic conflict — machine-checked through both
+executors; the wire marking is `ongeordend`, IR-SPEC ch. 6.1). Still
+design-only: the v0 desugaring of existing rule forms into ladders,
+and rule-readability of the conflict fact (OPEN). Worked outcomes for
 those remain pinned prose — binding on the implementation, not yet
 machine-checked.*
 
@@ -1755,6 +1760,6 @@ gevuld value; characteristic target: always — the boolean decision).
 
 ## Chapters (planned)
 
-*(none — chapters 1–8 are drafted; ch. 7's ladder (both target kinds) is
-landed, its remaining slices await their Phase-4 cards as noted in its
-status line)*
+*(none — chapters 1–8 are drafted; ch. 7's ladder — both target kinds
+and the unordered group — is landed; the v0 desugaring awaits its card
+as noted in its status line)*

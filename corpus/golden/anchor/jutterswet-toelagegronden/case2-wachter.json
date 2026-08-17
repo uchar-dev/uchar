@@ -1,0 +1,36 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "M",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "wachter"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "M",
+      "attribute": "toelage",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "M",
+      "characteristic": "gerechtigd"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

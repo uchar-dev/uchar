@@ -406,6 +406,9 @@ type default_ladder = {
   dl_kenmerk : string option; (* target characteristic — exactly one of the two *)
   dl_attribuut : string option; (* target attribute *)
   rungs : rung list; (* descending priority: highest first *)
+  dl_ongeordend : bool;
+      (* declared-unordered (ch. 7.2): multiple ladders on one target are
+         admissible iff every one carries this marking *)
   dl_bron : string option;
   dl_geldigheid : geldigheid option;
 }

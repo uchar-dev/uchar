@@ -47,7 +47,12 @@ spec bug.
   lowering verbatim: one decides predicate per rung, outcome heads
   guarded by `not decides_m` for every higher rung — sound NAF because
   WF-051 makes displacement edges negative (the verifier remains the
-  guard that a document is clingo-suitable). On an attribute ladder
+  guard that a document is clingo-suitable). A declared-unordered
+  group adds the ch. 7.2 layer: per-member outcome predicates, a
+  pairwise conflict rule depositing `inconsistent/2` keyed by the
+  target form, and outcome heads plus the defeasible input both
+  guarded on the conflict — a conflicting group derives no `val`, so
+  the input value stands, exactly ref/'s no-write. On an attribute ladder
   the consequence bindings sit inside `decides_n`, so a leeg
   consequence leaves it underivable — the gevuld gate for free — and
   the input value of a ladder target enters as `inputval/3`, standing

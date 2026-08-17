@@ -2061,6 +2061,10 @@
           "type": "string",
           "description": "Attribute-ladder target; a ladder carries exactly one of kenmerk/attribuut (WF-050)."
         },
+        "ongeordend": {
+          "type": "boolean",
+          "description": "Declared-unordered (ch. 7.2): multiple ladders on one target are admissible iff every one carries this marking; differing simultaneous decisions route to the \u00a79.5 channel."
+        },
         "rungs": {
           "type": "array",
           "items": {

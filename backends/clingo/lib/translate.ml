@@ -332,73 +332,138 @@ let translate_regel ctx (r : resolved_regel) =
           | _ -> fault "rule kind not translated")
       | _ -> fault "unsupported rule target")
 
-(* the default ladder (RUNTIME-SEMANTICS ch. 7, IR-SPEC
-   ch. 6): the ch. 7.5 decides_m lowering — one decides predicate per
-   rung (justification body; on a characteristic every justified rung
-   decides), and an attribution head only for besluit-true rungs,
-   guarded by `not decides_m` for every higher rung. Sound NAF: the
-   ladder's displacement edges are WF-051 negative edges. *)
-let translate_ladder ctx i (l : default_ladder) =
-  (match l.dl_geldigheid with
-  | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
-      fault "ladder validity windows are not translated yet"
-  | _ -> ());
+(* the ladder group (RUNTIME-SEMANTICS ch. 7, IR-SPEC ch. 6.1): the
+   ch. 7.5 decides_m lowering per member — decides predicates per rung,
+   an outcome predicate per member (highest deciding rung wins via
+   `not decides_m` guards; on an attribute ladder the consequence
+   bindings sit inside decides, so a leeg consequence is underivable —
+   the gevuld gate for free) — and the ch. 7.2 group layer on top: a
+   pairwise conflict rule, outcome heads and the defeasible input both
+   guarded on the conflict, and the conflict deposited as
+   inconsistent/2 keyed by the target form. A singleton group elides
+   the conflict machinery. Sound NAF because WF-051 makes displacement
+   edges negative (the verifier remains the guard that a document is
+   clingo-suitable). *)
+let translate_ladder_group ctx gidx (members : (int * default_ladder) list) =
+  let _, l0 = List.hd members in
+  List.iter
+    (fun ((_, l) : int * default_ladder) ->
+      match l.dl_geldigheid with
+      | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
+          fault "ladder validity windows are not translated yet"
+      | _ -> ())
+    members;
   let subject = "S" in
-  let base = Printf.sprintf "is_a(%s,%s)" subject (str l.dl_onderwerp) in
-  let d n = Printf.sprintf "dl%d_decides_%d(%s)" i n subject in
-  match (l.dl_kenmerk, l.dl_attribuut) with
+  let base = Printf.sprintf "is_a(%s,%s)" subject (str l0.dl_onderwerp) in
+  let d i n = Printf.sprintf "dl%d_decides_%d(%s)" i n subject in
+  let conflict = Printf.sprintf "grp%d_conflict(%s)" gidx subject in
+  let singleton = List.length members = 1 in
+  let conflict_guard = if singleton then [] else [ "not " ^ conflict ] in
+  let target_form tn = l0.dl_onderwerp ^ "." ^ tn in
+  match (l0.dl_kenmerk, l0.dl_attribuut) with
   | Some k, None ->
-      List.iteri
-        (fun n (r : rung) ->
-          let atoms =
-            cond_atoms ctx ~subject ~subject_ot:l.dl_onderwerp
-              (req "rung justification" r.rung_voorwaarde)
-          in
-          head_body ctx (d n) (base :: atoms);
-          if req "rung besluit" r.rung_besluit then
-            let displaced = List.init n (fun m -> "not " ^ d m) in
+      let dec i = Printf.sprintf "dl%d_dec" i in
+      List.iter
+        (fun ((i, l) : int * default_ladder) ->
+          List.iteri
+            (fun n (r : rung) ->
+              let atoms =
+                cond_atoms ctx ~subject ~subject_ot:l.dl_onderwerp
+                  (req "rung justification" r.rung_voorwaarde)
+              in
+              head_body ctx (d i n) (base :: atoms);
+              let b = if req "rung besluit" r.rung_besluit then 1 else 0 in
+              let displaced = List.init n (fun m -> "not " ^ d i m) in
+              head_body ctx
+                (Printf.sprintf "%s(%s,%d)" (dec i) subject b)
+                ((d i n :: displaced) @ [ base ]))
+            l.rungs)
+        members;
+      if not singleton then begin
+        List.iter
+          (fun ((i, _) : int * default_ladder) ->
+            List.iter
+              (fun ((j, _) : int * default_ladder) ->
+                if i < j then
+                  head_body ctx conflict
+                    [ Printf.sprintf "%s(%s,X)" (dec i) subject;
+                      Printf.sprintf "%s(%s,Y)" (dec j) subject; "X != Y" ])
+              members)
+          members;
+        head_body ctx
+          (Printf.sprintf "inconsistent(%s,%s)" (str (target_form k)) subject)
+          [ conflict ]
+      end;
+      List.iter
+        (fun ((i, l) : int * default_ladder) ->
+          (* only members with an attribute-true rung can derive the
+             characteristic — eliding the head keeps clingo info-clean *)
+          if List.exists (fun (r : rung) -> req "rung besluit" r.rung_besluit) l.rungs then
             head_body ctx
               (Printf.sprintf "heeft(%s,%s)" subject (str k))
-              ((d n :: displaced) @ [ base ]))
-        l.rungs
+              ((Printf.sprintf "%s(%s,1)" (dec i) subject :: conflict_guard) @ [ base ]))
+        members
   | None, Some a ->
-      (* attribute ladder (ch. 7.5): decides_n carries the justification
-         AND the consequence bindings — an unbound (leeg) consequence
-         leaves decides_n underivable, which is the gevuld gate for
-         free. The initialisation rung's justification is the absence
-         of an input value; the input value itself stands defeasibly
-         (below). *)
-      let target_scale = pow10 (attr_decimals ctx ~otype:l.dl_onderwerp ~attr:a) in
-      let has_input = Printf.sprintf "dl%d_has_input(%s)" i subject in
-      head_body ctx has_input
-        [ base; Printf.sprintf "inputval(%s,%s,_)" subject (str a) ];
-      let rung_cond (r : rung) =
-        if r.rung_initialisatie then [ "not " ^ has_input ]
-        else
-          cond_atoms ctx ~subject ~subject_ot:l.dl_onderwerp
-            (req "rung justification" r.rung_voorwaarde)
-      in
-      List.iteri
-        (fun n (r : rung) ->
-          let conseq = req "rung consequentie" r.rung_consequentie in
-          let bindings, _, scale = expr_term ctx ~subject ~subject_ot:l.dl_onderwerp conseq in
-          if scale <> target_scale then
-            fault "rung value scale %d does not match target scale %d for %S" scale
-              target_scale a;
-          head_body ctx (d n) ((base :: rung_cond r) @ bindings);
-          let bindings2, term2, _ = expr_term ctx ~subject ~subject_ot:l.dl_onderwerp conseq in
-          let displaced = List.init n (fun m -> "not " ^ d m) in
+      let out i = Printf.sprintf "dl%d_out" i in
+      let target_scale = pow10 (attr_decimals ctx ~otype:l0.dl_onderwerp ~attr:a) in
+      let has_input = Printf.sprintf "grp%d_has_input(%s)" gidx subject in
+      head_body ctx has_input [ base; Printf.sprintf "inputval(%s,%s,_)" subject (str a) ];
+      List.iter
+        (fun ((i, l) : int * default_ladder) ->
+          let rung_cond (r : rung) =
+            if r.rung_initialisatie then [ "not " ^ has_input ]
+            else
+              cond_atoms ctx ~subject ~subject_ot:l.dl_onderwerp
+                (req "rung justification" r.rung_voorwaarde)
+          in
+          List.iteri
+            (fun n (r : rung) ->
+              let conseq = req "rung consequentie" r.rung_consequentie in
+              let bindings, _, scale =
+                expr_term ctx ~subject ~subject_ot:l.dl_onderwerp conseq
+              in
+              if scale <> target_scale then
+                fault "rung value scale %d does not match target scale %d for %S" scale
+                  target_scale a;
+              head_body ctx (d i n) ((base :: rung_cond r) @ bindings);
+              let bindings2, term2, _ =
+                expr_term ctx ~subject ~subject_ot:l.dl_onderwerp conseq
+              in
+              let displaced = List.init n (fun m -> "not " ^ d i m) in
+              head_body ctx
+                (Printf.sprintf "%s(%s,%s)" (out i) subject term2)
+                ((base :: rung_cond r) @ bindings2 @ displaced))
+            l.rungs)
+        members;
+      if not singleton then begin
+        List.iter
+          (fun ((i, _) : int * default_ladder) ->
+            List.iter
+              (fun ((j, _) : int * default_ladder) ->
+                if i < j then
+                  head_body ctx conflict
+                    [ Printf.sprintf "%s(%s,X)" (out i) subject;
+                      Printf.sprintf "%s(%s,Y)" (out j) subject; "X != Y" ])
+              members)
+          members;
+        head_body ctx
+          (Printf.sprintf "inconsistent(%s,%s)" (str (target_form a)) subject)
+          [ conflict ]
+      end;
+      let eff = Printf.sprintf "grp%d_eff(%s)" gidx subject in
+      List.iter
+        (fun ((i, _) : int * default_ladder) ->
           head_body ctx
-            (Printf.sprintf "val(%s,%s,%s)" subject (str a) term2)
-            ((base :: rung_cond r) @ bindings2 @ displaced))
-        l.rungs;
-      (* the defeasible input: the case value stands unless the ladder
-         decides (ref/'s write_attr overwrite, mirrored as default) *)
-      let decided = Printf.sprintf "dl%d_decided(%s)" i subject in
-      List.iteri (fun n _ -> head_body ctx decided [ d n ]) l.rungs;
+            (Printf.sprintf "val(%s,%s,V)" subject (str a))
+            ((Printf.sprintf "%s(%s,V)" (out i) subject :: conflict_guard) @ [ base ]);
+          head_body ctx eff
+            ((Printf.sprintf "%s(%s,_)" (out i) subject :: conflict_guard) @ [ base ]))
+        members;
+      (* the defeasible input: the case value stands unless the group
+         effectively writes (a conflicting group leaves it standing) *)
       head_body ctx
         (Printf.sprintf "val(%s,%s,V)" subject (str a))
-        [ Printf.sprintf "inputval(%s,%s,V)" subject (str a); base; "not " ^ decided ]
+        [ Printf.sprintf "inputval(%s,%s,V)" subject (str a); base; "not " ^ eff ]
   | _ -> fault "a ladder targets exactly one of a characteristic or an attribute"
 
 (* allocation, proportional with cap/floor/remainder (RUNTIME-SEMANTICS
@@ -583,7 +648,28 @@ let translate (doc : document) (case : Case.t) : string =
   emit ctx "#defined inputval/3.";
   List.iter (translate_regel ctx) doc.resolved_regels;
   List.iteri (translate_verdeling ctx) doc.verdelingen;
-  List.iteri (translate_ladder ctx) doc.default_ladders;
+  (let key (l : default_ladder) =
+     norm l.dl_onderwerp ^ ":"
+     ^
+     match (l.dl_kenmerk, l.dl_attribuut) with
+     | Some k, _ -> norm k
+     | _, Some a -> norm a
+     | _ -> "?"
+   in
+   let groups =
+     List.fold_left
+       (fun acc (i, l) ->
+         let k = key l in
+         match List.assoc_opt k acc with
+         | Some _ ->
+             List.map
+               (fun (k', ms) -> if k' = k then (k', ms @ [ (i, l) ]) else (k', ms))
+               acc
+         | None -> acc @ [ (k, [ (i, l) ]) ])
+       []
+       (List.mapi (fun i l -> (i, l)) doc.default_ladders)
+   in
+   List.iteri (fun gidx (_, ms) -> translate_ladder_group ctx gidx ms) groups);
   List.iteri (translate_consistentie ctx) doc.consistenties;
   List.iter (translate_uniciteit ctx) doc.uniciteiten;
   translate_case ctx case;

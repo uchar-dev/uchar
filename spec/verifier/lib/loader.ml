@@ -855,7 +855,7 @@ let rung path j : rung =
 let default_ladder path j : default_ladder =
   let kvs = obj path j in
   expect_node path kvs "DefaultLadder";
-  check_keys path kvs ~ext:[ "attribuut" ]
+  check_keys path kvs ~ext:[ "attribuut"; "ongeordend" ]
     [ "node"; "naam"; "onderwerp"; "kenmerk"; "rungs"; "bron"; "geldigheid" ];
   let f name = field path kvs name in
   {
@@ -867,6 +867,10 @@ let default_ladder path j : default_ladder =
       List.mapi
         (fun i x -> rung (path / "rungs" / string_of_int i) x)
         (list_ (path / "rungs") (f "rungs"));
+    dl_ongeordend =
+      (match ext_field path kvs "ongeordend" (fun p j -> bool_ p j) with
+      | Some b -> b
+      | None -> false);
     dl_bron = str_opt (path / "bron") (f "bron");
     dl_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
   }

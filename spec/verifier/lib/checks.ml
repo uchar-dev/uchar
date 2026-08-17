@@ -2193,14 +2193,26 @@ let wf050 ctx =
            | None -> []
            | Some tn -> (
                let key = norm l.dl_onderwerp ^ ":" ^ norm tn in
-               (if Hashtbl.mem targets key then
+               let group_size =
+                 List.length
+                   (List.filter
+                      (fun (o : default_ladder) ->
+                        match
+                          (o.dl_kenmerk, o.dl_attribuut)
+                        with
+                        | Some k, None -> norm o.dl_onderwerp ^ ":" ^ norm k = key
+                        | None, Some a -> norm o.dl_onderwerp ^ ":" ^ norm a = key
+                        | _ -> false)
+                      ctx.doc.default_ladders)
+               in
+               ignore targets;
+               (if group_size > 1 && not l.dl_ongeordend then
                   [ v "WF-050" at
-                      ("a second ladder on target '" ^ l.dl_onderwerp ^ "." ^ tn
-                     ^ "' — this format carries at most one (the declared-unordered group is \
-                        a later slice)") ]
-                else (
-                  Hashtbl.add targets key ();
-                  []))
+                      ("multiple ladders on target '" ^ l.dl_onderwerp ^ "." ^ tn
+                     ^ "' without the declared-unordered marking — priority is explicit \
+                        (rungs) or explicitly absent ('ongeordend'), never implicit \
+                        (ch. 7.2)") ]
+                else [])
                @
                (* the ch. 7.1 single-writer lift: any plain writer beside
                   the ladder would silently defeat its decisions *)

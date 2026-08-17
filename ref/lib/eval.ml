@@ -602,70 +602,98 @@ let run_verdeling env world (v : resolved_verdeling) =
               (w, ch || ch2))
   end
 
-(* ch. 7.1, the default ladder: per subject the highest rung that
-   DECIDES wins. Characteristic target: every justified rung decides
-   (attribute / do-not-attribute). Attribute target: a rung decides
-   when its justification holds AND its consequence evaluates gevuld —
-   a leeg consequence falls through; a ladder without a decision writes
-   nothing. The initialisation rung is justified iff the target is
-   empty (nobody else may write it, WF-050, so its current emptiness IS
-   input emptiness). Rung evaluation is speculative: only the deciding
-   rung's channel deposits persist (ch. 7.1). The strata machinery
-   (WF-051's negative displacement edges) has already put every
-   justification and consequence producer strictly below the ladder. *)
-let run_ladder env world (l : default_ladder) =
-  let name = Option.value l.dl_naam ~default:"ladder" in
-  if not (applies env l.dl_geldigheid) then (world, false)
-  else
-    over_subjects world ~otype:l.dl_onderwerp ~rule:name (fun w self cond_err ->
-        let speculate f =
-          let buf = ref [] in
-          let r = f (fun m -> buf := m :: !buf) in
-          (r, fun () -> List.iter cond_err (List.rev !buf))
-        in
-        let justified (r : rung) err =
-          if r.rung_initialisatie then (
-            match l.dl_attribuut with
-            | Some a -> World.attr self a = Value.Empty
-            | None -> Value.fault "initialisation rung on a characteristic ladder")
-          else eval_cond env w self ~err (req "rung justification" r.rung_voorwaarde)
-        in
-        let rec decide = function
-          | [] -> (w, false)
-          | (r : rung) :: rest -> (
-              match l.dl_kenmerk with
-              | Some k ->
-                  let j, flush = speculate (fun err -> justified r err) in
-                  if j then (
-                    flush ();
-                    if req "rung besluit" r.rung_besluit then
-                      World.set_char w ~label:self.label ~char:k
-                    else (w, false))
-                  else decide rest
-              | None -> (
-                  let a = req "ladder attribuut" l.dl_attribuut in
-                  if Ir_v0.Checks.attr_temporal (objecttype env l.dl_onderwerp) a then
-                    Value.fault
-                      "temporal attribute %S as a ladder target: temporal writes are not \
-                       implemented"
-                      a;
-                  let outcome, flush =
-                    speculate (fun err ->
-                        if justified r err then
-                          Some
-                            (eval_expr env w self ~err
-                               (req "rung consequentie" r.rung_consequentie))
-                        else None)
-                  in
-                  match outcome with
-                  | Some v when v <> Value.Empty ->
+(* ch. 7.1/7.2, the ladder group on one target (a singleton group is
+   the plain ladder): each member decides independently — highest rung
+   that decides wins, with fall-through and speculative deposits per
+   ch. 7.1 — then the group acts once: equal decisions write once;
+   differing decisions write nothing (the target keeps what the fact
+   base holds) and deposit one §9.5 fact keyed by the target form
+   (ch. 7.2, an end-state observation). The strata machinery (WF-051)
+   has already put every justification and consequence producer
+   strictly below every member. *)
+let run_ladder_group env world (members : default_ladder list) =
+  let l0 = List.hd members in
+  let target_form =
+    l0.dl_onderwerp ^ "."
+    ^
+    match (l0.dl_kenmerk, l0.dl_attribuut) with
+    | Some k, _ -> k
+    | _, Some a -> a
+    | _ -> "?"
+  in
+  (match l0.dl_attribuut with
+  | Some a when Ir_v0.Checks.attr_temporal (objecttype env l0.dl_onderwerp) a ->
+      Value.fault
+        "temporal attribute %S as a ladder target: temporal writes are not implemented" a
+  | _ -> ());
+  over_subjects world ~otype:l0.dl_onderwerp ~rule:target_form (fun w self cond_err ->
+      let speculate f =
+        let buf = ref [] in
+        let r = f (fun m -> buf := m :: !buf) in
+        (r, fun () -> List.iter cond_err (List.rev !buf))
+      in
+      (* one member's decision, its speculative deposits flushed only
+         when it decides *)
+      let member_decision (l : default_ladder) =
+        if not (applies env l.dl_geldigheid) then None
+        else
+          let justified (r : rung) err =
+            if r.rung_initialisatie then (
+              match l.dl_attribuut with
+              | Some a -> World.attr self a = Value.Empty
+              | None -> Value.fault "initialisation rung on a characteristic ladder")
+            else eval_cond env w self ~err (req "rung justification" r.rung_voorwaarde)
+          in
+          let rec decide = function
+            | [] -> None
+            | (r : rung) :: rest -> (
+                match l.dl_kenmerk with
+                | Some _ ->
+                    let j, flush = speculate (fun err -> justified r err) in
+                    if j then (
                       flush ();
-                      World.write_attr w ~label:self.label ~attr:a
-                        ~decl:(attr_decl env ~otype:l.dl_onderwerp ~attr:a)
-                        v
-                  | Some _ (* leeg: falls through *) | None -> decide rest))
-        in
-        decide l.rungs)
+                      Some (`Char (req "rung besluit" r.rung_besluit)))
+                    else decide rest
+                | None -> (
+                    let outcome, flush =
+                      speculate (fun err ->
+                          if justified r err then
+                            Some
+                              (eval_expr env w self ~err
+                                 (req "rung consequentie" r.rung_consequentie))
+                          else None)
+                    in
+                    match outcome with
+                    | Some v when v <> Value.Empty ->
+                        flush ();
+                        Some (`Attr v)
+                    | Some _ (* leeg: falls through *) | None -> decide rest))
+          in
+          decide l.rungs
+      in
+      let decisions = List.filter_map member_decision members in
+      match decisions with
+      | [] -> (w, false)
+      | d0 :: rest ->
+          let equal_dec a b =
+            match (a, b) with
+            | `Char x, `Char y -> x = y
+            | `Attr x, `Attr y -> Arith.equal x y
+            | _ -> false
+          in
+          if List.for_all (equal_dec d0) rest then (
+            match d0 with
+            | `Char true ->
+                World.set_char w ~label:self.label ~char:(req "ladder kenmerk" l0.dl_kenmerk)
+            | `Char false -> (w, false)
+            | `Attr v ->
+                let a = req "ladder attribuut" l0.dl_attribuut in
+                World.write_attr w ~label:self.label ~attr:a
+                  ~decl:(attr_decl env ~otype:l0.dl_onderwerp ~attr:a)
+                  v)
+          else
+            (* over-determination (ch. 7.2): no write, one channel fact *)
+            (World.insert_error w ~rule:target_form ~subject:self.label, false))
 
 (* consistency and uniqueness fire at the computed fixpoint; violations
    are idempotent channel facts (ch. 5.6) *)
@@ -863,6 +891,31 @@ let evaluate env world =
   let cons_stratum i = stratum_of (Printf.sprintf "/consistenties/%d" i) in
   let uni_stratum i = stratum_of (Printf.sprintf "/uniciteiten/%d" i) in
   let indexed l = List.mapi (fun i x -> (i, x)) l in
+  (* ladder groups (ch. 7.2): members share one (subject, target); a
+     group runs at the max of its members' strata *)
+  let ladder_groups =
+    let key (l : default_ladder) =
+      norm l.dl_onderwerp ^ ":"
+      ^
+      match (l.dl_kenmerk, l.dl_attribuut) with
+      | Some k, _ -> norm k
+      | _, Some a -> norm a
+      | _ -> "?"
+    in
+    List.fold_left
+      (fun acc (i, l) ->
+        let k = key l in
+        match List.assoc_opt k acc with
+        | Some _ ->
+            List.map
+              (fun (k', (s, ls)) ->
+                if k' = k then (k', (max s (ladder_stratum i), ls @ [ l ])) else (k', (s, ls)))
+              acc
+        | None -> acc @ [ (k, (ladder_stratum i, [ l ])) ])
+      []
+      (indexed env.doc.default_ladders)
+    |> List.map snd
+  in
   let pass ~k world =
     let world, c1 =
       List.fold_left
@@ -886,13 +939,12 @@ let evaluate env world =
     in
     let world, c3 =
       List.fold_left
-        (fun (w, ch) (i, l) ->
-          if ladder_stratum i > k then (w, ch)
+        (fun (w, ch) (stratum, members) ->
+          if stratum > k then (w, ch)
           else
-            let w, c = run_ladder env w l in
+            let w, c = run_ladder_group env w members in
             (w, ch || c))
-        (world, false)
-        (indexed env.doc.default_ladders)
+        (world, false) ladder_groups
     in
     (world, c1 || c2 || c3)
   in

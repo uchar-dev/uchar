@@ -1,0 +1,273 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "toelage": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "visser",
+        "wachter",
+        "duinwachter",
+        "geschorst",
+        "gerechtigd"
+      ],
+      "kenmerkSoorten": {
+        "visser": "BIJVOEGLIJK",
+        "wachter": "BIJVOEGLIJK",
+        "duinwachter": "BIJVOEGLIJK",
+        "geschorst": "BIJVOEGLIJK",
+        "gerechtigd": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "toelage voor vissers",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "toelage voor wachters",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "toelage voor duinwachters",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "gerechtigd als visser",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "niet gerechtigd bij schorsing",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": [],
+  "defaultLadders": [
+    {
+      "node": "DefaultLadder",
+      "naam": "toelage voor vissers",
+      "onderwerp": "Jutter",
+      "kenmerk": null,
+      "attribuut": "toelage",
+      "rungs": [
+        {
+          "node": "Rung",
+          "besluit": null,
+          "voorwaarde": {
+            "node": "Kenmerk",
+            "kenmerk": "visser",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "hij visser is"
+          },
+          "consequentie": {
+            "node": "Literal",
+            "waarde": "10",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "10"
+          },
+          "bron": "visser: 10"
+        }
+      ],
+      "ongeordend": true,
+      "bron": "grond A",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "DefaultLadder",
+      "naam": "toelage voor wachters",
+      "onderwerp": "Jutter",
+      "kenmerk": null,
+      "attribuut": "toelage",
+      "rungs": [
+        {
+          "node": "Rung",
+          "besluit": null,
+          "voorwaarde": {
+            "node": "Kenmerk",
+            "kenmerk": "wachter",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "hij wachter is"
+          },
+          "consequentie": {
+            "node": "Literal",
+            "waarde": "20",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "20"
+          },
+          "bron": "wachter: 20"
+        }
+      ],
+      "ongeordend": true,
+      "bron": "grond B",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "DefaultLadder",
+      "naam": "toelage voor duinwachters",
+      "onderwerp": "Jutter",
+      "kenmerk": null,
+      "attribuut": "toelage",
+      "rungs": [
+        {
+          "node": "Rung",
+          "besluit": null,
+          "voorwaarde": {
+            "node": "Kenmerk",
+            "kenmerk": "duinwachter",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "hij duinwachter is"
+          },
+          "consequentie": {
+            "node": "Literal",
+            "waarde": "10",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "10"
+          },
+          "bron": "duinwachter: 10"
+        }
+      ],
+      "ongeordend": true,
+      "bron": "grond C",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "DefaultLadder",
+      "naam": "gerechtigd als visser",
+      "onderwerp": "Jutter",
+      "kenmerk": "gerechtigd",
+      "rungs": [
+        {
+          "node": "Rung",
+          "besluit": true,
+          "voorwaarde": {
+            "node": "Kenmerk",
+            "kenmerk": "visser",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "hij visser is"
+          },
+          "bron": "visser"
+        }
+      ],
+      "ongeordend": true,
+      "bron": "grond D",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "DefaultLadder",
+      "naam": "niet gerechtigd bij schorsing",
+      "onderwerp": "Jutter",
+      "kenmerk": "gerechtigd",
+      "rungs": [
+        {
+          "node": "Rung",
+          "besluit": false,
+          "voorwaarde": {
+            "node": "Kenmerk",
+            "kenmerk": "geschorst",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "hij geschorst is"
+          },
+          "bron": "geschorst"
+        }
+      ],
+      "ongeordend": true,
+      "bron": "grond E",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ]
+}
