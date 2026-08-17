@@ -100,21 +100,29 @@ let bound_role env (rb : rol_binding) =
           Value.fault "role binding names unknown role %S of fact type %S" rb.rb_rol
             rb.rb_feittype)
 
-(* linked instances of [to_type] seen from [self]; the connecting role
-   comes from the explicit [binding] when the node carries one, and from
-   the type-pair derivation otherwise. The case may key the link under
-   the role's name or its plural — try both. *)
-let linked ?binding env world (self : World.instance) ~to_type =
-  let role =
-    match binding with
-    | Some rb -> bound_role env rb
-    | None -> connecting_role env ~from_type:self.otype ~to_type
-  in
-  let keys = List.filter_map (fun k -> k) [ role.rol_meervoud; role.rol_naam ] in
+(* the storage keys a role's links may sit under, in read-preference
+   order: the case may key them by the role's plural or its name *)
+let role_keys (r : rol) = List.filter_map (fun k -> k) [ r.rol_meervoud; r.rol_naam ]
+
+(* linked instances over [role] seen from [self]: the first non-empty
+   key wins — the same preference the creation writer (World.add_link)
+   uses, so created and case-supplied links are read identically *)
+let role_links world (self : World.instance) (role : rol) =
   let labels =
-    List.fold_left (fun acc k -> if acc = [] then World.links self k else acc) [] keys
+    List.fold_left
+      (fun acc k -> if acc = [] then World.links self k else acc)
+      [] (role_keys role)
   in
   List.map (World.get world) labels
+
+(* linked instances of [to_type] seen from [self]; the connecting role
+   comes from the explicit [binding] when the node carries one, and from
+   the type-pair derivation otherwise. *)
+let linked ?binding env world (self : World.instance) ~to_type =
+  role_links world self
+    (match binding with
+    | Some rb -> bound_role env rb
+    | None -> connecting_role env ~from_type:self.otype ~to_type)
 
 (* a role reachable from [self]'s type whose name/plural matches [name] —
    the v0 instance-fold source wart: a pseudo-AttribuutRef carrying the
@@ -602,6 +610,60 @@ let run_verdeling env world (v : resolved_verdeling) =
               (w, ch || ch2))
   end
 
+(* ch. 5.5, relation creation: for each anchor whose condition holds,
+   navigate the join chain (anchor → tussenstappen → joinRol → target)
+   over existing links, and link anchor and target in the created
+   relation — both ends are written, so navigation from either side
+   sees the link. Naturally idempotent: an already-present link is a
+   no-op write, so a target reached along two paths links once. Only
+   the symbolic extension form (IR-SPEC ch. 3.4, WF-028) carries the
+   relational content; a bean-field-only v0 record faults. *)
+let run_feit_creatie env world (fc : resolved_feit_creatie) =
+  if not (applies env fc.fc_geldigheid) then (world, false)
+  else begin
+    let name = Option.value fc.fc_naam ~default:"<feitcreatie>" in
+    let ftn =
+      match fc.fc_feittype with
+      | Some f -> f
+      | None ->
+          Value.fault
+            "fact creation %S carries only bean fields; the symbolic form (IR-SPEC ch. 3.4) is \
+             what executes"
+            name
+    in
+    let role rname = bound_role env { rb_feittype = ftn; rb_rol = rname } in
+    let anker_rol = role (req "FeitCreatie.ankerRol" fc.anker_rol) in
+    let doel_rol = role (req "FeitCreatie.doelRol" fc.doel_rol) in
+    over_subjects world ~otype:(req "FeitCreatie.anker" fc.anker) ~rule:name
+      (fun w self err ->
+        let fire =
+          match fc.fc_voorwaarde with Some c -> eval_cond env w self ~err c | None -> true
+        in
+        if not fire then (w, false)
+        else
+          let hop insts rb =
+            List.concat_map (fun i -> role_links w i (bound_role env rb)) insts
+          in
+          let mids =
+            List.fold_left
+              (fun insts (t : tussenstap) -> hop insts (req "Tussenstap.rolBinding" t.ts_rol))
+              [ self ] fc.tussenstappen
+          in
+          let targets = hop mids (req "FeitCreatie.joinRol" fc.join_rol) in
+          List.fold_left
+            (fun (w, ch) (t : World.instance) ->
+              let w, c1 =
+                World.add_link w ~label:self.label ~keys:(role_keys doel_rol)
+                  ~many:doel_rol.rol_meervoudig ~target:t.label
+              in
+              let w, c2 =
+                World.add_link w ~label:t.label ~keys:(role_keys anker_rol)
+                  ~many:anker_rol.rol_meervoudig ~target:self.label
+              in
+              (w, ch || c1 || c2))
+            (w, false) targets)
+  end
+
 (* ch. 7.1/7.2, the ladder group on one target (a singleton group is
    the plain ladder): each member decides independently — highest rung
    that decides wins, with fall-through and speculative deposits per
@@ -835,8 +897,8 @@ let fixpoint ~budget step world =
   go 0 world
 
 let evaluate env world =
-  if env.doc.object_creaties <> [] || env.doc.feit_creaties <> [] then
-    Value.fault "object/fact creation is not implemented in this card";
+  if env.doc.object_creaties <> [] then
+    Value.fault "object creation is not implemented; no corpus case exercises it";
   if env.doc.uniciteit_unies <> [] then Value.fault "uniqueness unions not implemented in this card";
   if env.doc.regel_groepen <> [] then Value.fault "rule groups are not implemented in this card";
   parameterset_check env;
@@ -888,6 +950,7 @@ let evaluate env world =
   let rule_stratum i = stratum_of (Printf.sprintf "/resolvedRegels/%d" i) in
   let verdeling_stratum i = stratum_of (Printf.sprintf "/verdelingen/%d" i) in
   let ladder_stratum i = stratum_of (Printf.sprintf "/defaultLadders/%d" i) in
+  let fc_stratum i = stratum_of (Printf.sprintf "/feitCreaties/%d" i) in
   let cons_stratum i = stratum_of (Printf.sprintf "/consistenties/%d" i) in
   let uni_stratum i = stratum_of (Printf.sprintf "/uniciteiten/%d" i) in
   let indexed l = List.mapi (fun i x -> (i, x)) l in
@@ -949,7 +1012,17 @@ let evaluate env world =
             (w, ch || c))
         (world, false) ladder_groups
     in
-    (world, c1 || c2 || c3)
+    let world, c4 =
+      List.fold_left
+        (fun (w, ch) (i, fc) ->
+          if fc_stratum i > k then (w, ch)
+          else
+            let w, c = run_feit_creatie env w fc in
+            (w, ch || c))
+        (world, false)
+        (indexed env.doc.feit_creaties)
+    in
+    (world, c1 || c2 || c3 || c4)
   in
   let budget = 10_000 in
   (* for k = 0, 1, …: the forms of stratum <= k evaluate to their

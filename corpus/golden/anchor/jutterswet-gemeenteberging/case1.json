@@ -1,0 +1,86 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "G1",
+        "objectType": "Gemeente",
+        "attributes": {},
+        "roles": { "ingeschreven jutters": ["J1", "J2"] },
+        "characteristics": ["kustgemeente"]
+      },
+      {
+        "label": "G2",
+        "objectType": "Gemeente",
+        "attributes": {},
+        "roles": { "ingeschreven jutters": ["J3"] },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "aangemelde vondsten": ["V1", "V2", "V5"] },
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "aangemelde vondsten": ["V3", "V5"] },
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "aangemelde vondsten": ["V4"] },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": { "gewicht": { "number": "12" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": { "gewicht": { "number": "9" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": { "gewicht": { "number": "21" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": { "gewicht": { "number": "100" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": { "gewicht": { "number": "9" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "G1", "attribute": "bergingsgewicht", "value": { "number": "51" } },
+    { "kind": "attributeValue", "label": "G1", "attribute": "bergingsaantal", "value": { "number": "4" } },
+    { "kind": "attributeValue", "label": "G2", "attribute": "bergingsgewicht", "value": { "number": "0" } },
+    { "kind": "attributeValue", "label": "G2", "attribute": "bergingsaantal", "value": { "number": "0" } },
+    { "kind": "consistent" }
+  ]
+}

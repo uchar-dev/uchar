@@ -32,6 +32,14 @@ spec bug.
 - Negated characteristic reads are negation-as-failure — sound because
   WF-045/046 guarantee stratifiability; the verifier is thereby also
   the guard that a document is clingo-suitable.
+- Fact creation (IR-SPEC ch. 3.4; ch. 5.5) derives `rol/3`: the join
+  chain (anchor → tussenstappen → joinRol → target) becomes a body
+  join over `rol/3`, and the head lands the created relation's links —
+  both ends, the same two directions the reference interpreter's
+  writer lands. Set semantics carries the ch. 5.5 idempotence: a
+  target reached along two paths is one atom. Only the symbolic
+  extension form (WF-028) translates; a bean-field-only v0 record
+  faults, as in `ref/`.
 - Aggregation is `#count`/`#sum` with the contributor skip encoded by
   the body join; consistency and uniqueness derive `inconsistent/2`
   facts (the §9.5 channel); dates are civil day numbers; the temporal
@@ -95,6 +103,11 @@ Recorded limitations:
   UNSATISFIABLE by explicit constraints — clingo then fails exactly
   where `ref/` faults (ch. 4.4), instead of silently diverging by the
   truncation/floor difference.
+- A creation that would give a **to-one role a second distinct
+  filler** faults in `ref/` (`World.add_link`), but the derived
+  `rol/3` here carries no such guard — the model would simply hold
+  both atoms. No corpus case reaches that state; a case pinning it
+  would go red on gate 6 against ref/'s fault.
 
 ## Run
 

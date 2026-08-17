@@ -1,0 +1,37 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "G3",
+        "objectType": "Gemeente",
+        "attributes": {},
+        "roles": { "ingeschreven jutters": ["J4"] },
+        "characteristics": ["kustgemeente"]
+      },
+      {
+        "label": "G4",
+        "objectType": "Gemeente",
+        "attributes": {},
+        "roles": {},
+        "characteristics": ["kustgemeente"]
+      },
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "G3", "attribute": "bergingsgewicht", "value": { "number": "0" } },
+    { "kind": "attributeValue", "label": "G3", "attribute": "bergingsaantal", "value": { "number": "0" } },
+    { "kind": "attributeValue", "label": "G4", "attribute": "bergingsgewicht", "value": { "number": "0" } },
+    { "kind": "attributeValue", "label": "G4", "attribute": "bergingsaantal", "value": { "number": "0" } },
+    { "kind": "consistent" }
+  ]
+}

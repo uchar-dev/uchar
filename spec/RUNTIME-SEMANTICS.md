@@ -1180,7 +1180,21 @@ a linked-instance check where the created object references its
 subject, else a per-(rule, subject) creation marker): **one creation per
 rule per subject** unless the fact base itself changed the question.
 Relation creation (fact creation) is naturally idempotent — creating an
-already-present link is a no-op write.
+already-present link is a no-op write. For each anchor whose condition
+holds, the join chain (anchor → path steps → join hop, `IR-SPEC.md`
+ch. 3.4) is navigated over the existing links, and anchor and target
+are linked in the created relation — **both ends** are written, so
+navigation from either side sees the link. A second distinct filler on
+a to-one role is a fault, never a silent overwrite.
+
+Worked example (absolute; the anchor `jutterswet-gemeenteberging`
+verbatim): a kustgemeente creates `gemeentelijke berging` links to
+every vondst its ingeschreven jutters have aangemeld (one path step,
+then the join hop); som and aantal folds *over the created relation*
+yield **51** and **4** — the vondst reached along two jutters is
+linked once, the idempotence observable in the count — while a
+gemeente that is not a kustgemeente, or whose chain runs dry, creates
+nothing and the folds read the empty set (**0** and **0**).
 
 **Recursive creation** (the dialect rule group, `IR-SPEC.md` ch. 3.9)
 deliberately breaks the acyclicity of ch. 5.2 in one controlled way: a

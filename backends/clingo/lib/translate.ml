@@ -332,6 +332,57 @@ let translate_regel ctx (r : resolved_regel) =
           | _ -> fault "rule kind not translated")
       | _ -> fault "unsupported rule target")
 
+(* fact creation (IR-SPEC ch. 3.4; RUNTIME-SEMANTICS ch. 5.5): the join
+   chain becomes a body join over rol/3, and the head derives the
+   created relation's rol/3 facts — both ends, exactly the two
+   directions ref/'s writer lands; set semantics carries the
+   idempotence (a target reached along two paths is one atom). Only the
+   symbolic extension form executes; a bean-field-only v0 record faults
+   (as in ref/). *)
+let translate_feit_creatie ctx (fc : resolved_feit_creatie) =
+  (match fc.fc_geldigheid with
+  | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
+      fault "fact-creation validity windows are not translated yet"
+  | _ -> ());
+  let name = Option.value fc.fc_naam ~default:"<feitcreatie>" in
+  let ftn =
+    match fc.fc_feittype with
+    | Some f -> f
+    | None ->
+        fault
+          "fact creation %S carries only bean fields; the symbolic form (IR-SPEC ch. 3.4) is \
+           what executes"
+          name
+  in
+  let env =
+    { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None }
+  in
+  let role rname = Eval.bound_role env { rb_feittype = ftn; rb_rol = rname } in
+  let anker_rol = role (req "ankerRol" fc.anker_rol) in
+  let doel_rol = role (req "doelRol" fc.doel_rol) in
+  let anker = req "FeitCreatie.anker" fc.anker in
+  let subject = "S" in
+  let cond =
+    match fc.fc_voorwaarde with
+    | Some c -> cond_atoms ctx ~subject ~subject_ot:anker c
+    | None -> []
+  in
+  let hop (atoms, cur) rb =
+    let v = fresh ctx "H" in
+    ( atoms
+      @ [ Printf.sprintf "rol(%s,%s,%s)" cur (str (role_canonical (Eval.bound_role env rb))) v ],
+      v )
+  in
+  let mids =
+    List.fold_left
+      (fun acc (t : tussenstap) -> hop acc (req "Tussenstap.rolBinding" t.ts_rol))
+      ([], subject) fc.tussenstappen
+  in
+  let chain, target = hop mids (req "joinRol" fc.join_rol) in
+  let body = (Printf.sprintf "is_a(%s,%s)" subject (str anker) :: cond) @ chain in
+  head_body ctx (Printf.sprintf "rol(%s,%s,%s)" subject (str (role_canonical doel_rol)) target) body;
+  head_body ctx (Printf.sprintf "rol(%s,%s,%s)" target (str (role_canonical anker_rol)) subject) body
+
 (* the ladder group (RUNTIME-SEMANTICS ch. 7, IR-SPEC ch. 6.1): the
    ch. 7.5 decides_m lowering per member — decides predicates per rung,
    an outcome predicate per member (highest deciding rung wins via
@@ -640,7 +691,7 @@ let translate (doc : document) (case : Case.t) : string =
      itself. Forms outside the desugaring's domain stay as they are
      and fault below like before. *)
   let doc = Ir_v0.Desugar.document doc in
-  if doc.object_creaties <> [] || doc.feit_creaties <> [] then fault "creation not translated";
+  if doc.object_creaties <> [] then fault "object creation not translated";
   if doc.uniciteit_unies <> [] || doc.regel_groepen <> [] then
     fault "uniqueness unions / rule groups not translated";
   let ctx = { doc; case; buf = Buffer.create 4096; fresh = 0 } in
@@ -654,6 +705,7 @@ let translate (doc : document) (case : Case.t) : string =
   emit ctx "#defined inconsistent/2. #defined tl/5. #defined param_tl/4.";
   emit ctx "#defined inputval/3.";
   List.iter (translate_regel ctx) doc.resolved_regels;
+  List.iter (translate_feit_creatie ctx) doc.feit_creaties;
   List.iteri (translate_verdeling ctx) doc.verdelingen;
   (let key (l : default_ladder) =
      (* kind discriminant: a name-sharing attribute and characteristic

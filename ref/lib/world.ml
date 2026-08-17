@@ -97,6 +97,27 @@ let set_char w ~label ~char =
   if has_char i char then (w, false)
   else (update w { i with chars = norm char :: i.chars }, true)
 
+(* role links are naturally idempotent (ch. 5.5): linking an
+   already-present target is a no-op. [keys] is the read-preference
+   order (the role's plural, then its name — Eval.role_keys): the write
+   lands where a reader will look — an already-populated key first,
+   else the first key. A second distinct filler on a to-one role is a
+   fault, never a silent overwrite. *)
+let add_link w ~label ~keys ~many ~target =
+  let i = get w label in
+  let key =
+    match List.find_opt (fun k -> links i k <> []) keys with
+    | Some k -> k
+    | None -> ( match keys with k :: _ -> k | [] -> Value.fault "role without a name")
+  in
+  let existing = links i key in
+  if List.mem target existing then (w, false)
+  else if (not many) && existing <> [] then
+    Value.fault "to-one role %S on %S already links %s; a second filler is ill-typed (ch. 5.5)"
+      key label
+      (String.concat ", " existing)
+  else (update w { i with links = SMap.add (norm key) (existing @ [ target ]) i.links }, true)
+
 (* §9.5: one error fact per rule × subject, however often re-evaluated *)
 let insert_error w ~rule ~subject =
   let f = { rule; subject } in
