@@ -81,6 +81,9 @@
     { "kind": "attributeValue", "label": "G1", "attribute": "bergingsaantal", "value": { "number": "4" } },
     { "kind": "attributeValue", "label": "G2", "attribute": "bergingsgewicht", "value": { "number": "0" } },
     { "kind": "attributeValue", "label": "G2", "attribute": "bergingsaantal", "value": { "number": "0" } },
+    { "kind": "attributeValue", "label": "V1", "attribute": "aantal bergende gemeenten", "value": { "number": "1" } },
+    { "kind": "attributeValue", "label": "V5", "attribute": "aantal bergende gemeenten", "value": { "number": "1" } },
+    { "kind": "attributeValue", "label": "V4", "attribute": "aantal bergende gemeenten", "value": { "number": "0" } },
     { "kind": "consistent" }
   ]
 }

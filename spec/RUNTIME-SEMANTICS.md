@@ -1194,7 +1194,11 @@ then the join hop); som and aantal folds *over the created relation*
 yield **51** and **4** — the vondst reached along two jutters is
 linked once, the idempotence observable in the count — while a
 gemeente that is not a kustgemeente, or whose chain runs dry, creates
-nothing and the folds read the empty set (**0** and **0**).
+nothing and the folds read the empty set (**0** and **0**). The target
+side reads back: an aantal fold on the Vondst over the `bergende
+gemeente` end counts **1** for every geborgen vondst and **0** for the
+vondst of the non-coastal gemeente — the both-ends write, witnessed
+from the far end.
 
 **Recursive creation** (the dialect rule group, `IR-SPEC.md` ch. 3.9)
 deliberately breaks the acyclicity of ch. 5.2 in one controlled way: a
@@ -1307,6 +1311,10 @@ Value nodes, identified up to name normalisation:
 - **population** — object type: the instance set an instance fold
   (`IR-SPEC.md` ch. 4.3) or an allocation's recipient derivation reads,
   and object creation grows.
+- **relation** — declared fact type: its link set — written by the fact
+  creations that create it (ch. 5.5), read by every symbolic hop that
+  traverses it and by every fold or allocation that names it in a role
+  binding (from either end; the link is written on both).
 
 Each rule form reads and writes nodes:
 
@@ -1317,7 +1325,7 @@ Each rule form reads and writes nodes:
 | allocation | target attribute; declared remainder attribute | source amount; ratio, maximum and ordering attributes; condition reads; population(target type) |
 | consistency / uniqueness | channel(own name) | assertion operands / key attributes |
 | object creation | the attributes and characteristics its toekenningen set on the created type; population(created type) | condition and toekenning-value reads on the anchor |
-| relation creation | population(target-role filler type) | condition reads on the anchor and the join-chain traversal (role hops, `IR-SPEC.md` ch. 3.4) |
+| relation creation | population(target-role filler type); relation(created fact type) | condition reads on the anchor; relation(each hop of the join-chain traversal, `IR-SPEC.md` ch. 3.4) |
 
 Edges run producer → consumer — from every form that writes a node to
 every form that reads it — in three kinds:
@@ -1347,12 +1355,15 @@ every form that reads it — in three kinds:
 Parameters and input-only nodes (nodes no form writes) contribute no
 edges.
 
-*Scope narrowing, recorded:* relation membership read by a condition
-(rollidmaatschap) is treated as input — relation creation contributes a
-population edge to its target-role filler type, but finer
-relation-level nodes are deliberately not modelled until a corpus case
-demands them. Day-kind definitions read only input dates and contribute
-no edges.
+*Scope narrowing, recorded:* relation membership read by a *condition*
+(rollidmaatschap) is treated as input, and a **bindingless** fold or
+allocation keeps the population proxy — only reads that name the
+relation in a role binding, and the creation's own hops, carry
+relation-node edges (the creation-after-creation ordering demanded
+this; a bean-field-only v0 creation record carries no symbolic hops
+and stays on the bare population write, recorded with WF-028's
+uncheckable clause). Day-kind definitions read only input dates and
+contribute no edges.
 
 *Recorded residuals (ch. 7 territory, mirrored):* a condition-guarded
 attribute write whose condition later turns false keeps its written
@@ -1364,9 +1375,10 @@ never retracted). Both await the default model of ch. 7.
 ### 6.2 Acyclicity (WF-045)
 
 **WF-045.** The dependency graph MUST be acyclic after removing every
-object-creation form that is a member of a recursive rule group
-(`IR-SPEC.md` ch. 3.9): a dependency cycle is admissible **only** when
-it passes through such a form. That is ch. 5.5's one controlled
+creation form — object creation, or relation creation (ch. 5.5's
+idempotent, guard-free member) — that is a member of a recursive rule
+group (`IR-SPEC.md` ch. 3.9): a dependency cycle is admissible **only**
+when it passes through such a form. That is ch. 5.5's one controlled
 exception — recursive creation advances exactly one generation per
 instance; WF-033 guards the author's termination obligation and the
 runtime's bounded budget makes divergence a fault — promoted from the

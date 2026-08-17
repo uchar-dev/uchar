@@ -1630,15 +1630,24 @@ let expression_layer ctx =
    (object type), identified up to normalisation. Edges run producer ->
    consumer; a negated/negation-quantified characteristic read and a
    regelversie channel test are negative edges. WF-045: the graph minus
-   the object-creation members of recursive rule groups is acyclic.
+   the creation members of recursive rule groups is acyclic.
    WF-046: no cycle in the full graph carries a negative edge.
-   Recorded narrowings (ch. 6.1): relation membership reads are treated
-   as input; day-kind definitions contribute no edges. *)
+   Recorded narrowings (ch. 6.1): relation membership CONDITION reads
+   are treated as input; bindingless folds/allocations keep the
+   population proxy; day-kind definitions contribute no edges. Bound
+   relation reads (a RolBinding on a fold, an allocation, or a creation
+   hop) are relation-node edges (n_rel). *)
 
 let n_attr ot a = "attr:" ^ norm ot ^ ":" ^ norm a
 let n_char ot k = "char:" ^ norm ot ^ ":" ^ norm k
 let n_chan rule = "chan:" ^ norm (strip_version rule)
 let n_pop ot = "pop:" ^ norm ot
+
+(* the link set of one declared relation (ch. 6.1): written by the fact
+   creations that create it, read by every symbolic hop over it and by
+   every fold/allocation that names it in a role binding. Bindingless
+   forms keep the population proxy — the recorded narrowing. *)
+let n_rel ft = "rel:" ^ norm ft
 
 (* Edge kinds (RUNTIME-SEMANTICS ch. 6.1): positive; stratum-strict (a
    non-characteristic read by a form with irrevocable writes); negative
@@ -1672,9 +1681,16 @@ let rec dep_expr ~subject acc (e : expr) =
           | Ingevoegd { expr = None } -> acc)
         acc delen
   | Binair { links; rechts; _ } -> dep_opt ~subject (dep_opt ~subject acc links) rechts
-  | Functie { argumenten; element_objecttype; leegwaarde; filter; _ } ->
+  | Functie { argumenten; element_objecttype; leegwaarde; filter; bron_rol; _ } ->
       let acc =
         match element_objecttype with Some el -> (n_pop el, Dep_pos) :: acc | None -> acc
+      in
+      let acc =
+        (* a bound fold reads the named relation's link set — the edge a
+           fact creation's write reaches, from either end (ch. 6.1) *)
+        match bron_rol with
+        | Some (rb : rol_binding) -> (n_rel rb.rb_feittype, Dep_pos) :: acc
+        | None -> acc
       in
       let acc = List.fold_left (dep_expr ~subject) acc argumenten in
       let acc = dep_opt ~subject acc leegwaarde in
@@ -1770,7 +1786,10 @@ let dep_forms ctx : dep_form list =
         in
         let reads =
           (n_pop dt, Dep_pos)
-          :: (match v.bron_attribuut with Some a -> [ (n_attr bt a, Dep_pos) ] | None -> [])
+          :: (match v.verbindende_rol with
+             | Some rb -> [ (n_rel rb.rb_feittype, Dep_pos) ]
+             | None -> [])
+          @ (match v.bron_attribuut with Some a -> [ (n_attr bt a, Dep_pos) ] | None -> [])
           @ List.filter_map
               (fun a -> Option.map (fun a -> (n_attr dt a, Dep_pos)) a)
               [ v.rato_attribuut; v.maximum_attribuut; v.groepeer_attribuut ]
@@ -1846,12 +1865,33 @@ let dep_forms ctx : dep_form list =
       (fun i (f : resolved_feit_creatie) ->
         let at = Printf.sprintf "/feitCreaties/%d" i in
         let name = Option.value f.fc_naam ~default:at in
+        (* the symbolic form writes the created relation's link set and
+           reads the link set of every hop it traverses (ch. 6.1) — the
+           edge that orders creation-after-creation; a bean-field-only
+           record carries no symbolic hops (recorded uncheckable,
+           WF-028) and keeps the bare population write *)
+        let rel_writes = match f.fc_feittype with Some ft -> [ n_rel ft ] | None -> [] in
+        let hop_reads =
+          List.filter_map
+            (fun (t : tussenstap) ->
+              Option.map (fun (rb : rol_binding) -> (n_rel rb.rb_feittype, Dep_pos)) t.ts_rol)
+            f.tussenstappen
+          @
+          match f.join_rol with
+          | Some rb -> [ (n_rel rb.rb_feittype, Dep_pos) ]
+          | None -> []
+        in
         {
           df_at = at;
           df_name = name;
-          df_recursive_creation = false;
-          df_writes = (match f.fc_doel with Some d -> [ n_pop d ] | None -> []);
-          df_reads = strict_unless_char (cond ~subject:f.anker f.fc_voorwaarde);
+          (* ch. 5.5: a relation creation may be a member of a recursive
+             rule group (idempotent, no guard needed) — WF-045 removes
+             recursive-group creation members of either kind *)
+          df_recursive_creation = List.mem (norm (strip_version name)) recursive_members;
+          df_writes =
+            (match f.fc_doel with Some d -> [ n_pop d ] | None -> []) @ rel_writes;
+          df_reads =
+            strict_unless_char (hop_reads @ cond ~subject:f.anker f.fc_voorwaarde);
         })
       ctx.doc.feit_creaties
   in

@@ -62,6 +62,13 @@
           "decimalen": 0,
           "teken": "ONBEPAALD",
           "eenheid": null
+        },
+        "aantal bergende gemeenten": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
         }
       },
       "attribuutMeervoud": {},
@@ -163,6 +170,11 @@
     {
       "node": "Regel",
       "naam": "bergingsaantal van een gemeente",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "aantal bergende gemeenten van een vondst",
       "soort": "regel"
     }
   ],
@@ -304,6 +316,72 @@
           "node": "RolBinding",
           "feittype": "gemeentelijke berging",
           "rol": "geborgen vondst"
+        }
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "aantal bergende gemeenten van een vondst",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "aantal bergende gemeenten",
+        "objecttype": "Vondst",
+        "onderwerpBron": "een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "Het aantal bergende gemeenten van een Vondst",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "AANTAL",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "bergende gemeente",
+            "objecttype": "Vondst",
+            "onderwerpBron": "de Vondst",
+            "navigatieRol": null,
+            "type": {
+              "node": "Onbekend",
+              "reden": "niet opgelost"
+            },
+            "bron": "bergende gemeente van de Vondst",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": "Gemeente",
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "het aantal bergende gemeenten van de Vondst",
+        "granulariteit": null,
+        "bronRol": {
+          "node": "RolBinding",
+          "feittype": "gemeentelijke berging",
+          "rol": "bergende gemeente"
         }
       },
       "voorwaarde": null,

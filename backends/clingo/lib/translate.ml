@@ -381,7 +381,18 @@ let translate_feit_creatie ctx (fc : resolved_feit_creatie) =
   let chain, target = hop mids (req "joinRol" fc.join_rol) in
   let body = (Printf.sprintf "is_a(%s,%s)" subject (str anker) :: cond) @ chain in
   head_body ctx (Printf.sprintf "rol(%s,%s,%s)" subject (str (role_canonical doel_rol)) target) body;
-  head_body ctx (Printf.sprintf "rol(%s,%s,%s)" target (str (role_canonical anker_rol)) subject) body
+  head_body ctx (Printf.sprintf "rol(%s,%s,%s)" target (str (role_canonical anker_rol)) subject) body;
+  (* a second distinct filler on a to-one end faults in ref/
+     (World.add_link, ch. 5.5); an explicit constraint makes clingo fail
+     identically (UNSAT) instead of silently holding both atoms — the
+     allocation-guard pattern *)
+  let to_one_guard (r : rol) holder_type =
+    if not r.rol_meervoudig then
+      emit ctx ":- is_a(X,%s), 2 <= #count { Y : rol(X,%s,Y) }." (str holder_type)
+        (str (role_canonical r))
+  in
+  to_one_guard doel_rol anker;
+  to_one_guard anker_rol (req "FeitCreatie.doel" fc.fc_doel)
 
 (* the ladder group (RUNTIME-SEMANTICS ch. 7, IR-SPEC ch. 6.1): the
    ch. 7.5 decides_m lowering per member — decides predicates per rung,

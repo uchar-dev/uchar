@@ -186,8 +186,18 @@ let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
   in
   let links =
     List.fold_left
-      (fun acc (key, vj) ->
+      (fun (acc, seen) (key, vj) ->
         let role = resolve_role doc ~otype:otype_name ~key in
+        (* one role, one key: a split delivery (the same role under its
+           name AND its plural) would make the first-non-empty-key
+           readers see only half the links — refuse it at load time,
+           never read it silently wrong *)
+        let role_id = Option.value role.rol_naam ~default:key in
+        (match List.assoc_opt (norm role_id) seen with
+        | Some prev ->
+            fail "role keys %S and %S on %S both name the role %S; deliver one key" prev key
+              label role_id
+        | None -> ());
         let labels =
           match vj with
           | `List l -> List.map str l
@@ -195,9 +205,10 @@ let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
         in
         if (not role.rol_meervoudig) && List.length labels <> 1 then
           fail "to-one role %S carries %d labels" key (List.length labels);
-        SMap.add (norm key) labels acc)
-      SMap.empty
+        (SMap.add (norm key) labels acc, (norm role_id, key) :: seen))
+      (SMap.empty, [])
       (obj (field kvs "roles"))
+    |> fst
   in
   { label; otype = otype_name; attrs; chars; links; tls }
 

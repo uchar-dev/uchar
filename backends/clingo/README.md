@@ -37,9 +37,12 @@ spec bug.
   join over `rol/3`, and the head lands the created relation's links —
   both ends, the same two directions the reference interpreter's
   writer lands. Set semantics carries the ch. 5.5 idempotence: a
-  target reached along two paths is one atom. Only the symbolic
-  extension form (WF-028) translates; a bean-field-only v0 record
-  faults, as in `ref/`.
+  target reached along two paths is one atom. A to-one end gets an
+  explicit cardinality constraint, so a second distinct filler makes
+  the program UNSATISFIABLE exactly where `ref/`'s writer faults
+  (ch. 5.5) — the allocation-guard pattern, never a silent wrong
+  model. Only the symbolic extension form (WF-028) translates; a
+  bean-field-only v0 record faults, as in `ref/`.
 - Aggregation is `#count`/`#sum` with the contributor skip encoded by
   the body join; consistency and uniqueness derive `inconsistent/2`
   facts (the §9.5 channel); dates are civil day numbers; the temporal
@@ -103,11 +106,6 @@ Recorded limitations:
   UNSATISFIABLE by explicit constraints — clingo then fails exactly
   where `ref/` faults (ch. 4.4), instead of silently diverging by the
   truncation/floor difference.
-- A creation that would give a **to-one role a second distinct
-  filler** faults in `ref/` (`World.add_link`), but the derived
-  `rol/3` here carries no such guard — the model would simply hold
-  both atoms. No corpus case reaches that state; a case pinning it
-  would go red on gate 6 against ref/'s fault.
 
 ## Run
 
