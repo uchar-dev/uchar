@@ -22,8 +22,8 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
 ## Method: mirror, then diverge
 
 - **v0** is the faithful JSON dump of `regelspraak-java`'s in-memory IR
-  (`Resolver --ir`, emitting since the toolchain commit `c51652a`) at a
-  pinned commit — warts included.
+  (`Resolver --ir`; the working pin is the toolchain commit `911f064`,
+  emitting since `c51652a`) at a pinned commit — warts included.
 - **v1** is what this document specifies: it deviates from v0 deliberately
   where the founding review (`IR-REVIEW.md`) flagged Drools leakage
   (bean-field names → role bindings, salience → declared stratification,
@@ -35,7 +35,8 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   enters the wire as an **additive, optional extension** of
   `regelspraak-ir-v0`: the schema admits it as an optional field or node
   (never `required`, never null — written whole or not at all), the
-  loaders accept it, and the pinned v0 emitter never produces it. Every
+  loaders accept it, and the pinned v0 emitter does not produce it until
+  a pin bump lands it there. Every
   extension field is marked as such at its definition and tracked in the
   `CONSTRUCTS.md` delta column like any deviation; hand-written anchor
   cases (`corpus/golden/anchor/`) are its golden witnesses until the
@@ -45,7 +46,12 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   extension fields: `verbindendeRol` (ch. 3.2), `bronRol` (ch. 4.3), the
   symbolic fact-creation fields (ch. 3.4); current extension nodes and
   forms: `TemporalRead` (ch. 4.3a), the `defaultLadders` list
-  (ch. 6.1).
+  (ch. 6.1). **First pin bump (2026-08-17, toolchain `911f064`):** the
+  emitter produces `verbindendeRol` and `bronRol` where uniquely
+  derivable from declared names (absent otherwise — never null, never a
+  guessed plural); the emitter goldens carry them since that pin. The
+  remaining extensions stay anchor-only: their surface syntax does not
+  exist in the toolchain yet.
 
 ## Conventions (binding)
 

@@ -265,6 +265,11 @@
         "node": "Geldigheid",
         "vanaf": null,
         "tot": null
+      },
+      "verbindendeRol": {
+        "node": "RolBinding",
+        "feittype": "bergingsdeelname",
+        "rol": "berger"
       }
     }
   ],
