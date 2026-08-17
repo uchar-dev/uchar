@@ -23,14 +23,16 @@
         "wachter",
         "duinwachter",
         "geschorst",
-        "gerechtigd"
+        "gerechtigd",
+        "toelage"
       ],
       "kenmerkSoorten": {
         "visser": "BIJVOEGLIJK",
         "wachter": "BIJVOEGLIJK",
         "duinwachter": "BIJVOEGLIJK",
         "geschorst": "BIJVOEGLIJK",
-        "gerechtigd": "BIJVOEGLIJK"
+        "gerechtigd": "BIJVOEGLIJK",
+        "toelage": "BIJVOEGLIJK"
       },
       "kenmerkGranulariteit": {},
       "kenmerkTijdlijnAantal": {},
@@ -70,6 +72,11 @@
     {
       "node": "Regel",
       "naam": "niet gerechtigd bij schorsing",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "toelage-kenmerk voor vissers",
       "soort": "regel"
     }
   ],
@@ -263,6 +270,34 @@
       ],
       "ongeordend": true,
       "bron": "grond E",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "DefaultLadder",
+      "naam": "toelage-kenmerk voor vissers",
+      "onderwerp": "Jutter",
+      "kenmerk": "toelage",
+      "rungs": [
+        {
+          "node": "Rung",
+          "besluit": true,
+          "voorwaarde": {
+            "node": "Kenmerk",
+            "kenmerk": "visser",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "hij visser is"
+          },
+          "bron": "visser"
+        }
+      ],
+      "bron": "naamdeling-getuige: kenmerk 'toelage' naast attribuut 'toelage'",
       "geldigheid": {
         "node": "Geldigheid",
         "vanaf": null,

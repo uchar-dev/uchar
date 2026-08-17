@@ -2117,11 +2117,10 @@ let wf028 ctx =
 (* WF-050: ladder well-formedness (IR-SPEC ch. 6): at least one rung;
    exactly one target kind (characteristic or attribute), resolving on
    the subject; rung shapes match the target kind; the initialisation
-   rung is lowest and unique; the target has no other writer; at most
-   one ladder per target (the declared-unordered group is a later
-   slice). *)
+   rung is lowest and unique; the target has no other writer; multiple
+   ladders on one target only when every member is declared unordered
+   (ch. 7.2). *)
 let wf050 ctx =
-  let targets = Hashtbl.create 4 in
   List.concat
     (List.mapi
        (fun i (l : default_ladder) ->
@@ -2192,7 +2191,13 @@ let wf050 ctx =
          @ (match target_name with
            | None -> []
            | Some tn -> (
-               let key = norm l.dl_onderwerp ^ ":" ^ norm tn in
+               (* the group key carries the target KIND: an attribute and a
+                  characteristic may share a name (WF-002), and then they
+                  are two independent targets, not a group *)
+               let key =
+                 (if l.dl_kenmerk <> None then "K:" else "A:")
+                 ^ norm l.dl_onderwerp ^ ":" ^ norm tn
+               in
                let group_size =
                  List.length
                    (List.filter
@@ -2200,12 +2205,11 @@ let wf050 ctx =
                         match
                           (o.dl_kenmerk, o.dl_attribuut)
                         with
-                        | Some k, None -> norm o.dl_onderwerp ^ ":" ^ norm k = key
-                        | None, Some a -> norm o.dl_onderwerp ^ ":" ^ norm a = key
+                        | Some k, None -> "K:" ^ norm o.dl_onderwerp ^ ":" ^ norm k = key
+                        | None, Some a -> "A:" ^ norm o.dl_onderwerp ^ ":" ^ norm a = key
                         | _ -> false)
                       ctx.doc.default_ladders)
                in
-               ignore targets;
                (if group_size > 1 && not l.dl_ongeordend then
                   [ v "WF-050" at
                       ("multiple ladders on target '" ^ l.dl_onderwerp ^ "." ^ tn

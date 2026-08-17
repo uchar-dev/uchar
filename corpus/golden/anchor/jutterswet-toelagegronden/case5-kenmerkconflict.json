@@ -31,6 +31,11 @@
       "characteristic": "gerechtigd"
     },
     {
+      "kind": "characteristicPresent",
+      "label": "M",
+      "characteristic": "toelage"
+    },
+    {
       "kind": "inconsistent"
     }
   ]

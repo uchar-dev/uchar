@@ -895,7 +895,10 @@ let evaluate env world =
      group runs at the max of its members' strata *)
   let ladder_groups =
     let key (l : default_ladder) =
-      norm l.dl_onderwerp ^ ":"
+      (* the kind discriminant keeps a name-sharing attribute and
+         characteristic (WF-002) in separate groups *)
+      (if l.dl_kenmerk <> None then "K:" else "A:")
+      ^ norm l.dl_onderwerp ^ ":"
       ^
       match (l.dl_kenmerk, l.dl_attribuut) with
       | Some k, _ -> norm k

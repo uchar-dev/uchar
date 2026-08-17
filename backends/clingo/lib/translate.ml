@@ -649,7 +649,10 @@ let translate (doc : document) (case : Case.t) : string =
   List.iter (translate_regel ctx) doc.resolved_regels;
   List.iteri (translate_verdeling ctx) doc.verdelingen;
   (let key (l : default_ladder) =
-     norm l.dl_onderwerp ^ ":"
+     (* kind discriminant: a name-sharing attribute and characteristic
+        (WF-002) are separate targets, never one group *)
+     (if l.dl_kenmerk <> None then "K:" else "A:")
+     ^ norm l.dl_onderwerp ^ ":"
      ^
      match (l.dl_kenmerk, l.dl_attribuut) with
      | Some k, _ -> norm k

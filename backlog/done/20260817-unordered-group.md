@@ -39,3 +39,31 @@ status), `spec/CONSTRUCTS.md` (row 8), `spec/schema/**`,
 Out of scope: rule-readability of the conflict fact (stays OPEN); the
 v0 desugaring (its own card, next); mixed groups across target kinds
 (one target = one kind by construction); the emitter (pin-bump).
+
+Result: landed in full — ch. 7's executable design is complete. The
+`ongeordend` marking rides the wire; WF-050's temporary single-ladder
+clause became the designed rule (priority explicit or explicitly
+absent; negatief wf050-half-marked-group). ref evaluates ladders per
+group at the group's max stratum — members decide independently, the
+group acts once: equal decisions write once, differing decisions
+write nothing (input kept standing) and deposit one channel fact
+keyed by the target form; clingo carries the ch. 7.2 group layer
+(per-member outcomes, pairwise conflict to inconsistent/2, outcome
+heads and defeasible input guarded on the conflict), with singleton
+groups eliding the machinery — the two existing ladder anchors replay
+byte-identically. The anchor jutterswet-toelagegronden pins worked
+example 7.6.3 across six cases, including the characteristic-group
+conflict and input-kept-standing. Adversarial verification (two opus
+lenses): one major, fixed before merge — the group key ignored the
+target KIND, wrongly grouping a name-sharing attribute and
+characteristic (WF-002 allows the sharing) into one group, with false
+WF-050 rejections and executor breakage; the key now carries a kind
+discriminant in all three sites, and the anchor gained the
+name-sharing witness (a singleton characteristic ladder named
+'toelage' that must never group with the attribute ladders). Also
+fixed: the stale wf050 doc comment and dead scaffolding, and the
+CONSTRUCTS row-8 tail. Recorded, not changed: ref keys the conflict
+fact raw and clingo normalised — the inherited channel convention;
+no gate asserts the key, and rule-readability stays OPEN.
+Deliberately left: the v0 desugaring (the next card); rule-readability
+of the conflict fact; the emitter (pin-bump).

@@ -30,6 +30,11 @@
       "characteristic": "gerechtigd"
     },
     {
+      "kind": "characteristicAbsent",
+      "label": "M",
+      "characteristic": "toelage"
+    },
+    {
       "kind": "consistent"
     }
   ]
