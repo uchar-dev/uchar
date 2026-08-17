@@ -149,7 +149,7 @@ let find_objecttype (doc : document) name =
 (* the fact-type role a role key on an instance of [otype] refers to:
    the key names the *other* role (by name or plural) of a fact type in
    which [otype] can fill the opposite role *)
-let resolve_role (doc : document) ~otype ~key =
+let resolve_role_ft (doc : document) ~otype ~key =
   let hits =
     List.concat_map
       (fun (_, (ft : feittype)) ->
@@ -160,18 +160,20 @@ let resolve_role (doc : document) ~otype ~key =
         in
         match ft.rollen with
         | [ a; b ] ->
-            (if norm (ot a) = norm otype && matches b then [ b ] else [])
-            @ if norm (ot b) = norm otype && matches a then [ a ] else []
+            (if norm (ot a) = norm otype && matches b then [ (ft, b) ] else [])
+            @ if norm (ot b) = norm otype && matches a then [ (ft, a) ] else []
         | [ r ] when ft.wederkerig ->
             (* reciprocal: the single role is its own opposite *)
-            if norm (ot r) = norm otype && matches r then [ r ] else []
+            if norm (ot r) = norm otype && matches r then [ (ft, r) ] else []
         | _ -> [])
       doc.feittypen
   in
   match hits with
-  | [ r ] -> r
+  | [ p ] -> p
   | [] -> fail "role key %S does not resolve to a declared role opposite %S" key otype
   | _ -> fail "role key %S is ambiguous from %S" key otype
+
+let resolve_role doc ~otype ~key = snd (resolve_role_ft doc ~otype ~key)
 
 let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
   let kvs = obj j in
@@ -234,6 +236,63 @@ let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
     |> fst
   in
   { label; otype = otype_name; attrs; chars; links; tls }
+
+(* §13.3.9.2, mirrored: one reciprocal relation entry holds in BOTH
+   directions — the pinned runtime writes both to-one legs so
+   navigation never reads a spuriously empty side. The loader
+   materialises the reverse leg of every reciprocal link, so a
+   one-sided case supply reads identically in every executor; a
+   conflicting reverse leg on the to-one role (WF-013) is a load
+   error, never a silent overwrite. *)
+let materialise_reciprocal (doc : document) (world : World.t) =
+  SMap.fold
+    (fun _ (i : World.instance) w ->
+      SMap.fold
+        (fun key targets w ->
+          let ft, role = resolve_role_ft doc ~otype:i.otype ~key in
+          if not ft.wederkerig then w
+          else
+            List.fold_left
+              (fun (w : World.t) t ->
+                match SMap.find_opt t w.instances with
+                | None -> w (* check_role_targets reports the unknown label *)
+                | Some (ti : World.instance) ->
+                    let store_key =
+                      (* land the reverse leg where the target already
+                         keys this role, else under the case's key *)
+                      match SMap.find_opt (norm key) ti.links with
+                      | Some _ -> key
+                      | None -> (
+                          match
+                            List.find_opt
+                              (fun k -> SMap.mem (norm k) ti.links)
+                              (List.filter_map (fun k -> k) [ role.rol_meervoud; role.rol_naam ])
+                          with
+                          | Some k -> k
+                          | None -> key)
+                    in
+                    let existing =
+                      Option.value (SMap.find_opt (norm store_key) ti.links) ~default:[]
+                    in
+                    if List.mem i.label existing then w
+                    else if (not role.rol_meervoudig) && existing <> [] then
+                      fail
+                        "reciprocal role %S: %S already links %s; the reverse leg of %S -> %S \
+                         conflicts (WF-013 to-one)"
+                        key t
+                        (String.concat ", " existing)
+                        i.label t
+                    else
+                      {
+                        w with
+                        instances =
+                          SMap.add t
+                            { ti with links = SMap.add (norm store_key) (existing @ [ i.label ]) ti.links }
+                            w.instances;
+                      })
+              w targets)
+        i.links w)
+    world.instances world
 
 let check_role_targets (doc : document) (world : World.t) =
   SMap.iter
@@ -316,6 +375,7 @@ let load_file (doc : document) path : t =
     | `List l -> List.fold_left (fun w ij -> World.add_instance w (load_instance doc ij)) World.empty l
     | _ -> fail "instances: expected a list"
   in
+  let world = materialise_reciprocal doc world in
   check_role_targets doc world;
   let params, param_tls =
     List.fold_left

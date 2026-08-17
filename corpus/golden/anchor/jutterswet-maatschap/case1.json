@@ -14,7 +14,7 @@
         "label": "J2",
         "objectType": "Jutter",
         "attributes": { "vondstwaarde": { "number": "12" } },
-        "roles": { "maat": ["J1"] },
+        "roles": {},
         "characteristics": []
       },
       {

@@ -928,7 +928,12 @@ the non-unique case as marker/skip, and the executors fault on it). In
 v1 the binding is required and the derivation retires. The reciprocal
 shape (one role relating a type to itself, WF-011/013) participates in
 both routes: its single role is bound and opposite at once, and it
-counts as the connecting candidate for a self-typed pair.
+counts as the connecting candidate for a self-typed pair. A reciprocal
+relation entry holds in **both directions** — the pinned runtime
+writes both to-one legs so navigation never reads a spuriously empty
+side; the shared case loader materialises the reverse leg of every
+reciprocal link at load, and a conflicting reverse leg on the to-one
+role (WF-013) is a load error.
 
 ### 4.2 The distribution equations
 

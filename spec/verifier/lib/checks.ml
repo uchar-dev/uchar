@@ -2358,41 +2358,44 @@ let wf050 ctx =
        ctx.doc.default_ladders)
 
 (* WF-052 (the WF-026/WF-050 single-writer family): a connecting
-   relation with a to-one role has at most one creating writer — a
-   second writer would inevitably hand the to-one end a second filler
-   on shared subjects, which ref/ faults and an ASP model cannot fault
-   without a guard; the divergence closes statically. Writers of a
-   relation: fact creations naming it symbolically, and object
-   creations whose uniquely-derivable back-link it is. *)
+   relation whose CREATED-side role is to-one has at most one
+   object-creation writer — the second writer's link on a shared
+   subject is the second filler ref/ faults while a guardless stable
+   model silently holds both; the divergence closes statically. Fact
+   creations are not counted: their to-one writes are fault-paired
+   (writer fault ≡ cardinality-guard UNSAT), and a to-many
+   created-side role makes multi-writer creation harmless. *)
 let wf052 ctx =
-  let to_one (ftn : string) =
-    match find_ci ctx.doc.feittypen ftn with
-    | Some (ft : feittype) -> List.exists (fun (r : rol) -> not r.rol_meervoudig) ft.rollen
-    | None -> false
-  in
   let writers =
     List.filter_map
-      (fun (i, (f : resolved_feit_creatie)) ->
-        Option.map (fun ft -> (norm ft, Printf.sprintf "/feitCreaties/%d" i)) f.fc_feittype)
-      (List.mapi (fun i f -> (i, f)) ctx.doc.feit_creaties)
-    @ List.filter_map
-        (fun (i, (o : resolved_object_creatie)) ->
-          match (o.oc_subject, o.nieuw_type) with
-          | Some st, Some nt -> (
-              match connecting_candidates ctx ~from_type:st ~to_type:nt with
-              | [ fn ] -> Some (norm fn, Printf.sprintf "/objectCreaties/%d" i)
-              | _ -> None)
-          | _ -> None)
-        (List.mapi (fun i o -> (i, o)) ctx.doc.object_creaties)
+      (fun (i, (o : resolved_object_creatie)) ->
+        match (o.oc_subject, o.nieuw_type) with
+        | Some st, Some nt -> (
+            match connecting_candidates ctx ~from_type:st ~to_type:nt with
+            | [ fn ] -> (
+                (* the created-side role: the role nt fills in fn *)
+                match find_ci ctx.doc.feittypen fn with
+                | Some (ft : feittype) -> (
+                    let filler r = Option.value r.rol_objecttype_naam ~default:"" in
+                    match
+                      List.find_opt (fun (r : rol) -> norm (filler r) = norm nt) ft.rollen
+                    with
+                    | Some r when not r.rol_meervoudig ->
+                        Some (norm fn, Printf.sprintf "/objectCreaties/%d" i)
+                    | _ -> None)
+                | None -> None)
+            | _ -> None)
+        | _ -> None)
+      (List.mapi (fun i o -> (i, o)) ctx.doc.object_creaties)
   in
   List.concat_map
     (fun (ftn, at) ->
       let same = List.filter (fun (f, _) -> f = ftn) writers in
-      if to_one ftn && List.length same > 1 && (let a0 = snd (List.hd same) in a0 <> at) then
+      if List.length same > 1 && snd (List.hd same) <> at then
         [ v "WF-052" at
             (Printf.sprintf
-               "connecting relation '%s' has a to-one role and %d creating writers; at most one \
-                may write it"
+               "connecting relation '%s' has a to-one created-side role and %d object-creation \
+                writers; at most one may write it"
                ftn (List.length same)) ]
       else [])
     writers

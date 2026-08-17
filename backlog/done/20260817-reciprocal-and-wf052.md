@@ -35,3 +35,31 @@ Out of scope: reciprocal creations' own witness (the derivations now
 find the relation, recorded untested); symmetric-closure semantics for
 reciprocal links (links are read as stored, the existing convention);
 recursive rule groups.
+
+Result: landed in full; both recorded edges are closed. (1) Reciprocal
+fact types participate in all five derivation sites (resolve_binding,
+connecting_candidates, connecting_role, connecting_pair, role_by_name,
+plus the case loader's resolve_role) with bound = opposite = the single
+role; the maatschap anchor witnesses the bound AANTAL and bindingless
+SOM routes, and WF-013 has its first golden. The verification round's
+second major reshaped this part: the pinned runtime materialises a
+reciprocal entry in BOTH directions (both to-one legs written), so
+as-stored reading was a silent v0 divergence — the shared case loader
+now materialises the reverse leg at load (a conflicting reverse leg on
+the WF-013 to-one role is a load error), and case 1 supplies the
+maatschap one-sidedly precisely to witness that. (2) WF-052, narrowed
+by the round's first major: the original any-role-to-one test
+over-rejected the harmless parent-with-many-children shape (both
+executors agree there, no fault) — the rule now counts only
+object-creation writers of a relation whose CREATED-side role is
+to-one, exactly the guardless-model divergence; fact creations stay
+unrestricted (their to-one writes are fault-paired: writer fault ≡
+cardinality-guard UNSAT). The round also caught an editing accident:
+the WF-052 insertion had eaten the "### 3.5 Consistency" heading —
+restored.
+
+Recorded, deliberately accepted: a reciprocal object creation is
+WF-045-unreachable outside recursive rule groups (self-typed subject),
+so connecting_pair's reciprocal arm stays consistency-only until that
+card; the bound AANTAL witness is inherently 0/1 (WF-013 caps the
+role at to-one) — the SOM route carries the value-level witness.

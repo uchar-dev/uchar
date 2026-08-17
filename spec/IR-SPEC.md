@@ -799,15 +799,22 @@ in order → `joinRol` → target.
   warning-and-drop reasons; an emitted v0 record is always fully
   resolved. **Delta (promotion):** in v1 the ill-formed variants are
   verifier errors, not silent drops.
-- **WF-052** A connecting relation that carries a **to-one role** MUST
-  have at most one creating writer — counting the fact creations that
-  name it (`feittype`, this chapter) and the object creations whose
-  uniquely-derivable back-link it is (ch. 3.3). Two writers would
-  inevitably hand the to-one end a second filler on any shared subject:
-  the reference interpreter faults that write
-  (`RUNTIME-SEMANTICS.md` ch. 5.5), and a stable model cannot refuse it
-  without a guard — the single-writer discipline of WF-026/WF-050,
-  applied to created relations, closes the divergence statically.
+- **WF-052** A connecting relation whose **created-side role is
+  to-one** MUST have at most one object-creation writer (ch. 3.3: the
+  creations whose uniquely-derivable back-link it is). Two such writers
+  would hand the to-one end on a shared subject a second filler: the
+  reference interpreter faults that write (`RUNTIME-SEMANTICS.md`
+  ch. 5.5) while a guardless stable model would silently hold both —
+  the single-writer discipline of WF-026/WF-050, applied to created
+  relations, closes that divergence statically. Deliberately
+  conservative like its family: two writers with mutually exclusive
+  conditions are still rejected. Fact creations are not restricted:
+  their to-one writes are fault-paired already (the interpreter's
+  writer fault ≡ the generated cardinality guard's UNSAT), and a
+  to-many created-side role makes multi-writer object creation
+  harmless (idempotent links; both executors agree).
+
+### 3.5 Consistency
 
 An assertion that must hold; a violation is observable on the §9.5
 inconsistency channel — declarative, not "fire on the negation"
@@ -1318,7 +1325,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-049 | temporal read: basis temporal (attribute/granular parameter), day-precision date, element type | gate 3 | `anchor/jutterswet-aanmeldquotum` (attribute + parameter reads; hit, gap→leeg, empty date→leeg; replayed by gates 5–6) | `wf049-read-of-nontemporal` (basis) + `wf049-read-at-datetime` (date operand) + `wf049-type-not-element` (element type) |
 | WF-050 | ladder: ≥ 1 rung; exactly one target, resolving; rung shapes per kind; init rung lowest; no other writer; multiplicity only declared-unordered | gate 3 | `anchor/jutterswet-uitsluiting` (characteristic) + `anchor/jutterswet-vondstwaardering` (attribute + init) + `anchor/jutterswet-toelagegronden` (unordered groups, six conflict-path cases; all replayed by gates 5–6) | `wf050-empty-ladder` + `wf050-two-ladders-one-target` + `wf050-ladder-beside-rule` + `wf050-both-targets` + `wf050-init-not-lowest` + `wf050-rule-beside-attribute-ladder` + `wf050-allocation-beside-ladder` + `wf050-creation-beside-ladder` + `wf050-half-marked-group` |
 | WF-051 | no dependency cycle through a ladder (justification and consequence reads are negative edges) | gate 3 (over the extended dep_forms graph, shared with ref/'s strata) | `anchor/jutterswet-uitsluiting` (the ladder sits below its negated consumer — strata exist, oracle-replayed) | `wf051-ladder-reads-own-target` |
-| WF-052 | a to-one connecting relation has at most one creating writer (fact creations naming it; object creations whose unique back-link it is) | gate 3 | `anchor/jutterswet-penninguitgifte` (one writer per to-one relation, executed by gates 5–6) | `wf052-two-writers-one-to-one-relation` |
+| WF-052 | a connecting relation with a to-one created-side role has at most one object-creation writer (fact creations are fault-paired already) | gate 3 | `anchor/jutterswet-penninguitgifte` (one writer per to-one relation, executed by gates 5–6) | `wf052-two-writers-one-to-one-relation` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is
