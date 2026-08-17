@@ -44,3 +44,30 @@ Out of scope: desugaring versioned or multi-writer forms; conditional
 initialisations; characteristic-attribution desugaring (a single
 KENMERKTOEKENNING is already the one-rung ladder trivially — recorded,
 not transformed); the emitter (pin-bump).
+
+Result: landed, and the adversarial round earned its keep. Ch. 7.7 is
+normative: exactly one unconditional, version-free Initialisatie plus
+at most one version-free computing rule on a target read as one
+attribute ladder (the init rung is what the desugaring exists for);
+conditional inits, versioned forms, and multi-writer targets stay
+native with their reasons; the pinned delta stands — computed-leeg
+beside an init is divergent in the v0 reading (ref faults on the
+fixpoint budget) while the ladder defines it. Ir_v0.Desugar implements
+the table; the ASP backend desugars before translating (Initialisatie
+became translatable), ref replays the v0 forms natively, and the
+gate-6 differential over anchor jutterswet-waardering-v0vorm (four
+confluent cases: 50 / 25 / 40 kept / 50 over input) witnesses the
+lowering itself. The verification's blocker: the first cut desugared
+bare computations without an init too — silently changing six goldens'
+clingo path and diverging from ref on computed-leeg-over-input; the
+domain now requires exactly one init, the goldens translate natively
+again, and the bare-computation case is spec text. Also from the
+round: the too-strong "faulted by a consumer" sentence was made
+precise (order-dependent forms fault in ref; no gate admits executor
+disagreement), and the underlying pre-existing native-path limitation
+— a computed leeg overwriting an input value has no absence encoding —
+is now a recorded clingo-README limitation, kin to the empty-equality
+asymmetry. Ch. 7 is complete; only rule-readability of the conflict
+fact stays OPEN. Deliberately left: the native-path defeasible-input
+generalisation (its own card if a case ever demands it); the emitter
+(pin-bump).

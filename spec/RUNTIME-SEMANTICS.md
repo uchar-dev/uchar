@@ -1767,12 +1767,23 @@ serve the old forms through the new machinery:
 
 | v0 form(s) on one (type, attribute) target | Ladder reading |
 |---|---|
-| one version-free computing rule (Gelijkstelling/Berekening) | one rung: justification = its condition (an unconditional rule gets the vacuously true empty-ALLE), consequence = its value |
-| plus at most one **unconditional**, version-free Initialisatie | plus the ch. 7.3 initialisation rung (lowest) |
+| **exactly one** unconditional, version-free Initialisatie | the ch. 7.3 initialisation rung (lowest) |
+| plus at most one version-free computing rule (Gelijkstelling/Berekening) | plus one rung above it: justification = its condition (an unconditional rule gets the vacuously true empty-ALLE), consequence = its value |
 
-Outside the desugaring's domain — left as v0 forms, faulted by a
-consumer that cannot carry them, never guessed: **conditional
-initialisations** (their justification would need the input-emptiness
+The initialisation is what the desugaring exists for — and what keeps
+the two readings extensionally equal on the confluent domain. A **bare
+computation without one stays native**: its v0 meaning writes a
+computed leeg over an input value (ch. 1.2g), where the ladder reading
+would leave the input standing — desugaring it would silently change
+its meaning, not repair a hole. (That v0 meaning itself has no absence
+encoding on the ASP native path — a recorded backend limitation, kin
+to the empty-equality asymmetry; see `backends/clingo/README.md`.)
+
+Outside the desugaring's domain the v0 forms are left as they are; a
+consumer that cannot carry a form faults on it, and where a form's v0
+meaning is order-dependent the reference interpreter faults on the
+fixpoint budget — no gate ever admits a case on which the executors
+disagree. Excluded: **conditional initialisations** (their justification would need the input-emptiness
 guard conjoined, which is not a writable condition — WF-051 forbids
 reading the own target), **versioned forms** (version selection is
 temporal, ch. 7.4 — folding windows into justifications would conflate

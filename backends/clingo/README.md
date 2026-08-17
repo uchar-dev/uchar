@@ -23,7 +23,12 @@ spec bug.
   ordering comparison over leeg fails through the unbound body join —
   the ch. 1.2d ordering rule for free. The equality/inequality empty
   asymmetry has no such free encoding and faults until a corpus case
-  demands it (recorded finding).
+  demands it (recorded finding). Kin to it: a computed **leeg
+  overwriting an input value** (ch. 1.2g) has no absence encoding on
+  the native rule path — the input fact would stand beside the
+  underivable computation, so a case pinning that write goes red on
+  gate 6 (recorded limitation; the ladder path carries the same
+  situation correctly through its defeasible input).
 - Negated characteristic reads are negation-as-failure — sound because
   WF-045/046 guarantee stratifiability; the verifier is thereby also
   the guard that a document is clingo-suitable.

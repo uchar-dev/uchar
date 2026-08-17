@@ -61,11 +61,15 @@ let document (doc : document) : document =
   let desugarable (_, (_, rs)) =
     let inits = List.filter (fun r -> r.rr_soort = Some Initialisatie) rs in
     let comps = List.filter is_computing rs in
+    (* exactly one initialisation: the init rung is what the desugaring
+       exists for, and it is what keeps the two readings extensionally
+       equal on the confluent domain — a bare computation without one
+       reads differently on empty-over-input (ref writes the empty,
+       ch. 1.2g; the ladder falls through) and must stay native *)
     List.length rs = List.length inits + List.length comps
-    && List.length inits <= 1
+    && List.length inits = 1
     && List.for_all is_plain_init inits
     && List.length comps <= 1
-    && rs <> []
   in
   let chosen = List.filter desugarable targets in
   if chosen = [] then doc
