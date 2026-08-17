@@ -22,8 +22,8 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
 ## Method: mirror, then diverge
 
 - **v0** is the faithful JSON dump of `regelspraak-java`'s in-memory IR
-  (`Resolver --ir`; the working pin is the toolchain commit `911f064`,
-  emitting since `c51652a`) at a pinned commit — warts included.
+  (`Resolver --ir`; the working pin is the toolchain commit `edecb46`,
+  emitting since `446dfa6`) at a pinned commit — warts included.
 - **v1** is what this document specifies: it deviates from v0 deliberately
   where the founding review (`IR-REVIEW.md`) flagged Drools leakage
   (bean-field names → role bindings, salience → declared stratification,
@@ -46,12 +46,14 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   extension fields: `verbindendeRol` (ch. 3.2), `bronRol` (ch. 4.3), the
   symbolic fact-creation fields (ch. 3.4); current extension nodes and
   forms: `TemporalRead` (ch. 4.3a), the `defaultLadders` list
-  (ch. 6.1). **First pin bump (2026-08-17, toolchain `911f064`):** the
+  (ch. 6.1). **First pin bump (2026-08-17, toolchain `edecb46`):** the
   emitter produces `verbindendeRol` and `bronRol` where uniquely
   derivable from declared names (absent otherwise — never null, never a
   guessed plural); the emitter goldens carry them since that pin. The
-  remaining extensions stay anchor-only: their surface syntax does not
-  exist in the toolchain yet.
+  remaining extensions stay anchor-only: `TemporalRead` and the ladders
+  have no surface syntax in the toolchain yet, and the symbolic
+  fact-creation fields (whose bean-field surface form the toolchain does
+  emit) await their emitter-side role derivation.
 
 ## Conventions (binding)
 

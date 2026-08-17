@@ -11,8 +11,11 @@ Anchor cases differ from the emitted goldens one directory up in two
 ways: there is no `bron.rgs` (the `ir.json` is authored directly against
 `spec/IR-SPEC.md`), and they may carry the optional **extension fields**
 of the decided wire-entry discipline (IR-SPEC, Method) — v1 constructs
-the pinned v0 emitter cannot produce yet. Everything else holds
-unchanged: schema-valid and byte-round-tripping (gate 2),
+ahead of the pinned emitter. Extensions graduate: since the 2026-08-17
+pin bump the emitter itself produces `verbindendeRol` and `bronRol`;
+the rest (the temporal read, the ladders, the symbolic creation
+fields) remains anchor-pioneered until its pin bump. Everything else
+holds unchanged: schema-valid and byte-round-tripping (gate 2),
 verifier-clean (gate 3), case files valid (gate 4), and replayed with
 exact expectation match by both executors (gates 5 and 6).
 
