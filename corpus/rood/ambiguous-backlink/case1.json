@@ -14,7 +14,7 @@
     "parameters": {}
   },
   "expectedFault": {
-    "ref": "more than one fact type relates",
-    "clingo": "more than one fact type relates"
+    "ref": "the created object's back-link is ambiguous",
+    "clingo": "the created object's back-link is ambiguous"
   }
 }

@@ -106,6 +106,14 @@ shared-derivation bug from ever passing silently.
 
 Recorded limitations:
 
+- Two 1:1 object creations writing the same to-one connecting relation
+  from one subject are verifier-clean today: `ref/` faults on the
+  second filler (`World.add_link`), while the derived `rol/3` here
+  silently holds both — a divergence on a construct no corpus case
+  reaches. A candidate WF (at most one creation per to-one connecting
+  relation, the WF-026/WF-050 single-writer family) would close it
+  statically.
+
 - Clingo integers are 32-bit and wrap silently; the scaled encoding is
   exact only while every value and intermediate product stays within
   ±2³¹ (the allocation forms A×W before dividing). A mismatch fails

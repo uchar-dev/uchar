@@ -173,6 +173,11 @@ let resolve_role (doc : document) ~otype ~key =
 let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
   let kvs = obj j in
   let label = str (field kvs "label") in
+  (* "::" is the minted-instance namespace (Eval.run_object_creatie's
+     deterministic labels); a case label there could silently suppress
+     a creation — refused at load, never read wrong *)
+  if contains ~needle:"::" label then
+    fail "label %S: \"::\" is reserved for created instances" label;
   let otype_name = str (field kvs "objectType") in
   let ot = find_objecttype doc otype_name in
   let attrs, tls =

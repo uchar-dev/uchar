@@ -704,7 +704,7 @@ let run_feit_creatie env world (fc : resolved_feit_creatie) =
    v0's guard is a live fact-base negation) — while the to-many and
    linkless shapes guard per (rule × subject) through the
    deterministic label. *)
-let run_object_creatie env ~world0 world (oc : resolved_object_creatie) =
+let run_object_creatie env ~world0 ~idx world (oc : resolved_object_creatie) =
   if not (applies env oc.oc_geldigheid) then (world, false)
   else begin
     let name = Option.value oc.oc_naam ~default:"<objectcreatie>" in
@@ -717,7 +717,11 @@ let run_object_creatie env ~world0 world (oc : resolved_object_creatie) =
         in
         if not fire then (w, false)
         else begin
-          let label = Printf.sprintf "%s::%s" name self.label in
+          (* keyed by the creation INDEX, never the (nullable) name —
+             the same key the ASP backend's ocN(Subject) term uses, so
+             two name-less creations can never collide into one label;
+             the case loader reserves the "::" namespace for mints *)
+          let label = Printf.sprintf "oc%d::%s" idx self.label in
           let blocked =
             match pair with
             | Some (_, new_role, _) when not new_role.rol_meervoudig -> (
@@ -1137,7 +1141,7 @@ let evaluate env world =
         (fun (w, ch) (i, oc) ->
           if oc_stratum i > k then (w, ch)
           else
-            let w, c = run_object_creatie env ~world0 w oc in
+            let w, c = run_object_creatie env ~world0 ~idx:i w oc in
             (w, ch || c))
         (world, false)
         (indexed env.doc.object_creaties)

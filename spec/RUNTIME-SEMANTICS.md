@@ -1189,7 +1189,12 @@ linked-instance guard: an already linked instance — a case-supplied
 one included — blocks the creation; the executed guard reads the
 **input world** (a snapshot: v0's live fact-base negation is narrowed,
 recorded — cross-form blocking through links laid during evaluation is
-not mirrored). The to-many and linkless shapes realise the marker as
+not mirrored), and only the **subject-side stored links** (a case that
+delivers the link solely on the created side does not block — the
+storage-direction narrowing, recorded). Minted instances live in a
+reserved label namespace (`::`), refused for case labels at load, and
+are keyed by the creation's index — never its nullable name — so two
+name-less creations can never collide. The to-many and linkless shapes realise the marker as
 the deterministic mint itself. More than one connecting relation is a
 **fault** — v0 silently drops the back-link there ("onopgelost
 terugkoppeling"); execution refuses to guess (recorded delta, the red

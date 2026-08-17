@@ -176,6 +176,11 @@
       "node": "Regel",
       "naam": "penningcontrole",
       "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "houderscontrole",
+      "soort": "regel"
     }
   ],
   "resolvedRegels": [
@@ -490,6 +495,74 @@
       },
       "bron": "Er moet worden voldaan aan: elke Penning is uitgereikt",
       "line": 1,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedConsistentie",
+      "naam": "houderscontrole",
+      "subject": "Penning",
+      "assertie": {
+        "node": "Vergelijking",
+        "op": "GROTER_OF_GELIJK",
+        "links": {
+          "node": "Functie",
+          "kind": "AANTAL",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "houder",
+              "objecttype": "Penning",
+              "onderwerpBron": "de Penning",
+              "navigatieRol": null,
+              "type": {
+                "node": "Onbekend",
+                "reden": "niet opgelost"
+              },
+              "bron": "houder van de Penning",
+              "set": false,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": "Jutter",
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "het aantal houder van de Penning",
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "penningbezit",
+            "rol": "houder"
+          }
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "1",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "1"
+        },
+        "periode": null,
+        "bron": "het aantal houder van de Penning is groter of gelijk aan 1"
+      },
+      "bron": "Er moet worden voldaan aan: elke Penning heeft een houder",
+      "line": 2,
       "geldigheid": {
         "node": "Geldigheid",
         "vanaf": null,
