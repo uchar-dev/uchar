@@ -1007,13 +1007,17 @@ let aggregation_source_check ctx at = function
 let connecting_candidates ctx ~from_type ~to_type =
   List.filter_map
     (fun (fn, (ft : feittype)) ->
+      let ot r = Option.value r.rol_objecttype_naam ~default:"" in
       match ft.rollen with
       | [ a; b ] ->
-          let ot r = Option.value r.rol_objecttype_naam ~default:"" in
           if
             (norm (ot a) = norm from_type && norm (ot b) = norm to_type)
             || (norm (ot b) = norm from_type && norm (ot a) = norm to_type)
           then Some fn
+          else None
+      | [ r ] when ft.wederkerig ->
+          (* the single reciprocal role relates the type to itself *)
+          if norm (ot r) = norm from_type && norm from_type = norm to_type then Some fn
           else None
       | _ -> None)
     ctx.doc.feittypen
@@ -1040,10 +1044,22 @@ let resolve_binding ctx (rb : rol_binding) =
               Error
                 ("role binding names no declared role '" ^ rb.rb_rol ^ "' of fact type '"
                ^ rb.rb_feittype ^ "' (the plural does not bind)"))
+      | [ r ] when ft.wederkerig ->
+          (* the reciprocal shape (§13.3.9.2, WF-011/013): one role
+             relating the type to itself — bound and opposite are the
+             same role *)
+          let matches (r : rol) =
+            match r.rol_naam with Some n -> norm n = norm rb.rb_rol | None -> false
+          in
+          if matches r then Ok (ft, r, r)
+          else
+            Error
+              ("role binding names no declared role '" ^ rb.rb_rol ^ "' of fact type '"
+             ^ rb.rb_feittype ^ "' (the plural does not bind)")
       | _ ->
           Error
             ("role binding into fact type '" ^ rb.rb_feittype
-           ^ "', which does not have exactly two roles"))
+           ^ "', which does not have exactly two roles (or one, reciprocal)"))
 
 (* WF-047: the binding resolves and its fillers agree with the node's
    declared source/target types (skip a side the node leaves unnamed). *)
@@ -2341,6 +2357,46 @@ let wf050 ctx =
          )
        ctx.doc.default_ladders)
 
+(* WF-052 (the WF-026/WF-050 single-writer family): a connecting
+   relation with a to-one role has at most one creating writer — a
+   second writer would inevitably hand the to-one end a second filler
+   on shared subjects, which ref/ faults and an ASP model cannot fault
+   without a guard; the divergence closes statically. Writers of a
+   relation: fact creations naming it symbolically, and object
+   creations whose uniquely-derivable back-link it is. *)
+let wf052 ctx =
+  let to_one (ftn : string) =
+    match find_ci ctx.doc.feittypen ftn with
+    | Some (ft : feittype) -> List.exists (fun (r : rol) -> not r.rol_meervoudig) ft.rollen
+    | None -> false
+  in
+  let writers =
+    List.filter_map
+      (fun (i, (f : resolved_feit_creatie)) ->
+        Option.map (fun ft -> (norm ft, Printf.sprintf "/feitCreaties/%d" i)) f.fc_feittype)
+      (List.mapi (fun i f -> (i, f)) ctx.doc.feit_creaties)
+    @ List.filter_map
+        (fun (i, (o : resolved_object_creatie)) ->
+          match (o.oc_subject, o.nieuw_type) with
+          | Some st, Some nt -> (
+              match connecting_candidates ctx ~from_type:st ~to_type:nt with
+              | [ fn ] -> Some (norm fn, Printf.sprintf "/objectCreaties/%d" i)
+              | _ -> None)
+          | _ -> None)
+        (List.mapi (fun i o -> (i, o)) ctx.doc.object_creaties)
+  in
+  List.concat_map
+    (fun (ftn, at) ->
+      let same = List.filter (fun (f, _) -> f = ftn) writers in
+      if to_one ftn && List.length same > 1 && (let a0 = snd (List.hd same) in a0 <> at) then
+        [ v "WF-052" at
+            (Printf.sprintf
+               "connecting relation '%s' has a to-one role and %d creating writers; at most one \
+                may write it"
+               ftn (List.length same)) ]
+      else [])
+    writers
+
 (* WF-051: no dependency cycle may pass through a ladder — its
    displacement edges are negative (dep_forms above), so any such cycle
    also violates WF-046; this check names the ladder-specific rule. *)
@@ -2388,4 +2444,4 @@ let all (doc : document) : violation list =
       wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf020 ctx; wf021 ctx;
       wf022 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf032 ctx; wf033 ctx; wf045_046 ctx;
-      wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; expression_layer ctx ]
+      wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; expression_layer ctx ]

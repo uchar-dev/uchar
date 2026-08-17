@@ -1,0 +1,39 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": { "vondstwaarde": { "number": "30" } },
+        "roles": { "maat": ["J2"] },
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": { "vondstwaarde": { "number": "12" } },
+        "roles": { "maat": ["J1"] },
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": { "vondstwaarde": { "number": "7" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "aantal maten", "value": { "number": "1" } },
+    { "kind": "attributeValue", "label": "J1", "attribute": "maatwaarde", "value": { "number": "12" } },
+    { "kind": "attributeValue", "label": "J2", "attribute": "aantal maten", "value": { "number": "1" } },
+    { "kind": "attributeValue", "label": "J2", "attribute": "maatwaarde", "value": { "number": "30" } },
+    { "kind": "attributeValue", "label": "J3", "attribute": "aantal maten", "value": { "number": "0" } },
+    { "kind": "attributeValue", "label": "J3", "attribute": "maatwaarde", "value": { "number": "0" } },
+    { "kind": "consistent" }
+  ]
+}

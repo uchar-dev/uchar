@@ -153,15 +153,18 @@ let resolve_role (doc : document) ~otype ~key =
   let hits =
     List.concat_map
       (fun (_, (ft : feittype)) ->
+        let ot r = Option.value r.rol_objecttype_naam ~default:"" in
+        let matches (r : rol) =
+          (match r.rol_naam with Some n -> norm n = norm key | None -> false)
+          || (match r.rol_meervoud with Some m -> norm m = norm key | None -> false)
+        in
         match ft.rollen with
         | [ a; b ] ->
-            let ot r = Option.value r.rol_objecttype_naam ~default:"" in
-            let matches (r : rol) =
-              (match r.rol_naam with Some n -> norm n = norm key | None -> false)
-              || (match r.rol_meervoud with Some m -> norm m = norm key | None -> false)
-            in
             (if norm (ot a) = norm otype && matches b then [ b ] else [])
             @ if norm (ot b) = norm otype && matches a then [ a ] else []
+        | [ r ] when ft.wederkerig ->
+            (* reciprocal: the single role is its own opposite *)
+            if norm (ot r) = norm otype && matches r then [ r ] else []
         | _ -> [])
       doc.feittypen
   in

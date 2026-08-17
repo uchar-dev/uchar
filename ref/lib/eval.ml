@@ -66,11 +66,16 @@ let connecting_role env ~from_type ~to_type =
   let candidates =
     List.filter_map
       (fun (_, (ft : feittype)) ->
+        let ot r = Option.value r.rol_objecttype_naam ~default:"" in
         match ft.rollen with
         | [ a; b ] ->
-            let ot r = Option.value r.rol_objecttype_naam ~default:"" in
             if norm (ot a) = norm from_type && norm (ot b) = norm to_type then Some b
             else if norm (ot b) = norm from_type && norm (ot a) = norm to_type then Some a
+            else None
+        | [ r ] when ft.wederkerig ->
+            (* the reciprocal shape: the one role relates the type to
+               itself, and is both sides of the hop *)
+            if norm (ot r) = norm from_type && norm from_type = norm to_type then Some r
             else None
         | _ -> None)
       env.doc.feittypen
@@ -90,12 +95,16 @@ let connecting_pair env ~from_type ~to_type =
   let candidates =
     List.filter_map
       (fun (ftn, (ft : feittype)) ->
+        let ot r = Option.value r.rol_objecttype_naam ~default:"" in
         match ft.rollen with
         | [ a; b ] ->
-            let ot r = Option.value r.rol_objecttype_naam ~default:"" in
             if norm (ot a) = norm from_type && norm (ot b) = norm to_type then Some (ftn, b, a)
             else if norm (ot b) = norm from_type && norm (ot a) = norm to_type then
               Some (ftn, a, b)
+            else None
+        | [ r ] when ft.wederkerig ->
+            if norm (ot r) = norm from_type && norm from_type = norm to_type then
+              Some (ftn, r, r)
             else None
         | _ -> None)
       env.doc.feittypen
@@ -164,12 +173,14 @@ let role_by_name env ~self_type ~name =
   let hits =
     List.filter_map
       (fun (_, (ft : feittype)) ->
+        let ot r = Option.value r.rol_objecttype_naam ~default:"" in
         match ft.rollen with
         | [ a; b ] ->
-            let ot r = Option.value r.rol_objecttype_naam ~default:"" in
             if norm (ot a) = norm self_type && matches b then Some b
             else if norm (ot b) = norm self_type && matches a then Some a
             else None
+        | [ r ] when ft.wederkerig ->
+            if norm (ot r) = norm self_type && matches r then Some r else None
         | _ -> None)
       env.doc.feittypen
   in

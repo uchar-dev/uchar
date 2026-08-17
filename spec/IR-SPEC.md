@@ -427,9 +427,9 @@ Method) is the symbolic reference those chapters bind with:
 
 - **WF-047** A role binding MUST resolve: the fact type is declared, the
   role names exactly one of its roles (case-insensitive over the declared
-  name), and the fact type has exactly two roles — a binding into a
-  reciprocal (one-role) fact type is thereby **rejected** for now; no use
-  site admits one, and the restriction is revisited when one does. At each
+  name), and the fact type has exactly two roles — or exactly **one**,
+  reciprocal (WF-011/013), in which case the bound and the opposite role
+  are that same role: both sides fill the one declared type. At each
   use site the bound role's filler type and the opposite role's filler
   type MUST agree with the types the node declares (the site chapters
   state which side is bound: ch. 3.2, 4.3), and where the v0 form also
@@ -437,8 +437,10 @@ Method) is the symbolic reference those chapters bind with:
   denote the bound role.
 - **WF-048** A node that navigates the connecting relation *without* a
   binding — a bindingless allocation (ch. 3.2) or instance fold
-  (ch. 4.3) — is well-formed only if **exactly one** two-role fact type
-  relates its type pair: the ch. 4.1 runtime derivation fault of
+  (ch. 4.3) — is well-formed only if **exactly one** fact type relates
+  its type pair (a two-role fact type over the pair, or — for a
+  self-typed pair — a reciprocal one): the ch. 4.1 runtime derivation
+  fault of
   `RUNTIME-SEMANTICS.md` lifted to well-formedness. Every emitted v0
   document satisfies this (the v0 resolver enforces the same unique
   derivability at build time). In v1 the binding becomes required and
@@ -797,8 +799,15 @@ in order → `joinRol` → target.
   warning-and-drop reasons; an emitted v0 record is always fully
   resolved. **Delta (promotion):** in v1 the ill-formed variants are
   verifier errors, not silent drops.
-
-### 3.5 Consistency
+- **WF-052** A connecting relation that carries a **to-one role** MUST
+  have at most one creating writer — counting the fact creations that
+  name it (`feittype`, this chapter) and the object creations whose
+  uniquely-derivable back-link it is (ch. 3.3). Two writers would
+  inevitably hand the to-one end a second filler on any shared subject:
+  the reference interpreter faults that write
+  (`RUNTIME-SEMANTICS.md` ch. 5.5), and a stable model cannot refuse it
+  without a guard — the single-writer discipline of WF-026/WF-050,
+  applied to created relations, closes the divergence statically.
 
 An assertion that must hold; a violation is observable on the §9.5
 inconsistency channel — declarative, not "fire on the negation"
@@ -1270,7 +1279,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-010 | no restatement between non-convertible units (use-time; expression layer) | OPEN (v0 has no restatement node to anchor the check) | OPEN | OPEN |
 | WF-011 | fact-type arity: reciprocal = 1 role, else ≥ 2 (>2 OPEN) | gate 3 | `jutterswet-vondsttelling` | `wf011-one-role` |
 | WF-012 | role names unambiguous within a fact type (incl. plurals) | gate 3 | `jutterswet-vondsttelling` | `wf012-ambiguous-roles` |
-| WF-013 | reciprocal role is to-one; other roles carry explicit cardinality | gate 3 (first clause; declared-vs-defaulted cardinality has no provenance in v0) | OPEN (needs a reciprocal fact type) | `wf013-reciprocal-many` |
+| WF-013 | reciprocal role is to-one; other roles carry explicit cardinality | gate 3 (first clause; declared-vs-defaulted cardinality has no provenance in v0) | `anchor/jutterswet-maatschap` (a reciprocal fact type, folds replayed by gates 5–6) | `wf013-reciprocal-many` |
 | WF-014 | dimension labels non-empty, duplicate-free, ordered | gate 3 | OPEN | `wf014-empty-labels` |
 | WF-015 | one timeline declaration per normalized name; references resolve | gate 3 | `jutterswet-penningjaar` | `wf015-timeline-collision` |
 | WF-016 | variable-start timeline is anchored (rule-layer check) | gate 3 (existence of the determination; the anchor-write typing is WF-032/WF-023) | OPEN | `wf016-unanchored-variable-start` |
@@ -1304,11 +1313,12 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-044 | (consumer) Unresolved surfaces, never silently lowered | behavioural — gate 8 (`scripts/check-rood.sh`): both executors must fault, fragment-pinned | `corpus/rood/wf044-onopgelost-reached` (the red witness: ref faults the evaluation, the ASP backend the translation) | n/a (the marker is legal wire content; the fence is behavioural, not well-formedness) |
 | WF-045 | dependency graph acyclic (creation recursion excepted) | gate 3 | `jutterswet-vondsttelling` | `wf045-cyclic-attribute-dependency` |
 | WF-046 | no negative edge on a dependency cycle (strata exist) | gate 3 | `jutterswet-penningjaar` (the negated aanmeldplichtig reading — a negative edge, verifier-clean, oracle-replayed) | `wf046-negated-read-in-recursive-cycle` |
-| WF-047 | role binding resolves; fillers agree with the use site; written source denotes the bound role | gate 3 | `anchor/jutterswet-bergingstoezicht` (two fact types over one pair; allocation and fold bound, replayed by gates 5–6) | `wf047-dangling-role-binding` (resolution) + `wf047-bound-role-fills-source` (filler agreement) |
-| WF-048 | bindingless allocation/instance fold: connecting relation uniquely derivable | gate 3 (contexts with a statically known fold subject; a subjectless context — none exists in v0 dumps, whose folds sit under a typed rule target — is left to the executors' runtime fault) | `jutterswet-berging` + `jutterswet-vondsttelling` (bindingless, uniquely derivable) | `wf048-ambiguous-connecting-relation` |
+| WF-047 | role binding resolves; fillers agree with the use site; written source denotes the bound role | gate 3 | `anchor/jutterswet-bergingstoezicht` (two fact types over one pair; allocation and fold bound, replayed by gates 5–6) + `anchor/jutterswet-maatschap` (the reciprocal binding: bound = opposite) | `wf047-dangling-role-binding` (resolution) + `wf047-bound-role-fills-source` (filler agreement) + `wf047-reciprocal-wrong-filler` (the single-role filler clause) |
+| WF-048 | bindingless allocation/instance fold: connecting relation uniquely derivable | gate 3 (contexts with a statically known fold subject; a subjectless context — none exists in v0 dumps, whose folds sit under a typed rule target — is left to the executors' runtime fault) | `jutterswet-berging` + `jutterswet-vondsttelling` (bindingless, uniquely derivable) + `anchor/jutterswet-maatschap` (bindingless over a reciprocal relation) | `wf048-ambiguous-connecting-relation` |
 | WF-049 | temporal read: basis temporal (attribute/granular parameter), day-precision date, element type | gate 3 | `anchor/jutterswet-aanmeldquotum` (attribute + parameter reads; hit, gap→leeg, empty date→leeg; replayed by gates 5–6) | `wf049-read-of-nontemporal` (basis) + `wf049-read-at-datetime` (date operand) + `wf049-type-not-element` (element type) |
 | WF-050 | ladder: ≥ 1 rung; exactly one target, resolving; rung shapes per kind; init rung lowest; no other writer; multiplicity only declared-unordered | gate 3 | `anchor/jutterswet-uitsluiting` (characteristic) + `anchor/jutterswet-vondstwaardering` (attribute + init) + `anchor/jutterswet-toelagegronden` (unordered groups, six conflict-path cases; all replayed by gates 5–6) | `wf050-empty-ladder` + `wf050-two-ladders-one-target` + `wf050-ladder-beside-rule` + `wf050-both-targets` + `wf050-init-not-lowest` + `wf050-rule-beside-attribute-ladder` + `wf050-allocation-beside-ladder` + `wf050-creation-beside-ladder` + `wf050-half-marked-group` |
 | WF-051 | no dependency cycle through a ladder (justification and consequence reads are negative edges) | gate 3 (over the extended dep_forms graph, shared with ref/'s strata) | `anchor/jutterswet-uitsluiting` (the ladder sits below its negated consumer — strata exist, oracle-replayed) | `wf051-ladder-reads-own-target` |
+| WF-052 | a to-one connecting relation has at most one creating writer (fact creations naming it; object creations whose unique back-link it is) | gate 3 | `anchor/jutterswet-penninguitgifte` (one writer per to-one relation, executed by gates 5–6) | `wf052-two-writers-one-to-one-relation` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

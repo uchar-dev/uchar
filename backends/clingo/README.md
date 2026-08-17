@@ -31,7 +31,10 @@ spec bug.
   situation correctly through its defeasible input).
 - Negated characteristic reads are negation-as-failure — sound because
   WF-045/046 guarantee stratifiability; the verifier is thereby also
-  the guard that a document is clingo-suitable.
+  the guard that a document is clingo-suitable — as it is for the
+  to-one single-writer discipline: WF-052 statically excludes the two
+  1:1 creations whose second filler `ref/` faults but a guardless
+  model would silently hold.
 - Object creation (IR-SPEC ch. 3.3; ch. 5.5, non-recursive) mints the
   created instance as a deterministic function term `ocN(Subject)` —
   set semantics carries the per-(rule × subject) idempotence, exactly
@@ -105,14 +108,6 @@ semantics run in clingo; the hand-written absolute expectations keep a
 shared-derivation bug from ever passing silently.
 
 Recorded limitations:
-
-- Two 1:1 object creations writing the same to-one connecting relation
-  from one subject are verifier-clean today: `ref/` faults on the
-  second filler (`World.add_link`), while the derived `rol/3` here
-  silently holds both — a divergence on a construct no corpus case
-  reaches. A candidate WF (at most one creation per to-one connecting
-  relation, the WF-026/WF-050 single-writer family) would close it
-  statically.
 
 - Clingo integers are 32-bit and wrap silently; the scaled encoding is
   exact only while every value and intermediate product stays within

@@ -925,7 +925,10 @@ binding when present. *v0 mirror note:* a bindingless form derives the
 relation as the unique fact type relating `targetType` to `sourceType`
 — admissible only while that derivation is unique (WF-048; v0 refused
 the non-unique case as marker/skip, and the executors fault on it). In
-v1 the binding is required and the derivation retires.
+v1 the binding is required and the derivation retires. The reciprocal
+shape (one role relating a type to itself, WF-011/013) participates in
+both routes: its single role is bound and opposite at once, and it
+counts as the connecting candidate for a self-typed pair.
 
 ### 4.2 The distribution equations
 
@@ -1198,7 +1201,11 @@ name-less creations can never collide. The to-many and linkless shapes realise t
 the deterministic mint itself. More than one connecting relation is a
 **fault** — v0 silently drops the back-link there ("onopgelost
 terugkoppeling"); execution refuses to guess (recorded delta, the red
-witness `corpus/rood/ambiguous-backlink`).
+witness `corpus/rood/ambiguous-backlink`). And a to-one connecting
+relation admits at most **one** creating writer (WF-052, `IR-SPEC.md`
+ch. 3.4): a second writer's inevitable second filler is excluded
+statically, never left to diverge between a faulting interpreter and
+a guardless model.
 
 Worked example (absolute; the anchor `jutterswet-penninguitgifte`
 verbatim): every penninggerechtigde jutter gets a created Penning
