@@ -332,7 +332,7 @@ let translate_regel ctx (r : resolved_regel) =
           | _ -> fault "rule kind not translated")
       | _ -> fault "unsupported rule target")
 
-(* the characteristic default ladder (RUNTIME-SEMANTICS ch. 7, IR-SPEC
+(* the default ladder (RUNTIME-SEMANTICS ch. 7, IR-SPEC
    ch. 6): the ch. 7.5 decides_m lowering — one decides predicate per
    rung (justification body; on a characteristic every justified rung
    decides), and an attribution head only for besluit-true rungs,

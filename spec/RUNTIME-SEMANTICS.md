@@ -1755,6 +1755,6 @@ gevuld value; characteristic target: always — the boolean decision).
 
 ## Chapters (planned)
 
-*(none — chapters 1–8 are drafted; ch. 7's characteristic ladder is
+*(none — chapters 1–8 are drafted; ch. 7's ladder (both target kinds) is
 landed, its remaining slices await their Phase-4 cards as noted in its
 status line)*

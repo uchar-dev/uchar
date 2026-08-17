@@ -2224,6 +2224,28 @@ let wf050 ctx =
                      ^ "' — an unordered plain writer would silently defeat the ladder's \
                         decisions") ]
                 else [])
+               @ (if
+                    List.exists
+                      (fun (oc : resolved_object_creatie) ->
+                        (match oc.nieuw_type with
+                        | Some nt -> norm nt = norm l.dl_onderwerp
+                        | None -> false)
+                        && List.exists
+                             (fun (t : toekenning) ->
+                               (match t.toe_attribuut with
+                               | Some a -> norm a = norm tn
+                               | None -> false)
+                               && t.toe_kenmerk = (l.dl_kenmerk <> None))
+                             oc.toekenningen)
+                      ctx.doc.object_creaties
+                  then
+                    [ v "WF-050" at
+                        ("an object creation also initialises ladder target '"
+                       ^ l.dl_onderwerp ^ "." ^ tn
+                       ^ "' — a creation-time write would silently defeat the ladder's \
+                          decisions (and void the initialisation rung's input-emptiness \
+                          justification)") ]
+                  else [])
                @
                match l.dl_attribuut with
                | None -> []

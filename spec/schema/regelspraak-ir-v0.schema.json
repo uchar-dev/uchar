@@ -34,7 +34,7 @@
       "const": "regelspraak-ir-v0"
     },
     "defaultLadders": {
-      "description": "Extension list (v1, Phase 4 first cut): characteristic default ladders per spec/RUNTIME-SEMANTICS.md ch. 7. Optional; the v0 emitter never produces it.",
+      "description": "Extension list (v1, Phase 4): default ladders (characteristic and attribute forms) per spec/RUNTIME-SEMANTICS.md ch. 7. Optional; the v0 emitter never produces it.",
       "type": "array",
       "items": {
         "$ref": "#/$defs/DefaultLadder"
@@ -2084,7 +2084,7 @@
           ]
         }
       },
-      "description": "Extension node (v1, Phase 4): the characteristic default ladder — rungs in descending priority; the highest justified rung decides (besluit true = attribute, false = do-not-attribute)."
+      "description": "Extension node (v1, Phase 4): the default ladder — rungs in descending priority; the highest rung that decides wins. Characteristic target: besluit (true = attribute, false = do-not-attribute); attribute target: consequentie (a leeg-evaluating consequence falls through); the initialisation rung (lowest) is justified iff the target is empty in the input."
     },
     "RolBinding": {
       "type": "object",

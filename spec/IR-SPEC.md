@@ -75,7 +75,7 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
 3. **The rule layer** — normative draft (since v0.2).
 4. **The expression and condition layer** — **this release.**
 5. **Time** *(skeleton)*
-6. **Defaults and defeasibility** — the characteristic ladder is normative (ch. 6.1, Phase-4 first cut); the rest is design in `RUNTIME-SEMANTICS.md` ch. 7.
+6. **Defaults and defeasibility** — the ladder is normative in both target kinds (ch. 6.1); the declared-unordered group and the v0 desugaring are design in `RUNTIME-SEMANTICS.md` ch. 7.
 7. **Serialization** *(lands with `spec/schema/`)*
 8. **Well-formedness rules** — the WF index, at the end of this document.
 9. **The RegelSpraak dialect** *(skeleton)*
@@ -1208,8 +1208,10 @@ speculative (only the deciding rung's channel deposits persist).
   `besluit`); the initialisation rung MUST be the lowest, MUST carry
   no written justification, and MUST NOT sit on a characteristic
   ladder. The target MUST have no other writer — no second ladder, no
-  rule, no allocation on the same target: an unordered plain writer
-  would silently defeat the ladder's decisions (the ch. 7.1
+  rule, no allocation, and no object-creation initialisation on the
+  same target: an unordered plain writer would silently defeat the
+  ladder's decisions, and a creation-time write would void the
+  initialisation rung's input-emptiness justification (the ch. 7.1
   single-writer lift). Multiplicity without the later explicit group
   marking (the declared-unordered group, a later additive slice) is
   ill-formed until that slice lands.
@@ -1294,7 +1296,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-047 | role binding resolves; fillers agree with the use site; written source denotes the bound role | gate 3 | `anchor/jutterswet-bergingstoezicht` (two fact types over one pair; allocation and fold bound, replayed by gates 5–6) | `wf047-dangling-role-binding` (resolution) + `wf047-bound-role-fills-source` (filler agreement) |
 | WF-048 | bindingless allocation/instance fold: connecting relation uniquely derivable | gate 3 (contexts with a statically known fold subject; a subjectless context — none exists in v0 dumps, whose folds sit under a typed rule target — is left to the executors' runtime fault) | `jutterswet-berging` + `jutterswet-vondsttelling` (bindingless, uniquely derivable) | `wf048-ambiguous-connecting-relation` |
 | WF-049 | temporal read: basis temporal (attribute/granular parameter), day-precision date, element type | gate 3 | `anchor/jutterswet-aanmeldquotum` (attribute + parameter reads; hit, gap→leeg, empty date→leeg; replayed by gates 5–6) | `wf049-read-of-nontemporal` (basis) + `wf049-read-at-datetime` (date operand) + `wf049-type-not-element` (element type) |
-| WF-050 | ladder: ≥ 1 rung; exactly one target, resolving; rung shapes per kind; init rung lowest; no other writer | gate 3 (the group clause is design-only, ch. 6.1) | `anchor/jutterswet-uitsluiting` (characteristic) + `anchor/jutterswet-vondstwaardering` (attribute + init, six cases replayed by gates 5–6) | `wf050-empty-ladder` + `wf050-two-ladders-one-target` + `wf050-ladder-beside-rule` + `wf050-both-targets` + `wf050-init-not-lowest` + `wf050-rule-beside-attribute-ladder` |
+| WF-050 | ladder: ≥ 1 rung; exactly one target, resolving; rung shapes per kind; init rung lowest; no other writer | gate 3 (the group clause is design-only, ch. 6.1) | `anchor/jutterswet-uitsluiting` (characteristic) + `anchor/jutterswet-vondstwaardering` (attribute + init, six cases replayed by gates 5–6) | `wf050-empty-ladder` + `wf050-two-ladders-one-target` + `wf050-ladder-beside-rule` + `wf050-both-targets` + `wf050-init-not-lowest` + `wf050-rule-beside-attribute-ladder` + `wf050-allocation-beside-ladder` + `wf050-creation-beside-ladder` |
 | WF-051 | no dependency cycle through a ladder (justification and consequence reads are negative edges) | gate 3 (over the extended dep_forms graph, shared with ref/'s strata) | `anchor/jutterswet-uitsluiting` (the ladder sits below its negated consumer — strata exist, oracle-replayed) | `wf051-ladder-reads-own-target` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer

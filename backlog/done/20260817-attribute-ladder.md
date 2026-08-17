@@ -44,3 +44,28 @@ Out of scope: the declared-unordered group and the §9.5 conflict path
 (next slice); the v0 desugaring of existing Initialisatie/computation
 rules into ladders (the v0 forms stay the mirror); temporal ladder
 targets (refused fail-fast); the emitter (pin-bump).
+
+Result: landed in full. The attribute ladder rides the extension form
+backward-compatibly (kenmerk nullable, attribuut as the alternative
+target; Rung gains consequentie and initialisatie); ref implements the
+ch. 7.1 fall-through with a per-rung speculation buffer, and clingo
+gets the gevuld gate for free (consequence bindings inside decides_n)
+plus the defeasible-input lowering (inputval/3), so a deciding rung
+overwrites input exactly as ref's write does. The anchor
+jutterswet-vondstwaardering pins ch. 7.6.2's outcomes across six
+cases (50/30/25/25/40/50), replayed by gates 5 and 6. WF-050 carries
+the shape clauses and the full single-writer lift — after the
+adversarial round also against object-creation initialisations (the
+found major: a creation-time write would void the init rung's
+input-emptiness justification) and with the allocation clause's own
+negatief; five negatiefs joined this card in total. Verification also
+established the sharpest cross-executor risk is safe by design: the
+ch. 1.2a leeg-coalescing constructs (Binair arithmetic) that could
+diverge from clingo's leeg-as-absence body-joins are exactly the
+consequence forms clingo refuses to translate — an honest fault, never
+a silent wrong answer (recorded). Also recorded: the speculation
+buffer now wraps the characteristic branch too (corpus-invisible,
+conform ch. 7.1). Deliberately left: the declared-unordered group and
+the §9.5 conflict path (7.6.3, the next slice); the v0 desugaring of
+Initialisatie/computation rules into ladders; temporal ladder targets
+(refused fail-fast); the emitter (pin-bump).
