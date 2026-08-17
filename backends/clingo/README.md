@@ -43,12 +43,17 @@ spec bug.
   shared data-plane validation of `uchar-ref` (like the case loader),
   so an uncovered vintage read faults identically in both executors
   instead of ever reaching clingo.
-- The characteristic default ladder (IR-SPEC ch. 6.1) is the ch. 7.5
-  `decides_m` lowering verbatim: one decides predicate per rung, and
-  an attribution head only for besluit-true rungs, guarded by `not
-  decides_m` for every higher rung — sound NAF because WF-051 makes
-  displacement edges negative (the verifier remains the guard that a
-  document is clingo-suitable).
+- The default ladder (IR-SPEC ch. 6.1) is the ch. 7.5 `decides_m`
+  lowering verbatim: one decides predicate per rung, outcome heads
+  guarded by `not decides_m` for every higher rung — sound NAF because
+  WF-051 makes displacement edges negative (the verifier remains the
+  guard that a document is clingo-suitable). On an attribute ladder
+  the consequence bindings sit inside `decides_n`, so a leeg
+  consequence leaves it underivable — the gevuld gate for free — and
+  the input value of a ladder target enters as `inputval/3`, standing
+  defeasibly (`val :- inputval, not decided`) exactly where ref/'s
+  write overwrites it; the initialisation rung's justification is the
+  absence of that input.
 - Constructs outside the corpus-exercised subset fault the translator —
   fail fast, never a silent SKIP.
 

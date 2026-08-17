@@ -1538,15 +1538,20 @@ date 2026-03-15; Parameterset `penningbedrag` = [2025: 4, 2026: 5]
 
 ## 7. Defaults and defeasibility (design — the Phase-4 gate)
 
-*Status: normative design, with the **characteristic ladder landed**
-(`IR-SPEC.md` ch. 6.1: the `defaultLadders` extension form, WF-050/051
-with verifier checks and negatief cases; the art. 4 ladder is the
-anchor `corpus/golden/anchor/jutterswet-uitsluiting`, its four
-hand-run outcomes replayed by both executors — worked example 7.6.1 is
-machine-checked). Still design-only, landing with later Phase-4 cards:
-attribute-target ladders and leeg fall-through, the declared-unordered
-group and the §9.5 conflict path, the initialisation rung, the
-speculative-deposit guard, and the v0 desugaring. Worked outcomes for
+*Status: normative design, with the **ladder landed in both target
+kinds** (`IR-SPEC.md` ch. 6.1: the `defaultLadders` extension form,
+WF-050/051 with verifier checks and negatief cases). The art. 4
+characteristic ladder is the anchor
+`corpus/golden/anchor/jutterswet-uitsluiting` (worked example 7.6.1
+machine-checked); the attribute ladder with **leeg fall-through**, the
+**initialisation rung**, and the **speculative-deposit rule** is the
+anchor `corpus/golden/anchor/jutterswet-vondstwaardering` (worked
+example 7.6.2's outcomes — computed wins, fall-through to
+initialisation on a computed leeg, input left standing, a deciding
+rung overwriting input — machine-checked through both executors).
+Still design-only, landing with later Phase-4 cards: the
+declared-unordered group and the §9.5 conflict path (7.6.3), and the
+v0 desugaring of existing rule forms into ladders. Worked outcomes for
 those remain pinned prose — binding on the implementation, not yet
 machine-checked.*
 

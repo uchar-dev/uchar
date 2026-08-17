@@ -384,20 +384,27 @@ type diagnostic = {
 
 (* --- the document ------------------------------------------------------ *)
 
-(* Extension form (v1, Phase 4 first cut): the characteristic default
-   ladder of RUNTIME-SEMANTICS ch. 7 — rungs in descending priority,
-   each deciding to attribute (true) or not (false). Never
-   emitter-produced. *)
+(* Extension form (v1, Phase 4): the default ladder of
+   RUNTIME-SEMANTICS ch. 7 — rungs in descending priority. A
+   characteristic ladder's rungs carry a boolean [rung_besluit]
+   (attribute / do-not-attribute); an attribute ladder's rungs carry a
+   value [rung_consequentie] (a leeg-evaluating consequence falls
+   through). The initialisation rung ([rung_initialisatie], lowest
+   only) has no written justification: it is justified iff the target
+   is empty in the input facts (ch. 7.3). Never emitter-produced. *)
 type rung = {
-  rung_besluit : bool;
-  rung_voorwaarde : conditie;
+  rung_besluit : bool option;
+  rung_voorwaarde : conditie option;
+  rung_consequentie : expr option;
+  rung_initialisatie : bool;
   rung_bron : string option;
 }
 
 type default_ladder = {
   dl_naam : string option;
   dl_onderwerp : string; (* subject object type *)
-  dl_kenmerk : string; (* target characteristic *)
+  dl_kenmerk : string option; (* target characteristic — exactly one of the two *)
+  dl_attribuut : string option; (* target attribute *)
   rungs : rung list; (* descending priority: highest first *)
   dl_bron : string option;
   dl_geldigheid : geldigheid option;

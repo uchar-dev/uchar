@@ -1,13 +1,14 @@
 # uchar IR — Specification
 
-*Status: v0.7 — the model layer (ch. 2), the rule layer (ch. 3), and the
+*Status: v0.8 — the model layer (ch. 2), the rule layer (ch. 3), and the
 expression and condition layer (ch. 4) are normative **draft**; everything
 else is skeleton. New in v0.5: the wire-entry discipline for v1 constructs
 (Method) and the symbolic role bindings (ch. 2.6, 3.2, 3.4, 4.3;
 WF-047/048; WF-028's check). New in v0.6: the temporal-read node
 (ch. 4.3a, WF-049 — the decided row-11 point read). New in v0.7: the
 characteristic default ladder (ch. 6.1, WF-050/051 — the Phase-4 first
-cut). Authority for undocumented behaviour still lives in
+cut). New in v0.8: the attribute ladder with leeg fall-through and the
+initialisation rung (ch. 6.1). Authority for undocumented behaviour still lives in
 `regelspraak-java` (pinned commit `b85dff3`): the spec-§-citing javadoc of
 `ir/` and `model/`, and the decision records in
 `docs/grammar-divergences.md`; that authority pointer leaves this header at
@@ -1170,7 +1171,7 @@ over-determination surface, routed to the §9.5 channel);
 under-determination is leeg (a tracked Catala deviation,
 `CONSTRUCTS.md` row 8).
 
-### 6.1 The characteristic ladder (Phase-4 first cut, landed)
+### 6.1 The ladder (Phase 4: characteristic and attribute forms landed)
 
 `layer: core`; an **extension form** per the Method: an optional
 top-level list `defaultLadders` of `DefaultLadder` nodes — never
@@ -1180,37 +1181,52 @@ emitter-produced.
 |---|---|---|
 | `name` | string? | v0 wire `naam` |
 | `subject` | type ref | v0 wire `onderwerp`: the iterated subject type |
-| `characteristic` | string | v0 wire `kenmerk`: the target characteristic |
+| `characteristic` | string? | v0 wire `kenmerk`: the target characteristic — **exactly one** of the two targets |
+| `attribute` | string? | v0 wire `attribuut`: the target attribute |
 | `rungs` | non-empty list of Rung | **descending** priority: highest first |
 | `source`, `validity` | — | v0 wire `bron`, `geldigheid` |
 
-**Rung**: `decision` (v0 wire `besluit`, boolean — attribute vs
-do-not-attribute), `justification` (v0 wire `voorwaarde`, a condition),
-`source`. Semantics: `RUNTIME-SEMANTICS.md` ch. 7.1 — per subject the
-highest justified rung decides; on a characteristic every justified
-rung decides; a false decision derives nothing and displaces.
+**Rung**: `decision` (v0 wire `besluit`, boolean? — characteristic
+rungs only: attribute vs do-not-attribute), `justification` (v0 wire
+`voorwaarde`, a condition; null only on the initialisation rung),
+`consequence` (v0 wire `consequentie`, expression? — attribute rungs
+only), `initialisation` (v0 wire `initialisatie`, boolean — the
+ch. 7.3 rung: justified iff the target is empty in the input facts;
+lowest only), `source`. Semantics: `RUNTIME-SEMANTICS.md` ch. 7.1 —
+per subject the highest rung that **decides** wins: on a
+characteristic every justified rung decides (a false decision derives
+nothing and displaces); on an attribute a rung decides when its
+justification holds *and* its consequence evaluates gevuld — a leeg
+consequence **falls through**, a ladder without a decision **writes
+nothing** (the input value is left standing), and rung evaluation is
+speculative (only the deciding rung's channel deposits persist).
 
-- **WF-050** A ladder MUST carry at least one rung; its subject and
-  target characteristic MUST resolve; a ladder's target MUST have no
-  other writer — no second ladder, and no characteristic-attribution
-  rule on the same (subject, characteristic): an unordered plain
-  writer would silently defeat a do-not-attribute decision (the
-  ch. 7.1 single-writer lift). Multiplicity without the later explicit
-  group marking (the declared-unordered group of ch. 7.2 there, a
-  later additive slice) is ill-formed until that slice lands.
-- **WF-051** Every rung-justification read joins the ch. 6 dependency
-  graph of `RUNTIME-SEMANTICS.md` as a **negative edge** toward the
-  ladder's write (ch. 7.4 there: displacement makes every
-  justification decision-bearing — the ch. 6.1 edge-class extension);
-  no dependency cycle may pass through a ladder — strata must exist.
-  The WF-045/046 principles apply to the extended graph (a violating
-  document typically trips those too; WF-051 names the ladder-specific
-  rule).
+- **WF-050** A ladder MUST carry at least one rung and MUST target
+  exactly one of a characteristic or an attribute, resolving on its
+  subject. Rung shapes MUST match the target kind (characteristic:
+  `besluit`, no `consequentie`; attribute: `consequentie`, no
+  `besluit`); the initialisation rung MUST be the lowest, MUST carry
+  no written justification, and MUST NOT sit on a characteristic
+  ladder. The target MUST have no other writer — no second ladder, no
+  rule, no allocation on the same target: an unordered plain writer
+  would silently defeat the ladder's decisions (the ch. 7.1
+  single-writer lift). Multiplicity without the later explicit group
+  marking (the declared-unordered group, a later additive slice) is
+  ill-formed until that slice lands.
+- **WF-051** Every rung-justification read — and, on an attribute
+  ladder, every consequence read (the gevuld gate makes it
+  decision-bearing) — joins the ch. 6 dependency graph of
+  `RUNTIME-SEMANTICS.md` as a **negative edge** toward the ladder's
+  write (the ch. 6.1 edge-class extension); the initialisation rung's
+  implicit input-emptiness justification reads nothing. No dependency
+  cycle may pass through a ladder — strata must exist. The WF-045/046
+  principles apply to the extended graph (a violating document
+  typically trips those too; WF-051 names the ladder-specific rule).
 
 Still design-only (`RUNTIME-SEMANTICS.md` ch. 7; artifacts land with
-later Phase-4 cards): attribute-target ladders and leeg fall-through,
-the declared-unordered group and its §9.5 conflict path, the
-initialisation rung, and the speculative-deposit guard.
+later Phase-4 cards): the declared-unordered group and its §9.5
+conflict path, and the v0 desugaring of existing rule forms into
+ladders.
 
 ---
 
@@ -1278,8 +1294,8 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-047 | role binding resolves; fillers agree with the use site; written source denotes the bound role | gate 3 | `anchor/jutterswet-bergingstoezicht` (two fact types over one pair; allocation and fold bound, replayed by gates 5–6) | `wf047-dangling-role-binding` (resolution) + `wf047-bound-role-fills-source` (filler agreement) |
 | WF-048 | bindingless allocation/instance fold: connecting relation uniquely derivable | gate 3 (contexts with a statically known fold subject; a subjectless context — none exists in v0 dumps, whose folds sit under a typed rule target — is left to the executors' runtime fault) | `jutterswet-berging` + `jutterswet-vondsttelling` (bindingless, uniquely derivable) | `wf048-ambiguous-connecting-relation` |
 | WF-049 | temporal read: basis temporal (attribute/granular parameter), day-precision date, element type | gate 3 | `anchor/jutterswet-aanmeldquotum` (attribute + parameter reads; hit, gap→leeg, empty date→leeg; replayed by gates 5–6) | `wf049-read-of-nontemporal` (basis) + `wf049-read-at-datetime` (date operand) + `wf049-type-not-element` (element type) |
-| WF-050 | characteristic ladder: ≥ 1 rung; subject and characteristic resolve; the target has no other writer | gate 3 (characteristic form; the attribute/group clauses are design-only, ch. 6.1) | `anchor/jutterswet-uitsluiting` (the art. 4 ladder, four cases replayed by gates 5–6) | `wf050-empty-ladder` + `wf050-two-ladders-one-target` + `wf050-ladder-beside-rule` |
-| WF-051 | no dependency cycle through a ladder (displacement reads are negative edges) | gate 3 (over the extended dep_forms graph, shared with ref/'s strata) | `anchor/jutterswet-uitsluiting` (the ladder sits below its negated consumer — strata exist, oracle-replayed) | `wf051-ladder-reads-own-target` |
+| WF-050 | ladder: ≥ 1 rung; exactly one target, resolving; rung shapes per kind; init rung lowest; no other writer | gate 3 (the group clause is design-only, ch. 6.1) | `anchor/jutterswet-uitsluiting` (characteristic) + `anchor/jutterswet-vondstwaardering` (attribute + init, six cases replayed by gates 5–6) | `wf050-empty-ladder` + `wf050-two-ladders-one-target` + `wf050-ladder-beside-rule` + `wf050-both-targets` + `wf050-init-not-lowest` + `wf050-rule-beside-attribute-ladder` |
+| WF-051 | no dependency cycle through a ladder (justification and consequence reads are negative edges) | gate 3 (over the extended dep_forms graph, shared with ref/'s strata) | `anchor/jutterswet-uitsluiting` (the ladder sits below its negated consumer — strata exist, oracle-replayed) | `wf051-ladder-reads-own-target` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

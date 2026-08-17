@@ -1608,9 +1608,19 @@ let expression_layer ctx =
         List.concat
           (List.mapi
              (fun j (r : rung) ->
-               walk_cond ctx ~subject:(Some l.dl_onderwerp)
-                 (Printf.sprintf "/defaultLadders/%d/rungs/%d/voorwaarde" i j)
-                 r.rung_voorwaarde)
+               (match r.rung_voorwaarde with
+               | Some c ->
+                   walk_cond ctx ~subject:(Some l.dl_onderwerp)
+                     (Printf.sprintf "/defaultLadders/%d/rungs/%d/voorwaarde" i j)
+                     c
+               | None -> [])
+               @
+               match r.rung_consequentie with
+               | Some e ->
+                   walk_expr ctx ~subject:(Some l.dl_onderwerp)
+                     (Printf.sprintf "/defaultLadders/%d/rungs/%d/consequentie" i j)
+                     e
+               | None -> [])
              l.rungs))
       (List.mapi (fun i l -> (i, l)) ctx.doc.default_ladders)
 
@@ -1846,9 +1856,11 @@ let dep_forms ctx : dep_form list =
       ctx.doc.feit_creaties
   in
   let ladders =
-    (* ch. 7.4/WF-051: every rung-justification read is a displacement
-       read — a negative edge toward the ladder's write, regardless of
-       what it tests. The ladder writes its target characteristic. *)
+    (* ch. 7.4/WF-051: every rung-justification read — and, on an
+       attribute ladder, every consequence read (the gevuld gate makes
+       it decision-bearing) — is a displacement read: a negative edge
+       toward the ladder's write. The initialisation rung's implicit
+       input-emptiness justification reads nothing (ch. 7.3). *)
     List.mapi
       (fun i (l : default_ladder) ->
         let at = Printf.sprintf "/defaultLadders/%d" i in
@@ -1856,14 +1868,27 @@ let dep_forms ctx : dep_form list =
         let reads =
           List.concat_map
             (fun (r : rung) ->
-              dep_cond ~subject:(Some l.dl_onderwerp) ~neg:false [] r.rung_voorwaarde)
+              (match r.rung_voorwaarde with
+              | Some c -> dep_cond ~subject:(Some l.dl_onderwerp) ~neg:false [] c
+              | None -> [])
+              @
+              match r.rung_consequentie with
+              | Some e -> dep_expr ~subject:(Some l.dl_onderwerp) [] e
+              | None -> [])
             l.rungs
+        in
+        let writes =
+          (match l.dl_kenmerk with Some k -> [ n_char l.dl_onderwerp k ] | None -> [])
+          @
+          match l.dl_attribuut with
+          | Some a -> [ n_attr l.dl_onderwerp a ]
+          | None -> []
         in
         {
           df_at = at;
           df_name = name;
           df_recursive_creation = false;
-          df_writes = [ n_char l.dl_onderwerp l.dl_kenmerk ];
+          df_writes = writes;
           df_reads = List.map (fun (node, _) -> (node, Dep_neg)) reads;
         })
       ctx.doc.default_ladders
@@ -2089,58 +2114,139 @@ let wf028 ctx =
              created_checks @ chain_checks)
        ctx.doc.feit_creaties)
 
-(* WF-050: characteristic-ladder well-formedness (IR-SPEC ch. 6): at
-   least one rung; the subject object type and target characteristic
-   resolve; at most one ladder per (subject, characteristic) target in
-   this format (the declared-unordered group is a later slice). *)
+(* WF-050: ladder well-formedness (IR-SPEC ch. 6): at least one rung;
+   exactly one target kind (characteristic or attribute), resolving on
+   the subject; rung shapes match the target kind; the initialisation
+   rung is lowest and unique; the target has no other writer; at most
+   one ladder per target (the declared-unordered group is a later
+   slice). *)
 let wf050 ctx =
   let targets = Hashtbl.create 4 in
   List.concat
     (List.mapi
        (fun i (l : default_ladder) ->
          let at = Printf.sprintf "/defaultLadders/%d" i in
+         let target_name =
+           match (l.dl_kenmerk, l.dl_attribuut) with
+           | Some k, None -> Some k
+           | None, Some a -> Some a
+           | _ -> None
+         in
          (if l.rungs = [] then [ v "WF-050" at "a ladder carries at least one rung" ] else [])
+         @ (match target_name with
+           | None ->
+               [ v "WF-050" at
+                   "a ladder targets exactly one of a characteristic or an attribute" ]
+           | Some _ -> [])
          @ (match objecttype ctx l.dl_onderwerp with
            | None ->
                [ v "WF-050" at
                    ("ladder subject '" ^ l.dl_onderwerp ^ "' is not a declared object type") ]
-           | Some ot ->
-               if mem_ci (some_names ot.kenmerken) l.dl_kenmerk then []
-               else
-                 [ v "WF-050" at
-                     ("ladder target '" ^ l.dl_kenmerk
-                    ^ "' is not a declared characteristic of '" ^ l.dl_onderwerp ^ "'") ])
-         @
-         let key = norm l.dl_onderwerp ^ ":" ^ norm l.dl_kenmerk in
-         (if Hashtbl.mem targets key then
-            [ v "WF-050" at
-                ("a second ladder on target '" ^ l.dl_onderwerp ^ "." ^ l.dl_kenmerk
-               ^ "' — this format carries at most one (the declared-unordered group is a \
-                  later slice)") ]
-          else (
-            Hashtbl.add targets key ();
-            []))
-         @
-         (* the ch. 7.1 single-writer lift: a plain characteristic-
-            attribution rule beside the ladder would silently defeat a
-            do-not-attribute decision *)
-         if
-           List.exists
-             (fun (r : resolved_regel) ->
-               r.rr_soort = Some Kenmerktoekenning
-               &&
-               match r.doel with
-               | Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }) ->
-                   norm ot = norm l.dl_onderwerp && norm a = norm l.dl_kenmerk
-               | _ -> false)
-             ctx.doc.resolved_regels
-         then
-           [ v "WF-050" at
-               ("a characteristic-attribution rule also writes ladder target '"
-              ^ l.dl_onderwerp ^ "." ^ l.dl_kenmerk
-              ^ "' — an unordered plain writer would silently defeat a do-not-attribute \
-                 decision") ]
-         else [])
+           | Some ot -> (
+               (match l.dl_kenmerk with
+               | Some k when not (mem_ci (some_names ot.kenmerken) k) ->
+                   [ v "WF-050" at
+                       ("ladder target '" ^ k ^ "' is not a declared characteristic of '"
+                      ^ l.dl_onderwerp ^ "'") ]
+               | _ -> [])
+               @
+               match l.dl_attribuut with
+               | Some a when not (has_attr ot a) ->
+                   [ v "WF-050" at
+                       ("ladder target '" ^ a ^ "' is not a declared attribute of '"
+                      ^ l.dl_onderwerp ^ "'") ]
+               | _ -> []))
+         (* rung shapes per target kind (ch. 7.1) *)
+         @ List.concat
+             (List.mapi
+                (fun j (r : rung) ->
+                  let rat = Printf.sprintf "%s/rungs/%d" at j in
+                  (match (l.dl_kenmerk, r.rung_besluit, r.rung_consequentie) with
+                  | Some _, None, _ ->
+                      [ v "WF-050" rat "a characteristic rung carries a boolean besluit" ]
+                  | Some _, _, Some _ ->
+                      [ v "WF-050" rat "a characteristic rung carries no consequentie" ]
+                  | None, Some _, _ ->
+                      [ v "WF-050" rat "an attribute rung carries no besluit" ]
+                  | None, _, None when l.dl_attribuut <> None ->
+                      [ v "WF-050" rat "an attribute rung carries a consequentie" ]
+                  | _ -> [])
+                  @ (match (r.rung_initialisatie, r.rung_voorwaarde) with
+                    | true, Some _ ->
+                        [ v "WF-050" rat
+                            "the initialisation rung carries no written justification (its \
+                             justification is input-emptiness, ch. 7.3)" ]
+                    | false, None ->
+                        [ v "WF-050" rat "a non-initialisation rung carries a justification" ]
+                    | _ -> [])
+                  @ (if r.rung_initialisatie && l.dl_kenmerk <> None then
+                       [ v "WF-050" rat
+                           "an initialisation rung on a characteristic ladder is meaningless \
+                            (characteristics start absent)" ]
+                     else [])
+                  @
+                  if r.rung_initialisatie && j <> List.length l.rungs - 1 then
+                    [ v "WF-050" rat "the initialisation rung sits lowest (last)" ]
+                  else [])
+                l.rungs)
+         @ (match target_name with
+           | None -> []
+           | Some tn -> (
+               let key = norm l.dl_onderwerp ^ ":" ^ norm tn in
+               (if Hashtbl.mem targets key then
+                  [ v "WF-050" at
+                      ("a second ladder on target '" ^ l.dl_onderwerp ^ "." ^ tn
+                     ^ "' — this format carries at most one (the declared-unordered group is \
+                        a later slice)") ]
+                else (
+                  Hashtbl.add targets key ();
+                  []))
+               @
+               (* the ch. 7.1 single-writer lift: any plain writer beside
+                  the ladder would silently defeat its decisions *)
+               (if
+                  List.exists
+                    (fun (r : resolved_regel) ->
+                      match r.doel with
+                      | Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }) ->
+                          norm ot = norm l.dl_onderwerp
+                          && norm a = norm tn
+                          &&
+                          (match (l.dl_kenmerk, r.rr_soort) with
+                          | Some _, Some Kenmerktoekenning -> true
+                          | Some _, _ -> false
+                          | None, _ -> true)
+                      | _ -> false)
+                    ctx.doc.resolved_regels
+                then
+                  [ v "WF-050" at
+                      ("a rule also writes ladder target '" ^ l.dl_onderwerp ^ "." ^ tn
+                     ^ "' — an unordered plain writer would silently defeat the ladder's \
+                        decisions") ]
+                else [])
+               @
+               match l.dl_attribuut with
+               | None -> []
+               | Some a ->
+                   if
+                     List.exists
+                       (fun (vd : resolved_verdeling) ->
+                         (match (vd.doel_type, vd.doel_attribuut) with
+                         | Some dt, Some da ->
+                             norm dt = norm l.dl_onderwerp && norm da = norm a
+                         | _ -> false)
+                         ||
+                         match (vd.bron_type, vd.restant_attribuut) with
+                         | Some bt, Some ra ->
+                             norm bt = norm l.dl_onderwerp && norm ra = norm a
+                         | _ -> false)
+                       ctx.doc.verdelingen
+                   then
+                     [ v "WF-050" at
+                         ("an allocation also writes ladder target '" ^ l.dl_onderwerp ^ "."
+                        ^ a ^ "'") ]
+                   else []))
+         )
        ctx.doc.default_ladders)
 
 (* WF-051: no dependency cycle may pass through a ladder — its

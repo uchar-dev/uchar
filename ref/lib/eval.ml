@@ -602,23 +602,68 @@ let run_verdeling env world (v : resolved_verdeling) =
               (w, ch || ch2))
   end
 
-(* ch. 7.1, the characteristic ladder: per subject, the highest justified
-   rung decides — attribute (set the characteristic) or do-not-attribute
-   (derive nothing); rungs below the deciding one are displaced. The
-   strata machinery (WF-051's negative displacement edges) has already
-   put every justification producer strictly below the ladder. *)
+(* ch. 7.1, the default ladder: per subject the highest rung that
+   DECIDES wins. Characteristic target: every justified rung decides
+   (attribute / do-not-attribute). Attribute target: a rung decides
+   when its justification holds AND its consequence evaluates gevuld —
+   a leeg consequence falls through; a ladder without a decision writes
+   nothing. The initialisation rung is justified iff the target is
+   empty (nobody else may write it, WF-050, so its current emptiness IS
+   input emptiness). Rung evaluation is speculative: only the deciding
+   rung's channel deposits persist (ch. 7.1). The strata machinery
+   (WF-051's negative displacement edges) has already put every
+   justification and consequence producer strictly below the ladder. *)
 let run_ladder env world (l : default_ladder) =
   let name = Option.value l.dl_naam ~default:"ladder" in
   if not (applies env l.dl_geldigheid) then (world, false)
   else
     over_subjects world ~otype:l.dl_onderwerp ~rule:name (fun w self cond_err ->
+        let speculate f =
+          let buf = ref [] in
+          let r = f (fun m -> buf := m :: !buf) in
+          (r, fun () -> List.iter cond_err (List.rev !buf))
+        in
+        let justified (r : rung) err =
+          if r.rung_initialisatie then (
+            match l.dl_attribuut with
+            | Some a -> World.attr self a = Value.Empty
+            | None -> Value.fault "initialisation rung on a characteristic ladder")
+          else eval_cond env w self ~err (req "rung justification" r.rung_voorwaarde)
+        in
         let rec decide = function
           | [] -> (w, false)
-          | (r : rung) :: rest ->
-              if eval_cond env w self ~err:cond_err r.rung_voorwaarde then
-                if r.rung_besluit then World.set_char w ~label:self.label ~char:l.dl_kenmerk
-                else (w, false)
-              else decide rest
+          | (r : rung) :: rest -> (
+              match l.dl_kenmerk with
+              | Some k ->
+                  let j, flush = speculate (fun err -> justified r err) in
+                  if j then (
+                    flush ();
+                    if req "rung besluit" r.rung_besluit then
+                      World.set_char w ~label:self.label ~char:k
+                    else (w, false))
+                  else decide rest
+              | None -> (
+                  let a = req "ladder attribuut" l.dl_attribuut in
+                  if Ir_v0.Checks.attr_temporal (objecttype env l.dl_onderwerp) a then
+                    Value.fault
+                      "temporal attribute %S as a ladder target: temporal writes are not \
+                       implemented"
+                      a;
+                  let outcome, flush =
+                    speculate (fun err ->
+                        if justified r err then
+                          Some
+                            (eval_expr env w self ~err
+                               (req "rung consequentie" r.rung_consequentie))
+                        else None)
+                  in
+                  match outcome with
+                  | Some v when v <> Value.Empty ->
+                      flush ();
+                      World.write_attr w ~label:self.label ~attr:a
+                        ~decl:(attr_decl env ~otype:l.dl_onderwerp ~attr:a)
+                        v
+                  | Some _ (* leeg: falls through *) | None -> decide rest))
         in
         decide l.rungs)
 

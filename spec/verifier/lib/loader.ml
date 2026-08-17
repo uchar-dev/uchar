@@ -834,23 +834,35 @@ let diagnostic path j : diagnostic =
 let rung path j : rung =
   let kvs = obj path j in
   expect_node path kvs "Rung";
-  check_keys path kvs [ "node"; "besluit"; "voorwaarde"; "bron" ];
+  check_keys path kvs ~ext:[ "consequentie"; "initialisatie" ]
+    [ "node"; "besluit"; "voorwaarde"; "bron" ];
+  let bool_opt path = function
+    | `Bool b -> Some b
+    | `Null -> None
+    | j -> fail path ("expected boolean or null, got " ^ Yojson.Safe.to_string j)
+  in
   {
-    rung_besluit = bool_ (path / "besluit") (field path kvs "besluit");
-    rung_voorwaarde = conditie (path / "voorwaarde") (field path kvs "voorwaarde");
+    rung_besluit = bool_opt (path / "besluit") (field path kvs "besluit");
+    rung_voorwaarde = opt (path / "voorwaarde") conditie (field path kvs "voorwaarde");
+    rung_consequentie = ext_field path kvs "consequentie" expr;
+    rung_initialisatie =
+      (match ext_field path kvs "initialisatie" (fun p j -> bool_ p j) with
+      | Some b -> b
+      | None -> false);
     rung_bron = str_opt (path / "bron") (field path kvs "bron");
   }
 
 let default_ladder path j : default_ladder =
   let kvs = obj path j in
   expect_node path kvs "DefaultLadder";
-  check_keys path kvs
+  check_keys path kvs ~ext:[ "attribuut" ]
     [ "node"; "naam"; "onderwerp"; "kenmerk"; "rungs"; "bron"; "geldigheid" ];
   let f name = field path kvs name in
   {
     dl_naam = str_opt (path / "naam") (f "naam");
     dl_onderwerp = str (path / "onderwerp") (f "onderwerp");
-    dl_kenmerk = str (path / "kenmerk") (f "kenmerk");
+    dl_kenmerk = str_opt (path / "kenmerk") (f "kenmerk");
+    dl_attribuut = ext_field path kvs "attribuut" str;
     rungs =
       List.mapi
         (fun i x -> rung (path / "rungs" / string_of_int i) x)

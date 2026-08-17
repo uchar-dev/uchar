@@ -1993,10 +1993,30 @@
           "const": "Rung"
         },
         "besluit": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Characteristic ladders only: attribute (true) or do-not-attribute (false); null on attribute rungs."
         },
         "voorwaarde": {
-          "$ref": "#/$defs/conditie"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/conditie"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The justification; null only on the initialisation rung (its justification is input-emptiness, ch. 7.3)."
+        },
+        "consequentie": {
+          "$ref": "#/$defs/expr",
+          "description": "Attribute ladders only: the rung's value; a leeg-evaluating consequence falls through."
+        },
+        "initialisatie": {
+          "type": "boolean",
+          "description": "The initialisation rung (lowest only): justified iff the target is empty in the input facts."
         },
         "bron": {
           "type": [
@@ -2032,7 +2052,14 @@
           "type": "string"
         },
         "kenmerk": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "attribuut": {
+          "type": "string",
+          "description": "Attribute-ladder target; a ladder carries exactly one of kenmerk/attribuut (WF-050)."
         },
         "rungs": {
           "type": "array",
