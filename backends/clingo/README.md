@@ -103,9 +103,14 @@ Recorded limitations:
   loud against the absolute expectations, but a bignum/rational
   encoding is follow-up work for realistic monetary magnitudes.
 - Negative or empty allocation operands make the generated program
-  UNSATISFIABLE by explicit constraints — clingo then fails exactly
-  where `ref/` faults (ch. 4.4), instead of silently diverging by the
-  truncation/floor difference.
+  UNSATISFIABLE — clingo then fails exactly where `ref/` faults
+  (ch. 4.4), instead of silently diverging by the truncation/floor
+  difference. All fail-fast guards (these, and the to-one creation
+  guard) derive named `viol/2` witnesses closed by one global integrity
+  constraint; on UNSAT the runner re-runs without that constraint and
+  reports the fired witnesses, so an expectedFault fragment
+  (corpus/rood, gate 8) pins the *reason*, never merely "some
+  constraint fired".
 
 ## Run
 

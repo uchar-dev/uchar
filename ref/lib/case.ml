@@ -330,7 +330,12 @@ let load_file (doc : document) path : t =
     | None -> None
     | Some j ->
         let fk = obj j in
-        Some { ef_ref = str (field fk "ref"); ef_clingo = str (field fk "clingo") }
+        let frag what =
+          let s = str (field fk what) in
+          if s = "" then fail "expectedFault.%s: an empty fragment would match any fault" what;
+          s
+        in
+        Some { ef_ref = frag "ref"; ef_clingo = frag "clingo" }
   in
   let expected =
     match (List.assoc_opt "expected" kvs, expected_fault) with

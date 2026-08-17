@@ -1301,7 +1301,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-041 | counting-quantifier threshold ≥ 1 | gate 3 | OPEN | `wf041-threshold-zero` |
 | WF-042 | time window: ≥ 1 bound; bounds are dates, either precision | gate 3 | OPEN | `wf042-empty-window` |
 | WF-043 | whole-period qualifier only on a time-dependent operand | gate 3 | OPEN | `wf043-wholeperiod-nontemporal` |
-| WF-044 | (consumer) Unresolved surfaces, never silently lowered | behavioural (CI harness guard) — OPEN | OPEN | OPEN |
+| WF-044 | (consumer) Unresolved surfaces, never silently lowered | behavioural — gate 8 (`scripts/check-rood.sh`): both executors must fault, fragment-pinned | `corpus/rood/wf044-onopgelost-reached` (the red witness: ref faults the evaluation, the ASP backend the translation) | n/a (the marker is legal wire content; the fence is behavioural, not well-formedness) |
 | WF-045 | dependency graph acyclic (creation recursion excepted) | gate 3 | `jutterswet-vondsttelling` | `wf045-cyclic-attribute-dependency` |
 | WF-046 | no negative edge on a dependency cycle (strata exist) | gate 3 | `jutterswet-penningjaar` (the negated aanmeldplichtig reading — a negative edge, verifier-clean, oracle-replayed) | `wf046-negated-read-in-recursive-cycle` |
 | WF-047 | role binding resolves; fillers agree with the use site; written source denotes the bound role | gate 3 | `anchor/jutterswet-bergingstoezicht` (two fact types over one pair; allocation and fold bound, replayed by gates 5–6) | `wf047-dangling-role-binding` (resolution) + `wf047-bound-role-fills-source` (filler agreement) |

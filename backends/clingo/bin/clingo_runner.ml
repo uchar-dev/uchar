@@ -3,9 +3,12 @@
    the same absolute expectations gate 5 pins for ref/. On an
    expectedFault case (corpus/rood) the pair must instead fail
    observably — a translation fault or UNSAT — with the pinned fragment
-   in the report. Exit 0: every expectation matches, or the expected
-   fault is observed. Exit 1: mismatch, translation/evaluation fault,
-   an expected fault that does not occur, or a fault report without the
+   in the report; an UNSAT is diagnosed by re-running without the global
+   integrity constraint so the report names the viol/2 guard that
+   fired, and the fragment can pin the REASON, not just the failure.
+   Exit 0: every expectation matches, or the expected fault is
+   observed. Exit 1: mismatch, translation/evaluation fault, an
+   expected fault that does not occur, or a fault report without the
    fragment. Exit 2: load error or clingo unavailable. *)
 
 let read_all ic =
@@ -17,31 +20,76 @@ let read_all ic =
    with End_of_file -> ());
   Buffer.contents b
 
-(* run clingo on [program]; [`Sat json] with the outf2 payload, or
-   [`Unsat msg] with the report the expectedFault fragment matches *)
-let solve program =
+(* one clingo invocation on [text]; the raw outf2 payload and exit *)
+let run_clingo text =
   let tmp = Filename.temp_file "uchar-clingo" ".lp" in
   let oc = open_out tmp in
-  output_string oc program;
+  output_string oc text;
   close_out oc;
   let ic = Unix.open_process_in (Printf.sprintf "clingo --outf=2 %s" (Filename.quote tmp)) in
   let out = read_all ic in
   let status = Unix.close_process_in ic in
   Sys.remove tmp;
-  match status with
-  | Unix.WEXITED (10 | 30) -> `Sat out (* clingo: SAT / SAT+shown *)
-  | Unix.WEXITED 127 ->
+  (out, status)
+
+(* the viol/2 witnesses of an UNSAT program: re-run with the global
+   integrity constraint stripped and the witnesses shown *)
+let diagnose program =
+  let relaxed =
+    String.concat "\n"
+      (List.filter
+         (fun l -> String.trim l <> ":- viol(_,_).")
+         (String.split_on_char '\n' program))
+    ^ "\n#show viol/2.\n"
+  in
+  match run_clingo relaxed with
+  | out, Unix.WEXITED (10 | 30) -> (
+      try
+        match Yojson.Safe.from_string out with
+        | `Assoc kvs -> (
+            match List.assoc_opt "Call" kvs with
+            | Some (`List (call :: _)) -> (
+                match call with
+                | `Assoc ckvs -> (
+                    match List.assoc_opt "Witnesses" ckvs with
+                    | Some (`List (`Assoc wkvs :: _)) -> (
+                        match List.assoc_opt "Value" wkvs with
+                        | Some (`List atoms) ->
+                            List.filter_map
+                              (function
+                                | `String s
+                                  when String.length s >= 5 && String.sub s 0 5 = "viol(" ->
+                                    Some s
+                                | _ -> None)
+                              atoms
+                        | _ -> [])
+                    | _ -> [])
+                | _ -> [])
+            | _ -> [])
+        | _ -> []
+      with _ -> [])
+  | _ -> []
+
+(* run clingo on [program]; [`Sat json] with the outf2 payload, or
+   [`Unsat msg] with the diagnosed report the expectedFault fragment
+   matches *)
+let solve program =
+  match run_clingo program with
+  | out, Unix.WEXITED (10 | 30) -> `Sat out (* clingo: SAT / SAT+shown *)
+  | _, Unix.WEXITED 127 ->
       prerr_endline "CLINGO NOT FOUND on PATH";
       exit 2
-  | Unix.WEXITED 20 ->
-      `Unsat
-        "clingo: UNSATISFIABLE — a generated fail-fast constraint fired (negative or empty \
-         allocation operand, ch. 4.4; a to-one second filler, ch. 5.5) or the input is not \
-         stratified"
-  | Unix.WEXITED c ->
+  | _, Unix.WEXITED 20 ->
+      let reason =
+        match diagnose program with
+        | [] -> "no viol/2 witness (the input is not stratified?)"
+        | vs -> String.concat "; " vs
+      in
+      `Unsat (Printf.sprintf "clingo: UNSATISFIABLE — a fail-fast guard fired: %s" reason)
+  | out, Unix.WEXITED c ->
       Printf.eprintf "clingo exited %d:\n%s\n" c out;
       exit 1
-  | _ ->
+  | _, _ ->
       prerr_endline "clingo killed";
       exit 2
 

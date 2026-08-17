@@ -61,7 +61,7 @@ find corpus/golden corpus/rood -name ir.json 2>/dev/null | sort > "$list"
 while IFS= read -r f; do
     n_golden=$((n_golden + 1))
     if ! out=$("$BIN" "$f" 2>&1); then
-        printf 'FAIL: golden case %s is not verifier-clean:\n%s\n' "$f" "$out" >&2
+        printf 'FAIL: document %s is not verifier-clean:\n%s\n' "$f" "$out" >&2
         status=1
     fi
 done < "$list"

@@ -43,6 +43,6 @@
   },
   "expectedFault": {
     "ref": "a second filler is ill-typed",
-    "clingo": "UNSATISFIABLE"
+    "clingo": "to-one second filler"
   }
 }

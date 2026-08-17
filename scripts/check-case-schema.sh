@@ -40,18 +40,6 @@ while IFS= read -r f; do
         echo "FAIL: $f has no ir.json beside it (a case belongs to a document)" >&2
         status=1
     fi
-    case "$f" in
-        corpus/golden/*)
-            if grep -q '"expectedFault"' "$f"; then
-                echo "FAIL: $f carries expectedFault inside corpus/golden — red cases live in corpus/rood" >&2
-                status=1
-            fi ;;
-        corpus/rood/*)
-            if ! grep -q '"expectedFault"' "$f"; then
-                echo "FAIL: $f carries no expectedFault inside corpus/rood — green cases live in corpus/golden" >&2
-                status=1
-            fi ;;
-    esac
 done < "$list"
 
 $RUN - "$SCHEMA" "$list" <<'PY' || status=1
@@ -86,6 +74,17 @@ for path in files:
         be = best_match(errs)
         loc = "/".join(str(p) for p in be.absolute_path) or "<root>"
         sys.stderr.write("FAIL: %s\n  at: %s\n  %s\n" % (path, loc, be.message))
+        failed += 1
+        continue
+    # zone discipline, checked structurally on the parsed keys: a red
+    # case can never hide inside the green corpus, or vice versa.
+    if path.startswith("corpus/golden/") and "expectedFault" in doc:
+        sys.stderr.write("FAIL: %s carries expectedFault inside corpus/golden — "
+                         "red cases live in corpus/rood\n" % path)
+        failed += 1
+    elif path.startswith("corpus/rood/") and "expectedFault" not in doc:
+        sys.stderr.write("FAIL: %s carries no expectedFault inside corpus/rood — "
+                         "green cases live in corpus/golden\n" % path)
         failed += 1
 if failed:
     sys.exit(1)

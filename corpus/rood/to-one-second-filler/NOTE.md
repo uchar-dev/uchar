@@ -4,7 +4,9 @@ The ch. 5.5 to-one red path: one vondst is reported by jutters of two
 different kustgemeenten, so both municipal creations reach it and the
 to-one role `bergende gemeente` would get a second distinct filler.
 The reference interpreter's link writer faults; the ASP program is made
-UNSATISFIABLE by the generated cardinality constraint — the same
-fail-fast on both executors, never a silent model that holds both
-links. The document is the `jutterswet-gemeenteberging` anchor
+UNSATISFIABLE by the generated cardinality guard, and the runner's
+UNSAT diagnosis names the fired `viol/2` witness — so the pinned
+fragment verifies the *reason* (the to-one guard), not merely that some
+constraint fired. The same fail-fast on both executors, never a silent
+model that holds both links. The document is the `jutterswet-gemeenteberging` anchor
 verbatim; only the case is red.

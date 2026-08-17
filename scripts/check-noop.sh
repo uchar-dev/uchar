@@ -64,7 +64,9 @@ find corpus/golden -name 'case*.json' 2>/dev/null | sort > "$list"
 while IFS= read -r case; do
     n_cases=$((n_cases + 1))
     ir=$(dirname "$case")/ir.json
-    if "$BIN" --noop "$ir" "$case" >/dev/null 2>&1; then
+    "$BIN" --noop "$ir" "$case" >/dev/null 2>&1
+    code=$?
+    if [ "$code" -eq 0 ]; then
         if listed "$case"; then
             n_survivors=$((n_survivors + 1))
         else
@@ -72,6 +74,11 @@ while IFS= read -r case; do
             echo "  (if the standing IS what the case tests, pin it in check-noop.sh with a reason)" >&2
             status=1
         fi
+    elif [ "$code" -ne 1 ]; then
+        # exit 2 is a load error, not a refutation — a broken case must
+        # never count as discriminating power
+        echo "FAIL: $case errored under --noop (exit $code), refuting nothing" >&2
+        status=1
     elif listed "$case"; then
         echo "FAIL: stale survivor entry — $case no longer survives a no-op run" >&2
         status=1
