@@ -1,0 +1,25 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2028-03-15",
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "penningbedrag": { "timeline": [
+        { "from": "2025-01-01", "to": "2026-01-01", "value": { "number": "4" } },
+        { "from": "2026-01-01", "to": "2027-01-01", "value": { "number": "5" } }
+      ] }
+    }
+  },
+  "expectedFault": {
+    "ref": "does not cover the evaluation date",
+    "clingo": "does not cover the evaluation date"
+  }
+}

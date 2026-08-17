@@ -51,12 +51,13 @@ fi
 
 status=0
 
-# check 2: golden dumps are verifier-clean.
+# check 2: golden dumps — and the red corpus's documents, whose faults
+# are behavioural, never well-formedness — are verifier-clean.
 list=$(mktemp) || exit 2
 trap 'rm -f "$list"' EXIT
 
 n_golden=0
-find corpus/golden -name ir.json 2>/dev/null | sort > "$list"
+find corpus/golden corpus/rood -name ir.json 2>/dev/null | sort > "$list"
 while IFS= read -r f; do
     n_golden=$((n_golden + 1))
     if ! out=$("$BIN" "$f" 2>&1); then

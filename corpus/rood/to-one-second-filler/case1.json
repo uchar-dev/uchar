@@ -1,0 +1,48 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "G1",
+        "objectType": "Gemeente",
+        "attributes": {},
+        "roles": { "ingeschreven jutters": ["J1"] },
+        "characteristics": ["kustgemeente"]
+      },
+      {
+        "label": "G2",
+        "objectType": "Gemeente",
+        "attributes": {},
+        "roles": { "ingeschreven jutters": ["J2"] },
+        "characteristics": ["kustgemeente"]
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "aangemelde vondsten": ["V1"] },
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "aangemelde vondsten": ["V1"] },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": { "gewicht": { "number": "10" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "a second filler is ill-typed",
+    "clingo": "UNSATISFIABLE"
+  }
+}

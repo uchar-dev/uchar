@@ -21,6 +21,7 @@ construction**.
 | `golden/` | One directory per case: source, its IR-JSON, expected outcomes |
 | `golden/anchor/` | Hand-written cases with **absolute** expected values, permanently pinned — protected path |
 | `negatief/` | Deliberately ill-formed IR files + the verifier verdict each must produce (at least one per WF rule) |
+| `rood/` | Verifier-clean documents whose cases declare `expectedFault {ref, clingo}`: evaluation must fail observably in both executors, substring-pinned (gate 8) — the standing fence for red paths, the WF-044 unsolved state among them |
 
 ## Admission rules
 

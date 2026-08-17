@@ -264,6 +264,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           | _ -> fault "malformed asOfDate %S" d)
       | None ->
           fault "the Rekendatum constant needs an evaluation date; the case carries asOfDate null")
+  | Expr_onopgelost _ ->
+      (* the unsolved-state guard: an Onopgelost node never vanishes —
+         the rule that carries it fails observably (WF-044) *)
+      fault "Onopgelost reached in translation: this rule fails observably (WF-044)"
   | _ -> fault "expression kind not translated (no corpus case exercises it)"
 
 (* harmonise two scaled terms for comparison *)

@@ -28,13 +28,28 @@ type expectation =
   | Consistent
   | Inconsistent
 
+(* the red-path case form (corpus/rood): evaluation MUST fail
+   observably in every executor; each field is a substring the
+   executor's own fault report must contain *)
+type expected_fault = { ef_ref : string; ef_clingo : string }
+
 type t = {
   as_of : string option;
   world : World.t;
   params : Value.t SMap.t;
   param_tls : Timeline.t SMap.t; (* granular parameters' full timelines *)
-  expected : expectation list;
+  expected : expectation list; (* empty exactly when [expected_fault] is set *)
+  expected_fault : expected_fault option;
 }
+
+(* naive substring search, for matching a fault report against the
+   pinned expectedFault fragment *)
+let contains ~needle hay =
+  let nh = String.length hay and nn = String.length needle in
+  nn = 0
+  ||
+  let rec go i = i + nn <= nh && (String.sub hay i nn = needle || go (i + 1)) in
+  go 0
 
 (* --- json helpers (strict) --------------------------------------------- *)
 
@@ -310,13 +325,23 @@ let load_file (doc : document) path : t =
       (SMap.empty, SMap.empty)
       (obj (field input "parameters"))
   in
-  let expected =
-    match field kvs "expected" with
-    | `List l -> List.map (load_expectation doc world) l
-    | _ -> fail "expected: expected a list"
+  let expected_fault =
+    match List.assoc_opt "expectedFault" kvs with
+    | None -> None
+    | Some j ->
+        let fk = obj j in
+        Some { ef_ref = str (field fk "ref"); ef_clingo = str (field fk "clingo") }
   in
-  if expected = [] then fail "empty expectation list";
-  { as_of; world; params; param_tls; expected }
+  let expected =
+    match (List.assoc_opt "expected" kvs, expected_fault) with
+    | Some (`List l), None -> List.map (load_expectation doc world) l
+    | Some _, None -> fail "expected: expected a list"
+    | None, Some _ -> []
+    | Some _, Some _ -> fail "a case carries exactly one of expected / expectedFault"
+    | None, None -> fail "missing field %S" "expected"
+  in
+  if expected = [] && expected_fault = None then fail "empty expectation list";
+  { as_of; world; params; param_tls; expected; expected_fault }
 
 (* --- expectation checking ---------------------------------------------- *)
 

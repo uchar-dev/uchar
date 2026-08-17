@@ -26,9 +26,13 @@ CI runs both; CLAUDE.md's gate list grows to eight and its
 
 May touch: `ref/bin/runner.ml`, `backends/clingo/bin/clingo_runner.ml`,
 `ref/lib/case.ml`, `backends/clingo/lib/translate.ml` (explicit WF-044
-fault arm), `spec/schema/uchar-case-v0.schema.json`, `scripts/`
-(two new gates + glob widening in four existing), `corpus/rood/` (new),
-`.github/workflows/gates.yml`, `CLAUDE.md` (gate list), `backlog/`.
+fault arm), `spec/schema/uchar-case-v0.schema.json`,
+`spec/verifier/lib/loader.ml` (a mirror bug the red case exposed: the
+loader matched the expr/conditie marker as "Onbekend" where the pinned
+emitter writes "Onopgelost"), `scripts/` (two new gates + glob widening
+in four existing), `corpus/rood/` (new), `corpus/README.md` (zone row),
+`.github/workflows/gates.yml`, `CLAUDE.md` (gate list),
+`WAY-OF-WORKING.md` (zone list), `backlog/`.
 
 Out of scope: ref/test files; new WF rules; red paths that only one
 executor can observe (recorded instead); corpus/negatief changes.

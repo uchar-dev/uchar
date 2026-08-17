@@ -384,7 +384,9 @@ let rec expr path j : expr =
   | "Constante" ->
       check_keys path kvs [ "node"; "naam"; "type"; "bron" ];
       Constante { naam = str_opt (path / "naam") (f "naam"); typ = typ (); bron = bron () }
-  | "Onbekend" ->
+  | "Onopgelost" ->
+      (* the honest-marker node: the emitter names it Onopgelost
+         ("Onbekend" is the DATATYPE sentinel, never an expr node) *)
       check_keys path kvs [ "node"; "type"; "bron" ];
       Expr_onopgelost { typ = typ (); bron = bron () }
   | k -> fail (path / "node") ("unknown expr node \"" ^ k ^ "\"")
@@ -499,7 +501,8 @@ and conditie path j : conditie =
           inconsistent = bool_ (path / "inconsistent") (f "inconsistent");
           bron = bron ();
         }
-  | "Onbekend" ->
+  | "Onopgelost" ->
+      (* as with the expr marker: the emitter names it Onopgelost *)
       check_keys path kvs [ "node"; "bron" ];
       Conditie_onopgelost { bron = bron () }
   | k -> fail (path / "node") ("unknown conditie node \"" ^ k ^ "\"")

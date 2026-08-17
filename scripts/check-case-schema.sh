@@ -1,10 +1,14 @@
 #!/bin/sh
 # Gate 4: corpus case files (spec/schema/uchar-case-v0.schema.json).
 #
-# Three checks:
+# Four checks:
 #   1. the case schema is itself a valid draft 2020-12 schema (metaschema);
-#   2. every corpus/golden/**/case*.json validates against it;
-#   3. every case file sits beside an ir.json (a case belongs to a golden).
+#   2. every corpus/golden/**/case*.json and corpus/rood/**/case*.json
+#      validates against it;
+#   3. every case file sits beside an ir.json;
+#   4. zone discipline: a golden case carries `expected` (never
+#      `expectedFault`), a rood case carries `expectedFault` — a red
+#      case can never hide inside the green corpus, or vice versa.
 # An empty case set is reported explicitly, never silently green.
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
@@ -26,16 +30,28 @@ fi
 
 list=$(mktemp) || exit 2
 trap 'rm -f "$list"' EXIT
-find corpus/golden -name 'case*.json' 2>/dev/null | sort > "$list"
+find corpus/golden corpus/rood -name 'case*.json' 2>/dev/null | sort > "$list"
 
 status=0
 n=0
 while IFS= read -r f; do
     n=$((n + 1))
     if [ ! -f "$(dirname "$f")/ir.json" ]; then
-        echo "FAIL: $f has no ir.json beside it (a case belongs to a golden)" >&2
+        echo "FAIL: $f has no ir.json beside it (a case belongs to a document)" >&2
         status=1
     fi
+    case "$f" in
+        corpus/golden/*)
+            if grep -q '"expectedFault"' "$f"; then
+                echo "FAIL: $f carries expectedFault inside corpus/golden — red cases live in corpus/rood" >&2
+                status=1
+            fi ;;
+        corpus/rood/*)
+            if ! grep -q '"expectedFault"' "$f"; then
+                echo "FAIL: $f carries no expectedFault inside corpus/rood — green cases live in corpus/golden" >&2
+                status=1
+            fi ;;
+    esac
 done < "$list"
 
 $RUN - "$SCHEMA" "$list" <<'PY' || status=1

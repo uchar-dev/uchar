@@ -5,7 +5,11 @@
   "description": "One golden-corpus evaluation case: the input world, the evaluation date, parameter values, and the expected outcomes. Engine-neutral; consumed by the reference interpreter and any conforming backend harness. Values are unit-normalised to the referenced declaration's unit; numbers are exact decimal or rational lexemes carried as strings, never JSON floats.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["format", "asOfDate", "input", "expected"],
+  "required": ["format", "asOfDate", "input"],
+  "oneOf": [
+    { "required": ["expected"], "not": { "required": ["expectedFault"] } },
+    { "required": ["expectedFault"], "not": { "required": ["expected"] } }
+  ],
   "properties": {
     "format": { "const": "uchar-case-v0" },
     "asOfDate": {
@@ -32,6 +36,16 @@
       "type": "array",
       "minItems": 1,
       "items": { "$ref": "#/$defs/expectation" }
+    },
+    "expectedFault": {
+      "description": "The red-path alternative to `expected` (corpus/rood): evaluation of this case MUST fail observably in every executor — never a silent skip, never a model. Each field is a substring the executor's fault report must contain: `ref` against the reference interpreter's fault, `clingo` against the ASP runner's fault or UNSAT report. A case carries exactly one of `expected` / `expectedFault`.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "clingo"],
+      "properties": {
+        "ref": { "type": "string", "minLength": 1 },
+        "clingo": { "type": "string", "minLength": 1 }
+      }
     }
   },
   "$defs": {

@@ -37,7 +37,7 @@ if [ "$#" -gt 0 ]; then
     set -- "$SCHEMA" "$MODE" "$@"
 else
     MODE='corpus'
-    files=$(find corpus/golden -name ir.json 2>/dev/null | sort)
+    files=$(find corpus/golden corpus/rood -name ir.json 2>/dev/null | sort)
     # shellcheck disable=SC2086
     set -- "$SCHEMA" "$MODE" $files
 fi

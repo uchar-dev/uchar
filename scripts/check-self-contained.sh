@@ -14,7 +14,7 @@
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
-ZONES='corpus/golden corpus/negatief spec/schema spec/verifier ref backends'
+ZONES='corpus/golden corpus/negatief corpus/rood spec/schema spec/verifier ref backends'
 EXCEPTIONS=''
 PRIVATE='(/users/|/home/|~/|regelspraak-java|regelspraakruntime|calculemus)'
 
@@ -28,7 +28,7 @@ for zone in $ZONES; do
     fi
 done
 
-for zone in corpus/golden corpus/negatief; do
+for zone in corpus/golden corpus/negatief corpus/rood; do
     [ -e "$zone" ] || continue
     if git grep -nIiE '(^|[^[:alpha:]])toka([^[:alpha:]]|$)' -- "$zone"; then
         echo "FAIL: TOKA material in corpus data (rights policy, corpus/README.md)" >&2

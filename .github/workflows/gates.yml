@@ -78,3 +78,32 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y gringo && clingo --version
       - name: check-clingo
         run: opam exec -- sh scripts/check-clingo.sh
+
+  noop:
+    name: "Gate 7: no-op guard (a do-nothing executor must fail)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5"
+      - name: install yojson + zarith
+        run: opam install -y yojson zarith
+      - name: check-noop
+        run: opam exec -- sh scripts/check-noop.sh
+
+  rood:
+    name: "Gate 8: red corpus (expected faults observed in both executors)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5"
+      - name: install yojson + zarith
+        run: opam install -y yojson zarith
+      - name: install clingo
+        # Ubuntu ships the clingo binary in the gringo package
+        run: sudo apt-get update && sudo apt-get install -y gringo && clingo --version
+      - name: check-rood
+        run: opam exec -- sh scripts/check-rood.sh

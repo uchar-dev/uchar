@@ -89,7 +89,8 @@ without access to the maintainer's machine or private repositories.
 - **Working prose** — `spec/PLAN.md`, `spec/IR-REVIEW.md`, `backlog/`,
   `CLAUDE.md`, this file, top-level READMEs — may reference the private
   repos by name during development.
-- **Artifact zones** — `corpus/golden/`, `corpus/negatief/`, `spec/schema/`,
+- **Artifact zones** — `corpus/golden/`, `corpus/negatief/`,
+  `corpus/rood/`, `spec/schema/`,
   `spec/verifier/`, `ref/`, `backends/` — are self-contained **from their
   first commit**: no machine-local paths, no private-repo names, no
   file:line citations into private code. Code and data never carry

@@ -70,26 +70,30 @@ Grows monotonically; nothing that entered may regress; a green subset is not
 green. Current gates:
 
 1. `scripts/check-self-contained.sh` — artifact zones (`corpus/golden`,
-   `corpus/negatief`, `spec/schema`, `spec/verifier`, `ref`, `backends`)
+   `corpus/negatief`, `corpus/rood`, `spec/schema`, `spec/verifier`,
+   `ref`, `backends`)
    carry no machine-local paths or private-repo references, and corpus data
    is free of TOKA material. Working prose (plan, backlog, reviews) may
    reference the private source repos during development — see
    `WAY-OF-WORKING.md` §5–6.
 2. `scripts/check-ir-schema.sh` — the schema file is metaschema-valid;
-   every `corpus/golden/**/ir.json` validates against
+   every `corpus/golden/**/ir.json` and `corpus/rood/**/ir.json`
+   validates against
    `spec/schema/regelspraak-ir-v0.schema.json` and round-trips
    byte-identically; an unpopulated corpus is reported explicitly, never
    silently green.
 3. `scripts/check-verifier.sh` — the OCaml verifier (`spec/verifier/`)
-   builds; every `corpus/golden/**/ir.json` is verifier-clean; every
+   builds; every `corpus/golden/**/ir.json` and `corpus/rood/**/ir.json`
+   is verifier-clean; every
    `corpus/negatief/<wf###-slug>/ir.json` is rejected, citing the WF
    rule its directory name declares; an empty negatief corpus is a
    failure, never silently green.
 4. `scripts/check-case-schema.sh` — the case schema
    (`spec/schema/uchar-case-v0.schema.json`) is metaschema-valid; every
-   `corpus/golden/**/case*.json` validates against it and sits beside
-   an `ir.json`; an empty case set is reported explicitly, never
-   silently green.
+   `corpus/golden/**/case*.json` and `corpus/rood/**/case*.json`
+   validates against it and sits beside an `ir.json`; zone discipline
+   holds (golden carries `expected`, rood carries `expectedFault`); an
+   empty case set is reported explicitly, never silently green.
 5. `scripts/check-oracle.sh` — the reference interpreter (`ref/`) builds
    and replays every `corpus/golden/**/case*.json` with exact expectation
    match (the oracle guard of PLAN §8); goldens without a case file are
@@ -100,10 +104,19 @@ green. Current gates:
    must match the same absolute expectations gate 5 pins for `ref/`
    (ref ≡ Clingo over the corpus, anchored to hand-written values); an
    empty case set is a failure, never silently green.
-
-Standing harness guards still to land: no-op (an identity transpiler must
-fail), unsolved-state (`Onopgelost` surfaces in output, never vanishes —
-`ref/` already faults on reaching one, WF-044).
+7. `scripts/check-noop.sh` — the no-op guard (PLAN §8: an identity
+   transpiler must fail): every golden case run through the reference
+   runner's `--noop` mode (expectations against the raw input, no
+   evaluation) must fail; the cases that legitimately survive — they pin
+   defeasible standing — live in the script's explicit, reason-carrying
+   survivor list, which fails when stale; an empty case set is a
+   failure.
+8. `scripts/check-rood.sh` — the red corpus: every
+   `corpus/rood/**/case*.json` declares `expectedFault {ref, clingo}`
+   and MUST fail observably in **both** executors with the pinned
+   fragment in each report (the unsolved-state guard among them:
+   `Onopgelost` reached in evaluation faults with WF-044, never
+   vanishes); an empty red set is a failure, never silently green.
 
 ## Repo relationships
 
