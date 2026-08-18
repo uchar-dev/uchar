@@ -53,11 +53,17 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   (ch. 6.1). **First pin bump (2026-08-17, toolchain `edecb46`):** the
   emitter produces `verbindendeRol` and `bronRol` where uniquely
   derivable from declared names (absent otherwise — never null, never a
-  guessed plural); the emitter goldens carry them since that pin. The
-  remaining extensions stay anchor-only: `TemporalRead` and the ladders
-  have no surface syntax in the toolchain yet, and the symbolic
-  fact-creation fields (whose bean-field surface form the toolchain does
-  emit) await their emitter-side role derivation.
+  guessed plural); the emitter goldens carry them since that pin. **Second pin
+  bump (2026-08-18, toolchain `31f630a`):** the emitter produces the
+  navigation bindings (`navigatieBindingen` on the scalar navigated
+  read, `navigatieBinding` on the navigated characteristic check —
+  never on a fold source, per the ch. 4.1a emitter discipline),
+  `scopeRol` on the parent-scoped uniqueness, and the symbolic
+  fact-creation fields (whole-or-not per node), each only where
+  uniquely derivable from declared names; `jutterswet-postwacht` is the
+  emitter golden carrying all four families through both executors.
+  The remaining extensions stay anchor-only: `TemporalRead` and the
+  ladders have no surface syntax in the toolchain yet.
 
 ## Conventions (binding)
 
@@ -882,8 +888,7 @@ subject alone (the wire carries no parent type), where v0's resolver
 disambiguated by the (element, parent) pair — a same-named-roles clash
 refuses loudly instead of picking; the `scopeRol` binding is the
 unambiguous route. A scoped union is not
-representable in v0 and stays out. Emitter side of `scopeRol` is
-pin-bump territory.
+representable in v0 and stays out. The emitter produces `scopeRol` since the 2026-08-18 pin bump (toolchain `31f630a`).
 
 - **WF-030** Every source's keys MUST resolve to declared attributes; all
   sources MUST agree on key arity and per-position datatype kind
@@ -1424,8 +1429,8 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-050 | ladder: ≥ 1 rung; exactly one target, resolving; rung shapes per kind; init rung lowest; no other writer; multiplicity only declared-unordered | gate 3 | `anchor/jutterswet-uitsluiting` (characteristic) + `anchor/jutterswet-vondstwaardering` (attribute + init) + `anchor/jutterswet-toelagegronden` (unordered groups, six conflict-path cases; all replayed by gates 5–6) | `wf050-empty-ladder` + `wf050-two-ladders-one-target` + `wf050-ladder-beside-rule` + `wf050-both-targets` + `wf050-init-not-lowest` + `wf050-rule-beside-attribute-ladder` + `wf050-allocation-beside-ladder` + `wf050-creation-beside-ladder` + `wf050-half-marked-group` |
 | WF-051 | no dependency cycle through a ladder (justification and consequence reads are negative edges) | gate 3 (over the extended dep_forms graph, shared with ref/'s strata) | `anchor/jutterswet-uitsluiting` (the ladder sits below its negated consumer — strata exist, oracle-replayed) | `wf051-ladder-reads-own-target` |
 | WF-052 | a connecting relation with a to-one created-side role has at most one object-creation writer (fact creations are fault-paired already) | gate 3 | `anchor/jutterswet-penninguitgifte` (one writer per to-one relation, executed by gates 5–6) | `wf052-two-writers-one-to-one-relation` |
-| WF-053 | a navigated read resolves its walk: bindings resolve, chain-type, count and written names agree, the endpoint is reached; bindingless steps are uniquely derivable; scalar-slot hops are to-one; bindings on a non-navigating node are ill-formed | gate 3 | `anchor/jutterswet-kustwacht` (by-name, chain and by-pair shapes plus the navigated characteristic check, executed by gates 5–6 with leeg-on-absent and the negation asymmetry pinned) | `wf053-dangling-navigation-binding` (resolution) + `wf053-chain-near-side-mismatch` (chain typing) + `wf053-to-many-hop-in-scalar` (cardinality) + `wf053-written-role-mismatch` (written-name denotation) + `wf053-bindingless-ambiguous` (unique derivability) |
-| WF-054 | parent-scoped uniqueness: the scope role resolves (bound or uniquely derivable from the written scope field), its near side fills the subject, the written name denotes the bound role, the scope role is to-one; a scope binding on an unscoped uniqueness is ill-formed | gate 3 | `anchor/jutterswet-kustregister` (bound and bindingless scoped forms, executed by gates 5–6 with the scope-less exclusion pinned) | `wf054-dangling-scope-binding` (resolution) + `wf054-to-many-scope-role` (cardinality) + `wf054-binding-on-unscoped` (the non-scoped guard) |
+| WF-053 | a navigated read resolves its walk: bindings resolve, chain-type, count and written names agree, the endpoint is reached; bindingless steps are uniquely derivable; scalar-slot hops are to-one; bindings on a non-navigating node are ill-formed | gate 3 | `anchor/jutterswet-kustwacht` (by-name, chain and by-pair shapes plus the navigated characteristic check, executed by gates 5–6 with leeg-on-absent and the negation asymmetry pinned) + `jutterswet-postwacht` (emitter-produced bindings since the 2026-08-18 pin bump) | `wf053-dangling-navigation-binding` (resolution) + `wf053-chain-near-side-mismatch` (chain typing) + `wf053-to-many-hop-in-scalar` (cardinality) + `wf053-written-role-mismatch` (written-name denotation) + `wf053-bindingless-ambiguous` (unique derivability) |
+| WF-054 | parent-scoped uniqueness: the scope role resolves (bound or uniquely derivable from the written scope field), its near side fills the subject, the written name denotes the bound role, the scope role is to-one; a scope binding on an unscoped uniqueness is ill-formed | gate 3 | `anchor/jutterswet-kustregister` (bound and bindingless scoped forms, executed by gates 5–6 with the scope-less exclusion pinned) + `jutterswet-postwacht` (emitter-produced `scopeRol` since the 2026-08-18 pin bump) | `wf054-dangling-scope-binding` (resolution) + `wf054-to-many-scope-role` (cardinality) + `wf054-binding-on-unscoped` (the non-scoped guard) |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

@@ -1,0 +1,168 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Kustvak",
+        "attributes": {
+          "gevarenklasse": {
+            "number": "7"
+          }
+        },
+        "roles": {
+          "posten": [
+            "P1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "P1",
+        "objectType": "Post",
+        "attributes": {
+          "hoogte": {
+            "number": "15"
+          }
+        },
+        "roles": {
+          "kustvak": [
+            "V1"
+          ],
+          "seinen": [
+            "S1",
+            "S2"
+          ]
+        },
+        "characteristics": [
+          "risicopost"
+        ]
+      },
+      {
+        "label": "S1",
+        "objectType": "Sein",
+        "attributes": {
+          "gewicht": {
+            "number": "4"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S2",
+        "objectType": "Sein",
+        "attributes": {
+          "gewicht": {
+            "number": "6"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W1",
+        "objectType": "Wachter",
+        "attributes": {
+          "wachtnummer": {
+            "number": "1"
+          }
+        },
+        "roles": {
+          "post": [
+            "P1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "W2",
+        "objectType": "Wachter",
+        "attributes": {
+          "wachtnummer": {
+            "number": "2"
+          }
+        },
+        "roles": {
+          "post": [
+            "P1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "W1",
+      "attribute": "uitkijkbonus",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W2",
+      "attribute": "uitkijkbonus",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W1",
+      "attribute": "gevarenrang",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W2",
+      "attribute": "gevarenrang",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "W1",
+      "characteristic": "seingerechtigd"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "W2",
+      "characteristic": "seingerechtigd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "seinaantal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "seingewicht",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vakseinaantal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

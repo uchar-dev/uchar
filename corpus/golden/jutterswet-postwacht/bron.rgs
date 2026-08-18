@@ -1,0 +1,70 @@
+Objecttype de Wachter (mv: Wachters) (bezield)
+    is seingerechtigd kenmerk (bijvoeglijk);
+    het wachtnummer Numeriek (geheel getal);
+    de uitkijkbonus Numeriek (geheel getal);
+    de gevarenrang Numeriek (geheel getal);
+
+Objecttype de Post (mv: Posten)
+    is risicopost kenmerk (bijvoeglijk);
+    de hoogte Numeriek (geheel getal);
+    het seinaantal Numeriek (geheel getal);
+    het seingewicht Numeriek (geheel getal);
+
+Objecttype het Kustvak (mv: Kustvakken)
+    de gevarenklasse Numeriek (geheel getal);
+    het vakseinaantal Numeriek (geheel getal);
+
+Objecttype het Sein (mv: Seinen)
+    het gewicht Numeriek (geheel getal);
+
+Feittype postbezetting
+    de wachter (mv: wachters) Wachter
+    de post Post
+Eén post telt meerdere wachters
+
+Feittype kustligging
+    het kustvak Kustvak
+    de post (mv: posten) Post
+Eén kustvak telt meerdere posten
+
+Feittype seinvoering
+    de post Post
+    het sein (mv: seinen) Sein
+Eén post telt meerdere seinen
+
+Feittype vakbeseining
+    het seinvak Kustvak
+    het vaksein (mv: vakseinen) Sein
+Eén seinvak telt meerdere vakseinen
+
+Regel uitkijkbonus van een wachter
+    geldig altijd
+        De uitkijkbonus van een Wachter moet gesteld worden op de hoogte van zijn post.
+
+Regel gevarenrang van een wachter
+    geldig altijd
+        De gevarenrang van een Wachter moet gesteld worden op de gevarenklasse van het kustvak van zijn post.
+
+Regel seingerechtigd bij risicopost
+    geldig altijd
+        Een Wachter is seingerechtigd indien zijn post risicopost is.
+
+Regel seinaantal van een post
+    geldig altijd
+        Het seinaantal van een Post moet berekend worden als het aantal seinen van de post.
+
+Regel seingewicht van een post
+    geldig altijd
+        Het seingewicht van een Post moet berekend worden als de som van het gewicht van alle seinen van de post of 0 als die er niet zijn.
+
+Regel wachtnummer uniek per post
+    geldig altijd
+        De wachtnummer van alle Wachter van de post moeten uniek zijn.
+
+Regel vakbeseining door het kustvak
+    geldig altijd
+        Een vaksein van een Kustvak is een sein van de post van het kustvak.
+
+Regel vakseinaantal van een kustvak
+    geldig altijd
+        Het vakseinaantal van een Kustvak moet berekend worden als het aantal vakseinen van het kustvak.

@@ -91,3 +91,13 @@ window (WF-042), and the whole-period qualifier over a time-dependent
 operand (WF-043). When one of these constructs becomes executable, its
 witness moves into an executing document and the cabinet shrinks — it
 is scaffolding for the WF index, never a place for semantics.
+
+`jutterswet-postwacht` is the second pin bump's emitter golden
+(toolchain `31f630a`, 2026-08-18): a re-emittable source whose dump
+carries all four emitter-produced extension families — navigation
+bindings on the scalar read and the navigated characteristic check
+(and, witness by absence, NOT on the fold sources), `scopeRol` on the
+parent-scoped uniqueness, and the whole-or-not symbolic fact-creation
+block — executed end to end by gates 5–6 (navigated reads 15/7, the
+navigated check, folds 2/10, the created vakbeseining relation counted
+back as 2).
