@@ -1017,8 +1017,12 @@ all, never null, never empty.
   and each written step, where the v0 form carries one, denotes its
   hop's bound role (declared name or plural). Bindingless: each step
   MUST be uniquely derivable — by written name (exactly one reachable
-  role matches, the WF-048 model) or by type pair (exactly one fact
-  type relates the pair). In a scalar slot (`set` false) every hop's
+  role matches on declared name or plural, filtered on the endpoint
+  type where the step is the last: the v0 by-name derivation
+  disambiguates same-named roles by target type; its best-effort
+  pluralisation is deliberately not mirrored — an unmatched written
+  form refuses loudly instead of guessing a singular, a tracked delta)
+  or by type pair (exactly one fact type relates the pair). In a scalar slot (`set` false) every hop's
   reached role MUST be to-one — a to-many step needs an aggregation,
   never a silent first pick (the v0 resolver builds only to-one chains;
   its NAAR_VEEL marker, lifted to well-formedness). Bindings on a

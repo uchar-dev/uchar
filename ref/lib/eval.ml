@@ -178,11 +178,19 @@ let linked ?binding env world (self : World.instance) ~to_type =
 (* a role reachable from [self]'s type whose name/plural matches [name] —
    the v0 instance-fold source wart: a pseudo-AttribuutRef carrying the
    sentinel type names a role, resolved against declared roles (the
-   WF-034 exception) *)
-let role_by_name env ~self_type ~name =
+   WF-034 exception). [to_type], when known (a navigation hop with a
+   written endpoint), joins the filter — the v0 by-name derivation
+   (verbindendeRolViaNaam) disambiguates same-named roles by target
+   type; its best-effort pluralisation is deliberately NOT mirrored
+   (a loud refusal beats heuristic name formation — tracked delta). *)
+let role_by_name ?to_type env ~self_type ~name =
   let matches (r : rol) =
-    (match r.rol_naam with Some n -> norm n = norm name | None -> false)
-    || (match r.rol_meervoud with Some m -> norm m = norm name | None -> false)
+    ((match r.rol_naam with Some n -> norm n = norm name | None -> false)
+    || (match r.rol_meervoud with Some m -> norm m = norm name | None -> false))
+    &&
+    match to_type with
+    | None -> true
+    | Some t -> norm (Option.value r.rol_objecttype_naam ~default:"") = norm t
   in
   let hits =
     List.filter_map
@@ -217,15 +225,19 @@ let nav_target env world (self : World.instance) ~bindings ~navigatie_rol ~navig
     | None -> (
         match navigatie_pad with
         | _ :: _ ->
-            let step (cur, acc) name =
+            let last = List.length navigatie_pad - 1 in
+            let step (i, cur, acc) name =
               let name = req "navigation path step" name in
-              let r = role_by_name env ~self_type:cur ~name in
-              (Option.value r.rol_objecttype_naam ~default:"", acc @ [ r ])
+              let to_type = if i = last then Some endpoint else None in
+              let r = role_by_name ?to_type env ~self_type:cur ~name in
+              (i + 1, Option.value r.rol_objecttype_naam ~default:"", acc @ [ r ])
             in
-            snd (List.fold_left step (self.otype, []) navigatie_pad)
+            let _, _, roles = List.fold_left step (0, self.otype, []) navigatie_pad in
+            roles
         | [] -> (
             match navigatie_rol with
-            | Some n -> [ role_by_name env ~self_type:self.otype ~name:n ]
+            | Some n ->
+                [ role_by_name ~to_type:endpoint env ~self_type:self.otype ~name:n ]
             | None -> [ connecting_role env ~from_type:self.otype ~to_type:endpoint ]))
   in
   List.iter

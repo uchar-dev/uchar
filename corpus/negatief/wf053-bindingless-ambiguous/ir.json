@@ -147,6 +147,48 @@
           "meervoudig": false
         }
       ]
+    },
+    "kustligging": {
+      "node": "Feittype",
+      "naam": "kustligging",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "post",
+          "objecttypeNaam": "Post",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "kustvak",
+          "objecttypeNaam": "Kustvak",
+          "meervoud": null,
+          "meervoudig": false
+        }
+      ]
+    },
+    "kustgrens": {
+      "node": "Feittype",
+      "naam": "kustgrens",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "post",
+          "objecttypeNaam": "Post",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "kustvak",
+          "objecttypeNaam": "Kustvak",
+          "meervoud": null,
+          "meervoudig": false
+        }
+      ]
     }
   },
   "dimensies": {},
@@ -157,6 +199,11 @@
     {
       "node": "Regel",
       "naam": "uitkijkbonus van een wachter",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "vakklasse van een post",
       "soort": "regel"
     }
   ],
@@ -196,6 +243,51 @@
           "eenheid": null
         },
         "bron": "de hoogte van zijn post",
+        "set": false,
+        "navigatiePad": []
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "vakklasse van een post",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "vakklasse",
+        "objecttype": "Post",
+        "onderwerpBron": "een Post",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De vakklasse van een Post",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "AttribuutRef",
+        "attribuut": "gevarenklasse",
+        "objecttype": "Kustvak",
+        "onderwerpBron": "het Kustvak",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de gevarenklasse van het Kustvak",
         "set": false,
         "navigatiePad": []
       },

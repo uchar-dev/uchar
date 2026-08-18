@@ -225,15 +225,21 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           | None -> (
               match navigatie_pad with
               | _ :: _ ->
-                  let step (cur, acc) name =
+                  let last = List.length navigatie_pad - 1 in
+                  let step (i, cur, acc) name =
                     let name = req "navigation path step" name in
-                    let r = Eval.role_by_name env ~self_type:cur ~name in
-                    (Option.value r.rol_objecttype_naam ~default:"", acc @ [ r ])
+                    let to_type = if i = last then Some ot else None in
+                    let r = Eval.role_by_name ?to_type env ~self_type:cur ~name in
+                    (i + 1, Option.value r.rol_objecttype_naam ~default:"", acc @ [ r ])
                   in
-                  snd (List.fold_left step (subject_ot, []) navigatie_pad)
+                  let _, _, roles =
+                    List.fold_left step (0, subject_ot, []) navigatie_pad
+                  in
+                  roles
               | [] -> (
                   match navigatie_rol with
-                  | Some n -> [ Eval.role_by_name env ~self_type:subject_ot ~name:n ]
+                  | Some n ->
+                      [ Eval.role_by_name ~to_type:ot env ~self_type:subject_ot ~name:n ]
                   | None -> [ Eval.connecting_role env ~from_type:subject_ot ~to_type:ot ]))
         in
         List.iter

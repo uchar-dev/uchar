@@ -988,7 +988,17 @@ let is_role_name ctx name =
    naming a ROLE (usually the plural), typed with the unknown sentinel.
    Legitimate v0; the row-1 split removes the encoding in v1. Such an
    argument is checked here instead of by the generic walk. *)
-let aggregation_source_check ctx at = function
+let aggregation_source_check ctx at e =
+  (* a fold source never navigates: its relation is the fold's bronRol —
+     stray navigation bindings in this slot are ill-formed (WF-053) *)
+  (match e with
+   | Attribuut_ref { navigatie_bindingen = Some _; _ } ->
+       [ v "WF-053" at
+           "navigation bindings on a fold source are ill-formed (the fold's relation is \
+            bronRol)" ]
+   | _ -> [])
+  @
+  match e with
   | Attribuut_ref { attribuut = Some a; objecttype = Some otn;
                     navigatie_rol = None; navigatie_pad = []; _ } -> (
       match objecttype ctx otn with
@@ -1101,11 +1111,21 @@ let wf048_derivable ctx at ~from_type ~to_type ~site =
 
 (* One by-name navigation step from [from_type]: the unique reachable role
    whose declared name or plural matches [name] — the executors' hop
-   resolution, lifted to well-formedness. Returns (fact type, reached role). *)
-let nav_role_by_name ctx ~from_type ~name =
+   resolution, lifted to well-formedness. [endpoint], when the step is
+   the last (the written endpoint type is known), joins the filter: the
+   v0 by-name derivation (verbindendeRolViaNaam) disambiguates
+   same-named roles by target type. Its best-effort pluralisation is
+   deliberately NOT mirrored — a loud refusal beats heuristic name
+   formation (tracked delta, `CONSTRUCTS.md` row 4). Returns
+   (fact type, reached role). *)
+let nav_role_by_name ?endpoint ctx ~from_type ~name =
   let matches (r : rol) =
-    (match r.rol_naam with Some n -> norm n = norm name | None -> false)
-    || (match r.rol_meervoud with Some m -> norm m = norm name | None -> false)
+    ((match r.rol_naam with Some n -> norm n = norm name | None -> false)
+    || (match r.rol_meervoud with Some m -> norm m = norm name | None -> false))
+    &&
+    match endpoint with
+    | None -> true
+    | Some e -> norm (Option.value r.rol_objecttype_naam ~default:"") = norm e
   in
   let ot r = Option.value r.rol_objecttype_naam ~default:"" in
   let hits =
@@ -1239,18 +1259,25 @@ let nav_hops ctx ~subject ~(bindings : rol_binding list option)
                   | Ok p -> Ok [ p ]
                   | Error e -> Error [ e ]))
           | steps -> (
-              let step (cur, acc, errs) name =
+              let last = List.length steps - 1 in
+              let step (i, cur, acc, errs) name =
                 match errs with
-                | _ :: _ -> (cur, acc, errs) (* an unresolved hop stops the walk *)
+                | _ :: _ -> (i + 1, cur, acc, errs) (* an unresolved hop stops the walk *)
                 | [] -> (
-                    match nav_role_by_name ctx ~from_type:cur ~name with
-                    | Ok ((_, r) as p) -> (filler r, acc @ [ p ], [])
-                    | Error e -> (cur, acc, [ e ]))
+                    let ep = if i = last then endpoint else None in
+                    match nav_role_by_name ?endpoint:ep ctx ~from_type:cur ~name with
+                    | Ok ((_, r) as p) -> (i + 1, filler r, acc @ [ p ], [])
+                    | Error e -> (i + 1, cur, acc, [ e ]))
               in
-              let cur, acc, errs = List.fold_left step (subject, [], []) steps in
-              match errs @ endpoint_check (Some cur) with
-              | [] -> Ok acc
-              | errs -> Error errs)))
+              let _, cur, acc, errs = List.fold_left step (0, subject, [], []) steps in
+              (* a failed hop already reported; the endpoint check would
+                 only re-describe the stalled walk *)
+              match errs with
+              | _ :: _ -> Error errs
+              | [] -> (
+                  match endpoint_check (Some cur) with
+                  | [] -> Ok acc
+                  | errs -> Error errs))))
 
 (* WF-053 over one navigated attribute reference: the walk resolves
    (bound or uniquely derivable), and in a scalar slot every hop is
