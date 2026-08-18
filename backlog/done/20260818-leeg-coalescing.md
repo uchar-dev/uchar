@@ -25,3 +25,20 @@ corpus/golden/anchor/README.md, backlog/.
 Out of scope: gedeeld-door/macht/percentage-van in de vertaling (blijven
 luide faults); unit-conversie binnen operatoren in clingo (bestaande
 flank, genoteerd); ref-wijzigingen (ref is de mirror en al correct).
+
+Result: geland zoals gesneden. De ch. 1.2a-whitelist heeft zijn
+ASP-encodering (coalesce0: waarde bij binding, 0 via
+negation-as-failure met definedness-helper; propagerende posities
+blijven de kale unbound join), Min en Verminderd-met traden toe tot het
+vertaalde fragment, en de anchor jutterswet-leegrekening pint alle
+whitelist-cellen absoluut in beide executors — inclusief de
+verminderd-met-asymmetrie (links-leeg propageert naar attributeEmpty,
+rechts-leeg coalescet). Alle bestaande anchors, ook de recursieve met
+Plus op creatie-cycli, bleven stabiel onder de encodering. De
+encoderings-lens weerlegde niets; de dekkings-lens ving één MINOR
+(plus-rechts-leeg met attribuut-operand ongetuigd) — gedicht met de
+som-regel (5 plus korting: 5+0=5) vóór de merge. Encodering
+gedocumenteerd in ASP-TRANSLATION.md ch. 6a. Buiten scope gebleven,
+luide faults: gedeeld-door, macht, maal en percentage-van in de
+vertaling; de unit-conversie-flank binnen operatoren is genoteerd als
+bestaande, aparte kwestie.

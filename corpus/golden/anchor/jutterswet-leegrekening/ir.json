@@ -39,6 +39,13 @@
           "decimalen": 0,
           "teken": "ONBEPAALD",
           "eenheid": null
+        },
+        "som": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
         }
       },
       "attribuutMeervoud": {},
@@ -76,6 +83,11 @@
     {
       "node": "Regel",
       "naam": "netto van een vondst",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "som van een vondst",
       "soort": "regel"
     }
   ],
@@ -289,6 +301,75 @@
           "eenheid": null
         },
         "bron": "het gewicht van de Vondst verminderd met de korting"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "som van een vondst",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "som",
+        "objecttype": "Vondst",
+        "onderwerpBron": "de Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De som van een Vondst",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "PLUS",
+        "links": {
+          "node": "Literal",
+          "waarde": "5",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "5"
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "korting",
+          "objecttype": "Vondst",
+          "onderwerpBron": "de Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de korting",
+          "set": false,
+          "navigatiePad": []
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "5 plus de korting van de Vondst"
       },
       "voorwaarde": null,
       "geldigheid": {

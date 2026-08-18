@@ -75,6 +75,22 @@
       }
     },
     {
+      "kind": "attributeValue",
+      "label": "Va",
+      "attribute": "som",
+      "value": {
+        "number": "13"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "Vb",
+      "attribute": "som",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
       "kind": "consistent"
     }
   ]

@@ -46,6 +46,14 @@
       }
     },
     {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "som",
+      "value": {
+        "number": "13"
+      }
+    },
+    {
       "kind": "consistent"
     }
   ]
