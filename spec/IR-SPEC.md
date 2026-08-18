@@ -1055,6 +1055,13 @@ all, never null, never empty.
   operand as leeg; the navigated characteristic check on an absent link
   is false, negated or not.
 
+Emitter discipline (the pin-bump contract): an emitter binds the
+**scalar navigated read and the navigated characteristic check only** —
+a fold-source argument never carries `navigatieBindingen`, its relation
+is the fold's own `bronRol` (mirroring the v0 emitter's
+`bronRolBinding`, which is null exactly when the argument navigates).
+WF-053 enforces this: bindings on a fold source are ill-formed.
+
 Dependency discipline (ch. 6.1 of `RUNTIME-SEMANTICS.md`): a navigated
 read consumes the link set of every hop relation — the edge that orders
 navigation after relation creation — and a navigated characteristic
