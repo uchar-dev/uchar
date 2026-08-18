@@ -789,6 +789,15 @@ let wf030 ctx =
   @ List.concat_map
       (fun (i, r) ->
         let at = Printf.sprintf "/uniciteitUnies/%d" i in
+        let count_v =
+          (* the v0 resolver only ever produces the union shape with a
+             first source plus at least one vereniging — fewer sources
+             is not a mirror form, and an empty list would split the
+             executors (ref no-op vs translation fault) *)
+          if List.length r.bronnen < 2 then
+            [ v "WF-030" at "a uniqueness union carries at least two sources" ]
+          else []
+        in
         let per_bron =
           List.concat_map
             (fun b ->
@@ -862,7 +871,7 @@ let wf030 ctx =
               else []
           | _ -> []
         in
-        per_bron @ arity_v @ kind_v @ unit_v)
+        count_v @ per_bron @ arity_v @ kind_v @ unit_v)
       (List.mapi (fun i r -> (i, r)) ctx.doc.uniciteit_unies)
 
 let wf031 ctx =

@@ -1087,11 +1087,25 @@ let run_uniciteit_unie env world (u : resolved_uniciteit_unie) =
   if not (applies env u.uu_geldigheid) then world
   else begin
     let name = Option.value u.uu_naam ~default:"<uniciteitsunie>" in
+    if List.length u.bronnen < 2 then
+      Value.fault
+        "a uniqueness union carries at least two sources (WF-030; the v0 resolver never \
+         produces fewer)";
+    (* one row per (instance × source) — v0 SUMS the per-source counts,
+       so an instance reached through two sources contributes its tuple
+       twice and duplicates against itself, exactly like the runtime *)
     let keyed =
       List.concat_map
         (fun (b : uniciteit_unie_bron) ->
           let t = req "UniciteitUnie.bron.type" b.uub_type in
           let keys = List.map (req "sleutel") b.uub_sleutels in
+          List.iter
+            (fun k ->
+              if Ir_v0.Checks.attr_temporal (objecttype env t) k then
+                Value.fault
+                  "a temporal key in a uniqueness union is not executed (v0's own backends \
+                   disagree on it — recorded, ch. 5.9)")
+            keys;
           List.filter_map
             (fun (i : World.instance) ->
               let vs = List.map (World.attr i) keys in

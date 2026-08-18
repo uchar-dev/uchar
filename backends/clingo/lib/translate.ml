@@ -912,9 +912,20 @@ let translate_uniciteit_unie ctx i (u : resolved_uniciteit_unie) =
   in
   let scales = List.init arity max_scale in
   let pred = Printf.sprintf "uu%d_key" i in
-  List.iter
-    (fun (b : uniciteit_unie_bron) ->
+  (* the source INDEX rides the key atom: v0 SUMS the per-source counts,
+     so an instance contributing one tuple through two sources counts
+     twice — #count over (instance, source) pairs is exactly that sum *)
+  List.iteri
+    (fun j (b : uniciteit_unie_bron) ->
       let t = req "UniciteitUnie.bron.type" b.uub_type in
+      List.iter
+        (fun k ->
+          let k = req "sleutel" k in
+          if attr_temporal ctx ~otype:t ~attr:k then
+            fault
+              "a temporal key in a uniqueness union is not executed (v0's own backends \
+               disagree on it — recorded, ch. 5.9)")
+        b.uub_sleutels;
       let head_args =
         List.mapi
           (fun pos k ->
@@ -930,12 +941,12 @@ let translate_uniciteit_unie ctx i (u : resolved_uniciteit_unie) =
              (fun pos k -> Printf.sprintf "val(S,%s,K%d)" (str (req "sleutel" k)) pos)
              b.uub_sleutels
       in
-      emit ctx "%s(S,%s) :- %s." pred (String.concat "," head_args)
+      emit ctx "%s(S,%d,%s) :- %s." pred j (String.concat "," head_args)
         (String.concat ", " body))
     u.bronnen;
   let vars = List.init arity (fun p -> Printf.sprintf "V%d" p) in
-  emit ctx "inconsistent(%s,S) :- %s(S,%s), 2 <= #count { O : %s(O,%s) }." (str name) pred
-    (String.concat "," vars) pred (String.concat "," vars)
+  emit ctx "inconsistent(%s,S) :- %s(S,_,%s), 2 <= #count { O,J : %s(O,J,%s) }." (str name)
+    pred (String.concat "," vars) pred (String.concat "," vars)
 
 (* --- case facts ---------------------------------------------------------- *)
 

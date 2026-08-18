@@ -1390,14 +1390,22 @@ Both uniqueness forms fire at the fixpoint of their stratum and deposit
 idempotent §9.5 channel facts per (form name × instance), like the
 single form of ch. 5.6. Mirrored from the pinned runtime:
 
-1. **The union is one shared key domain.** The key tuples of ALL
-   sources — compared positionally, after per-position scale
-   harmonisation — form a single uniqueness domain: a duplicate may
-   arise across two different source types, and every instance whose
-   tuple occurs more than once is marked, whichever source it came
-   from, under the shared union name. Rows with an empty key component
-   do not participate (an empty key never collides, the ch. 5.6 rule).
-   Source arity, per-position datatype kind and unit agree by WF-030.
+1. **The union is one shared key domain, counted per (instance ×
+   source).** The key tuples of ALL sources — compared positionally,
+   after per-position scale harmonisation — form a single uniqueness
+   domain: a duplicate may arise across two different source types.
+   The count is the v0 SUM of the per-source counts: an instance
+   contributing one tuple through two sources counts twice and
+   duplicates against itself (two same-type sources over one row whose
+   two keys are equal mark that row). Every instance whose tuple's
+   summed count exceeds one is marked, whichever source it came from,
+   under the shared union name. Rows with an empty key component do not
+   participate (an empty key never collides, the ch. 5.6 rule). Source
+   arity, per-position datatype kind and unit agree, and a union
+   carries at least two sources (WF-030). A **temporal key** is not
+   executed: v0's own backends disagree on it (one skips the union, the
+   other checks it), so both executors fault loudly until a decision
+   lands — recorded.
 2. **The scope partitions, and scope-less rows are OUT.** A
    parent-scoped uniqueness (WF-054) tests its keys within each
    sub-population sharing one scope parent — the same key under two

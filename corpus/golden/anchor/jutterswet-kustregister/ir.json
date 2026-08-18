@@ -80,6 +80,37 @@
       "bezield": false,
       "meervoud": "Kavels"
     },
+    "Baken": {
+      "node": "Objecttype",
+      "naam": "Baken",
+      "attributen": {
+        "landcode": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "zeecode": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Bakens"
+    },
     "Gemeente": {
       "node": "Objecttype",
       "naam": "Gemeente",
@@ -272,6 +303,32 @@
         }
       ],
       "bron": "Strandvondst verenigd met Wrakvondst moeten uniek zijn.",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedUniciteitUnie",
+      "naam": "eenmalige bakencode",
+      "bronnen": [
+        {
+          "node": "Bron",
+          "type": "Baken",
+          "sleutels": [
+            "landcode"
+          ]
+        },
+        {
+          "node": "Bron",
+          "type": "Baken",
+          "sleutels": [
+            "zeecode"
+          ]
+        }
+      ],
+      "bron": "Baken verenigd met Baken moeten uniek zijn.",
       "geldigheid": {
         "node": "Geldigheid",
         "vanaf": null,

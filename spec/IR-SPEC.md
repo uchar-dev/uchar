@@ -876,7 +876,12 @@ scope parent; the written `scopeVeld` must denote it — WF-054), and both
 uniqueness forms execute in both executors: the union as one shared key
 domain across all sources, the scoped form per scope parent, with the
 v0 narrowing that scope-less instances do not participate mirrored and
-recorded (`RUNTIME-SEMANTICS.md` ch. 5.9). A scoped union is not
+recorded (`RUNTIME-SEMANTICS.md` ch. 5.9). Tracked delta within the
+mirror: the bindingless scope resolves by role name/plural from the
+subject alone (the wire carries no parent type), where v0's resolver
+disambiguated by the (element, parent) pair — a same-named-roles clash
+refuses loudly instead of picking; the `scopeRol` binding is the
+unambiguous route. A scoped union is not
 representable in v0 and stays out. Emitter side of `scopeRol` is
 pin-bump territory.
 
@@ -1380,7 +1385,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-027 | object-creation members declared on the created type; characteristic init boolean | gate 3 | `jutterswet-penninguitgifte` (anchor: the mint, its member initialisations and both guards execute, gates 5–6) | `wf027-ghost-member` |
 | WF-028 | symbolic fact creation all-or-nothing and resolvable; join chain reaches target; new ≠ final hop | gate 3 (symbolic extension form; a bean-field-only v0 record stays uncheckable — recorded) | `jutterswet-gemeenteberging` (anchor: the chain walk executes and folds over the created relation pin absolute values, gates 5–6) | `wf028-half-symbolic-creation` (all-or-nothing) + `wf028-create-along-final-hop` (the full chain walk) |
 | WF-029 | consistency assertion has a single subject | gate 3 | `jutterswet-vondstnummer` | `wf029-no-subject` |
-| WF-030 | uniqueness sources: keys resolve; arity, datatype kind and units agree per position | gate 3 | `jutterswet-vondstnummer` + `anchor/jutterswet-kustregister` (the union and both scoped forms, executed by gates 5–6) | `wf030-arity-mismatch` |
+| WF-030 | uniqueness sources: keys resolve; arity, datatype kind and units agree per position; a union carries ≥ 2 sources | gate 3 | `jutterswet-vondstnummer` + `anchor/jutterswet-kustregister` (the union — including the per-source sum over two same-type sources — and both scoped forms, executed by gates 5–6) | `wf030-arity-mismatch` + `wf030-single-source-union` |
 | WF-031 | one definition per day kind; condition present (recursion OPEN) | gate 3 | `jutterswet-vormenkabinet` (the schouwdag definition) | `wf031-missing-condition` |
 | WF-032 | start point: variable-start timeline, day-precision member, one per pair | gate 3 | `jutterswet-vormenkabinet` (the meetdatum anchor) | `wf032-fixed-start-anchor` |
 | WF-033 | (dialect) rule-group members resolve; recursive group has guarded creation | gate 3 | `anchor/jutterswet-wachtersketen` (the recursive chain executes to its fixpoint, gates 5–6; the runaway budget fault is red-pinned, gate 8) | `wf033-unguarded-recursive` |
