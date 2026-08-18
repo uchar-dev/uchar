@@ -341,7 +341,7 @@ let rec expr path j : expr =
           bron = bron ();
         }
   | "AttribuutRef" ->
-      check_keys path kvs
+      check_keys path kvs ~ext:[ "navigatieBindingen" ]
         [ "node"; "attribuut"; "objecttype"; "onderwerpBron"; "navigatieRol";
           "type"; "bron"; "set"; "navigatiePad" ];
       Attribuut_ref
@@ -354,6 +354,11 @@ let rec expr path j : expr =
           bron = bron ();
           set = bool_ (path / "set") (f "set");
           navigatie_pad = str_opt_list (path / "navigatiePad") (f "navigatiePad");
+          navigatie_bindingen =
+            ext_field path kvs "navigatieBindingen" (fun p j ->
+                match List.mapi (fun i x -> rol_binding (p / string_of_int i) x) (list_ p j) with
+                | [] -> fail p "an empty navigation-binding list is not a navigation"
+                | hops -> hops);
         }
   | "DimensieCel" ->
       check_keys path kvs [ "node"; "attribuut"; "labels"; "type"; "bron" ];
@@ -443,7 +448,7 @@ and conditie path j : conditie =
           bron = bron ();
         }
   | "Kenmerk" ->
-      check_keys path kvs
+      check_keys path kvs ~ext:[ "navigatieBinding" ]
         [ "node"; "kenmerk"; "navigatie"; "negatie"; "eigenaar"; "periode"; "bron" ];
       Kenmerk_check
         {
@@ -453,6 +458,7 @@ and conditie path j : conditie =
           eigenaar = str_opt (path / "eigenaar") (f "eigenaar");
           periode = periode ();
           bron = bron ();
+          navigatie_binding = ext_field path kvs "navigatieBinding" rol_binding;
         }
   | "Rollidmaatschap" ->
       check_keys path kvs [ "node"; "rol"; "anderTeFiller"; "negatie"; "bron" ];

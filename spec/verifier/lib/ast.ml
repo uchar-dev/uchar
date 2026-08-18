@@ -116,6 +116,9 @@ type expr =
       bron : string option;
       set : bool;
       navigatie_pad : string option list;
+      navigatie_bindingen : rol_binding list option;
+          (* extension: the navigation hops, subject-outward, one binding
+             per hop — the bound role is the role the hop reaches *)
     }
   | Dimensie_cel of {
       attribuut : expr option;
@@ -167,6 +170,9 @@ and conditie =
       eigenaar : string option;
       periode : geheel_periode option;
       bron : string option;
+      navigatie_binding : rol_binding option;
+          (* extension: the one hop of a navigated check — the bound role
+             is the role the hop reaches *)
     }
   | Rollidmaatschap of {
       rol : string option;

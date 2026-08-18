@@ -479,6 +479,7 @@ let aref attr otn typ : Ir_v0.Ast.expr =
       bron = None;
       set = false;
       navigatie_pad = [];
+      navigatie_bindingen = None;
     }
 
 let litv lex typ : Ir_v0.Ast.expr = Literal { waarde = Some lex; typ = Some typ; bron = None }
@@ -533,6 +534,7 @@ let () =
                     eigenaar = Some "Jutter";
                     periode = None;
                     bron = None;
+                    navigatie_binding = None;
                   }));
         ];
     }
@@ -609,7 +611,7 @@ let () =
 let () =
   let kc name = 
     Ir_v0.Ast.Kenmerk_check
-      { kenmerk = Some name; navigatie = None; negatie = true; eigenaar = Some "Aanvraag"; periode = None; bron = None }
+      { kenmerk = Some name; navigatie = None; negatie = true; eigenaar = Some "Aanvraag"; periode = None; bron = None; navigatie_binding = None }
   in
   let kt name char cond =
     rr name Kenmerktoekenning

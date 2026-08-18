@@ -189,16 +189,73 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           ([ Printf.sprintf "param(%s,%s)" (str name) v ], v, pow10 d)
       | None -> fault "unknown parameter %S" name)
   | Attribuut_ref
-      { attribuut; objecttype = ot; navigatie_rol = None; navigatie_pad = []; set = false; typ; _ }
+      { attribuut; objecttype = ot; navigatie_rol; navigatie_pad; navigatie_bindingen;
+        set = false; typ; _ }
     when not (match typ with Some (Datatype_onbekend _) -> true | _ -> false) ->
       let a = req "attribuut" attribuut in
       let ot = req "objecttype" ot in
       if attr_temporal ctx ~otype:ot ~attr:a then
         fault "temporal attribute %S in a scalar slot is refused (ch. 3.3)" a;
-      let v = fresh ctx "A" in
-      ( [ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ],
-        v,
-        pow10 (attr_decimals ctx ~otype:ot ~attr:a) )
+      let navigated =
+        navigatie_rol <> None || navigatie_pad <> [] || norm ot <> norm subject_ot
+      in
+      if not navigated then begin
+        (match navigatie_bindingen with
+        | Some _ ->
+            fault "navigation bindings on a reference that does not navigate (WF-053)"
+        | None -> ());
+        let v = fresh ctx "A" in
+        ( [ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ],
+          v,
+          pow10 (attr_decimals ctx ~otype:ot ~attr:a) )
+      end
+      else begin
+        (* the navigated read (ch. 5.8): one rol/3 body join per to-one
+           hop — an absent link leaves the body underivable, which IS the
+           leeg-on-absent-relation rule (leeg as absence, for free). The
+           hop roles resolve exactly as in ref/ (shared helpers), so the
+           two executors cannot drift on the walk. *)
+        let env =
+          { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
+            as_of = None }
+        in
+        let roles =
+          match navigatie_bindingen with
+          | Some rbs -> List.map (Eval.bound_role env) rbs
+          | None -> (
+              match navigatie_pad with
+              | _ :: _ ->
+                  let step (cur, acc) name =
+                    let name = req "navigation path step" name in
+                    let r = Eval.role_by_name env ~self_type:cur ~name in
+                    (Option.value r.rol_objecttype_naam ~default:"", acc @ [ r ])
+                  in
+                  snd (List.fold_left step (subject_ot, []) navigatie_pad)
+              | [] -> (
+                  match navigatie_rol with
+                  | Some n -> [ Eval.role_by_name env ~self_type:subject_ot ~name:n ]
+                  | None -> [ Eval.connecting_role env ~from_type:subject_ot ~to_type:ot ]))
+        in
+        List.iter
+          (fun (r : rol) ->
+            if r.rol_meervoudig then
+              fault
+                "navigation over the to-many role %S in a scalar slot is refused (WF-053)"
+                (Option.value r.rol_naam ~default:"?"))
+          roles;
+        let atoms, target =
+          List.fold_left
+            (fun (atoms, cur) (r : rol) ->
+              let n = fresh ctx "N" in
+              ( atoms @ [ Printf.sprintf "rol(%s,%s,%s)" cur (str (role_canonical r)) n ],
+                n ))
+            ([], subject) roles
+        in
+        let v = fresh ctx "A" in
+        ( atoms @ [ Printf.sprintf "val(%s,%s,%s)" target (str a) v ],
+          v,
+          pow10 (attr_decimals ctx ~otype:ot ~attr:a) )
+      end
   | Functie { kind = Aantal; argumenten = [ Attribuut_ref { attribuut; typ = Some (Datatype_onbekend _); navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some _; bron_rol; _ } ->
       (* the row-1 wart: the fold source names a role; count the linked
          instances. An explicit binding overrides the written name. *)
@@ -334,9 +391,36 @@ let rec cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       let r = expr_term ctx ~subject ~subject_ot (req "rechts" rechts) in
       let bindings, tl, tr = harmonised l r in
       bindings @ [ Printf.sprintf "%s %s %s" tl (vergelijk_sym op) tr ]
-  | Kenmerk_check { kenmerk; navigatie = None; negatie; eigenaar = _; _ } ->
+  | Kenmerk_check { kenmerk; navigatie = None; negatie; navigatie_binding; eigenaar = _; _ } ->
+      (match navigatie_binding with
+      | Some _ ->
+          fault "navigation binding on a characteristic check that does not navigate (WF-053)"
+      | None -> ());
       let k = req "kenmerk" kenmerk in
       [ (if negatie then "not " else "") ^ Printf.sprintf "heeft(%s,%s)" subject (str k) ]
+  | Kenmerk_check { kenmerk; navigatie = Some nav; negatie; navigatie_binding; eigenaar = _; _ }
+    ->
+      (* the navigated check (ch. 5.8): the hop is a POSITIVE literal;
+         only the characteristic sits under the negation. An absent link
+         therefore fails the positive and the negated form alike — the
+         deliberate v0 asymmetry, encoded for free. *)
+      let k = req "kenmerk" kenmerk in
+      let env =
+        { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
+          as_of = None }
+      in
+      let role =
+        match navigatie_binding with
+        | Some rb -> Eval.bound_role env rb
+        | None -> Eval.role_by_name env ~self_type:subject_ot ~name:nav
+      in
+      if role.rol_meervoudig then
+        fault
+          "the navigated check reaches the to-many role %S in a scalar condition (WF-053)"
+          (Option.value role.rol_naam ~default:"?");
+      let n = fresh ctx "N" in
+      [ Printf.sprintf "rol(%s,%s,%s)" subject (str (role_canonical role)) n;
+        (if negatie then "not " else "") ^ Printf.sprintf "heeft(%s,%s)" n (str k) ]
   | Samengesteld { kwantor = Alle | De; onderdelen; _ } ->
       List.concat_map (cond_atoms ctx ~subject ~subject_ot) onderdelen
   | _ -> fault "condition kind not translated (no corpus case exercises it)"

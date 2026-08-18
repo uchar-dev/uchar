@@ -1,0 +1,206 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Post": {
+      "node": "Objecttype",
+      "naam": "Post",
+      "attributen": {
+        "hoogte": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "vakklasse": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "risicopost"
+      ],
+      "kenmerkSoorten": {
+        "risicopost": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Posten"
+    },
+    "Wachter": {
+      "node": "Objecttype",
+      "naam": "Wachter",
+      "attributen": {
+        "uitkijkbonus": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "risicotoeslag": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "gevarenwacht",
+        "rustwacht"
+      ],
+      "kenmerkSoorten": {
+        "gevarenwacht": "BIJVOEGLIJK",
+        "rustwacht": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Wachters"
+    },
+    "Kustvak": {
+      "node": "Objecttype",
+      "naam": "Kustvak",
+      "attributen": {
+        "gevarenklasse": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "verraderlijk"
+      ],
+      "kenmerkSoorten": {
+        "verraderlijk": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Kustvakken"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {
+    "postbezetting": {
+      "node": "Feittype",
+      "naam": "postbezetting",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "wachter",
+          "objecttypeNaam": "Wachter",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "post",
+          "objecttypeNaam": "Post",
+          "meervoud": null,
+          "meervoudig": false
+        }
+      ]
+    }
+  },
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "uitkijkbonus van een wachter",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "uitkijkbonus van een wachter",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "uitkijkbonus",
+        "objecttype": "Wachter",
+        "onderwerpBron": "een Wachter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De uitkijkbonus van een Wachter",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "AttribuutRef",
+        "attribuut": "hoogte",
+        "objecttype": "Post",
+        "onderwerpBron": "zijn post",
+        "navigatieRol": "post",
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de hoogte van zijn post",
+        "set": false,
+        "navigatiePad": [],
+        "navigatieBindingen": [
+          {
+            "node": "RolBinding",
+            "feittype": "bemanning",
+            "rol": "post"
+          }
+        ]
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

@@ -1097,6 +1097,186 @@ let wf048_derivable ctx at ~from_type ~to_type ~site =
               name the connecting relation with an explicit role binding"
              site (List.length l) from_type to_type) ]
 
+(* --- WF-053: the navigated read (v1 extension) --------------------------- *)
+
+(* One by-name navigation step from [from_type]: the unique reachable role
+   whose declared name or plural matches [name] — the executors' hop
+   resolution, lifted to well-formedness. Returns (fact type, reached role). *)
+let nav_role_by_name ctx ~from_type ~name =
+  let matches (r : rol) =
+    (match r.rol_naam with Some n -> norm n = norm name | None -> false)
+    || (match r.rol_meervoud with Some m -> norm m = norm name | None -> false)
+  in
+  let ot r = Option.value r.rol_objecttype_naam ~default:"" in
+  let hits =
+    List.filter_map
+      (fun (fn, (ft : feittype)) ->
+        match ft.rollen with
+        | [ a; b ] ->
+            if norm (ot a) = norm from_type && matches b then Some (fn, b)
+            else if norm (ot b) = norm from_type && matches a then Some (fn, a)
+            else None
+        | [ r ] when ft.wederkerig ->
+            if norm (ot r) = norm from_type && matches r then Some (fn, r) else None
+        | _ -> None)
+      ctx.doc.feittypen
+  in
+  match hits with
+  | [ p ] -> Ok p
+  | [] -> Error (Printf.sprintf "no role named '%s' is reachable from '%s'" name from_type)
+  | _ ->
+      Error
+        (Printf.sprintf
+           "role name '%s' is ambiguous from '%s'; name the hop with an explicit role binding"
+           name from_type)
+
+(* The by-pair step (a directly named object type, no written role): the
+   unique fact type relating the pair, and the role [to_type] fills —
+   the executors' type-pair derivation (the WF-048 model). *)
+let nav_role_by_pair ctx ~from_type ~to_type =
+  let ot r = Option.value r.rol_objecttype_naam ~default:"" in
+  let hits =
+    List.filter_map
+      (fun (fn, (ft : feittype)) ->
+        match ft.rollen with
+        | [ a; b ] ->
+            if norm (ot a) = norm from_type && norm (ot b) = norm to_type then Some (fn, b)
+            else if norm (ot b) = norm from_type && norm (ot a) = norm to_type then Some (fn, a)
+            else None
+        | [ r ] when ft.wederkerig ->
+            if norm (ot r) = norm from_type && norm from_type = norm to_type then Some (fn, r)
+            else None
+        | _ -> None)
+      ctx.doc.feittypen
+  in
+  match hits with
+  | [ p ] -> Ok p
+  | [] -> Error (Printf.sprintf "bindingless navigation: no fact type relates '%s' to '%s'" from_type to_type)
+  | l ->
+      Error
+        (Printf.sprintf
+           "bindingless navigation: %d fact types relate '%s' to '%s' — not uniquely \
+            derivable; name the hop with an explicit role binding"
+           (List.length l) from_type to_type)
+
+(* The hop list of a navigated reference, subject-outward: (fact type,
+   reached role) per step. The bound route resolves each binding and
+   checks the chain's near sides and the written-name denotation; the
+   bindingless route requires each step to be uniquely derivable. Used
+   by the WF-053 check, and best-effort (errors dropped) by the
+   dependency graph. *)
+let nav_hops ctx ~subject ~(bindings : rol_binding list option)
+    ~(navigatie_rol : string option) ~(navigatie_pad : string option list)
+    ~(endpoint : string option) : ((string * rol) list, string list) result
+    =
+  let filler (r : rol) = Option.value r.rol_objecttype_naam ~default:"" in
+  let written_steps =
+    match navigatie_pad with
+    | [] -> ( match navigatie_rol with Some n -> Some [ n ] | None -> Some [] )
+    | pad ->
+        if List.exists (fun s -> s = None) pad then None
+        else Some (List.filter_map (fun s -> s) pad)
+  in
+  match written_steps with
+  | None -> Error [ "the navigation path carries a null step" ]
+  | Some written -> (
+      let denotes (r : rol) name =
+        (match r.rol_naam with Some n -> norm n = norm name | None -> false)
+        || (match r.rol_meervoud with Some m -> norm m = norm name | None -> false)
+      in
+      let endpoint_check cur =
+        match (endpoint, cur) with
+        | Some e, Some c when norm c <> norm e ->
+            [ Printf.sprintf "the navigation reaches '%s', not the endpoint '%s'" c e ]
+        | _ -> []
+      in
+      match bindings with
+      | Some hops -> (
+          let expected = match written with [] -> 1 | l -> List.length l in
+          if List.length hops <> expected then
+            Error
+              [ Printf.sprintf
+                  "the reference carries %d navigation bindings for %d navigation steps"
+                  (List.length hops) expected ]
+          else
+            let step (i, cur, acc, errs) (rb : rol_binding) =
+              match resolve_binding ctx rb with
+              | Error e -> (i + 1, None, acc, errs @ [ e ])
+              | Ok (_, bound, opposite) ->
+                  let near =
+                    match cur with
+                    | Some c when norm (filler opposite) <> norm c ->
+                        [ Printf.sprintf
+                            "hop %d over '%s': the near side fills '%s', but the walk stands \
+                             at '%s'"
+                            i rb.rb_feittype (filler opposite) c ]
+                    | _ -> []
+                  in
+                  let name_check =
+                    match List.nth_opt written i with
+                    | Some w when not (denotes bound w) ->
+                        [ Printf.sprintf
+                            "the written step '%s' does not denote the bound role '%s'" w
+                            (Option.value bound.rol_naam ~default:"?") ]
+                    | _ -> []
+                  in
+                  ( i + 1,
+                    Some (filler bound),
+                    acc @ [ (rb.rb_feittype, bound) ],
+                    errs @ near @ name_check )
+            in
+            let _, cur, acc, errs =
+              List.fold_left step (0, Some subject, [], []) hops
+            in
+            match errs @ endpoint_check cur with [] -> Ok acc | errs -> Error errs)
+      | None -> (
+          match written with
+          | [] -> (
+              match endpoint with
+              | None -> Ok [] (* nothing names the walk; not a navigation *)
+              | Some e -> (
+                  match nav_role_by_pair ctx ~from_type:subject ~to_type:e with
+                  | Ok p -> Ok [ p ]
+                  | Error e -> Error [ e ]))
+          | steps -> (
+              let step (cur, acc, errs) name =
+                match errs with
+                | _ :: _ -> (cur, acc, errs) (* an unresolved hop stops the walk *)
+                | [] -> (
+                    match nav_role_by_name ctx ~from_type:cur ~name with
+                    | Ok ((_, r) as p) -> (filler r, acc @ [ p ], [])
+                    | Error e -> (cur, acc, [ e ]))
+              in
+              let cur, acc, errs = List.fold_left step (subject, [], []) steps in
+              match errs @ endpoint_check (Some cur) with
+              | [] -> Ok acc
+              | errs -> Error errs)))
+
+(* WF-053 over one navigated attribute reference: the walk resolves
+   (bound or uniquely derivable), and in a scalar slot every hop is
+   to-one — a to-many step needs an aggregation, never a silent first
+   pick (the v0 resolver builds only to-one chains; NAAR_VEEL is its
+   marker). *)
+let wf053_attribuut_ref ctx at ~subject ~set ~bindings ~navigatie_rol ~navigatie_pad
+    ~endpoint =
+  match nav_hops ctx ~subject ~bindings ~navigatie_rol ~navigatie_pad ~endpoint with
+  | Error msgs -> List.map (fun m -> v "WF-053" at m) msgs
+  | Ok hops ->
+      if set then []
+      else
+        List.concat
+          (List.mapi
+             (fun i ((_, (r : rol))) ->
+               if r.rol_meervoudig then
+                 [ v "WF-053" at
+                     (Printf.sprintf
+                        "hop %d reaches the to-many role '%s' in a scalar slot — a to-many \
+                         step needs an aggregation, never a silent first pick"
+                        i
+                        (Option.value r.rol_naam ~default:"?")) ]
+               else [])
+             hops)
+
 let rec walk_expr ctx ~subject at (e : expr) : violation list =
   let sub p = at ^ "/" ^ p in
   let typ_checks =
@@ -1305,22 +1485,46 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
                 @ walk_expr ctx ~subject (sub n) e
             | None -> [])
           [ ("basis", basis); ("minimum", minimum); ("maximum", maximum) ]
-  | Attribuut_ref { attribuut; objecttype = otn; navigatie_rol; navigatie_pad; _ } -> (
+  | Attribuut_ref
+      { attribuut; objecttype = otn; navigatie_rol; navigatie_pad; navigatie_bindingen;
+        set; _ } -> (
       match otn with
       | Some otn -> (
           match objecttype ctx otn with
           | None ->
               [ v "WF-034" at ("object type '" ^ otn ^ "' is not declared") ]
-          | Some ot -> (
-              (* Only the navigation-free case resolves fully on the dump;
-                 navigated references check the endpoint type only. *)
-              match attribuut, navigatie_rol, navigatie_pad with
-              | Some a, None, [] ->
-                  if has_attr ot a || has_kenmerk ot a then []
-                  else
-                    [ v "WF-034" at
-                        ("'" ^ a ^ "' is neither an attribute nor a characteristic of '" ^ otn ^ "'") ]
-              | _ -> []))
+          | Some ot ->
+              (* [objecttype] is the type the value lives on — the subject
+                 itself or the navigation endpoint — so the member check
+                 covers both shapes *)
+              (match attribuut with
+               | Some a ->
+                   if has_attr ot a || has_kenmerk ot a then []
+                   else
+                     [ v "WF-034" at
+                         ("'" ^ a ^ "' is neither an attribute nor a characteristic of '" ^ otn
+                        ^ "'") ]
+               | None -> [])
+              @
+              (* WF-053: the navigated shapes — a written role, a declared
+                 chain, or a directly named off-subject type (by-pair) *)
+              let navigated =
+                navigatie_rol <> None || navigatie_pad <> []
+                || (match subject with Some st -> norm st <> norm otn | None -> false)
+              in
+              if not navigated then
+                match navigatie_bindingen with
+                | Some _ ->
+                    [ v "WF-053" at
+                        "navigation bindings on a reference that does not navigate" ]
+                | None -> []
+              else (
+                match subject with
+                | None -> [] (* no subject type anchors the walk *)
+                | Some st ->
+                    wf053_attribuut_ref ctx at ~subject:st ~set
+                      ~bindings:navigatie_bindingen ~navigatie_rol ~navigatie_pad
+                      ~endpoint:(Some otn)))
       | None -> [])
   | Dimensie_cel { attribuut; labels; _ } ->
       (match attribuut with
@@ -1511,7 +1715,7 @@ and walk_cond ctx ~subject at (c : conditie) : violation list =
          | _ -> [])
       @ whole_period_check periode [ operand ]
       @ (match operand with Some e -> walk_expr ctx ~subject (sub "operand") e | None -> [])
-  | Kenmerk_check { kenmerk; navigatie; periode; _ } ->
+  | Kenmerk_check { kenmerk; navigatie; periode; navigatie_binding; _ } ->
       (match kenmerk, navigatie, subject with
        | Some k, None, Some otn -> (
            match objecttype ctx otn with
@@ -1528,6 +1732,80 @@ and walk_cond ctx ~subject at (c : conditie) : violation list =
                  [ v "WF-043" at "whole-period qualifier on a non-time-dependent characteristic" ]
              | _ -> [])
          | _ -> [])
+      @ (* WF-053: the navigated characteristic check — one hop, bound or
+           uniquely derivable by the written role name; to-one only (the
+           v0 resolver's NAAR_VEEL marker, lifted); the characteristic
+           lives on the REACHED type *)
+      (match navigatie with
+       | None -> (
+           match navigatie_binding with
+           | Some _ ->
+               [ v "WF-053" at
+                   "navigation binding on a characteristic check that does not navigate" ]
+           | None -> [])
+       | Some nav -> (
+           match subject with
+           | None -> []
+           | Some st -> (
+               let filler (r : rol) = Option.value r.rol_objecttype_naam ~default:"" in
+               let hop =
+                 match navigatie_binding with
+                 | Some rb -> (
+                     match resolve_binding ctx rb with
+                     | Error e -> Error [ e ]
+                     | Ok (_, bound, opposite) ->
+                         let near =
+                           if norm (filler opposite) <> norm st then
+                             [ Printf.sprintf
+                                 "the near side of '%s' fills '%s', but the check's subject \
+                                  is '%s'"
+                                 rb.rb_feittype (filler opposite) st ]
+                           else []
+                         in
+                         let name_check =
+                           let denotes =
+                             (match bound.rol_naam with
+                              | Some n -> norm n = norm nav
+                              | None -> false)
+                             || match bound.rol_meervoud with
+                                | Some m -> norm m = norm nav
+                                | None -> false
+                           in
+                           if denotes then []
+                           else
+                             [ Printf.sprintf
+                                 "the written navigation '%s' does not denote the bound role \
+                                  '%s'"
+                                 nav
+                                 (Option.value bound.rol_naam ~default:"?") ]
+                         in
+                         if near @ name_check = [] then Ok bound
+                         else Error (near @ name_check))
+                 | None -> (
+                     match nav_role_by_name ctx ~from_type:st ~name:nav with
+                     | Ok (_, r) -> Ok r
+                     | Error e -> Error [ e ])
+               in
+               match hop with
+               | Error msgs -> List.map (fun m -> v "WF-053" at m) msgs
+               | Ok r ->
+                   (if r.rol_meervoudig then
+                      [ v "WF-053" at
+                          (Printf.sprintf
+                             "the navigated check reaches the to-many role '%s' — a to-many \
+                              step needs an aggregation, never a silent first pick"
+                             (Option.value r.rol_naam ~default:"?")) ]
+                    else [])
+                   @
+                   match kenmerk with
+                   | Some k -> (
+                       match objecttype ctx (filler r) with
+                       | Some ot when not (has_kenmerk ot k) ->
+                           [ v "WF-034" at
+                               ("'" ^ k ^ "' is not a declared characteristic of '" ^ filler r
+                              ^ "'") ]
+                       | _ -> [])
+                   | None -> [])))
   | Rollidmaatschap _ | Verre_rollidmaatschap _ -> []
   | Periode_conditie { vanaf; tot; _ } ->
       (if vanaf = None && tot = None then
@@ -1579,7 +1857,11 @@ let expression_layer ctx =
              (fun j t ->
                match t.toe_waarde with
                | Some e ->
-                   walk_expr ctx ~subject:r.nieuw_type
+                   (* member values evaluate on the creation SUBJECT
+                      (ch. 5.5) — the walking type for navigation and
+                      fold derivation is oc_subject, never the created
+                      type *)
+                   walk_expr ctx ~subject:r.oc_subject
                      (Printf.sprintf "%s/toekenningen/%d/waarde" at j) e
                | None -> [])
              r.toekenningen)
@@ -1685,14 +1967,38 @@ type dep_form = {
   df_reads : (string * dep_edge) list;
 }
 
-(* [subject] resolves owner-less characteristic reads *)
-let rec dep_expr ~subject acc (e : expr) =
+(* [subject] resolves owner-less characteristic reads; [ctx] resolves the
+   navigated shapes' hop relations *)
+let rec dep_expr ctx ~subject acc (e : expr) =
   match e with
-  | Attribuut_ref { attribuut = Some a; objecttype = Some ot; typ; _ } -> (
+  | Attribuut_ref
+      { attribuut = Some a; objecttype = Some ot; typ; navigatie_rol; navigatie_pad;
+        navigatie_bindingen; _ } -> (
       match typ with
       | Some (Datatype_onbekend _) ->
           acc (* the fold-source role wart; the fold adds the population read *)
-      | _ -> (n_attr ot a, Dep_pos) :: acc)
+      | _ ->
+          (* a navigated read consumes the link set of every hop relation
+             (ch. 6.1) — the edge that orders navigation-after-creation.
+             The bound hops name their relations; the bindingless walk is
+             derived best-effort (WF-053 reports an unresolvable one, so
+             dropping its edges never hides a cycle in a clean document) *)
+          let rel_edges =
+            match navigatie_bindingen with
+            | Some hops -> List.map (fun (rb : rol_binding) -> (n_rel rb.rb_feittype, Dep_pos)) hops
+            | None -> (
+                match subject with
+                | Some st
+                  when navigatie_rol <> None || navigatie_pad <> [] || norm st <> norm ot -> (
+                    match
+                      nav_hops ctx ~subject:st ~bindings:None ~navigatie_rol ~navigatie_pad
+                        ~endpoint:(Some ot)
+                    with
+                    | Ok hops -> List.map (fun (fn, _) -> (n_rel fn, Dep_pos)) hops
+                    | Error _ -> [])
+                | _ -> [])
+          in
+          rel_edges @ ((n_attr ot a, Dep_pos) :: acc))
   | Attribuut_ref _ | Literal _ | Parameter_ref _ | Variabele_ref _ | Constante _
   | Expr_onopgelost _ ->
       acc
@@ -1700,10 +2006,10 @@ let rec dep_expr ~subject acc (e : expr) =
       List.fold_left
         (fun acc -> function
           | Letterlijk _ -> acc
-          | Ingevoegd { expr = Some e } -> dep_expr ~subject acc e
+          | Ingevoegd { expr = Some e } -> dep_expr ctx ~subject acc e
           | Ingevoegd { expr = None } -> acc)
         acc delen
-  | Binair { links; rechts; _ } -> dep_opt ~subject (dep_opt ~subject acc links) rechts
+  | Binair { links; rechts; _ } -> dep_opt ctx ~subject (dep_opt ctx ~subject acc links) rechts
   | Functie { argumenten; element_objecttype; leegwaarde; filter; bron_rol; _ } ->
       let acc =
         match element_objecttype with Some el -> (n_pop el, Dep_pos) :: acc | None -> acc
@@ -1715,27 +2021,56 @@ let rec dep_expr ~subject acc (e : expr) =
         | Some (rb : rol_binding) -> (n_rel rb.rb_feittype, Dep_pos) :: acc
         | None -> acc
       in
-      let acc = List.fold_left (dep_expr ~subject) acc argumenten in
-      let acc = dep_opt ~subject acc leegwaarde in
-      (match filter with Some c -> dep_cond ~subject ~neg:false acc c | None -> acc)
-  | Afgerond { basis; _ } -> dep_opt ~subject acc basis
+      let acc = List.fold_left (dep_expr ctx ~subject) acc argumenten in
+      let acc = dep_opt ctx ~subject acc leegwaarde in
+      (match filter with Some c -> dep_cond ctx ~subject ~neg:false acc c | None -> acc)
+  | Afgerond { basis; _ } -> dep_opt ctx ~subject acc basis
   | Begrensd { basis; minimum; maximum; _ } ->
-      dep_opt ~subject (dep_opt ~subject (dep_opt ~subject acc basis) minimum) maximum
-  | Dimensie_cel { attribuut; _ } -> dep_opt ~subject acc attribuut
+      dep_opt ctx ~subject (dep_opt ctx ~subject (dep_opt ctx ~subject acc basis) minimum) maximum
+  | Dimensie_cel { attribuut; _ } -> dep_opt ctx ~subject acc attribuut
   | Temporal_read { basis; datum; _ } ->
       (* the read consumes its timeline reference and its date operand;
          the basis is an attribute/parameter reference whose own case
          adds the right edge *)
-      dep_expr ~subject (dep_expr ~subject acc basis) datum
+      dep_expr ctx ~subject (dep_expr ctx ~subject acc basis) datum
 
-and dep_opt ~subject acc = function Some e -> dep_expr ~subject acc e | None -> acc
+and dep_opt ctx ~subject acc = function Some e -> dep_expr ctx ~subject acc e | None -> acc
 
-and dep_cond ~subject ~neg acc (c : conditie) =
+and dep_cond ctx ~subject ~neg acc (c : conditie) =
   match c with
   | Vergelijking { links; rechts; _ } ->
-      dep_opt ~subject (dep_opt ~subject acc links) rechts
-  | Predicaat { operand; _ } -> dep_opt ~subject acc operand
-  | Kenmerk_check { kenmerk = Some k; eigenaar; negatie; _ } -> (
+      dep_opt ctx ~subject (dep_opt ctx ~subject acc links) rechts
+  | Predicaat { operand; _ } -> dep_opt ctx ~subject acc operand
+  | Kenmerk_check { kenmerk = Some k; eigenaar; negatie; navigatie = Some nav; navigatie_binding; _ }
+    -> (
+      (* the navigated check: the characteristic lives on the REACHED
+         type, and the hop relation itself is read positively (only the
+         characteristic sits under the negation — an absent link makes
+         the check false either way, never true). An unresolvable hop
+         contributes no edges; WF-053 reports it. *)
+      ignore eigenaar;
+      let kind = if neg || negatie then Dep_neg else Dep_pos in
+      let hop =
+        match navigatie_binding with
+        | Some rb -> (
+            match resolve_binding ctx rb with
+            | Ok (_, bound, _) -> Some (rb.rb_feittype, bound)
+            | Error _ -> None)
+        | None -> (
+            match subject with
+            | Some st -> (
+                match nav_role_by_name ctx ~from_type:st ~name:nav with
+                | Ok p -> Some p
+                | Error _ -> None)
+            | None -> None)
+      in
+      match hop with
+      | Some (fn, r) ->
+          (n_rel fn, Dep_pos)
+          :: (n_char (Option.value r.rol_objecttype_naam ~default:"") k, kind)
+          :: acc
+      | None -> acc)
+  | Kenmerk_check { kenmerk = Some k; eigenaar; negatie; navigatie = None; _ } -> (
       (* once negative, conservatively negative — double negation does
          not cancel (ch. 6.1) *)
       let kind = if neg || negatie then Dep_neg else Dep_pos in
@@ -1744,14 +2079,14 @@ and dep_cond ~subject ~neg acc (c : conditie) =
       | None -> acc)
   | Kenmerk_check _ -> acc
   | Rollidmaatschap _ | Verre_rollidmaatschap _ -> acc
-  | Periode_conditie { vanaf; tot; _ } -> dep_opt ~subject (dep_opt ~subject acc vanaf) tot
+  | Periode_conditie { vanaf; tot; _ } -> dep_opt ctx ~subject (dep_opt ctx ~subject acc vanaf) tot
   | Samengesteld { kwantor; onderdelen; _ } ->
       let neg' =
         match kwantor with
         | Geen | Ten_hoogste | Precies -> true (* negation-like: conservative, ch. 6.1 *)
         | De | Alle | Ten_minste -> neg
       in
-      List.fold_left (fun acc c -> dep_cond ~subject ~neg:neg' acc c) acc onderdelen
+      List.fold_left (fun acc c -> dep_cond ctx ~subject ~neg:neg' acc c) acc onderdelen
   | Regelversie { regel = Some r; _ } -> (n_chan r, Dep_neg) :: acc
   | Regelversie _ -> acc
   | Conditie_onopgelost _ -> acc
@@ -1762,7 +2097,7 @@ let dep_forms ctx : dep_form list =
       (fun g -> if g.recursief then List.map (fun n -> norm (strip_version n)) (some_names g.leden) else [])
       ctx.doc.regel_groepen
   in
-  let cond ~subject c = match c with Some c -> dep_cond ~subject ~neg:false [] c | None -> [] in
+  let cond ~subject c = match c with Some c -> dep_cond ctx ~subject ~neg:false [] c | None -> [] in
   (* a form with irrevocable writes (characteristic attribution, channel
      deposit, creation) must sit strictly above the producers of every
      non-characteristic value it reads — a transient it acted on would
@@ -1787,7 +2122,7 @@ let dep_forms ctx : dep_form list =
               [ (if r.rr_soort = Some Kenmerktoekenning then n_char ot a else n_attr ot a) ]
             in
             let subject = Some ot in
-            let reads = dep_opt ~subject (cond ~subject r.rr_voorwaarde) r.waarde in
+            let reads = dep_opt ctx ~subject (cond ~subject r.rr_voorwaarde) r.waarde in
             let reads =
               if r.rr_soort = Some Kenmerktoekenning then strict_unless_char reads else reads
             in
@@ -1897,7 +2232,7 @@ let dep_forms ctx : dep_form list =
                 grounding *)
              (match subject with Some st -> [ (n_pop st, Dep_pos) ] | None -> [])
             @ List.fold_left
-                (fun acc (t : toekenning) -> dep_opt ~subject acc t.toe_waarde)
+                (fun acc (t : toekenning) -> dep_opt ctx ~subject acc t.toe_waarde)
                 (cond ~subject o.oc_voorwaarde)
                 o.toekenningen)
         in
@@ -1959,11 +2294,11 @@ let dep_forms ctx : dep_form list =
           List.concat_map
             (fun (r : rung) ->
               (match r.rung_voorwaarde with
-              | Some c -> dep_cond ~subject:(Some l.dl_onderwerp) ~neg:false [] c
+              | Some c -> dep_cond ctx ~subject:(Some l.dl_onderwerp) ~neg:false [] c
               | None -> [])
               @
               match r.rung_consequentie with
-              | Some e -> dep_expr ~subject:(Some l.dl_onderwerp) [] e
+              | Some e -> dep_expr ctx ~subject:(Some l.dl_onderwerp) [] e
               | None -> [])
             l.rungs
         in

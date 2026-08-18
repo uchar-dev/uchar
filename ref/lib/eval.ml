@@ -203,6 +203,57 @@ let role_by_name env ~self_type ~name =
   | [] -> Value.fault "no role named %S reachable from %S" name self_type
   | _ -> Value.fault "ambiguous role name %S from %S" name self_type
 
+(* the navigated scalar read's hop walk (WF-053, RUNTIME-SEMANTICS
+   ch. 5.8): resolve the hop roles — the explicit bindings when the node
+   carries them, else the written names, else the type pair — then walk
+   the links. An absent link at any hop short-circuits the whole read to
+   None = leeg (ch. 1.2); a to-many hop in a scalar slot faults, never a
+   silent first pick. *)
+let nav_target env world (self : World.instance) ~bindings ~navigatie_rol ~navigatie_pad
+    ~endpoint =
+  let roles =
+    match bindings with
+    | Some rbs -> List.map (bound_role env) rbs
+    | None -> (
+        match navigatie_pad with
+        | _ :: _ ->
+            let step (cur, acc) name =
+              let name = req "navigation path step" name in
+              let r = role_by_name env ~self_type:cur ~name in
+              (Option.value r.rol_objecttype_naam ~default:"", acc @ [ r ])
+            in
+            snd (List.fold_left step (self.otype, []) navigatie_pad)
+        | [] -> (
+            match navigatie_rol with
+            | Some n -> [ role_by_name env ~self_type:self.otype ~name:n ]
+            | None -> [ connecting_role env ~from_type:self.otype ~to_type:endpoint ]))
+  in
+  List.iter
+    (fun (r : rol) ->
+      if r.rol_meervoudig then
+        Value.fault "navigation over the to-many role %S in a scalar slot is refused (WF-053)"
+          (Option.value r.rol_naam ~default:"?"))
+    roles;
+  let rec walk (cur : World.instance) = function
+    | [] ->
+        (* fail fast on a walk the verifier would reject: a binding chain
+           that lands off the declared endpoint must never silently read
+           an absent attribute as leeg *)
+        if norm cur.otype <> norm endpoint then
+          Value.fault "the navigation reached %S, not the declared endpoint %S" cur.otype
+            endpoint;
+        Some cur
+    | (r : rol) :: rest -> (
+        match role_links world cur r with
+        | [] -> None
+        | [ next ] -> walk next rest
+        | _ ->
+            Value.fault "to-one role %S links more than one instance on %S (ch. 5.5)"
+              (Option.value r.rol_naam ~default:"?")
+              cur.label)
+  in
+  walk self roles
+
 (* --- literals ----------------------------------------------------------- *)
 
 let unit_of_datatype = function
@@ -245,26 +296,43 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       | None ->
           Value.fault "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" name)
   | Attribuut_ref
-      { attribuut; objecttype = ot; navigatie_rol = None; navigatie_pad = []; set = false; typ; _ }
+      { attribuut; objecttype = ot; navigatie_rol; navigatie_pad; navigatie_bindingen;
+        set = false; typ; _ }
     when not (match typ with Some (Datatype_onbekend _) -> true | _ -> false) ->
       let name = req "AttribuutRef.attribuut" attribuut in
       let ot = req "AttribuutRef.objecttype" ot in
-      if norm ot <> norm self.otype then
-        Value.fault "navigation from %S to %S is not implemented in this card" self.otype ot
-      else begin
-        (* ch. 3.3, mirrored: no point-in-time read exists — a temporal
-           attribute in a scalar slot is refused; the only bridges are
-           the dedicated collapses (the temporal total handles its own
-           argument in eval_functie) *)
-        if Ir_v0.Checks.attr_temporal (objecttype env ot) name then
-          Value.fault
-            "temporal attribute %S in a scalar context is refused (ch. 3.3; no point-in-time \
-             read exists — the collapses are the only bridges)"
-            name;
+      (* ch. 3.3, mirrored: no point-in-time read exists — a temporal
+         attribute in a scalar slot is refused; the only bridges are
+         the dedicated collapses (the temporal total handles its own
+         argument in eval_functie). [ot] is the type the value lives on:
+         the subject itself, or the navigation endpoint. *)
+      if Ir_v0.Checks.attr_temporal (objecttype env ot) name then
+        Value.fault
+          "temporal attribute %S in a scalar context is refused (ch. 3.3; no point-in-time \
+           read exists — the collapses are the only bridges)"
+          name;
+      let navigated =
+        navigatie_rol <> None || navigatie_pad <> [] || norm ot <> norm self.otype
+      in
+      if not navigated then begin
+        (match navigatie_bindingen with
+        | Some _ ->
+            Value.fault "navigation bindings on a reference that does not navigate (WF-053)"
+        | None -> ());
         World.attr self name
       end
+      else begin
+        (* the navigated read (ch. 5.8): walk the to-one hops; an absent
+           link anywhere reads the whole operand as leeg *)
+        match
+          nav_target env world self ~bindings:navigatie_bindingen ~navigatie_rol
+            ~navigatie_pad ~endpoint:ot
+        with
+        | None -> Value.Empty
+        | Some target -> World.attr target name
+      end
   | Attribuut_ref _ ->
-      Value.fault "unsupported AttribuutRef shape (navigation/set/sentinel outside a fold)"
+      Value.fault "unsupported AttribuutRef shape (set/sentinel outside a fold)"
   | Binair { op; links; rechts; _ } -> (
       let l = eval_expr env world self ~err (req "Binair.links" links) in
       let r = eval_expr env world self ~err (req "Binair.rechts" rechts) in
@@ -508,13 +576,44 @@ let rec eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       let is_filled = v <> Value.Empty in
       if negatie then not is_filled else is_filled
   | Predicaat _ -> Value.fault "predicate kind not implemented in this card"
-  | Kenmerk_check { kenmerk; navigatie = None; negatie; _ } ->
+  | Kenmerk_check { kenmerk; navigatie = None; negatie; navigatie_binding; _ } ->
+      (match navigatie_binding with
+      | Some _ ->
+          Value.fault
+            "navigation binding on a characteristic check that does not navigate (WF-053)"
+      | None -> ());
       let k = req "KenmerkCheck.kenmerk" kenmerk in
       if kenmerk_temporal (objecttype env self.otype) k then
         Value.fault "temporal characteristic %S in a scalar condition is refused (ch. 3.3)" k;
       let has = World.has_char self k in
       if negatie then not has else has
-  | Kenmerk_check _ -> Value.fault "navigated characteristic check not implemented in this card"
+  | Kenmerk_check { kenmerk; navigatie = Some nav; negatie; navigatie_binding; _ } -> (
+      (* the navigated check (ch. 5.8): one to-one hop. The v0 asymmetry,
+         mirrored deliberately: an ABSENT link makes the check false for
+         the positive AND the negated form — unlike comparison and
+         leeg/gevuld, which treat the absent relation as a leegwaarde. *)
+      let k = req "KenmerkCheck.kenmerk" kenmerk in
+      let role =
+        match navigatie_binding with
+        | Some rb -> bound_role env rb
+        | None -> role_by_name env ~self_type:self.otype ~name:nav
+      in
+      if role.rol_meervoudig then
+        Value.fault
+          "the navigated check reaches the to-many role %S in a scalar condition (WF-053)"
+          (Option.value role.rol_naam ~default:"?");
+      match role_links world self role with
+      | [] -> false
+      | [ target ] ->
+          if kenmerk_temporal (objecttype env target.otype) k then
+            Value.fault "temporal characteristic %S in a scalar condition is refused (ch. 3.3)"
+              k;
+          let has = World.has_char target k in
+          if negatie then not has else has
+      | _ ->
+          Value.fault "to-one role %S links more than one instance on %S (ch. 5.5)"
+            (Option.value role.rol_naam ~default:"?")
+            self.label)
   | Samengesteld { kwantor; drempel; onderdelen; _ } -> (
       let hits = List.length (List.filter (eval_cond env world self ~err) onderdelen) in
       let n = List.length onderdelen in

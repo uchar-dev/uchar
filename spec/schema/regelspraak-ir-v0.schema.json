@@ -876,6 +876,14 @@
               "null"
             ]
           }
+        },
+        "navigatieBindingen": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/RolBinding"
+          },
+          "description": "Extension field (wire-entry discipline, IR-SPEC Method): the navigation hops as symbolic role bindings, subject-outward, one binding per hop — the bound role is the role the hop reaches (the far role). Written whole or not at all, never null."
         }
       }
     },
@@ -1422,6 +1430,10 @@
             "string",
             "null"
           ]
+        },
+        "navigatieBinding": {
+          "$ref": "#/$defs/RolBinding",
+          "description": "Extension field (wire-entry discipline, IR-SPEC Method): the one navigation hop of a navigated characteristic check as a symbolic role binding — the bound role is the role the hop reaches. Written whole or not at all, never null."
         }
       }
     },
