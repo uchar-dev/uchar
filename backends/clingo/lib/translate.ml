@@ -19,9 +19,16 @@
    - Dates are civil day numbers (the case loader's encoding).
    - Emptiness is absence: an underivable val/3 atom is leeg, and an
      ordering comparison over leeg fails by the unbound join — the
-     ch. 1.2d ordering rule for free. The equality/inequality empty
-     asymmetry has no such free encoding; those operators fault here
-     until a corpus case demands them (a recorded finding).
+     ch. 1.2d ordering rule for free. A COALESCING operand position
+     (the ch. 1.2a whitelist: both sides of plus/min, the right of
+     verminderd-met) additionally reads leeg as 0 through a default-0
+     helper (coalesce0: value when the operand's body binds, 0 by
+     negation-as-failure over a definedness helper), while a
+     propagating position (verminderd-met's left) stays the bare
+     unbound join — leeg leaves the rule underivable, exactly ref's
+     Empty propagation. The equality/inequality empty asymmetry has no
+     such free encoding; those operators fault here until a corpus
+     case demands them (a recorded finding).
 
    Everything outside the corpus-exercised subset faults with context:
    fail fast, never a silent SKIP. *)
@@ -167,6 +174,29 @@ let harmonised (b1, t1, s1) (b2, t2, s2) =
   let m = max s1 s2 in
   let scale t s = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
   (b1 @ b2, scale t1 s1, scale t2 s2)
+
+(* an operand in a COALESCING position (the ch. 1.2a whitelist): leeg
+   reads as 0. The operand's body atoms move into a helper predicate
+   that derives the bound value, and a default-0 rule fires when the
+   body has no derivation — negation-as-failure over a definedness
+   helper. An atom-free operand (a literal, a constant) is never empty
+   and passes through untouched. Sound on WF-045/046-clean documents:
+   the negation reads exactly what the positive operand read, so any
+   cycle it sits on is a creation cycle whose values are derived in the
+   minimal model (the definedness is grounded, never self-supporting). *)
+let coalesce0 ctx ~subject ~subject_ot (atoms, term, scale) =
+  if atoms = [] then (atoms, term, scale)
+  else begin
+    ctx.fresh <- ctx.fresh + 1;
+    let pred = Printf.sprintf "co%d" ctx.fresh in
+    let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+    let body = String.concat ", " (base :: atoms) in
+    emit ctx "%s(%s,%s) :- %s." pred subject term body;
+    emit ctx "%s_def(%s) :- %s." pred subject body;
+    emit ctx "%s(%s,0) :- %s, not %s_def(%s)." pred subject base pred subject;
+    let v = fresh ctx "C" in
+    ([ Printf.sprintf "%s(%s,%s)" pred subject v ], v, scale)
+  end
 
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   match e with
@@ -344,26 +374,33 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                 pow10 (decimals_of_datatype pr.par_datatype) )
           | None -> fault "unknown parameter %S" p)
       | _ -> fault "unsupported temporal-read basis shape")
-  | Binair { op = Plus; links; rechts; _ } ->
-      (* integer addition on harmonised scales — the recursive chain's
-         rank increment; other operators await a corpus case. Numeric
-         operands only: ref faults date arithmetic here, so a
-         non-numeric static type must not silently sum as day numbers *)
+  | Binair { op = (Plus | Min | Verminderd_met) as op; links; rechts; _ } ->
+      (* the additive family on harmonised scales. Numeric operands
+         only: ref faults date arithmetic here, so a non-numeric static
+         type must not silently sum as day numbers. Emptiness follows
+         the ch. 1.2a whitelist: plus/min coalesce BOTH operands to 0,
+         verminderd-met coalesces only the right — its left PROPAGATES,
+         which the bare unbound join encodes for free (a leeg left
+         leaves the rule underivable, exactly ref's Empty result). *)
       let numeric_ok e =
         match e with
         | Some e -> (
             match Ir_v0.Checks.typ_of_expr e with
             | Some (Numeriek _ | Percentage _) | None -> ()
-            | Some _ -> fault "non-numeric Plus operand is not translated (no corpus case)")
+            | Some _ ->
+                fault "non-numeric additive operand is not translated (no corpus case)")
         | None -> ()
       in
       numeric_ok links;
       numeric_ok rechts;
       let l = expr_term ctx ~subject ~subject_ot (req "Binair.links" links) in
       let r = expr_term ctx ~subject ~subject_ot (req "Binair.rechts" rechts) in
+      let l = if op = Verminderd_met then l else coalesce0 ctx ~subject ~subject_ot l in
+      let r = coalesce0 ctx ~subject ~subject_ot r in
       let _, _, s1 = l and _, _, s2 = r in
       let bindings, tl, tr = harmonised l r in
-      (bindings, Printf.sprintf "(%s+%s)" tl tr, max s1 s2)
+      let sym = if op = Plus then "+" else "-" in
+      (bindings, Printf.sprintf "(%s%s%s)" tl sym tr, max s1 s2)
   | Constante { naam = Some n; _ } when Ir_v0.Checks.norm n = Ir_v0.Checks.norm "Rekendatum" -> (
       (* ch. 8.2: the execution-date constant is a program constant — the
          session's one evaluation date as a civil day number *)

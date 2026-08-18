@@ -457,6 +457,32 @@ representations agree, as the ch. 6.1 unfolding argument says they must.
    (row 8) rather than compiling it away in the frontend: the compiled
    form erases exactly the structure a later amendment needs.
 
+## 6a. The empty-coalescing encoding (backends/clingo, 2026-08-18)
+
+The ch. 1.2a whitelist — leeg reads as 0 on both sides of plus and min
+and on the right of verminderd-met, while verminderd-met's left
+propagates — lands in the systematic backend as two dual encodings. A
+**propagating** position is the bare unbound join: an underivable
+operand body leaves the whole rule underivable, which IS Empty
+propagation. A **coalescing** position moves the operand's body atoms
+into a helper:
+
+```
+coN(S,V)   :- is_a(S,"t"), <operand body binding V>.
+coN_def(S) :- is_a(S,"t"), <operand body>.
+coN(S,0)   :- is_a(S,"t"), not coN_def(S).
+```
+
+and the operator's rule joins `coN(S,V)` instead of the raw body — the
+value when the operand derives, 0 by negation-as-failure when it does
+not. An atom-free operand (a literal) is never empty and stays inline.
+Sound on WF-045/046-clean documents: the negation reads exactly what
+the positive operand read, so a cycle it sits on is a creation cycle
+whose values are grounded in the minimal model — witnessed by the
+recursive anchors (rank+1 on the wachtersketen chain) staying stable
+under the encoding, and pinned absolutely by
+`corpus/golden/anchor/jutterswet-leegrekening`.
+
 ## 7. Deliberately out of scope
 
 Art. 5 (hardheid), art. 6, the v3 temporalisation, quantitative

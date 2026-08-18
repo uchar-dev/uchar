@@ -1,0 +1,81 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "Va",
+        "objectType": "Vondst",
+        "attributes": {
+          "korting": {
+            "number": "8"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "Vb",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "20"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "Va",
+      "attribute": "bruto",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "Va",
+      "attribute": "marge",
+      "value": {
+        "number": "-8"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "Va",
+      "attribute": "netto"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "Vb",
+      "attribute": "bruto",
+      "value": {
+        "number": "25"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "Vb",
+      "attribute": "marge",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "Vb",
+      "attribute": "netto",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
