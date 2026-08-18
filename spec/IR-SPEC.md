@@ -54,7 +54,7 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   emitter produces `verbindendeRol` and `bronRol` where uniquely
   derivable from declared names (absent otherwise — never null, never a
   guessed plural); the emitter goldens carry them since that pin. **Second pin
-  bump (2026-08-18, toolchain `31f630a`):** the emitter produces the
+  bump (2026-08-18, toolchain `fe46e49`):** the emitter produces the
   navigation bindings (`navigatieBindingen` on the scalar navigated
   read, `navigatieBinding` on the navigated characteristic check —
   never on a fold source, per the ch. 4.1a emitter discipline),
@@ -888,7 +888,7 @@ subject alone (the wire carries no parent type), where v0's resolver
 disambiguated by the (element, parent) pair — a same-named-roles clash
 refuses loudly instead of picking; the `scopeRol` binding is the
 unambiguous route. A scoped union is not
-representable in v0 and stays out. The emitter produces `scopeRol` since the 2026-08-18 pin bump (toolchain `31f630a`).
+representable in v0 and stays out. The emitter produces `scopeRol` since the 2026-08-18 pin bump (toolchain `fe46e49`).
 
 - **WF-030** Every source's keys MUST resolve to declared attributes; all
   sources MUST agree on key arity and per-position datatype kind

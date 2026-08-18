@@ -93,7 +93,7 @@ witness moves into an executing document and the cabinet shrinks — it
 is scaffolding for the WF index, never a place for semantics.
 
 `jutterswet-postwacht` is the second pin bump's emitter golden
-(toolchain `31f630a`, 2026-08-18): a re-emittable source whose dump
+(toolchain `fe46e49`, 2026-08-18): a re-emittable source whose dump
 carries all four emitter-produced extension families — navigation
 bindings on the scalar read and the navigated characteristic check
 (and, witness by absence, NOT on the fold sources), `scopeRol` on the
