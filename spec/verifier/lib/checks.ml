@@ -967,10 +967,22 @@ let wf033 ctx =
       @
       if g.recursief then
         let ocs = List.filter_map oc_by_name leden in
-        if ocs = [] then
-          [ v "WF-033" at "recursive group without an object-creation member" ]
-        else
-          List.concat_map
+        let fc_member lid =
+          List.exists
+            (fun (f : resolved_feit_creatie) ->
+              match f.fc_naam with
+              | Some m -> norm (strip_version m) = norm (strip_version lid)
+              | None -> false)
+            ctx.doc.feit_creaties
+        in
+        (* the recursion carrier is a creation member of EITHER kind:
+           an object creation needs its guard (each generation mints new
+           instances), a relation creation is idempotent over the fixed
+           universe and needs none (ch. 5.5) *)
+        (if ocs = [] && not (List.exists fc_member leden) then
+           [ v "WF-033" at "recursive group without a creation member" ]
+         else [])
+        @ List.concat_map
             (fun oc ->
               if oc.oc_voorwaarde = None then
                 [ v "WF-033" at

@@ -956,11 +956,16 @@ the fixpoint (`RUNTIME-SEMANTICS.md` ch. 5.5/6.2), with the bounded
 budget turning divergence into a fault in every executor.
 
 - **WF-033** (dialect) Every member name MUST resolve to a rule form in
-  the model; a `recursive` group MUST contain at least one object-creation
-  member, and every object-creation member of a recursive group MUST be
-  conditional (an unguarded creation in a recursive group cannot
-  terminate). *v0 mirror note:* containment is a v0 error; the unguarded
-  case only warns. **Delta (promotion)** for the guard.
+  the model; a `recursive` group MUST contain at least one creation
+  member — an object creation or a relation (fact) creation — and every
+  object-creation member of a recursive group MUST be conditional (an
+  unguarded object creation in a recursive group cannot terminate). A
+  relation-creation member needs no guard: it mints nothing — its writes
+  are idempotent links over the fixed universe, so its fixpoint is the
+  transitive closure and termination is structural
+  (`RUNTIME-SEMANTICS.md` ch. 5.5). *v0 mirror note:* containment is a
+  v0 error; the unguarded case only warns. **Delta (promotion)** for the
+  guard.
 
 ### 3.10 Validity
 
@@ -1388,7 +1393,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-030 | uniqueness sources: keys resolve; arity, datatype kind and units agree per position; a union carries ≥ 2 sources | gate 3 | `jutterswet-vondstnummer` + `anchor/jutterswet-kustregister` (the union — including the per-source sum over two same-type sources — and both scoped forms, executed by gates 5–6) | `wf030-arity-mismatch` + `wf030-single-source-union` |
 | WF-031 | one definition per day kind; condition present (recursion OPEN) | gate 3 | `jutterswet-vormenkabinet` (the schouwdag definition) | `wf031-missing-condition` |
 | WF-032 | start point: variable-start timeline, day-precision member, one per pair | gate 3 | `jutterswet-vormenkabinet` (the meetdatum anchor) | `wf032-fixed-start-anchor` |
-| WF-033 | (dialect) rule-group members resolve; recursive group has guarded creation | gate 3 | `anchor/jutterswet-wachtersketen` (the recursive chain executes to its fixpoint, gates 5–6; the runaway budget fault is red-pinned, gate 8) | `wf033-unguarded-recursive` |
+| WF-033 | (dialect) rule-group members resolve; recursive group has a creation member (either kind); object creations guarded, relation creations guard-free | gate 3 | `anchor/jutterswet-wachtersketen` (the recursive chain executes to its fixpoint, gates 5–6; the runaway budget fault is red-pinned, gate 8) + `anchor/jutterswet-erflijn` (the guard-free relation-creation member: the transitive closure reaches its fixpoint in both executors) | `wf033-unguarded-recursive` |
 | WF-034 | every expression/condition reference resolves (no unknown-type sentinel) | gate 3 (partial: sentinel types and parameter/day-kind/element-type/own-member references; variable bindings and navigation paths are not serialized in v0; excepted: a v0 instance-fold source argument names a role and carries the sentinel by construction — the row-1 wart, resolved against declared roles instead) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondsttelling` (role source) | `wf034-dangling-parameter` |
 | WF-035 | operator typing (numeric, unitless power, date±time-unit, unit compatibility, clamp) | gate 3 (over serialized operand types; the date±duration clause is OPEN) | `anchor/jutterswet-wachtersketen` (the numeric Plus, executed by gates 5–6) | `wf035-power-with-unit` |
 | WF-036 | comparison/predicate typing (ordering, precision, family, domain, builtin operands) | gate 3 (over serialized operand types) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondstnummer` (date ordering) | `wf036-order-number-vs-text` |
