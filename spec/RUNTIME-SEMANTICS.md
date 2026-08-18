@@ -1347,6 +1347,43 @@ Jutter j2: aantal aangemelde vondsten 3}. Fixpoint after one pass: j1
 **penninggerechtigd**, j2 not; no channel entries; end state = the two
 instances plus nothing else.
 
+### 5.8 The navigated read
+
+An attribute reference whose endpoint is off-subject (IR-SPEC ch. 4.1a,
+WF-053) reads through the role links, one to-one hop per step. The
+rules, mirrored from the pinned runtime's null-safe navigation readers:
+
+1. **Absent is leeg, at every hop.** A subject without a link over the
+   hop's role reads the whole operand as **leeg** — never a fault, never
+   a skipped rule. A multi-hop walk short-circuits: any intervening
+   absent link makes the operand leeg (§5.5.5). The leeg value then
+   flows through the ordinary ch. 1.2 discipline (a leeg operand makes
+   an ordering comparison onwaar; leeg/gevuld see it as leeg; a bare
+   assignment of leeg writes nothing).
+2. **To-many never reaches a scalar slot.** WF-053 rejects the shape
+   statically; the executors additionally refuse it at the hop, so a
+   document that evades the verifier still cannot silently pick a first
+   filler. A stored second filler on a to-one role is the ch. 5.5
+   write-boundary fault and cannot arise from a well-formed case.
+3. **The navigated characteristic check is asymmetric — deliberately.**
+   On an absent link the check is **onwaar for the positive AND the
+   negated form**: "zijn post is geen risicopost" does NOT hold for a
+   wachter without a post. This mirrors the pinned runtime exactly, and
+   differs from comparison and leeg/gevuld, which treat the absent
+   relation as a leegwaarde. In the ASP reading the hop is a positive
+   body literal and only the characteristic sits under negation-as-
+   failure — the same asymmetry, for free.
+
+Worked example (the `jutterswet-kustwacht` anchor, case 2, verbatim in
+gates 5–6): W1 mans post P1 in kustvak V1 (verraderlijk, gevarenklasse
+5); W4 mans post P3, which lies in no kustvak; W3 mans nothing. Then
+W1.uitkijkbonus = 12 (single hop), W1.risicotoeslag = 5 (two hops);
+W4.uitkijkbonus = 9 but W4.risicotoeslag is **leeg** (hop two absent —
+the short-circuit); W3 reads leeg on both (hop one absent). The negated
+check separates W3 from W4: P3 is not a risicopost, so W4 (linked) IS a
+rustwacht, while W3 (link absent) is NOT — negation does not resurrect
+an absent relation.
+
 ---
 
 ## 6. Stratification
@@ -1425,6 +1462,16 @@ this; a bean-field-only v0 creation record carries no symbolic hops
 and stays on the bare population write, recorded with WF-028's
 uncheckable clause). Day-kind definitions read only input dates and
 contribute no edges.
+
+*Navigated reads (ch. 5.8)* consume relation(each hop) — bound hops by
+their named fact types, bindingless hops by the WF-053 unique
+derivation (an unresolvable walk contributes no relation edges; WF-053
+rejects the document, so nothing is hidden on clean input). A navigated
+characteristic check additionally reads characteristic(reached type) —
+on the type the hop lands on, never the subject — negatively when
+negated; the hop relation itself is always a positive read (the
+asymmetry of ch. 5.8: an absent link fails the check, so no negative
+edge runs through the relation).
 
 *Recorded residuals (ch. 7 territory, mirrored):* a condition-guarded
 attribute write whose condition later turns false keeps its written

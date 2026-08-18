@@ -45,7 +45,9 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   fields the extensions supersede (`zetVeld`/`joinVeld` and kin). Current
   extension fields: `verbindendeRol` (ch. 3.2; and on object creation,
   ch. 3.3 — the back-link role), `bronRol` (ch. 4.3), the
-  symbolic fact-creation fields (ch. 3.4); current extension nodes and
+  symbolic fact-creation fields (ch. 3.4), `navigatieBindingen` on the
+  attribute reference and `navigatieBinding` on the characteristic check
+  (ch. 4.1a — the navigation hops); current extension nodes and
   forms: `TemporalRead` (ch. 4.3a), the `defaultLadders` list
   (ch. 6.1). **First pin bump (2026-08-17, toolchain `edecb46`):** the
   emitter produces `verbindendeRol` and `bronRol` where uniquely
@@ -979,10 +981,57 @@ the schema when it does.
 | Node | Fields | Notes |
 |---|---|---|
 | Literal | `value`, `type`, `source` | **Delta (row 27):** v0 carries the unparsed source string as the value; v1 carries a typed value |
-| AttributeReference | `attribute`, `subjectType`, `path` (role steps), `type`, `source` | **Delta (row 4):** v0 splits navigation over `navigatieRol` + `navigatiePad` + a `set` flag (with the invariant that a non-empty path implies a role) and keeps the transpiler-facing `onderwerpBron`; v1 unifies into one explicit path of role steps, with result cardinality derived from the declared role cardinalities. *Migration:* mechanical merge of the three fields |
+| AttributeReference | `attribute`, `subjectType`, `path` (role steps), `type`, `source` | **Delta (row 4):** v0 splits navigation over `navigatieRol` + `navigatiePad` + a `set` flag (with the invariant that a non-empty path implies a role) and keeps the transpiler-facing `onderwerpBron`; v1 unifies into one explicit path of role steps, with result cardinality derived from the declared role cardinalities. **Landed (2026-08-18):** the symbolic path rides the v0 wire as the `navigatieBindingen` extension field (ch. 4.1a, WF-053); the anchor `jutterswet-kustwacht` executes all three navigated shapes through both executors. *Migration:* the v1 unification drops the written-name fields the bindings supersede |
 | ParameterReference | `parameter` (name ref), `type`, `source` | the v0 wire form is already symbolic (the emitter writes the name) — the "embed the model object" wart is in-memory only |
 | VariableReference | `name`, `type`, `source` | a rule-local let-binding (§13.4.2.10); binding is frontend scope resolution |
 | ContextValue | `name` ∈ evaluation-date, evaluation-year | **Delta (row 25):** split from v0's `Constante` grab-bag; the pronoun referents that shared that node are surface forms the frontend resolves away. *v0 mirror note:* the wire carries `Constante` named `Rekendatum` (typed day-precision) or `Rekenjaar` (whole number); `Rekendatum` is the ch. 8.2 execution-date constant and the index of the ch. 8.3 vintage read (`RUNTIME-SEMANTICS.md`); `Rekenjaar` has no corpus witness yet — executors fault on it |
+
+### 4.1a The navigated read (WF-053)
+
+An attribute reference whose value lives off-subject **navigates**: its
+`objecttype` is the endpoint the attribute lives on, and the walk from
+the subject to that endpoint takes one role hop per step. The v0 wire
+carries the walk in three written shapes (§13.4.1/§13.4.2.9): a written
+role name (`navigatieRol`, possibly a plural — single hop), a resolved
+chain of declared role names (`navigatiePad`, subject-outward, first hop
+included — multi-hop), or a directly named object type with no written
+role at all (the **by-pair** shape: the connecting relation is derived
+from the type pair). The characteristic check (ch. 5) carries the same
+idea in its `navigatie` field — one written role hop.
+
+The symbolic route (extension fields per the Method):
+**`navigatieBindingen`** on the attribute reference — a list of
+RoleBindings (ch. 2.6), one per hop, subject-outward, each with **the
+role the hop reaches bound** (the far role; its filler is the type the
+walk stands on next) — and **`navigatieBinding`** on the characteristic
+check, its one hop in the same orientation. Written whole or not at
+all, never null, never empty.
+
+- **WF-053** A navigated reference MUST resolve its walk. With
+  bindings: the binding count equals the step count (one for the
+  single-hop and by-pair shapes), every binding resolves (WF-047's
+  resolution: declared fact type, declared role name — the plural does
+  not bind — two roles, or one reciprocal), each hop's opposite role
+  fills the type the walk stands on (the subject for hop one), the last
+  bound role's filler is the reference's `objecttype` (the endpoint),
+  and each written step, where the v0 form carries one, denotes its
+  hop's bound role (declared name or plural). Bindingless: each step
+  MUST be uniquely derivable — by written name (exactly one reachable
+  role matches, the WF-048 model) or by type pair (exactly one fact
+  type relates the pair). In a scalar slot (`set` false) every hop's
+  reached role MUST be to-one — a to-many step needs an aggregation,
+  never a silent first pick (the v0 resolver builds only to-one chains;
+  its NAAR_VEEL marker, lifted to well-formedness). Bindings on a
+  reference or check that does not navigate are ill-formed. Semantics:
+  `RUNTIME-SEMANTICS.md` ch. 5.8 — an absent link at any hop reads the
+  operand as leeg; the navigated characteristic check on an absent link
+  is false, negated or not.
+
+Dependency discipline (ch. 6.1 of `RUNTIME-SEMANTICS.md`): a navigated
+read consumes the link set of every hop relation — the edge that orders
+navigation after relation creation — and a navigated characteristic
+check reads the characteristic **on the reached type**, negatively when
+negated.
 
 ### 4.2 Operators
 
@@ -1097,7 +1146,7 @@ negatief corpus fixes the taxonomy's values.
 |---|---|---|
 | Comparison | `op`, `left`, `right`, `wholePeriod?`, `source` | operator set: ordering, equality, date ordering (ch. 2.2 inventory); v1 may unify date ordering under typed ordering — carried as-is in the mirror |
 | Predicate | `kind` ∈ empty, filled, elfproef, exact-digits (`digits`), day-kind (`dayKind`), `operand`, `negated`, `wholePeriod?`, `source` | empty/filled are core kernel (three-valued rules in `RUNTIME-SEMANTICS.md` ch. 1.2); the other three are dialect builtins |
-| CharacteristicCheck | `characteristic`, `navigation?` (to-one role), `negated`, `wholePeriod?`, `source` | **Delta (`CONSTRUCTS.md` ch. 2.2):** v0's `eigenaar` pattern-steering field (a Drools attachment hint set only on fact-creation guards) is dropped |
+| CharacteristicCheck | `characteristic`, `navigation?` (to-one role), `negated`, `wholePeriod?`, `source` | **Delta (`CONSTRUCTS.md` ch. 2.2):** v0's `eigenaar` pattern-steering field (a Drools attachment hint set only on fact-creation guards) is dropped. **Landed (2026-08-18):** the navigated check carries its one hop symbolically in the `navigatieBinding` extension field (ch. 4.1a, WF-053); semantics `RUNTIME-SEMANTICS.md` ch. 5.8 — an absent link is false, negated or not |
 | RoleMembership | `factType`, `role` (the role the subject plays), `negated`, `source` | **Delta (row 5):** one existential node replaces v0's near-side (`Rollidmaatschap`, with its filler-type lookup hint) and far-side (`VerreRollidmaatschap`, with the literal `backref` bean field and the top-level-only restriction — both dropped). *Migration:* near-side → the named role; far-side → the subject-side role of the relation |
 | Compound | `quantifier` ∈ all, none, the, at-least (`threshold`), at-most (`threshold`), exactly (`threshold`), `parts`, `source` | all/none/the are kernel; the counting forms are sugar (count-and-compare, row on `Kwantor`, `CONSTRUCTS.md` ch. 2.2) — mirrored as quantifiers |
 | TimeWindow | `from?`, `to?`, `toInclusive`, `source` | from inclusive, to exclusive unless `toInclusive`; never both absent |
@@ -1340,6 +1389,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-050 | ladder: ≥ 1 rung; exactly one target, resolving; rung shapes per kind; init rung lowest; no other writer; multiplicity only declared-unordered | gate 3 | `anchor/jutterswet-uitsluiting` (characteristic) + `anchor/jutterswet-vondstwaardering` (attribute + init) + `anchor/jutterswet-toelagegronden` (unordered groups, six conflict-path cases; all replayed by gates 5–6) | `wf050-empty-ladder` + `wf050-two-ladders-one-target` + `wf050-ladder-beside-rule` + `wf050-both-targets` + `wf050-init-not-lowest` + `wf050-rule-beside-attribute-ladder` + `wf050-allocation-beside-ladder` + `wf050-creation-beside-ladder` + `wf050-half-marked-group` |
 | WF-051 | no dependency cycle through a ladder (justification and consequence reads are negative edges) | gate 3 (over the extended dep_forms graph, shared with ref/'s strata) | `anchor/jutterswet-uitsluiting` (the ladder sits below its negated consumer — strata exist, oracle-replayed) | `wf051-ladder-reads-own-target` |
 | WF-052 | a connecting relation with a to-one created-side role has at most one object-creation writer (fact creations are fault-paired already) | gate 3 | `anchor/jutterswet-penninguitgifte` (one writer per to-one relation, executed by gates 5–6) | `wf052-two-writers-one-to-one-relation` |
+| WF-053 | a navigated read resolves its walk: bindings resolve, chain-type, count and written names agree, the endpoint is reached; bindingless steps are uniquely derivable; scalar-slot hops are to-one; bindings on a non-navigating node are ill-formed | gate 3 | `anchor/jutterswet-kustwacht` (by-name, chain and by-pair shapes plus the navigated characteristic check, executed by gates 5–6 with leeg-on-absent and the negation asymmetry pinned) | `wf053-dangling-navigation-binding` (resolution) + `wf053-chain-near-side-mismatch` (chain typing) + `wf053-to-many-hop-in-scalar` (cardinality) + `wf053-written-role-mismatch` (written-name denotation) + `wf053-bindingless-ambiguous` (unique derivability) |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is
