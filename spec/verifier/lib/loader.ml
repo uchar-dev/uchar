@@ -733,7 +733,8 @@ let resolved_consistentie path j : resolved_consistentie =
 let resolved_uniciteit path j : resolved_uniciteit =
   let kvs = obj path j in
   expect_node path kvs "ResolvedUniciteit";
-  check_keys path kvs [ "node"; "naam"; "subject"; "sleutels"; "scopeVeld"; "bron"; "geldigheid" ];
+  check_keys path kvs ~ext:[ "scopeRol" ]
+    [ "node"; "naam"; "subject"; "sleutels"; "scopeVeld"; "bron"; "geldigheid" ];
   let f name = field path kvs name in
   {
     uni_naam = str_opt (path / "naam") (f "naam");
@@ -742,6 +743,7 @@ let resolved_uniciteit path j : resolved_uniciteit =
     scope_veld = str_opt (path / "scopeVeld") (f "scopeVeld");
     uni_bron = str_opt (path / "bron") (f "bron");
     uni_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
+    scope_rol = ext_field path kvs "scopeRol" rol_binding;
   }
 
 let uniciteit_unie_bron path j : uniciteit_unie_bron =

@@ -1,0 +1,131 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Strandvondst",
+        "attributes": {
+          "vondstnummer": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S3",
+        "objectType": "Strandvondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W1",
+        "objectType": "Wrakvondst",
+        "attributes": {
+          "vondstnummer": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "G1",
+        "objectType": "Gemeente",
+        "attributes": {},
+        "roles": {
+          "kavels": [
+            "K1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "G2",
+        "objectType": "Gemeente",
+        "attributes": {},
+        "roles": {
+          "kavels": [
+            "K2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "K1",
+        "objectType": "Kavel",
+        "attributes": {
+          "etiket": {
+            "number": "1"
+          },
+          "sectiecode": {
+            "number": "10"
+          }
+        },
+        "roles": {
+          "gemeente": [
+            "G1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "K2",
+        "objectType": "Kavel",
+        "attributes": {
+          "etiket": {
+            "number": "1"
+          },
+          "sectiecode": {
+            "number": "10"
+          }
+        },
+        "roles": {
+          "gemeente": [
+            "G2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "K3",
+        "objectType": "Kavel",
+        "attributes": {
+          "etiket": {
+            "number": "1"
+          },
+          "sectiecode": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "G1",
+      "attribute": "kavelaantal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "G2",
+      "attribute": "kavelaantal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "G1",
+        "objectType": "Gemeente",
+        "attributes": {},
+        "roles": {
+          "kavels": [
+            "K1",
+            "K2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "K1",
+        "objectType": "Kavel",
+        "attributes": {
+          "etiket": {
+            "number": "5"
+          },
+          "sectiecode": {
+            "number": "10"
+          }
+        },
+        "roles": {
+          "gemeente": [
+            "G1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "K2",
+        "objectType": "Kavel",
+        "attributes": {
+          "etiket": {
+            "number": "5"
+          },
+          "sectiecode": {
+            "number": "11"
+          }
+        },
+        "roles": {
+          "gemeente": [
+            "G1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "G1",
+      "attribute": "kavelaantal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "inconsistent"
+    }
+  ]
+}

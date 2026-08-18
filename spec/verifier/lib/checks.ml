@@ -832,7 +832,37 @@ let wf030 ctx =
               else []
           | _ -> []
         in
-        per_bron @ arity_v @ kind_v)
+        (* per-position unit agreement — the v0 resolver refuses a union
+           whose key units differ (zelfdeDatatypes), so a €/$ mix could
+           otherwise slip through as a silent never-duplicate *)
+        let units_of b =
+          match b.uub_type with
+          | None -> None
+          | Some t ->
+              objecttype ctx t
+              |> Option.map (fun ot ->
+                  List.map
+                    (fun k ->
+                      match k with
+                      | Some k -> attr_of ot k |> Option.join |> Option.map unit_of
+                      | None -> None)
+                    b.uub_sleutels)
+        in
+        let unit_v =
+          match List.filter_map units_of r.bronnen with
+          | first :: rest when arity_v = [] ->
+              if
+                List.exists
+                  (fun other ->
+                    List.exists2
+                      (fun a b -> match a, b with Some x, Some y -> x <> y | _ -> false)
+                      first other)
+                  (List.filter (fun o -> List.length o = List.length first) rest)
+              then [ v "WF-030" at "union sources disagree on a key position's unit" ]
+              else []
+          | _ -> []
+        in
+        per_bron @ arity_v @ kind_v @ unit_v)
       (List.mapi (fun i r -> (i, r)) ctx.doc.uniciteit_unies)
 
 let wf031 ctx =
@@ -2203,15 +2233,54 @@ let dep_forms ctx : dep_form list =
         let at = Printf.sprintf "/uniciteiten/%d" i in
         let name = Option.value u.uni_naam ~default:at in
         let subj = Option.value u.uni_subject ~default:"" in
+        (* a parent-scoped uniqueness reads the scope relation's link set
+           (ch. 6.1) — bound by its named fact type, else derived from
+           the written scope field (an unresolvable scope contributes no
+           edge; WF-054 reports it) *)
+        let scope_read =
+          match (u.scope_rol, u.scope_veld) with
+          | Some rb, _ -> [ (n_rel rb.rb_feittype, Dep_strict) ]
+          | None, Some sv -> (
+              match nav_role_by_name ctx ~from_type:subj ~name:sv with
+              | Ok (fn, _) -> [ (n_rel fn, Dep_strict) ]
+              | Error _ -> [])
+          | None, None -> []
+        in
         {
           df_at = at;
           df_name = name;
           df_recursive_creation = false;
           df_writes = [ n_chan name ];
           df_reads =
-            List.map (fun k -> (n_attr subj (Option.value k ~default:""), Dep_strict)) u.sleutels;
+            scope_read
+            @ List.map
+                (fun k -> (n_attr subj (Option.value k ~default:""), Dep_strict))
+                u.sleutels;
         })
       ctx.doc.uniciteiten
+  in
+  let uniciteit_unies =
+    List.mapi
+      (fun i (u : resolved_uniciteit_unie) ->
+        let at = Printf.sprintf "/uniciteitUnies/%d" i in
+        let name = Option.value u.uu_naam ~default:at in
+        {
+          df_at = at;
+          df_name = name;
+          df_recursive_creation = false;
+          df_writes = [ n_chan name ];
+          df_reads =
+            List.concat_map
+              (fun (b : uniciteit_unie_bron) ->
+                match b.uub_type with
+                | Some t ->
+                    List.map
+                      (fun k -> (n_attr t (Option.value k ~default:""), Dep_strict))
+                      b.uub_sleutels
+                | None -> [])
+              u.bronnen;
+        })
+      ctx.doc.uniciteit_unies
   in
   let creaties =
     List.mapi
@@ -2345,7 +2414,8 @@ let dep_forms ctx : dep_form list =
         })
       ctx.doc.default_ladders
   in
-  regels @ verdelingen @ consistenties @ uniciteiten @ creaties @ feit_creaties @ ladders
+  regels @ verdelingen @ consistenties @ uniciteiten @ uniciteit_unies @ creaties
+  @ feit_creaties @ ladders
 
 let wf045_046 ctx =
   let forms = Array.of_list (dep_forms ctx) in
@@ -2794,6 +2864,117 @@ let wf052 ctx =
       else [])
     writers
 
+(* WF-054: parent-scoped uniqueness (the scope hop, v1 extension). The
+   scope role resolves — bound (scopeRol) or uniquely derivable from the
+   written scopeVeld name — its near side fills the subject, the written
+   name denotes the bound role, and the scope role is to-one (a scope
+   parent is one instance; the v0 reference field). A binding on an
+   unscoped uniqueness is ill-formed. Scope-less instances do not
+   participate at evaluation (RUNTIME-SEMANTICS ch. 5.9). *)
+let wf054 ctx =
+  List.concat_map
+    (fun (i, (r : resolved_uniciteit)) ->
+      let at = Printf.sprintf "/uniciteiten/%d" i in
+      match (r.scope_veld, r.scope_rol, r.uni_subject) with
+      | None, Some _, _ ->
+          [ v "WF-054" at "a scope binding on an unscoped uniqueness" ]
+      | None, None, _ -> []
+      | Some _, _, None -> [] (* WF-030 reports the missing subject *)
+      | Some sv, binding, Some subj -> (
+          let filler (r : rol) = Option.value r.rol_objecttype_naam ~default:"" in
+          let denotes (r : rol) name =
+            (match r.rol_naam with Some n -> norm n = norm name | None -> false)
+            || match r.rol_meervoud with Some m -> norm m = norm name | None -> false
+          in
+          let hop =
+            match binding with
+            | Some rb -> (
+                match resolve_binding ctx rb with
+                | Error e -> Error [ e ]
+                | Ok (_, bound, opposite) ->
+                    let near =
+                      if norm (filler opposite) <> norm subj then
+                        [ Printf.sprintf
+                            "the near side of '%s' fills '%s', but the uniqueness subject is \
+                             '%s'"
+                            rb.rb_feittype (filler opposite) subj ]
+                      else []
+                    in
+                    let name_v =
+                      if denotes bound sv then []
+                      else
+                        [ Printf.sprintf
+                            "the written scope field '%s' does not denote the bound role '%s'"
+                            sv
+                            (Option.value bound.rol_naam ~default:"?") ]
+                    in
+                    if near @ name_v = [] then Ok bound else Error (near @ name_v))
+            | None -> (
+                match nav_role_by_name ctx ~from_type:subj ~name:sv with
+                | Ok (_, r) -> Ok r
+                | Error e -> Error [ e ])
+          in
+          match hop with
+          | Error msgs -> List.map (fun m -> v "WF-054" at m) msgs
+          | Ok r ->
+              if r.rol_meervoudig then
+                [ v "WF-054" at
+                    (Printf.sprintf
+                       "the scope role '%s' is to-many — a scope parent is one instance"
+                       (Option.value r.rol_naam ~default:"?")) ]
+              else []))
+    (List.mapi (fun i r -> (i, r)) ctx.doc.uniciteiten)
+
+(* WF-023 (the shallow slice): assignment typing between the target's and
+   the value's serialized types — same family (numeric kinds count as
+   one), compatible units (a unitless literal adopts), no contradictory
+   sign restriction. The precision gate needs expression-shape analysis
+   and stays OPEN (the WF index records the reason). *)
+let wf023 ctx =
+  ignore ctx;
+  let sign_conflict d w =
+    match (d, w) with
+    | Numeriek { teken = Some (Niet_negatief | Positief); _ },
+      Numeriek { teken = Some Negatief; _ }
+    | Numeriek { teken = Some Negatief; _ },
+      Numeriek { teken = Some (Niet_negatief | Positief); _ } ->
+        true
+    | _ -> false
+  in
+  List.concat_map
+    (fun (i, (r : resolved_regel)) ->
+      let at = Printf.sprintf "/resolvedRegels/%d" i in
+      match (r.rr_soort, r.doel, r.waarde) with
+      | Some (Gelijkstelling | Berekening | Initialisatie), Some doel, Some w -> (
+          match (typ_of_expr doel, typ_of_expr w) with
+          | Some dt, Some wt -> (
+              match (dt, wt) with
+              | Datatype_onbekend _, _ | _, Datatype_onbekend _ -> []
+              | _ ->
+                  (if
+                     datatype_kind dt <> datatype_kind wt
+                     && not (is_number_like dt && is_number_like wt)
+                   then
+                     [ v "WF-023" at
+                         (Printf.sprintf "a %s value is assigned to a %s target"
+                            (datatype_kind wt) (datatype_kind dt)) ]
+                   else [])
+                  @ (if
+                       is_number_like dt && is_number_like wt
+                       && not
+                            (units_compatible_adopting r.doel r.waarde (unit_of dt)
+                               (unit_of wt))
+                     then [ v "WF-023" at "assignment across incompatible units" ]
+                     else [])
+                  @
+                  if sign_conflict dt wt then
+                    [ v "WF-023" at
+                        "the value's sign restriction contradicts the target's" ]
+                  else [])
+          | _ -> [])
+      | _ -> [])
+    (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_regels)
+
 (* WF-051: no dependency cycle may pass through a ladder — its
    displacement edges are negative (dep_forms above), so any such cycle
    also violates WF-046; this check names the ladder-specific rule. *)
@@ -2839,6 +3020,7 @@ let all (doc : document) : violation list =
     [ wf001 ctx; wf002 ctx; wf003 ctx; wf004 ctx; wf005 ctx; wf006 ctx;
       wf007_model ctx; wf009 ctx; wf011 ctx; wf012 ctx; wf013 ctx; wf014 ctx;
       wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf020 ctx; wf021 ctx;
-      wf022 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
+      wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf032 ctx; wf033 ctx; wf045_046 ctx;
-      wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; expression_layer ctx ]
+      wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf054 ctx;
+      expression_layer ctx ]

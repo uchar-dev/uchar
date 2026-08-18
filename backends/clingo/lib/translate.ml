@@ -860,17 +860,82 @@ let translate_consistentie ctx i (c : resolved_consistentie) =
 let translate_uniciteit ctx (u : resolved_uniciteit) =
   let name = Option.value u.uni_naam ~default:"uniciteit" in
   let subject_ot = req "subject" u.uni_subject in
-  if u.scope_veld <> None then fault "scoped uniqueness not translated";
   let keys = List.map (req "sleutel") u.sleutels in
   let joins label =
     List.mapi
       (fun i k -> Printf.sprintf "val(%s,%s,K%d)" label (str k) i)
       keys
   in
-  emit ctx "inconsistent(%s,S1) :- is_a(S1,%s), is_a(S2,%s), S1 != S2, %s, %s." (str name)
+  (* the scope hop (ch. 5.9, WF-054): both rows join the same scope
+     parent — an instance without the rol/3 atom (scope-less) never
+     matches, the pinned runtime's narrowing for free *)
+  let scope_atoms =
+    match (u.scope_rol, u.scope_veld) with
+    | None, None -> []
+    | rb_opt, sv_opt ->
+        let env =
+          { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
+            as_of = None }
+        in
+        let role =
+          match rb_opt with
+          | Some rb -> Eval.bound_role env rb
+          | None ->
+              Eval.role_by_name env ~self_type:subject_ot
+                ~name:(req "scopeVeld" sv_opt)
+        in
+        [ Printf.sprintf "rol(S1,%s,P)" (str (role_canonical role));
+          Printf.sprintf "rol(S2,%s,P)" (str (role_canonical role)) ]
+  in
+  emit ctx "inconsistent(%s,S1) :- is_a(S1,%s), is_a(S2,%s), S1 != S2, %s." (str name)
     (str subject_ot) (str subject_ot)
-    (String.concat ", " (joins "S1"))
-    (String.concat ", " (joins "S2"))
+    (String.concat ", " (joins "S1" @ joins "S2" @ scope_atoms))
+
+(* the uniqueness union (ch. 5.9): every source feeds one shared key
+   predicate — a duplicate may arise across two different source types.
+   Key positions harmonise to the maximum declared scale across sources,
+   so 5 and 5.00 collide exactly as the runtime's value equality does. *)
+let translate_uniciteit_unie ctx i (u : resolved_uniciteit_unie) =
+  let name = Option.value u.uu_naam ~default:(Printf.sprintf "uniciteitsunie%d" i) in
+  let arity =
+    match u.bronnen with
+    | b :: _ -> List.length b.uub_sleutels
+    | [] -> fault "a uniqueness union carries at least one source"
+  in
+  let max_scale pos =
+    List.fold_left
+      (fun m (b : uniciteit_unie_bron) ->
+        let t = req "UniciteitUnie.bron.type" b.uub_type in
+        let k = req "sleutel" (List.nth b.uub_sleutels pos) in
+        max m (attr_decimals ctx ~otype:t ~attr:k))
+      0 u.bronnen
+  in
+  let scales = List.init arity max_scale in
+  let pred = Printf.sprintf "uu%d_key" i in
+  List.iter
+    (fun (b : uniciteit_unie_bron) ->
+      let t = req "UniciteitUnie.bron.type" b.uub_type in
+      let head_args =
+        List.mapi
+          (fun pos k ->
+            let k = req "sleutel" k in
+            let d = attr_decimals ctx ~otype:t ~attr:k in
+            let m = pow10 (List.nth scales pos - d) in
+            if m = 1 then Printf.sprintf "K%d" pos else Printf.sprintf "(K%d*%d)" pos m)
+          b.uub_sleutels
+      in
+      let body =
+        Printf.sprintf "is_a(S,%s)" (str t)
+        :: List.mapi
+             (fun pos k -> Printf.sprintf "val(S,%s,K%d)" (str (req "sleutel" k)) pos)
+             b.uub_sleutels
+      in
+      emit ctx "%s(S,%s) :- %s." pred (String.concat "," head_args)
+        (String.concat ", " body))
+    u.bronnen;
+  let vars = List.init arity (fun p -> Printf.sprintf "V%d" p) in
+  emit ctx "inconsistent(%s,S) :- %s(S,%s), 2 <= #count { O : %s(O,%s) }." (str name) pred
+    (String.concat "," vars) pred (String.concat "," vars)
 
 (* --- case facts ---------------------------------------------------------- *)
 
@@ -955,7 +1020,6 @@ let translate (doc : document) (case : Case.t) : string =
      itself. Forms outside the desugaring's domain stay as they are
      and fault below like before. *)
   let doc = Ir_v0.Desugar.document doc in
-  if doc.uniciteit_unies <> [] then fault "uniqueness unions not translated";
   let ctx = { doc; case; buf = Buffer.create 4096; fresh = 0 } in
   (* ch. 8.4: the shared session-start Parameterset coverage check —
      data-plane validation (like the shared case loader), run before a
@@ -1010,6 +1074,7 @@ let translate (doc : document) (case : Case.t) : string =
    List.iteri (fun gidx (_, ms) -> translate_ladder_group ctx gidx ms) groups);
   List.iteri (translate_consistentie ctx) doc.consistenties;
   List.iter (translate_uniciteit ctx) doc.uniciteiten;
+  List.iteri (translate_uniciteit_unie ctx) doc.uniciteit_unies;
   translate_case ctx case;
   emit ctx "#show val/3. #show heeft/2. #show inconsistent/2.";
   Buffer.contents ctx.buf

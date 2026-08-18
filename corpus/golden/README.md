@@ -75,3 +75,19 @@ vondsten and for one whose only vondst has no gewicht). Note that a
 *sum* cannot observably distinguish contributor-skipping from
 coalescing-to-0 — that distinction is pinned by the min/max unit tests
 of `ref/test/` (WV-1.2e), not by this case.
+
+## The witness cabinet
+
+`jutterswet-vormenkabinet` is a **verifier-only** golden: it carries no
+case files (gate 5 lists it explicitly as not replayed) and exists to
+witness, positively and verifier-clean, the well-formedness rules whose
+constructs no executing document carries yet — the dimensioned
+attribute with its cell read (WF-004/014/040), the enumeration domain
+with a label assignment (WF-006/039), the sign-restricted literal
+(WF-039), the variable-start timeline with its start point
+(WF-016/032), the day-kind definition (WF-017/031), two dated versions
+of one rule name (WF-021), the counting quantifier (WF-041), the time
+window (WF-042), and the whole-period qualifier over a time-dependent
+operand (WF-043). When one of these constructs becomes executable, its
+witness moves into an executing document and the cabinet shrinks — it
+is scaffolding for the WF index, never a place for semantics.

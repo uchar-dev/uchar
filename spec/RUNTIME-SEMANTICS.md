@@ -1384,6 +1384,40 @@ check separates W3 from W4: P3 is not a risicopost, so W4 (linked) IS a
 rustwacht, while W3 (link absent) is NOT — negation does not resurrect
 an absent relation.
 
+### 5.9 Uniqueness: the union and the scope
+
+Both uniqueness forms fire at the fixpoint of their stratum and deposit
+idempotent §9.5 channel facts per (form name × instance), like the
+single form of ch. 5.6. Mirrored from the pinned runtime:
+
+1. **The union is one shared key domain.** The key tuples of ALL
+   sources — compared positionally, after per-position scale
+   harmonisation — form a single uniqueness domain: a duplicate may
+   arise across two different source types, and every instance whose
+   tuple occurs more than once is marked, whichever source it came
+   from, under the shared union name. Rows with an empty key component
+   do not participate (an empty key never collides, the ch. 5.6 rule).
+   Source arity, per-position datatype kind and unit agree by WF-030.
+2. **The scope partitions, and scope-less rows are OUT.** A
+   parent-scoped uniqueness (WF-054) tests its keys within each
+   sub-population sharing one scope parent — the same key under two
+   different parents never collides. An instance without a scope link
+   does not participate AT ALL: duplicates among scope-less instances
+   go undetected. That is the pinned runtime's silent narrowing,
+   mirrored deliberately and recorded here — a document that wants
+   global uniqueness declares it unscoped.
+3. **A scoped union does not exist.** v0 cannot represent it (the union
+   node carries no scope field and its resolver never produces one);
+   the wire keeps that shape unrepresentable until a v1 decision.
+
+Worked example (the `jutterswet-kustregister` anchor, verbatim in gates
+5–6): vondstnummer 7 on a Strandvondst AND on a Wrakvondst → both
+marked under "eenmalig vondstnummer" (case 2, the cross-type
+duplicate). Two kavels with etiket 5 in ONE gemeente → both marked
+(case 3); the same etiket in two different gemeenten, a scope-less
+kavel duplicating a scoped one, and an empty vondstnummer all stay
+consistent (case 1 — the three exclusions).
+
 ---
 
 ## 6. Stratification
@@ -1421,7 +1455,7 @@ Each rule form reads and writes nodes:
 | assignment / initialisation | its target attribute | every attribute and characteristic its value expression and condition reference — a navigated reference reads the referenced type's node; population(element type) per instance fold |
 | characteristic attribution | its target characteristic | idem |
 | allocation | target attribute; declared remainder attribute | source amount; ratio, maximum and ordering attributes; condition reads; population(target type) |
-| consistency / uniqueness | channel(own name) | assertion operands / key attributes |
+| consistency / uniqueness | channel(own name) | assertion operands / key attributes; a union reads every source's key attributes; a scoped uniqueness also reads relation(scope hop) — bound by its named fact type, else derived from the written scope field |
 | object creation | the attributes and characteristics its toekenningen set on the created type; population(created type); relation(the uniquely-derivable connecting fact type — the back-link, ch. 5.5) | condition and toekenning-value reads on the anchor; population(subject type) — iterating the subjects is a read: it orders creation-after-creation, and a self-typed creation becomes a WF-045 cycle instead of a diverging fixpoint or an unbounded grounding |
 | relation creation | population(target-role filler type); relation(created fact type) | condition reads on the anchor; relation(each hop of the join-chain traversal, `IR-SPEC.md` ch. 3.4) |
 

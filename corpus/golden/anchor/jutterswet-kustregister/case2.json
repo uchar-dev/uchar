@@ -1,0 +1,73 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Strandvondst",
+        "attributes": {
+          "vondstnummer": {
+            "number": "7"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W1",
+        "objectType": "Wrakvondst",
+        "attributes": {
+          "vondstnummer": {
+            "number": "7"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "G1",
+        "objectType": "Gemeente",
+        "attributes": {},
+        "roles": {
+          "kavels": [
+            "K1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "K1",
+        "objectType": "Kavel",
+        "attributes": {
+          "etiket": {
+            "number": "1"
+          },
+          "sectiecode": {
+            "number": "10"
+          }
+        },
+        "roles": {
+          "gemeente": [
+            "G1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "G1",
+      "attribute": "kavelaantal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "inconsistent"
+    }
+  ]
+}

@@ -333,6 +333,9 @@ type resolved_uniciteit = {
   scope_veld : string option;
   uni_bron : string option;
   uni_geldigheid : geldigheid option;
+  scope_rol : rol_binding option;
+      (* extension: the scope-parent role of a parent-scoped uniqueness,
+         named symbolically — the bound role's filler is the scope parent *)
 }
 
 type uniciteit_unie_bron = {

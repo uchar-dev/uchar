@@ -1035,7 +1035,20 @@ let run_uniciteit env world (u : resolved_uniciteit) =
   else begin
     let name = Option.value u.uni_naam ~default:"<uniciteit>" in
     let subject = req "Uniciteit.subject" u.uni_subject in
-    if u.scope_veld <> None then Value.fault "scoped uniqueness not implemented in this card";
+    (* the scope hop of a parent-scoped uniqueness (ch. 5.9, WF-054):
+       keys are unique within the sub-population sharing one scope
+       parent; an instance without a scope parent does not participate —
+       the pinned runtime's silent narrowing, mirrored and recorded *)
+    let scope_of =
+      match (u.scope_rol, u.scope_veld) with
+      | Some rb, _ ->
+          let role = bound_role env rb in
+          Some (fun i -> role_links world i role)
+      | None, Some sv ->
+          let role = role_by_name env ~self_type:subject ~name:sv in
+          Some (fun i -> role_links world i role)
+      | None, None -> None
+    in
     let keys = List.map (req "sleutel") u.sleutels in
     (* a duplicate non-empty key (ch. 5.6): rows with an empty key
        component do not participate *)
@@ -1044,8 +1057,48 @@ let run_uniciteit env world (u : resolved_uniciteit) =
         (fun (i : World.instance) ->
           let vs = List.map (World.attr i) keys in
           if List.exists (fun v -> v = Value.Empty) vs then None
-          else Some (String.concat "\x00" (List.map Value.to_string vs), i.label))
+          else
+            let key = String.concat "\x00" (List.map Value.to_string vs) in
+            match scope_of with
+            | None -> Some (key, i.label)
+            | Some links -> (
+                match links i with
+                | [] -> None (* scope-less: does not participate *)
+                | [ (p : World.instance) ] -> Some (p.label ^ "\x00" ^ key, i.label)
+                | _ ->
+                    Value.fault
+                      "to-one scope role links more than one instance on %S (ch. 5.5)"
+                      i.label))
         (World.of_type world subject)
+    in
+    let dup k = List.length (List.filter (fun (k', _) -> String.equal k k') keyed) > 1 in
+    List.fold_left
+      (fun w (k, label) -> if dup k then World.insert_error w ~rule:name ~subject:label else w)
+      world keyed
+  end
+
+(* ch. 5.9, the uniqueness union: the key tuples of ALL sources form one
+   shared uniqueness domain — a duplicate may arise across two different
+   source types; tuples compare positionally; rows with an empty key
+   component do not participate; every instance whose tuple occurs more
+   than once in the union deposits one channel fact under the shared
+   union name. *)
+let run_uniciteit_unie env world (u : resolved_uniciteit_unie) =
+  if not (applies env u.uu_geldigheid) then world
+  else begin
+    let name = Option.value u.uu_naam ~default:"<uniciteitsunie>" in
+    let keyed =
+      List.concat_map
+        (fun (b : uniciteit_unie_bron) ->
+          let t = req "UniciteitUnie.bron.type" b.uub_type in
+          let keys = List.map (req "sleutel") b.uub_sleutels in
+          List.filter_map
+            (fun (i : World.instance) ->
+              let vs = List.map (World.attr i) keys in
+              if List.exists (fun v -> v = Value.Empty) vs then None
+              else Some (String.concat "\x00" (List.map Value.to_string vs), i.label))
+            (World.of_type world t))
+        u.bronnen
     in
     let dup k = List.length (List.filter (fun (k', _) -> String.equal k k') keyed) > 1 in
     List.fold_left
@@ -1156,7 +1209,6 @@ let fixpoint ~budget step world =
   go 0 world
 
 let evaluate env world =
-  if env.doc.uniciteit_unies <> [] then Value.fault "uniqueness unions not implemented in this card";
   (* fail fast on unverified input: the cycle-tolerant strata below are
      sound only on WF-045/046-clean documents (every cycle then passes
      through a recursive-group creation and carries no negative edge) —
@@ -1254,6 +1306,7 @@ let evaluate env world =
   let oc_stratum i = stratum_of (Printf.sprintf "/objectCreaties/%d" i) in
   let cons_stratum i = stratum_of (Printf.sprintf "/consistenties/%d" i) in
   let uni_stratum i = stratum_of (Printf.sprintf "/uniciteiten/%d" i) in
+  let uu_stratum i = stratum_of (Printf.sprintf "/uniciteitUnies/%d" i) in
   let indexed l = List.mapi (fun i x -> (i, x)) l in
   (* ladder groups (ch. 7.2): members share one (subject, target); a
      group runs at the max of its members' strata *)
@@ -1360,6 +1413,11 @@ let evaluate env world =
       List.fold_left
         (fun w (i, u) -> if uni_stratum i = k then run_uniciteit env w u else w)
         !world
-        (indexed env.doc.uniciteiten)
+        (indexed env.doc.uniciteiten);
+    world :=
+      List.fold_left
+        (fun w (i, u) -> if uu_stratum i = k then run_uniciteit_unie env w u else w)
+        !world
+        (indexed env.doc.uniciteit_unies)
   done;
   !world

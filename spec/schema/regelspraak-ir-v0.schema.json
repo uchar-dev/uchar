@@ -2718,6 +2718,10 @@
               "type": "null"
             }
           ]
+        },
+        "scopeRol": {
+          "$ref": "#/$defs/RolBinding",
+          "description": "Extension field (wire-entry discipline, IR-SPEC Method): the scope-parent role of a parent-scoped uniqueness, named symbolically — the bound role is the role the scope hop reaches (its filler is the scope parent); the written scopeVeld must denote it. Written whole or not at all, never null."
         }
       }
     },
