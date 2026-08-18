@@ -734,6 +734,7 @@ chapter rule; the table below (minus `name`) is one version's body.
 | `initialisations` | list of MemberInit | declaration order |
 | `condition` | Condition? | — |
 | `validity` | Validity | — |
+| `verbindendeRol` | RoleBinding? (extension) | the created-side back-link role, named explicitly (see below) |
 
 **MemberInit**: `member` (string), `value` (expression), `characteristic`
 (boolean — v0 `kenmerk`: true = §13.4.6.4 characteristic-value form, the

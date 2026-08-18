@@ -47,3 +47,45 @@ needed per WF-033 — recorded untested); emitting `verbindendeRol` on
 creations from the toolchain (pin-bump territory); channel-content
 expectations (the exact end-rank pin beyond the detector's granularity
 is recorded as future case-schema work).
+
+Result: landed in full; the recursive marker is interpreted, not
+carried. Membership of a recursive group is the WF-045 cycle
+admission, and the chain runs one generation per instance to its
+fixpoint in both executors: ref/'s strata became cycle-tolerant
+(reachability classifies edges on a dependency cycle; strictness there
+is discharged by the generation progression, ch. 6.3 implemented), and
+the ASP backend grounds recursive creations along a generation depth
+whose exhaustion is the named viol/2 witness. ObjectCreatie gained the
+verbindendeRol extension (schema/loader/WF-047 site/WF-052/dep_forms)
+because a self-typed chain cannot name its back-link by derivation —
+connecting_pair now mirrors v0's null there, with the v0-faithful
+candidate counting (a two-role self shape blocks; any plurality on a
+self-typed pair is null). Binair Plus landed in the ASP expr_term
+(numeric operands only). The wachtersketen anchor pins the chain
+measurably (fold 2/5/0; the rank detector inconsistent exactly because
+generation five exists); runaway-recursion red-pins the budget fault
+in both executors; wf047-creation-binding-wrong-filler pins the new
+binding site.
+
+The verification round (two opus lenses) forced four fixes before
+merge: the budgets are now EQUAL (100 passes in ref, 100 generations
+per chain in clingo — the round proved a 100..499-generation window
+where clingo was UNSAT while ref answered, and the fix surfaced a real
+clingo limitation: its term handling aborts near nesting depth ~200,
+now a recorded README limitation the budget deliberately stays under);
+ref re-runs WF-045/046 itself before evaluating (the cycle-tolerant
+strata would otherwise silently answer on verifier-red input — fail
+fast restored, demonstrated on stripped-group and negative-cycle
+documents); Binair Plus refuses non-numeric operands (a Date would
+have summed as day numbers where ref faults); and connecting_pair
+counts self-typed candidates exactly as the pinned runtime does (the
+reciprocal-beside-binary corner no longer minted a link ref-side
+only). Notes recorded: non-recursive mints carry depth facts in
+recursive documents so chains seeded from them stay bounded; the
+ch. 3.3 table now lists the extension field.
+
+Deliberately left: recursive FACT-creation chains (WF-033 admits them
+guard-free; no witness yet); emitting verbindendeRol on creations from
+the toolchain (pin-bump territory); exact end-rank pinning beyond the
+detector's granularity (channel-content expectations are future
+case-schema work).

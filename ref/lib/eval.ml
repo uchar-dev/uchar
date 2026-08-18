@@ -97,27 +97,35 @@ let connecting_pair env ~from_type ~to_type =
       (fun (ftn, (ft : feittype)) ->
         let ot r = Option.value r.rol_objecttype_naam ~default:"" in
         match ft.rollen with
-        | [ _; _ ] when norm from_type = norm to_type ->
-            (* a self-typed two-role pair is role-ambiguous: the pinned
-               runtime derives null and drops the back-link — no
-               candidate; the explicit verbindendeRol binding is the
-               unambiguous route (IR-SPEC ch. 3.3) *)
-            None
+        | [ a; b ] when norm from_type = norm to_type ->
+            (* a self-typed two-role fact type is role-ambiguous: it
+               BLOCKS the derivation (the pinned runtime counts both
+               roles as candidates and derives null) — the explicit
+               verbindendeRol binding is the unambiguous route
+               (IR-SPEC ch. 3.3) *)
+            if norm (ot a) = norm from_type && norm (ot b) = norm from_type then
+              Some `Blocked
+            else None
         | [ a; b ] ->
-            if norm (ot a) = norm from_type && norm (ot b) = norm to_type then Some (ftn, b, a)
+            if norm (ot a) = norm from_type && norm (ot b) = norm to_type then
+              Some (`Pair (ftn, b, a))
             else if norm (ot b) = norm from_type && norm (ot a) = norm to_type then
-              Some (ftn, a, b)
+              Some (`Pair (ftn, a, b))
             else None
         | [ r ] when ft.wederkerig ->
             if norm (ot r) = norm from_type && norm from_type = norm to_type then
-              Some (ftn, r, r)
+              Some (`Pair (ftn, r, r))
             else None
         | _ -> None)
       env.doc.feittypen
   in
   match candidates with
   | [] -> None
-  | [ p ] -> Some p
+  | [ `Pair p ] -> Some p
+  | _ when norm from_type = norm to_type ->
+      (* any plurality on a self-typed pair — including a reciprocal
+         beside a blocked two-role shape — is v0's null: no link *)
+      None
   | _ ->
       Value.fault "more than one fact type relates %S to %S; the created object's back-link is \
                    ambiguous (ch. 5.5)"
@@ -1038,6 +1046,16 @@ let fixpoint ~budget step world =
 
 let evaluate env world =
   if env.doc.uniciteit_unies <> [] then Value.fault "uniqueness unions not implemented in this card";
+  (* fail fast on unverified input: the cycle-tolerant strata below are
+     sound only on WF-045/046-clean documents (every cycle then passes
+     through a recursive-group creation and carries no negative edge) —
+     ref/ re-runs those two checks itself rather than silently
+     answering on a graph the verifier would reject *)
+  (match Ir_v0.Checks.wf045_046 { doc = env.doc } with
+  | [] -> ()
+  | { Ir_v0.Checks.wf; at; reason } :: _ ->
+      Value.fault "%s at %s: %s — the dependency graph is ill-formed; ref/ refuses to evaluate"
+        wf at reason);
   parameterset_check env;
   (* the input-world snapshot the 1:1 creation guard reads (ch. 5.5) *)
   let world0 = world in
@@ -1207,11 +1225,14 @@ let evaluate env world =
     (world, c1 || c2 || c3 || c4 || c5)
   in
   (* the ch. 5.5/5.7 bounded budget: a recursive chain advances one
-     generation per pass, so this also caps runaway recursion — sized
-     two orders above any legitimate corpus fixpoint (~7 passes), small
-     enough that the red runaway witness faults promptly (minted labels
-     nest, so pass cost grows with the generation) *)
-  let budget = 500 in
+     generation per pass, so this also caps runaway recursion — an
+     order of magnitude above any legitimate corpus fixpoint (~7
+     passes), and deliberately EQUAL to the ASP backend's oc_budget so
+     both executors fault a runaway chain at the same generation
+     (clingo's nested creation terms cap the reachable depth anyway:
+     its term handling aborts near depth ~200 — recorded in the
+     backend README) *)
+  let budget = 100 in
   (* for k = 0, 1, …: the forms of stratum <= k evaluate to their
      fixpoint before any form of stratum k+1 fires (ch. 6.3); the
      consistency and uniqueness forms of stratum k fire once at that

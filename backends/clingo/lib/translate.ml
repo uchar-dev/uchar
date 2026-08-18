@@ -283,7 +283,19 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       | _ -> fault "unsupported temporal-read basis shape")
   | Binair { op = Plus; links; rechts; _ } ->
       (* integer addition on harmonised scales — the recursive chain's
-         rank increment; other operators await a corpus case *)
+         rank increment; other operators await a corpus case. Numeric
+         operands only: ref faults date arithmetic here, so a
+         non-numeric static type must not silently sum as day numbers *)
+      let numeric_ok e =
+        match e with
+        | Some e -> (
+            match Ir_v0.Checks.typ_of_expr e with
+            | Some (Numeriek _ | Percentage _) | None -> ()
+            | Some _ -> fault "non-numeric Plus operand is not translated (no corpus case)")
+        | None -> ()
+      in
+      numeric_ok links;
+      numeric_ok rechts;
       let l = expr_term ctx ~subject ~subject_ot (req "Binair.links" links) in
       let r = expr_term ctx ~subject ~subject_ot (req "Binair.rechts" rechts) in
       let _, _, s1 = l and _, _, s2 = r in
@@ -375,10 +387,13 @@ let translate_regel ctx (r : resolved_regel) =
    links only (inputrol/3, the case facts) — the same input-snapshot
    narrowing ref/ records for its guard. A creation that is a member of
    a RECURSIVE rule group grounds along a generation depth (depth/2,
-   bounded by oc_budget): the chain grounds exactly as far as its
-   condition carries it, and exhausting the budget derives a viol/2
-   witness — UNSAT exactly where ref/'s pass budget faults
-   (ch. 5.5's bounded budget, never a silent truncation). *)
+   bounded by oc_budget = 100, the same bound as ref/'s pass budget —
+   ref counts passes, this side generations per chain; one chain
+   advances one generation per pass, so the two accounts align):
+   exhausting the budget derives a viol/2 witness — UNSAT where ref/'s
+   pass budget faults (ch. 5.5's bounded budget, never a silent
+   truncation; the bound also stays under clingo's own term-depth
+   abort, recorded in the README). *)
 let translate_object_creatie ctx i (oc : resolved_object_creatie) =
   (match oc.oc_geldigheid with
   | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
@@ -428,7 +443,13 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
   let body =
     (Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) :: cond) @ guard @ depth_guard
   in
-  if recursive then head_body ctx (Printf.sprintf "depth(%s,D+1)" term) body;
+  (if recursive then head_body ctx (Printf.sprintf "depth(%s,D+1)" term) body
+   else if has_recursive_creation ctx.doc then
+     (* a non-recursive mint still carries a depth in a document with
+        recursive chains, so a chain seeded from it stays bounded *)
+     head_body ctx
+       (Printf.sprintf "depth(%s,D+1)" term)
+       (body @ [ Printf.sprintf "depth(%s,D)" subject ]));
   head_body ctx (Printf.sprintf "is_a(%s,%s)" term (str nieuw)) body;
   List.iter
     (fun (t : toekenning) ->

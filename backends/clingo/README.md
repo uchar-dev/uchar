@@ -51,10 +51,12 @@ spec bug.
   `depth(S,D), D < oc_budget`, and the mint derives `depth(ocN(S),
   D+1)` — so gringo grounds the chain exactly as far as its condition
   carries it (the nested terms ARE the generations), and a chain that
-  reaches `oc_budget` (`#const`, 100) derives the named witness
-  `viol("generation budget exhausted", _)` → UNSAT, exactly where the
-  reference interpreter's pass budget faults. Ch. 5.5's bounded
-  budget, never a silent truncation.
+  reaches `oc_budget` (`#const`, 100 — the same bound as the reference
+  interpreter's pass budget; ref counts passes, this side generations
+  per chain, and one chain advances one generation per pass) derives
+  the named witness `viol("generation budget exhausted", _)` → UNSAT
+  where the reference interpreter's pass budget faults. Ch. 5.5's
+  bounded budget, never a silent truncation.
 - Fact creation (IR-SPEC ch. 3.4; ch. 5.5) derives `rol/3`: the join
   chain (anchor → tussenstappen → joinRol → target) becomes a body
   join over `rol/3`, and the head lands the created relation's links —
@@ -120,6 +122,12 @@ shared-derivation bug from ever passing silently.
 
 Recorded limitations:
 
+- Clingo's term handling aborts (SIGABRT, observed in clingo 5.8.2)
+  once function terms nest beyond roughly 200 levels — the recursive
+  creation's generations ARE nested terms, so chains beyond that depth
+  cannot exist on this backend regardless of budget; `oc_budget` (100)
+  sits deliberately below the abort so budget exhaustion is always the
+  named `viol/2` witness, never a crash.
 - Clingo integers are 32-bit and wrap silently; the scaled encoding is
   exact only while every value and intermediate product stays within
   ±2³¹ (the allocation forms A×W before dividing). A mismatch fails
