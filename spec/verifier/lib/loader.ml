@@ -668,7 +668,7 @@ let toekenning path j : toekenning =
 let resolved_object_creatie path j : resolved_object_creatie =
   let kvs = obj path j in
   expect_node path kvs "ResolvedObjectCreatie";
-  check_keys path kvs
+  check_keys path kvs ~ext:[ "verbindendeRol" ]
     [ "node"; "naam"; "nieuwType"; "subject"; "toekenningen"; "voorwaarde"; "geldigheid" ];
   let f name = field path kvs name in
   {
@@ -681,6 +681,7 @@ let resolved_object_creatie path j : resolved_object_creatie =
         (list_ (path / "toekenningen") (f "toekenningen"));
     oc_voorwaarde = opt (path / "voorwaarde") conditie (f "voorwaarde");
     oc_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
+    oc_verbindende_rol = ext_field path kvs "verbindendeRol" rol_binding;
   }
 
 let resolved_verdeling path j : resolved_verdeling =

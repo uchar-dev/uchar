@@ -35,15 +35,26 @@ spec bug.
   to-one single-writer discipline: WF-052 statically excludes the two
   1:1 creations whose second filler `ref/` faults but a guardless
   model would silently hold.
-- Object creation (IR-SPEC ch. 3.3; ch. 5.5, non-recursive) mints the
+- Object creation (IR-SPEC ch. 3.3; ch. 5.5) mints the
   created instance as a deterministic function term `ocN(Subject)` —
   set semantics carries the per-(rule × subject) idempotence, exactly
   the reference interpreter's deterministic label. Member
-  initialisations are `val`/`heeft` heads on the term; the
-  uniquely-derivable connecting relation lands both `rol/3` ends; the
+  initialisations are `val`/`heeft` heads on the term; the back-link
+  relation (the explicit `verbindendeRol` binding, else the
+  uniquely-derivable pair) lands both `rol/3` ends; the
   1:1 linked-instance guard is `not inputrol/3` over the case links
   only (ch. 5.5's input-snapshot narrowing). An ambiguous connecting
   relation faults the translation, as in `ref/`.
+- A creation that is a member of a **recursive rule group**
+  (IR-SPEC ch. 3.9) grounds along a generation depth: every input
+  instance is `depth(_, 0)`, the creation's body carries
+  `depth(S,D), D < oc_budget`, and the mint derives `depth(ocN(S),
+  D+1)` — so gringo grounds the chain exactly as far as its condition
+  carries it (the nested terms ARE the generations), and a chain that
+  reaches `oc_budget` (`#const`, 100) derives the named witness
+  `viol("generation budget exhausted", _)` → UNSAT, exactly where the
+  reference interpreter's pass budget faults. Ch. 5.5's bounded
+  budget, never a silent truncation.
 - Fact creation (IR-SPEC ch. 3.4; ch. 5.5) derives `rol/3`: the join
   chain (anchor → tussenstappen → joinRol → target) becomes a body
   join over `rol/3`, and the head lands the created relation's links —

@@ -1585,6 +1585,13 @@ let expression_layer ctx =
              r.toekenningen)
         @ (match r.oc_voorwaarde with
            | Some c -> walk_cond ctx ~subject:r.oc_subject (at ^ "/voorwaarde") c
+           | None -> [])
+        @ (match r.oc_verbindende_rol with
+           | Some rb ->
+               (* the back-link binding (extension): the bound role is
+                  the created side, the opposite the subject side *)
+               wf047_binding ctx (at ^ "/verbindendeRol") rb ~bound_filler:r.nieuw_type
+                 ~other_filler:r.oc_subject
            | None -> []))
       (List.mapi (fun i r -> (i, r)) ctx.doc.object_creaties)
   @ List.concat_map
@@ -1853,14 +1860,27 @@ let dep_forms ctx : dep_form list =
         let subject = o.oc_subject in
         let writes =
           (n_pop nt)
-          :: (match subject with
-             | Some st -> (
+          :: (match (o.oc_verbindende_rol, subject) with
+             | Some rb, _ ->
+                 (* the explicit back-link binding (extension) names
+                    the written relation directly *)
+                 [ n_rel rb.rb_feittype ]
+             | None, Some st -> (
                  (* the back-link (ch. 5.5): a uniquely-derivable
-                    connecting relation is written on both ends *)
+                    connecting relation is written on both ends. A
+                    self-typed TWO-role pair is role-ambiguous — the
+                    derivation mirrors v0's null (no link) there, so no
+                    relation write either; the reciprocal shape stays
+                    unambiguous *)
                  match connecting_candidates ctx ~from_type:st ~to_type:nt with
-                 | [ fn ] -> [ n_rel fn ]
+                 | [ fn ] -> (
+                     match find_ci ctx.doc.feittypen fn with
+                     | Some (ft : feittype)
+                       when norm st = norm nt && not ft.wederkerig ->
+                         []
+                     | _ -> [ n_rel fn ])
                  | _ -> [])
-             | None -> [])
+             | None, None -> [])
           @ List.filter_map
                (fun (t : toekenning) ->
                  Option.map
@@ -2369,23 +2389,35 @@ let wf052 ctx =
   let writers =
     List.filter_map
       (fun (i, (o : resolved_object_creatie)) ->
-        match (o.oc_subject, o.nieuw_type) with
-        | Some st, Some nt -> (
-            match connecting_candidates ctx ~from_type:st ~to_type:nt with
-            | [ fn ] -> (
-                (* the created-side role: the role nt fills in fn *)
-                match find_ci ctx.doc.feittypen fn with
-                | Some (ft : feittype) -> (
-                    let filler r = Option.value r.rol_objecttype_naam ~default:"" in
-                    match
-                      List.find_opt (fun (r : rol) -> norm (filler r) = norm nt) ft.rollen
-                    with
-                    | Some r when not r.rol_meervoudig ->
-                        Some (norm fn, Printf.sprintf "/objectCreaties/%d" i)
-                    | _ -> None)
-                | None -> None)
+        let at = Printf.sprintf "/objectCreaties/%d" i in
+        match o.oc_verbindende_rol with
+        | Some rb -> (
+            (* the explicit binding names the created-side role *)
+            match resolve_binding ctx rb with
+            | Ok (_, bound, _) when not bound.rol_meervoudig ->
+                Some (norm rb.rb_feittype, at)
             | _ -> None)
-        | _ -> None)
+        | None -> (
+            match (o.oc_subject, o.nieuw_type) with
+            | Some st, Some nt -> (
+                match connecting_candidates ctx ~from_type:st ~to_type:nt with
+                | [ fn ] -> (
+                    (* the created-side role: the role nt fills in fn;
+                       a self-typed two-role pair is role-ambiguous and
+                       writes no link (no writer) *)
+                    match find_ci ctx.doc.feittypen fn with
+                    | Some (ft : feittype) when norm st = norm nt && not ft.wederkerig ->
+                        None
+                    | Some (ft : feittype) -> (
+                        let filler r = Option.value r.rol_objecttype_naam ~default:"" in
+                        match
+                          List.find_opt (fun (r : rol) -> norm (filler r) = norm nt) ft.rollen
+                        with
+                        | Some r when not r.rol_meervoudig -> Some (norm fn, at)
+                        | _ -> None)
+                    | None -> None)
+                | _ -> None)
+            | _ -> None))
       (List.mapi (fun i o -> (i, o)) ctx.doc.object_creaties)
   in
   List.concat_map

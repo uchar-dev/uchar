@@ -97,6 +97,12 @@ let connecting_pair env ~from_type ~to_type =
       (fun (ftn, (ft : feittype)) ->
         let ot r = Option.value r.rol_objecttype_naam ~default:"" in
         match ft.rollen with
+        | [ _; _ ] when norm from_type = norm to_type ->
+            (* a self-typed two-role pair is role-ambiguous: the pinned
+               runtime derives null and drops the back-link — no
+               candidate; the explicit verbindendeRol binding is the
+               unambiguous route (IR-SPEC ch. 3.3) *)
+            None
         | [ a; b ] ->
             if norm (ot a) = norm from_type && norm (ot b) = norm to_type then Some (ftn, b, a)
             else if norm (ot b) = norm from_type && norm (ot a) = norm to_type then
@@ -721,7 +727,17 @@ let run_object_creatie env ~world0 ~idx world (oc : resolved_object_creatie) =
     let name = Option.value oc.oc_naam ~default:"<objectcreatie>" in
     let nieuw = req "ObjectCreatie.nieuwType" oc.nieuw_type in
     let subject = req "ObjectCreatie.subject" oc.oc_subject in
-    let pair = connecting_pair env ~from_type:subject ~to_type:nieuw in
+    let pair =
+      (* the explicit back-link binding (extension, IR-SPEC ch. 3.3)
+         wins over the type-pair derivation — the only route for a
+         self-typed pair, whose derivation mirrors v0's null *)
+      match oc.oc_verbindende_rol with
+      | Some rb -> (
+          match Ir_v0.Checks.resolve_binding { doc = env.doc } rb with
+          | Ok (_, bound, other) -> Some (rb.rb_feittype, bound, other)
+          | Error e -> Value.fault "%s" e)
+      | None -> connecting_pair env ~from_type:subject ~to_type:nieuw
+    in
     over_subjects world ~otype:subject ~rule:name (fun w self err ->
         let fire =
           match oc.oc_voorwaarde with Some c -> eval_cond env w self ~err c | None -> true
@@ -1022,7 +1038,6 @@ let fixpoint ~budget step world =
 
 let evaluate env world =
   if env.doc.uniciteit_unies <> [] then Value.fault "uniqueness unions not implemented in this card";
-  if env.doc.regel_groepen <> [] then Value.fault "rule groups are not implemented in this card";
   parameterset_check env;
   (* the input-world snapshot the 1:1 creation guard reads (ch. 5.5) *)
   let world0 = world in
@@ -1030,8 +1045,12 @@ let evaluate env world =
      verifier checks (Ir_v0.Checks.dep_forms — shared by construction,
      so ref/ and WF-045/046 cannot drift). Every form gets the smallest
      stratum that puts it at or above its positive producers and
-     strictly above its negative ones; failure to converge is a
-     dependency cycle the verifier should have rejected. *)
+     strictly above its negative ones — except along a dependency
+     cycle: on verifier-clean input a cycle is WF-045-admissible (it
+     passes through a recursive-group creation), and ch. 6.3
+     discharges strictness there by the one-generation-per-instance
+     progression, not a boundary — cycle edges count positive. Failure
+     to converge is a cycle the verifier should have rejected. *)
   let dforms = Ir_v0.Checks.dep_forms { doc = env.doc } in
   let n = List.length dforms in
   let arr = Array.of_list dforms in
@@ -1043,6 +1062,30 @@ let evaluate env world =
            if List.mem node f.df_writes then [ i ] else [])
          dforms)
   in
+  (* reachability over the form graph, for the cycle test: an edge
+     p -> c lies on a cycle iff p is reachable from c *)
+  let succ = Array.make n [] in
+  Array.iteri
+    (fun ci (f : Ir_v0.Checks.dep_form) ->
+      List.iter
+        (fun (node, _) ->
+          List.iter
+            (fun pi -> if not (List.mem ci succ.(pi)) then succ.(pi) <- ci :: succ.(pi))
+            (writers node))
+        f.df_reads)
+    arr;
+  let reachable = Array.init n (fun _ -> Array.make n false) in
+  Array.iteri
+    (fun src _ ->
+      let rec go i =
+        if not reachable.(src).(i) then begin
+          reachable.(src).(i) <- true;
+          List.iter go succ.(i)
+        end
+      in
+      List.iter go succ.(src))
+    arr;
+  let on_cycle ~producer ~consumer = reachable.(consumer).(producer) in
   let changed = ref true in
   let rounds = ref 0 in
   while !changed do
@@ -1057,7 +1100,11 @@ let evaluate env world =
             List.iter
               (fun pi ->
                 let need =
-                  strata.(pi) + match kind with Ir_v0.Checks.Dep_pos -> 0 | _ -> 1
+                  strata.(pi)
+                  +
+                  match kind with
+                  | Ir_v0.Checks.Dep_pos -> 0
+                  | _ -> if on_cycle ~producer:pi ~consumer:ci then 0 else 1
                 in
                 if strata.(ci) < need then begin
                   strata.(ci) <- need;
@@ -1159,7 +1206,12 @@ let evaluate env world =
     in
     (world, c1 || c2 || c3 || c4 || c5)
   in
-  let budget = 10_000 in
+  (* the ch. 5.5/5.7 bounded budget: a recursive chain advances one
+     generation per pass, so this also caps runaway recursion — sized
+     two orders above any legitimate corpus fixpoint (~7 passes), small
+     enough that the red runaway witness faults promptly (minted labels
+     nest, so pass cost grows with the generation) *)
+  let budget = 500 in
   (* for k = 0, 1, …: the forms of stratum <= k evaluate to their
      fixpoint before any form of stratum k+1 fires (ch. 6.3); the
      consistency and uniqueness forms of stratum k fire once at that

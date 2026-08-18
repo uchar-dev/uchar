@@ -288,6 +288,9 @@ type resolved_object_creatie = {
   toekenningen : toekenning list;
   oc_voorwaarde : conditie option;
   oc_geldigheid : geldigheid option;
+  oc_verbindende_rol : rol_binding option;
+      (* extension: the created-side role of the back-link — required
+         where the derivation is role-ambiguous (a self-typed pair) *)
 }
 
 type resolved_verdeling = {

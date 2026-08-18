@@ -43,7 +43,8 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   emitter follows via a pin bump. The `regelspraak-ir-v1` format bump is
   reserved for the non-additive cleanup — renames, and dropping the v0
   fields the extensions supersede (`zetVeld`/`joinVeld` and kin). Current
-  extension fields: `verbindendeRol` (ch. 3.2), `bronRol` (ch. 4.3), the
+  extension fields: `verbindendeRol` (ch. 3.2; and on object creation,
+  ch. 3.3 — the back-link role), `bronRol` (ch. 4.3), the
   symbolic fact-creation fields (ch. 3.4); current extension nodes and
   forms: `TemporalRead` (ch. 4.3a), the `defaultLadders` list
   (ch. 6.1). **First pin bump (2026-08-17, toolchain `edecb46`):** the
@@ -739,6 +740,15 @@ chapter rule; the table below (minus `name`) is one version's body.
 member names a declared characteristic and the value is a boolean
 constant; false = §13.4.6.3 attribute-value form).
 
+The created object's **back-link** relation may be named explicitly
+through the extension field `verbindendeRol` (a RoleBinding per the
+Method, binding the **created-side** role; WF-047's filler clauses
+apply — bound = createdType, opposite = subject). Without the binding
+the relation is derived as the unique fact type relating the pair
+(`RUNTIME-SEMANTICS.md` ch. 5.5); a **self-typed** two-role pair is
+role-ambiguous there — the pinned runtime derives null and drops the
+link — so the binding is the only linked route for a recursive chain.
+
 - **WF-027** Every `member` MUST be a declared attribute or characteristic
   of `createdType`; a characteristic initialisation's value MUST be a
   boolean constant. *v0 mirror note:* both are resolver errors, but v0
@@ -919,10 +929,13 @@ extension; stays out of the core per PLAN §9, decision 5). v0 name:
 | `recursive` | boolean | the §9.10 marker |
 | `members` | list of rule names | written order |
 
-Members are ordinary rules; the group adds no execution semantics. The
-`recursive` marker's meaning awaits the neutral fixpoint semantics of
-`RUNTIME-SEMANTICS.md` ch. 5 (tracked in `CONSTRUCTS.md` row 14 — or it
-is a non-goal); until then it is carried, not interpreted.
+Members are ordinary rules; a non-recursive group adds no execution
+semantics (namespacing only). The `recursive` marker HAS its neutral
+meaning (decided with `CONSTRUCTS.md` row 14): membership of a
+recursive group is exactly what WF-045 admits — a creation member may
+sit on a dependency cycle, advancing one generation per instance to
+the fixpoint (`RUNTIME-SEMANTICS.md` ch. 5.5/6.2), with the bounded
+budget turning divergence into a fault in every executor.
 
 - **WF-033** (dialect) Every member name MUST resolve to a rule form in
   the model; a `recursive` group MUST contain at least one object-creation
@@ -1306,7 +1319,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-030 | uniqueness sources: keys resolve; arity and datatype kind agree | gate 3 | `jutterswet-vondstnummer` | `wf030-arity-mismatch` |
 | WF-031 | one definition per day kind; condition present (recursion OPEN) | gate 3 | OPEN | `wf031-missing-condition` |
 | WF-032 | start point: variable-start timeline, day-precision member, one per pair | gate 3 | OPEN | `wf032-fixed-start-anchor` |
-| WF-033 | (dialect) rule-group members resolve; recursive group has guarded creation | gate 3 | OPEN | `wf033-unguarded-recursive` |
+| WF-033 | (dialect) rule-group members resolve; recursive group has guarded creation | gate 3 | `anchor/jutterswet-wachtersketen` (the recursive chain executes to its fixpoint, gates 5–6; the runaway budget fault is red-pinned, gate 8) | `wf033-unguarded-recursive` |
 | WF-034 | every expression/condition reference resolves (no unknown-type sentinel) | gate 3 (partial: sentinel types and parameter/day-kind/element-type/own-member references; variable bindings and navigation paths are not serialized in v0; excepted: a v0 instance-fold source argument names a role and carries the sentinel by construction — the row-1 wart, resolved against declared roles instead) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondsttelling` (role source) | `wf034-dangling-parameter` |
 | WF-035 | operator typing (numeric, unitless power, date±time-unit, unit compatibility, clamp) | gate 3 (over serialized operand types; the date±duration clause is OPEN) | OPEN | `wf035-power-with-unit` |
 | WF-036 | comparison/predicate typing (ordering, precision, family, domain, builtin operands) | gate 3 (over serialized operand types) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondstnummer` (date ordering) | `wf036-order-number-vs-text` |
@@ -1320,7 +1333,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-044 | (consumer) Unresolved surfaces, never silently lowered | behavioural — gate 8 (`scripts/check-rood.sh`): both executors must fault, fragment-pinned | `corpus/rood/wf044-onopgelost-reached` (the red witness: ref faults the evaluation, the ASP backend the translation) | n/a (the marker is legal wire content; the fence is behavioural, not well-formedness) |
 | WF-045 | dependency graph acyclic (creation recursion excepted) | gate 3 | `jutterswet-vondsttelling` | `wf045-cyclic-attribute-dependency` |
 | WF-046 | no negative edge on a dependency cycle (strata exist) | gate 3 | `jutterswet-penningjaar` (the negated aanmeldplichtig reading — a negative edge, verifier-clean, oracle-replayed) | `wf046-negated-read-in-recursive-cycle` |
-| WF-047 | role binding resolves; fillers agree with the use site; written source denotes the bound role | gate 3 | `anchor/jutterswet-bergingstoezicht` (two fact types over one pair; allocation and fold bound, replayed by gates 5–6) + `anchor/jutterswet-maatschap` (the reciprocal binding: bound = opposite) | `wf047-dangling-role-binding` (resolution) + `wf047-bound-role-fills-source` (filler agreement) + `wf047-reciprocal-wrong-filler` (the single-role filler clause) |
+| WF-047 | role binding resolves; fillers agree with the use site; written source denotes the bound role | gate 3 | `anchor/jutterswet-bergingstoezicht` (two fact types over one pair; allocation and fold bound, replayed by gates 5–6) + `anchor/jutterswet-maatschap` (the reciprocal binding: bound = opposite) + `anchor/jutterswet-wachtersketen` (the creation back-link binding) | `wf047-dangling-role-binding` (resolution) + `wf047-bound-role-fills-source` (filler agreement) + `wf047-reciprocal-wrong-filler` (the single-role filler clause) + `wf047-creation-binding-wrong-filler` (the creation site) |
 | WF-048 | bindingless allocation/instance fold: connecting relation uniquely derivable | gate 3 (contexts with a statically known fold subject; a subjectless context — none exists in v0 dumps, whose folds sit under a typed rule target — is left to the executors' runtime fault) | `jutterswet-berging` + `jutterswet-vondsttelling` (bindingless, uniquely derivable) + `anchor/jutterswet-maatschap` (bindingless over a reciprocal relation) | `wf048-ambiguous-connecting-relation` |
 | WF-049 | temporal read: basis temporal (attribute/granular parameter), day-precision date, element type | gate 3 | `anchor/jutterswet-aanmeldquotum` (attribute + parameter reads; hit, gap→leeg, empty date→leeg; replayed by gates 5–6) | `wf049-read-of-nontemporal` (basis) + `wf049-read-at-datetime` (date operand) + `wf049-type-not-element` (element type) |
 | WF-050 | ladder: ≥ 1 rung; exactly one target, resolving; rung shapes per kind; init rung lowest; no other writer; multiplicity only declared-unordered | gate 3 | `anchor/jutterswet-uitsluiting` (characteristic) + `anchor/jutterswet-vondstwaardering` (attribute + init) + `anchor/jutterswet-toelagegronden` (unordered groups, six conflict-path cases; all replayed by gates 5–6) | `wf050-empty-ladder` + `wf050-two-ladders-one-target` + `wf050-ladder-beside-rule` + `wf050-both-targets` + `wf050-init-not-lowest` + `wf050-rule-beside-attribute-ladder` + `wf050-allocation-beside-ladder` + `wf050-creation-beside-ladder` + `wf050-half-marked-group` |

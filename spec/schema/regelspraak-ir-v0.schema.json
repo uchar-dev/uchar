@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://uchar.dev/schema/regelspraak-ir-v0.schema.json",
   "title": "regelspraak-ir-v0",
-  "description": "Structural schema for the 'regelspraak-ir-v0' format: the faithful engine-neutral JSON dump of the reference frontend's fully resolved model (mirror-then-diverge; see spec/IR-SPEC.md). Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Exception, by the decided wire-entry discipline (IR-SPEC, Method): extension fields carrying v1 deltas (verbindendeRol, bronRol, the symbolic fact-creation fields) are optional, and the expr union admits the extension node TemporalRead — the v0 emitter never produces any of them, and when present they are written whole, never null. Section citations (e.g. §13.3.3) point into the source language spec by number only.",
+  "description": "Structural schema for the 'regelspraak-ir-v0' format: the faithful engine-neutral JSON dump of the reference frontend's fully resolved model (mirror-then-diverge; see spec/IR-SPEC.md). Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Exception, by the decided wire-entry discipline (IR-SPEC, Method): extension fields carrying v1 deltas (verbindendeRol, bronRol, the symbolic fact-creation fields) are optional, and the expr union admits the extension node TemporalRead \u2014 the v0 emitter never produces any of them, and when present they are written whole, never null. Section citations (e.g. \u00a713.3.3) point into the source language spec by number only.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -350,7 +350,7 @@
       }
     },
     "datatype": {
-      "description": "A RegelSpraak datatype (§13.3.3), discriminated on 'node'.",
+      "description": "A RegelSpraak datatype (\u00a713.3.3), discriminated on 'node'.",
       "oneOf": [
         {
           "$ref": "#/$defs/Numeriek"
@@ -428,7 +428,7 @@
           ]
         }
       },
-      "description": "A unit: abbreviation, declaring system, canonical unit and conversion factor; 'noemer' is the denominator unit of a composite rate (§13.3.3.2), else null."
+      "description": "A unit: abbreviation, declaring system, canonical unit and conversion factor; 'noemer' is the denominator unit of a composite rate (\u00a713.3.3.2), else null."
     },
     "Literal": {
       "type": "object",
@@ -1105,7 +1105,7 @@
       "description": "Extension node (v1, CONSTRUCTS row 11): the point-in-time read read(tl, d) of spec/RUNTIME-SEMANTICS.md ch. 3.3. Never emitter-produced; basis, datum and type are required and non-null."
     },
     "expr": {
-      "description": "A resolved expression (§13.4), discriminated on 'node'.",
+      "description": "A resolved expression (\u00a713.4), discriminated on 'node'.",
       "oneOf": [
         {
           "$ref": "#/$defs/Literal"
@@ -2088,7 +2088,7 @@
           ]
         }
       },
-      "description": "Extension node (v1, Phase 4): the default ladder — rungs in descending priority; the highest rung that decides wins. Characteristic target: besluit (true = attribute, false = do-not-attribute); attribute target: consequentie (a leeg-evaluating consequence falls through); the initialisation rung (lowest) is justified iff the target is empty in the input."
+      "description": "Extension node (v1, Phase 4): the default ladder \u2014 rungs in descending priority; the highest rung that decides wins. Characteristic target: besluit (true = attribute, false = do-not-attribute); attribute target: consequentie (a leeg-evaluating consequence falls through); the initialisation rung (lowest) is justified iff the target is empty in the input."
     },
     "RolBinding": {
       "type": "object",
@@ -2461,6 +2461,10 @@
               "type": "null"
             }
           ]
+        },
+        "verbindendeRol": {
+          "$ref": "#/$defs/RolBinding",
+          "description": "Extension field (wire-entry discipline, IR-SPEC Method): the created-side role of the back-link, named explicitly \u2014 required where the type-pair derivation is role-ambiguous (a self-typed pair). Written whole or not at all, never null."
         }
       }
     },

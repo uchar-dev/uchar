@@ -121,6 +121,27 @@ let attr_granularity ctx ~otype ~attr =
 
 let req what = function Some x -> x | None -> fault "missing %s" what
 
+(* does any recursive rule group carry an object-creation member? —
+   gates the generation-depth machinery (depth/2, oc_budget) *)
+let has_recursive_creation (doc : document) =
+  List.exists
+    (fun (g : resolved_regel_groep) ->
+      g.recursief
+      && List.exists
+           (function
+             | Some l ->
+                 List.exists
+                   (fun (o : resolved_object_creatie) ->
+                     match o.oc_naam with
+                     | Some n ->
+                         norm (Ir_v0.Checks.strip_version n)
+                         = norm (Ir_v0.Checks.strip_version l)
+                     | None -> false)
+                   doc.object_creaties
+             | None -> false)
+           g.leden)
+    doc.regel_groepen
+
 (* the canonical role name: the plural for a to-many role, the singular
    otherwise — the same convention the case facts use *)
 let role_canonical (r : rol) =
@@ -140,6 +161,12 @@ let lexeme_decimals lex =
    exactly 1; other granularities await a corpus case *)
 let total_factor (g : granulariteit) =
   match g with Jaar -> 1 | _ -> fault "temporal total: only year granularity is exercised"
+
+(* harmonise two scaled terms for comparison *)
+let harmonised (b1, t1, s1) (b2, t2, s2) =
+  let m = max s1 s2 in
+  let scale t s = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
+  (b1 @ b2, scale t1 s1, scale t2 s2)
 
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   match e with
@@ -254,6 +281,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                 pow10 (decimals_of_datatype pr.par_datatype) )
           | None -> fault "unknown parameter %S" p)
       | _ -> fault "unsupported temporal-read basis shape")
+  | Binair { op = Plus; links; rechts; _ } ->
+      (* integer addition on harmonised scales — the recursive chain's
+         rank increment; other operators await a corpus case *)
+      let l = expr_term ctx ~subject ~subject_ot (req "Binair.links" links) in
+      let r = expr_term ctx ~subject ~subject_ot (req "Binair.rechts" rechts) in
+      let _, _, s1 = l and _, _, s2 = r in
+      let bindings, tl, tr = harmonised l r in
+      (bindings, Printf.sprintf "(%s+%s)" tl tr, max s1 s2)
   | Constante { naam = Some n; _ } when Ir_v0.Checks.norm n = Ir_v0.Checks.norm "Rekendatum" -> (
       (* ch. 8.2: the execution-date constant is a program constant — the
          session's one evaluation date as a civil day number *)
@@ -269,12 +304,6 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          the rule that carries it fails observably (WF-044) *)
       fault "Onopgelost reached in translation: this rule fails observably (WF-044)"
   | _ -> fault "expression kind not translated (no corpus case exercises it)"
-
-(* harmonise two scaled terms for comparison *)
-let harmonised (b1, t1, s1) (b2, t2, s2) =
-  let m = max s1 s2 in
-  let scale t s = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
-  (b1 @ b2, scale t1 s1, scale t2 s2)
 
 let vergelijk_sym = function
   | Groter_of_gelijk | Later_of_gelijk -> ">="
@@ -336,15 +365,20 @@ let translate_regel ctx (r : resolved_regel) =
           | _ -> fault "rule kind not translated")
       | _ -> fault "unsupported rule target")
 
-(* object creation (IR-SPEC ch. 3.3; RUNTIME-SEMANTICS ch. 5.5,
-   non-recursive): the created instance is a deterministic function
-   term ocN(Subject) — set semantics carries the per-(rule × subject)
-   idempotence, exactly ref/'s deterministic label. Member
-   initialisations become val/heeft heads on the term; the
-   uniquely-derivable connecting relation lands both rol/3 ends. The
-   1:1 shape's linked-instance guard reads the INPUT links only
-   (inputrol/3, the case facts) — the same input-snapshot narrowing
-   ref/ records for its guard. *)
+(* object creation (IR-SPEC ch. 3.3; RUNTIME-SEMANTICS ch. 5.5): the
+   created instance is a deterministic function term ocN(Subject) — set
+   semantics carries the per-(rule × subject) idempotence, exactly
+   ref/'s deterministic label. Member initialisations become val/heeft
+   heads on the term; the back-link relation (the explicit
+   verbindendeRol binding, else the uniquely-derivable pair) lands both
+   rol/3 ends. The 1:1 shape's linked-instance guard reads the INPUT
+   links only (inputrol/3, the case facts) — the same input-snapshot
+   narrowing ref/ records for its guard. A creation that is a member of
+   a RECURSIVE rule group grounds along a generation depth (depth/2,
+   bounded by oc_budget): the chain grounds exactly as far as its
+   condition carries it, and exhausting the budget derives a viol/2
+   witness — UNSAT exactly where ref/'s pass budget faults
+   (ch. 5.5's bounded budget, never a silent truncation). *)
 let translate_object_creatie ctx i (oc : resolved_object_creatie) =
   (match oc.oc_geldigheid with
   | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
@@ -357,7 +391,14 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
   let env =
     { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None }
   in
-  let pair = Eval.connecting_pair env ~from_type:subject_ot ~to_type:nieuw in
+  let pair =
+    match oc.oc_verbindende_rol with
+    | Some rb -> (
+        match Ir_v0.Checks.resolve_binding { doc = ctx.doc } rb with
+        | Ok (_, bound, other) -> Some (rb.rb_feittype, bound, other)
+        | Error e -> fault "%s" e)
+    | None -> Eval.connecting_pair env ~from_type:subject_ot ~to_type:nieuw
+  in
   let cond =
     match oc.oc_voorwaarde with
     | Some c -> cond_atoms ctx ~subject ~subject_ot c
@@ -369,7 +410,25 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
         [ Printf.sprintf "not inputrol(%s,%s,_)" subject (str (role_canonical new_role)) ]
     | _ -> []
   in
-  let body = (Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) :: cond) @ guard in
+  let recursive =
+    let name = norm (Ir_v0.Checks.strip_version (Option.value oc.oc_naam ~default:"")) in
+    List.exists
+      (fun (g : resolved_regel_groep) ->
+        g.recursief
+        && List.exists
+             (function
+               | Some l -> norm (Ir_v0.Checks.strip_version l) = name
+               | None -> false)
+             g.leden)
+      ctx.doc.regel_groepen
+  in
+  let depth_guard =
+    if recursive then [ Printf.sprintf "depth(%s,D)" subject; "D < oc_budget" ] else []
+  in
+  let body =
+    (Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) :: cond) @ guard @ depth_guard
+  in
+  if recursive then head_body ctx (Printf.sprintf "depth(%s,D+1)" term) body;
   head_body ctx (Printf.sprintf "is_a(%s,%s)" term (str nieuw)) body;
   List.iter
     (fun (t : toekenning) ->
@@ -719,6 +778,9 @@ let translate_case ctx (case : Case.t) =
   Eval.SMap.iter
     (fun label (i : Uchar_ref.World.instance) ->
       emit ctx "is_a(%s,%s)." (str_raw label) (str i.otype);
+      (* generation depth 0 for every input instance — the recursive
+         creations' grounding bound counts from here *)
+      if has_recursive_creation doc then emit ctx "depth(%s,0)." (str_raw label);
       Eval.SMap.iter
         (fun aname v ->
           let d = attr_decimals ctx ~otype:i.otype ~attr:aname in
@@ -782,8 +844,7 @@ let translate (doc : document) (case : Case.t) : string =
      itself. Forms outside the desugaring's domain stay as they are
      and fault below like before. *)
   let doc = Ir_v0.Desugar.document doc in
-  if doc.uniciteit_unies <> [] || doc.regel_groepen <> [] then
-    fault "uniqueness unions / rule groups not translated";
+  if doc.uniciteit_unies <> [] then fault "uniqueness unions not translated";
   let ctx = { doc; case; buf = Buffer.create 4096; fresh = 0 } in
   (* ch. 8.4: the shared session-start Parameterset coverage check —
      data-plane validation (like the shared case loader), run before a
@@ -794,6 +855,14 @@ let translate (doc : document) (case : Case.t) : string =
   emit ctx "#defined val/3. #defined heeft/2. #defined rol/3. #defined param/2.";
   emit ctx "#defined inconsistent/2. #defined tl/5. #defined param_tl/4.";
   emit ctx "#defined inputval/3. #defined viol/2. #defined inputrol/3.";
+  if has_recursive_creation doc then begin
+    (* the generation-depth bound (ch. 5.5's fire budget, grounded): a
+       recursive chain grounds only as deep as its condition carries
+       it, and a chain that reaches the budget derives a viol/2
+       witness — UNSAT exactly where ref/'s pass budget faults *)
+    emit ctx "#const oc_budget = 100. #defined depth/2.";
+    emit ctx "viol(\"generation budget exhausted\",X) :- depth(X,oc_budget)."
+  end;
   (* the fail-fast guards derive viol/2 witnesses; this single global
      integrity constraint turns any witness into UNSAT — the runner's
      UNSAT diagnosis re-runs without exactly this line to report which

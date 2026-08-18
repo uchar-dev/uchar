@@ -1187,11 +1187,13 @@ duplicate. The idempotence contract (v0 realises it with two guards —
 a linked-instance check where the created object references its
 subject, else a per-(rule, subject) creation marker): **one creation per
 rule per subject** unless the fact base itself changed the question.
-Executed (non-recursive): for each subject whose condition holds, a
+Executed: for each subject whose condition holds, a
 deterministic instance of the created type is minted, the member
 initialisations apply (values evaluated on the subject; a
 characteristic constant sets the mark), and new object and subject are
-linked over the **uniquely-derivable** connecting relation, both ends.
+linked over the back-link relation — the explicit `verbindendeRol`
+binding (`IR-SPEC.md` ch. 3.3) when present, else the
+**uniquely-derivable** connecting relation — both ends.
 The 1:1 shape (a to-one created-side role) realises the
 linked-instance guard: an already linked instance — a case-supplied
 one included — blocks the creation; the executed guard reads the
@@ -1249,14 +1251,28 @@ from the far end.
 deliberately breaks the acyclicity of ch. 5.2 in one controlled way: a
 creation whose output feeds its own condition advances **exactly one
 generation per instance**, and the chain runs to its fixpoint within
-the single evaluation. Termination is the author's obligation — every
+the single evaluation. A self-typed chain names its back-link role
+explicitly (`verbindendeRol`, `IR-SPEC.md` ch. 3.3 — the type-pair
+derivation is role-ambiguous there and mirrors v0's null). Termination
+is the author's obligation — every
 **object-creation member** of a recursive group MUST be conditional
 (WF-033; relation creations need no guard, being idempotent) — and the
 runtime's: a bounded fire budget turns a non-terminating set into a
-**fault**, never a silent truncation. Worked example (absolute): a
-chain "person aged n creates a linked person aged n + 1, while n < 5"
-from age 1 terminates with **5 instances**, both v0 backends, no cap
-hit.
+**fault**, never a silent truncation (the reference interpreter's pass
+budget; the ASP backend's generation-depth bound, whose exhaustion is
+a named `viol/2` witness → UNSAT).
+
+Worked example (absolute; the anchor `jutterswet-wachtersketen`
+verbatim): the chain "a wachter of rank n recruits an opvolger of rank
+n + 1, while n < 5", linked over `opvolging` via the explicit
+`verbindendeRol {opvolging, opvolger}`. From rank 1 the chain
+terminates at rank 5 — measured: the direct-successor fold on the
+labelled start reads **2** (from rank 4: **5**), the rank-detector
+consistency (rank < 5) turns the case **inconsistent** exactly because
+generation five exists, and an ineligible start (rank 7) recruits
+nothing (fold **0**). The runaway variant (condition rank ≥ 1) is the
+red witness `corpus/rood/runaway-recursion`: both executors fault
+their budget, loudly.
 
 ### 5.6 The error channel, operationally
 
