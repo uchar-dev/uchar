@@ -356,8 +356,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                :: fatoms)) ],
         v,
         pow10 (attr_decimals ctx ~otype:el ~attr:a) )
-  | Functie { kind = Totaal; argumenten = [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; _ } ]; filter = Some c; _ }
-    when attr_temporal ctx ~otype:aot ~attr:a ->
+  | Functie { kind = Totaal; argumenten = [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; navigatie_rol = None; navigatie_pad = []; set = false; _ } ]; filter = Some c; _ }
+    when norm aot = norm subject_ot && attr_temporal ctx ~otype:aot ~attr:a ->
       (* ch. 3.6, the gedurende clip: intersect the value timeline (tl/5)
          with the condition's true-periods, then total whole units per
          clipped segment. The intersection is pure integer max/min (four

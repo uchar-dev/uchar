@@ -25,12 +25,27 @@
           "decimalen": 0,
           "teken": "ONBEPAALD",
           "eenheid": null
+        },
+        "jaarpremie": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "premiesom": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
         }
       },
       "attribuutMeervoud": {},
       "attribuutDimensies": {},
       "attribuutGranulariteit": {
-        "wachtvergoeding per maand": "MAAND"
+        "wachtvergoeding per maand": "MAAND",
+        "jaarpremie": "JAAR"
       },
       "attribuutTijdlijnAantal": {},
       "attribuutTijdlijnNaam": {},
@@ -65,6 +80,11 @@
     {
       "node": "Regel",
       "naam": "topsom van een jutter",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "premiesom van een jutter",
       "soort": "regel"
     }
   ],
@@ -230,6 +250,78 @@
           "eenheid": null
         },
         "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan 10",
+        "granulariteit": null
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "premiesom van een jutter",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "premiesom",
+        "objecttype": "Jutter",
+        "onderwerpBron": "een Jutter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De premiesom van een Jutter",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "TOTAAL",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "jaarpremie",
+            "objecttype": "Jutter",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "zijn jaarpremie",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": "Jutter",
+        "leegwaarde": null,
+        "filter": {
+          "node": "Kenmerk",
+          "kenmerk": "wachtplichtig",
+          "navigatie": null,
+          "negatie": false,
+          "eigenaar": null,
+          "periode": null,
+          "bron": "gedurende de tijd dat hij wachtplichtig is"
+        },
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "het totaal van zijn jaarpremie gedurende de tijd dat hij wachtplichtig is",
         "granulariteit": null
       },
       "voorwaarde": null,

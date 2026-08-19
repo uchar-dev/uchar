@@ -828,9 +828,15 @@ let () =
    splits a bucket must not make the total undercount — clip coalesces
    adjacent equal fragments *)
 let () =
+  (* the clip floors whole units PER RAW FRAGMENT (the pinned runtime's
+     rsTijdKnip × rsTijdTotaal, mirrored by the ASP encoding): a
+     condition boundary that splits a bucket genuinely loses the partial
+     units on both sides — two adjacent half-month fragments each floor
+     to 0 whole months. The earlier coalescing expectation (100)
+     contradicted the runtime and was corrected with the clip card. *)
   let vals = [ seg "2024-01-01" "2024-02-01" (n "100") ] in
   let tp = [ (day "2024-01-01", day "2024-01-15"); (day "2024-01-15", day "2024-02-01") ] in
-  expect_num "verify-clip-coalesce" (Timeline.totaal Maand (Timeline.clip vals tp)) "100"
+  expect_num "verify-clip-per-fragment-floor" (Timeline.totaal Maand (Timeline.clip vals tp)) "0"
 
 (* WV-3.2: anchored month walls clamp from the anchor, never from the
    previous wall *)

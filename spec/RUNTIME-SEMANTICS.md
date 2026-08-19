@@ -637,9 +637,11 @@ refusal; it may not inherit the ambiguity.
 temporal total clips the value timeline BEFORE the total: intersect
 each value segment with the condition's true-periods (half-open
 interval intersection; the condition's own values are ignored), then
-total whole units of the value's granularity per clipped segment —
-floor, never pro-rata (a per-year value clipped to a partial year
-contributes 0). The condition's true-periods come from an own temporal
+total whole units of the value's granularity per RAW clipped
+fragment — floor, never pro-rata, never coalesced: a per-year value
+clipped to a partial year contributes 0, and two adjacent condition
+periods that split one whole unit lose BOTH halves (the pinned
+runtime's per-fragment floor, witnessed by the split-floor case). The condition's true-periods come from an own temporal
 characteristic (its case-supplied periods; a gap means the
 characteristic does not hold and clips away; negation takes the
 complement within the value segments) or from a per-segment comparison

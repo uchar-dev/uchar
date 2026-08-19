@@ -155,10 +155,12 @@ let som ?fallback ?(target_unit = Value.Unitless) (tls : t list) : t =
 
 (* --- ch. 3.6: the temporal total ---------------------------------------- *)
 
-(* clip a value timeline to the periods where [true_periods] holds;
-   adjacent equal fragments coalesce so a boundary that merely splits a
-   bucket cannot make the whole-units count undercount (the totaal folds
-   whole segments) *)
+(* clip a value timeline to the periods where [true_periods] holds: one
+   fragment per (value segment × condition period) overlap, NOT
+   coalesced — the pinned runtime floors whole units per raw clipped
+   fragment, so a condition boundary that splits a bucket genuinely
+   loses the partial units on both sides (mirrored; the ASP encoding
+   floors per fragment identically) *)
 let clip (tl : t) (true_periods : (int * int) list) : t =
   List.concat_map
     (fun s ->
@@ -168,7 +170,6 @@ let clip (tl : t) (true_periods : (int * int) list) : t =
           if t > v then Some { s with s_van = v; s_tot = t } else None)
         true_periods)
     tl
-  |> coalesce
 
 (* the true-periods of a per-period predicate over a tested timeline,
    evaluated over the cut set of tested ∪ span (the ch. 1.2 comparison

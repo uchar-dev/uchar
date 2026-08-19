@@ -70,6 +70,37 @@
         },
         "roles": {},
         "characteristics": []
+      },
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {
+          "jaarpremie": {
+            "timeline": [
+              {
+                "from": "2023-01-01",
+                "to": "2024-01-01",
+                "value": {
+                  "number": "10"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "wachtplichtig": [
+            {
+              "from": "2023-01-01",
+              "to": "2023-07-01"
+            },
+            {
+              "from": "2023-07-01",
+              "to": "2024-01-01"
+            }
+          ]
+        }
       }
     ],
     "parameters": {}
@@ -119,6 +150,30 @@
       "kind": "attributeValue",
       "label": "J3",
       "attribute": "topsom",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "premiesom",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "wachtsom",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "premiesom",
       "value": {
         "number": "0"
       }

@@ -46,12 +46,58 @@
       "kenmerkTijdlijnAantal": {},
       "bezield": true,
       "meervoud": "Jutters"
+    },
+    "Post": {
+      "node": "Objecttype",
+      "naam": "Post",
+      "attributen": {},
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "wachtplichtig"
+      ],
+      "kenmerkSoorten": {
+        "wachtplichtig": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {
+        "wachtplichtig": "MAAND"
+      },
+      "kenmerkTijdlijnAantal": {
+        "wachtplichtig": 1
+      },
+      "bezield": false,
+      "meervoud": "Posten"
     }
   },
   "domeinen": {},
   "parameters": {},
   "eenheidstelsels": {},
-  "feittypen": {},
+  "feittypen": {
+    "postbezetting": {
+      "node": "Feittype",
+      "naam": "postbezetting",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "jutter",
+          "objecttypeNaam": "Jutter",
+          "meervoud": "jutters",
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "post",
+          "objecttypeNaam": "Post",
+          "meervoud": null,
+          "meervoudig": false
+        }
+      ]
+    }
+  },
   "dimensies": {},
   "tijdlijnen": [],
   "dagsoorten": [],
