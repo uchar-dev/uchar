@@ -1,0 +1,64 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "P1",
+        "objectType": "Partij",
+        "attributes": {
+          "eenheden": {
+            "number": "5"
+          },
+          "toeslag": {
+            "number": "12"
+          },
+          "omzet": {
+            "number": "30"
+          },
+          "posten": {
+            "number": "8"
+          },
+          "aftrek": {
+            "number": "1.0"
+          },
+          "grondslag": {
+            "number": "10.5"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "totaal",
+      "value": {
+        "number": "12"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "marge",
+      "value": {
+        "number": "2.8"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "premie",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

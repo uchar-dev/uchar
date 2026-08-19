@@ -1,0 +1,146 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "L1",
+        "objectType": "Ligplaats",
+        "attributes": {
+          "jaarforfait": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2026-01-01",
+                "value": {
+                  "number": "15"
+                }
+              }
+            ]
+          },
+          "lengte": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "bezet": [
+            {
+              "from": "2025-02-01",
+              "to": "2025-02-08"
+            }
+          ]
+        }
+      },
+      {
+        "label": "L2",
+        "objectType": "Ligplaats",
+        "attributes": {
+          "jaarforfait": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2026-01-01",
+                "value": {
+                  "number": "15"
+                }
+              }
+            ]
+          },
+          "lengte": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "bezet": [
+            {
+              "from": "2025-02-01",
+              "to": "2025-02-15"
+            }
+          ]
+        }
+      },
+      {
+        "label": "L3",
+        "objectType": "Ligplaats",
+        "attributes": {
+          "jaarforfait": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2026-01-01",
+                "value": {
+                  "number": "15"
+                }
+              }
+            ]
+          },
+          "lengte": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "bezet": [
+            {
+              "from": "2025-02-01",
+              "to": "2025-02-22"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "L1",
+      "attribute": "ligdeel",
+      "timeline": [
+        {
+          "from": "2025-02-01",
+          "to": "2025-03-01",
+          "value": {
+            "number": "3.75"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "L2",
+      "attribute": "ligdeel",
+      "timeline": [
+        {
+          "from": "2025-02-01",
+          "to": "2025-03-01",
+          "value": {
+            "number": "7.5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "L3",
+      "attribute": "ligdeel",
+      "timeline": [
+        {
+          "from": "2025-02-01",
+          "to": "2025-03-01",
+          "value": {
+            "number": "11.25"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

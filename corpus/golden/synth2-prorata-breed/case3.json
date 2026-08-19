@@ -1,0 +1,81 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "L1",
+        "objectType": "Ligplaats",
+        "attributes": {
+          "jaarforfait": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-01-01",
+                "value": {
+                  "number": "29"
+                }
+              }
+            ]
+          },
+          "lengte": {
+            "number": "20"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "bezet": [
+            {
+              "from": "2024-02-10",
+              "to": "2024-04-01"
+            },
+            {
+              "from": "2025-01-05",
+              "to": "2025-02-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "L1",
+      "attribute": "ligdeel",
+      "timeline": [
+        {
+          "from": "2024-02-01",
+          "to": "2024-03-01",
+          "value": {
+            "number": "20"
+          }
+        },
+        {
+          "from": "2024-03-01",
+          "to": "2024-04-01",
+          "value": {
+            "number": "29"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "L1",
+      "attribute": "heffingdeel",
+      "timeline": []
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "L1",
+      "attribute": "toeslagdeel",
+      "timeline": []
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

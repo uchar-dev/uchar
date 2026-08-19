@@ -1,0 +1,63 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "M1",
+        "objectType": "Meting",
+        "attributes": {
+          "factor": {
+            "number": "4"
+          },
+          "korting": {
+            "number": "5"
+          },
+          "tarief": {
+            "number": "2"
+          },
+          "aantal": {
+            "number": "3"
+          },
+          "som": {
+            "number": "30"
+          },
+          "toeslag": {
+            "number": "7"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "actief"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "heffing",
+      "value": {
+        "number": "-5"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "M1",
+      "attribute": "rest"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "uitkomst",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "inconsistent"
+    }
+  ]
+}

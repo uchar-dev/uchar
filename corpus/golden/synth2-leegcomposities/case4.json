@@ -1,0 +1,125 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "M1",
+        "objectType": "Meting",
+        "attributes": {
+          "grondslag": {
+            "number": "3"
+          },
+          "factor": {
+            "number": "4"
+          },
+          "korting": {
+            "number": "5"
+          },
+          "aftrek": {
+            "number": "20"
+          },
+          "tarief": {
+            "number": "2"
+          },
+          "aantal": {
+            "number": "3"
+          },
+          "som": {
+            "number": "30"
+          },
+          "toeslag": {
+            "number": "7"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "actief"
+        ]
+      },
+      {
+        "label": "M2",
+        "objectType": "Meting",
+        "attributes": {
+          "grondslag": {
+            "number": "3"
+          },
+          "factor": {
+            "number": "4"
+          },
+          "korting": {
+            "number": "5"
+          },
+          "aftrek": {
+            "number": "20"
+          },
+          "tarief": {
+            "number": "2"
+          },
+          "aantal": {
+            "number": "3"
+          },
+          "som": {
+            "number": "30"
+          },
+          "toeslag": {
+            "number": "7"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "heffing",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "rest",
+      "value": {
+        "number": "14"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "uitkomst",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M2",
+      "attribute": "heffing",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M2",
+      "attribute": "rest",
+      "value": {
+        "number": "14"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "M2",
+      "attribute": "uitkomst"
+    },
+    {
+      "kind": "inconsistent"
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "L1",
+        "objectType": "Ligplaats",
+        "attributes": {
+          "jaarforfait": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2026-01-01",
+                "value": {
+                  "number": "15"
+                }
+              }
+            ]
+          },
+          "staffelbasis": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2026-01-01",
+                "value": {
+                  "number": "20"
+                }
+              }
+            ]
+          },
+          "seizoenbasis": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2026-01-01",
+                "value": {
+                  "number": "21"
+                }
+              }
+            ]
+          },
+          "lengte": {
+            "number": "15"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "bezet": [
+            {
+              "from": "2025-06-16",
+              "to": "2025-08-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "L1",
+      "attribute": "ligdeel",
+      "timeline": [
+        {
+          "from": "2025-06-01",
+          "to": "2025-07-01",
+          "value": {
+            "number": "7.5"
+          }
+        },
+        {
+          "from": "2025-07-01",
+          "to": "2025-08-01",
+          "value": {
+            "number": "15"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "L1",
+      "attribute": "heffingdeel",
+      "timeline": [
+        {
+          "from": "2025-06-01",
+          "to": "2025-07-01",
+          "value": {
+            "number": "10"
+          }
+        },
+        {
+          "from": "2025-07-01",
+          "to": "2025-08-01",
+          "value": {
+            "number": "20"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "L1",
+      "attribute": "toeslagdeel",
+      "timeline": [
+        {
+          "from": "2025-06-01",
+          "to": "2025-07-01",
+          "value": {
+            "number": "10.5"
+          }
+        },
+        {
+          "from": "2025-07-01",
+          "to": "2025-08-01",
+          "value": {
+            "number": "21"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

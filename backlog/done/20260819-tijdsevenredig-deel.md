@@ -72,5 +72,5 @@ emitter types this node with the WF-034 unknown-type sentinel — the
 emitter-emitted shape itself replayed exactly in both executors
 (bakenmeester, /tmp evidence) but cannot enter the corpus until a
 pin-bump card teaches the emitter the type; recorded in CONSTRUCTS as
-the next conformance delta. Corpus: 77 running cases, 79 negatiefs,
-6 red; ref ≡ clingo everywhere.
+the next conformance delta. Corpus: 76 running cases at that merge (77 corrects to 76 — a
+miscount), 79 negatiefs, 6 red; ref ≡ clingo everywhere.
