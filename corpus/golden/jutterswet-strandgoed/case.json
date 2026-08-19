@@ -63,6 +63,28 @@
         "attributes": {},
         "roles": {},
         "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
       }
     ],
     "parameters": {}
@@ -114,6 +136,22 @@
       "kind": "characteristicAbsent",
       "label": "V4",
       "characteristic": "waardevol"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "zwaargewicht",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "pronkstukaantal",
+      "value": {
+        "number": "0"
+      }
     },
     {
       "kind": "consistent"

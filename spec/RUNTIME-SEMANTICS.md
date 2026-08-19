@@ -555,6 +555,29 @@ broadcast in particular needs a time domain for the constant (an
 unbounded segment), the same obstacle as the unconditional temporal
 characteristic (ch. 3.11).
 
+### 3.4a The die/dat subselection on instance folds
+
+The `filter` condition of an instance fold evaluates **per
+contributor**: the element instance is the condition's subject, never
+the outer fold subject. A contributor whose filter operand is leeg
+fails the condition (the ch. 1.2 comparison discipline) and drops out;
+a filter over a derived characteristic reads it on the element type,
+so the fold sits above that characteristic's writer in the strata
+(ch. 6.1). A filter that excludes every contributor leaves an empty
+source: the sum's declared fallback fires, a count reads 0 — exactly
+the empty-role outcome. The same wire field also carries the §7.1
+gedurende timeline clip (on the temporal total, whose element type is
+the subject itself); that form is a timeline operation and both
+executors refuse it until the clip lands — recorded, unwitnessed by a
+red case until that card.
+
+Worked example (the `jutterswet-strandgoed` emitter golden, verbatim
+in gates 5–6): vondsten of 3, 7, 12 and one with an empty gewicht;
+"die groter zijn dan 5" sums 7+12=19 (the empty one drops out); "die
+waardevol zijn" — waardevol derived as gewicht > 10 — counts 1; a
+jutter whose only vondst fails the filter reads the fallback 0 and
+count 0.
+
 ### 3.5 Temporal summation — the contributor-skipping rule (§5.8.2)
 
 The temporal sum over N timeline contributors (the operands of a temporal
