@@ -494,10 +494,20 @@ v0's static decimal count dl+dr, exactly. **Percentage-van** is
 (l/100)·r with both sides coalescing; the /100 folds into the scale
 (sl·sr·100), so no quotient is ever computed and no truncation can
 diverge from ref's exact rationals. The write site fits a coarser scale
-to the target's declared scale by exact upscaling; a finer scale is
-refused at translation time — v0's §6.1.2 resolver guard mandates an
-explicit rounding there, so an admissible document never reaches that
-fault.
+to the target's declared scale by exact upscaling; a finer scale
+downscales under a runtime divisibility guard — ref writes any exact
+rational that fits the target's declared decimals (1.5 × 2.0 = 3.0
+lands on a 1-decimal target), and a value that does NOT fit derives a
+viol/2 witness, never a silently truncated value (a recorded loud
+asymmetry: ref would write the exact value).
+
+Every viol/2 or inconsistent/2 head a value expression emits carries
+the enclosing rule's condition atoms: ref evaluates the value only
+under a true voorwaarde, so a subject the condition excludes must
+never fault or deposit a channel fact — without the guard, a
+conditional division would turn a satisfiable program UNSAT on the
+excluded subjects (pinned by the vindersloon anchor's case4: a zero
+divisor under a false condition stays consistent).
 
 **Gedeeld-door** carries the §6.5 edges (arith.div_gen) beside its
 value:
@@ -517,13 +527,16 @@ filled dividend deposits the §9.5 channel fact and derives no value
 (leeg as absence); a numeric zero divisor derives a `viol/2` witness —
 UNSAT with the reason named, exactly where ref hard-faults (pinned by
 `corpus/rood/division-by-numeric-zero`). The true quotient
-(L/sl)/(R/sr) at out-scale m is L·(sr·m) / (R·sl); the *bare* division
-derives it only when the integer division is EXACT, and a remainder
-derives a `viol/2` witness instead of a truncated value. This is a
-recorded loud asymmetry: ref computes the exact rational, so a corpus
-case whose division is inexact *without an explicit rounding* cannot be
-admitted (the differential would split); v0's §6.1.2 static guard makes
-such programs demand a rounding anyway. The **Afgerond-over-division**
+(L/sl)/(R/sr) at out-scale m is L·(sr·m) / (R·sl), where m is
+max(sl, sr) widened to the write target's scale — ref writes the exact
+rational, so a quotient that fits the target's declared decimals
+exactly (10/4 = 2.50 on a 2-decimal target) must translate; the bare
+division derives its value only when the integer division at m is
+EXACT, and a remainder derives a `viol/2` witness instead of a
+truncated value. This is a recorded loud asymmetry: ref computes the
+exact rational, so a corpus case whose division result fits no
+representable scale *without an explicit rounding* cannot be admitted
+(the differential would split). The **Afgerond-over-division**
 form computes the mode's integer rounding of the true quotient in one
 step — floor T/N, ceiling (T+N−1)/N, half-away-from-zero (2T+N)/(2N) —
 exact for non-negative operands; the negative range is fenced by a

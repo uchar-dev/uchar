@@ -1,0 +1,93 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "waardering": {
+            "number": "6"
+          },
+          "factor": {
+            "number": "7"
+          },
+          "opbrengst": {
+            "number": "90"
+          },
+          "aandeel": {
+            "number": "3"
+          },
+          "weging": {
+            "number": "7"
+          },
+          "kaveldeel": {
+            "number": "0"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "loon",
+      "value": {
+        "number": "42"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vindersloon",
+      "value": {
+        "number": "18"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "deel",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "portie",
+      "value": {
+        "number": "12"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "bonus"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "middenprijs",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "krimp",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

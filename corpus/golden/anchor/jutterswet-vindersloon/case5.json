@@ -1,0 +1,108 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "waardering": {
+            "number": "100"
+          },
+          "factor": {
+            "number": "2"
+          },
+          "opbrengst": {
+            "number": "87"
+          },
+          "aandeel": {
+            "number": "3"
+          },
+          "weging": {
+            "number": "4"
+          },
+          "kaveldeel": {
+            "number": "3"
+          },
+          "koopsom": {
+            "number": "9"
+          },
+          "partijen": {
+            "number": "2"
+          },
+          "spanwijdte": {
+            "number": "0.5"
+          },
+          "rek": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "loon",
+      "value": {
+        "number": "200"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vindersloon",
+      "value": {
+        "number": "17.4"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "deel",
+      "value": {
+        "number": "29"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "portie",
+      "value": {
+        "number": "21"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "bonus",
+      "value": {
+        "number": "29"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "middenprijs",
+      "value": {
+        "number": "4.5"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "krimp",
+      "value": {
+        "number": "1.5"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

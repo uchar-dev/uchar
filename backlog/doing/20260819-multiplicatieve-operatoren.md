@@ -24,7 +24,8 @@ case fails observably in both executors with its pinned fragments
 
 May touch: `backends/clingo/lib/translate.ml`,
 `backends/clingo/bin/clingo_runner.ml` (only if fault reporting needs it),
-`corpus/golden/anchor/jutterswet-<new>/`, `corpus/rood/<new>/`,
+`corpus/golden/anchor/jutterswet-<new>/`, `corpus/golden/jutterswet-<new>/`
+(the emitter golden), `corpus/rood/<new>/`,
 `spec/ASP-TRANSLATION.md`, `spec/CONSTRUCTS.md`, `spec/IR-SPEC.md`
 (operator-index notes only, if any), `backlog/`.
 

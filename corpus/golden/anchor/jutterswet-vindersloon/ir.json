@@ -67,6 +67,62 @@
           "decimalen": 2,
           "teken": "ONBEPAALD",
           "eenheid": null
+        },
+        "kaveldeel": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bonus": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "koopsom": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "partijen": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "middenprijs": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "spanwijdte": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 1,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "rek": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 1,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "krimp": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 1,
+          "teken": "ONBEPAALD",
+          "eenheid": null
         }
       },
       "attribuutMeervoud": {},
@@ -109,6 +165,21 @@
     {
       "node": "Regel",
       "naam": "portie van een vondst",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "bonus van een vondst",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "middenprijs van een vondst",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "krimp van een vondst",
       "soort": "regel"
     }
   ],
@@ -408,6 +479,262 @@
           "eenheid": null
         },
         "bron": "de opbrengst van de Vondst gedeeld door de weging van de Vondst naar beneden afgerond op 0 decimalen"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "bonus van een vondst",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "bonus",
+        "objecttype": "Vondst",
+        "onderwerpBron": "de Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De bonus van een Vondst",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "GEDEELD_DOOR",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "opbrengst",
+          "objecttype": "Vondst",
+          "onderwerpBron": "de Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de opbrengst van de Vondst",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "kaveldeel",
+          "objecttype": "Vondst",
+          "onderwerpBron": "de Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "het kaveldeel van de Vondst",
+          "set": false,
+          "navigatiePad": []
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de opbrengst van de Vondst gedeeld door het kaveldeel van de Vondst"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "GROTER_OF_GELIJK",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "waardering",
+          "objecttype": "Vondst",
+          "onderwerpBron": "de Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de waardering van de Vondst",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "100",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "100"
+        },
+        "periode": null,
+        "bron": "de waardering van de Vondst is groter of gelijk aan 100"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "middenprijs van een vondst",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "middenprijs",
+        "objecttype": "Vondst",
+        "onderwerpBron": "de Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De middenprijs van een Vondst",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "GEDEELD_DOOR",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "koopsom",
+          "objecttype": "Vondst",
+          "onderwerpBron": "de Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de koopsom van de Vondst",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "partijen",
+          "objecttype": "Vondst",
+          "onderwerpBron": "de Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de partijen van de Vondst",
+          "set": false,
+          "navigatiePad": []
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de koopsom van de Vondst gedeeld door de partijen van de Vondst"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "krimp van een vondst",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "krimp",
+        "objecttype": "Vondst",
+        "onderwerpBron": "de Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 1,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De krimp van een Vondst",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "MAAL",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "spanwijdte",
+          "objecttype": "Vondst",
+          "onderwerpBron": "de Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 1,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de spanwijdte van de Vondst",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "rek",
+          "objecttype": "Vondst",
+          "onderwerpBron": "de Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 1,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de rek van de Vondst",
+          "set": false,
+          "navigatiePad": []
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de spanwijdte van de Vondst maal de rek van de Vondst"
       },
       "voorwaarde": null,
       "geldigheid": {

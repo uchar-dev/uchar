@@ -80,7 +80,23 @@ let scaled_of_value ~decimals (v : Value.t) : int =
 
 (* --- document lookups --------------------------------------------------- *)
 
-type ctx = { doc : document; case : Case.t; buf : Buffer.t; mutable fresh : int }
+type ctx = {
+  doc : document;
+  case : Case.t;
+  buf : Buffer.t;
+  mutable fresh : int;
+  (* the enclosing rule's condition atoms: every viol/2 or
+     inconsistent/2 head a value expression emits must fire only where
+     the rule itself fires — ref evaluates the value only under a true
+     voorwaarde, so an excluded subject must never fault (set around
+     the value translation, [] elsewhere) *)
+  mutable rule_guard : string list;
+  (* the write target's scale, as a lower bound for a bare division's
+     out-scale: ref writes the exact rational, so a quotient that fits
+     the target's declared decimals exactly must translate — testing
+     exactness on max(sl,sr) alone would refuse it (1 outside a write) *)
+  mutable write_scale : int;
+}
 
 (* The convention guards, mirroring ref/'s faults (IR-SPEC ch. 4.3a:
    "executors fault, never guess"): a point read needs the full-timeline
@@ -631,7 +647,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
             emit ctx "viol(\"negative operand under rounding is not translated\",%s) :- %s, (%s) < 0."
               subject
-              (String.concat ", " (base :: b))
+              (String.concat ", " ((base :: ctx.rule_guard) @ b))
               t);
         (b, rounded, target))
   | Constante { naam = Some n; _ } when Ir_v0.Checks.norm n = Ir_v0.Checks.norm "Rekendatum" -> (
@@ -674,7 +690,11 @@ and translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding =
   unit_free_ok (Some rechts);
   let bl, tl, sl = expr_term ctx ~subject ~subject_ot links in
   let br, tr, sr = expr_term ctx ~subject ~subject_ot rechts in
-  let out_scale = match rounding with None -> max sl sr | Some (_, d) -> pow10 d in
+  let out_scale =
+    match rounding with
+    | None -> max (max sl sr) ctx.write_scale
+    | Some (_, d) -> pow10 d
+  in
   let g = gcd (sr * out_scale) sl in
   let knum = sr * out_scale / g and kden = sl / g in
   let numt = if knum = 1 then Printf.sprintf "(%s)" tl else Printf.sprintf "((%s)*%d)" tl knum in
@@ -682,14 +702,17 @@ and translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding =
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "q%d" ctx.fresh in
   let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+  let guard = ctx.rule_guard in
   let lbody = String.concat ", " (base :: bl) in
   let rbody = String.concat ", " (base :: br) in
-  let full = String.concat ", " ((base :: bl) @ br) in
+  let full = String.concat ", " ((base :: guard) @ bl @ br) in
   emit ctx "%s_ldef(%s) :- %s." p subject lbody;
   emit ctx "%s_rdef(%s) :- %s." p subject rbody;
   emit ctx "%s(%s,0) :- %s, not %s_ldef(%s)." p subject base p subject;
   emit ctx "inconsistent(\"division by empty divisor\",%s) :- %s, %s_ldef(%s), not %s_rdef(%s)."
-    subject base p subject p subject;
+    subject
+    (String.concat ", " (base :: guard))
+    p subject p subject;
   emit ctx "viol(\"division by numeric zero\",%s) :- %s, (%s) == 0." subject full tr;
   (match rounding with
   | None ->
@@ -772,17 +795,26 @@ let head_body ctx head body = emit ctx "%s :- %s." head (String.concat ", " body
 
 (* fit a scaled term to the write target's declared scale: a coarser
    value upscales exactly (both scales are powers of ten); a finer one
-   is refused — v0's §6.1.2 resolver guard mandates an explicit
-   rounding there, so an admissible document never reaches this fault *)
-let fitted ~what term scale target =
-  if scale = target then term
+   downscales under a runtime divisibility guard — ref writes any exact
+   rational that fits the target's declared decimals, so a value that
+   FITS must land, and a value that does not is fenced by a viol/2
+   witness (never silently truncated; ref would write it exactly, a
+   recorded loud asymmetry like non-exact division). [body] is the
+   write rule's full body, so the fence fires only where the rule
+   fires. Returns the fitted term plus guard atoms for the write rule. *)
+let fitted ctx ~subject ~what ~body term scale target =
+  if scale = target then (term, [])
   else if target > scale && target mod scale = 0 then
-    Printf.sprintf "((%s)*%d)" term (target / scale)
-  else
-    fault
-      "value scale %d does not fit target scale %d for %S (a finer value needs an explicit \
-       rounding, §6.1.2)"
-      scale target what
+    (Printf.sprintf "((%s)*%d)" term (target / scale), [])
+  else if scale > target && scale mod target = 0 then begin
+    let k = scale / target in
+    emit ctx "viol(\"result of %s does not fit its declared decimals\",%s) :- %s, (%s) \\ %d != 0."
+      (norm what) subject
+      (String.concat ", " body)
+      term k;
+    (Printf.sprintf "((%s)/%d)" term k, [ Printf.sprintf "(%s) \\ %d == 0" term k ])
+  end
+  else fault "value scale %d does not align with target scale %d for %S" scale target what
 
 let translate_regel ctx (r : resolved_regel) =
   match r.rr_geldigheid with
@@ -806,12 +838,17 @@ let translate_regel ctx (r : resolved_regel) =
               | _ -> fault "characteristic attribution with a non-waar value");
               head_body ctx (Printf.sprintf "heeft(%s,%s)" subject (str a)) (base :: cond)
           | Some (Berekening | Gelijkstelling) ->
-              let bindings, term, scale = expr_term ctx ~subject ~subject_ot:ot (req "waarde" r.waarde) in
               let target_scale = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
-              let term = fitted ~what:a term scale target_scale in
+              ctx.rule_guard <- cond;
+              ctx.write_scale <- target_scale;
+              let bindings, term, scale = expr_term ctx ~subject ~subject_ot:ot (req "waarde" r.waarde) in
+              ctx.rule_guard <- [];
+              ctx.write_scale <- 1;
+              let body = (base :: cond) @ bindings in
+              let term, fit_guards = fitted ctx ~subject ~what:a ~body term scale target_scale in
               head_body ctx
                 (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
-                ((base :: cond) @ bindings)
+                (body @ fit_guards)
           | _ -> fault "rule kind not translated")
       | _ -> fault "unsupported rule target")
 
@@ -899,12 +936,17 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
         | Some (Literal { waarde = Some "onwaar"; _ }) -> ()
         | _ -> fault "characteristic initialisation of %S is not a boolean constant (WF-027)" m)
       else begin
+        let target_scale = pow10 (attr_decimals ctx ~otype:nieuw ~attr:m) in
+        ctx.rule_guard <- cond @ guard @ depth_guard;
+        ctx.write_scale <- target_scale;
         let bindings, tm, scale =
           expr_term ctx ~subject ~subject_ot (req "Toekenning.waarde" t.toe_waarde)
         in
-        let target_scale = pow10 (attr_decimals ctx ~otype:nieuw ~attr:m) in
-        let tm = fitted ~what:m tm scale target_scale in
-        head_body ctx (Printf.sprintf "val(%s,%s,%s)" term (str m) tm) (body @ bindings)
+        ctx.rule_guard <- [];
+        ctx.write_scale <- 1;
+        let wbody = body @ bindings in
+        let tm, fit_guards = fitted ctx ~subject ~what:m ~body:wbody tm scale target_scale in
+        head_body ctx (Printf.sprintf "val(%s,%s,%s)" term (str m) tm) (wbody @ fit_guards)
       end)
     oc.toekenningen;
   match pair with
@@ -1383,7 +1425,9 @@ let translate (doc : document) (case : Case.t) : string =
      itself. Forms outside the desugaring's domain stay as they are
      and fault below like before. *)
   let doc = Ir_v0.Desugar.document doc in
-  let ctx = { doc; case; buf = Buffer.create 4096; fresh = 0 } in
+  let ctx =
+    { doc; case; buf = Buffer.create 4096; fresh = 0; rule_guard = []; write_scale = 1 }
+  in
   (* ch. 8.4: the shared session-start Parameterset coverage check —
      data-plane validation (like the shared case loader), run before a
      program is emitted, mirroring ref/'s evaluation entry *)
