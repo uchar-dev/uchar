@@ -1,0 +1,57 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B1",
+        "objectType": "Berging",
+        "attributes": {
+          "opbrengst": {
+            "number": "90"
+          },
+          "vermenigvuldiger": {
+            "number": "8"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "premie",
+      "value": {
+        "number": "18"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "B1",
+      "attribute": "helpersdeel"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "dagdeel",
+      "value": {
+        "number": "11"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "product",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "inconsistent"
+    }
+  ]
+}

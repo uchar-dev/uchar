@@ -483,6 +483,61 @@ recursive anchors (rank+1 on the wachtersketen chain) staying stable
 under the encoding, and pinned absolutely by
 `corpus/golden/anchor/jutterswet-leegrekening`.
 
+## 6b. The multiplicative encoding (backends/clingo, 2026-08-19)
+
+The integer-scaling convention (a value with d declared decimals is the
+integer value × 10^d) extends to the multiplicative family without any
+division for two of the three operators. **Maal** coalesces both
+operands (ch. 1.2a) and multiplies the scaled integers: the product of
+a scale-sl and a scale-sr term is the true product at scale sl·sr —
+v0's static decimal count dl+dr, exactly. **Percentage-van** is
+(l/100)·r with both sides coalescing; the /100 folds into the scale
+(sl·sr·100), so no quotient is ever computed and no truncation can
+diverge from ref's exact rationals. The write site fits a coarser scale
+to the target's declared scale by exact upscaling; a finer scale is
+refused at translation time — v0's §6.1.2 resolver guard mandates an
+explicit rounding there, so an admissible document never reaches that
+fault.
+
+**Gedeeld-door** carries the §6.5 edges (arith.div_gen) beside its
+value:
+
+```
+qN_ldef(S) :- is_a(S,"t"), <dividend body>.
+qN_rdef(S) :- is_a(S,"t"), <divisor body>.
+qN(S,0)    :- is_a(S,"t"), not qN_ldef(S).
+inconsistent("division by empty divisor",S)
+           :- is_a(S,"t"), qN_ldef(S), not qN_rdef(S).
+viol("division by numeric zero",S) :- <full body>, (R) == 0.
+```
+
+An empty dividend collapses to 0 before the divisor is read (also under
+a zero or empty divisor — ref's match order); an empty divisor under a
+filled dividend deposits the §9.5 channel fact and derives no value
+(leeg as absence); a numeric zero divisor derives a `viol/2` witness —
+UNSAT with the reason named, exactly where ref hard-faults (pinned by
+`corpus/rood/division-by-numeric-zero`). The true quotient
+(L/sl)/(R/sr) at out-scale m is L·(sr·m) / (R·sl); the *bare* division
+derives it only when the integer division is EXACT, and a remainder
+derives a `viol/2` witness instead of a truncated value. This is a
+recorded loud asymmetry: ref computes the exact rational, so a corpus
+case whose division is inexact *without an explicit rounding* cannot be
+admitted (the differential would split); v0's §6.1.2 static guard makes
+such programs demand a rounding anyway. The **Afgerond-over-division**
+form computes the mode's integer rounding of the true quotient in one
+step — floor T/N, ceiling (T+N−1)/N, half-away-from-zero (2T+N)/(2N) —
+exact for non-negative operands; the negative range is fenced by a
+`viol/2` witness (richting-nul alone matches gringo's native truncation
+on both signs and needs no fence). A standalone `Afgerond` over a
+scaled term divides the scale surplus away with the same formulas.
+Unit-carrying multiplicative operands are refused at translation time:
+ref's unit algebra applies exact conversion factors (rate cancellation
+under maal, convertible-unit division) that this encoding does not
+carry. Anchored absolutely by
+`corpus/golden/anchor/jutterswet-vindersloon` (all three operators,
+every empty cell, the channel edge) and differentially by the emitter
+golden `corpus/golden/jutterswet-bergloon`.
+
 ## 7. Deliberately out of scope
 
 Art. 5 (hardheid), art. 6, the v3 temporalisation, quantitative

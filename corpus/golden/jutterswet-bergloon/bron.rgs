@@ -1,0 +1,25 @@
+Objecttype de Berging (mv: Bergingen)
+    de opbrengst Numeriek (geheel getal);
+    het helpersaantal Numeriek (geheel getal);
+    de premie Numeriek (getal met 2 decimalen);
+    het helpersdeel Numeriek (geheel getal);
+    het dagdeel Numeriek (geheel getal);
+    de waarde Numeriek (geheel getal);
+    de vermenigvuldiger Numeriek (geheel getal);
+    het product Numeriek (geheel getal);
+
+Regel premie van een berging
+    geldig altijd
+        De premie van een Berging moet berekend worden als 20% van de opbrengst van de Berging.
+
+Regel helpersdeel van een berging
+    geldig altijd
+        Het helpersdeel van een Berging moet berekend worden als de opbrengst van de Berging gedeeld door het helpersaantal van de Berging.
+
+Regel dagdeel van een berging
+    geldig altijd
+        Het dagdeel van een Berging moet berekend worden als de opbrengst van de Berging gedeeld door de vermenigvuldiger van de Berging naar beneden afgerond op 0 decimalen.
+
+Regel product van een berging
+    geldig altijd
+        Het product van een Berging moet berekend worden als de waarde van de Berging maal de vermenigvuldiger van de Berging.

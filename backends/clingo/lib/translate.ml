@@ -29,6 +29,19 @@
      Empty propagation. The equality/inequality empty asymmetry has no
      such free encoding; those operators fault here until a corpus
      case demands them (a recorded finding).
+   - The multiplicative family: maal and percentage-van coalesce both
+     operands and multiply scaled integers (percentage-van folds its
+     /100 into the scale — no division). Gedeeld-door carries its
+     three edges (empty dividend → 0; empty divisor under a filled
+     dividend → the §9.5 channel fact beside an absent value; numeric
+     zero divisor → a viol/2 witness, UNSAT with the reason named)
+     and translates only EXACT outcomes — a remainder derives a
+     viol/2 witness, never a silently truncated value; the
+     Afgerond-over-division form computes the mode's integer rounding
+     exactly (non-negative operands; the negative range is fenced by
+     a viol/2 witness). Unit-carrying multiplicative operands are
+     refused: ref's unit algebra applies conversion factors this
+     integer encoding does not carry.
 
    Everything outside the corpus-exercised subset faults with context:
    fail fast, never a silent SKIP. *)
@@ -207,6 +220,35 @@ let vergelijk_sym = function
       fault
         "equality over possibly-empty operands has no free ASP encoding (the ch. 1.2d \
          asymmetry); no corpus case exercises it — recorded finding"
+
+(* arithmetic operands must be statically numeric: ref faults date
+   arithmetic under the additive/multiplicative operators, so a
+   non-numeric static type must not silently compute on day numbers *)
+let numeric_ok e =
+  match e with
+  | Some e -> (
+      match Ir_v0.Checks.typ_of_expr e with
+      | Some (Numeriek _ | Percentage _) | None -> ()
+      | Some _ -> fault "non-numeric arithmetic operand is not translated (no corpus case)")
+  | None -> ()
+
+(* ref's unit algebra applies exact conversion factors (rate
+   cancellation under maal, convertible-unit division); the integer
+   encoding carries no unit information, so a unit-carrying operand of
+   the multiplicative family is refused rather than silently computed
+   factor-free *)
+let unit_free_ok e =
+  match e with
+  | Some e -> (
+      match Ir_v0.Checks.typ_of_expr e with
+      | Some (Numeriek { eenheid = Some _; _ } | Percentage { eenheid = Some _; _ }) ->
+          fault
+            "a unit-carrying multiplicative operand is not translated (ref's unit \
+             algebra applies conversion factors this integer encoding does not carry)"
+      | _ -> ())
+  | None -> ()
+
+let rec gcd a b = if b = 0 then a else gcd b (a mod b)
 
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   match e with
@@ -515,15 +557,6 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          verminderd-met coalesces only the right — its left PROPAGATES,
          which the bare unbound join encodes for free (a leeg left
          leaves the rule underivable, exactly ref's Empty result). *)
-      let numeric_ok e =
-        match e with
-        | Some e -> (
-            match Ir_v0.Checks.typ_of_expr e with
-            | Some (Numeriek _ | Percentage _) | None -> ()
-            | Some _ ->
-                fault "non-numeric additive operand is not translated (no corpus case)")
-        | None -> ()
-      in
       numeric_ok links;
       numeric_ok rechts;
       let l = expr_term ctx ~subject ~subject_ot (req "Binair.links" links) in
@@ -534,6 +567,73 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let bindings, tl, tr = harmonised l r in
       let sym = if op = Plus then "+" else "-" in
       (bindings, Printf.sprintf "(%s%s%s)" tl sym tr, max s1 s2)
+  | Binair { op = (Maal | Percentage_van) as op; links; rechts; _ } ->
+      (* the multiplicative family (ch. 1.2a + §6.4/§6.8): BOTH operands
+         coalesce leeg → 0. The product of two scaled integers is the
+         scaled integer of the product at scale sl·sr — v0's static
+         decimal count dl+dr. Percentage-van is (l/100)·r with the /100
+         folded into the scale (sl·sr·100): no division anywhere, so no
+         truncation can diverge from ref's exact rationals. *)
+      numeric_ok links;
+      numeric_ok rechts;
+      unit_free_ok links;
+      unit_free_ok rechts;
+      let bl, tl, sl =
+        coalesce0 ctx ~subject ~subject_ot
+          (expr_term ctx ~subject ~subject_ot (req "Binair.links" links))
+      in
+      let br, tr, sr =
+        coalesce0 ctx ~subject ~subject_ot
+          (expr_term ctx ~subject ~subject_ot (req "Binair.rechts" rechts))
+      in
+      ( bl @ br,
+        Printf.sprintf "(%s*%s)" tl tr,
+        sl * sr * (if op = Percentage_van then 100 else 1) )
+  | Binair { op = Gedeeld_door; links; rechts; _ } ->
+      translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding:None
+  | Afgerond { basis = Some (Functie { kind = Wortel; _ }); _ } ->
+      (* ref rounds the true irrational exactly (§13.4.17.13); that
+         computation has no integer encoding here yet *)
+      fault "rounded root is not translated (no corpus case)"
+  | Afgerond { basis = Some (Binair { op = Gedeeld_door; links; rechts; _ }); modus; decimalen; _ }
+    ->
+      translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding:(Some (modus, decimalen))
+  | Afgerond { basis; modus; decimalen; _ } -> (
+      (* rounding a scaled term (ch. 2.5). ref propagates an empty basis
+         (round_v: Empty → Empty), which the bare body join encodes for
+         free. A basis whose scale already fits 10^d is returned
+         unchanged (the rounding is the identity on values carrying at
+         most d decimals); a coarser target divides the scale away with
+         the mode's integer rounding formula — exact for non-negative
+         terms, with a viol/2 witness fencing the untranslated negative
+         range (richting-nul alone matches gringo's native truncation on
+         both signs). *)
+      let b, t, s = expr_term ctx ~subject ~subject_ot (req "Afgerond.basis" basis) in
+      let target = pow10 decimalen in
+      if target >= s then
+        if target mod s = 0 then
+          (b, (if target = s then t else Printf.sprintf "(%s*%d)" t (target / s)), target)
+        else fault "rounding target scale %d does not align with basis scale %d" target s
+      else if s mod target <> 0 then
+        fault "rounding basis scale %d does not align with target scale %d" s target
+      else
+        let k = s / target in
+        let rounded =
+          match modus with
+          | Richting_nul -> Printf.sprintf "((%s)/%d)" t k
+          | Naar_beneden -> Printf.sprintf "((%s)/%d)" t k
+          | Naar_boven | Weg_van_nul -> Printf.sprintf "(((%s)+%d)/%d)" t (k - 1) k
+          | Rekenkundig -> Printf.sprintf "((2*(%s)+%d)/%d)" t k (2 * k)
+        in
+        (match modus with
+        | Richting_nul -> ()
+        | _ ->
+            let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+            emit ctx "viol(\"negative operand under rounding is not translated\",%s) :- %s, (%s) < 0."
+              subject
+              (String.concat ", " (base :: b))
+              t);
+        (b, rounded, target))
   | Constante { naam = Some n; _ } when Ir_v0.Checks.norm n = Ir_v0.Checks.norm "Rekendatum" -> (
       (* ch. 8.2: the execution-date constant is a program constant — the
          session's one evaluation date as a civil day number *)
@@ -549,6 +649,81 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          the rule that carries it fails observably (WF-044) *)
       fault "Onopgelost reached in translation: this rule fails observably (WF-044)"
   | _ -> fault "expression kind not translated (no corpus case exercises it)"
+
+(* gedeeld-door (§6.5, arith.div_gen) — three edges plus the value:
+   an empty dividend collapses to 0 before the divisor is read (also
+   under a zero or empty divisor); an empty divisor under a filled
+   dividend deposits the §9.5 channel fact and derives no value (leeg
+   as absence); a numeric zero divisor is a hard fault — a viol/2
+   witness, so the UNSAT diagnosis names the reason, exactly where
+   ref faults. The value itself: the true quotient (L/sl)/(R/sr) at
+   out-scale m is L·(sr·m) / (R·sl). Bare division translates only
+   its EXACT outcomes — a remainder derives a viol/2 witness instead
+   of a truncated value (v0's §6.1.2 static guard demands an explicit
+   rounding before precision is lost; silent integer truncation would
+   diverge from ref's exact rationals). Rounded division computes the
+   mode's integer rounding of the true quotient, exact for
+   non-negative operands; the negative range is fenced by a viol/2
+   witness (richting-nul alone matches gringo's truncation on both
+   signs and needs no fence). *)
+and translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding =
+  let links = req "Binair.links" links and rechts = req "Binair.rechts" rechts in
+  numeric_ok (Some links);
+  numeric_ok (Some rechts);
+  unit_free_ok (Some links);
+  unit_free_ok (Some rechts);
+  let bl, tl, sl = expr_term ctx ~subject ~subject_ot links in
+  let br, tr, sr = expr_term ctx ~subject ~subject_ot rechts in
+  let out_scale = match rounding with None -> max sl sr | Some (_, d) -> pow10 d in
+  let g = gcd (sr * out_scale) sl in
+  let knum = sr * out_scale / g and kden = sl / g in
+  let numt = if knum = 1 then Printf.sprintf "(%s)" tl else Printf.sprintf "((%s)*%d)" tl knum in
+  let dent = if kden = 1 then Printf.sprintf "(%s)" tr else Printf.sprintf "((%s)*%d)" tr kden in
+  ctx.fresh <- ctx.fresh + 1;
+  let p = Printf.sprintf "q%d" ctx.fresh in
+  let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+  let lbody = String.concat ", " (base :: bl) in
+  let rbody = String.concat ", " (base :: br) in
+  let full = String.concat ", " ((base :: bl) @ br) in
+  emit ctx "%s_ldef(%s) :- %s." p subject lbody;
+  emit ctx "%s_rdef(%s) :- %s." p subject rbody;
+  emit ctx "%s(%s,0) :- %s, not %s_ldef(%s)." p subject base p subject;
+  emit ctx "inconsistent(\"division by empty divisor\",%s) :- %s, %s_ldef(%s), not %s_rdef(%s)."
+    subject base p subject p subject;
+  emit ctx "viol(\"division by numeric zero\",%s) :- %s, (%s) == 0." subject full tr;
+  (match rounding with
+  | None ->
+      emit ctx "%s(%s,V) :- %s, (%s) != 0, %s \\ %s == 0, V = %s/%s." p subject full tr numt
+        dent numt dent;
+      emit ctx
+        "viol(\"non-exact division (an explicit rounding is mandated before precision is \
+         lost)\",%s) :- %s, (%s) != 0, %s \\ %s != 0."
+        subject full tr numt dent
+  | Some (modus, _) ->
+      let value =
+        match modus with
+        | Richting_nul -> Printf.sprintf "%s/%s" numt dent
+        | Naar_beneden -> Printf.sprintf "%s/%s" numt dent
+        | Naar_boven | Weg_van_nul -> Printf.sprintf "(%s+%s-1)/%s" numt dent dent
+        | Rekenkundig -> Printf.sprintf "(2*%s+%s)/(2*%s)" numt dent dent
+      in
+      (match modus with
+      | Richting_nul -> ()
+      | _ ->
+          emit ctx
+            "viol(\"negative operand under rounded division is not translated\",%s) :- %s, %s < 0."
+            subject full numt;
+          emit ctx
+            "viol(\"negative operand under rounded division is not translated\",%s) :- %s, %s < 0."
+            subject full dent);
+      let guards =
+        match modus with
+        | Richting_nul -> Printf.sprintf "(%s) != 0" tr
+        | _ -> Printf.sprintf "%s >= 0, %s > 0" numt dent
+      in
+      emit ctx "%s(%s,V) :- %s, %s, V = %s." p subject full guards value);
+  let v = fresh ctx "Q" in
+  ([ Printf.sprintf "%s(%s,%s)" p subject v ], v, out_scale)
 
 and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
   match c with
@@ -595,6 +770,20 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
 
 let head_body ctx head body = emit ctx "%s :- %s." head (String.concat ", " body)
 
+(* fit a scaled term to the write target's declared scale: a coarser
+   value upscales exactly (both scales are powers of ten); a finer one
+   is refused — v0's §6.1.2 resolver guard mandates an explicit
+   rounding there, so an admissible document never reaches this fault *)
+let fitted ~what term scale target =
+  if scale = target then term
+  else if target > scale && target mod scale = 0 then
+    Printf.sprintf "((%s)*%d)" term (target / scale)
+  else
+    fault
+      "value scale %d does not fit target scale %d for %S (a finer value needs an explicit \
+       rounding, §6.1.2)"
+      scale target what
+
 let translate_regel ctx (r : resolved_regel) =
   match r.rr_geldigheid with
   | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
@@ -619,8 +808,7 @@ let translate_regel ctx (r : resolved_regel) =
           | Some (Berekening | Gelijkstelling) ->
               let bindings, term, scale = expr_term ctx ~subject ~subject_ot:ot (req "waarde" r.waarde) in
               let target_scale = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
-              if scale <> target_scale then
-                fault "value scale %d does not match target scale %d for %S" scale target_scale a;
+              let term = fitted ~what:a term scale target_scale in
               head_body ctx
                 (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
                 ((base :: cond) @ bindings)
@@ -715,9 +903,7 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
           expr_term ctx ~subject ~subject_ot (req "Toekenning.waarde" t.toe_waarde)
         in
         let target_scale = pow10 (attr_decimals ctx ~otype:nieuw ~attr:m) in
-        if scale <> target_scale then
-          fault "initialisation value scale %d does not match target scale %d for %S" scale
-            target_scale m;
+        let tm = fitted ~what:m tm scale target_scale in
         head_body ctx (Printf.sprintf "val(%s,%s,%s)" term (str m) tm) (body @ bindings)
       end)
     oc.toekenningen;

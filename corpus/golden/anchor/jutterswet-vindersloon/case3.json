@@ -1,0 +1,63 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "waardering": {
+            "number": "6"
+          },
+          "factor": {
+            "number": "7"
+          },
+          "opbrengst": {
+            "number": "90"
+          },
+          "weging": {
+            "number": "7"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "loon",
+      "value": {
+        "number": "42"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vindersloon",
+      "value": {
+        "number": "18"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "deel"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "portie",
+      "value": {
+        "number": "12"
+      }
+    },
+    {
+      "kind": "inconsistent"
+    }
+  ]
+}

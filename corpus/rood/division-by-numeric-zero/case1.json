@@ -1,0 +1,36 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "waardering": {
+            "number": "6"
+          },
+          "factor": {
+            "number": "7"
+          },
+          "opbrengst": {
+            "number": "90"
+          },
+          "aandeel": {
+            "number": "0"
+          },
+          "weging": {
+            "number": "7"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "division by numeric zero",
+    "clingo": "division by numeric zero"
+  }
+}
