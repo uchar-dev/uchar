@@ -71,7 +71,8 @@ green. Current gates:
 
 1. `scripts/check-self-contained.sh` — artifact zones (`corpus/golden`,
    `corpus/negatief`, `corpus/rood`, `spec/schema`, `spec/verifier`,
-   `ref`, `backends`)
+   `ref`, `backends`, and — since the Phase-1 exit — `spec/IR-SPEC.md`
+   and `spec/RUNTIME-SEMANTICS.md`)
    carry no machine-local paths or private-repo references, and corpus data
    is free of TOKA material. Working prose (plan, backlog, reviews) may
    reference the private source repos during development — see

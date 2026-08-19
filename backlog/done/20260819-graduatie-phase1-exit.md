@@ -26,3 +26,26 @@ spec/PLAN.md, backlog/.
 Out of scope: de public-flip zelf en branch-protection (maintainer);
 inhoudelijke spec-wijzigingen; CONSTRUCTS/IR-REVIEW (werkprose mag de
 naam blijven dragen).
+
+Result: geland zoals gesneden. IR-SPEC en RUNTIME-SEMANTICS lezen
+zelfstandig en zitten in gate 1 (rood getoond op een geplante
+verwijzing, daarna groen); WAY-OF-WORKING §6, CLAUDE.md's
+gate-1-beschrijving en het PLAN dragen de nieuwe stand; de
+Phase-1-exit is vastgesteld en het public-flip-besluit (PLAN §9,
+besluit 10) ligt bij de maintainer, samen met branch-protection.
+
+Verificatievangsten (2 opus-lenzen), gefixt vóór de merge: (1) MAJOR,
+door beide lenzen onafhankelijk — de graduatie-headerzin was onwaar
+("the pinned v0 source lives in PLAN §5 ... never here" terwijl de
+werkpins in § Method staan en §5 ze niet draagt) — herformuleerd: §5
+draagt de herkomst (welke toolchain, de reporelatie), de werkpins
+staan benoemd in de Method en resolven daar en in de git-historie;
+(2) de WF-index-rubric eiste "every row closed" waar de exit op
+gemotiveerde OPENs steunt — de rubric benoemt nu de drie resterende
+gemotiveerde OPENs (WF-008/010/019-negatief) expliciet; (3) een
+hernoemd normatief document zou door de [ -e ]-guard stil groen
+skippen — de gate eist nu het bestaan van beide documenten. Bewust
+gelaten: kale toolchain-commit-hashes (edecb46/fe46e49/446dfa6) in de
+pin-notities — herkomstneutraal en via §5 + git-historie traceerbaar;
+de generieke rolwoorden ("the emitter", "the v0 resolver") zijn
+toolchain-rollen, geen namen.

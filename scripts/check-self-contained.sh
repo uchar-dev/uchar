@@ -21,6 +21,15 @@ PRIVATE='(/users/|/home/|~/|regelspraak-java|regelspraakruntime|calculemus)'
 
 status=0
 
+# the graduated normative documents must always exist — a rename would
+# otherwise skip them silently green through the [ -e ] guard below
+for doc in spec/IR-SPEC.md spec/RUNTIME-SEMANTICS.md; do
+    if [ ! -e "$doc" ]; then
+        echo "FAIL: graduated normative document '$doc' is missing (rename it AND this gate together)" >&2
+        status=1
+    fi
+done
+
 for zone in $ZONES; do
     [ -e "$zone" ] || continue
     if git grep -nIiE "$PRIVATE" -- "$zone" $EXCEPTIONS; then

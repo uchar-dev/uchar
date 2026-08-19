@@ -4,8 +4,8 @@
 OPEN decisions); ch. 6–8 are skeleton. This document reads stand-alone
 (graduated into the self-containedness gate at the Phase-1 exit,
 2026-08-19): behaviour it does not document is undocumented — the
-mirror's provenance and the pinned v0 source live in `spec/PLAN.md` §5
-and the git history, never here. Every
+mirror's provenance (which toolchain, and the repo relation) lives in
+`spec/PLAN.md` §5 and the git history, never here. Every
 `§…` reference is a section number of the RegelSpraak language
 specification — numbers only, no text from it is reproduced (construct
 keywords, such as the fallback clause quoted in ch. 1.2, excepted). This

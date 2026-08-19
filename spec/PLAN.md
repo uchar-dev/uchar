@@ -303,7 +303,10 @@ one.
 the Java resolver — can load and verify an IR file; the golden corpus and
 round-trip tests gate CI; every well-formedness rule in the spec has a
 verifier check, a passing case, and a failing negatief case; the corpus is
-rights-free (Jutterswet-based) from its first commit.
+rights-free (Jutterswet-based) from its first commit. **Met (2026-08-19):**
+all four hold (the WF index carries no unmotivated OPEN), and the normative
+documents graduated into the self-containedness gate. The §9 decision 10
+public flip is now unblocked and awaits the maintainer.
 
 ### Phase 2 — Reference interpreter (starts as soon as the JSON form exists)
 

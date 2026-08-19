@@ -99,8 +99,9 @@ without access to the maintainer's machine or private repositories.
   private toolchain; they are listed as explicit exceptions in
   `scripts/check-self-contained.sh`, and that list only shrinks — sweeping a
   README clean and dropping its exception is part of the zone's first real
-  delivery. At Phase-1 exit, `spec/IR-SPEC.md` and `spec/RUNTIME-SEMANTICS.md`
-  graduate into the gated set: the normative documents must read stand-alone.
+  delivery. **Graduated (Phase-1 exit, 2026-08-19):** `spec/IR-SPEC.md` and
+  `spec/RUNTIME-SEMANTICS.md` are in the gated set — the normative documents
+  read stand-alone, mechanically enforced.
 - **Rights tripwire.** Corpus data must contain no TOKA material
   (`corpus/README.md`); the same script trips on it.
 

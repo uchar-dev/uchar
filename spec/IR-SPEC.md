@@ -11,9 +11,10 @@ cut). New in v0.8: the attribute ladder with leeg fall-through and the
 initialisation rung (ch. 6.1). New in v0.9: the declared-unordered
 ladder group and the §9.5 conflict path (ch. 6.1). This document reads stand-alone (graduated into the
 self-containedness gate at the Phase-1 exit, 2026-08-19): behaviour it
-does not document is undocumented — the mirror's provenance and the
-pinned v0 source live in `spec/PLAN.md` §5 and the git history, never
-here. Every `§…` reference is a section number of the
+does not document is undocumented. The mirror's provenance — which
+toolchain, and the repo relation — lives in `spec/PLAN.md` §5; the
+working pins are commit hashes of that toolchain, named in the Method
+below and resolvable there and in the git history. Every `§…` reference is a section number of the
 RegelSpraak language specification — numbers only; no text from it is
 reproduced here (construct keywords, such as the sum-fallback clause named
 in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
@@ -1367,7 +1368,9 @@ conflict fact stays OPEN.
 Format per rule: statement (in ch. 2–4), verifier check, golden case,
 negatief case. `OPEN` = the artifact does not exist yet; an `OPEN` entry is
 tracked debt under the spec discipline, and the Phase-1 exit requires every
-row closed. "gate 3" = implemented in `spec/verifier/` and run by
+row closed or its OPEN motivated in the row itself (three motivated OPENs
+remain: WF-008 and WF-010 await a wire form or witness v0 cannot yet
+produce; WF-019's negatief has no data-shaped counterexample). "gate 3" = implemented in `spec/verifier/` and run by
 `scripts/check-verifier.sh` over every golden and negatief case; a
 parenthesis names the clause the v0 wire format cannot carry (that clause
 stays OPEN with the reason). Negatief cases live in
