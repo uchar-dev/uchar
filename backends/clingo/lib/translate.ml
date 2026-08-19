@@ -179,6 +179,39 @@ let attr_unit ctx ~otype ~attr =
   | Some (Some (Numeriek { eenheid; _ } | Percentage { eenheid; _ })) -> eenheid
   | _ -> None
 
+(* the EFFECTIVE unit of an expression, derived from declarations
+   (attribute/parameter datatypes) and the ch. 2.6 join rules — never
+   from the node's own static annotation: a composite annotated
+   eenheid:null still carries its operands' units at runtime, and
+   reading the annotation let a unit-carrying comparison of two plus
+   composites slip the fence (a hunted silent split). Multiplicative
+   operands are fenced unit-free at their own translation, so those
+   nodes contribute None. *)
+let rec eff_unit ctx (e : expr) : eenheid option =
+  match e with
+  | Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ } ->
+      attr_unit ctx ~otype:ot ~attr:a
+  | Parameter_ref { parameter = Some p; _ } -> (
+      match Ir_v0.Checks.find_ci ctx.doc.parameters p with
+      | Some { par_datatype = Some (Numeriek { eenheid; _ } | Percentage { eenheid; _ }); _ } ->
+          eenheid
+      | _ -> None)
+  | Literal { typ = Some (Numeriek { eenheid; _ } | Percentage { eenheid; _ }); _ } -> eenheid
+  | Binair { op = Plus | Min | Verminderd_met; links; rechts; _ } -> (
+      (* additive results carry the left unit; a unitless side adopts
+         the other (Arith.join_units) — a genuine mismatch faults when
+         the join itself is translated *)
+      match Option.bind links (eff_unit ctx) with
+      | Some u -> Some u
+      | None -> Option.bind rechts (eff_unit ctx))
+  | Binair _ -> None
+  | Afgerond { basis; _ } | Begrensd { basis; _ } -> Option.bind basis (eff_unit ctx)
+  | Temporal_read { basis; _ } -> eff_unit ctx basis
+  | Functie { kind = Som | Totaal | Minimum | Maximum | Eerste | Laatste; argumenten = arg :: _; _ }
+    ->
+      eff_unit ctx arg
+  | _ -> None
+
 let attr_temporal ctx ~otype ~attr = Ir_v0.Checks.attr_temporal (objecttype ctx otype) attr
 
 let attr_granularity ctx ~otype ~attr =
@@ -281,29 +314,19 @@ let numeric_ok e =
       | Some _ -> fault "non-numeric arithmetic operand is not translated (no corpus case)")
   | None -> ()
 
-(* ref's unit algebra applies exact conversion factors (rate
-   cancellation under maal, convertible-unit division); the integer
-   encoding carries no unit information, so a unit-carrying operand of
-   the multiplicative family is refused rather than silently computed
-   factor-free *)
-let unit_free_ok e =
-  match e with
-  | Some e -> (
-      match Ir_v0.Checks.typ_of_expr e with
-      | Some (Numeriek { eenheid = Some _; _ } | Percentage { eenheid = Some _; _ }) ->
-          fault
-            "a unit-carrying multiplicative operand is not translated (ref's unit \
-             algebra applies conversion factors this integer encoding does not carry)"
-      | _ -> ())
-  | None -> ()
-
 let rec gcd a b = if b = 0 then a else gcd b (a mod b)
 
-let unit_of_expr e =
-  match Ir_v0.Checks.typ_of_expr e with
-  | Some (Numeriek { eenheid; _ }) -> eenheid
-  | Some (Percentage { eenheid; _ }) -> eenheid
-  | _ -> None
+(* multiplicative operands must be effectively unit-free: ref's unit
+   algebra (rate cancellation, convertible-unit division) applies exact
+   conversion factors this integer encoding does not carry *)
+let unit_free_ok ctx e =
+  match e with
+  | Some e ->
+      if eff_unit ctx e <> None then
+        fault
+          "a unit-carrying multiplicative operand is not translated (ref's unit \
+           algebra applies conversion factors this integer encoding does not carry)"
+  | None -> ()
 
 (* positions where ref RESTATES one operand into the other's unit — the
    additive join, the comparison, the write boundary — multiply by an
@@ -528,7 +551,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           when norm botn = norm aot && attr_temporal ctx ~otype:botn ~attr:b ->
             units_identical_ok ~what:"a clip comparison"
               (attr_unit ctx ~otype:botn ~attr:b)
-              (unit_of_expr grens);
+              (eff_unit ctx grens);
             let gb, gt, gs = expr_term ctx ~subject ~subject_ot grens in
             let bscale = pow10 (attr_decimals ctx ~otype:botn ~attr:b) in
             let m = max bscale gs in
@@ -582,12 +605,22 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         (fun v ->
           List.iter
             (fun t ->
-              if v < t then
-                emit ctx "%s_wu(%d,%d,%d)." p v t
-                  (Uchar_ref.Timeline.whole_units gran v t))
+              if v < t then begin
+                let n = Uchar_ref.Timeline.whole_units gran v t in
+                if n > 46340 then
+                  fault "a clipped span of %d whole units exceeds the guarded product range" n;
+                emit ctx "%s_wu(%d,%d,%d)." p v t n
+              end)
             endpoints)
         endpoints;
       let q = fresh ctx "Q" in
+      (* W×N inside the #sum is an emitted multiplication: guard the
+         segment value like every other product operand (the wu factor
+         is a compile-time constant bounded at emission above) *)
+      emit ctx
+        "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S) :- \
+         %s_seg(S,V,T,W), |W| > 46340."
+        p;
       emit ctx "%s_tot(S,%s) :- is_a(S,%s), %s = #sum { W*N,V,T : %s_seg(S,V,T,W), %s_wu(V,T,N) }."
         p q (str subject_ot) q p p;
       ( [ Printf.sprintf "%s_tot(%s,%s)" p subject q ],
@@ -650,8 +683,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       numeric_ok links;
       numeric_ok rechts;
       units_identical_ok ~what:"an additive join"
-        (Option.bind links unit_of_expr)
-        (Option.bind rechts unit_of_expr);
+        (Option.bind links (eff_unit ctx))
+        (Option.bind rechts (eff_unit ctx));
       let l = expr_term ctx ~subject ~subject_ot (req "Binair.links" links) in
       let r = expr_term ctx ~subject ~subject_ot (req "Binair.rechts" rechts) in
       let l = if op = Verminderd_met then l else coalesce0 ctx ~subject ~subject_ot l in
@@ -674,8 +707,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          truncation can diverge from ref's exact rationals. *)
       numeric_ok links;
       numeric_ok rechts;
-      unit_free_ok links;
-      unit_free_ok rechts;
+      unit_free_ok ctx links;
+      unit_free_ok ctx rechts;
       let bl, tl, sl =
         coalesce0 ctx ~subject ~subject_ot
           (expr_term ctx ~subject ~subject_ot (req "Binair.links" links))
@@ -776,8 +809,8 @@ and translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding =
   let links = req "Binair.links" links and rechts = req "Binair.rechts" rechts in
   numeric_ok (Some links);
   numeric_ok (Some rechts);
-  unit_free_ok (Some links);
-  unit_free_ok (Some rechts);
+  unit_free_ok ctx (Some links);
+  unit_free_ok ctx (Some rechts);
   let bl, tl, sl = expr_term ctx ~subject ~subject_ot links in
   let br, tr, sr = expr_term ctx ~subject ~subject_ot rechts in
   let out_scale =
@@ -845,8 +878,8 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
   match c with
   | Vergelijking { op; links; rechts; periode = None; _ } ->
       units_identical_ok ~what:"a comparison"
-        (Option.bind links unit_of_expr)
-        (Option.bind rechts unit_of_expr);
+        (Option.bind links (eff_unit ctx))
+        (Option.bind rechts (eff_unit ctx));
       let l = expr_term ctx ~subject ~subject_ot (req "links" links) in
       let r = expr_term ctx ~subject ~subject_ot (req "rechts" rechts) in
       let b1, t1, s1 = l and b2, t2, s2 = r in
@@ -946,7 +979,7 @@ let translate_regel ctx (r : resolved_regel) =
               units_identical_ok
                 ~what:(Printf.sprintf "the write to %S" a)
                 (attr_unit ctx ~otype:ot ~attr:a)
-                (Option.bind r.waarde unit_of_expr);
+                (Option.bind r.waarde (eff_unit ctx));
               ctx.rule_guard <- cond;
               ctx.write_scale <- target_scale;
               let bindings, term, scale = expr_term ctx ~subject ~subject_ot:ot (req "waarde" r.waarde) in
@@ -1048,7 +1081,7 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
         units_identical_ok
           ~what:(Printf.sprintf "the initialisation of %S" m)
           (attr_unit ctx ~otype:nieuw ~attr:m)
-          (Option.bind t.toe_waarde unit_of_expr);
+          (Option.bind t.toe_waarde (eff_unit ctx));
         ctx.rule_guard <- cond @ guard @ depth_guard;
         ctx.write_scale <- target_scale;
         let bindings, tm, scale =

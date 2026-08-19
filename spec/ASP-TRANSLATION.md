@@ -563,30 +563,44 @@ integers and wraps silently on overflow: 50000×50000 grounded negative,
 and a comparison threshold upscaled by the scale harmoniser wrapped
 negative and flipped a rule's condition — the one divergence class the
 differential gate cannot see coming, witnessed live by the round. Every
-emitted multiplication now carries a `viol/2` range guard on its
-operands (product factors ≤ 46340; additive/rounding/division operands
-bounded with headroom for their formulas; the clip's segment
-harmonisation included), input values and expectations beyond 2^31−1
-fault at translation (which also fences the formerly raw `Z.Overflow`
-crash on 10^20), and scales beyond 10^9 fault in `pow10`. The safe side
-is pinned by `corpus/golden/synth-grensrand`: the largest translatable
-product (46340² = 2147395600) replays exactly, so the guard provably
-does not fire early. Not yet fenced: the allocation recurrence and the
-uniqueness-union scale harmonisation predate the fence and share the
-wrap class — recorded for a later round.
+multiplication emitted by the expression translation now carries a
+`viol/2` range guard on its operands: product factors ≤ 46340 (note the
+bound is on the SCALED integer, so a 2-decimal multiplication operand
+is refused above 463.40 — conservative, and loud); additive, rounding
+and division operands bounded with headroom for their formulas; the
+clip's comparison harmonisation and its W×N segment products included
+(the wu factor is a compile-time constant, bounded at emission). Input
+values beyond 2^31−1 fault in `scaled_of_value`, expectation values in
+`Model.scaled_expect` (both also fencing the formerly raw `Z.Overflow`
+crash on 10^20), and scales beyond 10^9 fault in `pow10`. A comparison
+guard deliberately omits the enclosing rule's condition: ref evaluates
+a voorwaarde on every subject, so fencing it for every subject mirrors
+that reach. The safe side is pinned by `corpus/golden/synth-grensrand`:
+the largest translatable product (46340² = 2147395600) replays exactly,
+so the guard provably does not fire early. Not yet fenced: the
+allocation recurrence, the uniqueness-union scale harmonisation, and
+the accumulation inside `#sum` aggregates (the summed terms are
+operand-guarded; the running sum is not) predate or exceed this
+round — recorded for a later one.
 
 **The unit fence.** ref restates operands across units with exact
 conversion factors (1 m plus 50 cm = 150 cm); the integer encoding
 carries no factor and grounded 1+50 = 51 — a silent split the round
 caught in the additive join, the comparison, and the write boundary
 (kg-target written from a t-typed expression). All positions where ref
-would restate now refuse NON-IDENTICAL declared units; identical units
-(factor 1) and a unitless side (which adopts, value unchanged)
-translate, pinned from the safe side by the identical-unit join and
-comparison in `synth-grensrand`. The companion verifier gap is closed:
-WF-035's additive-family unit-compatibility clause skipped
-Verminderd_met entirely (negatief
-`wf035-verminderd-met-incompatible-units` pins the rejection).
+would restate now refuse NON-IDENTICAL units; identical units (factor
+1) and a unitless side (which adopts, value unchanged) translate,
+pinned from the safe side by the identical-unit join and comparison in
+`synth-grensrand`. The unit read is the EFFECTIVE unit — derived
+recursively from attribute and parameter declarations with the ch. 2.6
+join rules — never the node's own static annotation: a composite
+annotated `eenheid:null` still carries its operands' units at runtime,
+and the annotation-based first cut let a comparison of two plus
+composites slip through (caught by the verification round of this very
+fix). The companion verifier gap is closed: WF-035's additive-family
+unit-compatibility clause skipped Verminderd_met entirely (negatief
+`wf035-verminderd-met-incompatible-units` pins the rejection; v0's
+resolver enforces the same, so the widening is mirror-founded).
 
 **The name-quoting fence.** A declared name or case label containing a
 double quote, backslash or control character passed the verifier and

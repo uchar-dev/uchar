@@ -110,8 +110,13 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
     match v with
     | Value.Num (q, _) ->
         let s = Q.mul q (Q.of_int (Translate.pow10 d)) in
-        if Z.equal (Q.den s) Z.one then Z.to_int (Q.num s)
-        else fault "expected value does not fit the declared decimals"
+        if not (Z.equal (Q.den s) Z.one) then
+          fault "expected value does not fit the declared decimals"
+        else if Z.gt (Z.abs (Q.num s)) (Z.of_int Translate.max_int31) then
+          (* the same fence scaled_of_value carries: fault with the
+             reason instead of a raw Z.Overflow crash *)
+          fault "expected value %s exceeds clingo's integer range" (Q.to_string q)
+        else Z.to_int (Q.num s)
     | Value.Date z -> z
     | v -> fault "unscalable expected value %s" (Value.to_string v)
   in
