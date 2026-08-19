@@ -23,6 +23,7 @@ let fail fmt = Printf.ksprintf (fun s -> raise (Error s)) fmt
 type expectation =
   | Attribute_value of { label : string; attr : string; value : Value.t }
   | Attribute_empty of { label : string; attr : string }
+  | Attribute_timeline of { label : string; attr : string; tl : Timeline.t }
   | Char_present of { label : string; char : string }
   | Char_absent of { label : string; char : string }
   | Consistent
@@ -100,14 +101,15 @@ let is_timeline_json j =
    segments aligned to the declaration's granularity grid; segment values
    are scalars of the element datatype. From inclusive, to exclusive;
    absence between segments is a gap (leeg on read, ch. 3.1). *)
-let timeline_of_json ~at ~(gran : granulariteit) (decl : datatype option) (j : Yojson.Safe.t) :
-    Timeline.t =
+let timeline_of_json ?(allow_empty = false) ~at ~(gran : granulariteit) (decl : datatype option)
+    (j : Yojson.Safe.t) : Timeline.t =
   let segs =
     match j with
     | `Assoc [ ("timeline", `List l) ] -> l
     | _ -> fail "%s: malformed timeline value" at
   in
-  if segs = [] then fail "%s: a timeline value carries at least one segment" at;
+  if segs = [] && not allow_empty then
+    fail "%s: a timeline value carries at least one segment" at;
   let day_of ~what sj =
     match Value.date_of_iso (str sj) with
     | Value.Date d -> d
@@ -252,16 +254,18 @@ let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
                   fail "%s.%s: a characteristic timeline on a non-temporal characteristic"
                     label cname
             in
+            ignore gran;
             let at = label ^ "." ^ cname in
             let day_of ~what sj =
               match Value.date_of_iso (str sj) with
               | Value.Date d -> d
               | _ -> fail "%s: malformed %s date" at what
             in
-            let aligned d =
-              let van, _ = Timeline.bucket gran d in
-              van = d
-            in
+            (* true periods are DAY-precise regardless of the declared
+               granularity — the pinned runtime accepts a mid-month
+               boundary on a month-granular characteristic (the ch. 3.7
+               pro-rata's whole point); the granularity governs the
+               characteristic's bucketing, never its period grid *)
             let periods =
               match pj with
               | `List l ->
@@ -271,9 +275,6 @@ let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
                       let van = day_of ~what:"from" (field skvs "from") in
                       let tot = day_of ~what:"to" (field skvs "to") in
                       if tot <= van then fail "%s: period 'to' must lie after 'from'" at;
-                      if not (aligned van && aligned tot) then
-                        fail "%s: period boundaries must sit on the declared granularity grid"
-                          at;
                       (van, tot))
                     l
               | _ -> fail "%s: expected a list of periods" at
@@ -397,6 +398,30 @@ let load_expectation (doc : document) (world : World.t) (j : Yojson.Safe.t) : ex
       if not (Ir_v0.Checks.has_attr ot attr) then
         fail "expected attribute %S is not declared on %S" attr i.otype;
       Attribute_empty { label = i.label; attr }
+  | "attributeTimeline" ->
+      let i = get_instance () in
+      let attr = str (field kvs "attribute") in
+      let ot = find_objecttype doc i.otype in
+      let decl =
+        match Ir_v0.Checks.find_ci ot.attributen attr with
+        | Some d -> d
+        | None -> fail "expected attribute %S is not declared on %S" attr i.otype
+      in
+      let gran =
+        match Ir_v0.Checks.find_ci ot.attribuut_granulariteit attr with
+        | Some (Some g) -> g
+        | _ -> fail "expected timeline on %S, which declares no granularity" attr
+      in
+      Attribute_timeline
+        {
+          label = i.label;
+          attr;
+          tl =
+            timeline_of_json ~allow_empty:true
+              ~at:("expected " ^ i.label ^ "." ^ attr)
+              ~gran decl
+              (`Assoc [ ("timeline", field kvs "timeline") ]);
+        }
   | "characteristicPresent" | "characteristicAbsent" ->
       let i = get_instance () in
       let c = str (field kvs "characteristic") in
@@ -487,6 +512,27 @@ let check (case : t) (final : World.t) : string list =
           let actual = World.attr (World.get final label) attr in
           if actual = Value.Empty then None
           else Some (Printf.sprintf "%s.%s = %s, expected leeg" label attr (Value.to_string actual))
+      | Attribute_timeline { label; attr; tl } -> (
+          let show (s : Timeline.segment) =
+            Printf.sprintf "[%s,%s)=%s" (Value.iso_of_date s.s_van) (Value.iso_of_date s.s_tot)
+              (Value.to_string s.s_waarde)
+          in
+          let render l = if l = [] then "(empty)" else String.concat " " (List.map show l) in
+          match World.timeline (World.get final label) attr with
+          | None ->
+              Some (Printf.sprintf "%s.%s carries no timeline, expected %s" label attr (render tl))
+          | Some actual ->
+              let same =
+                List.length actual = List.length tl
+                && List.for_all2
+                     (fun (a : Timeline.segment) (b : Timeline.segment) ->
+                       a.s_van = b.s_van && a.s_tot = b.s_tot && Arith.equal a.s_waarde b.s_waarde)
+                     actual tl
+              in
+              if same then None
+              else
+                Some
+                  (Printf.sprintf "%s.%s = %s, expected %s" label attr (render actual) (render tl)))
       | Char_present { label; char } ->
           if World.has_char (World.get final label) char then None
           else Some (Printf.sprintf "%s lacks characteristic %S" label char)

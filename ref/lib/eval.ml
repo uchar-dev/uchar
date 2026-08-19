@@ -735,22 +735,90 @@ let over_subjects world ~otype ~rule body =
       (w, changed || ch))
     (world, false) (World.of_type world otype)
 
+(* ch. 3.7: the pro-rata target — the one implemented temporal write.
+   The value MUST be tijdsevenredig-deel over an own temporal attribute
+   with a gedurende condition on an own temporal characteristic (the
+   corpus shape; everything else faults). The base must be as coarse as
+   or coarser than the bucket, and the target's declared granularity
+   must equal the node's. An absent base timeline or a condition
+   without true periods writes the EMPTY timeline (v0: a null base
+   yields the empty list — the target exists, with no segments). *)
+let run_pro_rata env w (self : World.instance) ~ot ~attr waarde =
+  let ot_decl = objecttype env ot in
+  match waarde with
+  | Functie
+      { kind = Tijdsevenredig_deel;
+        argumenten =
+          [ Attribuut_ref
+              { attribuut = Some b; objecttype = Some bot; navigatie_rol = None;
+                navigatie_pad = []; set = false; _ } ];
+        filter = Some c; granulariteit = Some g; leegwaarde = None; dimensie_selectie = None; _ }
+    when norm bot = norm ot ->
+      let target_gran =
+        match Ir_v0.Checks.find_ci ot_decl.attribuut_granulariteit attr with
+        | Some (Some tg) -> tg
+        | _ -> Value.fault "pro-rata target %S without a granularity" attr
+      in
+      if target_gran <> g then
+        Value.fault
+          "pro-rata bucket granularity differs from the target's declared granularity (WF-056)";
+      let base_gran =
+        match Ir_v0.Checks.find_ci ot_decl.attribuut_granulariteit b with
+        | Some (Some bg) -> bg
+        | _ -> Value.fault "pro-rata base %S is not a temporal attribute (WF-056)" b
+      in
+      if base_gran < g then
+        Value.fault "pro-rata base granularity is finer than the bucket (WF-056)";
+      (match Ir_v0.Checks.find_ci ot_decl.attributen b with
+      | Some (Some (Numeriek { eenheid = Some _; _ } | Percentage { eenheid = Some _; _ })) ->
+          (* ch. 3.7: a rate base restates by its exact factor FIRST —
+             not executed here; refuse rather than prorate factor-free *)
+          Value.fault "pro-rata over a unit-carrying base is not executed (no corpus case)"
+      | _ -> ());
+      let true_periods =
+        match c with
+        | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; _ } ->
+            if not (kenmerk_temporal ot_decl k) then
+              Value.fault "gedurende over %S, which is not a temporal characteristic (WF-056)" k;
+            Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]
+        | _ ->
+            Value.fault
+              "unsupported pro-rata condition shape (an own temporal characteristic; no corpus \
+               case for more)"
+      in
+      let basis = Option.value (World.timeline self b) ~default:[] in
+      World.write_timeline w ~label:self.label ~attr (Timeline.pro_rata g basis true_periods)
+  | _ ->
+      Value.fault
+        "a temporal target takes only the ch. 3.7 pro-rata shape (an own temporal base with a \
+         gedurende condition); no corpus case for more"
+
 let run_rule env world (r : resolved_regel) =
   if not (applies env r.rr_geldigheid) then (world, false)
   else
     match r.doel with
     | Some (Attribuut_ref { attribuut; objecttype = Some ot; _ }) ->
         let attr = req "doel.attribuut" attribuut in
-        (* ch. 3.11: temporal targets are not implemented — refuse, never
+        let temporal_target =
+          match r.rr_soort with
+          | Some Kenmerktoekenning -> false
+          | _ -> Ir_v0.Checks.attr_temporal (objecttype env ot) attr
+        in
+        (* ch. 3.11: the only implemented temporal write is the ch. 3.7
+           pro-rata target; every other temporal target refuses — never
            silently coerce a scalar into a timeline *)
         (match r.rr_soort with
         | Some Kenmerktoekenning ->
             if kenmerk_temporal (objecttype env ot) attr then
               Value.fault "temporal characteristic %S: temporal writes are not implemented" attr
         | _ ->
-            if Ir_v0.Checks.attr_temporal (objecttype env ot) attr then
-              Value.fault "temporal attribute %S as a target: temporal writes are not implemented"
-                attr);
+            if temporal_target then
+              match r.waarde with
+              | Some (Functie { kind = Tijdsevenredig_deel; _ }) -> ()
+              | _ ->
+                  Value.fault
+                    "temporal attribute %S as a target: temporal writes are not implemented"
+                    attr);
         over_subjects world ~otype:ot ~rule:(rule_name r) (fun w self err ->
             let fire =
               match r.rr_voorwaarde with Some c -> eval_cond env w self ~err c | None -> true
@@ -763,6 +831,8 @@ let run_rule env world (r : resolved_regel) =
                   | Value.Bool true -> World.set_char w ~label:self.label ~char:attr
                   | Value.Bool false -> (w, false)
                   | v -> Value.fault "characteristic value is not boolean: %s" (Value.to_string v))
+              | Some (Gelijkstelling | Berekening) when temporal_target ->
+                  run_pro_rata env w self ~ot ~attr (req "waarde" r.waarde)
               | Some (Gelijkstelling | Berekening) ->
                   let v = eval_expr env w self ~err (req "waarde" r.waarde) in
                   World.write_attr w ~label:self.label ~attr ~decl:(attr_decl env ~otype:ot ~attr) v

@@ -1120,7 +1120,11 @@ ch. 1.2, mirrored in the matrix (row on TOTAAL, `CONSTRUCTS.md` ch. 2.1).
 wortel, absolute-waarde (core kernel); concatenatie (text fold);
 tijdsduur/absolute-tijdsduur (two date operands, result unit declared);
 tijdsevenredig-deel and aantal-dagen-in (each carrying a `granularity`
-bucket ∈ month/year); eerste-paasdag, datum-met, datumtijd-met, and the
+bucket ∈ month/year — tijdsevenredig-deel MUST carry a gedurende
+condition in `filter` and one temporal source argument as coarse as or
+coarser than its bucket, and on a temporal target the bucket MUST equal
+the target's declared granularity, WF-056; semantics ch. 3.7 of
+`RUNTIME-SEMANTICS.md`); eerste-paasdag, datum-met, datumtijd-met, and the
 seven date/time part extractors — the date library is
 `layer: dialect(regelspraak)` (row on date builtins, `CONSTRUCTS.md`
 ch. 2.1); semantics in `RUNTIME-SEMANTICS.md` ch. 2–3.
@@ -1435,6 +1439,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-053 | a navigated read resolves its walk: bindings resolve, chain-type, count and written names agree, the endpoint is reached; bindingless steps are uniquely derivable; scalar-slot hops are to-one; bindings on a non-navigating node are ill-formed | gate 3 | `anchor/jutterswet-kustwacht` (by-name, chain and by-pair shapes plus the navigated characteristic check, executed by gates 5–6 with leeg-on-absent and the negation asymmetry pinned) + `jutterswet-postwacht` (emitter-produced bindings since the 2026-08-18 pin bump) | `wf053-dangling-navigation-binding` (resolution) + `wf053-chain-near-side-mismatch` (chain typing) + `wf053-to-many-hop-in-scalar` (cardinality) + `wf053-written-role-mismatch` (written-name denotation) + `wf053-bindingless-ambiguous` (unique derivability) |
 | WF-054 | parent-scoped uniqueness: the scope role resolves (bound or uniquely derivable from the written scope field), its near side fills the subject, the written name denotes the bound role, the scope role is to-one; a scope binding on an unscoped uniqueness is ill-formed | gate 3 | `anchor/jutterswet-kustregister` (bound and bindingless scoped forms, executed by gates 5–6 with the scope-less exclusion pinned) + `jutterswet-postwacht` (emitter-produced `scopeRol` since the 2026-08-18 pin bump) | `wf054-dangling-scope-binding` (resolution) + `wf054-to-many-scope-role` (cardinality) + `wf054-binding-on-unscoped` (the non-scoped guard) |
 | WF-055 | the gedurende clip: a filter on the temporal total is a timeline operation — its condition is an own temporal characteristic check or a per-segment comparison of an own temporal attribute against a scalar bound | gate 3 | `jutterswet-getijdenwacht` (both clip shapes, the 71-pattern and the three zero shapes, executed by gates 5–6) | `wf055-nontemporal-clip-kenmerk` (temporality) + `wf055-navigated-clip-condition` (condition shape) |
+| WF-056 | the pro-rata fold (tijdsevenredig-deel) MUST carry a gedurende condition and one temporal source argument (a temporal attribute or granular parameter) as coarse as or coarser than its bucket; on a temporal target the bucket granularity MUST equal the target's declared granularity | gate 3 | `anchor/jutterswet-borgdeel` (the ch. 3.7 fold, executed by gates 5–6) | `wf056-no-gedurende-condition` + `wf056-scalar-base` + `wf056-bucket-target-mismatch` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

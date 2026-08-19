@@ -77,6 +77,51 @@ let bucket (g : Ir_v0.Ast.granulariteit) d =
       (van, days_from_civil ~y:y' ~m:m' ~d:1)
   | _ -> fault "bucketing is defined for month and year only (ch. 3.2)"
 
+(* ch. 3.7: the time-proportional part. One segment per calendar bucket
+   the condition's true periods touch, spanning the WHOLE bucket, value
+   = base(bucket start) × true-days/bucket-days as an exact rational —
+   v0's fold exactly: true days accumulate per bucket across condition
+   periods; the base is read at the bucket START only; a bucket without
+   true days, or whose start the base timeline does not cover (or
+   covers with leeg), yields no segment; no summation across buckets,
+   no auto-rounding, no coalescing of equal neighbours. *)
+let pro_rata (g : Ir_v0.Ast.granulariteit) (basis : t) (true_periods : (int * int) list) : t =
+  (match g with
+  | Maand | Jaar -> ()
+  | _ -> fault "pro-rata buckets are month or year only (ch. 3.7)");
+  let module IMap = Map.Make (Int) in
+  let acc =
+    List.fold_left
+      (fun acc (pv, pt) ->
+        if pt <= pv then acc
+        else
+          let rec walk acc d =
+            if d >= pt then acc
+            else
+              let bs, bn = bucket g d in
+              let days = min pt bn - max pv bs in
+              let acc =
+                if days > 0 then
+                  IMap.update bs (fun p -> Some (Option.value p ~default:0 + days)) acc
+                else acc
+              in
+              walk acc bn
+          in
+          walk acc pv)
+      IMap.empty true_periods
+  in
+  IMap.fold
+    (fun bs days segs ->
+      let _, bn = bucket g bs in
+      match read basis bs with
+      | Empty -> segs
+      | Num (q, u) ->
+          { s_van = bs; s_tot = bn; s_waarde = Num (Q.mul q (Q.make (Z.of_int days) (Z.of_int (bn - bs))), u) }
+          :: segs
+      | v -> fault "pro-rata base is not numeric: %s" (Value.to_string v))
+    acc []
+  |> List.rev
+
 (* anchored bucket walls: every wall computed directly from the anchor —
    never by incrementing the previous wall — so a month-end anchor
    clamps consistently (ch. 3.2) *)

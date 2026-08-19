@@ -140,6 +140,38 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
               Some
                 (Printf.sprintf "%s.%s = [%s], expected leeg" label attr
                    (String.concat ";" (List.map string_of_int got))))
+      | Attribute_timeline { label; attr; tl } ->
+          (* segment-exact: the model's tl/5 atoms for this attribute
+             (derived plus any case-supplied) must equal the expected
+             list, values scaled by the declared decimals *)
+          let want =
+            List.map
+              (fun (s : Uchar_ref.Timeline.segment) ->
+                (s.s_van, s.s_tot, scaled_expect ~label ~attr s.s_waarde))
+              tl
+          in
+          let got =
+            List.filter_map
+              (fun a ->
+                match a with
+                | { name = "tl"; args = [ A_str l; A_str at; A_int v; A_int t; A_int w ] }
+                  when String.equal l label && String.equal at (norm attr) ->
+                    Some (v, t, w)
+                | _ -> None)
+              model
+            |> List.sort compare
+          in
+          if got = want then None
+          else
+            let render l =
+              if l = [] then "(empty)"
+              else
+                String.concat " "
+                  (List.map (fun (v, t, w) -> Printf.sprintf "[%d,%d)=%d" v t w) l)
+            in
+            Some
+              (Printf.sprintf "%s.%s timeline = %s, expected %s" label attr (render got)
+                 (render want))
       | Char_present { label; char } ->
           if has model "heeft" [ A_str label; A_str (norm char) ] then None
           else Some (Printf.sprintf "%s lacks characteristic %S" label char)

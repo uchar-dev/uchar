@@ -172,6 +172,28 @@
         },
         {
           "type": "object", "additionalProperties": false,
+          "required": ["kind", "label", "attribute", "timeline"],
+          "properties": {
+            "kind": { "const": "attributeTimeline" },
+            "label": { "type": "string", "minLength": 1 },
+            "attribute": { "type": "string", "minLength": 1 },
+            "timeline": {
+              "description": "The expected full timeline of a temporal target, segment-exact (an empty array pins an empty timeline); ordering, non-overlap and grid alignment are the ref loader's cross-checks.",
+              "type": "array",
+              "items": {
+                "type": "object", "additionalProperties": false,
+                "required": ["from", "to", "value"],
+                "properties": {
+                  "from": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+                  "to": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+                  "value": { "$ref": "#/$defs/value" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
           "required": ["kind", "label", "characteristic"],
           "properties": {
             "kind": { "const": "characteristicPresent" },

@@ -1556,6 +1556,39 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
                  [ v "WF-055" (sub "filter")
                      "the gedurende condition is an own temporal characteristic check or a                       per-segment comparison of an own temporal attribute against a scalar                       bound" ])
          | _ -> [])
+      (* WF-056: the pro-rata fold (tijdsevenredig-deel) MUST carry a
+         gedurende condition, and its base MUST be a temporal source as
+         coarse as or coarser than the bucket *)
+      @ (if f.kind <> Tijdsevenredig_deel then []
+         else
+           (if f.filter = None then
+              [ v "WF-056" at "tijdsevenredig-deel without a gedurende condition" ]
+            else [])
+           @
+           match f.argumenten with
+           | [ Attribuut_ref { attribuut = Some b; objecttype = Some bot; _ } ] -> (
+               match objecttype ctx bot with
+               | Some ot -> (
+                   match
+                     List.find_opt (fun (n, _) -> norm n = norm b) ot.attribuut_granulariteit
+                   with
+                   | Some (_, Some bg) -> (
+                       match f.granulariteit with
+                       | Some g when bg < g ->
+                           [ v "WF-056" (sub "argumenten/0")
+                               "pro-rata base granularity is finer than the bucket" ]
+                       | _ -> [])
+                   | _ ->
+                       [ v "WF-056" (sub "argumenten/0")
+                           ("pro-rata base '" ^ b ^ "' is not a temporal attribute") ])
+               | None -> [])
+           | [ Parameter_ref { parameter = Some p; _ } ] -> (
+               match find_ci ctx.doc.parameters p with
+               | Some { par_granulariteit = Some _; _ } -> []
+               | _ ->
+                   [ v "WF-056" (sub "argumenten/0")
+                       ("pro-rata base parameter '" ^ p ^ "' is not granular") ])
+           | _ -> [ v "WF-056" at "tijdsevenredig-deel takes one temporal source argument" ])
       (* WF-047/048: the fold-source role binding (v1 extension) *)
       @ (let fold_source =
            match (f.element_objecttype, f.argumenten) with
@@ -1973,7 +2006,22 @@ let expression_layer ctx =
         | _ -> None
       in
       (* The target lvalue is WF-022's job, not part of the WF-034 walk. *)
-      (match r.waarde with Some e -> walk_expr ctx ~subject (at ^ "/waarde") e | None -> [])
+      (* WF-056 (rule level): a pro-rata value on a temporal target MUST
+         bucket at the target's declared granularity *)
+      (match (r.doel, r.waarde) with
+      | ( Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }),
+          Some (Functie { kind = Tijdsevenredig_deel; granulariteit = Some g; _ }) ) -> (
+          match objecttype ctx ot with
+          | Some otd -> (
+              match List.find_opt (fun (n, _) -> norm n = norm a) otd.attribuut_granulariteit with
+              | Some (_, Some tg) when tg <> g ->
+                  [ v "WF-056" (at ^ "/waarde")
+                      "pro-rata bucket granularity differs from the target's declared granularity"
+                  ]
+              | _ -> [])
+          | None -> [])
+      | _ -> [])
+      @ (match r.waarde with Some e -> walk_expr ctx ~subject (at ^ "/waarde") e | None -> [])
       @ (match r.rr_voorwaarde with
          | Some c -> walk_cond ctx ~subject (at ^ "/voorwaarde") c
          | None -> []))

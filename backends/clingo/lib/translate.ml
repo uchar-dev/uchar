@@ -980,6 +980,109 @@ let fitted ctx ~subject ~what ~body term scale target =
   end
   else fault "value scale %d does not align with target scale %d for %S" scale target what
 
+(* ch. 3.7: the pro-rata temporal target. The whole calendar is
+   compile-time data (the shared Timeline module, like the clip's wu
+   facts): bucket facts carry start, end and day count over the case's
+   endpoint span; the condition's true days accumulate per bucket from
+   the ktl facts by four-case interval intersection; the head derives
+   one tl/5 segment per bucket with true days, value = base(bucket
+   start) × days/bucket-days on the target scale — exact only, a
+   remainder derives a viol/2 witness (ref computes the exact rational;
+   v0 approximates a non-terminating fraction in DECIMAL64 — the
+   recorded ch. 3.7 delta), fenced like every division. *)
+let translate_pro_rata ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit) =
+  let base = Printf.sprintf "is_a(%s,%s)" subject (str ot) in
+  if not (attr_temporal ctx ~otype:ot ~attr:b) then
+    fault "pro-rata base %S is not a temporal attribute (WF-056)" b;
+  if attr_unit ctx ~otype:ot ~attr:b <> None || attr_unit ctx ~otype:ot ~attr:a <> None then
+    (* ch. 3.7: a rate base restates by its exact factor first — not
+       executed; refuse rather than prorate factor-free *)
+    fault "pro-rata over a unit-carrying base or target is not translated (no corpus case)";
+  (match (Ir_v0.Checks.find_ci (objecttype ctx ot).attribuut_granulariteit a,
+          Ir_v0.Checks.find_ci (objecttype ctx ot).attribuut_granulariteit b) with
+  | Some (Some tg), Some (Some bg) ->
+      if tg <> g then
+        fault "pro-rata bucket granularity differs from the target's declared granularity (WF-056)";
+      if bg < g then fault "pro-rata base granularity is finer than the bucket (WF-056)"
+  | _ -> fault "pro-rata target and base carry declared granularities (WF-056)");
+  ctx.fresh <- ctx.fresh + 1;
+  let p = Printf.sprintf "pr%d" ctx.fresh in
+  (* calendar as data: buckets over the case's endpoint span *)
+  let endpoints =
+    Eval.SMap.fold
+      (fun _ (i : Uchar_ref.World.instance) acc ->
+        let tl_pts =
+          Eval.SMap.fold
+            (fun _ (tl : Uchar_ref.Timeline.t) acc ->
+              List.concat_map
+                (fun (s : Uchar_ref.Timeline.segment) -> [ s.s_van; s.s_tot ])
+                tl
+              @ acc)
+            i.tls acc
+        in
+        Eval.SMap.fold
+          (fun _ periods acc -> List.concat_map (fun (v, t) -> [ v; t ]) periods @ acc)
+          i.ctls tl_pts)
+      ctx.case.world.instances []
+    |> List.sort_uniq compare
+  in
+  (match endpoints with
+  | [] -> ()
+  | lo :: _ ->
+      let hi = List.fold_left max lo endpoints in
+      let rec walk d n =
+        if d < hi then begin
+          if n > 46340 then fault "the pro-rata endpoint span exceeds the guarded bucket range";
+          let bs, bn = Uchar_ref.Timeline.bucket g d in
+          emit ctx "%s_b(%d,%d,%d)." p bs bn (bn - bs);
+          walk bn (n + 1)
+        end
+      in
+      let first, _ = Uchar_ref.Timeline.bucket g lo in
+      walk first 0);
+  (* true days per (bucket × condition segment): four-case intersection *)
+  List.iter
+    (fun (vcmp, vpick, tcmp, tpick) ->
+      emit ctx "%s_d(S,B,KV,KT,%s-%s) :- ktl(S,%s,KV,KT), %s_b(B,N,_), %s, %s, %s < %s." p tpick
+        vpick (str k) p vcmp tcmp vpick tpick)
+    [ ("KV >= B", "KV", "KT <= N", "KT");
+      ("KV >= B", "KV", "KT > N", "N");
+      ("KV < B", "B", "KT <= N", "KT");
+      ("KV < B", "B", "KT > N", "N") ];
+  let ta = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
+  let tb = pow10 (attr_decimals ctx ~otype:ot ~attr:b) in
+  let gg = gcd ta tb in
+  let kn = ta / gg and kd = tb / gg in
+  let numt = if kn = 1 then "(W*TD)" else Printf.sprintf "(W*TD*%d)" kn in
+  let dent = if kd = 1 then "Tot" else Printf.sprintf "(Tot*%d)" kd in
+  let body =
+    (base :: ctx.rule_guard)
+    @ cond
+    @ [ Printf.sprintf "%s_b(B,N,Tot)" p;
+        Printf.sprintf "TD = #sum { D,KV,KT : %s_d(S,B,KV,KT,D) }" p;
+        "TD > 0";
+        Printf.sprintf "tl(S,%s,BV,BT,W), BV <= B, B < BT" (str b) ]
+  in
+  (* the wrap fence: |W×TD×kn| ≤ 2^31 with TD ≤ 366 per bucket, and the
+     #sum's contributors (D ≤ 366) count-bounded like every sum *)
+  emit ctx
+    "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S) :- %s, |W| > %d."
+    (String.concat ", " body)
+    (max_int31 / (366 * kn));
+  emit ctx
+    "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S) :- %s, \
+     46340 < #count { KV,KT : %s_d(S,B,KV,KT,_) }."
+    (String.concat ", " ((base :: ctx.rule_guard) @ cond @ [ Printf.sprintf "%s_b(B,_,_)" p ]))
+    p;
+  emit ctx
+    "viol(\"non-exact pro-rata part (an explicit rounding is mandated before precision is \
+     lost)\",S) :- %s, %s \\ %s != 0."
+    (String.concat ", " body)
+    numt dent;
+  head_body ctx
+    (Printf.sprintf "tl(S,%s,B,N,%s/%s)" (str a) numt dent)
+    (body @ [ Printf.sprintf "%s \\ %s == 0" numt dent ])
+
 let translate_regel ctx (r : resolved_regel) =
   match r.rr_geldigheid with
   | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
@@ -1001,6 +1104,26 @@ let translate_regel ctx (r : resolved_regel) =
               | Some (Literal { waarde = Some "waar"; _ }) -> ()
               | _ -> fault "characteristic attribution with a non-waar value");
               head_body ctx (Printf.sprintf "heeft(%s,%s)" subject (str a)) (base :: cond)
+          | Some (Berekening | Gelijkstelling) when attr_temporal ctx ~otype:ot ~attr:a -> (
+              match r.waarde with
+              | Some
+                  (Functie
+                     { kind = Tijdsevenredig_deel;
+                       argumenten =
+                         [ Attribuut_ref
+                             { attribuut = Some b; objecttype = Some bot; navigatie_rol = None;
+                               navigatie_pad = []; set = false; _ } ];
+                       filter =
+                         Some
+                           (Kenmerk_check
+                              { kenmerk = Some k; navigatie = None; negatie = false; _ });
+                       granulariteit = Some g; leegwaarde = None; dimensie_selectie = None; _ })
+                when norm bot = norm ot ->
+                  translate_pro_rata ctx ~subject ~ot ~a ~cond ~b ~k ~g
+              | _ ->
+                  fault
+                    "a temporal target takes only the ch. 3.7 pro-rata shape (an own temporal \
+                     base with a gedurende condition); no corpus case for more")
           | Some (Berekening | Gelijkstelling) ->
               let target_scale = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
               units_identical_ok
@@ -1691,5 +1814,5 @@ let translate (doc : document) (case : Case.t) : string =
   List.iter (translate_uniciteit ctx) doc.uniciteiten;
   List.iteri (translate_uniciteit_unie ctx) doc.uniciteit_unies;
   translate_case ctx case;
-  emit ctx "#show val/3. #show heeft/2. #show inconsistent/2.";
+  emit ctx "#show val/3. #show heeft/2. #show inconsistent/2. #show tl/5.";
   Buffer.contents ctx.buf

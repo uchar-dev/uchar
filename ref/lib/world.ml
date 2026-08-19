@@ -94,6 +94,23 @@ let write_attr w ~label ~attr:name ~decl v =
   if Arith.equal old v then (w, false)
   else (update w { i with attrs = SMap.add (norm name) v i.attrs }, true)
 
+(* a timeline write (ch. 3.11, the pro-rata target): idempotence
+   compares segment lists exactly — same bounds, value-equal payloads.
+   Values land exactly as computed (v0 writes the fold's fraction
+   without a target rounding; the §6.1.2 discipline is downstream). *)
+let write_timeline w ~label ~attr:name (tl : Timeline.t) =
+  let i = get w label in
+  let same (a : Timeline.t) (b : Timeline.t) =
+    List.length a = List.length b
+    && List.for_all2
+         (fun (x : Timeline.segment) (y : Timeline.segment) ->
+           x.s_van = y.s_van && x.s_tot = y.s_tot && Arith.equal x.s_waarde y.s_waarde)
+         a b
+  in
+  match SMap.find_opt (norm name) i.tls with
+  | Some old when same old tl -> (w, false)
+  | _ -> (update w { i with tls = SMap.add (norm name) tl i.tls }, true)
+
 (* characteristics are monotone within one evaluation (ch. 5.3):
    default false, only ever set true *)
 let set_char w ~label ~char =

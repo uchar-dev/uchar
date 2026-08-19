@@ -1,0 +1,153 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "borgtarief": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-01-01",
+                "value": {
+                  "number": "12"
+                }
+              },
+              {
+                "from": "2025-01-01",
+                "to": "2026-01-01",
+                "value": {
+                  "number": "18"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "borgplichtig": [
+            {
+              "from": "2024-01-01",
+              "to": "2025-02-08"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "borgdeel",
+      "timeline": [
+        {
+          "from": "2024-01-01",
+          "to": "2024-02-01",
+          "value": {
+            "number": "12"
+          }
+        },
+        {
+          "from": "2024-02-01",
+          "to": "2024-03-01",
+          "value": {
+            "number": "12"
+          }
+        },
+        {
+          "from": "2024-03-01",
+          "to": "2024-04-01",
+          "value": {
+            "number": "12"
+          }
+        },
+        {
+          "from": "2024-04-01",
+          "to": "2024-05-01",
+          "value": {
+            "number": "12"
+          }
+        },
+        {
+          "from": "2024-05-01",
+          "to": "2024-06-01",
+          "value": {
+            "number": "12"
+          }
+        },
+        {
+          "from": "2024-06-01",
+          "to": "2024-07-01",
+          "value": {
+            "number": "12"
+          }
+        },
+        {
+          "from": "2024-07-01",
+          "to": "2024-08-01",
+          "value": {
+            "number": "12"
+          }
+        },
+        {
+          "from": "2024-08-01",
+          "to": "2024-09-01",
+          "value": {
+            "number": "12"
+          }
+        },
+        {
+          "from": "2024-09-01",
+          "to": "2024-10-01",
+          "value": {
+            "number": "12"
+          }
+        },
+        {
+          "from": "2024-10-01",
+          "to": "2024-11-01",
+          "value": {
+            "number": "12"
+          }
+        },
+        {
+          "from": "2024-11-01",
+          "to": "2024-12-01",
+          "value": {
+            "number": "12"
+          }
+        },
+        {
+          "from": "2024-12-01",
+          "to": "2025-01-01",
+          "value": {
+            "number": "12"
+          }
+        },
+        {
+          "from": "2025-01-01",
+          "to": "2025-02-01",
+          "value": {
+            "number": "18"
+          }
+        },
+        {
+          "from": "2025-02-01",
+          "to": "2025-03-01",
+          "value": {
+            "number": "4.5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
