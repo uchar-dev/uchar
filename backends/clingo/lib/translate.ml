@@ -356,11 +356,111 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                :: fatoms)) ],
         v,
         pow10 (attr_decimals ctx ~otype:el ~attr:a) )
-  | Functie { kind = Totaal; argumenten = [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; _ } ]; filter = Some _; _ }
+  | Functie { kind = Totaal; argumenten = [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; _ } ]; filter = Some c; _ }
     when attr_temporal ctx ~otype:aot ~attr:a ->
-      fault
-        "the gedurende timeline clip (a filter on the temporal total, \xc2\xa77.1) is not \
-         implemented \xe2\x80\x94 it is a timeline operation, never an instance subselection"
+      (* ch. 3.6, the gedurende clip: intersect the value timeline (tl/5)
+         with the condition's true-periods, then total whole units per
+         clipped segment. The intersection is pure integer max/min (four
+         explicit cases — old grounders lack assignment aggregates); the
+         CALENDAR (whole units per clipped span) enters as data: wu
+         facts computed by the shared Timeline module over the finite
+         cut set of the case's timeline endpoints, so the logic stays in
+         ASP and the calendar cannot drift from ref/. A fully
+         clipped-away or absent timeline sums to 0 — the #sum over the
+         empty set, exactly the mirrored v0 nuance. *)
+      (* the clip needs full timelines where the attribute is carried at
+         all — an ABSENT attribute clips to the empty sum (0, the v0
+         nuance), but a bucket scalar would read silently wrong *)
+      Eval.SMap.iter
+        (fun _ (i : Uchar_ref.World.instance) ->
+          if
+            Ir_v0.Checks.norm i.otype = Ir_v0.Checks.norm aot
+            && Uchar_ref.World.timeline i a = None
+            && Uchar_ref.World.attr i a <> Value.Empty
+          then
+            fault
+              "the gedurende clip of %S needs the full timeline; %S supplies only the                asOfDate-bucket scalar"
+              a i.label)
+        ctx.case.world.instances;
+      let gran = attr_granularity ctx ~otype:aot ~attr:a in
+      ctx.fresh <- ctx.fresh + 1;
+      let p = Printf.sprintf "cl%d" ctx.fresh in
+      (* the condition's period atoms over a fresh variable pair *)
+      let cond_atom =
+        match c with
+        | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; _ } ->
+            Printf.sprintf "ktl(S,%s,V2,T2)" (str k)
+        | Kenmerk_check { negatie = true; _ } ->
+            fault
+              "the negated gedurende clip (the complement walk) is not translated \
+               (no corpus case exercises it)"
+        | Vergelijking
+            { op; links = Some (Attribuut_ref
+                { attribuut = Some b; objecttype = Some botn; navigatie_rol = None;
+                  navigatie_pad = []; set = false; _ });
+              rechts = Some grens; periode = None; _ }
+          when norm botn = norm aot && attr_temporal ctx ~otype:botn ~attr:b ->
+            let gb, gt, gs = expr_term ctx ~subject ~subject_ot grens in
+            let bscale = pow10 (attr_decimals ctx ~otype:botn ~attr:b) in
+            let m = max bscale gs in
+            let wl = if bscale = m then "WB" else Printf.sprintf "(WB*%d)" (m / bscale) in
+            let gl = if gs = m then gt else Printf.sprintf "(%s*%d)" gt (m / gs) in
+            emit ctx "%s_cond(S,V2,T2) :- %s."
+              p
+              (String.concat ", "
+                 (Printf.sprintf "tl(S,%s,V2,T2,WB)" (str b)
+                 :: gb
+                 @ [ Printf.sprintf "%s %s %s" wl (vergelijk_sym op) gl ]));
+            Printf.sprintf "%s_cond(S,V2,T2)" p
+        | _ ->
+            fault
+              "unsupported gedurende condition shape (WF-055: an own temporal \
+               characteristic or a per-segment comparison of an own temporal attribute)"
+      in
+      (* four-case integer intersection: V = max(V1,V2), T = min(T1,T2) *)
+      List.iter
+        (fun (vcmp, vpick, tcmp, tpick) ->
+          emit ctx "%s_seg(S,%s,%s,W) :- tl(S,%s,V1,T1,W), %s, %s, %s, %s < %s." p vpick
+            tpick (str a) cond_atom vcmp tcmp vpick tpick)
+        [ ("V1 >= V2", "V1", "T1 <= T2", "T1");
+          ("V1 >= V2", "V1", "T1 > T2", "T2");
+          ("V1 < V2", "V2", "T1 <= T2", "T1");
+          ("V1 < V2", "V2", "T1 > T2", "T2") ];
+      (* the calendar as data: whole units per candidate clipped span *)
+      let endpoints =
+        Eval.SMap.fold
+          (fun _ (i : Uchar_ref.World.instance) acc ->
+            let tl_pts =
+              Eval.SMap.fold
+                (fun _ (tl : Uchar_ref.Timeline.t) acc ->
+                  List.concat_map
+                    (fun (s : Uchar_ref.Timeline.segment) -> [ s.s_van; s.s_tot ])
+                    tl
+                  @ acc)
+                i.tls acc
+            in
+            Eval.SMap.fold
+              (fun _ periods acc ->
+                List.concat_map (fun (v, t) -> [ v; t ]) periods @ acc)
+              i.ctls tl_pts)
+          ctx.case.world.instances []
+        |> List.sort_uniq compare
+      in
+      List.iter
+        (fun v ->
+          List.iter
+            (fun t ->
+              if v < t then
+                emit ctx "%s_wu(%d,%d,%d)." p v t
+                  (Uchar_ref.Timeline.whole_units gran v t))
+            endpoints)
+        endpoints;
+      let q = fresh ctx "Q" in
+      emit ctx "%s_tot(S,%s) :- is_a(S,%s), %s = #sum { W*N,V,T : %s_seg(S,V,T,W), %s_wu(V,T,N) }."
+        p q (str subject_ot) q p p;
+      ( [ Printf.sprintf "%s_tot(%s,%s)" p subject q ],
+        q,
+        pow10 (attr_decimals ctx ~otype:aot ~attr:a) )
   | Functie { kind = Totaal; argumenten = [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; _ } ]; _ }
     when attr_temporal ctx ~otype:aot ~attr:a ->
       (* ch. 3.6 over the asOfDate bucket: value × whole-units (= 1 for
@@ -1046,6 +1146,12 @@ let translate_case ctx (case : Case.t) =
             tl)
         i.tls;
       Eval.SMap.iter
+        (fun cname periods ->
+          List.iter
+            (fun (v, t) -> emit ctx "ktl(%s,%s,%d,%d)." (str_raw label) (str cname) v t)
+            periods)
+        i.ctls;
+      Eval.SMap.iter
         (fun key targets ->
           let canonical = role_canonical (Case.resolve_role doc ~otype:i.otype ~key) in
           List.iter
@@ -1099,7 +1205,7 @@ let translate (doc : document) (case : Case.t) : string =
     { Eval.doc; params = case.params; param_tls = case.param_tls; as_of = case.as_of };
   emit ctx "%% generated by backends/clingo from regelspraak-ir-v0 + uchar-case-v0.";
   emit ctx "#defined val/3. #defined heeft/2. #defined rol/3. #defined param/2.";
-  emit ctx "#defined inconsistent/2. #defined tl/5. #defined param_tl/4.";
+  emit ctx "#defined inconsistent/2. #defined tl/5. #defined param_tl/4. #defined ktl/4.";
   emit ctx "#defined inputval/3. #defined viol/2. #defined inputrol/3.";
   if has_recursive_creation doc then begin
     (* the generation-depth bound (ch. 5.5's fire budget, grounded): a

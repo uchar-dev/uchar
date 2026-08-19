@@ -235,7 +235,60 @@ let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
       (obj (field kvs "roles"))
     |> fst
   in
-  { label; otype = otype_name; attrs; chars; links; tls }
+  let ctls =
+    match List.assoc_opt "characteristicTimelines" kvs with
+    | None -> SMap.empty
+    | Some j ->
+        List.fold_left
+          (fun acc (cname, pj) ->
+            if not (Ir_v0.Checks.mem_ci (Ir_v0.Checks.some_names ot.kenmerken) cname) then
+              fail "characteristic %S is not declared on %S" cname otype_name;
+            let gran =
+              match
+                List.find_opt (fun (k, _) -> norm k = norm cname) ot.kenmerk_granulariteit
+              with
+              | Some (_, Some g) -> g
+              | _ ->
+                  fail "%s.%s: a characteristic timeline on a non-temporal characteristic"
+                    label cname
+            in
+            let at = label ^ "." ^ cname in
+            let day_of ~what sj =
+              match Value.date_of_iso (str sj) with
+              | Value.Date d -> d
+              | _ -> fail "%s: malformed %s date" at what
+            in
+            let aligned d =
+              let van, _ = Timeline.bucket gran d in
+              van = d
+            in
+            let periods =
+              match pj with
+              | `List l ->
+                  List.map
+                    (fun sj ->
+                      let skvs = obj sj in
+                      let van = day_of ~what:"from" (field skvs "from") in
+                      let tot = day_of ~what:"to" (field skvs "to") in
+                      if tot <= van then fail "%s: period 'to' must lie after 'from'" at;
+                      if not (aligned van && aligned tot) then
+                        fail "%s: period boundaries must sit on the declared granularity grid"
+                          at;
+                      (van, tot))
+                    l
+              | _ -> fail "%s: expected a list of periods" at
+            in
+            let sorted = List.sort compare periods in
+            List.iteri
+              (fun i (v, _) ->
+                if i > 0 then
+                  let _, prev_t = List.nth sorted (i - 1) in
+                  if v < prev_t then fail "%s: periods overlap" at)
+              sorted;
+            SMap.add (norm cname) sorted acc)
+          SMap.empty (obj j)
+  in
+  { label; otype = otype_name; attrs; chars; links; tls; ctls }
 
 (* §13.3.9.2, mirrored: one reciprocal relation entry holds in BOTH
    directions — the pinned runtime writes both to-one legs so

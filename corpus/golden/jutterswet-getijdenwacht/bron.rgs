@@ -1,0 +1,13 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de wachtvergoeding per maand Numeriek (geheel getal) voor elke maand;
+    is wachtplichtig kenmerk (bijvoeglijk) voor elke maand;
+    de wachtsom Numeriek (geheel getal);
+    de topsom Numeriek (geheel getal);
+
+Regel wachtsom van een jutter
+    geldig altijd
+        De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is).
+
+Regel topsom van een jutter
+    geldig altijd
+        De topsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan 10).

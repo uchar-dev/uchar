@@ -22,6 +22,10 @@ type instance = {
       (* full case-supplied timelines of temporal attributes (norm name);
          disjoint from [attrs] — a temporal attribute carries either the
          asOfDate-bucket scalar there or its full timeline here *)
+  ctls : (int * int) list SMap.t;
+      (* true-periods of temporal characteristics (norm name): half-open
+         day intervals where the characteristic holds; a gap means it
+         does not hold there (the gedurende clip cuts it away, ch. 3.6) *)
 }
 
 type error_fact = { rule : string; subject : string }

@@ -479,16 +479,66 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
          timeline to a scalar. The case carries the asOfDate bucket's
          value (corpus/golden/README.md); the collapse folds that
          one-bucket timeline: value × whole-units of its own grid. *)
-      if filter <> None then
-        Value.fault
-          "the gedurende timeline clip (a filter on the temporal total, §7.1) is not \
-           implemented — it is a timeline operation, never an instance subselection";
       let ot_decl = objecttype env aot in
       let gran =
         match Ir_v0.Checks.find_ci ot_decl.attribuut_granulariteit a with
         | Some (Some g) -> g
         | _ -> Value.fault "temporal attribute %S without a granularity" a
       in
+      (match filter with
+      | Some c -> (
+          (* ch. 3.6, the gedurende clip: intersect the value timeline
+             with the condition's true-periods, then total whole units
+             per clipped segment (floor, never pro-rata). A gap in the
+             condition is clipped away; a fully clipped-away — or
+             absent — value timeline totals 0, never leeg (the clip's
+             presence turns absence into 0, the mirrored v0 nuance).
+             The clip needs the FULL value timeline: a case that
+             carries only the asOfDate-bucket scalar cannot serve it. *)
+          let tl =
+            match World.timeline self a with
+            | Some tl -> tl
+            | None ->
+                if World.attr self a = Value.Empty then []
+                else
+                  Value.fault
+                    "the gedurende clip of %S needs the full timeline; the case supplies only \
+                     the asOfDate-bucket scalar"
+                    a
+          in
+          let span = List.map (fun (s : Timeline.segment) -> (s.s_van, s.s_tot)) tl in
+          let true_periods =
+            match c with
+            | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie; _ } ->
+                if not (kenmerk_temporal ot_decl k) then
+                  Value.fault
+                    "gedurende over %S, which is not a temporal characteristic (WF-055)" k;
+                let periods =
+                  Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]
+                in
+                if negatie then Timeline.complement periods ~span else periods
+            | Vergelijking
+                { op; links = Some (Attribuut_ref
+                    { attribuut = Some b; objecttype = Some botn; navigatie_rol = None;
+                      navigatie_pad = []; set = false; _ });
+                  rechts = Some grens; periode = None; _ }
+              when norm botn = norm self.otype
+                   && Ir_v0.Checks.attr_temporal ot_decl b ->
+                (* the compared timeline is evaluated PER SEGMENT against
+                   the scalar bound (piecewise-constant, never per day) *)
+                let tested =
+                  match World.timeline self b with Some t -> t | None -> []
+                in
+                let bound = eval_expr env world self ~err grens in
+                Timeline.true_periods_of tested ~span (fun v ->
+                    Arith.compare_op op v bound)
+            | _ ->
+                Value.fault
+                  "unsupported gedurende condition shape (WF-055: an own temporal \
+                   characteristic or a per-segment comparison of an own temporal attribute)"
+          in
+          Timeline.totaal gran (Timeline.clip tl true_periods))
+      | None -> (
       if World.timeline self a <> None then
         Value.fault
           "the temporal total of %S over a case-supplied full timeline is not exercised by any \
@@ -506,7 +556,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
           | v ->
               let day = match Value.date_of_iso d with Value.Date z -> z | _ -> assert false in
               let van, tot = Timeline.bucket gran day in
-              Timeline.totaal gran [ { Timeline.s_van = van; s_tot = tot; s_waarde = v } ]))
+              Timeline.totaal gran [ { Timeline.s_van = van; s_tot = tot; s_waarde = v } ]))))
   | _ ->
   (* non-temporal aggregation *)
   (* contributors: an instance fold over a role (element_objecttype set),
@@ -900,7 +950,7 @@ let run_object_creatie env ~world0 ~idx world (oc : resolved_object_creatie) =
             let w =
               World.add_instance w
                 { World.label; otype = nieuw; attrs = SMap.empty; chars = [];
-                  links = SMap.empty; tls = SMap.empty }
+                  links = SMap.empty; tls = SMap.empty; ctls = SMap.empty }
             in
             let w =
               List.fold_left

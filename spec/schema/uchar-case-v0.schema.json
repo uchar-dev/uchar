@@ -74,6 +74,21 @@
             "items": { "type": "string", "minLength": 1 }
           }
         },
+        "characteristicTimelines": {
+          "description": "Full timelines of temporal characteristics: per declared temporal characteristic the true-periods, day-precision, from inclusive / to exclusive, ordered and non-overlapping, aligned to the declaration's granularity grid. Absence of a period means the characteristic does not hold there (a gap is clipped away, never leeg).",
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object", "additionalProperties": false, "required": ["from", "to"],
+              "properties": {
+                "from": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+                "to": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" }
+              }
+            }
+          }
+        },
         "characteristics": {
           "description": "Characteristics asserted true on input; every other characteristic starts false.",
           "type": "array",

@@ -133,7 +133,7 @@ let mini_world v =
       attrs = (match v with None -> World.SMap.empty | Some v -> World.SMap.singleton "a" v);
       chars = [];
       links = World.SMap.empty;
-      tls = World.SMap.empty;
+      tls = World.SMap.empty; ctls = World.SMap.empty;
     }
 
 let () =
@@ -494,7 +494,7 @@ let inst label otype attrs : World.instance =
     attrs = List.fold_left (fun m (k, v) -> World.SMap.add k v m) World.SMap.empty attrs;
     chars = [];
     links = World.SMap.empty;
-    tls = World.SMap.empty;
+    tls = World.SMap.empty; ctls = World.SMap.empty;
   }
 
 let env_of doc : Eval.env =
