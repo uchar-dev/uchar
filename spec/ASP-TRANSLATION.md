@@ -577,11 +577,16 @@ guard deliberately omits the enclosing rule's condition: ref evaluates
 a voorwaarde on every subject, so fencing it for every subject mirrors
 that reach. The safe side is pinned by `corpus/golden/synth-grensrand`:
 the largest translatable product (46340² = 2147395600) replays exactly,
-so the guard provably does not fire early. Not yet fenced: the
-allocation recurrence, the uniqueness-union scale harmonisation, and
-the accumulation inside `#sum` aggregates (the summed terms are
-operand-guarded; the running sum is not) predate or exceed this
-round — recorded for a later one.
+so the guard provably does not fire early. The remainder recorded by
+round 1 is closed (2026-08-19): the allocation recurrence bounds pot
+and weights at 46340 with at most 46340 recipients (the weight sum,
+the pot×weight product and the share sum then provably stay inside
+2^31 — shares never exceed the pot under the non-negative-weight
+guard), the uniqueness-union harmonisation fences each upscaled key at
+max_int31 over its compile-time factor, and every `#sum` accumulation
+bounds both its contributors and their count at 46340 (46340² < 2^31).
+`#count` aggregates carry no fence: a count cannot approach 2^31
+before grounding itself becomes infeasible — recorded, not guarded.
 
 **The unit fence.** ref restates operands across units with exact
 conversion factors (1 m plus 50 cm = 150 cm); the integer encoding

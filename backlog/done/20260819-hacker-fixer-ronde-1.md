@@ -64,5 +64,6 @@ join/comparison replay exactly. Recorded remainder for a later round:
 the allocation recurrence, the uniqueness-union harmonisation and #sum
 accumulation share the wrap class unguarded; aggregation/temporal
 surfaces were only partially hunted (see the hunters' surfacesHunted
-logs in the session record). Corpus stands at 73 running cases, 75
-negatiefs, 6 red; ref ≡ clingo everywhere.
+logs in the session record). Corpus stands at 72 running cases, 75
+negatiefs, 6 red; ref ≡ clingo everywhere. (72 corrects a
+miscount of 73 in the first version of this note.)

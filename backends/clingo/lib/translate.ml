@@ -498,11 +498,25 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         | None -> []
         | Some c -> cond_atoms ctx ~subject:x ~subject_ot:el c
       in
-      ( [ Printf.sprintf "%s = #sum { %s,%s : %s }" v g x
-            (String.concat ", "
-               (Printf.sprintf "rol(%s,%s,%s)" subject (str role_name) x
-               :: Printf.sprintf "val(%s,%s,%s)" x (str a) g
-               :: fatoms)) ],
+      let contrib_body =
+        Printf.sprintf "rol(%s,%s,%s)" subject (str role_name) x
+        :: Printf.sprintf "val(%s,%s,%s)" x (str a) g
+        :: fatoms
+      in
+      (* the #sum accumulation stays inside 2^31 by bounding both the
+         contributors and their count: 46340 × 46340 < 2^31 *)
+      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      range_guard ctx ~subject
+        ~body:((base :: ctx.rule_guard) @ contrib_body)
+        [ (g, 46340) ];
+      emit ctx
+        "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, \
+         46340 < #count { %s : %s }."
+        subject
+        (String.concat ", " (base :: ctx.rule_guard))
+        x
+        (String.concat ", " contrib_body);
+      ( [ Printf.sprintf "%s = #sum { %s,%s : %s }" v g x (String.concat ", " contrib_body) ],
         v,
         pow10 (attr_decimals ctx ~otype:el ~attr:a) )
   | Functie { kind = Totaal; argumenten = [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; navigatie_rol = None; navigatie_pad = []; set = false; _ } ]; filter = Some c; _ }
@@ -1354,6 +1368,22 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
   emit ctx "viol(\"allocation: negative pot\",B) :- is_a(B,%s), val(B,%s,A), A < 0." (str bt)
     (str ba);
   emit ctx "viol(\"allocation: negative weight\",X) :- %sgewicht(X,W), W < 0." p;
+  (* the wrap fence: pot and weights ≤ 46340 and at most 46340
+     recipients keep the weight sum, the pot×weight product and the
+     share sum inside 2^31 (shares never exceed the pot: W ≤ S under
+     the non-negative-weight guard, and a cap only lowers them) *)
+  emit ctx
+    "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X) :- \
+     %sgewicht(X,W), |W| > 46340."
+    p;
+  emit ctx
+    "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",B) :- \
+     is_a(B,%s), val(B,%s,A), |A| > 46340."
+    (str bt) (str ba);
+  emit ctx
+    "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",B) :- \
+     is_a(B,%s), 46340 < #count { X : rol(B,%s,X) }."
+    (str bt) (str role);
   emit ctx "%sheeft_pot(B) :- is_a(B,%s), val(B,%s,_)." p (str bt) (str ba);
   emit ctx "viol(\"allocation: empty pot\",B) :- is_a(B,%s), rol(B,%s,_), not %sheeft_pot(B)."
     (str bt) (str role) p;
@@ -1378,6 +1408,12 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
   | None -> emit ctx "val(X,%s,R) :- %sraw(X,R)." (str da) p);
   (match v.restant_attribuut with
   | Some ra ->
+      (* shares are ≤ pot ≤ 46340 by construction; this guard also
+         covers a share written by anything other than this allocation *)
+      emit ctx
+        "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X) :- \
+         rol(B,%s,X), is_a(B,%s), val(X,%s,Sh), |Sh| > 46340."
+        (str role) (str bt) (str da);
       emit ctx "val(B,%s,A-T) :- is_a(B,%s), val(B,%s,A), %swsum(B,_), T = #sum { Sh,X : rol(B,%s,X), val(X,%s,Sh) }."
         (str ra) (str bt) (str ba) p (str role) (str da)
   | None -> ())
@@ -1474,6 +1510,20 @@ let translate_uniciteit_unie ctx i (u : resolved_uniciteit_unie) =
              (fun pos k -> Printf.sprintf "val(S,%s,K%d)" (str (req "sleutel" k)) pos)
              b.uub_sleutels
       in
+      (* the per-position upscale is an emitted multiplication: fence
+         the raw key against the compile-time factor *)
+      List.iteri
+        (fun pos k ->
+          let k = req "sleutel" k in
+          let d = attr_decimals ctx ~otype:t ~attr:k in
+          let m = pow10 (List.nth scales pos - d) in
+          if m > 1 then
+            emit ctx
+              "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S) :- \
+               %s, |K%d| > %d."
+              (String.concat ", " body)
+              pos (max_int31 / m))
+        b.uub_sleutels;
       emit ctx "%s(S,%d,%s) :- %s." pred j (String.concat "," head_args)
         (String.concat ", " body))
     u.bronnen;
