@@ -633,6 +633,27 @@ refusal; it may not inherit the ambiguity.
 
 ### 3.6 Collapse to a scalar — the temporal total
 
+**The gedurende clip (landed 2026-08-19, WF-055).** A filter on the
+temporal total clips the value timeline BEFORE the total: intersect
+each value segment with the condition's true-periods (half-open
+interval intersection; the condition's own values are ignored), then
+total whole units of the value's granularity per clipped segment —
+floor, never pro-rata (a per-year value clipped to a partial year
+contributes 0). The condition's true-periods come from an own temporal
+characteristic (its case-supplied periods; a gap means the
+characteristic does not hold and clips away; negation takes the
+complement within the value segments) or from a per-segment comparison
+of an own temporal attribute against a scalar bound
+(piecewise-constant, never per day). A fully clipped-away — or
+absent — value timeline totals 0, never leeg: the clip's presence
+turns absence into 0 (the mirrored v0 nuance; the unfiltered total of
+an absent timeline stays leeg). Worked example (the
+`jutterswet-getijdenwacht` emitter golden, verbatim in gates 5–6):
+10/month through 2023 and 11/month January–June 2024, clipped to
+[2023-07-01, 2024-02-01) → 6×10 + 1×11 = 71; the comparison clip
+"> 10" keeps the 11-segment → 6×11 = 66; a carrier without periods, and
+one without a timeline, both total 0.
+
 "Het totaal van" a timeline over time collapses it to one scalar:
 
 ```

@@ -109,3 +109,13 @@ characteristic-filtered count over a DERIVED characteristic (the filter
 reads what another rule writes — the strata witness), executed by both
 executors; a contributor with an empty filter operand drops out
 (ch. 1.2d), which the clingo join encodes for free.
+
+`jutterswet-getijdenwacht` (2026-08-19) is the gedurende-clip emitter
+golden (WF-055): the v0 71-pattern verbatim — 10/month through 2023 and
+11/month January–June 2024, clipped to the wachtplichtig periods
+[2023-07-01, 2024-02-01) → 6×10 + 1×11 = 71 — beside the per-segment
+comparison clip (> 10 keeps the 11-segment: 66) and the three zero
+shapes (no periods, no timeline, nothing above the bound). Case
+convention, recorded: a temporal characteristic's true-periods ride the
+`characteristicTimelines` instance field (half-open, grid-aligned); a
+gap means the characteristic does not hold there.

@@ -1513,6 +1513,46 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
                | Attribuut_ref _, Some _ -> aggregation_source_check ctx p a
                | _ -> walk_expr ctx ~subject p a)
              f.argumenten)
+      (* WF-055: the gedurende clip — a filter on the temporal total is a
+         timeline operation; its condition is an own temporal
+         characteristic check or a per-segment comparison of an own
+         temporal attribute against a scalar bound *)
+      @ (match (f.kind, f.argumenten, f.filter) with
+         | ( Totaal,
+             [ Attribuut_ref
+                 { attribuut = Some a; objecttype = Some aot; navigatie_rol = None;
+                   navigatie_pad = []; set = false; _ } ],
+             Some c )
+           when (match objecttype ctx aot with
+                | Some ot -> attr_temporal ot a
+                | None -> false) -> (
+             let temporal_char k =
+               match objecttype ctx aot with
+               | Some ot ->
+                   List.exists (fun (n, _) -> norm n = norm k) ot.kenmerk_granulariteit
+               | None -> false
+             in
+             match c with
+             | Kenmerk_check { kenmerk = Some k; navigatie = None; _ } ->
+                 if temporal_char k then []
+                 else
+                   [ v "WF-055" (sub "filter")
+                       ("gedurende over '" ^ k
+                      ^ "', which is not a temporal characteristic of '" ^ aot ^ "'") ]
+             | Vergelijking
+                 { links = Some (Attribuut_ref
+                     { attribuut = Some b; objecttype = Some botn; navigatie_rol = None;
+                       navigatie_pad = []; set = false; _ });
+                   rechts = Some _; periode = None; _ }
+               when norm botn = norm aot
+                    && (match objecttype ctx botn with
+                       | Some ot -> attr_temporal ot b
+                       | None -> false) ->
+                 []
+             | _ ->
+                 [ v "WF-055" (sub "filter")
+                     "the gedurende condition is an own temporal characteristic check or a                       per-segment comparison of an own temporal attribute against a scalar                       bound" ])
+         | _ -> [])
       (* WF-047/048: the fold-source role binding (v1 extension) *)
       @ (let fold_source =
            match (f.element_objecttype, f.argumenten) with
