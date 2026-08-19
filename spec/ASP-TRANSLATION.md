@@ -584,7 +584,12 @@ the pot×weight product and the share sum then provably stay inside
 2^31 — shares never exceed the pot under the non-negative-weight
 guard), the uniqueness-union harmonisation fences each upscaled key at
 max_int31 over its compile-time factor, and every `#sum` accumulation
-bounds both its contributors and their count at 46340 (46340² < 2^31).
+is bounded — the Som aggregation, the weight sum and the share sum by
+contributor ≤ 46340 plus contributor count ≤ 46340 (46340² < 2^31);
+the clip total, whose contributors are W×N products, by the |W| ≤
+46340 segment guard plus a compile-time bound of 46340 whole units on
+the FULL clipped endpoint span (segments are disjoint slices of one
+timeline, so ΣN never exceeds the span and |ΣW×N| ≤ 46340² holds).
 `#count` aggregates carry no fence: a count cannot approach 2^31
 before grounding itself becomes infeasible — recorded, not guarded.
 

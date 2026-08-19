@@ -615,6 +615,19 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           ctx.case.world.instances []
         |> List.sort_uniq compare
       in
+      (* the clip total's #sum accumulates W×N terms; its segments are
+         disjoint slices of one timeline, so ΣN over any subject is at
+         most the whole units of the FULL endpoint span — bounding that
+         span at 46340 keeps |ΣW×N| ≤ 46340² < 2^31 under the |W|
+         segment guard below (the wrap fence, compile-time) *)
+      (match endpoints with
+      | [] -> ()
+      | lo :: _ ->
+          let hi = List.fold_left max lo endpoints in
+          let n = Uchar_ref.Timeline.whole_units gran lo hi in
+          if n > 46340 then
+            fault "the clipped endpoint span covers %d whole units, beyond the guarded sum range"
+              n);
       List.iter
         (fun v ->
           List.iter
