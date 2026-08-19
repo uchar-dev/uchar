@@ -1,11 +1,11 @@
 # uchar IR — Runtime semantics
 
 *Status: ch. 1–5 are normative **draft** (v0 mirror with tracked deltas and
-OPEN decisions); ch. 6–8 are skeleton. Authority for undocumented behaviour
-still lives in `regelspraak-java` (pinned commit `b85dff3`):
-`runtime/RegelSpraakRuntime.java` — the single shared implementation both
-Drools back-ends call — and the decision records in
-`docs/grammar-divergences.md`; that pointer leaves at Phase-1 exit. Every
+OPEN decisions); ch. 6–8 are skeleton. This document reads stand-alone
+(graduated into the self-containedness gate at the Phase-1 exit,
+2026-08-19): behaviour it does not document is undocumented — the
+mirror's provenance and the pinned v0 source live in `spec/PLAN.md` §5
+and the git history, never here. Every
 `§…` reference is a section number of the RegelSpraak language
 specification — numbers only, no text from it is reproduced (construct
 keywords, such as the fallback clause quoted in ch. 1.2, excepted). This
@@ -1927,7 +1927,7 @@ One derived predicate carries the whole table: `decides_m` — rung *m*'s
 justification holds ∧ (attribute target: its consequence body derives a
 gevuld value; characteristic target: always — the boolean decision).
 
-| Declared (ch. 7) | ASP (`backends/clingo`) | Drools (`regelspraak-java`) | Replaces |
+| Declared (ch. 7) | ASP (`backends/clingo`) | Drools (the first-frontend toolchain) | Replaces |
 |---|---|---|---|
 | ladder rung *n* | its outcome rule carries `not decides_m` for each higher rung *m* (the nested art. 4 chain of `ASP-TRANSLATION.md` ch. 6.1 is the desugared characteristic special case) | generated guard from the higher rungs' `decides` conditions | the salience −1 trick — becomes derivable output |
 | fall-through on leeg (attribute) | `decides_n` is underivable when the consequence body is — absence composes | consequence-null guard | nothing (v0 cannot express it) |

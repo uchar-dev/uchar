@@ -9,21 +9,21 @@ WF-047/048; WF-028's check). New in v0.6: the temporal-read node
 characteristic default ladder (ch. 6.1, WF-050/051 — the Phase-4 first
 cut). New in v0.8: the attribute ladder with leeg fall-through and the
 initialisation rung (ch. 6.1). New in v0.9: the declared-unordered
-ladder group and the §9.5 conflict path (ch. 6.1). Authority for undocumented behaviour still lives in
-`regelspraak-java` (pinned commit `b85dff3`): the spec-§-citing javadoc of
-`ir/` and `model/`, and the decision records in
-`docs/grammar-divergences.md`; that authority pointer leaves this header at
-Phase-1 exit, when this document graduates into the self-containedness gate
-and must read stand-alone. Every `§…` reference is a section number of the
+ladder group and the §9.5 conflict path (ch. 6.1). This document reads stand-alone (graduated into the
+self-containedness gate at the Phase-1 exit, 2026-08-19): behaviour it
+does not document is undocumented — the mirror's provenance and the
+pinned v0 source live in `spec/PLAN.md` §5 and the git history, never
+here. Every `§…` reference is a section number of the
 RegelSpraak language specification — numbers only; no text from it is
 reproduced here (construct keywords, such as the sum-fallback clause named
 in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
 
 ## Method: mirror, then diverge
 
-- **v0** is the faithful JSON dump of `regelspraak-java`'s in-memory IR
-  (`Resolver --ir`; the working pin is the toolchain commit `edecb46`,
-  emitting since `446dfa6`) at a pinned commit — warts included.
+- **v0** is the faithful JSON dump of the first-frontend toolchain's
+  in-memory IR (`spec/PLAN.md` §5; the working pin is its commit
+  `edecb46`, emitting since `446dfa6`) at a pinned commit — warts
+  included.
 - **v1** is what this document specifies: it deviates from v0 deliberately
   where the founding review (`IR-REVIEW.md`) flagged Drools leakage
   (bean-field names → role bindings, salience → declared stratification,
