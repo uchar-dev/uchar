@@ -1,0 +1,84 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "borgtarief": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-01-01",
+                "value": {
+                  "number": "31"
+                }
+              }
+            ]
+          },
+          "jaartarief": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-01-01",
+                "value": {
+                  "number": "36.6"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "borgplichtig": [
+            {
+              "from": "2024-12-05",
+              "to": "2024-12-11"
+            },
+            {
+              "from": "2024-12-20",
+              "to": "2024-12-24"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "borgdeel",
+      "timeline": [
+        {
+          "from": "2024-12-01",
+          "to": "2025-01-01",
+          "value": {
+            "number": "10"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "jaardeel",
+      "timeline": [
+        {
+          "from": "2024-01-01",
+          "to": "2025-01-01",
+          "value": {
+            "number": "1"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

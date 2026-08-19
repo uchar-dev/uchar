@@ -519,6 +519,11 @@ let check (case : t) (final : World.t) : string list =
           in
           let render l = if l = [] then "(empty)" else String.concat " " (List.map show l) in
           match World.timeline (World.get final label) attr with
+          | None when tl = [] ->
+              (* a never-written temporal target and an explicitly empty
+                 timeline read leeg on every day (ch. 3.1) — the empty
+                 expectation matches both, as it does on the clingo side *)
+              None
           | None ->
               Some (Printf.sprintf "%s.%s carries no timeline, expected %s" label attr (render tl))
           | Some actual ->

@@ -36,6 +36,33 @@
         },
         "roles": {},
         "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "borgtarief": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-01-01",
+                "value": {
+                  "number": "12"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "borgplichtig": [
+            {
+              "from": "2024-03-01",
+              "to": "2024-04-01"
+            }
+          ]
+        }
       }
     ],
     "parameters": {}
@@ -52,6 +79,20 @@
       "label": "J2",
       "attribute": "borgdeel",
       "timeline": []
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J3",
+      "attribute": "borgdeel",
+      "timeline": [
+        {
+          "from": "2024-03-01",
+          "to": "2024-04-01",
+          "value": {
+            "number": "12"
+          }
+        }
+      ]
     },
     {
       "kind": "consistent"

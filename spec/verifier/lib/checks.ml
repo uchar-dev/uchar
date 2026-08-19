@@ -1561,9 +1561,26 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
          coarse as or coarser than the bucket *)
       @ (if f.kind <> Tijdsevenredig_deel then []
          else
-           (if f.filter = None then
-              [ v "WF-056" at "tijdsevenredig-deel without a gedurende condition" ]
-            else [])
+           (match f.filter with
+           | None -> [ v "WF-056" at "tijdsevenredig-deel without a gedurende condition" ]
+           | Some (Kenmerk_check { kenmerk = Some k; navigatie = None; _ }) -> (
+               (* the gedurende characteristic MUST be temporal — a
+                  non-temporal one has no periods to prorate over (a
+                  hunted gap: ref faulted, clingo silently emptied) *)
+               match f.argumenten with
+               | [ Attribuut_ref { objecttype = Some bot; _ } ] -> (
+                   match objecttype ctx bot with
+                   | Some ot
+                     when not
+                            (List.exists
+                               (fun (n, _) -> norm n = norm k)
+                               ot.kenmerk_granulariteit) ->
+                       [ v "WF-056" (sub "filter")
+                           ("gedurende over '" ^ k ^ "', which is not a temporal characteristic")
+                       ]
+                   | _ -> [])
+               | _ -> [])
+           | Some _ -> [])
            @
            match f.argumenten with
            | [ Attribuut_ref { attribuut = Some b; objecttype = Some bot; _ } ] -> (

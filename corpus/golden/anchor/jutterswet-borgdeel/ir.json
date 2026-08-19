@@ -18,13 +18,29 @@
           "decimalen": 2,
           "teken": "ONBEPAALD",
           "eenheid": null
+        },
+        "jaartarief": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "jaardeel": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
         }
       },
       "attribuutMeervoud": {},
       "attribuutDimensies": {},
       "attribuutGranulariteit": {
         "borgtarief": "JAAR",
-        "borgdeel": "MAAND"
+        "borgdeel": "MAAND",
+        "jaartarief": "JAAR",
+        "jaardeel": "JAAR"
       },
       "attribuutTijdlijnAantal": {},
       "attribuutTijdlijnNaam": {},
@@ -54,6 +70,11 @@
     {
       "node": "Regel",
       "naam": "borgdeel van een jutter",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "jaardeel van een jutter",
       "soort": "regel"
     }
   ],
@@ -122,6 +143,78 @@
         },
         "bron": "het tijdsevenredig deel per maand van zijn borgtarief gedurende de tijd dat hij borgplichtig is",
         "granulariteit": "MAAND"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "jaardeel van een jutter",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "jaardeel",
+        "objecttype": "Jutter",
+        "onderwerpBron": "de Jutter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het jaardeel van een Jutter",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "TIJDSEVENREDIG_DEEL",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "jaartarief",
+            "objecttype": "Jutter",
+            "onderwerpBron": "de Jutter",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "zijn jaartarief",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": null,
+        "leegwaarde": null,
+        "filter": {
+          "node": "Kenmerk",
+          "kenmerk": "borgplichtig",
+          "navigatie": null,
+          "negatie": false,
+          "eigenaar": null,
+          "periode": null,
+          "bron": "gedurende de tijd dat hij borgplichtig is"
+        },
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "het tijdsevenredig deel per jaar van zijn jaartarief gedurende de tijd dat hij borgplichtig is",
+        "granulariteit": "JAAR"
       },
       "voorwaarde": null,
       "geldigheid": {

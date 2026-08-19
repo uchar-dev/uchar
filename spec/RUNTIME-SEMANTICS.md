@@ -731,12 +731,20 @@ deel on bucket B = read(base, start(B)) × trueDays(B) / days(B)
   nothing.
 - A rate-unit base is restated **first**, by its exact factor
   (`€/jr` base for a per-month target: ÷ 12 exactly), then prorated.
+  *Delta (tracked, `CONSTRUCTS.md` row on the date builtins):* the rate
+  restatement and the anchored-bucket variant are FENCED in both
+  executors until a corpus case lands — a unit-carrying base or target
+  faults loudly, never prorates factor-free.
 - The fraction is exact and is **never auto-rounded** to the target's
   declared decimals — rounding happens only at an explicit rounding or
   the assignment gate (ch. 2.4). *v0 mirror note (residual, same class as
   ch. 2.1):* v0 stores a non-terminating pro-rata at 16 significant
   digits (DECIMAL64); the exact fraction is normative, the store is the
   v0 approximation; backends must agree on the corpus after rounding.
+  The reference interpreter stores the exact fraction; the ASP
+  translation derives only outcomes exact at the target scale and
+  fences a remainder with a loud witness — a non-terminating pro-rata
+  therefore cannot enter the differential corpus un-rounded.
 
 Worked examples (absolute): base per year €12 (2024) / €18 (2025),
 condition true [2024-01-01, 2025-02-08), monthly target: twelve months of

@@ -998,6 +998,15 @@ let translate_pro_rata ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit) =
     (* ch. 3.7: a rate base restates by its exact factor first — not
        executed; refuse rather than prorate factor-free *)
     fault "pro-rata over a unit-carrying base or target is not translated (no corpus case)";
+  if
+    not
+      (List.exists
+         (fun (n, _) -> norm n = norm k)
+         (objecttype ctx ot).kenmerk_granulariteit)
+  then
+    (* mirror ref's fault — a non-temporal characteristic must never
+       silently prorate to an empty timeline (a hunted gap) *)
+    fault "gedurende over %S, which is not a temporal characteristic (WF-056)" k;
   (match (Ir_v0.Checks.find_ci (objecttype ctx ot).attribuut_granulariteit a,
           Ir_v0.Checks.find_ci (objecttype ctx ot).attribuut_granulariteit b) with
   | Some (Some tg), Some (Some bg) ->
