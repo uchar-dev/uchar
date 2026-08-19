@@ -32,3 +32,31 @@ Out of scope: the standing adversarial hacker–fixer session (its own
 card once this regime exists); scale (thousands of cases); the held-out
 split; the Drools leg of the square (lives in the toolchain repo); any
 change to existing gates or corpus content.
+
+Result: scripts/admit.sh mechanizes the PLAN §8 admission gauntlet and
+three synthesized goldens entered exclusively through it (corpus at 72
+running cases, ref ≡ clingo everywhere). Red shown first — the refusal
+routes were each demonstrated live before the admissions:
+  REFUSED — ref does not replay …case1.json (a wrong expectation)
+  REFUSED — …case1.json is satisfied by a do-nothing executor
+  REFUSED — …carries no case*.json (an empty candidate never admits)
+  REFUSED — case files below the top level would be skipped: …
+  REFUSED — …case1.json errors under --noop (exit 2), which refutes nothing
+The adversarial round hardened the script (verifier binary preference
+now matches the build it just ran; the no-op verdict distinguishes
+exit 2 from a genuine refutation, closing the route by which an
+expectedFault case slipped past step 5; nested case files refuse
+instead of silently dropping; clingo presence is a precondition; copies
+are checked) and sharpened the content: the rounding fan gained the
+85/4 = 21.25 case that separates REKENKUNDIG from NAAR_BOVEN/WEG_VAN_NUL
+(re-admitted through the protocol, 5 cases). Recorded structural
+boundary: on non-negative operands NAAR_BENEDEN ≡ RICHTING_NUL and
+NAAR_BOVEN ≡ WEG_VAN_NUL; the separating domain (negative operands) is
+fenced out of the clingo backend by a viol/2 witness, so the
+differential square cannot admit a case distinguishing those pairs —
+the corpus pins three equivalence classes, which is the honest maximum.
+The README now calls the script the *sanctioned* door: routing through
+it is working discipline, not itself a gate — the gate set judges what
+is in the corpus, not how it arrived. Deliberately left: the standing
+adversarial hacker–fixer session (next card in this line); scale; the
+held-out split; the Drools leg of the square.
