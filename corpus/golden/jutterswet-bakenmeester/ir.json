@@ -1,0 +1,144 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Bakenmeester": {
+      "node": "Objecttype",
+      "naam": "Bakenmeester",
+      "attributen": {
+        "onderhoudstarief": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "onderhoudsbijdrage": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {
+        "onderhoudstarief": "JAAR",
+        "onderhoudsbijdrage": "MAAND"
+      },
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "dienstdoend"
+      ],
+      "kenmerkSoorten": {
+        "dienstdoend": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {
+        "dienstdoend": "MAAND"
+      },
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Bakenmeesters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "onderhoudsbijdrage van een bakenmeester",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "onderhoudsbijdrage van een bakenmeester",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "onderhoudsbijdrage",
+        "objecttype": "Bakenmeester",
+        "onderwerpBron": "een Bakenmeester",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De onderhoudsbijdrage van een Bakenmeester",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "TIJDSEVENREDIG_DEEL",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "onderhoudstarief",
+            "objecttype": "Bakenmeester",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "zijn onderhoudstarief",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": null,
+        "leegwaarde": null,
+        "filter": {
+          "node": "Kenmerk",
+          "kenmerk": "dienstdoend",
+          "navigatie": null,
+          "negatie": false,
+          "eigenaar": null,
+          "periode": null,
+          "bron": "gedurende de tijd dat hij dienstdoend is"
+        },
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "het tijdsevenredig deel per maand van zijn onderhoudstarief gedurende de tijd dat hij dienstdoend is",
+        "granulariteit": "MAAND"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

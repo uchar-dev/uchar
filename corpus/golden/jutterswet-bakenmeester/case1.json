@@ -1,0 +1,62 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B1",
+        "objectType": "Bakenmeester",
+        "attributes": {
+          "onderhoudstarief": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2026-01-01",
+                "value": {
+                  "number": "24"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "dienstdoend": [
+            {
+              "from": "2025-03-01",
+              "to": "2025-04-16"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "B1",
+      "attribute": "onderhoudsbijdrage",
+      "timeline": [
+        {
+          "from": "2025-03-01",
+          "to": "2025-04-01",
+          "value": {
+            "number": "24"
+          }
+        },
+        {
+          "from": "2025-04-01",
+          "to": "2025-05-01",
+          "value": {
+            "number": "12"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+Objecttype de Bakenmeester (mv: Bakenmeesters) (bezield)
+    het onderhoudstarief Numeriek (getal met 2 decimalen) voor elk jaar;
+    de onderhoudsbijdrage Numeriek (getal met 2 decimalen) voor elke maand;
+    is dienstdoend kenmerk (bijvoeglijk) voor elke maand;
+
+Regel onderhoudsbijdrage van een bakenmeester
+    geldig altijd
+        De onderhoudsbijdrage van een Bakenmeester moet gesteld worden op het tijdsevenredig deel per maand van zijn onderhoudstarief gedurende de tijd dat hij dienstdoend is.
