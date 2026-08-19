@@ -543,7 +543,10 @@ license files live at the repository root. (10) **Decided
 (2026-08-16):** public at latest at the Phase-1 exit — §8's enforcement
 mechanism (branch protection requires a public repo on the free org plan)
 argues for flipping early, and the rights hygiene (gate 1, the TOKA
-tripwire) is in place.
+tripwire) is in place. **Deferred (2026-08-19):** at the Phase-1 exit the
+maintainer holds the flip — the repo stays private until further notice;
+the enforcement caveat (no branch protection on a private free-plan repo)
+stands with it.
 
 ## 10. Rough effort
 
