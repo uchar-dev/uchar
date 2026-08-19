@@ -1,0 +1,414 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Meting": {
+      "node": "Objecttype",
+      "naam": "Meting",
+      "attributen": {
+        "factorEen": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "factorTwee": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "grensproduct": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "lengteA": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "cm",
+            "stelsel": "Lengte",
+            "canoniek": "cm",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "lengteB": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "cm",
+            "stelsel": "Lengte",
+            "canoniek": "cm",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "totaal": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "cm",
+            "stelsel": "Lengte",
+            "canoniek": "cm",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "indicatie": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Metingen"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {
+    "Lengte": {
+      "node": "Eenheidstelsel",
+      "naam": "Lengte",
+      "eenheden": {
+        "cm": {
+          "node": "Eenheid",
+          "afkorting": "cm",
+          "stelsel": "Lengte",
+          "canoniek": "cm",
+          "factorNaarCanoniek": 1,
+          "noemer": null
+        }
+      },
+      "aliassen": {}
+    }
+  },
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "grensproduct van een meting",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "totaal van een meting",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "indicatie van een meting",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "grensproduct van een meting",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "grensproduct",
+        "objecttype": "Meting",
+        "onderwerpBron": "de Meting",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het grensproduct van een Meting",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "MAAL",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "factorEen",
+          "objecttype": "Meting",
+          "onderwerpBron": "de Meting",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de factorEen van de Meting",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "factorTwee",
+          "objecttype": "Meting",
+          "onderwerpBron": "de Meting",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de factorTwee van de Meting",
+          "set": false,
+          "navigatiePad": []
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de factorEen van de Meting maal de factorTwee van de Meting"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "totaal van een meting",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "totaal",
+        "objecttype": "Meting",
+        "onderwerpBron": "de Meting",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "cm",
+            "stelsel": "Lengte",
+            "canoniek": "cm",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "bron": "Het totaal van een Meting",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "PLUS",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "lengteA",
+          "objecttype": "Meting",
+          "onderwerpBron": "de Meting",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "cm",
+              "stelsel": "Lengte",
+              "canoniek": "cm",
+              "factorNaarCanoniek": 1,
+              "noemer": null
+            }
+          },
+          "bron": "de lengteA van de Meting",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "lengteB",
+          "objecttype": "Meting",
+          "onderwerpBron": "de Meting",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "cm",
+              "stelsel": "Lengte",
+              "canoniek": "cm",
+              "factorNaarCanoniek": 1,
+              "noemer": null
+            }
+          },
+          "bron": "de lengteB van de Meting",
+          "set": false,
+          "navigatiePad": []
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "cm",
+            "stelsel": "Lengte",
+            "canoniek": "cm",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "bron": "de lengteA van de Meting plus de lengteB van de Meting"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "indicatie van een meting",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "indicatie",
+        "objecttype": "Meting",
+        "onderwerpBron": "de Meting",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De indicatie van een Meting",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "1",
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "1"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "GROTER_OF_GELIJK",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "lengteA",
+          "objecttype": "Meting",
+          "onderwerpBron": "de Meting",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "cm",
+              "stelsel": "Lengte",
+              "canoniek": "cm",
+              "factorNaarCanoniek": 1,
+              "noemer": null
+            }
+          },
+          "bron": "de lengteA van de Meting",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "lengteB",
+          "objecttype": "Meting",
+          "onderwerpBron": "de Meting",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "cm",
+              "stelsel": "Lengte",
+              "canoniek": "cm",
+              "factorNaarCanoniek": 1,
+              "noemer": null
+            }
+          },
+          "bron": "de lengteB van de Meting",
+          "set": false,
+          "navigatiePad": []
+        },
+        "periode": null,
+        "bron": "de lengteA van de Meting is groter of gelijk aan de lengteB van de Meting"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

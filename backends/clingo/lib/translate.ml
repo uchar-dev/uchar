@@ -53,12 +53,34 @@ module Eval = Uchar_ref.Eval
 
 let norm = Ir_v0.Checks.norm
 let fault = Value.fault
-let str s = "\"" ^ norm s ^ "\""
-let str_raw s = "\"" ^ s ^ "\"" (* labels keep their case-sensitive spelling *)
+(* a declared name or case label lands between double quotes in the
+   generated ASP; a quote, backslash or control character would break
+   the program's syntax UNFENCED (a hunted crash), so such a name
+   faults with its reason instead of being emitted raw *)
+let quote s =
+  String.iter
+    (fun c ->
+      if c = '"' || c = '\\' || Char.code c < 0x20 then
+        fault "name or label %S carries a character the ASP string encoding cannot quote" s)
+    s;
+  "\"" ^ s ^ "\""
+
+let str s = quote (norm s)
+let str_raw s = quote s (* labels keep their case-sensitive spelling *)
 
 (* --- scales ------------------------------------------------------------- *)
 
+(* clingo grounds arithmetic in machine integers and wraps silently on
+   overflow (a hunted silent split: 50000*50000 grounded NEGATIVE, and
+   a wrapped comparison threshold flipped a branch). Every path into
+   the integer encoding is therefore fenced: scales beyond 10^9 fault
+   here, input values beyond 2^31-1 fault in [scaled_of_value], and
+   emitted multiplications carry viol/2 range guards (see
+   [range_guard]). *)
+let max_int31 = 2147483647
+
 let pow10 n =
+  if n > 9 then fault "a scale of 10^%d exceeds clingo's integer range" n;
   let rec go acc n = if n = 0 then acc else go (acc * 10) (n - 1) in
   go 1 n
 
@@ -73,8 +95,14 @@ let scaled_of_value ~decimals (v : Value.t) : int =
   match v with
   | Num (q, _) ->
       let s = Q.mul q (Q.of_int (pow10 decimals)) in
-      if Z.equal (Q.den s) Z.one then Z.to_int (Q.num s)
-      else fault "value %s does not fit %d decimals" (Q.to_string q) decimals
+      if not (Z.equal (Q.den s) Z.one) then
+        fault "value %s does not fit %d decimals" (Q.to_string q) decimals
+      else if Z.gt (Z.abs (Q.num s)) (Z.of_int max_int31) then
+        fault
+          "value %s at %d decimals exceeds clingo's integer range (grounding would wrap \
+           silently)"
+          (Q.to_string q) decimals
+      else Z.to_int (Q.num s)
   | Date z -> z
   | v -> fault "unscalable value %s" (Value.to_string v)
 
@@ -145,6 +173,11 @@ let attr_decimals ctx ~otype ~attr =
   match Ir_v0.Checks.find_ci ot.attributen attr with
   | Some dt -> decimals_of_datatype dt
   | None -> fault "unknown attribute %S on %S" attr otype
+
+let attr_unit ctx ~otype ~attr =
+  match Ir_v0.Checks.find_ci (objecttype ctx otype).attributen attr with
+  | Some (Some (Numeriek { eenheid; _ } | Percentage { eenheid; _ })) -> eenheid
+  | _ -> None
 
 let attr_temporal ctx ~otype ~attr = Ir_v0.Checks.attr_temporal (objecttype ctx otype) attr
 
@@ -265,6 +298,41 @@ let unit_free_ok e =
   | None -> ()
 
 let rec gcd a b = if b = 0 then a else gcd b (a mod b)
+
+let unit_of_expr e =
+  match Ir_v0.Checks.typ_of_expr e with
+  | Some (Numeriek { eenheid; _ }) -> eenheid
+  | Some (Percentage { eenheid; _ }) -> eenheid
+  | _ -> None
+
+(* positions where ref RESTATES one operand into the other's unit — the
+   additive join, the comparison, the write boundary — multiply by an
+   exact conversion factor (a hunted silent split: 1 m plus 50 cm
+   grounded as 1+50). The integer encoding carries no factor, so only
+   IDENTICAL declared units (factor 1) or a unitless side (which adopts
+   the other unit, value unchanged) translate; anything else faults. *)
+let units_identical_ok ~what (l : eenheid option) (r : eenheid option) =
+  match (l, r) with
+  | Some a, Some b when a <> b ->
+      fault
+        "non-identical units under %s are not translated (ref restates with an exact \
+         conversion factor this integer encoding does not carry)"
+        what
+  | _ -> ()
+
+(* the viol/2 range fence on emitted arithmetic: fires when an operand
+   could push the term past clingo's silently-wrapping integer range;
+   [body] must ground the subject *)
+let range_guard ctx ~subject ~body terms_with_bounds =
+  List.iter
+    (fun (t, bound) ->
+      emit ctx
+        "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, \
+         |(%s)| > %d."
+        subject
+        (String.concat ", " body)
+        t bound)
+    terms_with_bounds
 
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   match e with
@@ -458,11 +526,17 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                   navigatie_pad = []; set = false; _ });
               rechts = Some grens; periode = None; _ }
           when norm botn = norm aot && attr_temporal ctx ~otype:botn ~attr:b ->
+            units_identical_ok ~what:"a clip comparison"
+              (attr_unit ctx ~otype:botn ~attr:b)
+              (unit_of_expr grens);
             let gb, gt, gs = expr_term ctx ~subject ~subject_ot grens in
             let bscale = pow10 (attr_decimals ctx ~otype:botn ~attr:b) in
             let m = max bscale gs in
             let wl = if bscale = m then "WB" else Printf.sprintf "(WB*%d)" (m / bscale) in
             let gl = if gs = m then gt else Printf.sprintf "(%s*%d)" gt (m / gs) in
+            range_guard ctx ~subject:"S"
+              ~body:(Printf.sprintf "tl(S,%s,V2,T2,WB)" (str b) :: gb)
+              [ ("WB", max_int31 / (m / bscale)); (gt, max_int31 / (m / gs)) ];
             emit ctx "%s_cond(S,V2,T2) :- %s."
               p
               (String.concat ", "
@@ -575,12 +649,20 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          leaves the rule underivable, exactly ref's Empty result). *)
       numeric_ok links;
       numeric_ok rechts;
+      units_identical_ok ~what:"an additive join"
+        (Option.bind links unit_of_expr)
+        (Option.bind rechts unit_of_expr);
       let l = expr_term ctx ~subject ~subject_ot (req "Binair.links" links) in
       let r = expr_term ctx ~subject ~subject_ot (req "Binair.rechts" rechts) in
       let l = if op = Verminderd_met then l else coalesce0 ctx ~subject ~subject_ot l in
       let r = coalesce0 ctx ~subject ~subject_ot r in
-      let _, _, s1 = l and _, _, s2 = r in
+      let _, tl_raw, s1 = l and _, tr_raw, s2 = r in
+      let m = max s1 s2 in
       let bindings, tl, tr = harmonised l r in
+      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      range_guard ctx ~subject
+        ~body:((base :: ctx.rule_guard) @ bindings)
+        [ (tl_raw, 1073741823 / (m / s1)); (tr_raw, 1073741823 / (m / s2)) ];
       let sym = if op = Plus then "+" else "-" in
       (bindings, Printf.sprintf "(%s%s%s)" tl sym tr, max s1 s2)
   | Binair { op = (Maal | Percentage_van) as op; links; rechts; _ } ->
@@ -602,6 +684,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         coalesce0 ctx ~subject ~subject_ot
           (expr_term ctx ~subject ~subject_ot (req "Binair.rechts" rechts))
       in
+      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      range_guard ctx ~subject
+        ~body:((base :: ctx.rule_guard) @ bl @ br)
+        [ (tl, 46340); (tr, 46340) ];
       ( bl @ br,
         Printf.sprintf "(%s*%s)" tl tr,
         sl * sr * (if op = Percentage_van then 100 else 1) )
@@ -626,14 +712,19 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          both signs). *)
       let b, t, s = expr_term ctx ~subject ~subject_ot (req "Afgerond.basis" basis) in
       let target = pow10 decimalen in
+      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      let gbody = (base :: ctx.rule_guard) @ b in
       if target >= s then
-        if target mod s = 0 then
+        if target mod s = 0 then begin
+          if target > s then range_guard ctx ~subject ~body:gbody [ (t, max_int31 / (target / s)) ];
           (b, (if target = s then t else Printf.sprintf "(%s*%d)" t (target / s)), target)
+        end
         else fault "rounding target scale %d does not align with basis scale %d" target s
       else if s mod target <> 0 then
         fault "rounding basis scale %d does not align with target scale %d" s target
       else
         let k = s / target in
+        range_guard ctx ~subject ~body:gbody [ (t, 536870912) ];
         let rounded =
           match modus with
           | Richting_nul -> Printf.sprintf "((%s)/%d)" t k
@@ -644,10 +735,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         (match modus with
         | Richting_nul -> ()
         | _ ->
-            let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
             emit ctx "viol(\"negative operand under rounding is not translated\",%s) :- %s, (%s) < 0."
               subject
-              (String.concat ", " ((base :: ctx.rule_guard) @ b))
+              (String.concat ", " gbody)
               t);
         (b, rounded, target))
   | Constante { naam = Some n; _ } when Ir_v0.Checks.norm n = Ir_v0.Checks.norm "Rekendatum" -> (
@@ -706,6 +796,9 @@ and translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding =
   let lbody = String.concat ", " (base :: bl) in
   let rbody = String.concat ", " (base :: br) in
   let full = String.concat ", " ((base :: guard) @ bl @ br) in
+  range_guard ctx ~subject
+    ~body:((base :: guard) @ bl @ br)
+    [ (tl, 536870912 / knum); (tr, 536870912 / kden) ];
   emit ctx "%s_ldef(%s) :- %s." p subject lbody;
   emit ctx "%s_rdef(%s) :- %s." p subject rbody;
   emit ctx "%s(%s,0) :- %s, not %s_ldef(%s)." p subject base p subject;
@@ -751,8 +844,17 @@ and translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding =
 and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
   match c with
   | Vergelijking { op; links; rechts; periode = None; _ } ->
+      units_identical_ok ~what:"a comparison"
+        (Option.bind links unit_of_expr)
+        (Option.bind rechts unit_of_expr);
       let l = expr_term ctx ~subject ~subject_ot (req "links" links) in
       let r = expr_term ctx ~subject ~subject_ot (req "rechts" rechts) in
+      let b1, t1, s1 = l and b2, t2, s2 = r in
+      let m = max s1 s2 in
+      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      range_guard ctx ~subject
+        ~body:((base :: b1) @ b2)
+        [ (t1, max_int31 / (m / s1)); (t2, max_int31 / (m / s2)) ];
       let bindings, tl, tr = harmonised l r in
       bindings @ [ Printf.sprintf "%s %s %s" tl (vergelijk_sym op) tr ]
   | Kenmerk_check { kenmerk; navigatie = None; negatie; navigatie_binding; eigenaar = _; _ } ->
@@ -804,8 +906,10 @@ let head_body ctx head body = emit ctx "%s :- %s." head (String.concat ", " body
    fires. Returns the fitted term plus guard atoms for the write rule. *)
 let fitted ctx ~subject ~what ~body term scale target =
   if scale = target then (term, [])
-  else if target > scale && target mod scale = 0 then
+  else if target > scale && target mod scale = 0 then begin
+    range_guard ctx ~subject ~body [ (term, max_int31 / (target / scale)) ];
     (Printf.sprintf "((%s)*%d)" term (target / scale), [])
+  end
   else if scale > target && scale mod target = 0 then begin
     let k = scale / target in
     emit ctx "viol(\"result of %s does not fit its declared decimals\",%s) :- %s, (%s) \\ %d != 0."
@@ -839,6 +943,10 @@ let translate_regel ctx (r : resolved_regel) =
               head_body ctx (Printf.sprintf "heeft(%s,%s)" subject (str a)) (base :: cond)
           | Some (Berekening | Gelijkstelling) ->
               let target_scale = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
+              units_identical_ok
+                ~what:(Printf.sprintf "the write to %S" a)
+                (attr_unit ctx ~otype:ot ~attr:a)
+                (Option.bind r.waarde unit_of_expr);
               ctx.rule_guard <- cond;
               ctx.write_scale <- target_scale;
               let bindings, term, scale = expr_term ctx ~subject ~subject_ot:ot (req "waarde" r.waarde) in
@@ -937,6 +1045,10 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
         | _ -> fault "characteristic initialisation of %S is not a boolean constant (WF-027)" m)
       else begin
         let target_scale = pow10 (attr_decimals ctx ~otype:nieuw ~attr:m) in
+        units_identical_ok
+          ~what:(Printf.sprintf "the initialisation of %S" m)
+          (attr_unit ctx ~otype:nieuw ~attr:m)
+          (Option.bind t.toe_waarde unit_of_expr);
         ctx.rule_guard <- cond @ guard @ depth_guard;
         ctx.write_scale <- target_scale;
         let bindings, tm, scale =

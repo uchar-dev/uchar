@@ -1,0 +1,58 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "M1",
+        "objectType": "Meting",
+        "attributes": {
+          "factorEen": {
+            "number": "46340"
+          },
+          "factorTwee": {
+            "number": "46340"
+          },
+          "lengteA": {
+            "number": "30"
+          },
+          "lengteB": {
+            "number": "20"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "grensproduct",
+      "value": {
+        "number": "2147395600"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "totaal",
+      "value": {
+        "number": "50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "indicatie",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

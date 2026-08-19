@@ -1412,7 +1412,10 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
          | Tot_de_macht, Some l, Some r
            when unit_of l <> None || unit_of r <> None ->
              [ v "WF-035" at "power operands must be unitless" ]
-         | (Plus | Min), Some l, Some r when is_number_like l && is_number_like r ->
+         | (Plus | Min | Verminderd_met), Some l, Some r when is_number_like l && is_number_like r ->
+             (* verminderd-met belongs to the additive family (ch. 1.2a);
+                ref restates its right operand like plus/min — a hunted
+                gap: the compatibility clause skipped it entirely *)
              if not (units_compatible_adopting links rechts (unit_of l) (unit_of r)) then
                [ v "WF-035" at "additive operands have incompatible units" ]
              else []
