@@ -101,3 +101,11 @@ parent-scoped uniqueness, and the whole-or-not symbolic fact-creation
 block — executed end to end by gates 5–6 (navigated reads 15/7, the
 navigated check, folds 2/10, the created vakbeseining relation counted
 back as 2).
+
+`jutterswet-strandgoed` (2026-08-19) is the aggregation-filter emitter
+golden: a comparison-filtered sum ("die groter zijn dan 5", with the 0
+fallback firing for the fold with no contributors) and a
+characteristic-filtered count over a DERIVED characteristic (the filter
+reads what another rule writes — the strata witness), executed by both
+executors; a contributor with an empty filter operand drops out
+(ch. 1.2d), which the clingo join encodes for free.

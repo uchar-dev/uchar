@@ -291,6 +291,36 @@ let literal_value (waarde : string option) (typ : datatype option) =
 (* --- expression evaluation --------------------------------------------- *)
 
 (* [err] deposits a §9.5 error reason for the evaluating rule × subject *)
+(* --- condition evaluation ---------------------------------------------- *)
+
+(* the static type an expression node carries on the wire *)
+let expr_typ : expr -> datatype option = function
+  | Literal { typ; _ }
+  | Tekst_reeks { typ; _ }
+  | Binair { typ; _ }
+  | Functie { typ; _ }
+  | Afgerond { typ; _ }
+  | Begrensd { typ; _ }
+  | Attribuut_ref { typ; _ }
+  | Dimensie_cel { typ; _ }
+  | Parameter_ref { typ; _ }
+  | Variabele_ref { typ; _ }
+  | Constante { typ; _ }
+  | Expr_onopgelost { typ; _ }
+  | Temporal_read { typ; _ } ->
+      typ
+
+(* the ch. 1.2d empty-equality asymmetry routes on the declared operand
+   kind — two empty runtime values cannot reveal it (Arith.compare_op) *)
+let static_numeric l r =
+  let kind e =
+    match expr_typ e with
+    | Some (Numeriek _ | Percentage _ | Datum_in_dagen | Datum_tijd) -> Some true
+    | Some (Tekst | Booleaan | Enumeratie _) -> Some false
+    | Some (Datatype_onbekend _) | None -> None
+  in
+  match kind l with Some b -> Some b | None -> kind r
+
 let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
   match e with
   | Literal { waarde; typ; _ } -> literal_value waarde typ
@@ -433,7 +463,11 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
 
 and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leegwaarde ~filter
     ~dimensie_selectie ~granulariteit ~bron_rol =
-  if filter <> None then Value.fault "aggregation filter not implemented in this card";
+  (* the die/dat subselection executes on the instance folds below; the
+     SAME wire field also carries the §7.1 gedurende timeline clip (a
+     filter on the temporal total, where elementObjecttype is the
+     subject itself) — that form must never run as an instance
+     subselection and faults in its own arm *)
   if dimensie_selectie <> None then Value.fault "dimension selection not implemented in this card";
   if granulariteit <> None then Value.fault "granularity-bucketed aggregation not implemented in this card";
   match (kind, argumenten) with
@@ -445,6 +479,10 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
          timeline to a scalar. The case carries the asOfDate bucket's
          value (corpus/golden/README.md); the collapse folds that
          one-bucket timeline: value × whole-units of its own grid. *)
+      if filter <> None then
+        Value.fault
+          "the gedurende timeline clip (a filter on the temporal total, §7.1) is not \
+           implemented — it is a timeline operation, never an instance subselection";
       let ot_decl = objecttype env aot in
       let gran =
         match Ir_v0.Checks.find_ci ot_decl.attribuut_granulariteit a with
@@ -474,6 +512,13 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
   (* contributors: an instance fold over a role (element_objecttype set),
      or listed operand expressions *)
   let contributors () =
+    (* the die/dat subselection (§13.4.2): the filter condition evaluates
+       PER CONTRIBUTOR — the element instance is the condition's subject,
+       never the outer fold subject. A contributor whose filter operand
+       is leeg simply fails the condition (ch. 1.2d) and drops out. *)
+    let keep (i : World.instance) =
+      match filter with None -> true | Some c -> eval_cond env world i ~err c
+    in
     (* fold-source shapes are navigation-free — the same narrowing the
        verifier's WF-047/048 detection uses; a navigated source falls to
        the fail-fast arm below *)
@@ -491,7 +536,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
               role_by_name env ~self_type:self.otype ~name:(req "fold source" attribuut)
             in
             ());
-        `Instances (linked ?binding:bron_rol env world self ~to_type:el)
+        `Instances (List.filter keep (linked ?binding:bron_rol env world self ~to_type:el))
     | ( Some el,
         [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]
       ) ->
@@ -499,8 +544,12 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
         `Values
           (List.map
              (fun i -> World.attr i name)
-             (linked ?binding:bron_rol env world self ~to_type:el))
-    | None, args -> `Values (List.map (eval_expr env world self ~err) args)
+             (List.filter keep (linked ?binding:bron_rol env world self ~to_type:el)))
+    | None, args ->
+        if filter <> None then
+          Value.fault "a filter on a listed-operand fold has no v0 form (the subselection \
+                       ranges over instances)";
+        `Values (List.map (eval_expr env world self ~err) args)
     | Some _, _ -> Value.fault "unsupported instance-fold source shape"
   in
   let values () =
@@ -541,37 +590,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
       | _ -> Value.fault "tijdsduur expects two arguments")
   | _ -> Value.fault "function kind not implemented in this card"
 
-(* --- condition evaluation ---------------------------------------------- *)
-
-(* the static type an expression node carries on the wire *)
-let expr_typ : expr -> datatype option = function
-  | Literal { typ; _ }
-  | Tekst_reeks { typ; _ }
-  | Binair { typ; _ }
-  | Functie { typ; _ }
-  | Afgerond { typ; _ }
-  | Begrensd { typ; _ }
-  | Attribuut_ref { typ; _ }
-  | Dimensie_cel { typ; _ }
-  | Parameter_ref { typ; _ }
-  | Variabele_ref { typ; _ }
-  | Constante { typ; _ }
-  | Expr_onopgelost { typ; _ }
-  | Temporal_read { typ; _ } ->
-      typ
-
-(* the ch. 1.2d empty-equality asymmetry routes on the declared operand
-   kind — two empty runtime values cannot reveal it (Arith.compare_op) *)
-let static_numeric l r =
-  let kind e =
-    match expr_typ e with
-    | Some (Numeriek _ | Percentage _ | Datum_in_dagen | Datum_tijd) -> Some true
-    | Some (Tekst | Booleaan | Enumeratie _) -> Some false
-    | Some (Datatype_onbekend _) | None -> None
-  in
-  match kind l with Some b -> Some b | None -> kind r
-
-let rec eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
+and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
   match c with
   | Vergelijking { op; links; rechts; periode = None; _ } ->
       let le = req "Vergelijking.links" links and re = req "Vergelijking.rechts" rechts in

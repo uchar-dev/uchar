@@ -1495,7 +1495,15 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
              | None -> [])
          | None -> [])
       @ (match f.filter with
-         | Some c -> walk_cond ctx ~subject (sub "filter") c
+         | Some c ->
+             (* the die/dat subselection evaluates per contributor: the
+                ELEMENT is the filter's subject, never the outer fold
+                subject (the gedurende clip's elementObjecttype is the
+                subject itself, so this switch is uniform) *)
+             let fsubject =
+               match f.element_objecttype with Some el -> Some el | None -> subject
+             in
+             walk_cond ctx ~subject:fsubject (sub "filter") c
          | None -> [])
       @ List.concat
           (List.mapi
@@ -2101,7 +2109,11 @@ let rec dep_expr ctx ~subject acc (e : expr) =
       in
       let acc = List.fold_left (dep_expr ctx ~subject) acc argumenten in
       let acc = dep_opt ctx ~subject acc leegwaarde in
-      (match filter with Some c -> dep_cond ctx ~subject ~neg:false acc c | None -> acc)
+      (* the filter's reads are the ELEMENT's (ch. 6.1): a filter over a
+         derived characteristic of the contributor type must sit above
+         that characteristic's writer *)
+      let fsubject = match element_objecttype with Some el -> Some el | None -> subject in
+      (match filter with Some c -> dep_cond ctx ~subject:fsubject ~neg:false acc c | None -> acc)
   | Afgerond { basis; _ } -> dep_opt ctx ~subject acc basis
   | Begrensd { basis; minimum; maximum; _ } ->
       dep_opt ctx ~subject (dep_opt ctx ~subject (dep_opt ctx ~subject acc basis) minimum) maximum

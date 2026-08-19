@@ -198,6 +198,16 @@ let coalesce0 ctx ~subject ~subject_ot (atoms, term, scale) =
     ([ Printf.sprintf "%s(%s,%s)" pred subject v ], v, scale)
   end
 
+let vergelijk_sym = function
+  | Groter_of_gelijk | Later_of_gelijk -> ">="
+  | Groter | Later -> ">"
+  | Kleiner | Eerder -> "<"
+  | Kleiner_of_gelijk | Eerder_of_gelijk -> "<="
+  | Gelijk | Ongelijk ->
+      fault
+        "equality over possibly-empty operands has no free ASP encoding (the ch. 1.2d \
+         asymmetry); no corpus case exercises it — recorded finding"
+
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   match e with
   | Literal { waarde; typ; _ } -> (
@@ -292,9 +302,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           v,
           pow10 (attr_decimals ctx ~otype:ot ~attr:a) )
       end
-  | Functie { kind = Aantal; argumenten = [ Attribuut_ref { attribuut; typ = Some (Datatype_onbekend _); navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some _; bron_rol; _ } ->
+  | Functie { kind = Aantal; argumenten = [ Attribuut_ref { attribuut; typ = Some (Datatype_onbekend _); navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some el; bron_rol; filter; _ } ->
       (* the row-1 wart: the fold source names a role; count the linked
-         instances. An explicit binding overrides the written name. *)
+         instances. An explicit binding overrides the written name. The
+         die/dat subselection joins per contributor: the filter atoms
+         range over the element variable (ch. 5.8-family reading — an
+         unbound filter operand excludes the contributor for free). *)
       let role =
         match bron_rol with
         | Some rb ->
@@ -303,10 +316,17 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         | None -> req "fold role" attribuut
       in
       let v = fresh ctx "C" in
-      ( [ Printf.sprintf "%s = #count { X%s : rol(%s,%s,X%s) }" v v subject (str role) v ],
+      let x = Printf.sprintf "X%s" v in
+      let fatoms =
+        match filter with
+        | None -> []
+        | Some c -> cond_atoms ctx ~subject:x ~subject_ot:el c
+      in
+      ( [ Printf.sprintf "%s = #count { %s : %s }" v x
+            (String.concat ", " (Printf.sprintf "rol(%s,%s,%s)" subject (str role) x :: fatoms)) ],
         v,
         1 )
-  | Functie { kind = Som; argumenten = [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some el; leegwaarde; bron_rol; _ } ->
+  | Functie { kind = Som; argumenten = [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some el; leegwaarde; bron_rol; filter; _ } ->
       let a = req "fold attribute" attribuut in
       (match leegwaarde with
       | Some (Literal { waarde = Some "0"; _ }) -> ()
@@ -324,10 +344,23 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       in
       let v = fresh ctx "S" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
-      ( [ Printf.sprintf "%s = #sum { %s,%s : rol(%s,%s,%s), val(%s,%s,%s) }" v g x subject
-            (str role_name) x x (str a) g ],
+      let fatoms =
+        match filter with
+        | None -> []
+        | Some c -> cond_atoms ctx ~subject:x ~subject_ot:el c
+      in
+      ( [ Printf.sprintf "%s = #sum { %s,%s : %s }" v g x
+            (String.concat ", "
+               (Printf.sprintf "rol(%s,%s,%s)" subject (str role_name) x
+               :: Printf.sprintf "val(%s,%s,%s)" x (str a) g
+               :: fatoms)) ],
         v,
         pow10 (attr_decimals ctx ~otype:el ~attr:a) )
+  | Functie { kind = Totaal; argumenten = [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; _ } ]; filter = Some _; _ }
+    when attr_temporal ctx ~otype:aot ~attr:a ->
+      fault
+        "the gedurende timeline clip (a filter on the temporal total, \xc2\xa77.1) is not \
+         implemented \xe2\x80\x94 it is a timeline operation, never an instance subselection"
   | Functie { kind = Totaal; argumenten = [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; _ } ]; _ }
     when attr_temporal ctx ~otype:aot ~attr:a ->
       (* ch. 3.6 over the asOfDate bucket: value × whole-units (= 1 for
@@ -417,17 +450,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       fault "Onopgelost reached in translation: this rule fails observably (WF-044)"
   | _ -> fault "expression kind not translated (no corpus case exercises it)"
 
-let vergelijk_sym = function
-  | Groter_of_gelijk | Later_of_gelijk -> ">="
-  | Groter | Later -> ">"
-  | Kleiner | Eerder -> "<"
-  | Kleiner_of_gelijk | Eerder_of_gelijk -> "<="
-  | Gelijk | Ongelijk ->
-      fault
-        "equality over possibly-empty operands has no free ASP encoding (the ch. 1.2d \
-         asymmetry); no corpus case exercises it — recorded finding"
-
-let rec cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
+and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
   match c with
   | Vergelijking { op; links; rechts; periode = None; _ } ->
       let l = expr_term ctx ~subject ~subject_ot (req "links" links) in
