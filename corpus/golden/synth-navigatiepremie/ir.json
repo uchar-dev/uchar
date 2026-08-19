@@ -1,0 +1,406 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Werf": {
+      "node": "Objecttype",
+      "naam": "Werf",
+      "attributen": {
+        "tarief": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Werven"
+    },
+    "Schuit": {
+      "node": "Objecttype",
+      "naam": "Schuit",
+      "attributen": {
+        "lengte": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "premie": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "product": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "toeslag": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Schuiten"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {
+    "ligplaats": {
+      "node": "Feittype",
+      "naam": "ligplaats",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "werf",
+          "objecttypeNaam": "Werf",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "schuit",
+          "objecttypeNaam": "Schuit",
+          "meervoud": "schuiten",
+          "meervoudig": true
+        }
+      ]
+    }
+  },
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "premie van een schuit",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "product van een schuit",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "toeslag van een schuit",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "premie van een schuit",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "premie",
+        "objecttype": "Schuit",
+        "onderwerpBron": "een Schuit",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De premie van een Schuit",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "PERCENTAGE_VAN",
+        "links": {
+          "node": "Literal",
+          "waarde": "20",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "20"
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "tarief",
+          "objecttype": "Werf",
+          "onderwerpBron": "de Schuit",
+          "navigatieRol": "Schuit",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "het tarief van de werf van de Schuit",
+          "set": false,
+          "navigatiePad": [
+            "werf"
+          ],
+          "navigatieBindingen": [
+            {
+              "node": "RolBinding",
+              "feittype": "ligplaats",
+              "rol": "werf"
+            }
+          ]
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "20% van het tarief van de werf van de Schuit"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "product van een schuit",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "product",
+        "objecttype": "Schuit",
+        "onderwerpBron": "een Schuit",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het product van een Schuit",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "MAAL",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "lengte",
+          "objecttype": "Schuit",
+          "onderwerpBron": "de Schuit",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de lengte van de Schuit",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "tarief",
+          "objecttype": "Werf",
+          "onderwerpBron": "de Schuit",
+          "navigatieRol": "Schuit",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "het tarief van de werf van de Schuit",
+          "set": false,
+          "navigatiePad": [
+            "werf"
+          ],
+          "navigatieBindingen": [
+            {
+              "node": "RolBinding",
+              "feittype": "ligplaats",
+              "rol": "werf"
+            }
+          ]
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de lengte van de Schuit maal het tarief van de werf van de Schuit"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "toeslag van een schuit",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "toeslag",
+        "objecttype": "Schuit",
+        "onderwerpBron": "een Schuit",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De toeslag van een Schuit",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "PERCENTAGE_VAN",
+        "links": {
+          "node": "Literal",
+          "waarde": "10",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "10"
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "tarief",
+          "objecttype": "Werf",
+          "onderwerpBron": "de Schuit",
+          "navigatieRol": "Schuit",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "het tarief van de werf van de Schuit",
+          "set": false,
+          "navigatiePad": [
+            "werf"
+          ],
+          "navigatieBindingen": [
+            {
+              "node": "RolBinding",
+              "feittype": "ligplaats",
+              "rol": "werf"
+            }
+          ]
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "10% van het tarief van de werf van de Schuit"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "GROTER",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "lengte",
+          "objecttype": "Schuit",
+          "onderwerpBron": "de Schuit",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de lengte van de Schuit",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "5",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "5"
+        },
+        "periode": null,
+        "bron": "de lengte van de Schuit groter is dan 5"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

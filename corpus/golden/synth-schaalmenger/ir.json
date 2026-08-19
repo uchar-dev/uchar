@@ -1,0 +1,480 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Zeil": {
+      "node": "Objecttype",
+      "naam": "Zeil",
+      "attributen": {
+        "hoogte": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 1,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "breedte": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 1,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "oppervlak": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "naadtoeslag": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "basiszoom": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 1,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "zoomlengte": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 1,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "materiaalkosten": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "panelen": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "stukprijs": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "rollengte": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 1,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "baanlengte": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 1,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "aantalBanen": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "restlengte": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 1,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Zeilen"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "oppervlak van een zeil",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "zoomlengte van een zeil",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "stukprijs van een zeil",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "restlengte van een zeil",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "oppervlak van een zeil",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "oppervlak",
+        "objecttype": "Zeil",
+        "onderwerpBron": "het Zeil",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het oppervlak van een Zeil",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "MAAL",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "hoogte",
+          "objecttype": "Zeil",
+          "onderwerpBron": "het Zeil",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 1,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de hoogte van het Zeil",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "breedte",
+          "objecttype": "Zeil",
+          "onderwerpBron": "het Zeil",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 1,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de breedte van het Zeil",
+          "set": false,
+          "navigatiePad": []
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de hoogte van het Zeil maal de breedte van het Zeil"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "zoomlengte van een zeil",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "zoomlengte",
+        "objecttype": "Zeil",
+        "onderwerpBron": "het Zeil",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 1,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De zoomlengte van een Zeil",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "PLUS",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "naadtoeslag",
+          "objecttype": "Zeil",
+          "onderwerpBron": "het Zeil",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de naadtoeslag van het Zeil",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "basiszoom",
+          "objecttype": "Zeil",
+          "onderwerpBron": "het Zeil",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 1,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de basiszoom van het Zeil",
+          "set": false,
+          "navigatiePad": []
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de naadtoeslag van het Zeil plus de basiszoom van het Zeil"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "stukprijs van een zeil",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "stukprijs",
+        "objecttype": "Zeil",
+        "onderwerpBron": "het Zeil",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De stukprijs van een Zeil",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "GEDEELD_DOOR",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "materiaalkosten",
+          "objecttype": "Zeil",
+          "onderwerpBron": "het Zeil",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de materiaalkosten van het Zeil",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "panelen",
+          "objecttype": "Zeil",
+          "onderwerpBron": "het Zeil",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de panelen van het Zeil",
+          "set": false,
+          "navigatiePad": []
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de materiaalkosten van het Zeil gedeeld door de panelen van het Zeil"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "restlengte van een zeil",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "restlengte",
+        "objecttype": "Zeil",
+        "onderwerpBron": "het Zeil",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 1,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De restlengte van een Zeil",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "VERMINDERD_MET",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "rollengte",
+          "objecttype": "Zeil",
+          "onderwerpBron": "het Zeil",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 1,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de rollengte van het Zeil",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Binair",
+          "op": "MAAL",
+          "links": {
+            "node": "AttribuutRef",
+            "attribuut": "baanlengte",
+            "objecttype": "Zeil",
+            "onderwerpBron": "het Zeil",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 1,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "de baanlengte van het Zeil",
+            "set": false,
+            "navigatiePad": []
+          },
+          "rechts": {
+            "node": "AttribuutRef",
+            "attribuut": "aantalBanen",
+            "objecttype": "Zeil",
+            "onderwerpBron": "het Zeil",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "het aantalBanen van het Zeil",
+            "set": false,
+            "navigatiePad": []
+          },
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 1,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de baanlengte van het Zeil maal het aantalBanen van het Zeil"
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 1,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de rollengte van het Zeil verminderd met de baanlengte van het Zeil maal het aantalBanen van het Zeil"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

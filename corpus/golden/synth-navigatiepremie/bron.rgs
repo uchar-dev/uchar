@@ -1,0 +1,25 @@
+Objecttype de Werf (mv: Werven)
+    het tarief Numeriek (geheel getal);
+
+Objecttype de Schuit (mv: Schuiten)
+    de lengte Numeriek (geheel getal);
+    de premie Numeriek (getal met 2 decimalen);
+    het product Numeriek (geheel getal);
+    de toeslag Numeriek (getal met 2 decimalen);
+
+Feittype ligplaats
+    de werf Werf
+    de schuit (mv: schuiten) Schuit
+Eén werf telt meerdere schuiten
+
+Regel premie van een schuit
+    geldig altijd
+        De premie van een Schuit moet berekend worden als 20% van het tarief van de werf van de Schuit.
+
+Regel product van een schuit
+    geldig altijd
+        Het product van een Schuit moet berekend worden als de lengte van de Schuit maal het tarief van de werf van de Schuit.
+
+Regel toeslag van een schuit
+    geldig altijd
+        De toeslag van een Schuit moet berekend worden als 10% van het tarief van de werf van de Schuit indien de lengte van de Schuit groter is dan 5.

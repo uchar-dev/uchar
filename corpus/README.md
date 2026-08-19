@@ -30,7 +30,12 @@ construction**.
 2. Synthesized cases (from Phase 2): admitted **only** when the full
    differential square agrees (Drools ≡ reference interpreter ≡ Clingo, to
    the extent those exist). Any disagreement routes to adversarial triage —
-   it is a spec bug to resolve, never a case to admit.
+   it is a spec bug to resolve, never a case to admit. Mechanized:
+   `scripts/admit.sh <candidate-dir> <name>` is the only door — it checks
+   self-containedness, verifier acceptance, exact replay in ref AND
+   clingo, the no-op refutation per case, and the full gate set after the
+   copy (rolling back on red). Synthesized directories are named
+   `golden/synth-*`; the anchor subset stays hand-written and pinned.
 3. Every WF rule in the spec has at least one passing golden case and one
    failing negatief case.
 4. The held-out acceptance split lives in a **separate private repository**,

@@ -1,0 +1,55 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Veilingronde",
+        "attributes": {
+          "opbrengst": {
+            "number": "87"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "prijsBenedenaf"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "prijsBovenaf"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "prijsRekenkundig"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "prijsNaarNul"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "prijsVanNul"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "prijsFijn"
+    },
+    {
+      "kind": "inconsistent"
+    }
+  ]
+}

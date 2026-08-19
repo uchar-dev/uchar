@@ -1,0 +1,81 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "Z1",
+        "objectType": "Zeil",
+        "attributes": {
+          "hoogte": {
+            "number": "2.5"
+          },
+          "breedte": {
+            "number": "1.3"
+          },
+          "naadtoeslag": {
+            "number": "2.5"
+          },
+          "basiszoom": {
+            "number": "1.2"
+          },
+          "materiaalkosten": {
+            "number": "9"
+          },
+          "panelen": {
+            "number": "4"
+          },
+          "rollengte": {
+            "number": "8.4"
+          },
+          "baanlengte": {
+            "number": "1.5"
+          },
+          "aantalBanen": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "Z1",
+      "attribute": "oppervlak",
+      "value": {
+        "number": "3.25"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "Z1",
+      "attribute": "zoomlengte",
+      "value": {
+        "number": "3.7"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "Z1",
+      "attribute": "stukprijs",
+      "value": {
+        "number": "2.25"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "Z1",
+      "attribute": "restlengte",
+      "value": {
+        "number": "3.9"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "Z1",
+        "objectType": "Zeil",
+        "attributes": {
+          "breedte": {
+            "number": "1.2"
+          },
+          "basiszoom": {
+            "number": "1.2"
+          },
+          "panelen": {
+            "number": "4"
+          },
+          "rollengte": {
+            "number": "8.4"
+          },
+          "aantalBanen": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "Z1",
+      "attribute": "oppervlak",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "Z1",
+      "attribute": "zoomlengte",
+      "value": {
+        "number": "1.2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "Z1",
+      "attribute": "stukprijs",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "Z1",
+      "attribute": "restlengte",
+      "value": {
+        "number": "8.4"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
