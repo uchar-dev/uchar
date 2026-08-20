@@ -37,3 +37,40 @@ found the fire-but-leeg corner divergent there and the fix pins it.
 Out of scope: the toolchain (decision 6, pin-bump card); timeline
 execution of the norm (recorded, follow-up); the hardship anchor (own
 card); any schema change (the proposal adds zero wire surface).
+
+Result: the standing norm executes. Landed: RS ch. 7.8 (the virtual
+input rung + the norm, worked examples verbatim from the new anchor);
+conflict-fact readability closed for v1 (RS ch. 7.2, IS ch. 6.1);
+the ch. 1.2 assignment exception; CONSTRUCTS rows 8/18 delta entries
+(equal-decisions and observable-not-fatal named as tracked Catala
+deviations; the Phase-5 nested-group direction recorded); the shared
+domain predicates `Ir_v0.Desugar.standing_targets`/`desugared_targets`;
+ref's no-write-on-leeg over both domains; clingo's generalised
+`inputval/3` with a value-carrying effectiveness atom (`standN_eff`);
+the ch. 6d fence retired for standing targets, retained for
+multi-writer/versioned/temporal; a NEW fence on allocation-target case
+input (red-first: `[999;60]` in one model, ref green over it — the
+latent superset gap); the ch. 6d postscript; anchors:
+`jutterswet-waardestelling` (4 cases, red-first: ref erased the input
+on the leeg corner, clingo refused all three input cases) and two
+additive `jutterswet-waardering-v0vorm` cases pinning the
+fire-but-leeg corner the breaker lens reproduced (ref faulted its pass
+budget where clingo answered — now both give 25/40, the RS ch. 7.7
+prose pin graduated to a differential witness). Three reason-carrying
+gate-7 survivors added. All eight gates green (106 cases, 9 survivors).
+
+Honest corrections: the anchor was placed DIRECTLY, not through
+scripts/admit.sh as the acceptance text assumed — admit.sh targets
+corpus/golden/ (not the anchor zone), refuses nested names, and
+refuses no-op survivors by design; the gate set is the admission
+evidence, per the hand-written-anchor rule. "May touch" was widened
+mid-card (recorded in the card) with additive cases for the
+waardering-v0vorm anchor.
+
+Deliberately left: temporal computing targets stay fenced (recorded in
+RS ch. 7.8 — scalar-first per decision 3); the toolchain untouched
+(decision 6 waits for a pin-bump card; the standing delta separates v1
+from v0 there and is tracked in CONSTRUCTS row 8); the over-precision
+loader divergence (ref accepts 40.005 on a 2-decimal attribute, clingo
+faults) is the new card backlog/new/20260820-input-precision-fence.md;
+the hardship anchor is its own later card.
