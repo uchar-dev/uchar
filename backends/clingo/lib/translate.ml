@@ -1643,14 +1643,48 @@ let translate_consistentie ctx i (c : resolved_consistentie) =
   head_body ctx ok (Printf.sprintf "is_a(S,%s)" (str subject_ot) :: atoms);
   emit ctx "inconsistent(%s,S) :- is_a(S,%s), not cons%d_ok(S)." (str name) (str subject_ot) i
 
+(* ch. 5.9 ever-uniqueness, shared by BOTH uniqueness forms
+   (compositionality: the same key, the same reading, either form).
+   The guards: at most one temporal component per key list, and a
+   temporal key supplied as a bucket scalar faults — ever-uniqueness
+   needs the full timeline. *)
+let uni_key_guards ctx ~otype ~keys =
+  let temporal = List.filter (fun k -> attr_temporal ctx ~otype ~attr:k) keys in
+  if List.length temporal > 1 then
+    fault
+      "a uniqueness key list carries at most one temporal key component (the same-moment \
+       tuple join has no corpus case; ch. 5.9)";
+  List.iter
+    (fun k ->
+      if attr_temporal ctx ~otype ~attr:k then
+        Eval.SMap.iter
+          (fun _ (inst : Uchar_ref.World.instance) ->
+            if
+              norm inst.otype = norm otype
+              && Uchar_ref.World.timeline inst k = None
+              && Uchar_ref.World.attr inst k <> Value.Empty
+            then
+              fault
+                "the ever-unique key %S needs the full timeline; %S supplies only a scalar \
+                 (ch. 5.9)"
+                k inst.label)
+          ctx.case.world.instances)
+    keys
+
+(* the key atom for one position: a val join for a scalar key, a tl
+   join for a temporal one — ANY segment's value, which IS the ever
+   reading (set semantics deduplicates same-instance redeclaration) *)
+let uni_key_atom ctx ~otype ~label ~pos k =
+  if attr_temporal ctx ~otype ~attr:k then Printf.sprintf "tl(%s,%s,_,_,K%d)" label (str k) pos
+  else Printf.sprintf "val(%s,%s,K%d)" label (str k) pos
+
 let translate_uniciteit ctx (u : resolved_uniciteit) =
   let name = Option.value u.uni_naam ~default:"uniciteit" in
   let subject_ot = req "subject" u.uni_subject in
   let keys = List.map (req "sleutel") u.sleutels in
+  uni_key_guards ctx ~otype:subject_ot ~keys;
   let joins label =
-    List.mapi
-      (fun i k -> Printf.sprintf "val(%s,%s,K%d)" label (str k) i)
-      keys
+    List.mapi (fun i k -> uni_key_atom ctx ~otype:subject_ot ~label ~pos:i k) keys
   in
   (* the scope hop (ch. 5.9, WF-054): both rows join the same scope
      parent — an instance without the rol/3 atom (scope-less) never
@@ -1704,37 +1738,9 @@ let translate_uniciteit_unie ctx i (u : resolved_uniciteit_unie) =
   List.iteri
     (fun j (b : uniciteit_unie_bron) ->
       let t = req "UniciteitUnie.bron.type" b.uub_type in
-      (* ch. 5.9 decision (2026-08-20): a temporal key reads
-         EVER-uniqueness — one key atom per value the timeline EVER
-         carries (set semantics deduplicates same-instance
-         redeclaration for free). At most one temporal component per
-         source: a second would need the same-moment tuple join. A
-         temporal key supplied as a bucket scalar would silently miss
-         values — refuse, the full timeline is required. *)
-      let temporal =
-        List.filter (fun k -> attr_temporal ctx ~otype:t ~attr:(req "sleutel" k)) b.uub_sleutels
-      in
-      if List.length temporal > 1 then
-        fault
-          "a uniqueness-union source carries at most one temporal key component (the \
-           same-moment tuple join has no corpus case; ch. 5.9)";
-      List.iter
-        (fun k ->
-          let k = req "sleutel" k in
-          if attr_temporal ctx ~otype:t ~attr:k then
-            Eval.SMap.iter
-              (fun _ (inst : Uchar_ref.World.instance) ->
-                if
-                  norm inst.otype = norm t
-                  && Uchar_ref.World.timeline inst k = None
-                  && Uchar_ref.World.attr inst k <> Value.Empty
-                then
-                  fault
-                    "the ever-unique key %S needs the full timeline; %S supplies only a \
-                     scalar (ch. 5.9)"
-                    k inst.label)
-              ctx.case.world.instances)
-        b.uub_sleutels;
+      (* the shared ever-uniqueness guards and key atoms (ch. 5.9):
+         one reading for the union and the single form alike *)
+      uni_key_guards ctx ~otype:t ~keys:(List.map (req "sleutel") b.uub_sleutels);
       let head_args =
         List.mapi
           (fun pos k ->
@@ -1747,12 +1753,7 @@ let translate_uniciteit_unie ctx i (u : resolved_uniciteit_unie) =
       let body =
         Printf.sprintf "is_a(S,%s)" (str t)
         :: List.mapi
-             (fun pos k ->
-               let k = req "sleutel" k in
-               if attr_temporal ctx ~otype:t ~attr:k then
-                 (* every value the timeline ever carries claims the key *)
-                 Printf.sprintf "tl(S,%s,_,_,K%d)" (str k) pos
-               else Printf.sprintf "val(S,%s,K%d)" (str k) pos)
+             (fun pos k -> uni_key_atom ctx ~otype:t ~label:"S" ~pos (req "sleutel" k))
              b.uub_sleutels
       in
       (* the per-position upscale is an emitted multiplication: fence

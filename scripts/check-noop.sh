@@ -27,10 +27,16 @@
 #   - jutterswet-nummerregister/case2.json: the ever-unique
 #     NON-collision (same-instance redeclaration) — the absence of a
 #     channel fact IS the assertion (RS ch. 5.9).
+#   - jutterswet-strandregister/case2.json: the same non-collision on
+#     the single form (shared tuple function, RS ch. 5.9).
+#   - jutterswet-strandregister/case4.json: the scope narrowing — the
+#     same ever-pair under two DIFFERENT parents stays consistent.
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
-corpus/golden/anchor/jutterswet-nummerregister/case2.json'
+corpus/golden/anchor/jutterswet-nummerregister/case2.json
+corpus/golden/anchor/jutterswet-strandregister/case2.json
+corpus/golden/anchor/jutterswet-strandregister/case4.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2

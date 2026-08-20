@@ -1,0 +1,89 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Kust",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Strandvondst",
+        "attributes": {
+          "vondstnummer": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-01-01",
+                "value": {
+                  "number": "1"
+                }
+              }
+            ]
+          },
+          "kavelnummer": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-01-01",
+                "value": {
+                  "number": "3"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {
+          "kust": [
+            "K1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S2",
+        "objectType": "Strandvondst",
+        "attributes": {
+          "vondstnummer": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-01-01",
+                "value": {
+                  "number": "2"
+                }
+              }
+            ]
+          },
+          "kavelnummer": {
+            "timeline": [
+              {
+                "from": "2026-01-01",
+                "to": "2027-01-01",
+                "value": {
+                  "number": "3"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {
+          "kust": [
+            "K1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "inconsistent"
+    }
+  ]
+}

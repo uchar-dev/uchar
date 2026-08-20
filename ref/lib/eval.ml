@@ -1169,6 +1169,51 @@ let run_consistentie env world (c : resolved_consistentie) =
     in
     world
 
+(* ch. 5.9 decision (2026-08-20, extended to BOTH uniqueness forms):
+   a temporal key reads EVER-uniqueness — an identity, not a
+   measurement: every value the timeline EVER carries is claimed,
+   colliding across instances even over non-overlapping periods.
+   Same-instance redeclaration is no collision: the tuple set is
+   deduplicated per instance (× source, in the union). At most one
+   temporal component per key list — a second would need the
+   same-moment tuple join, loud until a corpus case lands. A temporal
+   key needs its full timeline; a bucket scalar would silently miss
+   values. One shared function carries the single form and the union
+   (compositionality: the same key, the same reading, either form). *)
+let ever_tuples env ~otype ~keys (i : World.instance) : string list =
+  let ot_decl = objecttype env otype in
+  let temporal = List.filter (Ir_v0.Checks.attr_temporal ot_decl) keys in
+  if List.length temporal > 1 then
+    Value.fault
+      "a uniqueness key list carries at most one temporal key component (the same-moment \
+       tuple join has no corpus case; ch. 5.9)";
+  let carried k =
+    if not (Ir_v0.Checks.attr_temporal ot_decl k) then [ World.attr i k ]
+    else
+      match World.timeline i k with
+      | Some tl -> List.map (fun (s : Timeline.segment) -> s.s_waarde) tl
+      | None ->
+          if World.attr i k <> Value.Empty then
+            Value.fault
+              "the ever-unique key %S needs the full timeline; %S supplies only a scalar \
+               (ch. 5.9)"
+              k i.label
+          else []
+  in
+  (* the tuple set: scalars paired with every value the one temporal
+     component ever carries; an empty component drops the tuple (the
+     v0 empty-key rule) *)
+  let rec tuples acc = function
+    | [] -> [ List.rev acc ]
+    | k :: rest ->
+        List.concat_map
+          (fun v -> if v = Value.Empty then [] else tuples (v :: acc) rest)
+          (carried k)
+  in
+  tuples [] keys
+  |> List.map (fun vs -> String.concat "\x00" (List.map Value.to_string vs))
+  |> List.sort_uniq String.compare
+
 let run_uniciteit env world (u : resolved_uniciteit) =
   if not (applies env u.uni_geldigheid) then world
   else begin
@@ -1190,24 +1235,28 @@ let run_uniciteit env world (u : resolved_uniciteit) =
     in
     let keys = List.map (req "sleutel") u.sleutels in
     (* a duplicate non-empty key (ch. 5.6): rows with an empty key
-       component do not participate *)
+       component do not participate; temporal keys read ever-uniqueness
+       through the shared tuple function, composed with the scope
+       prefix (scope parent × ever-tuples) *)
     let keyed =
-      List.filter_map
+      List.concat_map
         (fun (i : World.instance) ->
-          let vs = List.map (World.attr i) keys in
-          if List.exists (fun v -> v = Value.Empty) vs then None
-          else
-            let key = String.concat "\x00" (List.map Value.to_string vs) in
+          let prefix =
             match scope_of with
-            | None -> Some (key, i.label)
+            | None -> Some ""
             | Some links -> (
                 match links i with
                 | [] -> None (* scope-less: does not participate *)
-                | [ (p : World.instance) ] -> Some (p.label ^ "\x00" ^ key, i.label)
+                | [ (p : World.instance) ] -> Some (p.label ^ "\x00")
                 | _ ->
                     Value.fault
                       "to-one scope role links more than one instance on %S (ch. 5.5)"
-                      i.label))
+                      i.label)
+          in
+          match prefix with
+          | None -> []
+          | Some pre ->
+              List.map (fun key -> (pre ^ key, i.label)) (ever_tuples env ~otype:subject ~keys i))
         (World.of_type world subject)
     in
     let dup k = List.length (List.filter (fun (k', _) -> String.equal k k') keyed) > 1 in
@@ -1238,50 +1287,11 @@ let run_uniciteit_unie env world (u : resolved_uniciteit_unie) =
         (fun (b : uniciteit_unie_bron) ->
           let t = req "UniciteitUnie.bron.type" b.uub_type in
           let keys = List.map (req "sleutel") b.uub_sleutels in
-          (* ch. 5.9 decision (2026-08-20): a temporal key reads
-             EVER-uniqueness — an identity, not a measurement: every
-             value the timeline EVER carries is claimed, colliding
-             across instances even over non-overlapping periods.
-             Same-instance redeclaration is no collision (the tuple set
-             is deduplicated per instance × source). At most one
-             temporal component per source: a second would need the
-             same-moment tuple join — loud until a corpus case lands. *)
-          let temporal = List.filter (Ir_v0.Checks.attr_temporal (objecttype env t)) keys in
-          if List.length temporal > 1 then
-            Value.fault
-              "a uniqueness-union source carries at most one temporal key component (the \
-               same-moment tuple join has no corpus case; ch. 5.9)";
+          (* the shared ever-tuple function (ch. 5.9): one reading for
+             the union and the single form alike *)
           List.concat_map
             (fun (i : World.instance) ->
-              let carried k =
-                if not (Ir_v0.Checks.attr_temporal (objecttype env t) k) then
-                  [ World.attr i k ]
-                else
-                  match World.timeline i k with
-                  | Some tl ->
-                      List.map (fun (s : Timeline.segment) -> s.s_waarde) tl
-                  | None ->
-                      if World.attr i k <> Value.Empty then
-                        Value.fault
-                          "the ever-unique key %S needs the full timeline; %S supplies only \
-                           a scalar (ch. 5.9)"
-                          k i.label
-                      else []
-              in
-              (* the tuple set: scalars paired with every value the one
-                 temporal component ever carries; an empty component
-                 drops the tuple (the v0 empty-key rule) *)
-              let rec tuples acc = function
-                | [] -> [ List.rev acc ]
-                | k :: rest ->
-                    List.concat_map
-                      (fun v -> if v = Value.Empty then [] else tuples (v :: acc) rest)
-                      (carried k)
-              in
-              tuples [] keys
-              |> List.map (fun vs -> String.concat "\x00" (List.map Value.to_string vs))
-              |> List.sort_uniq String.compare
-              |> List.map (fun key -> (key, i.label)))
+              List.map (fun key -> (key, i.label)) (ever_tuples env ~otype:t ~keys i))
             (World.of_type world t))
         u.bronnen
     in

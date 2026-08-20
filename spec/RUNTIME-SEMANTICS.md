@@ -1457,7 +1457,11 @@ single form of ch. 5.6. Mirrored from the pinned runtime:
    participate (an empty key never collides, the ch. 5.6 rule). Source
    arity, per-position datatype kind and unit agree, and a union
    carries at least two sources (WF-030). A **temporal key** reads
-   **ever-uniqueness** (decided 2026-08-20; v0's own backends disagreed —
+   **ever-uniqueness**, in the SINGLE form and the union alike — one
+   shared tuple function carries both, and the single form composes it
+   with its scope machinery (scope parent × ever-tuples), so the same
+   key reads the same way wherever it appears (compositionality,
+   decided 2026-08-20; v0's own backends disagreed —
    one skipped the union, the other checked it — so this is a v1 norm,
    not a mirror): a key is an identity, not a measurement, so every
    value the timeline EVER carries is claimed, and two instances
@@ -1471,7 +1475,8 @@ single form of ch. 5.6. Mirrored from the pinned runtime:
    the same-moment tuple join — loud until a corpus case lands). A
    temporal key supplied as a bucket scalar faults: ever-uniqueness
    needs the full timeline, a scalar would silently miss values.
-   Worked example (the `jutterswet-nummerregister` anchor, verbatim in
+   Worked examples (the `jutterswet-nummerregister` union anchor and
+   the `jutterswet-strandregister` single-form anchor, verbatim in
    gates 5–6): Strandvondst S1 carries vondstnummer 7 over
    [2024, 2025) and Wrakvondst W1 carries 7 over [2026, 2027) —
    non-overlapping, yet **inconsistent** (the ever collision); S1
@@ -1479,7 +1484,11 @@ single form of ch. 5.6. Mirrored from the pinned runtime:
    **consistent** (same-instance redeclaration deduplicates); and the
    compound (reekscode, volgnummer) = (4, 3) carried by S1 in 2024 and
    by W1 in 2026 collides across those different moments while
-   (9, 3) does not.
+   (9, 3) does not. On the single form: two Strandvondsten carrying 7
+   over 2024 and 2026 respectively are **inconsistent** (the same ever
+   collision, one type); and under the parent scope the same kavel
+   number ever-carried by two vondsten of ONE kust collides while the
+   same pair under two different kusten does not (scope × ever).
 2. **The scope partitions, and scope-less rows are OUT.** A
    parent-scoped uniqueness (WF-054) tests its keys within each
    sub-population sharing one scope parent — the same key under two
