@@ -15,4 +15,8 @@ faults, would each be a spec violation. The green side of the boundary
 is pinned by `corpus/golden/synth2-budgetgrens-onder`: the same
 document shape bounded at rank < 98 (97 generations) replays exactly
 in both executors, its consistency assertion (every rank < 99)
-witnessing termination by the chain's own condition.
+witnessing termination by the chain's own condition. The exact flip
+sits at 100 → 101 generations, verified in BOTH executors with no
+split window between the pinned points; the green pin sits two
+generations under the largest green chain as a deliberate robustness
+buffer against future evaluation-pass drift.

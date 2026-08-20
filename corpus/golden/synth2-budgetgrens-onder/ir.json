@@ -305,7 +305,7 @@
         "periode": null,
         "bron": "de rang van de Wachter is kleiner dan 99"
       },
-      "bron": "Er moet worden voldaan aan: de rang van elke Wachter is kleiner dan 5",
+      "bron": "Er moet worden voldaan aan: de rang van elke Wachter is kleiner dan 99",
       "line": 1,
       "geldigheid": {
         "node": "Geldigheid",

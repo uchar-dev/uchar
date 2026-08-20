@@ -59,7 +59,7 @@
   "regels": [
     {
       "node": "Regel",
-      "naam": "werf eeuwig",
+      "naam": "werf de lange keten",
       "soort": "regel"
     }
   ],
@@ -68,7 +68,7 @@
   "objectCreaties": [
     {
       "node": "ResolvedObjectCreatie",
-      "naam": "werf eeuwig",
+      "naam": "werf de lange keten",
       "nieuwType": "Wachter",
       "subject": "Wachter",
       "toekenningen": [
@@ -175,10 +175,10 @@
   "regelGroepen": [
     {
       "node": "ResolvedRegelGroep",
-      "naam": "eeuwige estafette",
+      "naam": "lange estafette",
       "recursief": true,
       "leden": [
-        "werf eeuwig"
+        "werf de lange keten"
       ],
       "bron": null,
       "line": 1
