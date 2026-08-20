@@ -1423,6 +1423,48 @@ let fixpoint ~budget step world =
   in
   go 0 world
 
+(* The input-precision fence: a case value whose exact rational does not
+   fit the attribute's/parameter's declared decimals is refused at the
+   evaluation boundary — fail fast, with the same "does not fit N
+   decimals" reason the ASP backend's integer scaling faults with, so
+   the two executors refuse identically instead of ref silently keeping
+   precision the declaration cannot hold. *)
+let validate_input_precision env world =
+  let fits ~decimals q =
+    Z.equal (Q.den (Q.mul q (Q.of_bigint (Z.pow (Z.of_int 10) decimals)))) Z.one
+  in
+  let check ~what dt (v : Value.t) =
+    match (dt, v) with
+    | Some (Numeriek { decimalen; _ }), Value.Num (q, _)
+    | Some (Percentage { decimalen; _ }), Value.Num (q, _) ->
+        if not (fits ~decimals:decimalen q) then
+          Value.fault "input %s = %s does not fit %d decimals" what (Q.to_string q) decimalen
+    | _ -> ()
+  in
+  SMap.iter
+    (fun _ (i : World.instance) ->
+      let decl attr = Option.join (Ir_v0.Checks.find_ci (objecttype env i.otype).attributen attr) in
+      SMap.iter (fun a v -> check ~what:(i.label ^ "." ^ a) (decl a) v) i.attrs;
+      SMap.iter
+        (fun a (tl : Timeline.t) ->
+          List.iter
+            (fun (s : Timeline.segment) -> check ~what:(i.label ^ "." ^ a) (decl a) s.s_waarde)
+            tl)
+        i.tls)
+    world.World.instances;
+  let param_decl p =
+    match Ir_v0.Checks.find_ci env.doc.parameters p with
+    | Some (par : parameter) -> par.par_datatype
+    | None -> None
+  in
+  SMap.iter (fun p v -> check ~what:("parameter " ^ p) (param_decl p) v) env.params;
+  SMap.iter
+    (fun p (tl : Timeline.t) ->
+      List.iter
+        (fun (s : Timeline.segment) -> check ~what:("parameter " ^ p) (param_decl p) s.s_waarde)
+        tl)
+    env.param_tls
+
 let evaluate env world =
   (* fail fast on unverified input: the cycle-tolerant strata below are
      sound only on WF-045/046-clean documents (every cycle then passes
@@ -1435,6 +1477,7 @@ let evaluate env world =
       Value.fault "%s at %s: %s — the dependency graph is ill-formed; ref/ refuses to evaluate"
         wf at reason);
   parameterset_check env;
+  validate_input_precision env world;
   (* the input-world snapshot the 1:1 creation guard reads (ch. 5.5) *)
   let world0 = world in
   (* Strata (ch. 6.3), computed from the same dependency graph the

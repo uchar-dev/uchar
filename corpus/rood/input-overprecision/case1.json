@@ -1,0 +1,24 @@
+{
+ "format": "uchar-case-v0",
+ "asOfDate": null,
+ "input": {
+  "instances": [
+   {
+    "label": "v1",
+    "objectType": "Vondst",
+    "attributes": {
+     "geschatte waarde": {
+      "number": "40.005"
+     }
+    },
+    "roles": {},
+    "characteristics": []
+   }
+  ],
+  "parameters": {}
+ },
+ "expectedFault": {
+  "ref": "does not fit 2 decimals",
+  "clingo": "does not fit 2 decimals"
+ }
+}
