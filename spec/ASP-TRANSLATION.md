@@ -664,6 +664,21 @@ sharing of condition facts, the overlapping/unsorted ctl loader
 rejections, reverse-ordered timeline expectations, and the pro-rata in
 operand/creation positions (loud faults on both sides).
 
+*Postscript (2026-08-20, the Phase-4 adoption).* The computed-target
+input fence retires for the RS ch. 7.8 **standing targets** — the case
+value enters as `inputval/3`, standing by NAF against an effectiveness
+atom that carries condition **and** value bindings (the defeasibility
+machinery this section named as the principled home; a condition-only
+atom would encode v0's erase instead — the atom's body is the semantic
+choice). The fence remains on non-standing computing targets
+(multi-writer, versioned, temporal). The adoption round also found and
+closed the neighbouring gap this section missed: an allocation
+`doelAttribuut` supplied by the case was **unfenced** — the case
+`val/3` fact and the allocation's own head unioned into a superset
+model (observed: `[999;60]` on one attribute, ref replaying green over
+it), silent wherever no expectation pinned the attribute. It now
+refuses loudly, exactly like this fence.
+
 ## 7. Deliberately out of scope
 
 Art. 5 (hardheid), art. 6, the v3 temporalisation, quantitative

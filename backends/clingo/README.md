@@ -104,7 +104,16 @@ spec bug.
   the input value of a ladder target enters as `inputval/3`, standing
   defeasibly (`val :- inputval, not decided`) exactly where ref/'s
   write overwrites it; the initialisation rung's justification is the
-  absence of that input.
+  absence of that input. The ch. 7.8 **standing targets** (a bare
+  scalar computing rule as its target's only writer,
+  `Ir_v0.Desugar.standing_targets`) take the same entry: the rule's
+  effectiveness atom (`standN_eff`) carries the full val-head body —
+  condition AND value bindings — so a leeg evaluation derives neither
+  and the input stands (`val :- inputval, not standN_eff`), matching
+  ref/'s no-write-on-leeg. The ch. 6d computed-target fence no longer
+  applies there; it remains on non-standing computing targets
+  (multi-writer, versioned, temporal), and an allocation
+  `doelAttribuut` supplied by the case is fenced the same way.
 - Constructs outside the corpus-exercised subset fault the translator —
   fail fast, never a silent SKIP.
 

@@ -118,7 +118,11 @@ them apart as the **period-coalescing rule** (ch. 3.4) and the
 fixpoint machinery of ch. 5 compares old and new value; empty-over-empty
 is a no-op, empty-over-value is a change). Worked example: target holds 5,
 computed value leeg → the write happens, target becomes leeg; target leeg,
-computed leeg → no-op. The initialisation form writes only when the target
+computed leeg → no-op. **Exception (ch. 7.8, decided 2026-08-20):** on a
+standing target — a bare scalar computing rule as its target's only
+writer — a computed leeg does not write and the input value stands (a
+tracked delta from the v0 mirror, `CONSTRUCTS.md` rows 8/18). The
+initialisation form writes only when the target
 is empty (§9.6) — specified as a defeasible default in ch. 7
 (`CONSTRUCTS.md` row 7).
 
@@ -1820,8 +1824,10 @@ executors; the wire marking is `ongeordend`, IR-SPEC ch. 6.1). The v0
 desugaring is ch. 7.7, machine-checked by the
 `jutterswet-waardering-v0vorm` anchor (ref replays the v0 forms
 natively, the ASP backend the desugared ladder — the gate-6
-differential witnesses the lowering). Only rule-readability of the
-conflict fact stays OPEN.*
+differential witnesses the lowering). Rule-readability of the conflict
+fact is **closed** for v1 (ch. 7.2, decided 2026-08-20); the ch. 7.8
+standing norm executes on scalar targets through both executors
+(temporal targets stay fenced — recorded, scalar-first).*
 
 ### 7.1 The model: the ladder, and fall-through as its semantics
 
@@ -1923,8 +1929,17 @@ EmptyError/ConflictError shape), mapped onto this IR's own discipline:
   group's target form as the rule name. That fact is an *end-state
   observation* (ch. 5.7 step 5): the ch. 5.6 regelversie read tests
   rule names, not target forms, so no existing condition reads a
-  conflict fact — whether a rule may is **OPEN** for the Phase-4
-  cards. Equal decisions are no conflict (idempotence, ch. 5.1). A
+  conflict fact. **Decided (2026-08-20): it stays that way in v1** —
+  the conflict fact is not rule-readable. Catala's conflict is
+  deliberately fatal and uncatchable; a readable conflict fact would
+  exceed even that, toward meta-defeasible repair rules, and the
+  statute pattern that seems to want it (samenloop) is a priority
+  declaration — an ordered ladder — not a conflict reader. Reopening
+  later is additive (`spec/proposals/PHASE4-DEFAULTS.md` §6). Equal
+  decisions are no conflict (idempotence, ch. 5.1) — a tracked
+  deviation from Catala, which conflicts on any two simultaneous
+  non-empty exceptions regardless of value equality (`CONSTRUCTS.md`
+  row 8). A
   single ladder cannot reach this outcome (ch. 7.1); the channel is
   exercised exactly by declared-unordered simultaneity — and a linear
   ladder never pays it (the exercise-2 finding, now by construction).
@@ -2034,12 +2049,14 @@ serve the old forms through the new machinery:
 
 The initialisation is what the desugaring exists for — and what keeps
 the two readings extensionally equal on the confluent domain. A **bare
-computation without one stays native**: its v0 meaning writes a
-computed leeg over an input value (ch. 1.2g), where the ladder reading
-would leave the input standing — desugaring it would silently change
-its meaning, not repair a hole. (That v0 meaning itself has no absence
-encoding on the ASP native path — a recorded backend limitation, kin
-to the empty-equality asymmetry; see `backends/clingo/README.md`.)
+computation without one stays outside the desugaring** — but no longer
+native-v0: the ch. 7.8 standing norm (decided 2026-08-20) gives it the
+ladder reading directly — a computed leeg leaves the input standing —
+with the v0 erase-on-leeg retired as a tracked delta. What this
+chapter could not do silently, ch. 7.8 does openly. (The v0 erase
+itself had no absence encoding on the ASP native path — the recorded
+backend limitation that, with the ch. 6d fence, kept the corner free
+of cases and the change cheap; see `backends/clingo/README.md`.)
 
 Outside the desugaring's domain the v0 forms are left as they are; a
 consumer that cannot carry a form faults on it, and where a form's v0
@@ -2072,7 +2089,59 @@ can pin the v0 side of that delta (a fault is not an expectation), so
 it is pinned here as prose and exercised in the card's verification
 record.
 
+### 7.8 The input rung and the standing norm (decided 2026-08-20)
+
+The case input on a defaults-carrying target is itself a default —
+restated as the **virtual input rung**: between the lowest ordinary
+rung and the initialisation rung sits an implicit rung whose
+justification is "the target is **gevuld** in the input facts" and
+whose consequence is that input value — the exact dual of the
+initialisation rung (ch. 7.3). Like the initialisation rung's, its
+justification reads the input world and contributes no dependency
+edges. This is a re-description of ch. 7.1's "the target keeps what
+the fact base holds" — every outcome of ch. 7.3 and 7.6.2 derives from
+"the highest rung that decides wins" alone — and it generalises beyond
+declared ladders:
+
+**The standing norm.** A **version-free scalar computing rule
+(Gelijkstelling/Berekening) that is its target's only writer** — no
+second rule, no initialisation beside it (that pair is the ch. 7.7
+desugaring's domain), no ladder, no allocation, no creation-time
+write — decides **like a rung**: its justification is its condition,
+and it decides only when its value evaluates **gevuld**. A **leeg
+evaluation writes nothing**: the target keeps what the fact base
+holds — the case-supplied input value, or leeg. The v0 mirror wrote
+the computed leeg over the input (ch. 1.2g); that erase is retired on
+this domain as a **tracked delta** (`CONSTRUCTS.md` rows 8/18) —
+decided openly where ch. 7.7 records it as the reason the bare form
+could not be desugared silently. Channel deposits of the evaluation
+persist as in any ordinary evaluation — the ladder remains the one
+sanctioned speculative context (ch. 7.1). Together with ch. 7.7, every
+scalar single-writer form now carries the ladder reading:
+initialisation alone and initialisation-beside-computation through the
+desugaring, the bare computation through this norm.
+
+Worked examples (absolute; the anchor `jutterswet-waardestelling`
+verbatim, all four through both executors): one conditional rule "de
+geschatte waarde = de taxatiewaarde, indien de Vondst gemeld is" over
+a case input of 40 — deciding rule computing 50 → **50** (computation
+displaces input); condition false → **40** (the flank: input stands);
+condition holds, taxatiewaarde leeg → **40** (the fall-through: a
+computed leeg never displaces an input value — the delta pin); no
+input, computing 50 → **50**. The two standing outcomes satisfy a
+do-nothing executor by construction — the standing *is* what they
+test — so they are reason-carrying gate-7 survivors. The domain
+predicate is shared between the executors (one definition), the ASP
+entry is the ladder's `inputval/3` with an effectiveness atom carrying
+condition **and** value bindings (a condition-only atom would encode
+the v0 erase instead — the atom's body is the semantic choice).
+**Temporal computing targets stay fenced** on the ASP side (recorded,
+scalar-first), as do multi-writer targets (v0 meaning: agenda order)
+and versioned targets (selection is temporal, ch. 7.4 — never
+defeasible).
+
 ## Chapters (planned)
 
 *(none — chapters 1–8 are drafted and ch. 7 is complete: both target
-kinds, the unordered group, and the v0 desugaring are landed)*
+kinds, the unordered group, the v0 desugaring, and the ch. 7.8
+standing norm are landed; the conflict fact is closed for v1)*

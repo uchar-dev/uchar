@@ -1362,8 +1362,12 @@ speculative (only the deciding rung's channel deposits persist).
 The v0 desugaring of existing rule forms into ladders is
 `RUNTIME-SEMANTICS.md` ch. 7.7 (implemented as `Ir_v0.Desugar`, the
 ASP backend's reading; witnessed differentially by the
-`jutterswet-waardering-v0vorm` anchor). Rule-readability of the
-conflict fact stays OPEN.
+`jutterswet-waardering-v0vorm` anchor); the bare computing rule
+carries the ladder reading directly through the ch. 7.8 standing norm
+(the shared `standing_targets` domain, anchor
+`jutterswet-waardestelling`). Rule-readability of the conflict fact is
+**closed** for v1 (`RUNTIME-SEMANTICS.md` ch. 7.2, decided
+2026-08-20; reopening is additive).
 
 ---
 
