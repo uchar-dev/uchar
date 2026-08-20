@@ -21,3 +21,22 @@ May touch: `ref/lib/` (the case/world validation site), `corpus/rood/`,
 Out of scope: the case schema (the pattern stays permissive; the check
 is semantic, against the declaration); parameter values (check whether
 the same gap exists there — if so, cover in this card, else record).
+
+Result: the fence lands at ref's evaluation boundary
+(`validate_input_precision`: attributes, attribute timelines, scalar
+parameters, parameter timelines — one shared check), red-first (40.005
+replayed green through ref while clingo faulted), with the shared
+"does not fit N decimals" fragment and the value rendered as its
+decimal lexeme. Two rood witnesses pin it in both executors:
+`input-overprecision` (the attribute branch, the waardestelling anchor
+verbatim) and `input-overprecision-param` (the parameter branch, the
+penningdrempel golden verbatim) — 13 red total, all gates green. The
+verification round caught a REAL counter-divergence the first version
+introduced — an over-precise scalar on a granular parameter made ref
+fault where clingo never reads that slot — closed at the loader with
+the symmetric refusal ("a scalar value on a granular parameter"),
+mirroring the existing timeline-on-scalar rejection. Recorded, not
+fixed here: the pre-existing null-datatype strictness gap (clingo
+faults "unscalable datatype" where ref accepts — verifier-rejected
+shapes, low realism); the timeline branches share the single check
+code path with the two pinned branches but carry no own corpus witness.

@@ -7,3 +7,6 @@ at the input boundary: the reference interpreter's precision fence
 (idem). Before the fence the reference interpreter silently kept the
 over-precise rational while the ASP side faulted — a divergence on
 schema-valid input (the standing-norm card's breaker find).
+
+The document is the jutterswet-waardestelling anchor verbatim; only the
+case is red.

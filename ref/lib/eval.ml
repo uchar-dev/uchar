@@ -1438,7 +1438,7 @@ let validate_input_precision env world =
     | Some (Numeriek { decimalen; _ }), Value.Num (q, _)
     | Some (Percentage { decimalen; _ }), Value.Num (q, _) ->
         if not (fits ~decimals:decimalen q) then
-          Value.fault "input %s = %s does not fit %d decimals" what (Q.to_string q) decimalen
+          Value.fault "input %s = %s does not fit %d decimals" what (Value.lexeme_of_q q) decimalen
     | _ -> ()
   in
   SMap.iter

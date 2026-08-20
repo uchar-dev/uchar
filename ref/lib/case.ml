@@ -474,6 +474,11 @@ let load_file (doc : document) path : t =
               | Some gran ->
                   (params, SMap.add (norm name) (timeline_of_json ~at ~gran p.par_datatype vj) ptls)
               | None -> fail "%s: a timeline value on a non-granular parameter" at)
+            else if p.par_granulariteit <> None then
+              (* the symmetric refusal: a granular parameter takes a
+                 timeline, never a scalar — the scalar slot is unread
+                 (ch. 8), so accepting one only breeds divergence *)
+              fail "%s: a scalar value on a granular parameter (it takes a timeline)" at
             else (SMap.add (norm name) (value_of_json ~at p.par_datatype vj) params, ptls)
         | None -> fail "parameter %S is not declared" name)
       (SMap.empty, SMap.empty)

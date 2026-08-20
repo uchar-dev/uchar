@@ -1,0 +1,16 @@
+{
+ "format": "uchar-case-v0",
+ "asOfDate": null,
+ "input": {
+  "instances": [],
+  "parameters": {
+   "vondstdrempel": {
+    "number": "7.5"
+   }
+  }
+ },
+ "expectedFault": {
+  "ref": "does not fit 0 decimals",
+  "clingo": "does not fit 0 decimals"
+ }
+}
