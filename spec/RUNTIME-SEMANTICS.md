@@ -1471,6 +1471,15 @@ single form of ch. 5.6. Mirrored from the pinned runtime:
    the same-moment tuple join — loud until a corpus case lands). A
    temporal key supplied as a bucket scalar faults: ever-uniqueness
    needs the full timeline, a scalar would silently miss values.
+   Worked example (the `jutterswet-nummerregister` anchor, verbatim in
+   gates 5–6): Strandvondst S1 carries vondstnummer 7 over
+   [2024, 2025) and Wrakvondst W1 carries 7 over [2026, 2027) —
+   non-overlapping, yet **inconsistent** (the ever collision); S1
+   carrying 7 over both [2024, 2025) and [2026, 2027) beside W1's 8 is
+   **consistent** (same-instance redeclaration deduplicates); and the
+   compound (reekscode, volgnummer) = (4, 3) carried by S1 in 2024 and
+   by W1 in 2026 collides across those different moments while
+   (9, 3) does not.
 2. **The scope partitions, and scope-less rows are OUT.** A
    parent-scoped uniqueness (WF-054) tests its keys within each
    sub-population sharing one scope parent — the same key under two
