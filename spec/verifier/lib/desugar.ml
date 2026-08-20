@@ -41,10 +41,11 @@ let is_plain_init (r : resolved_regel) =
   && version_free r.rr_geldigheid
   && r.waarde <> None
 
-(* Desugar every target carried entirely by domain forms; leave every
-   other rule untouched. Returns the rewritten document. *)
-let document (doc : document) : document =
-  let key (ot, a) = norm ot ^ ":" ^ norm a in
+let key (ot, a) = norm ot ^ ":" ^ norm a
+
+(* The ch. 7.7 domain: every (type, attribute) target carried entirely
+   by domain forms, with the rules that carry it. *)
+let chosen_targets (doc : document) =
   (* collect rules per attribute target *)
   let targets =
     List.fold_left
@@ -62,16 +63,28 @@ let document (doc : document) : document =
     let inits = List.filter (fun r -> r.rr_soort = Some Initialisatie) rs in
     let comps = List.filter is_computing rs in
     (* exactly one initialisation: the init rung is what the desugaring
-       exists for, and it is what keeps the two readings extensionally
-       equal on the confluent domain — a bare computation without one
-       reads differently on empty-over-input (ref writes the empty,
-       ch. 1.2g; the ladder falls through) and must stay native *)
+       exists for — the bare computation stays structurally outside the
+       desugaring and carries the ladder reading directly through the
+       ch. 7.8 standing norm (standing_targets below) *)
     List.length rs = List.length inits + List.length comps
     && List.length inits = 1
     && List.for_all is_plain_init inits
     && List.length comps <= 1
   in
-  let chosen = List.filter desugarable targets in
+  List.filter desugarable targets
+
+(* The ch. 7.7 desugaring domain as target keys — shared with ref/,
+   whose native replay gives these targets the same fall-through the
+   desugared ladder carries (RS ch. 7.7/7.8: a computing rule that
+   evaluates leeg writes nothing, so the init/input decides and the
+   fire-but-leeg corner is defined instead of divergent). *)
+let desugared_targets (doc : document) : (string * string) list =
+  List.map (fun (_, ((ot, a), _)) -> (norm ot, norm a)) (chosen_targets doc)
+
+(* Desugar every target carried entirely by domain forms; leave every
+   other rule untouched. Returns the rewritten document. *)
+let document (doc : document) : document =
+  let chosen = chosen_targets doc in
   if chosen = [] then doc
   else
     let in_chosen r =

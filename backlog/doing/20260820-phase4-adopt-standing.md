@@ -29,7 +29,10 @@ May touch: `backlog/`, `spec/RUNTIME-SEMANTICS.md`, `spec/IR-SPEC.md`,
 `spec/CONSTRUCTS.md`, `spec/ASP-TRANSLATION.md`,
 `spec/verifier/lib/desugar.ml`, `ref/lib/eval.ml`,
 `backends/clingo/lib/translate.ml`, `backends/clingo/README.md`,
-`scripts/check-noop.sh`, `corpus/golden/anchor/jutterswet-waardestelling/`.
+`scripts/check-noop.sh`, `corpus/golden/anchor/jutterswet-waardestelling/`,
+and (widened in the verification round, additive cases only)
+`corpus/golden/anchor/jutterswet-waardering-v0vorm/` — the breaker lens
+found the fire-but-leeg corner divergent there and the fix pins it.
 
 Out of scope: the toolchain (decision 6, pin-bump card); timeline
 execution of the norm (recorded, follow-up); the hardship anchor (own

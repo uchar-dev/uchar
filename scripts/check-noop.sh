@@ -37,6 +37,10 @@
 #   - jutterswet-waardestelling/case3-leeg-valt-door.json: the leeg
 #     fall-through on a standing target — a computed leeg never
 #     displaces the input value (ch. 7.8; the pinned v0 delta).
+#   - jutterswet-waardering-v0vorm/case6-leeg-doorval-input.json: the
+#     same fall-through in the ch. 7.7 desugaring domain (fire-but-leeg
+#     beside an initialisation, input standing) — the corner that was a
+#     prose pin until ref carried the ladder reading natively.
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
@@ -44,7 +48,8 @@ corpus/golden/anchor/jutterswet-nummerregister/case2.json
 corpus/golden/anchor/jutterswet-strandregister/case2.json
 corpus/golden/anchor/jutterswet-strandregister/case4.json
 corpus/golden/anchor/jutterswet-waardestelling/case2-flank-input-blijft.json
-corpus/golden/anchor/jutterswet-waardestelling/case3-leeg-valt-door.json'
+corpus/golden/anchor/jutterswet-waardestelling/case3-leeg-valt-door.json
+corpus/golden/anchor/jutterswet-waardering-v0vorm/case6-leeg-doorval-input.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2

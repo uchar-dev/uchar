@@ -2080,14 +2080,20 @@ forms, `ref/` replays them **natively** (ch. 5.4 semantics) while the
 ASP backend translates the **desugared** document (`Ir_v0.Desugar`,
 the table above, through the ch. 6.1 ladder machinery) — gate 6
 demands both readings coincide. Outside it, a computing rule that
-evaluates **leeg** beside an initialisation is *divergent* in the v0
+evaluates **leeg** beside an initialisation was *divergent* in the v0
 reading: the empty write (ch. 1.2g) and the refill alternate and no
-fixpoint exists — `ref/` faults on the pass budget; the ladder reading
-*defines* the case (fall-through; input left standing, ch. 7.1). The
-desugaring therefore repairs a hole rather than preserving it; no case
-can pin the v0 side of that delta (a fault is not an expectation), so
-it is pinned here as prose and exercised in the card's verification
-record.
+fixpoint exists, so `ref/`'s native replay faulted on the pass budget
+while the desugared ladder answered cleanly — a corner only prose
+could pin (a fault is not an expectation). **Closed with ch. 7.8
+(2026-08-20):** `ref/` now carries the ladder reading natively on the
+desugaring domain too — the leeg-evaluating rule writes nothing (the
+shared `desugared_targets` predicate), the init or input decides, and
+the corner is machine-pinned by the anchor's
+`case5-leeg-doorval-init` (erkend, no basisbedrag → **25**) and
+`case6-leeg-doorval-input` (idem over input 40 → **40**, a
+reason-carrying gate-7 survivor). The desugaring therefore repairs a
+hole rather than preserving it — and the repair is now witnessed
+differentially instead of recorded as prose.
 
 ### 7.8 The input rung and the standing norm (decided 2026-08-20)
 
