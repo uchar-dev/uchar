@@ -18,3 +18,16 @@ May touch: `backlog/`, `spec/proposals/PHASE4-DEFAULTS.md`.
 
 Out of scope: any normative document, executor, schema, verifier, or
 corpus change; the hardship anchor case (its own later card).
+
+Result: the §4.1 hardship-pattern paragraph and the decision-1 line are
+in place (same PROPOSAL status). Two opus lenses ran; all four minor
+findings fixed before the merge: "WF-051 untouched" corrected to
+satisfied-by-construction (the rung's reads are negative edges ending at
+an unwritten input fact), the visibility claim corrected for speculative
+rung evaluation (computed ≠ decided needs the standard route
+materialised on its own target), "deliberately out of corpus scope"
+corrected to "no corpus case exercises it yet", and art. 5
+characterised faithfully (the strandvoogd's decision halves the art. 3
+threshold — a parameter-modifying discretion, not a handed-down value).
+Deliberately left: the hardship anchor itself (its own card, after
+decision 1).
