@@ -252,8 +252,9 @@ norm becomes
 > a computed leeg never displaces an input-supplied value,
 
 with the v0 behaviour recorded as a tracked delta in `CONSTRUCTS.md`
-rows 8/18. Three arguments — stated honestly, because the verification
-round corrected the first: once `inputval/3` lands, **both** readings
+rows 8/18. Three arguments — stated honestly, because this card's
+verification round refuted an earlier, stronger first argument
+(monotone-inexpressibility): once `inputval/3` lands, **both** readings
 are monotonically encodable (§4.4: the effectiveness atom's body *is*
 the choice — value bindings give standing, condition-only gives v0's
 erase), so ch. 6d's "no monotone encoding" holds only for the legacy
