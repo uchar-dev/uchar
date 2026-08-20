@@ -205,27 +205,38 @@ semantics.** The legal case that genuinely wants input-beats-computation
 authority ("menselijke maat") — is expressible with the landed machinery
 as it stands. The override is not a bare value on the target: it is a
 **decision**, and it enters the dossier as its own declared input fact
-(the decided value beside the deciding act). The ladder then carries a
-**top rung** justified by that decision's presence, consequence the
-decided value; the computation sits on the rungs below. This is the
-classic two-rule treatment of discretionary clauses — the standard case
-and the discretionary case as separate rules, with the exercise of
-discretion itself an input fact, so that absent a decision the
-discretionary route stays silent by design (Sergot, Sadri, Kowalski,
-Kriwaczek, Hammond & Cory, "The British Nationality Act as a Logic
-Program", CACM 29(5), 1986, on "the Secretary of State may…"). Nothing
-new is needed: the rung reads the decision attribute, never its own
-target, so WF-051 is untouched, and the rung's priority *is* Catala's
-exception polarity — the override wins because it is the highest rung.
-What the pattern preserves, and a load-semantics Reading B would erase,
-is **grounding and traceability**: the ladder names which provision
-authorises the deviation and which act exercised it, and where
-visibility of the deviation is wanted, a consistency assertion beside
-the ladder surfaces computed ≠ decided on the §9.5 channel — where a
-silently overriding case input would leave no trace at all. A hardship
-anchor exercising this pattern (art. 5 Jutterswet, so far deliberately
-out of corpus scope) is the natural corpus companion once decision 1
-lands.
+(what was decided, beside the deciding act). The ladder then carries a
+**top rung** justified by that decision's presence, whose consequence is
+the discretionary route — a decided value where the provision hands one
+down, or the standard computation under the provision's altered terms
+where the discretion modifies a parameter; the standard route sits on
+the rungs below. This is the classic two-rule treatment of discretionary
+clauses — the standard case and the discretionary case as separate
+rules, with the exercise of discretion itself an input fact, so that
+absent a decision the discretionary route stays silent by design
+(Sergot, Sadri, Kowalski, Kriwaczek, Hammond & Cory, "The British
+Nationality Act as a Logic Program", CACM 29(5), 1986, on "the Secretary
+of State may…"). Nothing new is needed: the rung reads the decision
+attribute, never its own target — its reads add WF-051 negative edges
+like any rung's, but they terminate at an unwritten input fact, which no
+producer can close into a cycle, so WF-051 is satisfied by construction.
+The rung's priority *is* Catala's exception polarity — the override wins
+because it is the highest rung. What the pattern preserves, and a
+load-semantics Reading B would erase, is **grounding and traceability**:
+the ladder names which provision authorises the deviation and which act
+exercised it. One care for visibility: rung evaluation is speculative
+(RS ch. 7.1), so when the top rung wins, the displaced standard value is
+never persisted — a consistency on the ladder's own target cannot see
+the deviation. Where computed ≠ decided must surface on the §9.5
+channel, the standard route is materialised as its own attribute (a
+separate writer on a different target, admissible under WF-050) and the
+consistency compares the two — still a trace a silently overriding case
+input could never leave. A hardship anchor is the natural corpus
+companion once decision 1 lands: art. 5 Jutterswet (no corpus case
+exercises it yet) fits the pattern's structure exactly — the
+strandvoogd's besluit as the input fact, the top rung's consequence the
+art. 3 computation with the threshold halved ("twaalf" read as "zes"),
+a parameter-modifying discretion rather than a handed-down value.
 
 ### 4.2 The input rung, formalized
 
