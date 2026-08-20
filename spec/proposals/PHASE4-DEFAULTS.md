@@ -47,9 +47,11 @@ derives its strata from — the two executors cannot drift there).
 What remains of Phase 4 is therefore narrow and precise:
 
 1. **Input-as-default.** Case input on a computed target is handled
-   correctly only on ladder targets (`inputval/3`); everywhere else the
-   ASP backend refuses it loudly (`ASP-TRANSLATION.md` ch. 6d, the
-   computed-target input fence) and `ref/` overwrites v0-faithfully. §3–§4.
+   correctly only on ladder targets (`inputval/3`); on every other
+   Berekening/Gelijkstelling target the ASP backend refuses it loudly
+   (`ASP-TRANSLATION.md` ch. 6d, the computed-target input fence) and
+   `ref/` overwrites v0-faithfully — and on allocation targets it is
+   today neither handled nor fenced, a latent gap §4.4 records. §3–§4.
 2. **The Drools lowering** — the one unmet exit criterion of `PLAN.md`
    Phase 4: "the salience mechanism in the Drools backend is generated
    from IR-level defaults". §5.
@@ -250,11 +252,18 @@ norm becomes
 > a computed leeg never displaces an input-supplied value,
 
 with the v0 behaviour recorded as a tracked delta in `CONSTRUCTS.md`
-rows 8/18. Three arguments. First, the erased-input behaviour is
-precisely what has no monotone encoding — the fence exists because of
-this corner and only this corner; in the confluent domain (the rule
-evaluates gevuld or does not fire) the ladder reading and v0 agree
-extensionally. Second, the neighbouring case is already fault-domain:
+rows 8/18. Three arguments — stated honestly, because the verification
+round corrected the first: once `inputval/3` lands, **both** readings
+are monotonically encodable (§4.4: the effectiveness atom's body *is*
+the choice — value bindings give standing, condition-only gives v0's
+erase), so ch. 6d's "no monotone encoding" holds only for the legacy
+`val/3` scheme and decision 2 is a genuinely normative choice, not one
+forced by ASP. The grounds, then. First, **uniformity**: the ladder
+already norms fall-through (RS ch. 7.1) — one calculus should not carry
+two leeg-disciplines, displacing on declared ladders and erasing on bare
+targets; and in the confluent domain (the rule evaluates gevuld or does
+not fire) the two readings agree extensionally, so the norm decides only
+the corner. Second, the neighbouring case is already fault-domain:
 beside an initialisation, the v0 reading of a leeg-evaluating computation
 has no fixpoint at all (`ref/` faults on the pass budget — RS ch. 7.7);
 v1 would be *defining* behaviour where v0 diverges or is silent, not
@@ -278,21 +287,36 @@ val(S,"a",V) :- r_out(S,V).
 val(S,"a",V) :- inputval(S,"a",V), not r_eff(S).   % the input rung
 ```
 
-The load-bearing subtlety: `r_eff` must carry the **value bindings**,
-not only the condition — "decides" is justification ∧ gevuld (the ladder's
-`decides_m` shape, RS ch. 7.5). A leeg-evaluating consequence leaves
-`r_eff` underivable (absence composes, exactly the ch. 6a coalescing
-machinery), so the input stands — the fall-through norm of §4.3 for free.
-An `r_eff` that carried only the condition would displace the input to
-*nothing* on a leeg computation, which is neither v0 nor the proposed v1.
-Timelines take the same shape over `tl/5` with a per-rule effectiveness
-atom; the initialisation rung stays NAF over the input fact as in
-RS ch. 7.5. The fence (`case_supplies`) then **retires for desugarable
-targets** and narrows to what genuinely remains outside the calculus
-(case input on allocation targets and on creation-initialised members).
-Stratification is untouched: the new NAF is against `r_eff`, whose body
-is the rule's own — no new edges beyond the WF-051 classes the ladder
-already added.
+The load-bearing subtlety: the body of `r_eff` **is the semantic
+choice**. With the **value bindings** in it — "decides" as
+justification ∧ gevuld, the ladder's `decides_m` shape (RS ch. 7.5) — a
+leeg-evaluating consequence leaves `r_eff` underivable (absence
+composes, exactly the ch. 6a coalescing machinery) and the input stands:
+the fall-through norm of §4.3. With only the **condition** in it, a leeg
+computation still derives `r_eff`, the input rung is blocked, no `val`
+derives, and the target is leeg — which is precisely v0's erase-on-leeg
+(ch. 1.2g), monotonically encoded. Both readings are therefore
+expressible once `inputval/3` is general; ch. 6d's impossibility is a
+statement about the legacy `val/3` scheme, and decision 2 picks the
+value-binding body on the §4.3 grounds, not out of necessity. Timelines
+take the same shape over `tl/5` with a per-rule effectiveness atom; the
+initialisation rung stays NAF over the input fact as in RS ch. 7.5.
+
+The fence (`case_supplies`) then **retires for desugarable targets**;
+what stays fenced is the still-non-desugarable computing forms (multiple
+computing rules on one target, versioned forms, conditional
+initialisations). Two corrections from this card's own verification
+round, recorded here deliberately: (i) the fence never covered
+allocation — it is called only from the Berekening/Gelijkstelling arms,
+so case input on an allocation `doelAttribuut` is today emitted as a
+plain `val/3` fact beside the allocation's own head: an **unfenced
+latent superset gap**, to be closed by the §9 executor card with a fence
+of its own (an addition, not a narrowing); (ii) creation-initialised
+members need no fence — minted instances live in the reserved `::`
+namespace (RS ch. 5.5), so no case-supplied fact can ever collide with
+them. Stratification is untouched: the new NAF is against `r_eff`, whose
+body is the rule's own — no new edges beyond the WF-051 classes the
+ladder already added.
 
 ### 4.5 The ref encoding, sketched
 
@@ -432,14 +456,25 @@ target, siblings conflicting on differing simultaneous decisions —
 faithfully D-DefaultExceptionsConflict, modulo the equal-values deviation
 of §2.2).
 
-The gap, stated exactly: **branching below the root**. A base `b` with
-unordered exceptions `{x, y}` where `x` itself carries an exception `z`
-has no direct image — the chain cannot hold `{x, y}` unordered, and the
-group cannot nest `z` above `x` inside one member. The art. 4 desugaring
-(self-contained justifications, each conjoining its enclosing layer's)
-linearizes exception-*chains*, not sibling branches; compiling sibling
-branches into justification DNF is exactly what row 8 forbids ("the
-compiled DNF erases exactly the structure amendments edit").
+The gap, stated exactly: **branching below the root**. A group member is
+a chain and cannot itself branch — the group's one branching point is
+fixed at the root target. So a tree that branches at the root compiles:
+a base `b` with unordered exceptions `{x, y}` where `x` carries an
+exception `z` becomes a group of two chains, `[z, x]` and `[y]` — `z`
+displacing `x` inside member 1 is D-DefaultOneException, and member 1
+against member 2 is the root-level D-DefaultExceptionsConflict (what
+does *not* carry over is a shared non-trivial base `b` under all
+members — a root-level limitation, workable by duplicating `b` as each
+member's lowest rung under the equal-decisions rule). But a tree that
+branches **below** the root does not: `b ← x`, `x ← {y, z}` — a chain
+from the root, then an unordered pair as exceptions *to `x`* — has no
+image. Flattening it to the group `{[y, x], [z, x]}` is wrong, not just
+lossy: when only `y` applies and `x`'s justification holds, member 1
+decides `y` while member 2 decides `x` — a **spurious conflict** where
+the paper's calculus yields `y` (the `z` slot is `∅`; the sole non-empty
+exception wins). And compiling the branch away into justification DNF is
+exactly what row 8 forbids ("the compiled DNF erases exactly the
+structure amendments edit").
 
 Options for the Phase-5 design (decision 7 records the choice direction,
 the design itself stays at Phase 5 with rows 9/10/36):
@@ -483,7 +518,7 @@ not in advance. The first new WF number, if any later part needs one, is
 |---|---|---|
 | `RUNTIME-SEMANTICS.md` ch. 7 (+ ch. 1.2g note) | ch. 7.8 input rung; ch. 7.7 domain extension; conflict-readability closed (§6); the §2.2 deviations named | proposal branch (protected) |
 | `CONSTRUCTS.md` row 8 (+ row 18) | delta entries: equal-values conflict; observable-not-fatal conflict; computed-leeg-over-input standing | ordinary card |
-| `backends/clingo` | `inputval/3` generalized (§4.4); `case_supplies` fence narrowed to allocation/creation targets; ch. 6d note updated | ordinary card, red-first |
+| `backends/clingo` | `inputval/3` generalized (§4.4); `case_supplies` retired for desugarable targets, retained for non-desugarable computing forms; a **new** fence on allocation-target input (the latent gap of §4.4); ch. 6d note updated | ordinary card, red-first |
 | `ref/` | fall-through on desugarable computing targets (§4.5, desugar-route) | ordinary card, red-first |
 | corpus | new goldens: the flank, computed-over-input, the leeg-standing delta pin; gate-7 survivor list grows with reasons | through `scripts/admit.sh` |
 | toolchain | nothing until the §5 derivation card / next pin-bump; v0 delta tracked meanwhile | pin-bump conformance card |
@@ -503,10 +538,14 @@ today, which is exactly why the change is cheap now and dearer later.
    leeg never displaces an input-supplied value", extending the ch. 7.7
    desugaring to the bare computing rule and retiring the ch. 6d fence
    for desugarable targets; v0's erase-on-leeg becomes a tracked delta.
-   *Recommendation: yes. The corner is fence-blocked today (no case can
-   disagree), the neighbouring case is already fault-domain, and it is
-   the last obstacle between the flank cases and the differential
-   corpus.*
+   The alternative is honestly available: with `inputval/3` general,
+   v0's erase is *also* monotonically encodable (condition-only
+   effectiveness, §4.4), so the mirror could be kept — at the price of
+   two leeg-disciplines in one calculus. *Recommendation: yes,
+   fall-through. Uniformity with the landed ladder, the observed-fact
+   argument, the fault-domain neighbour — and the corner is
+   fence-blocked today, so no case can disagree; it is the last obstacle
+   between the flank cases and the differential corpus.*
 3. **Scope of decision 2** — scalars and timelines together (one
    machinery, §4.4) or scalar-first. *Recommendation: together, scalar
    demonstrated first in the executor card.*
@@ -555,16 +594,20 @@ val(S,"geschatte waarde",V) :- inputval(S,"geschatte waarde",V), not r1_eff(S).
 |---|---|---|---|
 | gemeld, taxatiewaarde 50.00 | rung 1 decides → **50.00** | `r1_eff(v1)` derives; `val(v1,…,5000)` from `r1_out`; input displaced by NAF | same (overwrite) — but the ASP side is fence-refused |
 | niet gemeld | rung 1 justification fails → input rung decides → **40.00** | `r1_eff` underivable → `val(v1,…,4000)` from `inputval` | ref same; ASP fence-refused (the §3b flank) |
-| gemeld, taxatiewaarde leeg | rung 1 falls through (consequence leeg) → input rung decides → **40.00** | `val(v1,"taxatiewaarde",_)` underivable → `r1_eff` underivable → input stands | **the delta**: v0/ref write leeg, input erased (ch. 1.2g); no monotone encoding exists |
+| gemeld, taxatiewaarde leeg | rung 1 falls through (consequence leeg) → input rung decides → **40.00** | `val(v1,"taxatiewaarde",_)` underivable → `r1_eff` underivable → input stands | **the delta**: v0/ref write leeg, input erased (ch. 1.2g) — encodable too, via a condition-only `r1_eff` (§4.4); decision 2 chooses standing |
 
 The three rows are the whole proposal in miniature: row 1 is the
 confluent domain where every reading agrees and only the encoding was
 missing; row 2 is the flank the fence needlessly refuses; row 3 is the
 one corner where a norm must be chosen — decision 2 chooses standing, and
 the table's middle column becomes the pinned expectation in both
-executors. Under Catala's calculus the same three rows read: the
-justification `gemeld` false → `∅` → the enclosing default (the input)
-supplies the value; the consequence empty → `∅` likewise; a non-empty
-consequence → the exception wins — with the §4.1 polarity note that
-Catala would put the input *above* the computation, which is decision 1's
-Reading B, declined for dossiers.
+executors. Read through the paper's reduction rules, the Reading-A term —
+the computation as the sole exception over the input as enclosing
+default, `⟨ ⟨ | gemeld :- taxatiewaarde ⟩ | true :- 40 ⟩` — reproduces
+the table exactly: a non-empty exception wins (row 1, 50); a false
+justification or an empty consequence makes the exception `∅`, caught at
+the exception slot, and the enclosing default supplies 40 (rows 2–3).
+That term is **ours**, not the one Catala itself would build: C-Def
+compiles a supplied input as the single *highest exception*, yielding 40
+in all three rows — decision 1's Reading B, declined for dossiers. The
+polarity is the entire difference.
