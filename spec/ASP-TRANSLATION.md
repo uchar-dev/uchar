@@ -620,6 +620,44 @@ constrain declared names (a WF rule, which would also protect other
 backends) is an open recommendation for the maintainer; until then this
 is a recorded loud asymmetry (ref executes such names as data).
 
+## 6d. The second adversarial round: the timeline machinery (2026-08-20)
+
+Round 2 hunted the youngest code — the pro-rata fold, the timeline
+checkers, the day-precise characteristic loader and the clip — and
+found two real classes, each independently confirmed by two hunters:
+
+**The derived-wall fix.** A gedurende clip over a DERIVED value
+timeline (a pro-rata target) inherits the fold's interior bucket
+walls, which the case's endpoint set does not carry: the clipped
+segments found no `wu` fact, the `#sum` ranged over nothing, and the
+total silently grounded 0 where ref computed the exact value. The
+clip's cutset now enriches with the clipped attribute's own
+granularity walls over the span whenever a pro-rata rule writes it —
+compile-time, and provably sufficient (a derived segment's bounds are
+bucket walls by construction). Pinned by
+`corpus/golden/synth2-clip-over-prorata` (the round's minimized
+witness, admitted through the protocol: fold Feb+Mar → clip totals
+24).
+
+**The computed-target input fence.** ref — like v0 — lets a computed
+target OVERWRITE a case-supplied input value or timeline
+(`write_attr`/`write_timeline` replace); a monotone ASP program cannot
+retract, so the case fact and the rule head would union into a
+superset model — a silent split both hunters reproduced symmetrically.
+The translator now refuses loudly when the case supplies input for a
+Berekening/Gelijkstelling target (scalar or temporal): overwrite
+semantics have no monotone encoding without the defeasibility
+machinery (Phase 4's default calculus is the principled home; ladder
+targets already carry it via `inputval/3`). A recorded loud asymmetry:
+ref executes such cases, this backend refuses them, so they cannot
+enter the differential corpus.
+
+Hunted and held (no finds): bucket-wall edges of the fold itself, base
+gaps at bucket starts, out-of-range condition periods, multi-rule
+sharing of condition facts, the overlapping/unsorted ctl loader
+rejections, reverse-ordered timeline expectations, and the pro-rata in
+operand/creation positions (loud faults on both sides).
+
 ## 7. Deliberately out of scope
 
 Art. 5 (hardheid), art. 6, the v3 temporalisation, quantitative

@@ -223,6 +223,33 @@ let attr_granularity ctx ~otype ~attr =
 
 let req what = function Some x -> x | None -> fault "missing %s" what
 
+(* does a pro-rata rule write this temporal attribute? — a clip over
+   such a DERIVED timeline inherits the fold's interior bucket walls,
+   which the case's endpoint set does not carry (a hunted silent zero:
+   the wu join found no fact and the #sum went empty) *)
+let prorata_writes (doc : document) ~otype ~attr =
+  List.exists
+    (fun (r : resolved_regel) ->
+      match (r.doel, r.waarde) with
+      | ( Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }),
+          Some (Functie { kind = Tijdsevenredig_deel; _ }) ) ->
+          norm a = norm attr && norm ot = norm otype
+      | _ -> false)
+    doc.resolved_regels
+
+(* does the case supply an input value or timeline for this attribute
+   on any instance of the type? — ref (like v0) lets a computed target
+   OVERWRITE its input, which has no monotone encoding here: the case
+   fact and the rule head would union into a superset model (a hunted
+   silent split), so the translator refuses loudly instead *)
+let case_supplies ctx ~otype ~attr =
+  Eval.SMap.exists
+    (fun _ (i : Uchar_ref.World.instance) ->
+      norm i.otype = norm otype
+      && (Uchar_ref.World.attr i attr <> Value.Empty
+         || Uchar_ref.World.timeline i attr <> None))
+    ctx.case.world.instances
+
 (* does any recursive rule group carry an object-creation member? —
    gates the generation-depth machinery (depth/2, oc_budget) *)
 let has_recursive_creation (doc : document) =
@@ -614,6 +641,27 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               i.ctls tl_pts)
           ctx.case.world.instances []
         |> List.sort_uniq compare
+      in
+      (* a DERIVED value timeline (a pro-rata target) carries the
+         fold's interior bucket walls, which the case endpoints do not:
+         enrich the cutset with the attribute's own granularity walls
+         over the span, so every derived segment finds its wu fact *)
+      let endpoints =
+        if not (prorata_writes ctx.doc ~otype:aot ~attr:a) then endpoints
+        else
+          match endpoints with
+          | [] -> endpoints
+          | lo :: _ ->
+              let hi = List.fold_left max lo endpoints in
+              let g = attr_granularity ctx ~otype:aot ~attr:a in
+              let rec walls d acc =
+                if d >= hi then acc
+                else
+                  let _, bn = Uchar_ref.Timeline.bucket g d in
+                  walls bn (bn :: acc)
+              in
+              let first, _ = Uchar_ref.Timeline.bucket g lo in
+              List.sort_uniq compare (endpoints @ (first :: walls first []))
       in
       (* the clip total's #sum accumulates W×N terms; its segments are
          disjoint slices of one timeline, so ΣN over any subject is at
@@ -1114,6 +1162,11 @@ let translate_regel ctx (r : resolved_regel) =
               | _ -> fault "characteristic attribution with a non-waar value");
               head_body ctx (Printf.sprintf "heeft(%s,%s)" subject (str a)) (base :: cond)
           | Some (Berekening | Gelijkstelling) when attr_temporal ctx ~otype:ot ~attr:a -> (
+              if case_supplies ctx ~otype:ot ~attr:a then
+                fault
+                  "the case supplies input for computed target %S: ref (like v0) overwrites it, \
+                   which has no monotone encoding here (no corpus case)"
+                  a;
               match r.waarde with
               | Some
                   (Functie
@@ -1134,6 +1187,11 @@ let translate_regel ctx (r : resolved_regel) =
                     "a temporal target takes only the ch. 3.7 pro-rata shape (an own temporal \
                      base with a gedurende condition); no corpus case for more")
           | Some (Berekening | Gelijkstelling) ->
+              if case_supplies ctx ~otype:ot ~attr:a then
+                fault
+                  "the case supplies input for computed target %S: ref (like v0) overwrites it, \
+                   which has no monotone encoding here (no corpus case)"
+                  a;
               let target_scale = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
               units_identical_ok
                 ~what:(Printf.sprintf "the write to %S" a)
