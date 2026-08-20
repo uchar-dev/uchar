@@ -1,0 +1,57 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "borgtarief": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-01-01",
+                "value": {
+                  "number": "12"
+                }
+              }
+            ]
+          },
+          "bedrag": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-01-01",
+                "value": {
+                  "number": "10"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "borgplichtig": [
+            {
+              "from": "2024-02-01",
+              "to": "2024-04-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "wachtsom",
+      "value": {
+        "number": "20"
+      }
+    }
+  ]
+}

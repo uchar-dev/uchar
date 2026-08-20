@@ -642,26 +642,40 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           ctx.case.world.instances []
         |> List.sort_uniq compare
       in
-      (* a DERIVED value timeline (a pro-rata target) carries the
-         fold's interior bucket walls, which the case endpoints do not:
-         enrich the cutset with the attribute's own granularity walls
-         over the span, so every derived segment finds its wu fact *)
+      (* a DERIVED timeline (a pro-rata target) carries the fold's
+         interior bucket walls, which the case endpoints do not: enrich
+         the cutset with the granularity walls of every derived
+         attribute the clip touches — the clipped source AND a
+         condition-comparison attribute alike (the verify round caught
+         the condition side reintroducing the silent zero) *)
+      let derived_attrs =
+        (if prorata_writes ctx.doc ~otype:aot ~attr:a then [ a ] else [])
+        @
+        match c with
+        | Vergelijking
+            { links = Some (Attribuut_ref { attribuut = Some b; objecttype = Some botn; _ }); _ }
+          when norm botn = norm aot && prorata_writes ctx.doc ~otype:botn ~attr:b -> [ b ]
+        | _ -> []
+      in
       let endpoints =
-        if not (prorata_writes ctx.doc ~otype:aot ~attr:a) then endpoints
+        if derived_attrs = [] then endpoints
         else
           match endpoints with
           | [] -> endpoints
           | lo :: _ ->
               let hi = List.fold_left max lo endpoints in
-              let g = attr_granularity ctx ~otype:aot ~attr:a in
-              let rec walls d acc =
-                if d >= hi then acc
-                else
-                  let _, bn = Uchar_ref.Timeline.bucket g d in
-                  walls bn (bn :: acc)
+              let walls_of attr =
+                let g = attr_granularity ctx ~otype:aot ~attr in
+                let rec walls d acc =
+                  if d >= hi then acc
+                  else
+                    let _, bn = Uchar_ref.Timeline.bucket g d in
+                    walls bn (bn :: acc)
+                in
+                let first, _ = Uchar_ref.Timeline.bucket g lo in
+                first :: walls first []
               in
-              let first, _ = Uchar_ref.Timeline.bucket g lo in
-              List.sort_uniq compare (endpoints @ (first :: walls first []))
+              List.sort_uniq compare (endpoints @ List.concat_map walls_of derived_attrs)
       in
       (* the clip total's #sum accumulates W×N terms; its segments are
          disjoint slices of one timeline, so ΣN over any subject is at

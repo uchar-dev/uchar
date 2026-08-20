@@ -631,13 +631,16 @@ timeline (a pro-rata target) inherits the fold's interior bucket
 walls, which the case's endpoint set does not carry: the clipped
 segments found no `wu` fact, the `#sum` ranged over nothing, and the
 total silently grounded 0 where ref computed the exact value. The
-clip's cutset now enriches with the clipped attribute's own
-granularity walls over the span whenever a pro-rata rule writes it —
-compile-time, and provably sufficient (a derived segment's bounds are
-bucket walls by construction). Pinned by
-`corpus/golden/synth2-clip-over-prorata` (the round's minimized
-witness, admitted through the protocol: fold Feb+Mar → clip totals
-24).
+clip's cutset now enriches with the granularity walls of every derived
+attribute the clip touches — the clipped source AND a
+condition-comparison attribute alike (this fix's own verify round
+caught the condition side reintroducing the zero) — compile-time, and
+sufficient because a derived segment's bounds are bucket walls by
+construction. Pinned by `corpus/golden/synth2-clip-over-prorata` (the
+clipped side: fold Feb+Mar → clip totals 24) and
+`corpus/golden/synth2-clip-cond-over-prorata` (the condition side: a
+derived timeline under the comparison, total 20), both the rounds'
+minimized witnesses admitted through the protocol.
 
 **The computed-target input fence.** ref — like v0 — lets a computed
 target OVERWRITE a case-supplied input value or timeline
