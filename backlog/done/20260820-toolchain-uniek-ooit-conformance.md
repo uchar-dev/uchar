@@ -25,7 +25,7 @@ May touch (toolchain repo): `DrlTranspiler`, `ExecModelTranspiler`,
 Out of scope: the same-moment tuple join for multiple temporal
 components (loud in uchar too); scoped unions.
 
-Result: landed at toolchain `83d9f24` (pushed), 948 tests green. The
+Result: landed at toolchain `da56e58` (pushed), 948+ tests green. The
 exploration lens sharpened the diagnosis first: the "checking" DRL
 route was in fact BROKEN — it joined the List<Segment> key by mvel `==`
 (Segment declares no equals), so the rule silently never fired on any
@@ -51,5 +51,18 @@ stays unique), and an ExecModelDifferentialTest fixture that guards
 DRL ≡ exec on the reading permanently. The pre-existing SINGLE-form
 temporal-uniqueness fixture (List-identity semantics,
 parity-faithful) stays untouched and green — that form was outside
-the decision. Working pin advanced to `83d9f24`; CONSTRUCTS row 20
-records the conformance.
+the decision. Working pin advanced to `da56e58`; CONSTRUCTS row 20
+records the conformance. The verify round added the compound-key
+differential fixture (the firing test alone proved only the DRL route)
+and raised the phase-H differential floor to 11 so a silent skip of
+either ever-uniqueness fixture turns the gate red. Recorded honestly:
+Java's rsOoitWaarden returns the empty claim-set on a non-List where
+the uchar executors fault — structurally unreachable in the Java fact
+model (temporal attributes are typed List<Segment>), a latent
+fail-fast gap only if fact generation ever changes; and the SINGLE
+uniqueness form keeps v0's point/identity semantics for temporal keys
+in all four executors consistently (lens-verified: no divergence) but
+unspecified by ch. 5.9 — a follow-up decision candidate for the
+maintainer. The uchar-side CONSTRUCTS row was touched though the
+card's May-touch named only toolchain paths — recorded as the
+undeclared-but-in-spirit edit it was.
