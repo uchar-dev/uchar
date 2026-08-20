@@ -1474,7 +1474,10 @@ single form of ch. 5.6. Mirrored from the pinned runtime:
    most ONE temporal component per source is executed (a second needs
    the same-moment tuple join — loud until a corpus case lands). A
    temporal key supplied as a bucket scalar faults: ever-uniqueness
-   needs the full timeline, a scalar would silently miss values.
+   needs the full timeline, a scalar would silently miss values — and
+   this form error precedes the scope narrowing: a scope-less instance
+   whose key has the wrong shape still faults (data integrity screams
+   before participation is decided, in both executors).
    Worked examples (the `jutterswet-nummerregister` union anchor and
    the `jutterswet-strandregister` single-form anchor, verbatim in
    gates 5–6): Strandvondst S1 carries vondstnummer 7 over

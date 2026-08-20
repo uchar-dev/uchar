@@ -1241,6 +1241,13 @@ let run_uniciteit env world (u : resolved_uniciteit) =
     let keyed =
       List.concat_map
         (fun (i : World.instance) ->
+          (* the key-shape guards run on EVERY instance of the type,
+             before scope participation: a temporal key supplied as a
+             bucket scalar is a form error that screams regardless of
+             whether the row would have participated (data integrity
+             precedes the scope narrowing — and the ASP side checks
+             the same way, at translation) *)
+          let tuples = ever_tuples env ~otype:subject ~keys i in
           let prefix =
             match scope_of with
             | None -> Some ""
@@ -1255,8 +1262,7 @@ let run_uniciteit env world (u : resolved_uniciteit) =
           in
           match prefix with
           | None -> []
-          | Some pre ->
-              List.map (fun key -> (pre ^ key, i.label)) (ever_tuples env ~otype:subject ~keys i))
+          | Some pre -> List.map (fun key -> (pre ^ key, i.label)) tuples)
         (World.of_type world subject)
     in
     let dup k = List.length (List.filter (fun (k', _) -> String.equal k k') keyed) > 1 in
