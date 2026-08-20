@@ -127,3 +127,60 @@ let document (doc : document) : document =
       resolved_regels = List.filter (fun r -> not (in_chosen r)) doc.resolved_regels;
       default_ladders = doc.default_ladders @ List.map ladder_of chosen;
     }
+
+(* The standing domain of RUNTIME-SEMANTICS ch. 7.8: the bare scalar
+   computing target — one version-free Gelijkstelling/Berekening as its
+   target's only writer (no initialisation beside it: that pair is the
+   ch. 7.7 desugaring's domain above; no ladder, allocation, or
+   creation-time write). On these targets the rule decides like a rung —
+   a leeg evaluation writes nothing and a case-supplied input value
+   stands. Shared by ref/ (the no-write on leeg) and the ASP backend
+   (the defeasible inputval/3 entry), so the domain has one definition. *)
+let standing_targets (doc : document) : (string * string) list =
+  let key (ot, a) = (norm ot, norm a) in
+  let written_by_rules =
+    List.fold_left
+      (fun acc r ->
+        match target_of r with
+        | Some t when r.rr_soort <> Some Kenmerktoekenning -> key t :: acc
+        | _ -> acc)
+      [] doc.resolved_regels
+  in
+  let count k = List.length (List.filter (( = ) k) written_by_rules) in
+  let other_writer (ot, a) =
+    List.exists
+      (fun (l : default_ladder) ->
+        norm l.dl_onderwerp = norm ot
+        && match l.dl_attribuut with Some la -> norm la = norm a | None -> false)
+      doc.default_ladders
+    || List.exists
+         (fun (v : resolved_verdeling) ->
+           (match v.doel_type with Some dt -> norm dt = norm ot | None -> false)
+           && match v.doel_attribuut with Some da -> norm da = norm a | None -> false)
+         doc.verdelingen
+    || List.exists
+         (fun (o : resolved_object_creatie) ->
+           (match o.nieuw_type with Some nt -> norm nt = norm ot | None -> false)
+           && List.exists
+                (fun (t : toekenning) ->
+                  (not t.toe_kenmerk)
+                  && match t.toe_attribuut with Some ta -> norm ta = norm a | None -> false)
+                o.toekenningen)
+         doc.object_creaties
+  in
+  let scalar (ot, a) =
+    match List.find_opt (fun (n, _) -> norm n = norm ot) doc.objecttypen with
+    | Some (_, decl) -> not (Checks.attr_temporal decl a)
+    | None -> false
+  in
+  List.filter_map
+    (fun r ->
+      match target_of r with
+      | Some t
+        when is_computing r
+             && count (key t) = 1
+             && scalar t
+             && not (other_writer t) ->
+          Some (key t)
+      | _ -> None)
+    doc.resolved_regels

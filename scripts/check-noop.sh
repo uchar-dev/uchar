@@ -31,12 +31,20 @@
 #     the single form (shared tuple function, RS ch. 5.9).
 #   - jutterswet-strandregister/case4.json: the scope narrowing — the
 #     same ever-pair under two DIFFERENT parents stays consistent.
+#   - jutterswet-waardestelling/case2-flank-input-blijft.json: the
+#     false-condition flank on a standing target — no write, the input
+#     stands (ch. 7.8).
+#   - jutterswet-waardestelling/case3-leeg-valt-door.json: the leeg
+#     fall-through on a standing target — a computed leeg never
+#     displaces the input value (ch. 7.8; the pinned v0 delta).
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
 corpus/golden/anchor/jutterswet-nummerregister/case2.json
 corpus/golden/anchor/jutterswet-strandregister/case2.json
-corpus/golden/anchor/jutterswet-strandregister/case4.json'
+corpus/golden/anchor/jutterswet-strandregister/case4.json
+corpus/golden/anchor/jutterswet-waardestelling/case2-flank-input-blijft.json
+corpus/golden/anchor/jutterswet-waardestelling/case3-leeg-valt-door.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2

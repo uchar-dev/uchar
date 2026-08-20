@@ -1,0 +1,36 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "v1",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatiewaarde": {
+            "number": "50.00"
+          },
+          "geschatte waarde": {
+            "number": "40.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "v1",
+      "attribute": "geschatte waarde",
+      "value": {
+        "number": "40.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

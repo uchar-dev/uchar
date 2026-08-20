@@ -835,7 +835,17 @@ let run_rule env world (r : resolved_regel) =
                   run_pro_rata env w self ~ot ~attr (req "waarde" r.waarde)
               | Some (Gelijkstelling | Berekening) ->
                   let v = eval_expr env w self ~err (req "waarde" r.waarde) in
-                  World.write_attr w ~label:self.label ~attr ~decl:(attr_decl env ~otype:ot ~attr) v
+                  (* ch. 7.8: on a standing target the rule decides like a
+                     rung — a leeg evaluation writes nothing (the input
+                     value stands); channel deposits of the evaluation
+                     persist as in any ordinary evaluation *)
+                  if
+                    v = Value.Empty
+                    && List.mem (norm ot, norm attr)
+                         (Ir_v0.Desugar.standing_targets env.doc)
+                  then (w, false)
+                  else
+                    World.write_attr w ~label:self.label ~attr ~decl:(attr_decl env ~otype:ot ~attr) v
               | Some Initialisatie ->
                   (* writes only when the target is empty (ch. 5.4) *)
                   if World.attr self attr <> Value.Empty then (w, false)

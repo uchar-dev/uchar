@@ -1207,7 +1207,10 @@ let translate_regel ctx (r : resolved_regel) =
                     "a temporal target takes only the ch. 3.7 pro-rata shape (an own temporal \
                      base with a gedurende condition); no corpus case for more")
           | Some (Berekening | Gelijkstelling) ->
-              if case_supplies ctx ~otype:ot ~attr:a then
+              let standing =
+                List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_targets ctx.doc)
+              in
+              if (not standing) && case_supplies ctx ~otype:ot ~attr:a then
                 fault
                   "the case supplies input for computed target %S: ref (like v0) overwrites it, \
                    which has no monotone encoding here (no corpus case)"
@@ -1226,7 +1229,26 @@ let translate_regel ctx (r : resolved_regel) =
               let term, fit_guards = fitted ctx ~subject ~what:a ~body term scale target_scale in
               head_body ctx
                 (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
-                (body @ fit_guards)
+                (body @ fit_guards);
+              (* ch. 7.8 standing target: the rule decides like a rung.
+                 The effectiveness atom carries the SAME body as the
+                 val head — condition and value bindings — so a leeg
+                 evaluation derives neither, and the case input (entered
+                 as inputval/3) stands by negation-as-failure. *)
+              if standing then begin
+                let sidx =
+                  let rec find i = function
+                    | [] -> fault "standing target %S not in its own domain" a
+                    | k :: tl -> if k = (norm ot, norm a) then i else find (i + 1) tl
+                  in
+                  find 0 (Ir_v0.Desugar.standing_targets ctx.doc)
+                in
+                let eff = Printf.sprintf "stand%d_eff(%s)" sidx subject in
+                head_body ctx eff (body @ fit_guards);
+                head_body ctx
+                  (Printf.sprintf "val(%s,%s,V)" subject (str a))
+                  [ Printf.sprintf "inputval(%s,%s,V)" subject (str a); base; "not " ^ eff ]
+              end
           | _ -> fault "rule kind not translated")
       | _ -> fault "unsupported rule target")
 
@@ -1549,6 +1571,17 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
   if v.vd_voorwaarde <> None then fault "conditional allocation not translated yet";
   let bt = req "bronType" v.bron_type and dt = req "doelType" v.doel_type in
   let ba = req "bronAttribuut" v.bron_attribuut and da = req "doelAttribuut" v.doel_attribuut in
+  (* the allocation-target input fence (the latent superset gap of the
+     PHASE4-DEFAULTS verification round): a case value on the target
+     would union with the allocation's own head into a superset model —
+     ref overwrites it, so the split would be silent wherever no
+     expectation pins the attribute. Refuse loudly, like the ch. 6d
+     computed-target fence. *)
+  if case_supplies ctx ~otype:dt ~attr:da then
+    fault
+      "the case supplies input for allocation target %S: ref (like v0) overwrites it, which \
+       has no monotone encoding here (no corpus case)"
+      da;
   let rato = req "ratoAttribuut (proportional)" v.rato_attribuut in
   let name = Option.value v.vd_naam ~default:"verdeling" in
   let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None } in
@@ -1792,8 +1825,10 @@ let translate_uniciteit_unie ctx i (u : resolved_uniciteit_unie) =
 
 let translate_case ctx (case : Case.t) =
   let doc = ctx.doc in
-  (* attribute-ladder targets: their input values enter defeasibly
-     (inputval/3), standing unless the ladder decides *)
+  (* attribute-ladder targets — and the ch. 7.8 standing targets (the
+     bare scalar computing rule) — take their input values defeasibly
+     (inputval/3), standing unless the ladder/rule decides *)
+  let standing = Ir_v0.Desugar.standing_targets doc in
   let ladder_target otype aname =
     List.exists
       (fun (l : default_ladder) ->
@@ -1801,6 +1836,7 @@ let translate_case ctx (case : Case.t) =
         | Some a -> norm l.dl_onderwerp = norm otype && norm a = norm aname
         | None -> false)
       doc.default_ladders
+    || List.mem (norm otype, norm aname) standing
   in
   Eval.SMap.iter
     (fun label (i : Uchar_ref.World.instance) ->
