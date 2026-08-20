@@ -199,6 +199,34 @@ context rather than a fact dossier. Reading B additionally cannot be
 retrofitted per-target without new wire surface, while Reading A needs
 none (§8).
 
+**The hardship pattern — Reading B as a program, not as load
+semantics.** The legal case that genuinely wants input-beats-computation
+— the discretionary override, a hardheidsclausule applied by a competent
+authority ("menselijke maat") — is expressible with the landed machinery
+as it stands. The override is not a bare value on the target: it is a
+**decision**, and it enters the dossier as its own declared input fact
+(the decided value beside the deciding act). The ladder then carries a
+**top rung** justified by that decision's presence, consequence the
+decided value; the computation sits on the rungs below. This is the
+classic two-rule treatment of discretionary clauses — the standard case
+and the discretionary case as separate rules, with the exercise of
+discretion itself an input fact, so that absent a decision the
+discretionary route stays silent by design (Sergot, Sadri, Kowalski,
+Kriwaczek, Hammond & Cory, "The British Nationality Act as a Logic
+Program", CACM 29(5), 1986, on "the Secretary of State may…"). Nothing
+new is needed: the rung reads the decision attribute, never its own
+target, so WF-051 is untouched, and the rung's priority *is* Catala's
+exception polarity — the override wins because it is the highest rung.
+What the pattern preserves, and a load-semantics Reading B would erase,
+is **grounding and traceability**: the ladder names which provision
+authorises the deviation and which act exercised it, and where
+visibility of the deviation is wanted, a consistency assertion beside
+the ladder surfaces computed ≠ decided on the §9.5 channel — where a
+silently overriding case input would leave no trace at all. A hardship
+anchor exercising this pattern (art. 5 Jutterswet, so far deliberately
+out of corpus scope) is the natural corpus companion once decision 1
+lands.
+
 ### 4.2 The input rung, formalized
 
 Restate RS ch. 7.1's "input facts are not a rung: they are the fact base"
@@ -534,7 +562,11 @@ today, which is exactly why the change is cheap now and dearer later.
    anchors' reading; recommended); B: input beats computation (Catala's
    C-Def polarity). *Recommendation: A. B's home is the Phase-5 scope
    call; adopting it for case input would flip `case6-rung-overschrijft`
-   and put the dossier above the law's arithmetic.*
+   and put the dossier above the law's arithmetic. Reading B's
+   legitimate legal instance — the discretionary/hardship override — is
+   served by the §4.1 hardship pattern (a top rung reading a declared
+   decision fact), grounded and traceable, with no load-semantics
+   change.*
 2. **Norm the fall-through for bare computing targets** — "a computed
    leeg never displaces an input-supplied value", extending the ch. 7.7
    desugaring to the bare computing rule and retiring the ch. 6d fence
