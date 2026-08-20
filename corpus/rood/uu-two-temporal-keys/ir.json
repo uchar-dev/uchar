@@ -1,0 +1,128 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Strandvondst": {
+      "node": "Objecttype",
+      "naam": "Strandvondst",
+      "attributen": {
+        "vondstnummer": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "volgnummer": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {
+        "vondstnummer": "JAAR",
+        "volgnummer": "JAAR"
+      },
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Strandvondsten"
+    },
+    "Wrakvondst": {
+      "node": "Objecttype",
+      "naam": "Wrakvondst",
+      "attributen": {
+        "vondstnummer": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "volgnummer": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {
+        "vondstnummer": "JAAR",
+        "volgnummer": "JAAR"
+      },
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Wrakvondsten"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "dubbel temporeel",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [
+    {
+      "node": "ResolvedUniciteitUnie",
+      "naam": "dubbel temporeel",
+      "bronnen": [
+        {
+          "node": "Bron",
+          "type": "Strandvondst",
+          "sleutels": [
+            "vondstnummer",
+            "volgnummer"
+          ]
+        },
+        {
+          "node": "Bron",
+          "type": "Wrakvondst",
+          "sleutels": [
+            "vondstnummer",
+            "volgnummer"
+          ]
+        }
+      ],
+      "bron": "Het vondstnummer met het volgnummer van Strandvondst verenigd met Wrakvondst moeten uniek zijn.",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

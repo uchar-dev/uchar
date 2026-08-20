@@ -1,0 +1,43 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Strandvondst",
+        "attributes": {
+          "vondstnummer": {
+            "number": "7"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W1",
+        "objectType": "Wrakvondst",
+        "attributes": {
+          "vondstnummer": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-01-01",
+                "value": {
+                  "number": "8"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "needs the full timeline",
+    "clingo": "needs the full timeline"
+  }
+}

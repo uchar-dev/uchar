@@ -1456,10 +1456,21 @@ single form of ch. 5.6. Mirrored from the pinned runtime:
    under the shared union name. Rows with an empty key component do not
    participate (an empty key never collides, the ch. 5.6 rule). Source
    arity, per-position datatype kind and unit agree, and a union
-   carries at least two sources (WF-030). A **temporal key** is not
-   executed: v0's own backends disagree on it (one skips the union, the
-   other checks it), so both executors fault loudly until a decision
-   lands — recorded.
+   carries at least two sources (WF-030). A **temporal key** reads
+   **ever-uniqueness** (decided 2026-08-20; v0's own backends disagreed —
+   one skipped the union, the other checked it — so this is a v1 norm,
+   not a mirror): a key is an identity, not a measurement, so every
+   value the timeline EVER carries is claimed, and two instances
+   collide even when their carrying periods do not overlap (a number
+   once issued stays issued; date-bound numbering is modelled
+   explicitly, as an object type with a validity period). The tuple set
+   is deduplicated per instance × source: same-instance redeclaration
+   is no collision. With a mixed compound key the tuples pair the
+   scalars with every value the temporal component ever carries; at
+   most ONE temporal component per source is executed (a second needs
+   the same-moment tuple join — loud until a corpus case lands). A
+   temporal key supplied as a bucket scalar faults: ever-uniqueness
+   needs the full timeline, a scalar would silently miss values.
 2. **The scope partitions, and scope-less rows are OUT.** A
    parent-scoped uniqueness (WF-054) tests its keys within each
    sub-population sharing one scope parent — the same key under two

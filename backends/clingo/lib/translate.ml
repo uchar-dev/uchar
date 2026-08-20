@@ -1704,13 +1704,36 @@ let translate_uniciteit_unie ctx i (u : resolved_uniciteit_unie) =
   List.iteri
     (fun j (b : uniciteit_unie_bron) ->
       let t = req "UniciteitUnie.bron.type" b.uub_type in
+      (* ch. 5.9 decision (2026-08-20): a temporal key reads
+         EVER-uniqueness — one key atom per value the timeline EVER
+         carries (set semantics deduplicates same-instance
+         redeclaration for free). At most one temporal component per
+         source: a second would need the same-moment tuple join. A
+         temporal key supplied as a bucket scalar would silently miss
+         values — refuse, the full timeline is required. *)
+      let temporal =
+        List.filter (fun k -> attr_temporal ctx ~otype:t ~attr:(req "sleutel" k)) b.uub_sleutels
+      in
+      if List.length temporal > 1 then
+        fault
+          "a uniqueness-union source carries at most one temporal key component (the \
+           same-moment tuple join has no corpus case; ch. 5.9)";
       List.iter
         (fun k ->
           let k = req "sleutel" k in
           if attr_temporal ctx ~otype:t ~attr:k then
-            fault
-              "a temporal key in a uniqueness union is not executed (v0's own backends \
-               disagree on it — recorded, ch. 5.9)")
+            Eval.SMap.iter
+              (fun _ (inst : Uchar_ref.World.instance) ->
+                if
+                  norm inst.otype = norm t
+                  && Uchar_ref.World.timeline inst k = None
+                  && Uchar_ref.World.attr inst k <> Value.Empty
+                then
+                  fault
+                    "the ever-unique key %S needs the full timeline; %S supplies only a \
+                     scalar (ch. 5.9)"
+                    k inst.label)
+              ctx.case.world.instances)
         b.uub_sleutels;
       let head_args =
         List.mapi
@@ -1724,7 +1747,12 @@ let translate_uniciteit_unie ctx i (u : resolved_uniciteit_unie) =
       let body =
         Printf.sprintf "is_a(S,%s)" (str t)
         :: List.mapi
-             (fun pos k -> Printf.sprintf "val(S,%s,K%d)" (str (req "sleutel" k)) pos)
+             (fun pos k ->
+               let k = req "sleutel" k in
+               if attr_temporal ctx ~otype:t ~attr:k then
+                 (* every value the timeline ever carries claims the key *)
+                 Printf.sprintf "tl(S,%s,_,_,K%d)" (str k) pos
+               else Printf.sprintf "val(S,%s,K%d)" (str k) pos)
              b.uub_sleutels
       in
       (* the per-position upscale is an emitted multiplication: fence

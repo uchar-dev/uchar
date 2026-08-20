@@ -1238,18 +1238,50 @@ let run_uniciteit_unie env world (u : resolved_uniciteit_unie) =
         (fun (b : uniciteit_unie_bron) ->
           let t = req "UniciteitUnie.bron.type" b.uub_type in
           let keys = List.map (req "sleutel") b.uub_sleutels in
-          List.iter
-            (fun k ->
-              if Ir_v0.Checks.attr_temporal (objecttype env t) k then
-                Value.fault
-                  "a temporal key in a uniqueness union is not executed (v0's own backends \
-                   disagree on it — recorded, ch. 5.9)")
-            keys;
-          List.filter_map
+          (* ch. 5.9 decision (2026-08-20): a temporal key reads
+             EVER-uniqueness — an identity, not a measurement: every
+             value the timeline EVER carries is claimed, colliding
+             across instances even over non-overlapping periods.
+             Same-instance redeclaration is no collision (the tuple set
+             is deduplicated per instance × source). At most one
+             temporal component per source: a second would need the
+             same-moment tuple join — loud until a corpus case lands. *)
+          let temporal = List.filter (Ir_v0.Checks.attr_temporal (objecttype env t)) keys in
+          if List.length temporal > 1 then
+            Value.fault
+              "a uniqueness-union source carries at most one temporal key component (the \
+               same-moment tuple join has no corpus case; ch. 5.9)";
+          List.concat_map
             (fun (i : World.instance) ->
-              let vs = List.map (World.attr i) keys in
-              if List.exists (fun v -> v = Value.Empty) vs then None
-              else Some (String.concat "\x00" (List.map Value.to_string vs), i.label))
+              let carried k =
+                if not (Ir_v0.Checks.attr_temporal (objecttype env t) k) then
+                  [ World.attr i k ]
+                else
+                  match World.timeline i k with
+                  | Some tl ->
+                      List.map (fun (s : Timeline.segment) -> s.s_waarde) tl
+                  | None ->
+                      if World.attr i k <> Value.Empty then
+                        Value.fault
+                          "the ever-unique key %S needs the full timeline; %S supplies only \
+                           a scalar (ch. 5.9)"
+                          k i.label
+                      else []
+              in
+              (* the tuple set: scalars paired with every value the one
+                 temporal component ever carries; an empty component
+                 drops the tuple (the v0 empty-key rule) *)
+              let rec tuples acc = function
+                | [] -> [ List.rev acc ]
+                | k :: rest ->
+                    List.concat_map
+                      (fun v -> if v = Value.Empty then [] else tuples (v :: acc) rest)
+                      (carried k)
+              in
+              tuples [] keys
+              |> List.map (fun vs -> String.concat "\x00" (List.map Value.to_string vs))
+              |> List.sort_uniq String.compare
+              |> List.map (fun key -> (key, i.label)))
             (World.of_type world t))
         u.bronnen
     in

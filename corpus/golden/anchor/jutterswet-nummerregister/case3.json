@@ -1,0 +1,113 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Strandvondst",
+        "attributes": {
+          "vondstnummer": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-01-01",
+                "value": {
+                  "number": "1"
+                }
+              }
+            ]
+          },
+          "reekscode": {
+            "number": "4"
+          },
+          "volgnummer": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-01-01",
+                "value": {
+                  "number": "3"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W1",
+        "objectType": "Wrakvondst",
+        "attributes": {
+          "vondstnummer": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-01-01",
+                "value": {
+                  "number": "2"
+                }
+              }
+            ]
+          },
+          "reekscode": {
+            "number": "4"
+          },
+          "volgnummer": {
+            "timeline": [
+              {
+                "from": "2026-01-01",
+                "to": "2027-01-01",
+                "value": {
+                  "number": "3"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W2",
+        "objectType": "Wrakvondst",
+        "attributes": {
+          "vondstnummer": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-01-01",
+                "value": {
+                  "number": "5"
+                }
+              }
+            ]
+          },
+          "reekscode": {
+            "number": "9"
+          },
+          "volgnummer": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-01-01",
+                "value": {
+                  "number": "3"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "inconsistent"
+    }
+  ]
+}

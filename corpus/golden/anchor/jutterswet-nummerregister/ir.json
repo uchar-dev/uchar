@@ -1,0 +1,173 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Strandvondst": {
+      "node": "Objecttype",
+      "naam": "Strandvondst",
+      "attributen": {
+        "vondstnummer": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "reekscode": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "volgnummer": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {
+        "vondstnummer": "JAAR",
+        "volgnummer": "JAAR"
+      },
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Strandvondsten"
+    },
+    "Wrakvondst": {
+      "node": "Objecttype",
+      "naam": "Wrakvondst",
+      "attributen": {
+        "vondstnummer": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "reekscode": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "volgnummer": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {
+        "vondstnummer": "JAAR",
+        "volgnummer": "JAAR"
+      },
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Wrakvondsten"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "eenmalig vondstnummer",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "eenmalige reekscode",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [
+    {
+      "node": "ResolvedUniciteitUnie",
+      "naam": "eenmalig vondstnummer",
+      "bronnen": [
+        {
+          "node": "Bron",
+          "type": "Strandvondst",
+          "sleutels": [
+            "vondstnummer"
+          ]
+        },
+        {
+          "node": "Bron",
+          "type": "Wrakvondst",
+          "sleutels": [
+            "vondstnummer"
+          ]
+        }
+      ],
+      "bron": "Strandvondst verenigd met Wrakvondst moeten uniek zijn.",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedUniciteitUnie",
+      "naam": "eenmalige reekscode",
+      "bronnen": [
+        {
+          "node": "Bron",
+          "type": "Strandvondst",
+          "sleutels": [
+            "reekscode",
+            "volgnummer"
+          ]
+        },
+        {
+          "node": "Bron",
+          "type": "Wrakvondst",
+          "sleutels": [
+            "reekscode",
+            "volgnummer"
+          ]
+        }
+      ],
+      "bron": "De reekscode met het volgnummer van Strandvondst verenigd met Wrakvondst moeten uniek zijn.",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

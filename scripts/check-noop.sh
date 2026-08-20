@@ -24,9 +24,13 @@
 #     initialisation leaves a filled input standing (ch. 5.4).
 #   - jutterswet-vondstnummer/case-consistent.json: a uniqueness that
 #     holds on the input — "consistent" is true of an empty channel.
+#   - jutterswet-nummerregister/case2.json: the ever-unique
+#     NON-collision (same-instance redeclaration) — the absence of a
+#     channel fact IS the assertion (RS ch. 5.9).
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
-corpus/golden/jutterswet-vondstnummer/case-consistent.json'
+corpus/golden/jutterswet-vondstnummer/case-consistent.json
+corpus/golden/anchor/jutterswet-nummerregister/case2.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
