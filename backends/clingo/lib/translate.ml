@@ -1644,6 +1644,10 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
 
 let translate_consistentie ctx i (c : resolved_consistentie) =
   let name = Option.value c.cons_naam ~default:(Printf.sprintf "consistentie%d" i) in
+  (* a division inside the assertion deposits its channel fact under
+     THIS name, like ref's err collector (the verify lens caught the
+     stale rule_name of the last-translated rule leaking in) *)
+  ctx.rule_name <- name;
   let subject_ot = req "subject" c.cons_subject in
   let ok = Printf.sprintf "cons%d_ok(S)" i in
   let atoms = cond_atoms ctx ~subject:"S" ~subject_ot (req "assertie" c.assertie) in

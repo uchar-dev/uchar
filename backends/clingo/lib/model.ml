@@ -205,5 +205,16 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
               | Some r, None -> Printf.sprintf "an inconsistent fact from rule %S" r
               | Some r, Some l -> Printf.sprintf "an inconsistent fact from rule %S on %S" r l
             in
-            Some (Printf.sprintf "expected inconsistent (%s), but the model carries none" want))
+            let carried =
+              List.filter_map
+                (fun a ->
+                  match a with
+                  | { name = "inconsistent"; args = [ A_str r; A_str s ] } -> Some (r ^ " × " ^ s)
+                  | { name = "inconsistent"; args = [ A_str r; _ ] } -> Some (r ^ " × <created>")
+                  | _ -> None)
+                model
+            in
+            Some
+              (Printf.sprintf "expected inconsistent (%s), but the model carries: %s" want
+                 (if carried = [] then "(none)" else String.concat "; " carried)))
     case.expected
