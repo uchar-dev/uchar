@@ -7,8 +7,9 @@ the declared kenmerk graph via the shared `Stratificatie` (the WF-046
 strata principle as a lowering; type-qualified, cycle-local fallback),
 red-first witnessed by `StratificatieKetenTest` (the two-layer negation
 chain that broke under the one-level heuristic), full suite green. This
-card lands the uchar-side records: the `CONSTRUCTS.md` row-6/row-8
-conformance pins, and the `PLAN.md` §6 Phase-4 exit note (met on the
+card lands the uchar-side records: the `CONSTRUCTS.md` row-6
+conformance pin (row 8's adoption pin predates this card), and the
+`PLAN.md` §6 Phase-4 exit note (met on the
 v0-expressible fragment; full ladder service in Drools awaits a
 ladder-producing frontend, Phase 5).
 

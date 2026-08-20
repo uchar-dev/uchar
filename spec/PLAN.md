@@ -384,8 +384,12 @@ trick this section names; and ref ≡ clingo holds over the defaults corpus
 (gates 5–6), with the Drools side agreeing over the shared v0 forms through
 its own differential. Deliberately open, recorded: full ladder service in
 the Drools backend waits for a ladder-producing frontend (Phase 5 — building
-it against hand-authored IR tests no production path), and temporal standing
-targets stay fenced (scalar-first, RS ch. 7.8).
+it against hand-authored IR tests no production path); temporal standing
+targets stay fenced (scalar-first, RS ch. 7.8); and one latent, non-defaults
+loader divergence is carded (`backlog/new/20260820-input-precision-fence.md`:
+ref accepts over-precise case input clingo faults — no corpus case exercises
+it, so the gates-5–6 agreement above is corpus-scoped, as every such claim
+is).
 
 ### Phase 5 — Catala as a frontend (direction 1)
 
