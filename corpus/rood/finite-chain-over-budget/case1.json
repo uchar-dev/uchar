@@ -1,0 +1,24 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W1",
+        "objectType": "Wachter",
+        "attributes": {
+          "rang": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "no fixpoint within",
+    "clingo": "generation budget exhausted"
+  }
+}
