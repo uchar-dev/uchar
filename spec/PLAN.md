@@ -373,7 +373,19 @@ the model first — that is where it is tested.
 **Exit criteria:** defaults, priorities, and conflicts are expressible and
 verified in the IR; the salience mechanism in the Drools backend is generated
 from IR-level defaults; interpreter and both engine backends agree on default
-resolution over new golden cases.
+resolution over new golden cases. **Met (2026-08-20), on the v0-expressible
+fragment:** the ladder rides the wire in both target kinds with WF-050/051
+(`defaultLadders`; anchors through both executors, incl. the ch. 7.8
+standing norm and the input rung — `RUNTIME-SEMANTICS.md` ch. 7,
+`spec/proposals/PHASE4-DEFAULTS.md`); the Drools salience is derived from
+the declared kenmerk graph (the WF-046 strata principle as a lowering,
+`CONSTRUCTS.md` row 6, toolchain pin `0b7f284`) instead of the syntactic
+trick this section names; and ref ≡ clingo holds over the defaults corpus
+(gates 5–6), with the Drools side agreeing over the shared v0 forms through
+its own differential. Deliberately open, recorded: full ladder service in
+the Drools backend waits for a ladder-producing frontend (Phase 5 — building
+it against hand-authored IR tests no production path), and temporal standing
+targets stay fenced (scalar-first, RS ch. 7.8).
 
 ### Phase 5 — Catala as a frontend (direction 1)
 
