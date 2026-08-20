@@ -516,14 +516,17 @@ value:
 qN_ldef(S) :- is_a(S,"t"), <dividend body>.
 qN_rdef(S) :- is_a(S,"t"), <divisor body>.
 qN(S,0)    :- is_a(S,"t"), not qN_ldef(S).
-inconsistent("division by empty divisor",S)
+inconsistent("<rule name>",S)
            :- is_a(S,"t"), qN_ldef(S), not qN_rdef(S).
 viol("division by numeric zero",S) :- <full body>, (R) == 0.
 ```
 
 An empty dividend collapses to 0 before the divisor is read (also under
 a zero or empty divisor — ref's match order); an empty divisor under a
-filled dividend deposits the §9.5 channel fact and derives no value
+filled dividend deposits the §9.5 channel fact — keyed by the ENCLOSING
+RULE'S NAME, exactly as ref keys its channel (harmonised 2026-08-20 so
+the case format's rule pin reads both executors identically; the reason
+text stays executor-internal) — and derives no value
 (leeg as absence); a numeric zero divisor derives a `viol/2` witness —
 UNSAT with the reason named, exactly where ref hard-faults (pinned by
 `corpus/rood/division-by-numeric-zero`). The true quotient

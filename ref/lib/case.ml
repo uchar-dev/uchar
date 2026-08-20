@@ -27,7 +27,7 @@ type expectation =
   | Char_present of { label : string; char : string }
   | Char_absent of { label : string; char : string }
   | Consistent
-  | Inconsistent
+  | Inconsistent of { rule : string option; label : string option }
 
 (* the red-path case form (corpus/rood): evaluation MUST fail
    observably in every executor; each field is a substring the
@@ -432,7 +432,15 @@ let load_expectation (doc : document) (world : World.t) (j : Yojson.Safe.t) : ex
         Char_present { label = i.label; char = c }
       else Char_absent { label = i.label; char = c }
   | "consistent" -> Consistent
-  | "inconsistent" -> Inconsistent
+  | "inconsistent" ->
+      let opt_str k = Option.map str (List.assoc_opt k kvs) in
+      (match (opt_str "rule", opt_str "label") with
+      | None, Some _ -> fail "an inconsistent label pin requires a rule pin"
+      | rule, (Some l as label) ->
+          if SMap.find_opt l world.instances = None then
+            fail "inconsistent expectation references unknown label %S" l
+          else Inconsistent { rule; label }
+      | rule, label -> Inconsistent { rule; label })
   | k -> fail "unknown expectation kind %S" k
 
 let load_file (doc : document) path : t =
@@ -553,7 +561,26 @@ let check (case : t) (final : World.t) : string list =
                     (List.map
                        (fun (f : World.error_fact) -> f.rule ^ " × " ^ f.subject)
                        final.channel)))
-      | Inconsistent ->
-          if final.channel <> [] then None
-          else Some "expected inconsistent, but the error channel is empty")
+      | Inconsistent { rule; label } -> (
+          let matches (f : World.error_fact) =
+            (match rule with None -> true | Some r -> norm f.rule = norm r)
+            && match label with None -> true | Some l -> String.equal f.subject l
+          in
+          match List.find_opt matches final.channel with
+          | Some _ -> None
+          | None ->
+              let want =
+                match (rule, label) with
+                | None, _ -> "any channel fact"
+                | Some r, None -> Printf.sprintf "a channel fact from rule %S" r
+                | Some r, Some l -> Printf.sprintf "a channel fact from rule %S on %S" r l
+              in
+              Some
+                (Printf.sprintf "expected inconsistent (%s), but the channel carries: %s" want
+                   (if final.channel = [] then "(empty)"
+                    else
+                      String.concat "; "
+                        (List.map
+                           (fun (f : World.error_fact) -> f.rule ^ " × " ^ f.subject)
+                           final.channel)))))
     case.expected

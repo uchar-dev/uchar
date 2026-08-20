@@ -57,7 +57,9 @@
       }
     },
     {
-      "kind": "inconsistent"
+      "kind": "inconsistent",
+      "rule": "uitkomst van een meting",
+      "label": "M1"
     }
   ]
 }

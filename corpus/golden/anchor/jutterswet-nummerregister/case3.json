@@ -107,7 +107,14 @@
   },
   "expected": [
     {
-      "kind": "inconsistent"
+      "kind": "inconsistent",
+      "rule": "eenmalige reekscode",
+      "label": "S1"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "eenmalige reekscode",
+      "label": "W1"
     }
   ]
 }

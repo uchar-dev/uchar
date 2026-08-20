@@ -216,7 +216,18 @@
         },
         {
           "type": "object", "additionalProperties": false, "required": ["kind"],
-          "properties": { "kind": { "const": "inconsistent" } }
+          "properties": {
+            "kind": { "const": "inconsistent" },
+            "rule": {
+              "description": "Optional precision: at least one channel fact from THIS rule (name-normalised). Without it the expectation is satisfied by any channel fact, whichever rule produced it — precise pins close the false-green window where a case stays green on the wrong fact.",
+              "type": "string", "minLength": 1
+            },
+            "label": {
+              "description": "Optional further precision (requires rule): the flagged instance's label, exact. A created instance (no case label) never matches.",
+              "type": "string", "minLength": 1
+            }
+          },
+          "dependentRequired": { "label": ["rule"] }
         }
       ]
     }

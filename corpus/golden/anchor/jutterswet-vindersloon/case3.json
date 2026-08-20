@@ -78,7 +78,9 @@
       }
     },
     {
-      "kind": "inconsistent"
+      "kind": "inconsistent",
+      "rule": "deel van een vondst",
+      "label": "V1"
     }
   ]
 }

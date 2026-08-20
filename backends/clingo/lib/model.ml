@@ -186,7 +186,24 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
               Some
                 (Printf.sprintf "expected consistent, but the model carries %d inconsistent fact(s)"
                    (List.length errs)))
-      | Inconsistent ->
-          if List.exists (fun a -> a.name = "inconsistent") model then None
-          else Some "expected inconsistent, but the model carries no inconsistent fact")
+      | Inconsistent { rule; label } ->
+          let matches a =
+            a.name = "inconsistent"
+            && (match a.args with
+               | [ A_str r; subj ] ->
+                   (match rule with None -> true | Some want -> norm r = norm want)
+                   && (match label with
+                      | None -> true
+                      | Some l -> ( match subj with A_str s -> String.equal s l | _ -> false))
+               | _ -> false)
+          in
+          if List.exists matches model then None
+          else
+            let want =
+              match (rule, label) with
+              | None, _ -> "any inconsistent fact"
+              | Some r, None -> Printf.sprintf "an inconsistent fact from rule %S" r
+              | Some r, Some l -> Printf.sprintf "an inconsistent fact from rule %S on %S" r l
+            in
+            Some (Printf.sprintf "expected inconsistent (%s), but the model carries none" want))
     case.expected

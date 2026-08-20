@@ -124,6 +124,11 @@ type ctx = {
      the target's declared decimals exactly must translate — testing
      exactness on max(sl,sr) alone would refuse it (1 outside a write) *)
   mutable write_scale : int;
+  (* the enclosing rule's (or creation's) name: the §9.5 channel fact
+     is keyed by it, exactly as ref's insert_error keys its channel —
+     the reason text stays executor-internal (a hunted checker split:
+     rule matching on the channel would otherwise diverge) *)
+  mutable rule_name : string;
 }
 
 (* The convention guards, mirroring ref/'s faults (IR-SPEC ch. 4.3a:
@@ -924,8 +929,8 @@ and translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding =
   emit ctx "%s_ldef(%s) :- %s." p subject lbody;
   emit ctx "%s_rdef(%s) :- %s." p subject rbody;
   emit ctx "%s(%s,0) :- %s, not %s_ldef(%s)." p subject base p subject;
-  emit ctx "inconsistent(\"division by empty divisor\",%s) :- %s, %s_ldef(%s), not %s_rdef(%s)."
-    subject
+  emit ctx "inconsistent(%s,%s) :- %s, %s_ldef(%s), not %s_rdef(%s)."
+    (str ctx.rule_name) subject
     (String.concat ", " (base :: guard))
     p subject p subject;
   emit ctx "viol(\"division by numeric zero\",%s) :- %s, (%s) == 0." subject full tr;
@@ -1160,6 +1165,7 @@ let translate_regel ctx (r : resolved_regel) =
       fault "validity windows are not translated yet"
   | _ ->
       let doel = req "doel" r.doel in
+      ctx.rule_name <- Option.value r.rr_naam ~default:"?";
       (match doel with
       | Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ } ->
           let subject = "S" in
@@ -1246,6 +1252,7 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
   | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
       fault "object-creation validity windows are not translated yet"
   | _ -> ());
+  ctx.rule_name <- Option.value oc.oc_naam ~default:"?";
   let nieuw = req "ObjectCreatie.nieuwType" oc.nieuw_type in
   let subject_ot = req "ObjectCreatie.subject" oc.oc_subject in
   let subject = "S" in
@@ -1867,7 +1874,8 @@ let translate (doc : document) (case : Case.t) : string =
      and fault below like before. *)
   let doc = Ir_v0.Desugar.document doc in
   let ctx =
-    { doc; case; buf = Buffer.create 4096; fresh = 0; rule_guard = []; write_scale = 1 }
+    { doc; case; buf = Buffer.create 4096; fresh = 0; rule_guard = []; write_scale = 1;
+      rule_name = "?" }
   in
   (* ch. 8.4: the shared session-start Parameterset coverage check —
      data-plane validation (like the shared case loader), run before a

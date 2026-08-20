@@ -83,7 +83,14 @@
   },
   "expected": [
     {
-      "kind": "inconsistent"
+      "kind": "inconsistent",
+      "rule": "kavel per kust",
+      "label": "S1"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "kavel per kust",
+      "label": "S2"
     }
   ]
 }
