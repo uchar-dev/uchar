@@ -214,10 +214,17 @@ the norm; the encoding buys most of it for free):
    `#sum` over an empty tuple set (translated only with the
    fallback-0 facet, S14).
 
-The one empty rule with **no** free encoding: the equality/inequality
+The one empty rule with no *free* encoding — the equality/inequality
 asymmetry of ch. 1.2d (leeg = leeg is true under gelijk-aan, false
-under ordering). `Gelijk`/`Ongelijk` comparisons therefore fault
-loudly until a corpus case demands them — a recorded finding, in S14.
+under ordering) — is encoded (2026-08-21) through a per-comparison
+helper: `eqN(S)` holds iff both operand bodies bind and the
+harmonised values match, *or neither binds*; ongelijk-aan is
+negation-as-failure over the helper, its exact complement. Sound for
+the same reason `coalesce0`'s definedness negation is: the helper
+reads only the operand bodies. Anchored by
+`jutterswet-sluitregister` (all four corners: equal, different,
+half-empty, both-empty). What remains loud: equality in the
+per-segment clip comparison (S14).
 
 Witnesses: `jutterswet-leegrekening`, `synth2-leegcomposities`,
 `jutterswet-vindersloon` (every empty cell), `jutterswet-taxatie`
@@ -294,8 +301,9 @@ conversion factors have no integer encoding (the hunted 1 m + 50 cm =
 `cond_atoms` lowers a condition to body atoms. **Comparison**
 (vergelijking): harmonised scaled terms joined by `>=`, `>`, `<`,
 `<=`; both operands are bare joins, so a leeg operand fails the
-condition (ch. 1.2d). Equality/inequality: no free encoding — faults
-(S5). **Characteristic check** (kenmerk-check): `heeft(S,k)`, or
+condition (ch. 1.2d). **Equality/inequality**: the eqN-helper
+encoding of S5 — gelijk-aan through the helper atom, ongelijk-aan
+through its negation (witness `jutterswet-sluitregister`). **Characteristic check** (kenmerk-check): `heeft(S,k)`, or
 `not heeft(S,k)` under negation — stratification (WF-045/046) makes
 this sound. The *navigated* check walks the `rol/3` hop as a POSITIVE
 literal with only the characteristic under the negation: an absent
@@ -562,8 +570,9 @@ context — the translation stops, nothing degrades. Grouped; the
 literal reason strings live in `backends/clingo/lib/translate.ml`.
 
 *Semantics deliberately unencoded (recorded findings):*
-equality/inequality over possibly-empty operands (the ch. 1.2d
-asymmetry — no free encoding); runtime, negative and fractional
+equality in the per-segment clip comparison (the scalar
+equality/inequality asymmetry itself is encoded — S5; the clip's
+empty corner is a different shape); runtime, negative and fractional
 power exponents (the runtime-exponent empty corner 4^leeg = leeg is
 thereby ref-only behaviour); ref's unit-conversion algebra (all
 restating positions refuse non-identical units); negative operands

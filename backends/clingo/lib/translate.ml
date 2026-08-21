@@ -340,9 +340,13 @@ let vergelijk_sym = function
   | Kleiner | Eerder -> "<"
   | Kleiner_of_gelijk | Eerder_of_gelijk -> "<="
   | Gelijk | Ongelijk ->
+      (* scalar conditions take the eqN-helper route in cond_atoms; what
+         remains on this symbol path is the per-segment clip comparison,
+         whose operands are timeline segments — the empty corner there
+         is a different shape (a gap, not an empty operand) *)
       fault
-        "equality over possibly-empty operands has no free ASP encoding (the ch. 1.2d \
-         asymmetry); no corpus case exercises it — recorded finding"
+        "equality in a per-segment clip comparison is not translated (no corpus case \
+         exercises it)"
 
 (* arithmetic operands must be statically numeric: ref faults date
    arithmetic under the additive/multiplicative operators, so a
@@ -1061,6 +1065,36 @@ and translate_power ctx ~subject ~subject_ot ~links ~rechts =
 
 and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
   match c with
+  | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ } ->
+      (* the ch. 1.2d equality asymmetry (arith.compare_op): gelijk-aan
+         is TRUE on two empty operands and FALSE on exactly one;
+         ongelijk-aan is its exact complement. Encoded through a
+         per-comparison helper: eqN(S) holds iff both operand bodies
+         bind and the harmonised values match, or neither binds.
+         Ongelijk is negation-as-failure over the helper — sound for
+         the same reason coalesce0's definedness negation is: the
+         helper reads only the operand bodies. *)
+      units_identical_ok ~what:"a comparison"
+        (Option.bind links (eff_unit ctx))
+        (Option.bind rechts (eff_unit ctx));
+      let l = expr_term ctx ~subject ~subject_ot (req "links" links) in
+      let r = expr_term ctx ~subject ~subject_ot (req "rechts" rechts) in
+      let b1, t1, s1 = l and b2, t2, s2 = r in
+      let m = max s1 s2 in
+      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      range_guard ctx ~subject
+        ~body:((base :: b1) @ b2)
+        [ (t1, max_int31 / (m / s1)); (t2, max_int31 / (m / s2)) ];
+      let bindings, tl, tr = harmonised l r in
+      ctx.fresh <- ctx.fresh + 1;
+      let p = Printf.sprintf "eq%d" ctx.fresh in
+      emit ctx "%s_l(%s) :- %s." p subject (String.concat ", " (base :: b1));
+      emit ctx "%s_r(%s) :- %s." p subject (String.concat ", " (base :: b2));
+      emit ctx "%s(%s) :- %s, %s == %s." p subject
+        (String.concat ", " (base :: bindings))
+        tl tr;
+      emit ctx "%s(%s) :- %s, not %s_l(%s), not %s_r(%s)." p subject base p subject p subject;
+      [ (if op = Gelijk then "" else "not ") ^ Printf.sprintf "%s(%s)" p subject ]
   | Vergelijking { op; links; rechts; periode = None; _ } ->
       units_identical_ok ~what:"a comparison"
         (Option.bind links (eff_unit ctx))

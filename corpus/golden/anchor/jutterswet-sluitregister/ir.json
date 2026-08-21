@@ -1,0 +1,216 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Register": {
+      "node": "Objecttype",
+      "naam": "Register",
+      "attributen": {
+        "telling": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "opgave": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "sluitend",
+        "afwijkend"
+      ],
+      "kenmerkSoorten": {
+        "sluitend": "BIJVOEGLIJK",
+        "afwijkend": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Registers"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "sluitend register",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "afwijkend register",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "sluitend register",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "sluitend",
+        "objecttype": "Register",
+        "onderwerpBron": "Een Register",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Register is sluitend",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "GELIJK",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "telling",
+          "objecttype": "Register",
+          "onderwerpBron": "het Register",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "de telling van het Register",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "opgave",
+          "objecttype": "Register",
+          "onderwerpBron": "het Register",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "de opgave van het Register",
+          "set": false,
+          "navigatiePad": []
+        },
+        "periode": null,
+        "bron": "zijn telling gelijk is aan zijn opgave"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "afwijkend register",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "afwijkend",
+        "objecttype": "Register",
+        "onderwerpBron": "Een Register",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Register is afwijkend",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "ONGELIJK",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "telling",
+          "objecttype": "Register",
+          "onderwerpBron": "het Register",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "de telling van het Register",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "opgave",
+          "objecttype": "Register",
+          "onderwerpBron": "het Register",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "de opgave van het Register",
+          "set": false,
+          "navigatiePad": []
+        },
+        "periode": null,
+        "bron": "zijn telling ongelijk is aan zijn opgave"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

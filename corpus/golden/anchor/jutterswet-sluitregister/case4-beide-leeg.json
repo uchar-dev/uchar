@@ -1,0 +1,31 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "R1",
+        "objectType": "Register",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "R1",
+      "characteristic": "sluitend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "R1",
+      "characteristic": "afwijkend"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
