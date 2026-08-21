@@ -1,0 +1,12 @@
+(library
+ (name catala_frontend_lib)
+ (libraries
+  catala.driver
+  catala.scopelang
+  catala.desugared
+  catala.shared_ast
+  catala.catala_utils
+  catala.runtime_ocaml
+  uchar-ir-v0
+  yojson
+  zarith))

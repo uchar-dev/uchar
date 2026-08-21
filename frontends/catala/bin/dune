@@ -1,2 +1,3 @@
 (executable
- (name catala_frontend))
+ (name catala_frontend)
+ (libraries catala_frontend_lib))

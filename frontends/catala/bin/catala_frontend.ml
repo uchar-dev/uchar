@@ -1,6 +1,22 @@
-(* Stub entry point — the real translation lands in the next commit.
-   Present so the red-first end-to-end test has an executable to invoke
-   and fails for the honest reason (no IR emitted yet). *)
+(* The Catala frontend plugin CLI:  catala_frontend <input.catala_en> <out-ir.json>
+
+   Exit 0: IR emitted. Exit 3: a loud refusal (a construct outside the
+   decided 5a fragment) — the reason is on stderr. Exit 2: usage / a
+   Catala compile error. *)
+
+module T = Catala_frontend_lib.Translate
+
 let () =
-  prerr_endline "catala_frontend: not implemented yet";
-  exit 1
+  match Sys.argv with
+  | [| _; input; output |] -> (
+      try T.run ~input ~output
+      with
+      | T.Refuse msg ->
+          Printf.eprintf "catala_frontend: refused: %s\n" msg;
+          exit 3
+      | e ->
+          Printf.eprintf "catala_frontend: %s\n" (Printexc.to_string e);
+          exit 2)
+  | _ ->
+      prerr_endline "usage: catala_frontend <input.catala_en> <out-ir.json>";
+      exit 2
