@@ -16,3 +16,15 @@ May touch: `frontends/catala/`, `corpus/`, `spec/` (alleen
 diff-bevindingen als delta), `backlog/`.
 
 Out of scope: constructen buiten het 5a-fragment.
+
+Gereedschapsnotitie (2026-08-21, uit de installatiesessie): naast
+catala en clerk staan lokaal catala-format 1.2.0 (topiary; `-i`
+in-place, idempotentie-check standaard, locale via bestandsextensie)
+en catala-lsp/catala-dap. Voor deze kaart: (a) de eigen
+.catala_en-bronnen door catala-format halen vóór ze het corpus in
+gaan (stijldiscipline zoals de canonieke JSON-ser); (b) bij de
+frontend-diff dient `catala interpret` als DERDE oordeel naast ref
+en clingo — de Catala-native uitkomst op hetzelfde programma maakt
+de triage (dialectverschil / IR-fout / frontend-bug) beslisbaar in
+plaats van beredeneerd, met catala-dap als stapdebugger wanneer de
+uitkomsten uiteenlopen.
