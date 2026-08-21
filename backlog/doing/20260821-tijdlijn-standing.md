@@ -18,6 +18,9 @@ clingo; alle acht gates groen; twee lenzen.
 
 May touch: `ref/lib/`, `backends/clingo/`, `spec/RUNTIME-SEMANTICS.md`
 (ch. 7.8-aanvulling), `spec/ASP-TRANSLATION.md` (ch. 6d-notitie),
-`corpus/golden/anchor/`, `scripts/check-noop.sh`, `backlog/`.
+`corpus/golden/anchor/`, `scripts/check-noop.sh`, `backlog/`, en
+(verruimd in de verificatieronde, protected-path-voorstel)
+`spec/verifier/lib/desugar.ml` — het gedeelde domeinpredicaat
+`standing_temporal_targets` hoort naast zijn scalaire broer.
 
 Out of scope: pro-rata-doelen (eigen fold-machinerie, WF-056).

@@ -2141,13 +2141,13 @@ predicate is shared between the executors (one definition), the ASP
 entry is the ladder's `inputval/3` with an effectiveness atom carrying
 condition **and** value bindings (a condition-only atom would encode
 the v0 erase instead — the atom's body is the semantic choice).
-**The timeline arm (decided with the temporal-standing card,
-2026-08-21):** the norm extends to a **standing temporal target** — a
+**The timeline arm (the temporal-standing card, 2026-08-21):** the
+norm extends to a **standing temporal target** — a
 temporal attribute carried by exactly one version-free computing rule
 (in practice the ch. 3.7 pro-rata fold) as its only writer. The rule
 decides only when its result timeline is **gevuld** (at least one
 segment); an empty result is the temporal leeg (empty == never-written,
-ch. 3.7) and **writes nothing**, so a case-supplied input timeline
+ch. 3.1) and **writes nothing**, so a case-supplied input timeline
 stands — **whole**: the ladder reading is per target, never per bucket
 (a rung decides once, and ch. 3.11's timeline write replaces the whole
 attribute timeline), so input and computed segments never interleave. A

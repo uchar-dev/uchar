@@ -186,11 +186,21 @@ let standing_targets_gen ~temporal (doc : document) : (string * string) list =
     | Some (_, decl) -> Checks.attr_temporal decl a = temporal
     | None -> false
   in
+  (* the temporal domain is additionally shape-exact: only the ch. 3.7
+     pro-rata fold executes as a temporal writer today, and a
+     shape-agnostic domain would skip the backend's input fence for
+     rules that then merely shape-fault — keep the fence in charge
+     there instead *)
+  let executable (r : resolved_regel) =
+    (not temporal)
+    || match r.waarde with Some (Functie { kind = Tijdsevenredig_deel; _ }) -> true | _ -> false
+  in
   List.filter_map
     (fun r ->
       match target_of r with
       | Some t
         when is_computing r
+             && executable r
              && count (key t) = 1
              && wanted_shape t
              && not (other_writer t) ->
@@ -204,7 +214,7 @@ let standing_targets = standing_targets_gen ~temporal:false
    temporal target carried by exactly one version-free computing rule
    (in practice the ch. 3.7 pro-rata fold) as its only writer. The rule
    decides only when its result timeline is GEVULD (>= 1 segment) — an
-   empty result is the temporal leeg (empty == never-written) and
+   empty result is the temporal leeg (empty == never-written, ch. 3.1) and
    writes nothing, so a case-supplied input timeline stands whole: the
    ladder reading is per target, never per bucket (a rung decides once;
    ref's write_timeline replaces whole). *)
