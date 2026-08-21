@@ -120,6 +120,14 @@ green. Current gates:
    `Onopgelost` reached in evaluation faults with WF-044, never
    vanishes); an empty red set is a failure, never silently green.
 
+9. `scripts/check-catala.sh` — the Catala frontend builds and its
+   full test suite passes (E2E through verifier, ref and clingo plus
+   the refusal fixtures), and every corpus golden carrying a
+   `bron.catala_en` regenerates through the plugin byte-identically
+   after canonicalisation (gate 2's serialiser shape, executed from
+   that script — one source of truth); an empty catala-golden set or
+   a missing catala installation is a failure, never silently green.
+
 ## Repo relationships
 
 - `regelspraak-java` (separate repository) is the first frontend + Drools
