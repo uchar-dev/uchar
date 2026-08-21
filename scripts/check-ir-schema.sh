@@ -70,6 +70,11 @@ except SchemaError as exc:
 validator = Draft202012Validator(schema)
 
 
+# NOTE: gate 9 (scripts/check-catala.sh) executes the slice of this
+# script from the RawNum class definition up to the roundtrip
+# definition as its canonicaliser — one serialiser shape, one source
+# of truth. Keep RawNum, escape and ser contiguous in that span, and
+# keep this comment free of those literal anchor strings.
 class RawNum:
     """A JSON number carrying its original lexeme, so round-trip re-emission is exact."""
     __slots__ = ("raw",)

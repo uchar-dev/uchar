@@ -21,11 +21,23 @@ fail() { echo "check-catala: FAIL — $*" >&2; exit 1; }
 command -v dune >/dev/null 2>&1 || fail "dune not found (run: eval \$(opam env))"
 command -v catala >/dev/null 2>&1 \
   || fail "the catala compiler is not installed — the frontend gate cannot run (never silently green)"
+command -v python3 >/dev/null 2>&1 || fail "python3 not found (the canonicaliser needs it)"
 
 dune build frontends/catala 2>/dev/null || dune build frontends/catala \
   || fail "the frontend does not build"
-dune build @frontends/catala/runtest 2>/dev/null || dune build @frontends/catala/runtest \
-  || fail "the frontend test suite is red"
+# --force so the suite actually RUNS every time (a cached run prints
+# nothing), and the check count is verified: the bare runtest alias is
+# a dune default that is empty-but-valid, so "the alias built" proves
+# nothing — a hunted silent green. Zero checks is a failure.
+suite_out=$(dune build --force @frontends/catala/runtest 2>&1)
+suite_status=$?
+if [ $suite_status -ne 0 ]; then
+  echo "$suite_out" | tail -15 >&2
+  fail "the frontend test suite is red"
+fi
+checks=$(printf '%s\n' "$suite_out" | sed -n 's/^\([0-9][0-9]*\) checks, 0 failures$/\1/p' | tail -1)
+[ -n "$checks" ] || fail "the suite produced no '<N> checks, 0 failures' line — it did not run (an empty runtest alias is a silent greenlight)"
+[ "$checks" -gt 0 ] || fail "the suite ran zero checks (an empty program list is a failure)"
 
 BIN=_build/default/frontends/catala/bin/catala_frontend.exe
 [ -x "$BIN" ] || fail "plugin binary missing at $BIN after build"
@@ -70,4 +82,4 @@ done < <(find corpus/golden -name bron.catala_en | sort)
 if [ $diffcount -gt 0 ] || [ $genfail -gt 0 ]; then
   fail "$pass identical, $diffcount diverging, $genfail generate failures"
 fi
-echo "check-catala: PASS — frontend suite green; $pass catala golden(s) regenerate byte-identically"
+echo "check-catala: PASS — frontend suite green ($checks checks); $pass catala golden(s) regenerate byte-identically"

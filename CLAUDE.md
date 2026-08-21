@@ -125,8 +125,13 @@ green. Current gates:
    the refusal fixtures), and every corpus golden carrying a
    `bron.catala_en` regenerates through the plugin byte-identically
    after canonicalisation (gate 2's serialiser shape, executed from
-   that script — one source of truth); an empty catala-golden set or
+   that script — one source of truth); an empty catala-golden set,
+   a suite that ran zero checks, or
    a missing catala installation is a failure, never silently green.
+   *Runs locally; its CI leg awaits the maintainer's call on the
+   catala dependency in CI (tracked:
+   `backlog/new/20260821-gate9-ci-leg.md`) — until then CI enforces
+   gates 1–8 and gate 9 is the reviewer's pre-merge duty.*
 
 ## Repo relationships
 
