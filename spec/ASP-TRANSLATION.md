@@ -1,8 +1,8 @@
 # ASP translation
 
-*Status: the systematic construct-by-construct translation (Part I,
-sections S1–S14) — the Phase-3 deliverable this document was always
-growing toward. Part I describes what `backends/clingo` provably does:
+*Status: the systematic construct-by-construct translation (Part I —
+sections S1–S7, S13 and S14 delivered; S8–S12 announced) — the
+Phase-3 deliverable this document was always growing toward. Part I describes what `backends/clingo` provably does:
 every claim is distilled from `backends/clingo/lib/translate.ml` and
 witnessed by the gate set (gate 6, `scripts/check-clingo.sh`, replays
 every golden case through the translation; gate 8,
@@ -39,8 +39,10 @@ stratifiable, so the program has exactly one stable model and the
 model checker (`backends/clingo/lib/model.ml`) *faults* on anything
 else — zero models and multiple witnesses are both translation bugs,
 never answers. The document is desugared first (`Ir_v0.Desugar`, the
-ch. 7.7 init+berekening → ladder rewrite), so the translator sees the
-same kernel the reference interpreter evaluates.
+ch. 7.7 init+berekening → ladder rewrite): this translator evaluates
+the desugared kernel while the reference interpreter replays the v0
+forms natively, so gate 6's differential witnesses the desugaring
+itself.
 
 The fixed predicate vocabulary:
 
@@ -88,7 +90,7 @@ remains as the last-line backstop and alone covers case *labels*,
 which are outside WF-057's reach. Attribute and rule names are
 normalised (`norm`) on both sides of every comparison; rule names in
 the channel are matched version-stripped by both executors' checkers
-(ch. 5.6 of `IR-SPEC.md`).
+(`RUNTIME-SEMANTICS.md` ch. 5.6).
 
 ### S2. Case input: facts and types
 
@@ -104,7 +106,7 @@ differential). A granular parameter is only ever read temporally
 (S4/S9): the scalar-slot read faults.
 
 The standing-target routing is the one semantic decision made at
-input time (RS ch. 7.8, detailed in S10): if the target attribute of
+input time (RS ch. 7.8; the announced S10 will carry the detail): if the target attribute of
 a defeasible producer — a ladder target, or a bare single-writer
 version-free computing rule (the standing norm) — receives case
 input, that input enters as `inputval/3` (scalar) or `inputtl/5`
@@ -117,9 +119,10 @@ fillings are doubled as `inputrol/3` when object creation is present
 every input instance gets `depth(L,0)` under the creation budget.
 
 Witnesses: every golden case exercises this section (gate 6);
-standing routing by the ladder anchors and `synth2-clip-over-prorata`;
-vintages by `jutterswet-aanmeldquotum`, `jutterswet-penningvintage`
-and `corpus/rood/vintage-uncovered-date`.
+standing routing by the ladder anchors, `jutterswet-waardestelling`
+(the scalar standing norm) and `jutterswet-borgdeel` (the temporal
+arm); vintages by `jutterswet-aanmeldquotum`,
+`jutterswet-penningvintage` and `corpus/rood/vintage-uncovered-date`.
 
 ### S3. Rules and write targets
 
@@ -200,14 +203,19 @@ the norm; the encoding buys most of it for free):
    the body: leeg leaves the rule underivable, which is exactly Empty
    propagation. The ch. 1.2d ordering rule (a comparison over leeg is
    false) costs nothing: the unbound join fails.
-2. **`coalesce0` — the whitelist.** A COALESCING position (ch. 1.2a:
-   both sides of plus/min/maal/percentage-van, the right of
-   verminderd-met, the dividend) reads leeg as 0 through a default-0
-   helper: `coN(S,⟨term⟩) :- ⟨body⟩.`, `coN_def(S) :- ⟨body⟩.`,
+2. **`coalesce0` — the whitelist.** A COALESCING operand position
+   (ch. 1.2a: both sides of plus/min/maal/percentage-van, the right
+   of verminderd-met) reads leeg as 0 through a default-0 helper:
+   `coN(S,⟨term⟩) :- ⟨body⟩.`, `coN_def(S) :- ⟨body⟩.`,
    `coN(S,0) :- is_a(S,ot), not coN_def(S).`
-3. **Default-0 heads.** Where the *result* of a whole construct is 0
-   on emptiness (the division's empty-dividend edge, the empty sum
-   with fallback 0), a default head under NAF encodes it directly.
+3. **Default results on emptiness.** Where the *result* of a whole
+   construct is 0 on emptiness, the encoding is per construct: the
+   division's empty-dividend edge is a default head under NAF on the
+   quotient predicate (`qN(S,0) :- is_a(S,ot), not qN_ldef(S).` —
+   note the dividend is *not* a coalesce0 position; the edge lives on
+   the construct's head), while the empty sum's 0 is clingo's native
+   `#sum` over an empty tuple set (translated only with the
+   fallback-0 facet, S14).
 
 The one empty rule with **no** free encoding: the equality/inequality
 asymmetry of ch. 1.2d (leeg = leeg is true under gelijk-aan, false
@@ -233,7 +241,11 @@ rounding it cannot compute in one integer step.
   value — empty dividend → 0 *before* the divisor is read; empty
   divisor under a filled dividend → the rule-keyed channel fact and
   no value; numeric zero divisor → `viol("division by numeric
-  zero")`. The bare form translates only EXACT outcomes: a remainder
+  zero")` — the v0-mirror hard fault, which ch. 1.4 point 4 keeps as
+  the mirror while v1 routes this case into the §9.5 channel (a
+  decided, tracked delta both executors will follow together when the
+  v1 divergence lands). The bare form translates only EXACT outcomes:
+  a remainder
   derives a `viol/2` witness, never a truncated value. The
   rounded form (afgerond over a division) computes the mode's integer
   rounding in one step — floor T/N, ceiling (T+N−1)/N,
@@ -292,8 +304,9 @@ this sound. The *navigated* check walks the `rol/3` hop as a POSITIVE
 literal with only the characteristic under the negation: an absent
 link fails the positive and the negated form alike — the deliberate
 v0 asymmetry (ch. 5.8), encoded for free. **Composite**
-(samengesteld, ALLE): concatenation of the parts' atoms. Other
-quantifiers and condition kinds fault (S14).
+(samengesteld, the ALLE and singular DE quantifiers): concatenation
+of the parts' atoms — both quantifiers are conjunctions over their
+parts. Other quantifiers and condition kinds fault (S14).
 
 Witnesses: `jutterswet-hardheid`, `jutterswet-uitsluiting`,
 `jutterswet-vormenkabinet`; the WF-053 negatiefs pin the navigation
@@ -316,8 +329,12 @@ executors — the case format's rule pin reads both identically:
 | ladder conflict (equal-priority disagreement) | `onderwerp.target` |
 | allocation: weightless recipient, cap holes | the allocation's name |
 
-Every channel head threads the enclosing rule's condition atoms
-(S3): a subject the condition excludes deposits nothing. The loader
+A channel head embedded in a rule's *value expression* — the
+division row — threads the enclosing rule's condition atoms (S3): a
+subject the condition excludes deposits nothing. The standalone forms
+(consistencies, uniqueness, ladder conflicts, allocations) have no
+enclosing voorwaarde to thread; their own bodies are the guard. The
+loader
 validates a pinned rule name against the closed set of channel-capable
 names and rejects unknown pins with a candidate list (ch. 5.6). Gross
 "inconsistent"-without-a-rule expectations are gone from the corpus:
@@ -339,7 +356,12 @@ restating positions refuse non-identical units); negative operands
 under non-richting-nul rounded forms (runtime `viol/2` fences);
 non-exact bare division and non-fitting write results (runtime
 `viol/2` — an explicit rounding is mandated before precision is
-lost).
+lost). And one decided *future* delta, recorded rather than encoded:
+numeric-zero division is today the v0-mirror hard fault in both
+executors (`corpus/rood/division-by-numeric-zero`,
+`division-abs-by-numeric-zero`); ch. 1.4 point 4 routes it into the
+§9.5 channel in v1 — a tracked delta both executors will take
+together.
 
 *Constructs and shapes without a corpus case (fault at translation):*
 validity windows (rules, ladders, creations); temporal targets
@@ -347,7 +369,11 @@ outside the ch. 3.7/3.8 fold shapes; the negated gedurende clip (the
 complement walk); gedurende condition shapes beyond WF-055; temporal
 totals over case-supplied full timelines, and non-year total
 granularity; `Begrensd` (clip/min-max) and rounded roots in term
-positions; characteristic attribution with a non-waar value;
+positions; a temporal attribute read in a scalar slot (ch. 3.3);
+non-numeric arithmetic operands and non-numeric literals in term
+positions (ref faults date arithmetic — day numbers must not silently
+compute); unscalable datatypes in the integer encoding;
+characteristic attribution with a non-waar value;
 non-proportional and conditional allocation; misaligned allocation
 and rounding scales; som fallbacks other than 0; uniqueness key
 lists with more than one temporal component, and ever-unique keys
@@ -1095,7 +1121,9 @@ refuses loudly, exactly like this fence.
 quantitative machinery beyond the art. 3 threshold, and any systematic
 core-IR-to-ASP mapping — all Phase-3 work. This document grows with
 each hand exercise until that systematic mapping replaces it. *That
-promise is kept: Part I is the systematic mapping, and the constructs
-this chapter deferred have long since landed (hardheid in the ladder
-anchors, the temporalisation in S9's machinery, the quantitative
-corpus throughout).*
+replacement is underway: Part I is the systematic mapping, delivered
+for the core (S1–S7, S13–S14) with the remaining constructs announced
+(S8–S12). The constructs this chapter deferred have long since landed
+in the corpus and the backend — hardheid in the ladder anchors, the
+temporalisation in the ch. 6d machinery (its systematic write-up is
+S9's announced work), the quantitative corpus throughout.*
