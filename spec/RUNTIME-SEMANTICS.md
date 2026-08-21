@@ -2151,7 +2151,8 @@ the v0 erase instead — the atom's body is the semantic choice).
 temporal-standing card's numbered question — whole-timeline over
 per-bucket):** the norm extends to a **standing temporal target** — a
 temporal attribute carried by exactly one version-free computing rule
-(in practice the ch. 3.7 pro-rata fold) as its only writer. The rule
+(in practice the ch. 3.7 pro-rata fold or the ch. 3.8 day
+count) as its only writer. The rule
 decides only when its result timeline is **gevuld** (at least one
 segment); an empty result is the temporal leeg (empty == never-written,
 ch. 3.1) and **writes nothing**, so a case-supplied input timeline
