@@ -1060,6 +1060,54 @@ let fitted ctx ~subject ~what ~body term scale target =
    remainder derives a viol/2 witness (ref computes the exact rational;
    v0 approximates a non-terminating fraction in DECIMAL64 — the
    recorded ch. 3.7 delta), fenced like every division. *)
+(* calendar as data: buckets over the case's endpoint span (shared by
+   the ch. 3.7 pro-rata fold and the ch. 3.8 day count) *)
+let emit_bucket_calendar ctx ~p ~(g : granulariteit) =
+  let endpoints =
+    Eval.SMap.fold
+      (fun _ (i : Uchar_ref.World.instance) acc ->
+        let tl_pts =
+          Eval.SMap.fold
+            (fun _ (tl : Uchar_ref.Timeline.t) acc ->
+              List.concat_map
+                (fun (s : Uchar_ref.Timeline.segment) -> [ s.s_van; s.s_tot ])
+                tl
+              @ acc)
+            i.tls acc
+        in
+        Eval.SMap.fold
+          (fun _ periods acc -> List.concat_map (fun (v, t) -> [ v; t ]) periods @ acc)
+          i.ctls tl_pts)
+      ctx.case.world.instances []
+    |> List.sort_uniq compare
+  in
+  match endpoints with
+  | [] -> ()
+  | lo :: _ ->
+      let hi = List.fold_left max lo endpoints in
+      let rec walk d n =
+        if d < hi then begin
+          if n > 46340 then fault "the bucket endpoint span exceeds the guarded range";
+          let bs, bn = Uchar_ref.Timeline.bucket g d in
+          emit ctx "%s_b(%d,%d,%d)." p bs bn (bn - bs);
+          walk bn (n + 1)
+        end
+      in
+      let first, _ = Uchar_ref.Timeline.bucket g lo in
+      walk first 0
+
+(* true days per (bucket × condition segment): four-case intersection
+   over the gedurende characteristic's timeline (shared likewise) *)
+let emit_true_days ctx ~p ~k =
+  List.iter
+    (fun (vcmp, vpick, tcmp, tpick) ->
+      emit ctx "%s_d(S,B,KV,KT,%s-%s) :- ktl(S,%s,KV,KT), %s_b(B,N,_), %s, %s, %s < %s." p tpick
+        vpick (str k) p vcmp tcmp vpick tpick)
+    [ ("KV >= B", "KV", "KT <= N", "KT");
+      ("KV >= B", "KV", "KT > N", "N");
+      ("KV < B", "B", "KT <= N", "KT");
+      ("KV < B", "B", "KT > N", "N") ]
+
 let translate_pro_rata ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit) =
   let base = Printf.sprintf "is_a(%s,%s)" subject (str ot) in
   if not (attr_temporal ctx ~otype:ot ~attr:b) then
@@ -1086,48 +1134,8 @@ let translate_pro_rata ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit) =
   | _ -> fault "pro-rata target and base carry declared granularities (WF-056)");
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "pr%d" ctx.fresh in
-  (* calendar as data: buckets over the case's endpoint span *)
-  let endpoints =
-    Eval.SMap.fold
-      (fun _ (i : Uchar_ref.World.instance) acc ->
-        let tl_pts =
-          Eval.SMap.fold
-            (fun _ (tl : Uchar_ref.Timeline.t) acc ->
-              List.concat_map
-                (fun (s : Uchar_ref.Timeline.segment) -> [ s.s_van; s.s_tot ])
-                tl
-              @ acc)
-            i.tls acc
-        in
-        Eval.SMap.fold
-          (fun _ periods acc -> List.concat_map (fun (v, t) -> [ v; t ]) periods @ acc)
-          i.ctls tl_pts)
-      ctx.case.world.instances []
-    |> List.sort_uniq compare
-  in
-  (match endpoints with
-  | [] -> ()
-  | lo :: _ ->
-      let hi = List.fold_left max lo endpoints in
-      let rec walk d n =
-        if d < hi then begin
-          if n > 46340 then fault "the pro-rata endpoint span exceeds the guarded bucket range";
-          let bs, bn = Uchar_ref.Timeline.bucket g d in
-          emit ctx "%s_b(%d,%d,%d)." p bs bn (bn - bs);
-          walk bn (n + 1)
-        end
-      in
-      let first, _ = Uchar_ref.Timeline.bucket g lo in
-      walk first 0);
-  (* true days per (bucket × condition segment): four-case intersection *)
-  List.iter
-    (fun (vcmp, vpick, tcmp, tpick) ->
-      emit ctx "%s_d(S,B,KV,KT,%s-%s) :- ktl(S,%s,KV,KT), %s_b(B,N,_), %s, %s, %s < %s." p tpick
-        vpick (str k) p vcmp tcmp vpick tpick)
-    [ ("KV >= B", "KV", "KT <= N", "KT");
-      ("KV >= B", "KV", "KT > N", "N");
-      ("KV < B", "B", "KT <= N", "KT");
-      ("KV < B", "B", "KT > N", "N") ];
+  emit_bucket_calendar ctx ~p ~g;
+  emit_true_days ctx ~p ~k;
   let ta = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
   let tb = pow10 (attr_decimals ctx ~otype:ot ~attr:b) in
   let gg = gcd ta tb in
@@ -1168,6 +1176,54 @@ let translate_pro_rata ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit) =
   if List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_temporal_targets ctx.doc) then begin
     let eff = Printf.sprintf "%s_eff(S)" p in
     head_body ctx eff (body @ [ Printf.sprintf "%s \\ %s == 0" numt dent ]);
+    head_body ctx
+      (Printf.sprintf "tl(S,%s,Van,Tot,V)" (str a))
+      [ Printf.sprintf "inputtl(S,%s,Van,Tot,V)" (str a); base; "not " ^ eff ]
+  end
+
+(* ch. 3.8 "aantal dagen in (de maand / het jaar)": per touched bucket
+   one segment carrying the true-day count — the pro-rata numerator
+   without the base join. WF-058 mirrors WF-056's facets. *)
+let translate_aantal_dagen ctx ~subject ~ot ~a ~cond ~k ~(g : granulariteit) =
+  let base = Printf.sprintf "is_a(%s,%s)" subject (str ot) in
+  if attr_unit ctx ~otype:ot ~attr:a <> None then
+    fault "day-count into a unit-carrying target is not translated (no corpus case)";
+  if
+    not
+      (List.exists
+         (fun (n, _) -> norm n = norm k)
+         (objecttype ctx ot).kenmerk_granulariteit)
+  then fault "gedurende over %S, which is not a temporal characteristic (WF-058)" k;
+  (match Ir_v0.Checks.find_ci (objecttype ctx ot).attribuut_granulariteit a with
+  | Some (Some tg) ->
+      if tg <> g then
+        fault "day-count bucket granularity differs from the target's declared granularity (WF-058)"
+  | _ -> fault "day-count target carries a declared granularity (WF-058)");
+  let ta = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
+  if ta > max_int31 / 366 then
+    fault "day-count target decimals exceed the guarded machine-integer range";
+  ctx.fresh <- ctx.fresh + 1;
+  let p = Printf.sprintf "adg%d" ctx.fresh in
+  emit_bucket_calendar ctx ~p ~g;
+  emit_true_days ctx ~p ~k;
+  let vterm = if ta = 1 then "TD" else Printf.sprintf "(TD*%d)" ta in
+  let body =
+    (base :: ctx.rule_guard)
+    @ cond
+    @ [ Printf.sprintf "%s_b(B,N,_)" p;
+        Printf.sprintf "TD = #sum { D,KV,KT : %s_d(S,B,KV,KT,D) }" p;
+        "TD > 0" ]
+  in
+  emit ctx
+    "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S) :- %s, \
+     46340 < #count { KV,KT : %s_d(S,B,KV,KT,_) }."
+    (String.concat ", " ((base :: ctx.rule_guard) @ cond @ [ Printf.sprintf "%s_b(B,_,_)" p ]))
+    p;
+  head_body ctx (Printf.sprintf "tl(S,%s,B,N,%s)" (str a) vterm) body;
+  (* the ch. 7.8 timeline arm, as for pro-rata *)
+  if List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_temporal_targets ctx.doc) then begin
+    let eff = Printf.sprintf "%s_eff(S)" p in
+    head_body ctx eff body;
     head_body ctx
       (Printf.sprintf "tl(S,%s,Van,Tot,V)" (str a))
       [ Printf.sprintf "inputtl(S,%s,Van,Tot,V)" (str a); base; "not " ^ eff ]
@@ -1219,10 +1275,20 @@ let translate_regel ctx (r : resolved_regel) =
                        granulariteit = Some g; leegwaarde = None; dimensie_selectie = None; _ })
                 when norm bot = norm ot ->
                   translate_pro_rata ctx ~subject ~ot ~a ~cond ~b ~k ~g
+              | Some
+                  (Functie
+                     { kind = Aantal_dagen_in; argumenten = [];
+                       filter =
+                         Some
+                           (Kenmerk_check
+                              { kenmerk = Some k; navigatie = None; negatie = false; _ });
+                       granulariteit = Some g; leegwaarde = None; dimensie_selectie = None; _ }) ->
+                  translate_aantal_dagen ctx ~subject ~ot ~a ~cond ~k ~g
               | _ ->
                   fault
-                    "a temporal target takes only the ch. 3.7 pro-rata shape (an own temporal \
-                     base with a gedurende condition); no corpus case for more")
+                    "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count \
+                     shape (a gedurende condition over an own temporal characteristic); no \
+                     corpus case for more")
           | Some (Berekening | Gelijkstelling) ->
               let standing =
                 List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_targets ctx.doc)

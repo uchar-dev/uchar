@@ -122,6 +122,43 @@ let pro_rata (g : Ir_v0.Ast.granulariteit) (basis : t) (true_periods : (int * in
     acc []
   |> List.rev
 
+(* ch. 3.8 "aantal dagen in (de maand / het jaar)": per touched
+   calendar bucket one segment whose value is the true-day count in
+   that bucket (multiple true intervals in one bucket sum); empty
+   buckets emit nothing. The counting fold is pro_rata's numerator
+   (ch. 3.7), value the whole-day count itself, unitless. *)
+let aantal_dagen_in (g : Ir_v0.Ast.granulariteit) (true_periods : (int * int) list) : t =
+  (match g with
+  | Maand | Jaar -> ()
+  | _ -> fault "day-count buckets are month or year only (ch. 3.8)");
+  let module IMap = Map.Make (Int) in
+  let acc =
+    List.fold_left
+      (fun acc (pv, pt) ->
+        if pt <= pv then acc
+        else
+          let rec walk acc d =
+            if d >= pt then acc
+            else
+              let bs, bn = bucket g d in
+              let days = min pt bn - max pv bs in
+              let acc =
+                if days > 0 then
+                  IMap.update bs (fun p -> Some (Option.value p ~default:0 + days)) acc
+                else acc
+              in
+              walk acc bn
+          in
+          walk acc pv)
+      IMap.empty true_periods
+  in
+  IMap.fold
+    (fun bs days segs ->
+      let _, bn = bucket g bs in
+      { s_van = bs; s_tot = bn; s_waarde = Value.Num (Q.of_int days, Value.Unitless) } :: segs)
+    acc []
+  |> List.rev
+
 (* anchored bucket walls: every wall computed directly from the anchor —
    never by incrementing the previous wall — so a month-end anchor
    clamps consistently (ch. 3.2) *)

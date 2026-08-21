@@ -771,7 +771,13 @@ segment `[start(B), next(B))` whose value is the true-day count in `B`
 The operator's stated bucket ("de maand"/"het jaar") must equal the
 target's granularity. Worked example (absolute): true on
 [2024-01-01, 2024-01-02) and [2024-01-10, 2024-02-14) → **jan = 1 + 22 =
-23**, **feb = 13**, two segments.
+23**, **feb = 13**, two segments. **Executed (2026-08-21, both
+executors; WF-058; anchor `jutterswet-dagentelling` carries this
+example verbatim plus the year-boundary split):** the gedurende
+condition is an own temporal characteristic (richer shapes refuse
+loudly, as at ch. 3.7); the ch. 7.8 timeline arm applies — a
+non-deciding count leaves a case-supplied input timeline standing
+whole; the anchored (variable-startpunt) form stays unexecuted, loud.
 
 **tijdsduur van A tot B** counts *whole* declared units between two
 dates, signed (negative when B < A); quarters = whole months ÷ 3; any

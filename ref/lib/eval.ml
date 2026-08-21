@@ -798,10 +798,45 @@ let run_pro_rata env w (self : World.instance) ~ot ~attr waarde =
              (Ir_v0.Desugar.standing_temporal_targets env.doc)
       then (w, false)
       else World.write_timeline w ~label:self.label ~attr result
+  | Functie
+      { kind = Aantal_dagen_in; argumenten = [];
+        filter = Some c; granulariteit = Some g; leegwaarde = None; dimensie_selectie = None; _ }
+    ->
+      (* ch. 3.8 "aantal dagen in": per touched bucket the true-day
+         count; WF-058 mirrors WF-056's facets — bucket equals the
+         target's declared granularity, gedurende over an own temporal
+         characteristic *)
+      let target_gran =
+        match Ir_v0.Checks.find_ci ot_decl.attribuut_granulariteit attr with
+        | Some (Some tg) -> tg
+        | _ -> Value.fault "day-count target %S without a granularity" attr
+      in
+      if target_gran <> g then
+        Value.fault
+          "day-count bucket granularity differs from the target's declared granularity (WF-058)";
+      let true_periods =
+        match c with
+        | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; _ } ->
+            if not (kenmerk_temporal ot_decl k) then
+              Value.fault "gedurende over %S, which is not a temporal characteristic (WF-058)" k;
+            Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]
+        | _ ->
+            Value.fault
+              "unsupported day-count condition shape (an own temporal characteristic; no corpus \
+               case for more)"
+      in
+      let result = Timeline.aantal_dagen_in g true_periods in
+      (* the ch. 7.8 timeline arm, as for pro-rata *)
+      if
+        result = []
+        && List.mem (norm ot, norm attr)
+             (Ir_v0.Desugar.standing_temporal_targets env.doc)
+      then (w, false)
+      else World.write_timeline w ~label:self.label ~attr result
   | _ ->
       Value.fault
-        "a temporal target takes only the ch. 3.7 pro-rata shape (an own temporal base with a \
-         gedurende condition); no corpus case for more"
+        "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape (a \
+         gedurende condition over an own temporal characteristic); no corpus case for more"
 
 let run_rule env world (r : resolved_regel) =
   if not (applies env r.rr_geldigheid) then (world, false)
@@ -824,7 +859,7 @@ let run_rule env world (r : resolved_regel) =
         | _ ->
             if temporal_target then
               match r.waarde with
-              | Some (Functie { kind = Tijdsevenredig_deel; _ }) -> ()
+              | Some (Functie { kind = Tijdsevenredig_deel | Aantal_dagen_in; _ }) -> ()
               | _ ->
                   Value.fault
                     "temporal attribute %S as a target: temporal writes are not implemented"

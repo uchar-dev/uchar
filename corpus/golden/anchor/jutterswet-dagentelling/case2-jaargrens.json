@@ -1,0 +1,71 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "borgplichtig": [
+            {
+              "from": "2024-12-30",
+              "to": "2025-01-03"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "borgdagen",
+      "timeline": [
+        {
+          "from": "2024-12-01",
+          "to": "2025-01-01",
+          "value": {
+            "number": "2"
+          }
+        },
+        {
+          "from": "2025-01-01",
+          "to": "2025-02-01",
+          "value": {
+            "number": "2"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "jaardagen",
+      "timeline": [
+        {
+          "from": "2024-01-01",
+          "to": "2025-01-01",
+          "value": {
+            "number": "2"
+          }
+        },
+        {
+          "from": "2025-01-01",
+          "to": "2026-01-01",
+          "value": {
+            "number": "2"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

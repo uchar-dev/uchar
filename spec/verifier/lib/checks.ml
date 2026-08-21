@@ -2024,20 +2024,53 @@ let expression_layer ctx =
       in
       (* The target lvalue is WF-022's job, not part of the WF-034 walk. *)
       (* WF-056 (rule level): a pro-rata value on a temporal target MUST
-         bucket at the target's declared granularity *)
+         bucket at the target's declared granularity; WF-058 states the
+         same facet for the ch. 3.8 day count *)
       (match (r.doel, r.waarde) with
       | ( Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }),
-          Some (Functie { kind = Tijdsevenredig_deel; granulariteit = Some g; _ }) ) -> (
+          Some
+            (Functie
+               { kind = (Tijdsevenredig_deel | Aantal_dagen_in) as kind;
+                 granulariteit = Some g; _ }) ) -> (
+          let wf, what =
+            if kind = Tijdsevenredig_deel then ("WF-056", "pro-rata") else ("WF-058", "day-count")
+          in
           match objecttype ctx ot with
           | Some otd -> (
               match List.find_opt (fun (n, _) -> norm n = norm a) otd.attribuut_granulariteit with
               | Some (_, Some tg) when tg <> g ->
-                  [ v "WF-056" (at ^ "/waarde")
-                      "pro-rata bucket granularity differs from the target's declared granularity"
+                  [ v wf (at ^ "/waarde")
+                      (what ^ " bucket granularity differs from the target's declared granularity")
                   ]
               | _ -> [])
           | None -> [])
       | _ -> [])
+      (* WF-058 (rule level): the day count MUST carry a gedurende
+         condition over an own temporal characteristic and takes no
+         arguments (the counting fold has no base) *)
+      @ (match r.waarde with
+        | Some (Functie ({ kind = Aantal_dagen_in; _ } as f)) ->
+            (if f.argumenten <> [] then
+               [ v "WF-058" (at ^ "/waarde/argumenten") "aantal-dagen-in takes no arguments" ]
+             else [])
+            @ (match f.filter with
+              | None -> [ v "WF-058" (at ^ "/waarde") "aantal-dagen-in without a gedurende condition" ]
+              | Some (Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; _ }) -> (
+                  match Option.bind subject (objecttype ctx) with
+                  | Some otd
+                    when not
+                           (List.exists
+                              (fun (n, _) -> norm n = norm k)
+                              otd.kenmerk_granulariteit) ->
+                      [ v "WF-058" (at ^ "/waarde/filter")
+                          ("gedurende over '" ^ k ^ "', which is not a temporal characteristic")
+                      ]
+                  | _ -> [])
+              | Some _ ->
+                  [ v "WF-058" (at ^ "/waarde/filter")
+                      "the day-count gedurende condition is an own temporal characteristic check"
+                  ])
+        | _ -> [])
       @ (match r.waarde with Some e -> walk_expr ctx ~subject (at ^ "/waarde") e | None -> [])
       @ (match r.rr_voorwaarde with
          | Some c -> walk_cond ctx ~subject (at ^ "/voorwaarde") c

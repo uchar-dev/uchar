@@ -50,6 +50,12 @@
 #   - jutterswet-borgdeel/case5-input-blijft.json: the temporal
 #     standing (ch. 7.8, timeline arm) — a non-deciding pro-rata fold
 #     (empty result) leaves the input timeline standing whole.
+#   - jutterswet-dagentelling/case3-leeg.json: the ch. 3.8 day count
+#     over no condition periods writes nothing — empty stays empty
+#     (never written) IS the assertion.
+#   - jutterswet-dagentelling/case4-input-blijft.json: the temporal
+#     standing for the day count — a non-deciding count leaves the
+#     input timeline standing whole (ch. 7.8, timeline arm).
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
@@ -61,7 +67,9 @@ corpus/golden/anchor/jutterswet-waardestelling/case3-leeg-valt-door.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case6-leeg-doorval-input.json
 corpus/golden/anchor/jutterswet-hardheid/case3-stilte.json
 corpus/golden/anchor/jutterswet-hardheid/case4-hardheidsgrens.json
-corpus/golden/anchor/jutterswet-borgdeel/case5-input-blijft.json'
+corpus/golden/anchor/jutterswet-borgdeel/case5-input-blijft.json
+corpus/golden/anchor/jutterswet-dagentelling/case3-leeg.json
+corpus/golden/anchor/jutterswet-dagentelling/case4-input-blijft.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2

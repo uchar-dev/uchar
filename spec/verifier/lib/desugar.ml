@@ -193,7 +193,10 @@ let standing_targets_gen ~temporal (doc : document) : (string * string) list =
      there instead *)
   let executable (r : resolved_regel) =
     (not temporal)
-    || match r.waarde with Some (Functie { kind = Tijdsevenredig_deel; _ }) -> true | _ -> false
+    ||
+    match r.waarde with
+    | Some (Functie { kind = Tijdsevenredig_deel | Aantal_dagen_in; _ }) -> true
+    | _ -> false
   in
   List.filter_map
     (fun r ->
