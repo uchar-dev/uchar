@@ -191,7 +191,14 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
             a.name = "inconsistent"
             && (match a.args with
                | [ A_str r; subj ] ->
-                   (match rule with None -> true | Some want -> norm r = norm want)
+                   (match rule with
+                   | None -> true
+                   | Some want ->
+                       (* version-stripped on both sides, like ref's
+                          checker: the channel key is version-stripped
+                          (ch. 5.6) *)
+                       norm (Ir_v0.Checks.strip_version r)
+                       = norm (Ir_v0.Checks.strip_version want))
                    && (match label with
                       | None -> true
                       | Some l -> ( match subj with A_str s -> String.equal s l | _ -> false))

@@ -441,37 +441,45 @@ let load_expectation (doc : document) (world : World.t) (j : Yojson.Safe.t) : ex
          mismatch. Valid names: every form name (version-stripped or
          full), ladder names, and the target form key an unordered
          ladder group deposits under. *)
+      let channel_names () =
+        (* every name a channel fact can carry: form names (the check
+           matches version-stripped, per ch. 5.6's version-stripped
+           key) and the target-form key an unordered ladder group
+           deposits under — ladder MEMBER names never reach the
+           channel and are deliberately absent *)
+        List.filter_map (fun (x : resolved_regel) -> x.rr_naam) doc.resolved_regels
+        @ List.filter_map (fun (x : resolved_object_creatie) -> x.oc_naam) doc.object_creaties
+        @ List.filter_map (fun (x : resolved_verdeling) -> x.vd_naam) doc.verdelingen
+        @ List.filter_map (fun (x : resolved_consistentie) -> x.cons_naam) doc.consistenties
+        @ List.filter_map (fun (x : resolved_uniciteit) -> x.uni_naam) doc.uniciteiten
+        @ List.filter_map (fun (x : resolved_uniciteit_unie) -> x.uu_naam) doc.uniciteit_unies
+        @ List.filter_map (fun (x : resolved_feit_creatie) -> x.fc_naam) doc.feit_creaties
+        @ List.map
+            (fun (l : default_ladder) ->
+              l.dl_onderwerp ^ "."
+              ^ match (l.dl_kenmerk, l.dl_attribuut) with
+                | Some k, _ -> k
+                | _, Some a -> a
+                | _ -> "?")
+            doc.default_ladders
+      in
       let known_rule r =
         let module C = Ir_v0.Checks in
-        let hit n = n <> None && (norm (Option.get n) = norm r || norm (C.strip_version (Option.get n)) = norm r) in
-        List.exists (fun (x : resolved_regel) -> hit x.rr_naam) doc.resolved_regels
-        || List.exists (fun (x : resolved_object_creatie) -> hit x.oc_naam) doc.object_creaties
-        || List.exists (fun (x : resolved_verdeling) -> hit x.vd_naam) doc.verdelingen
-        || List.exists (fun (x : resolved_consistentie) -> hit x.cons_naam) doc.consistenties
-        || List.exists (fun (x : resolved_uniciteit) -> hit x.uni_naam) doc.uniciteiten
-        || List.exists (fun (x : resolved_uniciteit_unie) -> hit x.uu_naam) doc.uniciteit_unies
-        || List.exists (fun (x : resolved_feit_creatie) -> hit x.fc_naam) doc.feit_creaties
-        || List.exists
-             (fun (l : default_ladder) ->
-               hit l.dl_naam
-               ||
-               let target_form =
-                 l.dl_onderwerp ^ "."
-                 ^ match (l.dl_kenmerk, l.dl_attribuut) with
-                   | Some k, _ -> k
-                   | _, Some a -> a
-                   | _ -> "?"
-               in
-               norm target_form = norm r)
-             doc.default_ladders
+        List.exists
+          (fun n -> norm (C.strip_version n) = norm (C.strip_version r))
+          (channel_names ())
       in
       (match (opt_str "rule", opt_str "label") with
       | None, Some _ -> fail "an inconsistent label pin requires a rule pin"
       | (Some r, _) when not (known_rule r) ->
+          let cands = List.sort_uniq compare (channel_names ()) in
+          let shown = List.filteri (fun i _ -> i < 8) cands in
           fail
             "inconsistent expectation references unknown rule %S: no form in the document \
-             carries that name"
+             carries that name (present, non-exhaustive: %s%s)"
             r
+            (String.concat ", " (List.map (Printf.sprintf "%S") shown))
+            (if List.length cands > 8 then ", …" else "")
       | rule, (Some l as label) ->
           if SMap.find_opt l world.instances = None then
             fail "inconsistent expectation references unknown label %S" l
@@ -604,7 +612,14 @@ let check (case : t) (final : World.t) : string list =
                        final.channel)))
       | Inconsistent { rule; label } -> (
           let matches (f : World.error_fact) =
-            (match rule with None -> true | Some r -> norm f.rule = norm r)
+            (match rule with
+            | None -> true
+            | Some r ->
+                (* version-stripped on both sides: the channel is keyed
+                   by rule name version-stripped (ch. 5.6), so a pin
+                   "X" matches a deposit from version "X #2" *)
+                norm (Ir_v0.Checks.strip_version f.rule)
+                = norm (Ir_v0.Checks.strip_version r))
             && match label with None -> true | Some l -> String.equal f.subject l
           in
           match List.find_opt matches final.channel with
