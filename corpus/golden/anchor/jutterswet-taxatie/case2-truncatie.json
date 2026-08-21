@@ -33,6 +33,34 @@
         },
         "roles": {},
         "characteristics": []
+      },
+      {
+        "label": "K3",
+        "objectType": "Kavel",
+        "attributes": {
+          "opbrengst": {
+            "number": "10"
+          },
+          "partijen": {
+            "number": "-3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K4",
+        "objectType": "Kavel",
+        "attributes": {
+          "opbrengst": {
+            "number": "-10"
+          },
+          "partijen": {
+            "number": "-3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
       }
     ],
     "parameters": {}
@@ -52,6 +80,22 @@
       "attribute": "stukprijs",
       "value": {
         "number": "-3.33333"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K3",
+      "attribute": "stukprijs",
+      "value": {
+        "number": "-3.33333"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K4",
+      "attribute": "stukprijs",
+      "value": {
+        "number": "3.33333"
       }
     },
     {

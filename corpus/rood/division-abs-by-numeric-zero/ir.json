@@ -16,7 +16,7 @@
           "node": "Numeriek",
           "geheel": true,
           "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
+          "teken": "ONBEPAALD",
           "eenheid": null
         },
         "stukprijs": {
@@ -164,7 +164,7 @@
             "node": "Numeriek",
             "geheel": true,
             "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
+            "teken": "ONBEPAALD",
             "eenheid": null
           },
           "bron": "de partijen van de Kavel",
