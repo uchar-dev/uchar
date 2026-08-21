@@ -147,6 +147,19 @@ Declared names are carried verbatim (whitespace-collapsed, case
 preserved). Name *matching* is case-insensitive: the source language
 declares names not to be case-distinguishing (§13.2.30).
 
+- **WF-057** Every declared name — object type, attribute,
+  characteristic, plural, role, fact type, parameter, domain, unit
+  system, dimension, timeline, day kind, and every form, rule-group and
+  ladder name — MUST be **target-text-safe**: free of the double quote
+  (`"`), the backslash (`\`) and control characters (below U+0020).
+  Such a name lands between quotes in generated target text (the ASP
+  program, DRL string literals, diagnostics), where these characters
+  break the syntax; a backend-side quoting fence catches them last-line
+  and one executor's refusal makes the document untestable
+  differentially — this rule rejects the document itself, once, for
+  every backend at once. (Decided by the maintainer 2026-08-21; the
+  clingo quoting fence remains as the vangnet.)
+
 - **WF-001** Within each of the eight top-level namespaces (object types,
   fact types, parameters, domains, unit systems, dimensions, timelines, day
   kinds), declared names MUST be unique under case-insensitive comparison.
@@ -1444,6 +1457,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-054 | parent-scoped uniqueness: the scope role resolves (bound or uniquely derivable from the written scope field), its near side fills the subject, the written name denotes the bound role, the scope role is to-one; a scope binding on an unscoped uniqueness is ill-formed | gate 3 | `anchor/jutterswet-kustregister` (bound and bindingless scoped forms, executed by gates 5–6 with the scope-less exclusion pinned) + `jutterswet-postwacht` (emitter-produced `scopeRol` since the 2026-08-18 pin bump) | `wf054-dangling-scope-binding` (resolution) + `wf054-to-many-scope-role` (cardinality) + `wf054-binding-on-unscoped` (the non-scoped guard) |
 | WF-055 | the gedurende clip: a filter on the temporal total is a timeline operation — its condition is an own temporal characteristic check or a per-segment comparison of an own temporal attribute against a scalar bound | gate 3 | `jutterswet-getijdenwacht` (both clip shapes, the 71-pattern and the three zero shapes, executed by gates 5–6) | `wf055-nontemporal-clip-kenmerk` (temporality) + `wf055-navigated-clip-condition` (condition shape) |
 | WF-056 | the pro-rata fold (tijdsevenredig-deel) MUST carry a gedurende condition and one temporal source argument (a temporal attribute or granular parameter) as coarse as or coarser than its bucket; on a temporal target the bucket granularity MUST equal the target's declared granularity | gate 3 | `anchor/jutterswet-borgdeel` (the ch. 3.7 fold, executed by gates 5–6) | `wf056-no-gedurende-condition` + `wf056-scalar-base` + `wf056-bucket-target-mismatch` |
+| WF-057 | declared names are target-text-safe: no double quote, backslash or control character in any declared/form name (ch. 2.1) | gate 3 | every golden (all declared names pass) | `wf057-quote-in-attribute` + `wf057-backslash-in-kenmerk` + `wf057-newline-in-rule-name` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

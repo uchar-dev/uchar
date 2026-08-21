@@ -3155,6 +3155,87 @@ let wf051 ctx =
          | _ -> [])
        ctx.doc.default_ladders)
 
+(* WF-057: declared names are target-text-safe (IR-SPEC ch. 2). A
+   declared name — object type, attribute, characteristic, plural,
+   role, fact type, parameter, domain, unit system, dimension,
+   timeline, day kind, or any form/group/ladder name — MUST NOT carry
+   a double quote, a backslash, or a control character: such a name
+   breaks a quoted target text (the hunted ASP crash the backend's
+   quoting fence catches last-line; this rule catches it at the
+   document, for every backend at once). *)
+let wf057 ctx =
+  let bad s =
+    String.exists (fun c -> c = '"' || c = '\\' || Char.code c < 0x20) s
+  in
+  let show s =
+    String.concat ""
+      (List.map
+         (fun c ->
+           if c = '"' then "\\\""
+           else if c = '\\' then "\\\\"
+           else if Char.code c < 0x20 then Printf.sprintf "\\u%04x" (Char.code c)
+           else String.make 1 c)
+         (List.init (String.length s) (String.get s)))
+  in
+  let check at what name =
+    match name with
+    | Some n when bad n ->
+        [ v "WF-057" at
+            (Printf.sprintf
+               "%s \"%s\" carries a quote, backslash or control character — declared names must \
+                be target-text-safe"
+               what (show n)) ]
+    | _ -> []
+  in
+  let keys at what pairs = List.concat_map (fun (k, _) -> check at what (Some k)) pairs in
+  List.concat
+    [ List.concat_map
+        (fun (key, (ot : objecttype)) ->
+          let at = "/objecttypen/" ^ key in
+          check at "object type name" (Some key)
+          @ check at "object type name" ot.ot_naam
+          @ check at "plural" ot.meervoud
+          @ keys at "attribute name" ot.attributen
+          @ List.concat_map (fun (_, m) -> check at "attribute plural" m) ot.attribuut_meervoud
+          @ List.concat_map (fun k -> check at "characteristic name" k) ot.kenmerken)
+        ctx.doc.objecttypen;
+      List.concat_map
+        (fun (key, (ft : feittype)) ->
+          let at = "/feittypen/" ^ key in
+          check at "fact type name" (Some key)
+          @ check at "fact type name" ft.ft_naam
+          @ List.concat_map
+              (fun (r : rol) ->
+                check at "role name" r.rol_naam @ check at "role plural" r.rol_meervoud)
+              ft.rollen)
+        ctx.doc.feittypen;
+      keys "/parameters" "parameter name" ctx.doc.parameters;
+      keys "/domeinen" "domain name" ctx.doc.domeinen;
+      keys "/eenheidstelsels" "unit system name" ctx.doc.eenheidstelsels;
+      List.concat_map
+        (fun (key, (d : dimensie)) ->
+          let at = "/dimensies/" ^ key in
+          check at "dimension name" (Some key)
+          @ check at "dimension name" d.dim_naam
+          @ check at "dimension plural" d.dim_naam_meervoud)
+        ctx.doc.dimensies;
+      List.concat_map (fun (tl : tijdlijn) -> check "/tijdlijnen" "timeline name" tl.tl_naam)
+        ctx.doc.tijdlijnen;
+      List.concat_map (fun d -> check "/dagsoorten" "day kind name" d) ctx.doc.dagsoorten;
+      List.concat_map
+        (fun (_, entries) ->
+          List.concat_map (fun (n, _, at) -> check at "form name" n) entries)
+        (form_arrays ctx);
+      List.concat_map
+        (fun (g : resolved_regel_groep) ->
+          check "/regelGroepen" "rule group name" g.rgr_naam)
+        ctx.doc.regel_groepen;
+      List.mapi
+        (fun i (l : default_ladder) ->
+          check (Printf.sprintf "/defaultLadders/%d" i) "ladder name" l.dl_naam)
+        ctx.doc.default_ladders
+      |> List.concat ]
+
 let all (doc : document) : violation list =
   let ctx = { doc } in
   List.concat
@@ -3164,4 +3245,5 @@ let all (doc : document) : violation list =
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf032 ctx; wf033 ctx; wf045_046 ctx;
       wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf054 ctx;
+      wf057 ctx;
       expression_layer ctx ]
