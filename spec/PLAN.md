@@ -12,19 +12,19 @@ enforcement mechanism for protected files, corpus-synthesis circularity,
 session-end bookkeeping); extends §9 with the corpus-provenance decision and
 two new open decisions (license, visibility).*
 
-*Changes in v6 relative to v5 (2026-08-21): every phase through 4
-carries its Met marking with evidence (Phase 0 via the source-anchoring
-landing; Phase 2 with the Drools leg explicitly indirect; Phases 1, 3
-and 4 as previously marked), and Phase 5 carries its adopted proposal
-with all six decisions taken — the plan states the actual position;
-nothing in it waits on a decision.*
-
 *Changes in v5 relative to v4: §9 decisions 7, 9 and 10 are taken (empty
 frozen to the mirror + whitelist; Apache-2.0 + CC-BY-4.0; public at latest
 at the Phase-1 exit); full-Catala expressibility becomes the Phase-5 goal
 (general folds and function values planned core, `CONSTRUCTS.md` rows
 10/36); the allocation edge holes and the row-30 "is gevuurd" verdict are
 decided in `RUNTIME-SEMANTICS.md`.*
+
+*Changes in v6 relative to v5 (2026-08-21): every phase through 4
+carries its Met marking with evidence (Phase 0 via the source-anchoring
+landing; Phase 2 with the Drools leg explicitly indirect; Phases 1, 3
+and 4 as previously marked), and Phase 5 carries its adopted proposal
+with all six decisions taken — the plan states the actual position;
+nothing in it waits on a decision.*
 
 ## 1. Vision and background
 
@@ -73,8 +73,9 @@ carried on every expression, and expressiveness gaps are honestly marked
 rule-version validity, timelines with granularity, parameter vintages with
 fail-fast selection — is strong within its single time axis.
 
-Three findings, however, block the universal ambition, and they are
-connected. First, there is no serialization format and no normative
+Three findings, however — as the founding review found them; Phases
+1–4 have since answered each — blocked the universal ambition, and
+they are connected. First, there is no serialization format and no normative
 specification: the IR exists only as in-memory Java between resolver and
 transpiler, so there is nothing a second frontend or a non-JVM backend could
 attach to. Second, the semantics that matter most — empty-value discipline
@@ -249,7 +250,9 @@ column doubling as the roadmap). The source-anchoring card
 (`backlog/done/20260815-bron-anchoring.md`) landed the other two
 criteria in `regelspraak-java`: the `Bron(file, line, column,
 snippet)` record replaces the bare string on `Expr`, `Conditie` and
-every `Resolved*` form that ever carried a source anchor — real
+every executable-law `Resolved*` form that ever carried a source
+anchor (the test-harness `ResolvedScenario`, row 37, keeps its
+string by design) — real
 coordinates at every resolver construction site bar one synthetic
 literal, with container forms deriving position through their
 component expressions — and `// Bron:` statute annotations ride the
@@ -352,17 +355,19 @@ runtime (structural: different repository, no dependency).
 (`scripts/check-oracle.sh`) replays every golden case through `ref/`
 with exact expectation match, and the no-shared-code criterion is
 structural fact (separate repository, no dependency, no copy-paste —
-`ref/` was written against the spec). The Drools≡interpreter leg runs
-**indirectly**: the toolchain's own differential holds Drools to the
-v0 runtime, and the emitter-golden conformance (`make
-uchar-conformance` at the `SPEC_REV` pin) plus gates 5–6 hold the
-same corpus documents to `ref/` (and `clingo`) — the triangle closes
-through the shared corpus, not through a direct
-Drools-executes-uchar-cases gate. That direct leg is a recorded open
-flank, not claimed: it needs the toolchain to *execute* uchar case
-files — the same machinery a ladder-producing frontend needs (Phase
-5) — and the divergence class it could catch is meanwhile fenced by
-the corpus-scoped agreement plus the spec-first delta regime.
+`ref/` was written against the spec). The Drools≡interpreter leg is
+**indirect and partial**, in the Phase-4 house phrasing: the
+toolchain's own differential holds its two Drools back-ends to each
+other and to pinned absolute values (both share the one v0 runtime —
+parity plus pins, not an independent oracle), while the
+emitter-golden conformance (`make uchar-conformance` at the
+`SPEC_REV` pin) plus gates 5–6 hold the same corpus *documents* to
+`ref/` and `clingo`. No gate runs Drools against uchar cases; that
+direct leg is a recorded open flank, not claimed — it needs the
+toolchain to *execute* uchar case files, the same machinery a
+ladder-producing frontend needs (Phase 5), and the divergence class
+it could catch is meanwhile fenced by the corpus-scoped agreement
+plus the spec-first delta regime.
 
 ### Phase 3 — Semantic anchor in ASP, then the Clingo backend
 
@@ -643,5 +648,6 @@ stands with it.
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3
 and 4 each in the same order of magnitude; Phase 5 comparable once 1–4 hold —
-all depending on whether this is evenings or work time. The gate set grows
+all depending on whether this is evenings or work time. *(As of
+2026-08-21 Phases 0–4 are Met; the estimate stands only for Phase 5.)* The gate set grows
 monotonically: nothing that has entered it may regress.
