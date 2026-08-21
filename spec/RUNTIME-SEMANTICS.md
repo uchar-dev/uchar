@@ -2141,8 +2141,9 @@ predicate is shared between the executors (one definition), the ASP
 entry is the ladder's `inputval/3` with an effectiveness atom carrying
 condition **and** value bindings (a condition-only atom would encode
 the v0 erase instead — the atom's body is the semantic choice).
-**The timeline arm (the temporal-standing card, 2026-08-21):** the
-norm extends to a **standing temporal target** — a
+**The timeline arm (decided by the maintainer 2026-08-21, the
+temporal-standing card's numbered question — whole-timeline over
+per-bucket):** the norm extends to a **standing temporal target** — a
 temporal attribute carried by exactly one version-free computing rule
 (in practice the ch. 3.7 pro-rata fold) as its only writer. The rule
 decides only when its result timeline is **gevuld** (at least one
