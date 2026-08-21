@@ -73,7 +73,9 @@
       }
     },
     {
-      "kind": "inconsistent"
+      "kind": "inconsistent",
+      "rule": "eenmalige bakencode",
+      "label": "B1"
     }
   ]
 }

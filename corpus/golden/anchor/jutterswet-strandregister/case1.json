@@ -46,7 +46,8 @@
   },
   "expected": [
     {
-      "kind": "inconsistent"
+      "kind": "inconsistent",
+      "rule": "eenmalig nummer"
     }
   ]
 }

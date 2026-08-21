@@ -64,7 +64,8 @@
       }
     },
     {
-      "kind": "inconsistent"
+      "kind": "inconsistent",
+      "rule": "eenmalig kaveletiket"
     }
   ]
 }

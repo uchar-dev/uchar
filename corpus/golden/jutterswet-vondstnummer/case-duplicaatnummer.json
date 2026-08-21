@@ -28,5 +28,5 @@
     ],
     "parameters": {}
   },
-  "expected": [ { "kind": "inconsistent" } ]
+  "expected": [ { "kind": "inconsistent", "rule": "eenmalig vondstnummer" } ]
 }

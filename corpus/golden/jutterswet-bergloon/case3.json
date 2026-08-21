@@ -51,7 +51,9 @@
       }
     },
     {
-      "kind": "inconsistent"
+      "kind": "inconsistent",
+      "rule": "helpersdeel van een berging",
+      "label": "B1"
     }
   ]
 }

@@ -33,7 +33,9 @@
       "characteristic": "toelage"
     },
     {
-      "kind": "inconsistent"
+      "kind": "inconsistent",
+      "rule": "Jutter.toelage",
+      "label": "M"
     }
   ]
 }

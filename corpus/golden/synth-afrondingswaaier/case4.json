@@ -49,7 +49,9 @@
       "attribute": "prijsFijn"
     },
     {
-      "kind": "inconsistent"
+      "kind": "inconsistent",
+      "rule": "prijs benedenaf van een veilingronde",
+      "label": "V1"
     }
   ]
 }

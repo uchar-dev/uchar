@@ -36,7 +36,9 @@
       "characteristic": "toelage"
     },
     {
-      "kind": "inconsistent"
+      "kind": "inconsistent",
+      "rule": "Jutter.gerechtigd",
+      "label": "M"
     }
   ]
 }

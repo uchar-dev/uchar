@@ -63,7 +63,9 @@
       "attribute": "restlengte"
     },
     {
-      "kind": "inconsistent"
+      "kind": "inconsistent",
+      "rule": "stukprijs van een zeil",
+      "label": "Z1"
     }
   ]
 }

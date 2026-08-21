@@ -55,7 +55,9 @@
       }
     },
     {
-      "kind": "inconsistent"
+      "kind": "inconsistent",
+      "rule": "marge van een partij",
+      "label": "P1"
     }
   ]
 }
