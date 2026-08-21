@@ -606,7 +606,8 @@ positions (ref faults date arithmetic — day numbers must not silently
 compute); unscalable datatypes in the integer encoding (a
 datatype-less *declaration* is since 2026-08-21 rejected by WF-059
 with the shared loader refusing its input as backstop — the fault
-here remains the last line for text/enum/boolean operand positions);
+here remains the last line for text/enum/boolean/dateTime operand
+positions);
 characteristic attribution with a non-waar value;
 non-proportional and conditional allocation; misaligned allocation
 and rounding scales; som fallbacks other than 0; uniqueness key

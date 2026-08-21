@@ -3196,27 +3196,6 @@ let wf051 ctx =
    breaks a quoted target text (the hunted ASP crash the backend's
    quoting fence catches last-line; this rule catches it at the
    document, for every backend at once). *)
-(* WF-059: every declared attribute carries a datatype — the attribute
-   pendant of WF-018's datatype clause. A datatype-less declaration is
-   loadable (the wire admits null) but splits the executors on
-   verifier-clean input: ref reads case input against it as a bare
-   unitless number while the integer-scaling translation cannot scale
-   it. The shared case loader refuses such input as the last-line
-   backstop. *)
-let wf059 ctx =
-  List.concat_map
-    (fun (key, (ot : objecttype)) ->
-      List.concat_map
-        (fun (an, dt) ->
-          match dt with
-          | None ->
-              [ v "WF-059"
-                  ("/objecttypen/" ^ key ^ "/attributen/" ^ an)
-                  "declared attribute carries no datatype" ]
-          | Some _ -> [])
-        ot.attributen)
-    ctx.doc.objecttypen
-
 let wf057 ctx =
   let bad s =
     String.exists (fun c -> c = '"' || c = '\\' || Char.code c < 0x20) s
@@ -3289,6 +3268,27 @@ let wf057 ctx =
           check (Printf.sprintf "/defaultLadders/%d" i) "ladder name" l.dl_naam)
         ctx.doc.default_ladders
       |> List.concat ]
+
+(* WF-059: every declared attribute carries a datatype — the attribute
+   pendant of WF-018's datatype clause. A datatype-less declaration is
+   loadable (the wire admits null) but splits the executors on
+   verifier-clean input: ref reads case input against it as a bare
+   unitless number while the integer-scaling translation cannot scale
+   it. The shared case loader refuses such input as the last-line
+   backstop. *)
+let wf059 ctx =
+  List.concat_map
+    (fun (key, (ot : objecttype)) ->
+      List.concat_map
+        (fun (an, dt) ->
+          match dt with
+          | None ->
+              [ v "WF-059"
+                  ("/objecttypen/" ^ key ^ "/attributen/" ^ an)
+                  "declared attribute carries no datatype" ]
+          | Some _ -> [])
+        ot.attributen)
+    ctx.doc.objecttypen
 
 let all (doc : document) : violation list =
   let ctx = { doc } in

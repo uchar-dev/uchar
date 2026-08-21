@@ -161,17 +161,6 @@ declares names not to be case-distinguishing (§13.2.30).
   clingo quoting fence remains as the last-line backstop, and alone
   still covers case labels, which are case-side.)
 
-- **WF-059** Every declared attribute MUST carry a datatype — the
-  attribute pendant of WF-018's datatype clause for parameters. The
-  wire admits `null` in the attribute map, but a datatype-less
-  declaration splits the executors on otherwise verifier-clean input:
-  the reference interpreter reads case input against it as a bare
-  unitless number while the integer-scaling ASP translation cannot
-  scale it (the "unscalable datatype" fault). This rule rejects the
-  document itself; the shared case loader additionally refuses a
-  value against a datatype-less declaration as the last-line
-  backstop.
-
 - **WF-001** Within each of the eight top-level namespaces (object types,
   fact types, parameters, domains, unit systems, dimensions, timelines, day
   kinds), declared names MUST be unique under case-insensitive comparison.
@@ -265,6 +254,21 @@ member; lifting temporality into the datatype itself (timeline-of-element)
 is the remaining step of the row-11 delta and lands with the expression
 layer, where it has consequences. Recorded here so it is not mistaken for a
 settled shape.
+
+- **WF-059** Every declared attribute MUST carry a datatype — the
+  attribute pendant of WF-018's datatype clause for parameters. The
+  wire admits `null` in the attribute map, but a datatype-less
+  declaration splits the executors on otherwise verifier-clean input:
+  the reference interpreter reads case input against it as a bare
+  unitless number while the integer-scaling ASP translation cannot
+  scale it (the "unscalable datatype" fault). This rule rejects the
+  document itself; the shared case loader additionally refuses a
+  value against a datatype-less declaration as the last-line
+  backstop. (Decided by the maintainer 2026-08-21, on the numbered
+  question the card's lens round required: the corpus carries no null
+  datatype anywhere, the emitter emits one only if its model carries
+  it, and should the mirror ever legitimately do so, gate 3 fails
+  loudly and the tracked-delta route reopens.)
 
 - **WF-004** A dimensioned attribute's `dimensions` list MUST be non-empty,
   duplicate-free, and every entry MUST resolve to a declared Dimension
@@ -1471,7 +1475,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-056 | the pro-rata fold (tijdsevenredig-deel) MUST carry a gedurende condition and one temporal source argument (a temporal attribute or granular parameter) as coarse as or coarser than its bucket; on a temporal target the bucket granularity MUST equal the target's declared granularity | gate 3 | `anchor/jutterswet-borgdeel` (the ch. 3.7 fold, executed by gates 5–6) | `wf056-no-gedurende-condition` + `wf056-scalar-base` + `wf056-bucket-target-mismatch` |
 | WF-057 | declared names are target-text-safe: no double quote, backslash or control character in any declared/form name (ch. 2.1) | gate 3 | every golden (a universal name-safety property: no single legal name exercises the boundary more than another; gate 3 witnesses none over-rejects) | `wf057-quote-in-attribute` + `wf057-backslash-in-kenmerk` + `wf057-newline-in-rule-name` |
 | WF-058 | the day count (aantal-dagen-in, `RUNTIME-SEMANTICS.md` ch. 3.8) MUST carry a gedurende condition over an own temporal characteristic, takes no arguments, and its stated bucket MUST equal the target's declared granularity | gate 3 | `anchor/jutterswet-dagentelling` (the ch. 3.8 worked example verbatim, executed by gates 5–6) | `wf058-no-gedurende-condition` + `wf058-bucket-target-mismatch` + `wf058-with-argument` |
-| WF-059 | every declared attribute carries a datatype (ch. 2.1 — the attribute pendant of WF-018's datatype clause; a null datatype splits the executors on otherwise clean input) | gate 3 | every golden (a universal declaration property; gate 3 witnesses none over-rejects) | `wf059-attribute-without-datatype` |
+| WF-059 | every declared attribute carries a datatype (ch. 2.2 — the attribute pendant of WF-018's datatype clause; a null datatype splits the executors on otherwise clean input) | gate 3 | every golden (a universal declaration property; gate 3 witnesses none over-rejects) | `wf059-attribute-without-datatype` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

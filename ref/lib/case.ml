@@ -85,7 +85,7 @@ let value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t =
      the integer-scaling translation cannot scale) — the shared loader
      refuses it in both, last-line behind the verifier's rejection *)
   | "number", None ->
-      fail "%s: a value against a declaration without a datatype (WF-059)" at
+      fail "%s: a value against a declaration without a datatype (WF-059 for attributes, WF-018 for parameters)" at
   | "date", Some Datum_in_dagen -> Value.date_of_iso (str v)
   | "dateTime", Some Datum_tijd -> Value.Date_time (ms_of_datetime (str v))
   | "boolean", Some Booleaan -> (
