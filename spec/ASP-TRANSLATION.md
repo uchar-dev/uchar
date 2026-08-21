@@ -322,15 +322,19 @@ an instance without the attribute contributes no tuple, and the empty
 tuple set is clingo's native 0, which is why only the fallback-0
 facet translates (a som without it would need an explicit non-empty
 guard to distinguish leeg from 0; faults until a corpus case demands
-it, S14). Both aggregates are fenced: each contributor at 46340 *and*
+it, S14). The *sum* is doubly fenced: each contributor at 46340 *and*
 the contributor count at 46340 (`viol` when `46340 < #count{...}`),
-so the accumulated sum provably stays inside 2^31.
+so the accumulated sum provably stays inside 2^31. The bare count
+carries no fence — a `#count` cannot approach 2^31 before grounding
+itself becomes infeasible (recorded, not guarded; ch. 6c).
 
 **Temporal total, clipped** (totaal ... gedurende, ch. 3.6): the
 clip predicates a fold over the subject's *own* temporal attribute on
-a condition timeline. Per clip N: the condition segments
-(`clN_cond(S,V2,T2)` — a `ktl/4` read, or a per-segment comparison of
-an own temporal attribute), the four-way segment intersection
+a condition timeline. Per clip N: the condition segments (the
+`ktl/4` atoms read directly for the kenmerk shape, or — for the
+per-segment comparison of an own temporal attribute — an
+intermediate `clN_cond(S,V2,T2)` predicate), the four-way segment
+intersection
 (`clN_seg(S,V,T,W)` with V = max of starts, T = min of ends), the
 calendar as *data* (`clN_wu(V,T,N)`: whole units per clipped span),
 and the total `Q = #sum { W*N,V,T : clN_seg(S,V,T,W), clN_wu(V,T,N)
@@ -359,18 +363,21 @@ from, to, scaled value) and `ktl/4` condition segments, with civil
 day numbers as endpoints. Three readers and two producers translate.
 
 **Point read** (ch. 3.3): `tl(S,a,F,T,R), F <= D, D < T` — and for a
-granular parameter `param_tl("p",F,T,R)` likewise. A gap, an empty
-date, an uncovered vintage: the body is underivable, leeg for free
-(the vintage fail-fast is the shared `parameterset_check`, gate-8
-witness `corpus/rood/vintage-uncovered-date`). A point read needs the
+granular parameter `param_tl("p",F,T,R)` likewise. A gap or an empty
+date: the body is underivable, leeg for free. An uncovered *vintage*
+is the opposite — the shared `parameterset_check` fail-fast, run
+before emission (gate-8 witness
+`corpus/rood/vintage-uncovered-date`). A point read needs the
 full timeline in the case; the asOfDate-bucket scalar cannot serve it
 and faults (the ch. 4.3a convention: executors fault, never guess).
 
 **Pro-rata** (tijdsevenredig-deel, ch. 3.7): per fold N, the bucket
-calendar as data (`prN_b(bs,bn,days)` — only buckets the condition
-touches), the true-day intersection (`prN_d(S,B,KV,KT,D)`: days of
-`ktl` overlap per bucket), and the head `tl(S,a,B,N,⟨W·TD/Tot⟩)`
-under a `TD > 0` gate — an untouched bucket derives no segment.
+calendar as data (`prN_b(bs,bn,days)` — every bucket in the corpus
+endpoints' span; the calendar is condition-blind), the true-day
+intersection (`prN_d(S,B,KV,KT,D)`: days of `ktl` overlap per
+bucket), and the head `tl(S,a,B,N,⟨W·TD/Tot⟩)` under a `TD > 0`
+gate — the *head*, not the calendar, restricts to touched buckets:
+an untouched bucket derives no segment.
 The quotient translates only exactly: a non-exact pro-rata part
 derives `viol("non-exact pro-rata part (an explicit rounding is
 mandated before precision is lost)")`. WF-056 fences the shape at
@@ -379,12 +386,16 @@ gedurende, bucket = target granularity, base not finer than the
 bucket). **Day count** (aantal-dagen-in, ch. 3.8): the same bucket
 and true-day machinery (shared emit helpers) with the head carrying
 `TD` itself — pro-rata's numerator as the value, unitless; WF-058
-mirrors WF-056's facets. Fences on both: the 366-headroom weight
-bound and the 46340 contributor-count guard.
+mirrors WF-056's facets. The 46340 contributor-count guard is
+shared; the 366-headroom bound differs per producer — pro-rata
+fences the weight |W|, the day count fences the target's decimal
+scale (a compile-time fault).
 
 Both producers carry the ch. 7.8 **standing arm** (S10): a per-fold
 effectiveness atom (`prN_eff`/`adgN_eff`) with the full bucket body —
-including the exactness guard — and the defeasible input rule
+for pro-rata including its exactness guard; the day count has no
+quotient, so its eff body is the plain bucket body — and the
+defeasible input rule
 `tl(S,a,F,T,V) :- inputtl(S,a,F,T,V), is_a(S,ot), not prN_eff(S).`
 An empty fold derives no effectiveness and the input timeline stands
 **whole**, never mixed per bucket (the maintainer-ratified
@@ -418,7 +429,8 @@ disagreement between members derives
 X != Y` — the §9.5 channel, never an arbitrary pick (a singleton
 group elides the conflict machinery entirely). An `initialisatie`
 rung additionally requires `not grpG_has_input(S)`: initialisation
-yields to case input by definition (RS ch. 7.2).
+yields to case input by definition (RS ch. 7.3, and the virtual
+input rung of ch. 7.8 that sits above it).
 
 **Standing input** (RS ch. 7.8): case input on a defeasible target
 enters as `inputval/3` (S2) and re-enters the model through
@@ -485,9 +497,10 @@ encoded as the R≤C / R>C / uncapped cases), and the remainder
 ch. 4.4 holes: a weightless recipient, a negative or absent cap —
 keyed by the allocation's name, per subject. `viol/2` fences:
 negative pot, negative weight, empty pot, and the 46340 bounds on
-weight, pot, recipient count and share (the weight sum, the
+weight, pot and recipient count — plus, when a remainder attribute
+is declared, on each share the remainder sums (the weight sum, the
 pot×weight product and the share sum then provably stay inside
-2^31). Only the proportional method translates; conditional
+2^31; without a remainder the shares are bounded by construction). Only the proportional method translates; conditional
 allocation and misaligned scales fault (S14). Case input on the
 allocation's target attribute is refused — the ch. 6d
 superset-model fence.
