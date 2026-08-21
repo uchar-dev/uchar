@@ -41,6 +41,12 @@
 #     same fall-through in the ch. 7.7 desugaring domain (fire-but-leeg
 #     beside an initialisation, input standing) — the corner that was a
 #     prose pin until ref carried the ladder reading natively.
+#   - jutterswet-hardheid/case3-stilte.json: the discretionary route
+#     stays silent without a decision (six finds, no strandvoogd act) —
+#     the silence IS the legislator's intent (the hardship pattern).
+#   - jutterswet-hardheid/case4-hardheidsgrens.json: a decision does
+#     not waive the halved threshold — four finds stay short, nothing
+#     is attributed; the absence is the assertion.
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
@@ -49,7 +55,9 @@ corpus/golden/anchor/jutterswet-strandregister/case2.json
 corpus/golden/anchor/jutterswet-strandregister/case4.json
 corpus/golden/anchor/jutterswet-waardestelling/case2-flank-input-blijft.json
 corpus/golden/anchor/jutterswet-waardestelling/case3-leeg-valt-door.json
-corpus/golden/anchor/jutterswet-waardering-v0vorm/case6-leeg-doorval-input.json'
+corpus/golden/anchor/jutterswet-waardering-v0vorm/case6-leeg-doorval-input.json
+corpus/golden/anchor/jutterswet-hardheid/case3-stilte.json
+corpus/golden/anchor/jutterswet-hardheid/case4-hardheidsgrens.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2

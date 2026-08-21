@@ -1,0 +1,168 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "aantal aangemelde vondsten": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "hardheid toegepast",
+        "penninggerechtigd"
+      ],
+      "kenmerkSoorten": {
+        "hardheid toegepast": "BIJVOEGLIJK",
+        "penninggerechtigd": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": [],
+  "defaultLadders": [
+    {
+      "node": "DefaultLadder",
+      "naam": "penningrecht",
+      "onderwerp": "Jutter",
+      "kenmerk": "penninggerechtigd",
+      "rungs": [
+        {
+          "node": "Rung",
+          "besluit": true,
+          "voorwaarde": {
+            "node": "Samengesteld",
+            "kwantor": "ALLE",
+            "drempel": 0,
+            "onderdelen": [
+              {
+                "node": "Kenmerk",
+                "kenmerk": "hardheid toegepast",
+                "navigatie": null,
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "de strandvoogd hardheid heeft toegepast"
+              },
+              {
+                "node": "Vergelijking",
+                "op": "GROTER_OF_GELIJK",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "aantal aangemelde vondsten",
+                  "objecttype": "Jutter",
+                  "onderwerpBron": "zijn aantal aangemelde vondsten",
+                  "navigatieRol": null,
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  },
+                  "bron": "zijn aantal aangemelde vondsten",
+                  "set": false,
+                  "navigatiePad": []
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "waarde": "6",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  },
+                  "bron": "6"
+                },
+                "periode": null,
+                "bron": "ten minste zes vondsten heeft aangemeld"
+              }
+            ],
+            "bron": "art. 5: artikel 3 als ware twaalf vervangen door zes"
+          },
+          "bron": "art. 5"
+        },
+        {
+          "node": "Rung",
+          "besluit": true,
+          "voorwaarde": {
+            "node": "Vergelijking",
+            "op": "GROTER_OF_GELIJK",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "aantal aangemelde vondsten",
+              "objecttype": "Jutter",
+              "onderwerpBron": "zijn aantal aangemelde vondsten",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "bron": "zijn aantal aangemelde vondsten",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "12",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "bron": "12"
+            },
+            "periode": null,
+            "bron": "ten minste twaalf vondsten heeft aangemeld"
+          },
+          "bron": "art. 3"
+        }
+      ],
+      "bron": "art. 3 en 5",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ]
+}
