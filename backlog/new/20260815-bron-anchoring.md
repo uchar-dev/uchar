@@ -1,5 +1,8 @@
 # Source anchoring (cross-repo: lands in regelspraak-java)
 
+Ontparkeerd 2026-08-21 (besluitenronde 2, punt 2b): tweede grote
+vervolg, na het fase-5-voorstel; de toolchain is ervoor vrijgegeven.
+
 Goal: the Phase-0 job from `spec/PLAN.md` §6 that lands in
 `regelspraak-java`: replace the bare `String bron` with
 `Bron(file, line, column, snippet)` on `Expr`, `Conditie`, and every
