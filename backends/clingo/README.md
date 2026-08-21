@@ -110,10 +110,15 @@ spec bug.
   effectiveness atom (`standN_eff`) carries the full val-head body —
   condition AND value bindings — so a leeg evaluation derives neither
   and the input stands (`val :- inputval, not standN_eff`), matching
-  ref/'s no-write-on-leeg. The ch. 6d computed-target fence no longer
-  applies there; it remains on non-standing computing targets
-  (multi-writer, versioned, temporal), and an allocation
-  `doelAttribuut` supplied by the case is fenced the same way.
+  ref/'s no-write-on-leeg. The temporal arm mirrors it
+  (`standing_temporal_targets`): a standing pro-rata target's input
+  timeline enters as `inputtl/5`, standing WHOLE unless the fold
+  derives a bucket (`prN_eff`, the full bucket body incl. the
+  exactness guard) — the whole-timeline reading of RS ch. 7.8. The
+  ch. 6d computed-target fence no longer applies to standing targets
+  (scalar or temporal); it remains on multi-writer and versioned
+  computing targets, and an allocation `doelAttribuut` supplied by the
+  case is fenced the same way.
 - Constructs outside the corpus-exercised subset fault the translator —
   fail fast, never a silent SKIP.
 

@@ -787,7 +787,17 @@ let run_pro_rata env w (self : World.instance) ~ot ~attr waarde =
                case for more)"
       in
       let basis = Option.value (World.timeline self b) ~default:[] in
-      World.write_timeline w ~label:self.label ~attr (Timeline.pro_rata g basis true_periods)
+      let result = Timeline.pro_rata g basis true_periods in
+      (* ch. 7.8, the timeline arm: on a standing temporal target the
+         fold decides only when its result is gevuld — an empty result
+         (the temporal leeg) writes nothing and a case-supplied input
+         timeline stands whole *)
+      if
+        result = []
+        && List.mem (norm ot, norm attr)
+             (Ir_v0.Desugar.standing_temporal_targets env.doc)
+      then (w, false)
+      else World.write_timeline w ~label:self.label ~attr result
   | _ ->
       Value.fault
         "a temporal target takes only the ch. 3.7 pro-rata shape (an own temporal base with a \

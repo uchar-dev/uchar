@@ -2141,10 +2141,23 @@ predicate is shared between the executors (one definition), the ASP
 entry is the ladder's `inputval/3` with an effectiveness atom carrying
 condition **and** value bindings (a condition-only atom would encode
 the v0 erase instead — the atom's body is the semantic choice).
-**Temporal computing targets stay fenced** on the ASP side (recorded,
-scalar-first), as do multi-writer targets (v0 meaning: agenda order)
-and versioned targets (selection is temporal, ch. 7.4 — never
-defeasible).
+**The timeline arm (decided with the temporal-standing card,
+2026-08-21):** the norm extends to a **standing temporal target** — a
+temporal attribute carried by exactly one version-free computing rule
+(in practice the ch. 3.7 pro-rata fold) as its only writer. The rule
+decides only when its result timeline is **gevuld** (at least one
+segment); an empty result is the temporal leeg (empty == never-written,
+ch. 3.7) and **writes nothing**, so a case-supplied input timeline
+stands — **whole**: the ladder reading is per target, never per bucket
+(a rung decides once, and ch. 3.11's timeline write replaces the whole
+attribute timeline), so input and computed segments never interleave. A
+deciding fold displaces the input timeline entirely (worked, absolute —
+the anchor `jutterswet-borgdeel` verbatim: a non-deciding fold over
+input [2024-03-01, 2024-05-01) = 7 leaves exactly that timeline, a
+reason-carrying gate-7 survivor; a fold deciding Jan–Feb 12 over an
+input March segment yields Jan–Feb 12 and nothing else). **Multi-writer
+targets stay fenced** on the ASP side (v0 meaning: agenda order), as do
+versioned targets (selection is temporal, ch. 7.4 — never defeasible).
 
 ## Chapters (planned)
 

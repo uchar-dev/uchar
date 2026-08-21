@@ -671,7 +671,13 @@ atom that carries condition **and** value bindings (the defeasibility
 machinery this section named as the principled home; a condition-only
 atom would encode v0's erase instead — the atom's body is the semantic
 choice). The fence remains on non-standing computing targets
-(multi-writer, versioned, temporal). The adoption round also found and
+(multi-writer, versioned) — the temporal arm followed with the
+temporal-standing card (2026-08-21): a standing temporal target's
+input timeline enters as `inputtl/5`, standing **whole** by NAF
+against the fold's per-bucket effectiveness atom (`prN_eff` carries
+the full bucket body incl. the exactness guard, so an empty fold
+derives no eff and the input stands — ref's no-write on an empty
+result, whole-timeline reading). The adoption round also found and
 closed the neighbouring gap this section missed: an allocation
 `doelAttribuut` supplied by the case was **unfenced** — the case
 `val/3` fact and the allocation's own head unioned into a superset

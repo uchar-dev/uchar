@@ -149,7 +149,7 @@ let document (doc : document) : document =
    a leeg evaluation writes nothing and a case-supplied input value
    stands. Shared by ref/ (the no-write on leeg) and the ASP backend
    (the defeasible inputval/3 entry), so the domain has one definition. *)
-let standing_targets (doc : document) : (string * string) list =
+let standing_targets_gen ~temporal (doc : document) : (string * string) list =
   let key (ot, a) = (norm ot, norm a) in
   let written_by_rules =
     List.fold_left
@@ -181,9 +181,9 @@ let standing_targets (doc : document) : (string * string) list =
                 o.toekenningen)
          doc.object_creaties
   in
-  let scalar (ot, a) =
+  let wanted_shape (ot, a) =
     match List.find_opt (fun (n, _) -> norm n = norm ot) doc.objecttypen with
-    | Some (_, decl) -> not (Checks.attr_temporal decl a)
+    | Some (_, decl) -> Checks.attr_temporal decl a = temporal
     | None -> false
   in
   List.filter_map
@@ -192,8 +192,20 @@ let standing_targets (doc : document) : (string * string) list =
       | Some t
         when is_computing r
              && count (key t) = 1
-             && scalar t
+             && wanted_shape t
              && not (other_writer t) ->
           Some (key t)
       | _ -> None)
     doc.resolved_regels
+
+let standing_targets = standing_targets_gen ~temporal:false
+
+(* The temporal standing domain (RS ch. 7.8, the timeline arm): a
+   temporal target carried by exactly one version-free computing rule
+   (in practice the ch. 3.7 pro-rata fold) as its only writer. The rule
+   decides only when its result timeline is GEVULD (>= 1 segment) — an
+   empty result is the temporal leeg (empty == never-written) and
+   writes nothing, so a case-supplied input timeline stands whole: the
+   ladder reading is per target, never per bucket (a rung decides once;
+   ref's write_timeline replaces whole). *)
+let standing_temporal_targets = standing_targets_gen ~temporal:true

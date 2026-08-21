@@ -47,6 +47,9 @@
 #   - jutterswet-hardheid/case4-hardheidsgrens.json: a decision does
 #     not waive the halved threshold — four finds stay short, nothing
 #     is attributed; the absence is the assertion.
+#   - jutterswet-borgdeel/case5-input-blijft.json: the temporal
+#     standing (ch. 7.8, timeline arm) — a non-deciding pro-rata fold
+#     (empty result) leaves the input timeline standing whole.
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
@@ -57,7 +60,8 @@ corpus/golden/anchor/jutterswet-waardestelling/case2-flank-input-blijft.json
 corpus/golden/anchor/jutterswet-waardestelling/case3-leeg-valt-door.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case6-leeg-doorval-input.json
 corpus/golden/anchor/jutterswet-hardheid/case3-stilte.json
-corpus/golden/anchor/jutterswet-hardheid/case4-hardheidsgrens.json'
+corpus/golden/anchor/jutterswet-hardheid/case4-hardheidsgrens.json
+corpus/golden/anchor/jutterswet-borgdeel/case5-input-blijft.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
