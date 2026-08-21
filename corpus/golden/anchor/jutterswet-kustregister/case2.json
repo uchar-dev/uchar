@@ -68,7 +68,13 @@
     },
     {
       "kind": "inconsistent",
-      "rule": "eenmalig vondstnummer"
+      "rule": "eenmalig vondstnummer",
+      "label": "S1"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "eenmalig vondstnummer",
+      "label": "W1"
     }
   ]
 }

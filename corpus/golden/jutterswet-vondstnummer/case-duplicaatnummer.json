@@ -7,9 +7,15 @@
         "label": "V1",
         "objectType": "Vondst",
         "attributes": {
-          "vondstnummer": { "number": "7" },
-          "vondstdag": { "date": "2025-03-01" },
-          "aanmelddatum": { "date": "2025-03-05" }
+          "vondstnummer": {
+            "number": "7"
+          },
+          "vondstdag": {
+            "date": "2025-03-01"
+          },
+          "aanmelddatum": {
+            "date": "2025-03-05"
+          }
         },
         "roles": {},
         "characteristics": []
@@ -18,9 +24,15 @@
         "label": "V2",
         "objectType": "Vondst",
         "attributes": {
-          "vondstnummer": { "number": "7" },
-          "vondstdag": { "date": "2025-04-01" },
-          "aanmelddatum": { "date": "2025-04-02" }
+          "vondstnummer": {
+            "number": "7"
+          },
+          "vondstdag": {
+            "date": "2025-04-01"
+          },
+          "aanmelddatum": {
+            "date": "2025-04-02"
+          }
         },
         "roles": {},
         "characteristics": []
@@ -28,5 +40,16 @@
     ],
     "parameters": {}
   },
-  "expected": [ { "kind": "inconsistent", "rule": "eenmalig vondstnummer" } ]
+  "expected": [
+    {
+      "kind": "inconsistent",
+      "rule": "eenmalig vondstnummer",
+      "label": "V1"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "eenmalig vondstnummer",
+      "label": "V2"
+    }
+  ]
 }

@@ -65,7 +65,13 @@
     },
     {
       "kind": "inconsistent",
-      "rule": "eenmalige sectiecode"
+      "rule": "eenmalige sectiecode",
+      "label": "K1"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "eenmalige sectiecode",
+      "label": "K2"
     }
   ]
 }

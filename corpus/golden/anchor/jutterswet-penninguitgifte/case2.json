@@ -31,6 +31,7 @@
     { "kind": "attributeValue", "label": "J3", "attribute": "aantal penningen", "value": { "number": "2" } },
     { "kind": "attributeValue", "label": "J3", "attribute": "penningtotaal", "value": { "number": "12" } },
     { "kind": "attributeValue", "label": "J3", "attribute": "aantal dossiers", "value": { "number": "1" } },
-    { "kind": "inconsistent", "rule": "penningcontrole", "label": "P1" }
+    { "kind": "inconsistent", "rule": "penningcontrole", "label": "P1" },
+    { "kind": "inconsistent", "rule": "houderscontrole", "label": "P1" }
   ]
 }

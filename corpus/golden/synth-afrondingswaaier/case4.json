@@ -52,6 +52,31 @@
       "kind": "inconsistent",
       "rule": "prijs benedenaf van een veilingronde",
       "label": "V1"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "prijs bovenaf van een veilingronde",
+      "label": "V1"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "prijs rekenkundig van een veilingronde",
+      "label": "V1"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "prijs naar nul van een veilingronde",
+      "label": "V1"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "prijs van nul van een veilingronde",
+      "label": "V1"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "prijs fijn van een veilingronde",
+      "label": "V1"
     }
   ]
 }

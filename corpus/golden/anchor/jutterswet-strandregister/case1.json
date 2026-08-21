@@ -47,7 +47,13 @@
   "expected": [
     {
       "kind": "inconsistent",
-      "rule": "eenmalig nummer"
+      "rule": "eenmalig nummer",
+      "label": "S1"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "eenmalig nummer",
+      "label": "S2"
     }
   ]
 }

@@ -65,7 +65,13 @@
     },
     {
       "kind": "inconsistent",
-      "rule": "eenmalig kaveletiket"
+      "rule": "eenmalig kaveletiket",
+      "label": "K1"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "eenmalig kaveletiket",
+      "label": "K2"
     }
   ]
 }
