@@ -24,3 +24,16 @@ skelet moet bouwen (expliciet melden), `backlog/`.
 
 Out of scope: het corpus (kaart 2); folds/enums (5b); geneste groepen
 (5c).
+
+Aanhechtpunt geverifieerd (2026-08-21, stap 1): catala 1.2.1 + clerk
+lokaal; `catala scopelang --no-stdlib` toont het niveau exact zoals
+het voorstel het beschrijft (default-bomen per variabele, context als
+"reentrant or by default"); de compilerbibliotheken zijn linkbaar via
+ocamlfind (catala.driver, catala.scopelang, catala.shared_ast).
+Architectuurkeuze: de plugin serialiseert via de bestaande
+Ir_v0-bibliotheek (dezelfde als verifier/ref/clingo), zodat
+schema-conformiteit en round-trip-stijl by construction gelden.
+May-touch-notitie: de registratie van frontends/ als artifact-zone in
+scripts/check-self-contained.sh (en de CLAUDE.md-gatetekst) volgt als
+expliciete verruiming bij de afronding — gate-onderhoud dat de nieuwe
+zone vereist.
