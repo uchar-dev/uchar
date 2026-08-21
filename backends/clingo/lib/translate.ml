@@ -593,11 +593,26 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let gran = attr_granularity ctx ~otype:aot ~attr:a in
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "cl%d" ctx.fresh in
-      (* the condition's period atoms over a fresh variable pair *)
-      let cond_atom =
+      (* the condition's period atoms, as a function of the variable
+         pair so a composite can join members under distinct names.
+         A composite ALLE member list intersects pairwise through
+         helper predicates — the same four-case integer max/min the
+         final value intersection uses (ch. 3.6: v0 nests per-member
+         clips; intersection is associative). *)
+      let emit_period_and q a1 a2 =
+        List.iter
+          (fun (vcmp, vpick, tcmp, tpick) ->
+            emit ctx "%s(S,%s,%s) :- %s, %s, %s, %s, %s < %s." q vpick tpick (a1 "V1" "T1")
+              (a2 "V2" "T2") vcmp tcmp vpick tpick)
+          [ ("V1 >= V2", "V1", "T1 <= T2", "T1");
+            ("V1 >= V2", "V1", "T1 > T2", "T2");
+            ("V1 < V2", "V2", "T1 <= T2", "T1");
+            ("V1 < V2", "V2", "T1 > T2", "T2") ]
+      in
+      let rec cond_fn c : string -> string -> string =
         match c with
         | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; _ } ->
-            Printf.sprintf "ktl(S,%s,V2,T2)" (str k)
+            fun v t -> Printf.sprintf "ktl(S,%s,%s,%s)" (str k) v t
         | Kenmerk_check { negatie = true; _ } ->
             fault
               "the negated gedurende clip (the complement walk) is not translated \
@@ -619,18 +634,30 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             range_guard ctx ~subject:"S"
               ~body:(Printf.sprintf "tl(S,%s,V2,T2,WB)" (str b) :: gb)
               [ ("WB", max_int31 / (m / bscale)); (gt, max_int31 / (m / gs)) ];
-            emit ctx "%s_cond(S,V2,T2) :- %s."
-              p
+            ctx.fresh <- ctx.fresh + 1;
+            let q = Printf.sprintf "cl%d_cond" ctx.fresh in
+            emit ctx "%s(S,V2,T2) :- %s." q
               (String.concat ", "
                  (Printf.sprintf "tl(S,%s,V2,T2,WB)" (str b)
                  :: gb
                  @ [ Printf.sprintf "%s %s %s" wl (vergelijk_sym op) gl ]));
-            Printf.sprintf "%s_cond(S,V2,T2)" p
+            fun v t -> Printf.sprintf "%s(S,%s,%s)" q v t
+        | Samengesteld { kwantor = Alle; onderdelen = first :: rest; _ } ->
+            List.fold_left
+              (fun acc part ->
+                let pf = cond_fn part in
+                ctx.fresh <- ctx.fresh + 1;
+                let q = Printf.sprintf "cl%d_and" ctx.fresh in
+                emit_period_and q acc pf;
+                fun v t -> Printf.sprintf "%s(S,%s,%s)" q v t)
+              (cond_fn first) rest
         | _ ->
             fault
               "unsupported gedurende condition shape (WF-055: an own temporal \
-               characteristic or a per-segment comparison of an own temporal attribute)"
+               characteristic, a per-segment comparison of an own temporal attribute, or \
+               an ALLE composite of such shapes)"
       in
+      let cond_atom = cond_fn c "V2" "T2" in
       (* four-case integer intersection: V = max(V1,V2), T = min(T1,T2) *)
       List.iter
         (fun (vcmp, vpick, tcmp, tpick) ->

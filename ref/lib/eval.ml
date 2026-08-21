@@ -507,7 +507,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                     a
           in
           let span = List.map (fun (s : Timeline.segment) -> (s.s_van, s.s_tot)) tl in
-          let true_periods =
+          let rec true_periods_of_cond (c : conditie) =
             match c with
             | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie; _ } ->
                 if not (kenmerk_temporal ot_decl k) then
@@ -532,11 +532,24 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                 let bound = eval_expr env world self ~err grens in
                 Timeline.true_periods_of tested ~span (fun v ->
                     Arith.compare_op op v bound)
+            | Samengesteld { kwantor = Alle; onderdelen = first :: rest; _ } ->
+                (* ch. 3.6, the composite ALLE clip: the intersection of
+                   the members' true periods — v0 nests the per-member
+                   clips, and intersection is associative. Members are
+                   positive own-temporal-characteristic checks or nested
+                   ALLE composites (WF-055); a negated member and the
+                   ten-minste union stay loud, recorded shapes. *)
+                List.fold_left
+                  (fun acc part ->
+                    Timeline.intersect_periods acc (true_periods_of_cond part))
+                  (true_periods_of_cond first) rest
             | _ ->
                 Value.fault
                   "unsupported gedurende condition shape (WF-055: an own temporal \
-                   characteristic or a per-segment comparison of an own temporal attribute)"
+                   characteristic, a per-segment comparison of an own temporal attribute, \
+                   or an ALLE composite of such shapes)"
           in
+          let true_periods = true_periods_of_cond c in
           Timeline.totaal gran (Timeline.clip tl true_periods))
       | None -> (
       if World.timeline self a <> None then

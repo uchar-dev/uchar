@@ -660,6 +660,30 @@ an absent timeline stays leeg). Worked example (the
 "> 10" keeps the 11-segment → 6×11 = 66; a carrier without periods, and
 one without a timeline, both total 0.
 
+**The composite clip (landed 2026-08-21).** A composite ALLE
+condition under gedurende clips to the **intersection** of its
+members' true-periods: the pinned runtime nests the per-member clips,
+and interval intersection is associative, so the order of members
+never matters and a nested ALLE collapses into the same set. Members
+are own-temporal-characteristic checks (the resolver gates composite
+gedurende to characteristic members — a comparison leaf is not
+admitted inside a composite) or nested ALLE composites. A member
+without any true period empties the intersection: the total is 0 by
+the clip-presence rule above. Worked example (the
+`jutterswet-dubbelwacht` anchor, absolute, gates 5–6): 10/month
+through 2024; borgplichtig January–July and aangesteld April–January
+intersect to April–July → 3×10 = 30; disjoint members → 0; one member
+without periods → 0; split periods (January–March + June–September
+against February–August) → (February–March) + (June–August) = 3
+months → 30. *Executed-note:* a **negated member** clips through its
+complement, exactly like the single negated clip — and shares that
+shape's standing executor asymmetry: the reference interpreter
+carries it, the ASP side faults loudly (no anchor can pin it
+differentially yet). The **ten-minste-1 union** (v0 clips to the
+union of member regions) stays a loud, recorded flank in both
+executors, and WF-055 does not admit it until an executor carries it
+with an anchor.
+
 "Het totaal van" a timeline over time collapses it to one scalar:
 
 ```

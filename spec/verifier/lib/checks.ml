@@ -1535,26 +1535,48 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
                    List.exists (fun (n, _) -> norm n = norm k) ot.kenmerk_granulariteit
                | None -> false
              in
-             match c with
-             | Kenmerk_check { kenmerk = Some k; navigatie = None; _ } ->
-                 if temporal_char k then []
-                 else
+             let rec clip_cond_ok c =
+               match c with
+               | Kenmerk_check { kenmerk = Some k; navigatie = None; _ } ->
+                   if temporal_char k then []
+                   else
+                     [ v "WF-055" (sub "filter")
+                         ("gedurende over '" ^ k
+                        ^ "', which is not a temporal characteristic of '" ^ aot ^ "'") ]
+               | Vergelijking
+                   { links = Some (Attribuut_ref
+                       { attribuut = Some b; objecttype = Some botn; navigatie_rol = None;
+                         navigatie_pad = []; set = false; _ });
+                     rechts = Some _; periode = None; _ }
+                 when norm botn = norm aot
+                      && (match objecttype ctx botn with
+                         | Some ot -> attr_temporal ot b
+                         | None -> false) ->
+                   []
+               | Samengesteld { kwantor = Alle; onderdelen = (_ :: _) as onderdelen; _ } ->
+                   (* the composite ALLE clip (ch. 3.6): every member is
+                      itself an admissible clip condition, restricted to
+                      characteristic members and nested ALLE composites --
+                      v0's resolver gates composite gedurende to
+                      characteristic members, so the comparison leaf is
+                      not admitted inside a composite *)
+                   List.concat_map
+                     (fun part ->
+                       match part with
+                       | Kenmerk_check _ | Samengesteld _ -> clip_cond_ok part
+                       | _ ->
+                           [ v "WF-055" (sub "filter")
+                               "a composite gedurende member is an own temporal \
+                                characteristic check or a nested ALLE composite (v0 gates \
+                                composite gedurende to characteristic members)" ])
+                     onderdelen
+               | _ ->
                    [ v "WF-055" (sub "filter")
-                       ("gedurende over '" ^ k
-                      ^ "', which is not a temporal characteristic of '" ^ aot ^ "'") ]
-             | Vergelijking
-                 { links = Some (Attribuut_ref
-                     { attribuut = Some b; objecttype = Some botn; navigatie_rol = None;
-                       navigatie_pad = []; set = false; _ });
-                   rechts = Some _; periode = None; _ }
-               when norm botn = norm aot
-                    && (match objecttype ctx botn with
-                       | Some ot -> attr_temporal ot b
-                       | None -> false) ->
-                 []
-             | _ ->
-                 [ v "WF-055" (sub "filter")
-                     "the gedurende condition is an own temporal characteristic check or a                       per-segment comparison of an own temporal attribute against a scalar                       bound" ])
+                       "the gedurende condition is an own temporal characteristic check, a \
+                        per-segment comparison of an own temporal attribute against a scalar \
+                        bound, or an ALLE composite of characteristic checks" ]
+             in
+             clip_cond_ok c)
          | _ -> [])
       (* WF-056: the pro-rata fold (tijdsevenredig-deel) MUST carry a
          gedurende condition, and its base MUST be a temporal source as

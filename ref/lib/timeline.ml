@@ -265,6 +265,21 @@ let true_periods_of (tested : t) ~(span : (int * int) list) (pred : Value.t -> b
 
 (* complement of a boolean timeline's true-periods within a span
    (ch. 3.6: the negated gedurende form) *)
+(* intersection of two true-period lists (ch. 3.6, the composite ALLE
+   clip): pairwise overlap [max from, min to) — v0 reaches the same set
+   by nesting per-member clips; intersection is associative, so the
+   fold over a composite's members lands on identical periods *)
+let intersect_periods (a : (int * int) list) (b : (int * int) list) : (int * int) list =
+  List.concat_map
+    (fun (av, at) ->
+      List.filter_map
+        (fun (bv, bt) ->
+          let v = max av bv and t = min at bt in
+          if t > v then Some (v, t) else None)
+        b)
+    a
+  |> List.sort compare
+
 let complement (true_periods : (int * int) list) ~(span : (int * int) list) : (int * int) list =
   List.concat_map
     (fun (sv, st) ->
