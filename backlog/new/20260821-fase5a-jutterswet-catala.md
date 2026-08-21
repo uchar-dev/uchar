@@ -28,3 +28,11 @@ en clingo — de Catala-native uitkomst op hetzelfde programma maakt
 de triage (dialectverschil / IR-fout / frontend-bug) beslisbaar in
 plaats van beredeneerd, met catala-dap als stapdebugger wanneer de
 uitkomsten uiteenlopen.
+
+Besluit-6-notitie voor 5c (2026-08-21, uit kaart 1): het skelet
+weigert context-variabelen — ch. 7.8's input-rung is Reading A en een
+enkel-scope-programma heeft geen caller, dus de door de maintainer
+gekozen top-rung-mapping (optie A) wordt pas realiseerbaar wanneer
+subscope-calls vertalen: de caller-waarde wordt dan een GEGENEREERDE
+top-rung in de ladder van de aangeroepen scope, geen
+standing-machinerie. Wie 5c oppakt begint daar.
