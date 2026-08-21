@@ -29,19 +29,24 @@ live by.
 
 Catala's pipeline: literate surface syntax → desugared →
 **scopelang** (scopes explicit; per scope variable one normalised
-default tree, the paper's D-Label) → **dcalc** (the default calculus;
+default tree — the paper's D-Label, what PHASE4-DEFAULTS §2.1 calls
+the surface desugaring; the trees exist from this level on) →
+**dcalc** (the default calculus;
 scopes compiled to functions, the caller's override thunked in as the
 highest exception, C-Def) → lcalc (defaults compiled to exceptions) →
 verified/extracted backends.
 
 We attach at the **scopelang→dcalc boundary**: after desugaring and
 normalisation — all sugar gone, types known, exception trees
-normalised, exactly the three properties PLAN §6 names — but *before*
-the scope structure compiles away. The scope structure is precisely
-what our mapping needs to see (§3): once scopes become functions and
-caller overrides become synthetic exceptions (C-Def), the structural
-information our object-type mapping and the Phase-4 input rung already
-express natively is gone, and we would be reverse-engineering it.
+normalised, exactly the three properties PLAN §6 names (they hold at
+scopelang; attaching one step above the literal "default-calculus
+level" is a deliberate refinement, confirmed as decision 1) — but
+*before* the scope structure compiles away. The scope structure is
+precisely what our mapping needs to see (§3): once scopes become
+functions and caller overrides become synthetic exceptions (C-Def),
+the structural information our object-type mapping needs — and the
+override *polarity* that §3's decision-6 row must get right — is
+gone, and we would be reverse-engineering it.
 
 Two practical notes, honestly stated. First, the exact module and
 plugin API against today's Catala compiler is an implementation-time
@@ -59,10 +64,10 @@ The right column is existing kernel unless marked otherwise.
 |---|---|---|
 | scope declaration | object type (one instance per scope invocation) | rows 9/21 — sugar over existing kernel |
 | scope variable (internal/output) | attribute of that object type | existing |
-| input variable | attribute filled by case input, or by the calling scope (below) | existing |
+| `input` variable (no own default; caller must supply) | attribute filled by the instantiation (member initialisation) | existing |
 | one default tree per variable (D-Label) | one ladder / declared-unordered ladder group on that attribute | landed (Phase 4); **sub-root branching: see §5.1** |
 | exception nesting (structural priority) | rung order; root branching = unordered group | landed (Phase 4) |
-| caller override of a context variable (C-Def: highest exception) | the Phase-4 input rung — case/caller input as the defeasible fact the ladder's write meets | landed (RS ch. 7.8); the mapping is *structure-preserving*, not re-encoded |
+| caller override of a `context` variable (C-Def: the caller's value as the **highest** exception — Reading B) | a **top rung** above the scope's own ladder (the §4.1 hardship pattern is the landed precedent of Reading B *as program structure*) — **not** the Phase-4 input rung, which is Reading A (computation displaces input) and runs the opposite direction; PHASE4-DEFAULTS §2.2 reserved this reconciliation for Phase 5 | **decision 6** (§8) |
 | subscope call (instantiate, bind inputs, read outputs) | object creation + member initialisation (the bound inputs) + role navigation (reading outputs) | row 9 — real design work, but over existing kernel nodes |
 | `ConflictError` (⊛) | the §9.5 channel fact, observable-not-fatal | landed; **tracked deviation** (row 8: Catala aborts, we continue) |
 | `EmptyError` (∅), catchable | ordinary leeg; fall-through | landed; **tracked deviation** (row 8) |
@@ -141,10 +146,14 @@ programs into Catala) is Phase 6's problem, deliberately deferred.
 **5.6 The two landed deviations stand.** ConflictError
 observable-not-fatal and EmptyError-as-ordinary-leeg are tracked
 deviations (row 8), decided in Phase 4. The plugin does not re-open
-them; a Catala program whose *correctness* depends on catching
-EmptyError (rare, discouraged upstream) translates to explicit
-emptiness conditions or is refused loudly — to be settled during 5a
-against real tutorial code.
+them. Precision on ∅: fall-through to the enclosing default is the
+*pervasive* core mechanism of the calculus (D-DefaultFalseNoExceptions)
+and maps onto ladder fall-through directly — nothing to settle there.
+The corner that does not map is **cross-scope** ∅-fallback (an
+enclosing default in the *calling* scope catching a callee variable's
+emptiness): that translates to explicit emptiness conditions where
+structure allows, and is refused loudly where it does not — to be
+settled during 5a against real tutorial code.
 
 ## 6. The staged path
 
@@ -182,20 +191,39 @@ definition an IR design flaw for 5d's triage.
 
 ## 8. Decisions for the maintainer
 
-1. **Attachment point**: the scopelang→dcalc boundary (§2), with the
-   implementation-time verification step in 5a. Proposed: yes.
-2. **Corpus route**: tutorial frontend-side only; the
-   Jutterswet-in-Catala article as the corpus-facing case (§4b).
-   Proposed: yes.
-3. **Where the plugin lives**: `frontends/catala/` in this monorepo (a
-   third sibling kind next to `ref/` and `backends/`; CI treats it
-   like a backend — builds, runs its suite, feeds the differential),
-   unless the Catala build dependency proves too heavy for this repo's
-   CI, in which case a separate repo pinned to `SPEC_REV` like the
-   toolchain. Proposed: monorepo first, escape hatch recorded.
-4. **Initial refusal scope**: option (iii) — sub-root branching,
-   folds/function values, payload enums, catchable-EmptyError
-   dependence all refuse loudly in 5a. Proposed: yes.
-5. **Stage order**: 5a → 5b → 5c → 5d as in §6, with 5b's two designs
-   allowed to interleave with 5a's plugin work once the refusals are
-   in place. Proposed: yes.
+1. **Attachment point.** A: the scopelang→dcalc boundary (§2 — scope
+   structure and override polarity still visible); B: dcalc proper
+   (PLAN §6's literal reading — simpler API surface, but scope
+   structure must be reverse-engineered). Recommendation: A, with the
+   implementation-time verification step opening 5a.
+2. **Corpus route.** A: tutorial frontend-side only, the
+   Jutterswet-in-Catala article as the corpus-facing case (§4b — the
+   same law through two frontends); B: the tutorial statute in the
+   corpus under upstream licence with attribution (cuts against
+   rights-free-by-construction). Recommendation: A.
+3. **Where the plugin lives.** A: `frontends/catala/` in this monorepo
+   (a third sibling kind next to `ref/` and `backends/`; CI treats it
+   like a backend); B: a separate repo pinned to `SPEC_REV` like the
+   toolchain, if the Catala build dependency proves too heavy for this
+   repo's CI. Recommendation: A first, B as the recorded escape hatch.
+4. **Initial refusal scope.** A: option (iii) — sub-root branching,
+   folds/function values, payload enums and cross-scope ∅-fallback all
+   refuse loudly in 5a; B: block 5a on the 5b/5c designs.
+   Recommendation: A (honest refusal ships earlier and the refusals
+   are the WF-044 house style).
+5. **Stage order.** A: 5a → 5b → 5c → 5d as in §6, 5b interleaving
+   with 5a once the refusals are in place; B: strictly serial.
+   Recommendation: A.
+6. **The override polarity** (the §3 C-Def row; PHASE4-DEFAULTS §2.2
+   reserved this for Phase 5). A caller override of a `context`
+   variable is Reading B — the caller's value *beats* the scope's own
+   computation (the highest exception) — which is the opposite of the
+   landed Phase-4 input rung (Reading A: computation displaces case
+   input). A: the plugin compiles a context override as a **top rung**
+   above the scope's own ladder (Reading B as program structure, the
+   §4.1 hardship-pattern shape; the input rung remains reserved for
+   the case dossier); B: refuse context overrides loudly in 5a and
+   design the mapping in 5c. Recommendation: A — it is
+   structure-preserving *because* the polarity is expressed as rung
+   order, and it keeps the two readings in the two distinct mechanisms
+   PHASE4-DEFAULTS §2.2 demands.
