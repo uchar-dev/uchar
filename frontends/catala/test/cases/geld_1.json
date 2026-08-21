@@ -1,0 +1,7 @@
+{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "L", "objectType": "Loonberekening",
+      "attributes": { "basisloon": { "number": "100.00" }, "toeslag": { "number": "25.50" } },
+      "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "L", "attribute": "totaal", "value": { "number": "125.50" } },
+    { "kind": "consistent" } ] }

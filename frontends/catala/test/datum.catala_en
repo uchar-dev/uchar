@@ -1,0 +1,15 @@
+# Peilwet (datum) — rechtenvrij, eigen auteurschap
+
+Een datumvergelijking (peildatum in het najaar) -> DatumInDagen +
+Later_of_gelijk. Draait door verifier + ref; clingo kan een datum-literal
+in termpositie niet vertalen (backend-limiet: dates zijn burgerlijke
+dagnummers uit case-input, geen IR-literals), dus die leg is ref-only.
+
+```catala
+declaration scope Peiling:
+  input peildatum content date
+  output najaar content boolean
+
+scope Peiling:
+  definition najaar equals peildatum >= |2024-07-01|
+```

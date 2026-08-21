@@ -84,11 +84,17 @@ let is_bool_dt = function I.Booleaan -> true | _ -> false
 (* --- literals ----------------------------------------------------------- *)
 
 let money_str (z : Z.t) : string =
+  (* Catala money is a count of cents; the IR carries a 2-decimal Numeriek
+     value lexeme (ref parses it with q_of_lexeme, clingo rescales it). *)
   let hundred = Z.of_int 100 in
   let neg = Z.sign z < 0 in
   let a = Z.abs z in
   Printf.sprintf "%s%s.%02d" (if neg then "-" else "") (Z.to_string (Z.div a hundred))
     (Z.to_int (Z.rem a hundred))
+
+let date_str (d : Catala_runtime.date) : string =
+  let y, m, dd = Catala_runtime.date_to_years_months_days d in
+  Printf.sprintf "%04d-%02d-%02d" y m dd
 
 let literal_expr (l : lit) : I.expr =
   match l with
@@ -97,7 +103,7 @@ let literal_expr (l : lit) : I.expr =
       Literal { waarde = Some w; typ = Some Booleaan; bron = Some w }
   | LInt z -> Literal { waarde = Some (Z.to_string z); typ = Some num_int; bron = Some (Z.to_string z) }
   | LMoney z -> Literal { waarde = Some (money_str z); typ = Some num_money; bron = Some (money_str z) }
-  | LDate _ -> refuse "date literal: rendering deferred in the 5a skeleton"
+  | LDate d -> Literal { waarde = Some (date_str d); typ = Some Datum_in_dagen; bron = Some (date_str d) }
   | LRat _ -> refuse "decimal (rational) literal: refused in the 5a skeleton"
   | LDuration _ -> refuse "duration literal: not supported in the 5a skeleton"
   | LUnit -> refuse "unit literal: not a domain value"

@@ -1,0 +1,5 @@
+{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "P", "objectType": "Peiling",
+      "attributes": { "peildatum": { "date": "2024-03-01" } }, "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [ { "kind": "characteristicAbsent", "label": "P", "characteristic": "najaar" }, { "kind": "consistent" } ] }

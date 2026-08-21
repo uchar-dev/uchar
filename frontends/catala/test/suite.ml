@@ -53,31 +53,43 @@ let () =
         prerr_endline "usage: suite <plugin> <verifier> <ref> <clingo>";
         exit 2
   in
-  (* passing programs: source -> its case files *)
+  (* a passing program run: translate, assert verifier-clean, replay every
+     case on ref, and (unless [ref_only]) on clingo too *)
+  let run_passing ~ref_only src cases =
+    Printf.printf "[passing%s] %s\n%!" (if ref_only then " ref-only" else "") src;
+    let out = Filename.temp_file "catfe" ".ir.json" in
+    let code, o = run [ plugin; src; out ] in
+    check (src ^ " : translate") (code = 0) (Printf.sprintf "exit %d\n%s" code o);
+    if code = 0 then begin
+      let vc, vo = run [ verifier; out ] in
+      check (src ^ " : verifier-clean") (vc = 0 && contains ~needle:"PASS" vo) vo;
+      List.iter
+        (fun cf ->
+          let rc, ro = run [ refx; out; cf ] in
+          check (cf ^ " : ref") (rc = 0) ro;
+          if not ref_only then begin
+            let gc, go = run [ clingo; out; cf ] in
+            check (cf ^ " : clingo") (gc = 0) go
+          end)
+        cases
+    end
+  in
+  (* ref + clingo passing programs: source -> its case files *)
   let passing =
     [ ("proef.catala_en",
        [ "cases/proef_12.json"; "cases/proef_6.json"; "cases/proef_25.json" ]);
       ("root_unordered.catala_en",
-       [ "cases/root_12.json"; "cases/root_3.json"; "cases/root_7.json" ]) ]
+       [ "cases/root_12.json"; "cases/root_3.json"; "cases/root_7.json" ]);
+      ("geld.catala_en", [ "cases/geld_1.json"; "cases/geld_2.json" ]) ]
   in
-  List.iter
-    (fun (src, cases) ->
-      Printf.printf "[passing] %s\n%!" src;
-      let out = Filename.temp_file "catfe" ".ir.json" in
-      let code, o = run [ plugin; src; out ] in
-      check (src ^ " : translate") (code = 0) (Printf.sprintf "exit %d\n%s" code o);
-      if code = 0 then begin
-        let vc, vo = run [ verifier; out ] in
-        check (src ^ " : verifier-clean") (vc = 0 && contains ~needle:"PASS" vo) vo;
-        List.iter
-          (fun cf ->
-            let rc, ro = run [ refx; out; cf ] in
-            check (cf ^ " : ref") (rc = 0) ro;
-            let gc, go = run [ clingo; out; cf ] in
-            check (cf ^ " : clingo") (gc = 0) go)
-          cases
-      end)
-    passing;
+  List.iter (fun (src, cases) -> run_passing ~ref_only:false src cases) passing;
+  (* ref-only passing programs: clingo cannot translate a date literal in a
+     term position (dates are civil day numbers from case input, not IR
+     literals) — a recorded backend limit, not a plugin bug. *)
+  let passing_ref_only =
+    [ ("datum.catala_en", [ "cases/datum_najaar.json"; "cases/datum_voorjaar.json" ]) ]
+  in
+  List.iter (fun (src, cases) -> run_passing ~ref_only:true src cases) passing_ref_only;
   (* refusal programs: source -> expected reason fragment *)
   let refusals =
     [ ("refuse_context.catala_en", "context");

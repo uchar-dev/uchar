@@ -1,0 +1,15 @@
+# Loonwet (geld) — rechtenvrij, eigen auteurschap
+
+Exacte 2-decimalen-optelling van twee geldbedragen, met een assertie die
+een consistentie wordt. Draait door ref EN clingo.
+
+```catala
+declaration scope Loonberekening:
+  input basisloon content money
+  input toeslag content money
+  output totaal content money
+
+scope Loonberekening:
+  definition totaal equals basisloon + toeslag
+  assertion totaal >= basisloon
+```
