@@ -1,0 +1,11 @@
+# Decimal-type — geweigerd (geen declareerbaar aantal decimalen). Grensbewijs:
+# de officiele tutorial gebruikt decimals, en valt dus buiten het 5a-fragment.
+
+```catala
+declaration scope Decimalscope:
+  input tarief content decimal
+  output r content decimal
+
+scope Decimalscope:
+  definition r equals tarief * tarief
+```

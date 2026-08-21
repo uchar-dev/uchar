@@ -1,0 +1,11 @@
+# Decimal-literal in een geldberekening — geweigerd (rationale literal).
+# Grensbewijs: decimals vallen buiten het 5a-fragment.
+
+```catala
+declaration scope Tariefscope:
+  input basis content money
+  output r content money
+
+scope Tariefscope:
+  definition r equals basis * 1.5
+```

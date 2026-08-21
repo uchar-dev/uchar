@@ -40,7 +40,18 @@
    displaces input" — Reading A). So a ladder-target with case input gives
    Reading A, never Reading B; realising Reading B needs an actual
    caller-override top rung, which needs a subscope call — refused in 5a.
-   Context variables are therefore refused loudly here. *)
+   Context variables are therefore refused loudly here.
+
+   The empty-operand rule. Catala reads every variable hard (error_empty:
+   an empty value is a fatal NoValueProvided), while the IR's arithmetic
+   and comparisons coalesce an empty operand (ch. 1.2, empty = 0). So a
+   variable read as an arithmetic/comparison operand is admitted only when
+   the variable is always filled: (i) it is an input — RECORDED ASSUMPTION:
+   the case dossier fulfils Catala's input contract, i.e. every input is
+   supplied — or (ii) it has an unconditional definition (a base default
+   that always decides, filled by construction). Otherwise the read is
+   refused loudly; picking coalesce-vs-hard is a deviation decision
+   deferred beyond the skeleton. *)
 
 open Shared_ast
 module M = Catala_utils.Mark
@@ -175,6 +186,30 @@ let translate_scope (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
       sd.scope_sig ScopeVar.Map.empty
   in
   let lookup v = ScopeVar.Map.find v vars in
+  (* variables that are always filled: inputs (the case dossier fulfils
+     Catala's input contract) or variables carrying an unconditional rung
+     (a base default that always decides). Only these are admitted as
+     arithmetic/comparison operands — see the head comment's empty-operand
+     rule. *)
+  let filled =
+    let s = ref ScopeVar.Set.empty in
+    ScopeVar.Map.iter
+      (fun v (sv : Sc.scope_var_ty) ->
+        if M.remove sv.svar_io.Dio.io_input = Catala_runtime.OnlyInput then
+          s := ScopeVar.Set.add v !s)
+      sd.scope_sig;
+    List.iter
+      (function
+        | Sc.ScopeVarDefinition { var; e; _ } -> (
+            match parse_chain e with
+            | Some rungs when List.exists (fun (c, _) -> is_true c) rungs ->
+                s := ScopeVar.Set.add (fst var) !s
+            | _ -> ())
+        | Sc.Assertion _ -> ())
+      sd.scope_decl_rules;
+    !s
+  in
+  let is_filled v = ScopeVar.Set.mem v filled in
   (* object type members, in declaration order *)
   let attributen = ref [] and kenmerken = ref [] in
   ScopeVar.Map.iter
@@ -217,16 +252,26 @@ let translate_scope (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
     | EAppOp { args = a :: _; _ } -> infer_dt a
     | _ -> None
   in
-  let rec value_expr e : I.expr =
+  let rec value_expr ?(operand = false) e : I.expr =
     let e = strip e in
     match M.remove e with
     | ELit l -> literal_expr l
     | ELocation (ScopelangScopeVar { name }) ->
-        let vname, dt = lookup (M.remove name) in
-        attr_ref vname dt
+        let v = M.remove name in
+        let vname, dt = lookup v in
+        if is_bool_dt dt then
+          refuse
+            "boolean variable %S read in a value position: booleans are characteristics (kenmerken); a value-position read of a characteristic has no image in the 5a fragment (read it as a condition instead)"
+            vname
+        else if operand && not (is_filled v) then
+          refuse
+            "variable %S read as an arithmetic/comparison operand is not always filled (not an input, no unconditional definition): Catala reads it hard (error_empty = fatal on empty) while the IR coalesces an empty operand — refused (deviation deferred)"
+            vname
+        else attr_ref vname dt
     | EAppOp { op; args; _ } -> (
         let bin bop a b : I.expr =
-          Binair { op = bop; links = Some (value_expr a); rechts = Some (value_expr b);
+          Binair { op = bop; links = Some (value_expr ~operand:true a);
+                   rechts = Some (value_expr ~operand:true b);
                    typ = infer_dt e; bron = None }
         in
         (* scopelang operators are resolved (overloaded:no): match the
@@ -235,7 +280,16 @@ let translate_scope (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
         | (Op.Add_int_int | Op.Add_mon_mon | Op.Add_dur_dur), [ a; b ] -> bin Plus a b
         | (Op.Sub_int_int | Op.Sub_mon_mon | Op.Sub_dur_dur), [ a; b ] -> bin Verminderd_met a b
         | (Op.Mult_int_int | Op.Mult_mon_int | Op.Mult_mon_rat | Op.Mult_dur_int), [ a; b ] -> bin Maal a b
-        | (Op.Div_int_int | Op.Div_mon_int | Op.Div_mon_mon | Op.Div_mon_rat | Op.Div_dur_dur), [ a; b ] -> bin Gedeeld_door a b
+        | (Op.Div_int_int | Op.Div_dur_dur), [ a; b ] -> bin Gedeeld_door a b
+        | (Op.Div_mon_int | Op.Div_mon_rat), [ a; b ] ->
+            (* Catala rounds money division to cents (arithmetic / nearest);
+               wrap the quotient so the IR rounds identically instead of
+               faulting on the remainder *)
+            Afgerond
+              { basis = Some (bin Gedeeld_door a b); modus = Rekenkundig;
+                decimalen = 2; typ = Some num_money; bron = None }
+        | Op.Div_mon_mon, [ _; _ ] ->
+            refuse "money / money division yields a decimal (rational): refused in the 5a skeleton (no declared number of decimals)"
         | o, _ -> refuse "operator %S not supported in a value expression" (Operator.name o))
     | EScopeCall _ ->
         refuse "subscope call (EScopeCall): object creation + role navigation (mapping row 9) is out of 5a scope"
@@ -280,8 +334,8 @@ let translate_scope (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
         match M.remove op, args with
         | (Op.Lt | Op.Lte | Op.Gt | Op.Gte | Op.Eq), [ a; b ] ->
             Vergelijking
-              { op = cmp_op (M.remove op) a b; links = Some (value_expr a);
-                rechts = Some (value_expr b); periode = None; bron = None }
+              { op = cmp_op (M.remove op) a b; links = Some (value_expr ~operand:true a);
+                rechts = Some (value_expr ~operand:true b); periode = None; bron = None }
         | Op.And, [ a; b ] ->
             Samengesteld { kwantor = Alle; drempel = 0; onderdelen = [ cond_expr a; cond_expr b ]; bron = Some "en" }
         | Op.Or, [ a; b ] ->

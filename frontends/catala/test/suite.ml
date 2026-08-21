@@ -80,7 +80,10 @@ let () =
        [ "cases/proef_12.json"; "cases/proef_6.json"; "cases/proef_25.json" ]);
       ("root_unordered.catala_en",
        [ "cases/root_12.json"; "cases/root_3.json"; "cases/root_7.json" ]);
-      ("geld.catala_en", [ "cases/geld_1.json"; "cases/geld_2.json" ]) ]
+      (* overlapping unordered grounds -> the §9.5 conflict deviation *)
+      ("root_conflict.catala_en", [ "cases/conflict_12.json" ]);
+      ("geld.catala_en",
+       [ "cases/geld_1.json"; "cases/geld_2.json"; "cases/geld_3.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:false src cases) passing;
   (* ref-only passing programs: clingo cannot translate a date literal in a
@@ -90,11 +93,24 @@ let () =
     [ ("datum.catala_en", [ "cases/datum_najaar.json"; "cases/datum_voorjaar.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:true src cases) passing_ref_only;
-  (* refusal programs: source -> expected reason fragment *)
+  (* refusal programs: source -> expected reason fragment. Besluit 4's four
+     forms plus the empty-operand and literal-false refusals; structs,
+     decimals and lists together carry the boundary proof that the official
+     Catala tutorial (structs, decimals, subscopes, lists) falls outside the
+     5a fragment. *)
   let refusals =
     [ ("refuse_context.catala_en", "context");
       ("refuse_subscope.catala_en", "subscope");
-      ("refuse_subroot.catala_en", "sub-root") ]
+      ("refuse_subroot.catala_en", "sub-root");
+      ("refuse_bool_value.catala_en", "value position");
+      ("refuse_empty_arith.catala_en", "operand");
+      ("refuse_enum.catala_en", "enum");
+      ("refuse_list.catala_en", "list");
+      ("refuse_struct.catala_en", "struct");
+      ("refuse_decimal_type.catala_en", "decimal");
+      ("refuse_decimal_literal.catala_en", "decimal");
+      ("refuse_ifthenelse.catala_en", "if-then-else");
+      ("refuse_boolfalse.catala_en", "false") ]
   in
   List.iter
     (fun (src, needle) ->

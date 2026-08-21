@@ -1,0 +1,10 @@
+# If-then-else in een waarde — buiten 5a.
+
+```catala
+declaration scope Ifscope:
+  input n content integer
+  output r content integer
+
+scope Ifscope:
+  definition r equals if n >= 10 then 1 else 2
+```

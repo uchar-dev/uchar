@@ -1,0 +1,18 @@
+# Lege-operand in rekenpositie — moet luid geweigerd worden (fix: hard read vs coalesce)
+
+De interne b is CONDITIONEEL gedefinieerd (alleen bij a >= 100). In
+`c equals a - b` leest Catala b hard (error_empty = fataal bij leeg),
+terwijl de IR een lege operand coalescet naar 0. Bij een ongedekte
+conditie divergeert dat stil; de plugin weigert de niet-altijd-gevulde
+operand-lezing (deviatiebesluit uitgesteld).
+
+```catala
+declaration scope Rekenleeg:
+  input a content integer
+  internal b content integer
+  output c content integer
+
+scope Rekenleeg:
+  definition b under condition a >= 100 consequence equals 5
+  definition c equals a - b
+```

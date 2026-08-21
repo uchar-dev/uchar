@@ -4,4 +4,5 @@
       "roles": {}, "characteristics": [] } ], "parameters": {} },
   "expected": [
     { "kind": "attributeValue", "label": "L", "attribute": "totaal", "value": { "number": "125.50" } },
+    { "kind": "attributeValue", "label": "L", "attribute": "derde", "value": { "number": "41.83" } },
     { "kind": "consistent" } ] }

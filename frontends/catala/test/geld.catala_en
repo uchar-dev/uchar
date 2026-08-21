@@ -1,15 +1,19 @@
 # Loonwet (geld) — rechtenvrij, eigen auteurschap
 
-Exacte 2-decimalen-optelling van twee geldbedragen, met een assertie die
-een consistentie wordt. Draait door ref EN clingo.
+Exacte 2-decimalen-optelling van twee geldbedragen, een geld-deling die
+Catala op centen afrondt (rekenkundig: $20/3 -> $6.67, geverifieerd tegen
+catala interpret), en een assertie die een consistentie wordt. Draait door
+ref EN clingo (Afgerond-over-deling is in clingo vertaald).
 
 ```catala
 declaration scope Loonberekening:
   input basisloon content money
   input toeslag content money
   output totaal content money
+  output derde content money
 
 scope Loonberekening:
   definition totaal equals basisloon + toeslag
+  definition derde equals totaal / 3
   assertion totaal >= basisloon
 ```

@@ -66,6 +66,11 @@ let regel_soort_s = function
   | Gelijkstelling -> "GELIJKSTELLING" | Berekening -> "BEREKENING"
   | Initialisatie -> "INITIALISATIE" | Kenmerktoekenning -> "KENMERKTOEKENNING"
 
+let afrond_modus_s = function
+  | Naar_beneden -> "NAAR_BENEDEN" | Naar_boven -> "NAAR_BOVEN"
+  | Rekenkundig -> "REKENKUNDIG" | Richting_nul -> "RICHTING_NUL"
+  | Weg_van_nul -> "WEG_VAN_NUL"
+
 let rec datatype (d : datatype) : json =
   match d with
   | Numeriek { geheel; decimalen; teken; eenheid } ->
@@ -106,6 +111,10 @@ let rec expr (e : expr) : json =
       node "Binair"
         [ ("op", s (bin_op_s op)); ("links", opt expr links);
           ("rechts", opt expr rechts); typ t; bron br ]
+  | Afgerond { basis; modus; decimalen; typ = t; bron = br } ->
+      node "Afgerond"
+        [ ("basis", opt expr basis); ("modus", s (afrond_modus_s modus));
+          ("decimalen", i decimalen); typ t; bron br ]
   | Attribuut_ref
       { attribuut; objecttype; onderwerp_bron; navigatie_rol; typ = t; bron = br;
         set; navigatie_pad; navigatie_bindingen = _ } ->

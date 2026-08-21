@@ -1,0 +1,11 @@
+# `definition flag equals false` — een boolean die op literal-false een
+# kenmerk zou moeten toekennen is niet toekenbaar (geweigerd).
+
+```catala
+declaration scope Falsescope:
+  input n content integer
+  output flag content boolean
+
+scope Falsescope:
+  definition flag equals false
+```
