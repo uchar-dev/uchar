@@ -44,10 +44,12 @@
 #   - jutterswet-hardheid/case3-stilte.json: the discretionary route
 #     stays silent without a decision (six finds, no strandvoogd act) —
 #     the silence IS the legislator's intent (the hardship pattern).
-#   - jutterswet-penningrecht-catala/case3-stilte.json and
-#     case4-hardheidsgrens.json: the Catala render of the same
-#     articles — silence without a ground is the meaning, exactly as
-#     the hand-written hardheid anchor pins it (same two corners)
+#   - jutterswet-penningrecht-catala/case3-stilte.json: the Catala
+#     render of the same articles — silence without a ground is the
+#     meaning, exactly as the hand-written hardheid anchor pins it
+#   - jutterswet-penningrecht-catala/case4-hardheidsgrens.json: a
+#     hardship ground does not waive the halved threshold — four
+#     finds stay short (the anchor's case4 reason, same corner)
 #   - jutterswet-hardheid/case4-hardheidsgrens.json: a decision does
 #     not waive the halved threshold — four finds stay short, nothing
 #     is attributed; the absence is the assertion.

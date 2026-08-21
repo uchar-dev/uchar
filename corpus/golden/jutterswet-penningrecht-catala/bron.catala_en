@@ -1,11 +1,18 @@
 # Jutterswet, artikelen 3 en 5 — het penningrecht
 
-Artikel 3. Een jutter die in het penningjaar ten minste twaalf
-vondsten heeft aangemeld, is penninggerechtigd.
+Art. 3 (penningrecht). Recht op de jutterspenning heeft de erkende
+jutter van onbesproken juttersgedrag die in het penningjaar ten minste
+twaalf vondsten bij de strandvoogd heeft aangemeld.
 
-Artikel 5. In gevallen waarin de strandvoogd hardheid heeft
-toegepast, wordt artikel 3 gelezen als ware "twaalf" vervangen door
-"zes".
+Art. 5 (hardheid). De strandvoogd kan in bijzondere gevallen artikel 3
+toepassen als ware "twaalf" vervangen door "zes".
+
+Modelleringsnotitie: dit model volgt het handgeschreven anker van
+dezelfde artikelen — de erkennings- en gedragsprecondities van art. 3
+zijn geabstraheerd, en art. 5's discretionaire "kan" komt binnen als
+het invoerfeit dat de strandvoogd hardheid heeft toegepast; het
+gemodelleerde fragment is de drempel met de hardheidslezing als
+uitzondering op artikel 3.
 
 ```catala
 declaration scope Penningrecht:
