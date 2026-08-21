@@ -1,15 +1,383 @@
 # ASP translation
 
-*Status: hand exercises (Phase-1 early start of the Phase-3 deliverable,
-per `PLAN.md` §6: "start the hand translation of one representative rule
-during Phase 1"). Scope: exercise 1 (ch. 1–5) — Jutterswet art. 1
-(verkrijging) and the art. 2 default (strandvondeling), in the v1 reading
-of `corpus/jutterswet/versiegeschiedenis.md`; exercise 2 (ch. 6) — the
-wet-v2 layered exclusion (art. 4 gelaagd + art. 4bis), where
-stratification becomes load-bearing. The systematic translation of the
-core IR is the Phase-3 deliverable; this document records the first
-contacts between the IR's constructs and a semantically alien target, and
-feeds its findings into the delta column of `CONSTRUCTS.md`.*
+*Status: the systematic construct-by-construct translation (Part I,
+sections S1–S14) — the Phase-3 deliverable this document was always
+growing toward. Part I describes what `backends/clingo` provably does:
+every claim is distilled from `backends/clingo/lib/translate.ml` and
+witnessed by the gate set (gate 6, `scripts/check-clingo.sh`, replays
+every golden case through the translation; gate 8,
+`scripts/check-rood.sh`, pins the observable faults; the negatief
+corpus under gate 3 pins what the verifier rejects before translation
+is ever reached). The text normates what the code proves — semantics
+itself is defined by `RUNTIME-SEMANTICS.md` and this document must
+never drift from it; where a construct does not translate, Part I says
+so loudly (S14), never silently. Part II (chapters 1–7) is the
+historical record: the two hand exercises and the encoding notes in
+the order they landed, kept in situ with their original chapter
+numbers because results, cards and code comments cite them (ch. 6a–6d
+especially). Where Part I and Part II describe the same machinery,
+Part I is the authoritative formulation.*
+
+## Part I — The systematic translation
+
+Sections S1–S7, S13 and S14 below cover the core: program shape, facts
+and types, rules and write targets, expression terms, emptiness,
+arithmetic, conditions, the §9.5 channel, and the complete inventory
+of loud non-translations. The remaining constructs are announced, not
+silently absent — **S8 aggregations and folds, S9 timelines, S10
+defeasibility and standing, S11 creation, S12 allocation and
+uniqueness** follow in the next installment of this card; until then
+their machinery is documented historically in ch. 6a–6d and their loud
+flanks are already complete in S14.
+
+### S1. Program shape and conventions
+
+One case, one ASP program, one stable model. The translation of a
+`regelspraak-ir-v0` document plus a `uchar-case-v0` case is a single
+ASP-Core-2 program; WF-045/046 make every admissible document
+stratifiable, so the program has exactly one stable model and the
+model checker (`backends/clingo/lib/model.ml`) *faults* on anything
+else — zero models and multiple witnesses are both translation bugs,
+never answers. The document is desugared first (`Ir_v0.Desugar`, the
+ch. 7.7 init+berekening → ladder rewrite), so the translator sees the
+same kernel the reference interpreter evaluates.
+
+The fixed predicate vocabulary:
+
+| predicate | carries |
+|---|---|
+| `is_a/2` | instance → object type |
+| `val/3` | instance, attribute, scaled value |
+| `heeft/2` | instance, characteristic |
+| `rol/3` | holder, canonical role name, filler |
+| `tl/5` | instance, attribute, from, to, scaled value (timeline segment) |
+| `ktl/4` | instance, characteristic, from, to (condition timeline) |
+| `param/2`, `param_tl/4` | parameter values, scalar and vintaged |
+| `inputval/3`, `inputtl/5`, `inputrol/3` | case input that enters *defeasibly* (S10) |
+| `inconsistent/2` | the §9.5 channel: rule-or-form name, subject |
+| `viol/2` | a hard-fault witness: reason, subject |
+| `depth/2` | creation-budget bookkeeping (S11) |
+
+Two failure channels, deliberately distinct. `inconsistent/2` **is
+part of the model**: §9.5 facts coexist with the answer, exactly as
+ref reports an inconsistency beside its values (`RUNTIME-SEMANTICS.md`
+ch. 1.4). `viol/2` is fenced by the global constraint `:- viol(_,_).`
+— any `viol/2` derivation makes the program UNSAT, which is the
+encoding of ref's *hard faults*; the runner then re-runs relaxed,
+shows the `viol/2` witnesses, and gate 8 pins the reason fragment in
+`expectedFault.clingo`. Nothing ever degrades silently: a value the
+encoding cannot carry exactly becomes a `viol/2` witness, never a
+truncated number.
+
+**Scaling.** clingo grounds arithmetic in machine integers. A value of
+an attribute declared with d decimals is carried as the integer value
+× 10^d; every arithmetic emission tracks the scale of its term
+statically and harmonises scales by exact integer multiplication.
+Because machine integers wrap silently (the hunted 50000×50000 <
+0 of ch. 6c), *every* path into the integer encoding is fenced — the
+bounds table is in S6. Scales themselves are capped at 10^9
+(`pow10`); input values are range-checked at load (`scaled_of_value`:
+"does not fit N decimals", "exceeds clingo's integer range" — gate-8
+witnesses `corpus/rood/input-overprecision`,
+`corpus/rood/input-overprecision-param`).
+
+**Names.** Declared names and case labels land between double quotes
+in the generated program. WF-057 (IR-SPEC ch. 2.1) rejects documents
+whose declared names could not be quoted; the emitter's `quote` fence
+remains as the last-line backstop and alone covers case *labels*,
+which are outside WF-057's reach. Attribute and rule names are
+normalised (`norm`) on both sides of every comparison; rule names in
+the channel are matched version-stripped by both executors' checkers
+(ch. 5.6 of `IR-SPEC.md`).
+
+### S2. Case input: facts and types
+
+The case loader's world enters as ground facts. Per instance: `is_a`
+with its label; each scalar attribute value as `val/3` (scaled); each
+characteristic as `heeft/2`; each attribute timeline segment as
+`tl/5`; each condition timeline as `ktl/4`; each role filling as
+`rol/3`. Parameters enter as `param/2`, vintaged (granular) parameters
+as `param_tl/4` segments; a *scalar* value on a granular parameter is
+refused at load by the shared case loader (both executors identically
+— the fence that keeps an unread slot from splitting the
+differential). A granular parameter is only ever read temporally
+(S4/S9): the scalar-slot read faults.
+
+The standing-target routing is the one semantic decision made at
+input time (RS ch. 7.8, detailed in S10): if the target attribute of
+a defeasible producer — a ladder target, or a bare single-writer
+version-free computing rule (the standing norm) — receives case
+input, that input enters as `inputval/3` (scalar) or `inputtl/5`
+(timeline) instead of `val/3`/`tl/5`, so the producer can defeat it;
+everything else enters as plain facts. Case input on a *non-standing*
+computed target is refused loudly (ref overwrites; a monotone
+encoding would union — the hunted superset model of ch. 6d). Role
+fillings are doubled as `inputrol/3` when object creation is present
+(the ch. 5.5 input-snapshot narrowing, S11). With recursive creation,
+every input instance gets `depth(L,0)` under the creation budget.
+
+Witnesses: every golden case exercises this section (gate 6);
+standing routing by the ladder anchors and `synth2-clip-over-prorata`;
+vintages by `jutterswet-aanmeldquotum`, `jutterswet-penningvintage`
+and `corpus/rood/vintage-uncovered-date`.
+
+### S3. Rules and write targets
+
+A `ResolvedRegel` translates by kind. **Characteristic attribution**
+(`KENMERKTOEKENNING`, value `waar`): `heeft(S,k) :- is_a(S,ot),
+⟨condition atoms⟩.` — negation-as-failure gives the absent case for
+free, and WF-045/046 stratification makes the negated reads sound.
+**Computation/equation** (`BEREKENING`/`GELIJKSTELLING`) to a scalar
+attribute target:
+
+```
+val(S,a,⟨term⟩) :- is_a(S,ot), ⟨condition⟩, ⟨bindings⟩, ⟨fit guards⟩.
+```
+
+where `⟨term⟩` is the value expression's scaled term (S4–S6) and the
+rule's condition atoms are threaded into *every* `viol/2` or
+`inconsistent/2` head the value expression emits (`ctx.rule_guard`):
+ref evaluates the value only under a true voorwaarde, so an excluded
+subject must never fault or deposit a channel fact (pinned by
+`jutterswet-vindersloon` case4 — a zero divisor under a false
+condition stays consistent).
+
+**The write boundary** (`fitted`): the term's scale is fitted to the
+target's declared scale. Equal — unchanged; coarser — exact upscale
+under a range guard; finer — downscale guarded by runtime
+divisibility, and a value that does *not* fit the declared decimals
+derives `viol("result of ... does not fit its declared decimals")`
+rather than truncating (a recorded loud asymmetry: ref writes the
+exact rational). Non-aligned scales fault at translation time. Units
+at the write boundary must be identical (S6's unit fence).
+
+A **standing** scalar target (S10) additionally emits an
+effectiveness atom carrying the full rule body, and the defeasible
+input rule `val(S,a,V) :- inputval(S,a,V), is_a(S,ot), not
+⟨eff⟩(S).` — the producer wins exactly where it decides; an empty
+result derives no effectiveness and the input stands (ref's
+no-write-on-empty, RS ch. 7.8).
+
+Not translated, loudly (S14 carries the full list): validity windows;
+temporal targets outside the two ch. 3.7/3.8 fold shapes; case input
+on non-standing computed targets; a `standing` target outside its own
+domain.
+
+### S4. Expression terms
+
+Every value expression lowers to a triple ⟨body atoms, integer term,
+scale⟩ (`expr_term`). **Literal**: the scaled constant, scale from its
+lexeme's decimals. **Parameter reference**: body atom `param("p",P)`,
+term `P`; granular parameters are refused in scalar slots (ch. 3.3/8).
+**Attribute reference**: body atom `val(S,a,A)`; a *navigated*
+reference (ch. 5.8) chains one `rol/3` atom per to-one hop before the
+final `val` — the shared variable is the join, and an absent link
+simply leaves the body underivable. Role resolution reuses the
+reference interpreter's own binding helpers (`Eval.bound_role`,
+`Eval.connecting_role`), so both executors resolve navigation
+identically. **Rekendatum** (ch. 8.2): the session's evaluation date
+as a compile-time civil day number; a case without `asOfDate` faults.
+**Temporal point read** (ch. 3.3): a `tl/5`/`param_tl/4` atom with
+`F <= D, D < T` — the gap and the empty-index corner are the
+underivable body, for free (more in S9). **Onopgelost**: translation
+faults with "Onopgelost reached" — the WF-044 unsolved-state guard;
+the rule fails observably (gate-8 witness
+`corpus/rood/wf044-onopgelost-reached`).
+
+Witnesses: navigation by `synth-navigatiepremie`,
+`jutterswet-vindersloon`, `jutterswet-borgdeel`; Rekendatum and point
+reads by `jutterswet-penningvintage`, `jutterswet-aanmeldquotum`.
+
+### S5. Emptiness: the three encodings
+
+Leeg is *absence*: an underivable `val/3` atom. Everything else
+follows from where a rule's body may or may not bind (RS ch. 1.2 is
+the norm; the encoding buys most of it for free):
+
+1. **Bare join — propagation.** An operand position whose emptiness
+   propagates (verminderd-met's left, the power's base, a rounding's
+   basis, every comparison operand) is simply the bound variable in
+   the body: leeg leaves the rule underivable, which is exactly Empty
+   propagation. The ch. 1.2d ordering rule (a comparison over leeg is
+   false) costs nothing: the unbound join fails.
+2. **`coalesce0` — the whitelist.** A COALESCING position (ch. 1.2a:
+   both sides of plus/min/maal/percentage-van, the right of
+   verminderd-met, the dividend) reads leeg as 0 through a default-0
+   helper: `coN(S,⟨term⟩) :- ⟨body⟩.`, `coN_def(S) :- ⟨body⟩.`,
+   `coN(S,0) :- is_a(S,ot), not coN_def(S).`
+3. **Default-0 heads.** Where the *result* of a whole construct is 0
+   on emptiness (the division's empty-dividend edge, the empty sum
+   with fallback 0), a default head under NAF encodes it directly.
+
+The one empty rule with **no** free encoding: the equality/inequality
+asymmetry of ch. 1.2d (leeg = leeg is true under gelijk-aan, false
+under ordering). `Gelijk`/`Ongelijk` comparisons therefore fault
+loudly until a corpus case demands them — a recorded finding, in S14.
+
+Witnesses: `jutterswet-leegrekening`, `synth2-leegcomposities`,
+`jutterswet-vindersloon` (every empty cell), `jutterswet-taxatie`
+case3 (empty dividend → 0 beside empty base → leeg).
+
+### S6. Arithmetic and its fences
+
+All arithmetic is exact integer arithmetic on scaled terms; the
+encoding never computes a quotient it cannot prove exact or a
+rounding it cannot compute in one integer step.
+
+- **Additive** (plus, min, verminderd-met): scales harmonised to
+  max(sl,sr) by exact multiplication; emptiness per the whitelist.
+- **Multiplicative** (maal, percentage-van): scaled product at scale
+  sl·sr; percentage-van folds its /100 into the scale (sl·sr·100) —
+  no division anywhere. Both operands coalesce.
+- **Division** (gedeeld-door): the three §6.5 edges ride beside the
+  value — empty dividend → 0 *before* the divisor is read; empty
+  divisor under a filled dividend → the rule-keyed channel fact and
+  no value; numeric zero divisor → `viol("division by numeric
+  zero")`. The bare form translates only EXACT outcomes: a remainder
+  derives a `viol/2` witness, never a truncated value. The
+  rounded form (afgerond over a division) computes the mode's integer
+  rounding in one step — floor T/N, ceiling (T+N−1)/N,
+  half-away-from-zero (2T+N)/(2N) — exact for non-negative operands,
+  the negative range fenced (richting-nul alone matches clingo's
+  native truncation on both signs and needs no fence).
+- **Abs-division** (gedeeld-door-abs, ch. 2.2): the rounded-division
+  path at (richting-nul, 5) — the defined truncation point, both
+  signs, no extra fence. Anchor `jutterswet-taxatie` (full sign
+  table); red `corpus/rood/division-abs-by-numeric-zero`.
+- **Power** (tot-de-macht): `((t)**e)` at compile-time scale sl^e for
+  a compile-time non-negative integer exponent; the base operand is
+  fenced at the largest value whose e-th power stays inside 2^31 —
+  the wrap would happen during *grounding*, before any guard on the
+  result could see it. Signed bases translate unfenced in value
+  (gringo's `**` matches the exact integer power, including x^0 = 1
+  and 0^0 = 1). Runtime, negative and fractional exponents fault.
+- **Rounding** (afgerond, ch. 2.5): scale surplus divided away by the
+  mode's formula; an empty basis propagates; a finer target upscales
+  exactly.
+
+The fence table — every emitted operation carries `viol/2` range
+guards on its operands ("arithmetic range exceeded (clingo grounds in
+machine integers)"):
+
+| position | bound on the scaled operand |
+|---|---|
+| product factor (maal, percentage-van) | 46340 |
+| `#sum` contributor and contributor count | 46340 each (46340² < 2³¹) |
+| additive operand | 1073741823 / harmonisation factor |
+| division operand | 536870912 / its exact-quotient factor |
+| comparison / upscale / write fit | 2147483647 / harmonisation factor |
+| power base (exponent e) | ⌊(2³¹−1)^(1/e)⌋ (46340 for e=2, 1290 for e=3) |
+| result scale | ≤ 10^9, compile-time |
+
+The safe side is pinned: `synth-grensrand` replays the largest
+translatable product (46340² = 2147395600) and `jutterswet-taxatie`
+case5 the largest translatable powers, so the guards provably do not
+fire early. **Units:** operands of the multiplicative family must be
+effectively unit-free, and positions where ref *restates* one operand
+into the other's unit (the additive join, the comparison, the write
+boundary) accept only identical units or a unitless side — ref's
+conversion factors have no integer encoding (the hunted 1 m + 50 cm =
+51 of ch. 6c). The unit is derived recursively from declarations
+(`eff_unit`), never read from a node's static annotation.
+
+### S7. Conditions
+
+`cond_atoms` lowers a condition to body atoms. **Comparison**
+(vergelijking): harmonised scaled terms joined by `>=`, `>`, `<`,
+`<=`; both operands are bare joins, so a leeg operand fails the
+condition (ch. 1.2d). Equality/inequality: no free encoding — faults
+(S5). **Characteristic check** (kenmerk-check): `heeft(S,k)`, or
+`not heeft(S,k)` under negation — stratification (WF-045/046) makes
+this sound. The *navigated* check walks the `rol/3` hop as a POSITIVE
+literal with only the characteristic under the negation: an absent
+link fails the positive and the negated form alike — the deliberate
+v0 asymmetry (ch. 5.8), encoded for free. **Composite**
+(samengesteld, ALLE): concatenation of the parts' atoms. Other
+quantifiers and condition kinds fault (S14).
+
+Witnesses: `jutterswet-hardheid`, `jutterswet-uitsluiting`,
+`jutterswet-vormenkabinet`; the WF-053 negatiefs pin the navigation
+well-formedness the verifier enforces before translation.
+
+### S13. The §9.5 channel
+
+`inconsistent/2` facts are model citizens, never fatal (the tracked
+Catala deviation of `CONSTRUCTS.md` row 8): "consistent" in a case
+expectation means the model carries *no* `inconsistent/2` atom, and a
+pinned inconsistency names its producer. The key is always the
+producing form's name, version-stripped at match time by both
+executors — the case format's rule pin reads both identically:
+
+| producer | key |
+|---|---|
+| division: empty divisor under filled dividend | the enclosing rule's name |
+| consistency assertion failure | the consistency's name |
+| uniqueness / uniqueness-union collision | the uniqueness form's name |
+| ladder conflict (equal-priority disagreement) | `onderwerp.target` |
+| allocation: weightless recipient, cap holes | the allocation's name |
+
+Every channel head threads the enclosing rule's condition atoms
+(S3): a subject the condition excludes deposits nothing. The loader
+validates a pinned rule name against the closed set of channel-capable
+names and rejects unknown pins with a candidate list (ch. 5.6). Gross
+"inconsistent"-without-a-rule expectations are gone from the corpus:
+collisions pin per subject (`jutterswet-nummerregister` precedent).
+
+### S14. What does not translate — the complete loud inventory
+
+The standing rule (PLAN §4): the core may say "I cannot express this
+(yet)"; it may not pretend. Every fault below is a `Value.fault` with
+context — the translation stops, nothing degrades. Grouped; the
+literal reason strings live in `backends/clingo/lib/translate.ml`.
+
+*Semantics deliberately unencoded (recorded findings):*
+equality/inequality over possibly-empty operands (the ch. 1.2d
+asymmetry — no free encoding); runtime, negative and fractional
+power exponents (the runtime-exponent empty corner 4^leeg = leeg is
+thereby ref-only behaviour); ref's unit-conversion algebra (all
+restating positions refuse non-identical units); negative operands
+under non-richting-nul rounded forms (runtime `viol/2` fences);
+non-exact bare division and non-fitting write results (runtime
+`viol/2` — an explicit rounding is mandated before precision is
+lost).
+
+*Constructs and shapes without a corpus case (fault at translation):*
+validity windows (rules, ladders, creations); temporal targets
+outside the ch. 3.7/3.8 fold shapes; the negated gedurende clip (the
+complement walk); gedurende condition shapes beyond WF-055; temporal
+totals over case-supplied full timelines, and non-year total
+granularity; `Begrensd` (clip/min-max) and rounded roots in term
+positions; characteristic attribution with a non-waar value;
+non-proportional and conditional allocation; misaligned allocation
+and rounding scales; som fallbacks other than 0; uniqueness key
+lists with more than one temporal component, and ever-unique keys
+served by a scalar; case input on non-standing computed targets
+(scalar, temporal, and allocation targets alike — the ch. 6d
+superset-model fence); to-many navigation in scalar slots (WF-053);
+bean-field-only fact creations (the symbolic ch. 3.4 form is what
+executes); the expression/condition catch-alls ("not translated — no
+corpus case exercises it").
+
+*Environment and input fences:* names the ASP string encoding cannot
+quote (WF-057's backstop, sole cover for case labels); values that do
+not fit their declared decimals or exceed 2^31−1; scales beyond 10^9;
+unknown object types, attributes, parameters; malformed or missing
+`asOfDate` under Rekendatum; granular parameters in scalar slots and
+their timelines missing from the case.
+
+Gate 8 keeps the observable-fault subset honest
+(`corpus/rood/`), and the catch-alls guarantee the list can only
+shrink by *translation*, never by silence.
+
+## Part II — The hand exercises and encoding notes (historical)
+
+*The chapters below predate Part I and keep their original numbers —
+results, cards and code comments cite them. Ch. 1–5: exercise 1,
+Jutterswet art. 1 (verkrijging) and the art. 2 default
+(strandvondeling). Ch. 6: exercise 2, the wet-v2 layered exclusion,
+where stratification became load-bearing. Ch. 6a–6d: the encoding as
+it landed, including the two adversarial rounds. Findings fed the
+delta column of `CONSTRUCTS.md` as they were made.*
 
 ## 1. Source and IR view
 
@@ -723,7 +1091,11 @@ refuses loudly, exactly like this fence.
 
 ## 7. Deliberately out of scope
 
-Art. 5 (hardheid), art. 6, the v3 temporalisation, quantitative
-machinery beyond the art. 3 threshold, and any systematic core-IR-to-ASP
-mapping — all Phase-3 work. This document grows with each hand exercise
-until that systematic mapping replaces it.
+*(Historical.)* Art. 5 (hardheid), art. 6, the v3 temporalisation,
+quantitative machinery beyond the art. 3 threshold, and any systematic
+core-IR-to-ASP mapping — all Phase-3 work. This document grows with
+each hand exercise until that systematic mapping replaces it. *That
+promise is kept: Part I is the systematic mapping, and the constructs
+this chapter deferred have long since landed (hardheid in the ladder
+anchors, the temporalisation in S9's machinery, the quantitative
+corpus throughout).*
