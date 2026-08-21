@@ -11,7 +11,7 @@
    FINDING (reported on the card): the [uchar-ir-v0] library ships a
    strict Loader (JSON->AST) but NO AST->JSON serialiser — the
    byte-identical round-trip of gate 2 (scripts/check-ir-schema.sh) is
-   carried by Python, and the goldens come from regelspraak-java's
+   carried by Python, and the corpus goldens arrive from the upstream
    emitter. So this serialiser had to be written here. It is not the
    byte-identical canonical emitter (2-space, lowercase \uXXXX escapes);
    it emits loader-valid JSON, which is all gates the plugin's output
