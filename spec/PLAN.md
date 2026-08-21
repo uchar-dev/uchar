@@ -1,6 +1,6 @@
 # PLAN — Toward a Normative, Engine-Neutral IR for Machine-Executable Law
 
-*Status: draft v5 · 2026-08-16 · lives in the `uchar` monorepo · companion to
+*Status: draft v6 · 2026-08-21 · lives in the `uchar` monorepo · companion to
 `IR-REVIEW.md` (same directory).*
 
 *Changes in v4 relative to v3: adds §5 (where things live: the monorepo and
@@ -11,6 +11,13 @@ explicit in Phase 1; hardens §8 (held-out split physically elsewhere,
 enforcement mechanism for protected files, corpus-synthesis circularity,
 session-end bookkeeping); extends §9 with the corpus-provenance decision and
 two new open decisions (license, visibility).*
+
+*Changes in v6 relative to v5 (2026-08-21): every phase through 4
+carries its Met marking with evidence (Phase 0 via the source-anchoring
+landing; Phase 2 with the Drools leg explicitly indirect; Phases 1, 3
+and 4 as previously marked), and Phase 5 carries its adopted proposal
+with all six decisions taken — the plan states the actual position;
+nothing in it waits on a decision.*
 
 *Changes in v5 relative to v4: §9 decisions 7, 9 and 10 are taken (empty
 frozen to the mirror + whitelist; Apache-2.0 + CC-BY-4.0; public at latest
@@ -236,6 +243,21 @@ roadmap.
 **Exit criteria:** every IR node carries file/line/column; explanations can
 cite statute annotations; `spec/CONSTRUCTS.md` has an explicit v1 scope
 decision per construct.
+**Met (2026-08-21):** the constructs matrix has carried its per-row v1
+verdict since the Phase-0 card that seeded it (37 rows, the delta
+column doubling as the roadmap). The source-anchoring card
+(`backlog/done/20260815-bron-anchoring.md`) landed the other two
+criteria in `regelspraak-java`: the `Bron(file, line, column,
+snippet)` record replaces the bare string on `Expr`, `Conditie` and
+every `Resolved*` form that ever carried a source anchor — real
+coordinates at every resolver construction site bar one synthetic
+literal, with container forms deriving position through their
+component expressions — and `// Bron:` statute annotations ride the
+lexer's hidden channel onto `ResolvedRegel.bronAnnotaties`,
+retrievable from the resolved form. The v0 wire is byte-identical
+throughout (the emitter-golden conformance at the `SPEC_REV` pin);
+the structured-`Bron` *wire* form remains the tracked row-3 v1 delta,
+by design.
 
 ### Phase 1 — The spec regime exists (months; the big job)
 
@@ -326,6 +348,21 @@ default model (Phase 4) gets implemented first.
 **Exit criteria:** interpreter passes the golden corpus; the
 Drools≡interpreter differential gates CI; no shared code with the production
 runtime (structural: different repository, no dependency).
+**Met (2026-08-21), with the Drools leg indirect:** gate 5
+(`scripts/check-oracle.sh`) replays every golden case through `ref/`
+with exact expectation match, and the no-shared-code criterion is
+structural fact (separate repository, no dependency, no copy-paste —
+`ref/` was written against the spec). The Drools≡interpreter leg runs
+**indirectly**: the toolchain's own differential holds Drools to the
+v0 runtime, and the emitter-golden conformance (`make
+uchar-conformance` at the `SPEC_REV` pin) plus gates 5–6 hold the
+same corpus documents to `ref/` (and `clingo`) — the triangle closes
+through the shared corpus, not through a direct
+Drools-executes-uchar-cases gate. That direct leg is a recorded open
+flank, not claimed: it needs the toolchain to *execute* uchar case
+files — the same machinery a ladder-producing frontend needs (Phase
+5) — and the divergence class it could catch is meanwhile fenced by
+the corpus-scoped agreement plus the spec-first delta regime.
 
 ### Phase 3 — Semantic anchor in ASP, then the Clingo backend
 
@@ -446,6 +483,16 @@ valid, verifier-clean IR and executes on interpreter + one engine; the
 frontend-diff exercise is documented with resulting spec changes; the
 hourglass is real — two frontends, two-plus backends, 2×2 through one waist
 instead of four translators.
+**Proposal adopted (2026-08-21):** `spec/proposals/PHASE5-CATALA.md`
+carries the design; its six decisions are all taken (attachment at the
+scopelang→dcalc boundary; context-override polarity as a top rung —
+Reading B as rung order, the input rung reserved for the case dossier;
+the rights-clean corpus route: tutorial frontend-side, a
+Jutterswet-in-Catala article as the corpus case; `frontends/catala/`
+in this monorepo with the separate-repo escape hatch recorded; loud
+refusals in 5a for sub-root branching, folds/function values, payload
+enums and cross-scope ∅-fallback; staged 5a→5d with 5b interleaving).
+The 5a cards sit in the backlog.
 
 ### Phase 6 — Catala as a backend: opportunistic, possibly never
 

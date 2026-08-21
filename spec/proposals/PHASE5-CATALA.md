@@ -1,6 +1,8 @@
 # Phase 5 — Catala as a frontend: the proposal
 
-*Status: proposal (2026-08-21), per the maintainer's decision round 2.
+*Status: adopted (2026-08-21) — all six §8 decisions taken by the
+maintainer in decision round 3; originally proposed per decision
+round 2.
 Companion to `PHASE4-DEFAULTS.md`, whose §2 fidelity map and §7
 tree-versus-chain groundwork this document builds on. No code lands
 with this proposal; §8 lists the decisions it needs. Paper references
@@ -196,24 +198,29 @@ definition an IR design flaw for 5d's triage.
    (PLAN §6's literal reading — simpler API surface, but scope
    structure must be reverse-engineered). Recommendation: A, with the
    implementation-time verification step opening 5a.
+   **Decided (maintainer, 2026-08-21): A.**
 2. **Corpus route.** A: tutorial frontend-side only, the
    Jutterswet-in-Catala article as the corpus-facing case (§4b — the
    same law through two frontends); B: the tutorial statute in the
    corpus under upstream licence with attribution (cuts against
    rights-free-by-construction). Recommendation: A.
+   **Decided (maintainer, 2026-08-21): A.**
 3. **Where the plugin lives.** A: `frontends/catala/` in this monorepo
    (a third sibling kind next to `ref/` and `backends/`; CI treats it
    like a backend); B: a separate repo pinned to `SPEC_REV` like the
    toolchain, if the Catala build dependency proves too heavy for this
    repo's CI. Recommendation: A first, B as the recorded escape hatch.
+   **Decided (maintainer, 2026-08-21): A, escape hatch recorded.**
 4. **Initial refusal scope.** A: option (iii) — sub-root branching,
    folds/function values, payload enums and cross-scope ∅-fallback all
    refuse loudly in 5a; B: block 5a on the 5b/5c designs.
    Recommendation: A (honest refusal ships earlier and the refusals
    are the WF-044 house style).
+   **Decided (maintainer, 2026-08-21): A.**
 5. **Stage order.** A: 5a → 5b → 5c → 5d as in §6, 5b interleaving
    with 5a once the refusals are in place; B: strictly serial.
    Recommendation: A.
+   **Decided (maintainer, 2026-08-21): A.**
 6. **The override polarity** (the §3 C-Def row; PHASE4-DEFAULTS §2.2
    reserved this for Phase 5). A caller override of a `context`
    variable is Reading B — the caller's value *beats* the scope's own
@@ -227,3 +234,4 @@ definition an IR design flaw for 5d's triage.
    structure-preserving *because* the polarity is expressed as rung
    order, and it keeps the two readings in the two distinct mechanisms
    PHASE4-DEFAULTS §2.2 demands.
+   **Decided (maintainer, 2026-08-21): A.**
