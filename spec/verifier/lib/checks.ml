@@ -1554,21 +1554,27 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
                          | None -> false) ->
                    []
                | Samengesteld { kwantor = Alle; onderdelen = (_ :: _) as onderdelen; _ } ->
-                   (* the composite ALLE clip (ch. 3.6): every member is
-                      itself an admissible clip condition, restricted to
-                      characteristic members and nested ALLE composites --
-                      v0's resolver gates composite gedurende to
-                      characteristic members, so the comparison leaf is
-                      not admitted inside a composite *)
+                   (* the FLAT composite ALLE clip (ch. 3.6): members are
+                      own-temporal-characteristic checks only. The v0
+                      boundary, stated precisely: v0 partitions STATIC
+                      comparison members out as value-side guards before
+                      its clip runs, and markers temporal-attribute
+                      comparisons and nested composite bullets as
+                      Onopgelost -- v1 narrows composite members to the
+                      characteristic checks both executors carry (the
+                      static-guard form and the nested bullet are
+                      recorded loud flanks, RUNTIME-SEMANTICS ch. 3.6) *)
                    List.concat_map
                      (fun part ->
                        match part with
-                       | Kenmerk_check _ | Samengesteld _ -> clip_cond_ok part
+                       | Kenmerk_check _ -> clip_cond_ok part
                        | _ ->
                            [ v "WF-055" (sub "filter")
                                "a composite gedurende member is an own temporal \
-                                characteristic check or a nested ALLE composite (v0 gates \
-                                composite gedurende to characteristic members)" ])
+                                characteristic check (v0 partitions static comparison \
+                                members into value-side guards and markers nested \
+                                bullets; v1 narrows composite members to characteristic \
+                                checks -- a recorded narrowing)" ])
                      onderdelen
                | _ ->
                    [ v "WF-055" (sub "filter")

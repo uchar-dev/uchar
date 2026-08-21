@@ -346,10 +346,11 @@ clip predicates a fold over the subject's *own* temporal attribute on
 a condition timeline. Per clip N: the condition segments (the
 `ktl/4` atoms read directly for the kenmerk shape, or — for the
 per-segment comparison of an own temporal attribute — an
-intermediate `clN_cond(S,V2,T2)` predicate; a composite ALLE
-condition intersects its members pairwise through `clN_and`
-helper predicates, the same four-case max/min as below — v0 nests
-per-member clips, and intersection is associative), the four-way
+intermediate `clN_cond(S,V2,T2)` predicate; a FLAT composite ALLE
+condition over characteristic members intersects them pairwise
+through `clN_and` helper predicates, the same four-case max/min as
+below — v0 nests per-member clips over such flat lists, and
+intersection is associative), the four-way
 segment intersection
 (`clN_seg(S,V,T,W)` with V = max of starts, T = min of ends), the
 calendar as *data* (`clN_wu(V,T,N)`: whole units per clipped span),
@@ -602,7 +603,10 @@ validity windows (rules, ladders, creations); temporal targets
 outside the ch. 3.7/3.8 fold shapes; the negated gedurende clip (the
 complement walk — also as a composite member; ref carries both, the
 standing executor asymmetry); the ten-minste-1 composite union (v0
-clips to the union of member regions; loud in both executors);
+clips to the union of member regions; loud in both executors); the
+static-comparison composite member (v0 partitions it into a
+value-side guard; loud in both executors) and the nested composite
+bullet (v0 markers it as Onopgelost; loud in both executors);
 gedurende condition shapes beyond WF-055; temporal
 totals over case-supplied full timelines, and non-year total
 granularity; `Begrensd` (clip/min-max) and rounded roots in term

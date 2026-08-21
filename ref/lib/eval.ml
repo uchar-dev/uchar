@@ -532,17 +532,32 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                 let bound = eval_expr env world self ~err grens in
                 Timeline.true_periods_of tested ~span (fun v ->
                     Arith.compare_op op v bound)
-            | Samengesteld { kwantor = Alle; onderdelen = first :: rest; _ } ->
-                (* ch. 3.6, the composite ALLE clip: the intersection of
-                   the members' true periods — v0 nests the per-member
-                   clips, and intersection is associative. Members are
-                   positive own-temporal-characteristic checks or nested
-                   ALLE composites (WF-055); a negated member and the
-                   ten-minste union stay loud, recorded shapes. *)
+            | Samengesteld { kwantor = Alle; onderdelen = (_ :: _ as onderdelen); _ } ->
+                (* ch. 3.6, the FLAT composite ALLE clip: the
+                   intersection of the members' true periods — v0 nests
+                   the per-member clips over exactly such flat
+                   characteristic lists. Members are restricted to
+                   own-temporal-characteristic checks (WF-055): v0
+                   partitions STATIC comparison members out as
+                   value-side guards before its clip ever runs, markers
+                   temporal-attribute comparisons and nested composite
+                   bullets — our v1 narrows composite members to the
+                   characteristic checks both executors carry (the
+                   static-guard form and the nested bullet are recorded
+                   loud flanks). *)
+                let member_periods part =
+                  match part with
+                  | Kenmerk_check _ -> true_periods_of_cond part
+                  | _ ->
+                      Value.fault
+                        "a composite gedurende member is an own temporal characteristic \
+                         check (WF-055; the static-guard and nested forms are recorded \
+                         flanks)"
+                in
                 List.fold_left
-                  (fun acc part ->
-                    Timeline.intersect_periods acc (true_periods_of_cond part))
-                  (true_periods_of_cond first) rest
+                  (fun acc part -> Timeline.intersect_periods acc (member_periods part))
+                  (member_periods (List.hd onderdelen))
+                  (List.tl onderdelen)
             | _ ->
                 Value.fault
                   "unsupported gedurende condition shape (WF-055: an own temporal \

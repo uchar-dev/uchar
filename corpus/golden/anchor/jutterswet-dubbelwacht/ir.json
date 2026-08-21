@@ -18,13 +18,6 @@
           "decimalen": 0,
           "teken": "ONBEPAALD",
           "eenheid": null
-        },
-        "nestwachtsom": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
         }
       },
       "attribuutMeervoud": {},
@@ -63,11 +56,6 @@
     {
       "node": "Regel",
       "naam": "dubbelwachtsom van een jutter",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "nestwachtsom van een jutter",
       "soort": "regel"
     }
   ],
@@ -152,103 +140,6 @@
           "eenheid": null
         },
         "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij borgplichtig en aangesteld is",
-        "granulariteit": null
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "nestwachtsom van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "nestwachtsom",
-        "objecttype": "Jutter",
-        "onderwerpBron": "De nestwachtsom van een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "De nestwachtsom van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "TOTAAL",
-        "argumenten": [
-          {
-            "node": "AttribuutRef",
-            "attribuut": "wachtvergoeding per maand",
-            "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "zijn wachtvergoeding per maand",
-            "set": false,
-            "navigatiePad": []
-          }
-        ],
-        "elementObjecttype": "Jutter",
-        "leegwaarde": null,
-        "filter": {
-          "node": "Samengesteld",
-          "kwantor": "ALLE",
-          "drempel": 0,
-          "onderdelen": [
-            {
-              "node": "Kenmerk",
-              "kenmerk": "borgplichtig",
-              "navigatie": null,
-              "negatie": false,
-              "eigenaar": null,
-              "periode": null,
-              "bron": "gedurende de tijd dat hij borgplichtig is"
-            },
-            {
-              "node": "Samengesteld",
-              "kwantor": "ALLE",
-              "drempel": 0,
-              "onderdelen": [
-                {
-                  "node": "Kenmerk",
-                  "kenmerk": "aangesteld",
-                  "navigatie": null,
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
-                  "bron": "gedurende de tijd dat hij aangesteld is"
-                }
-              ],
-              "bron": "gedurende de tijd dat hij aangesteld is"
-            }
-          ],
-          "bron": "gedurende de tijd dat hij borgplichtig en (aangesteld) is"
-        },
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij borgplichtig en (aangesteld) is",
         "granulariteit": null
       },
       "voorwaarde": null,

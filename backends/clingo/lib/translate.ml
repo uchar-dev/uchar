@@ -642,15 +642,28 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                  :: gb
                  @ [ Printf.sprintf "%s %s %s" wl (vergelijk_sym op) gl ]));
             fun v t -> Printf.sprintf "%s(S,%s,%s)" q v t
-        | Samengesteld { kwantor = Alle; onderdelen = first :: rest; _ } ->
+        | Samengesteld { kwantor = Alle; onderdelen = (_ :: _ as onderdelen); _ } ->
+            (* the FLAT composite only (WF-055): v0 partitions static
+               comparison members out as value-side guards before its
+               clip runs and markers nested bullets — v1 narrows
+               composite members to characteristic checks *)
+            let member_fn part =
+              match part with
+              | Kenmerk_check _ -> cond_fn part
+              | _ ->
+                  fault
+                    "a composite gedurende member is an own temporal characteristic check \
+                     (WF-055; the static-guard and nested forms are recorded flanks)"
+            in
             List.fold_left
               (fun acc part ->
-                let pf = cond_fn part in
+                let pf = member_fn part in
                 ctx.fresh <- ctx.fresh + 1;
                 let q = Printf.sprintf "cl%d_and" ctx.fresh in
                 emit_period_and q acc pf;
                 fun v t -> Printf.sprintf "%s(S,%s,%s)" q v t)
-              (cond_fn first) rest
+              (member_fn (List.hd onderdelen))
+              (List.tl onderdelen)
         | _ ->
             fault
               "unsupported gedurende condition shape (WF-055: an own temporal \

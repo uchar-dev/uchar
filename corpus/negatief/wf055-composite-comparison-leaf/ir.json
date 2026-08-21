@@ -162,7 +162,7 @@
               "bron": "zijn wachtvergoeding per maand groter is dan 5"
             }
           ],
-          "bron": "gedurende de tijd dat hij borgplichtig en aangesteld is"
+          "bron": "gedurende de tijd dat hij borgplichtig is en zijn wachtvergoeding per maand groter is dan 5"
         },
         "dimensieSelectie": null,
         "type": {

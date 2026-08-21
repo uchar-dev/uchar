@@ -49,14 +49,6 @@
       }
     },
     {
-      "kind": "attributeValue",
-      "label": "J1",
-      "attribute": "nestwachtsom",
-      "value": {
-        "number": "30"
-      }
-    },
-    {
       "kind": "consistent"
     }
   ]
