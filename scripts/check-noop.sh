@@ -44,6 +44,10 @@
 #   - jutterswet-hardheid/case3-stilte.json: the discretionary route
 #     stays silent without a decision (six finds, no strandvoogd act) —
 #     the silence IS the legislator's intent (the hardship pattern).
+#   - jutterswet-penningrecht-catala/case3-stilte.json and
+#     case4-hardheidsgrens.json: the Catala render of the same
+#     articles — silence without a ground is the meaning, exactly as
+#     the hand-written hardheid anchor pins it (same two corners)
 #   - jutterswet-hardheid/case4-hardheidsgrens.json: a decision does
 #     not waive the halved threshold — four finds stay short, nothing
 #     is attributed; the absence is the assertion.
@@ -67,6 +71,8 @@ corpus/golden/anchor/jutterswet-waardestelling/case3-leeg-valt-door.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case6-leeg-doorval-input.json
 corpus/golden/anchor/jutterswet-hardheid/case3-stilte.json
 corpus/golden/anchor/jutterswet-hardheid/case4-hardheidsgrens.json
+corpus/golden/jutterswet-penningrecht-catala/case3-stilte.json
+corpus/golden/jutterswet-penningrecht-catala/case4-hardheidsgrens.json
 corpus/golden/anchor/jutterswet-borgdeel/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-dagentelling/case3-leeg.json
 corpus/golden/anchor/jutterswet-dagentelling/case4-input-blijft.json'

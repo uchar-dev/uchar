@@ -1,0 +1,37 @@
+# Jutterswet, artikelen 3 en 5 — het penningrecht
+
+Artikel 3. Een jutter die in het penningjaar ten minste twaalf
+vondsten heeft aangemeld, is penninggerechtigd.
+
+Artikel 5. In gevallen waarin de strandvoogd hardheid heeft
+toegepast, wordt artikel 3 gelezen als ware "twaalf" vervangen door
+"zes".
+
+```catala
+declaration scope Penningrecht:
+  input aantal_aangemelde_vondsten content integer
+  input hardheid_toegepast content boolean
+  output penninggerechtigd content boolean
+
+scope Penningrecht:
+  # De stilte-basis: zonder gegronde aanspraak geen recht.
+  definition penninggerechtigd equals false
+
+  # Artikel 3: de gewone drempel.
+  label artikel_3 exception
+  definition penninggerechtigd
+  under condition aantal_aangemelde_vondsten >= 12
+  consequence equals
+    true
+
+  # Artikel 5 leest artikel 3 met "zes": de hardheidsgrond gaat vóór
+  # en is daarom een uitzondering óp artikel 3 — de keten, niet een
+  # tweede ongeordende grond.
+  exception artikel_3
+  definition penninggerechtigd
+  under condition
+    hardheid_toegepast
+    and aantal_aangemelde_vondsten >= 6
+  consequence equals
+    true
+```

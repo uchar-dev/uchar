@@ -117,6 +117,13 @@ the row-8 delta record**; this proposal asks to track them (decision 5):
   us (the ch. 5.1 equation reading makes agreeing writers idempotent,
   and legal grounds that agree are not in samenloop), but it is a
   deviation and belongs in the delta column.
+  *(Field note, 2026-08-21, the first frontend-diff exercise: catala
+  1.2.1 itself no longer aborts on two firing exceptions with EQUAL
+  values — verified live, `/tmp` probe: equal values interpret cleanly,
+  differing values still raise ConflictError. Against the shipping
+  compiler this deviation has narrowed to exactly our reading; the
+  paper-versus-implementation gap is Catala's, not ours.)*
+
 - **The conflict is observable, not fatal.** The paper's `⊛` aborts under
   any context (D-ContextConflictError); ours deposits one channel fact
   and the computation degrades locally (RS ch. 5.6: "facts on a channel,

@@ -1,0 +1,32 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J",
+        "objectType": "Penningrecht",
+        "attributes": {
+          "aantal_aangemelde_vondsten": {
+            "number": "6"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "hardheid_toegepast"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "J",
+      "characteristic": "penninggerechtigd"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

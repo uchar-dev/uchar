@@ -1,0 +1,180 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Penningrecht": {
+      "node": "Objecttype",
+      "naam": "Penningrecht",
+      "attributen": {
+        "aantal_aangemelde_vondsten": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "hardheid_toegepast",
+        "penninggerechtigd"
+      ],
+      "kenmerkSoorten": {
+        "hardheid_toegepast": "BIJVOEGLIJK",
+        "penninggerechtigd": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": null
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": [],
+  "defaultLadders": [
+    {
+      "node": "DefaultLadder",
+      "naam": "penninggerechtigd",
+      "onderwerp": "Penningrecht",
+      "kenmerk": "penninggerechtigd",
+      "rungs": [
+        {
+          "node": "Rung",
+          "besluit": true,
+          "voorwaarde": {
+            "node": "Samengesteld",
+            "kwantor": "ALLE",
+            "drempel": 0,
+            "onderdelen": [
+              {
+                "node": "Kenmerk",
+                "kenmerk": "hardheid_toegepast",
+                "navigatie": null,
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "hardheid_toegepast"
+              },
+              {
+                "node": "Vergelijking",
+                "op": "GROTER_OF_GELIJK",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "aantal_aangemelde_vondsten",
+                  "objecttype": "Penningrecht",
+                  "onderwerpBron": "de aantal_aangemelde_vondsten",
+                  "navigatieRol": null,
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "de aantal_aangemelde_vondsten",
+                  "set": false,
+                  "navigatiePad": []
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "waarde": "6",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "6"
+                },
+                "periode": null,
+                "bron": null
+              }
+            ],
+            "bron": "en"
+          },
+          "bron": "penninggerechtigd"
+        },
+        {
+          "node": "Rung",
+          "besluit": true,
+          "voorwaarde": {
+            "node": "Vergelijking",
+            "op": "GROTER_OF_GELIJK",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "aantal_aangemelde_vondsten",
+              "objecttype": "Penningrecht",
+              "onderwerpBron": "de aantal_aangemelde_vondsten",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de aantal_aangemelde_vondsten",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "12",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "12"
+            },
+            "periode": null,
+            "bron": null
+          },
+          "bron": "penninggerechtigd"
+        },
+        {
+          "node": "Rung",
+          "besluit": false,
+          "voorwaarde": {
+            "node": "Samengesteld",
+            "kwantor": "ALLE",
+            "drempel": 0,
+            "onderdelen": [],
+            "bron": "altijd"
+          },
+          "bron": "penninggerechtigd"
+        }
+      ],
+      "bron": "penninggerechtigd",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ]
+}
