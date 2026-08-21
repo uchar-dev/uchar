@@ -58,7 +58,7 @@ let fault = Value.fault
    the program's syntax UNFENCED (a hunted crash), so such a name
    faults with its reason instead of being emitted raw. For DECLARED
    names WF-057 (IR-SPEC ch. 2.1) now rejects the document itself —
-   this fence remains as the vangnet, and it alone covers case
+   this fence remains as the last-line backstop, and it alone covers case
    LABELS, which are case-side and outside WF-057's reach *)
 let quote s =
   String.iter
