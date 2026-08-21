@@ -214,17 +214,22 @@ the norm; the encoding buys most of it for free):
    `#sum` over an empty tuple set (translated only with the
    fallback-0 facet, S14).
 
-The one empty rule with no *free* encoding — the equality/inequality
+The one empty rule with no *free* encoding — the **numeric** equality
 asymmetry of ch. 1.2d (leeg = leeg is true under gelijk-aan, false
 under ordering) — is encoded (2026-08-21) through a per-comparison
 helper: `eqN(S)` holds iff both operand bodies bind and the
 harmonised values match, *or neither binds*; ongelijk-aan is
-negation-as-failure over the helper, its exact complement. Sound for
+negation-as-failure over the helper — its exact complement, which
+ch. 1.2d grants **numerically only** (the non-numeric branch makes
+*any* empty operand false in both directions, so there the two are
+not complements). Sound for
 the same reason `coalesce0`'s definedness negation is: the helper
 reads only the operand bodies. Anchored by
 `jutterswet-sluitregister` (all four corners: equal, different,
-half-empty, both-empty). What remains loud: equality in the
-per-segment clip comparison (S14).
+half-empty, both-empty). What remains loud: non-numeric scalar
+equality (text/enum/boolean operands fault as unscalable before any
+eqN rule is emitted) and equality in the per-segment clip comparison
+(S14).
 
 Witnesses: `jutterswet-leegrekening`, `synth2-leegcomposities`,
 `jutterswet-vindersloon` (every empty cell), `jutterswet-taxatie`
@@ -570,8 +575,11 @@ context — the translation stops, nothing degrades. Grouped; the
 literal reason strings live in `backends/clingo/lib/translate.ml`.
 
 *Semantics deliberately unencoded (recorded findings):*
-equality in the per-segment clip comparison (the scalar
-equality/inequality asymmetry itself is encoded — S5; the clip's
+non-numeric scalar equality (text/enum/boolean `Gelijk`/`Ongelijk` —
+ref answers per ch. 1.2d's non-numeric branch, the translation faults
+on the unscalable operand before any eqN rule is emitted; the
+*numeric* asymmetry itself is encoded — S5) and equality in the
+per-segment clip comparison (the clip's
 empty corner is a different shape); runtime, negative and fractional
 power exponents (the runtime-exponent empty corner 4^leeg = leeg is
 thereby ref-only behaviour); ref's unit-conversion algebra (all
