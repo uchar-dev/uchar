@@ -355,6 +355,25 @@ semantically different engine.
 **Exit criteria:** documented ASP translation of the core; role bindings
 replace bean-field names in the IR; Clingo backend passes the differential
 square on the subset; "engine-neutral" is a claim with evidence.
+**Met (2026-08-21):** the systematic translation is
+`spec/ASP-TRANSLATION.md` Part I (S1–S14: every translated construct
+with its gate witnesses, and the complete loud non-translation
+inventory in S14 — the core may say "not yet", it may not pretend).
+Role bindings are first-class on the wire and are what executes: each
+of the three bean-field carriers the review named landed its symbolic
+form as extension fields with a WF rule (fact creation, IR-SPEC
+ch. 3.4/WF-028; navigation, ch. 4.1a/WF-053; uniqueness scope,
+ch. 5.9/WF-054); the uchar executors never read `zetVeld`/`joinVeld`
+(a bean-field-only fact creation faults loudly), the `scopeVeld`
+fallback resolves a *declared role by name* — mirrored and
+corpus-witnessed, no bean mechanics — and the role-binding→bean-field
+derivation lives in the Drools backend (the ch. 3.4 migration note:
+the Phase-3 forcing move, made). The differential holds as gates 5–6
+over the full corpus (ref ≡ clingo, anchored to hand-written absolute
+values), and the toolchain conforms through the `SPEC_REV` pin
+(`make uchar-conformance`: every emitter golden byte-identical at the
+pinned revision). In ASP a fact type is simply the predicate `rol/3`
+— the claim this phase existed to earn.
 
 ### Phase 4 — The default model in the IR
 
