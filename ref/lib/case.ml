@@ -80,7 +80,12 @@ let value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t =
   | "number", Some (Numeriek { eenheid; _ } | Percentage { eenheid; _ }) ->
       let u = match eenheid with Some e -> Value.Unit e | None -> Value.Unitless in
       Value.Num (Value.q_of_lexeme (str v), u)
-  | "number", None -> Value.Num (Value.q_of_lexeme (str v), Value.Unitless)
+  (* WF-059 backstop: a value against a datatype-less declaration would
+     split the executors (ref would read a bare unitless number where
+     the integer-scaling translation cannot scale) — the shared loader
+     refuses it in both, last-line behind the verifier's rejection *)
+  | "number", None ->
+      fail "%s: a value against a declaration without a datatype (WF-059)" at
   | "date", Some Datum_in_dagen -> Value.date_of_iso (str v)
   | "dateTime", Some Datum_tijd -> Value.Date_time (ms_of_datetime (str v))
   | "boolean", Some Booleaan -> (
