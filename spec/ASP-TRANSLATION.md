@@ -1,8 +1,8 @@
 # ASP translation
 
-*Status: the systematic construct-by-construct translation (Part I —
-sections S1–S7, S13 and S14 delivered; S8–S12 announced) — the
-Phase-3 deliverable this document was always growing toward. Part I describes what `backends/clingo` provably does:
+*Status: the systematic construct-by-construct translation (Part I,
+sections S1–S14, complete for the translated core) — the Phase-3
+deliverable this document was always growing toward. Part I describes what `backends/clingo` provably does:
 every claim is distilled from `backends/clingo/lib/translate.ml` and
 witnessed by the gate set (gate 6, `scripts/check-clingo.sh`, replays
 every golden case through the translation; gate 8,
@@ -20,15 +20,12 @@ Part I is the authoritative formulation.*
 
 ## Part I — The systematic translation
 
-Sections S1–S7, S13 and S14 below cover the core: program shape, facts
-and types, rules and write targets, expression terms, emptiness,
-arithmetic, conditions, the §9.5 channel, and the complete inventory
-of loud non-translations. The remaining constructs are announced, not
-silently absent — **S8 aggregations and folds, S9 timelines, S10
-defeasibility and standing, S11 creation, S12 allocation and
-uniqueness** follow in the next installment of this card; until then
-their machinery is documented historically in ch. 6a–6d and their loud
-flanks are already complete in S14.
+Sections S1–S7 cover program shape, facts and types, rules and write
+targets, expression terms, emptiness, arithmetic and conditions; S8
+aggregations and folds, S9 timelines, S10 defeasibility and standing,
+S11 creation, S12 allocation and uniqueness; S13 the §9.5 channel;
+S14 the complete inventory of loud non-translations — what the
+backend does not translate is stated there, never silently absent.
 
 ### S1. Program shape and conventions
 
@@ -106,7 +103,7 @@ differential). A granular parameter is only ever read temporally
 (S4/S9): the scalar-slot read faults.
 
 The standing-target routing is the one semantic decision made at
-input time (RS ch. 7.8; the announced S10 will carry the detail): if the target attribute of
+input time (RS ch. 7.8; S10 carries the detail): if the target attribute of
 a defeasible producer — a ladder target, or a bare single-writer
 version-free computing rule (the standing norm) — receives case
 input, that input enters as `inputval/3` (scalar) or `inputtl/5`
@@ -311,6 +308,210 @@ parts. Other quantifiers and condition kinds fault (S14).
 Witnesses: `jutterswet-hardheid`, `jutterswet-uitsluiting`,
 `jutterswet-vormenkabinet`; the WF-053 negatiefs pin the navigation
 well-formedness the verifier enforces before translation.
+
+### S8. Aggregations and folds
+
+**Count** (aantal): `V = #count { X : rol(S,role,X), ⟨filter
+atoms⟩ }`, scale 1 — the role read via the node's binding or the
+declared role name, the `die/dat` filter lowered by `cond_atoms` over
+the element variable. An element the filter's body cannot derive
+contributes no tuple: the contributor skip is the join, for free.
+**Sum** (som): contributor body `rol(S,role,X), val(X,a,G), ⟨filter⟩`
+and `V = #sum { G,X : ⟨body⟩ }` at the element attribute's scale —
+an instance without the attribute contributes no tuple, and the empty
+tuple set is clingo's native 0, which is why only the fallback-0
+facet translates (a som without it would need an explicit non-empty
+guard to distinguish leeg from 0; faults until a corpus case demands
+it, S14). Both aggregates are fenced: each contributor at 46340 *and*
+the contributor count at 46340 (`viol` when `46340 < #count{...}`),
+so the accumulated sum provably stays inside 2^31.
+
+**Temporal total, clipped** (totaal ... gedurende, ch. 3.6): the
+clip predicates a fold over the subject's *own* temporal attribute on
+a condition timeline. Per clip N: the condition segments
+(`clN_cond(S,V2,T2)` — a `ktl/4` read, or a per-segment comparison of
+an own temporal attribute), the four-way segment intersection
+(`clN_seg(S,V,T,W)` with V = max of starts, T = min of ends), the
+calendar as *data* (`clN_wu(V,T,N)`: whole units per clipped span),
+and the total `Q = #sum { W*N,V,T : clN_seg(S,V,T,W), clN_wu(V,T,N)
+}`. An absent or clipped-away timeline sums over the empty set: the
+clip's presence turns absence into 0 (the mirrored v0 nuance, RS
+ch. 3.6). Fences: |W| ≤ 46340, the endpoint span at 46340 whole
+units (segments are disjoint slices of one timeline, so |ΣW×N| ≤
+46340² holds), and the comparison harmonisation bounds of S6.
+**Temporal total, unclipped**: the asOfDate-bucket convention — the
+case supplies the bucket scalar as a plain `val/3` and the total
+reads it (×year factor; only year granularity is exercised); the
+total over a case-supplied *full* timeline faults, loudly.
+
+Witnesses (gate 6): count by `jutterswet-erflijn`,
+`jutterswet-maatschap`, `jutterswet-kustregister`; sum by
+`jutterswet-bergingstoezicht`, `jutterswet-gemeenteberging`,
+`jutterswet-penninguitgifte`, `synth2-budgetgrens-onder`; the clip by
+`jutterswet-getijdenwacht`, `jutterswet-penningjaar`,
+`synth2-clip-over-prorata`, `synth2-clip-cond-over-prorata`; the
+WF-055 negatiefs pin the clip's admissible condition shapes.
+
+### S9. Timelines
+
+A timeline is data, not state: `tl/5` segments (instance, attribute,
+from, to, scaled value) and `ktl/4` condition segments, with civil
+day numbers as endpoints. Three readers and two producers translate.
+
+**Point read** (ch. 3.3): `tl(S,a,F,T,R), F <= D, D < T` — and for a
+granular parameter `param_tl("p",F,T,R)` likewise. A gap, an empty
+date, an uncovered vintage: the body is underivable, leeg for free
+(the vintage fail-fast is the shared `parameterset_check`, gate-8
+witness `corpus/rood/vintage-uncovered-date`). A point read needs the
+full timeline in the case; the asOfDate-bucket scalar cannot serve it
+and faults (the ch. 4.3a convention: executors fault, never guess).
+
+**Pro-rata** (tijdsevenredig-deel, ch. 3.7): per fold N, the bucket
+calendar as data (`prN_b(bs,bn,days)` — only buckets the condition
+touches), the true-day intersection (`prN_d(S,B,KV,KT,D)`: days of
+`ktl` overlap per bucket), and the head `tl(S,a,B,N,⟨W·TD/Tot⟩)`
+under a `TD > 0` gate — an untouched bucket derives no segment.
+The quotient translates only exactly: a non-exact pro-rata part
+derives `viol("non-exact pro-rata part (an explicit rounding is
+mandated before precision is lost)")`. WF-056 fences the shape at
+translation time (temporal base, own temporal characteristic under
+gedurende, bucket = target granularity, base not finer than the
+bucket). **Day count** (aantal-dagen-in, ch. 3.8): the same bucket
+and true-day machinery (shared emit helpers) with the head carrying
+`TD` itself — pro-rata's numerator as the value, unitless; WF-058
+mirrors WF-056's facets. Fences on both: the 366-headroom weight
+bound and the 46340 contributor-count guard.
+
+Both producers carry the ch. 7.8 **standing arm** (S10): a per-fold
+effectiveness atom (`prN_eff`/`adgN_eff`) with the full bucket body —
+including the exactness guard — and the defeasible input rule
+`tl(S,a,F,T,V) :- inputtl(S,a,F,T,V), is_a(S,ot), not prN_eff(S).`
+An empty fold derives no effectiveness and the input timeline stands
+**whole**, never mixed per bucket (the maintainer-ratified
+whole-timeline reading, RS ch. 7.8).
+
+Witnesses: point reads and vintages by `jutterswet-aanmeldquotum`,
+`jutterswet-penningvintage`; pro-rata by `jutterswet-borgdeel`,
+`jutterswet-bakenmeester`, `synth2-prorata-breed`; day count by
+`jutterswet-dagentelling` (the RS ch. 3.8 worked example verbatim);
+the WF-049/056/058 negatiefs pin the shapes.
+
+### S10. Defeasibility and standing
+
+The Phase-4 default calculus translates as layered
+negation-as-failure — stratification (WF-045/046) is what makes every
+layer sound.
+
+**Ladders** (`defaultLadders`, RS ch. 7): ladder members are grouped
+by subject and target. Per member i, rung n:
+`dlI_decides_n(S) :- is_a(S,ot), ⟨rung condition⟩[, ⟨consequence
+bindings⟩].` — for an *attribute* ladder the consequence's bindings
+sit inside `decides`, so an empty consequence cannot decide (the
+filled-gate for free); higher rungs displace lower ones by `not
+dlI_decides_m` for every higher m. The decision projects into
+`dlI_dec(S,b)` (characteristic arm) or `dlI_out(S,term)` (attribute
+arm), and the head fires under the group's conflict guard:
+`heeft(S,k) :- dlI_dec(S,1), not grpG_conflict(S), ...` /
+`val(S,a,V) :- dlI_out(S,V), not grpG_conflict(S), ...`. Equal-rung
+disagreement between members derives
+`inconsistent("onderwerp.target",S) :- dlI_dec(S,X), dlJ_dec(S,Y),
+X != Y` — the §9.5 channel, never an arbitrary pick (a singleton
+group elides the conflict machinery entirely). An `initialisatie`
+rung additionally requires `not grpG_has_input(S)`: initialisation
+yields to case input by definition (RS ch. 7.2).
+
+**Standing input** (RS ch. 7.8): case input on a defeasible target
+enters as `inputval/3` (S2) and re-enters the model through
+`val(S,a,V) :- inputval(S,a,V), is_a(S,ot), not grpG_eff(S).` — the
+producer defeats the input exactly where it *decides*. The
+effectiveness atom's body **is** the semantic choice: it carries
+condition *and* value bindings, so a producer that fires but derives
+nothing (an empty ladder outcome, an empty computing rule) leaves the
+input standing — ref's no-write-on-empty. A condition-only body
+would encode v0's erase instead. The standing norm extends this to
+bare single-writer version-free computing rules (S3) and to the
+temporal producers (S9, whole-timeline).
+
+Witnesses: `jutterswet-hardheid` (the §4.1 hardship pattern),
+`jutterswet-toelagegronden`, `jutterswet-uitsluiting`,
+`jutterswet-vondstwaardering` (conflict), `jutterswet-waardestelling`
+(scalar standing), `jutterswet-borgdeel` (temporal standing); the
+WF-050/051 negatiefs pin ladder well-formedness; gate 7's
+reason-carrying no-op survivors pin exactly the cases where standing
+input must survive an ineffective producer.
+
+### S11. Creation
+
+**Object creation** (ch. 3.3/5.5): the created instance is a
+deterministic function term `ocI(S)` — set semantics gives
+idempotence for free (re-deriving the same head is the same atom).
+`is_a(ocI(S),new) :- ⟨body⟩.`, member initialisations as
+`val(ocI(S),m,⟨term⟩)`/`heeft(ocI(S),m)`, and the back-link doubled
+in both directions (`rol(S,new_role,ocI(S))` and
+`rol(ocI(S),subj_role,S)`). The 1:1 input-snapshot narrowing guards
+the creating body with `not inputrol(S,new_role,_)` — creation reads
+the *input* world, not the growing one (ch. 5.5). Recursive creation
+is budgeted: `depth(ocI(S),D+1) :- ⟨body⟩, depth(S,D), D <
+oc_budget.` with `viol("generation budget exhausted",X) :-
+depth(X,oc_budget).` — the runaway chain is UNSAT with its reason,
+exactly where ref's pass budget faults. The back-link pair
+resolution reuses `Eval.connecting_pair`; an ambiguous back-link
+faults in both executors (`corpus/rood/ambiguous-backlink`).
+
+**Fact creation** (ch. 3.4): the symbolic form walks its join chain
+— one positive `rol/3` atom per step — and asserts the new filling
+in both directions. The to-one guard is a `viol/2` witness when a
+second filler appears on a to-one role
+(`corpus/rood/to-one-second-filler`). Bean-field-only fact creations
+fault: the symbolic form is what executes.
+
+Witnesses: `jutterswet-penninguitgifte`, `jutterswet-wachtersketen`,
+`synth2-budgetgrens-onder` (creation under the budget);
+`jutterswet-erflijn`, `jutterswet-gemeenteberging`,
+`jutterswet-postwacht` (fact creation); red:
+`ambiguous-backlink`, `to-one-second-filler`,
+`finite-chain-over-budget`, `runaway-recursion`.
+
+### S12. Allocation and uniqueness
+
+**Proportional allocation** (verdeling naar rato, ch. 4.2): the
+recurrence over the group translates as an aggregate cascade per
+allocation I — weights `vdI_gewicht(X,W)`, the weight sum
+`vdI_wsum(B,S) :- ..., S = #sum {W,X: ...}, S != 0`, raw shares
+`vdI_raw(X,(A*W)/S)` (integer division on non-negative operands is
+exactly the declared floor), the cap split (share = min(raw, cap)
+encoded as the R≤C / R>C / uncapped cases), and the remainder
+`val(B,ra,A−T)` with T the share sum. The §9.5 channel carries the
+ch. 4.4 holes: a weightless recipient, a negative or absent cap —
+keyed by the allocation's name, per subject. `viol/2` fences:
+negative pot, negative weight, empty pot, and the 46340 bounds on
+weight, pot, recipient count and share (the weight sum, the
+pot×weight product and the share sum then provably stay inside
+2^31). Only the proportional method translates; conditional
+allocation and misaligned scales fault (S14). Case input on the
+allocation's target attribute is refused — the ch. 6d
+superset-model fence.
+
+**Uniqueness** (ch. 5.9): a collision is a pairwise join —
+`inconsistent("name",S1) :- is_a(S1,ot), is_a(S2,ot), S1 != S2,
+⟨key atoms S1⟩, ⟨key atoms S2⟩, ⟨scope⟩.` — with scalar keys read
+via `val/3`, at most one temporal key component read *ever* via
+`tl(L,k,_,_,K)`, and the WF-054 scope hop as a shared `rol/3`
+parent. The **union** shares one key predicate `uuI_key(S,J,⟨K…⟩)`
+across its sources (positions harmonised to the max scale, each
+upscale fenced), colliding by `2 <= #count { O,J : uuI_key(O,J,⟨V…⟩)
+}` — the source index J rides along because v0 sums per-source
+counts. An ever-unique key served by a bucket scalar faults; so do
+two temporal components (the same-moment tuple join has no corpus
+case).
+
+Witnesses: allocation by `jutterswet-bergingstoezicht`,
+`jutterswet-berging`; uniqueness by `jutterswet-kustregister`,
+`jutterswet-strandregister`, `jutterswet-postwacht`,
+`jutterswet-vondstnummer`; the union by `jutterswet-nummerregister`
+(per-subject collision pins); red: `uni-temporal-key-scalar`,
+`uni-two-temporal-keys`, `uu-temporal-key-scalar`,
+`uu-two-temporal-keys`.
 
 ### S13. The §9.5 channel
 
@@ -1121,9 +1322,8 @@ refuses loudly, exactly like this fence.
 quantitative machinery beyond the art. 3 threshold, and any systematic
 core-IR-to-ASP mapping — all Phase-3 work. This document grows with
 each hand exercise until that systematic mapping replaces it. *That
-replacement is underway: Part I is the systematic mapping, delivered
-for the core (S1–S7, S13–S14) with the remaining constructs announced
-(S8–S12). The constructs this chapter deferred have long since landed
-in the corpus and the backend — hardheid in the ladder anchors, the
-temporalisation in the ch. 6d machinery (its systematic write-up is
-S9's announced work), the quantitative corpus throughout.*
+promise is kept: Part I (S1–S14) is the systematic mapping. The
+constructs this chapter deferred have long since landed — hardheid in
+the ladder anchors (S10), the temporalisation in the timeline
+machinery (S9, historically ch. 6d), the quantitative corpus
+throughout.*
