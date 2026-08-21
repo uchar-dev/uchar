@@ -434,8 +434,44 @@ let load_expectation (doc : document) (world : World.t) (j : Yojson.Safe.t) : ex
   | "consistent" -> Consistent
   | "inconsistent" ->
       let opt_str k = Option.map str (List.assoc_opt k kvs) in
+      (* the rule pin refuses at load when NO form in the document
+         carries the pinned name — symmetric with the unknown-label
+         refusal below (maintainer decision 2026-08-21): a typo
+         surfaces as a named load error, never as a vague red
+         mismatch. Valid names: every form name (version-stripped or
+         full), ladder names, and the target form key an unordered
+         ladder group deposits under. *)
+      let known_rule r =
+        let module C = Ir_v0.Checks in
+        let hit n = n <> None && (norm (Option.get n) = norm r || norm (C.strip_version (Option.get n)) = norm r) in
+        List.exists (fun (x : resolved_regel) -> hit x.rr_naam) doc.resolved_regels
+        || List.exists (fun (x : resolved_object_creatie) -> hit x.oc_naam) doc.object_creaties
+        || List.exists (fun (x : resolved_verdeling) -> hit x.vd_naam) doc.verdelingen
+        || List.exists (fun (x : resolved_consistentie) -> hit x.cons_naam) doc.consistenties
+        || List.exists (fun (x : resolved_uniciteit) -> hit x.uni_naam) doc.uniciteiten
+        || List.exists (fun (x : resolved_uniciteit_unie) -> hit x.uu_naam) doc.uniciteit_unies
+        || List.exists (fun (x : resolved_feit_creatie) -> hit x.fc_naam) doc.feit_creaties
+        || List.exists
+             (fun (l : default_ladder) ->
+               hit l.dl_naam
+               ||
+               let target_form =
+                 l.dl_onderwerp ^ "."
+                 ^ match (l.dl_kenmerk, l.dl_attribuut) with
+                   | Some k, _ -> k
+                   | _, Some a -> a
+                   | _ -> "?"
+               in
+               norm target_form = norm r)
+             doc.default_ladders
+      in
       (match (opt_str "rule", opt_str "label") with
       | None, Some _ -> fail "an inconsistent label pin requires a rule pin"
+      | (Some r, _) when not (known_rule r) ->
+          fail
+            "inconsistent expectation references unknown rule %S: no form in the document \
+             carries that name"
+            r
       | rule, (Some l as label) ->
           if SMap.find_opt l world.instances = None then
             fail "inconsistent expectation references unknown label %S" l
