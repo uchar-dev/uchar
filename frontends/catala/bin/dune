@@ -1,0 +1,2 @@
+(executable
+ (name catala_frontend))

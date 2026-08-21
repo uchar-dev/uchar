@@ -1,0 +1,16 @@
+# Contextvariabele — moet luid geweigerd worden (besluit 6 / ch. 7.8)
+
+Een `context`-variabele vraagt om Reading B (de caller-override als
+hoogste rung). De landed ch. 7.8-standing-machinerie plaatst case-input
+juist ONDER de eigen rungs (Reading A). De plugin weigert daarom.
+
+```catala
+declaration scope Ctx:
+  input n content integer
+  context drempel content integer
+  output ok content boolean
+
+scope Ctx:
+  definition drempel equals 5
+  definition ok equals n >= drempel
+```

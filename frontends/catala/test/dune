@@ -1,0 +1,25 @@
+(executable
+ (name suite)
+ (libraries unix))
+
+; The end-to-end plugin suite. It drives the plugin plus the three
+; workspace executors (verifier, reference runner, clingo runner) over
+; the Catala test programs and their cases. All four executables and the
+; Catala/case fixtures are declared as deps so dune builds and sandboxes
+; them; their paths are handed to the suite as argv.
+(rule
+ (alias runtest)
+ (deps
+  (glob_files *.catala_en)
+  (glob_files cases/*.json)
+  (file ../bin/catala_frontend.exe)
+  (file ../../../spec/verifier/bin/verifier.exe)
+  (file ../../../ref/bin/runner.exe)
+  (file ../../../backends/clingo/bin/clingo_runner.exe))
+ (action
+  (run
+   %{exe:suite.exe}
+   ../bin/catala_frontend.exe
+   ../../../spec/verifier/bin/verifier.exe
+   ../../../ref/bin/runner.exe
+   ../../../backends/clingo/bin/clingo_runner.exe)))

@@ -1,0 +1,20 @@
+# Subscope-call — moet luid geweigerd worden (5a-scope, besluit 4)
+
+Een subscope-aanroep (`EScopeCall`) is object-creatie + rolnavigatie
+(mapping-rij 9); dat is echt ontwerpwerk voor later. De plugin weigert.
+
+```catala
+declaration scope Inner:
+  input a content integer
+  output b content integer
+
+scope Inner:
+  definition b equals a + 1
+
+declaration scope Outer:
+  input seed content integer
+  output r content integer
+
+scope Outer:
+  definition r equals (output of Inner with { -- a: seed }).b
+```

@@ -1,0 +1,18 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "P", "objectType": "Penningrecht",
+        "attributes": { "aantal_vondsten": { "number": "12" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "P", "attribute": "drempel", "value": { "number": "12" } },
+    { "kind": "attributeValue", "label": "P", "attribute": "premie", "value": { "number": "100" } },
+    { "kind": "characteristicPresent", "label": "P", "characteristic": "gerechtigd" },
+    { "kind": "consistent" }
+  ]
+}

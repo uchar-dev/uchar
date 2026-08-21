@@ -1,0 +1,22 @@
+# Proefwet — rechtenvrij, eigen auteurschap
+
+Deze mini-wet is met opzet geschreven voor de plugin-testsuite (naar het
+model van de fictieve Jutterswet-casus): een penningrecht met een
+drempel, een gestaffelde premie en een gerechtigdheidskenmerk. Geen
+©-materiaal; volledig eigen tekst.
+
+```catala
+declaration scope Penningrecht:
+  input aantal_vondsten content integer
+  internal drempel content integer
+  output premie content integer
+  output gerechtigd content boolean
+
+scope Penningrecht:
+  definition drempel equals 12
+  definition premie equals 100
+  exception definition premie
+    under condition aantal_vondsten >= 20
+    consequence equals 500
+  definition gerechtigd equals aantal_vondsten >= drempel
+```

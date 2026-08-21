@@ -1,0 +1,16 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "T", "objectType": "Toeslag",
+        "attributes": { "n": { "number": "3" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "T", "attribute": "bedrag", "value": { "number": "20" } },
+    { "kind": "consistent" }
+  ]
+}
