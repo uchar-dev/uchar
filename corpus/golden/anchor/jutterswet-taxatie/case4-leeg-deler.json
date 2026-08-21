@@ -1,0 +1,43 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Kavel",
+        "attributes": {
+          "opbrengst": {
+            "number": "10"
+          },
+          "ribbe": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "inconsistent",
+      "rule": "stukprijs van een kavel",
+      "label": "K1"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "K1",
+      "attribute": "stukprijs"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "inhoud",
+      "value": {
+        "number": "8"
+      }
+    }
+  ]
+}

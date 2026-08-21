@@ -1,0 +1,69 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Kavel",
+        "attributes": {
+          "opbrengst": {
+            "number": "10"
+          },
+          "partijen": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K2",
+        "objectType": "Kavel",
+        "attributes": {
+          "opbrengst": {
+            "number": "-10"
+          },
+          "partijen": {
+            "number": "3"
+          },
+          "krimp": {
+            "number": "-3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "stukprijs",
+      "value": {
+        "number": "3.33333"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K2",
+      "attribute": "stukprijs",
+      "value": {
+        "number": "-3.33333"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K2",
+      "attribute": "krimpmaat",
+      "value": {
+        "number": "-27"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

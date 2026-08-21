@@ -1,0 +1,408 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Kavel": {
+      "node": "Objecttype",
+      "naam": "Kavel",
+      "attributen": {
+        "opbrengst": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "partijen": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "stukprijs": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 5,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "zijde": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 1,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "oppervlakte": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "ribbe": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "inhoud": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "krimp": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "krimpmaat": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Kavels"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "stukprijs van een kavel",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "oppervlakte van een kavel",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "inhoud van een kavel",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "krimpmaat van een kavel",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "stukprijs van een kavel",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "stukprijs",
+        "objecttype": "Kavel",
+        "onderwerpBron": "De stukprijs van een Kavel",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 5,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De stukprijs van een Kavel",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "GEDEELD_DOOR_ABS",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "opbrengst",
+          "objecttype": "Kavel",
+          "onderwerpBron": "de Kavel",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de opbrengst van de Kavel",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "partijen",
+          "objecttype": "Kavel",
+          "onderwerpBron": "de Kavel",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "de partijen van de Kavel",
+          "set": false,
+          "navigatiePad": []
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 5,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de opbrengst van de Kavel gedeeld door abs de partijen van de Kavel"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "oppervlakte van een kavel",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "oppervlakte",
+        "objecttype": "Kavel",
+        "onderwerpBron": "De oppervlakte van een Kavel",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "De oppervlakte van een Kavel",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "TOT_DE_MACHT",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "zijde",
+          "objecttype": "Kavel",
+          "onderwerpBron": "de Kavel",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 1,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "de zijde van de Kavel",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "2",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "2"
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "de zijde van de Kavel tot de macht 2"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "inhoud van een kavel",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "inhoud",
+        "objecttype": "Kavel",
+        "onderwerpBron": "De inhoud van een Kavel",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "De inhoud van een Kavel",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "TOT_DE_MACHT",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "ribbe",
+          "objecttype": "Kavel",
+          "onderwerpBron": "de Kavel",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "de ribbe van de Kavel",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "3",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "3"
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "de ribbe van de Kavel tot de macht 3"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "krimpmaat van een kavel",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "krimpmaat",
+        "objecttype": "Kavel",
+        "onderwerpBron": "De krimpmaat van een Kavel",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De krimpmaat van een Kavel",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "TOT_DE_MACHT",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "krimp",
+          "objecttype": "Kavel",
+          "onderwerpBron": "de Kavel",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de krimp van de Kavel",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "3",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "3"
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de krimp van de Kavel tot de macht 3"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

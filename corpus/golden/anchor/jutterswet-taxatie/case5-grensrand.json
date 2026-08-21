@@ -1,0 +1,44 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Kavel",
+        "attributes": {
+          "zijde": {
+            "number": "4634.0"
+          },
+          "ribbe": {
+            "number": "1290"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "oppervlakte",
+      "value": {
+        "number": "21473956"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "inhoud",
+      "value": {
+        "number": "2146689000"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

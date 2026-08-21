@@ -1,0 +1,27 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Kavel",
+        "attributes": {
+          "opbrengst": {
+            "number": "10"
+          },
+          "partijen": {
+            "number": "0"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "division by numeric zero",
+    "clingo": "division by numeric zero"
+  }
+}

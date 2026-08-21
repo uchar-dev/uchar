@@ -1,0 +1,48 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Kavel",
+        "attributes": {
+          "partijen": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "stukprijs",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "K1",
+      "attribute": "oppervlakte"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "K1",
+      "attribute": "inhoud"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "K1",
+      "attribute": "krimpmaat"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -39,7 +39,13 @@
      viol/2 witness, never a silently truncated value; the
      Afgerond-over-division form computes the mode's integer rounding
      exactly (non-negative operands; the negative range is fenced by
-     a viol/2 witness). Unit-carrying multiplicative operands are
+     a viol/2 witness). The abs-division variant is the same path
+     collapsed at (Richting_nul, 5) — ch. 2.2's defined truncation
+     point, both signs. Tot-de-macht is gringo's ** on the scaled
+     base at result scale sl^e, for a compile-time non-negative
+     integer exponent only (an empty base propagates by the bare
+     join; runtime, negative and fractional exponents fault).
+     Unit-carrying multiplicative operands are
      refused: ref's unit algebra applies conversion factors this
      integer encoding does not carry.
 
@@ -823,6 +829,19 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         sl * sr * (if op = Percentage_van then 100 else 1) )
   | Binair { op = Gedeeld_door; links; rechts; _ } ->
       translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding:None
+  | Binair { op = Gedeeld_door_abs; links; rechts; _ } ->
+      (* the abs-division variant (ch. 2.2): the quotient truncated
+         toward zero at 5 decimals — a defined collapse point, so the
+         rounded-division path with (Richting_nul, 5) IS the semantics
+         (arith.div_abs = div_gen collapsed through round_q Richting_nul
+         5), edges included: empty dividend → 0, empty divisor under a
+         filled dividend → the §9.5 channel fact, numeric zero → a
+         viol/2 witness. gringo's integer division truncates toward
+         zero on both signs, so the negative range needs no fence. *)
+      translate_division ctx ~subject ~subject_ot ~links ~rechts
+        ~rounding:(Some (Richting_nul, 5))
+  | Binair { op = Tot_de_macht; links; rechts; _ } ->
+      translate_power ctx ~subject ~subject_ot ~links ~rechts
   | Afgerond { basis = Some (Functie { kind = Wortel; _ }); _ } ->
       (* ref rounds the true irrational exactly (§13.4.17.13); that
          computation has no integer encoding here yet *)
@@ -970,6 +989,75 @@ and translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding =
       emit ctx "%s(%s,V) :- %s, %s, V = %s." p subject full guards value);
   let v = fresh ctx "Q" in
   ([ Printf.sprintf "%s(%s,%s)" p subject v ], v, out_scale)
+
+(* tot de macht (ch. 2.2, arith.pow_): exact integer power. Only a
+   compile-time non-negative integer exponent translates: the result
+   scale sl^e must be a compile-time constant, and ref's general form
+   (a negative exponent inverts first — a division; a fractional
+   exponent takes an exact root — the ch. 2.1 OPEN) has no integer
+   encoding here. Emptiness: the base PROPAGATES (ch. 1.2 — pow_
+   returns Empty on an empty base, no coalesce), which the bare body
+   join encodes for free. gringo's ** matches Z.pow on the exercised
+   range — (-3)**3 = -27, x**0 = 1 including 0**0 — so signed bases
+   translate unfenced; the operand itself is fenced at the largest
+   base whose e-th power stays inside 2^31 (the wrap would happen
+   during grounding, BEFORE any guard on the result could see it). *)
+and translate_power ctx ~subject ~subject_ot ~links ~rechts =
+  let links = req "Binair.links" links and rechts = req "Binair.rechts" rechts in
+  numeric_ok (Some links);
+  numeric_ok (Some rechts);
+  unit_free_ok ctx (Some links);
+  unit_free_ok ctx (Some rechts);
+  let e =
+    match rechts with
+    | Literal { waarde = Some w; _ } -> (
+        let q = Value.q_of_lexeme w in
+        if not (Z.equal (Q.den q) Z.one) then
+          fault
+            "fractional exponent %s is not translated (ref takes an exact root — the \
+             ch. 2.1 OPEN; no corpus case)"
+            w
+        else
+          match Z.to_int (Q.num q) with
+          | e when e >= 0 -> e
+          | _ ->
+              fault
+                "negative exponent %s is not translated (ref inverts the exact power — a \
+                 division; no corpus case)"
+                w
+          | exception Z.Overflow -> fault "exponent %s is out of range" w)
+    | _ ->
+        fault
+          "a runtime exponent is not translated (the result scale is exponent-dependent, \
+           and an empty or negative runtime exponent has no integer encoding; no corpus \
+           case)"
+  in
+  let b, t, s = expr_term ctx ~subject ~subject_ot links in
+  (* the result scale sl^e, fenced like pow10: beyond 10^9 the scaled
+     integers themselves leave clingo's range *)
+  let out_scale =
+    let rec go acc i =
+      if i = 0 then acc
+      else if acc > 1_000_000_000 / s then
+        fault "the power's result scale %d^%d exceeds clingo's integer range" s e
+      else go (acc * s) (i - 1)
+    in
+    go 1 e
+  in
+  (* the largest |base| whose e-th power stays inside 2^31, exactly *)
+  let pow_le_max k i =
+    let rec go acc i = if i = 0 then true else if acc > max_int31 / k then false else go (acc * k) (i - 1) in
+    k = 0 || go 1 i
+  in
+  if e >= 2 then begin
+    let bound =
+      let rec go k = if pow_le_max (k + 1) e then go (k + 1) else k in
+      go 0
+    in
+    let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+    range_guard ctx ~subject ~body:((base :: ctx.rule_guard) @ b) [ (t, bound) ]
+  end;
+  (b, Printf.sprintf "((%s)**%d)" t e, out_scale)
 
 and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
   match c with

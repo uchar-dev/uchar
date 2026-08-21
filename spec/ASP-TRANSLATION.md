@@ -554,6 +554,42 @@ carry. Anchored absolutely by
 every empty cell, the channel edge) and differentially by the emitter
 golden `corpus/golden/jutterswet-bergloon`.
 
+**Gedeeld-door-abs** (2026-08-21) is the same division path collapsed
+at (richting-nul, 5): ch. 2.2 defines the variant as the quotient
+truncated toward zero at 5 decimals, which is exactly the
+rounded-division emission at out-scale 10^5 — and since gringo's
+native integer division itself truncates toward zero on both signs,
+this is the one rounded mode that needs no negative-range fence. The
+three §6.5 edges ride along unchanged (empty dividend → 0 before the
+divisor is read; empty divisor under a filled dividend → the
+rule-keyed channel fact beside an absent value; numeric zero → a
+`viol/2` witness). Anchored absolutely by
+`corpus/golden/anchor/jutterswet-taxatie` (the RS ch. 2.2 example row
+on both signs — 10 ÷abs 3 = 3,33333 and −10 ÷abs 3 = −3,33333 — plus
+the exact and empty corners) and observably red by
+`corpus/rood/division-abs-by-numeric-zero` in both executors.
+
+**Tot-de-macht** (2026-08-21) translates for a compile-time
+non-negative integer exponent: the scaled base L at scale sl grounds
+as `L**e` at result scale sl^e, a compile-time constant fenced at
+10^9. gringo's `**` matches the exact integer power on the exercised
+range, signed bases included ((−3)\*\*3 = −27; x\*\*0 = 1 including
+0\*\*0), so signed bases translate unfenced in value. The base
+operand carries a `viol/2` fence at the largest value whose e-th
+power stays inside 2^31 — the wrap would occur during *grounding*,
+before any guard on the result term could observe it (46340 for e=2,
+1290 for e=3; `jutterswet-taxatie` case5 pins the largest
+translatable powers replaying exactly, so the guard provably does not
+fire early). An empty base propagates through the bare body join
+(ch. 1.2: the power has no coalesce). Three shapes fault loudly, by
+design: a runtime exponent (the result scale would be
+exponent-dependent, and the empty/negative runtime corners have no
+integer encoding), a negative exponent (ref inverts the exact power —
+a division), and a fractional exponent (an exact root — the ch. 2.1
+OPEN). The runtime-exponent empty corner (4^leeg = leeg, ch. 1.2)
+therefore remains ref-only behaviour: recorded here, never a silent
+SKIP.
+
 ## 6c. The three fences of the first adversarial round (2026-08-19)
 
 The first hacker–fixer round (PLAN §8) found no crack in the empty-value
