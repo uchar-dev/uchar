@@ -71,3 +71,44 @@ frontends/-zoneregistratie (scripts/ + CLAUDE.md, protected), eventuele
 CI-leg (.github, niet aangeraakt), en de lib-modulenaam-afwijking
 (`Catala_frontend_lib` i.p.v. `Catala_frontend`: dune verbiedt exe en lib
 met dezelfde modulenaam — de exe-naam `catala_frontend` is behouden).
+
+Result, slot (2026-08-21, na de lensronde): de zoneregistratie van
+frontends/ in scripts/check-self-contained.sh en de CLAUDE.md-gatetekst
+is gedaan (de aangekondigde verruiming; de gate ving direct één
+private-repo-naam in een commentaar — geveegd). De twee opus-lenzen
+vingen DRIE stille divergenties, elk tegen catala interpret
+gereproduceerd en vóór de merge gedicht met luide weigeringen of een
+getrouwe vorm: (1) een boolean in waarde-positie werd een dangling
+AttribuutRef (ref stil fout, clingo fault) → weigert nu luid; (2)
+Catala leest elke variabele hard (leeg = fataal) waar onze additieve
+familie coalesct — een conditioneel-lege operand gaf stil een
+gefabriceerde waarde → reken-/vergelijkingsoperanden zijn nu beperkt
+tot inputs (recorded aanname: het case-dossier vervult Catala's
+input-contract) en onvoorwaardelijk gedefinieerde variabelen, de rest
+weigert met het deviatiebesluit expliciet uitgesteld; (3)
+geld-deling miste Catala's verplichte cent-afronding (ref faultte op
+de rest) → Div_mon_int/rat wikkelt nu in Afgerond(REKENKUNDIG, 2),
+tegen catala interpret geverifieerd ($20/3→6.67), door alle drie de
+poorten; money/money weigert (decimal). Plus: de
+ConflictError-deviatie is nu écht getest (overlappende ongeordende
+gronden → inconsistent in beide executors) en de weigeringssuite
+dekt alle besluit-4-vormen (44 checks totaal). TUTORIAL-VERZOENING
+(acceptatie-eis 4, expliciet): de officiële Catala-tutorial steunt op
+structs, decimals, subscope-calls en lijsten — stuk voor stuk
+besluit-4-weigeringen — en is dus binnen het 5a-fragment
+onuitvoerbaar; de suite draait rechtenvrije eigen fixtures en de
+struct/decimal/lijst-weigeringstests zijn het grensbewijs (de
+tutorial weigert luid, exit 3, ter plekke gedemonstreerd). De
+tutorial-door-de-plugin verschuift daarmee expliciet naar het moment
+dat 5b (folds/enums) en de subscope-mapping landen. BESLUIT-6-NOTITIE:
+in de praktijk draait 5a optie B (context-variabelen weigeren) — de
+door de maintainer gekozen optie A (top-rung) blijkt pas realiseerbaar
+zodra subscope-calls vertalen, omdat ch. 7.8's input-rung Reading A
+is en een enkel-scope-programma geen caller heeft; vastgelegd op
+kaart 2 voor 5c. Rood-eerst is historisch verifieerbaar: commit
+6c93b77 draagt de suite met stub-bin (5 checks, 5 failures) zónder
+translate.ml. Openstaand, eerlijk: de plugin-suite draait buiten de
+acht gates (een CI-leg/gate-9-kaartje is de natuurlijke volgende
+stap); datum-vergelijkingen zijn ref-only (clingo vertaalt geen
+datum-literal in termpositie — bestaande backend-limiet); de
+byte-canonieke serialisatie is corpus-werk voor kaart 2.
