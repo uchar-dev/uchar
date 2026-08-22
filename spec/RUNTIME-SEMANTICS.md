@@ -1871,7 +1871,12 @@ natively, the ASP backend the desugared ladder — the gate-6
 differential witnesses the lowering). Rule-readability of the conflict
 fact is **closed** for v1 (ch. 7.2, decided 2026-08-20); the ch. 7.8
 standing norm executes on scalar targets through both executors
-(temporal targets stay fenced — recorded, scalar-first).*
+(temporal targets stay fenced — recorded, scalar-first). Below-root
+exception branching is ch. 7.9 (Phase 5c): the `Rung.excepties` wire
+form and its well-formedness (WF-050 recursion, WF-051 unchanged,
+WF-075) land with this chapter; the anchors `jutterswet-nestuitzondering`
+and `jutterswet-nestkenmerk` prove both target kinds through the executor
+card.*
 
 ### 7.1 The model: the ladder, and fall-through as its semantics
 
@@ -1987,6 +1992,10 @@ EmptyError/ConflictError shape), mapped onto this IR's own discipline:
   single ladder cannot reach this outcome (ch. 7.1); the channel is
   exercised exactly by declared-unordered simultaneity — and a linear
   ladder never pays it (the exercise-2 finding, now by construction).
+  A sub-group nested in a rung (ch. 7.9) reconciles by this same rule at
+  its own level; a differing sub-group propagates the conflict to the
+  root — no write, one **path-keyed** §9.5 fact (`Onderwerp.doel/<rung
+  index path>`) distinguishing a nested conflict from a root one.
 - **Characteristic targets**: the ladder computes its one boolean
   decision at the fixpoint of its justification strata (ch. 7.1);
   do-not-attribute means the ladder derives nothing. On a
@@ -2204,6 +2213,117 @@ reason-carrying gate-7 survivor; a fold deciding Jan–Feb 12 over an
 input March segment yields Jan–Feb 12 and nothing else). **Multi-writer
 targets stay fenced** on the ASP side (v0 meaning: agenda order), as do
 versioned targets (selection is temporal, ch. 7.4 — never defeasible).
+
+### 7.9 Nested exception groups (design — the Phase-5c gate)
+
+*Status: normative design; the wire form is `Rung.excepties` (`IR-SPEC.md`
+ch. 6.1, WF-075), an extension field, never emitter-produced. The worked
+examples below are the anchors `jutterswet-nestuitzondering` (attribute
+target) and `jutterswet-nestkenmerk` (characteristic target).*
+
+Ch. 7.1's ladder is a **chain**; ch. 7.2's declared-unordered group is
+**root-level branching**. What neither expresses is **branching below the
+root** — a chain whose exceptions themselves branch. Phase 5c adds it as
+one concept applied recursively (`PHASE4-DEFAULTS.md` §7 option i,
+ratified 2026-08-22): a rung's exception slot may hold a **sub-group** —
+`excepties = { ongeordend, leden }`, each member a `SubLadder` (a rung
+chain, descending, highest first, inheriting the root target and itself
+nesting via `Rung.excepties`). A sub-ladder carries **no target of its
+own**. Two rung shapes result:
+
+- a **form-a rung** — own justification/consequence (or besluit) **and**
+  `excepties`: the sub-group goes first (below), and its own
+  justification/consequence is the **fall-back** when the sub-group
+  decides nothing;
+- a **group-rung** — `excepties` with no own justification/consequence/
+  besluit: a chain position carrying a *multi-member base group* (or a
+  further exception group), whose members reconcile as an unordered
+  group.
+
+**The recursive reading.** A rung carrying `excepties` first **reconciles
+its sub-group exactly as the root group reconciles** (ch. 7.2): each
+member decides independently (its own highest deciding rung, recursively),
+and
+
+- if the deciding members **agree** — one member decides, or several
+  decide **equal** values/besluiten — that is the sub-group's decision,
+  and it **is the rung's decision** (the equal-decisions rule of ch. 7.2
+  holds at every level: agreeing grounds are no conflict);
+- if **no member decides**, the sub-group is empty and the rung **falls
+  back**: a form-a rung to its own justification/consequence (deciding, or
+  falling through, like a plain rung); a group-rung decides nothing and
+  the ladder falls through to the next lower rung;
+- if two members **decide differently**, that is the branch-below-the-root
+  conflict, and it **propagates to the root** (vraag 5, decided
+  2026-08-22, option A): the ladder **does not write** (the target keeps
+  what the fact base holds — its input value, or leeg) and one **§9.5
+  channel fact** records it, keyed by the target form **plus the rung
+  index path** — `Onderwerp.doel/<rungindexpad>` (e.g. `Jutter.heffing/0`
+  for the sub-group of rung 0; a root-level conflict keeps its bare
+  `Jutter.heffing`). The path suffix keeps a nested conflict
+  distinguishable from a root one. This is **uniform with the root
+  reading** (a differing group does not write) and **Catala-faithful**:
+  Catala's `⊛` propagates up the default tree (D-ContextConflictError),
+  and this reading follows that propagation **minus the fatality** we
+  already made observable (ch. 7.2; the deviation extends the tracked
+  row-8 record in `CONSTRUCTS.md`). The initialisation rung (ch. 7.3) and
+  the input rung (ch. 7.8) stay **root-only** — a sub-rung is never an
+  initialisation or input rung (WF-075).
+
+The **binding acceptance test** is `PHASE4-DEFAULTS.md` §7's spurious-
+conflict example (`b ← x`, `x ← {y, z}` with only `y` applicable and `x`
+justified): flattening the tree to a root group `{[y, x], [z, x]}`
+manufactures a conflict — member 1 decides `y`, member 2 decides `x` —
+where the paper's calculus yields **`y`** (the `z` slot is ∅, the sole
+non-empty exception wins). The nested reading yields `y`, consistent: the
+sub-group of `x` reconciles first, only `y` decides, and that is `x`'s
+decision — no spurious conflict. Ch. 7.2's reference here: a declared-
+unordered *root* group reconciles by the same rule the sub-group now uses
+recursively.
+
+**Worked examples (absolute; the anchors verbatim, both target kinds).**
+
+*Attribute target* — `jutterswet-nestuitzondering`, `Jutter.heffing`
+(2 decimals). One ladder: rung 0 = form-a `grondX → 40.00` with an
+unordered sub-group `{ grondY → 10.00, grondZ → 20.00, grondW → 10.00 }`;
+rung 1 = a group-rung carrying the unordered base group
+`{ grondB1 → 15.00, grondB2 → 25.00 }`.
+
+| Case | Input characteristics | `heffing` | Channel |
+|---|---|---|---|
+| `case1-alleen-y` | grondX, grondY | **10.00** | consistent — the spurious-conflict test: only `y` decides in the sub-group |
+| `case2-alleen-z` | grondX, grondZ | **20.00** | consistent |
+| `case3-verschillend` | grondX, grondY, grondZ | **leeg** | inconsistent `Jutter.heffing/0` — the sub-group of rung 0 decides 10 and 20 |
+| `case4-gelijk` | grondX, grondY, grondW | **10.00** | consistent — equal sub-decisions (10 and 10) are no conflict |
+| `case5-terugval` | grondX | **40.00** | consistent — empty sub-group falls back to rung 0's own consequence |
+| `case6-basis` | grondB1 | **15.00** | consistent — rung 0 undecided, the base group-rung decides |
+| `case7-basisconflict` | grondB1, grondB2 | **leeg** | inconsistent `Jutter.heffing/1` — the base group decides 15 and 25 |
+| `case8-niets` | (none) | **leeg** | consistent — nothing decides; a no-op-survivor (gate 7) |
+
+*Characteristic target* — `jutterswet-nestkenmerk`, `Jutter.vrijgesteld`.
+One ladder: rung 0 = form-a `nx → attribute (besluit true)` with an
+unordered sub-group `{ ny → do-not-attribute (false), nz → attribute
+(true) }`.
+
+| Case | Input characteristics | `vrijgesteld` | Channel |
+|---|---|---|---|
+| `case1-y-wint` | nx, ny | **absent** | consistent — the sub-decision `false` displaces `nx`'s `true` |
+| `case2-conflict` | nx, ny, nz | **absent** | inconsistent `Jutter.vrijgesteld/0` — the sub-group decides `false` and `true` |
+| `case3-terugval` | nx | **present** | consistent — empty sub-group falls back to rung 0's own besluit `true` |
+
+**Well-formedness and strata.** WF-050 recurses its rung-shape checks
+into sub-rungs (content per target kind; a group-rung carries `excepties`
+and no own content; a contentless rung is WF-075's concern). WF-051 needs
+**no change**: `dep_forms` folds **every descendant read** (justifications
+and consequences, recursively through sub-rungs) into the root ladder's
+negative edges, so a cycle through a sub-rung read is caught unchanged (a
+sub-rung reading its own root target is ill-formed). WF-075 governs the
+nested form itself (members ≥ 1, the unordered-multiplicity rule at every
+level, no initialisation in sub-rungs, the contentless rung). The ASP
+lowering of the nested form — a per-path predicate family, with value
+priority between a sub-group's outcome and a form-a rung's own consequence
+— is real design work carried by the executor card, proven by these
+anchors.
 
 ## 9. Sum types and match
 

@@ -1,0 +1,126 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "heffing": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "grondX"
+      ],
+      "kenmerkSoorten": {
+        "grondX": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": [],
+  "defaultLadders": [
+    {
+      "node": "DefaultLadder",
+      "naam": "heffing van een jutter",
+      "onderwerp": "Jutter",
+      "kenmerk": null,
+      "attribuut": "heffing",
+      "rungs": [
+        {
+          "node": "Rung",
+          "besluit": null,
+          "voorwaarde": {
+            "node": "Kenmerk",
+            "kenmerk": "grondX",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "hij grondX heeft"
+          },
+          "consequentie": {
+            "node": "Literal",
+            "waarde": "40.00",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "40.00"
+          },
+          "bron": "grondX: 40.00, met een sub-groep",
+          "excepties": {
+            "ongeordend": true,
+            "leden": [
+              {
+                "node": "SubLadder",
+                "rungs": [
+                  {
+                    "node": "Rung",
+                    "besluit": null,
+                    "voorwaarde": null,
+                    "consequentie": {
+                      "node": "Literal",
+                      "waarde": "25.00",
+                      "type": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      },
+                      "bron": "25.00"
+                    },
+                    "initialisatie": true,
+                    "bron": "sub-init: 25.00 (onwelgevormd)"
+                  }
+                ],
+                "bron": "lid met een initialisatie-rung"
+              }
+            ]
+          }
+        }
+      ],
+      "bron": "art. n",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ]
+}

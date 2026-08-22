@@ -1585,11 +1585,13 @@ emitter-produced.
 
 **Rung**: `decision` (v0 wire `besluit`, boolean? — characteristic
 rungs only: attribute vs do-not-attribute), `justification` (v0 wire
-`voorwaarde`, a condition; null only on the initialisation rung),
-`consequence` (v0 wire `consequentie`, expression? — attribute rungs
-only), `initialisation` (v0 wire `initialisatie`, boolean — the
-ch. 7.3 rung: justified iff the target is empty in the input facts;
-lowest only), `source`. Semantics: `RUNTIME-SEMANTICS.md` ch. 7.1 —
+`voorwaarde`, a condition; null only on the initialisation and
+group-rungs), `consequence` (v0 wire `consequentie`, expression? —
+attribute rungs only), `initialisation` (v0 wire `initialisatie`,
+boolean — the ch. 7.3 rung: justified iff the target is empty in the
+input facts; lowest only, **root-only**), `exceptions` (v0 wire
+`excepties`, the optional nested sub-group — the **Rung.exceptions and
+SubLadder** paragraph below), `source`. Semantics: `RUNTIME-SEMANTICS.md` ch. 7.1 —
 per subject the highest rung that **decides** wins: on a
 characteristic every justified rung decides (a false decision derives
 nothing and displaces); on an attribute a rung decides when its
@@ -1597,6 +1599,26 @@ justification holds *and* its consequence evaluates gevuld — a leeg
 consequence **falls through**, a ladder without a decision **writes
 nothing** (the input value is left standing), and rung evaluation is
 speculative (only the deciding rung's channel deposits persist).
+
+**Rung.exceptions and SubLadder** (`RUNTIME-SEMANTICS.md` ch. 7.9,
+Phase 5c — the below-root branching form): a rung's `exceptions` slot
+(v0 wire `excepties = { unordered, members }`, `ongeordend` + `leden`)
+holds a **sub-group** whose `members` are `SubLadder` nodes (v0 wire
+`SubLadder`: `rungs` — a non-empty rung chain, descending, highest
+first — and `source`). A sub-ladder inherits the root target and
+carries **none of its own**, and it may nest again via `Rung.exceptions`
+— the ladder is a rose tree. Two rung shapes: a **group-rung**
+(`exceptions`, no own besluit/consequence — the sub-group *is* its
+decision, carrying a multi-member base or exception group as a chain
+position) and a **form-a rung** (own besluit/consequence too — the
+sub-group decides first, its own consequence the fall-back when the
+sub-group is empty). A rung reconciles its sub-group by the same rule
+the declared-unordered root group uses (ch. 7.2), recursively; a
+**differing** sub-group propagates the conflict to the **root** — no
+write, one path-keyed §9.5 fact `subject.target/<rung index path>`
+(ch. 7.9, vraag 5 A). The initialisation and input rungs are
+**root-only** — a sub-rung is never one. `Rung.required` is untouched,
+so every existing document validates unchanged.
 
 - **WF-050** A ladder MUST carry at least one rung and MUST target
   exactly one of a characteristic or an attribute, resolving on its
@@ -1611,7 +1633,13 @@ speculative (only the deciding rung's channel deposits persist).
   initialisation rung's input-emptiness justification (the ch. 7.1
   single-writer lift). Multiple ladders on one target MUST all carry
   the `unordered` marking — priority is explicit (rungs) or explicitly
-  absent (the declared-unordered group), never implicit.
+  absent (the declared-unordered group), never implicit. The rung-shape
+  checks (content per target kind; a non-init rung carries a
+  justification) **recurse into sub-rungs** (ch. 7.9, a sub-ladder
+  inheriting the root target kind); a group-rung (`exceptions`, no own
+  content) is exempt from the content and justification requirements, and
+  a contentless rung — neither content nor sub-group — is WF-075's
+  concern.
 - **WF-051** Every rung-justification read — and, on an attribute
   ladder, every consequence read (the gevuld gate makes it
   decision-bearing) — joins the ch. 6 dependency graph of
@@ -1621,6 +1649,20 @@ speculative (only the deciding rung's channel deposits persist).
   cycle may pass through a ladder — strata must exist. The WF-045/046
   principles apply to the extended graph (a violating document
   typically trips those too; WF-051 names the ladder-specific rule).
+  This rule is **unchanged** by the nested form: `dep_forms` folds every
+  descendant read (justifications and consequences, recursively through
+  sub-rungs) into the same root negative edges (ch. 7.9), so a cycle
+  through a sub-rung read is caught here.
+- **WF-075** A rung's `exceptions` sub-group (`RUNTIME-SEMANTICS.md`
+  ch. 7.9) MUST carry at least one member; two or more members MUST
+  carry the `unordered` marking (the root regime of WF-050, applied at
+  every level — the flag rides the sub-group itself). A sub-rung MUST
+  NOT be an initialisation (or input) rung — those are root-only. Every
+  rung MUST carry its own decision/consequence, a nested sub-group, or
+  be the initialisation rung — a contentless rung decides nothing. The
+  rule recurses to any depth. (The content-KIND per target and the
+  descendant-read folding land with WF-050 and WF-051; a differing
+  sub-group's root propagation is evaluation semantics, ch. 7.9.)
 
 The v0 desugaring of existing rule forms into ladders is
 `RUNTIME-SEMANTICS.md` ch. 7.7 (implemented as `Ir_v0.Desugar`, the
@@ -1700,8 +1742,8 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-047 | role binding resolves; fillers agree with the use site; written source denotes the bound role | gate 3 | `anchor/jutterswet-bergingstoezicht` (two fact types over one pair; allocation and fold bound, replayed by gates 5–6) + `anchor/jutterswet-maatschap` (the reciprocal binding: bound = opposite) + `anchor/jutterswet-wachtersketen` (the creation back-link binding) | `wf047-dangling-role-binding` (resolution) + `wf047-bound-role-fills-source` (filler agreement) + `wf047-reciprocal-wrong-filler` (the single-role filler clause) + `wf047-creation-binding-wrong-filler` (the creation site) |
 | WF-048 | bindingless allocation/instance fold: connecting relation uniquely derivable | gate 3 (contexts with a statically known fold subject; a subjectless context — none exists in v0 dumps, whose folds sit under a typed rule target — is left to the executors' runtime fault) | `jutterswet-berging` + `jutterswet-vondsttelling` (bindingless, uniquely derivable) + `anchor/jutterswet-maatschap` (bindingless over a reciprocal relation) | `wf048-ambiguous-connecting-relation` |
 | WF-049 | temporal read: basis temporal (attribute/granular parameter), day-precision date, element type | gate 3 | `anchor/jutterswet-aanmeldquotum` (attribute + parameter reads; hit, gap→leeg, empty date→leeg; replayed by gates 5–6) | `wf049-read-of-nontemporal` (basis) + `wf049-read-at-datetime` (date operand) + `wf049-type-not-element` (element type) |
-| WF-050 | ladder: ≥ 1 rung; exactly one target, resolving; rung shapes per kind; init rung lowest; no other writer; multiplicity only declared-unordered | gate 3 | `anchor/jutterswet-uitsluiting` (characteristic) + `anchor/jutterswet-vondstwaardering` (attribute + init) + `anchor/jutterswet-toelagegronden` (unordered groups, six conflict-path cases; all replayed by gates 5–6) | `wf050-empty-ladder` + `wf050-two-ladders-one-target` + `wf050-ladder-beside-rule` + `wf050-both-targets` + `wf050-init-not-lowest` + `wf050-rule-beside-attribute-ladder` + `wf050-allocation-beside-ladder` + `wf050-creation-beside-ladder` + `wf050-half-marked-group` |
-| WF-051 | no dependency cycle through a ladder (justification and consequence reads are negative edges) | gate 3 (over the extended dep_forms graph, shared with ref/'s strata) | `anchor/jutterswet-uitsluiting` (the ladder sits below its negated consumer — strata exist, oracle-replayed) | `wf051-ladder-reads-own-target` |
+| WF-050 | ladder: ≥ 1 rung; exactly one target, resolving; rung shapes per kind (recursing into sub-rungs, ch. 7.9 — a group-rung carries `exceptions` and no own content); init rung lowest; no other writer; multiplicity only declared-unordered | gate 3 | `anchor/jutterswet-uitsluiting` (characteristic) + `anchor/jutterswet-vondstwaardering` (attribute + init) + `anchor/jutterswet-toelagegronden` (unordered groups, six conflict-path cases; all replayed by gates 5–6) | `wf050-empty-ladder` + `wf050-two-ladders-one-target` + `wf050-ladder-beside-rule` + `wf050-both-targets` + `wf050-init-not-lowest` + `wf050-rule-beside-attribute-ladder` + `wf050-allocation-beside-ladder` + `wf050-creation-beside-ladder` + `wf050-half-marked-group` + `wf050-subrung-wrong-shape` |
+| WF-051 | no dependency cycle through a ladder (justification and consequence reads are negative edges, folded recursively through sub-rungs, ch. 7.9) | gate 3 (over the extended dep_forms graph, shared with ref/'s strata) | `anchor/jutterswet-uitsluiting` (the ladder sits below its negated consumer — strata exist, oracle-replayed) | `wf051-ladder-reads-own-target` + `wf051-cycle-through-subrung` |
 | WF-052 | a connecting relation with a to-one created-side role has at most one object-creation writer (fact creations are fault-paired already) | gate 3 | `anchor/jutterswet-penninguitgifte` (one writer per to-one relation, executed by gates 5–6) | `wf052-two-writers-one-to-one-relation` |
 | WF-053 | a navigated read resolves its walk: bindings resolve, chain-type, count and written names agree, the endpoint is reached; bindingless steps are uniquely derivable; scalar-slot hops are to-one; bindings on a non-navigating node are ill-formed | gate 3 | `anchor/jutterswet-kustwacht` (by-name, chain and by-pair shapes plus the navigated characteristic check, executed by gates 5–6 with leeg-on-absent and the negation asymmetry pinned) + `jutterswet-postwacht` (emitter-produced bindings since the 2026-08-18 pin bump) | `wf053-dangling-navigation-binding` (resolution) + `wf053-chain-near-side-mismatch` (chain typing) + `wf053-to-many-hop-in-scalar` (cardinality) + `wf053-written-role-mismatch` (written-name denotation) + `wf053-bindingless-ambiguous` (unique derivability) |
 | WF-054 | parent-scoped uniqueness: the scope role resolves (bound or uniquely derivable from the written scope field), its near side fills the subject, the written name denotes the bound role, the scope role is to-one; a scope binding on an unscoped uniqueness is ill-formed | gate 3 | `anchor/jutterswet-kustregister` (bound and bindingless scoped forms, executed by gates 5–6 with the scope-less exclusion pinned) + `jutterswet-postwacht` (emitter-produced `scopeRol` since the 2026-08-18 pin bump) | `wf054-dangling-scope-binding` (resolution) + `wf054-to-many-scope-role` (cardinality) + `wf054-binding-on-unscoped` (the non-scoped guard) |
@@ -1725,6 +1767,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-072 | StructType use site agrees with its declaring domain; two struct-typed comparison operands name the same domain (the nominal rule, ch. 2.4) | gate 3 | `anchor/jutterswet-vondstdossier` | `wf072-use-site-drift` + `wf072-cross-struct-equality` |
 | WF-073 | StructLiteral: declared struct type; exactly the declared fields, each once; each value type matches the field declaration (ch. 4.9) | gate 3 | `anchor/jutterswet-vondstdossier` | `wf073-missing-field` + `wf073-alien-field` + `wf073-field-type-mismatch` |
 | WF-074 | FieldAccess: struct-typed base; field a declared field; node type = the field datatype (ch. 4.9) | gate 3 | `anchor/jutterswet-vondstdossier` | `wf074-unknown-field` + `wf074-nonstruct-base` |
+| WF-075 | nested exception form (ch. 7.9): a rung's `exceptions` sub-group carries ≥ 1 member; two or more require the `unordered` marking (the root regime, at every level); no initialisation/input rung in sub-rungs; every rung carries own content, a nested sub-group, or is the initialisation rung; recurses | gate 3 | `anchor/jutterswet-nestuitzondering` (attribute target) + `anchor/jutterswet-nestkenmerk` (characteristic target) — both admitted through the Phase-5c executor card | `wf075-empty-leden` + `wf075-two-members-unmarked` + `wf075-init-in-subrung` + `wf075-contentless-rung` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

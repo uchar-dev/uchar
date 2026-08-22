@@ -487,8 +487,25 @@ type rung = {
   rung_voorwaarde : conditie option;
   rung_consequentie : expr option;
   rung_initialisatie : bool;
+  rung_excepties : sub_group option;
+      (* extension (v1, Phase 5c): the nested exception sub-group
+         (RUNTIME-SEMANTICS ch. 7.9). A rung carrying it is a group-rung
+         (no own consequence/besluit — the sub-group is its decision) or a
+         form-a rung (own consequence/besluit too — the sub-group decides
+         first, the own consequence is the fall-back when it is empty). A
+         differing-deciding sub-group propagates the conflict to the root
+         (WF-075). Absent = a flat rung. *)
   rung_bron : string option;
 }
+
+(* Extension records (v1, Phase 5c): a Rung's exception sub-group and its
+   members (RUNTIME-SEMANTICS ch. 7.9). [sg_ongeordend] carries the
+   declared-unordered flag itself (the root regime, recursed); each
+   [sub_ladder] is a rung chain (descending, highest first) inheriting the
+   root ladder's target — it carries no target of its own. Never
+   emitter-produced. *)
+and sub_group = { sg_ongeordend : bool; sg_leden : sub_ladder list }
+and sub_ladder = { sl_rungs : rung list; sl_bron : string option }
 
 type default_ladder = {
   dl_naam : string option;

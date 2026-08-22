@@ -1057,10 +1057,10 @@ let diagnostic path j : diagnostic =
 
 (* Extension form (Phase 4 first cut): the characteristic default
    ladder. Strict: no nullable children beyond naam/bron/geldigheid. *)
-let rung path j : rung =
+let rec rung path j : rung =
   let kvs = obj path j in
   expect_node path kvs "Rung";
-  check_keys path kvs ~ext:[ "consequentie"; "initialisatie" ]
+  check_keys path kvs ~ext:[ "consequentie"; "initialisatie"; "excepties" ]
     [ "node"; "besluit"; "voorwaarde"; "bron" ];
   let bool_opt path = function
     | `Bool b -> Some b
@@ -1075,7 +1075,35 @@ let rung path j : rung =
       (match ext_field path kvs "initialisatie" (fun p j -> bool_ p j) with
       | Some b -> b
       | None -> false);
+    rung_excepties = ext_field path kvs "excepties" sub_group;
     rung_bron = str_opt (path / "bron") (field path kvs "bron");
+  }
+
+(* The nested exception sub-group riding [excepties] (v1, Phase 5c;
+   RUNTIME-SEMANTICS ch. 7.9). The sub-group object carries no node
+   discriminator (it is the extension field's value); each member is a
+   [SubLadder] node. Strict: both keys required. *)
+and sub_group path j : sub_group =
+  let kvs = obj path j in
+  check_keys path kvs [ "ongeordend"; "leden" ];
+  {
+    sg_ongeordend = bool_ (path / "ongeordend") (field path kvs "ongeordend");
+    sg_leden =
+      List.mapi
+        (fun i x -> sub_ladder (path / "leden" / string_of_int i) x)
+        (list_ (path / "leden") (field path kvs "leden"));
+  }
+
+and sub_ladder path j : sub_ladder =
+  let kvs = obj path j in
+  expect_node path kvs "SubLadder";
+  check_keys path kvs [ "node"; "rungs"; "bron" ];
+  {
+    sl_rungs =
+      List.mapi
+        (fun i x -> rung (path / "rungs" / string_of_int i) x)
+        (list_ (path / "rungs") (field path kvs "rungs"));
+    sl_bron = str_opt (path / "bron") (field path kvs "bron");
   }
 
 let default_ladder path j : default_ladder =

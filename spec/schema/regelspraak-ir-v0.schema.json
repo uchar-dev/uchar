@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://uchar.dev/schema/regelspraak-ir-v0.schema.json",
   "title": "regelspraak-ir-v0",
-  "description": "Structural schema for the 'regelspraak-ir-v0' format: the faithful engine-neutral JSON dump of the reference frontend's fully resolved model (mirror-then-diverge; see spec/IR-SPEC.md). Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Exception, by the decided wire-entry discipline (IR-SPEC, Method): extension fields carrying v1 deltas (verbindendeRol, bronRol, the symbolic fact-creation fields) are optional, the datatype union admits the extension nodes SumType (the payload-carrying variant family, CONSTRUCTS row 36), ListType (the sequence type, CONSTRUCTS row 10) and StructType (the record datatype, spec/proposals/PHASE5C-TUTORIAL.md §2), the expr union admits the extension nodes TemporalRead, Construct, Match, BinderRef, StructLiteral, FieldAccess and the row-10 fold family (ListLiteral, Lambda, IfThenElse, Invoke, Fold, MapList, FilterList, ListLength), and the optional top-level lists defaultLadders and functionDefs carry the ladder and named-logic extensions \u2014 the v0 emitter never produces any of them, and when present they are written whole, never null. Section citations (e.g. \u00a713.3.3) point into the source language spec by number only.",
+  "description": "Structural schema for the 'regelspraak-ir-v0' format: the faithful engine-neutral JSON dump of the reference frontend's fully resolved model (mirror-then-diverge; see spec/IR-SPEC.md). Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Exception, by the decided wire-entry discipline (IR-SPEC, Method): extension fields carrying v1 deltas (verbindendeRol, bronRol, the symbolic fact-creation fields) are optional, the datatype union admits the extension nodes SumType (the payload-carrying variant family, CONSTRUCTS row 36), ListType (the sequence type, CONSTRUCTS row 10) and StructType (the record datatype, spec/proposals/PHASE5C-TUTORIAL.md §2), the expr union admits the extension nodes TemporalRead, Construct, Match, BinderRef, StructLiteral, FieldAccess and the row-10 fold family (ListLiteral, Lambda, IfThenElse, Invoke, Fold, MapList, FilterList, ListLength), and the optional top-level lists defaultLadders and functionDefs carry the ladder and named-logic extensions, and a Rung carries the optional excepties sub-group (a nested exception SubLadder tree, RUNTIME-SEMANTICS ch. 7.9) \u2014 the v0 emitter never produces any of them, and when present they are written whole, never null. Section citations (e.g. \u00a713.3.3) point into the source language spec by number only.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -2719,6 +2719,28 @@
           "type": "boolean",
           "description": "The initialisation rung (lowest only): justified iff the target is empty in the input facts."
         },
+        "excepties": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "ongeordend",
+            "leden"
+          ],
+          "properties": {
+            "ongeordend": {
+              "type": "boolean",
+              "description": "Declared-unordered (ch. 7.9): two or more members require this marking, the root regime applied at every level; a differing-deciding sub-group propagates the conflict to the root (WF-075)."
+            },
+            "leden": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/SubLadder"
+              }
+            }
+          },
+          "description": "Extension field (v1, Phase 5c): the nested exception sub-group of RUNTIME-SEMANTICS ch. 7.9 — a rung's exception slot as a rose tree. A rung carrying excepties is either a group-rung (no own besluit/consequentie — the sub-group is its decision, carrying a multi-member base or exception group as a chain position) or a form-a rung (own besluit/consequentie too — the sub-group decides first, its own consequence the fall-back when the sub-group is empty). The initialisation and input rungs are root-only. Never emitter-produced."
+        },
         "bron": {
           "type": [
             "string",
@@ -2726,6 +2748,35 @@
           ]
         }
       }
+    },
+    "SubLadder": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "rungs",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "SubLadder"
+        },
+        "rungs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/Rung"
+          },
+          "description": "A member of an exception sub-group: a rung chain (descending, highest first) inheriting the root ladder's target, itself possibly nesting via Rung.excepties. Carries no target of its own."
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "description": "Extension node (v1, Phase 5c): one member of a Rung's exception sub-group (RUNTIME-SEMANTICS ch. 7.9). Never emitter-produced."
     },
     "DefaultLadder": {
       "type": "object",

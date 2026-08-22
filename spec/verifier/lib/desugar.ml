@@ -104,6 +104,7 @@ let document (doc : document) : document =
                     Some (Option.value r.rr_voorwaarde ~default:always_true);
                   rung_consequentie = Some (Option.get r.waarde);
                   rung_initialisatie = false;
+                  rung_excepties = None;
                   rung_bron = r.rr_naam;
                 }
             else None)
@@ -119,6 +120,7 @@ let document (doc : document) : document =
                   rung_voorwaarde = None;
                   rung_consequentie = Some (Option.get r.waarde);
                   rung_initialisatie = true;
+                  rung_excepties = None;
                   rung_bron = r.rr_naam;
                 }
             else None)

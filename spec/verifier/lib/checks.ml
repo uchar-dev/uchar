@@ -2667,22 +2667,38 @@ let expression_layer ctx =
       (List.mapi (fun i r -> (i, r)) ctx.doc.feit_creaties)
   @ List.concat_map
       (fun (i, (l : default_ladder)) ->
+        (* the expression walk descends into sub-rungs (ch. 7.9): a
+           sub-rung's justification and consequence are checked exactly as
+           a root rung's, the sub-ladder inheriting the root subject *)
+        let rec rung_walk prefix (r : rung) =
+          (match r.rung_voorwaarde with
+          | Some c ->
+              walk_cond ctx ~binders:[] ~subject:(Some l.dl_onderwerp)
+                (prefix ^ "/voorwaarde") c
+          | None -> [])
+          @ (match r.rung_consequentie with
+            | Some e ->
+                walk_expr ctx ~binders:[] ~subject:(Some l.dl_onderwerp)
+                  (prefix ^ "/consequentie") e
+            | None -> [])
+          @ (match r.rung_excepties with
+            | Some sg ->
+                List.concat
+                  (List.mapi
+                     (fun k (sl : sub_ladder) ->
+                       List.concat
+                         (List.mapi
+                            (fun m sr ->
+                              rung_walk
+                                (Printf.sprintf "%s/excepties/leden/%d/rungs/%d" prefix k m)
+                                sr)
+                            sl.sl_rungs))
+                     sg.sg_leden)
+            | None -> [])
+        in
         List.concat
           (List.mapi
-             (fun j (r : rung) ->
-               (match r.rung_voorwaarde with
-               | Some c ->
-                   walk_cond ctx ~binders:[] ~subject:(Some l.dl_onderwerp)
-                     (Printf.sprintf "/defaultLadders/%d/rungs/%d/voorwaarde" i j)
-                     c
-               | None -> [])
-               @
-               match r.rung_consequentie with
-               | Some e ->
-                   walk_expr ctx ~binders:[] ~subject:(Some l.dl_onderwerp)
-                     (Printf.sprintf "/defaultLadders/%d/rungs/%d/consequentie" i j)
-                     e
-               | None -> [])
+             (fun j r -> rung_walk (Printf.sprintf "/defaultLadders/%d/rungs/%d" i j) r)
              l.rungs))
       (List.mapi (fun i l -> (i, l)) ctx.doc.default_ladders)
 
@@ -3119,23 +3135,29 @@ let dep_forms ctx : dep_form list =
        attribute ladder, every consequence read (the gevuld gate makes
        it decision-bearing) — is a displacement read: a negative edge
        toward the ladder's write. The initialisation rung's implicit
-       input-emptiness justification reads nothing (ch. 7.3). *)
+       input-emptiness justification reads nothing (ch. 7.3). Ch. 7.9:
+       every DESCENDANT read (justifications and consequences, recursively
+       through sub-rungs) folds into the same root negative edges — so a
+       cycle through a sub-rung read is caught by WF-051 unchanged. *)
     List.mapi
       (fun i (l : default_ladder) ->
         let at = Printf.sprintf "/defaultLadders/%d" i in
         let name = Option.value l.dl_naam ~default:at in
-        let reads =
-          List.concat_map
-            (fun (r : rung) ->
-              (match r.rung_voorwaarde with
-              | Some c -> dep_cond ctx ~subject:(Some l.dl_onderwerp) ~neg:false [] c
-              | None -> [])
-              @
-              match r.rung_consequentie with
-              | Some e -> dep_expr ctx ~subject:(Some l.dl_onderwerp) [] e
-              | None -> [])
-            l.rungs
+        let rec rung_reads (r : rung) =
+          (match r.rung_voorwaarde with
+          | Some c -> dep_cond ctx ~subject:(Some l.dl_onderwerp) ~neg:false [] c
+          | None -> [])
+          @ (match r.rung_consequentie with
+            | Some e -> dep_expr ctx ~subject:(Some l.dl_onderwerp) [] e
+            | None -> [])
+          @ (match r.rung_excepties with
+            | Some sg ->
+                List.concat_map
+                  (fun (sl : sub_ladder) -> List.concat_map rung_reads sl.sl_rungs)
+                  sg.sg_leden
+            | None -> [])
         in
+        let reads = List.concat_map rung_reads l.rungs in
         let writes =
           (match l.dl_kenmerk with Some k -> [ n_char l.dl_onderwerp k ] | None -> [])
           @
@@ -3415,34 +3437,62 @@ let wf050 ctx =
                        ("ladder target '" ^ a ^ "' is not a declared attribute of '"
                       ^ l.dl_onderwerp ^ "'") ]
                | _ -> []))
-         (* rung shapes per target kind (ch. 7.1) *)
+         (* rung shapes per target kind (ch. 7.1); the content-kind and
+            justification-presence checks recurse into sub-rungs (ch. 7.9 —
+            a sub-ladder inherits the root target kind). A group-rung
+            (excepties present, no own besluit/consequentie) delegates its
+            decision to its sub-group: it is exempt from the content and
+            justification requirements. A contentless rung (neither content
+            nor sub-group) is WF-075's concern. *)
+         @ (let is_char = l.dl_kenmerk <> None in
+            let rec shape prefix (rungs : rung list) =
+              List.concat
+                (List.mapi
+                   (fun j (r : rung) ->
+                     let rat = Printf.sprintf "%s/rungs/%d" prefix j in
+                     let has_content =
+                       r.rung_besluit <> None || r.rung_consequentie <> None
+                     in
+                     let is_group = r.rung_excepties <> None && not has_content in
+                     (* present content must match the target kind *)
+                     (match (is_char, r.rung_besluit, r.rung_consequentie) with
+                     | true, _, Some _ ->
+                         [ v "WF-050" rat "a characteristic rung carries no consequentie" ]
+                     | false, Some _, _ ->
+                         [ v "WF-050" rat "an attribute rung carries no besluit" ]
+                     | _ -> [])
+                     @ (match (r.rung_initialisatie, is_group, r.rung_voorwaarde) with
+                       | true, _, Some _ ->
+                           [ v "WF-050" rat
+                               "the initialisation rung carries no written justification (its \
+                                justification is input-emptiness, ch. 7.3)" ]
+                       | false, false, None when has_content ->
+                           [ v "WF-050" rat "a non-initialisation rung carries a justification" ]
+                       | _ -> [])
+                     @ (match r.rung_excepties with
+                       | Some sg ->
+                           List.concat
+                             (List.mapi
+                                (fun k (sl : sub_ladder) ->
+                                  shape
+                                    (Printf.sprintf "%s/excepties/leden/%d" rat k)
+                                    sl.sl_rungs)
+                                sg.sg_leden)
+                       | None -> []))
+                   rungs)
+            in
+            shape at l.rungs)
+         (* the initialisation rung's position is a root-ladder property
+            (a sub-rung initialisation is ill-formed, WF-075) *)
          @ List.concat
              (List.mapi
                 (fun j (r : rung) ->
                   let rat = Printf.sprintf "%s/rungs/%d" at j in
-                  (match (l.dl_kenmerk, r.rung_besluit, r.rung_consequentie) with
-                  | Some _, None, _ ->
-                      [ v "WF-050" rat "a characteristic rung carries a boolean besluit" ]
-                  | Some _, _, Some _ ->
-                      [ v "WF-050" rat "a characteristic rung carries no consequentie" ]
-                  | None, Some _, _ ->
-                      [ v "WF-050" rat "an attribute rung carries no besluit" ]
-                  | None, _, None when l.dl_attribuut <> None ->
-                      [ v "WF-050" rat "an attribute rung carries a consequentie" ]
-                  | _ -> [])
-                  @ (match (r.rung_initialisatie, r.rung_voorwaarde) with
-                    | true, Some _ ->
-                        [ v "WF-050" rat
-                            "the initialisation rung carries no written justification (its \
-                             justification is input-emptiness, ch. 7.3)" ]
-                    | false, None ->
-                        [ v "WF-050" rat "a non-initialisation rung carries a justification" ]
-                    | _ -> [])
-                  @ (if r.rung_initialisatie && l.dl_kenmerk <> None then
-                       [ v "WF-050" rat
-                           "an initialisation rung on a characteristic ladder is meaningless \
-                            (characteristics start absent)" ]
-                     else [])
+                  (if r.rung_initialisatie && l.dl_kenmerk <> None then
+                     [ v "WF-050" rat
+                         "an initialisation rung on a characteristic ladder is meaningless \
+                          (characteristics start absent)" ]
+                   else [])
                   @
                   if r.rung_initialisatie && j <> List.length l.rungs - 1 then
                     [ v "WF-050" rat "the initialisation rung sits lowest (last)" ]
@@ -3750,6 +3800,67 @@ let wf051 ctx =
                  ^ Option.value l.dl_naam ~default:at
                  ^ "' — its displacement reads are negative edges; no strata exist") ]
          | _ -> [])
+       ctx.doc.default_ladders)
+
+(* WF-075: the nested exception form (RUNTIME-SEMANTICS ch. 7.9). A rung's
+   [excepties] sub-group carries at least one member, and two or more
+   members require the unordered marking — the root regime (WF-050's
+   declared-unordered rule) applied at every level; the flag rides the
+   sub-group object itself. A sub-rung carries no initialisation (the
+   initialisation and input rungs are root-only). Every rung carries its
+   own decision/consequence, a nested sub-group, or is the initialisation
+   rung — a contentless rung decides nothing. Recurses to any depth. (The
+   content-KIND per target and the WF-051 descendant-read folding land with
+   WF-050 and dep_forms; a differing sub-group's root propagation is
+   evaluation semantics, ch. 7.9.) *)
+let wf075 ctx =
+  List.concat
+    (List.mapi
+       (fun i (l : default_ladder) ->
+         let at = Printf.sprintf "/defaultLadders/%d" i in
+         let rec walk ~in_sub prefix (rungs : rung list) =
+           List.concat
+             (List.mapi
+                (fun j (r : rung) ->
+                  let rat = Printf.sprintf "%s/rungs/%d" prefix j in
+                  let has_content =
+                    r.rung_besluit <> None || r.rung_consequentie <> None
+                  in
+                  (if in_sub && r.rung_initialisatie then
+                     [ v "WF-075" rat
+                         "a sub-group rung carries no initialisation (the initialisation \
+                          and input rungs are root-only, ch. 7.9)" ]
+                   else [])
+                  @ (if (not has_content) && r.rung_excepties = None
+                        && not r.rung_initialisatie
+                     then
+                       [ v "WF-075" rat
+                           "a rung carries its own decision/consequence or a nested \
+                            exception sub-group (a contentless rung decides nothing, \
+                            ch. 7.9)" ]
+                     else [])
+                  @ (match r.rung_excepties with
+                    | None -> []
+                    | Some sg ->
+                        (if sg.sg_leden = [] then
+                           [ v "WF-075" (rat ^ "/excepties")
+                               "an exception sub-group carries at least one member (ch. 7.9)" ]
+                         else [])
+                        @ (if List.length sg.sg_leden >= 2 && not sg.sg_ongeordend then
+                             [ v "WF-075" (rat ^ "/excepties")
+                                 "an exception sub-group with two or more members must be \
+                                  declared unordered (the root regime, ch. 7.9)" ]
+                           else [])
+                        @ List.concat
+                            (List.mapi
+                               (fun k (sl : sub_ladder) ->
+                                 walk ~in_sub:true
+                                   (Printf.sprintf "%s/excepties/leden/%d" rat k)
+                                   sl.sl_rungs)
+                               sg.sg_leden)))
+                rungs)
+         in
+         walk ~in_sub:false at l.rungs)
        ctx.doc.default_ladders)
 
 (* WF-057: declared names are target-text-safe (IR-SPEC ch. 2). A
@@ -4214,4 +4325,4 @@ let all (doc : document) : violation list =
       wf029 ctx; wf030 ctx; wf031 ctx; wf032 ctx; wf033 ctx; wf045_046 ctx;
       wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf054 ctx;
       wf057 ctx; wf059 ctx; wf060 ctx; wf061 ctx; wf065 ctx; wf067 ctx;
-      wf071 ctx; wf072 ctx; expression_layer ctx ]
+      wf071 ctx; wf072 ctx; wf075 ctx; expression_layer ctx ]
