@@ -51,9 +51,13 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   (ch. 4.1a — the navigation hops), `scopeRol` on the scoped uniqueness
   (ch. 3.6, WF-054); current extension nodes and
   forms: `TemporalRead` (ch. 4.3a), the `defaultLadders` list
-  (ch. 6.1), and the sum-type family — the `SumType` datatype
+  (ch. 6.1), the sum-type family — the `SumType` datatype
   (ch. 2.4) with the `Construct`/`Match`/`BinderRef` expression nodes
-  (ch. 4.7), a v1 kernel extension the emitter never produces
+  (ch. 4.7) — and the fold family — the `ListType` datatype (ch. 2.4),
+  the `functionDefs` top-level list (ch. 2.11) and the
+  `ListLiteral`/`Lambda`/`IfThenElse`/`Invoke`/`Fold`/`MapList`/
+  `FilterList`/`ListLength` expression nodes (ch. 4.8) — both v1
+  kernel extensions the emitter never produces
   (`spec/proposals/PHASE5B-KERNEL.md`). **First pin bump (2026-08-17, toolchain `edecb46`):** the
   emitter produces `verbindendeRol` and `bronRol` where uniquely
   derivable from declared names (absent otherwise — never null, never a
@@ -311,6 +315,7 @@ A closed sum. v1 variants:
 | `Date` | `precision: day \| millisecond` | orderable; `precision` is deliberately not called granularity — that term is reserved for the five-value timeline set |
 | `Enumeration` | `domain: string`, `values: list of string` | `domain` is a resolvable reference to a declared Domain (WF-003), not a free string — this satisfies the "real reference, not a name string" delta of `CONSTRUCTS.md` ch. 2.4 |
 | `SumType` | `domain: string`, `constructors: list of {name, payload: Datatype?}` | **extension node** (Method; wire node `SumType`, never emitter-produced): the payload-carrying variant family, CONSTRUCTS row 36 — see the SumType clause below |
+| `ListType` | `element: Datatype` | **extension node** (Method; wire node `ListType`, never emitter-produced): an ordered, possibly empty sequence type, CONSTRUCTS row 10 — see the ListType clause below |
 
 `sign` ∈ {`unspecified`, `negative`, `nonNegative`, `positive`} (v0
 `Teken`).
@@ -331,7 +336,7 @@ false`, `decimals = 0` (no precision ceiling; §13.3.3 form (c)). The
   belongs to the expression layer — forward reference, **OPEN**.
 
 Orderability: `Number` and `Date` are orderable; `Text`, `Boolean`,
-`Enumeration`, and `SumType` are equality-only. This is deliberate (an
+`Enumeration`, `SumType`, and `ListType` are equality-only. This is deliberate (an
 ordered use of a non-orderable type is a rule-layer WF violation,
 specified with that layer).
 
@@ -368,6 +373,23 @@ normalise to a valid symbolic constant (`[a-z][a-z0-9_]*` — e.g. one
 carrying spaces) is a loud executor fence inventoried in
 `ASP-TRANSLATION.md` S15, not a well-formedness violation — the WF-057
 precedent fences only the string encoding, never the functor charset.
+
+**ListType (extension; CONSTRUCTS row 10, design
+`spec/proposals/PHASE5B-KERNEL.md` §3).** An ordered, possibly empty
+sequence of one element datatype. The empty list is a *value*; leeg
+remains the absence of one (`RUNTIME-SEMANTICS.md` ch. 10.1). List
+values are equality-only (elementwise, in order) and never orderable;
+they are built by `ListLiteral` (ch. 4.8) or supplied by a case, and
+consumed by the fold family.
+
+- **WF-065** A `ListType` element datatype MUST be first-order and
+  non-list: one of `Number`, day-precision `Date`, or a declared
+  `SumType` (lists of lists, text, boolean, enumeration, function and
+  millisecond-date elements are ill-formed — the admissible set of the
+  ratified design, loudly extensible). A list-typed attribute MUST be
+  scalar-carried: a granularity declaration on it (a list-typed
+  temporal attribute) is ill-formed in v1 — a recorded fence, not a
+  design position.
 
 **Deltas (tracked, `CONSTRUCTS.md` row 27):**
 
@@ -646,6 +668,32 @@ timeline name.
 
 - **WF-018** A parameter's datatype MUST resolve (WF-003) and its timeline
   facet, when present, MUST satisfy WF-005. **Delta (promotion).**
+
+### 2.11 FunctionDef — named reusable logic
+
+`layer: core`; an **extension form** per the Method: an optional
+top-level list `functionDefs`, never emitter-produced (CONSTRUCTS
+row 10 — this *is* DMN's Business Knowledge Model: named logic, bound
+and invoked by name; design `spec/proposals/PHASE5B-KERNEL.md` §3).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | string | declared name (own namespace, ci-unique) |
+| `parameters` | list of `{name, datatype}` | typed, uniquely named |
+| `result` | Datatype | the declared result datatype |
+| `body` | Expr | the closed body |
+
+- **WF-067** Function definitions MUST carry ci-unique names; every
+  parameter MUST carry a datatype and a name unique within the
+  definition; the `result` MUST be a declared-resolvable datatype; the
+  **body is closed** — it may reference its own parameters
+  (`BinderRef`), document parameters (`ParameterRef`), literals,
+  operators, `Construct`/`Match`/`IfThenElse`, and other functions via
+  `Invoke`; any attribute, characteristic, aggregation, temporal or
+  variable read is ill-formed — and the invocation graph over
+  `functionDefs` MUST be acyclic (no recursion: the Catala mirror, and
+  what keeps termination and stratification trivial — a closed body
+  contributes no dependency edges, so WF-045/046 are untouched).
 
 ---
 
@@ -1382,6 +1430,50 @@ literally (a wildcard would make totality a runtime property again).
   datatype — the `Match`'s own `type`. (This rule governs the new
   binder forms only; a `VariabeleRef` remains outside it, row 24.)
 
+### 4.8 The fold family — ListLiteral, Lambda, IfThenElse, Invoke, Fold, MapList, FilterList, ListLength
+
+`layer: core`; **extension nodes** per the Method (never
+emitter-produced; CONSTRUCTS row 10; semantics `RUNTIME-SEMANTICS.md`
+ch. 10; design and the ratified closed-kernel decision
+`spec/proposals/PHASE5B-KERNEL.md` §3). Together with ch. 2.11 these
+carry general folds and function values over list *values*; the
+`Functie` aggregation catalogue (ch. 4.3) keeps its instance-set world
+untouched — the two never merge in v1.
+
+| Node | Fields | Notes |
+|---|---|---|
+| ListLiteral | `type` (the ListType), `elements` (list of expr), `source` | ordered; a leeg element evaluation propagates — the whole literal evaluates leeg (a list never carries a hole, ch. 10.1) |
+| Lambda | `parameters` (list of `{name, datatype}`), `body` (expr), `source` | **position-restricted**: admissible only as the `function` operand of `Fold`/`MapList`; the body is closed (the WF-067 clause); parameters bind via `BinderRef` |
+| IfThenElse | `type`, `condition` (Condition), `then` (expr), `else` (expr), `source` | **position-restricted**: admissible only inside lambda and function bodies — rule expressions keep the ladder/voorwaarde idiom; the condition reuses the ch. 4.5 condition union (no boolean-typed expressions enter the IR), evaluated under the ordinary ch. 1.2 comparison discipline; exactly the chosen branch is evaluated |
+| Invoke | `type`, `function` (name), `arguments` (list of expr), `source` | calls a ch. 2.11 FunctionDef; strict — a leeg argument propagates without entering the body |
+| Fold | `type`, `list` (expr), `function` (Lambda or a FunctionDef name), `init` (expr), `source` | left fold, order normative; the function takes `(accumulator, element)` |
+| MapList | `type` (a ListType), `list` (expr), `function` (Lambda or a FunctionDef name), `source` | elementwise, order-preserving |
+| FilterList | `type` (the source ListType), `list` (expr), `binder` (name), `condition` (Condition), `source` | keeps the elements whose condition holds with the binder bound — the aggregation-`filter` precedent (a condition per contributor), which is why this node carries a binder + condition rather than a boolean-bodied lambda |
+| ListLength | `type` (whole Number), `list` (expr), `source` | the element count |
+
+- **WF-066** Every `ListLiteral` element's static type MUST equal the
+  literal's declared element datatype.
+- **WF-068** An `Invoke` MUST name a declared FunctionDef; the
+  argument count MUST equal the parameter count, each argument's
+  static type MUST match its parameter's datatype, and the node's
+  `type` MUST equal the declared `result`.
+- **WF-069** A `Lambda` outside a `Fold`/`MapList` `function` operand,
+  or an `IfThenElse` outside a lambda or function body, is ill-formed;
+  a lambda's parameters MUST be typed and its arity MUST fit its host
+  (`Fold`: two — accumulator, element; `MapList`: one); lambda bodies
+  MUST be closed (the WF-067 clause); an `IfThenElse`'s branches MUST
+  agree on one datatype — the node's own `type`.
+- **WF-070** The fold-family `list` operand MUST be list-typed. For
+  `Fold`: the `init`, the accumulator parameter, the function body and
+  the node's `type` MUST share one first-order non-list datatype (a
+  list-typed accumulator is ill-formed — the ASP term-depth fence of
+  the ratified design; a `SumType` accumulator is admissible and is
+  what the `Reduce` lowering uses), and the element parameter MUST
+  carry the source element datatype. For `MapList`: the node's `type`
+  MUST be the ListType of the body's datatype. For `FilterList`: the
+  node's `type` MUST equal the source's. For `ListLength`: the node's
+  `type` MUST be a whole Number.
+
 ---
 
 ## 6. Defaults and defeasibility
@@ -1547,6 +1639,12 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-062 | Construct: declared constructor; argument present iff unary; argument type matches the declared payload (ch. 4.7) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf062-nullary-with-argument` + `wf062-payload-type-mismatch` |
 | WF-063 | Match totality: sum-typed scrutinee; arms cover the declared constructors exactly, each once; binder iff unary (ch. 4.7) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf063-missing-arm` + `wf063-alien-constructor` + `wf063-binder-on-nullary` + `wf063-duplicate-arm` |
 | WF-064 | every BinderRef resolves to an enclosing binder; match arm bodies agree on one result datatype (ch. 4.7; VariabeleRef stays outside — row 24) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf064-unbound-binderref` + `wf064-mixed-arm-types` |
+| WF-065 | ListType: first-order non-list element (Number, day-precision Date, declared SumType); no granularity on a list-typed attribute (ch. 2.4) | gate 3 | `anchor/jutterswet-staffelvergoeding` (executed by gates 5–6) | `wf065-list-of-list` + `wf065-temporal-list-attribute` |
+| WF-066 | ListLiteral elements carry the declared element datatype (ch. 4.8) | gate 3 | `anchor/jutterswet-aanspraaktelling` | `wf066-heterogeneous-literal` |
+| WF-067 | FunctionDef: ci-unique names, typed unique parameters, resolvable result, closed body, acyclic invocation graph (ch. 2.11) | gate 3 | `anchor/jutterswet-aanspraaktelling` | `wf067-recursive-functions` + `wf067-attribute-read-in-body` |
+| WF-068 | Invoke: resolvable function, arity, argument types, result type (ch. 4.8) | gate 3 | `anchor/jutterswet-aanspraaktelling` | `wf068-unresolved-invoke` + `wf068-arity-mismatch` |
+| WF-069 | Lambda only as a Fold/MapList operand; IfThenElse only inside bodies; lambda arity per host, typed parameters, closed bodies; IfThenElse branch agreement (ch. 4.8) | gate 3 | `anchor/jutterswet-staffelvergoeding` | `wf069-lambda-outside-fold` + `wf069-ifthenelse-outside-body` |
+| WF-070 | fold-family shapes: list-typed source; Fold accumulator first-order non-list shared with init/body/type, element parameter = source element; MapList/FilterList/ListLength result typing (ch. 4.8) | gate 3 | `anchor/jutterswet-staffelvergoeding` + `anchor/jutterswet-aanspraaktelling` | `wf070-list-accumulator` + `wf070-scalar-source` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

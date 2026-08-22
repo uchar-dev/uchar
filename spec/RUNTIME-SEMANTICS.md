@@ -1,8 +1,8 @@
 # uchar IR — Runtime semantics
 
-*Status: ch. 1–9 are normative **draft** (ch. 1–5 the v0 mirror with
-tracked deltas and OPEN decisions; ch. 6–8 drafted; ch. 9 a v1 kernel
-extension with no v0 counterpart — `spec/proposals/PHASE5B-KERNEL.md`). This document reads stand-alone
+*Status: ch. 1–10 are normative **draft** (ch. 1–5 the v0 mirror with
+tracked deltas and OPEN decisions; ch. 6–8 drafted; ch. 9–10 v1 kernel
+extensions with no v0 counterpart — `spec/proposals/PHASE5B-KERNEL.md`). This document reads stand-alone
 (graduated into the self-containedness gate at the Phase-1 exit,
 2026-08-19): behaviour it does not document is undocumented — the
 mirror's provenance (which toolchain, and the repo relation) lives in
@@ -25,7 +25,9 @@ tests verbatim.
 A computed value is one of: an exact rational number (ch. 2.1), a text, a
 boolean, a date (day or millisecond precision), an enumeration value, a
 constructor value (ch. 9 — a declared constructor tag with, for a unary
-constructor, one payload value) — or
+constructor, one payload value), a list value (ch. 10 — an ordered,
+possibly empty sequence of element values; `[]` is a value, leeg is the
+absence of one) — or
 **empty** (leeg): the distinguished absence of a value, belonging to no
 datatype. Empty is not zero, not the empty string, not false; every context
 below defines explicitly what it does with an empty operand. (Empty is also
@@ -2316,8 +2318,103 @@ Worked (the anchor's condition rules — `bevoorschot` iff `beschikking`
   temporal totals stay numeric-only regardless (ch. 3.4–3.6), as for
   text and enumeration members.
 
+## 10. Folds and function values
+
+*A v1 kernel extension (CONSTRUCTS row 10; design and ratified
+decisions: `spec/proposals/PHASE5B-KERNEL.md` §3). No v0 counterpart
+exists; this chapter is normative from first writing. Node forms and
+well-formedness: IR-SPEC ch. 2.4 (`ListType`), ch. 2.11
+(`functionDefs`) and ch. 4.8, WF-065..070. DMN's Business Knowledge
+Model + invocation is exactly the ch. 2.11 + `Invoke` pair.*
+
+### 10.1 List values
+
+A **list value** is an ordered, possibly empty sequence of element
+values of one declared element datatype. A list value is *gevuld* —
+also when empty: `[]` is a value, leeg is the absence of one (the
+distinction the fold identity and the case format both need). Element
+positions hold values, never leeg — "a list with holes" is not a v1
+notion: a `ListLiteral` whose element evaluates leeg **propagates**
+(the whole literal evaluates leeg, the ch. 1.3 strict default), and
+the case loader rejects a leeg element. This is also why binders never
+see leeg inside fold bodies. List equality is elementwise and in
+order; lists are not orderable.
+
+### 10.2 Fold, MapList, FilterList, ListLength
+
+- **Fold**: `fold(f, init, [x1..xn]) = f(…f(f(init, x1), x2)…, xn)` —
+  a **left** fold, order normative. `fold(f, init, []) = init`. A leeg
+  `list` operand propagates leeg; so does a leeg `init`. Inside the
+  body the ordinary ch. 1–2 operator discipline governs — the fold
+  node adds no empty policy of its own (compositionality; the
+  aggregation table of ch. 1.2 stays the instance world's own).
+- **MapList**: elementwise, order-preserving; a leeg source propagates.
+  A body evaluation that yields leeg propagates — the whole map
+  evaluates leeg (no holes, ch. 10.1).
+- **FilterList**: keeps, in order, the elements for which the
+  condition holds with the binder bound to the element — the
+  ch. 3.5a aggregation-filter discipline per element; a leeg source
+  propagates. A filter that excludes everything yields `[]`, a value.
+- **ListLength**: the element count; `[]` counts 0; a leeg source
+  propagates leeg.
+- **IfThenElse** (inside bodies only): evaluate the condition under
+  the ordinary ch. 1.2 comparison discipline; evaluate exactly the
+  chosen branch — strict, no coalesce, the rung-justification mirror.
+- **Invoke**: evaluate the arguments strictly (a leeg argument
+  propagates leeg without entering the body), bind, evaluate the
+  closed body. Recursion does not exist (WF-067), so termination is
+  structural.
+
+### 10.3 Worked examples — the `jutterswet-staffelvergoeding` anchor
+
+Parameter `staffelbedragen` : list of Number(2 dec) ; parameter
+`plafond` = 40.00. Rule: `vergoeding` := Fold over `staffelbedragen`,
+init 0.00, body `(acc, x) ↦ if acc + x ≤ plafond then acc + x else
+acc` (the capped sum — the `IfThenElse` body).
+
+- `staffelbedragen` = [12.50, 30.00, 7.25] → 0+12.50 = 12.50 (≤ 40);
+  12.50+30.00 = 42.50 (> 40, keep 12.50); 12.50+7.25 = 19.75 (≤ 40) →
+  `vergoeding` = **19.75**. The left-to-right order is load-bearing:
+  the reordered list [30.00, 12.50, 7.25] would yield 37.25 — the
+  anchor pins the order.
+- `staffelbedragen` = [] → the fold yields its init: `vergoeding` =
+  **0.00** (the empty list is a value).
+- `staffelbedragen` absent (leeg) → `vergoeding` **leeg** (propagation
+  — nothing is written; a reason-carrying no-op survivor).
+
+### 10.4 Worked examples — the `jutterswet-aanspraaktelling` anchor (composing ch. 9)
+
+Sum type `aanspraak` = `Erkend(bedrag: 2 dec)` | `Vervallen`; input
+attribute `aanspraken` : list of `aanspraak`. FunctionDef
+`aanspraakwaarde(a: aanspraak) : Number(2 dec)` = match `a`:
+`Erkend(b)` → `b`; `Vervallen` → 0.00. Rules: `erkende som` :=
+Fold(+, 0.00) over MapList(`aanspraken`, `Invoke aanspraakwaarde`);
+`aantal erkend` := ListLength(FilterList(`aanspraken`, `a` ≠
+`Construct Vervallen`)).
+
+- `aanspraken` = [`Erkend(10.00)`, `Vervallen`, `Erkend(2.50)`] →
+  MapList yields [10.00, 0.00, 2.50]; `erkende som` = **12.50**;
+  FilterList keeps [`Erkend(10.00)`, `Erkend(2.50)`] (the ch. 9.3
+  inequality per element); `aantal erkend` = **2**.
+- `aanspraken` = [] → `erkende som` = 0.00; `aantal erkend` = 0 (both
+  written — `[]` is a value).
+- `aanspraken` absent → both **leeg** (propagation; no-op survivors).
+
+### 10.5 Carriage and boundaries
+
+Case carriage: list values ride the case value union as
+`{ "list": [ …values… ] }` in input attributes, parameters and
+expectations; the loaders fail fast on an element against the wrong
+element datatype and on a leeg element. Storable list-typed
+*attributes* exist (scalar-carried; no timelines, WF-065). The ASP
+side reifies a list value as indexed facts and runs the fold as index
+recursion with the S6/S8 range fences; every fold-family form of this
+chapter translates — the differential (gates 5 ≡ 6) covers the whole
+kernel, and whatever a future corner cannot carry lands as a loud
+fault in the ASP inventory, never a silent skip.
+
 ## Chapters (planned)
 
-*(none — chapters 1–9 are drafted; ch. 7 is complete, and ch. 9 carries
-the row-36 kernel extension. The row-10 fold kernel lands as ch. 10 with
-its card — `spec/proposals/PHASE5B-KERNEL.md` §3.)*
+*(none — chapters 1–10 are drafted; ch. 7 is complete, ch. 9 carries
+the row-36 kernel extension and ch. 10 the row-10 fold kernel —
+`spec/proposals/PHASE5B-KERNEL.md`.)*
