@@ -1,0 +1,126 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "functionDefs": [
+    {
+      "node": "FunctionDef",
+      "name": "even",
+      "parameters": [
+        {
+          "name": "a",
+          "datatype": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          }
+        }
+      ],
+      "result": {
+        "node": "Numeriek",
+        "geheel": true,
+        "decimalen": 0,
+        "teken": "NIET_NEGATIEF",
+        "eenheid": null
+      },
+      "body": {
+        "node": "Invoke",
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "function": "oneven",
+        "arguments": [
+          {
+            "node": "BinderRef",
+            "name": "a",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            },
+            "bron": null
+          }
+        ],
+        "bron": null
+      },
+      "bron": null
+    },
+    {
+      "node": "FunctionDef",
+      "name": "oneven",
+      "parameters": [
+        {
+          "name": "a",
+          "datatype": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          }
+        }
+      ],
+      "result": {
+        "node": "Numeriek",
+        "geheel": true,
+        "decimalen": 0,
+        "teken": "NIET_NEGATIEF",
+        "eenheid": null
+      },
+      "body": {
+        "node": "Invoke",
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "function": "even",
+        "arguments": [
+          {
+            "node": "BinderRef",
+            "name": "a",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            },
+            "bron": null
+          }
+        ],
+        "bron": null
+      },
+      "bron": null
+    }
+  ],
+  "objecttypen": {},
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

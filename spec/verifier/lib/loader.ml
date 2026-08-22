@@ -273,6 +273,11 @@ let rec datatype path j : datatype =
                   opt (cp / "payload") datatype (field cp ckvs "payload") ))
               (list_ (path / "constructors") (f "constructors"));
         }
+  | "ListType" ->
+      (* extension node (v1, row 10): the sole child is the element datatype,
+         which recurses through [datatype] *)
+      check_keys path kvs [ "node"; "element" ];
+      List_type { element = datatype (path / "element") (f "element") }
   | k -> fail (path / "node") ("unknown datatype node \"" ^ k ^ "\"")
 
 let geheel_periode path j : geheel_periode =
@@ -436,6 +441,85 @@ let rec expr path j : expr =
   | "BinderRef" ->
       check_keys path kvs [ "node"; "name"; "type"; "bron" ];
       Binder_ref { naam = str (path / "name") (f "name"); typ = typ (); bron = bron () }
+  | "ListLiteral" ->
+      (* extension node (v1, row 10): ordered element expressions, one shared
+         element datatype (WF-066); type required not-null *)
+      check_keys path kvs [ "node"; "type"; "elements"; "bron" ];
+      List_literal
+        {
+          typ = typ ();
+          elements =
+            List.mapi
+              (fun i x -> expr (path / "elements" / string_of_int i) x)
+              (list_ (path / "elements") (f "elements"));
+          bron = bron ();
+        }
+  | "Lambda" ->
+      (* extension node (v1, row 10): a lambda as an ordinary expr operand is
+         ill-formed (WF-069); it loads so the verifier can reject it citing
+         the rule. As a Fold/MapList function operand it is a [fold_fn]
+         instead, parsed below. *)
+      check_keys path kvs [ "node"; "parameters"; "body"; "bron" ];
+      Lambda
+        {
+          parameters = lambda_params (path / "parameters") (f "parameters");
+          body = expr (path / "body") (f "body");
+          bron = bron ();
+        }
+  | "IfThenElse" ->
+      check_keys path kvs [ "node"; "type"; "condition"; "then"; "else"; "bron" ];
+      If_then_else
+        {
+          typ = typ ();
+          condition = conditie (path / "condition") (f "condition");
+          then_ = expr (path / "then") (f "then");
+          else_ = expr (path / "else") (f "else");
+          bron = bron ();
+        }
+  | "Invoke" ->
+      check_keys path kvs [ "node"; "type"; "function"; "arguments"; "bron" ];
+      Invoke
+        {
+          typ = typ ();
+          functie = str (path / "function") (f "function");
+          arguments =
+            List.mapi
+              (fun i x -> expr (path / "arguments" / string_of_int i) x)
+              (list_ (path / "arguments") (f "arguments"));
+          bron = bron ();
+        }
+  | "Fold" ->
+      check_keys path kvs [ "node"; "type"; "list"; "function"; "init"; "bron" ];
+      Fold
+        {
+          typ = typ ();
+          list = expr (path / "list") (f "list");
+          functie = fold_fn (path / "function") (f "function");
+          init = expr (path / "init") (f "init");
+          bron = bron ();
+        }
+  | "MapList" ->
+      check_keys path kvs [ "node"; "type"; "list"; "function"; "bron" ];
+      Map_list
+        {
+          typ = typ ();
+          list = expr (path / "list") (f "list");
+          functie = fold_fn (path / "function") (f "function");
+          bron = bron ();
+        }
+  | "FilterList" ->
+      check_keys path kvs [ "node"; "type"; "list"; "binder"; "condition"; "bron" ];
+      Filter_list
+        {
+          typ = typ ();
+          list = expr (path / "list") (f "list");
+          binder = str (path / "binder") (f "binder");
+          condition = conditie (path / "condition") (f "condition");
+          bron = bron ();
+        }
+  | "ListLength" ->
+      check_keys path kvs [ "node"; "type"; "list"; "bron" ];
+      List_length { typ = typ (); list = expr (path / "list") (f "list"); bron = bron () }
   | "Constante" ->
       check_keys path kvs [ "node"; "naam"; "type"; "bron" ];
       Constante { naam = str_opt (path / "naam") (f "naam"); typ = typ (); bron = bron () }
@@ -445,6 +529,38 @@ let rec expr path j : expr =
       check_keys path kvs [ "node"; "type"; "bron" ];
       Expr_onopgelost { typ = typ (); bron = bron () }
   | k -> fail (path / "node") ("unknown expr node \"" ^ k ^ "\"")
+
+(* Lambda / FunctionDef parameters: each carries a name and a datatype (both
+   required, non-null — a typed binding). *)
+and lambda_params path j : (string * datatype) list =
+  List.mapi
+    (fun i p ->
+      let pp = path / string_of_int i in
+      let pkvs = obj pp p in
+      check_keys pp pkvs [ "name"; "datatype" ];
+      ( str (pp / "name") (field pp pkvs "name"),
+        datatype (pp / "datatype") (field pp pkvs "datatype") ))
+    (list_ path j)
+
+(* The Fold/MapList [function] operand: a bare string is a FunctionDef name;
+   an object is an inline Lambda (parsed here, not via the expr dispatcher —
+   the Lambda expr variant is only for the ill-formed misplaced case). *)
+and fold_fn path j : fold_fn =
+  match j with
+  | `String s -> Fn_name s
+  | `Assoc _ ->
+      let kvs = obj path j in
+      expect_node path kvs "Lambda";
+      check_keys path kvs [ "node"; "parameters"; "body"; "bron" ];
+      Fn_lambda
+        {
+          parameters = lambda_params (path / "parameters") (field path kvs "parameters");
+          body = expr (path / "body") (field path kvs "body");
+          bron = str_opt (path / "bron") (field path kvs "bron");
+        }
+  | j ->
+      fail path
+        ("expected a Lambda object or a function-name string, got " ^ Yojson.Safe.to_string j)
 
 and tekst_deel path j : tekst_deel =
   let kvs = obj path j in
@@ -937,10 +1053,25 @@ let default_ladder path j : default_ladder =
     dl_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
   }
 
+(* Extension form (v1, row 10): a named reusable function (IR-SPEC ch. 2.11).
+   Strict: name/parameters/result/body required, bron nullable. *)
+let function_def path j : function_def =
+  let kvs = obj path j in
+  expect_node path kvs "FunctionDef";
+  check_keys path kvs [ "node"; "name"; "parameters"; "result"; "body"; "bron" ];
+  let f name = field path kvs name in
+  {
+    fd_naam = str (path / "name") (f "name");
+    fd_parameters = lambda_params (path / "parameters") (f "parameters");
+    fd_result = datatype (path / "result") (f "result");
+    fd_body = expr (path / "body") (f "body");
+    fd_bron = str_opt (path / "bron") (f "bron");
+  }
+
 let document (j : json) : document =
   let path = "" in
   let kvs = obj path j in
-  check_keys path kvs ~ext:[ "defaultLadders" ]
+  check_keys path kvs ~ext:[ "defaultLadders"; "functionDefs" ]
     [ "formaat"; "objecttypen"; "domeinen"; "parameters"; "eenheidstelsels";
       "feittypen"; "dimensies"; "tijdlijnen"; "dagsoorten"; "dagsoortPerEenheid";
       "regels"; "resolvedRegels"; "resolvedDagsoorten"; "objectCreaties";
@@ -981,6 +1112,13 @@ let document (j : json) : document =
           List.mapi
             (fun i x -> default_ladder (path / "defaultLadders" / string_of_int i) x)
             (list_ (path / "defaultLadders") j)
+      | None -> []);
+    function_defs =
+      (match List.assoc_opt "functionDefs" kvs with
+      | Some j ->
+          List.mapi
+            (fun i x -> function_def (path / "functionDefs" / string_of_int i) x)
+            (list_ (path / "functionDefs") j)
       | None -> []);
   }
 

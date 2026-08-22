@@ -136,6 +136,16 @@
             "constructor": { "type": "string", "minLength": 1 },
             "payload": { "$ref": "#/$defs/value" }
           }
+        },
+        {
+          "description": "A list value (CONSTRUCTS row 10): an ordered, possibly empty sequence of element values, all of the list's declared element datatype; the loader rejects a leeg element (spec/RUNTIME-SEMANTICS.md ch. 10.1).",
+          "type": "object", "additionalProperties": false, "required": ["list"],
+          "properties": {
+            "list": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/value" }
+            }
+          }
         }
       ]
     },

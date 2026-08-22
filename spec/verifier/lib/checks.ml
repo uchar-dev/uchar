@@ -762,7 +762,7 @@ let wf029 ctx =
 let datatype_kind = function
   | Numeriek _ -> "number" | Percentage _ -> "percentage" | Tekst -> "text"
   | Booleaan -> "boolean" | Datum_in_dagen -> "date-day" | Datum_tijd -> "date-ms"
-  | Enumeratie _ -> "enumeration" | Sum_type _ -> "sumtype"
+  | Enumeratie _ -> "enumeration" | Sum_type _ -> "sumtype" | List_type _ -> "list"
   | Datatype_onbekend _ -> "unknown"
 
 let wf030 ctx =
@@ -1005,7 +1005,11 @@ let typ_of_expr = function
   | Attribuut_ref { typ; _ } | Dimensie_cel { typ; _ } | Parameter_ref { typ; _ }
   | Variabele_ref { typ; _ } | Constante { typ; _ } | Expr_onopgelost { typ; _ }
   | Temporal_read { typ; _ } | Construct { typ; _ } | Match { typ; _ }
-  | Binder_ref { typ; _ } -> typ
+  | Binder_ref { typ; _ } | List_literal { typ; _ } | If_then_else { typ; _ }
+  | Invoke { typ; _ } | Fold { typ; _ } | Map_list { typ; _ }
+  | Filter_list { typ; _ } | List_length { typ; _ } -> typ
+  (* a Lambda is never a value: it carries no type *)
+  | Lambda _ -> None
 
 (* Is this expression a time-dependent operand (for WF-043)? *)
 let expr_temporal ctx = function
@@ -1037,6 +1041,20 @@ let constructors_agree (a : (string * datatype option) list)
     (b : (string * datatype option) list) =
   List.length a = List.length b
   && List.for_all2 (fun (n1, p1) (n2, p2) -> norm n1 = norm n2 && p1 = p2) a b
+
+(* The declared FunctionDef of [name], iff present (WF-067..068/070). *)
+let function_decl ctx name : function_def option =
+  List.find_opt (fun (fd : function_def) -> norm fd.fd_naam = norm name) ctx.doc.function_defs
+
+let is_list_type = function List_type _ -> true | _ -> false
+
+(* A first-order non-list datatype: Numeriek, day-precision Date, or a
+   declared SumType — the admissible list element (WF-065) and the pattern
+   WF-060 uses for constructor payloads. *)
+let admissible_element ctx = function
+  | Numeriek _ | Datum_in_dagen -> true
+  | Sum_type { domein; _ } -> sum_decl ctx domein <> None
+  | _ -> false
 
 let scalar_one_arg_kinds =
   [ Wortel; Absolute_waarde; Eerste_paasdag; Jaar_uit; Maand_uit; Dag_uit;
@@ -1376,7 +1394,13 @@ let wf053_attribuut_ref ctx at ~subject ~set ~bindings ~navigatie_rol ~navigatie
                else [])
              hops)
 
-let rec walk_expr ctx ~binders ~subject at (e : expr) : violation list =
+(* [body] threads the closed-body context (IR-SPEC ch. 2.11 / ch. 4.8): None
+   at rule level, [Some wf] inside a function body (wf = "WF-067") or a lambda
+   body (wf = "WF-069"). It gates two things: the position of IfThenElse (only
+   inside a body) and the closed-ness of a body — a body may not read an
+   attribute, dimension cell, aggregation, temporal or variable, nor a
+   condition beyond Vergelijking/Predicaat. *)
+let rec walk_expr ctx ~binders ~subject ?(body = None) at (e : expr) : violation list =
   let sub p = at ^ "/" ^ p in
   let typ_checks =
     match typ_of_expr e with
@@ -1387,7 +1411,28 @@ let rec walk_expr ctx ~binders ~subject at (e : expr) : violation list =
   in
   typ_checks
   @
-  match e with
+  (let closed =
+     (* inside a closed body: the reads that break closure short-circuit,
+        citing the host rule (WF-067 for a function body, WF-069 for a
+        lambda body) *)
+     match body with
+     | None -> None
+     | Some wf -> (
+         let deny phrase =
+           Some [ v wf at (phrase ^ " is not admissible inside a closed function or lambda body") ]
+         in
+         match e with
+         | Attribuut_ref _ -> deny "an attribute or characteristic read"
+         | Dimensie_cel _ -> deny "a dimension-cell read"
+         | Functie _ -> deny "an aggregation"
+         | Temporal_read _ -> deny "a temporal read"
+         | Variabele_ref _ -> deny "a variable read"
+         | _ -> None)
+   in
+   match closed with
+   | Some vs -> vs
+   | None ->
+   match e with
   | Literal { waarde; typ; _ } -> (
       match typ, waarde with
       | Some (Enumeratie { waarden; _ }), Some w when not (mem_ci (some_names waarden) w) ->
@@ -1409,7 +1454,7 @@ let rec walk_expr ctx ~binders ~subject at (e : expr) : violation list =
              match d with
              | Letterlijk _ -> []
              | Ingevoegd { expr = Some e } ->
-                 walk_expr ctx ~binders ~subject (Printf.sprintf "%s/delen/%d/expr" at i) e
+                 walk_expr ctx ~binders ~subject ~body (Printf.sprintf "%s/delen/%d/expr" at i) e
              | Ingevoegd { expr = None } -> [])
            delen)
   | Binair { op; links; rechts; _ } ->
@@ -1441,8 +1486,8 @@ let rec walk_expr ctx ~binders ~subject at (e : expr) : violation list =
                [ v "WF-035" at "additive operands have incompatible units" ]
              else []
          | _ -> [])
-      @ (match links with Some e -> walk_expr ctx ~binders ~subject (sub "links") e | None -> [])
-      @ (match rechts with Some e -> walk_expr ctx ~binders ~subject (sub "rechts") e | None -> [])
+      @ (match links with Some e -> walk_expr ctx ~binders ~subject ~body (sub "links") e | None -> [])
+      @ (match rechts with Some e -> walk_expr ctx ~binders ~subject ~body (sub "rechts") e | None -> [])
   | Functie f ->
       let arity = List.length f.argumenten in
       (* WF-037: facet validity per kind *)
@@ -1697,7 +1742,7 @@ let rec walk_expr ctx ~binders ~subject at (e : expr) : violation list =
              | Some st -> wf048_derivable ctx at ~from_type:st ~to_type:el ~site:"instance fold"
              | None -> []))
   | Afgerond { basis; _ } ->
-      (match basis with Some e -> walk_expr ctx ~binders ~subject (sub "basis") e | None -> [])
+      (match basis with Some e -> walk_expr ctx ~binders ~subject ~body (sub "basis") e | None -> [])
   | Begrensd { basis; minimum; maximum; _ } ->
       (if minimum = None && maximum = None then
          [ v "WF-035" at "clamp without any bound" ]
@@ -1710,7 +1755,7 @@ let rec walk_expr ctx ~binders ~subject at (e : expr) : violation list =
                  | Some d when not (is_number_like d) ->
                      [ v "WF-035" (sub n) ("clamp " ^ n ^ " is " ^ datatype_kind d ^ ", must be numeric") ]
                  | _ -> [])
-                @ walk_expr ctx ~binders ~subject (sub n) e
+                @ walk_expr ctx ~binders ~subject ~body (sub n) e
             | None -> [])
           [ ("basis", basis); ("minimum", minimum); ("maximum", maximum) ]
   | Attribuut_ref
@@ -1903,7 +1948,7 @@ let rec walk_expr ctx ~binders ~subject at (e : expr) : violation list =
            [ v "WF-062" (sub "type")
                ("construct type is " ^ datatype_kind d ^ ", not a sum type") ])
       @ (match argument with
-         | Some a -> walk_expr ctx ~binders ~subject (sub "argument") a
+         | Some a -> walk_expr ctx ~binders ~subject ~body (sub "argument") a
          | None -> [])
   | Match { typ; scrutinee; arms; _ } ->
       let decl =
@@ -1985,21 +2030,212 @@ let rec walk_expr ctx ~binders ~subject at (e : expr) : violation list =
               arms
       in
       scrutinee_checks @ totality @ binder_checks @ body_type_checks
-      @ walk_expr ctx ~binders ~subject (sub "scrutinee") scrutinee
+      @ walk_expr ctx ~binders ~subject ~body (sub "scrutinee") scrutinee
       @ List.concat
           (List.mapi
-             (fun i (_, binder, body) ->
+             (fun i (_, binder, arm_body) ->
                let binders' = match binder with Some b -> b :: binders | None -> binders in
-               walk_expr ctx ~binders:binders' ~subject
-                 (Printf.sprintf "%s/arms/%d/body" at i) body)
+               walk_expr ctx ~binders:binders' ~subject ~body
+                 (Printf.sprintf "%s/arms/%d/body" at i) arm_body)
              arms)
   | Binder_ref { naam; _ } ->
-      (* WF-064: a binder reference resolves lexically to an enclosing
-         match-arm binder (a VariabeleRef stays outside this rule — row 24) *)
+      (* WF-064: a binder reference resolves lexically to an enclosing binder
+         (a match arm, or a lambda/function parameter — row 10); a
+         VariabeleRef stays outside this rule (row 24) *)
       if List.exists (fun b -> norm b = norm naam) binders then []
       else [ v "WF-064" at ("binder reference '" ^ naam ^ "' resolves to no enclosing binder") ]
+  | List_literal { typ; elements; _ } ->
+      (* WF-066: every element's static type equals the declared element datatype *)
+      let elem_dt = match typ with Some (List_type { element }) -> Some element | _ -> None in
+      (match typ with
+       | Some (List_type _) -> []
+       | Some d ->
+           [ v "WF-066" (sub "type") ("list literal type is " ^ datatype_kind d ^ ", not a list type") ]
+       | None -> [ v "WF-066" (sub "type") "list literal carries no type" ])
+      @ (match elem_dt with
+         | None -> []
+         | Some ed ->
+             List.concat
+               (List.mapi
+                  (fun i e ->
+                    match typ_of_expr e with
+                    | Some t when t <> ed ->
+                        [ v "WF-066" (sub (Printf.sprintf "elements/%d" i))
+                            ("element type " ^ datatype_kind t ^ " differs from the declared element "
+                           ^ datatype_kind ed) ]
+                    | _ -> [])
+                  elements))
+      @ List.concat
+          (List.mapi
+             (fun i e -> walk_expr ctx ~binders ~subject ~body (sub (Printf.sprintf "elements/%d" i)) e)
+             elements)
+  | Lambda _ ->
+      (* WF-069: a lambda is admissible only as a Fold/MapList function operand
+         (there it is loaded as a fold_fn, never this expr variant) *)
+      [ v "WF-069" at "a Lambda is admissible only as the function operand of a Fold or MapList" ]
+  | If_then_else { typ; condition; then_; else_; _ } ->
+      (* WF-069: position-restricted to lambda and function bodies; both
+         branches agree on the node's own type *)
+      (match body with
+       | Some _ -> []
+       | None -> [ v "WF-069" at "an IfThenElse is admissible only inside a lambda or function body" ])
+      @ (let branch name e =
+           match typ, typ_of_expr e with
+           | Some t, Some bt when t <> bt ->
+               [ v "WF-069" (sub name)
+                   ("the " ^ name ^ " branch is " ^ datatype_kind bt ^ ", but the IfThenElse type is "
+                  ^ datatype_kind t) ]
+           | _ -> []
+         in
+         branch "then" then_ @ branch "else" else_)
+      @ walk_cond ctx ~binders ~subject ~body (sub "condition") condition
+      @ walk_expr ctx ~binders ~subject ~body (sub "then") then_
+      @ walk_expr ctx ~binders ~subject ~body (sub "else") else_
+  | Invoke { typ; functie; arguments; _ } ->
+      (* WF-068: resolvable function; arity; argument types; result type *)
+      (match function_decl ctx functie with
+       | None ->
+           [ v "WF-068" at ("invoke names '" ^ functie ^ "', which is not a declared function") ]
+       | Some fd ->
+           (if List.length arguments <> List.length fd.fd_parameters then
+              [ v "WF-068" at
+                  (Printf.sprintf "invoke of '%s' supplies %d arguments, but it declares %d parameters"
+                     functie (List.length arguments) (List.length fd.fd_parameters)) ]
+            else
+              List.concat
+                (List.mapi
+                   (fun i (a, (_, pt)) ->
+                     match typ_of_expr a with
+                     | Some at' when at' <> pt ->
+                         [ v "WF-068" (sub (Printf.sprintf "arguments/%d" i))
+                             ("argument type " ^ datatype_kind at'
+                            ^ " does not match the parameter datatype " ^ datatype_kind pt) ]
+                     | _ -> [])
+                   (List.combine arguments fd.fd_parameters)))
+           @ (match typ with
+             | Some t when t <> fd.fd_result ->
+                 [ v "WF-068" (sub "type")
+                     "invoke result type differs from the declared function result" ]
+             | _ -> []))
+      @ List.concat
+          (List.mapi
+             (fun i a -> walk_expr ctx ~binders ~subject ~body (sub (Printf.sprintf "arguments/%d" i)) a)
+             arguments)
+  | Fold { typ; list; functie; init; _ } ->
+      let src_elem = match typ_of_expr list with Some (List_type { element }) -> Some element | _ -> None in
+      fold_source_check ctx (sub "list") list
+      (* WF-070: the accumulator (node type = init type) is one first-order
+         non-list datatype *)
+      @ (match typ with
+        | Some d when is_list_type d ->
+            [ v "WF-070" (sub "type")
+                "fold accumulator is list-typed — it must be a first-order non-list datatype" ]
+        | _ -> [])
+      @ (match typ, typ_of_expr init with
+        | Some at', Some it when at' <> it ->
+            [ v "WF-070" (sub "init") "fold init datatype differs from the accumulator type" ]
+        | _ -> [])
+      (* WF-069/070: the (accumulator, element) function, its closed body *)
+      @ check_fold_fn ctx ~binders ~subject (sub "function") ~params:[ typ; src_elem ] ~result:typ functie
+      @ walk_expr ctx ~binders ~subject ~body (sub "list") list
+      @ walk_expr ctx ~binders ~subject ~body (sub "init") init
+  | Map_list { typ; list; functie; _ } ->
+      let src_elem = match typ_of_expr list with Some (List_type { element }) -> Some element | _ -> None in
+      let out_elem = match typ with Some (List_type { element }) -> Some element | _ -> None in
+      fold_source_check ctx (sub "list") list
+      (* WF-070: the node type is the ListType of the body's datatype *)
+      @ (match typ with
+        | Some (List_type _) -> []
+        | Some d ->
+            [ v "WF-070" (sub "type") ("map result is " ^ datatype_kind d ^ ", must be a list type") ]
+        | None -> [ v "WF-070" (sub "type") "map carries no result type" ])
+      @ check_fold_fn ctx ~binders ~subject (sub "function") ~params:[ src_elem ] ~result:out_elem functie
+      @ walk_expr ctx ~binders ~subject ~body (sub "list") list
+  | Filter_list { typ; list; binder; condition; _ } ->
+      fold_source_check ctx (sub "list") list
+      (* WF-070: the node type equals the source's list type *)
+      @ (match typ, typ_of_expr list with
+        | Some t, Some s when t <> s ->
+            [ v "WF-070" (sub "type") "filter result type must equal the source list type" ]
+        | _ -> [])
+      @ walk_expr ctx ~binders ~subject ~body (sub "list") list
+      (* the binder is bound in the condition — the aggregation-filter precedent *)
+      @ walk_cond ctx ~binders:(binder :: binders) ~subject ~body (sub "condition") condition
+  | List_length { typ; list; _ } ->
+      fold_source_check ctx (sub "list") list
+      (* WF-070: the count is a whole number *)
+      @ (match typ with
+        | Some (Numeriek { geheel = true; _ }) -> []
+        | Some d ->
+            [ v "WF-070" (sub "type") ("length is " ^ datatype_kind d ^ ", must be a whole number") ]
+        | None -> [ v "WF-070" (sub "type") "length carries no type" ])
+      @ walk_expr ctx ~binders ~subject ~body (sub "list") list)
 
-and walk_cond ctx ~binders ~subject at (c : conditie) : violation list =
+(* WF-070: the fold-family [list] operand must be list-typed. *)
+and fold_source_check _ctx at list =
+  match typ_of_expr list with
+  | Some (List_type _) -> []
+  | Some d -> [ v "WF-070" at ("fold source is " ^ datatype_kind d ^ ", must be list-typed") ]
+  | None -> [ v "WF-070" at "fold source carries no type" ]
+
+(* A Fold/MapList [function] operand (IR-SPEC ch. 4.8): [params] the expected
+   parameter datatypes in order (accumulator then element for a fold, element
+   for a map), [result] the expected body datatype. A lambda's body is a fresh
+   closed body (WF-069); a name resolves against functionDefs (WF-070). *)
+and check_fold_fn ctx ~binders ~subject at ~params ~result (fn : fold_fn) : violation list =
+  let arity = List.length params in
+  match fn with
+  | Fn_lambda { parameters; body = lbody; _ } ->
+      (if List.length parameters <> arity then
+         [ v "WF-069" at
+             (Printf.sprintf "lambda takes %d parameters, but its host expects %d"
+                (List.length parameters) arity) ]
+       else
+         List.concat
+           (List.map2
+              (fun (pn, pt) exp ->
+                match exp with
+                | Some e when e <> pt ->
+                    [ v "WF-070" at
+                        ("lambda parameter '" ^ pn ^ "' is " ^ datatype_kind pt ^ ", expected "
+                       ^ datatype_kind e) ]
+                | _ -> [])
+              parameters params))
+      @ (match result, typ_of_expr lbody with
+        | Some r, Some b when r <> b ->
+            [ v "WF-070" at
+                ("lambda body is " ^ datatype_kind b ^ ", but the fold requires " ^ datatype_kind r) ]
+        | _ -> [])
+      @ walk_expr ctx ~binders:(List.map fst parameters @ binders) ~subject ~body:(Some "WF-069")
+          (at ^ "/body") lbody
+  | Fn_name n -> (
+      match function_decl ctx n with
+      | None ->
+          [ v "WF-070" at ("fold function names '" ^ n ^ "', which is not a declared function") ]
+      | Some fd ->
+          (if List.length fd.fd_parameters <> arity then
+             [ v "WF-070" at
+                 (Printf.sprintf "function '%s' takes %d parameters, but the fold expects %d" n
+                    (List.length fd.fd_parameters) arity) ]
+           else
+             List.concat
+               (List.map2
+                  (fun (_, pt) exp ->
+                    match exp with
+                    | Some e when e <> pt ->
+                        [ v "WF-070" at
+                            ("function '" ^ n ^ "' parameter is " ^ datatype_kind pt ^ ", expected "
+                           ^ datatype_kind e) ]
+                    | _ -> [])
+                  fd.fd_parameters params))
+          @ (match result with
+            | Some r when r <> fd.fd_result ->
+                [ v "WF-070" at
+                    ("function '" ^ n ^ "' result is " ^ datatype_kind fd.fd_result
+                   ^ ", but the fold requires " ^ datatype_kind r) ]
+            | _ -> []))
+
+and walk_cond ctx ~binders ~subject ?(body = None) at (c : conditie) : violation list =
   let sub p = at ^ "/" ^ p in
   let whole_period_check periode operands =
     match periode with
@@ -2010,6 +2246,24 @@ and walk_cond ctx ~binders ~subject at (c : conditie) : violation list =
         else
           [ v "WF-043" at "whole-period qualifier on a non-time-dependent operand" ]
   in
+  let closed =
+    (* inside a closed body a condition is limited to Vergelijking/Predicaat
+       over admissible operands (IR-SPEC ch. 2.11): a characteristic,
+       role-membership, period, composite or regelversie read breaks closure *)
+    match body with
+    | None -> None
+    | Some wf -> (
+        match c with
+        | Vergelijking _ | Predicaat _ -> None
+        | _ ->
+            Some
+              [ v wf at
+                  "this condition reads a characteristic, role, period or composite — not \
+                   admissible inside a closed function or lambda body" ])
+  in
+  match closed with
+  | Some vs -> vs
+  | None ->
   match c with
   | Vergelijking { op; links; rechts; periode; _ } ->
       let lt = Option.bind links typ_of_expr and rt = Option.bind rechts typ_of_expr in
@@ -2060,8 +2314,8 @@ and walk_cond ctx ~binders ~subject at (c : conditie) : violation list =
            | _ -> [])
        | _ -> [])
       @ whole_period_check periode [ links; rechts ]
-      @ (match links with Some e -> walk_expr ctx ~binders ~subject (sub "links") e | None -> [])
-      @ (match rechts with Some e -> walk_expr ctx ~binders ~subject (sub "rechts") e | None -> [])
+      @ (match links with Some e -> walk_expr ctx ~binders ~subject ~body (sub "links") e | None -> [])
+      @ (match rechts with Some e -> walk_expr ctx ~binders ~subject ~body (sub "rechts") e | None -> [])
   | Predicaat { soort; operand; dagsoort; periode; _ } ->
       let ot = Option.bind operand typ_of_expr in
       (match soort, ot with
@@ -2083,7 +2337,7 @@ and walk_cond ctx ~binders ~subject at (c : conditie) : violation list =
              [ v "WF-034" at ("reference to undeclared day kind '" ^ dk ^ "'") ]
          | _ -> [])
       @ whole_period_check periode [ operand ]
-      @ (match operand with Some e -> walk_expr ctx ~binders ~subject (sub "operand") e | None -> [])
+      @ (match operand with Some e -> walk_expr ctx ~binders ~subject ~body (sub "operand") e | None -> [])
   | Kenmerk_check { kenmerk; navigatie; periode; navigatie_binding; _ } ->
       (match kenmerk, navigatie, subject with
        | Some k, None, Some otn -> (
@@ -2459,10 +2713,30 @@ let rec dep_expr ctx ~subject acc (e : expr) =
       (* the reads are the scrutinee's and every arm body's; a binder is
          lexical, contributing no attribute/parameter edge of its own *)
       List.fold_left
-        (fun acc (_, _, body) -> dep_expr ctx ~subject acc body)
+        (fun acc (_, _, arm_body) -> dep_expr ctx ~subject acc arm_body)
         (dep_expr ctx ~subject acc scrutinee)
         arms
   | Binder_ref _ -> acc
+  (* the fold family (row 10): the reads live in the list source, the init and
+     the filter condition; a closed lambda/function body reads no attributes,
+     so it contributes no edges — but the walk is harmless and total *)
+  | List_literal { elements; _ } -> List.fold_left (dep_expr ctx ~subject) acc elements
+  | Lambda { body = lbody; _ } -> dep_expr ctx ~subject acc lbody
+  | If_then_else { condition; then_; else_; _ } ->
+      let acc = dep_cond ctx ~subject ~neg:false acc condition in
+      dep_expr ctx ~subject (dep_expr ctx ~subject acc then_) else_
+  | Invoke { arguments; _ } -> List.fold_left (dep_expr ctx ~subject) acc arguments
+  | Fold { list; functie; init; _ } ->
+      dep_fold_fn ctx ~subject (dep_expr ctx ~subject (dep_expr ctx ~subject acc list) init) functie
+  | Map_list { list; functie; _ } ->
+      dep_fold_fn ctx ~subject (dep_expr ctx ~subject acc list) functie
+  | Filter_list { list; condition; _ } ->
+      dep_cond ctx ~subject ~neg:false (dep_expr ctx ~subject acc list) condition
+  | List_length { list; _ } -> dep_expr ctx ~subject acc list
+
+and dep_fold_fn ctx ~subject acc = function
+  | Fn_lambda { body = lbody; _ } -> dep_expr ctx ~subject acc lbody
+  | Fn_name _ -> acc
 
 and dep_opt ctx ~subject acc = function Some e -> dep_expr ctx ~subject acc e | None -> acc
 
@@ -3589,6 +3863,152 @@ let wf061 ctx =
         | None -> [])
       ctx.doc.parameters
 
+(* WF-065: a ListType element MUST be first-order and non-list (Number,
+   day-precision Date, or a declared SumType), and a list-typed attribute
+   MUST NOT carry a granularity (a list-typed temporal attribute is
+   ill-formed) — IR-SPEC ch. 2.4. *)
+let wf065 ctx =
+  let element_check at element =
+    if admissible_element ctx element then []
+    else
+      [ v "WF-065" at
+          ("list element is " ^ datatype_kind element
+         ^ ", not a first-order non-list datatype (number, day-precision date, or a declared \
+            sum type)") ]
+  in
+  List.concat_map
+    (fun (otname, (ot : objecttype)) ->
+      List.concat_map
+        (fun (an, dt) ->
+          match dt with
+          | Some (List_type { element }) ->
+              let at = "/objecttypen/" ^ otname ^ "/attributen/" ^ an in
+              element_check at element
+              @ (if
+                   List.exists
+                     (fun (n, g) -> norm n = norm an && g <> None)
+                     ot.attribuut_granulariteit
+                 then
+                   [ v "WF-065" at
+                       "a list-typed attribute carries a granularity — a list-typed temporal \
+                        attribute is ill-formed" ]
+                 else [])
+          | _ -> [])
+        ot.attributen)
+    ctx.doc.objecttypen
+  @ List.concat_map
+      (fun (pn, (p : parameter)) ->
+        match p.par_datatype with
+        | Some (List_type { element }) -> element_check ("/parameters/" ^ pn) element
+        | _ -> [])
+      ctx.doc.parameters
+  @ List.concat_map
+      (fun (dn, dt) ->
+        match dt with
+        | Some (List_type { element }) -> element_check ("/domeinen/" ^ dn) element
+        | _ -> [])
+      ctx.doc.domeinen
+
+(* The function names invoked by an expression — Invoke targets and named
+   Fold/MapList operands — for the WF-067 acyclicity check. *)
+let rec invoked_expr acc (e : expr) : string list =
+  match e with
+  | Invoke { functie; arguments; _ } -> List.fold_left invoked_expr (functie :: acc) arguments
+  | Fold { list; functie; init; _ } ->
+      invoked_fold_fn (invoked_expr (invoked_expr acc list) init) functie
+  | Map_list { list; functie; _ } -> invoked_fold_fn (invoked_expr acc list) functie
+  | Filter_list { list; condition; _ } -> invoked_cond (invoked_expr acc list) condition
+  | List_length { list; _ } -> invoked_expr acc list
+  | List_literal { elements; _ } -> List.fold_left invoked_expr acc elements
+  | Lambda { body; _ } -> invoked_expr acc body
+  | If_then_else { condition; then_; else_; _ } ->
+      invoked_expr (invoked_expr (invoked_cond acc condition) then_) else_
+  | Binair { links; rechts; _ } -> invoked_opt (invoked_opt acc links) rechts
+  | Functie { argumenten; leegwaarde; filter; _ } ->
+      let acc = List.fold_left invoked_expr acc argumenten in
+      let acc = invoked_opt acc leegwaarde in
+      (match filter with Some c -> invoked_cond acc c | None -> acc)
+  | Afgerond { basis; _ } -> invoked_opt acc basis
+  | Begrensd { basis; minimum; maximum; _ } ->
+      invoked_opt (invoked_opt (invoked_opt acc basis) minimum) maximum
+  | Construct { argument; _ } -> invoked_opt acc argument
+  | Match { scrutinee; arms; _ } ->
+      List.fold_left (fun acc (_, _, b) -> invoked_expr acc b) (invoked_expr acc scrutinee) arms
+  | Tekst_reeks { delen; _ } ->
+      List.fold_left
+        (fun acc -> function Ingevoegd { expr = Some e } -> invoked_expr acc e | _ -> acc)
+        acc delen
+  | Dimensie_cel { attribuut; _ } -> invoked_opt acc attribuut
+  | Temporal_read { basis; datum; _ } -> invoked_expr (invoked_expr acc basis) datum
+  | Literal _ | Attribuut_ref _ | Parameter_ref _ | Variabele_ref _ | Constante _
+  | Expr_onopgelost _ | Binder_ref _ ->
+      acc
+
+and invoked_opt acc = function Some e -> invoked_expr acc e | None -> acc
+
+and invoked_fold_fn acc = function
+  | Fn_lambda { body; _ } -> invoked_expr acc body
+  | Fn_name n -> n :: acc
+
+and invoked_cond acc (c : conditie) : string list =
+  match c with
+  | Vergelijking { links; rechts; _ } -> invoked_opt (invoked_opt acc links) rechts
+  | Predicaat { operand; _ } -> invoked_opt acc operand
+  | Samengesteld { onderdelen; _ } -> List.fold_left invoked_cond acc onderdelen
+  | Periode_conditie { vanaf; tot; _ } -> invoked_opt (invoked_opt acc vanaf) tot
+  | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _ | Regelversie _
+  | Conditie_onopgelost _ ->
+      acc
+
+(* WF-067: FunctionDef discipline (IR-SPEC ch. 2.11) — ci-unique names, typed
+   uniquely-named parameters, a resolvable result, a closed body (the walk with
+   [~body:(Some "WF-067")]), and an acyclic invocation graph. *)
+let wf067 ctx =
+  let fds = ctx.doc.function_defs in
+  let name_dups =
+    dups_by norm (List.mapi (fun i fd -> (fd.fd_naam, Printf.sprintf "/functionDefs/%d" i)) fds)
+    |> List.map (fun (first, dup, at) ->
+           v "WF-067" at
+             (Printf.sprintf "duplicate function name '%s' (already declared as '%s')" dup first))
+  in
+  (* [name] reaches itself through the invocation graph? *)
+  let rec reaches ~target ~visited name =
+    match function_decl ctx name with
+    | None -> false
+    | Some fd ->
+        List.exists
+          (fun callee ->
+            norm callee = norm target
+            || ((not (List.mem (norm callee) visited))
+               && reaches ~target ~visited:(norm callee :: visited) callee))
+          (invoked_expr [] fd.fd_body)
+  in
+  name_dups
+  @ List.concat
+      (List.mapi
+         (fun i (fd : function_def) ->
+           let at = Printf.sprintf "/functionDefs/%d" i in
+           (dups_by norm (List.map (fun (pn, _) -> (pn, at)) fd.fd_parameters)
+            |> List.map (fun (first, dup, at') ->
+                   v "WF-067" at'
+                     (Printf.sprintf "duplicate parameter name '%s' (already declared as '%s')" dup
+                        first)))
+           @ (match fd.fd_result with
+             | Sum_type { domein; _ } when sum_decl ctx domein = None ->
+                 [ v "WF-067" at
+                     ("result names sum-type domain '" ^ domein ^ "', which is not a declared sum \
+                       type") ]
+             | _ -> [])
+           @ walk_expr ctx ~binders:(List.map fst fd.fd_parameters) ~subject:None
+               ~body:(Some "WF-067") (at ^ "/body") fd.fd_body
+           @ (if reaches ~target:fd.fd_naam ~visited:[ norm fd.fd_naam ] fd.fd_naam then
+                [ v "WF-067" at
+                    ("function '" ^ fd.fd_naam
+                   ^ "' is part of a recursive invocation cycle — the invocation graph must be \
+                      acyclic") ]
+              else []))
+         fds)
+
 let all (doc : document) : violation list =
   let ctx = { doc } in
   List.concat
@@ -3598,5 +4018,5 @@ let all (doc : document) : violation list =
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf032 ctx; wf033 ctx; wf045_046 ctx;
       wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf054 ctx;
-      wf057 ctx; wf059 ctx; wf060 ctx; wf061 ctx;
+      wf057 ctx; wf059 ctx; wf060 ctx; wf061 ctx; wf065 ctx; wf067 ctx;
       expression_layer ctx ]

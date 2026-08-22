@@ -66,6 +66,10 @@ type datatype =
      constructor carries a name and either one payload datatype (unary) or
      None (nullary). Never emitter-produced. *)
   | Sum_type of { domein : string; constructoren : (string * datatype option) list }
+  (* Extension node (v1, row 10): an ordered, possibly empty sequence type
+     (IR-SPEC ch. 2.4). [element] is the single element datatype (first-order
+     and non-list — WF-065). Never emitter-produced. *)
+  | List_type of { element : datatype }
   | Datatype_onbekend of { reden : string option }
 
 (* The whole-period qualifier tag riding Vergelijking/Predicaat/Kenmerk. *)
@@ -158,6 +162,45 @@ type expr =
       bron : string option;
     }
   | Binder_ref of { naam : string; typ : datatype option; bron : string option }
+  (* Extension nodes (v1, row 10): the fold family (IR-SPEC ch. 4.8;
+     semantics RUNTIME-SEMANTICS ch. 10). [typ] rides the TemporalRead
+     pattern — present on the wire (non-null) for every node except [Lambda],
+     which is never a value. A [Lambda] as an ordinary expr operand is
+     ill-formed (WF-069); it is legal only as the [functie] of a Fold/MapList,
+     where it is a [fold_fn], not this variant. Never emitter-produced. *)
+  | List_literal of { typ : datatype option; elements : expr list; bron : string option }
+  | Lambda of { parameters : (string * datatype) list; body : expr; bron : string option }
+  | If_then_else of {
+      typ : datatype option;
+      condition : conditie;
+      then_ : expr;
+      else_ : expr;
+      bron : string option;
+    }
+  | Invoke of { typ : datatype option; functie : string; arguments : expr list; bron : string option }
+  | Fold of {
+      typ : datatype option;
+      list : expr;
+      functie : fold_fn;
+      init : expr;
+      bron : string option;
+    }
+  | Map_list of { typ : datatype option; list : expr; functie : fold_fn; bron : string option }
+  | Filter_list of {
+      typ : datatype option;
+      list : expr;
+      binder : string;
+      condition : conditie;
+      bron : string option;
+    }
+  | List_length of { typ : datatype option; list : expr; bron : string option }
+
+(* The [function] operand of a Fold/MapList: an inline lambda or a named
+   FunctionDef (the two wire forms of IR-SPEC ch. 4.8). A lambda body is
+   closed (WF-069); a name resolves against [functionDefs] (WF-070). *)
+and fold_fn =
+  | Fn_lambda of { parameters : (string * datatype) list; body : expr; bron : string option }
+  | Fn_name of string
 
 and tekst_deel =
   | Letterlijk of { tekst : string option }
@@ -448,6 +491,18 @@ type default_ladder = {
   dl_geldigheid : geldigheid option;
 }
 
+(* Extension form (v1, row 10): a named reusable function — DMN's Business
+   Knowledge Model (IR-SPEC ch. 2.11). Typed, uniquely named parameters; a
+   resolvable result; a closed body; an acyclic invocation graph (WF-067).
+   Carried by the optional top-level [function_defs]. Never emitter-produced. *)
+type function_def = {
+  fd_naam : string;
+  fd_parameters : (string * datatype) list;
+  fd_result : datatype;
+  fd_body : expr;
+  fd_bron : string option;
+}
+
 type document = {
   objecttypen : (string * objecttype) list;
   domeinen : (string * datatype option) list;
@@ -471,4 +526,5 @@ type document = {
   regel_groepen : resolved_regel_groep list;
   diagnostics : diagnostic list;
   default_ladders : default_ladder list; (* extension: absent = [] *)
+  function_defs : function_def list; (* extension: absent = [] *)
 }
