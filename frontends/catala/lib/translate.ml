@@ -64,6 +64,12 @@ exception Refuse of string
 
 let refuse fmt = Printf.ksprintf (fun s -> raise (Refuse s)) fmt
 
+(* Enums referenced by the translated document, recorded as [sum_type_of]
+   builds each SumType; [file_to_document] resets it per run and reads it to
+   emit exactly the used enums as domains — [ctx_enums] also carries built-in
+   enums (e.g. the desugarer's Optional), which no 5b program references. *)
+let used_enums = ref EnumName.Set.empty
+
 (* --- IR building blocks ------------------------------------------------- *)
 
 let geldig : I.geldigheid = { geld_vanaf = None; geld_tot = None }
@@ -73,7 +79,13 @@ let always_true : I.conditie = Samengesteld { kwantor = Alle; drempel = 0; onder
 
 (* --- Catala type -> IR datatype ---------------------------------------- *)
 
-let rec catala_dt (t : typ) : I.datatype =
+(* Every Catala enum maps to the row-36 SumType, uniformly — including
+   all-nullary enums (PHASE5B-KERNEL §2.7): Enumeratie stays the untouched
+   v0 mirror form and the two never convert. The declaring enum's base name
+   is the domain; constructor payloads recurse through [catala_dt]; a
+   TLit TUnit payload is nullary (None); a TTuple payload is an n-ary
+   constructor — 5c struct territory — and refuses loudly. *)
+let rec catala_dt (enums : enum_ctx) (t : typ) : I.datatype =
   match M.remove t with
   | TLit TInt -> num_int
   | TLit TBool -> Booleaan
@@ -82,13 +94,36 @@ let rec catala_dt (t : typ) : I.datatype =
   | TLit TRat -> refuse "decimal (rational) type: refused in the 5a skeleton (no declared number of decimals to derive)"
   | TLit TDuration -> refuse "duration type: not supported in the 5a skeleton"
   | TLit (TUnit | TPos) -> refuse "unit/pos type: not a domain value"
-  | TDefault inner -> catala_dt inner
+  | TDefault inner -> catala_dt enums inner
   | TArrow _ -> refuse "function-valued variable: new kernel (row 10), designed spec-first in 5b"
   | TStruct _ -> refuse "struct-typed variable: not supported in the 5a skeleton"
-  | TEnum _ -> refuse "enum-typed variable: payload enums are a new kernel (row 36), 5b"
+  | TEnum name -> sum_type_of enums name
+  | TTuple _ ->
+      refuse
+        "tuple payload: an n-ary constructor payload de-tuplifies to a Catala tuple — 5c struct territory, single-payload constructors only (WF); refused"
   | TArray _ -> refuse "list-typed variable: folds/lists are a new kernel (row 10), 5b"
   | TOption _ -> refuse "option-typed variable: not supported in the 5a skeleton"
   | _ -> refuse "unsupported variable type"
+
+(* An enum -> its SumType datatype: constructors in declaration order
+   (EnumConstructor ids are generative, so the map folds declaration-first). *)
+and sum_type_of (enums : enum_ctx) (name : EnumName.t) : I.datatype =
+  used_enums := EnumName.Set.add name !used_enums;
+  let sig_ =
+    try EnumName.Map.find name enums
+    with Not_found -> refuse "enum %S is not declared" (EnumName.base name)
+  in
+  let constructoren =
+    List.rev
+      (EnumConstructor.Map.fold
+         (fun c ty acc ->
+           let payload =
+             match M.remove ty with TLit TUnit -> None | _ -> Some (catala_dt enums ty)
+           in
+           (EnumConstructor.to_string c, payload) :: acc)
+         sig_ [])
+  in
+  Sum_type { domein = EnumName.base name; constructoren }
 
 let is_bool_dt = function I.Booleaan -> true | _ -> false
 
@@ -169,7 +204,7 @@ let parse_root_unordered e =
   | _ -> None
 
 (* one scope -> its object type, rules, ladders, consistencies *)
-let translate_scope (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
+let translate_scope (enums : enum_ctx) (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
   let ot_name = ScopeName.base name in
   (* variable table: ScopeVar -> (declared name, IR datatype) *)
   let vars : (string * I.datatype) ScopeVar.Map.t =
@@ -182,7 +217,7 @@ let translate_scope (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
                "context (reentrant) variable %S: besluit 6 wants Reading B (caller override as the highest rung), but ch. 7.8's input rung sits BELOW the ordinary rungs (Reading A). A single-scope 5a program cannot realise Reading B — refused."
                vname
          | Catala_runtime.NoInput | Catala_runtime.OnlyInput -> ());
-        ScopeVar.Map.add v (vname, catala_dt sv.svar_out_ty) acc)
+        ScopeVar.Map.add v (vname, catala_dt enums sv.svar_out_ty) acc)
       sd.scope_sig ScopeVar.Map.empty
   in
   let lookup v = ScopeVar.Map.find v vars in
@@ -241,21 +276,30 @@ let translate_scope (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
         typ = Some dt; bron = Some ("de " ^ vname); set = false;
         navigatie_pad = []; navigatie_bindingen = None }
   in
-  let rec infer_dt e : I.datatype option =
+  (* [env] binds match-arm payload binders (a Bindlib var -> its declared
+     name and IR datatype); it is empty outside a match body. *)
+  let rec infer_dt ?(env = Var.Map.empty) e : I.datatype option =
     match M.remove (strip e) with
     | ELit (LInt _) -> Some num_int
     | ELit (LBool _) -> Some Booleaan
     | ELit (LMoney _) -> Some num_money
     | ELit (LDate _) -> Some Datum_in_dagen
+    | EVar v -> Option.map snd (Var.Map.find_opt v env)
     | ELocation (ScopelangScopeVar { name }) ->
         (try Some (snd (lookup (M.remove name))) with Not_found -> None)
-    | EAppOp { args = a :: _; _ } -> infer_dt a
+    | EAppOp { args = a :: _; _ } -> infer_dt ~env a
     | _ -> None
   in
-  let rec value_expr ?(operand = false) e : I.expr =
+  let rec value_expr ?(operand = false) ?(env = Var.Map.empty) e : I.expr =
     let e = strip e in
     match M.remove e with
     | ELit l -> literal_expr l
+    | EVar v -> (
+        (* a match-arm payload binder -> BinderRef (RUNTIME-SEMANTICS ch. 9.2);
+           deliberately distinct from VariabeleRef (row 24) *)
+        match Var.Map.find_opt v env with
+        | Some (nm, dt) -> Binder_ref { naam = nm; typ = Some dt; bron = Some nm }
+        | None -> refuse "unbound variable %S in a value position" (Bindlib.name_of v))
     | ELocation (ScopelangScopeVar { name }) ->
         let v = M.remove name in
         let vname, dt = lookup v in
@@ -270,9 +314,9 @@ let translate_scope (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
         else attr_ref vname dt
     | EAppOp { op; args; _ } -> (
         let bin bop a b : I.expr =
-          Binair { op = bop; links = Some (value_expr ~operand:true a);
-                   rechts = Some (value_expr ~operand:true b);
-                   typ = infer_dt e; bron = None }
+          Binair { op = bop; links = Some (value_expr ~operand:true ~env a);
+                   rechts = Some (value_expr ~operand:true ~env b);
+                   typ = infer_dt ~env e; bron = None }
         in
         (* scopelang operators are resolved (overloaded:no): match the
            typed suffixes, not the overloaded forms. *)
@@ -300,16 +344,86 @@ let translate_scope (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
         | EScopeCall _ ->
             refuse "subscope call (reading a subscope output): object creation + role navigation (mapping row 9) is out of 5a scope"
         | _ -> refuse "struct field access: not supported in the 5a skeleton")
-    | EMatch _ -> refuse "match on an enum: payload enums are a new kernel (row 36), 5b"
-    | EInj _ -> refuse "enum constructor injection: new kernel (row 36), 5b"
+    | EInj { name; e = payload; cons } ->
+        (* a constructor value; unit payload = nullary (argument None) *)
+        let sig_ = EnumName.Map.find name enums in
+        let payload_ty = EnumConstructor.Map.find cons sig_ in
+        let argument =
+          match M.remove payload_ty with
+          | TLit TUnit -> None
+          | _ -> Some (value_expr ~env payload)
+        in
+        Construct
+          { typ = Some (sum_type_of enums name);
+            constructor_ = EnumConstructor.to_string cons; argument;
+            bron = Some (EnumConstructor.to_string cons) }
+    | EMatch { name; e = scrut; cases } ->
+        let sig_ = EnumName.Map.find name enums in
+        (* exhaustiveness fold (mirrors dcalc/from_scopelang.ml:223–249):
+           scopelang does not guarantee totality, so a partial cases map is
+           refused with the missing constructors named — the IR-side WF-063
+           stays the independent gate. Wildcards never reach here: the
+           desugarer fans a wildcard out over the missing constructors. *)
+        let missing =
+          List.rev
+            (EnumConstructor.Map.fold
+               (fun c _ acc ->
+                 if EnumConstructor.Map.mem c cases then acc
+                 else EnumConstructor.to_string c :: acc)
+               sig_ [])
+        in
+        if missing <> [] then
+          refuse "match on enum %S is not total: missing constructor(s) %s"
+            (EnumName.base name) (String.concat ", " missing);
+        (* arms in declared-constructor order; each case is a one-argument
+           EAbs (the desugarer wraps the payload binder — nullary carries a
+           unit binder, which becomes binder: null) *)
+        let arms_rev, inferred =
+          EnumConstructor.Map.fold
+            (fun c payload_ty (arms, inf) ->
+              let case = EnumConstructor.Map.find c cases in
+              let vars, body =
+                match M.remove case with
+                | EAbs { binder; _ } -> Bindlib.unmbind binder
+                | _ ->
+                    refuse
+                      "match case for %S is not a function (unexpected scopelang shape)"
+                      (EnumConstructor.to_string c)
+              in
+              let binder_name, env' =
+                match M.remove payload_ty with
+                | TLit TUnit -> (None, env)
+                | _ ->
+                    let v = vars.(0) in
+                    let nm = Bindlib.name_of v in
+                    (Some nm, Var.Map.add v (nm, catala_dt enums payload_ty) env)
+              in
+              let inf' =
+                match inf with Some _ -> inf | None -> infer_dt ~env:env' body
+              in
+              ( (EnumConstructor.to_string c, binder_name, value_expr ~env:env' body)
+                :: arms,
+                inf' ))
+            sig_ ([], None)
+        in
+        let result_dt =
+          match inferred with
+          | Some d -> d
+          | None ->
+              refuse "cannot infer the result datatype of a match on %S"
+                (EnumName.base name)
+        in
+        Match
+          { typ = Some result_dt; scrutinee = value_expr ~env scrut;
+            arms = List.rev arms_rev; bron = Some ("match " ^ EnumName.base name) }
     | EArray _ -> refuse "list literal: folds/lists are a new kernel (row 10), 5b"
     | EAbs _ -> refuse "function value: new kernel (row 10), 5b"
     | EStruct _ -> refuse "struct value: not supported in the 5a skeleton"
     | EIfThenElse _ -> refuse "if-then-else in a value: not supported in the 5a skeleton"
     | _ -> refuse "value-expression shape not supported in the 5a skeleton"
   in
-  let cmp_op o a b : I.vergelijk_op =
-    let is_date = infer_dt a = Some Datum_in_dagen || infer_dt b = Some Datum_in_dagen in
+  let cmp_op ?(env = Var.Map.empty) o a b : I.vergelijk_op =
+    let is_date = infer_dt ~env a = Some Datum_in_dagen || infer_dt ~env b = Some Datum_in_dagen in
     match o, is_date with
     | Op.Lt, false -> Kleiner | Op.Lt, true -> Eerder
     | Op.Lte, false -> Kleiner_of_gelijk | Op.Lte, true -> Eerder_of_gelijk
@@ -318,7 +432,7 @@ let translate_scope (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
     | Op.Eq, _ -> Gelijk
     | _ -> refuse "comparison operator not supported"
   in
-  let rec cond_expr e : I.conditie =
+  let rec cond_expr ?(env = Var.Map.empty) e : I.conditie =
     let e = strip e in
     match M.remove e with
     | ELit (LBool true) -> always_true
@@ -331,15 +445,29 @@ let translate_scope (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
               eigenaar = None; periode = None; bron = Some vname; navigatie_binding = None }
         else refuse "non-boolean variable %S used as a condition" vname
     | EAppOp { op; args; _ } -> (
+        let vergelijking vop a b : I.conditie =
+          Vergelijking
+            { op = vop; links = Some (value_expr ~operand:true ~env a);
+              rechts = Some (value_expr ~operand:true ~env b); periode = None; bron = None }
+        in
         match M.remove op, args with
         | (Op.Lt | Op.Lte | Op.Gt | Op.Gte | Op.Eq), [ a; b ] ->
-            Vergelijking
-              { op = cmp_op (M.remove op) a b; links = Some (value_expr ~operand:true a);
-                rechts = Some (value_expr ~operand:true b); periode = None; bron = None }
+            vergelijking (cmp_op ~env (M.remove op) a b) a b
+        | Op.Not, [ inner ] -> (
+            (* Catala desugars [a != b] to [not (a = b)] (from_surface:705);
+               it is the only Not shape the fragment expresses — a sum-type or
+               scalar inequality -> ONGELIJK (leeg-correct: Tabel 38, both
+               directions false over a leeg operand). *)
+            match M.remove (strip inner) with
+            | EAppOp { op = iop; args = [ a; b ]; _ } -> (
+                match M.remove iop with
+                | Op.Eq -> vergelijking Ongelijk a b
+                | _ -> refuse "operator Not is only expressible over an equality (a != b)")
+            | _ -> refuse "operator Not is only expressible over an equality (a != b)")
         | Op.And, [ a; b ] ->
-            Samengesteld { kwantor = Alle; drempel = 0; onderdelen = [ cond_expr a; cond_expr b ]; bron = Some "en" }
+            Samengesteld { kwantor = Alle; drempel = 0; onderdelen = [ cond_expr ~env a; cond_expr ~env b ]; bron = Some "en" }
         | Op.Or, [ a; b ] ->
-            Samengesteld { kwantor = Ten_minste; drempel = 1; onderdelen = [ cond_expr a; cond_expr b ]; bron = Some "of" }
+            Samengesteld { kwantor = Ten_minste; drempel = 1; onderdelen = [ cond_expr ~env a; cond_expr ~env b ]; bron = Some "of" }
         | o, _ -> refuse "operator %S not supported in a condition" (Operator.name o))
     | _ -> refuse "condition shape not supported in the 5a skeleton"
   in
@@ -462,19 +590,28 @@ let file_to_document (input : string) : I.document =
     refuse "imported modules are not supported in the 5a skeleton";
   if not (TopdefName.Map.is_empty prog.Sc.program_topdefs) then
     refuse "top-level definitions (constants / functions) are not supported in the 5a skeleton";
+  let enums = prog.Sc.program_ctx.ctx_enums in
   let scopes = ScopeName.Map.bindings prog.Sc.program_scopes in
   if scopes = [] then refuse "no scope declaration found";
+  used_enums := EnumName.Set.empty;
   let objecttypen = ref [] and regels = ref [] and ladders = ref [] and cons = ref [] in
   List.iter
     (fun (name, decl) ->
-      let ot_name, ot, rs, ls, cs = translate_scope name (M.remove decl) in
+      let ot_name, ot, rs, ls, cs = translate_scope enums name (M.remove decl) in
       objecttypen := (ot_name, ot) :: !objecttypen;
       regels := !regels @ rs;
       ladders := !ladders @ ls;
       cons := !cons @ cs)
     scopes;
+  (* the enums actually referenced above become SumType domains, in
+     declaration order (PHASE5B-KERNEL §2.7); no longer hard-wired empty *)
+  let domeinen =
+    List.map
+      (fun name -> (EnumName.base name, Some (sum_type_of enums name)))
+      (EnumName.Set.elements !used_enums)
+  in
   { objecttypen = List.rev !objecttypen;
-    domeinen = []; parameters = []; eenheidstelsels = []; feittypen = [];
+    domeinen; parameters = []; eenheidstelsels = []; feittypen = [];
     dimensies = []; tijdlijnen = []; dagsoorten = []; dagsoort_per_eenheid = [];
     regels = []; resolved_regels = !regels; resolved_dagsoorten = [];
     object_creaties = []; verdelingen = []; consistenties = !cons;

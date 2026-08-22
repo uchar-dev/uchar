@@ -88,6 +88,15 @@ let rec datatype (d : datatype) : json =
           ("eenheid", opt eenheid_j eenheid) ]
   | Enumeratie { domein; waarden } ->
       node "Enumeratie" [ ("domein", so domein); ("waarden", str_opt_list waarden) ]
+  | Sum_type { domein; constructoren } ->
+      node "SumType"
+        [ ("domain", s domein);
+          ("constructors",
+           `List
+             (List.map
+                (fun (nm, payload) ->
+                  `Assoc [ ("name", s nm); ("payload", opt datatype payload) ])
+                constructoren)) ]
   | Datatype_onbekend { reden } -> node "Onbekend" [ ("reden", so reden) ]
 
 and eenheid_j (e : eenheid) : json =
@@ -130,6 +139,24 @@ let rec expr (e : expr) : json =
   | Constante { naam; typ = t; bron = br } ->
       node "Constante" [ ("naam", so naam); typ t; bron br ]
   | Expr_onopgelost { typ = t; bron = br } -> node "Onopgelost" [ typ t; bron br ]
+  | Construct { typ = t; constructor_; argument; bron = br } ->
+      node "Construct"
+        [ ("type", opt datatype t); ("constructor", s constructor_);
+          ("argument", opt expr argument); bron br ]
+  | Match { typ = t; scrutinee; arms; bron = br } ->
+      node "Match"
+        [ ("type", opt datatype t); ("scrutinee", expr scrutinee);
+          ("arms",
+           `List
+             (List.map
+                (fun (c, binder, body) ->
+                  `Assoc
+                    [ ("constructor", s c); ("binder", so binder);
+                      ("body", expr body) ])
+                arms));
+          bron br ]
+  | Binder_ref { naam; typ = t; bron = br } ->
+      node "BinderRef" [ ("name", s naam); typ t; bron br ]
   | other ->
       failwith
         ("Emit.expr: node not produced by the skeleton: "

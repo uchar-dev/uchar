@@ -1,0 +1,20 @@
+# Tupel-payload — een n-aire constructor de-tupelificeert de surface tot een
+# Catala-tupel (TTuple). Dat is 5c struct-terrein (de kern draagt precies een
+# payload per constructor); de plugin weigert luid. Grensbewijs voor de
+# structs-hek van PHASE5B-KERNEL §1.
+
+```catala
+declaration enumeration Koppel:
+  -- Paar content (integer, integer)
+  -- Leeg
+
+declaration scope Tupletest:
+  input koppel content Koppel
+  output r content integer
+
+scope Tupletest:
+  definition r equals
+    match koppel with pattern
+    -- Paar content xy : 0
+    -- Leeg : 1
+```

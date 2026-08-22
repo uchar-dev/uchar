@@ -83,7 +83,17 @@ let () =
       (* overlapping unordered grounds -> the §9.5 conflict deviation *)
       ("root_conflict.catala_en", [ "cases/conflict_12.json" ]);
       ("geld.catala_en",
-       [ "cases/geld_1.json"; "cases/geld_2.json"; "cases/geld_3.json" ]) ]
+       [ "cases/geld_1.json"; "cases/geld_2.json"; "cases/geld_3.json" ]);
+      (* row-36 sum types: a payload enum with a total match (Construct,
+         Match, BinderRef, nullary arms and sum-equality) through the full
+         differential *)
+      ("enum.catala_en",
+       [ "cases/enum_gehonoreerd.json"; "cases/enum_afgewezen.json";
+         "cases/enum_aangehouden.json" ]);
+      (* a wildcard match: the desugarer makes it total before scopelang, so
+         the plugin never sees a wildcard *)
+      ("enum_wildcard.catala_en",
+       [ "cases/wild_een.json"; "cases/wild_twee.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:false src cases) passing;
   (* ref-only passing programs: clingo cannot translate a date literal in a
@@ -104,7 +114,10 @@ let () =
       ("refuse_subroot.catala_en", "sub-root");
       ("refuse_bool_value.catala_en", "value position");
       ("refuse_empty_arith.catala_en", "operand");
-      ("refuse_enum.catala_en", "enum");
+      (* row-36 fences: a partial match (WF-063 totality) and a tuple payload
+         (the structs-5c fence) each refuse loudly *)
+      ("refuse_partialmatch.catala_en", "total");
+      ("refuse_tuple.catala_en", "tuple");
       ("refuse_list.catala_en", "list");
       ("refuse_struct.catala_en", "struct");
       ("refuse_decimal_type.catala_en", "decimal");

@@ -1,0 +1,21 @@
+# Partiele match zonder wildcard — scopelang garandeert GEEN totaliteit (de
+# check ligt een pass later), dus de match komt partieel bij de plugin aan.
+# De plugin repliceert de exhaustiviteitsvouw en weigert luid met de
+# ontbrekende constructor benoemd (Onbekend). Grensbewijs voor WF-063.
+
+```catala
+declaration enumeration Toestand:
+  -- Aan content integer
+  -- Uit
+  -- Onbekend
+
+declaration scope Partialtest:
+  input toestand content Toestand
+  output waarde content integer
+
+scope Partialtest:
+  definition waarde equals
+    match toestand with pattern
+    -- Aan content n : n
+    -- Uit : 0
+```

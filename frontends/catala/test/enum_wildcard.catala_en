@@ -1,0 +1,21 @@
+# Wildcard-match — de desugarer waaiert de wildcard uit over de ontbrekende
+# constructoren, zodat de match totaal bij de plugin aankomt: bewijst dat de
+# plugin NOOIT een wildcard ziet (IR-SPEC ch. 4.7: geen wildcards in de IR).
+# Draait door verifier, ref EN clingo.
+
+```catala
+declaration enumeration Klasse:
+  -- Een content integer
+  -- Twee
+  -- Drie
+
+declaration scope Wildtest:
+  input klasse content Klasse
+  output score content integer
+
+scope Wildtest:
+  definition score equals
+    match klasse with pattern
+    -- Een content n : n
+    -- anything : 0
+```

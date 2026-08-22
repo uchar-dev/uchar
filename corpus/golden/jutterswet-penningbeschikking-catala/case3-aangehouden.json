@@ -1,0 +1,43 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B",
+        "objectType": "Penningbeschikking",
+        "attributes": {
+          "penningstatus": {
+            "constructor": "Aangehouden"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "B",
+      "attribute": "penningrecht",
+      "value": {
+        "number": "15.00"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "B",
+      "characteristic": "voorlopig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "B",
+      "characteristic": "beslist"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

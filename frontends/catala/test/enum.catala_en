@@ -1,0 +1,24 @@
+# Payload-enum met totale match — rechtenvrij, eigen auteurschap (row 36, 5b).
+# Bewijst de volle keten: TEnum -> SumType (domein + use-site), EInj ->
+# Construct, EMatch -> Match met payload-binder (BinderRef) en nullaire armen,
+# en sum-gelijkheid -> Vergelijking GELIJK. Draait door verifier, ref EN clingo.
+
+```catala
+declaration enumeration Uitslag:
+  -- Gehonoreerd content integer
+  -- Afgewezen
+  -- Aangehouden
+
+declaration scope Enumtest:
+  input uitslag content Uitslag
+  output punten content integer
+  output lopend content boolean
+
+scope Enumtest:
+  definition punten equals
+    match uitslag with pattern
+    -- Gehonoreerd content n : n + 1
+    -- Afgewezen : 0
+    -- Aangehouden : 5
+  definition lopend equals uitslag = Aangehouden
+```

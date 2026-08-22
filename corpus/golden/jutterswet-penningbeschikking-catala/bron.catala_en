@@ -1,0 +1,43 @@
+# Jutterswet, artikel 7 — de penningbeschikking
+
+Art. 7 (penningbeschikking). Op de aanvraag om de jutterspenning beslist
+de strandvoogd bij beschikking. De beschikking luidt verleend, geweigerd
+of aangehouden. Bij een verleende beschikking stelt de strandvoogd het
+toegekende bedrag vast; het penningrecht is dat bedrag vermeerderd met de
+vaste opslag van dertig gulden. Bij een geweigerde beschikking bestaat
+geen penningrecht. Bij een aangehouden beschikking keert de strandvoogd
+een voorschot van vijftien gulden uit.
+
+De beschikking is voorlopig zolang zij is aangehouden; zij is beslist
+zodra zij is verleend of geweigerd.
+
+Modelleringsnotitie: dit is een eigen artikel in de stijl van het anker
+`jutterswet-beschikkingsom`, maar zelfstandig geschreven. De beschikking
+is een payload-som (row 36): `Verleend` draagt het toegekende bedrag, de
+overige constructoren zijn nullair. Het penningrecht volgt uit een totale
+match op de status; de vaste opslag staat als bedrag in de verleende arm.
+De kenmerken `voorlopig` en `beslist` volgen uit sum-gelijkheid resp.
+-ongelijkheid met `Aangehouden` (Tabel 38: een lege status maakt zowel
+`=` als `≠` onwaar).
+
+```catala
+declaration enumeration Penningstatus:
+  -- Verleend content money
+  -- Geweigerd
+  -- Aangehouden
+
+declaration scope Penningbeschikking:
+  input penningstatus content Penningstatus
+  output penningrecht content money
+  output voorlopig content boolean
+  output beslist content boolean
+
+scope Penningbeschikking:
+  definition penningrecht equals
+    match penningstatus with pattern
+    -- Verleend content bedrag : bedrag + $30.00
+    -- Geweigerd : $0.00
+    -- Aangehouden : $15.00
+  definition voorlopig equals penningstatus = Aangehouden
+  definition beslist equals penningstatus != Aangehouden
+```

@@ -1,0 +1,16 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "W", "objectType": "Wildtest",
+        "attributes": { "klasse": { "constructor": "Een", "payload": { "number": "7" } } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "W", "attribute": "score", "value": { "number": "7" } },
+    { "kind": "consistent" }
+  ]
+}
