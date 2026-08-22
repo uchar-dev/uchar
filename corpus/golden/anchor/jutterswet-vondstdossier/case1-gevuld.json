@@ -1,0 +1,116 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "dossier": {
+            "struct": {
+              "waarde": {
+                "number": "120.50"
+              },
+              "telling": {
+                "number": "3"
+              }
+            }
+          },
+          "dossiers": {
+            "list": [
+              {
+                "struct": {
+                  "waarde": {
+                    "number": "10.00"
+                  },
+                  "telling": {
+                    "number": "1"
+                  }
+                }
+              },
+              {
+                "struct": {
+                  "waarde": {
+                    "number": "2.50"
+                  },
+                  "telling": {
+                    "number": "2"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "opslag": {
+        "number": "5.00"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "premie",
+      "value": {
+        "number": "125.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "totaalwaarde",
+      "value": {
+        "number": "12.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "samenvatting",
+      "value": {
+        "struct": {
+          "waarde": {
+            "number": "125.50"
+          },
+          "telling": {
+            "number": "2"
+          }
+        }
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "dossier",
+      "value": {
+        "struct": {
+          "waarde": {
+            "number": "120.50"
+          },
+          "telling": {
+            "number": "3"
+          }
+        }
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "dubbel"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "afwijkend"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

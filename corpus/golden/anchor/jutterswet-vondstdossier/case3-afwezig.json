@@ -1,0 +1,50 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "opslag": {
+        "number": "5.00"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "premie"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "totaalwaarde"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "samenvatting"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "dubbel"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "afwijkend"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

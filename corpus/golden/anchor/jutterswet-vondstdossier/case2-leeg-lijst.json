@@ -1,0 +1,80 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "dossier": {
+            "struct": {
+              "waarde": {
+                "number": "120.50"
+              },
+              "telling": {
+                "number": "3"
+              }
+            }
+          },
+          "dossiers": {
+            "list": []
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "opslag": {
+        "number": "5.00"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "premie",
+      "value": {
+        "number": "125.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "totaalwaarde",
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "samenvatting",
+      "value": {
+        "struct": {
+          "waarde": {
+            "number": "125.50"
+          },
+          "telling": {
+            "number": "0"
+          }
+        }
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "dubbel"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "afwijkend"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
