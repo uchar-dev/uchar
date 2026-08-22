@@ -1,0 +1,32 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "M",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "nx",
+          "ny",
+          "nz"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "M",
+      "characteristic": "vrijgesteld"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "Jutter.vrijgesteld/0",
+      "label": "M"
+    }
+  ]
+}

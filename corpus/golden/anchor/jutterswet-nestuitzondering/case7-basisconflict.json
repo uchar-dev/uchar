@@ -1,0 +1,31 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "M",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "grondB1",
+          "grondB2"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "M",
+      "attribute": "heffing"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "Jutter.heffing/1",
+      "label": "M"
+    }
+  ]
+}
