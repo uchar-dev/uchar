@@ -31,17 +31,25 @@ against what already lands:
   optional refinement.
 - **2-3 needs:** `list of Individual` (a struct as list element), the
   declared subscope with input definitions, `let … in` (with an
-  `if … then … else` inside the let body at rule level), rational
-  casts/arithmetic (`decimal of n`, `Div_rat_rat`, …), and
-  `Integer.sum` — a *stdlib module* function whose body is unreachable
-  at the scopelang cut (module topdef bodies only materialise below
-  it), so it must be recognised by qualified name and lowered directly.
+  `if … then … else` inside the let body at rule level), and rational
+  casts/arithmetic (`decimal of n`, `Div_rat_rat`, …). Its summation
+  is the deprecated surface form `sum integer of`, which desugars
+  *above* the scopelang cut to the `Reduce(Add)`+`Optional`-match
+  shape — **already carried by the ratified 5b lowering**; no stdlib
+  machinery is on the critical path (the first draft wrongly routed
+  this through `Integer.sum` — the lens round corrected it; the plugin
+  must merely tolerate catala's deprecation warning on the fixture).
 - **2-4 adds:** multi-`state` variables and a subscope call *per list
   element* (`map each … to (output of … with {…}).household_tax`) —
   per-element instantiation, machinery nothing in the IR has.
 - **The tutorial does *not* use context/reentrant inputs.** Decision
   6's generated top rung is therefore not on the tutorial's critical
-  path; the context refusal stays (§5).
+  path; its implementation is deferred, not refused as policy (§3).
+- **The rights fence:** the tutorial text is upstream-licensed, so per
+  the ratified decision 2 it never enters `corpus/golden/` — the exit
+  witness is a **frontend-side E2E fixture** (gate 9's suite: plugin →
+  verifier → ref → clingo); the corpus-facing witnesses remain the
+  own-authored Jutterswet-in-Catala articles.
 
 One latent defect surfaced by the survey, fixed under this design:
 Catala's runtime rounds *money multiplication* to the cent
@@ -82,6 +90,11 @@ in the value domain. The rules, mirroring the sum-type clauses:
   element set — `list of Individual` is the tutorial's input shape and
   the whole point; the fence was written "loudly extensible" for
   exactly this.
+- **WF-067/WF-069 widen**: `FieldAccess` (and `StructLiteral`) join
+  the closed-body whitelist — the tutorial's map-over-struct-field
+  (`λ individual. individual.kindertal`) is otherwise ill-formed
+  inside a lambda body (a lens catch: the whitelist is exhaustive and
+  the first draft never extended it).
 - **Case format**: one `{ "struct": { field: value, … } }` variant in
   the value union; `list` already recurses, so list-of-struct parses
   with no further surface.
@@ -144,19 +157,36 @@ ladders carry no target of their own (they inherit the root's);
 `Rung.required` is untouched, so every existing document validates
 unchanged.
 
-Semantics (RUNTIME-SEMANTICS ch. 7, generalised — no new concepts): a
-rung carrying `excepties` first reconciles its sub-group exactly as the
-root group reconciles today (each member's effective decision;
-all-equal → one decision; differing → the sub-group's own §9.5 conflict
-fact and no decision); the sub-group's decision, if any, *is* the
-rung's decision; an empty sub-group falls through to the rung's own
-justification/consequence. The conflict-fact key gains a path suffix so
-a nested conflict is distinguishable from a root conflict. The
+Semantics (RUNTIME-SEMANTICS ch. 7, generalised): a rung carrying
+`excepties` first reconciles its sub-group exactly as the root group
+reconciles today (each member's effective decision; all-equal → one
+decision); the sub-group's decision, if any, *is* the rung's decision;
+an empty sub-group falls through to the rung's own justification/
+consequence. **A rung may also be a pure group-rung** — `excepties`
+present, no own justification/consequence — which is what carries a
+*multi-member base group* (the exit witness's own root has one:
+article 2 old/new is a two-member `just = false` base group; the lens
+round caught that the first draft had no home for it): the base
+position of a chain is then a group-rung whose sub-group holds the
+base members, unordered, with the ordinary conflict reading if they
+overlap — no disjointness assumption. **What a differing sub-group
+does is vraag 5**: propagate to the root (no write, one path-keyed
+§9.5 fact — uniform with the root reading and Catala's ⊛-propagation
+minus fatality; the recommendation) or decide-nothing-and-fall-through
+to the parent rung. Either way the conflict-fact key gains a path
+suffix so a nested conflict is distinguishable from a root conflict,
+and the choice extends the tracked row-8 deviation record. The
 initialisation rung and the ch. 7.8 input rung stay root-only. WF-050
-recurses its shape checks; WF-051 needs zero change once `dep_forms`
-folds every descendant read into the root ladder's negative edges (the
-recorded "every descendant read is a negative edge toward the root
-target").
+recurses its shape checks (a group-rung carries `excepties` iff it
+carries no own consequence/besluit); WF-051 needs zero change once
+`dep_forms` folds every descendant read into the root ladder's
+negative edges (the recorded "every descendant read is a negative edge
+toward the root target"). On the ASP side the nested lowering is real
+design work, stated as such: the flat group's effectiveness/conflict
+atoms become a per-path predicate family, and a rung whose decision
+comes from a sub-group needs value-priority between the sub-group's
+outcome and its own consequence — card 2 designs it, the anchor family
+proves it.
 
 **The binding acceptance test** is PHASE4-DEFAULTS §7's spurious-
 conflict example, pinned absolutely: the tree `b ← x`, `x ← {y, z}`
@@ -175,24 +205,35 @@ equal-decisions rule).
 
 ## 5. Design 4 — the small pieces (decision-free, stated for the record)
 
-- **Decimals.** Catala decimals are exact rationals — precisely our
-  exact-rational model. `TLit TRat` → the *unbounded* `Numeriek`
-  precision form (`geheel=false, decimalen=0`, WF-007 form (c), exempt
-  from the assignment gate); `LRat` literals carry the exact lexeme;
+- **Decimals — the ref side is decision-free, the clingo side is
+  vraag 4.** Catala decimals are exact rationals — precisely our
+  exact-rational model, and `LRat` literals carry the exact lexeme;
   the resolved rational operators (`Add/Sub/Mult/Div_rat_rat`,
   `Minus_rat`, `ToRat_int`, `ToRat_mon`) map onto the existing numeric
-  operators. **`Mult_mon_rat`/`Mult_mon_int` get the
-  `Afgerond {REKENKUNDIG, 2}` wrapper** the money divisions already
-  carry (Catala rounds money products to the cent — the §1 latent
-  defect; existing catala goldens regenerate under gate 9 if their
-  bytes move). No `Percentage` node is involved — Catala pre-divides.
-- **Stdlib.** The plugin flips `no_stdlib` and admits a named
-  **allowlist** — `Integer.sum`, `Money.sum`, `Decimal.sum` —
-  recognised by *module-qualified* name (the current base-name lookup
-  drops the module path and would collide) and lowered directly to
-  `Fold(+, 0/…)` over the argument; module topdef bodies are
-  unreachable at the scopelang cut, so this is the only honest route.
-  Everything else from modules keeps refusing loudly.
+  operators; no `Percentage` node is involved — Catala pre-divides
+  (`20%` arrives as `1/5`). But the first draft's mapping onto the
+  *unbounded* `Numeriek` form was refuted by the lens round: clingo
+  scales every value by `decimalen`, so the unbounded form is
+  integer-only there — `tax_rate = 0.21` faults, and the money-product
+  `Afgerond` would be a silent no-op at scale 1. The workable route
+  (vraag 4, option A): decimal-typed declarations carry a **pinned
+  finite scale** `decimalen = S` (S chosen at implementation against
+  the tutorial, recorded); ref stays exact-rational and both executors
+  fault loudly and *consistently* on a value that does not terminate
+  at S (ref's bounded-write gate, clingo's existing does-not-fit
+  fence) — the differential holds everywhere it runs.
+- **Money multiplication** gets the `Afgerond {REKENKUNDIG, 2}`
+  wrapper the money divisions already carry (Catala rounds money
+  products to the cent — the §1 latent defect). No existing catala
+  golden contains a money multiplication (lens-verified), so the fix
+  moves no existing bytes; it lands with the first fixture that does.
+- **No stdlib machinery.** The first draft's `Integer.sum` allowlist
+  was misfounded (the tutorial uses the deprecated `sum <type> of`
+  surface form, desugared to the 5b-covered `Reduce`+`Optional` shape
+  above the cut — lens-verified with a live `catala scopelang` run);
+  `no_stdlib` stays true, modules keep refusing loudly, and the
+  base-name collision in the topdef lookup is fixed defensively. The
+  plugin tolerates catala's deprecation warning on the fixture.
 - **Sub-root refusal narrowing, `filled`-analysis recursion, and the
   `EStructAccess`-over-call plumbing** are plugin mechanics under the
   designs above.
@@ -245,24 +286,53 @@ IR kwadratisch bij ketens). C: onbeperkte rule-level-conditionals
 **Aanbeveling: A.**
 
 **Vraag 3 — het tutorial-exitdoel.** A: **`tutorial_end_2_3` als de
-exit-getuige** — het bevat élke constructiefamilie (structs, decimals,
-lijsten+folds, subscope-call, let-in, vertakkende exceptiebomen), en
-2-4's twee restvormen (multi-`state`-variabelen; de
-subscope-call-per-lijstelement) worden luide, geïnventariseerde
-flanken met een eigen vervolgkaart. B: volledig 2-4 als doel — dan
-komt per-element-instantiëring (echte nieuwe machinerie) nu op het
-kritieke pad. **Aanbeveling: A.**
+exit-getuige** (als frontend-side E2E-fixture — het corpus blijft per
+het geratificeerde besluit 2 rechtenvrij) — het bevat élke
+constructiefamilie (structs, decimals, lijsten+folds, subscope-call,
+let-in, vertakkende exceptiebomen), en 2-4's restvormen
+(multi-`state`-variabelen; de subscope-call-per-lijstelement; de
+directe attribuut-guard) worden luide, geïnventariseerde flanken met
+een eigen vervolgkaart. B: volledig 2-4 als doel — dan komt
+per-element-instantiëring (echte nieuwe machinerie) nu op het kritieke
+pad. **Aanbeveling: A.**
+
+**Vraag 4 — de clingo-decimaalschaal** (door de lensronde uit de
+beslissingsvrije lijst gelicht: de onbegrensde vorm is in clingo
+integer-only en de tutorial fault op `tax_rate`). A:
+**decimal-declaraties dragen een gepinde eindige schaal
+`decimalen = S`** (S bij implementatie tegen de tutorial gekozen en
+vastgelegd); ref blijft exact-rationaal; beide executors faulten luid
+en consistent op een waarde die niet op S termineert (refs
+begrensde-schrijf-poort, clingo's bestaande past-niet-hek) — het
+differentiaal geldt overal waar het draait. B: een
+rationale-getallen-encodering in clingo (paar-termen met
+normalisatie) — zwaar, en het raakt elke rekenroute.
+**Aanbeveling: A.**
+
+**Vraag 5 — de geneste-conflictsemantiek** (de tweede door de lenzen
+gevonden verborgen keuze; een verruiming van het getrackte
+rij-8-deviatierecord). A: **een verschillend-beslissende sub-groep
+propageert naar de root** — geen schrijf, één pad-gesleuteld
+§9.5-feit; uniform met de root-lezing (conflict = geen schrijf) én
+Catala-getrouw (⊛ propageert door de boom) minus de fataliteit die we
+al eerder observeerbaar maakten. B: de sub-groep beslist niets en het
+parent-rung valt door naar zijn eigen consequentie — lokaler, maar het
+wijkt vérder van het paper af en maakt "conflict" op twee niveaus twee
+verschillende dingen. **Aanbeveling: A.**
 
 Beslissingsvrij vastgelegd (geen vraag): subscope-calls als lowering
 op de bestaande kernel (creatie + init + genavigeerde read — de al in
-PLAN §6 en mapping-rij 9 benoemde richting; context-inputs blijven
-geweigerd en besluit-6's gegenereerde rung blijft de vastgelegde
-vervolgconstructie met zijn WF-050-randvoorwaarde); geneste groepen
-als `Rung.excepties` per de geratificeerde optie (i), met het
-spurious-conflict-anker als bindende toets; de decimals-mapping op de
-onbegrensde Numeriek-vorm; het `Afgerond`-omhulsel op
+PLAN §6 en mapping-rij 9 benoemde richting; besluit-6's gegenereerde
+rung blijft geratificeerd en wordt met deze machinerie realiseerbaar —
+5c stelt de implementatie uit omdat de tutorial hem niet nodig heeft,
+met de WF-050-randvoorwaarde vastgelegd); geneste groepen als
+`Rung.excepties` per de geratificeerde optie (i), incl. de
+groep-rung-vorm voor meervoudige basisgroepen, met het
+spurious-conflict-anker als bindende toets; het `Afgerond`-omhulsel op
 geld-vermenigvuldiging (het Div-precedent, tegen de shipping runtime
-gemeten); de stdlib-allowlist per gekwalificeerde naam.
+gemeten; byte-neutraal voor het bestaande corpus); géén
+stdlib-machinerie (de som-vormen zijn 5b-gedekt); de
+WF-065/067/069-verbredingen met struct-vormen.
 
 ## 8. The implementation cards
 
@@ -276,7 +346,10 @@ lensronde, eerlijk Result):
 3. `fase5c-let-decimals` — §5 + §6: de `Let`-knoop, de
    WF-069-verruiming, decimals, de geld-vermenigvuldigingsafronding,
    de stdlib-allowlist.
-4. `fase5c-subscopes-tutorial` — §3 plus de tutorial-golden:
-   `tutorial_end_2_3` door de plugin de corpus in, drievoudig
-   geverifieerd — het formele 5a-exitcriterium valt hier, en PLAN §6
-   Phase 5 krijgt zijn Met-markering voor dat criterium.
+4. `fase5c-subscopes-tutorial` — §3 plus de tutorial als
+   frontend-side E2E-fixture (`tutorial_end_2_3` door de plugin,
+   verifier-clean en op ref + clingo — het corpus blijft rechtenvrij,
+   besluit 2), naast een eigen-geschreven Jutterswet-subscope-golden
+   dóór het corpus met de volle gate-set — het formele
+   5a-exitcriterium valt hier, en PLAN §6 Phase 5 krijgt zijn
+   Met-markering voor dat criterium.
