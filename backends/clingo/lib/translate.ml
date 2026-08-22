@@ -138,6 +138,12 @@ type ctx = {
      the reason text stays executor-internal (a hunted checker split:
      rule matching on the channel would otherwise diverge) *)
   mutable rule_name : string;
+  (* the lexical binder environment for match arms (RUNTIME-SEMANTICS
+     ch. 9.2): a bound binder name maps to the ASP variable the arm's
+     scrutinee pattern binds and the payload's declared scale, so a
+     BinderRef in the arm body resolves to that variable. Set per arm,
+     [] elsewhere — WF-064 makes an unbound read statically impossible *)
+  mutable binders : (string * (string * int)) list;
 }
 
 (* The convention guards, mirroring ref/'s faults (IR-SPEC ch. 4.3a:
@@ -402,6 +408,53 @@ let range_guard ctx ~subject ~body terms_with_bounds =
         t bound)
     terms_with_bounds
 
+(* --- sum types (RUNTIME-SEMANTICS ch. 9; ASP-TRANSLATION S14) ------------ *)
+
+(* a constructor VALUE or PATTERN is a ground term whose functor is the
+   normalised constructor name: nullary is the bare functor (afgewezen),
+   unary is functor(payload). A functor is an ASP symbol, not a string —
+   so the name must normalise to a valid symbolic constant [a-z][a-z0-9_]*
+   or the emitted program is syntactically broken UNFENCED. norm lowercases
+   and collapses whitespace; a collapsed name that is empty, digit-led or
+   carries a non-word character faults here with its reason (WF-060 admits
+   the declaration; this is the ASP-side backstop, the quote fence's kin). *)
+let ctor_functor tag =
+  let f = norm tag in
+  let ok =
+    f <> ""
+    && (match f.[0] with 'a' .. 'z' -> true | _ -> false)
+    && String.for_all (function 'a' .. 'z' | '0' .. '9' | '_' -> true | _ -> false) f
+  in
+  if not ok then
+    fault "constructor name %S does not normalise to a valid ASP functor symbol (%S)" tag f;
+  f
+
+(* the declared constructor list of a SumType annotation, and the declared
+   payload datatype of one constructor within it (the payload is scaled by
+   its OWN declaration, never by any target attribute) *)
+let sum_constructors = function
+  | Some (Sum_type { constructoren; _ }) -> constructoren
+  | _ -> fault "a sum-type node without its SumType annotation (WF-061 should preclude this)"
+
+let ctor_payload_datatype constructoren tag =
+  match List.find_opt (fun (n, _) -> norm n = norm tag) constructoren with
+  | Some (_, pdt) -> pdt
+  | None -> fault "constructor %S is not declared in the sum type" tag
+
+let is_sum_operand = function
+  | Some e -> ( match Ir_v0.Checks.typ_of_expr e with Some (Sum_type _) -> true | _ -> false)
+  | None -> false
+
+(* the ground term for a constructor VALUE (case emission): payload scaled
+   by the constructor's declared payload datatype *)
+let ctor_value_term constructoren (tag, (payload : Value.t option)) =
+  let f = ctor_functor tag in
+  match (ctor_payload_datatype constructoren tag, payload) with
+  | None, None -> f
+  | Some d, Some v -> Printf.sprintf "%s(%d)" f (scaled_of_value ~decimals:(decimals_of_datatype (Some d)) v)
+  | Some _, None -> fault "unary constructor %S carries no payload value" tag
+  | None, Some _ -> fault "nullary constructor %S carries a payload value" tag
+
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   match e with
   | Literal { waarde; typ; _ } -> (
@@ -451,7 +504,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
            two executors cannot drift on the walk. *)
         let env =
           { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-            as_of = None }
+            as_of = None; locals = Eval.SMap.empty }
         in
         let roles =
           match navigatie_bindingen with
@@ -505,7 +558,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let role =
         match bron_rol with
         | Some rb ->
-            let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None } in
+            let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty } in
             role_canonical (Eval.bound_role env rb)
         | None -> req "fold role" attribuut
       in
@@ -529,7 +582,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           fault "som without the 0 fallback needs an explicit non-empty guard; no corpus case yet");
       (* the connecting role: the node's explicit binding when present,
          else derived the same way ref/ derives it *)
-      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None } in
+      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty } in
       let role_name =
         role_canonical
           (match bron_rol with
@@ -943,6 +996,20 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           | _ -> fault "malformed asOfDate %S" d)
       | None ->
           fault "the Rekendatum constant needs an evaluation date; the case carries asOfDate null")
+  | Construct { typ; constructor_; argument; _ } ->
+      (* ch. 9.1: a constructor value is a ground term. A Literal argument
+         is a ground payload scaled to the DECLARED payload datatype; a leeg
+         argument needs no encoding here — underivability propagates on its
+         own where the payload is a bound read (no corpus case). *)
+      ([], construct_ground_term ctx typ constructor_ argument, 0)
+  | Match { typ; scrutinee; arms; _ } ->
+      translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms
+  | Binder_ref { naam; _ } -> (
+      (* ch. 9.2: the ASP variable the enclosing match arm's scrutinee
+         pattern bound to this payload, at the payload's declared scale *)
+      match List.assoc_opt (norm naam) ctx.binders with
+      | Some (var, scale) -> ([], var, scale)
+      | None -> fault "unbound binder %S in the ASP translation (WF-064 should preclude this)" naam)
   | Expr_onopgelost _ ->
       (* the unsolved-state guard: an Onopgelost node never vanishes —
          the rule that carries it fails observably (WF-044) *)
@@ -1105,6 +1172,19 @@ and translate_power ctx ~subject ~subject_ot ~links ~rechts =
 
 and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
   match c with
+  | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ }
+    when is_sum_operand links || is_sum_operand rechts ->
+      (* ch. 9.3: sum-typed equality is POSITIVE ground-term unification.
+         Both operand terms bind (an own attribute read via its val atom, a
+         Construct as a bare ground term); Gelijk tests T1 == T2, Ongelijk
+         tests T1 != T2. Ongelijk is NEVER `not gelijk`: a leeg operand must
+         make BOTH directions false (Tabel 38, the non-numeric branch), and a
+         val atom that does not bind fails the positive join in both — the
+         NAF complement would instead make Ongelijk TRUE on leeg (the S14
+         non-complement warning, honoured here). *)
+      let ll, tl = sum_term ctx ~subject ~subject_ot (req "links" links) in
+      let rr, tr = sum_term ctx ~subject ~subject_ot (req "rechts" rechts) in
+      ll @ rr @ [ Printf.sprintf "%s %s %s" tl (if op = Gelijk then "==" else "!=") tr ]
   | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ } ->
       (* the ch. 1.2d equality asymmetry (arith.compare_op): gelijk-aan
          is TRUE on two empty operands and FALSE on exactly one;
@@ -1165,7 +1245,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       let k = req "kenmerk" kenmerk in
       let env =
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-          as_of = None }
+          as_of = None; locals = Eval.SMap.empty }
       in
       let role =
         match navigatie_binding with
@@ -1182,6 +1262,104 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
   | Samengesteld { kwantor = Alle | De; onderdelen; _ } ->
       List.concat_map (cond_atoms ctx ~subject ~subject_ot) onderdelen
   | _ -> fault "condition kind not translated (no corpus case exercises it)"
+
+(* the ground term of a Construct (ch. 9.1): a Literal payload scaled to the
+   constructor's DECLARED payload datatype; the nullary case is the bare
+   functor. A non-literal payload would need underivability propagation and
+   has no corpus case. *)
+and construct_ground_term ctx typ constructor_ argument =
+  let constructoren = sum_constructors typ in
+  let f = ctor_functor constructor_ in
+  match (ctor_payload_datatype constructoren constructor_, argument) with
+  | None, None -> f
+  | None, Some _ -> fault "nullary constructor %S built with an argument (WF-062)" constructor_
+  | Some _, None -> fault "unary constructor %S built without an argument (WF-062)" constructor_
+  | Some d, Some (Literal { waarde = Some lex; _ }) ->
+      ignore ctx;
+      Printf.sprintf "%s(%d)" f
+        (scaled_of_value ~decimals:(decimals_of_datatype (Some d))
+           (Value.Num (Value.q_of_lexeme lex, Value.Unitless)))
+  | Some _, Some _ ->
+      fault
+        "a Construct payload other than a literal is not translated (a bound payload would need \
+         underivability propagation; no corpus case)"
+
+(* a sum-typed comparison operand → (body atoms binding a term, the term):
+   an own-subject attribute read binds its val atom's value; a Construct is a
+   bare ground term with no atom. Both are positive, so a leeg attribute read
+   simply fails the join (Tabel 38 for free). *)
+and sum_term ctx ~subject ~subject_ot (e : expr) : string list * string =
+  match e with
+  | Construct { typ; constructor_; argument; _ } ->
+      ([], construct_ground_term ctx typ constructor_ argument)
+  | Attribuut_ref
+      { attribuut = Some a; objecttype = Some ot; navigatie_rol = None; navigatie_pad = [];
+        navigatie_bindingen = None; set = false; _ }
+    when norm ot = norm subject_ot ->
+      if attr_temporal ctx ~otype:ot ~attr:a then
+        fault "temporal sum carriage is a recorded flank; no corpus case";
+      let v = fresh ctx "V" in
+      ([ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ], v)
+  | _ ->
+      fault
+        "a sum-typed operand here is an own-subject attribute read or a Construct (no corpus case \
+         for more)"
+
+(* the scrutinee as a pattern atom for one match arm: the val atom carries
+   the constructor pattern; a unary arm's payload variable is bound by it *)
+and scrutinee_pattern ctx ~subject ~subject_ot ~scrutinee ~pattern =
+  match scrutinee with
+  | Attribuut_ref
+      { attribuut = Some a; objecttype = Some ot; navigatie_rol = None; navigatie_pad = [];
+        navigatie_bindingen = None; set = false; _ }
+    when norm ot = norm subject_ot ->
+      if attr_temporal ctx ~otype:ot ~attr:a then
+        fault "temporal sum carriage is a recorded flank; no corpus case";
+      [ Printf.sprintf "val(%s,%s,%s)" subject (str a) pattern ]
+  | _ ->
+      fault
+        "a match scrutinee here is an own-subject sum-typed attribute read (no corpus case for more)"
+
+(* total match (ch. 9.2): one rule per arm into a matchN(S,Result) helper —
+   no NAF (WF-063 totality makes the functor in the scrutinee's val atom
+   select the arm), so the stratification posture is untouched. A leeg
+   scrutinee binds no val atom, no arm rule fires, matchN stays underived —
+   propagation for free. The unary arm's payload variable rides both the
+   binder environment (so a BinderRef resolves to it) and the rule guard (so
+   any viol/2 the arm body emits carries the scrutinee atom that binds it). *)
+and translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms =
+  let constructoren = sum_constructors (Ir_v0.Checks.typ_of_expr scrutinee) in
+  ctx.fresh <- ctx.fresh + 1;
+  let p = Printf.sprintf "match%d" ctx.fresh in
+  let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+  let out_scale = pow10 (decimals_of_datatype typ) in
+  List.iter
+    (fun (ctor, binder, body) ->
+      let f = ctor_functor ctor in
+      let pattern, binding =
+        match (ctor_payload_datatype constructoren ctor, binder) with
+        | None, None -> (f, None)
+        | Some d, Some b ->
+            let pv = fresh ctx "P" in
+            (Printf.sprintf "%s(%s)" f pv, Some (norm b, (pv, pow10 (decimals_of_datatype (Some d)))))
+        | Some _, None -> fault "unary match arm %S lacks a binder (WF-063)" ctor
+        | None, Some _ -> fault "nullary match arm %S carries a binder (WF-063)" ctor
+      in
+      let scrut_atoms = scrutinee_pattern ctx ~subject ~subject_ot ~scrutinee ~pattern in
+      let saved_guard = ctx.rule_guard and saved_binders = ctx.binders in
+      ctx.rule_guard <- ctx.rule_guard @ scrut_atoms;
+      (match binding with Some b -> ctx.binders <- b :: ctx.binders | None -> ());
+      let body_atoms, body_term, body_scale = expr_term ctx ~subject ~subject_ot body in
+      ctx.rule_guard <- saved_guard;
+      ctx.binders <- saved_binders;
+      if body_scale <> out_scale then
+        fault "match arm %S result scale %d does not match the match's declared scale %d" ctor
+          body_scale out_scale;
+      emit ctx "%s(%s,%s) :- %s." p subject body_term
+        (String.concat ", " ((base :: scrut_atoms) @ body_atoms)))
+    arms;
+  let v = fresh ctx "M" in
+  ([ Printf.sprintf "%s(%s,%s)" p subject v ], v, out_scale)
 
 (* --- rule forms ---------------------------------------------------------- *)
 
@@ -1525,7 +1703,7 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
   let subject = "S" in
   let term = Printf.sprintf "oc%d(%s)" i subject in
   let env =
-    { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None }
+    { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty }
   in
   let pair =
     match oc.oc_verbindende_rol with
@@ -1632,7 +1810,7 @@ let translate_feit_creatie ctx (fc : resolved_feit_creatie) =
           name
   in
   let env =
-    { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None }
+    { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty }
   in
   let role rname = Eval.bound_role env { rb_feittype = ftn; rb_rol = rname } in
   let anker_rol = role (req "ankerRol" fc.anker_rol) in
@@ -1829,7 +2007,7 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
       da;
   let rato = req "ratoAttribuut (proportional)" v.rato_attribuut in
   let name = Option.value v.vd_naam ~default:"verdeling" in
-  let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None } in
+  let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty } in
   let role =
     role_canonical
       (match v.verbindende_rol with
@@ -1984,7 +2162,7 @@ let translate_uniciteit ctx (u : resolved_uniciteit) =
     | rb_opt, sv_opt ->
         let env =
           { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-            as_of = None }
+            as_of = None; locals = Eval.SMap.empty }
         in
         let role =
           match rb_opt with
@@ -2091,14 +2269,35 @@ let translate_case ctx (case : Case.t) =
       if has_recursive_creation doc then emit ctx "depth(%s,0)." (str_raw label);
       Eval.SMap.iter
         (fun aname v ->
-          let d = attr_decimals ctx ~otype:i.otype ~attr:aname in
-          let pred = if ladder_target i.otype aname then "inputval" else "val" in
-          emit ctx "%s(%s,%s,%d)." pred (str_raw label) (str aname)
-            (scaled_of_value ~decimals:d v))
+          match v with
+          | Value.Ctor (tag, payload) ->
+              (* ch. 9.4 case carriage: a sum-typed input value is a ground
+                 constructor term, payload scaled by its declared payload
+                 datatype. A sum-typed attribute is input-only in v1 (never a
+                 ladder or standing target), so it enters as a plain val/3. *)
+              let constructoren =
+                match Ir_v0.Checks.find_ci (objecttype ctx i.otype).attributen aname with
+                | Some (Some (Sum_type { constructoren; _ })) -> constructoren
+                | _ -> fault "constructor value on non-sum-typed attribute %S" aname
+              in
+              emit ctx "val(%s,%s,%s)." (str_raw label) (str aname)
+                (ctor_value_term constructoren (tag, payload))
+          | _ ->
+              let d = attr_decimals ctx ~otype:i.otype ~attr:aname in
+              let pred = if ladder_target i.otype aname then "inputval" else "val" in
+              emit ctx "%s(%s,%s,%d)." pred (str_raw label) (str aname)
+                (scaled_of_value ~decimals:d v))
         i.attrs;
       List.iter (fun k -> emit ctx "heeft(%s,%s)." (str_raw label) (str k)) i.chars;
       Eval.SMap.iter
         (fun aname (tl : Uchar_ref.Timeline.t) ->
+          (* ch. 9.4: sum-typed temporal carriage is a recorded flank — the
+             value model admits it but no case exercises it, so the ASP case
+             emission faults loudly rather than silently omitting segments *)
+          (match Ir_v0.Checks.find_ci (objecttype ctx i.otype).attributen aname with
+          | Some (Some (Sum_type _)) ->
+              fault "temporal sum carriage is a recorded flank; no corpus case"
+          | _ -> ());
           let d = attr_decimals ctx ~otype:i.otype ~attr:aname in
           (* a standing temporal target's input timeline enters
              defeasibly (inputtl/5), standing whole unless the fold
@@ -2168,13 +2367,14 @@ let translate (doc : document) (case : Case.t) : string =
   let doc = Ir_v0.Desugar.document doc in
   let ctx =
     { doc; case; buf = Buffer.create 4096; fresh = 0; rule_guard = []; write_scale = 1;
-      rule_name = "?" }
+      rule_name = "?"; binders = [] }
   in
   (* ch. 8.4: the shared session-start Parameterset coverage check —
      data-plane validation (like the shared case loader), run before a
      program is emitted, mirroring ref/'s evaluation entry *)
   Eval.parameterset_check
-    { Eval.doc; params = case.params; param_tls = case.param_tls; as_of = case.as_of };
+    { Eval.doc; params = case.params; param_tls = case.param_tls; as_of = case.as_of;
+      locals = Eval.SMap.empty };
   emit ctx "%% generated by backends/clingo from regelspraak-ir-v0 + uchar-case-v0.";
   emit ctx "#defined val/3. #defined heeft/2. #defined rol/3. #defined param/2.";
   emit ctx "#defined inconsistent/2. #defined tl/5. #defined param_tl/4. #defined ktl/4.";

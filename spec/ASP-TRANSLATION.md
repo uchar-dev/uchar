@@ -1,7 +1,7 @@
 # ASP translation
 
 *Status: the systematic construct-by-construct translation (Part I,
-sections S1–S14, complete for the translated core) — the Phase-3
+sections S1–S15, complete for the translated core) — the Phase-3
 deliverable this document was always growing toward. Part I describes what `backends/clingo` provably does:
 every claim is distilled from `backends/clingo/lib/translate.ml` and
 witnessed by the gate set (gate 6, `scripts/check-clingo.sh`, replays
@@ -11,7 +11,7 @@ corpus under gate 3 pins what the verifier rejects before translation
 is ever reached). The text normates what the code proves — semantics
 itself is defined by `RUNTIME-SEMANTICS.md` and this document must
 never drift from it; where a construct does not translate, Part I says
-so loudly (S14), never silently. Part II (chapters 1–7) is the
+so loudly (S15), never silently. Part II (chapters 1–7) is the
 historical record: the two hand exercises and the encoding notes in
 the order they landed, kept in situ with their original chapter
 numbers because results, cards and code comments cite them (ch. 6a–6d
@@ -24,8 +24,9 @@ Sections S1–S7 cover program shape, facts and types, rules and write
 targets, expression terms, emptiness, arithmetic and conditions; S8
 aggregations and folds, S9 timelines, S10 defeasibility and standing,
 S11 creation, S12 allocation and uniqueness; S13 the §9.5 channel;
-S14 the complete inventory of loud non-translations — what the
-backend does not translate is stated there, never silently absent.
+S14 sum types and total match; S15 the complete inventory of loud
+non-translations — what the backend does not translate is stated
+there, never silently absent.
 
 ### S1. Program shape and conventions
 
@@ -158,7 +159,7 @@ input rule `val(S,a,V) :- inputval(S,a,V), is_a(S,ot), not
 result derives no effectiveness and the input stands (ref's
 no-write-on-empty, RS ch. 7.8).
 
-Not translated, loudly (S14 carries the full list): validity windows;
+Not translated, loudly (S15 carries the full list): validity windows;
 temporal targets outside the two ch. 3.7/3.8 fold shapes; case input
 on non-standing computed targets; a `standing` target outside its own
 domain.
@@ -212,7 +213,7 @@ the norm; the encoding buys most of it for free):
    note the dividend is *not* a coalesce0 position; the edge lives on
    the construct's head), while the empty sum's 0 is clingo's native
    `#sum` over an empty tuple set (translated only with the
-   fallback-0 facet, S14).
+   fallback-0 facet, S15).
 
 The one empty rule with no *free* encoding — the **numeric** equality
 asymmetry of ch. 1.2d (leeg = leeg is true under gelijk-aan, false
@@ -229,7 +230,7 @@ reads only the operand bodies. Anchored by
 half-empty, both-empty). What remains loud: non-numeric scalar
 equality (text/enum/boolean operands fault as unscalable before any
 eqN rule is emitted) and equality in the per-segment clip comparison
-(S14).
+(S15).
 
 Witnesses: `jutterswet-leegrekening`, `synth2-leegcomposities`,
 `jutterswet-vindersloon` (every empty cell), `jutterswet-taxatie`
@@ -316,7 +317,7 @@ link fails the positive and the negated form alike — the deliberate
 v0 asymmetry (ch. 5.8), encoded for free. **Composite**
 (samengesteld, the ALLE and singular DE quantifiers): concatenation
 of the parts' atoms — both quantifiers are conjunctions over their
-parts. Other quantifiers and condition kinds fault (S14).
+parts. Other quantifiers and condition kinds fault (S15).
 
 Witnesses: `jutterswet-hardheid`, `jutterswet-uitsluiting`,
 `jutterswet-vormenkabinet`; the WF-053 negatiefs pin the navigation
@@ -335,7 +336,7 @@ an instance without the attribute contributes no tuple, and the empty
 tuple set is clingo's native 0, which is why only the fallback-0
 facet translates (a som without it would need an explicit non-empty
 guard to distinguish leeg from 0; faults until a corpus case demands
-it, S14). The *sum* is doubly fenced: each contributor at 46340 *and*
+it, S15). The *sum* is doubly fenced: each contributor at 46340 *and*
 the contributor count at 46340 (`viol` when `46340 < #count{...}`),
 so the accumulated sum provably stays inside 2^31. The bare count
 carries no fence — a `#count` cannot approach 2^31 before grounding
@@ -518,7 +519,7 @@ weight, pot and recipient count — plus, when a remainder attribute
 is declared, on each share the remainder sums (the weight sum, the
 pot×weight product and the share sum then provably stay inside
 2^31; without a remainder the shares are bounded by construction). Only the proportional method translates; conditional
-allocation and misaligned scales fault (S14). Case input on the
+allocation and misaligned scales fault (S15). Case input on the
 allocation's target attribute is refused — the ch. 6d
 superset-model fence.
 
@@ -571,7 +572,83 @@ names and rejects unknown pins with a candidate list (ch. 5.6). Gross
 "inconsistent"-without-a-rule expectations are gone from the corpus:
 collisions pin per subject (`jutterswet-nummerregister` precedent).
 
-### S14. What does not translate — the complete loud inventory
+### S14. Sum types and total match
+
+A `SumType` value (RUNTIME-SEMANTICS ch. 9, CONSTRUCTS row 36) is a
+**ground term**: a nullary constructor is the bare normalised functor
+(`afgewezen`), a unary one is `functor(payload)`. The payload is scaled
+by the constructor's **own declared payload datatype** — never by any
+target attribute (`ctor_value_term` reads the payload's decimals from
+the `SumType` declaration; a money payload's cents come from the
+payload, not the write site). The functor is an ASP *symbol*, not a
+string: the constructor name must normalise (`Ir_v0.Checks.norm`
+lowercases and collapses whitespace) to a valid symbolic constant
+`[a-z][a-z0-9_]*`, or the emitted program would be syntactically broken
+unfenced — `ctor_functor` faults on a name that does not, the quote
+fence's kin for the sum world (WF-060 admits the declaration; this is
+the ASP-side backstop). `translate_case` emits a sum-typed input
+attribute as `val(label, attr, term)`.
+
+**Total match** (`Match`, ch. 9.2) lowers to **one rule per arm** into a
+`matchN(S,Result)` helper — the scrutinee's `val/3` atom carries the
+constructor **pattern**, so the functor itself selects the arm:
+
+```
+matchN(S,⟨arm term⟩) :- is_a(S,ot), val(S,scrut,ctor_k(P…)), ⟨arm body⟩.
+```
+
+**No negation-as-failure** — WF-063 makes the arms cover the declared
+constructors exactly, so the arms are mutually exclusive by their
+functors and the stratification posture is untouched (the one-stable-
+model invariant holds). A unary arm's pattern binds a payload variable
+`P`; that variable rides both the binder environment (so a `BinderRef`
+in the arm body resolves to it, at the payload's declared scale) and the
+rule guard (so any `viol/2` the arm body emits carries the scrutinee
+atom that binds `P` — else `P` would be an unsafe variable in that guard
+rule). **A leeg scrutinee** binds no `val/3` atom: no arm rule fires,
+`matchN` stays underived, the target is leeg — propagation for free (the
+S5 point-1 pattern; ch. 9.2's leeg propagation, no implicit leeg-arm).
+The anchor's rung — `uitkering` := match on `beschikking`:
+`Toegekend(bedrag)` → `bedrag` + parameter `vaste voet`, `Afgewezen` →
+0.00, `Aangehouden` → 12.00 — emits three `match1` rules; the payload
+`P` and the parameter share a scale (both 2 decimals), so the addition
+reuses the ordinary additive machinery (S6).
+
+**Sum equality** (ch. 9.3) is **positive ground-term unification**, never
+the NAF complement. Both operand terms bind — an own-subject attribute
+read via its `val/3` atom, a `Construct` as a bare ground term — and:
+
+- `Gelijk`: `⟨T1⟩ == ⟨T2⟩` beside the two binding atoms;
+- `Ongelijk`: `⟨T1⟩ != ⟨T2⟩` — **both-bound-and-different**, positively,
+  **never `not gelijk`**.
+
+The reason is Tabel 38's non-numeric branch: a leeg operand makes **both**
+`=` and `≠` false, so the two are *not* complements over leeg. An
+attribute read that is leeg does not bind its `val/3` atom, so the
+positive join fails in both directions alike — leeg-correct for free. The
+NAF complement would instead make `Ongelijk` **true** on leeg (the S5
+non-complement warning, honoured here rather than merely cited). The
+anchor's two characteristic rules are exactly these forms —
+`heeft(S,bevoorschot) :- …, val(S,beschikking,V), V == aangehouden.`
+and `heeft(S,afgehandeld) :- …, val(S,beschikking,V), V != aangehouden.`
+
+On the check side (`model.ml`), a constructor term is parsed
+**recursively** (the earlier flat lexer could not parse a bare nullary
+symbol); a sum-typed `attributeValue` expectation is built by the *same*
+`ctor_value_term` emission machinery and parsed by the *same* term
+parser, then compared structurally — one source of truth, no independent
+scaling path to drift. A sum-typed target that stays leeg reports as
+underived (the emptiness test sees any `val/3`, not only numeric ones).
+
+Witnesses: the anchor `jutterswet-beschikkingsom` — case1 `Toegekend`
+(the unary arm, payload + parameter → 1275.50), case2 `Afgewezen` (0.00)
+and case3 `Aangehouden` (12.00) (the nullary arms and the two
+characteristic rules), case4 leeg (the whole match and both equality
+directions go leeg/false — the both-directions-false corner, pinned
+absolutely); the WF-060..064 negatiefs pin what the verifier rejects
+before translation.
+
+### S15. What does not translate — the complete loud inventory
 
 The standing rule (PLAN §4): the core may say "I cannot express this
 (yet)"; it may not pretend. Every fault below is a `Value.fault` with
@@ -628,6 +705,24 @@ superset-model fence); to-many navigation in scalar slots (WF-053);
 bean-field-only fact creations (the symbolic ch. 3.4 form is what
 executes); the expression/condition catch-alls ("not translated — no
 corpus case exercises it").
+
+*Sum types (S14) — carriage and shapes without a corpus case:*
+**temporal sum carriage** is a recorded flank — the value model admits a
+sum-typed temporal attribute and the case format can write one, but no
+case exercises it, so the ASP case emission (and any sum scrutinee or
+operand over an own temporal attribute) faults with the literal reason
+`temporal sum carriage is a recorded flank; no corpus case` rather than
+silently omitting the constructor-valued segments (RUNTIME-SEMANTICS
+ch. 9.4); a `Construct` payload other than a literal (a bound payload
+would need underivability propagation — no corpus case); a match
+scrutinee or a sum-typed equality operand other than an own-subject
+attribute read or a `Construct` (navigated sum reads await a case); a
+match arm whose result scale disagrees with the match's declared scale;
+a constructor name that does not normalise to a valid ASP functor symbol
+(`ctor_functor`, the sum-side quote backstop). Nullary-with-argument and
+unary-without-argument constructs, an alien or missing arm, a binder on a
+nullary arm and its converse are rejected by WF-062..064 before
+translation is reached.
 
 *Environment and input fences:* names the ASP string encoding cannot
 quote (WF-057's backstop, sole cover for case labels); values that do
@@ -1366,7 +1461,7 @@ refuses loudly, exactly like this fence.
 quantitative machinery beyond the art. 3 threshold, and any systematic
 core-IR-to-ASP mapping — all Phase-3 work. This document grows with
 each hand exercise until that systematic mapping replaces it. *That
-promise is kept: Part I (S1–S14) is the systematic mapping. The
+promise is kept: Part I (S1–S15) is the systematic mapping. The
 constructs this chapter deferred have long since landed — hardheid in
 the ladder anchors (S10), the temporalisation in the timeline
 machinery (S9, historically ch. 6d), the quantitative corpus

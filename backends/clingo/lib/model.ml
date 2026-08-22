@@ -13,52 +13,71 @@ type atom = { name : string; args : arg list }
 and arg =
   | A_str of string
   | A_int of int
-  | A_term of string
-      (* an uninterpreted function term — a created instance
-         (translate's ocN(Subject) minting); opaque here, so it can
-         never match a case label in an expectation *)
+  | A_term of term
+      (* a compound term: a created instance (translate's ocN(Subject)
+         minting) or a constructor value (RUNTIME-SEMANTICS ch. 9.1) —
+         parsed recursively, so a nullary constructor (a bare symbol, no
+         arguments) and a payload-bearing one both structure, and the
+         constructor-value expectation compares them structurally *)
 
-(* atoms as clingo prints them: name("string",-3,oc0("A1"),...) — our
-   strings carry no quotes or escapes; a function-term argument is cut
-   at the top-level comma (parenthesis-depth and quote aware) *)
+(* a clingo term: a scaled integer, a double-quoted string, or a functor
+   with zero or more argument terms — zero arguments is a bare symbolic
+   constant (a nullary constructor, e.g. `afgewezen`), which the earlier
+   flat lexer could not parse *)
+and term =
+  | T_int of int
+  | T_str of string
+  | T_func of string * term list
+
+(* split a functor's argument list on top-level commas — parenthesis-depth
+   and quote aware, so nested terms and quoted strings survive intact *)
+let split_top_commas (s : string) : string list =
+  let n = String.length s in
+  let out = ref [] and start = ref 0 and depth = ref 0 and in_str = ref false in
+  for i = 0 to n - 1 do
+    match s.[i] with
+    | '"' -> in_str := not !in_str
+    | '(' when not !in_str -> incr depth
+    | ')' when not !in_str -> decr depth
+    | ',' when !depth = 0 && not !in_str ->
+        out := String.sub s !start (i - !start) :: !out;
+        start := i + 1
+    | _ -> ()
+  done;
+  out := String.sub s !start (n - !start) :: !out;
+  List.rev_map String.trim !out
+
+let rec parse_term (s : string) : term =
+  let s = String.trim s in
+  match int_of_string_opt s with
+  | Some v -> T_int v
+  | None ->
+      let n = String.length s in
+      if n >= 2 && s.[0] = '"' && s.[n - 1] = '"' then T_str (String.sub s 1 (n - 2))
+      else (
+        match String.index_opt s '(' with
+        | None ->
+            if s = "" then fault "empty clingo term";
+            T_func (s, []) (* a bare symbolic constant — a nullary constructor *)
+        | Some i ->
+            if s.[n - 1] <> ')' then fault "malformed clingo function term %S" s;
+            let name = String.sub s 0 i in
+            let body = String.sub s (i + 1) (n - i - 2) in
+            T_func (name, List.map parse_term (split_top_commas body)))
+
+(* an atom's argument: a top-level quoted string is a string; otherwise the
+   general term parser decides int / string / compound *)
+let arg_of_term = function T_int v -> A_int v | T_str s -> A_str s | t -> A_term t
+
+(* atoms as clingo prints them: name("string",-3,oc0("A1"),afgewezen,...) —
+   our strings carry no quotes or escapes *)
 let parse_atom (s : string) : atom =
   match String.index_opt s '(' with
   | None -> { name = s; args = [] }
   | Some i ->
       let name = String.sub s 0 i in
       let body = String.sub s (i + 1) (String.length s - i - 2) in
-      let args = ref [] in
-      let pos = ref 0 in
-      let n = String.length body in
-      while !pos < n do
-        (match body.[!pos] with
-        | '"' ->
-            let close = String.index_from body (!pos + 1) '"' in
-            args := A_str (String.sub body (!pos + 1) (close - !pos - 1)) :: !args;
-            pos := close + 1
-        | _ ->
-            let stop = ref !pos and depth = ref 0 and in_str = ref false in
-            while
-              !stop < n
-              && not (body.[!stop] = ',' && !depth = 0 && not !in_str)
-            do
-              (match body.[!stop] with
-              | '"' -> in_str := not !in_str
-              | '(' when not !in_str -> incr depth
-              | ')' when not !in_str -> decr depth
-              | _ -> ());
-              incr stop
-            done;
-            let lex = String.trim (String.sub body !pos (!stop - !pos)) in
-            (match int_of_string_opt lex with
-            | Some v -> args := A_int v :: !args
-            | None ->
-                if String.contains lex '(' then args := A_term lex :: !args
-                else fault "unparsable clingo term %S in %S" lex s);
-            pos := !stop);
-        if !pos < n && body.[!pos] = ',' then incr pos
-      done;
-      { name; args = List.rev !args }
+      { name; args = List.map (fun a -> arg_of_term (parse_term a)) (split_top_commas body) }
 
 let model_of_outf2 (j : Yojson.Safe.t) : atom list =
   let open Yojson.Safe.Util in
@@ -85,6 +104,39 @@ let val_of model label attr =
     (fun a ->
       match a with
       | { name = "val"; args = [ A_str l; A_str at; A_int v ] }
+        when String.equal l label && String.equal at (norm attr) ->
+          Some v
+      | _ -> None)
+    model
+
+let rec render_term = function
+  | T_int v -> string_of_int v
+  | T_str s -> "\"" ^ s ^ "\""
+  | T_func (f, []) -> f
+  | T_func (f, args) -> f ^ "(" ^ String.concat "," (List.map render_term args) ^ ")"
+
+let render_arg = function A_int v -> string_of_int v | A_str s -> "\"" ^ s ^ "\"" | A_term t -> render_term t
+
+(* the constructor TERMS of val(label,attr,·) — the sum-typed reading, kin to
+   [val_of]'s numeric reading *)
+let term_of model label attr =
+  List.filter_map
+    (fun a ->
+      match a with
+      | { name = "val"; args = [ A_str l; A_str at; A_term t ] }
+        when String.equal l label && String.equal at (norm attr) ->
+          Some t
+      | _ -> None)
+    model
+
+(* every val(label,attr,·), whatever the value's shape — the emptiness test
+   must see a DERIVED sum-typed target (an A_term value), not only numeric
+   ones, or it would report a derived constructor value as leeg *)
+let val_present model label attr =
+  List.filter_map
+    (fun a ->
+      match a with
+      | { name = "val"; args = [ A_str l; A_str at; v ] }
         when String.equal l label && String.equal at (norm attr) ->
           Some v
       | _ -> None)
@@ -120,9 +172,42 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
     | Value.Date z -> z
     | v -> fault "unscalable expected value %s" (Value.to_string v)
   in
+  (* the constructor-value expectation (ch. 9.4): built by the SAME emission
+     machinery the translator uses (payload scaled by the target attribute's
+     declared payload datatype) and parsed by the SAME term parser — one
+     source of truth, so the comparison is a structural term equality with no
+     independent scaling path to drift *)
+  let ctor_expect ~label ~attr (v : Value.t) : term =
+    let i = Uchar_ref.World.SMap.find label case.world.Uchar_ref.World.instances in
+    let ot = i.Uchar_ref.World.otype in
+    let constructoren =
+      match Ir_v0.Checks.find_ci doc.objecttypen ot with
+      | Some otd -> (
+          match Ir_v0.Checks.find_ci otd.attributen attr with
+          | Some (Some (Sum_type { constructoren; _ })) -> constructoren
+          | _ -> fault "a constructor value expected on the non-sum-typed attribute %S" attr)
+      | None -> fault "unknown object type %S" ot
+    in
+    match v with
+    | Value.Ctor (tag, payload) -> parse_term (Translate.ctor_value_term constructoren (tag, payload))
+    | _ -> fault "ctor_expect on a non-constructor value"
+  in
   List.filter_map
     (fun (e : Case.expectation) ->
       match e with
+      | Attribute_value { label; attr; value = Value.Ctor _ as value } -> (
+          let want = ctor_expect ~label ~attr value in
+          match term_of model label attr with
+          | [ got ] when got = want -> None
+          | [] ->
+              Some
+                (Printf.sprintf "%s.%s is underived (leeg), expected %s" label attr
+                   (render_term want))
+          | got ->
+              Some
+                (Printf.sprintf "%s.%s = [%s], expected %s" label attr
+                   (String.concat ";" (List.map render_term got))
+                   (render_term want)))
       | Attribute_value { label; attr; value } -> (
           let want = scaled_expect ~label ~attr value in
           match val_of model label attr with
@@ -134,12 +219,12 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
                    (String.concat ";" (List.map string_of_int got))
                    want))
       | Attribute_empty { label; attr } -> (
-          match val_of model label attr with
+          match val_present model label attr with
           | [] -> None
           | got ->
               Some
                 (Printf.sprintf "%s.%s = [%s], expected leeg" label attr
-                   (String.concat ";" (List.map string_of_int got))))
+                   (String.concat ";" (List.map render_arg got))))
       | Attribute_timeline { label; attr; tl } ->
           (* segment-exact: the model's tl/5 atoms for this attribute
              (derived plus any case-supplied) must equal the expected
