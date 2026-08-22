@@ -30,6 +30,11 @@ type t =
       (* a constructor value (RUNTIME-SEMANTICS ch. 9.1): a declared tag
          and, for a unary constructor, its payload value; it never carries
          a leeg payload — a Construct with a leeg argument propagates leeg *)
+  | Lijst of t list
+      (* a list value (RUNTIME-SEMANTICS ch. 10.1): an ordered, possibly
+         empty sequence of element values. [] is a value (gevuld), distinct
+         from leeg; no element position is ever leeg — a ListLiteral with a
+         leeg element propagates, and the case loader rejects leeg elements *)
 
 (* A fault aborts the evaluation observably (hard runtime error, ch. 1.4
    point 4; Onopgelost, WF-044; a non-representable bounded write). *)
@@ -154,3 +159,5 @@ let rec to_string = function
   (* the deterministic constructor rendering: Toegekend(1250.50), Afgewezen *)
   | Ctor (tag, None) -> tag
   | Ctor (tag, Some v) -> Printf.sprintf "%s(%s)" tag (to_string v)
+  (* the deterministic list rendering: [12.5, 30, 7.25], [] *)
+  | Lijst xs -> "[" ^ String.concat ", " (List.map to_string xs) ^ "]"

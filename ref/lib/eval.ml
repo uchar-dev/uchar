@@ -59,6 +59,13 @@ let attr_decl env ~otype ~attr =
   | Some dt -> dt
   | None -> Value.fault "unknown attribute %S on %S" attr otype
 
+(* a FunctionDef resolved by name (ch. 2.11); an unresolved invoke is a
+   WF-068 miss made statically impossible, so it faults fail-fast *)
+let function_def env name : function_def =
+  match List.find_opt (fun (d : function_def) -> norm d.fd_naam = norm name) env.doc.function_defs with
+  | Some d -> d
+  | None -> Value.fault "unknown function %S (WF-068 should preclude this)" name
+
 let kenmerk_temporal (ot : objecttype) name =
   List.exists (fun (k, _) -> norm k = norm name) ot.kenmerk_granulariteit
 
@@ -313,8 +320,18 @@ let expr_typ : expr -> datatype option = function
   | Temporal_read { typ; _ }
   | Construct { typ; _ }
   | Match { typ; _ }
-  | Binder_ref { typ; _ } ->
+  | Binder_ref { typ; _ }
+  | List_literal { typ; _ }
+  | If_then_else { typ; _ }
+  | Invoke { typ; _ }
+  | Fold { typ; _ }
+  | Map_list { typ; _ }
+  | Filter_list { typ; _ }
+  | List_length { typ; _ } ->
       typ
+  (* a Lambda is never a value (WF-069, position-restricted): it carries no
+     wire [typ] and never reaches a slot where its static type is read *)
+  | Lambda _ -> None
 
 (* the ch. 1.2d empty-equality asymmetry routes on the declared operand
    kind — two empty runtime values cannot reveal it (Arith.compare_op) *)
@@ -322,7 +339,7 @@ let static_numeric l r =
   let kind e =
     match expr_typ e with
     | Some (Numeriek _ | Percentage _ | Datum_in_dagen | Datum_tijd) -> Some true
-    | Some (Tekst | Booleaan | Enumeratie _ | Sum_type _) -> Some false
+    | Some (Tekst | Booleaan | Enumeratie _ | Sum_type _ | List_type _) -> Some false
     | Some (Datatype_onbekend _) | None -> None
   in
   match kind l with Some b -> Some b | None -> kind r
@@ -342,7 +359,11 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       match SMap.find_opt (norm name) env.params with
       | Some v -> v
       | None ->
-          Value.fault "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" name)
+          (* a declared parameter the case does not supply is absent input,
+             read leeg — the parallel of an unset attribute (World.attr) and
+             what the ch. 10.3 staffelvergoeding anchor's case3 pins: an
+             absent list-typed parameter propagates leeg through the Fold *)
+          Value.Empty)
   | Attribuut_ref
       { attribuut; objecttype = ot; navigatie_rol; navigatie_pad; navigatie_bindingen;
         set = false; typ; _ }
@@ -505,6 +526,97 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       match SMap.find_opt (norm naam) env.locals with
       | Some v -> v
       | None -> Value.fault "unbound binder %S (WF-064 should preclude this)" naam)
+  | List_literal { elements; _ } ->
+      (* ch. 10.1: a list value; an element evaluating leeg propagates —
+         the whole literal evaluates leeg (a list carries no hole) *)
+      let vs = List.map (eval_expr env world self ~err) elements in
+      if List.exists (fun v -> v = Value.Empty) vs then Value.Empty else Value.Lijst vs
+  | Lambda _ ->
+      (* WF-069: a Lambda is position-restricted — only the [function] operand
+         of a Fold/MapList, evaluated there via [apply_fold_fn], never on its
+         own as a value *)
+      Value.fault "a Lambda is position-restricted (WF-069): it is only a Fold/MapList operand"
+  | If_then_else { condition; then_; else_; _ } ->
+      (* ch. 10.2: evaluate the condition under the ordinary comparison
+         discipline, then exactly the chosen branch — strict, no coalesce *)
+      if eval_cond env world self ~err condition then eval_expr env world self ~err then_
+      else eval_expr env world self ~err else_
+  | Invoke { functie; arguments; _ } -> (
+      (* ch. 10.2: evaluate arguments strictly (a leeg argument propagates
+         without entering the body); bind the parameters in a fresh locals —
+         the body is closed (WF-067) — and evaluate it. No recursion (WF-067),
+         so termination is structural *)
+      let fd = function_def env functie in
+      if List.length arguments <> List.length fd.fd_parameters then
+        Value.fault "function %S invoked with %d arguments, expected %d (WF-068)" functie
+          (List.length arguments) (List.length fd.fd_parameters);
+      let args = List.map (eval_expr env world self ~err) arguments in
+      if List.exists (fun v -> v = Value.Empty) args then Value.Empty
+      else eval_closed_body env world self ~err fd.fd_parameters fd.fd_body args)
+  | Fold { list; functie; init; _ } -> (
+      (* ch. 10.2: a left fold, order normative. A leeg list operand and a
+         leeg init both propagate; fold(f, init, []) = init *)
+      match eval_expr env world self ~err list with
+      | Value.Empty -> Value.Empty
+      | Value.Lijst xs -> (
+          match eval_expr env world self ~err init with
+          | Value.Empty -> Value.Empty
+          | acc0 -> List.fold_left (fun acc x -> apply_fold_fn env world self ~err functie [ acc; x ]) acc0 xs)
+      | v -> Value.fault "fold list operand is %s, not a list value" (Value.to_string v))
+  | Map_list { list; functie; _ } -> (
+      (* ch. 10.2: elementwise, order-preserving; a leeg source propagates,
+         and a body yielding leeg propagates the whole map (no hole) *)
+      match eval_expr env world self ~err list with
+      | Value.Empty -> Value.Empty
+      | Value.Lijst xs ->
+          let ys = List.map (fun x -> apply_fold_fn env world self ~err functie [ x ]) xs in
+          if List.exists (fun v -> v = Value.Empty) ys then Value.Empty else Value.Lijst ys
+      | v -> Value.fault "map-list operand is %s, not a list value" (Value.to_string v))
+  | Filter_list { list; binder; condition; _ } -> (
+      (* ch. 10.2: keep, in order, the elements the condition holds for with
+         the binder bound to the element — the aggregation-filter precedent
+         (a condition per contributor); a leeg source propagates *)
+      match eval_expr env world self ~err list with
+      | Value.Empty -> Value.Empty
+      | Value.Lijst xs ->
+          Value.Lijst
+            (List.filter
+               (fun x ->
+                 let locals = SMap.add (norm binder) x env.locals in
+                 eval_cond { env with locals } world self ~err condition)
+               xs)
+      | v -> Value.fault "filter-list operand is %s, not a list value" (Value.to_string v))
+  | List_length { list; _ } -> (
+      (* ch. 10.2: the element count; [] counts 0; a leeg source propagates *)
+      match eval_expr env world self ~err list with
+      | Value.Empty -> Value.Empty
+      | Value.Lijst xs -> Value.Num (Q.of_int (List.length xs), Value.Unitless)
+      | v -> Value.fault "list-length operand is %s, not a list value" (Value.to_string v))
+
+(* apply a fold-family [function] operand (IR-SPEC ch. 4.8) — an inline
+   lambda or a named FunctionDef — to already-evaluated arguments. Bodies are
+   closed (WF-069/067), so a fresh locals holds exactly the parameters; a
+   fold body never sees leeg (ch. 10.1), so no leeg-argument short-circuit is
+   needed here (the Invoke arm carries the strict one). *)
+and apply_fold_fn env world self ~err (fn : fold_fn) (args : Value.t list) : Value.t =
+  match fn with
+  | Fn_lambda { parameters; body; _ } -> eval_closed_body env world self ~err parameters body args
+  | Fn_name name ->
+      let fd = function_def env name in
+      eval_closed_body env world self ~err fd.fd_parameters fd.fd_body args
+
+(* bind [parameters] to [args] in a fresh locals (a closed body sees only its
+   own parameters, WF-067) and evaluate [body]; arity is a WF-068/069/070
+   invariant, refused fail-fast here rather than raising Invalid_argument *)
+and eval_closed_body env world self ~err (parameters : (string * datatype) list) body
+    (args : Value.t list) : Value.t =
+  if List.length parameters <> List.length args then
+    Value.fault "closed body applied to %d arguments, expected %d (WF-068/069/070)"
+      (List.length args) (List.length parameters);
+  let locals =
+    List.fold_left2 (fun acc (pname, _) v -> SMap.add (norm pname) v acc) SMap.empty parameters args
+  in
+  eval_expr { env with locals } world self ~err body
 
 and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leegwaarde ~filter
     ~dimensie_selectie ~granulariteit ~bron_rol =
@@ -1479,6 +1591,24 @@ let vintage_read_params (doc : document) : string list =
     | Match { scrutinee; arms; _ } ->
         expr scrutinee;
         List.iter (fun (_, _, body) -> expr body) arms
+    | List_literal { elements; _ } -> List.iter expr elements
+    | Lambda { body; _ } -> expr body
+    | If_then_else { condition; then_; else_; _ } -> cond condition; expr then_; expr else_
+    | Invoke { functie; arguments; _ } ->
+        List.iter expr arguments;
+        (* recurse into the invoked FunctionDef body: a vintage read reachable
+           only through named closed logic must still be discovered (WF-067
+           makes this acyclic, so the walk terminates) *)
+        fn_body functie
+    | Fold { list; functie; init; _ } -> expr list; fold_fn functie; expr init
+    | Map_list { list; functie; _ } -> expr list; fold_fn functie
+    | Filter_list { list; condition; _ } -> expr list; cond condition
+    | List_length { list; _ } -> expr list
+  and fn_body name =
+    match List.find_opt (fun (d : function_def) -> norm d.fd_naam = norm name) doc.function_defs with
+    | Some d -> expr d.fd_body
+    | None -> ()
+  and fold_fn = function Fn_lambda { body; _ } -> expr body | Fn_name name -> fn_body name
   and opt = function Some e -> expr e | None -> ()
   and cond (c : conditie) =
     match c with

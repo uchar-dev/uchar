@@ -98,6 +98,27 @@ let rec value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t
       let s = str v in
       if List.exists (function Some w -> norm w = norm s | None -> false) waarden then Value.Enum s
       else fail "%s: %S is not a declared enumeration value" at s
+  (* the list value form of §2.5 (RUNTIME-SEMANTICS ch. 10.5): each element
+     loads recursively against the declared element datatype, in order; a
+     null/leeg element is refused — list positions are never leeg (ch. 10.1) *)
+  | "list", Some (List_type { element }) -> (
+      match v with
+      | `List elems ->
+          Value.Lijst
+            (List.mapi
+               (fun i ej ->
+                 match ej with
+                 | `Null ->
+                     fail "%s[%d]: a list element is leeg; list positions are never leeg (ch. 10.1)"
+                       at i
+                 | _ -> value_of_json ~at:(Printf.sprintf "%s[%d]" at i) (Some element) ej)
+               elems)
+      | _ -> fail "%s: a list value's \"list\" field is not an array" at)
+  (* WF-059/WF-018 backstop, widened to the list value: a value against a
+     datatype-less declaration splits the executors, so the shared loader
+     refuses it in both *)
+  | "list", None ->
+      fail "%s: a value against a declaration without a datatype (WF-059 for attributes, WF-018 for parameters)" at
   | _, Some _ -> fail "%s: value variant %S does not match the declared datatype" at variant
   | _, None -> fail "%s: value variant %S against an unknown datatype" at variant
 

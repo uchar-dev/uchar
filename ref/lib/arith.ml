@@ -332,6 +332,9 @@ let rec equal a b =
           | None, None -> true
           | Some va, Some vb -> equal va vb
           | _ -> false)
+  (* ch. 10.1: list equality is elementwise and in order; a position is
+     never leeg, so this agrees with the Tabel 38 reading below *)
+  | Lijst xs, Lijst ys -> List.length xs = List.length ys && List.for_all2 equal xs ys
   | _ -> false
 
 let eq_non_numeric l r =
@@ -346,6 +349,7 @@ let eq_non_numeric l r =
   | Bool a, Bool b -> Bool.equal a b
   | Enum a, Enum b -> String.equal (Ir_v0.Checks.norm a) (Ir_v0.Checks.norm b)
   | (Ctor _ as a), (Ctor _ as b) -> equal a b
+  | (Lijst _ as a), (Lijst _ as b) -> equal a b
   | _ -> fault "mixed-type equality: %s vs %s" (to_string l) (to_string r)
 
 (* [static_numeric] carries the comparison's statically declared kind:
@@ -452,5 +456,7 @@ let text_of = function
   (* a constructor value has no text coercion — fail fast, never a
      silent stringification into a text join *)
   | Ctor _ as v -> fault "a constructor value has no text coercion: %s" (to_string v)
+  (* a list value has no text coercion either — same fail-fast boundary *)
+  | Lijst _ as v -> fault "a list value has no text coercion: %s" (to_string v)
 
 let concat vs = Text (String.concat "" (List.map text_of vs))

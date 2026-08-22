@@ -448,6 +448,7 @@ let empty_doc : Ir_v0.Ast.document =
     regel_groepen = [];
     diagnostics = [];
     default_ladders = [];
+    function_defs = [];
   }
 
 let ot name attrs kenmerken : string * Ir_v0.Ast.objecttype =
@@ -908,6 +909,54 @@ let () =
   (* 9.3: sum values are not orderable — scalar_cmp faults *)
   expect_fault "WV-9.3-order-fault"
     (fun () -> Arith.compare_op ~static_numeric:false Kleiner toegekend aangehouden)
+
+(* --- ch. 10: folds and function values (RUNTIME-SEMANTICS ch. 10) -------
+   Value-level worked examples: list rendering (10.1) and the list-equality
+   corners — elementwise and IN ORDER, with the Tabel 38 Empty corners ([] is
+   a value, leeg is its absence). The evaluation of the fold family over
+   documents is pinned absolutely by the jutterswet-staffelvergoeding and
+   jutterswet-aanspraaktelling anchors through gates 5-6 (case1 the deciding
+   fold, case2 the empty-list value writing 0.00/0, case3 the leeg-propagation
+   survivor writing nothing). *)
+let lijst xs = Value.Lijst xs
+
+let () =
+  let l1 = lijst [ n "12.50"; n "30.00"; n "7.25" ] in
+  let l1' = lijst [ n "12.50"; n "30.00"; n "7.25" ] in
+  let l_reordered = lijst [ n "30.00"; n "12.50"; n "7.25" ] in
+  let l_short = lijst [ n "12.50"; n "30.00" ] in
+  (* 10.1: the deterministic list rendering (canonical trailing-zero-dropped
+     lexemes, the same form used everywhere a value renders) *)
+  check "WV-10.1-render" (Value.to_string l1 = "[12.5, 30, 7.25]");
+  check "WV-10.1-render-empty" (Value.to_string (lijst []) = "[]");
+  (* 10.1: equality is elementwise AND in order — the load-bearing distinction
+     the staffelvergoeding anchor pins (reordered would fold to 37.25) *)
+  check "WV-10.1-eq" (Arith.equal l1 l1' = true);
+  check "WV-10.1-eq-order" (Arith.equal l1 l_reordered = false);
+  check "WV-10.1-eq-length" (Arith.equal l1 l_short = false);
+  check "WV-10.1-eq-empty-list" (Arith.equal (lijst []) (lijst []) = true);
+  (* 10.1: the non-numeric equality path agrees (a position is never leeg) *)
+  check "WV-10.1-teq" (Arith.eq_non_numeric l1 l1' = true);
+  check "WV-10.1-teq-order" (Arith.eq_non_numeric l1 l_reordered = false);
+  (* Tabel 38: a leeg operand makes eq_non_numeric false in BOTH directions;
+     and the empty list [] (a value) is never equal to leeg (its absence) *)
+  check "WV-10.1-teq-empty-l" (Arith.eq_non_numeric leeg l1 = false);
+  check "WV-10.1-teq-empty-r" (Arith.eq_non_numeric l1 leeg = false);
+  check "WV-10.1-eq-empty-vs-nil" (Arith.equal leeg (lijst []) = false);
+  (* composing ch. 9: a list of constructor values (the aanspraaktelling
+     shape) — equal to itself, order-sensitive, never equal reordered *)
+  let a1 =
+    lijst [ ctor "Erkend" (Some (n "10.00")); ctor "Vervallen" None; ctor "Erkend" (Some (n "2.50")) ]
+  in
+  let a1' =
+    lijst [ ctor "Erkend" (Some (n "10.00")); ctor "Vervallen" None; ctor "Erkend" (Some (n "2.50")) ]
+  in
+  let a_reordered =
+    lijst [ ctor "Vervallen" None; ctor "Erkend" (Some (n "10.00")); ctor "Erkend" (Some (n "2.50")) ]
+  in
+  check "WV-10.1-ctor-eq" (Arith.equal a1 a1' = true);
+  check "WV-10.1-ctor-eq-order" (Arith.equal a1 a_reordered = false);
+  check "WV-10.1-ctor-render" (Value.to_string a1 = "[Erkend(10), Vervallen, Erkend(2.5)]")
 
 let () =
   if !failures > 0 then begin

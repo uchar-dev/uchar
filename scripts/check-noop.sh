@@ -67,6 +67,16 @@
 #     nothing, so uitkering stays empty and both = and ≠ against
 #     Aangehouden are false (Tabel 38); the expectation IS that absence,
 #     which a do-nothing executor satisfies.
+#   - jutterswet-staffelvergoeding/case3-afwezig.json: the leeg-list
+#     propagation of ch. 10.3 — with the staffelbedragen parameter absent
+#     (read leeg), the Fold propagates leeg and vergoeding stays empty; the
+#     expectation IS that absence. The sibling case2-leeg-lijst (supplied
+#     []) DOES decide — it writes 0.00 — and is deliberately not a survivor.
+#   - jutterswet-aanspraaktelling/case3-afwezig.json: the same
+#     leeg-propagation of ch. 10.4 — with the aanspraken list absent, the
+#     MapList/Fold and the FilterList/ListLength both propagate leeg, so
+#     erkende som and aantal erkend stay empty. Its case2-leeg-lijst
+#     (supplied []) writes 0.00/0 and is not a survivor.
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
@@ -83,7 +93,9 @@ corpus/golden/jutterswet-penningrecht-catala/case4-hardheidsgrens.json
 corpus/golden/anchor/jutterswet-borgdeel/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-dagentelling/case3-leeg.json
 corpus/golden/anchor/jutterswet-dagentelling/case4-input-blijft.json
-corpus/golden/anchor/jutterswet-beschikkingsom/case4-leeg.json'
+corpus/golden/anchor/jutterswet-beschikkingsom/case4-leeg.json
+corpus/golden/anchor/jutterswet-staffelvergoeding/case3-afwezig.json
+corpus/golden/anchor/jutterswet-aanspraaktelling/case3-afwezig.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
