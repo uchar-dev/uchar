@@ -1,0 +1,26 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "D",
+        "objectType": "Dossierrecht",
+        "attributes": {
+          "dossier": { "struct": { "waarde": { "number": "80.00" }, "telling": { "number": "5" } } },
+          "dossiers": { "list": [] },
+          "opslag": { "number": "5.00" }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "D", "attribute": "dossierpenning", "value": { "number": "85.00" } },
+    { "kind": "attributeValue", "label": "D", "attribute": "totaalwaarde", "value": { "number": "0.00" } },
+    { "kind": "attributeValue", "label": "D", "attribute": "vondstaantal", "value": { "number": "5" } },
+    { "kind": "consistent" }
+  ]
+}

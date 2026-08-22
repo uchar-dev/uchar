@@ -98,6 +98,14 @@ let rec datatype (d : datatype) : json =
                   `Assoc [ ("name", s nm); ("payload", opt datatype payload) ])
                 constructoren)) ]
   | List_type { element } -> node "ListType" [ ("element", datatype element) ]
+  | Struct_type { domein; velden } ->
+      node "StructType"
+        [ ("domain", s domein);
+          ("fields",
+           `List
+             (List.map
+                (fun (nm, dt) -> `Assoc [ ("name", s nm); ("datatype", datatype dt) ])
+                velden)) ]
   | Datatype_onbekend { reden } -> node "Onbekend" [ ("reden", so reden) ]
 
 and eenheid_j (e : eenheid) : json =
@@ -183,6 +191,18 @@ let rec expr (e : expr) : json =
           ("condition", conditie condition); bron br ]
   | List_length { typ = t; list; bron = br } ->
       node "ListLength" [ ("type", opt datatype t); ("list", expr list); bron br ]
+  | Struct_literal { typ = t; velden; bron = br } ->
+      node "StructLiteral"
+        [ ("type", opt datatype t);
+          ("fields",
+           `List
+             (List.map
+                (fun (nm, v) -> `Assoc [ ("name", s nm); ("value", expr v) ])
+                velden));
+          bron br ]
+  | Field_access { typ = t; base; veld; bron = br } ->
+      node "FieldAccess"
+        [ ("type", opt datatype t); ("base", expr base); ("field", s veld); bron br ]
   | other ->
       failwith
         ("Emit.expr: node not produced by the skeleton: "

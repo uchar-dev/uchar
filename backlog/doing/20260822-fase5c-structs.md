@@ -65,5 +65,23 @@ struct-recursie; optionele velden (no-hole is de norm).
   build backends/clingo` groen; check-clingo GROEN (154, ref ≡ clingo incl.
   de struct-verwachting en de Tabel-38-hoek); check-rood (14) en check-noop
   (134 + 20 survivors) groen.
-- Nog te doen (deze kaart): plugin (`TStruct`/`EStruct`/`EStructAccess`;
-  `ctx_structs` doorgeven), herpin, twee lenzen — buiten opdracht 4.
+- **Opdracht 5 (plugin + vierde catala-golden) — klaar.** `emit.ml`:
+  `StructType`/`StructLiteral`/`FieldAccess` byte-conform aan het anker
+  (`domain`/`fields[name,datatype]`; `type`/`fields[name,value]`;
+  `type`/`base`/`field`). `translate.ml`: `ctx_structs` uit `program_ctx`
+  gethreade naast `ctx_enums` (door `catala_dt`/`sum_type_of`/`struct_type_of`,
+  `make_exprs`, `translate_scope`, `topdef_*`, `file_to_document`); `TStruct` →
+  `struct_type_of` (velden in declaratievolgorde via `StructField.Map`,
+  WF-071-weigering op ontoelaatbare veldtypen); `TArray` admitteert
+  struct-elementen (WF-065); `EStruct` → `StructLiteral`; `EStructAccess` →
+  `FieldAccess` (alleen de niet-subscope-vorm — een `EScopeCall`-basis blijft
+  geweigerd met de bestaande subscope-tekst); `infer_dt`-cases;
+  struct-domeinen-emissie. Fixture `refuse_struct` vervangen door de positieve
+  `struct.catala_en` (struct-input, veldprojectie als operand, list-of-struct
+  met map+fold) + twee cases; suite 81 checks (was 76). Vierde golden
+  `jutterswet-dossierrecht-catala/` (eigen-geschreven artikel 7–9 +
+  modelleringsnotitie; ir via plugin + gate-2-canonisatie; 3 beslissende cases,
+  alle drie falen --noop; drievoudig groen). Gates: check-catala GROEN (81
+  checks; VIER catala-goldens byte-identiek); gates 1–8 groen.
+- Nog te doen (deze kaart): herpin (SPEC_REV-bump, conformance 11/11), twee
+  opus-lenzen met bevindingen gefixt vóór de merge.

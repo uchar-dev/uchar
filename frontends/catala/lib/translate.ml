@@ -37,7 +37,9 @@
                                        reducer and an extraction Match (§3.5)
    - if-then-else (inside a body)   -> IfThenElse (WF-069; refused in a rule)
    - top-level function + call      -> FunctionDef + Invoke (row 10, DMN BKM)
-   - subscope call, structs, tuple payloads, Sort/Find/Map2/argmin,
+   - struct type / literal / .field -> StructType / StructLiteral / FieldAccess
+                                       (row 5c; a struct is a value, WF-071/074)
+   - subscope call, tuple payloads, Sort/Find/Map2/argmin,
      scope-capturing bodies, plain-value topdefs -> REFUSED (§4 fences)
 
    The context (reentrant) finding. Besluit 6 wants a caller override of a
@@ -78,6 +80,12 @@ let refuse fmt = Printf.ksprintf (fun s -> raise (Refuse s)) fmt
    enums (e.g. the desugarer's Optional), which no 5b program references. *)
 let used_enums = ref EnumName.Set.empty
 
+(* Structs referenced by the translated document, recorded by [struct_type_of];
+   [file_to_document] resets it per run and reads it to emit exactly the used
+   structs as domains — the SumType landing pattern (a StructType is hosted by
+   [domeinen], repeated whole at every use site). *)
+let used_structs = ref StructName.Set.empty
+
 (* The reduce lowering (§3.5) needs a nominal Optional sum type carrying the
    concrete element datatype; Catala's builtin [option_enum] carries a
    *universal* Present payload (Expr.option_enum_config), so [sum_type_of] on
@@ -117,8 +125,9 @@ let note_optional (element : I.datatype) : unit =
    v0 mirror form and the two never convert. The declaring enum's base name
    is the domain; constructor payloads recurse through [catala_dt]; a
    TLit TUnit payload is nullary (None); a TTuple payload is an n-ary
-   constructor — 5c struct territory — and refuses loudly. *)
-let rec catala_dt (enums : enum_ctx) (t : typ) : I.datatype =
+   constructor — 5c struct territory — and refuses loudly. A [TStruct] is the
+   row-5c record datatype ([struct_type_of]). *)
+let rec catala_dt (enums : enum_ctx) (structs : struct_ctx) (t : typ) : I.datatype =
   match M.remove t with
   | TLit TInt -> num_int
   | TLit TBool -> Booleaan
@@ -127,27 +136,27 @@ let rec catala_dt (enums : enum_ctx) (t : typ) : I.datatype =
   | TLit TRat -> refuse "decimal (rational) type: refused in the 5a skeleton (no declared number of decimals to derive)"
   | TLit TDuration -> refuse "duration type: not supported in the 5a skeleton"
   | TLit (TUnit | TPos) -> refuse "unit/pos type: not a domain value"
-  | TDefault inner -> catala_dt enums inner
+  | TDefault inner -> catala_dt enums structs inner
   | TArrow _ -> refuse "function-valued variable: new kernel (row 10), designed spec-first in 5b"
-  | TStruct _ -> refuse "struct-typed variable: not supported in the 5a skeleton"
-  | TEnum name -> sum_type_of enums name
+  | TStruct name -> struct_type_of enums structs name
+  | TEnum name -> sum_type_of enums structs name
   | TTuple _ ->
       refuse
         "tuple payload: an n-ary constructor payload de-tuplifies to a Catala tuple — 5c struct territory, single-payload constructors only (WF); refused"
   | TArray inner ->
-      let element = catala_dt enums inner in
+      let element = catala_dt enums structs inner in
       (match element with
-       | Numeriek _ | Datum_in_dagen | Sum_type _ -> List_type { element }
+       | Numeriek _ | Datum_in_dagen | Sum_type _ | Struct_type _ -> List_type { element }
        | _ ->
            refuse
              "WF-065: a list element must be first-order and non-list (Number, day-precision date, \
-              or a declared sum type); this element type is inadmissible")
+              a declared sum type, or a declared struct); this element type is inadmissible")
   | TOption _ -> refuse "option-typed variable: not supported in the 5a skeleton"
   | _ -> refuse "unsupported variable type"
 
 (* An enum -> its SumType datatype: constructors in declaration order
    (EnumConstructor ids are generative, so the map folds declaration-first). *)
-and sum_type_of (enums : enum_ctx) (name : EnumName.t) : I.datatype =
+and sum_type_of (enums : enum_ctx) (structs : struct_ctx) (name : EnumName.t) : I.datatype =
   used_enums := EnumName.Set.add name !used_enums;
   let sig_ =
     try EnumName.Map.find name enums
@@ -158,12 +167,41 @@ and sum_type_of (enums : enum_ctx) (name : EnumName.t) : I.datatype =
       (EnumConstructor.Map.fold
          (fun c ty acc ->
            let payload =
-             match M.remove ty with TLit TUnit -> None | _ -> Some (catala_dt enums ty)
+             match M.remove ty with TLit TUnit -> None | _ -> Some (catala_dt enums structs ty)
            in
            (EnumConstructor.to_string c, payload) :: acc)
          sig_ [])
   in
   Sum_type { domein = EnumName.base name; constructoren }
+
+(* A struct -> its StructType datatype: fields in declaration order
+   (StructField ids are generative, so the map folds declaration-first). Field
+   datatypes recurse through [catala_dt] and must be WF-071-admissible
+   (Numeriek / DatumInDagen / SumType / StructType) — an inadmissible field
+   type (Tekst, Booleaan, Enumeratie, DatumTijd, a list) refuses loudly. *)
+and struct_type_of (enums : enum_ctx) (structs : struct_ctx) (name : StructName.t) : I.datatype =
+  used_structs := StructName.Set.add name !used_structs;
+  let sig_ =
+    try StructName.Map.find name structs
+    with Not_found -> refuse "struct %S is not declared" (StructName.base name)
+  in
+  let velden =
+    List.rev
+      (StructField.Map.fold
+         (fun fld ty acc ->
+           let dt = catala_dt enums structs ty in
+           (match dt with
+            | Numeriek _ | Datum_in_dagen | Sum_type _ | Struct_type _ -> ()
+            | _ ->
+                refuse
+                  "WF-071: struct %S field %S has an inadmissible datatype (only Number, \
+                   day-precision date, a declared sum type or a declared struct are admissible \
+                   struct fields)"
+                  (StructName.base name) (StructField.to_string fld));
+           (StructField.to_string fld, dt) :: acc)
+         sig_ [])
+  in
+  Struct_type { domein = StructName.base name; velden }
 
 let is_bool_dt = function I.Booleaan -> true | _ -> false
 
@@ -252,7 +290,7 @@ let parse_root_unordered e =
    them (the closed-body fence, WF-067). [in_body] tracks whether we are inside
    a lambda or function body — where IfThenElse is admissible (WF-069) and a
    scope-variable read is a capture (WF-067). *)
-let make_exprs ~(enums : enum_ctx)
+let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
     ~(functions : (string * I.datatype) list)
     ~(read_var : operand:bool -> in_body:bool -> ScopeVar.t M.pos -> I.expr)
     ~(check_var : in_body:bool -> ScopeVar.t M.pos -> I.conditie)
@@ -284,7 +322,11 @@ let make_exprs ~(enums : enum_ctx)
     | ELit (LDate _) -> Some Datum_in_dagen
     | EVar v -> Option.map snd (Var.Map.find_opt v env)
     | ELocation (ScopelangScopeVar { name }) -> lookup_var (M.remove name)
-    | EInj { name; _ } -> Some (sum_type_of enums name)
+    | EInj { name; _ } -> Some (sum_type_of enums structs name)
+    | EStruct { name; _ } -> Some (struct_type_of enums structs name)
+    | EStructAccess { name; field; _ } ->
+        Option.map (catala_dt enums structs)
+          (Option.bind (StructName.Map.find_opt name structs) (StructField.Map.find_opt field))
     | EIfThenElse { etrue; _ } -> infer_dt ~env etrue
     | EApp { f; _ } -> (
         match M.remove (strip f) with
@@ -332,7 +374,7 @@ let make_exprs ~(enums : enum_ctx)
         | Op.Map, [ f; lst ] ->
             let vars, tys, body = lambda_of f in
             if Array.length vars <> 1 then refuse "a map lambda takes exactly one parameter";
-            let pn = Bindlib.name_of vars.(0) and pt = catala_dt enums (List.nth tys 0) in
+            let pn = Bindlib.name_of vars.(0) and pt = catala_dt enums structs (List.nth tys 0) in
             let env' = Var.Map.add vars.(0) (pn, pt) env in
             let out_elt =
               match infer_dt ~env:env' body with
@@ -348,7 +390,7 @@ let make_exprs ~(enums : enum_ctx)
         | Op.Filter, [ f; lst ] ->
             let vars, tys, body = lambda_of f in
             if Array.length vars <> 1 then refuse "a filter lambda takes exactly one parameter";
-            let pn = Bindlib.name_of vars.(0) and pt = catala_dt enums (List.nth tys 0) in
+            let pn = Bindlib.name_of vars.(0) and pt = catala_dt enums structs (List.nth tys 0) in
             let env' = Var.Map.add vars.(0) (pn, pt) env in
             let src_ty =
               match infer_dt ~env lst with
@@ -361,8 +403,8 @@ let make_exprs ~(enums : enum_ctx)
         | Op.Fold, [ f; init; lst ] ->
             let vars, tys, body = lambda_of f in
             if Array.length vars <> 2 then refuse "a fold lambda takes exactly two parameters";
-            let an = Bindlib.name_of vars.(0) and at = catala_dt enums (List.nth tys 0) in
-            let xn = Bindlib.name_of vars.(1) and xt = catala_dt enums (List.nth tys 1) in
+            let an = Bindlib.name_of vars.(0) and at = catala_dt enums structs (List.nth tys 0) in
+            let xn = Bindlib.name_of vars.(1) and xt = catala_dt enums structs (List.nth tys 1) in
             let env' = Var.Map.add vars.(1) (xn, xt) (Var.Map.add vars.(0) (an, at) env) in
             Fold
               { typ = Some at; list = value_expr ~in_body ~env lst;
@@ -399,11 +441,31 @@ let make_exprs ~(enums : enum_ctx)
         | _ -> refuse "application of a non-top-level expression is not supported")
     | EScopeCall _ ->
         refuse "subscope call (EScopeCall): object creation + role navigation (mapping row 9) is out of 5a scope"
-    | EStructAccess { e = inner; _ } -> (
+    | EStructAccess { name; e = inner; field } -> (
         match M.remove (strip inner) with
         | EScopeCall _ ->
+            (* reading a subscope output: still object creation + role
+               navigation (mapping row 9), refused until kaart 4 *)
             refuse "subscope call (reading a subscope output): object creation + role navigation (mapping row 9) is out of 5a scope"
-        | _ -> refuse "struct field access: not supported in the 5a skeleton")
+        | _ ->
+            (* row-5c FieldAccess: [base] is a struct value; the node type is
+               the field's declared datatype (WF-074). The empty-operand flag
+               propagates to the base — reading a field of a not-always-filled
+               struct in arithmetic stays refused, since Catala reads it hard
+               while a FieldAccess coalesces via the surrounding operator. *)
+            let veld_ty =
+              match
+                Option.bind (StructName.Map.find_opt name structs)
+                  (StructField.Map.find_opt field)
+              with
+              | Some ty -> catala_dt enums structs ty
+              | None ->
+                  refuse "field %S is not declared on struct %S"
+                    (StructField.to_string field) (StructName.base name)
+            in
+            Field_access
+              { typ = Some veld_ty; base = value_expr ~operand ~in_body ~env inner;
+                veld = StructField.to_string field; bron = None })
     | EInj { name; e = payload; cons } ->
         (* a constructor value; unit payload = nullary (argument None) *)
         let sig_ = EnumName.Map.find name enums in
@@ -414,7 +476,7 @@ let make_exprs ~(enums : enum_ctx)
           | _ -> Some (value_expr ~in_body ~env payload)
         in
         Construct
-          { typ = Some (sum_type_of enums name);
+          { typ = Some (sum_type_of enums structs name);
             constructor_ = EnumConstructor.to_string cons; argument;
             bron = Some (EnumConstructor.to_string cons) }
     | EMatch { name; e = scrut; cases } when EnumName.equal name ConstantNames.option_enum ->
@@ -432,7 +494,7 @@ let make_exprs ~(enums : enum_ctx)
         in
         let rvars, rtys, rbody = lambda_of f in
         if Array.length rvars <> 2 then refuse "a reduce combining function takes two parameters";
-        let elt = catala_dt enums (List.nth rtys 0) in
+        let elt = catala_dt enums structs (List.nth rtys 0) in
         let opt = optional_dt elt in
         note_optional elt;
         let none_c = EnumConstructor.to_string ConstantNames.none_constr in
@@ -520,7 +582,7 @@ let make_exprs ~(enums : enum_ctx)
                 | _ ->
                     let v = vars.(0) in
                     let nm = Bindlib.name_of v in
-                    (Some nm, Var.Map.add v (nm, catala_dt enums payload_ty) env)
+                    (Some nm, Var.Map.add v (nm, catala_dt enums structs payload_ty) env)
               in
               let inf' =
                 match inf with Some _ -> inf | None -> infer_dt ~env:env' body
@@ -553,7 +615,20 @@ let make_exprs ~(enums : enum_ctx)
               { typ = Some (List_type { element = elt });
                 elements = List.map (value_expr ~in_body ~env) elts; bron = None })
     | EAbs _ -> refuse "a function value outside a fold/map operand is not first-class (WF-069): only a Fold/MapList function operand or a named function"
-    | EStruct _ -> refuse "struct value: not supported in the 5a skeleton"
+    | EStruct { name; fields } ->
+        (* row-5c StructLiteral: fields in declaration order (WF-073). Catala's
+           [from_surface] guarantees every declared field is supplied, so the
+           map is exactly the declared fields. A field evaluating leeg makes the
+           whole literal leeg (NO-HOLE); that is the surrounding semantics, so
+           the field values are ordinary (non-operand) reads. *)
+        let velden =
+          List.rev
+            (StructField.Map.fold
+               (fun fld v acc ->
+                 (StructField.to_string fld, value_expr ~in_body ~env v) :: acc)
+               fields [])
+        in
+        Struct_literal { typ = Some (struct_type_of enums structs name); velden; bron = None }
     | EIfThenElse { cond; etrue; efalse } ->
         if not in_body then
           refuse
@@ -608,7 +683,7 @@ let make_exprs ~(enums : enum_ctx)
   (value_expr, cond_expr)
 
 (* one scope -> its object type, rules, ladders, consistencies *)
-let translate_scope (enums : enum_ctx) (functions : (string * I.datatype) list)
+let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (string * I.datatype) list)
     (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
   let ot_name = ScopeName.base name in
   (* variable table: ScopeVar -> (declared name, IR datatype) *)
@@ -622,7 +697,7 @@ let translate_scope (enums : enum_ctx) (functions : (string * I.datatype) list)
                "context (reentrant) variable %S: besluit 6 wants Reading B (caller override as the highest rung), but ch. 7.8's input rung sits BELOW the ordinary rungs (Reading A). A single-scope 5a program cannot realise Reading B — refused."
                vname
          | Catala_runtime.NoInput | Catala_runtime.OnlyInput -> ());
-        ScopeVar.Map.add v (vname, catala_dt enums sv.svar_out_ty) acc)
+        ScopeVar.Map.add v (vname, catala_dt enums structs sv.svar_out_ty) acc)
       sd.scope_sig ScopeVar.Map.empty
   in
   let lookup v = ScopeVar.Map.find v vars in
@@ -713,7 +788,7 @@ let translate_scope (enums : enum_ctx) (functions : (string * I.datatype) list)
   in
   let lookup_var v = try Some (snd (lookup v)) with Not_found -> None in
   let value_expr, cond_expr =
-    make_exprs ~enums ~functions ~read_var ~check_var ~lookup_var
+    make_exprs ~enums ~structs ~functions ~read_var ~check_var ~lookup_var
   in
   (* condition option: [true] is unconditional -> None (for plain rules) *)
   let cond_opt e = if is_true e then None else Some (cond_expr e) in
@@ -827,13 +902,13 @@ let translate_scope (enums : enum_ctx) (functions : (string * I.datatype) list)
 (* pass 1: the invocation signature (name -> result datatype), read from the
    arrow type — a plain-value topdef (a constant, not a function) is refused
    until a case wants it (recorded, §3.5). *)
-let topdef_signatures enums topdefs : (string * I.datatype) list =
+let topdef_signatures enums structs topdefs : (string * I.datatype) list =
   List.map
     (fun (name, (_e, typ, _vis, is_ext)) ->
       if is_ext then refuse "an external top-level definition is not translated";
       let result =
         match M.remove typ with
-        | TArrow (_, r) -> catala_dt enums r
+        | TArrow (_, r) -> catala_dt enums structs r
         | _ ->
             refuse
               "a plain-value top-level definition (a constant, not a function) is refused until a case wants it (recorded)"
@@ -843,9 +918,9 @@ let topdef_signatures enums topdefs : (string * I.datatype) list =
 
 (* pass 2: each function body -> a closed FunctionDef; the body sees only its
    parameters (a refusing scope context enforces the closed-body fence). *)
-let topdef_functions enums functions topdefs : I.function_def list =
+let topdef_functions enums structs functions topdefs : I.function_def list =
   let value_expr, _cond =
-    make_exprs ~enums ~functions
+    make_exprs ~enums ~structs ~functions
       ~read_var:(fun ~operand:_ ~in_body:_ _ ->
         refuse "WF-067: a closed top-level function body may not read a scope variable")
       ~check_var:(fun ~in_body:_ _ ->
@@ -859,7 +934,7 @@ let topdef_functions enums functions topdefs : I.function_def list =
       | EAbs { binder; tys; _ } ->
           let vars, body = Bindlib.unmbind binder in
           let params =
-            List.mapi (fun i v -> (Bindlib.name_of v, catala_dt enums (List.nth tys i)))
+            List.mapi (fun i v -> (Bindlib.name_of v, catala_dt enums structs (List.nth tys i)))
               (Array.to_list vars)
           in
           let env =
@@ -886,31 +961,36 @@ let file_to_document (input : string) : I.document =
   if not (ModuleName.Map.is_empty prog.Sc.program_modules) then
     refuse "imported modules are not supported in the 5a skeleton";
   let enums = prog.Sc.program_ctx.ctx_enums in
+  let structs = prog.Sc.program_ctx.ctx_structs in
   let scopes = ScopeName.Map.bindings prog.Sc.program_scopes in
   if scopes = [] then refuse "no scope declaration found";
   used_enums := EnumName.Set.empty;
+  used_structs := StructName.Set.empty;
   used_optional := None;
-  let functions = topdef_signatures enums prog.Sc.program_topdefs in
+  let functions = topdef_signatures enums structs prog.Sc.program_topdefs in
   let objecttypen = ref [] and regels = ref [] and ladders = ref [] and cons = ref [] in
   List.iter
     (fun (name, decl) ->
-      let ot_name, ot, rs, ls, cs = translate_scope enums functions name (M.remove decl) in
+      let ot_name, ot, rs, ls, cs = translate_scope enums structs functions name (M.remove decl) in
       objecttypen := (ot_name, ot) :: !objecttypen;
       regels := !regels @ rs;
       ladders := !ladders @ ls;
       cons := !cons @ cs)
     scopes;
-  let function_defs = topdef_functions enums functions prog.Sc.program_topdefs in
-  (* the enums actually referenced above become SumType domains, in
-     declaration order (PHASE5B-KERNEL §2.7); the reduce lowering's Optional
-     (built with the concrete element datatype) joins them when used. *)
+  let function_defs = topdef_functions enums structs functions prog.Sc.program_topdefs in
+  (* the enums and structs actually referenced above become SumType/StructType
+     domains, in declaration order (PHASE5B-KERNEL §2.7); the reduce lowering's
+     Optional (built with the concrete element datatype) joins them when used. *)
   let domeinen =
     (match !used_optional with
      | Some elt -> [ (optional_domain, Some (optional_dt elt)) ]
      | None -> [])
     @ List.map
-        (fun name -> (EnumName.base name, Some (sum_type_of enums name)))
+        (fun name -> (EnumName.base name, Some (sum_type_of enums structs name)))
         (EnumName.Set.elements !used_enums)
+    @ List.map
+        (fun name -> (StructName.base name, Some (struct_type_of enums structs name)))
+        (StructName.Set.elements !used_structs)
   in
   { objecttypen = List.rev !objecttypen;
     domeinen; parameters = []; eenheidstelsels = []; feittypen = [];

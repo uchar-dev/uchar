@@ -1,0 +1,579 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Dossierrecht": {
+      "node": "Objecttype",
+      "naam": "Dossierrecht",
+      "attributen": {
+        "dossier": {
+          "node": "StructType",
+          "domain": "Vondstdossier",
+          "fields": [
+            {
+              "name": "waarde",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "telling",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              }
+            }
+          ]
+        },
+        "dossiers": {
+          "node": "ListType",
+          "element": {
+            "node": "StructType",
+            "domain": "Vondstdossier",
+            "fields": [
+              {
+                "name": "waarde",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                }
+              },
+              {
+                "name": "telling",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                }
+              }
+            ]
+          }
+        },
+        "opslag": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "dossierpenning": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "totaalwaarde": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "vondstaantal": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": null
+    }
+  },
+  "domeinen": {
+    "Vondstdossier": {
+      "node": "StructType",
+      "domain": "Vondstdossier",
+      "fields": [
+        {
+          "name": "waarde",
+          "datatype": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          }
+        },
+        {
+          "name": "telling",
+          "datatype": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          }
+        }
+      ]
+    }
+  },
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "berekening dossierpenning",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "dossierpenning",
+        "objecttype": "Dossierrecht",
+        "onderwerpBron": "de dossierpenning",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de dossierpenning",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "PLUS",
+        "links": {
+          "node": "FieldAccess",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "base": {
+            "node": "AttribuutRef",
+            "attribuut": "dossier",
+            "objecttype": "Dossierrecht",
+            "onderwerpBron": "de dossier",
+            "navigatieRol": null,
+            "type": {
+              "node": "StructType",
+              "domain": "Vondstdossier",
+              "fields": [
+                {
+                  "name": "waarde",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "telling",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  }
+                }
+              ]
+            },
+            "bron": "de dossier",
+            "set": false,
+            "navigatiePad": []
+          },
+          "field": "waarde",
+          "bron": null
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "opslag",
+          "objecttype": "Dossierrecht",
+          "onderwerpBron": "de opslag",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de opslag",
+          "set": false,
+          "navigatiePad": []
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": null
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "berekening totaalwaarde",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "totaalwaarde",
+        "objecttype": "Dossierrecht",
+        "onderwerpBron": "de totaalwaarde",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de totaalwaarde",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Fold",
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "list": {
+          "node": "MapList",
+          "type": {
+            "node": "ListType",
+            "element": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          "list": {
+            "node": "AttribuutRef",
+            "attribuut": "dossiers",
+            "objecttype": "Dossierrecht",
+            "onderwerpBron": "de dossiers",
+            "navigatieRol": null,
+            "type": {
+              "node": "ListType",
+              "element": {
+                "node": "StructType",
+                "domain": "Vondstdossier",
+                "fields": [
+                  {
+                    "name": "waarde",
+                    "datatype": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "ONBEPAALD",
+                      "eenheid": null
+                    }
+                  },
+                  {
+                    "name": "telling",
+                    "datatype": {
+                      "node": "Numeriek",
+                      "geheel": true,
+                      "decimalen": 0,
+                      "teken": "ONBEPAALD",
+                      "eenheid": null
+                    }
+                  }
+                ]
+              }
+            },
+            "bron": "de dossiers",
+            "set": false,
+            "navigatiePad": []
+          },
+          "function": {
+            "node": "Lambda",
+            "parameters": [
+              {
+                "name": "d",
+                "datatype": {
+                  "node": "StructType",
+                  "domain": "Vondstdossier",
+                  "fields": [
+                    {
+                      "name": "waarde",
+                      "datatype": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      }
+                    },
+                    {
+                      "name": "telling",
+                      "datatype": {
+                        "node": "Numeriek",
+                        "geheel": true,
+                        "decimalen": 0,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      }
+                    }
+                  ]
+                }
+              }
+            ],
+            "body": {
+              "node": "FieldAccess",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "base": {
+                "node": "BinderRef",
+                "name": "d",
+                "type": {
+                  "node": "StructType",
+                  "domain": "Vondstdossier",
+                  "fields": [
+                    {
+                      "name": "waarde",
+                      "datatype": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      }
+                    },
+                    {
+                      "name": "telling",
+                      "datatype": {
+                        "node": "Numeriek",
+                        "geheel": true,
+                        "decimalen": 0,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      }
+                    }
+                  ]
+                },
+                "bron": "d"
+              },
+              "field": "waarde",
+              "bron": null
+            },
+            "bron": "d"
+          },
+          "bron": null
+        },
+        "function": {
+          "node": "Lambda",
+          "parameters": [
+            {
+              "name": "acc",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "w",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              }
+            }
+          ],
+          "body": {
+            "node": "Binair",
+            "op": "PLUS",
+            "links": {
+              "node": "BinderRef",
+              "name": "acc",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "acc"
+            },
+            "rechts": {
+              "node": "BinderRef",
+              "name": "w",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "w"
+            },
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": null
+          },
+          "bron": null
+        },
+        "init": {
+          "node": "Literal",
+          "waarde": "0.00",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "0.00"
+        },
+        "bron": null
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "berekening vondstaantal",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "vondstaantal",
+        "objecttype": "Dossierrecht",
+        "onderwerpBron": "de vondstaantal",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de vondstaantal",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "FieldAccess",
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "base": {
+          "node": "AttribuutRef",
+          "attribuut": "dossier",
+          "objecttype": "Dossierrecht",
+          "onderwerpBron": "de dossier",
+          "navigatieRol": null,
+          "type": {
+            "node": "StructType",
+            "domain": "Vondstdossier",
+            "fields": [
+              {
+                "name": "waarde",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                }
+              },
+              {
+                "name": "telling",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                }
+              }
+            ]
+          },
+          "bron": "de dossier",
+          "set": false,
+          "navigatiePad": []
+        },
+        "field": "telling",
+        "bron": null
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": [],
+  "defaultLadders": []
+}

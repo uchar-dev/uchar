@@ -1,0 +1,12 @@
+{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "V", "objectType": "Vondstdossier",
+      "attributes": {
+        "dossier": { "struct": { "waarde": { "number": "100.00" }, "telling": { "number": "2" } } },
+        "dossiers": { "list": [] },
+        "opslag": { "number": "5.00" } },
+      "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "V", "attribute": "premie", "value": { "number": "105.00" } },
+    { "kind": "attributeValue", "label": "V", "attribute": "aantal", "value": { "number": "2" } },
+    { "kind": "attributeValue", "label": "V", "attribute": "totaal", "value": { "number": "0.00" } },
+    { "kind": "consistent" } ] }

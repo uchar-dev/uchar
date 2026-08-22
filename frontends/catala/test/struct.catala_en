@@ -1,0 +1,30 @@
+# Struct — record-datatype (row 5c), rechtenvrij eigen auteurschap.
+#
+# Een vondstdossier is een record met een waarde en een telling. Twee
+# constructies die de tutorial ook draait, zonder subscope: veldprojectie
+# (`dossier.waarde` als rekenoperand) en een lijst van records waarover
+# een map-over-veldprojectie plus een som draait. Draait door ref EN
+# clingo (FieldAccess op de struct-attribuutlezing en op de gebonden
+# lijstbinder; StructType als lijstelement, WF-065).
+
+```catala
+declaration structure Vondst:
+  data waarde content money
+  data telling content integer
+
+declaration scope Vondstdossier:
+  input dossier content Vondst
+  input dossiers content list of Vondst
+  input opslag content money
+  output premie content money
+  output aantal content integer
+  output totaal content money
+
+scope Vondstdossier:
+  definition premie equals dossier.waarde + opslag
+  definition aantal equals dossier.telling
+  definition totaal equals
+    combine all w
+      among (map each d among dossiers to d.waarde)
+      in acc initially $0.00 with (acc + w)
+```

@@ -1,0 +1,43 @@
+# Jutterswet, artikelen 7 tot en met 9 — het dossierrecht
+
+Art. 7 (dossierpenning). De jutter die een vondstdossier bijhoudt,
+ontvangt een dossierpenning ter grootte van de in dat dossier vermelde
+waarde, vermeerderd met de vaste opslag.
+
+Art. 8 (totaalwaarde). De totaalwaarde van de dossiers van een jutter is
+de som van de in elk dossier vermelde waarden.
+
+Art. 9 (vondstaantal). Het aantal vondsten van een dossier is de in dat
+dossier vermelde telling.
+
+Modelleringsnotitie: een vondstdossier is een record met twee velden —
+de waarde (in geld) en de telling (het aantal aangemelde vondsten).
+Artikel 7 leest het waardeveld van het aangewezen dossier en telt de
+vaste opslag erbij (een veldprojectie als rekenoperand); artikel 8
+projecteert het waardeveld over de lijst van dossiers en telt die
+projecties op (een som over een map-over-veldprojectie); artikel 9
+leest het tellingveld. De record is als eigen datatype gemodelleerd,
+niet als objecttype — een dossier is een waarde, geen bezielde entiteit.
+Het fragment gebruikt geen subscope.
+
+```catala
+declaration structure Vondstdossier:
+  data waarde content money
+  data telling content integer
+
+declaration scope Dossierrecht:
+  input dossier content Vondstdossier
+  input dossiers content list of Vondstdossier
+  input opslag content money
+  output dossierpenning content money
+  output totaalwaarde content money
+  output vondstaantal content integer
+
+scope Dossierrecht:
+  definition dossierpenning equals dossier.waarde + opslag
+  definition totaalwaarde equals
+    combine all w
+      among (map each d among dossiers to d.waarde)
+      in acc initially $0.00 with (acc + w)
+  definition vondstaantal equals dossier.telling
+```

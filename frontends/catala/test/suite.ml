@@ -100,7 +100,12 @@ let () =
       (* row-10 + row-36: maximum … or if list empty then … — the §3.5 reduce
          lowering (Optional-som, IfThenElse reducer, Fold, extraction Match)
          through the full differential, including the empty-list default *)
-      ("maximum.catala_en", [ "cases/max_drie.json"; "cases/max_leeg.json" ]) ]
+      ("maximum.catala_en", [ "cases/max_drie.json"; "cases/max_leeg.json" ]);
+      (* row-5c structs: a record input, a field projection as an arithmetic
+         operand, and a list of records with map-over-field + fold — the
+         tutorial's struct shape without a subscope, through the full
+         differential (StructType as a list element is WF-065) *)
+      ("struct.catala_en", [ "cases/struct_gevuld.json"; "cases/struct_leeg.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:false src cases) passing;
   (* ref-only passing programs. datum: clingo cannot translate a date literal
@@ -114,10 +119,10 @@ let () =
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:true src cases) passing_ref_only;
   (* refusal programs: source -> expected reason fragment. Besluit 4's four
-     forms plus the empty-operand and literal-false refusals; structs,
-     decimals and lists together carry the boundary proof that the official
-     Catala tutorial (structs, decimals, subscopes, lists) falls outside the
-     5a fragment. *)
+     forms plus the empty-operand and literal-false refusals; decimals and
+     subscopes carry the boundary proof that the official Catala tutorial
+     (decimals, subscopes, let-in, branching exceptions) still falls outside
+     the fragment — structs and lists now land (row 5c/10). *)
   let refusals =
     [ ("refuse_context.catala_en", "context");
       ("refuse_subscope.catala_en", "subscope");
@@ -125,10 +130,10 @@ let () =
       ("refuse_bool_value.catala_en", "value position");
       ("refuse_empty_arith.catala_en", "operand");
       (* row-36 fences: a partial match (WF-063 totality) and a tuple payload
-         (the structs-5c fence) each refuse loudly *)
+         (an n-ary constructor payload — single-payload constructors only)
+         each refuse loudly *)
       ("refuse_partialmatch.catala_en", "total");
       ("refuse_tuple.catala_en", "tuple");
-      ("refuse_struct.catala_en", "struct");
       ("refuse_decimal_type.catala_en", "decimal");
       ("refuse_decimal_literal.catala_en", "decimal");
       (* an if-then-else in a RULE expression stays refused (WF-069: value
