@@ -267,58 +267,51 @@ binder → term); in ref it is `locals`. The alternatives — inlining
 and unrestricted rule-level conditionals (reopens NAF-over-derived-
 atoms and the leeg-divergence class) — are rejected in the question.
 
-## 7. The decisions (numbered; to the maintainer before any spec work merges)
+## 7. The decisions (numbered; ratified by the maintainer 2026-08-22 — all five as recommended)
 
-**Vraag 1 — de struct-representatie.** A: **eigen record-datatype**
+**Vraag 1 — de struct-representatie. Decided (2026-08-22): A — eigen record-datatype**
 (`StructType`/`StructLiteral`/`FieldAccess` + recordwaarde, §2 — het
 SumType/ListType-landingspatroon; no-hole-leegte; nominale identiteit;
 WF-065-verruiming met struct-elementen; acycliciteits-/dieptehek). B:
 lowering op objecttypen — verworpen in §2 om de identiteit/waarde-,
-orde/rol- en fold-familie-mismatches. **Aanbeveling: A.**
+orde/rol- en fold-familie-mismatches.
 
-**Vraag 2 — `Let` en de rule-level-conditional.** A: **strikte
-`Let`-knoop + WF-069-verruiming met de conditie-operand-discipline**
+**Vraag 2 — `Let` en de rule-level-conditional. Decided (2026-08-22): A — strikte `Let`-knoop + WF-069-verruiming met de conditie-operand-discipline**
 (§6 — binders zijn nooit leeg; het differentiaal blijft per
 constructie gesloten). B: pure inlining (geen nieuwe knoop, maar
 dupliceert multi-use-bindingen zoals `deduction`/`tax` en vergroot de
 IR kwadratisch bij ketens). C: onbeperkte rule-level-conditionals
 (heropent de NAF-/leeg-divergentieklasse die 5b juist dichtte).
-**Aanbeveling: A.**
 
-**Vraag 3 — het tutorial-exitdoel.** A: **`tutorial_end_2_3` als de
-exit-getuige** (als frontend-side E2E-fixture — het corpus blijft per
+**Vraag 3 — het tutorial-exitdoel. Decided (2026-08-22): A — `tutorial_end_2_3` als de exit-getuige** (als frontend-side E2E-fixture — het corpus blijft per
 het geratificeerde besluit 2 rechtenvrij) — het bevat élke
 constructiefamilie (structs, decimals, lijsten+folds, subscope-call,
 let-in, vertakkende exceptiebomen), en 2-4's restvormen
 (multi-`state`-variabelen; de subscope-call-per-lijstelement; de
 directe attribuut-guard) worden luide, geïnventariseerde flanken met
-een eigen vervolgkaart. B: volledig 2-4 als doel — dan komt
-per-element-instantiëring (echte nieuwe machinerie) nu op het kritieke
-pad. **Aanbeveling: A.**
+een eigen vervolgkaart. Verworpen: B (volledig 2-4 — per-element-
+instantiëring zou nu op het kritieke pad komen).
 
 **Vraag 4 — de clingo-decimaalschaal** (door de lensronde uit de
-beslissingsvrije lijst gelicht: de onbegrensde vorm is in clingo
-integer-only en de tutorial fault op `tax_rate`). A:
+beslissingsvrije lijst gelicht). **Decided (2026-08-22): A —**
 **decimal-declaraties dragen een gepinde eindige schaal
 `decimalen = S`** (S bij implementatie tegen de tutorial gekozen en
 vastgelegd); ref blijft exact-rationaal; beide executors faulten luid
 en consistent op een waarde die niet op S termineert (refs
 begrensde-schrijf-poort, clingo's bestaande past-niet-hek) — het
-differentiaal geldt overal waar het draait. B: een
-rationale-getallen-encodering in clingo (paar-termen met
-normalisatie) — zwaar, en het raakt elke rekenroute.
-**Aanbeveling: A.**
+differentiaal geldt overal waar het draait. Verworpen: B (een
+rationale-getallen-encodering in clingo — zwaar, raakt elke
+rekenroute).
 
-**Vraag 5 — de geneste-conflictsemantiek** (de tweede door de lenzen
-gevonden verborgen keuze; een verruiming van het getrackte
-rij-8-deviatierecord). A: **een verschillend-beslissende sub-groep
+**Vraag 5 — de geneste-conflictsemantiek** (de tweede lensvondst; een
+verruiming van het getrackte rij-8-deviatierecord). **Decided
+(2026-08-22): A —** **een verschillend-beslissende sub-groep
 propageert naar de root** — geen schrijf, één pad-gesleuteld
 §9.5-feit; uniform met de root-lezing (conflict = geen schrijf) én
 Catala-getrouw (⊛ propageert door de boom) minus de fataliteit die we
-al eerder observeerbaar maakten. B: de sub-groep beslist niets en het
-parent-rung valt door naar zijn eigen consequentie — lokaler, maar het
-wijkt vérder van het paper af en maakt "conflict" op twee niveaus twee
-verschillende dingen. **Aanbeveling: A.**
+al eerder observeerbaar maakten. Verworpen: B (doorvallen naar het
+parent-rung — wijkt vérder van het paper af en maakt "conflict" op
+twee niveaus twee verschillende dingen).
 
 Beslissingsvrij vastgelegd (geen vraag): subscope-calls als lowering
 op de bestaande kernel (creatie + init + genavigeerde read — de al in
