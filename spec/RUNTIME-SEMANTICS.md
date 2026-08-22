@@ -1,7 +1,8 @@
 # uchar IR — Runtime semantics
 
-*Status: ch. 1–5 are normative **draft** (v0 mirror with tracked deltas and
-OPEN decisions); ch. 6–8 are skeleton. This document reads stand-alone
+*Status: ch. 1–9 are normative **draft** (ch. 1–5 the v0 mirror with
+tracked deltas and OPEN decisions; ch. 6–8 drafted; ch. 9 a v1 kernel
+extension with no v0 counterpart — `spec/proposals/PHASE5B-KERNEL.md`). This document reads stand-alone
 (graduated into the self-containedness gate at the Phase-1 exit,
 2026-08-19): behaviour it does not document is undocumented — the
 mirror's provenance (which toolchain, and the repo relation) lives in
@@ -22,7 +23,9 @@ tests verbatim.
 ### 1.1 The value domain
 
 A computed value is one of: an exact rational number (ch. 2.1), a text, a
-boolean, a date (day or millisecond precision), an enumeration value — or
+boolean, a date (day or millisecond precision), an enumeration value, a
+constructor value (ch. 9 — a declared constructor tag with, for a unary
+constructor, one payload value) — or
 **empty** (leeg): the distinguished absence of a value, belonging to no
 datatype. Empty is not zero, not the empty string, not false; every context
 below defines explicitly what it does with an empty operand. (Empty is also
@@ -415,10 +418,11 @@ read(tl, d) = the value of the segment with van ≤ d < tot,  if one exists
   (residual):* v0's
   temporal total distinguishes an absent timeline (leeg result) from a
   present-but-segmentless one (0) — see ch. 3.6.
-- Segment-wise equality — same `van`, same `tot`, numerically equal or
-  both-leeg value — is the change-detection rule for timeline writes (the
-  temporal analogue of the scalar rule in ch. 1.2 Assignment; evaluation
-  model: ch. 5).
+- Segment-wise equality — same `van`, same `tot`, equal-or-both-leeg
+  value (numeric equality for numeric members; ch. 9.3 structural
+  equality for constructor-valued members) — is the change-detection
+  rule for timeline writes (the temporal analogue of the scalar rule in
+  ch. 1.2 Assignment; evaluation model: ch. 5).
 
 ### 3.2 Period grids, buckets, and variable starting points
 
@@ -2195,8 +2199,117 @@ input March segment yields Jan–Feb 12 and nothing else). **Multi-writer
 targets stay fenced** on the ASP side (v0 meaning: agenda order), as do
 versioned targets (selection is temporal, ch. 7.4 — never defeasible).
 
+## 9. Sum types and match
+
+*A v1 kernel extension (CONSTRUCTS row 36; design and ratified decisions:
+`spec/proposals/PHASE5B-KERNEL.md` §2). No v0 counterpart exists — the
+toolchain has no source construct that produces these forms — so this
+chapter mirrors nothing; it is normative from first writing. Node forms
+and well-formedness: IR-SPEC ch. 2.4 (`SumType`) and ch. 4.7
+(`Construct`, `Match`, `BinderRef`), WF-060..064.*
+
+### 9.1 Constructor values
+
+A **constructor value** is a declared constructor tag of a declared sum
+type with, for a unary constructor, exactly one payload value of the
+declared payload datatype. It is *gevuld* by construction, and it
+**never carries a leeg payload**: a `Construct` whose argument evaluates
+leeg propagates — the whole `Construct` evaluates leeg (the ch. 1.3
+strict default; constructing "a grant of nothing" is not expressible,
+exactly as a ladder never writes leeg, ch. 7.1).
+
+Worked (the `jutterswet-beschikkingsom` anchor's declarations —
+`beschikking` = `Toegekend(bedrag: 2 decimals)` | `Afgewezen` |
+`Aangehouden`):
+
+- `Construct Toegekend(1250.50)` → the value `Toegekend(1250.50)`.
+- `Construct Toegekend(x)` with `x` leeg → leeg.
+- `Construct Afgewezen` → the value `Afgewezen` (nullary; gevuld).
+
+### 9.2 Match
+
+`Match(scrutinee, arms)` — the arms cover the declared constructors
+exactly (WF-063: compile-time totality; a runtime "no arm" state is
+unreachable on well-formed input):
+
+1. Evaluate the scrutinee. **If it is leeg, the match evaluates leeg**
+   — propagation, the ch. 1.3 default. There is no implicit leeg-arm
+   and no coalesce to a default constructor (an explicit leeg-arm is a
+   recorded non-goal; it would be a new three-valued form).
+2. Otherwise the scrutinee is a constructor value; evaluate the unique
+   arm for its tag, with the arm's binder (unary arms) bound to the
+   payload value. The match's value is that body's value. A `BinderRef`
+   reads the nearest enclosing binder of its name (WF-064); the binding
+   is lexical and per-evaluation, never stored.
+
+Worked (the anchor's rule — `uitkering` := match `beschikking`:
+`Toegekend(bedrag)` → `bedrag` + parameter `vaste voet` (25.00);
+`Afgewezen` → 0.00; `Aangehouden` → 12.00):
+
+- `beschikking` = `Toegekend(1250.50)` → `uitkering` = **1275.50**.
+- `beschikking` = `Afgewezen` → `uitkering` = **0.00**.
+- `beschikking` = `Aangehouden` → `uitkering` = **12.00**.
+- `beschikking` leeg → `uitkering` **leeg** (nothing is written; on a
+  bare single-writer target the ch. 7.8 standing norm applies
+  unchanged).
+
+The body's own operators keep their ordinary ch. 1–2 discipline; the
+match adds no empty policy of its own beyond step 1.
+
+### 9.3 Equality — structural and nominal
+
+Two constructor values are compared only when their static types name
+the same declaring sum-type domain (WF-061 — the nominal rule;
+cross-sum-type comparison is ill-formed, never false). Then:
+
+- **equal** iff the tags are equal and, for unary tags, the payloads
+  are equal under the ordinary value equality of their payload
+  datatype;
+- constructor values are **non-numeric** for the ch. 1.2 comparison
+  discipline: **any leeg operand makes both `=` and `≠` false** (the
+  Tabel 38 rule — deliberately not complements over leeg; the numeric
+  both-empty asymmetry does *not* apply);
+- constructor values are not orderable: `<`/`>` over a sum type is a
+  typing fault, as for text and enumeration values.
+
+Structural equality is the equality used by the three consumers that
+need one: idempotent writes (ch. 5.1), timeline segment
+change-detection (ch. 3.1, as amended), and the ladder's
+equal-decisions-are-no-conflict rule (ch. 7.5) — two rungs both
+deciding `Toegekend(1250.50)` are equal decisions, not a conflict.
+
+Worked (the anchor's condition rules — `bevoorschot` iff `beschikking`
+= `Aangehouden`; `afgehandeld` iff `beschikking` ≠ `Aangehouden`):
+
+- `beschikking` = `Aangehouden` → `bevoorschot` waar, `afgehandeld`
+  onwaar.
+- `beschikking` = `Toegekend(1250.50)` → `bevoorschot` onwaar,
+  `afgehandeld` waar (different tag).
+- `beschikking` leeg → **both onwaar** (the both-directions-false
+  corner, pinned absolutely in the anchor's case 4).
+
+### 9.4 Carriage, ladders, timelines
+
+- **Ladders and standing.** A sum-typed attribute target changes no
+  ladder semantics: the decide-test stays gevuld/leeg and never
+  inspects the tag (ch. 7.1); a rung wanting "decide only for
+  constructor X" puts a match or a ch. 9.3 equality in its
+  justification. The ch. 7.8 standing norm carries over unchanged.
+- **Case carriage.** Constructor values ride the case format's value
+  union (input attributes, parameters, expectations); the loaders
+  fail fast on an undeclared constructor or a payload against the
+  wrong datatype (the WF-059/WF-018 backstop, widened).
+- **Timelines — recorded flank, not yet carried.** The value model
+  admits a sum-typed temporal attribute and the case format can write
+  one; no anchor exercises it, and the ASP case emission does not yet
+  carry constructor-valued segments (it faults loudly). Until a case
+  wants one, temporal sum carriage is a recorded OPEN in the ASP
+  inventory — never a silent divergence. Timeline *arithmetic* and
+  temporal totals stay numeric-only regardless (ch. 3.4–3.6), as for
+  text and enumeration members.
+
 ## Chapters (planned)
 
-*(none — chapters 1–8 are drafted and ch. 7 is complete: both target
-kinds, the unordered group, the v0 desugaring, and the ch. 7.8
-standing norm are landed; the conflict fact is closed for v1)*
+*(none — chapters 1–9 are drafted; ch. 7 is complete, and ch. 9 carries
+the row-36 kernel extension. The row-10 fold kernel lands as ch. 10 with
+its card — `spec/proposals/PHASE5B-KERNEL.md` §3.)*

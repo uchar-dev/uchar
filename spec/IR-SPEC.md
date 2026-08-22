@@ -51,7 +51,10 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   (ch. 4.1a — the navigation hops), `scopeRol` on the scoped uniqueness
   (ch. 3.6, WF-054); current extension nodes and
   forms: `TemporalRead` (ch. 4.3a), the `defaultLadders` list
-  (ch. 6.1). **First pin bump (2026-08-17, toolchain `edecb46`):** the
+  (ch. 6.1), and the sum-type family — the `SumType` datatype
+  (ch. 2.4) with the `Construct`/`Match`/`BinderRef` expression nodes
+  (ch. 4.7), a v1 kernel extension the emitter never produces
+  (`spec/proposals/PHASE5B-KERNEL.md`). **First pin bump (2026-08-17, toolchain `edecb46`):** the
   emitter produces `verbindendeRol` and `bronRol` where uniquely
   derivable from declared names (absent otherwise — never null, never a
   guessed plural); the emitter goldens carry them since that pin. **Second pin
@@ -288,7 +291,7 @@ A named, reusable datatype.
 | Field | Type | Meaning |
 |---|---|---|
 | `name` | string | declared name |
-| `datatype` | Datatype | an Enumeration for a value-list domain, else a base datatype |
+| `datatype` | Datatype | an Enumeration for a value-list domain, a SumType for a variant domain (extension, ch. 2.4), else a base datatype |
 
 v0 name: `domeinen` registry entry.
 
@@ -307,6 +310,7 @@ A closed sum. v1 variants:
 | `Boolean` | — | equality only |
 | `Date` | `precision: day \| millisecond` | orderable; `precision` is deliberately not called granularity — that term is reserved for the five-value timeline set |
 | `Enumeration` | `domain: string`, `values: list of string` | `domain` is a resolvable reference to a declared Domain (WF-003), not a free string — this satisfies the "real reference, not a name string" delta of `CONSTRUCTS.md` ch. 2.4 |
+| `SumType` | `domain: string`, `constructors: list of {name, payload: Datatype?}` | **extension node** (Method; wire node `SumType`, never emitter-produced): the payload-carrying variant family, CONSTRUCTS row 36 — see the SumType clause below |
 
 `sign` ∈ {`unspecified`, `negative`, `nonNegative`, `positive`} (v0
 `Teken`).
@@ -326,10 +330,37 @@ false`, `decimals = 0` (no precision ceiling; §13.3.3 form (c)). The
   *use-time* rule recorded with the type it governs; its verifier check
   belongs to the expression layer — forward reference, **OPEN**.
 
-Orderability: `Number` and `Date` are orderable; `Text`, `Boolean`, and
-`Enumeration` are equality-only. This is deliberate (an ordered use of a
-non-orderable type is a rule-layer WF violation, specified with that
-layer).
+Orderability: `Number` and `Date` are orderable; `Text`, `Boolean`,
+`Enumeration`, and `SumType` are equality-only. This is deliberate (an
+ordered use of a non-orderable type is a rule-layer WF violation,
+specified with that layer).
+
+**SumType (extension; CONSTRUCTS row 36, design
+`spec/proposals/PHASE5B-KERNEL.md` §2).** A declared, nominal variant
+family: each constructor carries a `name` and either no payload
+(`payload` absent — nullary) or exactly one payload datatype (unary;
+the ratified single-payload decision — n-ary payloads are the 5c
+struct territory and are ill-formed here). A `SumType` is declared as a
+domain (ch. 2.3) and repeated whole at every use site, exactly as
+`Enumeration` repeats `values`. It is a different family from
+`Enumeration`, which stays the payload-less v0 mirror form; the two
+never convert.
+
+- **WF-060** A `SumType` declaration MUST carry at least one
+  constructor; constructor names MUST be unique (ci) within the
+  declaration; every payload datatype MUST be one of `Number`,
+  day-precision `Date`, or a declared `SumType` (text, boolean,
+  enumeration, millisecond-date and nested-sum-beyond-declared payloads
+  are ill-formed — the admissible set is a recorded v1 fence, loudly
+  extensible); and the declaration graph over sum-type payloads MUST be
+  acyclic (no recursive sum types — Catala has none, and acyclicity is
+  what statically bounds constructor-term depth for the ASP encoding).
+- **WF-061** A `SumType` use site MUST name a declared domain whose
+  datatype is a `SumType` that agrees with the use site (same
+  constructors, same payload datatypes, same order); and two sum-typed
+  operands of one comparison MUST name the same declaring domain — the
+  nominal-identity rule, the sum-type sibling of WF-008 (which stays
+  stated over `Enumeration` and keeps its own OPEN).
 
 **Deltas (tracked, `CONSTRUCTS.md` row 27):**
 
@@ -1316,6 +1347,34 @@ Comparison, Predicate, and CharacteristicCheck only —
   strata MUST exist (`RUNTIME-SEMANTICS.md` ch. 6.3). v0's single
   agenda boundary is the two-stratum special case.
 
+### 4.7 Sum-type expressions — Construct, Match, BinderRef
+
+`layer: core`; **extension nodes** per the Method (wire nodes
+`Construct`, `Match`, `BinderRef` — never emitter-produced; CONSTRUCTS
+row 36; semantics `RUNTIME-SEMANTICS.md` ch. 9; design and ratified
+decisions `spec/proposals/PHASE5B-KERNEL.md` §2).
+
+| Node | Fields | Notes |
+|---|---|---|
+| Construct | `type` (the SumType), `constructor`, `argument?` (expr), `source` | builds a constructor value; a leeg argument propagates (the whole node evaluates leeg — a constructor value never carries a leeg payload) |
+| Match | `type` (the result datatype), `scrutinee` (expr), `arms`, `source` | each arm: `{constructor, binder: string \| null, body: expr}`; evaluation `RUNTIME-SEMANTICS.md` ch. 9.2 — a leeg scrutinee propagates, no implicit leeg-arm |
+| BinderRef | `name`, `type`, `source` | reads the nearest enclosing binder (a unary match arm's `binder`; the row-10 card adds lambda and function parameters). Deliberately distinct from `VariabeleRef`, which stays the rule-local let-binding of row 24 with its unserialized definitions and its motivated OPEN — the two roles never share a node |
+
+There are no wildcards: the arms enumerate the declared constructors
+literally (a wildcard would make totality a runtime property again).
+
+- **WF-062** A `Construct` MUST name a declared constructor of its
+  `SumType`; the `argument` MUST be present iff the constructor is
+  unary, and its static type MUST match the declared payload datatype.
+- **WF-063** A `Match` scrutinee MUST be sum-typed, and the arms MUST
+  cover exactly the declared constructors of that sum type — each
+  exactly once, none missing, none alien; an arm MUST carry a `binder`
+  iff its constructor is unary.
+- **WF-064** Every `BinderRef` MUST resolve to an enclosing binder of
+  its name, and all arm bodies of a `Match` MUST agree on one result
+  datatype — the `Match`'s own `type`. (This rule governs the new
+  binder forms only; a `VariabeleRef` remains outside it, row 24.)
+
 ---
 
 ## 6. Defaults and defeasibility
@@ -1476,6 +1535,11 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-057 | declared names are target-text-safe: no double quote, backslash or control character in any declared/form name (ch. 2.1) | gate 3 | every golden (a universal name-safety property: no single legal name exercises the boundary more than another; gate 3 witnesses none over-rejects) | `wf057-quote-in-attribute` + `wf057-backslash-in-kenmerk` + `wf057-newline-in-rule-name` |
 | WF-058 | the day count (aantal-dagen-in, `RUNTIME-SEMANTICS.md` ch. 3.8) MUST carry a gedurende condition over an own temporal characteristic, takes no arguments, and its stated bucket MUST equal the target's declared granularity | gate 3 | `anchor/jutterswet-dagentelling` (the ch. 3.8 worked example verbatim, executed by gates 5–6) | `wf058-no-gedurende-condition` + `wf058-bucket-target-mismatch` + `wf058-with-argument` |
 | WF-059 | every declared attribute carries a datatype (ch. 2.2 — the attribute pendant of WF-018's datatype clause; a null datatype splits the executors on otherwise clean input) | gate 3 | every golden (a universal declaration property; gate 3 witnesses none over-rejects) | `wf059-attribute-without-datatype` |
+| WF-060 | SumType declaration: ≥ 1 constructor, unique names (ci), admissible payload datatypes (Number, day-precision Date, declared SumType), acyclic payload graph (ch. 2.4) | gate 3 | `anchor/jutterswet-beschikkingsom` (executed by gates 5–6) | `wf060-duplicate-constructor` + `wf060-text-payload` + `wf060-recursive-sumtype` |
+| WF-061 | SumType use site agrees with its declaring domain; two sum-typed comparison operands name the same domain (the nominal rule, ch. 2.4) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf061-use-site-drift` + `wf061-cross-sumtype-equality` |
+| WF-062 | Construct: declared constructor; argument present iff unary; argument type matches the declared payload (ch. 4.7) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf062-nullary-with-argument` + `wf062-payload-type-mismatch` |
+| WF-063 | Match totality: sum-typed scrutinee; arms cover the declared constructors exactly, each once; binder iff unary (ch. 4.7) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf063-missing-arm` + `wf063-alien-constructor` + `wf063-binder-on-nullary` |
+| WF-064 | every BinderRef resolves to an enclosing binder; match arm bodies agree on one result datatype (ch. 4.7; VariabeleRef stays outside — row 24) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf064-unbound-binderref` + `wf064-mixed-arm-types` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is
