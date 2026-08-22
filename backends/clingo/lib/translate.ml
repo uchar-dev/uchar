@@ -486,7 +486,7 @@ let struct_type_of_datatype = function
    A struct always declares at least one field (WF-071), so the term is never
    the bare functor (no collision with a nullary constructor). A nested struct
    or sum field VALUE has no integer encoding here and no corpus case — it
-   faults (S17), the nested-sum-payload fence's sibling. *)
+   faults (S18), the nested-sum-payload fence's sibling. *)
 let struct_value_term (domein, velden) (fs : (string * Value.t) list) : string =
   let f = ctor_functor domein in
   let arg (fname, fdt) =
@@ -1136,7 +1136,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* the I-1/I recurrence needs contiguous positions: a FilterList anywhere
          in the source chain (also under an index-preserving MapList) leaves
          index gaps the recursion would silently stall on, so it is refused
-         loudly here (S17) rather than deriving nothing. ListLength over a
+         loudly here (S18) rather than deriving nothing. ListLength over a
          filter stays fine — #count tolerates the gaps. *)
       let rec no_filter_source e =
         match e with
@@ -1752,7 +1752,7 @@ and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
       emit ctx "lpres(%s) :- lpres(%s)." fltid inner;
       (fltid, inner_es)
   | List_literal _ ->
-      fault "a ListLiteral list source is not translated (no corpus case; S17 inventory)"
+      fault "a ListLiteral list source is not translated (no corpus case; S18 inventory)"
   | Fold _ -> fault "a Fold is a scalar, not a list source"
   | _ ->
       fault
@@ -2492,18 +2492,172 @@ let translate_feit_creatie ctx (fc : resolved_feit_creatie) =
   to_one_guard doel_rol anker;
   to_one_guard anker_rol (req "FeitCreatie.doel" fc.fc_doel)
 
-(* the ladder group (RUNTIME-SEMANTICS ch. 7, IR-SPEC ch. 6.1): the
-   ch. 7.5 decides_m lowering per member — decides predicates per rung,
-   an outcome predicate per member (highest deciding rung wins via
-   `not decides_m` guards; on an attribute ladder the consequence
-   bindings sit inside decides, so a leeg consequence is underivable —
-   the gevuld gate for free) — and the ch. 7.2 group layer on top: a
-   pairwise conflict rule, outcome heads and the defeasible input both
-   guarded on the conflict, and the conflict deposited as
-   inconsistent/2 keyed by the target form. A singleton group elides
-   the conflict machinery. Sound NAF because WF-051 makes displacement
-   edges negative (the verifier remains the guard that a document is
-   clingo-suitable). *)
+(* the ladder group (RUNTIME-SEMANTICS ch. 7.1/7.2/7.9, IR-SPEC ch. 6.1;
+   ASP-TRANSLATION S17): the ch. 7.5 decides_m lowering generalised into a
+   recursive rose tree (ch. 7.9). A CHAIN — a rung list, a top-level member or a sub-ladder —
+   lowers to an outcome predicate `T_out(S,V)` (the highest settling rung's
+   decision: the 0/1 besluit on a characteristic ladder, the scaled
+   consequence term on an attribute ladder) and a conflict flag `T_cfl(S)`
+   (the highest settling rung's sub-group conflict, propagated upward). A
+   GROUP — a rung's exception sub-group, or the root member set —
+   reconciles its member chains exactly as ch. 7.2 reconciles the root:
+   differing decisions derive a path-keyed inconsistent/2 and suppress the
+   clean decision, and a member conflict propagates before differing
+   decisions are read (conflict-first). A rung SETTLES the walk when it
+   decides or conflicts; higher settling rungs displace lower ones by
+   `not T_stl_m` — the flat encoding's displacement, now carrying conflicts
+   too (a higher deciding rung displaces a lower rung's sub-group conflict,
+   vraag 5-A). A differing sub-group therefore propagates one conflict atom
+   to the root, which suppresses EVERY write on the target (the `not
+   grpG_conflict` guard) and leaves the case input standing, while its own
+   group deposits the sole §9.5 fact under its rung-index path key. Every
+   negation points strictly down the tree or at strictly-higher rungs
+   (disjoint subtrees) — no conflict atom depends on the write it guards,
+   so the program stays stratified and clingo keeps its one stable model.
+   Sound NAF because WF-051 folds every descendant read into a negative
+   edge toward the root target (the verifier remains the clingo-suitability
+   guard). *)
+let path_key target_form = function
+  | [] -> target_form
+  | path -> target_form ^ "/" ^ String.concat "/" (List.map string_of_int path)
+
+let rec translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path ~root
+    ~target_form ~target_scale ~has_input (rungs : rung list) : string * string =
+  let tag = fresh ctx "nl" in
+  let out = Printf.sprintf "%s_out" tag in
+  let cfl = Printf.sprintf "%s_cfl" tag in
+  (* a flat chain never conflicts, so [cfl] may carry no rule — declare it so
+     the root/parent's `not cfl` reference raises no undefined-atom warning *)
+  emit ctx "#defined %s/1." cfl;
+  let stl n = Printf.sprintf "%s_stl%d" tag n in
+  let dec n = Printf.sprintf "%s_dec%d" tag n in
+  let conf n = Printf.sprintf "%s_conf%d" tag n in
+  let own_just (r : rung) =
+    if r.rung_initialisatie then (
+      if not root then
+        fault "an initialisation rung inside a sub-ladder is ill-formed (WF-075)";
+      match has_input with
+      | Some hi -> [ Printf.sprintf "not %s(%s)" hi subject ]
+      | None -> fault "initialisation rung on a characteristic ladder")
+    else cond_atoms ctx ~subject ~subject_ot (req "rung justification" r.rung_voorwaarde)
+  in
+  (* a rung's OWN decision (a plain rung, an init rung, or a form-a
+     fall-back): on the attribute arm the consequence bindings sit in the
+     body, so a leeg consequence leaves the decision underivable — the
+     fall-through gate for free; [extra] carries the `not U_any` guard that
+     restricts a form-a fall-back to an undecided sub-group (ch. 7.9) *)
+  let emit_own_dec n (r : rung) ~extra =
+    if is_char then
+      let b = if req "rung besluit" r.rung_besluit then 1 else 0 in
+      head_body ctx (Printf.sprintf "%s(%s,%d)" (dec n) subject b)
+        ((base :: own_just r) @ extra)
+    else
+      let bindings, term, scale =
+        expr_term ctx ~subject ~subject_ot (req "rung consequentie" r.rung_consequentie)
+      in
+      if scale <> target_scale then
+        fault "rung value scale %d does not match target scale %d" scale target_scale;
+      head_body ctx (Printf.sprintf "%s(%s,%s)" (dec n) subject term)
+        ((base :: own_just r) @ bindings @ extra)
+  in
+  List.iteri
+    (fun n (r : rung) ->
+      (match r.rung_excepties with
+      | None -> emit_own_dec n r ~extra:[]
+      | Some sg ->
+          let u_out, u_cfl, u_any =
+            translate_group ctx ~is_char ~subject ~subject_ot ~base
+              ~group_path:(path @ [ n ]) ~target_form ~target_scale ~has_input sg
+          in
+          (* the sub-group goes first: adopt its clean decision, propagate its
+             conflict; the own justification/consequence is the fall-back only
+             when the sub-group decides nothing (ch. 7.9) *)
+          head_body ctx (Printf.sprintf "%s(%s,V)" (dec n) subject)
+            [ Printf.sprintf "%s(%s,V)" u_out subject ];
+          head_body ctx (Printf.sprintf "%s(%s)" (conf n) subject)
+            [ Printf.sprintf "%s(%s)" u_cfl subject ];
+          let has_own =
+            if is_char then r.rung_besluit <> None else r.rung_consequentie <> None
+          in
+          if has_own then
+            emit_own_dec n r ~extra:[ Printf.sprintf "not %s(%s)" u_any subject ]);
+      head_body ctx (Printf.sprintf "%s(%s)" (stl n) subject)
+        [ Printf.sprintf "%s(%s,_)" (dec n) subject ];
+      if r.rung_excepties <> None then
+        head_body ctx (Printf.sprintf "%s(%s)" (stl n) subject)
+          [ Printf.sprintf "%s(%s)" (conf n) subject ])
+    rungs;
+  (* the chain outcome: the highest settling rung wins — lower rungs are
+     displaced by `not stl_m` for every strictly-higher m *)
+  List.iteri
+    (fun n (r : rung) ->
+      let displaced = List.init n (fun m -> Printf.sprintf "not %s(%s)" (stl m) subject) in
+      head_body ctx (Printf.sprintf "%s(%s,V)" out subject)
+        (Printf.sprintf "%s(%s,V)" (dec n) subject :: displaced);
+      if r.rung_excepties <> None then
+        head_body ctx (Printf.sprintf "%s(%s)" cfl subject)
+          (Printf.sprintf "%s(%s)" (conf n) subject :: displaced))
+    rungs;
+  (out, cfl)
+
+and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
+    ~target_form ~target_scale ~has_input (sg : sub_group) : string * string * string =
+  let tag = fresh ctx "ng" in
+  let out = Printf.sprintf "%s_out" tag in
+  let cfl = Printf.sprintf "%s_cfl" tag in
+  let diff = Printf.sprintf "%s_diff" tag in
+  let any = Printf.sprintf "%s_any" tag in
+  (* a single-member group has no differing pair, so [diff] may carry no
+     rule — declare it against the `cfl :- diff` / inconsistent references *)
+  emit ctx "#defined %s/1." diff;
+  let members =
+    List.map
+      (fun (sl : sub_ladder) ->
+        translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path:group_path
+          ~root:false ~target_form ~target_scale ~has_input sl.sl_rungs)
+      sg.sg_leden
+  in
+  let no_member_cfl =
+    List.map (fun (_, mc) -> Printf.sprintf "not %s(%s)" mc subject) members
+  in
+  (* differing member decisions are a conflict at THIS group, keyed by the
+     group's rung-index path — unless a member itself conflicts, whose deeper
+     key propagates instead (conflict-first, ch. 7.9) *)
+  List.iteri
+    (fun i (oi, _) ->
+      List.iteri
+        (fun j (oj, _) ->
+          if i < j then
+            head_body ctx (Printf.sprintf "%s(%s)" diff subject)
+              ([ Printf.sprintf "%s(%s,X)" oi subject;
+                 Printf.sprintf "%s(%s,Y)" oj subject; "X != Y" ]
+              @ no_member_cfl))
+        members)
+    members;
+  List.iter
+    (fun (_, mc) ->
+      head_body ctx (Printf.sprintf "%s(%s)" cfl subject)
+        [ Printf.sprintf "%s(%s)" mc subject ])
+    members;
+  head_body ctx (Printf.sprintf "%s(%s)" cfl subject)
+    [ Printf.sprintf "%s(%s)" diff subject ];
+  (* the clean group decision (equal decisions collapse to one, differing are
+     suppressed by the conflict); [any] = decided-or-conflicted, the fall-back
+     gate of a form-a parent rung *)
+  List.iter
+    (fun (om, _) ->
+      head_body ctx (Printf.sprintf "%s(%s,V)" out subject)
+        [ Printf.sprintf "%s(%s,V)" om subject; Printf.sprintf "not %s(%s)" cfl subject ])
+    members;
+  head_body ctx (Printf.sprintf "%s(%s)" any subject)
+    [ Printf.sprintf "%s(%s,_)" out subject ];
+  head_body ctx (Printf.sprintf "%s(%s)" any subject)
+    [ Printf.sprintf "%s(%s)" cfl subject ];
+  head_body ctx
+    (Printf.sprintf "inconsistent(%s,%s)" (str (path_key target_form group_path)) subject)
+    [ Printf.sprintf "%s(%s)" diff subject ];
+  (out, cfl, any)
+
 let translate_ladder_group ctx gidx (members : (int * default_ladder) list) =
   let _, l0 = List.hd members in
   List.iter
@@ -2515,116 +2669,90 @@ let translate_ladder_group ctx gidx (members : (int * default_ladder) list) =
     members;
   let subject = "S" in
   let base = Printf.sprintf "is_a(%s,%s)" subject (str l0.dl_onderwerp) in
-  let d i n = Printf.sprintf "dl%d_decides_%d(%s)" i n subject in
-  let conflict = Printf.sprintf "grp%d_conflict(%s)" gidx subject in
-  let singleton = List.length members = 1 in
-  let conflict_guard = if singleton then [] else [ "not " ^ conflict ] in
-  let target_form tn = l0.dl_onderwerp ^ "." ^ tn in
-  match (l0.dl_kenmerk, l0.dl_attribuut) with
-  | Some k, None ->
-      let dec i = Printf.sprintf "dl%d_dec" i in
-      List.iter
-        (fun ((i, l) : int * default_ladder) ->
+  let is_char, target_name =
+    match (l0.dl_kenmerk, l0.dl_attribuut) with
+    | Some k, None -> (true, k)
+    | None, Some a -> (false, a)
+    | _ -> fault "a ladder targets exactly one of a characteristic or an attribute"
+  in
+  let target_form = l0.dl_onderwerp ^ "." ^ target_name in
+  (* the attribute arm's input scaffolding: the target scale, and the input
+     predicate the initialisation rung and the defeasible-input rule read *)
+  let target_scale, has_input =
+    if is_char then (0, None)
+    else begin
+      let hi = Printf.sprintf "grp%d_has_input" gidx in
+      head_body ctx (Printf.sprintf "%s(%s)" hi subject)
+        [ base; Printf.sprintf "inputval(%s,%s,_)" subject (str target_name) ];
+      (pow10 (attr_decimals ctx ~otype:l0.dl_onderwerp ~attr:target_name), Some hi)
+    end
+  in
+  (* each top-level member is a chain reconciled at the root path [] *)
+  let member_info =
+    List.map
+      (fun ((_, l) : int * default_ladder) ->
+        let out, cfl =
+          translate_chain ctx ~is_char ~subject ~subject_ot:l.dl_onderwerp ~base ~path:[]
+            ~root:true ~target_form ~target_scale ~has_input l.rungs
+        in
+        (out, cfl, List.exists (fun (r : rung) -> r.rung_excepties <> None) l.rungs))
+      members
+  in
+  (* the root group (ch. 7.2): differing member decisions and any propagated
+     sub-group conflict block every write; a differing ROOT decision deposits
+     the bare-keyed §9.5 fact. A conflict is possible only with ≥2 members or
+     nested excepties — otherwise the guard is absent (the flat singleton). *)
+  let nested = List.exists (fun (_, _, c) -> c) member_info in
+  let conflict_possible = List.length members >= 2 || nested in
+  let root_cfl = Printf.sprintf "grp%d_conflict(%s)" gidx subject in
+  let root_diff = Printf.sprintf "grp%d_diff(%s)" gidx subject in
+  if conflict_possible then begin
+    (* propagate a member (sub-group) conflict up to the root *)
+    List.iter
+      (fun (_, cfl, can) ->
+        if can then head_body ctx root_cfl [ Printf.sprintf "%s(%s)" cfl subject ])
+      member_info;
+    if List.length members >= 2 then begin
+      let no_member_cfl =
+        List.map (fun (_, cfl, _) -> Printf.sprintf "not %s(%s)" cfl subject) member_info
+      in
+      List.iteri
+        (fun i (oi, _, _) ->
           List.iteri
-            (fun n (r : rung) ->
-              let atoms =
-                cond_atoms ctx ~subject ~subject_ot:l.dl_onderwerp
-                  (req "rung justification" r.rung_voorwaarde)
-              in
-              head_body ctx (d i n) (base :: atoms);
-              let b = if req "rung besluit" r.rung_besluit then 1 else 0 in
-              let displaced = List.init n (fun m -> "not " ^ d i m) in
-              head_body ctx
-                (Printf.sprintf "%s(%s,%d)" (dec i) subject b)
-                ((d i n :: displaced) @ [ base ]))
-            l.rungs)
-        members;
-      if not singleton then begin
-        List.iter
-          (fun ((i, _) : int * default_ladder) ->
-            List.iter
-              (fun ((j, _) : int * default_ladder) ->
-                if i < j then
-                  head_body ctx conflict
-                    [ Printf.sprintf "%s(%s,X)" (dec i) subject;
-                      Printf.sprintf "%s(%s,Y)" (dec j) subject; "X != Y" ])
-              members)
-          members;
-        head_body ctx
-          (Printf.sprintf "inconsistent(%s,%s)" (str (target_form k)) subject)
-          [ conflict ]
-      end;
-      List.iter
-        (fun ((i, l) : int * default_ladder) ->
-          (* only members with an attribute-true rung can derive the
-             characteristic — eliding the head keeps clingo info-clean *)
-          if List.exists (fun (r : rung) -> req "rung besluit" r.rung_besluit) l.rungs then
-            head_body ctx
-              (Printf.sprintf "heeft(%s,%s)" subject (str k))
-              ((Printf.sprintf "%s(%s,1)" (dec i) subject :: conflict_guard) @ [ base ]))
-        members
-  | None, Some a ->
-      let out i = Printf.sprintf "dl%d_out" i in
-      let target_scale = pow10 (attr_decimals ctx ~otype:l0.dl_onderwerp ~attr:a) in
-      let has_input = Printf.sprintf "grp%d_has_input(%s)" gidx subject in
-      head_body ctx has_input [ base; Printf.sprintf "inputval(%s,%s,_)" subject (str a) ];
-      List.iter
-        (fun ((i, l) : int * default_ladder) ->
-          let rung_cond (r : rung) =
-            if r.rung_initialisatie then [ "not " ^ has_input ]
-            else
-              cond_atoms ctx ~subject ~subject_ot:l.dl_onderwerp
-                (req "rung justification" r.rung_voorwaarde)
-          in
-          List.iteri
-            (fun n (r : rung) ->
-              let conseq = req "rung consequentie" r.rung_consequentie in
-              let bindings, _, scale =
-                expr_term ctx ~subject ~subject_ot:l.dl_onderwerp conseq
-              in
-              if scale <> target_scale then
-                fault "rung value scale %d does not match target scale %d for %S" scale
-                  target_scale a;
-              head_body ctx (d i n) ((base :: rung_cond r) @ bindings);
-              let bindings2, term2, _ =
-                expr_term ctx ~subject ~subject_ot:l.dl_onderwerp conseq
-              in
-              let displaced = List.init n (fun m -> "not " ^ d i m) in
-              head_body ctx
-                (Printf.sprintf "%s(%s,%s)" (out i) subject term2)
-                ((base :: rung_cond r) @ bindings2 @ displaced))
-            l.rungs)
-        members;
-      if not singleton then begin
-        List.iter
-          (fun ((i, _) : int * default_ladder) ->
-            List.iter
-              (fun ((j, _) : int * default_ladder) ->
-                if i < j then
-                  head_body ctx conflict
-                    [ Printf.sprintf "%s(%s,X)" (out i) subject;
-                      Printf.sprintf "%s(%s,Y)" (out j) subject; "X != Y" ])
-              members)
-          members;
-        head_body ctx
-          (Printf.sprintf "inconsistent(%s,%s)" (str (target_form a)) subject)
-          [ conflict ]
-      end;
-      let eff = Printf.sprintf "grp%d_eff(%s)" gidx subject in
-      List.iter
-        (fun ((i, _) : int * default_ladder) ->
-          head_body ctx
-            (Printf.sprintf "val(%s,%s,V)" subject (str a))
-            ((Printf.sprintf "%s(%s,V)" (out i) subject :: conflict_guard) @ [ base ]);
-          head_body ctx eff
-            ((Printf.sprintf "%s(%s,_)" (out i) subject :: conflict_guard) @ [ base ]))
-        members;
-      (* the defeasible input: the case value stands unless the group
-         effectively writes (a conflicting group leaves it standing) *)
-      head_body ctx
-        (Printf.sprintf "val(%s,%s,V)" subject (str a))
-        [ Printf.sprintf "inputval(%s,%s,V)" subject (str a); base; "not " ^ eff ]
-  | _ -> fault "a ladder targets exactly one of a characteristic or an attribute"
+            (fun j (oj, _, _) ->
+              if i < j then
+                head_body ctx root_diff
+                  ([ Printf.sprintf "%s(%s,X)" oi subject;
+                     Printf.sprintf "%s(%s,Y)" oj subject; "X != Y" ]
+                  @ no_member_cfl))
+            member_info)
+        member_info;
+      head_body ctx root_cfl [ root_diff ];
+      head_body ctx (Printf.sprintf "inconsistent(%s,%s)" (str target_form) subject)
+        [ root_diff ]
+    end
+  end;
+  let conflict_guard = if conflict_possible then [ "not " ^ root_cfl ] else [] in
+  if is_char then
+    List.iter
+      (fun (out, _, _) ->
+        head_body ctx (Printf.sprintf "heeft(%s,%s)" subject (str target_name))
+          ((Printf.sprintf "%s(%s,1)" out subject :: conflict_guard) @ [ base ]))
+      member_info
+  else begin
+    let eff = Printf.sprintf "grp%d_eff(%s)" gidx subject in
+    List.iter
+      (fun (out, _, _) ->
+        head_body ctx (Printf.sprintf "val(%s,%s,V)" subject (str target_name))
+          ((Printf.sprintf "%s(%s,V)" out subject :: conflict_guard) @ [ base ]);
+        head_body ctx eff
+          ((Printf.sprintf "%s(%s,_)" out subject :: conflict_guard) @ [ base ]))
+      member_info;
+    (* the defeasible input: the case value stands unless the group
+       effectively writes (a conflicting group leaves it standing) *)
+    head_body ctx (Printf.sprintf "val(%s,%s,V)" subject (str target_name))
+      [ Printf.sprintf "inputval(%s,%s,V)" subject (str target_name); base; "not " ^ eff ]
+  end
 
 (* allocation, proportional with cap/floor/remainder (RUNTIME-SEMANTICS
    ch. 4.2), in integer arithmetic. Scale bookkeeping: raw = pot×w/Σw

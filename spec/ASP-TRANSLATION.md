@@ -888,7 +888,97 @@ build-side no-hole witness: a leeg `premie` propagates through the whole
 Tabel-38 both-false corner — a no-op survivor). The WF-071..074
 negatiefs pin what the verifier rejects before translation.
 
-### S17. What does not translate — the complete loud inventory
+### S17. Nested exception groups
+
+The flat ladder of S10 is the unary case of a rose tree (RS ch. 7.9, the
+ratified option i). A rung's `excepties` sub-group generalises the
+`decides_m` lowering recursively; the translation is a real extension of
+S10, not an application of it.
+
+**Chains and groups.** A *chain* — a rung list, either a top-level member
+or a sub-ladder — lowers to two predicates: an outcome `T_out(S,V)` (the
+highest *settling* rung's decision: the 0/1 besluit on a characteristic
+ladder, the scaled consequence term on an attribute ladder) and a
+conflict flag `T_cfl(S)`. A *group* — a rung's sub-group, or the root
+member set — reconciles its member chains exactly as S10's root group
+reconciles:
+
+```
+gU_diff(S) :- mI_out(S,X), mJ_out(S,Y), X != Y, not mK_cfl(S)…   % I<J, every K
+gU_cfl(S)  :- mK_cfl(S).                                          % conflict-first
+gU_cfl(S)  :- gU_diff(S).
+gU_out(S,V) :- mK_out(S,V), not gU_cfl(S).                        % clean decision
+gU_any(S)  :- gU_out(S,_).   gU_any(S) :- gU_cfl(S).
+inconsistent("onderwerp.target/⟨path⟩",S) :- gU_diff(S).
+```
+
+Equal decisions collapse to one `gU_out` atom (idempotence — the ch. 5.1
+reading, RS ch. 7.2); differing ones raise `gU_diff` and are suppressed.
+A member conflict propagates *before* differing decisions are read
+(`not mK_cfl` — the conflict-first ordering of ch. 7.9), so a deeper key
+wins over a shallower one.
+
+**The rung.** A rung carrying `excepties` reads its group first:
+
+```
+tN_dec(S,V) :- gU_out(S,V).                                        % adopt the sub decision
+tN_conf(S)  :- gU_cfl(S).                                          % propagate the sub conflict
+tN_dec(S,c) :- ⟨own justification⟩, ⟨own bindings⟩, not gU_any(S). % form-a fall-back only
+```
+
+A *group-rung* (no own besluit/consequence — the multi-member base group
+of RS ch. 7.9, e.g. art. 6's B1/B2 basisgrond) omits the third rule and
+merely carries its group as a chain position. A rung *settles* the walk
+when it decides or conflicts (`tN_stl :- tN_dec(_)`;
+`tN_stl :- tN_conf`), and the chain's outcome takes the highest settling
+rung, higher rungs displacing lower ones by `not tM_stl` — the S10
+displacement, now carrying conflicts too, so a higher deciding rung
+displaces a lower rung's sub-group conflict (vraag 5-A). The form-a
+fall-back's `not gU_any` restricts the own justification/consequence to a
+sub-group that decides *nothing*: a deciding or conflicting sub-group
+takes precedence.
+
+**Vraag 5-A — propagation to the root.** `T_cfl` climbs the tree to
+`grpG_conflict`, which guards *every* write head and the effectiveness
+atom `grpG_eff`: a differing sub-group therefore writes nothing on the
+target and leaves any case input standing (S10's `inputval` path), while
+the sole §9.5 fact is the `inconsistent` its *own* group deposits under a
+**path key** — `onderwerp.target` plus the rung-index path
+(`Jutter.heffing/0` for the sub-group of root rung 0, `Jutter.heffing/1`
+for rung 1's base group). The root's own differing decisions keep the
+bare key `Jutter.heffing` (S10). One conflict, one fact, one place —
+uniform with the root reading and Catala's ⊛-propagation minus the
+fatality we already made observable.
+
+**Stratification.** Every negation points strictly *down* the tree
+(`not gU_cfl`, `not gU_any`) or at strictly *higher* rungs of the same
+chain (`not tM_stl` — disjoint subtrees). No conflict atom depends on the
+write it guards, so the program stays stratified and clingo keeps its one
+stable model — the soundness S10 has, extended by construction. The
+`#defined tN_cfl/1` and `#defined gU_diff/1` declarations keep a
+conflict-free chain or a single-member group free of undefined-atom
+warnings.
+
+Witnesses: `anchor/jutterswet-nestuitzondering` (the attribute arm,
+art. 6) — case1-alleen-y is **the binding spurious-conflict test**
+(flattening `{y,x}∥{z,x}` manufactures a root conflict; the nested
+reading yields `10.00`, consistent — PHASE4-DEFAULTS §7), case2-alleen-z
+the sole-exception route, case3-verschillend the propagated sub-group
+conflict (`heffing` leeg + `Jutter.heffing/0`), case4-gelijk the
+equal-decisions rule *at sub-group level*, case5-terugval the form-a
+fall-back to `40.00`, case6-basis and case7-basisconflict the group-rung
+base group and its `Jutter.heffing/1` conflict, case8-niets the
+all-undecided no-op survivor; `anchor/jutterswet-nestkenmerk` (the
+characteristic arm, art. 7) — case1-y-wint the sub-besluit `false`
+displacing the root `true` (vrijgesteld absent, consistent),
+case2-conflict the `Jutter.vrijgesteld/0` key, case3-terugval the
+empty-sub-group fall-back to `true`. The six nested-group negatiefs pin
+what the verifier rejects before translation ever runs:
+`wf050-half-marked-group`, `wf050-subrung-wrong-shape`,
+`wf075-contentless-rung`, `wf075-empty-leden`, `wf075-init-in-subrung`,
+`wf075-two-members-unmarked`.
+
+### S18. What does not translate — the complete loud inventory
 
 The standing rule (PLAN §4): the core may say "I cannot express this
 (yet)"; it may not pretend. Every fault below is a `Value.fault` with
@@ -1041,6 +1131,20 @@ The struct-side record-valued `attributeValue` expectation in `model.ml`
 faults (above). Missing/extra/leeg record fields, cross-domain
 comparison, and inadmissible field datatypes are rejected by WF-071..074
 before translation is reached.
+
+*Nested exception groups (S17) — the backstops:* an **initialisation
+rung inside a sub-ladder** faults (`an initialisation rung inside a
+sub-ladder is ill-formed (WF-075)`) — the initialisation and ch. 7.8
+input rungs stay root-only, and WF-075 rejects the shape first, so the
+fault survives only as an unreachable backstop on WF-clean input; a
+**rung consequence scale** disagreeing with the target scale faults at
+every depth (`rung value scale … does not match target scale …`), a
+sub-ladder inheriting the root target's declared scale (RS ch. 7.9);
+validity windows on a ladder — nested or flat — fault as before. The
+**shared non-trivial base under all members** stays a frontend refusal
+(PHASE5C-TUTORIAL §4), never a clingo shape: a group-rung carries a
+multi-member base group here with no special encoding, so nothing new is
+refused for it.
 
 *Environment and input fences:* names the ASP string encoding cannot
 quote (WF-057's backstop, sole cover for case labels); values that do
