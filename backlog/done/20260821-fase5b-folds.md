@@ -65,3 +65,49 @@ Voortgang:
   groen). Suite +17 checks (76 totaal; drie catala-goldens byte-
   identiek). Alle negen gates groen. Nog te doen vóór merge: de
   toolchain-herpin en de twee opus-lenzen.
+
+Result: rij 10 is kernel, end-to-end, op het rij-36-substraat. Spec-first:
+IR-SPEC ch. 2.4 (ListType, WF-065), ch. 2.11 (functionDefs — DMN's
+BKM, WF-067: gesloten body's, acyclische invocatiegraaf) en ch. 4.8
+(ListLiteral/Lambda/IfThenElse/Invoke/Fold/MapList/FilterList/
+ListLength, WF-066/068/069/070; FilterList als binder-plus-conditie
+naar het aggregatie-filter-precedent — nergens boolean-getypeerde
+expressies; IfThenElse positiegebonden aan body's), RUNTIME-SEMANTICS
+ch. 10 (lijstwaarden met de []-vs-leeg-scheiding; linksvouw met
+normatieve volgorde; de gesloten-body-leeg-vrij-invariant). Daarna de
+keten met rood-eerst per stap: schema's additief, verifier met twaalf
+wf06[5-9]/wf070-negatiefs, de ankers jutterswet-staffelvergoeding
+(begrensde vouw 19.75 — volgorde-dragend: herordend gaf 37.25; [] →
+0.00; afwezig → leeg als survivor) en jutterswet-aanspraaktelling
+(ch. 9-compositie: MapList+Invoke+Fold → 12.50, FilterList+Ongelijk+
+ListLength → 2), ref (Lijst-waarde, apply_fold_fn, WV-10-blokken —
+testbestand gewijzigd, gesanctioneerd en gemeld), clingo
+(lpres/lelem-reïficatie, acc-indexrecursie mét viol/2-hekken,
+IfThenElse per-tak met builtin-complementen zonder NAF, Invoke
+geïnlined; ASP-TRANSLATION S15 nieuw, inventaris → S16 terminaal), en
+de plugin (Map/Filter/Fold/Length direct; de Reduce→Fold-lowering met
+concrete Optional-SumType-accumulator; topdefs → FunctionDef;
+scope-vangende body's en Sort/argmin/plain-value-topdefs weigeren
+luid; derde Catala-golden jutterswet-penningstaffel-catala met
+maximum-of-lijst — de lowering, IfThenElse en Fold op de wire,
+byte-identiek geregenereerd; 76 checks). Lensronde (2 opus): één
+BLOCKING, onafhankelijk door beide lenzen empirisch bewezen — de
+implementatie-agent had leeg-bij-afwezige-parameter ONVOORWAARDELIJK
+gemaakt, waardoor een afwezige scalaire parameter ref (0.00 via de
+else-tak) en clingo (onafgeleid) stil splitste; versmald naar
+uitsluitend lijst-parameters, de ch. 5.7-fault hersteld en de
+invariant met twee WV-tests gepind. Verder: Fold-over-gefilterde-lijst
+rekende in clingo stil mis (indexgaten; verifier-clean) → nu een
+luide gerichte fault in de S16-inventaris; Fn_name als fold-operand
+(getuigenloos ref-accepteert/clingo-weigert) → per WF-069 versmald
+met eigen negatief; de rij-10-stempel ontdaan van een teltfout en een
+executor-overclaim. Alle negen gates groen: 66 ir.json round-trip,
+115 negatiefs, 165 cases, 151 dubbel (ref ≡ clingo), 132
+no-op-refuters + 19 survivors, 14 rood, 76 plugin-checks, 3
+Catala-goldens byte-identiek; @ref/runtest 216. Bewust gelaten (luid,
+geïnventariseerd in S16): ListLiteral als fold-bron, Fold over een
+gefilterde keten (herindexering), rule-level Invoke in clingo,
+lijst-verwachtingen in model.ml, en de niet-lijst-vormen van de
+weigerlijst; de Catala-tutorial wacht nog op structs+subscopes (5c).
+Herpin volgt direct na de merge; de pin-SHA-stempels van rijen 36 en
+10 in CONSTRUCTS volgen met de eerstvolgende kaart.
