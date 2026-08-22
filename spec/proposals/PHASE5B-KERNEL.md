@@ -532,38 +532,25 @@ Both cards force a toolchain re-pin (spec/schema and the normative
 documents move); conformance stays 11/11 byte-identical. Gate 9
 regenerates any `bron.catala_en` golden the plugin work adds.
 
-## 6. The decisions (numbered; to the maintainer before any spec work merges)
+## 6. The decisions (numbered; ratified by the maintainer 2026-08-22)
 
-**Vraag 1 — payload-vorm van rij 36.** A: **één payload per
-constructor** (0 of 1; het Catala-isomorfe model — n-air is daar al
-getupeld, nullair is unit; structs blijven volledig in 5c; het
-tuple-geval weigert luid tot structs landen). B: benoemde
-meerveldige payloads (mini-structs) nu al in de kern — breder, maar
-het haalt het structontwerp naar voren en vergroot elke executor- en
-schema-stap. **Aanbeveling: A.**
+**Vraag 1 — payload-vorm van rij 36. Decided (2026-08-22): A — één
+payload per constructor** (0 of 1; het Catala-isomorfe model — n-air
+is daar al getupeld, nullair is unit; structs blijven volledig in 5c;
+het tuple-geval weigert luid tot structs landen). Verworpen: B
+(benoemde meerveldige payloads — dat haalt het structontwerp naar
+voren).
 
-**Vraag 2 — de rij-10-kerngrens.** De lensronde legde bloot dat de
-eerste versie hier een verborgen keuze bevatte (de waarde-conditional);
-de drie eerlijke opties:
-
-- **A (aanbevolen): de gesloten kern van §3.1 mét de positiegebonden
-  `IfThenElse` en sum-getypeerde accumulatoren.** Het volledige
-  IR-differentiaal (ref ≡ clingo over de hele kern); de plugin draagt
-  daarmee Catala's `sum`/`maximum`/`minimum`/`combine all`-familie via
-  de uitgespelde `Reduce`-lowering; wat de frontend blijft weigeren
-  (scope-vangende body's, sort/find/argmin) weigert luid en staat in
-  §4.
-- **B: de kern zonder `IfThenElse`** — kleinst mogelijk; `sum` via
-  `Reduce(Add)` vertaalt nog, maar `maximum`/`minimum` en elke
-  conditionele reducer weigeren luid. Minder spec-werk nu, en de
-  bekendste lijstvormen van Catala vallen buiten het differentiaal.
-- **C: een bredere kern** (eerste-klasse functiewaarden,
-  attribuut-lezende body's, lijst-accumulatoren) waarvan de ASP-kant
-  substantiële delen luid weigert — expressiever op papier, maar het
-  differentiaal dekt de kern dan niet meer en de waarde-wereld van
-  ch. 1 moet open.
-
-**Aanbeveling: A.**
+**Vraag 2 — de rij-10-kerngrens. Decided (2026-08-22): A — de
+gesloten kern van §3.1 mét de positiegebonden `IfThenElse` en
+sum-getypeerde accumulatoren.** Het volledige IR-differentiaal
+(ref ≡ clingo over de hele kern); de plugin draagt daarmee Catala's
+`sum`/`maximum`/`minimum`/`combine all`-familie via de uitgespelde
+`Reduce`-lowering; wat de frontend blijft weigeren (scope-vangende
+body's, sort/find/argmin) weigert luid en staat in §4. Verworpen: B
+(zonder `IfThenElse` — de bekendste Catala-lijstvormen zouden buiten
+het differentiaal vallen) en C (bredere kern — het differentiaal zou
+de kern niet meer dekken en de waarde-wereld van ch. 1 moest open).
 
 Beslissingsvrij vastgelegd (geen vraag): de additieve wire-route (de
 vastgelegde Method-discipline); leeg propageert door match, fold én
