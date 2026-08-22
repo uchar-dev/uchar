@@ -1446,8 +1446,8 @@ untouched — the two never merge in v1.
 | Lambda | `parameters` (list of `{name, datatype}`), `body` (expr), `source` | **position-restricted**: admissible only as the `function` operand of `Fold`/`MapList`; the body is closed (the WF-067 clause); parameters bind via `BinderRef` |
 | IfThenElse | `type`, `condition` (Condition), `then` (expr), `else` (expr), `source` | **position-restricted**: admissible only inside lambda and function bodies — rule expressions keep the ladder/voorwaarde idiom; the condition reuses the ch. 4.5 condition union (no boolean-typed expressions enter the IR), evaluated under the ordinary ch. 1.2 comparison discipline; exactly the chosen branch is evaluated |
 | Invoke | `type`, `function` (name), `arguments` (list of expr), `source` | calls a ch. 2.11 FunctionDef; strict — a leeg argument propagates without entering the body |
-| Fold | `type`, `list` (expr), `function` (Lambda or a FunctionDef name), `init` (expr), `source` | left fold, order normative; the function takes `(accumulator, element)` |
-| MapList | `type` (a ListType), `list` (expr), `function` (Lambda or a FunctionDef name), `source` | elementwise, order-preserving |
+| Fold | `type`, `list` (expr), `function` (an inline `Lambda`), `init` (expr), `source` | left fold, order normative; the function takes `(accumulator, element)`; the operand MUST be an inline `Lambda` (WF-069) — a named function reaches a fold through a lambda body that `Invoke`s it |
+| MapList | `type` (a ListType), `list` (expr), `function` (an inline `Lambda`), `source` | elementwise, order-preserving; the operand MUST be an inline `Lambda` (WF-069) — a named function reaches it through a lambda body that `Invoke`s it |
 | FilterList | `type` (the source ListType), `list` (expr), `binder` (name), `condition` (Condition), `source` | keeps the elements whose condition holds with the binder bound — the aggregation-`filter` precedent (a condition per contributor), which is why this node carries a binder + condition rather than a boolean-bodied lambda |
 | ListLength | `type` (whole Number), `list` (expr), `source` | the element count |
 
@@ -1459,10 +1459,14 @@ untouched — the two never merge in v1.
   `type` MUST equal the declared `result`.
 - **WF-069** A `Lambda` outside a `Fold`/`MapList` `function` operand,
   or an `IfThenElse` outside a lambda or function body, is ill-formed;
-  a lambda's parameters MUST be typed and its arity MUST fit its host
-  (`Fold`: two — accumulator, element; `MapList`: one); lambda bodies
-  MUST be closed (the WF-067 clause); an `IfThenElse`'s branches MUST
-  agree on one datatype — the node's own `type`.
+  a `Fold`/`MapList` `function` operand MUST be an inline `Lambda` — a
+  bare FunctionDef name is ill-formed (the mirror-safe route: a named
+  function reaches a fold through a lambda body that `Invoke`s it, as
+  the anchors do); a lambda's parameters MUST be typed and its arity
+  MUST fit its host (`Fold`: two — accumulator, element; `MapList`:
+  one); lambda bodies MUST be closed (the WF-067 clause); an
+  `IfThenElse`'s branches MUST agree on one datatype — the node's own
+  `type`.
 - **WF-070** The fold-family `list` operand MUST be list-typed. For
   `Fold`: the `init`, the accumulator parameter, the function body and
   the node's `type` MUST share one first-order non-list datatype (a
@@ -1643,7 +1647,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-066 | ListLiteral elements carry the declared element datatype (ch. 4.8) | gate 3 | `anchor/jutterswet-aanspraaktelling` | `wf066-heterogeneous-literal` |
 | WF-067 | FunctionDef: ci-unique names, typed unique parameters, resolvable result, closed body, acyclic invocation graph (ch. 2.11) | gate 3 | `anchor/jutterswet-aanspraaktelling` | `wf067-recursive-functions` + `wf067-attribute-read-in-body` |
 | WF-068 | Invoke: resolvable function, arity, argument types, result type (ch. 4.8) | gate 3 | `anchor/jutterswet-aanspraaktelling` | `wf068-unresolved-invoke` + `wf068-arity-mismatch` |
-| WF-069 | Lambda only as a Fold/MapList operand; IfThenElse only inside bodies; lambda arity per host, typed parameters, closed bodies; IfThenElse branch agreement (ch. 4.8) | gate 3 | `anchor/jutterswet-staffelvergoeding` | `wf069-lambda-outside-fold` + `wf069-ifthenelse-outside-body` |
+| WF-069 | Lambda only as a Fold/MapList operand and the operand only an inline Lambda (no bare FunctionDef name); IfThenElse only inside bodies; lambda arity per host, typed parameters, closed bodies; IfThenElse branch agreement (ch. 4.8) | gate 3 | `anchor/jutterswet-staffelvergoeding` | `wf069-lambda-outside-fold` + `wf069-ifthenelse-outside-body` + `wf069-named-function-operand` |
 | WF-070 | fold-family shapes: list-typed source; Fold accumulator first-order non-list shared with init/body/type, element parameter = source element; MapList/FilterList/ListLength result typing (ch. 4.8) | gate 3 | `anchor/jutterswet-staffelvergoeding` + `anchor/jutterswet-aanspraaktelling` | `wf070-list-accumulator` + `wf070-scalar-source` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer

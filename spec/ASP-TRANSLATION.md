@@ -871,12 +871,13 @@ translation is reached.
 *Folds and function values (S15) — shapes without a corpus case:* a
 **`ListLiteral`** list source (the reified-list encoding covers it, but
 no corpus case builds a list in an expression rather than the case —
-`list_source` faults); a **`Fold` over a `FilterList`** (the index
-recurrence needs contiguous positions, and a filter leaves gaps — no
-re-indexing is built because no case composes the two; `ListLength` over
-a filter is fine, it counts); a **named FunctionDef as a `Fold`/`MapList`
-operand** (only the inline `Lambda` form has a case — the anchors invoke
-named functions through `Invoke`, not as fold operands); an **IfThenElse
+`list_source` faults); a **`Fold` over a `FilterList`** — the index
+recurrence needs contiguous positions and a filter leaves gaps, so the
+`Fold` translation walks its source chain (through index-preserving
+`MapList`s) and faults loudly with `a Fold over a filtered list is not
+translated (index gaps need re-indexing; no corpus case)` rather than
+silently deriving nothing; `ListLength` over a filter stays fine, it
+counts; an **IfThenElse
 condition** other than a comparison over bound terms, a **closed-body
 term** other than a bound binder / literal / parameter / `+`-`-`
 combination / `Construct`, and a **`FilterList` condition** other than a
@@ -885,7 +886,14 @@ narrowed to what the two anchors exercise); a **list-valued
 `attributeValue` expectation** in `model.ml` (the anchors expect only
 scalars and leegte; a list comparison is not built until a case wants
 one). Multiplicative and other operators inside fold bodies ride the same
-"no corpus case" fence as their rule-expression kin.
+"no corpus case" fence as their rule-expression kin. A **named FunctionDef
+as a `Fold`/`MapList` operand** is no longer a shape-without-a-case: it is
+**WF-069-rejected** before translation (the operand MUST be an inline
+`Lambda`; a named function reaches a fold through a lambda body that
+`Invoke`s it — `wf069-named-function-operand`), so the clingo fault
+(`a named FunctionDef as a fold operand is refused (WF-069: the operand
+must be an inline lambda)`) survives only as an unreachable backstop on
+WF-clean input.
 
 *Environment and input fences:* names the ASP string encoding cannot
 quote (WF-057's backstop, sole cover for case labels); values that do

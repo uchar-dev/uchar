@@ -1086,6 +1086,21 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          so nothing is reachable — leeg propagation for free. A sum-typed
          accumulator (the Optional of the reduce lowering, ch. 10.4) carries a
          ground constructor term, scale 0. *)
+      (* the I-1/I recurrence needs contiguous positions: a FilterList anywhere
+         in the source chain (also under an index-preserving MapList) leaves
+         index gaps the recursion would silently stall on, so it is refused
+         loudly here (S16) rather than deriving nothing. ListLength over a
+         filter stays fine — #count tolerates the gaps. *)
+      let rec no_filter_source e =
+        match e with
+        | Filter_list _ ->
+            fault
+              "a Fold over a filtered list is not translated (index gaps need re-indexing; no \
+               corpus case)"
+        | Map_list { list; _ } -> no_filter_source list
+        | _ -> ()
+      in
+      no_filter_source list;
       let out_scale = value_scale typ in
       let lterm, elem_scale = list_source ctx ~subject ~subject_ot list in
       ctx.fresh <- ctx.fresh + 1;
@@ -1100,7 +1115,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         | Fn_lambda { parameters = [ (a, _); (x, _) ]; body; _ } -> (a, x, body)
         | Fn_lambda _ -> fault "a fold lambda takes exactly two parameters (WF-070)"
         | Fn_name _ ->
-            fault "a named FunctionDef as a fold operand is not translated (no corpus case)"
+            (* WF-069 rejects this before translation; an unreachable backstop *)
+            fault "a named FunctionDef as a fold operand is refused (WF-069: the operand must be an inline lambda)"
       in
       let base_body = Printf.sprintf "lpres(%s)" lterm in
       emit ctx "%s(%s,0,%s) :- %s." fa lterm init_term
@@ -1543,7 +1559,8 @@ and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
         | Fn_lambda { parameters = [ (pn, _) ]; body; _ } -> (pn, body)
         | Fn_lambda _ -> fault "a MapList lambda takes exactly one parameter (WF-070)"
         | Fn_name _ ->
-            fault "a named FunctionDef as a MapList operand is not translated (no corpus case)"
+            (* WF-069 rejects this before translation; an unreachable backstop *)
+            fault "a named FunctionDef as a MapList operand is refused (WF-069: the operand must be an inline lambda)"
       in
       let base = [ Printf.sprintf "lelem(%s,I,V)" inner ] in
       let saved = ctx.binders in

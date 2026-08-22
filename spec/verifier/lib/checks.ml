@@ -2208,32 +2208,15 @@ and check_fold_fn ctx ~binders ~subject at ~params ~result (fn : fold_fn) : viol
         | _ -> [])
       @ walk_expr ctx ~binders:(List.map fst parameters @ binders) ~subject ~body:(Some "WF-069")
           (at ^ "/body") lbody
-  | Fn_name n -> (
-      match function_decl ctx n with
-      | None ->
-          [ v "WF-070" at ("fold function names '" ^ n ^ "', which is not a declared function") ]
-      | Some fd ->
-          (if List.length fd.fd_parameters <> arity then
-             [ v "WF-070" at
-                 (Printf.sprintf "function '%s' takes %d parameters, but the fold expects %d" n
-                    (List.length fd.fd_parameters) arity) ]
-           else
-             List.concat
-               (List.map2
-                  (fun (_, pt) exp ->
-                    match exp with
-                    | Some e when e <> pt ->
-                        [ v "WF-070" at
-                            ("function '" ^ n ^ "' parameter is " ^ datatype_kind pt ^ ", expected "
-                           ^ datatype_kind e) ]
-                    | _ -> [])
-                  fd.fd_parameters params))
-          @ (match result with
-            | Some r when r <> fd.fd_result ->
-                [ v "WF-070" at
-                    ("function '" ^ n ^ "' result is " ^ datatype_kind fd.fd_result
-                   ^ ", but the fold requires " ^ datatype_kind r) ]
-            | _ -> []))
+  | Fn_name n ->
+      (* WF-069 (the mirror-safe route): the function operand MUST be an inline
+         lambda; a named function reaches a fold through a lambda body that
+         Invokes it (exactly what the anchors do), so a bare FunctionDef name
+         has no executor witness and is refused before translation *)
+      [ v "WF-069" at
+          ("the fold function operand names '" ^ n
+         ^ "', but must be an inline lambda (a named function reaches a fold via a lambda body \
+            that invokes it)") ]
 
 and walk_cond ctx ~binders ~subject ?(body = None) at (c : conditie) : violation list =
   let sub p = at ^ "/" ^ p in

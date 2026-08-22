@@ -2340,6 +2340,22 @@ the case loader rejects a leeg element. This is also why binders never
 see leeg inside fold bodies. List equality is elementwise and in
 order; lists are not orderable.
 
+**The closed-body leeg-free invariant.** Every operand a closed lambda
+or function body reads is *known non-leeg* at the point the body runs,
+so the body's ch. 1–2 operator discipline never has to coalesce a
+missing operand mid-fold. The justification is exhaustive on the
+operand kinds a closed body admits: *binders* are never leeg (a list
+element carries no hole — the propagation above — and a leeg `init` or
+a leeg `list` **source** propagates *before* any body evaluation, so no
+`f(acc, x)` step is ever entered with a leeg `acc` or `x`); *literals*
+are never leeg; and a *parameter* read is the one place an absence
+could enter — a declared-but-absent **non-list** parameter FAULTS
+(fail-fast, ch. 5.7, unchanged), so it never reaches a body as leeg,
+while a declared-but-absent **list** parameter reads leeg and that
+leegte propagates on **source position** (the `list` operand) *before*
+any body runs, never as a body operand. Emptiness therefore lives only
+at the fold's boundary (init, source), never in its interior.
+
 ### 10.2 Fold, MapList, FilterList, ListLength
 
 - **Fold**: `fold(f, init, [x1..xn]) = f(…f(f(init, x1), x2)…, xn)` —
@@ -2380,7 +2396,16 @@ acc` (the capped sum — the `IfThenElse` body).
 - `staffelbedragen` = [] → the fold yields its init: `vergoeding` =
   **0.00** (the empty list is a value).
 - `staffelbedragen` absent (leeg) → `vergoeding` **leeg** (propagation
-  — nothing is written; a reason-carrying no-op survivor).
+  — nothing is written; a reason-carrying no-op survivor). This reads
+  leeg because `staffelbedragen` is **list-typed**: an absent list
+  parameter reading leeg is the **only** widening of the ch. 5.7
+  fail-fast binding, and it yields **source-position** emptiness alone
+  — it propagates on the `list` operand before the body runs (the
+  ch. 10.1 invariant), never as a body operand. Every other
+  declared-but-absent parameter still FAULTS (ch. 5.7). The anchor pins
+  exactly this: case3 omits only `staffelbedragen`; the scalar
+  `plafond` remains supplied, so its own absence would fault rather than
+  read leeg.
 
 ### 10.4 Worked examples — the `jutterswet-aanspraaktelling` anchor (composing ch. 9)
 
@@ -2406,7 +2431,14 @@ Case carriage: list values ride the case value union as
 `{ "list": [ …values… ] }` in input attributes, parameters and
 expectations; the loaders fail fast on an element against the wrong
 element datatype and on a leeg element. Storable list-typed
-*attributes* exist (scalar-carried; no timelines, WF-065). The ASP
+*attributes* exist (scalar-carried; no timelines, WF-065). An
+absent declared parameter binds fail-fast (ch. 5.7) with the **one**
+exception this chapter needs: an absent **list-typed** parameter reads
+leeg, and that leegte is confined to **source position** — it
+propagates on the `list` operand before any body evaluation (ch. 10.1),
+never as a fold-body operand, and no scalar absence is ever read leeg
+(which keeps ref and Clingo in step: a scalar absence would fire ref's
+else-branch where Clingo derives nothing). The ASP
 side reifies a list value as indexed facts and runs the fold as index
 recursion with the S6/S8 range fences; every fold-family form of this
 chapter translates — the differential (gates 5 ≡ 6) covers the whole

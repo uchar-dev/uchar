@@ -1500,7 +1500,7 @@
           ]
         }
       },
-      "description": "Extension node (IR-SPEC Method; wire node Fold, never emitter-produced): the left fold (CONSTRUCTS row 10; spec/RUNTIME-SEMANTICS.md ch. 10.2). 'function' is a two-parameter (accumulator, element) Lambda or a FunctionDef name; the accumulator/init/body/type share one first-order non-list datatype — WF-070. 'type', 'list' and 'init' are required and non-null."
+      "description": "Extension node (IR-SPEC Method; wire node Fold, never emitter-produced): the left fold (CONSTRUCTS row 10; spec/RUNTIME-SEMANTICS.md ch. 10.2). 'function' is a two-parameter (accumulator, element) Lambda; a bare FunctionDef name is structurally valid on the wire but WF-069 requires the inline Lambda (a named function reaches a fold through a lambda body that Invokes it). The accumulator/init/body/type share one first-order non-list datatype — WF-070. 'type', 'list' and 'init' are required and non-null."
     },
     "MapList": {
       "type": "object",
@@ -1539,7 +1539,7 @@
           ]
         }
       },
-      "description": "Extension node (IR-SPEC Method; wire node MapList, never emitter-produced): the order-preserving map (CONSTRUCTS row 10; spec/RUNTIME-SEMANTICS.md ch. 10.2). 'function' is a one-parameter Lambda or a FunctionDef name; 'type' (a ListType) is the ListType of the body's datatype — WF-070. 'type' and 'list' are required and non-null."
+      "description": "Extension node (IR-SPEC Method; wire node MapList, never emitter-produced): the order-preserving map (CONSTRUCTS row 10; spec/RUNTIME-SEMANTICS.md ch. 10.2). 'function' is a one-parameter Lambda; a bare FunctionDef name is structurally valid on the wire but WF-069 requires the inline Lambda (a named function reaches a map through a lambda body that Invokes it). 'type' (a ListType) is the ListType of the body's datatype — WF-070. 'type' and 'list' are required and non-null."
     },
     "FilterList": {
       "type": "object",

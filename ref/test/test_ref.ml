@@ -958,6 +958,38 @@ let () =
   check "WV-10.1-ctor-eq-order" (Arith.equal a1 a_reordered = false);
   check "WV-10.1-ctor-render" (Value.to_string a1 = "[Erkend(10), Vervallen, Erkend(2.5)]")
 
+(* --- ch. 10.1/10.3/10.5: absent-parameter binding at eval level ---------
+   The closed-body leeg-free invariant hinges on where an absence enters: a
+   declared-but-absent SCALAR parameter FAULTS (fail-fast, ch. 5.7), while
+   only an absent LIST parameter reads leeg (source position — the
+   staffelvergoeding case3 propagation the Fold needs). Narrowing leeg-on-
+   absent to lists is what keeps ref and clingo in step: a scalar absence
+   read leeg would fire ref's fold-body else-branch where clingo derives
+   nothing (the empirically observed divergence this test pins shut). *)
+let () =
+  let param name dt : Ir_v0.Ast.parameter =
+    { par_naam = Some name; par_datatype = Some dt; par_granulariteit = None }
+  in
+  let doc =
+    {
+      empty_doc with
+      objecttypen = [ ot "J" [] [] ];
+      parameters =
+        [ ("p", param "p" num0); ("lst", param "lst" (List_type { element = num0 })) ];
+    }
+  in
+  (* env_of leaves params empty, so both declared parameters are absent *)
+  let env = env_of doc in
+  let w = World.add_instance World.empty (inst "j" "J" []) in
+  let self = World.get w "j" in
+  let pref name typ : Ir_v0.Ast.expr =
+    Parameter_ref { parameter = Some name; typ = Some typ; bron = None }
+  in
+  expect_fault "WV-5.7-scalar-absent-fault"
+    (fun () -> Eval.eval_expr env w self ~err:no_err (pref "p" num0));
+  expect_leeg "WV-10.3-list-absent-leeg"
+    (Eval.eval_expr env w self ~err:no_err (pref "lst" (List_type { element = num0 })))
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

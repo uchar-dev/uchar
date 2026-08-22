@@ -349,21 +349,30 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
   | Literal { waarde; typ; _ } -> literal_value waarde typ
   | Parameter_ref { parameter; _ } -> (
       let name = req "ParameterRef.parameter" parameter in
-      (match Ir_v0.Checks.find_ci env.doc.parameters name with
-      | Some { par_granulariteit = Some _; _ } ->
-          (* v0 refuses a granular parameter in a scalar slot (the §8.2
-             marker family); how a rule reads a vintage is ch. 8 scope *)
-          Value.fault "parameter %S is granular; reading a vintage in a rule is ch. 8 scope" name
-      | Some _ -> ()
-      | None -> Value.fault "unknown parameter %S" name);
+      let decl =
+        match Ir_v0.Checks.find_ci env.doc.parameters name with
+        | Some { par_granulariteit = Some _; _ } ->
+            (* v0 refuses a granular parameter in a scalar slot (the §8.2
+               marker family); how a rule reads a vintage is ch. 8 scope *)
+            Value.fault "parameter %S is granular; reading a vintage in a rule is ch. 8 scope" name
+        | Some p -> p
+        | None -> Value.fault "unknown parameter %S" name
+      in
       match SMap.find_opt (norm name) env.params with
       | Some v -> v
-      | None ->
-          (* a declared parameter the case does not supply is absent input,
-             read leeg — the parallel of an unset attribute (World.attr) and
-             what the ch. 10.3 staffelvergoeding anchor's case3 pins: an
-             absent list-typed parameter propagates leeg through the Fold *)
-          Value.Empty)
+      | None -> (
+          (* an absent declared parameter is fail-fast (ch. 5.7), EXCEPT a
+             list-typed one: an absent list reads leeg and propagates on
+             source position, the ch. 10.3 staffelvergoeding case3 the Fold
+             needs. Narrowing leeg-on-absent to lists keeps a missing scalar
+             parameter a fault, where ref and clingo agree (a scalar absence
+             read leeg would diverge — ref's else-branch fires, clingo derives
+             nothing). *)
+          match decl.par_datatype with
+          | Some (List_type _) -> Value.Empty
+          | _ ->
+              Value.fault "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)"
+                name))
   | Attribuut_ref
       { attribuut; objecttype = ot; navigatie_rol; navigatie_pad; navigatie_bindingen;
         set = false; typ; _ }
