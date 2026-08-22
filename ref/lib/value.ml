@@ -1,8 +1,9 @@
 (* The value domain of the reference interpreter (RUNTIME-SEMANTICS ch. 1.1):
    an exact rational, a text, a boolean, a date (day or millisecond
-   precision), an enumeration value — or empty, the distinguished absence of
-   a value. Empty is not zero, not the empty string, not false, and distinct
-   from Onopgelost (an unresolvable construct, which faults evaluation).
+   precision), an enumeration value, a constructor value (ch. 9.1) — or
+   empty, the distinguished absence of a value. Empty is not zero, not the
+   empty string, not false, and distinct from Onopgelost (an unresolvable
+   construct, which faults evaluation).
 
    Numbers carry their unit; unit algebra lives in Arith (ch. 2.6).
 
@@ -25,6 +26,10 @@ type t =
   | Date of int (* civil days since 1970-01-01 *)
   | Date_time of int (* milliseconds since 1970-01-01T00:00:00 *)
   | Enum of string
+  | Ctor of string * t option
+      (* a constructor value (RUNTIME-SEMANTICS ch. 9.1): a declared tag
+         and, for a unary constructor, its payload value; it never carries
+         a leeg payload — a Construct with a leeg argument propagates leeg *)
 
 (* A fault aborts the evaluation observably (hard runtime error, ch. 1.4
    point 4; Onopgelost, WF-044; a non-representable bounded write). *)
@@ -138,7 +143,7 @@ let lexeme_of_q q =
       (if Z.sign scaled < 0 then "-" else "")
       ^ String.sub s 0 cut ^ "." ^ String.sub s cut d
 
-let to_string = function
+let rec to_string = function
   | Empty -> "leeg"
   | Num (q, _) -> lexeme_of_q q
   | Text s -> Printf.sprintf "%S" s
@@ -146,3 +151,6 @@ let to_string = function
   | Date z -> iso_of_date z
   | Date_time ms -> Printf.sprintf "@%dms" ms
   | Enum s -> s
+  (* the deterministic constructor rendering: Toegekend(1250.50), Afgewezen *)
+  | Ctor (tag, None) -> tag
+  | Ctor (tag, Some v) -> Printf.sprintf "%s(%s)" tag (to_string v)

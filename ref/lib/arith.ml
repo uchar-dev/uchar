@@ -306,15 +306,46 @@ let scalar_cmp l r =
   | Date_time a, Date_time b -> compare (a : int) b
   | _ -> fault "unordered comparison: %s vs %s" (to_string l) (to_string r)
 
+(* value equality: idempotent writes (ch. 5.1 clause 2) and the structural,
+   nominal equality of constructor values (ch. 9.3). It is [rec] for the
+   nested-constructor payload; a payload is never leeg, so this agrees with
+   the Tabel 38 reading [eq_non_numeric] uses for the same values. *)
+let rec equal a b =
+  match (a, b) with
+  | Empty, Empty -> true
+  | Num (qa, ua), Num (qb, ub) -> (
+      match (ua, ub) with
+      | Unitless, Unitless -> Q.equal qa qb
+      | Unit x, Unit y when convertible x y -> Q.equal qa (Q.mul qb (conv_factor y x))
+      | Unit _, Unitless | Unitless, Unit _ -> Q.equal qa qb
+      | _ -> false)
+  | Text a, Text b -> String.equal a b
+  | Bool a, Bool b -> Bool.equal a b
+  | Date a, Date b -> Int.equal a b
+  | Date_time a, Date_time b -> Int.equal a b
+  | Enum a, Enum b -> String.equal (Ir_v0.Checks.norm a) (Ir_v0.Checks.norm b)
+  (* ch. 9.3: tags equal (ci-normalised) and, for unary tags, payloads
+     equal under their own value equality — structural and nominal *)
+  | Ctor (ta, pa), Ctor (tb, pb) ->
+      String.equal (Ir_v0.Checks.norm ta) (Ir_v0.Checks.norm tb)
+      && (match (pa, pb) with
+          | None, None -> true
+          | Some va, Some vb -> equal va vb
+          | _ -> false)
+  | _ -> false
+
 let eq_non_numeric l r =
   (* §5 Tabel 38: any empty operand → false; exact value equality else.
      Enum identity goes through the verifier's normalisation, like every
-     other declared name. *)
+     other declared name. Constructor values use the ch. 9.3 structural
+     equality; a mixed pair (e.g. a constructor against a number) stays the
+     existing mixed-type fault. *)
   match (l, r) with
   | Empty, _ | _, Empty -> false
   | Text a, Text b -> String.equal a b
   | Bool a, Bool b -> Bool.equal a b
   | Enum a, Enum b -> String.equal (Ir_v0.Checks.norm a) (Ir_v0.Checks.norm b)
+  | (Ctor _ as a), (Ctor _ as b) -> equal a b
   | _ -> fault "mixed-type equality: %s vs %s" (to_string l) (to_string r)
 
 (* [static_numeric] carries the comparison's statically declared kind:
@@ -418,23 +449,8 @@ let text_of = function
   | Date z -> iso_of_date z
   | Date_time _ as v -> to_string v
   | Enum s -> s
+  (* a constructor value has no text coercion — fail fast, never a
+     silent stringification into a text join *)
+  | Ctor _ as v -> fault "a constructor value has no text coercion: %s" (to_string v)
 
 let concat vs = Text (String.concat "" (List.map text_of vs))
-
-(* --- value equality (for idempotent writes, ch. 5.1 clause 2) ---------- *)
-
-let equal a b =
-  match (a, b) with
-  | Empty, Empty -> true
-  | Num (qa, ua), Num (qb, ub) -> (
-      match (ua, ub) with
-      | Unitless, Unitless -> Q.equal qa qb
-      | Unit x, Unit y when convertible x y -> Q.equal qa (Q.mul qb (conv_factor y x))
-      | Unit _, Unitless | Unitless, Unit _ -> Q.equal qa qb
-      | _ -> false)
-  | Text a, Text b -> String.equal a b
-  | Bool a, Bool b -> Bool.equal a b
-  | Date a, Date b -> Int.equal a b
-  | Date_time a, Date_time b -> Int.equal a b
-  | Enum a, Enum b -> String.equal (Ir_v0.Checks.norm a) (Ir_v0.Checks.norm b)
-  | _ -> false

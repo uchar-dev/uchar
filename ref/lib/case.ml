@@ -73,8 +73,11 @@ let ms_of_datetime s =
       (((((days * 24) + hh) * 60) + mm) * 60 + ss) * 1000 + ms)
   |> function Some v -> v | None -> fail "malformed dateTime %S" s
 
-let value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t =
+let rec value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t =
   let kvs = obj j in
+  match List.assoc_opt "constructor" kvs with
+  | Some ctor_j -> constructor_of_json ~at decl kvs ctor_j
+  | None ->
   let variant, v = match kvs with [ (k, v) ] -> (k, v) | _ -> fail "%s: malformed value" at in
   match (variant, decl) with
   | "number", Some (Numeriek { eenheid; _ } | Percentage { eenheid; _ }) ->
@@ -97,6 +100,30 @@ let value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t =
       else fail "%s: %S is not a declared enumeration value" at s
   | _, Some _ -> fail "%s: value variant %S does not match the declared datatype" at variant
   | _, None -> fail "%s: value variant %S against an unknown datatype" at variant
+
+(* The constructor value form of §2.5: {constructor, payload?}. The
+   cross-checks JSON Schema cannot express live here (the WF-059/WF-018
+   backstop, widened to the sum type): the tag names a declared constructor
+   (ci), the payload is present iff the constructor is unary and loads
+   recursively against the declared payload datatype. *)
+and constructor_of_json ~at (decl : datatype option) kvs ctor_j : Value.t =
+  let tag = str ctor_j in
+  match decl with
+  | Some (Sum_type { constructoren; _ }) -> (
+      match List.find_opt (fun (name, _) -> norm name = norm tag) constructoren with
+      | None -> fail "%s: %S is not a declared constructor of the sum type" at tag
+      | Some (_, payload_decl) -> (
+          match (payload_decl, List.assoc_opt "payload" kvs) with
+          | Some pdt, Some pj -> Value.Ctor (tag, Some (value_of_json ~at (Some pdt) pj))
+          | None, None -> Value.Ctor (tag, None)
+          | Some _, None -> fail "%s: unary constructor %S carries no payload" at tag
+          | None, Some _ -> fail "%s: nullary constructor %S carries a payload" at tag))
+  | Some _ -> fail "%s: a constructor value against a non-sum-type declaration" at
+  | None ->
+      fail
+        "%s: a constructor value against a declaration without a datatype (WF-059 for \
+         attributes, WF-018 for parameters)"
+        at
 
 (* Is this value JSON the timeline variant? *)
 let is_timeline_json j =

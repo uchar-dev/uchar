@@ -62,6 +62,11 @@
 #   - jutterswet-dagentelling/case4-input-blijft.json: the temporal
 #     standing for the day count — a non-deciding count leaves the
 #     input timeline standing whole (ch. 7.8, timeline arm).
+#   - jutterswet-beschikkingsom/case4-leeg.json: the leeg-scrutinee
+#     corner (ch. 9.2) — with beschikking absent the match derives
+#     nothing, so uitkering stays empty and both = and ≠ against
+#     Aangehouden are false (Tabel 38); the expectation IS that absence,
+#     which a do-nothing executor satisfies.
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
@@ -77,7 +82,8 @@ corpus/golden/jutterswet-penningrecht-catala/case3-stilte.json
 corpus/golden/jutterswet-penningrecht-catala/case4-hardheidsgrens.json
 corpus/golden/anchor/jutterswet-borgdeel/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-dagentelling/case3-leeg.json
-corpus/golden/anchor/jutterswet-dagentelling/case4-input-blijft.json'
+corpus/golden/anchor/jutterswet-dagentelling/case4-input-blijft.json
+corpus/golden/anchor/jutterswet-beschikkingsom/case4-leeg.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2

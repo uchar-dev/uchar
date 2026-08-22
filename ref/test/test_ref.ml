@@ -11,8 +11,10 @@
 open Uchar_ref
 
 let failures = ref 0
+let total = ref 0
 
 let check name ok =
+  incr total;
   if not ok then begin
     incr failures;
     Printf.printf "FAIL %s\n" name
@@ -498,7 +500,8 @@ let inst label otype attrs : World.instance =
   }
 
 let env_of doc : Eval.env =
-  { doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None }
+  { doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None;
+    locals = Eval.SMap.empty }
 
 (* WV-6.4-a (= the ch. 5.3 pair): producer/consumer across one negative
    edge — {waar, onwaar} at inkomen 50, {onwaar, waar} at 200, never the
@@ -847,9 +850,66 @@ let () =
     (wall 0 = day "2024-01-31" && wall 1 = day "2024-02-29" && wall 2 = day "2024-03-31"
     && wall 3 = day "2024-04-30")
 
+(* --- ch. 9: sum types and match (RUNTIME-SEMANTICS ch. 9) ---------------
+   Operator-level worked examples. The 9.1 Construct leeg-propagation and
+   the 9.2 whole-match evaluation need a document; the anchor
+   jutterswet-beschikkingsom pins those through gates 5-6 (case1-3 the
+   filled arms, case4 the leeg-scrutinee corner). Here: the 9.1 rendering
+   and the 9.3 equality corners, verbatim on the anchor's
+   beschikking = Toegekend(bedrag) | Afgewezen | Aangehouden. *)
+let ctor tag p = Value.Ctor (tag, p)
+
+let () =
+  let toegekend = ctor "Toegekend" (Some (n "1250.50")) in
+  let toegekend' = ctor "Toegekend" (Some (n "1250.50")) in
+  let toegekend_ander = ctor "Toegekend" (Some (n "1000.00")) in
+  let afgewezen = ctor "Afgewezen" None in
+  let aangehouden = ctor "Aangehouden" None in
+  (* 9.1: the deterministic constructor rendering — the payload uses the
+     canonical decimal lexeme (lexeme_of_q, trailing zero dropped), the
+     same form used everywhere a value is rendered *)
+  check "WV-9.1-render-unary" (Value.to_string toegekend = "Toegekend(1250.5)");
+  check "WV-9.1-render-nullary" (Value.to_string afgewezen = "Afgewezen");
+  (* 9.3: structural equality — equal tag AND equal payload *)
+  check "WV-9.3-struct-eq" (Arith.eq_non_numeric toegekend toegekend' = true);
+  (* 9.3: same tag, unequal payload → not equal *)
+  check "WV-9.3-struct-neq-payload" (Arith.eq_non_numeric toegekend toegekend_ander = false);
+  (* 9.3: unequal tags → not equal (unary vs nullary, and nullary vs nullary) *)
+  check "WV-9.3-neq-tag-unary-nullary" (Arith.eq_non_numeric toegekend afgewezen = false);
+  check "WV-9.3-neq-tag-nullary" (Arith.eq_non_numeric afgewezen aangehouden = false);
+  (* the idempotent-write equality agrees (a payload is never leeg) *)
+  check "WV-9.3-equal-struct-eq" (Arith.equal toegekend toegekend' = true);
+  check "WV-9.3-equal-struct-neq" (Arith.equal toegekend toegekend_ander = false);
+  (* 9.3 through the comparison operator (sum types are non-numeric): the
+     anchor's rule 2 (= Aangehouden) and rule 3 (≠ Aangehouden) *)
+  check "WV-9.3-eq-same-tag"
+    (Arith.compare_op ~static_numeric:false Gelijk aangehouden aangehouden = true);
+  check "WV-9.3-neq-same-tag"
+    (Arith.compare_op ~static_numeric:false Ongelijk aangehouden aangehouden = false);
+  check "WV-9.3-eq-diff-tag"
+    (Arith.compare_op ~static_numeric:false Gelijk toegekend aangehouden = false);
+  check "WV-9.3-neq-diff-tag"
+    (Arith.compare_op ~static_numeric:false Ongelijk toegekend aangehouden = true);
+  (* 9.3: a leeg operand makes BOTH = and ≠ false (Tabel 38 mirror,
+     deliberately not complements — the anchor's case 4 corner), in both
+     operand orders *)
+  check "WV-9.3-eq-empty-l"
+    (Arith.compare_op ~static_numeric:false Gelijk leeg aangehouden = false);
+  check "WV-9.3-neq-empty-l"
+    (Arith.compare_op ~static_numeric:false Ongelijk leeg aangehouden = false);
+  check "WV-9.3-eq-empty-r"
+    (Arith.compare_op ~static_numeric:false Gelijk aangehouden leeg = false);
+  check "WV-9.3-neq-empty-r"
+    (Arith.compare_op ~static_numeric:false Ongelijk aangehouden leeg = false);
+  (* 9.3: eq_non_numeric with an empty operand is false directly *)
+  check "WV-9.3-teq-empty" (Arith.eq_non_numeric leeg aangehouden = false);
+  (* 9.3: sum values are not orderable — scalar_cmp faults *)
+  expect_fault "WV-9.3-order-fault"
+    (fun () -> Arith.compare_op ~static_numeric:false Kleiner toegekend aangehouden)
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;
     exit 1
   end
-  else print_endline "test_ref: all worked examples pass"
+  else Printf.printf "test_ref: all %d worked examples pass\n" !total

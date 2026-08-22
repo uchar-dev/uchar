@@ -27,6 +27,7 @@ let () =
         params = case.params;
         param_tls = case.param_tls;
         as_of = case.as_of;
+        locals = Uchar_ref.World.SMap.empty;
       }
     in
     match case.expected_fault with

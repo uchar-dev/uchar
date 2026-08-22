@@ -25,6 +25,9 @@ type env = {
   params : Value.t SMap.t; (* by norm name *)
   param_tls : Timeline.t SMap.t; (* granular parameters' full timelines (norm name) *)
   as_of : string option; (* ISO date; None = time-free session *)
+  locals : Value.t SMap.t;
+      (* lexical binders bound per match-arm evaluation (ch. 9.2), by norm
+         name; the row-10 card extends this to lambda/function parameters *)
 }
 
 let req what = function Some x -> x | None -> Value.fault "missing %s in IR node" what
@@ -307,7 +310,10 @@ let expr_typ : expr -> datatype option = function
   | Variabele_ref { typ; _ }
   | Constante { typ; _ }
   | Expr_onopgelost { typ; _ }
-  | Temporal_read { typ; _ } ->
+  | Temporal_read { typ; _ }
+  | Construct { typ; _ }
+  | Match { typ; _ }
+  | Binder_ref { typ; _ } ->
       typ
 
 (* the ch. 1.2d empty-equality asymmetry routes on the declared operand
@@ -316,7 +322,7 @@ let static_numeric l r =
   let kind e =
     match expr_typ e with
     | Some (Numeriek _ | Percentage _ | Datum_in_dagen | Datum_tijd) -> Some true
-    | Some (Tekst | Booleaan | Enumeratie _) -> Some false
+    | Some (Tekst | Booleaan | Enumeratie _ | Sum_type _) -> Some false
     | Some (Datatype_onbekend _) | None -> None
   in
   match kind l with Some b -> Some b | None -> kind r
@@ -460,6 +466,45 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       | v ->
           Value.fault "temporal-read date operand is %s, must be a day-precision date"
             (Value.to_string v))
+  | Construct { constructor_; argument; _ } -> (
+      (* ch. 9.1: a leeg argument propagates — a constructor value never
+         carries a leeg payload; a nullary constructor (argument absent) is
+         gevuld by construction *)
+      match argument with
+      | None -> Value.Ctor (constructor_, None)
+      | Some a -> (
+          match eval_expr env world self ~err a with
+          | Value.Empty -> Value.Empty
+          | v -> Value.Ctor (constructor_, Some v)))
+  | Match { scrutinee; arms; _ } -> (
+      (* ch. 9.2: evaluate the scrutinee; a leeg scrutinee propagates leeg
+         (no implicit leeg-arm); otherwise the unique arm for the tag, with
+         its binder bound to the payload for this evaluation only *)
+      match eval_expr env world self ~err scrutinee with
+      | Value.Empty -> Value.Empty
+      | Value.Ctor (tag, payload) -> (
+          match List.find_opt (fun (c, _, _) -> norm c = norm tag) arms with
+          | None ->
+              Value.fault
+                "match has no arm for constructor %S (WF-063 totality should preclude this)" tag
+          | Some (_, binder, body) ->
+              let locals =
+                match (binder, payload) with
+                | None, None -> env.locals
+                | Some b, Some v -> SMap.add (norm b) v env.locals
+                | Some _, None ->
+                    Value.fault "match arm for nullary constructor %S carries a binder (WF-063)" tag
+                | None, Some _ ->
+                    Value.fault "match arm for unary constructor %S lacks a binder (WF-063)" tag
+              in
+              eval_expr { env with locals } world self ~err body)
+      | v -> Value.fault "match scrutinee is %s, not a constructor value" (Value.to_string v))
+  | Binder_ref { naam; _ } -> (
+      (* ch. 9.2: the nearest enclosing binder; WF-064 makes the miss
+         statically impossible, so an unbound read is a fail-fast fault *)
+      match SMap.find_opt (norm naam) env.locals with
+      | Some v -> v
+      | None -> Value.fault "unbound binder %S (WF-064 should preclude this)" naam)
 
 and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leegwaarde ~filter
     ~dimensie_selectie ~granulariteit ~bron_rol =
@@ -1418,7 +1463,7 @@ let vintage_read_params (doc : document) : string list =
         expr basis;
         expr datum
     | Literal _ | Attribuut_ref _ | Parameter_ref _ | Variabele_ref _ | Constante _
-    | Expr_onopgelost _ ->
+    | Expr_onopgelost _ | Binder_ref _ ->
         ()
     | Tekst_reeks { delen; _ } ->
         List.iter (function Ingevoegd { expr = Some e } -> expr e | _ -> ()) delen
@@ -1430,6 +1475,10 @@ let vintage_read_params (doc : document) : string list =
     | Afgerond { basis; _ } -> opt basis
     | Begrensd { basis; minimum; maximum; _ } -> opt basis; opt minimum; opt maximum
     | Dimensie_cel { attribuut; _ } -> opt attribuut
+    | Construct { argument; _ } -> opt argument
+    | Match { scrutinee; arms; _ } ->
+        expr scrutinee;
+        List.iter (fun (_, _, body) -> expr body) arms
   and opt = function Some e -> expr e | None -> ()
   and cond (c : conditie) =
     match c with
