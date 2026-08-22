@@ -220,7 +220,7 @@ let rec eenheid path j : eenheid =
     noemer = opt (path / "noemer") eenheid (field path kvs "noemer");
   }
 
-let datatype path j : datatype =
+let rec datatype path j : datatype =
   let kvs = obj path j in
   let f name = field path kvs name in
   match node_kind path kvs with
@@ -255,6 +255,24 @@ let datatype path j : datatype =
   | "Onbekend" ->
       check_keys path kvs [ "node"; "reden" ];
       Datatype_onbekend { reden = str_opt (path / "reden") (f "reden") }
+  | "SumType" ->
+      (* extension node (v1, row 36): domain is a plain string; each
+         constructor carries a name and a payload datatype or explicit null
+         (nullary). Payloads recurse through [datatype] (nested sum types). *)
+      check_keys path kvs [ "node"; "domain"; "constructors" ];
+      Sum_type
+        {
+          domein = str (path / "domain") (f "domain");
+          constructoren =
+            List.mapi
+              (fun i c ->
+                let cp = path / "constructors" / string_of_int i in
+                let ckvs = obj cp c in
+                check_keys cp ckvs [ "name"; "payload" ];
+                ( str (cp / "name") (field cp ckvs "name"),
+                  opt (cp / "payload") datatype (field cp ckvs "payload") ))
+              (list_ (path / "constructors") (f "constructors"));
+        }
   | k -> fail (path / "node") ("unknown datatype node \"" ^ k ^ "\"")
 
 let geheel_periode path j : geheel_periode =
@@ -386,6 +404,38 @@ let rec expr path j : expr =
           typ = typ ();
           bron = bron ();
         }
+  | "Construct" ->
+      (* extension node (v1, row 36): argument present (an expr) iff unary,
+         explicit null for a nullary constructor; type required not-null *)
+      check_keys path kvs [ "node"; "type"; "constructor"; "argument"; "bron" ];
+      Construct
+        {
+          typ = typ ();
+          constructor_ = str (path / "constructor") (f "constructor");
+          argument = opt (path / "argument") expr (f "argument");
+          bron = bron ();
+        }
+  | "Match" ->
+      check_keys path kvs [ "node"; "type"; "scrutinee"; "arms"; "bron" ];
+      Match
+        {
+          typ = typ ();
+          scrutinee = expr (path / "scrutinee") (f "scrutinee");
+          arms =
+            List.mapi
+              (fun i a ->
+                let ap = path / "arms" / string_of_int i in
+                let akvs = obj ap a in
+                check_keys ap akvs [ "constructor"; "binder"; "body" ];
+                ( str (ap / "constructor") (field ap akvs "constructor"),
+                  str_opt (ap / "binder") (field ap akvs "binder"),
+                  expr (ap / "body") (field ap akvs "body") ))
+              (list_ (path / "arms") (f "arms"));
+          bron = bron ();
+        }
+  | "BinderRef" ->
+      check_keys path kvs [ "node"; "name"; "type"; "bron" ];
+      Binder_ref { naam = str (path / "name") (f "name"); typ = typ (); bron = bron () }
   | "Constante" ->
       check_keys path kvs [ "node"; "naam"; "type"; "bron" ];
       Constante { naam = str_opt (path / "naam") (f "naam"); typ = typ (); bron = bron () }

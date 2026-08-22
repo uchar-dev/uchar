@@ -128,6 +128,14 @@
         {
           "type": "object", "additionalProperties": false, "required": ["enumeration"],
           "properties": { "enumeration": { "type": "string", "minLength": 1 } }
+        },
+        {
+          "description": "A sum-type constructor value (CONSTRUCTS row 36): a declared constructor tag plus, for a unary constructor, its one payload value; 'payload' is absent for a nullary constructor.",
+          "type": "object", "additionalProperties": false, "required": ["constructor"],
+          "properties": {
+            "constructor": { "type": "string", "minLength": 1 },
+            "payload": { "$ref": "#/$defs/value" }
+          }
         }
       ]
     },

@@ -1,0 +1,192 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "beschikking": {
+          "node": "SumType",
+          "domain": "beschikking",
+          "constructors": [
+            {
+              "name": "Toegekend",
+              "payload": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "Afgewezen",
+              "payload": null
+            },
+            {
+              "name": "Aangehouden",
+              "payload": null
+            }
+          ]
+        },
+        "toestand": {
+          "node": "SumType",
+          "domain": "status",
+          "constructors": [
+            {
+              "name": "Open",
+              "payload": null
+            },
+            {
+              "name": "Dicht",
+              "payload": null
+            }
+          ]
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    }
+  },
+  "domeinen": {
+    "beschikking": {
+      "node": "SumType",
+      "domain": "beschikking",
+      "constructors": [
+        {
+          "name": "Toegekend",
+          "payload": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          }
+        },
+        {
+          "name": "Afgewezen",
+          "payload": null
+        },
+        {
+          "name": "Aangehouden",
+          "payload": null
+        }
+      ]
+    },
+    "status": {
+      "node": "SumType",
+      "domain": "status",
+      "constructors": [
+        {
+          "name": "Open",
+          "payload": null
+        },
+        {
+          "name": "Dicht",
+          "payload": null
+        }
+      ]
+    }
+  },
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [
+    {
+      "node": "ResolvedConsistentie",
+      "naam": "Kruiscontrole",
+      "subject": "Jutter",
+      "assertie": {
+        "node": "Vergelijking",
+        "op": "GELIJK",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "beschikking",
+          "objecttype": "Jutter",
+          "onderwerpBron": null,
+          "navigatieRol": null,
+          "type": {
+            "node": "SumType",
+            "domain": "beschikking",
+            "constructors": [
+              {
+                "name": "Toegekend",
+                "payload": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              },
+              {
+                "name": "Afgewezen",
+                "payload": null
+              },
+              {
+                "name": "Aangehouden",
+                "payload": null
+              }
+            ]
+          },
+          "bron": null,
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "toestand",
+          "objecttype": "Jutter",
+          "onderwerpBron": null,
+          "navigatieRol": null,
+          "type": {
+            "node": "SumType",
+            "domain": "status",
+            "constructors": [
+              {
+                "name": "Open",
+                "payload": null
+              },
+              {
+                "name": "Dicht",
+                "payload": null
+              }
+            ]
+          },
+          "bron": null,
+          "set": false,
+          "navigatiePad": []
+        },
+        "periode": null,
+        "bron": null
+      },
+      "bron": null,
+      "line": 1,
+      "geldigheid": null
+    }
+  ],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

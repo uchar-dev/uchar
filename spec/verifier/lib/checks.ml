@@ -762,7 +762,8 @@ let wf029 ctx =
 let datatype_kind = function
   | Numeriek _ -> "number" | Percentage _ -> "percentage" | Tekst -> "text"
   | Booleaan -> "boolean" | Datum_in_dagen -> "date-day" | Datum_tijd -> "date-ms"
-  | Enumeratie _ -> "enumeration" | Datatype_onbekend _ -> "unknown"
+  | Enumeratie _ -> "enumeration" | Sum_type _ -> "sumtype"
+  | Datatype_onbekend _ -> "unknown"
 
 let wf030 ctx =
   let key_checks at otn keys =
@@ -1003,7 +1004,8 @@ let typ_of_expr = function
   | Functie { typ; _ } | Afgerond { typ; _ } | Begrensd { typ; _ }
   | Attribuut_ref { typ; _ } | Dimensie_cel { typ; _ } | Parameter_ref { typ; _ }
   | Variabele_ref { typ; _ } | Constante { typ; _ } | Expr_onopgelost { typ; _ }
-  | Temporal_read { typ; _ } -> typ
+  | Temporal_read { typ; _ } | Construct { typ; _ } | Match { typ; _ }
+  | Binder_ref { typ; _ } -> typ
 
 (* Is this expression a time-dependent operand (for WF-043)? *)
 let expr_temporal ctx = function
@@ -1016,6 +1018,25 @@ let expr_temporal ctx = function
       | Some par -> par.par_granulariteit <> None
       | None -> false)
   | _ -> false
+
+(* --- sum-type helpers (IR-SPEC ch. 2.4 / ch. 4.7) ----------------------- *)
+
+(* The declared constructor list of a domain, iff it is declared (in
+   [domeinen]) as a SumType. This is the nominal source of truth for
+   WF-061..064: a use site names a domain, and the declaration is what it
+   must agree with — never the inline (possibly drifted) copy. *)
+let sum_decl ctx domein : (string * datatype option) list option =
+  match find_ci ctx.doc.domeinen domein with
+  | Some (Some (Sum_type { constructoren; _ })) -> Some constructoren
+  | _ -> None
+
+(* Two constructor lists agree when they carry the same constructors in the
+   same order with structurally equal payloads (names case-insensitively,
+   the WF-001 identity rule; payloads by the datatype equality WF-049 uses). *)
+let constructors_agree (a : (string * datatype option) list)
+    (b : (string * datatype option) list) =
+  List.length a = List.length b
+  && List.for_all2 (fun (n1, p1) (n2, p2) -> norm n1 = norm n2 && p1 = p2) a b
 
 let scalar_one_arg_kinds =
   [ Wortel; Absolute_waarde; Eerste_paasdag; Jaar_uit; Maand_uit; Dag_uit;
@@ -1355,7 +1376,7 @@ let wf053_attribuut_ref ctx at ~subject ~set ~bindings ~navigatie_rol ~navigatie
                else [])
              hops)
 
-let rec walk_expr ctx ~subject at (e : expr) : violation list =
+let rec walk_expr ctx ~binders ~subject at (e : expr) : violation list =
   let sub p = at ^ "/" ^ p in
   let typ_checks =
     match typ_of_expr e with
@@ -1388,7 +1409,7 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
              match d with
              | Letterlijk _ -> []
              | Ingevoegd { expr = Some e } ->
-                 walk_expr ctx ~subject (Printf.sprintf "%s/delen/%d/expr" at i) e
+                 walk_expr ctx ~binders ~subject (Printf.sprintf "%s/delen/%d/expr" at i) e
              | Ingevoegd { expr = None } -> [])
            delen)
   | Binair { op; links; rechts; _ } ->
@@ -1420,8 +1441,8 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
                [ v "WF-035" at "additive operands have incompatible units" ]
              else []
          | _ -> [])
-      @ (match links with Some e -> walk_expr ctx ~subject (sub "links") e | None -> [])
-      @ (match rechts with Some e -> walk_expr ctx ~subject (sub "rechts") e | None -> [])
+      @ (match links with Some e -> walk_expr ctx ~binders ~subject (sub "links") e | None -> [])
+      @ (match rechts with Some e -> walk_expr ctx ~binders ~subject (sub "rechts") e | None -> [])
   | Functie f ->
       let arity = List.length f.argumenten in
       (* WF-037: facet validity per kind *)
@@ -1475,7 +1496,7 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
                   [ v "WF-038" (sub "leegwaarde")
                       ("sum fallback is " ^ datatype_kind d ^ ", must be numeric") ]
               | _ -> [])
-             @ walk_expr ctx ~subject (sub "leegwaarde") lw)
+             @ walk_expr ctx ~binders ~subject (sub "leegwaarde") lw)
          | None -> [])
       (* WF-040: dimension selection labels *)
       @ (match f.dimensie_selectie with
@@ -1506,7 +1527,7 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
              let fsubject =
                match f.element_objecttype with Some el -> Some el | None -> subject
              in
-             walk_cond ctx ~subject:fsubject (sub "filter") c
+             walk_cond ctx ~binders ~subject:fsubject (sub "filter") c
          | None -> [])
       @ List.concat
           (List.mapi
@@ -1514,7 +1535,7 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
                let p = Printf.sprintf "%s/argumenten/%d" at i in
                match a, f.element_objecttype with
                | Attribuut_ref _, Some _ -> aggregation_source_check ctx p a
-               | _ -> walk_expr ctx ~subject p a)
+               | _ -> walk_expr ctx ~binders ~subject p a)
              f.argumenten)
       (* WF-055: the gedurende clip — a filter on the temporal total is a
          timeline operation; its condition is an own temporal
@@ -1676,7 +1697,7 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
              | Some st -> wf048_derivable ctx at ~from_type:st ~to_type:el ~site:"instance fold"
              | None -> []))
   | Afgerond { basis; _ } ->
-      (match basis with Some e -> walk_expr ctx ~subject (sub "basis") e | None -> [])
+      (match basis with Some e -> walk_expr ctx ~binders ~subject (sub "basis") e | None -> [])
   | Begrensd { basis; minimum; maximum; _ } ->
       (if minimum = None && maximum = None then
          [ v "WF-035" at "clamp without any bound" ]
@@ -1689,7 +1710,7 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
                  | Some d when not (is_number_like d) ->
                      [ v "WF-035" (sub n) ("clamp " ^ n ^ " is " ^ datatype_kind d ^ ", must be numeric") ]
                  | _ -> [])
-                @ walk_expr ctx ~subject (sub n) e
+                @ walk_expr ctx ~binders ~subject (sub n) e
             | None -> [])
           [ ("basis", basis); ("minimum", minimum); ("maximum", maximum) ]
   | Attribuut_ref
@@ -1766,8 +1787,8 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
                 | None ->
                     [ v "WF-040" at ("cell read of undimensioned attribute '" ^ a ^ "'") ])
             | None -> [])
-           @ walk_expr ctx ~subject (sub "attribuut") inner
-       | Some inner -> walk_expr ctx ~subject (sub "attribuut") inner
+           @ walk_expr ctx ~binders ~subject (sub "attribuut") inner
+       | Some inner -> walk_expr ctx ~binders ~subject (sub "attribuut") inner
        | None -> [])
   | Parameter_ref { parameter; _ } -> (
       match parameter with
@@ -1839,10 +1860,146 @@ let rec walk_expr ctx ~subject at (e : expr) : violation list =
                 "the read's date operand carries no type (extension node: day precision required)" ]
       in
       basis_checks @ datum_checks
-      @ walk_expr ctx ~subject (sub "basis") basis
-      @ walk_expr ctx ~subject (sub "datum") datum
+      @ walk_expr ctx ~binders ~subject (sub "basis") basis
+      @ walk_expr ctx ~binders ~subject (sub "datum") datum
+  | Construct { typ; constructor_; argument; _ } ->
+      (* WF-062: the constructor is declared in the node's sum type; the
+         argument is present iff the constructor is unary; the argument's
+         static type equals the declared payload datatype *)
+      (match typ with
+       | None -> [ v "WF-062" (sub "type") "construct carries no sum type" ]
+       | Some (Sum_type { domein; _ }) -> (
+           match sum_decl ctx domein with
+           | None ->
+               [ v "WF-062" (sub "type")
+                   ("construct names sum-type domain '" ^ domein
+                  ^ "', which is not a declared sum type") ]
+           | Some ctors -> (
+               match List.find_opt (fun (n, _) -> norm n = norm constructor_) ctors with
+               | None ->
+                   [ v "WF-062" at
+                       ("'" ^ constructor_ ^ "' is not a declared constructor of sum type '"
+                      ^ domein ^ "'") ]
+               | Some (_, payload) -> (
+                   match payload, argument with
+                   | None, None | Some _, Some _ ->
+                       (match payload, argument with
+                        | Some pd, Some a -> (
+                            match typ_of_expr a with
+                            | Some ad when ad <> pd ->
+                                [ v "WF-062" at
+                                    ("argument type " ^ datatype_kind ad
+                                   ^ " does not match the declared payload "
+                                   ^ datatype_kind pd) ]
+                            | _ -> [])
+                        | _ -> [])
+                   | None, Some _ ->
+                       [ v "WF-062" at
+                           ("nullary constructor '" ^ constructor_ ^ "' carries an argument") ]
+                   | Some _, None ->
+                       [ v "WF-062" at
+                           ("unary constructor '" ^ constructor_ ^ "' carries no argument") ])))
+       | Some d ->
+           [ v "WF-062" (sub "type")
+               ("construct type is " ^ datatype_kind d ^ ", not a sum type") ])
+      @ (match argument with
+         | Some a -> walk_expr ctx ~binders ~subject (sub "argument") a
+         | None -> [])
+  | Match { typ; scrutinee; arms; _ } ->
+      let decl =
+        match typ_of_expr scrutinee with
+        | Some (Sum_type { domein; _ }) -> `Sum (domein, sum_decl ctx domein)
+        | Some d -> `NotSum d
+        | None -> `NoType
+      in
+      let scrutinee_checks, ctors =
+        match decl with
+        | `NoType -> ([ v "WF-063" (sub "scrutinee") "match scrutinee carries no type" ], None)
+        | `NotSum d ->
+            ([ v "WF-063" (sub "scrutinee")
+                 ("match scrutinee is " ^ datatype_kind d ^ ", not a sum type") ], None)
+        | `Sum (domein, None) ->
+            ([ v "WF-063" (sub "scrutinee")
+                 ("match scrutinee names sum-type domain '" ^ domein
+                ^ "', which is not a declared sum type") ], None)
+        | `Sum (_, Some cs) -> ([], Some cs)
+      in
+      let arm_names = List.map (fun (c, _, _) -> c) arms in
+      (* WF-063: the arms cover exactly the declared constructors, each once *)
+      let totality =
+        match ctors with
+        | None -> []
+        | Some cs ->
+            let declared = List.map fst cs in
+            List.map
+              (fun (_, dup, _) ->
+                v "WF-063" at ("constructor '" ^ dup ^ "' is matched by more than one arm"))
+              (dups_by norm (List.map (fun c -> (c, at)) arm_names))
+            @ List.filter_map
+                (fun c ->
+                  if mem_ci declared c then None
+                  else
+                    Some
+                      (v "WF-063" at
+                         ("arm '" ^ c ^ "' is not a declared constructor of the sum type")))
+                arm_names
+            @ List.filter_map
+                (fun d ->
+                  if mem_ci arm_names d then None
+                  else Some (v "WF-063" at ("constructor '" ^ d ^ "' is not covered by any arm")))
+                declared
+      in
+      (* WF-063: an arm carries a binder iff its constructor is unary *)
+      let binder_checks =
+        match ctors with
+        | None -> []
+        | Some cs ->
+            List.concat_map
+              (fun (c, binder, _) ->
+                match List.find_opt (fun (n, _) -> norm n = norm c) cs with
+                | None -> [] (* alien arm: reported by totality *)
+                | Some (_, payload) -> (
+                    match payload, binder with
+                    | None, None | Some _, Some _ -> []
+                    | None, Some b ->
+                        [ v "WF-063" at
+                            ("nullary constructor '" ^ c ^ "' carries a binder '" ^ b ^ "'") ]
+                    | Some _, None ->
+                        [ v "WF-063" at ("unary constructor '" ^ c ^ "' carries no binder") ]))
+              arms
+      in
+      (* WF-064: all arm bodies agree on one result datatype — the Match's own type *)
+      let body_type_checks =
+        match typ with
+        | None -> []
+        | Some mt ->
+            List.filter_map
+              (fun (c, _, body) ->
+                match typ_of_expr body with
+                | Some bt when bt <> mt ->
+                    Some
+                      (v "WF-064" at
+                         ("the '" ^ c ^ "' arm body is " ^ datatype_kind bt
+                        ^ ", but the match result type is " ^ datatype_kind mt))
+                | _ -> None)
+              arms
+      in
+      scrutinee_checks @ totality @ binder_checks @ body_type_checks
+      @ walk_expr ctx ~binders ~subject (sub "scrutinee") scrutinee
+      @ List.concat
+          (List.mapi
+             (fun i (_, binder, body) ->
+               let binders' = match binder with Some b -> b :: binders | None -> binders in
+               walk_expr ctx ~binders:binders' ~subject
+                 (Printf.sprintf "%s/arms/%d/body" at i) body)
+             arms)
+  | Binder_ref { naam; _ } ->
+      (* WF-064: a binder reference resolves lexically to an enclosing
+         match-arm binder (a VariabeleRef stays outside this rule — row 24) *)
+      if List.exists (fun b -> norm b = norm naam) binders then []
+      else [ v "WF-064" at ("binder reference '" ^ naam ^ "' resolves to no enclosing binder") ]
 
-and walk_cond ctx ~subject at (c : conditie) : violation list =
+and walk_cond ctx ~binders ~subject at (c : conditie) : violation list =
   let sub p = at ^ "/" ^ p in
   let whole_period_check periode operands =
     match periode with
@@ -1885,6 +2042,11 @@ and walk_cond ctx ~subject at (c : conditie) : violation list =
            | Enumeratie { domein = Some d1; _ }, Enumeratie { domein = Some d2; _ }
              when norm d1 <> norm d2 ->
                [ v "WF-036" at "equality across different enumeration domains" ]
+           | Sum_type { domein = d1; _ }, Sum_type { domein = d2; _ } when norm d1 <> norm d2 ->
+               (* WF-061 (nominal): two sum-typed operands of one comparison
+                  MUST name the same declaring domain *)
+               [ v "WF-061" at
+                   ("comparison across different sum-type domains '" ^ d1 ^ "' and '" ^ d2 ^ "'") ]
            | Datum_in_dagen, Datum_tijd | Datum_tijd, Datum_in_dagen ->
                [ v "WF-036" at "equality across date precisions" ]
            | a, b when is_number_like a && is_number_like b ->
@@ -1898,8 +2060,8 @@ and walk_cond ctx ~subject at (c : conditie) : violation list =
            | _ -> [])
        | _ -> [])
       @ whole_period_check periode [ links; rechts ]
-      @ (match links with Some e -> walk_expr ctx ~subject (sub "links") e | None -> [])
-      @ (match rechts with Some e -> walk_expr ctx ~subject (sub "rechts") e | None -> [])
+      @ (match links with Some e -> walk_expr ctx ~binders ~subject (sub "links") e | None -> [])
+      @ (match rechts with Some e -> walk_expr ctx ~binders ~subject (sub "rechts") e | None -> [])
   | Predicaat { soort; operand; dagsoort; periode; _ } ->
       let ot = Option.bind operand typ_of_expr in
       (match soort, ot with
@@ -1921,7 +2083,7 @@ and walk_cond ctx ~subject at (c : conditie) : violation list =
              [ v "WF-034" at ("reference to undeclared day kind '" ^ dk ^ "'") ]
          | _ -> [])
       @ whole_period_check periode [ operand ]
-      @ (match operand with Some e -> walk_expr ctx ~subject (sub "operand") e | None -> [])
+      @ (match operand with Some e -> walk_expr ctx ~binders ~subject (sub "operand") e | None -> [])
   | Kenmerk_check { kenmerk; navigatie; periode; navigatie_binding; _ } ->
       (match kenmerk, navigatie, subject with
        | Some k, None, Some otn -> (
@@ -2026,7 +2188,7 @@ and walk_cond ctx ~subject at (c : conditie) : violation list =
                  | Some d when not (is_date d) ->
                      [ v "WF-042" (sub n) ("window bound is " ^ datatype_kind d ^ ", must be a date") ]
                  | _ -> [])
-                @ walk_expr ctx ~subject (sub n) e
+                @ walk_expr ctx ~binders ~subject (sub n) e
             | None -> [])
           [ ("vanaf", vanaf); ("tot", tot) ]
   | Samengesteld { kwantor; drempel; onderdelen; _ } ->
@@ -2036,7 +2198,7 @@ and walk_cond ctx ~subject at (c : conditie) : violation list =
        | _ -> [])
       @ List.concat
           (List.mapi
-             (fun i c -> walk_cond ctx ~subject (Printf.sprintf "%s/onderdelen/%d" at i) c)
+             (fun i c -> walk_cond ctx ~binders ~subject (Printf.sprintf "%s/onderdelen/%d" at i) c)
              onderdelen)
   | Regelversie _ -> [] (* row-30 split; admissibility OPEN *)
   | Conditie_onopgelost _ -> []
@@ -2099,9 +2261,9 @@ let expression_layer ctx =
                       "the day-count gedurende condition is an own temporal characteristic check"
                   ])
         | _ -> [])
-      @ (match r.waarde with Some e -> walk_expr ctx ~subject (at ^ "/waarde") e | None -> [])
+      @ (match r.waarde with Some e -> walk_expr ctx ~binders:[] ~subject (at ^ "/waarde") e | None -> [])
       @ (match r.rr_voorwaarde with
-         | Some c -> walk_cond ctx ~subject (at ^ "/voorwaarde") c
+         | Some c -> walk_cond ctx ~binders:[] ~subject (at ^ "/voorwaarde") c
          | None -> []))
     (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_regels)
   @ List.concat_map
@@ -2116,12 +2278,12 @@ let expression_layer ctx =
                       (ch. 5.5) — the walking type for navigation and
                       fold derivation is oc_subject, never the created
                       type *)
-                   walk_expr ctx ~subject:r.oc_subject
+                   walk_expr ctx ~binders:[] ~subject:r.oc_subject
                      (Printf.sprintf "%s/toekenningen/%d/waarde" at j) e
                | None -> [])
              r.toekenningen)
         @ (match r.oc_voorwaarde with
-           | Some c -> walk_cond ctx ~subject:r.oc_subject (at ^ "/voorwaarde") c
+           | Some c -> walk_cond ctx ~binders:[] ~subject:r.oc_subject (at ^ "/voorwaarde") c
            | None -> [])
         @ (match r.oc_verbindende_rol with
            | Some rb ->
@@ -2135,7 +2297,7 @@ let expression_layer ctx =
       (fun (i, r) ->
         match r.vd_voorwaarde with
         | Some c ->
-            walk_cond ctx ~subject:r.bron_type
+            walk_cond ctx ~binders:[] ~subject:r.bron_type
               (Printf.sprintf "/verdelingen/%d/voorwaarde" i) c
         | None -> [])
       (List.mapi (fun i r -> (i, r)) ctx.doc.verdelingen)
@@ -2143,7 +2305,7 @@ let expression_layer ctx =
       (fun (i, r) ->
         match r.assertie with
         | Some c ->
-            walk_cond ctx ~subject:r.cons_subject
+            walk_cond ctx ~binders:[] ~subject:r.cons_subject
               (Printf.sprintf "/consistenties/%d/assertie" i) c
         | None -> [])
       (List.mapi (fun i r -> (i, r)) ctx.doc.consistenties)
@@ -2151,7 +2313,7 @@ let expression_layer ctx =
       (fun (i, r) ->
         match r.rd_voorwaarde with
         | Some c ->
-            walk_cond ctx ~subject:None
+            walk_cond ctx ~binders:[] ~subject:None
               (Printf.sprintf "/resolvedDagsoorten/%d/voorwaarde" i) c
         | None -> [])
       (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_dagsoorten)
@@ -2159,7 +2321,7 @@ let expression_layer ctx =
       (fun (i, r) ->
         match r.fc_voorwaarde with
         | Some c ->
-            walk_cond ctx ~subject:r.anker
+            walk_cond ctx ~binders:[] ~subject:r.anker
               (Printf.sprintf "/feitCreaties/%d/voorwaarde" i) c
         | None -> [])
       (List.mapi (fun i r -> (i, r)) ctx.doc.feit_creaties)
@@ -2170,14 +2332,14 @@ let expression_layer ctx =
              (fun j (r : rung) ->
                (match r.rung_voorwaarde with
                | Some c ->
-                   walk_cond ctx ~subject:(Some l.dl_onderwerp)
+                   walk_cond ctx ~binders:[] ~subject:(Some l.dl_onderwerp)
                      (Printf.sprintf "/defaultLadders/%d/rungs/%d/voorwaarde" i j)
                      c
                | None -> [])
                @
                match r.rung_consequentie with
                | Some e ->
-                   walk_expr ctx ~subject:(Some l.dl_onderwerp)
+                   walk_expr ctx ~binders:[] ~subject:(Some l.dl_onderwerp)
                      (Printf.sprintf "/defaultLadders/%d/rungs/%d/consequentie" i j)
                      e
                | None -> [])
@@ -2292,6 +2454,15 @@ let rec dep_expr ctx ~subject acc (e : expr) =
          the basis is an attribute/parameter reference whose own case
          adds the right edge *)
       dep_expr ctx ~subject (dep_expr ctx ~subject acc basis) datum
+  | Construct { argument; _ } -> dep_opt ctx ~subject acc argument
+  | Match { scrutinee; arms; _ } ->
+      (* the reads are the scrutinee's and every arm body's; a binder is
+         lexical, contributing no attribute/parameter edge of its own *)
+      List.fold_left
+        (fun acc (_, _, body) -> dep_expr ctx ~subject acc body)
+        (dep_expr ctx ~subject acc scrutinee)
+        arms
+  | Binder_ref _ -> acc
 
 and dep_opt ctx ~subject acc = function Some e -> dep_expr ctx ~subject acc e | None -> acc
 
@@ -3318,6 +3489,106 @@ let wf059 ctx =
         ot.attributen)
     ctx.doc.objecttypen
 
+(* WF-060: a SumType declaration (a domain whose datatype is a SumType) MUST
+   carry at least one constructor, unique constructor names, admissible
+   payload datatypes (Number, day-precision Date, or a declared SumType),
+   and an acyclic payload graph over the sum-type declarations (IR-SPEC
+   ch. 2.4 — no recursive sum types). *)
+let wf060 ctx =
+  let payload_domains cs =
+    List.filter_map
+      (fun (_, p) -> match p with Some (Sum_type { domein; _ }) -> Some domein | _ -> None)
+      cs
+  in
+  (* is [target] reachable from itself through the payload graph? *)
+  let rec reaches ~target ~visited d =
+    match sum_decl ctx d with
+    | None -> false
+    | Some cs ->
+        List.exists
+          (fun e ->
+            norm e = norm target
+            || ((not (List.mem (norm e) visited))
+               && reaches ~target ~visited:(norm e :: visited) e))
+          (payload_domains cs)
+  in
+  List.concat_map
+    (fun (name, dt) ->
+      match dt with
+      | Some (Sum_type { constructoren; _ }) ->
+          let at = "/domeinen/" ^ name in
+          (if constructoren = [] then [ v "WF-060" at "sum type declares no constructor" ]
+           else [])
+          @ List.map
+              (fun (first, dup, at') ->
+                v "WF-060" at'
+                  (Printf.sprintf "duplicate constructor name '%s' (already declared as '%s')"
+                     dup first))
+              (dups_by norm (List.map (fun (n, _) -> (n, at)) constructoren))
+          @ List.concat_map
+              (fun (_, payload) ->
+                match payload with
+                | None | Some (Numeriek _) | Some Datum_in_dagen -> []
+                | Some (Sum_type { domein; _ }) -> (
+                    match sum_decl ctx domein with
+                    | Some _ -> []
+                    | None ->
+                        [ v "WF-060" at
+                            ("constructor payload names sum-type domain '" ^ domein
+                           ^ "', which is not a declared sum type") ])
+                | Some d ->
+                    [ v "WF-060" at
+                        ("constructor payload is " ^ datatype_kind d
+                       ^ ", which is not an admissible sum-type payload (number, day-precision \
+                          date, or a declared sum type)") ])
+              constructoren
+          @
+          if reaches ~target:name ~visited:[ norm name ] name then
+            [ v "WF-060" at
+                ("sum type '" ^ name
+               ^ "' is recursive — the payload graph over sum-type declarations must be acyclic")
+            ]
+          else []
+      | _ -> [])
+    ctx.doc.domeinen
+
+(* WF-061: a SumType use site (an attribute or parameter datatype that is a
+   SumType) MUST name a declared domain whose declaration it agrees with —
+   same constructors, same payloads, same order (IR-SPEC ch. 2.4). The
+   nominal-comparison half of the rule (two sum-typed operands of one
+   comparison name the same domain) rides the expression walk, walk_cond. *)
+let wf061 ctx =
+  let use_site at = function
+    | Sum_type { domein; constructoren } -> (
+        match sum_decl ctx domein with
+        | None ->
+            [ v "WF-061" at
+                ("sum-type use site names domain '" ^ domein
+               ^ "', which is not a declared sum type") ]
+        | Some decl ->
+            if constructors_agree decl constructoren then []
+            else
+              [ v "WF-061" at
+                  ("sum-type use site disagrees with the declaration of domain '" ^ domein
+                 ^ "' (same constructors, payloads and order required)") ])
+    | _ -> []
+  in
+  List.concat_map
+    (fun (otname, (ot : objecttype)) ->
+      List.concat_map
+        (fun (an, dt) ->
+          match dt with
+          | Some st -> use_site ("/objecttypen/" ^ otname ^ "/attributen/" ^ an) st
+          | None -> [])
+        ot.attributen)
+    ctx.doc.objecttypen
+  @ List.concat_map
+      (fun (pn, (p : parameter)) ->
+        match p.par_datatype with
+        | Some st -> use_site ("/parameters/" ^ pn) st
+        | None -> [])
+      ctx.doc.parameters
+
 let all (doc : document) : violation list =
   let ctx = { doc } in
   List.concat
@@ -3327,5 +3598,5 @@ let all (doc : document) : violation list =
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf032 ctx; wf033 ctx; wf045_046 ctx;
       wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf054 ctx;
-      wf057 ctx; wf059 ctx;
+      wf057 ctx; wf059 ctx; wf060 ctx; wf061 ctx;
       expression_layer ctx ]

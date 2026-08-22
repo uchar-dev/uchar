@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://uchar.dev/schema/regelspraak-ir-v0.schema.json",
   "title": "regelspraak-ir-v0",
-  "description": "Structural schema for the 'regelspraak-ir-v0' format: the faithful engine-neutral JSON dump of the reference frontend's fully resolved model (mirror-then-diverge; see spec/IR-SPEC.md). Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Exception, by the decided wire-entry discipline (IR-SPEC, Method): extension fields carrying v1 deltas (verbindendeRol, bronRol, the symbolic fact-creation fields) are optional, and the expr union admits the extension node TemporalRead \u2014 the v0 emitter never produces any of them, and when present they are written whole, never null. Section citations (e.g. \u00a713.3.3) point into the source language spec by number only.",
+  "description": "Structural schema for the 'regelspraak-ir-v0' format: the faithful engine-neutral JSON dump of the reference frontend's fully resolved model (mirror-then-diverge; see spec/IR-SPEC.md). Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Exception, by the decided wire-entry discipline (IR-SPEC, Method): extension fields carrying v1 deltas (verbindendeRol, bronRol, the symbolic fact-creation fields) are optional, the datatype union admits the extension node SumType (the payload-carrying variant family, CONSTRUCTS row 36), and the expr union admits the extension nodes TemporalRead, Construct, Match and BinderRef \u2014 the v0 emitter never produces any of them, and when present they are written whole, never null. Section citations (e.g. \u00a713.3.3) point into the source language spec by number only.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -349,6 +349,51 @@
         }
       }
     },
+    "SumType": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "domain",
+        "constructors"
+      ],
+      "properties": {
+        "node": {
+          "const": "SumType"
+        },
+        "domain": {
+          "type": "string"
+        },
+        "constructors": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "payload"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "payload": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/datatype"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "description": "Extension node (IR-SPEC Method; wire node SumType, never emitter-produced): the payload-carrying variant family of CONSTRUCTS row 36 — a declared, nominal sum type hosted by 'domeinen' and repeated whole at every use site. Each constructor carries a 'name' and either one 'payload' datatype (unary) or null (nullary). See spec/IR-SPEC.md ch. 2.4 (WF-060/061)."
+    },
     "datatype": {
       "description": "A RegelSpraak datatype (\u00a713.3.3), discriminated on 'node'.",
       "oneOf": [
@@ -375,6 +420,9 @@
         },
         {
           "$ref": "#/$defs/Onbekend"
+        },
+        {
+          "$ref": "#/$defs/SumType"
         }
       ]
     },
@@ -1112,6 +1160,129 @@
       },
       "description": "Extension node (v1, CONSTRUCTS row 11): the point-in-time read read(tl, d) of spec/RUNTIME-SEMANTICS.md ch. 3.3. Never emitter-produced; basis, datum and type are required and non-null."
     },
+    "Construct": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "type",
+        "constructor",
+        "argument",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "Construct"
+        },
+        "type": {
+          "$ref": "#/$defs/datatype"
+        },
+        "constructor": {
+          "type": "string"
+        },
+        "argument": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "description": "Extension node (IR-SPEC Method; wire node Construct, never emitter-produced): builds a sum-type constructor value (CONSTRUCTS row 36; spec/RUNTIME-SEMANTICS.md ch. 9.1). 'argument' is an expr iff the constructor is unary, null for a nullary constructor. 'type' (the SumType) is required and non-null."
+    },
+    "Match": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "type",
+        "scrutinee",
+        "arms",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "Match"
+        },
+        "type": {
+          "$ref": "#/$defs/datatype"
+        },
+        "scrutinee": {
+          "$ref": "#/$defs/expr"
+        },
+        "arms": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "constructor",
+              "binder",
+              "body"
+            ],
+            "properties": {
+              "constructor": {
+                "type": "string"
+              },
+              "binder": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "body": {
+                "$ref": "#/$defs/expr"
+              }
+            }
+          }
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "description": "Extension node (IR-SPEC Method; wire node Match, never emitter-produced): deconstructs a sum-type value, one arm per declared constructor (CONSTRUCTS row 36; spec/RUNTIME-SEMANTICS.md ch. 9.2). A unary arm carries a 'binder' name, a nullary arm carries null. 'type' (the result datatype) and 'scrutinee' are required and non-null."
+    },
+    "BinderRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "name",
+        "type",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "BinderRef"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/datatype"
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "description": "Extension node (IR-SPEC Method; wire node BinderRef, never emitter-produced): reads the nearest enclosing match-arm binder of its name (CONSTRUCTS row 36; spec/RUNTIME-SEMANTICS.md ch. 9.2). Deliberately distinct from VariabeleRef (row 24). 'name' and 'type' are required and non-null."
+    },
     "expr": {
       "description": "A resolved expression (\u00a713.4), discriminated on 'node'.",
       "oneOf": [
@@ -1153,6 +1324,15 @@
         },
         {
           "$ref": "#/$defs/TemporalRead"
+        },
+        {
+          "$ref": "#/$defs/Construct"
+        },
+        {
+          "$ref": "#/$defs/Match"
+        },
+        {
+          "$ref": "#/$defs/BinderRef"
         }
       ]
     },

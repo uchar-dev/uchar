@@ -1,0 +1,48 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {},
+  "domeinen": {
+    "lijst": {
+      "node": "SumType",
+      "domain": "lijst",
+      "constructors": [
+        {
+          "name": "Leeg",
+          "payload": null
+        },
+        {
+          "name": "Punt",
+          "payload": {
+            "node": "SumType",
+            "domain": "lijst",
+            "constructors": [
+              {
+                "name": "Leeg",
+                "payload": null
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

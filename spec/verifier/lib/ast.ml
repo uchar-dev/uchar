@@ -61,6 +61,11 @@ type datatype =
   | Datum_in_dagen
   | Datum_tijd
   | Enumeratie of { domein : string option; waarden : string option list }
+  (* Extension node (v1, row 36): the payload-carrying variant family
+     (IR-SPEC ch. 2.4). [domein] names the declaring domain; each
+     constructor carries a name and either one payload datatype (unary) or
+     None (nullary). Never emitter-produced. *)
+  | Sum_type of { domein : string; constructoren : (string * datatype option) list }
   | Datatype_onbekend of { reden : string option }
 
 (* The whole-period qualifier tag riding Vergelijking/Predicaat/Kenmerk. *)
@@ -135,6 +140,24 @@ type expr =
      attribute or a granular parameter); [datum] is a day-precision date
      expression. Never emitter-produced; strict, no nullable children. *)
   | Temporal_read of { basis : expr; datum : expr; typ : datatype option; bron : string option }
+  (* Extension nodes (v1, row 36): the sum-type expression forms
+     (IR-SPEC ch. 4.7; semantics RUNTIME-SEMANTICS ch. 9). [typ] is
+     required on the wire (non-null, the TemporalRead pattern); [argument]
+     and the arm [binder] are the only nullable children — an explicit
+     null there is nullary. Never emitter-produced. *)
+  | Construct of {
+      typ : datatype option;
+      constructor_ : string;
+      argument : expr option;
+      bron : string option;
+    }
+  | Match of {
+      typ : datatype option;
+      scrutinee : expr;
+      arms : (string * string option * expr) list; (* constructor, binder, body *)
+      bron : string option;
+    }
+  | Binder_ref of { naam : string; typ : datatype option; bron : string option }
 
 and tekst_deel =
   | Letterlijk of { tekst : string option }

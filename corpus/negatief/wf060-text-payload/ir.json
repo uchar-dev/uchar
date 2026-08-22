@@ -1,0 +1,45 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {},
+  "domeinen": {
+    "beschikking": {
+      "node": "SumType",
+      "domain": "beschikking",
+      "constructors": [
+        {
+          "name": "Toegekend",
+          "payload": {
+            "node": "Tekst"
+          }
+        },
+        {
+          "name": "Afgewezen",
+          "payload": null
+        },
+        {
+          "name": "Aangehouden",
+          "payload": null
+        }
+      ]
+    }
+  },
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}
