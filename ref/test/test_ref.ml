@@ -851,12 +851,14 @@ let () =
     && wall 3 = day "2024-04-30")
 
 (* --- ch. 9: sum types and match (RUNTIME-SEMANTICS ch. 9) ---------------
-   Operator-level worked examples. The 9.1 Construct leeg-propagation and
-   the 9.2 whole-match evaluation need a document; the anchor
-   jutterswet-beschikkingsom pins those through gates 5-6 (case1-3 the
-   filled arms, case4 the leeg-scrutinee corner). Here: the 9.1 rendering
-   and the 9.3 equality corners, verbatim on the anchor's
-   beschikking = Toegekend(bedrag) | Afgewezen | Aangehouden. *)
+   Operator-level worked examples. The 9.1 unary Construct build with its
+   leeg-argument propagation, and the 9.2 whole-match evaluation, need a
+   document; the anchor jutterswet-beschikkingsom pins those through gates
+   5-6 (uitkering := match beschikking: case1-3 the filled arms, case4 the
+   leeg-scrutinee corner; herbeschikking := Toegekend(borg): case1 the unary
+   build Toegekend(300.00), cases 2-4 the leeg-argument corner). Here: the
+   value level — the 9.1 rendering and the 9.3 equality corners, verbatim on
+   the anchor's beschikking = Toegekend(bedrag) | Afgewezen | Aangehouden. *)
 let ctor tag p = Value.Ctor (tag, p)
 
 let () =

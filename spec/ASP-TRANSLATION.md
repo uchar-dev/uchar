@@ -713,13 +713,28 @@ case exercises it, so the ASP case emission (and any sum scrutinee or
 operand over an own temporal attribute) faults with the literal reason
 `temporal sum carriage is a recorded flank; no corpus case` rather than
 silently omitting the constructor-valued segments (RUNTIME-SEMANTICS
-ch. 9.4); a `Construct` payload other than a literal (a bound payload
-would need underivability propagation — no corpus case); a match
+ch. 9.4); a `Construct` payload other than a literal or an own-subject
+attribute read (a bound own-attribute read in write position rides its
+`val` atom, the anchor's `herbeschikking` rule
+`val(S,herbeschikking,toegekend(V)) :- …, val(S,borg,V)`; a `Match` or
+composite payload still has no corpus case); a match
 scrutinee or a sum-typed equality operand other than an own-subject
 attribute read or a `Construct` (navigated sum reads await a case); a
 match arm whose result scale disagrees with the match's declared scale;
 a constructor name that does not normalise to a valid ASP functor symbol
-(`ctor_functor`, the sum-side quote backstop). Nullary-with-argument and
+(`ctor_functor`, the sum-side quote backstop). A **sum-typed parameter**
+is ref-only: ref accepts and executes it, but the ASP case emission
+scales every parameter through `decimals_of_datatype` and so faults on a
+`SumType` datatype with the literal reason `unscalable datatype in the
+ASP translation` (a constructor value has no integer encoding). Two
+payload **values** WF-060 admits but the ASP value emission does not yet
+carry uniformly: a **nested-sum payload** (a declared-`SumType` payload)
+faults the same way — `ctor_value_term` scales the payload through
+`decimals_of_datatype`, which yields no number for a constructor value
+(`unscalable datatype in the ASP translation`); a **day-precision date
+payload** does translate — `ctor_value_term` emits `functor(dayNumber)`
+at scale 0 (the day integer) — so there the gap is only that no corpus
+case exercises it. Nullary-with-argument and
 unary-without-argument constructs, an alien or missing arm, a binder on a
 nullary arm and its converse are rejected by WF-062..064 before
 translation is reached.

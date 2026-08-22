@@ -2226,6 +2226,14 @@ Worked (the `jutterswet-beschikkingsom` anchor's declarations —
 - `Construct Toegekend(x)` with `x` leeg → leeg.
 - `Construct Afgewezen` → the value `Afgewezen` (nullary; gevuld).
 
+The anchor's fourth rule pins both forms absolutely through gates 5–6:
+`herbeschikking` := `Construct Toegekend(borg)` (the argument a bound
+attribute read). Case 1 supplies `borg` = 300.00 →
+`herbeschikking` = **Toegekend(300.00)** (the unary build); cases 2–4
+supply no `borg`, so the argument is leeg and the whole `Construct`
+propagates → `herbeschikking` **leeg** (the leeg-argument corner, pinned
+threefold).
+
 ### 9.2 Match
 
 `Match(scrutinee, arms)` — the arms cover the declared constructors

@@ -362,6 +362,13 @@ never convert.
   nominal-identity rule, the sum-type sibling of WF-008 (which stays
   stated over `Enumeration` and keeps its own OPEN).
 
+A recorded flank, deliberately not a WF clause: the ASP backend carries
+each constructor name as a *functor symbol*, so a name that does not
+normalise to a valid symbolic constant (`[a-z][a-z0-9_]*` — e.g. one
+carrying spaces) is a loud executor fence inventoried in
+`ASP-TRANSLATION.md` S15, not a well-formedness violation — the WF-057
+precedent fences only the string encoding, never the functor charset.
+
 **Deltas (tracked, `CONSTRUCTS.md` row 27):**
 
 - v0 `Percentage` is removed as a separate variant: a percentage is a
@@ -1536,9 +1543,9 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-058 | the day count (aantal-dagen-in, `RUNTIME-SEMANTICS.md` ch. 3.8) MUST carry a gedurende condition over an own temporal characteristic, takes no arguments, and its stated bucket MUST equal the target's declared granularity | gate 3 | `anchor/jutterswet-dagentelling` (the ch. 3.8 worked example verbatim, executed by gates 5–6) | `wf058-no-gedurende-condition` + `wf058-bucket-target-mismatch` + `wf058-with-argument` |
 | WF-059 | every declared attribute carries a datatype (ch. 2.2 — the attribute pendant of WF-018's datatype clause; a null datatype splits the executors on otherwise clean input) | gate 3 | every golden (a universal declaration property; gate 3 witnesses none over-rejects) | `wf059-attribute-without-datatype` |
 | WF-060 | SumType declaration: ≥ 1 constructor, unique names (ci), admissible payload datatypes (Number, day-precision Date, declared SumType), acyclic payload graph (ch. 2.4) | gate 3 | `anchor/jutterswet-beschikkingsom` (executed by gates 5–6) | `wf060-duplicate-constructor` + `wf060-text-payload` + `wf060-recursive-sumtype` |
-| WF-061 | SumType use site agrees with its declaring domain; two sum-typed comparison operands name the same domain (the nominal rule, ch. 2.4) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf061-use-site-drift` + `wf061-cross-sumtype-equality` |
+| WF-061 | SumType use site agrees with its declaring domain; two sum-typed comparison operands name the same domain (the nominal rule, ch. 2.4) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf061-use-site-drift` + `wf061-cross-sumtype-equality` + `wf061-undeclared-domain` |
 | WF-062 | Construct: declared constructor; argument present iff unary; argument type matches the declared payload (ch. 4.7) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf062-nullary-with-argument` + `wf062-payload-type-mismatch` |
-| WF-063 | Match totality: sum-typed scrutinee; arms cover the declared constructors exactly, each once; binder iff unary (ch. 4.7) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf063-missing-arm` + `wf063-alien-constructor` + `wf063-binder-on-nullary` |
+| WF-063 | Match totality: sum-typed scrutinee; arms cover the declared constructors exactly, each once; binder iff unary (ch. 4.7) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf063-missing-arm` + `wf063-alien-constructor` + `wf063-binder-on-nullary` + `wf063-duplicate-arm` |
 | WF-064 | every BinderRef resolves to an enclosing binder; match arm bodies agree on one result datatype (ch. 4.7; VariabeleRef stays outside — row 24) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf064-unbound-binderref` + `wf064-mixed-arm-types` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer

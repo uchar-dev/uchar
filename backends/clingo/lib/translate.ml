@@ -199,6 +199,11 @@ let attr_unit ctx ~otype ~attr =
   | Some (Some (Numeriek { eenheid; _ } | Percentage { eenheid; _ })) -> eenheid
   | _ -> None
 
+let attr_sum_typed ctx ~otype ~attr =
+  match Ir_v0.Checks.find_ci (objecttype ctx otype).attributen attr with
+  | Some (Some (Sum_type _)) -> true
+  | _ -> false
+
 (* the EFFECTIVE unit of an expression, derived from declarations
    (attribute/parameter datatypes) and the ch. 2.6 join rules — never
    from the node's own static annotation: a composite annotated
@@ -996,12 +1001,34 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           | _ -> fault "malformed asOfDate %S" d)
       | None ->
           fault "the Rekendatum constant needs an evaluation date; the case carries asOfDate null")
-  | Construct { typ; constructor_; argument; _ } ->
-      (* ch. 9.1: a constructor value is a ground term. A Literal argument
-         is a ground payload scaled to the DECLARED payload datatype; a leeg
-         argument needs no encoding here — underivability propagates on its
-         own where the payload is a bound read (no corpus case). *)
+  | Construct { typ; constructor_; argument = (None | Some (Literal _)) as argument; _ } ->
+      (* ch. 9.1: a constructor value is a ground term when its payload is
+         ground — a nullary tag, or a literal payload scaled to the DECLARED
+         payload datatype. *)
       ([], construct_ground_term ctx typ constructor_ argument, 0)
+  | Construct { typ; constructor_; argument = Some (Attribuut_ref _ as arg); _ } -> (
+      (* ch. 9.1: a bound payload (an own attribute read) rides the argument's
+         own val atom, scaled to the DECLARED payload datatype; a leeg argument
+         binds no atom, so the rule does not fire and the whole Construct is
+         leeg — propagation for free. The scale of the constructor VALUE itself
+         is 0 (a sum term is not numeric); it is carried by [attr_sum_typed]'s
+         write path, never fitted. *)
+      match ctor_payload_datatype (sum_constructors typ) constructor_ with
+      | None -> fault "nullary constructor %S built with an argument (WF-062)" constructor_
+      | Some d ->
+          let f = ctor_functor constructor_ in
+          let payload_scale = pow10 (decimals_of_datatype (Some d)) in
+          let atoms, term, scale = expr_term ctx ~subject ~subject_ot arg in
+          if scale <> payload_scale then
+            fault
+              "a Construct payload at scale %d does not match the declared payload scale %d \
+               (rescaling a bound sum payload has no corpus case)"
+              scale payload_scale;
+          (atoms, Printf.sprintf "%s(%s)" f term, 0))
+  | Construct _ ->
+      fault
+        "a Construct payload other than a literal or an own attribute read is not translated (a \
+         Match or composite payload has no corpus case)"
   | Match { typ; scrutinee; arms; _ } ->
       translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms
   | Binder_ref { naam; _ } -> (
@@ -1180,7 +1207,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
          tests T1 != T2. Ongelijk is NEVER `not gelijk`: a leeg operand must
          make BOTH directions false (Tabel 38, the non-numeric branch), and a
          val atom that does not bind fails the positive join in both — the
-         NAF complement would instead make Ongelijk TRUE on leeg (the S14
+         NAF complement would instead make Ongelijk TRUE on leeg (the S5
          non-complement warning, honoured here). *)
       let ll, tl = sum_term ctx ~subject ~subject_ot (req "links" links) in
       let rr, tr = sum_term ctx ~subject ~subject_ot (req "rechts" rechts) in
@@ -1591,6 +1618,24 @@ let translate_regel ctx (r : resolved_regel) =
               | Some (Literal { waarde = Some "waar"; _ }) -> ()
               | _ -> fault "characteristic attribution with a non-waar value");
               head_body ctx (Printf.sprintf "heeft(%s,%s)" subject (str a)) (base :: cond)
+          | Some (Berekening | Gelijkstelling) when attr_sum_typed ctx ~otype:ot ~attr:a ->
+              (* ch. 9.1: a Construct write to a sum-typed target. A sum value
+                 carries no numeric scale, no unit and no fit — the constructor
+                 term rides straight into the val head. A leeg argument binds no
+                 atom, so the rule does not fire and the target is leeg
+                 (propagation). A case-supplied sum computed target has no
+                 monotone encoding here (the standing/inputval path is
+                 numeric-shaped; no corpus case), so it is fenced loudly. *)
+              if case_supplies ctx ~otype:ot ~attr:a then
+                fault
+                  "a case-supplied sum-typed computed target %S has no encoding here (no corpus \
+                   case)"
+                  a;
+              ctx.rule_guard <- cond;
+              let bindings, term, _ = expr_term ctx ~subject ~subject_ot:ot (req "waarde" r.waarde) in
+              ctx.rule_guard <- [];
+              head_body ctx (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
+                ((base :: cond) @ bindings)
           | Some (Berekening | Gelijkstelling) when attr_temporal ctx ~otype:ot ~attr:a -> (
               if
                 (not (List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_temporal_targets ctx.doc)))
@@ -2273,8 +2318,9 @@ let translate_case ctx (case : Case.t) =
           | Value.Ctor (tag, payload) ->
               (* ch. 9.4 case carriage: a sum-typed input value is a ground
                  constructor term, payload scaled by its declared payload
-                 datatype. A sum-typed attribute is input-only in v1 (never a
-                 ladder or standing target), so it enters as a plain val/3. *)
+                 datatype. A sum-typed COMPUTED target is fenced against
+                 case-supplied input in translate_regel, so a sum value in the
+                 input is input-only here and enters as a plain val/3. *)
               let constructoren =
                 match Ir_v0.Checks.find_ci (objecttype ctx i.otype).attributen aname with
                 | Some (Some (Sum_type { constructoren; _ })) -> constructoren

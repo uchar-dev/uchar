@@ -12,6 +12,9 @@
             "payload": {
               "number": "1250.50"
             }
+          },
+          "borg": {
+            "number": "300.00"
           }
         },
         "roles": {},
@@ -41,6 +44,17 @@
         "constructor": "Toegekend",
         "payload": {
           "number": "1250.50"
+        }
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "herbeschikking",
+      "value": {
+        "constructor": "Toegekend",
+        "payload": {
+          "number": "300.00"
         }
       }
     },

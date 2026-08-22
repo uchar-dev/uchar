@@ -24,6 +24,11 @@
       "attribute": "uitkering"
     },
     {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "herbeschikking"
+    },
+    {
       "kind": "characteristicAbsent",
       "label": "J1",
       "characteristic": "bevoorschot"
