@@ -335,6 +335,16 @@ let rec equal a b =
   (* ch. 10.1: list equality is elementwise and in order; a position is
      never leeg, so this agrees with the Tabel 38 reading below *)
   | Lijst xs, Lijst ys -> List.length xs = List.length ys && List.for_all2 equal xs ys
+  (* ch. 11.2: record equality is fieldwise and structural — positional over
+     the shared declaration order, field names matched ci; a field is never
+     leeg, so this agrees with the Tabel 38 reading below. WF-072 guarantees
+     two compared records name the same declaring domain (same fields, order). *)
+  | Record fa, Record fb ->
+      List.length fa = List.length fb
+      && List.for_all2
+           (fun (na, va) (nb, vb) ->
+             String.equal (Ir_v0.Checks.norm na) (Ir_v0.Checks.norm nb) && equal va vb)
+           fa fb
   | _ -> false
 
 let eq_non_numeric l r =
@@ -350,6 +360,9 @@ let eq_non_numeric l r =
   | Enum a, Enum b -> String.equal (Ir_v0.Checks.norm a) (Ir_v0.Checks.norm b)
   | (Ctor _ as a), (Ctor _ as b) -> equal a b
   | (Lijst _ as a), (Lijst _ as b) -> equal a b
+  (* ch. 11.2: record values are non-numeric; a leeg operand already fell to
+     false above, else the fieldwise structural equality of [equal] *)
+  | (Record _ as a), (Record _ as b) -> equal a b
   | _ -> fault "mixed-type equality: %s vs %s" (to_string l) (to_string r)
 
 (* [static_numeric] carries the comparison's statically declared kind:
@@ -458,5 +471,7 @@ let text_of = function
   | Ctor _ as v -> fault "a constructor value has no text coercion: %s" (to_string v)
   (* a list value has no text coercion either — same fail-fast boundary *)
   | Lijst _ as v -> fault "a list value has no text coercion: %s" (to_string v)
+  (* a record value has no text coercion either — same fail-fast boundary *)
+  | Record _ as v -> fault "a record value has no text coercion: %s" (to_string v)
 
 let concat vs = Text (String.concat "" (List.map text_of vs))

@@ -263,7 +263,51 @@
         },
         "bron": null
       },
-      "voorwaarde": null,
+      "voorwaarde": {
+        "node": "Predicaat",
+        "soort": "GEVULD",
+        "operand": {
+          "node": "AttribuutRef",
+          "attribuut": "dossier",
+          "objecttype": "Jutter",
+          "onderwerpBron": null,
+          "navigatieRol": null,
+          "type": {
+            "node": "StructType",
+            "domain": "dossier",
+            "fields": [
+              {
+                "name": "waarde",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              },
+              {
+                "name": "telling",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              }
+            ]
+          },
+          "bron": null,
+          "set": false,
+          "navigatiePad": []
+        },
+        "dagsoort": null,
+        "negatie": false,
+        "cijfers": 0,
+        "periode": null,
+        "bron": null
+      },
       "geldigheid": null
     },
     {

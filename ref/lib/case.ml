@@ -119,6 +119,30 @@ let rec value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t
      refuses it in both *)
   | "list", None ->
       fail "%s: a value against a declaration without a datatype (WF-059 for attributes, WF-018 for parameters)" at
+  (* the record value form (RUNTIME-SEMANTICS ch. 11.3): exactly the declared
+     fields, in declaration order, each loaded recursively against its field
+     datatype. Fail fast on a missing, extra, wrong-typed or leeg field — the
+     no-hole rule at the boundary (the WF-059/WF-018 backstop, widened). *)
+  | "struct", Some (Struct_type { velden; _ }) -> (
+      match v with
+      | `Assoc field_kvs ->
+          if List.length field_kvs <> List.length velden then
+            fail "%s: record supplies %d fields, the struct declares %d" at (List.length field_kvs)
+              (List.length velden);
+          Value.Record
+            (List.map
+               (fun (fname, fdt) ->
+                 match List.find_opt (fun (k, _) -> norm k = norm fname) field_kvs with
+                 | None -> fail "%s: record is missing declared field %S" at fname
+                 | Some (_, `Null) ->
+                     fail "%s.%s: a record field is leeg; record fields are never leeg (ch. 11.1)"
+                       at fname
+                 | Some (_, fj) -> (fname, value_of_json ~at:(at ^ "." ^ fname) (Some fdt) fj))
+               velden)
+      | _ -> fail "%s: a record value's \"struct\" field is not an object" at)
+  (* WF-059/WF-018 backstop, widened to the record value *)
+  | "struct", None ->
+      fail "%s: a value against a declaration without a datatype (WF-059 for attributes, WF-018 for parameters)" at
   | _, Some _ -> fail "%s: value variant %S does not match the declared datatype" at variant
   | _, None -> fail "%s: value variant %S against an unknown datatype" at variant
 

@@ -321,6 +321,8 @@ let expr_typ : expr -> datatype option = function
   | Construct { typ; _ }
   | Match { typ; _ }
   | Binder_ref { typ; _ }
+  | Struct_literal { typ; _ }
+  | Field_access { typ; _ }
   | List_literal { typ; _ }
   | If_then_else { typ; _ }
   | Invoke { typ; _ }
@@ -339,7 +341,7 @@ let static_numeric l r =
   let kind e =
     match expr_typ e with
     | Some (Numeriek _ | Percentage _ | Datum_in_dagen | Datum_tijd) -> Some true
-    | Some (Tekst | Booleaan | Enumeratie _ | Sum_type _ | List_type _) -> Some false
+    | Some (Tekst | Booleaan | Enumeratie _ | Sum_type _ | List_type _ | Struct_type _) -> Some false
     | Some (Datatype_onbekend _) | None -> None
   in
   match kind l with Some b -> Some b | None -> kind r
@@ -535,6 +537,25 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       match SMap.find_opt (norm naam) env.locals with
       | Some v -> v
       | None -> Value.fault "unbound binder %S (WF-064 should preclude this)" naam)
+  | Struct_literal { velden; _ } ->
+      (* ch. 11.1: a record value; a field evaluating leeg propagates — the
+         whole literal evaluates leeg (a record carries no hole). The field
+         order is the wire's declaration order (WF-073). *)
+      let fs = List.map (fun (n, e) -> (n, eval_expr env world self ~err e)) velden in
+      if List.exists (fun (_, v) -> v = Value.Empty) fs then Value.Empty else Value.Record fs
+  | Field_access { base; veld; _ } -> (
+      (* ch. 11.1: read one declared field; a leeg base propagates leeg
+         (reading a field of an absent record is leeg). The projection is by
+         ci field name (WF-074), positional over the record's fields. *)
+      match eval_expr env world self ~err base with
+      | Value.Empty -> Value.Empty
+      | Value.Record fs -> (
+          match List.find_opt (fun (n, _) -> norm n = norm veld) fs with
+          | Some (_, v) -> v
+          | None ->
+              Value.fault "field %S is not present on the record value (WF-074 should preclude this)"
+                veld)
+      | v -> Value.fault "field access base is %s, not a record value" (Value.to_string v))
   | List_literal { elements; _ } ->
       (* ch. 10.1: a list value; an element evaluating leeg propagates —
          the whole literal evaluates leeg (a list carries no hole) *)
@@ -1600,6 +1621,8 @@ let vintage_read_params (doc : document) : string list =
     | Match { scrutinee; arms; _ } ->
         expr scrutinee;
         List.iter (fun (_, _, body) -> expr body) arms
+    | Struct_literal { velden; _ } -> List.iter (fun (_, e) -> expr e) velden
+    | Field_access { base; _ } -> expr base
     | List_literal { elements; _ } -> List.iter expr elements
     | Lambda { body; _ } -> expr body
     | If_then_else { condition; then_; else_; _ } -> cond condition; expr then_; expr else_

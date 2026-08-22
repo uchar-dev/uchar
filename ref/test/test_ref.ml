@@ -990,6 +990,85 @@ let () =
   expect_leeg "WV-10.3-list-absent-leeg"
     (Eval.eval_expr env w self ~err:no_err (pref "lst" (List_type { element = num0 })))
 
+(* --- ch. 11: record values (RUNTIME-SEMANTICS ch. 11) -------------------
+   Value-level worked examples on the anchor's dossier struct (fields
+   waarde, telling): the 11.1 rendering and the 11.2 equality — structural
+   AND nominal. ch. 11.2 fixes the comparison to be POSITIONAL over the
+   shared declaration order with field names matched ci; it is NOT
+   field-order-independent (the "veldvolgorde-onafhankelijkheid? nee"
+   point). The Tabel 38 Empty corners: a leeg operand makes both = and ≠
+   false. The evaluation over documents — StructLiteral no-hole,
+   FieldAccess-on-leeg, the nominal GELIJK/ONGELIJK rules — is pinned
+   absolutely by the jutterswet-vondstdossier anchor through gates 5-6
+   (case1/2 dubbel, case3 the both-directions-false corner and the
+   build-side no-hole leeg). *)
+let record fs = Value.Record fs
+
+let () =
+  let d1 = record [ ("waarde", n "120.50"); ("telling", n "3") ] in
+  let d1' = record [ ("waarde", n "120.50"); ("telling", n "3") ] in
+  (* 11.1: the deterministic record rendering — canonical trailing-zero-
+     dropped lexemes, fields in declaration order *)
+  check "WV-11.1-render"
+    (Value.to_string (record [ ("waarde", n "125.50"); ("telling", n "2") ])
+     = "{waarde: 125.5, telling: 2}");
+  (* 11.2: structural equality — fieldwise, every field equal *)
+  check "WV-11.2-eq" (Arith.equal d1 d1' = true);
+  (* 11.2: a differing field value → not equal *)
+  let d_val = record [ ("waarde", n "125.50"); ("telling", n "3") ] in
+  check "WV-11.2-neq-value" (Arith.equal d1 d_val = false);
+  (* 11.2: field names are matched ci by declaration — same order, ci-variant
+     names, equal values → equal (nominal names, not case-sensitive) *)
+  let d_ci = record [ ("Waarde", n "120.50"); ("Telling", n "3") ] in
+  check "WV-11.2-eq-ci-names" (Arith.equal d1 d_ci = true);
+  (* 11.2: the comparison is POSITIONAL over the shared declaration order —
+     NOT field-order-independent: a record whose fields sit in a different
+     order is a different construction and compares unequal (ch. 11.2 fixes
+     the order; the loader always builds in declaration order) *)
+  let d_reordered = record [ ("telling", n "3"); ("waarde", n "120.50") ] in
+  check "WV-11.2-neq-reordered" (Arith.equal d1 d_reordered = false);
+  (* 11.2: the non-numeric equality path agrees (a field is never leeg) *)
+  check "WV-11.2-teq" (Arith.eq_non_numeric d1 d1' = true);
+  check "WV-11.2-teq-neq" (Arith.eq_non_numeric d1 d_val = false);
+  (* 11.2 through the comparison operator (records are non-numeric): the
+     anchor's dubbel (= dossier) and afwijkend (≠ dossier) rules *)
+  check "WV-11.2-eq-op" (Arith.compare_op ~static_numeric:false Gelijk d1 d1' = true);
+  check "WV-11.2-neq-op" (Arith.compare_op ~static_numeric:false Ongelijk d1 d1' = false);
+  check "WV-11.2-eq-op-diff" (Arith.compare_op ~static_numeric:false Gelijk d1 d_val = false);
+  check "WV-11.2-neq-op-diff" (Arith.compare_op ~static_numeric:false Ongelijk d1 d_val = true);
+  (* 11.2: a leeg operand makes BOTH = and ≠ false (Tabel 38, deliberately
+     not complements — the anchor's case3 corner: dubbel AND afwijkend both
+     absent), in both operand orders *)
+  check "WV-11.2-eq-empty-l" (Arith.compare_op ~static_numeric:false Gelijk leeg d1 = false);
+  check "WV-11.2-neq-empty-l" (Arith.compare_op ~static_numeric:false Ongelijk leeg d1 = false);
+  check "WV-11.2-eq-empty-r" (Arith.compare_op ~static_numeric:false Gelijk d1 leeg = false);
+  check "WV-11.2-neq-empty-r" (Arith.compare_op ~static_numeric:false Ongelijk d1 leeg = false);
+  check "WV-11.2-teq-empty" (Arith.eq_non_numeric leeg d1 = false);
+  (* 11.2: records are not orderable — scalar_cmp faults *)
+  expect_fault "WV-11.2-order-fault"
+    (fun () -> Arith.compare_op ~static_numeric:false Kleiner d1 d1');
+  (* composing ch. 10: a list of records (the anchor's dossiers input) —
+     equal to itself, order-sensitive, never equal reordered *)
+  let ds =
+    lijst
+      [ record [ ("waarde", n "10.00"); ("telling", n "1") ];
+        record [ ("waarde", n "2.50"); ("telling", n "2") ] ]
+  in
+  let ds' =
+    lijst
+      [ record [ ("waarde", n "10.00"); ("telling", n "1") ];
+        record [ ("waarde", n "2.50"); ("telling", n "2") ] ]
+  in
+  let ds_reordered =
+    lijst
+      [ record [ ("waarde", n "2.50"); ("telling", n "2") ];
+        record [ ("waarde", n "10.00"); ("telling", n "1") ] ]
+  in
+  check "WV-11.2-list-eq" (Arith.equal ds ds' = true);
+  check "WV-11.2-list-eq-order" (Arith.equal ds ds_reordered = false);
+  check "WV-11.2-list-render"
+    (Value.to_string ds = "[{waarde: 10, telling: 1}, {waarde: 2.5, telling: 2}]")
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

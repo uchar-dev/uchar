@@ -77,6 +77,15 @@
 #     MapList/Fold and the FilterList/ListLength both propagate leeg, so
 #     erkende som and aantal erkend stay empty. Its case2-leeg-lijst
 #     (supplied []) writes 0.00/0 and is not a survivor.
+#   - jutterswet-vondstdossier/case3-afwezig.json: the record no-hole
+#     absence (ch. 11) — with both struct inputs (dossier, dossiers) absent,
+#     premie's dossier-guarded rule does not fire, totaalwaarde's fold
+#     propagates leeg over the absent list, samenvatting's StructLiteral
+#     propagates leeg (its telling field |dossiers| evaluates leeg — the
+#     build-side no-hole witness), and dubbel/afwijkend are both false
+#     against the leeg struct operand (Tabel 38 — the both-directions
+#     corner). The absence IS the assertion; case1/case2 (both supplied)
+#     decide and are not survivors.
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
@@ -95,7 +104,8 @@ corpus/golden/anchor/jutterswet-dagentelling/case3-leeg.json
 corpus/golden/anchor/jutterswet-dagentelling/case4-input-blijft.json
 corpus/golden/anchor/jutterswet-beschikkingsom/case4-leeg.json
 corpus/golden/anchor/jutterswet-staffelvergoeding/case3-afwezig.json
-corpus/golden/anchor/jutterswet-aanspraaktelling/case3-afwezig.json'
+corpus/golden/anchor/jutterswet-aanspraaktelling/case3-afwezig.json
+corpus/golden/anchor/jutterswet-vondstdossier/case3-afwezig.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2

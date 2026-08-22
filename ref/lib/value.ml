@@ -35,6 +35,13 @@ type t =
          empty sequence of element values. [] is a value (gevuld), distinct
          from leeg; no element position is ever leeg — a ListLiteral with a
          leeg element propagates, and the case loader rejects leeg elements *)
+  | Record of (string * t) list
+      (* a record value (RUNTIME-SEMANTICS ch. 11.1): a declared struct
+         type's declared fields, in declaration order, each mapped to a
+         value of the field's datatype. It is gevuld by construction and
+         never carries a leeg field — a StructLiteral with a leeg field
+         propagates, and the case loader rejects leeg fields (the no-hole
+         rule, the Ctor/Lijst sibling) *)
 
 (* A fault aborts the evaluation observably (hard runtime error, ch. 1.4
    point 4; Onopgelost, WF-044; a non-representable bounded write). *)
@@ -161,3 +168,6 @@ let rec to_string = function
   | Ctor (tag, Some v) -> Printf.sprintf "%s(%s)" tag (to_string v)
   (* the deterministic list rendering: [12.5, 30, 7.25], [] *)
   | Lijst xs -> "[" ^ String.concat ", " (List.map to_string xs) ^ "]"
+  (* the deterministic record rendering: {waarde: 125.5, telling: 2} *)
+  | Record fs ->
+      "{" ^ String.concat ", " (List.map (fun (n, v) -> n ^ ": " ^ to_string v) fs) ^ "}"
