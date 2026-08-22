@@ -88,6 +88,19 @@
 #     corner). The absence IS the assertion; case1/case2 (both lists
 #     supplied) and case4 (dossier present, list absent) all decide and are
 #     not survivors.
+#   - jutterswet-nestuitzondering/case8-niets.json: the nested-group empty
+#     fall-through (ch. 7.9) — with no ground characteristic present, rung 0's
+#     sub-group is empty and its own grondX consequence does not fire, the base
+#     group-rung's sub-group is empty too, so nothing decides and heffing stays
+#     empty. The absence IS the assertion; the sibling cases all decide (a
+#     value or a conflict fact) and are not survivors.
+#   - jutterswet-nestkenmerk/case1-y-wint.json: the characteristic variant of
+#     the spurious-conflict test (ch. 7.9) — the sub-decision do-not-attribute
+#     (false, from ny) displaces rung 0's own true, so vrijgesteld stays absent.
+#     The observable outcome (absent + consistent) coincides with a do-nothing
+#     run, yet the case pins the nested reading against a FLATTENING executor,
+#     which would manufacture a conflict here (case2-conflict and case3-terugval
+#     both decide observably and are not survivors).
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
@@ -107,7 +120,9 @@ corpus/golden/anchor/jutterswet-dagentelling/case4-input-blijft.json
 corpus/golden/anchor/jutterswet-beschikkingsom/case4-leeg.json
 corpus/golden/anchor/jutterswet-staffelvergoeding/case3-afwezig.json
 corpus/golden/anchor/jutterswet-aanspraaktelling/case3-afwezig.json
-corpus/golden/anchor/jutterswet-vondstdossier/case3-afwezig.json'
+corpus/golden/anchor/jutterswet-vondstdossier/case3-afwezig.json
+corpus/golden/anchor/jutterswet-nestuitzondering/case8-niets.json
+corpus/golden/anchor/jutterswet-nestkenmerk/case1-y-wint.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2

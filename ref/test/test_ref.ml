@@ -711,6 +711,63 @@ let () =
   let w = World.add_instance World.empty (inst "x" "Ding" []) in
   expect_fault "WV-6.4-c-cycle-fault" (fun () -> Eval.evaluate (env_of doc) w)
 
+(* WV-7.9: nested exception groups (ch. 7.9) — the PHASE4-DEFAULTS §7
+   spurious-conflict test at the unit level (b <- x, x <- {y, z}, a hand-built
+   attribute ladder). Only y applicable and x justified must yield y, never a
+   manufactured root conflict; y and z deciding differently propagates the
+   conflict to the root (no write, path-keyed Jutter.heffing/0); neither
+   applicable falls back to the rung's own consequence. The corpus anchors
+   jutterswet-nestuitzondering/nestkenmerk carry the full family; this isolates
+   the reconciliation invariant in the fast suite. *)
+let () =
+  let inst_c label otype chars : World.instance =
+    {
+      label; otype;
+      attrs = World.SMap.empty;
+      chars = List.map Ir_v0.Checks.norm chars;
+      links = World.SMap.empty;
+      tls = World.SMap.empty; ctls = World.SMap.empty;
+    }
+  in
+  let kc name : Ir_v0.Ast.conditie =
+    Kenmerk_check
+      { kenmerk = Some name; navigatie = None; negatie = false; eigenaar = Some "Jutter";
+        periode = None; bron = None; navigatie_binding = None }
+  in
+  let leaf name lex : Ir_v0.Ast.rung =
+    { rung_besluit = None; rung_voorwaarde = Some (kc name);
+      rung_consequentie = Some (litv lex num0); rung_initialisatie = false;
+      rung_excepties = None; rung_bron = None }
+  in
+  let sub name lex : Ir_v0.Ast.sub_ladder = { sl_rungs = [ leaf name lex ]; sl_bron = None } in
+  let ladder : Ir_v0.Ast.default_ladder =
+    { dl_naam = Some "heffing"; dl_onderwerp = "Jutter"; dl_kenmerk = None;
+      dl_attribuut = Some "heffing";
+      rungs =
+        [ { rung_besluit = None; rung_voorwaarde = Some (kc "grondX");
+            rung_consequentie = Some (litv "40" num0); rung_initialisatie = false;
+            rung_excepties =
+              Some { sg_ongeordend = true; sg_leden = [ sub "grondY" "10"; sub "grondZ" "20" ] };
+            rung_bron = None } ];
+      dl_ongeordend = false; dl_bron = None; dl_geldigheid = None }
+  in
+  let doc =
+    { empty_doc with
+      objecttypen = [ ot "Jutter" [ ("heffing", Some num0) ] [ "grondX"; "grondY"; "grondZ" ] ];
+      default_ladders = [ ladder ] }
+  in
+  let run chars =
+    let final = Eval.evaluate (env_of doc) (World.add_instance World.empty (inst_c "j" "Jutter" chars)) in
+    let j = World.get final "j" in
+    (World.attr j "heffing", List.map (fun (f : World.error_fact) -> f.rule) final.channel)
+  in
+  let v1, c1 = run [ "grondX"; "grondY" ] in
+  check "WV-7.9-spurious-y" (Arith.equal v1 (n "10") && c1 = []);
+  let v2, c2 = run [ "grondX"; "grondY"; "grondZ" ] in
+  check "WV-7.9-subconflict" (v2 = Value.Empty && c2 = [ "Jutter.heffing/0" ]);
+  let v3, c3 = run [ "grondX" ] in
+  check "WV-7.9-fallback" (Arith.equal v3 (n "40") && c3 = [])
+
 (* --- ch. 3: timeline algebra (worked examples verbatim) ----------------- *)
 
 let day s = match Value.date_of_iso s with Value.Date z -> z | _ -> assert false

@@ -1336,15 +1336,25 @@ let run_object_creatie env ~world0 ~idx world (oc : resolved_object_creatie) =
         end)
   end
 
+(* ch. 7.1/7.9: a ladder member's decision, and the reconciled outcome of a
+   rung chain — [Decided] (the highest deciding rung), [Conflict] (a
+   differing sub-group, keyed by its rung-index path, propagating to the
+   root with no write), or [Undecided] (nothing decided; fall-through). *)
+type ladder_decision = Char_dec of bool | Attr_dec of Value.t
+type chain_result = Decided of ladder_decision | Conflict of string | Undecided
+
 (* ch. 7.1/7.2, the ladder group on one target (a singleton group is
    the plain ladder): each member decides independently — highest rung
    that decides wins, with fall-through and speculative deposits per
    ch. 7.1 — then the group acts once: equal decisions write once;
    differing decisions write nothing (the target keeps what the fact
    base holds) and deposit one §9.5 fact keyed by the target form
-   (ch. 7.2, an end-state observation). The strata machinery (WF-051)
-   has already put every justification and consequence producer
-   strictly below every member. *)
+   (ch. 7.2, an end-state observation). Ch. 7.9: a rung's exception
+   sub-group reconciles by the same rule recursively; a differing
+   sub-group propagates the conflict to the root — no write, one §9.5
+   fact keyed by the target form plus the rung-index path. The strata
+   machinery (WF-051) has already put every descendant justification and
+   consequence producer strictly below every member. *)
 let run_ladder_group env world (members : default_ladder list) =
   let l0 = List.hd members in
   let target_form =
@@ -1366,11 +1376,44 @@ let run_ladder_group env world (members : default_ladder list) =
         let r = f (fun m -> buf := m :: !buf) in
         (r, fun () -> List.iter cond_err (List.rev !buf))
       in
-      (* one member's decision, its speculative deposits flushed only
-         when it decides *)
-      let member_decision (l : default_ladder) =
-        if not (applies env l.dl_geldigheid) then None
+      let equal_dec a b =
+        match (a, b) with
+        | Char_dec x, Char_dec y -> x = y
+        | Attr_dec x, Attr_dec y -> Arith.equal x y
+        | _ -> false
+      in
+      (* the §9.5 conflict key (ch. 7.2/7.9): the bare target form for a
+         root-level over-determination, the target form plus the rung-index
+         path for a nested sub-group conflict *)
+      let path_key = function
+        | [] -> target_form
+        | path -> target_form ^ "/" ^ String.concat "/" (List.map string_of_int path)
+      in
+      (* reconcile a group's member results (ch. 7.2, applied at every level
+         by ch. 7.9): a conflict from a deeper sub-group propagates unchanged;
+         otherwise the deciding members must agree — equal decisions are one
+         decision, differing decisions are a conflict keyed at [path] (no
+         write). Members that decide nothing drop out. *)
+      let reconcile ~path (results : chain_result list) : chain_result =
+        match List.find_opt (function Conflict _ -> true | _ -> false) results with
+        | Some c -> c
+        | None -> (
+            match List.filter_map (function Decided d -> Some d | _ -> None) results with
+            | [] -> Undecided
+            | d0 :: rest ->
+                if List.for_all (equal_dec d0) rest then Decided d0
+                else Conflict (path_key path))
+      in
+      (* one member ladder's decision (ch. 7.1), recursive per ch. 7.9: the
+         highest rung that decides wins; a rung carrying [excepties]
+         reconciles its sub-group first, and its own justification/consequence
+         is the fall-back only when the sub-group decides nothing. Speculative
+         deposits flush when — and only when — a rung decides, composing
+         through the recursion. *)
+      let member_decision (l : default_ladder) : chain_result =
+        if not (applies env l.dl_geldigheid) then Undecided
         else
+          let is_char = l.dl_kenmerk <> None in
           let justified (r : rung) err =
             if r.rung_initialisatie then (
               match l.dl_attribuut with
@@ -1378,56 +1421,82 @@ let run_ladder_group env world (members : default_ladder list) =
               | None -> Value.fault "initialisation rung on a characteristic ladder")
             else eval_cond env w self ~err (req "rung justification" r.rung_voorwaarde)
           in
-          let rec decide = function
-            | [] -> None
-            | (r : rung) :: rest -> (
-                match l.dl_kenmerk with
-                | Some _ ->
-                    let j, flush = speculate (fun err -> justified r err) in
-                    if j then (
-                      flush ();
-                      Some (`Char (req "rung besluit" r.rung_besluit)))
-                    else decide rest
-                | None -> (
-                    let outcome, flush =
-                      speculate (fun err ->
-                          if justified r err then
-                            Some
-                              (eval_expr env w self ~err
-                                 (req "rung consequentie" r.rung_consequentie))
-                          else None)
+          (* the rung's OWN decision, sub-group aside (a plain rung, the
+             initialisation rung, or a form-a rung's fall-back): Some when it
+             decides, None when it falls through *)
+          let own_decision (r : rung) : ladder_decision option =
+            if is_char then (
+              let j, flush = speculate (fun err -> justified r err) in
+              if j then (
+                flush ();
+                Some (Char_dec (req "rung besluit" r.rung_besluit)))
+              else None)
+            else
+              let outcome, flush =
+                speculate (fun err ->
+                    if justified r err then
+                      Some
+                        (eval_expr env w self ~err
+                           (req "rung consequentie" r.rung_consequentie))
+                    else None)
+              in
+              match outcome with
+              | Some v when v <> Value.Empty ->
+                  flush ();
+                  Some (Attr_dec v)
+              | Some _ (* leeg: falls through *) | None -> None
+          in
+          let rec decide ~path (rungs : rung list) : chain_result =
+            let rec go i = function
+              | [] -> Undecided
+              | (r : rung) :: rest -> (
+                  let fall_through () =
+                    (* a form-a rung falls back to its own decision; a
+                       group-rung (no own content) decides nothing (ch. 7.9) *)
+                    let has_content =
+                      r.rung_besluit <> None || r.rung_consequentie <> None
                     in
-                    match outcome with
-                    | Some v when v <> Value.Empty ->
-                        flush ();
-                        Some (`Attr v)
-                    | Some _ (* leeg: falls through *) | None -> decide rest))
+                    if has_content then
+                      match own_decision r with Some d -> Decided d | None -> go (i + 1) rest
+                    else go (i + 1) rest
+                  in
+                  match r.rung_excepties with
+                  | Some sg -> (
+                      (* the sub-group goes first: reconcile it at this rung's
+                         path, then propagate its conflict, adopt its decision,
+                         or fall back when it decides nothing *)
+                      let sub_path = path @ [ i ] in
+                      let results =
+                        List.map
+                          (fun (sl : sub_ladder) -> decide ~path:sub_path sl.sl_rungs)
+                          sg.sg_leden
+                      in
+                      match reconcile ~path:sub_path results with
+                      | (Conflict _ | Decided _) as d -> d
+                      | Undecided -> fall_through ())
+                  | None -> (
+                      match own_decision r with
+                      | Some d -> Decided d
+                      | None -> go (i + 1) rest))
+            in
+            go 0 rungs
           in
-          decide l.rungs
+          decide ~path:[] l.rungs
       in
-      let decisions = List.filter_map member_decision members in
-      match decisions with
-      | [] -> (w, false)
-      | d0 :: rest ->
-          let equal_dec a b =
-            match (a, b) with
-            | `Char x, `Char y -> x = y
-            | `Attr x, `Attr y -> Arith.equal x y
-            | _ -> false
-          in
-          if List.for_all (equal_dec d0) rest then (
-            match d0 with
-            | `Char true ->
-                World.set_char w ~label:self.label ~char:(req "ladder kenmerk" l0.dl_kenmerk)
-            | `Char false -> (w, false)
-            | `Attr v ->
-                let a = req "ladder attribuut" l0.dl_attribuut in
-                World.write_attr w ~label:self.label ~attr:a
-                  ~decl:(attr_decl env ~otype:l0.dl_onderwerp ~attr:a)
-                  v)
-          else
-            (* over-determination (ch. 7.2): no write, one channel fact *)
-            (World.insert_error w ~rule:target_form ~subject:self.label, false))
+      match reconcile ~path:[] (List.map member_decision members) with
+      | Undecided -> (w, false)
+      | Conflict rule ->
+          (* over-determination (ch. 7.2/7.9): no write, one channel fact —
+             bare-keyed at the root, path-keyed for a nested sub-group *)
+          (World.insert_error w ~rule ~subject:self.label, false)
+      | Decided (Char_dec true) ->
+          World.set_char w ~label:self.label ~char:(req "ladder kenmerk" l0.dl_kenmerk)
+      | Decided (Char_dec false) -> (w, false)
+      | Decided (Attr_dec v) ->
+          let a = req "ladder attribuut" l0.dl_attribuut in
+          World.write_attr w ~label:self.label ~attr:a
+            ~decl:(attr_decl env ~otype:l0.dl_onderwerp ~attr:a)
+            v)
 
 (* consistency and uniqueness fire at the computed fixpoint; violations
    are idempotent channel facts (ch. 5.6) *)
