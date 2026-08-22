@@ -1,0 +1,13 @@
+# Plain-value topdef — een top-level constante (geen functie). Geweigerd tot
+# een case haar wil (§3.5, recorded).
+
+```catala
+declaration drempel content money equals $5.00
+
+declaration scope Drempelscope:
+  input basis content money
+  output r content money
+
+scope Drempelscope:
+  definition r equals basis + drempel
+```

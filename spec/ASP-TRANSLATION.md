@@ -729,6 +729,26 @@ scale.
   running accumulator is grounding-time arithmetic and would otherwise
   wrap silently past 2³¹ where ref's exact rationals do not (the S6/S8
   fence discipline, on the fold interior).
+- A **`Construct` with a computed payload** inside a body (the reduce
+  lowering's `Some(⟨body⟩)` step) wraps *each* payload branch in the
+  constructor functor: `body_branches ⟨payload⟩` splits an `IfThenElse`
+  payload into its two branches (the max/min reducer), each becoming a
+  `present(⟨term⟩)`. The constructor value carries no numeric scale (0);
+  its payload rides the declared payload scale, range-fenced like any
+  arithmetic step.
+
+**The reduce lowering** (`sum`/`maximum`/`minimum`, RUNTIME-SEMANTICS
+ch. 10.4/§3.5) folds over an **`Optional` accumulator** (a `SumType`,
+scale 0 by `value_scale`): the init is `absent`, and the step is a
+`Match` on the accumulator binder rebuilding `present(…)` — so
+`faN(L,I,present(V)) :- …, A = absent` (the first element) and
+`faN(L,I,present(⟨f(P,V)⟩)) :- …, A = present(P)` (the combine, one rule
+per reducer branch). The wrapping extraction `Match` (Absent → the
+empty-list default, Present b → b) runs over the **fold result** rather
+than an attribute: `translate_match` binds the `frN(L,V)` term once and
+each arm is a builtin `V = absent` / `V = present(P)` — the same
+functor-unification as a bound-term match, over a term produced by a
+`Fold` rather than read from a `val/3` atom.
 
 On the check side, `model.ml` reads the fold family's scalar results as
 ordinary `val/3` — the reified lists are internal (`#show` carries only
@@ -747,8 +767,14 @@ parameter absent → leeg, a no-op survivor). `anchor/jutterswet-aanspraaktellin
 aanspraakwaarde)` and `aantal erkend` := `ListLength(FilterList(aanspraken,
 a ≠ Vervallen))`, composing S14 (case1 `[Erkend(10.00), Vervallen,
 Erkend(2.50)]` → **12.50** and **2**; case2 `[]` → **0.00** and **0**;
-case3 the list attribute absent → both leeg). The WF-065..070 negatiefs
-pin what the verifier rejects before translation.
+case3 the list attribute absent → both leeg). `jutterswet-penningstaffel-catala`
+(the plugin-generated golden) — `hoogste` := `maximum … or if list empty
+then $0.00`, the reduce lowering end to end (the `Optional` fold, the
+`IfThenElse` reducer, the extraction `Match` over the fold result: case1
+`[12.50, 30.00, 7.25]` → **30.00**, case2 `[]` → **0.00** via the Absent
+arm, case3 a tie `[8.00, 25.50, 25.50, 3.00]` → **25.50**), beside
+`totaal` as a plain numeric `Fold`. The WF-065..070 negatiefs pin what
+the verifier rejects before translation.
 
 ### S16. What does not translate — the complete loud inventory
 
@@ -819,9 +845,10 @@ ch. 9.4); a `Construct` payload other than a literal or an own-subject
 attribute read (a bound own-attribute read in write position rides its
 `val` atom, the anchor's `herbeschikking` rule
 `val(S,herbeschikking,toegekend(V)) :- …, val(S,borg,V)`; a `Match` or
-composite payload still has no corpus case); a match
-scrutinee or a sum-typed equality operand other than an own-subject
-attribute read or a `Construct` (navigated sum reads await a case); a
+composite payload still has no corpus case); a sum-typed equality operand other than an own-subject
+attribute read or a `Construct`, and a match scrutinee other than an
+own-subject attribute read or a `Fold` result (the reduce extraction —
+navigated sum reads await a case); a
 match arm whose result scale disagrees with the match's declared scale;
 a constructor name that does not normalise to a valid ASP functor symbol
 (`ctor_functor`, the sum-side quote backstop). A **sum-typed parameter**

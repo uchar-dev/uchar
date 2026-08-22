@@ -1,0 +1,36 @@
+# Jutterswet, artikel 8 — de penningstaffel
+
+Art. 8 (penningstaffel). Een jutter die in één getij meerdere
+strandpenningen aanbrengt, krijgt elke penning afzonderlijk getaxeerd.
+De hoogste getaxeerde waarde bepaalt de ereplaats op de strandrol; brengt
+de jutter in dat getij niets aan, dan bedraagt de hoogste waarde nul
+gulden. De totale vergoeding is de som van alle in dat getij getaxeerde
+waarden.
+
+Modelleringsnotitie: dit is een eigen artikel in de stijl van de ankers
+`jutterswet-staffelvergoeding` en `jutterswet-aanspraaktelling`, maar
+zelfstandig geschreven. De getaxeerde waarden komen als een lijst van
+geldbedragen uit het dossier (een lijst-getypeerd invoerattribuut, row
+10). `hoogste` gebruikt Catala's `maximum … or if list empty then …`,
+die desugart tot een `reduce` met een lege-lijst-standaardwaarde; de
+plugin lowert die reduce (§3.5) naar een `Fold` over een `Optional`-som
+(row 36 — `Absent`/`Present`), met een `IfThenElse` in de vouwstap (de
+`x > y ? x : y`-reducer) en een afsluitende `Match` die de gevouwen
+`Optional` uitpakt naar het bedrag of, bij de lege lijst, naar nul
+gulden. `totaal` gebruikt de expliciete `combine all … in … initially …
+with …`-vouw, die rechtstreeks tot een `Fold` met een geldaccumulator
+lowert. Zo staan de reduce-lowering, de `Optional`-som, de `IfThenElse`
+en de `Fold` alle op de wire, drievoudig gedekt door verifier, ref en
+clingo.
+
+```catala
+declaration scope Penningstaffel:
+  input bedragen content list of money
+  output hoogste content money
+  output totaal content money
+
+scope Penningstaffel:
+  definition hoogste equals maximum of bedragen or if list empty then $0.00
+  definition totaal equals
+    combine all b among bedragen in acc initially $0.00 with (acc + b)
+```

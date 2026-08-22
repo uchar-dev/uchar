@@ -1,0 +1,4 @@
+{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "L", "objectType": "Lijst",
+      "attributes": { "bedragen": { "list": [ { "number": "10.00" }, { "number": "2.50" } ] } }, "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "attributeValue", "label": "L", "attribute": "totaal", "value": { "number": "14.50" } }, { "kind": "consistent" } ] }

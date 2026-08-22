@@ -1,0 +1,11 @@
+# Sort — buiten de 5b-kern (row 10, §4). Ordening en argmin/argmax blijven
+# luid geweigerd tot een latere fase.
+
+```catala
+declaration scope Sorteer:
+  input bedragen content list of money
+  output gesorteerd content list of money
+
+scope Sorteer:
+  definition gesorteerd equals sort bedragen in decreasing order
+```

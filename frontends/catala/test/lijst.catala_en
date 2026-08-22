@@ -1,0 +1,18 @@
+# Lijst — map + fold (row 10), rechtenvrij eigen auteurschap.
+#
+# Een lijst geldbedragen wordt element voor element met een gulden verhoogd
+# (map) en daarna opgeteld (een expliciete combine/fold met een
+# geld-accumulator). Draait door ref EN clingo: MapList als foldbron plus
+# een numerieke Fold, zoals het aanspraaktelling-anker.
+
+```catala
+declaration scope Lijst:
+  input bedragen content list of money
+  output totaal content money
+
+scope Lijst:
+  definition totaal equals
+    combine all y
+      among (map each x among bedragen to (x + $1.00))
+      in acc initially $0.00 with (acc + y)
+```

@@ -1,0 +1,15 @@
+# Maximum — de Reduce-lowering (row 10 + row 36), rechtenvrij eigen auteurschap.
+#
+# `maximum … or if list empty then …` desugart tot een reduce met een
+# lege-lijst-standaard; de plugin lowert die (§3.5) naar een Fold over een
+# Optional-som (Absent/Present) met een IfThenElse-vouwstap en een
+# afsluitende Match die de Optional uitpakt. Draait door ref EN clingo.
+
+```catala
+declaration scope Grootste:
+  input bedragen content list of money
+  output hoogste content money
+
+scope Grootste:
+  definition hoogste equals maximum of bedragen or if list empty then $0.00
+```

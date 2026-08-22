@@ -1,0 +1,21 @@
+# Functie — een topdef-functie plus aanroep (row 10, DMN's BKM),
+# rechtenvrij eigen auteurschap.
+#
+# `verhoog` is een gesloten top-level functie (FunctionDef); de scope roept
+# haar aan (Invoke). Ref-only: clingo vertaalt een Invoke binnen een
+# fold/map-body (het aanspraaktelling-anker), maar een Invoke rechtstreeks
+# in een regelwaarde heeft nog geen corpus-case — een genoteerde
+# backend-grens, geen plugin-fout.
+
+```catala
+declaration verhoog content money
+  depends on m content money
+  equals m + $5.00
+
+declaration scope Verhoging:
+  input basis content money
+  output resultaat content money
+
+scope Verhoging:
+  definition resultaat equals verhoog of basis
+```

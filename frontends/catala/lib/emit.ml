@@ -97,6 +97,7 @@ let rec datatype (d : datatype) : json =
                 (fun (nm, payload) ->
                   `Assoc [ ("name", s nm); ("payload", opt datatype payload) ])
                 constructoren)) ]
+  | List_type { element } -> node "ListType" [ ("element", datatype element) ]
   | Datatype_onbekend { reden } -> node "Onbekend" [ ("reden", so reden) ]
 
 and eenheid_j (e : eenheid) : json =
@@ -157,6 +158,31 @@ let rec expr (e : expr) : json =
           bron br ]
   | Binder_ref { naam; typ = t; bron = br } ->
       node "BinderRef" [ ("name", s naam); typ t; bron br ]
+  | List_literal { typ = t; elements; bron = br } ->
+      node "ListLiteral"
+        [ ("type", opt datatype t); ("elements", `List (List.map expr elements)); bron br ]
+  | If_then_else { typ = t; condition; then_; else_; bron = br } ->
+      node "IfThenElse"
+        [ ("type", opt datatype t); ("condition", conditie condition);
+          ("then", expr then_); ("else", expr else_); bron br ]
+  | Invoke { typ = t; functie; arguments; bron = br } ->
+      node "Invoke"
+        [ ("type", opt datatype t); ("function", s functie);
+          ("arguments", `List (List.map expr arguments)); bron br ]
+  | Fold { typ = t; list; functie; init; bron = br } ->
+      node "Fold"
+        [ ("type", opt datatype t); ("list", expr list);
+          ("function", fold_fn functie); ("init", expr init); bron br ]
+  | Map_list { typ = t; list; functie; bron = br } ->
+      node "MapList"
+        [ ("type", opt datatype t); ("list", expr list);
+          ("function", fold_fn functie); bron br ]
+  | Filter_list { typ = t; list; binder; condition; bron = br } ->
+      node "FilterList"
+        [ ("type", opt datatype t); ("list", expr list); ("binder", s binder);
+          ("condition", conditie condition); bron br ]
+  | List_length { typ = t; list; bron = br } ->
+      node "ListLength" [ ("type", opt datatype t); ("list", expr list); bron br ]
   | other ->
       failwith
         ("Emit.expr: node not produced by the skeleton: "
@@ -164,9 +190,23 @@ let rec expr (e : expr) : json =
           | Tekst_reeks _ -> "TekstReeks" | Functie _ -> "Functie"
           | Afgerond _ -> "Afgerond" | Begrensd _ -> "Begrensd"
           | Dimensie_cel _ -> "DimensieCel" | Temporal_read _ -> "TemporalRead"
+          | Lambda _ -> "Lambda (position-restricted; only a Fold/MapList operand)"
           | _ -> "?"))
 
-let rec conditie (c : conditie) : json =
+(* the Fold/MapList [function] operand: an inline Lambda object or a bare
+   FunctionDef-name string (the two wire forms of IR-SPEC ch. 4.8). *)
+and fold_fn (f : fold_fn) : json =
+  match f with
+  | Fn_name n -> `String n
+  | Fn_lambda { parameters; body; bron = br } ->
+      node "Lambda"
+        [ ("parameters", param_list parameters); ("body", expr body); ("bron", so br) ]
+
+(* Lambda / FunctionDef parameters: a name and a datatype, both required. *)
+and param_list (ps : (string * datatype) list) : json =
+  `List (List.map (fun (n, dt) -> `Assoc [ ("name", s n); ("datatype", datatype dt) ]) ps)
+
+and conditie (c : conditie) : json =
   let bron br = ("bron", so br) in
   let periode p = ("periode", opt geheel_periode p) in
   match c with
@@ -246,9 +286,21 @@ let default_ladder (l : default_ladder) : json =
     @ ongeordend
     @ [ ("bron", so l.dl_bron); ("geldigheid", opt geldigheid l.dl_geldigheid) ])
 
+let function_def (fd : function_def) : json =
+  node "FunctionDef"
+    [ ("name", s fd.fd_naam); ("parameters", param_list fd.fd_parameters);
+      ("result", datatype fd.fd_result); ("body", expr fd.fd_body);
+      ("bron", so fd.fd_bron) ]
+
 let document (d : document) : json =
+  (* functionDefs is an extension top-level key, written only when non-empty —
+     the optional-field pattern the loader admits for defaultLadders. *)
+  let function_defs =
+    match d.function_defs with [] -> [] | fds -> [ ("functionDefs", `List (List.map function_def fds)) ]
+  in
   `Assoc
-    [ ("formaat", `String "regelspraak-ir-v0");
+    (function_defs
+    @ [ ("formaat", `String "regelspraak-ir-v0");
       ("objecttypen", map_ objecttype d.objecttypen);
       ("domeinen", map_ (opt datatype) d.domeinen);
       ("parameters", `Assoc []);
@@ -270,7 +322,7 @@ let document (d : document) : json =
       ("resolvedStartpunten", `List []);
       ("regelGroepen", `List []);
       ("diagnostics", `List []);
-      ("defaultLadders", `List (List.map default_ladder d.default_ladders)) ]
+      ("defaultLadders", `List (List.map default_ladder d.default_ladders)) ])
 
 let to_string (d : document) : string = Yojson.Safe.pretty_to_string (document d) ^ "\n"
 

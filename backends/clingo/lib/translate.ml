@@ -100,6 +100,14 @@ let decimals_of_datatype = function
       ignore dt;
       fault "unscalable datatype in the ASP translation"
 
+(* the ASP scale of an accumulator/result datatype: numeric datatypes ride
+   their declared decimals; a sum-typed accumulator (the reduce lowering's
+   Optional, ch. 10.4/§3.5) is a ground constructor term carrying no numeric
+   scale (0), exactly like a Construct value in [expr_term] *)
+let value_scale = function
+  | Some (Sum_type _) -> 0
+  | t -> pow10 (decimals_of_datatype t)
+
 let scaled_of_value ~decimals (v : Value.t) : int =
   match v with
   | Num (q, _) ->
@@ -1075,8 +1083,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* ch. 10.2: index recursion over the reified list (S15). The result is
          the accumulator at the list length; a present-but-empty list yields
          the init (base case fires on lpres); an absent list derives no lpres,
-         so nothing is reachable — leeg propagation for free. *)
-      let out_scale = pow10 (decimals_of_datatype typ) in
+         so nothing is reachable — leeg propagation for free. A sum-typed
+         accumulator (the Optional of the reduce lowering, ch. 10.4) carries a
+         ground constructor term, scale 0. *)
+      let out_scale = value_scale typ in
       let lterm, elem_scale = list_source ctx ~subject ~subject_ot list in
       ctx.fresh <- ctx.fresh + 1;
       let fa = Printf.sprintf "fa%d" ctx.fresh and fr = Printf.sprintf "fr%d" ctx.fresh in
@@ -1447,7 +1457,22 @@ and translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms =
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "match%d" ctx.fresh in
   let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
-  let out_scale = pow10 (decimals_of_datatype typ) in
+  let out_scale = value_scale typ in
+  (* the scrutinee's pattern carrier: an own-subject sum-typed attribute read
+     carries the constructor pattern in its val atom (functor unification); any
+     other sum-valued scrutinee (a Fold — the reduce lowering's extraction,
+     ch. 10.4) is evaluated once to a bound term matched by builtin equality. *)
+  let arm_scrut =
+    match scrutinee with
+    | Attribuut_ref
+        { attribuut = Some _; objecttype = Some ot; navigatie_rol = None; navigatie_pad = [];
+          navigatie_bindingen = None; set = false; _ }
+      when norm ot = norm subject_ot ->
+        fun pattern -> scrutinee_pattern ctx ~subject ~subject_ot ~scrutinee ~pattern
+    | _ ->
+        let satoms, sterm, _ = expr_term ctx ~subject ~subject_ot scrutinee in
+        fun pattern -> satoms @ [ Printf.sprintf "%s = %s" sterm pattern ]
+  in
   List.iter
     (fun (ctor, binder, body) ->
       let f = ctor_functor ctor in
@@ -1460,7 +1485,7 @@ and translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms =
         | Some _, None -> fault "unary match arm %S lacks a binder (WF-063)" ctor
         | None, Some _ -> fault "nullary match arm %S carries a binder (WF-063)" ctor
       in
-      let scrut_atoms = scrutinee_pattern ctx ~subject ~subject_ot ~scrutinee ~pattern in
+      let scrut_atoms = arm_scrut pattern in
       let saved_guard = ctx.rule_guard and saved_binders = ctx.binders in
       ctx.rule_guard <- ctx.rule_guard @ scrut_atoms;
       (match binding with Some b -> ctx.binders <- b :: ctx.binders | None -> ());
@@ -1619,6 +1644,26 @@ and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * 
       in
       ctx.binders <- saved;
       List.map (fun (g, t, s) -> (arg_atoms @ g, t, s)) branches
+  | Construct { typ; constructor_; argument = Some payload; _ } ->
+      (* ch. 10.4/§3.5: a Construct with a computed payload inside a closed
+         body — the reduce lowering's Some(...) step. The payload itself may
+         still branch (an IfThenElse reducer), so it goes through
+         [body_branches]; each branch wraps in the constructor functor. The
+         constructor VALUE carries no numeric scale (0); its payload rides the
+         declared payload scale. *)
+      let constructoren = sum_constructors typ in
+      (match ctor_payload_datatype constructoren constructor_ with
+      | None -> fault "nullary constructor %S built with an argument (WF-062)" constructor_
+      | Some d ->
+          let pscale = pow10 (decimals_of_datatype (Some d)) in
+          let f = ctor_functor constructor_ in
+          List.map
+            (fun (g, t, s) ->
+              if s <> pscale then
+                fault "a Construct payload branch scale %d does not match the declared payload scale %d"
+                  s pscale;
+              (g, Printf.sprintf "%s(%s)" f t, 0))
+            (body_branches ctx ~guard_body ~witness payload))
   | _ ->
       let a, t, s = closed_term ctx ~guard_body ~witness e in
       [ (a, t, s) ]

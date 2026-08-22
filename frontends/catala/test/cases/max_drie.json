@@ -1,0 +1,4 @@
+{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "G", "objectType": "Grootste",
+      "attributes": { "bedragen": { "list": [ { "number": "12.50" }, { "number": "30.00" }, { "number": "7.25" } ] } }, "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "attributeValue", "label": "G", "attribute": "hoogste", "value": { "number": "30.00" } }, { "kind": "consistent" } ] }

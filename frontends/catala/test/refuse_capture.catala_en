@@ -1,0 +1,14 @@
+# Scope-vangende fold-body — de gesloten-body-fence (WF-067). De vouwstap
+# leest de scopevariabele `drempel`, wat een closed body verbiedt; luid
+# geweigerd (§4, question 2 — pas een latere fase opent scope-lezende body's).
+
+```catala
+declaration scope Vangst:
+  input bedragen content list of money
+  input drempel content money
+  output totaal content money
+
+scope Vangst:
+  definition totaal equals
+    combine all x among bedragen in acc initially $0.00 with (acc + x + drempel)
+```

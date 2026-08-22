@@ -1,0 +1,30 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "P",
+        "objectType": "Penningstaffel",
+        "attributes": {
+          "bedragen": {
+            "list": [
+              { "number": "8.00" },
+              { "number": "25.50" },
+              { "number": "25.50" },
+              { "number": "3.00" }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "P", "attribute": "hoogste", "value": { "number": "25.50" } },
+    { "kind": "attributeValue", "label": "P", "attribute": "totaal", "value": { "number": "62.00" } },
+    { "kind": "consistent" }
+  ]
+}

@@ -44,3 +44,24 @@ Out of scope: structs/subscopes en de `no_stdlib`-flip met
 eerste-klasse functiewaarden; lijst-accumulatoren; hereniging van de
 `Functie`-aggregatiecatalogus met de fold-familie; `IfThenElse` buiten
 body's.
+
+Voortgang:
+- Opdracht 1 (schema + verifier + WF-065..070-negatiefs), 2 (de twee
+  ankers), 3 (ref), 4 (clingo) gemerged.
+- Opdracht 5 (2026-08-22): de Catala-plugin draagt de fold-familie —
+  `TArray`→`ListType` (WF-065-weigering voor ontoelaatbare elementen),
+  `EArray`→`ListLiteral`, `Map`/`Filter`/`Fold`/`Length` direct, `EAbs`
+  in foldpositie→`Lambda`, `IfThenElse` alleen in body's (rule-niveau
+  blijft geweigerd), topdefs→`FunctionDef` + `Invoke`, en de `Reduce`-
+  lowering (`sum`/`maximum`/`minimum`) naar een `Fold` over een concrete
+  `Optional`-som (het universele option_enum-payload omzeild) met een
+  extractie-`Match`. Weigeringen: scope-vangende body's (WF-067),
+  Sort/Find/Map2/argmin, plain-value topdefs. De clingo-backend is
+  uitgebreid voor de reduce-lowering (sum-getypeerde foldaccumulator
+  scale-0, `Construct` met berekende payload in body's, `Match` over een
+  Fold-resultaat — ASP-TRANSLATION S15). Derde catala-golden
+  `jutterswet-penningstaffel-catala` (maximum-met-default + numerieke
+  fold; drie beslissende cases, alle drie falen --noop; drievoudig
+  groen). Suite +17 checks (76 totaal; drie catala-goldens byte-
+  identiek). Alle negen gates groen. Nog te doen vóór merge: de
+  toolchain-herpin en de twee opus-lenzen.

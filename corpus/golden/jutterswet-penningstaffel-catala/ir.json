@@ -1,0 +1,590 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Penningstaffel": {
+      "node": "Objecttype",
+      "naam": "Penningstaffel",
+      "attributen": {
+        "bedragen": {
+          "node": "ListType",
+          "element": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          }
+        },
+        "hoogste": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "totaal": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": null
+    }
+  },
+  "domeinen": {
+    "Optional": {
+      "node": "SumType",
+      "domain": "Optional",
+      "constructors": [
+        {
+          "name": "Absent",
+          "payload": null
+        },
+        {
+          "name": "Present",
+          "payload": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          }
+        }
+      ]
+    }
+  },
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "berekening hoogste",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "hoogste",
+        "objecttype": "Penningstaffel",
+        "onderwerpBron": "de hoogste",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de hoogste",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Match",
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "scrutinee": {
+          "node": "Fold",
+          "type": {
+            "node": "SumType",
+            "domain": "Optional",
+            "constructors": [
+              {
+                "name": "Absent",
+                "payload": null
+              },
+              {
+                "name": "Present",
+                "payload": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                }
+              }
+            ]
+          },
+          "list": {
+            "node": "AttribuutRef",
+            "attribuut": "bedragen",
+            "objecttype": "Penningstaffel",
+            "onderwerpBron": "de bedragen",
+            "navigatieRol": null,
+            "type": {
+              "node": "ListType",
+              "element": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              }
+            },
+            "bron": "de bedragen",
+            "set": false,
+            "navigatiePad": []
+          },
+          "function": {
+            "node": "Lambda",
+            "parameters": [
+              {
+                "name": "geaccumuleerde optie",
+                "datatype": {
+                  "node": "SumType",
+                  "domain": "Optional",
+                  "constructors": [
+                    {
+                      "name": "Absent",
+                      "payload": null
+                    },
+                    {
+                      "name": "Present",
+                      "payload": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "y",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                }
+              }
+            ],
+            "body": {
+              "node": "Match",
+              "type": {
+                "node": "SumType",
+                "domain": "Optional",
+                "constructors": [
+                  {
+                    "name": "Absent",
+                    "payload": null
+                  },
+                  {
+                    "name": "Present",
+                    "payload": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "ONBEPAALD",
+                      "eenheid": null
+                    }
+                  }
+                ]
+              },
+              "scrutinee": {
+                "node": "BinderRef",
+                "name": "geaccumuleerde optie",
+                "type": {
+                  "node": "SumType",
+                  "domain": "Optional",
+                  "constructors": [
+                    {
+                      "name": "Absent",
+                      "payload": null
+                    },
+                    {
+                      "name": "Present",
+                      "payload": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      }
+                    }
+                  ]
+                },
+                "bron": "geaccumuleerde optie"
+              },
+              "arms": [
+                {
+                  "constructor": "Absent",
+                  "binder": null,
+                  "body": {
+                    "node": "Construct",
+                    "type": {
+                      "node": "SumType",
+                      "domain": "Optional",
+                      "constructors": [
+                        {
+                          "name": "Absent",
+                          "payload": null
+                        },
+                        {
+                          "name": "Present",
+                          "payload": {
+                            "node": "Numeriek",
+                            "geheel": false,
+                            "decimalen": 2,
+                            "teken": "ONBEPAALD",
+                            "eenheid": null
+                          }
+                        }
+                      ]
+                    },
+                    "constructor": "Present",
+                    "argument": {
+                      "node": "BinderRef",
+                      "name": "y",
+                      "type": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      },
+                      "bron": "y"
+                    },
+                    "bron": "Present"
+                  }
+                },
+                {
+                  "constructor": "Present",
+                  "binder": "x",
+                  "body": {
+                    "node": "Construct",
+                    "type": {
+                      "node": "SumType",
+                      "domain": "Optional",
+                      "constructors": [
+                        {
+                          "name": "Absent",
+                          "payload": null
+                        },
+                        {
+                          "name": "Present",
+                          "payload": {
+                            "node": "Numeriek",
+                            "geheel": false,
+                            "decimalen": 2,
+                            "teken": "ONBEPAALD",
+                            "eenheid": null
+                          }
+                        }
+                      ]
+                    },
+                    "constructor": "Present",
+                    "argument": {
+                      "node": "IfThenElse",
+                      "type": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      },
+                      "condition": {
+                        "node": "Vergelijking",
+                        "op": "GROTER",
+                        "links": {
+                          "node": "BinderRef",
+                          "name": "x",
+                          "type": {
+                            "node": "Numeriek",
+                            "geheel": false,
+                            "decimalen": 2,
+                            "teken": "ONBEPAALD",
+                            "eenheid": null
+                          },
+                          "bron": "x"
+                        },
+                        "rechts": {
+                          "node": "BinderRef",
+                          "name": "y",
+                          "type": {
+                            "node": "Numeriek",
+                            "geheel": false,
+                            "decimalen": 2,
+                            "teken": "ONBEPAALD",
+                            "eenheid": null
+                          },
+                          "bron": "y"
+                        },
+                        "periode": null,
+                        "bron": null
+                      },
+                      "then": {
+                        "node": "BinderRef",
+                        "name": "x",
+                        "type": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        },
+                        "bron": "x"
+                      },
+                      "else": {
+                        "node": "BinderRef",
+                        "name": "y",
+                        "type": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        },
+                        "bron": "y"
+                      },
+                      "bron": null
+                    },
+                    "bron": "Present"
+                  }
+                }
+              ],
+              "bron": "de volgende vouwstap"
+            },
+            "bron": "de vouwstap"
+          },
+          "init": {
+            "node": "Construct",
+            "type": {
+              "node": "SumType",
+              "domain": "Optional",
+              "constructors": [
+                {
+                  "name": "Absent",
+                  "payload": null
+                },
+                {
+                  "name": "Present",
+                  "payload": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  }
+                }
+              ]
+            },
+            "constructor": "Absent",
+            "argument": null,
+            "bron": "Absent"
+          },
+          "bron": "gevouwen tot een optionele waarde"
+        },
+        "arms": [
+          {
+            "constructor": "Absent",
+            "binder": null,
+            "body": {
+              "node": "Literal",
+              "waarde": "0.00",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "0.00"
+            }
+          },
+          {
+            "constructor": "Present",
+            "binder": "x",
+            "body": {
+              "node": "BinderRef",
+              "name": "x",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "x"
+            }
+          }
+        ],
+        "bron": "de gevouwen waarde uitgepakt"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "berekening totaal",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "totaal",
+        "objecttype": "Penningstaffel",
+        "onderwerpBron": "de totaal",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de totaal",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Fold",
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "list": {
+          "node": "AttribuutRef",
+          "attribuut": "bedragen",
+          "objecttype": "Penningstaffel",
+          "onderwerpBron": "de bedragen",
+          "navigatieRol": null,
+          "type": {
+            "node": "ListType",
+            "element": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          "bron": "de bedragen",
+          "set": false,
+          "navigatiePad": []
+        },
+        "function": {
+          "node": "Lambda",
+          "parameters": [
+            {
+              "name": "acc",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "b",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              }
+            }
+          ],
+          "body": {
+            "node": "Binair",
+            "op": "PLUS",
+            "links": {
+              "node": "BinderRef",
+              "name": "acc",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "acc"
+            },
+            "rechts": {
+              "node": "BinderRef",
+              "name": "b",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "b"
+            },
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": null
+          },
+          "bron": null
+        },
+        "init": {
+          "node": "Literal",
+          "waarde": "0.00",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "0.00"
+        },
+        "bron": null
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": [],
+  "defaultLadders": []
+}

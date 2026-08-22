@@ -93,14 +93,24 @@ let () =
       (* a wildcard match: the desugarer makes it total before scopelang, so
          the plugin never sees a wildcard *)
       ("enum_wildcard.catala_en",
-       [ "cases/wild_een.json"; "cases/wild_twee.json" ]) ]
+       [ "cases/wild_een.json"; "cases/wild_twee.json" ]);
+      (* row-10 fold family: a map + explicit numeric fold (MapList as a fold
+         source, the aanspraaktelling pattern) *)
+      ("lijst.catala_en", [ "cases/lijst_twee.json"; "cases/lijst_leeg.json" ]);
+      (* row-10 + row-36: maximum … or if list empty then … — the §3.5 reduce
+         lowering (Optional-som, IfThenElse reducer, Fold, extraction Match)
+         through the full differential, including the empty-list default *)
+      ("maximum.catala_en", [ "cases/max_drie.json"; "cases/max_leeg.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:false src cases) passing;
-  (* ref-only passing programs: clingo cannot translate a date literal in a
-     term position (dates are civil day numbers from case input, not IR
-     literals) — a recorded backend limit, not a plugin bug. *)
+  (* ref-only passing programs. datum: clingo cannot translate a date literal
+     in a term position (dates are civil day numbers from case input, not IR
+     literals). functie: clingo translates an Invoke inside a fold/map body
+     (the aanspraaktelling anchor) but not yet a rule-level Invoke — a recorded
+     backend limit, not a plugin bug. *)
   let passing_ref_only =
-    [ ("datum.catala_en", [ "cases/datum_najaar.json"; "cases/datum_voorjaar.json" ]) ]
+    [ ("datum.catala_en", [ "cases/datum_najaar.json"; "cases/datum_voorjaar.json" ]);
+      ("functie.catala_en", [ "cases/functie_tien.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:true src cases) passing_ref_only;
   (* refusal programs: source -> expected reason fragment. Besluit 4's four
@@ -118,12 +128,18 @@ let () =
          (the structs-5c fence) each refuse loudly *)
       ("refuse_partialmatch.catala_en", "total");
       ("refuse_tuple.catala_en", "tuple");
-      ("refuse_list.catala_en", "list");
       ("refuse_struct.catala_en", "struct");
       ("refuse_decimal_type.catala_en", "decimal");
       ("refuse_decimal_literal.catala_en", "decimal");
+      (* an if-then-else in a RULE expression stays refused (WF-069: value
+         conditionals live only inside lambda/function bodies) *)
       ("refuse_ifthenelse.catala_en", "if-then-else");
-      ("refuse_boolfalse.catala_en", "false") ]
+      ("refuse_boolfalse.catala_en", "false");
+      (* row-10 fences (§4): list sorting, a plain-value topdef, and a
+         scope-capturing fold body (the closed-body fence, WF-067) *)
+      ("refuse_sort.catala_en", "Sort");
+      ("refuse_topdef_value.catala_en", "plain-value");
+      ("refuse_capture.catala_en", "WF-067") ]
   in
   List.iter
     (fun (src, needle) ->

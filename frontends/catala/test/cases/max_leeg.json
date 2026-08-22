@@ -1,0 +1,4 @@
+{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "G", "objectType": "Grootste",
+      "attributes": { "bedragen": { "list": [] } }, "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "attributeValue", "label": "G", "attribute": "hoogste", "value": { "number": "0.00" } }, { "kind": "consistent" } ] }
