@@ -1014,13 +1014,18 @@ no case exercises it, so the ASP case emission (and any struct field-access
 base over an own temporal attribute) faults with the literal reason
 `temporal struct carriage is a recorded flank; no corpus case` rather than
 silently omitting the record-valued segments (the sum-carriage sibling).
-Two field **values** WF-071 admits but the ASP value emission does not yet
-carry: a **nested struct field** and a **sum-typed field** — a struct or
-constructor value has no integer encoding in the flat record term, so
-`struct_value_term` faults with `a nested struct/sum/list field value has
-no integer encoding in the ASP struct term (no corpus case)` (a
-day-precision date field *does* translate — `decimals_of_datatype` scales
-it at 0). A **case-supplied struct computed target** has no monotone
+A **struct-typed parameter** is ref-only, the sum-typed-parameter
+sibling: ref accepts and executes it, but the ASP case emission scales
+every scalar parameter through `decimals_of_datatype`, which yields no
+number for a `StructType` datatype and so faults with the literal reason
+`unscalable datatype in the ASP translation` (a record value has no
+integer encoding) — no corpus case exercises it. Two field **values**
+WF-071 admits but the ASP value emission does not yet carry: a **nested
+struct field** and a **sum-typed field** — a struct or constructor value
+has no integer encoding in the flat record term, so `struct_value_term`
+faults with `a nested struct/sum/list field value has no integer encoding
+in the ASP struct term (no corpus case)` (a day-precision date field
+*does* translate — `decimals_of_datatype` scales it at 0). A **case-supplied struct computed target** has no monotone
 encoding (the case fact and the rule head would union into a superset
 model — the ch. 6d fence): `a case-supplied struct-typed computed target
 "…" has no encoding here (no corpus case)`. A **struct field-access base**

@@ -1717,12 +1717,26 @@ let validate_input_precision env world =
   let fits ~decimals q =
     Z.equal (Q.den (Q.mul q (Q.of_bigint (Z.pow (Z.of_int 10) decimals)))) Z.one
   in
-  let check ~what dt (v : Value.t) =
+  let rec check ~what dt (v : Value.t) =
     match (dt, v) with
     | Some (Numeriek { decimalen; _ }), Value.Num (q, _)
     | Some (Percentage { decimalen; _ }), Value.Num (q, _) ->
         if not (fits ~decimals:decimalen q) then
           Value.fault "input %s = %s does not fit %d decimals" what (Value.lexeme_of_q q) decimalen
+    (* recurse into composite values: an over-precise field of a record or
+       element of a list is refused at the boundary too, exactly as the ASP
+       backend scales every field/element — otherwise ref keeps a precision
+       inside a struct or list that the declaration cannot hold while clingo
+       faults (the same 5b gap for list elements, now closed for both) *)
+    | Some (Struct_type { velden; _ }), Value.Record fs ->
+        List.iter
+          (fun (fname, fv) ->
+            match List.find_opt (fun (n, _) -> norm n = norm fname) velden with
+            | Some (_, fdt) -> check ~what:(what ^ "." ^ fname) (Some fdt) fv
+            | None -> ())
+          fs
+    | Some (List_type { element }), Value.Lijst xs ->
+        List.iteri (fun i x -> check ~what:(Printf.sprintf "%s[%d]" what i) (Some element) x) xs
     | _ -> ()
   in
   SMap.iter

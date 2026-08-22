@@ -67,6 +67,13 @@
           "teken": "NIET_NEGATIEF",
           "eenheid": null
         },
+        "waardekopie": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
         "totaalwaarde": {
           "node": "Numeriek",
           "geheel": false,
@@ -958,6 +965,78 @@
         "periode": null,
         "bron": null
       },
+      "geldigheid": null
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "waardekopie van een jutter",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "waardekopie",
+        "objecttype": "Jutter",
+        "onderwerpBron": null,
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": null,
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "FieldAccess",
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "base": {
+          "node": "AttribuutRef",
+          "attribuut": "dossier",
+          "objecttype": "Jutter",
+          "onderwerpBron": null,
+          "navigatieRol": null,
+          "type": {
+            "node": "StructType",
+            "domain": "dossier",
+            "fields": [
+              {
+                "name": "waarde",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              },
+              {
+                "name": "telling",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              }
+            ]
+          },
+          "bron": null,
+          "set": false,
+          "navigatiePad": []
+        },
+        "field": "waarde",
+        "bron": null
+      },
+      "voorwaarde": null,
       "geldigheid": null
     }
   ],

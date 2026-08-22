@@ -64,6 +64,14 @@
     {
       "kind": "attributeValue",
       "label": "J1",
+      "attribute": "waardekopie",
+      "value": {
+        "number": "120.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
       "attribute": "totaalwaarde",
       "value": {
         "number": "12.50"

@@ -2476,28 +2476,48 @@ field value evaluates leeg propagates — the whole literal evaluates leeg
 not expressible). A `FieldAccess` on a leeg base likewise propagates
 (reading a field of an absent record is leeg).
 
-Worked (the anchor's `samenvatting` := `{ waarde: premie, telling:
-|dossiers| }` and `premie` := `dossier.waarde + opslag`):
+Worked (the anchor's `premie` := `dossier.waarde + opslag` **guarded by
+`GEVULD(dossier)`**, `waardekopie` := `dossier.waarde` — a bare
+`FieldAccess`, **unguarded** — and `samenvatting` := `{ waarde: premie,
+telling: |dossiers| }`). The guard on `premie` is load-bearing: `+`
+coalesces a leeg operand to 0 (ch. 1.3), so an *unguarded* `premie` would
+write **5.00** at an absent `dossier` (0 + `opslag`), not leeg — the
+`GEVULD(dossier)` condition makes `premie` leeg exactly when the record
+is absent. `waardekopie` needs no such guard: a bare `FieldAccess` on a
+leeg base propagates leeg (below), with no arithmetic to coalesce.
 
 - **case1-gevuld** — `dossier` = `{waarde: 120.50, telling: 3}`,
   `dossiers` = `[{10.00, 1}, {2.50, 2}]`. `dossier.waarde` reads
-  **120.50** (the `FieldAccess`), so `premie` = 120.50 + 5.00 =
-  **125.50**; `totaalwaarde` maps `d ↦ d.waarde` over `dossiers` →
-  `[10.00, 2.50]` and folds → **12.50** (the `FieldAccess` inside the
-  map's closed lambda body — the WF-069 widening); `samenvatting` =
-  **`{waarde: 125.50, telling: 2}`** (`premie` and `|dossiers|` = 2).
-- **case2-leeg-lijst** — `dossiers` = `[]`, `dossier` unchanged.
-  `totaalwaarde` folds the empty map → **0.00**; `samenvatting` =
-  **`{waarde: 125.50, telling: 0}`** (`|[]|` = 0 — a value, not leeg).
-- **case3-afwezig** — `dossier` and `dossiers` both absent.
-  `dossier.waarde` reads **leeg** (`FieldAccess` on a leeg base
-  propagates); `totaalwaarde` reads **leeg** (a leeg list source
-  propagates through map and fold, ch. 10.2); and `samenvatting` is
-  **leeg** — the build-side no-hole witness: its `telling` field,
-  `|dossiers|` over the absent list, evaluates leeg, so the whole
-  `StructLiteral` is leeg (never `{125.50, leeg}`). Nothing is written; on
-  bare single-writer targets the ch. 7.8 standing norm applies unchanged
-  — the reason-carrying no-op survivor.
+  **120.50** (the `FieldAccess`), so `premie` (its guard true) = 120.50 +
+  5.00 = **125.50** and `waardekopie` = **120.50**; `totaalwaarde` maps
+  `d ↦ d.waarde` over `dossiers` → `[10.00, 2.50]` and folds → **12.50**
+  (the `FieldAccess` inside the map's closed lambda body — the WF-069
+  widening); `samenvatting` = **`{waarde: 125.50, telling: 2}`** (`premie`
+  and `|dossiers|` = 2).
+- **case2-leeg-lijst** — `dossiers` = `[]`, `dossier` unchanged. `premie`
+  = **125.50** and `waardekopie` = **120.50** as case1; `totaalwaarde`
+  folds the empty map → **0.00**; `samenvatting` = **`{waarde: 125.50,
+  telling: 0}`** (`|[]|` = 0 — a value, not leeg).
+- **case3-afwezig** — `dossier` and `dossiers` both absent. `premie` is
+  **leeg**: its `GEVULD(dossier)` guard is false, so the rule does not
+  fire — never the 5.00 an unguarded coalescing `+` would write.
+  `waardekopie` reads **leeg** directly (`FieldAccess` on a leeg base
+  propagates, no guard needed); `totaalwaarde` reads **leeg** (a leeg
+  list source propagates through map and fold, ch. 10.2); and
+  `samenvatting` is **leeg** — the build-side no-hole witness: its
+  `telling` field, `|dossiers|` over the absent list, evaluates leeg, so
+  the whole `StructLiteral` is leeg (never `{125.50, leeg}`). Nothing is
+  written; on bare single-writer targets the ch. 7.8 standing norm
+  applies unchanged — the reason-carrying no-op survivor.
+- **case4-dossier-zonder-lijst** — `dossier` = `{120.50, 3}` present,
+  `dossiers` absent. `premie` fires (guard true) = **125.50** and
+  `waardekopie` = **120.50**; `totaalwaarde` is **leeg** (the absent list
+  propagates through map and fold). `samenvatting` is **leeg** even
+  though its `waarde` field (`premie`) *is* gevuld at 125.50: its
+  `telling` field `|dossiers|` over the absent list is leeg, so the whole
+  `StructLiteral` is leeg — the pure `{gevuld, leeg}` no-hole witness,
+  **never** `{125.50, leeg}`. This case decides (`premie`/`waardekopie`
+  written), so it refutes a do-nothing executor.
 
 ### 11.2 Equality — structural and nominal
 
@@ -2526,8 +2546,9 @@ are equal decisions, not a conflict.
 Worked (the anchor's `dubbel` iff `dossier` = `{waarde: 120.50, telling:
 3}`; `afwijkend` iff `dossier` ≠ `{waarde: 120.50, telling: 3}`):
 
-- **case1/case2** — `dossier` = `{120.50, 3}` → `dubbel` **aanwezig**
-  (fieldwise equal within one domain), `afwijkend` **afwezig**.
+- **case1/case2/case4** — `dossier` = `{120.50, 3}` → `dubbel`
+  **aanwezig** (fieldwise equal within one domain), `afwijkend`
+  **afwezig**.
 - **case3** — `dossier` **leeg** → **both afwezig** (the
   both-directions-false corner: leeg makes `=` and `≠` both onwaar,
   Tabel 38 — pinned absolutely).
@@ -2535,13 +2556,25 @@ Worked (the anchor's `dubbel` iff `dossier` = `{waarde: 120.50, telling:
 ### 11.3 Carriage, ladders, timelines
 
 - **Case carriage.** Record values ride the case format's value union as
-  `{ "struct": { field: value, … } }` (input attributes, parameters,
-  expectations); `list` already recurses, so a list of records parses with
-  no further surface. The loaders fail fast on an undeclared field, a
-  field against the wrong datatype, or a leeg field (the no-hole rule at
-  the boundary — the WF-059/WF-018 backstop, widened). The anchor's
-  `dossier` rides as `{"struct": {"waarde": {"number": "120.50"},
-  "telling": {"number": "3"}}}`.
+  `{ "struct": { field: value, … } }`; `list` already recurses, so a list
+  of records parses with no further surface. Input **attributes** and
+  **expectations** are witnessed by the anchor
+  (`corpus/golden/anchor/jutterswet-vondstdossier`); the value union also
+  admits a **struct-typed parameter**, which ref carries but clingo
+  refuses loudly — the ASP case emission scales every scalar parameter and
+  a `StructType` has no integer encoding (`unscalable datatype in the ASP
+  translation`), and no corpus case exercises it (the sum-typed-parameter
+  sibling, ASP-TRANSLATION S17). The loaders fail fast on an undeclared
+  field, a field against the wrong datatype, or a leeg field (the no-hole
+  rule at the boundary — the WF-059/WF-018 backstop, widened); and the
+  input-precision fence recurses into record fields and list elements,
+  refusing a field or element whose exact rational does not fit its
+  declared decimals in **both** executors
+  (`corpus/rood/struct-field-overprecision`,
+  `corpus/rood/list-element-overprecision` — ref now matches the ASP
+  backend's per-field/per-element scaling, which faulted there all along).
+  The anchor's `dossier` rides as `{"struct": {"waarde": {"number":
+  "120.50"}, "telling": {"number": "3"}}}`.
 - **Ladders and standing.** A struct-typed attribute target changes no
   ladder semantics: the decide-test stays gevuld/leeg and never inspects a
   field (ch. 7.1); the ch. 7.8 standing norm carries over unchanged.

@@ -1,0 +1,35 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "dossier": {
+            "struct": {
+              "waarde": {
+                "number": "40.005"
+              },
+              "telling": {
+                "number": "3"
+              }
+            }
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "opslag": {
+        "number": "5.00"
+      }
+    }
+  },
+  "expectedFault": {
+    "ref": "does not fit 2 decimals",
+    "clingo": "does not fit 2 decimals"
+  }
+}

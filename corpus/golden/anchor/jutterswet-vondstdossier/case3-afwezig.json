@@ -26,6 +26,11 @@
     {
       "kind": "attributeEmpty",
       "label": "J1",
+      "attribute": "waardekopie"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
       "attribute": "totaalwaarde"
     },
     {
