@@ -58,7 +58,10 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   `ListLiteral`/`Lambda`/`IfThenElse`/`Invoke`/`Fold`/`MapList`/
   `FilterList`/`ListLength` expression nodes (ch. 4.8) — both v1
   kernel extensions the emitter never produces
-  (`spec/proposals/PHASE5B-KERNEL.md`). **First pin bump (2026-08-17, toolchain `edecb46`):** the
+  (`spec/proposals/PHASE5B-KERNEL.md`); and the record family — the
+  `StructType` datatype (ch. 2.4) with the `StructLiteral`/`FieldAccess`
+  expression nodes (ch. 4.9) — the Phase-5c kernel extension, likewise
+  never emitter-produced (`spec/proposals/PHASE5C-TUTORIAL.md`). **First pin bump (2026-08-17, toolchain `edecb46`):** the
   emitter produces `verbindendeRol` and `bronRol` where uniquely
   derivable from declared names (absent otherwise — never null, never a
   guessed plural); the emitter goldens carry them since that pin. **Second pin
@@ -316,6 +319,7 @@ A closed sum. v1 variants:
 | `Enumeration` | `domain: string`, `values: list of string` | `domain` is a resolvable reference to a declared Domain (WF-003), not a free string — this satisfies the "real reference, not a name string" delta of `CONSTRUCTS.md` ch. 2.4 |
 | `SumType` | `domain: string`, `constructors: list of {name, payload: Datatype?}` | **extension node** (Method; wire node `SumType`, never emitter-produced): the payload-carrying variant family, CONSTRUCTS row 36 — see the SumType clause below |
 | `ListType` | `element: Datatype` | **extension node** (Method; wire node `ListType`, never emitter-produced): an ordered, possibly empty sequence type, CONSTRUCTS row 10 — see the ListType clause below |
+| `StructType` | `domain: string`, `fields: list of {name, datatype: Datatype}` | **extension node** (Method; wire node `StructType`, never emitter-produced): the record datatype, Phase-5c core (`spec/proposals/PHASE5C-TUTORIAL.md` §2) — see the StructType clause below |
 
 `sign` ∈ {`unspecified`, `negative`, `nonNegative`, `positive`} (v0
 `Teken`).
@@ -336,7 +340,8 @@ false`, `decimals = 0` (no precision ceiling; §13.3.3 form (c)). The
   belongs to the expression layer — forward reference, **OPEN**.
 
 Orderability: `Number` and `Date` are orderable; `Text`, `Boolean`,
-`Enumeration`, `SumType`, and `ListType` are equality-only. This is deliberate (an
+`Enumeration`, `SumType`, `ListType`, and `StructType` are equality-only.
+This is deliberate (an
 ordered use of a non-orderable type is a rule-layer WF violation,
 specified with that layer).
 
@@ -383,13 +388,47 @@ they are built by `ListLiteral` (ch. 4.8) or supplied by a case, and
 consumed by the fold family.
 
 - **WF-065** A `ListType` element datatype MUST be first-order and
-  non-list: one of `Number`, day-precision `Date`, or a declared
-  `SumType` (lists of lists, text, boolean, enumeration, function and
-  millisecond-date elements are ill-formed — the admissible set of the
-  ratified design, loudly extensible). A list-typed attribute MUST be
+  non-list: one of `Number`, day-precision `Date`, a declared
+  `SumType`, or — the **Phase-5c widening** — a declared `StructType`
+  (`list of Individual` is the tutorial's input shape; the fence was
+  written loudly extensible for exactly this). Lists of lists, text,
+  boolean, enumeration, function and
+  millisecond-date elements stay ill-formed — the admissible set of the
+  ratified design, loudly extensible. A list-typed attribute MUST be
   scalar-carried: a granularity declaration on it (a list-typed
   temporal attribute) is ill-formed in v1 — a recorded fence, not a
   design position.
+
+**StructType (extension; Phase-5c core, design
+`spec/proposals/PHASE5C-TUTORIAL.md` §2).** A declared, nominal record: a
+finite, ordered list of named `fields`, each carrying a datatype. A
+`StructType` is declared as a domain (ch. 2.3) and repeated whole at
+every use site, exactly as `SumType` repeats its constructors — the same
+landing pattern (extension node, hosted by `domeinen`, never
+emitter-produced). It is a value type: records are anonymous values
+compared by value, never entities with identity (the rejected
+object-type lowering, `PHASE5C-TUTORIAL.md` §2). Its expression nodes —
+`StructLiteral` and `FieldAccess` — are ch. 4.9; the record value and its
+no-hole/equality semantics are `RUNTIME-SEMANTICS.md` ch. 11.
+
+- **WF-071** A `StructType` declaration MUST carry at least one field;
+  field names MUST be unique (ci) within the declaration; every field
+  datatype MUST be one of `Number`, day-precision `Date`, a declared
+  `SumType`, or a declared `StructType` (text, boolean, enumeration,
+  millisecond-date and list fields are ill-formed — the admissible set
+  is a recorded v1 fence, loudly extensible); and the declaration graph
+  MUST be acyclic — no recursive structs. This graph is the **same**
+  acyclicity graph as WF-060's: it spans sum-type payloads and struct
+  fields together, so a struct nesting a sum type nesting the struct is
+  caught, and it is what statically bounds record-term depth for the ASP
+  encoding.
+- **WF-072** A `StructType` use site MUST name a declared domain whose
+  datatype is a `StructType` that agrees with the use site (same fields,
+  same field datatypes, same order); and two struct-typed operands of
+  one comparison MUST name the same declaring domain — the
+  nominal-identity rule, the struct sibling of WF-061 (fieldwise
+  structural equality within one domain; cross-domain comparison is
+  statically ill-formed, never false, ch. 11).
 
 **Deltas (tracked, `CONSTRUCTS.md` row 27):**
 
@@ -688,7 +727,9 @@ and invoked by name; design `spec/proposals/PHASE5B-KERNEL.md` §3).
   definition; the `result` MUST be a declared-resolvable datatype; the
   **body is closed** — it may reference its own parameters
   (`BinderRef`), document parameters (`ParameterRef`), literals,
-  operators, `Construct`/`Match`/`IfThenElse`, and other functions via
+  operators, `Construct`/`Match`/`IfThenElse`, `StructLiteral`/
+  `FieldAccess` (the **Phase-5c widening** — a record built or read over
+  binders and parameters keeps the body closed), and other functions via
   `Invoke`; any attribute, characteristic, aggregation, temporal or
   variable read is ill-formed — and the invocation graph over
   `functionDefs` MUST be acyclic (no recursion: the Catala mirror, and
@@ -1464,8 +1505,10 @@ untouched — the two never merge in v1.
   function reaches a fold through a lambda body that `Invoke`s it, as
   the anchors do); a lambda's parameters MUST be typed and its arity
   MUST fit its host (`Fold`: two — accumulator, element; `MapList`:
-  one); lambda bodies MUST be closed (the WF-067 clause); an
-  `IfThenElse`'s branches MUST agree on one datatype — the node's own
+  one); lambda bodies MUST be closed (the WF-067 clause — which the
+  **Phase-5c widening** extends to admit `FieldAccess` and
+  `StructLiteral`, so a map-over-struct-field lambda body is well-formed);
+  an `IfThenElse`'s branches MUST agree on one datatype — the node's own
   `type`.
 - **WF-070** The fold-family `list` operand MUST be list-typed. For
   `Fold`: the `init`, the accumulator parameter, the function body and
@@ -1477,6 +1520,35 @@ untouched — the two never merge in v1.
   MUST be the ListType of the body's datatype. For `FilterList`: the
   node's `type` MUST equal the source's. For `ListLength`: the node's
   `type` MUST be a whole Number.
+
+### 4.9 Record expressions — StructLiteral, FieldAccess
+
+`layer: core`; **extension nodes** per the Method (wire nodes
+`StructLiteral`, `FieldAccess` — never emitter-produced; Phase-5c core;
+semantics `RUNTIME-SEMANTICS.md` ch. 11; design and ratified decision
+`spec/proposals/PHASE5C-TUTORIAL.md` §2, question 1 = A).
+
+| Node | Fields | Notes |
+|---|---|---|
+| StructLiteral | `type` (the StructType, strictly non-null), `fields` (list of `{name, value: expr}` in declaration order), `source` | builds a record value; a leeg field value propagates (the whole node evaluates leeg — a record value never carries a leeg field, the `Construct`/`ListLiteral` no-hole rule) |
+| FieldAccess | `type` (the field's datatype), `base` (expr), `field`, `source` | reads one declared field of a record; a leeg base propagates (ch. 11) |
+
+- **WF-073** A `StructLiteral` MUST name a declared struct type in its
+  `type` and supply exactly that type's declared fields — each declared
+  field once, none missing, none alien; each field value's static type
+  MUST equal the declared field datatype.
+- **WF-074** A `FieldAccess` `base` MUST be struct-typed, its `field`
+  MUST be a declared field of that struct, and the node's `type` MUST
+  equal that field's declared datatype.
+
+The **WF-069 closed-body whitelist widens** (the Phase-5c widening):
+`FieldAccess` and `StructLiteral` are admissible inside a closed lambda
+or function body — the tutorial's map-over-struct-field
+(`λ individual. individual.kindertal`, a `FieldAccess` on a binder) is
+otherwise ill-formed inside a lambda body (the reads that break closure —
+attribute, dimension, aggregation, temporal, variable — are unchanged;
+the two record nodes join the admissible set, their own operand reads
+still following the closed-body discipline).
 
 ---
 
@@ -1643,12 +1715,16 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-062 | Construct: declared constructor; argument present iff unary; argument type matches the declared payload (ch. 4.7) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf062-nullary-with-argument` + `wf062-payload-type-mismatch` |
 | WF-063 | Match totality: sum-typed scrutinee; arms cover the declared constructors exactly, each once; binder iff unary (ch. 4.7) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf063-missing-arm` + `wf063-alien-constructor` + `wf063-binder-on-nullary` + `wf063-duplicate-arm` |
 | WF-064 | every BinderRef resolves to an enclosing binder; match arm bodies agree on one result datatype (ch. 4.7; VariabeleRef stays outside — row 24) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf064-unbound-binderref` + `wf064-mixed-arm-types` |
-| WF-065 | ListType: first-order non-list element (Number, day-precision Date, declared SumType); no granularity on a list-typed attribute (ch. 2.4) | gate 3 | `anchor/jutterswet-staffelvergoeding` (executed by gates 5–6) | `wf065-list-of-list` + `wf065-temporal-list-attribute` |
+| WF-065 | ListType: first-order non-list element (Number, day-precision Date, declared SumType, or — the 5c widening — declared StructType); no granularity on a list-typed attribute (ch. 2.4) | gate 3 | `anchor/jutterswet-staffelvergoeding` (executed by gates 5–6) + `anchor/jutterswet-vondstdossier` (the list-of-struct widening) | `wf065-list-of-list` + `wf065-temporal-list-attribute` |
 | WF-066 | ListLiteral elements carry the declared element datatype (ch. 4.8) | gate 3 | `anchor/jutterswet-aanspraaktelling` | `wf066-heterogeneous-literal` |
-| WF-067 | FunctionDef: ci-unique names, typed unique parameters, resolvable result, closed body, acyclic invocation graph (ch. 2.11) | gate 3 | `anchor/jutterswet-aanspraaktelling` | `wf067-recursive-functions` + `wf067-attribute-read-in-body` |
+| WF-067 | FunctionDef: ci-unique names, typed unique parameters, resolvable result, closed body (the 5c widening admits FieldAccess/StructLiteral), acyclic invocation graph (ch. 2.11) | gate 3 | `anchor/jutterswet-aanspraaktelling` | `wf067-recursive-functions` + `wf067-attribute-read-in-body` |
 | WF-068 | Invoke: resolvable function, arity, argument types, result type (ch. 4.8) | gate 3 | `anchor/jutterswet-aanspraaktelling` | `wf068-unresolved-invoke` + `wf068-arity-mismatch` |
-| WF-069 | Lambda only as a Fold/MapList operand and the operand only an inline Lambda (no bare FunctionDef name); IfThenElse only inside bodies; lambda arity per host, typed parameters, closed bodies; IfThenElse branch agreement (ch. 4.8) | gate 3 | `anchor/jutterswet-staffelvergoeding` | `wf069-lambda-outside-fold` + `wf069-ifthenelse-outside-body` + `wf069-named-function-operand` |
+| WF-069 | Lambda only as a Fold/MapList operand and the operand only an inline Lambda (no bare FunctionDef name); IfThenElse only inside bodies; lambda arity per host, typed parameters, closed bodies (the 5c widening admits FieldAccess/StructLiteral); IfThenElse branch agreement (ch. 4.8) | gate 3 | `anchor/jutterswet-staffelvergoeding` + `anchor/jutterswet-vondstdossier` (the map-over-struct-field body) | `wf069-lambda-outside-fold` + `wf069-ifthenelse-outside-body` + `wf069-named-function-operand` |
 | WF-070 | fold-family shapes: list-typed source; Fold accumulator first-order non-list shared with init/body/type, element parameter = source element; MapList/FilterList/ListLength result typing (ch. 4.8) | gate 3 | `anchor/jutterswet-staffelvergoeding` + `anchor/jutterswet-aanspraaktelling` | `wf070-list-accumulator` + `wf070-scalar-source` |
+| WF-071 | StructType declaration: ≥ 1 field, ci-unique names, admissible field datatypes (Number, day-precision Date, declared SumType, declared StructType), acyclic field graph shared with WF-060 (ch. 2.4) | gate 3 | `anchor/jutterswet-vondstdossier` | `wf071-duplicate-field` + `wf071-text-field` + `wf071-recursive-struct` |
+| WF-072 | StructType use site agrees with its declaring domain; two struct-typed comparison operands name the same domain (the nominal rule, ch. 2.4) | gate 3 | `anchor/jutterswet-vondstdossier` | `wf072-use-site-drift` + `wf072-cross-struct-equality` |
+| WF-073 | StructLiteral: declared struct type; exactly the declared fields, each once; each value type matches the field declaration (ch. 4.9) | gate 3 | `anchor/jutterswet-vondstdossier` | `wf073-missing-field` + `wf073-alien-field` + `wf073-field-type-mismatch` |
+| WF-074 | FieldAccess: struct-typed base; field a declared field; node type = the field datatype (ch. 4.9) | gate 3 | `anchor/jutterswet-vondstdossier` | `wf074-unknown-field` + `wf074-nonstruct-base` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

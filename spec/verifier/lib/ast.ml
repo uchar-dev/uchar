@@ -70,6 +70,11 @@ type datatype =
      (IR-SPEC ch. 2.4). [element] is the single element datatype (first-order
      and non-list — WF-065). Never emitter-produced. *)
   | List_type of { element : datatype }
+  (* Extension node (v1, Phase 5c): the record datatype
+     (IR-SPEC ch. 2.4; design spec/proposals/PHASE5C-TUTORIAL.md §2).
+     [domein] names the declaring domain; each field carries a name and a
+     non-null datatype (WF-071). Never emitter-produced. *)
+  | Struct_type of { domein : string; velden : (string * datatype) list }
   | Datatype_onbekend of { reden : string option }
 
 (* The whole-period qualifier tag riding Vergelijking/Predicaat/Kenmerk. *)
@@ -162,6 +167,13 @@ type expr =
       bron : string option;
     }
   | Binder_ref of { naam : string; typ : datatype option; bron : string option }
+  (* Extension nodes (v1, Phase 5c): the record expression forms
+     (IR-SPEC ch. 4.9; semantics RUNTIME-SEMANTICS ch. 11). [typ] is required
+     on the wire (non-null, the TemporalRead pattern). [Struct_literal]'s
+     [velden] map field name to value in declaration order; [Field_access]
+     reads one field [veld] of a struct-typed [base]. Never emitter-produced. *)
+  | Struct_literal of { typ : datatype option; velden : (string * expr) list; bron : string option }
+  | Field_access of { typ : datatype option; base : expr; veld : string; bron : string option }
   (* Extension nodes (v1, row 10): the fold family (IR-SPEC ch. 4.8;
      semantics RUNTIME-SEMANTICS ch. 10). [typ] rides the TemporalRead
      pattern — present on the wire (non-null) for every node except [Lambda],

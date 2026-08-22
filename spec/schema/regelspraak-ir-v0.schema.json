@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://uchar.dev/schema/regelspraak-ir-v0.schema.json",
   "title": "regelspraak-ir-v0",
-  "description": "Structural schema for the 'regelspraak-ir-v0' format: the faithful engine-neutral JSON dump of the reference frontend's fully resolved model (mirror-then-diverge; see spec/IR-SPEC.md). Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Exception, by the decided wire-entry discipline (IR-SPEC, Method): extension fields carrying v1 deltas (verbindendeRol, bronRol, the symbolic fact-creation fields) are optional, the datatype union admits the extension nodes SumType (the payload-carrying variant family, CONSTRUCTS row 36) and ListType (the sequence type, CONSTRUCTS row 10), the expr union admits the extension nodes TemporalRead, Construct, Match, BinderRef and the row-10 fold family (ListLiteral, Lambda, IfThenElse, Invoke, Fold, MapList, FilterList, ListLength), and the optional top-level lists defaultLadders and functionDefs carry the ladder and named-logic extensions \u2014 the v0 emitter never produces any of them, and when present they are written whole, never null. Section citations (e.g. \u00a713.3.3) point into the source language spec by number only.",
+  "description": "Structural schema for the 'regelspraak-ir-v0' format: the faithful engine-neutral JSON dump of the reference frontend's fully resolved model (mirror-then-diverge; see spec/IR-SPEC.md). Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Exception, by the decided wire-entry discipline (IR-SPEC, Method): extension fields carrying v1 deltas (verbindendeRol, bronRol, the symbolic fact-creation fields) are optional, the datatype union admits the extension nodes SumType (the payload-carrying variant family, CONSTRUCTS row 36), ListType (the sequence type, CONSTRUCTS row 10) and StructType (the record datatype, spec/proposals/PHASE5C-TUTORIAL.md §2), the expr union admits the extension nodes TemporalRead, Construct, Match, BinderRef, StructLiteral, FieldAccess and the row-10 fold family (ListLiteral, Lambda, IfThenElse, Invoke, Fold, MapList, FilterList, ListLength), and the optional top-level lists defaultLadders and functionDefs carry the ladder and named-logic extensions \u2014 the v0 emitter never produces any of them, and when present they are written whole, never null. Section citations (e.g. \u00a713.3.3) point into the source language spec by number only.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -418,6 +418,44 @@
       },
       "description": "Extension node (IR-SPEC Method; wire node ListType, never emitter-produced): an ordered, possibly empty sequence type of CONSTRUCTS row 10. 'element' is the single element datatype (first-order and non-list — WF-065). See spec/IR-SPEC.md ch. 2.4 (WF-065)."
     },
+    "StructType": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "domain",
+        "fields"
+      ],
+      "properties": {
+        "node": {
+          "const": "StructType"
+        },
+        "domain": {
+          "type": "string"
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "datatype"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "datatype": {
+                "$ref": "#/$defs/datatype"
+              }
+            }
+          }
+        }
+      },
+      "description": "Extension node (IR-SPEC Method; wire node StructType, never emitter-produced): the record datatype of the Phase-5c core (spec/proposals/PHASE5C-TUTORIAL.md §2) — a declared, nominal record hosted by 'domeinen' and repeated whole at every use site, exactly the SumType/ListType landing pattern. Each field carries a 'name' and a non-null 'datatype' (a number, day-precision date, sum type or struct type — WF-071). See spec/IR-SPEC.md ch. 2.4 (WF-071/072)."
+    },
     "datatype": {
       "description": "A RegelSpraak datatype (\u00a713.3.3), discriminated on 'node'.",
       "oneOf": [
@@ -450,6 +488,9 @@
         },
         {
           "$ref": "#/$defs/ListType"
+        },
+        {
+          "$ref": "#/$defs/StructType"
         }
       ]
     },
@@ -1310,6 +1351,83 @@
       },
       "description": "Extension node (IR-SPEC Method; wire node BinderRef, never emitter-produced): reads the nearest enclosing match-arm binder of its name (CONSTRUCTS row 36; spec/RUNTIME-SEMANTICS.md ch. 9.2). Deliberately distinct from VariabeleRef (row 24). 'name' and 'type' are required and non-null."
     },
+    "StructLiteral": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "type",
+        "fields",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "StructLiteral"
+        },
+        "type": {
+          "$ref": "#/$defs/datatype"
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "value"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "value": {
+                "$ref": "#/$defs/expr"
+              }
+            }
+          }
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "description": "Extension node (IR-SPEC Method; wire node StructLiteral, never emitter-produced): builds a record value (spec/proposals/PHASE5C-TUTORIAL.md §2; spec/RUNTIME-SEMANTICS.md ch. 11). 'fields' supplies exactly the declared fields, each once, in declaration order — WF-073; a field whose value evaluates leeg propagates (the whole literal is leeg, the no-hole rule). 'type' (the StructType) is required and non-null."
+    },
+    "FieldAccess": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "type",
+        "base",
+        "field",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "FieldAccess"
+        },
+        "type": {
+          "$ref": "#/$defs/datatype"
+        },
+        "base": {
+          "$ref": "#/$defs/expr"
+        },
+        "field": {
+          "type": "string"
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "description": "Extension node (IR-SPEC Method; wire node FieldAccess, never emitter-produced): reads one declared field of a record (spec/proposals/PHASE5C-TUTORIAL.md §2; spec/RUNTIME-SEMANTICS.md ch. 11). 'base' is struct-typed and 'field' is one of its declared fields; the node 'type' is that field's datatype — WF-074. A leeg base propagates. 'type' and 'base' are required and non-null."
+    },
     "LambdaParameter": {
       "type": "object",
       "additionalProperties": false,
@@ -1694,6 +1812,12 @@
         },
         {
           "$ref": "#/$defs/BinderRef"
+        },
+        {
+          "$ref": "#/$defs/StructLiteral"
+        },
+        {
+          "$ref": "#/$defs/FieldAccess"
         },
         {
           "$ref": "#/$defs/ListLiteral"

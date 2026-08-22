@@ -763,7 +763,7 @@ let datatype_kind = function
   | Numeriek _ -> "number" | Percentage _ -> "percentage" | Tekst -> "text"
   | Booleaan -> "boolean" | Datum_in_dagen -> "date-day" | Datum_tijd -> "date-ms"
   | Enumeratie _ -> "enumeration" | Sum_type _ -> "sumtype" | List_type _ -> "list"
-  | Datatype_onbekend _ -> "unknown"
+  | Struct_type _ -> "struct" | Datatype_onbekend _ -> "unknown"
 
 let wf030 ctx =
   let key_checks at otn keys =
@@ -1005,7 +1005,8 @@ let typ_of_expr = function
   | Attribuut_ref { typ; _ } | Dimensie_cel { typ; _ } | Parameter_ref { typ; _ }
   | Variabele_ref { typ; _ } | Constante { typ; _ } | Expr_onopgelost { typ; _ }
   | Temporal_read { typ; _ } | Construct { typ; _ } | Match { typ; _ }
-  | Binder_ref { typ; _ } | List_literal { typ; _ } | If_then_else { typ; _ }
+  | Binder_ref { typ; _ } | Struct_literal { typ; _ } | Field_access { typ; _ }
+  | List_literal { typ; _ } | If_then_else { typ; _ }
   | Invoke { typ; _ } | Fold { typ; _ } | Map_list { typ; _ }
   | Filter_list { typ; _ } | List_length { typ; _ } -> typ
   (* a Lambda is never a value: it carries no type *)
@@ -1042,18 +1043,35 @@ let constructors_agree (a : (string * datatype option) list)
   List.length a = List.length b
   && List.for_all2 (fun (n1, p1) (n2, p2) -> norm n1 = norm n2 && p1 = p2) a b
 
+(* The declared field list of a domain, iff it is declared (in [domeinen])
+   as a StructType — the nominal source of truth for WF-072..074, the
+   struct sibling of [sum_decl]. *)
+let struct_decl ctx domein : (string * datatype) list option =
+  match find_ci ctx.doc.domeinen domein with
+  | Some (Some (Struct_type { velden; _ })) -> Some velden
+  | _ -> None
+
+(* Two field lists agree when they carry the same fields in the same order
+   with structurally equal datatypes (names ci; datatypes by value equality —
+   the WF-061 constructors_agree pattern). *)
+let fields_agree (a : (string * datatype) list) (b : (string * datatype) list) =
+  List.length a = List.length b
+  && List.for_all2 (fun (n1, d1) (n2, d2) -> norm n1 = norm n2 && d1 = d2) a b
+
 (* The declared FunctionDef of [name], iff present (WF-067..068/070). *)
 let function_decl ctx name : function_def option =
   List.find_opt (fun (fd : function_def) -> norm fd.fd_naam = norm name) ctx.doc.function_defs
 
 let is_list_type = function List_type _ -> true | _ -> false
 
-(* A first-order non-list datatype: Numeriek, day-precision Date, or a
-   declared SumType — the admissible list element (WF-065) and the pattern
-   WF-060 uses for constructor payloads. *)
+(* A first-order non-list datatype: Numeriek, day-precision Date, a declared
+   SumType, or a declared StructType — the admissible list element (WF-065,
+   widened by Phase 5c with struct elements) and the pattern WF-060 uses for
+   constructor payloads. *)
 let admissible_element ctx = function
   | Numeriek _ | Datum_in_dagen -> true
   | Sum_type { domein; _ } -> sum_decl ctx domein <> None
+  | Struct_type { domein; _ } -> struct_decl ctx domein <> None
   | _ -> false
 
 let scalar_one_arg_kinds =
@@ -2044,6 +2062,86 @@ let rec walk_expr ctx ~binders ~subject ?(body = None) at (e : expr) : violation
          VariabeleRef stays outside this rule (row 24) *)
       if List.exists (fun b -> norm b = norm naam) binders then []
       else [ v "WF-064" at ("binder reference '" ^ naam ^ "' resolves to no enclosing binder") ]
+  | Struct_literal { typ; velden; _ } ->
+      (* WF-073: the type is a declared struct; the supplied fields are
+         exactly the declared fields, each once; each value's static type
+         equals the field declaration *)
+      (match typ with
+       | None -> [ v "WF-073" (sub "type") "struct literal carries no type" ]
+       | Some (Struct_type { domein; _ }) -> (
+           match struct_decl ctx domein with
+           | None ->
+               [ v "WF-073" (sub "type")
+                   ("struct literal names struct-type domain '" ^ domein
+                  ^ "', which is not a declared struct type") ]
+           | Some decl ->
+               let declared_names = List.map fst decl in
+               let lit_names = List.map fst velden in
+               List.map
+                 (fun (_, dup, _) ->
+                   v "WF-073" at ("field '" ^ dup ^ "' is supplied by more than one entry"))
+                 (dups_by norm (List.map (fun n -> (n, at)) lit_names))
+               @ List.filter_map
+                   (fun n ->
+                     if mem_ci declared_names n then None
+                     else
+                       Some
+                         (v "WF-073" at
+                            ("field '" ^ n ^ "' is not a declared field of struct '" ^ domein ^ "'")))
+                   lit_names
+               @ List.filter_map
+                   (fun d ->
+                     if mem_ci lit_names d then None
+                     else Some (v "WF-073" at ("declared field '" ^ d ^ "' is not supplied")))
+                   declared_names
+               @ List.concat_map
+                   (fun (fname, value) ->
+                     match List.find_opt (fun (n, _) -> norm n = norm fname) decl with
+                     | None -> [] (* alien: reported above *)
+                     | Some (_, fdt) -> (
+                         match typ_of_expr value with
+                         | Some vt when vt <> fdt ->
+                             [ v "WF-073" at
+                                 ("field '" ^ fname ^ "' value is " ^ datatype_kind vt
+                                ^ ", but the declared field datatype is " ^ datatype_kind fdt) ]
+                         | _ -> []))
+                   velden)
+       | Some d ->
+           [ v "WF-073" (sub "type")
+               ("struct literal type is " ^ datatype_kind d ^ ", not a struct type") ])
+      @ List.concat
+          (List.mapi
+             (fun i (_, value) ->
+               walk_expr ctx ~binders ~subject ~body (sub (Printf.sprintf "fields/%d/value" i)) value)
+             velden)
+  | Field_access { typ; base; veld; _ } ->
+      (* WF-074: the base is struct-typed; the field is a declared field; the
+         node type equals that field's declared datatype *)
+      (match typ_of_expr base with
+       | Some (Struct_type { domein; _ }) -> (
+           match struct_decl ctx domein with
+           | None ->
+               [ v "WF-074" (sub "base")
+                   ("field access base names struct-type domain '" ^ domein
+                  ^ "', which is not a declared struct type") ]
+           | Some decl -> (
+               match List.find_opt (fun (n, _) -> norm n = norm veld) decl with
+               | None ->
+                   [ v "WF-074" at
+                       ("'" ^ veld ^ "' is not a declared field of struct '" ^ domein ^ "'") ]
+               | Some (_, fdt) -> (
+                   match typ with
+                   | Some t when t <> fdt ->
+                       [ v "WF-074" (sub "type")
+                           ("field access type " ^ datatype_kind t
+                          ^ " differs from the declared field datatype " ^ datatype_kind fdt) ]
+                   | None -> [ v "WF-074" (sub "type") "field access carries no type" ]
+                   | _ -> [])))
+       | Some d ->
+           [ v "WF-074" (sub "base")
+               ("field access base is " ^ datatype_kind d ^ ", not a struct value") ]
+       | None -> [ v "WF-074" (sub "base") "field access base carries no type" ])
+      @ walk_expr ctx ~binders ~subject ~body (sub "base") base
   | List_literal { typ; elements; _ } ->
       (* WF-066: every element's static type equals the declared element datatype *)
       let elem_dt = match typ with Some (List_type { element }) -> Some element | _ -> None in
@@ -2284,6 +2382,11 @@ and walk_cond ctx ~binders ~subject ?(body = None) at (c : conditie) : violation
                   MUST name the same declaring domain *)
                [ v "WF-061" at
                    ("comparison across different sum-type domains '" ^ d1 ^ "' and '" ^ d2 ^ "'") ]
+           | Struct_type { domein = d1; _ }, Struct_type { domein = d2; _ } when norm d1 <> norm d2 ->
+               (* WF-072 (nominal): two struct-typed operands of one comparison
+                  MUST name the same declaring domain *)
+               [ v "WF-072" at
+                   ("comparison across different struct-type domains '" ^ d1 ^ "' and '" ^ d2 ^ "'") ]
            | Datum_in_dagen, Datum_tijd | Datum_tijd, Datum_in_dagen ->
                [ v "WF-036" at "equality across date precisions" ]
            | a, b when is_number_like a && is_number_like b ->
@@ -2700,6 +2803,11 @@ let rec dep_expr ctx ~subject acc (e : expr) =
         (dep_expr ctx ~subject acc scrutinee)
         arms
   | Binder_ref _ -> acc
+  (* the record forms (Phase 5c): the reads live in the field values and the
+     accessed base *)
+  | Struct_literal { velden; _ } ->
+      List.fold_left (fun acc (_, value) -> dep_expr ctx ~subject acc value) acc velden
+  | Field_access { base; _ } -> dep_expr ctx ~subject acc base
   (* the fold family (row 10): the reads live in the list source, the init and
      the filter condition; a closed lambda/function body reads no attributes,
      so it contributes no edges — but the walk is harmless and total *)
@@ -3746,29 +3854,39 @@ let wf059 ctx =
         ot.attributen)
     ctx.doc.objecttypen
 
+(* The composite domains a declared domain directly references — the sum-type
+   payloads and the struct fields that name another (sum or struct) domain.
+   This is the shared acyclicity graph of WF-060 and WF-071: no recursive sum
+   types or structs (the term-depth fence for the ASP encoding, ch. 2.4). *)
+let domain_refs ctx name : string list =
+  let composite_domain = function
+    | Sum_type { domein; _ } | Struct_type { domein; _ } -> Some domein
+    | _ -> None
+  in
+  match find_ci ctx.doc.domeinen name with
+  | Some (Some (Sum_type { constructoren; _ })) ->
+      List.filter_map (fun (_, p) -> Option.bind p composite_domain) constructoren
+  | Some (Some (Struct_type { velden; _ })) ->
+      List.filter_map (fun (_, d) -> composite_domain d) velden
+  | _ -> []
+
+(* Is [target] reachable from [name] through the composite-domain graph? *)
+let domain_reaches ctx ~target ~visited name =
+  let rec go visited name =
+    List.exists
+      (fun e ->
+        norm e = norm target
+        || ((not (List.mem (norm e) visited)) && go (norm e :: visited) e))
+      (domain_refs ctx name)
+  in
+  go visited name
+
 (* WF-060: a SumType declaration (a domain whose datatype is a SumType) MUST
    carry at least one constructor, unique constructor names, admissible
    payload datatypes (Number, day-precision Date, or a declared SumType),
-   and an acyclic payload graph over the sum-type declarations (IR-SPEC
+   and an acyclic payload graph — shared with WF-071's struct fields (IR-SPEC
    ch. 2.4 — no recursive sum types). *)
 let wf060 ctx =
-  let payload_domains cs =
-    List.filter_map
-      (fun (_, p) -> match p with Some (Sum_type { domein; _ }) -> Some domein | _ -> None)
-      cs
-  in
-  (* is [target] reachable from itself through the payload graph? *)
-  let rec reaches ~target ~visited d =
-    match sum_decl ctx d with
-    | None -> false
-    | Some cs ->
-        List.exists
-          (fun e ->
-            norm e = norm target
-            || ((not (List.mem (norm e) visited))
-               && reaches ~target ~visited:(norm e :: visited) e))
-          (payload_domains cs)
-  in
   List.concat_map
     (fun (name, dt) ->
       match dt with
@@ -3800,10 +3918,11 @@ let wf060 ctx =
                           date, or a declared sum type)") ])
               constructoren
           @
-          if reaches ~target:name ~visited:[ norm name ] name then
+          if domain_reaches ctx ~target:name ~visited:[ norm name ] name then
             [ v "WF-060" at
                 ("sum type '" ^ name
-               ^ "' is recursive — the payload graph over sum-type declarations must be acyclic")
+               ^ "' is recursive — the payload graph over sum-type and struct declarations must \
+                  be acyclic")
             ]
           else []
       | _ -> [])
@@ -3846,18 +3965,108 @@ let wf061 ctx =
         | None -> [])
       ctx.doc.parameters
 
+(* WF-071: a StructType declaration (a domain whose datatype is a StructType)
+   MUST carry at least one field, ci-unique field names, admissible field
+   datatypes (Number, day-precision Date, a declared SumType, or a declared
+   StructType), and an acyclic field graph — shared with WF-060's sum-type
+   payloads (IR-SPEC ch. 2.4 — no recursive structs). *)
+let wf071 ctx =
+  List.concat_map
+    (fun (name, dt) ->
+      match dt with
+      | Some (Struct_type { velden; _ }) ->
+          let at = "/domeinen/" ^ name in
+          (if velden = [] then [ v "WF-071" at "struct type declares no field" ] else [])
+          @ List.map
+              (fun (first, dup, at') ->
+                v "WF-071" at'
+                  (Printf.sprintf "duplicate field name '%s' (already declared as '%s')" dup first))
+              (dups_by norm (List.map (fun (n, _) -> (n, at)) velden))
+          @ List.concat_map
+              (fun (fname, fdt) ->
+                match fdt with
+                | Numeriek _ | Datum_in_dagen -> []
+                | Sum_type { domein; _ } -> (
+                    match sum_decl ctx domein with
+                    | Some _ -> []
+                    | None ->
+                        [ v "WF-071" at
+                            ("field '" ^ fname ^ "' names sum-type domain '" ^ domein
+                           ^ "', which is not a declared sum type") ])
+                | Struct_type { domein; _ } -> (
+                    match struct_decl ctx domein with
+                    | Some _ -> []
+                    | None ->
+                        [ v "WF-071" at
+                            ("field '" ^ fname ^ "' names struct-type domain '" ^ domein
+                           ^ "', which is not a declared struct type") ])
+                | d ->
+                    [ v "WF-071" at
+                        ("field '" ^ fname ^ "' is " ^ datatype_kind d
+                       ^ ", which is not an admissible struct-field datatype (number, day-precision \
+                          date, sum type, or struct type)") ])
+              velden
+          @
+          if domain_reaches ctx ~target:name ~visited:[ norm name ] name then
+            [ v "WF-071" at
+                ("struct type '" ^ name
+               ^ "' is recursive — the field graph over sum-type and struct declarations must be \
+                  acyclic")
+            ]
+          else []
+      | _ -> [])
+    ctx.doc.domeinen
+
+(* WF-072: a StructType use site (an attribute or parameter datatype that is a
+   StructType) MUST name a declared domain whose declaration it agrees with —
+   same fields, datatypes, order (IR-SPEC ch. 2.4). The nominal-comparison
+   half (two struct-typed operands of one comparison name the same domain)
+   rides the expression walk, walk_cond. *)
+let wf072 ctx =
+  let use_site at = function
+    | Struct_type { domein; velden } -> (
+        match struct_decl ctx domein with
+        | None ->
+            [ v "WF-072" at
+                ("struct-type use site names domain '" ^ domein
+               ^ "', which is not a declared struct type") ]
+        | Some decl ->
+            if fields_agree decl velden then []
+            else
+              [ v "WF-072" at
+                  ("struct-type use site disagrees with the declaration of domain '" ^ domein
+                 ^ "' (same fields, datatypes and order required)") ])
+    | _ -> []
+  in
+  List.concat_map
+    (fun (otname, (ot : objecttype)) ->
+      List.concat_map
+        (fun (an, dt) ->
+          match dt with
+          | Some st -> use_site ("/objecttypen/" ^ otname ^ "/attributen/" ^ an) st
+          | None -> [])
+        ot.attributen)
+    ctx.doc.objecttypen
+  @ List.concat_map
+      (fun (pn, (p : parameter)) ->
+        match p.par_datatype with
+        | Some st -> use_site ("/parameters/" ^ pn) st
+        | None -> [])
+      ctx.doc.parameters
+
 (* WF-065: a ListType element MUST be first-order and non-list (Number,
-   day-precision Date, or a declared SumType), and a list-typed attribute
-   MUST NOT carry a granularity (a list-typed temporal attribute is
-   ill-formed) — IR-SPEC ch. 2.4. *)
+   day-precision Date, a declared SumType, or a declared StructType — the
+   Phase-5c widening), and a list-typed attribute MUST NOT carry a
+   granularity (a list-typed temporal attribute is ill-formed) — IR-SPEC
+   ch. 2.4. *)
 let wf065 ctx =
   let element_check at element =
     if admissible_element ctx element then []
     else
       [ v "WF-065" at
           ("list element is " ^ datatype_kind element
-         ^ ", not a first-order non-list datatype (number, day-precision date, or a declared \
-            sum type)") ]
+         ^ ", not a first-order non-list datatype (number, day-precision date, a declared \
+            sum type, or a declared struct type)") ]
   in
   List.concat_map
     (fun (otname, (ot : objecttype)) ->
@@ -3917,6 +4126,9 @@ let rec invoked_expr acc (e : expr) : string list =
   | Construct { argument; _ } -> invoked_opt acc argument
   | Match { scrutinee; arms; _ } ->
       List.fold_left (fun acc (_, _, b) -> invoked_expr acc b) (invoked_expr acc scrutinee) arms
+  | Struct_literal { velden; _ } ->
+      List.fold_left (fun acc (_, value) -> invoked_expr acc value) acc velden
+  | Field_access { base; _ } -> invoked_expr acc base
   | Tekst_reeks { delen; _ } ->
       List.fold_left
         (fun acc -> function Ingevoegd { expr = Some e } -> invoked_expr acc e | _ -> acc)
@@ -4002,4 +4214,4 @@ let all (doc : document) : violation list =
       wf029 ctx; wf030 ctx; wf031 ctx; wf032 ctx; wf033 ctx; wf045_046 ctx;
       wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf054 ctx;
       wf057 ctx; wf059 ctx; wf060 ctx; wf061 ctx; wf065 ctx; wf067 ctx;
-      expression_layer ctx ]
+      wf071 ctx; wf072 ctx; expression_layer ctx ]

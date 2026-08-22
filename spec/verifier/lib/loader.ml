@@ -278,6 +278,25 @@ let rec datatype path j : datatype =
          which recurses through [datatype] *)
       check_keys path kvs [ "node"; "element" ];
       List_type { element = datatype (path / "element") (f "element") }
+  | "StructType" ->
+      (* extension node (v1, Phase 5c): domain is a plain string; each field
+         carries a name and a non-null datatype (no nullary field — unlike a
+         sum-type payload). Fields recurse through [datatype] (nested structs
+         and sum types). *)
+      check_keys path kvs [ "node"; "domain"; "fields" ];
+      Struct_type
+        {
+          domein = str (path / "domain") (f "domain");
+          velden =
+            List.mapi
+              (fun i fld ->
+                let fp = path / "fields" / string_of_int i in
+                let fkvs = obj fp fld in
+                check_keys fp fkvs [ "name"; "datatype" ];
+                ( str (fp / "name") (field fp fkvs "name"),
+                  datatype (fp / "datatype") (field fp fkvs "datatype") ))
+              (list_ (path / "fields") (f "fields"));
+        }
   | k -> fail (path / "node") ("unknown datatype node \"" ^ k ^ "\"")
 
 let geheel_periode path j : geheel_periode =
@@ -441,6 +460,35 @@ let rec expr path j : expr =
   | "BinderRef" ->
       check_keys path kvs [ "node"; "name"; "type"; "bron" ];
       Binder_ref { naam = str (path / "name") (f "name"); typ = typ (); bron = bron () }
+  | "StructLiteral" ->
+      (* extension node (v1, Phase 5c): the fields map name to a value expr,
+         in declaration order (WF-073); type required not-null *)
+      check_keys path kvs [ "node"; "type"; "fields"; "bron" ];
+      Struct_literal
+        {
+          typ = typ ();
+          velden =
+            List.mapi
+              (fun i fld ->
+                let fp = path / "fields" / string_of_int i in
+                let fkvs = obj fp fld in
+                check_keys fp fkvs [ "name"; "value" ];
+                ( str (fp / "name") (field fp fkvs "name"),
+                  expr (fp / "value") (field fp fkvs "value") ))
+              (list_ (path / "fields") (f "fields"));
+          bron = bron ();
+        }
+  | "FieldAccess" ->
+      (* extension node (v1, Phase 5c): base struct-typed, field a plain
+         string; type required not-null *)
+      check_keys path kvs [ "node"; "type"; "base"; "field"; "bron" ];
+      Field_access
+        {
+          typ = typ ();
+          base = expr (path / "base") (f "base");
+          veld = str (path / "field") (f "field");
+          bron = bron ();
+        }
   | "ListLiteral" ->
       (* extension node (v1, row 10): ordered element expressions, one shared
          element datatype (WF-066); type required not-null *)

@@ -1,8 +1,10 @@
 # uchar IR — Runtime semantics
 
-*Status: ch. 1–10 are normative **draft** (ch. 1–5 the v0 mirror with
+*Status: ch. 1–11 are normative **draft** (ch. 1–5 the v0 mirror with
 tracked deltas and OPEN decisions; ch. 6–8 drafted; ch. 9–10 v1 kernel
-extensions with no v0 counterpart — `spec/proposals/PHASE5B-KERNEL.md`). This document reads stand-alone
+extensions with no v0 counterpart — `spec/proposals/PHASE5B-KERNEL.md`;
+ch. 11 the Phase-5c record extension —
+`spec/proposals/PHASE5C-TUTORIAL.md`). This document reads stand-alone
 (graduated into the self-containedness gate at the Phase-1 exit,
 2026-08-19): behaviour it does not document is undocumented — the
 mirror's provenance (which toolchain, and the repo relation) lives in
@@ -27,7 +29,9 @@ boolean, a date (day or millisecond precision), an enumeration value, a
 constructor value (ch. 9 — a declared constructor tag with, for a unary
 constructor, one payload value), a list value (ch. 10 — an ordered,
 possibly empty sequence of element values; `[]` is a value, leeg is the
-absence of one) — or
+absence of one), a record value (ch. 11 — the declared fields of a struct
+type mapped to values, each of the field's datatype; filled by
+construction, never carrying a leeg field) — or
 **empty** (leeg): the distinguished absence of a value, belonging to no
 datatype. Empty is not zero, not the empty string, not false; every context
 below defines explicitly what it does with an empty operand. (Empty is also
@@ -2445,8 +2449,114 @@ chapter translates — the differential (gates 5 ≡ 6) covers the whole
 kernel, and whatever a future corner cannot carry lands as a loud
 fault in the ASP inventory, never a silent skip.
 
+## 11. Record values
+
+*A v1 kernel extension (Phase-5c core; design and ratified decision:
+`spec/proposals/PHASE5C-TUTORIAL.md` §2, question 1 = A). No v0
+counterpart exists — the toolchain has no source construct that produces
+these forms — so this chapter mirrors nothing; it is normative from first
+writing. Node forms and well-formedness: IR-SPEC ch. 2.4 (`StructType`)
+and ch. 4.9 (`StructLiteral`, `FieldAccess`), WF-071..074. The worked
+examples are the `jutterswet-vondstdossier` anchor's, absolute.*
+
+The anchor's declarations, used throughout: domain `dossier` is a struct
+with fields `waarde` (2-decimal number) and `telling` (whole number).
+Object type `Jutter` carries `dossier` (a `dossier`), `dossiers` (a list
+of `dossier`), `premie`, `totaalwaarde`, `samenvatting` (a `dossier`), and
+the characteristics `dubbel`/`afwijkend`. Parameter `opslag` = 5.00.
+
+### 11.1 Record values and the no-hole rule
+
+A **record value** is a declared struct type's declared fields mapped to
+values, each of the field's declared datatype. It is *gevuld* by
+construction and **never carries a leeg field**: a `StructLiteral` whose
+field value evaluates leeg propagates — the whole literal evaluates leeg
+(the ch. 1.3 strict default, exactly the `Construct` (ch. 9.1) and
+`ListLiteral` (ch. 10.1) no-hole rule; "a record of a missing field" is
+not expressible). A `FieldAccess` on a leeg base likewise propagates
+(reading a field of an absent record is leeg).
+
+Worked (the anchor's `samenvatting` := `{ waarde: premie, telling:
+|dossiers| }` and `premie` := `dossier.waarde + opslag`):
+
+- **case1-gevuld** — `dossier` = `{waarde: 120.50, telling: 3}`,
+  `dossiers` = `[{10.00, 1}, {2.50, 2}]`. `dossier.waarde` reads
+  **120.50** (the `FieldAccess`), so `premie` = 120.50 + 5.00 =
+  **125.50**; `totaalwaarde` maps `d ↦ d.waarde` over `dossiers` →
+  `[10.00, 2.50]` and folds → **12.50** (the `FieldAccess` inside the
+  map's closed lambda body — the WF-069 widening); `samenvatting` =
+  **`{waarde: 125.50, telling: 2}`** (`premie` and `|dossiers|` = 2).
+- **case2-leeg-lijst** — `dossiers` = `[]`, `dossier` unchanged.
+  `totaalwaarde` folds the empty map → **0.00**; `samenvatting` =
+  **`{waarde: 125.50, telling: 0}`** (`|[]|` = 0 — a value, not leeg).
+- **case3-afwezig** — `dossier` and `dossiers` both absent.
+  `dossier.waarde` reads **leeg** (`FieldAccess` on a leeg base
+  propagates); `totaalwaarde` reads **leeg** (a leeg list source
+  propagates through map and fold, ch. 10.2); and `samenvatting` is
+  **leeg** — the build-side no-hole witness: its `telling` field,
+  `|dossiers|` over the absent list, evaluates leeg, so the whole
+  `StructLiteral` is leeg (never `{125.50, leeg}`). Nothing is written; on
+  bare single-writer targets the ch. 7.8 standing norm applies unchanged
+  — the reason-carrying no-op survivor.
+
+### 11.2 Equality — structural and nominal
+
+Two record values are compared only when their static types name the
+**same declaring struct domain** (WF-072 — the nominal rule, the struct
+sibling of ch. 9.3; cross-domain comparison is ill-formed, never false).
+Then:
+
+- **equal** iff every declared field is equal under the ordinary value
+  equality of that field's datatype (fieldwise structural equality; field
+  names match ci by declaration, so the comparison is positional over the
+  shared declaration order);
+- record values are **non-numeric** for the ch. 1.2 comparison
+  discipline: **any leeg operand makes both `=` and `≠` false** (the
+  Tabel 38 rule — deliberately not complements over leeg; the numeric
+  both-empty asymmetry does *not* apply);
+- record values are not orderable: `<`/`>` over a struct is a typing
+  fault, as for text, enumeration and sum-type values.
+
+Structural equality is the equality used by the three consumers that need
+one: idempotent writes (ch. 5.1), timeline segment change-detection
+(ch. 3.1, as amended), and the ladder's equal-decisions-are-no-conflict
+rule (ch. 7.5) — two rungs both deciding `{waarde: 125.50, telling: 2}`
+are equal decisions, not a conflict.
+
+Worked (the anchor's `dubbel` iff `dossier` = `{waarde: 120.50, telling:
+3}`; `afwijkend` iff `dossier` ≠ `{waarde: 120.50, telling: 3}`):
+
+- **case1/case2** — `dossier` = `{120.50, 3}` → `dubbel` **aanwezig**
+  (fieldwise equal within one domain), `afwijkend` **afwezig**.
+- **case3** — `dossier` **leeg** → **both afwezig** (the
+  both-directions-false corner: leeg makes `=` and `≠` both onwaar,
+  Tabel 38 — pinned absolutely).
+
+### 11.3 Carriage, ladders, timelines
+
+- **Case carriage.** Record values ride the case format's value union as
+  `{ "struct": { field: value, … } }` (input attributes, parameters,
+  expectations); `list` already recurses, so a list of records parses with
+  no further surface. The loaders fail fast on an undeclared field, a
+  field against the wrong datatype, or a leeg field (the no-hole rule at
+  the boundary — the WF-059/WF-018 backstop, widened). The anchor's
+  `dossier` rides as `{"struct": {"waarde": {"number": "120.50"},
+  "telling": {"number": "3"}}}`.
+- **Ladders and standing.** A struct-typed attribute target changes no
+  ladder semantics: the decide-test stays gevuld/leeg and never inspects a
+  field (ch. 7.1); the ch. 7.8 standing norm carries over unchanged.
+- **Timelines — recorded flank, not yet carried.** The value model admits
+  a struct-typed temporal attribute and the case format can write one; no
+  anchor exercises it, and the ASP case emission does not yet carry
+  record-valued segments (it faults loudly). Until a case wants one,
+  temporal record carriage is a recorded OPEN in the ASP inventory —
+  never a silent divergence, the ch. 9.4 flank pattern. Timeline
+  *arithmetic* and temporal totals stay numeric-only regardless
+  (ch. 3.4–3.6), as for the sum-type, text and enumeration members.
+
 ## Chapters (planned)
 
-*(none — chapters 1–10 are drafted; ch. 7 is complete, ch. 9 carries
-the row-36 kernel extension and ch. 10 the row-10 fold kernel —
-`spec/proposals/PHASE5B-KERNEL.md`.)*
+*(none — chapters 1–11 are drafted; ch. 7 is complete, ch. 9 carries
+the row-36 sum-type kernel, ch. 10 the row-10 fold kernel
+(`spec/proposals/PHASE5B-KERNEL.md`) and ch. 11 the Phase-5c record
+kernel (`spec/proposals/PHASE5C-TUTORIAL.md`).)*

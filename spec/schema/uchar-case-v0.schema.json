@@ -146,6 +146,16 @@
               "items": { "$ref": "#/$defs/value" }
             }
           }
+        },
+        {
+          "description": "A record value (spec/proposals/PHASE5C-TUTORIAL.md §2; spec/RUNTIME-SEMANTICS.md ch. 11): the declared fields mapped to their values, each of the field's declared datatype. Filled by construction — the loader rejects a leeg field (the no-hole rule).",
+          "type": "object", "additionalProperties": false, "required": ["struct"],
+          "properties": {
+            "struct": {
+              "type": "object",
+              "additionalProperties": { "$ref": "#/$defs/value" }
+            }
+          }
         }
       ]
     },

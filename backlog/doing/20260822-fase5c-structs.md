@@ -25,3 +25,26 @@ backlog/. Toolchain: alleen de herpin-commit.
 
 Out of scope: subscopes, geneste groepen, Let/decimals (kaarten 2–4);
 struct-recursie; optionele velden (no-hole is de norm).
+
+## Voortgang
+
+- **Opdracht 1 (normtekst + schema's + verifier + negatiefs) — klaar.**
+  IR-SPEC ch. 2.4 (`StructType`-rij + clausule, WF-071/072; orderability;
+  Method-extensielijst), ch. 4.9 (`StructLiteral`/`FieldAccess`,
+  WF-073/074), de WF-065/067/069-verbredingen tekstueel + WF-indexrijen.
+  RUNTIME-SEMANTICS ch. 1.1 + nieuw ch. 11 (recordwaarden, no-hole,
+  structurele+nominale gelijkheid met Tabel 38, de drie afnemers,
+  ankerworked-examples, tijdlijn-flank). Schema's: `StructType` in de
+  datatype-oneOf, `StructLiteral`/`FieldAccess` in de expr-oneOf,
+  `{"struct": …}` in de case-value-unie. Verifier: `Struct_type`/
+  `Struct_literal`/`Field_access` in ast/loader/checks; WF-071..074 met de
+  gedeelde acycliciteitsgraaf (sum-payloads + struct-velden), WF-065-
+  verruiming (struct als lijst-element), WF-067/069 (gesloten body's laten
+  de record-knopen toe via de deny-lijst-default). Tien negatiefs
+  (`wf071..wf074-*`), elk voor precies hun regel. Gates 1/2/3/4 groen
+  (gate 3: 66 golden clean; 125 negatief). Rood-eerst getoond. Anker-ir
+  uit het ontwerp gebouwd in /tmp en verifier-clean (positieve toets).
+- Nog te doen (deze kaart): het `anchor/jutterswet-vondstdossier`-golden
+  mét case1/2/3 door het corpus, ref + clingo (case-formaat `{"struct":
+  …}`, functorterm-encodering), plugin (`TStruct`/`EStruct`/
+  `EStructAccess`), herpin, twee lenzen — buiten opdracht 1.
