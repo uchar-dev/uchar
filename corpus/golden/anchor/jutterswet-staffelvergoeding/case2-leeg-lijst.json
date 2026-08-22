@@ -1,0 +1,36 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "staffelbedragen": {
+        "list": []
+      },
+      "plafond": {
+        "number": "40.00"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "vergoeding",
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

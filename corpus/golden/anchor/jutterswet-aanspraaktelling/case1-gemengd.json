@@ -1,0 +1,57 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "aanspraken": {
+            "list": [
+              {
+                "constructor": "Erkend",
+                "payload": {
+                  "number": "10.00"
+                }
+              },
+              {
+                "constructor": "Vervallen"
+              },
+              {
+                "constructor": "Erkend",
+                "payload": {
+                  "number": "2.50"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "erkende som",
+      "value": {
+        "number": "12.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aantal erkend",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
