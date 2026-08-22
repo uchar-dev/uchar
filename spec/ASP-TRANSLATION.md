@@ -1,7 +1,7 @@
 # ASP translation
 
 *Status: the systematic construct-by-construct translation (Part I,
-sections S1–S15, complete for the translated core) — the Phase-3
+sections S1–S16, complete for the translated core) — the Phase-3
 deliverable this document was always growing toward. Part I describes what `backends/clingo` provably does:
 every claim is distilled from `backends/clingo/lib/translate.ml` and
 witnessed by the gate set (gate 6, `scripts/check-clingo.sh`, replays
@@ -11,7 +11,7 @@ corpus under gate 3 pins what the verifier rejects before translation
 is ever reached). The text normates what the code proves — semantics
 itself is defined by `RUNTIME-SEMANTICS.md` and this document must
 never drift from it; where a construct does not translate, Part I says
-so loudly (S15), never silently. Part II (chapters 1–7) is the
+so loudly (S16), never silently. Part II (chapters 1–7) is the
 historical record: the two hand exercises and the encoding notes in
 the order they landed, kept in situ with their original chapter
 numbers because results, cards and code comments cite them (ch. 6a–6d
@@ -24,9 +24,9 @@ Sections S1–S7 cover program shape, facts and types, rules and write
 targets, expression terms, emptiness, arithmetic and conditions; S8
 aggregations and folds, S9 timelines, S10 defeasibility and standing,
 S11 creation, S12 allocation and uniqueness; S13 the §9.5 channel;
-S14 sum types and total match; S15 the complete inventory of loud
-non-translations — what the backend does not translate is stated
-there, never silently absent.
+S14 sum types and total match; S15 folds and function values; S16 the
+complete inventory of loud non-translations — what the backend does
+not translate is stated there, never silently absent.
 
 ### S1. Program shape and conventions
 
@@ -159,7 +159,7 @@ input rule `val(S,a,V) :- inputval(S,a,V), is_a(S,ot), not
 result derives no effectiveness and the input stands (ref's
 no-write-on-empty, RS ch. 7.8).
 
-Not translated, loudly (S15 carries the full list): validity windows;
+Not translated, loudly (S16 carries the full list): validity windows;
 temporal targets outside the two ch. 3.7/3.8 fold shapes; case input
 on non-standing computed targets; a `standing` target outside its own
 domain.
@@ -213,7 +213,7 @@ the norm; the encoding buys most of it for free):
    note the dividend is *not* a coalesce0 position; the edge lives on
    the construct's head), while the empty sum's 0 is clingo's native
    `#sum` over an empty tuple set (translated only with the
-   fallback-0 facet, S15).
+   fallback-0 facet, S16).
 
 The one empty rule with no *free* encoding — the **numeric** equality
 asymmetry of ch. 1.2d (leeg = leeg is true under gelijk-aan, false
@@ -230,7 +230,7 @@ reads only the operand bodies. Anchored by
 half-empty, both-empty). What remains loud: non-numeric scalar
 equality (text/enum/boolean operands fault as unscalable before any
 eqN rule is emitted) and equality in the per-segment clip comparison
-(S15).
+(S16).
 
 Witnesses: `jutterswet-leegrekening`, `synth2-leegcomposities`,
 `jutterswet-vindersloon` (every empty cell), `jutterswet-taxatie`
@@ -317,7 +317,7 @@ link fails the positive and the negated form alike — the deliberate
 v0 asymmetry (ch. 5.8), encoded for free. **Composite**
 (samengesteld, the ALLE and singular DE quantifiers): concatenation
 of the parts' atoms — both quantifiers are conjunctions over their
-parts. Other quantifiers and condition kinds fault (S15).
+parts. Other quantifiers and condition kinds fault (S16).
 
 Witnesses: `jutterswet-hardheid`, `jutterswet-uitsluiting`,
 `jutterswet-vormenkabinet`; the WF-053 negatiefs pin the navigation
@@ -336,7 +336,7 @@ an instance without the attribute contributes no tuple, and the empty
 tuple set is clingo's native 0, which is why only the fallback-0
 facet translates (a som without it would need an explicit non-empty
 guard to distinguish leeg from 0; faults until a corpus case demands
-it, S15). The *sum* is doubly fenced: each contributor at 46340 *and*
+it, S16). The *sum* is doubly fenced: each contributor at 46340 *and*
 the contributor count at 46340 (`viol` when `46340 < #count{...}`),
 so the accumulated sum provably stays inside 2^31. The bare count
 carries no fence — a `#count` cannot approach 2^31 before grounding
@@ -519,7 +519,7 @@ weight, pot and recipient count — plus, when a remainder attribute
 is declared, on each share the remainder sums (the weight sum, the
 pot×weight product and the share sum then provably stay inside
 2^31; without a remainder the shares are bounded by construction). Only the proportional method translates; conditional
-allocation and misaligned scales fault (S15). Case input on the
+allocation and misaligned scales fault (S16). Case input on the
 allocation's target attribute is refused — the ch. 6d
 superset-model fence.
 
@@ -648,7 +648,109 @@ directions go leeg/false — the both-directions-false corner, pinned
 absolutely); the WF-060..064 negatiefs pin what the verifier rejects
 before translation.
 
-### S15. What does not translate — the complete loud inventory
+### S15. Folds and function values
+
+A **list value** (RUNTIME-SEMANTICS ch. 10, CONSTRUCTS row 10) is
+reified as indexed facts keyed by a **list-id term** `L`: `lelem(L,I,V)`
+carries the element `V` at its 1-based position `I`, and `lpres(L)`
+marks the list *present*. The two predicates are separate on purpose —
+a present-but-empty list carries `lpres` and no `lelem`, which is
+exactly the value/absence distinction ch. 10.1 needs: `[]` is a value
+(`lpres`, no elements), leeg is the absence of one (no `lpres`). Element
+`V` is scaled by the **element** datatype (`element_scale_of`): a
+numeric element by its own decimals, a `SumType` element as its ground
+constructor term (S14's `ctor_value_term`). Order is load-bearing and
+kept (`translate_case` emits `I` = 1, 2, … in list order). The list-id
+term is `plist(name)` for a list parameter, `alist(Subject,attr)` for an
+own list-typed attribute — the subject variable rides the id, so one set
+of derivation rules serves every subject at once, and distinct subjects'
+lists never collide.
+
+**Fold** (`Fold`, ch. 10.2) is **index recursion** over `L`:
+
+```
+faN(L,0,⟨init⟩)  :- lpres(L).
+faN(L,I,⟨f(A,V)⟩) :- faN(L,I-1,A), lelem(L,I,V), ⟨body⟩.   (one rule per branch)
+frN(L,F)          :- lpres(L), N = #count { I : lelem(L,I,_) }, faN(L,N,F).
+```
+
+The base case fires on `lpres`, so an **empty list yields the init**; the
+result reads the accumulator at the list length (`#count` over `lelem`);
+an **absent list derives no `lpres`**, so nothing is reachable and the
+target stays leeg — propagation for free. The recurrence's contiguous
+`I-1`/`I` chain requires **contiguous indices**, which a parameter,
+attribute, `MapList` (index-preserving) or `ListLiteral` source
+provides; a `FilterList` leaves gaps, so a `Fold` over a `FilterList` has
+no encoding and no corpus case (S16).
+
+**MapList** and **FilterList** derive their own `lelem`/`lpres`, keyed by
+a fresh functor over the inner list-id (`lmN(⟨inner⟩)`,
+`lfN(⟨inner⟩)`), element-wise and flat:
+
+```
+lelem(lmN(In),I,⟨f(V)⟩) :- lelem(In,I,V), ⟨body⟩.   lpres(lmN(In)) :- lpres(In).
+lelem(lfN(In),I,V) :- lelem(In,I,V), ⟨cond over V⟩.  lpres(lfN(In)) :- lpres(In).
+```
+
+`MapList`'s body is the fold-body machinery (below); `FilterList`'s
+condition keeps the element under a **positive** builtin — a sum-typed
+`Ongelijk` is `V != ⟨Construct⟩`, both-bound-and-different, never
+`not gelijk` (the S14 non-complement rule; the element is always bound,
+so Tabel 38's leeg corner cannot arise). **ListLength** (`ListLength`) is
+`llN(L,C) :- lpres(L), C = #count { I : lelem(L,I,_) }` — an empty list
+counts 0, an absent list derives no count (leeg); `#count` tolerates a
+`FilterList`'s index gaps, so no re-indexing is needed there.
+
+**Closed bodies** (lambda and function bodies, WF-067/069) lower to a
+list of *branches* (`body_branches`): guard atoms, a result term and its
+scale.
+
+- **IfThenElse** (ch. 10.2) splits into two branches — the `then` under
+  the condition's positive builtin, the `else` under its exact
+  complement (`cmp_sym`/`cmp_complement`). The condition reads only bound
+  terms (binders, parameters, literals), so it is a **builtin comparison
+  over harmonised scales** and the complement is exact — **no NAF over
+  derived atoms**, the stratification posture untouched (the S7
+  closed-body point, mirrored here).
+- **Match on a bound term** (ch. 10.4): the scrutinee is a bound binder
+  (a lambda/function parameter or a match payload), not an attribute, so
+  each arm lowers to a **functor-unification builtin** — `V = ctor(P)`
+  for a unary arm (binding the payload `P`), `V = ctor` for a nullary
+  one — one branch per arm, no NAF (WF-063 totality). This is S14's total
+  match on a term already bound rather than read from a `val/3` atom.
+- **Invoke** (ch. 10.2) inlines the acyclic (WF-067) FunctionDef body at
+  the call site, binding its parameters to the argument terms — the
+  aanspraaktelling map is `Invoke aanspraakwaarde` over each element,
+  whose body is exactly the bound-term match above.
+- Any other closed term (`closed_term`) is a bound binder, a literal, a
+  document parameter, a `+`/`-` combination of those, or a `Construct`.
+  **Every emitted arithmetic step carries a `viol/2` range fence**
+  grounded by the recurrence body and witnessed by the list-id — the
+  running accumulator is grounding-time arithmetic and would otherwise
+  wrap silently past 2³¹ where ref's exact rationals do not (the S6/S8
+  fence discipline, on the fold interior).
+
+On the check side, `model.ml` reads the fold family's scalar results as
+ordinary `val/3` — the reified lists are internal (`#show` carries only
+`val`/`heeft`/`inconsistent`/`tl`), so a numeric fold result and a
+`ListLength` count are plain numeric expectations, and a leeg target
+(absent list) reports underived through the same `val_present` path. A
+**list-valued** `attributeValue` expectation has no corpus case and
+faults loudly (S16) rather than growing a half-built list comparison.
+
+Witnesses: `anchor/jutterswet-staffelvergoeding` — the capped-sum
+`Fold` over the list *parameter* `staffelbedragen` with an `IfThenElse`
+body (case1 `[12.50, 30.00, 7.25]` → **19.75**, the left-to-right order
+load-bearing; case2 `[]` → **0.00**, the empty list a value; case3 the
+parameter absent → leeg, a no-op survivor). `anchor/jutterswet-aanspraaktelling`
+— `erkende som` := `Fold(+, 0.00)` over `MapList(aanspraken, Invoke
+aanspraakwaarde)` and `aantal erkend` := `ListLength(FilterList(aanspraken,
+a ≠ Vervallen))`, composing S14 (case1 `[Erkend(10.00), Vervallen,
+Erkend(2.50)]` → **12.50** and **2**; case2 `[]` → **0.00** and **0**;
+case3 the list attribute absent → both leeg). The WF-065..070 negatiefs
+pin what the verifier rejects before translation.
+
+### S16. What does not translate — the complete loud inventory
 
 The standing rule (PLAN §4): the core may say "I cannot express this
 (yet)"; it may not pretend. Every fault below is a `Value.fault` with
@@ -738,6 +840,25 @@ case exercises it. Nullary-with-argument and
 unary-without-argument constructs, an alien or missing arm, a binder on a
 nullary arm and its converse are rejected by WF-062..064 before
 translation is reached.
+
+*Folds and function values (S15) — shapes without a corpus case:* a
+**`ListLiteral`** list source (the reified-list encoding covers it, but
+no corpus case builds a list in an expression rather than the case —
+`list_source` faults); a **`Fold` over a `FilterList`** (the index
+recurrence needs contiguous positions, and a filter leaves gaps — no
+re-indexing is built because no case composes the two; `ListLength` over
+a filter is fine, it counts); a **named FunctionDef as a `Fold`/`MapList`
+operand** (only the inline `Lambda` form has a case — the anchors invoke
+named functions through `Invoke`, not as fold operands); an **IfThenElse
+condition** other than a comparison over bound terms, a **closed-body
+term** other than a bound binder / literal / parameter / `+`-`-`
+combination / `Construct`, and a **`FilterList` condition** other than a
+sum-typed (in)equality over the bound element (the closed-body grammar is
+narrowed to what the two anchors exercise); a **list-valued
+`attributeValue` expectation** in `model.ml` (the anchors expect only
+scalars and leegte; a list comparison is not built until a case wants
+one). Multiplicative and other operators inside fold bodies ride the same
+"no corpus case" fence as their rule-expression kin.
 
 *Environment and input fences:* names the ASP string encoding cannot
 quote (WF-057's backstop, sole cover for case labels); values that do
@@ -1476,7 +1597,7 @@ refuses loudly, exactly like this fence.
 quantitative machinery beyond the art. 3 threshold, and any systematic
 core-IR-to-ASP mapping — all Phase-3 work. This document grows with
 each hand exercise until that systematic mapping replaces it. *That
-promise is kept: Part I (S1–S15) is the systematic mapping. The
+promise is kept: Part I (S1–S16) is the systematic mapping. The
 constructs this chapter deferred have long since landed — hardheid in
 the ladder anchors (S10), the temporalisation in the timeline
 machinery (S9, historically ch. 6d), the quantitative corpus

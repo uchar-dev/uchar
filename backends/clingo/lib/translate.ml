@@ -460,6 +460,39 @@ let ctor_value_term constructoren (tag, (payload : Value.t option)) =
   | Some _, None -> fault "unary constructor %S carries no payload value" tag
   | None, Some _ -> fault "nullary constructor %S carries a payload value" tag
 
+(* --- the fold family (RUNTIME-SEMANTICS ch. 10; ASP-TRANSLATION S15) ------ *)
+
+(* the scale of a list ELEMENT datatype: numeric elements ride their declared
+   decimals, a sum element is a ground constructor term (scale 0 — it carries
+   no numeric scale, exactly as a Construct value does in expr_term) *)
+let element_scale_of = function
+  | Numeriek { decimalen; _ } | Percentage { decimalen; _ } -> pow10 decimalen
+  | Datum_in_dagen -> 1
+  | Sum_type _ -> 0
+  | dt ->
+      ignore dt;
+      fault "a list element datatype without an integer encoding (no corpus case)"
+
+(* the builtin comparison symbol and its exact complement, for an IfThenElse
+   condition over BOUND terms inside a closed body: the closed body never sees
+   leeg (ch. 10.1), so `then` reads the positive builtin and `else` its
+   mirror — no NAF over derived atoms (the S7 closed-body point) *)
+let cmp_sym = function
+  | Kleiner | Eerder -> "<"
+  | Kleiner_of_gelijk | Eerder_of_gelijk -> "<="
+  | Groter | Later -> ">"
+  | Groter_of_gelijk | Later_of_gelijk -> ">="
+  | Gelijk -> "=="
+  | Ongelijk -> "!="
+
+let cmp_complement = function
+  | Kleiner | Eerder -> ">="
+  | Kleiner_of_gelijk | Eerder_of_gelijk -> ">"
+  | Groter | Later -> "<="
+  | Groter_of_gelijk | Later_of_gelijk -> "<"
+  | Gelijk -> "!="
+  | Ongelijk -> "=="
+
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   match e with
   | Literal { waarde; typ; _ } -> (
@@ -1032,11 +1065,66 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   | Match { typ; scrutinee; arms; _ } ->
       translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms
   | Binder_ref { naam; _ } -> (
-      (* ch. 9.2: the ASP variable the enclosing match arm's scrutinee
-         pattern bound to this payload, at the payload's declared scale *)
+      (* ch. 9.2/10.2: the ASP variable the enclosing match arm's scrutinee
+         pattern or the enclosing lambda/function parameter bound, at its
+         declared scale *)
       match List.assoc_opt (norm naam) ctx.binders with
       | Some (var, scale) -> ([], var, scale)
       | None -> fault "unbound binder %S in the ASP translation (WF-064 should preclude this)" naam)
+  | Fold { typ; list; functie; init; _ } ->
+      (* ch. 10.2: index recursion over the reified list (S15). The result is
+         the accumulator at the list length; a present-but-empty list yields
+         the init (base case fires on lpres); an absent list derives no lpres,
+         so nothing is reachable — leeg propagation for free. *)
+      let out_scale = pow10 (decimals_of_datatype typ) in
+      let lterm, elem_scale = list_source ctx ~subject ~subject_ot list in
+      ctx.fresh <- ctx.fresh + 1;
+      let fa = Printf.sprintf "fa%d" ctx.fresh and fr = Printf.sprintf "fr%d" ctx.fresh in
+      let init_atoms, init_term, init_scale =
+        closed_term ctx ~guard_body:[ Printf.sprintf "lpres(%s)" lterm ] ~witness:lterm init
+      in
+      if init_scale <> out_scale then
+        fault "fold init scale %d does not match the fold's declared scale %d" init_scale out_scale;
+      let accname, xname, body =
+        match functie with
+        | Fn_lambda { parameters = [ (a, _); (x, _) ]; body; _ } -> (a, x, body)
+        | Fn_lambda _ -> fault "a fold lambda takes exactly two parameters (WF-070)"
+        | Fn_name _ ->
+            fault "a named FunctionDef as a fold operand is not translated (no corpus case)"
+      in
+      let base_body = Printf.sprintf "lpres(%s)" lterm in
+      emit ctx "%s(%s,0,%s) :- %s." fa lterm init_term
+        (String.concat ", " (base_body :: init_atoms));
+      let rec_body =
+        [ Printf.sprintf "%s(%s,I-1,A)" fa lterm; Printf.sprintf "lelem(%s,I,V)" lterm ]
+      in
+      let saved = ctx.binders in
+      ctx.binders <-
+        (norm accname, ("A", out_scale)) :: (norm xname, ("V", elem_scale)) :: ctx.binders;
+      let branches = body_branches ctx ~guard_body:rec_body ~witness:lterm body in
+      ctx.binders <- saved;
+      List.iter
+        (fun (g, t, s) ->
+          if s <> out_scale then
+            fault "a fold body branch scale %d does not match the fold's declared scale %d" s
+              out_scale;
+          emit ctx "%s(%s,I,%s) :- %s." fa lterm t (String.concat ", " (rec_body @ g)))
+        branches;
+      emit ctx "%s(%s,F) :- lpres(%s), N = #count { I : lelem(%s,I,_) }, %s(%s,N,F)." fr lterm
+        lterm lterm fa lterm;
+      let v = fresh ctx "F" in
+      ([ Printf.sprintf "%s(%s,%s)" fr lterm v ], v, out_scale)
+  | List_length { list; _ } ->
+      (* ch. 10.2: #count over the reified elements, gated on presence — an
+         empty list counts 0, an absent list derives no lpres and so no count
+         (leeg). #count tolerates the gaps a FilterList leaves (no
+         re-indexing needed; a Fold over a FilterList would and has no case). *)
+      let lterm, _ = list_source ctx ~subject ~subject_ot list in
+      ctx.fresh <- ctx.fresh + 1;
+      let p = Printf.sprintf "ll%d" ctx.fresh in
+      emit ctx "%s(%s,C) :- lpres(%s), C = #count { I : lelem(%s,I,_) }." p lterm lterm lterm;
+      let v = fresh ctx "L" in
+      ([ Printf.sprintf "%s(%s,%s)" p lterm v ], v, 1)
   | Expr_onopgelost _ ->
       (* the unsolved-state guard: an Onopgelost node never vanishes —
          the rule that carries it fails observably (WF-044) *)
@@ -1387,6 +1475,255 @@ and translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms =
     arms;
   let v = fresh ctx "M" in
   ([ Printf.sprintf "%s(%s,%s)" p subject v ], v, out_scale)
+
+(* a list-valued operand → (list-id term, element scale). A list value is
+   reified as indexed facts (S15): [lelem(L,I,V)] for the element at 1-based
+   index [I], and [lpres(L)] marking the list present (a present-but-empty
+   list carries lpres and no lelem — the value/absence distinction ch. 10.1
+   needs). Own list-typed attributes and list parameters take their facts
+   from [translate_case]; a MapList/FilterList derives its own, keyed by a
+   fresh functor over the inner list-id so distinct subjects' lists never
+   collide. The subject variable rides an attribute list-id, so the same
+   derivation rules serve every subject at once. *)
+and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
+  match e with
+  | Attribuut_ref
+      { attribuut = Some a; objecttype = Some ot; navigatie_rol = None; navigatie_pad = [];
+        navigatie_bindingen = None; set = false; _ }
+    when norm ot = norm subject_ot ->
+      let element =
+        match Ir_v0.Checks.find_ci (objecttype ctx ot).attributen a with
+        | Some (Some (List_type { element })) -> element
+        | _ -> fault "the fold source %S is not a list-typed own attribute (no corpus case)" a
+      in
+      (Printf.sprintf "alist(%s,%s)" subject (str a), element_scale_of element)
+  | Parameter_ref { parameter = Some p; _ } -> (
+      match Ir_v0.Checks.find_ci ctx.doc.parameters p with
+      | Some { par_datatype = Some (List_type { element }); _ } ->
+          (Printf.sprintf "plist(%s)" (str p), element_scale_of element)
+      | Some _ -> fault "the fold source parameter %S is not list-typed" p
+      | None -> fault "unknown parameter %S" p)
+  | Map_list { typ; list; functie; _ } ->
+      let inner, inner_es = list_source ctx ~subject ~subject_ot list in
+      let out_es =
+        element_scale_of
+          (match typ with
+          | Some (List_type { element }) -> element
+          | _ -> fault "a MapList without its ListType annotation (WF-070)")
+      in
+      ctx.fresh <- ctx.fresh + 1;
+      let mapid = Printf.sprintf "lm%d(%s)" ctx.fresh inner in
+      let pname, body =
+        match functie with
+        | Fn_lambda { parameters = [ (pn, _) ]; body; _ } -> (pn, body)
+        | Fn_lambda _ -> fault "a MapList lambda takes exactly one parameter (WF-070)"
+        | Fn_name _ ->
+            fault "a named FunctionDef as a MapList operand is not translated (no corpus case)"
+      in
+      let base = [ Printf.sprintf "lelem(%s,I,V)" inner ] in
+      let saved = ctx.binders in
+      ctx.binders <- (norm pname, ("V", inner_es)) :: ctx.binders;
+      let branches = body_branches ctx ~guard_body:base ~witness:mapid body in
+      ctx.binders <- saved;
+      List.iter
+        (fun (g, t, s) ->
+          if s <> out_es then
+            fault "a MapList body scale %d does not match its declared element scale %d" s out_es;
+          emit ctx "lelem(%s,I,%s) :- %s." mapid t (String.concat ", " (base @ g)))
+        branches;
+      emit ctx "lpres(%s) :- lpres(%s)." mapid inner;
+      (mapid, out_es)
+  | Filter_list { list; binder; condition; _ } ->
+      let inner, inner_es = list_source ctx ~subject ~subject_ot list in
+      ctx.fresh <- ctx.fresh + 1;
+      let fltid = Printf.sprintf "lf%d(%s)" ctx.fresh inner in
+      let saved = ctx.binders in
+      ctx.binders <- (norm binder, ("V", inner_es)) :: ctx.binders;
+      let catoms = filter_condition ctx condition in
+      ctx.binders <- saved;
+      emit ctx "lelem(%s,I,V) :- %s." fltid
+        (String.concat ", " (Printf.sprintf "lelem(%s,I,V)" inner :: catoms));
+      emit ctx "lpres(%s) :- lpres(%s)." fltid inner;
+      (fltid, inner_es)
+  | List_literal _ ->
+      fault "a ListLiteral list source is not translated (no corpus case; S16 inventory)"
+  | Fold _ -> fault "a Fold is a scalar, not a list source"
+  | _ ->
+      fault
+        "a list source here is an own list-typed attribute, a list parameter, a MapList or a \
+         FilterList (no corpus case for more)"
+
+(* a closed lambda/function body → the branches (guard atoms, result term,
+   scale) it lowers to: an IfThenElse splits into a positive and a
+   complemented branch (S7 builtin complements, no NAF), a Match on a bound
+   term into one branch per arm (functor unification in a builtin equality),
+   an Invoke inlines the acyclic FunctionDef body, and any other closed term
+   is a single branch. The [guard_body] grounds the emitted range fences. *)
+and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * int) list =
+  match e with
+  | If_then_else { condition; then_; else_; _ } ->
+      let catoms, pos, neg = body_condition ctx ~guard_body ~witness condition in
+      let arm extra branches =
+        List.map (fun (g, t, s) -> (catoms @ (extra :: g), t, s)) branches
+      in
+      arm pos (body_branches ctx ~guard_body ~witness then_)
+      @ arm neg (body_branches ctx ~guard_body ~witness else_)
+  | Match { scrutinee; arms; _ } ->
+      let sv = sum_operand ctx scrutinee in
+      let constructoren = sum_constructors (Ir_v0.Checks.typ_of_expr scrutinee) in
+      List.concat_map
+        (fun (ctor, binder, body) ->
+          let f = ctor_functor ctor in
+          let pattern, binding =
+            match (ctor_payload_datatype constructoren ctor, binder) with
+            | None, None -> (Printf.sprintf "%s = %s" sv f, None)
+            | Some d, Some b ->
+                let pv = fresh ctx "P" in
+                ( Printf.sprintf "%s = %s(%s)" sv f pv,
+                  Some (norm b, (pv, pow10 (decimals_of_datatype (Some d)))) )
+            | Some _, None -> fault "unary match arm %S lacks a binder (WF-063)" ctor
+            | None, Some _ -> fault "nullary match arm %S carries a binder (WF-063)" ctor
+          in
+          let saved = ctx.binders in
+          (match binding with Some b -> ctx.binders <- b :: ctx.binders | None -> ());
+          let branches =
+            body_branches ctx ~guard_body:(guard_body @ [ pattern ]) ~witness body
+          in
+          ctx.binders <- saved;
+          List.map (fun (g, t, s) -> (pattern :: g, t, s)) branches)
+        arms
+  | Invoke { functie; arguments; _ } ->
+      let fd =
+        match
+          List.find_opt
+            (fun (d : function_def) -> norm d.fd_naam = norm functie)
+            ctx.doc.function_defs
+        with
+        | Some d -> d
+        | None -> fault "unknown function %S (WF-068)" functie
+      in
+      if List.length arguments <> List.length fd.fd_parameters then
+        fault "function %S invoked with the wrong arity (WF-068)" functie;
+      let argbinds =
+        List.map2
+          (fun (pn, _) arg ->
+            let a, t, s = closed_term ctx ~guard_body ~witness arg in
+            (a, (norm pn, (t, s))))
+          fd.fd_parameters arguments
+      in
+      let arg_atoms = List.concat_map fst argbinds in
+      let saved = ctx.binders in
+      ctx.binders <- List.map snd argbinds @ ctx.binders;
+      let branches =
+        body_branches ctx ~guard_body:(guard_body @ arg_atoms) ~witness fd.fd_body
+      in
+      ctx.binders <- saved;
+      List.map (fun (g, t, s) -> (arg_atoms @ g, t, s)) branches
+  | _ ->
+      let a, t, s = closed_term ctx ~guard_body ~witness e in
+      [ (a, t, s) ]
+
+(* an IfThenElse condition over bound terms → (binding atoms, positive
+   builtin, complement builtin). Closed bodies read only bound terms, so the
+   comparison is a builtin over harmonised scales and the else-branch is its
+   exact mirror — no NAF over derived atoms (the S7 closed-body point). *)
+and body_condition ctx ~guard_body ~witness (c : conditie) : string list * string * string =
+  match c with
+  | Vergelijking { op; links; rechts; periode = None; _ } ->
+      let la, lt, ls = closed_term ctx ~guard_body ~witness (req "links" links) in
+      let ra, rt, rs = closed_term ctx ~guard_body ~witness (req "rechts" rechts) in
+      let m = max ls rs in
+      let sc t s = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
+      let lt = sc lt ls and rt = sc rt rs in
+      ( la @ ra,
+        Printf.sprintf "%s %s %s" lt (cmp_sym op) rt,
+        Printf.sprintf "%s %s %s" lt (cmp_complement op) rt )
+  | _ ->
+      fault
+        "an IfThenElse condition in a closed body is a comparison over bound terms (no corpus \
+         case for more)"
+
+(* a closed-body TERM → (binding atoms, term, scale). Operands are bound
+   binders (a lambda/function parameter or a match payload), literals,
+   document parameters, additive combinations of those, and Constructs — the
+   closed-body grammar (WF-067/069). Every emitted arithmetic step carries a
+   range fence grounded by [guard_body] and witnessed by [witness] (the
+   list-id), so the running accumulator cannot wrap silently past 2^31. *)
+and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int =
+  match e with
+  | Binder_ref { naam; _ } -> (
+      match List.assoc_opt (norm naam) ctx.binders with
+      | Some (var, scale) -> ([], var, scale)
+      | None -> fault "unbound binder %S in a closed body (WF-064 should preclude this)" naam)
+  | Literal { waarde; typ; _ } -> (
+      let lex = req "Literal.waarde" waarde in
+      match typ with
+      | Some (Numeriek _ | Percentage _) | None ->
+          let d = lexeme_decimals lex in
+          let v = scaled_of_value ~decimals:d (Value.Num (Value.q_of_lexeme lex, Value.Unitless)) in
+          ([], string_of_int v, pow10 d)
+      | _ -> fault "a non-numeric literal in a closed-body term position")
+  | Parameter_ref { parameter; _ } -> (
+      let name = req "ParameterRef.parameter" parameter in
+      match Ir_v0.Checks.find_ci ctx.doc.parameters name with
+      | Some { par_granulariteit = Some _; _ } ->
+          fault "a granular parameter %S in a closed body is refused (ch. 3.3/8)" name
+      | Some p ->
+          let d = decimals_of_datatype p.par_datatype in
+          let v = fresh ctx "P" in
+          ([ Printf.sprintf "param(%s,%s)" (str name) v ], v, pow10 d)
+      | None -> fault "unknown parameter %S" name)
+  | Binair { op = (Plus | Min) as op; links; rechts; _ } ->
+      numeric_ok links;
+      numeric_ok rechts;
+      let bl, tl, sl = closed_term ctx ~guard_body ~witness (req "Binair.links" links) in
+      let br, tr, sr = closed_term ctx ~guard_body ~witness (req "Binair.rechts" rechts) in
+      let m = max sl sr in
+      let sc t s = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
+      let tl' = sc tl sl and tr' = sc tr sr in
+      range_guard ctx ~subject:witness
+        ~body:(guard_body @ bl @ br)
+        [ (tl', 1073741823 / (m / sl)); (tr', 1073741823 / (m / sr)) ];
+      (bl @ br, Printf.sprintf "(%s%s%s)" tl' (if op = Plus then "+" else "-") tr', m)
+  | Construct { typ; constructor_; argument; _ } ->
+      ([], construct_ground_term ctx typ constructor_ argument, 0)
+  | _ ->
+      fault
+        "a closed-body term here is a bound binder, a literal, a parameter, a +/- combination \
+         or a Construct (no corpus case for more)"
+
+(* a sum-typed operand inside a closed body → its ground term: a bound binder
+   (a lambda/function parameter or a match payload) resolves to its ASP
+   variable, a Construct to its ground constructor term. Both are positive,
+   so a comparison over them is builtin functor (in)equality (ch. 10.4). *)
+and sum_operand ctx (e : expr) : string =
+  match e with
+  | Binder_ref { naam; _ } -> (
+      match List.assoc_opt (norm naam) ctx.binders with
+      | Some (var, _) -> var
+      | None -> fault "unbound binder %S in a closed body (WF-064 should preclude this)" naam)
+  | Construct { typ; constructor_; argument; _ } -> construct_ground_term ctx typ constructor_ argument
+  | _ ->
+      fault
+        "a sum-typed operand in a closed body is a bound binder or a Construct (no corpus case \
+         for more)"
+
+(* a FilterList condition → the builtin atoms it adds to the keep rule
+   (beside the element's own lelem join). A sum-typed (in)equality is
+   POSITIVE functor (in)equality over the bound element and a ground
+   Construct — never `not gelijk` (the ch. 10.4/S14 non-complement rule);
+   the element is always bound, so Tabel 38's leeg corner cannot arise. *)
+and filter_condition ctx (c : conditie) : string list =
+  match c with
+  | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ }
+    when is_sum_operand links || is_sum_operand rechts ->
+      let lt = sum_operand ctx (req "links" links) in
+      let rt = sum_operand ctx (req "rechts" rechts) in
+      [ Printf.sprintf "%s %s %s" lt (if op = Gelijk then "==" else "!=") rt ]
+  | _ ->
+      fault
+        "a FilterList condition here is a sum-typed (in)equality over the bound element (no \
+         corpus case for more)"
 
 (* --- rule forms ---------------------------------------------------------- *)
 
@@ -2289,6 +2626,27 @@ let translate_uniciteit_unie ctx i (u : resolved_uniciteit_unie) =
   emit ctx "inconsistent(%s,S) :- %s(S,_,%s), 2 <= #count { O,J : %s(O,J,%s) }." (str name)
     pred (String.concat "," vars) pred (String.concat "," vars)
 
+(* reify a list VALUE as the indexed facts the fold family reads (S15):
+   [lpres(L)] marks the list present (so a present-but-empty list still fires
+   the fold base and ListLength's count — the value/absence distinction of
+   ch. 10.1), and [lelem(L,I,V)] carries each element at its 1-based position,
+   scaled by the ELEMENT datatype (numeric elements by their decimals, a sum
+   element as its ground constructor term). Order is load-bearing and kept. *)
+let reify_list ctx ~lid ~element (xs : Value.t list) =
+  emit ctx "lpres(%s)." lid;
+  List.iteri
+    (fun n (v : Value.t) ->
+      let term =
+        match element with
+        | Sum_type { constructoren; _ } -> (
+            match v with
+            | Value.Ctor (tag, payload) -> ctor_value_term constructoren (tag, payload)
+            | _ -> fault "a non-constructor value in a sum-typed list element")
+        | _ -> string_of_int (scaled_of_value ~decimals:(decimals_of_datatype (Some element)) v)
+      in
+      emit ctx "lelem(%s,%d,%s)." lid (n + 1) term)
+    xs
+
 (* --- case facts ---------------------------------------------------------- *)
 
 let translate_case ctx (case : Case.t) =
@@ -2328,6 +2686,18 @@ let translate_case ctx (case : Case.t) =
               in
               emit ctx "val(%s,%s,%s)." (str_raw label) (str aname)
                 (ctor_value_term constructoren (tag, payload))
+          | Value.Lijst xs ->
+              (* ch. 10.5 case carriage: a list-typed input attribute reifies
+                 as lpres/lelem keyed by [alist(label,attr)] — the same list-id
+                 the fold family reads. A list-typed COMPUTED target has no
+                 monotone encoding here, fenced in translate_regel. *)
+              let element =
+                match Ir_v0.Checks.find_ci (objecttype ctx i.otype).attributen aname with
+                | Some (Some (List_type { element })) -> element
+                | _ -> fault "list value on non-list-typed attribute %S" aname
+              in
+              reify_list ctx ~lid:(Printf.sprintf "alist(%s,%s)" (str_raw label) (str aname))
+                ~element xs
           | _ ->
               let d = attr_decimals ctx ~otype:i.otype ~attr:aname in
               let pred = if ladder_target i.otype aname then "inputval" else "val" in
@@ -2383,6 +2753,12 @@ let translate_case ctx (case : Case.t) =
     (fun pname v ->
       match Ir_v0.Checks.find_ci doc.parameters pname with
       | Some { par_granulariteit = Some _; _ } -> () (* never read; ch. 8 *)
+      | Some { par_datatype = Some (List_type { element }); _ } -> (
+          (* ch. 10.5: a list-typed parameter reifies as lpres/lelem keyed by
+             [plist(name)] — the same list-id the fold family reads *)
+          match v with
+          | Value.Lijst xs -> reify_list ctx ~lid:(Printf.sprintf "plist(%s)" (str pname)) ~element xs
+          | _ -> fault "list-typed parameter %S carries a non-list value" pname)
       | Some p ->
           let d = decimals_of_datatype p.par_datatype in
           emit ctx "param(%s,%d)." (str pname) (scaled_of_value ~decimals:d v)
@@ -2425,6 +2801,9 @@ let translate (doc : document) (case : Case.t) : string =
   emit ctx "#defined val/3. #defined heeft/2. #defined rol/3. #defined param/2.";
   emit ctx "#defined inconsistent/2. #defined tl/5. #defined param_tl/4. #defined ktl/4.";
   emit ctx "#defined inputval/3. #defined inputtl/5. #defined viol/2. #defined inputrol/3.";
+  (* the fold family's reified lists (S15): declared so a case with an absent
+     list source leaves lpres/lelem head-less without a grounding warning *)
+  emit ctx "#defined lpres/1. #defined lelem/3.";
   if has_recursive_creation doc then begin
     (* the generation-depth bound (ch. 5.5's fire budget, grounded): a
        recursive chain grounds only as deep as its condition carries

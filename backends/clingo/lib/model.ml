@@ -208,6 +208,12 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
                 (Printf.sprintf "%s.%s = [%s], expected %s" label attr
                    (String.concat ";" (List.map render_term got))
                    (render_term want)))
+      | Attribute_value { value = Value.Lijst _; _ } ->
+          (* ch. 10.5: a list-valued expectation has no corpus case — the
+             reified list rides internal lelem/lpres, never a shown val/3, so
+             a structural list comparison is not built until a case wants one
+             (ASP-TRANSLATION S16) *)
+          fault "a list-valued attributeValue expectation is not checked here (no corpus case)"
       | Attribute_value { label; attr; value } -> (
           let want = scaled_expect ~label ~attr value in
           match val_of model label attr with
