@@ -8,7 +8,7 @@ numeric zero. The variant shares `arith.div_gen` in ref and the
 rounded-division path in the clingo translation, so it carries the
 same edge: a numeric zero divisor is the v0-mirror hard fault in both
 executors, with the v1 §9.5-channel route a decided, tracked delta
-(RUNTIME-SEMANTICS ch. 1.4 point 4; `ASP-TRANSLATION.md` S6/S16).
+(RUNTIME-SEMANTICS ch. 1.4 point 4; `ASP-TRANSLATION.md` S6/S17).
 This witness pins that the abs arm carries the edge *itself* — a
 translation of the variant that lost the zero-divisor fault while the
 bare division kept it would split the executors silently.

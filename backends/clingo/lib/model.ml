@@ -192,6 +192,27 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
     | Value.Ctor (tag, payload) -> parse_term (Translate.ctor_value_term constructoren (tag, payload))
     | _ -> fault "ctor_expect on a non-constructor value"
   in
+  (* the record-value expectation (RUNTIME-SEMANTICS ch. 11.3): built by the
+     SAME struct_value_term emission the translator uses (each field scaled by
+     its declared field datatype, in declaration order) and parsed by the SAME
+     recursive term parser — one source of truth, so the comparison is a
+     structural term equality with no independent scaling path to drift (the
+     case1-dossier pin exercises exactly this) *)
+  let struct_expect ~label ~attr (v : Value.t) : term =
+    let i = Uchar_ref.World.SMap.find label case.world.Uchar_ref.World.instances in
+    let ot = i.Uchar_ref.World.otype in
+    let domein, velden =
+      match Ir_v0.Checks.find_ci doc.objecttypen ot with
+      | Some otd -> (
+          match Ir_v0.Checks.find_ci otd.attributen attr with
+          | Some (Some (Struct_type { domein; velden })) -> (domein, velden)
+          | _ -> fault "a record value expected on the non-struct-typed attribute %S" attr)
+      | None -> fault "unknown object type %S" ot
+    in
+    match v with
+    | Value.Record fs -> parse_term (Translate.struct_value_term (domein, velden) fs)
+    | _ -> fault "struct_expect on a non-record value"
+  in
   List.filter_map
     (fun (e : Case.expectation) ->
       match e with
@@ -208,11 +229,24 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
                 (Printf.sprintf "%s.%s = [%s], expected %s" label attr
                    (String.concat ";" (List.map render_term got))
                    (render_term want)))
+      | Attribute_value { label; attr; value = Value.Record _ as value } -> (
+          let want = struct_expect ~label ~attr value in
+          match term_of model label attr with
+          | [ got ] when got = want -> None
+          | [] ->
+              Some
+                (Printf.sprintf "%s.%s is underived (leeg), expected %s" label attr
+                   (render_term want))
+          | got ->
+              Some
+                (Printf.sprintf "%s.%s = [%s], expected %s" label attr
+                   (String.concat ";" (List.map render_term got))
+                   (render_term want)))
       | Attribute_value { value = Value.Lijst _; _ } ->
           (* ch. 10.5: a list-valued expectation has no corpus case — the
              reified list rides internal lelem/lpres, never a shown val/3, so
              a structural list comparison is not built until a case wants one
-             (ASP-TRANSLATION S16) *)
+             (ASP-TRANSLATION S17) *)
           fault "a list-valued attributeValue expectation is not checked here (no corpus case)"
       | Attribute_value { label; attr; value } -> (
           let want = scaled_expect ~label ~attr value in

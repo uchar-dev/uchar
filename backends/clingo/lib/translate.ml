@@ -105,7 +105,7 @@ let decimals_of_datatype = function
    Optional, ch. 10.4/§3.5) is a ground constructor term carrying no numeric
    scale (0), exactly like a Construct value in [expr_term] *)
 let value_scale = function
-  | Some (Sum_type _) -> 0
+  | Some (Sum_type _ | Struct_type _) -> 0
   | t -> pow10 (decimals_of_datatype t)
 
 let scaled_of_value ~decimals (v : Value.t) : int =
@@ -210,6 +210,11 @@ let attr_unit ctx ~otype ~attr =
 let attr_sum_typed ctx ~otype ~attr =
   match Ir_v0.Checks.find_ci (objecttype ctx otype).attributen attr with
   | Some (Some (Sum_type _)) -> true
+  | _ -> false
+
+let attr_struct_typed ctx ~otype ~attr =
+  match Ir_v0.Checks.find_ci (objecttype ctx otype).attributen attr with
+  | Some (Some (Struct_type _)) -> true
   | _ -> false
 
 (* the EFFECTIVE unit of an expression, derived from declarations
@@ -458,6 +463,45 @@ let is_sum_operand = function
   | Some e -> ( match Ir_v0.Checks.typ_of_expr e with Some (Sum_type _) -> true | _ -> false)
   | None -> false
 
+(* --- structs (RUNTIME-SEMANTICS ch. 11; ASP-TRANSLATION S16) -------------- *)
+
+let is_struct_operand = function
+  | Some e -> ( match Ir_v0.Checks.typ_of_expr e with Some (Struct_type _) -> true | _ -> false)
+  | None -> false
+
+(* the declaring domain and declared fields of a struct-typed node, from its
+   StructType annotation (WF-072 repeats it whole at every use site) *)
+let struct_type_of (e : expr) : string * (string * datatype) list =
+  match Ir_v0.Checks.typ_of_expr e with
+  | Some (Struct_type { domein; velden }) -> (domein, velden)
+  | _ -> fault "a struct node without its StructType annotation (WF-072 should preclude this)"
+
+let struct_type_of_datatype = function
+  | Some (Struct_type { domein; velden }) -> (domein, velden)
+  | _ -> fault "a StructLiteral without its StructType annotation (WF-073 should preclude this)"
+
+(* the ground term for a record VALUE (RUNTIME-SEMANTICS ch. 11.1): the
+   normalised declaring-domain functor over the fields in FIXED DECLARATION
+   ORDER, each scaled by its OWN declared field datatype — dossier(12050,3).
+   A struct always declares at least one field (WF-071), so the term is never
+   the bare functor (no collision with a nullary constructor). A nested struct
+   or sum field VALUE has no integer encoding here and no corpus case — it
+   faults (S17), the nested-sum-payload fence's sibling. *)
+let struct_value_term (domein, velden) (fs : (string * Value.t) list) : string =
+  let f = ctor_functor domein in
+  let arg (fname, fdt) =
+    match List.find_opt (fun (n, _) -> norm n = norm fname) fs with
+    | None -> fault "record value is missing declared field %S" fname
+    | Some (_, v) -> (
+        match fdt with
+        | Sum_type _ | Struct_type _ | List_type _ ->
+            fault
+              "a nested struct/sum/list field value has no integer encoding in the ASP struct \
+               term (no corpus case)"
+        | _ -> string_of_int (scaled_of_value ~decimals:(decimals_of_datatype (Some fdt)) v))
+  in
+  Printf.sprintf "%s(%s)" f (String.concat "," (List.map arg velden))
+
 (* the ground term for a constructor VALUE (case emission): payload scaled
    by the constructor's declared payload datatype *)
 let ctor_value_term constructoren (tag, (payload : Value.t option)) =
@@ -477,6 +521,9 @@ let element_scale_of = function
   | Numeriek { decimalen; _ } | Percentage { decimalen; _ } -> pow10 decimalen
   | Datum_in_dagen -> 1
   | Sum_type _ -> 0
+  (* a struct element is a ground record term (RUNTIME-SEMANTICS ch. 11.1),
+     carrying no numeric scale — the Sum_type sibling *)
+  | Struct_type _ -> 0
   | dt ->
       ignore dt;
       fault "a list element datatype without an integer encoding (no corpus case)"
@@ -1089,7 +1136,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* the I-1/I recurrence needs contiguous positions: a FilterList anywhere
          in the source chain (also under an index-preserving MapList) leaves
          index gaps the recursion would silently stall on, so it is refused
-         loudly here (S16) rather than deriving nothing. ListLength over a
+         loudly here (S17) rather than deriving nothing. ListLength over a
          filter stays fine — #count tolerates the gaps. *)
       let rec no_filter_source e =
         match e with
@@ -1151,6 +1198,20 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       emit ctx "%s(%s,C) :- lpres(%s), C = #count { I : lelem(%s,I,_) }." p lterm lterm lterm;
       let v = fresh ctx "L" in
       ([ Printf.sprintf "%s(%s,%s)" p lterm v ], v, 1)
+  | Field_access { base; veld; _ } ->
+      (* ch. 11.1: read one declared field of a struct-typed base by positional
+         projection. The base binds its record term (an own attribute read via
+         its val atom); a leeg base binds nothing, so the projection propagates
+         leeg for free. *)
+      let batoms, bterm = struct_base ctx ~subject ~subject_ot base in
+      let unif, fvar, fscale = project_field ctx ~base ~bterm ~veld in
+      (batoms @ [ unif ], fvar, fscale)
+  | Struct_literal { typ; velden; _ } ->
+      (* ch. 11.1: a computed record value — the domain functor over the field
+         terms (declaration order), no numeric scale (0). A leeg field leaves
+         the literal underivable (no-hole propagation, the Construct sibling). *)
+      let atoms, term = struct_literal_term ctx ~subject ~subject_ot ~typ ~velden in
+      (atoms, term, 0)
   | Expr_onopgelost _ ->
       (* the unsolved-state guard: an Onopgelost node never vanishes —
          the rule that carries it fails observably (WF-044) *)
@@ -1314,6 +1375,19 @@ and translate_power ctx ~subject ~subject_ot ~links ~rechts =
 and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
   match c with
   | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ }
+    when is_struct_operand links || is_struct_operand rechts ->
+      (* ch. 11.2: record equality is POSITIVE ground-term unification, the
+         sum-type pattern (S14). Both operands bind their record term (an own
+         attribute read via its val atom, a StructLiteral as its computed
+         term); Gelijk tests ==, Ongelijk tests != — never `not gelijk`: a leeg
+         operand binds no term, so BOTH directions fail (Tabel 38's non-numeric
+         branch, the case3 dubbel-én-afwijkend-afwezig corner). Nominal identity
+         is carried by the functor itself (= the declaring domain); WF-072
+         precludes a cross-domain comparison statically. *)
+      let ll, tl = struct_term ctx ~subject ~subject_ot (req "links" links) in
+      let rr, tr = struct_term ctx ~subject ~subject_ot (req "rechts" rechts) in
+      ll @ rr @ [ Printf.sprintf "%s %s %s" tl (if op = Gelijk then "==" else "!=") tr ]
+  | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ }
     when is_sum_operand links || is_sum_operand rechts ->
       (* ch. 9.3: sum-typed equality is POSITIVE ground-term unification.
          Both operand terms bind (an own attribute read via its val atom, a
@@ -1402,6 +1476,17 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
         (if negatie then "not " else "") ^ Printf.sprintf "heeft(%s,%s)" n (str k) ]
   | Samengesteld { kwantor = Alle | De; onderdelen; _ } ->
       List.concat_map (cond_atoms ctx ~subject ~subject_ot) onderdelen
+  | Predicaat { soort = Gevuld; operand; negatie = false; dagsoort = None; periode = None; _ } ->
+      (* the gevuld gate (ref eval: value <> leeg): the operand's binding atoms
+         as a positive join. A struct operand rides struct_term (its val atom),
+         any other operand rides expr_term — either way absence leaves the atoms
+         unbound, so the gated rule does not fire (leeg-on-absence for free). The
+         value itself is discarded; only presence matters. *)
+      let operand = req "Predicaat.operand" operand in
+      if is_struct_operand (Some operand) then fst (struct_term ctx ~subject ~subject_ot operand)
+      else
+        let atoms, _, _ = expr_term ctx ~subject ~subject_ot operand in
+        atoms
   | _ -> fault "condition kind not translated (no corpus case exercises it)"
 
 (* the ground term of a Construct (ch. 9.1): a Literal payload scaled to the
@@ -1445,6 +1530,85 @@ and sum_term ctx ~subject ~subject_ot (e : expr) : string list * string =
       fault
         "a sum-typed operand here is an own-subject attribute read or a Construct (no corpus case \
          for more)"
+
+(* positional field projection (RUNTIME-SEMANTICS ch. 11.1): given the base's
+   already-bound struct TERM and the base expr (for its StructType), unify the
+   term against the domain functor with the declared field's 1-based position
+   carrying a fresh variable and an anonymous variable elsewhere — [bterm] =
+   dossier(W,_) binds W. Returns the unification atom, the field variable and
+   the FIELD's declared scale (never the base's — a struct term is scale 0). *)
+and project_field ctx ~base ~bterm ~veld : string * string * int =
+  let domein, velden = struct_type_of base in
+  let idx, fdt =
+    let rec find i = function
+      | [] -> fault "field %S is not a declared field of struct %S (WF-074)" veld domein
+      | (n, dt) :: tl -> if norm n = norm veld then (i, dt) else find (i + 1) tl
+    in
+    find 0 velden
+  in
+  let fvar = fresh ctx "W" in
+  let pat = List.mapi (fun i _ -> if i = idx then fvar else "_") velden in
+  ( Printf.sprintf "%s = %s(%s)" bterm (ctor_functor domein) (String.concat "," pat),
+    fvar,
+    value_scale (Some fdt) )
+
+(* resolve a struct-typed base/operand to (atoms binding its ground term, the
+   term): an own-subject struct-typed attribute read rides its val atom (a leeg
+   read binds nothing → Tabel 38's both-false corner and FieldAccess-on-leeg
+   propagation for free), a bound binder (a lambda parameter over a struct list
+   element) resolves to its ASP variable. *)
+and struct_base ctx ~subject ~subject_ot (e : expr) : string list * string =
+  match e with
+  | Attribuut_ref
+      { attribuut = Some a; objecttype = Some ot; navigatie_rol = None; navigatie_pad = [];
+        navigatie_bindingen = None; set = false; _ }
+    when norm ot = norm subject_ot ->
+      if attr_temporal ctx ~otype:ot ~attr:a then
+        fault "temporal struct carriage is a recorded flank; no corpus case";
+      let v = fresh ctx "B" in
+      ([ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ], v)
+  | Binder_ref { naam; _ } -> (
+      match List.assoc_opt (norm naam) ctx.binders with
+      | Some (var, _) -> ([], var)
+      | None -> fault "unbound binder %S in a struct field access (WF-064 should preclude this)" naam)
+  | _ ->
+      fault
+        "a struct field-access base here is an own-subject attribute read or a bound binder (no \
+         corpus case for more)"
+
+(* the term for a StructLiteral in value/equality position (the computed
+   record — the 5b computed-Construct pattern): each declared field's value is
+   translated in FIXED DECLARATION ORDER and wrapped in the domain functor; a
+   field evaluating leeg binds no atom, so the whole literal is underivable —
+   the no-hole propagation. Each field's static scale must equal its declared
+   scale (WF-073 guarantees the shape; this pins the encoding). *)
+and struct_literal_term ctx ~subject ~subject_ot ~typ ~velden : string list * string =
+  let domein, decls = struct_type_of_datatype typ in
+  let atoms, terms =
+    List.fold_left
+      (fun (atoms, terms) (fname, fdt) ->
+        let fexpr =
+          match List.find_opt (fun (n, _) -> norm n = norm fname) velden with
+          | Some (_, e) -> e
+          | None -> fault "StructLiteral is missing declared field %S (WF-073)" fname
+        in
+        let a, t, s = expr_term ctx ~subject ~subject_ot fexpr in
+        if s <> value_scale (Some fdt) then
+          fault "a StructLiteral field %S scale %d does not match its declared scale %d" fname s
+            (value_scale (Some fdt));
+        (atoms @ a, terms @ [ t ]))
+      ([], []) decls
+  in
+  (atoms, Printf.sprintf "%s(%s)" (ctor_functor domein) (String.concat "," terms))
+
+(* a struct-typed comparison operand → (atoms binding its ground term, the
+   term): an own-subject attribute read via its val atom, a StructLiteral as
+   its computed/ground term. Both are positive, so a leeg attribute read fails
+   the join (Tabel 38 for free), the sum-type pattern. *)
+and struct_term ctx ~subject ~subject_ot (e : expr) : string list * string =
+  match e with
+  | Struct_literal { typ; velden; _ } -> struct_literal_term ctx ~subject ~subject_ot ~typ ~velden
+  | _ -> struct_base ctx ~subject ~subject_ot e
 
 (* the scrutinee as a pattern atom for one match arm: the val atom carries
    the constructor pattern; a unary arm's payload variable is bound by it *)
@@ -1588,7 +1752,7 @@ and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
       emit ctx "lpres(%s) :- lpres(%s)." fltid inner;
       (fltid, inner_es)
   | List_literal _ ->
-      fault "a ListLiteral list source is not translated (no corpus case; S16 inventory)"
+      fault "a ListLiteral list source is not translated (no corpus case; S17 inventory)"
   | Fold _ -> fault "a Fold is a scalar, not a list source"
   | _ ->
       fault
@@ -1749,6 +1913,22 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
       (bl @ br, Printf.sprintf "(%s%s%s)" tl' (if op = Plus then "+" else "-") tr', m)
   | Construct { typ; constructor_; argument; _ } ->
       ([], construct_ground_term ctx typ constructor_ argument, 0)
+  | Field_access { base; veld; _ } ->
+      (* ch. 11.1 inside a closed body (the MapList-over-struct-field lelem
+         route, λd. d.veld): the base is a bound struct binder; project its
+         field positionally by unification over the binder's ASP variable *)
+      let bterm =
+        match base with
+        | Binder_ref { naam; _ } -> (
+            match List.assoc_opt (norm naam) ctx.binders with
+            | Some (var, _) -> var
+            | None ->
+                fault "unbound binder %S in a closed-body field access (WF-064 should preclude this)"
+                  naam)
+        | _ -> fault "a closed-body field access reads a bound struct binder (no corpus case for more)"
+      in
+      let unif, fvar, fscale = project_field ctx ~base ~bterm ~veld in
+      ([ unif ], fvar, fscale)
   | _ ->
       fault
         "a closed-body term here is a bound binder, a literal, a parameter, a +/- combination \
@@ -2028,6 +2208,23 @@ let translate_regel ctx (r : resolved_regel) =
               if case_supplies ctx ~otype:ot ~attr:a then
                 fault
                   "a case-supplied sum-typed computed target %S has no encoding here (no corpus \
+                   case)"
+                  a;
+              ctx.rule_guard <- cond;
+              let bindings, term, _ = expr_term ctx ~subject ~subject_ot:ot (req "waarde" r.waarde) in
+              ctx.rule_guard <- [];
+              head_body ctx (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
+                ((base :: cond) @ bindings)
+          | Some (Berekening | Gelijkstelling) when attr_struct_typed ctx ~otype:ot ~attr:a ->
+              (* ch. 11.1: a StructLiteral write to a struct-typed target. The
+                 record term rides straight into the val head — no numeric scale,
+                 no unit, no fit (value_scale 0), the Construct-write sibling. A
+                 leeg field leaves the literal underivable, so the target is leeg
+                 (no-hole propagation). A case-supplied struct computed target has
+                 no monotone encoding here (the sum-target sibling), fenced. *)
+              if case_supplies ctx ~otype:ot ~attr:a then
+                fault
+                  "a case-supplied struct-typed computed target %S has no encoding here (no corpus \
                    case)"
                   a;
               ctx.rule_guard <- cond;
@@ -2704,6 +2901,10 @@ let reify_list ctx ~lid ~element (xs : Value.t list) =
             match v with
             | Value.Ctor (tag, payload) -> ctor_value_term constructoren (tag, payload)
             | _ -> fault "a non-constructor value in a sum-typed list element")
+        | Struct_type { domein; velden } -> (
+            match v with
+            | Value.Record fs -> struct_value_term (domein, velden) fs
+            | _ -> fault "a non-record value in a struct-typed list element")
         | _ -> string_of_int (scaled_of_value ~decimals:(decimals_of_datatype (Some element)) v)
       in
       emit ctx "lelem(%s,%d,%s)." lid (n + 1) term)
@@ -2760,6 +2961,19 @@ let translate_case ctx (case : Case.t) =
               in
               reify_list ctx ~lid:(Printf.sprintf "alist(%s,%s)" (str_raw label) (str aname))
                 ~element xs
+          | Value.Record fs ->
+              (* ch. 11.3 case carriage: a struct-typed input attribute is a
+                 ground record term, fields scaled by their declared datatypes.
+                 A struct-typed COMPUTED target is fenced against case-supplied
+                 input in translate_regel, so a struct value is input-only here
+                 and enters as a plain val/3 (the Ctor sibling). *)
+              let domein, velden =
+                match Ir_v0.Checks.find_ci (objecttype ctx i.otype).attributen aname with
+                | Some (Some (Struct_type { domein; velden })) -> (domein, velden)
+                | _ -> fault "record value on non-struct-typed attribute %S" aname
+              in
+              emit ctx "val(%s,%s,%s)." (str_raw label) (str aname)
+                (struct_value_term (domein, velden) fs)
           | _ ->
               let d = attr_decimals ctx ~otype:i.otype ~attr:aname in
               let pred = if ladder_target i.otype aname then "inputval" else "val" in
@@ -2775,6 +2989,8 @@ let translate_case ctx (case : Case.t) =
           (match Ir_v0.Checks.find_ci (objecttype ctx i.otype).attributen aname with
           | Some (Some (Sum_type _)) ->
               fault "temporal sum carriage is a recorded flank; no corpus case"
+          | Some (Some (Struct_type _)) ->
+              fault "temporal struct carriage is a recorded flank; no corpus case"
           | _ -> ());
           let d = attr_decimals ctx ~otype:i.otype ~attr:aname in
           (* a standing temporal target's input timeline enters

@@ -398,9 +398,9 @@ semantically different engine.
 replace bean-field names in the IR; Clingo backend passes the differential
 square on the subset; "engine-neutral" is a claim with evidence.
 **Met (2026-08-21):** the systematic translation is
-`spec/ASP-TRANSLATION.md` Part I (S1–S16: every translated construct
+`spec/ASP-TRANSLATION.md` Part I (S1–S17: every translated construct
 with its gate witnesses, and the complete loud non-translation
-inventory in S16 — the core may say "not yet", it may not pretend).
+inventory in S17 — the core may say "not yet", it may not pretend).
 Criterion 2 is met under the **semantic reading**, ratified by the
 maintainer (2026-08-21, numbered question): the symbolic role
 bindings are first-class on the wire and are the only thing the uchar

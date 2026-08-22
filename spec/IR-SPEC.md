@@ -376,7 +376,7 @@ A recorded flank, deliberately not a WF clause: the ASP backend carries
 each constructor name as a *functor symbol*, so a name that does not
 normalise to a valid symbolic constant (`[a-z][a-z0-9_]*` — e.g. one
 carrying spaces) is a loud executor fence inventoried in
-`ASP-TRANSLATION.md` S16, not a well-formedness violation — the WF-057
+`ASP-TRANSLATION.md` S17, not a well-formedness violation — the WF-057
 precedent fences only the string encoding, never the functor charset.
 
 **ListType (extension; CONSTRUCTS row 10, design

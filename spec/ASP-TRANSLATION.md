@@ -1,7 +1,7 @@
 # ASP translation
 
 *Status: the systematic construct-by-construct translation (Part I,
-sections S1–S16, complete for the translated core) — the Phase-3
+sections S1–S17, complete for the translated core) — the Phase-3
 deliverable this document was always growing toward. Part I describes what `backends/clingo` provably does:
 every claim is distilled from `backends/clingo/lib/translate.ml` and
 witnessed by the gate set (gate 6, `scripts/check-clingo.sh`, replays
@@ -11,7 +11,7 @@ corpus under gate 3 pins what the verifier rejects before translation
 is ever reached). The text normates what the code proves — semantics
 itself is defined by `RUNTIME-SEMANTICS.md` and this document must
 never drift from it; where a construct does not translate, Part I says
-so loudly (S16), never silently. Part II (chapters 1–7) is the
+so loudly (S17), never silently. Part II (chapters 1–7) is the
 historical record: the two hand exercises and the encoding notes in
 the order they landed, kept in situ with their original chapter
 numbers because results, cards and code comments cite them (ch. 6a–6d
@@ -24,7 +24,8 @@ Sections S1–S7 cover program shape, facts and types, rules and write
 targets, expression terms, emptiness, arithmetic and conditions; S8
 aggregations and folds, S9 timelines, S10 defeasibility and standing,
 S11 creation, S12 allocation and uniqueness; S13 the §9.5 channel;
-S14 sum types and total match; S15 folds and function values; S16 the
+S14 sum types and total match; S15 folds and function values; S16
+structs (the record datatype); S17 the
 complete inventory of loud non-translations — what the backend does
 not translate is stated there, never silently absent.
 
@@ -159,7 +160,7 @@ input rule `val(S,a,V) :- inputval(S,a,V), is_a(S,ot), not
 result derives no effectiveness and the input stands (ref's
 no-write-on-empty, RS ch. 7.8).
 
-Not translated, loudly (S16 carries the full list): validity windows;
+Not translated, loudly (S17 carries the full list): validity windows;
 temporal targets outside the two ch. 3.7/3.8 fold shapes; case input
 on non-standing computed targets; a `standing` target outside its own
 domain.
@@ -213,7 +214,7 @@ the norm; the encoding buys most of it for free):
    note the dividend is *not* a coalesce0 position; the edge lives on
    the construct's head), while the empty sum's 0 is clingo's native
    `#sum` over an empty tuple set (translated only with the
-   fallback-0 facet, S16).
+   fallback-0 facet, S17).
 
 The one empty rule with no *free* encoding — the **numeric** equality
 asymmetry of ch. 1.2d (leeg = leeg is true under gelijk-aan, false
@@ -230,7 +231,7 @@ reads only the operand bodies. Anchored by
 half-empty, both-empty). What remains loud: non-numeric scalar
 equality (text/enum/boolean operands fault as unscalable before any
 eqN rule is emitted) and equality in the per-segment clip comparison
-(S16).
+(S17).
 
 Witnesses: `jutterswet-leegrekening`, `synth2-leegcomposities`,
 `jutterswet-vindersloon` (every empty cell), `jutterswet-taxatie`
@@ -317,7 +318,7 @@ link fails the positive and the negated form alike — the deliberate
 v0 asymmetry (ch. 5.8), encoded for free. **Composite**
 (samengesteld, the ALLE and singular DE quantifiers): concatenation
 of the parts' atoms — both quantifiers are conjunctions over their
-parts. Other quantifiers and condition kinds fault (S16).
+parts. Other quantifiers and condition kinds fault (S17).
 
 Witnesses: `jutterswet-hardheid`, `jutterswet-uitsluiting`,
 `jutterswet-vormenkabinet`; the WF-053 negatiefs pin the navigation
@@ -336,7 +337,7 @@ an instance without the attribute contributes no tuple, and the empty
 tuple set is clingo's native 0, which is why only the fallback-0
 facet translates (a som without it would need an explicit non-empty
 guard to distinguish leeg from 0; faults until a corpus case demands
-it, S16). The *sum* is doubly fenced: each contributor at 46340 *and*
+it, S17). The *sum* is doubly fenced: each contributor at 46340 *and*
 the contributor count at 46340 (`viol` when `46340 < #count{...}`),
 so the accumulated sum provably stays inside 2^31. The bare count
 carries no fence — a `#count` cannot approach 2^31 before grounding
@@ -519,7 +520,7 @@ weight, pot and recipient count — plus, when a remainder attribute
 is declared, on each share the remainder sums (the weight sum, the
 pot×weight product and the share sum then provably stay inside
 2^31; without a remainder the shares are bounded by construction). Only the proportional method translates; conditional
-allocation and misaligned scales fault (S16). Case input on the
+allocation and misaligned scales fault (S17). Case input on the
 allocation's target attribute is refused — the ch. 6d
 superset-model fence.
 
@@ -681,7 +682,7 @@ target stays leeg — propagation for free. The recurrence's contiguous
 `I-1`/`I` chain requires **contiguous indices**, which a parameter,
 attribute, `MapList` (index-preserving) or `ListLiteral` source
 provides; a `FilterList` leaves gaps, so a `Fold` over a `FilterList` has
-no encoding and no corpus case (S16).
+no encoding and no corpus case (S17).
 
 **MapList** and **FilterList** derive their own `lelem`/`lpres`, keyed by
 a fresh functor over the inner list-id (`lmN(⟨inner⟩)`,
@@ -756,7 +757,7 @@ ordinary `val/3` — the reified lists are internal (`#show` carries only
 `ListLength` count are plain numeric expectations, and a leeg target
 (absent list) reports underived through the same `val_present` path. A
 **list-valued** `attributeValue` expectation has no corpus case and
-faults loudly (S16) rather than growing a half-built list comparison.
+faults loudly (S17) rather than growing a half-built list comparison.
 
 Witnesses: `anchor/jutterswet-staffelvergoeding` — the capped-sum
 `Fold` over the list *parameter* `staffelbedragen` with an `IfThenElse`
@@ -776,7 +777,118 @@ arm, case3 a tie `[8.00, 25.50, 25.50, 3.00]` → **25.50**), beside
 `totaal` as a plain numeric `Fold`. The WF-065..070 negatiefs pin what
 the verifier rejects before translation.
 
-### S16. What does not translate — the complete loud inventory
+### S16. Structs (the record datatype)
+
+A **record value** (RUNTIME-SEMANTICS ch. 11, CONSTRUCTS the Phase-5c
+row) is a **ground term** whose functor is the **normalised declaring
+domain** (`ctor_functor`, the sum-world fence reused) and whose
+arguments are the declared fields in **fixed declaration order**, each
+scaled by its **own declared field datatype** — the struct
+`dossier {waarde: 2-dec, telling: 0-dec}` value `{120.50, 3}` is
+`dossier(12050,3)`. The term itself carries no numeric scale
+(`value_scale`/`element_scale_of` map a struct to 0, the `SumType`
+sibling); each *field* rides its own decimals. A struct always declares
+at least one field (WF-071), so the term is never the bare functor —
+no collision with a nullary constructor of the same domain name.
+`translate_case` emits a struct-typed input attribute as
+`val(label, attr, ⟨struct term⟩)` (`struct_value_term`), and a
+struct-typed **list element** reifies through the same builder inside
+`reify_list` (`lelem(alist(…),I,dossier(1000,1))`) — `list of dossier`
+is depth 1, and the WF-071 acyclicity fence keeps any composition
+statically bounded under clingo's term-depth abort.
+
+**FieldAccess** (ch. 11.1) is **positional projection by unification**.
+The base binds its record term; the declared field's 1-based position
+carries a fresh variable and an anonymous variable fills the rest, so
+the field is read by unifying the term against the domain functor:
+
+```
+val(S,dossier,B), B = dossier(W,_)      % read own attribute .waarde → W
+```
+
+Two base shapes land, both `struct_base`/`project_field`:
+
+- an **own-subject struct attribute read** (the rule-expression route —
+  `premie := dossier.waarde + opslag`) binds `B` via `val(S,dossier,B)`,
+  then `B = dossier(W,_)`; a **leeg base** binds no `val/3` atom, so the
+  projection is underivable — propagation for free;
+- a **bound struct binder** (the closed-body route —
+  `λ d. d.waarde` mapping over `list of dossier`) resolves to the ASP
+  variable the enclosing `lelem` join bound, then `V = dossier(W,_)`
+  binds the field — the **lelem route**: `MapList` over a struct-field
+  projection lowers to
+  `lelem(lmN(In),I,W) :- lelem(In,I,V), V = dossier(W,_)`, so the mapped
+  list carries the projected field and an ordinary numeric `Fold`
+  totals it (the anchor's `totaalwaarde`). The result scale is always
+  the **field's** declared scale, never the base's.
+
+**StructLiteral** in value position (`samenvatting := {waarde: premie,
+telling: ListLength(dossiers)}`) builds the term from its **field
+terms with their atoms** — the 5b computed-`Construct` pattern:
+`struct_literal_term` translates each declared field in **declaration
+order** (each field's static scale must equal its declared scale) and
+wraps the results in the domain functor,
+`val(S,samenvatting,dossier(A,L)) :- …, val(S,premie,A), llN(…,L)`. A
+field evaluating **leeg** binds no atom, so the whole literal is
+underivable and the target is leeg — **NO-HOLE** propagation, the
+`Construct`/`ListLiteral` sibling (a record value never carries a leeg
+field). A case-supplied struct **computed** target has no monotone
+encoding here (the sum-target sibling), fenced loudly (S17).
+
+**Struct equality** (ch. 11.2) is **positive ground-term unification**,
+the S14 sum pattern exactly — never the NAF complement:
+
+- `Gelijk`: `⟨T1⟩ == ⟨T2⟩` beside the two binding atoms;
+- `Ongelijk`: `⟨T1⟩ != ⟨T2⟩` — both-bound-and-different, positively,
+  **never `not gelijk`**.
+
+Both operands bind their record term — an own attribute read via its
+`val/3` atom, a `StructLiteral` as its computed/ground term
+(`struct_term`). **Nominal identity is carried by the functor itself**
+(= the declaring domain), so two operands compare only when they name
+the same domain; WF-072 precludes a cross-domain comparison statically.
+**Structural equality is the term equality** clingo's `==`/`!=` compute
+over the fixed-order arguments. A **leeg operand** binds no term, so the
+positive join fails in **both** directions — Tabel 38's non-numeric
+branch (leeg makes `=` *and* `≠` false), the same both-false corner the
+sum world honours (never the NAF complement, which would make `Ongelijk`
+true on leeg). The anchor's `dubbel` / `afwijkend` rules are exactly
+these forms — `heeft(S,dubbel) :- …, val(S,dossier,B), B == dossier(12050,3).`
+and `heeft(S,afwijkend) :- …, val(S,dossier,B), B != dossier(12050,3).`
+
+The **gevuld gate** (`Predicaat` soort `Gevuld`, ref: value ≠ leeg) is the
+operand's binding atoms as a **positive join**: a struct operand rides
+`struct_term`'s `val/3` atom, any other rides `expr_term`; either way an
+absent value leaves the atoms unbound, so the gated rule does not fire —
+leeg-on-absence for free (the anchor's `premie` rule reads
+`GEVULD(dossier)`).
+
+On the check side, `model.ml` builds a record-valued `attributeValue`
+expectation by the **same** `struct_value_term` emission (each field
+scaled by its declared field datatype, declaration order) and parses it
+with the **same** recursive term parser, then compares structurally —
+one source of truth, no independent scaling path to drift (the
+case1 `dossier` input pin exercises exactly this — the
+expectation-arm witness). A struct target that stays leeg reports
+underived through the same `val_present` path.
+
+Witnesses: the anchor `anchor/jutterswet-vondstdossier` — **case1
+gevuld** exercises every route at once: `premie` (FieldAccess over the
+own struct attribute, plus a parameter → 125.50), `totaalwaarde`
+(the `MapList`-over-struct-field `Fold` — the lelem route — over
+`[{10.00,1},{2.50,2}]` → 12.50), `samenvatting` (the computed
+`StructLiteral` → `{125.50, 2}`), `dubbel` present (struct `==`),
+`afwijkend` absent (struct `!=`), and the `dossier` **input** itself
+pinned as `{120.50, 3}` (the recursive-term-parser scaling); **case2
+leeg-lijst** (`dossiers = []` → `totaalwaarde` 0.00 by the fold base,
+`samenvatting` `{125.50, 0}`); **case3 afwezig** (both struct inputs
+absent → `premie`/`totaalwaarde`/`samenvatting` all leeg — the
+build-side no-hole witness: a leeg `premie` propagates through the whole
+`StructLiteral` — and `dubbel` **and** `afwijkend` both absent — the
+Tabel-38 both-false corner — a no-op survivor). The WF-071..074
+negatiefs pin what the verifier rejects before translation.
+
+### S17. What does not translate — the complete loud inventory
 
 The standing rule (PLAN §4): the core may say "I cannot express this
 (yet)"; it may not pretend. Every fault below is a `Value.fault` with
@@ -894,6 +1006,36 @@ as a `Fold`/`MapList` operand** is no longer a shape-without-a-case: it is
 (`a named FunctionDef as a fold operand is refused (WF-069: the operand
 must be an inline lambda)`) survives only as an unreachable backstop on
 WF-clean input.
+
+*Structs (S16) — carriage and shapes without a corpus case:*
+**temporal struct carriage** is a recorded flank — the value model admits
+a struct-typed temporal attribute and the case format can write one, but
+no case exercises it, so the ASP case emission (and any struct field-access
+base over an own temporal attribute) faults with the literal reason
+`temporal struct carriage is a recorded flank; no corpus case` rather than
+silently omitting the record-valued segments (the sum-carriage sibling).
+Two field **values** WF-071 admits but the ASP value emission does not yet
+carry: a **nested struct field** and a **sum-typed field** — a struct or
+constructor value has no integer encoding in the flat record term, so
+`struct_value_term` faults with `a nested struct/sum/list field value has
+no integer encoding in the ASP struct term (no corpus case)` (a
+day-precision date field *does* translate — `decimals_of_datatype` scales
+it at 0). A **case-supplied struct computed target** has no monotone
+encoding (the case fact and the rule head would union into a superset
+model — the ch. 6d fence): `a case-supplied struct-typed computed target
+"…" has no encoding here (no corpus case)`. A **struct field-access base**
+other than an own-subject attribute read or a bound binder, and a
+**struct equality operand** other than an own-subject attribute read or a
+`StructLiteral`, fault as `a struct field-access base here is an
+own-subject attribute read or a bound binder (no corpus case for more)`
+and its equality kin (navigated struct reads await a case); a
+**StructLiteral field scale** disagreeing with its declared scale faults
+`a StructLiteral field "…" scale … does not match its declared scale …`.
+The struct-side record-valued `attributeValue` expectation in `model.ml`
+*is* checked (the anchor pins it); only a **list-valued** one still
+faults (above). Missing/extra/leeg record fields, cross-domain
+comparison, and inadmissible field datatypes are rejected by WF-071..074
+before translation is reached.
 
 *Environment and input fences:* names the ASP string encoding cannot
 quote (WF-057's backstop, sole cover for case labels); values that do
@@ -1632,7 +1774,7 @@ refuses loudly, exactly like this fence.
 quantitative machinery beyond the art. 3 threshold, and any systematic
 core-IR-to-ASP mapping — all Phase-3 work. This document grows with
 each hand exercise until that systematic mapping replaces it. *That
-promise is kept: Part I (S1–S16) is the systematic mapping. The
+promise is kept: Part I (S1–S17) is the systematic mapping. The
 constructs this chapter deferred have long since landed — hardheid in
 the ladder anchors (S10), the temporalisation in the timeline
 machinery (S9, historically ch. 6d), the quantitative corpus
