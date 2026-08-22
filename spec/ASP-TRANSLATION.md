@@ -1,7 +1,7 @@
 # ASP translation
 
 *Status: the systematic construct-by-construct translation (Part I,
-sections S1–S17, complete for the translated core) — the Phase-3
+sections S1–S18, complete for the translated core) — the Phase-3
 deliverable this document was always growing toward. Part I describes what `backends/clingo` provably does:
 every claim is distilled from `backends/clingo/lib/translate.ml` and
 witnessed by the gate set (gate 6, `scripts/check-clingo.sh`, replays
@@ -11,7 +11,7 @@ corpus under gate 3 pins what the verifier rejects before translation
 is ever reached). The text normates what the code proves — semantics
 itself is defined by `RUNTIME-SEMANTICS.md` and this document must
 never drift from it; where a construct does not translate, Part I says
-so loudly (S17), never silently. Part II (chapters 1–7) is the
+so loudly (S18), never silently. Part II (chapters 1–7) is the
 historical record: the two hand exercises and the encoding notes in
 the order they landed, kept in situ with their original chapter
 numbers because results, cards and code comments cite them (ch. 6a–6d
@@ -25,7 +25,7 @@ targets, expression terms, emptiness, arithmetic and conditions; S8
 aggregations and folds, S9 timelines, S10 defeasibility and standing,
 S11 creation, S12 allocation and uniqueness; S13 the §9.5 channel;
 S14 sum types and total match; S15 folds and function values; S16
-structs (the record datatype); S17 the
+structs (the record datatype); S18 the
 complete inventory of loud non-translations — what the backend does
 not translate is stated there, never silently absent.
 
@@ -160,7 +160,7 @@ input rule `val(S,a,V) :- inputval(S,a,V), is_a(S,ot), not
 result derives no effectiveness and the input stands (ref's
 no-write-on-empty, RS ch. 7.8).
 
-Not translated, loudly (S17 carries the full list): validity windows;
+Not translated, loudly (S18 carries the full list): validity windows;
 temporal targets outside the two ch. 3.7/3.8 fold shapes; case input
 on non-standing computed targets; a `standing` target outside its own
 domain.
@@ -214,7 +214,7 @@ the norm; the encoding buys most of it for free):
    note the dividend is *not* a coalesce0 position; the edge lives on
    the construct's head), while the empty sum's 0 is clingo's native
    `#sum` over an empty tuple set (translated only with the
-   fallback-0 facet, S17).
+   fallback-0 facet, S18).
 
 The one empty rule with no *free* encoding — the **numeric** equality
 asymmetry of ch. 1.2d (leeg = leeg is true under gelijk-aan, false
@@ -231,7 +231,7 @@ reads only the operand bodies. Anchored by
 half-empty, both-empty). What remains loud: non-numeric scalar
 equality (text/enum/boolean operands fault as unscalable before any
 eqN rule is emitted) and equality in the per-segment clip comparison
-(S17).
+(S18).
 
 Witnesses: `jutterswet-leegrekening`, `synth2-leegcomposities`,
 `jutterswet-vindersloon` (every empty cell), `jutterswet-taxatie`
@@ -318,7 +318,7 @@ link fails the positive and the negated form alike — the deliberate
 v0 asymmetry (ch. 5.8), encoded for free. **Composite**
 (samengesteld, the ALLE and singular DE quantifiers): concatenation
 of the parts' atoms — both quantifiers are conjunctions over their
-parts. Other quantifiers and condition kinds fault (S17).
+parts. Other quantifiers and condition kinds fault (S18).
 
 Witnesses: `jutterswet-hardheid`, `jutterswet-uitsluiting`,
 `jutterswet-vormenkabinet`; the WF-053 negatiefs pin the navigation
@@ -337,7 +337,7 @@ an instance without the attribute contributes no tuple, and the empty
 tuple set is clingo's native 0, which is why only the fallback-0
 facet translates (a som without it would need an explicit non-empty
 guard to distinguish leeg from 0; faults until a corpus case demands
-it, S17). The *sum* is doubly fenced: each contributor at 46340 *and*
+it, S18). The *sum* is doubly fenced: each contributor at 46340 *and*
 the contributor count at 46340 (`viol` when `46340 < #count{...}`),
 so the accumulated sum provably stays inside 2^31. The bare count
 carries no fence — a `#count` cannot approach 2^31 before grounding
@@ -520,7 +520,7 @@ weight, pot and recipient count — plus, when a remainder attribute
 is declared, on each share the remainder sums (the weight sum, the
 pot×weight product and the share sum then provably stay inside
 2^31; without a remainder the shares are bounded by construction). Only the proportional method translates; conditional
-allocation and misaligned scales fault (S17). Case input on the
+allocation and misaligned scales fault (S18). Case input on the
 allocation's target attribute is refused — the ch. 6d
 superset-model fence.
 
@@ -682,7 +682,7 @@ target stays leeg — propagation for free. The recurrence's contiguous
 `I-1`/`I` chain requires **contiguous indices**, which a parameter,
 attribute, `MapList` (index-preserving) or `ListLiteral` source
 provides; a `FilterList` leaves gaps, so a `Fold` over a `FilterList` has
-no encoding and no corpus case (S17).
+no encoding and no corpus case (S18).
 
 **MapList** and **FilterList** derive their own `lelem`/`lpres`, keyed by
 a fresh functor over the inner list-id (`lmN(⟨inner⟩)`,
@@ -757,7 +757,7 @@ ordinary `val/3` — the reified lists are internal (`#show` carries only
 `ListLength` count are plain numeric expectations, and a leeg target
 (absent list) reports underived through the same `val_present` path. A
 **list-valued** `attributeValue` expectation has no corpus case and
-faults loudly (S17) rather than growing a half-built list comparison.
+faults loudly (S18) rather than growing a half-built list comparison.
 
 Witnesses: `anchor/jutterswet-staffelvergoeding` — the capped-sum
 `Fold` over the list *parameter* `staffelbedragen` with an `IfThenElse`
@@ -833,7 +833,7 @@ field evaluating **leeg** binds no atom, so the whole literal is
 underivable and the target is leeg — **NO-HOLE** propagation, the
 `Construct`/`ListLiteral` sibling (a record value never carries a leeg
 field). A case-supplied struct **computed** target has no monotone
-encoding here (the sum-target sibling), fenced loudly (S17).
+encoding here (the sum-target sibling), fenced loudly (S18).
 
 **Struct equality** (ch. 11.2) is **positive ground-term unification**,
 the S14 sum pattern exactly — never the NAF complement:
@@ -972,10 +972,11 @@ all-undecided no-op survivor; `anchor/jutterswet-nestkenmerk` (the
 characteristic arm, art. 7) — case1-y-wint the sub-besluit `false`
 displacing the root `true` (vrijgesteld absent, consistent),
 case2-conflict the `Jutter.vrijgesteld/0` key, case3-terugval the
-empty-sub-group fall-back to `true`. The six nested-group negatiefs pin
-what the verifier rejects before translation ever runs:
+empty-sub-group fall-back to `true`. The seven nested-group negatiefs
+pin what the verifier rejects before translation ever runs:
 `wf050-half-marked-group`, `wf050-subrung-wrong-shape`,
-`wf075-contentless-rung`, `wf075-empty-leden`, `wf075-init-in-subrung`,
+`wf075-contentless-rung`, `wf075-empty-leden`,
+`wf075-grouprung-with-justification`, `wf075-init-in-subrung`,
 `wf075-two-members-unmarked`.
 
 ### S18. What does not translate — the complete loud inventory
@@ -1883,7 +1884,7 @@ refuses loudly, exactly like this fence.
 quantitative machinery beyond the art. 3 threshold, and any systematic
 core-IR-to-ASP mapping — all Phase-3 work. This document grows with
 each hand exercise until that systematic mapping replaces it. *That
-promise is kept: Part I (S1–S17) is the systematic mapping. The
+promise is kept: Part I (S1–S18) is the systematic mapping. The
 constructs this chapter deferred have long since landed — hardheid in
 the ladder anchors (S10), the temporalisation in the timeline
 machinery (S9, historically ch. 6d), the quantitative corpus

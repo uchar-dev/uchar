@@ -1608,9 +1608,10 @@ holds a **sub-group** whose `members` are `SubLadder` nodes (v0 wire
 first — and `source`). A sub-ladder inherits the root target and
 carries **none of its own**, and it may nest again via `Rung.exceptions`
 — the ladder is a rose tree. Two rung shapes: a **group-rung**
-(`exceptions`, no own besluit/consequence — the sub-group *is* its
-decision, carrying a multi-member base or exception group as a chain
-position) and a **form-a rung** (own besluit/consequence too — the
+(`exceptions`, no own condition/besluit/consequence — the sub-group *is*
+its decision, carrying a multi-member base or exception group as a chain
+position; a stray justification here is ill-formed, WF-075) and a
+**form-a rung** (own besluit/consequence too — the
 sub-group decides first, its own consequence the fall-back when the
 sub-group is empty). A rung reconciles its sub-group by the same rule
 the declared-unordered root group uses (ch. 7.2), recursively; a
@@ -1659,10 +1660,15 @@ so every existing document validates unchanged.
   every level — the flag rides the sub-group itself). A sub-rung MUST
   NOT be an initialisation (or input) rung — those are root-only. Every
   rung MUST carry its own decision/consequence, a nested sub-group, or
-  be the initialisation rung — a contentless rung decides nothing. The
-  rule recurses to any depth. (The content-KIND per target and the
-  descendant-read folding land with WF-050 and WF-051; a differing
-  sub-group's root propagation is evaluation semantics, ch. 7.9.)
+  be the initialisation rung — a contentless rung decides nothing. A
+  **group-rung** (a sub-group with no own decision or consequence) MUST
+  NOT carry a justification (`condition`) of its own: its members decide,
+  so a condition there is never read and would be silently ignored —
+  such a rung is neither a well-formed form-a rung nor a well-formed
+  group-rung and is rejected. The rule recurses to any depth. (The
+  content-KIND per target and the descendant-read folding land with
+  WF-050 and WF-051; a differing sub-group's root propagation is
+  evaluation semantics, ch. 7.9.)
 
 The v0 desugaring of existing rule forms into ladders is
 `RUNTIME-SEMANTICS.md` ch. 7.7 (implemented as `Ir_v0.Desugar`, the
@@ -1767,7 +1773,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-072 | StructType use site agrees with its declaring domain; two struct-typed comparison operands name the same domain (the nominal rule, ch. 2.4) | gate 3 | `anchor/jutterswet-vondstdossier` | `wf072-use-site-drift` + `wf072-cross-struct-equality` |
 | WF-073 | StructLiteral: declared struct type; exactly the declared fields, each once; each value type matches the field declaration (ch. 4.9) | gate 3 | `anchor/jutterswet-vondstdossier` | `wf073-missing-field` + `wf073-alien-field` + `wf073-field-type-mismatch` |
 | WF-074 | FieldAccess: struct-typed base; field a declared field; node type = the field datatype (ch. 4.9) | gate 3 | `anchor/jutterswet-vondstdossier` | `wf074-unknown-field` + `wf074-nonstruct-base` |
-| WF-075 | nested exception form (ch. 7.9): a rung's `exceptions` sub-group carries ≥ 1 member; two or more require the `unordered` marking (the root regime, at every level); no initialisation/input rung in sub-rungs; every rung carries own content, a nested sub-group, or is the initialisation rung; recurses | gate 3 | `anchor/jutterswet-nestuitzondering` (attribute target) + `anchor/jutterswet-nestkenmerk` (characteristic target) — both admitted through the Phase-5c executor card | `wf075-empty-leden` + `wf075-two-members-unmarked` + `wf075-init-in-subrung` + `wf075-contentless-rung` |
+| WF-075 | nested exception form (ch. 7.9): a rung's `exceptions` sub-group carries ≥ 1 member; two or more require the `unordered` marking (the root regime, at every level); no initialisation/input rung in sub-rungs; every rung carries own content, a nested sub-group, or is the initialisation rung; a group-rung (sub-group, no own content) carries no own justification; recurses | gate 3 | `anchor/jutterswet-nestuitzondering` (attribute target) + `anchor/jutterswet-nestkenmerk` (characteristic target) + `anchor/jutterswet-nestdiepte` (three-level depth) — admitted through the Phase-5c executor card | `wf075-empty-leden` + `wf075-two-members-unmarked` + `wf075-init-in-subrung` + `wf075-contentless-rung` + `wf075-grouprung-with-justification` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

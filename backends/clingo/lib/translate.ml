@@ -2522,7 +2522,8 @@ let path_key target_form = function
   | path -> target_form ^ "/" ^ String.concat "/" (List.map string_of_int path)
 
 let rec translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path ~root
-    ~target_form ~target_scale ~has_input (rungs : rung list) : string * string =
+    ~target_form ~target_scale ~has_input ~outer_displaced (rungs : rung list) :
+    string * string =
   let tag = fresh ctx "nl" in
   let out = Printf.sprintf "%s_out" tag in
   let cfl = Printf.sprintf "%s_cfl" tag in
@@ -2565,9 +2566,19 @@ let rec translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path ~root
       (match r.rung_excepties with
       | None -> emit_own_dec n r ~extra:[]
       | Some sg ->
+          (* the displacement wait threaded into the sub-group: every
+             strictly-higher (lower-index) rung of this chain, accumulated
+             with the enclosing rungs' waits, so the sub-group's own §9.5
+             inconsistent deposit is suppressed when a higher rung settles —
+             exactly the guard the chain outcome below puts on [out]/[cfl] *)
+          let rung_displaced =
+            outer_displaced
+            @ List.init n (fun m -> Printf.sprintf "not %s(%s)" (stl m) subject)
+          in
           let u_out, u_cfl, u_any =
             translate_group ctx ~is_char ~subject ~subject_ot ~base
-              ~group_path:(path @ [ n ]) ~target_form ~target_scale ~has_input sg
+              ~group_path:(path @ [ n ]) ~target_form ~target_scale ~has_input
+              ~outer_displaced:rung_displaced sg
           in
           (* the sub-group goes first: adopt its clean decision, propagate its
              conflict; the own justification/consequence is the fall-back only
@@ -2601,7 +2612,8 @@ let rec translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path ~root
   (out, cfl)
 
 and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
-    ~target_form ~target_scale ~has_input (sg : sub_group) : string * string * string =
+    ~target_form ~target_scale ~has_input ~outer_displaced (sg : sub_group) :
+    string * string * string =
   let tag = fresh ctx "ng" in
   let out = Printf.sprintf "%s_out" tag in
   let cfl = Printf.sprintf "%s_cfl" tag in
@@ -2614,7 +2626,8 @@ and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
     List.map
       (fun (sl : sub_ladder) ->
         translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path:group_path
-          ~root:false ~target_form ~target_scale ~has_input sl.sl_rungs)
+          ~root:false ~target_form ~target_scale ~has_input
+          ~outer_displaced sl.sl_rungs)
       sg.sg_leden
   in
   let no_member_cfl =
@@ -2653,9 +2666,14 @@ and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
     [ Printf.sprintf "%s(%s,_)" out subject ];
   head_body ctx (Printf.sprintf "%s(%s)" any subject)
     [ Printf.sprintf "%s(%s)" cfl subject ];
+  (* the sub-group's §9.5 deposit carries the SAME displacement wait the
+     enclosing chain puts on its outcome (ch. 7.9): a strictly-higher settling
+     rung displaces this whole sub-group, path-keyed fact and all, so the
+     deposit must not fire on the bare [diff] atom alone (root members do not
+     displace each other, so the bare-keyed root deposit stays unguarded) *)
   head_body ctx
     (Printf.sprintf "inconsistent(%s,%s)" (str (path_key target_form group_path)) subject)
-    [ Printf.sprintf "%s(%s)" diff subject ];
+    (Printf.sprintf "%s(%s)" diff subject :: outer_displaced);
   (out, cfl, any)
 
 let translate_ladder_group ctx gidx (members : (int * default_ladder) list) =
@@ -2693,7 +2711,7 @@ let translate_ladder_group ctx gidx (members : (int * default_ladder) list) =
       (fun ((_, l) : int * default_ladder) ->
         let out, cfl =
           translate_chain ctx ~is_char ~subject ~subject_ot:l.dl_onderwerp ~base ~path:[]
-            ~root:true ~target_form ~target_scale ~has_input l.rungs
+            ~root:true ~target_form ~target_scale ~has_input ~outer_displaced:[] l.rungs
         in
         (out, cfl, List.exists (fun (r : rung) -> r.rung_excepties <> None) l.rungs))
       members

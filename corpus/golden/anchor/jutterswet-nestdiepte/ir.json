@@ -1,0 +1,248 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "heffing": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "grondX",
+        "grondY",
+        "grondP",
+        "grondQ",
+        "grondR"
+      ],
+      "kenmerkSoorten": {
+        "grondX": "BIJVOEGLIJK",
+        "grondY": "BIJVOEGLIJK",
+        "grondP": "BIJVOEGLIJK",
+        "grondQ": "BIJVOEGLIJK",
+        "grondR": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "heffing van een jutter (nestdiepte)",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": [],
+  "defaultLadders": [
+    {
+      "node": "DefaultLadder",
+      "naam": "heffing van een jutter (nestdiepte)",
+      "onderwerp": "Jutter",
+      "kenmerk": null,
+      "attribuut": "heffing",
+      "rungs": [
+        {
+          "node": "Rung",
+          "besluit": null,
+          "voorwaarde": {
+            "node": "Kenmerk",
+            "kenmerk": "grondX",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "hij grondX heeft"
+          },
+          "consequentie": {
+            "node": "Literal",
+            "waarde": "40.00",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "40.00"
+          },
+          "bron": "grondX: 40.00, tenzij een geneste uitzonderingsgrond geldt",
+          "excepties": {
+            "ongeordend": true,
+            "leden": [
+              {
+                "node": "SubLadder",
+                "rungs": [
+                  {
+                    "node": "Rung",
+                    "besluit": null,
+                    "voorwaarde": {
+                      "node": "Kenmerk",
+                      "kenmerk": "grondY",
+                      "navigatie": null,
+                      "negatie": false,
+                      "eigenaar": null,
+                      "periode": null,
+                      "bron": "hij grondY heeft"
+                    },
+                    "consequentie": {
+                      "node": "Literal",
+                      "waarde": "10.00",
+                      "type": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      },
+                      "bron": "10.00"
+                    },
+                    "bron": "grondY: 10.00"
+                  }
+                ],
+                "bron": "tak Y"
+              },
+              {
+                "node": "SubLadder",
+                "rungs": [
+                  {
+                    "node": "Rung",
+                    "besluit": null,
+                    "voorwaarde": {
+                      "node": "Kenmerk",
+                      "kenmerk": "grondP",
+                      "navigatie": null,
+                      "negatie": false,
+                      "eigenaar": null,
+                      "periode": null,
+                      "bron": "hij grondP heeft"
+                    },
+                    "consequentie": {
+                      "node": "Literal",
+                      "waarde": "30.00",
+                      "type": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      },
+                      "bron": "30.00"
+                    },
+                    "bron": "grondP: 30.00, tenzij een diepere grond geldt",
+                    "excepties": {
+                      "ongeordend": true,
+                      "leden": [
+                        {
+                          "node": "SubLadder",
+                          "rungs": [
+                            {
+                              "node": "Rung",
+                              "besluit": null,
+                              "voorwaarde": {
+                                "node": "Kenmerk",
+                                "kenmerk": "grondQ",
+                                "navigatie": null,
+                                "negatie": false,
+                                "eigenaar": null,
+                                "periode": null,
+                                "bron": "hij grondQ heeft"
+                              },
+                              "consequentie": {
+                                "node": "Literal",
+                                "waarde": "5.00",
+                                "type": {
+                                  "node": "Numeriek",
+                                  "geheel": false,
+                                  "decimalen": 2,
+                                  "teken": "ONBEPAALD",
+                                  "eenheid": null
+                                },
+                                "bron": "5.00"
+                              },
+                              "bron": "grondQ: 5.00"
+                            }
+                          ],
+                          "bron": "diepste tak Q"
+                        },
+                        {
+                          "node": "SubLadder",
+                          "rungs": [
+                            {
+                              "node": "Rung",
+                              "besluit": null,
+                              "voorwaarde": {
+                                "node": "Kenmerk",
+                                "kenmerk": "grondR",
+                                "navigatie": null,
+                                "negatie": false,
+                                "eigenaar": null,
+                                "periode": null,
+                                "bron": "hij grondR heeft"
+                              },
+                              "consequentie": {
+                                "node": "Literal",
+                                "waarde": "25.00",
+                                "type": {
+                                  "node": "Numeriek",
+                                  "geheel": false,
+                                  "decimalen": 2,
+                                  "teken": "ONBEPAALD",
+                                  "eenheid": null
+                                },
+                                "bron": "25.00"
+                              },
+                              "bron": "grondR: 25.00"
+                            }
+                          ],
+                          "bron": "diepste tak R"
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "bron": "tak P (met eigen excepties)"
+              }
+            ]
+          }
+        }
+      ],
+      "bron": "art. 6a: de heffing met drielaags geneste uitzonderingsgronden",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ]
+}

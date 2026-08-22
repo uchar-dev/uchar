@@ -8,7 +8,7 @@ routes an *empty* divisor to the §9.5 channel beside an empty result; a
 **v0-mirror behaviour that RUNTIME-SEMANTICS ch. 1.4 point 4 (PLAN §9
 decision 7) explicitly keeps as the mirror**, while the same decision
 routes this case into the §9.5 channel in v1: a decided, tracked delta
-(recorded in `ASP-TRANSLATION.md` S6/S17) that both executors will
+(recorded in `ASP-TRANSLATION.md` S6/S18) that both executors will
 take together when the v1 divergence lands. Until then: ref faults in
 `arith.div_gen`, and the clingo translation derives a `viol/2` witness
 whose reason the UNSAT report names. The distinction is load-bearing

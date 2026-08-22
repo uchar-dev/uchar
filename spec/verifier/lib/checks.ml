@@ -3839,6 +3839,14 @@ let wf075 ctx =
                             exception sub-group (a contentless rung decides nothing, \
                             ch. 7.9)" ]
                      else [])
+                  @ (if r.rung_excepties <> None && (not has_content)
+                        && r.rung_voorwaarde <> None && not r.rung_initialisatie
+                     then
+                       [ v "WF-075" rat
+                           "a group-rung (an exception sub-group with no own decision or \
+                            consequence) carries no justification of its own: the sub-group \
+                            decides, so a condition here would be silently ignored (ch. 7.9)" ]
+                     else [])
                   @ (match r.rung_excepties with
                     | None -> []
                     | Some sg ->

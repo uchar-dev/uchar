@@ -2270,6 +2270,26 @@ and
   the input rung (ch. 7.8) stay **root-only** — a sub-rung is never an
   initialisation or input rung (WF-075).
 
+**Displacement of a lower rung's sub-group.** Ch. 7.1's rule — the
+highest deciding rung of a chain wins, lower rungs never reached —
+extends to settling **by conflict**: a rung **settles** when its
+sub-group decides *or* conflicts. A strictly-higher settling rung
+(deciding or conflicting) therefore **displaces the entire sub-group of
+every lower rung, including that lower sub-group's path-keyed §9.5
+fact** — a displaced sub-group is never reached, so neither its decision
+nor its conflict surfaces. This is the chain reading applied to the
+nested form: the conflict a lower sub-group *would* deposit is
+speculative until its rung is reached, and a higher settling rung keeps
+it from ever being reached. (The corollary the executors must honour:
+the path-keyed `subject.target/<path>` fact of a displaced sub-group
+must not be emitted — a bare differing-pair signal without the
+displacement wait is an incoherent model. Witnessed by
+`jutterswet-nestuitzondering/case9-verdrongen-conflict`: input
+`grondX + grondB1 + grondB2` settles rung 0 at **40.00** on its empty
+sub-group, so the base group-rung's `grondB1`-vs-`grondB2` conflict at
+`Jutter.heffing/1` is displaced — the ladder writes 40.00, consistent,
+**no** `/1` fact.)
+
 The **binding acceptance test** is `PHASE4-DEFAULTS.md` §7's spurious-
 conflict example (`b ← x`, `x ← {y, z}` with only `y` applicable and `x`
 justified): flattening the tree to a root group `{[y, x], [z, x]}`
@@ -2310,6 +2330,21 @@ unordered sub-group `{ ny → do-not-attribute (false), nz → attribute
 | `case1-y-wint` | nx, ny | **absent** | consistent — the sub-decision `false` displaces `nx`'s `true` |
 | `case2-conflict` | nx, ny, nz | **absent** | inconsistent `Jutter.vrijgesteld/0` — the sub-group decides `false` and `true` |
 | `case3-terugval` | nx | **present** | consistent — empty sub-group falls back to rung 0's own besluit `true` |
+
+*Nest depth* — `jutterswet-nestdiepte`, `Jutter.heffing` (2 decimals),
+three levels deep. One ladder: rung 0 = form-a `grondX → 40.00` with an
+unordered sub-group of two siblings `{ s0 = grondY → 10.00; s1 =
+grondP → 30.00 with its own unordered sub-group { grondQ → 5.00,
+grondR → 25.00 } }`. `s0` and `s1` are unordered siblings — they
+reconcile as a group, they do not displace each other. The path suffix
+is the **rung-index path**, so the innermost conflict keys at
+`Jutter.heffing/0/0` (rung 0 of the root chain, then rung 0 of `s1`).
+
+| Case | Input characteristics | `heffing` | Channel |
+|---|---|---|---|
+| `case1-diep-pad` | grondX, grondP, grondQ | **5.00** | consistent — the clean deep path: only `grondQ` decides in the innermost sub-group, and the single decision bubbles up unchanged (5.00 → s1 → rung 0) |
+| `case2-diep-conflict` | grondX, grondP, grondQ, grondR | **leeg** | inconsistent `Jutter.heffing/0/0` — the innermost sub-group decides 5.00 and 25.00; the deep conflict propagates through the sibling group to the root |
+| `case3-terugval` | grondX | **40.00** | consistent — nothing below decides; rung 0 falls back to its own consequence |
 
 **Well-formedness and strata.** WF-050 recurses its rung-shape checks
 into sub-rungs (content per target kind; a group-rung carries `excepties`
