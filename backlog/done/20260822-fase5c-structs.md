@@ -85,3 +85,44 @@ struct-recursie; optionele velden (no-hole is de norm).
   checks; VIER catala-goldens byte-identiek); gates 1–8 groen.
 - Nog te doen (deze kaart): herpin (SPEC_REV-bump, conformance 11/11), twee
   opus-lenzen met bevindingen gefixt vóór de merge.
+
+Result: rij 38 (structs als record-datatype) is kernel, end-to-end.
+Spec-first: IR-SPEC ch. 2.4 (StructType, WF-071/072) en ch. 4.9
+(StructLiteral/FieldAccess, WF-073/074) met de expliciete
+WF-065/067/069-verruimingen; RUNTIME-SEMANTICS ch. 11 (recordwaarden,
+no-hole, structurele+nominale gelijkheid, Tabel 38); de keten met
+rood-eerst per stap: schema's additief, verifier met tien
+wf07x-negatiefs, het anker jutterswet-vondstdossier (vier cases;
+list-of-struct met map-over-veldprojectie — de tutorialvorm; de
+verwachtingsarm gepind op input én berekende structwaarde), ref
+(Record-waarde), clingo (functortermen in vaste declaratievolgorde,
+positionele projectie, positieve gelijkheid; ASP-TRANSLATION S16,
+inventaris → S17), en de plugin (ctx_structs-threading;
+TStruct/EStruct/EStructAccess; de subscope-afgrenzing naar kaart 4
+intact; vierde Catala-golden jutterswet-dossierrecht-catala,
+byte-identiek; 81 checks). EERLIJK VERANTWOORD — de
+midden-keten-correctie: mijn bindende case3-ontwerp was arithmetisch
+onmogelijk (plus coalesct leeg, ch. 1.2 — premie zou 5.00 worden); de
+ankeragent vond het, de ref-agent gaf R1 een GEVULD(dossier)-voorwaarde
+— de eerste corpus-Predicaat — en het reeds-gecommitte anker is
+daarvoor mid-kaart gewijzigd (de generator liep aanvankelijk achter en
+is hersteld; regeneratie byte-identiek). De lensronde (2 opus) ving
+daarbovenop: het invoerprecisie-hek recurseerde niet in samengestelde
+waarden (ref accepteerde stil wat clingo weigert — de heropening van
+de rood-gepinde invariant, óók latent voor 5b-lijstelementen) → het
+hek recursief gemaakt met twee nieuwe rood-getuigen
+(struct-field-overprecision, list-element-overprecision); de
+GEVULD-correctie had de FieldAccess-op-leeg-clausule getuigenloos
+gemaakt → de ongegaurde waardekopie-regel plus case4 (de zuivere
+{gevuld, leeg}-no-hole-getuige); ch. 11 verzweeg de dragende guard →
+benoemd met het coalescing-waarom; de parameterdracht-claim versmald
+(struct-parameter = ref-only, luide clingo-fault, S17). Alle negen
+gates groen: 70 ir.json round-trip, 125 negatiefs, 174 cases, 158
+dubbel (ref ≡ clingo), 138 no-op-refuters + 20 survivors, 16 rood, 81
+plugin-checks, 4 Catala-goldens byte-identiek; CONSTRUCTS rij 38
+gestempeld. Bewust gelaten (luid, S17): struct-getypeerde parameters,
+genest-struct/sum-veldwaarden in clingo-emissie, struct-tijdlijnen;
+struct-recursie en optionele velden blijven WF-onwelgevormd; de
+subscope-EStructAccess wacht op kaart 4. Herpin volgt direct na de
+merge; ref/test/test_ref.ml is gewijzigd (kaart-gesanctioneerd, hier
+gemeld).
