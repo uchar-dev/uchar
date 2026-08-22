@@ -1,0 +1,7 @@
+{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "N", "objectType": "Nestgroep",
+      "attributes": { "n": { "number": "200" } }, "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [
+    { "kind": "attributeEmpty", "label": "N", "attribute": "belasting" },
+    { "kind": "inconsistent", "rule": "Nestgroep.belasting/0", "label": "N" } ] }

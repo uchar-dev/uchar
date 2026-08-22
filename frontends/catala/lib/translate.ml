@@ -26,7 +26,11 @@
                                        rungs high-to-low
    - root-level unordered exceptions (no unconditional base) ->
                                        a declared-unordered ladder group
-   - sub-root branching / base-plus-unordered -> REFUSED (besluit 4, §5.1)
+   - below-root branching (a chain exception carrying an unordered exception
+     group) -> one ladder whose rung carries a nested [excepties] sub-group
+     (row 5c, ch. 7.9: form-a rung / group-rung; WF-075)
+   - a shared non-trivial base under all members of a root-level unordered
+     group -> REFUSED (PHASE4-DEFAULTS §7; workable later by base-duplication)
    - context (reentrant) variable   -> REFUSED (see below; besluit 6 finding)
    - assertion                      -> consistency rule
    - enum (payload or nullary)      -> SumType + Construct/Match (row 36)
@@ -244,42 +248,94 @@ let rec strip e =
 let is_true e = match M.remove (strip e) with ELit (LBool true) -> true | _ -> false
 let is_empty e = match M.remove (strip e) with EEmpty -> true | _ -> false
 
-(* a single default: EDefault{excepts=[]; just; cons} -> (just, cons) *)
-let as_def e =
+(* --- the default tree, parsed into a rung tree (PHASE5C §4, ch. 7.9) -----
+
+   The two flat parsers (a linear chain, a flat root-unordered group) become
+   one recursive walk over the scopelang default tree. A [prung] carries the
+   raw Catala (justification, consequence) exprs; [translate_def] lowers it to
+   [I.rung] once [value_expr]/[cond_rung] are in scope. A chain is highest
+   priority first, mirroring the ladder wire order. The three shapes:
+   - [Plain (just, cons)]      — an ordinary rung.
+   - [Form_a (just, cons, g)]  — own content PLUS a nested exception sub-group
+                                 [g] (the sub-group decides first, the own
+                                 consequence is the fall-back — ch. 7.9 form a).
+   - [Group_rung g]            — a pure group-rung: no own content, only the
+                                 sub-group (a multi-member base/exception group
+                                 — ch. 7.9 form b).
+   Each sub-group member is itself a chain ([prung list]). *)
+type 'e prung =
+  | Plain of 'e * 'e
+  | Form_a of 'e * 'e * 'e pgroup
+  | Group_rung of 'e pgroup
+and 'e pgroup = 'e prung list list
+
+(* classify a stripped scopelang default node. Catala emits, per scope
+   variable, one default tree: a priority node [⟨ excepts | true :- cons ⟩]
+   (cons = this level's definitions, excepts = higher-priority exceptions),
+   whose definition levels are groups [⟨ defs | false :- ∅ ⟩], bottoming out
+   in leaf defaults [⟨ | just :- cons ⟩]. *)
+let default_kind e =
   match M.remove (strip e) with
-  | EDefault { excepts = []; just; cons } -> Some (just, cons)
+  | EDefault { excepts = []; just; cons } when not (is_empty cons) -> `Leaf (just, cons)
+  | EDefault { excepts; just = _; cons } when is_empty cons -> `Group excepts
+  | EDefault { excepts; just = _; cons } -> `Prio (excepts, cons)
+  | _ -> `Other
+
+(* the recursive walk: a default subtree -> a rung chain (highest first), or
+   None when the shape is outside the fragment (a loud refusal upstream). *)
+let rec parse_tree e : 'e prung list option =
+  match default_kind e with
+  | `Leaf (just, cons) -> Some [ Plain (just, cons) ]
+  | `Group [ single ] -> parse_tree single (* a single-def group unwraps *)
+  | `Group members -> Option.map (fun g -> [ Group_rung g ]) (parse_group members)
+  | `Prio (excepts, cons) -> (
+      match parse_tree cons with None -> None | Some lower -> attach excepts lower)
+  | `Other -> None
+
+and parse_group members : 'e pgroup option =
+  let rec go acc = function
+    | [] -> Some (List.rev acc)
+    | m :: rest -> ( match parse_tree m with Some c -> go (c :: acc) rest | None -> None)
+  in
+  go [] members
+
+(* attach higher-priority exceptions to a lower chain: a single chain exception
+   stacks above (strict priority — ordered rungs); an unordered group (>=2
+   alternatives) nests into the head rung's exception slot (form a — flattening
+   it to ordered rungs would suppress the very conflict the paper raises, the
+   spurious-conflict argument of PHASE4-DEFAULTS §7). *)
+and attach excepts lower =
+  match excepts with
+  | [] -> Some lower
+  | [ single ] -> (
+      match default_kind single with
+      | `Group members when List.length members >= 2 -> nest members lower
+      | _ -> ( match parse_tree single with Some hi -> Some (hi @ lower) | None -> None))
+  | _ -> nest excepts lower
+
+(* nest an unordered exception group as the [Form_a] sub-group of the rung it
+   excepts. Two shapes stay refused (recorded, PHASE4-DEFAULTS §7 — the
+   sub-root refusal narrows to exactly these):
+   - excepting a group-rung (the rung it excepts is itself a multi-member
+     group), and
+   - excepting the UNCONDITIONAL base directly (a shared non-trivial base
+     under all members — the root-level limitation, workable later by
+     base-duplication under the equal-decisions rule).
+   An unordered group only nests onto an ordinary conditional exception rung. *)
+and nest members lower =
+  match (parse_group members, lower) with
+  | Some g, Plain (j, c) :: rest when not (is_true j) -> Some (Form_a (j, c, g) :: rest)
   | _ -> None
 
-(* pure chain (no branching anywhere): priority-ordered rungs high->low *)
-let rec parse_chain e =
-  let e = strip e in
-  match M.remove e with
-  | EDefault { excepts; just = _; cons } when is_empty cons ->
-      (* a definitions group (Leaf): its defs live in [excepts] *)
-      (match excepts with
-       | [ d ] -> (match as_def d with Some (j, c) -> Some [ (j, c) ] | None -> None)
-       | _ -> None)
-  | EDefault { excepts = [ exc ]; just = _; cons } ->
-      (* a Node with exactly one exception: exc is higher priority, cons the base *)
-      (match parse_chain exc, parse_chain cons with
-       | Some hi, Some lo -> Some (hi @ lo)
-       | _ -> None)
-  | _ -> ( match as_def e with Some (j, c) -> Some [ (j, c) ] | None -> None )
-
-(* flat root-level unordered group: a Leaf with >=2 simple defs and no base *)
-let parse_root_unordered e =
-  match M.remove (strip e) with
-  | EDefault { excepts; just = _; cons } when is_empty cons -> (
-      match excepts with
-      | _ :: _ :: _ -> (
-          try
-            Some
-              (List.map
-                 (fun d -> match as_def d with Some jc -> jc | None -> raise Exit)
-                 excepts)
-          with Exit -> None)
-      | _ -> None)
-  | _ -> None
+(* does the tree carry an always-deciding unconditional base (the lowest rung)?
+   recurses through the nested form — used for the operand-fill analysis. *)
+let base_is_filled e =
+  match parse_tree (strip e) with
+  | None -> false
+  | Some rungs ->
+      List.exists
+        (function Plain (j, _) | Form_a (j, _, _) -> is_true j | Group_rung _ -> false)
+        rungs
 
 (* --- expression / condition translation --------------------------------
 
@@ -715,11 +771,8 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
       sd.scope_sig;
     List.iter
       (function
-        | Sc.ScopeVarDefinition { var; e; _ } -> (
-            match parse_chain e with
-            | Some rungs when List.exists (fun (c, _) -> is_true c) rungs ->
-                s := ScopeVar.Set.add (fst var) !s
-            | _ -> ())
+        | Sc.ScopeVarDefinition { var; e; _ } ->
+            if base_is_filled e then s := ScopeVar.Set.add (fst var) !s
         | Sc.Assertion _ -> ())
       sd.scope_decl_rules;
     !s
@@ -823,62 +876,84 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
       waarde = Some (Literal { waarde = Some "waar"; typ = Some Booleaan; bron = Some "waar" });
       rr_voorwaarde = voorwaarde; rr_geldigheid = Some geldig }
   in
-  let attr_ladder ?(ongeordend = false) vname suffix rungs : I.default_ladder =
-    { dl_naam = Some (vname ^ suffix); dl_onderwerp = ot_name; dl_kenmerk = None;
-      dl_attribuut = Some vname;
-      rungs = List.map
-        (fun (cond, value) : I.rung ->
-          { rung_besluit = None; rung_voorwaarde = cond_rung cond;
-            rung_consequentie = Some (value_expr value); rung_initialisatie = false;
-            rung_bron = Some vname })
-        rungs;
-      dl_ongeordend = ongeordend; dl_bron = Some vname; dl_geldigheid = Some geldig }
-  in
-  let char_ladder ?(ongeordend = false) vname suffix rungs : I.default_ladder =
-    { dl_naam = Some (vname ^ suffix); dl_onderwerp = ot_name; dl_kenmerk = Some vname;
-      dl_attribuut = None;
-      rungs = List.map
-        (fun (cond, value) : I.rung ->
-          let besluit = match M.remove (strip value) with
-            | ELit (LBool b) -> b
-            | _ -> refuse "characteristic ladder rung value must be a literal true/false"
-          in
-          { rung_besluit = Some besluit; rung_voorwaarde = cond_rung cond;
-            rung_consequentie = None; rung_initialisatie = false; rung_bron = Some vname })
-        rungs;
-      dl_ongeordend = ongeordend; dl_bron = Some vname; dl_geldigheid = Some geldig }
-  in
   (* dispatch one variable definition *)
   let translate_def v e =
     let vname, dt = lookup v in
     let is_bool = is_bool_dt dt in
-    let parsed =
-      match parse_chain e with
-      | Some rungs -> `Chain rungs
-      | None -> (
-          match parse_root_unordered e with
-          | Some alts -> `Unordered alts
-          | None ->
-              refuse
-                "variable %S: the default tree branches below the root (sub-root branching) or combines an unconditional base with unordered exceptions — not a single chain nor a flat declared-unordered group (besluit 4, PHASE5-CATALA §5.1)"
-                vname)
+    let bool_besluit value =
+      match M.remove (strip value) with
+      | ELit (LBool b) -> b
+      | _ -> refuse "a characteristic ladder rung value must be a literal true/false"
     in
-    match parsed with
-    | `Chain [ (cond, value) ] ->
-        if is_bool then
-          add_regel (kenmerktoekenning vname ~voorwaarde:(combine (cond_opt cond) (bool_value_guard value)))
-        else if is_true cond then add_regel (berekening vname dt value ~cond:None)
-        else add_ladder (attr_ladder vname "" [ (cond, value) ])
-    | `Chain rungs ->
-        if is_bool then add_ladder (char_ladder vname "" rungs)
-        else add_ladder (attr_ladder vname "" rungs)
-    | `Unordered alts ->
+    (* lower a parsed rung tree to IR rungs (ch. 7.9): a plain rung, a form-a
+       rung (own content plus [excepties]), or a pure group-rung (no own
+       content). A sub-ladder inherits the root target kind (attribute vs
+       characteristic), so [is_bool] carries through the recursion. *)
+    let rec build_rung (pr : _ prung) : I.rung =
+      match pr with
+      | Plain (cond, value) -> content_rung cond value None
+      | Form_a (cond, value, g) -> content_rung cond value (Some (build_group g))
+      | Group_rung g ->
+          { rung_besluit = None; rung_voorwaarde = None; rung_consequentie = None;
+            rung_initialisatie = false; rung_excepties = Some (build_group g);
+            rung_bron = Some vname }
+    and content_rung cond value excepties : I.rung =
+      if is_bool then
+        { rung_besluit = Some (bool_besluit value); rung_voorwaarde = cond_rung cond;
+          rung_consequentie = None; rung_initialisatie = false;
+          rung_excepties = excepties; rung_bron = Some vname }
+      else
+        { rung_besluit = None; rung_voorwaarde = cond_rung cond;
+          rung_consequentie = Some (value_expr value); rung_initialisatie = false;
+          rung_excepties = excepties; rung_bron = Some vname }
+    and build_group (g : _ pgroup) : I.sub_group =
+      { sg_ongeordend = List.length g >= 2;
+        sg_leden =
+          List.map
+            (fun member : I.sub_ladder ->
+              { sl_rungs = List.map build_rung member; sl_bron = Some vname })
+            g }
+    in
+    let build_ladder ?(ongeordend = false) suffix (chain : _ prung list) : I.default_ladder =
+      { dl_naam = Some (vname ^ suffix); dl_onderwerp = ot_name;
+        dl_kenmerk = (if is_bool then Some vname else None);
+        dl_attribuut = (if is_bool then None else Some vname);
+        rungs = List.map build_rung chain;
+        dl_ongeordend = ongeordend; dl_bron = Some vname; dl_geldigheid = Some geldig }
+    in
+    match default_kind (strip e) with
+    | `Group members when List.length members >= 2 ->
+        (* a root-level unordered group -> the declared-unordered ladder group:
+           one [ongeordend] ladder per member (ch. 7.2, unchanged) — distinct
+           from a NESTED unordered group, which rides [excepties] on one rung *)
         List.iteri
-          (fun i alt ->
+          (fun i m ->
             let suffix = " #" ^ string_of_int (i + 1) in
-            if is_bool then add_ladder (char_ladder ~ongeordend:true vname suffix [ alt ])
-            else add_ladder (attr_ladder ~ongeordend:true vname suffix [ alt ]))
-          alts
+            match parse_tree m with
+            | Some chain -> add_ladder (build_ladder ~ongeordend:true suffix chain)
+            | None ->
+                refuse
+                  "variable %S: an unordered-group member is outside the fragment (besluit 4)"
+                  vname)
+          members
+    | _ -> (
+        match parse_tree (strip e) with
+        | None ->
+            refuse
+              "variable %S: the default tree combines an unconditional base with unordered \
+               exceptions (a shared non-trivial base, PHASE4-DEFAULTS §7), or its shape is \
+               outside the fragment — not a chain, a nested exception tree, nor a flat \
+               declared-unordered group (besluit 4/vraag 5, PHASE5C §4)"
+              vname
+        | Some [ Plain (cond, value) ] ->
+            (* a single plain rung is a bare rule, not a ladder *)
+            if is_bool then
+              add_regel
+                (kenmerktoekenning vname
+                   ~voorwaarde:(combine (cond_opt cond) (bool_value_guard value)))
+            else if is_true cond then add_regel (berekening vname dt value ~cond:None)
+            else add_ladder (build_ladder "" [ Plain (cond, value) ])
+        | Some chain -> add_ladder (build_ladder "" chain))
   in
   (* walk the scope body *)
   List.iteri

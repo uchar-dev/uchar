@@ -280,10 +280,10 @@ let resolved_consistentie (c : resolved_consistentie) : json =
       ("assertie", opt conditie c.assertie); ("bron", so c.cons_bron);
       ("line", i c.cons_line); ("geldigheid", opt geldigheid c.cons_geldigheid) ]
 
-let rung (r : rung) : json =
-  (* [besluit] is a required key (null on an attribute rung); [consequentie]
-     and [initialisatie] are extension fields — written only when present /
-     true, matching the loader's [ext] admission. *)
+let rec rung (r : rung) : json =
+  (* [besluit] is a required key (null on an attribute / group rung);
+     [consequentie], [initialisatie] and [excepties] are extension fields —
+     written only when present, matching the loader's [ext] admission. *)
   let base =
     [ ("node", `String "Rung");
       ("besluit", (match r.rung_besluit with None -> `Null | Some x -> `Bool x));
@@ -293,7 +293,22 @@ let rung (r : rung) : json =
     match r.rung_consequentie with None -> [] | Some e -> [ ("consequentie", expr e) ]
   in
   let init = if r.rung_initialisatie then [ ("initialisatie", `Bool true) ] else [] in
-  `Assoc (base @ conseq @ init @ [ ("bron", so r.rung_bron) ])
+  let excepties =
+    match r.rung_excepties with None -> [] | Some sg -> [ ("excepties", sub_group sg) ]
+  in
+  `Assoc (base @ conseq @ init @ [ ("bron", so r.rung_bron) ] @ excepties)
+
+(* the nested exception sub-group riding [excepties] (v1, Phase 5c): the
+   {ongeordend, leden} object (no node discriminator) and its [SubLadder]
+   members, mirroring the loader's [sub_group]/[sub_ladder]. *)
+and sub_group (sg : sub_group) : json =
+  `Assoc
+    [ ("ongeordend", b sg.sg_ongeordend);
+      ("leden", `List (List.map sub_ladder sg.sg_leden)) ]
+
+and sub_ladder (sl : sub_ladder) : json =
+  node "SubLadder"
+    [ ("rungs", `List (List.map rung sl.sl_rungs)); ("bron", so sl.sl_bron) ]
 
 let default_ladder (l : default_ladder) : json =
   let attribuut = match l.dl_attribuut with None -> [] | Some a -> [ ("attribuut", `String a) ] in

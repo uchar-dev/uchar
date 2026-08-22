@@ -1,0 +1,21 @@
+# Gedeelde niet-triviale basis — moet luid geweigerd worden (PHASE4-DEFAULTS §7)
+
+De boom vertakt AAN de wortel in twee ongeordende uitzonderingen op één
+gedeelde, onvoorwaardelijke basis (`basis`, waarde 1). Geneste groepen
+dragen een vertakking ÓNDER de wortel (een gewone exceptie met eigen
+sub-groep), maar een gedeelde niet-triviale basis onder álle leden blijft
+buiten deze kaart — werkbaar later door de basis in elk lid te dupliceren
+onder de gelijk-beslist-regel. Tot dan weigert de plugin luid.
+
+```catala
+declaration scope Gedeeldebasis:
+  input n content integer
+  output x content integer
+
+scope Gedeeldebasis:
+  label basis definition x equals 1
+  exception basis definition x
+    under condition n >= 100 consequence equals 20
+  exception basis definition x
+    under condition n <= 0 consequence equals 30
+```

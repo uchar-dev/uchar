@@ -105,7 +105,20 @@ let () =
          operand, and a list of records with map-over-field + fold — the
          tutorial's struct shape without a subscope, through the full
          differential (StructType as a list element is WF-065) *)
-      ("struct.catala_en", [ "cases/struct_gevuld.json"; "cases/struct_leeg.json" ]) ]
+      ("struct.catala_en", [ "cases/struct_gevuld.json"; "cases/struct_leeg.json" ]);
+      (* row-5c/ch. 7.9 nested exception groups: the tutorial article-3 tree
+         (a base with an exception carrying two unordered exceptions) rides one
+         [Rung.excepties] sub-group. The binding spurious-conflict test of
+         PHASE4-DEFAULTS §7 pinned frontend-side: only-one-sub-member (n=100)
+         decides that member ($20 — flattening would fabricate a $20-vs-$10
+         conflict), the form-a own consequence fires when the sub-group is
+         empty (n=50 -> $10), the base carries the fall-through (n=5 -> $40),
+         and two differing sub-members (n=200) propagate to the root — no
+         write, one path-keyed §9.5 fact "Nestgroep.belasting/0" — through ref
+         AND clingo *)
+      ("nested_group.catala_en",
+       [ "cases/nested_100.json"; "cases/nested_50.json";
+         "cases/nested_5.json"; "cases/nested_200.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:false src cases) passing;
   (* ref-only passing programs. datum: clingo cannot translate a date literal
@@ -126,7 +139,10 @@ let () =
   let refusals =
     [ ("refuse_context.catala_en", "context");
       ("refuse_subscope.catala_en", "subscope");
-      ("refuse_subroot.catala_en", "sub-root");
+      (* a shared non-trivial base under all members of a root-level unordered
+         group stays refused (PHASE4-DEFAULTS §7; nested groups carry
+         below-root branching, not this) *)
+      ("refuse_sharedbase.catala_en", "shared non-trivial base");
       ("refuse_bool_value.catala_en", "value position");
       ("refuse_empty_arith.catala_en", "operand");
       (* row-36 fences: a partial match (WF-063 totality) and a tuple payload

@@ -1,0 +1,30 @@
+# Geneste uitzonderingsboom — rechtenvrij, eigen auteurschap
+
+De tutorial-artikel-3-vorm zonder decimals: een money-doel met een
+onvoorwaardelijke basis, één exceptie dáárop, en twee excepties dáárop
+weer. De boom vertakt ONDER de wortel — precies de vorm die de plugin
+vroeger luid weigerde (`refuse_subroot`). Nu draagt `Rung.excepties`
+hem: rung 0 = `lvl1` (eigen $10) met een ongeordende sub-groep
+{`n >= 100` -> $20, `n >= 200` -> $30}; rung 1 = de basis ($40).
+
+Dit is de bindende spurious-conflict-toets (PHASE4-DEFAULTS §7): bij
+`n = 100` beslist alléén het eerste sub-lid ($20), dus wint $20 — het
+platslaan tot `{[hoog, lvl1], [laag, lvl1]}` zou hier een schijnconflict
+$20-vs-$10 fabriceren. Bij `n = 200` beslissen beide sub-leden
+verschillend ($20 vs $30): dat propageert naar de wortel — geen schrijf,
+één pad-gesleuteld §9.5-feit `Nestgroep.belasting/0`.
+
+```catala
+declaration scope Nestgroep:
+  input n content integer
+  output belasting content money
+
+scope Nestgroep:
+  label basis definition belasting equals $40
+  label lvl1 exception basis definition belasting
+    under condition n >= 10 consequence equals $10
+  exception lvl1 definition belasting
+    under condition n >= 100 consequence equals $20
+  exception lvl1 definition belasting
+    under condition n >= 200 consequence equals $30
+```
