@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://uchar.dev/schema/regelspraak-ir-v0.schema.json",
   "title": "regelspraak-ir-v0",
-  "description": "Structural schema for the 'regelspraak-ir-v0' format: the faithful engine-neutral JSON dump of the reference frontend's fully resolved model (mirror-then-diverge; see spec/IR-SPEC.md). Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Exception, by the decided wire-entry discipline (IR-SPEC, Method): extension fields carrying v1 deltas (verbindendeRol, bronRol, the symbolic fact-creation fields) are optional, the datatype union admits the extension nodes SumType (the payload-carrying variant family, CONSTRUCTS row 36), ListType (the sequence type, CONSTRUCTS row 10) and StructType (the record datatype, spec/proposals/PHASE5C-TUTORIAL.md §2), the expr union admits the extension nodes TemporalRead, Construct, Match, BinderRef, StructLiteral, FieldAccess and the row-10 fold family (ListLiteral, Lambda, IfThenElse, Invoke, Fold, MapList, FilterList, ListLength), and the optional top-level lists defaultLadders and functionDefs carry the ladder and named-logic extensions, and a Rung carries the optional excepties sub-group (a nested exception SubLadder tree, RUNTIME-SEMANTICS ch. 7.9) \u2014 the v0 emitter never produces any of them, and when present they are written whole, never null. Section citations (e.g. \u00a713.3.3) point into the source language spec by number only.",
+  "description": "Structural schema for the 'regelspraak-ir-v0' format: the faithful engine-neutral JSON dump of the reference frontend's fully resolved model (mirror-then-diverge; see spec/IR-SPEC.md). Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Exception, by the decided wire-entry discipline (IR-SPEC, Method): extension fields carrying v1 deltas (verbindendeRol, bronRol, the symbolic fact-creation fields) are optional, the datatype union admits the extension nodes SumType (the payload-carrying variant family, CONSTRUCTS row 36), ListType (the sequence type, CONSTRUCTS row 10) and StructType (the record datatype, spec/proposals/PHASE5C-TUTORIAL.md §2), the expr union admits the extension nodes TemporalRead, Construct, Match, BinderRef, StructLiteral, FieldAccess, the row-10 fold family (ListLiteral, Lambda, IfThenElse, Invoke, Fold, MapList, FilterList, ListLength) and the strict value-level binding Let (spec/proposals/PHASE5C-TUTORIAL.md §6), and the optional top-level lists defaultLadders and functionDefs carry the ladder and named-logic extensions, and a Rung carries the optional excepties sub-group (a nested exception SubLadder tree, RUNTIME-SEMANTICS ch. 7.9) \u2014 the v0 emitter never produces any of them, and when present they are written whole, never null. Section citations (e.g. \u00a713.3.3) point into the source language spec by number only.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -1723,6 +1723,42 @@
       },
       "description": "Extension node (IR-SPEC Method; wire node ListLength, never emitter-produced): the element count (CONSTRUCTS row 10; spec/RUNTIME-SEMANTICS.md ch. 10.2). 'type' is a whole Number — WF-070. 'type' and 'list' are required and non-null."
     },
+    "Let": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "type",
+        "binder",
+        "value",
+        "body",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "Let"
+        },
+        "type": {
+          "$ref": "#/$defs/datatype"
+        },
+        "binder": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/expr"
+        },
+        "body": {
+          "$ref": "#/$defs/expr"
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "description": "Extension node (IR-SPEC Method; wire node Let, never emitter-produced): the strict value-level binding (spec/proposals/PHASE5C-TUTORIAL.md §6, question 2 = A; spec/RUNTIME-SEMANTICS.md ch. 10.6). 'binder' is visible only in 'body', never in its own 'value' — WF-076; it joins the WF-064 binder regime. The node 'type' equals the 'body' type — WF-076. Strict: a 'value' that evaluates leeg propagates (the whole Let is leeg, the body never runs), so a body binder is never leeg — the leeg-barrier behind the WF-069 widening (IfThenElse becomes admissible inside Let bodies) and the WF-077 condition-operand discipline. 'type', 'binder', 'value' and 'body' are required and non-null."
+    },
     "FunctionDef": {
       "type": "object",
       "additionalProperties": false,
@@ -1842,6 +1878,9 @@
         },
         {
           "$ref": "#/$defs/ListLength"
+        },
+        {
+          "$ref": "#/$defs/Let"
         }
       ]
     },

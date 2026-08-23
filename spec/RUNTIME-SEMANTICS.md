@@ -369,6 +369,46 @@ exact fraction. Example: base 1200, 90 of 365 days → 1200 × 90/365 =
 rounding: afgerond op 2 rekenkundig = **295,89**. Full timeline algebra:
 ch. 3.
 
+### 2.9 The pinned decimal scale — Catala decimals (Phase-5c, vraag 4-A)
+
+*A v1 kernel decision (design and ratified decision:
+`spec/proposals/PHASE5C-TUTORIAL.md` §5, question 4 = A). Frontend
+mapping: the Catala plugin.*
+
+A Catala decimal (`TRat`) is an **exact rational** — precisely the
+ch. 2.1 model — so its resolved operators
+(`Add/Sub/Mult/Div_rat_rat`, `Minus_rat`) map onto the existing numeric
+operators and its literals (`LRat`) carry the exact lexeme; the casts
+`ToRat_int`/`ToRat_mon` are pass-through with retyping (the value is
+already exact-rational), and no `Percentage` node is involved (Catala
+pre-divides — `20%` arrives as the rational `1/5`). But because the ASP
+side scales every value by its declared `decimalen`, an *unbounded*
+decimal form would be integer-only there. The pin: a Catala-decimal
+declaration carries a **finite scale `decimalen = S`, with S = 4**
+(chosen against the tutorial, fixed here) — the frontend maps `TRat` to
+`Numeriek{geheel = false, decimalen = 4, teken onbepaald, eenheid
+null}`.
+
+`ref` stays exact-rational throughout; both executors then **fault
+loudly and consistently on a value that does not terminate at 4
+decimals** — ref at its bounded-write gate (ch. 2.4), clingo at its
+existing does-not-fit fence. This is the ch. 2.4 delta (a
+possibly-non-terminating value MUST pass an explicit rounding before a
+bounded write) realised for Catala decimals; a 4-dec target fed `1,0000
+÷ 3,0000` faults in **both** executors (the differential holds where it
+runs — the red witness `corpus/rood/decimal-nonterminating`, landing
+with the executor card).
+
+**Money × decimal rounds to the cent.** Catala's runtime rounds money
+multiplication (`Mult_mon_rat`/`Mult_mon_int`) to the cent, so the
+frontend wraps those products in `Afgerond {REKENKUNDIG, 2}` — the same
+wrapper the money *divisions* already carry. (No existing corpus golden
+contains a money multiplication, so the fix is byte-neutral; it lands
+with the first fixture that exercises it. The ASP encoding must split
+the scale-2 × scale-4 product so the intermediate stays inside the
+int31 fences — e.g. `M × R = M × R_hi/10² + M × R_lo/10⁴`, each part
+within the existing bound, the sum exact.)
+
 ---
 
 ## 3. Timeline algebra
@@ -2532,9 +2572,11 @@ at the fold's boundary (init, source), never in its interior.
   propagates. A filter that excludes everything yields `[]`, a value.
 - **ListLength**: the element count; `[]` counts 0; a leeg source
   propagates leeg.
-- **IfThenElse** (inside bodies only): evaluate the condition under
-  the ordinary ch. 1.2 comparison discipline; evaluate exactly the
-  chosen branch — strict, no coalesce, the rung-justification mirror.
+- **IfThenElse** (inside lambda, function or — the Phase-5c widening —
+  strict `Let` bodies, ch. 10.6): evaluate the condition under the
+  ordinary ch. 1.2 comparison discipline, its operands disciplined to
+  bound-non-leeg reads by WF-077; evaluate exactly the chosen branch —
+  strict, no coalesce, the rung-justification mirror.
 - **Invoke**: evaluate the arguments strictly (a leeg argument
   propagates leeg without entering the body), bind, evaluate the
   closed body. Recursion does not exist (WF-067), so termination is
@@ -2603,6 +2645,66 @@ recursion with the S6/S8 range fences; every fold-family form of this
 chapter translates — the differential (gates 5 ≡ 6) covers the whole
 kernel, and whatever a future corner cannot carry lands as a loud
 fault in the ASP inventory, never a silent skip.
+
+### 10.6 Let — the strict value-level binding
+
+*A v1 kernel extension (Phase-5c; design and ratified decision:
+`spec/proposals/PHASE5C-TUTORIAL.md` §6, question 2 = A). Node form and
+well-formedness: IR-SPEC ch. 4.10, WF-076/WF-077. Normative from first
+writing.*
+
+A `Let` evaluates its `value` in the enclosing scope, then — **only if
+that value is gevuld** — binds the `binder` to it and evaluates the
+`body`. It is **strict**: `Let x = leeg in body` evaluates **leeg**, and
+the `body` never runs. The binder is therefore never leeg inside the
+body — the **leeg-barrier**, which is what makes a `Let`-body binder a
+safe operand for an `IfThenElse` condition (WF-077) and makes ref's leeg
+propagation coincide with clingo's underivability (an underivable value
+atom simply never binds). In `ref` a `Let` is a `locals` entry; in the
+ASP encoding it is a bound intermediate (its value term and atoms, the
+body translated with `binder → term`).
+
+The strictness is **not** a coalesce, and that is the point. Compare,
+over an absent `inkomen` (leeg):
+
+- `inkomen maal 0,21` — a bare `maal`: empty **coalesces** to 0
+  (ch. 1.2a), so the product is **0**.
+- `Let ink = inkomen in ink maal 0,21` — the strict binding: the leeg
+  `value` **propagates**, so the whole `Let` is **leeg**.
+
+The two disagree on exactly the empty input. Routing the read through a
+strict `Let` is how an author (or the Catala frontend) chooses
+propagation over coalescing; WF-077 makes that routing mandatory for
+`IfThenElse` condition operands, so the branch guard is always a
+definite waar/onwaar over non-leeg operands (the NAF-free
+exact-complement encoding).
+
+**Worked example — the `jutterswet-tariefstelling` anchor.** Object
+type `Jutter` with `inkomen` (2 dec, input), `kindertal` (whole, input),
+and derived `aanslag` (2 dec), `factor` (4 dec), `gewogen` (2 dec).
+
+- `aanslag` := `Let ink = inkomen in Let aftrek = kindertal × 250,00 in
+  Let belasting = (ink × 0,2100) afgerond op 2 (rekenkundig) in
+  if aftrek > belasting then 0,00 else belasting − aftrek` — a `Let`
+  chain whose innermost body is the `IfThenElse`, its condition reading
+  only the binders `aftrek`, `belasting` (WF-077).
+- `factor` := `1,0000 + kindertal ÷ 2,0000` (pure decimal arithmetic —
+  whole `kindertal` ÷ a 4-dec literal, the mixed-decimals family).
+- `gewogen` := `(Let ink2 = inkomen in ink2 × factor) afgerond op 2`.
+
+| case | inputs | `aftrek` | `belasting` | `aanslag` | `factor` | `gewogen` |
+|---|---|---|---|---|---|---|
+| 1 | inkomen 20000,00; kindertal 2 | 500,00 | 4200,00 | **3700,00** (else: 4200 − 500) | 2,0000 | **40000,00** |
+| 2 | inkomen 1000,00; kindertal 3 | 750,00 | 210,00 | **0,00** (then: aftrek > belasting) | 2,5000 | 2500,00 |
+| 3 | inkomen **absent**; kindertal 2 | — | — | **leeg** | 2,0000 | **leeg** |
+
+Case 3 is the barrier pinned: `Let ink = inkomen` reads leeg, so the
+whole `aanslag` chain is leeg — and likewise `Let ink2 = inkomen` makes
+`gewogen` leeg. **Without** the `Let`, the bare `inkomen × 0,2100` would
+*coalesce* to 0 and `belasting`/`gewogen` would compute a spurious
+`0,00` — this is why the discipline exists. `factor` still writes
+`2,0000` (it reads `kindertal`, which is present), so case 3 **decides**
+and is **not** a defeasible no-op survivor.
 
 ## 11. Record values
 

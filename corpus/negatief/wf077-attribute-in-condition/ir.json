@@ -1,0 +1,175 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "aanslag": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "inkomen": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "bepaal aanslag",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "aanslag",
+        "objecttype": "Jutter",
+        "onderwerpBron": null,
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de aanslag",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Let",
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "binder": "dummy",
+        "value": {
+          "node": "Literal",
+          "waarde": "1.00",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "een"
+        },
+        "body": {
+          "node": "IfThenElse",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "condition": {
+            "node": "Vergelijking",
+            "op": "GROTER",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "inkomen",
+              "objecttype": "Jutter",
+              "onderwerpBron": null,
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "bron": "het inkomen",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "0.00",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "nul"
+            },
+            "periode": null,
+            "bron": "het inkomen groter dan nul"
+          },
+          "then": {
+            "node": "Literal",
+            "waarde": "10.00",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "tien"
+          },
+          "else": {
+            "node": "Literal",
+            "waarde": "0.00",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "nul"
+          },
+          "bron": "een als-dan-anders"
+        },
+        "bron": "een let om de if toe te laten"
+      },
+      "voorwaarde": null,
+      "geldigheid": null
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

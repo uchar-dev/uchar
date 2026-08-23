@@ -174,6 +174,21 @@ type expr =
      reads one field [veld] of a struct-typed [base]. Never emitter-produced. *)
   | Struct_literal of { typ : datatype option; velden : (string * expr) list; bron : string option }
   | Field_access of { typ : datatype option; base : expr; veld : string; bron : string option }
+  (* Extension node (v1, Phase 5c): the strict let binding (IR-SPEC ch. 4.10;
+     semantics RUNTIME-SEMANTICS ch. 10.6; design
+     spec/proposals/PHASE5C-TUTORIAL.md §6, question 2 = A). [typ] is required
+     on the wire (non-null, the TemporalRead pattern) and equals the [body]
+     type (WF-076). [binder] is visible only in [body] — never in its own
+     [value] (WF-076); it joins the WF-064 binder regime. Strict: a leeg
+     [value] propagates (the whole Let is leeg, the body never runs). Never
+     emitter-produced. *)
+  | Let of {
+      typ : datatype option;
+      binder : string;
+      value : expr;
+      body : expr;
+      bron : string option;
+    }
   (* Extension nodes (v1, row 10): the fold family (IR-SPEC ch. 4.8;
      semantics RUNTIME-SEMANTICS ch. 10). [typ] rides the TemporalRead
      pattern — present on the wire (non-null) for every node except [Lambda],

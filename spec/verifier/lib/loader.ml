@@ -568,6 +568,18 @@ let rec expr path j : expr =
   | "ListLength" ->
       check_keys path kvs [ "node"; "type"; "list"; "bron" ];
       List_length { typ = typ (); list = expr (path / "list") (f "list"); bron = bron () }
+  | "Let" ->
+      (* extension node (v1, Phase 5c): strict; type required not-null, binder a
+         plain string, value and value/body non-null exprs *)
+      check_keys path kvs [ "node"; "type"; "binder"; "value"; "body"; "bron" ];
+      Let
+        {
+          typ = typ ();
+          binder = str (path / "binder") (f "binder");
+          value = expr (path / "value") (f "value");
+          body = expr (path / "body") (f "body");
+          bron = bron ();
+        }
   | "Constante" ->
       check_keys path kvs [ "node"; "naam"; "type"; "bron" ];
       Constante { naam = str_opt (path / "naam") (f "naam"); typ = typ (); bron = bron () }

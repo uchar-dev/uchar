@@ -1006,7 +1006,7 @@ let typ_of_expr = function
   | Variabele_ref { typ; _ } | Constante { typ; _ } | Expr_onopgelost { typ; _ }
   | Temporal_read { typ; _ } | Construct { typ; _ } | Match { typ; _ }
   | Binder_ref { typ; _ } | Struct_literal { typ; _ } | Field_access { typ; _ }
-  | List_literal { typ; _ } | If_then_else { typ; _ }
+  | List_literal { typ; _ } | If_then_else { typ; _ } | Let { typ; _ }
   | Invoke { typ; _ } | Fold { typ; _ } | Map_list { typ; _ }
   | Filter_list { typ; _ } | List_length { typ; _ } -> typ
   (* a Lambda is never a value: it carries no type *)
@@ -1412,13 +1412,127 @@ let wf053_attribuut_ref ctx at ~subject ~set ~bindings ~navigatie_rol ~navigatie
                else [])
              hops)
 
-(* [body] threads the closed-body context (IR-SPEC ch. 2.11 / ch. 4.8): None
-   at rule level, [Some wf] inside a function body (wf = "WF-067") or a lambda
-   body (wf = "WF-069"). It gates two things: the position of IfThenElse (only
-   inside a body) and the closed-ness of a body — a body may not read an
-   attribute, dimension cell, aggregation, temporal or variable, nor a
-   condition beyond Vergelijking/Predicaat. *)
-let rec walk_expr ctx ~binders ~subject ?(body = None) at (e : expr) : violation list =
+(* The position context threaded as [~body] through the expression walk
+   (IR-SPEC ch. 2.11 / ch. 4.8 / ch. 4.10). It gates two independent things:
+   whether an IfThenElse is admissible (everywhere but rule level) and whether
+   the surrounding body is CLOSED (a function or lambda body denies attribute,
+   dimension-cell, aggregation, temporal and variable reads, and conditions
+   beyond Vergelijking/Predicaat). A strict Let body admits IfThenElse without
+   closing — its reads stay open (the leeg-barrier there is WF-077, not
+   closure). *)
+type body_pos =
+  | Rule_pos              (* rule level: IfThenElse ill-formed, reads open *)
+  | Closed_pos of string  (* function/lambda body: IfThenElse ok, reads closed (host wf id) *)
+  | Let_pos               (* strict Let body: IfThenElse ok, reads open *)
+
+(* Does [e] read the binder [b] anywhere (ci), skipping subtrees that lexically
+   rebind the name (a match arm, lambda/fold parameter, filter or nested let of
+   the same name shadows it)? WF-076: a Let binder is visible only in its body,
+   never in its own value. *)
+let rec mentions_binder b (e : expr) : bool =
+  let same n = norm n = norm b in
+  let opt = function Some e -> mentions_binder b e | None -> false in
+  match e with
+  | Binder_ref { naam; _ } -> same naam
+  | Literal _ | Parameter_ref _ | Variabele_ref _ | Constante _ | Attribuut_ref _
+  | Dimensie_cel _ | Expr_onopgelost _ -> false
+  | Binair { links; rechts; _ } -> opt links || opt rechts
+  | Afgerond { basis; _ } -> opt basis
+  | Begrensd { basis; minimum; maximum; _ } -> opt basis || opt minimum || opt maximum
+  | Field_access { base; _ } -> mentions_binder b base
+  | Struct_literal { velden; _ } -> List.exists (fun (_, e) -> mentions_binder b e) velden
+  | List_literal { elements; _ } -> List.exists (mentions_binder b) elements
+  | Construct { argument; _ } -> opt argument
+  | Temporal_read { basis; datum; _ } -> mentions_binder b basis || mentions_binder b datum
+  | Invoke { arguments; _ } -> List.exists (mentions_binder b) arguments
+  | Tekst_reeks { delen; _ } ->
+      List.exists (function Ingevoegd { expr = Some e } -> mentions_binder b e | _ -> false) delen
+  | Functie { argumenten; leegwaarde; filter; _ } ->
+      List.exists (mentions_binder b) argumenten || opt leegwaarde
+      || (match filter with Some c -> mentions_binder_cond b c | None -> false)
+  | If_then_else { condition; then_; else_; _ } ->
+      mentions_binder_cond b condition || mentions_binder b then_ || mentions_binder b else_
+  | List_length { list; _ } -> mentions_binder b list
+  (* the binder-introducing forms: a rebinding of [b] shadows it below *)
+  | Match { scrutinee; arms; _ } ->
+      mentions_binder b scrutinee
+      || List.exists
+           (fun (_, arm_binder, arm_body) ->
+             match arm_binder with
+             | Some ab when same ab -> false
+             | _ -> mentions_binder b arm_body)
+           arms
+  | Lambda { parameters; body = lbody; _ } ->
+      if List.exists (fun (pn, _) -> same pn) parameters then false else mentions_binder b lbody
+  | Filter_list { list; binder; condition; _ } ->
+      mentions_binder b list || (if same binder then false else mentions_binder_cond b condition)
+  | Fold { list; functie; init; _ } ->
+      mentions_binder b list || mentions_binder b init || mentions_binder_fold_fn b functie
+  | Map_list { list; functie; _ } -> mentions_binder b list || mentions_binder_fold_fn b functie
+  | Let { value; binder; body; _ } ->
+      mentions_binder b value || (if same binder then false else mentions_binder b body)
+
+and mentions_binder_fold_fn b = function
+  | Fn_lambda { parameters; body = lbody; _ } ->
+      if List.exists (fun (pn, _) -> norm pn = norm b) parameters then false
+      else mentions_binder b lbody
+  | Fn_name _ -> false
+
+and mentions_binder_cond b (c : conditie) : bool =
+  let opt = function Some e -> mentions_binder b e | None -> false in
+  match c with
+  | Vergelijking { links; rechts; _ } -> opt links || opt rechts
+  | Predicaat { operand; _ } -> opt operand
+  | Periode_conditie { vanaf; tot; _ } -> opt vanaf || opt tot
+  | Samengesteld { onderdelen; _ } -> List.exists (mentions_binder_cond b) onderdelen
+  | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _ | Regelversie _
+  | Conditie_onopgelost _ -> false
+
+(* WF-077 — the condition-operand discipline (IR-SPEC ch. 4.10). Everywhere an
+   IfThenElse is admissible, its condition may READ only binders, parameters
+   and literals; arithmetic combinators (Binair/Afgerond/Begrensd) over those
+   are fine — the reads are what matter. An attribute/field/characteristic read
+   must pass through a strict Let binding first: that is the leeg-barrier that
+   makes ref's leeg propagation and clingo's underivability coincide by
+   construction, keeping the NAF-free exact-complement branches honest. *)
+let rec bound_only_expr (e : expr) : bool =
+  let opt = function Some e -> bound_only_expr e | None -> true in
+  match e with
+  | Binder_ref _ | Parameter_ref _ | Literal _ -> true
+  | Binair { links; rechts; _ } -> opt links && opt rechts
+  | Afgerond { basis; _ } -> opt basis
+  | Begrensd { basis; minimum; maximum; _ } -> opt basis && opt minimum && opt maximum
+  | Tekst_reeks { delen; _ } ->
+      List.for_all (function Ingevoegd { expr = Some e } -> bound_only_expr e | _ -> true) delen
+  | _ -> false
+
+let wf077_condition at (c : conditie) : violation list =
+  let operand slot = function
+    | Some e when not (bound_only_expr e) ->
+        [ v "WF-077" slot
+            "an IfThenElse condition operand reads more than a binder, parameter or literal — an \
+             attribute, field or characteristic read must pass through a strict Let binding first" ]
+    | _ -> []
+  in
+  let rec walk at (c : conditie) =
+    match c with
+    | Vergelijking { links; rechts; _ } ->
+        operand (at ^ "/links") links @ operand (at ^ "/rechts") rechts
+    | Predicaat { operand = o; _ } -> operand (at ^ "/operand") o
+    | Periode_conditie { vanaf; tot; _ } -> operand (at ^ "/vanaf") vanaf @ operand (at ^ "/tot") tot
+    | Samengesteld { onderdelen; _ } ->
+        List.concat
+          (List.mapi (fun i c -> walk (Printf.sprintf "%s/onderdelen/%d" at i) c) onderdelen)
+    | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _ | Regelversie _
+    | Conditie_onopgelost _ ->
+        [ v "WF-077" at
+            "an IfThenElse condition reads a characteristic, role or channel — not admissible (only \
+             binders, parameters and literals may be read; route state reads through a strict Let \
+             binding)" ]
+  in
+  walk at c
+
+let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : violation list =
   let sub p = at ^ "/" ^ p in
   let typ_checks =
     match typ_of_expr e with
@@ -1432,10 +1546,11 @@ let rec walk_expr ctx ~binders ~subject ?(body = None) at (e : expr) : violation
   (let closed =
      (* inside a closed body: the reads that break closure short-circuit,
         citing the host rule (WF-067 for a function body, WF-069 for a
-        lambda body) *)
+        lambda body). A strict Let body (Let_pos) is NOT closed — its reads
+        stay open; rule level (Rule_pos) never closes either. *)
      match body with
-     | None -> None
-     | Some wf -> (
+     | Rule_pos | Let_pos -> None
+     | Closed_pos wf -> (
          let deny phrase =
            Some [ v wf at (phrase ^ " is not admissible inside a closed function or lambda body") ]
          in
@@ -2142,6 +2257,33 @@ let rec walk_expr ctx ~binders ~subject ?(body = None) at (e : expr) : violation
                ("field access base is " ^ datatype_kind d ^ ", not a struct value") ]
        | None -> [ v "WF-074" (sub "base") "field access base carries no type" ])
       @ walk_expr ctx ~binders ~subject ~body (sub "base") base
+  | Let { typ; binder; value; body = lbody; _ } ->
+      (* WF-076: the strict let (IR-SPEC ch. 4.10). The node type equals the
+         body type; the binder is visible only in the body (never in its own
+         value); the binder joins the WF-064 regime for the body. *)
+      (match typ, typ_of_expr lbody with
+       | Some t, Some bt when t <> bt ->
+           [ v "WF-076" (sub "type")
+               (Printf.sprintf
+                  "the let type (%s) differs from its body type (%s) — the let type must equal the \
+                   body type"
+                  (datatype_kind t) (datatype_kind bt)) ]
+       | None, _ -> [ v "WF-076" (sub "type") "let carries no type" ]
+       | _ -> [])
+      @ (if mentions_binder binder value then
+           [ v "WF-076" (sub "value")
+               ("the let binder '" ^ binder
+              ^ "' is referenced in its own value — a binder is visible only in the let body") ]
+         else [])
+      (* the value evaluates in the enclosing scope: the binder is NOT in scope
+         here, and the position context is unchanged (a Let value inside a
+         closed body stays closed) *)
+      @ walk_expr ctx ~binders ~subject ~body (sub "value") value
+      (* the body: the binder joins the scope; a strict Let body admits
+         IfThenElse (Let_pos) unless already inside a closed body (stay closed) *)
+      @ walk_expr ctx ~binders:(binder :: binders) ~subject
+          ~body:(match body with Closed_pos w -> Closed_pos w | Rule_pos | Let_pos -> Let_pos)
+          (sub "body") lbody
   | List_literal { typ; elements; _ } ->
       (* WF-066: every element's static type equals the declared element datatype *)
       let elem_dt = match typ with Some (List_type { element }) -> Some element | _ -> None in
@@ -2172,11 +2314,16 @@ let rec walk_expr ctx ~binders ~subject ?(body = None) at (e : expr) : violation
          (there it is loaded as a fold_fn, never this expr variant) *)
       [ v "WF-069" at "a Lambda is admissible only as the function operand of a Fold or MapList" ]
   | If_then_else { typ; condition; then_; else_; _ } ->
-      (* WF-069: position-restricted to lambda and function bodies; both
-         branches agree on the node's own type *)
+      (* WF-069: position-restricted to lambda, function and (the Phase-5c
+         widening) strict Let bodies; both branches agree on the node's own
+         type. WF-077: the condition-operand discipline holds wherever an
+         IfThenElse is admissible. *)
       (match body with
-       | Some _ -> []
-       | None -> [ v "WF-069" at "an IfThenElse is admissible only inside a lambda or function body" ])
+       | Closed_pos _ | Let_pos -> []
+       | Rule_pos ->
+           [ v "WF-069" at
+               "an IfThenElse is admissible only inside a lambda, function or strict let body" ])
+      @ wf077_condition (sub "condition") condition
       @ (let branch name e =
            match typ, typ_of_expr e with
            | Some t, Some bt when t <> bt ->
@@ -2304,8 +2451,8 @@ and check_fold_fn ctx ~binders ~subject at ~params ~result (fn : fold_fn) : viol
             [ v "WF-070" at
                 ("lambda body is " ^ datatype_kind b ^ ", but the fold requires " ^ datatype_kind r) ]
         | _ -> [])
-      @ walk_expr ctx ~binders:(List.map fst parameters @ binders) ~subject ~body:(Some "WF-069")
-          (at ^ "/body") lbody
+      @ walk_expr ctx ~binders:(List.map fst parameters @ binders) ~subject
+          ~body:(Closed_pos "WF-069") (at ^ "/body") lbody
   | Fn_name n ->
       (* WF-069 (the mirror-safe route): the function operand MUST be an inline
          lambda; a named function reaches a fold through a lambda body that
@@ -2316,7 +2463,7 @@ and check_fold_fn ctx ~binders ~subject at ~params ~result (fn : fold_fn) : viol
          ^ "', but must be an inline lambda (a named function reaches a fold via a lambda body \
             that invokes it)") ]
 
-and walk_cond ctx ~binders ~subject ?(body = None) at (c : conditie) : violation list =
+and walk_cond ctx ~binders ~subject ?(body = Rule_pos) at (c : conditie) : violation list =
   let sub p = at ^ "/" ^ p in
   let whole_period_check periode operands =
     match periode with
@@ -2330,10 +2477,11 @@ and walk_cond ctx ~binders ~subject ?(body = None) at (c : conditie) : violation
   let closed =
     (* inside a closed body a condition is limited to Vergelijking/Predicaat
        over admissible operands (IR-SPEC ch. 2.11): a characteristic,
-       role-membership, period, composite or regelversie read breaks closure *)
+       role-membership, period, composite or regelversie read breaks closure.
+       A strict Let body (Let_pos) is open; rule level (Rule_pos) too. *)
     match body with
-    | None -> None
-    | Some wf -> (
+    | Rule_pos | Let_pos -> None
+    | Closed_pos wf -> (
         match c with
         | Vergelijking _ | Predicaat _ -> None
         | _ ->
@@ -2824,6 +2972,10 @@ let rec dep_expr ctx ~subject acc (e : expr) =
   | Struct_literal { velden; _ } ->
       List.fold_left (fun acc (_, value) -> dep_expr ctx ~subject acc value) acc velden
   | Field_access { base; _ } -> dep_expr ctx ~subject acc base
+  (* the strict let (Phase 5c): its reads live in the value and the body; the
+     binder is lexical, contributing no attribute/parameter edge of its own *)
+  | Let { value; body = lbody; _ } ->
+      dep_expr ctx ~subject (dep_expr ctx ~subject acc value) lbody
   (* the fold family (row 10): the reads live in the list source, the init and
      the filter condition; a closed lambda/function body reads no attributes,
      so it contributes no edges — but the walk is harmless and total *)
@@ -4248,6 +4400,7 @@ let rec invoked_expr acc (e : expr) : string list =
   | Struct_literal { velden; _ } ->
       List.fold_left (fun acc (_, value) -> invoked_expr acc value) acc velden
   | Field_access { base; _ } -> invoked_expr acc base
+  | Let { value; body = lbody; _ } -> invoked_expr (invoked_expr acc value) lbody
   | Tekst_reeks { delen; _ } ->
       List.fold_left
         (fun acc -> function Ingevoegd { expr = Some e } -> invoked_expr acc e | _ -> acc)
@@ -4314,7 +4467,7 @@ let wf067 ctx =
                        type") ]
              | _ -> [])
            @ walk_expr ctx ~binders:(List.map fst fd.fd_parameters) ~subject:None
-               ~body:(Some "WF-067") (at ^ "/body") fd.fd_body
+               ~body:(Closed_pos "WF-067") (at ^ "/body") fd.fd_body
            @ (if reaches ~target:fd.fd_naam ~visited:[ norm fd.fd_naam ] fd.fd_naam then
                 [ v "WF-067" at
                     ("function '" ^ fd.fd_naam

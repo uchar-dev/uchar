@@ -61,7 +61,9 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   (`spec/proposals/PHASE5B-KERNEL.md`); and the record family — the
   `StructType` datatype (ch. 2.4) with the `StructLiteral`/`FieldAccess`
   expression nodes (ch. 4.9) — the Phase-5c kernel extension, likewise
-  never emitter-produced (`spec/proposals/PHASE5C-TUTORIAL.md`). **First pin bump (2026-08-17, toolchain `edecb46`):** the
+  never emitter-produced (`spec/proposals/PHASE5C-TUTORIAL.md`); and the
+  strict value-level binding `Let` (ch. 4.10), the same Phase-5c kernel
+  extension. **First pin bump (2026-08-17, toolchain `edecb46`):** the
   emitter produces `verbindendeRol` and `bronRol` where uniquely
   derivable from declared names (absent otherwise — never null, never a
   guessed plural); the emitter goldens carry them since that pin. **Second pin
@@ -729,7 +731,8 @@ and invoked by name; design `spec/proposals/PHASE5B-KERNEL.md` §3).
   (`BinderRef`), document parameters (`ParameterRef`), literals,
   operators, `Construct`/`Match`/`IfThenElse`, `StructLiteral`/
   `FieldAccess` (the **Phase-5c widening** — a record built or read over
-  binders and parameters keeps the body closed), and other functions via
+  binders and parameters keeps the body closed), `Let` (a strict binding
+  over closed operands stays closed, ch. 4.10), and other functions via
   `Invoke`; any attribute, characteristic, aggregation, temporal or
   variable read is ill-formed — and the invocation graph over
   `functionDefs` MUST be acyclic (no recursion: the Catala mirror, and
@@ -1469,7 +1472,9 @@ literally (a wildcard would make totality a runtime property again).
 - **WF-064** Every `BinderRef` MUST resolve to an enclosing binder of
   its name, and all arm bodies of a `Match` MUST agree on one result
   datatype — the `Match`'s own `type`. (This rule governs the new
-  binder forms only; a `VariabeleRef` remains outside it, row 24.)
+  binder forms — a match arm's binder, a lambda/function parameter and,
+  the Phase-5c widening, a `Let` binder (ch. 4.10), scoped to the `Let`
+  body; a `VariabeleRef` remains outside it, row 24.)
 
 ### 4.8 The fold family — ListLiteral, Lambda, IfThenElse, Invoke, Fold, MapList, FilterList, ListLength
 
@@ -1485,7 +1490,7 @@ untouched — the two never merge in v1.
 |---|---|---|
 | ListLiteral | `type` (the ListType), `elements` (list of expr), `source` | ordered; a leeg element evaluation propagates — the whole literal evaluates leeg (a list never carries a hole, ch. 10.1) |
 | Lambda | `parameters` (list of `{name, datatype}`), `body` (expr), `source` | **position-restricted**: admissible only as the `function` operand of `Fold`/`MapList`; the body is closed (the WF-067 clause); parameters bind via `BinderRef` |
-| IfThenElse | `type`, `condition` (Condition), `then` (expr), `else` (expr), `source` | **position-restricted**: admissible only inside lambda and function bodies — rule expressions keep the ladder/voorwaarde idiom; the condition reuses the ch. 4.5 condition union (no boolean-typed expressions enter the IR), evaluated under the ordinary ch. 1.2 comparison discipline; exactly the chosen branch is evaluated |
+| IfThenElse | `type`, `condition` (Condition), `then` (expr), `else` (expr), `source` | **position-restricted**: admissible only inside lambda, function and (the Phase-5c widening) strict `Let` bodies (ch. 4.10) — bare rule expressions keep the ladder/voorwaarde idiom; the condition reuses the ch. 4.5 condition union (no boolean-typed expressions enter the IR), evaluated under the ordinary ch. 1.2 comparison discipline, its operands disciplined by WF-077; exactly the chosen branch is evaluated |
 | Invoke | `type`, `function` (name), `arguments` (list of expr), `source` | calls a ch. 2.11 FunctionDef; strict — a leeg argument propagates without entering the body |
 | Fold | `type`, `list` (expr), `function` (an inline `Lambda`), `init` (expr), `source` | left fold, order normative; the function takes `(accumulator, element)`; the operand MUST be an inline `Lambda` (WF-069) — a named function reaches a fold through a lambda body that `Invoke`s it |
 | MapList | `type` (a ListType), `list` (expr), `function` (an inline `Lambda`), `source` | elementwise, order-preserving; the operand MUST be an inline `Lambda` (WF-069) — a named function reaches it through a lambda body that `Invoke`s it |
@@ -1499,7 +1504,8 @@ untouched — the two never merge in v1.
   static type MUST match its parameter's datatype, and the node's
   `type` MUST equal the declared `result`.
 - **WF-069** A `Lambda` outside a `Fold`/`MapList` `function` operand,
-  or an `IfThenElse` outside a lambda or function body, is ill-formed;
+  or an `IfThenElse` outside a lambda, function or strict `Let` body
+  (the Phase-5c widening, ch. 4.10), is ill-formed;
   a `Fold`/`MapList` `function` operand MUST be an inline `Lambda` — a
   bare FunctionDef name is ill-formed (the mirror-safe route: a named
   function reaches a fold through a lambda body that `Invoke`s it, as
@@ -1549,6 +1555,56 @@ otherwise ill-formed inside a lambda body (the reads that break closure —
 attribute, dimension, aggregation, temporal, variable — are unchanged;
 the two record nodes join the admissible set, their own operand reads
 still following the closed-body discipline).
+
+### 4.10 The strict value-level binding — Let
+
+`layer: core`; **extension node** per the Method (wire node `Let` —
+never emitter-produced; Phase-5c core; semantics
+`RUNTIME-SEMANTICS.md` ch. 10.6; design and ratified decision
+`spec/proposals/PHASE5C-TUTORIAL.md` §6, question 2 = A). A `Let` is an
+ordinary expression, admissible **anywhere** an expression is (unlike
+`IfThenElse`, which stays position-restricted). It carries the
+tutorial's `let … in …` at rule level and everywhere else.
+
+| Node | Fields | Notes |
+|---|---|---|
+| Let | `type` (strictly non-null), `binder` (name), `value` (expr), `body` (expr), `source` | evaluates `value`; **strict** — a leeg `value` propagates (the whole `Let` evaluates leeg, the `body` never runs); otherwise binds `binder` to the value and evaluates `body`. The binder is visible **only** in `body`, never in its own `value` |
+
+The strictness is the load-bearing point: because a leeg `value`
+short-circuits before the `body` runs, a `body` binder is **never
+leeg**. That is the **leeg-barrier** — an underivable value simply
+never binds, so ref's leeg propagation and clingo's underivability
+coincide by construction (the 5b lesson applied forward). It is what
+lets `IfThenElse` widen into `Let` bodies (WF-069) under a condition
+that reads only bound-non-leeg operands (WF-077), keeping the NAF-free
+exact-complement branch encoding honest. The contrast is normative and
+worked in `RUNTIME-SEMANTICS.md` ch. 10.6: a bare `maal` over a leeg
+attribute *coalesces* to 0 (ch. 1.2a), whereas the same attribute bound
+through a strict `Let` *propagates* leeg — which is exactly why the
+discipline exists.
+
+- **WF-076** A `Let`'s `type` MUST equal its `body`'s datatype; the
+  `binder` MUST NOT be referenced within its own `value` (it is visible
+  only in `body`); the `value` and `body` MUST be well-formed. The
+  binder joins the WF-064 binder regime for the `body` (a `BinderRef`
+  in the body resolves to it).
+- **WF-077** Everywhere an `IfThenElse` is admissible (a lambda,
+  function or strict `Let` body), its condition may **read** only
+  binders, parameters and literals — arithmetic combinators (`Binair`,
+  `Afgerond`, `Begrensd`) over those are admissible, since what matters
+  is what is read. An attribute, field, characteristic, aggregation,
+  temporal or variable read as (or inside) a condition operand is
+  ill-formed: it MUST pass through a strict `Let` binding first. This is
+  the condition-operand discipline — the leeg-barrier stated as a
+  well-formedness rule.
+
+**WF-064 widens** (the Phase-5c widening): a `Let` binder joins the
+enclosing-binder set a `BinderRef` resolves against (alongside a match
+arm's binder and a lambda/function parameter), scoped to the `Let`
+`body`. **WF-069 widens**: `IfThenElse` becomes admissible inside a
+`Let` body as well as inside lambda and function bodies — a `Let` body
+is *not* a closed body (it may read attributes; only the condition of
+an `IfThenElse` within it is disciplined, by WF-077).
 
 ---
 
@@ -1762,18 +1818,20 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-061 | SumType use site agrees with its declaring domain; two sum-typed comparison operands name the same domain (the nominal rule, ch. 2.4) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf061-use-site-drift` + `wf061-cross-sumtype-equality` + `wf061-undeclared-domain` |
 | WF-062 | Construct: declared constructor; argument present iff unary; argument type matches the declared payload (ch. 4.7) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf062-nullary-with-argument` + `wf062-payload-type-mismatch` |
 | WF-063 | Match totality: sum-typed scrutinee; arms cover the declared constructors exactly, each once; binder iff unary (ch. 4.7) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf063-missing-arm` + `wf063-alien-constructor` + `wf063-binder-on-nullary` + `wf063-duplicate-arm` |
-| WF-064 | every BinderRef resolves to an enclosing binder; match arm bodies agree on one result datatype (ch. 4.7; VariabeleRef stays outside — row 24) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf064-unbound-binderref` + `wf064-mixed-arm-types` |
+| WF-064 | every BinderRef resolves to an enclosing binder (a match arm's binder, a lambda/function parameter, or — the 5c widening — a `Let` binder scoped to its body); match arm bodies agree on one result datatype (ch. 4.7/4.10; VariabeleRef stays outside — row 24) | gate 3 | `anchor/jutterswet-beschikkingsom` + `anchor/jutterswet-tariefstelling` (Let binders) | `wf064-unbound-binderref` + `wf064-mixed-arm-types` |
 | WF-065 | ListType: first-order non-list element (Number, day-precision Date, declared SumType, or — the 5c widening — declared StructType); no granularity on a list-typed attribute (ch. 2.4) | gate 3 | `anchor/jutterswet-staffelvergoeding` (executed by gates 5–6) + `anchor/jutterswet-vondstdossier` (the list-of-struct widening) | `wf065-list-of-list` + `wf065-temporal-list-attribute` |
 | WF-066 | ListLiteral elements carry the declared element datatype (ch. 4.8) | gate 3 | `anchor/jutterswet-aanspraaktelling` | `wf066-heterogeneous-literal` |
 | WF-067 | FunctionDef: ci-unique names, typed unique parameters, resolvable result, closed body (the 5c widening admits FieldAccess/StructLiteral), acyclic invocation graph (ch. 2.11) | gate 3 | `anchor/jutterswet-aanspraaktelling` | `wf067-recursive-functions` + `wf067-attribute-read-in-body` |
 | WF-068 | Invoke: resolvable function, arity, argument types, result type (ch. 4.8) | gate 3 | `anchor/jutterswet-aanspraaktelling` | `wf068-unresolved-invoke` + `wf068-arity-mismatch` |
-| WF-069 | Lambda only as a Fold/MapList operand and the operand only an inline Lambda (no bare FunctionDef name); IfThenElse only inside bodies; lambda arity per host, typed parameters, closed bodies (the 5c widening admits FieldAccess/StructLiteral); IfThenElse branch agreement (ch. 4.8) | gate 3 | `anchor/jutterswet-staffelvergoeding` + `anchor/jutterswet-vondstdossier` (the map-over-struct-field body) | `wf069-lambda-outside-fold` + `wf069-ifthenelse-outside-body` + `wf069-named-function-operand` |
+| WF-069 | Lambda only as a Fold/MapList operand and the operand only an inline Lambda (no bare FunctionDef name); IfThenElse only inside lambda, function or (the 5c widening) strict `Let` bodies; lambda arity per host, typed parameters, closed bodies (the 5c widening admits FieldAccess/StructLiteral); IfThenElse branch agreement (ch. 4.8/4.10) | gate 3 | `anchor/jutterswet-staffelvergoeding` + `anchor/jutterswet-vondstdossier` (the map-over-struct-field body) + `anchor/jutterswet-tariefstelling` (the Let-body IfThenElse) | `wf069-lambda-outside-fold` + `wf069-ifthenelse-outside-body` + `wf069-named-function-operand` |
 | WF-070 | fold-family shapes: list-typed source; Fold accumulator first-order non-list shared with init/body/type, element parameter = source element; MapList/FilterList/ListLength result typing (ch. 4.8) | gate 3 | `anchor/jutterswet-staffelvergoeding` + `anchor/jutterswet-aanspraaktelling` | `wf070-list-accumulator` + `wf070-scalar-source` |
 | WF-071 | StructType declaration: ≥ 1 field, ci-unique names, admissible field datatypes (Number, day-precision Date, declared SumType, declared StructType), acyclic field graph shared with WF-060 (ch. 2.4) | gate 3 | `anchor/jutterswet-vondstdossier` | `wf071-duplicate-field` + `wf071-text-field` + `wf071-recursive-struct` |
 | WF-072 | StructType use site agrees with its declaring domain; two struct-typed comparison operands name the same domain (the nominal rule, ch. 2.4) | gate 3 | `anchor/jutterswet-vondstdossier` | `wf072-use-site-drift` + `wf072-cross-struct-equality` |
 | WF-073 | StructLiteral: declared struct type; exactly the declared fields, each once; each value type matches the field declaration (ch. 4.9) | gate 3 | `anchor/jutterswet-vondstdossier` | `wf073-missing-field` + `wf073-alien-field` + `wf073-field-type-mismatch` |
 | WF-074 | FieldAccess: struct-typed base; field a declared field; node type = the field datatype (ch. 4.9) | gate 3 | `anchor/jutterswet-vondstdossier` | `wf074-unknown-field` + `wf074-nonstruct-base` |
 | WF-075 | nested exception form (ch. 7.9): a rung's `exceptions` sub-group carries ≥ 1 member; two or more require the `unordered` marking (the root regime, at every level); no initialisation/input rung in sub-rungs; every rung carries own content, a nested sub-group, or is the initialisation rung; a group-rung (sub-group, no own content) carries no own justification; recurses | gate 3 | `anchor/jutterswet-nestuitzondering` (attribute target) + `anchor/jutterswet-nestkenmerk` (characteristic target) + `anchor/jutterswet-nestdiepte` (three-level depth) — admitted through the Phase-5c executor card | `wf075-empty-leden` + `wf075-two-members-unmarked` + `wf075-init-in-subrung` + `wf075-contentless-rung` + `wf075-grouprung-with-justification` |
+| WF-076 | `Let`: the node `type` equals its `body` type; the binder is visible only in the `body` (never in its own `value`); `value` and `body` well-formed; the binder joins WF-064 (ch. 4.10) | gate 3 | `anchor/jutterswet-tariefstelling` — admitted through the Phase-5c let/decimals executor card | `wf076-body-type-mismatch` + `wf076-unbound-binder-in-value` |
+| WF-077 | the condition-operand discipline: everywhere an `IfThenElse` is admissible (lambda, function or strict `Let` bodies), its condition READS only binders, parameters and literals (arithmetic combinators over those are admissible — the reads are what matter); an attribute/field/characteristic read routes through a strict `Let` binding first — the leeg-barrier (ch. 4.10) | gate 3 | `anchor/jutterswet-tariefstelling` + `anchor/jutterswet-staffelvergoeding` (a `Binair` over binders as a condition operand) | `wf077-attribute-in-condition` + `wf077-fieldaccess-in-condition` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is
