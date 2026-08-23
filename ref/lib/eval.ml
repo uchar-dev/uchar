@@ -321,6 +321,7 @@ let expr_typ : expr -> datatype option = function
   | Construct { typ; _ }
   | Match { typ; _ }
   | Binder_ref { typ; _ }
+  | Let { typ; _ }
   | Struct_literal { typ; _ }
   | Field_access { typ; _ }
   | List_literal { typ; _ }
@@ -537,6 +538,16 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       match SMap.find_opt (norm naam) env.locals with
       | Some v -> v
       | None -> Value.fault "unbound binder %S (WF-064 should preclude this)" naam)
+  | Let { binder; value; body; _ } -> (
+      (* ch. 10.6: the strict let. Evaluate [value] first; a leeg value
+         propagates — the whole Let is leeg and the body never runs (WF-076,
+         the leeg-barrier). Otherwise the binder — never leeg — joins the
+         locals (the WF-064 regime) and the body is evaluated under it. *)
+      match eval_expr env world self ~err value with
+      | Value.Empty -> Value.Empty
+      | v ->
+          let locals = SMap.add (norm binder) v env.locals in
+          eval_expr { env with locals } world self ~err body)
   | Struct_literal { velden; _ } ->
       (* ch. 11.1: a record value; a field evaluating leeg propagates — the
          whole literal evaluates leeg (a record carries no hole). The field
@@ -1692,6 +1703,7 @@ let vintage_read_params (doc : document) : string list =
         List.iter (fun (_, _, body) -> expr body) arms
     | Struct_literal { velden; _ } -> List.iter (fun (_, e) -> expr e) velden
     | Field_access { base; _ } -> expr base
+    | Let { value; body; _ } -> expr value; expr body
     | List_literal { elements; _ } -> List.iter expr elements
     | Lambda { body; _ } -> expr body
     | If_then_else { condition; then_; else_; _ } -> cond condition; expr then_; expr else_

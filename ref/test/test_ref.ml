@@ -1126,6 +1126,51 @@ let () =
   check "WV-11.2-list-render"
     (Value.to_string ds = "[{waarde: 10, telling: 1}, {waarde: 2.5, telling: 2}]")
 
+(* --- ch. 10.6: the strict Let (RUNTIME-SEMANTICS ch. 10.6; PHASE5C §6) ---
+   Three worked examples pinning the strict-Let discipline the
+   jutterswet-tariefstelling anchor rests on:
+   (1) binder-lookup — a bound value is read through BinderRef in the body;
+   (2) a leeg value propagates WITHOUT the body running — the body reads an
+       unbound binder that would fault if evaluated, so returning leeg (not
+       raising) is the proof the body never ran (the leeg-barrier, WF-076);
+   (3) the maal-coalesce CONTRAST — a bare AttribuutRef reading leeg times a
+       literal coalesces to 0 (ch. 1.2a), whereas the SAME read routed
+       through a strict Let binding propagates leeg: the very reason the
+       discipline exists (anchor case3). *)
+let () =
+  let binder_ref name typ : Ir_v0.Ast.expr =
+    Binder_ref { naam = name; typ = Some typ; bron = None }
+  in
+  let letexpr binder value body typ : Ir_v0.Ast.expr =
+    Let { typ = Some typ; binder; value; body; bron = None }
+  in
+  let maal l r : Ir_v0.Ast.expr =
+    Binair { op = Maal; links = Some l; rechts = Some r; typ = Some num0; bron = None }
+  in
+  let doc = { empty_doc with objecttypen = [ ot "J" [ ("a", Some num0) ] [] ] } in
+  let env = env_of doc in
+  (* the instance leaves attribute "a" absent, so a bare read is leeg *)
+  let w = World.add_instance World.empty (inst "j" "J" []) in
+  let self = World.get w "j" in
+  let a_leeg = aref "a" "J" num0 in
+  (* (1) let x = 7 in x -> 7 *)
+  expect_num "WV-10.6-binder-lookup"
+    (Eval.eval_expr env w self ~err:no_err
+       (letexpr "x" (litv "7" num0) (binder_ref "x" num0) num0))
+    "7";
+  (* (2) leeg value -> leeg, and the unbound-binder body never runs (no fault) *)
+  expect_leeg "WV-10.6-leeg-value-no-body"
+    (Eval.eval_expr env w self ~err:no_err
+       (letexpr "x" a_leeg (binder_ref "y" num0) num0));
+  (* (3a) the bare maal coalesces the leeg read to 0 (ch. 1.2a) ... *)
+  expect_num "WV-10.6-maal-coalesce-bare"
+    (Eval.eval_expr env w self ~err:no_err (maal a_leeg (litv "5" num0)))
+    "0";
+  (* (3b) ... but the SAME read through a strict Let binding propagates leeg *)
+  expect_leeg "WV-10.6-let-barrier"
+    (Eval.eval_expr env w self ~err:no_err
+       (letexpr "x" a_leeg (maal (binder_ref "x" num0) (litv "5" num0)) num0))
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;
