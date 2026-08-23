@@ -1234,13 +1234,30 @@ refused for it.
 
 *The strict `Let`, guarded consequences and the split money
 multiplication (S18) — shapes and fences without a corpus case:* a
-**value-position `IfThenElse` condition** other than a comparison over
-bound binders / parameters / literals (`a value-position IfThenElse
-condition is a comparison over bound operands (WF-077; …)`) — WF-077
-rejects a bare attribute-read operand before translation, so the operand
-backstop (`… must be a binder, parameter or literal (WF-077)`) survives
-only as an unreachable guard on WF-clean input; **negative operands under
-the money multiplication** (ref rounds either sign; runtime `viol/2`, the
+**value-position `IfThenElse` condition** that is not a comparison
+(`a value-position IfThenElse condition is a comparison over bound
+operands (WF-077; no corpus case for more)`) — a predicate or composite
+condition has no corpus case. Its comparison operands may READ binders,
+parameters and literals, and arithmetic combinators (`Binair`,
+`Afgerond`, `Begrensd`, `Tekst_reeks`) over those are admissible:
+`value_condition` lowers each operand through `expr_term` and harmonises
+the two operand scales exactly as the closed-body comparison route does,
+so the operand backstop (`… must read only binders, parameters or
+literals (WF-077)`) refuses only the attribute/field/characteristic reads
+WF-077 already rejects before translation — an unreachable guard on
+WF-clean input (the guard mirrors the verifier's `bound_only_expr`). Two
+`Let`-body shapes an executor carries only in the bare rule-value
+position fault loudly elsewhere: a **`Let` inside a closed body** (a fold,
+function or lambda body — `closed_term` has no `Let` arm) faults `a
+closed-body term here is a bound binder, a literal, a parameter, a +/-
+combination or a Construct (no corpus case for more)`; a **`Let` whose
+body is an `IfThenElse` outside the bare rule value** (a ladder rung, a
+creation member initialisation, a sum- or struct-target value —
+`expr_term` peels the `Let` but has no `If_then_else` arm) faults
+`expression kind not translated (no corpus case exercises it)`. ref
+carries both everywhere (ch. 4.10); on the ASP side only `value_branches`
+reaches an `IfThenElse`, and only at the rule value. **Negative operands
+under the money multiplication** (ref rounds either sign; runtime `viol/2`, the
 non-richting-nul rounding sibling) and the two split range fences (`M·Rh`
 and `M·Rl`, runtime `viol/2` — the tutorial's magnitudes clear them); a
 **money multiplication other than a 2-decimal money times a 4-decimal

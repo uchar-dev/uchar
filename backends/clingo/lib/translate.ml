@@ -2116,12 +2116,29 @@ let rec value_branches ctx ~subject ~subject_ot (e : expr) : (string list * stri
    NAF over derived atoms. Returns (binding atoms, positive builtin, complement
    builtin). *)
 and value_condition ctx ~subject ~subject_ot (c : conditie) : string list * string * string =
-  let operand_ok = function
-    | Some (Binder_ref _ | Parameter_ref _ | Literal _) -> ()
-    | _ ->
-        fault
-          "a value-position IfThenElse condition operand must be a binder, parameter or literal \
-           (WF-077)"
+  (* WF-077 admits arithmetic combinators (Binair/Afgerond/Begrensd/Tekst_reeks)
+     over binders, parameters and literals as condition operands — the READS are
+     what stay total (never leeg), which is what keeps the else-branch the
+     positive builtin's EXACT complement. [expr_term] lowers each operand below
+     and the two operand scales harmonise there exactly as the closed-body
+     comparison route ([body_condition]) does, so only the read SHAPE needs
+     gating here; an attribute/field/characteristic read — WF-077-rejected
+     before translation — is all this backstop still refuses. Mirrors
+     [Ir_v0.Checks.bound_only_expr]. *)
+  let rec bound_only = function
+    | Binder_ref _ | Parameter_ref _ | Literal _ -> true
+    | Binair { links; rechts; _ } -> opt links && opt rechts
+    | Afgerond { basis; _ } -> opt basis
+    | Begrensd { basis; minimum; maximum; _ } -> opt basis && opt minimum && opt maximum
+    | Tekst_reeks { delen; _ } ->
+        List.for_all (function Ingevoegd { expr = Some e } -> bound_only e | _ -> true) delen
+    | _ -> false
+  and opt = function Some e -> bound_only e | None -> true in
+  let operand_ok o =
+    if not (opt o) then
+      fault
+        "a value-position IfThenElse condition operand must read only binders, parameters or \
+         literals (WF-077)"
   in
   match c with
   | Vergelijking { op; links; rechts; periode = None; _ } ->

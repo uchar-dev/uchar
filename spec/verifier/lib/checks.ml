@@ -765,6 +765,26 @@ let datatype_kind = function
   | Enumeratie _ -> "enumeration" | Sum_type _ -> "sumtype" | List_type _ -> "list"
   | Struct_type _ -> "struct" | Datatype_onbekend _ -> "unknown"
 
+(* like [datatype_kind] but carrying the decimal count and unit a numeric type
+   turns on: a WF-076 mismatch on precision or unit renders as "number differs
+   from number" under the bare kind, hiding exactly the discrepancy the check
+   catches — so a numeric type also shows its decimals and unit. *)
+let datatype_detail dt =
+  let dec_unit decimalen eenheid =
+    let u =
+      match eenheid with
+      | None -> ""
+      | Some { afkorting = Some a; _ } -> ", " ^ a
+      | Some { canoniek = Some c; _ } -> ", " ^ c
+      | Some _ -> ", unit"
+    in
+    Printf.sprintf "(%d decimals%s)" decimalen u
+  in
+  match dt with
+  | Numeriek { decimalen; eenheid; _ } -> "number" ^ dec_unit decimalen eenheid
+  | Percentage { decimalen; eenheid; _ } -> "percentage" ^ dec_unit decimalen eenheid
+  | other -> datatype_kind other
+
 let wf030 ctx =
   let key_checks at otn keys =
     match objecttype ctx otn with
@@ -2267,7 +2287,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                (Printf.sprintf
                   "the let type (%s) differs from its body type (%s) — the let type must equal the \
                    body type"
-                  (datatype_kind t) (datatype_kind bt)) ]
+                  (datatype_detail t) (datatype_detail bt)) ]
        | None, _ -> [ v "WF-076" (sub "type") "let carries no type" ]
        | _ -> [])
       @ (if mentions_binder binder value then

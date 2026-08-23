@@ -1564,7 +1564,14 @@ never emitter-produced; Phase-5c core; semantics
 `spec/proposals/PHASE5C-TUTORIAL.md` §6, question 2 = A). A `Let` is an
 ordinary expression, admissible **anywhere** an expression is (unlike
 `IfThenElse`, which stays position-restricted). It carries the
-tutorial's `let … in …` at rule level and everywhere else.
+tutorial's `let … in …` at rule level and everywhere else. That
+admissibility is a well-formedness statement, and the executors meet it
+unevenly: `ref` evaluates a `Let` in every position; the ASP backend
+carries it in every ordinary term position and — as a guarded
+consequence (S18) — in the bare rule value, while two shapes it does not
+yet carry fault loudly rather than silently (ASP-TRANSLATION `S19`): a
+`Let` inside a closed lambda/function body, and a `Let` whose body is an
+`IfThenElse` outside the bare rule value.
 
 | Node | Fields | Notes |
 |---|---|---|
@@ -1579,9 +1586,9 @@ lets `IfThenElse` widen into `Let` bodies (WF-069) under a condition
 that reads only bound-non-leeg operands (WF-077), keeping the NAF-free
 exact-complement branch encoding honest. The contrast is normative and
 worked in `RUNTIME-SEMANTICS.md` ch. 10.6: a bare `maal` over a leeg
-attribute *coalesces* to 0 (ch. 1.2a), whereas the same attribute bound
-through a strict `Let` *propagates* leeg — which is exactly why the
-discipline exists.
+attribute *coalesces* to 0 (the ch. 1.2 coalesce table's `maal` row),
+whereas the same attribute bound through a strict `Let` *propagates* leeg
+— which is exactly why the discipline exists.
 
 - **WF-076** A `Let`'s `type` MUST equal its `body`'s datatype; the
   `binder` MUST NOT be referenced within its own `value` (it is visible

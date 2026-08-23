@@ -1134,9 +1134,14 @@ let () =
        unbound binder that would fault if evaluated, so returning leeg (not
        raising) is the proof the body never ran (the leeg-barrier, WF-076);
    (3) the maal-coalesce CONTRAST — a bare AttribuutRef reading leeg times a
-       literal coalesces to 0 (ch. 1.2a), whereas the SAME read routed
-       through a strict Let binding propagates leeg: the very reason the
-       discipline exists (anchor case3). *)
+       literal coalesces to 0 (the ch. 1.2 coalesce table's maal row),
+       whereas the SAME read routed through a strict Let binding propagates
+       leeg: the very reason the discipline exists (anchor case3);
+   (4) shadowing — a nested Let reusing a binder name: the inner binding
+       wins inside its body and the outer is restored once that body ends;
+   (5) shadowing across a fold parameter — a Let in the lambda body reusing
+       the fold's element binder wins over it (ref semantics; the ASP side
+       carries a Let only in the bare rule value, ASP-TRANSLATION S19). *)
 let () =
   let binder_ref name typ : Ir_v0.Ast.expr =
     Binder_ref { naam = name; typ = Some typ; bron = None }
@@ -1169,7 +1174,43 @@ let () =
   (* (3b) ... but the SAME read through a strict Let binding propagates leeg *)
   expect_leeg "WV-10.6-let-barrier"
     (Eval.eval_expr env w self ~err:no_err
-       (letexpr "x" a_leeg (maal (binder_ref "x" num0) (litv "5" num0)) num0))
+       (letexpr "x" a_leeg (maal (binder_ref "x" num0) (litv "5" num0)) num0));
+  (* (4) shadowing: let x = 2 in (let x = 3 in x) maal x  ==  3 × 2 = 6
+     (an inner leak would give 3×3 = 9; no shadowing would give 2×2 = 4) *)
+  expect_num "WV-10.6-shadow-inner-wins"
+    (Eval.eval_expr env w self ~err:no_err
+       (letexpr "x" (litv "2" num0)
+          (maal (letexpr "x" (litv "3" num0) (binder_ref "x" num0) num0) (binder_ref "x" num0))
+          num0))
+    "6";
+  (* (5) shadowing across a fold parameter: fold(+, 0, [1;2;3]) with body
+     `let x = 100 in acc + x` totals 0+100+100+100 = 300 — the Let's x wins
+     over the fold's element binder x (were it not to, the total would be 6) *)
+  let plus l r : Ir_v0.Ast.expr =
+    Binair { op = Plus; links = Some l; rechts = Some r; typ = Some num0; bron = None }
+  in
+  let shadow_fold : Ir_v0.Ast.expr =
+    Fold
+      { typ = Some num0;
+        list =
+          List_literal
+            { typ = Some (List_type { element = num0 });
+              elements = [ litv "1" num0; litv "2" num0; litv "3" num0 ];
+              bron = None };
+        functie =
+          Fn_lambda
+            { parameters = [ ("acc", num0); ("x", num0) ];
+              body =
+                letexpr "x" (litv "100" num0)
+                  (plus (binder_ref "acc" num0) (binder_ref "x" num0))
+                  num0;
+              bron = None };
+        init = litv "0" num0;
+        bron = None }
+  in
+  expect_num "WV-10.6-shadow-fold-parameter"
+    (Eval.eval_expr env w self ~err:no_err shadow_fold)
+    "300"
 
 let () =
   if !failures > 0 then begin

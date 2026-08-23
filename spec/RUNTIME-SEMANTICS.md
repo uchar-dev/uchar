@@ -379,8 +379,10 @@ A Catala decimal (`TRat`) is an **exact rational** — precisely the
 ch. 2.1 model — so its resolved operators
 (`Add/Sub/Mult/Div_rat_rat`, `Minus_rat`) map onto the existing numeric
 operators and its literals (`LRat`) carry the exact lexeme; the casts
-`ToRat_int`/`ToRat_mon` are pass-through with retyping (the value is
-already exact-rational), and no `Percentage` node is involved (Catala
+`ToRat_int`/`ToRat_mon` are a **pass-through** — the value is already
+exact-rational, so the plugin emits the operand unchanged, with no cast
+node of its own, and the result type is borne by the surrounding
+mixed-decimals arithmetic — and no `Percentage` node is involved (Catala
 pre-divides — `20%` arrives as the rational `1/5`). But because the ASP
 side scales every value by its declared `decimalen`, an *unbounded*
 decimal form would be integer-only there. The pin: a Catala-decimal
@@ -2668,7 +2670,7 @@ The strictness is **not** a coalesce, and that is the point. Compare,
 over an absent `inkomen` (leeg):
 
 - `inkomen maal 0,21` — a bare `maal`: empty **coalesces** to 0
-  (ch. 1.2a), so the product is **0**.
+  (the ch. 1.2 coalesce table's `maal` row), so the product is **0**.
 - `Let ink = inkomen in ink maal 0,21` — the strict binding: the leeg
   `value` **propagates**, so the whole `Let` is **leeg**.
 
