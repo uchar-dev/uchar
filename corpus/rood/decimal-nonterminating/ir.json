@@ -1,0 +1,144 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Deling": {
+      "node": "Objecttype",
+      "naam": "Deling",
+      "attributen": {
+        "teller": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 4,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "noemer": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 4,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "quotient": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 4,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Delingen"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "quotient van een deling",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "quotient van een deling",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "quotient",
+        "objecttype": "Deling",
+        "onderwerpBron": "Het quotient van een Deling",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 4,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het quotient van een Deling",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "GEDEELD_DOOR",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "teller",
+          "objecttype": "Deling",
+          "onderwerpBron": "de Deling",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 4,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de teller van de Deling",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "noemer",
+          "objecttype": "Deling",
+          "onderwerpBron": "de Deling",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 4,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de noemer van de Deling",
+          "set": false,
+          "navigatiePad": []
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 4,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de teller van de Deling gedeeld door de noemer van de Deling"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

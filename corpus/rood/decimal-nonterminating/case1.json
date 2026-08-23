@@ -1,0 +1,27 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "D1",
+        "objectType": "Deling",
+        "attributes": {
+          "teller": {
+            "number": "1.0000"
+          },
+          "noemer": {
+            "number": "3.0000"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "does not fit the declared 4 decimals",
+    "clingo": "non-exact division (an explicit rounding is mandated before precision is lost)"
+  }
+}
