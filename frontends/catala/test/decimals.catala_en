@@ -1,0 +1,23 @@
+# Decimals — percentage-literal, rationale rekenkunde en money × rat (§5)
+
+Catala-decimals zijn exacte rationalen; ze landen als een begrensde
+`Numeriek` op de gepinde schaal S = 4 (vraag 4-A). Een percentage-literal
+(`20%`) arriveert al voorgedeeld als de rationale `1/5`. De rationale
+operatoren (`+ - * /`, unaire `-`) lowieren naar de bestaande Binair-familie
+en de cast `decimal of …` is pass-through. Een geldproduct `income × rate`
+rondt Catala op de cent — de plugin omhult het met `Afgerond{REKENKUNDIG,2}`
+(het Div-precedent), dat clingo gesplitst encodeert op tutorial-magnitude.
+
+```catala
+declaration scope Dec:
+  input income content money
+  input count content integer
+  output rate content decimal
+  output blended content decimal
+  output levy content money
+
+scope Dec:
+  definition rate equals 30% + - (5.0 / 100.0)
+  definition blended equals decimal of count / 10.0 * 2.0 - 1.0 / 100.0
+  definition levy equals income * rate
+```

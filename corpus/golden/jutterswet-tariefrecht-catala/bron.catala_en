@@ -1,0 +1,57 @@
+# Jutterswet, artikelen 2, 3 en 4 — het penningtarief
+
+Art. 2 (penningtarief). Over het juttersinkomen is de penningheffing
+verschuldigd naar een tarief van twintig ten honderd. De jutter met ten
+minste twee inwonende kinderen geniet een verlaagd tarief van vijftien
+ten honderd.
+
+Art. 3 (grootgezin en kleine beurs). Het verlaagde tarief van artikel 2
+wordt verder verlaagd tot tien ten honderd voor de jutter met ten minste
+vier inwonende kinderen, en tot nul voor de jutter wiens inkomen
+tienduizend gulden niet te boven gaat.
+
+Art. 4 (de aanslag). De penningaanslag is de heffing over het inkomen
+naar het tarief van de artikelen 2 en 3, verminderd met een kinderaftrek
+van tweehonderdvijftig gulden per inwonend kind; zij bedraagt nooit
+minder dan nul.
+
+Modelleringsnotitie: dit is een eigen, rechtenvrij artikel in de stijl
+van de handgeschreven anker `jutterswet-tariefstelling`, maar zelfstandig
+door de Catala-plugin geschreven — het bundelt de twee 5c-machinerieën
+die de tutorial nodig heeft. Het tarief (art. 2/3) is een vertakkende
+uitzonderingsboom over percentages: de onvoorwaardelijke basis (20%), één
+uitzondering dáárop (de kinderlast, 15%), en dáárop weer twee ongeordende
+uitzonderingen (het grootgezin, 10%, en de kleine beurs, 0%). Die boom
+rijdt op één `Rung.excepties` sub-groep (row 5c, ch. 7.9 — de vorm die de
+plugin vroeger luid weigerde). Bij `kindertal = 4` beslist alléén het
+grootgezin-sublid — de bindende spurious-conflict-lezing (PHASE4-DEFAULTS
+§7): platslaan zou hier een schijnconflict fabriceren. De aanslag (art. 4)
+gebruikt de tutorial-regelvorm `let … in let … in if …`: de strikte
+`Let`-knopen (WF-076), de `IfThenElse` binnen de laatste `Let`-body
+(WF-069) met een binder-only conditie (WF-077), en het geldproduct
+`inkomen × tarief` dat Catala op de cent rondt — `Afgerond{REKENKUNDIG,2}`,
+door clingo gesplitst geëncodeerd zodat het schaal-6-product op
+tutorial-magnitude (€20.000 × 20%) nooit int31 omwikkelt. Decimals dragen
+de gepinde schaal S = 4 (vraag 4-A).
+
+```catala
+declaration scope Penningplichtige:
+  input inkomen content money
+  input kindertal content integer
+  internal tarief content decimal
+  output aanslag content money
+
+scope Penningplichtige:
+  label basis definition tarief equals 20%
+  label kinderlast exception basis definition tarief
+    under condition kindertal >= 2 consequence equals 15%
+  exception kinderlast definition tarief
+    under condition kindertal >= 4 consequence equals 10%
+  exception kinderlast definition tarief
+    under condition inkomen <= $10,000 consequence equals 0%
+
+  definition aanslag equals
+    let aftrek equals $250 * kindertal in
+    let belasting equals inkomen * tarief in
+    if aftrek > belasting then $0 else belasting - aftrek
+```

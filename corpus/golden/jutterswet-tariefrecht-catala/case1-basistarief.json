@@ -1,0 +1,24 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Penningplichtige",
+        "attributes": {
+          "inkomen": { "number": "20000.00" },
+          "kindertal": { "number": "1" }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "tarief", "value": { "number": "0.2000" } },
+    { "kind": "attributeValue", "label": "J1", "attribute": "aanslag", "value": { "number": "3750.00" } },
+    { "kind": "consistent" }
+  ]
+}

@@ -1,0 +1,10 @@
+{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "D", "objectType": "Dec",
+      "attributes": { "income": { "number": "20000.00" }, "count": { "number": "3" } },
+      "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "D", "attribute": "rate", "value": { "number": "0.2500" } },
+    { "kind": "attributeValue", "label": "D", "attribute": "blended", "value": { "number": "0.5900" } },
+    { "kind": "attributeValue", "label": "D", "attribute": "levy", "value": { "number": "5000.00" } },
+    { "kind": "consistent" } ] }

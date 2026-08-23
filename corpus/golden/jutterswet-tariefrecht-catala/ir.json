@@ -1,0 +1,539 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Penningplichtige": {
+      "node": "Objecttype",
+      "naam": "Penningplichtige",
+      "attributen": {
+        "inkomen": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "kindertal": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "tarief": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 4,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "aanslag": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": null
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "berekening aanslag",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "aanslag",
+        "objecttype": "Penningplichtige",
+        "onderwerpBron": "de aanslag",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de aanslag",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Let",
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "binder": "aftrek",
+        "value": {
+          "node": "Afgerond",
+          "basis": {
+            "node": "Binair",
+            "op": "MAAL",
+            "links": {
+              "node": "Literal",
+              "waarde": "250.00",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "250.00"
+            },
+            "rechts": {
+              "node": "AttribuutRef",
+              "attribuut": "kindertal",
+              "objecttype": "Penningplichtige",
+              "onderwerpBron": "de kindertal",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de kindertal",
+              "set": false,
+              "navigatiePad": []
+            },
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": null
+          },
+          "modus": "REKENKUNDIG",
+          "decimalen": 2,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": null
+        },
+        "body": {
+          "node": "Let",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "binder": "belasting",
+          "value": {
+            "node": "Afgerond",
+            "basis": {
+              "node": "Binair",
+              "op": "MAAL",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "inkomen",
+                "objecttype": "Penningplichtige",
+                "onderwerpBron": "de inkomen",
+                "navigatieRol": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "de inkomen",
+                "set": false,
+                "navigatiePad": []
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "tarief",
+                "objecttype": "Penningplichtige",
+                "onderwerpBron": "de tarief",
+                "navigatieRol": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 4,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "de tarief",
+                "set": false,
+                "navigatiePad": []
+              },
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": null
+            },
+            "modus": "REKENKUNDIG",
+            "decimalen": 2,
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": null
+          },
+          "body": {
+            "node": "IfThenElse",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "condition": {
+              "node": "Vergelijking",
+              "op": "GROTER",
+              "links": {
+                "node": "BinderRef",
+                "name": "aftrek",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "aftrek"
+              },
+              "rechts": {
+                "node": "BinderRef",
+                "name": "belasting",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "belasting"
+              },
+              "periode": null,
+              "bron": null
+            },
+            "then": {
+              "node": "Literal",
+              "waarde": "0.00",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "0.00"
+            },
+            "else": {
+              "node": "Binair",
+              "op": "VERMINDERD_MET",
+              "links": {
+                "node": "BinderRef",
+                "name": "belasting",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "belasting"
+              },
+              "rechts": {
+                "node": "BinderRef",
+                "name": "aftrek",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "aftrek"
+              },
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": null
+            },
+            "bron": null
+          },
+          "bron": "belasting"
+        },
+        "bron": "aftrek"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": [],
+  "defaultLadders": [
+    {
+      "node": "DefaultLadder",
+      "naam": "tarief",
+      "onderwerp": "Penningplichtige",
+      "kenmerk": null,
+      "attribuut": "tarief",
+      "rungs": [
+        {
+          "node": "Rung",
+          "besluit": null,
+          "voorwaarde": {
+            "node": "Vergelijking",
+            "op": "GROTER_OF_GELIJK",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "kindertal",
+              "objecttype": "Penningplichtige",
+              "onderwerpBron": "de kindertal",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de kindertal",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "2",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "2"
+            },
+            "periode": null,
+            "bron": null
+          },
+          "consequentie": {
+            "node": "Literal",
+            "waarde": "0.1500",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 4,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "0.1500"
+          },
+          "bron": "tarief",
+          "excepties": {
+            "ongeordend": true,
+            "leden": [
+              {
+                "node": "SubLadder",
+                "rungs": [
+                  {
+                    "node": "Rung",
+                    "besluit": null,
+                    "voorwaarde": {
+                      "node": "Vergelijking",
+                      "op": "GROTER_OF_GELIJK",
+                      "links": {
+                        "node": "AttribuutRef",
+                        "attribuut": "kindertal",
+                        "objecttype": "Penningplichtige",
+                        "onderwerpBron": "de kindertal",
+                        "navigatieRol": null,
+                        "type": {
+                          "node": "Numeriek",
+                          "geheel": true,
+                          "decimalen": 0,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        },
+                        "bron": "de kindertal",
+                        "set": false,
+                        "navigatiePad": []
+                      },
+                      "rechts": {
+                        "node": "Literal",
+                        "waarde": "4",
+                        "type": {
+                          "node": "Numeriek",
+                          "geheel": true,
+                          "decimalen": 0,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        },
+                        "bron": "4"
+                      },
+                      "periode": null,
+                      "bron": null
+                    },
+                    "consequentie": {
+                      "node": "Literal",
+                      "waarde": "0.1000",
+                      "type": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 4,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      },
+                      "bron": "0.1000"
+                    },
+                    "bron": "tarief"
+                  }
+                ],
+                "bron": "tarief"
+              },
+              {
+                "node": "SubLadder",
+                "rungs": [
+                  {
+                    "node": "Rung",
+                    "besluit": null,
+                    "voorwaarde": {
+                      "node": "Vergelijking",
+                      "op": "KLEINER_OF_GELIJK",
+                      "links": {
+                        "node": "AttribuutRef",
+                        "attribuut": "inkomen",
+                        "objecttype": "Penningplichtige",
+                        "onderwerpBron": "de inkomen",
+                        "navigatieRol": null,
+                        "type": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        },
+                        "bron": "de inkomen",
+                        "set": false,
+                        "navigatiePad": []
+                      },
+                      "rechts": {
+                        "node": "Literal",
+                        "waarde": "10000.00",
+                        "type": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        },
+                        "bron": "10000.00"
+                      },
+                      "periode": null,
+                      "bron": null
+                    },
+                    "consequentie": {
+                      "node": "Literal",
+                      "waarde": "0.0000",
+                      "type": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 4,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      },
+                      "bron": "0.0000"
+                    },
+                    "bron": "tarief"
+                  }
+                ],
+                "bron": "tarief"
+              }
+            ]
+          }
+        },
+        {
+          "node": "Rung",
+          "besluit": null,
+          "voorwaarde": {
+            "node": "Samengesteld",
+            "kwantor": "ALLE",
+            "drempel": 0,
+            "onderdelen": [],
+            "bron": "altijd"
+          },
+          "consequentie": {
+            "node": "Literal",
+            "waarde": "0.2000",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 4,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "0.2000"
+          },
+          "bron": "tarief"
+        }
+      ],
+      "bron": "tarief",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ]
+}

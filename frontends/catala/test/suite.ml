@@ -118,7 +118,18 @@ let () =
          AND clingo *)
       ("nested_group.catala_en",
        [ "cases/nested_100.json"; "cases/nested_50.json";
-         "cases/nested_5.json"; "cases/nested_200.json" ]) ]
+         "cases/nested_5.json"; "cases/nested_200.json" ]);
+      (* row-5c §6: the tutorial's rule-level let-if over money — nested strict
+         Let nodes whose body is an IfThenElse (WF-069 widens into Let bodies)
+         with a binder-only condition (WF-077). Both branches through the full
+         differential *)
+      ("let_if.catala_en", [ "cases/letif_60.json"; "cases/letif_0.json" ]);
+      (* row-5c §5: Catala decimals at the pinned scale S = 4 — a percentage
+         literal, the rational operators (Add/Sub/Mult/Div_rat_rat, unary
+         Minus_rat) and the ToRat cast, plus a money × rate product that Catala
+         rounds to the cent (Afgerond{REKENKUNDIG,2}) on tutorial magnitude,
+         which clingo encodes SPLIT so the scale-6 product never wraps int31 *)
+      ("decimals.catala_en", [ "cases/dec_drie.json"; "cases/dec_vijf.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:false src cases) passing;
   (* ref-only passing programs. datum: clingo cannot translate a date literal
@@ -132,10 +143,10 @@ let () =
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:true src cases) passing_ref_only;
   (* refusal programs: source -> expected reason fragment. Besluit 4's four
-     forms plus the empty-operand and literal-false refusals; decimals and
-     subscopes carry the boundary proof that the official Catala tutorial
-     (decimals, subscopes, let-in, branching exceptions) still falls outside
-     the fragment — structs and lists now land (row 5c/10). *)
+     forms plus the empty-operand and literal-false refusals; the subscope
+     fence carries the boundary proof that the remaining tutorial construct
+     (the subscope call) still falls outside the fragment — decimals, let-in
+     and branching exceptions now land (row 5c). *)
   let refusals =
     [ ("refuse_context.catala_en", "context");
       ("refuse_subscope.catala_en", "subscope");
@@ -150,10 +161,17 @@ let () =
          each refuse loudly *)
       ("refuse_partialmatch.catala_en", "total");
       ("refuse_tuple.catala_en", "tuple");
-      ("refuse_decimal_type.catala_en", "decimal");
-      ("refuse_decimal_literal.catala_en", "decimal");
-      (* an if-then-else in a RULE expression stays refused (WF-069: value
-         conditionals live only inside lambda/function bodies) *)
+      (* row-5c §5: a decimal literal that does not terminate at the pinned
+         scale S = 4 is refused loudly at the source (the leeg-barrier for
+         precision) *)
+      ("refuse_nonterminating.catala_en", "terminate");
+      (* row-5c §6: WF-077, the condition-operand discipline — an if-then-else
+         condition that reads an attribute directly (not through a strict let)
+         is refused with the hoist instruction *)
+      ("refuse_condition_read.catala_en", "WF-077");
+      (* an if-then-else in a BARE rule expression (not under a let) stays
+         refused (WF-069: value conditionals live only inside lambda, function
+         or strict Let bodies) *)
       ("refuse_ifthenelse.catala_en", "if-then-else");
       ("refuse_boolfalse.catala_en", "false");
       (* row-10 fences (§4): list sorting, a plain-value topdef, and a

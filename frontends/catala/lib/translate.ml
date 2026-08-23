@@ -104,6 +104,13 @@ let optional_domain = EnumName.base ConstantNames.option_enum
 let geldig : I.geldigheid = { geld_vanaf = None; geld_tot = None }
 let num_int : I.datatype = Numeriek { geheel = true; decimalen = 0; teken = Some Onbepaald; eenheid = None }
 let num_money : I.datatype = Numeriek { geheel = false; decimalen = 2; teken = Some Onbepaald; eenheid = None }
+(* the pinned Catala-decimal scale (PHASE5C-TUTORIAL §5, vraag 4-A): S = 4.
+   A Catala decimal is an exact rational; it lands as a bounded Numeriek at
+   four decimals, and a value that does not terminate at four decimals faults
+   loudly and consistently in both executors (ref's bounded-write gate,
+   clingo's does-not-fit fence). *)
+let rat_scale = 4
+let num_rat : I.datatype = Numeriek { geheel = false; decimalen = rat_scale; teken = Some Onbepaald; eenheid = None }
 let always_true : I.conditie = Samengesteld { kwantor = Alle; drempel = 0; onderdelen = []; bron = Some "altijd" }
 
 let optional_dt (element : I.datatype) : I.datatype =
@@ -137,7 +144,7 @@ let rec catala_dt (enums : enum_ctx) (structs : struct_ctx) (t : typ) : I.dataty
   | TLit TBool -> Booleaan
   | TLit TMoney -> num_money
   | TLit TDate -> Datum_in_dagen
-  | TLit TRat -> refuse "decimal (rational) type: refused in the 5a skeleton (no declared number of decimals to derive)"
+  | TLit TRat -> num_rat
   | TLit TDuration -> refuse "duration type: not supported in the 5a skeleton"
   | TLit (TUnit | TPos) -> refuse "unit/pos type: not a domain value"
   | TDefault inner -> catala_dt enums structs inner
@@ -209,6 +216,23 @@ and struct_type_of (enums : enum_ctx) (structs : struct_ctx) (name : StructName.
 
 let is_bool_dt = function I.Booleaan -> true | _ -> false
 
+(* the declared datatype riding an already-built IR expression — the mirror
+   of the verifier's [typ_of_expr] (checks.ml). Used to set a [Let]'s type to
+   its body's type (WF-076) and an [IfThenElse]'s type to its then-branch
+   (WF-069), by construction rather than by re-inference. *)
+let ir_typ (e : I.expr) : I.datatype option =
+  match e with
+  | Literal { typ; _ } | Tekst_reeks { typ; _ } | Binair { typ; _ }
+  | Functie { typ; _ } | Afgerond { typ; _ } | Begrensd { typ; _ }
+  | Attribuut_ref { typ; _ } | Dimensie_cel { typ; _ } | Parameter_ref { typ; _ }
+  | Variabele_ref { typ; _ } | Constante { typ; _ } | Expr_onopgelost { typ; _ }
+  | Temporal_read { typ; _ } | Construct { typ; _ } | Match { typ; _ }
+  | Binder_ref { typ; _ } | Struct_literal { typ; _ } | Field_access { typ; _ }
+  | List_literal { typ; _ } | If_then_else { typ; _ } | Let { typ; _ }
+  | Invoke { typ; _ } | Fold { typ; _ } | Map_list { typ; _ }
+  | Filter_list { typ; _ } | List_length { typ; _ } -> typ
+  | Lambda _ -> None
+
 (* --- literals ----------------------------------------------------------- *)
 
 let money_str (z : Z.t) : string =
@@ -224,6 +248,25 @@ let date_str (d : Catala_runtime.date) : string =
   let y, m, dd = Catala_runtime.date_to_years_months_days d in
   Printf.sprintf "%04d-%02d-%02d" y m dd
 
+(* an exact rational (a Catala decimal, [Q.t]) -> its four-decimal lexeme.
+   The pinned scale is S = 4 (vraag 4-A); a rational that does not terminate
+   at four decimals has no exact representation there and is refused loudly —
+   the same barrier ref's bounded-write gate and clingo's does-not-fit fence
+   enforce dynamically, applied at the source. *)
+let rat_str (q : Q.t) : string =
+  let scale = Z.pow (Z.of_int 10) rat_scale in
+  let scaled = Q.mul q (Q.of_bigint scale) in
+  if not (Z.equal (Q.den scaled) Z.one) then
+    refuse
+      "decimal literal %s does not terminate at %d decimals (the pinned Catala-decimal scale): it \
+       has no exact four-decimal representation — refused"
+      (Q.to_string q) rat_scale;
+  let k = Q.num scaled in
+  let neg = Z.sign k < 0 in
+  let a = Z.abs k in
+  Printf.sprintf "%s%s.%0*d" (if neg then "-" else "") (Z.to_string (Z.div a scale)) rat_scale
+    (Z.to_int (Z.rem a scale))
+
 let literal_expr (l : lit) : I.expr =
   match l with
   | LBool b ->
@@ -232,7 +275,7 @@ let literal_expr (l : lit) : I.expr =
   | LInt z -> Literal { waarde = Some (Z.to_string z); typ = Some num_int; bron = Some (Z.to_string z) }
   | LMoney z -> Literal { waarde = Some (money_str z); typ = Some num_money; bron = Some (money_str z) }
   | LDate d -> Literal { waarde = Some (date_str d); typ = Some Datum_in_dagen; bron = Some (date_str d) }
-  | LRat _ -> refuse "decimal (rational) literal: refused in the 5a skeleton"
+  | LRat q -> Literal { waarde = Some (rat_str q); typ = Some num_rat; bron = Some (rat_str q) }
   | LDuration _ -> refuse "duration literal: not supported in the 5a skeleton"
   | LUnit -> refuse "unit literal: not a domain value"
 
@@ -247,6 +290,42 @@ let rec strip e =
 
 let is_true e = match M.remove (strip e) with ELit (LBool true) -> true | _ -> false
 let is_empty e = match M.remove (strip e) with EEmpty -> true | _ -> false
+
+(* WF-077, the condition-operand discipline (IR-SPEC ch. 4.10). Everywhere an
+   [IfThenElse] is admissible (a lambda, function or strict [Let] body), its
+   condition may READ only binders, parameters and literals; arithmetic
+   combinators over those are admissible. An attribute/field/characteristic/
+   aggregation/temporal read as (or inside) a condition operand must be hoisted
+   through a strict [let … in] binding first — the leeg-barrier. Enforced here
+   as a pre-walk over the raw scopelang condition, refusing loudly with the
+   hoist instruction; the translation that follows then meets only bound reads
+   and literals. *)
+let rec check_cond_wf077 e =
+  match M.remove (strip e) with
+  | ELit _ | EVar _ -> ()
+  | EAppOp { args; _ } -> List.iter check_cond_wf077 args
+  | EIfThenElse { cond; etrue; efalse } ->
+      check_cond_wf077 cond; check_cond_wf077 etrue; check_cond_wf077 efalse
+  | ELocation (ScopelangScopeVar { name; _ }) ->
+      refuse
+        "WF-077: the condition of an if-then-else reads the scope variable %S directly; bind it \
+         through a strict `let … in` first and compare the binder — a condition may read only \
+         binders, parameters and literals (the condition-operand discipline, the leeg-barrier)"
+        (M.remove (ScopeVar.get_info (M.remove name)))
+  | ELocation _ ->
+      refuse
+        "WF-077: an if-then-else condition may read only binders, parameters and literals; hoist \
+         this read through a strict `let … in` binding first"
+  | EStructAccess { field; _ } ->
+      refuse
+        "WF-077: the condition of an if-then-else reads the struct field %S directly; hoist it \
+         through a strict `let … in` binding first (a condition reads only binders, parameters and \
+         literals)"
+        (StructField.to_string field)
+  | _ ->
+      refuse
+        "WF-077: an if-then-else condition admits only binders, parameters, literals and arithmetic \
+         over those; hoist any other read through a strict `let … in` binding first"
 
 (* --- the default tree, parsed into a rung tree (PHASE5C §4, ch. 7.9) -----
 
@@ -395,7 +474,12 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
         | _ -> infer_dt ~env a)
     | _ -> None
   in
-  let rec value_expr ?(operand = false) ?(in_body = false) ?(env = Var.Map.empty) e : I.expr =
+  let rec value_expr ?(operand = false) ?(in_body = false) ?(in_let = false)
+      ?(env = Var.Map.empty) e : I.expr =
+    (* [in_body]: a closed lambda/function body — scope reads refuse (WF-067),
+       IfThenElse admissible. [in_let]: a strict Let body — scope reads are
+       allowed (a Let body is NOT closed), IfThenElse admissible (WF-069, the
+       5c widening). IfThenElse is admissible iff [in_body || in_let]. *)
     let e = strip e in
     match M.remove e with
     | ELit l -> literal_expr l
@@ -409,15 +493,24 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
     | ELocation (ScopelangScopeVar { name }) -> read_var ~operand ~in_body name
     | EAppOp { op; args; _ } -> (
         let bin bop a b : I.expr =
-          Binair { op = bop; links = Some (value_expr ~operand:true ~in_body ~env a);
-                   rechts = Some (value_expr ~operand:true ~in_body ~env b);
+          Binair { op = bop; links = Some (value_expr ~operand:true ~in_body ~in_let ~env a);
+                   rechts = Some (value_expr ~operand:true ~in_body ~in_let ~env b);
                    typ = infer_dt ~env e; bron = None }
         in
         match M.remove op, args with
-        | (Op.Add_int_int | Op.Add_mon_mon | Op.Add_dur_dur), [ a; b ] -> bin Plus a b
-        | (Op.Sub_int_int | Op.Sub_mon_mon | Op.Sub_dur_dur), [ a; b ] -> bin Verminderd_met a b
-        | (Op.Mult_int_int | Op.Mult_mon_int | Op.Mult_mon_rat | Op.Mult_dur_int), [ a; b ] -> bin Maal a b
-        | (Op.Div_int_int | Op.Div_dur_dur), [ a; b ] -> bin Gedeeld_door a b
+        | (Op.Add_int_int | Op.Add_mon_mon | Op.Add_dur_dur | Op.Add_rat_rat), [ a; b ] -> bin Plus a b
+        | (Op.Sub_int_int | Op.Sub_mon_mon | Op.Sub_dur_dur | Op.Sub_rat_rat), [ a; b ] ->
+            bin Verminderd_met a b
+        | (Op.Mult_int_int | Op.Mult_dur_int | Op.Mult_rat_rat), [ a; b ] -> bin Maal a b
+        | (Op.Mult_mon_int | Op.Mult_mon_rat), [ a; b ] ->
+            (* Catala rounds a money product to the cent (o_mult_mon_rat, §5) —
+               wrap the product in Afgerond{REKENKUNDIG,2} exactly as the money
+               divisions are (the Div precedent). A money × 4-decimal rate takes
+               clingo's split encoding downstream (money_mult_shape). *)
+            Afgerond
+              { basis = Some (bin Maal a b); modus = Rekenkundig; decimalen = 2;
+                typ = Some num_money; bron = None }
+        | (Op.Div_int_int | Op.Div_dur_dur | Op.Div_rat_rat), [ a; b ] -> bin Gedeeld_door a b
         | (Op.Div_mon_int | Op.Div_mon_rat), [ a; b ] ->
             (* Catala rounds money division to cents (arithmetic / nearest);
                wrap the quotient so the IR rounds identically instead of
@@ -425,6 +518,21 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
             Afgerond
               { basis = Some (bin Gedeeld_door a b); modus = Rekenkundig;
                 decimalen = 2; typ = Some num_money; bron = None }
+        | Op.Minus_rat, [ a ] ->
+            (* unary rational negation -> 0 - a in the additive family (MIN
+               coalesces both operands to 0; the operand is not leeg here) *)
+            Binair
+              { op = Min;
+                links =
+                  Some (Literal { waarde = Some (rat_str Q.zero); typ = Some num_rat;
+                                  bron = Some (rat_str Q.zero) });
+                rechts = Some (value_expr ~operand:true ~in_body ~in_let ~env a);
+                typ = Some num_rat; bron = None }
+        | (Op.ToRat_int | Op.ToRat_mon), [ a ] ->
+            (* the decimal casts (decimal of n / of $m) are pass-through: a Catala
+               decimal is already an exact rational, so the operand carries through
+               unchanged, its declared datatype riding the mixed-decimals family *)
+            value_expr ~operand ~in_body ~in_let ~env a
         | Op.Div_mon_mon, [ _; _ ] ->
             refuse "money / money division yields a decimal (rational): refused in the 5a skeleton (no declared number of decimals)"
         | Op.Map, [ f; lst ] ->
@@ -439,9 +547,9 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
             in
             Map_list
               { typ = Some (List_type { element = out_elt });
-                list = value_expr ~in_body ~env lst;
+                list = value_expr ~in_body ~in_let ~env lst;
                 functie = Fn_lambda { parameters = [ (pn, pt) ];
-                                      body = value_expr ~in_body:true ~env:env' body; bron = Some pn };
+                                      body = value_expr ~in_body:true ~in_let:false ~env:env' body; bron = Some pn };
                 bron = None }
         | Op.Filter, [ f; lst ] ->
             let vars, tys, body = lambda_of f in
@@ -454,8 +562,8 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
               | _ -> refuse "cannot infer the ListType of a filter source"
             in
             Filter_list
-              { typ = Some src_ty; list = value_expr ~in_body ~env lst; binder = pn;
-                condition = cond_expr ~in_body ~env:env' body; bron = None }
+              { typ = Some src_ty; list = value_expr ~in_body ~in_let ~env lst; binder = pn;
+                condition = cond_expr ~in_body ~in_let ~env:env' body; bron = None }
         | Op.Fold, [ f; init; lst ] ->
             let vars, tys, body = lambda_of f in
             if Array.length vars <> 2 then refuse "a fold lambda takes exactly two parameters";
@@ -463,12 +571,12 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
             let xn = Bindlib.name_of vars.(1) and xt = catala_dt enums structs (List.nth tys 1) in
             let env' = Var.Map.add vars.(1) (xn, xt) (Var.Map.add vars.(0) (an, at) env) in
             Fold
-              { typ = Some at; list = value_expr ~in_body ~env lst;
+              { typ = Some at; list = value_expr ~in_body ~in_let ~env lst;
                 functie = Fn_lambda { parameters = [ (an, at); (xn, xt) ];
-                                      body = value_expr ~in_body:true ~env:env' body; bron = None };
-                init = value_expr ~in_body ~env init; bron = None }
+                                      body = value_expr ~in_body:true ~in_let:false ~env:env' body; bron = None };
+                init = value_expr ~in_body ~in_let ~env init; bron = None }
         | Op.Length, [ lst ] ->
-            List_length { typ = Some num_int; list = value_expr ~in_body ~env lst; bron = None }
+            List_length { typ = Some num_int; list = value_expr ~in_body ~in_let ~env lst; bron = None }
         | Op.Reduce, _ ->
             refuse "a bare reduce appears only as the scrutinee of an Optional match (the sum/maximum/minimum lowering)"
         | Op.Sort _, _ ->
@@ -484,6 +592,29 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
         | o, _ -> refuse "operator %S not supported in a value expression" (Operator.name o))
     | EApp { f; args; _ } -> (
         match M.remove (strip f) with
+        | EAbs { binder; tys; _ } ->
+            (* the strict Let (IR-SPEC ch. 4.10): Catala lowers [let x = v in
+               body] to [EApp{EAbs[x], [v]}], a chain nesting one per binding.
+               Each binder joins the WF-064 regime for its body; the value is
+               evaluated in the enclosing position (the binder is NOT visible in
+               its own value, WF-076), the body in a Let position where
+               IfThenElse widens in (WF-069). A leeg value propagates strictly.
+               The node type equals the body type (WF-076), read off the body. *)
+            let vars, body = Bindlib.unmbind binder in
+            if Array.length vars <> List.length args then
+              refuse "a let-binding applies %d value(s) to %d binder(s)" (List.length args)
+                (Array.length vars);
+            let argv = Array.of_list args in
+            let rec build i env =
+              if i = Array.length vars then value_expr ~in_body ~in_let:(not in_body) ~env body
+              else
+                let name = Bindlib.name_of vars.(i) in
+                let bt = catala_dt enums structs (List.nth tys i) in
+                let v = value_expr ~in_body ~in_let ~env argv.(i) in
+                let rest = build (i + 1) (Var.Map.add vars.(i) (name, bt) env) in
+                I.Let { typ = ir_typ rest; binder = name; value = v; body = rest; bron = Some name }
+            in
+            build 0 env
         | ELocation (ToplevelVar { name; _ }) ->
             let fname = TopdefName.base (M.remove name) in
             let rty =
@@ -493,7 +624,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
             in
             Invoke
               { typ = Some rty; functie = fname;
-                arguments = List.map (value_expr ~operand:true ~in_body ~env) args; bron = Some fname }
+                arguments = List.map (value_expr ~operand:true ~in_body ~in_let ~env) args; bron = Some fname }
         | _ -> refuse "application of a non-top-level expression is not supported")
     | EScopeCall _ ->
         refuse "subscope call (EScopeCall): object creation + role navigation (mapping row 9) is out of 5a scope"
@@ -520,7 +651,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
                     (StructField.to_string field) (StructName.base name)
             in
             Field_access
-              { typ = Some veld_ty; base = value_expr ~operand ~in_body ~env inner;
+              { typ = Some veld_ty; base = value_expr ~operand ~in_body ~in_let ~env inner;
                 veld = StructField.to_string field; bron = None })
     | EInj { name; e = payload; cons } ->
         (* a constructor value; unit payload = nullary (argument None) *)
@@ -529,7 +660,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
         let argument =
           match M.remove payload_ty with
           | TLit TUnit -> None
-          | _ -> Some (value_expr ~in_body ~env payload)
+          | _ -> Some (value_expr ~in_body ~in_let ~env payload)
         in
         Construct
           { typ = Some (sum_type_of enums structs name);
@@ -561,7 +692,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
         let an = Bindlib.name_of rvars.(0) and xn = Bindlib.name_of rvars.(1) in
         let acc_name = fresh_acc_name [ an; xn ] in
         let env_step = Var.Map.add rvars.(1) (xn, elt) (Var.Map.add rvars.(0) (an, elt) env) in
-        let present_body = some_of (value_expr ~in_body:true ~env:env_step rbody) in
+        let present_body = some_of (value_expr ~in_body:true ~in_let:false ~env:env_step rbody) in
         let absent_body = some_of (Binder_ref { naam = xn; typ = Some elt; bron = Some xn }) in
         let step : I.expr =
           Match
@@ -572,7 +703,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
         in
         let fold : I.expr =
           Fold
-            { typ = Some opt; list = value_expr ~in_body ~env lst;
+            { typ = Some opt; list = value_expr ~in_body ~in_let ~env lst;
               functie = Fn_lambda { parameters = [ (acc_name, opt); (xn, elt) ]; body = step;
                                     bron = Some "de vouwstap" };
               init = Construct { typ = Some opt; constructor_ = none_c; argument = None; bron = Some none_c };
@@ -584,15 +715,15 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
           match M.remove none_case with
           | EAbs { binder; _ } ->
               let _v, b = Bindlib.unmbind binder in
-              value_expr ~in_body ~env b
-          | _ -> value_expr ~in_body ~env none_case
+              value_expr ~in_body ~in_let ~env b
+          | _ -> value_expr ~in_body ~in_let ~env none_case
         in
         let sbinder, s_body =
           match M.remove some_case with
           | EAbs { binder; _ } ->
               let vs, b = Bindlib.unmbind binder in
               let n = Bindlib.name_of vs.(0) in
-              (n, value_expr ~in_body ~env:(Var.Map.add vs.(0) (n, elt) env) b)
+              (n, value_expr ~in_body ~in_let ~env:(Var.Map.add vs.(0) (n, elt) env) b)
           | _ -> refuse "the Present arm of an Optional match is not a function"
         in
         Match
@@ -643,7 +774,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
               let inf' =
                 match inf with Some _ -> inf | None -> infer_dt ~env:env' body
               in
-              ( (EnumConstructor.to_string c, binder_name, value_expr ~in_body ~env:env' body)
+              ( (EnumConstructor.to_string c, binder_name, value_expr ~in_body ~in_let ~env:env' body)
                 :: arms,
                 inf' ))
             sig_ ([], None)
@@ -656,7 +787,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
                 (EnumName.base name)
         in
         Match
-          { typ = Some result_dt; scrutinee = value_expr ~in_body ~env scrut;
+          { typ = Some result_dt; scrutinee = value_expr ~in_body ~in_let ~env scrut;
             arms = List.rev arms_rev; bron = Some ("match " ^ EnumName.base name) }
     | EArray elts -> (
         match elts with
@@ -669,7 +800,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
             in
             List_literal
               { typ = Some (List_type { element = elt });
-                elements = List.map (value_expr ~in_body ~env) elts; bron = None })
+                elements = List.map (value_expr ~in_body ~in_let ~env) elts; bron = None })
     | EAbs _ -> refuse "a function value outside a fold/map operand is not first-class (WF-069): only a Fold/MapList function operand or a named function"
     | EStruct { name; fields } ->
         (* row-5c StructLiteral: fields in declaration order (WF-073). Catala's
@@ -681,18 +812,23 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
           List.rev
             (StructField.Map.fold
                (fun fld v acc ->
-                 (StructField.to_string fld, value_expr ~in_body ~env v) :: acc)
+                 (StructField.to_string fld, value_expr ~in_body ~in_let ~env v) :: acc)
                fields [])
         in
         Struct_literal { typ = Some (struct_type_of enums structs name); velden; bron = None }
     | EIfThenElse { cond; etrue; efalse } ->
-        if not in_body then
+        if not (in_body || in_let) then
           refuse
-            "if-then-else in a rule expression: a value-level conditional is admissible only inside a lambda or function body (WF-069); a rule keeps the ladder/voorwaarde idiom";
+            "if-then-else in a rule expression: a value-level conditional is admissible only inside a lambda, function or strict let body (WF-069); a rule keeps the ladder/voorwaarde idiom (bind through a `let … in` to carry it)";
+        (* WF-077, the condition-operand discipline: a condition reads only
+           binders, parameters and literals — an attribute/field read must be
+           hoisted through a strict let first (checked before translation) *)
+        check_cond_wf077 cond;
+        let then_ = value_expr ~in_body ~in_let ~env etrue in
+        let else_ = value_expr ~in_body ~in_let ~env efalse in
         If_then_else
-          { typ = infer_dt ~env etrue; condition = cond_expr ~in_body ~env cond;
-            then_ = value_expr ~in_body ~env etrue; else_ = value_expr ~in_body ~env efalse;
-            bron = None }
+          { typ = ir_typ then_; condition = cond_expr ~in_body ~in_let ~env cond;
+            then_; else_; bron = None }
     | _ -> refuse "value-expression shape not supported in the 5a skeleton"
   and cmp_op ?(env = Var.Map.empty) o a b : I.vergelijk_op =
     let is_date = infer_dt ~env a = Some Datum_in_dagen || infer_dt ~env b = Some Datum_in_dagen in
@@ -703,7 +839,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
     | Op.Gte, false -> Groter_of_gelijk | Op.Gte, true -> Later_of_gelijk
     | Op.Eq, _ -> Gelijk
     | _ -> refuse "comparison operator not supported"
-  and cond_expr ?(in_body = false) ?(env = Var.Map.empty) e : I.conditie =
+  and cond_expr ?(in_body = false) ?(in_let = false) ?(env = Var.Map.empty) e : I.conditie =
     let e = strip e in
     match M.remove e with
     | ELit (LBool true) -> always_true
@@ -712,8 +848,8 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
     | EAppOp { op; args; _ } -> (
         let vergelijking vop a b : I.conditie =
           Vergelijking
-            { op = vop; links = Some (value_expr ~operand:true ~in_body ~env a);
-              rechts = Some (value_expr ~operand:true ~in_body ~env b); periode = None; bron = None }
+            { op = vop; links = Some (value_expr ~operand:true ~in_body ~in_let ~env a);
+              rechts = Some (value_expr ~operand:true ~in_body ~in_let ~env b); periode = None; bron = None }
         in
         match M.remove op, args with
         | (Op.Lt | Op.Lte | Op.Gt | Op.Gte | Op.Eq), [ a; b ] ->
@@ -730,9 +866,9 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
                 | _ -> refuse "operator Not is only expressible over an equality (a != b)")
             | _ -> refuse "operator Not is only expressible over an equality (a != b)")
         | Op.And, [ a; b ] ->
-            Samengesteld { kwantor = Alle; drempel = 0; onderdelen = [ cond_expr ~in_body ~env a; cond_expr ~in_body ~env b ]; bron = Some "en" }
+            Samengesteld { kwantor = Alle; drempel = 0; onderdelen = [ cond_expr ~in_body ~in_let ~env a; cond_expr ~in_body ~in_let ~env b ]; bron = Some "en" }
         | Op.Or, [ a; b ] ->
-            Samengesteld { kwantor = Ten_minste; drempel = 1; onderdelen = [ cond_expr ~in_body ~env a; cond_expr ~in_body ~env b ]; bron = Some "of" }
+            Samengesteld { kwantor = Ten_minste; drempel = 1; onderdelen = [ cond_expr ~in_body ~in_let ~env a; cond_expr ~in_body ~in_let ~env b ]; bron = Some "of" }
         | o, _ -> refuse "operator %S not supported in a condition" (Operator.name o))
     | _ -> refuse "condition shape not supported in the 5a skeleton"
   in
@@ -1019,7 +1155,7 @@ let topdef_functions enums structs functions topdefs : I.function_def list =
           in
           { I.fd_naam = fname; fd_parameters = params;
             fd_result = List.assoc fname functions;
-            fd_body = value_expr ~in_body:true ~env body; fd_bron = Some fname }
+            fd_body = value_expr ~in_body:true ~in_let:false ~env body; fd_bron = Some fname }
       | _ ->
           refuse
             "a plain-value top-level definition (a constant, not a function) is refused until a case wants it (recorded)")

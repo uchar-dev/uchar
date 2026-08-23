@@ -203,6 +203,12 @@ let rec expr (e : expr) : json =
   | Field_access { typ = t; base; veld; bron = br } ->
       node "FieldAccess"
         [ ("type", opt datatype t); ("base", expr base); ("field", s veld); bron br ]
+  | Let { typ = t; binder; value; body; bron = br } ->
+      (* the strict Let (IR-SPEC ch. 4.10): [type] is non-null on the wire and
+         equals the body type (WF-076); [binder] joins the WF-064 regime *)
+      node "Let"
+        [ ("type", opt datatype t); ("binder", s binder);
+          ("value", expr value); ("body", expr body); bron br ]
   | other ->
       failwith
         ("Emit.expr: node not produced by the skeleton: "

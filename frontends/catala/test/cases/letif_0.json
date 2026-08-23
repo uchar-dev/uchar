@@ -1,0 +1,8 @@
+{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "L", "objectType": "LetIf",
+      "attributes": { "a": { "number": "40.00" }, "b": { "number": "100.00" } },
+      "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "L", "attribute": "result", "value": { "number": "0.00" } },
+    { "kind": "consistent" } ] }

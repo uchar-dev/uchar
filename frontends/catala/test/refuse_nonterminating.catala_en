@@ -1,0 +1,13 @@
+# Niet-terminerende decimaal-literal — geweigerd (§5, vraag 4-A).
+# De gepinde schaal is S = 4; een literal die niet op vier decimalen
+# termineert (hier 0,12345 = 2469/20000) heeft geen exacte representatie
+# en wordt luid geweigerd — dezelfde barrière die refs begrensde-schrijf-
+# poort en clingo's past-niet-hek dynamisch handhaven, aan de bron.
+
+```catala
+declaration scope NonTerm:
+  output r content decimal
+
+scope NonTerm:
+  definition r equals 0.12345
+```

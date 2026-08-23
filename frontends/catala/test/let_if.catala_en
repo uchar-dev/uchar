@@ -1,0 +1,21 @@
+# De let-if-vorm — de tutorial-regelvorm over money (row 5c, §6)
+
+De 2-3-regelvorm zonder decimals: een geldwaarde berekend als een
+`let … in let … in if … then … else …`. Catala lowert `let x equals e
+in b` naar `EApp{EAbs[x], [e]}`; de plugin bouwt er strikte `Let`-knopen
+van (WF-076), en de body-`if` wordt toegelaten binnen de `Let`-body
+(WF-069, de 5c-verruiming). De conditie leest uitsluitend binders (WF-077:
+de conditie-operand-discipline). Beide takken drievoudig gedekt.
+
+```catala
+declaration scope LetIf:
+  input a content money
+  input b content money
+  output result content money
+
+scope LetIf:
+  definition result equals
+    let x equals a in
+    let y equals b in
+    if y > x then $0 else x - y
+```

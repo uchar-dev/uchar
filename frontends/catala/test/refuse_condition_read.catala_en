@@ -1,0 +1,17 @@
+# De conditie-operand-discipline (WF-077) — geweigerd.
+# Een if-then-else-conditie mag alleen binders, parameters en literals
+# lezen; hier leest `b > x` het attribuut `b` rechtstreeks. Dat moet
+# eerst door een strikte `let … in`-binding — de leeg-barrière die refs
+# leeg-propagatie en clingo's onafleidbaarheid laat samenvallen.
+
+```catala
+declaration scope Guard:
+  input a content money
+  input b content money
+  output r content money
+
+scope Guard:
+  definition r equals
+    let x equals a in
+    if b > x then $0 else x
+```
