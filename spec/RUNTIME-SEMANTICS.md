@@ -2821,7 +2821,7 @@ Worked (the anchor's `dubbel` iff `dossier` = `{waarde: 120.50, telling:
   refuses loudly — the ASP case emission scales every scalar parameter and
   a `StructType` has no integer encoding (`unscalable datatype in the ASP
   translation`), and no corpus case exercises it (the sum-typed-parameter
-  sibling, ASP-TRANSLATION S18). The loaders fail fast on an undeclared
+  sibling, ASP-TRANSLATION S19). The loaders fail fast on an undeclared
   field, a field against the wrong datatype, or a leeg field (the no-hole
   rule at the boundary — the WF-059/WF-018 backstop, widened); and the
   input-precision fence recurses into record fields and list elements,

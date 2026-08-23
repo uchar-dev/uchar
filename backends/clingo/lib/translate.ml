@@ -486,7 +486,7 @@ let struct_type_of_datatype = function
    A struct always declares at least one field (WF-071), so the term is never
    the bare functor (no collision with a nullary constructor). A nested struct
    or sum field VALUE has no integer encoding here and no corpus case — it
-   faults (S18), the nested-sum-payload fence's sibling. *)
+   faults (S19), the nested-sum-payload fence's sibling. *)
 let struct_value_term (domein, velden) (fs : (string * Value.t) list) : string =
   let f = ctor_functor domein in
   let arg (fname, fdt) =
@@ -1039,6 +1039,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   | Afgerond { basis = Some (Binair { op = Gedeeld_door; links; rechts; _ }); modus; decimalen; _ }
     ->
       translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding:(Some (modus, decimalen))
+  | Afgerond { basis = Some basis; modus = Rekenkundig; decimalen = 2; _ }
+    when money_mult_shape basis ->
+      (* the money × rate product Catala rounds to the cent (S-section (c)) —
+         encoded SPLIT because the naive scale-6 product wraps int31 at
+         tutorial magnitude *)
+      translate_money_mult ctx ~subject ~subject_ot ~basis
   | Afgerond { basis; modus; decimalen; _ } -> (
       (* rounding a scaled term (ch. 2.5). ref propagates an empty basis
          (round_v: Empty → Empty), which the bare body join encodes for
@@ -1126,6 +1132,23 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       match List.assoc_opt (norm naam) ctx.binders with
       | Some (var, scale) -> ([], var, scale)
       | None -> fault "unbound binder %S in the ASP translation (WF-064 should preclude this)" naam)
+  | Let { binder; value; body; _ } ->
+      (* ch. 10.6: the strict Let as a bound intermediate (S-section (a)).
+         The value is translated to (atoms, term, scale); the binder resolves
+         to that term, and the value's atoms are threaded into [rule_guard] so
+         any helper emitted while translating the body binds the value's
+         variables. A leeg value binds no atom, so every rule carrying the body
+         is underivable — ref's strict-Let leeg and clingo's underivability
+         coincide by construction. Returned atoms carry both the value's and
+         the body's, so the caller's rule body binds every variable it uses. *)
+      let va, vt, vs = expr_term ctx ~subject ~subject_ot value in
+      let saved_b = ctx.binders and saved_g = ctx.rule_guard in
+      ctx.binders <- (norm binder, (vt, vs)) :: ctx.binders;
+      ctx.rule_guard <- ctx.rule_guard @ va;
+      let ba, bt, bs = expr_term ctx ~subject ~subject_ot body in
+      ctx.binders <- saved_b;
+      ctx.rule_guard <- saved_g;
+      (va @ ba, bt, bs)
   | Fold { typ; list; functie; init; _ } ->
       (* ch. 10.2: index recursion over the reified list (S15). The result is
          the accumulator at the list length; a present-but-empty list yields
@@ -1136,7 +1159,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* the I-1/I recurrence needs contiguous positions: a FilterList anywhere
          in the source chain (also under an index-preserving MapList) leaves
          index gaps the recursion would silently stall on, so it is refused
-         loudly here (S18) rather than deriving nothing. ListLength over a
+         loudly here (S19) rather than deriving nothing. ListLength over a
          filter stays fine — #count tolerates the gaps. *)
       let rec no_filter_source e =
         match e with
@@ -1752,7 +1775,7 @@ and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
       emit ctx "lpres(%s) :- lpres(%s)." fltid inner;
       (fltid, inner_es)
   | List_literal _ ->
-      fault "a ListLiteral list source is not translated (no corpus case; S18 inventory)"
+      fault "a ListLiteral list source is not translated (no corpus case; S19 inventory)"
   | Fold _ -> fault "a Fold is a scalar, not a list source"
   | _ ->
       fault
@@ -1967,9 +1990,155 @@ and filter_condition ctx (c : conditie) : string list =
         "a FilterList condition here is a sum-typed (in)equality over the bound element (no \
          corpus case for more)"
 
+(* is [basis] a money × rate product (possibly under strict Lets)? — a
+   2-decimal money multiplied by a 4-decimal rate, the [Mult_mon_rat] shape
+   the plugin wraps in Afgerond{REKENKUNDIG,2} (§5). The naive scale-6 product
+   wraps int31 at tutorial magnitude, so it takes the split encoding. *)
+and money_mult_shape (basis : expr) : bool =
+  let dec e =
+    match Ir_v0.Checks.typ_of_expr e with
+    | Some (Numeriek { decimalen; _ } | Percentage { decimalen; _ }) -> Some decimalen
+    | _ -> None
+  in
+  let rec go = function
+    | Let { body; _ } -> go body
+    | Binair { op = Maal; links = Some m; rechts = Some r; _ } -> dec m = Some 2 && dec r = Some 4
+    | _ -> false
+  in
+  go basis
+
+(* the split money multiplication (S-section (c)): rounding a 2-decimal money
+   M times a 4-decimal rate R to the cent. The naive product M·R at scale 10^6
+   wraps clingo's machine integers at tutorial magnitude (2000000·2100 > 2^31),
+   so the rate is split into two scale-2 halves — Rh = R/100, Rl = R\100 —
+   giving M·R/10^4 = M·Rh/10^2 + M·Rl/10^4. The rounded cent is
+   C = qA + (100·rA + M·Rl + 5000)/10^4 with A = M·Rh, qA = A/100, rA = A\100:
+   demonstrably round(M·R/10^4) half-up for non-negative operands (ref's
+   round_z Rekenkundig), each partial product fenced by a viol/2 witness so no
+   term wraps silently. Strict Lets around the product are peeled with their
+   binders in scope, exactly as ref evaluates the Let body. *)
+and translate_money_mult ctx ~subject ~subject_ot ~basis : string list * string * int =
+  let saved_b = ctx.binders and saved_g = ctx.rule_guard in
+  let rec peel = function
+    | Let { binder; value; body; _ } ->
+        let va, vt, vs = expr_term ctx ~subject ~subject_ot value in
+        ctx.binders <- (norm binder, (vt, vs)) :: ctx.binders;
+        ctx.rule_guard <- ctx.rule_guard @ va;
+        peel body
+    | Binair { op = Maal; links; rechts; _ } ->
+        (req "money multiplication links" links, req "money multiplication rechts" rechts)
+    | _ -> fault "money multiplication basis is not a MAAL (money_mult_shape gated this)"
+  in
+  let m, r = peel basis in
+  numeric_ok (Some m);
+  numeric_ok (Some r);
+  unit_free_ok ctx (Some m);
+  unit_free_ok ctx (Some r);
+  (* ch. 1.2a: the multiplicative operands coalesce leeg → 0, exactly as ref's
+     [Arith.mul] does — a leeg rate makes the product 0, not leeg (the strict
+     Let barrier that makes a leeg money leeg lives one level up, in the peeled
+     value atoms, never in these direct operands) *)
+  let ma, tm, sm = coalesce0 ctx ~subject ~subject_ot (expr_term ctx ~subject ~subject_ot m) in
+  let ra, tr, sr = coalesce0 ctx ~subject ~subject_ot (expr_term ctx ~subject ~subject_ot r) in
+  if sm <> 100 || sr <> 10000 then
+    fault "the split money multiplication expects a 2-decimal money and a 4-decimal rate (%d,%d)" sm
+      sr;
+  let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+  let gbody = String.concat ", " ((base :: ctx.rule_guard) @ ma @ ra) in
+  (* REKENKUNDIG half-away is encoded here for non-negative operands only (the
+     tutorial's money and rate are >= 0; ref rounds either sign) *)
+  emit ctx
+    "viol(\"negative operand under money multiplication is not translated\",%s) :- %s, (%s) < 0."
+    subject gbody tm;
+  emit ctx
+    "viol(\"negative operand under money multiplication is not translated\",%s) :- %s, (%s) < 0."
+    subject gbody tr;
+  (* A = M·Rh fence: |M| <= max_int31/(|Rh|+1) keeps |M·Rh| inside 2^31; the
+     |Rh|+1 divisor is >= 1 for either sign, so a negative rate (fenced UNSAT
+     above) can never divide by zero during grounding *)
+  emit ctx
+    "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, |%s| > \
+     %d/(|(%s)/100|+1)."
+    subject gbody tm max_int31 tr;
+  (* B = M·Rl fence: Rl = R\100 < 100, so |M| <= (max_int31-20000)/99 keeps the
+     rounded numerator 100·rA + M·Rl + 5000 inside 2^31 *)
+  emit ctx
+    "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, |%s| > %d."
+    subject gbody tm
+    ((max_int31 - 20000) / 99);
+  ctx.fresh <- ctx.fresh + 1;
+  let p = Printf.sprintf "mm%d" ctx.fresh in
+  emit ctx
+    "%s(%s,C) :- %s, (%s) >= 0, (%s) >= 0, A = (%s)*((%s)/100), C = A/100 + (100*(A\\100) + \
+     (%s)*((%s)\\100) + 5000)/10000."
+    p subject gbody tm tr tm tr tm tr;
+  let v = fresh ctx "MM" in
+  ctx.binders <- saved_b;
+  ctx.rule_guard <- saved_g;
+  ([ Printf.sprintf "%s(%s,%s)" p subject v ], v, 100)
+
 (* --- rule forms ---------------------------------------------------------- *)
 
 let head_body ctx head body = emit ctx "%s :- %s." head (String.concat ", " body)
+
+(* the rule VALUE position (§6, guarded consequences): a Let binds an
+   intermediate whose value atoms are shared across the branches; an
+   IfThenElse (now reachable through Let bodies, WF-069) lowers to one guarded
+   outcome per branch — the condition a builtin over bound/parameter/literal
+   operands (WF-077) and its exact complement, NAF-free, so the leeg barrier
+   and clingo's underivability coincide by construction. Any other value is a
+   single branch via [expr_term]. Returns (guard atoms, result term, scale)
+   per branch, mirroring [body_branches] at value position. *)
+let rec value_branches ctx ~subject ~subject_ot (e : expr) : (string list * string * int) list =
+  match e with
+  | Let { binder; value; body; _ } ->
+      let va, vt, vs = expr_term ctx ~subject ~subject_ot value in
+      let saved_b = ctx.binders and saved_g = ctx.rule_guard in
+      ctx.binders <- (norm binder, (vt, vs)) :: ctx.binders;
+      ctx.rule_guard <- ctx.rule_guard @ va;
+      let branches = value_branches ctx ~subject ~subject_ot body in
+      ctx.binders <- saved_b;
+      ctx.rule_guard <- saved_g;
+      List.map (fun (g, t, s) -> (va @ g, t, s)) branches
+  | If_then_else { condition; then_; else_; _ } ->
+      let catoms, pos, neg = value_condition ctx ~subject ~subject_ot condition in
+      let arm extra branches = List.map (fun (g, t, s) -> (catoms @ (extra :: g), t, s)) branches in
+      arm pos (value_branches ctx ~subject ~subject_ot then_)
+      @ arm neg (value_branches ctx ~subject ~subject_ot else_)
+  | _ ->
+      let a, t, s = expr_term ctx ~subject ~subject_ot e in
+      [ (a, t, s) ]
+
+(* a value-position IfThenElse condition (WF-077): a comparison whose operands
+   are bound binders, parameters or literals — never a bare attribute read.
+   That is exactly what keeps the else-branch the positive builtin's EXACT
+   complement (the operands are total, never leeg), so the two branches need no
+   NAF over derived atoms. Returns (binding atoms, positive builtin, complement
+   builtin). *)
+and value_condition ctx ~subject ~subject_ot (c : conditie) : string list * string * string =
+  let operand_ok = function
+    | Some (Binder_ref _ | Parameter_ref _ | Literal _) -> ()
+    | _ ->
+        fault
+          "a value-position IfThenElse condition operand must be a binder, parameter or literal \
+           (WF-077)"
+  in
+  match c with
+  | Vergelijking { op; links; rechts; periode = None; _ } ->
+      operand_ok links;
+      operand_ok rechts;
+      let la, lt, ls = expr_term ctx ~subject ~subject_ot (req "Vergelijking.links" links) in
+      let ra, rt, rs = expr_term ctx ~subject ~subject_ot (req "Vergelijking.rechts" rechts) in
+      let m = max ls rs in
+      let sc t s = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
+      let lt = sc lt ls and rt = sc rt rs in
+      ( la @ ra,
+        Printf.sprintf "%s %s %s" lt (cmp_sym op) rt,
+        Printf.sprintf "%s %s %s" lt (cmp_complement op) rt )
+  | _ ->
+      fault
+        "a value-position IfThenElse condition is a comparison over bound operands (WF-077; no \
+         corpus case for more)"
 
 (* fit a scaled term to the write target's declared scale: a coarser
    value upscales exactly (both scales are powers of ten); a finer one
@@ -2286,33 +2455,49 @@ let translate_regel ctx (r : resolved_regel) =
                 (Option.bind r.waarde (eff_unit ctx));
               ctx.rule_guard <- cond;
               ctx.write_scale <- target_scale;
-              let bindings, term, scale = expr_term ctx ~subject ~subject_ot:ot (req "waarde" r.waarde) in
+              (* the value lowers to one or more guarded branches (§6): a
+                 non-branching value is one branch, identical to the single-head
+                 emission; a Let-nested IfThenElse is one val head per branch,
+                 the shared Let value atoms in each branch's body *)
+              let branches = value_branches ctx ~subject ~subject_ot:ot (req "waarde" r.waarde) in
               ctx.rule_guard <- [];
               ctx.write_scale <- 1;
-              let body = (base :: cond) @ bindings in
-              let term, fit_guards = fitted ctx ~subject ~what:a ~body term scale target_scale in
-              head_body ctx
-                (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
-                (body @ fit_guards);
-              (* ch. 7.8 standing target: the rule decides like a rung.
-                 The effectiveness atom carries the SAME body as the
-                 val head — condition and value bindings — so a leeg
-                 evaluation derives neither, and the case input (entered
-                 as inputval/3) stands by negation-as-failure. *)
-              if standing then begin
-                let sidx =
-                  let rec find i = function
-                    | [] -> fault "standing target %S not in its own domain" a
-                    | k :: tl -> if k = (norm ot, norm a) then i else find (i + 1) tl
+              (* ch. 7.8 standing target: the rule decides like a rung. The
+                 effectiveness atom carries the SAME body as each val head —
+                 condition and value bindings — so a leeg evaluation derives
+                 neither, and the case input (entered as inputval/3) stands by
+                 negation-as-failure. With a Let-nested IfThenElse the value is
+                 several mutually-exclusive branches; the rule decides if ANY
+                 branch fires, so eff is emitted per branch and the input-stands
+                 rule once. *)
+              let eff =
+                if standing then begin
+                  let sidx =
+                    let rec find i = function
+                      | [] -> fault "standing target %S not in its own domain" a
+                      | k :: tl -> if k = (norm ot, norm a) then i else find (i + 1) tl
+                    in
+                    find 0 (Ir_v0.Desugar.standing_targets ctx.doc)
                   in
-                  find 0 (Ir_v0.Desugar.standing_targets ctx.doc)
-                in
-                let eff = Printf.sprintf "stand%d_eff(%s)" sidx subject in
-                head_body ctx eff (body @ fit_guards);
-                head_body ctx
-                  (Printf.sprintf "val(%s,%s,V)" subject (str a))
-                  [ Printf.sprintf "inputval(%s,%s,V)" subject (str a); base; "not " ^ eff ]
-              end
+                  Some (Printf.sprintf "stand%d_eff(%s)" sidx subject)
+                end
+                else None
+              in
+              List.iter
+                (fun (bindings, term, scale) ->
+                  let body = (base :: cond) @ bindings in
+                  let term, fit_guards = fitted ctx ~subject ~what:a ~body term scale target_scale in
+                  head_body ctx
+                    (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
+                    (body @ fit_guards);
+                  match eff with Some e -> head_body ctx e (body @ fit_guards) | None -> ())
+                branches;
+              (match eff with
+              | Some e ->
+                  head_body ctx
+                    (Printf.sprintf "val(%s,%s,V)" subject (str a))
+                    [ Printf.sprintf "inputval(%s,%s,V)" subject (str a); base; "not " ^ e ]
+              | None -> ())
           | _ -> fault "rule kind not translated")
       | _ -> fault "unsupported rule target")
 

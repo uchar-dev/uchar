@@ -246,7 +246,7 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
           (* ch. 10.5: a list-valued expectation has no corpus case — the
              reified list rides internal lelem/lpres, never a shown val/3, so
              a structural list comparison is not built until a case wants one
-             (ASP-TRANSLATION S18) *)
+             (ASP-TRANSLATION S19) *)
           fault "a list-valued attributeValue expectation is not checked here (no corpus case)"
       | Attribute_value { label; attr; value } -> (
           let want = scaled_expect ~label ~attr value in

@@ -1,7 +1,7 @@
 # ASP translation
 
 *Status: the systematic construct-by-construct translation (Part I,
-sections S1–S18, complete for the translated core) — the Phase-3
+sections S1–S19, complete for the translated core) — the Phase-3
 deliverable this document was always growing toward. Part I describes what `backends/clingo` provably does:
 every claim is distilled from `backends/clingo/lib/translate.ml` and
 witnessed by the gate set (gate 6, `scripts/check-clingo.sh`, replays
@@ -11,7 +11,7 @@ corpus under gate 3 pins what the verifier rejects before translation
 is ever reached). The text normates what the code proves — semantics
 itself is defined by `RUNTIME-SEMANTICS.md` and this document must
 never drift from it; where a construct does not translate, Part I says
-so loudly (S18), never silently. Part II (chapters 1–7) is the
+so loudly (S19), never silently. Part II (chapters 1–7) is the
 historical record: the two hand exercises and the encoding notes in
 the order they landed, kept in situ with their original chapter
 numbers because results, cards and code comments cite them (ch. 6a–6d
@@ -25,9 +25,10 @@ targets, expression terms, emptiness, arithmetic and conditions; S8
 aggregations and folds, S9 timelines, S10 defeasibility and standing,
 S11 creation, S12 allocation and uniqueness; S13 the §9.5 channel;
 S14 sum types and total match; S15 folds and function values; S16
-structs (the record datatype); S18 the
-complete inventory of loud non-translations — what the backend does
-not translate is stated there, never silently absent.
+structs (the record datatype); S17 nested exception groups; S18 the
+strict `Let`, guarded consequences and the split money multiplication;
+S19 the complete inventory of loud non-translations — what the backend
+does not translate is stated there, never silently absent.
 
 ### S1. Program shape and conventions
 
@@ -160,7 +161,7 @@ input rule `val(S,a,V) :- inputval(S,a,V), is_a(S,ot), not
 result derives no effectiveness and the input stands (ref's
 no-write-on-empty, RS ch. 7.8).
 
-Not translated, loudly (S18 carries the full list): validity windows;
+Not translated, loudly (S19 carries the full list): validity windows;
 temporal targets outside the two ch. 3.7/3.8 fold shapes; case input
 on non-standing computed targets; a `standing` target outside its own
 domain.
@@ -214,7 +215,7 @@ the norm; the encoding buys most of it for free):
    note the dividend is *not* a coalesce0 position; the edge lives on
    the construct's head), while the empty sum's 0 is clingo's native
    `#sum` over an empty tuple set (translated only with the
-   fallback-0 facet, S18).
+   fallback-0 facet, S19).
 
 The one empty rule with no *free* encoding — the **numeric** equality
 asymmetry of ch. 1.2d (leeg = leeg is true under gelijk-aan, false
@@ -231,7 +232,7 @@ reads only the operand bodies. Anchored by
 half-empty, both-empty). What remains loud: non-numeric scalar
 equality (text/enum/boolean operands fault as unscalable before any
 eqN rule is emitted) and equality in the per-segment clip comparison
-(S18).
+(S19).
 
 Witnesses: `jutterswet-leegrekening`, `synth2-leegcomposities`,
 `jutterswet-vindersloon` (every empty cell), `jutterswet-taxatie`
@@ -318,7 +319,7 @@ link fails the positive and the negated form alike — the deliberate
 v0 asymmetry (ch. 5.8), encoded for free. **Composite**
 (samengesteld, the ALLE and singular DE quantifiers): concatenation
 of the parts' atoms — both quantifiers are conjunctions over their
-parts. Other quantifiers and condition kinds fault (S18).
+parts. Other quantifiers and condition kinds fault (S19).
 
 Witnesses: `jutterswet-hardheid`, `jutterswet-uitsluiting`,
 `jutterswet-vormenkabinet`; the WF-053 negatiefs pin the navigation
@@ -337,7 +338,7 @@ an instance without the attribute contributes no tuple, and the empty
 tuple set is clingo's native 0, which is why only the fallback-0
 facet translates (a som without it would need an explicit non-empty
 guard to distinguish leeg from 0; faults until a corpus case demands
-it, S18). The *sum* is doubly fenced: each contributor at 46340 *and*
+it, S19). The *sum* is doubly fenced: each contributor at 46340 *and*
 the contributor count at 46340 (`viol` when `46340 < #count{...}`),
 so the accumulated sum provably stays inside 2^31. The bare count
 carries no fence — a `#count` cannot approach 2^31 before grounding
@@ -520,7 +521,7 @@ weight, pot and recipient count — plus, when a remainder attribute
 is declared, on each share the remainder sums (the weight sum, the
 pot×weight product and the share sum then provably stay inside
 2^31; without a remainder the shares are bounded by construction). Only the proportional method translates; conditional
-allocation and misaligned scales fault (S18). Case input on the
+allocation and misaligned scales fault (S19). Case input on the
 allocation's target attribute is refused — the ch. 6d
 superset-model fence.
 
@@ -682,7 +683,7 @@ target stays leeg — propagation for free. The recurrence's contiguous
 `I-1`/`I` chain requires **contiguous indices**, which a parameter,
 attribute, `MapList` (index-preserving) or `ListLiteral` source
 provides; a `FilterList` leaves gaps, so a `Fold` over a `FilterList` has
-no encoding and no corpus case (S18).
+no encoding and no corpus case (S19).
 
 **MapList** and **FilterList** derive their own `lelem`/`lpres`, keyed by
 a fresh functor over the inner list-id (`lmN(⟨inner⟩)`,
@@ -757,7 +758,7 @@ ordinary `val/3` — the reified lists are internal (`#show` carries only
 `ListLength` count are plain numeric expectations, and a leeg target
 (absent list) reports underived through the same `val_present` path. A
 **list-valued** `attributeValue` expectation has no corpus case and
-faults loudly (S18) rather than growing a half-built list comparison.
+faults loudly (S19) rather than growing a half-built list comparison.
 
 Witnesses: `anchor/jutterswet-staffelvergoeding` — the capped-sum
 `Fold` over the list *parameter* `staffelbedragen` with an `IfThenElse`
@@ -833,7 +834,7 @@ field evaluating **leeg** binds no atom, so the whole literal is
 underivable and the target is leeg — **NO-HOLE** propagation, the
 `Construct`/`ListLiteral` sibling (a record value never carries a leeg
 field). A case-supplied struct **computed** target has no monotone
-encoding here (the sum-target sibling), fenced loudly (S18).
+encoding here (the sum-target sibling), fenced loudly (S19).
 
 **Struct equality** (ch. 11.2) is **positive ground-term unification**,
 the S14 sum pattern exactly — never the NAF complement:
@@ -979,7 +980,91 @@ pin what the verifier rejects before translation ever runs:
 `wf075-grouprung-with-justification`, `wf075-init-in-subrung`,
 `wf075-two-members-unmarked`.
 
-### S18. What does not translate — the complete loud inventory
+### S18. The strict `Let`, guarded consequences, and the split money multiplication
+
+Three capabilities land here (design `PHASE5C-TUTORIAL.md` §5–6, the
+ratified vragen 2-A and 4-A), all sharing one discipline: **the strict
+`Let` is the leeg barrier, and an underivable value atom simply never
+binds** — so ref's leeg propagation and clingo's underivability coincide
+*by construction*, the S5 lesson carried into the value position.
+
+**(a) `Let` as a bound intermediate.** A `Let { binder; value; body }`
+translates the `value` to `(atoms, term, scale)`, binds
+`binder → (term, scale)` in the binder environment (the S14/S15 regime,
+WF-064), and threads the value's atoms into the rule guard so any helper
+emitted while translating the `body` binds the value's variables; the
+atoms then ride into the enclosing rule body. Because those atoms are a
+*positive* join, a leeg value (an underivable read) leaves every rule
+carrying the body underivable — exactly ref's strict `Let`, where a leeg
+value propagates and the body never runs (RUNTIME-SEMANTICS ch. 10.6).
+The binder, once bound, is **never leeg** — the load-bearing point that
+keeps the branch complement (below) honest. `expr_term`, `value_branches`
+and the money-multiplication peel bind `Let`s the same way; the anchor's
+`aanslag` rule threads three (`ink`, `aftrek`, `belasting`).
+
+**(b) Guarded consequences.** A rule value now reaches an `IfThenElse`
+through `Let` bodies (WF-069 widened). At value position it lowers to
+**one guarded outcome rule per branch** (`value_branches`): the shared
+`Let` value atoms sit in *both* branch bodies, the condition is a builtin
+comparison over the branches' bound terms, and the else-branch carries
+its *exact complement* (`cmp_complement`) — no NAF over derived atoms.
+WF-077 is what makes this sound: a value-position `IfThenElse` condition
+reads only binders, parameters and literals, never a bare attribute read,
+so its operands are total (never leeg) and the positive/complement pair
+partitions cleanly (the S7 closed-body argument, now at rule level). Each
+branch emits its own `val(S,attr,·)` head; on a standing target (S10)
+each branch also emits the effectiveness atom — the rule decides if *any*
+branch fires — and the input-stands rule is emitted once.
+
+**(c) Decimals and the split money multiplication.** Catala decimals are
+exact rationals with a **pinned finite scale S = 4** (vraag 4-A): a
+4-decimal declaration scales by 10^4, ref stays exact-rational, and a
+value that does not terminate at four decimals faults loudly and
+*consistently* in both executors — ref's bounded-write gate and clingo's
+does-not-fit / non-exact-division fence (the red witness
+`corpus/rood/decimal-nonterminating`, `1,0000 / 3,0000` at four decimals:
+ref's *"does not fit the declared 4 decimals"* and clingo's *"non-exact
+division (an explicit rounding is mandated before precision is lost)"*).
+The rational operators and the `ToRat` casts ride the existing numeric
+family unchanged (a cast is a pass-through re-typing — the value is
+already exact-rational).
+
+The one new arithmetic encoding is the money product Catala rounds to the
+cent (`Mult_mon_rat`; the plugin wraps it in `Afgerond {REKENKUNDIG, 2}`).
+The naive scale-6 product **wraps clingo's machine integers at tutorial
+magnitude** — €20.000 × 21% is 2000000 × 2100 = 4.2·10⁹ > 2³¹ — so a
+2-decimal money `M` times a 4-decimal rate `R` is encoded **split**, the
+rate in two scale-2 halves `Rh = R/100`, `Rl = R\100`:
+
+    M·R/10⁴  =  M·Rh/10²  +  M·Rl/10⁴
+
+The rounded cent is `C = qA + (100·rA + M·Rl + 5000)/10⁴` with `A = M·Rh`,
+`qA = A/100`, `rA = A\100` — demonstrably `round(M·R/10⁴)` half-up (ref's
+`round_z Rekenkundig`) for non-negative operands, each partial product
+fenced by a `viol/2` witness so no term wraps silently: `A = M·Rh` by
+`|M| ≤ max_int31/(Rh+1)` (Rh ≥ 0, so the +1 divisor never faults on
+zero), and `M·Rl` (with `Rl < 100`) by `|M| ≤ (max_int31−20000)/99`,
+keeping the rounded numerator `100·rA + M·Rl + 5000` inside 2³¹. The
+operands coalesce leeg → 0 exactly as ref's `Arith.mul` (a leeg rate
+makes the product 0, not leeg); the strict-`Let` barrier that makes a
+leeg *money* leeg lives one level up, in the peeled value atoms, never in
+these direct operands. Strict `Let`s around the product are peeled with
+their binders in scope. Negative operands are not encoded (ref rounds
+either sign; the tutorial's money and rate are ≥ 0) — a `viol/2` fence,
+S19.
+
+Witnesses: `anchor/jutterswet-tariefstelling` — **case1-elsetak** the
+else branch (`aanslag` 3700.00 from belasting 4200.00 − aftrek 500.00,
+the split money product €20.000 × 21% = €4.200 exact), **case2-dantak**
+the then branch (aftrek 750.00 > belasting 210.00 → `aanslag` 0.00),
+**case3-leegbarriere** the double leeg barrier (inkomen absent → both
+`aanslag` and `gewogen` leeg through the strict `Let`, while `factor`
+2.0000 still writes — the case that pins *why* the discipline exists:
+without the `Let`, the bare `maal` would coalesce a leeg inkomen to 0.00,
+ch. 1.2a). Gate 6 replays all three (ref ≡ clingo); gate 8 the red
+witness.
+
+### S19. What does not translate — the complete loud inventory
 
 The standing rule (PLAN §4): the core may say "I cannot express this
 (yet)"; it may not pretend. Every fault below is a `Value.fault` with
@@ -1146,6 +1231,26 @@ validity windows on a ladder — nested or flat — fault as before. The
 (PHASE5C-TUTORIAL §4), never a clingo shape: a group-rung carries a
 multi-member base group here with no special encoding, so nothing new is
 refused for it.
+
+*The strict `Let`, guarded consequences and the split money
+multiplication (S18) — shapes and fences without a corpus case:* a
+**value-position `IfThenElse` condition** other than a comparison over
+bound binders / parameters / literals (`a value-position IfThenElse
+condition is a comparison over bound operands (WF-077; …)`) — WF-077
+rejects a bare attribute-read operand before translation, so the operand
+backstop (`… must be a binder, parameter or literal (WF-077)`) survives
+only as an unreachable guard on WF-clean input; **negative operands under
+the money multiplication** (ref rounds either sign; runtime `viol/2`, the
+non-richting-nul rounding sibling) and the two split range fences (`M·Rh`
+and `M·Rl`, runtime `viol/2` — the tutorial's magnitudes clear them); a
+**money multiplication other than a 2-decimal money times a 4-decimal
+rate** — `Mult_mon_int` and other scale pairs are not split, they ride
+the S6 multiplicative fence (the 46340 operand bound, which faults at
+large magnitude) — while the split's own scale backstop (`the split money
+multiplication expects a 2-decimal money and a 4-decimal rate …`) is
+unreachable once `money_mult_shape` has gated the decimals. The strict
+`Let` itself has no fault of its own: a leeg value is underivability, not
+a fault (the S18 coincidence).
 
 *Environment and input fences:* names the ASP string encoding cannot
 quote (WF-057's backstop, sole cover for case labels); values that do
@@ -1884,7 +1989,7 @@ refuses loudly, exactly like this fence.
 quantitative machinery beyond the art. 3 threshold, and any systematic
 core-IR-to-ASP mapping — all Phase-3 work. This document grows with
 each hand exercise until that systematic mapping replaces it. *That
-promise is kept: Part I (S1–S18) is the systematic mapping. The
+promise is kept: Part I (S1–S19) is the systematic mapping. The
 constructs this chapter deferred have long since landed — hardheid in
 the ladder anchors (S10), the temporalisation in the timeline
 machinery (S9, historically ch. 6d), the quantitative corpus
