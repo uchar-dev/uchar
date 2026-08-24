@@ -206,3 +206,18 @@ Zelf geverifieerd en verholpen.
 
 May-touch onveranderd: `spec/IR-SPEC.md`, `spec/verifier/`, `corpus/negatief/`.
 `spec/CONSTRUCTS.md` NIET aangeraakt. Alle negen gates opnieuw groen.
+
+Result: de drie hekken van het maintainersbesluit (vraag 2, alle
+drie) staan als WF-078 (BinderRef.type-kruiscontrole tegen het
+binder-datatype, de AttribuutRef-parallel zonder eigen verbreding),
+WF-079 (het dubbelschrijvers-hek: twee of meer kale schrijvers op
+één attribuut-doel zonder ladder onwelgevormd; kenmerktoekenningen
+expliciet vrij — corpus-breed vooraf gevalideerd, het
+penningrecht-paar blijft clean) en WF-080 (waarde-positie-verwijzing
+moet op een attribuut resolveren; het kenmerk-endpoint-lek dicht),
+elk rood-eerst met negatief-cases en met de PHASE5D-DIFF
+§8.2-open-vraag bijgewerkt naar het besluit. De lensronde ving een
+echte MAJOR: WF-080 dekte de aggregatie-bron-waardepositie niet
+(dezelfde leugen via een som-over-navigatie glipte erdoor) —
+gedicht, met extra negatief. Alle negen gates groen, ook na de
+rebase over de frontend-serie (100 goldens).
