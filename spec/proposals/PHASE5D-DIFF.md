@@ -62,8 +62,10 @@ base for isolating form from meaning (see §6 for what this scoping costs).
 Both dumps are checked-in goldens; both are byte-identical to a fresh
 regeneration.
 
-- uchar-HEAD at dump production: `2a4dc0d` (branch `card/fase5d-frontend-diff`,
-  before the pair-fragment commit); the checked-in goldens sit at `272506e`.
+- uchar side: branch `card/fase5d-frontend-diff` — the card claim at
+  `ac391c2`, the checked-in pair-fragment goldens at `3285c58` (hashes
+  refreshed after a rebase onto main orphaned the originals; the dumps
+  regenerate byte-identically from the checked-in goldens regardless).
 - toolchain (`regelspraak-java`) git HEAD: `332db4c`.
 - toolchain `SPEC_REV` pin: `81e198e`.
 
@@ -235,10 +237,13 @@ the condition trees are **identical in shape**. The toolchain's hardheid
 rule `voorwaarde` and the Catala rung-1 `voorwaarde` are both
 `Samengesteld{kwantor: ALLE}[ Kenmerk(hardheid…), Vergelijking(≥, AttribuutRef,
 Literal "6") ]`; the drempel rule and rung-2 are both
-`Vergelijking(≥, AttribuutRef, Literal "12")`. Modulo names, byte-for-byte
-the same expression forms. The entire diff lives in the top-level wrapper
-(ladder vs flat rules) — nothing in the condition/expression/type layer
-diverges.
+`Vergelijking(≥, AttribuutRef, Literal "12")`. Modulo names — and modulo
+the category-(i) `teken` refinement of §4.1, which the emitter copies onto
+every `AttribuutRef.type` inside the conditions (`NIET_NEGATIEF` vs
+`ONBEPAALD`; lens-verified benign: negative, empty and boundary inputs
+agree across both forms and both executors) — byte-for-byte the same
+expression forms. Beyond that one copied field, the entire diff lives in
+the top-level wrapper (ladder vs flat rules).
 
 ### 4.3 Category (iii) — real design flaws
 

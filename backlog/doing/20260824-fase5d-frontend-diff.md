@@ -56,7 +56,7 @@ Beide dumps reproduceerbaar geproduceerd:
   (bron.rgs, ir.json, vijf cases). Recept: vanuit de regelspraak-java
   checkout `make ir FILE=<...>/jutterswet-penningrecht/bron.rgs
   OUT=<pad>` — byte-identiek aan de ingecheckte `ir.json` (geverifieerd
-  tegen een verse resolve). Revisies: uchar-HEAD `2a4dc0d`,
+  tegen een verse resolve). Revisies: uchar-branchcommit `3285c58` (na rebase ververst),
   toolchain git HEAD `332db4c`, toolchain SPEC_REV `81e198e`.
 - Catala-kant (bestaand): `jutterswet-penningrecht-catala/ir.json`,
   door de plugin (`_build/default/frontends/catala/bin/catala_frontend.exe`
