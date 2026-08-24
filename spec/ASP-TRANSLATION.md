@@ -718,7 +718,10 @@ condition keeps the element under a **positive** builtin — a sum-typed
 so Tabel 38's leeg corner cannot arise). **ListLength** (`ListLength`) is
 `llN(L,C) :- lpres(L), C = #count { I : lelem(L,I,_) }` — an empty list
 counts 0, an absent list derives no count (leeg); `#count` tolerates a
-`FilterList`'s index gaps, so no re-indexing is needed there.
+`FilterList`'s index gaps, so no re-indexing is needed there. When this
+count is bound to a `Let` binder and read in a term position, the S18(a)
+self-contained helper keeps `C` safe inside any coalesce or range fence
+built from local atoms (B3).
 
 **Closed bodies** (lambda and function bodies, WF-067/069) lower to a
 list of *branches* (`body_branches`): guard atoms, a result term and its
@@ -1005,19 +1008,35 @@ ratified vragen 2-A and 4-A), all sharing one discipline: **the strict
 binds** — so ref's leeg propagation and clingo's underivability coincide
 *by construction*, the S5 lesson carried into the value position.
 
-**(a) `Let` as a bound intermediate.** A `Let { binder; value; body }`
-translates the `value` to `(atoms, term, scale)`, binds
-`binder → (term, scale)` in the binder environment (the S14/S15 regime,
-WF-064), and threads the value's atoms into the rule guard so any helper
-emitted while translating the `body` binds the value's variables; the
-atoms then ride into the enclosing rule body. Because those atoms are a
-*positive* join, a leeg value (an underivable read) leaves every rule
-carrying the body underivable — exactly ref's strict `Let`, where a leeg
-value propagates and the body never runs (RUNTIME-SEMANTICS ch. 10.6).
-The binder, once bound, is **never leeg** — the load-bearing point that
-keeps the branch complement (below) honest. `expr_term`, `value_branches`
-and the money-multiplication peel bind `Let`s the same way; the anchor's
-`aanslag` rule threads three (`ink`, `aftrek`, `belasting`).
+**(a) `Let` as a self-contained bound intermediate.** A
+`Let { binder; value; body }` translates the `value` to
+`(atoms, term, scale)` and binds the binder in the binder environment
+(the S14/S15 regime, WF-064). The value's atoms also thread into the rule
+guard, so a leeg value (an underivable read) leaves every rule carrying
+the body underivable — exactly ref's strict `Let`, where a leeg value
+propagates and the body never runs (RUNTIME-SEMANTICS ch. 10.6). But the
+rule guard alone does not reach every position the binder is read: a
+coalesce (S5), a range fence (S6) and the money-product partials build
+their helper rules from the operand's *local* atoms only, so a binder
+whose value is a bare term — a `ListLength` count, a `Fold` result, an
+attribute read — and whose sole binding lived in the guard grounds
+**unsafe** inside one such helper (`co7(S,(L2+C6)) :- …, is_a(S,"jutter")`
+with the count variable `L2` unbound — the B3 defect). The binder is
+therefore made **self-contained**: a value carrying atoms is bound
+through a per-subject helper `letN(S,term) :- is_a(S,ot), ⟨value atoms⟩`
+(for a `ListLength` value that is the `#count` aggregate over the S15
+`lpres`/`lelem` reification), and the binder read carries the single
+`letN` atom — so wherever it lands, in a helper body or the enclosing
+rule, the value is bound before use. Because the helper is still a
+*positive* join over the value's atoms, the leeg-propagation above is
+unchanged. An atom-free value (a literal) is already ground and needs no
+helper. The binder, once bound, is **never leeg** — the load-bearing
+point that keeps the branch complement (below) honest. `expr_term`,
+`value_branches` and the money-multiplication peel bind `Let`s the same
+way; the anchor's `aanslag` rule threads three (`ink`, `aftrek`,
+`belasting`), and `jutterswet-postenheffing` pins a `ListLength`-valued
+binder read inside a product (`heffing = 100.00 · (aantal_posten +
+number of posten)`, 600.00 / 0.00, ref ≡ clingo).
 
 **(b) Guarded consequences.** A rule value now reaches an `IfThenElse`
 through `Let` bodies (WF-069 widened). At value position it lowers to

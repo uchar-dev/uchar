@@ -150,8 +150,13 @@ type ctx = {
      ch. 9.2): a bound binder name maps to the ASP variable the arm's
      scrutinee pattern binds and the payload's declared scale, so a
      BinderRef in the arm body resolves to that variable. Set per arm,
-     [] elsewhere — WF-064 makes an unbound read statically impossible *)
-  mutable binders : (string * (string * int)) list;
+     [] elsewhere — WF-064 makes an unbound read statically impossible.
+     The atom list is the binder's own BINDING atoms (empty for a
+     recurrence-bound binder — a match payload, a lambda/fold parameter —
+     whose ASP variable the surrounding join already grounds; non-empty
+     for a Let binder, which reads through its self-contained helper so a
+     bare value var is bound wherever it is used, B3) *)
+  mutable binders : (string * (string list * string * int)) list;
 }
 
 (* The convention guards, mirroring ref/'s faults (IR-SPEC ch. 4.3a:
@@ -547,6 +552,28 @@ let cmp_complement = function
   | Groter_of_gelijk | Later_of_gelijk -> "<"
   | Gelijk -> "!="
   | Ongelijk -> "=="
+
+(* B3: a Let binder must be SELF-CONTAINED wherever it is read. A bare value
+   term (a ListLength count, a Fold result, an attribute read) is bound only by
+   its value atoms [va]; the Let keeps those in [rule_guard], but coalesce0 (and
+   the other helper-emitting positions) build their rules from the LOCAL atoms
+   only, so a bare Let-bound var used inside one grounds UNSAFE (the tutorial's
+   `let n = number of individuals` read in the money product). Bind the value
+   through a per-subject helper `letN(S,vt) :- is_a(S,ot), va.` — for a
+   ListLength that is the count aggregate over lpres/lelem — so every read
+   carries the single `letN` atom and the length/value is bound before use. An
+   atom-free value (a literal) is already ground and needs no helper. *)
+let let_binder ctx ~subject ~subject_ot ((va, vt, vs) : string list * string * int) :
+    string list * string * int =
+  if va = [] then ([], vt, vs)
+  else begin
+    ctx.fresh <- ctx.fresh + 1;
+    let p = Printf.sprintf "let%d" ctx.fresh in
+    let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+    emit ctx "%s(%s,%s) :- %s." p subject vt (String.concat ", " (base :: va));
+    let v = fresh ctx "LB" in
+    ([ Printf.sprintf "%s(%s,%s)" p subject v ], v, vs)
+  end
 
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   match e with
@@ -1138,9 +1165,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   | Binder_ref { naam; _ } -> (
       (* ch. 9.2/10.2: the ASP variable the enclosing match arm's scrutinee
          pattern or the enclosing lambda/function parameter bound, at its
-         declared scale *)
+         declared scale; a Let binder additionally carries its self-contained
+         helper atom (B3), so the value is bound wherever the read lands *)
       match List.assoc_opt (norm naam) ctx.binders with
-      | Some (var, scale) -> ([], var, scale)
+      | Some (atoms, var, scale) -> (atoms, var, scale)
       | None -> fault "unbound binder %S in the ASP translation (WF-064 should preclude this)" naam)
   | Let { binder; value; body; _ } ->
       (* ch. 10.6: the strict Let as a bound intermediate (S-section (a)).
@@ -1153,7 +1181,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          the body's, so the caller's rule body binds every variable it uses. *)
       let va, vt, vs = expr_term ctx ~subject ~subject_ot value in
       let saved_b = ctx.binders and saved_g = ctx.rule_guard in
-      ctx.binders <- (norm binder, (vt, vs)) :: ctx.binders;
+      ctx.binders <- (norm binder, let_binder ctx ~subject ~subject_ot (va, vt, vs)) :: ctx.binders;
       ctx.rule_guard <- ctx.rule_guard @ va;
       let ba, bt, bs = expr_term ctx ~subject ~subject_ot body in
       ctx.binders <- saved_b;
@@ -1206,7 +1234,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       in
       let saved = ctx.binders in
       ctx.binders <-
-        (norm accname, ("A", out_scale)) :: (norm xname, ("V", elem_scale)) :: ctx.binders;
+        (norm accname, ([], "A", out_scale)) :: (norm xname, ([], "V", elem_scale)) :: ctx.binders;
       let branches = body_branches ctx ~guard_body:rec_body ~witness:lterm body in
       ctx.binders <- saved;
       List.iter
@@ -1602,7 +1630,7 @@ and struct_base ctx ~subject ~subject_ot (e : expr) : string list * string =
       ([ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ], v)
   | Binder_ref { naam; _ } -> (
       match List.assoc_opt (norm naam) ctx.binders with
-      | Some (var, _) -> ([], var)
+      | Some (atoms, var, _) -> (atoms, var)
       | None -> fault "unbound binder %S in a struct field access (WF-064 should preclude this)" naam)
   | _ ->
       fault
@@ -1694,7 +1722,7 @@ and translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms =
         | None, None -> (f, None)
         | Some d, Some b ->
             let pv = fresh ctx "P" in
-            (Printf.sprintf "%s(%s)" f pv, Some (norm b, (pv, pow10 (decimals_of_datatype (Some d)))))
+            (Printf.sprintf "%s(%s)" f pv, Some (norm b, ([], pv, pow10 (decimals_of_datatype (Some d)))))
         | Some _, None -> fault "unary match arm %S lacks a binder (WF-063)" ctor
         | None, Some _ -> fault "nullary match arm %S carries a binder (WF-063)" ctor
       in
@@ -1761,7 +1789,7 @@ and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
       in
       let base = [ Printf.sprintf "lelem(%s,I,V)" inner ] in
       let saved = ctx.binders in
-      ctx.binders <- (norm pname, ("V", inner_es)) :: ctx.binders;
+      ctx.binders <- (norm pname, ([], "V", inner_es)) :: ctx.binders;
       let branches = body_branches ctx ~guard_body:base ~witness:mapid body in
       ctx.binders <- saved;
       List.iter
@@ -1777,7 +1805,7 @@ and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
       ctx.fresh <- ctx.fresh + 1;
       let fltid = Printf.sprintf "lf%d(%s)" ctx.fresh inner in
       let saved = ctx.binders in
-      ctx.binders <- (norm binder, ("V", inner_es)) :: ctx.binders;
+      ctx.binders <- (norm binder, ([], "V", inner_es)) :: ctx.binders;
       let catoms = filter_condition ctx condition in
       ctx.binders <- saved;
       emit ctx "lelem(%s,I,V) :- %s." fltid
@@ -1819,7 +1847,7 @@ and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * 
             | Some d, Some b ->
                 let pv = fresh ctx "P" in
                 ( Printf.sprintf "%s = %s(%s)" sv f pv,
-                  Some (norm b, (pv, pow10 (decimals_of_datatype (Some d)))) )
+                  Some (norm b, ([], pv, pow10 (decimals_of_datatype (Some d)))) )
             | Some _, None -> fault "unary match arm %S lacks a binder (WF-063)" ctor
             | None, Some _ -> fault "nullary match arm %S carries a binder (WF-063)" ctor
           in
@@ -1847,7 +1875,7 @@ and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * 
         List.map2
           (fun (pn, _) arg ->
             let a, t, s = closed_term ctx ~guard_body ~witness arg in
-            (a, (norm pn, (t, s))))
+            (a, (norm pn, ([], t, s))))
           fd.fd_parameters arguments
       in
       let arg_atoms = List.concat_map fst argbinds in
@@ -1912,7 +1940,9 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
   match e with
   | Binder_ref { naam; _ } -> (
       match List.assoc_opt (norm naam) ctx.binders with
-      | Some (var, scale) -> ([], var, scale)
+      (* a closed-body binder is recurrence-bound (its atoms are empty); the
+         surrounding lelem/pattern join grounds the ASP variable *)
+      | Some (_, var, scale) -> ([], var, scale)
       | None -> fault "unbound binder %S in a closed body (WF-064 should preclude this)" naam)
   | Literal { waarde; typ; _ } -> (
       let lex = req "Literal.waarde" waarde in
@@ -1954,7 +1984,7 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
         match base with
         | Binder_ref { naam; _ } -> (
             match List.assoc_opt (norm naam) ctx.binders with
-            | Some (var, _) -> var
+            | Some (_, var, _) -> var
             | None ->
                 fault "unbound binder %S in a closed-body field access (WF-064 should preclude this)"
                   naam)
@@ -1975,7 +2005,7 @@ and sum_operand ctx (e : expr) : string =
   match e with
   | Binder_ref { naam; _ } -> (
       match List.assoc_opt (norm naam) ctx.binders with
-      | Some (var, _) -> var
+      | Some (_, var, _) -> var
       | None -> fault "unbound binder %S in a closed body (WF-064 should preclude this)" naam)
   | Construct { typ; constructor_; argument; _ } -> construct_ground_term ctx typ constructor_ argument
   | _ ->
@@ -2032,7 +2062,7 @@ and translate_money_mult ctx ~subject ~subject_ot ~basis : string list * string 
   let rec peel = function
     | Let { binder; value; body; _ } ->
         let va, vt, vs = expr_term ctx ~subject ~subject_ot value in
-        ctx.binders <- (norm binder, (vt, vs)) :: ctx.binders;
+        ctx.binders <- (norm binder, let_binder ctx ~subject ~subject_ot (va, vt, vs)) :: ctx.binders;
         ctx.rule_guard <- ctx.rule_guard @ va;
         peel body
     | Binair { op = Maal; links; rechts; _ } ->
@@ -2104,7 +2134,7 @@ let rec value_branches ctx ~subject ~subject_ot (e : expr) : (string list * stri
   | Let { binder; value; body; _ } ->
       let va, vt, vs = expr_term ctx ~subject ~subject_ot value in
       let saved_b = ctx.binders and saved_g = ctx.rule_guard in
-      ctx.binders <- (norm binder, (vt, vs)) :: ctx.binders;
+      ctx.binders <- (norm binder, let_binder ctx ~subject ~subject_ot (va, vt, vs)) :: ctx.binders;
       ctx.rule_guard <- ctx.rule_guard @ va;
       let branches = value_branches ctx ~subject ~subject_ot body in
       ctx.binders <- saved_b;

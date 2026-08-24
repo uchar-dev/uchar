@@ -276,3 +276,59 @@ alleen vergelijkingsoperanden.
 ROOD-EERST (letterlijk, vóór de fix): clingo `TRANSLATION FAULT: non-numeric
 literal in a term position`; ref `oracle: PASS` op beide. NA de fix clingo
 `PASS (3 expectations)` op beide, gate 6 volledig groen (189 cases).
+
+## clingo B3 — ListLength in termpositie (self-contained Let-binder) geland (besluit 2) (2026-08-24)
+
+Een `Let`-gebonden bare waarde (een `ListLength`-telling, een `Fold`-resultaat,
+een attribuutlezing) die in een termpositie werd gelezen, grondde tot een
+onveilige variabele: de binder-atomen zaten alleen in de `rule_guard`, maar
+coalesce0 (S5), de range-hek (S6) en de geld-productdeelproducten bouwen hun
+hulpregels uit de LOKALE operand-atomen — dus een binder-lezing binnen zo'n
+hulpregel groundde `L2` ongebonden (`co7(S,(L2+C6)) :- …, is_a(S,"jutter")`).
+
+- `backends/clingo/lib/translate.ml`: nieuwe helper `let_binder` maakt een
+  atoom-dragende `Let`-waarde SELF-CONTAINED via een per-subject hulpregel
+  `letN(S,term) :- is_a(S,ot), <waarde-atomen>` (voor een `ListLength` is dat
+  het `#count`-aggregaat over de bestaande `lpres`/`lelem`-reïficatie). De
+  binder-lezing draagt daarna het enkele `letN`-atoom, dus de waarde is gebonden
+  waar hij ook landt — in een hulpregel-body of de omhullende regel. Een
+  atoom-vrije waarde (een literal) is al grond en krijgt geen hulpregel. Het
+  `ctx.binders`-type draagt nu de binder-atomen mee (`string list * string *
+  int`); recurrence-gebonden binders (match-payload, lambda/fold-parameter)
+  houden een lege atoomlijst (de omhullende join grondt hun ASP-variabele).
+  Toegepast op de drie regel-waarde-`Let`-sites (`expr_term`, `value_branches`,
+  de geld-product-peel). De leeg-propagatie blijft ongewijzigd (de hulpregel is
+  nog steeds een positieve join over de waarde-atomen).
+- `spec/ASP-TRANSLATION.md` S18(a) herschreven (de "atomen in de rule_guard"-
+  claim die B3 weerlegde, gecorrigeerd naar de self-contained hulpregel); S15
+  ListLength-alinea met een verwijzing uitgebreid. Geen S19-regel geschrapt: B3
+  was een latente onveilige-variabele-bug (een clingo-grounding-fout), geen
+  gedocumenteerde luide `Value.fault`-weigering.
+- Nieuwe golden `corpus/golden/jutterswet-postenheffing/` (eigen-geschreven,
+  rechtenvrij): `heffing = let aantal_posten = number of posten in 100.00 *
+  (aantal_posten + number of posten)` — een `Let`-gebonden `ListLength` (de
+  self-contained binder) náást een bare `ListLength`, samen in een product.
+  case1 (`[12,7,9]` → 3 posten → 600.00), case2 (`[]` → 0 posten → 0.00, de
+  aanwezig-maar-lege-lijst-telt-0 semantiek van ch. 10.1); beide absoluut gepind
+  door BEIDE executors, beide noop-gerefuteerd (geen survivor). Magnitude bewust
+  klein (100.00 schaalt naar 10000 ≤ 46340) zodat de multiplicatieve range-hek
+  niet vuurt.
+
+ROOD-EERST (letterlijk, vóór de fix, beide cases):
+`error: unsafe variables in: co7(S,(L2+C6)):-…,is_a(S,"jutter").` / `note:
+'L2' is unsafe` — grounding gestopt. ref `oracle: PASS` op beide. NA de fix
+clingo `PASS (2 expectations)` op beide, gate 6 volledig groen (191 cases,
+ref ≡ clingo overal). Gates 1-8 groen (self-contained; ir-schema 81; verifier
+81 golden clean + 137 negatief; case-schema 208; oracle 191; noop 169 refute +
+22 survivors; rood 17).
+
+Bijvangst: de fix is generiek (elke atoom-dragende `Let`-waarde, niet alleen
+`ListLength`) — een `Fold`-resultaat of attribuutlezing gebonden aan een `Let`
+en gelezen in een gecoalescte term had dezelfde bug; de discriminator is
+`va = []` (atoom-vrij → geen hulpregel) versus niet-leeg, de natuurlijke grens,
+geen `ListLength`-special-case. Bestaande `Let`-goldens (tariefstelling) krijgen
+nu `letN`-hulpregels in hun ASP maar blijven semantisch identiek en gate-6-groen.
+
+Nog open in deze kaart: de plugin-splitsing van `EScopeCall` en de
+tutorial-exitgetuige (B1 opgeheven op spec/ref/clingo-niveau; de plugin- en
+frontend-fixture-stappen resteren).
