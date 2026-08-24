@@ -52,3 +52,20 @@ Gedaan:
 
 Alle negen gates groen in de worktree (zie commit-log). Open: twee
 opus-lenzen vóór merge (buiten deze subagent).
+
+Result: de clingo-vertaling van struct-veldtoegang is recursief:
+struct_base betreedt een Field_access-basis opnieuw en project_field
+voegt per niveau één projectie-unificatie toe; tussenliggende
+struct-velden dragen schaal 0 en alleen het blad zijn eigen
+gedeclareerde schaal; leeg ergens in de keten bindt niets, zodat de
+projectie op elke diepte onafleidbaar blijft — identiek aan ref,
+door de lenzen op drie niveaus diep, lege tussenstructs en
+geld-vs-numeriek-schalen empirisch schoon bevonden. De golden
+jutterswet-vangstwaardering pint het geneste geldveld door beide
+executors (heffing 125.75, grondslagkopie 100.25), rood-eerst met de
+letterlijke oude fault. ASP-TRANSLATION S16 draagt de recursieve
+derde basisvorm; de oude weigering is uit de vertaling en de
+S19-inventaris (die alleen nog de genavigeerde struct-lezing luid
+houdt). Bewust buiten scope gebleven, gedocumenteerd in S19: de
+struct-VALUE-vorm (geneste structs in case-invoer/verwachtingen) —
+een aparte, luide flank. Beide lenzen vonden niets.
