@@ -50,7 +50,7 @@ door beide executors bevestigd.
 | `synth3-vondststaat` | vlakke struct: StructLiteral-bouw + FieldAccess + struct-gelijkheid-kenmerk | 3 |
 | `synth3-nestwaarde` | geneste struct: geneste StructLiteral-bouw + FieldAccess-over-FieldAccess (diepste scalair) | 3 |
 | `synth3-drempelheffing` | strikte Let ×3 genest; binder tweemaal gelezen; WF-077 conditie-operand; leeg-barrière; Afgerond load-bearing | 4 |
-| `synth3-nestkorting` | geneste laddergroep (Rung.excepties, ongeordend): enkel/gelijk-geen-conflict/verschillend-conflict-naar-root/terugval/init-basis | 5 |
+| `synth3-nestkorting` | geneste laddergroep (Rung.excepties, ongeordend) met BEREKENDE exceptie-consequenties (Binair over invoer `grondslag`, geen kale Literal): berekend-enkel/waarde-gelijk-via-verschillende-expr/verschillend-conflict/berekende-terugval/init — zie lensronde 1 | 5 |
 | `synth3-kamerheffing` | subscope-lowering: ResolvedObjectCreatie + boolean-getypeerde-expressie kenmerk-init (WF-027-relaxatie) + genavigeerde teruglezing | 3 |
 | `synth3-besluitschakel` | Construct-in-regel (twee disjuncte writers) + downstream Match over berekend sum-attribuut | 4 |
 | `synth3-letbeslag` | strikte Let met Match-body; binder tweemaal gelezen; direct-afgeronde productarm; Match-leeg vs Let-leeg-barrière | 4 |
@@ -132,3 +132,83 @@ regel 4) weigert ze als ref≢clingo. Geen ervan is een spec-fix binnen deze kaa
   scherpe, reproduceerbare ref≢clingo-grens die een eigen kaart verdient
   (spec-besluit: waar dwingt v1 de ch. 2.4-afronding af — op de schrijfgrens
   zoals ref, of op elk materialisatiepunt zoals clingo?). Buiten deze kaart.
+
+---
+
+## Lensronde 1 verwerkt (2026-08-24)
+
+**BEVINDING 1 [MINOR/CONFIRMED] — synth3-nestkorting was een re-skin van anchor
+jutterswet-nestuitzondering.** Zelf geverifieerd (beide IR's gelezen): de oude
+nestkorting was structureel isomorf — één kenmerk-gated rung (rechtA→100) met een
+`ongeordend`-excepties-groep van drie kale-Literal SubLadders (grondP=30,
+grondQ=45, grondR=30, twee-gelijk-één-verschillend) plus een init-rung; de vijf
+cases vielen op een strikte deelverzameling van de negen van nestuitzondering.
+Alleen kenmerk-namen, doel-attribuut en bedragen verschilden; de beslisprocedure
+was identiek. **De bevinding is terecht.**
+
+**Fix — geretarget, niet gedropt.** De bevinding noemt drie retarget-opties; twee
+vielen af na verificatie: (a) *geordende* meerledige excepties bestaan niet —
+WF-075 (spec-regel 1854) eist de `unordered`-markering zodra een groep ≥2 leden
+heeft, dus `ongeordend:false` met meerdere leden is ill-formed; (c) *drielaags*
+nesting is al geankerd door `jutterswet-nestdiepte`. Overblijft (b): **een
+exceptie-consequentie die een berekende expressie is i.p.v. een kale Literal** —
+in het hele corpus dragen álle exceptie-armen kale Literals (nestuitzondering,
+nestdiepte, nestkenmerk, toelagegronden, tariefrecht-catala). Beide executors
+evalueren de rung-consequentie via hun algemene expressiepad (ref `eval_expr`,
+clingo `expr_term`), dus een berekende arm is toelaatbaar en verifier-clean.
+
+De geretargete golden: elke consequentie is nu een berekende `Binair` (PLUS) over
+een invoer-attribuut `grondslag` — de eigen terugval van de toprung
+(`grondslag+90`) en de drie armen P=`grondslag+20`, Q=`grondslag+35`,
+R=`(grondslag+15)+5`. **R en P berekenen dezelfde waarde via een verschillende
+expressie**, dus case2 oefent waarde-gelijkheid-reconciliatie over syntactisch
+verschillende expressies — precies wat geen kale-Literal-anker kan raken (daar is
+"gelijk" letterlijk dezelfde literal-string).
+
+### Admissie (drievoudig, PLAN §8) — alle vijf cases
+
+| case | kenmerken / grondslag | korting | construct |
+|---|---|---|---|
+| `case1-berekend-enkel` | rechtA,grondP / 12.00 | 32.00 | enkele berekende exceptie-arm; waarde volgt de invoer |
+| `case2-gelijk-verschillende-expr` | rechtA,grondP,grondR / 10.00 | 30.00 | P=30 == R=30 via verschíllende expressie → geen conflict |
+| `case3-conflict-berekend` | rechtA,grondP,grondQ / 10.00 | leeg + `Jutter.korting/0` | P=30 ≠ Q=45 → conflict op berekende waarden |
+| `case4-terugval-berekend` | rechtA / 10.00 | 100.00 | terugval naar de berekende eigen consequentie van de toprung |
+| `case5-init-basis` | (geen) / 10.00 | 5.00 | init-rung beslist |
+
+Verifier-clean (95 golden clean). ref ≡ clingo exact op elke handberekende
+waarde (executors als bevestiging: alle vijf `oracle: PASS` / `clingo: PASS`).
+
+### Coverage-toets (construct eruit → verwachting verandert) — 2 getoond
+
+A. **Waarde-gelijkheid is load-bearing.** R's binnenste literal 15.00→16.00
+   (R wordt 31 ≠ P=30) → case2's schone 30.00 klapt in beide executors om naar
+   een conflict: ref `MISMATCH: M.korting = leeg, expected 30` +
+   `channel carries: Jutter.korting/0 × M`; clingo `underived (leeg), expected
+   3000` + `1 inconsistent fact(s)`. Dit is de exacte eigenschap die geen
+   kale-Literal-anker oefent.
+B. **De payload is berekend, niet een vaste literal.** case1 `grondslag`
+   12.00→20.00 (verwachting nog 32.00) → korting volgt de som: ref
+   `MISMATCH: M.korting = 40, expected 32`; clingo `= [4000], expected 3200`.
+
+### Rood-eerst (foute-verwachting-proef, letterlijke uitvoer)
+
+case1 32.00→32.01 → ref `MISMATCH: M.korting = 32, expected 32.01`; clingo
+`MISMATCH: M.korting = [3200], expected 3201`. De verwachting is load-bearing.
+
+### check-noop.sh — ongewijzigd
+
+Geen survivor-pin toegevoegd of verwijderd: alle vijf nieuwe cases refuteren een
+niets-doende executor (de korting is berekend/afgeleid, case3 verwacht bovendien
+een `inconsistent`-feit dat noop niet produceert). Gate 7 blijft 33 survivors.
+
+### Alle negen gates groen (slotregels)
+
+1. `check-self-contained: PASS`
+2. `check-ir-schema: PASS (schema valid; 95 file(s) validate and round-trip)`
+3. `check-verifier: PASS (95 golden clean; 138 negatief rejected for their declared rule)`
+4. `check-case-schema: PASS (schema valid; 263 case file(s) validate)`
+5. `check-oracle: PASS (246 cases replayed exactly; NOT replayed, no case file yet: corpus/golden/jutterswet-vormenkabinet)`
+6. `check-clingo: PASS (246 cases replay exactly through clingo — ref = clingo over the corpus)`
+7. `check-noop: PASS (213 cases refute a do-nothing executor; 33 pinned survivors pin defeasible standing)`
+8. `check-rood: PASS (17 red cases fault observably in both executors)`
+9. `check-catala: PASS — frontend suite green (128 checks); 7 catala golden(s) regenerate byte-identically`
