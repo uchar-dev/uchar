@@ -1,0 +1,33 @@
+# Jutterswet, artikel 11 — de getrapte vangstheffing
+
+Art. 11 (getrapte vangstheffing). De vangstheffing van een jutter wordt in
+stappen bepaald. De brutovangstheffing is gelijk aan de aangebrachte waarde.
+De brutovangstheffing wordt vermeerderd met de vaste bergingsopslag. De aldus
+verkregen heffing wordt verminderd met de drempelvrijstelling, met dien
+verstande dat bij een grootvangst in plaats daarvan een grootvangsttoeslag
+wordt bijgeteld.
+
+Modelleringsnotitie: artikel 11 rekent één grootheid — de vangstheffing — in
+opeenvolgende stappen (`state`) uit. Elke stap leest de uitkomst van de vorige
+en is louter suiker over gekoppelde toekenning: de plugin lowert elke stap als
+een gewoon intern attribuut met een eigen default-boom (`vangstheffing bruto`,
+`vangstheffing na_opslag`, `vangstheffing netto`), waarbij stap n stap n-1
+leest. De laatste stap draagt een uitzondering (een eigen ladder): de
+grootvangsttoeslag verdringt de drempelvrijstelling. Het fragment gebruikt geen
+subscope; de grootvangst is een kenmerk.
+
+```catala
+declaration scope Vangstheffing:
+  input aangebrachte_waarde content money
+  input grootvangst content boolean
+  output vangstheffing content money
+    state bruto
+    state na_opslag
+    state netto
+
+scope Vangstheffing:
+  definition vangstheffing state bruto equals aangebrachte_waarde
+  definition vangstheffing state na_opslag equals vangstheffing + $5.00
+  definition vangstheffing state netto equals vangstheffing - $12.00
+  exception definition vangstheffing state netto under condition grootvangst consequence equals vangstheffing + $20.00
+```

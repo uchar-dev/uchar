@@ -1,0 +1,18 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "T", "objectType": "Trapheffing",
+        "attributes": { "grondslag": { "number": "100" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "T", "attribute": "heffing bruto", "value": { "number": "100" } },
+    { "kind": "attributeValue", "label": "T", "attribute": "heffing na_aftrek", "value": { "number": "90" } },
+    { "kind": "attributeValue", "label": "T", "attribute": "heffing definitief", "value": { "number": "180" } },
+    { "kind": "consistent" }
+  ]
+}

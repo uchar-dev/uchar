@@ -1,0 +1,314 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Vangstheffing": {
+      "node": "Objecttype",
+      "naam": "Vangstheffing",
+      "attributen": {
+        "aangebrachte_waarde": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "vangstheffing bruto": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "vangstheffing na_opslag": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "vangstheffing netto": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "grootvangst"
+      ],
+      "kenmerkSoorten": {
+        "grootvangst": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": null
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "berekening vangstheffing bruto",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "vangstheffing bruto",
+        "objecttype": "Vangstheffing",
+        "onderwerpBron": "de vangstheffing bruto",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de vangstheffing bruto",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "AttribuutRef",
+        "attribuut": "aangebrachte_waarde",
+        "objecttype": "Vangstheffing",
+        "onderwerpBron": "de aangebrachte_waarde",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de aangebrachte_waarde",
+        "set": false,
+        "navigatiePad": []
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "berekening vangstheffing na_opslag",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "vangstheffing na_opslag",
+        "objecttype": "Vangstheffing",
+        "onderwerpBron": "de vangstheffing na_opslag",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de vangstheffing na_opslag",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "PLUS",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "vangstheffing bruto",
+          "objecttype": "Vangstheffing",
+          "onderwerpBron": "de vangstheffing bruto",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de vangstheffing bruto",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "5.00",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "5.00"
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": null
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": [],
+  "defaultLadders": [
+    {
+      "node": "DefaultLadder",
+      "naam": "vangstheffing netto",
+      "onderwerp": "Vangstheffing",
+      "kenmerk": null,
+      "attribuut": "vangstheffing netto",
+      "rungs": [
+        {
+          "node": "Rung",
+          "besluit": null,
+          "voorwaarde": {
+            "node": "Kenmerk",
+            "kenmerk": "grootvangst",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "grootvangst"
+          },
+          "consequentie": {
+            "node": "Binair",
+            "op": "PLUS",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "vangstheffing na_opslag",
+              "objecttype": "Vangstheffing",
+              "onderwerpBron": "de vangstheffing na_opslag",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de vangstheffing na_opslag",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "20.00",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "20.00"
+            },
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": null
+          },
+          "bron": "vangstheffing netto"
+        },
+        {
+          "node": "Rung",
+          "besluit": null,
+          "voorwaarde": {
+            "node": "Samengesteld",
+            "kwantor": "ALLE",
+            "drempel": 0,
+            "onderdelen": [],
+            "bron": "altijd"
+          },
+          "consequentie": {
+            "node": "Binair",
+            "op": "VERMINDERD_MET",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "vangstheffing na_opslag",
+              "objecttype": "Vangstheffing",
+              "onderwerpBron": "de vangstheffing na_opslag",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de vangstheffing na_opslag",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "12.00",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "12.00"
+            },
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": null
+          },
+          "bron": "vangstheffing netto"
+        }
+      ],
+      "bron": "vangstheffing netto",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ]
+}

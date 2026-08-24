@@ -1,0 +1,26 @@
+# Labeled variable states — sugar over chained assignment (CONSTRUCTS row 2)
+
+Catala's `state` steps on one scope variable are pure sugar: the desugarer
+collapses each state into its own scopelang variable (`heffing#bruto`,
+`heffing#na_aftrek`, …), step n reading step n-1. The plugin lowers each step
+as an ordinary internal attribute with its own default tree — no new node, no
+state machinery — mangling the `#` to a space (`heffing bruto`, …) so every
+downstream read resolves through the ordinary variable table. A step may carry
+an exception (its own ladder): here `definitief` doubles the after-deduction
+value, or, when `verhoogd`, adds five instead. Own-authored, rights-free.
+
+```catala
+declaration scope Trapheffing:
+  input grondslag content integer
+  input verhoogd content boolean
+  output heffing content integer
+    state bruto
+    state na_aftrek
+    state definitief
+
+scope Trapheffing:
+  definition heffing state bruto equals grondslag
+  definition heffing state na_aftrek equals heffing - 10
+  definition heffing state definitief equals heffing * 2
+  exception definition heffing state definitief under condition verhoogd consequence equals heffing + 5
+```

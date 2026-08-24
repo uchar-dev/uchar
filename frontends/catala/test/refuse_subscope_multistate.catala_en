@@ -1,17 +1,28 @@
-# Multi-state variable — refused (PHASE5C-TUTORIAL §3, the 2-4 flank)
+# Multi-state subscope output — refused (CONSTRUCTS row 9, the row-2 flank)
 
-The tutorial's 2-4 shape also carries multi-`state` variables. Catala expands
-each state into a separate scopelang variable; the IR has no state machinery.
-Refused loudly (a `#`-suffixed scopelang variable name is the tell).
+A standalone `state` chain now lands as ordinary internal attributes (see
+`states.catala_en`). What stays refused is a subscope reading a callee's
+**multi-state** output: the callee's states lower to distinct attributes
+(`heffing bruto`, `heffing gecorrigeerd`) with no single output attribute, so
+the caller's bare `aanslag.heffing` read has no image. Refused loudly.
 
 ```catala
 declaration scope Aanslag:
   input grondslag content integer
   output heffing content integer
-    state basis
+    state bruto
     state gecorrigeerd
 
+declaration scope Kantoor:
+  input basis content integer
+  aanslag scope Aanslag
+  output totaal content integer
+
 scope Aanslag:
-  definition heffing state basis equals grondslag
+  definition heffing state bruto equals grondslag
   definition heffing state gecorrigeerd equals heffing - 10
+
+scope Kantoor:
+  definition aanslag.grondslag equals basis
+  definition totaal equals aanslag.heffing + 1
 ```

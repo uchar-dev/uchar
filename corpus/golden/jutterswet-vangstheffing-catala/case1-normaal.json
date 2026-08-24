@@ -1,0 +1,22 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V",
+        "objectType": "Vangstheffing",
+        "attributes": { "aangebrachte_waarde": { "number": "100.00" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "V", "attribute": "vangstheffing bruto", "value": { "number": "100.00" } },
+    { "kind": "attributeValue", "label": "V", "attribute": "vangstheffing na_opslag", "value": { "number": "105.00" } },
+    { "kind": "attributeValue", "label": "V", "attribute": "vangstheffing netto", "value": { "number": "93.00" } },
+    { "kind": "consistent" }
+  ]
+}

@@ -78,6 +78,18 @@ exception Refuse of string
 
 let refuse fmt = Printf.ksprintf (fun s -> raise (Refuse s)) fmt
 
+(* Catala's labeled variable states (CONSTRUCTS row 2) are sugar over chained
+   assignment: the desugarer collapses each [state] of one scope variable into
+   its own scopelang variable named [base#state] (a '#' joins base and state),
+   and step n reads step n-1 by an ordinary variable reference. The plugin
+   lowers each step as a plain internal attribute; the '#' is mangled to a
+   space at the variable table so the step carries a plain declared name and
+   every downstream read resolves through [lookup] unchanged. A base without
+   states has no '#' and is returned verbatim (byte-identity for the corpus
+   goldens). *)
+let state_attr_name (vname : string) : string =
+  String.map (function '#' -> ' ' | c -> c) vname
+
 (* Enums referenced by the translated document, recorded as [sum_type_of]
    builds each SumType; [file_to_document] resets it per run and reads it to
    emit exactly the used enums as domains — [ctx_enums] also carries built-in
@@ -954,6 +966,7 @@ let ruled_vnames_of (sd : untyped Sc.scope_decl) : string list =
    are qualified by subject). *)
 let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (string * I.datatype) list)
     ~(ambiguous : string list) ~(top_rung_vars : ScopeName.t -> ScopeVar.Set.t)
+    ~(callee_multistate : ScopeName.t -> string list)
     (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
   let ot_name = ScopeName.base name in
   (* a rule/ladder name for [vname]: qualified by subject when [vname] produces a
@@ -1001,12 +1014,13 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
       (fun v (sv : Sc.scope_var_ty) acc ->
         if is_subscope v then acc
         else begin
-          let vname = M.remove (ScopeVar.get_info v) in
-          if String.contains vname '#' then
-            refuse
-              "multi-state variable %S: states are out of scope — Catala expands each state into a \
-               separate scopelang variable and the IR has no state machinery (PHASE5C card 4 flank); refused"
-              vname;
+          (* a state step lands as an ordinary internal attribute (row 2):
+             [state_attr_name] mangles the [base#state] scopelang name to a
+             plain declared name, step n reads step n-1 as any other variable
+             read, resolved through [lookup]. A subscope reading a callee's
+             multi-state output has no single attribute to bind and stays
+             refused ([read_subscope_output], the row-9 flank). *)
+          let vname = state_attr_name (M.remove (ScopeVar.get_info v)) in
           (* a context (reentrant) variable is no longer refused (besluit 6):
              it is an ordinary attribute whose OWN default becomes the base of
              a ladder, and a caller override rides above it as a generated top
@@ -1067,6 +1081,17 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
     | Some (scope, _args, out_struct) ->
         let callee_type = ScopeName.base scope in
         let fld_name = StructField.to_string field in
+        (* the narrowed multi-state flank (row 9): a callee output that is
+           itself multi-state lowers to distinct internal attributes
+           ("<base> <state>"), so there is no single attribute for the bare
+           struct-field output the caller reads — refused loudly (a standalone
+           state chain lands; only a subscope reading one does not). *)
+        if List.mem fld_name (callee_multistate scope) then
+          refuse
+            "subscope output %S of %S is a multi-state variable: its states lower to distinct \
+             internal attributes (one per state) and there is no single output attribute for the \
+             caller's bare read — refused (multi-state subscope output)"
+            fld_name callee_type;
         let fld_ty =
           match
             Option.bind (StructName.Map.find_opt out_struct structs)
@@ -1609,12 +1634,37 @@ let file_to_document (input : string) : I.document =
   let top_rung_vars sc =
     try ScopeName.Map.find sc top_rung_map with Not_found -> ScopeVar.Set.empty
   in
+  (* row 2: per scope, the base names of its multi-state variables (a scopelang
+     variable name carrying a '#'). A caller reading such a variable's bare
+     struct-field output has no single callee attribute to bind — the narrowed
+     multi-state refusal ([read_subscope_output]); a standalone state chain has
+     no caller and lands. *)
+  let multistate_map =
+    List.fold_left
+      (fun acc (name, decl) ->
+        let sd : untyped Sc.scope_decl = M.remove decl in
+        let bases =
+          ScopeVar.Map.fold
+            (fun v _ a ->
+              let nm = M.remove (ScopeVar.get_info v) in
+              match String.index_opt nm '#' with
+              | Some i -> String.sub nm 0 i :: a
+              | None -> a)
+            sd.scope_sig []
+        in
+        ScopeName.Map.add name (List.sort_uniq compare bases) acc)
+      ScopeName.Map.empty scopes
+  in
+  let callee_multistate sc =
+    try ScopeName.Map.find sc multistate_map with Not_found -> []
+  in
   let objecttypen = ref [] and regels = ref [] and ladders = ref [] and cons = ref [] in
   let feittypen = ref [] and creaties = ref [] and overrides = ref [] in
   List.iter
     (fun (name, decl) ->
       let ot_name, ot, rs, ls, cs, fts, ocs, ovs =
-        translate_scope enums structs functions ~ambiguous ~top_rung_vars name (M.remove decl)
+        translate_scope enums structs functions ~ambiguous ~top_rung_vars ~callee_multistate name
+          (M.remove decl)
       in
       objecttypen := (ot_name, ot) :: !objecttypen;
       regels := !regels @ rs;

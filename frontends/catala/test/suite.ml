@@ -160,7 +160,16 @@ let () =
          `catala interpret`. Through the full differential (ref AND clingo) *)
       ("tutorial_end_2_3.catala_en",
        [ "cases/tutorial_binnengaats_laag.json"; "cases/tutorial_overzee_hoog.json";
-         "cases/tutorial_binnengaats_hoog.json" ]) ]
+         "cases/tutorial_binnengaats_hoog.json" ]);
+      (* CONSTRUCTS row 2: labeled variable states as sugar over chained
+         assignment. A three-step chain (bruto → na_aftrek → definitief), each
+         step an ordinary internal attribute reading the previous, with an
+         exception on the last step (its own ladder). Two cases pin both the
+         plain-chain values and the exception branch (verhoogd true → 95 via
+         the top rung, false → 180 via the base), calibrated against
+         `catala interpret`. Through the full differential (ref AND clingo) *)
+      ("states.catala_en",
+       [ "cases/states_normaal.json"; "cases/states_verhoogd.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:false src cases) passing;
   (* ref-only passing programs. datum: clingo cannot translate a date literal
@@ -192,7 +201,9 @@ let () =
       (* PHASE5C-TUTORIAL §3 subscope flanks — declared subscopes lower
          (subscope.catala_en), but four shapes stay refused, each loudly:
          the inline/anonymous call (2-1), the per-element call (2-4), a
-         whole-struct output read, and multi-state variables *)
+         whole-struct output read, and a subscope reading a callee's
+         multi-state output (a standalone state chain now lands as sugar —
+         states.catala_en — only the bare cross-scope output read has no image) *)
       ("refuse_subscope.catala_en", "subscope");
       ("refuse_subscope_perelement.catala_en", "per-element");
       ("refuse_subscope_wholestruct.catala_en", "whole struct");
