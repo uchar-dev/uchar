@@ -179,11 +179,16 @@ let () =
      (the subscope call) still falls outside the fragment — decimals, let-in
      and branching exceptions now land (row 5c). *)
   let refusals =
-    [ (* besluit 6 landed the attribute-target top rung; the narrowed remnant of
-         the old blanket context refusal is a context override on a CHARACTERISTIC
-         (boolean) callee target — a decided attribution, not a value — which
-         stays a recorded flank *)
+    [ (* besluit 6 landed the attribute-target top rung; three narrowed remnants
+         of the old blanket context refusal each stay recorded flanks, one fixture
+         per flank (CONSTRUCTS row 9): a context override on a CHARACTERISTIC
+         (boolean) callee target — a decided attribution, not a value; a caller
+         override that BRANCHES BELOW THE ROOT (a nested exception tree, not a
+         plain-rung chain); and a callee OWN DEFAULT that is itself ROOT-UNORDERED
+         (no single base for a top rung to sit above) *)
       ("refuse_context.catala_en", "characteristic");
+      ("refuse_context_branching.catala_en", "branching tree");
+      ("refuse_context_owndefault.catala_en", "root-level unordered own default");
       (* PHASE5C-TUTORIAL §3 subscope flanks — declared subscopes lower
          (subscope.catala_en), but four shapes stay refused, each loudly:
          the inline/anonymous call (2-1), the per-element call (2-4), a

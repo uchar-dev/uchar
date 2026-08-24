@@ -70,4 +70,27 @@ sessieverslag). `scripts/check-noop.sh` NIET geraakt — de nieuwe
 golden-cases berekenen `verschuldigd` (niet in de ruwe invoer) en
 weigeren de no-op vanzelf; survivor-lijst ongewijzigd (24).
 
-Open: twee opus-lenzen vóór de merge (parent/orchestrator).
+Lensronde (2026-08-24, 2 MINOR verwerkt):
+- Bevinding 1 [CONFIRMED] — de refuse-fixtureset pinde 1 van 3 geclaimde
+  context-flanken. Empirisch bevestigd (rood-eerst, letterlijke exit-3-uitvoer)
+  dat de andere twee luid weigeren; ze krijgen nu elk een eigen fixture:
+  `refuse_context_branching.catala_en` (een onder-de-wortel-vertakte
+  caller-override → needle "branching tree", pad translate.ml:1429) en
+  `refuse_context_owndefault.catala_en` (een root-ongeordend eigen default van
+  de callee → needle "root-level unordered own default", pad translate.ml:1330).
+  De suite pint nu alle drie (128 checks, +2). Nuance uit de bevinding
+  weerlegd: een échte onder-de-wortel-vertakte (Form_a) override bereikt de
+  toegewijde 1429-tak rechtstreeks — een base-loze root-ongeordende override is
+  daarvoor NIET vereist; het generieke 1446-None-pad ("outside the fragment")
+  hoort bij de gedeelde-basis-vorm (een andere, reeds-elders-gedekte flank),
+  niet bij onder-de-wortel-vertakking.
+- Bevinding 2 [PLAUSIBLE] — de top-rung leest de caller via back-link-navigatie
+  (een elaboratie boven het letterlijke §4.1-zelfde-subject-patroon).
+  Geverifieerd: geen defect (de bevinding meldt zelf "geen code-actie"); de
+  navigatie-mechaniek is al expliciet benoemd in de Executed-notitie
+  (spec/proposals/PHASE5-CATALA.md:246-247), in CONSTRUCTS rij 9 ("navigated
+  over the `verbindendeRol` back-link") én in deze kaart (r. 40-48). De
+  gevraagde documentatie bestaat dus al — geen wijziging.
+Alle negen gates na de fix opnieuw groen in deze worktree.
+
+Open: (afgehandeld) de twee opus-lenzen zijn verwerkt.

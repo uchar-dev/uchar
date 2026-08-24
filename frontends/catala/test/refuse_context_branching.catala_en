@@ -1,0 +1,39 @@
+# Context override that branches below the root — a recorded besluit-6 flank
+
+Besluit 6 lowers a caller override of a `context` variable to a **chain** of
+plain-rung top rungs above the callee's own ladder. When the override itself
+is a **below-root branching** tree (a base rung carrying a nested exception
+sub-group — the ch. 7.9 shape) it is not a plain-rung chain: only a chain of
+plain-rung overrides lowers to top rungs, so the branching override stays
+refused loudly, one of the narrowed remnants of the old blanket context
+refusal (CONSTRUCTS row 9 / `spec/proposals/PHASE5-CATALA.md` decision 6).
+
+```catala
+declaration scope Kamer:
+  input grondslag content integer
+  context drempel content integer
+  output uitkomst content integer
+
+scope Kamer:
+  definition drempel equals 10
+  definition uitkomst equals grondslag - drempel
+
+declaration scope Aanslag:
+  input grondslag content integer
+  input a content boolean
+  input b content boolean
+  input c content boolean
+  kamer scope Kamer
+  output heffing content integer
+
+scope Aanslag:
+  definition kamer.grondslag equals grondslag
+  label basis definition kamer.drempel equals 5
+  label lvl1 exception basis definition kamer.drempel
+    under condition a consequence equals 20
+  exception lvl1 definition kamer.drempel
+    under condition b consequence equals 25
+  exception lvl1 definition kamer.drempel
+    under condition c consequence equals 30
+  definition heffing equals kamer.uitkomst
+```
