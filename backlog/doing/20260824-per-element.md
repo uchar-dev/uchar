@@ -62,3 +62,49 @@ subscope call (reading a subscope output of an anonymous instance): only
 declared subscopes lower … per-element/inline calls are out of scope`.
 
 Open: de twee opus-lenzen vóór merge (orchestratie parent).
+
+## Lensronde (2026-08-25)
+
+Twee lens-bevindingen (beide [MINOR/CONFIRMED]) verwerkt. Beide eerst
+zelf gereproduceerd — ref rekent door, clingo TRANSLATION-FAULT — dus
+een ref-only lowering (ref≡catala, clingo≠ref: een divergentie). De
+letterlijke rode uitvoer stond in beide gevallen op
+`oracle: PASS` naast `TRANSLATION FAULT: a closed-body term here is a
+bound binder, a literal, a parameter, a +/- combination or a Construct
+(no corpus case for more)`.
+
+**Bevinding 1 — de gate lowerde óók in fold-reducer-bodies.** De
+per-element-gate stond op `in_body`, maar `in_body` is óók waar in een
+fold-reducer-, functie- en match-body. Een inline `(output of S
+with {…}).f` recht in een fold-reducer (`combine … with (acc + (output
+of Kamer with {…}).bedrag)`) lowerde daardoor naar een `Invoke` die als
+`closed_term` van de `+` van de reducer landt — en clingo's `closed_term`
+heeft geen `Invoke`-tak (alleen de map-body-route lowert via
+`body_branches`). Fix (frontend, smalst): een nieuwe context-vlag
+`in_map_body`, alleen gezet op de map-body-site en nooit doorgegeven aan
+een sub-expressie, zodat de gate exact de DIRECTE map-body is. Een
+per-element-aanroep genest in een fold-reducer/arithmetiek/match/functie
+weigert nu luid (`refuse_perelement_foldcall`). De te sterke
+comment-invariant ("`in_body` is exactly the gate") is gecorrigeerd.
+
+**Bevinding 2 — de "+/- fence" liet binaire aftrekking door.** Een
+callee-body `grondslag - 5` lowert naar `Binair{Verminderd_met}`, dat
+buiten clingo's gesloten-body-hek valt: `closed_term`'s Binair-tak
+kent alleen `Plus`/`Min` (unaire negatie = `0 - a`), NIET
+`Verminderd_met`. (Dezelfde aftrekking in een gewone, niet-gesloten
+regel is wél goed — clingo's algemene vertaler kent `Verminderd_met`;
+het gat is specifiek de gesloten callee-body.) Fix (frontend, smalst):
+een `+/- fence`-wandeling over de gesynthetiseerde `FunctionDef`-body in
+`scope_to_function_def` weigert elke niet-additieve binaire operator
+(aftrekking/vermenigvuldiging/deling/macht) luid per element
+(`refuse_perelement_subtraction`). Het hek is nu `{Plus, Min}`, niet een
+losse "`+/-`".
+
+Onderliggende clingo-`closed_term`-gaten (geen `Invoke`-tak; geen
+`Verminderd_met` in de Binair-tak) zijn buiten deze kaart — de fix laat
+de divergentie luid weigeren aan de frontend, niet stil naar ref-only IR
+zakken. Beide zijn géén ontwerpvraag: het maintainersbesluit 1-A noemt de
+map-body en de additieve body al; de bevindingen tonen dat het hek niet
+werd gehandhaafd. `spec/proposals/PHASE5C-TUTORIAL.md §3a` bijgewerkt
+(gate = `in_map_body`; het hek = `{Plus, Min}`), plus de
+green-fixture-header. Alle negen gates opnieuw groen.

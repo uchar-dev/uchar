@@ -247,6 +247,16 @@ let () =
       ("refuse_perelement_noninput.catala_en", "non-input read");
       ("refuse_perelement_conflict.catala_en", "unordered/conflict exception group");
       ("refuse_perelement_multioutput.catala_en", "multi-output");
+      (* besluit 1-A lens round — two ref-only lowerings the map-body/functie
+         route let slip past: (1) the same inline call written directly in a
+         FOLD reducer body (not the map body) — its Invoke would land as a
+         closed_term the clingo backend cannot translate; the gate is the DIRECT
+         map body ([in_map_body]), not the broader [in_body]; (2) a callee with a
+         binary-subtraction body — [Verminderd_met] is outside clingo's additive
+         +/- closed-body fence (only [Plus]/[Min]). Each refuses loudly per
+         element so the divergence surfaces as a refusal, not ref-only IR *)
+      ("refuse_perelement_foldcall.catala_en", "non-map closed body");
+      ("refuse_perelement_subtraction.catala_en", "non-additive binary operator");
       (* the honest attempt at the REAL Catala-book tutorial 2-4: its
          `shares_of_household_tax` maps to a WHOLE callee output (a list of
          instances, Direction B), refused at the whole-struct read — the first of

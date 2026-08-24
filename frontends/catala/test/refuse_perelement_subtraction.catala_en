@@ -1,0 +1,30 @@
+# Per-element callee with a subtractive body — refused (besluit 1-A, lens round)
+
+Besluit 1-A's `+/- fence` names exactly the ADDITIVE binary operators `Plus` and
+`Min` (unary negation lowers to `0 - a`) — the only binary arithmetic clingo's
+closed-body term (`closed_term`) admits. A binary subtraction (`grondslag - 5`)
+lowers to `Binair{Verminderd_met}`, which is NOT inside that fence: ref computes
+it, but clingo TRANSLATION-FAULTs on the closed body — a ref-only lowering. (In a
+plain, non-closed rule the same subtraction is fine — clingo's general translator
+handles it; the gap is specific to a closed callee body.) A subtractive or
+multiplicative per-element callee body is refused per element. Own-authored,
+rights-free.
+
+```catala
+declaration scope Kamer:
+  input grondslag content integer
+  output bedrag content integer
+
+scope Kamer:
+  definition bedrag equals grondslag - 5
+
+declaration scope Aanslag:
+  input grondslagen content list of integer
+  output totaal content integer
+
+scope Aanslag:
+  definition totaal equals
+    combine all b
+      among (map each g among grondslagen to (output of Kamer with { -- grondslag: g }).bedrag)
+      in acc initially 0 with (acc + b)
+```

@@ -1,0 +1,30 @@
+# Per-element call in a non-map closed body — refused (besluit 1-A, lens round)
+
+The ratified per-element 2-4 shape is an inline `(output of S with {…}).f` that
+is DIRECTLY the map lambda body. Writing the same call directly inside a FOLD
+reducer body (a natural `combine … with (acc + (output of Kamer with {…}).bedrag)`
+instead of `map → fold`) also lands in a closed body — but not the map body. Its
+`Invoke` would lower as a closed-body TERM of the reducer's `+`, which clingo's
+`closed_term` cannot translate (only the map path lowers via `body_branches`), so
+ref would compute while clingo TRANSLATION-FAULTs — a ref-only lowering. The gate
+is `in_map_body` (the DIRECT map body), not the broader `in_body`, so this shape
+is refused per element. Own-authored, rights-free.
+
+```catala
+declaration scope Kamer:
+  input grondslag content integer
+  output bedrag content integer
+
+scope Kamer:
+  definition bedrag equals grondslag + 100
+
+declaration scope Aanslag:
+  input grondslagen content list of integer
+  output totaal content integer
+
+scope Aanslag:
+  definition totaal equals
+    combine all g
+      among grondslagen
+      in acc initially 0 with (acc + (output of Kamer with { -- grondslag: g }).bedrag)
+```

@@ -208,10 +208,18 @@ lowerings, chosen by how the caller consumes the callee:
   `MapList(list, λg. Invoke(S, …))` — for multiple outputs a
   `FieldAccess` on a `StructLiteral` result. **No instance, no creation
   key: the per-element identity IS the list position** (clingo's existing
-  `lelem` index reification). The gate is `in_body` — the ratified form
-  is an inline `EScopeCall` in the *map lambda body*; a bare inline call
-  in a rule value (the tutorial-2-1 shape) is not this route and stays
-  refused.
+  `lelem` index reification). The gate is `in_map_body` — the ratified
+  form is an inline `EScopeCall` that is DIRECTLY the *map lambda body*.
+  It is NOT the broader `in_body` (which also holds inside a fold-reducer,
+  function, or match body, and inside arithmetic): only the direct map
+  body has a clingo image, because its `Invoke` lowers through
+  `body_branches`, whereas a call nested elsewhere in a closed body would
+  land as a `closed_term` the backend cannot translate (an `Invoke` has no
+  `closed_term` case). So a bare inline call in a rule value (the
+  tutorial-2-1 shape), a call inside a fold reducer, and a call nested in
+  arithmetic all stay refused — each loudly
+  (`refuse_perelement_foldcall`, the lens-round fixture for the
+  fold-reducer case).
 
 **Pure function, defined.** A callee `S` is pure iff: every output is a
 chain / plain-ladder expressible as a closed `IfThenElse`/`Let`/`Match`
@@ -234,10 +242,21 @@ itself mints sub-instances) — is formally deferred.**
 **Two measured walls, honoured.** (1) A caller output attribute stored as
 a **list** fails clingo (`val/3` carries scalars); the covered form is
 `map → fold/length` to a **scalar**, and the list-stored form is the
-documented flank. (2) **Multiplication/division inside a closed body**
-fails clingo (S15: `+/-` only); fixture bodies are chosen **additive**,
-and a multiplicative callee is the documented flank. Both walls are why
-the golden folds an additive `map` to a scalar.
+documented flank. (2) **Non-additive arithmetic inside a closed body**
+fails clingo: its `closed_term` admits ONLY the additive binary operators
+`Plus` and `Min` (unary negation lowers to `0 - a`). Note — measured in
+the lens round — that this fence EXCLUDES binary subtraction: `a - b`
+lowers to `Binair{Verminderd_met}`, which clingo's `closed_term` rejects
+exactly as it rejects multiplication and division (though the SAME
+subtraction in a plain, non-closed rule is fine — clingo's general
+translator handles `Verminderd_met`; the gap is specific to a closed
+callee body). So the fence is `{Plus, Min}`, not a loose "`+/-`": a
+per-element callee whose body carries a binary subtraction,
+multiplication, or division is REFUSED per element (the `+/- fence` is now
+enforced by a body walk, not merely a documented flank —
+`refuse_perelement_subtraction`, the lens-round fixture). Fixture bodies
+stay **additive**; both walls are why the golden folds an additive `map`
+to a scalar.
 
 **Witnesses.** The corpus Catala golden `jutterswet-kamerheffing-catala`
 (art. 14, own-authored, rights-free: `Kamerbedrag` a pure `grondslag +

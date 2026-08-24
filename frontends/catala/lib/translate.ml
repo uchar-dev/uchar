@@ -547,11 +547,19 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
     | _ -> None
   in
   let rec value_expr ?(operand = false) ?(in_body = false) ?(in_let = false)
-      ?(env = Var.Map.empty) e : I.expr =
+      ?(in_map_body = false) ?(env = Var.Map.empty) e : I.expr =
     (* [in_body]: a closed lambda/function body — scope reads refuse (WF-067),
        IfThenElse admissible. [in_let]: a strict Let body — scope reads are
        allowed (a Let body is NOT closed), IfThenElse admissible (WF-069, the
-       5c widening). IfThenElse is admissible iff [in_body || in_let]. *)
+       5c widening). IfThenElse is admissible iff [in_body || in_let].
+       [in_map_body]: this node IS the map lambda's body expression (the
+       ratified per-element 2-4 position, besluit 1-A). It is set only at the
+       map body call site and never propagated into a sub-expression, so it is
+       true exactly for a per-element [EScopeCall] read that is DIRECTLY the map
+       body — a fold-reducer/function/match body (all [in_body]) is excluded,
+       since only the map path has a clingo image (its Invoke lowers via
+       body_branches; a fold-nested Invoke would land as a closed_term the
+       backend cannot translate). *)
     let e = strip e in
     match M.remove e with
     | ELit l -> literal_expr l
@@ -630,7 +638,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
               { typ = Some (List_type { element = out_elt });
                 list = value_expr ~in_body ~in_let ~env lst;
                 functie = Fn_lambda { parameters = [ (pn, pt) ];
-                                      body = value_expr ~in_body:true ~in_let:false ~env:env' body; bron = Some pn };
+                                      body = value_expr ~in_body:true ~in_let:false ~in_map_body:true ~env:env' body; bron = Some pn };
                 bron = None }
         | Op.Filter, [ f; lst ] ->
             let vars, tys, body = lambda_of f in
@@ -727,21 +735,25 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
         | Some ir -> ir
         | None -> (
         match M.remove (strip inner) with
-        | EScopeCall { scope; args } when in_body ->
-            (* an inline subscope call [(output of S with {…}).f] INSIDE a
-               lambda/map body — the ratified per-element 2-4 shape (besluit
-               1-A). [in_body] is exactly the gate: the ratified form is an
-               inline [EScopeCall] in the MAP LAMBDA body, so a bare inline call
-               in a rule value (the tutorial-2-1 shape) is not this route and
-               falls to the refusal below. When the callee S is a PURE FUNCTION
-               it lowers to a FunctionDef and this read to an [Invoke] of it — no
-               instance, no creation key (the per-element identity is the list
-               position). [per_element_call] validates purity + synthesises the
-               FunctionDef (memoised) and refuses the weiger-grens loudly; here
-               we line the call arguments up with the FunctionDef parameters and
-               build the Invoke. A callee with an own creation, a non-input read,
-               an unordered/conflict-group output or multiple outputs refuses
-               inside the hook. *)
+        | EScopeCall { scope; args } when in_map_body ->
+            (* an inline subscope call [(output of S with {…}).f] that is
+               DIRECTLY the MAP LAMBDA body — the ratified per-element 2-4 shape
+               (besluit 1-A). [in_map_body] (not the broader [in_body]) is the
+               gate: it is set only at the map body site and never descends into
+               a sub-expression, so a bare inline call in a rule value (the
+               tutorial-2-1 shape), a call nested inside arithmetic, and a call
+               in a fold-reducer/function/match body all fall to the refusal
+               below — the last three [in_body] but not [in_map_body], and only
+               the direct map body has a clingo image (its Invoke lowers via
+               body_branches; a closed_term-nested Invoke faults in the backend).
+               When the callee S is a PURE FUNCTION it lowers to a FunctionDef
+               and this read to an [Invoke] of it — no instance, no creation key
+               (the per-element identity is the list position). [per_element_call]
+               validates purity + synthesises the FunctionDef (memoised) and
+               refuses the weiger-grens loudly; here we line the call arguments up
+               with the FunctionDef parameters and build the Invoke. A callee with
+               an own creation, a non-input read, an unordered/conflict-group
+               output or multiple outputs refuses inside the hook. *)
             let pem = per_element_call scope field in
             let arguments =
               List.map
@@ -757,14 +769,23 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
             Invoke
               { typ = Some pem.pem_result_ty; functie = pem.pem_fname; arguments;
                 bron = Some pem.pem_fname }
+        | EScopeCall _ when in_body ->
+            (* an inline subscope call inside a closed body that is NOT directly
+               the map lambda body — a fold-reducer body, a match arm, a
+               function body, or nested inside arithmetic within a map body. Only
+               the DIRECT map body lowers via [body_branches] (which handles the
+               Invoke); a closed_term-nested Invoke has no clingo image (the
+               backend's closed_term rejects it). Refused per element so the
+               divergence surfaces as a loud refusal, not a ref-only lowering. *)
+            refuse "inline per-element subscope call nested in a non-map closed body (a fold reducer, a match arm, a function body, or inside arithmetic): only a per-element call that is DIRECTLY the map lambda body lowers to the functie-route (besluit 1-A) — a closed-body-nested call has no clingo image and is out of scope"
         | EScopeCall _ ->
             (* a bare inline subscope call in a rule value (NOT inside a lambda
                body) — the tutorial-2-1 shape: an anonymous instance per
                occurrence, which the creation-per-subject key cannot carry. Only
                a DECLARED subscope lowers to object creation + navigation
-               (PHASE5C-TUTORIAL §3), and only a per-element call INSIDE a map
-               body lowers to the functie-route (besluit 1-A). Refused. *)
-            refuse "inline subscope call (reading a subscope output of an anonymous instance): only declared subscopes lower to object creation + role navigation (PHASE5C-TUTORIAL §3), and only a per-element call inside a map body lowers to the functie-route (besluit 1-A); a bare inline call is out of scope"
+               (PHASE5C-TUTORIAL §3), and only a per-element call directly in a
+               map body lowers to the functie-route (besluit 1-A). Refused. *)
+            refuse "inline subscope call (reading a subscope output of an anonymous instance): only declared subscopes lower to object creation + role navigation (PHASE5C-TUTORIAL §3), and only a per-element call directly in a map body lowers to the functie-route (besluit 1-A); a bare inline call is out of scope"
         | _ ->
             (* row-5c FieldAccess: [base] is a struct value; the node type is
                the field's declared datatype (WF-074). The empty-operand flag
@@ -1868,6 +1889,71 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
     | [] -> refuse "per-element callee %S output %S has an empty rung chain" cname out_name
   in
   let body = body_of rungs in
+  (* the +/- fence (besluit 1-A, 2026-08-24): clingo's closed-body term
+     ([closed_term]) admits only the ADDITIVE binary operators — [Plus] and
+     [Min] (unary negation lowers to 0 - a). A binary subtraction
+     ([Verminderd_met]), a multiplication, a division or a power in a closed
+     body has no clingo closed-body image (a measured wall), so a per-element
+     callee whose body carries one computes in ref but TRANSLATION-FAULTs in
+     clingo — a ref-only lowering. Refuse it loudly here so the divergence
+     surfaces as a refusal, not silent ref-only IR. (The card's "+/- fence"
+     names exactly {Plus, Min}: binary subtraction is NOT inside it.) *)
+  let rec fence_expr (e : I.expr) : unit =
+    match e with
+    | Binair { op = (Plus | Min); links; rechts; _ } ->
+        Option.iter fence_expr links; Option.iter fence_expr rechts
+    | Binair { op = (Verminderd_met | Maal | Gedeeld_door | Gedeeld_door_abs
+                    | Tot_de_macht | Percentage_van); _ } ->
+        refuse
+          "per-element callee %S has a non-additive binary operator in its closed body \
+           (binary subtraction/multiplication/division): clingo's closed-body term admits \
+           only the additive +/- fence (Plus and unary Min) — a subtractive or multiplicative \
+           body has no clingo image and is refused per element (besluit 1-A, 2026-08-24)"
+          cname
+    | Literal _ | Binder_ref _ | Parameter_ref _ | Variabele_ref _ | Constante _
+    | Attribuut_ref _ | Expr_onopgelost _ -> ()
+    | Functie { argumenten; leegwaarde; filter; _ } ->
+        List.iter fence_expr argumenten; Option.iter fence_expr leegwaarde;
+        Option.iter fence_cond filter
+    | Afgerond { basis; _ } -> Option.iter fence_expr basis
+    | Begrensd { basis; minimum; maximum; _ } ->
+        Option.iter fence_expr basis; Option.iter fence_expr minimum;
+        Option.iter fence_expr maximum
+    | Tekst_reeks { delen; _ } ->
+        List.iter
+          (function I.Ingevoegd { expr = Some x } -> fence_expr x | _ -> ())
+          delen
+    | Dimensie_cel { attribuut; _ } -> Option.iter fence_expr attribuut
+    | Temporal_read { basis; datum; _ } -> fence_expr basis; fence_expr datum
+    | Construct { argument; _ } -> Option.iter fence_expr argument
+    | Match { scrutinee; arms; _ } ->
+        fence_expr scrutinee; List.iter (fun (_, _, b) -> fence_expr b) arms
+    | Struct_literal { velden; _ } -> List.iter (fun (_, v) -> fence_expr v) velden
+    | Field_access { base; _ } -> fence_expr base
+    | Let { value; body; _ } -> fence_expr value; fence_expr body
+    | List_literal { elements; _ } -> List.iter fence_expr elements
+    | Lambda { body; _ } -> fence_expr body
+    | If_then_else { condition; then_; else_; _ } ->
+        fence_cond condition; fence_expr then_; fence_expr else_
+    | Invoke { arguments; _ } -> List.iter fence_expr arguments
+    | Fold { list; functie; init; _ } ->
+        fence_expr list; fence_fn functie; fence_expr init
+    | Map_list { list; functie; _ } -> fence_expr list; fence_fn functie
+    | Filter_list { list; condition; _ } -> fence_expr list; fence_cond condition
+    | List_length { list; _ } -> fence_expr list
+  and fence_fn = function Fn_lambda { body; _ } -> fence_expr body | Fn_name _ -> ()
+  and fence_cond (c : I.conditie) : unit =
+    match c with
+    | Vergelijking { links; rechts; _ } ->
+        Option.iter fence_expr links; Option.iter fence_expr rechts
+    | Predicaat { operand; _ } -> Option.iter fence_expr operand
+    | Periode_conditie { vanaf; tot; _ } ->
+        Option.iter fence_expr vanaf; Option.iter fence_expr tot
+    | Samengesteld { onderdelen; _ } -> List.iter fence_cond onderdelen
+    | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _
+    | Regelversie _ | Conditie_onopgelost _ -> ()
+  in
+  fence_expr body;
   ( { I.fd_naam = cname; fd_parameters = params; fd_result = out_dt; fd_body = body;
       fd_bron = Some cname },
     { pem_fname = cname; pem_params = inputs; pem_result_ty = out_dt } )

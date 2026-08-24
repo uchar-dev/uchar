@@ -9,9 +9,10 @@ per-element identity is the list position (clingo's `lelem` index reification).
 `Kamer` is a pure function here (one output, a plain total base, an ADDITIVE
 body, no own creation, no non-input reads), so `(Kamer of {grondslag=g}).bedrag`
 becomes `Invoke(Kamer, g)`. The map result is folded to a SCALAR — the covered,
-triple-green form (a list-STORED output attribute has no clingo image; an
-additive body stays inside clingo's closed-body +/- fence, S15). Own-authored,
-rights-free.
+triple-green form (a list-STORED output attribute has no clingo image; a
+PURELY-ADDITIVE body stays inside clingo's closed-body fence, whose Binair case
+admits only `Plus`/`Min` — NOT binary subtraction `Verminderd_met`, refused per
+element, S15). Own-authored, rights-free.
 
 ```catala
 declaration scope Kamer:
