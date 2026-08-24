@@ -26,11 +26,21 @@ May touch: als kaart 1 plus spec/PLAN.md. Out of scope: 2-4
 
 ## Opdracht "tutorial-exitgetuige" — ROOD-EERST en BLOKKADE (2026-08-24)
 
-Status: **GEBLOKKEERD**. `tutorial_end_2_3.catala_en` kan binnen het
-geratificeerde ontwerp géén drievoudig-groene (plugin → verifier → ref →
-clingo) frontend-fixture worden. Drie onafhankelijke blokkades, elk met
-letterlijk bewijs. Het ontwerp is NIET gewijzigd; de werkboom is schoon
-(geen code-diff).
+Status: **OPGEHEVEN — besloten en opgeheven (maintainersbesluit 2026-08-24,
+genummerde vragen, beide A).** De analyse hieronder is als rood-eerst
+vastgelegd (drie onafhankelijke blokkades, elk met letterlijk bewijs; het
+ontwerp was op dat moment NIET gewijzigd, de werkboom schoon). Het besluit:
+(1) **WF-027 is verruimd** — een kenmerk-initialisatie in een `ObjectCreatie`
+mag een boolean-getypte EXPRESSIE dragen (de constante blijft de v0-vorm),
+wat **B1** (boolean subscope-invoer) op élke laag opheft (verifier, ref,
+clingo, plugin); (2) **de clingo-flanken B2** (datum-literaal in termpositie)
+**en B3** (ListLength-in-term-binding) **landen in deze kaart** en heffen het
+clingo-been op. `tutorial_end_2_3` loopt nu drievoudig groen (plugin →
+verifier → ref → clingo, gate 9) — zie de landingsnotities verderop in dit
+bestand (WF-027-verruiming; ref-evaluatie + rekenkamer-overzee-anker; clingo
+kenmerk-init-expressie; clingo B2; clingo B3; plugin-verruiming). De
+oorspronkelijke blokkade-analyse blijft hieronder staan als
+rood-eerst-record.
 
 ### Herkomst van de fixture
 

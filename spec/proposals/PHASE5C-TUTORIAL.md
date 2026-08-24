@@ -148,6 +148,42 @@ is recorded here as the design constraint for that later card);
 subscope outputs consumed as whole structs (rather than per-field
 reads) follow design 1 once both land.
 
+**Executed (2026-08-24) — §3 landed, the subscope call triple-green.**
+The lowering runs end to end: the plugin splits `EScopeCall` into a
+`ResolvedObjectCreatie` of the callee type (args as `Toekenningen` on
+the input attributes, the `verbindendeRol` back-link) plus a navigated
+`AttribuutRef` per output read, and the callee rules run in the
+caller's fixpoint. Witnesses: the corpus subscope golden
+`anchor/jutterswet-rekenkamer` and the Catala golden
+`jutterswet-rekenkamerheffing-catala` through the full gate set;
+`subscope.catala_en` and `tutorial_end_2_3` through gate 9 (plugin →
+verifier → ref → clingo). **Two follow-on maintainer decisions, taken
+at execution (2026-08-24, numbered questions, both A):** (1) **WF-027
+relaxed — the B1-A widening.** A characteristic initialisation in an
+`ObjectCreatie` may carry a boolean-*typed* EXPRESSION, not only the
+boolean constant, so a caller boolean read (the tutorial's
+`overseas_territories`) binds a callee kenmerk over the
+`verbindendeRol`; the constant stays the v0 emitter form (additive on
+the wire — the expression form is the v1 relaxation the frontend uses),
+the tracked delta is `CONSTRUCTS.md` rows 9/21, spec `IR-SPEC.md`
+ch. 3.3, semantics `RUNTIME-SEMANTICS.md` ch. 5.5, negatief
+`wf027-nonboolean-characteristic-init`. This lifts B1 — the
+boolean-subscope-input blockade — on every layer (verifier, ref,
+clingo, plugin). (2) **The two clingo flanks land in this card — the
+B2/B3-A decision.** A date literal in a term position translates to its
+civil day-number (B2), and a `Let`-bound bare value (`ListLength`,
+`Fold`, attribute read) read in a term position binds through a
+self-contained per-subject helper rule (B3); both were clingo-leg
+limits on the tutorial's own exception tree and money product, and both
+are now differentially green (ref ≡ clingo over the corpus,
+`spec/ASP-TRANSLATION.md` S4/S18). The remaining §3 fences stay loud
+and recorded — per-element calls (2-4), multi-`state`, context/
+reentrant inputs (decision 6 deferred under the WF-050 constraint),
+whole-struct output consumption, and the creation-key collision
+backstop. **The frontend-diff exit obligation is not discharged here**
+(that is card 5d); §3's landing discharges only the
+round-trips-and-executes half of the 5a exit criterion (PLAN §6).
+
 ## 4. Design 3 — nested ladder groups (the ratified option i, executed)
 
 The additive wire form: an optional field **`excepties` on `Rung`** —

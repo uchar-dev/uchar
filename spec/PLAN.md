@@ -488,6 +488,20 @@ valid, verifier-clean IR and executes on interpreter + one engine; the
 frontend-diff exercise is documented with resulting spec changes; the
 hourglass is real — two frontends, two-plus backends, 2×2 through one waist
 instead of four translators.
+**Met in part (2026-08-24):** the first exit criterion is discharged —
+`tutorial_end_2_3` round-trips through the plugin into valid,
+verifier-clean IR and executes on interpreter + one engine (plugin →
+verifier → ref → clingo, triple-green under gate 9), on the subscope-call
+lowering of `spec/proposals/PHASE5C-TUTORIAL.md` §3 (object creation +
+member-init `Toekenningen` + `verbindendeRol` + navigated output reads)
+with the WF-027 delta for boolean subscope inputs (`CONSTRUCTS.md`
+rows 9/21); the own-authored Jutterswet witnesses —
+`anchor/jutterswet-rekenkamer`, `anchor/jutterswet-rekenkamer-overzee`,
+and the Catala golden `jutterswet-rekenkamerheffing-catala` — pass the
+full gate set. **The frontend-diff criterion is deliberately NOT met
+here:** the second exit criterion (diff both frontends' IR dumps, document
+the resulting spec changes) is the follow-on card 5d, and the hourglass
+claim waits on it.
 **Proposal adopted (2026-08-21):** `spec/proposals/PHASE5-CATALA.md`
 carries the design; its six decisions are all taken (attachment at the
 scopelang→dcalc boundary; context-override polarity as a top rung —
