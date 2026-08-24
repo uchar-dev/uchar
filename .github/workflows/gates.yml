@@ -111,11 +111,19 @@ jobs:
   catala:
     # The gate-9 CI leg is conditional by maintainer decision (2026-08-24):
     # the catala dependency may enter CI, but only where the catala tools
-    # are already available (developer machines, self-hosted runners with
-    # catala on PATH). On runners without catala — github.com's hosted
-    # runners among them — the job skips LOUDLY and is not a blocker; the
-    # gate itself (scripts/check-catala.sh) is unchanged and still fails
-    # hard without catala, so a local run can never be silently green.
+    # are already available on the runner — on the bare PATH or inside the
+    # runner's own opam switch (the standard developer install). On runners
+    # without catala — github.com's hosted runners among them — the job
+    # skips LOUDLY and is not a blocker; a forced frontend regression is
+    # therefore caught only on runners that carry catala, and the gate
+    # remains the reviewer's pre-merge duty on such a machine. Where catala
+    # IS present the gate runs in the runner's own environment (opam exec
+    # against the existing switch — deliberately no setup-ocaml here: a
+    # fresh switch would mask the catala libraries the frontend links
+    # against) and any failure there, including a missing dune or clingo,
+    # is a real blocker: a runner that carries catala must carry the rest.
+    # The gate script itself is unchanged and still fails hard without
+    # catala, so a local run can never be silently green.
     name: "Gate 9: Catala frontend (runs where catala is available)"
     runs-on: ubuntu-latest
     steps:
@@ -125,22 +133,21 @@ jobs:
         run: |
           if command -v catala >/dev/null 2>&1; then
             echo "present=true" >> "$GITHUB_OUTPUT"
+            echo "via=direct" >> "$GITHUB_OUTPUT"
             catala --version
+          elif command -v opam >/dev/null 2>&1 && opam exec -- sh -c 'command -v catala' >/dev/null 2>&1; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+            echo "via=opam" >> "$GITHUB_OUTPUT"
+            opam exec -- catala --version
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "::warning title=gate 9 skipped::the catala compiler is not on this runner; per the maintainer decision of 2026-08-24 this is NOT a blocker. Gate 9 runs in full wherever the catala tools exist (bash scripts/check-catala.sh) and remains the reviewer's pre-merge duty there."
+            echo "::warning title=gate 9 skipped::the catala compiler is not on this runner (bare PATH nor opam switch); per the maintainer decision of 2026-08-24 this is NOT a blocker. Gate 9 runs in full wherever the catala tools exist (bash scripts/check-catala.sh) and remains the reviewer's pre-merge duty there."
           fi
-      - uses: ocaml/setup-ocaml@v3
+      - name: check-catala (in the runner's own environment)
         if: steps.has-catala.outputs.present == 'true'
-        with:
-          ocaml-compiler: "5"
-      - name: install yojson + zarith
-        if: steps.has-catala.outputs.present == 'true'
-        run: opam install -y yojson zarith
-      - name: install clingo
-        # Ubuntu ships the clingo binary in the gringo package
-        if: steps.has-catala.outputs.present == 'true'
-        run: sudo apt-get update && sudo apt-get install -y gringo && clingo --version
-      - name: check-catala
-        if: steps.has-catala.outputs.present == 'true'
-        run: opam exec -- bash scripts/check-catala.sh
+        run: |
+          if [ "${{ steps.has-catala.outputs.via }}" = "opam" ]; then
+            opam exec -- bash scripts/check-catala.sh
+          else
+            bash scripts/check-catala.sh
+          fi

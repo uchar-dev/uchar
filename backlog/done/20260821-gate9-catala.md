@@ -49,3 +49,9 @@ ongetrackte draad — nu een kaart). Bewust gelaten: geen timeout op
 de plugin-aanroep (macOS mist een draagbare timeout; recorded), en
 suite.ml's eigen lege-lijst-guard blijft aan de gate-kant afgedekt
 (nul checks faalt daar) in plaats van in de suite zelf.
+
+Naschrift (2026-08-24): de open afweging hierboven is beslist — de
+CI-leg bestaat, conditioneel (draait waar catala voorhanden is, skipt
+luid en niet-blokkerend waar niet); het getrackte pad leeft voort als
+backlog/done/20260821-gate9-ci-leg.md. Het record hierboven blijft
+staan als momentopname.

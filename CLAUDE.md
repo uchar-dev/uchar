@@ -130,9 +130,12 @@ green. Current gates:
    a missing catala installation is a failure, never silently green.
    *Its CI leg is conditional by maintainer decision (2026-08-24):
    the `gates.yml` job runs the gate in full wherever the catala
-   tools are on the runner's PATH, and skips loudly — a warning,
-   never a silent green, never a blocker — on runners without them
-   (github.com's hosted runners have no catala). The gate script
+   tools are available on the runner — on the bare PATH or in the
+   runner's own opam switch, in whose environment the gate then runs —
+   and skips loudly — a warning, never a silent green, never a
+   blocker — on runners without them. github.com's hosted runners
+   have no catala, so hosted CI does NOT catch a frontend
+   regression; only a catala-carrying runner does. The gate script
    itself is unchanged and still fails hard without catala, so gate 9
    remains the reviewer's pre-merge duty on a machine that has it.*
 
