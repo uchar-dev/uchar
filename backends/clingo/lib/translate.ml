@@ -1623,7 +1623,13 @@ and project_field ctx ~base ~bterm ~veld : string * string * int =
    term): an own-subject struct-typed attribute read rides its val atom (a leeg
    read binds nothing → Tabel 38's both-false corner and FieldAccess-on-leeg
    propagation for free), a bound binder (a lambda parameter over a struct list
-   element) resolves to its ASP variable. *)
+   element) resolves to its ASP variable, and a struct-typed FieldAccess (a
+   struct-in-struct: a field access whose base is itself a struct-typed field
+   access) resolves RECURSIVELY — the inner base binds its record term, that
+   term projects the struct field (project_field, the intermediate field's own
+   scale 0), and the projected variable is the record term the outer access
+   projects against. A leeg anywhere in the chain binds nothing, so the whole
+   projection is underivable — leeg propagation for free at every depth. *)
 and struct_base ctx ~subject ~subject_ot (e : expr) : string list * string =
   match e with
   | Attribuut_ref
@@ -1638,10 +1644,14 @@ and struct_base ctx ~subject ~subject_ot (e : expr) : string list * string =
       match List.assoc_opt (norm naam) ctx.binders with
       | Some (atoms, var, _) -> (atoms, var)
       | None -> fault "unbound binder %S in a struct field access (WF-064 should preclude this)" naam)
+  | Field_access { base; veld; _ } ->
+      let batoms, bterm = struct_base ctx ~subject ~subject_ot base in
+      let unif, fvar, _fscale = project_field ctx ~base ~bterm ~veld in
+      (batoms @ [ unif ], fvar)
   | _ ->
       fault
-        "a struct field-access base here is an own-subject attribute read or a bound binder (no \
-         corpus case for more)"
+        "a struct field-access base here is an own-subject attribute read, a bound binder or a \
+         struct-typed field access (no corpus case for more)"
 
 (* the term for a StructLiteral in value/equality position (the computed
    record — the 5b computed-Construct pattern): each declared field's value is

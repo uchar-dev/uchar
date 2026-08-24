@@ -827,7 +827,7 @@ the field is read by unifying the term against the domain functor:
 val(S,dossier,B), B = dossier(W,_)      % read own attribute .waarde → W
 ```
 
-Two base shapes land, both `struct_base`/`project_field`:
+Three base shapes land, all `struct_base`/`project_field`:
 
 - an **own-subject struct attribute read** (the rule-expression route —
   `premie := dossier.waarde + opslag`) binds `B` via `val(S,dossier,B)`,
@@ -841,7 +841,26 @@ Two base shapes land, both `struct_base`/`project_field`:
   `lelem(lmN(In),I,W) :- lelem(In,I,V), V = dossier(W,_)`, so the mapped
   list carries the projected field and an ordinary numeric `Fold`
   totals it (the anchor's `totaalwaarde`). The result scale is always
-  the **field's** declared scale, never the base's.
+  the **field's** declared scale, never the base's;
+- a **struct-typed field access** (the **struct-in-struct** route —
+  `heffing := waardering.kern.grondslag`, a field access whose base is
+  itself a struct-typed field access) resolves **recursively**:
+  `struct_base` re-enters on the inner base, so each level of nesting
+  adds **one** projection unification. The intermediate struct field is
+  read at its own scale — `value_scale` maps a `StructType` to 0 — so
+  the recursion carries **no** numeric rescaling until it reaches the
+  leaf, where `project_field` returns the **leaf field's** declared
+  scale. The two-level read `waardering.kern.grondslag`
+  (`waardering{toeslag, kern{eenheden, grondslag}}`, `grondslag`
+  a money field) lowers to
+  `val(S,waardering,B), B = waardering(_,K), K = kernwaarde(_,G)` — `B`
+  projects the outer term to the intermediate `K` (position 2, scale 0),
+  then `K` projects to the leaf `G` (position 2, `grondslag`'s money
+  scale). A **leeg anywhere in the chain** binds nothing, so the whole
+  projection is underivable at every depth — propagation for free. The
+  outer record is either computed (a nested `StructLiteral` write,
+  `waardering(A1,kernwaarde(A2,A3))`) or an own struct attribute; the
+  read grounds the same recursive way regardless.
 
 **StructLiteral** in value position (`samenvatting := {waarde: premie,
 telling: ListLength(dossiers)}`) builds the term from its **field
@@ -908,6 +927,23 @@ build-side no-hole witness: a leeg `premie` propagates through the whole
 `StructLiteral` — and `dubbel` **and** `afwijkend` both absent — the
 Tabel-38 both-false corner — a no-op survivor). The WF-071..074
 negatiefs pin what the verifier rejects before translation.
+
+The **struct-in-struct recursion** rides its own golden,
+`jutterswet-vangstwaardering` — a `Vangst` computes the nested record
+`waardering{toeslag, kern{eenheden, grondslag}}` from its scalars and
+reads the deepest **money** field back: **case1 gevuld**
+(`heffing := waardering.kern.grondslag + waardering.toeslag` → 125.75,
+the additive combination of the two-level read and the one-level read;
+`grondslagkopie := waardering.kern.grondslag` → 100.25, the bare
+two-level read — the scale-per-datatype witness, `grondslag` at money
+scale behind the integer `eenheden`); **case2 leeg-grondslag**
+(`grondbedrag` absent → the nested `StructLiteral` is leeg by no-hole →
+`waardering` leeg → `heffing` **0.00** by the ch. 1.3 additive
+coalesce, `grondslagkopie` **leeg** by bare-read propagation — the two
+leeg corners of the recursion pinned against ref, ref ≡ clingo). The
+outer record here is **computed**, so no nested record **value** is
+emitted; a nested struct/sum field *value* (input or expectation) still
+has no flat-term encoding (S19).
 
 ### S17. Nested exception groups
 
@@ -1256,13 +1292,17 @@ in the ASP struct term (no corpus case)` (a day-precision date field
 *does* translate — `decimals_of_datatype` scales it at 0). A **case-supplied struct computed target** has no monotone
 encoding (the case fact and the rule head would union into a superset
 model — the ch. 6d fence): `a case-supplied struct-typed computed target
-"…" has no encoding here (no corpus case)`. A **struct field-access base**
-other than an own-subject attribute read or a bound binder, and a
-**struct equality operand** other than an own-subject attribute read or a
-`StructLiteral`, fault as `a struct field-access base here is an
-own-subject attribute read or a bound binder (no corpus case for more)`
-and its equality kin (navigated struct reads await a case); a
-**StructLiteral field scale** disagreeing with its declared scale faults
+"…" has no encoding here (no corpus case)`. A **struct-in-struct field
+access** now **does** translate — `struct_base` recurses on a
+struct-typed field-access base, one projection unification per level
+(S16, golden `jutterswet-vangstwaardering`) — so what remains loud is a
+**struct field-access base** (and its **struct equality operand** kin)
+that is a **navigated** struct read, or otherwise neither an own-subject
+attribute read, a bound binder, a struct-typed field access, nor — for
+equality — a `StructLiteral`: `a struct field-access base here is an
+own-subject attribute read, a bound binder or a struct-typed field
+access (no corpus case for more)` (navigated struct reads await a case);
+a **StructLiteral field scale** disagreeing with its declared scale faults
 `a StructLiteral field "…" scale … does not match its declared scale …`.
 The struct-side record-valued `attributeValue` expectation in `model.ml`
 *is* checked (the anchor pins it); only a **list-valued** one still
