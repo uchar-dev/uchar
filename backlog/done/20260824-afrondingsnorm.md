@@ -116,3 +116,22 @@ verwachting 33,30 (`FAIL WV-2.9-match-arm-round` / `1 failure(s)`), daarna
 gecorrigeerd naar 33,33. ref/test nu op 254 worked examples; alle negen gates
 opnieuw groen (self-contained, ir-schema 97, verifier 97/138, case-schema 266,
 oracle 249, clingo 249, noop 216/33, rood 17, catala 128/7).
+
+Result: besluit 3-A is genormeerd zonder één gedragswijziging
+(ref/lib en backends byte-identiek bewezen): RS ch. 2.9 draagt de
+normzin "the scale is a boundary, not a step" — tussenwaarden
+exact-rationeel, S bindt declaraties en schrijfgrenzen, afronding
+alleen op collapse-punten (Afgerond, ÷abs, de schrijfgrens) — en
+S19 legt clingo's per-stap-materialisatie vast als conforme, luide
+backend-limiet. Getuigen: WV-2.9-let-endpoint-round en
+-exact-intermediate, plus na de nagedraaide lens
+WV-2.9-match-arm-round (100÷3 door een Match-arm, eindpunt 33,33) —
+254 werkvoorbeelden. De lensronden (één na server-uitval opnieuw
+gedraaid — het regime van twee lenzen is gehaald) bevestigden de
+norm op elf varianten: ref exact door Let, dubbele Let,
+deling-vóór-en-ná, en vergelijkingen (de scherpe toets 100÷3 > 33,33
+gaf wáár — de tussenwaarde is echt exact, niet stil geschaald); de
+schrijfgrens fault luid door de Let heen; clingo weigert elke
+niet-terminerende vorm luid en is het overal eens waar de deling
+termineert. Eén eerdere normzin-overklaim ("sole collapse") is in de
+eerste lensronde gecorrigeerd naar de drie collapse-punten.
