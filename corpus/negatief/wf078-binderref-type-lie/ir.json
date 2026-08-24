@@ -1,0 +1,110 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "basis": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "etiket": {
+          "node": "Tekst"
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "etiket van een jutter",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "etiket",
+        "objecttype": "Jutter",
+        "onderwerpBron": "de Jutter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Tekst"
+        },
+        "bron": "het etiket van de Jutter",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Let",
+        "type": {
+          "node": "Tekst"
+        },
+        "binder": "b",
+        "value": {
+          "node": "AttribuutRef",
+          "attribuut": "basis",
+          "objecttype": "Jutter",
+          "onderwerpBron": "de Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "de basis van de Jutter",
+          "set": false,
+          "navigatiePad": []
+        },
+        "body": {
+          "node": "BinderRef",
+          "name": "b",
+          "type": {
+            "node": "Tekst"
+          },
+          "bron": "de basis"
+        },
+        "bron": "de basis als etiket"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

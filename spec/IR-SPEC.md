@@ -836,6 +836,23 @@ the literal true — mirrored.)
   errors via the §6/Tabel 61 typing tables — except for characteristic
   attribution, where v0 skips the check (harmless today: the value is a
   constructed constant).
+- **WF-079** A (type, attribute) target that carries no ladder MUST have
+  at most one **unconditional, version-free** computing rule
+  (GELIJKSTELLING/BEREKENING). Two or more over-determine the target with
+  no explicit priority — the single-writer discipline of WF-026/WF-050/
+  WF-052 extended to bare attribute writers (`RUNTIME-SEMANTICS.md`
+  ch. 7.7: the desugaring admits at most one version-free computing rule
+  per target). Priority is a ladder (explicit rungs) or `ongeordend`
+  (explicitly absent), never implicit agenda order. Characteristic
+  attributions (KENMERKTOEKENNING) are exempt — a monotone
+  many-grounds-one-truth — and a guarded case split (each writer carrying
+  a `condition`) carries its own priority and stays outside the rule; only
+  the bare collision is statically over-determined. *Motivation:* the
+  `PHASE5D-DIFF` §8.2 witness — the flat form is un-pinnable in every
+  zone (ref oscillates and faults the fixpoint budget, clingo is silently
+  multi-valued, so the executors disagree and no corpus zone admits it);
+  WF-079 refuses it ahead of the differential square. **Delta
+  (promotion).**
 
 The corpus case `corpus/golden/jutterswet-penningdrempel/` instantiates
 this node in its **v0 mirror form** (a flat entry with the
@@ -1389,6 +1406,17 @@ Comparison, Predicate, and CharacteristicCheck only —
   Unresolved node (honest) or ill-formed IR (a dangling reference in a
   structured node) — never a sentinel type inside an otherwise-structured
   node; the unknown datatype does not exist in v1 (ch. 2.4).
+- **WF-080** A value-position `AttributeReference` MUST resolve to an
+  **attribute** of its endpoint type, never a characteristic. A value
+  position is where an expression yields a value: a rule/member value, a
+  rung consequence, a condition operand. A characteristic carries truth,
+  not an attribute value; it is read through a characteristic check
+  (ch. 4.5), never an `AttributeReference` in a value slot. *v0 mirror
+  note:* the resolver's member lookup admitted either member kind
+  (`has_attr || has_kenmerk`) — a tolerated leak the kenmerk exploration
+  surfaced; v1 splits it. The rule TARGET lvalue is out of scope (WF-022
+  governs it), so a characteristic attribution's target is unaffected.
+  **Delta (promotion).**
 - **WF-035** Operator typing (mirror of the v0 error set): numeric
   operators' operands MUST be number-like; power operands MUST
   additionally be unitless; a date ± duration MUST use a time unit or
@@ -1490,6 +1518,23 @@ literally (a wildcard would make totality a runtime property again).
   binder forms — a match arm's binder, a lambda/function parameter and,
   the Phase-5c widening, a `Let` binder (ch. 4.10), scoped to the `Let`
   body; a `VariabeleRef` remains outside it, row 24.)
+- **WF-078** A `BinderRef`'s serialized `type`, where present, MUST agree
+  in **soort** with the datatype of the binder it resolves to — the
+  leaf-ref cross-check WF-023/WF-027 perform for a resolved
+  `AttributeReference`, applied to a binder's declared datatype (a match
+  arm binder's constructor payload, a lambda/function parameter's declared
+  type, a `Let` binder's value type, a filter binder's element type). The
+  cross is by soort only — number, text, boolean, date, sum type, list,
+  struct — leaving decimals and units uncrossed exactly as the
+  `AttributeReference` cross does. A binder whose declared datatype is
+  unknown, or a reference carrying no `type`, defers. *Motivation:* WF-035
+  reads the same serialized `type` but exempts additive (`+`/`−`) operands
+  so date ± duration can pass; a soort-lie on a binder in an additive
+  position slips that exemption — verifier-clean, ref computes on, clingo
+  faults the translation — the split the adversarial hunt found (the
+  card). WF-078 crosses the annotation against the binder's real datatype
+  at every use, closing the gap independent of operator position. **Delta
+  (promotion).**
 
 ### 4.8 The fold family — ListLiteral, Lambda, IfThenElse, Invoke, Fold, MapList, FilterList, ListLength
 
@@ -1854,6 +1899,9 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-075 | nested exception form (ch. 7.9): a rung's `exceptions` sub-group carries ≥ 1 member; two or more require the `unordered` marking (the root regime, at every level); no initialisation/input rung in sub-rungs; every rung carries own content, a nested sub-group, or is the initialisation rung; a group-rung (sub-group, no own content) carries no own justification; recurses | gate 3 | `anchor/jutterswet-nestuitzondering` (attribute target) + `anchor/jutterswet-nestkenmerk` (characteristic target) + `anchor/jutterswet-nestdiepte` (three-level depth) — admitted through the Phase-5c executor card | `wf075-empty-leden` + `wf075-two-members-unmarked` + `wf075-init-in-subrung` + `wf075-contentless-rung` + `wf075-grouprung-with-justification` |
 | WF-076 | `Let`: the node `type` equals its `body` type; the binder is visible only in the `body` (never in its own `value`); `value` and `body` well-formed; the binder joins WF-064 (ch. 4.10) | gate 3 | `anchor/jutterswet-tariefstelling` — admitted through the Phase-5c let/decimals executor card | `wf076-body-type-mismatch` + `wf076-unbound-binder-in-value` |
 | WF-077 | the condition-operand discipline: everywhere an `IfThenElse` is admissible (lambda, function or strict `Let` bodies), its condition READS only binders, parameters and literals (arithmetic combinators over those are admissible — the reads are what matter); an attribute/field/characteristic read routes through a strict `Let` binding first — the leeg-barrier (ch. 4.10) | gate 3 | `anchor/jutterswet-tariefstelling` + `anchor/jutterswet-staffelvergoeding` (a `Binair` over binders as a condition operand) | `wf077-attribute-in-condition` + `wf077-fieldaccess-in-condition` |
+| WF-078 | a `BinderRef`'s serialized `type` agrees in soort with its resolved binder's declared datatype (a match arm's constructor payload, a lambda/function parameter, a `Let` binder's value, a filter binder's element) — the leaf-ref cross-check WF-023/WF-027 do for a resolved `AttribuutRef`, soort only (decimals/units uncrossed, as there); closes the WF-035 additive-position exemption for binders (ch. 4.7) | gate 3 | `anchor/jutterswet-aanspraaktelling` (fold/match binders) + `anchor/jutterswet-tariefstelling` (`Let` binders) | `wf078-binderref-type-lie` |
+| WF-079 | at most one unconditional, version-free computing rule (Gelijkstelling/Berekening) per non-laddered (type, attribute) target — the single-writer discipline of WF-026/WF-050/WF-052 for bare attribute writers (ch. 7.7); Kenmerktoekenning exempt (monotone), guarded case splits and versioned forms outside; the PHASE5D-DIFF §8.2 un-pinnable form refused ahead of the square | gate 3 | `anchor/jutterswet-rekenkamer-overzee` (a guarded gewone/overzeese case split on one target — the fence does not over-fire on conditional writers) | `wf079-two-unconditional-writers` |
+| WF-080 | a value-position `AttribuutRef` resolves to an attribute, not a characteristic (a characteristic is read through a characteristic check, ch. 4.5) — closes the tolerated `has_attr||has_kenmerk` leak; the rule TARGET lvalue is out of scope (WF-022) | gate 3 | `jutterswet-vondsttelling` (a universal value-read property; gate 3 witnesses none over-rejects) | `wf080-value-position-kenmerk` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

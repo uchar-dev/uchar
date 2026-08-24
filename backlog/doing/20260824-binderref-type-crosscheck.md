@@ -135,3 +135,40 @@ kenmerk-verkenning; eveneens corpus-breed te valideren). Elk hek:
 WF-tekst in IR-SPEC, verifier-check, rood-eerst, en minstens één
 negatief-case per hek. May touch verbreedt met: spec/IR-SPEC.md,
 spec/verifier/, corpus/negatief/. GEEN spec/CONSTRUCTS.md.
+
+## Resultaat (2026-08-24)
+
+Alle drie de hekken geland — WF-078, WF-079, WF-080 (aansluitend op de
+index, hoogste was WF-077). Elk rood-eerst gedemonstreerd (oude verifier
+`PASS`, nieuwe `FAIL` met letterlijke uitvoer), één negatief-case per hek,
+gate 3 groen op alle 97 goldens vóór én na (corpus-breed schoon).
+
+- **WF-078 (fence 1)** — `BinderRef.type`-kruiscontrole tegen het
+  binder-datatype, soort-alleen (decimalen/eenheid ongekruist, zoals
+  `AttribuutRef`). Getypte binder-omgeving door `walk_expr` geregen
+  (match-arm-payload, lambda/functie-parameter, `Let`-value, filter-element);
+  kruis in de `BinderRef`-tak (`spec/verifier/lib/checks.ml`). Sluit de
+  WF-035 additief-positie-uitzondering voor binders.
+  Negatief: `corpus/negatief/wf078-binderref-type-lie/` (`Let`-binder
+  `Numeriek`, `BinderRef` liegt `Tekst`).
+  `WF-078 FAIL /resolvedRegels/0/waarde/body/type: binder reference 'b' is typed text, but its binder is number`
+- **WF-079 (fence 2)** — het dubbelschrijvers-hek: ≤ 1 onvoorwaardelijke,
+  versie-vrije BEREKENING/GELIJKSTELLING-schrijver per niet-ladder
+  (type, attribuut)-doel. Kenmerktoekenningen vrij; bewaakte case-splits
+  (rekenkamer-overzee, besluitschakel, kamerheffing) blijven schoon omdat
+  ze een `voorwaarde` dragen — de smalste, klank-vrije lezing van "kaal"
+  die de volle corpus schoon houdt (RUNTIME-SEMANTICS ch. 7.7: hoogstens
+  één versie-vrije rekenregel). PHASE5D-DIFF §8.2 bijgewerkt: open vraag
+  beslist.
+  Negatief: `corpus/negatief/wf079-two-unconditional-writers/`.
+  `WF-079 FAIL /resolvedRegels/0: two unconditional computing rules write target (jutter, uitkomst) with no ladder`
+- **WF-080 (fence 3)** — waarde-positie-`AttribuutRef` moet op een attribuut
+  resolveren; kenmerk-endpoint is onwelgevormd. `has_attr||has_kenmerk`-lek
+  gesplitst (`checks.ml`). Doel-lvalue buiten bereik (WF-022), dus
+  kenmerktoekenning-doelen onaangetast.
+  Negatief: `corpus/negatief/wf080-value-position-kenmerk/`.
+  `WF-080 FAIL /resolvedRegels/0/waarde: 'penninggerechtigd' is a characteristic of 'Jutter', not an attribute`
+
+May-touch gerespecteerd: `spec/IR-SPEC.md`, `spec/verifier/`,
+`corpus/negatief/`, plus `spec/proposals/PHASE5D-DIFF.md` (§8.2-besluit).
+`spec/CONSTRUCTS.md` NIET aangeraakt. Negen gates groen.

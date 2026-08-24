@@ -1974,7 +1974,17 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                  covers both shapes *)
               (match attribuut with
                | Some a ->
-                   if has_attr ot a || has_kenmerk ot a then []
+                   if has_attr ot a then []
+                   else if has_kenmerk ot a then
+                     (* WF-080: a value position reads a value; a characteristic
+                        endpoint carries no attribute value here. The tolerated
+                        has_attr||has_kenmerk leak: a kenmerk is read through a
+                        characteristic check (ch. 4.5), never an AttribuutRef in
+                        a value slot. *)
+                     [ v "WF-080" at
+                         ("'" ^ a ^ "' is a characteristic of '" ^ otn
+                        ^ "', not an attribute — a characteristic endpoint is ill-formed in a \
+                           value position") ]
                    else
                      [ v "WF-034" at
                          ("'" ^ a ^ "' is neither an attribute nor a characteristic of '" ^ otn
@@ -2235,17 +2245,45 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
       @ walk_expr ctx ~binders ~subject ~body (sub "scrutinee") scrutinee
       @ List.concat
           (List.mapi
-             (fun i (_, binder, arm_body) ->
-               let binders' = match binder with Some b -> b :: binders | None -> binders in
+             (fun i (cname, binder, arm_body) ->
+               let binders' =
+                 match binder with
+                 | Some b ->
+                     (* the arm binder's declared datatype is the matched
+                        constructor's payload (WF-078 reads it) *)
+                     let bdt =
+                       match ctors with
+                       | Some cs -> (
+                           match List.find_opt (fun (n, _) -> norm n = norm cname) cs with
+                           | Some (_, payload) -> payload
+                           | None -> None)
+                       | None -> None
+                     in
+                     (b, bdt) :: binders
+                 | None -> binders
+               in
                walk_expr ctx ~binders:binders' ~subject ~body
                  (Printf.sprintf "%s/arms/%d/body" at i) arm_body)
              arms)
-  | Binder_ref { naam; _ } ->
+  | Binder_ref { naam; typ; _ } -> (
       (* WF-064: a binder reference resolves lexically to an enclosing binder
          (a match arm, or a lambda/function parameter — row 10); a
          VariabeleRef stays outside this rule (row 24) *)
-      if List.exists (fun b -> norm b = norm naam) binders then []
-      else [ v "WF-064" at ("binder reference '" ^ naam ^ "' resolves to no enclosing binder") ]
+      match List.find_opt (fun (b, _) -> norm b = norm naam) binders with
+      | None -> [ v "WF-064" at ("binder reference '" ^ naam ^ "' resolves to no enclosing binder") ]
+      | Some (_, bdt) -> (
+          (* WF-078: the serialized [type] must not lie about the binder's
+             soort — the leaf-ref cross-check WF-023/WF-027 perform for a
+             resolved AttribuutRef, applied to a binder's declared datatype.
+             Soort only (decimals and units stay uncrossed, exactly as for the
+             AttribuutRef cross-check); a binder whose declared type is unknown
+             defers, as does a reference carrying no type. *)
+          match (bdt, typ) with
+          | Some d, Some t when datatype_kind t <> datatype_kind d ->
+              [ v "WF-078" (sub "type")
+                  (Printf.sprintf "binder reference '%s' is typed %s, but its binder is %s" naam
+                     (datatype_kind t) (datatype_kind d)) ]
+          | _ -> []))
   | Struct_literal { typ; velden; _ } ->
       (* WF-073: the type is a declared struct; the supplied fields are
          exactly the declared fields, each once; each value's static type
@@ -2348,9 +2386,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
          here, and the position context is unchanged (a Let value inside a
          closed body stays closed) *)
       @ walk_expr ctx ~binders ~subject ~body (sub "value") value
-      (* the body: the binder joins the scope; a strict Let body admits
-         IfThenElse (Let_pos) unless already inside a closed body (stay closed) *)
-      @ walk_expr ctx ~binders:(binder :: binders) ~subject
+      (* the body: the binder joins the scope carrying its value's datatype
+         (WF-078); a strict Let body admits IfThenElse (Let_pos) unless already
+         inside a closed body (stay closed) *)
+      @ walk_expr ctx ~binders:((binder, typ_of_expr value) :: binders) ~subject
           ~body:(match body with Closed_pos w -> Closed_pos w | Rule_pos | Let_pos -> Let_pos)
           (sub "body") lbody
   | List_literal { typ; elements; _ } ->
@@ -2466,6 +2505,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
       @ check_fold_fn ctx ~binders ~subject (sub "function") ~params:[ src_elem ] ~result:out_elem functie
       @ walk_expr ctx ~binders ~subject ~body (sub "list") list
   | Filter_list { typ; list; binder; condition; _ } ->
+      let src_elem = match typ_of_expr list with Some (List_type { element }) -> Some element | _ -> None in
       fold_source_check ctx (sub "list") list
       (* WF-070: the node type equals the source's list type *)
       @ (match typ, typ_of_expr list with
@@ -2473,8 +2513,9 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
             [ v "WF-070" (sub "type") "filter result type must equal the source list type" ]
         | _ -> [])
       @ walk_expr ctx ~binders ~subject ~body (sub "list") list
-      (* the binder is bound in the condition — the aggregation-filter precedent *)
-      @ walk_cond ctx ~binders:(binder :: binders) ~subject ~body (sub "condition") condition
+      (* the binder is bound in the condition — the aggregation-filter precedent;
+         it carries the source element datatype (WF-078) *)
+      @ walk_cond ctx ~binders:((binder, src_elem) :: binders) ~subject ~body (sub "condition") condition
   | List_length { typ; list; _ } ->
       fold_source_check ctx (sub "list") list
       (* WF-070: the count is a whole number *)
@@ -2520,8 +2561,9 @@ and check_fold_fn ctx ~binders ~subject at ~params ~result (fn : fold_fn) : viol
             [ v "WF-070" at
                 ("lambda body is " ^ datatype_kind b ^ ", but the fold requires " ^ datatype_kind r) ]
         | _ -> [])
-      @ walk_expr ctx ~binders:(List.map fst parameters @ binders) ~subject
-          ~body:(Closed_pos "WF-069") (at ^ "/body") lbody
+      @ walk_expr ctx
+          ~binders:(List.map (fun (n, dt) -> (n, Some dt)) parameters @ binders)
+          ~subject ~body:(Closed_pos "WF-069") (at ^ "/body") lbody
   | Fn_name n ->
       (* WF-069 (the mirror-safe route): the function operand MUST be an inline
          lambda; a named function reaches a fold through a lambda body that
@@ -3873,6 +3915,64 @@ let wf052 ctx =
       else [])
     writers
 
+(* WF-079 (the WF-026/WF-050/WF-052 single-writer family, RUNTIME-SEMANTICS
+   ch. 7.7): a (type, attribute) target that carries no ladder admits at most
+   one unconditional, version-free computing rule (Gelijkstelling/Berekening).
+   Two or more — the PHASE5D-DIFF §8.2 un-pinnable form — over-determine the
+   target with no explicit priority: ref oscillates (no fixpoint, ch. 5.7),
+   clingo is silently multi-valued, and the pair falls through every zone.
+   Characteristic attributions (Kenmerktoekenning) are exempt — a monotone
+   many-grounds-one-truth (the penningrecht pair) — and a ladder on the target
+   routes multiplicity through WF-050 instead. Conditional writers (a guarded
+   case split) carry their own priority and stay outside: only the bare
+   (unconditional) collision is statically over-determined. Mirrors WF-026's
+   version-stripped pairing. *)
+let wf079 ctx =
+  let laddered otn a =
+    List.exists
+      (fun (l : default_ladder) ->
+        match l.dl_attribuut with
+        | Some la -> norm l.dl_onderwerp = norm otn && norm la = norm a
+        | None -> false)
+      ctx.doc.default_ladders
+  in
+  let writers =
+    List.filter_map
+      (fun (i, (r : resolved_regel)) ->
+        match (r.rr_soort, r.doel, r.rr_voorwaarde) with
+        | ( Some (Gelijkstelling | Berekening),
+            Some (Attribuut_ref { attribuut = Some a; objecttype = Some otn; _ }),
+            None )
+          when not (laddered otn a) ->
+            Some
+              ( Option.map strip_version r.rr_naam, norm otn, norm a, r.rr_geldigheid,
+                Printf.sprintf "/resolvedRegels/%d" i )
+        | _ -> None)
+      (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_regels)
+  in
+  let rec pairs = function
+    | [] -> []
+    | (n1, ot1, a1, g1, at1) :: rest ->
+        List.filter_map
+          (fun (n2, ot2, a2, g2, _) ->
+            let same_target = ot1 = ot2 && a1 = a2 in
+            let distinct_form =
+              match (n1, n2) with Some x, Some y -> norm x <> norm y | _ -> true
+            in
+            if same_target && distinct_form && validity_overlaps g1 g2 then
+              Some
+                (v "WF-079" at1
+                   (Printf.sprintf
+                      "two unconditional computing rules write target (%s, %s) with no ladder — \
+                       priority is explicit (a ladder) or explicitly absent, never implicit agenda \
+                       order (ch. 7.7)"
+                      ot1 a1))
+            else None)
+          rest
+        @ pairs rest
+  in
+  pairs writers
+
 (* WF-054: parent-scoped uniqueness (the scope hop, v1 extension). The
    scope role resolves — bound (scopeRol) or uniquely derivable from the
    written scopeVeld name — its near side fills the subject, the written
@@ -4535,8 +4635,9 @@ let wf067 ctx =
                      ("result names sum-type domain '" ^ domein ^ "', which is not a declared sum \
                        type") ]
              | _ -> [])
-           @ walk_expr ctx ~binders:(List.map fst fd.fd_parameters) ~subject:None
-               ~body:(Closed_pos "WF-067") (at ^ "/body") fd.fd_body
+           @ walk_expr ctx
+               ~binders:(List.map (fun (n, dt) -> (n, Some dt)) fd.fd_parameters)
+               ~subject:None ~body:(Closed_pos "WF-067") (at ^ "/body") fd.fd_body
            @ (if reaches ~target:fd.fd_naam ~visited:[ norm fd.fd_naam ] fd.fd_naam then
                 [ v "WF-067" at
                     ("function '" ^ fd.fd_naam
@@ -4553,6 +4654,6 @@ let all (doc : document) : violation list =
       wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf020 ctx; wf021 ctx;
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf032 ctx; wf033 ctx; wf045_046 ctx;
-      wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf054 ctx;
+      wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf079 ctx; wf054 ctx;
       wf057 ctx; wf059 ctx; wf060 ctx; wf061 ctx; wf065 ctx; wf067 ctx;
       wf071 ctx; wf072 ctx; wf075 ctx; expression_layer ctx ]

@@ -463,11 +463,19 @@ path-keyed §9.5 fact, both backends).
 The gate set is the backstop that makes the flat form's verifier-cleanliness
 harmless: the differential square (gates 5–6) rejects it downstream even
 though the verifier admits it. Whether a *defensive* WF rule should reject
-two differently-valued flat writers on one target ahead of the square is a
-latent design question this witness surfaces but does not decide — the v0
-emitter never produces the shape (mirror-then-diverge: v0 renders either a
-single writer or the toolchain's monotone same-valued pair), and no numbered
-maintainer question is forced. It is recorded here for the lens round.
+two flat writers on one target ahead of the square was the latent design
+question this witness surfaced. **Decided (maintainer, 2026-08-24): yes.**
+It is now **WF-079** (`spec/IR-SPEC.md` ch. 3.1; `RUNTIME-SEMANTICS.md`
+ch. 7.7): a non-laddered (type, attribute) target admits at most one
+unconditional, version-free computing rule (Gelijkstelling/Berekening); two
+or more are ill-formed. The rule is scoped to the soundly-detectable subset —
+**unconditional** ("bare") writers, where over-determination is certain
+without a satisfiability check — so it never rejects a valid program: the v0
+emitter's single writer, its monotone same-valued KENMERKTOEKENNING pair
+(exempt by kind), and the corpus's guarded case splits (each writer carries
+its own `condition`, e.g. `anchor/jutterswet-rekenkamer-overzee`) all stay
+clean. A conditional overlap that is only semantically over-determined stays
+a differential-square catch. Negatief: `corpus/negatief/wf079-two-unconditional-writers/`.
 
 ### 8.3 Classification and ledger delta
 
@@ -482,8 +490,8 @@ maintainer question is forced. It is recorded here for the lens round.
 - **Normative changes: none.** The semantics this witness exercises
   (path-keyed §9.5 propagation from an unordered sub-group) landed in
   Phase 5c; `case4-conflict` is a new *witness*, not a new rule.
-- **Maintainer questions: none forced** (one latent, non-blocking
-  observation recorded in §8.2 for the lens round).
+- **Maintainer questions: none forced** (the one latent observation §8.2
+  recorded was decided 2026-08-24 — the defensive rule landed as WF-079).
 - **§6 limit closed:** the "sharp case is out of scope" bullet is
   superseded — the divergent-exception path is now witnessed end-to-end
   (Catala abort quoted, uchar §9.5 fact pinned in both executors, v0-flat
