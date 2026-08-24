@@ -478,3 +478,39 @@ Gates (finaal, alle negen groen): self-contained PASS; ir-schema 81; verifier
 81 golden + **138** negatief; case-schema **209**; oracle **192**; clingo
 **192**; noop **170** refute + 22 survivors; rood 17; catala PASS (120 checks,
 6 goldens byte-identiek).
+
+Result: de subscope-lowering van PHASE5C-TUTORIAL §3 landde volledig op de
+bestaande kernel (geen nieuwe knoop) en de tutorial-exitgetuige draait
+drievoudig groen. Geland: het anker jutterswet-rekenkamer (creatie +
+MemberInits + verbindendeRol + genavigeerde output-lezing; callee-regels in
+de caller-fixpoint, zónder executor-wijziging); de plugin-splitsing
+EScopeCall → creatie + genavigeerde reads met de catala-golden
+jutterswet-rekenkamerheffing-catala en de E2E-getuige subscope.catala_en;
+het maintainersbesluit 2026-08-24 (genummerde vragen, beide A): de
+WF-027-verruiming — een kenmerk-initialisatie draagt een boolean-getypte
+expressie — door spec, verifier, ref en clingo (anker
+jutterswet-rekenkamer-overzee), plus de clingo-flanken B2 (datum-literaal
+in termpositie, anker jutterswet-verjaring) en B3 (de generieke
+Let-binder-hulpregel, golden jutterswet-postenheffing);
+tutorial_end_2_3 als frontend-fixture door plugin → verifier → ref →
+clingo (gate 9: 120 checks; cases geijkt tegen catala interpret), met de
+vulanalyse-verfijning (uitputtende datum-complementaire basisgroep) en de
+cross-scope-naamdisambiguatie; PLAN §6 Phase 5 "Met in part" voor het
+plugin-exitcriterium; CONSTRUCTS-rijen 9/21 bijgewerkt. Rood-eerst per
+stap, vastgelegd in de landingsnotities hierboven. De lensronde (twee
+opus-lenzen, beide empirisch) ving één BLOCKING — de lege-boolean-flank
+van de kenmerk-init divergeerde (ref fault, clingo stil door); genormeerd
+op leeg → ongezet langs de attribuut-init-parallel die het besluit zelf
+aanriep, gefixt in spec+ref met anker-case3 als permanente gate-5/6-wacht
+— en twee MINORs (WF-027-kruisvalidatie van het opgeloste
+attribuut-datatype + negatief-case; de kids≤5-magnitudegrens
+gedocumenteerd in fixture en S18), alle gefixt vóór de merge (0410244).
+Bleef bewust liggen, luid en geregistreerd: per-element-subscope-calls
+(2-4), multi-state, context-inputs (besluit 6 geratificeerd-maar-
+uitgesteld onder de WF-050-randvoorwaarde), whole-struct-consumptie,
+de creatie-sleutel-botsing (backstop, door Catala niet uitdrukbaar),
+geneste struct-veldtoegang in clingo (pre-existing kaart-1-flank), de
+genavigeerde kenmerk-lees-expressie (geen IR-image; ontwerpvraag), de
+kids≥6-grens van de gesplitste geldencodering (gedocumenteerde
+backend-limiet: ref rekent, clingo hekt), en het frontend-diff-criterium
+van Phase 5 — dat is kaart 5d.
