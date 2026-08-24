@@ -79,3 +79,22 @@ Alle negen gates groen in deze worktree:
 
 Rest vóór merge: twee opus-lenzen (acceptance) — buiten deze
 subagent-beurt.
+
+## Lensronde 1 (2026-08-24)
+
+Bevinding 1 [MINOR/CONFIRMED] verwerkt: PHASE5D-DIFF §8.2 labelde clingo's
+platte-vorm-uitkomst als "`clingo`: `PASS`", in visuele parallel met de
+letterlijke verifier-/ref-verdicten ernaast — maar de runner emit dáár nooit
+`PASS`. Geverifieerd tegen `backends/clingo/bin/clingo_runner.ml`: de runner
+print `clingo: PASS (N expectations)` uitsluitend wanneer `Model.check` `[]`
+teruggeeft (alle pins matchen); voor de multi-valued `J1.tarief = [0;1000]`
+matcht geen enkele single-value-pin, dus rapporteert de runner `MISMATCH`
+(en `CASE ERROR: … unknown rule` op een `inconsistent`-pin). Fix: het label
+vervangen door bewoording die de runner volgt (consistent stabiel model,
+geen §9.5-feit, maar `MISMATCH`/`CASE ERROR` op elke pin — geen pinbare
+`PASS`); dit heft ook de milde spanning met "un-pinnable in every zone" twee
+alinea's verderop op. Substantie ongewijzigd (ref ≢ clingo, stil multi-valued
+consistent). Alleen `spec/proposals/PHASE5D-DIFF.md` geraakt; geen
+scripts/check-noop.sh, geen artefactzone. Alle negen gates opnieuw groen
+(1 self-contained · 2 ir-schema 82 · 3 verifier 82/138 · 4 case-schema 215
+· 5 oracle 198 · 6 clingo 198 · 7 noop 174/24 · 8 rood 17 · 9 catala 120/6).

@@ -442,10 +442,12 @@ a scratch v0-flat IR — two flat `BEREKENING` rules on the same non-laddered
   a fault (ch. 5.7)`.** The two rules each overwrite the other every pass;
   the fixpoint oscillates 0.1000 ↔ 0.0000 and never converges. Not
   last-writer-win — **non-termination**.
-- **`clingo`: `PASS` with `J1.tarief = [0;1000]`.** The stable model carries
-  **both** values at once, and the runner sees no §9.5 fact — reported
-  `consistent`. Not last-writer-win either — a **silently multi-valued**
-  target.
+- **`clingo`: a consistent stable model, no fault — but `J1.tarief =
+  [0;1000]`.** The stable model carries **both** values at once and raises no
+  §9.5 inconsistency fact, so against any single-value pin the runner reports
+  `MISMATCH` (and against an `inconsistent` pin, a `CASE ERROR: … unknown
+  rule`) — no expectation makes it emit a pinnable `PASS`. Not last-writer-win
+  either — a **silently multi-valued** target.
 
 So `ref` faults and `clingo` is silently-consistent-multivalued: **ref ≢
 clingo**. Under the corpus rules a differential disagreement "routes to
