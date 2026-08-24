@@ -1,0 +1,52 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {
+          "aftrek": {
+            "number": "30"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J5",
+        "objectType": "Jutter",
+        "attributes": {
+          "grondslag": {
+            "number": "80"
+          },
+          "aftrek": {
+            "number": "20"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J4",
+      "attribute": "heffing"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "heffing",
+      "value": {
+        "number": "60"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
