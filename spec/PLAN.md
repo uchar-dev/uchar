@@ -488,7 +488,7 @@ valid, verifier-clean IR and executes on interpreter + one engine; the
 frontend-diff exercise is documented with resulting spec changes; the
 hourglass is real — two frontends, two-plus backends, 2×2 through one waist
 instead of four translators.
-**Met in part (2026-08-24):** the first exit criterion is discharged —
+**Met (2026-08-24):** both exit criteria stand. The first is discharged —
 `tutorial_end_2_3` round-trips through the plugin into valid,
 verifier-clean IR and executes on interpreter + one engine (plugin →
 verifier → ref → clingo, triple-green under gate 9), on the subscope-call
@@ -498,10 +498,17 @@ with the WF-027 delta for boolean subscope inputs (`CONSTRUCTS.md`
 rows 9/21); the own-authored Jutterswet witnesses —
 `anchor/jutterswet-rekenkamer`, `anchor/jutterswet-rekenkamer-overzee`,
 and the Catala golden `jutterswet-rekenkamerheffing-catala` — pass the
-full gate set. **The frontend-diff criterion is deliberately NOT met
-here:** the second exit criterion (diff both frontends' IR dumps, document
-the resulting spec changes) is the follow-on card 5d, and the hourglass
-claim waits on it.
+full gate set. **The frontend-diff criterion is now discharged (card 5d):**
+`spec/proposals/PHASE5D-DIFF.md` runs the same law — Jutterswet art. 3 jo. 5
+(penningrecht / hardheid) — through both frontends (the RegelSpraak toolchain
+resolver, two flat `KENMERKTOEKENNING` rules; the Catala plugin, one
+`defaultLadder`) and diffs the two IR dumps, both carried through the full
+gate set: every difference is administrative or a tracked v0↔v1 delta
+(`CONSTRUCTS.md` rows 8/2/7), no category-(iii) design flaw, and the resulting
+spec change is one besluit-free documentary note (no normative change, no
+numbered maintainer question). With both criteria met the hourglass is real —
+two frontends, two-plus backends, 2×2 through one waist instead of four
+translators.
 **Proposal adopted (2026-08-21):** `spec/proposals/PHASE5-CATALA.md`
 carries the design; its six decisions are all taken (attachment at the
 scopelang→dcalc boundary; context-override polarity as a top rung —

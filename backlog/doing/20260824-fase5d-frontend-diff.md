@@ -123,3 +123,31 @@ declaraties (`teken`, meervoud).
 Gates 1–2 groen na het toevoegen van het document (raakt geen
 artefactzone). Vervolg (card-close): PLAN §6-markering flippen, twee
 opus-lenzen.
+
+## Afronding — documentatie geland (2026-08-24)
+
+De besluit-vrije uitkomst van de diff is vastgelegd en de
+Phase-5-markering geflipt (geen semantiekwijziging):
+
+- `spec/CONSTRUCTS.md` rij 8 draagt nu de getrackte Phase-5d-notitie: het
+  penningrecht-paar (toolchain twee platte `KENMERKTOEKENNING` vs Catala's
+  ene `defaultLadder`) diffde tot **geen categorie-(iii)-ontwerpfout**; de
+  ene besluit-vrije observatie — meervoudige gelijk-waardige
+  kenmerktoekenningen op één doel blijven native, niet gedesugared
+  (ordevrij/conflictvrij per monotone idempotentie ch. 5.3, extensioneel de
+  disjunctieve één-sport-equivalent) — staat er verwijzend naar
+  `spec/proposals/PHASE5D-DIFF.md`. Geen genummerde maintainersvraag.
+- `spec/PLAN.md` §6 Phase 5: **"Met in part" → "Met" (2026-08-24)**, met
+  beide getuigen — `spec/proposals/PHASE5C-TUTORIAL.md` (het eerste
+  criterium, tutorial-round-trip) en `spec/proposals/PHASE5D-DIFF.md` (het
+  frontend-diff-criterium, het paar-fragment door de volle gate-set). Beide
+  exitcriteria staan; de hourglass-claim is nu waar (twee frontends,
+  twee-plus backends, 2×2 door één waist). Verder niets geherformuleerd.
+
+Ter controle gedraaid: gate 1 (`check-self-contained.sh`) en gate 2
+(`check-ir-schema.sh`) groen — PLAN/CONSTRUCTS/backlog zijn working prose,
+geen artefactzone. Gate 9 (`check-catala.sh`) groen (lokaal, catala 1.2.1):
+de plugin-suite + de byte-identieke corpus-regeneratie ongewijzigd, want de
+afronding raakt `frontends/catala/` noch `corpus/golden/` niet.
+
+Open vóór de merge: twee opus-lenzen op het diff-document.
