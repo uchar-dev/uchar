@@ -108,3 +108,21 @@ map-body en de additieve body al; de bevindingen tonen dat het hek niet
 werd gehandhaafd. `spec/proposals/PHASE5C-TUTORIAL.md §3a` bijgewerkt
 (gate = `in_map_body`; het hek = `{Plus, Min}`), plus de
 green-fixture-header. Alle negen gates opnieuw groen.
+
+Result: besluit 1-A is uitgevoerd: een zuivere-functie-callee die per
+lijstelement wordt aangeroepen lowert naar een FunctionDef en de
+map-body naar MapList/Invoke op de lijstwaarde — geen instantie,
+geen creatie-sleutel; de per-element-identiteit is de lijstpositie.
+De duale lowering, de weigergrens (conflict-/creatie-dragende
+callees, niet-input-reads, lijst-opgeslagen outputs) en de formele
+Direction-B-deferral staan als Decided-sectie in de proposals; de
+getuigen zijn de fixtures op de drievoudig-groene map→fold-route en
+de catala-golden jutterswet-kamerheffing-catala. Rood-eerst vanaf de
+oude per-element-refusal. De lensronde ving twee CONFIRMED MINORs —
+de in_body-poort lowerde ook in fold-reducer-bodies en een
+subtractie-body raakte een ref-only vorm (beide ref≡catala maar
+clingo-fault, dus divergent): de poort is versmald tot de directe
+map-body en het +/--hek wordt frontend-side afgedwongen, beide nu
+luide weigeringen. De echte tutorial_end_2_4 is beproefd en het
+rapport in de kaart somt precies op wat die pagina nog blokkeert.
+Alle negen gates groen.
