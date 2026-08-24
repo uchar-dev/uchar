@@ -37,20 +37,36 @@ The two rules that *are* individually executable — `staat na schouw`
 cannot be replayed on their own: the evaluator runs every `resolvedRegel`,
 so the three refusing rules bring the whole replay down first.
 
-A case with zero `Schouwveld` instances would evade the faults (no subject,
-no rule body runs) but would exercise nothing and pin nothing real —
-exactly the manufactured "make the report go away" case this cabinet must
-not carry. Executable expectations belong to executing goldens, not to a
-scaffold.
+A case with zero `Schouwveld` instances does not even evade the faults
+cleanly. The reference interpreter is lazy per-instance: with no subject no
+rule body runs, so `ref` reports `oracle: PASS`. But the ASP backend
+translates every rule body **statically**, independent of instance count, so
+`clingo` still faults —
+`TRANSLATION FAULT: expression kind not translated (no corpus case exercises it)`
+— and gate 6 would turn **red**, not merely pin nothing. Either way the case
+exercises and pins nothing real: it is exactly the manufactured "make the
+report go away" case this cabinet must not carry. Executable expectations
+belong to executing goldens, not to a scaffold.
 
 ## Reproduction
 
 From the workspace root, with the ref runner built (`dune build ref`), the
 runner on this `ir.json` and any case carrying one `Schouwveld` instance
 faults with `expression kind not implemented in this card` — the
-dimension-cell read of the first rule. Filtering `resolvedRegels` down to
-each blocking rule in turn (for example with `jq`) reproduces the other two
-faults in the table above.
+dimension-cell read of the first rule. Filtering `resolvedRegels` down to a
+single blocking rule in turn (for example with `jq`) reproduces the other
+faults in the table above — with one wrinkle for the temporal row:
+
+- `peiling bij dubbele borging` alone faults with
+  `condition kind not implemented in this card`, at any `asOfDate`
+  (including a null one).
+- The two `doorwaadbaar bij lage stand` rules carry validity bounds
+  (`#1 tot 2025-12-31`, `#2 vanaf 2026-01-01`), so filtering to them with a
+  null `asOfDate` faults *first* with `a validity-bounded form needs an
+  evaluation date; this session is time-free` — not the whole-period fault.
+  The whole-period-comparison refusal (`whole-period comparison is ch. 3
+  scope`) surfaces only once the case also carries an `asOfDate` inside a
+  rule's window — for example `#2` with `asOfDate 2026-06-01`.
 
 ## When this cabinet shrinks
 

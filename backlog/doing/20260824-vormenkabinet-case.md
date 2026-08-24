@@ -47,3 +47,25 @@ geen rood-eerst/noop-refutatie van toepassing; scripts/check-noop.sh
 ONGEWIJZIGD (de survivor-lijst iterateert over case*.json — deze golden
 komt daar niet in voor). Alle negen gates groen (slotregels geciteerd
 in de sessie-uitvoer).
+
+Lensronde (2 MINOR, beide CONFIRMED — empirisch geverifieerd, NOTE.md
+gecorrigeerd, geen code/IR gewijzigd):
+  - Bev.1 (NOTE:40): de nul-instantie-case "ontwijkt de faults" gold
+    alleen voor ref (lui per instantie → `oracle: PASS`), niet voor
+    clingo — die vertaalt elke regel-body statisch, ongeacht het aantal
+    instanties, en fault op `TRANSLATION FAULT: expression kind not
+    translated (no corpus case exercises it)` (EXIT 1), dus gate 6 zou
+    ROOD worden i.p.v. "niets pinnen". NOTE herschreven: benoemt nu beide
+    executors expliciet; conclusie (geen case verzinnen) ongewijzigd,
+    juist versterkt.
+  - Bev.2 (NOTE:51): de reproductie-recept-regel "reproduceert de andere
+    twee faults" klopte niet voor de temporele rij: filteren op de
+    doorwaadbaar-regels met asOfDate null fault éérst op `a
+    validity-bounded form needs an evaluation date; this session is
+    time-free` (beide regels dragen geldigheidsgrenzen: #1 tot
+    2025-12-31, #2 vanaf 2026-01-01). De heel-periode-weigering (`whole-
+    period comparison is ch. 3 scope`) verschijnt pas met een asOfDate
+    binnen een venster (bv. #2 met 2026-06-01). Peiling fault op elke
+    datum. Reproductie-sectie gesplitst per regel met de precieze
+    voorwaarde.
+  Alle negen gates opnieuw groen na de fixes.
