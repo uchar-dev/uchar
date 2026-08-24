@@ -11,6 +11,13 @@
           "decimalen": 2,
           "teken": "ONBEPAALD",
           "eenheid": null
+        },
+        "grondslag": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
         }
       },
       "attribuutMeervoud": {},
@@ -83,8 +90,37 @@
             "bron": "hij rechtA heeft"
           },
           "consequentie": {
-            "node": "Literal",
-            "waarde": "100.00",
+            "node": "Binair",
+            "op": "PLUS",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "grondslag",
+              "objecttype": "Jutter",
+              "onderwerpBron": "de grondslag van de Jutter",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de grondslag van de Jutter",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "90.00",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "90.00"
+            },
             "type": {
               "node": "Numeriek",
               "geheel": false,
@@ -92,9 +128,9 @@
               "teken": "ONBEPAALD",
               "eenheid": null
             },
-            "bron": "100.00"
+            "bron": "de grondslag plus 90.00"
           },
-          "bron": "rechtA: 100.00, tenzij een uitzonderingsgrond geldt",
+          "bron": "rechtA: de grondslag plus 90.00, tenzij een uitzonderingsgrond geldt",
           "excepties": {
             "ongeordend": true,
             "leden": [
@@ -114,8 +150,37 @@
                       "bron": "hij grondP heeft"
                     },
                     "consequentie": {
-                      "node": "Literal",
-                      "waarde": "30.00",
+                      "node": "Binair",
+                      "op": "PLUS",
+                      "links": {
+                        "node": "AttribuutRef",
+                        "attribuut": "grondslag",
+                        "objecttype": "Jutter",
+                        "onderwerpBron": "de grondslag van de Jutter",
+                        "navigatieRol": null,
+                        "type": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        },
+                        "bron": "de grondslag van de Jutter",
+                        "set": false,
+                        "navigatiePad": []
+                      },
+                      "rechts": {
+                        "node": "Literal",
+                        "waarde": "20.00",
+                        "type": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        },
+                        "bron": "20.00"
+                      },
                       "type": {
                         "node": "Numeriek",
                         "geheel": false,
@@ -123,9 +188,9 @@
                         "teken": "ONBEPAALD",
                         "eenheid": null
                       },
-                      "bron": "30.00"
+                      "bron": "de grondslag plus 20.00"
                     },
-                    "bron": "grondP: 30.00"
+                    "bron": "grondP: de grondslag plus 20.00"
                   }
                 ],
                 "bron": "uitzondering P"
@@ -146,8 +211,37 @@
                       "bron": "hij grondQ heeft"
                     },
                     "consequentie": {
-                      "node": "Literal",
-                      "waarde": "45.00",
+                      "node": "Binair",
+                      "op": "PLUS",
+                      "links": {
+                        "node": "AttribuutRef",
+                        "attribuut": "grondslag",
+                        "objecttype": "Jutter",
+                        "onderwerpBron": "de grondslag van de Jutter",
+                        "navigatieRol": null,
+                        "type": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        },
+                        "bron": "de grondslag van de Jutter",
+                        "set": false,
+                        "navigatiePad": []
+                      },
+                      "rechts": {
+                        "node": "Literal",
+                        "waarde": "35.00",
+                        "type": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        },
+                        "bron": "35.00"
+                      },
                       "type": {
                         "node": "Numeriek",
                         "geheel": false,
@@ -155,9 +249,9 @@
                         "teken": "ONBEPAALD",
                         "eenheid": null
                       },
-                      "bron": "45.00"
+                      "bron": "de grondslag plus 35.00"
                     },
-                    "bron": "grondQ: 45.00"
+                    "bron": "grondQ: de grondslag plus 35.00"
                   }
                 ],
                 "bron": "uitzondering Q"
@@ -178,8 +272,61 @@
                       "bron": "hij grondR heeft"
                     },
                     "consequentie": {
-                      "node": "Literal",
-                      "waarde": "30.00",
+                      "node": "Binair",
+                      "op": "PLUS",
+                      "links": {
+                        "node": "Binair",
+                        "op": "PLUS",
+                        "links": {
+                          "node": "AttribuutRef",
+                          "attribuut": "grondslag",
+                          "objecttype": "Jutter",
+                          "onderwerpBron": "de grondslag van de Jutter",
+                          "navigatieRol": null,
+                          "type": {
+                            "node": "Numeriek",
+                            "geheel": false,
+                            "decimalen": 2,
+                            "teken": "ONBEPAALD",
+                            "eenheid": null
+                          },
+                          "bron": "de grondslag van de Jutter",
+                          "set": false,
+                          "navigatiePad": []
+                        },
+                        "rechts": {
+                          "node": "Literal",
+                          "waarde": "15.00",
+                          "type": {
+                            "node": "Numeriek",
+                            "geheel": false,
+                            "decimalen": 2,
+                            "teken": "ONBEPAALD",
+                            "eenheid": null
+                          },
+                          "bron": "15.00"
+                        },
+                        "type": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        },
+                        "bron": "de grondslag plus 15.00"
+                      },
+                      "rechts": {
+                        "node": "Literal",
+                        "waarde": "5.00",
+                        "type": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        },
+                        "bron": "5.00"
+                      },
                       "type": {
                         "node": "Numeriek",
                         "geheel": false,
@@ -187,9 +334,9 @@
                         "teken": "ONBEPAALD",
                         "eenheid": null
                       },
-                      "bron": "30.00"
+                      "bron": "die som plus 5.00"
                     },
-                    "bron": "grondR: 30.00"
+                    "bron": "grondR: (de grondslag plus 15.00) plus 5.00"
                   }
                 ],
                 "bron": "uitzondering R"
@@ -203,7 +350,7 @@
           "voorwaarde": null,
           "consequentie": {
             "node": "Literal",
-            "waarde": "10.00",
+            "waarde": "5.00",
             "type": {
               "node": "Numeriek",
               "geheel": false,
@@ -211,13 +358,13 @@
               "teken": "ONBEPAALD",
               "eenheid": null
             },
-            "bron": "10.00"
+            "bron": "5.00"
           },
           "initialisatie": true,
-          "bron": "basis: 10.00"
+          "bron": "basis: 5.00"
         }
       ],
-      "bron": "art. 7: de korting met geneste uitzonderingsgronden",
+      "bron": "art. 7: de korting met berekende geneste uitzonderingsgronden",
       "geldigheid": {
         "node": "Geldigheid",
         "vanaf": null,

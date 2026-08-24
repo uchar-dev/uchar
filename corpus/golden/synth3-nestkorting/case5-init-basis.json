@@ -6,13 +6,13 @@
       {
         "label": "M",
         "objectType": "Jutter",
-        "attributes": {},
+        "attributes": {
+          "grondslag": {
+            "number": "10.00"
+          }
+        },
         "roles": {},
-        "characteristics": [
-          "rechtA",
-          "grondP",
-          "grondR"
-        ]
+        "characteristics": []
       }
     ],
     "parameters": {}
@@ -23,7 +23,7 @@
       "label": "M",
       "attribute": "korting",
       "value": {
-        "number": "30.00"
+        "number": "5.00"
       }
     },
     {

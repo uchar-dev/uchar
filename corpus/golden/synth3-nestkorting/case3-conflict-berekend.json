@@ -6,11 +6,16 @@
       {
         "label": "M",
         "objectType": "Jutter",
-        "attributes": {},
+        "attributes": {
+          "grondslag": {
+            "number": "10.00"
+          }
+        },
         "roles": {},
         "characteristics": [
           "rechtA",
-          "grondP"
+          "grondP",
+          "grondQ"
         ]
       }
     ],
@@ -18,15 +23,14 @@
   },
   "expected": [
     {
-      "kind": "attributeValue",
+      "kind": "attributeEmpty",
       "label": "M",
-      "attribute": "korting",
-      "value": {
-        "number": "30.00"
-      }
+      "attribute": "korting"
     },
     {
-      "kind": "consistent"
+      "kind": "inconsistent",
+      "rule": "Jutter.korting/0",
+      "label": "M"
     }
   ]
 }
