@@ -261,10 +261,19 @@ and conditie (c : conditie) : json =
           ("onderdelen", `List (List.map conditie onderdelen)); bron br ]
   | Kenmerk_check
       { kenmerk; navigatie; negatie; eigenaar; periode = p; bron = br;
-        navigatie_binding = _ } ->
+        navigatie_binding = nb } ->
+      (* navigatieBinding is an extension field (the loader admits it via [ext])
+         — written whole or not at all (schema: never null), only when the check
+         actually navigates (ch. 4.1a/5: a caller reads a callee characteristic
+         over the synthesised back-link — the condition sibling of a navigated
+         AttribuutRef) *)
+      let ext =
+        match nb with None -> [] | Some rb -> [ ("navigatieBinding", rol_binding rb) ]
+      in
       node "Kenmerk"
-        [ ("kenmerk", so kenmerk); ("navigatie", so navigatie);
-          ("negatie", b negatie); ("eigenaar", so eigenaar); periode p; bron br ]
+        ([ ("kenmerk", so kenmerk); ("navigatie", so navigatie);
+           ("negatie", b negatie); ("eigenaar", so eigenaar); periode p; bron br ]
+        @ ext)
   | Conditie_onopgelost { bron = br } -> node "Onopgelost" [ bron br ]
   | _ -> failwith "Emit.conditie: condition shape not produced by the skeleton"
 

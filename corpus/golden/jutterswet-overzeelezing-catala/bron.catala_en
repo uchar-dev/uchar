@@ -1,0 +1,41 @@
+# Jutterswet, artikel 13 — de overzeetoeslag
+
+Art. 13 (overzeetoeslag). De heffing die een jutter over een vondst
+verschuldigd is, bedraagt de vondstwaarde. Is de eigenaar van de vondst
+overzees, dan wordt de heffing verdubbeld. Een eigenaar is overzees
+wanneer zijn registratiezone hoger is dan honderd.
+
+Modelleringsnotitie: het artikel leest een kenmerk van een aanpalende
+entiteit — de eigenaar — als voorwaarde. De aanslag richt haar eigenaar
+op, voorziet die van een registratiezone, en de eigenaarregel leidt
+daaruit het kenmerk `overzees` af (een berekend booleaans uitvoer-kenmerk,
+dus een karakteristiek op de eigenaar). De verdubbeling staat als
+uitzonderingssport boven de basis; haar voorwaarde leest `overzees` van
+de eigenaar over de gesynthetiseerde terugkoppeling heen. Dat is de
+genavigeerde kenmerk-lezing in conditie-positie (IR-SPEC ch. 4.1a/5,
+WF-053; geen nieuwe knoop — de wire-knoop `Kenmerk` met `navigatie` en
+`navigatieBinding`, beide executoren dragen hem, anker
+jutterswet-kustwacht). Eigen auteurschap, rechtenvrij; de eigenaarregel
+draait in de fixpoint van de aanslag op de gemunte instantie.
+
+```catala
+declaration scope Eigenaar:
+  input registratiezone content integer
+  output overzees content boolean
+
+scope Eigenaar:
+  definition overzees equals registratiezone > 100
+
+declaration scope Vondstaanslag:
+  input vondstwaarde content integer
+  input registratiezone content integer
+  eigenaar scope Eigenaar
+  output heffing content integer
+
+scope Vondstaanslag:
+  definition eigenaar.registratiezone equals registratiezone
+  definition heffing equals vondstwaarde
+  exception definition heffing
+    under condition eigenaar.overzees
+    consequence equals vondstwaarde * 2
+```

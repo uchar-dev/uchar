@@ -311,7 +311,12 @@
             "negatie": false,
             "eigenaar": null,
             "periode": null,
-            "bron": "hardheid"
+            "bron": "hardheid",
+            "navigatieBinding": {
+              "node": "RolBinding",
+              "feittype": "Bergingsaanslag_rekenkamer",
+              "rol": "rekenkamer_houder"
+            }
           },
           "consequentie": {
             "node": "AttribuutRef",

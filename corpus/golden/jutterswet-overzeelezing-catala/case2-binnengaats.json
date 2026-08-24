@@ -1,0 +1,36 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondstaanslag",
+        "attributes": {
+          "vondstwaarde": {
+            "number": "3000"
+          },
+          "registratiezone": {
+            "number": "50"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "heffing",
+      "value": {
+        "number": "3000"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

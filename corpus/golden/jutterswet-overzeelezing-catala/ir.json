@@ -1,0 +1,328 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Eigenaar": {
+      "node": "Objecttype",
+      "naam": "Eigenaar",
+      "attributen": {
+        "registratiezone": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "overzees"
+      ],
+      "kenmerkSoorten": {
+        "overzees": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": null
+    },
+    "Vondstaanslag": {
+      "node": "Objecttype",
+      "naam": "Vondstaanslag",
+      "attributen": {
+        "vondstwaarde": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "registratiezone": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "heffing": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": null
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {
+    "Vondstaanslag_eigenaar": {
+      "node": "Feittype",
+      "naam": "Vondstaanslag_eigenaar",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "eigenaar_houder",
+          "objecttypeNaam": "Vondstaanslag",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "eigenaar",
+          "objecttypeNaam": "Eigenaar",
+          "meervoud": null,
+          "meervoudig": false
+        }
+      ]
+    }
+  },
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "kenmerktoekenning overzees",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "overzees",
+        "objecttype": "Eigenaar",
+        "onderwerpBron": "de overzees",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "de overzees",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "GROTER",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "registratiezone",
+          "objecttype": "Eigenaar",
+          "onderwerpBron": "de registratiezone",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de registratiezone",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "100",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "100"
+        },
+        "periode": null,
+        "bron": null
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [
+    {
+      "node": "ResolvedObjectCreatie",
+      "naam": "richt eigenaar op",
+      "nieuwType": "Eigenaar",
+      "subject": "Vondstaanslag",
+      "toekenningen": [
+        {
+          "node": "Toekenning",
+          "attribuut": "registratiezone",
+          "waarde": {
+            "node": "AttribuutRef",
+            "attribuut": "registratiezone",
+            "objecttype": "Vondstaanslag",
+            "onderwerpBron": "de registratiezone",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "de registratiezone",
+            "set": false,
+            "navigatiePad": []
+          },
+          "kenmerk": false
+        }
+      ],
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      },
+      "verbindendeRol": {
+        "node": "RolBinding",
+        "feittype": "Vondstaanslag_eigenaar",
+        "rol": "eigenaar"
+      }
+    }
+  ],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": [],
+  "defaultLadders": [
+    {
+      "node": "DefaultLadder",
+      "naam": "heffing",
+      "onderwerp": "Vondstaanslag",
+      "kenmerk": null,
+      "attribuut": "heffing",
+      "rungs": [
+        {
+          "node": "Rung",
+          "besluit": null,
+          "voorwaarde": {
+            "node": "Kenmerk",
+            "kenmerk": "overzees",
+            "navigatie": "eigenaar",
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "de eigenaar is overzees",
+            "navigatieBinding": {
+              "node": "RolBinding",
+              "feittype": "Vondstaanslag_eigenaar",
+              "rol": "eigenaar"
+            }
+          },
+          "consequentie": {
+            "node": "Binair",
+            "op": "MAAL",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "vondstwaarde",
+              "objecttype": "Vondstaanslag",
+              "onderwerpBron": "de vondstwaarde",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de vondstwaarde",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "2",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "2"
+            },
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": null
+          },
+          "bron": "heffing"
+        },
+        {
+          "node": "Rung",
+          "besluit": null,
+          "voorwaarde": {
+            "node": "Samengesteld",
+            "kwantor": "ALLE",
+            "drempel": 0,
+            "onderdelen": [],
+            "bron": "altijd"
+          },
+          "consequentie": {
+            "node": "AttribuutRef",
+            "attribuut": "vondstwaarde",
+            "objecttype": "Vondstaanslag",
+            "onderwerpBron": "de vondstwaarde",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "de vondstwaarde",
+            "set": false,
+            "navigatiePad": []
+          },
+          "bron": "heffing"
+        }
+      ],
+      "bron": "heffing",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ]
+}

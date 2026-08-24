@@ -137,6 +137,16 @@ let () =
          the caller's fixpoint on the minted instance. Through the full
          differential (ref AND clingo) *)
       ("subscope.catala_en", [ "cases/subscope_70.json"; "cases/subscope_160.json" ]);
+      (* IR-SPEC ch. 4.1a/5, WF-053: a boolean OUTPUT of a declared subscope (a
+         callee characteristic) read as a VOORWAARDE lowers to a navigated
+         [Kenmerk] check over the synthesised back-link — the condition sibling
+         of the value-position navigated AttribuutRef, no new node. The exception
+         rung's guard reads `overzees` of the minted eigenaar over the back-link;
+         overseas doubles the heffing (registratiezone 200 → $6000), binnengaats
+         the base decides (zone 50 → $3000), both pinned against `catala
+         interpret`. Through the full differential (ref AND clingo) *)
+      ("overzeelezing.catala_en",
+       [ "cases/overzee_hoog.json"; "cases/binnengaats.json" ]);
       (* besluit 6: a context (reentrant) subscope input lowered to a generated
          top rung above the callee's own ladder (PHASE5-CATALA decision 6,
          Reading B). The caller's override rides above the callee's own default

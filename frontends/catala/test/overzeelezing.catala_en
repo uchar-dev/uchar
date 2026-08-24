@@ -1,0 +1,31 @@
+# Genavigeerde kenmerk-lezing in conditie-positie (IR-SPEC ch. 4.1a/5, WF-053)
+
+A boolean OUTPUT of a declared subscope — a characteristic on the callee —
+read as a VOORWAARDE lowers to a navigated `Kenmerk` check over the
+synthesised back-link (the condition sibling of the value-position
+navigated `AttribuutRef`; no new node). The exception rung's guard reads
+`overzees` of the minted `eigenaar` instance over the `Vondstaanslag_eigenaar`
+back-link. Both executors carry the navigated check (anchor
+jutterswet-kustwacht). Own-authored, rights-free.
+
+```catala
+declaration scope Eigenaar:
+  input registratiezone content integer
+  output overzees content boolean
+
+scope Eigenaar:
+  definition overzees equals registratiezone > 100
+
+declaration scope Vondstaanslag:
+  input vondstwaarde content integer
+  input registratiezone content integer
+  eigenaar scope Eigenaar
+  output heffing content integer
+
+scope Vondstaanslag:
+  definition eigenaar.registratiezone equals registratiezone
+  definition heffing equals vondstwaarde
+  exception definition heffing
+    under condition eigenaar.overzees
+    consequence equals vondstwaarde * 2
+```

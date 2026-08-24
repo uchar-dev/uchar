@@ -473,7 +473,8 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
     ~(read_var : operand:bool -> in_body:bool -> ScopeVar.t M.pos -> I.expr)
     ~(check_var : in_body:bool -> ScopeVar.t M.pos -> I.conditie)
     ~(lookup_var : ScopeVar.t -> I.datatype option)
-    ~(read_subscope_output : ScopeVar.t -> StructField.t -> I.expr option) =
+    ~(read_subscope_output : ScopeVar.t -> StructField.t -> I.expr option)
+    ~(check_subscope_output : ScopeVar.t -> StructField.t -> I.conditie option) =
   (* an EAbs (a fold/map/filter operand or a function) -> its bound variables,
      their declared types, and its body *)
   let lambda_of e =
@@ -938,6 +939,22 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
         | Op.Or, [ a; b ] ->
             Samengesteld { kwantor = Ten_minste; drempel = 1; onderdelen = [ cond_expr ~in_body ~in_let ~env a; cond_expr ~in_body ~in_let ~env b ]; bron = Some "of" }
         | o, _ -> refuse "operator %S not supported in a condition" (Operator.name o))
+    | EStructAccess { e = inner; field; _ } -> (
+        (* the navigated leaf-read in CONDITION position (IR-SPEC ch. 4.1a/5,
+           WF-053): a boolean output of a declared subscope instance read as a
+           voorwaarde lowers to a navigated [Kenmerk_check] over the synthesised
+           back-link — the condition sibling of the value-position
+           [read_subscope_output], symmetric to the plain [check_var]. Only a
+           declared subscope instance carries this image; a non-subscope
+           struct-field condition (a boolean record field, or the value-position
+           boolean read of besluit 4-A) has none and falls to the loud refusal. *)
+        match
+          match M.remove (strip inner) with
+          | ELocation (ScopelangScopeVar { name = sv }) -> check_subscope_output (M.remove sv) field
+          | _ -> None
+        with
+        | Some c -> c
+        | None -> refuse "condition shape not supported in the 5a skeleton")
     | _ -> refuse "condition shape not supported in the 5a skeleton"
   in
   (value_expr, cond_expr)
@@ -1114,6 +1131,49 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
                navigatie_bindingen =
                  Some [ { rb_feittype = subscope_feittype v; rb_rol = callee_role } ] })
   in
+  (* a declared subscope's per-field output read in CONDITION position (IR-SPEC
+     ch. 4.1a/5, WF-053): an [EStructAccess] on the instance variable whose
+     callee output field is BOOLEAN — a characteristic on the callee — lowers to
+     a navigated [Kenmerk_check] over the same synthesised back-link the
+     value-position read navigates. A non-boolean output field read as a
+     condition, and the multi-state flank, refuse exactly as the value-position
+     read does. *)
+  let check_subscope_output v (field : StructField.t) : I.conditie option =
+    match ScopeVar.Map.find_opt v subscope_meta with
+    | None -> None
+    | Some (scope, _args, out_struct) ->
+        let callee_type = ScopeName.base scope in
+        let fld_name = StructField.to_string field in
+        if List.mem fld_name (callee_multistate scope) then
+          refuse
+            "subscope output %S of %S is a multi-state variable: its states lower to distinct \
+             internal attributes (one per state) and there is no single output characteristic for \
+             the caller's condition read — refused (multi-state subscope output)"
+            fld_name callee_type;
+        let fld_ty =
+          match
+            Option.bind (StructName.Map.find_opt out_struct structs)
+              (StructField.Map.find_opt field)
+          with
+          | Some ty -> catala_dt enums structs ty
+          | None ->
+              refuse "subscope output field %S is not declared on callee %S" fld_name callee_type
+        in
+        (match fld_ty with
+         | I.Booleaan -> ()
+         | _ ->
+             refuse
+               "non-boolean subscope output %S of %S read as a condition: only a boolean output (a \
+                callee characteristic) lowers to a navigated Kenmerk check"
+               fld_name callee_type);
+        let callee_role = subscope_callee_role v in
+        let bron = Printf.sprintf "de %s is %s" (M.remove (ScopeVar.get_info v)) fld_name in
+        Some
+          (Kenmerk_check
+             { kenmerk = Some fld_name; navigatie = Some callee_role; negatie = false;
+               eigenaar = None; periode = None; bron = Some bron;
+               navigatie_binding = Some { I.rb_feittype = subscope_feittype v; rb_rol = callee_role } })
+  in
   (* variables that are always filled: inputs (the case dossier fulfils
      Catala's input contract) or variables carrying an unconditional rung
      (a base default that always decides). Only these are admitted as
@@ -1240,6 +1300,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   let lookup_var v = try Some (snd (lookup v)) with Not_found -> None in
   let value_expr, cond_expr =
     make_exprs ~enums ~structs ~functions ~read_var ~check_var ~lookup_var ~read_subscope_output
+      ~check_subscope_output
   in
   (* besluit 6: the value/condition walk that lowers a caller override into a
      top rung on the callee ladder. Same walk as the scope's own, but every
@@ -1258,7 +1319,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
           { kenmerk = Some k; navigatie = Some rol; negatie = false; eigenaar = None;
             periode = None; bron = Some k;
             navigatie_binding = Some { I.rb_feittype = feittype; rb_rol = rol } })
-      ~lookup_var ~read_subscope_output
+      ~lookup_var ~read_subscope_output ~check_subscope_output
   in
   (* condition option: [true] is unconditional -> None (for plain rules) *)
   let cond_opt e = if is_true e then None else Some (cond_expr e) in
@@ -1553,6 +1614,7 @@ let topdef_functions enums structs functions topdefs : I.function_def list =
         refuse "WF-067: a closed top-level function body may not read a scope characteristic")
       ~lookup_var:(fun _ -> None)
       ~read_subscope_output:(fun _ _ -> None)
+      ~check_subscope_output:(fun _ _ -> None)
   in
   List.map
     (fun (name, (e, _typ, _vis, _ext)) ->
