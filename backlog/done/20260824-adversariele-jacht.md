@@ -187,3 +187,22 @@ aanbeveling. Een BinderRef-only fix zou de parallelle
 AttribuutRef-onder-additief-lacune open hebben gelaten.
 
 `scripts/check-noop.sh` NIET aangeraakt.
+
+Result: de eerste jachtsessie vond géén stille ref↔clingo-divergentie
+— de fail-fast-architectuur hield stand: elke niet-encodeerbare vorm
+faalt luid, en de verdachte formules (round_z, de gesplitste
+geldvermenigvuldiging, de cent-afronding) bleken bewijsbaar gelijk.
+Wel één echte verifier-lacune: BinderRef.type wordt niet tegen het
+binder-datatype gekruist (de kruiscontrole die AttribuutRef wél
+heeft) — een soort-leugen op een genest BinderRef-blad is
+verifier-schoon, ref rekent door, clingo fault luid: de
+vierkant-invariant splitst. Omdat de verifier beschermd pad is, is
+dat een kaartvoorstel geworden
+(backlog/new/20260824-binderref-type-crosscheck.md), geen eigen
+wijziging. Elk onderzocht spoor staat in de kaart, ook de lege. De
+lensronde ving tweemaal dezelfde documentaire misattributie
+(WF-023-benaming), verwerkt. Open, geregistreerd: de genavigeerde
+boolean-kenmerk-init is ref-uitvoerbaar maar clingo-geweigerd (luid,
+in-code erkend) — een geauthorde getuige zou de asymmetrie pinnen;
+en de vraag of de BinderRef-check ook decimalen moet kruisen hoort
+bij het kaartvoorstel.
