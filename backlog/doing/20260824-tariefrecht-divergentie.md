@@ -22,3 +22,60 @@ spec/proposals/PHASE5D-DIFF.md, spec/CONSTRUCTS.md (UITSLUITEND rij
 8), scripts/check-noop.sh (survivor-lijst, alleen indien nodig),
 backlog/. Out of scope: elke normatieve IR-SPEC/RS-wijziging;
 frontends/; backends/.
+
+## Voortgang (2026-08-24)
+
+Inventaris. `jutterswet-tariefrecht-catala` pinde drie cases
+(basistarief/grootgezin/vrijstelling) die stuk voor stuk **hooguit
+één** sub-uitzondering raken — de ongeordende `Rung.excepties`-groep
+(grootgezin 10 % / kleine beurs 0 %) zat wél in de IR maar bleef
+onbeproefd; er was nog géén conflict-case. `anchor/jutterswet-toelagegronden`
+pint de ongeordende top-level groep met het §9.5-conflictpad
+(case3-conflict: visser+wachter → `attributeEmpty toelage` +
+`inconsistent Jutter.toelage`). PHASE5D-DIFF §1/§6 hield `tariefrecht`
+bewust buiten het penningrecht-paar en noemde de scherpe flank (twee
+ongeordend-verschillend-besluitende uitzonderingen) "out of scope …
+awaits a fragment that can carry it honestly".
+
+Gedicht.
+1. **Conflict-case** `case4-conflict.json` toegevoegd (overlap
+   kindertal=4 ∧ inkomen=8000). Catala-abort zelf geverifieerd via
+   `catala interpret` op een /tmp-#[test]-kopie (letterlijke
+   ConflictError in §8 geciteerd). ONZE uitkomst, beide executors:
+   `tarief` leeg, path-gesleuteld §9.5-feit `Penningplichtige.tarief/0`,
+   en `aanslag` lóst nog op tot 0.00 (MAAL coalescet de leeg-tarief naar
+   nul — niet-fataal, tegenover Catala's scope-abort). Rood-eerst:
+   eerst gepind op de naïeve `tarief=0.1000`+`consistent`; beide
+   executors wezen dat af.
+2. **v0-platte-vorm empirisch getoetst** (scratch: twee vlakke
+   `BEREKENING`-schrijvers op één niet-ladder-doel): verifier-clean,
+   maar **ref divergeert** (geen fixpoint, ch. 5.7) terwijl **clingo
+   stil multi-valued** (`tarief = [0;1000]`, `consistent`) — ref ≢
+   clingo, in géén corpus-zone toelaatbaar. De `ongeordend`-laddergroep
+   is dus de enige IR-vorm die deze over-determinatie met
+   executor-overeenstemming uitdrukt, geen suiker over vlakke regels.
+   Verfijnt §6's speculatie "silently last-writer-win".
+3. **PHASE5D-DIFF §8** geschreven (sluit de §6-grens; §6-bullet
+   vooruitverwezen) en de **CONSTRUCTS-rij-8-zin** toegevoegd.
+
+`scripts/check-noop.sh` NIET aangeraakt — de conflict-case faalt correct
+onder `--noop` (geen survivor). Geen normatieve wijziging; geen gedwongen
+maintainer-vraag (één latente, niet-blokkerende observatie in §8.2 voor de
+lens-ronde: moet de verifier twee verschillend-schrijvende vlakke doelen
+vóór het differentieelvierkant weigeren?).
+
+Alle negen gates groen in deze worktree:
+- 1 self-contained: PASS
+- 2 ir-schema: PASS (schema valid; 82 files validate + round-trip)
+- 3 verifier: PASS (82 golden clean; 138 negatief rejected)
+- 4 case-schema: PASS (215 case files validate)
+- 5 oracle: PASS (198 cases replayed exactly)
+- 6 clingo: PASS (198 cases replay exactly — ref = clingo)
+- 7 noop: PASS (174 refute; 24 pinned survivors)
+- 8 rood: PASS (17 red cases fault in both executors)
+- 9 catala: PASS (frontend suite 120 checks; 6 catala goldens regenerate
+  byte-identically — `tariefrecht-catala` ongewijzigd geregenereerd,
+  alleen een case toegevoegd)
+
+Rest vóór merge: twee opus-lenzen (acceptance) — buiten deze
+subagent-beurt.
