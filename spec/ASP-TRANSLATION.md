@@ -480,7 +480,17 @@ idempotence for free (re-deriving the same head is the same atom).
 `is_a(ocI(S),new) :- ⟨body⟩.`, member initialisations as
 `val(ocI(S),m,⟨term⟩)`/`heeft(ocI(S),m)`, and the back-link doubled
 in both directions (`rol(S,new_role,ocI(S))` and
-`rol(ocI(S),subj_role,S)`). The 1:1 input-snapshot narrowing guards
+`rol(ocI(S),subj_role,S)`). A **characteristic initialisation** deposits
+`heeft(ocI(S),m)`: the two boolean constants are the v0 form — `waar`
+an unconditional head, `onwaar` no head at all — and the WF-027
+relaxation (besluit 1) admits a boolean-typed **expression**, which
+*guards* the head on the SUBJECT (`heeft(ocI(S),m) :- ⟨body⟩,
+⟨bool atoms⟩`): a boolean is a characteristic in v0, so an own-subject
+boolean-attribute read is `heeft(S,a)` — present iff true, absent iff
+false, so the deposit fires exactly on true and the mark stays unset on
+false (closed-world, ref's reading; `translate_case` carries a boolean
+input attribute the same way — `heeft(label,a)` when true, absence when
+false). The 1:1 input-snapshot narrowing guards
 the creating body with `not inputrol(S,new_role,_)` — creation reads
 the *input* world, not the growing one (ch. 5.5). Recursive creation
 is budgeted: `depth(ocI(S),D+1) :- ⟨body⟩, depth(S,D), D <

@@ -2518,6 +2518,26 @@ let translate_regel ctx (r : resolved_regel) =
           | _ -> fault "rule kind not translated")
       | _ -> fault "unsupported rule target")
 
+(* a boolean-typed characteristic-initialisation EXPRESSION → the body atoms
+   that hold exactly when it is TRUE (WF-027 relaxation, besluit 1). A boolean
+   is a characteristic in v0 (booleans are characteristics), so an own-subject
+   boolean-attribute read is [heeft(S,a)] — present iff true, absent iff false
+   (closed-world, ref's reading). The boolean constant forms stay the v0 shape,
+   handled at the call site; this covers the expression form the tutorial's
+   navigated subscope input needs. *)
+let bool_atoms ctx ~subject ~subject_ot (e : expr) : string list =
+  ignore ctx;
+  match e with
+  | Attribuut_ref
+      { attribuut = Some a; objecttype = Some ot; navigatie_rol = None; navigatie_pad = [];
+        navigatie_bindingen = None; set = false; _ }
+    when norm ot = norm subject_ot ->
+      [ Printf.sprintf "heeft(%s,%s)" subject (str a) ]
+  | _ ->
+      fault
+        "a characteristic-initialisation expression here is an own-subject boolean attribute read \
+         (no corpus case for more)"
+
 (* object creation (IR-SPEC ch. 3.3; RUNTIME-SEMANTICS ch. 5.5): the
    created instance is a deterministic function term ocN(Subject) — set
    semantics carries the per-(rule × subject) idempotence, exactly
@@ -2601,7 +2621,16 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
         | Some (Literal { waarde = Some "waar"; _ }) ->
             head_body ctx (Printf.sprintf "heeft(%s,%s)" term (str m)) body
         | Some (Literal { waarde = Some "onwaar"; _ }) -> ()
-        | _ -> fault "characteristic initialisation of %S is not a boolean constant (WF-027)" m)
+        | Some e ->
+            (* WF-027 relaxation (besluit 1): a boolean-typed EXPRESSION guards
+               the deposit — evaluated on the creation SUBJECT (the same
+               caller-context as an attribute Toekenning, ref's closed-world
+               reading): true → the mark is set on the minted instance, false →
+               the guard fails and the mark stays unset (an absent init). The two
+               boolean-constant arms above are the v0 form, byte-for-byte. *)
+            let batoms = bool_atoms ctx ~subject ~subject_ot e in
+            head_body ctx (Printf.sprintf "heeft(%s,%s)" term (str m)) (body @ batoms)
+        | None -> fault "characteristic initialisation of %S without a value (WF-027)" m)
       else begin
         let target_scale = pow10 (attr_decimals ctx ~otype:nieuw ~attr:m) in
         units_identical_ok
@@ -3284,6 +3313,11 @@ let translate_case ctx (case : Case.t) =
       Eval.SMap.iter
         (fun aname v ->
           match v with
+          | Value.Bool b ->
+              (* a boolean attribute is a characteristic in v0 (booleans are
+                 characteristics): true → heeft/2, false → absence
+                 (closed-world), the [bool_atoms] read-shape on the case side *)
+              if b then emit ctx "heeft(%s,%s)." (str_raw label) (str aname)
           | Value.Ctor (tag, payload) ->
               (* ch. 9.4 case carriage: a sum-typed input value is a ground
                  constructor term, payload scaled by its declared payload

@@ -224,3 +224,30 @@ a boolean constant (WF-027)` op beide cases. Site:
 in ASP (evalueer de caller-context-boolean tot de `heeft/1`-hoofdguard) landen,
 naast de B2/B3-flanken. De golden staan gecommit (rood-eerst voor het
 clingo-been); gate 6 is NIET gedraaid als groen-eis in deze stap.
+
+## clingo kenmerk-init-expressie geland (besluit 1, executor-stap) (2026-08-24)
+
+De clingo-kant van de WF-027-verruiming: het kenmerk-deposit in
+`translate_object_creatie` wordt conditioneel op de vertaalde boolean-
+expressie, gelijk aan ref's gesloten-wereld-lezing. De twee
+boolean-constante-takken (`Literal "waar"`/`"onwaar"`) staan byte-voor-byte
+zoals ze waren; alleen de `_`-fallthrough van fault naar
+expressie-vertaling gesplitst.
+
+- `backends/clingo/lib/translate.ml`: nieuwe helper `bool_atoms` (een
+  boolean-getypte kenmerk-init-EXPRESSIE → de body-atomen die exact bij TRUE
+  gelden). Een boolean is een kenmerk in v0, dus een own-subject
+  boolean-attribuutlezing is `[heeft(S,a)]` — aanwezig iff waar. Het deposit
+  `heeft(ocI(S),m) :- <body>, <bool atoms>` vuurt op waar, blijft ongezet op
+  onwaar. De case-emissie draagt een boolean-INPUT-attribuut nu ook als
+  `heeft(label,a)` (waar) / afwezig (onwaar) — de `bool_atoms`-leesvorm aan de
+  case-kant (was: fault op `Value.Bool` via `scaled_of_value`).
+- `spec/ASP-TRANSLATION.md` S11: de kenmerk-init-expressievorm en de
+  boolean-attribuut-carriage gedocumenteerd (bestaande sectie uitgebreid).
+
+ROOD-EERST (letterlijke uitvoer, vóór de fix, beide cases):
+`TRANSLATION FAULT: characteristic initialisation of "overzees" is not a
+boolean constant (WF-027)`. NA de fix `clingo: PASS (2 expectations)` op beide.
+Gate 6 volledig groen (187 cases). Bijvangst: de boolean-attribuut-carriage in
+de case-emissie is een nieuwe representatie (booleans-als-kenmerk), vereist
+door het caller-boolean-attribuut van het rekenkamer-overzee-anker.
