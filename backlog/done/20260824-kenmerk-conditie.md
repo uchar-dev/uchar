@@ -153,3 +153,16 @@ dezelfde `I.Booleaan`-guard dekt hem. Geen aparte actie.
 De "Open flank" hierboven is hiermee gedicht: de waarde-positie-lezing
 van een boolean subscope-uitvoer wordt nu — net als de bare own-boolean
 read — luid geweigerd, in lijn met besluit 4-A.
+
+Result: de genavigeerde kenmerk-lezing in conditie-positie is geland
+via route A — geen nieuwe knoop: cond_expr lowert een boolean
+subscope-uitvoer gelezen als voorwaarde naar de genavigeerde
+Kenmerk-check over de gesynthetiseerde terugkoppeling (ch.
+4.1a/WF-053), rood-eerst vanaf de oude refusal. Fixtures en een
+eigen catala-golden onder gate 9, geijkt tegen catala interpret. De
+lensronde ving een echte MAJOR: de wáárde-positie-lezing van
+diezelfde boolean subscope-uitvoer glipte langs het besluit-4-A-hek
+(read_subscope_output emitteerde een bengelende AttribuutRef) — één
+wortel, gedicht: de waarde-positie weigert nu weer luid, met
+refuse-fixture; conditie-positie blijft de gedekte route. Alle negen
+gates groen na de fix.
