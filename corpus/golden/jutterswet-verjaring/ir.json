@@ -1,0 +1,179 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "peildatum": {
+          "node": "DatumInDagen"
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "verjaard",
+        "actueel"
+      ],
+      "kenmerkSoorten": {
+        "verjaard": "BIJVOEGLIJK",
+        "actueel": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "Kenmerktoekenning jutter verjaard",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "Kenmerktoekenning jutter actueel",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "Kenmerktoekenning jutter verjaard",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "verjaard",
+        "objecttype": "Jutter",
+        "onderwerpBron": "Een Jutter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Jutter is verjaard",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "EERDER",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "peildatum",
+          "objecttype": "Jutter",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "zijn peildatum",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "2000-01-01",
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "2000-01-01"
+        },
+        "periode": null,
+        "bron": "zijn peildatum eerder is dan 2000-01-01"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "Kenmerktoekenning jutter actueel",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "actueel",
+        "objecttype": "Jutter",
+        "onderwerpBron": "Een Jutter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Jutter is actueel",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "LATER_OF_GELIJK",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "peildatum",
+          "objecttype": "Jutter",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "zijn peildatum",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "2000-01-01",
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "2000-01-01"
+        },
+        "periode": null,
+        "bron": "zijn peildatum niet eerder is dan 2000-01-01"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

@@ -557,6 +557,16 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           let d = lexeme_decimals lex in
           let v = scaled_of_value ~decimals:d (Value.Num (Value.q_of_lexeme lex, Value.Unitless)) in
           ([], string_of_int v, pow10 d)
+      | Some Datum_in_dagen -> (
+          (* B2: a date literal in a term position is the civil day number,
+             scale 1 — the SAME representation the Rekendatum constant, a date
+             attribute read (val/3) and the point read use, so a date comparison
+             harmonises day numbers directly (no second date encoding). ref
+             faults date ARITHMETIC (numeric_ok gates the additive/multiplicative
+             families), so this only reaches comparison operands. *)
+          match Value.date_of_iso lex with
+          | Value.Date z -> ([], string_of_int z, 1)
+          | _ -> fault "malformed date literal %S" lex)
       | _ -> fault "non-numeric literal in a term position")
   | Parameter_ref { parameter; _ } ->
       let name = req "ParameterRef.parameter" parameter in

@@ -1,0 +1,35 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "peildatum": {
+            "date": "2005-03-20"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "J2",
+      "characteristic": "verjaard"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J2",
+      "characteristic": "actueel"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

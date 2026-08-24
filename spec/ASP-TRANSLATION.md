@@ -170,7 +170,14 @@ domain.
 
 Every value expression lowers to a triple ⟨body atoms, integer term,
 scale⟩ (`expr_term`). **Literal**: the scaled constant, scale from its
-lexeme's decimals. **Parameter reference**: body atom `param("p",P)`,
+lexeme's decimals; a **date literal** (`|2000-01-01|`) is its civil day
+number at scale 1 — the *same* encoding as a date attribute read
+(`val/3`), the point read and the Rekendatum constant, so a date
+comparison harmonises day numbers directly and needs no second date
+encoding (B2). ref faults date *arithmetic* (`numeric_ok` gates the
+additive/multiplicative families on both operands), so a date literal
+reaches comparison operands only; a text/enum/boolean literal in a term
+position still faults (S19). **Parameter reference**: body atom `param("p",P)`,
 term `P`; granular parameters are refused in scalar slots (ch. 3.3/8).
 **Attribute reference**: body atom `val(S,a,A)`; a *navigated*
 reference (ch. 5.8) chains one `rol/3` atom per to-one hop before the
@@ -1114,9 +1121,11 @@ gedurende condition shapes beyond WF-055; temporal
 totals over case-supplied full timelines, and non-year total
 granularity; `Begrensd` (clip/min-max) and rounded roots in term
 positions; a temporal attribute read in a scalar slot (ch. 3.3);
-non-numeric arithmetic operands and non-numeric literals in term
-positions (ref faults date arithmetic — day numbers must not silently
-compute); unscalable datatypes in the integer encoding (a
+non-numeric arithmetic operands (ref faults date arithmetic — day
+numbers must not silently compute) and a **text/enum/boolean literal in
+a term position** (a **date literal** now translates as its civil day
+number — B2, the S4 date-comparison sibling — so only the genuinely
+non-numeric literals fault here); unscalable datatypes in the integer encoding (a
 datatype-less *declaration* is since 2026-08-21 rejected by WF-059
 with the shared loader refusing its input as backstop — the fault
 here remains the last line for text/enum/boolean/dateTime operand

@@ -251,3 +251,28 @@ boolean constant (WF-027)`. NA de fix `clingo: PASS (2 expectations)` op beide.
 Gate 6 volledig groen (187 cases). Bijvangst: de boolean-attribuut-carriage in
 de case-emissie is een nieuwe representatie (booleans-als-kenmerk), vereist
 door het caller-boolean-attribuut van het rekenkamer-overzee-anker.
+
+## clingo B2 — datum-literaal in termpositie geland (besluit 2) (2026-08-24)
+
+Een datum-literaal (`|2000-01-01|`) in een termpositie vertaalt nu naar
+zijn burgerlijk dagnummer op schaal 1 — dezelfde representatie die een
+datum-attribuutlezing (`val/3`), de puntlezing en de Rekendatum-constante al
+gebruiken (geen tweede datumcodering). ref fault datum-REKENKUNDE
+(`numeric_ok` hekt de additieve/multiplicatieve families), dus dit raakt
+alleen vergelijkingsoperanden.
+
+- `backends/clingo/lib/translate.ml` (`expr_term` Literal): `Some Datum_in_dagen`
+  → `Value.date_of_iso` → `([], dagnummer, 1)` (de Rekendatum-tak-spiegel). De
+  tekst/enum/boolean-literalen in termpositie faulten nog steeds.
+- `spec/ASP-TRANSLATION.md` S4 (Literal-bullet) uitgebreid; de S19-regel
+  gesplitst (datum-literaal vertaalt nu; tekst/enum/boolean-literaal faultt nog).
+- Nieuwe golden `corpus/golden/jutterswet-verjaring/` (eigen-geschreven,
+  rechtenvrij): een Jutter is `verjaard` als `peildatum` eerder is dan
+  2000-01-01, `actueel` als niet-eerder — twee kenmerktoekenningen over een
+  datum-literaal-vergelijking (`<` en `>=`). case1 (1999-06-15 → verjaard),
+  case2 (2005-03-20 → actueel); beide kenmerken absoluut gepind door BEIDE
+  executors, beide noop-gerefuteerd (geen survivor).
+
+ROOD-EERST (letterlijk, vóór de fix): clingo `TRANSLATION FAULT: non-numeric
+literal in a term position`; ref `oracle: PASS` op beide. NA de fix clingo
+`PASS (3 expectations)` op beide, gate 6 volledig groen (189 cases).
