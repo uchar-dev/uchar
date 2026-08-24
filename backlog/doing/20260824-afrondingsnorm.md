@@ -99,3 +99,20 @@ Alle negen gates opnieuw groen:
 - check-noop: PASS (216 cases refute a do-nothing executor; 33 pinned survivors pin defeasible standing)
 - check-rood: PASS (17 red cases fault observably in both executors)
 - check-catala: PASS — frontend suite green (128 checks); 7 catala golden(s) regenerate byte-identically
+
+## Nagedraaide lens-bevinding (MINOR/PLAUSIBLE): de Match-arm-tak nu ook getuigd
+
+De laatste lens-bevinding merkte op dat de RS ch. 2.9-normzin de Match-arm-
+resultaattak (ch. 9.2) expliciet als tweede drager van een exacte, niet-
+terminerende tussenwaarde noemt, terwijl alleen de strikte-Let-tak machine-
+getuigd was (de `WV-2.9-let-*` asserts). Toegevoegd: `WV-2.9-match-arm-round`
+in `ref/test/test_ref.ml` (kaart-gesanctioneerde testaanraking — ref/test staat
+in de May-touch, hierbij expliciet gemeld). De witness bindt 100 ÷ 3 = 33,333…
+als payload van een `Toegekend`-construct, matcht het op de arm-binder `deel`
+(gedeclareerd op twee decimalen, net als de Let-binder erboven) en rondt pas op
+het eindpunt af door één `Afgerond` → 33,33; de gedeclareerde arm-binderschaal
+collabeert de tussenwaarde nooit. Rood-eerst gedraaid met een opzettelijk foute
+verwachting 33,30 (`FAIL WV-2.9-match-arm-round` / `1 failure(s)`), daarna
+gecorrigeerd naar 33,33. ref/test nu op 254 worked examples; alle negen gates
+opnieuw groen (self-contained, ir-schema 97, verifier 97/138, case-schema 266,
+oracle 249, clingo 249, noop 216/33, rood 17, catala 128/7).
