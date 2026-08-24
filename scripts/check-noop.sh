@@ -50,6 +50,13 @@
 #   - jutterswet-penningrecht-catala/case4-hardheidsgrens.json: a
 #     hardship ground does not waive the halved threshold — four
 #     finds stay short (the anchor's case4 reason, same corner)
+#   - jutterswet-penningrecht/case3-stilte.json: the RegelSpraak render
+#     of the same articles (the toolchain's two flat kenmerktoekenning
+#     rungs, not a ladder) — silence without a ground is the meaning,
+#     exactly as the hardheid anchor and the Catala render pin it.
+#   - jutterswet-penningrecht/case4-hardheidsgrens.json: the same
+#     halved-threshold corner on the RegelSpraak side — a hardship
+#     ground leaves four finds short, nothing is attributed.
 #   - jutterswet-hardheid/case4-hardheidsgrens.json: a decision does
 #     not waive the halved threshold — four finds stay short, nothing
 #     is attributed; the absence is the assertion.
@@ -114,6 +121,8 @@ corpus/golden/anchor/jutterswet-hardheid/case3-stilte.json
 corpus/golden/anchor/jutterswet-hardheid/case4-hardheidsgrens.json
 corpus/golden/jutterswet-penningrecht-catala/case3-stilte.json
 corpus/golden/jutterswet-penningrecht-catala/case4-hardheidsgrens.json
+corpus/golden/jutterswet-penningrecht/case3-stilte.json
+corpus/golden/jutterswet-penningrecht/case4-hardheidsgrens.json
 corpus/golden/anchor/jutterswet-borgdeel/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-dagentelling/case3-leeg.json
 corpus/golden/anchor/jutterswet-dagentelling/case4-input-blijft.json

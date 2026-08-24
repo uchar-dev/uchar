@@ -1,0 +1,16 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is penninggerechtigd kenmerk (bijvoeglijk);
+    is hardheid toegepast kenmerk (bijvoeglijk);
+    het aantal aangemelde vondsten Numeriek (niet-negatief geheel getal);
+
+Regel penninggerechtigd bij drempel
+    geldig altijd
+        Een Jutter is penninggerechtigd
+        indien zijn aantal aangemelde vondsten groter of gelijk is aan 12.
+
+Regel penninggerechtigd bij hardheid
+    geldig altijd
+        Een Jutter is penninggerechtigd
+        indien hij aan alle volgende voorwaarden voldoet:
+        - hij is hardheid toegepast
+        - zijn aantal aangemelde vondsten is groter of gelijk aan 6.
