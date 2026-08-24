@@ -155,3 +155,32 @@ de plugin-suite + de byte-identieke corpus-regeneratie ongewijzigd, want de
 afronding raakt `frontends/catala/` noch `corpus/golden/` niet.
 
 Open vóór de merge: twee opus-lenzen op het diff-document.
+
+Result: de frontend-diff-oefening is uitgevoerd en gedocumenteerd
+(spec/proposals/PHASE5D-DIFF.md); daarmee staat PLAN §6 Phase 5 op
+"Met" met beide getuigen. Het paar: Jutterswet art. 3 jo. 5
+(penningrecht/hardheid) — de toolchain-kant nieuw geschreven als
+emitter-golden corpus/golden/jutterswet-penningrecht (bron.rgs +
+ir.json byte-identiek reproduceerbaar, vijf cases die de
+catala-golden één-op-één spiegelen, twee reden-dragende
+no-op-survivor-pins), naast de bestaande
+jutterswet-penningrecht-catala. De vorm-diff: de toolchain emitteert
+twee platte KENMERKTOEKENNING-regels zonder defaultLadders-sleutel;
+de plugin één ladder met drie sporten — en de structurele
+classificatie leverde géén categorie-(iii)-ontwerpfout: elk verschil
+is administratief of een getrackte v0↔v1-delta (CONSTRUCTS rijen
+8/2/7). Eén besluit-vrije observatie is op rij 8 vastgelegd
+(meervoudige gelijk-waardige kenmerktoekenningen blijven native —
+ordevrij en conflictvrij door monotone idempotentie). De lensronde
+(twee opus-lenzen, empirisch) bevestigde de gelijkheidsclaim op tien
+extra flanken (leeg, negatief, grenzen, de overlap) over beide
+vormen × beide executors, en de teken-benignclaim op negatieve
+invoer; twee documentaire MINORs zijn vóór de merge verwerkt (de te
+sterke wrapper-only-formulering; verweesde pre-rebase-hashes in het
+recept). Bleef bewust liggen, met naam genoemd in het document: het
+werkelijk divergente geval — ongeordende, verschillend besluitende
+uitzonderingen (tariefrecht's ConflictError) — is buiten dit paar
+gehouden om de vorm-diff niet met een semantische divergentie te
+vervuilen; dáár kan een echte vormfout nog schuilen. Eén fragment
+bewijst geen volledigheid; de oefening is een steekproef op de
+kern-defeasibility, geen dekkingsclaim.
