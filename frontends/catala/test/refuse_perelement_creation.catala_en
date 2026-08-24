@@ -1,0 +1,34 @@
+# Per-element callee with own object creation — refused (besluit 1-A weiger-grens)
+
+The functie-route lowers a PURE callee. `KamerCreatie` is impure: it declares a
+subscope of its own (`inner scope Inner`) and so mints its own instance — an own
+object creation the list-position identity cannot carry. Refused per element;
+Direction B (real per-element instances) is deferred (2026-08-24).
+
+```catala
+declaration scope Inner:
+  input x content integer
+  output y content integer
+
+scope Inner:
+  definition y equals x + 1
+
+declaration scope KamerCreatie:
+  input grondslag content integer
+  inner scope Inner
+  output bedrag content integer
+
+scope KamerCreatie:
+  definition inner.x equals grondslag
+  definition bedrag equals inner.y
+
+declaration scope Aanslag:
+  input grondslagen content list of integer
+  output totaal content integer
+
+scope Aanslag:
+  definition totaal equals
+    combine all b
+      among (map each g among grondslagen to (output of KamerCreatie with { -- grondslag: g }).bedrag)
+      in acc initially 0 with (acc + b)
+```

@@ -188,7 +188,17 @@ let () =
          unique — without the mangling they collide on WF-020 (the lens flank).
          One case pins both scopes' chains ($100 → 90 for Eerste, → 80 for
          Tweede), calibrated against `catala interpret`. Full differential *)
-      ("states_twoscope.catala_en", [ "cases/states_twoscope.json" ]) ]
+      ("states_twoscope.catala_en", [ "cases/states_twoscope.json" ]);
+      (* besluit 1-A (2026-08-24): the per-element subscope call's functie-route.
+         The tutorial-2-4 shape [map each g among xs to (S of {…}).f] over a
+         PURE-FUNCTION callee lowers S to a FunctionDef (row 10) and the map body
+         to [MapList(xs, λg. Invoke(S, g))] — no instance, no creation key (the
+         per-element identity is the list position, clingo's lelem index). Here
+         `Kamer` is pure (one output, plain total base, an ADDITIVE body), and
+         the caller folds the mapped list to a SCALAR — the covered, triple-green
+         form. grondslagen [1;2;3] -> each +100 -> sum 306, through the full
+         differential (ref AND clingo) *)
+      ("subscope_perelement.catala_en", [ "cases/perelement_drie.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:false src cases) passing;
   (* ref-only passing programs. datum: clingo cannot translate a date literal
@@ -218,15 +228,31 @@ let () =
       ("refuse_context_branching.catala_en", "branching tree");
       ("refuse_context_owndefault.catala_en", "root-level unordered own default");
       (* PHASE5C-TUTORIAL §3 subscope flanks — declared subscopes lower
-         (subscope.catala_en), but four shapes stay refused, each loudly:
-         the inline/anonymous call (2-1), the per-element call (2-4), a
-         whole-struct output read, and a subscope reading a callee's
-         multi-state output (a standalone state chain now lands as sugar —
-         states.catala_en — only the bare cross-scope output read has no image) *)
+         (subscope.catala_en), and the per-element PURE-FUNCTION call now lowers
+         too (subscope_perelement.catala_en, besluit 1-A), but these shapes stay
+         refused, each loudly: the inline/anonymous call (2-1), a whole-struct
+         output read, and a subscope reading a callee's multi-state output (a
+         standalone state chain now lands as sugar — states.catala_en — only the
+         bare cross-scope output read has no image) *)
       ("refuse_subscope.catala_en", "subscope");
-      ("refuse_subscope_perelement.catala_en", "per-element");
       ("refuse_subscope_wholestruct.catala_en", "whole struct");
       ("refuse_subscope_multistate.catala_en", "multi-state");
+      (* besluit 1-A weiger-grens — the per-element functie-route lowers only a
+         PURE callee; four impure shapes refuse loudly per element, one fixture
+         each: own object creation (a callee subscope of its own), a non-input
+         read (an internal/output variable in the body), an unordered/conflict
+         exception-group output (no single closed body), and multiple outputs
+         (the FieldAccess-on-StructLiteral form, deferred: no clingo image) *)
+      ("refuse_perelement_creation.catala_en", "own object creation");
+      ("refuse_perelement_noninput.catala_en", "non-input read");
+      ("refuse_perelement_conflict.catala_en", "unordered/conflict exception group");
+      ("refuse_perelement_multioutput.catala_en", "multi-output");
+      (* the honest attempt at the REAL Catala-book tutorial 2-4: its
+         `shares_of_household_tax` maps to a WHOLE callee output (a list of
+         instances, Direction B), refused at the whole-struct read — the first of
+         several walls the header enumerates (own creation, non-input read,
+         multiplicative body, multi-output). Direction B stays deferred *)
+      ("refuse_tutorial_end_2_4.catala_en", "whole struct");
       (* a shared non-trivial base under all members of a root-level unordered
          group stays refused (PHASE4-DEFAULTS §7; nested groups carry
          below-root branching, not this) *)

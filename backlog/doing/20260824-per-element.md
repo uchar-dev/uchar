@@ -27,3 +27,38 @@ spec/proposals/, scripts/check-noop.sh (alleen indien nodig),
 backlog/. GEEN spec/CONSTRUCTS.md. Out of scope: ref/, backends/,
 spec/IR-SPEC.md, spec/RUNTIME-SEMANTICS.md, spec/verifier/,
 spec/schema/.
+
+## Uitgevoerd (2026-08-24)
+
+De functie-route is geïmplementeerd en alle negen gates zijn groen.
+Wat er landde:
+
+- **translate.ml.** Een inline `EScopeCall` in een map-lambda-body
+  (`in_body`-gepoort) lowert een ZUIVERE-FUNCTIE-callee naar een
+  `FunctionDef` (rij-10-machinerie) en de map-body naar
+  `Invoke(callee, …)` — geen instantie, geen creatie-sleutel. De
+  zuiverheidsanalyse (`scope_to_function_def`) weigert luid: eigen
+  creatie, niet-input-reads, ongeordende-/conflict-groep-outputs,
+  meervoudige outputs (de FieldAccess-op-StructLiteral-vorm, uitgesteld:
+  geen clingo-beeld). Een bare inline-aanroep in een regelwaarde
+  (2-1-vorm) blijft geweigerd. De duale lowering + Direction-B-deferral
+  staat als Decided-sectie §3a in `spec/proposals/PHASE5C-TUTORIAL.md`.
+- **Groene fixture.** `subscope_perelement.catala_en` (map→fold naar een
+  scalar, additieve body) drievoudig-groen door verifier+ref+clingo.
+- **Corpus-golden.** `corpus/golden/jutterswet-kamerheffing-catala`
+  (art. 14, eigen auteurschap, rechtenvrij) door de volle gate-set,
+  byte-identiek regenererend onder gate 9.
+- **Refuse-fixtures.** `refuse_perelement_{creation,noninput,conflict,
+  multioutput}` voor de weiger-grens; `refuse_tutorial_end_2_4` — de
+  eerlijke poging op de echte boekpagina (herkomst + Apache-2.0 in de
+  header) met een precies blokkade-rapport (whole-struct-lezing als
+  eerste muur, daarboven eigen creatie / niet-input-read / multiplicatie
+  / multi-output). De oude blanket `refuse_subscope_perelement` is
+  vervangen.
+
+Twee muren gehonoreerd (additieve body; map→fold naar scalar). Rood-eerst
+vastgelegd: de oude per-element-refusal luidde letterlijk `refused: inline
+subscope call (reading a subscope output of an anonymous instance): only
+declared subscopes lower … per-element/inline calls are out of scope`.
+
+Open: de twee opus-lenzen vóór merge (orchestratie parent).

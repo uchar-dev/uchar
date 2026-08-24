@@ -1,0 +1,38 @@
+# Jutterswet, artikel 14 — de kamerheffing
+
+Art. 14 (kamerheffing). Een jutter die over meer vondsten verschuldigd is,
+betaalt per vondst een kamerbedrag. Het kamerbedrag is de grondslag van de
+vondst, vermeerderd met het vaste kamerrecht van honderd gulden. De
+kamerheffing is de som van de kamerbedragen over alle grondslagen.
+
+Modelleringsnotitie (besluit 1-A, 2026-08-24, de per-element functie-route).
+Het kamerbedrag hangt uitsluitend af van één invoer — de grondslag — via een
+gesloten, totale, additieve regel: `Kamerbedrag` is een ZUIVERE FUNCTIE. De
+aanslag roept die functie per grondslag aan
+(`map elke g … tot (Kamerbedrag met {grondslag = g}).bedrag`); die per-element
+aanroep lowert niet naar een instantie maar naar een `FunctionDef` plus een
+`Invoke` in de map-body (rij-10-machinerie). Er is geen gemunte instantie en
+geen creatie-sleutel: de per-element-identiteit is de lijstpositie (in clingo
+de bestaande `lelem`-indexreïficatie). De gemapte lijst wordt tot een SCALAR
+gevouwen — de gedekte, drievoudig-groene vorm; een als lijst opgeslagen
+uitvoer heeft geen clingo-beeld, en de additieve body blijft binnen clingo's
+gesloten-body +/- hek (S15). Eigen auteurschap, rechtenvrij.
+
+```catala
+declaration scope Kamerbedrag:
+  input grondslag content integer
+  output bedrag content integer
+
+scope Kamerbedrag:
+  definition bedrag equals grondslag + 100
+
+declaration scope Kamerheffing:
+  input grondslagen content list of integer
+  output heffing content integer
+
+scope Kamerheffing:
+  definition heffing equals
+    combine all b
+      among (map each g among grondslagen to (output of Kamerbedrag with { -- grondslag: g }).bedrag)
+      in acc initially 0 with (acc + b)
+```

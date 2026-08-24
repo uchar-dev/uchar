@@ -1,0 +1,33 @@
+# Per-element subscope call — the functie-route (besluit 1-A, 2026-08-24)
+
+The tutorial's 2-4 shape: a subscope call *per list element*
+(`map each g among … to (output of … with {…}).field`). Besluit 1-A lowers a
+PURE-FUNCTION callee to a FunctionDef (row-10 machinery) and the map body to
+`MapList(list, λg. Invoke(callee, …))` — no instance, no creation key; the
+per-element identity is the list position (clingo's `lelem` index reification).
+
+`Kamer` is a pure function here (one output, a plain total base, an ADDITIVE
+body, no own creation, no non-input reads), so `(Kamer of {grondslag=g}).bedrag`
+becomes `Invoke(Kamer, g)`. The map result is folded to a SCALAR — the covered,
+triple-green form (a list-STORED output attribute has no clingo image; an
+additive body stays inside clingo's closed-body +/- fence, S15). Own-authored,
+rights-free.
+
+```catala
+declaration scope Kamer:
+  input grondslag content integer
+  output bedrag content integer
+
+scope Kamer:
+  definition bedrag equals grondslag + 100
+
+declaration scope Aanslag:
+  input grondslagen content list of integer
+  output totaal content integer
+
+scope Aanslag:
+  definition totaal equals
+    combine all b
+      among (map each g among grondslagen to (output of Kamer with { -- grondslag: g }).bedrag)
+      in acc initially 0 with (acc + b)
+```

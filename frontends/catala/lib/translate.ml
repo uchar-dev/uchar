@@ -459,6 +459,26 @@ let base_is_filled e =
           | Group_rung _ -> false)
         rungs
 
+(* the per-element functie-route (besluit 1-A, 2026-08-24). The 2-4 shape
+   collapses at scopelang to a MapList over the list VALUE carrying an inline
+   [EScopeCall] in the lambda body — [map (λg → (S of {…}).f) xs]. When the
+   callee is a PURE FUNCTION (every output a plain chain expressible as a closed
+   IfThenElse/Let/Match body; no own object creation; no non-input reads; a
+   total base) it lowers to a FunctionDef (row-10 machinery) and the map body to
+   [MapList(xs, λg. Invoke(S, …))]. No instance, no creation key: the
+   per-element identity IS the list position (clingo's existing lelem index
+   reification). This record carries what the [EStructAccess]/[EScopeCall]
+   handler needs to build the [Invoke]: the synthesised FunctionDef name, the
+   callee input variables in FunctionDef parameter order (to line the call
+   arguments up), and the accessed output field datatype (the Invoke type). The
+   hook itself refuses the ratified weiger-grens loudly (own creation, non-input
+   reads, unordered/conflict-group outputs, multi-output). *)
+type per_element_meta = {
+  pem_fname : string;
+  pem_params : ScopeVar.t list;
+  pem_result_ty : I.datatype;
+}
+
 (* --- expression / condition translation --------------------------------
 
    [value_expr] and [cond_expr] are the same walk for a scope rule body and a
@@ -474,7 +494,8 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
     ~(check_var : in_body:bool -> ScopeVar.t M.pos -> I.conditie)
     ~(lookup_var : ScopeVar.t -> I.datatype option)
     ~(read_subscope_output : ScopeVar.t -> StructField.t -> I.expr option)
-    ~(check_subscope_output : ScopeVar.t -> StructField.t -> I.conditie option) =
+    ~(check_subscope_output : ScopeVar.t -> StructField.t -> I.conditie option)
+    ~(per_element_call : ScopeName.t -> StructField.t -> per_element_meta) =
   (* an EAbs (a fold/map/filter operand or a function) -> its bound variables,
      their declared types, and its body *)
   let lambda_of e =
@@ -594,7 +615,16 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
             let out_elt =
               match infer_dt ~env:env' body with
               | Some d -> d
-              | None -> refuse "cannot infer the element datatype of a map body"
+              | None ->
+                  (* the inference-blind shapes are all refusals: surface the
+                     body's OWN reason (e.g. a whole-struct per-element subscope
+                     read — the tutorial-2-4 [shares_of_household_tax] shape,
+                     mapping to a WHOLE callee output rather than one output
+                     field) rather than a generic inference message. Only ever
+                     reached on the refusal path, so no successful golden pays
+                     the extra translation. *)
+                  ignore (value_expr ~in_body:true ~in_let:false ~env:env' body);
+                  refuse "cannot infer the element datatype of a map body"
             in
             Map_list
               { typ = Some (List_type { element = out_elt });
@@ -697,12 +727,44 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
         | Some ir -> ir
         | None -> (
         match M.remove (strip inner) with
+        | EScopeCall { scope; args } when in_body ->
+            (* an inline subscope call [(output of S with {…}).f] INSIDE a
+               lambda/map body — the ratified per-element 2-4 shape (besluit
+               1-A). [in_body] is exactly the gate: the ratified form is an
+               inline [EScopeCall] in the MAP LAMBDA body, so a bare inline call
+               in a rule value (the tutorial-2-1 shape) is not this route and
+               falls to the refusal below. When the callee S is a PURE FUNCTION
+               it lowers to a FunctionDef and this read to an [Invoke] of it — no
+               instance, no creation key (the per-element identity is the list
+               position). [per_element_call] validates purity + synthesises the
+               FunctionDef (memoised) and refuses the weiger-grens loudly; here
+               we line the call arguments up with the FunctionDef parameters and
+               build the Invoke. A callee with an own creation, a non-input read,
+               an unordered/conflict-group output or multiple outputs refuses
+               inside the hook. *)
+            let pem = per_element_call scope field in
+            let arguments =
+              List.map
+                (fun iv ->
+                  match ScopeVar.Map.find_opt iv args with
+                  | Some (_, argexpr) -> value_expr ~operand:true ~in_body ~in_let ~env argexpr
+                  | None ->
+                      refuse
+                        "the per-element call to %S omits input %S: a pure-function callee needs every input supplied"
+                        pem.pem_fname (M.remove (ScopeVar.get_info iv)))
+                pem.pem_params
+            in
+            Invoke
+              { typ = Some pem.pem_result_ty; functie = pem.pem_fname; arguments;
+                bron = Some pem.pem_fname }
         | EScopeCall _ ->
-            (* an inline (anonymous) subscope call — [(output of S with {…}).f],
-               the tutorial-2-1 and the per-element 2-4 shape: an anonymous
-               instance per occurrence, which the creation-per-subject key
-               cannot carry. Only DECLARED subscopes are lowered (§3). Refused. *)
-            refuse "inline subscope call (reading a subscope output of an anonymous instance): only declared subscopes lower to object creation + role navigation (PHASE5C-TUTORIAL §3); per-element/inline calls are out of scope"
+            (* a bare inline subscope call in a rule value (NOT inside a lambda
+               body) — the tutorial-2-1 shape: an anonymous instance per
+               occurrence, which the creation-per-subject key cannot carry. Only
+               a DECLARED subscope lowers to object creation + navigation
+               (PHASE5C-TUTORIAL §3), and only a per-element call INSIDE a map
+               body lowers to the functie-route (besluit 1-A). Refused. *)
+            refuse "inline subscope call (reading a subscope output of an anonymous instance): only declared subscopes lower to object creation + role navigation (PHASE5C-TUTORIAL §3), and only a per-element call inside a map body lowers to the functie-route (besluit 1-A); a bare inline call is out of scope"
         | _ ->
             (* row-5c FieldAccess: [base] is a struct value; the node type is
                the field's declared datatype (WF-074). The empty-operand flag
@@ -987,6 +1049,7 @@ let ruled_vnames_of (sd : untyped Sc.scope_decl) : string list =
 let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (string * I.datatype) list)
     ~(ambiguous : string list) ~(top_rung_vars : ScopeName.t -> ScopeVar.Set.t)
     ~(callee_multistate : ScopeName.t -> string list)
+    ~(per_element_call : ScopeName.t -> StructField.t -> per_element_meta)
     (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
   let ot_name = ScopeName.base name in
   (* a rule/ladder name for [vname]: qualified by subject when [vname] produces a
@@ -1315,7 +1378,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   let lookup_var v = try Some (snd (lookup v)) with Not_found -> None in
   let value_expr, cond_expr =
     make_exprs ~enums ~structs ~functions ~read_var ~check_var ~lookup_var ~read_subscope_output
-      ~check_subscope_output
+      ~check_subscope_output ~per_element_call
   in
   (* besluit 6: the value/condition walk that lowers a caller override into a
      top rung on the callee ladder. Same walk as the scope's own, but every
@@ -1335,6 +1398,9 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
             periode = None; bron = Some k;
             navigatie_binding = Some { I.rb_feittype = feittype; rb_rol = rol } })
       ~lookup_var ~read_subscope_output ~check_subscope_output
+      ~per_element_call:(fun _ _ ->
+        refuse
+          "a per-element subscope call inside a caller override value/guard is not supported (besluit 6 override reads navigate the back-link; the per-element functie-route has no navigated form)")
   in
   (* condition option: [true] is unconditional -> None (for plain rules) *)
   let cond_opt e = if is_true e then None else Some (cond_expr e) in
@@ -1630,6 +1696,9 @@ let topdef_functions enums structs functions topdefs : I.function_def list =
       ~lookup_var:(fun _ -> None)
       ~read_subscope_output:(fun _ _ -> None)
       ~check_subscope_output:(fun _ _ -> None)
+      ~per_element_call:(fun _ _ ->
+        refuse
+          "WF-067: a closed top-level function body may not contain a per-element subscope call")
   in
   List.map
     (fun (name, (e, _typ, _vis, _ext)) ->
@@ -1653,6 +1722,155 @@ let topdef_functions enums structs functions topdefs : I.function_def list =
           refuse
             "a plain-value top-level definition (a constant, not a function) is refused until a case wants it (recorded)")
     (TopdefName.Map.bindings topdefs)
+
+(* the per-element functie-route (besluit 1-A, 2026-08-24): a callee scope that
+   is a PURE FUNCTION lowers to a closed FunctionDef, and a per-element call to
+   it becomes an [Invoke]. Purity is checked here and refused loudly otherwise
+   (the ratified weiger-grens): (1) no own object creation — the callee makes no
+   subscope call of its own; (2) exactly one output — the multi-output form is
+   the FieldAccess-on-StructLiteral shape, deferred (no clingo closed-body
+   image); (3) the output is an ordered plain-rung chain with a total base — an
+   unordered/conflict-group output refuses; (4) no non-input reads — every read
+   in the body resolves to one of the callee's inputs, mapped to the FunctionDef
+   parameter binder (a read of an internal/output variable refuses). Direction B
+   (real per-element instances) stays deferred. Returns the FunctionDef plus the
+   [per_element_meta] the call site needs to line the arguments up. *)
+let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
+    (functions : (string * I.datatype) list) (callee : ScopeName.t)
+    (sd : untyped Sc.scope_decl) (accessed : StructField.t) :
+    I.function_def * per_element_meta =
+  let cname = ScopeName.base callee in
+  (* (1) own object creation: any rule whose value is an [EScopeCall] *)
+  List.iter
+    (function
+      | Sc.ScopeVarDefinition { e; _ } -> (
+          match M.remove (strip e) with
+          | EScopeCall _ ->
+              refuse
+                "per-element callee %S creates its own subscope instance (own object creation): \
+                 refused per element — Direction B (real per-element instances) is deferred \
+                 (besluit 1-A, 2026-08-24)"
+                cname
+          | _ -> ())
+      | Sc.Assertion _ -> ())
+    sd.scope_decl_rules;
+  let sig_bindings = ScopeVar.Map.bindings sd.scope_sig in
+  let inputs =
+    List.filter_map
+      (fun (v, (sv : Sc.scope_var_ty)) ->
+        match M.remove sv.svar_io.Dio.io_input with
+        | Catala_runtime.OnlyInput -> Some v
+        | _ -> None)
+      sig_bindings
+  in
+  let outputs =
+    List.filter_map
+      (fun (v, (sv : Sc.scope_var_ty)) ->
+        if M.remove sv.svar_io.Dio.io_output then Some v else None)
+      sig_bindings
+  in
+  (* (2) exactly one output *)
+  let out_v =
+    match outputs with
+    | [ v ] -> v
+    | [] -> refuse "per-element callee %S declares no output to read" cname
+    | _ ->
+        refuse
+          "per-element callee %S declares %d outputs: the multi-output form lowers to a FieldAccess \
+           on a StructLiteral result, which has no clingo closed-body image yet — deferred flank \
+           (besluit 1-A, 2026-08-24)"
+          cname (List.length outputs)
+  in
+  let out_name = M.remove (ScopeVar.get_info out_v) in
+  if StructField.to_string accessed <> out_name then
+    refuse "the per-element call reads field %S but callee %S's single output is %S"
+      (StructField.to_string accessed) cname out_name;
+  let dt_of v = catala_dt enums structs (ScopeVar.Map.find v sd.scope_sig).svar_out_ty in
+  let out_dt = dt_of out_v in
+  let params = List.map (fun v -> (M.remove (ScopeVar.get_info v), dt_of v)) inputs in
+  let input_set =
+    List.fold_left (fun s v -> ScopeVar.Set.add v s) ScopeVar.Set.empty inputs
+  in
+  (* (4) the closed body: an input read -> its parameter binder; any other scope
+     read refuses (non-input read). No subscope image (creation already refused);
+     no nested per-element call. *)
+  let value_expr, cond_expr =
+    make_exprs ~enums ~structs ~functions
+      ~read_var:(fun ~operand:_ ~in_body:_ name ->
+        let v = M.remove name in
+        if ScopeVar.Set.mem v input_set then
+          let nm = M.remove (ScopeVar.get_info v) in
+          Binder_ref { naam = nm; typ = Some (dt_of v); bron = Some nm }
+        else
+          refuse
+            "per-element callee %S reads %S, which is not one of its inputs (non-input read): \
+             refused per element (weiger-grens)"
+            cname (M.remove (ScopeVar.get_info v)))
+      ~check_var:(fun ~in_body:_ name ->
+        refuse
+          "per-element callee %S reads %S as a bare condition: a pure-function body admits only \
+           numeric-comparison guards over inputs (no corpus case for a bare boolean-input condition)"
+          cname (M.remove (ScopeVar.get_info (M.remove name))))
+      ~lookup_var:(fun v -> if ScopeVar.Set.mem v input_set then Some (dt_of v) else None)
+      ~read_subscope_output:(fun _ _ -> None)
+      ~check_subscope_output:(fun _ _ -> None)
+      ~per_element_call:(fun _ _ ->
+        refuse
+          "per-element callee %S itself makes a per-element subscope call (nested per-element): \
+           refused — Direction B is deferred"
+          cname)
+  in
+  (* (3) the output default tree -> a closed IfThenElse body: an ordered chain of
+     [Plain] rungs (highest first) bottoming at a total base; an
+     unordered/conflict-group rung refuses. *)
+  let out_e =
+    match
+      List.find_map
+        (function
+          | Sc.ScopeVarDefinition { var; e; _ } when ScopeVar.equal (fst var) out_v -> Some e
+          | _ -> None)
+        sd.scope_decl_rules
+    with
+    | Some e -> e
+    | None -> refuse "per-element callee %S output %S has no definition" cname out_name
+  in
+  let rungs =
+    match parse_tree (strip out_e) with
+    | Some rs -> rs
+    | None ->
+        refuse
+          "per-element callee %S output %S is not a plain default chain (outside the closed-body \
+           fragment)"
+          cname out_name
+  in
+  let rec body_of = function
+    | [ Plain (just, cons) ] ->
+        if is_true just then value_expr ~in_body:true cons
+        else
+          refuse
+            "per-element callee %S output %S has no total base (its lowest rung is conditional): a \
+             pure function needs a total base"
+            cname out_name
+    | Plain (just, cons) :: rest ->
+        if is_true just then
+          refuse "per-element callee %S output %S: an unconditional rung shadows lower rungs" cname
+            out_name
+        else
+          let then_ = value_expr ~in_body:true cons in
+          If_then_else
+            { typ = ir_typ then_; condition = cond_expr ~in_body:true just; then_;
+              else_ = body_of rest; bron = None }
+    | (Form_a _ | Group_rung _) :: _ ->
+        refuse
+          "per-element callee %S output %S carries an unordered/conflict exception group: refused \
+           per element (weiger-grens; only an ordered plain chain lowers to a closed IfThenElse body)"
+          cname out_name
+    | [] -> refuse "per-element callee %S output %S has an empty rung chain" cname out_name
+  in
+  let body = body_of rungs in
+  ( { I.fd_naam = cname; fd_parameters = params; fd_result = out_dt; fd_body = body;
+      fd_bron = Some cname },
+    { pem_fname = cname; pem_params = inputs; pem_result_ty = out_dt } )
 
 (* --- driver ------------------------------------------------------------- *)
 
@@ -1738,13 +1956,33 @@ let file_to_document (input : string) : I.document =
   let callee_multistate sc =
     try ScopeName.Map.find sc multistate_map with Not_found -> []
   in
+  (* the per-element functie-route (besluit 1-A, 2026-08-24): a per-element
+     subscope call to a pure-function callee synthesises ONE FunctionDef per
+     callee scope, memoised here (a callee referenced from several map bodies
+     yields one FunctionDef, keyed by scope name) and appended to
+     [function_defs] below. The hook validates purity and refuses the
+     weiger-grens loudly. *)
+  let synth_fns : (ScopeName.t * (I.function_def * per_element_meta)) list ref = ref [] in
+  let per_element_call callee (field : StructField.t) : per_element_meta =
+    match List.find_opt (fun (n, _) -> ScopeName.equal n callee) !synth_fns with
+    | Some (_, (_, meta)) -> meta
+    | None ->
+        let sd =
+          match List.find_opt (fun (n, _) -> ScopeName.equal n callee) scopes with
+          | Some (_, decl) -> M.remove decl
+          | None -> refuse "per-element call to an unknown scope %S" (ScopeName.base callee)
+        in
+        let fd, meta = scope_to_function_def enums structs functions callee sd field in
+        synth_fns := (callee, (fd, meta)) :: !synth_fns;
+        meta
+  in
   let objecttypen = ref [] and regels = ref [] and ladders = ref [] and cons = ref [] in
   let feittypen = ref [] and creaties = ref [] and overrides = ref [] in
   List.iter
     (fun (name, decl) ->
       let ot_name, ot, rs, ls, cs, fts, ocs, ovs =
-        translate_scope enums structs functions ~ambiguous ~top_rung_vars ~callee_multistate name
-          (M.remove decl)
+        translate_scope enums structs functions ~ambiguous ~top_rung_vars ~callee_multistate
+          ~per_element_call name (M.remove decl)
       in
       objecttypen := (ot_name, ot) :: !objecttypen;
       regels := !regels @ rs;
@@ -1777,7 +2015,10 @@ let file_to_document (input : string) : I.document =
         if extra = [] then l else { l with rungs = extra @ l.rungs })
       !ladders
   in
-  let function_defs = topdef_functions enums structs functions prog.Sc.program_topdefs in
+  let function_defs =
+    topdef_functions enums structs functions prog.Sc.program_topdefs
+    @ List.rev_map (fun (_, (fd, _)) -> fd) !synth_fns
+  in
   (* the enums and structs actually referenced above become SumType/StructType
      domains, in declaration order (PHASE5B-KERNEL §2.7); the reduce lowering's
      Optional (built with the concrete element datatype) joins them when used. *)

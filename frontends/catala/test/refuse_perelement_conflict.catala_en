@@ -1,0 +1,26 @@
+# Per-element callee with an unordered/conflict-group output — refused
+
+Only an ordered plain-rung chain with a total base lowers to a closed
+IfThenElse body. `KamerConflict`'s output is a root-level unordered group of two
+OVERLAPPING conditions with no unconditional base — a conflict-bearing group, no
+single closed body. Refused per element (besluit 1-A weiger-grens).
+
+```catala
+declaration scope KamerConflict:
+  input grondslag content integer
+  output bedrag content integer
+
+scope KamerConflict:
+  definition bedrag under condition grondslag > 0 consequence equals grondslag + 1
+  definition bedrag under condition grondslag > 5 consequence equals grondslag + 2
+
+declaration scope Aanslag:
+  input grondslagen content list of integer
+  output totaal content integer
+
+scope Aanslag:
+  definition totaal equals
+    combine all b
+      among (map each g among grondslagen to (output of KamerConflict with { -- grondslag: g }).bedrag)
+      in acc initially 0 with (acc + b)
+```

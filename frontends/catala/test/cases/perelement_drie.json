@@ -1,0 +1,4 @@
+{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "A", "objectType": "Aanslag",
+      "attributes": { "grondslagen": { "list": [ { "number": "1" }, { "number": "2" }, { "number": "3" } ] } }, "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "attributeValue", "label": "A", "attribute": "totaal", "value": { "number": "306" } }, { "kind": "consistent" } ] }

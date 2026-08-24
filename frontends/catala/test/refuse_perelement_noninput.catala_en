@@ -1,0 +1,26 @@
+# Per-element callee with a non-input read — refused (besluit 1-A weiger-grens)
+
+A pure-function callee reads only its own inputs. `KamerNonInput`'s output reads
+`tarief`, an INTERNAL variable (neither an input nor the accessed output), which
+has no FunctionDef parameter to bind — a non-input read. Refused per element.
+
+```catala
+declaration scope KamerNonInput:
+  input grondslag content integer
+  internal tarief content integer
+  output bedrag content integer
+
+scope KamerNonInput:
+  definition tarief equals 100
+  definition bedrag equals grondslag + tarief
+
+declaration scope Aanslag:
+  input grondslagen content list of integer
+  output totaal content integer
+
+scope Aanslag:
+  definition totaal equals
+    combine all b
+      among (map each g among grondslagen to (output of KamerNonInput with { -- grondslag: g }).bedrag)
+      in acc initially 0 with (acc + b)
+```

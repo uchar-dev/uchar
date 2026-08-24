@@ -1,0 +1,29 @@
+# Per-element callee with multiple outputs — refused (deferred flank)
+
+A single-output callee lowers to a scalar-returning FunctionDef and a bare
+Invoke. The multi-output form (the ratified design's FieldAccess on a
+StructLiteral result) has no clingo closed-body image yet — a closed-body
+field-access-over-Invoke is outside clingo's grammar (S15) — so `KamerMulti`,
+which declares two outputs, is refused per element as a documented flank
+(besluit 1-A, 2026-08-24).
+
+```catala
+declaration scope KamerMulti:
+  input grondslag content integer
+  output bedrag content integer
+  output korting content integer
+
+scope KamerMulti:
+  definition bedrag equals grondslag + 100
+  definition korting equals grondslag + 5
+
+declaration scope Aanslag:
+  input grondslagen content list of integer
+  output totaal content integer
+
+scope Aanslag:
+  definition totaal equals
+    combine all b
+      among (map each g among grondslagen to (output of KamerMulti with { -- grondslag: g }).bedrag)
+      in acc initially 0 with (acc + b)
+```

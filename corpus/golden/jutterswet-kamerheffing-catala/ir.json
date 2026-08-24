@@ -1,0 +1,412 @@
+{
+  "functionDefs": [
+    {
+      "node": "FunctionDef",
+      "name": "Kamerbedrag",
+      "parameters": [
+        {
+          "name": "grondslag",
+          "datatype": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          }
+        }
+      ],
+      "result": {
+        "node": "Numeriek",
+        "geheel": true,
+        "decimalen": 0,
+        "teken": "ONBEPAALD",
+        "eenheid": null
+      },
+      "body": {
+        "node": "Binair",
+        "op": "PLUS",
+        "links": {
+          "node": "BinderRef",
+          "name": "grondslag",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "grondslag"
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "100",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "100"
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": null
+      },
+      "bron": "Kamerbedrag"
+    }
+  ],
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Kamerbedrag": {
+      "node": "Objecttype",
+      "naam": "Kamerbedrag",
+      "attributen": {
+        "grondslag": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bedrag": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": null
+    },
+    "Kamerheffing": {
+      "node": "Objecttype",
+      "naam": "Kamerheffing",
+      "attributen": {
+        "grondslagen": {
+          "node": "ListType",
+          "element": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          }
+        },
+        "heffing": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": null
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "berekening bedrag",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "bedrag",
+        "objecttype": "Kamerbedrag",
+        "onderwerpBron": "de bedrag",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de bedrag",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "PLUS",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "grondslag",
+          "objecttype": "Kamerbedrag",
+          "onderwerpBron": "de grondslag",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de grondslag",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "100",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "100"
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": null
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "berekening heffing",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "heffing",
+        "objecttype": "Kamerheffing",
+        "onderwerpBron": "de heffing",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de heffing",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Fold",
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "list": {
+          "node": "MapList",
+          "type": {
+            "node": "ListType",
+            "element": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          "list": {
+            "node": "AttribuutRef",
+            "attribuut": "grondslagen",
+            "objecttype": "Kamerheffing",
+            "onderwerpBron": "de grondslagen",
+            "navigatieRol": null,
+            "type": {
+              "node": "ListType",
+              "element": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              }
+            },
+            "bron": "de grondslagen",
+            "set": false,
+            "navigatiePad": []
+          },
+          "function": {
+            "node": "Lambda",
+            "parameters": [
+              {
+                "name": "g",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                }
+              }
+            ],
+            "body": {
+              "node": "Invoke",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "function": "Kamerbedrag",
+              "arguments": [
+                {
+                  "node": "BinderRef",
+                  "name": "g",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "g"
+                }
+              ],
+              "bron": "Kamerbedrag"
+            },
+            "bron": "g"
+          },
+          "bron": null
+        },
+        "function": {
+          "node": "Lambda",
+          "parameters": [
+            {
+              "name": "acc",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "b",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              }
+            }
+          ],
+          "body": {
+            "node": "Binair",
+            "op": "PLUS",
+            "links": {
+              "node": "BinderRef",
+              "name": "acc",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "acc"
+            },
+            "rechts": {
+              "node": "BinderRef",
+              "name": "b",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "b"
+            },
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": null
+          },
+          "bron": null
+        },
+        "init": {
+          "node": "Literal",
+          "waarde": "0",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "0"
+        },
+        "bron": null
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": [],
+  "defaultLadders": []
+}

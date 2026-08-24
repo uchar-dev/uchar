@@ -1,0 +1,36 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K",
+        "objectType": "Kamerheffing",
+        "attributes": {
+          "grondslagen": {
+            "list": [
+              { "number": "200" },
+              { "number": "400" }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "K",
+      "attribute": "heffing",
+      "value": {
+        "number": "800"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

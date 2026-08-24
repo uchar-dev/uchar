@@ -184,6 +184,72 @@ backstop. **The frontend-diff exit obligation is not discharged here**
 (that is card 5d); §3's landing discharges only the
 round-trips-and-executes half of the 5a exit criterion (PLAN §6).
 
+### 3a. The per-element subscope call — the functie-route. Decided (2026-08-24): 1-A, executed.
+
+The 2-4 fence above ("a subscope call per list element … refused until
+designed") is now lifted for the pure-function case, and the design
+below is ratified and executed.
+
+**The dual lowering, named explicitly.** A subscope call has TWO
+lowerings, chosen by how the caller consumes the callee:
+
+- **whole-instance call → object creation** (§3, landed 2026-08-24): a
+  *declared* subscope, one call per caller subject, collapses to a
+  `ResolvedObjectCreatie` of the callee type plus a `verbindendeRol`
+  back-link, its outputs read as navigated `AttribuutRef`s. The callee
+  is an *entity*; the per-subject creation key carries it.
+- **per-element call → function** (§3a, this decision): an *inline*
+  subscope call `(S of {…}).f` appearing INSIDE a map lambda body — the
+  2-4 shape, which collapses at scopelang to a `MapList` over the list
+  VALUE carrying the inline `EScopeCall` in the lambda body,
+  `map (λg → (S of {grondslag=g}).bedrag) grondslagen`. When the callee
+  `S` is a **pure function** it lowers to a `FunctionDef` (the row-10
+  machinery, DMN's BKM) and the map body to
+  `MapList(list, λg. Invoke(S, …))` — for multiple outputs a
+  `FieldAccess` on a `StructLiteral` result. **No instance, no creation
+  key: the per-element identity IS the list position** (clingo's existing
+  `lelem` index reification). The gate is `in_body` — the ratified form
+  is an inline `EScopeCall` in the *map lambda body*; a bare inline call
+  in a rule value (the tutorial-2-1 shape) is not this route and stays
+  refused.
+
+**Pure function, defined.** A callee `S` is pure iff: every output is a
+chain / plain-ladder expressible as a closed `IfThenElse`/`Let`/`Match`
+body; it makes **no own object creation** (no subscope of its own); it
+performs **no non-input reads** (every read resolves to one of `S`'s
+inputs, mapped to the `FunctionDef` parameter binder); and it has a
+**total base**. The body walk maps an input read to its parameter
+`BinderRef` and refuses any other scope read.
+
+**The weiger-grens (ratified), each a loud refuse-fixture.** Refused per
+element: a callee with an **own creation** (`refuse_perelement_creation`),
+a **non-input read** (`refuse_perelement_noninput`), an
+**unordered/conflict-group output** (`refuse_perelement_conflict`), and —
+the deferred flank — **multiple outputs** (`refuse_perelement_multioutput`),
+whose `FieldAccess`-on-`StructLiteral` form has no clingo closed-body
+image yet (a closed-body field-access-over-`Invoke` is outside clingo's
+grammar). **Direction B — real per-element instances (a callee that
+itself mints sub-instances) — is formally deferred.**
+
+**Two measured walls, honoured.** (1) A caller output attribute stored as
+a **list** fails clingo (`val/3` carries scalars); the covered form is
+`map → fold/length` to a **scalar**, and the list-stored form is the
+documented flank. (2) **Multiplication/division inside a closed body**
+fails clingo (S15: `+/-` only); fixture bodies are chosen **additive**,
+and a multiplicative callee is the documented flank. Both walls are why
+the golden folds an additive `map` to a scalar.
+
+**Witnesses.** The corpus Catala golden `jutterswet-kamerheffing-catala`
+(art. 14, own-authored, rights-free: `Kamerbedrag` a pure `grondslag +
+100`, `Kamerheffing` folding the per-element `Invoke` to a scalar)
+through the full gate set; `subscope_perelement.catala_en` through gate 9
+(plugin → verifier → ref → clingo); the five refuse-fixtures above; and
+the honest attempt at the real book page `refuse_tutorial_end_2_4` — its
+`shares_of_household_tax` maps to a **whole** callee output (a `list of`
+instances, Direction B), refused at the whole-struct read, upstream of
+its callee's own creation, non-input read, multiplicative body and
+multi-output (all enumerated in that fixture's header).
+
 ## 4. Design 3 — nested ladder groups (the ratified option i, executed)
 
 The additive wire form: an optional field **`excepties` on `Rung`** —
