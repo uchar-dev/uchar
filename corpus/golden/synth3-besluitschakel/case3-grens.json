@@ -1,0 +1,48 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "score": {
+            "number": "50.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "drempel": {
+        "number": "50.00"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "uitkomst",
+      "value": {
+        "constructor": "Toegewezen",
+        "payload": {
+          "number": "50.00"
+        }
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "bedrag",
+      "value": {
+        "number": "60.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

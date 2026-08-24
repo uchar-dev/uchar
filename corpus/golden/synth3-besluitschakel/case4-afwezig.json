@@ -1,0 +1,35 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "drempel": {
+        "number": "50.00"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J4",
+      "attribute": "uitkomst"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J4",
+      "attribute": "bedrag"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

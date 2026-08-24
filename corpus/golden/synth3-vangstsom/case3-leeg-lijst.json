@@ -1,0 +1,37 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "vangsten": {
+            "list": []
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "plafond": {
+        "number": "40.00"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "totaal",
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

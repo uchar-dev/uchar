@@ -1,0 +1,331 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "grondslag": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "heffing": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {
+    "drempel": {
+      "node": "Parameter",
+      "naam": "drempel",
+      "datatype": {
+        "node": "Numeriek",
+        "geheel": false,
+        "decimalen": 2,
+        "teken": "ONBEPAALD",
+        "eenheid": null
+      },
+      "granulariteit": null
+    },
+    "tarief": {
+      "node": "Parameter",
+      "naam": "tarief",
+      "datatype": {
+        "node": "Numeriek",
+        "geheel": false,
+        "decimalen": 3,
+        "teken": "ONBEPAALD",
+        "eenheid": null
+      },
+      "granulariteit": null
+    },
+    "basisheffing": {
+      "node": "Parameter",
+      "naam": "basisheffing",
+      "datatype": {
+        "node": "Numeriek",
+        "geheel": false,
+        "decimalen": 2,
+        "teken": "ONBEPAALD",
+        "eenheid": null
+      },
+      "granulariteit": null
+    }
+  },
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "heffing van een jutter",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "heffing van een jutter",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "heffing",
+        "objecttype": "Jutter",
+        "onderwerpBron": "De heffing van een Jutter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De heffing van een Jutter",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Let",
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "binder": "g",
+        "value": {
+          "node": "AttribuutRef",
+          "attribuut": "grondslag",
+          "objecttype": "Jutter",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "zijn grondslag",
+          "set": false,
+          "navigatiePad": []
+        },
+        "body": {
+          "node": "Let",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "binder": "ruw",
+          "value": {
+            "node": "Binair",
+            "op": "MAAL",
+            "links": {
+              "node": "BinderRef",
+              "name": "g",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "bron": "de grondslag"
+            },
+            "rechts": {
+              "node": "ParameterRef",
+              "parameter": "tarief",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 3,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "het tarief"
+            },
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 5,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "de grondslag maal het tarief"
+          },
+          "body": {
+            "node": "Let",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "binder": "volle",
+            "value": {
+              "node": "Afgerond",
+              "basis": {
+                "node": "BinderRef",
+                "name": "ruw",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 5,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "de grondslag maal het tarief"
+              },
+              "modus": "REKENKUNDIG",
+              "decimalen": 2,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de grondslag maal het tarief rekenkundig afgerond op 2 decimalen"
+            },
+            "body": {
+              "node": "IfThenElse",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "condition": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "BinderRef",
+                  "name": "g",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  },
+                  "bron": "de grondslag"
+                },
+                "rechts": {
+                  "node": "ParameterRef",
+                  "parameter": "drempel",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "de drempel"
+                },
+                "periode": null,
+                "bron": "de grondslag groter dan de drempel"
+              },
+              "then": {
+                "node": "Binair",
+                "op": "PLUS",
+                "links": {
+                  "node": "ParameterRef",
+                  "parameter": "basisheffing",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "de basisheffing"
+                },
+                "rechts": {
+                  "node": "BinderRef",
+                  "name": "volle",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "de volle heffing"
+                },
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "de basisheffing plus de volle heffing"
+              },
+              "else": {
+                "node": "ParameterRef",
+                "parameter": "basisheffing",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "de basisheffing"
+              },
+              "bron": "de basisheffing, verhoogd met de volle heffing zodra de drempel is overschreden"
+            },
+            "bron": "volle is de grondslag maal het tarief afgerond"
+          },
+          "bron": "ruw is de grondslag maal het tarief"
+        },
+        "bron": "g is de grondslag van de Jutter"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

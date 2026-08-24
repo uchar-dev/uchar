@@ -1,0 +1,34 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J3",
+      "attribute": "kernprijs"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "totaal",
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

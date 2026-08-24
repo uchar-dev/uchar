@@ -1,0 +1,36 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J4",
+      "attribute": "aantalAfgekeurd"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J4",
+      "attribute": "aantalNietAfgekeurd"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J4",
+      "attribute": "totaalKeuringen"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

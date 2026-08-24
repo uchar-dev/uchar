@@ -1,0 +1,39 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "stand": {
+            "constructor": "Geborgen",
+            "payload": {
+              "number": "50.00"
+            }
+          },
+          "grondslag": {
+            "number": "90.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "tarief",
+      "value": {
+        "number": "50.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

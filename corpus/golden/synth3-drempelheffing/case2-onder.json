@@ -1,0 +1,43 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "grondslag": {
+            "number": "80.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "drempel": {
+        "number": "100.00"
+      },
+      "tarief": {
+        "number": "0.075"
+      },
+      "basisheffing": {
+        "number": "20.00"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "heffing",
+      "value": {
+        "number": "20.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

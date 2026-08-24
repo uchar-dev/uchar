@@ -1,0 +1,35 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "drempel": {
+        "number": "20.00"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J4",
+      "attribute": "bovental"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J4",
+      "attribute": "somverhoogd"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "keuringen": {
+            "list": [
+              {
+                "constructor": "Goedgekeurd",
+                "payload": {
+                  "number": "8.00"
+                }
+              },
+              {
+                "constructor": "Afgekeurd"
+              },
+              {
+                "constructor": "Voorwaardelijk",
+                "payload": {
+                  "number": "5.00"
+                }
+              },
+              {
+                "constructor": "Afgekeurd"
+              },
+              {
+                "constructor": "Goedgekeurd",
+                "payload": {
+                  "number": "9.00"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aantalAfgekeurd",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aantalNietAfgekeurd",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "totaalKeuringen",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

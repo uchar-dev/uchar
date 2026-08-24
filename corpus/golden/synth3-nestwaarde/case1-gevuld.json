@@ -1,0 +1,47 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "stuks": {
+            "number": "4"
+          },
+          "prijs": {
+            "number": "12.50"
+          },
+          "opslag": {
+            "number": "3.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "kernprijs",
+      "value": {
+        "number": "12.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "totaal",
+      "value": {
+        "number": "15.50"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

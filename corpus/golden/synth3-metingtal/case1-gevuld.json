@@ -1,0 +1,58 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "metingen": {
+            "list": [
+              {
+                "number": "10.00"
+              },
+              {
+                "number": "25.00"
+              },
+              {
+                "number": "5.00"
+              },
+              {
+                "number": "40.00"
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "drempel": {
+        "number": "20.00"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "bovental",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "somverhoogd",
+      "value": {
+        "number": "84.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

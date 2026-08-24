@@ -1,0 +1,36 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J3",
+      "attribute": "staat"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J3",
+      "attribute": "kernwaarde"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J3",
+      "characteristic": "groot"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

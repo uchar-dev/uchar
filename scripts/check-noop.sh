@@ -108,6 +108,34 @@
 #     run, yet the case pins the nested reading against a FLATTENING executor,
 #     which would manufacture a conflict here (case2-conflict and case3-terugval
 #     both decide observably and are not survivors).
+#   - synth3-standtarief/case4-leeg.json: a leeg scrutinee propagates through
+#     Match (ch. 9.2) — with stand absent tarief stays empty; the absence IS the
+#     assertion (case1/2/3 all decide and are not survivors).
+#   - synth3-vangstsom/case4-afwezig.json: the leeg-list propagation of ch. 10.3
+#     — the vangsten list absent, the Fold propagates leeg, totaal stays empty;
+#     the supplied [] sibling (case3) writes 0.00 and is not a survivor.
+#   - synth3-metingtal/case4-afwezig.json: the same leeg-list propagation through
+#     MapList + Fold (bovental and somverhoogd both empty); case3 (supplied [])
+#     decides 0/0.00 and is not a survivor.
+#   - synth3-keuringtal/case4-afwezig.json: the leeg-list propagation through
+#     FilterList + ListLength (all three counts empty); case3 (supplied []) writes
+#     0/0/0 and is not a survivor.
+#   - synth3-vondststaat/case3-afwezig.json: the record no-hole absence (ch. 11)
+#     — both scalar inputs absent, the StructLiteral build propagates leeg, the
+#     FieldAccess reads leeg, and the struct-equality characteristic is false
+#     against a leeg operand; the absence IS the assertion.
+#   - synth3-drempelheffing/case4-leeg-grondslag.json: the strict Let leeg-barrier
+#     (ch. 10.6) — `Let g = grondslag` reads leeg, so the whole heffing chain is
+#     leeg regardless of the other strict bindings; the absence IS the assertion.
+#   - synth3-besluitschakel/case4-afwezig.json: a score absent leaves both
+#     disjoint Construct writers unjustified, so uitkomst is undecided and the
+#     downstream Match propagates leeg to bedrag; the absence IS the assertion.
+#   - synth3-letbeslag/case3-leeg-regime.json: a leeg Match scrutinee propagates
+#     (ch. 9.2) even while the strict Let binding stays gevuld — regime absent,
+#     beslag empty; the value cases decide and are not survivors.
+#   - synth3-letbeslag/case4-leeg-grondslag.json: the strict Let leeg-barrier
+#     again (ch. 10.6), here composed under a Match body — grondslag absent makes
+#     `Let g` leeg, so beslag is leeg before the Match ever dispatches.
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
@@ -131,7 +159,16 @@ corpus/golden/anchor/jutterswet-staffelvergoeding/case3-afwezig.json
 corpus/golden/anchor/jutterswet-aanspraaktelling/case3-afwezig.json
 corpus/golden/anchor/jutterswet-vondstdossier/case3-afwezig.json
 corpus/golden/anchor/jutterswet-nestuitzondering/case8-niets.json
-corpus/golden/anchor/jutterswet-nestkenmerk/case1-y-wint.json'
+corpus/golden/anchor/jutterswet-nestkenmerk/case1-y-wint.json
+corpus/golden/synth3-standtarief/case4-leeg.json
+corpus/golden/synth3-vangstsom/case4-afwezig.json
+corpus/golden/synth3-metingtal/case4-afwezig.json
+corpus/golden/synth3-keuringtal/case4-afwezig.json
+corpus/golden/synth3-vondststaat/case3-afwezig.json
+corpus/golden/synth3-drempelheffing/case4-leeg-grondslag.json
+corpus/golden/synth3-besluitschakel/case4-afwezig.json
+corpus/golden/synth3-letbeslag/case3-leeg-regime.json
+corpus/golden/synth3-letbeslag/case4-leeg-grondslag.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2

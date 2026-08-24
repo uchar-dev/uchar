@@ -1,0 +1,32 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "M",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "rechtA",
+          "grondP",
+          "grondQ"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "M",
+      "attribute": "korting"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "Jutter.korting/0",
+      "label": "M"
+    }
+  ]
+}
