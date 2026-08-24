@@ -172,3 +172,37 @@ gate 3 groen op alle 97 goldens vóór én na (corpus-breed schoon).
 May-touch gerespecteerd: `spec/IR-SPEC.md`, `spec/verifier/`,
 `corpus/negatief/`, plus `spec/proposals/PHASE5D-DIFF.md` (§8.2-besluit).
 `spec/CONSTRUCTS.md` NIET aangeraakt. Negen gates groen.
+
+## Lensronde (2026-08-24)
+
+BEVINDING 1 [MAJOR/CONFIRMED] — WF-080 dekte de aggregatie-bron-waardepositie
+niet: een kenmerk-bron splitste de executors terwijl de verifier hem toeliet.
+Zelf geverifieerd en verholpen.
+
+- **Reproductie (rood-eerst).** `corpus/golden/anchor/jutterswet-penninguitgifte`,
+  regel `penningtotaal van een jutter` = `SOM` over `Penning`; bron-argument
+  `bedrag` (attribuut) → `uitgereikt` (kenmerk van `Penning`). Oude verifier:
+  `PASS`. `ref`: rekent door, `penningtotaal = 0` (kenmerk als leeg numeriek
+  gevouwen — geen fault). `clingo`: `TRANSLATION FAULT: unknown attribute
+  "uitgereikt" on "Penning"`. Eén executor levert een waarde, de ander weigert
+  — precies de un-pinnable klasse die WF-080 hoort te weren.
+- **Oorzaak.** De aggregatie-bron loopt via `aggregation_source_check`
+  (`checks.ml`), een apart pad van de generieke `walk_expr`-waardewandeling
+  waar de kaart WF-080 al bedraadde. Dat pad hield het zusterinstantie van het
+  `has_attr || has_kenmerk`-lek: het accepteerde attribuut, kenmerk **of** rol.
+- **Fix (smalst).** De WF-080-splitsing doorgetrokken naar
+  `aggregation_source_check`: `has_attr || is_role_name` blijft toegelaten (de
+  count-over-rol v0-encodering behoudt zijn rol-bron), een kenmerk-only endpoint
+  wordt afgekeurd met WF-080, mirror van de `walk_expr`-tak. Nieuwe verifier:
+  `WF-080 FAIL /resolvedRegels/1/waarde/argumenten/0: 'uitgereikt' is a
+  characteristic of 'Penning', not an attribute — a characteristic endpoint is
+  ill-formed in an aggregation source position`.
+- **Artefact.** Negatief `corpus/negatief/wf080-aggregation-source-kenmerk/`
+  (minimale `SOM` met kenmerk-bron; faalt exact met WF-080, geen incidentele
+  fouten). IR-SPEC WF-080-tekst + WF-index-rij verbreed met de
+  aggregatie-bron-positie. De AANTAL-count-over-rol goldens (`penningen`,
+  `dossiers`) blijven schoon via `is_role_name`; gate 3 groen op alle 97
+  goldens (142 negatief, +1).
+
+May-touch onveranderd: `spec/IR-SPEC.md`, `spec/verifier/`, `corpus/negatief/`.
+`spec/CONSTRUCTS.md` NIET aangeraakt. Alle negen gates opnieuw groen.

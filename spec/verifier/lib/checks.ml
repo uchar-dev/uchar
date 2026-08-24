@@ -1181,7 +1181,19 @@ let aggregation_source_check ctx at e =
       match objecttype ctx otn with
       | None -> [ v "WF-034" at ("object type '" ^ otn ^ "' is not declared") ]
       | Some ot ->
-          if has_attr ot a || has_kenmerk ot a || is_role_name ctx a then []
+          if has_attr ot a || is_role_name ctx a then []
+          else if has_kenmerk ot a then
+            (* WF-080: an aggregation source is a value position — a
+               value-yielding fold reads each element's attribute value
+               (a count names a role, kept above via is_role_name). A
+               characteristic endpoint carries no value here: ref folds it
+               as empty, clingo cannot translate it — the split the sibling
+               walk_expr branch already refuses. The same tolerated
+               has_attr||has_kenmerk leak, closed here too. *)
+            [ v "WF-080" at
+                ("'" ^ a ^ "' is a characteristic of '" ^ otn
+               ^ "', not an attribute — a characteristic endpoint is ill-formed in an \
+                  aggregation source position") ]
           else
             [ v "WF-034" at
                 ("'" ^ a ^ "' is neither a member of '" ^ otn ^ "' nor a declared role") ])

@@ -1409,14 +1409,17 @@ Comparison, Predicate, and CharacteristicCheck only —
 - **WF-080** A value-position `AttributeReference` MUST resolve to an
   **attribute** of its endpoint type, never a characteristic. A value
   position is where an expression yields a value: a rule/member value, a
-  rung consequence, a condition operand. A characteristic carries truth,
-  not an attribute value; it is read through a characteristic check
-  (ch. 4.5), never an `AttributeReference` in a value slot. *v0 mirror
-  note:* the resolver's member lookup admitted either member kind
-  (`has_attr || has_kenmerk`) — a tolerated leak the kenmerk exploration
-  surfaced; v1 splits it. The rule TARGET lvalue is out of scope (WF-022
-  governs it), so a characteristic attribution's target is unaffected.
-  **Delta (promotion).**
+  rung consequence, a condition operand, and the source of a value-yielding
+  aggregation (a `SOM`/`TOTAAL`/`MINIMUM`/… fold whose element values are
+  folded — a count's source names a role, not a value, and is out of
+  scope). A characteristic carries truth, not an attribute value; it is
+  read through a characteristic check (ch. 4.5), never an
+  `AttributeReference` in a value slot. *v0 mirror note:* the resolver's
+  member lookup admitted either member kind (`has_attr || has_kenmerk`) — a
+  tolerated leak the kenmerk exploration surfaced; v1 splits it, in both the
+  generic value walk and the separate aggregation-source path. The rule
+  TARGET lvalue is out of scope (WF-022 governs it), so a characteristic
+  attribution's target is unaffected. **Delta (promotion).**
 - **WF-035** Operator typing (mirror of the v0 error set): numeric
   operators' operands MUST be number-like; power operands MUST
   additionally be unitless; a date ± duration MUST use a time unit or
@@ -1901,7 +1904,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-077 | the condition-operand discipline: everywhere an `IfThenElse` is admissible (lambda, function or strict `Let` bodies), its condition READS only binders, parameters and literals (arithmetic combinators over those are admissible — the reads are what matter); an attribute/field/characteristic read routes through a strict `Let` binding first — the leeg-barrier (ch. 4.10) | gate 3 | `anchor/jutterswet-tariefstelling` + `anchor/jutterswet-staffelvergoeding` (a `Binair` over binders as a condition operand) | `wf077-attribute-in-condition` + `wf077-fieldaccess-in-condition` |
 | WF-078 | a `BinderRef`'s serialized `type` agrees in soort with its resolved binder's declared datatype (a match arm's constructor payload, a lambda/function parameter, a `Let` binder's value, a filter binder's element) — the leaf-ref cross-check WF-023/WF-027 do for a resolved `AttribuutRef`, soort only (decimals/units uncrossed, as there); closes the WF-035 additive-position exemption for binders (ch. 4.7) | gate 3 | `anchor/jutterswet-aanspraaktelling` (fold/match binders) + `anchor/jutterswet-tariefstelling` (`Let` binders) | `wf078-binderref-type-lie` |
 | WF-079 | at most one unconditional, version-free computing rule (Gelijkstelling/Berekening) per non-laddered (type, attribute) target — the single-writer discipline of WF-026/WF-050/WF-052 for bare attribute writers (ch. 7.7); Kenmerktoekenning exempt (monotone), guarded case splits and versioned forms outside; the PHASE5D-DIFF §8.2 un-pinnable form refused ahead of the square | gate 3 | `anchor/jutterswet-rekenkamer-overzee` (a guarded gewone/overzeese case split on one target — the fence does not over-fire on conditional writers) | `wf079-two-unconditional-writers` |
-| WF-080 | a value-position `AttribuutRef` resolves to an attribute, not a characteristic (a characteristic is read through a characteristic check, ch. 4.5) — closes the tolerated `has_attr||has_kenmerk` leak; the rule TARGET lvalue is out of scope (WF-022) | gate 3 | `jutterswet-vondsttelling` (a universal value-read property; gate 3 witnesses none over-rejects) | `wf080-value-position-kenmerk` |
+| WF-080 | a value-position `AttribuutRef` resolves to an attribute, not a characteristic (a characteristic is read through a characteristic check, ch. 4.5) — closes the tolerated `has_attr||has_kenmerk` leak in both the generic value walk and the aggregation-source path (a value-yielding fold's source; a count's role source stays in scope of WF-034); the rule TARGET lvalue is out of scope (WF-022) | gate 3 | `jutterswet-vondsttelling` + `anchor/jutterswet-penninguitgifte` (a `SOM` folding an attribute source; gate 3 witnesses none over-rejects) | `wf080-value-position-kenmerk` + `wf080-aggregation-source-kenmerk` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is
