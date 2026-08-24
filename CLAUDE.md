@@ -128,10 +128,13 @@ green. Current gates:
    that script — one source of truth); an empty catala-golden set,
    a suite that ran zero checks, or
    a missing catala installation is a failure, never silently green.
-   *Runs locally; its CI leg awaits the maintainer's call on the
-   catala dependency in CI (tracked:
-   `backlog/new/20260821-gate9-ci-leg.md`) — until then CI enforces
-   gates 1–8 and gate 9 is the reviewer's pre-merge duty.*
+   *Its CI leg is conditional by maintainer decision (2026-08-24):
+   the `gates.yml` job runs the gate in full wherever the catala
+   tools are on the runner's PATH, and skips loudly — a warning,
+   never a silent green, never a blocker — on runners without them
+   (github.com's hosted runners have no catala). The gate script
+   itself is unchanged and still fails hard without catala, so gate 9
+   remains the reviewer's pre-merge duty on a machine that has it.*
 
 ## Repo relationships
 

@@ -107,3 +107,40 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y gringo && clingo --version
       - name: check-rood
         run: opam exec -- sh scripts/check-rood.sh
+
+  catala:
+    # The gate-9 CI leg is conditional by maintainer decision (2026-08-24):
+    # the catala dependency may enter CI, but only where the catala tools
+    # are already available (developer machines, self-hosted runners with
+    # catala on PATH). On runners without catala — github.com's hosted
+    # runners among them — the job skips LOUDLY and is not a blocker; the
+    # gate itself (scripts/check-catala.sh) is unchanged and still fails
+    # hard without catala, so a local run can never be silently green.
+    name: "Gate 9: Catala frontend (runs where catala is available)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: detect catala
+        id: has-catala
+        run: |
+          if command -v catala >/dev/null 2>&1; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+            catala --version
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=gate 9 skipped::the catala compiler is not on this runner; per the maintainer decision of 2026-08-24 this is NOT a blocker. Gate 9 runs in full wherever the catala tools exist (bash scripts/check-catala.sh) and remains the reviewer's pre-merge duty there."
+          fi
+      - uses: ocaml/setup-ocaml@v3
+        if: steps.has-catala.outputs.present == 'true'
+        with:
+          ocaml-compiler: "5"
+      - name: install yojson + zarith
+        if: steps.has-catala.outputs.present == 'true'
+        run: opam install -y yojson zarith
+      - name: install clingo
+        # Ubuntu ships the clingo binary in the gringo package
+        if: steps.has-catala.outputs.present == 'true'
+        run: sudo apt-get update && sudo apt-get install -y gringo && clingo --version
+      - name: check-catala
+        if: steps.has-catala.outputs.present == 'true'
+        run: opam exec -- bash scripts/check-catala.sh
