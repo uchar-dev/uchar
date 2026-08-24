@@ -729,6 +729,22 @@ let typ_of_expr = function
   (* a Lambda is never a value: it carries no type *)
   | Lambda _ -> None
 
+(* An AttribuutRef's serialized [typ] can lie about the attribute's actual
+   datatype (a numeric attribute forced to typ=Booleaan passes typ_of_expr but
+   diverges at runtime). For a value check the honest static type is the
+   RESOLVED attribute datatype — the cross-validation WF-023 performs in
+   rekenposities. Resolve it from the reference's declared endpoint type (the
+   type the value lives on: the subject itself or the navigation endpoint) and
+   member. A reference we cannot resolve (undeclared type/member, a
+   characteristic read that is not in [attributen], or a non-reference node)
+   yields None, and the caller falls back to the node's own typ. *)
+let resolved_attr_datatype ctx = function
+  | Attribuut_ref { attribuut = Some a; objecttype = Some otn; _ } -> (
+      match objecttype ctx otn with
+      | Some ot -> ( match attr_of ot a with Some (Some dt) -> Some dt | _ -> None)
+      | None -> None)
+  | _ -> None
+
 let wf027 ctx =
   List.concat_map
     (fun (i, r) ->
@@ -765,13 +781,23 @@ let wf027 ctx =
                         (match t.toe_waarde with
                          | None ->
                              [ v "WF-027" tat "characteristic initialisation without a value" ]
-                         | Some w -> (
-                             match typ_of_expr w with
-                             | Some Booleaan | Some (Datatype_onbekend _) -> []
-                             | _ ->
-                                 [ v "WF-027" tat
-                                     "characteristic initialisation's value must be a \
-                                      boolean-typed expression" ]))
+                         | Some w ->
+                             (* the honest static type: an AttribuutRef's own typ
+                                may lie, so prefer the resolved attribute datatype
+                                (the WF-023 cross-validation); fall back to the
+                                node typ for every other expression. The v0
+                                unknown sentinel stays the skip. *)
+                             let effective =
+                               match resolved_attr_datatype ctx w with
+                               | Some dt -> Some dt
+                               | None -> typ_of_expr w
+                             in
+                             (match effective with
+                              | Some Booleaan | Some (Datatype_onbekend _) -> []
+                              | _ ->
+                                  [ v "WF-027" tat
+                                      "characteristic initialisation's value must be a \
+                                       boolean-typed expression" ]))
                       else if not (has_attr ot m) then
                         [ v "WF-027" tat ("'" ^ m ^ "' is not a declared attribute of '" ^ tn ^ "'") ]
                       else [])

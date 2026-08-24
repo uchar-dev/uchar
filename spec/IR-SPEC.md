@@ -925,8 +925,11 @@ link — so the binding is the only linked route for a recursive chain.
   boolean-typed expression (a boolean constant is the v0 form). The value
   evaluates on the creation subject, exactly as an attribute initialisation
   does (`RUNTIME-SEMANTICS.md` ch. 5.5): true attributes the characteristic,
-  false leaves it unattributed — equivalent to an absent initialisation, the
-  closed-world reading characteristic checks already apply. The verifier
+  false **or empty** leaves it unattributed — equivalent to an absent
+  initialisation, the closed-world reading characteristic checks already
+  apply (the empty flank follows the attribute-initialisation parallel — a
+  leeg value writes silently — and is indistinguishable from false to a
+  characteristic check). The verifier
   admits a statically boolean-typed value and refuses a statically
   non-boolean one; the v0 unknown-typed sentinel it cannot refute defers to
   the runtime bounded-write fail-fast (the WF-023 skip). *v0 mirror note:*

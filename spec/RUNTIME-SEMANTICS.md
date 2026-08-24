@@ -1335,9 +1335,13 @@ Executed: for each subject whose condition holds, a
 deterministic instance of the created type is minted, the member
 initialisations apply (values evaluated on the subject; a characteristic
 initialisation's boolean-typed value sets the mark when it evaluates
-true and, evaluating false, leaves it unset — equivalent to an absent
-initialisation, the closed-world reading characteristic checks already
-apply; the boolean constant is its v0 form), and new object and subject
+true and, evaluating false **or empty**, leaves it unset — equivalent to
+an absent initialisation, the closed-world reading characteristic checks
+already apply; the empty flank follows the attribute-initialisation
+parallel — an empty value writes silently there — and the closed-world
+reading makes leeg and false indistinguishable to a characteristic check,
+as an absent atom is both to the ASP backend; the boolean constant is its
+v0 form), and new object and subject
 are linked over the back-link relation — the explicit `verbindendeRol`
 binding (`IR-SPEC.md` ch. 3.3) when present, else the
 **uniquely-derivable** connecting relation — both ends.

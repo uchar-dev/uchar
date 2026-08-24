@@ -589,6 +589,10 @@ let () =
   let read_overzees = aref "overzees" "Jutter" Booleaan in
   check "WV-5.5-charinit-expr-true" (mint read_overzees (Value.Bool true) = true);
   check "WV-5.5-charinit-expr-false" (mint read_overzees (Value.Bool false) = false);
+  (* the empty flank (a missing caller attribute reads leeg) joins false:
+     the mark is left unset, no fault — the attribute-init parallel and the
+     closed-world reading, identical to the ASP backend's absent atom *)
+  check "WV-5.5-charinit-expr-empty" (mint read_overzees Value.Empty = false);
   (* the preserved v0 constant form is unconditional — set on waar regardless
      of the caller, unset on onwaar *)
   check "WV-5.5-charinit-const-waar" (mint (litv "waar" Booleaan) (Value.Bool false) = true);

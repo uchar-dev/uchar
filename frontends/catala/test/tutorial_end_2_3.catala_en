@@ -17,6 +17,15 @@ those test scopes back. Catala emits a deprecation warning on `sum integer
 of` (line "sum integer of"); the plugin tolerates it (the form desugars above
 the scopelang cut to the 5b-covered Reduce+Optional shape — no stdlib).
 
+The three cases pin `number_of_children` ≤ 5 for a clingo reason, not a
+semantic one: the household-tax money product carries the computed rate
+`1.0 + decimal of number_of_children / 2.0`, whose exact division rides an
+intermediate at scale 10^8; at the pinned S = 4 that intermediate stays inside
+clingo's int31 grounding range only for ≤ 5 children — at ≥ 6 the split money
+product's `viol/2` range fence fires (UNSAT), while ref computes it exactly
+either way. A documented backend limit (`spec/ASP-TRANSLATION.md` S18(c)), not
+a bug — the overseas and computed-rate flanks the cases witness need no more.
+
 ```catala
 declaration structure Individual:
   data income content money

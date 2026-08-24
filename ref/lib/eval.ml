@@ -1323,11 +1323,17 @@ let run_object_creatie env ~world0 ~idx world (oc : resolved_object_creatie) =
                            as an attribute initialisation is (the RuleVersion
                            Kenmerktoekenning mirror) — true sets the mark on the
                            minted instance, false leaves it unset (closed-world,
-                           an absent init). The boolean constant above stays the
-                           v0 form. *)
+                           an absent init). Empty joins the false flank: an
+                           attribute initialisation writes an empty value
+                           silently, and the closed-world reading (a missing
+                           deposit) makes leeg and false indistinguishable to a
+                           characteristic check — matching the ASP backend, where
+                           an absent atom is both. The boolean constant above
+                           stays the v0 form; a truly non-boolean value (a
+                           number, a text) still faults fast. *)
                         match eval_expr env w self ~err e with
                         | Value.Bool true -> fst (World.set_char w ~label ~char:m)
-                        | Value.Bool false -> w
+                        | Value.Bool false | Value.Empty -> w
                         | v ->
                             Value.fault
                               "characteristic initialisation of %S is not boolean: %s (WF-027)"

@@ -1100,6 +1100,20 @@ without the `Let`, the bare `maal` would coalesce a leeg inkomen to 0.00,
 ch. 1.2a). Gate 6 replays all three (ref ≡ clingo); gate 8 the red
 witness.
 
+**A computed-rate magnitude limit (the tutorial fixture).** When the
+4-decimal rate is itself computed by an exact division — the Catala
+tutorial's `1.0 + decimal of number_of_children / 2.0`
+(`frontends/catala/test/tutorial_end_2_3.catala_en`) — the division rides
+an intermediate at scale 10^8 (the S = 4 numerator pre-scaled by 10^4 to
+divide exactly). That intermediate, not the split product's fenced
+partials, is the binding constraint: it stays inside clingo's int31
+grounding range only for a small operand — ≤ 5 children in the fixture —
+and at ≥ 6 the operand's own range fence (`viol/2`) fires, UNSAT. ref
+computes it exactly either way. A backend limit of the exact-division
+encoding at scale S, not a bug and not a `viol/2` the ref shares; the
+fixture's cases pin ≤ 5 children deliberately (its overseas and
+computed-rate flanks need no larger operand).
+
 ### S19. What does not translate — the complete loud inventory
 
 The standing rule (PLAN §4): the core may say "I cannot express this

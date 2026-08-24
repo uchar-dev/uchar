@@ -417,3 +417,64 @@ creatie-sleutel-botsing is een defensieve backstop die Catala niet kan uitdrukke
 
 Nog open: de spec/PLAN.md §6-Met-markering voor het 5a-exitcriterium en de
 opus-lensronde (buiten deze opdracht).
+
+## Lensronde — drie CONFIRMED bevindingen verwerkt (2026-08-24)
+
+Twee opus-lenzen op de subscope/tutorial-kaart leverden drie bevindingen; alle
+drie gefixt, alle negen gates groen, de 6 catala-goldens byte-identiek.
+
+**Bevinding 1 (BLOCKING, door beide lenzen onafhankelijk bevestigd) — de lege
+flank van de WF-027-verruimde kenmerk-init divergeerde.** Een kenmerk-init
+waarvan de boolean-expressie LEEG evalueert (het caller-attribuut ontbreekt in
+de case, schema-geldig) liet ref faulten (`characteristic initialisation of X
+is not boolean: leeg`) terwijl clingo stil doorrekent (leeg/false vallen samen
+op atoom-afwezig → geen deposit → schoon antwoord). **Gekozen fix: leeg → het
+kenmerk wordt NIET gezet, géén fault, in beide executors identiek.** Motivering
+(de maintainerslijn die het besluit zelf aanriep): (a) de
+attribuut-initialisatie-parallel — een attribuut-init schrijft een lege waarde
+immers *stil* door, empirisch bevestigd; (b) de gesloten-wereld-lezing maakt
+leeg en false ononderscheidbaar voor een kenmerk-check, precies zoals clingo's
+afwezige atoom beide is. De fault-tak blijft voor écht niet-boolean waarden
+(getallen/strings). Verwerkt:
+- `spec/RUNTIME-SEMANTICS.md` ch. 5.5 + `spec/IR-SPEC.md` ch. 3.3 (WF-027):
+  de drie-flanken-lezing genormeerd (waar→gezet; onwaar én leeg→ongezet, met de
+  parallel + gesloten-wereld-motivering).
+- `ref/lib/eval.ml` (`run_object_creatie`): `Value.Empty` naar de ongezet-tak
+  (`Value.Bool false | Value.Empty -> w`); smalste wijziging.
+- `corpus/golden/anchor/jutterswet-rekenkamer-overzee/case3-onbepaald.json`:
+  overzees weggelaten → heffing 5000 (de gewone-rekenkamer-regel; zelfde
+  uitkomst als de expliciete-onwaar-flank). Handberekend en absoluut gepind;
+  noop-refuter (MISMATCH leeg vs 5000). Bewaakt door gate 5 én 6.
+- `ref/test/test_ref.ml`: `WV-5.5-charinit-expr-empty` toegevoegd
+  (kaart-gesanctioneerd, finding 1d — 251 worked examples).
+  ROOD-EERST (letterlijk): vóór `EVALUATION FAULT: characteristic
+  initialisation of "overzees" is not boolean: leeg (WF-027)` (exit 1); na
+  `oracle: PASS (2 expectations)`; clingo ongewijzigd al `PASS`.
+
+**Bevinding 2 (MINOR, lens 1) — WF-027 vertrouwde de gedeclareerde node-typ.**
+Een `AttribuutRef` met een leugenachtige `typ={Booleaan}` op een numeriek
+attribuut passeerde de verifier en divergeerde runtime. Fix: de
+WF-027-waardecheck kruisvalideert voor een AttribuutRef-waarde nu het
+OPGELOSTE attribuut-datatype tegen Booleaan (nieuwe helper
+`resolved_attr_datatype`, analoog aan WF-023's kruisvalidatie; de
+`Datatype_onbekend`-sentinel blijft de skip, een niet-oplosbare of
+niet-AttribuutRef-waarde valt terug op de node-typ). Nieuwe negatief-case
+`corpus/negatief/wf027-lying-attribuutref-type/` pint de leugen-vorm.
+ROOD-EERST (letterlijk): vóór `verifier: PASS` (geaccepteerd); na `WF-027 FAIL
+/objectCreaties/0/toekenningen/0: characteristic initialisation's value must
+be a boolean-typed expression` (exit 1).
+
+**Bevinding 3 (MINOR, lens 2) — de clingo-grens van de gesplitste
+geldencodering stond alleen in de vergankelijke doing-kaart.** Het intermediair
+van de computed-rate deling (`1.0 + decimal of kids / 2.0`) schaalt 10^8 en
+overschrijdt clingo's int31 bij kids ≥ 6 (ref rekent correct, clingo vuurt de
+range-hek; een gedocumenteerde backend-limiet, geen bug). Gedocumenteerd waar
+een lezer hem vindt: een proza-notitie in
+`frontends/catala/test/tutorial_end_2_3.catala_en` bij de cases-verwijzing én
+een notitie in `spec/ASP-TRANSLATION.md` S18(c) (geen nieuwe S-sectie; S19
+blijft de hoogste).
+
+Gates (finaal, alle negen groen): self-contained PASS; ir-schema 81; verifier
+81 golden + **138** negatief; case-schema **209**; oracle **192**; clingo
+**192**; noop **170** refute + 22 survivors; rood 17; catala PASS (120 checks,
+6 goldens byte-identiek).
