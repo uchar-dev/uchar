@@ -94,3 +94,26 @@ Lensronde (2026-08-24, 2 MINOR verwerkt):
 Alle negen gates na de fix opnieuw groen in deze worktree.
 
 Open: (afgehandeld) de twee opus-lenzen zijn verwerkt.
+
+Result: besluit 6 is uitgevoerd exact zoals geratificeerd
+(PHASE5-CATALA §8, besluit 6-A, letterlijk geciteerd in de
+Executed-notitie): een Catala context-input op een subscope lowert
+naar een gegenereerde TOP-rung boven de eigen ladder van de callee
+(Reading B als rung-volgorde, het hardheidspatroon; de ch.
+7.8-input-rung blijft van het case-dossier), waarbij guard en waarde
+van de rung de caller genavigeerd lezen over de
+verbindendeRol-teruglus; een ladderloos callee-doel houdt de
+MemberInit-route (de WF-050-randvoorwaarde). Géén verifier-wijziging
+nodig gebleken: de navigatie-mechaniek is vóór implementatie
+empirisch gevalideerd met een handgebouwde IR (verifier-schoon,
+ref ≡ clingo ≡ catala interpret op beide polariteiten — override
+wint / callee-basis beslist). Getuigen: de fixture context.catala_en
+door verifier, ref en clingo, en de nieuwe catala-golden byte-identiek
+onder gate 9; refuse_context versmald, en na de lensronde dekken drie
+refuse-fixtures exact de drie gedocumenteerde context-flanken
+(128 checks). De lensronde ving één CONFIRMED MINOR (de
+fixtureset dekte één van de drie flanken) en één PLAUSIBLE die na
+verificatie geen defect bleek (de genavigeerde lezing is expliciet
+onderdeel van de Executed-notitie). Bewust gebleven weigeringen,
+gedocumenteerd: de gedeelde-basis-override en de basisloze
+ongeordende override (vallen samen met bestaande rij-8/9-flanken).
