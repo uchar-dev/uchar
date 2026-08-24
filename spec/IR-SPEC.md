@@ -783,7 +783,7 @@ One node covers computing an attribute and attributing a characteristic
 |---|---|---|
 | `validity` | Validity | which evaluation dates this version governs (ch. 3.10) |
 | `target` | attribute reference | the written member: an attribute, or a characteristic |
-| `value` | expression | the computed value; for a characteristic target: the boolean constant true (v0 mirror; Phase 4 generalises this into the default model) |
+| `value` | expression | the computed value; for a characteristic target: the boolean constant true — v0 mirror, the emitter's only form (Phase 4 generalises this into the default model; the ch. 3.3 initialisation form now generalises the characteristic value to a boolean-typed expression, WF-027 — the v1 relaxation the Catala frontend uses) |
 | `condition` | Condition? | absent = unconditional |
 | `initialisation` | boolean | write-only-if-empty (§9.6) — the defeasible default of `CONSTRUCTS.md` row 7; semantics in `RUNTIME-SEMANTICS.md` ch. 7 |
 | `presentation` | `calculation` \| `equation` | dialect tag: which surface form (§13.4.4/.9) produced it; no semantic difference |
@@ -907,8 +907,9 @@ chapter rule; the table below (minus `name`) is one version's body.
 
 **MemberInit**: `member` (string), `value` (expression), `characteristic`
 (boolean — v0 `kenmerk`: true = §13.4.6.4 characteristic-value form, the
-member names a declared characteristic and the value is a boolean
-constant; false = §13.4.6.3 attribute-value form).
+member names a declared characteristic and the value is a boolean-typed
+expression — a boolean constant is the v0 form; false = §13.4.6.3
+attribute-value form).
 
 The created object's **back-link** relation may be named explicitly
 through the extension field `verbindendeRol` (a RoleBinding per the
@@ -921,9 +922,20 @@ link — so the binding is the only linked route for a recursive chain.
 
 - **WF-027** Every `member` MUST be a declared attribute or characteristic
   of `createdType`; a characteristic initialisation's value MUST be a
-  boolean constant. *v0 mirror note:* both are resolver errors, but v0
-  still appends the offending initialisation after diagnosing — v1 makes
-  the form itself ill-formed. **Delta (promotion of the append).**
+  boolean-typed expression (a boolean constant is the v0 form). The value
+  evaluates on the creation subject, exactly as an attribute initialisation
+  does (`RUNTIME-SEMANTICS.md` ch. 5.5): true attributes the characteristic,
+  false leaves it unattributed — equivalent to an absent initialisation, the
+  closed-world reading characteristic checks already apply. The verifier
+  admits a statically boolean-typed value and refuses a statically
+  non-boolean one; the v0 unknown-typed sentinel it cannot refute defers to
+  the runtime bounded-write fail-fast (the WF-023 skip). *v0 mirror note:*
+  both the ghost-member and the non-boolean-value violations are resolver
+  errors, but v0 still appends the offending initialisation after diagnosing
+  — v1 makes the form itself ill-formed. **Delta (promotion of the append).**
+  *v0 mirror note:* the v0 emitter produces only the constant form; the
+  boolean-expression form is the v1 relaxation the Catala frontend uses for
+  boolean subscope inputs (additive on the wire, `CONSTRUCTS.md` row 21).
   Assignment typing per WF-023 applies per initialisation.
 
 ### 3.4 Fact creation

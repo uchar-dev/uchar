@@ -1333,9 +1333,12 @@ subject, else a per-(rule, subject) creation marker): **one creation per
 rule per subject** unless the fact base itself changed the question.
 Executed: for each subject whose condition holds, a
 deterministic instance of the created type is minted, the member
-initialisations apply (values evaluated on the subject; a
-characteristic constant sets the mark), and new object and subject are
-linked over the back-link relation — the explicit `verbindendeRol`
+initialisations apply (values evaluated on the subject; a characteristic
+initialisation's boolean-typed value sets the mark when it evaluates
+true and, evaluating false, leaves it unset — equivalent to an absent
+initialisation, the closed-world reading characteristic checks already
+apply; the boolean constant is its v0 form), and new object and subject
+are linked over the back-link relation — the explicit `verbindendeRol`
 binding (`IR-SPEC.md` ch. 3.3) when present, else the
 **uniquely-derivable** connecting relation — both ends.
 The 1:1 shape (a to-one created-side role) realises the

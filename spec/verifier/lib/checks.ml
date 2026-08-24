@@ -712,6 +712,23 @@ let wf026 ctx =
   in
   pairs named
 
+(* The type an expression carries, iff it is a value (a Lambda is not). The
+   sole nominal source for static typing; WF-027 uses it to admit a
+   boolean-TYPED characteristic value, and the expression walk (WF-034..) below
+   reuses it. *)
+let typ_of_expr = function
+  | Literal { typ; _ } | Tekst_reeks { typ; _ } | Binair { typ; _ }
+  | Functie { typ; _ } | Afgerond { typ; _ } | Begrensd { typ; _ }
+  | Attribuut_ref { typ; _ } | Dimensie_cel { typ; _ } | Parameter_ref { typ; _ }
+  | Variabele_ref { typ; _ } | Constante { typ; _ } | Expr_onopgelost { typ; _ }
+  | Temporal_read { typ; _ } | Construct { typ; _ } | Match { typ; _ }
+  | Binder_ref { typ; _ } | Struct_literal { typ; _ } | Field_access { typ; _ }
+  | List_literal { typ; _ } | If_then_else { typ; _ } | Let { typ; _ }
+  | Invoke { typ; _ } | Fold { typ; _ } | Map_list { typ; _ }
+  | Filter_list { typ; _ } | List_length { typ; _ } -> typ
+  (* a Lambda is never a value: it carries no type *)
+  | Lambda _ -> None
+
 let wf027 ctx =
   List.concat_map
     (fun (i, r) ->
@@ -734,11 +751,27 @@ let wf027 ctx =
                                ("'" ^ m ^ "' is not a declared characteristic of '" ^ tn ^ "'") ]
                          else [])
                         @
+                        (* Phase 5c relaxation: a characteristic initialisation
+                           value is a boolean-TYPED expression, not only the
+                           boolean constant (which stays the v0 form). What the
+                           verifier can statically type as boolean passes; a
+                           statically non-boolean value (a numeric/text literal,
+                           any evidently non-boolean node) stays refused. The v0
+                           unknown sentinel cannot be refuted statically, so it
+                           defers to the runtime fail-fast at the write, exactly
+                           as WF-023 skips Datatype_onbekend. A value that
+                           carries no type at all (a Lambda — never a value)
+                           stays refused. *)
                         (match t.toe_waarde with
-                         | Some (Literal { waarde = Some ("waar" | "onwaar"); typ = Some Booleaan; _ }) -> []
-                         | _ ->
-                             [ v "WF-027" tat
-                                 "characteristic initialisation's value must be a boolean constant" ])
+                         | None ->
+                             [ v "WF-027" tat "characteristic initialisation without a value" ]
+                         | Some w -> (
+                             match typ_of_expr w with
+                             | Some Booleaan | Some (Datatype_onbekend _) -> []
+                             | _ ->
+                                 [ v "WF-027" tat
+                                     "characteristic initialisation's value must be a \
+                                      boolean-typed expression" ]))
                       else if not (has_attr ot m) then
                         [ v "WF-027" tat ("'" ^ m ^ "' is not a declared attribute of '" ^ tn ^ "'") ]
                       else [])
@@ -1019,18 +1052,8 @@ let wf033 ctx =
 (* Expression layer: WF-034 .. WF-043 (walk)                               *)
 (* ======================================================================= *)
 
-let typ_of_expr = function
-  | Literal { typ; _ } | Tekst_reeks { typ; _ } | Binair { typ; _ }
-  | Functie { typ; _ } | Afgerond { typ; _ } | Begrensd { typ; _ }
-  | Attribuut_ref { typ; _ } | Dimensie_cel { typ; _ } | Parameter_ref { typ; _ }
-  | Variabele_ref { typ; _ } | Constante { typ; _ } | Expr_onopgelost { typ; _ }
-  | Temporal_read { typ; _ } | Construct { typ; _ } | Match { typ; _ }
-  | Binder_ref { typ; _ } | Struct_literal { typ; _ } | Field_access { typ; _ }
-  | List_literal { typ; _ } | If_then_else { typ; _ } | Let { typ; _ }
-  | Invoke { typ; _ } | Fold { typ; _ } | Map_list { typ; _ }
-  | Filter_list { typ; _ } | List_length { typ; _ } -> typ
-  (* a Lambda is never a value: it carries no type *)
-  | Lambda _ -> None
+(* [typ_of_expr] is defined above WF-027 (it types a characteristic
+   initialisation's value); the expression walk below shares it. *)
 
 (* Is this expression a time-dependent operand (for WF-043)? *)
 let expr_temporal ctx = function

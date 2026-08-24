@@ -1,0 +1,101 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Rederij": {
+      "node": "Objecttype",
+      "naam": "Rederij",
+      "attributen": {
+        "vloototal": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Rederijen"
+    },
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {},
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "penninggerechtigd"
+      ],
+      "kenmerkSoorten": {
+        "penninggerechtigd": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [
+    {
+      "node": "ResolvedObjectCreatie",
+      "naam": "Creatie jutter",
+      "nieuwType": "Jutter",
+      "subject": "Rederij",
+      "toekenningen": [
+        {
+          "node": "Toekenning",
+          "attribuut": "penninggerechtigd",
+          "waarde": {
+            "node": "Literal",
+            "waarde": "5",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            },
+            "bron": "5"
+          },
+          "kenmerk": true
+        }
+      ],
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

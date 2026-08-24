@@ -128,3 +128,45 @@ binding) — geïnventariseerd als flanken naast de 2-4-restvormen. De
 veilige operand-vulanalyse-verfijning (uitputtende basisgroep) kan bij die
 vervolgkaart landen zodra er een groene fixture is die hem uitoefent. Het
 5a-exitcriterium (PLAN §6) valt hiermee NIET in deze kaart.
+
+---
+
+## WF-027-verruiming geland (2026-08-24, MAINTAINERSBESLUIT besluit 1)
+
+De spec-kant van de B1-blokkade (boolean/kenmerk-subscope-invoer) is
+opgeheven door de geratificeerde WF-027-verruiming: een kenmerk-initialisatie
+in een ObjectCreatie mag nu een boolean-getypte EXPRESSIE dragen (de constante
+blijft de v0-vorm; de parallel met attribuut-`Toekenningen`; additief op de
+wire). Spec-first geland:
+
+- `spec/IR-SPEC.md`: WF-027 (ch. 3.3) geherformuleerd — de waarde MOET
+  boolean-getypt zijn (constante = v0-vorm); MemberInit-tabel en de
+  RuleVersion-waarderegel (ch. 3.1) bijgewerkt met de v0-spiegelnotitie
+  (de v0-emitter produceert alleen de constante-vorm; de expressievorm is de
+  v1-verruiming die de Catala-frontend benut). WF-022
+  (RuleVersion-kenmerktoekenning = constante true) is ONGEWIJZIGD — buiten
+  besluit 1.
+- `spec/RUNTIME-SEMANTICS.md` ch. 5.5: de kenmerk-init-waarde evalueert op
+  het creatie-subject (als attribuut-inits); waar → gezet, onwaar → ongezet
+  (gesloten-wereld, equivalent aan een afwezige init).
+- `spec/verifier/lib/checks.ml` WF-027: `typ_of_expr` naar boven verplaatst
+  zodat de check hem kan gebruiken; boolean-getypt → geaccepteerd, statisch
+  niet-boolean (numeriek/tekst-literal, evident niet-boolean knoop) →
+  afgekeurd met WF-027, de v0 onbekend-sentinel verschuift naar de
+  runtime-fail-fast (de WF-023-skip).
+- `spec/CONSTRUCTS.md` rij 21: gedocumenteerde delta.
+- `corpus/negatief/wf027-nonboolean-characteristic-init/`: pint de nieuwe
+  grens (een numeriek-getypte kenmerk-init afgekeurd met WF-027).
+
+ROOD-EERST bewezen (letterlijke uitvoer): de huidige verifier keurt een
+kenmerk-init met een boolean-`AttribuutRef` af ("must be a boolean constant");
+na de verruiming PASS; de nieuwe negatief blijft afgekeurd ("must be a
+boolean-typed expression"). Gates 1-4 groen (self-contained; ir-schema 78
+files; verifier 78 golden clean + 137 negatief; case-schema 202). Geen
+bestaande golden breekt — de verruiming verbreedt alleen (het anker
+`jutterswet-penninguitgifte` houdt zijn constante kenmerk-init).
+
+Nog open in deze kaart (besluit 2 + executor-stappen): de clingo-flanken B2
+(datum-literaal in termpositie) en B3 (ListLength-in-term-binding); ref +
+clingo executor-ondersteuning voor de niet-constante kenmerk-init; de
+plugin-splitsing van `EScopeCall`; de tutorial-exitgetuige.
