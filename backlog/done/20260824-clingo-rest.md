@@ -144,3 +144,22 @@ Alle negen gates opnieuw groen (slotregels):
 - `check-noop: PASS (183 cases refute a do-nothing executor; 24 pinned survivors pin defeasible standing)`
 - `check-rood: PASS (17 red cases fault observably in both executors)`
 - `check-catala: PASS — frontend suite green (128 checks); 7 catala golden(s) regenerate byte-identically`
+
+Result: beide flanken gedicht. (1) De magnitudegrens zat niet in het
+geldproduct maar in de exacte deling met constante deler: de
+delerschaal (10^4) prescaleerde de teller naar 10^8. De constante
+breuk reduceert nu door zijn volle gcd vóór het gronden, bewezen in
+ASP-TRANSLATION S18(c) (gereduceerd en ongereduceerd duiden dezelfde
+rationale; waarde, niet-exact-viol en nul-hek onveranderd); de
+tutorialvorm draagt nu tot n=40 kinderen (cent-afrondingshek), was
+n≤5 — getuige jutterswet-kinderweging (n=20 en n=6). De runtime-
+variabele deler houdt de oude tweefactorvorm (geen corpus-case). (2)
+struct_value_term is recursief: geneste structs als case-invoer en
+-verwachting dragen door beide executors; sum-/list-veldwaarden
+faulten nog, met nieuwe reden in S19; CONSTRUCTS rij 38 is bij de
+landing serieel geactualiseerd. De lensronde ving een echte MAJOR
+(tweemaal onafhankelijk): de gereduceerde const-divisor-vorm liet de
+deler-zijdige range-hek vallen zodat clingo stil kon overlopen waar
+ref exact rekent — hersteld met het hek op de gereduceerde factoren,
+door beide lenzen nagerekend. Rood-eerst per flank met de letterlijke
+oude viol- en fault-uitvoer.
