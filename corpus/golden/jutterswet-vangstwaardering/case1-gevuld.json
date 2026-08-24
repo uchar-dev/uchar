@@ -1,0 +1,47 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vangst",
+        "attributes": {
+          "grondbedrag": {
+            "number": "100.25"
+          },
+          "stuks": {
+            "number": "3"
+          },
+          "toeslagbedrag": {
+            "number": "25.50"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "heffing",
+      "value": {
+        "number": "125.75"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "grondslagkopie",
+      "value": {
+        "number": "100.25"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
