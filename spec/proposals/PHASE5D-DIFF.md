@@ -319,10 +319,11 @@ this exercise.**
   rungs decide the same value). The genuinely dangerous composition — two
   *unordered, differently-deciding* exceptions, where the ladder faults on
   §9.5 over-determination and flat rules would silently last-writer-win — is
-  precisely `tariefrecht`, deliberately excluded (§1). This exercise
-  therefore **does not** exercise the divergent-exception path, which is
-  where a real IR-form flaw could still hide; that comparison awaits a
-  fragment (and frontend behaviour) that can carry it honestly.
+  precisely `tariefrecht`, deliberately excluded (§1). The penningrecht
+  exercise itself **does not** exercise the divergent-exception path, which is
+  where a real IR-form flaw could still hide. That comparison is supplied
+  separately in **§8** — the divergence witness `tariefrecht` carries — so
+  this limit is now closed rather than left open.
 - **The two sources are not character-identical declarations.** The `teken`
   refinement (§4.1) and the plural differ between the source texts; they are
   benign on this corpus but mean "same law" holds at the level of *outcomes
@@ -347,3 +348,141 @@ this exercise.**
   Phase-5 exit criterion — "the frontend-diff exercise is documented with
   resulting spec changes" — is met. The PLAN §6 marking flip and the two
   opus lens rounds are the card-close steps that follow.
+
+## 8. The divergence witness — closing the §6 grens (2026-08-24)
+
+§6's third bullet named the one composition the penningrecht pair could not
+carry: **two unordered, differently-deciding exceptions**, where Catala
+raises a `ConflictError` and uchar takes the §9.5 channel. That composition
+is `tariefrecht`, and it already lives in the corpus as a Catala golden
+(`corpus/golden/jutterswet-tariefrecht-catala`) — a `DefaultLadder` on
+`tarief` whose kinderlast rung (art. 2, 15 %) carries an **unordered
+`Rung.excepties` sub-group** (art. 3): `grootgezin` (kindertal ≥ 4 → 10 %)
+and `kleine beurs` (inkomen ≤ 10000 → 0 %). The three cases the golden
+shipped with each fire **at most one** sub-exception, so the sharp corner was
+present in the IR but unexercised. This section exercises it.
+
+### 8.1 The overlap input, and what each side does with it
+
+The witness input is the overlap the golden's cases avoided: **kindertal = 4
+∧ inkomen = 8000** (`case4-conflict.json`). Both sub-exceptions are justified
+at once and decide **different** values (10 % vs 0 %).
+
+**Catala aborts.** Verified directly with `catala interpret` on a scratch
+copy of `bron.catala_en` that adds one `#[test]` scope feeding the overlap
+input (`clerk test` compiles the stdlib into `<scratch>/_build/libcatala`;
+the interpret call it then runs is quoted below). The scope does not
+evaluate to a value — the whole computation faults, pointing at the two
+conflicting exception rungs:
+
+```
+$ catala interpret -I . tariefrecht-conflict.catala_en \
+      --stdlib=_build/libcatala --scope=TariefConflictTest
+┌─[ERROR]─
+│
+│  During evaluation: conflict between multiple valid consequences for
+│  assigning the same variable.
+│
+├─➤ …:49.55-58:
+│ 49 │     under condition kindertal >= 4 consequence equals 10%
+│    │                                                       ‾‾‾
+│
+├─➤ …:51.59-61:
+│ 51 │     under condition inkomen <= $10,000 consequence equals 0%
+│    │                                                           ‾‾
+└─
+```
+
+**uchar does not abort — it deposits one observable fact.** Both executors
+replay `case4-conflict` (gates 5–6, exact match):
+
+- `tarief` is **leeg**: the differing sub-group propagates its conflict to
+  the root rung and the ladder writes nothing (RUNTIME-SEMANTICS ch. 7.9);
+- the §9.5 channel carries exactly one fact, **path-keyed** to the rung that
+  hosts the sub-group: `Penningplichtige.tarief/0` — distinguishing a nested
+  sub-group conflict from a root-level one (`…/tarief` bare), the row-8
+  Phase-5c form;
+- and, the sharpest half of the contrast, the computation **continues**:
+  `aanslag` still resolves — to **0.00**. `aanslag = inkomen × tarief`, and
+  `MAAL` coalesces the blanked (leeg) rate to zero (the v0 mirror reading,
+  ch. 1.2a; `ref/lib/arith.ml`'s `coalesce0`), so `belasting = 0`, the
+  money floor `aftrek(1000) > belasting(0)` holds, and the then-branch pins
+  `0.00`. Where Catala aborts the **entire scope** (no `aanslag` at all),
+  uchar blanks the one over-determined target, records the conflict, and
+  runs the rest of the program to a defined answer.
+
+That is the tracked row-8 deviation made concrete: **Catala's ⊛-propagation
+minus the fatality** — the conflict is an end-state observation on the §9.5
+channel, never a program-aborting exception.
+
+Rood-eerst: `case4-conflict` was first pinned to the naive
+"priority/last-writer" reading `tarief = 0.1000` + `consistent`; both
+executors rejected it (`ref`: `J1.tarief = leeg, expected 0.1` and
+`the channel carries: Penningplichtige.tarief/0 × J1`; `clingo`: `J1.tarief
+is underived (leeg)` and `the model carries 1 inconsistent fact(s)`), which
+is the proof that neither executor silently picks a winner.
+
+### 8.2 Can the v0-flat form express this? No — and the way it fails is the
+finding
+
+§6 speculated that, without a ladder, "flat rules would silently
+last-writer-win". The prediction was that the flat form loses the conflict;
+the empirical reality is **sharper and worse than last-writer-win**. Built as
+a scratch v0-flat IR — two flat `BEREKENING` rules on the same non-laddered
+`tarief` target, no ladder, no sub-group: `tarief bij grootgezin`
+(kindertal ≥ 4 → 0.1000) and `tarief bij kleine beurs` (inkomen ≤ 10000 →
+0.0000) — and replayed on the same overlap input:
+
+- **verifier: `PASS`.** The flat form is *well-formed*. WF-050's
+  single-writer rule binds a target that **carries a ladder**; two flat
+  computing writers on a non-laddered attribute violate no WF rule (the same
+  reasoning as §5's characteristic case — but there the two writers were
+  monotone and same-valued; here they differ).
+- **`ref`: `EVALUATION FAULT: no fixpoint within 100 passes — divergence is
+  a fault (ch. 5.7)`.** The two rules each overwrite the other every pass;
+  the fixpoint oscillates 0.1000 ↔ 0.0000 and never converges. Not
+  last-writer-win — **non-termination**.
+- **`clingo`: `PASS` with `J1.tarief = [0;1000]`.** The stable model carries
+  **both** values at once, and the runner sees no §9.5 fact — reported
+  `consistent`. Not last-writer-win either — a **silently multi-valued**
+  target.
+
+So `ref` faults and `clingo` is silently-consistent-multivalued: **ref ≢
+clingo**. Under the corpus rules a differential disagreement "routes to
+adversarial triage, never to admission". The flat form is therefore
+**un-pinnable in every zone**: not a golden (ref ≢ clingo, and ref does not
+even terminate), not a `negatief` (verifier-clean), not a `rood` (clingo
+raises no fault). It falls through the whole corpus by construction — which
+is exactly why the ladder's `ongeordend` group is *not* optional sugar over
+two flat rules but **the only IR form** in which this law's over-determination
+is expressible with the executors in agreement (one leeg target, one
+path-keyed §9.5 fact, both backends).
+
+The gate set is the backstop that makes the flat form's verifier-cleanliness
+harmless: the differential square (gates 5–6) rejects it downstream even
+though the verifier admits it. Whether a *defensive* WF rule should reject
+two differently-valued flat writers on one target ahead of the square is a
+latent design question this witness surfaces but does not decide — the v0
+emitter never produces the shape (mirror-then-diverge: v0 renders either a
+single writer or the toolchain's monotone same-valued pair), and no numbered
+maintainer question is forced. It is recorded here for the lens round.
+
+### 8.3 Classification and ledger delta
+
+- **Category (iii) — design flaws: still none.** The divergent-exception
+  path — the one §6 flagged as where a flaw could hide — is walked here and
+  exposes no untracked divergence. The Catala/uchar difference is the
+  **already-tracked** row-8 deviation (over-determination → observable,
+  non-fatal §9.5 channel fact, vs Catala's fatal `ConflictError`); the
+  flat-vs-ladder difference is the row-8 ladder rationale itself
+  (`Rung.excepties`, RS ch. 7.9, WF-075), now shown to be load-bearing
+  rather than cosmetic.
+- **Normative changes: none.** The semantics this witness exercises
+  (path-keyed §9.5 propagation from an unordered sub-group) landed in
+  Phase 5c; `case4-conflict` is a new *witness*, not a new rule.
+- **Maintainer questions: none forced** (one latent, non-blocking
+  observation recorded in §8.2 for the lens round).
+- **§6 limit closed:** the "sharp case is out of scope" bullet is
+  superseded — the divergent-exception path is now witnessed end-to-end
+  (Catala abort quoted, uchar §9.5 fact pinned in both executors, v0-flat
+  inexpressibility shown empirically).
