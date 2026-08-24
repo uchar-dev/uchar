@@ -18,7 +18,11 @@ verwerkt vóór de merge.
 
 May touch: spec/proposals/, spec/CONSTRUCTS.md, spec/PLAN.md,
 corpus/golden/ (een nieuw paar-fragment indien nodig),
-frontends/catala/ (fixture indien nodig), backlog/.
+frontends/catala/ (fixture indien nodig), backlog/, en — correctie
+bij uitvoering, expliciet genoteerd — scripts/check-noop.sh: de
+stilte-cases van het nieuwe paar-fragment zijn no-op-survivors en
+moeten reden-dragend in de survivor-lijst (gate 7 eist dat); een
+beschermd pad, onder het lens-plus-mandaat-regime.
 
 Out of scope: normatieve IR-SPEC/RUNTIME-SEMANTICS-wijzigingen
 zonder genummerde vraag; elke toolchain-wijziging (read-only, de
