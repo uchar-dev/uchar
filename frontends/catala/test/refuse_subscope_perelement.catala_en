@@ -1,0 +1,23 @@
+# Per-element subscope call — refused (PHASE5C-TUTORIAL §3, the 2-4 flank)
+
+The tutorial's 2-4 shape: a subscope call *per list element*
+(`map each g among … to (output of … with {…}).field`). Per-element
+instantiation mints one anonymous callee instance per element, which the
+creation-per-subject key cannot carry — refused until designed.
+
+```catala
+declaration scope Kamer:
+  input grondslag content integer
+  output bedrag content integer
+
+scope Kamer:
+  definition bedrag equals grondslag * 2
+
+declaration scope Aanslag:
+  input grondslagen content list of integer
+  output bedragen content list of integer
+
+scope Aanslag:
+  definition bedragen equals
+    map each g among grondslagen to (output of Kamer with { -- grondslag: g }).bedrag
+```

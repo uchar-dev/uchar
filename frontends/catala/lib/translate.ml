@@ -429,7 +429,8 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
     ~(functions : (string * I.datatype) list)
     ~(read_var : operand:bool -> in_body:bool -> ScopeVar.t M.pos -> I.expr)
     ~(check_var : in_body:bool -> ScopeVar.t M.pos -> I.conditie)
-    ~(lookup_var : ScopeVar.t -> I.datatype option) =
+    ~(lookup_var : ScopeVar.t -> I.datatype option)
+    ~(read_subscope_output : ScopeVar.t -> StructField.t -> I.expr option) =
   (* an EAbs (a fold/map/filter operand or a function) -> its bound variables,
      their declared types, and its body *)
   let lambda_of e =
@@ -627,13 +628,31 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
                 arguments = List.map (value_expr ~operand:true ~in_body ~in_let ~env) args; bron = Some fname }
         | _ -> refuse "application of a non-top-level expression is not supported")
     | EScopeCall _ ->
-        refuse "subscope call (EScopeCall): object creation + role navigation (mapping row 9) is out of 5a scope"
+        (* a bare subscope call consumed as a whole struct value (rather than
+           per output field): the declared-subscope lowering reads outputs one
+           field at a time (PHASE5C-TUTORIAL §3) — a whole-struct read follows
+           design 1 once both land. Refused loudly. *)
+        refuse "subscope output consumed as a whole struct: only per-field reads of a declared subscope's outputs are lowered (PHASE5C-TUTORIAL §3); a whole-struct read is out of scope"
     | EStructAccess { name; e = inner; field } -> (
+        (* the declared-subscope output read (PHASE5C-TUTORIAL §3.2): an
+           [EStructAccess] on a subscope-instance scope variable — the field
+           name IS the callee output-variable name at scopelang — lowers to a
+           navigated [AttribuutRef] over the synthesised back-link. *)
+        let via_subscope =
+          match M.remove (strip inner) with
+          | ELocation (ScopelangScopeVar { name = sv }) -> read_subscope_output (M.remove sv) field
+          | _ -> None
+        in
+        match via_subscope with
+        | Some ir -> ir
+        | None -> (
         match M.remove (strip inner) with
         | EScopeCall _ ->
-            (* reading a subscope output: still object creation + role
-               navigation (mapping row 9), refused until kaart 4 *)
-            refuse "subscope call (reading a subscope output): object creation + role navigation (mapping row 9) is out of 5a scope"
+            (* an inline (anonymous) subscope call — [(output of S with {…}).f],
+               the tutorial-2-1 and the per-element 2-4 shape: an anonymous
+               instance per occurrence, which the creation-per-subject key
+               cannot carry. Only DECLARED subscopes are lowered (§3). Refused. *)
+            refuse "inline subscope call (reading a subscope output of an anonymous instance): only declared subscopes lower to object creation + role navigation (PHASE5C-TUTORIAL §3); per-element/inline calls are out of scope"
         | _ ->
             (* row-5c FieldAccess: [base] is a struct value; the node type is
                the field's declared datatype (WF-074). The empty-operand flag
@@ -652,7 +671,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
             in
             Field_access
               { typ = Some veld_ty; base = value_expr ~operand ~in_body ~in_let ~env inner;
-                veld = StructField.to_string field; bron = None })
+                veld = StructField.to_string field; bron = None }))
     | EInj { name; e = payload; cons } ->
         (* a constructor value; unit payload = nullary (argument None) *)
         let sig_ = EnumName.Map.find name enums in
@@ -878,21 +897,95 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
 let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (string * I.datatype) list)
     (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
   let ot_name = ScopeName.base name in
-  (* variable table: ScopeVar -> (declared name, IR datatype) *)
+  (* declared subscopes (PHASE5C-TUTORIAL §3): a declared subscope collapses at
+     scopelang into ONE [ScopeVarDefinition] whose value is an [EScopeCall] and
+     whose variable is TStruct-typed (the callee's output struct). Recorded here
+     — BEFORE [catala_dt]'s struct path — so the instance variable is never
+     treated as a record attribute: it is a to-be-created callee instance,
+     linked to its caller by a synthesised back-link. The stored [args] map
+     callee input variables to the caller argument expressions. *)
+  let subscope_meta =
+    List.fold_left
+      (fun acc rule ->
+        match rule with
+        | Sc.ScopeVarDefinition { var; typ; e; _ } -> (
+            match M.remove (strip e) with
+            | EScopeCall { scope; args } ->
+                let out_struct =
+                  match M.remove typ with
+                  | TStruct n -> n
+                  | _ ->
+                      refuse
+                        "a subscope instance variable is not struct-typed (unexpected scopelang shape)"
+                in
+                ScopeVar.Map.add (fst var) (scope, args, out_struct) acc
+            | _ -> acc)
+        | Sc.Assertion _ -> acc)
+      ScopeVar.Map.empty sd.scope_decl_rules
+  in
+  let is_subscope v = ScopeVar.Map.mem v subscope_meta in
+  (* the synthesised back-link naming (PHASE5C-TUTORIAL §3.1): one fact type per
+     declared subscope, globally unique by caller + instance variable; the
+     callee fills a to-one role named for the instance variable, the caller the
+     opposite role. *)
+  let subscope_feittype v = ot_name ^ "_" ^ M.remove (ScopeVar.get_info v) in
+  let subscope_callee_role v = M.remove (ScopeVar.get_info v) in
+  let subscope_caller_role v = M.remove (ScopeVar.get_info v) ^ "_houder" in
+  (* variable table: ScopeVar -> (declared name, IR datatype). Subscope
+     instances are excluded — they are relations, not attributes. *)
   let vars : (string * I.datatype) ScopeVar.Map.t =
     ScopeVar.Map.fold
       (fun v (sv : Sc.scope_var_ty) acc ->
-        let vname = M.remove (ScopeVar.get_info v) in
-        (match M.remove sv.svar_io.Dio.io_input with
-         | Catala_runtime.Reentrant ->
-             refuse
-               "context (reentrant) variable %S: besluit 6 wants Reading B (caller override as the highest rung), but ch. 7.8's input rung sits BELOW the ordinary rungs (Reading A). A single-scope 5a program cannot realise Reading B — refused."
-               vname
-         | Catala_runtime.NoInput | Catala_runtime.OnlyInput -> ());
-        ScopeVar.Map.add v (vname, catala_dt enums structs sv.svar_out_ty) acc)
+        if is_subscope v then acc
+        else begin
+          let vname = M.remove (ScopeVar.get_info v) in
+          if String.contains vname '#' then
+            refuse
+              "multi-state variable %S: states are out of scope — Catala expands each state into a \
+               separate scopelang variable and the IR has no state machinery (PHASE5C card 4 flank); refused"
+              vname;
+          (match M.remove sv.svar_io.Dio.io_input with
+           | Catala_runtime.Reentrant ->
+               refuse
+                 "context (reentrant) variable %S: besluit 6 wants Reading B (caller override as the highest rung), but ch. 7.8's input rung sits BELOW the ordinary rungs (Reading A). A single-scope 5a program cannot realise Reading B — refused."
+                 vname
+           | Catala_runtime.NoInput | Catala_runtime.OnlyInput -> ());
+          ScopeVar.Map.add v (vname, catala_dt enums structs sv.svar_out_ty) acc
+        end)
       sd.scope_sig ScopeVar.Map.empty
   in
   let lookup v = ScopeVar.Map.find v vars in
+  (* a declared subscope's per-field output read (PHASE5C-TUTORIAL §3.2): an
+     [EStructAccess] on the instance variable becomes a navigated [AttribuutRef]
+     over the back-link — the field name IS the callee output-variable name, so
+     it is also the callee attribute name. The output field's datatype comes
+     from the callee's output struct directly (never routed through
+     [struct_type_of], so the output struct is not emitted as a domain). *)
+  let read_subscope_output v (field : StructField.t) : I.expr option =
+    match ScopeVar.Map.find_opt v subscope_meta with
+    | None -> None
+    | Some (scope, _args, out_struct) ->
+        let callee_type = ScopeName.base scope in
+        let fld_name = StructField.to_string field in
+        let fld_ty =
+          match
+            Option.bind (StructName.Map.find_opt out_struct structs)
+              (StructField.Map.find_opt field)
+          with
+          | Some ty -> catala_dt enums structs ty
+          | None ->
+              refuse "subscope output field %S is not declared on callee %S" fld_name callee_type
+        in
+        let callee_role = subscope_callee_role v in
+        let bron = Printf.sprintf "de %s van de %s" fld_name (M.remove (ScopeVar.get_info v)) in
+        Some
+          (Attribuut_ref
+             { attribuut = Some fld_name; objecttype = Some callee_type; onderwerp_bron = Some bron;
+               navigatie_rol = Some callee_role; typ = Some fld_ty; bron = Some bron; set = false;
+               navigatie_pad = [];
+               navigatie_bindingen =
+                 Some [ { rb_feittype = subscope_feittype v; rb_rol = callee_role } ] })
+  in
   (* variables that are always filled: inputs (the case dossier fulfils
      Catala's input contract) or variables carrying an unconditional rung
      (a base default that always decides). Only these are admitted as
@@ -948,6 +1041,11 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   in
   let read_var ~operand ~in_body name : I.expr =
     let v = M.remove name in
+    if is_subscope v then
+      refuse
+        "the subscope instance %S is read as a whole struct value: read its outputs one field at a \
+         time (PHASE5C-TUTORIAL §3.2); a whole-struct read is out of scope"
+        (M.remove (ScopeVar.get_info v));
     let vname, dt = lookup v in
     if in_body then
       refuse
@@ -964,7 +1062,13 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
     else attr_ref vname dt
   in
   let check_var ~in_body name : I.conditie =
-    let vname, dt = lookup (M.remove name) in
+    let v = M.remove name in
+    if is_subscope v then
+      refuse
+        "the subscope instance %S is read in a condition: read its outputs one field at a time \
+         (PHASE5C-TUTORIAL §3.2)"
+        (M.remove (ScopeVar.get_info v));
+    let vname, dt = lookup v in
     if in_body then
       refuse
         "WF-067: a closed lambda/function body may not read the scope characteristic %S (the scope-capturing fence)"
@@ -977,7 +1081,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   in
   let lookup_var v = try Some (snd (lookup v)) with Not_found -> None in
   let value_expr, cond_expr =
-    make_exprs ~enums ~structs ~functions ~read_var ~check_var ~lookup_var
+    make_exprs ~enums ~structs ~functions ~read_var ~check_var ~lookup_var ~read_subscope_output
   in
   (* condition option: [true] is unconditional -> None (for plain rules) *)
   let cond_opt e = if is_true e then None else Some (cond_expr e) in
@@ -999,6 +1103,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   in
   (* accumulators *)
   let regels = ref [] and ladders = ref [] and consistenties = ref [] in
+  let feittypen = ref [] and creaties = ref [] in
   let add_regel r = regels := r :: !regels in
   let add_ladder l = ladders := l :: !ladders in
   let berekening vname dt value ~cond : I.resolved_regel =
@@ -1091,14 +1196,80 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
             else add_ladder (build_ladder "" [ Plain (cond, value) ])
         | Some chain -> add_ladder (build_ladder "" chain))
   in
+  (* one declared subscope -> its synthesised fact type and object creation
+     (PHASE5C-TUTORIAL §3.1): the call's args bind as member initialisations
+     (Toekenningen) on the callee's INPUT attributes, plus the verbindendeRol
+     back-link. A subscope input is an unconditional caller value; a conditional
+     or laddered target is out of scope (the WF-050 rung route is deferred). *)
+  let build_subscope v (scope, args, _out_struct) =
+    let callee_type = ScopeName.base scope in
+    let instance_var = M.remove (ScopeVar.get_info v) in
+    let callee_role = subscope_callee_role v in
+    let caller_role = subscope_caller_role v in
+    let feittype = subscope_feittype v in
+    if List.exists (fun (ft : I.feittype) -> ft.ft_naam = Some feittype) !feittypen then
+      refuse
+        "two declared subscopes collide on the synthesised fact type %S (creation-per-subject key); \
+         only one call per caller subject is keyable — refused (PHASE5C-TUTORIAL §3 flank)"
+        feittype;
+    let ft : I.feittype =
+      { ft_naam = Some feittype; wederkerig = false;
+        rollen =
+          [ { rol_naam = Some caller_role; rol_objecttype_naam = Some ot_name; rol_meervoud = None;
+              rol_meervoudig = false };
+            { rol_naam = Some callee_role; rol_objecttype_naam = Some callee_type;
+              rol_meervoud = None; rol_meervoudig = false } ] }
+    in
+    (* a subscope input definition carries the ordinary scope-variable default
+       shape [error_empty ⟨ ⟨true ⊢ ⟨X⟩⟩ | false ⊢ ∅ ⟩] — one unconditional
+       plain rung. Anything richer (a conditional base or a ladder) is a rung
+       target, which the WF-050 route (deferred) would carry, not a member
+       initialisation. *)
+    let arg_value e =
+      match parse_tree (strip e) with
+      | Some [ Plain (just, cons) ] when is_true just -> value_expr cons
+      | _ ->
+          refuse
+            "a subscope input to %S is not an unconditional value: conditional/laddered subscope \
+             inputs enter as a rung, never a member initialisation (the WF-050 route is deferred, \
+             PHASE5C-TUTORIAL §3) — refused"
+            instance_var
+    in
+    let toekenningen =
+      List.rev
+        (ScopeVar.Map.fold
+           (fun k (_pos, argexpr) acc ->
+             let attr = M.remove (ScopeVar.get_info k) in
+             let waarde = arg_value argexpr in
+             (match ir_typ waarde with
+              | Some Booleaan ->
+                  refuse
+                    "boolean subscope input %S to %S: only numeric/date/enum inputs are lowered (a \
+                     characteristic initialisation needs a boolean literal, WF-027) — refused"
+                    attr instance_var
+              | _ -> ());
+             { I.toe_attribuut = Some attr; toe_waarde = Some waarde; toe_kenmerk = false } :: acc)
+           args [])
+    in
+    let oc : I.resolved_object_creatie =
+      { oc_naam = Some ("richt " ^ instance_var ^ " op"); nieuw_type = Some callee_type;
+        oc_subject = Some ot_name; toekenningen; oc_voorwaarde = None; oc_geldigheid = Some geldig;
+        oc_verbindende_rol = Some { rb_feittype = feittype; rb_rol = callee_role } }
+    in
+    feittypen := ft :: !feittypen;
+    creaties := oc :: !creaties
+  in
   (* walk the scope body *)
   List.iteri
     (fun idx rule ->
       match rule with
-      | Sc.ScopeVarDefinition { var; io; e; _ } ->
-          (match M.remove io.Dio.io_input with
-           | Catala_runtime.OnlyInput -> () (* input: filled by the case, no rule *)
-           | _ -> translate_def (fst var) e)
+      | Sc.ScopeVarDefinition { var; io; e; _ } -> (
+          match ScopeVar.Map.find_opt (fst var) subscope_meta with
+          | Some info -> build_subscope (fst var) info
+          | None -> (
+              match M.remove io.Dio.io_input with
+              | Catala_runtime.OnlyInput -> () (* input: filled by the case, no rule *)
+              | _ -> translate_def (fst var) e))
       | Sc.Assertion { e; _ } ->
           consistenties :=
             { I.cons_naam = Some ("assertie " ^ ot_name ^ " " ^ string_of_int (idx + 1));
@@ -1106,7 +1277,8 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
               cons_bron = Some "assertion"; cons_line = idx + 1; cons_geldigheid = Some geldig }
             :: !consistenties)
     sd.scope_decl_rules;
-  (ot_name, objecttype, List.rev !regels, List.rev !ladders, List.rev !consistenties)
+  ( ot_name, objecttype, List.rev !regels, List.rev !ladders, List.rev !consistenties,
+    List.rev !feittypen, List.rev !creaties )
 
 (* --- top-level definitions -> FunctionDefs (row 10, DMN's BKM) ---------- *)
 
@@ -1137,6 +1309,7 @@ let topdef_functions enums structs functions topdefs : I.function_def list =
       ~check_var:(fun ~in_body:_ _ ->
         refuse "WF-067: a closed top-level function body may not read a scope characteristic")
       ~lookup_var:(fun _ -> None)
+      ~read_subscope_output:(fun _ _ -> None)
   in
   List.map
     (fun (name, (e, _typ, _vis, _ext)) ->
@@ -1180,13 +1353,18 @@ let file_to_document (input : string) : I.document =
   used_optional := None;
   let functions = topdef_signatures enums structs prog.Sc.program_topdefs in
   let objecttypen = ref [] and regels = ref [] and ladders = ref [] and cons = ref [] in
+  let feittypen = ref [] and creaties = ref [] in
   List.iter
     (fun (name, decl) ->
-      let ot_name, ot, rs, ls, cs = translate_scope enums structs functions name (M.remove decl) in
+      let ot_name, ot, rs, ls, cs, fts, ocs =
+        translate_scope enums structs functions name (M.remove decl)
+      in
       objecttypen := (ot_name, ot) :: !objecttypen;
       regels := !regels @ rs;
       ladders := !ladders @ ls;
-      cons := !cons @ cs)
+      cons := !cons @ cs;
+      feittypen := !feittypen @ List.map (fun (ft : I.feittype) -> (Option.get ft.ft_naam, ft)) fts;
+      creaties := !creaties @ ocs)
     scopes;
   let function_defs = topdef_functions enums structs functions prog.Sc.program_topdefs in
   (* the enums and structs actually referenced above become SumType/StructType
@@ -1204,10 +1382,10 @@ let file_to_document (input : string) : I.document =
         (StructName.Set.elements !used_structs)
   in
   { objecttypen = List.rev !objecttypen;
-    domeinen; parameters = []; eenheidstelsels = []; feittypen = [];
+    domeinen; parameters = []; eenheidstelsels = []; feittypen = !feittypen;
     dimensies = []; tijdlijnen = []; dagsoorten = []; dagsoort_per_eenheid = [];
     regels = []; resolved_regels = !regels; resolved_dagsoorten = [];
-    object_creaties = []; verdelingen = []; consistenties = !cons;
+    object_creaties = !creaties; verdelingen = []; consistenties = !cons;
     uniciteiten = []; uniciteit_unies = []; feit_creaties = [];
     resolved_startpunten = []; regel_groepen = []; diagnostics = [];
     default_ladders = !ladders; function_defs }

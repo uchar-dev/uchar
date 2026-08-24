@@ -1,0 +1,23 @@
+# Whole-struct subscope output — refused (PHASE5C-TUTORIAL §3)
+
+A subscope output consumed as a whole struct value (here bound whole through
+a `let`, rather than read one field at a time) is out of scope: the lowering
+reads outputs per field over the back-link. A whole-struct read follows
+design 1 (the StructType datatype) once both land.
+
+```catala
+declaration scope Kamer:
+  input grondslag content integer
+  output bedrag content integer
+
+scope Kamer:
+  definition bedrag equals grondslag * 2
+
+declaration scope Aanslag:
+  input grondslag content integer
+  output heffing content integer
+
+scope Aanslag:
+  definition heffing equals
+    let k equals (output of Kamer with { -- grondslag: grondslag }) in k.bedrag
+```

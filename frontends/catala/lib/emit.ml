@@ -119,6 +119,12 @@ and eenheid_j (e : eenheid) : json =
 let geheel_periode (g : geheel_periode) : json =
   node "GeheelPeriode" [ ("jaar", b g.gp_jaar); ("niet", b g.gp_niet) ]
 
+(* the symbolic role binding (IR-SPEC ch. 2.6): a whole-or-nothing pair of
+   plain strings — the back-link of an object creation and the hop of a
+   navigated read (Phase 5c subscope lowering). *)
+let rol_binding (rb : rol_binding) : json =
+  node "RolBinding" [ ("feittype", s rb.rb_feittype); ("rol", s rb.rb_rol) ]
+
 let rec expr (e : expr) : json =
   let typ t = ("type", opt datatype t) in
   let bron br = ("bron", so br) in
@@ -135,12 +141,21 @@ let rec expr (e : expr) : json =
           ("decimalen", i decimalen); typ t; bron br ]
   | Attribuut_ref
       { attribuut; objecttype; onderwerp_bron; navigatie_rol; typ = t; bron = br;
-        set; navigatie_pad; navigatie_bindingen = _ } ->
+        set; navigatie_pad; navigatie_bindingen = nb } ->
+      (* navigatieBindingen is an extension field (the loader admits it via
+         [ext]) — written only when the reference actually navigates (Phase 5c
+         subscope lowering: the caller reads a callee output over the back-link) *)
+      let ext =
+        match nb with
+        | None -> []
+        | Some hops -> [ ("navigatieBindingen", `List (List.map rol_binding hops)) ]
+      in
       node "AttribuutRef"
-        [ ("attribuut", so attribuut); ("objecttype", so objecttype);
-          ("onderwerpBron", so onderwerp_bron); ("navigatieRol", so navigatie_rol);
-          typ t; bron br; ("set", b set);
-          ("navigatiePad", str_opt_list navigatie_pad) ]
+        ([ ("attribuut", so attribuut); ("objecttype", so objecttype);
+           ("onderwerpBron", so onderwerp_bron); ("navigatieRol", so navigatie_rol);
+           typ t; bron br; ("set", b set);
+           ("navigatiePad", str_opt_list navigatie_pad) ]
+        @ ext)
   | Parameter_ref { parameter; typ = t; bron = br } ->
       node "ParameterRef" [ ("parameter", so parameter); typ t; bron br ]
   | Variabele_ref { naam; typ = t; bron = br } ->
@@ -286,6 +301,41 @@ let resolved_consistentie (c : resolved_consistentie) : json =
       ("assertie", opt conditie c.assertie); ("bron", so c.cons_bron);
       ("line", i c.cons_line); ("geldigheid", opt geldigheid c.cons_geldigheid) ]
 
+(* fact type + roles (IR-SPEC ch. 2.6): the connecting relation the plugin
+   synthesises to carry a subscope back-link (Phase 5c). Each role names its
+   filler object type; the plugin's roles are always to-one. *)
+let rol (r : rol) : json =
+  node "Rol"
+    [ ("naam", so r.rol_naam); ("objecttypeNaam", so r.rol_objecttype_naam);
+      ("meervoud", so r.rol_meervoud); ("meervoudig", b r.rol_meervoudig) ]
+
+let feittype (ft : feittype) : json =
+  node "Feittype"
+    [ ("naam", so ft.ft_naam); ("wederkerig", b ft.wederkerig);
+      ("rollen", `List (List.map rol ft.rollen)) ]
+
+let toekenning (t : toekenning) : json =
+  node "Toekenning"
+    [ ("attribuut", so t.toe_attribuut); ("waarde", opt expr t.toe_waarde);
+      ("kenmerk", b t.toe_kenmerk) ]
+
+let resolved_object_creatie (oc : resolved_object_creatie) : json =
+  (* verbindendeRol is an extension field (the loader admits it via [ext]) —
+     the created-side role of the back-link, written whole when present *)
+  let vrb =
+    match oc.oc_verbindende_rol with
+    | None -> []
+    | Some rb -> [ ("verbindendeRol", rol_binding rb) ]
+  in
+  `Assoc
+    ([ ("node", `String "ResolvedObjectCreatie");
+       ("naam", so oc.oc_naam); ("nieuwType", so oc.nieuw_type);
+       ("subject", so oc.oc_subject);
+       ("toekenningen", `List (List.map toekenning oc.toekenningen));
+       ("voorwaarde", opt conditie oc.oc_voorwaarde);
+       ("geldigheid", opt geldigheid oc.oc_geldigheid) ]
+    @ vrb)
+
 let rec rung (r : rung) : json =
   (* [besluit] is a required key (null on an attribute / group rung);
      [consequentie], [initialisatie] and [excepties] are extension fields —
@@ -346,7 +396,7 @@ let document (d : document) : json =
       ("domeinen", map_ (opt datatype) d.domeinen);
       ("parameters", `Assoc []);
       ("eenheidstelsels", `Assoc []);
-      ("feittypen", `Assoc []);
+      ("feittypen", map_ feittype d.feittypen);
       ("dimensies", `Assoc []);
       ("tijdlijnen", `List []);
       ("dagsoorten", `List []);
@@ -354,7 +404,7 @@ let document (d : document) : json =
       ("regels", `List []);
       ("resolvedRegels", `List (List.map resolved_regel d.resolved_regels));
       ("resolvedDagsoorten", `List []);
-      ("objectCreaties", `List []);
+      ("objectCreaties", `List (List.map resolved_object_creatie d.object_creaties));
       ("verdelingen", `List []);
       ("consistenties", `List (List.map resolved_consistentie d.consistenties));
       ("uniciteiten", `List []);

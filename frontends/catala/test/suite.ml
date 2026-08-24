@@ -129,7 +129,14 @@ let () =
          Minus_rat) and the ToRat cast, plus a money × rate product that Catala
          rounds to the cent (Afgerond{REKENKUNDIG,2}) on tutorial magnitude,
          which clingo encodes SPLIT so the scale-6 product never wraps int31 *)
-      ("decimals.catala_en", [ "cases/dec_drie.json"; "cases/dec_vijf.json" ]) ]
+      ("decimals.catala_en", [ "cases/dec_drie.json"; "cases/dec_vijf.json" ]);
+      (* PHASE5C-TUTORIAL §3: a declared subscope lowered onto existing kernel —
+         one ResolvedObjectCreatie of the callee (the call's args as Toekenningen
+         on its inputs, plus the verbindendeRol back-link) and the output read as
+         a navigated AttribuutRef over that back-link; the callee's rule runs in
+         the caller's fixpoint on the minted instance. Through the full
+         differential (ref AND clingo) *)
+      ("subscope.catala_en", [ "cases/subscope_70.json"; "cases/subscope_160.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:false src cases) passing;
   (* ref-only passing programs. datum: clingo cannot translate a date literal
@@ -149,7 +156,14 @@ let () =
      and branching exceptions now land (row 5c). *)
   let refusals =
     [ ("refuse_context.catala_en", "context");
+      (* PHASE5C-TUTORIAL §3 subscope flanks — declared subscopes lower
+         (subscope.catala_en), but four shapes stay refused, each loudly:
+         the inline/anonymous call (2-1), the per-element call (2-4), a
+         whole-struct output read, and multi-state variables *)
       ("refuse_subscope.catala_en", "subscope");
+      ("refuse_subscope_perelement.catala_en", "per-element");
+      ("refuse_subscope_wholestruct.catala_en", "whole struct");
+      ("refuse_subscope_multistate.catala_en", "multi-state");
       (* a shared non-trivial base under all members of a root-level unordered
          group stays refused (PHASE4-DEFAULTS §7; nested groups carry
          below-root branching, not this) *)

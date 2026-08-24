@@ -1,0 +1,36 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B1",
+        "objectType": "Bergingsaanslag",
+        "attributes": {
+          "bergingswaarde": {
+            "number": "100"
+          },
+          "vindersaftrek": {
+            "number": "30"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "heffing",
+      "value": {
+        "number": "70"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

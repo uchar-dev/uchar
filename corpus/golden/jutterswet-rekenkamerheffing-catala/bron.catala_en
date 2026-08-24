@@ -1,0 +1,37 @@
+# Jutterswet, artikel 9 — de rekenkamerheffing
+
+Art. 9 (rekenkamerheffing). De heffing die een jutter over een berging
+verschuldigd is, wordt door de rekenkamer van de strandvoogd vastgesteld
+op de bergingswaarde verminderd met de vindersaftrek.
+
+Modelleringsnotitie: het artikel delegeert de vaststelling aan een tweede
+entiteit — de rekenkamer. De berging richt haar rekenkamer op, voorziet
+die van een grondslag en een aftrek, en leest het vastgestelde bedrag
+terug als haar heffing. Dit is de subscope-vorm van PHASE5C-TUTORIAL §3,
+gelowerd op objectcreatie plus genavigeerde lezing (geen nieuwe knoop):
+één `ResolvedObjectCreatie` van de rekenkamer met de bergingswaarden als
+`Toekenningen` op haar invoerattributen en een `verbindendeRol`-terugkoppeling,
+en een genavigeerde `AttribuutRef` voor de uitkomst. Eigen auteurschap,
+rechtenvrij; de rekenkamerregel draait in de fixpoint van de berging op de
+gemunte instantie.
+
+```catala
+declaration scope Rekenkamer:
+  input grondslag content integer
+  input aftrek content integer
+  output bedrag content integer
+
+scope Rekenkamer:
+  definition bedrag equals grondslag - aftrek
+
+declaration scope Bergingsaanslag:
+  input bergingswaarde content integer
+  input vindersaftrek content integer
+  rekenkamer scope Rekenkamer
+  output heffing content integer
+
+scope Bergingsaanslag:
+  definition rekenkamer.grondslag equals bergingswaarde
+  definition rekenkamer.aftrek equals vindersaftrek
+  definition heffing equals rekenkamer.bedrag
+```

@@ -1,7 +1,11 @@
-# Subscope-call — moet luid geweigerd worden (5a-scope, besluit 4)
+# Inline (anonymous) subscope call — stays refused (PHASE5C-TUTORIAL §3)
 
-Een subscope-aanroep (`EScopeCall`) is object-creatie + rolnavigatie
-(mapping-rij 9); dat is echt ontwerpwerk voor later. De plugin weigert.
+A *declared* subscope now lowers (see `subscope.catala_en`): it collapses to
+one object creation plus a navigated read, keyed by the creation-per-subject
+key. An *inline* call — `(output of Inner with {…}).b` used directly in an
+expression, with no declared subscope variable — mints an anonymous instance
+per occurrence, which that key cannot carry. Only declared subscopes lower;
+the inline/anonymous form (the tutorial-2-1 shape) stays refused.
 
 ```catala
 declaration scope Inner:

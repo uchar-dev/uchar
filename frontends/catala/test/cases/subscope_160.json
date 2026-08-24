@@ -1,0 +1,36 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "A2",
+        "objectType": "Aanslag",
+        "attributes": {
+          "grondslag": {
+            "number": "250"
+          },
+          "aftrek": {
+            "number": "90"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "A2",
+      "attribute": "heffing",
+      "value": {
+        "number": "160"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
