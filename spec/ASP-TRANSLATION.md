@@ -1417,7 +1417,25 @@ large magnitude) — while the split's own scale backstop (`the split money
 multiplication expects a 2-decimal money and a 4-decimal rate …`) is
 unreachable once `money_mult_shape` has gated the decimals. The strict
 `Let` itself has no fault of its own: a leeg value is underivability, not
-a fault (the S18 coincidence).
+a fault (the S18 coincidence). It does, however, **materialise its binder
+at a finite integer scale** (the value's out-scale, RUNTIME-SEMANTICS
+ch. 2.4), and that is where the afrondingsnorm (RUNTIME-SEMANTICS ch. 2.9,
+vraag 3-A: intermediate values are exact-rational, the scale binds
+declarations and write boundaries, never a step) becomes a **loud backend
+limit**. The minimised synthesis find: a strict `Let` binding the
+**non-terminating** quotient `100 ÷ 3 = 33,333…`, read at an endpoint
+`Afgerond op 2 rekenkundig`. ref carries the exact rational through the
+`Let` and the single endpoint `Afgerond` collapses it once to 33,33; the
+ASP side translates the binder's value as a **bare** division (the
+`Afgerond`-over-division fold of this section fires only when the round
+wraps the division *directly*, not through a binder read), whose
+`non-exact division (an explicit rounding is mandated before precision is
+lost)` fence trips because `100/3` terminates at **no** finite scale. So
+clingo, which cannot represent an exact-rational intermediate, refuses the
+form loudly — a documented limit **conform to the norm**: the two
+executors diverge here in *expressiveness*, never in *value*, the
+exact-to-the-rounding-point rule made visible on the backend that must
+round every step.
 
 *Environment and input fences:* names the ASP string encoding cannot
 quote (WF-057's backstop, sole cover for case labels); values that do

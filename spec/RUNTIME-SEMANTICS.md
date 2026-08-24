@@ -401,6 +401,22 @@ bounded write) realised for Catala decimals; a 4-dec target fed `1,0000
 runs — the red witness `corpus/rood/decimal-nonterminating`, landing
 with the executor card).
 
+**The scale is a boundary, not a step (maintainer decision 2026-08-24,
+vraag 3-A).** A declared scale `S` — the pin above, or any attribute's
+own `decimalen` — binds only a *declaration* and the *write boundary* it
+guards (ch. 2.4); every intermediate value stays the exact rational of
+ch. 2.1 — a strict-`Let` binder (ch. 10.6) and a `Match`-arm result
+(ch. 9.2) among them, rounded to no scale — and the sole collapse to a
+decimal is an explicit `Afgerond` node (ch. 2.5). Worked example: `100 ÷
+3` (non-terminating) bound through a strict `Let` at a 2-decimal
+declaration and rounded once at the endpoint — `afgerond op 2
+rekenkundig` → **33,33**; the same binder `afgerond op 4` → **33,3333**,
+never the 33,3300 a step-binding scale would have pre-collapsed; while
+writing that binder unrounded into its bounded target faults (ch. 2.4).
+`ref` realises this exactly; clingo materialises each step at its
+declared scale and so must refuse this form loudly — a documented backend
+limit conform to the norm, not a value split (`ASP-TRANSLATION.md` S19).
+
 **Money × decimal rounds to the cent.** Catala's runtime rounds money
 multiplication (`Mult_mon_rat`/`Mult_mon_int`) to the cent, so the
 frontend wraps those products in `Afgerond {REKENKUNDIG, 2}` — the same

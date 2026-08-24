@@ -1262,6 +1262,64 @@ let () =
     (Eval.eval_expr env w self ~err:no_err shadow_fold)
     "300"
 
+(* --- ch. 2.9: the afrondingsnorm — exact to the rounding point
+   (RUNTIME-SEMANTICS ch. 2.9; maintainer decision 2026-08-24, vraag 3-A).
+   Intermediate values are exact-rational (ch. 2.1); a declared scale binds a
+   declaration and the write boundary it guards (ch. 2.4), never an
+   intermediate step; the sole collapse to a decimal is an Afgerond node
+   (ch. 2.5). Witness: the non-terminating quotient 100 ÷ 3 = 33,333…, bound
+   in a strict Let whose value is DECLARED at two decimals, read at the
+   endpoint through a single Afgerond. Rounded to 2 the endpoint is 33,33;
+   rounded to 4 it is 33,3333 — not 33,3300, the value a scale that bound the
+   intermediate step would have forced (ref ignores the binder's declared
+   scale and carries the exact rational to the endpoint). clingo materialises
+   the binder at that declared scale and refuses this very form loudly
+   (ASP-TRANSLATION S19): a documented backend limit, conform to the norm,
+   never a wrong value. Card-sanctioned test touch (20260824-afrondingsnorm). *)
+let () =
+  let num2 : Ir_v0.Ast.datatype =
+    Numeriek { geheel = false; decimalen = 2; teken = None; eenheid = None }
+  in
+  let binder_ref name typ : Ir_v0.Ast.expr =
+    Binder_ref { naam = name; typ = Some typ; bron = None }
+  in
+  let deel : Ir_v0.Ast.expr =
+    Binair
+      { op = Gedeeld_door;
+        links = Some (litv "100" num0);
+        rechts = Some (litv "3" num0);
+        typ = Some num2;
+        bron = None }
+  in
+  let let_round dec : Ir_v0.Ast.expr =
+    Let
+      { typ = Some num2;
+        binder = "deel";
+        value = deel;
+        body =
+          Afgerond
+            { basis = Some (binder_ref "deel" num2);
+              modus = Rekenkundig;
+              decimalen = dec;
+              typ = Some num2;
+              bron = None };
+        bron = None }
+  in
+  let doc = { empty_doc with objecttypen = [ ot "J" [ ("a", Some num0) ] [] ] } in
+  let env = env_of doc in
+  let w = World.add_instance World.empty (inst "j" "J" []) in
+  let self = World.get w "j" in
+  (* endpoint rounded to 2 decimals: the exact 100/3 collapses once → 33,33 *)
+  expect_num "WV-2.9-let-endpoint-round"
+    (Eval.eval_expr env w self ~err:no_err (let_round 2))
+    "33.33";
+  (* endpoint rounded to 4: 33,3333 — the exact rational survived the strict
+     Let; a scale binding the intermediate step would have pre-collapsed it to
+     33,33 so this endpoint would read 33,3300 (== 33,33) *)
+  expect_num "WV-2.9-let-exact-intermediate"
+    (Eval.eval_expr env w self ~err:no_err (let_round 4))
+    "33.3333"
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;
