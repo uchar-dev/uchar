@@ -212,3 +212,23 @@ een `inconsistent`-feit dat noop niet produceert). Gate 7 blijft 33 survivors.
 7. `check-noop: PASS (213 cases refute a do-nothing executor; 33 pinned survivors pin defeasible standing)`
 8. `check-rood: PASS (17 red cases fault observably in both executors)`
 9. `check-catala: PASS — frontend suite green (128 checks); 7 catala golden(s) regenerate byte-identically`
+
+Result: de eerste synthesegolf staat: 11 synth3-goldens met 42 cases
+over de dun gedekte 5b/5c-constructen (Match/SumType, de
+fold-familie, vlakke en geneste structs, strikte Let, geneste
+laddergroepen met conflict en terugval, subscope-creatie met
+boolean-getypeerde kenmerk-init), elk met hand-berekende absolute
+verwachtingen en de drievoudige admissie van PLAN §8: verifier-clean,
+ref ≡ clingo exact op de handwaarde, en noop-refutatie of een
+reden-dragende survivor-pin. De coverage-toets is voor vijf goldens
+getoond (construct eruit → verwachting verandert); de lensronde ving
+één degeneraat (een re-skin van een bestaand anker), vervangen.
+De belangrijkste opbrengst zijn drie ref↔clingo-divergentievondsten
+die de admissie correct WEIGERDE en die geminimaliseerd in deze
+kaart staan — waaronder één semantisch scherpe: een
+niet-terminerende deling die een Let-binder of Match-arm kruist
+vóórdat de Afgerond hem omsluit rondt in ref exact-rationeel af waar
+clingo op de tussenwaarde faalt. Dat is een spec-besluit (waar
+dwingt v1 de afronding af: op de schrijfgrens of op elk
+materialisatiepunt) en gaat als genummerde vraag naar de maintainer;
+tot dat besluit blijft de vorm buiten het corpus.
