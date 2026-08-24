@@ -1,79 +1,121 @@
-# WF-voorstel: kruiscontrole van BinderRef.type
+# WF-voorstel: leaf-ref-type-leugen in additieve operand-posities (herkomst: BinderRef, spoor 7b)
 
 Herkomst: de eerste adversariële jachtsessie
-(`backlog/doing/20260824-adversariele-jacht.md`, spoor 7b). Dit is een
-KAARTVOORSTEL, geen ingecheckte wijziging — `spec/verifier/` is een
-protected path, dus de jacht raakt de check niet zelf aan.
+(`backlog/doing/20260824-adversariele-jacht.md`, spoor 7b), gecorrigeerd in
+de lensronde van dezelfde sessie (twee opus-lenzen, beide MINOR/CONFIRMED —
+zie de lensronde-notitie in het jachtrapport). Dit is een KAARTVOORSTEL, geen
+ingecheckte wijziging — `spec/verifier/` is een protected path, dus de jacht
+raakt de check niet zelf aan.
 
-## De vondst
+## De vondst (gecorrigeerd t.o.v. spoor 7b)
 
-De verifier kruiscontroleert het `type` van een `AttribuutRef` tegen de
-gedeclareerde attribuut-datatype (WF-023; het lieg-geval heeft een
-negatief: `corpus/negatief/wf027-lying-attribuutref-type/`). Voor een
-`BinderRef` bestaat die kruiscontrole NIET. WF-064 controleert alleen
-(a) dat elke BinderRef lexicaal naar een omsluitende binder resolvet en
-(b) dat de arm-lichamen van een Match op één resultaat-datatype
-overeenkomen (`spec/verifier/lib/checks.ml:2218`, `:2244`). Het `type`
-dat het BinderRef-blad zelf draagt — schema-verplicht en non-null
-(`spec/schema/regelspraak-ir-v0.schema.json:1352`) — wordt nergens tegen
-de gedeclareerde datatype van de binder gehouden.
+De oorspronkelijke spoor-7b-formulering ("`AttribuutRef.type` wordt
+kruisgecontroleerd (WF-023), `BinderRef.type` niet") was onnauwkeurig op het
+WF-id én op de as van de asymmetrie. Empirisch (verifier/ref/clingo, herhaald
+in de lensronde):
 
-Gevolg: een IR waarin een genest BinderRef-blad een `type` draagt dat
-zijn binder tegenspreekt, is verifier-schoon, maar splitst het
-differentieel-vierkant:
+- Wat een soort-leugen (`Numeriek` → `Tekst`/`Booleaan`) op een reken-operand
+  afkeurt is **WF-035** ("operand of a numeric operator is text/boolean"),
+  niet WF-023 en geen blad-kruiscontrole. WF-035 leest de geserialiseerde
+  `typ_of_expr` van de operand (`spec/verifier/lib/checks.ml:1663`,`:1675`) en
+  vuurt **gelijk voor BinderRef én AttribuutRef** — `typ_of_expr` leest het
+  `type`-veld van beide blad-knopen (`checks.ml:719`, AttribuutRef op `:722`,
+  BinderRef op `:725`).
+- WF-035 vuurt echter **alleen onder numeriek-vereiste operatoren** (`MAAL`,
+  `GEDEELD_DOOR`, `GEDEELD_DOOR_ABS`, `PERCENTAGE_VAN`, `VERMINDERD_MET`,
+  `TOT_DE_MACHT`). Voor de additieve operatoren `PLUS`/`MIN` is de
+  numericiteits-eis expliciet uitgezet
+  (`checks.ml:1668`: `Plus | Min -> false (* may be date +/- duration *)`)
+  zodat datum±duur kan blijven werken. Gevolg: **geen** soort-leugen op een
+  `PLUS`/`MIN`-operand wordt gevangen, ongeacht of het blad een BinderRef of
+  een AttribuutRef is.
+- De escape in spoor 7b (`acc + x`, `PLUS`) kwam dus door de **additieve
+  positie**, niet door BinderRef-specificiteit. Bewijs (lensronde): dezelfde
+  BinderRef-`x`-soort-leugen wordt onder `MAAL` wél afgekeurd
+  (`WF-035 FAIL … operand of a numeric operator is text`), en een
+  AttribuutRef-operand onder `PLUS` glipt er even hard doorheen (verifier
+  PASS; ref rekent door; clingo TRANSLATION FAULT).
 
-- decimalen-leugen (2→4 op `x` in een fold-lichaam `acc + x`): INERT —
-  beide executors negeren de annotatie (clingo leest de binder-schaal uit
-  `ctx.binders`, ref de runtime-waarde). verifier PASS, ref PASS, clingo
-  PASS, dezelfde waarde. Geen splitsing, wél een geaccepteerde
-  inconsistentie.
-- soort-leugen (`Numeriek` → `Tekst` of `Booleaan` op `x`/`acc`):
-  verifier PASS + ref PASS (annotatie genegeerd, correcte waarde) +
-  clingo TRANSLATION FAULT `"non-numeric arithmetic operand is not
-  translated (no corpus case)"`. De clingo-fout komt uit `numeric_ok`
-  (`backends/clingo/lib/translate.ml:383`), dat `typ_of_expr` van de
-  operand leest en op `Tekst`/`Booleaan` weigert.
+Wat wél een blad-`type`-kruiscontrole doet — `resolved_attr_datatype`
+(`checks.ml:741`) — is UITSLUITEND in **WF-027** bedraad (kenmerk-init,
+`checks.ml:791`, binnen `wf027` vanaf `:748`); daarom citeert het negatief
+`corpus/negatief/wf027-lying-attribuutref-type/` **WF-027**, niet WF-023.
+WF-023 zelf (`checks.ml:3942`) is de toewijzings-doelregel ("a text value is
+assigned to a number target") en leest `typ_of_expr` — het geserialiseerde,
+mogelijk liegende type — niet een resolved-blad-kruiscontrole. Er bestaat dus
+**voor geen van beide blad-soorten** een decimalen/eenheid- of
+soort-kruiscontrole van het blad-`type` in een reken-positie.
 
-De splitsing is LUID (clingo weigert, ref rekent) — nooit stil, dus geen
-corpus-case en geen zwijgende divergentie. Maar het is precies de klasse
-die de verifier hoort te vangen: een zelf-tegensprekende IR die geen enkel
-frontend hoort te emitteren en die de WF-023-broer voor een AttribuutRef
-al zou afkeuren. De verifier is de poortwachter van de differentiële
-vierkant-invariant; deze leugen glipt erdoor.
+De decimalen-leugen is bovendien **inert en ongecontroleerd voor beide
+blad-soorten**: `waardering`-`AttribuutRef` met `decimalen 0 → 5` in
+`loon = waardering * factor` (vindersloon) geeft verifier PASS + ref PASS +
+clingo PASS, dezelfde waarde (`loon = 42`) — de executors negeren de
+annotatie. Of decimalen-consistentie überhaupt afgedwongen moet worden is een
+spec-keuze zonder gedrag; de soort-leugen is de gedrag-rakende splitsing.
+
+## De echte lacune
+
+Een leaf-ref (BinderRef óf AttribuutRef) met een soort-leugen in een
+**additieve (`PLUS`/`MIN`) operand-positie** is verifier-schoon maar splitst
+het differentieel-vierkant LUID: ref rekent door (annotatie genegeerd),
+clingo `TRANSLATION FAULT: non-numeric arithmetic operand is not translated`
+(`backends/clingo/lib/translate.ml:383`, uit `numeric_ok`). Nooit stil, dus
+geen corpus-case en geen zwijgende divergentie — maar precies de klasse die de
+poortwachter hoort te vangen: een zelf-tegensprekende IR die geen frontend
+hoort te emitteren en die WF-035 onder elk niet-additief operator al zou
+afkeuren.
 
 ## Minimale reproductie
 
-Basis: `corpus/golden/anchor/jutterswet-aanspraaktelling/` (fold over een
-sumtype-lijst met een `acc + x`-lambda-lichaam). Mutatie: zet op de
-`rechts`-operand (BinderRef `x`) van het fold-lichaam
-`type = {"node":"Tekst"}`. Draai verifier/ref/clingo met
-`case1-gemengd.json`:
+Basis: `corpus/golden/anchor/jutterswet-vindersloon/` (`loon = waardering *
+factor`) en `.../jutterswet-aanspraaktelling/` (fold-lichaam `acc + x`).
 
-    verifier: PASS
-    oracle:   PASS (3 expectations)        # ref: erkende som 12.50, aantal 2 — correct
-    clingo:   TRANSLATION FAULT: non-numeric arithmetic operand ...
+- AttribuutRef onder additief: zet in de vindersloon-`loon`-regel `waarde.op`
+  op `PLUS` en `waarde.links` (`waardering`).`type` op `{Tekst}`. → verifier
+  PASS; ref rekent (`loon = 13`, annotatie genegeerd); clingo `TRANSLATION
+  FAULT: non-numeric arithmetic operand`.
+- BinderRef onder additief (spoor 7b): zet in aanspraaktelling op de
+  `rechts`-BinderRef `x` `type = {Tekst}` (lichaam blijft `acc + x`, `PLUS`).
+  → verifier PASS; ref rekent; clingo TRANSLATION FAULT.
+- Controle dat het de additieve positie is, niet het blad: dezelfde
+  BinderRef-`x`-soort-leugen onder `MAAL` → `WF-035 FAIL … operand of a
+  numeric operator is text` (afgekeurd). Idem AttribuutRef onder `MAAL`.
+- Decimalen-leugen (op AttribuutRef of BinderRef): driemaal PASS, inert.
 
-Dezelfde leugen op de decimalen (2→4) levert driemaal PASS — inert.
+Werkbestanden (buiten de repo): `/tmp/hunt/vl_attref_plus_text.json`,
+`/tmp/hunt/asp_binderref_x_text_PLUS.json`,
+`/tmp/hunt/asp_binderref_x_text_MAAL.json`, `/tmp/hunt/vl_attref_numlie.json`.
 
 ## Voorstel
 
-Breid WF-064 (of een nieuwe WF-nabuur) uit met: het `type` van elke
-`BinderRef` moet de gedeclareerde datatype van zijn resolvende binder
-zijn (match-arm binder-payload, lambda/functie-parameter, of Let-binder),
-onder dezelfde ci/decimalen/eenheid-vergelijking die WF-023 voor
-AttribuutRef gebruikt; de `Datatype_onbekend`-sentinel defereert naar de
-runtime fail-fast, net als WF-023/WF-027. Bij landing hoort een negatief
-`corpus/negatief/wf064-lying-binderref-type/` (soort-leugen), broer van
-`wf027-lying-attribuutref-type`.
+Twee sporen, maintainer-keuze (beide raken `spec/verifier/` +
+`spec/IR-SPEC.md`, protected):
 
-Merk op: het decimalen-lieg-geval is INERT (geen gedrag), dus of de check
-ook decimalen-consistentie afdwingt is een spec-keuze; de soort-leugen is
-de gedrag-rakende splitsing en is het minimale doel.
+1. **Smalst, gedrag-gericht (aanbevolen):** scherp WF-035's `PLUS`/`MIN`-
+   uitzondering aan zodat een operand die *nooit* een datum of duur kan zijn —
+   een `Tekst`- of `Booleaan`-getypte operand — óók onder `PLUS`/`MIN` wordt
+   afgekeurd, terwijl echte datum±duur-optellingen toegelaten blijven. Dit
+   sluit de lacune voor béide blad-soorten in één keer, want WF-035 leest
+   `typ_of_expr` uniform. Bij landing een negatief
+   `corpus/negatief/wf035-additive-text-operand/` (soort-leugen op een
+   `PLUS`-operand).
+2. **Breder, structureel:** een blad-`type`-kruiscontrole (`BinderRef` én
+   `AttribuutRef`) tegen de resolved/gedeclareerde datatype in álle
+   reken-posities, model `resolved_attr_datatype` (`checks.ml:741`). Dit vangt
+   óók de (inerte) decimalen-leugen; of decimalen-consistentie afgedwongen
+   moet worden is de spec-keuze hierboven.
+
+Let op: een **BinderRef-only** fix (de eerste, onnauwkeurige spoor-7b-
+formulering) zou de parallelle AttribuutRef-onder-additief-lacune open laten —
+daarom is de lacune hier herkaderd als leaf-ref-breed en
+operator-positie-gedreven, niet BinderRef-specifiek. Bij landing hoort de
+rij-notitie in `spec/CONSTRUCTS.md` (registry-conflict: door de maintainer,
+niet in de jacht).
 
 ## Reikwijdte / risico
 
-Klein en mechanisch (één statische typvergelijking, model WF-023). Raakt
-`spec/verifier/` + `spec/IR-SPEC.md` (WF-index) + een negatief-case —
-alle protected, dus maintainer-werk. Geen executor-wijziging nodig: ref
-en clingo gedragen zich al correct (ref negeert, clingo weigert luid); de
-check haalt de inconsistente IR gewoon weg vóór de executors.
+Optie 1 is klein en mechanisch (één extra tak in WF-035's `PLUS`/`MIN`-arm).
+Raakt `spec/verifier/` + `spec/IR-SPEC.md` (WF-index) + een negatief-case —
+alle protected, dus maintainer-werk. Geen executor-wijziging nodig: ref en
+clingo gedragen zich al correct (ref rekent door, clingo weigert luid); de
+check haalt de inconsistente IR weg vóór de executors.

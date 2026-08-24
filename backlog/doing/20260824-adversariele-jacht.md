@@ -56,8 +56,10 @@ er geen. Wél één echte verifier-lacune (spoor 7b), luid maar routeerbaar.
 
 ### Sporen die iets vonden
 
-**Spoor 7b — VONDST: `BinderRef.type` wordt niet kruisgecontroleerd.**
-De verifier controleert `AttribuutRef.type` tegen de gedeclareerde
+**Spoor 7b — VONDST: leaf-ref-type-leugen in additieve operand-positie.**
+(WF-attributie en asymmetrie-framing hieronder GECORRIGEERD in de
+lensronde — zie "Lensronde" onderaan; de oorspronkelijke tekst blijft als
+log staan.) De verifier controleert `AttribuutRef.type` tegen de gedeclareerde
 datatype (WF-023; negatief `wf027-lying-attribuutref-type`), maar voor
 een `BinderRef` bestaat die controle niet. WF-064 checkt alleen
 binder-resolutie en arm-lichaam-type-overeenkomst
@@ -144,3 +146,44 @@ zich correct; de lacune zit in de poortwachter) en geen zwijgende
 divergentie om rood-eerst te vangen. Ingecheckt: dit rapport + het
 kaartvoorstel. Alle negen gates in de worktree onveranderd t.o.v.
 baseline (de wijzigingen zijn backlog-proza; gate 1 scant backlog niet).
+
+## Lensronde (2026-08-24) — twee opus-lenzen verwerkt
+
+Twee MINOR/CONFIRMED-bevindingen over spoor 7b / het kaartvoorstel; beide
+zelf her-geverifieerd (verifier + ref + clingo, herhaalde repro) en beide
+GEGROND. Geen weerlegging. De correctie raakt alléén proza (het
+kaartvoorstel `backlog/new/20260824-binderref-type-crosscheck.md` en dit
+rapport); geen corpus-, ref-, clingo- of scripts/check-noop.sh-wijziging.
+
+Kern van beide lenzen: spoor 7b's WF-attributie en asymmetrie-framing
+klopten niet.
+
+- **WF-id.** Wat een soort-leugen (`Numeriek` → `Tekst`/`Booleaan`) op een
+  reken-operand afkeurt is **WF-035** ("operand of a numeric operator is
+  text/boolean", `spec/verifier/lib/checks.ml:1663`,`:1675`), niet WF-023
+  en geen blad-kruiscontrole. WF-023 (`checks.ml:3942`) is de
+  toewijzings-doelregel; de resolved-blad-kruiscontrole
+  `resolved_attr_datatype` (`checks.ml:741`) is UITSLUITEND in **WF-027**
+  bedraad (`checks.ml:791`), vandaar dat `wf027-lying-attribuutref-type`
+  WF-027 citeert, niet WF-023.
+- **As van de asymmetrie.** De escape was **operator-positie-gedreven**, niet
+  BinderRef-specifiek. WF-035 leest `typ_of_expr` uniform voor BinderRef én
+  AttribuutRef (`checks.ml:719`), maar vuurt alleen onder numeriek-vereiste
+  operatoren; voor `PLUS`/`MIN` is de numericiteits-eis uitgezet
+  (`checks.ml:1668`, datum±duur). Her-geverifieerd: BinderRef-`x`-soort-leugen
+  onder `MAAL` → `WF-035 FAIL` (afgekeurd); dezelfde onder `PLUS` (spoor 7b's
+  `acc + x`) → verifier PASS; een AttribuutRef-operand onder `PLUS` (vindersloon
+  `loon`, op `MAAL`→`PLUS`, `waardering` `type`→`{Tekst}`) → verifier PASS, ref
+  rekent `loon = 13`, clingo `TRANSLATION FAULT: non-numeric arithmetic
+  operand`. De decimalen-leugen is inert en ongecontroleerd voor béide
+  blad-soorten (`waardering` `decimalen 0→5`: verifier/ref/clingo alle PASS,
+  `loon = 42`).
+
+Gevolg voor het kaartvoorstel: herkaderd van "kruiscontrole van
+`BinderRef.type`" naar "leaf-ref-type-leugen in additieve operand-positie"
+(leaf-ref-breed, niet BinderRef-only) met de smalste, gedrag-gerichte fix
+(WF-035's `PLUS`/`MIN`-uitzondering aanscherpen voor `Tekst`/`Booleaan`) als
+aanbeveling. Een BinderRef-only fix zou de parallelle
+AttribuutRef-onder-additief-lacune open hebben gelaten.
+
+`scripts/check-noop.sh` NIET aangeraakt.
