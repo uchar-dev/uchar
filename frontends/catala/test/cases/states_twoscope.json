@@ -1,0 +1,22 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "E", "objectType": "Eerste",
+        "attributes": { "grondslag": { "number": "100" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "T", "objectType": "Tweede",
+        "attributes": { "grondslag": { "number": "100" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "E", "attribute": "heffing bruto", "value": { "number": "100" } },
+    { "kind": "attributeValue", "label": "E", "attribute": "heffing netto", "value": { "number": "90" } },
+    { "kind": "attributeValue", "label": "T", "attribute": "heffing bruto", "value": { "number": "100" } },
+    { "kind": "attributeValue", "label": "T", "attribute": "heffing netto", "value": { "number": "80" } },
+    { "kind": "consistent" }
+  ]
+}

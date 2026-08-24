@@ -1,0 +1,32 @@
+# Two scopes sharing a state-bearing output variable name (WF-020 guard)
+
+Labeled variable states lower to plain internal attributes whose `#` is
+mangled to a space (`heffing#bruto` → `heffing bruto`). A rule name that
+recurs across scopes is qualified by subject so it stays globally unique
+(WF-020). Both scopes below declare the SAME state-bearing output variable
+`heffing`, so their step rules (`berekening heffing bruto`, `berekening
+heffing netto`) would collide unless the cross-scope ambiguity is detected on
+the mangled name — the detector (`ruled_vnames_of`) mangles exactly as the
+rule labeller does. Own-authored, rights-free.
+
+```catala
+declaration scope Eerste:
+  input grondslag content integer
+  output heffing content integer
+    state bruto
+    state netto
+
+declaration scope Tweede:
+  input grondslag content integer
+  output heffing content integer
+    state bruto
+    state netto
+
+scope Eerste:
+  definition heffing state bruto equals grondslag
+  definition heffing state netto equals heffing - 10
+
+scope Tweede:
+  definition heffing state bruto equals grondslag
+  definition heffing state netto equals heffing - 20
+```

@@ -946,7 +946,10 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
    that is neither a subscope instance (that becomes an object creation) nor a
    pure input (that carries no rule). Used across scopes to detect a
    variable name that produces a rule in more than one scope, so its rule/ladder
-   name is qualified by subject and stays globally unique (WF-020). *)
+   name is qualified by subject and stays globally unique (WF-020). A state
+   step's rule name is the [state_attr_name]-mangled declared name (that is what
+   [rule_label] compares against [ambiguous]), so mangle here too — otherwise a
+   state variable shared across scopes never matches and collides on WF-020. *)
 let ruled_vnames_of (sd : untyped Sc.scope_decl) : string list =
   List.sort_uniq compare
     (List.filter_map
@@ -957,7 +960,7 @@ let ruled_vnames_of (sd : untyped Sc.scope_decl) : string list =
              | _ -> (
                  match M.remove io.Dio.io_input with
                  | Catala_runtime.OnlyInput -> None
-                 | _ -> Some (M.remove (ScopeVar.get_info (fst var)))))
+                 | _ -> Some (state_attr_name (M.remove (ScopeVar.get_info (fst var))))))
          | Sc.Assertion _ -> None)
        sd.scope_decl_rules)
 

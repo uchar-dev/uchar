@@ -169,7 +169,16 @@ let () =
          the top rung, false → 180 via the base), calibrated against
          `catala interpret`. Through the full differential (ref AND clingo) *)
       ("states.catala_en",
-       [ "cases/states_normaal.json"; "cases/states_verhoogd.json" ]) ]
+       [ "cases/states_normaal.json"; "cases/states_verhoogd.json" ]);
+      (* CONSTRUCTS row 2 / WF-020 guard: two scopes declare the SAME
+         state-bearing output variable `heffing`. The cross-scope ambiguity
+         detector mangles the `#` exactly as the rule labeller does, so the
+         recurring step rules are qualified by subject (`berekening Eerste
+         heffing netto` vs `berekening Tweede heffing netto`) and stay globally
+         unique — without the mangling they collide on WF-020 (the lens flank).
+         One case pins both scopes' chains ($100 → 90 for Eerste, → 80 for
+         Tweede), calibrated against `catala interpret`. Full differential *)
+      ("states_twoscope.catala_en", [ "cases/states_twoscope.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:false src cases) passing;
   (* ref-only passing programs. datum: clingo cannot translate a date literal
