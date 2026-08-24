@@ -622,9 +622,15 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             fault "navigation bindings on a reference that does not navigate (WF-053)"
         | None -> ());
         let v = fresh ctx "A" in
-        ( [ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ],
-          v,
-          pow10 (attr_decimals ctx ~otype:ot ~attr:a) )
+        (* a sum-/struct-typed attribute holds a ground record/constructor term,
+           carrying no numeric scale (value_scale 0) — the whole-value read (a
+           struct passed as a subscope input), the struct_base sibling. A numeric
+           attribute rides its declared scale. *)
+        let scale =
+          if attr_sum_typed ctx ~otype:ot ~attr:a || attr_struct_typed ctx ~otype:ot ~attr:a then 0
+          else pow10 (attr_decimals ctx ~otype:ot ~attr:a)
+        in
+        ([ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ], v, scale)
       end
       else begin
         (* the navigated read (ch. 5.8): one rol/3 body join per to-one
@@ -2671,6 +2677,17 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
             let batoms = bool_atoms ctx ~subject ~subject_ot e in
             head_body ctx (Printf.sprintf "heeft(%s,%s)" term (str m)) (body @ batoms)
         | None -> fault "characteristic initialisation of %S without a value (WF-027)" m)
+      else if attr_sum_typed ctx ~otype:nieuw ~attr:m || attr_struct_typed ctx ~otype:nieuw ~attr:m
+      then begin
+        (* a sum-/struct-typed initialisation (the tutorial passes an [Individual]
+           struct as a subscope input): the record/constructor term carries no
+           numeric scale, no unit and no fit — it rides straight into the val head,
+           the translate_regel struct/sum-target sibling (ch. 9.1/11.1). *)
+        ctx.rule_guard <- cond @ guard @ depth_guard;
+        let bindings, tm, _ = expr_term ctx ~subject ~subject_ot (req "Toekenning.waarde" t.toe_waarde) in
+        ctx.rule_guard <- [];
+        head_body ctx (Printf.sprintf "val(%s,%s,%s)" term (str m) tm) (body @ bindings)
+      end
       else begin
         let target_scale = pow10 (attr_decimals ctx ~otype:nieuw ~attr:m) in
         units_identical_ok

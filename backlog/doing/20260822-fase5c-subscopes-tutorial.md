@@ -332,3 +332,78 @@ nu `letN`-hulpregels in hun ASP maar blijven semantisch identiek en gate-6-groen
 Nog open in deze kaart: de plugin-splitsing van `EScopeCall` en de
 tutorial-exitgetuige (B1 opgeheven op spec/ref/clingo-niveau; de plugin- en
 frontend-fixture-stappen resteren).
+
+## tutorial-exitgetuige drievoudig groen — plugin-verruiming geland (2026-08-24)
+
+De B1-blokkade is nu ook op plugin/frontend-niveau opgeheven: `tutorial_end_2_3`
+loopt drievoudig groen (plugin → verifier → ref → clingo). Vijf plugin-stappen
+plus één clingo-uitbreiding.
+
+- **Boolean subscope-invoer (besluit 1, item 1a/1c).**
+  `frontends/catala/lib/translate.ml`: een boolean caller-variabele die als
+  subscope-arg-WAARDE wordt gelezen (`value_read_bools`) wordt als boolean
+  ATTRIBUUT gedeclareerd (de rekenkamer-overzee-anker-vorm: ref leest uit attrs,
+  clingo als `heeft`), en `read_var` produceert er een `AttribuutRef` voor
+  i.p.v. te weigeren. In `build_subscope` wordt de boolean-arg een
+  kenmerk-`Toekenning` (`toe_kenmerk=true`) met die vertaalde waarde — de
+  callee-kenmerk-init (WF-027-verruimde vorm). De waarde-positie-refusal blijft
+  elders intact (`refuse_bool_value` weigert nog); een boolean die óók als
+  conditie gelezen wordt, weigert luid (gemengde carriage).
+- **Vulanalyse-verfijning (item 1b).** Een uitputtende datum-complementaire
+  basisgroep (article_2 `< 2000` / `>= 2000` met `false ⊢ ∅`) wordt als 'gevuld'
+  erkend: `base_is_filled` herkent een twee-lid-`Group_rung` met
+  complementaire vergelijkingsoperatoren (`< / >=`, `> / <=`) over
+  structureel-gelijke operanden (`Expr.equal`). Totaal → nooit leeg → geen
+  coalesce-vs-hard-divergentie (het uitgestelde besluit blijft ongeraakt).
+- **Cross-scope regelnaam-disambiguatie (bijvangst).** De tutorial heeft twee
+  `household_tax`-outputs (Article 7 collectief, Article 8 per-individu) op
+  verschillende objecttypen → botsende globale regelnaam (WF-020). `file_to_document`
+  berekent de regel-variabelenamen die in >1 scope voorkomen; `translate_scope`
+  qualificeert ALLEEN die met het subject (`berekening HouseholdTaxComputation
+  household_tax`). Byte-neutraal voor de 6 bestaande catala-goldens (geen enkele
+  heeft een cross-scope regelnaam-botsing).
+- **`infer_dt` LRat + ToRat (bijvangst).** `1.0 + decimal of kids / 2.0` typeerde
+  als `null`/int i.p.v. num_rat (4 dec), waardoor `money_mult_shape` in clingo
+  faalde en `$10.000 * rate` via de generieke Maal de int31-range-guard trok.
+  `infer_dt` (op de Catala-expr) krijgt `ELit (LRat _) → num_rat` en
+  `ToRat_int|ToRat_mon → num_rat`, zodat de computed-rate money-product de
+  split-encodering neemt. Byte-neutraal (geen golden heeft een LRat/ToRat als
+  eerste Binair-operand).
+- **clingo struct-subscope-invoer (bijvangst, naast B2/B3).**
+  `backends/clingo/lib/translate.ml`: een struct/sum-getypte `Toekenning`
+  (`individual : Individual` als subscope-invoer) rijdt zonder numerieke schaal
+  in de `val`-head (spiegel van de translate_regel struct-target-tak), en een
+  whole-value struct-`AttribuutRef`-LEZING in `expr_term` krijgt schaal 0
+  (`value_scale`) i.p.v. `pow10 (attr_decimals …)` dat op `Struct_type` faultte.
+
+**ROOD-EERST (letterlijk, originele plugin (HEAD) op de fixture):**
+`catala_frontend: refused: variable "tax_rate" read as an arithmetic/comparison
+operand is not always filled …` (exit 3). Na de vulanalyse-fix verschuift de
+refusal naar `boolean variable "overseas_territories" read in a value position`;
+na de boolean-subscope-fix loopt de fixture schoon.
+
+**Fixture + cases.** `frontends/catala/test/tutorial_end_2_3.catala_en` (catala-book
+`examples/tutorial_end_2_3.catala_en` @ commit `62c35379`, de ontwerp-getrouwe
+`sum integer of`-vorm; de upstream Test-scopes — inline subscope-calls buiten het
+fragment — weggelaten, grondwaarheid via een /tmp-kopie met #[test]-scopes en
+`catala interpret --no-stdlib`). Drie cases, absoluut geijkt: binnengaats-laag
+($15.000, 0 kinderen, 1999 → household_tax $7.000,00); overzee-hoog en
+binnengaats-hoog ($100.001, 5 kinderen, 2005 → $9.999,75 vs $4.999,70, de
+article_6-25%- tegen article_5-30%-flank). De kinderen ≤ 5 respecteren clingo's
+int31-grens op de deling `kids/2.0` op schaal 10^8 bij de gepinde S=4 (een
+gedocumenteerde backend-limiet, geen bug); de overseas-flank blijft observeerbaar
+in household_tax.
+
+**Gates.** Gate 9: `PASS — frontend suite green (120 checks); 6 catala golden(s)
+regenerate byte-identically` (de tutorial voegt 8 checks toe: translate,
+verifier-clean, 3 cases × ref+clingo). Gates 1-8 volledig groen (self-contained;
+ir-schema 81; verifier 81 golden + 137 negatief; case-schema 208; oracle 191;
+clingo 191; noop 169+22; rood 17) — de corpus-artefacten zijn ongewijzigd (de
+wijzigingen raken alleen de frontend, de clingo-backend en de nieuwe
+frontend-fixture). Refuse-fixtureset intact: per-element, multi-state, context,
+whole-struct en de waarde-positie-kenmerklezing weigeren alle nog; de
+creatie-sleutel-botsing is een defensieve backstop die Catala niet kan uitdrukken
+(distincte instance-var-namen → distincte sleutels).
+
+Nog open: de spec/PLAN.md §6-Met-markering voor het 5a-exitcriterium en de
+opus-lensronde (buiten deze opdracht).

@@ -1,0 +1,10 @@
+{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "H", "objectType": "HouseholdTaxIndividualComputation",
+      "attributes": {
+        "individual": { "struct": { "income": { "number": "15000.00" }, "number_of_children": { "number": "0" } } },
+        "overseas_territories": { "boolean": false },
+        "current_date": { "date": "1999-01-01" } },
+      "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "H", "attribute": "household_tax", "value": { "number": "7000.00" } },
+    { "kind": "consistent" } ] }

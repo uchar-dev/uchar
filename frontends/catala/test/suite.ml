@@ -136,7 +136,21 @@ let () =
          a navigated AttribuutRef over that back-link; the callee's rule runs in
          the caller's fixpoint on the minted instance. Through the full
          differential (ref AND clingo) *)
-      ("subscope.catala_en", [ "cases/subscope_70.json"; "cases/subscope_160.json" ]) ]
+      ("subscope.catala_en", [ "cases/subscope_70.json"; "cases/subscope_160.json" ]);
+      (* PHASE5C-TUTORIAL §3 exit witness: the Catala book's tutorial_end_2_3
+         through the plugin — structs, decimals, a branching exception tree with
+         a total date-complementary base group, the money × computed-rate product
+         (split in clingo), a declared subscope whose inputs include a struct
+         (Individual) and a BOOLEAN (overseas_territories, the WF-027-relaxed
+         kenmerk-init carrying a caller boolean-attribute expression), and the
+         let-if household tax reading the subscope's income_tax output over the
+         back-link. Three cases: the low-income binnengaats flank ($7,000), and
+         the overseas-true vs overseas-false high-income flanks ($9,999.75 vs
+         $4,999.70 — article_6's 25% against article_5's 30%), all pinned against
+         `catala interpret`. Through the full differential (ref AND clingo) *)
+      ("tutorial_end_2_3.catala_en",
+       [ "cases/tutorial_binnengaats_laag.json"; "cases/tutorial_overzee_hoog.json";
+         "cases/tutorial_binnengaats_hoog.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:false src cases) passing;
   (* ref-only passing programs. datum: clingo cannot translate a date literal

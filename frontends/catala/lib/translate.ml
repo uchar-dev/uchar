@@ -406,14 +406,45 @@ and nest members lower =
   | Some g, Plain (j, c) :: rest when not (is_true j) -> Some (Form_a (j, c, g) :: rest)
   | _ -> None
 
-(* does the tree carry an always-deciding unconditional base (the lowest rung)?
-   recurses through the nested form — used for the operand-fill analysis. *)
+(* the ordered-comparison polarity of a scopelang operator around a split
+   point K: [`Below] is [E < K], [`AboveEq] is [E >= K], and mirrored for the
+   strict/non-strict flip. A non-comparison operator has no polarity. *)
+let cmp_polarity o =
+  match o with
+  | Op.Lt -> Some `Below | Op.Lte -> Some `BelowEq
+  | Op.Gt -> Some `Above | Op.Gte -> Some `AboveEq
+  | _ -> None
+
+(* two justifications form an EXHAUSTIVE complementary split of the ordered
+   domain: [E < K] with [E >= K], or [E > K] with [E <= K] — the same operand
+   [E] and split point [K], strict on one side and non-strict on the other.
+   Such a pair covers every input, so the group they head is never empty (the
+   operand-fill analysis: a total base group is always filled). *)
+let complementary_just j1 j2 =
+  match M.remove (strip j1), M.remove (strip j2) with
+  | ( EAppOp { op = o1; args = [ a1; b1 ]; _ },
+      EAppOp { op = o2; args = [ a2; b2 ]; _ } ) ->
+      (match cmp_polarity (M.remove o1), cmp_polarity (M.remove o2) with
+       | Some `Below, Some `AboveEq | Some `AboveEq, Some `Below
+       | Some `Above, Some `BelowEq | Some `BelowEq, Some `Above -> true
+       | _ -> false)
+      && Expr.equal a1 a2 && Expr.equal b1 b2
+  | _ -> false
+
+(* does the tree carry an always-deciding base (the lowest rung)? Either an
+   unconditional base rung, or a two-member base GROUP whose members split the
+   domain exhaustively (the date-complementary [article_2] shape: old [< 2000]
+   / new [>= 2000] with the [false ⊢ ∅] fallback — total, never empty). Recurses
+   through the nested form — used for the operand-fill analysis. *)
 let base_is_filled e =
   match parse_tree (strip e) with
   | None -> false
   | Some rungs ->
       List.exists
-        (function Plain (j, _) | Form_a (j, _, _) -> is_true j | Group_rung _ -> false)
+        (function
+          | Plain (j, _) | Form_a (j, _, _) -> is_true j
+          | Group_rung [ [ Plain (j1, _) ]; [ Plain (j2, _) ] ] -> complementary_just j1 j2
+          | Group_rung _ -> false)
         rungs
 
 (* --- expression / condition translation --------------------------------
@@ -456,6 +487,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
     | ELit (LBool _) -> Some Booleaan
     | ELit (LMoney _) -> Some num_money
     | ELit (LDate _) -> Some Datum_in_dagen
+    | ELit (LRat _) -> Some num_rat
     | EVar v -> Option.map snd (Var.Map.find_opt v env)
     | ELocation (ScopelangScopeVar { name }) -> lookup_var (M.remove name)
     | EInj { name; _ } -> Some (sum_type_of enums structs name)
@@ -472,6 +504,11 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
     | EAppOp { op; args = a :: _; _ } -> (
         match M.remove op with
         | Op.Length -> Some num_int
+        (* the decimal casts yield an exact rational (num_rat): the operand is a
+           pass-through at value level, but its STATIC type is the rational scale,
+           which the money × rate split (money_mult_shape) reads to route a
+           computed-rate product through the split encoding *)
+        | Op.ToRat_int | Op.ToRat_mon -> Some num_rat
         | _ -> infer_dt ~env a)
     | _ -> None
   in
@@ -893,10 +930,35 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
   in
   (value_expr, cond_expr)
 
-(* one scope -> its object type, rules, ladders, consistencies *)
+(* the rule-producing variable base-names of a scope: a [ScopeVarDefinition]
+   that is neither a subscope instance (that becomes an object creation) nor a
+   pure input (that carries no rule). Used across scopes to detect a
+   variable name that produces a rule in more than one scope, so its rule/ladder
+   name is qualified by subject and stays globally unique (WF-020). *)
+let ruled_vnames_of (sd : untyped Sc.scope_decl) : string list =
+  List.sort_uniq compare
+    (List.filter_map
+       (function
+         | Sc.ScopeVarDefinition { var; e; io; _ } -> (
+             match M.remove (strip e) with
+             | EScopeCall _ -> None
+             | _ -> (
+                 match M.remove io.Dio.io_input with
+                 | Catala_runtime.OnlyInput -> None
+                 | _ -> Some (M.remove (ScopeVar.get_info (fst var)))))
+         | Sc.Assertion _ -> None)
+       sd.scope_decl_rules)
+
+(* one scope -> its object type, rules, ladders, consistencies. [ambiguous] is
+   the set of rule variable names that recur across scopes (rule names for them
+   are qualified by subject). *)
 let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (string * I.datatype) list)
-    (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
+    ~(ambiguous : string list) (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
   let ot_name = ScopeName.base name in
+  (* a rule/ladder name for [vname]: qualified by subject when [vname] produces a
+     rule in more than one scope, bare otherwise (existing single-scope names
+     are unchanged — byte-identity for the corpus goldens). *)
+  let rule_label vname = if List.mem vname ambiguous then ot_name ^ " " ^ vname else vname in
   (* declared subscopes (PHASE5C-TUTORIAL §3): a declared subscope collapses at
      scopelang into ONE [ScopeVarDefinition] whose value is an [EScopeCall] and
      whose variable is TStruct-typed (the callee's output struct). Recorded here
@@ -955,6 +1017,37 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
       sd.scope_sig ScopeVar.Map.empty
   in
   let lookup v = ScopeVar.Map.find v vars in
+  (* boolean caller variables read as a subscope-input VALUE (an arg of a
+     declared subscope call). A boolean is a characteristic, and a value-position
+     read of a characteristic has no expression image (read_var refuses it). The
+     WF-027 relaxation (besluit 1) carries the kenmerk-init value as a
+     boolean-typed [Attribuut_ref], so such a caller boolean is declared as a
+     boolean ATTRIBUTE — the jutterswet-rekenkamer-overzee anchor's shape (ref
+     reads it from attrs, clingo as heeft). A boolean read only as a condition
+     stays a characteristic. The scope of this widening is exactly the
+     kenmerk-init position; the value-position refusal holds everywhere else. *)
+  let value_read_bools =
+    let bare_bool_read argexpr =
+      match parse_tree (strip argexpr) with
+      | Some [ Plain (just, cons) ] when is_true just -> (
+          match M.remove (strip cons) with
+          | ELocation (ScopelangScopeVar { name }) -> (
+              let cv = M.remove name in
+              match ScopeVar.Map.find_opt cv vars with
+              | Some (_, Booleaan) -> Some cv
+              | _ -> None)
+          | _ -> None)
+      | _ -> None
+    in
+    ScopeVar.Map.fold
+      (fun _ (_scope, args, _out) acc ->
+        ScopeVar.Map.fold
+          (fun _ (_pos, argexpr) acc ->
+            match bare_bool_read argexpr with Some cv -> ScopeVar.Set.add cv acc | None -> acc)
+          args acc)
+      subscope_meta ScopeVar.Set.empty
+  in
+  let is_value_bool v = ScopeVar.Set.mem v value_read_bools in
   (* a declared subscope's per-field output read (PHASE5C-TUTORIAL §3.2): an
      [EStructAccess] on the instance variable becomes a navigated [AttribuutRef]
      over the back-link — the field name IS the callee output-variable name, so
@@ -1010,8 +1103,8 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   (* object type members, in declaration order *)
   let attributen = ref [] and kenmerken = ref [] in
   ScopeVar.Map.iter
-    (fun _ (vname, dt) ->
-      if is_bool_dt dt then kenmerken := vname :: !kenmerken
+    (fun v (vname, dt) ->
+      if is_bool_dt dt && not (is_value_bool v) then kenmerken := vname :: !kenmerken
       else attributen := (vname, Some dt) :: !attributen)
     vars;
   let attributen = List.rev !attributen and kenmerken = List.rev !kenmerken in
@@ -1051,7 +1144,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
       refuse
         "WF-067: a closed lambda/function body may not read the scope variable %S (an attribute or characteristic read is ill-formed in a body — the scope-capturing fence)"
         vname
-    else if is_bool_dt dt then
+    else if is_bool_dt dt && not (is_value_bool v) then
       refuse
         "boolean variable %S read in a value position: booleans are characteristics (kenmerken); a value-position read of a characteristic has no image in the 5a fragment (read it as a condition instead)"
         vname
@@ -1072,6 +1165,15 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
     if in_body then
       refuse
         "WF-067: a closed lambda/function body may not read the scope characteristic %S (the scope-capturing fence)"
+        vname
+    else if is_value_bool v then
+      (* declared as a boolean ATTRIBUTE because it feeds a subscope kenmerk-init
+         (value position); reading it ALSO as a condition would need it as a
+         characteristic — the two carriages are incompatible, refused loudly *)
+      refuse
+        "boolean variable %S is read both as a subscope-input value and as a condition: the value \
+         read carries it as an attribute, a condition read needs a characteristic — mixed carriage \
+         is not supported (read one way)"
         vname
     else if is_bool_dt dt then
       Kenmerk_check
@@ -1107,12 +1209,12 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   let add_regel r = regels := r :: !regels in
   let add_ladder l = ladders := l :: !ladders in
   let berekening vname dt value ~cond : I.resolved_regel =
-    { rr_naam = Some ("berekening " ^ vname); rr_soort = Some Berekening;
+    { rr_naam = Some ("berekening " ^ rule_label vname); rr_soort = Some Berekening;
       doel = Some (attr_ref vname dt);
       waarde = Some (value_expr value); rr_voorwaarde = cond; rr_geldigheid = Some geldig }
   in
   let kenmerktoekenning vname ~voorwaarde : I.resolved_regel =
-    { rr_naam = Some ("kenmerktoekenning " ^ vname); rr_soort = Some Kenmerktoekenning;
+    { rr_naam = Some ("kenmerktoekenning " ^ rule_label vname); rr_soort = Some Kenmerktoekenning;
       doel = Some (attr_ref vname Booleaan);
       waarde = Some (Literal { waarde = Some "waar"; typ = Some Booleaan; bron = Some "waar" });
       rr_voorwaarde = voorwaarde; rr_geldigheid = Some geldig }
@@ -1156,7 +1258,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
             g }
     in
     let build_ladder ?(ongeordend = false) suffix (chain : _ prung list) : I.default_ladder =
-      { dl_naam = Some (vname ^ suffix); dl_onderwerp = ot_name;
+      { dl_naam = Some (rule_label vname ^ suffix); dl_onderwerp = ot_name;
         dl_kenmerk = (if is_bool then Some vname else None);
         dl_attribuut = (if is_bool then None else Some vname);
         rungs = List.map build_rung chain;
@@ -1241,14 +1343,13 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
            (fun k (_pos, argexpr) acc ->
              let attr = M.remove (ScopeVar.get_info k) in
              let waarde = arg_value argexpr in
-             (match ir_typ waarde with
-              | Some Booleaan ->
-                  refuse
-                    "boolean subscope input %S to %S: only numeric/date/enum inputs are lowered (a \
-                     characteristic initialisation needs a boolean literal, WF-027) — refused"
-                    attr instance_var
-              | _ -> ());
-             { I.toe_attribuut = Some attr; toe_waarde = Some waarde; toe_kenmerk = false } :: acc)
+             (* a boolean input binds as a characteristic initialisation
+                (toe_kenmerk = true): the callee's input boolean is a kenmerk,
+                and the WF-027 relaxation (besluit 1) carries the caller's
+                boolean-typed value expression as its init. Numeric/date/struct/
+                enum inputs stay attribute initialisations. *)
+             let toe_kenmerk = (match ir_typ waarde with Some Booleaan -> true | _ -> false) in
+             { I.toe_attribuut = Some attr; toe_waarde = Some waarde; toe_kenmerk } :: acc)
            args [])
     in
     let oc : I.resolved_object_creatie =
@@ -1352,12 +1453,21 @@ let file_to_document (input : string) : I.document =
   used_structs := StructName.Set.empty;
   used_optional := None;
   let functions = topdef_signatures enums structs prog.Sc.program_topdefs in
+  (* a rule variable name that produces a rule in more than one scope collides on
+     the (globally unique) rule name — qualify those, and only those, by subject
+     (PHASE5C-TUTORIAL: the tutorial's two [household_tax] outputs across the
+     collective and per-individual scopes). *)
+  let ambiguous =
+    let per_scope = List.map (fun (_, decl) -> ruled_vnames_of (M.remove decl)) scopes in
+    let all = List.concat per_scope in
+    List.sort_uniq compare (List.filter (fun n -> List.length (List.filter (( = ) n) all) > 1) all)
+  in
   let objecttypen = ref [] and regels = ref [] and ladders = ref [] and cons = ref [] in
   let feittypen = ref [] and creaties = ref [] in
   List.iter
     (fun (name, decl) ->
       let ot_name, ot, rs, ls, cs, fts, ocs =
-        translate_scope enums structs functions name (M.remove decl)
+        translate_scope enums structs functions ~ambiguous name (M.remove decl)
       in
       objecttypen := (ot_name, ot) :: !objecttypen;
       regels := !regels @ rs;
