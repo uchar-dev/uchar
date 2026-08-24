@@ -232,6 +232,13 @@ let () =
          below-root branching, not this) *)
       ("refuse_sharedbase.catala_en", "shared non-trivial base");
       ("refuse_bool_value.catala_en", "value position");
+      (* besluit 4-A, the navigated sibling: a boolean OUTPUT of a declared
+         subscope (a callee characteristic) read in a VALUE position — here an
+         equality operand — refuses loudly, mirroring the own-boolean value
+         guard. Read as a CONDITION it lowers (overzeelezing.catala_en); the
+         value position has no image and would emit a dangling AttribuutRef the
+         verifier admits but ref/clingo split on *)
+      ("refuse_subscope_bool_value.catala_en", "value position");
       ("refuse_empty_arith.catala_en", "operand");
       (* row-36 fences: a partial match (WF-063 totality) and a tuple payload
          (an n-ary constructor payload — single-payload constructors only)

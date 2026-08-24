@@ -1121,6 +1121,21 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
           | None ->
               refuse "subscope output field %S is not declared on callee %S" fld_name callee_type
         in
+        (* besluit 4-A: a BOOLEAN callee output is a characteristic (kenmerk) on
+           the callee, so a value-position read of it has no image — it would
+           emit a dangling AttribuutRef the verifier admits and the executors
+           split on (ref reads it leeg, clingo faults on the unknown attribute).
+           Refuse loudly, the navigated sibling of scalar_read's own-boolean
+           value guard and the inverse of check_subscope_output's condition
+           guard; the author is pointed at the condition read that DOES lower. *)
+        (match fld_ty with
+         | I.Booleaan ->
+             refuse
+               "boolean subscope output %S of %S read in a value position: it is a characteristic \
+                (kenmerk) on the callee, and a value-position read of a characteristic has no image \
+                in the 5a fragment (read it as a condition instead)"
+               fld_name callee_type
+         | _ -> ());
         let callee_role = subscope_callee_role v in
         let bron = Printf.sprintf "de %s van de %s" fld_name (M.remove (ScopeVar.get_info v)) in
         Some

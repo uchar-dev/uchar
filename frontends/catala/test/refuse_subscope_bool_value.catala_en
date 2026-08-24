@@ -1,0 +1,35 @@
+# Boolean subscope-output read in WAARDE-positie — moet luid geweigerd (besluit 4-A).
+
+Een boolean OUTPUT van een gedeclareerde subscope is een kenmerk op de callee.
+Gelezen als VOORWAARDE verlaagt hij tot een genavigeerde `Kenmerk`-check
+(`overzeelezing.catala_en`). Gelezen in WAARDE-positie — hier als operand van
+een gelijkheid `eig_a.overzees = eig_b.overzees` — heeft hij geen beeld: de
+plugin zou een dangling `AttribuutRef` tegen de callee-karakteristiek emitteren
+(verifier-clean, maar ref leest hem leeg en antwoordt stil fout, clingo faalt op
+het onbekende attribuut). De plugin weigert die waarde-positie-lezing luid en
+wijst de auteur naar de conditie-lezing. Eigen auteurschap, rechtenvrij.
+
+```catala
+declaration scope Eigenaar:
+  input registratiezone content integer
+  output overzees content boolean
+
+scope Eigenaar:
+  definition overzees equals registratiezone > 100
+
+declaration scope Vondstaanslag:
+  input vondstwaarde content integer
+  input registratiezone_a content integer
+  input registratiezone_b content integer
+  eig_a scope Eigenaar
+  eig_b scope Eigenaar
+  output heffing content integer
+
+scope Vondstaanslag:
+  definition eig_a.registratiezone equals registratiezone_a
+  definition eig_b.registratiezone equals registratiezone_b
+  definition heffing equals vondstwaarde
+  exception definition heffing
+    under condition eig_a.overzees = eig_b.overzees
+    consequence equals vondstwaarde * 2
+```

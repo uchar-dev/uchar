@@ -92,3 +92,64 @@ callee-karakteristiek). Dit is een bestaand gat in de waarde-positie
 (niet geraakt door deze cond-verbreding). Besluit 4-A houdt de
 waarde-positie uit scope; gemeld voor de maintainer. Nog open:
 twee opus-lenzen vóór de merge.
+
+## Lensronde (2026-08-24) — de open flank gedicht
+
+Twee opus-lenzen, één wortel: de boolean subscope-uitvoer in
+WAARDE-positie (de "Open flank" hierboven).
+
+**BEVINDING 1 [MAJOR/CONFIRMED] — zelf gereproduceerd, in scope
+gedicht.** Empirisch bevestigd met de branch-binaries op de
+gelijkheids-operandvorm `eig_a.overzees = eig_b.overzees` (zone
+200/200): plugin exit 0, verifier PASS, ref `MISMATCH: V1.heffing =
+3000, expected 6000` (stil FOUT — de uitzondering vuurt nooit omdat
+`overzees` als nooit-gezet attribuut leeg gelezen wordt), clingo
+`TRANSLATION FAULT: unknown attribute "overzees" on "Eigenaar"`. Dus
+een stille ref/clingo-divergentie plus een verifier-miss plus een fout
+ref-antwoord — zwaarder dan de eenregelige flank-notitie. De headline
+"de waarde-positie-refusal blijft exact staan" dekte alléén de bare
+own-boolean read (`refuse_bool_value`), niet de genavigeerde
+subscope-uitvoer.
+
+Besluit 4-A houdt de waarde-positie uit scope = geweigerd, níét stil
+toegelaten. De code dwong dat op de genavigeerde tak niet af. Gedicht
+binnen de kaart (May-touch `frontends/catala/`), smalste vorm: in
+`read_subscope_output` een `I.Booleaan`-guard die luid weigert — de
+genavigeerde broer van `scalar_read`'s own-boolean waarde-guard
+(translate.ml:1254) en de inverse van `check_subscope_output`'s
+conditie-guard. Numerieke/datum/struct/sum-uitvoeren in waarde-positie
+blijven onaangeraakt (legitiem, bv. `subscope.catala_en`'s
+`kamer.uitkomst`). Geen enkele bestaande groene golden leest een
+boolean subscope-uitvoer in waarde-positie (penningbeschikking/
+penningrecht hebben geen subscope; overzeelezing leest in
+conditie-positie) — de fix is veilig.
+
+ROOD-EERST (letterlijk, HEAD vóór de fix): plugin exit 0 / verifier
+PASS / ref `MISMATCH: V1.heffing = 3000, expected 6000` / clingo
+`TRANSLATION FAULT: unknown attribute "overzees" on "Eigenaar"`.
+NÁ de fix: `catala_frontend: refused: boolean subscope output
+"overzees" of "Eigenaar" read in a value position … (read it as a
+condition instead)` (exit 3). Gepind door de nieuwe refusal-fixture
+`frontends/catala/test/refuse_subscope_bool_value.catala_en`
+(needle "value position", de genavigeerde broer van
+`refuse_bool_value`), +1 check (144 → 145).
+
+**BEVINDING 2 [MINOR/CONFIRMED] — zelfde wortel, gesubsumeerd.** De
+bare gelijkheids-operandvorm `vlag equals eigenaar.overzees =
+eigenaar.overzees` is dezelfde dangling-`AttribuutRef`-lezing;
+dezelfde `I.Booleaan`-guard dekt hem. Geen aparte actie.
+
+**Alle negen gates opnieuw groen (slotregels):**
+1. `check-self-contained: PASS`
+2. `check-ir-schema: PASS (schema valid; 99 file(s) validate and round-trip)`
+3. `check-verifier: PASS (99 golden clean; 138 negatief rejected for their declared rule)`
+4. `check-case-schema: PASS (schema valid; 270 case file(s) validate)`
+5. `check-oracle: PASS (253 cases replayed exactly; NOT replayed, no case file yet: corpus/golden/jutterswet-vormenkabinet)`
+6. `check-clingo: PASS (253 cases replay exactly through clingo — ref = clingo over the corpus)`
+7. `check-noop: PASS (220 cases refute a do-nothing executor; 33 pinned survivors pin defeasible standing)`
+8. `check-rood: PASS (17 red cases fault observably in both executors)`
+9. `check-catala: PASS — frontend suite green (145 checks); 9 catala golden(s) regenerate byte-identically`
+
+De "Open flank" hierboven is hiermee gedicht: de waarde-positie-lezing
+van een boolean subscope-uitvoer wordt nu — net als de bare own-boolean
+read — luid geweigerd, in lijn met besluit 4-A.
