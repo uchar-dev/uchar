@@ -84,3 +84,42 @@ Status: alle negen gates groen (gate 9 lokaal, catala 1.2.1). De
 analyse (het diff-document in `spec/proposals/`, de
 categorie-classificatie met spec-gevolgen, PLAN §6-markering, twee
 opus-lenzen) is de vervolgstap die deze geparkeerde artefacten leest.
+
+## De analyse — het diff-document (2026-08-24)
+
+`spec/proposals/PHASE5D-DIFF.md` geschreven: het gekozen fragment en
+waarom, het reproduceerbare dump-recept (revisies gepind), de
+gelijkheidstoets (vijf cases, dezelfde absolute uitkomsten door ref én
+clingo op beide dumps), en de volledige boom-classificatie.
+
+Uitkomst van de classificatie:
+- **(i) administratief:** objecttypenaam (Jutter/Penningrecht),
+  member-namen (spatie vs underscore), `bron`/`onderwerpBron`-strings,
+  `kenmerken`-volgorde, `meervoud`, en `teken` (NIET_NEGATIEF vs
+  ONBEPAALD — een auteursverschil in de twee bronteksten, benigne op dit
+  corpus).
+- **(ii) getrackte v0↔v1-delta (bevestiging, geen vondst):** de kern —
+  `defaultLadder` (Catala) vs twee platte `KENMERKTOEKENNING`-regels
+  (toolchain), getrackt in CONSTRUCTS rij 8/2/7 + IR-SPEC ch. 6.1 +
+  RUNTIME-SEMANTICS ch. 7/7.7; de parse-stage `Regel`-shells (§2.3
+  non-goal); het optionele `defaultLadders`-veld aanwezig vs
+  nooit-geproduceerd (schema/Method wire-discipline). Onder de container
+  zijn de conditie-bomen vormidentiek — de hele diff zit in de wrapper.
+- **(iii) echte ontwerpfout: GEEN.** Elk verschil valt in (i) of een
+  getrackte (ii); geen verwacht-maar-ongetrackt verschil.
+
+Eén beslissingsvrije documentaire aanbeveling (§5): een verhelderende
+zin in ch. 7.7 / CONSTRUCTS rij 8 dat meervoudige gelijk-waardige
+kenmerktoekenningen op één doel native blijven (idempotent, ordevrij),
+extensioneel de disjunctieve één-sport-ladder. Géén genummerde
+maintainersvraag; `besluit_plichtig` leeg.
+
+Eerlijke grenzen (§6): v0-spiegel vs v1-vormen; één fragment ≠
+volledigheid; het divergente geval (ongeordende, verschillend-beslissende
+uitzonderingen — `tariefrecht`) is bewust buiten scope, dáár kan een
+echte vorm-fout nog schuilen; de twee bronnen zijn geen teken-identieke
+declaraties (`teken`, meervoud).
+
+Gates 1–2 groen na het toevoegen van het document (raakt geen
+artefactzone). Vervolg (card-close): PLAN §6-markering flippen, twee
+opus-lenzen.
