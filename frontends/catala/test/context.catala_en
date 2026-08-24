@@ -1,0 +1,37 @@
+# Context (reentrant) input — the generated top rung (besluit 6)
+
+A `context` variable of a subscope carries the callee's OWN default, and
+the caller MAY override it. Reading B (Catala's C-Def): the caller's value
+is the HIGHEST-priority exception — it beats the callee's own computation.
+The plugin lowers this to a **generated top rung** above the callee's own
+ladder on that target (PHASE5-CATALA decision 6): the rung's guard and value
+read the caller, navigated over the synthesised back-link (callee → caller),
+with no standing machinery — Reading B expressed as rung order.
+
+Both polarities ride one program: the caller overrides `drempel` under a
+case boolean, so `pas_toe` = true makes the top rung decide (the override
+wins) and `pas_toe` = false lets the callee's own ladder base decide.
+Own-authored, rights-free.
+
+```catala
+declaration scope Kamer:
+  input grondslag content integer
+  context drempel content integer
+  output uitkomst content integer
+
+scope Kamer:
+  definition drempel equals 10
+  definition uitkomst equals grondslag - drempel
+
+declaration scope Aanslag:
+  input grondslag content integer
+  input eigen_drempel content integer
+  input pas_toe content boolean
+  kamer scope Kamer
+  output heffing content integer
+
+scope Aanslag:
+  definition kamer.grondslag equals grondslag
+  definition kamer.drempel under condition pas_toe consequence equals eigen_drempel
+  definition heffing equals kamer.uitkomst
+```

@@ -953,7 +953,8 @@ let ruled_vnames_of (sd : untyped Sc.scope_decl) : string list =
    the set of rule variable names that recur across scopes (rule names for them
    are qualified by subject). *)
 let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (string * I.datatype) list)
-    ~(ambiguous : string list) (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
+    ~(ambiguous : string list) ~(top_rung_vars : ScopeName.t -> ScopeVar.Set.t)
+    (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
   let ot_name = ScopeName.base name in
   (* a rule/ladder name for [vname]: qualified by subject when [vname] produces a
      rule in more than one scope, bare otherwise (existing single-scope names
@@ -1006,17 +1007,23 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
               "multi-state variable %S: states are out of scope — Catala expands each state into a \
                separate scopelang variable and the IR has no state machinery (PHASE5C card 4 flank); refused"
               vname;
-          (match M.remove sv.svar_io.Dio.io_input with
-           | Catala_runtime.Reentrant ->
-               refuse
-                 "context (reentrant) variable %S: besluit 6 wants Reading B (caller override as the highest rung), but ch. 7.8's input rung sits BELOW the ordinary rungs (Reading A). A single-scope 5a program cannot realise Reading B — refused."
-                 vname
-           | Catala_runtime.NoInput | Catala_runtime.OnlyInput -> ());
+          (* a context (reentrant) variable is no longer refused (besluit 6):
+             it is an ordinary attribute whose OWN default becomes the base of
+             a ladder, and a caller override rides above it as a generated top
+             rung ([build_subscope] below; the merge is in [file_to_document]).
+             The io_input is consulted through [top_rung_vars]. *)
           ScopeVar.Map.add v (vname, catala_dt enums structs sv.svar_out_ty) acc
         end)
       sd.scope_sig ScopeVar.Map.empty
   in
   let lookup v = ScopeVar.Map.find v vars in
+  (* besluit 6: the reentrant variables of THIS scope that carry an own
+     default — their own default becomes a ladder base (never a bare
+     Berekening/Kenmerktoekenning, so a caller top rung can prepend, ch. 7.9),
+     and a caller override lands as a generated top rung on that ladder. A
+     reentrant variable without an own default keeps the ladderless MemberInit
+     route (there is no own ladder to sit above). *)
+  let is_reentrant_top v = ScopeVar.Set.mem v (top_rung_vars name) in
   (* boolean caller variables read as a subscope-input VALUE (an arg of a
      declared subscope call). A boolean is a characteristic, and a value-position
      read of a characteristic has no expression image (read_var refuses it). The
@@ -1125,14 +1132,26 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   in
   (* scope-variable reads resolve to attribute/characteristic reads; inside a
      closed body they are captures and refuse (WF-067). *)
-  let attr_ref vname dt : I.expr =
+  (* [nav = Some (feittype, rol)] wraps the read as a navigated one-hop read
+     over the synthesised back-link (ch. 5.8), used for a caller override lowered
+     as a top rung on the callee ladder (besluit 6): the rung lives on the callee
+     (the ladder subject), so its caller reads navigate callee -> caller. *)
+  let attr_ref ?nav vname dt : I.expr =
+    let navigatie_rol, navigatie_bindingen =
+      match nav with
+      | None -> (None, None)
+      | Some (ft, rol) -> (Some rol, Some [ { I.rb_feittype = ft; rb_rol = rol } ])
+    in
     Attribuut_ref
       { attribuut = Some vname; objecttype = Some ot_name;
-        onderwerp_bron = Some ("de " ^ vname); navigatie_rol = None;
+        onderwerp_bron = Some ("de " ^ vname); navigatie_rol;
         typ = Some dt; bron = Some ("de " ^ vname); set = false;
-        navigatie_pad = []; navigatie_bindingen = None }
+        navigatie_pad = []; navigatie_bindingen }
   in
-  let read_var ~operand ~in_body name : I.expr =
+  (* the shared scalar-read check (subscope/closed-body/boolean-carriage/
+     empty-operand), returning the declared name and datatype; [read_var] wraps
+     it in a bare [attr_ref], the override reader in a navigated one. *)
+  let scalar_read ~operand ~in_body name : string * I.datatype =
     let v = M.remove name in
     if is_subscope v then
       refuse
@@ -1152,9 +1171,11 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
       refuse
         "variable %S read as an arithmetic/comparison operand is not always filled (not an input, no unconditional definition): Catala reads it hard (error_empty = fatal on empty) while the IR coalesces an empty operand — refused (deviation deferred)"
         vname
-    else attr_ref vname dt
+    else (vname, dt)
   in
-  let check_var ~in_body name : I.conditie =
+  (* the shared characteristic-read check; [check_var] wraps it in a bare
+     [Kenmerk_check], the override reader in a navigated one. *)
+  let kenmerk_read ~in_body name : string =
     let v = M.remove name in
     if is_subscope v then
       refuse
@@ -1175,15 +1196,41 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
          read carries it as an attribute, a condition read needs a characteristic — mixed carriage \
          is not supported (read one way)"
         vname
-    else if is_bool_dt dt then
-      Kenmerk_check
-        { kenmerk = Some vname; navigatie = None; negatie = false;
-          eigenaar = None; periode = None; bron = Some vname; navigatie_binding = None }
+    else if is_bool_dt dt then vname
     else refuse "non-boolean variable %S used as a condition" vname
+  in
+  let read_var ~operand ~in_body name : I.expr =
+    let vname, dt = scalar_read ~operand ~in_body name in
+    attr_ref vname dt
+  in
+  let check_var ~in_body name : I.conditie =
+    let k = kenmerk_read ~in_body name in
+    Kenmerk_check
+      { kenmerk = Some k; navigatie = None; negatie = false;
+        eigenaar = None; periode = None; bron = Some k; navigatie_binding = None }
   in
   let lookup_var v = try Some (snd (lookup v)) with Not_found -> None in
   let value_expr, cond_expr =
     make_exprs ~enums ~structs ~functions ~read_var ~check_var ~lookup_var ~read_subscope_output
+  in
+  (* besluit 6: the value/condition walk that lowers a caller override into a
+     top rung on the callee ladder. Same walk as the scope's own, but every
+     caller read navigates back over the back-link (feittype, caller role):
+     the override rung sits on the callee's ladder yet reads the caller's
+     override value and guard — Reading B expressed as rung order, no standing
+     machinery. *)
+  let override_exprs ~feittype ~rol =
+    make_exprs ~enums ~structs ~functions
+      ~read_var:(fun ~operand ~in_body name ->
+        let vname, dt = scalar_read ~operand ~in_body name in
+        attr_ref ~nav:(feittype, rol) vname dt)
+      ~check_var:(fun ~in_body name ->
+        let k = kenmerk_read ~in_body name in
+        Kenmerk_check
+          { kenmerk = Some k; navigatie = Some rol; negatie = false; eigenaar = None;
+            periode = None; bron = Some k;
+            navigatie_binding = Some { I.rb_feittype = feittype; rb_rol = rol } })
+      ~lookup_var ~read_subscope_output
   in
   (* condition option: [true] is unconditional -> None (for plain rules) *)
   let cond_opt e = if is_true e then None else Some (cond_expr e) in
@@ -1206,6 +1253,10 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   (* accumulators *)
   let regels = ref [] and ladders = ref [] and consistenties = ref [] in
   let feittypen = ref [] and creaties = ref [] in
+  (* besluit 6: caller override top rungs, keyed by (callee object type,
+     callee attribute); [file_to_document] prepends them onto that callee's
+     own ladder once every scope is translated. *)
+  let override_contribs : (string * string * I.rung list) list ref = ref [] in
   let add_regel r = regels := r :: !regels in
   let add_ladder l = ladders := l :: !ladders in
   let berekening vname dt value ~cond : I.resolved_regel =
@@ -1264,8 +1315,24 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
         rungs = List.map build_rung chain;
         dl_ongeordend = ongeordend; dl_bron = Some vname; dl_geldigheid = Some geldig }
     in
+    (* besluit 6: a reentrant variable's own default must be a LADDER (never a
+       bare Berekening), so a caller override can ride above it as a top rung.
+       The attribute-target chain own default is covered; a characteristic
+       context target and a root-unordered own default are recorded flanks. *)
+    if is_reentrant_top v && is_bool then
+      refuse
+        "context (reentrant) characteristic %S: a caller boolean override is a recorded besluit-6 \
+         flank (the generated top rung covers attribute targets — a characteristic top rung is not \
+         wired); refused"
+        vname;
     match default_kind (strip e) with
     | `Group members when List.length members >= 2 ->
+        if is_reentrant_top v then
+          refuse
+            "context (reentrant) variable %S with a root-level unordered own default: a caller top \
+             rung above an unordered group is a recorded besluit-6 flank (a chain own default is \
+             covered); refused"
+            vname;
         (* a root-level unordered group -> the declared-unordered ladder group:
            one [ongeordend] ladder per member (ch. 7.2, unchanged) — distinct
            from a NESTED unordered group, which rides [excepties] on one rung *)
@@ -1289,12 +1356,15 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
                declared-unordered group (besluit 4/vraag 5, PHASE5C §4)"
               vname
         | Some [ Plain (cond, value) ] ->
-            (* a single plain rung is a bare rule, not a ladder *)
+            (* a single plain rung is a bare rule, not a ladder — unless the
+               target is a reentrant context variable, whose own default must be
+               a ladder base for the caller top rung to sit above (besluit 6) *)
             if is_bool then
               add_regel
                 (kenmerktoekenning vname
                    ~voorwaarde:(combine (cond_opt cond) (bool_value_guard value)))
-            else if is_true cond then add_regel (berekening vname dt value ~cond:None)
+            else if is_true cond && not (is_reentrant_top v) then
+              add_regel (berekening vname dt value ~cond:None)
             else add_ladder (build_ladder "" [ Plain (cond, value) ])
         | Some chain -> add_ladder (build_ladder "" chain))
   in
@@ -1322,6 +1392,11 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
             { rol_naam = Some callee_role; rol_objecttype_naam = Some callee_type;
               rol_meervoud = None; rol_meervoudig = false } ] }
     in
+    (* besluit 6: which of this callee's inputs are reentrant context targets
+       carrying an own default — those args become top rungs, not member
+       initialisations. *)
+    let ovr_set = top_rung_vars scope in
+    let ve_ov, ce_ov = override_exprs ~feittype ~rol:caller_role in
     (* a subscope input definition carries the ordinary scope-variable default
        shape [error_empty ⟨ ⟨true ⊢ ⟨X⟩⟩ | false ⊢ ∅ ⟩] — one unconditional
        plain rung. Anything richer (a conditional base or a ladder) is a rung
@@ -1337,19 +1412,58 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
              PHASE5C-TUTORIAL §3) — refused"
             instance_var
     in
+    (* besluit 6: a caller override of a reentrant callee variable that carries
+       an own default (in [ovr_set]) does NOT bind as a member initialisation —
+       it becomes a generated top rung above the callee's own ladder (Reading B
+       as rung order, the §4.1 hardship-pattern shape; the WF-050 constraint).
+       Its guard and value read the caller, navigated over the back-link
+       (callee -> caller); no standing machinery. *)
+    let override_rung callee_var (pr : _ prung) : I.rung =
+      match pr with
+      | Plain (just, value) ->
+          { I.rung_besluit = None;
+            rung_voorwaarde = Some (if is_true just then always_true else ce_ov just);
+            rung_consequentie = Some (ve_ov value);
+            rung_initialisatie = false; rung_excepties = None;
+            rung_bron = Some ("context-override " ^ callee_var) }
+      | Form_a _ | Group_rung _ ->
+          refuse
+            "a caller override of the context variable %S is a branching tree (a nested or \
+             root-unordered override): only a chain of plain-rung overrides lowers to top rungs \
+             (besluit 6 flank); refused"
+            callee_var
+    in
+    ScopeVar.Map.iter
+      (fun k (_pos, argexpr) ->
+        if ScopeVar.Set.mem k ovr_set then
+          let callee_var = M.remove (ScopeVar.get_info k) in
+          match parse_tree (strip argexpr) with
+          | Some chain ->
+              override_contribs :=
+                (callee_type, callee_var, List.map (override_rung callee_var) chain)
+                :: !override_contribs
+          | None ->
+              refuse
+                "a caller override of the context variable %S is outside the fragment (besluit 6); \
+                 refused"
+                callee_var)
+      args;
     let toekenningen =
       List.rev
         (ScopeVar.Map.fold
            (fun k (_pos, argexpr) acc ->
-             let attr = M.remove (ScopeVar.get_info k) in
-             let waarde = arg_value argexpr in
-             (* a boolean input binds as a characteristic initialisation
-                (toe_kenmerk = true): the callee's input boolean is a kenmerk,
-                and the WF-027 relaxation (besluit 1) carries the caller's
-                boolean-typed value expression as its init. Numeric/date/struct/
-                enum inputs stay attribute initialisations. *)
-             let toe_kenmerk = (match ir_typ waarde with Some Booleaan -> true | _ -> false) in
-             { I.toe_attribuut = Some attr; toe_waarde = Some waarde; toe_kenmerk } :: acc)
+             if ScopeVar.Set.mem k ovr_set then acc
+             else begin
+               let attr = M.remove (ScopeVar.get_info k) in
+               let waarde = arg_value argexpr in
+               (* a boolean input binds as a characteristic initialisation
+                  (toe_kenmerk = true): the callee's input boolean is a kenmerk,
+                  and the WF-027 relaxation (besluit 1) carries the caller's
+                  boolean-typed value expression as its init. Numeric/date/struct/
+                  enum inputs stay attribute initialisations. *)
+               let toe_kenmerk = (match ir_typ waarde with Some Booleaan -> true | _ -> false) in
+               { I.toe_attribuut = Some attr; toe_waarde = Some waarde; toe_kenmerk } :: acc
+             end)
            args [])
     in
     let oc : I.resolved_object_creatie =
@@ -1379,7 +1493,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
             :: !consistenties)
     sd.scope_decl_rules;
   ( ot_name, objecttype, List.rev !regels, List.rev !ladders, List.rev !consistenties,
-    List.rev !feittypen, List.rev !creaties )
+    List.rev !feittypen, List.rev !creaties, List.rev !override_contribs )
 
 (* --- top-level definitions -> FunctionDefs (row 10, DMN's BKM) ---------- *)
 
@@ -1462,20 +1576,77 @@ let file_to_document (input : string) : I.document =
     let all = List.concat per_scope in
     List.sort_uniq compare (List.filter (fun n -> List.length (List.filter (( = ) n) all) > 1) all)
   in
+  (* besluit 6: per callee scope, the reentrant context variables that carry an
+     own default — those, and only those, take a caller override as a generated
+     top rung on the forced ladder base; a reentrant target without an own
+     default keeps the ladderless MemberInit route. *)
+  let top_rung_map =
+    List.fold_left
+      (fun acc (name, decl) ->
+        let sd : untyped Sc.scope_decl = M.remove decl in
+        let reentrant =
+          ScopeVar.Map.fold
+            (fun v (sv : Sc.scope_var_ty) a ->
+              match M.remove sv.svar_io.Dio.io_input with
+              | Catala_runtime.Reentrant -> ScopeVar.Set.add v a
+              | _ -> a)
+            sd.scope_sig ScopeVar.Set.empty
+        in
+        let with_default =
+          List.fold_left
+            (fun a rule ->
+              match rule with
+              | Sc.ScopeVarDefinition { var; e; _ } when ScopeVar.Set.mem (fst var) reentrant ->
+                  (match parse_tree (strip e) with
+                   | Some (_ :: _) -> ScopeVar.Set.add (fst var) a
+                   | _ -> a)
+              | _ -> a)
+            ScopeVar.Set.empty sd.scope_decl_rules
+        in
+        ScopeName.Map.add name with_default acc)
+      ScopeName.Map.empty scopes
+  in
+  let top_rung_vars sc =
+    try ScopeName.Map.find sc top_rung_map with Not_found -> ScopeVar.Set.empty
+  in
   let objecttypen = ref [] and regels = ref [] and ladders = ref [] and cons = ref [] in
-  let feittypen = ref [] and creaties = ref [] in
+  let feittypen = ref [] and creaties = ref [] and overrides = ref [] in
   List.iter
     (fun (name, decl) ->
-      let ot_name, ot, rs, ls, cs, fts, ocs =
-        translate_scope enums structs functions ~ambiguous name (M.remove decl)
+      let ot_name, ot, rs, ls, cs, fts, ocs, ovs =
+        translate_scope enums structs functions ~ambiguous ~top_rung_vars name (M.remove decl)
       in
       objecttypen := (ot_name, ot) :: !objecttypen;
       regels := !regels @ rs;
       ladders := !ladders @ ls;
       cons := !cons @ cs;
       feittypen := !feittypen @ List.map (fun (ft : I.feittype) -> (Option.get ft.ft_naam, ft)) fts;
-      creaties := !creaties @ ocs)
+      creaties := !creaties @ ocs;
+      overrides := !overrides @ ovs)
     scopes;
+  (* prepend each caller override's top rungs onto its callee's own ladder
+     (besluit 6): the highest rungs win (Reading B as rung order). Every
+     contribution must find its callee ladder — the reentrant target's own
+     default is forced to a ladder base above. *)
+  List.iter
+    (fun (ot, var, _) ->
+      if not (List.exists
+                (fun (l : I.default_ladder) -> l.dl_onderwerp = ot && l.dl_attribuut = Some var)
+                !ladders)
+      then refuse "a context override on %s.%s found no callee ladder (besluit 6)" ot var)
+    !overrides;
+  let ladders =
+    List.map
+      (fun (l : I.default_ladder) ->
+        let extra =
+          List.concat_map
+            (fun (ot, var, rungs) ->
+              if l.dl_onderwerp = ot && l.dl_attribuut = Some var then rungs else [])
+            !overrides
+        in
+        if extra = [] then l else { l with rungs = extra @ l.rungs })
+      !ladders
+  in
   let function_defs = topdef_functions enums structs functions prog.Sc.program_topdefs in
   (* the enums and structs actually referenced above become SumType/StructType
      domains, in declaration order (PHASE5B-KERNEL §2.7); the reduce lowering's
@@ -1498,6 +1669,6 @@ let file_to_document (input : string) : I.document =
     object_creaties = !creaties; verdelingen = []; consistenties = !cons;
     uniciteiten = []; uniciteit_unies = []; feit_creaties = [];
     resolved_startpunten = []; regel_groepen = []; diagnostics = [];
-    default_ladders = !ladders; function_defs }
+    default_ladders = ladders; function_defs }
 
 let run ~input ~output = Emit.to_file output (file_to_document input)

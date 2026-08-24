@@ -1,0 +1,45 @@
+# Jutterswet, artikel 9bis — de hardheidsaftrek
+
+Art. 9bis (hardheidsaftrek). De rekenkamer van de strandvoogd stelt de
+heffing over een berging vast op de bergingswaarde verminderd met de aftrek.
+De aftrek bedraagt in beginsel de standaardaftrek. De strandvoogd kan, indien
+de heffing tot een onbillijkheid van overwegende aard leidt, een hogere
+hardheidsaftrek vaststellen; die treedt dan in de plaats van de
+standaardaftrek.
+
+Modelleringsnotitie: de aftrek is een `context`-variabele van de rekenkamer —
+de rekenkamer draagt haar eigen standaardaftrek (de eigen ladder), en de
+bergingsaanslag (de aanroeper) kan die overschrijven met de hardheidsaftrek.
+Dit is Reading B (Catala's C-Def): de aanroeper-waarde is de hoogste
+uitzondering, zij verslaat de eigen berekening van de rekenkamer. De plugin
+lowert de overschrijving naar een **gegenereerde top-rung** boven de eigen
+ladder van de rekenkamer op dat doel (PHASE5-CATALA besluit 6, het
+§4.1-hardheidspatroon): de guard (`hardheid`) en de waarde (`hardheidsaftrek`)
+van de rung lezen de aanroeper, genavigeerd over de teruggekoppelde
+`verbindendeRol` (callee → caller) — geen standing-machinerie, Reading B als
+rung-volgorde. Valt de guard weg, dan valt de top-rung door en beslist de eigen
+ladder van de rekenkamer. Eigen auteurschap, rechtenvrij; de rekenkamerregels
+draaien in de fixpoint van de bergingsaanslag op de gemunte instantie.
+
+```catala
+declaration scope Rekenkamer:
+  input bergingswaarde content integer
+  context aftrek content integer
+  output heffing content integer
+
+scope Rekenkamer:
+  definition aftrek equals 100
+  definition heffing equals bergingswaarde - aftrek
+
+declaration scope Bergingsaanslag:
+  input bergingswaarde content integer
+  input hardheidsaftrek content integer
+  input hardheid content boolean
+  rekenkamer scope Rekenkamer
+  output verschuldigd content integer
+
+scope Bergingsaanslag:
+  definition rekenkamer.bergingswaarde equals bergingswaarde
+  definition rekenkamer.aftrek under condition hardheid consequence equals hardheidsaftrek
+  definition verschuldigd equals rekenkamer.heffing
+```

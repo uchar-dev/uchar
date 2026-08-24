@@ -137,6 +137,16 @@ let () =
          the caller's fixpoint on the minted instance. Through the full
          differential (ref AND clingo) *)
       ("subscope.catala_en", [ "cases/subscope_70.json"; "cases/subscope_160.json" ]);
+      (* besluit 6: a context (reentrant) subscope input lowered to a generated
+         top rung above the callee's own ladder (PHASE5-CATALA decision 6,
+         Reading B). The caller's override rides above the callee's own default
+         `drempel = 10`; the top rung's guard (`pas_toe`) and value
+         (`eigen_drempel`) read the caller navigated over the back-link. Both
+         polarities: pas_toe = true → the top rung decides (100 − 30 = 70), and
+         pas_toe = false → the top rung falls through and the callee base decides
+         (100 − 10 = 90), pinned against `catala interpret`. Through the full
+         differential (ref AND clingo) *)
+      ("context.catala_en", [ "cases/context_wel.json"; "cases/context_niet.json" ]);
       (* PHASE5C-TUTORIAL §3 exit witness: the Catala book's tutorial_end_2_3
          through the plugin — structs, decimals, a branching exception tree with
          a total date-complementary base group, the money × computed-rate product
@@ -169,7 +179,11 @@ let () =
      (the subscope call) still falls outside the fragment — decimals, let-in
      and branching exceptions now land (row 5c). *)
   let refusals =
-    [ ("refuse_context.catala_en", "context");
+    [ (* besluit 6 landed the attribute-target top rung; the narrowed remnant of
+         the old blanket context refusal is a context override on a CHARACTERISTIC
+         (boolean) callee target — a decided attribution, not a value — which
+         stays a recorded flank *)
+      ("refuse_context.catala_en", "characteristic");
       (* PHASE5C-TUTORIAL §3 subscope flanks — declared subscopes lower
          (subscope.catala_en), but four shapes stay refused, each loudly:
          the inline/anonymous call (2-1), the per-element call (2-4), a

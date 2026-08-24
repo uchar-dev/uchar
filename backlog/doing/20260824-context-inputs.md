@@ -27,3 +27,47 @@ Executed-notitie), scripts/check-noop.sh (alleen indien nodig),
 backlog/. Out of scope: ref/, backends/, spec/IR-SPEC.md,
 spec/RUNTIME-SEMANTICS.md, spec/verifier/ (een noodzakelijk
 gebleken verifier-check = blokkade, eerst voorleggen).
+
+Result (2026-08-24): besluit 6 uitgevoerd — de gegenereerde
+top-rung. De rood-eerst is vastgelegd: het oude blanket-refuse gaf
+letterlijk `context (reentrant) variable "drempel": besluit 6 wants
+Reading B ... A single-scope 5a program cannot realise Reading B —
+refused.`
+
+Ontwerpkeuze (binnen het geratificeerde besluit, GEEN afwijking): de
+caller-arg wordt een gegenereerde top-rung IN de ladder van de
+aangeroepen scope (besluit-6-notitie 2026-08-21) waarvan guard én
+waarde de caller lezen, GENAVIGEERD over de `verbindendeRol`-teruglus
+(callee → caller) — geen standing-machinerie. Dit is de meest letterlijke
+lezing van "de caller-waarde wordt een top-rung boven de callee-ladder"
+en het §4.1-hardheidspatroon (de rung leest een input-attribuut, hier
+navigerend de caller-input). De navigatie-mechaniek is EMPIRISCH
+gevalideerd vóór implementatie: een handgebouwde IR met een genavigeerde
+top-rung is verifier-schoon en beide executors (ref ≡ clingo) matchen
+`catala interpret` (70 override-wint / 90 callee-basis). GEEN
+verifier-wijziging nodig — dus geen blokkade.
+
+Plumbing (`frontends/catala/lib/translate.ml`): het blanket
+reentrant-refuse is weg; een reentrant doel met eigen default wordt een
+ladder-basis geforceerd (nooit een kale Berekening); de caller-override
+lowert via een genavigeerde `override_exprs` naar top-rung(s), verzameld
+per (callee-objecttype, callee-attribuut) en in `file_to_document`
+vóórgeplakt op de ladder van dat doel. Een ladderloos callee-doel (kale
+input) houdt de MemberInit-route (WF-050). `attr_ref`/`read_var`/
+`check_var` zijn geherfactored tot gedeelde `scalar_read`/`kenmerk_read`
++ genavigeerde varianten (gedragsbehoud; 126 suite-checks groen).
+
+Getuigen: fixture `frontends/catala/test/context.catala_en` (beide
+polariteiten door verifier → ref → clingo) en de eigen catala-golden
+`corpus/golden/jutterswet-hardheidsaftrek-catala/` (art. 9bis, byte-
+identiek onder gate 9). De refuse-fixtureset is versmald: `refuse_context`
+weigert nu een context-override op een KENMERK-doel (het narrowed
+overblijfsel — attribuut-doel gelandt, karakteristiek/onder-de-wortel-
+vertakt/root-ongeordend blijven luide flanken).
+
+Alle negen gates groen in deze worktree (slotregels in het
+sessieverslag). `scripts/check-noop.sh` NIET geraakt — de nieuwe
+golden-cases berekenen `verschuldigd` (niet in de ruwe invoer) en
+weigeren de no-op vanzelf; survivor-lijst ongewijzigd (24).
+
+Open: twee opus-lenzen vóór de merge (parent/orchestrator).

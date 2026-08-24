@@ -1,0 +1,38 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B1",
+        "objectType": "Bergingsaanslag",
+        "attributes": {
+          "bergingswaarde": {
+            "number": "1000"
+          },
+          "hardheidsaftrek": {
+            "number": "350"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "hardheid"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "verschuldigd",
+      "value": {
+        "number": "650"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

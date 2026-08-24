@@ -1,16 +1,30 @@
-# Contextvariabele — moet luid geweigerd worden (besluit 6 / ch. 7.8)
+# Context override on a CHARACTERISTIC target — a recorded besluit-6 flank
 
-Een `context`-variabele vraagt om Reading B (de caller-override als
-hoogste rung). De landed ch. 7.8-standing-machinerie plaatst case-input
-juist ONDER de eigen rungs (Reading A). De plugin weigert daarom.
+Besluit 6's generated top rung (implemented) covers a context override on an
+ATTRIBUTE target: the §4.1 hardship-pattern shape is a decided *value* riding
+above the callee's own ladder. A context override on a *characteristic*
+(boolean) callee target — a decided attribution rather than a value — is not
+wired: it stays refused loudly, the narrowed remnant of the old blanket
+context refusal.
 
 ```catala
-declaration scope Ctx:
-  input n content integer
-  context drempel content integer
-  output ok content boolean
+declaration scope Kamer:
+  input grondslag content integer
+  context vrijgesteld content boolean
+  output uitkomst content boolean
 
-scope Ctx:
-  definition drempel equals 5
-  definition ok equals n >= drempel
+scope Kamer:
+  definition vrijgesteld equals grondslag < 50
+  definition uitkomst equals vrijgesteld
+
+declaration scope Aanslag:
+  input grondslag content integer
+  input zet_vrij content boolean
+  kamer scope Kamer
+  output resultaat content boolean
+
+scope Aanslag:
+  definition kamer.grondslag equals grondslag
+  definition kamer.vrijgesteld under condition zet_vrij consequence equals true
+  definition resultaat equals kamer.uitkomst
 ```
