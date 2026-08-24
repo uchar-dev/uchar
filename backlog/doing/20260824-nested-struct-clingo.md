@@ -21,3 +21,34 @@ spec/ASP-TRANSLATION.md, spec/CONSTRUCTS.md (UITSLUITEND rij 38),
 scripts/check-noop.sh (alleen indien nodig), backlog/. Out of scope:
 ref/, frontends/, spec/IR-SPEC.md, spec/RUNTIME-SEMANTICS.md,
 spec/verifier/.
+
+## Voortgang (2026-08-24)
+
+Gedaan:
+- Golden `corpus/golden/jutterswet-vangstwaardering/` (eigen Jutterswet-
+  materiaal): een `Vangst` berekent de geneste record
+  `waardering{toeslag, kern{eenheden, grondslag}}` uit zijn scalars en
+  leest het diepste geldveld terug via een veldtoegang op een
+  veldtoegang. `heffing := waardering.kern.grondslag + waardering.toeslag`
+  (125.75) en `grondslagkopie := waardering.kern.grondslag` (100.25).
+  Ontwerpkeuze: de buitenste struct is COMPUTED (geneste StructLiteral,
+  grondt al via `struct_literal_term`), zodat alleen `struct_base` de
+  blokkade is — de geneste-struct-VELDWAARDE-fault (`struct_value_term`,
+  input/expectation) blijft een aparte, nog niet gedichte S19-gap.
+- Rood-eerst getoond (letterlijk): beide cases faalden met
+  `TRANSLATION FAULT: a struct field-access base here is an own-subject
+  attribute read or a bound binder (no corpus case for more)`; ref was al
+  groen (case1 heffing 125.75 / grondslagkopie 100.25; case2 heffing 0.00
+  door de ch.1.3 additieve coalesce, grondslagkopie leeg).
+- `struct_base` recursief gemaakt op een `Field_access`-basis (één
+  projectie-unificatie per niveau; tussenstruct op scale 0, blad op eigen
+  scale). Weigering weg uit de vertaling én uit S19; S16 uitgebreid met de
+  recursieve derde basisvorm + de nieuwe golden als witness; CONSTRUCTS
+  rij 38 bijgewerkt.
+- Leeg-flank: case2 pint beide hoeken — `heffing` 0.00 (additieve
+  coalesce, ref-gedrag) en `grondslagkopie` leeg (bare-read propagatie);
+  ref ≡ clingo. Case2 faalt onder --noop (concrete 0.00-verwachting), dus
+  GEEN survivor-regel nodig: `scripts/check-noop.sh` ongewijzigd.
+
+Alle negen gates groen in de worktree (zie commit-log). Open: twee
+opus-lenzen vóór merge (buiten deze subagent).
