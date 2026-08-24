@@ -1180,6 +1180,19 @@ for `1 / 3.0000`, every existing division outcome is bit-identical). This
 is the sole change — the split product's own rounding proof above stands
 untouched.
 
+The folded denominator `c·s_L/k` is itself the **ground constant** the
+rounding formulas feed unguarded into `2·dent` and `2·numt+dent`, so the
+fold applies only while it rides the same int31 fence a divisor *term*
+would: past `536870912` (`2·dent` would leave 2³¹ and wrap **silently** —
+a ref≠clingo split, and a ground guard on the already-wrapped literal
+cannot fire). A larger constant divisor — one past `~10⁹` — therefore
+drops back to the two-factor form, whose `(t_R, 536870912/kden)`
+`range_guard` fences the divisor term and fires the loud `arithmetic range
+exceeded` `viol/2` UNSAT, exactly as every constant divisor did before the
+fold existed. No corpus case reaches it (the tutorial fold keeps
+`c·s_L/k = 1`); ref computes such a quotient exactly, clingo cannot ground
+it, so the fence is the honest verdict, never a silent value.
+
 With the division no longer the binding constraint, that constraint is now
 the split product's `A = M·Rh` partial (S18(c)): for the tutorial's
 `$10,000 · (1 + n/2)` it carries `n ≤ 40` and fires the range `viol/2` at

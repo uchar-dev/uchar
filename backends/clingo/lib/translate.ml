@@ -1340,18 +1340,31 @@ and translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding =
   in
   let numt, dent, range_bounds =
     let numt_of knum = if knum = 1 then Printf.sprintf "(%s)" tl else Printf.sprintf "((%s)*%d)" tl knum in
+    let two_factor () =
+      let g = gcd (sr * out_scale) sl in
+      let knum = sr * out_scale / g and kden = sl / g in
+      ( numt_of knum,
+        (if kden = 1 then Printf.sprintf "(%s)" tr else Printf.sprintf "((%s)*%d)" tr kden),
+        [ (tl, 536870912 / knum); (tr, 536870912 / kden) ] )
+    in
     match const_div with
     | Some c ->
         let num_c = sr * out_scale and den_c = c * sl in
         let g = gcd num_c den_c in
         let knum = num_c / g and kden_c = den_c / g in
-        (numt_of knum, Printf.sprintf "(%d)" kden_c, [ (tl, 536870912 / knum) ])
-    | None ->
-        let g = gcd (sr * out_scale) sl in
-        let knum = sr * out_scale / g and kden = sl / g in
-        ( numt_of knum,
-          (if kden = 1 then Printf.sprintf "(%s)" tr else Printf.sprintf "((%s)*%d)" tr kden),
-          [ (tl, 536870912 / knum); (tr, 536870912 / kden) ] )
+        (* the fold shrinks the denominator to the GROUND constant kden_c, which
+           the rounding formulas feed UNGUARDED into 2*dent, numt+dent-1 and
+           2*numt+dent. numt is fenced to 2^29 below, but nothing bounds kden_c,
+           so a kden_c past 2^29 lets 2*dent or 2*numt+dent leave int31 and wrap
+           silently — the very ref!=clingo split the fold otherwise closes. A
+           ground guard on the already-wrapped literal cannot fire, so when the
+           fold leaves the fence, drop back to the two-factor form: its
+           (tr,536870912/kden) range_guard fences the divisor term and fires the
+           loud "arithmetic range exceeded" UNSAT, exactly as every constant
+           divisor did before the fold existed. *)
+        if kden_c > 536870912 then two_factor ()
+        else (numt_of knum, Printf.sprintf "(%d)" kden_c, [ (tl, 536870912 / knum) ])
+    | None -> two_factor ()
   in
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "q%d" ctx.fresh in

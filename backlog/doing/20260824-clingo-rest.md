@@ -93,3 +93,54 @@ weerleggen de no-op vanzelf (geen survivor-toevoeging nodig).
   kaart (registry-conflictles); rij-notitie bij de maintainer-landing.
 - Twee opus-lenzen vóór de merge staan nog open (review-stap van de
   orchestrator/maintainer).
+
+## Lensronde 2026-08-24
+
+Twee lens-bevindingen (MAJOR/CONFIRMED), beide dezelfde wortel op
+`backends/clingo/lib/translate.ml:1348` — de constante-deler-fold liet de
+hek op de **noemerzijde** vallen. Zelf geverifieerd vóór de fix (hand-IR
+buiten de corpus, `q := Afgerond(x / c, MODUS, dec)`):
+
+- Bevinding 1 (`c = 2000000001`, REKENKUNDIG, 2 dec, x=1): ref `oracle:
+  PASS` (0.00); clingo `MISMATCH: R1.q = [-6]` — een STABIEL model (SAT,
+  geen viol) met een fout antwoord −0.06. NAAR_BOVEN/WEG_VAN_NUL (x=2000000):
+  ref 0.01, clingo `[-1]` (−0.01). Stil ref≠clingo, de kardinale defectklasse.
+- Bevinding 2 (`c = 214748.3647`, geschaald 2³¹−1, copriem met 10,
+  REKENKUNDIG, 4 dec, x=1): ref `PASS` (0.0000); clingo `MISMATCH: R1.q =
+  [973741824]` — grof fout, SAT, geen viol.
+
+Oorzaak: de fold reduceert de constante breuk en emitteert de **gereduceerde
+noemer** `kden_c = c·s_L/k` als grondconstante die de afrondingsformules
+ongehekt in `2·dent` resp. `2·numt+dent` voeren. `numt` is gehekt tot 2²⁹,
+maar `kden_c` niet — voorbij 2²⁹ verlaat `2·dent` int31 en **wrapt stil**
+(clingo 5.8.2: `2·2000000001` grondt naar een negatief getal). Een grondhek op
+de al-gewrapte literal kan niet vuren, dus dit is niet met een grond-`range_guard`
+te dichten.
+
+Fix (smalste): de fold geldt alleen zolang `kden_c ≤ 536870912` (dan blijven
+`2·dent`, `numt+dent−1`, `2·numt+dent` binnen 2³¹). Voorbij die grens valt de
+tak terug op de **tweefactorvorm**, wier `(t_R, 536870912/kden)` `range_guard`
+de delerterm hekt en de luide `arithmetic range exceeded` UNSAT vuurt — precies
+het gedrag dat elke constante deler had vóór de fold bestond. Na de fix vuren
+alle vier repro-gevallen die UNSAT; de kleine-deler-fold (`/3`, `/2.0000`) blijft
+byte-identiek en rekent exact door (ref ≡ clingo `PASS`).
+
+Geen corpus-getuige mogelijk: ref rekent zo'n quotiënt exact (geen fault), dus
+noch een golden (ref-PASS vs clingo-UNSAT divergeert) noch een rood-getuige
+(rood eist fault in BEIDE executors, ref faalt niet) past. Delen door >10⁹ is
+exotisch in recht; het punt is de luide hek, niet een verbrede encodering.
+
+ASP-TRANSLATION S18 bijgewerkt met de noemerhek-alinea (de fold geldt alleen
+binnen de int31-hek; erbuiten vuurt de tweefactor-`range_guard`). `spec/CONSTRUCTS.md`
+NIET aangeraakt (registry-conflictles). `scripts/check-noop.sh` NIET gewijzigd.
+Alle negen gates opnieuw groen (slotregels):
+
+- `check-self-contained: PASS`
+- `check-ir-schema: PASS (schema valid; 86 file(s) validate and round-trip)`
+- `check-verifier: PASS (86 golden clean; 138 negatief rejected for their declared rule)`
+- `check-case-schema: PASS (schema valid; 224 case file(s) validate)`
+- `check-oracle: PASS (207 cases replayed exactly; NOT replayed, no case file yet: corpus/golden/jutterswet-vormenkabinet)`
+- `check-clingo: PASS (207 cases replay exactly through clingo — ref = clingo over the corpus)`
+- `check-noop: PASS (183 cases refute a do-nothing executor; 24 pinned survivors pin defeasible standing)`
+- `check-rood: PASS (17 red cases fault observably in both executors)`
+- `check-catala: PASS — frontend suite green (128 checks); 7 catala golden(s) regenerate byte-identically`
