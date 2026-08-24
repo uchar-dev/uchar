@@ -69,3 +69,17 @@ gecorrigeerd, geen code/IR gewijzigd):
     datum. Reproductie-sectie gesplitst per regel met de precieze
     voorwaarde.
   Alle negen gates opnieuw groen na de fixes.
+
+Result: geen gat maar een bewuste keuze, nu gedocumenteerd. Het
+vormenkabinet is het verifier-only getuigedocument dat de
+Golden-kolom-OPENs van de WF-index sluit; drie van zijn regels
+oefenen constructen die beide executors per constructie weigeren
+(DimensieCel-lezing, telkwantor met tijdvenster, geheel-periode-
+vergelijking), dus een case kan niet bestaan zonder die weigeringen
+te slopen. NOTE.md in de golden draagt de drie letterlijke faults,
+het reproductierecept en de krimp-conditie; gate 5 blijft hem
+gemotiveerd als case-loos melden. Geen case verzonnen. De lensronde
+ving twee documentaire MINORs (de nul-instantie-bewering gold alleen
+voor ref — clingo fault statisch; het reproductierecept miste de
+geldigheidsgrens-voorwaarde), beide verwerkt. Niets buiten de golden
+en de backlog geraakt.
