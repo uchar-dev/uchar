@@ -1321,6 +1321,72 @@ let () =
     (Eval.eval_expr env w self ~err:no_err (let_round 4))
     "33.3333"
 
+(* --- ch. 2.9 × ch. 9.2: the afrondingsnorm across a Match-arm result.
+   The ch. 2.9 norm names the Match-arm result (ch. 9.2) as a second carrier
+   of an exact, non-terminating intermediate: the strict-Let witness above
+   pins the Let carrier, this one pins the Match arm. Witness: 100 ÷ 3 =
+   33,333… is the payload of a Toegekend construct; the Match binds it to the
+   arm binder [deel] — DECLARED at two decimals, as the Let binder was — and
+   reads it at the endpoint through a single Afgerond. The binder's declared
+   scale never collapses the intermediate: the exact rational crosses the arm
+   (ch. 9.2 binds the payload value verbatim) and the sole endpoint Afgerond
+   is the one collapse → 33,33; had the arm binding pre-rounded to two
+   decimals this would still read 33,33, but the ch. 2.9 norm forbids that
+   intermediate collapse and the exact carry is what this pins. Card-
+   sanctioned test touch (20260824-afrondingsnorm). *)
+let () =
+  let num2 : Ir_v0.Ast.datatype =
+    Numeriek { geheel = false; decimalen = 2; teken = None; eenheid = None }
+  in
+  let binder_ref name typ : Ir_v0.Ast.expr =
+    Binder_ref { naam = name; typ = Some typ; bron = None }
+  in
+  let beschikking : Ir_v0.Ast.datatype =
+    Sum_type
+      { domein = "beschikking";
+        constructoren = [ ("Toegekend", Some num2); ("Afgewezen", None) ] }
+  in
+  let deel : Ir_v0.Ast.expr =
+    Binair
+      { op = Gedeeld_door;
+        links = Some (litv "100" num0);
+        rechts = Some (litv "3" num0);
+        typ = Some num2;
+        bron = None }
+  in
+  (* scrutinee: Toegekend(100 ÷ 3) — the non-terminating quotient is the payload *)
+  let scrutinee : Ir_v0.Ast.expr =
+    Construct
+      { typ = Some beschikking;
+        constructor_ = "Toegekend";
+        argument = Some deel;
+        bron = None }
+  in
+  let match_round : Ir_v0.Ast.expr =
+    Match
+      { typ = Some num2;
+        scrutinee;
+        arms =
+          [ ( "Toegekend",
+              Some "deel",
+              Afgerond
+                { basis = Some (binder_ref "deel" num2);
+                  modus = Rekenkundig;
+                  decimalen = 2;
+                  typ = Some num2;
+                  bron = None } );
+            ("Afgewezen", None, litv "0" num2) ];
+        bron = None }
+  in
+  let doc = { empty_doc with objecttypen = [ ot "J" [ ("a", Some num0) ] [] ] } in
+  let env = env_of doc in
+  let w = World.add_instance World.empty (inst "j" "J" []) in
+  let self = World.get w "j" in
+  (* the exact 100/3 crosses the Match arm and collapses once at the endpoint *)
+  expect_num "WV-2.9-match-arm-round"
+    (Eval.eval_expr env w self ~err:no_err match_round)
+    "33.33"
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;
