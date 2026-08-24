@@ -119,3 +119,19 @@ Raakt `spec/verifier/` + `spec/IR-SPEC.md` (WF-index) + een negatief-case —
 alle protected, dus maintainer-werk. Geen executor-wijziging nodig: ref en
 clingo gedragen zich al correct (ref rekent door, clingo weigert luid); de
 check haalt de inconsistente IR weg vóór de executors.
+
+Verbreding (maintainersbesluit 2026-08-24, vraag 2 — alle drie
+gekozen): deze kaart draagt naast de BinderRef-kruiscontrole ook de
+twee zusterhekken: (a) het dubbelschrijvers-hek — twee of meer kale
+BEREKENING/GELIJKSTELLING-schrijvers op één attribuut-doel zonder
+ladder zijn onwelgevormd (de bewezen un-pinnable vorm uit
+PHASE5D-DIFF §8.2; gelijk-besluitende kenmerktoekenningen blijven
+legaal — het penningrecht-paar en de volle corpus moeten clean
+blijven, corpus-breed te valideren vóór de aanscherping); (b) de
+waarde-positie-AttribuutRef-aanscherping — in waarde-positie moet de
+verwijzing op een attribuut resolveren, een kenmerk-endpoint is
+onwelgevormd (het getolereerde has_attr||has_kenmerk-lek uit de
+kenmerk-verkenning; eveneens corpus-breed te valideren). Elk hek:
+WF-tekst in IR-SPEC, verifier-check, rood-eerst, en minstens één
+negatief-case per hek. May touch verbreedt met: spec/IR-SPEC.md,
+spec/verifier/, corpus/negatief/. GEEN spec/CONSTRUCTS.md.
