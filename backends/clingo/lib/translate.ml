@@ -489,20 +489,27 @@ let struct_type_of_datatype = function
    normalised declaring-domain functor over the fields in FIXED DECLARATION
    ORDER, each scaled by its OWN declared field datatype — dossier(12050,3).
    A struct always declares at least one field (WF-071), so the term is never
-   the bare functor (no collision with a nullary constructor). A nested struct
-   or sum field VALUE has no integer encoding here and no corpus case — it
-   faults (S19), the nested-sum-payload fence's sibling. *)
-let struct_value_term (domein, velden) (fs : (string * Value.t) list) : string =
+   the bare functor (no collision with a nullary constructor). A nested STRUCT
+   field VALUE recurses — one nested functor per level, mirroring [struct_base]'s
+   recursion on a struct-in-struct field ACCESS, and the WF-071 acyclicity fence
+   keeps the depth statically bounded (S16). A sum- or list-typed field value
+   still has no flat integer encoding here and no corpus case — it faults (S19),
+   the nested-sum-payload fence's sibling. *)
+let rec struct_value_term (domein, velden) (fs : (string * Value.t) list) : string =
   let f = ctor_functor domein in
   let arg (fname, fdt) =
     match List.find_opt (fun (n, _) -> norm n = norm fname) fs with
     | None -> fault "record value is missing declared field %S" fname
     | Some (_, v) -> (
         match fdt with
-        | Sum_type _ | Struct_type _ | List_type _ ->
+        | Struct_type { domein = d2; velden = v2 } -> (
+            match v with
+            | Value.Record fs2 -> struct_value_term (d2, v2) fs2
+            | _ -> fault "a struct-typed field %S expects a record value" fname)
+        | Sum_type _ | List_type _ ->
             fault
-              "a nested struct/sum/list field value has no integer encoding in the ASP struct \
-               term (no corpus case)"
+              "a nested sum/list field value has no integer encoding in the ASP struct term (no \
+               corpus case)"
         | _ -> string_of_int (scaled_of_value ~decimals:(decimals_of_datatype (Some fdt)) v))
   in
   Printf.sprintf "%s(%s)" f (String.concat "," (List.map arg velden))
@@ -1314,10 +1321,38 @@ and translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding =
     | None -> max (max sl sr) ctx.write_scale
     | Some (_, d) -> pow10 d
   in
-  let g = gcd (sr * out_scale) sl in
-  let knum = sr * out_scale / g and kden = sl / g in
-  let numt = if knum = 1 then Printf.sprintf "(%s)" tl else Printf.sprintf "((%s)*%d)" tl knum in
-  let dent = if kden = 1 then Printf.sprintf "(%s)" tr else Printf.sprintf "((%s)*%d)" tr kden in
+  (* the exact scaled quotient is  tl·(sr·out_scale) / (tr·sl).  A RUNTIME
+     divisor reduces only the two constant multipliers by their gcd and rides
+     its own term tr·kden, so the scale-(sr·out_scale) numerator can reach 10^8
+     at a 4-decimal divisor (the tutorial's n / 2.0000), fencing the dividend at
+     5.  A COMPILE-TIME-CONSTANT positive divisor (an atom-free integer term c)
+     instead folds the whole constant fraction (sr·out_scale)/(c·sl) by its FULL
+     gcd, so the divisor's scale never inflates the numerator — the intermediate
+     shrinks (10^8 → 5000 for n / 2.0000) and the fence loosens accordingly.
+     The fold is exact: dividing numerator and denominator constants by a common
+     factor preserves both the integer quotient (floor of one rational) and its
+     divisibility test, so every existing outcome — value, non-exact viol, zero
+     fence — is unchanged (S18). *)
+  let const_div =
+    if br = [] then
+      match int_of_string_opt (String.trim tr) with Some c when c > 0 -> Some c | _ -> None
+    else None
+  in
+  let numt, dent, range_bounds =
+    let numt_of knum = if knum = 1 then Printf.sprintf "(%s)" tl else Printf.sprintf "((%s)*%d)" tl knum in
+    match const_div with
+    | Some c ->
+        let num_c = sr * out_scale and den_c = c * sl in
+        let g = gcd num_c den_c in
+        let knum = num_c / g and kden_c = den_c / g in
+        (numt_of knum, Printf.sprintf "(%d)" kden_c, [ (tl, 536870912 / knum) ])
+    | None ->
+        let g = gcd (sr * out_scale) sl in
+        let knum = sr * out_scale / g and kden = sl / g in
+        ( numt_of knum,
+          (if kden = 1 then Printf.sprintf "(%s)" tr else Printf.sprintf "((%s)*%d)" tr kden),
+          [ (tl, 536870912 / knum); (tr, 536870912 / kden) ] )
+  in
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "q%d" ctx.fresh in
   let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
@@ -1325,9 +1360,7 @@ and translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding =
   let lbody = String.concat ", " (base :: bl) in
   let rbody = String.concat ", " (base :: br) in
   let full = String.concat ", " ((base :: guard) @ bl @ br) in
-  range_guard ctx ~subject
-    ~body:((base :: guard) @ bl @ br)
-    [ (tl, 536870912 / knum); (tr, 536870912 / kden) ];
+  range_guard ctx ~subject ~body:((base :: guard) @ bl @ br) range_bounds;
   emit ctx "%s_ldef(%s) :- %s." p subject lbody;
   emit ctx "%s_rdef(%s) :- %s." p subject rbody;
   emit ctx "%s(%s,0) :- %s, not %s_ldef(%s)." p subject base p subject;

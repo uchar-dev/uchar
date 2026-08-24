@@ -1,0 +1,47 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vangst",
+        "attributes": {
+          "waardering": {
+            "struct": {
+              "toeslag": { "number": "25.50" },
+              "kern": {
+                "struct": {
+                  "eenheden": { "number": "3" },
+                  "grondslag": { "number": "100.25" }
+                }
+              }
+            }
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "V1", "attribute": "heffing", "value": { "number": "125.75" } },
+    { "kind": "attributeValue", "label": "V1", "attribute": "grondslagkopie", "value": { "number": "100.25" } },
+    {
+      "kind": "attributeValue", "label": "V1", "attribute": "waardering",
+      "value": {
+        "struct": {
+          "toeslag": { "number": "25.50" },
+          "kern": {
+            "struct": {
+              "eenheden": { "number": "3" },
+              "grondslag": { "number": "100.25" }
+            }
+          }
+        }
+      }
+    },
+    { "kind": "consistent" }
+  ]
+}

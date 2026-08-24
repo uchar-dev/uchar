@@ -1,0 +1,497 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Vangst": {
+      "node": "Objecttype",
+      "naam": "Vangst",
+      "attributen": {
+        "waardering": {
+          "node": "StructType",
+          "domain": "waardering",
+          "fields": [
+            {
+              "name": "toeslag",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "kern",
+              "datatype": {
+                "node": "StructType",
+                "domain": "kernwaarde",
+                "fields": [
+                  {
+                    "name": "eenheden",
+                    "datatype": {
+                      "node": "Numeriek",
+                      "geheel": true,
+                      "decimalen": 0,
+                      "teken": "NIET_NEGATIEF",
+                      "eenheid": null
+                    }
+                  },
+                  {
+                    "name": "grondslag",
+                    "datatype": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "NIET_NEGATIEF",
+                      "eenheid": null
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "heffing": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "grondslagkopie": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Vangsten"
+    }
+  },
+  "domeinen": {
+    "kernwaarde": {
+      "node": "StructType",
+      "domain": "kernwaarde",
+      "fields": [
+        {
+          "name": "eenheden",
+          "datatype": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          }
+        },
+        {
+          "name": "grondslag",
+          "datatype": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          }
+        }
+      ]
+    },
+    "waardering": {
+      "node": "StructType",
+      "domain": "waardering",
+      "fields": [
+        {
+          "name": "toeslag",
+          "datatype": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          }
+        },
+        {
+          "name": "kern",
+          "datatype": {
+            "node": "StructType",
+            "domain": "kernwaarde",
+            "fields": [
+              {
+                "name": "eenheden",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              },
+              {
+                "name": "grondslag",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "heffing van een vangst",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "heffing",
+        "objecttype": "Vangst",
+        "onderwerpBron": null,
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": null,
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "PLUS",
+        "links": {
+          "node": "FieldAccess",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "base": {
+            "node": "FieldAccess",
+            "type": {
+              "node": "StructType",
+              "domain": "kernwaarde",
+              "fields": [
+                {
+                  "name": "eenheden",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "grondslag",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                }
+              ]
+            },
+            "base": {
+              "node": "AttribuutRef",
+              "attribuut": "waardering",
+              "objecttype": "Vangst",
+              "onderwerpBron": null,
+              "navigatieRol": null,
+              "type": {
+                "node": "StructType",
+                "domain": "waardering",
+                "fields": [
+                  {
+                    "name": "toeslag",
+                    "datatype": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "NIET_NEGATIEF",
+                      "eenheid": null
+                    }
+                  },
+                  {
+                    "name": "kern",
+                    "datatype": {
+                      "node": "StructType",
+                      "domain": "kernwaarde",
+                      "fields": [
+                        {
+                          "name": "eenheden",
+                          "datatype": {
+                            "node": "Numeriek",
+                            "geheel": true,
+                            "decimalen": 0,
+                            "teken": "NIET_NEGATIEF",
+                            "eenheid": null
+                          }
+                        },
+                        {
+                          "name": "grondslag",
+                          "datatype": {
+                            "node": "Numeriek",
+                            "geheel": false,
+                            "decimalen": 2,
+                            "teken": "NIET_NEGATIEF",
+                            "eenheid": null
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "bron": null,
+              "set": false,
+              "navigatiePad": []
+            },
+            "field": "kern",
+            "bron": null
+          },
+          "field": "grondslag",
+          "bron": null
+        },
+        "rechts": {
+          "node": "FieldAccess",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "base": {
+            "node": "AttribuutRef",
+            "attribuut": "waardering",
+            "objecttype": "Vangst",
+            "onderwerpBron": null,
+            "navigatieRol": null,
+            "type": {
+              "node": "StructType",
+              "domain": "waardering",
+              "fields": [
+                {
+                  "name": "toeslag",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "kern",
+                  "datatype": {
+                    "node": "StructType",
+                    "domain": "kernwaarde",
+                    "fields": [
+                      {
+                        "name": "eenheden",
+                        "datatype": {
+                          "node": "Numeriek",
+                          "geheel": true,
+                          "decimalen": 0,
+                          "teken": "NIET_NEGATIEF",
+                          "eenheid": null
+                        }
+                      },
+                      {
+                        "name": "grondslag",
+                        "datatype": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "NIET_NEGATIEF",
+                          "eenheid": null
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            "bron": null,
+            "set": false,
+            "navigatiePad": []
+          },
+          "field": "toeslag",
+          "bron": null
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": null
+      },
+      "voorwaarde": null,
+      "geldigheid": null
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "grondslagkopie van een vangst",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "grondslagkopie",
+        "objecttype": "Vangst",
+        "onderwerpBron": null,
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": null,
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "FieldAccess",
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "base": {
+          "node": "FieldAccess",
+          "type": {
+            "node": "StructType",
+            "domain": "kernwaarde",
+            "fields": [
+              {
+                "name": "eenheden",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              },
+              {
+                "name": "grondslag",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              }
+            ]
+          },
+          "base": {
+            "node": "AttribuutRef",
+            "attribuut": "waardering",
+            "objecttype": "Vangst",
+            "onderwerpBron": null,
+            "navigatieRol": null,
+            "type": {
+              "node": "StructType",
+              "domain": "waardering",
+              "fields": [
+                {
+                  "name": "toeslag",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "kern",
+                  "datatype": {
+                    "node": "StructType",
+                    "domain": "kernwaarde",
+                    "fields": [
+                      {
+                        "name": "eenheden",
+                        "datatype": {
+                          "node": "Numeriek",
+                          "geheel": true,
+                          "decimalen": 0,
+                          "teken": "NIET_NEGATIEF",
+                          "eenheid": null
+                        }
+                      },
+                      {
+                        "name": "grondslag",
+                        "datatype": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "NIET_NEGATIEF",
+                          "eenheid": null
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            "bron": null,
+            "set": false,
+            "navigatiePad": []
+          },
+          "field": "kern",
+          "bron": null
+        },
+        "field": "grondslag",
+        "bron": null
+      },
+      "voorwaarde": null,
+      "geldigheid": null
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

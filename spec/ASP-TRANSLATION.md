@@ -942,8 +942,26 @@ scale behind the integer `eenheden`); **case2 leeg-grondslag**
 coalesce, `grondslagkopie` **leeg** by bare-read propagation — the two
 leeg corners of the recursion pinned against ref, ref ≡ clingo). The
 outer record here is **computed**, so no nested record **value** is
-emitted; a nested struct/sum field *value* (input or expectation) still
-has no flat-term encoding (S19).
+emitted.
+
+The **recursive struct value** — a nested record as a case **input** or
+**expectation** — rides `jutterswet-waarderingsinvoer`: a `Vangst` whose
+`waardering{toeslag, kern{eenheden, grondslag}}` is a direct **input**
+(not computed), so the nested record enters through `struct_value_term`,
+which **recurses** — one nested functor per level, each field at its own
+declared scale — emitting
+`val(V,waardering,waardering(2550,kernwaarde(3,10025)))` (the value-side
+mirror of the `struct_base` field-access recursion above; the WF-071
+acyclicity fence bounds the depth statically). The same recursive emission
+and the model's recursive term parser build and compare the struct-valued
+`attributeValue` **expectation** — one source of truth, no drift.
+**case1 genest** echoes `waardering` itself, reads the deepest field back
+(`grondslagkopie := waardering.kern.grondslag` → 100.25, the `struct_base`
+recursion over the input record) and sums the two-level and one-level
+reads (`heffing := waardering.kern.grondslag + waardering.toeslag` →
+125.75) — the value shape and the field-access shape witnessed together,
+ref ≡ clingo. A nested **sum-** or **list-**typed field value still has no
+flat-term encoding (S19).
 
 ### S17. Nested exception groups
 
@@ -1139,16 +1157,40 @@ witness.
 **A computed-rate magnitude limit (the tutorial fixture).** When the
 4-decimal rate is itself computed by an exact division — the Catala
 tutorial's `1.0 + decimal of number_of_children / 2.0`
-(`frontends/catala/test/tutorial_end_2_3.catala_en`) — the division rides
-an intermediate at scale 10^8 (the S = 4 numerator pre-scaled by 10^4 to
-divide exactly). That intermediate, not the split product's fenced
-partials, is the binding constraint: it stays inside clingo's int31
-grounding range only for a small operand — ≤ 5 children in the fixture —
-and at ≥ 6 the operand's own range fence (`viol/2`) fires, UNSAT. ref
-computes it exactly either way. A backend limit of the exact-division
-encoding at scale S, not a bug and not a `viol/2` the ref shares; the
-fixture's cases pin ≤ 5 children deliberately (its overseas and
-computed-rate flanks need no larger operand).
+(`frontends/catala/test/tutorial_end_2_3.catala_en`) — the exact scaled
+quotient of `L / R` at out-scale `m` is `L·(s_R·m) / (R·s_L)` (`s_L`,
+`s_R` the operand scales). At `S = 4` the numerator is pre-scaled by the
+divisor's own scale `s_R = 10⁴`, so a 4-decimal divisor rides a
+scale-`s_R·m = 10⁸` intermediate — `n·10⁸` for `n / 2.0000` — which clears
+clingo's int31 grounding range only for `n ≤ 5`.
+
+The divisor here is a **compile-time constant** `c` (`2.0000` →
+`c = 20000`), and that lets the whole *constant* fraction `(s_R·m)/(c·s_L)`
+reduce by its **full gcd** before grounding, folding the divisor's scale
+out of the numerator: with `k = gcd(s_R·m, c·s_L)` the encoding emits
+`(n·(s_R·m/k)) / (c·s_L/k)` — for `n / 2.0000` that is `n·5000 / 1`, so the
+scale-10⁸ intermediate never forms and the dividend fence loosens from
+`≤ 5` to `≤ 107374`. **The fold is exact.** The unreduced and reduced
+forms denote the *same rational* `n·(s_R·m)/(c·s_L)`; clingo's `/` is its
+floor and `\ == 0` its integrality test, and floor and integrality are
+invariants of the rational, not of the representation — so `⌊·⌋`, the
+non-exact `viol/2`, and the zero-divisor fence are all **unchanged**; only
+the range bound moves (the value 3.0000 for `n = 4`, the non-exact viol
+for `1 / 3.0000`, every existing division outcome is bit-identical). This
+is the sole change — the split product's own rounding proof above stands
+untouched.
+
+With the division no longer the binding constraint, that constraint is now
+the split product's `A = M·Rh` partial (S18(c)): for the tutorial's
+`$10,000 · (1 + n/2)` it carries `n ≤ 40` and fires the range `viol/2` at
+`n ≥ 41`, where `M·Rh` genuinely exceeds 2³¹ — the fence stays loud for
+exactly what does not fit, and ref computes every case exactly. Golden
+`jutterswet-kinderweging` pins `n = 20` (well past the old 6) and `n = 6`
+(the old boundary) through both executors, ref ≡ clingo. A **runtime**
+(non-constant) 4-decimal divisor keeps the two-factor form and its
+scale-10⁸ intermediate — no corpus case exercises one, so its dividend
+fence stays at the conservative bound. The fixture's cases keep `n ≤ 5`
+for their own overseas and computed-rate flanks, no longer a backend cap.
 
 ### S19. What does not translate — the complete loud inventory
 
@@ -1283,13 +1325,16 @@ sibling: ref accepts and executes it, but the ASP case emission scales
 every scalar parameter through `decimals_of_datatype`, which yields no
 number for a `StructType` datatype and so faults with the literal reason
 `unscalable datatype in the ASP translation` (a record value has no
-integer encoding) — no corpus case exercises it. Two field **values**
-WF-071 admits but the ASP value emission does not yet carry: a **nested
-struct field** and a **sum-typed field** — a struct or constructor value
-has no integer encoding in the flat record term, so `struct_value_term`
-faults with `a nested struct/sum/list field value has no integer encoding
-in the ASP struct term (no corpus case)` (a day-precision date field
-*does* translate — `decimals_of_datatype` scales it at 0). A **case-supplied struct computed target** has no monotone
+integer encoding) — no corpus case exercises it. A **nested struct field
+value** WF-071 admits now **does** translate — `struct_value_term`
+recurses, one nested functor per level, the value-side mirror of the
+`struct_base` field-access recursion (S16, golden
+`jutterswet-waarderingsinvoer`, both the case-input and expectation arms).
+What remains loud is a **sum-typed field** or a **list-typed field** — a
+constructor or list value has no integer encoding in the flat record term,
+so `struct_value_term` faults with `a nested sum/list field value has no
+integer encoding in the ASP struct term (no corpus case)` (a day-precision
+date field *does* translate — `decimals_of_datatype` scales it at 0). A **case-supplied struct computed target** has no monotone
 encoding (the case fact and the rule head would union into a superset
 model — the ch. 6d fence): `a case-supplied struct-typed computed target
 "…" has no encoding here (no corpus case)`. A **struct-in-struct field

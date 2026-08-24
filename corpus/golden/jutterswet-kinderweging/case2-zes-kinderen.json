@@ -1,0 +1,24 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "inkomen": { "number": "1000.00" },
+          "kindertal": { "number": "6" }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "factor", "value": { "number": "4.0000" } },
+    { "kind": "attributeValue", "label": "J1", "attribute": "gewogen", "value": { "number": "4000.00" } },
+    { "kind": "consistent" }
+  ]
+}
