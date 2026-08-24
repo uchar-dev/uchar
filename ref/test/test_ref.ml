@@ -552,6 +552,52 @@ let () =
   check "WV-6.4-a-50" (run "50" = (true, false));
   check "WV-6.4-a-200" (run "200" = (false, true))
 
+(* WV-5.5-charinit: a characteristic initialisation in an ObjectCreatie may
+   carry a boolean-TYPED expression, evaluated on the creation subject exactly
+   as an attribute initialisation is (the WF-027 relaxation, maintainer
+   decision 2026-08-24, besluit 1). The caller Jutter carries the boolean; the
+   minted Rekenkamer's kenmerk is set iff the value evaluates true, left unset
+   when it evaluates false (closed-world). The boolean constant stays the v0
+   form; a value that evaluates non-boolean faults fast. *)
+let () =
+  let doc_of waarde : Ir_v0.Ast.document =
+    {
+      empty_doc with
+      objecttypen =
+        [ ot "Jutter" [ ("overzees", Some Booleaan) ] []; ot "Rekenkamer" [] [ "overzees" ] ];
+      object_creaties =
+        [
+          {
+            oc_naam = Some "richt de rekenkamer op";
+            nieuw_type = Some "Rekenkamer";
+            oc_subject = Some "Jutter";
+            toekenningen =
+              [ { toe_attribuut = Some "overzees"; toe_waarde = Some waarde; toe_kenmerk = true } ];
+            oc_voorwaarde = None;
+            oc_geldigheid = None;
+            oc_verbindende_rol = None;
+          };
+        ];
+    }
+  in
+  let mint waarde overzees_in =
+    let doc = doc_of waarde in
+    let w = World.add_instance World.empty (inst "j" "Jutter" [ ("overzees", overzees_in) ]) in
+    let final = Eval.evaluate (env_of doc) w in
+    World.has_char (World.get final "oc0::j") "overzees"
+  in
+  let read_overzees = aref "overzees" "Jutter" Booleaan in
+  check "WV-5.5-charinit-expr-true" (mint read_overzees (Value.Bool true) = true);
+  check "WV-5.5-charinit-expr-false" (mint read_overzees (Value.Bool false) = false);
+  (* the preserved v0 constant form is unconditional — set on waar regardless
+     of the caller, unset on onwaar *)
+  check "WV-5.5-charinit-const-waar" (mint (litv "waar" Booleaan) (Value.Bool false) = true);
+  check "WV-5.5-charinit-const-onwaar" (mint (litv "onwaar" Booleaan) (Value.Bool true) = false);
+  (* a value that evaluates to a non-boolean faults fast (the runtime
+     bounded-write guard the verifier's v0 unknown-sentinel defers to) *)
+  expect_fault "WV-5.5-charinit-nonbool-fault" (fun () ->
+      ignore (mint (litv "5" num0) (Value.Bool true)))
+
 (* WV-6.4-b (= the ch. 5.6 channel read): one error fact, both dossiers
    flagged — the reading rule sits strictly above the consistency *)
 let () =

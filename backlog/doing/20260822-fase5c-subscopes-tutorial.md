@@ -170,3 +170,57 @@ Nog open in deze kaart (besluit 2 + executor-stappen): de clingo-flanken B2
 (datum-literaal in termpositie) en B3 (ListLength-in-term-binding); ref +
 clingo executor-ondersteuning voor de niet-constante kenmerk-init; de
 plugin-splitsing van `EScopeCall`; de tutorial-exitgetuige.
+
+## ref-evaluatie kenmerk-init-expressie + corpus-getuige geland (2026-08-24)
+
+De ref-kant van de WF-027-verruiming (besluit 1) is geland, met een
+corpus-anker dat hem uitoefent.
+
+- `ref/lib/eval.ml` (`run_object_creatie`): een kenmerk-initialisatie met een
+  expressie-waarde evalueert nu op het creatie-subject (dezelfde
+  caller-context als attribuut-`Toekenningen`, de RuleVersion-Kenmerktoekenning-
+  spiegel) — `Bool true` → kenmerk gezet op de geminte instantie, `Bool false`
+  → niet gezet (gesloten-wereld), niet-boolean → fail-fast. De twee
+  boolean-constante-takken (`Literal "waar"`/`"onwaar"`) staan exact zoals ze
+  waren (v0-vorm ongewijzigd). Smalste wijziging: alleen de `_`-fallthrough van
+  fault naar evaluatie gesplitst.
+- Nieuw zuster-anker `corpus/golden/anchor/jutterswet-rekenkamer-overzee/`:
+  Jutter (caller) draagt een boolean read-bron `overzees`; de ObjectCreatie
+  `richt de rekenkamer op` initialiseert het callee-kenmerk
+  `Rekenkamer.overzees` uit die caller-lezing (de niet-literale
+  kenmerk-init-expressie). Een voorwaardelijke callee-regel
+  (`KenmerkCheck overzees`) geeft de overzeese Rekenkamer een +1000-toeslag.
+  `case1-overzees` (overzees=waar → callee-kenmerk gezet → heffing 6000) en
+  `case2-binnengaats` (overzees=onwaar → niet gezet → basisbedrag 5000, zelfde
+  grondslag 5000) pinnen beide flanken absoluut. ir.json canoniek
+  geserialiseerd (gate-2-slice via /tmp/gen_overzee.py), byte-identieke
+  round-trip.
+- Notitie (bijvangst/open flank): de caller-bron is een boolean *attribuut*,
+  geen kenmerk — een value-positie-kenmerklezing heeft geen expressie-image in
+  de IR (de plugin-hek `frontends/catala/lib/translate.ml:1054-1057`: "booleans
+  are characteristics ... a value-position read of a characteristic has no
+  image"). Het callee-*doel* is een echt kenmerk (het WF-027-subject) en de
+  callee-regel leest het via `KenmerkCheck`. Een genavigeerde
+  kenmerk-lees-expressie zou een nieuwe knoop vergen (ontwerpvraag → buiten
+  deze kaart).
+
+ROOD-EERST (letterlijke uitvoer): de ref VÓÓR de fix faalt op beide nieuwe
+golden met `EVALUATION FAULT: characteristic initialisation of "overzees" is
+not a boolean constant (WF-027)` (exit 1); NA de fix `oracle: PASS`. De
+noop-refutatie faalt beide (`MISMATCH: J1.heffing = leeg, expected 6000` /
+`J2.heffing = leeg, expected 5000`), dus geen noop-survivors.
+
+Gates 1-5 en 7 volledig groen (self-contained; ir-schema 79; verifier 79
+golden clean + 137 negatief; case-schema 204; oracle 187; noop 165 refute + 22
+survivors). `@ref/runtest` groen: 250 worked examples (WV-5.5-charinit-* toe-
+gevoegd — kaart-gesanctioneerd: expr-true/false, de v0-constante-vorm, en de
+niet-boolean fail-fast).
+
+CLINGO ROOD-EERST voor de volgende agent (gate 6, verwacht rood op de nieuwe
+golden): `TRANSLATION FAULT: characteristic initialisation of "overzees" is not
+a boolean constant (WF-027)` op beide cases. Site:
+`backends/clingo/lib/translate.ml:2599-2604` — de kenmerk-init-tak matcht alleen
+`Literal "waar"/"onwaar"` en fault op de `_`-fallthrough; de expressievorm moet
+in ASP (evalueer de caller-context-boolean tot de `heeft/1`-hoofdguard) landen,
+naast de B2/B3-flanken. De golden staan gecommit (rood-eerst voor het
+clingo-been); gate 6 is NIET gedraaid als groen-eis in deze stap.

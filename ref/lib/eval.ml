@@ -1316,10 +1316,25 @@ let run_object_creatie env ~world0 ~idx world (oc : resolved_object_creatie) =
                     | Some (Literal { waarde = Some "waar"; _ }) ->
                         fst (World.set_char w ~label ~char:m)
                     | Some (Literal { waarde = Some "onwaar"; _ }) -> w
-                    | _ ->
+                    | Some e -> (
+                        (* Phase 5c (WF-027 relaxation): a characteristic
+                           initialisation may also carry a boolean-typed
+                           expression, evaluated on the creation subject exactly
+                           as an attribute initialisation is (the RuleVersion
+                           Kenmerktoekenning mirror) — true sets the mark on the
+                           minted instance, false leaves it unset (closed-world,
+                           an absent init). The boolean constant above stays the
+                           v0 form. *)
+                        match eval_expr env w self ~err e with
+                        | Value.Bool true -> fst (World.set_char w ~label ~char:m)
+                        | Value.Bool false -> w
+                        | v ->
+                            Value.fault
+                              "characteristic initialisation of %S is not boolean: %s (WF-027)"
+                              m (Value.to_string v))
+                    | None ->
                         Value.fault
-                          "characteristic initialisation of %S is not a boolean constant (WF-027)"
-                          m)
+                          "characteristic initialisation of %S without a value (WF-027)" m)
                   else
                     let v = eval_expr env w self ~err (req "Toekenning.waarde" t.toe_waarde) in
                     fst
