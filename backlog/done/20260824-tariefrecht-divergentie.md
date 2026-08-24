@@ -98,3 +98,25 @@ consistent). Alleen `spec/proposals/PHASE5D-DIFF.md` geraakt; geen
 scripts/check-noop.sh, geen artefactzone. Alle negen gates opnieuw groen
 (1 self-contained · 2 ir-schema 82 · 3 verifier 82/138 · 4 case-schema 215
 · 5 oracle 198 · 6 clingo 198 · 7 noop 174/24 · 8 rood 17 · 9 catala 120/6).
+
+Result: de 5d-grens is gesloten. case4-conflict op het
+tariefrecht-paar pint het geval waarop 'catala interpret' met
+ConflictError aborteert: beide executors deponeren exact het
+pad-gesleutelde §9.5-feit Penningplichtige.tarief/0, het tarief
+blijft leeg, en de aanslag rekent dóór tot 0.00 — het observeerbare,
+niet-fatale contrast met Catala's scope-abort, letterlijk geciteerd
+in PHASE5D-DIFF §8. De scherpste vondst: de v0-platte vorm (twee
+vlakke schrijvers op één niet-ladder-doel) is verifier-clean maar
+un-pinnable — ref bereikt geen fixpoint, clingo levert stil een
+multi-valued model zonder conflictfeit; ref ≢ clingo, in geen enkele
+corpuszone toelaatbaar. De ongeordende laddergroep is daarmee
+aantoonbaar de enige IR-vorm die deze over-determinatie met
+executor-overeenstemming uitdrukt; §8.2 corrigeert de eerdere
+"last-writer-win"-speculatie van §6. Rood-eerst met een opzettelijk
+foute prioriteitslezing, door beide executors afgewezen. De lensronde
+(één MINOR: een misleidend PASS-label bij de clingo-uitvoer in §8.2)
+is verwerkt. Open, vastgelegd in §8.2 en bewust géén genummerde
+vraag: of de verifier de un-pinnable platte vorm defensief moet
+weigeren vóór het differentieel-vierkant — de v0-emitter produceert
+hem nooit en gates 5-6 vangen hem; een toekomstige kaart kan het
+hek alsnog optrekken.
