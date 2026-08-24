@@ -406,8 +406,10 @@ vraag 3-A).** A declared scale `S` — the pin above, or any attribute's
 own `decimalen` — binds only a *declaration* and the *write boundary* it
 guards (ch. 2.4); every intermediate value stays the exact rational of
 ch. 2.1 — a strict-`Let` binder (ch. 10.6) and a `Match`-arm result
-(ch. 9.2) among them, rounded to no scale — and the sole collapse to a
-decimal is an explicit `Afgerond` node (ch. 2.5). Worked example: `100 ÷
+(ch. 9.2) among them, rounded to no scale — and a declared scale is never
+itself a collapse point: those stay exactly the three of ch. 2.1 — an
+explicit `Afgerond` node (ch. 2.5), the ch. 2.2 abs-division operator, and
+the ch. 2.4 write boundary already named. Worked example: `100 ÷
 3` (non-terminating) bound through a strict `Let` at a 2-decimal
 declaration and rounded once at the endpoint — `afgerond op 2
 rekenkundig` → **33,33**; the same binder `afgerond op 4` → **33,3333**,

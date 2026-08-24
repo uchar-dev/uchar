@@ -55,3 +55,47 @@ clingo's weigering is conform):
   (geen hernummering).
 
 Alle negen gates groen. Nog open (acceptance): twee opus-lenzen verwerkt.
+
+## Lensronde (2026-08-24)
+
+**BEVINDING 1 [MINOR/PLAUSIBLE] — CONFIRMED, verwerkt.** De normzin
+(RS ch. 2.9, regel 409) stelde "the sole collapse to a decimal is an
+explicit `Afgerond` node (ch. 2.5)". Zelf geverifieerd: ch. 2.1
+(regels 212–217) somt DRIE collapse-punten op — (1) expliciete afronding
+ch. 2.5, (2) abs-deling ch. 2.2, (3) schrijfgrens ch. 2.4 — en de ch. 2.2
+tabel (regel 235) bevestigt de abs-variant als "a defined collapse point";
+`ref/lib/arith.ml:171` (`div_abs = ... round_q Richting_nul 5`) bevestigt
+dat de abs-deling buiten elke `Afgerond`-knoop naar decimaal collabeert.
+Het woord "sole" overklaimt dus: het sluit de expliciete `÷abs`-operator
+uit en is strak genomen inconsistent met de gezaghebbende opsomming in
+ch. 2.1. GEEN gedragsdefect — ref klopt en blijft ongewijzigd; dit is een
+precisie-correctie in normatieve tekst.
+
+Fix (kleinste, geen gedragswijziging):
+- **RS ch. 2.9** — de collaps-clausule verwijst nu direct naar ch. 2.1's
+  opsomming: "a declared scale is never itself a collapse point: those stay
+  exactly the three of ch. 2.1 — an explicit `Afgerond` node (ch. 2.5), the
+  ch. 2.2 abs-division operator, and the ch. 2.4 write boundary already
+  named." De these van de zin ("de schaal is een grens, geen stap") blijft;
+  alleen de overklaim is weg.
+- **ref/test/test_ref.ml** (kaart-gesanctioneerde testaanraking, gemeld) —
+  het WV-commentaar droeg dezelfde formulering; nu op de witness begrensd:
+  "the sole collapse in this witness is its endpoint Afgerond node (ch. 2.5;
+  ch. 2.1 also admits the ch. 2.2 abs-division, not exercised here)."
+  Commentaar-only; de 253 WV's blijven groen.
+- **ASP-TRANSLATION S19** — al witness-begrensd ("the single endpoint
+  Afgerond collapses it once to 33,33"), geen overklaim; ongewijzigd.
+
+Geen rood-test: zuivere prozacorrectie zonder gedragswijziging; de bestaande
+WV-asserts `WV-2.9-let-*` blijven het gedrag pinnen.
+
+Alle negen gates opnieuw groen:
+- check-self-contained: PASS
+- check-ir-schema: PASS (schema valid; 97 file(s) validate and round-trip)
+- check-verifier: PASS (97 golden clean; 138 negatief rejected for their declared rule)
+- check-case-schema: PASS (schema valid; 266 case file(s) validate)
+- check-oracle: PASS (249 cases replayed exactly; NOT replayed, no case file yet: corpus/golden/jutterswet-vormenkabinet)
+- check-clingo: PASS (249 cases replay exactly through clingo — ref = clingo over the corpus)
+- check-noop: PASS (216 cases refute a do-nothing executor; 33 pinned survivors pin defeasible standing)
+- check-rood: PASS (17 red cases fault observably in both executors)
+- check-catala: PASS — frontend suite green (128 checks); 7 catala golden(s) regenerate byte-identically
