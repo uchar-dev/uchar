@@ -47,3 +47,32 @@ recorded), Datum_met/Datumtijd_met/sub-day extractors and
 Absolute_tijdsduur (the duration-class cards), ONGELIJK-over-extractor
 with an empty date (keep it out of the golden or pin it — do not leave
 it half-exercised), `spec/CONSTRUCTS.md` (serial at merge).
+
+Result: the date-function class is closed in both executors. RS ch. 3.8
+gained the extraction/Easter paragraph (civil components as unitless
+whole numbers, leeg via ch. 1.2b, the Gauss/Anonymous algorithm written
+out with the 2024/2026/2027/2038 pins); WF-038 gained the
+day-precision-extractor date-operand clause, verifier arm and negatief
+`wf038-extractor-text` (red-first shown: it was verifier-clean before,
+faulting only at runtime). ref: Arith.maand_uit/dag_uit mirror
+jaar_uit, Arith.eerste_paasdag is the Gauss chain (leeg propagates; a
+non-whole or unit-carrying year faults — the ratified delta vs v0's
+silent int-narrowing, noted in the RS paragraph); the catch-all stays
+for datum-met/datumtijd-met/sub-day. clingo: the extractors read the
+shared era decomposition, Easter is the Gauss chain into the
+days_from_civil re-encode with a year-before-1 viol fence;
+ASP-TRANSLATION S6a extended, S19 shrunk (S19 stays highest). Witness
+golden `jutterswet-paasvondst`: maand-uit TEN_MINSTE-1 disjunction,
+eerste-paasdag∘jaar-uit equality, jaar-uit Gelijkstelling — plus a
+dag-uit Gelijkstelling beyond the card's letter, added so clingo's
+DAG_UIT arm is differentially exercised, not dead code. Five
+hand-computed cases on both sides of the Easter and month boundaries;
+the leeg case pins paasvondst WAAR on a dateless Vondst (ch. 1.2d
+numeric equality of two empties, both executors agree). All 14 worked
+examples are verbatim ref tests (293 total). Nine gates green:
+134 ir round-trip, 134/155 verifier, 354 cases, 334 oracle = 334
+clingo, 300 noop refuters + 34 pinned, 20 rood, 169 catala checks.
+Deliberately left: DAGSOORT/ResolvedDagsoort (follow-up card),
+datum-met/datumtijd-met and the sub-day extractors (duration-class
+cards), ONGELIJK-over-extractor with an empty date (kept out of the
+golden entirely), the CONSTRUCTS.md row (serial at merge).
