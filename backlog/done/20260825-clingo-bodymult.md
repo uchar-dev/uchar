@@ -129,3 +129,23 @@ Alle negen gates opnieuw groen (slotregels):
 7. `check-noop: PASS (226 cases refute a do-nothing executor; 33 pinned survivors pin defeasible standing)`
 8. `check-rood: PASS (18 red cases fault observably in both executors)`
 9. `check-catala: PASS — frontend suite green (155 checks); 10 catala golden(s) regenerate byte-identically`
+
+Result: de gesloten-body-fence is verbreed met de multiplicatieve
+vormen van tutorialpagina 2-4 — algemene Maal, geld×rate via de
+gedeelde gesplitste cent-encodering, de decimal-of-harmonisatie en
+de gcd-gereduceerde constante-deler-deling — met werkelijk één
+codering (het regel-niveau emitteert nu via dezelfde helpers,
+byte-identiek geverifieerd) en met alle hekken meebewogen én vurend
+getoond (46340-ranges, niet-exact-viol als rood-getuige,
+cent-afronding). ref ≡ clingo over de volle corpus. De lensronde
+ving een echte MAJOR — de gesloten deling liet ctx.write_scale uit
+de exactheidstoets vallen, waardoor clingo spurieus weigerde waar
+ref rekende — gefixt in spiegeling met het regel-niveau, met vaste
+regressiegetuige; en een pre-existing MINOR: een buiten-Let-binder
+gelezen in een fold-body passeert de verifier terwijl beide
+executors er verschillend op stuklopen (ref: unbound-binder-fault
+met de eigen notitie dat WF-064 dit hoort te weren; clingo: onveilig
+grondingsfout) — een verifier-gat op beschermd pad, als voorstel
+geregistreerd, niet hier gedicht. Blijvend luid, gedocumenteerd in
+S19: runtime-deler, Percentage_van, Gedeeld_door_abs, Tot_de_macht
+en Let binnen gesloten bodies.
