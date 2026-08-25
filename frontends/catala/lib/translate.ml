@@ -1461,6 +1461,19 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
         "the subscope instance %S is read as a whole struct value: read its outputs one field at a \
          time (PHASE5C-TUTORIAL §3.2); a whole-struct read is out of scope"
         (M.remove (ScopeVar.get_info v));
+    if is_fused v then
+      (* the fused whole-struct per-element map internal (PHASE5C-TUTORIAL §3a):
+         it lands in [fused_meta], never in [vars] — [lookup] would raise. Only
+         the bare per-field map (intercepted in the [Op.Map] fusion branch)
+         has a per-field image; a whole read, a list-length, or a non-field map
+         reaches here and must refuse loudly (mirroring [is_subscope]), never
+         crash on [lookup]. *)
+      refuse
+        "the whole-struct per-element map internal %S is read other than per field: the fused \
+         struct list never exists on the wire, so only bare per-field reads (map each x among it to \
+         x.field) are lowered (PHASE5C-TUTORIAL §3a) — a whole read, a list-length, or a non-field \
+         map has no per-field image; Direction B, refused"
+        (M.remove (ScopeVar.get_info v));
     let vname, dt = lookup v in
     if in_body then
       refuse
@@ -1484,6 +1497,15 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
       refuse
         "the subscope instance %S is read in a condition: read its outputs one field at a time \
          (PHASE5C-TUTORIAL §3.2)"
+        (M.remove (ScopeVar.get_info v));
+    if is_fused v then
+      (* the fused whole-struct per-element map internal read in a condition:
+         mirror the [is_subscope] guard so it refuses loudly rather than raising
+         on [lookup] (PHASE5C-TUTORIAL §3a). *)
+      refuse
+        "the whole-struct per-element map internal %S is read in a condition: the fused struct list \
+         never exists on the wire, only bare per-field reads are lowered (PHASE5C-TUTORIAL §3a) — \
+         read other than per field is out of scope, refused"
         (M.remove (ScopeVar.get_info v));
     let vname, dt = lookup v in
     if in_body then

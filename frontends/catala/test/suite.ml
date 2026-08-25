@@ -273,6 +273,15 @@ let () =
       ("refuse_perelement_creation.catala_en", "unordered/conflict exception group");
       ("refuse_perelement_nested_noninput.catala_en", "non-input read");
       ("refuse_perelement_wholestruct_output.catala_en", "OUTPUT");
+      (* the fusie-lowering lens flank (2026-08-25): a fused whole-struct
+         per-element map INTERNAL is excluded from [vars], so any consumption
+         OTHER than a bare per-field map — a list-length (`number of shares`) or
+         a whole read into an output (`picked equals shares`, Direction B) —
+         must refuse loudly, not raise [Not_found] on the absent [vars] entry
+         (exit 2, an uncaught internal error). Both scalar_read and kenmerk_read
+         now mirror the sibling [is_subscope] guard *)
+      ("refuse_perelement_wholestruct_read.catala_en", "read other than per field");
+      ("refuse_perelement_wholestruct_whole.catala_en", "read other than per field");
       (* besluit 1-A lens round — two ref-only lowerings the map-body/functie
          route let slip past: (1) the same inline call written directly in a
          FOLD reducer body (not the map body) — its Invoke would land as a

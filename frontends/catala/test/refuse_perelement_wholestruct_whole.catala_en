@@ -1,0 +1,32 @@
+# Fused whole-struct internal read whole into an output — refused (Direction B)
+
+The FUSION (PHASE5C-TUTORIAL §3a, 2026-08-25) inlines a whole-struct per-element
+map INTERNAL only where it is consumed as bare per-field reads: the struct list
+never exists on the wire. Here `shares` IS consumed per field (the `totaal`
+fold), but ALSO read WHOLE into the output `picked` (`definition picked equals
+shares`) — the exact Direction B case: a caller could read the whole list, which
+has no clingo image. The fused internal is excluded from `vars`, so this read
+refuses loudly rather than crashing on the absent entry (the lens flank).
+
+```catala
+declaration scope Kamer:
+  input grondslag content integer
+  output bedrag content integer
+
+scope Kamer:
+  definition bedrag equals grondslag + 100
+
+declaration scope Aanslag:
+  input grondslagen content list of integer
+  internal shares content list of Kamer
+  output totaal content integer
+  output picked content list of Kamer
+
+scope Aanslag:
+  definition shares equals
+    map each g among grondslagen to
+    (output of Kamer with { -- grondslag: g })
+  definition totaal equals
+    sum integer of map each s among shares to s.bedrag
+  definition picked equals shares
+```

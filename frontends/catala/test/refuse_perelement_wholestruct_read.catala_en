@@ -1,0 +1,33 @@
+# Fused whole-struct internal read other than per field (list-length) — refused
+
+The FUSION (PHASE5C-TUTORIAL §3a, 2026-08-25) inlines a whole-struct per-element
+map INTERNAL — `map each g among source to (output of Callee with {…})` — ONLY
+where it is consumed as a bare per-field read (`map each x among shares to
+x.field`): the struct list never exists on the wire. Here `shares` IS consumed
+per field (the `totaal` fold), but ALSO read whole by `number of shares` (a
+list-length). That non-per-field read has no per-field image — the fused list is
+not on the wire — so it refuses loudly (Direction B), rather than crashing on the
+absent `vars` entry (the lens flank: a fused internal is excluded from `vars`).
+
+```catala
+declaration scope Kamer:
+  input grondslag content integer
+  output bedrag content integer
+
+scope Kamer:
+  definition bedrag equals grondslag + 100
+
+declaration scope Aanslag:
+  input grondslagen content list of integer
+  internal shares content list of Kamer
+  output totaal content integer
+  output aantal content integer
+
+scope Aanslag:
+  definition shares equals
+    map each g among grondslagen to
+    (output of Kamer with { -- grondslag: g })
+  definition totaal equals
+    sum integer of map each s among shares to s.bedrag
+  definition aantal equals number of shares
+```
