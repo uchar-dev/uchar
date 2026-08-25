@@ -1520,7 +1520,24 @@ literally (a wildcard would make totality a runtime property again).
   datatype — the `Match`'s own `type`. (This rule governs the new
   binder forms — a match arm's binder, a lambda/function parameter and,
   the Phase-5c widening, a `Let` binder (ch. 4.10), scoped to the `Let`
-  body; a `VariabeleRef` remains outside it, row 24.)
+  body; a `VariabeleRef` remains outside it, row 24.) **The closure
+  clause:** inside a **closed** body — a lambda or function body
+  (ch. 4.8/2.11), the bodies WF-069/WF-067 hold closed — the
+  enclosing-binder set is *closed at the boundary*. A `BinderRef` there
+  MUST resolve to the body's own parameters or to a binder introduced
+  **inside** the body (a match arm's binder, an inner `Let`, a filter
+  binder); a `BinderRef` that reaches **outside** the closed body — an
+  enclosing rule's `Let` binder, or an outer fold's parameter, read from
+  within the body — is ill-formed. This is the binder companion to the
+  attribute, dimension, aggregation, temporal and variable reads
+  WF-069/WF-067 already deny; a `Let` bound *inside* the body stays in
+  scope (ch. 4.10). *Motivation:* such a read is otherwise
+  verifier-clean yet splits the executors — `ref` faults cleanly on the
+  unbound binder while the ASP backend drops the free binder into an
+  unsafe rule and clingo grounding-crashes (exit 65) rather than emitting
+  a clean TRANSLATION FAULT; both fault loudly (no wrong answer), so the
+  clause is a robustness/diagnosis fence, weening the ill-formed IR at
+  gate 3 ahead of either executor. **Delta (promotion).**
 - **WF-078** A `BinderRef`'s serialized `type`, where present, MUST agree
   in **soort** with the datatype of the binder it resolves to — the
   leaf-ref cross-check WF-023/WF-027 perform for a resolved
@@ -1888,7 +1905,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-061 | SumType use site agrees with its declaring domain; two sum-typed comparison operands name the same domain (the nominal rule, ch. 2.4) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf061-use-site-drift` + `wf061-cross-sumtype-equality` + `wf061-undeclared-domain` |
 | WF-062 | Construct: declared constructor; argument present iff unary; argument type matches the declared payload (ch. 4.7) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf062-nullary-with-argument` + `wf062-payload-type-mismatch` |
 | WF-063 | Match totality: sum-typed scrutinee; arms cover the declared constructors exactly, each once; binder iff unary (ch. 4.7) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf063-missing-arm` + `wf063-alien-constructor` + `wf063-binder-on-nullary` + `wf063-duplicate-arm` |
-| WF-064 | every BinderRef resolves to an enclosing binder (a match arm's binder, a lambda/function parameter, or — the 5c widening — a `Let` binder scoped to its body); match arm bodies agree on one result datatype (ch. 4.7/4.10; VariabeleRef stays outside — row 24) | gate 3 | `anchor/jutterswet-beschikkingsom` + `anchor/jutterswet-tariefstelling` (Let binders) | `wf064-unbound-binderref` + `wf064-mixed-arm-types` |
+| WF-064 | every BinderRef resolves to an enclosing binder (a match arm's binder, a lambda/function parameter, or — the 5c widening — a `Let` binder scoped to its body); the closure clause: inside a closed lambda/function body the set is closed at the boundary, so a BinderRef reaching an enclosing rule's Let binder or an outer fold's parameter is ill-formed (an inside-body Let stays in scope); match arm bodies agree on one result datatype (ch. 4.7/4.8/4.10; VariabeleRef stays outside — row 24) | gate 3 | `anchor/jutterswet-beschikkingsom` + `anchor/jutterswet-tariefstelling` (Let binders) | `wf064-unbound-binderref` + `wf064-mixed-arm-types` + `wf064-enclosing-binder-in-closed-body` (the closure clause) |
 | WF-065 | ListType: first-order non-list element (Number, day-precision Date, declared SumType, or — the 5c widening — declared StructType); no granularity on a list-typed attribute (ch. 2.4) | gate 3 | `anchor/jutterswet-staffelvergoeding` (executed by gates 5–6) + `anchor/jutterswet-vondstdossier` (the list-of-struct widening) | `wf065-list-of-list` + `wf065-temporal-list-attribute` |
 | WF-066 | ListLiteral elements carry the declared element datatype (ch. 4.8) | gate 3 | `anchor/jutterswet-aanspraaktelling` | `wf066-heterogeneous-literal` |
 | WF-067 | FunctionDef: ci-unique names, typed unique parameters, resolvable result, closed body (the 5c widening admits FieldAccess/StructLiteral), acyclic invocation graph (ch. 2.11) | gate 3 | `anchor/jutterswet-aanspraaktelling` | `wf067-recursive-functions` + `wf067-attribute-read-in-body` |

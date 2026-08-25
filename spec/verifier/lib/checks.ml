@@ -1503,7 +1503,12 @@ let wf053_attribuut_ref ctx at ~subject ~set ~bindings ~navigatie_rol ~navigatie
    closure). *)
 type body_pos =
   | Rule_pos              (* rule level: IfThenElse ill-formed, reads open *)
-  | Closed_pos of string  (* function/lambda body: IfThenElse ok, reads closed (host wf id) *)
+  | Closed_pos of string * string list
+      (* function/lambda body: IfThenElse ok, reads closed (host wf id); the
+         [string list] carries the binder names bound OUTSIDE this closed body
+         (WF-064's closure clause): a closed body sees only its own parameters
+         and inner bindings, so a BinderRef to an outer binder is rejected —
+         the names are kept only to sharpen that diagnostic *)
   | Let_pos               (* strict Let body: IfThenElse ok, reads open *)
 
 (* Does [e] read the binder [b] anywhere (ci), skipping subtrees that lexically
@@ -1631,7 +1636,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
         stay open; rule level (Rule_pos) never closes either. *)
      match body with
      | Rule_pos | Let_pos -> None
-     | Closed_pos wf -> (
+     | Closed_pos (wf, _) -> (
          let deny phrase =
            Some [ v wf at (phrase ^ " is not admissible inside a closed function or lambda body") ]
          in
@@ -2280,9 +2285,25 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
   | Binder_ref { naam; typ; _ } -> (
       (* WF-064: a binder reference resolves lexically to an enclosing binder
          (a match arm, or a lambda/function parameter — row 10); a
-         VariabeleRef stays outside this rule (row 24) *)
+         VariabeleRef stays outside this rule (row 24). Inside a closed body
+         the visible [binders] are its own — a lambda/function's parameters
+         and whatever an inner Let/match/filter binds; the enclosing scope's
+         binders were dropped at the closure boundary, so a reference that
+         reaches out to one is rejected here (the closure clause), citing the
+         outer name it names when we still remember it. *)
       match List.find_opt (fun (b, _) -> norm b = norm naam) binders with
-      | None -> [ v "WF-064" at ("binder reference '" ^ naam ^ "' resolves to no enclosing binder") ]
+      | None ->
+          let outside =
+            match body with
+            | Closed_pos (_, outer) -> List.exists (fun n -> norm n = norm naam) outer
+            | Rule_pos | Let_pos -> false
+          in
+          if outside then
+            [ v "WF-064" at
+                ("binder reference '" ^ naam
+               ^ "' is bound outside the enclosing closed body — a closed function or lambda body \
+                  reads only its own parameters and inner bindings") ]
+          else [ v "WF-064" at ("binder reference '" ^ naam ^ "' resolves to no enclosing binder") ]
       | Some (_, bdt) -> (
           (* WF-078: the serialized [type] must not lie about the binder's
              soort — the leaf-ref cross-check WF-023/WF-027 perform for a
@@ -2402,7 +2423,11 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
          (WF-078); a strict Let body admits IfThenElse (Let_pos) unless already
          inside a closed body (stay closed) *)
       @ walk_expr ctx ~binders:((binder, typ_of_expr value) :: binders) ~subject
-          ~body:(match body with Closed_pos w -> Closed_pos w | Rule_pos | Let_pos -> Let_pos)
+          ~body:(match body with Closed_pos (wf, o) -> Closed_pos (wf, o) | Rule_pos | Let_pos -> Let_pos)
+          (* a Let inside a closed body stays closed with the SAME outer set —
+             the Let binder is an INNER binding (added to [binders] above), so a
+             BinderRef to it resolves; only reads reaching past the boundary are
+             the closure clause's concern *)
           (sub "body") lbody
   | List_literal { typ; elements; _ } ->
       (* WF-066: every element's static type equals the declared element datatype *)
@@ -2573,9 +2598,17 @@ and check_fold_fn ctx ~binders ~subject at ~params ~result (fn : fold_fn) : viol
             [ v "WF-070" at
                 ("lambda body is " ^ datatype_kind b ^ ", but the fold requires " ^ datatype_kind r) ]
         | _ -> [])
+      (* the lambda body is CLOSED (WF-069): it sees only its own parameters,
+         never the enclosing scope's binders. Dropping the enclosing [binders]
+         here is what closes WF-064's closure clause — an outer Let/fold binder
+         read from inside the body no longer resolves and is rejected; their
+         names ride in the [Closed_pos] payload solely to sharpen that
+         diagnostic. *)
       @ walk_expr ctx
-          ~binders:(List.map (fun (n, dt) -> (n, Some dt)) parameters @ binders)
-          ~subject ~body:(Closed_pos "WF-069") (at ^ "/body") lbody
+          ~binders:(List.map (fun (n, dt) -> (n, Some dt)) parameters)
+          ~subject
+          ~body:(Closed_pos ("WF-069", List.map fst binders))
+          (at ^ "/body") lbody
   | Fn_name n ->
       (* WF-069 (the mirror-safe route): the function operand MUST be an inline
          lambda; a named function reaches a fold through a lambda body that
@@ -2604,7 +2637,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) at (c : conditie) : viola
        A strict Let body (Let_pos) is open; rule level (Rule_pos) too. *)
     match body with
     | Rule_pos | Let_pos -> None
-    | Closed_pos wf -> (
+    | Closed_pos (wf, _) -> (
         match c with
         | Vergelijking _ | Predicaat _ -> None
         | _ ->
@@ -4647,9 +4680,12 @@ let wf067 ctx =
                      ("result names sum-type domain '" ^ domein ^ "', which is not a declared sum \
                        type") ]
              | _ -> [])
+           (* a FunctionDef body is closed and top-level: it sees only its own
+              parameters, so there are no outer binders to remember (WF-064's
+              closure clause has nothing to name here) *)
            @ walk_expr ctx
                ~binders:(List.map (fun (n, dt) -> (n, Some dt)) fd.fd_parameters)
-               ~subject:None ~body:(Closed_pos "WF-067") (at ^ "/body") fd.fd_body
+               ~subject:None ~body:(Closed_pos ("WF-067", [])) (at ^ "/body") fd.fd_body
            @ (if reaches ~target:fd.fd_naam ~visited:[ norm fd.fd_naam ] fd.fd_naam then
                 [ v "WF-067" at
                     ("function '" ^ fd.fd_naam
