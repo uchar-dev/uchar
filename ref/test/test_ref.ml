@@ -1541,7 +1541,15 @@ let () =
     (Arith.tijdsduur ~unit_:Tu_uur leeg (dt "2024-03-01T10:15:00"));
   (* mixed precision is ill-formed (WF-038) — fail fast behind the verifier *)
   expect_fault "WV-3.8-dt-mix" (fun () ->
-      Arith.tijdsduur ~unit_:Tu_dag (Value.date_of_iso "2024-02-28") (dt "2024-03-01T10:15:00"))
+      Arith.tijdsduur ~unit_:Tu_dag (Value.date_of_iso "2024-02-28") (dt "2024-03-01T10:15:00"));
+  (* a step that leaves the representable ms range faults, never a silent
+     wrap-around (v0's LocalDateTime.plus raises DateTimeException) *)
+  expect_fault "WV-3.8-dt-bereik-uur" (fun () ->
+      plus Tu_uur "2024-01-01T00:00:00" "2000000000000");
+  expect_fault "WV-3.8-dt-bereik-neg" (fun () ->
+      min_ Tu_uur "2024-01-01T00:00:00" "2000000000000");
+  expect_fault "WV-3.8-dt-bereik-dag" (fun () ->
+      plus Tu_dag "2024-01-01T00:00:00" "60000000000")
 
 (* --- ch. 3.8 through Eval: the datum-tijd routing ------------------------
    The widened WF-035/WF-038 fences in eval.ml admit a Datum_tijd operand

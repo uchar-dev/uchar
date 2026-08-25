@@ -1035,8 +1035,11 @@ counts whole units:
 Empty rules are ch. 1.2 unchanged: a leeg datetime propagates; a leeg
 duration counts as 0 (the datetime unchanged); a leeg tijdsduur
 operand propagates, never 0. A fractional duration count truncates
-toward zero before the step, as at day precision. Worked examples
-(absolute, pinned; each becomes a `ref/` test verbatim):
+toward zero before the step, as at day precision. A step whose result
+leaves the representable millisecond range is a fault, never a silent
+wrap-around (v0's `LocalDateTime.plus` raises `DateTimeException` past
+its range). Worked examples (absolute, pinned; each becomes a `ref/`
+test verbatim):
 
 - **Sub-day linearity:** 2024-02-28T23:30:00 + 26 uur =
   **2024-03-01T01:30:00** (across the leap day); 2024-03-01T00:15:00
@@ -1062,6 +1065,9 @@ toward zero before the step, as at day precision. Worked examples
 - **Empty rules:** leeg + 26 uur = leeg; 2024-02-28T23:30:00 + leeg
   uur = 2024-02-28T23:30:00; tijdsduur van leeg tot
   2024-03-01T10:15:00 in hele uren = leeg.
+- **Out of range:** 2024-01-01T00:00:00 ± 2 000 000 000 000 uur =
+  **fault**, and + 60 000 000 000 dagen = **fault** — the step leaves
+  the ms range; a wrap-around never masquerades as a datetime.
 
 **Executed in ref only (2026-08-25; WF-035/WF-038):** the datum-tijd
 layer runs in `ref/`, pinned by the worked examples above as unit

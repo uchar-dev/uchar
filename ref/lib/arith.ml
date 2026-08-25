@@ -556,13 +556,28 @@ let sub_day_ms : Ir_v0.Checks.time_unit -> int option = function
 (* datetime + n units: sub-day units are linear on the ms value; calendar
    units act on the civil day part through the day kernel above (linear
    days/weeks, the month-end clamp), preserving the time-of-day — the v0
-   LocalDateTime mirror *)
+   LocalDateTime mirror. A step that leaves the representable ms range
+   faults, never a silent wrap-around (v0's LocalDateTime.plus raises
+   DateTimeException past its range); the bounds are checked before the
+   product so the check itself cannot wrap. *)
+let ms_range_fault () =
+  fault "datum-tijd arithmetic leaves the representable millisecond range (v0 raises \
+         DateTimeException)"
+
 let add_units_ms (tu : Ir_v0.Checks.time_unit) n t =
   match sub_day_ms tu with
-  | Some u -> t + (n * u)
+  | Some u ->
+      if n > max_int / u || n < min_int / u then ms_range_fault ();
+      let step = n * u in
+      let s = t + step in
+      if (step > 0 && s < t) || (step < 0 && s > t) then ms_range_fault ();
+      s
   | None ->
       let d, msod = split_ms t in
-      (add_units tu n d * ms_per_day) + msod
+      let d' = add_units tu n d in
+      if d' > (max_int - msod) / ms_per_day || d' < min_int / ms_per_day then
+        ms_range_fault ();
+      (d' * ms_per_day) + msod
 
 (* whole units from datetime A to datetime B: a sub-day unit counts
    linearly on the ms difference (quot, toward zero); a day-based unit
