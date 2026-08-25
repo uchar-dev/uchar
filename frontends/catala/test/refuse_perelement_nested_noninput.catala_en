@@ -1,0 +1,38 @@
+# Nested sub-callee with a non-input read — refused (niet-zuivere sub-callee)
+
+A nested subscope lowers to an Invoke only when its own callee is a pure function
+(PHASE5C-TUTORIAL §3a, 2026-08-25). `InnerNonInput`'s output reads `helper`, an
+INTERNAL variable (neither an input nor a nested subscope output), which has no
+FunctionDef parameter to bind — a non-input read. So the nested composition
+`KamerNested.bedrag = inner.y` refuses per element: an impure sub-callee has no
+function image.
+
+```catala
+declaration scope InnerNonInput:
+  input x content integer
+  internal helper content integer
+  output y content integer
+
+scope InnerNonInput:
+  definition helper equals 100
+  definition y equals x + helper
+
+declaration scope KamerNested:
+  input grondslag content integer
+  inner scope InnerNonInput
+  output bedrag content integer
+
+scope KamerNested:
+  definition inner.x equals grondslag
+  definition bedrag equals inner.y
+
+declaration scope Aanslag:
+  input grondslagen content list of integer
+  output totaal content integer
+
+scope Aanslag:
+  definition totaal equals
+    combine all b
+      among (map each g among grondslagen to (output of KamerNested with { -- grondslag: g }).bedrag)
+      in acc initially 0 with (acc + b)
+```

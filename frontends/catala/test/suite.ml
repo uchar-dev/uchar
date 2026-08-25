@@ -213,7 +213,12 @@ let () =
          edge ($25,000; $0). Through the full differential (ref AND clingo) *)
       ("tutorial_end_2_4.catala_en",
        [ "cases/tutorial24_meerpersoons.json"; "cases/tutorial24_capflank.json";
-         "cases/tutorial24_randgeval.json" ]) ]
+         "cases/tutorial24_randgeval.json" ]);
+      (* PHASE5C-TUTORIAL §3a MULTI-OUTPUT, the direct-map-body sibling: a
+         per-element callee with two outputs, of which only `.bedrag` is read in
+         the map body, synthesises exactly `KamerMulti bedrag` (grondslag + 100)
+         and folds to a scalar. grondslagen [1;2;3] -> 306, ref AND clingo *)
+      ("subscope_perelement_multi.catala_en", [ "cases/perelement_drie.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:false src cases) passing;
   (* ref-only passing programs. datum: clingo cannot translate a date literal
@@ -252,32 +257,33 @@ let () =
       ("refuse_subscope.catala_en", "subscope");
       ("refuse_subscope_wholestruct.catala_en", "whole struct");
       ("refuse_subscope_multistate.catala_en", "multi-state");
-      (* besluit 1-A weiger-grens — the per-element functie-route lowers only a
-         PURE callee; four impure shapes refuse loudly per element, one fixture
-         each: own object creation (a callee subscope of its own), a non-input
-         read (an internal/output variable in the body), an unordered/conflict
-         exception-group output (no single closed body), and multiple outputs
-         (the FieldAccess-on-StructLiteral form, deferred: no clingo image) *)
-      ("refuse_perelement_creation.catala_en", "own object creation");
+      (* besluit 1-A weiger-grens (refined 2026-08-25, PHASE5C-TUTORIAL §3a) —
+         the functie-route lowers a PURE callee; multi-output and a nested
+         pure-function subscope now LAND (subscope_perelement_multi.catala_en,
+         tutorial_end_2_4.catala_en), but these impurities stay refused, each
+         loudly: a top-level non-input read (an internal/output variable in the
+         body); a top-level unordered/conflict-group output (no single closed
+         body); a NESTED sub-callee needing a real instance — a conflict channel
+         (refuse_perelement_creation: échte creatie, Direction B); a NESTED
+         sub-callee with a non-input read (niet-zuivere sub-callee); and a
+         whole-struct per-element map declared as an OUTPUT (a list that must
+         exist on the wire, no clingo image) *)
       ("refuse_perelement_noninput.catala_en", "non-input read");
       ("refuse_perelement_conflict.catala_en", "unordered/conflict exception group");
-      ("refuse_perelement_multioutput.catala_en", "multi-output");
+      ("refuse_perelement_creation.catala_en", "unordered/conflict exception group");
+      ("refuse_perelement_nested_noninput.catala_en", "non-input read");
+      ("refuse_perelement_wholestruct_output.catala_en", "OUTPUT");
       (* besluit 1-A lens round — two ref-only lowerings the map-body/functie
          route let slip past: (1) the same inline call written directly in a
          FOLD reducer body (not the map body) — its Invoke would land as a
          closed_term the clingo backend cannot translate; the gate is the DIRECT
          map body ([in_map_body]), not the broader [in_body]; (2) a callee with a
-         binary-subtraction body — [Verminderd_met] is outside clingo's additive
-         +/- closed-body fence (only [Plus]/[Min]). Each refuses loudly per
-         element so the divergence surfaces as a refusal, not ref-only IR *)
+         binary-subtraction body — [Verminderd_met] is outside clingo's closed-body
+         additive fence (Plus/Min; card clingo-bodymult widened it to ×, the
+         money×rate cent product and a constant-divisor division, but NOT binary
+         subtraction). Each refuses loudly per element, not ref-only IR *)
       ("refuse_perelement_foldcall.catala_en", "non-map closed body");
-      ("refuse_perelement_subtraction.catala_en", "non-additive binary operator");
-      (* the honest attempt at the REAL Catala-book tutorial 2-4: its
-         `shares_of_household_tax` maps to a WHOLE callee output (a list of
-         instances, Direction B), refused at the whole-struct read — the first of
-         several walls the header enumerates (own creation, non-input read,
-         multiplicative body, multi-output). Direction B stays deferred *)
-      ("refuse_tutorial_end_2_4.catala_en", "whole struct");
+      ("refuse_perelement_subtraction.catala_en", "non-carried binary operator");
       (* a shared non-trivial base under all members of a root-level unordered
          group stays refused (PHASE4-DEFAULTS §7; nested groups carry
          below-root branching, not this) *)

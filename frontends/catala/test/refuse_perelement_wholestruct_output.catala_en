@@ -1,0 +1,26 @@
+# Whole-struct per-element map as an OUTPUT — refused (Direction B)
+
+The FUSION (PHASE5C-TUTORIAL §3a, 2026-08-25) inlines a whole-struct per-element
+map — `map each g among source to (output of Callee with {…})` — ONLY when it
+lands in an INTERNAL consumed per field: the struct list never exists on the
+wire. The SAME shape declared as an OUTPUT is a `list of Callee` that must exist
+on the wire (a caller could read the whole list), which has no clingo image — so
+it stays refused, Direction B.
+
+```catala
+declaration scope Kamer:
+  input grondslag content integer
+  output bedrag content integer
+
+scope Kamer:
+  definition bedrag equals grondslag + 100
+
+declaration scope Aanslag:
+  input grondslagen content list of integer
+  output shares content list of Kamer
+
+scope Aanslag:
+  definition shares equals
+    map each g among grondslagen to
+    (output of Kamer with { -- grondslag: g })
+```

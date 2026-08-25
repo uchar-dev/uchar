@@ -1,0 +1,121 @@
+# Jutterswet, artikel 15 — de kamerheffing over een huishouden
+
+Art. 15 (kamerheffing per huishouden). Jutters die samen een huishouden voeren,
+zijn gezamenlijk een kamerheffing verschuldigd. Per jutter geldt een kamerbedrag
+van duizend gulden, vermeerderd met een kwart daarvan per kind. Van de heffing
+wordt de eigen vangstheffing van elke jutter afgetrokken; de gezamenlijke aftrek
+bedraagt ten hoogste vijfhonderd gulden.
+
+Modelleringsnotitie (PHASE5C-TUTORIAL §3a, de fusie-lowering, 2026-08-25). De
+tussenlijst `aandelen` — één `JutterAandeel` per jutter — is een INTERN veld dat
+uitsluitend per veld wordt geconsumeerd (twee `sum money of … tot a.kamerbedrag`
+/ `.aftrek`-vouwen). Die struct-lijst bestaat nooit op de wire: elke per-veld-vouw
+fuseert naar `MapList(jutters, λj. Invoke(JutterAandeel <veld>, j))`. `JutterAandeel`
+draagt twee uitvoervelden (MULTI-OUTPUT → één FunctionDef per veld) en een eigen
+subscope `heffing` naar `Vangstheffing`, die zélf een zuivere functie is — dus
+`heffing.bedrag` lowert als GENESTE Invoke (functiecompositie, geen instantie).
+Het geldproduct `$1.000 · (1 + n/4)` (een `Maal` plus een constante-deler `/4.0`)
+rijdt op clingo's verbrede gesloten-body-hek (kaart clingo-bodymult). De aftrekcap
+rijdt op de STATES. Eigen auteurschap, rechtenvrij.
+
+```catala
+declaration structure Jutter:
+  data vangst content money
+  data kinderen content integer
+
+declaration scope Vangstheffing:
+  input vangst content money
+  input kinderen content integer
+  output bedrag content money
+
+declaration scope JutterAandeel:
+  input jutter content Jutter
+
+  heffing scope Vangstheffing
+
+  output kamerbedrag content money
+  output aftrek content money
+
+declaration scope Kamerheffing:
+  input jutters content list of Jutter
+
+  internal aandelen content list of JutterAandeel
+
+  internal totale_aftrek content money
+    state basis
+    state begrensd
+
+  output heffing content money
+    state basis
+    state na_aftrek
+```
+
+## Artikel 15, eerste lid — de vangstheffing per jutter
+
+```catala
+scope Vangstheffing:
+  label tarief_basis
+  definition bedrag equals
+    vangst * 0.20
+
+  label tarief_verlaagd exception tarief_basis
+  definition bedrag
+    under condition kinderen >= 2
+    consequence equals vangst * 0.15
+```
+
+## Artikel 15, tweede lid — het kamerbedrag en de aftrek
+
+```catala
+scope JutterAandeel:
+  definition heffing.vangst equals
+    jutter.vangst
+  definition heffing.kinderen equals
+    jutter.kinderen
+
+  definition kamerbedrag equals
+    $1,000 * (1.0 + decimal of jutter.kinderen / 4.0)
+
+  definition aftrek equals
+    heffing.bedrag
+
+scope Kamerheffing:
+  definition aandelen equals
+    map each jutter among jutters to
+    (
+      output of JutterAandeel with { -- jutter: jutter }
+    )
+
+  definition heffing
+    state basis
+  equals
+    sum money of
+      map each a among aandelen
+      to a.kamerbedrag
+```
+
+## Artikel 15, derde lid — de begrensde aftrek
+
+```catala
+scope Kamerheffing:
+  definition totale_aftrek
+    state basis
+  equals
+    sum money of
+      map each a among aandelen
+      to a.aftrek
+
+  definition totale_aftrek
+    state begrensd
+  equals
+    let cap equals $500 in
+    let raw equals totale_aftrek in
+    if raw > cap then cap else raw
+
+  definition heffing
+    state na_aftrek
+  equals
+    let basis equals heffing in
+    let afgetrokken equals totale_aftrek in
+    if afgetrokken > basis then $0 else basis - afgetrokken
+```

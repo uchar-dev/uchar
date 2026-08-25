@@ -1,11 +1,11 @@
-# Per-element callee with multiple outputs — refused (deferred flank)
+# Per-element callee with multiple outputs — one FunctionDef per read field
 
-A single-output callee lowers to a scalar-returning FunctionDef and a bare
-Invoke. The multi-output form (the ratified design's FieldAccess on a
-StructLiteral result) has no clingo closed-body image yet — a closed-body
-field-access-over-Invoke is outside clingo's grammar (S15) — so `KamerMulti`,
-which declares two outputs, is refused per element as a documented flank
-(besluit 1-A, 2026-08-24).
+Multi-output (PHASE5C-TUTORIAL §3a, 2026-08-25): a per-element callee that
+declares more than one output lowers ONE FunctionDef per read output FIELD,
+named `<callee> <field>`. `KamerMulti` declares two outputs; the caller reads
+only `.bedrag` in the map body, so exactly `KamerMulti bedrag` is synthesised
+(`grondslag + 100`) and the map folds to a scalar — the direct-map-body sibling
+of the tutorial's fused multi-output. Own-authored, rights-free.
 
 ```catala
 declaration scope KamerMulti:

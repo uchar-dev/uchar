@@ -269,6 +269,63 @@ instances, Direction B), refused at the whole-struct read, upstream of
 its callee's own creation, non-input read, multiplicative body and
 multi-output (all enumerated in that fixture's header).
 
+**Refinement (2026-08-25) — fusion, nested Invoke, multi-output; the
+weiger-grens moves, staying inside besluit 1-A.** The `refuse_tutorial_
+end_2_4` walls above are now lifted for the pure-function case, and the
+book page lands green as `tutorial_end_2_4.catala_en`. Still **no
+instances, no new kernel node, list-position identity** — the four
+existing FunctionDef/Invoke pieces carry it:
+
+- **FUSION (deforestation).** A whole-struct per-element map
+  `map each x among source to (output of Callee with {…})` landing in an
+  **INTERNAL** — a `list of Callee` **consumed only per field** (field
+  reads/folds on the stored list) — never exists on the wire: at each
+  per-field consumption it fuses to
+  `MapList(source, λx. Invoke(Callee <field>, args))`. The intermediate
+  struct list is inlined away; the internal produces no rule and no
+  attribute. A whole-struct map that must exist as a list — declared an
+  **OUTPUT**, or read other than per field — stays **loudly refused**
+  (Direction B: a caller could read the whole list; no clingo image).
+- **NESTED INVOKE (function composition).** A **declared subscope inside
+  a pure-function callee whose own callee also passes the purity
+  analysis** lowers as a nested `Invoke` — the sub-callee becomes a
+  `FunctionDef` too (recursive synthesis under a cycle guard; **WF-067**
+  is the acyclic-callgraph gate). A subscope-output read
+  (`income_tax_computation.income_tax`) is then simply that Invoke's
+  value. This narrows the old "own object creation" wall: **real
+  creation** — a sub-callee that needs a *standing instance* (roles,
+  ladders on the instance, a §9.5 **conflict channel**), or that fails
+  purity another way (a non-input read) — stays **refused, Direction B**.
+- **MULTI-OUTPUT.** A callee with more than one output declares **one
+  FunctionDef per read output field**, named `<callee> <field>`
+  (single-output callees keep the bare `<callee>` name — byte-identity
+  for the existing goldens). The old `FieldAccess`-on-`StructLiteral`
+  deferral is gone: each field is its own scalar function.
+- **FENCE NARROWING.** The frontend closed-body fence narrows to exactly
+  what clingo's `closed_term` carries after card `clingo-bodymult`:
+  **`Maal`, a constant-divisor `Gedeeld_door`, and the money×rate cent
+  product** (`Afgerond` over a `Maal`) now pass; **binary subtraction
+  `Verminderd_met`, a runtime divisor, the abs-division, a power and a
+  percentage** stay refused per element (no closed-body image). The
+  boundary was determined by running clingo, and is documented in the
+  refusal text.
+
+**Refined witnesses.** `tutorial_end_2_4.catala_en` through gate 9
+(plugin → verifier → ref → clingo), three cases pinned against `catala
+interpret` (a two-person household $21,750 / cap $8,250; the cap flank
+$11,500 / $8,500; the exempt-rate edge $25,000 / $0); the corpus Catala
+golden `jutterswet-kamerhuishouden-catala` (art. 15, own-authored,
+rights-free: the fused `aandelen` internal, a two-output `JutterAandeel`
+with a nested pure `Vangstheffing`, the `$1.000·(1+n/4)` product and the
+deduction cap on the states) through the full gate set;
+`subscope_perelement_multi.catala_en` (direct-map-body multi-output)
+through gate 9; and the refined refuse-set — `refuse_perelement_creation`
+(a nested sub-callee with a conflict channel — échte creatie),
+`refuse_perelement_nested_noninput` (a nested sub-callee with a non-input
+read), `refuse_perelement_wholestruct_output` (a whole-struct map as an
+OUTPUT), plus the retained `refuse_perelement_noninput` /
+`_conflict` / `_foldcall` / `_subtraction`.
+
 ## 4. Design 3 — nested ladder groups (the ratified option i, executed)
 
 The additive wire form: an optional field **`excepties` on `Rung`** —

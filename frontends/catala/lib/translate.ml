@@ -459,6 +459,28 @@ let base_is_filled e =
           | Group_rung _ -> false)
         rungs
 
+(* a whole-struct per-element-map definition (FUSION, PHASE5C-TUTORIAL §3a): the
+   unconditional [map each x among source to (output of Callee with {…})] shape,
+   [source] and the map's lambda binder/tys/body-args extracted through the
+   default-tree wrapper. Returns the callee, the source list, the (single)
+   binder, its declared types and the subscope call's args (callee input ->
+   arg over the binder), or None when the definition is not that shape. *)
+let whole_struct_map_of e =
+  match parse_tree (strip e) with
+  | Some [ Plain (just, cons) ] when is_true just -> (
+      match M.remove (strip cons) with
+      | EAppOp { op; args = [ f; source ]; _ } when M.remove op = Op.Map -> (
+          match M.remove (strip f) with
+          | EAbs { binder; tys; _ } ->
+              let vs, body = Bindlib.unmbind binder in
+              (match M.remove (strip body) with
+               | EScopeCall { scope; args } when Array.length vs = 1 ->
+                   Some (scope, source, vs.(0), List.nth tys 0, args)
+               | _ -> None)
+          | _ -> None)
+      | _ -> None)
+  | _ -> None
+
 (* the per-element functie-route (besluit 1-A, 2026-08-24). The 2-4 shape
    collapses at scopelang to a MapList over the list VALUE carrying an inline
    [EScopeCall] in the lambda body — [map (λg → (S of {…}).f) xs]. When the
@@ -495,7 +517,8 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
     ~(lookup_var : ScopeVar.t -> I.datatype option)
     ~(read_subscope_output : ScopeVar.t -> StructField.t -> I.expr option)
     ~(check_subscope_output : ScopeVar.t -> StructField.t -> I.conditie option)
-    ~(per_element_call : ScopeName.t -> StructField.t -> per_element_meta) =
+    ~(per_element_call : ScopeName.t -> StructField.t -> per_element_meta)
+    ~fused_map =
   (* an EAbs (a fold/map/filter operand or a function) -> its bound variables,
      their declared types, and its body *)
   let lambda_of e =
@@ -615,6 +638,66 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
             value_expr ~operand ~in_body ~in_let ~env a
         | Op.Div_mon_mon, [ _; _ ] ->
             refuse "money / money division yields a decimal (rational): refused in the 5a skeleton (no declared number of decimals)"
+        | Op.Map, [ f; lst ]
+          when (match M.remove (strip lst) with
+                | ELocation (ScopelangScopeVar { name }) -> fused_map (M.remove name) <> None
+                | _ -> false) ->
+            (* FUSION (PHASE5C-TUTORIAL §3a, 2026-08-25): [lst] reads a
+               whole-struct per-element-map INTERNAL (a [list of Callee], never on
+               the wire) consumed PER FIELD — [map each x among shares to x.field].
+               It fuses to [MapList(source, λx. Invoke(callee_field, args))]: the
+               intermediate struct list never exists. [f] must be λx. x.field (a
+               bare field access on the element); any other consumption of the
+               fused internal has no per-field image and refuses. *)
+            let fused_v =
+              match M.remove (strip lst) with
+              | ELocation (ScopelangScopeVar { name }) -> M.remove name
+              | _ -> assert false
+            in
+            let callee, source, bvar, bname, elem_ty, cargs =
+              match fused_map fused_v with Some m -> m | None -> assert false
+            in
+            let field =
+              match M.remove (strip f) with
+              | EAbs { binder; _ } -> (
+                  let vs, body = Bindlib.unmbind binder in
+                  match M.remove (strip body) with
+                  | EStructAccess { e = eb; field; _ }
+                    when Array.length vs = 1
+                         && (match M.remove (strip eb) with EVar _ -> true | _ -> false) ->
+                      field
+                  | _ ->
+                      refuse
+                        "the whole-struct per-element-map internal %S is consumed by a map whose body \
+                         is not a bare field access on the element: a fused internal must be consumed \
+                         PER FIELD (never as a whole struct — no clingo image for the list)"
+                        (M.remove (ScopeVar.get_info fused_v)))
+              | _ -> refuse "a map operand is not a lambda (unexpected scopelang shape)"
+            in
+            let pem = per_element_call callee field in
+            let env' = Var.Map.add bvar (bname, elem_ty) env in
+            let arguments =
+              List.map
+                (fun iv ->
+                  match ScopeVar.Map.find_opt iv cargs with
+                  | Some (_, argexpr) ->
+                      value_expr ~operand:true ~in_body:true ~in_let:false ~env:env' argexpr
+                  | None ->
+                      refuse "the fused per-element call to %S omits input %S" pem.pem_fname
+                        (M.remove (ScopeVar.get_info iv)))
+                pem.pem_params
+            in
+            let invoke : I.expr =
+              Invoke
+                { typ = Some pem.pem_result_ty; functie = pem.pem_fname; arguments;
+                  bron = Some pem.pem_fname }
+            in
+            Map_list
+              { typ = Some (List_type { element = pem.pem_result_ty });
+                list = value_expr ~in_body ~in_let ~env source;
+                functie =
+                  Fn_lambda { parameters = [ (bname, elem_ty) ]; body = invoke; bron = Some bname };
+                bron = None }
         | Op.Map, [ f; lst ] ->
             let vars, tys, body = lambda_of f in
             if Array.length vars <> 1 then refuse "a map lambda takes exactly one parameter";
@@ -1057,6 +1140,9 @@ let ruled_vnames_of (sd : untyped Sc.scope_decl) : string list =
          | Sc.ScopeVarDefinition { var; e; io; _ } -> (
              match M.remove (strip e) with
              | EScopeCall _ -> None
+             (* a fused whole-struct per-element map produces no rule (FUSION,
+                PHASE5C-TUTORIAL §3a) — exclude it from the WF-020 ambiguity set *)
+             | _ when whole_struct_map_of e <> None -> None
              | _ -> (
                  match M.remove io.Dio.io_input with
                  | Catala_runtime.OnlyInput -> None
@@ -1104,6 +1190,36 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
       ScopeVar.Map.empty sd.scope_decl_rules
   in
   let is_subscope v = ScopeVar.Map.mem v subscope_meta in
+  (* FUSION (PHASE5C-TUTORIAL §3a, 2026-08-25): a whole-struct per-element map
+     [map each x among source to (output of Callee with {…})] landing in an
+     INTERNAL — a [list of Callee] that is consumed ONLY per field — never exists
+     on the wire: at each per-field consumption it fuses to
+     [MapList(source, λx. Invoke(Callee_field, args))]. Recorded here (instance
+     var -> callee, source, binder, element type, call args), and excluded from
+     [vars]/rules like a subscope. The SAME shape declared as an OUTPUT (a list
+     that must exist on the wire) is refused — Direction B. *)
+  let fused_meta =
+    List.fold_left
+      (fun acc rule ->
+        match rule with
+        | Sc.ScopeVarDefinition { var; io; e; _ } -> (
+            match whole_struct_map_of e with
+            | Some (scope, source, bvar, bty, args) ->
+                if M.remove io.Dio.io_output then
+                  refuse
+                    "variable %S is a whole-struct per-element map defined as an OUTPUT (a list of \
+                     callee instances): the struct list must exist on the wire — no clingo image; \
+                     Direction B, refused"
+                    (M.remove (ScopeVar.get_info (fst var)));
+                let bname = Bindlib.name_of bvar in
+                let elem_ty = catala_dt enums structs bty in
+                ScopeVar.Map.add (fst var) (scope, source, bvar, bname, elem_ty, args) acc
+            | None -> acc)
+        | Sc.Assertion _ -> acc)
+      ScopeVar.Map.empty sd.scope_decl_rules
+  in
+  let is_fused v = ScopeVar.Map.mem v fused_meta in
+  let fused_lookup v = ScopeVar.Map.find_opt v fused_meta in
   (* the synthesised back-link naming (PHASE5C-TUTORIAL §3.1): one fact type per
      declared subscope, globally unique by caller + instance variable; the
      callee fills a to-one role named for the instance variable, the caller the
@@ -1116,7 +1232,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   let vars : (string * I.datatype) ScopeVar.Map.t =
     ScopeVar.Map.fold
       (fun v (sv : Sc.scope_var_ty) acc ->
-        if is_subscope v then acc
+        if is_subscope v || is_fused v then acc
         else begin
           (* a state step lands as an ordinary internal attribute (row 2):
              [state_attr_name] mangles the [base#state] scopelang name to a
@@ -1399,7 +1515,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   let lookup_var v = try Some (snd (lookup v)) with Not_found -> None in
   let value_expr, cond_expr =
     make_exprs ~enums ~structs ~functions ~read_var ~check_var ~lookup_var ~read_subscope_output
-      ~check_subscope_output ~per_element_call
+      ~check_subscope_output ~per_element_call ~fused_map:fused_lookup
   in
   (* besluit 6: the value/condition walk that lowers a caller override into a
      top rung on the callee ladder. Same walk as the scope's own, but every
@@ -1418,7 +1534,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
           { kenmerk = Some k; navigatie = Some rol; negatie = false; eigenaar = None;
             periode = None; bron = Some k;
             navigatie_binding = Some { I.rb_feittype = feittype; rb_rol = rol } })
-      ~lookup_var ~read_subscope_output ~check_subscope_output
+      ~lookup_var ~read_subscope_output ~check_subscope_output ~fused_map:(fun _ -> None)
       ~per_element_call:(fun _ _ ->
         refuse
           "a per-element subscope call inside a caller override value/guard is not supported (besluit 6 override reads navigate the back-link; the per-element functie-route has no navigated form)")
@@ -1672,10 +1788,15 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
       | Sc.ScopeVarDefinition { var; io; e; _ } -> (
           match ScopeVar.Map.find_opt (fst var) subscope_meta with
           | Some info -> build_subscope (fst var) info
-          | None -> (
-              match M.remove io.Dio.io_input with
-              | Catala_runtime.OnlyInput -> () (* input: filled by the case, no rule *)
-              | _ -> translate_def (fst var) e))
+          | None ->
+              (* a fused whole-struct per-element map produces no rule: the struct
+                 list never exists on the wire, it is inlined per field at each
+                 consumption (FUSION, PHASE5C-TUTORIAL §3a) *)
+              if is_fused (fst var) then ()
+              else (
+                match M.remove io.Dio.io_input with
+                | Catala_runtime.OnlyInput -> () (* input: filled by the case, no rule *)
+                | _ -> translate_def (fst var) e))
       | Sc.Assertion { e; _ } ->
           consistenties :=
             { I.cons_naam = Some ("assertie " ^ ot_name ^ " " ^ string_of_int (idx + 1));
@@ -1717,6 +1838,7 @@ let topdef_functions enums structs functions topdefs : I.function_def list =
       ~lookup_var:(fun _ -> None)
       ~read_subscope_output:(fun _ _ -> None)
       ~check_subscope_output:(fun _ _ -> None)
+      ~fused_map:(fun _ -> None)
       ~per_element_call:(fun _ _ ->
         refuse
           "WF-067: a closed top-level function body may not contain a per-element subscope call")
@@ -1757,24 +1879,30 @@ let topdef_functions enums structs functions topdefs : I.function_def list =
    (real per-element instances) stays deferred. Returns the FunctionDef plus the
    [per_element_meta] the call site needs to line the arguments up. *)
 let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
-    (functions : (string * I.datatype) list) (callee : ScopeName.t)
-    (sd : untyped Sc.scope_decl) (accessed : StructField.t) :
+    (functions : (string * I.datatype) list)
+    ~(per_element_call : ScopeName.t -> StructField.t -> per_element_meta)
+    (callee : ScopeName.t) (sd : untyped Sc.scope_decl) (accessed : StructField.t) :
     I.function_def * per_element_meta =
   let cname = ScopeName.base callee in
-  (* (1) own object creation: any rule whose value is an [EScopeCall] *)
-  List.iter
-    (function
-      | Sc.ScopeVarDefinition { e; _ } -> (
-          match M.remove (strip e) with
-          | EScopeCall _ ->
-              refuse
-                "per-element callee %S creates its own subscope instance (own object creation): \
-                 refused per element — Direction B (real per-element instances) is deferred \
-                 (besluit 1-A, 2026-08-24)"
-                cname
-          | _ -> ())
-      | Sc.Assertion _ -> ())
-    sd.scope_decl_rules;
+  (* a declared subscope inside the callee is no longer own-creation-refused
+     (PHASE5C-TUTORIAL §3a, 2026-08-25): if its OWN callee also passes this
+     analysis it is nested function composition — a subscope-output read lowers
+     to a nested [Invoke] ([read_subscope_output] below, [per_element_call]
+     recursing under the cycle guard). Recorded here (instance var -> callee +
+     args). Real creation — a sub-callee needing a standing instance (an
+     unordered/conflict output, a non-input read) — surfaces as that sub-callee
+     failing purity, refused where its output is read (Direction B). *)
+  let subscope_meta =
+    List.fold_left
+      (fun acc rule ->
+        match rule with
+        | Sc.ScopeVarDefinition { var; e; _ } -> (
+            match M.remove (strip e) with
+            | EScopeCall { scope; args } -> ScopeVar.Map.add (fst var) (scope, args) acc
+            | _ -> acc)
+        | Sc.Assertion _ -> acc)
+      ScopeVar.Map.empty sd.scope_decl_rules
+  in
   let sig_bindings = ScopeVar.Map.bindings sd.scope_sig in
   let inputs =
     List.filter_map
@@ -1790,31 +1918,105 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
         if M.remove sv.svar_io.Dio.io_output then Some v else None)
       sig_bindings
   in
-  (* (2) exactly one output *)
+  (* MULTI-OUTPUT (PHASE5C-TUTORIAL §3a, 2026-08-25): one FunctionDef per read
+     output FIELD. The accessed field must be a declared output; a multi-output
+     callee qualifies the function name by field ("<callee> <field>"), a
+     single-output callee keeps the bare callee name (byte-identity for the
+     existing single-output goldens). *)
   let out_v =
-    match outputs with
-    | [ v ] -> v
-    | [] -> refuse "per-element callee %S declares no output to read" cname
-    | _ ->
-        refuse
-          "per-element callee %S declares %d outputs: the multi-output form lowers to a FieldAccess \
-           on a StructLiteral result, which has no clingo closed-body image yet — deferred flank \
-           (besluit 1-A, 2026-08-24)"
-          cname (List.length outputs)
+    match
+      List.find_opt
+        (fun v -> M.remove (ScopeVar.get_info v) = StructField.to_string accessed)
+        outputs
+    with
+    | Some v -> v
+    | None -> (
+        match outputs with
+        | [] -> refuse "per-element callee %S declares no output to read" cname
+        | _ ->
+            refuse
+              "the per-element call reads field %S, which is not a declared output of callee %S"
+              (StructField.to_string accessed) cname)
   in
   let out_name = M.remove (ScopeVar.get_info out_v) in
-  if StructField.to_string accessed <> out_name then
-    refuse "the per-element call reads field %S but callee %S's single output is %S"
-      (StructField.to_string accessed) cname out_name;
+  let multi = List.length outputs > 1 in
+  let fname = if multi then cname ^ " " ^ out_name else cname in
   let dt_of v = catala_dt enums structs (ScopeVar.Map.find v sd.scope_sig).svar_out_ty in
   let out_dt = dt_of out_v in
   let params = List.map (fun v -> (M.remove (ScopeVar.get_info v), dt_of v)) inputs in
   let input_set =
     List.fold_left (fun s v -> ScopeVar.Set.add v s) ScopeVar.Set.empty inputs
   in
-  (* (4) the closed body: an input read -> its parameter binder; any other scope
-     read refuses (non-input read). No subscope image (creation already refused);
-     no nested per-element call. *)
+  (* a nested subscope argument — a forward of the enclosing callee's inputs (a
+     bare input read, a field of an input struct) or a literal (function
+     composition threads the enclosing inputs through). Like a subscope input it
+     carries the unconditional-default wrapper [⟨true ⊢ X⟩], peeled here. *)
+  let rec arg_ir_inner argexpr : I.expr =
+    match M.remove (strip argexpr) with
+    | ELocation (ScopelangScopeVar { name }) ->
+        let v = M.remove name in
+        if ScopeVar.Set.mem v input_set then
+          let nm = M.remove (ScopeVar.get_info v) in
+          Binder_ref { naam = nm; typ = Some (dt_of v); bron = Some nm }
+        else
+          refuse
+            "a nested subscope in %S forwards %S, which is not one of %S's inputs: a nested \
+             pure-function composition forwards only the enclosing callee's inputs (non-input read)"
+            cname (M.remove (ScopeVar.get_info v)) cname
+    | ELit l -> literal_expr l
+    | EStructAccess { name; e = base; field } ->
+        let veld_ty =
+          match
+            Option.bind (StructName.Map.find_opt name structs) (StructField.Map.find_opt field)
+          with
+          | Some ty -> catala_dt enums structs ty
+          | None ->
+              refuse "field %S is not declared on struct %S" (StructField.to_string field)
+                (StructName.base name)
+        in
+        Field_access
+          { typ = Some veld_ty; base = arg_ir_inner base; veld = StructField.to_string field;
+            bron = None }
+    | _ ->
+        refuse
+          "a nested subscope argument in %S is not an input forward (a bare input, a field of an \
+           input struct) nor a literal (function composition needs input-forwarded arguments)"
+          cname
+  in
+  let arg_ir argexpr =
+    arg_ir_inner
+      (match parse_tree (strip argexpr) with
+       | Some [ Plain (just, cons) ] when is_true just -> cons
+       | _ -> argexpr)
+  in
+  (* NESTED INVOKE (PHASE5C-TUTORIAL §3a, 2026-08-25): a subscope-output read in
+     the body -> a nested Invoke of the sub-callee's field FunctionDef
+     ([per_element_call] recurses; the cycle guard + WF-067 keep the callgraph
+     acyclic). The read is just that Invoke's value. A non-subscope non-input read
+     still refuses ([read_var] below). *)
+  let read_subscope_output v (field : StructField.t) : I.expr option =
+    match ScopeVar.Map.find_opt v subscope_meta with
+    | None -> None
+    | Some (sub_scope, args) ->
+        let pem = per_element_call sub_scope field in
+        let arguments =
+          List.map
+            (fun iv ->
+              match ScopeVar.Map.find_opt iv args with
+              | Some (_, argexpr) -> arg_ir argexpr
+              | None ->
+                  refuse "the nested subscope call in %S omits input %S of %S" cname
+                    (M.remove (ScopeVar.get_info iv)) (ScopeName.base sub_scope))
+            pem.pem_params
+        in
+        Some
+          (Invoke
+             { typ = Some pem.pem_result_ty; functie = pem.pem_fname; arguments;
+               bron = Some pem.pem_fname })
+  in
+  (* the closed body: an input read -> its parameter binder; a subscope-output
+     read -> a nested Invoke; any other scope read refuses (non-input read); no
+     direct per-element map call inside the body. *)
   let value_expr, cond_expr =
     make_exprs ~enums ~structs ~functions
       ~read_var:(fun ~operand:_ ~in_body:_ name ->
@@ -1833,12 +2035,13 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
            numeric-comparison guards over inputs (no corpus case for a bare boolean-input condition)"
           cname (M.remove (ScopeVar.get_info (M.remove name))))
       ~lookup_var:(fun v -> if ScopeVar.Set.mem v input_set then Some (dt_of v) else None)
-      ~read_subscope_output:(fun _ _ -> None)
+      ~read_subscope_output
       ~check_subscope_output:(fun _ _ -> None)
+      ~fused_map:(fun _ -> None)
       ~per_element_call:(fun _ _ ->
         refuse
-          "per-element callee %S itself makes a per-element subscope call (nested per-element): \
-           refused — Direction B is deferred"
+          "per-element callee %S itself makes a direct per-element subscope call in a map body \
+           (nested per-element map): refused — Direction B is deferred"
           cname)
   in
   (* (3) the output default tree -> a closed IfThenElse body: an ordered chain of
@@ -1889,33 +2092,69 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
     | [] -> refuse "per-element callee %S output %S has an empty rung chain" cname out_name
   in
   let body = body_of rungs in
-  (* the +/- fence (besluit 1-A, 2026-08-24): clingo's closed-body term
-     ([closed_term]) admits only the ADDITIVE binary operators — [Plus] and
-     [Min] (unary negation lowers to 0 - a). A binary subtraction
-     ([Verminderd_met]), a multiplication, a division or a power in a closed
-     body has no clingo closed-body image (a measured wall), so a per-element
-     callee whose body carries one computes in ref but TRANSLATION-FAULTs in
-     clingo — a ref-only lowering. Refuse it loudly here so the divergence
-     surfaces as a refusal, not silent ref-only IR. (The card's "+/- fence"
-     names exactly {Plus, Min}: binary subtraction is NOT inside it.) *)
+  (* the closed-body arithmetic fence (besluit 1-A, 2026-08-24; NARROWED
+     2026-08-25 by card clingo-bodymult). clingo's closed-body term
+     ([closed_term], §S15) now carries — beyond the additive [Plus]/[Min] — the
+     multiplicative [Maal], the money×rate cent product ([Afgerond] over a Maal),
+     and a division by a COMPILE-TIME CONSTANT divisor. It still faults on binary
+     subtraction ([Verminderd_met] — the additive family is Plus/Min only), a
+     RUNTIME divisor, the abs-division, a power and a percentage: a per-element
+     callee whose closed body carries one computes in ref but TRANSLATION-FAULTs
+     in clingo. Refuse those loudly here so the divergence surfaces as a refusal,
+     not silent ref-only IR. (decimal-of is pass-through — no node — and the
+     money×rate wrapper rides [Afgerond].) *)
   let rec fence_expr (e : I.expr) : unit =
     match e with
-    | Binair { op = (Plus | Min); links; rechts; _ } ->
+    | Binair { op = (Plus | Min | Maal); links; rechts; _ } ->
         Option.iter fence_expr links; Option.iter fence_expr rechts
-    | Binair { op = (Verminderd_met | Maal | Gedeeld_door | Gedeeld_door_abs
-                    | Tot_de_macht | Percentage_van); _ } ->
+    | Binair { op = Gedeeld_door; links; rechts; _ } ->
+        (match rechts with
+         | Some (Literal _) -> ()
+         | _ ->
+             refuse
+               "per-element callee %S divides by a non-constant divisor in its closed body: clingo's \
+                closed-body division carries only a compile-time constant divisor (card \
+                clingo-bodymult) — a runtime divisor has no closed-body image and is refused per \
+                element"
+               cname);
+        Option.iter fence_expr links; Option.iter fence_expr rechts
+    | Binair { op = (Verminderd_met | Gedeeld_door_abs | Tot_de_macht | Percentage_van); _ } ->
         refuse
-          "per-element callee %S has a non-additive binary operator in its closed body \
-           (binary subtraction/multiplication/division): clingo's closed-body term admits \
-           only the additive +/- fence (Plus and unary Min) — a subtractive or multiplicative \
-           body has no clingo image and is refused per element (besluit 1-A, 2026-08-24)"
+          "per-element callee %S carries a non-carried binary operator in its closed body (binary \
+           subtraction, abs-division, power or percentage): clingo's closed-body term carries +, -, \
+           ×, the money×rate cent product and a constant-divisor division, but not this form (card \
+           clingo-bodymult) — refused per element"
           cname
     | Literal _ | Binder_ref _ | Parameter_ref _ | Variabele_ref _ | Constante _
     | Attribuut_ref _ | Expr_onopgelost _ -> ()
     | Functie { argumenten; leegwaarde; filter; _ } ->
         List.iter fence_expr argumenten; Option.iter fence_expr leegwaarde;
         Option.iter fence_cond filter
-    | Afgerond { basis; _ } -> Option.iter fence_expr basis
+    | Afgerond { basis = Some basis; _ } ->
+        (* clingo's closed-body [Afgerond] carries ONLY the money × 4-decimal-rate
+           cent product ([money_mult_shape]: a Maal of a 2-decimal money by a
+           4-decimal rate). A money DIVISION ([Afgerond] over a [Gedeeld_door]) or
+           a money×integer rounding has no closed-body image — refuse those, or the
+           fence lets a ref-only lowering slip (card clingo-bodymult, S18(c)). *)
+        let dec e =
+          match ir_typ e with Some (Numeriek { decimalen; _ }) -> Some decimalen | _ -> None
+        in
+        let rec money_rate (b : I.expr) =
+          match b with
+          | Let { body; _ } -> money_rate body
+          | Binair { op = Maal; links = Some m; rechts = Some r; _ } ->
+              dec m = Some 2 && dec r = Some 4
+          | _ -> false
+        in
+        if money_rate basis then fence_expr basis
+        else
+          refuse
+            "per-element callee %S wraps a rounding (Afgerond) that is not the money × 4-decimal-rate \
+             cent product: clingo's closed-body term carries only that product (card clingo-bodymult) \
+             — a money division or a money×integer rounding has no closed-body image, refused per \
+             element"
+            cname
+    | Afgerond { basis = None; _ } -> ()
     | Begrensd { basis; minimum; maximum; _ } ->
         Option.iter fence_expr basis; Option.iter fence_expr minimum;
         Option.iter fence_expr maximum
@@ -1954,9 +2193,9 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
     | Regelversie _ | Conditie_onopgelost _ -> ()
   in
   fence_expr body;
-  ( { I.fd_naam = cname; fd_parameters = params; fd_result = out_dt; fd_body = body;
-      fd_bron = Some cname },
-    { pem_fname = cname; pem_params = inputs; pem_result_ty = out_dt } )
+  ( { I.fd_naam = fname; fd_parameters = params; fd_result = out_dt; fd_body = body;
+      fd_bron = Some fname },
+    { pem_fname = fname; pem_params = inputs; pem_result_ty = out_dt } )
 
 (* --- driver ------------------------------------------------------------- *)
 
@@ -2042,24 +2281,41 @@ let file_to_document (input : string) : I.document =
   let callee_multistate sc =
     try ScopeName.Map.find sc multistate_map with Not_found -> []
   in
-  (* the per-element functie-route (besluit 1-A, 2026-08-24): a per-element
-     subscope call to a pure-function callee synthesises ONE FunctionDef per
-     callee scope, memoised here (a callee referenced from several map bodies
-     yields one FunctionDef, keyed by scope name) and appended to
-     [function_defs] below. The hook validates purity and refuses the
-     weiger-grens loudly. *)
-  let synth_fns : (ScopeName.t * (I.function_def * per_element_meta)) list ref = ref [] in
-  let per_element_call callee (field : StructField.t) : per_element_meta =
-    match List.find_opt (fun (n, _) -> ScopeName.equal n callee) !synth_fns with
+  (* the per-element functie-route (besluit 1-A, 2026-08-24; MULTI-OUTPUT +
+     NESTED INVOKE 2026-08-25): a per-element (or fused) read of an output FIELD
+     of a pure-function callee synthesises ONE FunctionDef per (callee, field),
+     memoised here (keyed by scope name + field, so a multi-output callee yields
+     one FunctionDef per read field and a callee referenced from several sites
+     yields one) and appended to [function_defs] below. [per_element_call]
+     recurses through a nested subscope-output read ([read_subscope_output]); the
+     [in_progress] stack is the cycle guard (WF-067 is the acyclic-callgraph
+     gate — a genuinely recursive callgraph refuses here rather than looping). *)
+  let synth_fns : ((ScopeName.t * string) * (I.function_def * per_element_meta)) list ref =
+    ref []
+  in
+  let in_progress : ScopeName.t list ref = ref [] in
+  let key_eq (s1, f1) (s2, f2) = ScopeName.equal s1 s2 && String.equal f1 f2 in
+  let rec per_element_call callee (field : StructField.t) : per_element_meta =
+    let key = (callee, StructField.to_string field) in
+    match List.find_opt (fun (k, _) -> key_eq k key) !synth_fns with
     | Some (_, (_, meta)) -> meta
     | None ->
+        if List.exists (ScopeName.equal callee) !in_progress then
+          refuse
+            "the per-element callgraph is cyclic through %S: the invocation graph must be acyclic \
+             (WF-067)"
+            (ScopeName.base callee);
         let sd =
           match List.find_opt (fun (n, _) -> ScopeName.equal n callee) scopes with
           | Some (_, decl) -> M.remove decl
           | None -> refuse "per-element call to an unknown scope %S" (ScopeName.base callee)
         in
-        let fd, meta = scope_to_function_def enums structs functions callee sd field in
-        synth_fns := (callee, (fd, meta)) :: !synth_fns;
+        in_progress := callee :: !in_progress;
+        let fd, meta =
+          scope_to_function_def enums structs functions ~per_element_call callee sd field
+        in
+        in_progress := List.filter (fun c -> not (ScopeName.equal c callee)) !in_progress;
+        synth_fns := (key, (fd, meta)) :: !synth_fns;
         meta
   in
   let objecttypen = ref [] and regels = ref [] and ladders = ref [] and cons = ref [] in
