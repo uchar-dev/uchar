@@ -1,0 +1,23 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "grondslag": { "number": "60" },
+      "kindertallen": { "list": [ { "number": "7" } ] }
+    }
+  },
+  "expectedFault": {
+    "ref": "does not fit the declared 2 decimals",
+    "clingo": "non-exact division (an explicit rounding is mandated before precision is lost)"
+  }
+}

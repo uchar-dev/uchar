@@ -745,20 +745,24 @@ scale.
   aanspraaktelling map is `Invoke aanspraakwaarde` over each element,
   whose body is exactly the bound-term match above.
 - Any other closed term (`closed_term`) is a bound binder, a literal, a
-  document parameter, a `+`/`-`/`×` combination of those, a
-  **constant-divisor division**, or a `Construct`. **Every emitted
-  arithmetic step carries a `viol/2` range fence** grounded by the
-  recurrence body and witnessed by the list-id — the running accumulator is
-  grounding-time arithmetic and would otherwise wrap silently past 2³¹ where
-  ref's exact rationals do not (the S6/S8 fence discipline, on the fold
-  interior). The multiplicative forms reuse the rule-level encodings
-  verbatim (one encoding, never a second), only swapping the subject-keyed
-  grounding for the recurrence body and the list-id witness, so every fence
-  moves with them:
+  document parameter, a `+`/`-`/`×`/`percentage-of` combination of those, a
+  **division** (bare or abs), a **power by a constant integer exponent**, a
+  `Construct`, or a **`Let`**. **Every emitted arithmetic step carries a
+  `viol/2` range fence** grounded by the recurrence body and witnessed by the
+  list-id — the running accumulator is grounding-time arithmetic and would
+  otherwise wrap silently past 2³¹ where ref's exact rationals do not (the
+  S6/S8 fence discipline, on the fold interior). The arithmetic forms reuse the
+  rule-level encodings verbatim (one encoding, never a second), only swapping
+  the subject-keyed grounding for the recurrence body and the list-id witness,
+  so every fence moves with them:
     - **`Maal`** is the scaled product `(tl*tr)` at scale `sl·sr` with the
       46340 product fence on each operand — the S6 multiplicative family
       without the leeg coalesce (a closed-body binder never goes leeg, the
-      additive-family posture of `closed_term`).
+      additive-family posture of `closed_term`). **`Percentage_van`** is the
+      same product with the `/100` folded into the scale (`sl·sr·100`, no
+      division) — the rule-level `(Maal | Percentage_van)` arm carried into the
+      body (golden `jutterswet-kinderprocent`, `acc + (x% van grondslag)`,
+      `[10,25]/200 → 70.00`).
     - **The money × rate product** rounded to the cent
       (`Afgerond{REKENKUNDIG,2}` over a 2-decimal money × 4-decimal rate,
       `money_mult_shape`) is the split encoding of S18(c) — the shared
@@ -780,9 +784,39 @@ scale.
       decimals than `max(s_L, s_R)` offers (e.g. `x / 4` into a 2-decimal
       attribute → `0.25`) is still exact against that stored scale. An integer
       dividend under the division is thereby widened to the shared out-scale
-      (the `decimal of n` ToRat pass-through), needing no separate node. The
-      runtime-divisor edges (empty dividend/divisor) cannot arise on
-      always-bound binders, so they do not ride here.
+      (the `decimal of n` ToRat pass-through), needing no separate node. A
+      **`Gedeeld_door_abs`** rides the same `closed_division` with
+      `rounding = Some (Richting_nul, 5)`: the quotient truncated toward zero at
+      the 5-decimal collapse point (ch. 2.2), which gringo's integer `/` computes
+      on both signs, so no exactness guard and no negative fence — the
+      round_z-scale-5 form carried whole into the body (golden
+      `jutterswet-kinderkap`, `acc + (x /abs 3)`, `[10,25] → 11.66666`). A
+      **runtime (bound-binder) divisor** for the bare division keeps the
+      two-factor form and rides a numeric-zero `viol/2`; the empty-operand §9.5
+      edges (empty dividend → 0, empty divisor → the channel) cannot arise on
+      always-bound binders, so only the zero fault does (golden
+      `jutterswet-kinderdeler`, `acc + (grondslag / x)`, `60/[2,3,4,5] → 77.00`,
+      every quotient exact; red `closed-runtime-division-by-zero`, `[2,0]` → both
+      *"division by numeric zero"*).
+    - **`Tot_de_macht`** by a compile-time non-negative integer exponent unfolds
+      to **repeated `Maal`** under the same 46340 fence — one factor per step, the
+      running partial product bounded so it never wraps (a conservative
+      `t^(e-1) ≤ 46340` bound, tighter than the rule-level base bound but always
+      loud). The exponent reading (`const_pow_exponent`) is shared with the
+      rule-level power; a runtime, negative or fractional exponent faults with its
+      reason, ref-only behaviour (golden `jutterswet-kindermacht`, `acc + x^3`,
+      `[2,3] → 35`).
+    - A **`Let` inside the body** (ch. 10.6) inlines its value — a closed-body
+      term — binding the binder to that term with **empty atoms** (the
+      recurrence-bound convention, so a nested read is self-contained) and
+      threading the value's binding atoms into every read site. No subject-keyed
+      helper: that is the rule level's shape, where a leeg value must break the
+      body, and a closed-body binder is never leeg (golden `jutterswet-kinderlet`,
+      `acc + (let bijdrage = grondslag maal x in bijdrage)`, `[2,3]/5.00 →
+      25.00`). A binder bound by a `Let` **outside** the closed body carries
+      binding atoms `closed_term` would have to drop; that reading is refused with
+      a clean fault (the sharp afbakening, S19), the parallel verifier card making
+      the shape WF-064-ill-formed.
 - A **`Construct` with a computed payload** inside a body (the reduce
   lowering's `Some(⟨body⟩)` step) wraps *each* payload branch in the
   constructor functor: `body_branches ⟨payload⟩` splits an `IfThenElse`
@@ -1342,21 +1376,32 @@ translated (index gaps need re-indexing; no corpus case)` rather than
 silently deriving nothing; `ListLength` over a filter stays fine, it
 counts; an **IfThenElse
 condition** other than a comparison over bound terms, a **closed-body
-term** other than a bound binder / literal / parameter / `+`,`-`,`×`
-combination / constant-divisor division / money×rate split / `Construct`,
+term** other than a bound binder / literal / parameter /
+`+`,`-`,`×`,`percentage-of` combination / division (bare or abs) / money×rate
+split / power by a constant integer exponent / `Construct` / `Let`,
 and a **`FilterList` condition** other than a
 sum-typed (in)equality over the bound element (the closed-body grammar is
 narrowed to what the corpus exercises); a **list-valued
 `attributeValue` expectation** in `model.ml` (the anchors expect only
 scalars and leegte; a list comparison is not built until a case wants
-one). The **multiplicative closed-body forms now translate** (S15, golden
-`jutterswet-kinderfoldheffing`; red `closed-nonexact-division`): `Maal`,
-the money×rate split rounded to the cent, and a division by a compile-time
-positive constant, each reusing its rule-level encoding and every fence in
-the fold interior. What still rides the "no corpus case" fence inside a
-closed body is the rest of the arithmetic — a **runtime (non-constant)
-divisor**, `Percentage_van`, `Gedeeld_door_abs`, `Tot_de_macht`, and a
-`Let` (`closed_term` has no arm for these). A **named FunctionDef
+one). The **closed-body arithmetic forms now translate** (S15, goldens
+`jutterswet-kinderfoldheffing` and the `jutterswet-kinder*` rest-form
+witnesses; reds `closed-nonexact-division`, `closed-runtime-division-by-zero`),
+each reusing its rule-level encoding and every fence in the fold interior:
+`Maal` and `Percentage_van`, the money×rate split rounded to the cent, a
+division by a compile-time positive constant **or a runtime (bound-binder)
+divisor** (the latter with a numeric-zero fence, the empty-operand §9.5 edges
+gone because a closed-body binder is never leeg), `Gedeeld_door_abs` (the
+richting-nul truncation at the 5-decimal collapse point), `Tot_de_macht` by a
+constant integer exponent (repeated `Maal`), and a `Let` **inside** the body
+(its value inlined, the binder self-contained). The one closed-body `Let`
+reading still refused is a binder bound **outside** the body: `closed_term`
+would drop its binding atoms into an unsafe rule, so it faults cleanly (`the
+closed body reads binder "…" bound by a Let OUTSIDE it …`) — ref faults there
+too (`unbound binder`), and the parallel verifier card makes the shape
+WF-064-ill-formed (`backlog/new/20260825-closed-body-enclosing-binder.md`);
+until it merges the fence is the clean backstop in place of gringo's grounding
+crash. A **named FunctionDef
 as a `Fold`/`MapList` operand** is no longer a shape-without-a-case: it is
 **WF-069-rejected** before translation (the operand MUST be an inline
 `Lambda`; a named function reaches a fold through a lambda body that
@@ -1434,19 +1479,21 @@ the two operand scales exactly as the closed-body comparison route does,
 so the operand backstop (`… must read only binders, parameters or
 literals (WF-077)`) refuses only the attribute/field/characteristic reads
 WF-077 already rejects before translation — an unreachable guard on
-WF-clean input (the guard mirrors the verifier's `bound_only_expr`). Two
-`Let`-body shapes an executor carries only in the bare rule-value
-position fault loudly elsewhere: a **`Let` inside a closed body** (a fold,
-function or lambda body — `closed_term` has no `Let` arm) faults `a
-closed-body term here is a bound binder, a literal, a parameter, a +/- or ×
-combination, a constant-divisor division or a Construct (no corpus case for
-more)`; a **`Let` whose
+WF-clean input (the guard mirrors the verifier's `bound_only_expr`). A
+**`Let` inside a closed body** (a fold, function or lambda body) **now
+translates** — `closed_term`/`body_branches` inline the value and bind the
+binder self-contained (S15, golden `jutterswet-kinderlet`); the only closed-body
+`Let` reading refused is a binder bound **outside** the body (an ill-formed
+shape both executors reject, the parallel verifier card's WF-064 gap). One
+`Let`-body shape an executor carries only in the bare rule-value position still
+faults elsewhere: a **`Let` whose
 body is an `IfThenElse` outside the bare rule value** (a ladder rung, a
 creation member initialisation, a sum- or struct-target value —
 `expr_term` peels the `Let` but has no `If_then_else` arm) faults
 `expression kind not translated (no corpus case exercises it)`. ref
-carries both everywhere (ch. 4.10); on the ASP side only `value_branches`
-reaches an `IfThenElse`, and only at the rule value. **Negative operands
+carries it everywhere (ch. 4.10); on the ASP side only `value_branches`
+reaches an `IfThenElse` at the rule value (a closed-body `IfThenElse` reducer
+does lower — `body_branches`). **Negative operands
 under the money multiplication** (ref rounds either sign; runtime `viol/2`, the
 non-richting-nul rounding sibling) and the two split range fences (`M·Rh`
 and `M·Rl`, runtime `viol/2` — the tutorial's magnitudes clear them); a

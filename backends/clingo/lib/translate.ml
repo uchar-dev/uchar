@@ -2384,21 +2384,22 @@ and closed_division ctx ~guard_body ~witness ~rounding ~links ~rechts : string l
     let knum = sr * out_scale / g and kden = sl / g in
     ( numt_of knum,
       (if kden = 1 then Printf.sprintf "(%s)" tr else Printf.sprintf "((%s)*%d)" tr kden),
-      [ (tl, 536870912 / knum); (tr, 536870912 / kden) ],
-      true )
+      [ (tl, 536870912 / knum); (tr, 536870912 / kden) ] )
   in
-  let numt, dent, range_bounds, runtime =
+  let numt, dent, range_bounds =
     match const_div with
     | Some c ->
         let knum, kden_c = const_div_reduce ~sl ~sr ~out_scale ~c in
         (* a folded denominator past the fence would feed 2·dent unguarded past
            2^31 (S18); drop back to the two-factor form, whose divisor-term
-           range_guard fires the loud UNSAT — a runtime divisor is impossible
-           here (const_div is Some), so this branch never sets [runtime] *)
+           range_guard fires the loud UNSAT — exactly the rule-level fallback *)
         if kden_c > 536870912 then two_factor ()
-        else (numt_of knum, Printf.sprintf "(%d)" kden_c, [ (tl, 536870912 / knum) ], false)
+        else (numt_of knum, Printf.sprintf "(%d)" kden_c, [ (tl, 536870912 / knum) ])
     | None -> two_factor ()
   in
+  (* only a genuine runtime divisor (a bound binder) can be numeric zero; a
+     constant divisor is fenced positive, even on the two-factor fallback *)
+  let runtime = const_div = None in
   let gbody = guard_body @ bl @ br in
   range_guard ctx ~subject:witness ~body:gbody range_bounds;
   (* a runtime divisor can be numeric zero (never leeg — the §9.5 empty-divisor
