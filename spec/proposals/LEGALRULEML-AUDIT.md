@@ -69,10 +69,17 @@ LegalRuleML (§4.2.1) types the body→head link by strength: **strict**
 never assert its own — `Defeater`). Conflict resolution is by
 **specificity**, **salience/weight**, or a **preference (superiority)
 relation**; LegalRuleML picks the last, materialised as
-`<lrml:Override over="#cs2" under="#cs1"/>` — a first-class ordered pair
-in a defeasible priority relation, optionally itself derivable
-(`body => (r1 > r2)`) and context-scoped. Strength is attached either in
-a `<lrml:Context>` (localised) or via `<lrml:hasStrength>` (global).
+`<lrml:Override over="#cs2" under="#cs1"/>` — a **static** first-class
+ordered pair between Legal-Statement identifiers (glossary: "an
+indication that a Legal Rule takes precedence over another"), attached
+via `hasTemplate`/`OverrideStatement` or as a `hasQualification`. A
+*derivable* superiority (`body => (r1 > r2)`, the preference relation as
+a rule head) appears in §4.2.1 only as cited literature — "Antoniou [2]
+proposes that instances of the superiority relation appear in the head
+of rules" — and is **not** machinery the standard itself defines.
+Strength (not Override — Context's edge list §3.6 has `appliesStrength`,
+no `appliesOverride`) is attached either in a `<lrml:Context>`
+(localised) or via `<lrml:hasStrength>` (global).
 
 uchar's model is the **default ladder** (`IR-SPEC.md` ch. 6.1; RS ch. 7;
 `CONSTRUCTS.md` row 8): a first-class, per-target list of prioritised
@@ -83,7 +90,7 @@ rungs evaluated top-down with fall-through — the highest rung that
 |---|---|---|
 | **Defeasible rule** (`=>`) | **GEDEKT** | The ladder rung is exactly a defeasible conclusion: it holds unless a higher rung decides. WF-050/051; `IR-SPEC.md` ch. 6.1; RS ch. 7.1. Witnesses: `anchor/jutterswet-uitsluiting` (characteristic ladder, worked example 7.6.1), `anchor/jutterswet-vondstwaardering` (attribute ladder + leeg fall-through + initialisation rung), both replayed by gates 5–6. |
 | **Priority between conflicting rules** | **DEELS** | *Within one target* priority is first-class and explicit: `rungs` is a **descending** priority list (`IR-SPEC.md` ch. 6.1), and below-root branching nests it as a rose tree (WF-075, RS ch. 7.9; `anchor/jutterswet-nestuitzondering`, `-nestkenmerk`, `-nestdiepte`). *Across targets / across independently authored rules* there is **no** free superiority relation — see the Override row. LegalRuleML's third resolution method (preference relation) is the one uchar realises, but only intra-target; specificity and salience are not modelled (salience was deliberately removed — `CONSTRUCTS.md` row 6, PLAN §2/§4). |
-| **Override** (`<lrml:Override>`, a free `r1 > r2` pair) | **DEELS / NIET (as a free relation)** | uchar expresses override as **structure**, not as a standalone relation object: a higher rung *displaces* a lower one (RS ch. 7.1), and unordered co-writers with differing decisions route to the §9.5 conflict channel instead of silently overriding (WF-050, RS ch. 7.2; `anchor/jutterswet-toelagegronden`, six conflict-path cases). What is **not** expressible: a first-class, possibly *dynamically argued* superiority pair between two rules on **different** targets, or a preference that is itself a rule head (`body => (r1 > r2)`). `CONSTRUCTS.md` row 8 records this precisely — "LegalRuleML adds strict-vs-defeasible tagging and cross-rule override as refinements." → candidate C2 (§7). |
+| **Override** (`<lrml:Override>`, a free `r1 > r2` pair) | **DEELS / NIET (as a free relation)** | uchar expresses override as **structure**, not as a standalone relation object: a higher rung *displaces* a lower one (RS ch. 7.1), and unordered co-writers with differing decisions route to the §9.5 conflict channel instead of silently overriding (WF-050, RS ch. 7.2; `anchor/jutterswet-toelagegronden`, six cases of which three pin the conflict path — root, kenmerk, and input-blijft conflict — while case4 pins the equal-grounds *no*-conflict flank, RS 7.6.3). What is **not** expressible: the standard's static, first-class superiority pair between two rules on **different** targets. (The *derivable* form `body => (r1 > r2)` is Antoniou's literature proposal cited in §4.2.1, not a standard requirement — see the cluster intro.) `CONSTRUCTS.md` row 8 records this precisely — "LegalRuleML adds strict-vs-defeasible tagging and cross-rule override as refinements." → candidate C2 (§7). |
 | **Defeater** (`~>`, block-only) | **DEELS** | The block-only effect exists *inside* a ladder: a characteristic rung with a false decision "derives nothing and displaces" (`IR-SPEC.md` ch. 6.1; RS ch. 7.1) — it defeats lower rungs without asserting a positive conclusion, which is the defeater's intent. But there is **no** standalone `Defeater` node that attaches to an arbitrary rule as a strength; the block is only a rung position within a target's ladder. Witness: `anchor/jutterswet-uitsluiting` (art. 4 "geen recht", a displacing non-attribution). |
 | **Strict rule** (`->`, indisputable) | **DEELS** | The nearest form is the **monotone** base: a bare computing rule decides like the lowest non-init rung (the ch. 7.8 standing norm, `anchor/jutterswet-waardestelling`), and a characteristic attribution (`KENMERKTOEKENNING`) is order-free and idempotent — extensionally a one-rung constitutive rule (`CONSTRUCTS.md` row 8, Phase-5d note). But uchar carries **no strength tag**: nothing marks a conclusion as *indisputable* vs *defeasible* on the wire. Defeasibility is expressed by *presence of a ladder*, not by a `StrictStrength`/`DefeasibleStrength` label — a structural encoding, not LegalRuleML's metadata one. |
 | **Strength tagging** (`hasStrength` / `appliesStrength`) | **NIET** | No wire slot tags a rule's strength; strength is implicit in structure (ladder ⇒ defeasible; bare rule ⇒ monotone base). Consequence: the strict/defeasible/defeater *vocabulary* is a refinement uchar does not carry — `CONSTRUCTS.md` row 8 ("strict-vs-defeasible tagging … as refinements"). Not needed for evaluation (the structure already decides); a documented deviation, folded into candidate C2. |
@@ -107,8 +114,8 @@ windows + vintages)
 
 LegalRuleML (§4.3.5) models the **external** temporal dimensions of a
 norm along *three legal axes* — "when they come into force (entry), when
-they effect the intended result (**efficacy**), and when they apply
-(**applicability**)" — plus, in the vocabulary, statuses such as
+they effect the intended or desired result (**efficacy**), and when they
+apply (**applicability**)" — plus, in the vocabulary, statuses such as
 `InForce` and `Efficacious`. It does so with `<lrml:TemporalCharacteristic>`
 = (`forStatus`, `hasStatusDevelopment` ∈ {`Starts`, `Ends`, …},
 `atTime`), attachable at very fine granularity (atom, rel, if, then) via
@@ -123,23 +130,25 @@ timelines (RS ch. 3). The mismatch runs in *both* directions.
 
 | LegalRuleML concept | Verdict | Evidence and boundary |
 |---|---|---|
-| **Applicability axis** (gating: does the norm apply on date d) | **GEDEKT** | The evaluation date **gates** a versioned form against its validity window: WF-021 (version windows non-overlapping), `IR-SPEC.md` ch. 3.10, RS ch. 8.2; witness `jutterswet-vormenkabinet` (two dated versions of one rule name). This is the "applicability / in-force gating" of one axis, done exactly. |
+| **Applicability axis** (gating: does the norm apply on date d) | **DEELS** | The evaluation date **gates** a versioned form against its validity window: WF-021 (version windows non-overlapping), `IR-SPEC.md` ch. 3.10, RS ch. 8.2. But the witness is **verifier-only**: `jutterswet-vormenkabinet` (two dated versions of one rule name) is the witness cabinet — by its own NOTE it carries no `case*.json` and *cannot* replay (its other rules fault in both executors), and it is the **only** corpus document with a bounded `geldigheid` window at all. So WF-021 well-formedness is witnessed by gate 3 (plus negatief `wf021-version-overlap`), while the RS ch. 8.2 *runtime* gating is exercised by **zero** replaying cases — the same missing-executor-witness class as C1. → candidate C3 (§7): a replaying two-dated-versions golden with an `asOfDate` case in each window. |
 | **Parameter versioning over time** (LegalRuleML's "penalty 500\$/750\$/1000\$ by crime date" example, §4.2.3.2) | **GEDEKT** | The vintage read: a granular parameter read at the evaluation date, `read(tl_p, Rekendatum)` — RS ch. 8.3–8.4, WF-018/005; witnesses `jutterswet-penningjaar` and `anchor/jutterswet-penningvintage` (RS ch. 8.5 worked example verbatim, gates 5–6), with a session-start coverage check that faults on a missing vintage before any rule fires. This is precisely LegalRuleML's "point to the correct penalty according to the time." |
-| **Content-event timelines** (durations, per-period values) | **GEDEKT** (and *beyond* LegalRuleML) | Object/attribute timelines with granularity, cut-merge, pro-rata, day counts: RS ch. 3, WF-005/015/016/055/056/058; witnesses `jutterswet-getijdenwacht`, `anchor/jutterswet-borgdeel`, `anchor/jutterswet-dagentelling`. LegalRuleML deliberately does **not** model this (§4.3.5); the direction of the mismatch here is that uchar is richer, as PLAN §5 (Phase 5) predicts. |
+| **Content-event timelines** (durations, per-period values) | **GEDEKT** (and *beyond* LegalRuleML) | Object/attribute timelines with granularity, cut-merge, pro-rata, day counts: RS ch. 3, WF-005/015/016/055/056/058; witnesses `jutterswet-getijdenwacht`, `anchor/jutterswet-borgdeel`, `anchor/jutterswet-dagentelling`. LegalRuleML deliberately does **not** model this — §4.3.5's own exclusion carries the claim; PLAN §6 (Phase 5) makes the same richer-on-time prediction, though about Catala, not LegalRuleML. |
 | **Multiple *norm-status* axes** (entry-into-force vs **efficacy** vs applicability, held distinct) | **NIET** | uchar collapses valuation = calculation = vintage into one axis by design. Consequence: a **documented decision**, not an accident — PLAN §9 decision 2 ("single time axis … accepted v1 scope"); `CONSTRUCTS.md` row 12 ("Second time axis (knowledge time / retroactivity) — later(v2) … LegalRuleML distinguishes in-force / efficacy / application — the extension point must not hard-code 'exactly two axes'"). The extension point is *named* in RS ch. 8.1 ("a second, knowledge-time axis … a session-shape change, not a re-foundation"). |
 | **Knowledge-time / retroactivity axis** | **NIET (later v2, extension point named)** | Same decision. RS ch. 8.1 names it as the second session parameter selecting rule versions/vintages "as known at k"; `CONSTRUCTS.md` row 12, PLAN §9 (2). Not a v1 gap to be carded — a designed-for future. |
 | **Status developments** (`Starts` / `Ends` / and by extension Suspended / Repealed / Annulled) | **DEELS / NIET** | Validity windows give a norm-version's **start and end of applicability** (WF-021, `IR-SPEC.md` ch. 3.10) — the `Starts`/`Ends` of applicability. But there is **no** first-class status-transition model: no `Suspended`, `Repealed`, `Annulled`, no `forStatus`/`hasStatusDevelopment` pair. A repeal is expressed by *ending a version's window* and opening the successor's, not by a status event on the norm. Honest shortfall; naturally folded into the row-12 second-axis work rather than a standalone v1 card. |
 | **Fine-grained temporal attachment** (temporal parameters on an atom/if/then, §4.3.5 + Associations) | **NIET (as attachment) / partially subsumed** | uchar attaches validity to a **rule version** (`geldigheid`) and a source ref to **every node** (`IR-SPEC.md` ch. 4), but there is no Association mechanism binding a temporal characteristic to an arbitrary sub-expression. In practice the single axis + per-version window covers the Jutterswet's needs; the sub-atom temporal-tagging generality is unmodelled and unneeded at v1. |
 
-**Cluster verdict.** On the **single** axis LegalRuleML cares about
-(applicability gating + version/vintage selection), uchar is **GEDEKT**
-and, on content-event time, richer than LegalRuleML. On the
+**Cluster verdict.** On the **single** axis LegalRuleML cares about,
+uchar is **GEDEKT** for vintage selection and, on content-event time,
+richer than LegalRuleML — but applicability *gating* is **DEELS**: the
+mechanism is specified and verifier-witnessed (WF-021), yet no replaying
+corpus case exercises it (→ candidate C3). On the
 **multiplicity** of norm-status axes (efficacy ≠ enforceability ≠
 applicability) and on status-development events, uchar is **NIET** — but
 this is the single most-cited *decision* in the plan (PLAN §9 (2),
 `CONSTRUCTS.md` row 12), with the extension point explicitly named in
-RS ch. 8.1. No v1 card; the row-12 later(v2) work absorbs the
-status-development refinement too.
+RS ch. 8.1. No v1 card for the multiplicity NIET; the row-12 later(v2)
+work absorbs the status-development refinement too.
 
 ---
 
@@ -182,7 +191,7 @@ The distinction is the crux of the finding.
 | **Constitutive / counts-as rule** (head = institutional fact) | **GEDEKT** | This *is* uchar's `KENMERKTOEKENNING` — "X counts as Y" as a characteristic attribution (`IR-SPEC.md` ch. 3.1; `CONSTRUCTS.md` row 8 Phase-5d note on monotone attribution). Witness: `jutterswet-penningrecht` — art. 3 *penningrecht* is modelled as the characteristic `penninggerechtigd` (`BIJVOEGLIJK`), a constitutive status, exactly LegalRuleML's constitutive half. uchar's whole calculus is the constitutive category. |
 | **Prescriptive rule / deontic head** (`SuborderList` of `[D]A`) | **NIET** | No deontic operator, no prescriptive statement, no suborder list. Consequence: **documented non-goal** — `CONSTRUCTS.md` row 32 ("Deontic layer (obligation/permission/prohibition, violation → reparation, alternatives) — non-goal (v1) … uchar v1 is a constitutive calculation IR: rules define what counts as what, not who must do what"). |
 | **Obligation / Prohibition / Permission / Right** | **NIET** | None expressible. Note the adversarial trap the corpus itself sets: art. 3 is literally a *recht* (right), yet uchar models it **constitutively** (a kenmerk `penninggerechtigd`), **not** as a LegalRuleML `[RIGHT]` with a Bearer and AuxiliaryParty. So even where the domain contains a deontic-sounding term, the IR expresses only the counts-as projection of it. Row 32. |
-| **Violation → Penalty → Reparation** (compensation chains) | **NIET** | No violation state, no penalty/reparation linkage. Row 32. LegalRuleML's temporal-versioned penalty example (§4.2.3.2) is doubly out — both the penalty layer (row 32) and the multi-axis time it rides on (row 12) are unmodelled. |
+| **Violation → Penalty → Reparation** (compensation chains) | **NIET** | No violation state, no penalty/reparation linkage. Row 32. Violation's dual **Compliance** (§3.4, "an indication that an Obligation has been fulfilled or a Prohibition has not been violated") is equally **NIET** under the same row. LegalRuleML's temporal-versioned penalty example (§4.2.3.2) is doubly out — both the penalty layer (row 32) and the multi-axis time it rides on (row 12) are unmodelled. |
 | **Directed operators** (Bearer / AuxiliaryParty) | **NIET** | uchar has roles and role membership (`CONSTRUCTS.md` rows 4/5, WF-047) — a *structural* party model — but no deontic direction (who is bound, who benefits). The role machinery is for fact navigation, not for deontic party assignment. Row 32. |
 
 **Cluster verdict.** Split cleanly along LegalRuleML's own
@@ -190,7 +199,10 @@ constitutive/prescriptive line: the **constitutive** half is **GEDEKT**
 (it is uchar's core); the **prescriptive/deontic** half is **NIET**, an
 explicit, single-sentence non-goal (`CONSTRUCTS.md` row 32). This is the
 sharpest boundary of the standing test and the plan draws it on purpose:
-uchar computes what-counts-as-what, not who-must-do-what.
+uchar computes what-counts-as-what, not who-must-do-what. (Glossary
+completeness: **FactualStatement** — §3.4, "an expression of fact" — is
+trivially **GEDEKT**: it is the case dossier's input facts,
+`spec/schema/uchar-case-v0.schema.json`, gate 4.)
 
 ---
 
@@ -211,9 +223,10 @@ uchar's answer is the **Bron** machinery (`CONSTRUCTS.md` row 3; PLAN §4
 | LegalRuleML concept | Verdict | Evidence and boundary |
 |---|---|---|
 | **Source reference on every rule/fragment** | **DEELS** | Every IR node carries a `source` (`IR-SPEC.md` ch. 4.1, ch. 4 preamble). But (a) it is today the **v0 `bron` string** — the structured `Bron(file, line, column, snippet)` is a **tracked delta** not yet on the wire (`IR-SPEC.md` ch. 4 preamble "pending delta (tracked, `CONSTRUCTS.md` row 3)"; row 3); (b) the string points to the **frontend surface fragment** (the RegelSpraak/Catala text — witness: `jutterswet-penningrecht/ir.json`, `"bron": "Een Jutter is penninggerechtigd"`), not to a legal-source identifier. So intra-repo, rule↔surface traceability exists; it is coarse and not yet structured. |
-| **Legal-source identifier** (Akoma Ntoso / ECLI / IRI) + N:M source↔rule isomorphism | **NIET** | uchar has no `LegalReference`/`LegalSource` node, no external legal-source id, and no N:M source↔rule Association. The statute lives in the corpus as prose (`corpus/jutterswet/wet-v*.md`, art. 1–5), but the IR does not reference statute articles by a machine identifier. PLAN §4 states the *ambition* ("back to … the statute article … via `// Bron:` annotations"), and `// Bron:` annotations exist upstream in `regelspraak-java` (Phase 0, `bronAnnotaties`) — **but zero corpus goldens carry `bronAnnotaties` on the wire** (verified: `grep -rl bronAnnotat corpus/golden` → 0). So statute-article traceability is *promised and upstream-built* yet **unwitnessed in this repo**. → candidate C1. |
+| **Legal-source identifier** (Akoma Ntoso / ECLI / IRI) + N:M source↔rule isomorphism | **NIET** | uchar has no `LegalReference`/`LegalSource` node, no external legal-source id, and no N:M source↔rule Association. The statute lives in the corpus as prose (`corpus/jutterswet/wet-v*.md`, art. 1–5 in v0 growing to art. 1–9 in v4), but the IR does not reference statute articles by a machine identifier. PLAN §4 states the *ambition* ("back to … the statute article … via `// Bron:` annotations"), and `// Bron:` annotations exist upstream in `regelspraak-java` (Phase 0, `bronAnnotaties`) — **but zero corpus goldens carry `bronAnnotaties` on the wire** (verified: `grep -rl bronAnnotat corpus/golden` → 0). So statute-article traceability is *promised and upstream-built* yet **unwitnessed in this repo**. → candidate C1. |
 | **Authority** (who endorsed the norm) | **NIET (later v2)** | No authority node. Consequence: `CONSTRUCTS.md` row 33 ("Norm authority/agent attribution — LegalRuleML — later(v2) — sugar (metadata on row 3) — provenance metadata on source references; cheap, not evaluation-relevant"). A stated later, not a v1 gap. |
 | **Agent / Figure / Role** (author acting in a function) | **NIET (later v2)** | Same row 33. uchar's `Rol` is a fact-navigation role (WF-047), a different notion from LegalRuleML's authorship Role/Figure; the provenance-agent model is row 33 metadata. |
+| **Paraphrase** (§3.4, "a natural language rendering of a Legal Rule … alternative to its Legal Source(s)") | **NIET** | No node carries an alternative natural-language rendering; the `bron` string is the *originating* surface text, not a paraphrase. Same source-metadata family as rows 3/33 — sugar on the source layer if ever needed. |
 
 **Cluster verdict.** **DEELS.** The traceability *skeleton* is real and
 first-class (every node has a source ref; the structured form is a
@@ -263,9 +276,12 @@ does not itself impose (cluster 1, GEDEKT: WF-050/051/075/045/046, ladder
 ch. 6.1 / RS ch. 7, anchors `jutterswet-uitsluiting` /
 `-vondstwaardering` / `-toelagegronden` / `-nestdiepte`); and on the
 **one time axis** LegalRuleML's applicability/efficacy machinery reduces
-to — version gating plus vintage selection — **yes**, indeed with richer
-content-event timelines than LegalRuleML models (cluster 2, GEDEKT:
-WF-021/018, RS ch. 8, `jutterswet-vormenkabinet` / `-penningvintage`).
+to — **yes for vintage selection**, with richer content-event timelines
+than LegalRuleML models (cluster 2: WF-018, RS ch. 8,
+`-penningvintage`), but **version gating only DEELS**: the mechanism is
+specified and verifier-witnessed (WF-021, `jutterswet-vormenkabinet` —
+verifier-only by its own NOTE), while no replaying corpus case exercises
+the RS ch. 8.2 runtime gating (→ candidate C3).
 But the standing test's own three headline items split: **override** is
 only **DEELS** — uchar has intra-target ladder priority, not
 LegalRuleML's free `r1 > r2` superiority relation or its
@@ -287,7 +303,7 @@ uchar **can express LegalRuleML's defeasible-reasoning and single-axis
 temporal core, and does so as far as the plan's declared scope reaches**;
 everything it cannot express is a *cited decision* (single axis;
 constitutive-not-deontic; jurisdiction/alternatives non-goals) rather
-than an oversight, with exactly two live loose ends worth a card.
+than an oversight, with exactly three live loose ends worth a card.
 
 **Consequence ledger** (every NIET/DEELS accounted for):
 
@@ -295,7 +311,8 @@ than an oversight, with exactly two live loose ends worth a card.
 |---|---|---|---|
 | 1 Defeasibility | defeasible / priority (intra-target) / defeater-in-ladder / stratification / discretion | GEDEKT | — |
 | 1 | cross-rule Override, strength tags | DEELS/NIET | refinement, `CONSTRUCTS.md` row 8 → candidate **C2** |
-| 2 Time | applicability gating, vintage, content timelines | GEDEKT | — |
+| 2 Time | vintage, content timelines | GEDEKT | — |
+| 2 | applicability gating (runtime, RS ch. 8.2) | DEELS | verifier-witnessed only (WF-021, witness cabinet); no replaying case → candidate **C3** |
 | 2 | efficacy/enforceability multiplicity, knowledge-time axis, status developments | NIET | PLAN §9 decision 2; `CONSTRUCTS.md` row 12 (later v2); extension point RS ch. 8.1 |
 | 3 Jurisdiction | jurisdiction | NIET | non-goal, `CONSTRUCTS.md` row 13 |
 | 4 Deontic | constitutive / counts-as | GEDEKT | — |
@@ -321,12 +338,23 @@ here):
 - **C2 — Decide the override/strength question.** uchar expresses
   priority only *within* a per-target ladder and tags no strength.
   Candidate: a design note (not a v1 build) settling whether
-  LegalRuleML's free superiority relation (`<lrml:Override>`, incl.
-  `body => (r1 > r2)`) and its strict/defeasible/defeater strength tags
+  LegalRuleML's superiority relation (the static `<lrml:Override>` pair
+  between Legal-Statement identifiers — the derivable
+  `body => (r1 > r2)` form is Antoniou's literature proposal, outside
+  the standard, and sets no requirement) and its
+  strict/defeasible/defeater strength tags
   are a genuine requirement for the corpus's law, or whether the
   intra-target ladder is sufficient by construction — `CONSTRUCTS.md`
   row 8 already frames these as "refinements," so this is a scope
   confirmation, not new machinery.
+- **C3 — Witness runtime version gating with a replaying golden.** The
+  only bounded-`geldigheid` document in the corpus is the verifier-only
+  witness cabinet (`jutterswet-vormenkabinet`, no `case*.json` by
+  design), so RS ch. 8.2's date-gating of rule versions is exercised by
+  zero replaying cases. Candidate: a golden with two dated versions of
+  one rule built from executable constructs, plus cases with an
+  `asOfDate` in each window — after which the cabinet's WF-021 row moves
+  out, per its own NOTE's shrink rule.
 
 - **Documented, no card (for completeness):** second time axis + status
   developments → PLAN §9 (2) / `CONSTRUCTS.md` row 12 (later v2, extension
