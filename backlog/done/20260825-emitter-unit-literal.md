@@ -37,3 +37,28 @@ the literal must carry its unit the way attributes already do).
 Out of scope: `spec/CONSTRUCTS.md` (registry note serial at merge),
 executor-parser loosening (the lexeme stays bare — WF-081 stands), any
 other toolchain change beyond the emitter fix.
+
+Result: both sides landed. Investigation first: the v0 wire ALREADY
+carries the unit slot — `Literal.type` is the full datatype union, and
+`Numeriek`/`Percentage` carry `eenheid` exactly as attribute datatypes
+do; both executors already read it (`ref` `unit_of_datatype`, clingo
+`eff_unit` on the literal type). So NO uchar-side schema/IR-SPEC/
+verifier/ref/clingo movement was needed: the narrowest form is
+toolchain-only. Red-first: today's emitter on `... plus 5 €` wrote
+`"waarde": "5 €"` (with the resolved Eenheid already in the type!);
+verifier: `WF-081 FAIL /resolvedRegels/0/waarde/rechts: numeric
+literal lexeme '5 €' is not a bare number`. Fix (mandate 1-A, toolchain
+commit f8a3ce8): the literal's waarde is the bare NUMBER token text —
+covers the unit suffix AND the same-production '%' suffix ("21%" wrote
+"21%" too); `bron` keeps the full snippet; Drools consumers route
+through Rationaal.van and are byte-unchanged (make test 551 pass /
+1 pre-existing env-abort; drools-it 957 pass). Scan verified NONE of
+the 12 emitter goldens carries a unit or % literal (all numeric
+waardes bare), so none moved. New emitter golden
+`corpus/golden/jutterswet-meldloon`: integer (5 €) and decimal-comma
+(12,50 €) unit literals, chained, two cases with absolute values
+replaying in ref AND clingo (310 doubly-replayed corpus cases).
+uchar-conformance against this branch: 13 emitter goldens
+byte-identical. All nine gates green. Deliberately left: the SPEC_REV
+re-pin (maintainer, after this lands); executor-parser stays strict
+(WF-081 stands).
