@@ -388,6 +388,35 @@ let numeric_ok e =
       | Some _ -> fault "non-numeric arithmetic operand is not translated (no corpus case)")
   | None -> ()
 
+(* the compile-time non-negative integer exponent of a tot-de-macht, shared by
+   the rule-level [translate_power] (gringo's power operator) and the closed-body
+   repeated Maal (one exponent reading). ref's general form has no integer
+   encoding here:
+   a fractional exponent takes an exact root (ch. 2.1 OPEN), a negative exponent
+   inverts (a division), a runtime exponent makes the result scale
+   exponent-dependent — each faults with its reason *)
+let const_pow_exponent = function
+  | Literal { waarde = Some w; _ } -> (
+      let q = Value.q_of_lexeme w in
+      if not (Z.equal (Q.den q) Z.one) then
+        fault
+          "fractional exponent %s is not translated (ref takes an exact root — the ch. 2.1 OPEN; \
+           no corpus case)"
+          w
+      else
+        match Z.to_int (Q.num q) with
+        | e when e >= 0 -> e
+        | _ ->
+            fault
+              "negative exponent %s is not translated (ref inverts the exact power — a division; no \
+               corpus case)"
+              w
+        | exception Z.Overflow -> fault "exponent %s is out of range" w)
+  | _ ->
+      fault
+        "a runtime exponent is not translated (the result scale is exponent-dependent, and an empty \
+         or negative runtime exponent has no integer encoding; no corpus case)"
+
 let rec gcd a b = if b = 0 then a else gcd b (a mod b)
 
 (* the gcd-reduced constant-divisor fraction (§6.5/S18): the exact scaled
@@ -1482,30 +1511,7 @@ and translate_power ctx ~subject ~subject_ot ~links ~rechts =
   numeric_ok (Some rechts);
   unit_free_ok ctx (Some links);
   unit_free_ok ctx (Some rechts);
-  let e =
-    match rechts with
-    | Literal { waarde = Some w; _ } -> (
-        let q = Value.q_of_lexeme w in
-        if not (Z.equal (Q.den q) Z.one) then
-          fault
-            "fractional exponent %s is not translated (ref takes an exact root — the \
-             ch. 2.1 OPEN; no corpus case)"
-            w
-        else
-          match Z.to_int (Q.num q) with
-          | e when e >= 0 -> e
-          | _ ->
-              fault
-                "negative exponent %s is not translated (ref inverts the exact power — a \
-                 division; no corpus case)"
-                w
-          | exception Z.Overflow -> fault "exponent %s is out of range" w)
-    | _ ->
-        fault
-          "a runtime exponent is not translated (the result scale is exponent-dependent, \
-           and an empty or negative runtime exponent has no integer encoding; no corpus \
-           case)"
-  in
+  let e = const_pow_exponent rechts in
   let b, t, s = expr_term ctx ~subject ~subject_ot links in
   (* the result scale sl^e, fenced like pow10: beyond 10^9 the scaled
      integers themselves leave clingo's range *)
@@ -2137,6 +2143,34 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
          the round_z-scale-5 form carried into the body context needs no
          exactness guard and no negative fence *)
       closed_division ctx ~guard_body ~witness ~rounding:(Some (Richting_nul, 5)) ~links ~rechts
+  | Binair { op = Tot_de_macht; links; rechts; _ } ->
+      (* tot de macht in a closed body (ch. 2.2): a compile-time non-negative
+         integer exponent unfolds to repeated Maal under the SAME 46340
+         multiplicative fence — each partial product bounded so the running
+         accumulator stays inside 2^31 (conservative — it fences t^(e-1) ≤ 46340,
+         tighter than the rule-level base bound — but always loud, never a silent
+         wrap). The base propagates leeg by the bare join (ref's pow_ on an empty
+         base); a runtime, negative or fractional exponent faults. *)
+      numeric_ok links;
+      numeric_ok rechts;
+      unit_free_ok ctx links;
+      unit_free_ok ctx rechts;
+      let e = const_pow_exponent (req "Binair.rechts" rechts) in
+      let bl, tl, sl = closed_term ctx ~guard_body ~witness (req "Binair.links" links) in
+      if e = 0 then ([], "1", 1)
+      else begin
+        let rec go acc_term acc_scale k =
+          if k = 0 then (acc_term, acc_scale)
+          else begin
+            if acc_scale > 1_000_000_000 / sl then
+              fault "the closed-body power's result scale %d^%d exceeds clingo's integer range" sl e;
+            range_guard ctx ~subject:witness ~body:(guard_body @ bl) [ (acc_term, 46340); (tl, 46340) ];
+            go (Printf.sprintf "(%s*%s)" acc_term tl) (acc_scale * sl) (k - 1)
+          end
+        in
+        let term, scale = go tl sl (e - 1) in
+        (bl, term, scale)
+      end
   | _ ->
       fault
         "a closed-body term here is a bound binder, a literal, a parameter, a +/-/×/percentage-of \
