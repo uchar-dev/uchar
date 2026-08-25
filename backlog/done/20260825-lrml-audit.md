@@ -92,3 +92,22 @@ negen verwerkt in commit 59b33a7:
 
 Gates na verwerking: check-self-contained PASS, check-ir-schema PASS
 (104 files validate and round-trip). Resterend: tweede opus-lens.
+
+Result: de staande PLAN §3-toets — "can our IR express what
+LegalRuleML can?" — is beantwoord in
+spec/proposals/LEGALRULEML-AUDIT.md, per requirement-cluster met
+natrekbare verwijzingen en corpus-getuigen, en adversarieel gelezen
+door twee fable-lenzen die het document op zijn eigen leesconventie
+vingen: de applicability-as stond GEDEKT op de ene golden die per
+ontwerp nooit repliceert — nu eerlijk DEELS, met kandidaat C3 (een
+replayende twee-versies-golden met asOfDate per geldigheidsvenster)
+erbij; de afleidbare Override bleek literatuur (Antoniou) en geen
+OASIS-machinerie, wat besluitvraag C2 verkleinde; plus citaat-,
+sectie- en telcorrecties. De kern van het antwoord staat:
+defeasibility, overrides-als-ladder, bronnen en jurisdictie-als-
+domeininhoud draagt de IR; de drie LegalRuleML-tijdassen dekt v1
+bewust niet volledig (de enkele as is PLAN-besluit 2, met het
+ontworpen uitbreidingspunt); deontische begrippen zijn een eerlijk
+non-goal zolang geen brontaal ze aanlevert. Drie levende einden als
+kandidaten: C1 (bronannotaties op de wire), C2 (de statische
+Override-relatie), C3 (de replayende gating-getuige).
