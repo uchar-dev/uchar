@@ -772,8 +772,14 @@ scale.
       range fence and the non-exact `viol/2` ride the list-id, and the value
       is guarded **exact** (`numt \ dent == 0`), so a non-exact quotient
       derives no value and its viol makes the program UNSAT — the remainder
-      never truncates silently. An integer dividend under the division is
-      widened to the divisor's rational scale by the out-scale harmonisation
+      never truncates silently. The exactness test runs at the out-scale
+      `max(s_L, s_R, write_scale)` — the same target the rule-level division
+      uses — so it is the precision the fold WRITE stores (the fold's target
+      attribute scale, carried into the body by `write_scale`), not merely the
+      operand scales: a bare-integer divisor whose exact quotient needs more
+      decimals than `max(s_L, s_R)` offers (e.g. `x / 4` into a 2-decimal
+      attribute → `0.25`) is still exact against that stored scale. An integer
+      dividend under the division is thereby widened to the shared out-scale
       (the `decimal of n` ToRat pass-through), needing no separate node. The
       runtime-divisor edges (empty dividend/divisor) cannot arise on
       always-bound binders, so they do not ride here.

@@ -2290,7 +2290,13 @@ and closed_division ctx ~guard_body ~witness ~links ~rechts : string list * stri
         "a closed-body division needs a compile-time positive constant divisor (no corpus case for \
          a runtime divisor)"
   in
-  let out_scale = max sl sr in
+  (* the exactness test must run at the precision the fold/write will STORE, not
+     merely at the operand scales: a bare-integer divisor (x / 4) whose quotient
+     needs more decimals than max(sl,sr) offers is still exact against the target
+     attribute scale, which [ctx.write_scale] carries into the fold body. Mirrors
+     the rule-level [translate_division] (out_scale = max (max sl sr) write_scale);
+     dropping write_scale here made clingo spuriously UNSAT where ref accepts. *)
+  let out_scale = max (max sl sr) ctx.write_scale in
   let knum, kden_c = const_div_reduce ~sl ~sr ~out_scale ~c in
   if kden_c > 536870912 then
     fault "a closed-body constant divisor whose reduced denominator exceeds the fence has no corpus case";
