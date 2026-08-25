@@ -462,8 +462,11 @@ and this backend); declared factors and stelsel never enter.
   year before 0000-03`, PMT < 2) guarding the re-encode's divisions.
   Both fire only where the rule fires (rule-guard discipline, S13).
 - **Loud flanks**: datum-tijd operands, sub-day units on either form,
-  and day-kind (dagsoort) durations/tijdsduren fault at translation —
-  ref refuses the same shapes at evaluation (S19).
+  and day-kind (dagsoort) durations/tijdsduren fault at translation.
+  Day-kind shapes ref refuses at evaluation too; the datum-tijd and
+  sub-day shapes ref executes since 2026-08-25 (RUNTIME-SEMANTICS
+  ch. 3.8, the millisecond layer) — here they stay loud under the
+  datum-tijd embargo (S19).
 
 Witnesses: anchor `jutterswet-jutleeftijd` (the three ch. 3.8 worked
 examples — leap child, clamp-not-inverse, signed truncation — plus the
@@ -1586,11 +1589,21 @@ the S6a calendar chains; the day-precision part extractors and
 eerste-paasdag joined 2026-08-25 — the shared era decomposition and
 the Gauss chain, S6a, `jutterswet-paasvondst`, with eerste-paasdag's
 own year-before-1 `viol/2` fence), and what stays loud in the date
-family is datum-tijd operands (day precision only), sub-day units,
+family is datum-tijd operands and sub-day units — since 2026-08-25
+under the **datum-tijd embargo** (maintainer decision, ratified):
+ref executes the millisecond layer (RUNTIME-SEMANTICS ch. 3.8 —
+sub-day linearity, time-of-day preservation, the borrow rule),
+this backend keeps its loud fault because a datetime's ms value
+does not fit clingo's integer range, and **no datum-tijd corpus
+golden lands** until a pair-term encoding (the civil day beside the
+ms-of-day, the registered future work — its own card) closes the
+gap; ref's datum-tijd behaviour is pinned by worked-example unit
+tests, not by parity, until then — as well as
 day-kind (dagsoort) durations and tijdsduren,
 `DATUM_MET`/`DATUMTIJD_MET`, and the sub-day part extractors
-(uur/minuut/seconde/milliseconde-uit, still under the catch-all with
-their millisecond layer) — plus a **text/enum/boolean literal in
+(uur/minuut/seconde/milliseconde-uit, still under the catch-all;
+outside ref too — the extractor slice is not the ms layer's
+arithmetic) — plus a **text/enum/boolean literal in
 a NUMERIC term position** (a **date literal** translates as its civil
 day number — B2, the S4 date-comparison sibling — and since
 2026-08-25 the text/enum/boolean literals and own-subject reads
