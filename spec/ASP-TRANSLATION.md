@@ -394,7 +394,7 @@ conversion factors have no integer encoding (the hunted 1 m + 50 cm =
 51 of ch. 6c). The unit is derived recursively from declarations
 (`eff_unit`), never read from a node's static annotation.
 
-### S6a. The calendar chains — date ± duration and tijdsduur (ch. 3.8)
+### S6a. The calendar chains — date ± duration, tijdsduur, part extraction and Easter (ch. 3.8)
 
 Dates are civil day numbers (the case loader's encoding, the S4 date
 literal's B2 convention), so day-precision calendar arithmetic is pure
@@ -423,13 +423,28 @@ and this backend); declared factors and stelsel never enter.
   divisibility; operands non-negative, so truncation is floor). The
   day clamps by the exact integer min `(D + ML − |D − ML|)/2`, and the
   re-encode is `days_from_civil` with the `(14 − M)/12` March shift.
+- **The day-precision part extractors** (jaar/maand/dag-uit) bind the
+  same era decomposition once and read the civil components off it —
+  `PM/12`, `(PM mod 12) + 1` and `D` — as unitless whole terms at
+  scale 1 (ch. 3.8: the month 1..12, never a March-based index).
+- **eerste-paasdag** is the ch. 3.8 Gauss/Anonymous chain as binding
+  atoms — the spec's `quot`/`mod` are gringo's `/` and `\` verbatim —
+  ending in the `days_from_civil` re-encode (the `(14 − MO)/12`
+  March-shift term is 0 because the month is always 3 or 4; written
+  anyway so the file has one re-encode shape). Its own fence:
+  `eerste-paasdag of a year before 1 is not translated` — below year 1
+  the chain's intermediates go negative and gringo's toward-zero
+  division stops being the floor the era re-encode needs; ref computes
+  those years, so the fence is a loud narrowing, never a silent wrong
+  date.
 - **Emptiness**: the date operand PROPAGATES by its bare join (an
   unbound chain leaves the rule — or the `dpmN` helper — underivable,
   leeg as absence); the duration COALESCES through `coalesce0` (leeg
   counts 0: `+0` days, or `add_months 0` = the date unchanged, since a
   day never exceeds its own month's length). A fractional count
   truncates toward zero through its scale division before the calendar
-  step.
+  step. An extractor or Easter operand propagates like the date operand
+  — the ch. 1.2b leeg rule for free.
 - **Fences**: every packed decomposition carries the pre-epoch
   `viol/2` witness (`date before 0000-03-01 in calendar arithmetic`) —
   the shift must stay non-negative for truncation to equal floor — and
@@ -445,7 +460,14 @@ examples — leap child, clamp-not-inverse, signed truncation — plus the
 leeg corner) and golden `jutterswet-vervaltermijn` (month-end clamp in
 and out of a leap year, the empty-duration standstill, the quarter
 step, fractional truncation), each hand-computed and replayed by
-gates 5–6.
+gates 5–6. The extraction/Easter slice rides golden
+`jutterswet-paasvondst` (a maand-uit disjunction through the cqN
+counting composite, an eerste-paasdag∘jaar-uit date equality through
+the eqN helper — whose both-unbound arm makes a dateless subject
+paasvondst-waar, the ch. 1.2d numeric-equality reading, pinned in its
+leeg case — and a jaar-uit/dag-uit Gelijkstelling pair), hand-computed
+on both sides of the Easter and month boundaries across the 2024, 2026,
+2027 and 2038 pins.
 
 ### S7. Conditions
 
@@ -1546,11 +1568,15 @@ positions; a temporal attribute read in a scalar slot (ch. 3.3);
 non-numeric arithmetic operands — narrowed 2026-08-25: the
 **day-precision date family now translates** (date ± duration and
 tijdsduur/absolute-tijdsduur in dagen/weken/maanden/kwartalen/jaren,
-the S6a calendar chains), and what stays loud in the date family is
-datum-tijd operands (day precision only), sub-day units, day-kind
-(dagsoort) durations and tijdsduren, `DATUM_MET`/`DATUMTIJD_MET`, and
-the eerste-paasdag/part-extractor builtins (each still under a
-catch-all or its own fault) — plus a **text/enum/boolean literal in
+the S6a calendar chains; the day-precision part extractors and
+eerste-paasdag joined 2026-08-25 — the shared era decomposition and
+the Gauss chain, S6a, `jutterswet-paasvondst`, with eerste-paasdag's
+own year-before-1 `viol/2` fence), and what stays loud in the date
+family is datum-tijd operands (day precision only), sub-day units,
+day-kind (dagsoort) durations and tijdsduren,
+`DATUM_MET`/`DATUMTIJD_MET`, and the sub-day part extractors
+(uur/minuut/seconde/milliseconde-uit, still under the catch-all with
+their millisecond layer) — plus a **text/enum/boolean literal in
 a NUMERIC term position** (a **date literal** translates as its civil
 day number — B2, the S4 date-comparison sibling — and since
 2026-08-25 the text/enum/boolean literals and own-subject reads

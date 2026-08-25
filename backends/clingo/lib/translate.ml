@@ -1360,6 +1360,94 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde ->
           (* unreachable: day_time_unit_of faulted the sub-day units *)
           assert false)
+  | Functie { kind = (Jaar_uit | Maand_uit | Dag_uit) as kind; argumenten; filter; _ } ->
+      (* the day-precision part extractors (ch. 3.8): the civil components
+         of the operand's day number as unitless whole terms — the same
+         era decomposition the packed-month rule rides (PM = 12·year +
+         month − 1, D the day of month). Leeg propagates by the bare join:
+         an unbound date leaves the chain unbound. *)
+      if filter <> None then fault "a filter on a part extractor has no v0 form";
+      let a =
+        match argumenten with
+        | [ a ] -> a
+        | _ -> fault "a part extractor expects one argument"
+      in
+      (match Ir_v0.Checks.typ_of_expr a with
+      | Some Datum_in_dagen -> ()
+      | Some Datum_tijd ->
+          fault "datum-tijd part extraction is not translated (day precision only)"
+      | _ -> fault "part-extractor operand is not statically a day-precision date");
+      let ba, ta, sa = expr_term ctx ~subject ~subject_ot a in
+      if sa <> 1 then fault "part-extractor operand must be an unscaled day term";
+      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      pre_epoch_fence ctx ~subject ~body:((base :: ctx.rule_guard) @ ba) ta;
+      let catoms, pmv, dv = civil_pm_day ctx ta in
+      let t =
+        match kind with
+        | Jaar_uit -> Printf.sprintf "(%s/12)" pmv
+        | Maand_uit -> Printf.sprintf "((%s \\ 12)+1)" pmv
+        | Dag_uit -> dv
+        | _ -> assert false
+      in
+      (ba @ catoms, t, 1)
+  | Functie { kind = Eerste_paasdag; argumenten; filter; _ } ->
+      (* eerste paasdag van a whole unitless year (ch. 3.8): the
+         Gauss/Anonymous chain, then days_from_civil with the March shift —
+         the month is always 3 or 4, so the shift term is 0, written anyway
+         to mirror the month step's re-encode shape. For years >= 1 every
+         intermediate that needs floor is non-negative (fenced below), so
+         gringo's toward-zero division is exact; leeg propagates by the
+         bare join. *)
+      if filter <> None then fault "a filter on eerste-paasdag has no v0 form";
+      let y =
+        match argumenten with
+        | [ y ] -> y
+        | _ -> fault "eerste-paasdag expects one argument"
+      in
+      (match Ir_v0.Checks.typ_of_expr y with
+      | Some (Numeriek { geheel = true; eenheid = None; _ }) -> ()
+      | _ -> fault "eerste-paasdag operand is not statically a whole unitless year (WF-038)");
+      let by, ty, sy = expr_term ctx ~subject ~subject_ot y in
+      if sy <> 1 then fault "eerste-paasdag year operand must be an unscaled whole term";
+      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      emit ctx
+        "viol(\"eerste-paasdag of a year before 1 is not translated (the Gauss chain \
+         needs non-negative intermediates)\",%s) :- %s, (%s) < 1."
+        subject
+        (String.concat ", " ((base :: ctx.rule_guard) @ by))
+        ty;
+      let av = fresh ctx "A" and bv = fresh ctx "B" and cv = fresh ctx "C" in
+      let dv = fresh ctx "D" and ev = fresh ctx "E" in
+      let fv = fresh ctx "F" and gv = fresh ctx "G" and hv = fresh ctx "H" in
+      let iv = fresh ctx "I" and kv = fresh ctx "K" and lv = fresh ctx "L" in
+      let mv = fresh ctx "M" and mov = fresh ctx "MO" and dav = fresh ctx "DA" in
+      let y2 = fresh ctx "Y2" and e2 = fresh ctx "E2" and yoe2 = fresh ctx "YOE" in
+      let mp2 = fresh ctx "MP" and doy2 = fresh ctx "DOY" and doe2 = fresh ctx "DOE" in
+      let zt = fresh ctx "ZT" in
+      let chain =
+        [ Printf.sprintf "%s = (%s) \\ 19" av ty;
+          Printf.sprintf "%s = (%s)/100" bv ty;
+          Printf.sprintf "%s = (%s) \\ 100" cv ty;
+          Printf.sprintf "%s = %s/4" dv bv;
+          Printf.sprintf "%s = %s \\ 4" ev bv;
+          Printf.sprintf "%s = (%s+8)/25" fv bv;
+          Printf.sprintf "%s = ((%s-%s)+1)/3" gv bv fv;
+          Printf.sprintf "%s = ((((19*%s)+%s)-%s-%s)+15) \\ 30" hv av bv dv gv;
+          Printf.sprintf "%s = %s/4" iv cv;
+          Printf.sprintf "%s = %s \\ 4" kv cv;
+          Printf.sprintf "%s = ((((32+(2*%s))+(2*%s))-%s)-%s) \\ 7" lv ev iv hv kv;
+          Printf.sprintf "%s = ((%s+(11*%s))+(22*%s))/451" mv av hv lv;
+          Printf.sprintf "%s = (((%s+%s)-(7*%s))+114)/31" mov hv lv mv;
+          Printf.sprintf "%s = ((((%s+%s)-(7*%s))+114) \\ 31)+1" dav hv lv mv;
+          Printf.sprintf "%s = (%s)-((14-%s)/12)" y2 ty mov;
+          Printf.sprintf "%s = %s/400" e2 y2;
+          Printf.sprintf "%s = %s-(%s*400)" yoe2 y2 e2;
+          Printf.sprintf "%s = (%s+9) \\ 12" mp2 mov;
+          Printf.sprintf "%s = ((((153*%s)+2)/5)+%s)-1" doy2 mp2 dav;
+          Printf.sprintf "%s = (((%s*365)+(%s/4))-(%s/100))+%s" doe2 yoe2 yoe2 yoe2 doy2;
+          Printf.sprintf "%s = ((%s*146097)+%s)-719468" zt e2 doe2 ]
+      in
+      (by @ chain, zt, 1)
   | Binair { op = (Plus | Min) as op; links; rechts; _ }
     when List.exists
            (fun e ->
