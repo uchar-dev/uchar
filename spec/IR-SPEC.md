@@ -1503,7 +1503,9 @@ Comparison, Predicate, and CharacteristicCheck only —
   MUST be numeric with compatible units; date folds' (first/last)
   operands MUST be dates of equal precision; a totaal operand that is
   non-temporal MUST carry a rate unit per time unit; eerste-paasdag MUST
-  take a whole, unitless year; the sub-day part extractors MUST take a
+  take a whole, unitless year; the day-precision part extractors
+  (jaar-uit, maand-uit, dag-uit) MUST take a date operand — either
+  precision; the sub-day part extractors MUST take a
   millisecond-precision date; a sum's `emptyFallback` MUST be numeric;
   a tijdsduur's (either variant) two operands MUST be dates of one
   precision and its node type MUST carry a recognised time-unit or
@@ -1932,7 +1934,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-035 | operator typing (numeric, unitless power, date±duration order/unit/precision, unit compatibility, clamp) | gate 3 (over serialized operand types) | `anchor/jutterswet-wachtersketen` (the numeric Plus, executed by gates 5–6) + `jutterswet-vervaltermijn` (date ± duration, the date-left plus and min forms, executed by gates 5–6) | `wf035-power-with-unit` + `wf035-datum-plus-datum` + `wf035-duur-plus-datum` + `wf035-duur-min-datum` + `wf035-uur-op-dagdatum` |
 | WF-036 | comparison/predicate typing (ordering, precision, family, domain, builtin operands) | gate 3 (over serialized operand types) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondstnummer` (date ordering) | `wf036-order-number-vs-text` |
 | WF-037 | aggregation/builtin shape: facet validity and arity per kind | gate 3 (fixed-arity kinds; date-construction arity OPEN) | `jutterswet-vondsttelling` | `wf037-fallback-on-minimum` |
-| WF-038 | aggregation operand typing (units, precision, rate for totaal, year for paasdag, tijdsduur operands and node-type unit) | gate 3 (paasdag, sub-day extractors, sum fallback, tijdsduur; the totaal rate clause and fold unit-compatibility are OPEN) | `jutterswet-vondsttelling` (the sum fallback slice) + `anchor/jutterswet-jutleeftijd` (the tijdsduur slice, executed by gates 5–6) | `wf038-paasdag-text` + `wf038-tijdsduur-gemengde-precisie` + `wf038-tijdsduur-zonder-tijdseenheid` + `wf038-tijdsduur-zonder-node-type` |
+| WF-038 | aggregation operand typing (units, precision, rate for totaal, year for paasdag, date for the day-precision extractors, tijdsduur operands and node-type unit) | gate 3 (paasdag, day-precision and sub-day extractors, sum fallback, tijdsduur; the totaal rate clause and fold unit-compatibility are OPEN) | `jutterswet-vondsttelling` (the sum fallback slice) + `anchor/jutterswet-jutleeftijd` (the tijdsduur slice, executed by gates 5–6) + `jutterswet-paasvondst` (the paasdag and extractor slice, executed by gates 5–6) | `wf038-paasdag-text` + `wf038-extractor-text` + `wf038-tijdsduur-gemengde-precisie` + `wf038-tijdsduur-zonder-tijdseenheid` + `wf038-tijdsduur-zonder-node-type` |
 | WF-039 | enum label in domain; literal sign restriction | gate 3 | `jutterswet-vormenkabinet` (the gaaf label and the sign-restricted aanwas) | `wf039-negative-under-nonneg` |
 | WF-040 | dimension cell pins every dimension; selection labels resolve in order | gate 3 | `jutterswet-vormenkabinet` (the voorjaar cell read) | `wf040-unpinned-cell` |
 | WF-041 | counting-quantifier threshold ≥ 1 | gate 3 | `jutterswet-vormenkabinet` (ten minste 2) | `wf041-threshold-zero` |

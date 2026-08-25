@@ -74,7 +74,7 @@ recorded as such.
 | Context | Empty behaviour | Worked examples |
 |---|---|---|
 | date ± duration | empty *date* propagates; empty *duration* coalesces to 0 — **Executed** (2026-08-25, both executors; ch. 3.8) | leeg + 5 dagen = leeg; datum + leeg dagen = datum |
-| date construction / part extraction | any empty part or date propagates | jaar uit leeg = leeg |
+| date construction / part extraction | any empty part or date propagates — day-precision extraction and the Easter builtin **Executed** (2026-08-25, both executors; ch. 3.8) | jaar uit leeg = leeg; eerste paasdag van leeg = leeg |
 | tijdsduur van A tot B | any empty operand propagates (never 0) — **Executed** (2026-08-25, both executors; ch. 3.8) | tijdsduur van leeg tot d = leeg |
 
 **Text, booleans, enumerations**
@@ -987,8 +987,48 @@ clamps the day to the target month's length — 2024-01-31 + 1 maand =
 is three months, a year twelve (so a leap birthday clamps the same
 way); a day or week count is linear (+n / +7·n epoch days). A
 fractional count truncates toward zero. (Empty rules: ch. 1.2 — a leeg
-date propagates, a leeg duration counts as 0.) One date-builtin pin that
-becomes a `ref/` test: eerste paasdag van 2024 = **2024-03-31**.
+date propagates, a leeg duration counts as 0.)
+
+**Date-part extraction and the Easter builtin.** Year, month and day
+extraction ("het jaar / de maand / de dag uit") read the **civil
+components of the proleptic Gregorian calendar in zoneless civil
+time** — the same (y, m, d) triple the whole-unit definition above is
+built on; no time zones, no DST — from a day-precision date, each as a
+**unitless whole number**: the year as written, the month **1..12**,
+the day of month 1..the month's length. A leeg date propagates
+(ch. 1.2b: jaar/maand/dag uit leeg = leeg). "De eerste paasdag van" a
+**whole, unitless** year (WF-038) is Easter Sunday of that year per
+the Gauss/Anonymous algorithm, normative verbatim (`quot` and `mod`
+are integer division truncating toward zero and its remainder, as in
+the packed-month rule above):
+
+```
+a = j mod 19,   b = j quot 100,  c = j mod 100
+d = b quot 4,   e = b mod 4
+f = (b + 8) quot 25,   g = (b − f + 1) quot 3
+h = (19·a + b − d − g + 15) mod 30
+i = c quot 4,   k = c mod 4
+l = (32 + 2·e + 2·i − h − k) mod 7
+m = (a + 11·h + 22·l) quot 451
+maand = (h + l − 7·m + 114) quot 31
+dag   = ((h + l − 7·m + 114) mod 31) + 1
+```
+
+The result is the day-precision civil date (j, maand, dag). A leeg
+year propagates; a non-whole or unit-carrying year value is a fault —
+never a silent truncation to whole (a tracked delta: v0 narrows the
+year to a machine int silently; the verifier makes the static shape
+ill-formed either way). Worked examples (absolute, pinned; each
+becomes a `ref/` test verbatim): jaar uit 2026-11-03 = **2026**; maand
+uit 2026-11-03 = **11**; dag uit 2026-11-03 = **3**; eerste paasdag
+van 2024 = **2024-03-31**, van 2026 = **2026-04-05**, van 2027 =
+**2027-03-28**, van 2038 = **2038-04-25**. **Executed (2026-08-25,
+both executors; WF-038):** the day-precision extractors and the Easter
+builtin run in ref and clingo — golden `jutterswet-paasvondst`
+(a maand-uit disjunction, an eerste-paasdag∘jaar-uit date equality, a
+jaar-uit/dag-uit Gelijkstelling pair, the leeg corner) carries the
+class differentially. Datum-tijd operands, the sub-day extractors and
+date construction (datum-met/datumtijd-met) stay unexecuted, loud.
 
 ### 3.9 The whole-period qualifier (§8.2)
 

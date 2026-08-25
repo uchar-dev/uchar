@@ -1872,6 +1872,15 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
              | Some d ->
                  [ v "WF-038" at ("sub-day extractor operand is " ^ datatype_kind d
                                   ^ ", must be a millisecond-precision date") ])
+         | (Jaar_uit | Maand_uit | Dag_uit), [ a ] -> (
+             (* the day-precision extractors read civil components (ch. 3.8
+                of RUNTIME-SEMANTICS): the operand must be a date — either
+                precision, mirroring the v0 field read *)
+             match typ_of_expr a with
+             | Some d when not (is_date d) ->
+                 [ v "WF-038" at ("day-precision extractor operand is " ^ datatype_kind d
+                                  ^ ", must be a date") ]
+             | _ -> [])
          | (Tijdsduur | Absolute_tijdsduur), [ a; b ] ->
              (* the WF-038 tijdsduur clause (RUNTIME-SEMANTICS ch. 3.8): both
                 operands dates of one precision; the node type carries the
