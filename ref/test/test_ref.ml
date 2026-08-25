@@ -1543,6 +1543,69 @@ let () =
   expect_fault "WV-3.8-dt-mix" (fun () ->
       Arith.tijdsduur ~unit_:Tu_dag (Value.date_of_iso "2024-02-28") (dt "2024-03-01T10:15:00"))
 
+(* --- ch. 3.8 through Eval: the datum-tijd routing ------------------------
+   The widened WF-035/WF-038 fences in eval.ml admit a Datum_tijd operand
+   with a sub-day unit into the millisecond layer — and still refuse that
+   unit on a day-precision date. The Arith checks above cannot see this
+   routing (they call the layer directly), and the datum-tijd embargo
+   admits no corpus golden, so these IR-shaped expressions through
+   Eval.eval_expr are the only executable pin on the eval wiring
+   ("Executed in ref only", RUNTIME-SEMANTICS ch. 3.8). *)
+let () =
+  let uur = unit_ ~canoniek:"uur" "u" in
+  let num_uur : Ir_v0.Ast.datatype =
+    Numeriek { geheel = true; decimalen = 0; teken = None; eenheid = Some uur }
+  in
+  let doc =
+    {
+      empty_doc with
+      objecttypen =
+        [ ot "Vondst"
+            [ ("melding", Some Datum_tijd); ("berging", Some Datum_tijd);
+              ("dagtekening", Some Datum_in_dagen) ]
+            [] ];
+    }
+  in
+  let env = env_of doc in
+  let dt s = Value.Date_time (Case.ms_of_datetime s) in
+  let w =
+    World.add_instance World.empty
+      (inst "v" "Vondst"
+         [ ("melding", dt "2024-02-28T23:30:00");
+           ("berging", dt "2024-03-01T10:15:00");
+           ("dagtekening", Value.date_of_iso "2024-02-28") ])
+  in
+  let self = World.get w "v" in
+  let ev = Eval.eval_expr env w self ~err:no_err in
+  let plus_uren attr typ lex : Ir_v0.Ast.expr =
+    Binair
+      { op = Plus; links = Some (aref attr "Vondst" typ);
+        rechts = Some (litv lex num_uur); typ = Some typ; bron = None }
+  in
+  let tijdsduur_uren a typ_a b typ_b : Ir_v0.Ast.expr =
+    Functie
+      { kind = Tijdsduur;
+        argumenten = [ aref a "Vondst" typ_a; aref b "Vondst" typ_b ];
+        element_objecttype = None; leegwaarde = None; filter = None;
+        dimensie_selectie = None; typ = Some num_uur; bron = None;
+        granulariteit = None; bron_rol = None }
+  in
+  (* the widened WF-035 fence: a datum-tijd operand rides its sub-day unit
+     into the ms layer (WV-3.8-dt-uur, through the evaluator) *)
+  check "WV-3.8-dt-eval-plus-uur"
+    (ev (plus_uren "melding" Datum_tijd "26") = dt "2024-03-01T01:30:00");
+  (* ... and still stands for a day-precision date (WF-035) *)
+  expect_fault "WV-3.8-dt-eval-wf035" (fun () ->
+      ev (plus_uren "dagtekening" Datum_in_dagen "26"));
+  (* the widened WF-038 fence: sub-day tijdsduur over two datetimes reaches
+     the linear hour count (WV-3.8-dt-borrow-uren, through the evaluator) *)
+  expect_num "WV-3.8-dt-eval-tijdsduur"
+    (ev (tijdsduur_uren "melding" Datum_tijd "berging" Datum_tijd))
+    "34";
+  (* ... and still refuses a day-precision operand (WF-038) *)
+  expect_fault "WV-3.8-dt-eval-wf038" (fun () ->
+      ev (tijdsduur_uren "dagtekening" Datum_in_dagen "berging" Datum_tijd))
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;
