@@ -1,0 +1,115 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "vondstdatum": {
+            "date": "2027-03-28"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "vondstdatum": {
+            "date": "2038-04-25"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "vondstdatum": {
+            "date": "2024-03-31"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vondstjaar",
+      "value": {
+        "number": "2027"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vondstdag",
+      "value": {
+        "number": "28"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "paasvondst"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "zomervondst"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "vondstjaar",
+      "value": {
+        "number": "2038"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "vondstdag",
+      "value": {
+        "number": "25"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "paasvondst"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "vondstjaar",
+      "value": {
+        "number": "2024"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "vondstdag",
+      "value": {
+        "number": "31"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V3",
+      "characteristic": "paasvondst"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

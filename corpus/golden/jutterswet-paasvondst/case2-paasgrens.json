@@ -1,0 +1,78 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "vondstdatum": {
+            "date": "2026-04-04"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "vondstdatum": {
+            "date": "2026-04-06"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vondstjaar",
+      "value": {
+        "number": "2026"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vondstdag",
+      "value": {
+        "number": "4"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "paasvondst"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "vondstjaar",
+      "value": {
+        "number": "2026"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "vondstdag",
+      "value": {
+        "number": "6"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V2",
+      "characteristic": "paasvondst"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "vondstdatum": {
+            "date": "2026-04-05"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vondstjaar",
+      "value": {
+        "number": "2026"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vondstdag",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "paasvondst"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "zomervondst"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

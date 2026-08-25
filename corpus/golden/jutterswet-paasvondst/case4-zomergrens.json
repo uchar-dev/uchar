@@ -1,0 +1,123 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "vondstdatum": {
+            "date": "2026-06-30"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "vondstdatum": {
+            "date": "2026-07-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "vondstdatum": {
+            "date": "2026-08-31"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {
+          "vondstdatum": {
+            "date": "2026-09-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "zomervondst"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vondstdag",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "zomervondst"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "vondstdag",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V3",
+      "characteristic": "zomervondst"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "vondstdag",
+      "value": {
+        "number": "31"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V4",
+      "characteristic": "zomervondst"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V4",
+      "attribute": "vondstdag",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vondstjaar",
+      "value": {
+        "number": "2026"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "paasvondst"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
