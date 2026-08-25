@@ -369,8 +369,12 @@ let eq_non_numeric l r =
    the ch. 1.2d empty-equality asymmetry (leeg = leeg is waar numerically,
    onwaar non-numerically) is decided by the operand *types*, which two
    empty runtime values cannot reveal. Absent static information, two
-   empties follow the numeric rule. *)
-let compare_op ?static_numeric (op : Ir_v0.Ast.vergelijk_op) l r =
+   empties follow the numeric rule. [static_date] narrows the numeric rule
+   to the ch. 1.2d date row: v0's Tabel-38 guard on the date-vs-date shape
+   (`cmp && !(l == null && r == null)`) makes a both-leeg gelijk-aan
+   onwaar — never the numeric two-empties-equal cell — while ongelijk-aan
+   keeps the numeric cells (both readings already agree there). *)
+let compare_op ?static_numeric ?(static_date = false) (op : Ir_v0.Ast.vergelijk_op) l r =
   let ordering cmp =
     (* any empty operand → false *)
     match (l, r) with Empty, _ | _, Empty -> false | _ -> cmp (scalar_cmp l r) 0
@@ -387,9 +391,10 @@ let compare_op ?static_numeric (op : Ir_v0.Ast.vergelijk_op) l r =
   | Groter_of_gelijk | Later_of_gelijk -> ordering ( >= )
   | Gelijk ->
       if numeric then
-        (* numeric equality: true iff both empty, else value equality *)
+        (* numeric equality: true iff both empty, else value equality —
+           except the date row, where both-empty is onwaar (the v0 guard) *)
         match (l, r) with
-        | Empty, Empty -> true
+        | Empty, Empty -> not static_date
         | Empty, _ | _, Empty -> false
         | _ -> scalar_cmp l r = 0
       else eq_non_numeric l r

@@ -38,9 +38,11 @@ Gate 5 (`scripts/check-oracle.sh`) replays every
 Fail fast is the rule: any construct outside the implemented subset
 faults with file/position context — never a silent fallback.
 
-- **Date equality** follows the *numeric* empty-equality rules of
-  ch. 1.2d (a day-precision date is a day count), not the non-numeric
-  text/enum/boolean rules. Recorded as an adopted reading.
+- **Date comparisons** follow the ch. 1.2d date row: ordering and
+  inequality ride the numeric rules on the civil day number, but
+  gelijk-aan is false on ANY empty operand — in particular both-empty,
+  never the numeric two-empties-equal cell (v0's Tabel-38 guard on the
+  date shape, `Arith.compare_op ~static_date`).
 - **The connecting relation** for allocation recipients and instance
   folds is derived as the unique fact type relating the two object
   types — the recorded v0 wart of ch. 4.1; zero or two candidates fault.

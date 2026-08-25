@@ -30,7 +30,7 @@
       "characteristic": "zomervondst"
     },
     {
-      "kind": "characteristicPresent",
+      "kind": "characteristicAbsent",
       "label": "V1",
       "characteristic": "paasvondst"
     },

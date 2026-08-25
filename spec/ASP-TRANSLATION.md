@@ -145,9 +145,11 @@ the equality read needs the three-way distinction (waar / onwaar /
 leeg) that `heeft/2` alone cannot carry: `false` is a *value* in the
 `val/3` carriage, distinct from absence. Day-precision **dates** are
 not symbolic: a date is its civil day number in the integer encoding
-(S4), and date equality is *numeric* (the adopted reading of
-`ref/lib/value.ml`). A `dateTime` value stays refused — milliseconds
-since epoch exceed clingo's integer range.
+(S4). Date *ordering* and *inequality* ride the numeric rules on that
+day number, but date *equality* follows RS ch. 1.2d's date row — any
+empty operand false, in particular both-empty (v0's Tabel-38 guard on
+the date shape; S7 carries the routing). A `dateTime` value stays
+refused — milliseconds since epoch exceed clingo's integer range.
 
 The standing-target routing is the one semantic decision made at
 input time (RS ch. 7.8; S10 carries the detail): if the target attribute of
@@ -320,9 +322,17 @@ which is exactly Tabel 38 (the sum/struct S14/S16 pattern on the
 scalar datatypes). Anchored by `jutterswet-vondstetiket`,
 `jutterswet-keurstaat` and `jutterswet-borgvlag` (each with the
 both-directions-false leeg corner beside `jutterswet-jutdatum`'s
-*numeric* date corner, where ongelijk-aan on leeg is waar — the
-asymmetry pinned side by side). What remains loud: equality in the
-per-segment clip comparison (S19).
+date corner, where ongelijk-aan on one leeg is waar — the
+asymmetry pinned side by side). The **date** row (RS ch. 1.2d, v0's
+Tabel-38 guard on the date shape) straddles the two: date gelijk-aan
+takes the bare positive harmonised join — any empty operand false, in
+particular both-empty, where the eqN both-unbound arm would read waar
+— while date ongelijk-aan stays on the eqN complement, whose cells
+(exactly-one-empty waar, both-empty onwaar) are the date row's own.
+Anchored by `jutterswet-paasvondst` case5 (both-empty gelijk-aan
+onwaar: a dateless subject gains no kenmerk) beside
+`jutterswet-jutdatum` case3 (the one-empty cells). What remains loud:
+equality in the per-segment clip comparison (S19).
 
 Witnesses: `jutterswet-leegrekening`, `synth2-leegcomposities`,
 `jutterswet-vindersloon` (every empty cell), `jutterswet-taxatie`
@@ -463,11 +473,11 @@ step, fractional truncation), each hand-computed and replayed by
 gates 5–6. The extraction/Easter slice rides golden
 `jutterswet-paasvondst` (a maand-uit disjunction through the cqN
 counting composite, an eerste-paasdag∘jaar-uit date equality through
-the eqN helper — whose both-unbound arm makes a dateless subject
-paasvondst-waar, the ch. 1.2d numeric-equality reading, pinned in its
-leeg case — and a jaar-uit/dag-uit Gelijkstelling pair), hand-computed
-on both sides of the Easter and month boundaries across the 2024, 2026,
-2027 and 2038 pins.
+the positive date-equality join of S5/S7 — any empty operand false, so
+a dateless subject is paasvondst-onwaar: the RS ch. 1.2d date row,
+v0's Tabel-38 guard, pinned in its leeg case — and a jaar-uit/dag-uit
+Gelijkstelling pair), hand-computed on both sides of the Easter and
+month boundaries across the 2024, 2026, 2027 and 2038 pins.
 
 ### S7. Conditions
 
@@ -476,13 +486,17 @@ on both sides of the Easter and month boundaries across the 2024, 2026,
 `<=`; both operands are bare joins, so a leeg operand fails the
 condition (ch. 1.2d). **Equality/inequality**: statically routed
 on the operands' declared kind, exactly as ref routes
-(`static_numeric`): numeric operands take the eqN-helper encoding of
-S5 — gelijk-aan through the helper atom, ongelijk-aan through its
-negation (witness `jutterswet-sluitregister`); text/enum/boolean
-operands take the positive symbolic-term join of S5 — `==`/`!=` over
-both bound terms, any empty operand false in both directions
-(witnesses `jutterswet-vondstetiket`, `jutterswet-keurstaat`,
-`jutterswet-borgvlag`). **Characteristic check** (kenmerk-check): `heeft(S,k)`, or
+(`static_numeric`/`static_date`): numeric operands take the eqN-helper
+encoding of S5 — gelijk-aan through the helper atom, ongelijk-aan
+through its negation (witness `jutterswet-sluitregister`);
+text/enum/boolean operands take the positive symbolic-term join of S5
+— `==`/`!=` over both bound terms, any empty operand false in both
+directions (witnesses `jutterswet-vondstetiket`,
+`jutterswet-keurstaat`, `jutterswet-borgvlag`); date-typed gelijk-aan
+takes the bare positive harmonised join (any empty operand false —
+the RS ch. 1.2d date row, witness `jutterswet-paasvondst` case5)
+while date-typed ongelijk-aan stays on the eqN complement, whose
+cells match the date row (witness `jutterswet-jutdatum` case3). **Characteristic check** (kenmerk-check): `heeft(S,k)`, or
 `not heeft(S,k)` under negation — stratification (WF-045/046) makes
 this sound. The *navigated* check walks the `rol/3` hop as a POSITIVE
 literal with only the characteristic under the negation: an absent

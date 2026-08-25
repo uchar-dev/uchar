@@ -103,7 +103,19 @@ let () =
   check "WV-1.2d-neq-2" (Arith.compare_op Ongelijk leeg leeg = false);
   check "WV-1.2d-neq-3" (Arith.compare_op Ongelijk (n "5") (n "3") = true);
   (* non-numeric equality: two empties are NOT equal (§5 Tabel 38) *)
-  check "WV-1.2d-teq-1" (Arith.eq_non_numeric leeg leeg = false)
+  check "WV-1.2d-teq-1" (Arith.eq_non_numeric leeg leeg = false);
+  (* the date row (v0's Tabel-38 guard on the date shape): gelijk-aan
+     over dates is onwaar on ANY empty operand — in particular
+     both-empty, where the numeric rule above reads waar — while
+     ongelijk-aan keeps the numeric cells (exactly one empty → waar,
+     both empty → onwaar) *)
+  (let d = Value.date_of_iso "2026-06-21" in
+   let cmp op a b = Arith.compare_op ~static_numeric:true ~static_date:true op a b in
+   check "WV-1.2d-date-eq-1" (cmp Gelijk leeg leeg = false);
+   check "WV-1.2d-date-eq-2" (cmp Gelijk leeg d = false);
+   check "WV-1.2d-date-eq-3" (cmp Gelijk d d = true);
+   check "WV-1.2d-date-neq-1" (cmp Ongelijk leeg d = true);
+   check "WV-1.2d-date-neq-2" (cmp Ongelijk leeg leeg = false))
 
 (* --- ch. 1.2e: aggregations (the §5.8.2/§4.20 split) -------------------- *)
 

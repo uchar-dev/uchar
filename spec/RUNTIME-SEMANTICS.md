@@ -92,12 +92,20 @@ recorded as such.
 | numeric equality | true iff **both** empty, else value equality | leeg = leeg → waar; leeg = 5 → onwaar |
 | numeric inequality | true iff **exactly one** empty, else value inequality | leeg ≠ 5 → waar; leeg ≠ leeg → onwaar; 5 ≠ 3 → waar |
 | non-numeric equality (text/enum/boolean, §5 Tabel 38) | any empty operand → false | leeg =ₜ leeg → onwaar |
+| date equality/inequality (v0's Tabel-38 guard on the date shape) | equality: any empty operand → false — in particular **both** empty, never the numeric two-empties-equal cell; inequality: the numeric rule (true iff exactly one empty) | leeg =ᴰ leeg → onwaar; leeg =ᴰ 2026-06-21 → onwaar; leeg ≠ᴰ 2026-06-21 → waar; leeg ≠ᴰ leeg → onwaar |
 | leeg / gevuld predicates | absence — including a failed to-one navigation — **is** leeg = waar | "de leeftijd van zijn partner is leeg" is waar for a partnerless person |
 
 Note the deliberate asymmetry: numeric equality treats two empties as
 equal; non-numeric equality does not. Both are mirrored, and the ch. 1.4
 decision keeps them: the equality rules where empty carries meaning are
-on its must-preserve list.
+on its must-preserve list. Dates straddle the two: ordering and
+inequality ride the numeric rules on the civil day number, but date
+equality follows the any-empty-is-false rule — the mirror of v0's
+explicit guard `cmp && !(l == null && r == null)` on the date-vs-date
+comparison shape (its Tabel 38 classifies Datum non-numeric). Pinned by
+`jutterswet-paasvondst` case5 (both-empty gelijk-aan → onwaar, a
+dateless subject gains no kenmerk) beside `jutterswet-jutdatum` case3
+(one-empty: gelijk-aan onwaar, ongelijk-aan waar).
 
 **Aggregations**
 
@@ -1015,10 +1023,13 @@ dag   = ((h + l − 7·m + 114) mod 31) + 1
 ```
 
 The result is the day-precision civil date (j, maand, dag). A leeg
-year propagates; a non-whole or unit-carrying year value is a fault —
-never a silent truncation to whole (a tracked delta: v0 narrows the
-year to a machine int silently; the verifier makes the static shape
-ill-formed either way). Worked examples (absolute, pinned; each
+year propagates; a non-whole or unit-carrying year value is a fault,
+and so is a whole year outside the executor's machine-integer range —
+never a silent truncation to whole, never a silent wrap-around (one
+tracked delta, both cells: v0 narrows the year to a machine int
+silently; the verifier makes the non-whole/unit-carrying static shape
+ill-formed, while the out-of-range fault is runtime-only — no static
+check can bound a computed year). Worked examples (absolute, pinned; each
 becomes a `ref/` test verbatim): jaar uit 2026-11-03 = **2026**; maand
 uit 2026-11-03 = **11**; dag uit 2026-11-03 = **3**; eerste paasdag
 van 2024 = **2024-03-31**, van 2026 = **2026-04-05**, van 2027 =

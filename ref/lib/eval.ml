@@ -347,6 +347,15 @@ let static_numeric l r =
   in
   match kind l with Some b -> Some b | None -> kind r
 
+(* the ch. 1.2d date row rides the numeric bucket above EXCEPT its
+   both-leeg gelijk-aan cell, which is onwaar — v0's Tabel-38 guard on
+   the date shape (Arith.compare_op ~static_date) *)
+let static_date l r =
+  let is_date e =
+    match expr_typ e with Some (Datum_in_dagen | Datum_tijd) -> true | _ -> false
+  in
+  is_date l || is_date r
+
 let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
   match e with
   | Literal { waarde; typ; _ } -> literal_value waarde typ
@@ -963,7 +972,8 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       let le = req "Vergelijking.links" links and re = req "Vergelijking.rechts" rechts in
       let l = eval_expr env world self ~err le in
       let r = eval_expr env world self ~err re in
-      Arith.compare_op ?static_numeric:(static_numeric le re) op l r
+      Arith.compare_op ?static_numeric:(static_numeric le re) ~static_date:(static_date le re) op l
+        r
   | Vergelijking _ -> Value.fault "whole-period comparison is ch. 3 scope"
   | Predicaat { soort = Leeg; operand; negatie; _ } ->
       let v = eval_expr env world self ~err (req "Predicaat.operand" operand) in

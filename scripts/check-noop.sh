@@ -142,6 +142,12 @@
 #     input carries; the absence IS the assertion. The five sibling cases all
 #     decide (the hoogste under samenloop, or the sole ground's bedrag) and
 #     are not survivors.
+#   - jutterswet-paasvondst/case5-leeg.json: the ch. 1.2d date-row leeg
+#     corner — a dateless Vondst makes every extractor leeg, and the
+#     both-leeg date gelijk-aan is onwaar (v0's Tabel-38 guard, NOT the
+#     numeric two-empties-equal cell), so nothing is written and no
+#     kenmerk attaches; the absence IS the assertion. The four sibling
+#     cases all decide and are not survivors.
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
@@ -175,7 +181,8 @@ corpus/golden/synth3-drempelheffing/case4-leeg-grondslag.json
 corpus/golden/synth3-besluitschakel/case4-afwezig.json
 corpus/golden/synth3-letbeslag/case3-leeg-regime.json
 corpus/golden/synth3-letbeslag/case4-leeg-grondslag.json
-corpus/golden/jutterswet-samenloop/case6-geen-grond.json'
+corpus/golden/jutterswet-samenloop/case6-geen-grond.json
+corpus/golden/jutterswet-paasvondst/case5-leeg.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2

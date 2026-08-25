@@ -518,7 +518,8 @@ let vergelijk_sym = function
   | Kleiner | Eerder -> "<"
   | Kleiner_of_gelijk | Eerder_of_gelijk -> "<="
   | Gelijk | Ongelijk ->
-      (* scalar conditions take the eqN-helper route in cond_atoms; what
+      (* scalar conditions take the eqN-helper route in cond_atoms (date
+         gelijk-aan its positive join, which maps its own ==); what
          remains on this symbol path is the per-segment clip comparison,
          whose operands are timeline segments — the empty corner there
          is a different shape (a gap, not an empty operand) *)
@@ -711,12 +712,20 @@ let is_struct_operand = function
    normalise at the same point), a boolean is the bare symbol waar/onwaar —
    NOT the closed-world heeft/2 (which cannot tell false from leeg; the
    equality read needs the three-way distinction). Day-precision dates are
-   NOT here: date equality is numeric (the adopted reading of ref/lib/value.ml),
-   riding the integer day number and the eqN asymmetry. *)
+   NOT here: they ride the integer day number — but their gelijk-aan takes
+   the positive join in cond_atoms, not the eqN both-unbound arm (the
+   ch. 1.2d date row: v0's Tabel-38 guard on the date shape). *)
 let is_symbolic_operand = function
   | Some e -> (
       match Ir_v0.Checks.typ_of_expr e with
       | Some (Tekst | Booleaan | Enumeratie _) -> true
+      | _ -> false)
+  | None -> false
+
+let is_date_operand = function
+  | Some e -> (
+      match Ir_v0.Checks.typ_of_expr e with
+      | Some (Datum_in_dagen | Datum_tijd) -> true
       | _ -> false)
   | None -> false
 
@@ -1993,15 +2002,23 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       let ll, tl = symbolic_term ctx ~subject ~subject_ot (req "links" links) in
       let rr, tr = symbolic_term ctx ~subject ~subject_ot (req "rechts" rechts) in
       ll @ rr @ [ Printf.sprintf "%s %s %s" tl (if op = Gelijk then "==" else "!=") tr ]
-  | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ } ->
-      (* the ch. 1.2d equality asymmetry (arith.compare_op): gelijk-aan
-         is TRUE on two empty operands and FALSE on exactly one;
-         ongelijk-aan is its exact complement. Encoded through a
+  | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ }
+    when not (op = Gelijk && (is_date_operand links || is_date_operand rechts)) ->
+      (* the ch. 1.2d NUMERIC equality asymmetry (arith.compare_op):
+         gelijk-aan is TRUE on two empty operands and FALSE on exactly
+         one; ongelijk-aan is its exact complement. Encoded through a
          per-comparison helper: eqN(S) holds iff both operand bodies
          bind and the harmonised values match, or neither binds.
          Ongelijk is negation-as-failure over the helper — sound for
          the same reason coalesce0's definedness negation is: the
-         helper reads only the operand bodies. *)
+         helper reads only the operand bodies. The DATE row narrows
+         this (RS ch. 1.2d, v0's Tabel-38 guard on the date shape):
+         date-typed gelijk-aan must be onwaar on two empty operands, so
+         the when-guard routes it past the both-unbound arm to the bare
+         positive join below (any empty operand false — the guard for
+         free). Date-typed ongelijk-aan STAYS here: the complement's
+         cells (exactly-one-empty waar, both-empty onwaar) are the date
+         row's own. *)
       units_identical_ok ~what:"a comparison"
         (Option.bind links (eff_unit ctx))
         (Option.bind rechts (eff_unit ctx));
@@ -2024,6 +2041,8 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       emit ctx "%s(%s) :- %s, not %s_l(%s), not %s_r(%s)." p subject base p subject p subject;
       [ (if op = Gelijk then "" else "not ") ^ Printf.sprintf "%s(%s)" p subject ]
   | Vergelijking { op; links; rechts; periode = None; _ } ->
+      (* the orderings, plus date-typed gelijk-aan (routed here by the
+         when-guard above): bare positive joins, any empty operand false *)
       units_identical_ok ~what:"a comparison"
         (Option.bind links (eff_unit ctx))
         (Option.bind rechts (eff_unit ctx));
@@ -2036,7 +2055,8 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
         ~body:((base :: b1) @ b2)
         [ (t1, max_int31 / (m / s1)); (t2, max_int31 / (m / s2)) ];
       let bindings, tl, tr = harmonised l r in
-      bindings @ [ Printf.sprintf "%s %s %s" tl (vergelijk_sym op) tr ]
+      let sym = match op with Gelijk -> "==" | op -> vergelijk_sym op in
+      bindings @ [ Printf.sprintf "%s %s %s" tl sym tr ]
   | Kenmerk_check { kenmerk; navigatie = None; negatie; navigatie_binding; eigenaar = _; _ } ->
       (match navigatie_binding with
       | Some _ ->

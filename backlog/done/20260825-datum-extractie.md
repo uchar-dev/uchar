@@ -67,12 +67,33 @@ eerste-paasdag∘jaar-uit equality, jaar-uit Gelijkstelling — plus a
 dag-uit Gelijkstelling beyond the card's letter, added so clingo's
 DAG_UIT arm is differentially exercised, not dead code. Five
 hand-computed cases on both sides of the Easter and month boundaries;
-the leeg case pins paasvondst WAAR on a dateless Vondst (ch. 1.2d
-numeric equality of two empties, both executors agree). All 14 worked
-examples are verbatim ref tests (293 total). Nine gates green:
-134 ir round-trip, 134/155 verifier, 354 cases, 334 oracle = 334
-clingo, 300 noop refuters + 34 pinned, 20 rood, 169 catala checks.
+the leeg case pins paasvondst ONWAAR on a dateless Vondst (the
+ch. 1.2d date row — corrected in review, below). The 13 new worked
+examples are verbatim ref tests (the build report's "14" overcounted:
+jaar uit leeg = leeg already existed as WV-1.2b-datum-3).
 Deliberately left: DAGSOORT/ResolvedDagsoort (follow-up card),
 datum-met/datumtijd-met and the sub-day extractors (duration-class
 cards), ONGELIJK-over-extractor with an empty date (kept out of the
 golden entirely), the CONSTRUCTS.md row (serial at merge).
+
+Review fix (2026-08-25): the build had pinned the leeg case
+paasvondst-WAAR on the numeric two-empties-equal reading — ref-derived
+parity, not the v0 mirror: v0's Tabel 38 classifies Datum non-numeric
+and its date-vs-date comparison carries the explicit both-null guard,
+so a both-leeg date gelijk-aan is onwaar in production; the one-leeg
+cells agree in both readings (jutdatum case3 unchanged). Fixed
+red-first — the flipped pin failed gates 5 and 6 against both
+executors verbatim ("V1 carries characteristic \"paasvondst\",
+expected absent") — then: RS ch. 1.2 gained the date row (equality
+any-empty-false, inequality the numeric rule) with five verbatim
+WV-1.2d-date tests; ref routes it via `compare_op ~static_date`;
+clingo routes date gelijk-aan past the eqN both-unbound arm onto the
+bare positive join (date ongelijk-aan stays on the eqN complement,
+whose cells match the date row); ASP-TRANSLATION S2/S5/S6a/S7 state
+the date row instead of the unratified "numeric-equality reading";
+case5 (all-empty in, all-empty out) entered check-noop's survivor
+list with its reason. Also worded the eerste-paasdag out-of-range
+year fault (v0 wraps silently) into the same RS ch. 3.8 tracked
+delta. 298 ref worked examples. Nine gates green after the fix:
+134 ir round-trip, 134/155 verifier, 354 cases, 334 oracle = 334
+clingo, 299 noop refuters + 35 pinned, 20 rood, 169 catala checks.
