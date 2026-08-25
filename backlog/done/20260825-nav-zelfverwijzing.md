@@ -41,3 +41,26 @@ May touch: `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`,
 Out of scope: the plural-morphology fallback (card D2), the fold-source
 forms (cards C1/C2), `spec/CONSTRUCTS.md` (serial — row 4 delta note at
 merge).
+
+Result: Landed whole. IR-SPEC ch. 4.1a carries the zero-hop
+self-reference paragraph (far-role resolution first, self-reference
+only at zero far hits under the WF-083 self-denotation test; both v0
+fall-throughs — any unresolved same-typed name, the ambiguous far
+match — deliberately not mirrored, loud faults, tracked deltas);
+RUNTIME-SEMANTICS ch. 5.8 rule 4 + worked example, verbatim in
+ref/test/test_ref.ml (WV-5.8-4, 8 assertions, 341 total). Verifier:
+nav_hops single-step arm; ref: nav_single_step, shared by the clingo
+translation (zero hops = no rol/3 atom; ASP-TRANSLATION S4 note).
+Witness: jutterswet-aanmelderkrediet (emitter-produced wire; the
+unconditional own-read on a linkless instance beside the reciprocal
+far hop with its leeg-on-absent contrast; both executors, 7
+expectations). Negatief wf053-zelfverwijzing-vreemde-rol pins the
+narrowing with the sharpened rejection. The navigated characteristic
+check is DEFERRED, explicitly: v0's resolver never produces the
+self-referencing shape, so a self-denoting name there faults loudly
+in verifier wording and both executors — it does not read the own
+characteristic. Deliberately left: the CONSTRUCTS row-4 delta note
+(serial at merge, per the card); the plural-morphology fallback (D2).
+Nine gates green: 137 ir round-trip, 137 golden clean / 157 negatief,
+359 cases, 339 oracle = 339 clingo, 304 noop + 35 survivors, 20 rood,
+catala 169 checks / 11 byte-identical.
