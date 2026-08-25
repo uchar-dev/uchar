@@ -2108,14 +2108,18 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
     | Binair { op = (Plus | Min | Maal); links; rechts; _ } ->
         Option.iter fence_expr links; Option.iter fence_expr rechts
     | Binair { op = Gedeeld_door; links; rechts; _ } ->
+        (* clingo's closed_division carries a compile-time POSITIVE constant
+           divisor only (br = [] and the scaled value a positive int). A runtime
+           or non-positive divisor faults there — refuse it here so the fence
+           matches clingo (card clingo-bodymult). *)
         (match rechts with
-         | Some (Literal _) -> ()
+         | Some (Literal { waarde = Some w; _ })
+           when (match float_of_string_opt w with Some f -> f > 0.0 | None -> false) -> ()
          | _ ->
              refuse
-               "per-element callee %S divides by a non-constant divisor in its closed body: clingo's \
-                closed-body division carries only a compile-time constant divisor (card \
-                clingo-bodymult) — a runtime divisor has no closed-body image and is refused per \
-                element"
+               "per-element callee %S divides by a non-constant or non-positive divisor in its closed \
+                body: clingo's closed-body division carries only a compile-time positive constant \
+                divisor (card clingo-bodymult) — refused per element"
                cname);
         Option.iter fence_expr links; Option.iter fence_expr rechts
     | Binair { op = (Verminderd_met | Gedeeld_door_abs | Tot_de_macht | Percentage_van); _ } ->
