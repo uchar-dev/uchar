@@ -29,3 +29,25 @@ May touch: `spec/RUNTIME-SEMANTICS.md` (ch. 3.8 datetime paragraph),
 Out of scope: any clingo code change, any corpus golden for datetime,
 the pair-term design (future card), `spec/CONSTRUCTS.md` (serial),
 `spec/IR-SPEC.md` (no WF change needed — WF-035/038 land in A1).
+
+Result: the datum-tijd millisecond layer executes in ref — sub-day
+units linear on the ms value, calendar units on the civil day part
+preserving the time-of-day (floor-division split, also pre-epoch),
+whole-unit tijdsduur with the borrow rule (strictly-before, mirrored
+on the negative side) — the rsDatumReken/rsTijdsduur LocalDateTime
+mirror. Empty rules ch. 1.2 unchanged; mixed tijdsduur precision
+stays a loud fault. Red-first held: the verifier-clean repro faulted
+at all three sites in the old ref (quoted in the ms-layer commit)
+and replays exactly after (oracle PASS, 4 expectations, including
+the borrow corner 34 uren / 1 dag). RUNTIME-SEMANTICS ch. 3.8
+carries the datetime paragraph; its worked examples run verbatim in
+test_ref.ml (20 new checks, 318 total) — the pin, since the embargo
+admits no corpus golden. ASP-TRANSLATION S6a/S19 record the embargo:
+clingo keeps its loud fault (verified on the repro: "unscalable
+datatype in the ASP translation"), no datum-tijd golden until the
+pair-term encoding; S19 stays highest. Deliberately left: the
+pair-term encoding card itself is not cut here (outside May touch —
+for the maintainer to register); sub-day extractors and
+datum-met/datumtijd-met stay unexecuted, loud; clingo's internal
+reason string "the datum-tijd layer is not executed" is now stale
+about ref but clingo code was out of scope. All nine gates green.
