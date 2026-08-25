@@ -1285,7 +1285,10 @@ all, never null, never empty.
   disambiguates same-named roles by target type; its best-effort
   pluralisation is deliberately not mirrored — an unmatched written
   form refuses loudly instead of guessing a singular, a tracked delta)
-  or by type pair (exactly one fact type relates the pair). In a scalar slot (`set` false) every hop's
+  or by type pair (exactly one fact type relates the pair), or — the
+  one exception, scoped precisely — the single written step is the
+  zero-hop self-reference of the paragraph below and the walk is
+  empty. In a scalar slot (`set` false) every hop's
   reached role MUST be to-one — a to-many step needs an aggregation,
   never a silent first pick (the v0 resolver builds only to-one chains;
   its NAAR_VEEL marker, lifted to well-formedness). Bindings on a
@@ -1293,6 +1296,35 @@ all, never null, never empty.
   `RUNTIME-SEMANTICS.md` ch. 5.8 — an absent link at any hop reads the
   operand as leeg; the navigated characteristic check on an absent link
   is false, negated or not.
+
+**The zero-hop self-reference.** A definite reference may name the
+subject by a role the subject ITSELF fills ("het strandtegoed van de
+aanmelder", read on the Jutter who *is* the aanmelder): the reference
+then denotes the subject and its walk is **empty** — zero hops, the
+own attribute, read unconditionally (no link is consulted). On the
+wire this is a single bindingless written step (`navigatieRol`; there
+is no hop, so there is nothing to bind — a chain step or a binding is
+never a self-reference) whose endpoint type equals the subject type,
+and it is well-formed **iff** both hold: the step does not resolve as
+a far role (zero hits under the by-name derivation above, endpoint
+filter included), and the name matches, case-insensitively on declared
+name or declared plural, a role the subject type itself fills in some
+declared fact type (the WF-083 self-denotation test). The resolution
+ORDER is normative: far-role resolution comes FIRST, and the
+self-reference applies only at zero far hits — a reciprocal relation's
+role name ("zijn strandmaat", on the type that fills that very role)
+resolves as a far role and stays a real hop, never a self-read. Two v0
+fall-throughs are deliberately NOT mirrored (tracked deltas in the
+safe direction, `CONSTRUCTS.md` row 4): v0 reads the own attribute for
+ANY unresolved written name on a same-typed reference — v1 demands the
+self-denotation test, so a same-typed reference naming a vreemde rol
+stays ill-formed (negatief `wf053-zelfverwijzing-vreemde-rol`) — and
+v0 falls through on an AMBIGUOUS far match as well, where v1 keeps the
+loud ambiguity refusal. The characteristic check's `navigatie` is NOT
+in scope: v0's resolver never produces a self-referencing navigated
+check, so its one written hop stays a real hop and a self-denoting
+name there remains ill-formed — both executors refuse it explicitly.
+Semantics: `RUNTIME-SEMANTICS.md` ch. 5.8 rule 4.
 
 Emitter discipline (the pin-bump contract): an emitter binds the
 **scalar navigated read and the navigated characteristic check only** —
@@ -1973,7 +2005,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-050 | ladder: ≥ 1 rung; exactly one target, resolving; rung shapes per kind (recursing into sub-rungs, ch. 7.9 — a group-rung carries `exceptions` and no own content); init rung lowest; no other writer; multiplicity only declared-unordered | gate 3 | `anchor/jutterswet-uitsluiting` (characteristic) + `anchor/jutterswet-vondstwaardering` (attribute + init) + `anchor/jutterswet-toelagegronden` (unordered groups, six conflict-path cases; all replayed by gates 5–6) | `wf050-empty-ladder` + `wf050-two-ladders-one-target` + `wf050-ladder-beside-rule` + `wf050-both-targets` + `wf050-init-not-lowest` + `wf050-rule-beside-attribute-ladder` + `wf050-allocation-beside-ladder` + `wf050-creation-beside-ladder` + `wf050-half-marked-group` + `wf050-subrung-wrong-shape` |
 | WF-051 | no dependency cycle through a ladder (justification and consequence reads are negative edges, folded recursively through sub-rungs, ch. 7.9) | gate 3 (over the extended dep_forms graph, shared with ref/'s strata) | `anchor/jutterswet-uitsluiting` (the ladder sits below its negated consumer — strata exist, oracle-replayed) | `wf051-ladder-reads-own-target` + `wf051-cycle-through-subrung` |
 | WF-052 | a connecting relation with a to-one created-side role has at most one object-creation writer (fact creations are fault-paired already) | gate 3 | `anchor/jutterswet-penninguitgifte` (one writer per to-one relation, executed by gates 5–6) | `wf052-two-writers-one-to-one-relation` |
-| WF-053 | a navigated read resolves its walk: bindings resolve, chain-type, count and written names agree, the endpoint is reached; bindingless steps are uniquely derivable; scalar-slot hops are to-one; bindings on a non-navigating node are ill-formed | gate 3 | `anchor/jutterswet-kustwacht` (by-name, chain and by-pair shapes plus the navigated characteristic check, executed by gates 5–6 with leeg-on-absent and the negation asymmetry pinned) + `jutterswet-postwacht` (emitter-produced bindings since the 2026-08-18 pin bump) | `wf053-dangling-navigation-binding` (resolution) + `wf053-chain-near-side-mismatch` (chain typing) + `wf053-to-many-hop-in-scalar` (cardinality) + `wf053-written-role-mismatch` (written-name denotation) + `wf053-bindingless-ambiguous` (unique derivability) |
+| WF-053 | a navigated read resolves its walk: bindings resolve, chain-type, count and written names agree, the endpoint is reached; bindingless steps are uniquely derivable; scalar-slot hops are to-one; bindings on a non-navigating node are ill-formed; a single bindingless written step at zero far hits on a same-typed endpoint is the zero-hop self-reference iff the name denotes a role the subject itself fills (ch. 4.1a) | gate 3 | `anchor/jutterswet-kustwacht` (by-name, chain and by-pair shapes plus the navigated characteristic check, executed by gates 5–6 with leeg-on-absent and the negation asymmetry pinned) + `jutterswet-postwacht` (emitter-produced bindings since the 2026-08-18 pin bump) + `jutterswet-aanmelderkrediet` (the zero-hop self-reference beside the reciprocal far hop, executed by gates 5–6) | `wf053-dangling-navigation-binding` (resolution) + `wf053-chain-near-side-mismatch` (chain typing) + `wf053-to-many-hop-in-scalar` (cardinality) + `wf053-written-role-mismatch` (written-name denotation) + `wf053-bindingless-ambiguous` (unique derivability) + `wf053-zelfverwijzing-vreemde-rol` (the self-reference narrowing) |
 | WF-054 | parent-scoped uniqueness: the scope role resolves (bound or uniquely derivable from the written scope field), its near side fills the subject, the written name denotes the bound role, the scope role is to-one; a scope binding on an unscoped uniqueness is ill-formed | gate 3 | `anchor/jutterswet-kustregister` (bound and bindingless scoped forms, executed by gates 5–6 with the scope-less exclusion pinned) + `jutterswet-postwacht` (emitter-produced `scopeRol` since the 2026-08-18 pin bump) | `wf054-dangling-scope-binding` (resolution) + `wf054-to-many-scope-role` (cardinality) + `wf054-binding-on-unscoped` (the non-scoped guard) |
 | WF-055 | the gedurende clip: a filter on the temporal total is a timeline operation — its condition is an own temporal characteristic check, a per-segment comparison of an own temporal attribute against a scalar bound, or a FLAT ALLE composite of characteristic checks (`RUNTIME-SEMANTICS.md` ch. 3.6: the intersection of the members' true-periods; v0 partitions static comparison members into value-side guards and markers nested bullets — v1 narrows composite members to characteristic checks, a recorded narrowing) | gate 3 | `jutterswet-getijdenwacht` (both simple shapes) + `anchor/jutterswet-dubbelwacht` (the flat composite: overlap, disjoint, one-empty and split periods, executed by gates 5–6) | `wf055-nontemporal-clip-kenmerk` + `wf055-navigated-clip-condition` + `wf055-composite-comparison-leaf` + `wf055-composite-nontemporal-leaf` + `wf055-composite-nested` |
 | WF-056 | the pro-rata fold (tijdsevenredig-deel) MUST carry a gedurende condition and one temporal source argument (a temporal attribute or granular parameter) as coarse as or coarser than its bucket; on a temporal target the bucket granularity MUST equal the target's declared granularity | gate 3 | `anchor/jutterswet-borgdeel` (the ch. 3.7 fold, executed by gates 5–6) | `wf056-no-gedurende-condition` + `wf056-scalar-base` + `wf056-bucket-target-mismatch` |

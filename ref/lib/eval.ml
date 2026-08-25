@@ -212,7 +212,7 @@ let self_denoting_role (doc : document) ~self_type name =
         ft.rollen)
     doc.feittypen
 
-let role_by_name ?to_type env ~self_type ~name =
+let reachable_roles_by_name ?to_type env ~self_type ~name =
   let matches (r : rol) =
     ((match r.rol_naam with Some n -> norm n = norm name | None -> false)
     || (match r.rol_meervoud with Some m -> norm m = norm name | None -> false))
@@ -221,23 +221,50 @@ let role_by_name ?to_type env ~self_type ~name =
     | None -> true
     | Some t -> norm (Option.value r.rol_objecttype_naam ~default:"") = norm t
   in
-  let hits =
-    List.filter_map
-      (fun (_, (ft : feittype)) ->
-        let ot r = Option.value r.rol_objecttype_naam ~default:"" in
-        match ft.rollen with
-        | [ a; b ] ->
-            if norm (ot a) = norm self_type && matches b then Some b
-            else if norm (ot b) = norm self_type && matches a then Some a
-            else None
-        | [ r ] when ft.wederkerig ->
-            if norm (ot r) = norm self_type && matches r then Some r else None
-        | _ -> None)
-      env.doc.feittypen
-  in
-  match hits with
+  List.filter_map
+    (fun (_, (ft : feittype)) ->
+      let ot r = Option.value r.rol_objecttype_naam ~default:"" in
+      match ft.rollen with
+      | [ a; b ] ->
+          if norm (ot a) = norm self_type && matches b then Some b
+          else if norm (ot b) = norm self_type && matches a then Some a
+          else None
+      | [ r ] when ft.wederkerig ->
+          if norm (ot r) = norm self_type && matches r then Some r else None
+      | _ -> None)
+    env.doc.feittypen
+
+let role_by_name ?to_type env ~self_type ~name =
+  match reachable_roles_by_name ?to_type env ~self_type ~name with
   | [ r ] -> r
   | [] -> Value.fault "no role named %S reachable from %S" name self_type
+  | _ -> Value.fault "ambiguous role name %S from %S" name self_type
+
+(* the zero-hop self-reference (WF-053, IR-SPEC ch. 4.1a): a single
+   bindingless written step on a reference whose endpoint type equals
+   the subject type may denote the subject ITSELF, by a role the
+   subject fills ("het strandtegoed van de aanmelder", read on the
+   Jutter who is the aanmelder) — then the walk is empty and the own
+   attribute is read, unconditionally (no link is consulted). Order is
+   normative: far-role resolution FIRST (a reciprocal role stays a
+   real hop); the self-reference only at zero far hits, and only under
+   the WF-083 self-denotation test. v0's broader fall-throughs (ANY
+   unresolved name on a same-typed reference, and the ambiguous far
+   match) are deliberately NOT mirrored — both keep the loud fault
+   (tracked delta in the safe direction). Returns None for the empty
+   walk. *)
+let nav_single_step env ~self_type ~endpoint ~name : rol option =
+  match reachable_roles_by_name ~to_type:endpoint env ~self_type ~name with
+  | [ r ] -> Some r
+  | [] when norm endpoint = norm self_type && self_denoting_role env.doc ~self_type name ->
+      None
+  | [] ->
+      if norm endpoint = norm self_type then
+        Value.fault
+          "no role named %S is reachable from %S, and it does not name a role %S itself \
+           fills — not the zero-hop self-reference (WF-053)"
+          name self_type self_type
+      else Value.fault "no role named %S reachable from %S" name self_type
   | _ -> Value.fault "ambiguous role name %S from %S" name self_type
 
 (* the navigated scalar read's hop walk (WF-053, RUNTIME-SEMANTICS
@@ -245,7 +272,8 @@ let role_by_name ?to_type env ~self_type ~name =
    carries them, else the written names, else the type pair — then walk
    the links. An absent link at any hop short-circuits the whole read to
    None = leeg (ch. 1.2); a to-many hop in a scalar slot faults, never a
-   silent first pick. *)
+   silent first pick. A zero-hop self-reference (ch. 5.8 rule 4) walks
+   nothing and reads the subject itself. *)
 let nav_target env world (self : World.instance) ~bindings ~navigatie_rol ~navigatie_pad
     ~endpoint =
   let roles =
@@ -265,8 +293,13 @@ let nav_target env world (self : World.instance) ~bindings ~navigatie_rol ~navig
             roles
         | [] -> (
             match navigatie_rol with
-            | Some n ->
-                [ role_by_name ~to_type:endpoint env ~self_type:self.otype ~name:n ]
+            | Some n -> (
+                (* single written step: a far role when one resolves, the
+                   zero-hop self-reference when none does and the name
+                   denotes the subject itself (ch. 4.1a) *)
+                match nav_single_step env ~self_type:self.otype ~endpoint ~name:n with
+                | Some r -> [ r ]
+                | None -> [])
             | None -> [ connecting_role env ~from_type:self.otype ~to_type:endpoint ]))
   in
   List.iter
@@ -1048,7 +1081,23 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       let role =
         match navigatie_binding with
         | Some rb -> bound_role env rb
-        | None -> role_by_name env ~self_type:self.otype ~name:nav
+        | None ->
+            (* deferred, loudly: the ch. 4.1a zero-hop self-reference is
+               scoped to the attribute read — v0's resolver never
+               produces a navigated check whose written role denotes the
+               subject itself, so a self-denoting name here faults
+               explicitly rather than silently reading the own
+               characteristic *)
+            if
+              reachable_roles_by_name env ~self_type:self.otype ~name:nav = []
+              && self_denoting_role env.doc ~self_type:self.otype nav
+            then
+              Value.fault
+                "the navigated characteristic check's role %S names a role %S itself fills \
+                 — the zero-hop self-reference does not extend to the characteristic check \
+                 (deferred; WF-053, IR-SPEC ch. 4.1a)"
+                nav self.otype
+            else role_by_name env ~self_type:self.otype ~name:nav
       in
       if role.rol_meervoudig then
         Value.fault

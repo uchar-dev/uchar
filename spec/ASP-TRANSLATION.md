@@ -261,8 +261,12 @@ reference (ch. 5.8) chains one `rol/3` atom per to-one hop before the
 final `val` — the shared variable is the join, and an absent link
 simply leaves the body underivable. Role resolution reuses the
 reference interpreter's own binding helpers (`Eval.bound_role`,
-`Eval.connecting_role`), so both executors resolve navigation
-identically. **Rekendatum** (ch. 8.2): the session's evaluation date
+`Eval.connecting_role`, `Eval.nav_single_step`), so both executors
+resolve navigation identically; the zero-hop self-reference (ch. 5.8
+rule 4) resolves to an EMPTY hop list, so no `rol/3` atom is emitted
+at all and the `val` atom reads the subject itself — the
+unconditional own-read, structurally (witness
+`jutterswet-aanmelderkrediet`). **Rekendatum** (ch. 8.2): the session's evaluation date
 as a compile-time civil day number; a case without `asOfDate` faults.
 **Temporal point read** (ch. 3.3): a `tl/5`/`param_tl/4` atom with
 `F <= D, D < T` — the gap and the empty-index corner are the

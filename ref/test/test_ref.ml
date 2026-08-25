@@ -1697,6 +1697,98 @@ let () =
   expect_num "WV-3.4a-zelfbron-nul" (ev "j2" (aantal "aanmelder")) "0";
   expect_fault "WV-3.4a-zelfbron-weg" (fun () -> ev "j1" (aantal "vondst"))
 
+(* --- ch. 5.8 rule 4: the zero-hop self-reference (WF-053) --------------- *)
+
+(* WV-5.8-4: the `jutterswet-aanmelderkrediet` worked example. Jutters
+   fill the role aanmelder (vondstaanmelding) and the reciprocal role
+   strandmaat (strandmaatschap). "het strandtegoed van de aanmelder
+   plus 2" denotes the subject itself — zero hops, the own attribute,
+   unconditionally (J3 carries no links at all and still reads 9).
+   "het strandtegoed van zijn strandmaat" resolves as a far role FIRST
+   (the reciprocal case — never a self-read): J1 reads J2's 25, J3
+   reads leeg (rule 1, absent link). A same-typed reference naming a
+   role the Jutter does NOT fill ("van de vondst") keeps the loud
+   fault — the WF-053 narrowing. The navigated characteristic check is
+   out of rule 4's scope: a self-denoting name there faults loudly. *)
+let () =
+  let doc =
+    {
+      empty_doc with
+      objecttypen =
+        [ ot "Jutter"
+            [ ("strandtegoed", Some num0); ("meldkrediet", Some num0);
+              ("maatdeling", Some num0) ]
+            [];
+          ot "Vondst" [ ("gewicht", Some num0) ] [] ];
+      feittypen =
+        [ ( "vondstaanmelding",
+            {
+              ft_naam = Some "vondstaanmelding";
+              wederkerig = false;
+              rollen =
+                [
+                  { rol_naam = Some "aanmelder"; rol_objecttype_naam = Some "Jutter";
+                    rol_meervoud = None; rol_meervoudig = false };
+                  { rol_naam = Some "vondst"; rol_objecttype_naam = Some "Vondst";
+                    rol_meervoud = Some "vondsten"; rol_meervoudig = true };
+                ];
+            } );
+          ( "strandmaatschap",
+            {
+              ft_naam = Some "strandmaatschap";
+              wederkerig = true;
+              rollen =
+                [
+                  { rol_naam = Some "strandmaat"; rol_objecttype_naam = Some "Jutter";
+                    rol_meervoud = Some "strandmaten"; rol_meervoudig = false };
+                ];
+            } ) ];
+    }
+  in
+  let nav_read rol : Ir_v0.Ast.expr =
+    Attribuut_ref
+      {
+        attribuut = Some "strandtegoed";
+        objecttype = Some "Jutter";
+        onderwerp_bron = None;
+        navigatie_rol = Some rol;
+        typ = Some num0;
+        bron = None;
+        set = false;
+        navigatie_pad = [];
+        navigatie_bindingen = None;
+      }
+  in
+  let plus2 : Ir_v0.Ast.expr =
+    Binair
+      { op = Plus; links = Some (nav_read "aanmelder"); rechts = Some (litv "2" num0);
+        typ = Some num0; bron = None }
+  in
+  let env = env_of doc in
+  let w =
+    World.add_instance
+      (World.add_instance
+         (World.add_instance World.empty
+            { (inst "j1" "Jutter" [ ("strandtegoed", n "10") ]) with
+              links = World.SMap.add "strandmaat" [ "j2" ] World.SMap.empty })
+         { (inst "j2" "Jutter" [ ("strandtegoed", n "25") ]) with
+           links = World.SMap.add "strandmaat" [ "j1" ] World.SMap.empty })
+      (inst "j3" "Jutter" [ ("strandtegoed", n "7") ])
+  in
+  let ev label e = Eval.eval_expr env w (World.get w label) ~err:no_err e in
+  expect_num "WV-5.8-4-zelf-j1" (ev "j1" plus2) "12";
+  expect_num "WV-5.8-4-zelf-j2" (ev "j2" plus2) "27";
+  expect_num "WV-5.8-4-zelf-j3-onvoorwaardelijk" (ev "j3" plus2) "9";
+  expect_num "WV-5.8-4-maat-j1" (ev "j1" (nav_read "strandmaat")) "25";
+  expect_num "WV-5.8-4-maat-j2" (ev "j2" (nav_read "strandmaat")) "10";
+  expect_leeg "WV-5.8-4-maat-j3-leeg" (ev "j3" (nav_read "strandmaat"));
+  expect_fault "WV-5.8-4-vreemde-rol" (fun () -> ev "j1" (nav_read "vondst"));
+  expect_fault "WV-5.8-4-kenmerkcheck-uitgesteld" (fun () ->
+      Eval.eval_cond env w (World.get w "j1") ~err:no_err
+        (Kenmerk_check
+           { kenmerk = Some "betrouwbaar"; navigatie = Some "aanmelder"; negatie = false;
+             eigenaar = None; periode = None; bron = None; navigatie_binding = None }))
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

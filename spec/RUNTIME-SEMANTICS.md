@@ -1806,6 +1806,19 @@ rules, mirrored from the pinned runtime's null-safe navigation readers:
    relation as a leegwaarde. In the ASP reading the hop is a positive
    body literal and only the characteristic sits under negation-as-
    failure — the same asymmetry, for free.
+4. **The self-reference navigates zero hops — unconditionally.** A
+   single bindingless written step that denotes the subject by a role
+   the subject itself fills (IR-SPEC ch. 4.1a: zero far hits AND the
+   self-denotation test, far-role resolution always first) reads the
+   subject's OWN attribute — the walk is empty. No link is consulted,
+   so the read succeeds on an instance with no relation instances at
+   all: there is no leeg-on-absent-link here, because there is no hop
+   to be absent. A name that does resolve as a far role — the
+   reciprocal partner case — stays a real one-hop read with rule 1's
+   leeg-on-absent behaviour. The navigated characteristic check is NOT
+   in this rule's scope: a self-denoting name there is refused loudly
+   by both executors (ch. 4.1a scopes the zero-hop form to the
+   attribute read).
 
 Worked example (the `jutterswet-kustwacht` anchor, case 2, verbatim in
 gates 5–6): W1 mans post P1 in kustvak V1 (verraderlijk, gevarenklasse
@@ -1816,6 +1829,22 @@ the short-circuit); W3 reads leeg on both (hop one absent). The negated
 check separates W3 from W4: P3 is not a risicopost, so W4 (linked) IS a
 rustwacht, while W3 (link absent) is NOT — negation does not resurrect
 an absent relation.
+
+Worked example (rule 4; the `jutterswet-aanmelderkrediet` golden,
+case 1, verbatim in gates 5–6 and in `ref/test/test_ref.ml`): Jutters
+fill the role aanmelder in feittype vondstaanmelding, and the role
+strandmaat in the reciprocal feittype strandmaatschap. J1
+(strandtegoed 10) is strandmaat of J2 (25); J3 (7) carries no links at
+all. "het strandtegoed van de aanmelder plus 2" is the zero-hop
+self-reference: meldkrediet J1 = 12, J2 = 27, **J3 = 9** — J3 has no
+links and still reads its own attribute (the unconditional own-read).
+"het strandtegoed van zijn strandmaat" resolves as a far role
+(reciprocal — order first): maatdeling J1 = 25 and J2 = 10, never a
+self-read; J3's maatdeling is **leeg** (rule 1, absent link) — the
+contrast that separates the real hop from the empty walk. A same-typed
+reference naming a role the subject does NOT fill ("het strandtegoed
+van de vondst" on a Jutter) stays a loud fault, never an own-read
+(the WF-053 narrowing; negatief `wf053-zelfverwijzing-vreemde-rol`).
 
 ### 5.9 Uniqueness: the union and the scope
 

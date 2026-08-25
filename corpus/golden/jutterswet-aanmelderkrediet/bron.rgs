@@ -1,0 +1,24 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het strandtegoed Numeriek (geheel getal);
+    het meldkrediet Numeriek (geheel getal);
+    de maatdeling Numeriek (geheel getal);
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+
+Feittype vondstaanmelding
+    de aanmelder Jutter
+    de vondst (mv: vondsten) Vondst
+Eén aanmelder telt meerdere vondsten
+
+Wederkerig feittype strandmaatschap
+    de strandmaat (mv: strandmaten) Jutter
+Eén strandmaat heeft één strandmaat
+
+Regel meldkrediet van een jutter
+    geldig altijd
+        Het meldkrediet van een Jutter moet berekend worden als het strandtegoed van de aanmelder plus 2.
+
+Regel maatdeling van een jutter
+    geldig altijd
+        De maatdeling van een Jutter moet gesteld worden op het strandtegoed van zijn strandmaat.

@@ -1409,7 +1409,7 @@ let wf048_derivable ctx at ~from_type ~to_type ~site =
    deliberately NOT mirrored — a loud refusal beats heuristic name
    formation (tracked delta, `CONSTRUCTS.md` row 4). Returns
    (fact type, reached role). *)
-let nav_role_by_name ?endpoint ctx ~from_type ~name =
+let nav_roles_by_name ?endpoint ctx ~from_type ~name =
   let matches (r : rol) =
     ((match r.rol_naam with Some n -> norm n = norm name | None -> false)
     || (match r.rol_meervoud with Some m -> norm m = norm name | None -> false))
@@ -1419,20 +1419,20 @@ let nav_role_by_name ?endpoint ctx ~from_type ~name =
     | Some e -> norm (Option.value r.rol_objecttype_naam ~default:"") = norm e
   in
   let ot r = Option.value r.rol_objecttype_naam ~default:"" in
-  let hits =
-    List.filter_map
-      (fun (fn, (ft : feittype)) ->
-        match ft.rollen with
-        | [ a; b ] ->
-            if norm (ot a) = norm from_type && matches b then Some (fn, b)
-            else if norm (ot b) = norm from_type && matches a then Some (fn, a)
-            else None
-        | [ r ] when ft.wederkerig ->
-            if norm (ot r) = norm from_type && matches r then Some (fn, r) else None
-        | _ -> None)
-      ctx.doc.feittypen
-  in
-  match hits with
+  List.filter_map
+    (fun (fn, (ft : feittype)) ->
+      match ft.rollen with
+      | [ a; b ] ->
+          if norm (ot a) = norm from_type && matches b then Some (fn, b)
+          else if norm (ot b) = norm from_type && matches a then Some (fn, a)
+          else None
+      | [ r ] when ft.wederkerig ->
+          if norm (ot r) = norm from_type && matches r then Some (fn, r) else None
+      | _ -> None)
+    ctx.doc.feittypen
+
+let nav_role_by_name ?endpoint ctx ~from_type ~name =
+  match nav_roles_by_name ?endpoint ctx ~from_type ~name with
   | [ p ] -> Ok p
   | [] -> Error (Printf.sprintf "no role named '%s' is reachable from '%s'" name from_type)
   | _ ->
@@ -1549,6 +1549,41 @@ let nav_hops ctx ~subject ~(bindings : rol_binding list option)
                   match nav_role_by_pair ctx ~from_type:subject ~to_type:e with
                   | Ok p -> Ok [ p ]
                   | Error e -> Error [ e ]))
+          | [ n ] when navigatie_pad = [] -> (
+              (* the single written step (navigatieRol): a far role when
+                 one resolves; at ZERO far hits, on an endpoint equal to
+                 the subject type, a name that denotes a role the subject
+                 itself fills is the zero-hop self-reference (ch. 4.1a) —
+                 the walk is empty. Order is normative: far-role
+                 resolution first (a reciprocal role stays a real hop);
+                 v0's broader same-typed fall-through and its
+                 ambiguous-far-match fall-through are deliberately NOT
+                 mirrored — both stay loud (tracked delta, safe
+                 direction). *)
+              match nav_roles_by_name ?endpoint ctx ~from_type:subject ~name:n with
+              | [ p ] -> Ok [ p ]
+              | [] -> (
+                  match endpoint with
+                  | Some e
+                    when norm e = norm subject && self_denoting_role ctx ~otype:subject n ->
+                      Ok []
+                  | Some e when norm e = norm subject ->
+                      Error
+                        [ Printf.sprintf
+                            "no role named '%s' is reachable from '%s', and it does not \
+                             name a role '%s' itself fills — not the zero-hop \
+                             self-reference"
+                            n subject subject ]
+                  | _ ->
+                      Error
+                        [ Printf.sprintf "no role named '%s' is reachable from '%s'" n
+                            subject ])
+              | _ ->
+                  Error
+                    [ Printf.sprintf
+                        "role name '%s' is ambiguous from '%s'; name the hop with an \
+                         explicit role binding"
+                        n subject ])
           | steps -> (
               let last = List.length steps - 1 in
               let step (i, cur, acc, errs) name =
@@ -3011,7 +3046,19 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) at (c : conditie) : viola
                  | None -> (
                      match nav_role_by_name ctx ~from_type:st ~name:nav with
                      | Ok (_, r) -> Ok r
-                     | Error e -> Error [ e ])
+                     | Error e ->
+                         (* the ch. 4.1a zero-hop self-reference is scoped
+                            to the attribute read; a self-denoting name on
+                            the navigated check stays rejected, explicitly *)
+                         if
+                           nav_roles_by_name ctx ~from_type:st ~name:nav = []
+                           && self_denoting_role ctx ~otype:st nav
+                         then
+                           Error
+                             [ e ^ "; '" ^ nav ^ "' names a role '" ^ st
+                               ^ "' itself fills — the zero-hop self-reference does not \
+                                  extend to the characteristic check" ]
+                         else Error [ e ])
                in
                match hop with
                | Error msgs -> List.map (fun m -> v "WF-053" at m) msgs

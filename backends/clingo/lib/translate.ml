@@ -971,8 +971,17 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                   roles
               | [] -> (
                   match navigatie_rol with
-                  | Some n ->
-                      [ Eval.role_by_name ~to_type:ot env ~self_type:subject_ot ~name:n ]
+                  | Some n -> (
+                      (* single written step, shared with ref: a far role
+                         when one resolves, the zero-hop self-reference
+                         when none does and the name denotes the subject
+                         itself (ch. 4.1a) — then no rol/3 join at all,
+                         the val atom reads the subject directly *)
+                      match
+                        Eval.nav_single_step env ~self_type:subject_ot ~endpoint:ot ~name:n
+                      with
+                      | Some r -> [ r ]
+                      | None -> [])
                   | None -> [ Eval.connecting_role env ~from_type:subject_ot ~to_type:ot ]))
         in
         List.iter
@@ -2151,7 +2160,22 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       let role =
         match navigatie_binding with
         | Some rb -> Eval.bound_role env rb
-        | None -> Eval.role_by_name env ~self_type:subject_ot ~name:nav
+        | None ->
+            (* deferred, loudly — mirroring ref: the ch. 4.1a zero-hop
+               self-reference is scoped to the attribute read; a
+               self-denoting name on the navigated check faults
+               explicitly rather than silently reading the own
+               characteristic *)
+            if
+              Eval.reachable_roles_by_name env ~self_type:subject_ot ~name:nav = []
+              && Eval.self_denoting_role ctx.doc ~self_type:subject_ot nav
+            then
+              fault
+                "the navigated characteristic check's role %S names a role %S itself fills \
+                 — the zero-hop self-reference does not extend to the characteristic check \
+                 (deferred; WF-053, IR-SPEC ch. 4.1a)"
+                nav subject_ot
+            else Eval.role_by_name env ~self_type:subject_ot ~name:nav
       in
       if role.rol_meervoudig then
         fault

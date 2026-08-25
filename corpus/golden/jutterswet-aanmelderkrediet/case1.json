@@ -1,0 +1,39 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": { "strandtegoed": { "number": "10" } },
+        "roles": { "strandmaat": ["J2"] },
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": { "strandtegoed": { "number": "25" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": { "strandtegoed": { "number": "7" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "meldkrediet", "value": { "number": "12" } },
+    { "kind": "attributeValue", "label": "J2", "attribute": "meldkrediet", "value": { "number": "27" } },
+    { "kind": "attributeValue", "label": "J3", "attribute": "meldkrediet", "value": { "number": "9" } },
+    { "kind": "attributeValue", "label": "J1", "attribute": "maatdeling", "value": { "number": "25" } },
+    { "kind": "attributeValue", "label": "J2", "attribute": "maatdeling", "value": { "number": "10" } },
+    { "kind": "attributeEmpty", "label": "J3", "attribute": "maatdeling" },
+    { "kind": "consistent" }
+  ]
+}
