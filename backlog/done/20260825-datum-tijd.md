@@ -41,13 +41,19 @@ at all three sites in the old ref (quoted in the ms-layer commit)
 and replays exactly after (oracle PASS, 4 expectations, including
 the borrow corner 34 uren / 1 dag). RUNTIME-SEMANTICS ch. 3.8
 carries the datetime paragraph; its worked examples run verbatim in
-test_ref.ml (20 new checks, 318 total) — the pin, since the embargo
-admits no corpus golden. ASP-TRANSLATION S6a/S19 record the embargo:
-clingo keeps its loud fault (verified on the repro: "unscalable
-datatype in the ASP translation"), no datum-tijd golden until the
-pair-term encoding; S19 stays highest. Deliberately left: the
-pair-term encoding card itself is not cut here (outside May touch —
-for the maintainer to register); sub-day extractors and
-datum-met/datumtijd-met stay unexecuted, loud; clingo's internal
-reason string "the datum-tijd layer is not executed" is now stale
-about ref but clingo code was out of scope. All nine gates green.
+test_ref.ml — the pin, since the embargo admits no corpus golden.
+Review fixes (2026-08-25): the eval-level routing (the widened
+WF-035/WF-038 fences) is pinned by IR-shaped expressions through
+Eval.eval_expr — red against the pre-card eval.ml, both old fault
+strings witnessed — and the ms layer fences its range (a step past
+the int ms range faults as v0's DateTimeException does, never a
+silent wrap-around; ch. 3.8 sentence + worked example); 325 checks
+total. ASP-TRANSLATION S6a/S19 record the embargo: clingo keeps its
+loud fault (verified on the repro: "unscalable datatype in the ASP
+translation"), no datum-tijd golden until the pair-term encoding —
+cut as its own card in the review round
+(backlog/new/20260825-paarterm-datumtijd.md, A4), which also carries
+the sweep of clingo's now-stale internal reason string "the
+datum-tijd layer is not executed" (clingo code stays out of scope
+here); S19 stays highest. Deliberately left: sub-day extractors and
+datum-met/datumtijd-met stay unexecuted, loud. All nine gates green.
