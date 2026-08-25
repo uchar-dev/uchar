@@ -1245,12 +1245,34 @@ let self_denoting_role ctx ~otype name =
         ft.rollen)
     ctx.doc.feittypen
 
+(* The ch. 4.1 type-pair derivation, mirrored from the executors: the
+   two-role fact types relating [from_type] to [to_type] (either way). *)
+let connecting_candidates ctx ~from_type ~to_type =
+  List.filter_map
+    (fun (fn, (ft : feittype)) ->
+      let ot r = Option.value r.rol_objecttype_naam ~default:"" in
+      match ft.rollen with
+      | [ a; b ] ->
+          if
+            (norm (ot a) = norm from_type && norm (ot b) = norm to_type)
+            || (norm (ot b) = norm from_type && norm (ot a) = norm to_type)
+          then Some fn
+          else None
+      | [ r ] when ft.wederkerig ->
+          (* the single reciprocal role relates the type to itself *)
+          if norm (ot r) = norm from_type && norm from_type = norm to_type then Some fn
+          else None
+      | _ -> None)
+    ctx.doc.feittypen
+
 (* The v0 instance-fold source wart (`CONSTRUCTS.md` row 1): a count/fold
    over a fact-type relation encodes its source as a pseudo-AttribuutRef
    naming a ROLE (usually the plural), typed with the unknown sentinel.
    Legitimate v0; the row-1 split removes the encoding in v1. Such an
-   argument is checked here instead of by the generic walk. *)
-let aggregation_source_check ctx at e =
+   argument is checked here instead of by the generic walk. [element_type]
+   is the fold's declared element type — the far end of the narrowed
+   type-pair fallback (IR-SPEC ch. 4.3). *)
+let aggregation_source_check ctx at ~element_type e =
   (* a fold source never navigates: its relation is the fold's bronRol —
      stray navigation bindings in this slot are ill-formed (WF-053) *)
   (match e with
@@ -1296,32 +1318,26 @@ let aggregation_source_check ctx at e =
                 ("'" ^ a ^ "' is a characteristic of '" ^ otn
                ^ "', not an attribute — a characteristic endpoint is ill-formed in an \
                   aggregation source position") ]
-          else
-            [ v "WF-034" at
-                ("'" ^ a ^ "' is neither a member of '" ^ otn ^ "' nor a declared role") ])
+          else (
+            (* the narrowed type-pair fallback (IR-SPEC ch. 4.3): a written
+               source name that resolves to no declared role — v0's
+               synthesized plural over a role without a declared one — is
+               admitted iff exactly ONE fact type connects the fold subject
+               to the element type; that relation is the source,
+               deterministically, no spelling guess. Zero or multiple keep
+               the rejection loud. *)
+            match connecting_candidates ctx ~from_type:otn ~to_type:element_type with
+            | [ _ ] -> []
+            | cands ->
+                [ v "WF-034" at
+                    ("'" ^ a ^ "' is neither a member of '" ^ otn
+                   ^ "' nor a declared role, and the type pair '" ^ otn ^ "'/'"
+                   ^ element_type ^ "' does not derive a unique source ("
+                   ^ string_of_int (List.length cands)
+                   ^ " connecting fact types) — the ch. 4.3 fallback cannot stand in") ]))
   | _ -> []
 
 (* --- WF-047 / WF-048: symbolic role bindings (v1 extension) -------------- *)
-
-(* The ch. 4.1 type-pair derivation, mirrored from the executors: the
-   two-role fact types relating [from_type] to [to_type] (either way). *)
-let connecting_candidates ctx ~from_type ~to_type =
-  List.filter_map
-    (fun (fn, (ft : feittype)) ->
-      let ot r = Option.value r.rol_objecttype_naam ~default:"" in
-      match ft.rollen with
-      | [ a; b ] ->
-          if
-            (norm (ot a) = norm from_type && norm (ot b) = norm to_type)
-            || (norm (ot b) = norm from_type && norm (ot a) = norm to_type)
-          then Some fn
-          else None
-      | [ r ] when ft.wederkerig ->
-          (* the single reciprocal role relates the type to itself *)
-          if norm (ot r) = norm from_type && norm from_type = norm to_type then Some fn
-          else None
-      | _ -> None)
-    ctx.doc.feittypen
 
 (* Resolve a binding to (fact type, bound role, opposite role). Only the
    declared role name binds — the plural is presentation (WF-047). *)
@@ -2047,7 +2063,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
              (fun i a ->
                let p = Printf.sprintf "%s/argumenten/%d" at i in
                match a, f.element_objecttype with
-               | Attribuut_ref _, Some _ -> aggregation_source_check ctx p a
+               | Attribuut_ref _, Some el -> aggregation_source_check ctx p ~element_type:el a
                | _ -> walk_expr ctx ~binders ~subject p a)
              f.argumenten)
       (* WF-055: the gedurende clip — a filter on the temporal total is a

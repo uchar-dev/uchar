@@ -1789,6 +1789,103 @@ let () =
            { kenmerk = Some "betrouwbaar"; navigatie = Some "aanmelder"; negatie = false;
              eigenaar = None; periode = None; bron = None; navigatie_binding = None }))
 
+(* --- ch. 3.4a: the type-pair fallback for the fold-source name ---------- *)
+
+(* WV-3.4a-typenpaar: the `jutterswet-kaveltelling` worked example. The
+   role duinkavel (kaveltoewijzing) declares no plural, and the written
+   source "duinkavels" resolves nowhere — the unique Jutter/Duinkavel
+   fact type is the source: j1 counts its three Duinkavels. The written
+   singular "vat" resolves by declared role name (vatberging, declared
+   plural "vaten"): j1 counts its two Vaten. A Jutter with no links
+   counts 0 and 0. With a second fact type connecting Jutter to
+   Duinkavel the unresolved written form keeps the loud fault — the
+   fallback never guesses between two relations. *)
+let () =
+  let base_ft : (string * Ir_v0.Ast.feittype) list =
+    [ ( "kaveltoewijzing",
+        {
+          ft_naam = Some "kaveltoewijzing";
+          wederkerig = false;
+          rollen =
+            [
+              { rol_naam = Some "pachter"; rol_objecttype_naam = Some "Jutter";
+                rol_meervoud = None; rol_meervoudig = false };
+              { rol_naam = Some "duinkavel"; rol_objecttype_naam = Some "Duinkavel";
+                rol_meervoud = None; rol_meervoudig = true };
+            ];
+        } );
+      ( "vatberging",
+        {
+          ft_naam = Some "vatberging";
+          wederkerig = false;
+          rollen =
+            [
+              { rol_naam = Some "berger"; rol_objecttype_naam = Some "Jutter";
+                rol_meervoud = None; rol_meervoudig = false };
+              { rol_naam = Some "vat"; rol_objecttype_naam = Some "Vat";
+                rol_meervoud = Some "vaten"; rol_meervoudig = true };
+            ];
+        } ) ]
+  in
+  let doc =
+    {
+      empty_doc with
+      objecttypen =
+        [ ot "Jutter" [ ("aantal duinkavels", Some num0); ("aantal geborgen vaten", Some num0) ] [];
+          ot "Duinkavel" [] []; ot "Vat" [] [] ];
+      feittypen = base_ft;
+    }
+  in
+  let count_source name : Ir_v0.Ast.expr =
+    Attribuut_ref
+      {
+        attribuut = Some name; objecttype = Some "Jutter"; onderwerp_bron = None;
+        navigatie_rol = None; typ = Some (Datatype_onbekend { reden = None });
+        bron = None; set = false; navigatie_pad = []; navigatie_bindingen = None;
+      }
+  in
+  let aantal name el : Ir_v0.Ast.expr =
+    Functie
+      { kind = Aantal; argumenten = [ count_source name ];
+        element_objecttype = Some el; leegwaarde = None; filter = None;
+        dimensie_selectie = None; typ = Some num0; bron = None;
+        granulariteit = None; bron_rol = None }
+  in
+  let w =
+    List.fold_left World.add_instance World.empty
+      [ { (inst "j1" "Jutter" []) with
+          links =
+            World.SMap.add "duinkavel" [ "k1"; "k2"; "k3" ]
+              (World.SMap.add "vaten" [ "t1"; "t2" ] World.SMap.empty) };
+        inst "j2" "Jutter" [];
+        inst "k1" "Duinkavel" []; inst "k2" "Duinkavel" []; inst "k3" "Duinkavel" [];
+        inst "t1" "Vat" []; inst "t2" "Vat" [] ]
+  in
+  let ev doc label e = Eval.eval_expr (env_of doc) w (World.get w label) ~err:no_err e in
+  expect_num "WV-3.4a-typenpaar-kavels" (ev doc "j1" (aantal "duinkavels" "Duinkavel")) "3";
+  expect_num "WV-3.4a-typenpaar-vat-enkelvoud" (ev doc "j1" (aantal "vat" "Vat")) "2";
+  expect_num "WV-3.4a-typenpaar-kavels-nul" (ev doc "j2" (aantal "duinkavels" "Duinkavel")) "0";
+  expect_num "WV-3.4a-typenpaar-vat-nul" (ev doc "j2" (aantal "vat" "Vat")) "0";
+  let doc2 =
+    { doc with
+      feittypen =
+        base_ft
+        @ [ ( "kavelpacht",
+              {
+                ft_naam = Some "kavelpacht";
+                wederkerig = false;
+                rollen =
+                  [
+                    { rol_naam = Some "pachtheer"; rol_objecttype_naam = Some "Jutter";
+                      rol_meervoud = None; rol_meervoudig = false };
+                    { rol_naam = Some "pachtkavel"; rol_objecttype_naam = Some "Duinkavel";
+                      rol_meervoud = None; rol_meervoudig = true };
+                  ];
+              } ) ] }
+  in
+  expect_fault "WV-3.4a-typenpaar-ambigu" (fun () ->
+      ev doc2 "j1" (aantal "duinkavels" "Duinkavel"))
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

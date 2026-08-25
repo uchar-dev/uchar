@@ -192,7 +192,10 @@ let linked ?binding env world (self : World.instance) ~to_type =
    written endpoint), joins the filter — the v0 by-name derivation
    (verbindendeRolViaNaam) disambiguates same-named roles by target
    type; its best-effort pluralisation is deliberately NOT mirrored
-   (a loud refusal beats heuristic name formation — tracked delta). *)
+   (a loud refusal beats heuristic name formation — tracked delta). The
+   fold-source arm adds the narrowed type-pair fallback for a name that
+   resolves NOWHERE (IR-SPEC ch. 4.3): the unique connecting fact type
+   is the source; zero or multiple keep the loud fault. *)
 (* the self-denoting fold source (WF-083, IR-SPEC ch. 4.3): the written
    form "het aantal <rol> van de <onderwerp>" may name the fold subject
    by its OWN role name; the wire carries that written role in the
@@ -959,11 +962,22 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
            explicit binding the name check is the verifier's (WF-047) *)
         (match bron_rol with
         | Some _ -> ()
-        | None ->
-            let (_ : rol) =
-              role_by_name env ~self_type:self.otype ~name:(req "fold source" attribuut)
-            in
-            ());
+        | None -> (
+            let name = req "fold source" attribuut in
+            match reachable_roles_by_name env ~self_type:self.otype ~name with
+            | [ _ ] -> ()
+            | _ :: _ -> Value.fault "ambiguous role name %S from %S" name self.otype
+            | [] ->
+                (* the narrowed type-pair fallback (IR-SPEC ch. 4.3,
+                   RUNTIME-SEMANTICS ch. 3.4a): a written name that
+                   resolves to no declared role — v0's synthesized plural
+                   over a role without a declared one — is admitted iff
+                   exactly one fact type connects the subject to the
+                   element type; [connecting_role] faults loudly on zero
+                   or multiple, and the +s/+en spelling guess itself
+                   stays unmirrored (tracked delta) *)
+                let (_ : rol) = connecting_role env ~from_type:self.otype ~to_type:el in
+                ()));
         `Instances (List.filter keep (linked ?binding:bron_rol env world self ~to_type:el))
     | ( Some el,
         [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]

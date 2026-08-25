@@ -547,10 +547,18 @@ well-formedness the verifier enforces before translation.
 ### S8. Aggregations and folds
 
 **Count** (aantal): `V = #count { X : rol(S,role,X), ⟨filter
-atoms⟩ }`, scale 1 — the role read via the node's binding or the
-declared role name, the `die/dat` filter lowered by `cond_atoms` over
-the element variable. An element the filter's body cannot derive
-contributes no tuple: the contributor skip is the join, for free.
+atoms⟩ }`, scale 1 — the role is the node's binding when present,
+else resolve-or-fault (IR-SPEC ch. 4.3): the written source name must
+resolve against declared roles (name or plural, ci) or fall back to
+the unique connecting fact type, and the count keys that connecting
+role's **canonical** name — never the raw written lexeme, which as a
+`rol/3` key silently counted 0 whenever it differed from the declared
+plural that keys the facts (the written singular of a to-many role,
+or an undeclared synthesized plural; hardened 2026-08-26, witnessed
+by `jutterswet-kaveltelling`). The `die/dat` filter is lowered by
+`cond_atoms` over the element variable. An element the filter's body
+cannot derive contributes no tuple: the contributor skip is the join,
+for free.
 The **self-denoting** source (WF-083, RS ch. 3.4a): a fold-source
 argument whose `navigatieRol` names a role the subject's own type
 fills translates identically — the field is presentation, not

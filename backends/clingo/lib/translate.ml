@@ -1019,12 +1019,25 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          die/dat subselection joins per contributor: the filter atoms
          range over the element variable (ch. 5.8-family reading — an
          unbound filter operand excludes the contributor for free). *)
+      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty } in
       let role =
-        match bron_rol with
-        | Some rb ->
-            let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty } in
-            role_canonical (Eval.bound_role env rb)
-        | None -> req "fold role" attribuut
+        role_canonical
+          (match bron_rol with
+          | Some rb -> Eval.bound_role env rb
+          | None -> (
+              (* resolve-or-fault (IR-SPEC ch. 4.3), never the raw lexeme
+                 as the rol/3 key: the written name must resolve against
+                 declared roles (name or plural, ci) or fall back to the
+                 unique connecting fact type — the same order ref/ walks.
+                 The count then keys the CONNECTING role's canonical name,
+                 exactly like the som arm below: the raw-lexeme key
+                 silently counted 0 whenever the written form differed
+                 from the declared plural that keys rol/3 (the singular
+                 of a to-many role, or an undeclared synthesized plural). *)
+              let name = req "fold role" attribuut in
+              match Eval.reachable_roles_by_name env ~self_type:subject_ot ~name with
+              | [] | [ _ ] -> Eval.connecting_role env ~from_type:subject_ot ~to_type:el
+              | _ -> fault "ambiguous role name %S from %S" name subject_ot))
       in
       let v = fresh ctx "C" in
       let x = Printf.sprintf "X%s" v in

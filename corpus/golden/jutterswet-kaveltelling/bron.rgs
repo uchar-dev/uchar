@@ -1,0 +1,25 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het aantal duinkavels Numeriek (niet-negatief geheel getal);
+    het aantal geborgen vaten Numeriek (niet-negatief geheel getal);
+
+Objecttype het Duinkavel (mv: Duinkavels)
+
+Objecttype het Vat (mv: Vaten)
+
+Feittype kaveltoewijzing
+    de pachter Jutter
+    het duinkavel Duinkavel
+Eén pachter heeft meerdere duinkavels
+
+Feittype vatberging
+    de berger Jutter
+    het vat (mv: vaten) Vat
+Eén berger heeft meerdere vaten
+
+Regel aantal duinkavels
+    geldig altijd
+        Het aantal duinkavels van een Jutter moet berekend worden als het aantal duinkavels van de Jutter.
+
+Regel aantal geborgen vaten
+    geldig altijd
+        Het aantal geborgen vaten van een Jutter moet berekend worden als het aantal vat van de Jutter.

@@ -712,6 +712,30 @@ so a leeg element attribute still counts (the aggregation row of
 ch. 1.2: a count, never empty). A Jutter with zero linked Vondsten
 counts **0**, never leeg.
 
+**The type-pair fallback for the fold-source role name (WF-034).** A
+written fold-source name that resolves to no declared role (ci,
+declared name or declared plural) folds over the **unique** fact type
+connecting the fold subject type to the element type; zero or
+multiple connecting fact types, or a name matching several reachable
+roles, keep the loud fault — never a spelling guess (`IR-SPEC.md`
+ch. 4.3; the `+s`/`+en` plural synthesis is an unmirrored delta).
+
+Worked example (the `jutterswet-kaveltelling` golden, verbatim in
+gates 5–6 and as WV-3.4a-typenpaar in `ref/` tests): the role
+`duinkavel` (kaveltoewijzing) declares no plural, and the written
+source "het aantal duinkavels van de Jutter" resolves nowhere — the
+unique Jutter/Duinkavel fact type is the source, so a Jutter linked
+to three Duinkavels counts **3**; the written singular "het aantal
+vat van de Jutter" resolves by declared role name against `vat`
+(vatberging, declared plural `vaten`) and counts that Jutter's two
+Vaten as **2** — in the ASP backend both counts key the connecting
+role's canonical name (`duinkavel`, `vaten`), never the written
+lexeme, which as a raw `rol/3` key silently counted 0. A Jutter with
+no links counts **0** and **0**; with a second fact type connecting
+Jutter to Duinkavel the unresolved written form faults loudly
+(the `wf034-ambigu-typenpaar` rejection at the well-formedness
+layer).
+
 ### 3.5 Temporal summation — the contributor-skipping rule (§5.8.2)
 
 The temporal sum over N timeline contributors (the operands of a temporal
