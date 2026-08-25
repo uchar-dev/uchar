@@ -121,3 +121,17 @@ faultte al correct. `spec/CONSTRUCTS.md` niet geraakt.
 
 Protected paths aangeraakt (propose-only, maintainer merget):
 `spec/IR-SPEC.md` (WF-064-tekst + tabelrij), `spec/verifier/lib/checks.ml`.
+
+Result (landing): het vierde slot is geland als WF-064-verbreding
+(de closure-clausule — het nummer dat ref's eigen fault-tekst al
+noemde): een binder-lezing binnen een gesloten lambda-/functie-body
+die resolvet naar een búíten die body gebonden binder is
+onwelgevormd en wordt op gate 3 geweerd vóór de executors — die er
+tot nu toe verschillend maar beide luid op struikelden (ref
+unbound-binder-fault, clingo grondingsfout). Binnen-body-binders
+(fold-parameters, match-payloads, de binnen-body-Let van de
+parallelle S19-kaart) blijven welgevormd; de afbakening is door de
+lens met omzeilings- én vals-positief-pogingen getoetst — beide
+lenzen vonden niets. Rood-eerst met het minimale document en de
+getoonde executor-split; negatief-case onder het WF-064-nummer;
+corpus-breed vóór en na groen.
