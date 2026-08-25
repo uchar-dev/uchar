@@ -2102,12 +2102,14 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
       in
       let unif, fvar, fscale = project_field ctx ~base ~bterm ~veld in
       ([ unif ], fvar, fscale)
-  | Binair { op = Maal; links; rechts; _ } ->
-      (* the multiplicative family in a closed body (§6.4): the scaled product at
-         scale sl·sr, both operands bound (a closed-body binder never goes leeg,
-         so no coalesce — the additive-family posture of this function). The
-         rule-level product encoding and its 46340 range fence, grounded by
-         [guard_body] and keyed by [witness] (one encoding). *)
+  | Binair { op = (Maal | Percentage_van) as op; links; rechts; _ } ->
+      (* the multiplicative family in a closed body (§6.4/§6.8): the scaled
+         product at scale sl·sr, both operands bound (a closed-body binder never
+         goes leeg, so no coalesce — the additive-family posture of this
+         function). Percentage-van is (l/100)·r with the /100 folded into the
+         scale (sl·sr·100): no division anywhere, the rule-level fold carried into
+         the body context (one encoding). The rule-level product encoding and its
+         46340 range fence, grounded by [guard_body] and keyed by [witness]. *)
       numeric_ok links;
       numeric_ok rechts;
       unit_free_ok ctx links;
@@ -2115,7 +2117,7 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
       let bl, tl, sl = closed_term ctx ~guard_body ~witness (req "Binair.links" links) in
       let br, tr, sr = closed_term ctx ~guard_body ~witness (req "Binair.rechts" rechts) in
       range_guard ctx ~subject:witness ~body:(guard_body @ bl @ br) [ (tl, 46340); (tr, 46340) ];
-      (bl @ br, Printf.sprintf "(%s*%s)" tl tr, sl * sr)
+      (bl @ br, Printf.sprintf "(%s*%s)" tl tr, sl * sr * (if op = Percentage_van then 100 else 1))
   | Afgerond { basis = Some basis; modus = Rekenkundig; decimalen = 2; _ }
     when money_mult_shape basis ->
       (* the money × rate product Catala rounds to the cent (§5/S18(c)) inside a
