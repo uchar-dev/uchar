@@ -30,3 +30,21 @@ Out of scope: the emitter fix (card 20260825-emitter-unit-literal), any
 executor-parser change (decision 1-A chose the writer side), `spec/schema/`
 (the lexeme stays a JSON string), and `spec/CONSTRUCTS.md` (registry note
 lands serially at merge time, by the maintainer session — do NOT touch it).
+
+Result: WF-081 staat. `spec/IR-SPEC.md` hfst. 4.1 geeft de
+lexeme-grammatica normatief, gepind op de gedeelde parser van beide
+executors (na `,`→`.`: `'-'? digits`, `'-'? digits? '.' digits`, of
+`'-'? digits '/' digits` met noemer ongelijk nul — niets anders: geen
+witruimte, geen `+`, geen exponent, geen groepering, geen
+eenheidsteken); de WF-index kreeg de rij (golden-getuige
+`anchor/jutterswet-tariefstelling`). De verifier weigert elke
+Numeriek/Percentage-literal buiten die grammatica onder WF-081
+(`lexeme_bare_number` in `spec/verifier/lib/checks.ml`, gespiegeld aan
+de executor-parser). Rood-eerst getoond: het eigen-geschreven
+`corpus/negatief/wf081-unit-in-lexeme`-document ("5 €") kreeg
+`verifier: PASS` van de oude verifier en wordt nu geweigerd met
+WF-081. Alle negen gates groen (gate 3: 111 golden clean, 144
+negatief). Bewust gelaten: de emitterfix (kaart
+20260825-emitter-unit-literal), datum-lexemes en Tekst-literals
+(expliciet buiten het hek), en de registry-notitie in
+`spec/CONSTRUCTS.md` (maintainer, serieel bij landing).
