@@ -76,7 +76,7 @@ card; each carries its witness.
 | explicitly *absent* priority | the declared-unordered group (`ongeordend: true` on every member) — "priority is explicit (rungs) or explicitly absent … never implicit" | RS ch. 7.1; WF-050 multiplicity clause; anchor `jutterswet-toelagegronden` (six ladders on `ir.json`: five group members carry `ongeordend: true` on the wire, the sixth is a lone ladder needing no marking) |
 | conflict detection | differing simultaneous decisions → no write + one §9.5 channel fact, keyed by target form; nested conflicts path-keyed | RS ch. 7.2/7.9; `jutterswet-toelagegronden/case3-conflict.json` (expected `"inconsistent", "rule": "Jutter.toelage"`), `jutterswet-tariefrecht-catala/case4-conflict.json` (`"rule": "Penningplichtige.tarief/0"`) |
 | block-only defeat (defeater) | a characteristic rung with `besluit: false` — "derives nothing and displaces" | `IR-SPEC.md` ch. 6.1; RS ch. 7.1; anchor `jutterswet-uitsluiting` (art. 4 "geldt niet") |
-| indisputable conclusion (strict) | the single-writer bare form: WF-050's no-other-writer clause, WF-026, WF-052, WF-079 make a second writer ill-formed — a deciding bare rule is displaced by nothing (a non-deciding one leaves the input standing, ch. 7.8) | `IR-SPEC.md` WF index; `spec/verifier/lib/checks.ml` (WF-050 from line ~3707, WF-079 from ~3963); negatiefs `wf050-ladder-beside-rule`, `wf079-two-unconditional-writers` |
+| indisputable conclusion (strict) | the single-writer bare form: WF-050's no-other-writer clause, WF-026, WF-052 and — for the unconditional collision — WF-079 fence the second writer; a guarded overlap escapes the static fences and falls to the differential square (fact 2 below); a deciding bare rule is displaced by nothing (a non-deciding one leaves the input standing, ch. 7.8) | `IR-SPEC.md` WF index; `spec/verifier/lib/checks.ml` (WF-050 from line ~3707, WF-079 from ~3963 — its comment scopes it to the bare collision); negatiefs `wf050-ladder-beside-rule`, `wf079-two-unconditional-writers` |
 | priority vs. time | version selection is **temporal, never defeasible** — "a later version does not 'override' an earlier one … they never co-apply" | RS ch. 7.4; WF-021 |
 | priority vs. stratification | every rung read (justifications and consequences, recursively through sub-rungs) folds into **negative edges** toward the ladder's write; strata must exist | WF-051; `checks.ml` `dep_forms` (the `ladders` block, `rung_reads` recursing through `rung_excepties`); negatiefs `wf051-ladder-reads-own-target`, `wf051-cycle-through-subrung` |
 | displaced priority is speculative | a higher settling rung displaces a lower sub-group *including its conflict fact* | RS ch. 7.9; `jutterswet-nestuitzondering/case9-verdrongen-conflict.json` |
@@ -86,16 +86,37 @@ Three structural facts carry the whole analysis:
 1. **A single ladder cannot conflict** — at most one rung decides
    (RS ch. 7.1, "a property of the semantics, not a claim about
    authors").
-2. **Outside a ladder, competing writers are ill-formed, not
-   arbitrated.** WF-050 (no writer beside a ladder), WF-026 (one
-   allocation per target), WF-052 (one creation writer per to-one
-   relation), WF-079 (one unconditional bare computing rule per
-   target). The one multi-writer form the IR *admits* is the
-   declared-unordered group — and `PHASE5D-DIFF.md` §8.2 showed the
-   v0-flat alternative (two flat writers, no ladder) cannot even be
-   pinned: `ref/` diverges while clingo silently multi-values, a
-   ref ≢ clingo split no corpus zone admits. Over-determination is
-   expressible in exactly one form, and that form reports loudly.
+2. **Outside a ladder, competing writers are fenced — statically
+   where that is sound, by the differential square beyond it, never
+   arbitrated.** The static fences: WF-050 (no writer beside a
+   ladder), WF-026 (one allocation per target), WF-052 (one creation
+   writer per to-one relation), WF-079 (one *unconditional* bare
+   computing rule per target). WF-079 is deliberately scoped to the
+   unconditional collision — "only the bare (unconditional) collision
+   is statically over-determined" (`checks.ml`, the WF-079 comment) —
+   and its landing decision names the residue: "a conditional overlap
+   that is only semantically over-determined stays a
+   differential-square catch" (`PHASE5D-DIFF.md` §8.2, maintainer,
+   2026-08-24). That residue is real and verifier-clean: two *guarded*
+   bare writers whose guards overlap. Verified for this card
+   (2026-08-25) on a scratch copy of `synth-grensrand/ir.json` with a
+   second guarded `BEREKENING` on `Meting.indicatie` (value 2, guard
+   `lengteA <= lengteB`, beside the golden's value-1 rule guarded
+   `>=`): the verifier PASSes it; on `lengteA = lengteB = 30` (both
+   guards true) `ref/` faults — `EVALUATION FAULT: no fixpoint within
+   100 passes — divergence is a fault (ch. 5.7)`, an evaluation
+   fault, not a §9.5 fact — while clingo exits 0 on a
+   `consistent`-only pin, no fault and no §9.5 fact, and pinning
+   either single value reports `MISMATCH: M1.indicatie = [2;1]`: the
+   stable model silently holds both. The same
+   un-pinnable ref ≢ clingo split §8.2
+   exhibited for the unconditional pair: not a golden (ref ≢ clingo),
+   not a negatief (verifier-clean), not a rood (clingo raises no
+   fault) — no corpus zone admits the program, so the fence is
+   gates 5–6, not a WF rule. The one multi-writer form the IR admits
+   *with defined, pinnable semantics* is the declared-unordered
+   group, and only that form reports its over-determination loudly
+   (one leeg target, one §9.5 fact, both executors).
 3. **Priority is static structure.** Rung order is document shape;
    the verifier checks it (WF-050/075) and folds it into static strata
    (WF-051) both executors share. Nothing about who-beats-whom is
@@ -130,9 +151,10 @@ The absence of a free relation is not an oversight three times over:
 A top-level `superiorities` list of ordered statement pairs, the direct
 image of `<lrml:Override>`. Split by what the pair would relate:
 
-- **Same target.** The only admissible same-target multiplicity is the
-  declared-unordered group (§2 fact 2). A pair ordering two group
-  members re-expresses what rung order in one ladder already expresses
+- **Same target.** The only same-target multiplicity with defined,
+  pinnable semantics is the declared-unordered group (§2 fact 2). A
+  pair ordering two group members re-expresses what rung order in one
+  ladder already expresses
   — two encodings of one priority, which WF-050's "explicit or
   explicitly absent, never implicit" exists to prevent. Worse, a pair
   ordering *some* members creates the **partially ordered group**, a
@@ -145,13 +167,24 @@ image of `<lrml:Override>`. Split by what the pair would relate:
   conflict today, the channel reports it loudly; an override pair would
   resolve it silently — trading the fail-fast §9.5 discipline for
   quiet arbitration, the exact trade RS ch. 7.5 row 5 retired
-  ("silent last-writer-wins").
+  ("silent last-writer-wins"). One same-target place remains where a
+  free pair would genuinely have something to decide: the
+  guarded-overlap residue of §2 fact 2 — two verifier-clean writers,
+  no defined winner. But the IR already owns the arbitration form for
+  exactly that competition: put both writers on one ladder and the
+  rung order *is* the pair, statically checked (WF-050/075) and
+  pinned by both executors. A free `r1 > r2` there adds no
+  expressiveness; it would instead legitimise, as a supported
+  program, the form the differential square exists to keep out of
+  every corpus zone.
 - **Different targets.** Two rules on different targets never compete:
   each writes its own value node, and conflict — the thing a
   superiority relation exists to resolve — cannot arise between them.
   LegalRuleML needs the free pair because its statements may derive
-  contradictory conclusions anywhere; uchar's single-writer discipline
-  removes that substrate structurally. A cross-target `r1 > r2` would
+  contradictory conclusions anywhere; uchar confines that substrate to
+  same-target competition, fenced per §2 fact 2 (statically or by the
+  differential square) — cross-target there is no shared value node
+  left to contradict. A cross-target `r1 > r2` would
   be a pair with nothing to decide: to give it meaning one would first
   have to *weaken* WF-050/026/079 and re-admit competing writers —
   dismantling the confluence argument of RS ch. 5.2/7.1 to make room
@@ -177,8 +210,9 @@ A `strength ∈ {strict, defeasible, defeater}` enum. In this IR every
 value of the tag is already **derivable from structure**: a laddered
 target is defeasible (rungs above can displace); a `besluit: false`
 rung is the defeater (blocks, asserts nothing — RS ch. 7.1); a bare
-single-writer form is as strict as this calculus gets (no admissible
-displacer, §2). A wire tag therefore carries either zero information
+single-writer form is as strict as this calculus gets (no displacer
+leaves a well-defined program, §2 fact 2). A wire tag therefore
+carries either zero information
 (it agrees with the structure — redundant) or a contradiction (a
 "strict" tag on a rung below another rung — and then the verifier must
 reject it, meaning the tag *still* carries zero information, at the
