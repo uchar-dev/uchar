@@ -1388,6 +1388,69 @@ let () =
     (Eval.eval_expr env w self ~err:no_err match_round)
     "33.33"
 
+(* --- ch. 3.8: the calendar kernel (worked examples verbatim) ------------ *)
+
+let () =
+  let d = Value.date_of_iso in
+  let td u a b = Arith.tijdsduur ~unit_:u (d a) (d b) in
+  let plus u date lex = Arith.date_plus_duration ~unit_:u (d date) (n lex) in
+  let min_ u date lex = Arith.date_plus_duration ~minus:true ~unit_:u (d date) (n lex) in
+  let open Ir_v0.Checks in
+  (* the leap child: 29-02-2004 → 28-02-2026 = 21 whole years; one day
+     later = 22 *)
+  expect_num "WV-3.8-leap-21" (td Tu_jaar "2004-02-29" "2026-02-28") "21";
+  expect_num "WV-3.8-leap-22" (td Tu_jaar "2004-02-29" "2026-03-01") "22";
+  expect_num "WV-3.8-leap-mnd-263" (td Tu_maand "2004-02-29" "2026-02-28") "263";
+  expect_num "WV-3.8-leap-mnd-264" (td Tu_maand "2004-02-29" "2026-03-01") "264";
+  (* clamp, not inverse: 31-01-2024 + 1 maand = 29-02-2024, yet the
+     tijdsduur between them is 0 whole months *)
+  check "WV-3.8-clamp-leap" (plus Tu_maand "2024-01-31" "1" = d "2024-02-29");
+  expect_num "WV-3.8-clamp-not-inverse" (td Tu_maand "2024-01-31" "2024-02-29") "0";
+  (* signed truncation toward zero: −7 months is −2 whole quarters, 0 years *)
+  expect_num "WV-3.8-neg-mnd" (td Tu_maand "2025-03-10" "2024-08-10") "-7";
+  expect_num "WV-3.8-neg-kw" (td Tu_kwartaal "2025-03-10" "2024-08-10") "-2";
+  expect_num "WV-3.8-neg-jr" (td Tu_jaar "2025-03-10" "2024-08-10") "0";
+  expect_num "WV-3.8-neg-abs"
+    (Arith.tijdsduur ~absolute:true ~unit_:Tu_maand (d "2025-03-10") (d "2024-08-10"))
+    "7";
+  (* date ± whole calendar units: the month-end clamp, quarter = 3 months,
+     year = 12 months, day/week linear *)
+  check "WV-3.8-clamp-nonleap" (plus Tu_maand "2025-01-31" "1" = d "2025-02-28");
+  check "WV-3.8-kwartaal" (plus Tu_kwartaal "2024-01-01" "1" = d "2024-04-01");
+  check "WV-3.8-jaar-leap" (plus Tu_jaar "2024-02-29" "1" = d "2025-02-28");
+  check "WV-3.8-weken" (plus Tu_week "2024-01-31" "2" = d "2024-02-14");
+  check "WV-3.8-dagen" (plus Tu_dag "2024-12-30" "3" = d "2025-01-02");
+  (* a fractional count truncates toward zero before the calendar step *)
+  check "WV-3.8-frac-plus" (plus Tu_maand "2024-01-31" "1,9" = d "2024-02-29");
+  check "WV-3.8-frac-min" (min_ Tu_maand "2024-01-31" "1,9" = d "2023-12-31");
+  (* min: the date left, the duration subtracted *)
+  check "WV-3.8-min-week" (min_ Tu_week "2024-01-31" "1" = d "2024-01-24");
+  (* empty rules (ch. 1.2): leeg date propagates; leeg duration counts 0;
+     leeg tijdsduur operand propagates *)
+  expect_leeg "WV-3.8-leeg-datum" (Arith.date_plus_duration ~unit_:Tu_dag leeg (n "5"));
+  check "WV-3.8-leeg-duur"
+    (Arith.date_plus_duration ~unit_:Tu_maand (d "2024-01-31") leeg = d "2024-01-31");
+  expect_leeg "WV-3.8-leeg-tijdsduur" (Arith.tijdsduur ~unit_:Tu_jaar leeg (d "2025-03-01"));
+  (* the spelling table: nine units, keyed on spelling, case-insensitive;
+     plural and abbreviation land on the same unit; alien spellings miss *)
+  check "WV-3.8-spelling-jr"
+    (time_unit_of_spelling "jaren" = Some Tu_jaar
+    && time_unit_of_spelling "JR" = Some Tu_jaar
+    && time_unit_of_spelling "jaar" = Some Tu_jaar);
+  check "WV-3.8-spelling-negen"
+    (time_unit_of_spelling "maanden" = Some Tu_maand
+    && time_unit_of_spelling "kwartalen" = Some Tu_kwartaal
+    && time_unit_of_spelling "weken" = Some Tu_week
+    && time_unit_of_spelling "dg" = Some Tu_dag
+    && time_unit_of_spelling "uren" = Some Tu_uur
+    && time_unit_of_spelling "min" = Some Tu_minuut
+    && time_unit_of_spelling "secondes" = Some Tu_seconde
+    && time_unit_of_spelling "ms" = Some Tu_milliseconde);
+  check "WV-3.8-spelling-alien" (time_unit_of_spelling "werkdag" = None);
+  (* sub-day units demand datum-tijd operands — loud, never silent *)
+  expect_fault "WV-3.8-subday-tijdsduur" (fun () -> td Tu_uur "2024-01-01" "2024-01-02");
+  expect_fault "WV-3.8-subday-plus" (fun () -> plus Tu_uur "2024-01-01" "3")
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

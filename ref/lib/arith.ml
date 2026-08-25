@@ -433,28 +433,106 @@ let agg_max vs = agg_extreme (fun c -> c > 0) vs
 let agg_eerste vs = match filled vs with [] -> Empty | v :: _ -> v
 let agg_laatste vs = match filled vs with [] -> Empty | vs -> List.nth vs (List.length vs - 1)
 
-(* --- date part extraction / date arithmetic (ch. 1.2b) ----------------- *)
+(* --- date part extraction / date arithmetic (ch. 1.2b + ch. 3.8) ------- *)
 
 let jaar_uit = function
   | Empty -> Empty
   | Date z -> let y, _, _ = civil_from_days z in Num (Q.of_int y, Unitless)
   | v -> fault "jaar uit: expected a date, got %s" (to_string v)
 
-(* date ± duration: empty date propagates; empty duration coalesces to 0
-   (the only duration that coalesces). Non-empty duration arithmetic is
-   timeline-adjacent and lands with ch. 3. *)
-let date_plus_duration d dur =
+(* --- the calendar kernel (ch. 3.8): proleptic Gregorian, zoneless civil
+   time, built on the civil helpers of Value (days_from_civil /
+   civil_from_days). The counted unit arrives resolved through the shared
+   spelling table (Ir_v0.Checks.time_unit_of_spelling) — declared factors
+   and stelsel are irrelevant to calendar arithmetic. *)
+
+let leap y = (y mod 4 = 0 && y mod 100 <> 0) || y mod 400 = 0
+
+let month_length y m =
+  match m with
+  | 2 -> if leap y then 29 else 28
+  | 4 | 6 | 9 | 11 -> 30
+  | _ -> 31
+
+(* the packed-month rule: packed(D) = (12·year + month − 1)·32 + day *)
+let packed z =
+  let y, m, d = civil_from_days z in
+  ((((12 * y) + m) - 1) * 32) + d
+
+(* proleptic-month split needs floor division (negative years) *)
+let floor_div a b = if a >= 0 then a / b else -(((-a) + b - 1) / b)
+
+(* date + n whole months, clamped to the target month's end (ch. 3.8) *)
+let add_months n z =
+  let y, m, d = civil_from_days z in
+  let pm = (12 * y) + (m - 1) + n in
+  let ty = floor_div pm 12 in
+  let tm = (pm - (12 * ty)) + 1 in
+  days_from_civil ~y:ty ~m:tm ~d:(min d (month_length ty tm))
+
+(* whole units from A to B, signed, truncating toward zero (OCaml (/)
+   truncates toward zero, exactly the ch. 3.8 quot) *)
+let whole_units_between (tu : Ir_v0.Checks.time_unit) za zb =
+  match tu with
+  | Tu_dag -> zb - za
+  | Tu_week -> (zb - za) / 7
+  | Tu_maand -> (packed zb - packed za) / 32
+  | Tu_kwartaal -> (packed zb - packed za) / 32 / 3
+  | Tu_jaar -> (packed zb - packed za) / 32 / 12
+  | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde ->
+      fault "sub-day tijdsduur needs datum-tijd operands (the datum-tijd layer is not executed)"
+
+let add_units (tu : Ir_v0.Checks.time_unit) n z =
+  match tu with
+  | Tu_dag -> z + n
+  | Tu_week -> z + (7 * n)
+  | Tu_maand -> add_months n z
+  | Tu_kwartaal -> add_months (3 * n) z
+  | Tu_jaar -> add_months (12 * n) z
+  | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde ->
+      fault "sub-day date arithmetic needs a datum-tijd operand (the datum-tijd layer is not executed)"
+
+(* a duration count is taken as whole units: a fractional count truncates
+   toward zero (ch. 3.8); Z.div truncates toward zero *)
+let whole_count_of q =
+  match Z.to_int (Z.div (Q.num q) (Q.den q)) with
+  | n -> n
+  | exception Z.Overflow -> fault "duration count %s is out of range" (Q.to_string q)
+
+(* date ± duration (ch. 3.8; empty rules ch. 1.2): empty date propagates;
+   empty duration coalesces to 0 — the date unchanged, the only duration
+   that coalesces. The non-empty step needs the resolved time unit. *)
+let date_plus_duration ?(minus = false) ?unit_ d dur =
   match (d, dur) with
   | Empty, _ -> Empty
   | Date z, Empty -> Date z
   | Date_time t, Empty -> Date_time t
-  | _ -> fault "non-empty duration arithmetic is ch. 3 scope"
+  | Date z, _ -> (
+      let q, _u = num_exn (if minus then "min" else "plus") dur in
+      let n = whole_count_of q in
+      let n = if minus then -n else n in
+      match unit_ with
+      | Some tu -> Date (add_units tu n z)
+      | None -> fault "date arithmetic without a resolved time unit (WF-035)")
+  | Date_time _, _ ->
+      fault "datum-tijd date arithmetic is not executed (day precision only)"
+  | v, _ -> fault "date arithmetic: expected a date, got %s" (to_string v)
 
-(* tijdsduur van A tot B: any empty operand propagates, never 0 *)
-let tijdsduur a b =
+(* tijdsduur van A tot B (ch. 3.8): whole declared units, signed; the
+   absolute variant drops the sign; any empty operand propagates, never 0.
+   The result carries the node's declared unit [result_unit]. *)
+let tijdsduur ?(absolute = false) ?unit_ ?(result_unit = Unitless) a b =
   match (a, b) with
   | Empty, _ | _, Empty -> Empty
-  | _ -> fault "non-empty tijdsduur is ch. 3 scope"
+  | Date za, Date zb -> (
+      match unit_ with
+      | Some tu ->
+          let n = whole_units_between tu za zb in
+          Num (Q.of_int (if absolute then abs n else n), result_unit)
+      | None -> fault "tijdsduur without a resolved time unit (WF-038)")
+  | (Date_time _, _ | _, Date_time _) ->
+      fault "datum-tijd tijdsduur is not executed (day precision only)"
+  | _ -> fault "tijdsduur: expected two dates, got %s and %s" (to_string a) (to_string b)
 
 (* --- text (ch. 1.2c): empty coerces to "" ------------------------------ *)
 

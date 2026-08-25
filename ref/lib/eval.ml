@@ -414,6 +414,53 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       end
   | Attribuut_ref _ ->
       Value.fault "unsupported AttribuutRef shape (set/sentinel outside a fold)"
+  | Binair { op = (Plus | Min) as op; links; rechts; _ }
+    when List.exists
+           (fun e ->
+             match Option.bind e expr_typ with
+             | Some (Datum_in_dagen | Datum_tijd) -> true
+             | _ -> false)
+           [ links; rechts ] -> (
+      (* date ± duration (ch. 3.8), routed on the static date type. The
+         WF-035 discipline, enforced fail-fast behind the verifier: plus
+         commutes, min admits the date on the LEFT only, date ± date is
+         ill-formed; the duration's unit is its static type's unit spelling
+         through the shared table — sub-day units demand datum-tijd. *)
+      let le = req "Binair.links" links and re = req "Binair.rechts" rechts in
+      let date_typed e =
+        match expr_typ e with Some (Datum_in_dagen | Datum_tijd) -> true | _ -> false
+      in
+      let minus = op = Min in
+      let dur_e =
+        if date_typed le && date_typed re then
+          Value.fault "date \xc2\xb1 date is ill-formed (WF-035)"
+        else if date_typed le then re
+        else if minus then
+          Value.fault "duration \xe2\x88\x92 date is ill-formed (WF-035: subtraction admits \
+                       the date on the left only)"
+        else le
+      in
+      let unit_ =
+        match expr_typ dur_e with
+        | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ }) -> (
+            match Ir_v0.Checks.time_unit_of_eenheid u with
+            | Some tu ->
+                if Ir_v0.Checks.time_unit_sub_day tu then
+                  Value.fault
+                    "sub-day date arithmetic needs a datum-tijd operand (WF-035; the \
+                     datum-tijd layer is not executed)"
+                else tu
+            | None ->
+                Value.fault
+                  "duration unit %S is not a recognised time unit (a day-kind duration is \
+                   a recorded flank, not executed)"
+                  (Option.value u.afkorting ~default:"?"))
+        | _ -> Value.fault "date \xc2\xb1 duration without a time unit (WF-035)"
+      in
+      let l = eval_expr env world self ~err le in
+      let r = eval_expr env world self ~err re in
+      let d, dur = if date_typed le then (l, r) else (r, l) in
+      Arith.date_plus_duration ~minus ~unit_ d dur)
   | Binair { op; links; rechts; _ } -> (
       let l = eval_expr env world self ~err (req "Binair.links" links) in
       let r = eval_expr env world self ~err (req "Binair.rechts" rechts) in
@@ -438,6 +485,39 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       let v = eval_expr env world self ~err (req "Begrensd.basis" basis) in
       let bound = function None -> Value.Empty | Some b -> eval_expr env world self ~err b in
       Arith.clamp ~min_:(bound minimum) ~max_:(bound maximum) v
+  | Functie { kind = (Tijdsduur | Absolute_tijdsduur) as kind; argumenten; filter; typ; _ } -> (
+      (* tijdsduur van A tot B (ch. 3.8), routed on the node-type unit:
+         the counted unit is the node's own declared unit, resolved by
+         spelling through the shared table (WF-038). *)
+      if filter <> None then Value.fault "a filter on a tijdsduur has no v0 form";
+      match argumenten with
+      | [ a; b ] ->
+          let unit_ =
+            match typ with
+            | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ })
+              -> (
+                match Ir_v0.Checks.time_unit_of_eenheid u with
+                | Some tu ->
+                    if Ir_v0.Checks.time_unit_sub_day tu then
+                      Value.fault
+                        "sub-day tijdsduur needs datum-tijd operands (WF-038; the \
+                         datum-tijd layer is not executed)"
+                    else tu
+                | None ->
+                    Value.fault
+                      "tijdsduur unit %S is not a recognised time unit (a day-kind \
+                       tijdsduur is a recorded flank, not executed)"
+                      (Option.value u.afkorting ~default:"?"))
+            | _ ->
+                Value.fault "tijdsduur without a recognised time unit on its node type \
+                             (WF-038)"
+          in
+          Arith.tijdsduur
+            ~absolute:(kind = Absolute_tijdsduur)
+            ~unit_ ~result_unit:(unit_of_datatype typ)
+            (eval_expr env world self ~err a)
+            (eval_expr env world self ~err b)
+      | _ -> Value.fault "tijdsduur expects two arguments")
   | Functie { kind; argumenten; element_objecttype; leegwaarde; filter; dimensie_selectie; granulariteit; bron_rol; typ = _; bron = _ } ->
       eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leegwaarde ~filter
         ~dimensie_selectie ~granulariteit ~bron_rol
@@ -859,11 +939,9 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
       match argumenten with
       | [ a ] -> Arith.jaar_uit (eval_expr env world self ~err a)
       | _ -> Value.fault "jaar uit expects one argument")
-  | Tijdsduur -> (
-      match argumenten with
-      | [ a; b ] ->
-          Arith.tijdsduur (eval_expr env world self ~err a) (eval_expr env world self ~err b)
-      | _ -> Value.fault "tijdsduur expects two arguments")
+  | Tijdsduur | Absolute_tijdsduur ->
+      (* unreachable: eval_expr routes both variants on the node-type unit *)
+      assert false
   | _ -> Value.fault "function kind not implemented in this card"
 
 and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =

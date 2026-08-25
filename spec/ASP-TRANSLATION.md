@@ -245,9 +245,10 @@ lexeme's decimals; a **date literal** (`|2000-01-01|`) is its civil day
 number at scale 1 — the *same* encoding as a date attribute read
 (`val/3`), the point read and the Rekendatum constant, so a date
 comparison harmonises day numbers directly and needs no second date
-encoding (B2). ref faults date *arithmetic* (`numeric_ok` gates the
-additive/multiplicative families on both operands), so a date literal
-reaches comparison operands only; a text/enum/boolean literal in a
+encoding (B2). Date *arithmetic* rides the same day numbers through
+the S6a calendar chains (`numeric_ok` still gates the multiplicative
+family and verminderd-met on both operands — a date must not silently
+multiply); a text/enum/boolean literal in a
 NUMERIC term position still faults (S19) — in the positions that
 carry the non-numeric scalars (an equality operand, a text/enum write
 value) it lowers through `symbolic_term` to its S2 ground term, never
@@ -392,6 +393,58 @@ boundary) accept only identical units or a unitless side — ref's
 conversion factors have no integer encoding (the hunted 1 m + 50 cm =
 51 of ch. 6c). The unit is derived recursively from declarations
 (`eff_unit`), never read from a node's static annotation.
+
+### S6a. The calendar chains — date ± duration and tijdsduur (ch. 3.8)
+
+Dates are civil day numbers (the case loader's encoding, the S4 date
+literal's B2 convention), so day-precision calendar arithmetic is pure
+ASP term arithmetic — no calendar-as-data, no grounding over dates.
+The counted unit resolves by SPELLING through the shared table
+(`Ir_v0.Checks.time_unit_of_spelling` — one table for verifier, ref
+and this backend); declared factors and stelsel never enter.
+
+- **Day and week are linear**: `date + n` days is `(T)+(N)`; weeks
+  `(T)+(7*(N))`; the week tijdsduur is `((TB)-(TA))/7`. gringo's `/`
+  truncates toward zero on both signs — exactly the ch. 3.8 `quot`.
+- **tijdsduur in months/quarters/years** is the packed-month rule as a
+  binding chain per operand: the era decomposition (shift by 719468,
+  era = Z/146097, then yoe/doy/mp/d as in the civil algorithm) ends in
+  the proleptic month `PM = 12·(yoe + 400·era) + mp + 2` — one uniform
+  formula, no month-conditional — and `packed = PM·32 + D`. Months are
+  `(packed(B) − packed(A))/32`, quarters `/3`, years `/12`, all
+  truncating toward zero (the negative-span case of
+  `jutterswet-jutleeftijd` pins the toward-zero reading
+  differentially). The absolute variant wraps gringo's `|t|`.
+- **date ± months/quarters/years** emits one helper predicate per site
+  (`dpmN`), derived by the **leap/month-length rule pair**: the
+  non-February arm computes `30 + ((M + M/8) mod 2)`, the February arm
+  `28 + L` with the leap indicator `L = (4 − Y mod 4)/4 − (100 − Y mod
+  100)/100 + (400 − Y mod 400)/400` (each term is 1 exactly on
+  divisibility; operands non-negative, so truncation is floor). The
+  day clamps by the exact integer min `(D + ML − |D − ML|)/2`, and the
+  re-encode is `days_from_civil` with the `(14 − M)/12` March shift.
+- **Emptiness**: the date operand PROPAGATES by its bare join (an
+  unbound chain leaves the rule — or the `dpmN` helper — underivable,
+  leeg as absence); the duration COALESCES through `coalesce0` (leeg
+  counts 0: `+0` days, or `add_months 0` = the date unchanged, since a
+  day never exceeds its own month's length). A fractional count
+  truncates toward zero through its scale division before the calendar
+  step.
+- **Fences**: every packed decomposition carries the pre-epoch
+  `viol/2` witness (`date before 0000-03-01 in calendar arithmetic`) —
+  the shift must stay non-negative for truncation to equal floor — and
+  the month step adds the year-zero fence (`date arithmetic reaches a
+  year before 0000-03`, PMT < 2) guarding the re-encode's divisions.
+  Both fire only where the rule fires (rule-guard discipline, S13).
+- **Loud flanks**: datum-tijd operands, sub-day units on either form,
+  and day-kind (dagsoort) durations/tijdsduren fault at translation —
+  ref refuses the same shapes at evaluation (S19).
+
+Witnesses: anchor `jutterswet-jutleeftijd` (the three ch. 3.8 worked
+examples — leap child, clamp-not-inverse, signed truncation — plus the
+leeg corner) and golden `jutterswet-vervaltermijn` (month-end clamp in
+and out of a leap year, the empty-duration standstill, plus commuting,
+fractional truncation), each hand-computed and replayed by gates 5–6.
 
 ### S7. Conditions
 
@@ -1489,8 +1542,14 @@ gedurende condition shapes beyond WF-055; temporal
 totals over case-supplied full timelines, and non-year total
 granularity; `Begrensd` (clip/min-max) and rounded roots in term
 positions; a temporal attribute read in a scalar slot (ch. 3.3);
-non-numeric arithmetic operands (ref faults date arithmetic — day
-numbers must not silently compute) and a **text/enum/boolean literal in
+non-numeric arithmetic operands — narrowed 2026-08-25: the
+**day-precision date family now translates** (date ± duration and
+tijdsduur/absolute-tijdsduur in dagen/weken/maanden/kwartalen/jaren,
+the S6a calendar chains), and what stays loud in the date family is
+datum-tijd operands (day precision only), sub-day units, day-kind
+(dagsoort) durations and tijdsduren, `DATUM_MET`/`DATUMTIJD_MET`, and
+the eerste-paasdag/part-extractor builtins (each still under a
+catch-all or its own fault) — plus a **text/enum/boolean literal in
 a NUMERIC term position** (a **date literal** translates as its civil
 day number — B2, the S4 date-comparison sibling — and since
 2026-08-25 the text/enum/boolean literals and own-subject reads

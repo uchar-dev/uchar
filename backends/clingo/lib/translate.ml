@@ -385,6 +385,133 @@ let coalesce0 ctx ~subject ~subject_ot (atoms, term, scale) =
     ([ Printf.sprintf "%s(%s,%s)" pred subject v ], v, scale)
   end
 
+(* --- the calendar chains (RUNTIME-SEMANTICS ch. 3.8) --------------------
+   Dates are civil day numbers (B2). Whole-unit counting and the
+   date-plus-months step run as pure-ASP arithmetic chains: the civil
+   decomposition keeps every intermediate non-negative for any date from
+   0000-03-01 on (fenced by a viol/2 witness below), so gringo's
+   toward-zero division equals the floor the era arithmetic needs. The
+   divisions that DO see a negative operand — the packed difference quot
+   32, the week quotient, quarters/years over months, the whole-count
+   scale division — truncate toward zero by gringo's C semantics, which
+   IS the ch. 3.8 quot (the negative-span case of the
+   jutterswet-jutleeftijd anchor pins it differentially). *)
+
+(* the counted unit, resolved by SPELLING from a static type through the
+   shared table (Ir_v0.Checks, RUNTIME-SEMANTICS ch. 3.8): day-precision
+   units only — sub-day, day-kind and missing units fault loudly *)
+let day_time_unit_of ~what (t : datatype option) =
+  match t with
+  | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ }) -> (
+      match Ir_v0.Checks.time_unit_of_eenheid u with
+      | Some tu ->
+          if Ir_v0.Checks.time_unit_sub_day tu then
+            fault "sub-day %s is not translated (the datum-tijd layer is not executed)" what
+          else tu
+      | None ->
+          fault
+            "%s unit %S is not a recognised time unit (a day-kind form is a recorded \
+             flank, not executed)"
+            what
+            (Option.value u.afkorting ~default:"?"))
+  | _ -> fault "%s without a time unit on its static type" what
+
+(* the era decomposition of a day-number term into binding atoms; returns
+   the atoms plus the packed-month term pieces: PM (proleptic month,
+   12·year + month − 1, uniform via PM = 12·(yoe + 400·era) + mp + 2) and
+   D (day of month). packed(D) = PM·32 + D (ch. 3.8). *)
+let civil_pm_day ctx (t : string) =
+  let zv = fresh ctx "Z" and ev = fresh ctx "E" and doev = fresh ctx "DOE" in
+  let yoev = fresh ctx "YOE" and doyv = fresh ctx "DOY" and mpv = fresh ctx "MP" in
+  let dv = fresh ctx "D" and pmv = fresh ctx "PM" in
+  ( [ Printf.sprintf "%s = (%s)+719468" zv t;
+      Printf.sprintf "%s = %s/146097" ev zv;
+      Printf.sprintf "%s = %s-(%s*146097)" doev zv ev;
+      Printf.sprintf "%s = ((%s-(%s/1460))+(%s/36524)-(%s/146096))/365" yoev doev doev doev
+        doev;
+      Printf.sprintf "%s = %s-(((365*%s)+(%s/4))-(%s/100))" doyv doev yoev yoev yoev;
+      Printf.sprintf "%s = ((5*%s)+2)/153" mpv doyv;
+      Printf.sprintf "%s = (%s-(((153*%s)+2)/5))+1" dv doyv mpv;
+      Printf.sprintf "%s = ((12*(%s+(400*%s)))+%s)+2" pmv yoev ev mpv ],
+    pmv,
+    dv )
+
+(* the pre-epoch fence: a date before 0000-03-01 would push the shifted
+   day number negative and turn gringo truncation away from floor —
+   fenced with a viol/2 witness, never a silent wrong month *)
+let pre_epoch_fence ctx ~subject ~body t =
+  emit ctx
+    "viol(\"date before 0000-03-01 in calendar arithmetic (the civil decomposition needs \
+     a non-negative shifted day number)\",%s) :- %s, (%s) < -719468."
+    subject
+    (String.concat ", " body)
+    t
+
+(* date + count whole months (ch. 3.8): re-anchor the proleptic month and
+   clamp the day to the target month's length — one helper predicate per
+   site, derived by the leap/month-length RULE PAIR: the non-February arm
+   computes 30 + ((m + m/8) mod 2), the February arm 28 + the leap
+   indicator (each (k − y mod k)/k term is 1 exactly on divisibility —
+   non-negative operands, so truncation is floor). The clamp is the exact
+   integer min (a + b − |a − b|)/2; the re-encode is days_from_civil with
+   the (14 − m)/12 March-shift. An empty date or duration operand leaves
+   the chain unbound — the helper underivable, leeg as absence. *)
+let translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms ~date_term ~dur_atoms
+    ~count =
+  let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+  pre_epoch_fence ctx ~subject ~body:((base :: ctx.rule_guard) @ date_atoms) date_term;
+  ctx.fresh <- ctx.fresh + 1;
+  let p = Printf.sprintf "dpm%d" ctx.fresh in
+  let catoms, pmv, dv = civil_pm_day ctx date_term in
+  let pmt = fresh ctx "PMT" and yt = fresh ctx "YT" and mt = fresh ctx "MT" in
+  let chain =
+    date_atoms @ dur_atoms @ catoms
+    @ [ Printf.sprintf "%s = (%s)+(%s)" pmt pmv count;
+        Printf.sprintf "%s = %s/12" yt pmt;
+        Printf.sprintf "%s = (%s-(12*%s))+1" mt pmt yt ]
+  in
+  (* the year-zero fence: PMT < 2 reaches a March-shifted year below 0,
+     where the re-encode divisions would truncate away from floor *)
+  emit ctx "viol(\"date arithmetic reaches a year before 0000-03\",%s) :- %s, %s < 2."
+    subject
+    (String.concat ", " ((base :: ctx.rule_guard) @ chain))
+    pmt;
+  let finish ml_atoms mlv =
+    let dt = fresh ctx "DT" and y2 = fresh ctx "Y2" and e2 = fresh ctx "E2" in
+    let yoe2 = fresh ctx "YOE" and mp2 = fresh ctx "MP" and doy2 = fresh ctx "DOY" in
+    let doe2 = fresh ctx "DOE" and zt = fresh ctx "ZT" in
+    ( chain @ ml_atoms
+      @ [ Printf.sprintf "%s = ((%s+%s)-|%s-%s|)/2" dt dv mlv dv mlv;
+          Printf.sprintf "%s = %s-((14-%s)/12)" y2 yt mt;
+          Printf.sprintf "%s = %s/400" e2 y2;
+          Printf.sprintf "%s = %s-(%s*400)" yoe2 y2 e2;
+          Printf.sprintf "%s = (%s+9) \\ 12" mp2 mt;
+          Printf.sprintf "%s = ((((153*%s)+2)/5)+%s)-1" doy2 mp2 dt;
+          Printf.sprintf "%s = (((%s*365)+(%s/4))-(%s/100))+%s" doe2 yoe2 yoe2 yoe2 doy2;
+          Printf.sprintf "%s = ((%s*146097)+%s)-719468" zt e2 doe2 ],
+      zt )
+  in
+  let ml = fresh ctx "ML" in
+  let body1, z1 =
+    finish
+      [ Printf.sprintf "%s != 2" mt;
+        Printf.sprintf "%s = 30+((%s+(%s/8)) \\ 2)" ml mt mt ]
+      ml
+  in
+  emit ctx "%s(%s,%s) :- %s." p subject z1 (String.concat ", " (base :: body1));
+  let lv = fresh ctx "L" in
+  let body2, z2 =
+    finish
+      [ Printf.sprintf "%s = 2" mt;
+        Printf.sprintf "%s = (((4-(%s \\ 4))/4)-((100-(%s \\ 100))/100))+((400-(%s \\ 400))/400)"
+          lv yt yt yt;
+        Printf.sprintf "%s = 28+%s" ml lv ]
+      ml
+  in
+  emit ctx "%s(%s,%s) :- %s." p subject z2 (String.concat ", " (base :: body2));
+  let v = fresh ctx "DP" in
+  ([ Printf.sprintf "%s(%s,%s)" p subject v ], v, 1)
+
 let vergelijk_sym = function
   | Groter_of_gelijk | Later_of_gelijk -> ">="
   | Groter | Later -> ">"
@@ -1182,6 +1309,115 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                 pow10 (decimals_of_datatype pr.par_datatype) )
           | None -> fault "unknown parameter %S" p)
       | _ -> fault "unsupported temporal-read basis shape")
+  | Functie { kind = (Tijdsduur | Absolute_tijdsduur) as kind; argumenten; filter; typ; _ }
+    ->
+      (* tijdsduur van A tot B (ch. 3.8): whole declared units between two
+         day-precision dates, signed — the packed-month rule as a pure-ASP
+         decomposition chain; the absolute variant wraps gringo's |t|. The
+         counted unit is the NODE type's unit, resolved by spelling
+         (WF-038). Any empty operand leaves its bare join unbound — leeg
+         propagation for free, never 0. *)
+      if filter <> None then fault "a filter on a tijdsduur has no v0 form";
+      let a, b =
+        match argumenten with
+        | [ a; b ] -> (a, b)
+        | _ -> fault "tijdsduur expects two arguments"
+      in
+      let operand_day e =
+        match Ir_v0.Checks.typ_of_expr e with
+        | Some Datum_in_dagen -> ()
+        | Some Datum_tijd ->
+            fault "datum-tijd tijdsduur is not translated (day precision only)"
+        | _ -> fault "tijdsduur operand is not statically a day-precision date"
+      in
+      operand_day a;
+      operand_day b;
+      let tu = day_time_unit_of ~what:"tijdsduur" typ in
+      let ba, ta, sa = expr_term ctx ~subject ~subject_ot a in
+      let bb, tb, sb = expr_term ctx ~subject ~subject_ot b in
+      if sa <> 1 || sb <> 1 then fault "tijdsduur operands must be unscaled day terms";
+      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      let wrap t = if kind = Absolute_tijdsduur then Printf.sprintf "|%s|" t else t in
+      (match tu with
+      | Tu_dag -> (ba @ bb, wrap (Printf.sprintf "((%s)-(%s))" tb ta), 1)
+      | Tu_week -> (ba @ bb, wrap (Printf.sprintf "(((%s)-(%s))/7)" tb ta), 1)
+      | Tu_maand | Tu_kwartaal | Tu_jaar ->
+          pre_epoch_fence ctx ~subject ~body:((base :: ctx.rule_guard) @ ba) ta;
+          pre_epoch_fence ctx ~subject ~body:((base :: ctx.rule_guard) @ bb) tb;
+          let ca, pma, da = civil_pm_day ctx ta in
+          let cb, pmb, db = civil_pm_day ctx tb in
+          let months =
+            Printf.sprintf "((((%s*32)+%s)-((%s*32)+%s))/32)" pmb db pma da
+          in
+          let n =
+            match tu with
+            | Tu_maand -> months
+            | Tu_kwartaal -> Printf.sprintf "(%s/3)" months
+            | Tu_jaar -> Printf.sprintf "(%s/12)" months
+            | _ -> assert false
+          in
+          (ba @ bb @ ca @ cb, wrap n, 1)
+      | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde ->
+          (* unreachable: day_time_unit_of faulted the sub-day units *)
+          assert false)
+  | Binair { op = (Plus | Min) as op; links; rechts; _ }
+    when List.exists
+           (fun e ->
+             match Option.bind e Ir_v0.Checks.typ_of_expr with
+             | Some (Datum_in_dagen | Datum_tijd) -> true
+             | _ -> false)
+           [ links; rechts ] ->
+      (* date ± duration (ch. 3.8), routed on the static date type — the
+         ref mirror: plus commutes, min admits the date on the LEFT only,
+         date ± date is ill-formed (WF-035, fail-fast behind the
+         verifier). The date operand PROPAGATES empty by its bare join;
+         the duration COALESCES (leeg counts 0, the date unchanged); a
+         fractional count truncates toward zero through the scale
+         division (gringo truncates toward zero on both signs). *)
+      let le = req "Binair.links" links and re = req "Binair.rechts" rechts in
+      let date_typed e =
+        match Ir_v0.Checks.typ_of_expr e with
+        | Some Datum_in_dagen -> true
+        | Some Datum_tijd ->
+            fault "datum-tijd date arithmetic is not translated (day precision only)"
+        | _ -> false
+      in
+      let minus = op = Min in
+      let date_e, dur_e =
+        if date_typed le && date_typed re then
+          fault "date \xc2\xb1 date is ill-formed (WF-035)"
+        else if date_typed le then (le, re)
+        else if minus then
+          fault
+            "duration \xe2\x88\x92 date is ill-formed (WF-035: subtraction admits the date \
+             on the left only)"
+        else (re, le)
+      in
+      let tu =
+        day_time_unit_of ~what:"date arithmetic" (Ir_v0.Checks.typ_of_expr dur_e)
+      in
+      let bd, td_, sd = expr_term ctx ~subject ~subject_ot date_e in
+      if sd <> 1 then fault "date operand must be an unscaled day term";
+      let bn, tn, sn =
+        coalesce0 ctx ~subject ~subject_ot (expr_term ctx ~subject ~subject_ot dur_e)
+      in
+      let n_term = if sn = 1 then tn else Printf.sprintf "((%s)/%d)" tn sn in
+      let n_term = if minus then Printf.sprintf "(-(%s))" n_term else n_term in
+      (match tu with
+      | Tu_dag -> (bd @ bn, Printf.sprintf "((%s)+(%s))" td_ n_term, 1)
+      | Tu_week -> (bd @ bn, Printf.sprintf "((%s)+(7*(%s)))" td_ n_term, 1)
+      | Tu_maand ->
+          translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms:bd
+            ~date_term:td_ ~dur_atoms:bn ~count:n_term
+      | Tu_kwartaal ->
+          translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms:bd
+            ~date_term:td_ ~dur_atoms:bn ~count:(Printf.sprintf "(3*(%s))" n_term)
+      | Tu_jaar ->
+          translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms:bd
+            ~date_term:td_ ~dur_atoms:bn ~count:(Printf.sprintf "(12*(%s))" n_term)
+      | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde ->
+          (* unreachable: day_time_unit_of faulted the sub-day units *)
+          assert false)
   | Binair { op = (Plus | Min | Verminderd_met) as op; links; rechts; _ } ->
       (* the additive family on harmonised scales. Numeric operands
          only: ref faults date arithmetic here, so a non-numeric static
