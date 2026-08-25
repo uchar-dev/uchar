@@ -335,6 +335,11 @@ here):
   isomorphism requirement lands as a *concrete, checkable* uchar gap
   rather than a stated intention. Small, corpus-and-schema-scoped; the
   natural companion to the row-3 structured-`Bron` delta.
+  **Delivered (2026-08-25):** the optional `bronAnnotaties` field
+  (WF-082, IR-SPEC ch. 3.1) rides the wire additively; emitter golden
+  `jutterswet-hardheidsoverschot` carries the annotations, three
+  negatief cases pin the failure modes. The machine-readable
+  legal-source id (this candidate's optional tail) remains open.
 - **C2 — Decide the override/strength question.** uchar expresses
   priority only *within* a per-target ladder and tags no strength.
   Candidate: a design note (not a v1 build) settling whether
@@ -347,6 +352,9 @@ here):
   intra-target ladder is sufficient by construction — `CONSTRUCTS.md`
   row 8 already frames these as "refinements," so this is a scope
   confirmation, not new machinery.
+  **Proposed (2026-08-25):** `spec/proposals/PRIORITY-RELATION.md`
+  recommends not building the free relation or strength tags; its five
+  numbered ratification questions await the maintainer.
 - **C3 — Witness runtime version gating with a replaying golden.** The
   only bounded-`geldigheid` document in the corpus is the verifier-only
   witness cabinet (`jutterswet-vormenkabinet`, no `case*.json` by
@@ -355,6 +363,11 @@ here):
   one rule built from executable constructs, plus cases with an
   `asOfDate` in each window — after which the cabinet's WF-021 row moves
   out, per its own NOTE's shrink rule.
+  **Delivered (2026-08-25):** `anchor/jutterswet-jutheffing` — two dated
+  versions of one rule name, per-window absolute values (230/270) and
+  the outside-every-window flank pinned as a leeg outcome, replaying
+  through both executors (gates 5–6); the WF-021 index row now names it
+  beside the cabinet.
 
 - **Documented, no card (for completeness):** second time axis + status
   developments → PLAN §9 (2) / `CONSTRUCTS.md` row 12 (later v2, extension
