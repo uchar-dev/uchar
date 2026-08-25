@@ -1,0 +1,22 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "kindertallen": { "list": [ { "number": "10" }, { "number": "25" } ] }
+    }
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "kaptotaal", "value": { "number": "11.66666" } },
+    { "kind": "consistent" }
+  ]
+}

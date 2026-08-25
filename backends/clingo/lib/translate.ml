@@ -2124,14 +2124,24 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
          closed body — the split encoding, shared with the rule level *)
       closed_money_mult ctx ~guard_body ~witness ~basis
   | Binair { op = Gedeeld_door; links; rechts; _ } ->
-      (* a closed-body division by a compile-time positive constant (the
-         tutorial's decimal of n / 2.0000) — the gcd-reduced form with its
-         divisor-side range fence and non-exact viol, both in body context *)
-      closed_division ctx ~guard_body ~witness ~links ~rechts
+      (* a closed-body bare division (§6.5): a compile-time positive constant
+         divisor rides the gcd-reduced form (the tutorial's decimal of n /
+         2.0000); a RUNTIME divisor (a bound binder — a list element) rides the
+         two-factor form with its numeric-zero fence, the empty-operand §9.5
+         edges gone because a closed-body binder is never leeg. Divisor-side
+         range fence and non-exact viol both in body context. *)
+      closed_division ctx ~guard_body ~witness ~rounding:None ~links ~rechts
+  | Binair { op = Gedeeld_door_abs; links; rechts; _ } ->
+      (* the abs-division variant (ch. 2.2): the quotient truncated toward zero
+         at 5 decimals — gringo's integer `/` IS that collapse on both signs, so
+         the round_z-scale-5 form carried into the body context needs no
+         exactness guard and no negative fence *)
+      closed_division ctx ~guard_body ~witness ~rounding:(Some (Richting_nul, 5)) ~links ~rechts
   | _ ->
       fault
-        "a closed-body term here is a bound binder, a literal, a parameter, a +/- or × \
-         combination, a constant-divisor division or a Construct (no corpus case for more)"
+        "a closed-body term here is a bound binder, a literal, a parameter, a +/-/×/percentage-of \
+         combination, a division (bare or abs), a power by a constant integer exponent, a Construct \
+         or a Let (no corpus case for more)"
 
 (* a sum-typed operand inside a closed body → its ground term: a bound binder
    (a lambda/function parameter or a match payload) resolves to its ASP
@@ -2262,16 +2272,23 @@ and closed_money_mult ctx ~guard_body ~witness ~basis : string list * string * i
   let a = fresh ctx "A" and c = fresh ctx "C" in
   (ma @ ra @ money_mult_body ~a ~c ~tm ~tr, c, 100)
 
-(* a closed-body division by a COMPILE-TIME positive constant divisor (§6.5/S18):
-   the gcd-reduced exact form shared with the rule-level bare division. The
-   runtime-divisor edges (empty dividend → 0, empty divisor → the §9.5 channel)
-   never arise on always-bound binders, so only the divisor-side fences ride: the
-   numerator range fence and the non-exact viol, both keyed by [witness] and
-   grounded by [guard_body]. The value is guarded EXACT (numt \ dent == 0), so a
-   non-exact quotient derives no value and its viol makes the program UNSAT — the
-   remainder never truncates silently (ref stays exact-rational, then its bounded
-   write refuses; the differential holds where it runs). *)
-and closed_division ctx ~guard_body ~witness ~links ~rechts : string list * string * int =
+(* a closed-body division (§6.5/S18), the rule-level [translate_division]
+   carried into the body context. A COMPILE-TIME positive constant divisor folds
+   the whole constant fraction (sr·out_scale)/(c·sl) by its full gcd; a RUNTIME
+   divisor (a bound binder — a list element) keeps the two-factor form and rides
+   a numeric-zero fence. The empty-operand edges the rule level carries (empty
+   dividend → 0, empty divisor → the §9.5 channel) never arise here — a
+   closed-body binder is never leeg (ch. 10.1) — so no coalesce and no
+   inconsistent/2 fact, only the divisor-side fences keyed by [witness] and
+   grounded by [guard_body]. [rounding] None is the exact bare division (value
+   guarded [numt \ dent == 0], a remainder derives a viol/2 and UNSAT — ref
+   stays exact-rational, then its bounded write refuses; the differential holds
+   where it runs); [Some (Richting_nul, d)] is the abs-division truncation at d
+   decimals, which gringo's integer `/` computes on both signs, needing no
+   exactness guard and no negative fence. The exactness test runs at the
+   precision the fold/write will STORE ([ctx.write_scale] for the bare form, the
+   collapse scale for abs), not merely at the operand scales. *)
+and closed_division ctx ~guard_body ~witness ~rounding ~links ~rechts : string list * string * int =
   let links = req "Binair.links" links and rechts = req "Binair.rechts" rechts in
   numeric_ok (Some links);
   numeric_ok (Some rechts);
@@ -2279,42 +2296,61 @@ and closed_division ctx ~guard_body ~witness ~links ~rechts : string list * stri
   unit_free_ok ctx (Some rechts);
   let bl, tl, sl = closed_term ctx ~guard_body ~witness links in
   let br, tr, sr = closed_term ctx ~guard_body ~witness rechts in
-  let c =
-    if br = [] then
-      match int_of_string_opt (String.trim tr) with
-      | Some c when c > 0 -> c
-      | _ ->
-          fault
-            "a closed-body division needs a compile-time positive constant divisor (no corpus case \
-             for a runtime or non-positive divisor)"
-    else
-      fault
-        "a closed-body division needs a compile-time positive constant divisor (no corpus case for \
-         a runtime divisor)"
+  let out_scale =
+    match rounding with None -> max (max sl sr) ctx.write_scale | Some (_, d) -> pow10 d
   in
-  (* the exactness test must run at the precision the fold/write will STORE, not
-     merely at the operand scales: a bare-integer divisor (x / 4) whose quotient
-     needs more decimals than max(sl,sr) offers is still exact against the target
-     attribute scale, which [ctx.write_scale] carries into the fold body. Mirrors
-     the rule-level [translate_division] (out_scale = max (max sl sr) write_scale);
-     dropping write_scale here made clingo spuriously UNSAT where ref accepts. *)
-  let out_scale = max (max sl sr) ctx.write_scale in
-  let knum, kden_c = const_div_reduce ~sl ~sr ~out_scale ~c in
-  if kden_c > 536870912 then
-    fault "a closed-body constant divisor whose reduced denominator exceeds the fence has no corpus case";
-  let numt = if knum = 1 then Printf.sprintf "(%s)" tl else Printf.sprintf "((%s)*%d)" tl knum in
-  let dent = Printf.sprintf "(%d)" kden_c in
+  let const_div =
+    if br = [] then
+      match int_of_string_opt (String.trim tr) with Some c when c > 0 -> Some c | _ -> None
+    else None
+  in
+  let numt_of knum = if knum = 1 then Printf.sprintf "(%s)" tl else Printf.sprintf "((%s)*%d)" tl knum in
+  let two_factor () =
+    let g = gcd (sr * out_scale) sl in
+    let knum = sr * out_scale / g and kden = sl / g in
+    ( numt_of knum,
+      (if kden = 1 then Printf.sprintf "(%s)" tr else Printf.sprintf "((%s)*%d)" tr kden),
+      [ (tl, 536870912 / knum); (tr, 536870912 / kden) ],
+      true )
+  in
+  let numt, dent, range_bounds, runtime =
+    match const_div with
+    | Some c ->
+        let knum, kden_c = const_div_reduce ~sl ~sr ~out_scale ~c in
+        (* a folded denominator past the fence would feed 2·dent unguarded past
+           2^31 (S18); drop back to the two-factor form, whose divisor-term
+           range_guard fires the loud UNSAT — a runtime divisor is impossible
+           here (const_div is Some), so this branch never sets [runtime] *)
+        if kden_c > 536870912 then two_factor ()
+        else (numt_of knum, Printf.sprintf "(%d)" kden_c, [ (tl, 536870912 / knum) ], false)
+    | None -> two_factor ()
+  in
   let gbody = guard_body @ bl @ br in
-  range_guard ctx ~subject:witness ~body:gbody [ (tl, 536870912 / knum) ];
-  emit ctx
-    "viol(\"non-exact division (an explicit rounding is mandated before precision is lost)\",%s) :- \
-     %s, %s \\ %s != 0."
-    witness
-    (String.concat ", " gbody)
-    numt dent;
-  ( bl @ br @ [ Printf.sprintf "%s \\ %s == 0" numt dent ],
-    Printf.sprintf "(%s/%s)" numt dent,
-    out_scale )
+  range_guard ctx ~subject:witness ~body:gbody range_bounds;
+  (* a runtime divisor can be numeric zero (never leeg — the §9.5 empty-divisor
+     edge cannot arise in a closed body); a constant divisor is fenced positive *)
+  if runtime then
+    emit ctx "viol(\"division by numeric zero\",%s) :- %s, (%s) == 0." witness
+      (String.concat ", " gbody) tr;
+  let nonzero = if runtime then [ Printf.sprintf "(%s) != 0" tr ] else [] in
+  match rounding with
+  | None ->
+      emit ctx
+        "viol(\"non-exact division (an explicit rounding is mandated before precision is lost)\",%s) \
+         :- %s, %s \\ %s != 0."
+        witness
+        (String.concat ", " (gbody @ nonzero))
+        numt dent;
+      ( bl @ br @ nonzero @ [ Printf.sprintf "%s \\ %s == 0" numt dent ],
+        Printf.sprintf "(%s/%s)" numt dent,
+        out_scale )
+  | Some (Richting_nul, _) ->
+      (bl @ br @ nonzero, Printf.sprintf "(%s/%s)" numt dent, out_scale)
+  | Some (modus, _) ->
+      ignore modus;
+      fault
+        "a closed-body rounded division supports only the richting-nul abs-division collapse (no \
+         corpus case for another rounding mode)"
 
 (* --- rule forms ---------------------------------------------------------- *)
 

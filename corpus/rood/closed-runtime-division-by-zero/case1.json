@@ -1,0 +1,23 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "grondslag": { "number": "60" },
+      "kindertallen": { "list": [ { "number": "2" }, { "number": "0" } ] }
+    }
+  },
+  "expectedFault": {
+    "ref": "division by numeric zero",
+    "clingo": "division by numeric zero"
+  }
+}
