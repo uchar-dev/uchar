@@ -102,3 +102,15 @@ groen in deze worktree (130 golden schoon; 147 negatief afgewezen; 335
 cases valide; 315 exact door ref en door clingo; 282 noop-refuters + 33
 gepinde survivors; 20 rood in beide executors; catala 169 checks, 11
 goldens byte-identiek).
+
+**Correctie bij de landing (opus-lenzen, 2026-08-25).** De clingo-
+deltatabel sluit niet op de kopregel "26 -> 23": de regel
+"beslistabel/disjunctieve conditie 3 -> 0" is te smal gelabeld — de
+conditiesoort-klasse telde gisteren 5 scenario's (waarvan er nu één
+akkoord is, drie de nieuwe quote-labelklasse blootlegden en één de
+band-conditie bleef), en de gisteren-kolom telt met de tabel-labels
+niet tot 26 op. De scenario-toewijzing per klasse staat reproduceerbaar
+in /tmp/toka-hermeting naast gisterens /tmp/toka; de topcijfers
+(ref 19/30, clingo 7/30, nul stille divergenties) zijn door beide
+lenzen onafhankelijk steekproefsgewijs bevestigd en staan los van de
+klasse-labeling.
