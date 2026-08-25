@@ -1,0 +1,15 @@
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
+Objecttype de Vondst (mv: Vondsten)
+    de waarde Numeriek (geheel getal) met eenheid €;
+    het meldloon Numeriek (geheel getal) met eenheid €;
+    het nettoloon Numeriek (getal met 2 decimalen) met eenheid €;
+
+Regel meldloon van een vondst
+    geldig altijd
+        Het meldloon van een Vondst moet berekend worden als de waarde van de Vondst plus 5 €.
+
+Regel nettoloon van een vondst
+    geldig altijd
+        Het nettoloon van een Vondst moet berekend worden als het meldloon van de Vondst min 12,50 €.

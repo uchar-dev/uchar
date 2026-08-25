@@ -1,0 +1,41 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "20"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "meldloon",
+      "value": {
+        "number": "25"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "nettoloon",
+      "value": {
+        "number": "12.50"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
