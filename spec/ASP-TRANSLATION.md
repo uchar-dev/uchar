@@ -92,6 +92,33 @@ normalised (`norm`) on both sides of every comparison; rule names in
 the channel are matched version-stripped by both executors' checkers
 (`RUNTIME-SEMANTICS.md` ch. 5.6).
 
+**The validity gate** (IR-SPEC ch. 3.10 Validity; RUNTIME-SEMANTICS
+ch. 8.2 gates it at runtime against the session's `asOfDate`). One
+case, one program also fixes the evaluation date: the case's
+`asOfDate` is a translation-time constant, so ref's *runtime* gate is
+decided at translation, decision for decision (`applies`, the literal
+mirror of ref's `applies` in `ref/lib/eval.ml`). A rule, a ladder
+member, an object creation or a fact creation whose window excludes
+the date **does not apply**: nothing of it is emitted — no head, no
+helper predicate, no `viol/2` fence (ref never evaluates an excluded
+form, so a zero divisor or range hazard inside one must not fault
+here either). Window bounds compare as ISO strings, both ends
+inclusive, exactly as ref compares them; a *bounded* window in a
+time-free session (`asOfDate` null) faults with ref's own reason
+(`a validity-bounded form needs an evaluation date; this session is
+time-free`), so the two executors refuse identically. Windowed forms
+never collide with the defeasible-input machinery: the ch. 7.7
+desugaring and the ch. 7.8 standing norm both demand *version-free*
+forms, so an excluded rule's target simply keeps its case input as
+the plain `val/3` fact — with one seam handled explicitly: a ladder
+*group* whose members are all excluded still emits the unconditional
+pass-through `val(S,a,V) :- inputval(S,a,V), is_a(S,ot).`, because
+the defeasible entry keys on the unfiltered ladder list (S10/S17).
+Windows on the forms the gate does not carry — allocation,
+consistency checks, uniqueness — fault loudly (S19). Witness:
+`jutterswet-vensterheffing` (one rule inside its window, one before
+it, replayed at an `asOfDate` on each side).
+
 ### S2. Case input: facts and types
 
 The case loader's world enters as ground facts. Per instance: `is_a`
@@ -199,7 +226,13 @@ split, and no corpus case computes a boolean attribute. Witnesses:
 `afschrift`), `jutterswet-keurstaat` (the enum copy `oordeel` and the
 conditional literal `stempel`).
 
-Not translated, loudly (S19 carries the full list): validity windows;
+A rule's **validity window** rides S1's validity gate: an excluded
+rule emits nothing and its target's case input stands untouched; an
+in-window rule translates as any version-free rule — including the
+ch. 6d fence when the case supplies its (never-standing) computed
+target. Witness: `jutterswet-vensterheffing`.
+
+Not translated, loudly (S19 carries the full list):
 temporal targets outside the two ch. 3.7/3.8 fold shapes; case input
 on non-standing computed targets; a `standing` target outside its own
 domain; boolean computed targets (above).
@@ -496,7 +529,12 @@ negation-as-failure — stratification (WF-045/046) is what makes every
 layer sound.
 
 **Ladders** (`defaultLadders`, RS ch. 7): ladder members are grouped
-by subject and target. Per member i, rung n:
+by subject and target. A member whose validity window excludes the
+`asOfDate` leaves the member set before translation (ref's
+`member_decision` returns Undecided before a single rung is
+evaluated — S1's validity gate); a group whose members are *all*
+excluded decides nothing and emits only the unconditional input
+pass-through. Per member i, rung n:
 `dlI_decides_n(S) :- is_a(S,ot), ⟨rung condition⟩[, ⟨consequence
 bindings⟩].` — for an *attribute* ladder the consequence's bindings
 sit inside `decides`, so an empty consequence cannot decide (the
@@ -568,6 +606,10 @@ in both directions. The to-one guard is a `viol/2` witness when a
 second filler appears on a to-one role
 (`corpus/rood/to-one-second-filler`). Bean-field-only fact creations
 fault: the symbolic form is what executes.
+
+Both creation forms sit under S1's validity gate: an excluded
+creation does not apply — nothing is minted, no link lands, no
+budget or to-one guard fires.
 
 Witnesses: `jutterswet-penninguitgifte`, `jutterswet-wachtersketen`,
 `synth2-budgetgrens-onder` (creation under the budget);
@@ -1352,7 +1394,15 @@ executors (`corpus/rood/division-by-numeric-zero`,
 together.
 
 *Constructs and shapes without a corpus case (fault at translation):*
-validity windows (rules, ladders, creations); temporal targets
+validity windows on the forms OUTSIDE the ch. 8.2 gate — allocation,
+consistency checks, uniqueness and the uniqueness union (`… validity
+windows are not translated (no corpus case)`; before the gate landed
+for rules, ladder members and creations these forms silently ignored
+their window, so the fault is new and load-bearing: an unwindowed
+translation would apply outside its window) — while windows on rules,
+ladder members and both creation forms now translate (S1's validity
+gate, `jutterswet-vensterheffing`), including the time-free refusal
+both executors share; temporal targets
 outside the ch. 3.7/3.8 fold shapes; the negated gedurende clip (the
 complement walk — also as a composite member; ref carries both, the
 standing executor asymmetry); the ten-minste-1 composite union (v0
@@ -1528,7 +1578,9 @@ fault survives only as an unreachable backstop on WF-clean input; a
 **rung consequence scale** disagreeing with the target scale faults at
 every depth (`rung value scale … does not match target scale …`), a
 sub-ladder inheriting the root target's declared scale (RS ch. 7.9);
-validity windows on a ladder — nested or flat — fault as before. The
+a validity window on a ladder gates per top-level member since the
+ch. 8.2 landing (S1's validity gate; a sub-ladder carries no window of
+its own in the IR, so nothing nested is silently gated). The
 **shared non-trivial base under all members** stays a frontend refusal
 (PHASE5C-TUTORIAL §4), never a clingo shape: a group-rung carries a
 multi-member base group here with no special encoding, so nothing new is

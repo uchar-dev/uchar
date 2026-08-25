@@ -197,6 +197,27 @@ let fresh ctx prefix =
   ctx.fresh <- ctx.fresh + 1;
   Printf.sprintf "%s%d" prefix ctx.fresh
 
+(* the validity gate (RUNTIME-SEMANTICS ch. 3.10/5.6, gated at runtime
+   against the session's asOfDate — ch. 8.2): the mirror of ref's
+   [applies] (ref/lib/eval.ml), decision for decision. The translation is
+   per-case, so the case's asOfDate is a translation-time constant and
+   the runtime gate is decided HERE: a form whose window excludes the
+   date simply does not apply and emits nothing — no head, no helper, no
+   viol/2 fence (ref never evaluates it). Bounds compare as ISO strings,
+   both inclusive, exactly as ref compares them; a bounded window in a
+   time-free session faults with ref's reason, so the two executors
+   refuse identically. *)
+let applies ctx (g : geldigheid option) =
+  match g with
+  | None | Some { geld_vanaf = None; geld_tot = None } -> true
+  | Some { geld_vanaf; geld_tot } -> (
+      match ctx.case.as_of with
+      | None ->
+          fault "a validity-bounded form needs an evaluation date; this session is time-free"
+      | Some d ->
+          (match geld_vanaf with Some v -> String.compare v d <= 0 | None -> true)
+          && (match geld_tot with Some t -> String.compare d t <= 0 | None -> true))
+
 let objecttype ctx name =
   match Ir_v0.Checks.find_ci ctx.doc.objecttypen name with
   | Some ot -> ot
@@ -2793,10 +2814,15 @@ let translate_aantal_dagen ctx ~subject ~ot ~a ~cond ~k ~(g : granulariteit) =
   end
 
 let translate_regel ctx (r : resolved_regel) =
-  match r.rr_geldigheid with
-  | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
-      fault "validity windows are not translated yet"
-  | _ ->
+  (* the ch. 8.2 validity gate: an excluded rule does not apply — nothing
+     is emitted, so its target's case input stands untouched as the plain
+     val/3 fact. No inputval machinery waits on it: a windowed rule is in
+     neither the ch. 7.7 desugaring domain nor the ch. 7.8 standing domain
+     (both demand version-free forms), so the defeasible-input entry never
+     keys on a windowed rule's target. An in-window rule translates as any
+     version-free rule — including the ch. 6d fence when the case supplies
+     its (never-standing) computed target. *)
+  if applies ctx r.rr_geldigheid then begin
       let doel = req "doel" r.doel in
       ctx.rule_name <- Option.value r.rr_naam ~default:"?";
       (match doel with
@@ -2981,6 +3007,7 @@ let translate_regel ctx (r : resolved_regel) =
               | None -> ())
           | _ -> fault "rule kind not translated")
       | _ -> fault "unsupported rule target")
+  end
 
 (* a boolean-typed characteristic-initialisation EXPRESSION → the body atoms
    that hold exactly when it is TRUE (WF-027 relaxation, besluit 1). A boolean
@@ -3020,10 +3047,11 @@ let bool_atoms ctx ~subject ~subject_ot (e : expr) : string list =
    truncation; the bound also stays under clingo's own term-depth
    abort, recorded in the README). *)
 let translate_object_creatie ctx i (oc : resolved_object_creatie) =
-  (match oc.oc_geldigheid with
-  | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
-      fault "object-creation validity windows are not translated yet"
-  | _ -> ());
+  (* the ch. 8.2 validity gate: an excluded creation does not apply —
+     nothing is minted, no back-link lands, no guard fires (ref skips the
+     whole form). The index [i] stays the iteration index, so the other
+     creations' oc%d terms are unchanged by a skipped neighbour. *)
+  if applies ctx oc.oc_geldigheid then begin
   ctx.rule_name <- Option.value oc.oc_naam ~default:"?";
   let nieuw = req "ObjectCreatie.nieuwType" oc.nieuw_type in
   let subject_ot = req "ObjectCreatie.subject" oc.oc_subject in
@@ -3124,7 +3152,7 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
         head_body ctx (Printf.sprintf "val(%s,%s,%s)" term (str m) tm) (wbody @ fit_guards)
       end)
     oc.toekenningen;
-  match pair with
+  (match pair with
   | None -> ()
   | Some (_, new_role, subj_role) ->
       head_body ctx
@@ -3132,7 +3160,8 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
         body;
       head_body ctx
         (Printf.sprintf "rol(%s,%s,%s)" term (str (role_canonical subj_role)) subject)
-        body
+        body)
+  end
 
 (* fact creation (IR-SPEC ch. 3.4; RUNTIME-SEMANTICS ch. 5.5): the join
    chain becomes a body join over rol/3, and the head derives the
@@ -3142,10 +3171,10 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
    symbolic extension form executes; a bean-field-only v0 record faults
    (as in ref/). *)
 let translate_feit_creatie ctx (fc : resolved_feit_creatie) =
-  (match fc.fc_geldigheid with
-  | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
-      fault "fact-creation validity windows are not translated yet"
-  | _ -> ());
+  (* the ch. 8.2 validity gate: an excluded fact creation does not apply —
+     no rol/3 lands and its to-one guards stay unemitted (ref adds no
+     link, so no second-filler fault can arise from this form) *)
+  if applies ctx fc.fc_geldigheid then begin
   let name = Option.value fc.fc_naam ~default:"<feitcreatie>" in
   let ftn =
     match fc.fc_feittype with
@@ -3197,6 +3226,7 @@ let translate_feit_creatie ctx (fc : resolved_feit_creatie) =
   in
   to_one_guard doel_rol anker;
   to_one_guard anker_rol (req "FeitCreatie.doel" fc.fc_doel)
+  end
 
 (* the ladder group (RUNTIME-SEMANTICS ch. 7.1/7.2/7.9, IR-SPEC ch. 6.1;
    ASP-TRANSLATION S17): the ch. 7.5 decides_m lowering generalised into a
@@ -3383,14 +3413,31 @@ and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
   (out, cfl, any)
 
 let translate_ladder_group ctx gidx (members : (int * default_ladder) list) =
+  (* the ch. 8.2 validity gate, per member: an excluded member is
+     Undecided — no decision, no conflict, no §9.5 deposit (ref's
+     member_decision returns Undecided before a single rung is
+     evaluated), so it simply leaves the group's member set. The group
+     reconciles the members that remain. *)
   let _, l0 = List.hd members in
-  List.iter
-    (fun ((_, l) : int * default_ladder) ->
-      match l.dl_geldigheid with
-      | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
-          fault "ladder validity windows are not translated yet"
-      | _ -> ())
-    members;
+  let members =
+    List.filter (fun ((_, l) : int * default_ladder) -> applies ctx l.dl_geldigheid) members
+  in
+  if members = [] then (
+    (* every member excluded: the group decides nothing. The attribute
+       target's case input entered defeasibly (inputval/3 — translate_case
+       keys on the UNFILTERED ladder list), so the pass-through must still
+       be emitted, unconditionally, or the standing input would silently
+       vanish. A characteristic target has no defeasible entry; nothing
+       remains to emit. *)
+    match l0.dl_attribuut with
+    | Some a ->
+        head_body ctx
+          (Printf.sprintf "val(S,%s,V)" (str a))
+          [ Printf.sprintf "inputval(S,%s,V)" (str a);
+            Printf.sprintf "is_a(S,%s)" (str l0.dl_onderwerp) ]
+    | None -> ())
+  else begin
+  let _, l0 = List.hd members in
   let subject = "S" in
   let base = Printf.sprintf "is_a(%s,%s)" subject (str l0.dl_onderwerp) in
   let is_char, target_name =
@@ -3477,12 +3524,21 @@ let translate_ladder_group ctx gidx (members : (int * default_ladder) list) =
     head_body ctx (Printf.sprintf "val(%s,%s,V)" subject (str target_name))
       [ Printf.sprintf "inputval(%s,%s,V)" subject (str target_name); base; "not " ^ eff ]
   end
+  end
 
 (* allocation, proportional with cap/floor/remainder (RUNTIME-SEMANTICS
    ch. 4.2), in integer arithmetic. Scale bookkeeping: raw = pot×w/Σw
    carries the pot's scale (the weight scale cancels); the floor at the
    declared decimals must therefore coincide with the pot/target scale. *)
 let translate_verdeling ctx i (v : resolved_verdeling) =
+  (* windows on the untranslated-window forms fault LOUDLY (they were
+     silently ignored before the ch. 8.2 gate landed for rules, ladders
+     and creations): an unwindowed translation of a windowed allocation
+     would silently apply outside its window *)
+  (match v.vd_geldigheid with
+  | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
+      fault "allocation validity windows are not translated (no corpus case)"
+  | _ -> ());
   if v.vd_methode <> Some Naar_rato then fault "only the proportional allocation is translated yet";
   if v.vd_voorwaarde <> None then fault "conditional allocation not translated yet";
   let bt = req "bronType" v.bron_type and dt = req "doelType" v.doel_type in
@@ -3592,6 +3648,11 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
   | None -> ())
 
 let translate_consistentie ctx i (c : resolved_consistentie) =
+  (* the allocation-window sibling: loud, never silently unwindowed *)
+  (match c.cons_geldigheid with
+  | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
+      fault "consistency-check validity windows are not translated (no corpus case)"
+  | _ -> ());
   let name = Option.value c.cons_naam ~default:(Printf.sprintf "consistentie%d" i) in
   (* a division inside the assertion deposits its channel fact under
      THIS name, like ref's err collector (the verify lens caught the
@@ -3639,6 +3700,11 @@ let uni_key_atom ctx ~otype ~label ~pos k =
   else Printf.sprintf "val(%s,%s,K%d)" label (str k) pos
 
 let translate_uniciteit ctx (u : resolved_uniciteit) =
+  (* the allocation-window sibling: loud, never silently unwindowed *)
+  (match u.uni_geldigheid with
+  | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
+      fault "uniqueness validity windows are not translated (no corpus case)"
+  | _ -> ());
   let name = Option.value u.uni_naam ~default:"uniciteit" in
   let subject_ot = req "subject" u.uni_subject in
   let keys = List.map (req "sleutel") u.sleutels in
@@ -3676,6 +3742,11 @@ let translate_uniciteit ctx (u : resolved_uniciteit) =
    Key positions harmonise to the maximum declared scale across sources,
    so 5 and 5.00 collide exactly as the runtime's value equality does. *)
 let translate_uniciteit_unie ctx i (u : resolved_uniciteit_unie) =
+  (* the allocation-window sibling: loud, never silently unwindowed *)
+  (match u.uu_geldigheid with
+  | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
+      fault "uniqueness-union validity windows are not translated (no corpus case)"
+  | _ -> ());
   let name = Option.value u.uu_naam ~default:(Printf.sprintf "uniciteitsunie%d" i) in
   let arity =
     match u.bronnen with
