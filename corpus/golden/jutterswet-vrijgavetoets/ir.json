@@ -1,0 +1,234 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Bergingszaak": {
+      "node": "Objecttype",
+      "naam": "Bergingszaak",
+      "attributen": {
+        "bezwaren": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "status": {
+          "node": "Tekst"
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "geclaimd"
+      ],
+      "kenmerkSoorten": {
+        "geclaimd": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Bergingszaken"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "vrijgave zonder beletsel",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "aanhouding bij beletsel",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "vrijgave zonder beletsel",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "status",
+        "objecttype": "Bergingszaak",
+        "onderwerpBron": "een Bergingszaak",
+        "navigatieRol": null,
+        "type": {
+          "node": "Tekst"
+        },
+        "bron": "De status van een Bergingszaak",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "vrijgegeven",
+        "type": {
+          "node": "Tekst"
+        },
+        "bron": "'vrijgegeven'"
+      },
+      "voorwaarde": {
+        "node": "Samengesteld",
+        "kwantor": "GEEN",
+        "drempel": 0,
+        "onderdelen": [
+          {
+            "node": "Kenmerk",
+            "kenmerk": "geclaimd",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "de Bergingszaak geclaimd is"
+          },
+          {
+            "node": "Vergelijking",
+            "op": "GROTER",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "bezwaren",
+              "objecttype": "Bergingszaak",
+              "onderwerpBron": "de bezwaren",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de bezwaren van de Bergingszaak",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "0",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "0"
+            },
+            "periode": null,
+            "bron": "haar bezwaren groter zijn dan 0"
+          }
+        ],
+        "bron": "geen van: geclaimd, bezwaren boven 0"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "aanhouding bij beletsel",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "status",
+        "objecttype": "Bergingszaak",
+        "onderwerpBron": "een Bergingszaak",
+        "navigatieRol": null,
+        "type": {
+          "node": "Tekst"
+        },
+        "bron": "De status van een Bergingszaak",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "aangehouden",
+        "type": {
+          "node": "Tekst"
+        },
+        "bron": "'aangehouden'"
+      },
+      "voorwaarde": {
+        "node": "Samengesteld",
+        "kwantor": "TEN_MINSTE",
+        "drempel": 1,
+        "onderdelen": [
+          {
+            "node": "Kenmerk",
+            "kenmerk": "geclaimd",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "de Bergingszaak geclaimd is"
+          },
+          {
+            "node": "Vergelijking",
+            "op": "GROTER",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "bezwaren",
+              "objecttype": "Bergingszaak",
+              "onderwerpBron": "de bezwaren",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de bezwaren van de Bergingszaak",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "0",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "0"
+            },
+            "periode": null,
+            "bron": "haar bezwaren groter zijn dan 0"
+          }
+        ],
+        "bron": "ten minste \u00e9\u00e9n van: geclaimd, bezwaren boven 0"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

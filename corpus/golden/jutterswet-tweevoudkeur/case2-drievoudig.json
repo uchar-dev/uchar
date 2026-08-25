@@ -1,0 +1,41 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Keurstuk",
+        "attributes": {
+          "zegels": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gemerkt",
+          "gewogen"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "K1",
+      "attribute": "oordeel"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "zegelafschrift",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

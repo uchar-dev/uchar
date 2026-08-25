@@ -414,9 +414,36 @@ link fails the positive and the negated form alike — the deliberate
 v0 asymmetry (ch. 5.8), encoded for free. **Composite**
 (samengesteld, the ALLE and singular DE quantifiers): concatenation
 of the parts' atoms — both quantifiers are conjunctions over their
-parts. Other quantifiers and condition kinds fault (S19).
+parts. Other condition kinds fault (S19).
 
-Witnesses: `jutterswet-hardheid`, `jutterswet-uitsluiting`,
+**Composite, counting** (samengesteld — GEEN, TEN MINSTE, TEN
+HOOGSTE, PRECIES; the decision-table desugar's disjunctive row is
+TEN MINSTE 1): ref counts the members that evaluate true (its hits)
+and compares against the threshold — GEEN hits = 0, TEN MINSTE
+hits >= d, TEN HOOGSTE hits <= d, PRECIES hits = d. Encoded per
+composite: each member i becomes its own indexed helper rule
+`cqN(S,i) :- is_a(S,ot), ⟨member atoms⟩` — derivable exactly where
+ref counts a hit, so a leeg member operand counts false through the
+unbound positive join (Tabel 38 for free) — and one aggregate rule
+`cqN_n(S,H) :- is_a(S,ot), H = #count { I : cqN(S,I) }` binds the
+hit count per subject (0 included). The composite itself contributes
+only the plain atoms `cqN_n(S,H)` plus the threshold comparison, so
+it serves every position `cond_atoms` serves — aggregate elements
+included, where a body aggregate literal could not appear. The
+non-monotone quantifiers (GEEN / TEN HOOGSTE / PRECIES behave like
+negation) stay sound because the verifier's WF-045/046 dependency
+walk conservatively marks their members as negative edges, keeping
+the ground program stratified. A counting composite without members
+faults, and every member kind keeps its own fault (S19).
+
+Witnesses (gate 6): `jutterswet-rubriektabel` (TEN MINSTE 1 — the
+disjunctive decision-table row over text equalities — and TEN MINSTE
+2 over mixed kenmerk/comparison members, threshold boundary
+included), `jutterswet-vrijgavetoets` (GEEN, with the
+leeg-member-counts-false corner), `jutterswet-sluimerwacht` (TEN
+HOOGSTE, hits 1/2/3 around threshold 1), `jutterswet-tweevoudkeur`
+(PRECIES, hits 2 against 3). Further: `jutterswet-hardheid`,
+`jutterswet-uitsluiting`,
 `jutterswet-vormenkabinet`; the WF-053 negatiefs pin the navigation
 well-formedness the verifier enforces before translation.
 
@@ -1447,7 +1474,18 @@ served by a scalar; case input on non-standing computed targets
 superset-model fence); to-many navigation in scalar slots (WF-053);
 bean-field-only fact creations (the symbolic ch. 3.4 form is what
 executes); the expression/condition catch-alls ("not translated — no
-corpus case exercises it").
+corpus case exercises it") — narrowed 2026-08-25: the *scalar*
+counting composites (GEEN / TEN MINSTE / TEN HOOGSTE / PRECIES, the
+decision-table desugar's disjunctive condition kinds among them) now
+translate through the cqN count encoding (S7:
+`jutterswet-rubriektabel`, `jutterswet-vrijgavetoets`,
+`jutterswet-sluimerwacht`, `jutterswet-tweevoudkeur`) and left this
+catch-all; what remains under it for composites is the member-less
+counting list (`a counting composite without members is not
+translated (no corpus case)`) and every member kind that keeps its
+own fault (a Periode member — the vormenkabinet's peiling rule, still
+refused by both executors — Rollidmaatschap, an Onopgelost bullet, a
+comparison carrying a periode, the negated gevuld predicate).
 
 *Sum types (S14) — carriage and shapes without a corpus case:*
 **temporal sum carriage** is a recorded flank — the value model admits a

@@ -1745,6 +1745,44 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
         (if negatie then "not " else "") ^ Printf.sprintf "heeft(%s,%s)" n (str k) ]
   | Samengesteld { kwantor = Alle | De; onderdelen; _ } ->
       List.concat_map (cond_atoms ctx ~subject ~subject_ot) onderdelen
+  | Samengesteld
+      { kwantor = (Geen | Ten_minste | Ten_hoogste | Precies) as kwantor; drempel; onderdelen; _ }
+    ->
+      (* the counting quantifiers (ref eval_cond: hits over the member list —
+         GEEN hits = 0, TEN MINSTE hits >= d, TEN HOOGSTE hits <= d, PRECIES
+         hits = d; the decision-table desugar's disjunctive row is TEN_MINSTE
+         1). Each member becomes its own indexed helper rule — cqN(S,i) :-
+         is_a(S,ot), ⟨member atoms⟩, derivable exactly where ref counts the
+         member as a hit (an unbound operand fails the positive join: a leeg
+         member counts false, Tabel 38 for free) — and one aggregate rule
+         binds the hit count per subject. The composite itself contributes
+         only plain atoms (the count read plus its comparison), so it serves
+         every position cond_atoms serves, aggregate elements included, where
+         a body aggregate could not. Soundness of the non-monotone
+         quantifiers rides the verifier's conservative dependency edges
+         (GEEN/TEN_HOOGSTE/PRECIES members are negative in the WF-045/046
+         stratification walk), which keep the ground program stratified. *)
+      if onderdelen = [] then
+        fault "a counting composite without members is not translated (no corpus case)";
+      ctx.fresh <- ctx.fresh + 1;
+      let p = Printf.sprintf "cq%d" ctx.fresh in
+      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      List.iteri
+        (fun i c ->
+          let atoms = cond_atoms ctx ~subject ~subject_ot c in
+          emit ctx "%s(%s,%d) :- %s." p subject (i + 1) (String.concat ", " (base :: atoms)))
+        onderdelen;
+      let h = fresh ctx "H" in
+      emit ctx "%s_n(%s,%s) :- %s, %s = #count { I : %s(%s,I) }." p subject h base h p subject;
+      let compare =
+        match kwantor with
+        | Geen -> Printf.sprintf "%s == 0" h
+        | Ten_minste -> Printf.sprintf "%s >= %d" h drempel
+        | Ten_hoogste -> Printf.sprintf "%s <= %d" h drempel
+        | Precies -> Printf.sprintf "%s == %d" h drempel
+        | Alle | De -> fault "unreachable: a conjunctive quantifier in the counting branch"
+      in
+      [ Printf.sprintf "%s_n(%s,%s)" p subject h; compare ]
   | Predicaat { soort = Gevuld; operand; negatie = false; dagsoort = None; periode = None; _ } ->
       (* the gevuld gate (ref eval: value <> leeg): the operand's binding atoms
          as a positive join. A struct operand rides struct_term (its val atom),

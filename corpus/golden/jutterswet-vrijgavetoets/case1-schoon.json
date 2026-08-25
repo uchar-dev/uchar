@@ -1,0 +1,33 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B1",
+        "objectType": "Bergingszaak",
+        "attributes": {
+          "bezwaren": {
+            "number": "0"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "status",
+      "value": {
+        "text": "vrijgegeven"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
