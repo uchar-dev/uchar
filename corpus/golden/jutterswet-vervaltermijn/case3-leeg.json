@@ -1,0 +1,74 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "uitsteldagen": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "aangiftedatum": {
+            "date": "2024-01-31"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "vervaldatum"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "toetsdatum"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "herinneringsdatum"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "gedoogdatum"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "respijtdatum"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "opschortdatum"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "vervaldatum",
+      "value": {
+        "date": "2024-02-14"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

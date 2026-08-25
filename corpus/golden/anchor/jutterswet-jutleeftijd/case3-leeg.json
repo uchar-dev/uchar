@@ -1,0 +1,62 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "peildatum": {
+            "date": "2026-02-28"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "geboortedatum": {
+            "date": "2004-02-29"
+          },
+          "peildatum": {
+            "date": "2026-02-28"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "jutleeftijd"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "kwartaalspan"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "maandafstand"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "jutleeftijd",
+      "value": {
+        "number": "21"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,498 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Vondst": {
+      "node": "Objecttype",
+      "naam": "Vondst",
+      "attributen": {
+        "aangiftedatum": {
+          "node": "DatumInDagen"
+        },
+        "uitsteldagen": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": null,
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "dagen",
+            "stelsel": null,
+            "canoniek": null,
+            "factorNaarCanoniek": null,
+            "noemer": null
+          }
+        },
+        "vervaldatum": {
+          "node": "DatumInDagen"
+        },
+        "toetsdatum": {
+          "node": "DatumInDagen"
+        },
+        "herinneringsdatum": {
+          "node": "DatumInDagen"
+        },
+        "gedoogdatum": {
+          "node": "DatumInDagen"
+        },
+        "respijtdatum": {
+          "node": "DatumInDagen"
+        },
+        "opschortdatum": {
+          "node": "DatumInDagen"
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Vondsten"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "Berekening vervaldatum",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "Berekening toetsdatum",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "Berekening herinneringsdatum",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "Berekening gedoogdatum",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "Berekening respijtdatum",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "Berekening opschortdatum",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "Berekening vervaldatum",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "vervaldatum",
+        "objecttype": "Vondst",
+        "onderwerpBron": "een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "DatumInDagen"
+        },
+        "bron": "De vervaldatum van een Vondst",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "PLUS",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "aangiftedatum",
+          "objecttype": "Vondst",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "zijn aangiftedatum",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "2",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": null,
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "wk",
+              "stelsel": null,
+              "canoniek": null,
+              "factorNaarCanoniek": null,
+              "noemer": null
+            }
+          },
+          "bron": "2 weken"
+        },
+        "type": {
+          "node": "DatumInDagen"
+        },
+        "bron": "zijn aangiftedatum plus 2 weken"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "Berekening toetsdatum",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "toetsdatum",
+        "objecttype": "Vondst",
+        "onderwerpBron": "een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "DatumInDagen"
+        },
+        "bron": "De toetsdatum van een Vondst",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "PLUS",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "aangiftedatum",
+          "objecttype": "Vondst",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "zijn aangiftedatum",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "1",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": null,
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "maand",
+              "stelsel": null,
+              "canoniek": null,
+              "factorNaarCanoniek": null,
+              "noemer": null
+            }
+          },
+          "bron": "1 maand"
+        },
+        "type": {
+          "node": "DatumInDagen"
+        },
+        "bron": "zijn aangiftedatum plus 1 maand"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "Berekening herinneringsdatum",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "herinneringsdatum",
+        "objecttype": "Vondst",
+        "onderwerpBron": "een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "DatumInDagen"
+        },
+        "bron": "De herinneringsdatum van een Vondst",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "MIN",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "aangiftedatum",
+          "objecttype": "Vondst",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "zijn aangiftedatum",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "1",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": null,
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "week",
+              "stelsel": null,
+              "canoniek": null,
+              "factorNaarCanoniek": null,
+              "noemer": null
+            }
+          },
+          "bron": "1 week"
+        },
+        "type": {
+          "node": "DatumInDagen"
+        },
+        "bron": "zijn aangiftedatum min 1 week"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "Berekening gedoogdatum",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "gedoogdatum",
+        "objecttype": "Vondst",
+        "onderwerpBron": "een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "DatumInDagen"
+        },
+        "bron": "De gedoogdatum van een Vondst",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "PLUS",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "aangiftedatum",
+          "objecttype": "Vondst",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "zijn aangiftedatum",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "uitsteldagen",
+          "objecttype": "Vondst",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": null,
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "dagen",
+              "stelsel": null,
+              "canoniek": null,
+              "factorNaarCanoniek": null,
+              "noemer": null
+            }
+          },
+          "bron": "zijn uitsteldagen",
+          "set": false,
+          "navigatiePad": []
+        },
+        "type": {
+          "node": "DatumInDagen"
+        },
+        "bron": "zijn aangiftedatum plus zijn uitsteldagen"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "Berekening respijtdatum",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "respijtdatum",
+        "objecttype": "Vondst",
+        "onderwerpBron": "een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "DatumInDagen"
+        },
+        "bron": "De respijtdatum van een Vondst",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "MIN",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "aangiftedatum",
+          "objecttype": "Vondst",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "zijn aangiftedatum",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "1,9",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 1,
+            "teken": null,
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "mnd",
+              "stelsel": null,
+              "canoniek": null,
+              "factorNaarCanoniek": null,
+              "noemer": null
+            }
+          },
+          "bron": "1,9 maanden"
+        },
+        "type": {
+          "node": "DatumInDagen"
+        },
+        "bron": "zijn aangiftedatum min 1,9 maanden"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "Berekening opschortdatum",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "opschortdatum",
+        "objecttype": "Vondst",
+        "onderwerpBron": "een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "DatumInDagen"
+        },
+        "bron": "De opschortdatum van een Vondst",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "PLUS",
+        "links": {
+          "node": "Literal",
+          "waarde": "2",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": null,
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "wk",
+              "stelsel": null,
+              "canoniek": null,
+              "factorNaarCanoniek": null,
+              "noemer": null
+            }
+          },
+          "bron": "2 weken"
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "aangiftedatum",
+          "objecttype": "Vondst",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "zijn aangiftedatum",
+          "set": false,
+          "navigatiePad": []
+        },
+        "type": {
+          "node": "DatumInDagen"
+        },
+        "bron": "2 weken plus zijn aangiftedatum"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}
