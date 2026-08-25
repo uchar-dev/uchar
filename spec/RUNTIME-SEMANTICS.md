@@ -662,6 +662,24 @@ waardevol zijn" — waardevol derived as gewicht > 10 — counts 1; a
 jutter whose only vondst fails the filter reads the fallback 0 and
 count 0.
 
+**The self-denoting fold source (WF-083).** The written form "het
+aantal `<rol>` van de `<onderwerp>`" may name the fold subject by its
+own role name ("het aantal vondsten van de aanmelder", evaluated on
+the Jutter who *is* the aanmelder). The wire carries that written role
+in the fold-source argument's `navigatieRol`; the field is
+presentation of the written form, not navigation (`IR-SPEC.md`
+ch. 4.3) — no hop happens, and the fold evaluates exactly as the bare
+subject-anchored form: the subject's own linked instances of the
+element type are the contributors.
+
+Worked example (the `jutterswet-aanmeldertelling` emitter golden,
+verbatim in gates 5–6 and as WV-3.4a-zelfbron in `ref/` tests): a
+Jutter linked to two Vondsten — one with gewicht 2,50 kg, one whose
+gewicht is leeg — counts **2**: a count folds instances, not values,
+so a leeg element attribute still counts (the aggregation row of
+ch. 1.2: a count, never empty). A Jutter with zero linked Vondsten
+counts **0**, never leeg.
+
 ### 3.5 Temporal summation — the contributor-skipping rule (§5.8.2)
 
 The temporal sum over N timeline contributors (the operands of a temporal

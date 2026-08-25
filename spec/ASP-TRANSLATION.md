@@ -547,6 +547,12 @@ atoms⟩ }`, scale 1 — the role read via the node's binding or the
 declared role name, the `die/dat` filter lowered by `cond_atoms` over
 the element variable. An element the filter's body cannot derive
 contributes no tuple: the contributor skip is the join, for free.
+The **self-denoting** source (WF-083, RS ch. 3.4a): a fold-source
+argument whose `navigatieRol` names a role the subject's own type
+fills translates identically — the field is presentation, not
+navigation, so the same `rol(S,role,X)` join over the written source
+role applies (the ref mirror's `self_denoting_role` check gates the
+arm); an away-pointing role keeps the loud translation fault.
 **Sum** (som): contributor body `rol(S,role,X), val(X,a,G), ⟨filter⟩`
 and `V = #sum { G,X : ⟨body⟩ }` at the element attribute's scale —
 an instance without the attribute contributes no tuple, and the empty
@@ -584,7 +590,8 @@ reads it (×year factor; only year granularity is exercised); the
 total over a case-supplied *full* timeline faults, loudly.
 
 Witnesses (gate 6): count by `jutterswet-erflijn`,
-`jutterswet-maatschap`, `jutterswet-kustregister`; sum by
+`jutterswet-maatschap`, `jutterswet-kustregister`, the self-denoting
+source by `jutterswet-aanmeldertelling`; sum by
 `jutterswet-bergingstoezicht`, `jutterswet-gemeenteberging`,
 `jutterswet-penninguitgifte`, `synth2-budgetgrens-onder`; the clip by
 `jutterswet-getijdenwacht`, `jutterswet-penningjaar`,

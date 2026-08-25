@@ -1614,6 +1614,78 @@ let () =
   expect_fault "WV-3.8-dt-eval-wf038" (fun () ->
       ev (tijdsduur_uren "dagtekening" Datum_in_dagen "berging" Datum_tijd))
 
+(* --- ch. 3.4a: the self-denoting fold source (WF-083) ------------------- *)
+
+(* WV-3.4a-zelfbron: "het aantal vondsten van de aanmelder" — the fold
+   source names the fold subject by its OWN role name; navigatieRol
+   carries the written role, presentation, not navigation. A Jutter
+   linked to two Vondsten — one with gewicht 2,50, one whose gewicht is
+   leeg — counts 2 (instances, not values: the ch. 1.2 aggregation row,
+   a count never empty); a Jutter with zero links counts 0, never leeg.
+   An away-pointing navigatieRol keeps the loud unsupported-shape fault. *)
+let () =
+  let num2 : Ir_v0.Ast.datatype =
+    Numeriek { geheel = false; decimalen = 2; teken = None; eenheid = None }
+  in
+  let doc =
+    {
+      empty_doc with
+      objecttypen =
+        [ ot "Jutter" [ ("aantal eigen vondsten", Some num0) ] [];
+          ot "Vondst" [ ("gewicht", Some num2) ] [] ];
+      feittypen =
+        [ ( "vondstaanmelding",
+            {
+              ft_naam = Some "vondstaanmelding";
+              wederkerig = false;
+              rollen =
+                [
+                  { rol_naam = Some "aanmelder"; rol_objecttype_naam = Some "Jutter";
+                    rol_meervoud = None; rol_meervoudig = false };
+                  { rol_naam = Some "vondst"; rol_objecttype_naam = Some "Vondst";
+                    rol_meervoud = Some "vondsten"; rol_meervoudig = true };
+                ];
+            } ) ];
+    }
+  in
+  let count_source nav : Ir_v0.Ast.expr =
+    Attribuut_ref
+      {
+        attribuut = Some "vondsten";
+        objecttype = Some "Jutter";
+        onderwerp_bron = None;
+        navigatie_rol = Some nav;
+        typ = Some (Datatype_onbekend { reden = None });
+        bron = None;
+        set = false;
+        navigatie_pad = [];
+        navigatie_bindingen = None;
+      }
+  in
+  let aantal nav : Ir_v0.Ast.expr =
+    Functie
+      { kind = Aantal; argumenten = [ count_source nav ];
+        element_objecttype = Some "Vondst"; leegwaarde = None; filter = None;
+        dimensie_selectie = None; typ = Some num0; bron = None;
+        granulariteit = None; bron_rol = None }
+  in
+  let env = env_of doc in
+  let w =
+    World.add_instance
+      (World.add_instance
+         (World.add_instance
+            (World.add_instance World.empty
+               { (inst "j1" "Jutter" []) with
+                 links = World.SMap.add "vondsten" [ "v1"; "v2" ] World.SMap.empty })
+            (inst "j2" "Jutter" []))
+         (inst "v1" "Vondst" [ ("gewicht", n "2.50") ]))
+      (inst "v2" "Vondst" [])
+  in
+  let ev label e = Eval.eval_expr env w (World.get w label) ~err:no_err e in
+  expect_num "WV-3.4a-zelfbron-twee" (ev "j1" (aantal "aanmelder")) "2";
+  expect_num "WV-3.4a-zelfbron-nul" (ev "j2" (aantal "aanmelder")) "0";
+  expect_fault "WV-3.4a-zelfbron-weg" (fun () -> ev "j1" (aantal "vondst"))
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

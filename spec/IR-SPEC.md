@@ -1349,6 +1349,30 @@ Empty-source results differ per kind — the som/totaal split and the
 no-fallback rule for min/max/first/last are `RUNTIME-SEMANTICS.md`
 ch. 1.2, mirrored in the matrix (row on TOTAAL, `CONSTRUCTS.md` ch. 2.1).
 
+**The self-denoting fold source (WF-083).** The written form "het aantal
+`<rol>` van de `<onderwerp>`" may name the fold subject by its
+OWN role name ("het aantal vondsten van de aanmelder", evaluated on the
+Jutter who *is* the aanmelder). The v0 wire then carries that written
+role in the fold-source argument's `navigatieRol` — ch. 4.1a's field,
+but here without its meaning: it is presentation of the written form,
+not navigation. No hop happens, the fold stays anchored on its subject,
+and the v0 production runtime ignores the field on this argument. A
+fold-source argument may therefore carry `navigatieRol` **iff** the name
+denotes the subject: it matches, case-insensitively on declared name or
+declared plural, a role that the argument's object type — the fold
+subject — itself fills in some declared fact type. Anything else on a
+fold-source argument would be navigation, which a fold source never does
+(its relation is `sourceRole`; ch. 4.1a's emitter discipline).
+
+- **WF-083** A fold-source argument MUST NOT navigate: a non-empty
+  `navigatiePad` is ill-formed, and a `navigatieRol`, when present, MUST
+  be self-denoting — it names a role (ci, declared name or declared
+  plural) that the argument's object type itself fills. An away-pointing
+  `navigatieRol` (naming only roles filled by other types, or no
+  declared role at all) is ill-formed. Semantics: `RUNTIME-SEMANTICS.md`
+  ch. 3.4a — the self-denoting count folds the subject's own linked
+  instances exactly as the bare subject-anchored form does.
+
 **BuiltinCall** — scalar, text, and date builtins with plain arguments:
 wortel, absolute-waarde (core kernel); concatenatie (text fold);
 tijdsduur/absolute-tijdsduur (two date operands, result unit declared);
@@ -1979,6 +2003,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-080 | a value-position `AttribuutRef` resolves to an attribute, not a characteristic (a characteristic is read through a characteristic check, ch. 4.5) — closes the tolerated `has_attr||has_kenmerk` leak in both the generic value walk and the aggregation-source path (a value-yielding fold's source; a count's role source stays in scope of WF-034); the rule TARGET lvalue is out of scope (WF-022) | gate 3 | `jutterswet-vondsttelling` + `anchor/jutterswet-penninguitgifte` (a `SOM` folding an attribute source; gate 3 witnesses none over-rejects) | `wf080-value-position-kenmerk` + `wf080-aggregation-source-kenmerk` |
 | WF-081 | a numeric literal's lexeme is a bare number in the executors' shared grammar — after `,`→`.`: `'-'? digits`, `'-'? digits? '.' digits`, or `'-'? digits '/' digits` with a non-zero denominator (ch. 4.1); unit or currency tokens, whitespace, `+`, exponents and grouping are ill-formed (the unit belongs in the datatype's `eenheid`) — closes the gate blind spot where a unit written into the lexeme passed the verifier while both executors fault on it; date lexemes and `Tekst` literals out of scope | gate 3 | `anchor/jutterswet-tariefstelling` (integer and decimal lexemes through the fence; gate 3 witnesses none over-rejects) | `wf081-unit-in-lexeme` |
 | WF-082 | the `bronAnnotaties` extension field (ch. 3.1): when present a non-empty list of non-empty trimmed statute annotations; a rule without annotations omits the field — absence leaves no trace | gate 3 | `jutterswet-hardheid` (one- and two-annotation rules on the wire, the unannotated rule traceless; replayed by gates 5–6) | `wf082-empty-bron-annotaties` |
+| WF-083 | a fold-source argument never navigates (ch. 4.3): a non-empty `navigatiePad` is ill-formed; a `navigatieRol`, when present, is self-denoting — it names a role (ci, declared name or plural) the argument's object type itself fills; away-pointing is ill-formed — closes the silent fall-through where a navigating fold source passed the verifier while ref faults on it | gate 3 | `jutterswet-aanmeldertelling` (the self-denoting count "het aantal vondsten van de aanmelder" through both executors) | `wf083-fold-source-navigates-away` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

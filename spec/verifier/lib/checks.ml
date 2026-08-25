@@ -1228,6 +1228,23 @@ let is_role_name ctx name =
         ft.rollen)
     ctx.doc.feittypen
 
+(* Does [name] match (ci, declared name or plural) a role that [otype]
+   itself fills in some declared fact type? The self-denoting fold source
+   (WF-083, IR-SPEC ch. 4.3): the written form "het aantal <rol> van de
+   <onderwerp>" names the fold subject by its own role name, and the wire
+   carries that written role in the argument's navigatieRol —
+   presentation, not navigation. *)
+let self_denoting_role ctx ~otype name =
+  List.exists
+    (fun (_, (ft : feittype)) ->
+      List.exists
+        (fun (r : rol) ->
+          norm (Option.value r.rol_objecttype_naam ~default:"") = norm otype
+          && ((match r.rol_naam with Some n -> norm n = norm name | None -> false)
+             || match r.rol_meervoud with Some m -> norm m = norm name | None -> false))
+        ft.rollen)
+    ctx.doc.feittypen
+
 (* The v0 instance-fold source wart (`CONSTRUCTS.md` row 1): a count/fold
    over a fact-type relation encodes its source as a pseudo-AttribuutRef
    naming a ROLE (usually the plural), typed with the unknown sentinel.
@@ -1244,8 +1261,25 @@ let aggregation_source_check ctx at e =
    | _ -> [])
   @
   match e with
+  | Attribuut_ref { navigatie_pad = _ :: _; _ } ->
+      [ v "WF-083" at
+          "a fold source never navigates: a non-empty navigatiePad on a fold-source argument \
+           is ill-formed (the fold's relation is bronRol)" ]
   | Attribuut_ref { attribuut = Some a; objecttype = Some otn;
-                    navigatie_rol = None; navigatie_pad = []; _ } -> (
+                    navigatie_rol; navigatie_pad = []; _ } -> (
+      (* the self-denoting fold source (WF-083): navigatieRol here is the
+         written form naming the fold subject by its own role name — an
+         away-pointing role would be navigation, which a fold source
+         never does; the silent fall-through this arm replaces let it
+         pass while both executors fault on it *)
+      (match navigatie_rol with
+       | Some nr when not (self_denoting_role ctx ~otype:otn nr) ->
+           [ v "WF-083" at
+               ("navigatieRol '" ^ nr ^ "' on a fold source does not denote the fold subject: \
+                 no role named so (declared name or plural, ci) is filled by '" ^ otn
+                ^ "' itself — a fold source never navigates") ]
+       | _ -> [])
+      @
       match objecttype ctx otn with
       | None -> [ v "WF-034" at ("object type '" ^ otn ^ "' is not declared") ]
       | Some ot ->
@@ -3276,7 +3310,21 @@ let rec dep_expr ctx ~subject acc (e : expr) =
            fact creation's write reaches, from either end (ch. 6.1) *)
         match bron_rol with
         | Some (rb : rol_binding) -> (n_rel rb.rb_feittype, Dep_pos) :: acc
-        | None -> acc
+        | None -> (
+            (* the bindingless instance fold's role-wart source names its
+               relation by role name — derive it best-effort (the
+               navigated-read discipline: WF-034/047 report an
+               unresolvable one, so dropping its edge never hides a
+               cycle in a clean document) and read its link set beside
+               the population proxy *)
+            match (element_objecttype, subject, argumenten) with
+            | ( Some _, Some st,
+                [ Attribuut_ref
+                    { attribuut = Some a; typ = Some (Datatype_onbekend _); _ } ] ) -> (
+                match nav_role_by_name ctx ~from_type:st ~name:a with
+                | Ok (fn, _) -> (n_rel fn, Dep_pos) :: acc
+                | Error _ -> acc)
+            | _ -> acc)
       in
       let acc = List.fold_left (dep_expr ctx ~subject) acc argumenten in
       let acc = dep_opt ctx ~subject acc leegwaarde in

@@ -995,7 +995,16 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           v,
           pow10 (attr_decimals ctx ~otype:ot ~attr:a) )
       end
-  | Functie { kind = Aantal; argumenten = [ Attribuut_ref { attribuut; typ = Some (Datatype_onbekend _); navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some el; bron_rol; filter; _ } ->
+  | Functie { kind = Aantal; argumenten = [ Attribuut_ref { attribuut; typ = Some (Datatype_onbekend _); navigatie_rol; navigatie_pad = []; _ } ]; element_objecttype = Some el; bron_rol; filter; _ }
+    when (match navigatie_rol with
+         | None -> true
+         | Some nr ->
+             (* the self-denoting source (WF-083): the written form names
+                the fold subject by its own role name — presentation, not
+                navigation; the count stays subject-anchored (the ref
+                mirror). An away-pointing role falls through to the loud
+                translation fault. *)
+             Eval.self_denoting_role ctx.doc ~self_type:subject_ot nr) ->
       (* the row-1 wart: the fold source names a role; count the linked
          instances. An explicit binding overrides the written name. The
          die/dat subselection joins per contributor: the filter atoms

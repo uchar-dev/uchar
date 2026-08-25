@@ -193,6 +193,25 @@ let linked ?binding env world (self : World.instance) ~to_type =
    (verbindendeRolViaNaam) disambiguates same-named roles by target
    type; its best-effort pluralisation is deliberately NOT mirrored
    (a loud refusal beats heuristic name formation — tracked delta). *)
+(* the self-denoting fold source (WF-083, IR-SPEC ch. 4.3): the written
+   form "het aantal <rol> van de <onderwerp>" may name the fold subject
+   by its OWN role name; the wire carries that written role in the
+   fold-source argument's navigatieRol. Presentation, not navigation —
+   the v0 production runtime ignores the field there; mirrored safely:
+   the name must denote a role (ci, name or declared plural) that
+   [self_type] itself fills in some fact type, else the loud
+   unsupported-shape fault stands. *)
+let self_denoting_role (doc : document) ~self_type name =
+  List.exists
+    (fun (_, (ft : feittype)) ->
+      List.exists
+        (fun (r : rol) ->
+          norm (Option.value r.rol_objecttype_naam ~default:"") = norm self_type
+          && ((match r.rol_naam with Some n -> norm n = norm name | None -> false)
+             || match r.rol_meervoud with Some m -> norm m = norm name | None -> false))
+        ft.rollen)
+    doc.feittypen
+
 let role_by_name ?to_type env ~self_type ~name =
   let matches (r : rol) =
     ((match r.rol_naam with Some n -> norm n = norm name | None -> false)
@@ -894,7 +913,15 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
     | ( Some el,
         [ Attribuut_ref
             { attribuut; typ = Some (Datatype_onbekend _);
-              navigatie_rol = None; navigatie_pad = []; _ } ] ) ->
+              navigatie_rol; navigatie_pad = []; _ } ] )
+      when (match navigatie_rol with
+           | None -> true
+           | Some nr ->
+               (* the self-denoting source (WF-083): the written form
+                  names the fold subject by its own role name — no
+                  navigation, the fold stays subject-anchored; an
+                  away-pointing role falls to the loud fault below *)
+               self_denoting_role env.doc ~self_type:self.otype nr) ->
         (* the row-1 wart: the fold source argument names a role; with an
            explicit binding the name check is the verifier's (WF-047) *)
         (match bron_rol with
