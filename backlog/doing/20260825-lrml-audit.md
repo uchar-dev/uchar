@@ -54,3 +54,41 @@ Alle negen gates groen (slotregels):
 
 Geen normatieve wijziging; `spec/CONSTRUCTS.md` niet aangeraakt. Resterend
 per acceptance: twee opus-lenzen verwerken (orchestratie-vervolg).
+
+## Lensronde 1 verwerkt (2026-08-25)
+
+Negen bevindingen (2 MAJOR, 7 MINOR), alle negen zelf geverifieerd tegen
+repo en OASIS-brontekst (opnieuw opgehaald) — geen enkele weerlegd; alle
+negen verwerkt in commit 59b33a7:
+
+- **MAJOR (1+6, zelfde defect):** applicability-gating-rij cluster 2 was
+  GEDEKT op getuige `jutterswet-vormenkabinet`, die per eigen NOTE nooit
+  kan replayen en het enige document met begrensd geldigheid-venster is
+  (scan over alle 104 ir.json's bevestigd; geen case*.json aanwezig).
+  Rij naar DEELS (WF-021 verifier-getuigd + negatief
+  `wf021-version-overlap`; RS ch. 8.2-runtime-gating door nul cases
+  geoefend); clusterverdict, §7-antwoord en ledger aangepast; nieuwe
+  kandidaat **C3** (replayende twee-versies-golden, asOfDate per
+  venster); "exactly two live loose ends" → three.
+- **MINOR (3+7, zelfde defect):** afleidbare Override
+  (`body => (r1 > r2)`) is Antoniou-literatuur in OASIS §4.2.1, geen
+  standaard-machinerie (16 Override-voorkomens gescand; Context §3.6
+  heeft appliesStrength, geen appliesOverride — herbevestigd tegen de
+  opgehaalde bron). §1-intro, Override-rij en C2 versmald.
+- **MINOR 2:** "PLAN §5 (Phase 5)" was tweemaal mis (§5 = Where things
+  live; de voorspelling op r. 481 gaat over Catala) — nu §4.3.5's eigen
+  uitsluiting als drager, PLAN §6 (Phase 5) als Catala-parallel.
+- **MINOR 4:** statuutomvang "art. 1–5" → "art. 1–5 in v0 growing to
+  art. 1–9 in v4" (grep '^\*\*Art' over wet-v*.md bevestigd).
+- **MINOR 5:** OASIS-citaat §4.3.5 miste "or desired" — hersteld
+  woordelijk (tegen de bron gecontroleerd).
+- **MINOR 8:** "six conflict-path cases" → zes cases waarvan drie het
+  conflictpad pinnen, case4 de gelijke-gronden-geen-conflict-flank
+  (grep inconsistent over de zes case-files bevestigd: 3/6).
+- **MINOR 9:** Compliance (NIET, row 32, bij de Violation-rij),
+  Paraphrase (NIET, bron-metadata-familie, nieuwe rij cluster 5) en
+  FactualStatement (triviaal GEDEKT, case-dossier/gate 4) elk één zin
+  gegeven (grep bevestigde afwezigheid van alle drie).
+
+Gates na verwerking: check-self-contained PASS, check-ir-schema PASS
+(104 files validate and round-trip). Resterend: tweede opus-lens.
