@@ -207,3 +207,26 @@ Status: rapport compleet (a–e). Twee opus-lenzen verwerkt: reproductie (de
 eigen-geschreven "5 €"-minimalisatie) en rapport-eerlijkheid (de
 methodologische kanttekeningen onder d). Geen artefactzone aangeraakt; enkel
 deze kaart gewijzigd.
+
+Result (landing): de eerste productiecasus door de uchar-keten, en
+het directe Drools-been voor het eerst gemeten. Kern over 30
+uitvoerbare scenario's: NUL stille waarde-divergenties — elke
+niet-overeenstemming is een luide fault of weigering; ref stemt met
+Drools overeen op 18/30 (de rest zijn expliciete evaluatiefouten op
+nog niet gedragen constructen), clingo op 4/30 (de rest expliciete
+vertaalweigeringen), en waar beide dragen zijn ref, clingo en Drools
+het exact eens, inclusief harde getallen. De verifier weigert het
+volle model op zes WF-klassen over vier constructclusters — dekking
+is de bindende beperking, niet correctheid. De gouden vondst,
+TOKA-vrij gereproduceerd: de v0-emitter schrijft eenheden ín het
+getal-lexeme ("5 €"), wat verifier-clean is maar beide
+uchar-executors laat weigeren waar Drools rekent — een gate-blinde
+vlek met drie besluitopties in de gaten-inventaris. De rechtenregel
+is nageleefd en door de lens woord-voor-woord geverifieerd: geen
+letter casus-materiaal in dit repo; de toolchain onaangeraakt. De
+twee lensrondes (na de eerdere zelfcertificerings-notitie alsnog
+onafhankelijk gedraaid) reproduceerden álle kwantitatieve claims
+exact en vonden nul defecten. De gaten-inventaris onder (e) staat
+klaar als kaartkandidaten; de spec-beslissingen (unit-literal-route,
+WF-026-strengheid, WF-016-scoping, clingo-dekking voor
+real-world-constructen) zijn van de maintainer.
