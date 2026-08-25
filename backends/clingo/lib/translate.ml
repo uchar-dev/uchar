@@ -1975,6 +1975,17 @@ and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * 
           ctx.binders <- saved;
           List.map (fun (g, t, s) -> (pattern :: g, t, s)) branches)
         arms
+  | Let { binder; value; body; _ } ->
+      (* a Let whose body still branches (an IfThenElse reducer, a Match under a
+         Let): the value is inlined by the closed_term Let discipline, the binder
+         bound with empty atoms, and the value's binding atoms thread into every
+         branch's body *)
+      let va, vt, vs = closed_term ctx ~guard_body ~witness value in
+      let saved = ctx.binders in
+      ctx.binders <- (norm binder, ([], vt, vs)) :: ctx.binders;
+      let branches = body_branches ctx ~guard_body:(guard_body @ va) ~witness body in
+      ctx.binders <- saved;
+      List.map (fun (g, t, s) -> (va @ g, t, s)) branches
   | Invoke { functie; arguments; _ } ->
       let fd =
         match
@@ -2056,9 +2067,23 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
   match e with
   | Binder_ref { naam; _ } -> (
       match List.assoc_opt (norm naam) ctx.binders with
-      (* a closed-body binder is recurrence-bound (its atoms are empty); the
-         surrounding lelem/pattern join grounds the ASP variable *)
-      | Some (_, var, scale) -> ([], var, scale)
+      (* a closed-body binder is either recurrence-bound (a lambda/fold parameter
+         or a match payload) or bound by a Let INSIDE this body: both carry EMPTY
+         atoms — the surrounding lelem/pattern join, or the Let's inlined value,
+         grounds the ASP variable. A binder carrying binding atoms was bound by a
+         Let OUTSIDE the closed body (a rule-level let_binder helper); dropping
+         those atoms here would ground an unsafe rule (gringo crashes), so this
+         reading is refused loudly. The parallel verifier card makes the shape
+         WF-ill-formed (WF-064); until it merges this fence catches it — a clean
+         TRANSLATION FAULT in place of clingo's grounding crash (ref already
+         faults cleanly with its own unbound-binder note). *)
+      | Some ([], var, scale) -> ([], var, scale)
+      | Some (_ :: _, _, _) ->
+          fault
+            "the closed body reads binder %S bound by a Let OUTSIDE it; this reading is refused (a \
+             closed-body read must be self-contained — the parallel verifier card makes it \
+             WF-ill-formed)"
+            naam
       | None -> fault "unbound binder %S in a closed body (WF-064 should preclude this)" naam)
   | Literal { waarde; typ; _ } -> (
       let lex = req "Literal.waarde" waarde in
@@ -2171,6 +2196,21 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
         let term, scale = go tl sl (e - 1) in
         (bl, term, scale)
       end
+  | Let { binder; value; body; _ } ->
+      (* a Let INSIDE a closed body (ch. 10.6, the let_binder discipline carried
+         into the body context): the value is itself a closed-body term, so it is
+         INLINED — the binder maps to the value's term with EMPTY atoms (the
+         recurrence-bound convention, so a nested read is self-contained), and the
+         value's binding atoms thread into every read site through the returned
+         atom list. No subject-keyed let helper (that is the rule level's shape,
+         where a leeg value must break the body); a closed-body binder is never
+         leeg. *)
+      let va, vt, vs = closed_term ctx ~guard_body ~witness value in
+      let saved = ctx.binders in
+      ctx.binders <- (norm binder, ([], vt, vs)) :: ctx.binders;
+      let ba, bt, bs = closed_term ctx ~guard_body:(guard_body @ va) ~witness body in
+      ctx.binders <- saved;
+      (va @ ba, bt, bs)
   | _ ->
       fault
         "a closed-body term here is a bound binder, a literal, a parameter, a +/-/×/percentage-of \
