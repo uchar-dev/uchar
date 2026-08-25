@@ -1,0 +1,129 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "geboortedatum": {
+          "node": "DatumInDagen"
+        },
+        "peildatum": {
+          "node": "DatumInDagen"
+        },
+        "jutleeftijd": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": null,
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Jutters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "Berekening jutleeftijd",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "Berekening jutleeftijd",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "jutleeftijd",
+        "objecttype": "Jutter",
+        "onderwerpBron": "een Jutter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": null,
+          "eenheid": null
+        },
+        "bron": "De jutleeftijd van een Jutter",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "TIJDSDUUR",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "geboortedatum",
+            "objecttype": "Jutter",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "DatumInDagen"
+            },
+            "bron": "zijn geboortedatum",
+            "set": false,
+            "navigatiePad": []
+          },
+          {
+            "node": "AttribuutRef",
+            "attribuut": "peildatum",
+            "objecttype": "Jutter",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "DatumInDagen"
+            },
+            "bron": "zijn peildatum",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": null,
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": null,
+        "bron": "de tijdsduur van zijn geboortedatum tot zijn peildatum",
+        "granulariteit": null
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

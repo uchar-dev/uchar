@@ -1368,9 +1368,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              | _ -> false)
            [ links; rechts ] ->
       (* date ± duration (ch. 3.8), routed on the static date type — the
-         ref mirror: plus commutes, min admits the date on the LEFT only,
-         date ± date is ill-formed (WF-035, fail-fast behind the
-         verifier). The date operand PROPAGATES empty by its bare join;
+         ref mirror: the date stands on the LEFT of plus and min (v0's
+         typing opens its date branch only for a date-left operand — no
+         commuting), date ± date is ill-formed (WF-035, fail-fast behind
+         the verifier). The date operand PROPAGATES empty by its bare join;
          the duration COALESCES (leeg counts 0, the date unchanged); a
          fractional count truncates toward zero through the scale
          division (gringo truncates toward zero on both signs). *)
@@ -1387,11 +1388,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         if date_typed le && date_typed re then
           fault "date \xc2\xb1 date is ill-formed (WF-035)"
         else if date_typed le then (le, re)
-        else if minus then
-          fault
-            "duration \xe2\x88\x92 date is ill-formed (WF-035: subtraction admits the date \
-             on the left only)"
-        else (re, le)
+        else
+          fault "duration %s date is ill-formed (WF-035: the date stands on the left; \
+                 v0 does not commute)"
+            (if minus then "\xe2\x88\x92" else "+")
       in
       let tu =
         day_time_unit_of ~what:"date arithmetic" (Ir_v0.Checks.typ_of_expr dur_e)

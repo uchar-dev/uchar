@@ -422,10 +422,12 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
              | _ -> false)
            [ links; rechts ] -> (
       (* date ± duration (ch. 3.8), routed on the static date type. The
-         WF-035 discipline, enforced fail-fast behind the verifier: plus
-         commutes, min admits the date on the LEFT only, date ± date is
-         ill-formed; the duration's unit is its static type's unit spelling
-         through the shared table — sub-day units demand datum-tijd. *)
+         WF-035 discipline, enforced fail-fast behind the verifier: the
+         date stands on the LEFT of plus and min (v0's typing opens its
+         date branch only for a date-left operand — no commuting), date ±
+         date is ill-formed; the duration's unit is its static type's unit
+         spelling through the shared table — sub-day units demand
+         datum-tijd. *)
       let le = req "Binair.links" links and re = req "Binair.rechts" rechts in
       let date_typed e =
         match expr_typ e with Some (Datum_in_dagen | Datum_tijd) -> true | _ -> false
@@ -435,10 +437,10 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
         if date_typed le && date_typed re then
           Value.fault "date \xc2\xb1 date is ill-formed (WF-035)"
         else if date_typed le then re
-        else if minus then
-          Value.fault "duration \xe2\x88\x92 date is ill-formed (WF-035: subtraction admits \
-                       the date on the left only)"
-        else le
+        else
+          Value.fault "duration %s date is ill-formed (WF-035: the date stands on the \
+                       left; v0 does not commute)"
+            (if minus then "\xe2\x88\x92" else "+")
       in
       let unit_ =
         match expr_typ dur_e with
@@ -457,9 +459,8 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                   (Option.value u.afkorting ~default:"?"))
         | _ -> Value.fault "date \xc2\xb1 duration without a time unit (WF-035)"
       in
-      let l = eval_expr env world self ~err le in
-      let r = eval_expr env world self ~err re in
-      let d, dur = if date_typed le then (l, r) else (r, l) in
+      let d = eval_expr env world self ~err le in
+      let dur = eval_expr env world self ~err re in
       Arith.date_plus_duration ~minus ~unit_ d dur)
   | Binair { op; links; rechts; _ } -> (
       let l = eval_expr env world self ~err (req "Binair.links" links) in

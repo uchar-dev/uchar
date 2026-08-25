@@ -443,8 +443,9 @@ and this backend); declared factors and stelsel never enter.
 Witnesses: anchor `jutterswet-jutleeftijd` (the three ch. 3.8 worked
 examples — leap child, clamp-not-inverse, signed truncation — plus the
 leeg corner) and golden `jutterswet-vervaltermijn` (month-end clamp in
-and out of a leap year, the empty-duration standstill, plus commuting,
-fractional truncation), each hand-computed and replayed by gates 5–6.
+and out of a leap year, the empty-duration standstill, the quarter
+step, fractional truncation), each hand-computed and replayed by
+gates 5–6.
 
 ### S7. Conditions
 

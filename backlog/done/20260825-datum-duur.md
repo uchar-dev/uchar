@@ -73,11 +73,12 @@ fixing sentence; ch. 2.2 gained the two rows, ch. 1.2's date rows are
 Executed. The OPEN WF-035 date±duration clause and the WF-038 tijdsduur
 extension are implemented in the verifier on the shared spelling table
 (Ir_v0.Checks.time_unit_of_spelling — one source for verifier, ref and
-clingo); all five negatiefs reject citing their rule (red-first: all
-five passed the pre-change verifier). ref carries the calendar kernel
+clingo); all seven negatiefs reject citing their rule (red-first: each
+passed the pre-change verifier). ref carries the calendar kernel
 in arith.ml on the value.ml civil helpers, eval.ml routes Binair on the
 static date type and Tijdsduur/Absolute_tijdsduur on the node-type
-unit; the worked examples are ref tests verbatim (280 pass). clingo
+unit; the worked examples are ref tests verbatim (280 pass, 254 on the
+main base — 26 added). clingo
 carries the pure-ASP calendar chains (ASP-TRANSLATION S6a: day/week
 linear, months via the era decomposition and packed difference,
 date-plus-months via the dpmN leap/month-length rule pair with the
@@ -86,9 +87,34 @@ stays highest. Witnesses: anchor jutterswet-jutleeftijd (leap corner,
 leeg corner, negative span -2 kwartalen toward zero, clamp-not-inverse)
 and golden jutterswet-vervaltermijn (2 weken, month-end clamp both
 leap-nesses, min date-left, leeg-duration standstill, fractional
-truncation, commuted plus), replayed exactly by ref AND clingo. All
-nine gates green (133 ir round-trip / 133+152 verifier / 349 cases /
-329 oracle / 329 clingo / 295+34 noop / 20 rood / 169 catala checks).
+truncation, the quarter step), replayed exactly by ref AND clingo.
+
+Review correction (2026-08-25): the card mandate said "PLUS both
+sides", but v0's Typering opens its date branch only for a date-left
+operand (Typering.java case PLUS: `l.isDatum()`) — duration + date
+falls into numeriekBinair and ERRORs; the runtime helper rsDatumReken
+commutes but is unreachable behind that rejection. The commuted plus
+was therefore NOT a v0 mirror and is dropped everywhere: spec (ch. 3.8
+operand order, ch. 2.2 row, WF-035 clause), verifier (duration-left
+plus rejects), both executors (fault), and the opschortdatum golden
+rule now pins the date-left quarter step instead. Two negatiefs added
+red-first: wf035-duur-plus-datum and wf038-tijdsduur-zonder-node-type
+(the latter closes the verifier leniency that let a tijdsduur without
+any node type pass while ref faulted at evaluation).
+
+All nine gates green (133 ir round-trip / 133+154 verifier / 349 cases
+/ 329 oracle / 329 clingo / 295+34 noop / 20 rood / 169 catala
+checks).
 Deliberately left, loud: dagsoort-as-unit forms, DATUM_MET/DATUMTIJD_MET,
 the datum-tijd sub-day layer (A2), the date-literal lexeme pin (A3);
-timelines untouched — tijdsduur is scalar, as mandated.
+timelines untouched — tijdsduur is scalar, as mandated. Recorded
+flanks, both loud and both keyed on the static-type routing: (a) ref
+evaluates date arithmetic inside closed fold-lambda bodies (eval_closed_body
+shares eval_expr) while clingo's closed_term faults it — an asymmetric
+loud refusal a future corpus candidate would hit at gate 6, never a
+silent divergence in the admitted corpus; (b) pre-existing: clingo's
+numeric_ok admits an operand without a static type, so a type-less but
+date-valued operand under an additive operator faults in ref yet would
+sum civil day numbers in clingo — unreachable from the admitted corpus
+(golden impossible: ref faults; rood impossible: clingo does not),
+triage due when a candidate surfaces.

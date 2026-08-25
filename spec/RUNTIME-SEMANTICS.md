@@ -238,7 +238,7 @@ the fractional-exponent domain or mandates a decimal-precision minimum.
 | percentage van | `l/100 × r`, exactly | (1/3)% van 600 = 2 (exact, not 1,999…); 50% van 4,00 = 2 |
 | wortel | principal square root; mandatory explicit rounding follows (§13.4.17.13) | √9 = 3; √2 afgerond op 2 (rekenkundig) = 1,41 |
 | absolute waarde | magnitude; type (unit, precision, sign) passes through | \|−3/7\| = 3/7 |
-| datum ± duur (plus/min over a date and a duration) | **calendar arithmetic, not field arithmetic** — ch. 3.8: the count truncates toward zero, months/quarters/years clamp to the month end; plus commutes, min admits the date left only | 2024-01-31 + 2 weken = 2024-02-14; 2024-01-31 + 1 maand = 2024-02-29 |
+| datum ± duur (plus/min over a date and a duration) | **calendar arithmetic, not field arithmetic** — ch. 3.8: the count truncates toward zero, months/quarters/years clamp to the month end; the date stands on the left of plus and min (duration ± date is ill-formed) | 2024-01-31 + 2 weken = 2024-02-14; 2024-01-31 + 1 maand = 2024-02-29 |
 | tijdsduur van A tot B (in hele *eenheid*) | whole declared units between two dates, signed; the packed-month rule of ch. 3.8; the absolute variant drops the sign | tijdsduur van 29-02-2004 tot 28-02-2026 in jaren = 21 |
 
 Division by numeric zero: hard fault in v0; decided for v1: it routes
@@ -940,10 +940,11 @@ and demand millisecond-precision (datum-tijd) operands. A spelling
 outside the table is a declared day kind (the day-kind forms above) or
 ill-formed (WF-035/WF-038).
 
-**Operand order and precision.** Date + duration commutes — the
-duration may stand on either side of plus; subtraction admits the date
-on the **left only** (duration − date is ill-formed), and date ± date
-is ill-formed (WF-035). tijdsduur's two operands must be dates of one
+**Operand order and precision.** The date stands on the **left** of
+both plus and min — a duration-left operand (duration + date, duration
+− date) is ill-formed, as is date ± date (WF-035): v0's typing opens
+its date branch only for a date-left operand, so plus does *not*
+commute. tijdsduur's two operands must be dates of one
 precision (WF-038); mixed precision is ill-formed. A fractional
 duration count **truncates toward zero** before the calendar step (1,9
 maanden steps 1 month; −1,9 truncates to −1). Empty rules: ch. 1.2 —
@@ -956,7 +957,7 @@ weken, maanden, kwartalen and jaren, and date ± duration in those
 units — runs in ref and clingo. Anchor `jutterswet-jutleeftijd`
 carries the three worked examples above verbatim (plus the leeg
 corner); golden `jutterswet-vervaltermijn` pins the month-end clamp,
-the empty-duration standstill, the operand commuting and the
+the empty-duration standstill, the quarter step and the
 fractional truncation. The day-kind (dagsoort-as-unit) forms and the
 datum-tijd sub-day layer stay unexecuted, loud — tracked debt, never a
 silent skip.

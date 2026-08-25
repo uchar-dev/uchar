@@ -441,25 +441,6 @@
         "node": "Binair",
         "op": "PLUS",
         "links": {
-          "node": "Literal",
-          "waarde": "2",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": null,
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "wk",
-              "stelsel": null,
-              "canoniek": null,
-              "factorNaarCanoniek": null,
-              "noemer": null
-            }
-          },
-          "bron": "2 weken"
-        },
-        "rechts": {
           "node": "AttribuutRef",
           "attribuut": "aangiftedatum",
           "objecttype": "Vondst",
@@ -472,10 +453,29 @@
           "set": false,
           "navigatiePad": []
         },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "1",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": null,
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "kw",
+              "stelsel": null,
+              "canoniek": null,
+              "factorNaarCanoniek": null,
+              "noemer": null
+            }
+          },
+          "bron": "1 kwartaal"
+        },
         "type": {
           "node": "DatumInDagen"
         },
-        "bron": "2 weken plus zijn aangiftedatum"
+        "bron": "zijn aangiftedatum plus 1 kwartaal"
       },
       "voorwaarde": null,
       "geldigheid": {

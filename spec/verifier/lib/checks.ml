@@ -1777,11 +1777,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                [ v "WF-035" at "additive operands have incompatible units" ]
              else []
          | _ -> [])
-      (* the WF-035 date±duration clause (RUNTIME-SEMANTICS ch. 3.8): plus
-         commutes, min admits the date on the LEFT only, date ± date is
-         ill-formed; the duration operand is a number whose unit spelling is
-         a recognised time unit or a declared day kind; a sub-day unit
-         demands a millisecond-precision date operand *)
+      (* the WF-035 date±duration clause (RUNTIME-SEMANTICS ch. 3.8): the
+         date stands on the LEFT of plus and min — v0's typing opens its
+         date branch only for a date-left operand, so duration ± date and
+         date ± date are ill-formed; the duration operand is a number whose
+         unit spelling is a recognised time unit or a declared day kind; a
+         sub-day unit demands a millisecond-precision date operand *)
       @ (let duration_side side t date_t =
            match t with
            | None -> []
@@ -1818,8 +1819,11 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
              [ v "WF-035" at
                  "duration \xe2\x88\x92 date is ill-formed (subtraction admits the date on \
                   the left only)" ]
+         | Plus, _, Some r when is_date r ->
+             [ v "WF-035" at
+                 "duration + date is ill-formed (the date stands on the left; v0 does \
+                  not commute)" ]
          | (Plus | Min), Some l, _ when is_date l -> duration_side "rechts" rt l
-         | Plus, _, Some r when is_date r -> duration_side "links" lt r
          | _ -> [])
       @ (match links with Some e -> walk_expr ctx ~binders ~subject ~body (sub "links") e | None -> [])
       @ (match rechts with Some e -> walk_expr ctx ~binders ~subject ~body (sub "rechts") e | None -> [])
@@ -1891,7 +1895,13 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                          precision)" ]
                 | _ -> [])
              @ (match f.typ with
-                | None -> []
+                | None ->
+                    (* the counted unit lives on the node type: an absent
+                       type cannot carry it — without this arm the wire is
+                       verifier-clean and faults only at evaluation *)
+                    [ v "WF-038" at
+                        "tijdsduur without a node type (the counted unit is the node \
+                         type's unit)" ]
                 | Some t -> (
                     match unit_of t with
                     | None ->
