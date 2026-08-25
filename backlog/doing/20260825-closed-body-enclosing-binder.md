@@ -33,3 +33,15 @@ only), backends/clingo/, corpus/negatief/ (the WF-064 witness), spec/IR-SPEC.md
 
 Out of scope: ref/ (already faults correctly); the multiplicative closed-body
 broadening (landed on `20260825-clingo-bodymult`).
+
+Besluit (maintainer, 2026-08-25): uitvoeren — het vierde slot, in de
+lijn van het hekken-besluit van 2026-08-24. De lezing van een búíten
+de gesloten body gebonden binder (Let-binder van de omsluitende
+regel gelezen in een fold-/lambda-body) wordt onwelgevormd: de
+verifier weert hem vóór de executors (die er nu verschillend maar
+beide luid op struikelen). Volg het voorstel hierboven: bepaal of
+dit een WF-064-verbreding of een nieuw nummer is (aansluitend op de
+index), verifier-check, rood-eerst, minstens één negatief-case,
+corpus-breed gevalideerd. LET OP de parallelle S19-kaart: een Let
+BINNEN de body wordt daar juist gedragen — de check moet exact de
+buiten-binder-lezing raken, niet de binnen-body-Let.
