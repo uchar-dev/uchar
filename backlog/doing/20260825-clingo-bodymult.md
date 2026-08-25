@@ -81,3 +81,51 @@ Alle negen gates groen (slotregels):
 9. `check-catala: PASS — frontend suite green (155 checks); 10 catala golden(s) regenerate byte-identically`
 
 Openstaand: twee opus-lenzen vóór de merge (acceptance).
+
+## Lensronde (2026-08-25)
+
+Twee opus-lensbevindingen verwerkt; beide zelf gereproduceerd (rood-eerst,
+letterlijke uitvoer).
+
+- **BEVINDING 1 [MAJOR/CONFIRMED] — gevallen schaalhek in `closed_division`.**
+  WAAR. `closed_division` berekende `out_scale = max sl sr` en liet
+  `ctx.write_scale` vallen; het regel-niveau-`translate_division` gebruikt
+  `max (max sl sr) ctx.write_scale`. Gevolg: een gesloten-body constante-deler-
+  deling waarvan het exacte quotiënt méér decimalen vergt dan de operand-schalen
+  bieden maar wél in de fold-/schrijfschaal past, vuurde ten onrechte de
+  niet-exact-deling-viol → clingo UNSAT waar ref de waarde aanvaardt. De
+  tutorial-deler `2,0000` (sr=10000 ≥ write_scale) maskeerde het; alleen een
+  bare-integer-deler legt write_scale bloot. Rood-eerst gereproduceerd op een
+  wegwerp-IR (`acc + x/4` in een 2-dec accumulator, kindertallen=[1]): verifier
+  `PASS`, ref `oracle: PASS` (0,25), clingo `UNSATISFIABLE — ... viol("non-exact
+  division ...",plist("kindertallen"))`. Fix: `out_scale = max (max sl sr)
+  ctx.write_scale` (r. 2293, spiegelt r. 1371). Na de fix beide `PASS` (0,25).
+  Vaste getuige: `corpus/golden/jutterswet-kinderkwart` (`Fold(+, 0.00)` van
+  `acc + kindertal / 4` in het 2-dec attribuut `kwartheffing`; case1 [1,2,3] →
+  1,50, case2 [] → 0,00; hand berekend, ref ≡ clingo). S15 bijgewerkt: de
+  out-scale is `max(s_L, s_R, write_scale)`, gelijk aan het regel-niveau.
+
+- **BEVINDING 2 [MINOR/CONFIRMED, buiten scope] — omsluitende Let-binder in een
+  gesloten fold-body.** WAAR (pre-existing; `closed_term`'s Binder_ref r. 2055
+  laat de bind-atomen vallen — de Plus/Min-tak deed dit al vóór deze kaart, de
+  nieuwe Maal-tak is enkel een nieuwe route). De verplichte compositie
+  `Let(f=<parameter>) in Fold(+,0, λacc x. acc + x*f)` gereproduceerd: verifier
+  `PASS` (WF-064 weigert het niet), ref `EVALUATION FAULT: unbound binder "f"
+  (WF-064 should preclude this)`, clingo grond-crash `error: unsafe variables
+  ... 'LB3' is unsafe`, clingo exit 65. Beide executors falen (geen fout
+  antwoord); WF-064-ill-gevormd, dus nooit een golden. De echte leemte is
+  WF-064-volledigheid (spec/verifier) óf een nette `closed_term`-fault i.p.v.
+  een onveilige regel — beide buiten deze kaart (May touch sluit spec/verifier
+  en ref uit; een nette-fault-ontwerpkeuze verbreedt de kaart). Getrackt:
+  `backlog/new/20260825-closed-body-enclosing-binder.md`.
+
+Alle negen gates opnieuw groen (slotregels):
+1. `check-self-contained: PASS`
+2. `check-ir-schema: PASS (schema valid; 103 file(s) validate and round-trip)`
+3. `check-verifier: PASS (103 golden clean; 142 negatief rejected for their declared rule)`
+4. `check-case-schema: PASS (schema valid; 277 case file(s) validate)`
+5. `check-oracle: PASS (259 cases replayed exactly; NOT replayed, no case file yet: corpus/golden/jutterswet-vormenkabinet)`
+6. `check-clingo: PASS (259 cases replay exactly through clingo — ref = clingo over the corpus)`
+7. `check-noop: PASS (226 cases refute a do-nothing executor; 33 pinned survivors pin defeasible standing)`
+8. `check-rood: PASS (18 red cases fault observably in both executors)`
+9. `check-catala: PASS — frontend suite green (155 checks); 10 catala golden(s) regenerate byte-identically`
