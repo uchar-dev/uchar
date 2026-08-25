@@ -1,0 +1,76 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "C1",
+        "objectType": "Centpot",
+        "attributes": {
+          "centopbrengst": {
+            "number": "125.00"
+          }
+        },
+        "roles": {
+          "centjutters": [
+            "J1",
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "centgewicht": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "centgewicht": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "centdeel",
+      "value": {
+        "number": "62.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "centdeel",
+      "value": {
+        "number": "62.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "C1",
+      "attribute": "centrest",
+      "value": {
+        "number": "1.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

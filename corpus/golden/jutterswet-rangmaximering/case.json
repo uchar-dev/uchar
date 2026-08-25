@@ -1,0 +1,166 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Penningkas",
+        "attributes": {
+          "penningbudget": {
+            "number": "1800"
+          }
+        },
+        "roles": {
+          "wachters": [
+            "W1",
+            "W2",
+            "W3",
+            "W4",
+            "W5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "W1",
+        "objectType": "Wachter",
+        "attributes": {
+          "wachtjaar": {
+            "number": "2010"
+          },
+          "voorranggewicht": {
+            "number": "3"
+          },
+          "penningmaximum": {
+            "number": "500"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W2",
+        "objectType": "Wachter",
+        "attributes": {
+          "wachtjaar": {
+            "number": "2015"
+          },
+          "voorranggewicht": {
+            "number": "2"
+          },
+          "penningmaximum": {
+            "number": "500"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W3",
+        "objectType": "Wachter",
+        "attributes": {
+          "wachtjaar": {
+            "number": "2015"
+          },
+          "voorranggewicht": {
+            "number": "1"
+          },
+          "penningmaximum": {
+            "number": "500"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W4",
+        "objectType": "Wachter",
+        "attributes": {
+          "wachtjaar": {
+            "number": "2020"
+          },
+          "voorranggewicht": {
+            "number": "3"
+          },
+          "penningmaximum": {
+            "number": "250"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W5",
+        "objectType": "Wachter",
+        "attributes": {
+          "wachtjaar": {
+            "number": "2020"
+          },
+          "voorranggewicht": {
+            "number": "1"
+          },
+          "penningmaximum": {
+            "number": "250"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "W1",
+      "attribute": "penningtoewijzing",
+      "value": {
+        "number": "500"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W2",
+      "attribute": "penningtoewijzing",
+      "value": {
+        "number": "500"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W3",
+      "attribute": "penningtoewijzing",
+      "value": {
+        "number": "433"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W4",
+      "attribute": "penningtoewijzing",
+      "value": {
+        "number": "250"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W5",
+      "attribute": "penningtoewijzing",
+      "value": {
+        "number": "91"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "onuitgekeerd budget",
+      "value": {
+        "number": "26"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

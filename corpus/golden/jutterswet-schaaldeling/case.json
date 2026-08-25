@@ -1,0 +1,82 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Kadeberging",
+        "attributes": {
+          "kadeopbrengst": {
+            "number": "100"
+          }
+        },
+        "roles": {
+          "kadejutters": [
+            "J1",
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "vrachtgewicht": {
+            "number": "1"
+          },
+          "kademaximum": {
+            "number": "90"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "vrachtgewicht": {
+            "number": "2"
+          },
+          "kademaximum": {
+            "number": "50"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "kadedeel",
+      "value": {
+        "number": "33.33"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "kadedeel",
+      "value": {
+        "number": "50.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "kaderest",
+      "value": {
+        "number": "16.67"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

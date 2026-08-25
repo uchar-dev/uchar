@@ -3564,10 +3564,17 @@ let translate_ladder_group ctx gidx (members : (int * default_ladder) list) =
   end
   end
 
-(* allocation, proportional with cap/floor/remainder (RUNTIME-SEMANTICS
-   ch. 4.2), in integer arithmetic. Scale bookkeeping: raw = pot×w/Σw
-   carries the pot's scale (the weight scale cancels); the floor at the
-   declared decimals must therefore coincide with the pot/target scale. *)
+(* allocation (RUNTIME-SEMANTICS ch. 4): the ch. 4.2 recurrence over
+   ordered recipient groups, in integer arithmetic — all three methods.
+   Scale layer: shares are floored at the declared rounding scale d ≤ t
+   by the integer division itself — the pot rides into the numerator
+   upscaled by 10^(d−p), or the divisor by 10^(p−d), so division on
+   non-negative operands is exactly floor_d (the weight scale cancels
+   in the ratio); the written share upscales to the target scale t, and
+   the remainder lives at its own scale r ≥ max(p, d). Without declared
+   rounding ref writes the EXACT rational share and faults a
+   non-fitting write — here an exactness viol/2 at the target scale,
+   never a silent floor (the aligned form used to floor silently). *)
 let translate_verdeling ctx i (v : resolved_verdeling) =
   (* windows on the untranslated-window forms fault LOUDLY (they were
      silently ignored before the ch. 8.2 gate landed for rules, ladders
@@ -3577,8 +3584,13 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
   | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
       fault "allocation validity windows are not translated (no corpus case)"
   | _ -> ());
-  if v.vd_methode <> Some Naar_rato then fault "only the proportional allocation is translated yet";
-  if v.vd_voorwaarde <> None then fault "conditional allocation not translated yet";
+  let methode =
+    match v.vd_methode with
+    | Some Complex | None ->
+        (* WF-024 rejects both before translation; the backstop mirrors ref *)
+        fault "COMPLEX allocation is not admissible IR (WF-024)"
+    | Some m -> m
+  in
   let bt = req "bronType" v.bron_type and dt = req "doelType" v.doel_type in
   let ba = req "bronAttribuut" v.bron_attribuut and da = req "doelAttribuut" v.doel_attribuut in
   (* the allocation-target input fence (the latent superset gap of the
@@ -3592,8 +3604,23 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
       "the case supplies input for allocation target %S: ref (like v0) overwrites it, which \
        has no monotone encoding here (no corpus case)"
       da;
-  let rato = req "ratoAttribuut (proportional)" v.rato_attribuut in
+  (* WF-025 field-validity backstops, rejected before translation on
+     verifier-clean input *)
+  (match (methode, v.rato_attribuut, v.maximum_attribuut) with
+  | Gelijke_delen, Some _, _ ->
+      fault "an equal-shares allocation with a ratio attribute is ill-formed (WF-025)"
+  | (Gelijke_delen | Op_volgorde), None, Some _ ->
+      fault "an allocation maximum requires the weighted split (WF-025)"
+  | _ -> ());
+  (match (methode, v.groepeer_attribuut) with
+  | (Gelijke_delen | Naar_rato), Some _ ->
+      fault "an ordering key on a non-ordered allocation is ill-formed (WF-025)"
+  | _ -> ());
   let name = Option.value v.vd_naam ~default:"verdeling" in
+  (* the §9.5 channel key: a deposit out of the voorwaarde (a division
+     edge inside the condition) rides the allocation's name, exactly as
+     ref's cond_err does (S13) *)
+  ctx.rule_name <- name;
   let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty } in
   let role =
     role_canonical
@@ -3601,89 +3628,276 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
       | Some rb -> Eval.bound_role env rb
       | None -> Eval.connecting_role env ~from_type:bt ~to_type:dt)
   in
-  let pot_scale = pow10 (attr_decimals ctx ~otype:bt ~attr:ba) in
-  let target_scale = pow10 (attr_decimals ctx ~otype:dt ~attr:da) in
-  let floor_scale = pow10 (Option.value v.afronding_decimalen ~default:0) in
-  let cap_scale =
-    match v.maximum_attribuut with
-    | Some cap -> pow10 (attr_decimals ctx ~otype:dt ~attr:cap)
-    | None -> target_scale
-  in
-  let rest_scale =
-    match v.restant_attribuut with
-    | Some ra -> pow10 (attr_decimals ctx ~otype:bt ~attr:ra)
-    | None -> pot_scale
-  in
-  if
-    pot_scale <> target_scale || floor_scale <> target_scale || cap_scale <> target_scale
-    || rest_scale <> pot_scale
-  then
-    fault
-      "allocation scale mismatch (pot %d, target %d, floor %d, cap %d, rest %d): only the \
-       aligned form is translated"
-      pot_scale target_scale floor_scale cap_scale rest_scale;
   let p = Printf.sprintf "vd%d_" i in
-  (* eligible recipients: filled weight; the weightless are excluded and
-     surface on the channel (ch. 4.4) *)
-  emit ctx "%sgewicht(X,W) :- rol(B,%s,X), is_a(B,%s), val(X,%s,W)." p (str role) (str bt)
-    (str rato);
-  (* fail-fast guards, mirrored on ref/'s faults: integer division is
-     floor only on non-negative operands, and an empty pot is the
-     ch. 4.4 v0 hole ref/ faults on — viol/2 witnesses plus the global
-     integrity constraint make clingo fail identically instead of
-     silently diverging, and let the runner name the fired guard *)
-  emit ctx "viol(\"allocation: negative pot\",B) :- is_a(B,%s), val(B,%s,A), A < 0." (str bt)
-    (str ba);
-  emit ctx "viol(\"allocation: negative weight\",X) :- %sgewicht(X,W), W < 0." p;
-  (* the wrap fence: pot and weights ≤ 46340 and at most 46340
-     recipients keep the weight sum, the pot×weight product and the
-     share sum inside 2^31 (shares never exceed the pot: W ≤ S under
-     the non-negative-weight guard, and a cap only lowers them) *)
-  emit ctx
-    "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X) :- \
-     %sgewicht(X,W), |W| > 46340."
-    p;
+  (* --- the scale layer ------------------------------------------------ *)
+  let pdec = attr_decimals ctx ~otype:bt ~attr:ba in
+  let tdec = attr_decimals ctx ~otype:dt ~attr:da in
+  (match v.afronding_decimalen with
+  | Some d when d > tdec ->
+      fault
+        "allocation rounding at %d decimals is finer than its %d-decimal target (no corpus \
+         case)"
+        d tdec
+  | _ -> ());
+  (* exact mode: no declared rounding — ref keeps the exact rational
+     share and faults a write that does not fit the target's decimals;
+     the share division gets an exactness viol below, never a silent
+     floor *)
+  let exact = v.afronding_decimalen = None in
+  let ddec = Option.value v.afronding_decimalen ~default:tdec in
+  if exact && v.maximum_attribuut <> None then
+    fault
+      "an unrounded allocation with a maximum is not translated (whether the exact share or \
+       the cap is the written minimum decides the exactness fault; no corpus case)";
+  let cdec = Option.map (fun cap -> attr_decimals ctx ~otype:dt ~attr:cap) v.maximum_attribuut in
+  let rdec = Option.map (fun ra -> attr_decimals ctx ~otype:bt ~attr:ra) v.restant_attribuut in
+  (match rdec with
+  | Some r when r < pdec || r < ddec ->
+      fault
+        "an allocation remainder at %d decimals under a %d-decimal pot and %d-decimal \
+         rounding is not exactly representable (no corpus case)"
+        r pdec ddec
+  | _ -> ());
+  let m_num = pow10 (max 0 (ddec - pdec)) in
+  let m_den = pow10 (max 0 (pdec - ddec)) in
+  let m_val = pow10 (tdec - ddec) in
+  let scaled t m = if m = 1 then t else Printf.sprintf "%s*%d" t m in
+  let divd t m = if m = 1 then t else Printf.sprintf "(%s*%d)" t m in
+  (* the conditional gate (ch. 4.1): a source distributes only where its
+     voorwaarde holds — ref evaluates the condition before it touches
+     pot or recipients, so every semantic guard and §9.5 deposit below
+     rides this gate. The wrap fences do NOT: grounding computes the
+     scaled products whether or not the condition turns out true. *)
+  head_body ctx
+    (Printf.sprintf "%ssrc(B)" p)
+    (Printf.sprintf "is_a(B,%s)" (str bt)
+    ::
+    (match v.vd_voorwaarde with
+    | None -> []
+    | Some c -> cond_atoms ctx ~subject:"B" ~subject_ot:bt c));
+  let src = Printf.sprintf "%ssrc(B)" p in
+  (* the wrap fences: operand bounds shrink by exactly the scale
+     multipliers a misaligned form introduces, so every product — the
+     pot upscale to rounding/target/remainder scale, pot×weight, the
+     weight sum times the divisor upscale, and the share sums — provably
+     stays inside 2^31 (46340² < 2^31; equal scales keep the historical
+     46340 everywhere) *)
+  let pot_bound =
+    46340
+    / max
+        (pow10 (max 0 (tdec - pdec)))
+        (match rdec with Some r -> pow10 (r - pdec) | None -> 1)
+  in
   emit ctx
     "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",B) :- \
-     is_a(B,%s), val(B,%s,A), |A| > 46340."
-    (str bt) (str ba);
+     is_a(B,%s), val(B,%s,A), |A| > %d."
+    (str bt) (str ba) pot_bound;
   emit ctx
     "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",B) :- \
      is_a(B,%s), 46340 < #count { X : rol(B,%s,X) }."
     (str bt) (str role);
-  emit ctx "%sheeft_pot(B) :- is_a(B,%s), val(B,%s,_)." p (str bt) (str ba);
-  emit ctx "viol(\"allocation: empty pot\",B) :- is_a(B,%s), rol(B,%s,_), not %sheeft_pot(B)."
-    (str bt) (str role) p;
-  emit ctx "inconsistent(%s,X) :- rol(B,%s,X), is_a(B,%s), not %sheeft_gewicht(X)." (str name)
-    (str role) (str bt) p;
-  emit ctx "%sheeft_gewicht(X) :- %sgewicht(X,_)." p p;
-  emit ctx "%swsum(B,S) :- is_a(B,%s), S = #sum { W,X : rol(B,%s,X), %sgewicht(X,W) }, S != 0." p
-    (str bt) (str role) p;
-  emit ctx "%sraw(X,(A*W)/S) :- rol(B,%s,X), %sgewicht(X,W), %swsum(B,S), val(B,%s,A)." p
-    (str role) p p (str ba);
-  (match v.maximum_attribuut with
-  | Some cap ->
-      (* cap before floor; an empty or negative cap degrades to uncapped
-         + a channel fact (ch. 4.3) *)
-      emit ctx "%scap(X,C) :- %sraw(X,_), val(X,%s,C), C >= 0." p p (str cap);
-      emit ctx "inconsistent(%s,X) :- %sraw(X,_), val(X,%s,C), C < 0." (str name) p (str cap);
-      emit ctx "inconsistent(%s,X) :- %sraw(X,_), not %sheeft_cap(X)." (str name) p p;
-      emit ctx "%sheeft_cap(X) :- val(X,%s,C), C >= 0, %sraw(X,_)." p (str cap) p;
-      emit ctx "val(X,%s,R) :- %sraw(X,R), %scap(X,C), R <= C." (str da) p p;
-      emit ctx "val(X,%s,C) :- %sraw(X,R), %scap(X,C), R > C." (str da) p p;
-      emit ctx "val(X,%s,R) :- %sraw(X,R), not %sheeft_cap(X)." (str da) p p
-  | None -> emit ctx "val(X,%s,R) :- %sraw(X,R)." (str da) p);
-  (match v.restant_attribuut with
-  | Some ra ->
-      (* shares are ≤ pot ≤ 46340 by construction; this guard also
-         covers a share written by anything other than this allocation *)
+  (match v.rato_attribuut with
+  | Some rato ->
       emit ctx
         "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X) :- \
-         rol(B,%s,X), is_a(B,%s), val(X,%s,Sh), |Sh| > 46340."
-        (str role) (str bt) (str da);
-      emit ctx "val(B,%s,A-T) :- is_a(B,%s), val(B,%s,A), %swsum(B,_), T = #sum { Sh,X : rol(B,%s,X), val(X,%s,Sh) }."
-        (str ra) (str bt) (str ba) p (str role) (str da)
-  | None -> ())
+         rol(B,%s,X), is_a(B,%s), val(X,%s,W), |W| > %d."
+        (str role) (str bt) (str rato) (46340 / m_den)
+  | None -> ());
+  (match (v.maximum_attribuut, cdec) with
+  | Some cap, Some c when pow10 (max 0 (ddec - c)) > 1 ->
+      emit ctx
+        "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X) :- \
+         rol(B,%s,X), is_a(B,%s), val(X,%s,C), |C| > %d."
+        (str role) (str bt) (str cap) (46340 / pow10 (ddec - c))
+  | _ -> ());
+  emit ctx "%sheeft_pot(B) :- is_a(B,%s), val(B,%s,_)." p (str bt) (str ba);
+  (* the target write and the remainder, shared across the methods; the
+     remainder guard carries each method's Nothing case (ch. 4.4: zero
+     recipients, or an absent/zero weight sum, write NO rest) *)
+  let emit_write share_atom =
+    emit ctx "val(X,%s,%s) :- %s." (str da) (scaled "S" m_val) share_atom
+  in
+  let emit_rest ~guard ~sum =
+    match (v.restant_attribuut, rdec) with
+    | Some ra, Some r ->
+        emit ctx "val(B,%s,%s-%s) :- %s, val(B,%s,A), %s, T = #sum { %s }." (str ra)
+          (scaled "A" (pow10 (r - pdec)))
+          (scaled "T" (pow10 (r - ddec)))
+          src (str ba) guard sum
+    | _ -> () (* undeclared: the rest lapses (a SHOULD, no WF rule) *)
+  in
+  (* cap-before-floor (ch. 4.3): share = min(floor_d raw, floor_d cap) —
+     the floor commutes with min — with the degrade edges: an empty or
+     negative cap is uncapped + a channel fact. [raw_pat] is the
+     method's raw atom with X free; the declared cap floors to the
+     rounding scale (an upscale is exact, a downscale is the floor). *)
+  let emit_cap_atoms ~raw_pat =
+    let cap = req "maximumAttribuut" v.maximum_attribuut in
+    let c = match cdec with Some c -> c | None -> assert false in
+    let capd =
+      if ddec >= c then scaled "C" (pow10 (ddec - c))
+      else Printf.sprintf "C/%d" (pow10 (c - ddec))
+    in
+    emit ctx "%scapd(X,%s) :- %s, val(X,%s,C), C >= 0." p capd raw_pat (str cap);
+    emit ctx "inconsistent(%s,X) :- %s, val(X,%s,C), C < 0." (str name) raw_pat (str cap);
+    emit ctx "inconsistent(%s,X) :- %s, not %sheeft_cap(X)." (str name) raw_pat p;
+    emit ctx "%sheeft_cap(X) :- val(X,%s,C), C >= 0, %s." p (str cap) raw_pat
+  in
+  let exact_viol = "allocation: a share does not fit the target scale (an explicit rounding is mandated before precision is lost)" in
+  match methode with
+  | Complex -> assert false (* fenced above *)
+  | Naar_rato ->
+      let rato = req "ratoAttribuut (proportional)" v.rato_attribuut in
+      (* fail-fast guards, mirrored on ref/'s faults and on floor
+         semantics: integer division is floor only on non-negative
+         operands, and an empty pot is the ch. 4.4 v0 hole ref/ faults
+         on — viol/2 witnesses plus the global integrity constraint
+         make clingo fail identically instead of silently diverging *)
+      emit ctx "viol(\"allocation: negative pot\",B) :- %s, val(B,%s,A), A < 0." src (str ba);
+      emit ctx "viol(\"allocation: empty pot\",B) :- %s, rol(B,%s,_), not %sheeft_pot(B)." src
+        (str role) p;
+      (* eligible recipients: filled weight; the weightless are excluded
+         and surface on the channel (ch. 4.4) *)
+      emit ctx "%sgewicht(X,W) :- rol(B,%s,X), %s, val(X,%s,W)." p (str role) src (str rato);
+      emit ctx "viol(\"allocation: negative weight\",X) :- %sgewicht(X,W), W < 0." p;
+      emit ctx "inconsistent(%s,X) :- rol(B,%s,X), %s, not %sheeft_gewicht(X)." (str name)
+        (str role) src p;
+      emit ctx "%sheeft_gewicht(X) :- %sgewicht(X,_)." p p;
+      emit ctx "%swsum(B,S) :- %s, S = #sum { W,X : rol(B,%s,X), %sgewicht(X,W) }, S != 0." p
+        src (str role) p;
+      let num = Printf.sprintf "%s*W" (scaled "A" m_num) in
+      let den = divd "S" m_den in
+      let raw_body =
+        Printf.sprintf "rol(B,%s,X), %sgewicht(X,W), %swsum(B,S), val(B,%s,A)" (str role) p p
+          (str ba)
+      in
+      emit ctx "%sraw(X,(%s)/%s) :- %s." p num den raw_body;
+      if exact then
+        emit ctx "viol(\"%s\",X) :- %s, (%s) \\ %s != 0." exact_viol raw_body num den;
+      (match v.maximum_attribuut with
+      | Some _ ->
+          emit_cap_atoms ~raw_pat:(Printf.sprintf "%sraw(X,_)" p);
+          emit ctx "%sshare(X,R) :- %sraw(X,R), %scapd(X,C), R <= C." p p p;
+          emit ctx "%sshare(X,C) :- %sraw(X,R), %scapd(X,C), R > C." p p p;
+          emit ctx "%sshare(X,R) :- %sraw(X,R), not %sheeft_cap(X)." p p p
+      | None -> emit ctx "%sshare(X,R) :- %sraw(X,R)." p p);
+      emit_write (Printf.sprintf "%sshare(X,S)" p);
+      emit_rest ~guard:(Printf.sprintf "%swsum(B,_)" p)
+        ~sum:(Printf.sprintf "S,X : rol(B,%s,X), %sshare(X,S)" (str role) p)
+  | Gelijke_delen ->
+      (* one group, all recipients, unweighted (ch. 4.2); the negative
+         and empty pot guards as in the proportional method (the empty
+         pot is the same ch. 4.4 v0 mirror hole) *)
+      emit ctx "viol(\"allocation: negative pot\",B) :- %s, val(B,%s,A), A < 0." src (str ba);
+      emit ctx "viol(\"allocation: empty pot\",B) :- %s, rol(B,%s,_), not %sheeft_pot(B)." src
+        (str role) p;
+      emit ctx "%sn(B,N) :- %s, rol(B,%s,_), N = #count { X : rol(B,%s,X) }." p src (str role)
+        (str role);
+      let num = scaled "A" m_num in
+      let den = divd "N" m_den in
+      let raw_body = Printf.sprintf "rol(B,%s,X), %sn(B,N), val(B,%s,A)" (str role) p (str ba) in
+      emit ctx "%sshare(X,(%s)/%s) :- %s." p num den raw_body;
+      if exact then
+        emit ctx "viol(\"%s\",X) :- %s, (%s) \\ %s != 0." exact_viol raw_body num den;
+      emit_write (Printf.sprintf "%sshare(X,S)" p);
+      emit_rest ~guard:(Printf.sprintf "%sn(B,_)" p)
+        ~sum:(Printf.sprintf "S,X : rol(B,%s,X), %sshare(X,S)" (str role) p)
+  | Op_volgorde ->
+      (* groups are the equal-key classes of the ordering attribute,
+         ascending/descending as declared, an EMPTY key sorting last in
+         both directions (ch. 4.2): a filled key's rank counts the
+         distinct keys before it, the keyless group sits at the filled
+         group count. vdN_pot(B,R,P) IS the recurrence: rank R divides
+         the pot as it stands at entry, shares are capped, floored and
+         clamped at 0, and max(0, P−ΣS) carries forward — the recursion
+         through the assignment aggregates grounds because the rank
+         strictly increases under the ranks bound. Negative raws (a
+         negative pot) clamp to the real 0 ref assigns, so the
+         trunc-vs-floor split of negative division never surfaces and a
+         negative pot needs no viol here; an empty pot is Nothing (the
+         §9.7.6 discipline), never the equal/proportional fault. *)
+      let rolx = Printf.sprintf "rol(B,%s,X)" (str role) in
+      (match v.groepeer_attribuut with
+      | Some ga ->
+          let cmp = if v.afnemend then ">" else "<" in
+          emit ctx "%skey(B,X,K) :- %s, %s, val(X,%s,K)." p rolx src (str ga);
+          emit ctx "%shaskey(B,X) :- %skey(B,X,_)." p p;
+          emit ctx "%snokey(B,X) :- %s, %s, not %shaskey(B,X)." p rolx src p;
+          emit ctx "%sgkey(B,K) :- %skey(B,_,K)." p p;
+          emit ctx "%sgrank(B,K,R) :- %sgkey(B,K), R = #count { K2 : %sgkey(B,K2), K2 %s K }."
+            p p p cmp;
+          emit ctx "%sng(B,N) :- %s, rol(B,%s,_), N = #count { K : %sgkey(B,K) }." p src
+            (str role) p;
+          emit ctx "%smrank(B,X,R) :- %skey(B,X,K), %sgrank(B,K,R)." p p p;
+          emit ctx "%smrank(B,X,N) :- %snokey(B,X), %sng(B,N)." p p p;
+          emit ctx "%shasnokey(B) :- %snokey(B,_)." p p;
+          emit ctx "%sranks(B,N+1) :- %sng(B,N), %shasnokey(B)." p p p;
+          emit ctx "%sranks(B,N) :- %sng(B,N), not %shasnokey(B)." p p p
+      | None ->
+          (* keyless: ONE group — ref sorts an all-empty key list into a
+             single equal-key class *)
+          emit ctx "%smrank(B,X,0) :- %s, %s." p rolx src;
+          emit ctx "%sranks(B,1) :- %s, rol(B,%s,_)." p src (str role));
+      emit ctx "%spot(B,0,%s) :- %s, val(B,%s,A), rol(B,%s,_)." p (scaled "A" m_num) src
+        (str ba) (str role);
+      (match v.rato_attribuut with
+      | Some rato ->
+          (* the weighted tie-break (ch. 4.2/4.4): an empty weight is a
+             real 0 + a §9.5 deposit, a negative one counts as 0
+             silently; a tie group whose weights sum to 0 assigns 0 to
+             every member (the recurrence's 0/0 case) *)
+          emit ctx "%shasw(X) :- val(X,%s,_)." p (str rato);
+          emit ctx "%stw(B,X,W) :- %smrank(B,X,_), val(X,%s,W), W >= 0." p p (str rato);
+          emit ctx "%stw(B,X,0) :- %smrank(B,X,_), val(X,%s,W), W < 0." p p (str rato);
+          emit ctx "%stw(B,X,0) :- %smrank(B,X,_), not %shasw(X)." p p p;
+          emit ctx "inconsistent(%s,X) :- %smrank(B,X,_), %sheeft_pot(B), not %shasw(X)."
+            (str name) p p p;
+          emit ctx
+            "%sgwsum(B,R,S) :- %spot(B,R,_), %smrank(B,_,R), S = #sum { W,X : %smrank(B,X,R), \
+             %stw(B,X,W) }."
+            p p p p p;
+          emit ctx
+            "%sraw(B,X,(P*W)/%s) :- %smrank(B,X,R), %spot(B,R,P), %stw(B,X,W), %sgwsum(B,R,S), \
+             S != 0."
+            p (divd "S" m_den) p p p p;
+          emit ctx "%sraw(B,X,0) :- %smrank(B,X,R), %spot(B,R,_), %sgwsum(B,R,0)." p p p p;
+          if exact then
+            emit ctx
+              "viol(\"%s\",X) :- %smrank(B,X,R), %spot(B,R,P), %stw(B,X,W), %sgwsum(B,R,S), \
+               S != 0, P*W > 0, (P*W) \\ %s != 0."
+              exact_viol p p p p (divd "S" m_den)
+      | None ->
+          emit ctx
+            "%sgsize(B,R,N) :- %spot(B,R,_), %smrank(B,_,R), N = #count { X : %smrank(B,X,R) }."
+            p p p p;
+          emit ctx "%sraw(B,X,P/%s) :- %smrank(B,X,R), %spot(B,R,P), %sgsize(B,R,N)." p
+            (divd "N" m_den) p p p;
+          if exact then
+            emit ctx
+              "viol(\"%s\",X) :- %smrank(B,X,R), %spot(B,R,P), %sgsize(B,R,N), P > 0, \
+               P \\ %s != 0."
+              exact_viol p p p (divd "N" m_den));
+      (match v.maximum_attribuut with
+      | Some _ ->
+          emit_cap_atoms ~raw_pat:(Printf.sprintf "%sraw(_,X,_)" p);
+          emit ctx "%ssh0(B,X,S) :- %sraw(B,X,S), %scapd(X,C), S <= C." p p p;
+          emit ctx "%ssh0(B,X,C) :- %sraw(B,X,S), %scapd(X,C), S > C." p p p;
+          emit ctx "%ssh0(B,X,S) :- %sraw(B,X,S), not %sheeft_cap(X)." p p p
+      | None -> emit ctx "%ssh0(B,X,S) :- %sraw(B,X,S)." p p);
+      (* the ordered-only max(0,·) clamps of ch. 4.2 *)
+      emit ctx "%sshare(B,X,S) :- %ssh0(B,X,S), S >= 0." p p;
+      emit ctx "%sshare(B,X,0) :- %ssh0(B,X,S), S < 0." p p;
+      emit ctx
+        "%sspent(B,R,T) :- %spot(B,R,_), T = #sum { %s,X : %smrank(B,X,R), %sshare(B,X,S) }."
+        p p (scaled "S" m_den) p p;
+      emit ctx
+        "%spot(B,R+1,P-T) :- %spot(B,R,P), %sspent(B,R,T), %sranks(B,N), R+1 < N, P-T >= 0."
+        p p p p;
+      emit ctx "%spot(B,R+1,0) :- %spot(B,R,P), %sspent(B,R,T), %sranks(B,N), R+1 < N, P-T < 0."
+        p p p p;
+      emit_write (Printf.sprintf "%sshare(B,X,S)" p);
+      emit_rest ~guard:(Printf.sprintf "rol(B,%s,_)" (str role))
+        ~sum:(Printf.sprintf "S,X : %sshare(B,X,S)" p)
 
 let translate_consistentie ctx i (c : resolved_consistentie) =
   (* the allocation-window sibling: loud, never silently unwindowed *)

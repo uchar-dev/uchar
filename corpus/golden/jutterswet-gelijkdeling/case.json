@@ -1,0 +1,84 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Strandveiling",
+        "attributes": {
+          "veilingopbrengst": {
+            "number": "90"
+          }
+        },
+        "roles": {
+          "veilingjutters": [
+            "J1",
+            "J2",
+            "J3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "veilingdeel",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "veilingdeel",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "veilingdeel",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "veilingrestant",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

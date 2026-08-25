@@ -1,0 +1,136 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B1",
+        "objectType": "Strandberging",
+        "attributes": {
+          "bergopbrengst": {
+            "number": "100"
+          },
+          "vrijgavescore": {
+            "number": "12"
+          }
+        },
+        "roles": {
+          "bergjutters": [
+            "J1",
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "B2",
+        "objectType": "Strandberging",
+        "attributes": {
+          "bergopbrengst": {
+            "number": "40"
+          },
+          "vrijgavescore": {
+            "number": "7"
+          }
+        },
+        "roles": {
+          "bergjutters": [
+            "J3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "B3",
+        "objectType": "Strandberging",
+        "attributes": {
+          "bergopbrengst": {
+            "number": "50"
+          }
+        },
+        "roles": {
+          "bergjutters": [
+            "J4"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "berggewicht": {
+            "number": "60"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "berggewicht": {
+            "number": "20"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "berggewicht": {
+            "number": "5"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {
+          "berggewicht": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "bergdeel",
+      "value": {
+        "number": "75"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "bergdeel",
+      "value": {
+        "number": "25"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J3",
+      "attribute": "bergdeel"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J4",
+      "attribute": "bergdeel"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

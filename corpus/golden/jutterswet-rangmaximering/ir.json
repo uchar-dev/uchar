@@ -1,0 +1,156 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Penningkas": {
+      "node": "Objecttype",
+      "naam": "Penningkas",
+      "attributen": {
+        "penningbudget": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "onuitgekeerd budget": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Penningkassen"
+    },
+    "Wachter": {
+      "node": "Objecttype",
+      "naam": "Wachter",
+      "attributen": {
+        "wachtjaar": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "voorranggewicht": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "penningmaximum": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "penningtoewijzing": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Wachters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {
+    "wachtdienst": {
+      "node": "Feittype",
+      "naam": "wachtdienst",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "penningkas",
+          "objecttypeNaam": "Penningkas",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "wachter",
+          "objecttypeNaam": "Wachter",
+          "meervoud": "wachters",
+          "meervoudig": true
+        }
+      ]
+    }
+  },
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "verdeel het penningbudget van een penningkas",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [
+    {
+      "node": "ResolvedVerdeling",
+      "naam": "verdeel het penningbudget van een penningkas",
+      "bronType": "Penningkas",
+      "bronAttribuut": "penningbudget",
+      "doelType": "Wachter",
+      "doelAttribuut": "penningtoewijzing",
+      "methode": "OP_VOLGORDE",
+      "ratoAttribuut": "voorranggewicht",
+      "maximumAttribuut": "penningmaximum",
+      "afrondingDecimalen": 0,
+      "restantAttribuut": "onuitgekeerd budget",
+      "groepeerAttribuut": "wachtjaar",
+      "afnemend": false,
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      },
+      "verbindendeRol": {
+        "node": "RolBinding",
+        "feittype": "wachtdienst",
+        "rol": "wachter"
+      }
+    }
+  ],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

@@ -1,0 +1,108 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Kustpost",
+        "attributes": {},
+        "roles": {
+          "aangemelde jutters": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "K2",
+        "objectType": "Kustpost",
+        "attributes": {
+          "bergingscapaciteit": {
+            "number": "60"
+          }
+        },
+        "roles": {
+          "aangemelde jutters": [
+            "J5",
+            "J6"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "aanmeldjaar": {
+            "number": "2019"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J5",
+        "objectType": "Jutter",
+        "attributes": {
+          "aanmeldjaar": {
+            "number": "2021"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J6",
+        "objectType": "Jutter",
+        "attributes": {
+          "aanmeldjaar": {
+            "number": "2021"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "toegewezen capaciteit"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "K1",
+      "attribute": "restcapaciteit"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "toegewezen capaciteit",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J6",
+      "attribute": "toegewezen capaciteit",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K2",
+      "attribute": "restcapaciteit",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

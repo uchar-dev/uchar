@@ -647,22 +647,55 @@ Witnesses: `jutterswet-penninguitgifte`, `jutterswet-wachtersketen`,
 
 ### S12. Allocation and uniqueness
 
-**Proportional allocation** (verdeling naar rato, ch. 4.2): the
-recurrence over the group translates as an aggregate cascade per
-allocation I — weights `vdI_gewicht(X,W)`, the weight sum
-`vdI_wsum(B,S) :- ..., S = #sum {W,X: ...}, S != 0`, raw shares
-`vdI_raw(X,(A*W)/S)` (integer division on non-negative operands is
-exactly the declared floor), the cap split (share = min(raw, cap)
-encoded as the R≤C / R>C / uncapped cases), and the remainder
-`val(B,ra,A−T)` with T the share sum. The §9.5 channel carries the
-ch. 4.4 holes: a weightless recipient, a negative or absent cap —
-keyed by the allocation's name, per subject. `viol/2` fences:
-negative pot, negative weight, empty pot, and the 46340 bounds on
-weight, pot and recipient count — plus, when a remainder attribute
-is declared, on each share the remainder sums (the weight sum, the
-pot×weight product and the share sum then provably stay inside
-2^31; without a remainder the shares are bounded by construction). Only the proportional method translates; conditional
-allocation and misaligned scales fault (S19). Case input on the
+**Allocation** (verdeling, ch. 4): all three methods translate as
+instances of the ch. 4.2 recurrence, per allocation I rooted in the
+gate `vdI_src(B)` — `is_a` plus the voorwaarde's condition atoms
+(S7), so a **conditional** allocation distributes only where its
+condition holds, and every semantic guard and §9.5 deposit below
+rides the same gate (ref evaluates the condition before it touches
+pot or recipients). The **scale layer** admits misaligned
+declarations: shares are floored at the declared rounding scale
+d ≤ t by the integer division itself — the pot upscaled by 10^(d−p)
+into the numerator, or the divisor by 10^(p−d) when the pot is finer
+(non-negative operands make integer division exactly floor_d; the
+weight scale cancels in the ratio) — the written share upscales to
+the target scale t, and the remainder lives at its own scale
+r ≥ max(p, d): `val(B,ra,A·10^(r−p) − T·10^(r−d))` over the
+allocation's OWN share atoms. Without declared rounding ref writes
+the EXACT rational share and faults a non-fitting write; that is
+mirrored as an exactness viol at the target scale — the previously
+"aligned" unrounded form floored silently, now it viols.
+**Proportional** (naar rato): weights `vdI_gewicht(X,W)` over the
+gate, the weight sum with `S != 0`, raw shares `vdI_raw`, the cap
+split share = min(floor_d raw, floor_d cap) — the floor commutes
+with min, the declared cap floors to the rounding scale — as the
+R≤C / R>C / uncapped cases. **Equal shares**: one group,
+`vdI_n(B,N)` recipients, share = floor_d(A/n), no weights and (by
+WF-025) no cap. **Ordered** (op volgorde): `vdI_grank` ranks the
+distinct key values by counting predecessors (ascending `<`,
+descending `>`), the keyless group at the filled-group count — an
+empty key sorts LAST in both directions; `vdI_pot(B,R,P)` IS the
+recurrence: rank R divides the pot as it stands at entry (the
+weighted tie-break `vdI_tw`: an empty weight a real 0 + a §9.5
+deposit, a negative one 0 silently, a 0-sum tie group assigning 0 to
+every member), shares are capped, floored and clamped at 0
+(`vdI_sh0`/`vdI_share`), and `max(0, P−ΣS)` carries forward — the
+recursion through the assignment aggregates grounds because the rank
+strictly increases under the `vdI_ranks` bound. Negative raws (a
+negative pot) clamp to the real 0 ref assigns, so ordered needs no
+negative-pot viol, and an empty ordered pot is Nothing (§9.7.6),
+never a fault. The §9.5 channel carries the ch. 4.4 holes — a
+weightless proportional recipient, an empty ordered tie weight, a
+negative or absent cap — keyed by the allocation's name, per
+subject. `viol/2` fences: negative pot and weight and empty pot
+(equal/proportional only — ref faults the empty pot as the ch. 4.4
+v0 mirror hole), the exactness viol, and the wrap bounds on pot,
+weight, cap and recipient count, which shrink by exactly the scale
+multipliers a misaligned form introduces (46340² < 2^31; equal
+scales keep the historical 46340 everywhere). The wrap fences stay
+UNGATED by the voorwaarde — grounding computes the scaled products
+whether or not the condition turns out true — so clingo refuses
+loudly where ref would merely skip the source. Case input on the
 allocation's target attribute is refused — the ch. 6d
 superset-model fence.
 
@@ -679,8 +712,20 @@ counts. An ever-unique key served by a bucket scalar faults; so do
 two temporal components (the same-moment tuple join has no corpus
 case).
 
-Witnesses: allocation by `jutterswet-bergingstoezicht`,
-`jutterswet-berging`; uniqueness by `jutterswet-kustregister`,
+Witnesses: proportional allocation by `jutterswet-bergingstoezicht`,
+`jutterswet-berging`; equal shares by `jutterswet-gelijkdeling`
+(floor + remainder, the recipientless source writing nothing);
+ordered by `jutterswet-rangdeling` (depletion over year groups, the
+empty key last, the negative pot clamping to real 0s),
+`jutterswet-rangmaximering` (tie weights + cap + floor + remainder —
+the ch. 4.6 full recurrence — plus the 0/0 tie group and the empty
+tie weight's §9.5 deposit) and `jutterswet-rangaflopend`
+(descending, empty key still last); conditional by
+`jutterswet-voorwaardedeling` (the false and leeg condition arms
+leaving targets leeg); misaligned scales by `jutterswet-schaaldeling`
+(whole-euro pot and cap into a cent target under 2-decimal rounding)
+and `jutterswet-centdeling` (cent pot under whole-euro rounding into
+a cent target); uniqueness by `jutterswet-kustregister`,
 `jutterswet-strandregister`, `jutterswet-postwacht`,
 `jutterswet-vondstnummer`; the union by `jutterswet-nummerregister`
 (per-subject collision pins); red: `uni-temporal-key-scalar`,
@@ -702,13 +747,16 @@ executors — the case format's rule pin reads both identically:
 | consistency assertion failure | the consistency's name |
 | uniqueness / uniqueness-union collision | the uniqueness form's name |
 | ladder conflict (equal-priority disagreement) | `onderwerp.target` |
-| allocation: weightless recipient, cap holes | the allocation's name |
+| allocation: weightless recipient, empty ordered tie weight, cap holes | the allocation's name |
 
 A channel head embedded in a rule's *value expression* — the
 division row — threads the enclosing rule's condition atoms (S3): a
 subject the condition excludes deposits nothing. The standalone forms
-(consistencies, uniqueness, ladder conflicts, allocations) have no
-enclosing voorwaarde to thread; their own bodies are the guard. The
+(consistencies, uniqueness, ladder conflicts) have no
+enclosing voorwaarde to thread; their own bodies are the guard. An
+allocation's deposits ride its `vdI_src` gate (S12): a source its
+voorwaarde excludes deposits nothing, and a deposit out of the
+condition itself (a division edge) keys the allocation's name. The
 loader
 validates a pinned rule name against the closed set of channel-capable
 names and rejects unknown pins with a candidate list (ch. 5.6). Gross
@@ -1466,8 +1514,17 @@ and for text/enum/boolean **parameters**, which ref executes but the
 ASP parameter emission scales through `decimals_of_datatype` —
 ref-only until a corpus case demands a symbolic parameter carriage);
 characteristic attribution with a non-waar value;
-non-proportional and conditional allocation; misaligned allocation
-and rounding scales; som fallbacks other than 0; uniqueness key
+the allocation's remaining scale-shape fences — since 2026-08-25
+all three methods, the voorwaarde and misaligned pot/target/cap/rest
+scales translate (S12), and what stays loud is rounding declared
+FINER than the target scale, a remainder declared coarser than the
+pot or rounding scale, and an unrounded (exact-share) allocation
+carrying a maximum (whether the exact share or the cap is the
+written minimum decides ref's write fault, a split with no corpus
+case) — while the unrounded aligned form, which used to floor
+silently where ref faults a non-fitting write, now carries the
+runtime exactness viol instead of a silent divergence;
+som fallbacks other than 0; uniqueness key
 lists with more than one temporal component, and ever-unique keys
 served by a scalar; case input on non-standing computed targets
 (scalar, temporal, and allocation targets alike — the ch. 6d

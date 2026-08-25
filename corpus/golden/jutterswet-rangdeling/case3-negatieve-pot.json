@@ -1,0 +1,76 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Kustpost",
+        "attributes": {
+          "bergingscapaciteit": {
+            "number": "-50"
+          }
+        },
+        "roles": {
+          "aangemelde jutters": [
+            "J1",
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "aanmeldjaar": {
+            "number": "2020"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "aanmeldjaar": {
+            "number": "2020"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "toegewezen capaciteit",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "toegewezen capaciteit",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "restcapaciteit",
+      "value": {
+        "number": "-50"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
