@@ -1,0 +1,24 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "grondslag": { "number": "123.45" },
+      "kindertallen": { "list": [] }
+    }
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "heffing", "value": { "number": "0.00" } },
+    { "kind": "attributeValue", "label": "J1", "attribute": "puntentotaal", "value": { "number": "0" } },
+    { "kind": "consistent" }
+  ]
+}

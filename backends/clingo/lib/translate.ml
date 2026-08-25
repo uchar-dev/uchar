@@ -390,6 +390,19 @@ let numeric_ok e =
 
 let rec gcd a b = if b = 0 then a else gcd b (a mod b)
 
+(* the gcd-reduced constant-divisor fraction (§6.5/S18): the exact scaled
+   quotient of a dividend at scale [sl] by a COMPILE-TIME positive constant
+   divisor [c] at scale [sr], targeting [out_scale], is tl·(sr·out_scale) /
+   (c·sl). Folding that constant fraction to lowest terms keeps the divisor's
+   scale from inflating the numerator; the fold is exact (dividing numerator and
+   denominator constants by a common factor preserves both the integer quotient
+   and its divisibility test). Shared by the rule-level bare division and the
+   closed-body division — one reduction. *)
+let const_div_reduce ~sl ~sr ~out_scale ~c =
+  let num_c = sr * out_scale and den_c = c * sl in
+  let g = gcd num_c den_c in
+  (num_c / g, den_c / g)
+
 (* multiplicative operands must be effectively unit-free: ref's unit
    algebra (rate cancellation, convertible-unit division) applies exact
    conversion factors this integer encoding does not carry *)
@@ -430,6 +443,43 @@ let range_guard ctx ~subject ~body terms_with_bounds =
         (String.concat ", " body)
         t bound)
     terms_with_bounds
+
+(* the split money × rate cent encoding (§5/S18(c)), shared verbatim by the
+   rule-level Afgerond{money×rate} and the closed-body money multiplication (one
+   encoding). Rounding a 2-decimal money M by a 4-decimal rate R to the cent: the
+   naive product M·R at scale 10^6 wraps clingo's machine integers at tutorial
+   magnitude, so the rate splits into two scale-2 halves — Rh = R/100, Rl = R\100
+   — giving round(M·R/10^4) half-up as C = A/100 + (100·(A\100) + M·Rl + 5000)/10^4
+   with A = M·Rh (REKENKUNDIG, non-negative operands). [money_mult_fences] emits
+   the four viol/2 fences keyed by [subject], grounded by the caller's [gbody]
+   string; [money_mult_body] returns the non-negativity guards and the A/C
+   assignment atoms over the caller's fresh variables [a] and [c]. *)
+let money_mult_fences ctx ~subject ~gbody ~tm ~tr =
+  emit ctx
+    "viol(\"negative operand under money multiplication is not translated\",%s) :- %s, (%s) < 0."
+    subject gbody tm;
+  emit ctx
+    "viol(\"negative operand under money multiplication is not translated\",%s) :- %s, (%s) < 0."
+    subject gbody tr;
+  (* A = M·Rh fence: |M| <= max_int31/(|Rh|+1) keeps |M·Rh| inside 2^31; the
+     |Rh|+1 divisor is >= 1 for either sign, so a negative rate (fenced UNSAT
+     above) can never divide by zero during grounding *)
+  emit ctx
+    "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, |%s| > \
+     %d/(|(%s)/100|+1)."
+    subject gbody tm max_int31 tr;
+  (* B = M·Rl fence: Rl = R\100 < 100, so |M| <= (max_int31-20000)/99 keeps the
+     rounded numerator 100·rA + M·Rl + 5000 inside 2^31 *)
+  emit ctx
+    "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, |%s| > %d."
+    subject gbody tm
+    ((max_int31 - 20000) / 99)
+
+let money_mult_body ~a ~c ~tm ~tr =
+  [ Printf.sprintf "(%s) >= 0" tm;
+    Printf.sprintf "(%s) >= 0" tr;
+    Printf.sprintf "%s = (%s)*((%s)/100)" a tm tr;
+    Printf.sprintf "%s = %s/100 + (100*(%s\\100) + (%s)*((%s)\\100) + 5000)/10000" c a a tm tr ]
 
 (* --- sum types (RUNTIME-SEMANTICS ch. 9; ASP-TRANSLATION S14) ------------ *)
 
@@ -1349,9 +1399,7 @@ and translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding =
     in
     match const_div with
     | Some c ->
-        let num_c = sr * out_scale and den_c = c * sl in
-        let g = gcd num_c den_c in
-        let knum = num_c / g and kden_c = den_c / g in
+        let knum, kden_c = const_div_reduce ~sl ~sr ~out_scale ~c in
         (* the fold shrinks the denominator to the GROUND constant kden_c, which
            the rounding formulas feed UNGUARDED into 2*dent, numt+dent-1 and
            2*numt+dent. numt is fenced to 2^29 below, but nothing bounds kden_c,
@@ -2054,10 +2102,34 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
       in
       let unif, fvar, fscale = project_field ctx ~base ~bterm ~veld in
       ([ unif ], fvar, fscale)
+  | Binair { op = Maal; links; rechts; _ } ->
+      (* the multiplicative family in a closed body (§6.4): the scaled product at
+         scale sl·sr, both operands bound (a closed-body binder never goes leeg,
+         so no coalesce — the additive-family posture of this function). The
+         rule-level product encoding and its 46340 range fence, grounded by
+         [guard_body] and keyed by [witness] (one encoding). *)
+      numeric_ok links;
+      numeric_ok rechts;
+      unit_free_ok ctx links;
+      unit_free_ok ctx rechts;
+      let bl, tl, sl = closed_term ctx ~guard_body ~witness (req "Binair.links" links) in
+      let br, tr, sr = closed_term ctx ~guard_body ~witness (req "Binair.rechts" rechts) in
+      range_guard ctx ~subject:witness ~body:(guard_body @ bl @ br) [ (tl, 46340); (tr, 46340) ];
+      (bl @ br, Printf.sprintf "(%s*%s)" tl tr, sl * sr)
+  | Afgerond { basis = Some basis; modus = Rekenkundig; decimalen = 2; _ }
+    when money_mult_shape basis ->
+      (* the money × rate product Catala rounds to the cent (§5/S18(c)) inside a
+         closed body — the split encoding, shared with the rule level *)
+      closed_money_mult ctx ~guard_body ~witness ~basis
+  | Binair { op = Gedeeld_door; links; rechts; _ } ->
+      (* a closed-body division by a compile-time positive constant (the
+         tutorial's decimal of n / 2.0000) — the gcd-reduced form with its
+         divisor-side range fence and non-exact viol, both in body context *)
+      closed_division ctx ~guard_body ~witness ~links ~rechts
   | _ ->
       fault
-        "a closed-body term here is a bound binder, a literal, a parameter, a +/- combination \
-         or a Construct (no corpus case for more)"
+        "a closed-body term here is a bound binder, a literal, a parameter, a +/- or × \
+         combination, a constant-divisor division or a Construct (no corpus case for more)"
 
 (* a sum-typed operand inside a closed body → its ground term: a bound binder
    (a lambda/function parameter or a match payload) resolves to its ASP
@@ -2147,37 +2219,94 @@ and translate_money_mult ctx ~subject ~subject_ot ~basis : string list * string 
       sr;
   let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
   let gbody = String.concat ", " ((base :: ctx.rule_guard) @ ma @ ra) in
-  (* REKENKUNDIG half-away is encoded here for non-negative operands only (the
-     tutorial's money and rate are >= 0; ref rounds either sign) *)
-  emit ctx
-    "viol(\"negative operand under money multiplication is not translated\",%s) :- %s, (%s) < 0."
-    subject gbody tm;
-  emit ctx
-    "viol(\"negative operand under money multiplication is not translated\",%s) :- %s, (%s) < 0."
-    subject gbody tr;
-  (* A = M·Rh fence: |M| <= max_int31/(|Rh|+1) keeps |M·Rh| inside 2^31; the
-     |Rh|+1 divisor is >= 1 for either sign, so a negative rate (fenced UNSAT
-     above) can never divide by zero during grounding *)
-  emit ctx
-    "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, |%s| > \
-     %d/(|(%s)/100|+1)."
-    subject gbody tm max_int31 tr;
-  (* B = M·Rl fence: Rl = R\100 < 100, so |M| <= (max_int31-20000)/99 keeps the
-     rounded numerator 100·rA + M·Rl + 5000 inside 2^31 *)
-  emit ctx
-    "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, |%s| > %d."
-    subject gbody tm
-    ((max_int31 - 20000) / 99);
+  (* the fences and REKENKUNDIG half-away encoding are shared with the closed
+     body (one encoding); here the value rides a subject-keyed helper predicate,
+     the operand atoms baked into its body *)
+  money_mult_fences ctx ~subject ~gbody ~tm ~tr;
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "mm%d" ctx.fresh in
-  emit ctx
-    "%s(%s,C) :- %s, (%s) >= 0, (%s) >= 0, A = (%s)*((%s)/100), C = A/100 + (100*(A\\100) + \
-     (%s)*((%s)\\100) + 5000)/10000."
-    p subject gbody tm tr tm tr tm tr;
+  emit ctx "%s(%s,C) :- %s, %s." p subject gbody
+    (String.concat ", " (money_mult_body ~a:"A" ~c:"C" ~tm ~tr));
   let v = fresh ctx "MM" in
   ctx.binders <- saved_b;
   ctx.rule_guard <- saved_g;
   ([ Printf.sprintf "%s(%s,%s)" p subject v ], v, 100)
+
+(* the money × rate cent product inside a CLOSED body (S15/S18(c)): the same
+   split encoding as [translate_money_mult], but the operands are bound binders
+   (a closed-body binder never goes leeg, so no coalesce and no Let peeling — a
+   closed body carries no Let), and the A/C assignments are INLINE body atoms
+   over fresh variables rather than a subject-keyed helper predicate, so the fold
+   recurrence that consumes them binds the per-element index directly. The four
+   fences ride [witness] and [guard_body] — every fence moves to body context. *)
+and closed_money_mult ctx ~guard_body ~witness ~basis : string list * string * int =
+  let m, r =
+    match basis with
+    | Binair { op = Maal; links; rechts; _ } ->
+        (req "money multiplication links" links, req "money multiplication rechts" rechts)
+    | _ -> fault "a closed-body money multiplication basis is not a bare MAAL"
+  in
+  numeric_ok (Some m);
+  numeric_ok (Some r);
+  unit_free_ok ctx (Some m);
+  unit_free_ok ctx (Some r);
+  let ma, tm, sm = closed_term ctx ~guard_body ~witness m in
+  let ra, tr, sr = closed_term ctx ~guard_body ~witness r in
+  if sm <> 100 || sr <> 10000 then
+    fault "the split money multiplication expects a 2-decimal money and a 4-decimal rate (%d,%d)" sm
+      sr;
+  let gbody = String.concat ", " (guard_body @ ma @ ra) in
+  money_mult_fences ctx ~subject:witness ~gbody ~tm ~tr;
+  let a = fresh ctx "A" and c = fresh ctx "C" in
+  (ma @ ra @ money_mult_body ~a ~c ~tm ~tr, c, 100)
+
+(* a closed-body division by a COMPILE-TIME positive constant divisor (§6.5/S18):
+   the gcd-reduced exact form shared with the rule-level bare division. The
+   runtime-divisor edges (empty dividend → 0, empty divisor → the §9.5 channel)
+   never arise on always-bound binders, so only the divisor-side fences ride: the
+   numerator range fence and the non-exact viol, both keyed by [witness] and
+   grounded by [guard_body]. The value is guarded EXACT (numt \ dent == 0), so a
+   non-exact quotient derives no value and its viol makes the program UNSAT — the
+   remainder never truncates silently (ref stays exact-rational, then its bounded
+   write refuses; the differential holds where it runs). *)
+and closed_division ctx ~guard_body ~witness ~links ~rechts : string list * string * int =
+  let links = req "Binair.links" links and rechts = req "Binair.rechts" rechts in
+  numeric_ok (Some links);
+  numeric_ok (Some rechts);
+  unit_free_ok ctx (Some links);
+  unit_free_ok ctx (Some rechts);
+  let bl, tl, sl = closed_term ctx ~guard_body ~witness links in
+  let br, tr, sr = closed_term ctx ~guard_body ~witness rechts in
+  let c =
+    if br = [] then
+      match int_of_string_opt (String.trim tr) with
+      | Some c when c > 0 -> c
+      | _ ->
+          fault
+            "a closed-body division needs a compile-time positive constant divisor (no corpus case \
+             for a runtime or non-positive divisor)"
+    else
+      fault
+        "a closed-body division needs a compile-time positive constant divisor (no corpus case for \
+         a runtime divisor)"
+  in
+  let out_scale = max sl sr in
+  let knum, kden_c = const_div_reduce ~sl ~sr ~out_scale ~c in
+  if kden_c > 536870912 then
+    fault "a closed-body constant divisor whose reduced denominator exceeds the fence has no corpus case";
+  let numt = if knum = 1 then Printf.sprintf "(%s)" tl else Printf.sprintf "((%s)*%d)" tl knum in
+  let dent = Printf.sprintf "(%d)" kden_c in
+  let gbody = guard_body @ bl @ br in
+  range_guard ctx ~subject:witness ~body:gbody [ (tl, 536870912 / knum) ];
+  emit ctx
+    "viol(\"non-exact division (an explicit rounding is mandated before precision is lost)\",%s) :- \
+     %s, %s \\ %s != 0."
+    witness
+    (String.concat ", " gbody)
+    numt dent;
+  ( bl @ br @ [ Printf.sprintf "%s \\ %s == 0" numt dent ],
+    Printf.sprintf "(%s/%s)" numt dent,
+    out_scale )
 
 (* --- rule forms ---------------------------------------------------------- *)
 

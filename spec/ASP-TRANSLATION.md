@@ -745,12 +745,38 @@ scale.
   aanspraaktelling map is `Invoke aanspraakwaarde` over each element,
   whose body is exactly the bound-term match above.
 - Any other closed term (`closed_term`) is a bound binder, a literal, a
-  document parameter, a `+`/`-` combination of those, or a `Construct`.
-  **Every emitted arithmetic step carries a `viol/2` range fence**
-  grounded by the recurrence body and witnessed by the list-id — the
-  running accumulator is grounding-time arithmetic and would otherwise
-  wrap silently past 2³¹ where ref's exact rationals do not (the S6/S8
-  fence discipline, on the fold interior).
+  document parameter, a `+`/`-`/`×` combination of those, a
+  **constant-divisor division**, or a `Construct`. **Every emitted
+  arithmetic step carries a `viol/2` range fence** grounded by the
+  recurrence body and witnessed by the list-id — the running accumulator is
+  grounding-time arithmetic and would otherwise wrap silently past 2³¹ where
+  ref's exact rationals do not (the S6/S8 fence discipline, on the fold
+  interior). The multiplicative forms reuse the rule-level encodings
+  verbatim (one encoding, never a second), only swapping the subject-keyed
+  grounding for the recurrence body and the list-id witness, so every fence
+  moves with them:
+    - **`Maal`** is the scaled product `(tl*tr)` at scale `sl·sr` with the
+      46340 product fence on each operand — the S6 multiplicative family
+      without the leeg coalesce (a closed-body binder never goes leeg, the
+      additive-family posture of `closed_term`).
+    - **The money × rate product** rounded to the cent
+      (`Afgerond{REKENKUNDIG,2}` over a 2-decimal money × 4-decimal rate,
+      `money_mult_shape`) is the split encoding of S18(c) — the shared
+      `money_mult_fences`/`money_mult_body`, with the four fences (two
+      negative-operand, two range) keyed by the list-id and the `A`/`C`
+      assignments emitted *inline* as body atoms over fresh variables rather
+      than a subject-keyed helper predicate, so the fold recurrence binds the
+      per-element index directly.
+    - **A `Gedeeld_door` by a compile-time positive constant** is the
+      gcd-reduced form of S18 (the shared `const_div_reduce`): the numerator
+      range fence and the non-exact `viol/2` ride the list-id, and the value
+      is guarded **exact** (`numt \ dent == 0`), so a non-exact quotient
+      derives no value and its viol makes the program UNSAT — the remainder
+      never truncates silently. An integer dividend under the division is
+      widened to the divisor's rational scale by the out-scale harmonisation
+      (the `decimal of n` ToRat pass-through), needing no separate node. The
+      runtime-divisor edges (empty dividend/divisor) cannot arise on
+      always-bound binders, so they do not ride here.
 - A **`Construct` with a computed payload** inside a body (the reduce
   lowering's `Some(⟨body⟩)` step) wraps *each* payload branch in the
   constructor functor: `body_branches ⟨payload⟩` splits an `IfThenElse`
@@ -1310,14 +1336,21 @@ translated (index gaps need re-indexing; no corpus case)` rather than
 silently deriving nothing; `ListLength` over a filter stays fine, it
 counts; an **IfThenElse
 condition** other than a comparison over bound terms, a **closed-body
-term** other than a bound binder / literal / parameter / `+`-`-`
-combination / `Construct`, and a **`FilterList` condition** other than a
+term** other than a bound binder / literal / parameter / `+`,`-`,`×`
+combination / constant-divisor division / money×rate split / `Construct`,
+and a **`FilterList` condition** other than a
 sum-typed (in)equality over the bound element (the closed-body grammar is
-narrowed to what the two anchors exercise); a **list-valued
+narrowed to what the corpus exercises); a **list-valued
 `attributeValue` expectation** in `model.ml` (the anchors expect only
 scalars and leegte; a list comparison is not built until a case wants
-one). Multiplicative and other operators inside fold bodies ride the same
-"no corpus case" fence as their rule-expression kin. A **named FunctionDef
+one). The **multiplicative closed-body forms now translate** (S15, golden
+`jutterswet-kinderfoldheffing`; red `closed-nonexact-division`): `Maal`,
+the money×rate split rounded to the cent, and a division by a compile-time
+positive constant, each reusing its rule-level encoding and every fence in
+the fold interior. What still rides the "no corpus case" fence inside a
+closed body is the rest of the arithmetic — a **runtime (non-constant)
+divisor**, `Percentage_van`, `Gedeeld_door_abs`, `Tot_de_macht`, and a
+`Let` (`closed_term` has no arm for these). A **named FunctionDef
 as a `Fold`/`MapList` operand** is no longer a shape-without-a-case: it is
 **WF-069-rejected** before translation (the operand MUST be an inline
 `Lambda`; a named function reaches a fold through a lambda body that
@@ -1399,8 +1432,9 @@ WF-clean input (the guard mirrors the verifier's `bound_only_expr`). Two
 `Let`-body shapes an executor carries only in the bare rule-value
 position fault loudly elsewhere: a **`Let` inside a closed body** (a fold,
 function or lambda body — `closed_term` has no `Let` arm) faults `a
-closed-body term here is a bound binder, a literal, a parameter, a +/-
-combination or a Construct (no corpus case for more)`; a **`Let` whose
+closed-body term here is a bound binder, a literal, a parameter, a +/- or ×
+combination, a constant-divisor division or a Construct (no corpus case for
+more)`; a **`Let` whose
 body is an `IfThenElse` outside the bare rule value** (a ladder rung, a
 creation member initialisation, a sum- or struct-target value —
 `expr_term` peels the `Let` but has no `If_then_else` arm) faults
