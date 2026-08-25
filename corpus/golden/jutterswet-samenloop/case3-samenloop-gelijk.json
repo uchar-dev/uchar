@@ -1,0 +1,39 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J",
+        "objectType": "Jutter",
+        "attributes": {
+          "berggeld": {
+            "number": "40"
+          },
+          "wachtgeld": {
+            "number": "40"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "berger",
+          "wachter"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J",
+      "attribute": "vergoeding",
+      "value": {
+        "number": "40"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

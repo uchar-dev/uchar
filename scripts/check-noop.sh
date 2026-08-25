@@ -136,6 +136,12 @@
 #   - synth3-letbeslag/case4-leeg-grondslag.json: the strict Let leeg-barrier
 #     again (ch. 10.6), here composed under a Match body — grondslag absent makes
 #     `Let g` leeg, so beslag is leeg before the Match ever dispatches.
+#   - jutterswet-samenloop/case6-geen-grond.json: the no-ground flank of the
+#     samenloop competition ladder (ch. 7.1) — with neither aanspraak ground
+#     present no rung decides and vergoeding stays empty, whatever amounts the
+#     input carries; the absence IS the assertion. The five sibling cases all
+#     decide (the hoogste under samenloop, or the sole ground's bedrag) and
+#     are not survivors.
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
@@ -168,7 +174,8 @@ corpus/golden/synth3-vondststaat/case3-afwezig.json
 corpus/golden/synth3-drempelheffing/case4-leeg-grondslag.json
 corpus/golden/synth3-besluitschakel/case4-afwezig.json
 corpus/golden/synth3-letbeslag/case3-leeg-regime.json
-corpus/golden/synth3-letbeslag/case4-leeg-grondslag.json'
+corpus/golden/synth3-letbeslag/case4-leeg-grondslag.json
+corpus/golden/jutterswet-samenloop/case6-geen-grond.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
