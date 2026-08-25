@@ -1464,8 +1464,12 @@ Comparison, Predicate, and CharacteristicCheck only —
   attribution's target is unaffected. **Delta (promotion).**
 - **WF-035** Operator typing (mirror of the v0 error set): numeric
   operators' operands MUST be number-like; power operands MUST
-  additionally be unitless; a date ± duration MUST use a time unit or
-  declared day kind; additive operands MUST have compatible units (both
+  additionally be unitless; a date ± duration MUST use a time unit (the
+  ch. 3.8 spelling table of `RUNTIME-SEMANTICS.md`) or declared day
+  kind, with the date on the left of min (duration − date is
+  ill-formed), date ± date ill-formed, and a sub-day unit demanding a
+  millisecond-precision date operand; additive operands MUST have
+  compatible units (both
   unitless or both present and convertible — WF-010); a clamp's base and
   bounds MUST be numeric, and at least one bound MUST be present (that
   last clause is structural in v0's grammar, not a typing error —
@@ -1498,7 +1502,12 @@ Comparison, Predicate, and CharacteristicCheck only —
   operands MUST be dates of equal precision; a totaal operand that is
   non-temporal MUST carry a rate unit per time unit; eerste-paasdag MUST
   take a whole, unitless year; the sub-day part extractors MUST take a
-  millisecond-precision date; a sum's `emptyFallback` MUST be numeric.
+  millisecond-precision date; a sum's `emptyFallback` MUST be numeric;
+  a tijdsduur's (either variant) two operands MUST be dates of one
+  precision and its node type MUST carry a recognised time-unit or
+  declared day-kind spelling (the ch. 3.8 table of
+  `RUNTIME-SEMANTICS.md`), a sub-day unit demanding
+  millisecond-precision operands.
 - **WF-039** A written enumeration label MUST belong to the declared
   domain; a numeric literal MUST satisfy the target's sign restriction
   (mirror; also invoked from WF-023).
@@ -1918,10 +1927,10 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-032 | start point: variable-start timeline, day-precision member, one per pair | gate 3 | `jutterswet-vormenkabinet` (the meetdatum anchor) | `wf032-fixed-start-anchor` |
 | WF-033 | (dialect) rule-group members resolve; recursive group has a creation member (either kind); object creations guarded, relation creations guard-free | gate 3 | `anchor/jutterswet-wachtersketen` (the recursive chain executes to its fixpoint, gates 5–6; the runaway budget fault is red-pinned, gate 8) + `anchor/jutterswet-erflijn` (the guard-free relation-creation member: the transitive closure reaches its fixpoint in both executors) | `wf033-unguarded-recursive` (the guard clause) + `wf033-no-creation-member` (the containment clause) |
 | WF-034 | every expression/condition reference resolves (no unknown-type sentinel) | gate 3 (partial: sentinel types and parameter/day-kind/element-type/own-member references; variable bindings and navigation paths are not serialized in v0; excepted: a v0 instance-fold source argument names a role and carries the sentinel by construction — the row-1 wart, resolved against declared roles instead) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondsttelling` (role source) | `wf034-dangling-parameter` |
-| WF-035 | operator typing (numeric, unitless power, date±time-unit, unit compatibility, clamp) | gate 3 (over serialized operand types; the date±duration clause is OPEN) | `anchor/jutterswet-wachtersketen` (the numeric Plus, executed by gates 5–6) | `wf035-power-with-unit` |
+| WF-035 | operator typing (numeric, unitless power, date±duration order/unit/precision, unit compatibility, clamp) | gate 3 (over serialized operand types) | `anchor/jutterswet-wachtersketen` (the numeric Plus, executed by gates 5–6) + `jutterswet-vervaltermijn` (date ± duration, both operand orders of plus and the min form, executed by gates 5–6) | `wf035-power-with-unit` + `wf035-datum-plus-datum` + `wf035-duur-min-datum` + `wf035-uur-op-dagdatum` |
 | WF-036 | comparison/predicate typing (ordering, precision, family, domain, builtin operands) | gate 3 (over serialized operand types) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondstnummer` (date ordering) | `wf036-order-number-vs-text` |
 | WF-037 | aggregation/builtin shape: facet validity and arity per kind | gate 3 (fixed-arity kinds; date-construction arity OPEN) | `jutterswet-vondsttelling` | `wf037-fallback-on-minimum` |
-| WF-038 | aggregation operand typing (units, precision, rate for totaal, year for paasdag) | gate 3 (paasdag, sub-day extractors, sum fallback; the totaal rate clause and fold unit-compatibility are OPEN) | `jutterswet-vondsttelling` (the sum fallback slice) | `wf038-paasdag-text` |
+| WF-038 | aggregation operand typing (units, precision, rate for totaal, year for paasdag, tijdsduur operands and node-type unit) | gate 3 (paasdag, sub-day extractors, sum fallback, tijdsduur; the totaal rate clause and fold unit-compatibility are OPEN) | `jutterswet-vondsttelling` (the sum fallback slice) + `anchor/jutterswet-jutleeftijd` (the tijdsduur slice, executed by gates 5–6) | `wf038-paasdag-text` + `wf038-tijdsduur-gemengde-precisie` + `wf038-tijdsduur-zonder-tijdseenheid` |
 | WF-039 | enum label in domain; literal sign restriction | gate 3 | `jutterswet-vormenkabinet` (the gaaf label and the sign-restricted aanwas) | `wf039-negative-under-nonneg` |
 | WF-040 | dimension cell pins every dimension; selection labels resolve in order | gate 3 | `jutterswet-vormenkabinet` (the voorjaar cell read) | `wf040-unpinned-cell` |
 | WF-041 | counting-quantifier threshold ≥ 1 | gate 3 | `jutterswet-vormenkabinet` (ten minste 2) | `wf041-threshold-zero` |

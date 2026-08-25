@@ -73,9 +73,9 @@ recorded as such.
 
 | Context | Empty behaviour | Worked examples |
 |---|---|---|
-| date ± duration | empty *date* propagates; empty *duration* coalesces to 0 | leeg + 5 dagen = leeg; datum + leeg dagen = datum |
+| date ± duration | empty *date* propagates; empty *duration* coalesces to 0 — **Executed** (2026-08-25, both executors; ch. 3.8) | leeg + 5 dagen = leeg; datum + leeg dagen = datum |
 | date construction / part extraction | any empty part or date propagates | jaar uit leeg = leeg |
-| tijdsduur van A tot B | any empty operand propagates (never 0) | tijdsduur van leeg tot d = leeg |
+| tijdsduur van A tot B | any empty operand propagates (never 0) — **Executed** (2026-08-25, both executors; ch. 3.8) | tijdsduur van leeg tot d = leeg |
 
 **Text, booleans, enumerations**
 
@@ -238,6 +238,8 @@ the fractional-exponent domain or mandates a decimal-precision minimum.
 | percentage van | `l/100 × r`, exactly | (1/3)% van 600 = 2 (exact, not 1,999…); 50% van 4,00 = 2 |
 | wortel | principal square root; mandatory explicit rounding follows (§13.4.17.13) | √9 = 3; √2 afgerond op 2 (rekenkundig) = 1,41 |
 | absolute waarde | magnitude; type (unit, precision, sign) passes through | \|−3/7\| = 3/7 |
+| datum ± duur (plus/min over a date and a duration) | **calendar arithmetic, not field arithmetic** — ch. 3.8: the count truncates toward zero, months/quarters/years clamp to the month end; plus commutes, min admits the date left only | 2024-01-31 + 2 weken = 2024-02-14; 2024-01-31 + 1 maand = 2024-02-29 |
+| tijdsduur van A tot B (in hele *eenheid*) | whole declared units between two dates, signed; the packed-month rule of ch. 3.8; the absolute variant drops the sign | tijdsduur van 29-02-2004 tot 28-02-2026 in jaren = 21 |
 
 Division by numeric zero: hard fault in v0; decided for v1: it routes
 into the §9.5 channel (ch. 1.4 point 4). A rational literal
@@ -878,9 +880,86 @@ non-deciding count leaves a case-supplied input timeline standing
 whole; the anchored (variable-startpunt) form stays unexecuted, loud.
 
 **tijdsduur van A tot B** counts *whole* declared units between two
-dates, signed (negative when B < A); quarters = whole months ÷ 3; any
-leeg operand → leeg, never 0 (ch. 1.2). The absolute variant drops the
-sign.
+dates, signed (negative when B < A); any leeg operand → leeg, never 0
+(ch. 1.2). The absolute variant drops the sign. "hele" in the surface
+phrase only types the *result* as a whole number — the count is always
+whole units, written "hele" or not. The calendar is the **proleptic
+Gregorian calendar in zoneless civil time**: no time zones, no DST, no
+leap seconds — a date is a civil (y, m, d) triple, bijective with its
+epoch day number (days since 1970-01-01). The whole-unit definition is
+the **packed-month rule** (v0 mirror, exact):
+
+```
+epoch(D)  = civil days since 1970-01-01
+packed(D) = (12·year(D) + month(D) − 1)·32 + day(D)
+
+dagen     = epoch(B) − epoch(A)
+weken     = dagen quot 7
+maanden   = (packed(B) − packed(A)) quot 32
+kwartalen = maanden quot 3
+jaren     = maanden quot 12
+```
+
+`quot` is integer division truncating **toward zero**, so a negative
+span truncates toward zero, never toward −∞. Worked examples
+(absolute, pinned):
+
+- **Leap child:** 29-02-2004 tot 28-02-2026 = **21** whole years
+  (packed difference 8447, quot 32 = 263 months, quot 12 = 21);
+  29-02-2004 tot 01-03-2026 = **22** (8452 quot 32 = 264 months).
+- **Clamp, not inverse:** 31-01-2024 + 1 maand = 29-02-2024 (the clamp
+  below), yet tijdsduur van 31-01-2024 tot 29-02-2024 = **0** whole
+  months (packed difference 30 < 32): whole-unit counting is *not* the
+  inverse of date-plus-unit arithmetic.
+- **Signed truncation:** 10-03-2025 tot 10-08-2024 = −7 whole months;
+  in whole quarters −7 quot 3 = **−2** (toward zero); in whole years
+  **0**; the absolute variant reads 7 months.
+
+**The time-unit spelling table (normative).** A duration's unit is the
+declared unit of its static type — for date ± duration the duration
+operand's type, for tijdsduur the node's own result type — recognised
+by SPELLING, case-insensitive, keyed on the unit's written
+abbreviation. Declared conversion factors and the declaring stelsel are
+irrelevant to calendar arithmetic (the stelsel may be null): a year is
+a calendar year, never a second count. Nine units:
+
+| Unit | Recognised spellings |
+|---|---|
+| jaar | jaar, jr, jaren |
+| maand | maand, mnd, maanden |
+| kwartaal | kwartaal, kw, kwartalen |
+| week | week, wk, weken |
+| dag | dag, dg, dagen |
+| uur | uur, u, uren |
+| minuut | minuut, min, minuten |
+| seconde | seconde, sec, s, seconden, secondes |
+| milliseconde | milliseconde, ms, milliseconden, millisecondes |
+
+The first five are day-precision units; the last four are sub-day units
+and demand millisecond-precision (datum-tijd) operands. A spelling
+outside the table is a declared day kind (the day-kind forms above) or
+ill-formed (WF-035/WF-038).
+
+**Operand order and precision.** Date + duration commutes — the
+duration may stand on either side of plus; subtraction admits the date
+on the **left only** (duration − date is ill-formed), and date ± date
+is ill-formed (WF-035). tijdsduur's two operands must be dates of one
+precision (WF-038); mixed precision is ill-formed. A fractional
+duration count **truncates toward zero** before the calendar step (1,9
+maanden steps 1 month; −1,9 truncates to −1). Empty rules: ch. 1.2 —
+a leeg date propagates; a leeg duration counts as 0 (the date passes
+unchanged); a leeg tijdsduur operand propagates, never 0.
+
+**Executed (2026-08-25, both executors; WF-035/WF-038):** the
+day-precision family — tijdsduur and absolute tijdsduur in dagen,
+weken, maanden, kwartalen and jaren, and date ± duration in those
+units — runs in ref and clingo. Anchor `jutterswet-jutleeftijd`
+carries the three worked examples above verbatim (plus the leeg
+corner); golden `jutterswet-vervaltermijn` pins the month-end clamp,
+the empty-duration standstill, the operand commuting and the
+fractional truncation. The day-kind (dagsoort-as-unit) forms and the
+datum-tijd sub-day layer stay unexecuted, loud — tracked debt, never a
+silent skip.
 
 **Duration in a day-kind** ("de tijdsduur van A tot B in werkdagen")
 counts the days d with `A < d ≤ B` — **start exclusive, end inclusive**
@@ -900,9 +979,12 @@ examples (absolute; day-kind = 25/26 December): 20-12 + 2 → **26-12**;
 25-12 + 1 → **26-12**; 26-12-2024 + 1 → **25-12-2025**; 20-12 + 0 →
 **20-12**; 27-12 − 1 → **26-12**; 25-12-2024 − 1 → **26-12-2023**.
 
-**Date ± whole calendar units** clamps to the month end: 2024-01-31 + 1
-maand = **2024-02-29** (leap), 2025-01-31 + 1 maand = **2025-02-28**; a
-quarter is three months: 2024-01-01 + 1 kwartaal = **2024-04-01**. A
+**Date ± whole calendar units** clamps to the month end: date + n
+maanden advances the proleptic month (12·year + month − 1) by n and
+clamps the day to the target month's length — 2024-01-31 + 1 maand =
+**2024-02-29** (leap), 2025-01-31 + 1 maand = **2025-02-28**; a quarter
+is three months, a year twelve (so a leap birthday clamps the same
+way); a day or week count is linear (+n / +7·n epoch days). A
 fractional count truncates toward zero. (Empty rules: ch. 1.2 — a leeg
 date propagates, a leeg duration counts as 0.) One date-builtin pin that
 becomes a `ref/` test: eerste paasdag van 2024 = **2024-03-31**.

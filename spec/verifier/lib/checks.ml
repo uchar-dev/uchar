@@ -139,6 +139,38 @@ let units_compatible_adopting lexpr rexpr a b =
   || is_unitless_numeric_literal rexpr
   || units_compatible a b
 
+(* --- the time-unit spelling table (RUNTIME-SEMANTICS ch. 3.8) ----------- *)
+
+(* The nine calendar units, keyed on SPELLING (case-insensitive) — the one
+   normative table the verifier's WF-035/WF-038 clauses and the executors'
+   calendar arithmetic share. Declared conversion factors and the declaring
+   stelsel are irrelevant to calendar arithmetic (the stelsel may be null):
+   a year is a calendar year, never a second count. *)
+type time_unit =
+  | Tu_jaar | Tu_kwartaal | Tu_maand | Tu_week | Tu_dag
+  | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde
+
+let time_unit_of_spelling s =
+  match String.lowercase_ascii (String.trim s) with
+  | "jaar" | "jr" | "jaren" -> Some Tu_jaar
+  | "maand" | "mnd" | "maanden" -> Some Tu_maand
+  | "kwartaal" | "kw" | "kwartalen" -> Some Tu_kwartaal
+  | "week" | "wk" | "weken" -> Some Tu_week
+  | "dag" | "dg" | "dagen" -> Some Tu_dag
+  | "uur" | "u" | "uren" -> Some Tu_uur
+  | "minuut" | "min" | "minuten" -> Some Tu_minuut
+  | "seconde" | "sec" | "s" | "seconden" | "secondes" -> Some Tu_seconde
+  | "milliseconde" | "ms" | "milliseconden" | "millisecondes" -> Some Tu_milliseconde
+  | _ -> None
+
+let time_unit_of_eenheid (e : eenheid) =
+  match e.afkorting with Some a -> time_unit_of_spelling a | None -> None
+
+(* sub-day units demand millisecond-precision (datum-tijd) operands *)
+let time_unit_sub_day = function
+  | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde -> true
+  | Tu_jaar | Tu_kwartaal | Tu_maand | Tu_week | Tu_dag -> false
+
 (* Numeric literal lexeme sign (Dutch decimal comma; raw source string). *)
 let lexeme_negative s =
   let s = String.trim s in
@@ -197,6 +229,14 @@ let find_tijdlijn ctx name =
        | Some n -> tl_norm n = tl_norm name
        | None -> false)
     ctx.doc.tijdlijnen
+
+(* a unit spelling declared as a day kind (dagsoortPerEenheid): admitted
+   beside the nine time units in date arithmetic and tijdsduur (WF-035/
+   WF-038) — the executors stay loud on those forms *)
+let day_kind_unit ctx (u : eenheid) =
+  match u.afkorting with
+  | Some a -> List.exists (fun (k, _) -> norm k = norm a) ctx.doc.dagsoort_per_eenheid
+  | None -> false
 
 (* All named rule forms, per array: (array-name, entry-names-with-validity). *)
 let form_arrays ctx =
@@ -1737,6 +1777,50 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                [ v "WF-035" at "additive operands have incompatible units" ]
              else []
          | _ -> [])
+      (* the WF-035 date±duration clause (RUNTIME-SEMANTICS ch. 3.8): plus
+         commutes, min admits the date on the LEFT only, date ± date is
+         ill-formed; the duration operand is a number whose unit spelling is
+         a recognised time unit or a declared day kind; a sub-day unit
+         demands a millisecond-precision date operand *)
+      @ (let duration_side side t date_t =
+           match t with
+           | None -> []
+           | Some d when not (is_number_like d) ->
+               [ v "WF-035" (sub side)
+                   ("date \xc2\xb1 duration: the duration operand is " ^ datatype_kind d
+                    ^ ", must be a number carrying a time unit") ]
+           | Some d -> (
+               match unit_of d with
+               | None ->
+                   [ v "WF-035" (sub side)
+                       "date \xc2\xb1 duration: the duration operand carries no time unit" ]
+               | Some u -> (
+                   match time_unit_of_eenheid u with
+                   | Some tu ->
+                       if time_unit_sub_day tu && date_t = Datum_in_dagen then
+                         [ v "WF-035" at
+                             "sub-day time unit on a day-precision date (millisecond \
+                              precision required)" ]
+                       else []
+                   | None ->
+                       if day_kind_unit ctx u then []
+                       else
+                         [ v "WF-035" (sub side)
+                             ("'" ^ Option.value u.afkorting ~default:"?"
+                              ^ "' is not a recognised time unit or declared day kind") ]))
+         in
+         match op, lt, rt with
+         | (Plus | Min), Some l, Some r when is_date l && is_date r ->
+             [ v "WF-035" at
+                 "date \xc2\xb1 date is ill-formed (date arithmetic takes a date and a \
+                  duration)" ]
+         | Min, _, Some r when is_date r ->
+             [ v "WF-035" at
+                 "duration \xe2\x88\x92 date is ill-formed (subtraction admits the date on \
+                  the left only)" ]
+         | (Plus | Min), Some l, _ when is_date l -> duration_side "rechts" rt l
+         | Plus, _, Some r when is_date r -> duration_side "links" lt r
+         | _ -> [])
       @ (match links with Some e -> walk_expr ctx ~binders ~subject ~body (sub "links") e | None -> [])
       @ (match rechts with Some e -> walk_expr ctx ~binders ~subject ~body (sub "rechts") e | None -> [])
   | Functie f ->
@@ -1784,6 +1868,51 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
              | Some d ->
                  [ v "WF-038" at ("sub-day extractor operand is " ^ datatype_kind d
                                   ^ ", must be a millisecond-precision date") ])
+         | (Tijdsduur | Absolute_tijdsduur), [ a; b ] ->
+             (* the WF-038 tijdsduur clause (RUNTIME-SEMANTICS ch. 3.8): both
+                operands dates of one precision; the node type carries the
+                counted unit — a recognised time-unit or declared day-kind
+                spelling; a sub-day unit demands millisecond-precision
+                operands *)
+             let ta = typ_of_expr a and tb = typ_of_expr b in
+             let operand side t =
+               match t with
+               | Some d when not (is_date d) ->
+                   [ v "WF-038" (sub side)
+                       ("tijdsduur operand is " ^ datatype_kind d ^ ", must be a date") ]
+               | _ -> []
+             in
+             operand "argumenten/0" ta
+             @ operand "argumenten/1" tb
+             @ (match ta, tb with
+                | Some da, Some db when is_date da && is_date db && da <> db ->
+                    [ v "WF-038" at
+                        "tijdsduur operands mix date precisions (both must share one \
+                         precision)" ]
+                | _ -> [])
+             @ (match f.typ with
+                | None -> []
+                | Some t -> (
+                    match unit_of t with
+                    | None ->
+                        [ v "WF-038" at
+                            "tijdsduur without a recognised time unit on its node type" ]
+                    | Some u -> (
+                        match time_unit_of_eenheid u with
+                        | Some tu ->
+                            if time_unit_sub_day tu
+                               && (ta = Some Datum_in_dagen || tb = Some Datum_in_dagen)
+                            then
+                              [ v "WF-038" at
+                                  "sub-day tijdsduur unit on day-precision operands \
+                                   (millisecond precision required)" ]
+                            else []
+                        | None ->
+                            if day_kind_unit ctx u then []
+                            else
+                              [ v "WF-038" at
+                                  ("'" ^ Option.value u.afkorting ~default:"?"
+                                   ^ "' is not a recognised time unit or declared day kind") ])))
          | _ -> [])
       @ (match f.leegwaarde with
          | Some lw -> (
