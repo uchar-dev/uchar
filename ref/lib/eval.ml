@@ -456,10 +456,10 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
         | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ }) -> (
             match Ir_v0.Checks.time_unit_of_eenheid u with
             | Some tu ->
-                if Ir_v0.Checks.time_unit_sub_day tu then
+                if Ir_v0.Checks.time_unit_sub_day tu && expr_typ le = Some Datum_in_dagen
+                then
                   Value.fault
-                    "sub-day date arithmetic needs a datum-tijd operand (WF-035; the \
-                     datum-tijd layer is not executed)"
+                    "sub-day date arithmetic needs a datum-tijd operand (WF-035)"
                 else tu
             | None ->
                 Value.fault
@@ -508,10 +508,12 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
               -> (
                 match Ir_v0.Checks.time_unit_of_eenheid u with
                 | Some tu ->
-                    if Ir_v0.Checks.time_unit_sub_day tu then
+                    if
+                      Ir_v0.Checks.time_unit_sub_day tu
+                      && (expr_typ a = Some Datum_in_dagen || expr_typ b = Some Datum_in_dagen)
+                    then
                       Value.fault
-                        "sub-day tijdsduur needs datum-tijd operands (WF-038; the \
-                         datum-tijd layer is not executed)"
+                        "sub-day tijdsduur needs datum-tijd operands (WF-038)"
                     else tu
                 | None ->
                     Value.fault

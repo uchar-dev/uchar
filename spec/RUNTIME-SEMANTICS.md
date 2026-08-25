@@ -966,9 +966,13 @@ units — runs in ref and clingo. Anchor `jutterswet-jutleeftijd`
 carries the three worked examples above verbatim (plus the leeg
 corner); golden `jutterswet-vervaltermijn` pins the month-end clamp,
 the empty-duration standstill, the quarter step and the
-fractional truncation. The day-kind (dagsoort-as-unit) forms and the
-datum-tijd sub-day layer stay unexecuted, loud — tracked debt, never a
-silent skip.
+fractional truncation. The day-kind (dagsoort-as-unit) forms stay
+unexecuted, loud — tracked debt, never a silent skip. The datum-tijd
+millisecond layer is executed in ref per the paragraph below; in the
+ASP backend it stays a loud fault under the datum-tijd embargo
+(maintainer decision 2026-08-25, ratified; `spec/ASP-TRANSLATION.md`
+S19), so its behaviour is pinned by worked-example unit tests, not by
+a corpus golden.
 
 **Duration in a day-kind** ("de tijdsduur van A tot B in werkdagen")
 counts the days d with `A < d ≤ B` — **start exclusive, end inclusive**
@@ -996,6 +1000,76 @@ is three months, a year twelve (so a leap birthday clamps the same
 way); a day or week count is linear (+n / +7·n epoch days). A
 fractional count truncates toward zero. (Empty rules: ch. 1.2 — a leeg
 date propagates, a leeg duration counts as 0.)
+
+**The datum-tijd millisecond layer.** A millisecond-precision date is
+its millisecond count since 1970-01-01T00:00:00 in the same zoneless
+civil time — no time zones, no DST, no leap seconds, so every civil
+day is exactly 86 400 000 ms. Its civil day and its time-of-day split
+by floor division: the time-of-day is always 0 ≤ msod < 86 400 000,
+also left of the epoch. Datetime ± duration follows the date rules
+above, refined per unit family:
+
+- **Sub-day units are linear on the ms value**: datetime ± n
+  uur/minuut/seconde/milliseconde moves n·3 600 000 / n·60 000 /
+  n·1 000 / n·1 ms, rolling freely across day boundaries.
+- **Calendar units act on the civil day part, preserving the
+  time-of-day**: datetime ± n dagen/weken/maanden/kwartalen/jaren
+  steps the day part exactly as a day-precision date (linear days and
+  weeks; the month-end clamp) and reattaches the time-of-day
+  unchanged.
+
+tijdsduur van A tot B over two datetimes (one precision, WF-038)
+counts whole units:
+
+- in a **sub-day unit**: the ms difference quot the unit's ms size —
+  linear, signed, truncating toward zero;
+- in a **day-based unit**: the **borrow rule**, the classic
+  silent-error corner: when B's civil day lies ahead of A's but B's
+  time-of-day lies *strictly* before A's, the last day is not yet
+  complete — one day is borrowed back off B's day part before the
+  day-precision whole-unit count above (epoch days, packed months,
+  quot); mirrored on the negative side (B's day behind A's, B's
+  time-of-day strictly after A's: one day forward). Equal
+  times-of-day borrow nothing.
+
+Empty rules are ch. 1.2 unchanged: a leeg datetime propagates; a leeg
+duration counts as 0 (the datetime unchanged); a leeg tijdsduur
+operand propagates, never 0. A fractional duration count truncates
+toward zero before the step, as at day precision. Worked examples
+(absolute, pinned; each becomes a `ref/` test verbatim):
+
+- **Sub-day linearity:** 2024-02-28T23:30:00 + 26 uur =
+  **2024-03-01T01:30:00** (across the leap day); 2024-03-01T00:15:00
+  − 30 minuten = **2024-02-29T23:45:00**; 2024-01-01T00:00:00 +
+  1500 milliseconden = **2024-01-01T00:00:01.500**.
+- **Time-of-day preservation with the clamp:** 2024-01-31T09:30:00 +
+  1 maand = **2024-02-29T09:30:00**; 2024-02-28T23:30:00 + 1 maand =
+  **2024-03-28T23:30:00**, and + 2 weken = **2024-03-13T23:30:00**.
+- **The borrow corner:** tijdsduur van 2024-02-28T23:30:00 tot
+  2024-03-01T10:15:00 in hele uren = **34** (48 h − 13 h 15 min =
+  34 h 45 min, whole 34); in hele dagen = **1**, not 2 — B's 10:15
+  lies before A's 23:30, so the second day is incomplete. Counting
+  the bare day parts would read 2: the silent error the borrow rule
+  pins.
+- **Borrow across a month count:** tijdsduur van 2024-01-31T10:00:00
+  tot 2024-03-31T09:59:00 in hele maanden = **1** (the borrow steps B
+  back to 2024-03-30; packed difference 63, quot 32 = 1); one minute
+  later, tot 2024-03-31T10:00:00, = **2** (equal times-of-day, no
+  borrow; packed difference 64).
+- **A negative span:** tijdsduur van 2024-03-01T10:15:00 tot
+  2024-02-28T23:30:00 in hele uren = **−34**; in hele dagen = **−1**
+  (the mirrored borrow); the absolute variant reads 34 and 1.
+- **Empty rules:** leeg + 26 uur = leeg; 2024-02-28T23:30:00 + leeg
+  uur = 2024-02-28T23:30:00; tijdsduur van leeg tot
+  2024-03-01T10:15:00 in hele uren = leeg.
+
+**Executed in ref only (2026-08-25; WF-035/WF-038):** the datum-tijd
+layer runs in `ref/`, pinned by the worked examples above as unit
+tests. The ASP backend keeps its loud fault — a datetime's ms value
+does not fit clingo's integer range — under the datum-tijd embargo
+(maintainer decision 2026-08-25, ratified): no datum-tijd corpus
+golden lands until a pair-term encoding exists (`spec/ASP-TRANSLATION.md`
+S19 records the embargo and names that registered future work).
 
 **Date-part extraction and the Easter builtin.** Year, month and day
 extraction ("het jaar / de maand / de dag uit") read the **civil

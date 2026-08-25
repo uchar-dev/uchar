@@ -522,7 +522,7 @@ let whole_units_between (tu : Ir_v0.Checks.time_unit) za zb =
   | Tu_kwartaal -> (packed zb - packed za) / 32 / 3
   | Tu_jaar -> (packed zb - packed za) / 32 / 12
   | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde ->
-      fault "sub-day tijdsduur needs datum-tijd operands (the datum-tijd layer is not executed)"
+      fault "sub-day tijdsduur needs datum-tijd operands (day-precision values)"
 
 let add_units (tu : Ir_v0.Checks.time_unit) n z =
   match tu with
@@ -532,7 +532,56 @@ let add_units (tu : Ir_v0.Checks.time_unit) n z =
   | Tu_kwartaal -> add_months (3 * n) z
   | Tu_jaar -> add_months (12 * n) z
   | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde ->
-      fault "sub-day date arithmetic needs a datum-tijd operand (the datum-tijd layer is not executed)"
+      fault "sub-day date arithmetic needs a datum-tijd operand (day-precision value)"
+
+(* --- the datum-tijd millisecond layer (ch. 3.8): a datetime is its ms
+   count since 1970-01-01T00:00:00 in the same zoneless civil time —
+   every civil day is exactly 86 400 000 ms. The civil day and the
+   time-of-day split by floor division, so the time-of-day is always
+   0 ≤ msod < 86 400 000, also left of the epoch. *)
+
+let ms_per_day = 86_400_000
+
+let split_ms t =
+  let d = floor_div t ms_per_day in
+  (d, t - (d * ms_per_day))
+
+let sub_day_ms : Ir_v0.Checks.time_unit -> int option = function
+  | Tu_uur -> Some 3_600_000
+  | Tu_minuut -> Some 60_000
+  | Tu_seconde -> Some 1_000
+  | Tu_milliseconde -> Some 1
+  | _ -> None
+
+(* datetime + n units: sub-day units are linear on the ms value; calendar
+   units act on the civil day part through the day kernel above (linear
+   days/weeks, the month-end clamp), preserving the time-of-day — the v0
+   LocalDateTime mirror *)
+let add_units_ms (tu : Ir_v0.Checks.time_unit) n t =
+  match sub_day_ms tu with
+  | Some u -> t + (n * u)
+  | None ->
+      let d, msod = split_ms t in
+      (add_units tu n d * ms_per_day) + msod
+
+(* whole units from datetime A to datetime B: a sub-day unit counts
+   linearly on the ms difference (quot, toward zero); a day-based unit
+   carries the BORROW rule — when B's civil day lies ahead of A's but its
+   time-of-day lies strictly before A's, the last day is not yet complete,
+   so one day is borrowed back off B's day part before the day-precision
+   count above; mirrored on the negative side. v0's LocalDateTime
+   counting — the classic silent-error corner (ch. 3.8). *)
+let whole_units_between_ms (tu : Ir_v0.Checks.time_unit) ta tb =
+  match sub_day_ms tu with
+  | Some u -> (tb - ta) / u (* OCaml (/) truncates toward zero *)
+  | None ->
+      let da, msa = split_ms ta and db, msb = split_ms tb in
+      let db =
+        if db > da && msb < msa then db - 1
+        else if db < da && msb > msa then db + 1
+        else db
+      in
+      whole_units_between tu da db
 
 (* a duration count is taken as whole units: a fractional count truncates
    toward zero (ch. 3.8); Z.div truncates toward zero *)
@@ -556,8 +605,13 @@ let date_plus_duration ?(minus = false) ?unit_ d dur =
       match unit_ with
       | Some tu -> Date (add_units tu n z)
       | None -> fault "date arithmetic without a resolved time unit (WF-035)")
-  | Date_time _, _ ->
-      fault "datum-tijd date arithmetic is not executed (day precision only)"
+  | Date_time t, _ -> (
+      let q, _u = num_exn (if minus then "min" else "plus") dur in
+      let n = whole_count_of q in
+      let n = if minus then -n else n in
+      match unit_ with
+      | Some tu -> Date_time (add_units_ms tu n t)
+      | None -> fault "date arithmetic without a resolved time unit (WF-035)")
   | v, _ -> fault "date arithmetic: expected a date, got %s" (to_string v)
 
 (* tijdsduur van A tot B (ch. 3.8): whole declared units, signed; the
@@ -572,8 +626,14 @@ let tijdsduur ?(absolute = false) ?unit_ ?(result_unit = Unitless) a b =
           let n = whole_units_between tu za zb in
           Num (Q.of_int (if absolute then abs n else n), result_unit)
       | None -> fault "tijdsduur without a resolved time unit (WF-038)")
-  | (Date_time _, _ | _, Date_time _) ->
-      fault "datum-tijd tijdsduur is not executed (day precision only)"
+  | Date_time ta, Date_time tb -> (
+      match unit_ with
+      | Some tu ->
+          let n = whole_units_between_ms tu ta tb in
+          Num (Q.of_int (if absolute then abs n else n), result_unit)
+      | None -> fault "tijdsduur without a resolved time unit (WF-038)")
+  | (Date _, Date_time _ | Date_time _, Date _) ->
+      fault "tijdsduur operands mix date precisions (WF-038)"
   | _ -> fault "tijdsduur: expected two dates, got %s and %s" (to_string a) (to_string b)
 
 (* --- text (ch. 1.2c): empty coerces to "" ------------------------------ *)

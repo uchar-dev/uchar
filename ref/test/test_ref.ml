@@ -1488,6 +1488,61 @@ let () =
   expect_fault "WV-3.8-paasdag-eenheid" (fun () -> Arith.eerste_paasdag (nu jr "2024"));
   expect_fault "WV-3.8-maand-uit-tekst" (fun () -> Arith.maand_uit (Value.Text "x"))
 
+(* --- ch. 3.8: the datum-tijd millisecond layer (worked examples
+   verbatim) --------------------------------------------------------------- *)
+
+let () =
+  let dt s = Value.Date_time (Case.ms_of_datetime s) in
+  let plus u date lex = Arith.date_plus_duration ~unit_:u (dt date) (n lex) in
+  let min_ u date lex = Arith.date_plus_duration ~minus:true ~unit_:u (dt date) (n lex) in
+  let td u a b = Arith.tijdsduur ~unit_:u (dt a) (dt b) in
+  let open Ir_v0.Checks in
+  (* sub-day linearity, across the leap day *)
+  check "WV-3.8-dt-uur" (plus Tu_uur "2024-02-28T23:30:00" "26" = dt "2024-03-01T01:30:00");
+  check "WV-3.8-dt-minuut"
+    (min_ Tu_minuut "2024-03-01T00:15:00" "30" = dt "2024-02-29T23:45:00");
+  check "WV-3.8-dt-ms"
+    (plus Tu_milliseconde "2024-01-01T00:00:00" "1500" = dt "2024-01-01T00:00:01.500");
+  (* calendar units act on the civil day part, preserving the time-of-day *)
+  check "WV-3.8-dt-klem" (plus Tu_maand "2024-01-31T09:30:00" "1" = dt "2024-02-29T09:30:00");
+  check "WV-3.8-dt-maand" (plus Tu_maand "2024-02-28T23:30:00" "1" = dt "2024-03-28T23:30:00");
+  check "WV-3.8-dt-weken" (plus Tu_week "2024-02-28T23:30:00" "2" = dt "2024-03-13T23:30:00");
+  (* the fractional count truncates toward zero before the step, as at day
+     precision; the pre-epoch split keeps the time-of-day non-negative *)
+  check "WV-3.8-dt-frac" (plus Tu_uur "2024-02-28T23:30:00" "1,9" = dt "2024-02-29T00:30:00");
+  check "WV-3.8-dt-pre-epoch"
+    (plus Tu_dag "1969-12-31T23:30:00" "1" = dt "1970-01-01T23:30:00");
+  (* the borrow corner: the time of day counts back before the whole-unit
+     count — hours stay linear, days/months borrow *)
+  expect_num "WV-3.8-dt-borrow-uren" (td Tu_uur "2024-02-28T23:30:00" "2024-03-01T10:15:00") "34";
+  expect_num "WV-3.8-dt-borrow-dagen" (td Tu_dag "2024-02-28T23:30:00" "2024-03-01T10:15:00") "1";
+  expect_num "WV-3.8-dt-borrow-maand"
+    (td Tu_maand "2024-01-31T10:00:00" "2024-03-31T09:59:00") "1";
+  expect_num "WV-3.8-dt-geen-borrow"
+    (td Tu_maand "2024-01-31T10:00:00" "2024-03-31T10:00:00") "2";
+  (* a negative span; the absolute variant drops the sign *)
+  expect_num "WV-3.8-dt-neg-uren" (td Tu_uur "2024-03-01T10:15:00" "2024-02-28T23:30:00") "-34";
+  expect_num "WV-3.8-dt-neg-dagen" (td Tu_dag "2024-03-01T10:15:00" "2024-02-28T23:30:00") "-1";
+  expect_num "WV-3.8-dt-abs-uren"
+    (Arith.tijdsduur ~absolute:true ~unit_:Tu_uur
+       (dt "2024-03-01T10:15:00") (dt "2024-02-28T23:30:00"))
+    "34";
+  expect_num "WV-3.8-dt-abs-dagen"
+    (Arith.tijdsduur ~absolute:true ~unit_:Tu_dag
+       (dt "2024-03-01T10:15:00") (dt "2024-02-28T23:30:00"))
+    "1";
+  (* empty rules (ch. 1.2): leeg datetime propagates; leeg duration counts
+     0; leeg tijdsduur operand propagates *)
+  expect_leeg "WV-3.8-dt-leeg-datum" (Arith.date_plus_duration ~unit_:Tu_uur leeg (n "26"));
+  check "WV-3.8-dt-leeg-duur"
+    (Arith.date_plus_duration ~unit_:Tu_uur (dt "2024-02-28T23:30:00") leeg
+    = dt "2024-02-28T23:30:00");
+  expect_leeg "WV-3.8-dt-leeg-tijdsduur"
+    (Arith.tijdsduur ~unit_:Tu_uur leeg (dt "2024-03-01T10:15:00"));
+  (* mixed precision is ill-formed (WF-038) — fail fast behind the verifier *)
+  expect_fault "WV-3.8-dt-mix" (fun () ->
+      Arith.tijdsduur ~unit_:Tu_dag (Value.date_of_iso "2024-02-28") (dt "2024-03-01T10:15:00"))
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;
