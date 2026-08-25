@@ -64,3 +64,31 @@ Out of scope: datum-tijd (card A2), dagsoort-as-unit forms and
 DATUM_MET/DATUMTIJD_MET (recorded, stay loud), the date-literal lexeme
 pin (card A3), the timeline/grid machinery (this class is scalar — do
 NOT route tijdsduur through timelines), `spec/CONSTRUCTS.md` (serial).
+
+Result: the day-precision date/duration family executes end to end.
+RUNTIME-SEMANTICS ch. 3.8 carries the packed-month rule with the three
+pinned worked examples, the nine-unit spelling table, operand order,
+precision rules, toward-zero truncation and the proleptic-Gregorian
+fixing sentence; ch. 2.2 gained the two rows, ch. 1.2's date rows are
+Executed. The OPEN WF-035 date±duration clause and the WF-038 tijdsduur
+extension are implemented in the verifier on the shared spelling table
+(Ir_v0.Checks.time_unit_of_spelling — one source for verifier, ref and
+clingo); all five negatiefs reject citing their rule (red-first: all
+five passed the pre-change verifier). ref carries the calendar kernel
+in arith.ml on the value.ml civil helpers, eval.ml routes Binair on the
+static date type and Tijdsduur/Absolute_tijdsduur on the node-type
+unit; the worked examples are ref tests verbatim (280 pass). clingo
+carries the pure-ASP calendar chains (ASP-TRANSLATION S6a: day/week
+linear, months via the era decomposition and packed difference,
+date-plus-months via the dpmN leap/month-length rule pair with the
+exact-min clamp; pre-epoch and year-zero viol/2 fences); S19 shrank and
+stays highest. Witnesses: anchor jutterswet-jutleeftijd (leap corner,
+leeg corner, negative span -2 kwartalen toward zero, clamp-not-inverse)
+and golden jutterswet-vervaltermijn (2 weken, month-end clamp both
+leap-nesses, min date-left, leeg-duration standstill, fractional
+truncation, commuted plus), replayed exactly by ref AND clingo. All
+nine gates green (133 ir round-trip / 133+152 verifier / 349 cases /
+329 oracle / 329 clingo / 295+34 noop / 20 rood / 169 catala checks).
+Deliberately left, loud: dagsoort-as-unit forms, DATUM_MET/DATUMTIJD_MET,
+the datum-tijd sub-day layer (A2), the date-literal lexeme pin (A3);
+timelines untouched — tijdsduur is scalar, as mandated.
