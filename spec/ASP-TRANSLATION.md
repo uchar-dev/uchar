@@ -590,9 +590,13 @@ reads it (×year factor; only year granularity is exercised); the
 total over a case-supplied *full* timeline faults, loudly.
 
 **The articulated eerste/laatste fold** (RS ch. 1.2e: the ordering
-fold over ≥ 2 listed operands; dispatched by argument shape — the
-vestigial `elementObjecttype` v0 stamps on a listed fold names no
-instance source): one helper predicate per fold site. Each operand's
+fold over ≥ 2 listed operands; dispatched by argument shape within
+v0's listed family minimum/maximum/eerste/laatste only — the vestigial
+`elementObjecttype` v0 stamps on a listed fold names no instance
+source, while a multi-operand som/totaal/aantal keeps its loud fault
+in both executors, v0's accumulate consuming the element there; the
+numeric operands are RS ch. 1.2e's tracked v1 widening): one helper
+predicate per fold site. Each operand's
 body derives its value, harmonised to the common scale, into the
 shared head — `flN(S,Tᵢ') :- is_a(S,ot), ⟨operand atoms⟩` — and the
 fold reads `flN_def(S), V = #min { X : flN(S,X) }` (eerste; laatste

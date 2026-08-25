@@ -940,12 +940,17 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
           (List.map
              (fun i -> World.attr i name)
              (List.filter keep (linked ?binding:bron_rol env world self ~to_type:el)))
-    | _, (_ :: _ :: _ as args) ->
+    | _, (_ :: _ :: _ as args)
+      when (match kind with Eerste | Laatste | Minimum | Maximum -> true | _ -> false) ->
         (* the articulated value fold (§5.8.3: ≥2 listed operands) is
-           decided by argument SHAPE, not element absence: v0's resolver
-           stamps elementObjecttype with the first operand's owner even
-           here — a vestigial tag an instance fold (always one source
-           argument) never shares *)
+           decided by argument SHAPE, not element absence — but ONLY for
+           v0's listed family MIN/MAX/EERSTE/LAATSTE (isGelisteFold: the
+           scalar concatenatieFold path, where the resolver-stamped
+           elementObjecttype is vestigial). For SOM/TOTAAL/AANTAL the
+           element is load-bearing: v0's accumulate consumes it (joins
+           the element, reads only argument 0), so a multi-operand form
+           keeps the loud fault below — never a silent list fold v0
+           would compute differently. *)
         if filter <> None then
           Value.fault "a filter on a listed-operand fold has no v0 form (the subselection \
                        ranges over instances)";

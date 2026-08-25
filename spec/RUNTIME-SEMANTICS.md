@@ -127,12 +127,28 @@ keeps the least/earliest operand and "de laatste van" the
 greatest/latest — a "<"/">" fold over the operand *values*, never a
 positional pick of the first/last filled operand: de eerste van 5 en 3
 is 3, not 5. Empty operands are skipped and all-empty yields empty (the
-table row above). The listed fold is dispatched by argument *shape*:
-v0's resolver stamps `elementObjecttype` with the first operand's owner
-even here, a vestigial tag — an instance fold always carries exactly
-one source argument, a listed fold at least two. Worked examples (ref
-tests verbatim; the `jutterswet-peildatum` golden pins them through
-both executors): eerste van (5, leeg, 3) = 3 and laatste van
+table row above); a tie takes the *later* operand (v0's listed fold,
+`acc < x ? acc : x`) — value-equal, so unobservable today. The listed
+fold is dispatched by argument *shape*, for v0's listed family
+minimum/maximum/eerste/laatste ONLY: v0's resolver stamps
+`elementObjecttype` with the first operand's owner even here, a
+vestigial tag — an instance fold always carries exactly one source
+argument, a listed fold at least two. For som/totaal/aantal the element
+is *load-bearing* (v0's accumulate joins it and reads only the first
+operand), so a multi-operand form of those faults loudly — never a
+silent list fold v0 would compute differently. **Tracked deviation
+(ratification pending):** the numeric half of this fold is a v1
+*widening*, not a mirror. v0's static typing (§4.14/§4.15) admits
+eerste/laatste over date expressions only — a concrete non-date operand
+is a compile-time ERROR ("eerste van vereist datumexpressies, kreeg …",
+`Typering.datumAggregatie`) and the model is refused; only
+Onbekend-typed operands reach v0's runtime fold, which is itself the
+type-generic ordering above. v1 admits any single comparable family
+under that same ordering; the delta belongs to the `FunctieKind`
+(aggregations) row of `spec/CONSTRUCTS.md` at the serial merge update.
+Worked examples (ref tests verbatim; the `jutterswet-peildatum` golden
+pins them through both executors — the numeric pair is the widening's
+witness): eerste van (5, leeg, 3) = 3 and laatste van
 (5, leeg, 3) = 5; eerste van (2026-06-21, 2026-05-01) = 2026-05-01;
 laatste van (2026-06-21, leeg) = 2026-06-21; eerste van (leeg, leeg) =
 leeg.

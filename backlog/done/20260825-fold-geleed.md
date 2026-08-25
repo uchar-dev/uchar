@@ -63,3 +63,24 @@ no new WF rule (the shape is schema-legal and now executes; nothing
 meaningless to reject); the mixed-unit result-unit nuance of v0's
 Eenheid1 restating is unobservable in ref's value model and fenced
 identical-units in clingo.
+
+Review fix (2026-08-25): two corrections. (1) The numeric half is NOT
+a v0 mirror but a v1 typing widening: v0's `Typering.datumAggregatie`
+(ExpressieBouwer EERSTE/LAATSTE, Severity.ERROR) admits only date
+expressions — "de eerste van 5 en 3" never compiles in v0 production
+(engine refuses ERROR models); only Onbekend-typed operands reach the
+type-generic runtime fold. RS ch. 1.2e now names this a tracked
+deviation, ratification pending; the CONSTRUCTS delta (`FunctieKind`
+aggregations row) is the serial merge update — maintainer decides:
+ratify the widening or cut the numeric rules/expectations from
+`jutterswet-peildatum`. (2) The shape-dispatch arm in ref matched ALL
+fold kinds: a multi-operand SOM/TOTAAL/AANTAL with a stamped element
+silently computed a list fold v0 never exhibits (v0's accumulate
+consumes the element, reads only argument 0). Red-first: the SOM probe
+(laagloon rule, kind SOM, bergloon=5/meldloon=3, expected 8) passed
+silently pre-fix ("oracle: PASS (2 expectations)"); the arm is now
+narrowed to v0's listed family Eerste/Laatste/Minimum/Maximum
+(isGelisteFold) and the probe faults loudly again ("unsupported
+instance-fold source shape"). Also mirrored the listed-fold tie rule
+exactly (ties take the later operand — value-equal, unobservable
+today).

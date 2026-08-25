@@ -439,9 +439,12 @@ let agg_max vs = agg_extreme (fun c -> c > 0) vs
 (* eerste/laatste are ORDERING folds, not positional picks: v0 computes
    "de eerste van A en B" as the least/earliest operand ("<") and "de
    laatste van" as the greatest/latest (">") — de eerste van 5 en 3 is 3.
-   Empty operands are skipped; all-empty yields empty (ch. 1.2e). *)
-let agg_eerste vs = agg_extreme (fun c -> c < 0) vs
-let agg_laatste vs = agg_extreme (fun c -> c > 0) vs
+   Empty operands are skipped; all-empty yields empty (ch. 1.2e). Ties
+   take the LATER operand (v0's listed fold: `acc < x ? acc : x`) —
+   value-equal, so unobservable today; agg_min/agg_max keep the strict
+   compare (the instance-accumulate mirror, first-seen wins). *)
+let agg_eerste vs = agg_extreme (fun c -> c <= 0) vs
+let agg_laatste vs = agg_extreme (fun c -> c >= 0) vs
 
 (* --- date part extraction / date arithmetic (ch. 1.2b + ch. 3.8) ------- *)
 
