@@ -27,3 +27,25 @@ Out of scope: any spec or executor change (the machinery exists —
 WF-050/051, RS ch. 7); `spec/CONSTRUCTS.md` (registry note serial at
 merge if needed); the free superiority relation and strength tags
 (decided non-goals, §10 of the proposal).
+
+Result: landed as the plain golden `corpus/golden/jutterswet-samenloop/`
+(hand-authored ir.json, extension form `defaultLadders` — the plain zone
+already carries hand-authored ladders, e.g. `synth3-nestkorting`; anchor
+was not needed and stays untouched). The own-authored samenloopbepaling
+("berggeld voor de berger, wachtgeld voor de wachter; bij samenloop van
+beide aanspraken geldt de hoogste") compiles as a three-rung **ordered
+competition** on `Jutter.vergoeding`: a comparison-justified samenloop
+rung (both grounds AND wachtgeld > berggeld → wachtgeld) above the two
+grounds in article order (berger → berggeld, wachter → wachtgeld) — the
+ordering itself carries the samenloop meaning, no exception ladder. Six
+hand-calculated cases pin all flanks: both grounds with the wachter
+claim highest (45), both with the berger claim highest (60), the tie at
+the strict-comparison boundary (40), each ground alone (a higher amount
+without its ground never wins: 30 beats a groundless 45, mirrored 45
+beats a groundless 60), and no ground → leeg. Both executors replay all
+six exactly (gates 5–6: 321 cases); five refute --noop, the geen-grond
+flank was shown red unpinned and then pinned as a reason-carrying
+survivor (gate 7: 287 refute / 34 survivors). Deliberately left: the
+wet itself did not grow a numbered article — the bepaling lives in the
+golden's bron prose like the other hand-authored ladder goldens; a
+future wet-v5 can absorb it verbatim.
