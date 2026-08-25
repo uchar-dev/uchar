@@ -589,6 +589,28 @@ case supplies the bucket scalar as a plain `val/3` and the total
 reads it (×year factor; only year granularity is exercised); the
 total over a case-supplied *full* timeline faults, loudly.
 
+**The articulated eerste/laatste fold** (RS ch. 1.2e: the ordering
+fold over ≥ 2 listed operands; dispatched by argument shape — the
+vestigial `elementObjecttype` v0 stamps on a listed fold names no
+instance source): one helper predicate per fold site. Each operand's
+body derives its value, harmonised to the common scale, into the
+shared head — `flN(S,Tᵢ') :- is_a(S,ot), ⟨operand atoms⟩` — and the
+fold reads `flN_def(S), V = #min { X : flN(S,X) }` (eerste; laatste
+takes `#max`). An empty operand derives nothing and drops out of the
+aggregate set — the empty-skip discipline as the join, for free; the
+definedness atom keeps the fold's body underivable when *no* operand
+derives, so all-empty stays leeg as absence and no `#sup`/`#inf`
+ever escapes into a value. Fences: one comparable family only (all
+operands statically dates or none — ref faults the unordered mixed
+comparison at runtime, and a day number must not silently order
+against a scaled numeric; text/boolean/enum operands fault; datum-tijd
+is the S6a embargo), identical (or absent, adopting) units — ref
+restates into the first operand's unit with exact factors this
+integer encoding does not carry — and the S6 range bound on any
+harmonisation product. Minimum/maximum over listed operands would
+take the same encoding; no corpus case exercises them yet, so they
+keep the loud S19 fault.
+
 Witnesses (gate 6): count by `jutterswet-erflijn`,
 `jutterswet-maatschap`, `jutterswet-kustregister`, the self-denoting
 source by `jutterswet-aanmeldertelling`; sum by
@@ -596,7 +618,10 @@ source by `jutterswet-aanmeldertelling`; sum by
 `jutterswet-penninguitgifte`, `synth2-budgetgrens-onder`; the clip by
 `jutterswet-getijdenwacht`, `jutterswet-penningjaar`,
 `synth2-clip-over-prorata`, `synth2-clip-cond-over-prorata`; the
-WF-055 negatiefs pin the clip's admissible condition shapes.
+WF-055 negatiefs pin the clip's admissible condition shapes; the
+articulated eerste/laatste fold by `jutterswet-peildatum` (a date pair
+and a numeric pair, the ordering-vs-positional pin, the empty-skip and
+all-empty corners).
 
 ### S9. Timelines
 
@@ -1657,7 +1682,10 @@ decision-table desugar's disjunctive condition kinds among them) now
 translate through the cqN count encoding (S7:
 `jutterswet-rubriektabel`, `jutterswet-vrijgavetoets`,
 `jutterswet-sluimerwacht`, `jutterswet-tweevoudkeur`) and left this
-catch-all; what remains under it for composites is the member-less
+catch-all, as did the articulated eerste/laatste fold (S8,
+`jutterswet-peildatum`; minimum/maximum over listed operands stay
+under it — the same encoding would serve, no corpus case);
+what remains under it for composites is the member-less
 counting list (`a counting composite without members is not
 translated (no corpus case)`) and every member kind that keeps its
 own fault (a Periode member — the vormenkabinet's peiling rule, still

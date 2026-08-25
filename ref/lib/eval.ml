@@ -940,6 +940,16 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
           (List.map
              (fun i -> World.attr i name)
              (List.filter keep (linked ?binding:bron_rol env world self ~to_type:el)))
+    | _, (_ :: _ :: _ as args) ->
+        (* the articulated value fold (§5.8.3: ≥2 listed operands) is
+           decided by argument SHAPE, not element absence: v0's resolver
+           stamps elementObjecttype with the first operand's owner even
+           here — a vestigial tag an instance fold (always one source
+           argument) never shares *)
+        if filter <> None then
+          Value.fault "a filter on a listed-operand fold has no v0 form (the subselection \
+                       ranges over instances)";
+        `Values (List.map (eval_expr env world self ~err) args)
     | None, args ->
         if filter <> None then
           Value.fault "a filter on a listed-operand fold has no v0 form (the subselection \

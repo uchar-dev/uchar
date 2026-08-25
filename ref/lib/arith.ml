@@ -435,8 +435,13 @@ let agg_extreme keep vs =
 
 let agg_min vs = agg_extreme (fun c -> c < 0) vs
 let agg_max vs = agg_extreme (fun c -> c > 0) vs
-let agg_eerste vs = match filled vs with [] -> Empty | v :: _ -> v
-let agg_laatste vs = match filled vs with [] -> Empty | vs -> List.nth vs (List.length vs - 1)
+
+(* eerste/laatste are ORDERING folds, not positional picks: v0 computes
+   "de eerste van A en B" as the least/earliest operand ("<") and "de
+   laatste van" as the greatest/latest (">") — de eerste van 5 en 3 is 3.
+   Empty operands are skipped; all-empty yields empty (ch. 1.2e). *)
+let agg_eerste vs = agg_extreme (fun c -> c < 0) vs
+let agg_laatste vs = agg_extreme (fun c -> c > 0) vs
 
 (* --- date part extraction / date arithmetic (ch. 1.2b + ch. 3.8) ------- *)
 

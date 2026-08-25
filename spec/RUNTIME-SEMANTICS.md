@@ -121,6 +121,22 @@ empty or all-empty source differs per aggregation — this is the
 | minimum/maximum, eerste/laatste | **empty**; no fallback form exists | min(5, leeg, 3) = 3; min(leeg, leeg) = leeg |
 | dimension folds (§5.8.5) | empty cells skipped; all-empty selection = empty (som may use its fallback) | cells {Q1: 3, Q2: leeg, Q3: 2}: som over Q1–Q3 = 5; som over {Q2} = leeg |
 
+**Eerste/laatste are ordering folds.** The articulated value fold
+"de eerste van A en B [en C …]" (§5.8.3/§4.14–.15, ≥ 2 listed operands)
+keeps the least/earliest operand and "de laatste van" the
+greatest/latest — a "<"/">" fold over the operand *values*, never a
+positional pick of the first/last filled operand: de eerste van 5 en 3
+is 3, not 5. Empty operands are skipped and all-empty yields empty (the
+table row above). The listed fold is dispatched by argument *shape*:
+v0's resolver stamps `elementObjecttype` with the first operand's owner
+even here, a vestigial tag — an instance fold always carries exactly
+one source argument, a listed fold at least two. Worked examples (ref
+tests verbatim; the `jutterswet-peildatum` golden pins them through
+both executors): eerste van (5, leeg, 3) = 3 and laatste van
+(5, leeg, 3) = 5; eerste van (2026-06-21, 2026-05-01) = 2026-05-01;
+laatste van (2026-06-21, leeg) = 2026-06-21; eerste van (leeg, leeg) =
+leeg.
+
 **Timelines** carry *two different* empty rules, mirrored as found: the
 per-period arithmetic of §5.1.4 coalesces an empty period to 0, while the
 temporal sum of §5.8.2 skips empty operands and yields an empty period only

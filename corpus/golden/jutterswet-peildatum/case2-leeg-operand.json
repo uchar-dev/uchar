@@ -1,0 +1,60 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "melddatum": {
+            "date": "2026-05-01"
+          },
+          "meldloon": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "peildatum",
+      "value": {
+        "date": "2026-05-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "sluitdatum",
+      "value": {
+        "date": "2026-05-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "laagloon",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "hoogloon",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

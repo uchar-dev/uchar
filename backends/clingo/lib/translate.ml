@@ -1072,6 +1072,70 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       ( [ Printf.sprintf "%s = #sum { %s,%s : %s }" v g x (String.concat ", " contrib_body) ],
         v,
         pow10 (attr_decimals ctx ~otype:el ~attr:a) )
+  | Functie { kind = (Eerste | Laatste) as kind; argumenten = (_ :: _ :: _ as args); filter; _ }
+    ->
+      (* the articulated eerste/laatste fold (RUNTIME-SEMANTICS ch. 1.2e):
+         the ORDERING fold — #min/#max over the listed operand terms with
+         the empty-skip discipline. One helper predicate per fold site:
+         each operand derives its harmonised value into the shared head;
+         an empty operand derives nothing and drops out of the aggregate
+         set; the definedness atom keeps the fold's body underivable when
+         NO operand derives — all-empty stays leeg as absence, never a
+         #sup/#inf escaping into a value. Dispatch is by argument shape
+         (≥ 2 listed operands): the vestigial elementObjecttype v0 stamps
+         on a listed fold names no instance source (the ref mirror). *)
+      if filter <> None then
+        fault "a filter on a listed-operand fold has no v0 form (the subselection ranges \
+               over instances)";
+      (* one comparable family only: ref's ordering comparison faults a
+         mixed pair at runtime — a day number must not silently order
+         against a scaled numeric *)
+      let dated = List.map (fun a -> is_date_operand (Some a)) args in
+      if List.exists Fun.id dated && not (List.for_all Fun.id dated) then
+        fault "mixed date/non-date operands under an eerste/laatste fold are not \
+               translated (ref faults the unordered comparison)";
+      List.iter
+        (fun a ->
+          if is_symbolic_operand (Some a) then
+            fault "a text/boolean/enum operand under an eerste/laatste fold has no order \
+                   (ref faults the unordered comparison)";
+          match Ir_v0.Checks.typ_of_expr a with
+          | Some Datum_tijd ->
+              fault "datum-tijd eerste/laatste is not translated (day precision only)"
+          | _ -> ())
+        args;
+      (* ref restates numeric operands into the first operand's unit with
+         exact factors this integer encoding does not carry — identical
+         (or absent, adopting) units only, the additive-join fence *)
+      let first_unit =
+        List.fold_left
+          (fun acc a -> match acc with Some _ -> acc | None -> eff_unit ctx a)
+          None args
+      in
+      List.iter
+        (fun a ->
+          units_identical_ok ~what:"an eerste/laatste fold" first_unit (eff_unit ctx a))
+        args;
+      let ops = List.map (expr_term ctx ~subject ~subject_ot) args in
+      let m = List.fold_left (fun acc (_, _, s) -> max acc s) 1 ops in
+      ctx.fresh <- ctx.fresh + 1;
+      let pred = Printf.sprintf "fl%d" ctx.fresh in
+      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      List.iter
+        (fun (atoms, t, s) ->
+          let body = base :: atoms in
+          if m / s > 1 then range_guard ctx ~subject ~body [ (t, 1073741823 / (m / s)) ];
+          let t' = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
+          emit ctx "%s(%s,%s) :- %s." pred subject t' (String.concat ", " body))
+        ops;
+      emit ctx "%s_def(%s) :- %s(%s,X)." pred subject pred subject;
+      let v = fresh ctx "F" in
+      let x = Printf.sprintf "X%s" v in
+      let agg = match kind with Eerste -> "#min" | _ -> "#max" in
+      ( [ Printf.sprintf "%s_def(%s)" pred subject;
+          Printf.sprintf "%s = %s { %s : %s(%s,%s) }" v agg x pred subject x ],
+        v,
+        m )
   | Functie { kind = Totaal; argumenten = [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; navigatie_rol = None; navigatie_pad = []; set = false; _ } ]; filter = Some c; _ }
     when norm aot = norm subject_ot && attr_temporal ctx ~otype:aot ~attr:a ->
       (* ch. 3.6, the gedurende clip: intersect the value timeline (tl/5)

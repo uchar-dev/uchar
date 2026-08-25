@@ -127,6 +127,17 @@ let () =
   expect_num "WV-1.2e-aantal-1" (Arith.agg_aantal []) "0";
   expect_num "WV-1.2e-min-1" (Arith.agg_min [ n "5"; leeg; n "3" ]) "3";
   expect_leeg "WV-1.2e-min-2" (Arith.agg_min [ leeg; leeg ]);
+  (* eerste/laatste are ORDERING folds (ch. 1.2e): least/earliest and
+     greatest/latest over the operand values, never a positional pick *)
+  expect_num "WV-1.2e-eerste-1" (Arith.agg_eerste [ n "5"; leeg; n "3" ]) "3";
+  expect_num "WV-1.2e-laatste-1" (Arith.agg_laatste [ n "5"; leeg; n "3" ]) "5";
+  check "WV-1.2e-eerste-2"
+    (Arith.agg_eerste [ Value.date_of_iso "2026-06-21"; Value.date_of_iso "2026-05-01" ]
+    = Value.date_of_iso "2026-05-01");
+  check "WV-1.2e-laatste-2"
+    (Arith.agg_laatste [ Value.date_of_iso "2026-06-21"; leeg ]
+    = Value.date_of_iso "2026-06-21");
+  expect_leeg "WV-1.2e-eerste-3" (Arith.agg_eerste [ leeg; leeg ]);
   (* dimension folds (§5.8.5): empty cells skipped; all-empty = empty *)
   expect_num "WV-1.2e-dim-1" (Arith.agg_som ~fallback:None [ n "3"; leeg; n "2" ]) "5";
   expect_leeg "WV-1.2e-dim-2" (Arith.agg_som ~fallback:None [ leeg ])
