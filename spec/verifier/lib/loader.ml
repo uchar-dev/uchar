@@ -865,7 +865,8 @@ let geldigheid path j : geldigheid =
 let resolved_regel path j : resolved_regel =
   let kvs = obj path j in
   expect_node path kvs "ResolvedRegel";
-  check_keys path kvs [ "node"; "naam"; "soort"; "doel"; "waarde"; "voorwaarde"; "geldigheid" ];
+  check_keys path kvs ~ext:[ "bronAnnotaties" ]
+    [ "node"; "naam"; "soort"; "doel"; "waarde"; "voorwaarde"; "geldigheid" ];
   let f name = field path kvs name in
   {
     rr_naam = str_opt (path / "naam") (f "naam");
@@ -874,6 +875,9 @@ let resolved_regel path j : resolved_regel =
     waarde = opt (path / "waarde") expr (f "waarde");
     rr_voorwaarde = opt (path / "voorwaarde") conditie (f "voorwaarde");
     rr_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
+    rr_bron_annotaties =
+      ext_field path kvs "bronAnnotaties" (fun p j ->
+          List.mapi (fun i x -> str (p / string_of_int i) x) (list_ p j));
   }
 
 let resolved_dagsoort path j : resolved_dagsoort =

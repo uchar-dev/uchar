@@ -1591,13 +1591,14 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   let berekening vname dt value ~cond : I.resolved_regel =
     { rr_naam = Some ("berekening " ^ rule_label vname); rr_soort = Some Berekening;
       doel = Some (attr_ref vname dt);
-      waarde = Some (value_expr value); rr_voorwaarde = cond; rr_geldigheid = Some geldig }
+      waarde = Some (value_expr value); rr_voorwaarde = cond; rr_geldigheid = Some geldig;
+      rr_bron_annotaties = None }
   in
   let kenmerktoekenning vname ~voorwaarde : I.resolved_regel =
     { rr_naam = Some ("kenmerktoekenning " ^ rule_label vname); rr_soort = Some Kenmerktoekenning;
       doel = Some (attr_ref vname Booleaan);
       waarde = Some (Literal { waarde = Some "waar"; typ = Some Booleaan; bron = Some "waar" });
-      rr_voorwaarde = voorwaarde; rr_geldigheid = Some geldig }
+      rr_voorwaarde = voorwaarde; rr_geldigheid = Some geldig; rr_bron_annotaties = None }
   in
   (* dispatch one variable definition *)
   let translate_def v e =

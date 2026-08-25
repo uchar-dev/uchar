@@ -49,7 +49,8 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   symbolic fact-creation fields (ch. 3.4), `navigatieBindingen` on the
   attribute reference and `navigatieBinding` on the characteristic check
   (ch. 4.1a — the navigation hops), `scopeRol` on the scoped uniqueness
-  (ch. 3.6, WF-054); current extension nodes and
+  (ch. 3.6, WF-054), `bronAnnotaties` on the resolved rule (ch. 3.1,
+  WF-082 — the statute annotations); current extension nodes and
   forms: `TemporalRead` (ch. 4.3a), the `defaultLadders` list
   (ch. 6.1), the sum-type family — the `SumType` datatype
   (ch. 2.4) with the `Construct`/`Match`/`BinderRef` expression nodes
@@ -75,6 +76,12 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   fact-creation fields (whole-or-not per node), each only where
   uniquely derivable from declared names; `jutterswet-postwacht` is the
   emitter golden carrying all four families through both executors.
+  **Third pin bump (2026-08-25):** the emitter produces `bronAnnotaties`
+  on every resolved rule whose source carries `// Bron:` annotation
+  comments directly above the rule header (trimmed, blank annotations
+  dropped, the field omitted when none remain); `jutterswet-hardheid`
+  is the emitter golden carrying one- and two-annotation rules — and an
+  unannotated rule without a trace — through both executors.
   The remaining extensions stay anchor-only: `TemporalRead` and the
   ladders have no surface syntax in the toolchain yet.
 
@@ -776,6 +783,7 @@ One node covers computing an attribute and attributing a characteristic
 |---|---|---|
 | `name` | string | rule identity |
 | `versions` | list of RuleVersion, ≥ 1 | in declaration order |
+| `statuteAnnotations` | list of string? | **extension field** (v0 wire `bronAnnotaties`): the `// Bron:` statute annotations written directly above the rule header, the text after `Bron:` trimmed, in source order — the PLAN §4 traceability thread from a rule back to its wetsartikel. Provenance only, never evaluation-relevant: executors ignore it. When present the list is non-empty with non-empty trimmed entries; a rule without annotations omits the field — written whole or not at all (WF-082). *v0 mirror note:* v0 flattens versions into separate `ResolvedRegel` entries, so the wire carries the field per flattened entry, stamped from the one comment block above the shared rule header |
 
 **RuleVersion**:
 
@@ -853,6 +861,15 @@ the literal true — mirrored.)
   multi-valued, so the executors disagree and no corpus zone admits it);
   WF-079 refuses it ahead of the differential square. **Delta
   (promotion).**
+- **WF-082** The `bronAnnotaties` extension field, when present, MUST be
+  a non-empty list whose entries are non-empty and carry no leading or
+  trailing whitespace; a rule without annotations MUST omit the field
+  (absence leaves no trace — an empty or blank form is ill-formed). The
+  emitter satisfies this by trimming the text after `// Bron:` and
+  dropping blank annotations. *v0 mirror note:* upstream builds the
+  annotation list in Phase 0 but the pinned v0 emitter did not put it on
+  the wire; the field enters as an extension (Method) with the
+  2026-08-25 pin bump.
 
 The corpus case `corpus/golden/jutterswet-penningdrempel/` instantiates
 this node in its **v0 mirror form** (a flat entry with the
@@ -1948,6 +1965,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-079 | at most one unconditional, version-free computing rule (Gelijkstelling/Berekening) per non-laddered (type, attribute) target — the single-writer discipline of WF-026/WF-050/WF-052 for bare attribute writers (ch. 7.7); Kenmerktoekenning exempt (monotone), guarded case splits and versioned forms outside; the PHASE5D-DIFF §8.2 un-pinnable form refused ahead of the square | gate 3 | `anchor/jutterswet-rekenkamer-overzee` (a guarded gewone/overzeese case split on one target — the fence does not over-fire on conditional writers) | `wf079-two-unconditional-writers` |
 | WF-080 | a value-position `AttribuutRef` resolves to an attribute, not a characteristic (a characteristic is read through a characteristic check, ch. 4.5) — closes the tolerated `has_attr||has_kenmerk` leak in both the generic value walk and the aggregation-source path (a value-yielding fold's source; a count's role source stays in scope of WF-034); the rule TARGET lvalue is out of scope (WF-022) | gate 3 | `jutterswet-vondsttelling` + `anchor/jutterswet-penninguitgifte` (a `SOM` folding an attribute source; gate 3 witnesses none over-rejects) | `wf080-value-position-kenmerk` + `wf080-aggregation-source-kenmerk` |
 | WF-081 | a numeric literal's lexeme is a bare number in the executors' shared grammar — after `,`→`.`: `'-'? digits`, `'-'? digits? '.' digits`, or `'-'? digits '/' digits` with a non-zero denominator (ch. 4.1); unit or currency tokens, whitespace, `+`, exponents and grouping are ill-formed (the unit belongs in the datatype's `eenheid`) — closes the gate blind spot where a unit written into the lexeme passed the verifier while both executors fault on it; date lexemes and `Tekst` literals out of scope | gate 3 | `anchor/jutterswet-tariefstelling` (integer and decimal lexemes through the fence; gate 3 witnesses none over-rejects) | `wf081-unit-in-lexeme` |
+| WF-082 | the `bronAnnotaties` extension field (ch. 3.1): when present a non-empty list of non-empty trimmed statute annotations; a rule without annotations omits the field — absence leaves no trace | gate 3 | `jutterswet-hardheid` (one- and two-annotation rules on the wire, the unannotated rule traceless; replayed by gates 5–6) | `wf082-empty-bron-annotaties` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

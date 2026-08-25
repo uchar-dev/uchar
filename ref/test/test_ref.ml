@@ -488,7 +488,8 @@ let aref attr otn typ : Ir_v0.Ast.expr =
 let litv lex typ : Ir_v0.Ast.expr = Literal { waarde = Some lex; typ = Some typ; bron = None }
 
 let rr name soort doel waarde cond : Ir_v0.Ast.resolved_regel =
-  { rr_naam = Some name; rr_soort = Some soort; doel; waarde; rr_voorwaarde = cond; rr_geldigheid = None }
+  { rr_naam = Some name; rr_soort = Some soort; doel; waarde; rr_voorwaarde = cond; rr_geldigheid = None;
+    rr_bron_annotaties = None }
 
 let inst label otype attrs : World.instance =
   {

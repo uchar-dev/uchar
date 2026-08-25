@@ -4161,6 +4161,34 @@ let wf023 ctx =
       | _ -> [])
     (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_regels)
 
+(* WF-082: the bronAnnotaties extension field (IR-SPEC ch. 3.1) — the
+   `// Bron:` statute annotations on a resolved rule. When present it is a
+   non-empty list of non-empty entries that carry no surrounding
+   whitespace (the emitter trims and omits blanks; an empty or blank form
+   would be a trace of absence, and absence leaves no trace). *)
+let wf082 ctx =
+  List.concat_map
+    (fun (i, (r : resolved_regel)) ->
+      let at = Printf.sprintf "/resolvedRegels/%d/bronAnnotaties" i in
+      match r.rr_bron_annotaties with
+      | None -> []
+      | Some [] ->
+          [ v "WF-082" at
+              "bronAnnotaties is empty — an annotation-free rule omits the field entirely" ]
+      | Some entries ->
+          List.concat
+            (List.mapi
+               (fun j e ->
+                 if e = "" then
+                   [ v "WF-082" (Printf.sprintf "%s/%d" at j)
+                       "blank statute annotation — every entry carries text" ]
+                 else if String.trim e <> e then
+                   [ v "WF-082" (Printf.sprintf "%s/%d" at j)
+                       "statute annotation carries leading/trailing whitespace — entries are trimmed" ]
+                 else [])
+               entries))
+    (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_regels)
+
 (* WF-051: no dependency cycle may pass through a ladder — its
    displacement edges are negative (dep_forms above), so any such cycle
    also violates WF-046; this check names the ladder-specific rule. *)
@@ -4734,6 +4762,6 @@ let all (doc : document) : violation list =
       wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf020 ctx; wf021 ctx;
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf032 ctx; wf033 ctx; wf045_046 ctx;
-      wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf079 ctx; wf054 ctx;
+      wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf079 ctx; wf082 ctx; wf054 ctx;
       wf057 ctx; wf059 ctx; wf060 ctx; wf061 ctx; wf065 ctx; wf067 ctx;
       wf071 ctx; wf072 ctx; wf075 ctx; expression_layer ctx ]

@@ -366,6 +366,8 @@ type resolved_regel = {
   waarde : expr option;
   rr_voorwaarde : conditie option;
   rr_geldigheid : geldigheid option;
+  rr_bron_annotaties : string list option;
+      (* extension: `// Bron:` statute annotations, source order (WF-082) *)
 }
 
 type resolved_dagsoort = {
