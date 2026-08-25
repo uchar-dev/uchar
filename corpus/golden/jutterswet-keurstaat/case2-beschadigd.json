@@ -1,0 +1,48 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "staat": {
+            "enumeration": "Beschadigd"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "veilbaar"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "afgekeurd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "oordeel",
+      "value": {
+        "enumeration": "beschadigd"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "stempel"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

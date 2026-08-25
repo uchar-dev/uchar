@@ -26,9 +26,10 @@
      negation-as-failure over a definedness helper), while a
      propagating position (verminderd-met's left) stays the bare
      unbound join — leeg leaves the rule underivable, exactly ref's
-     Empty propagation. The equality/inequality empty asymmetry has no
-     such free encoding; those operators fault here until a corpus
-     case demands them (a recorded finding).
+     Empty propagation. The NUMERIC equality/inequality empty
+     asymmetry rides a per-comparison eqN helper (S5); the NON-numeric
+     text/enum/boolean equality is a positive symbolic-term join —
+     any empty operand fails both directions (Tabel 38, S5/S7).
    - The multiplicative family: maal and percentage-van coalesce both
      operands and multiply scaled integers (percentage-van folds its
      /100 into the scale — no division). Gedeeld-door carries its
@@ -552,6 +553,72 @@ let is_sum_operand = function
 let is_struct_operand = function
   | Some e -> ( match Ir_v0.Checks.typ_of_expr e with Some (Struct_type _) -> true | _ -> false)
   | None -> false
+
+(* --- text/enum/boolean scalars (RUNTIME-SEMANTICS ch. 1.2d; S2/S5/S7) ----- *)
+
+(* the ch. 1.2d NON-numeric scalars carry ground SYMBOLIC terms beside the
+   integer encoding: a text value is its verbatim quoted string (ref compares
+   String.equal — spelling and case are load-bearing), an enum label is its
+   NORMALISED quoted string (ref compares norm-equal, so both executors
+   normalise at the same point), a boolean is the bare symbol waar/onwaar —
+   NOT the closed-world heeft/2 (which cannot tell false from leeg; the
+   equality read needs the three-way distinction). Day-precision dates are
+   NOT here: date equality is numeric (the adopted reading of ref/lib/value.ml),
+   riding the integer day number and the eqN asymmetry. *)
+let is_symbolic_operand = function
+  | Some e -> (
+      match Ir_v0.Checks.typ_of_expr e with
+      | Some (Tekst | Booleaan | Enumeratie _) -> true
+      | _ -> false)
+  | None -> false
+
+let attr_symbolic_datatype ctx ~otype ~attr =
+  match Ir_v0.Checks.find_ci (objecttype ctx otype).attributen attr with
+  | Some (Some ((Tekst | Booleaan | Enumeratie _) as dt)) -> Some dt
+  | _ -> None
+
+(* the ground term of a text/enum/boolean VALUE (case emission and the
+   model-side expectation, one source of truth) *)
+let symbolic_value_term (v : Value.t) : string =
+  match v with
+  | Value.Text s -> quote s
+  | Value.Enum s -> str s
+  | Value.Bool b -> if b then "waar" else "onwaar"
+  | v -> fault "not a text/enum/boolean scalar value %s" (Value.to_string v)
+
+let symbolic_literal_term (typ : datatype) lex =
+  match typ with
+  | Tekst -> quote lex
+  | Enumeratie _ -> str lex
+  | Booleaan -> (
+      match norm lex with
+      | "waar" -> "waar"
+      | "onwaar" -> "onwaar"
+      | _ -> fault "malformed boolean literal %S" lex)
+  | _ -> fault "not a text/enum/boolean literal"
+
+(* a text/enum/boolean operand → (body atoms binding a ground term, the
+   term): an own-subject attribute read binds its val atom's value, a literal
+   is a bare ground term with no atom. Both are positive, so a leeg attribute
+   read simply fails the join (Tabel 38's any-empty-is-false, in BOTH
+   equality directions, for free) — the sum/struct operand pattern on the
+   scalar datatypes. *)
+let symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string =
+  match e with
+  | Literal { waarde; typ = Some ((Tekst | Booleaan | Enumeratie _) as t); _ } ->
+      ([], symbolic_literal_term t (req "Literal.waarde" waarde))
+  | Attribuut_ref
+      { attribuut = Some a; objecttype = Some ot; navigatie_rol = None; navigatie_pad = [];
+        navigatie_bindingen = None; set = false; _ }
+    when norm ot = norm subject_ot && attr_symbolic_datatype ctx ~otype:ot ~attr:a <> None ->
+      if attr_temporal ctx ~otype:ot ~attr:a then
+        fault "temporal text/enum/boolean carriage is a recorded flank; no corpus case";
+      let v = fresh ctx "V" in
+      ([ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ], v)
+  | _ ->
+      fault
+        "a text/enum/boolean operand here is an own-subject attribute read or a literal (no \
+         corpus case for more)"
 
 (* the declaring domain and declared fields of a struct-typed node, from its
    StructType annotation (WF-072 repeats it whole at every use site) *)
@@ -1566,6 +1633,20 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
          non-complement warning, honoured here). *)
       let ll, tl = sum_term ctx ~subject ~subject_ot (req "links" links) in
       let rr, tr = sum_term ctx ~subject ~subject_ot (req "rechts" rechts) in
+      ll @ rr @ [ Printf.sprintf "%s %s %s" tl (if op = Gelijk then "==" else "!=") tr ]
+  | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ }
+    when is_symbolic_operand links || is_symbolic_operand rechts ->
+      (* ch. 1.2d's NON-numeric branch (§5 Tabel 38): text/enum/boolean
+         equality is POSITIVE ground-term comparison — both operands bind
+         (an own attribute read via its val atom, a literal as a ground
+         term); Gelijk tests ==, Ongelijk tests != and is NEVER `not
+         gelijk`: ANY empty operand must make BOTH directions false, which
+         the unbound positive join gives for free (the sum/struct pattern
+         of S14/S16, on the scalar datatypes). The numeric eqN asymmetry
+         below — leeg = leeg waar, its NAF complement for ongelijk — is
+         numeric-only and deliberately does NOT apply here. *)
+      let ll, tl = symbolic_term ctx ~subject ~subject_ot (req "links" links) in
+      let rr, tr = symbolic_term ctx ~subject ~subject_ot (req "rechts" rechts) in
       ll @ rr @ [ Printf.sprintf "%s %s %s" tl (if op = Gelijk then "==" else "!=") tr ]
   | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ } ->
       (* the ch. 1.2d equality asymmetry (arith.compare_op): gelijk-aan
@@ -2768,6 +2849,39 @@ let translate_regel ctx (r : resolved_regel) =
               ctx.rule_guard <- [];
               head_body ctx (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
                 ((base :: cond) @ bindings)
+          | Some (Berekening | Gelijkstelling)
+            when (match attr_symbolic_datatype ctx ~otype:ot ~attr:a with
+                 | Some (Tekst | Enumeratie _) -> true
+                 | _ -> false)
+                 && not (attr_temporal ctx ~otype:ot ~attr:a) ->
+              (* ch. 1.2d scalars in write position: a text/enum ground term
+                 rides straight into the val head — no numeric scale, no unit,
+                 no fit (the sum/struct-target pattern). A leeg source read
+                 binds no atom, so the rule does not fire and the target is
+                 leeg (propagation). A case-supplied text/enum computed target
+                 has no monotone encoding here (the sum-target sibling),
+                 fenced loudly. *)
+              if case_supplies ctx ~otype:ot ~attr:a then
+                fault
+                  "a case-supplied text/enum computed target %S has no encoding here (no corpus \
+                   case)"
+                  a;
+              ctx.rule_guard <- cond;
+              let bindings, term = symbolic_term ctx ~subject ~subject_ot:ot (req "waarde" r.waarde) in
+              ctx.rule_guard <- [];
+              head_body ctx (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
+                ((base :: cond) @ bindings)
+          | Some (Berekening | Gelijkstelling)
+            when attr_symbolic_datatype ctx ~otype:ot ~attr:a = Some Booleaan ->
+              (* a boolean is a characteristic in v0: rule forms READ it
+                 closed-world through heeft/2 (bool_atoms, the WF-027 guard),
+                 which a derived val/3 would not feed — the two encodings
+                 would split. No corpus case computes a boolean attribute;
+                 refuse loudly rather than encode half of it. *)
+              fault
+                "a boolean computed target %S has no encoding here (the closed-world heeft/2 \
+                 read and a derived val/3 would split; no corpus case)"
+                a
           | Some (Berekening | Gelijkstelling) when attr_temporal ctx ~otype:ot ~attr:a -> (
               if
                 (not (List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_temporal_targets ctx.doc)))
@@ -3677,8 +3791,20 @@ let translate_case ctx (case : Case.t) =
           | Value.Bool b ->
               (* a boolean attribute is a characteristic in v0 (booleans are
                  characteristics): true → heeft/2, false → absence
-                 (closed-world), the [bool_atoms] read-shape on the case side *)
-              if b then emit ctx "heeft(%s,%s)." (str_raw label) (str aname)
+                 (closed-world), the [bool_atoms] read-shape on the case side.
+                 The ch. 1.2d equality read additionally needs the three-way
+                 distinction (waar / onwaar / leeg) the closed-world heeft/2
+                 cannot carry, so the value ALSO enters as val/3 with the
+                 bare symbol waar/onwaar — false is a VALUE there, distinct
+                 from absence (S2/S5). *)
+              if b then emit ctx "heeft(%s,%s)." (str_raw label) (str aname);
+              emit ctx "val(%s,%s,%s)." (str_raw label) (str aname) (symbolic_value_term v)
+          | Value.Text _ | Value.Enum _ ->
+              (* ch. 1.2d scalar carriage: a text value is its verbatim quoted
+                 string, an enum label its normalised quoted string — the same
+                 ground terms symbolic_term reads and the literal emission
+                 writes, so equality is direct term identity (S2). *)
+              emit ctx "val(%s,%s,%s)." (str_raw label) (str aname) (symbolic_value_term v)
           | Value.Ctor (tag, payload) ->
               (* ch. 9.4 case carriage: a sum-typed input value is a ground
                  constructor term, payload scaled by its declared payload

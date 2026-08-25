@@ -49,7 +49,7 @@ The fixed predicate vocabulary:
 | predicate | carries |
 |---|---|
 | `is_a/2` | instance → object type |
-| `val/3` | instance, attribute, scaled value |
+| `val/3` | instance, attribute, scaled (or S2 symbolic) value |
 | `heeft/2` | instance, characteristic |
 | `rol/3` | holder, canonical role name, filler |
 | `tl/5` | instance, attribute, from, to, scaled value (timeline segment) |
@@ -105,6 +105,23 @@ refused at load by the shared case loader (both executors identically
 differential). A granular parameter is only ever read temporally
 (S4/S9): the scalar-slot read faults.
 
+The ch. 1.2d **non-numeric scalars** ride ground *symbolic* terms in
+the same `val/3` slot, beside the integer encoding
+(`symbolic_value_term`): a **text** value is its verbatim quoted
+string (ref compares `String.equal` — spelling and case are
+load-bearing), an **enum** label its NORMALISED quoted string (ref
+compares norm-equal, so both executors normalise at the same point),
+and a **boolean** the bare symbol `waar`/`onwaar`. A boolean input
+additionally keeps its closed-world characteristic reading — `true` →
+`heeft/2`, `false` → absence (the `bool_atoms` read of S11) — because
+the equality read needs the three-way distinction (waar / onwaar /
+leeg) that `heeft/2` alone cannot carry: `false` is a *value* in the
+`val/3` carriage, distinct from absence. Day-precision **dates** are
+not symbolic: a date is its civil day number in the integer encoding
+(S4), and date equality is *numeric* (the adopted reading of
+`ref/lib/value.ml`). A `dateTime` value stays refused — milliseconds
+since epoch exceed clingo's integer range.
+
 The standing-target routing is the one semantic decision made at
 input time (RS ch. 7.8; S10 carries the detail): if the target attribute of
 a defeasible producer — a ladder target, or a bare single-writer
@@ -122,7 +139,12 @@ Witnesses: every golden case exercises this section (gate 6);
 standing routing by the ladder anchors, `jutterswet-waardestelling`
 (the scalar standing norm) and `jutterswet-borgdeel` (the temporal
 arm); vintages by `jutterswet-aanmeldquotum`,
-`jutterswet-penningvintage` and `corpus/rood/vintage-uncovered-date`.
+`jutterswet-penningvintage` and `corpus/rood/vintage-uncovered-date`;
+the symbolic carriage by `jutterswet-vondstetiket` (text),
+`jutterswet-keurstaat` (enum, including the case2 norm-insensitive
+spelling), `jutterswet-borgvlag` (boolean — case2 pins `onwaar` as a
+value distinct from case3's absence) and `jutterswet-jutdatum` (the
+date-as-day-number sibling).
 
 ### S3. Rules and write targets
 
@@ -161,10 +183,26 @@ input rule `val(S,a,V) :- inputval(S,a,V), is_a(S,ot), not
 result derives no effectiveness and the input stands (ref's
 no-write-on-empty, RS ch. 7.8).
 
+A **text/enum scalar target** takes the sum/struct-target route: the
+value — a text/enum literal or an own-subject text/enum attribute
+read, lowered by `symbolic_term` (S2's ground terms) — rides straight
+into the `val` head, no scale, no unit, no fit. A leeg source read
+binds no atom, so the rule does not fire and the target is leeg
+(propagation for free). A case-supplied text/enum *computed* target
+has no monotone encoding here (the sum-target sibling) and is fenced
+loudly. A **boolean computed target** is refused with its reason: a
+boolean is a characteristic in v0, so rule forms *read* it
+closed-world through `heeft/2` (the WF-027 `bool_atoms` guard, S11),
+which a derived `val/3` would not feed — the two encodings would
+split, and no corpus case computes a boolean attribute. Witnesses:
+`jutterswet-vondstetiket` (the literal write `rubriek` and the copy
+`afschrift`), `jutterswet-keurstaat` (the enum copy `oordeel` and the
+conditional literal `stempel`).
+
 Not translated, loudly (S19 carries the full list): validity windows;
 temporal targets outside the two ch. 3.7/3.8 fold shapes; case input
 on non-standing computed targets; a `standing` target outside its own
-domain.
+domain; boolean computed targets (above).
 
 ### S4. Expression terms
 
@@ -176,8 +214,11 @@ number at scale 1 — the *same* encoding as a date attribute read
 comparison harmonises day numbers directly and needs no second date
 encoding (B2). ref faults date *arithmetic* (`numeric_ok` gates the
 additive/multiplicative families on both operands), so a date literal
-reaches comparison operands only; a text/enum/boolean literal in a term
-position still faults (S19). **Parameter reference**: body atom `param("p",P)`,
+reaches comparison operands only; a text/enum/boolean literal in a
+NUMERIC term position still faults (S19) — in the positions that
+carry the non-numeric scalars (an equality operand, a text/enum write
+value) it lowers through `symbolic_term` to its S2 ground term, never
+through `expr_term`. **Parameter reference**: body atom `param("p",P)`,
 term `P`; granular parameters are refused in scalar slots (ch. 3.3/8).
 **Attribute reference**: body atom `val(S,a,A)`; a *navigated*
 reference (ch. 5.8) chains one `rol/3` atom per to-one hop before the
@@ -236,10 +277,18 @@ not complements). Sound for
 the same reason `coalesce0`'s definedness negation is: the helper
 reads only the operand bodies. Anchored by
 `jutterswet-sluitregister` (all four corners: equal, different,
-half-empty, both-empty). What remains loud: non-numeric scalar
-equality (text/enum/boolean operands fault as unscalable before any
-eqN rule is emitted) and equality in the per-segment clip comparison
-(S19).
+half-empty, both-empty). The **non-numeric** branch (text/enum/boolean
+`Gelijk`/`Ongelijk`, since 2026-08-25) needs no helper at all: both
+operands lower through `symbolic_term` to positively-bound ground
+terms (S2), `Gelijk` tests `==`, `Ongelijk` tests `!=` — never `not
+gelijk` — and *any* empty operand fails the join in both directions,
+which is exactly Tabel 38 (the sum/struct S14/S16 pattern on the
+scalar datatypes). Anchored by `jutterswet-vondstetiket`,
+`jutterswet-keurstaat` and `jutterswet-borgvlag` (each with the
+both-directions-false leeg corner beside `jutterswet-jutdatum`'s
+*numeric* date corner, where ongelijk-aan on leeg is waar — the
+asymmetry pinned side by side). What remains loud: equality in the
+per-segment clip comparison (S19).
 
 Witnesses: `jutterswet-leegrekening`, `synth2-leegcomposities`,
 `jutterswet-vindersloon` (every empty cell), `jutterswet-taxatie`
@@ -316,9 +365,15 @@ conversion factors have no integer encoding (the hunted 1 m + 50 cm =
 `cond_atoms` lowers a condition to body atoms. **Comparison**
 (vergelijking): harmonised scaled terms joined by `>=`, `>`, `<`,
 `<=`; both operands are bare joins, so a leeg operand fails the
-condition (ch. 1.2d). **Equality/inequality**: the eqN-helper
-encoding of S5 — gelijk-aan through the helper atom, ongelijk-aan
-through its negation (witness `jutterswet-sluitregister`). **Characteristic check** (kenmerk-check): `heeft(S,k)`, or
+condition (ch. 1.2d). **Equality/inequality**: statically routed
+on the operands' declared kind, exactly as ref routes
+(`static_numeric`): numeric operands take the eqN-helper encoding of
+S5 — gelijk-aan through the helper atom, ongelijk-aan through its
+negation (witness `jutterswet-sluitregister`); text/enum/boolean
+operands take the positive symbolic-term join of S5 — `==`/`!=` over
+both bound terms, any empty operand false in both directions
+(witnesses `jutterswet-vondstetiket`, `jutterswet-keurstaat`,
+`jutterswet-borgvlag`). **Characteristic check** (kenmerk-check): `heeft(S,k)`, or
 `not heeft(S,k)` under negation — stratification (WF-045/046) makes
 this sound. The *navigated* check walks the `rol/3` hop as a POSITIVE
 literal with only the characteristic under the negation: an absent
@@ -1279,12 +1334,10 @@ context — the translation stops, nothing degrades. Grouped; the
 literal reason strings live in `backends/clingo/lib/translate.ml`.
 
 *Semantics deliberately unencoded (recorded findings):*
-non-numeric scalar equality (text/enum/boolean `Gelijk`/`Ongelijk` —
-ref answers per ch. 1.2d's non-numeric branch, the translation faults
-on the unscalable operand before any eqN rule is emitted; the
-*numeric* asymmetry itself is encoded — S5) and equality in the
-per-segment clip comparison (the clip's
-empty corner is a different shape); runtime, negative and fractional
+equality in the per-segment clip comparison (the clip's
+empty corner is a different shape — non-numeric scalar equality
+itself is since 2026-08-25 encoded, S5/S7, like the numeric
+asymmetry before it); runtime, negative and fractional
 power exponents (the runtime-exponent empty corner 4^leeg = leeg is
 thereby ref-only behaviour); ref's unit-conversion algebra (all
 restating positions refuse non-identical units); negative operands
@@ -1313,13 +1366,28 @@ granularity; `Begrensd` (clip/min-max) and rounded roots in term
 positions; a temporal attribute read in a scalar slot (ch. 3.3);
 non-numeric arithmetic operands (ref faults date arithmetic — day
 numbers must not silently compute) and a **text/enum/boolean literal in
-a term position** (a **date literal** now translates as its civil day
-number — B2, the S4 date-comparison sibling — so only the genuinely
-non-numeric literals fault here); unscalable datatypes in the integer encoding (a
+a NUMERIC term position** (a **date literal** translates as its civil
+day number — B2, the S4 date-comparison sibling — and since
+2026-08-25 the text/enum/boolean literals and own-subject reads
+translate in their OWN positions: equality operands and text/enum
+write values, through `symbolic_term`, S2/S3/S5/S7 — so what faults
+here is those datatypes reaching `expr_term`'s integer encoding:
+arithmetic, ordering comparisons, the gevuld-predicate operand and
+every other numeric slot); the symbolic-term fences of S2/S3: a
+text/enum/boolean operand that is neither an own-subject attribute
+read nor a literal (navigated reads await a case), temporal
+text/enum/boolean carriage (a recorded flank, the sum/struct
+sibling), a case-supplied text/enum *computed* target (the ch. 6d
+superset-model fence), and a **boolean computed target** (the
+closed-world `heeft/2` read and a derived `val/3` would split — S3);
+unscalable datatypes in the integer encoding (a
 datatype-less *declaration* is since 2026-08-21 rejected by WF-059
 with the shared loader refusing its input as backstop — the fault
-here remains the last line for text/enum/boolean/dateTime operand
-positions);
+here remains the last line for **dateTime** operand positions,
+whose millisecond values exceed clingo's integer range in any slot,
+and for text/enum/boolean **parameters**, which ref executes but the
+ASP parameter emission scales through `decimals_of_datatype` —
+ref-only until a corpus case demands a symbolic parameter carriage);
 characteristic attribution with a non-waar value;
 non-proportional and conditional allocation; misaligned allocation
 and rounding scales; som fallbacks other than 0; uniqueness key

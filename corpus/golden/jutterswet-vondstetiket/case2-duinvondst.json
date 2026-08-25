@@ -1,0 +1,48 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "etiket": {
+            "text": "duinvondst"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "erkend"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "omstreden"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "rubriek"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "afschrift",
+      "value": {
+        "text": "duinvondst"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

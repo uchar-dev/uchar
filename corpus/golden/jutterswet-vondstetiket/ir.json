@@ -1,0 +1,272 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Vondst": {
+      "node": "Objecttype",
+      "naam": "Vondst",
+      "attributen": {
+        "etiket": {
+          "node": "Tekst"
+        },
+        "rubriek": {
+          "node": "Tekst"
+        },
+        "afschrift": {
+          "node": "Tekst"
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "erkend",
+        "omstreden"
+      ],
+      "kenmerkSoorten": {
+        "erkend": "BIJVOEGLIJK",
+        "omstreden": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Vondsten"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "erkenning naar etiket",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "betwisting naar etiket",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "rubricering van een erkende vondst",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "afschrift van het etiket",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "erkenning naar etiket",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "erkend",
+        "objecttype": "Vondst",
+        "onderwerpBron": "Een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Vondst is erkend",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "GELIJK",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "etiket",
+          "objecttype": "Vondst",
+          "onderwerpBron": "de Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Tekst"
+          },
+          "bron": "het etiket van de Vondst",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "zeevondst",
+          "type": {
+            "node": "Tekst"
+          },
+          "bron": "'zeevondst'"
+        },
+        "periode": null,
+        "bron": "haar etiket gelijk is aan 'zeevondst'"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "betwisting naar etiket",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "omstreden",
+        "objecttype": "Vondst",
+        "onderwerpBron": "Een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Vondst is omstreden",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "ONGELIJK",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "etiket",
+          "objecttype": "Vondst",
+          "onderwerpBron": "de Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Tekst"
+          },
+          "bron": "het etiket van de Vondst",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "zeevondst",
+          "type": {
+            "node": "Tekst"
+          },
+          "bron": "'zeevondst'"
+        },
+        "periode": null,
+        "bron": "haar etiket ongelijk is aan 'zeevondst'"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "rubricering van een erkende vondst",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "rubriek",
+        "objecttype": "Vondst",
+        "onderwerpBron": "een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "Tekst"
+        },
+        "bron": "De rubriek van een Vondst",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "strandgoed",
+        "type": {
+          "node": "Tekst"
+        },
+        "bron": "'strandgoed'"
+      },
+      "voorwaarde": {
+        "node": "Kenmerk",
+        "kenmerk": "erkend",
+        "navigatie": null,
+        "negatie": false,
+        "eigenaar": null,
+        "periode": null,
+        "bron": "de Vondst is erkend"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "afschrift van het etiket",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "afschrift",
+        "objecttype": "Vondst",
+        "onderwerpBron": "een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "Tekst"
+        },
+        "bron": "Het afschrift van een Vondst",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "AttribuutRef",
+        "attribuut": "etiket",
+        "objecttype": "Vondst",
+        "onderwerpBron": "de Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "Tekst"
+        },
+        "bron": "het etiket van de Vondst",
+        "set": false,
+        "navigatiePad": []
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

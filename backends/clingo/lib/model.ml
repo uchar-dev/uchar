@@ -248,6 +248,27 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
              a structural list comparison is not built until a case wants one
              (ASP-TRANSLATION S19) *)
           fault "a list-valued attributeValue expectation is not checked here (no corpus case)"
+      | Attribute_value { label; attr; value = (Value.Text _ | Value.Enum _ | Value.Bool _) as value }
+        -> (
+          (* the text/enum/boolean expectation (ch. 1.2d's non-numeric
+             scalars): built by the SAME symbolic_value_term emission the
+             translator uses and parsed by the SAME term parser — one source
+             of truth, no independent encoding to drift (the ctor/struct
+             pattern). A boolean expectation reads the val/3 carriage
+             (waar/onwaar), never heeft/2 — mirroring ref, which checks the
+             attribute slot, not the characteristic set. *)
+          let want = arg_of_term (parse_term (Translate.symbolic_value_term value)) in
+          match val_present model label attr with
+          | [ got ] when got = want -> None
+          | [] ->
+              Some
+                (Printf.sprintf "%s.%s is underived (leeg), expected %s" label attr
+                   (render_arg want))
+          | got ->
+              Some
+                (Printf.sprintf "%s.%s = [%s], expected %s" label attr
+                   (String.concat ";" (List.map render_arg got))
+                   (render_arg want)))
       | Attribute_value { label; attr; value } -> (
           let want = scaled_expect ~label ~attr value in
           match val_of model label attr with

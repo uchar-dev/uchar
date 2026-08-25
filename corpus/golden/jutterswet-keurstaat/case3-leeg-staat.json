@@ -1,0 +1,65 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "staat": {
+            "enumeration": "wrakhout"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "veilbaar"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "afgekeurd"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "oordeel"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "stempel"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "afgekeurd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "oordeel",
+      "value": {
+        "enumeration": "wrakhout"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

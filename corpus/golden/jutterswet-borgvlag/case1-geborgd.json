@@ -1,0 +1,48 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B1",
+        "objectType": "Berging",
+        "attributes": {
+          "geborgd": {
+            "boolean": true
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "B1",
+      "characteristic": "afgehandeld"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "B1",
+      "characteristic": "openstaand"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "B1",
+      "characteristic": "betwist"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "geborgd",
+      "value": {
+        "boolean": true
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

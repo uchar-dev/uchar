@@ -1,0 +1,65 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "etiket": {
+            "text": "zeevondst"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "erkend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "omstreden"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "rubriek"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "afschrift"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "erkend"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "rubriek",
+      "value": {
+        "text": "strandgoed"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
