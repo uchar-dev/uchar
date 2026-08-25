@@ -40,3 +40,26 @@ May touch: `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`,
 `spec/ASP-TRANSLATION.md` (hardening note).
 Out of scope: pluralisation heuristics (stays a delta), navigated reads
 (D1), `spec/CONSTRUCTS.md` (serial at merge).
+
+Result: landed whole (2026-08-26). The narrowed type-pair fallback is
+normative (IR-SPEC ch. 2.6 decision closing the OPEN morphology point,
+ch. 4.3 resolution paragraph, WF-034 clause + index row) and executes in
+all three implementations: verifier aggregation_source_check, ref
+fold-arm (connecting_role), clingo count arm. The clingo arm is
+additionally hardened to resolve-or-fault and to key rol/3 by the
+connecting role's canonical name, never the raw written lexeme — the
+latent silent-0 (written singular of a to-many role whose declared
+plural keys the facts) is closed and pinned (ASP-TRANSLATION S8).
+Red-first: ref faulted 'no role named "duinkavels" reachable from
+"Jutter"'; clingo counted 0 where 3 and 2 were expected. Witness golden
+jutterswet-kaveltelling (both executors, 5 expectations, noop-refuting);
+negatief wf034-ambigu-typenpaar (rejected citing WF-034, WF-048
+incidental); RUNTIME-SEMANTICS ch. 3.4a worked example verbatim as
+WV-3.4a-typenpaar (5 ref-test assertions, add-only). Nine gates green:
+138 ir round-trip, 138/158 verifier, 360 case-schema, 340 oracle, 340
+clingo, 305+35 noop, 20 rood, 169 catala checks + 11 byte-identical.
+Deliberately left: the +s/+en pluralisation stays an unmirrored tracked
+delta (per the card); the CONSTRUCTS.md delta-row note is serial at
+merge (out of scope here); the WF-047 written-name-denotes-bound-role
+rule is untouched — with an explicit binding a divergent written form
+stays ill-formed.
