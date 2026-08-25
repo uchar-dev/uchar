@@ -28,3 +28,17 @@ Acceptance:
 May touch: `spec/proposals/PRIORITY-RELATION.md` only.
 Out of scope: any edit to `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`,
 schema, verifier, corpus, backends, frontends, `spec/CONSTRUCTS.md`.
+
+## Result
+
+`spec/proposals/PRIORITY-RELATION.md` landed (415 lines): the C2 design
+exploration recommends NOT building the free `r1 > r2` relation or
+strength tags, with five numbered ratification questions (§9) awaiting
+the maintainer. The opus lens caught one MAJOR — §2 overclaimed that
+over-determination outside a ladder always reports loudly; two guarded
+writers with overlapping guards are verifier-clean yet split ref
+(divergence fault) from clingo (silent multi-value) — fixed with the
+mechanical witness written into the proposal itself. Deliberately left:
+the five questions are unanswered (a proposal is a proposal); the
+CONSTRUCTS row-8 note is ratification question 5; the samenloop witness
+of question 4 would be its own small card if ratified.
