@@ -440,6 +440,43 @@ let jaar_uit = function
   | Date z -> let y, _, _ = civil_from_days z in Num (Q.of_int y, Unitless)
   | v -> fault "jaar uit: expected a date, got %s" (to_string v)
 
+let maand_uit = function
+  | Empty -> Empty
+  | Date z -> let _, m, _ = civil_from_days z in Num (Q.of_int m, Unitless)
+  | v -> fault "maand uit: expected a date, got %s" (to_string v)
+
+let dag_uit = function
+  | Empty -> Empty
+  | Date z -> let _, _, d = civil_from_days z in Num (Q.of_int d, Unitless)
+  | v -> fault "dag uit: expected a date, got %s" (to_string v)
+
+(* eerste paasdag van a whole unitless year (ch. 3.8): the Gauss/Anonymous
+   algorithm, verbatim from the spec; leeg propagates; a non-whole or
+   unit-carrying year faults — the ratified delta: never a silent
+   truncation to whole. OCaml (/) and (mod) truncate toward zero, exactly
+   the ch. 3.8 quot/mod. *)
+let eerste_paasdag = function
+  | Empty -> Empty
+  | Num (q, Unitless) when Z.equal (Q.den q) Z.one ->
+      let j =
+        match Z.to_int (Q.num q) with
+        | j -> j
+        | exception Z.Overflow ->
+            fault "eerste paasdag: year %s is out of range" (Q.to_string q)
+      in
+      let a = j mod 19 and b = j / 100 and c = j mod 100 in
+      let d = b / 4 and e = b mod 4 in
+      let f = (b + 8) / 25 in
+      let g = (b - f + 1) / 3 in
+      let h = ((19 * a) + b - d - g + 15) mod 30 in
+      let i = c / 4 and k = c mod 4 in
+      let l = (32 + (2 * e) + (2 * i) - h - k) mod 7 in
+      let m = (a + (11 * h) + (22 * l)) / 451 in
+      let maand = (h + l - (7 * m) + 114) / 31 in
+      let dag = ((h + l - (7 * m) + 114) mod 31) + 1 in
+      Date (days_from_civil ~y:j ~m:maand ~d:dag)
+  | v -> fault "eerste paasdag: expected a whole unitless year, got %s (WF-038)" (to_string v)
+
 (* --- the calendar kernel (ch. 3.8): proleptic Gregorian, zoneless civil
    time, built on the civil helpers of Value (days_from_civil /
    civil_from_days). The counted unit arrives resolved through the shared

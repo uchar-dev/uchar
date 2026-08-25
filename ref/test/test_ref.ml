@@ -1451,6 +1451,31 @@ let () =
   expect_fault "WV-3.8-subday-tijdsduur" (fun () -> td Tu_uur "2024-01-01" "2024-01-02");
   expect_fault "WV-3.8-subday-plus" (fun () -> plus Tu_uur "2024-01-01" "3")
 
+(* --- ch. 3.8: date-part extraction and the Easter builtin (worked
+   examples verbatim) ----------------------------------------------------- *)
+
+let () =
+  let d = Value.date_of_iso in
+  (* civil components of a day-precision date, unitless whole numbers *)
+  expect_num "WV-3.8-jaar-uit" (Arith.jaar_uit (d "2026-11-03")) "2026";
+  expect_num "WV-3.8-maand-uit" (Arith.maand_uit (d "2026-11-03")) "11";
+  expect_num "WV-3.8-dag-uit" (Arith.dag_uit (d "2026-11-03")) "3";
+  (* the four pinned Easter Sundays: 2024 (the standing pin), 2026, the
+     March Easter 2027, the late-April Easter 2038 *)
+  check "WV-3.8-paasdag-2024" (Arith.eerste_paasdag (n "2024") = d "2024-03-31");
+  check "WV-3.8-paasdag-2026" (Arith.eerste_paasdag (n "2026") = d "2026-04-05");
+  check "WV-3.8-paasdag-2027" (Arith.eerste_paasdag (n "2027") = d "2027-03-28");
+  check "WV-3.8-paasdag-2038" (Arith.eerste_paasdag (n "2038") = d "2038-04-25");
+  (* leeg propagates (ch. 1.2b) *)
+  expect_leeg "WV-3.8-maand-uit-leeg" (Arith.maand_uit leeg);
+  expect_leeg "WV-3.8-dag-uit-leeg" (Arith.dag_uit leeg);
+  expect_leeg "WV-3.8-paasdag-leeg" (Arith.eerste_paasdag leeg);
+  (* a non-whole or unit-carrying year faults (never a silent truncation);
+     a non-date extractor operand faults *)
+  expect_fault "WV-3.8-paasdag-frac" (fun () -> Arith.eerste_paasdag (n "2024,5"));
+  expect_fault "WV-3.8-paasdag-eenheid" (fun () -> Arith.eerste_paasdag (nu jr "2024"));
+  expect_fault "WV-3.8-maand-uit-tekst" (fun () -> Arith.maand_uit (Value.Text "x"))
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

@@ -940,6 +940,18 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
       match argumenten with
       | [ a ] -> Arith.jaar_uit (eval_expr env world self ~err a)
       | _ -> Value.fault "jaar uit expects one argument")
+  | Maand_uit -> (
+      match argumenten with
+      | [ a ] -> Arith.maand_uit (eval_expr env world self ~err a)
+      | _ -> Value.fault "maand uit expects one argument")
+  | Dag_uit -> (
+      match argumenten with
+      | [ a ] -> Arith.dag_uit (eval_expr env world self ~err a)
+      | _ -> Value.fault "dag uit expects one argument")
+  | Eerste_paasdag -> (
+      match argumenten with
+      | [ a ] -> Arith.eerste_paasdag (eval_expr env world self ~err a)
+      | _ -> Value.fault "eerste paasdag expects one argument")
   | Tijdsduur | Absolute_tijdsduur ->
       (* unreachable: eval_expr routes both variants on the node-type unit *)
       assert false
