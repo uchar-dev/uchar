@@ -1,0 +1,155 @@
+# Tutorial end 2-4 — the Catala book's per-element household refactor (fused)
+
+Frontend E2E fixture (PHASE5C-TUTORIAL §3a, the fusie-lowering). Source: the
+Catala project's compiler test / book tutorial section 2.4
+(`tests/en/tutorial_end_2_4.catala_en`, catala 1.2.x), which layers the
+per-individual household refactor onto the 2-3 income tax; authored by the
+Catala team (Denis Merigoux et al.), Apache-2.0-licensed, reproduced here as a
+conformance fixture. The upstream `Test` / `TestHousehold` scopes are omitted
+(they read a whole subscope output as `output … content IncomeTaxComputation`,
+outside the declared-subscope fragment — mirroring the 2-3 fixture's omission);
+their absolute expectations ride the `cases/tutorial24_*` files, calibrated
+against `catala interpret` on a /tmp copy that adds `#[test]` scopes back.
+
+What lands here (2026-08-25, besluit 1-A refined):
+
+  * FUSION — `shares_of_household_tax` is an INTERNAL `list of
+    HouseholdTaxIndividualComputation`, consumed only per field (the two
+    `sum money of … to share.household_tax` / `.deduction` folds). The struct
+    list never exists on the wire: each per-field fold fuses to
+    `MapList(individuals, λi. Invoke(HouseholdTaxIndividualComputation <field>, i))`.
+  * MULTI-OUTPUT — `HouseholdTaxIndividualComputation` declares two outputs, so
+    one FunctionDef per read field.
+  * NESTED INVOKE — that callee declares a subscope `income_tax_computation`
+    whose own callee `IncomeTaxComputation` is itself a pure function, so
+    `income_tax_computation.income_tax` lowers to a nested `Invoke` (function
+    composition, no instance).
+  * The money × computed-rate product `$10,000 · (1 + n/2)` (a `Maal` plus a
+    constant-divisor `/2.0`) and the rate `income · r` ride clingo's widened
+    closed-body fence (card clingo-bodymult, S15).
+  * The deduction cap rides the STATES: `total_deduction` (base → capped at
+    $8,500) and `household_tax` (base → deduction), rule-level let-ifs.
+
+The per-individual deduction here is the full income tax; the household-level
+cap ($8,500) and the floor-at-zero ride the states — the book's own
+`total_deduction` / `household_tax` state chain, without the per-individual
+`min` (a per-element `min` needs a rule-level clamp no closed function body
+carries). `IncomeTaxComputation`'s rate ladder is an ordered chain (income and
+children only): a closed pure-function body carries no unordered exception
+group.
+
+```catala
+declaration structure Individual:
+  data income content money
+  data number_of_children content integer
+
+declaration scope IncomeTaxComputation:
+  input income content money
+  input number_of_children content integer
+  output income_tax content money
+
+declaration scope HouseholdTaxIndividualComputation:
+  input individual content Individual
+
+  income_tax_computation scope IncomeTaxComputation
+
+  output household_tax content money
+  output deduction content money
+
+declaration scope HouseholdTaxComputation:
+  input individuals content list of Individual
+
+  internal shares_of_household_tax
+    content list of HouseholdTaxIndividualComputation
+
+  internal total_deduction content money
+    state base
+    state capped
+
+  output household_tax content money
+    state base
+    state deduction
+```
+
+## Article 1
+
+```catala
+scope IncomeTaxComputation:
+  label rate_base
+  definition income_tax equals
+    income * 0.20
+
+  label rate_reduced exception rate_base
+  definition income_tax
+    under condition number_of_children >= 2
+    consequence equals income * 0.15
+
+  label rate_exempt exception rate_reduced
+  definition income_tax
+    under condition income <= $10,000
+    consequence equals $0
+```
+
+## Article 7
+
+```catala
+scope HouseholdTaxIndividualComputation:
+  definition income_tax_computation.income equals
+    individual.income
+  definition income_tax_computation.number_of_children equals
+    individual.number_of_children
+
+  definition household_tax equals
+    $10,000 * (1.0 + decimal of individual.number_of_children / 2.0)
+
+scope HouseholdTaxComputation:
+  definition shares_of_household_tax equals
+    map each individual among individuals to
+    (
+      output of HouseholdTaxIndividualComputation with {
+        -- individual: individual
+      }
+    )
+
+  definition household_tax
+    state base
+  equals
+    sum money of
+      map each share among shares_of_household_tax
+      to share.household_tax
+```
+
+## Article 8
+
+```catala
+scope HouseholdTaxIndividualComputation:
+  definition deduction equals
+    income_tax_computation.income_tax
+
+scope HouseholdTaxComputation:
+  definition total_deduction
+    state base
+  equals
+    sum money of
+      map each share among shares_of_household_tax
+      to share.deduction
+
+  definition household_tax
+    state deduction
+  equals
+    let base_tax equals household_tax in
+    let owed equals total_deduction in
+    if owed > base_tax then $0 else base_tax - owed
+```
+
+## Article 9
+
+```catala
+scope HouseholdTaxComputation:
+  definition total_deduction
+    state capped
+  equals
+    let cap equals $8,500 in
+    let raw equals total_deduction in
+    if raw > cap then cap else raw
+```

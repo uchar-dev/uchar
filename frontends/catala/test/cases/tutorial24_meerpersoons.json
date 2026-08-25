@@ -1,0 +1,11 @@
+{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "H", "objectType": "HouseholdTaxComputation",
+      "attributes": {
+        "individuals": { "list": [
+          { "struct": { "income": { "number": "30000.00" }, "number_of_children": { "number": "0" } } },
+          { "struct": { "income": { "number": "15000.00" }, "number_of_children": { "number": "2" } } } ] } },
+      "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "H", "attribute": "total_deduction capped", "value": { "number": "8250.00" } },
+    { "kind": "attributeValue", "label": "H", "attribute": "household_tax deduction", "value": { "number": "21750.00" } },
+    { "kind": "consistent" } ] }

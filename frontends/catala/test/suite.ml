@@ -198,7 +198,22 @@ let () =
          the caller folds the mapped list to a SCALAR — the covered, triple-green
          form. grondslagen [1;2;3] -> each +100 -> sum 306, through the full
          differential (ref AND clingo) *)
-      ("subscope_perelement.catala_en", [ "cases/perelement_drie.json" ]) ]
+      ("subscope_perelement.catala_en", [ "cases/perelement_drie.json" ]);
+      (* PHASE5C-TUTORIAL §3a (the fusie-lowering): the Catala book's tutorial 2-4
+         through the plugin — a whole-struct per-element map landing in an INTERNAL
+         [list of HouseholdTaxIndividualComputation], consumed only per field and
+         FUSED to per-field [MapList(individuals, λi. Invoke(<callee> <field>, i))];
+         MULTI-OUTPUT (household_tax + deduction → two FunctionDefs); a NESTED
+         Invoke (the callee's own IncomeTaxComputation subscope); the money ×
+         computed-rate product ($10,000·(1+n/2)) over the widened closed-body
+         fence; and the deduction cap on the STATES (total_deduction base→capped,
+         household_tax base→deduction). Three cases pinned against `catala
+         interpret`: a two-person household ($21,750; total_deduction $8,250), the
+         cap flank ($11,500; total_deduction capped at $8,500), and the exempt-rate
+         edge ($25,000; $0). Through the full differential (ref AND clingo) *)
+      ("tutorial_end_2_4.catala_en",
+       [ "cases/tutorial24_meerpersoons.json"; "cases/tutorial24_capflank.json";
+         "cases/tutorial24_randgeval.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:false src cases) passing;
   (* ref-only passing programs. datum: clingo cannot translate a date literal
