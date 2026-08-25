@@ -1207,6 +1207,31 @@ the schema when it does.
 | VariableReference | `name`, `type`, `source` | a rule-local let-binding (§13.4.2.10); binding is frontend scope resolution |
 | ContextValue | `name` ∈ evaluation-date, evaluation-year | **Delta (row 25):** split from v0's `Constante` grab-bag; the pronoun referents that shared that node are surface forms the frontend resolves away. *v0 mirror note:* the wire carries `Constante` named `Rekendatum` (typed day-precision) or `Rekenjaar` (whole number); `Rekendatum` is the ch. 8.2 execution-date constant and the index of the ch. 8.3 vintage read (`RUNTIME-SEMANTICS.md`); `Rekenjaar` has no corpus witness yet — executors fault on it |
 
+**The numeric-literal lexeme (WF-081).** A `Literal` whose `type` is
+numeric (`Numeriek` or `Percentage`) MUST carry as its value a **bare
+number lexeme**: after mapping every `,` to `.` (the Dutch decimal comma,
+admitted as a decimal separator only — never as grouping), the lexeme
+matches exactly
+
+```
+number   ::= integer | decimal | rational
+integer  ::= '-'? digits
+decimal  ::= '-'? digits? '.' digits
+rational ::= '-'? digits '/' digits      -- denominator non-zero
+digits   ::= [0-9]+
+```
+
+Nothing else is a number lexeme: no whitespace, no leading `+`, no
+exponent, no grouping separators, and — the fence this rule exists for —
+no unit or currency token inside the lexeme (`"5 €"` is ill-formed; a
+unit belongs in the datatype's `eenheid`, never in the value string).
+Both executors share this grammar in their lexeme parser and fault at
+evaluation time on anything outside it; WF-081 makes such a document
+ill-formed at verification time, ahead of any executor. Scope: numeric
+literals only — date lexemes (ISO `yyyy-mm-dd`) and `Tekst` literals
+(which legitimately carry arbitrary text) are governed by their own
+forms, not by this rule.
+
 ### 4.1a The navigated read (WF-053)
 
 An attribute reference whose value lives off-subject **navigates**: its
@@ -1922,6 +1947,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-078 | a `BinderRef`'s serialized `type` agrees in soort with its resolved binder's declared datatype (a match arm's constructor payload, a lambda/function parameter, a `Let` binder's value, a filter binder's element) — the leaf-ref cross-check WF-023/WF-027 do for a resolved `AttribuutRef`, soort only (decimals/units uncrossed, as there); closes the WF-035 additive-position exemption for binders (ch. 4.7) | gate 3 | `anchor/jutterswet-aanspraaktelling` (fold/match binders) + `anchor/jutterswet-tariefstelling` (`Let` binders) | `wf078-binderref-type-lie` |
 | WF-079 | at most one unconditional, version-free computing rule (Gelijkstelling/Berekening) per non-laddered (type, attribute) target — the single-writer discipline of WF-026/WF-050/WF-052 for bare attribute writers (ch. 7.7); Kenmerktoekenning exempt (monotone), guarded case splits and versioned forms outside; the PHASE5D-DIFF §8.2 un-pinnable form refused ahead of the square | gate 3 | `anchor/jutterswet-rekenkamer-overzee` (a guarded gewone/overzeese case split on one target — the fence does not over-fire on conditional writers) | `wf079-two-unconditional-writers` |
 | WF-080 | a value-position `AttribuutRef` resolves to an attribute, not a characteristic (a characteristic is read through a characteristic check, ch. 4.5) — closes the tolerated `has_attr||has_kenmerk` leak in both the generic value walk and the aggregation-source path (a value-yielding fold's source; a count's role source stays in scope of WF-034); the rule TARGET lvalue is out of scope (WF-022) | gate 3 | `jutterswet-vondsttelling` + `anchor/jutterswet-penninguitgifte` (a `SOM` folding an attribute source; gate 3 witnesses none over-rejects) | `wf080-value-position-kenmerk` + `wf080-aggregation-source-kenmerk` |
+| WF-081 | a numeric literal's lexeme is a bare number in the executors' shared grammar — after `,`→`.`: `'-'? digits`, `'-'? digits? '.' digits`, or `'-'? digits '/' digits` with a non-zero denominator (ch. 4.1); unit or currency tokens, whitespace, `+`, exponents and grouping are ill-formed (the unit belongs in the datatype's `eenheid`) — closes the gate blind spot where a unit written into the lexeme passed the verifier while both executors fault on it; date lexemes and `Tekst` literals out of scope | gate 3 | `anchor/jutterswet-tariefstelling` (integer and decimal lexemes through the fence; gate 3 witnesses none over-rejects) | `wf081-unit-in-lexeme` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

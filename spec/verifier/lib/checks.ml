@@ -150,6 +150,34 @@ let lexeme_zero s =
           then String.sub s 1 (String.length s - 1) else s in
   s <> "" && String.for_all (fun c -> c = '0' || c = ',' || c = '.') s
 
+(* WF-081: the executors' shared numeric-lexeme grammar (IR-SPEC ch. 4.1).
+   After mapping every ',' to '.', a lexeme is
+     integer  ::= '-'? digits
+     decimal  ::= '-'? digits? '.' digits
+     rational ::= '-'? digits '/' digits   (denominator not all zeros)
+     digits   ::= [0-9]+
+   Anything else — unit or currency tokens, whitespace, '+', exponents,
+   grouping separators — is not a number lexeme; both executors fault on
+   it at evaluation time, so the verifier refuses it up front. *)
+let lexeme_bare_number s =
+  let s = String.map (fun c -> if c = ',' then '.' else c) s in
+  let digits d = d <> "" && String.for_all (fun c -> c >= '0' && c <= '9') d in
+  let strip_sign d =
+    if String.length d > 0 && d.[0] = '-' then String.sub d 1 (String.length d - 1) else d
+  in
+  match String.index_opt s '/' with
+  | Some i ->
+      let num = strip_sign (String.sub s 0 i) in
+      let den = String.sub s (i + 1) (String.length s - i - 1) in
+      digits num && digits den && String.exists (fun c -> c <> '0') den
+  | None -> (
+      match String.index_opt s '.' with
+      | None -> digits (strip_sign s)
+      | Some i ->
+          let whole = strip_sign (String.sub s 0 i) in
+          let frac = String.sub s (i + 1) (String.length s - i - 1) in
+          digits frac && String.for_all (fun c -> c >= '0' && c <= '9') whole)
+
 (* --- document context --------------------------------------------------- *)
 
 type ctx = { doc : document }
@@ -1654,6 +1682,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
    match e with
   | Literal { waarde; typ; _ } -> (
       match typ, waarde with
+      | Some (Numeriek _ | Percentage _), Some w when not (lexeme_bare_number w) ->
+          [ v "WF-081" at
+              ("numeric literal lexeme '" ^ w
+               ^ "' is not a bare number (sign, digits, optional fraction — ch. 4.1)") ]
       | Some (Enumeratie { waarden; _ }), Some w when not (mem_ci (some_names waarden) w) ->
           [ v "WF-039" at ("enumeration label '" ^ w ^ "' is not in the declared domain") ]
       | Some (Numeriek { teken = Some t; _ }), Some w -> (
