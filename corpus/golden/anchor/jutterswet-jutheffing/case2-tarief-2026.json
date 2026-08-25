@@ -1,0 +1,35 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-07-01",
+  "input": {
+    "instances": [
+      {
+        "label": "A1",
+        "objectType": "Jutaangifte",
+        "attributes": {
+          "aangiftewaarde": { "number": "200" }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "A1",
+      "attribute": "jutheffing",
+      "value": { "number": "270" }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "A1",
+      "attribute": "registratiegetal",
+      "value": { "number": "201" }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
