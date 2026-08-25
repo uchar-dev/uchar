@@ -44,3 +44,24 @@ Out of scope: sub-form C2 (the ordered eerste/laatste articulated fold
 pin-bump giving the self-denoting source a bronRol (toolchain-side
 follow-up), best-effort pluralisation (stays a tracked delta),
 `spec/CONSTRUCTS.md` (serial at merge).
+
+Result: WF-083 landed whole. Red-first shown: the emitter-authored C1
+wire (navigatieRol "aanmelder" on the fold source, no bronRol) was
+verifier-PASS while ref faulted "EVALUATION FAULT: unsupported
+instance-fold source shape" and clingo faulted "TRANSLATION FAULT:
+expression kind not translated". Landed: IR-SPEC ch. 4.3 paragraph +
+WF-083 + index row; RUNTIME-SEMANTICS ch. 3.4a worked example (verbatim
+WV-3.4a-zelfbron/-nul/-weg in ref/test, add-only); verifier
+self_denoting_role + the WF-083 arm replacing the silent fall-through;
+the dep-walker's bindingless fold source now reads the relation edge
+beside the population edge (nav_role_by_name, best-effort); ref arm 1
+and clingo's Aantal arm widened with the same guard (shared via
+Eval.self_denoting_role); ASP-TRANSLATION S8 note; golden
+jutterswet-aanmeldertelling (2 links -> 2, leeg gewicht still counts,
+0 links -> 0) and negatief wf083-fold-source-navigates-away. All nine
+gates green (135/135+156/355/335/335/300+35/20/169+11).
+Deliberately left: sub-form C2 (own card); the emitter pin-bump giving
+the source a bronRol (toolchain-side); the set=true (value-fold) source
+with a self-denoting navigatieRol — the verifier admits it only
+relative to the ARGUMENT's object type (the element type there), both
+executors still fault loudly on it, no corpus case exercises it.
