@@ -413,3 +413,26 @@ Near-zero, by design:
    protected-path merge for a sentence whose content RS ch. 7.4
    already states — justified only if the maintainer wants the C2
    decision citable from inside the normative document itself.
+
+## 10. Decisions (2026-08-25)
+
+The maintainer answered all five §9 questions with option **A** (numbered
+ratification round, 2026-08-25):
+
+1. **The free superiority relation: not built.** The structural encoding
+   (rungs, nested groups, declared-unordered) is the v1 priority
+   mechanism; cross-target override remains inexpressible by design. A
+   future frontend whose source carries free override assertions must
+   compile them into ladder structure or refuse loudly.
+2. **Strength tags: not built.** Strict/defeasible/defeater remain
+   structural readings (§4.2), never wire labels; the audit's NIET on
+   strength tagging is a decided deviation.
+3. **Export mapping: direction only.** §4.3 records the
+   structure→LegalRuleML direction; nothing is specified normatively
+   until an interchange demand exists.
+4. **The samenloop witness: carded, low priority.** One own-authored
+   Jutterswet samenloop golden as an ordered ladder —
+   `backlog` card 20260825-samenloop-getuige.
+5. **Recording: this section plus the serial `CONSTRUCTS.md` row-8
+   note.** RS ch. 7.4's existing sentence already carries the normative
+   boundary; no protected-path addition.
