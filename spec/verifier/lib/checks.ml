@@ -1265,6 +1265,28 @@ let connecting_candidates ctx ~from_type ~to_type =
       | _ -> None)
     ctx.doc.feittypen
 
+(* The ch. 4.3 fallback counts candidate ROLES, not fact types — v0's
+   verbindendeRol (every role of the far type whose fact type also relates
+   the near type). A self-typed two-role fact type offers BOTH its roles and
+   so blocks the derivation, exactly as the executors' Eval.connecting_role
+   and the ch. 4.1/5.5 connecting_pair do; WF-034 lifts that block to
+   well-formedness. Mirrors ref's candidate list one-to-one. *)
+let connecting_role_candidates ctx ~from_type ~to_type =
+  List.concat_map
+    (fun (_, (ft : feittype)) ->
+      let ot r = Option.value r.rol_objecttype_naam ~default:"" in
+      match ft.rollen with
+      | [ a; b ] ->
+          (if norm (ot a) = norm from_type && norm (ot b) = norm to_type then [ b ]
+           else [])
+          @ (if norm (ot b) = norm from_type && norm (ot a) = norm to_type then [ a ]
+             else [])
+      | [ r ] when ft.wederkerig ->
+          if norm (ot r) = norm from_type && norm from_type = norm to_type then [ r ]
+          else []
+      | _ -> [])
+    ctx.doc.feittypen
+
 (* The v0 instance-fold source wart (`CONSTRUCTS.md` row 1): a count/fold
    over a fact-type relation encodes its source as a pseudo-AttribuutRef
    naming a ROLE (usually the plural), typed with the unknown sentinel.
@@ -1322,19 +1344,20 @@ let aggregation_source_check ctx at ~element_type e =
             (* the narrowed type-pair fallback (IR-SPEC ch. 4.3): a written
                source name that resolves to no declared role — v0's
                synthesized plural over a role without a declared one — is
-               admitted iff exactly ONE fact type connects the fold subject
-               to the element type; that relation is the source,
-               deterministically, no spelling guess. Zero or multiple keep
-               the rejection loud. *)
-            match connecting_candidates ctx ~from_type:otn ~to_type:element_type with
+               admitted iff the type pair derives a unique CONNECTING ROLE;
+               that role is the source, deterministically, no spelling guess.
+               Zero, several, or a self-typed two-role pair (both roles are
+               candidates — the executors' block, ch. 4.1) keep the rejection
+               loud. Counted in candidate roles, not fact types. *)
+            match connecting_role_candidates ctx ~from_type:otn ~to_type:element_type with
             | [ _ ] -> []
             | cands ->
                 [ v "WF-034" at
                     ("'" ^ a ^ "' is neither a member of '" ^ otn
                    ^ "' nor a declared role, and the type pair '" ^ otn ^ "'/'"
-                   ^ element_type ^ "' does not derive a unique source ("
+                   ^ element_type ^ "' does not derive a unique connecting role ("
                    ^ string_of_int (List.length cands)
-                   ^ " connecting fact types) — the ch. 4.3 fallback cannot stand in") ]))
+                   ^ " candidates) — the ch. 4.3 fallback cannot stand in") ]))
   | _ -> []
 
 (* --- WF-047 / WF-048: symbolic role bindings (v1 extension) -------------- *)

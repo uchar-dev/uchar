@@ -714,11 +714,15 @@ counts **0**, never leeg.
 
 **The type-pair fallback for the fold-source role name (WF-034).** A
 written fold-source name that resolves to no declared role (ci,
-declared name or declared plural) folds over the **unique** fact type
-connecting the fold subject type to the element type; zero or
-multiple connecting fact types, or a name matching several reachable
-roles, keep the loud fault — never a spelling guess (`IR-SPEC.md`
-ch. 4.3; the `+s`/`+en` plural synthesis is an unmirrored delta).
+declared name or declared plural) folds over the **unique connecting
+role** derived from the type pair — exactly one fact type connects the
+fold subject type to the element type, and it is not a self-typed
+two-role fact type, whose two roles are both candidates and so block the
+derivation (the ch. 4.1 type-pair block); zero or multiple connecting
+roles, or a name matching several reachable roles, keep the loud fault —
+never a spelling guess (`IR-SPEC.md` ch. 4.3; uniqueness is counted in
+candidate roles, not fact types; the `+s`/`+en` plural synthesis is an
+unmirrored delta).
 
 Worked example (the `jutterswet-kaveltelling` golden, verbatim in
 gates 5–6 and as WV-3.4a-typenpaar in `ref/` tests): the role

@@ -69,31 +69,43 @@ let function_def env name : function_def =
 let kenmerk_temporal (ot : objecttype) name =
   List.exists (fun (k, _) -> norm k = norm name) ot.kenmerk_granulariteit
 
-(* the unique fact type connecting two object types; deriving it — rather
-   than naming the role in the IR — is the recorded v0 wart of ch. 4.1,
-   mirrored here for both allocation recipients and instance folds *)
+(* the unique connecting role between two object types; deriving it —
+   rather than naming the role in the IR — is the recorded v0 wart of
+   ch. 4.1, mirrored here for both allocation recipients and instance
+   folds. Uniqueness is counted in candidate ROLES, not fact types
+   (v0's verbindendeRol, RegelSpraakModel: every role of the far type
+   whose fact type also relates the near type counts), so a self-typed
+   two-role fact type offers BOTH its roles and blocks the derivation —
+   the pinned runtime derives null there; execution refuses to guess,
+   the same block connecting_pair carries. *)
 let connecting_role env ~from_type ~to_type =
   let candidates =
-    List.filter_map
+    List.concat_map
       (fun (_, (ft : feittype)) ->
         let ot r = Option.value r.rol_objecttype_naam ~default:"" in
         match ft.rollen with
         | [ a; b ] ->
-            if norm (ot a) = norm from_type && norm (ot b) = norm to_type then Some b
-            else if norm (ot b) = norm from_type && norm (ot a) = norm to_type then Some a
-            else None
+            (if norm (ot a) = norm from_type && norm (ot b) = norm to_type then [ b ]
+             else [])
+            @
+            if norm (ot b) = norm from_type && norm (ot a) = norm to_type then [ a ]
+            else []
         | [ r ] when ft.wederkerig ->
             (* the reciprocal shape: the one role relates the type to
                itself, and is both sides of the hop *)
-            if norm (ot r) = norm from_type && norm from_type = norm to_type then Some r
-            else None
-        | _ -> None)
+            if norm (ot r) = norm from_type && norm from_type = norm to_type then [ r ]
+            else []
+        | _ -> [])
       env.doc.feittypen
   in
   match candidates with
   | [ r ] -> r
   | [] -> Value.fault "no fact type relates %S to %S" from_type to_type
-  | _ -> Value.fault "more than one fact type relates %S to %S" from_type to_type
+  | _ ->
+      Value.fault
+        "the connecting role from %S to %S is ambiguous (%d candidate roles); the pinned \
+         runtime derives null there"
+        from_type to_type (List.length candidates)
 
 (* the unique fact type relating [from_type] to [to_type], with its
    name and both roles — (fact-type name, role to_type fills, role

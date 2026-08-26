@@ -1,0 +1,14 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "ambiguous role name \"vriend\" from \"Jutter\"",
+    "clingo": "ambiguous role name \"vriend\" from \"Jutter\""
+  }
+}

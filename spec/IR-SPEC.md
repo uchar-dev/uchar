@@ -1418,16 +1418,23 @@ argument's `attribuut` slot. Resolution order is normative: the name
 resolves FIRST, case-insensitively over the declared role name and the
 declared plural — never a synthesized plural (the ch. 2.6 decision).
 A name that resolves to no declared role does not by itself make the
-fold ill-formed: when exactly **one** fact type connects the fold
-subject type to the element type, that relation is the source — the
-same unique derivability WF-048 already demands of the bindingless
-fold, so the unresolved written form degrades to presentation. This is
-the narrowed mirror of v0's source scoping, which matched best-effort
-(synthesized plurals included) and fell back to the type pair: v1
-keeps the deterministic fallback and drops the spelling guess. A name
-that resolves to no declared role over a type pair that zero or
-several fact types connect is ill-formed (WF-034); a name matching
-several reachable roles stays a loud executor fault, never a guess.
+fold ill-formed: when the type pair derives a **unique connecting
+role** — exactly one fact type connects the fold subject type to the
+element type, and it is not a self-typed two-role fact type (whose two
+roles are both candidates and so block the derivation, ch. 4.1) — that
+role is the source, the same unique derivability WF-048 already demands
+of the bindingless fold, so the unresolved written form degrades to
+presentation. Uniqueness is counted in candidate **roles**, not fact
+types: v0's `verbindendeRol` counts every role of the far type whose
+fact type also relates the near type, and a lone self-typed two-role
+fact type offers two. This is the narrowed mirror of v0's source
+scoping, which matched best-effort (synthesized plurals included) and
+fell back to the type pair: v1 keeps the deterministic fallback and
+drops the spelling guess. A name that resolves to no declared role over
+a type pair that derives no unique connecting role — zero or several
+connecting fact types, or a single self-typed two-role fact type — is
+ill-formed (WF-034); a name matching several reachable roles stays a
+loud executor fault, never a guess.
 Semantics: `RUNTIME-SEMANTICS.md` ch. 3.4a; the ASP backend keys the
 count by the connecting role's canonical name, never by the written
 lexeme.
@@ -1527,10 +1534,12 @@ Comparison, Predicate, and CharacteristicCheck only —
   dimension names and labels, day kinds, and referenced rules. The one
   scoped exception is the fold-source role name (ch. 4.3): a written
   name that resolves to no declared role (ci, declared name or declared
-  plural) still resolves through the type-pair fallback **iff** exactly
-  one fact type connects the fold subject type to the element type;
-  zero or multiple connecting fact types leave it a dangling
-  reference — ill-formed. *v0 mirror
+  plural) still resolves through the type-pair fallback **iff** the type
+  pair derives a unique connecting role — exactly one fact type connects
+  the fold subject type to the element type, and not a self-typed
+  two-role fact type (which offers both its roles, blocking the
+  derivation, ch. 4.1); zero or multiple connecting roles leave it a
+  dangling reference — ill-formed. *v0 mirror
   note:* fail-soft throughout — unresolved references degrade to the
   unknown-typed sentinel or an Unresolved node, warned at best. **Delta
   (promotion):** in v1, "could not resolve" is either an explicit
@@ -2019,7 +2028,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-031 | one definition per day kind; condition present (recursion OPEN) | gate 3 | `jutterswet-vormenkabinet` (the schouwdag definition) | `wf031-missing-condition` |
 | WF-032 | start point: variable-start timeline, day-precision member, one per pair | gate 3 | `jutterswet-vormenkabinet` (the meetdatum anchor) | `wf032-fixed-start-anchor` |
 | WF-033 | (dialect) rule-group members resolve; recursive group has a creation member (either kind); object creations guarded, relation creations guard-free | gate 3 | `anchor/jutterswet-wachtersketen` (the recursive chain executes to its fixpoint, gates 5–6; the runaway budget fault is red-pinned, gate 8) + `anchor/jutterswet-erflijn` (the guard-free relation-creation member: the transitive closure reaches its fixpoint in both executors) | `wf033-unguarded-recursive` (the guard clause) + `wf033-no-creation-member` (the containment clause) |
-| WF-034 | every expression/condition reference resolves (no unknown-type sentinel) | gate 3 (partial: sentinel types and parameter/day-kind/element-type/own-member references; variable bindings and navigation paths are not serialized in v0; excepted: a v0 instance-fold source argument names a role and carries the sentinel by construction — the row-1 wart, resolved against declared roles with the ch. 4.3 type-pair fallback for a name that resolves nowhere) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondsttelling` (role source) + `jutterswet-kaveltelling` (the type-pair fallback: an undeclared synthesized plural over a unique pair, both executors) | `wf034-dangling-parameter` + `wf034-ambigu-typenpaar` (unresolved name, two connecting fact types) |
+| WF-034 | every expression/condition reference resolves (no unknown-type sentinel) | gate 3 (partial: sentinel types and parameter/day-kind/element-type/own-member references; variable bindings and navigation paths are not serialized in v0; excepted: a v0 instance-fold source argument names a role and carries the sentinel by construction — the row-1 wart, resolved against declared roles with the ch. 4.3 type-pair fallback for a name that resolves nowhere) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondsttelling` (role source) + `jutterswet-kaveltelling` (the type-pair fallback: an undeclared synthesized plural over a unique pair, both executors) | `wf034-dangling-parameter` + `wf034-ambigu-typenpaar` (unresolved name, two connecting fact types) + `wf034-zelftype-typenpaar` (unresolved name, one self-typed two-role fact type — both roles are candidates, counted in roles not fact types) |
 | WF-035 | operator typing (numeric, unitless power, date±duration order/unit/precision, unit compatibility, clamp) | gate 3 (over serialized operand types) | `anchor/jutterswet-wachtersketen` (the numeric Plus, executed by gates 5–6) + `jutterswet-vervaltermijn` (date ± duration, the date-left plus and min forms, executed by gates 5–6) | `wf035-power-with-unit` + `wf035-datum-plus-datum` + `wf035-duur-plus-datum` + `wf035-duur-min-datum` + `wf035-uur-op-dagdatum` |
 | WF-036 | comparison/predicate typing (ordering, precision, family, domain, builtin operands) | gate 3 (over serialized operand types) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondstnummer` (date ordering) | `wf036-order-number-vs-text` |
 | WF-037 | aggregation/builtin shape: facet validity and arity per kind | gate 3 (fixed-arity kinds; date-construction arity OPEN) | `jutterswet-vondsttelling` | `wf037-fallback-on-minimum` |
