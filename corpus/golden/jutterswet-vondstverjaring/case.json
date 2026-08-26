@@ -1,0 +1,35 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-03-15",
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": { "vondstdag": { "date": "2023-12-31" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": { "vondstdag": { "date": "2024-01-31" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": { "vondstdag": { "date": "2024-02-01" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "characteristicPresent", "label": "V1", "characteristic": "verjaard" },
+    { "kind": "characteristicAbsent", "label": "V2", "characteristic": "verjaard" },
+    { "kind": "characteristicAbsent", "label": "V3", "characteristic": "verjaard" }
+  ]
+}

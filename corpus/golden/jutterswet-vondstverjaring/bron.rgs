@@ -1,0 +1,8 @@
+Objecttype de Vondst (mv: Vondsten)
+    de vondstdag Datum in dagen;
+    is verjaard kenmerk (bijvoeglijk);
+
+Regel Kenmerktoekenning verjaard
+    geldig altijd
+        Een Vondst is verjaard
+        indien zijn vondstdag eerder is dan 31-01-2024.

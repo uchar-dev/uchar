@@ -210,6 +210,31 @@ let lexeme_bare_number s =
           let frac = String.sub s (i + 1) (String.length s - i - 1) in
           digits frac && String.for_all (fun c -> c >= '0' && c <= '9') whole)
 
+(* WF-084: the executors' shared date-literal lexeme grammar (IR-SPEC ch. 4.1).
+   A Datum literal's value MUST be the strict ISO form yyyy-mm-dd: fixed field
+   widths (4-2-2 digits), month 1–12, day 1..days-in-month (leap-aware). The
+   Dutch source snippet "31-01-2024" or "dd. 31-01-2024" is ill-formed — the
+   bare form the executors misparsed as year 31 (→ 0036-07-16), the prefixed
+   form they fault on; the verifier refuses both up front. Mirror of the
+   ref/clingo date_of_iso fence (ref/lib/value.ml). *)
+let lexeme_iso_date s =
+  let is_leap y = (y mod 4 = 0 && y mod 100 <> 0) || y mod 400 = 0 in
+  let days_in_month y m =
+    match m with
+    | 1 | 3 | 5 | 7 | 8 | 10 | 12 -> 31
+    | 4 | 6 | 9 | 11 -> 30
+    | 2 -> if is_leap y then 29 else 28
+    | _ -> 0
+  in
+  let digits str = str <> "" && String.for_all (fun c -> c >= '0' && c <= '9') str in
+  match String.split_on_char '-' s with
+  | [ y; m; d ]
+    when String.length y = 4 && String.length m = 2 && String.length d = 2
+         && digits y && digits m && digits d ->
+      let y = int_of_string y and m = int_of_string m and d = int_of_string d in
+      m >= 1 && m <= 12 && d >= 1 && d <= days_in_month y m
+  | _ -> false
+
 (* --- document context --------------------------------------------------- *)
 
 type ctx = { doc : document }
@@ -1834,6 +1859,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
           [ v "WF-081" at
               ("numeric literal lexeme '" ^ w
                ^ "' is not a bare number (sign, digits, optional fraction — ch. 4.1)") ]
+      | Some Datum_in_dagen, Some w when not (lexeme_iso_date w) ->
+          [ v "WF-084" at
+              ("date literal lexeme '" ^ w
+               ^ "' is not the ISO form yyyy-mm-dd (fixed field widths, valid ranges — ch. 4.1)") ]
       | Some (Enumeratie { waarden; _ }), Some w when not (mem_ci (some_names waarden) w) ->
           [ v "WF-039" at ("enumeration label '" ^ w ^ "' is not in the declared domain") ]
       | Some (Numeriek { teken = Some t; _ }), Some w -> (

@@ -1256,6 +1256,36 @@ literals only — date lexemes (ISO `yyyy-mm-dd`) and `Tekst` literals
 (which legitimately carry arbitrary text) are governed by their own
 forms, not by this rule.
 
+**The date-literal lexeme (WF-084).** A `Literal` whose `type` is a
+day-precision date (`DatumInDagen`) MUST carry as its value the **strict
+ISO date lexeme** the executors parse:
+
+```
+date  ::= yyyy '-' mm '-' dd
+yyyy  ::= digit digit digit digit
+mm    ::= digit digit                 -- 01–12
+dd    ::= digit digit                 -- 01..days-in-month, leap-aware
+digit ::= [0-9]
+```
+
+Fixed field widths (four-two-two), single `-` separators, no prefix, no
+whitespace, no time component; the month is 1–12 and the day is a real
+day of that month in the proleptic Gregorian calendar (29 February only
+in a leap year). This is the fence the rule exists for: a RegelSpraak
+date literal is written Dutch day-first (`31-01-2024`, optionally the
+`dd. ` de-dato prefix) — a lexeme both executors read as ISO, so a bare
+`31-01-2024` was silently taken as year 31 (`0036-07-16` after the
+day-2024 roll-over), a differential-blind wrong answer that ref and the
+ASP backend agreed on, while the prefixed `dd. 31-01-2024` faults. Both
+executors share this grammar in their `date_of_iso` reader and fault at
+evaluation (ref) or translation (the ASP backend) time on anything
+outside it; WF-084 makes such a document ill-formed at verification
+time, ahead of any executor. The emitter writes the bare ISO lexeme and
+keeps the source snippet in `bron`. Scope: day-precision date literals;
+datetime lexemes (`DatumTijd`, millisecond precision) carry their own
+ISO discipline, tracked separately (they are not exercised by any corpus
+literal yet).
+
 ### 4.1a The navigated read (WF-053)
 
 An attribute reference whose value lives off-subject **navigates**: its
@@ -2078,6 +2108,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-081 | a numeric literal's lexeme is a bare number in the executors' shared grammar — after `,`→`.`: `'-'? digits`, `'-'? digits? '.' digits`, or `'-'? digits '/' digits` with a non-zero denominator (ch. 4.1); unit or currency tokens, whitespace, `+`, exponents and grouping are ill-formed (the unit belongs in the datatype's `eenheid`) — closes the gate blind spot where a unit written into the lexeme passed the verifier while both executors fault on it; date lexemes and `Tekst` literals out of scope | gate 3 | `anchor/jutterswet-tariefstelling` (integer and decimal lexemes through the fence; gate 3 witnesses none over-rejects) | `wf081-unit-in-lexeme` |
 | WF-082 | the `bronAnnotaties` extension field (ch. 3.1): when present a non-empty list of non-empty trimmed statute annotations; a rule without annotations omits the field — absence leaves no trace | gate 3 | `jutterswet-hardheid` (one- and two-annotation rules on the wire, the unannotated rule traceless; replayed by gates 5–6) | `wf082-empty-bron-annotaties` |
 | WF-083 | a fold-source argument never navigates (ch. 4.3): a non-empty `navigatiePad` is ill-formed; a `navigatieRol`, when present, is self-denoting — it names a role (ci, declared name or plural) the argument's object type itself fills; away-pointing is ill-formed — closes the silent fall-through where a navigating fold source passed the verifier while ref faults on it | gate 3 | `jutterswet-aanmeldertelling` (the self-denoting count "het aantal vondsten van de aanmelder" through both executors) | `wf083-fold-source-navigates-away` |
+| WF-084 | a day-precision date literal's lexeme is the strict ISO form `yyyy-mm-dd` the executors parse (ch. 4.1) — fixed field widths (four-two-two digits), single `-` separators, month 1–12, day 1..days-in-month (leap-aware); the Dutch day-first source snippet is ill-formed, whether the bare `31-01-2024` (silently misread as year 31 → `0036-07-16`, a differential-blind wrong answer both executors agreed on) or the `dd. `-prefixed form (both executors fault) — closes that blind spot, the emitter now writing the bare ISO lexeme and keeping the snippet in `bron`; datetime lexemes out of scope | gate 3 | `jutterswet-vondstverjaring` (an ISO date literal through the fence, replayed by gates 5–6) | `wf084-source-snippet` + `wf084-bare-non-iso` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

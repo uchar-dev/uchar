@@ -73,13 +73,33 @@ let civil_from_days z =
   let m = if mp < 10 then mp + 3 else mp - 9 in
   ((if m <= 2 then y + 1 else y), m, d)
 
+let is_leap y = (y mod 4 = 0 && y mod 100 <> 0) || y mod 400 = 0
+
+let days_in_month ~y ~m =
+  match m with
+  | 1 | 3 | 5 | 7 | 8 | 10 | 12 -> 31
+  | 4 | 6 | 9 | 11 -> 30
+  | 2 -> if is_leap y then 29 else 28
+  | _ -> 0
+
+(* WF-084: a date literal's lexeme is the strict ISO form the executors parse
+   (IR-SPEC ch. 4.1) — fixed field widths yyyy-mm-dd, all digits, month 1–12,
+   day 1..days-in-month. A lax split (int_of_string per '-' part) read the
+   Dutch source snippet "31-01-2024" as year 31 / month 1 / day 2024 (which
+   rolls over to 0036-07-16) — a silent misparse both executors shared. The
+   fence faults loudly instead; WF-084 refuses such a lexeme at verification
+   time, ahead of any executor. *)
 let date_of_iso s =
+  let digits str = String.for_all (fun c -> c >= '0' && c <= '9') str in
   match String.split_on_char '-' s with
-  | [ y; m; d ] -> (
-      match (int_of_string_opt y, int_of_string_opt m, int_of_string_opt d) with
-      | Some y, Some m, Some d -> Date (days_from_civil ~y ~m ~d)
-      | _ -> fault "malformed date lexeme %S" s)
-  | _ -> fault "malformed date lexeme %S" s
+  | [ y; m; d ]
+    when String.length y = 4 && String.length m = 2 && String.length d = 2
+         && digits y && digits m && digits d -> (
+      let y = int_of_string y and m = int_of_string m and d = int_of_string d in
+      if m < 1 || m > 12 then fault "month out of range in date lexeme %S" s
+      else if d < 1 || d > days_in_month ~y ~m then fault "day out of range in date lexeme %S" s
+      else Date (days_from_civil ~y ~m ~d))
+  | _ -> fault "malformed date lexeme %S (expected ISO yyyy-mm-dd)" s
 
 let iso_of_date z =
   let y, m, d = civil_from_days z in
