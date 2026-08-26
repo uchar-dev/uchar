@@ -242,7 +242,12 @@
           "eenheid": null
         },
         "bron": "het aantal vat van de Jutter",
-        "granulariteit": null
+        "granulariteit": null,
+        "bronRol": {
+          "node": "RolBinding",
+          "feittype": "vatberging",
+          "rol": "vat"
+        }
       },
       "voorwaarde": null,
       "geldigheid": {
