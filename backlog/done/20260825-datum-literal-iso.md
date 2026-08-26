@@ -39,3 +39,36 @@ May touch: `spec/IR-SPEC.md` (WF rule + index), `spec/verifier/`,
 toolchain emitter + its tests (one-time mandate, NO SPEC_REV commit).
 Out of scope: datetime lexemes beyond mirroring the same ISO discipline
 (keep the change narrow), `spec/CONSTRUCTS.md` (serial at merge).
+
+Result (landed): WF-084 — the next free number after WF-083 — added to
+`spec/IR-SPEC.md` beside WF-081's numeric grammar (ch. 4.1) with its
+normative ISO grammar and index row: a day-precision date literal's
+lexeme MUST be the strict ISO form `yyyy-mm-dd` (fixed field widths,
+month 1–12, day 1..days-in-month, leap-aware). Verifier: the
+`lexeme_iso_date` predicate + a WF-084 arm in the Literal check
+(`spec/verifier/lib/checks.ml`). Executors: `ref/lib/value.ml`
+`date_of_iso` hardened (fixed widths + range + leap); the clingo backend
+reuses that same reader (`uchar-ref`'s `Value`), so both executors fault
+loudly with ONE change — no separate `backends/clingo/` edit was needed.
+Negatief: `wf084-bare-non-iso` (`31-01-2024`, the day-first form ref +
+clingo silently misread as `0036-07-16`) and `wf084-source-snippet`
+(`dd. 31-01-2024`, the raw snippet form). New emitter golden
+`jutterswet-vondstverjaring` (an ISO date literal `2024-01-31`, source
+snippet `31-01-2024` kept in `bron`), replayed exactly by ref and
+clingo. Red-first shown: pre-fix emitter emitted the snippet; ref
+computed `0036-07-16` and clingo the identical civil day `-706182`
+(differential-blind); post-hardening both fault
+("malformed date lexeme"). All nine uchar gates green.
+
+Toolchain (separate repo `regelspraak-java`, one-time write mandate, NO
+SPEC_REV commit): `ExpressieBouwer` emits the bare ISO waarde for a
+deDato literal (snippet in `bron`); `Literalen.parseDatum` made the
+single dual-format reader (ISO waarde + day-first snippet) so the
+Drools/ExecModel back-ends read the emitted ISO waarde — a required
+companion to the emitter change, without which `make test` was red; two
+pinning `IrEmitterTest` cases. `make test` green (555 tests);
+`uchar-conformance` 18/19 goldens byte-identical INCLUDING the new one.
+The single divergence (`jutterswet-kaveltelling`, a `bronRol`
+fold-source field) is pre-existing drift between the toolchain `main`
+and this card's corpus base — reproduced with my changes stashed, wholly
+unrelated to WF-084. Datetime literals left day-first (out of scope).
