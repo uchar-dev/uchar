@@ -84,15 +84,38 @@ first-filler existence test.
   no-link×negation (vrijgesteld present).
 - `ref/test/test_ref.ml`: WV-5.8a (append-only) — the four corners plus the
   to-many refusal fault.
+- `corpus/rood/near-side-rolcheck-to-many/`: own-authored red witness
+  (Wachtpost as subject over the same `wachtindeling` feittype) pinning the
+  reachable to-many connecting reference — verifier-clean, expectedFault
+  {ref, clingo}, both executors fault on `wachtjutter`.
+- `corpus/golden/jutterswet-wachtploeg/`: own-authored witness that folds
+  the rolcheck INSIDE a counting composite (`TEN MINSTE 2` over a positive
+  rolcheck member, a negation rolcheck member, and a kenmerk) — the
+  differential guard for the broadened `cond_atoms` surface: both the
+  positive `rol/3` join and the negation `rmN` helper fold under a
+  non-monotone quantifier, ref ≡ clingo on all four instances.
 
-**No WF clause / negatief added — justified.** The resolver only ever emits
-a well-formed near-side Rollidmaatschap (a to-one forward connecting role;
-a to-many or far-side subject becomes `VerreRollidmaatschap` or `Onopgelost`
-instead). The verifier already accepts Rollidmaatschap (no missing static
-check; it references no attributes and adds no dependency edge). The only
-pathological shape — a hand-crafted to-many connecting reference — is
-refused loudly at runtime by BOTH executors (mirroring v0's marker), so no
-static WF rule is warranted. `spec/IR-SPEC.md` and `corpus/negatief/`
+**A rood witness for the to-many connecting reference; no WF clause /
+negatief — justified.** The resolver emits a **bare** near-side
+Rollidmaatschap whichever end is the subject: flipping the subject to the
+far side of the SAME fact type — rule "Een Wachtpost is bemand indien hij
+een toegewezen wachtpost is" — yields a verifier-clean node whose
+connecting reference to the other filler (`Jutter`) is the **to-many** role
+`wachtjutter` (§8.1.7's near-side "is een", distinct from the far-side
+"heeft een" `VerreRollidmaatschap`; the node does NOT become
+`VerreRollidmaatschap` or `Onopgelost`). This shape is therefore reachable
+from ordinary well-formed RegelSpraak — **not** hand-crafted — so the
+marker→loud-fault divergence needs a machine-checkable artifact. v0 lowers
+it to a MARKER (a `false` DRL constraint / null WaardeFn — a silent no-op
+completing the run); both executors here refuse loudly (ref at evaluation,
+clingo at translation, through the shared `Eval.connecting_role`). That
+runtime divergence is now pinned by
+`corpus/rood/near-side-rolcheck-to-many/` (expectedFault {ref, clingo}),
+mirroring the `ambiguous-backlink` precedent. No static WF rule is added:
+v0 admits the shape statically (its marker is a lowering decision, not a
+static rejection), the verifier already accepts Rollidmaatschap (it
+references no attributes and adds no dependency edge), so the delta lives
+at runtime, not in the verifier. `spec/IR-SPEC.md` and `corpus/negatief/`
 untouched.
 
 **Red-first (quoted).** own-authored `jutterswet-wachtindeling`, verifier
@@ -103,12 +126,12 @@ expectations)`, clingo `clingo: PASS (4 expectations)`. The originating
 /tmp TOKA slice 42 now also replays `oracle: PASS` in ref (investigation
 only; no TOKA material entered uchar).
 
-**All nine gates green (worktree):** 1 self-contained PASS; 2 ir-schema 140
-validate+round-trip; 3 verifier 140 golden clean / 159 negatief rejected;
-4 case-schema 362 valid; 5 oracle 341 replayed exactly; 6 clingo 341 replay
-(ref = clingo); 7 noop 306 refuters + 35 pinned survivors; 8 rood 21 both
-executors; 9 catala 169 checks, 11 catala goldens byte-identical.
-`dune test` 351 worked examples pass.
+**All nine gates green (worktree, re-run after the review fix):**
+1 self-contained PASS; 2 ir-schema 142 validate+round-trip; 3 verifier 142
+golden clean / 159 negatief rejected; 4 case-schema 364 valid; 5 oracle 342
+replayed exactly; 6 clingo 342 replay (ref = clingo); 7 noop 307 refuters +
+35 pinned survivors; 8 rood 22 both executors; 9 catala 169 checks, 11 catala
+goldens byte-identical. `dune test` worked examples pass.
 
 Branch left unmerged as the maintainer proposal (touches the protected
 `spec/RUNTIME-SEMANTICS.md`).

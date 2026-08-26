@@ -1,0 +1,78 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W1",
+        "objectType": "Wachtpost",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "toegewezen wachtpost": [
+            "W1"
+          ]
+        },
+        "characteristics": [
+          "actief"
+        ]
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "toegewezen wachtpost": [
+            "W1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "actief"
+        ]
+      },
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "gemengd"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J2",
+      "characteristic": "gemengd"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J3",
+      "characteristic": "gemengd"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J4",
+      "characteristic": "gemengd"
+    }
+  ]
+}

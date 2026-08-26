@@ -1,0 +1,154 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {},
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "actief",
+        "gemengd"
+      ],
+      "kenmerkSoorten": {
+        "actief": "BIJVOEGLIJK",
+        "gemengd": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    },
+    "Wachtpost": {
+      "node": "Objecttype",
+      "naam": "Wachtpost",
+      "attributen": {},
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Wachtposten"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {
+    "wachtindeling": {
+      "node": "Feittype",
+      "naam": "wachtindeling",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "wachtjutter",
+          "objecttypeNaam": "Jutter",
+          "meervoud": "wachtjutters",
+          "meervoudig": true
+        },
+        {
+          "node": "Rol",
+          "naam": "toegewezen wachtpost",
+          "objecttypeNaam": "Wachtpost",
+          "meervoud": null,
+          "meervoudig": false
+        }
+      ]
+    }
+  },
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "gemengd bij tenminste twee",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "gemengd bij tenminste twee",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "gemengd",
+        "objecttype": "Jutter",
+        "onderwerpBron": "Een Jutter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Jutter is gemengd",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Samengesteld",
+        "kwantor": "TEN_MINSTE",
+        "drempel": 2,
+        "onderdelen": [
+          {
+            "node": "Rollidmaatschap",
+            "rol": "wachtjutter",
+            "anderTeFiller": "Wachtpost",
+            "negatie": false,
+            "bron": "hij een wachtjutter is"
+          },
+          {
+            "node": "Rollidmaatschap",
+            "rol": "wachtjutter",
+            "anderTeFiller": "Wachtpost",
+            "negatie": true,
+            "bron": "hij geen wachtjutter is"
+          },
+          {
+            "node": "Kenmerk",
+            "kenmerk": "actief",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "hij actief is"
+          }
+        ],
+        "bron": "ten minste 2 van de volgende gelden"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

@@ -1876,7 +1876,7 @@ van de vondst" on a Jutter) stays a loud fault, never an own-read
 
 ### 5.8a The near-side rolcheck
 
-A **rolcheck** ("hij is een passagier", §8.1.7 — the IR's `Rollidmaatschap`)
+A **rolcheck** ("hij is een wachtjutter", §8.1.7 — the IR's `Rollidmaatschap`)
 tests whether the subject **fills** a role. In the reference-field fact
 model the subject fills the role iff its reference to the **other end** of
 that fact type is set, so v0 lowers the check to a **null-test on that
