@@ -1874,6 +1874,51 @@ reference naming a role the subject does NOT fill ("het strandtegoed
 van de vondst" on a Jutter) stays a loud fault, never an own-read
 (the WF-053 narrowing; negatief `wf053-zelfverwijzing-vreemde-rol`).
 
+### 5.8a The near-side rolcheck
+
+A **rolcheck** ("hij is een passagier", §8.1.7 — the IR's `Rollidmaatschap`)
+tests whether the subject **fills** a role. In the reference-field fact
+model the subject fills the role iff its reference to the **other end** of
+that fact type is set, so v0 lowers the check to a **null-test on that
+reference** (DrlTranspiler §8.1.7). The written role name is presentation;
+the reference tested is the **connecting role** from the subject's type to
+the other-end type the IR carries (`anderTeFiller`) — the same by-pair
+derivation `ref/` shares with the ASP backend and the allocation recipients
+(ch. 4.1, `Eval.connecting_role`). The rules:
+
+1. **Present reference fills; absent does not.** A subject holding a link
+   over the connecting role fills the role; a subject with no such link does
+   not. The empty operand is the absent reference — there is no fault here,
+   only false.
+2. **The "is geen" negation is the inverse null-test — it flips.** Unlike
+   the navigated *characteristic* check of ch. 5.8 rule 3 (asymmetric:
+   onwaar for the positive and the negated form on an absent link, because
+   the negation sits behind a hop), the rolcheck's negation tests the
+   reference **itself**, so an absent reference makes "is geen &lt;rol&gt;"
+   **waar**. "hij is geen wachtjutter" holds exactly for a jutter with no
+   post. In the ASP reading the positive form is a bare `rol/3` join (an
+   absent link never binds, so the gated rule does not fire); the negation
+   is a helper deriving the link's presence, negated-as-failure, with the
+   subject kept bound by the rule's `is_a` base — the inverse null-test, for
+   free.
+3. **To-many connecting reference is refused, loudly.** The near-side
+   null-test needs a **to-one** reference. When the connecting role is
+   to-many, v0 cannot lower it to a scalar null-test and **markers** it (the
+   far-side "heeft een &lt;rol&gt;" is the distinct `VerreRollidmaatschap`
+   exists-join, not this near-side form); both executors refuse it (ch. 5.5)
+   rather than silently deciding a first-filler existence test.
+
+Worked example (the `jutterswet-wachtindeling` golden, verbatim in gates
+5–6 and in `ref/test/test_ref.ml`): feittype wachtindeling relates the
+to-many role wachtjutter (Jutter) to the to-one role toegewezen wachtpost
+(Wachtpost). "Een Jutter is wachtdoend indien hij een wachtjutter is"
+(positive) and "Een Jutter is vrijgesteld indien hij geen wachtjutter is"
+(negation) pin every corner. With J1 assigned to post W1 and J2 assigned to
+no post: J1 fills the role (its toegewezen-wachtpost reference is set), so
+J1 **is wachtdoend** and **is not vrijgesteld**; J2's reference is absent,
+so J2 **is not wachtdoend** and **is vrijgesteld**. The reference and the ASP
+run agree on all four (link × {positive, negation}).
+
 ### 5.9 Uniqueness: the union and the scope
 
 Both uniqueness forms fire at the fixpoint of their stratum and deposit

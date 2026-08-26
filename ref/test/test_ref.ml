@@ -1886,6 +1886,60 @@ let () =
   expect_fault "WV-3.4a-typenpaar-ambigu" (fun () ->
       ev doc2 "j1" (aantal "duinkavels" "Duinkavel"))
 
+(* --- ch. 5.8a: the near-side rolcheck ---------------------------------- *)
+
+(* WV-5.8a: the `jutterswet-wachtindeling` worked example. Feittype
+   wachtindeling relates the to-many role wachtjutter (Jutter) to the
+   to-one role toegewezen wachtpost (Wachtpost). The subject fills
+   wachtjutter iff its toegewezen-wachtpost reference is set — a null-test
+   on that connecting reference. J1 is assigned post W1, J2 to none: the
+   positive rolcheck holds for J1, not J2; the "is geen" negation flips it
+   (unlike the navigated characteristic check of ch. 5.8 rule 3, which is
+   asymmetric). A to-many connecting reference is v0's marker, refused
+   loudly. *)
+let () =
+  let ft_wacht rechts_meervoudig : string * Ir_v0.Ast.feittype =
+    ( "wachtindeling",
+      {
+        ft_naam = Some "wachtindeling";
+        wederkerig = false;
+        rollen =
+          [
+            { rol_naam = Some "wachtjutter"; rol_objecttype_naam = Some "Jutter";
+              rol_meervoud = Some "wachtjutters"; rol_meervoudig = true };
+            { rol_naam = Some "toegewezen wachtpost"; rol_objecttype_naam = Some "Wachtpost";
+              rol_meervoud = (if rechts_meervoudig then Some "wachtposten" else None);
+              rol_meervoudig = rechts_meervoudig };
+          ];
+      } )
+  in
+  let doc =
+    { empty_doc with
+      objecttypen = [ ot "Jutter" [] [ "wachtdoend"; "vrijgesteld" ]; ot "Wachtpost" [] [] ];
+      feittypen = [ ft_wacht false ] }
+  in
+  let env = env_of doc in
+  let w =
+    World.add_instance
+      (World.add_instance
+         (World.add_instance World.empty (inst "w1" "Wachtpost" []))
+         { (inst "j1" "Jutter" []) with
+           links = World.SMap.add "toegewezen wachtpost" [ "w1" ] World.SMap.empty })
+      (inst "j2" "Jutter" [])
+  in
+  let rolcheck negatie : Ir_v0.Ast.conditie =
+    Rollidmaatschap
+      { rol = Some "wachtjutter"; ander_te_filler = Some "Wachtpost"; negatie; bron = None }
+  in
+  let ec label c = Eval.eval_cond env w (World.get w label) ~err:no_err c in
+  check "WV-5.8a-vervult-j1" (ec "j1" (rolcheck false));
+  check "WV-5.8a-vervult-j2-niet" (not (ec "j2" (rolcheck false)));
+  check "WV-5.8a-geen-j1-niet" (not (ec "j1" (rolcheck true)));
+  check "WV-5.8a-geen-j2" (ec "j2" (rolcheck true));
+  let doc_mm = { doc with feittypen = [ ft_wacht true ] } in
+  expect_fault "WV-5.8a-naar-veel-refuseert" (fun () ->
+      Eval.eval_cond (env_of doc_mm) w (World.get w "j1") ~err:no_err (rolcheck false))
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

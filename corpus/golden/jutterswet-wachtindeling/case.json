@@ -1,0 +1,56 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W1",
+        "objectType": "Wachtpost",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "toegewezen wachtpost": [
+            "W1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "wachtdoend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "vrijgesteld"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J2",
+      "characteristic": "wachtdoend"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J2",
+      "characteristic": "vrijgesteld"
+    }
+  ]
+}

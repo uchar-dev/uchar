@@ -2197,6 +2197,40 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       let n = fresh ctx "N" in
       [ Printf.sprintf "rol(%s,%s,%s)" subject (str (role_canonical role)) n;
         (if negatie then "not " else "") ^ Printf.sprintf "heeft(%s,%s)" n (str k) ]
+  | Rollidmaatschap { ander_te_filler; negatie; _ } ->
+      (* the near-side rolcheck (RUNTIME-SEMANTICS ch. 5.8a): the subject fills
+         the role iff its to-one reference to the OTHER end is set. The
+         connecting role to [ander_te_filler] is the fact-type route (v0's
+         verbindendeRol, shared with ref via Eval.connecting_role); an input
+         link is a rol/3 fact. Positive: the join binds a filler N — absent
+         link, no fire (leeg-on-absence for free). Negation ("is geen"): a
+         helper derives the link's presence, negated, with the subject kept
+         bound by the caller's is_a base — the inverse null-test. A to-many
+         connecting reference is v0's marker, refused loudly, mirroring ref. *)
+      let other = req "Rollidmaatschap.anderTeFiller" ander_te_filler in
+      let env =
+        { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
+          as_of = None; locals = Eval.SMap.empty }
+      in
+      let role = Eval.connecting_role env ~from_type:subject_ot ~to_type:other in
+      if role.rol_meervoudig then
+        fault
+          "the rolcheck's connecting reference to %S is the to-many role %S (ch. 5.5): the \
+           near-side null-test needs a to-one reference — v0 markers it"
+          other
+          (Option.value role.rol_naam ~default:"?");
+      let canonical = role_canonical role in
+      if negatie then begin
+        ctx.fresh <- ctx.fresh + 1;
+        let p = Printf.sprintf "rm%d" ctx.fresh in
+        let n = fresh ctx "N" in
+        emit ctx "%s(%s) :- is_a(%s,%s), rol(%s,%s,%s)." p subject subject (str subject_ot) subject
+          (str canonical) n;
+        [ Printf.sprintf "not %s(%s)" p subject ]
+      end
+      else
+        let n = fresh ctx "N" in
+        [ Printf.sprintf "rol(%s,%s,%s)" subject (str canonical) n ]
   | Samengesteld { kwantor = Alle | De; onderdelen; _ } ->
       List.concat_map (cond_atoms ctx ~subject ~subject_ot) onderdelen
   | Samengesteld

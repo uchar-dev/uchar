@@ -1,0 +1,18 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+	is wachtdoend kenmerk (bijvoeglijk);
+	is vrijgesteld kenmerk (bijvoeglijk);
+
+Objecttype de Wachtpost (mv: Wachtposten)
+
+Feittype wachtindeling
+	de wachtjutter (mv: wachtjutters) Jutter
+	de toegewezen wachtpost Wachtpost
+Eén toegewezen wachtpost telt meerdere wachtjutters
+
+Regel wachtdoend bij wachtpost
+	geldig altijd
+		Een Jutter is wachtdoend indien hij een wachtjutter is.
+
+Regel vrijgesteld zonder wachtpost
+	geldig altijd
+		Een Jutter is vrijgesteld indien hij geen wachtjutter is.

@@ -508,10 +508,22 @@ cells match the date row (witness `jutterswet-jutdatum` case3). **Characteristic
 this sound. The *navigated* check walks the `rol/3` hop as a POSITIVE
 literal with only the characteristic under the negation: an absent
 link fails the positive and the negated form alike — the deliberate
-v0 asymmetry (ch. 5.8), encoded for free. **Composite**
-(samengesteld, the ALLE and singular DE quantifiers): concatenation
-of the parts' atoms — both quantifiers are conjunctions over their
-parts. Other condition kinds fault (S19).
+v0 asymmetry (ch. 5.8), encoded for free. **Role membership**
+(rolcheck — the near-side `Rollidmaatschap`): the subject fills the
+role iff its to-one reference to the other end is set, so the positive
+form is a bare `rol(S,role,X)` join over the connecting role's
+canonical name (`Eval.connecting_role`, shared with ref) — an absent
+link never binds, so the gated rule does not fire (the null-test,
+leeg-on-absence for free). The "is geen" negation derives a per-subject
+helper `rmN(S) :- is_a(S,ot), rol(S,role,X)` and reads it negated, the
+subject kept bound by the head's `is_a` base — the inverse null-test,
+and unlike the navigated characteristic check it *flips*
+(RUNTIME-SEMANTICS ch. 5.8a). A to-many connecting reference is v0's
+marker (the far-side `VerreRollidmaatschap` exists-join is the distinct
+form), refused loudly. Witness `jutterswet-wachtindeling`.
+**Composite** (samengesteld, the ALLE and singular DE quantifiers):
+concatenation of the parts' atoms — both quantifiers are conjunctions
+over their parts. Other condition kinds fault (S19).
 
 **Composite, counting** (samengesteld — GEEN, TEN MINSTE, TEN
 HOOGSTE, PRECIES; the decision-table desugar's disjunctive row is
@@ -1705,8 +1717,9 @@ what remains under it for composites is the member-less
 counting list (`a counting composite without members is not
 translated (no corpus case)`) and every member kind that keeps its
 own fault (a Periode member — the vormenkabinet's peiling rule, still
-refused by both executors — Rollidmaatschap, an Onopgelost bullet, a
-comparison carrying a periode, the negated gevuld predicate).
+refused by both executors — an Onopgelost bullet, a
+comparison carrying a periode, the negated gevuld predicate; the
+near-side Rollidmaatschap now rides the S7 rol/3 join, above).
 
 *Sum types (S14) — carriage and shapes without a corpus case:*
 **temporal sum carriage** is a recorded flank — the value model admits a

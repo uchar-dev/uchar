@@ -1155,7 +1155,27 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
   | Regelversie { inconsistent = false; _ } ->
       Value.fault
         "'is gevuurd' is not implemented (row 30: decided as a dialect-only fixpoint predicate)"
-  | Rollidmaatschap _ | Verre_rollidmaatschap _ | Periode_conditie _ ->
+  | Rollidmaatschap { ander_te_filler; negatie; _ } ->
+      (* ch. 5.8a near-side rolcheck ("hij is een <rol>"): the subject fills
+         the role iff its to-ONE reference to the OTHER end of the fact type
+         is set — a null-test on that reference (v0 DrlTranspiler §8.1.7,
+         mirrored). The written role name is presentation; the fact-type
+         route is the connecting role to [ander_te_filler] (v0's
+         verbindendeRol). A to-MANY connecting reference is v0's marker (the
+         far-side needs an exists-join, not a scalar null-test), refused
+         loudly here — never silently decided. The absent reference is leeg:
+         false for the positive form, true for the "is geen" negation. *)
+      let other = req "Rollidmaatschap.anderTeFiller" ander_te_filler in
+      let role = connecting_role env ~from_type:self.otype ~to_type:other in
+      if role.rol_meervoudig then
+        Value.fault
+          "the rolcheck's connecting reference to %S is the to-many role %S (ch. 5.5): the \
+           near-side null-test needs a to-one reference — v0 markers it"
+          other
+          (Option.value role.rol_naam ~default:"?");
+      let fills = role_links world self role <> [] in
+      if negatie then not fills else fills
+  | Verre_rollidmaatschap _ | Periode_conditie _ ->
       Value.fault "condition kind not implemented in this card"
   | Conditie_onopgelost _ -> Value.fault "Onopgelost condition reached in evaluation (WF-044)"
 
