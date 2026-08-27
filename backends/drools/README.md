@@ -39,7 +39,7 @@ mvn -o -f backends/drools/pom.xml package
 #    (Main-Class: io.github.yhavinga.regelspraak.cases.DroolsBackendMain)
 ```
 
-`-o` builds offline against the local `~/.m2` cache. The `package` phase also runs the
+`-o` builds offline against the local Maven repository cache. The `package` phase also runs the
 loader round-trip witness (`RoundTripWitnessTest`). `scripts/check-drools.sh` rebuilds the
 jar automatically (offline) if it is absent, then runs jar-only.
 
