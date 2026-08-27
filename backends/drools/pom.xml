@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>dev.uchar.backends</groupId>
+  <artifactId>uchar-drools-backend</artifactId>
+  <version>0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+  <name>uchar Drools backend (IR consumer)</name>
+
+  <!--
+    The Drools backend of the uchar differential square. Maintainer architecture anchor
+    (2026-08-27): this backend CONSUMES the uchar IR — the loader reads ir.json off the
+    wire exactly as ref/ and backends/clingo do; the RegelSpraak source-compile path is
+    NEVER the gate path. So this module compiles the transpiler + Drools runtime ported
+    from regelspraak-java (the production semantics), plus a NEW ir.json -> model loader
+    and a uchar case*.json runner, but it does NOT depend on the frontend resolver/parser
+    (ANTLR): it borrows only the shared IR record types (model/ir/kern), which are
+    code-identical across the two repos, compiled here from the frontend source tree.
+
+    Build the shaded runtime uber-jar once (decision V2-B); the gate runs jar-only:
+        mvn -q -o -f backends/drools/pom.xml package
+    yields target/uchar-drools-backend-shaded.jar with Main-Class the case runner.
+  -->
+
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <drools.version>8.44.0.Final</drools.version>
+    <jackson.version>2.21.2</jackson.version>
+    <!-- the frontend IR record types (model/ir/kern) — the ONE copy, compiled in-tree -->
+    <frontend.src>${project.basedir}/../../frontends/regelspraak/src/main/java</frontend.src>
+  </properties>
+
+  <dependencies>
+    <!-- The Drools RUNTIME that COMPILES (KieBaseBuilder, drools-model-compiler) and FIRES
+         (kiesession, core) the executable Model. The exec-model path is pure Java lambdas;
+         drools-engine brings drools-core + drools-model-compiler + drools-canonical-model
+         + drools-kiesession transitively. Same pin as regelspraak-java engine/pom.xml. -->
+    <dependency>
+      <groupId>org.drools</groupId>
+      <artifactId>drools-engine</artifactId>
+      <version>${drools.version}</version>
+    </dependency>
+    <!-- the loader + parametersetlader parse the wire with Jackson -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <!-- The frontend ir.Bron record carries an ANTLR-ctx factory (Bron.van) beside its
+         plain snippet form (Bron.synthetisch, the one the loader uses). Compiling that
+         shared record here needs the ANTLR runtime on the classpath — the runtime only,
+         never the tool. It is NOT shaded into the uber-jar (provided scope): the loader
+         only ever calls the ctx-free factory. -->
+    <dependency>
+      <groupId>org.antlr</groupId>
+      <artifactId>antlr4-runtime</artifactId>
+      <version>4.13.2</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Compile the frontend IR record types (model/ir/kern only) alongside the backend
+           sources: the shared IR shape lives in frontends/regelspraak/ir (the card's "no
+           second copy"). The frontend resolver/emit are ANTLR-coupled and NOT needed here,
+           so they are excluded from compilation. -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>add-frontend-ir-records</id>
+            <phase>generate-sources</phase>
+            <goals><goal>add-source</goal></goals>
+            <configuration>
+              <sources>
+                <source>${frontend.src}</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+        <configuration>
+          <!-- keep the ANTLR-coupled frontend packages out of this build: only the
+               engine-neutral IR records (model/ir/kern) are compiled from the frontend. -->
+          <excludes>
+            <exclude>**/regelspraak/resolver/**</exclude>
+            <exclude>**/regelspraak/emit/**</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
+      <!-- The shaded runtime uber-jar (decision V2-B): all of Drools + Jackson + the IR
+           records + the backend, so the gate runs jar-only (setup-java + cached jars,
+           the gate-10 pattern). Rebuild it with `mvn -o -f backends/drools/pom.xml package`. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.6.0</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals><goal>shade</goal></goals>
+            <configuration>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <shadedClassifierName>shaded</shadedClassifierName>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>io.github.yhavinga.regelspraak.cases.DroolsBackendMain</mainClass>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+              </transformers>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                    <exclude>module-info.class</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
