@@ -20,7 +20,11 @@ EXCEPTIONS=''
 # 'main-spec' is anchored on a leading non-letter so it flags a citation into the
 # private RegelSpraak spec markdown (e.g. "(main-spec §12, L4633)") without matching
 # innocuous words like "domain-specific".
-PRIVATE='(/users/|/home/|~/|regelspraak-java|regelspraakruntime|calculemus|[^a-zA-Z]main-spec)'
+# NB: 'regelspraakruntime' left the general private-token set when the Drools backend
+# landed (decision V3-a): the production RegelSpraakRuntime now lives — legitimately and
+# by design — under backends/drools/runtime/. The no-share tripwire below re-imposes the
+# invariant precisely, forbidding that runtime ONLY where it must never be (ref/, spec/verifier/).
+PRIVATE='(/users/|/home/|~/|regelspraak-java|calculemus|[^a-zA-Z]main-spec)'
 
 status=0
 
@@ -51,6 +55,20 @@ for zone in corpus/golden corpus/negatief corpus/rood frontends; do
     [ -e "$zone" ] || continue
     if git grep -nIiE '(^|[^[:alpha:]])toka([^[:alpha:]]|$)' -- "$zone"; then
         echo "FAIL: TOKA material in artifact zone '$zone' (rights policy, corpus/README.md; the sole exception is the isolated toka/ zone)" >&2
+        status=1
+    fi
+done
+
+# The NO-SHARE tripwire (decision V3-a, 2026-08-27). The production RegelSpraak runtime
+# lives ONLY under backends/drools/runtime/; ref/ (the reference interpreter) and
+# spec/verifier/ (the OCaml verifier) MUST share no code with it — separate implementations
+# are the structural proof the spec is engine-neutral. A transliteration of the production
+# runtime into either zone (its class, an org.drools import, or a signature runtime method —
+# rsPlus, rsVerdeelOpVolgorde, Breuk) is a LOUD failure here, never a silent copy.
+for zone in ref spec/verifier; do
+    [ -e "$zone" ] || continue
+    if git grep -nIE 'RegelSpraakRuntime|org\.drools|rsPlus|rsVerdeelOpVolgorde|Breuk' -- "$zone"; then
+        echo "FAIL: production-runtime token in '$zone' — the Drools runtime lives ONLY under backends/drools/runtime/; ref/ and spec/verifier/ share no code with it (decision V3-a)" >&2
         status=1
     fi
 done

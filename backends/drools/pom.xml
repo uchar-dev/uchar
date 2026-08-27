@@ -15,10 +15,11 @@
     (2026-08-27): this backend CONSUMES the uchar IR — the loader reads ir.json off the
     wire exactly as ref/ and backends/clingo do; the RegelSpraak source-compile path is
     NEVER the gate path. So this module compiles the transpiler + Drools runtime ported
-    from regelspraak-java (the production semantics), plus a NEW ir.json -> model loader
-    and a uchar case*.json runner, but it does NOT depend on the frontend resolver/parser
-    (ANTLR): it borrows only the shared IR record types (model/ir/kern), which are
-    code-identical across the two repos, compiled here from the frontend source tree.
+    from the production RegelSpraak toolchain (the production semantics), plus a NEW
+    ir.json -> model loader and a uchar case*.json runner, but it does NOT depend on the
+    frontend resolver/parser (ANTLR): it borrows only the shared IR record types
+    (model/ir/kern), which are code-identical to the frontend's, compiled here from the
+    frontend source tree.
 
     Build the shaded runtime uber-jar once (decision V2-B); the gate runs jar-only:
         mvn -q -o -f backends/drools/pom.xml package
@@ -38,7 +39,7 @@
     <!-- The Drools RUNTIME that COMPILES (KieBaseBuilder, drools-model-compiler) and FIRES
          (kiesession, core) the executable Model. The exec-model path is pure Java lambdas;
          drools-engine brings drools-core + drools-model-compiler + drools-canonical-model
-         + drools-kiesession transitively. Same pin as regelspraak-java engine/pom.xml. -->
+         + drools-kiesession transitively. Same Drools pin as the reference toolchain. -->
     <dependency>
       <groupId>org.drools</groupId>
       <artifactId>drools-engine</artifactId>
