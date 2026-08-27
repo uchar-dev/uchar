@@ -123,32 +123,55 @@ EOF
             ir=$(dirname "$case")/ir.json
             frag=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("expectedFault",{}).get("drools",""))' "$case")
             reason=$(awk -F'|' -v n="$name" '$1==n {i=index($0,"|"); print substr($0,i+1); exit}' "$excl")
-            out=$(java -cp "$JAR" "$MAIN" "$ir" "$case" 2>/dev/null)
-            code=$?
+            # DroolsRoodMain prints exactly one status line (FAULT|NOFAULT|EXCLUDE|ERROR <detail>) last on
+            # stdout; the leg classifies on that STATUS TOKEN, never the bare exit code, so an ERROR (a backend
+            # crash) can never be swallowed as a not-carried outcome and a listed reason's category is checked.
+            out=$(java -cp "$JAR" "$MAIN" "$ir" "$case" 2>/dev/null | tail -1)
+            tok=${out%% *}
             if [ -n "$frag" ]; then
                 if [ -n "$reason" ]; then
                     echo "FAIL: $name carries a drools fragment AND sits in the Drools exclusion list — drop the static entry" >&2
                     status=1
                 fi
-                if [ "$code" -ne 0 ]; then
-                    printf 'FAIL: %s — Drools did not fault (pinned drools="%s"):\n%s\n' "$name" "$frag" "$out" >&2
-                    status=1
-                else
-                    case "$out" in
-                        *"$frag"*) d_fault=$((d_fault + 1)) ;;
-                        *) printf 'FAIL: %s — Drools faulted but the pinned fragment is absent (drools="%s"):\n%s\n' "$name" "$frag" "$out" >&2
-                           status=1 ;;
-                    esac
-                fi
+                # a carried case MUST be a genuine FAULT at fire whose report contains the pinned fragment; any
+                # other token (NOFAULT / EXCLUDE / a crash ERROR) is a regression, never a pass.
+                case "$tok" in
+                    FAULT)
+                        case "$out" in
+                            *"$frag"*) d_fault=$((d_fault + 1)) ;;
+                            *) printf 'FAIL: %s — Drools faulted but the pinned fragment is absent (drools="%s"):\n%s\n' "$name" "$frag" "$out" >&2
+                               status=1 ;;
+                        esac ;;
+                    *) printf 'FAIL: %s — Drools did not FAULT (pinned drools="%s"), observed %s:\n%s\n' "$name" "$frag" "$tok" "$out" >&2
+                       status=1 ;;
+                esac
             else
                 if [ -z "$reason" ]; then
                     printf 'FAIL: %s carries no drools fragment and is not in the Drools exclusion list — pin a fragment or list it with a reason:\n%s\n' "$name" "$out" >&2
                     status=1
-                elif [ "$code" -eq 0 ]; then
-                    printf 'FAIL: stale exclusion — %s is listed (%s) but Drools now FAULTS; drop the entry and pin its fragment:\n%s\n' "$name" "$reason" "$out" >&2
-                    status=1
                 else
-                    d_excl=$((d_excl + 1))
+                    # the listed reason's first word is its declared not-carried category; it is machine-checked
+                    # against the observed token, so a reason that drifts (EXCLUDE<->NOFAULT) or a case that now
+                    # FAULTs or ERRORs fails the gate — the stale-guard is no longer exit-code-blind.
+                    rcat=${reason%% *}
+                    case "$tok" in
+                        FAULT)
+                            printf 'FAIL: stale exclusion — %s is listed (%s) but Drools now FAULTS; drop the entry and pin its fragment:\n%s\n' "$name" "$reason" "$out" >&2
+                            status=1 ;;
+                        ERROR)
+                            printf 'FAIL: %s is listed (%s) but Drools ERRORED — a backend crash is never a not-carried outcome; fix the crash or reclassify:\n%s\n' "$name" "$reason" "$out" >&2
+                            status=1 ;;
+                        EXCLUDE|NOFAULT)
+                            if [ "$tok" != "$rcat" ]; then
+                                printf 'FAIL: reason drift — %s is listed as %s but Drools now reports %s; correct the reason category to match the observed status:\n%s\n' "$name" "$rcat" "$tok" "$out" >&2
+                                status=1
+                            else
+                                d_excl=$((d_excl + 1))
+                            fi ;;
+                        *)
+                            printf 'FAIL: %s — unexpected Drools status token "%s" (expected FAULT/EXCLUDE/NOFAULT/ERROR):\n%s\n' "$name" "$tok" "$out" >&2
+                            status=1 ;;
+                    esac
                 fi
             fi
         done < "$list"
@@ -161,6 +184,12 @@ EOF
             fi
         done < "$excl"
         rm -f "$excl"
+        # at-least-one-fault discipline: the leg must anchor on a genuine backend fault (the smoke-test
+        # canary of a working jar) — an all-not-carried run is never silently green.
+        if [ "$d_fault" -eq 0 ]; then
+            echo 'check-rood: FAIL — Drools leg: no rood case fault-pinned; at least one genuine backend fault must anchor the leg (an empty fault set is a failure, never silently green)' >&2
+            status=1
+        fi
         if [ "$status" -eq 0 ]; then
             printf 'check-rood: Drools leg PASS (%s fault-pinned, %s not-carried with reason)\n' "$d_fault" "$d_excl"
         fi

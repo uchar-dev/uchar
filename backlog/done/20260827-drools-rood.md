@@ -78,3 +78,31 @@ form coverage would reclassify some NOFAULT/EXCLUDE cases into
 fault-pins; the stale guard will demand it. Not touched: `.github/` (a
 CI leg for the Drools rood gate is a maintainer decision — noted, not
 taken).
+
+Fix pass (review, 2026-08-27) — `scripts/check-rood.sh` Drools leg:
+
+- **MAJOR.** The not-carried branch classified each case on the process
+  exit code (0 vs non-zero), so NOFAULT (1), EXCLUDE (2) and a crash
+  ERROR (3) all fell through the same `else` and were counted as valid
+  `d_excl` outcomes: a backend crash was masked and the listed reason's
+  EXCLUDE-vs-NOFAULT category was never checked against reality. The leg
+  now classifies on `DroolsRoodMain`'s STATUS TOKEN (the first word of
+  its last stdout line, `tail -1`), matching sibling gate 12's discipline
+  that "an ERROR always fails". A listed case that FAULTs is stale; a
+  listed case that ERRORs fails hard; and the reason's declared category
+  (`${reason%% *}`, EXCLUDE or NOFAULT) is machine-checked against the
+  observed token — reason-category drift now fails. The carried branch is
+  likewise token-based (must be FAULT with the pinned fragment). Verified
+  live: all 21 listed categories match their observed token (0
+  mismatches); the leg stays `1 fault-pinned, 21 not-carried`.
+- **NOTE (line 164).** Added an at-least-one-fault guard: the leg now
+  fails if `d_fault == 0`, so a state that fault-pins nothing (or a
+  wholly-broken jar) can no longer print PASS — the repo's "an empty X is
+  a failure, never silently green" applied to the leg.
+- Motivated, not changed: the hosted-CI coverage gap (`.github/` is a
+  protected path this card may not touch — a disclosed maintainer
+  decision) and the offline-`mvn` build failure turning the leg red
+  (consistent with gate 12's hard-fail-on-red-build, cannot bite hosted
+  CI which has no JDK, and reliably distinguishing an empty ~/.m2 from a
+  genuinely red build is neither cheap nor safe — fail-fast favours
+  surfacing it).
