@@ -173,3 +173,27 @@ jobs:
           key: regelspraak-jars-antlr-4.13.2-junit-1.10.2
       - name: check-regelspraak
         run: bash scripts/check-regelspraak.sh
+
+  toka-parity:
+    # Gate 11 — the isolated toka/ parity zone (maintainer decision
+    # 2026-08-27), TEMPORARY: this job leaves CI with the zone, the one
+    # documented exception to gate-set monotonicity. Same shape as gate 10
+    # (setup-java, cached public tool-jar downloads) — unconditional and
+    # blocking: hosted CI must catch a frontend-vs-toolchain TOKA parity
+    # regression. It re-emits the toolchain-pinned dumps through uchar's own
+    # frontend and requires byte-identity, and runs the TOKA test suite.
+    name: "Gate 11: TOKA parity zone (temporary, unconditional, blocking)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: cache the ANTLR + JUnit tool jars
+        uses: actions/cache@v4
+        with:
+          path: frontends/regelspraak/lib
+          key: regelspraak-jars-antlr-4.13.2-junit-1.10.2
+      - name: check-toka-parity
+        run: bash scripts/check-toka-parity.sh
