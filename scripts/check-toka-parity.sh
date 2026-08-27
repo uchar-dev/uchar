@@ -4,9 +4,14 @@
 # This gate exists ONLY while the isolated `toka/` zone exists. It is the one
 # documented exception to gate-set monotonicity (CLAUDE.md): it leaves the set
 # when the ©-Belastingdienst zone is removed ahead of any public flip. Until
-# then it is unconditional and blocking, exactly like gate 10.
+# then it is unconditional and blocking. NOTE: it is NOT "exactly like gate 10"
+# any more — obligation 4 (the differential replay, added by decision V6-A)
+# needs the FULL toolchain of gates 6 + 12 combined: OCaml/dune (ref + clingo),
+# the clingo binary, AND the Drools shaded jar, on top of gate 10's JDK 21. The
+# CI job (`toka-parity` in .github/workflows/gates.yml) provisions exactly that;
+# on a runner missing any of them this gate fails LOUDLY (never silently green).
 #
-# Four obligations, each loud (the sister-gate contract):
+# Five obligations, each loud (the sister-gate contract):
 #   1. the frontend builds (ANTLR parser + resolver + IR emitter, JDK 21+) and
 #      the TOKA test suite under toka/ compiles + passes against it with a
 #      NON-ZERO test count — a suite that ran nothing is a silent greenlight;
@@ -14,7 +19,13 @@
 #      toolchain at the pin) re-emits through uchar's OWN frontend
 #      byte-identically — the feature-parity proof (frontend == toolchain on
 #      the ©-Belastingdienst casus the public corpus may never carry);
-#   3. the DIFFERENTIAL replay (decision V6-A, 2026-08-27): every toka case under
+#   3. every replay slice (`toka/cases/**/ir.json`) obeys the SAME metaschema
+#      + byte-round-trip discipline gate 2 enforces on the public corpus, run
+#      here in explicit mode via scripts/check-ir-schema.sh — one serialiser,
+#      one source of truth. Gate 2 scans only corpus/, so without this leg the
+#      newly-committed IR wire artifacts would ride only on the more-permissive
+#      ref/clingo/Drools loaders (defense-in-depth for the temporary zone);
+#   4. the DIFFERENTIAL replay (decision V6-A, 2026-08-27): every toka case under
 #      toka/cases/<scenario>/{ir.json,case.json} replays through ref AND clingo
 #      AND the uchar-IR-loading Drools backend, and its observed outcome in each
 #      executor MUST match the class the parity manifest pins — exact agreement
@@ -22,9 +33,9 @@
 #      per-form EXCLUDE) where one does not. ZERO silent divergences is the hard
 #      rule: a value difference WITHOUT a fault (a ref non-match, a Drools FAIL or
 #      ERROR at fire) reddens the gate. Per-class counts land in the report;
-#   4. an empty fixture set, zero tests, a stale holdout, or a toka case dir the
+#   5. an empty fixture set, zero tests, a stale holdout, or a toka case dir the
 #      manifest does not cover is a FAILURE, never silently green; a missing JDK,
-#      dune (ref/clingo), or clingo fails loudly.
+#      dune (ref/clingo), clingo, or the Drools jar fails loudly.
 #
 # The reason-carrying holdout mirrors gate 7's survivor list: the full casus
 # raises exactly ONE resolver ERROR — the §4.1 datum+datum casus-quirk in
@@ -112,6 +123,20 @@ done < <(find "$TOKA" -name ir.json -not -path "$TOKA/cases/*" | sort)
 [ "$casus_n" -gt 0 ] || fail "no toka/**/ir.json parity dumps found (an empty fixture set is a failure)"
 # stale-holdout guard: the reason-carrying holdout must still be present.
 find "$TOKA" -name "$HOLDOUT" | grep -q . || fail "holdout '$HOLDOUT' not found under $TOKA — the reason-carrying list is stale"
+
+# 3b. schema + round-trip discipline over the replay slices. Gate 2 scans only
+#     corpus/; these newly-committed IR wire artifacts are otherwise unguarded.
+#     Reuse the gate-2 script in explicit mode — same metaschema, same canonical
+#     serialiser, one source of truth — so a slice editing into a schema-invalid
+#     or non-byte-round-tripping shape reddens the gate here.
+slice_irs=$(find "$TOKA/cases" -name ir.json | sort)
+[ -n "$slice_irs" ] || fail "no $TOKA/cases/**/ir.json slices to schema-check"
+# shellcheck disable=SC2086
+if ! schema_out=$(sh scripts/check-ir-schema.sh $slice_irs 2>&1); then
+  printf '%s\n' "$schema_out" >&2
+  fail "a toka replay slice is schema-invalid or does not round-trip byte-identically (gate-2 discipline)"
+fi
+slice_n=$(printf '%s\n' "$slice_irs" | grep -c .)
 
 # 4. the differential replay (decision V6-A): every toka case through ref, clingo, Drools.
 MANIFEST="$TOKA/cases/parity.manifest"
@@ -202,6 +227,7 @@ fi
 echo ""
 echo "check-toka-parity: PASS"
 echo "  re-emission: $casus_n casus dump(s), $frag_n .rgs re-emitted byte-identical (holdout: $HOLDOUT); TOKA suite $tests tests"
+echo "  schema: $slice_n replay slice(s) metaschema-valid + byte-round-trip (gate-2 discipline, explicit mode)"
 echo "  differential replay: $cases_n toka cases through ref, clingo, Drools (slices under $TOKA/cases/), ZERO silent divergences"
 echo "    ref    : $ref_pass PASS / 0 diverge  (the 100% oracle carries every toka case)"
 echo "    clingo : $clingo_pass PASS / $clingo_fault loud translation-fault / 0 silent diverge"

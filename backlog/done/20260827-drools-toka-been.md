@@ -86,3 +86,45 @@ subsets are not committed here); the full-casus re-emission remains the
 frontend==toolchain parity proof. The whole leg is temporary and leaves with the
 zone. Protected path touched: `scripts/check-toka-parity.sh` — branch left
 unmerged as the maintainer's proposal.
+
+---
+
+Review fixes (2026-08-27, fixagent on `card/drools-toka-been`):
+
+**MAJOR — the gate-11 CI job could not reach green.** The build agent's Result
+and both the script header and the CI comment claimed gate 11 was "exactly like
+gate 10" (setup-java only). Once obligation 4 (the differential replay) landed,
+that was FALSE: `scripts/check-toka-parity.sh` now hard-requires OCaml/dune
+(ref+clingo), the clingo binary, and a Drools shaded jar — none of which the
+wired `toka-parity` job provisioned, so hosted CI would hard-fail at the `dune
+not found` guard on merge. Fixed by provisioning the job with the FULL toolchain
+of gates 6 + 12 combined (`.github/workflows/gates.yml`): `setup-java` with
+`cache: maven` + `mvn -B … package` (frontend + Drools uber-jar, built once as
+gate 12 does), `ocaml/setup-ocaml` + `opam install yojson zarith` (dune),
+`apt-get install gringo` (clingo), `python3 -m pip install --user jsonschema`
+(the schema leg below), and `opam exec -- bash scripts/check-toka-parity.sh`.
+The false "exactly like gate 10" claim is corrected in the script header and the
+CI comment. `.github/` is a protected path; this diff is a proposal the
+maintainer merges with the rest of the branch — flagged here as extra scope
+because the card named `.github` out of scope, but leaving the required,
+blocking gate-11 job red on merge was the larger harm.
+
+**NOTE — the replay slices sat outside every schema gate.** Gate 2 scans only
+`corpus/`, so the 30 newly-committed `toka/cases/**/ir.json` wire artifacts rode
+only on the permissive ref/clingo/Drools loaders. Added obligation 3 to the gate
+script: the same metaschema + byte-round-trip discipline, run in explicit mode
+via `scripts/check-ir-schema.sh` (one serialiser, one source of truth). Shown
+red-first (a stray trailing newline on one slice reddens the gate at the
+round-trip check), green after revert; all 30 slices validate and round-trip.
+
+**NOTES motivated, not changed.** (a) The Drools axis carries zero positive
+plays (all 30 EXCLUDE on the shared wederkerig `Partnerrelatie` feittype, one on
+objectcreatie checked first) — this is the faithful measured state; the card
+forbids narrowing a slice to force a play, and the positive Drools value
+protection lives in gate 12 over `corpus/golden`. Already disclosed in the
+manifest header and "Honest scope of the Drools leg". (b) toka-28's order-
+dependent EXCLUDE reason is already disclosed by the manifest header ("toka-28
+additionally carries an objectcreatie … checked first", every slice bundling the
+wederkerig feittype). (c) The backlog naming the casus feittype is charter-
+permitted working prose outside the swept zones, not a gate-1 violation;
+scrubbing an accurate close-out record buys no gate and loses fidelity.

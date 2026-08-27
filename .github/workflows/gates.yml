@@ -177,11 +177,18 @@ jobs:
   toka-parity:
     # Gate 11 — the isolated toka/ parity zone (maintainer decision
     # 2026-08-27), TEMPORARY: this job leaves CI with the zone, the one
-    # documented exception to gate-set monotonicity. Same shape as gate 10
-    # (setup-java, cached public tool-jar downloads) — unconditional and
+    # documented exception to gate-set monotonicity. Unconditional and
     # blocking: hosted CI must catch a frontend-vs-toolchain TOKA parity
-    # regression. It re-emits the toolchain-pinned dumps through uchar's own
-    # frontend and requires byte-identity, and runs the TOKA test suite.
+    # regression AND a differential-replay divergence. It is NOT the same
+    # shape as gate 10 any more: obligation 4 (the decision-V6-A replay)
+    # runs every toka case through ref, clingo and the Drools backend, so
+    # this job needs the FULL toolchain of gates 6 + 12 combined — setup-java
+    # (frontend + Drools shaded jar), setup-ocaml + yojson/zarith (ref/clingo
+    # via dune), the clingo binary (gringo), and python3+jsonschema (the
+    # gate-2 schema leg over the replay slices). The Drools uber-jar is built
+    # once here (as gate 12 does) so the gate runs jar-only; ref/clingo build
+    # inside the script under opam exec. The gate script itself fails LOUDLY
+    # on any missing tool, so a local run can never be silently green.
     name: "Gate 11: TOKA parity zone (temporary, unconditional, blocking)"
     runs-on: ubuntu-latest
     steps:
@@ -190,13 +197,26 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
+          cache: maven
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5"
+      - name: install yojson + zarith
+        run: opam install -y yojson zarith
+      - name: install clingo
+        # Ubuntu ships the clingo binary in the gringo package
+        run: sudo apt-get update && sudo apt-get install -y gringo && clingo --version
+      - name: install jsonschema
+        run: python3 -m pip install --user jsonschema
       - name: cache the ANTLR + JUnit tool jars
         uses: actions/cache@v4
         with:
           path: frontends/regelspraak/lib
           key: regelspraak-jars-antlr-4.13.2-junit-1.10.2
+      - name: build the shaded Drools-runtime uber-jar (+ round-trip witness test)
+        run: mvn -B -f backends/drools/pom.xml package
       - name: check-toka-parity
-        run: bash scripts/check-toka-parity.sh
+        run: opam exec -- bash scripts/check-toka-parity.sh
 
   drools:
     # Gate 12 — the Drools differential leg of the square (maintainer decision
