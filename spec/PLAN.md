@@ -676,7 +676,11 @@ argues for flipping early, and the rights hygiene (gate 1, the TOKA
 tripwire) is in place. **Deferred (2026-08-19):** at the Phase-1 exit the
 maintainer holds the flip — the repo stays private until further notice;
 the enforcement caveat (no branch protection on a private free-plan repo)
-stands with it.
+stands with it. **Precondition added (2026-08-27):** the temporary
+`toka/` parity zone admits ©-Belastingdienst material into the tree AND
+the git history; the flip now additionally requires removing the zone
+and rewriting history (filter-repo or a fresh public copy) — recorded in
+`CLAUDE.md` with the zone's charter.
 
 ## 10. Rough effort
 
