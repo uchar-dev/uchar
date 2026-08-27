@@ -65,6 +65,13 @@
 
   <build>
     <plugins>
+      <!-- pin to a locally-cached surefire (the module ships no tests; the differential is the
+           gate, jar-only) so the offline build binds without reaching central. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.2</version>
+      </plugin>
       <!-- Compile the frontend IR record types (model/ir/kern only) alongside the backend
            sources: the shared IR shape lives in frontends/regelspraak/ir (the card's "no
            second copy"). The frontend resolver/emit are ANTLR-coupled and NOT needed here,
