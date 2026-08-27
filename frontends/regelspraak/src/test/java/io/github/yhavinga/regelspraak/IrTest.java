@@ -248,25 +248,25 @@ class IrTest {
     }
 
     @Test void aggregatie_neemt_het_elementtype_via_rolnavigatie_over() {
-        // "de som van <attr> van alle passagiers van de reis": the element is the
-        // passagier's attribute (head noun before 'van'), so the sum is its type —
-        // not the deeper "reis". Count is a non-negative integer.
+        // "de som van <attr> van alle deelnemers van de groep": the element is the
+        // deelnemer's attribute (head noun before 'van'), so the sum is its type —
+        // not the deeper "groep". Count is a non-negative integer.
         String src = """
-            Objecttype de Vlucht
+            Objecttype de Ploeg
                 het totaalbedrag Numeriek (geheel getal);
-                het aantal reizigers Numeriek (geheel getal);
+                het aantal leden Numeriek (geheel getal);
             Objecttype de Persoon
                 het bedrag Numeriek (geheel getal);
-            Feittype Vlucht van personen
-                de reis Vlucht
-                de passagier Persoon
-            Eén reis betreft meerdere passagiers
+            Feittype Ploeg van personen
+                de groep Ploeg
+                de deelnemer Persoon
+            Eén groep betreft meerdere deelnemers
             Regel som
                 geldig altijd
-                    Het totaalbedrag van een reis moet berekend worden als de som van het bedrag van alle passagiers van de reis.
+                    Het totaalbedrag van een groep moet berekend worden als de som van het bedrag van alle deelnemers van de groep.
             Regel telling
                 geldig altijd
-                    Het aantal reizigers van een reis moet berekend worden als het aantal passagiers van de reis.
+                    Het aantal leden van een groep moet berekend worden als het aantal deelnemers van de groep.
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "fouten: " + m.errors());
@@ -332,32 +332,32 @@ class IrTest {
     }
 
     @Test void referenties_lossen_op_via_feittype_rollen() {
-        // Subjects are roles, not object-type names: "een reis" → Vlucht (role reis),
-        // "een passagier"/"alle passagiers" → Persoon (role passagier, incl. plural).
+        // Subjects are roles, not object-type names: "een groep" → Ploeg (role groep),
+        // "een deelnemer"/"alle deelnemers" → Persoon (role deelnemer, incl. plural).
         String src = """
-            Objecttype de Vlucht
+            Objecttype de Ploeg
                 de prijs Numeriek (geheel getal);
             Objecttype de Persoon
                 de leeftijd Numeriek (geheel getal);
-            Feittype Vlucht van personen
-                de reis Vlucht
-                de passagier Persoon
-            Eén reis betreft meerdere passagiers
+            Feittype Ploeg van personen
+                de groep Ploeg
+                de deelnemer Persoon
+            Eén groep betreft meerdere deelnemers
             Regel r
                 geldig altijd
-                    De prijs van een reis moet gesteld worden op de leeftijd van alle passagiers.
+                    De prijs van een groep moet gesteld worden op de leeftijd van alle deelnemers.
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "valse fout via rolnavigatie: " + m.errors());
 
         ResolvedRegel rr = m.resolvedRegels.get(0);
         Expr.AttribuutRef doel = assertInstanceOf(Expr.AttribuutRef.class, rr.doel());
-        assertNotNull(doel.objecttype(), "rol 'reis' niet opgelost");
-        assertEquals("Vlucht", doel.objecttype().naam);          // via role reis
+        assertNotNull(doel.objecttype(), "rol 'groep' niet opgelost");
+        assertEquals("Ploeg", doel.objecttype().naam);          // via role groep
 
         Expr.AttribuutRef waarde = assertInstanceOf(Expr.AttribuutRef.class, rr.waarde());
-        assertNotNull(waarde.objecttype(), "meervoudige rol 'passagiers' niet opgelost");
-        assertEquals("Persoon", waarde.objecttype().naam);       // via plural role passagiers
+        assertNotNull(waarde.objecttype(), "meervoudige rol 'deelnemers' niet opgelost");
+        assertEquals("Persoon", waarde.objecttype().naam);       // via plural role deelnemers
         assertTrue(waarde.type().isNumeriek());
     }
 

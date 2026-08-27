@@ -22,7 +22,7 @@ class MeervoudMatcherTest {
 
     @Test void regelmatige_meervouden() {
         assertTrue(MeervoudMatcher.meervoudsVormen("burgerservicenummer").contains("burgerservicenummers")); // -s
-        assertTrue(MeervoudMatcher.meervoudsVormen("vlucht").contains("vluchten"));                          // -en
+        assertTrue(MeervoudMatcher.meervoudsVormen("ploeg").contains("ploegen"));                            // -en
         assertTrue(MeervoudMatcher.meervoudsVormen("naam").contains("namen"));                               // aa->a +en
         assertTrue(MeervoudMatcher.meervoudsVormen("persoon").contains("personen"));                         // oo->o +en
     }
@@ -35,12 +35,12 @@ class MeervoudMatcherTest {
     }
 
     @Test void objecttype_bindt_naam_meervoud_en_gedeclareerd_meervoud() {
-        Objecttype vlucht = new Objecttype("Vlucht");
+        Objecttype ploeg = new Objecttype("Ploeg");
         Objecttype np = new Objecttype("Natuurlijk persoon");
         np.meervoud = "Natuurlijke personen";
-        List<Objecttype> typen = List.of(vlucht, np);
-        assertEquals(vlucht, MeervoudMatcher.vindObjecttype(typen, "Vlucht"));               // exact name
-        assertEquals(vlucht, MeervoudMatcher.vindObjecttype(typen, "Vluchten"));             // regular plural
+        List<Objecttype> typen = List.of(ploeg, np);
+        assertEquals(ploeg, MeervoudMatcher.vindObjecttype(typen, "Ploeg"));                 // exact name
+        assertEquals(ploeg, MeervoudMatcher.vindObjecttype(typen, "Ploegen"));               // regular plural
         assertEquals(np, MeervoudMatcher.vindObjecttype(typen, "Natuurlijke personen"));     // declared meervoud (irregular)
         assertNull(MeervoudMatcher.vindObjecttype(typen, "Routes"));                         // unknown
     }
@@ -65,9 +65,9 @@ class MeervoudMatcherTest {
         tweeDecl.attribuutMeervoud.put("zoon", "kinderen");
         tweeDecl.attribuutMeervoud.put("dochter", "kinderen");
         assertNull(MeervoudMatcher.vindAttribuut(tweeDecl, "kinderen"));
-        Objecttype kruis = metAttributen("reis", "vlucht");   // reis declares "vluchten"; it is also vlucht's regular plural
-        kruis.attribuutMeervoud.put("reis", "vluchten");
-        assertNull(MeervoudMatcher.vindAttribuut(kruis, "vluchten"));
+        Objecttype kruis = metAttributen("groep", "ploeg");   // groep declares "ploegen"; it is also ploeg's regular plural
+        kruis.attribuutMeervoud.put("groep", "ploegen");
+        assertNull(MeervoudMatcher.vindAttribuut(kruis, "ploegen"));
         Objecttype exact = metAttributen("wagens", "auto");   // a singular literally named like a plural still wins exactly
         exact.attribuutMeervoud.put("auto", "wagens");
         assertEquals("wagens", MeervoudMatcher.vindAttribuut(exact, "wagens"));

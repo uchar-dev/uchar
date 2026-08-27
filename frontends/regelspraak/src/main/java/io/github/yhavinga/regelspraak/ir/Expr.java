@@ -90,7 +90,7 @@ public sealed interface Expr {
      *  sommatie is then a leegwaarde); always null for non-sommatie functions.
      *
      *  `filter` is a §13.4.2 "die/dat &lt;predicaat&gt;" subselectie on the counted/aggregated
-     *  element ("het aantal passagiers van de reis die een kind zijn" — only the kind-passagiers).
+     *  element ("het aantal deelnemers van de groep die een kind zijn" — only the kind-deelnemers).
      *  It is resolved against the ELEMENT type, not the rule subject. Null when the operand
      *  carries no such filter. A filter the resolver cannot yet structure (the kenmerk-membership
      *  predicates these subselecties use are still {@link Conditie.Onopgelost}) is kept here as an
@@ -150,7 +150,7 @@ public sealed interface Expr {
      * `type` is the attribute's declared datatype on that object type.
      *
      * `navigatieRol` is the role name the author WROTE to reach that object (the
-     * onderwerp's primary noun, e.g. "heenvlucht" in "de tarief van de heenvlucht"),
+     * onderwerp's primary noun, e.g. "voordeur" in "de breedte van de voordeur"),
      * or null when the reference is the subject's own attribute / names an object type
      * directly. Threading the written role lets the transpiler pick the right
      * reference field when one object-type pair is connected by more than one feittype

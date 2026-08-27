@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class KenmerkMatcherTest {
 
     private static Objecttype met(String... kenmerken) {
-        Objecttype ot = new Objecttype("Passagier");
+        Objecttype ot = new Objecttype("Ploeg");
         for (String k : kenmerken) ot.kenmerken.add(k);
         return ot;
     }
@@ -63,17 +63,17 @@ class KenmerkMatcherTest {
 
     @Test void meerwoordig_kenmerk_verbuigt_op_de_kop_niet_de_staart() {
         // §3.5 a multi-word bijvoeglijk kenmerk inflects on its HEAD adjective, with the prepositional tail
-        // kept verbatim: "bereikbaar per trein" -> "bereikbare per trein", NOT the tail-inflected non-word
-        // "bereikbaar per treine". The head's digraph-shortening still applies ("groot bereik" -> "grote bereik").
-        assertEquals(List.of("bereikbare per trein"), KenmerkMatcher.verbogenVormen("bereikbaar per trein"));
+        // kept verbatim: "vaarbaar bij eb" -> "vaarbare bij eb", NOT the tail-inflected non-word
+        // "vaarbaar bij ebe". The head's digraph-shortening still applies ("groot bereik" -> "grote bereik").
+        assertEquals(List.of("vaarbare bij eb"), KenmerkMatcher.verbogenVormen("vaarbaar bij eb"));
         assertEquals(List.of("grote bereik"), KenmerkMatcher.verbogenVormen("groot bereik"));
-        assertEquals("bereikbaar per trein", KenmerkMatcher.vind(met("bereikbaar per trein"), "bereikbare per trein"));
-        assertEquals("bereikbaar per trein", KenmerkMatcher.vind(met("bereikbaar per trein"), "Bereikbare per trein"));
+        assertEquals("vaarbaar bij eb", KenmerkMatcher.vind(met("vaarbaar bij eb"), "vaarbare bij eb"));
+        assertEquals("vaarbaar bij eb", KenmerkMatcher.vind(met("vaarbaar bij eb"), "Vaarbare bij eb"));
         // the tail-inflected non-word must NOT bind (proves the fix, not a looser match)
-        assertNull(KenmerkMatcher.vind(met("bereikbaar per trein"), "bereikbaar per treine"));
+        assertNull(KenmerkMatcher.vind(met("vaarbaar bij eb"), "vaarbaar bij ebe"));
         // the exact base still wins, and an unrelated phrase stays unmatched
-        assertEquals("bereikbaar per trein", KenmerkMatcher.vind(met("bereikbaar per trein"), "bereikbaar per trein"));
-        assertNull(KenmerkMatcher.vind(met("bereikbaar per trein"), "bereikbare per bus"));
+        assertEquals("vaarbaar bij eb", KenmerkMatcher.vind(met("vaarbaar bij eb"), "vaarbaar bij eb"));
+        assertNull(KenmerkMatcher.vind(met("vaarbaar bij eb"), "vaarbare bij vloed"));
     }
 
     @Test void ambigue_verbuiging_bindt_niets() {

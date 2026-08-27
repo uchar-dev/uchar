@@ -14,16 +14,16 @@ import java.util.List;
  * pipe line as a {@code TABEL_RIJ} token; {@link RuleChecker} splits it on '|'). A row's cell[0] is the §12 row
  * numbering, used only to name the synthetic regel.
  *
- * <p><b>§12 column model</b> (main-spec §12, L4633-4766): column 0 is the row numbering. A header that starts with
+ * <p><b>§12 column model</b> (§12): column 0 is the row numbering. A header that starts with
  * {@code "indien"} is a CONDITIE-kolom; every other header is a CONCLUSIE-kolom (a §9.1 gelijkstelling header ending
  * in "moet gesteld worden op", or a §9.2 kenmerk header "… is …"). Conclusie-kolommen may sit before OR after the
  * conditie-kolommen. Per row: one regel per conclusie-kolom, voorwaarde = the AND of the non-n.v.t. conditie cells.
  *
  * <p><b>§5.7 concatenatie cell</b>: a conditie cell under an equality predicate may list several values separated by a
- * comma and a final " of " ("A", "B" of "C") — a DISJUNCTION over that one column. The spec presents the very same
- * Woonregio rules hand-written with this exact disjunction as an "er aan tenminste één van de volgende voorwaarden
- * wordt voldaan" list (L4654-4678), so a multi-value cell desugars to that §13.4.14 OR-list (reusing the resolver's
- * existing compound-condition support) rather than a verbatim value-series (which the resolver does not lower). Net
+ * comma and a final " of " ("A", "B" of "C") — a DISJUNCTION over that one column. A multi-value cell therefore
+ * desugars to a §13.4.14 "er aan tenminste één van de volgende voorwaarden wordt voldaan" OR-list (reusing the
+ * resolver's existing compound-condition support) rather than a verbatim value-series (which the resolver does not
+ * lower). Net
  * row shape: AND across conditie-kolommen, OR within a multi-value cell; a disjunction inside an AND nests as a
  * §13.4.14.2 "er voldoet aan tenminste één …" sub-list and is reordered LAST so its greedy bullet capture is harmless.
  *
@@ -80,7 +80,7 @@ public final class BeslistabelDesugar {
                         condities.add(new Voorwaarde(negeerKenmerkKop(kop), List.of()));
                     else {
                         // §5.7: "is gelijk aan" series uses "of" (a DISJUNCTION, ≤1 value matches); "is ongelijk aan"
-                        // uses "en" (§12-note L4702: a CONJUNCTION of !=, must differ from ALL), which flattens into
+                        // uses "en" (§12: a CONJUNCTION of !=, must differ from ALL), which flattens into
                         // the row's AND as separate conditions. Split respects double quotes (a value may contain , / of).
                         boolean ongelijk = kop.toLowerCase().contains("ongelijk");
                         List<String> waarden = splitReeks(cell, ongelijk);
@@ -101,7 +101,7 @@ public final class BeslistabelDesugar {
         return uit;
     }
 
-    /** A single conditie cell: the predicate kop ("zijn woonprovincie gelijk is aan", the header minus "indien") and
+    /** A single conditie cell: the predicate kop ("zijn klasse gelijk is aan", the header minus "indien") and
      *  its value(s). A §5.7 concatenatie cell ("A, B of C") under an equality predicate yields &gt;1 value. */
     private record Voorwaarde(String kop, List<String> waarden) {
         boolean disjunctie() { return waarden.size() > 1; }
@@ -196,7 +196,7 @@ public final class BeslistabelDesugar {
                     + "niet 'berekend als' (§12)");
             return null;
         }
-        // §9.2 kenmerktoekenning: the header IS the assertion ("een passagier is een passagier jonger dan 18 jaar").
+        // §9.2 kenmerktoekenning: the header IS the assertion ("een deelnemer is een deelnemer jonger dan 18 jaar").
         if (cell.equalsIgnoreCase("waar")) return header;
         if (cell.equalsIgnoreCase("onwaar")) {
             waarschuw.accept("rij " + nr + ": een kenmerk-conclusie 'onwaar' kan niet als negatieve toekenning "
@@ -209,7 +209,7 @@ public final class BeslistabelDesugar {
     }
 
     /** Split a §5.7 concatenatie cell into its values: at TOP-LEVEL commas and the connector word — " of " for an
-     *  equality series, " en " for an inequality series (§12-note L4702). The split is QUOTE-AWARE: a ',' or the
+     *  equality series, " en " for an inequality series (§12). The split is QUOTE-AWARE: a ',' or the
      *  word inside a double-quoted tekstwaarde (a legal §5.4 value, e.g. {@code "Holland, Noord"} or {@code "A of B"})
      *  is NOT a separator, so the literal stays intact. A single-value cell returns a 1-element list. */
     private static List<String> splitReeks(String cell, boolean ongelijk) {

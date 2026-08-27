@@ -480,11 +480,11 @@ public final class DefinitionResolver {
             String rolNaam = src(rs.rolNaam());
             String meervoud = rs.meervoudsvorm() != null ? src(rs.meervoudsvorm()) : null; // declared "(mv: …)"
             // §13.3.9.3: feitTypeNaam excludes 'de'/'het' (it stops at the role's article), so a feittype
-            // name that itself contains an article ("bonus van DE vlucht") truncates there and the leftover
+            // name that itself contains an article ("bonus van DE groep") truncates there and the leftover
             // "de <woord>" is absorbed by this greedy rolNaam — corrupting it to "<woord> de <echte rol>"
             // with no error node. A role name MAY legitimately contain an article, but only after a
             // preposition ("eigenaar van de woning", "behandelaar van het dossier"); the corruption's article
-            // instead follows a bare noun ("vlucht de bonusvlucht"). So flag a 'de'/'het' that has a word
+            // instead follows a bare noun ("groep de bonusgroep"). So flag a 'de'/'het' that has a word
             // before AND after it and is NOT preceded by a preposition — the tell-tale of a swallowed
             // name+article boundary — without warning on spec-legal "… van de/het …" names.
             if (lidwoordNaBareWoord(rolNaam))
@@ -526,8 +526,8 @@ public final class DefinitionResolver {
      *  {@code (één|meerdere) <rolnaam> <relatiebeschrijving>}: the rolnaam is the LEADING phrase
      *  and the free-text relatiebeschrijving prose follows it. So a role is matched against the
      *  longest LEADING sub-phrase of the deel (not word-by-word). This binds a multi-word role
-     *  name whole ("passagier met recht op treinmiles") and never marks a role that a trailing
-     *  relatiebeschrijving merely names ("… boeken de reis voor …" leaves the reis role untouched)
+     *  name whole ("deelnemer met recht op korting") and never marks a role that a trailing
+     *  relatiebeschrijving merely names ("… behoren de groep toe aan …" leaves the groep role untouched)
      *  — the two failure modes word-by-word matching had. */
     private List<Rol> markeerKardinaliteit(List<Rol> rollen, FeitTypeCardinaliteitContext card) {
         List<Rol> uit = new ArrayList<>(rollen);

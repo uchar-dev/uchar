@@ -324,7 +324,7 @@ final class RuleChecker {
         return fout[0] ? null : rc;
     }
 
-    /** §4.2 (spec line 1387): the validity periods of a rule's versions must not overlap —
+    /** §4.2: the validity periods of a rule's versions must not overlap —
      *  otherwise more than one version applies at a Rekendatum (and, writing the same
      *  attribute, they ping-pong in the engine). Flag any intersecting pair. */
     private void meldOverlap(String naam, List<Geldigheid> gelden, int line) {
@@ -616,8 +616,8 @@ final class RuleChecker {
         if (!a.onderwerpKeten().isEmpty()) return null;
         java.util.List<KaleNaamDeelContext> delen = a.kaleNaam(1).kaleNaamDeel();
         if (delen.size() != 2) return null;                          // element + exactly one parent navigation
-        // The element is an object type ("alle Vluchten") or, more often when scoped, a role name
-        // ("alle passagiers van de reis") — the role's plural matches via the feittype, not the
+        // The element is an object type ("alle Ploegen") or, more often when scoped, a role name
+        // ("alle deelnemers van de groep") — the role's plural matches via the feittype, not the
         // conservative object-type plural.
         Objecttype elem = MeervoudMatcher.vindObjecttype(model.objecttypen.values(), src(delen.get(0)));
         if (elem == null) elem = model.rolDoeltypeNaarSubject(null, src(delen.get(0)));
@@ -721,7 +721,7 @@ final class RuleChecker {
         else if (z != null && z.NAAR_RATO_VAN() != null) {
             methode = ResolvedVerdeling.Methode.NAAR_RATO;
             // the BARE weight name (kaleNaam, lidwoord stripped) so it maps straight to a recipient getter,
-            // exactly like b.attribuut()/d.attribuut() — "de woonregio factor" -> "woonregio factor".
+            // exactly like b.attribuut()/d.attribuut() — "de bruto premie" -> "bruto premie".
             rato = z.attribuutMetLidwoord() != null && z.attribuutMetLidwoord().kaleNaam() != null
                     ? src(z.attribuutMetLidwoord().kaleNaam()) : null;
         }
@@ -866,7 +866,7 @@ final class RuleChecker {
      *  role {@code rolC} — AND the §9.4 MULTI-HOP shape (a navigation chain on the RHS), whose
      *  intermediate hops become {@link ResolvedFeitCreatie.Tussenstap}s walked below. The one hard gate
      *  is that {@code onderwerpD} must be a back-reference to the iterated anker itself (a DIFFERENT
-     *  object of the same type reached by a role — "de aansluitvlucht" — keeps an honest WARNING rather
+     *  object of the same type reached by a role — "de buurgroep" — keeps an honest WARNING rather
      *  than a silent wrong link); an unresolvable role/onderwerp/cardinaliteit likewise WARNs. */
     private void feitCreatie(String naam, FeitCreatieContext fc, VoorwaardeDeelContext vd, Conditie voorwaarde, Geldigheid geldigheid) {
         String rolB = stripArtikel(src(fc.kaleNaam(0)));               // LHS role — the relation being created
@@ -875,9 +875,9 @@ final class RuleChecker {
         java.util.List<KaleNaamDeelContext> delen = rhs.kaleNaamDeel();
         String rolC = stripArtikel(src(delen.get(0)));                 // RHS role — the FINAL hop onto the doel
         // onderwerpD must be a back-reference to the iterated anker ITSELF, not a different object of the
-        // same type reached by a role: "de vlucht" lifts, but "de aansluitvlucht" must WARN, not silently
+        // same type reached by a role: "de groep" lifts, but "de buurgroep" must WARN, not silently
         // reuse the anker's own join. It denotes the anker when its written noun matches the ANKER's own
-        // written noun (the anker may itself be named by a role — "een vastgestelde contingent treinmiles" —
+        // written noun (the anker may itself be named by a role — "een toegewezen reeks punten" —
         // so a type-name-only test is too strict); the strict type match is kept as an additional path.
         String ankerNoun = bouwer.primaireNaamVanOnderwerp(fc.onderwerp(0));
         String terugNoun = bouwer.primaireNaamVanOnderwerp(fc.onderwerp(1));
@@ -991,7 +991,7 @@ final class RuleChecker {
     }
 
     /** §13.4.7 voorwaarde hosting. A feitcreatie guard is built with the ANKER as subject; a guard that
-     *  names a kenmerk of the DOEL ("indien de passagier vip is") is then an unresolved marker, because the
+     *  names a kenmerk of the DOEL ("indien de deelnemer vip is") is then an unresolved marker, because the
      *  single-subject §8.1.8 path refuses a to-many navigation from the anker (it would need a separate
      *  pattern). The feitcreatie HAS that pattern ($doel), so re-resolve the guard with the doel as subject;
      *  if it is then a single BARE doel-kenmerk, tag it with {@code eigenaar = doel} so the transpiler hosts
@@ -1632,7 +1632,7 @@ final class RuleChecker {
         return keurGeheelPeriode(uitNonToplevelKaal(lhs, op, bron), geheelPeriode(op.gehelePeriodevergelijking()), bron);
     }
 
-    /** §8.2 line 3437: the "gedurende de/het gehele &lt;periode&gt;" check is only defined when the predicate's
+    /** §8.2: the "gedurende de/het gehele &lt;periode&gt;" check is only defined when the predicate's
      *  onderwerp is TIJDSAFHANKELIJK. A qualifier over a static onderwerp is a spec error — reject it (an ERROR +
      *  Onopgelost) rather than silently markering a rule that can never fire. {@code niet} is irrelevant here (a
      *  whole-period NEGATION of a static check is just as ill-defined). */
@@ -1784,10 +1784,10 @@ final class RuleChecker {
             if (dag != null && !lhs.type().isOnbekend())
                 return dagsoortOperandFout(lhs, naamCtx, bron);
         }
-        // §8.1.5 + Tabel 16 (spec L3224) "<datum> is geen <dagsoort>": the NEGATED dagsoortcontrole, kept on the §8.1.5
+        // §8.1.5 + Tabel 16 "<datum> is geen <dagsoort>": the NEGATED dagsoortcontrole, kept on the §8.1.5
         // datum-value path — NEVER mis-folded into the §3.5 kenmerkcheck (a dagsoort is no kenmerk; §5.15-based
         // leegwaarde: a leeg/non-dagsoort datum IS "geen <dagsoort>" = WAAR). "geen" is a LOWER_ID (no GEEN token), so
-        // where it lands depends on the operand shape: for a §6 date-arithmetic operand ("de vluchtdatum plus 1 dag") it
+        // where it lands depends on the operand shape: for a §6 date-arithmetic operand ("de startdatum plus 1 dag") it
         // stays on the operator's kaleNaam ("geen kerstdag"); for a plain AttribuutRef the greedy onderwerp absorbs it
         // as a TRAILING word of the operand bron (like "niet"), leaving the bare dagsoort as the kaleNaam.
         if (!heeftWerkwoord && lhs != null) {   // §8.1.5/§5.15/Tabel 57: any datum/tijd operand (date part taken)
@@ -1825,7 +1825,7 @@ final class RuleChecker {
             // kenmerkConditie de-negates to "== false"). When the name is not a kenmerk it is a §8.1.7 rolcheck —
             // kenmerk-first (the non-"een" form IS how a bijvoeglijk kenmerk is written, so kenmerkConditie already
             // claims those; only a name that is a ROLE but not a kenmerk newly binds). §13.4.15.44 makes the "een"
-            // optional ("hij is passagier"); "heeft (geen) <rol>" is the §8.1.7 possessive, which rolLidmaatschap
+            // optional ("hij is deelnemer"); "heeft (geen) <rol>" is the §8.1.7 possessive, which rolLidmaatschap
             // resolves to the near-side test or — when the subject owns a to-many filler — the far-side exists-join.
             Conditie kc = kenmerkConditie(subject, naam, null, heeftWerkwoord, bron);
             if (kc != null) { keurNegatieSoort(subject, kc, heeftWerkwoord); return kc; }
@@ -1873,7 +1873,7 @@ final class RuleChecker {
     /** §8.1.8.2 "&lt;subject&gt; heeft een &lt;bezittelijk kenmerk&gt;" -> a {@link Conditie.Kenmerk} ("k == true"),
      *  but ONLY for a {@link Objecttype.KenmerkSoort#BEZITTELIJK} kenmerk: the EEN-form heeft binds a possession of
      *  a kenmerk (the §7.1 "heeft een recht op belastingvermindering"), while a possession of a ROLE
-     *  ("heeft een passagier") is no kenmerk and stays null for the caller's §8.1.7 far-side rolcheck. A
+     *  ("heeft een deelnemer") is no kenmerk and stays null for the caller's §8.1.7 far-side rolcheck. A
      *  bijvoeglijk/zelfstandig kenmerk uses "is", so the heeft EEN-form must not bind them. Null when no
      *  BEZITTELIJK kenmerk of {@code subject} bears the name. */
     private Conditie bezittelijkKenmerk(Objecttype subject, String naam, Bron bron) {
@@ -1900,8 +1900,8 @@ final class RuleChecker {
         if (filler != null && model.naarVeelRol(subject, filler, naam)) {
             // The backref is the subject-side role of the SAME feittype as the named role — found by the written
             // role name (verbindendeRolViaElementnaam), which disambiguates a filler that references the subject
-            // through MORE THAN ONE feittype (e.g. a Passagier that fills both "passagier" and "bonuspassagier" of
-            // a Vlucht): the by-pair verbindendeRol is then ambiguous and the far-side would wrongly stay a marker.
+            // through MORE THAN ONE feittype (e.g. a Persoon that fills both "deelnemer" and "bonusdeelnemer" of
+            // a Ploeg): the by-pair verbindendeRol is then ambiguous and the far-side would wrongly stay a marker.
             // Fall back to the by-pair lookup for the single-feittype case (both give the same role there).
             String backref = model.verbindendeRolViaElementnaam(subject, naam);
             if (backref == null) backref = model.verbindendeRol(filler, subject);
@@ -1958,7 +1958,7 @@ final class RuleChecker {
      *  reaches, not the subject. Lowered when the rol is a TO-ONE navigation from the subject (so the
      *  property path {@code rol.kenmerk} reads one object); a TO-MANY navigation needs an exists/forall and
      *  stays a marker, as does an unresolvable rol or a kenmerk the navigated type does not declare. The rol
-     *  is normalised to its declared name (a plural "de passagiers" is the same role as "de passagier"), so
+     *  is normalised to its declared name (a plural "de deelnemers" is the same role as "de deelnemer"), so
      *  the to-many test and the emitted reference field are the canonical one. With {@code metEen} the verb selects
      *  the soort, exactly as the subject's own EEN-form ({@link #kenmerkPredicaat}): "is een &lt;k&gt;" binds a
      *  §8.1.8.3 ZELFSTANDIG kenmerk of the navigated type, "heeft een &lt;k&gt;" a §8.1.8.2 BEZITTELIJK one — neither
@@ -2025,10 +2025,10 @@ final class RuleChecker {
             return (doelRol == null && c.naam().equalsIgnoreCase("hij")) ? "" : null;
         String b = lhs.bron() == null ? "" : stripArtikel(lhs.bron().snippet());
         if (b.equalsIgnoreCase(subject.naam)) return "";                              // "de Meting"
-        if (b.regionMatches(true, 0, subject.naam + " ", 0, subject.naam.length() + 1)) // "de Meting bereikbaar per"
+        if (b.regionMatches(true, 0, subject.naam + " ", 0, subject.naam.length() + 1)) // "de Meting vaarbaar bij"
             return b.substring(subject.naam.length()).trim();
-        // The doel is named by the ROLE it fills ("de passagier"), which need not equal its type name
-        // ("Natuurlijk persoon"); accept that role too, with the same multi-word-kenmerk kop reconstruction.
+        // The doel is named by the ROLE it fills ("de deelnemer"), which need not equal its type name
+        // ("Persoon"); accept that role too, with the same multi-word-kenmerk kop reconstruction.
         if (doelRol != null) {
             if (b.equalsIgnoreCase(doelRol)) return "";
             if (b.regionMatches(true, 0, doelRol + " ", 0, doelRol.length() + 1))

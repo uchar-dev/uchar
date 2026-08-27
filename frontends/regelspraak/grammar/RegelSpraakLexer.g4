@@ -20,7 +20,7 @@
 //     domain/datatype names are Capitalised, attribute/role/parameter names are
 //     lowercase — makes capitalisation a reliable, grammar-usable boundary: it is
 //     what lets "de belasting op basis van afstand Bedrag" split into the
-//     lowercase attribute name and the capitalised domain, and "de reis Vlucht"
+//     lowercase attribute name and the capitalised domain, and "de groep Ploeg"
 //     into role and objecttype, with no symbol table.
 //
 //  3. COMPARISON OPERATORS ARE ATOMIC WORDS (gelijk, ongelijk, groter, kleiner,
@@ -88,7 +88,7 @@ TIJDSEVENREDIG_DEEL_PER: 'het' WSP 'tijdsevenredig' WSP 'deel' WSP 'per'; // §1
 // so 'in' and 'hele' stay separate tokens (the bare-unit form is just 'in <unit>').
 // 'aantal' is its own word (the telling aggregation 'het aantal' is composed in
 // the parser as HET AANTAL_WORD), so the article stays separable from an
-// attribute name that merely begins with "aantal" (e.g. "het aantal treinmiles").
+// attribute name that merely begins with "aantal" (e.g. "het aantal punten").
 // The longer 'het aantal dagen in' phrase is still matched first.
 
 // --- bounding / rounding / arithmetic phrases ---

@@ -22,7 +22,7 @@ import java.util.List;
  * <p>{@code scopeVeld} (usually null) makes the uniqueness PARENT-SCOPED — "de X van alle Y van &lt;Z&gt;",
  * unique within each Z rather than globally: it is the reference field on a {@code subject} fact that
  * points at the scope owner, so the count is restricted to instances sharing the subject's scope
- * (e.g. seat numbers unique per flight: scopeVeld "reis", counting only passagiers of the same reis).
+ * (e.g. member numbers unique per group: scopeVeld "groep", counting only deelnemers of the same groep).
  *
  * <p>{@code scopeRol} (the uchar {@code scopeRol} extension, null unless the uniqueness is scoped and
  * the scope relation is uniquely derivable) is the symbolic form of {@code scopeVeld}: the fact type

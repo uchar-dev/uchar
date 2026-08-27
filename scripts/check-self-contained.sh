@@ -17,7 +17,10 @@ cd "$(git rev-parse --show-toplevel)" || exit 2
 
 ZONES='corpus/golden corpus/negatief corpus/rood spec/schema spec/verifier ref backends frontends spec/IR-SPEC.md spec/RUNTIME-SEMANTICS.md'
 EXCEPTIONS=''
-PRIVATE='(/users/|/home/|~/|regelspraak-java|regelspraakruntime|calculemus)'
+# 'main-spec' is anchored on a leading non-letter so it flags a citation into the
+# private RegelSpraak spec markdown (e.g. "(main-spec §12, L4633)") without matching
+# innocuous words like "domain-specific".
+PRIVATE='(/users/|/home/|~/|regelspraak-java|regelspraakruntime|calculemus|[^a-zA-Z]main-spec)'
 
 status=0
 
@@ -38,10 +41,10 @@ for zone in $ZONES; do
     fi
 done
 
-for zone in corpus/golden corpus/negatief corpus/rood; do
+for zone in corpus/golden corpus/negatief corpus/rood frontends; do
     [ -e "$zone" ] || continue
     if git grep -nIiE '(^|[^[:alpha:]])toka([^[:alpha:]]|$)' -- "$zone"; then
-        echo "FAIL: TOKA material in corpus data (rights policy, corpus/README.md)" >&2
+        echo "FAIL: TOKA material in artifact zone '$zone' (rights policy, corpus/README.md)" >&2
         status=1
     fi
 done

@@ -134,24 +134,24 @@ class IrEmitterTest {
 
     @Test void fold_bron_argument_draagt_geen_navigatiebindingen() {
         // The fold's SOURCE argument routes through bronRol; even though its type (Persoon) differs
-        // from the fold's outer subject (Vlucht) — the by-pair shape — it must carry NO
+        // from the fold's outer subject (Ploeg) — the by-pair shape — it must carry NO
         // navigatieBindingen (IR-SPEC ch. 4.1a; the uchar verifier rejects nav bindings in a fold slot).
         String src = """
-            Objecttype de Vlucht
+            Objecttype de Ploeg
                 het totaalbedrag Numeriek (geheel getal);
             Objecttype de Persoon
                 de leeftijd Numeriek (geheel getal);
-            Feittype vluchtdeelname
-                de reis Vlucht
-                de passagier (mv: passagiers) Persoon
-            Eén reis telt meerdere passagiers
+            Feittype deelname
+                de groep Ploeg
+                de deelnemer (mv: deelnemers) Persoon
+            Eén groep telt meerdere deelnemers
             Regel som
                 geldig altijd
-                    Het totaalbedrag van een reis moet berekend worden als de som van de leeftijd van alle passagiers van de reis.
+                    Het totaalbedrag van een groep moet berekend worden als de som van de leeftijd van alle deelnemers van de groep.
             """;
         String c = emitCompact(src);
         assertTrue(c.contains(
-                "\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"vluchtdeelname\",\"rol\":\"passagier\"}"),
+                "\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"deelname\",\"rol\":\"deelnemer\"}"),
                 () -> "de fold moet zijn bronRol dragen:\n" + c);
         assertFalse(c.contains("navigatieBindingen"),
                 () -> "een fold-bron-argument mag GEEN navigatieBindingen dragen:\n" + c);
@@ -159,25 +159,25 @@ class IrEmitterTest {
 
     @Test void fold_filter_elementlezing_draagt_geen_navigatiebindingen() {
         // The filter is a subselectie over the fold ELEMENT: "die kleiner zijn dan 18" reads the
-        // passagier's OWN leeftijd — an own read, not a navigation from the outer reis. So the filter
+        // deelnemer's OWN leeftijd — an own read, not a navigation from the outer groep. So the filter
         // read carries no spurious by-pair navigatieBindingen (the emitter walks the filter with the
         // element as subject).
         String src = """
-            Objecttype de Vlucht
+            Objecttype de Ploeg
                 het totaalbedrag Numeriek (geheel getal);
             Objecttype de Persoon
                 de leeftijd Numeriek (geheel getal);
-            Feittype vluchtdeelname
-                de reis Vlucht
-                de passagier (mv: passagiers) Persoon
-            Eén reis telt meerdere passagiers
+            Feittype deelname
+                de groep Ploeg
+                de deelnemer (mv: deelnemers) Persoon
+            Eén groep telt meerdere deelnemers
             Regel som
                 geldig altijd
-                    Het totaalbedrag van een reis moet berekend worden als de som van de leeftijd van alle passagiers van de reis die kleiner zijn dan 18.
+                    Het totaalbedrag van een groep moet berekend worden als de som van de leeftijd van alle deelnemers van de groep die kleiner zijn dan 18.
             """;
         String c = emitCompact(src);
         assertTrue(c.contains(
-                "\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"vluchtdeelname\",\"rol\":\"passagier\"}"),
+                "\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"deelname\",\"rol\":\"deelnemer\"}"),
                 () -> "de fold moet zijn bronRol dragen:\n" + c);
         assertFalse(c.contains("navigatieBindingen"),
                 () -> "een element-eigen filter-lezing mag GEEN navigatieBindingen dragen:\n" + c);

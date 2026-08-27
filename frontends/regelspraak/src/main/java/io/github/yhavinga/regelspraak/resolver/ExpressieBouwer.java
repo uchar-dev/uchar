@@ -421,7 +421,7 @@ final class ExpressieBouwer {
      *  place. It only lowers a fold over a SINGLE gedimensioneerd attribuut's labels, and only when the
      *  operand is the rule subject's OWN dimensioned attribute ({@code a.objecttype() == huidigSubject} —
      *  the §5.8.5 case, "zijn betaalde belasting in jaar"). A NAVIGATED operand is deferred: a to-MANY read
-     *  ("de prijs in jaar van alle passagiers") would be a 2-level aggregation (over instances AND labels)
+     *  ("de prijs in jaar van alle deelnemers") would be a 2-level aggregation (over instances AND labels)
      *  that the single-Map fold cannot express — resolving it would drop the marker and let the instance
      *  accumulate sum Maps (a miscompile) — and a to-one navigated fold has no spec/corpus example yet. The
      *  attribute must carry exactly ONE dimension (the value space is a Map&lt;label,value&gt;; a
@@ -530,15 +530,15 @@ final class ExpressieBouwer {
     }
 
     /** The §5.6 "die/dat &lt;predicaat&gt;" subselectie filtering a SINGLE-operand set-aggregation's
-     *  element ("het aantal / de som / de minimale waarde van … passagiers van de reis die een kind
-     *  zijn" — only the kind-passagiers). Resolved against the ELEMENT type (not the rule subject): a
+     *  element ("het aantal / de som / de minimale waarde van … deelnemers van de groep die een kind
+     *  zijn" — only the kind-deelnemers). Resolved against the ELEMENT type (not the rule subject): a
      *  kenmerk of the element becomes a real {@link Conditie.Kenmerk} (lowered as an accumulate-source
      *  constraint); anything else stays {@link Conditie.Onopgelost}, so the aggregation is a visible
      *  marker rather than a silently-wrong total over EVERY instance.
      *
      *  Only a single operand is considered: a multi-operand telling (the §5.8.1 union) or a min/max
      *  VALUE-fold has no single element filter — there a die belongs to one operand's own navigation
-     *  (e.g. "de eerste passagier die …"), not the aggregation, and markering on it would kill a
+     *  (e.g. "de eerste deelnemer die …"), not the aggregation, and markering on it would kill a
      *  working accumulate (see p20b). With one operand a generic subtree scan is safe. */
     /** §7.1/§7.3.2 the "gedurende de tijd dat <voorwaarde>" restriction on "het totaal van <temporeel attribuut>"
      *  OR "het tijdsevenredig deel per <maand|jaar> van <temporeel attribuut>", when it is a SIMPLE single-period
@@ -821,7 +821,7 @@ final class ExpressieBouwer {
         return null;
     }
 
-    /** The element type a count operand ("passagiers van …") ranges over, or null when it is not an
+    /** The element type a count operand ("deelnemers van …") ranges over, or null when it is not an
      *  "&lt;attribuut&gt; van &lt;onderwerp&gt;" naming a countable element — used to confirm every operand
      *  of a §5.8.1 union shares one element before OR-ing their filters. */
     private Objecttype operandElement(ParseTree op) {
@@ -880,7 +880,7 @@ final class ExpressieBouwer {
     /** §5.6/§13.4.13.5-.7 a getal/datum/tekst elementairpredicaat "die &lt;op&gt; &lt;expr&gt;" (the vragende-meervoud
      *  "die kleiner zijn dan 18", or the permissive verb-leading register) -> a {@link Conditie.Vergelijking} over the
      *  element's AGGREGATED attribute. The subselectie names no attribute, so the LHS is the very attribute the
-     *  aggregation folds (the single AttribuutRef operand of the element, e.g. "de leeftijd van alle passagiers"); the
+     *  aggregation folds (the single AttribuutRef operand of the element, e.g. "de leeftijd van alle deelnemers"); the
      *  comparison is then constrained on the accumulate's source pattern. A count over the bare element (no folded
      *  attribute), a navigated/set-of operand, or a non-comparison predicaat returns null -> the caller markers. The
      *  RHS is resolved in the rule's subject context (a literal or a parameter-global — not an element attribute). */
@@ -956,7 +956,7 @@ final class ExpressieBouwer {
             // "Datum in dagen" has no hour/minute/second. The DATE parts (jaar/maand/dag) accept any date, so
             // they are NOT checked. Onbekend is skipped (no claim); only a concrete DatumInDagen is a violation.
             case UUR_UIT, MINUUT_UIT, SECONDE_UIT, MILLISECONDE_UIT -> tijdComponentFout(typen);
-            // §4.16/§4.17 typeringen L676/L703: the two operands of a (absolute) tijdsduur must BOTH be datum AND have the
+            // §4.16/§4.17 typeringen: the two operands of a (absolute) tijdsduur must BOTH be datum AND have the
             // SAME tijd-precisie.
             case TIJDSDUUR, ABSOLUTE_TIJDSDUUR -> tijdsduurPrecisieFout(kind, typen);
             default -> null;
@@ -1019,7 +1019,7 @@ final class ExpressieBouwer {
                 + typen.get(0).naam() + " (§13.4.17.21-.24)";
     }
 
-    /** §4.16/§4.17 (typeringen L676/L703, normative): the two operands (van, tot) of a (absolute) tijdsduur must BOTH be a
+    /** §4.16/§4.17 (typeringen, normative): the two operands (van, tot) of a (absolute) tijdsduur must BOTH be a
      *  datumexpressie AND have the SAME tijd-precisie — both {@link Datatype.DatumInDagen} or both {@link Datatype.DatumTijd}.
      *  A non-datum operand (a Numeriek passed where a datum belongs) or a concrete mixed pair (Datum-in-dagen tot
      *  Datum-en-tijd) is spec-illegal but otherwise silently emits code neither back-end can run (rsTijdsduur wants a
@@ -1030,7 +1030,7 @@ final class ExpressieBouwer {
         Datatype ref = null;
         for (Datatype d : typen) {
             if (d.isOnbekend()) continue;                       // no claim
-            if (!d.isDatum())                                   // L676/L703: "twee expressies, beide van het datatype datum"
+            if (!d.isDatum())                                   // §4.16/§4.17: both operands must be a datumexpressie
                 return "de (absolute) tijdsduur van … tot … vereist twee datumexpressies, kreeg " + d.naam() + " (" + sectie + ")";
             if (ref == null) ref = d;
             else if (!ref.getClass().equals(d.getClass()))      // both datum but a different tijd-precisie
@@ -1337,7 +1337,7 @@ final class ExpressieBouwer {
     private Expr attribuutRef(String attr, OnderwerpContext onderwerp, Bron bron) {
         String onderwerpBron = onderwerp != null ? src(onderwerp) : "";
         // §13.4.1.3/§5.5.3 a rangtelwoord on the SUBJECT reference ("de bijdrage van de als tweede genoemde
-        // passagier"): consume the ordinal — the bare resolution when it selects the rule's single binding,
+        // deelnemer"): consume the ordinal — the bare resolution when it selects the rule's single binding,
         // an ERROR/marker otherwise (keurRangtelwoord). Never silently dropped (the pre-consumption behavior
         // aliased every mention to one binding).
         OnderwerpVerwijzingContext ov = verwijzingMetRangtelwoord(onderwerp);
@@ -1386,8 +1386,8 @@ final class ExpressieBouwer {
         }
         Datatype dt = ot != null && ot.attribuut(attr) != null ? ot.attribuut(attr) : null;
         if (dt == null && ot != null) {
-            // §3.7/§5.1 an appositive "in <eenheid>" on an attribuut read — the spec's flagship §12 reisduur
-            // conditie "de reisduur per trein IN MINUTEN van zijn reis" (main-spec L4729-4731). This is not its
+            // §3.7/§5.1 an appositive "in <eenheid>" on an attribuut read — a §12 conditie such as
+            // "de looptijd IN MINUTEN van zijn meting" re-states the attribute's own unit inline. This is not its
             // own EBNF production (the only grammar "in <eenheid>" is the §13.4.17.32 tijdsduur "in hele
             // <eenheid>"), so the unit is greedily swallowed into the kaleNaam; but the spec body writes it and
             // it merely RE-STATES the attribute's own unit (the spec always names the attribute's NATIVE unit:
@@ -1410,7 +1410,7 @@ final class ExpressieBouwer {
             }
         }
         // declared-names-only IR: a WRITTEN PLURAL of a declared attribute binds the DECLARED name at resolve time
-        // ("de leeftijden van alle passagiers" reads the attribute declared 'leeftijd'), so the IR only ever
+        // ("de leeftijden van alle deelnemers" reads the attribute declared 'leeftijd'), so the IR only ever
         // carries declared members and no back-end synthesizes a getter from surface morphology. The matcher
         // is ambiguity-safe (declared "(mv: …)" or the conservative regular plural of exactly ONE attribute);
         // an unbindable written form keeps its Onbekend type and stays a downstream marker.

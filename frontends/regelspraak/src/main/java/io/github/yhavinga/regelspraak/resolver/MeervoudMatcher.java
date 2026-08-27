@@ -8,7 +8,7 @@ import java.util.List;
 
 /** Binds a written PLURAL noun to a declared singular — needed by the §8.1.6 uniciteitscontrole, whose
  *  onderwerpexpressie names the attribute and the object type in the plural ("de burgerservicenummers
- *  van alle Vluchten moeten uniek zijn") while both are declared in the singular.
+ *  van alle Ploegen moeten uniek zijn") while both are declared in the singular.
  *
  *  <p>Like {@link KenmerkMatcher} it tries exact (case-insensitive) first and is <b>ambiguity-safe</b>
  *  (a written plural that is the regular plural of more than one declared name binds none — an honest
@@ -21,7 +21,7 @@ import java.util.List;
  *  opens the final syllable (naam→namen, persoon→personen). Stress-dependent consonant doubling
  *  (bus→bussen) and the "-eren" plural (kind→kinderen) are NOT modelled — a name needing them stays a
  *  marker rather than risk a wrong bind. Candidates are generated from the controlled declared singular
- *  and tested against the written form, so an over-generated non-word ("vluchts") cannot mis-bind. */
+ *  and tested against the written form, so an over-generated non-word ("ploegs") cannot mis-bind. */
 final class MeervoudMatcher {
     private MeervoudMatcher() {}
 
@@ -93,7 +93,7 @@ final class MeervoudMatcher {
             if (isKlinker(v2) && isMedeklinker(v1) && isMedeklinker(last))
                 return uit;                                          // short V + single C: doubling class, unmodelled
         }
-        uit.add(b + "en");                                           // vlucht→vluchten, vierkant→vierkanten
+        uit.add(b + "en");                                           // ploeg→ploegen, vierkant→vierkanten
         return uit;
     }
 

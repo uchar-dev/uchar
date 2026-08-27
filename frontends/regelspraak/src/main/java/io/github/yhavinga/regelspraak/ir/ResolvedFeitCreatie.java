@@ -11,12 +11,12 @@ import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
  *
  * <p>The fact model represents a relation instance as a reference field on the many-side fact
  * pointing at the one-side fact (the same convention {@code objectCreatie} links by, e.g.
- * {@code Passagier.reis -> Vlucht}). So creation is a {@code modify}-set of {@code zetVeld} — the
+ * {@code Deelnemer.groep -> Ploeg}). So creation is a {@code modify}-set of {@code zetVeld} — the
  * anker-side role of {@code rolB}'s feittype — on each matching {@code doel}.
  *
  * <p>The §9.4 canonical example is MULTI-HOP: {@code onderwerpD} reaches the {@code anker} through a chain
- * of intermediate objects ("… een passagier van de reis met treinmiles van het vastgestelde contingent
- * treinmiles": Contingent &rarr; Vlucht &rarr; Natuurlijk persoon). {@code tussenstappen} captures those
+ * of intermediate objects ("… een deelnemer van de groep met punten van de toegekende reeks punten":
+ * Reeks &rarr; Ploeg &rarr; Persoon). {@code tussenstappen} captures those
  * intermediate hops from the anker; the {@code joinVeld} then joins the {@code doel} to the LAST step,
  * or — for the 1-hop shape, with {@code tussenstappen} empty — directly to the anker.
  *

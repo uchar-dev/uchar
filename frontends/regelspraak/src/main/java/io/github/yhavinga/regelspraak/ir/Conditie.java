@@ -25,8 +25,8 @@ public sealed interface Conditie {
     Bron bron();
 
     /** §8.2 / §13.4.15.70 "gedurende de/het gehele &lt;periode&gt;" whole-period qualifier on a predicate over a
-     *  tijdsafhankelijk onderwerp (§8.2 line 3437). The qualified predicate yields "waar" only if the underlying
-     *  check holds at EVERY moment of each named calendar period the subject's timeline touches (§8.2 line 3448).
+     *  tijdsafhankelijk onderwerp (§8.2). The qualified predicate yields "waar" only if the underlying
+     *  check holds at EVERY moment of each named calendar period the subject's timeline touches (§8.2).
      *  {@code jaar} = "gedurende het gehele jaar" (false = "de gehele maand"); {@code niet} = the §8.2
      *  "niet gedurende …" form, which complements the whole-period result. Attached to the temporal predicate it
      *  qualifies — a {@link Vergelijking}, a {@link Predicaat}, or a {@link Kenmerk}; null on an ordinary predicate. */
@@ -73,19 +73,19 @@ public sealed interface Conditie {
         public Kenmerk(String kenmerk, Bron bron) { this(kenmerk, null, false, null, null, bron); }
     }
 
-    /** §8.1.7 rolcheck ("hij is een passagier"): true when the subject FILLS the role {@code rol}.
+    /** §8.1.7 rolcheck ("hij is een deelnemer"): true when the subject FILLS the role {@code rol}.
      *  In the §9.4 reference-field fact model the subject fills a role iff its reference to the OTHER
      *  end of that feittype is set, so this lowers to a bare null-test on that reference field
-     *  ({@code reis != null}); {@code anderTeFiller} is that other end's object type, from which the
+     *  ({@code groep != null}); {@code anderTeFiller} is that other end's object type, from which the
      *  transpiler looks up the reference field. {@code negatie} marks the §8.1.7/§8.1.8.3 "is geen &lt;rol&gt;"
-     *  negation — the subject does NOT fill the role — which lowers to the inverse null-test ({@code reis == null}).
+     *  negation — the subject does NOT fill the role — which lowers to the inverse null-test ({@code groep == null}).
      *  When the reference lives on the other side (the §8.1.7 "heeft" form) it is a {@link VerreRollidmaatschap}. */
     record Rollidmaatschap(String rol, Objecttype anderTeFiller, Bron bron, boolean negatie) implements Conditie {
         /** Positive rolcheck — the subject fills the role. */
         Rollidmaatschap(String rol, Objecttype anderTeFiller, Bron bron) { this(rol, anderTeFiller, bron, false); }
     }
 
-    /** §8.1.7 FAR-side rolcheck ("de vlucht heeft een passagier"): the subject sits on the "één" side, so the
+    /** §8.1.7 FAR-side rolcheck ("de groep heeft een deelnemer"): the subject sits on the "één" side, so the
      *  reference lives on the OTHER object — a to-many {@code filler} whose {@code backref} field points back to
      *  the subject. True when at least one such filler exists, so it lowers to an EXISTS-join (a separate
      *  when-clause {@code exists <filler>( <backref> == $subject )}), NOT an in-pattern constraint — which is why

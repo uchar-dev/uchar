@@ -194,21 +194,21 @@ public final class RegelSpraakModel {
 
     /**
      * Resolve a subject noun to the object type it denotes (§13.4.1). The noun may
-     * name an object type directly (case-insensitive: "de vlucht" → Vlucht) or be a
-     * feittype role whose filler is that object type ("een passagier" → Natuurlijk
-     * persoon via the role "passagier"). A role reference is often plural
-     * ("passagiers"); a simple Dutch +s/+en plural is matched against the singular
+     * name an object type directly (case-insensitive: "de groep" → Ploeg) or be a
+     * feittype role whose filler is that object type ("een deelnemer" → Persoon
+     * via the role "deelnemer"). A role reference is often plural
+     * ("deelnemers"); a simple Dutch +s/+en plural is matched against the singular
      * role name. The phrase is tried whole first, then with leading words dropped,
-     * so a multi-word role ("reis met treinmiles") binds before its head noun does.
+     * so a multi-word role ("groep met punten") binds before its head noun does.
      * Returns null when nothing matches — the caller then makes no type claim.
      */
     public Objecttype resolveObjecttype(String naam) {
         if (naam == null || naam.isBlank()) return null;
         // The entity is the HEAD noun phrase, before any " van " navigation:
-        // in "passagiers van de reis" the attribute owner is the passagier, while
-        // "van de reis" only scopes which one. So cut at the first 'van', then within
+        // in "deelnemers van de groep" the attribute owner is the deelnemer, while
+        // "van de groep" only scopes which one. So cut at the first 'van', then within
         // the head try the whole phrase before its tail (a multi-word role like
-        // "reis met treinmiles" binds before a leading qualifier is dropped).
+        // "groep met punten" binds before a leading qualifier is dropped).
         String[] woorden = naam.trim().split("\\s+");
         int eind = woorden.length;
         for (int i = 0; i < woorden.length; i++) if (woorden[i].equalsIgnoreCase("van")) { eind = i; break; }
@@ -224,8 +224,8 @@ public final class RegelSpraakModel {
 
     /** The object type DIRECTLY named {@code naam} (case-insensitively), or null — a name match
      *  only, never a feittype role. Distinct from {@link #resolveObjecttype}, which also reaches a
-     *  type through a role; a feitcreatie back-reference needs the strict form to tell "de vlucht"
-     *  (the iterated anker itself) from "de aansluitvlucht" (a different flight of the same type). */
+     *  type through a role; a feitcreatie back-reference needs the strict form to tell "de groep"
+     *  (the iterated anker itself) from "de buurgroep" (a different group of the same type). */
     public Objecttype objecttypeOpNaam(String naam) {
         Objecttype exact = objecttypen.get(naam);
         if (exact != null) return exact;
@@ -245,8 +245,8 @@ public final class RegelSpraakModel {
      * The role name to navigate from {@code houder} to {@code doelwit} — the
      * reference field on a {@code houder} fact that points at a {@code doelwit},
      * which is the role {@code doelwit} plays in a feittype that also relates a
-     * {@code houder}. So from a passagier (Natuurlijk persoon) to its flight (Vlucht)
-     * this is "reis". Returns null when there is no such feittype or more than one
+     * {@code houder}. So from a deelnemer (Persoon) to its group (Ploeg)
+     * this is "groep". Returns null when there is no such feittype or more than one
      * (ambiguous) — the caller then emits a marker rather than a wrong join. This is
      * the by-pair fallback used when the source did not name the role; prefer
      * {@link #verbindendeRolViaNaam} whenever the written role is available.
@@ -469,7 +469,7 @@ public final class RegelSpraakModel {
      * The written role name to record on a navigation reference: the {@code noun}
      * itself when it denotes a feittype role (and not an object type by that name),
      * else null. Kept as written so {@link #verbindendeRolViaNaam}'s {@code rolMatcht}
-     * can still reconcile a plural ("passagiers") against the declared singular.
+     * can still reconcile a plural ("deelnemers") against the declared singular.
      */
     public String navigatieRolNaam(String noun) {
         if (noun == null || noun.isBlank()) return null;

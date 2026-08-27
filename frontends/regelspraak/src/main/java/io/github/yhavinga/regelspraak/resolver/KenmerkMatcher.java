@@ -9,10 +9,10 @@ import java.util.List;
  *  declared kenmerk of an object type.
  *
  *  <p>A bijvoeglijk kenmerk is declared in its base/predicative form ("is <b>minderjarig</b>
- *  kenmerk", §3.5), but a subselectie writes it nominalized — the spec's own canonical §5.6 example
- *  reads "het aantal passagiers van de reis die een <b>minderjarige</b> zijn" against that declared
+ *  kenmerk", §3.5), but a subselectie writes it nominalized — a §5.6 subselectie
+ *  reads "het aantal deelnemers van de groep die een <b>minderjarige</b> zijn" against that declared
  *  "minderjarig", and §5.7 does the same. Plain case-insensitive equality misses the "-e" inflection,
- *  so the spec's primary subselectie example would silently stay a marker.
+ *  so that subselectie would silently stay a marker.
  *
  *  <p>Matching tries exact (case-insensitive) against the base form first — always preferred over an
  *  inflected hit, so a kenmerk that happens to be the inflection of another still binds itself — then
@@ -57,9 +57,9 @@ final class KenmerkMatcher {
      *  candidate: the syllable-opening shortened form for a long-vowel-digraph-plus-one-consonant
      *  stem, otherwise the plain "-e" suffix.
      *
-     *  <p>A MULTI-WORD bijvoeglijk kenmerk ("bereikbaar per trein", §3.5) inflects on its HEAD — the
-     *  adjective is the first word, the rest a prepositional/complement tail — so "bereikbare per trein",
-     *  not the tail-inflected non-word "bereikbaar per treine". So the head word is inflected and the
+     *  <p>A MULTI-WORD bijvoeglijk kenmerk ("vaarbaar bij eb", §3.5) inflects on its HEAD — the
+     *  adjective is the first word, the rest a prepositional/complement tail — so "vaarbare bij eb",
+     *  not the tail-inflected non-word "vaarbaar bij ebe". So the head word is inflected and the
      *  tail re-appended verbatim; a single-word phrase is just the head with no tail. */
     static List<String> verbogenVormen(String basis) {
         List<String> uit = new ArrayList<>();

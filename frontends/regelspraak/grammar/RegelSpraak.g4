@@ -11,7 +11,7 @@
 // attribute/role/kenmerk names are LOWER_ID-led and may embed function words.
 // That convention is exactly what lets a context-free parser split
 // "de belasting op basis van afstand Bedrag" (lowercase name + capitalised
-// domain) and "de reis Vlucht" (lowercase role + capitalised objecttype) with no
+// domain) and "de groep Ploeg" (lowercase role + capitalised objecttype) with no
 // symbol table. Genuinely context-sensitive boundaries that capitalisation does
 // NOT resolve — notably the feittype cardinality line, where a role name abuts a
 // free-text relatiebeschrijving — are captured as a token run for the resolver
@@ -546,7 +546,7 @@ universeelOnderwerp : onbepaaldLidwoord kaleNaam ;             // §13.4.1.2
 onderwerpVerwijzing : bepaaldLidwoord rangtelwoord? kaleNaam ; // §13.4.1.3
 selector            : lidwoord kaleNaam ;                      // §13.4.2.7
 // objectexpressie (§13.4.17.5): a possibly-quantified subject, incl. the
-// quantifier+bare-role form "alle passagiers van de reis".
+// quantifier+bare-role form "alle deelnemers van de groep".
 onderwerp
     : kwantificatie kaleNaam ( VAN onderwerp )?
     | onderwerpKeten
@@ -571,7 +571,7 @@ referentie // §13.4.17.41-44
 // ====================================================================
 regel       : REGEL regelNaam regelVersie+ ;        // §13.4.2.1
 // A regelnaam is free <karakterreeks>: it routinely embeds keywords and even
-// multi-word phrase tokens ("... geen rondvlucht is", "verdeling treinmiles in
+// multi-word phrase tokens ("... geen dagtaak is", "verdeling punten in
 // gelijke delen", "... vertrek min reserveringstermijn"). It is exactly the run
 // of tokens up to the 'geldig' that opens the first versie.
 regelNaam   : ~GELDIG+ ;                             // §13.4.2.2
@@ -735,11 +735,11 @@ samengesteldPredicaat // §13.4.13.4
 
 // §8.3.1/§8.1 Tabel 16: an ENKELE conditie used as a voorwaarde (after 'indien', or
 // after 'dat'/'gedurende de tijd dat', which reuse this rule) takes the VRAGENDE vorm
-// — "het werkwoord staat achteraan" (§8.3.1 line 3488, §10.1 line 4333): "indien hij
-// een passagier is", "… gelijk is aan …", "… leeg is". So the TOPLEVEL elementaire
+// — "het werkwoord staat achteraan" (§8.3.1, §10.1): "indien hij
+// een deelnemer is", "… gelijk is aan …", "… leeg is". So the TOPLEVEL elementaire
 // voorwaarde admits ONLY the verb-trailing toplevelOperator; the verb-leading
 // (stellende) register is reserved for samengestelde-voorwaarde BULLETS
-// (elementaireVoorwaarde, §8.3.2 line 3575). The BULLET rule deliberately stays
+// (elementaireVoorwaarde, §8.3.2). The BULLET rule deliberately stays
 // permissive (admits BOTH families) — the draft's own examples mix registers in a
 // bullet, and over-acceptance
 // there is harmless (the resolver gives the right meaning); operator/operand legality
@@ -792,8 +792,8 @@ elementaireVoorwaarde // §13.4.15.49-.50
     | expressie ( nonToplevelOperator | toplevelOperator )
     | periodevergelijkingElementair
     ;
-// §13.4.15.66/.18 / §8.1.9: the regelversie reference names the rule and — per the §8.1.9 worked
-// example "regelversie Controleer of vlucht geen rondvlucht (altijd) is inconsistent." — carries the
+// §13.4.15.66/.18 / §8.1.9: the regelversie reference names the rule and — as in
+// "regelversie Controleer of groep geen dagtaak (altijd) is inconsistent." — carries the
 // version's geldigheid in parens. The EBNF's <karakterreeks> subsumes both; here the name (which cannot
 // contain '(') and the parenthesised versie-aanduiding (the §13.4.2.5 geldigheid vocabulary) split cleanly.
 consistentieVoorwaarde : REGELVERSIE vrijeNaam ( LPAREN versieGeldigheid RPAREN )? IS ( GEVUURD | INCONSISTENT ) ; // §13.4.15.66
