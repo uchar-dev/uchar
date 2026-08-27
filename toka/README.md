@@ -19,10 +19,12 @@ be removed in one move.
   (`scripts/check-toka-parity.sh`) re-emits it through uchar's own frontend and
   requires byte-identity, so any emitter divergence between toolchain and
   frontend is caught.
-- `src/test/java/**` — the three integration tests excluded at the frontend
-  takeover, in their original form (only the fixture path and, where needed,
-  the package were adjusted). They exercise the frontend end-to-end on the
-  TOKA shapes.
+- `src/test/java/**` — two of the three integration tests excluded at the
+  frontend takeover (CasusTest, ModelTest), in their original form (only the
+  fixture path and, where needed, the package were adjusted). They exercise
+  the frontend end-to-end on the TOKA shapes. RuleCheckTest stayed behind:
+  it imports the Drools transpiler, which is out of this zone's scope — it
+  returns with a Drools-backend card.
 
 ## The holdout
 
