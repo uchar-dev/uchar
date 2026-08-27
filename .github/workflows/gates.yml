@@ -151,3 +151,25 @@ jobs:
           else
             bash scripts/check-catala.sh
           fi
+
+  regelspraak:
+    # Unconditional and blocking by maintainer decision (2026-08-27):
+    # unlike gate 9, hosted CI must catch a RegelSpraak frontend
+    # regression — the JDK comes from setup-java and the two tool jars
+    # are plain public downloads the Makefile fetches (cached here), so
+    # nothing about this gate depends on a specially-provisioned runner.
+    name: "Gate 10: RegelSpraak frontend (unconditional, blocking)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: cache the ANTLR + JUnit tool jars
+        uses: actions/cache@v4
+        with:
+          path: frontends/regelspraak/lib
+          key: regelspraak-jars-antlr-4.13.2-junit-1.10.2
+      - name: check-regelspraak
+        run: bash scripts/check-regelspraak.sh

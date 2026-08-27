@@ -139,6 +139,15 @@ green. Current gates:
    itself is unchanged and still fails hard without catala, so gate 9
    remains the reviewer's pre-merge duty on a machine that has it.*
 
+10. `scripts/check-regelspraak.sh` — the RegelSpraak frontend
+    (`frontends/regelspraak`, jar-only: JDK 21+, ANTLR + JUnit jars
+    fetched into a gitignored `lib/`) builds and its JUnit suite
+    passes with a non-zero test count; every corpus golden carrying a
+    `bron.rgs` re-emits through `--ir` byte-identically to the
+    committed `ir.json`; an empty rgs-golden set or a zero-test run
+    is a failure, never silently green. Its CI leg is unconditional
+    and blocking (maintainer decision 2026-08-27).
+
 ## Repo relationships
 
 - `regelspraak-java` (separate repository) is the first frontend + Drools
