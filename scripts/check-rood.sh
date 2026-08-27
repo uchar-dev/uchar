@@ -64,7 +64,112 @@ if [ "$n_cases" -eq 0 ]; then
     exit 1
 fi
 
+# --- the Drools leg (decision V3-b, 2026-08-27) -----------------------------------------------
+# The Drools backend CONSUMES the uchar IR (loads ir.json off the wire). For each rood case it
+# either observes a genuine runtime fault AT FIRE — the FAULT this leg pins, its
+# `expectedFault.drools` fragment in the report — or it does not carry the red-path form (an
+# EXCLUDE from the loader/transpiler, or a NOFAULT where the backend does not enforce the
+# constraint and runs to a model). A carried form pins a fragment; a not-carried form is listed
+# below with a reason. The exclusion list is stale-guarded: a listed case that now FAULTS, or is
+# gone, fails the gate; a case that is neither pinned nor listed fails the gate (completeness).
+#
+# Conditional on a JDK + python3 + the shaded jar, the gate-9 (catala) pattern: run in FULL where
+# they exist (every failure inside is hard), skip LOUDLY where they do not — a warning, never a
+# silent green, never a blocker. .github/ is a protected path this card may not touch, and the
+# hosted gate-8 runner carries no JDK; so the leg is the reviewer's pre-merge duty on a machine
+# that has java. The ref/clingo legs above remain the CI blocker.
+JAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | head -1)
+if command -v java >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1 \
+   && { [ -n "$JAR" ] || command -v mvn >/dev/null 2>&1; }; then
+    if [ -z "$JAR" ]; then
+        echo 'check-rood: Drools leg — shaded jar absent, building it once (offline)…' >&2
+        mvn -o -q -f backends/drools/pom.xml package >/dev/null 2>&1
+        JAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | head -1)
+    fi
+    if [ -z "$JAR" ]; then
+        echo 'check-rood: FAIL — Drools leg: java present but no shaded jar (build it: mvn -o -f backends/drools/pom.xml package)' >&2
+        status=1
+    else
+        MAIN=io.github.yhavinga.regelspraak.cases.DroolsRoodMain
+        excl=$(mktemp) || exit 2
+        # <rood-case-dir>|<reason the v0 Drools backend does not fault-pin this red form>
+        cat > "$excl" <<'EOF'
+ambiguous-backlink|EXCLUDE objectcreatie (§13.4.6) refused up front — the creation consequence does not execute in the v0 backend, so the ambiguous back-link is never reached
+ambiguous-fold-role-name|NOFAULT the v0 backend resolves the fold role without detecting the cross-type ambiguity ref/clingo reject; it runs to a model
+closed-nonexact-division|EXCLUDE the v0 loader refuses the model's list datatype (ListType) — the fold-over-a-list form is not carried
+closed-runtime-division-by-zero|EXCLUDE the v0 loader refuses the model's list datatype (ListType) — the fold-over-a-list form is not carried
+closed-runtime-nonexact-division|EXCLUDE the v0 loader refuses the model's list datatype (ListType) — the fold-over-a-list form is not carried
+decimal-nonterminating|NOFAULT the v0 backend has no §6.1.2 write-precision guard — a non-terminating quotient collapses to DECIMAL64 (Breuk.naarDecimal) instead of faulting; it runs to a model
+division-by-numeric-zero|EXCLUDE the reaching rule (vindersloon van een vondst) does not lower — a transpiler SKIP (waarde buiten scope); fire is never reached
+finite-chain-over-budget|EXCLUDE objectcreatie (§13.4.6) refused up front — the generative chain does not execute in the v0 backend
+input-overprecision|NOFAULT the v0 case runner does not enforce declared attribute input precision — it accepts the over-precise value and runs to a model
+input-overprecision-param|NOFAULT the v0 case runner does not enforce declared parameter input precision — it accepts the over-precise value and runs to a model
+list-element-overprecision|EXCLUDE the v0 loader refuses the model's record datatype (StructType) before any list-element precision is reached — the record/struct form is not carried
+near-side-rolcheck-to-many|EXCLUDE the rolcheck rule (bemand met jutter) does not lower — a transpiler SKIP (voorwaarde buiten Phase-B scope); fire is never reached
+runaway-recursion|EXCLUDE objectcreatie (§13.4.6) refused up front — the recursive generator does not execute in the v0 backend
+struct-field-overprecision|EXCLUDE the v0 loader refuses the model's record datatype (StructType) — the record/struct form is not carried
+to-one-second-filler|EXCLUDE the case's role (aangemelde vondsten) has no uniquely derivable reference field in the v0 bean model — the role input is refused before the second-filler violation is reached
+uni-temporal-key-scalar|EXCLUDE the case sets a temporal attribute (kavelnummer) as a scalar — a temporal/dimensioned attribute input the v0 backend does not carry
+uni-two-temporal-keys|EXCLUDE the case sets a temporal attribute (vondstnummer) as a scalar — a temporal attribute input the v0 backend does not carry
+uu-temporal-key-scalar|EXCLUDE the case sets a temporal attribute (vondstnummer) as a scalar — a temporal attribute input the v0 backend does not carry
+uu-two-temporal-keys|EXCLUDE the case sets a temporal attribute (vondstnummer) as a scalar — a temporal attribute input the v0 backend does not carry
+vintage-uncovered-date|EXCLUDE the v0 loader refuses the TemporalRead expression node (the vintage read) — the temporal-read form is not carried
+wf044-onopgelost-reached|EXCLUDE the reaching rule (waardering van een vondst) does not lower — a transpiler SKIP (waarde buiten scope); the Onopgelost marker never fires, so it is not Drools-carried (the WF-044 guard: listed, not fragment-pinned)
+EOF
+        d_fault=0
+        d_excl=0
+        while IFS= read -r case; do
+            name=$(basename "$(dirname "$case")")
+            ir=$(dirname "$case")/ir.json
+            frag=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("expectedFault",{}).get("drools",""))' "$case")
+            reason=$(awk -F'|' -v n="$name" '$1==n {i=index($0,"|"); print substr($0,i+1); exit}' "$excl")
+            out=$(java -cp "$JAR" "$MAIN" "$ir" "$case" 2>/dev/null)
+            code=$?
+            if [ -n "$frag" ]; then
+                if [ -n "$reason" ]; then
+                    echo "FAIL: $name carries a drools fragment AND sits in the Drools exclusion list — drop the static entry" >&2
+                    status=1
+                fi
+                if [ "$code" -ne 0 ]; then
+                    printf 'FAIL: %s — Drools did not fault (pinned drools="%s"):\n%s\n' "$name" "$frag" "$out" >&2
+                    status=1
+                else
+                    case "$out" in
+                        *"$frag"*) d_fault=$((d_fault + 1)) ;;
+                        *) printf 'FAIL: %s — Drools faulted but the pinned fragment is absent (drools="%s"):\n%s\n' "$name" "$frag" "$out" >&2
+                           status=1 ;;
+                    esac
+                fi
+            else
+                if [ -z "$reason" ]; then
+                    printf 'FAIL: %s carries no drools fragment and is not in the Drools exclusion list — pin a fragment or list it with a reason:\n%s\n' "$name" "$out" >&2
+                    status=1
+                elif [ "$code" -eq 0 ]; then
+                    printf 'FAIL: stale exclusion — %s is listed (%s) but Drools now FAULTS; drop the entry and pin its fragment:\n%s\n' "$name" "$reason" "$out" >&2
+                    status=1
+                else
+                    d_excl=$((d_excl + 1))
+                fi
+            fi
+        done < "$list"
+        # gone-guard: every exclusion entry must name an existing rood case (a double-list is caught above)
+        while IFS='|' read -r n _rest; do
+            [ -z "$n" ] && continue
+            if [ -z "$(find "corpus/rood/$n" -maxdepth 1 -name 'case*.json' 2>/dev/null | head -1)" ]; then
+                echo "FAIL: stale exclusion — '$n' is listed but no such rood case exists" >&2
+                status=1
+            fi
+        done < "$excl"
+        rm -f "$excl"
+        if [ "$status" -eq 0 ]; then
+            printf 'check-rood: Drools leg PASS (%s fault-pinned, %s not-carried with reason)\n' "$d_fault" "$d_excl"
+        fi
+    fi
+else
+    echo 'check-rood: Drools leg SKIPPED — needs java + python3 + (the shaded jar or mvn). Not a blocker (the hosted gate-8 runner carries no JDK; the leg is the reviewer pre-merge duty). The ref/clingo legs above are the CI blocker.' >&2
+fi
+
 if [ "$status" -eq 0 ]; then
-    printf 'check-rood: PASS (%s red cases fault observably in both executors)\n' "$n_cases"
+    printf 'check-rood: PASS (%s red cases fault observably in ref and clingo)\n' "$n_cases"
 fi
 exit "$status"

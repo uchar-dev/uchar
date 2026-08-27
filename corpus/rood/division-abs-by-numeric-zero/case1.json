@@ -22,6 +22,7 @@
   },
   "expectedFault": {
     "ref": "division by numeric zero",
-    "clingo": "division by numeric zero"
+    "clingo": "division by numeric zero",
+    "drools": "Breuk deling door 0"
   }
 }

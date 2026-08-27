@@ -38,13 +38,14 @@
       "items": { "$ref": "#/$defs/expectation" }
     },
     "expectedFault": {
-      "description": "The red-path alternative to `expected` (corpus/rood): evaluation of this case MUST fail observably in every executor — never a silent skip, never a model. Each field is a substring the executor's fault report must contain: `ref` against the reference interpreter's fault, `clingo` against the ASP runner's fault or UNSAT report. A case carries exactly one of `expected` / `expectedFault`.",
+      "description": "The red-path alternative to `expected` (corpus/rood): evaluation of this case MUST fail observably in every executor that carries its form — never a silent skip, never a model. Each field is a substring the executor's fault report must contain: `ref` against the reference interpreter's fault, `clingo` against the ASP runner's fault or UNSAT report, and the OPTIONAL `drools` against the Drools backend's fault-at-fire report. The `ref` and `clingo` fields are mandatory (both executors carry every red form). `drools` is present only where the v0 Drools backend carries the red-path form and faults at fire; where it does not — a form the loader/transpiler refuses, or a constraint the backend does not enforce — gate 8's Drools leg lists the case with a reason instead. A case carries exactly one of `expected` / `expectedFault`.",
       "type": "object",
       "additionalProperties": false,
       "required": ["ref", "clingo"],
       "properties": {
         "ref": { "type": "string", "minLength": 1 },
-        "clingo": { "type": "string", "minLength": 1 }
+        "clingo": { "type": "string", "minLength": 1 },
+        "drools": { "type": "string", "minLength": 1 }
       }
     }
   },

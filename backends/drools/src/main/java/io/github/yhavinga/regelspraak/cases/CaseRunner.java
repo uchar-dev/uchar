@@ -72,50 +72,7 @@ public final class CaseRunner {
      *  (loader refusal, transpiler marker, contract violation, unsupported form) becomes an EXCLUDE result. */
     public static Result runGolden(Path irPath, List<Path> casePaths) {
         try {
-            JsonNode ir = JSON.readTree(Files.readString(irPath));
-            RegelSpraakModel model = IrLoader.load(ir);
-
-            // Two forms the v0 backend cannot REPLAY are refused up front — a LOUD per-form exclusion, never a
-            // silent value-divergence in the gate. Carrying either to fire only to fault or misvalue there is
-            // honestly NOT-CARRIED, not a semantic exec-model difference, so it belongs in the auto-excluded
-            // channel with a reason, not the value-divergence list whose banner claims a genuine ref/clingo delta:
-            //   §13.4.6 objectcreatie — the creation consequence does not execute in this backend: a navigated
-            //     read of the created object yields leeg, or the creation rule raises an intValue() NPE on a leeg
-            //     member. It lowers without a marker and reaches fire, but never reproduces the pinned value;
-            //     scoped not-carried pending triage, so the gate makes NO claim the backend executes objectcreatie.
-            if (!model.objectCreaties.isEmpty())
-                throw new Excluded("objectcreatie (§13.4.6) is not replayed by the v0 Drools backend — the creation "
-                        + "consequence does not execute (a navigated created-object read yields leeg, or an intValue() "
-                        + "NPE is raised on a leeg member); it lowers and reaches fire but never reproduces the pinned value");
-            //   §13.3.9.2 wederkerig self-relation — FactModelGenerator derives no scalar reference field for a
-            //     self-pair role, so a rule reading it has no getter (the exec-model build itself throws); refuse
-            //     before building rather than let the build crash into an unclassified ERROR.
-            if (model.feittypen.values().stream().anyMatch(ft -> ft.wederkerig))
-                throw new Excluded("wederkerig self-relation (§13.3.9.2) is not carried by the v0 Drools backend — "
-                        + "FactModelGenerator derives no scalar reference field for a self-pair role");
-
-            Map<String, String> bronnen = FactModelGenerator.genereer(model);
-            ClassLoader cl = BeanCompiler.compileer(bronnen);
-            List<String> schendingen = ContractValidator.valideer(model, cl);
-            if (!schendingen.isEmpty()) throw new Excluded("contract: " + schendingen.get(0));
-
-            ClassLoader vorige = Thread.currentThread().getContextClassLoader();
-            Thread.currentThread().setContextClassLoader(cl);
-            ExecModelTranspiler et;
-            KieBase kieBase;
-            try {
-                et = ExecModelTranspiler.build(model, cl);
-                // every construct must LOWER — a marker means the exec KieBase silently omits it,
-                // so the case's expectations could not be produced; that golden is not carried.
-                for (Dekking d : et.dekking())
-                    if (!d.lowered()) throw new Excluded("transpiler " + d.verdict() + ": " + d.sleutel()
-                            + (d.reden().isEmpty() ? "" : " — " + d.reden()));
-                kieBase = KieBaseBuilder.createKieBaseFromModel(et.model());
-            } finally {
-                Thread.currentThread().setContextClassLoader(vorige);
-            }
-
-            CaseRunner runner = new CaseRunner(model, kieBase, cl);
+            CaseRunner runner = build(irPath);
             List<String> failures = new ArrayList<>();
             int played = 0;
             for (Path cp : casePaths) {
@@ -133,6 +90,133 @@ public final class CaseRunner {
         } catch (java.io.IOException e) {
             throw new RuntimeException("could not read " + irPath + ": " + e.getMessage(), e);
         }
+    }
+
+    /** Load {@code irPath}, refuse the two non-replayable forms, generate+contract-check the beans, lower every
+     *  construct, and build the {@link KieBase} — the shared prelude of both the green replay and the red probe.
+     *  Throws {@link Excluded} / {@link IrLoader.Refusal} for any form the v0 backend does not carry. */
+    private static CaseRunner build(Path irPath) throws java.io.IOException {
+        JsonNode ir = JSON.readTree(Files.readString(irPath));
+        RegelSpraakModel model = IrLoader.load(ir);
+
+        // Two forms the v0 backend cannot REPLAY are refused up front — a LOUD per-form exclusion, never a
+        // silent value-divergence in the gate. Carrying either to fire only to fault or misvalue there is
+        // honestly NOT-CARRIED, not a semantic exec-model difference, so it belongs in the auto-excluded
+        // channel with a reason, not the value-divergence list whose banner claims a genuine ref/clingo delta:
+        //   §13.4.6 objectcreatie — the creation consequence does not execute in this backend: a navigated
+        //     read of the created object yields leeg, or the creation rule raises an intValue() NPE on a leeg
+        //     member. It lowers without a marker and reaches fire, but never reproduces the pinned value;
+        //     scoped not-carried pending triage, so the gate makes NO claim the backend executes objectcreatie.
+        if (!model.objectCreaties.isEmpty())
+            throw new Excluded("objectcreatie (§13.4.6) is not replayed by the v0 Drools backend — the creation "
+                    + "consequence does not execute (a navigated created-object read yields leeg, or an intValue() "
+                    + "NPE is raised on a leeg member); it lowers and reaches fire but never reproduces the pinned value");
+        //   §13.3.9.2 wederkerig self-relation — FactModelGenerator derives no scalar reference field for a
+        //     self-pair role, so a rule reading it has no getter (the exec-model build itself throws); refuse
+        //     before building rather than let the build crash into an unclassified ERROR.
+        if (model.feittypen.values().stream().anyMatch(ft -> ft.wederkerig))
+            throw new Excluded("wederkerig self-relation (§13.3.9.2) is not carried by the v0 Drools backend — "
+                    + "FactModelGenerator derives no scalar reference field for a self-pair role");
+
+        Map<String, String> bronnen = FactModelGenerator.genereer(model);
+        ClassLoader cl = BeanCompiler.compileer(bronnen);
+        List<String> schendingen = ContractValidator.valideer(model, cl);
+        if (!schendingen.isEmpty()) throw new Excluded("contract: " + schendingen.get(0));
+
+        ClassLoader vorige = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(cl);
+        try {
+            ExecModelTranspiler et = ExecModelTranspiler.build(model, cl);
+            // every construct must LOWER — a marker means the exec KieBase silently omits it,
+            // so the case's expectations could not be produced; that golden is not carried.
+            for (Dekking d : et.dekking())
+                if (!d.lowered()) throw new Excluded("transpiler " + d.verdict() + ": " + d.sleutel()
+                        + (d.reden().isEmpty() ? "" : " — " + d.reden()));
+            KieBase kieBase = KieBaseBuilder.createKieBaseFromModel(et.model());
+            return new CaseRunner(model, kieBase, cl);
+        } finally {
+            Thread.currentThread().setContextClassLoader(vorige);
+        }
+    }
+
+    // ---------------- the red path (corpus/rood, gate 8's Drools leg) ----------------
+
+    /** What the v0 Drools backend OBSERVES when it replays one {@code expectedFault} case:
+     *  FAULT (a genuine runtime fault at fire, with the fault text ref/clingo pin against),
+     *  EXCLUDE (a form the backend does not carry, with the reason), or NOFAULT (the case ran to a
+     *  model — the backend does not enforce this red-path constraint, so its form is not Drools-carried). */
+    public record RoodResult(String status, String detail) {}
+
+    /** Replay a single {@code corpus/rood} case and report what the backend observes. A fault the loader or a
+     *  case-input form raises before fire is an EXCLUDE (the form is not carried); a fault raised AT fire — a
+     *  division by zero, a fixpoint failure — is the FAULT this gate leg pins. */
+    public static RoodResult runRood(Path irPath, Path casePath) {
+        CaseRunner runner;
+        try {
+            runner = build(irPath);
+        } catch (Excluded e) {
+            return new RoodResult("EXCLUDE", e.getMessage());
+        } catch (IrLoader.Refusal e) {
+            return new RoodResult("EXCLUDE", "loader: " + e.getMessage());
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("could not read " + irPath + ": " + e.getMessage(), e);
+        }
+        try {
+            JsonNode c = JSON.readTree(Files.readString(casePath));
+            String fault = runner.fireRood(c);
+            return fault == null
+                    ? new RoodResult("NOFAULT", "ran to a model without faulting")
+                    : new RoodResult("FAULT", fault);
+        } catch (Excluded e) {
+            return new RoodResult("EXCLUDE", e.getMessage());
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("could not read " + casePath + ": " + e.getMessage(), e);
+        } catch (RuntimeException e) {
+            // a fault raised while loading inputs or firing rules — a division by zero surfaces here, wrapped by
+            // Drools; the whole cause chain is the report so the pinned fragment can match the deepest message.
+            return new RoodResult("FAULT", faultText(e));
+        }
+    }
+
+    /** Fire one red-path case: load its world, fire the rules, and return the fault text if the run does not
+     *  reach a fixpoint. Returns {@code null} when the run completes cleanly (a NOFAULT — the backend produced a
+     *  model where ref/clingo reject). A fault raised at fire propagates as an exception the caller renders. */
+    private String fireRood(JsonNode c) {
+        labelNaarBean.clear();
+        labelType.clear();
+        ClassLoader vorige = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(cl);
+        KieSession sessie = kieBase.newKieSession();
+        try {
+            JsonNode input = c.get("input");
+            JsonNode instances = input.get("instances");
+            for (JsonNode i : instances) beanVoor(i);
+            for (JsonNode i : instances) zetAttributenEnKenmerken(i);
+            for (JsonNode i : instances) zetRollen(i);
+            zetGlobals(sessie, c);
+            for (Object bean : labelNaarBean.values()) sessie.insert(bean);
+            int n = sessie.fireAllRules(100_000);
+            return n >= 100_000 ? "geen fixpunt (kringverwijzing?)" : null;
+        } finally {
+            sessie.dispose();
+            Thread.currentThread().setContextClassLoader(vorige);
+        }
+    }
+
+    /** The full cause chain of a fault as one line — {@code SimpleName: message <- SimpleName: message …} — so the
+     *  pinned fragment can match the deepest wrapped message (a Drools rule fault wraps the runtime's exception). */
+    private static String faultText(Throwable t) {
+        StringBuilder sb = new StringBuilder();
+        Throwable c = t;
+        while (c != null) {
+            if (sb.length() > 0) sb.append(" <- ");
+            sb.append(c.getClass().getSimpleName());
+            if (c.getMessage() != null) sb.append(": ").append(c.getMessage());
+            Throwable next = c.getCause();
+            if (next == c) break;   // guard a self-referential cause chain
+            c = next;
+        }
+        return sb.toString();
     }
 
     // ---------------- one case ----------------
