@@ -41,13 +41,29 @@ for zone in $ZONES; do
     fi
 done
 
+# The TOKA rights tripwire. ©-Belastingdienst material is admitted in exactly
+# ONE place — the top-level toka/ parity zone (maintainer decision 2026-08-27,
+# temporary; it leaves with the zone ahead of any public flip). Every OTHER
+# artifact zone stays TOKA-free and this tripwire keeps firing on it. toka/ is
+# deliberately absent from the scanned set below — it is NOT swept — and is
+# asserted separately to carry no machine-local paths.
 for zone in corpus/golden corpus/negatief corpus/rood frontends; do
     [ -e "$zone" ] || continue
     if git grep -nIiE '(^|[^[:alpha:]])toka([^[:alpha:]]|$)' -- "$zone"; then
-        echo "FAIL: TOKA material in artifact zone '$zone' (rights policy, corpus/README.md)" >&2
+        echo "FAIL: TOKA material in artifact zone '$zone' (rights policy, corpus/README.md; the sole exception is the isolated toka/ zone)" >&2
         status=1
     fi
 done
+
+# toka/ is exempt from the self-containedness prose rules (it carries the
+# ©-material and names the toolchain by design) but MUST carry no machine-local
+# paths — the one rule that still applies inside the zone.
+if [ -e toka ]; then
+    if git grep -nIiE '(/users/|/home/|~/)' -- toka; then
+        echo "FAIL: machine-local path in the toka/ parity zone (WAY-OF-WORKING.md section 6; toka/ is exempt from the prose rules but not from this one)" >&2
+        status=1
+    fi
+fi
 
 [ "$status" -eq 0 ] && echo 'check-self-contained: PASS'
 exit "$status"
