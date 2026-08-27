@@ -51,9 +51,22 @@ without maintainer review must not land.
 
 - **Rights-free by construction.** Own-authored casus material (the
   Jutterswet) and statute text (copyright-free under art. 11 Auteurswet)
-  only. No ©-Belastingdienst material enters this repo: no TOKA casus, no
-  RegelSpraak specification excerpts. Programs *written in* RegelSpraak are
-  ours; the language specification text is not.
+  only. No ©-Belastingdienst material enters this repo — no TOKA casus, no
+  RegelSpraak specification excerpts — **with exactly one exception (below).**
+  Programs *written in* RegelSpraak are ours; the language specification text
+  is not.
+- **The `toka/` exception (maintainer decision 2026-08-27, temporary).**
+  ©-Belastingdienst TOKA material is admitted for feature-parity testing of
+  uchar's own frontend against the original toolchain, isolated in one
+  top-level `toka/` zone and **nowhere else**. Consequences, accepted and
+  recorded: (1) the material is in git **history** from the card that created
+  the zone, so the repository **must stay private while the zone exists**;
+  (2) any public flip (PLAN §9 decision 10) requires **both** removing the
+  zone **and** a history rewrite (filter-repo or a fresh public copy) —
+  deletion alone does not erase history; (3) every other zone stays TOKA-free
+  and gate 1 keeps tripping on it (`scripts/check-self-contained.sh`). The
+  zone is exempt from the self-containedness prose rules but carries no
+  machine-local paths.
 - Synthesized cases are admitted only when the full differential square
   agrees (Drools ≡ reference interpreter ≡ Clingo, to the extent those
   exist); disagreement routes to adversarial triage, never to admission.
@@ -75,7 +88,10 @@ green. Current gates:
    since the Phase-1 exit, `spec/IR-SPEC.md`
    and `spec/RUNTIME-SEMANTICS.md`)
    carry no machine-local paths or private-repo references, and corpus data
-   is free of TOKA material. Working prose (plan, backlog, reviews) may
+   is free of TOKA material — with the single, temporary exception of the
+   `toka/` parity zone (see Corpus rules), which the tripwire deliberately
+   skips while it keeps firing on every other zone; `toka/` itself is checked
+   only for machine-local paths. Working prose (plan, backlog, reviews) may
    reference the private source repos during development — see
    `WAY-OF-WORKING.md` §5–6.
 2. `scripts/check-ir-schema.sh` — the schema file is metaschema-valid;
@@ -147,6 +163,20 @@ green. Current gates:
     committed `ir.json`; an empty rgs-golden set or a zero-test run
     is a failure, never silently green. Its CI leg is unconditional
     and blocking (maintainer decision 2026-08-27).
+
+11. `scripts/check-toka-parity.sh` — **TEMPORARY** (maintainer decision
+    2026-08-27): the isolated `toka/` parity zone. The frontend builds and
+    the TOKA integration tests under `toka/` (excluded at the frontend
+    takeover, brought here in original form) compile + pass against it with a
+    non-zero test count; every toolchain-pinned `toka/**/ir.json` re-emits
+    through uchar's own frontend byte-identically (frontend ≡ toolchain on
+    the ©-Belastingdienst casus the public corpus may never carry); an empty
+    fixture set, zero tests, or a stale holdout is a failure, never silently
+    green. The single reason-carrying holdout (`toka-23`, the §4.1
+    datum+datum casus-quirk that is the sole tolerated error) mirrors gate 7.
+    CI leg unconditional and blocking. **This gate is the one documented
+    exception to gate-set monotonicity: it leaves the set with the zone,
+    ahead of any public flip.**
 
 ## Repo relationships
 
