@@ -1,0 +1,73 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "C1",
+        "objectType": "Contingent treinmiles",
+        "attributes": {
+          "totaal aantal treinmiles": {
+            "number": "1000"
+          }
+        },
+        "roles": {
+          "passagier met recht op treinmiles": [
+            "P1",
+            "P2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "P1",
+        "objectType": "Natuurlijk persoon",
+        "attributes": {
+          "treinmiles": {
+            "number": "0"
+          }
+        },
+        "roles": {
+          "te verdelen contingent treinmiles": [
+            "C1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "P2",
+        "objectType": "Natuurlijk persoon",
+        "attributes": {
+          "treinmiles": {
+            "number": "0"
+          }
+        },
+        "roles": {
+          "te verdelen contingent treinmiles": [
+            "C1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "treinmiles",
+      "value": {
+        "number": "500"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P2",
+      "attribute": "treinmiles",
+      "value": {
+        "number": "500"
+      }
+    }
+  ]
+}

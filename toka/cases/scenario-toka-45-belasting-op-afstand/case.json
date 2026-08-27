@@ -1,0 +1,62 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2024-01-01",
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vlucht",
+        "attributes": {
+          "bereikbaar per trein": {
+            "boolean": true
+          },
+          "afstand tot bestemming": {
+            "number": "200"
+          }
+        },
+        "roles": {
+          "passagier": [
+            "P1"
+          ]
+        },
+        "characteristics": [
+          "belaste reis"
+        ]
+      },
+      {
+        "label": "P1",
+        "objectType": "Natuurlijk persoon",
+        "attributes": {},
+        "roles": {
+          "reis": [
+            "V1"
+          ]
+        },
+        "characteristics": [
+          "passagier van 25 tot en met 64 jaar"
+        ]
+      }
+    ],
+    "parameters": {
+      "lage basistarief eerste schijf": {
+        "number": "100.00"
+      },
+      "lage tarief vermindering eerste schijf": {
+        "number": "0.20"
+      },
+      "bovengrens afstand eerste schijf": {
+        "number": "500"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "belasting op basis van afstand",
+      "value": {
+        "number": "60.00"
+      }
+    }
+  ]
+}

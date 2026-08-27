@@ -1,0 +1,28 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vlucht",
+        "attributes": {
+          "luchthaven van vertrek": {
+            "enumeration": "Amsterdam Schiphol"
+          },
+          "luchthaven van bestemming": {
+            "enumeration": "Parijs Charles de Gaulle"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "consistent"
+    }
+  ]
+}

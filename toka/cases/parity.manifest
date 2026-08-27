@@ -1,0 +1,50 @@
+# TOKA parity manifest — the recorded outcome class of every toka case in each
+# executor of the differential square (ref, clingo, Drools), pinned so gate 11
+# (scripts/check-toka-parity.sh) fails on any drift. Derived by the slotmeting
+# method (backlog/done/20260826-toka-slotmeting.md): each scenario is a slice of
+# the ©-Belastingdienst TOKA casus (companions resolved to an ir.json), replayed
+# against the hand-derived case.json. This file, the slices and the cases live
+# ONLY here under toka/ (the charter zone); ©-material never leaves it.
+#
+# Columns, pipe-delimited: scenario | ref | clingo | clingo-fragment | drools | drools-fragment
+#   ref     = PASS   : the ref-100 oracle matches every pinned expectation (exit 0). A wrong
+#                      value makes the runner exit non-zero -> the gate reddens (no silent divergence).
+#   clingo  = PASS   : clingo's stable model matches the same pinned expectations (exit 0), OR
+#           = FAULT  : clingo refuses LOUDLY at translation; the fragment MUST appear in its output.
+#   drools  = PLAYED : the uchar-IR-loading Drools backend lowered every form and matched, OR
+#           = EXCLUDE : a form the v0 backend does not carry is refused LOUDLY per form; the
+#                      fragment MUST appear. Every toka slice bundles the whole structural model,
+#                      including the wederkerig Partnerrelatie feittype (§13.3.9.2), so the backend
+#                      refuses each slice up front; toka-28 additionally carries an objectcreatie
+#                      (§13.4.6), checked first. A FAIL/ERROR (a value difference without a fault)
+#                      is NEVER listed and always reddens the gate — the hard zero-silent-divergence rule.
+scenario-toka-17-bepaal-leeftijd|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-18-minderjarig|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-19-hoeveelheid-passagiers|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-20-totaal-te-betalen|PASS|FAULT|som without the 0 fallback|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-21-oudste-passagier|PASS|FAULT|expression kind not translated|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-22-datum-tijd-berekening|PASS|FAULT|unscalable datatype in the ASP translation|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-24-te-betalen-belasting|PASS|FAULT|expression kind not translated|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-25-verwachte-aankomst|PASS|FAULT|unscalable datatype in the ASP translation|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-26-hoogseizoen|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-27-paaskorting|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-28-vastgestelde-contingent|PASS|PASS|-|EXCLUDE|objectcreatie (§13.4.6)
+scenario-toka-29-passagier-met-recht|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-30-geen-rondvlucht|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-31-initialiseer|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-32-gelijke-delen|PASS|FAULT|the case supplies input for allocation|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-33-naar-rato-woonregio|PASS|FAULT|the case supplies input for allocation|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-34-leeftijd-en-woonregio|PASS|FAULT|the case supplies input for allocation|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-35-woonregio-met-maximum|PASS|FAULT|the case supplies input for allocation|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-36-naar-rato-afronding|PASS|FAULT|the case supplies input for allocation|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-37-leeftijd-woonregio-max-afronding|PASS|FAULT|the case supplies input for allocation|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-39-belaste-reis|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-40-duurzaamheidskorting|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-41-duurzaamheidskorting-alternatief|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-42-passagier-18-24|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-43-startpunt-vertrek|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-44-startpunt-min-reserveringstermijn|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-45-belasting-op-afstand|PASS|FAULT|non-numeric arithmetic operand|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-46-woonregio-factor-1|PASS|FAULT|carries a character the ASP string encoding cannot quote|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-46-woonregio-factor-2|PASS|FAULT|carries a character the ASP string encoding cannot quote|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-46-woonregio-factor-3|PASS|FAULT|carries a character the ASP string encoding cannot quote|EXCLUDE|wederkerig self-relation (§13.3.9.2)

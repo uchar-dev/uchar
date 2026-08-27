@@ -1,0 +1,43 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vlucht",
+        "attributes": {},
+        "roles": {
+          "passagier": [
+            "P1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "C1",
+        "objectType": "Contingent treinmiles",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "P1",
+        "objectType": "Natuurlijk persoon",
+        "attributes": {},
+        "roles": {
+          "reis": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "consistent"
+    }
+  ]
+}

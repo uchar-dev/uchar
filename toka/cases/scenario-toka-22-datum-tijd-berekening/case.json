@@ -1,0 +1,33 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vlucht",
+        "attributes": {
+          "verwachte datum-tijd van vertrek": {
+            "dateTime": "2024-06-15T10:00:00.000"
+          },
+          "daadwerkelijke datum-tijd van vertrek": {
+            "dateTime": "2024-06-15T09:30:00.000"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "datum-tijd voor het berekenen van de belasting op basis van afstand",
+      "value": {
+        "dateTime": "2024-06-15T09:30:00.000"
+      }
+    }
+  ]
+}

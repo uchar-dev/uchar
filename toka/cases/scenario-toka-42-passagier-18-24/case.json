@@ -1,0 +1,46 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vlucht",
+        "attributes": {},
+        "roles": {
+          "passagier": [
+            "P1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "P1",
+        "objectType": "Natuurlijk persoon",
+        "attributes": {
+          "leeftijd": {
+            "number": "20"
+          }
+        },
+        "roles": {
+          "reis": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "volwassenleeftijd": {
+        "number": "18"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "P1",
+      "characteristic": "passagier van 18 tot en met 24 jaar"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vlucht",
+        "attributes": {
+          "vluchtdatum": {
+            "date": "2024-06-15"
+          }
+        },
+        "roles": {
+          "passagier": [
+            "P1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "P1",
+        "objectType": "Natuurlijk persoon",
+        "attributes": {
+          "geboortedatum": {
+            "date": "2010-06-15"
+          }
+        },
+        "roles": {
+          "reis": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "volwassenleeftijd": {
+        "number": "18"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "P1",
+      "characteristic": "minderjarig"
+    }
+  ]
+}

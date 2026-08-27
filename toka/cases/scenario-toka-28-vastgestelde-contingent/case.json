@@ -1,0 +1,29 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vlucht",
+        "attributes": {
+          "hoeveelheid passagiers": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "aantal treinmiles per passagier voor contingent": {
+        "number": "100"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "consistent"
+    }
+  ]
+}

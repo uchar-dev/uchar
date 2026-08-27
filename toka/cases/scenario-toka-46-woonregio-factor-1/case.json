@@ -1,0 +1,30 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "P1",
+        "objectType": "Natuurlijk persoon",
+        "attributes": {
+          "woonprovincie": {
+            "text": "\"Friesland\""
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "woonregio factor",
+      "value": {
+        "number": "1"
+      }
+    }
+  ]
+}

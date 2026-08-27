@@ -1,0 +1,55 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vlucht",
+        "attributes": {
+          "afstand tot bestemming": {
+            "number": "200"
+          }
+        },
+        "roles": {
+          "passagier": [
+            "P1"
+          ]
+        },
+        "characteristics": [
+          "duurzaam"
+        ]
+      },
+      {
+        "label": "P1",
+        "objectType": "Natuurlijk persoon",
+        "attributes": {
+          "leeftijd": {
+            "number": "70"
+          }
+        },
+        "roles": {
+          "reis": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "duurzaamheidskorting minimale afstand": {
+        "number": "100"
+      },
+      "pensioenleeftijd": {
+        "number": "67"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "P1",
+      "characteristic": "recht op duurzaamheidskorting"
+    }
+  ]
+}

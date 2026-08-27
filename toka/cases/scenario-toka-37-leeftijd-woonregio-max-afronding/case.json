@@ -1,0 +1,198 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "C1",
+        "objectType": "Contingent treinmiles",
+        "attributes": {
+          "totaal aantal treinmiles": {
+            "number": "1800"
+          }
+        },
+        "roles": {
+          "passagier met recht op treinmiles": [
+            "P1",
+            "P2",
+            "P3",
+            "P4",
+            "P5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "P1",
+        "objectType": "Natuurlijk persoon",
+        "attributes": {
+          "treinmiles": {
+            "number": "0"
+          },
+          "leeftijd": {
+            "number": "22"
+          },
+          "woonregio factor": {
+            "number": "3"
+          },
+          "maximaal aantal te ontvangen treinmiles": {
+            "number": "500"
+          }
+        },
+        "roles": {
+          "te verdelen contingent treinmiles": [
+            "C1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "P2",
+        "objectType": "Natuurlijk persoon",
+        "attributes": {
+          "treinmiles": {
+            "number": "0"
+          },
+          "leeftijd": {
+            "number": "39"
+          },
+          "woonregio factor": {
+            "number": "2"
+          },
+          "maximaal aantal te ontvangen treinmiles": {
+            "number": "500"
+          }
+        },
+        "roles": {
+          "te verdelen contingent treinmiles": [
+            "C1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "P3",
+        "objectType": "Natuurlijk persoon",
+        "attributes": {
+          "treinmiles": {
+            "number": "0"
+          },
+          "leeftijd": {
+            "number": "39"
+          },
+          "woonregio factor": {
+            "number": "1"
+          },
+          "maximaal aantal te ontvangen treinmiles": {
+            "number": "500"
+          }
+        },
+        "roles": {
+          "te verdelen contingent treinmiles": [
+            "C1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "P4",
+        "objectType": "Natuurlijk persoon",
+        "attributes": {
+          "treinmiles": {
+            "number": "0"
+          },
+          "leeftijd": {
+            "number": "66"
+          },
+          "woonregio factor": {
+            "number": "3"
+          },
+          "maximaal aantal te ontvangen treinmiles": {
+            "number": "250"
+          }
+        },
+        "roles": {
+          "te verdelen contingent treinmiles": [
+            "C1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "P5",
+        "objectType": "Natuurlijk persoon",
+        "attributes": {
+          "treinmiles": {
+            "number": "0"
+          },
+          "leeftijd": {
+            "number": "66"
+          },
+          "woonregio factor": {
+            "number": "1"
+          },
+          "maximaal aantal te ontvangen treinmiles": {
+            "number": "250"
+          }
+        },
+        "roles": {
+          "te verdelen contingent treinmiles": [
+            "C1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "treinmiles",
+      "value": {
+        "number": "500"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P2",
+      "attribute": "treinmiles",
+      "value": {
+        "number": "500"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P3",
+      "attribute": "treinmiles",
+      "value": {
+        "number": "433"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P4",
+      "attribute": "treinmiles",
+      "value": {
+        "number": "250"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P5",
+      "attribute": "treinmiles",
+      "value": {
+        "number": "91"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "C1",
+      "attribute": "restant na verdeling",
+      "value": {
+        "number": "26"
+      }
+    }
+  ]
+}

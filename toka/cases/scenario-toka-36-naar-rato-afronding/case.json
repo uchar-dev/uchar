@@ -1,0 +1,87 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "C1",
+        "objectType": "Contingent treinmiles",
+        "attributes": {
+          "totaal aantal treinmiles": {
+            "number": "1001"
+          }
+        },
+        "roles": {
+          "passagier met recht op treinmiles": [
+            "P1",
+            "P2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "P1",
+        "objectType": "Natuurlijk persoon",
+        "attributes": {
+          "treinmiles": {
+            "number": "0"
+          },
+          "woonregio factor": {
+            "number": "3"
+          }
+        },
+        "roles": {
+          "te verdelen contingent treinmiles": [
+            "C1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "P2",
+        "objectType": "Natuurlijk persoon",
+        "attributes": {
+          "treinmiles": {
+            "number": "0"
+          },
+          "woonregio factor": {
+            "number": "2"
+          }
+        },
+        "roles": {
+          "te verdelen contingent treinmiles": [
+            "C1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "treinmiles",
+      "value": {
+        "number": "600"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P2",
+      "attribute": "treinmiles",
+      "value": {
+        "number": "400"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "C1",
+      "attribute": "restant na verdeling",
+      "value": {
+        "number": "1"
+      }
+    }
+  ]
+}
