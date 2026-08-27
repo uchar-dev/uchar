@@ -1,1 +1,3 @@
 target/
+# maven-shade regenerates this on every `package`; it is a build product, not source
+dependency-reduced-pom.xml
