@@ -6,7 +6,7 @@
 # when the ©-Belastingdienst zone is removed ahead of any public flip. Until
 # then it is unconditional and blocking, exactly like gate 10.
 #
-# Three obligations, each loud (the sister-gate contract):
+# Four obligations, each loud (the sister-gate contract):
 #   1. the frontend builds (ANTLR parser + resolver + IR emitter, JDK 21+) and
 #      the TOKA test suite under toka/ compiles + passes against it with a
 #      NON-ZERO test count — a suite that ran nothing is a silent greenlight;
@@ -14,8 +14,17 @@
 #      toolchain at the pin) re-emits through uchar's OWN frontend
 #      byte-identically — the feature-parity proof (frontend == toolchain on
 #      the ©-Belastingdienst casus the public corpus may never carry);
-#   3. an empty fixture set, zero tests, or a stale holdout is a FAILURE,
-#      never silently green; a missing JDK fails loudly.
+#   3. the DIFFERENTIAL replay (decision V6-A, 2026-08-27): every toka case under
+#      toka/cases/<scenario>/{ir.json,case.json} replays through ref AND clingo
+#      AND the uchar-IR-loading Drools backend, and its observed outcome in each
+#      executor MUST match the class the parity manifest pins — exact agreement
+#      where all three carry, a LOUD refusal (clingo translation fault / Drools
+#      per-form EXCLUDE) where one does not. ZERO silent divergences is the hard
+#      rule: a value difference WITHOUT a fault (a ref non-match, a Drools FAIL or
+#      ERROR at fire) reddens the gate. Per-class counts land in the report;
+#   4. an empty fixture set, zero tests, a stale holdout, or a toka case dir the
+#      manifest does not cover is a FAILURE, never silently green; a missing JDK,
+#      dune (ref/clingo), or clingo fails loudly.
 #
 # The reason-carrying holdout mirrors gate 7's survivor list: the full casus
 # raises exactly ONE resolver ERROR — the §4.1 datum+datum casus-quirk in
@@ -56,7 +65,9 @@ JUNIT=$(ls "$FE"/lib/junit-platform-console-standalone-*.jar 2>/dev/null | head 
 TEST_SRC=$(find "$TOKA" -name '*.java')
 [ -n "$TEST_SRC" ] || fail "no TOKA test sources under $TOKA (an empty test set is a failure)"
 TOUT=$(mktemp -d -t toka-tests-XXXXXX)
-trap 'rm -rf "$TOUT"' EXIT
+REPLAY_TMP=""
+cleanup() { rm -rf "${TOUT:-}" "${REPLAY_TMP:-}"; }
+trap cleanup EXIT
 if ! javac -cp "$JAR:$JUNIT:$FE/out" -d "$TOUT" $TEST_SRC 2>"$TOUT/javac.err"; then
   cat "$TOUT/javac.err" >&2
   fail "the TOKA test sources do not compile against the frontend"
@@ -72,7 +83,10 @@ tests=$(printf '%s\n' "$suite_out" | sed -n 's/^\[ *\([0-9][0-9]*\) tests succes
 [ -n "$tests" ] || fail "the suite produced no '[ N tests successful ]' line — it did not run"
 [ "$tests" -gt 0 ] || fail "the suite ran zero tests (an empty test set is a failure)"
 
-# 3. re-emit every pinned casus dump and require byte-identity.
+# 3. re-emit every pinned casus dump and require byte-identity. The per-scenario
+#    slice dumps under toka/cases/ (part 4's replay fixtures) carry no sibling
+#    .rgs and are NOT re-emittable, so they are excluded here — only casus dumps
+#    that sit beside their .rgs sources are the frontend==toolchain parity proof.
 casus_n=0; frag_n=0
 while IFS= read -r dump; do
   d=$(dirname "$dump"); name=${d#"$TOKA"/}
@@ -93,10 +107,106 @@ while IFS= read -r dump; do
     rm -f "$out"; fail "$name: the frontend output diverges from the pinned dump"
   fi
   rm -f "$out"; casus_n=$((casus_n + 1)); frag_n=$((frag_n + n))
-done < <(find "$TOKA" -name ir.json | sort)
+done < <(find "$TOKA" -name ir.json -not -path "$TOKA/cases/*" | sort)
 
 [ "$casus_n" -gt 0 ] || fail "no toka/**/ir.json parity dumps found (an empty fixture set is a failure)"
 # stale-holdout guard: the reason-carrying holdout must still be present.
 find "$TOKA" -name "$HOLDOUT" | grep -q . || fail "holdout '$HOLDOUT' not found under $TOKA — the reason-carrying list is stale"
 
-echo "check-toka-parity: PASS — TOKA suite green ($tests tests); $casus_n casus dump(s), $frag_n .rgs re-emitted byte-identical (holdout: $HOLDOUT)"
+# 4. the differential replay (decision V6-A): every toka case through ref, clingo, Drools.
+MANIFEST="$TOKA/cases/parity.manifest"
+[ -f "$MANIFEST" ] || fail "no parity manifest at $MANIFEST (the replay leg has nothing pinned)"
+
+# ref + clingo (OCaml) — build at the workspace root; fall back to the opam env.
+if ! command -v dune >/dev/null 2>&1; then
+  command -v opam >/dev/null 2>&1 && eval "$(opam env)"
+fi
+command -v dune   >/dev/null 2>&1 || fail "dune not found (ref+clingo need OCaml/dune)"
+command -v clingo >/dev/null 2>&1 || fail "clingo not found on PATH (the differential needs it)"
+dune build ref backends >/dev/null 2>&1 || fail "the ref/clingo build is red"
+REF=_build/default/ref/bin/runner.exe
+CLINGO=_build/default/backends/clingo/bin/clingo_runner.exe
+[ -x "$REF" ] && [ -x "$CLINGO" ] || fail "ref/clingo binaries missing after the build"
+
+# the Drools backend jar — consumes the uchar IR off the wire (gate-12 pattern), built once offline.
+DJAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | head -1)
+if [ -z "$DJAR" ]; then
+  command -v mvn >/dev/null 2>&1 || fail "no Drools shaded jar and mvn not found — build it: mvn -o -f backends/drools/pom.xml package"
+  echo "check-toka-parity: Drools shaded jar absent — building it once (offline)…" >&2
+  mvn -o -q -f backends/drools/pom.xml package >/dev/null 2>&1 || fail "the Drools shaded-jar build is red"
+  DJAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | head -1)
+  [ -n "$DJAR" ] || fail "the build produced no Drools shaded jar"
+fi
+
+REPLAY_TMP=$(mktemp -d -t toka-replay-XXXXXX)
+CFRAGS="$REPLAY_TMP/clingo-faults"; DFRAGS="$REPLAY_TMP/drools-excludes"; : >"$CFRAGS"; : >"$DFRAGS"
+declare -a REPLAY_FAIL=()
+seen="$REPLAY_TMP/seen"; : >"$seen"
+cases_n=0
+ref_pass=0
+clingo_pass=0; clingo_fault=0
+drools_play=0; drools_excl=0
+
+while IFS='|' read -r scen ref clingo cfrag drools dfrag; do
+  case "$scen" in ''|\#*) continue;; esac
+  dir="$TOKA/cases/$scen"; ir="$dir/ir.json"; cs="$dir/case.json"
+  [ -f "$ir" ] && [ -f "$cs" ] || fail "manifest names '$scen' but $dir lacks ir.json/case.json"
+  printf '%s\n' "$scen" >>"$seen"
+  cases_n=$((cases_n + 1))
+
+  # --- ref: the ref-100 oracle carries every toka case; a non-match is a silent divergence.
+  if [ "$ref" = PASS ]; then
+    if "$REF" "$ir" "$cs" >/dev/null 2>&1; then ref_pass=$((ref_pass + 1))
+    else REPLAY_FAIL+=("$scen: ref pinned PASS but refused/diverged (a value difference without a fault fails the gate)"); fi
+  else fail "manifest: unexpected ref token '$ref' for $scen (ref is the 100% oracle over this set)"; fi
+
+  # --- clingo: PASS matches the same pinned expectations, else a LOUD translation fault with the fragment.
+  cout=$("$CLINGO" "$ir" "$cs" 2>&1); cc=$?
+  if [ "$clingo" = PASS ]; then
+    if [ $cc -eq 0 ]; then clingo_pass=$((clingo_pass + 1))
+    else REPLAY_FAIL+=("$scen: clingo pinned PASS but did not replay: $(printf '%s' "$cout" | head -1)"); fi
+  elif [ "$clingo" = FAULT ]; then
+    if [ $cc -ne 0 ] && printf '%s' "$cout" | grep -qF "$cfrag"; then
+      clingo_fault=$((clingo_fault + 1)); printf '%s\n' "$cfrag" >>"$CFRAGS"
+    else REPLAY_FAIL+=("$scen: clingo pinned loud FAULT '$cfrag' but got exit=$cc: $(printf '%s' "$cout" | head -1)"); fi
+  else fail "manifest: unexpected clingo token '$clingo' for $scen"; fi
+
+  # --- Drools: PLAYED (lowered + matched) or a LOUD per-form EXCLUDE with the fragment. A FAIL/ERROR at
+  #     fire is a value difference without a fault (or a crash) and always reddens the gate — the hard rule.
+  dout=$(java -jar "$DJAR" "$ir" "$cs" 2>/dev/null | tail -1); dtok=${dout%% *}
+  if [ "$drools" = PLAYED ]; then
+    if [ "$dtok" = PLAYED ]; then drools_play=$((drools_play + 1))
+    else REPLAY_FAIL+=("$scen: Drools pinned PLAYED but got: $dout"); fi
+  elif [ "$drools" = EXCLUDE ]; then
+    if [ "$dtok" = EXCLUDE ] && printf '%s' "$dout" | grep -qF "$dfrag"; then
+      drools_excl=$((drools_excl + 1)); printf '%s\n' "$dfrag" >>"$DFRAGS"
+    else REPLAY_FAIL+=("$scen: Drools pinned loud EXCLUDE '$dfrag' but got: $dout"); fi
+  else fail "manifest: unexpected drools token '$drools' for $scen"; fi
+done < "$MANIFEST"
+
+[ "$cases_n" -gt 0 ] || fail "the parity manifest pins zero toka cases (an empty replay set is a failure)"
+
+# every toka case dir must be covered by the manifest — no silent skip.
+while IFS= read -r cdir; do
+  s=$(basename "$(dirname "$cdir")")
+  grep -qxF "$s" "$seen" || fail "toka case '$s' has an ir.json but no manifest line — it would be silently skipped"
+done < <(find "$TOKA/cases" -name ir.json | sort)
+
+# the hard rule: any unpinned outcome — a silent value divergence among them — reddens the gate.
+if [ ${#REPLAY_FAIL[@]} -gt 0 ]; then
+  echo "check-toka-parity: FAIL — ${#REPLAY_FAIL[@]} toka case(s) diverged from the pinned parity class:" >&2
+  for f in "${REPLAY_FAIL[@]}"; do echo "    $f" >&2; done
+  fail "the differential replay found ${#REPLAY_FAIL[@]} divergence(s) (zero silent divergences is the hard rule)"
+fi
+
+echo ""
+echo "check-toka-parity: PASS"
+echo "  re-emission: $casus_n casus dump(s), $frag_n .rgs re-emitted byte-identical (holdout: $HOLDOUT); TOKA suite $tests tests"
+echo "  differential replay: $cases_n toka cases through ref, clingo, Drools (slices under $TOKA/cases/), ZERO silent divergences"
+echo "    ref    : $ref_pass PASS / 0 diverge  (the 100% oracle carries every toka case)"
+echo "    clingo : $clingo_pass PASS / $clingo_fault loud translation-fault / 0 silent diverge"
+echo "    Drools : $drools_play PLAYED / $drools_excl loud per-form EXCLUDE / 0 FAIL-or-ERROR"
+echo "    clingo faults by class:"
+sort "$CFRAGS" | uniq -c | sed 's/^/     /'
+echo "    Drools excludes by form:"
+sort "$DFRAGS" | uniq -c | sed 's/^/     /'
