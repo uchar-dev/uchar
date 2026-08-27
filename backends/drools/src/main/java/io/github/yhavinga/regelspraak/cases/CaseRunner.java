@@ -75,6 +75,25 @@ public final class CaseRunner {
             JsonNode ir = JSON.readTree(Files.readString(irPath));
             RegelSpraakModel model = IrLoader.load(ir);
 
+            // Two forms the v0 backend cannot REPLAY are refused up front — a LOUD per-form exclusion, never a
+            // silent value-divergence in the gate. Carrying either to fire only to fault or misvalue there is
+            // honestly NOT-CARRIED, not a semantic exec-model difference, so it belongs in the auto-excluded
+            // channel with a reason, not the value-divergence list whose banner claims a genuine ref/clingo delta:
+            //   §13.4.6 objectcreatie — the creation consequence does not execute in this backend: a navigated
+            //     read of the created object yields leeg, or the creation rule raises an intValue() NPE on a leeg
+            //     member. It lowers without a marker and reaches fire, but never reproduces the pinned value;
+            //     scoped not-carried pending triage, so the gate makes NO claim the backend executes objectcreatie.
+            if (!model.objectCreaties.isEmpty())
+                throw new Excluded("objectcreatie (§13.4.6) is not replayed by the v0 Drools backend — the creation "
+                        + "consequence does not execute (a navigated created-object read yields leeg, or an intValue() "
+                        + "NPE is raised on a leeg member); it lowers and reaches fire but never reproduces the pinned value");
+            //   §13.3.9.2 wederkerig self-relation — FactModelGenerator derives no scalar reference field for a
+            //     self-pair role, so a rule reading it has no getter (the exec-model build itself throws); refuse
+            //     before building rather than let the build crash into an unclassified ERROR.
+            if (model.feittypen.values().stream().anyMatch(ft -> ft.wederkerig))
+                throw new Excluded("wederkerig self-relation (§13.3.9.2) is not carried by the v0 Drools backend — "
+                        + "FactModelGenerator derives no scalar reference field for a self-pair role");
+
             Map<String, String> bronnen = FactModelGenerator.genereer(model);
             ClassLoader cl = BeanCompiler.compileer(bronnen);
             List<String> schendingen = ContractValidator.valideer(model, cl);

@@ -11,12 +11,16 @@
 # NOT-CARRIED forms never vanish silently. Two reason-carrying channels, both loud:
 #   1. PER-FORM auto-exclusions — the CLI itself refuses a form the v0 backend does not carry
 #      (a loader Refusal on a v1 node/section, a transpiler MARKER/SKIP, a contract violation, a
-#      temporal/dimensioned/rational/list/struct input, a wederkerig self-relation, an
-#      attributeTimeline read-back). The reason is printed; these self-document per form.
-#   2. VALUE-DIVERGENCE exclusions — a golden that loads, lowers and fires but whose OUTCOME
-#      diverges from the pinned value (or faults at fire time). The exec-model (the production
+#      temporal/dimensioned/rational/list/struct input, an OBJECTCREATIE (§13.4.6) that does not
+#      execute, a WEDERKERIG self-relation (§13.3.9.2), an attributeTimeline read-back). The reason
+#      is printed; these self-document per form. A form that lowers but faults / yields the wrong
+#      value at fire — objectcreatie among them — is not carried and lands HERE, not in channel 2.
+#   2. VALUE-DIVERGENCE exclusions — a golden that loads, lowers, fires WITHOUT faulting, and
+#      produces a WRONG VALUE (a FAIL: verwacht X, werkelijk Y). The exec-model (the production
 #      RegelSpraak semantics) genuinely differs from ref/clingo here; each such golden is listed
-#      below WITH a reason. The list is the check-noop survivor pattern: it FAILS WHEN STALE — a
+#      below WITH a reason. This channel is FAIL-ONLY: a crash at fire (ERROR) is never a value-
+#      divergence — it is a not-carried form and MUST be a channel-1 auto-exclusion, so an ERROR
+#      always fails the gate. The list is the check-noop survivor pattern: it FAILS WHEN STALE — a
 #      listed golden that now plays+passes, or a listed golden that is gone, trips the gate.
 #
 # An empty played set is a FAILURE, never silently green. Report: played N, auto-excluded M,
@@ -56,17 +60,10 @@ EXCLUDE_KNOWN=(
   "jutterswet-vondstetiket|leeg-in-condition: a kenmerk over a leeg operand reads present where ref/clingo pin absent"
   "jutterswet-gelijkdeling|leeg in a verdeling restant: exec-model writes a value where ref/clingo pin leeg"
   "jutterswet-voorwaardedeling|leeg under a conditional verdeling: exec-model writes a value where ref/clingo pin leeg"
-  # objectcreatie (§13.4.6): the create + navigation/aggregation chain does not reproduce the
-  # pinned value in the jar-only exec-model runner (produces leeg, or the creation consequence
-  # raises an intValue() NPE on a leeg member). Observed divergence; flagged for follow-up triage.
-  "anchor/jutterswet-rekenkamer|objectcreatie+navigation: exec-model yields leeg for the navigated created-object read"
-  "anchor/jutterswet-rekenkamer-overzee|objectcreatie: exec-model creation consequence raises an intValue() NPE on a leeg member"
-  "synth3-kamerheffing|objectcreatie: exec-model creation consequence raises an intValue() NPE on a leeg member"
-  # wederkerig self-relation (§13.3.9.2): a feittype relates a type to itself through one role;
-  # FactModelGenerator derives NO scalar reference field for a self-pair, so the case cannot set
-  # the role and a rule that reads it has no getter.
-  "anchor/jutterswet-maatschap|wederkerig self-relation: no scalar bean reference field for a self-pair role"
-  "jutterswet-aanmelderkrediet|wederkerig self-relation: a rule reads a self-pair role with no derived getter"
+  # NB objectcreatie (§13.4.6) and wederkerig self-relations (§13.3.9.2) are NOT listed here: they do not
+  # execute in the v0 backend at all (a navigated created-object read yields leeg / an intValue() NPE; a self-pair
+  # role has no derived bean field), so they are LOUD PER-FORM auto-exclusions in CaseRunner, not value-divergences.
+  # A crash-at-fire is a not-carried form, never a "genuine exec-model semantic difference" — see the ERROR arm below.
 )
 
 known_reason() { local n="$1"; for e in "${EXCLUDE_KNOWN[@]}"; do [ "${e%%|*}" = "$n" ] && { echo "${e#*|}"; return 0; }; done; return 1; }
@@ -95,12 +92,19 @@ while IFS= read -r ir; do
         fail "double-listed: '$name' auto-excludes per form AND sits in EXCLUDE_KNOWN — drop the static entry"
       fi
       auto_excl=$((auto_excl + 1)); AUTO_REASONS+=("${out#EXCLUDE }") ;;
-    FAIL|ERROR)
+    FAIL)
+      # A value-divergence is a VALUE difference (FAIL: verwacht X, werkelijk Y) — the exec-model genuinely
+      # differs from ref/clingo. It must be listed with a reason; an unlisted FAIL breaks the square.
       if reason=$(known_reason "$name"); then
         div_excl=$((div_excl + 1)); KNOWN_HIT+=("$name")
       else
         FAILED+=("$name :: $out")
       fi ;;
+    ERROR)
+      # A crash at fire is NOT a value-divergence — it is a form the backend does not execute, which belongs in
+      # the per-form auto-exclusion channel (a CaseRunner Excluded), never excused as a semantic ref/clingo delta.
+      # So an ERROR always fails the gate, whether or not the golden is listed: it must be reclassified, not listed.
+      FAILED+=("$name :: $out  (a fault at fire is not a value-divergence — make it a per-form auto-exclusion)") ;;
     *) FAILED+=("$name :: unexpected output: $out") ;;
   esac
 done < <(find corpus/golden -name ir.json | sort)
