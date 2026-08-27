@@ -197,3 +197,24 @@ jobs:
           key: regelspraak-jars-antlr-4.13.2-junit-1.10.2
       - name: check-toka-parity
         run: bash scripts/check-toka-parity.sh
+
+  drools:
+    # Gate 12 — the Drools differential leg of the square (maintainer decision
+    # 2026-08-27). Unconditional and blocking, the gate-10 pattern: the JDK
+    # comes from setup-java and the Drools + Jackson artifacts are plain public
+    # Maven downloads (cached here), so nothing depends on a specially-
+    # provisioned runner. The shaded runtime uber-jar is built ONCE (which also
+    # runs the loader round-trip witness test), then the gate runs JAR-ONLY.
+    name: "Gate 12: Drools backend differential (unconditional, blocking)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: build the shaded Drools-runtime uber-jar (+ round-trip witness test)
+        run: mvn -B -f backends/drools/pom.xml package
+      - name: check-drools
+        run: bash scripts/check-drools.sh

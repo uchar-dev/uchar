@@ -178,15 +178,41 @@ green. Current gates:
     exception to gate-set monotonicity: it leaves the set with the zone,
     ahead of any public flip.**
 
+12. `scripts/check-drools.sh` — the Drools differential leg of the square
+    (maintainer decision 2026-08-27). The Drools backend
+    (`backends/drools`, a shaded Maven runtime uber-jar, JAR-ONLY like
+    gate 10) CONSUMES the uchar IR: it loads every golden's `ir.json` off
+    the wire (never the RegelSpraak source — the source-compile path may
+    serve only as an internal test comparison, NEVER as the gate path),
+    builds a KieBase through the ported exec-model back-end, and replays
+    every `case*.json`. A golden whose forms the loader+transpiler carry
+    MUST replay with EXACTLY the pinned expectations gates 5 (ref) and 6
+    (clingo) verify — a played pass IS the square (ref ≡ clingo ≡ Drools
+    over the corpus). Not-carried forms never vanish silently: per-form
+    auto-refusals (a loader Refusal on a v1 node/section, a transpiler
+    marker, a contract violation, a temporal/dimensioned/rational/list/
+    struct input, a wederkerig self-relation) each print their reason, and
+    a reason-carrying value-divergence list IN THE SCRIPT (the check-noop
+    survivor pattern) names each golden whose fired outcome differs from
+    ref/clingo and FAILS WHEN STALE. An empty played set is a failure. CI
+    leg unconditional and blocking.
+
 ## Repo relationships
 
 - `regelspraak-java` (separate repository) is the first frontend + Drools
   backend. It consumes this repo at a pinned `SPEC_REV`; changes flow
   **spec-first**: the delta lands here (spec + corpus + schema), then a
   pin-bump conformance PR lands there.
-- Its `RegelSpraakRuntime` is production semantics. `ref/` must share no code
-  with it — separate repositories make this structural; no copy-paste imports
-  either.
+- Its `RegelSpraakRuntime` is production semantics. That production runtime
+  now lives HERE too, in exactly ONE place — `backends/drools/runtime/` (the
+  Drools backend, ported at the drools-backend card so the IR has a third
+  executor). `ref/` (the reference interpreter) and `spec/verifier/` (the
+  OCaml verifier) must share NO code with it: separate implementations are the
+  structural proof the spec is engine-neutral, no copy-paste imports either.
+  Gate 1's no-share tripwire (decision V3-a) enforces this mechanically —
+  `ref/` and `spec/verifier/` carry no production-runtime token
+  (`RegelSpraakRuntime`, an `org.drools` import, or a signature method:
+  `rsPlus`, `rsVerdeelOpVolgorde`, `Breuk`).
 
 ## Conventions
 
