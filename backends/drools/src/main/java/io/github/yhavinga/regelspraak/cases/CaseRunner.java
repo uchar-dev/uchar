@@ -119,9 +119,11 @@ public final class CaseRunner {
     // ---------------- one case ----------------
 
     private final Map<String, Object> labelNaarBean = new LinkedHashMap<>();
+    private final Map<String, Objecttype> labelType = new LinkedHashMap<>();
 
     private String runCase(String naam, JsonNode c) {
         labelNaarBean.clear();
+        labelType.clear();
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         KieSession sessie = kieBase.newKieSession();
@@ -161,7 +163,14 @@ public final class CaseRunner {
             throw new RuntimeException("kon bean voor label '" + label + "' niet maken", e);
         }
         labelNaarBean.put(label, bean);
+        labelType.put(label, ot);
         return bean;
+    }
+
+    /** Whether {@code attr} on {@code ot} is a §13.3.6 temporal (List&lt;Segment&gt;) or §3.6 dimensioned
+     *  (Map) bean member — the two non-scalar fact shapes the v0 case runner does not carry as scalars. */
+    private boolean nietScalair(Objecttype ot, String attr) {
+        return ot.attribuutGranulariteit.containsKey(attr) || !ot.dimensiesVan(attr).isEmpty();
     }
 
     private void zetAttributenEnKenmerken(JsonNode i) {
@@ -171,6 +180,8 @@ public final class CaseRunner {
         if (attrs != null) for (Map.Entry<String, JsonNode> e : attrs.properties()) {
             Datatype dt = ot.attribuut(e.getKey());
             if (dt == null) throw new Excluded("case sets undeclared attribute '" + e.getKey() + "' on " + ot.naam);
+            if (nietScalair(ot, e.getKey()))
+                throw new Excluded("temporal/dimensioned attribute input '" + e.getKey() + "' is not carried by the v0 backend");
             roep(bean, Namen.setter(e.getKey()), argType(dt), waardeNaarArg(e.getValue(), e.getKey()));
         }
         JsonNode kenmerken = i.get("characteristics");
@@ -244,7 +255,11 @@ public final class CaseRunner {
 
     private String attribuut(JsonNode v, boolean leegVerwacht) {
         String attr = v.get("attribute").asText();
-        Object bean = labelNaarBean.get(v.get("label").asText());
+        String label = v.get("label").asText();
+        Objecttype ot = labelType.get(label);
+        if (ot != null && nietScalair(ot, attr))
+            throw new Excluded("temporal/dimensioned attribute read-back '" + attr + "' is not carried by the v0 backend");
+        Object bean = labelNaarBean.get(label);
         Object werkelijk = bean == null ? null : lees(bean, Namen.getter(attr));
         if (leegVerwacht)
             return werkelijk == null ? null : "verwacht leeg, werkelijk " + werkelijk;
