@@ -184,6 +184,12 @@ uchar/
 ├── corpus/      golden corpus (incl. the pinned anchor/ subset),
 │                negatief-corpus, casus source material (jutterswet/)
 ├── ref/         reference interpreter (Phase 2)
+├── frontends/
+│   ├── catala/       Catala plugin at the scopelang boundary (Phase 5)
+│   └── regelspraak/  the RegelSpraak parser+resolver+emitter — a copy
+│                     of the toolchain's frontend half (2026-08-27),
+│                     drift-guarded by gate 10's byte-identical
+│                     re-emission of every rgs-carrying golden
 └── backends/
     └── clingo/  (Phase 3)
 ```
@@ -203,7 +209,14 @@ Three things live deliberately outside the monorepo:
   schema, then a pin-bump conformance PR lands there). If external
   implementers ever require the spec to stand alone, `git subtree split`
   extracts it with history; if two-repo friction ever outweighs independence,
-  the toolchain moves in. Both doors stay open.
+  the toolchain moves in. Both doors stay open. *(Partially exercised
+  2026-08-27: the frontend half — grammar, resolver, IR emitter — lives
+  in the monorepo as `frontends/regelspraak` on the copy route (four
+  ratified decisions), dual-pinned against drift by gate 10 here and
+  `uchar-conformance` there; the Drools backend and production runtime
+  stay outside. The planned upgrade, once the ladder-producing frontend
+  evolution starts, is inverting the dependency so the toolchain
+  consumes this frontend — one source of frontend truth.)*
 - **The held-out corpus split** — a separate private repository (e.g.
   `uchar-corpus-heldout`), pulled only by the CI acceptance job (§8).
 - **The org profile** (`.github` repo) — the public landing page until the
