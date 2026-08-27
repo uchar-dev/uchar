@@ -6,7 +6,7 @@ import java.util.List;
  * The outcome of running ONE scenariotoets (docs/SCENARIOTOETSEN.md) through the {@link ScenarioRunner}: its
  * {@link Status}, the per-expectation verdicts, the fired-rules {@link Trace}, and the per-scope-rule coverage.
  * It carries both the VERWACHTE and the WERKELIJKE value per expectation — the werkelijk side is the oracle the
- * next phase (the golden-TOKA differential) reads, and the verwacht/werkelijk pair is what a FAIL prints.
+ * next phase (the golden differential) reads, and the verwacht/werkelijk pair is what a FAIL prints.
  *
  * @param naam        the scenario name (as written)
  * @param status      PASS (all expectations met, no marker), FAIL (≥1 expectation missed / resolve error),

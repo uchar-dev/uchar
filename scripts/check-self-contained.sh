@@ -48,10 +48,12 @@ done
 # The TOKA rights tripwire. ©-Belastingdienst material is admitted in exactly
 # ONE place — the top-level toka/ parity zone (maintainer decision 2026-08-27,
 # temporary; it leaves with the zone ahead of any public flip). Every OTHER
-# artifact zone stays TOKA-free and this tripwire keeps firing on it. toka/ is
-# deliberately absent from the scanned set below — it is NOT swept — and is
-# asserted separately to carry no machine-local paths.
-for zone in corpus/golden corpus/negatief corpus/rood frontends; do
+# artifact zone stays TOKA-free and this tripwire keeps firing on it — so it
+# sweeps the SAME $ZONES the private-reference scan does (backends included: the
+# ported Drools backend is an artifact zone and a comment quoting a TOKA/
+# RegelSpraak-spec excerpt is a leak). toka/ is deliberately absent from $ZONES
+# — it is NOT swept — and is asserted separately to carry no machine-local paths.
+for zone in $ZONES; do
     [ -e "$zone" ] || continue
     if git grep -nIiE '(^|[^[:alpha:]])toka([^[:alpha:]]|$)' -- "$zone"; then
         echo "FAIL: TOKA material in artifact zone '$zone' (rights policy, corpus/README.md; the sole exception is the isolated toka/ zone)" >&2

@@ -491,7 +491,7 @@ public final class ExecModelTranspiler {
                 consequence = DSL.on(sVar, (Variable) resVar).execute(body);
             }
         } else if (isScalarSoort(r.soort()) && containsAggregatie(r.waarde())) {
-            // §5.8 AGGREGATION INSIDE ARITHMETIC ("het aantal passagiers maal de factor", "de totaal van X plus Y"):
+            // §5.8 AGGREGATION INSIDE ARITHMETIC ("het aantal elementen maal de factor", "de totaal van X plus Y"):
             // the value is an arithmetic tree whose operand is an aggregation. Lower each embedded aggregation to its
             // own accumulate CE (binding a result var), then the consequence combines the bound results + own-attr
             // reads + a (≤1) global. Mirrors DrlTranspiler.waarde recursing through binairTerm into accumulate.
@@ -526,8 +526,8 @@ public final class ExecModelTranspiler {
         } else if (isScalarSoort(r.soort()) && r.waarde() instanceof Expr.ParameterRef tpr
                 && nietNumeriekeGlobal(globalNaam(tpr.parameter().naam())) != null) {
             // §13.4.6 assign a single NON-NUMERIC Parameter-GLOBAL verbatim into the attribute — a Tekst/Enumeratie String
-            // ("De roepnaam wordt gesteld op de STANDAARDNAAM"), a Datum LocalDate or a Datum-en-tijd LocalDateTime
-            // ("De gebdatum wordt gesteld op de PEILDATUM"). The numeric value-path below binds globals as BigDecimal, so
+            // ("De naam wordt gesteld op de STANDAARDNAAM"), a Datum LocalDate or a Datum-en-tijd LocalDateTime
+            // ("De datum wordt gesteld op de PARAMETERDATUM"). The numeric value-path below binds globals as BigDecimal, so
             // a non-numeric global would skip there. Bind the typed global and set it directly. (DRL declares the global
             // with its concrete type so the setter resolves — both back-ends used to decline this: DRL build-error / exec skip.)
             Global<?> g = nietNumeriekeGlobal(globalNaam(tpr.parameter().naam()));
@@ -837,8 +837,8 @@ public final class ExecModelTranspiler {
         Expr ander = linksAgg ? v.rechts() : v.links();
         // scope: a LITERAL, an OWN (non-navigated) attribute, a numeric scalar Parameter-GLOBAL, a numeric to-ONE
         // NAVIGATED attribute threshold, or a numeric arithmetic EXPRESSION reading 2 DISTINCT scalar numeric globals
-        // ("... groter is dan de grensa plus de grensb"). The own-attr containsKey clause is load-bearing: a navigation
-        // the resolver could NOT encode ("de afstand van de luchthaven van de Vlucht") can surface as an AttribuutRef
+        // ("... groter is dan global A plus global B"). The own-attr containsKey clause is load-bearing: a navigation
+        // the resolver could NOT encode ("de afstand van de locatie van de houder") can surface as an AttribuutRef
         // with navRol==null and objecttype==subject yet a name NOT on the subject — scalarWaarde would build a reader for
         // a non-existent getter that THROWS at fireAllRules (review wf_900d3055-a62 F2). Only a PROPER navigation (navRol
         // != null) is admitted, read null-safely via navReader (absent relation -> null; to-many/unresolvable -> navReader
@@ -927,7 +927,7 @@ public final class ExecModelTranspiler {
 
     /** The number of DISTINCT scalar Parameter-globals an aggregation-condition RHS expression reads (via
      *  {@link #scalarWaarde}), or 0 if it does not lower / any global is non-numeric. Used by
-     *  {@link #aggregatieVoorwaarde} to detect the 2-distinct-global expression RHS ("de grensa plus de grensb"). */
+     *  {@link #aggregatieVoorwaarde} to detect the 2-distinct-global expression RHS ("global A plus global B"). */
     private int aggRhsGlobalCount(Objecttype subject, Expr ander) {
         WaardeFn rhs = scalarWaarde(subject, ander);
         if (rhs == null || rhs.globals().isEmpty()) return 0;
@@ -936,7 +936,7 @@ public final class ExecModelTranspiler {
     }
 
     /** §8.1.1 an aggregation-condition whose RHS is a numeric arithmetic expression reading 2 DISTINCT scalar
-     *  Parameter-globals ("het aantal passagiers van de Vlucht groter is dan de grensa plus de grensb"). Bind each
+     *  Parameter-globals ("het aantal elementen van de houder groter is dan global A plus global B"). Bind each
      *  distinct global into its OWN {@link java.util.Optional} from-declaration (the {@link #nGlobalGate} idiom: two
      *  global {@link Variable}s in ONE exec-model expr collapse to the LAST global's value, so distinct decls are
      *  mandatory), then the accumulate-result comparison references the aggregate + count + subject + BOTH global
@@ -1204,7 +1204,7 @@ public final class ExecModelTranspiler {
             kenmerk = k.kenmerk();
             negatie = k.negatie();
         } else if (f.filter() instanceof Conditie.Kenmerk kn && kn.navigatie() != null && subject != null) {
-            // §7.1 a NAVIGATED temporal kenmerk ("gedurende de tijd dat zijn reis een recht op korting heeft"): clip
+            // §7.1 a NAVIGATED temporal kenmerk ("gedurende de tijd dat zijn partner een recht op korting heeft"): clip
             // to the to-one role's kenmerk timeline, read root-guarded (a null reference -> leeg). Mirrors DRL.
             segCls = segmentClass();
             if (segCls == null) return null;
@@ -1534,7 +1534,7 @@ public final class ExecModelTranspiler {
             } else if (base instanceof Expr.AttribuutRef ba && ba.navigatieRol() != null && !ba.set()
                     && ba.objecttype() != null && ba.objecttype().attribuutGranulariteit.containsKey(ba.attribuut())
                     && !ba.objecttype().attribuutTijdlijnAantal.containsKey(ba.attribuut())) {
-                // §7.3.2 a TO-ONE NAVIGATED base ("de X van zijn reis"): read the partner's temporal attribute root-guarded
+                // §7.3.2 a TO-ONE NAVIGATED base ("de X van zijn partner"): read the partner's temporal attribute root-guarded
                 // (navReader: null relation -> leeg). The gedurende condition stays over the SUBJECT. Mirrors DRL.
                 java.util.function.Function<Object, Object> nav = navReader(ba, subject);
                 if (nav != null) {
@@ -2009,7 +2009,7 @@ public final class ExecModelTranspiler {
         return s -> (List<?>) RegelSpraakRuntime.get(s, kenmerk);
     }
 
-    /** §8.2/§7.1 the boolean-timeline reader for a to-ONE NAVIGATED temporal kenmerk ("zijn reis gedurende het gehele
+    /** §8.2/§7.1 the boolean-timeline reader for a to-ONE NAVIGATED temporal kenmerk ("zijn partner gedurende het gehele
      *  jaar actief is"): the role's kenmerk {@code List<Segment>}, read ROOT-GUARDED (a null relation -&gt; leeg timeline
      *  -&gt; rsGeheelPeriode vacuously true, matching the DRL `root == null ? null : root.getKenmerk()`). null for a
      *  negated / to-many / non-temporal navigated kenmerk. Mirrors DrlTranspiler.navigatieKenmerkTijdreeks. */
@@ -2093,9 +2093,9 @@ public final class ExecModelTranspiler {
             WaardeFn g = scalarWaarde(null, ander);
             if (g == null) {
                 // scalarWaarde's navigated branch is value-path-only (valueSubject is null here), so a to-ONE navigated
-                // grenswaarde ("… gelijk is aan de drempel van zijn reis") would skip while the DRL oracle FIRES it via
-                // reis!.attr. Lower it with the same condition-aware null-safe role reader the timeline side uses, so
-                // both back-ends agree (a null relation -> null grens -> the §8.2 check fails, matching mvel's reis!.attr).
+                // grenswaarde ("… gelijk is aan de drempel van zijn partner") would skip while the DRL oracle FIRES it via
+                // partner!.attr. Lower it with the same condition-aware null-safe role reader the timeline side uses, so
+                // both back-ends agree (a null relation -> null grens -> the §8.2 check fails, matching mvel's partner!.attr).
                 if (ander instanceof Expr.AttribuutRef ar && ar.navigatieRol() != null && (ar.type().isNumeriek() || ar.type().isPercentage())) {
                     String rol = navComparisonRole(ar, subject);
                     if (rol != null) {
@@ -2387,7 +2387,7 @@ public final class ExecModelTranspiler {
             return new Gate(pattern, List.of(item));
         }
         // §8.1.1 a comparison written with the Parameter-GLOBAL on the LEFT ("de DREMPEL groter is dan zijn prijs", "de
-        // PEILDATUM later is dan zijn geboortedatum", "de STANDAARDVERTREK gelijk is aan zijn vertrek") — DRL reads the
+        // PARAMETERDATUM later is dan zijn datum", "de STANDAARDDATUM gelijk is aan zijn datum") — DRL reads the
         // global as a free name and fires, but every exec vs-global branch keys on an AttribuutRef/expressie LHS + a
         // ParameterRef RHS, so a global-LHS skipped. Normalise: swap the operands and REVERSE the operator (omkeren),
         // then the existing vs-global branches lower it (numeric / datum / tekst, own + navigated + expr). Safe by
@@ -2404,7 +2404,7 @@ public final class ExecModelTranspiler {
             return voorwaarde(new Conditie.Vergelijking(Operatoren.omkeren(gv.op()), gv.rechts(), gv.links(), gv.periode(), gv.bron()),
                     pattern, subject, subjectVar);
         // §8.1.1 a DATUM comparison of an OWN or to-one NAVIGATED datum attribute vs a Datum-in-dagen Parameter-GLOBAL
-        // ("zijn geboortedatum eerder is dan de PEILDATUM", "de vluchtdatum van zijn reis gelijk is aan de PEILDATUM").
+        // ("zijn datum eerder is dan de PARAMETERDATUM", "de datum van zijn partner gelijk is aan de PARAMETERDATUM").
         // BEFORE the numeric vs-global branch (whose `!isNumeriekOp -> return null` would otherwise swallow a datum op).
         // DRL reads the date global as a free name; the exec binds the LocalDate global as a pattern variable and
         // compares via datumVergelijkTemporal (§5 leegwaarde tables). A mixed Datum-in-dagen/Datum-en-tijd pair is a
@@ -2428,7 +2428,7 @@ public final class ExecModelTranspiler {
             return null;   // unresolvable nav -> honest skip (symmetric with DRL marker)
         }
         // §5.3 a DATUM comparison of an OWN or to-one NAVIGATED Datum-in-dagen attribute vs REKENDATUM ("zijn
-        // geboortedatum eerder is dan Rekendatum"): bind the §4.2 rekendatum global as the pattern variable and
+        // datum eerder is dan Rekendatum"): bind the §4.2 rekendatum global as the pattern variable and
         // compare via datumVergelijkTemporal (ordering AND gelijk/ongelijk — the §5 leegwaarde tables; an unset
         // rekendatum reads leeg). DRL reads the global as a free name in the same constraint.
         if (c instanceof Conditie.Vergelijking v
@@ -2442,7 +2442,7 @@ public final class ExecModelTranspiler {
                     datumVergelijkTemporal(lf.apply(s), rd instanceof java.time.LocalDate d ? d : null, op)), List.of());
         }
         // §5.3 a TEKST/enumeratiewaarde equality (GELIJK/ONGELIJK) of an OWN or to-one NAVIGATED attribute vs a Tekst
-        // Parameter-GLOBAL ("zijn vertrek gelijk is aan de STANDAARDVERTREK"). BEFORE the numeric vs-global branch (whose
+        // Parameter-GLOBAL ("zijn naam gelijk is aan de STANDAARDNAAM"). BEFORE the numeric vs-global branch (whose
         // globals.get == null for a tekst global would `return null` -> skip). DRL reads the tekst global as a free name;
         // the exec binds the String global as a pattern variable. §5.5.5 a null relation / leeg attr reads LEEG, then
         // string equality with the §5 leegwaarde tables (GELIJK Tabel 38 one/both-leeg onwaar; ONGELIJK Tabel 44 one-leeg WAAR).
@@ -2483,9 +2483,9 @@ public final class ExecModelTranspiler {
             return new Gate(pattern.expr(nextId("c"), (Variable) g,
                     (Predicate2) (s, gv) -> vergelijk(scale(num(s, attr), f[0]), scale((BigDecimal) gv, f[1]), op)), List.of());
         }
-        // §8.1.1 a to-ONE NAVIGATED numeric comparison vs a Parameter-GLOBAL — the §12 reisduur "de reisduur van
-        // zijn reis groter is dan <de bovengrens schijf>" shape. The global is a pattern variable (2-var expr),
-        // navReader reads the navigated value null-safely. Mirrors DRL `reis!.x op global`.
+        // §8.1.1 a to-ONE NAVIGATED numeric comparison vs a Parameter-GLOBAL — the §12 "de duur van
+        // zijn partner groter is dan <de bovengrens schijf>" shape. The global is a pattern variable (2-var expr),
+        // navReader reads the navigated value null-safely. Mirrors DRL `partner!.x op global`.
         if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && la.navigatieRol() != null
                 && la.type().isGetalachtig() && isNumeriekOp(v.op()) && v.rechts() instanceof Expr.ParameterRef pr) {   // §4.8 numeriek OR percentage
             if (la.objecttype() == null || la.objecttype().attribuutGranulariteit.containsKey(la.attribuut())) return null;  // temporal -> Phase F
@@ -2509,7 +2509,7 @@ public final class ExecModelTranspiler {
         }
         // §8.1.1 a NUMERIC comparison where an operand is an EXPRESSION (arithmetic Binair / Functie / begrenzing /
         // afronding) and the comparison reads EXACTLY ONE numeric/percentage Parameter-GLOBAL — "zijn prijs plus de
-        // toeslag groter is dan de drempel", "zijn prijs maal 2 groter is dan de grens", "de vertrektijd van zijn reis
+        // toeslag groter is dan de drempel", "zijn prijs maal 2 groter is dan de grens", "de waarde van zijn partner
         // plus de toeslag groter is dan zijn prijs". Bind that one global as a pattern variable (a 2-var expr), lowering
         // BOTH sides via scalarWaarde. DRL reads the global as a free name in the constraint operand. A NAVIGATED operand
         // inside the expr lowers via scalarWaarde's navigated read — the subject rides as the value-path parameter (no-mutable-build-state,
@@ -2552,8 +2552,8 @@ public final class ExecModelTranspiler {
             // 0 globals -> leafPredicate's expr-comparison branch; unresolved / non-numeric global -> falls through -> skip
         }
         // §8.1.1 a DATUM comparison where an operand is a §6/§13.4.16 date-arithmetic expression that reads EXACTLY
-        // ONE Parameter-GLOBAL (the duration is a parameter, e.g. "de geboortedatum plus de MEERDERJARIGHEIDSLEEFTIJD
-        // eerder is dan de peildatum"): bind that global as a pattern variable (a 2-var expr) and evaluate
+        // ONE Parameter-GLOBAL (the duration is a parameter, e.g. "de datum plus de DUURPARAMETER
+        // eerder is dan de PARAMETERDATUM"): bind that global as a pattern variable (a 2-var expr) and evaluate
         // datumVergelijkTemporal. DRL binds the global directly in the rsDatumReken constraint. 0 globals -> the
         // fact-only leafPredicate below; >1 global -> skip (a condition expr binds at most one global, like the
         // numeric vs-global branches above).
@@ -2577,7 +2577,7 @@ public final class ExecModelTranspiler {
             // 0 globals -> falls through to leafPredicate (covered); >1 / unresolved -> falls through -> skip
         }
         // §8.1.5 dagsoortcontrole "<datum> is een <dagsoort>" whose datum operand reads EXACTLY ONE NUMERIC Parameter-
-        // GLOBAL (a §6 date-arithmetic expression whose duration is a numeric parameter, "de vluchtdatum plus de MARGE
+        // GLOBAL (a §6 date-arithmetic expression whose duration is a numeric parameter, "de datum plus de DUURPARAMETER
         // een werkdag is"): bind that global as a pattern variable (a 2-var expr), mirroring the date-arith-vs-global
         // comparison branch above. DRL calls the rsDagsoort_<N> predicate GLOBAL on the free-name global directly; the
         // exec pattern needs it as a Variable. A fact-only (0-global) operand falls through to leafPredicate. The cases
@@ -2644,8 +2644,8 @@ public final class ExecModelTranspiler {
         // (handled with a bound global in voorwaarde); inside a counting quantifier that null skips the whole compound.
         Conditie.GeheelPeriode gp82 = geheelPeriodeVan(c);
         if (gp82 != null) return geheelPeriodeLeaf(geheelPeriode82(c, gp82, subject));
-        // §8.1.1 a comparison written with the CONSTANT on the LEFT ("100 groter is dan zijn vertrektijd", "1-1-2020
-        // eerder is dan zijn vluchtdatum", "1-1-2021 gelijk is aan zijn vluchtdatum") — DRL fires `100 > attr` /
+        // §8.1.1 a comparison written with the CONSTANT on the LEFT ("100 groter is dan zijn waarde", "1-1-2020
+        // eerder is dan zijn datum", "1-1-2021 gelijk is aan zijn datum") — DRL fires `100 > attr` /
         // `literal < attr` directly, but every exec leaf branch keys on an AttribuutRef/expressie LHS, so a literal-LHS
         // comparison SKIPPED. Normalise it: swap the operands and REVERSE the operator (omkeren), then the existing
         // attr-on-LHS branches lower it. Safe by construction — only a literal-LHS comparison (which otherwise skips) is
@@ -2745,10 +2745,10 @@ public final class ExecModelTranspiler {
             BigDecimal rhsScaled = scale(rhs, f[1]);
             return s -> vergelijk(scale(num(s, attr), f[0]), rhsScaled, op);
         }
-        // §8.1.1 a to-ONE NAVIGATED numeric comparison vs a numeric literal ("de reisduur van zijn reis groter is dan
-        // 60"): read the navigated value null-safely (mvel's `reis!.x`), restate units, and vergelijk. navReader
+        // §8.1.1 a to-ONE NAVIGATED numeric comparison vs a numeric literal ("de duur van zijn partner groter is dan
+        // 60"): read the navigated value null-safely (mvel's `partner!.x`), restate units, and vergelijk. navReader
         // resolves the to-one role and root-guards a null relation (-> leeg -> ordering no-match / GELIJK-both-leeg,
-        // matching mvel `null op x`); a to-many / unresolvable navigation -> null (skip). Mirrors DRL `reis!.x op lit`.
+        // matching mvel `null op x`); a to-many / unresolvable navigation -> null (skip). Mirrors DRL `partner!.x op lit`.
         if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && la.navigatieRol() != null
                 && la.type().isNumeriek() && isNumeriekOp(v.op())
                 && v.rechts() instanceof Expr.Literal lit && lit.type().isNumeriek()) {
@@ -2771,7 +2771,7 @@ public final class ExecModelTranspiler {
                 return vergelijk(scale(RegelSpraakRuntime.toBd(attrVal), f[0]), rhsScaled, op);
             };
         }
-        // §8.1.1 a to-ONE NAVIGATED numeric comparison vs an OWN attribute ("de reisduur van zijn reis groter is dan
+        // §8.1.1 a to-ONE NAVIGATED numeric comparison vs an OWN attribute ("de duur van zijn partner groter is dan
         // zijn drempel"): the navigated LHS read null-safely (a null relation short-circuits the whole term), the own
         // RHS fact-local. Mirrors DRL `rol!.x op ownAttr`.
         if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && la.navigatieRol() != null
@@ -2835,7 +2835,7 @@ public final class ExecModelTranspiler {
             return s -> datumVergelijkTemporal(lf.apply(s), rf.apply(s), op);
         }
         // §8.1.1 a DATUM ordering comparison where an operand is a §6/§13.4.16 date-arithmetic EXPRESSION ("de
-        // daadwerkelijke vertrek later is dan de vluchtdatum plus de uitstelduur"). The simple attr-vs-literal form
+        // daadwerkelijke datum later is dan de datum plus de DUURPARAMETER"). The simple attr-vs-literal form
         // is handled above; here at least one side is a date-arith Binair, so BOTH sides lower via scalarWaarde
         // (-> a Temporal) and compare via datumVergelijkTemporal. A fact-only reader (0 globals). DRL lowers the
         // same expression as the constraint operand (`attr > ((LocalDate) rsDatumReken(...))`).
@@ -2893,7 +2893,7 @@ public final class ExecModelTranspiler {
         // arithmetic Binair ("de prijs plus 10"), a §6.1.4 begrenzing or a §13.4.17.25 afronding — vs a numeric
         // literal. Lower the LHS via scalarWaarde (which now covers these); a fact-only reader (0 globals) makes it a
         // Predicate1, then vergelijk + restatement. DRL lowers the same expression as a constraint operand. A NAVIGATED
-        // operand inside the LHS ("de vertrektijd van zijn reis plus 1 > 100") lowers via scalarWaarde's navigated read —
+        // operand inside the LHS ("de waarde van zijn partner plus 1 > 100") lowers via scalarWaarde's navigated read —
         // the subject passed as the value-path parameter; an ABSENT relation reads leeg -> leeg-as-0 in the arithmetic
         // (see the expr-vs-expr branch below for the rsRelGetal parity). A param-reading LHS keeps globals non-empty ->
         // skipped (the global path binds it in voorwaarde).
@@ -2925,7 +2925,7 @@ public final class ExecModelTranspiler {
         // begrenzing / afronding) and the OTHER side is a numeric attribute OR also an expression — NOT a literal (the
         // branch above). Lower BOTH sides via scalarWaarde (the value-path lowering, at parity with DrlTranspiler.binairTerm
         // on the value side), then vergelijk + §5.1 restatement. parityOnveilig skips a §3.6 dimensiecel and a cross-unit
-        // +/- (DRL markers those). A NAVIGATED operand inside the expr ("de prijs van zijn reis plus 1 groter is dan zijn
+        // +/- (DRL markers those). A NAVIGATED operand inside the expr ("de prijs van zijn partner plus 1 groter is dan zijn
         // drempel") lowers via scalarWaarde's navigated read — the subject rides as the value-path parameter (like the
         // §8.2 grens path) so navReader resolves. An ABSENT relation reads LEEG, which the arithmetic treats per the §4/§6
         // leegwaarde tables (leeg-as-0 in +/-/*, §4.1 Tabel 3 etc.) and then vergelijk's leegwaarde semantics — NOT a
@@ -2933,7 +2933,7 @@ public final class ExecModelTranspiler {
         // arithmetic leg null-safely via rsRelGetal, so both back-ends compute leeg-as-0). A GLOBAL operand keeps globals
         // non-empty -> skip (the expr-vs-global path binds at most one global, in voorwaarde); an unresolvable / to-many
         // navigation -> scalarWaarde null -> skip. Closes the masked DRL-fires/exec-skips for "de a plus de b is gelijk aan
-        // de c" / "de prijs van zijn reis plus 1 groter is dan zijn drempel".
+        // de c" / "de prijs van zijn partner plus 1 groter is dan zijn drempel".
         if (c instanceof Conditie.Vergelijking v && isNumeriekOp(v.op())
                 && getalachtigVergelijkbaar(v.links())
                 && getalachtigVergelijkbaar(v.rechts())
@@ -3064,13 +3064,13 @@ public final class ExecModelTranspiler {
             return s -> {
                 // §5.15 + Tabel 16: an absent relation (or a leeg datum) reads a leegwaarde, which is NEVER a dagsoort.
                 // Under two-valued negation "is een <dagsoort>" -> ONWAAR (neg=false), "is geen <dagsoort>" -> WAAR
-                // (neg=true). Mirrors DRL `(neg?"!":"") (reis!.x != null && rsDagsoort(reis!.x))` (the `!.` short-circuit).
+                // (neg=true). Mirrors DRL `(neg?"!":"") (partner!.x != null && rsDagsoort(partner!.x))` (the `!.` short-circuit).
                 Object rel = RegelSpraakRuntime.get(s, rol);
                 java.time.LocalDate ld = rel != null ? asDag(RegelSpraakRuntime.get(rel, attr)) : null;
                 return neg != (ld != null && pred.test(ld));
             };
         }
-        // §8.1.5 dagsoortcontrole over a NON-attribute datum operand (a §6 date-arithmetic expression "de vluchtdatum
+        // §8.1.5 dagsoortcontrole over a NON-attribute datum operand (a §6 date-arithmetic expression "de datum
         // plus 1 dag is een kerstdag", a date-valued function) — lower it via scalarWaarde, mirroring DrlTranspiler's
         // generic operand path so the back-ends stay at parity. Fact-only (no globals); a global-reading operand is not
         // a fact-only leaf -> skip. §5.15: an absent/non-date value is ONWAAR.
@@ -3243,7 +3243,7 @@ public final class ExecModelTranspiler {
             }, g);
         }
         if (e instanceof Expr.AttribuutRef a && a.navigatieRol() == null) {
-            // §5.8 a SET operand ("de prijs van ALLE passagiers", set()==true) is an instance-AGGREGATION SOURCE, not the
+            // §5.8 a SET operand ("de prijs van ALLE elementen", set()==true) is an instance-AGGREGATION SOURCE, not the
             // subject's own scalar attribute — reading it as RegelSpraakRuntime.get(subject, attr) would look the
             // attribute up on the WRONG fact (the subject, which need not declare it) and THROW at fire time, aborting the
             // WHOLE session (an asymmetric, masked crash: DRL honestly markers a bare SET-in-scalar read). Skip it here so
@@ -4689,7 +4689,7 @@ public final class ExecModelTranspiler {
         // scalar THEN-waarde: a toekenning value IS a consequence value.
         //   - A NON-aggregation value stays on the existing scalarWaarde WaardeFn path (navigated chains / builtins /
         //     dimensiecel that lowerVal does not cover; it also restates into the target unit internally).
-        //   - A §5.8 AGGREGATION-valued toekenning (toka-28: "het aantal passagiers van de Vlucht maal <param>", the
+        //   - A §5.8 AGGREGATION-valued toekenning ("het aantal elementen van de houder maal <param>", the
         //     count is NOT an attribute) cannot host its accumulate CE inside a WaardeFn, so it lowers via lowerVal to
         //     an Eval + its own accumulate CE(s) + result Variable(s) threaded through the consequence's aggsAll[],
         //     exactly like the regel aggregatie-in-arithmetiek path (L454-486). DrlTranspiler.objectCreatie likewise
@@ -4909,7 +4909,7 @@ public final class ExecModelTranspiler {
         for (int i = 0; i < kwalificeren.size(); i++) {
             Expr.Binair d = kwalificeren.get(i);
             // null-safe readers for the dividend/divisor — own attribute or a to-one navigated read (a null relation
-            // collapses to leeg, exactly as DRL's root-guarded "(reis != null && reis.x != null)" / "reis.x" forms).
+            // collapses to leeg, exactly as DRL's root-guarded "(partner != null && partner.x != null)" / "partner.x" forms).
             java.util.function.Function<Object, Object> dividend = companionOperand(d.links(), subject);
             java.util.function.Function<Object, Object> divisor = companionOperand(d.rechts(), subject);
             seq = 0;

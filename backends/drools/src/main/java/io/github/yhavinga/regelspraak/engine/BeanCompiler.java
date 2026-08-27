@@ -25,8 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Compiles the {@link FactModelGenerator}-emitted bean sources IN MEMORY (javax.tools) and serves the resulting
- * classes from a child-first classloader — the engine-side, reusable form of the {@code FactModelGeneratorTest}/
- * {@code TokaVuurTest} test harness (test code cannot be called from {@code engine/main}). The {@link ScenarioRunner}
+ * classes from a child-first classloader — the engine-side, reusable form of the fact-model compile harness the
+ * tests use (test code cannot be called from {@code engine/main}). The {@link ScenarioRunner}
  * compiles the bundle's beans ONCE (they are the same for every scenario in a run) and hands the loader to the
  * exec-model transpiler's {@code build(model, classLoader)} passthrough so the compiled rules bind against these
  * beans, and to the {@link io.github.yhavinga.regelspraak.schema.ContractValidator} so the contract is checked against them.
@@ -42,7 +42,7 @@ public final class BeanCompiler {
      * Content-keyed cache of compiled bean bundles for the lifetime of the JVM: a SHA-256 over the (className →
      * source) map maps to the loader serving THAT exact bytecode. The generated beans are immutable classes and
      * the loader is stateless, so many callers that regenerate the SAME fact model (a mini-model shared across
-     * dozens of differential/scenario cases, or the 32 golden manifest lines that share one TOKA foundation) get
+     * dozens of differential/scenario cases, or many golden manifest lines that share one fact-model foundation) get
      * ONE javac invocation + ONE loader instead of recompiling identical sources every time. A distinct model
      * (different beans) keys to a distinct entry, so no two models are ever conflated.
      */

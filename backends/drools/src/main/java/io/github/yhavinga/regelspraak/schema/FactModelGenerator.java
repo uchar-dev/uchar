@@ -40,7 +40,7 @@ public final class FactModelGenerator {
     public static List<Lid> leden(RegelSpraakModel model, Objecttype ot) {
         List<Lid> uit = new ArrayList<>();
         java.util.Set<String> gezien = new java.util.HashSet<>();   // ONE bean property per name: an attribute,
-        // kenmerk and to-one role may legally share a name (TOKA's 'bereikbaar per trein' is both a kenmerk
+        // kenmerk and to-one role may legally share a name (a single name can be declared as both a kenmerk
         // and a Boolean attribute); the bean can carry only one field, and the runtime property resolution
         // reads whichever getter exists — so the FIRST derivation (attribute > kenmerk > referentie) wins.
         for (Map.Entry<String, Datatype> e : ot.attributen.entrySet()) {
@@ -59,8 +59,8 @@ public final class FactModelGenerator {
         }
         // §13.3.9: the scalar to-one reference fields — derived from the SAME authority the transpilers
         // navigate by (verbindendeRol + naarVeelRol): for every other objecttype reachable through exactly
-        // one feittype, the houder carries a field named after the doelwit's role ("Eén reis betreft
-        // meerdere passagiers" -> Passagier.reis : Vlucht), UNLESS that navigation crosses a to-many role
+        // one feittype, the houder carries a field named after the doelwit's role ("Eén houder betreft
+        // meerdere elementen" -> Element.houder : Houder), UNLESS that navigation crosses a to-many role
         // (then the scalar reference lives on the other side). A self-referential or ambiguous pair derives
         // nothing: the transpilers navigate those only via the WRITTEN role name, which a static bean
         // derivation cannot know — under-implied, never over-implied.

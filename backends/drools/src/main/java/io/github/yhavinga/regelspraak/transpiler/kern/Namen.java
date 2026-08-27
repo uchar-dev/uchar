@@ -11,8 +11,8 @@ public final class Namen {
 
     /** A RegelSpraak name → a Java identifier: split on non-letter/digit runs, then camel-
      *  (upperFirst=false) or Pascal-case (true) the words. NO lidwoord stripping: the resolver already
-     *  delivers declared names bare, and a kenmerk whose name deliberately CARRIES an article ("de duurste
-     *  reis") must bind its full name, not collide with a shorter sibling. A word written ALL-CAPS (a
+     *  delivers declared names bare, and a kenmerk whose name deliberately CARRIES an article ("de oudste
+     *  jutter") must bind its full name, not collide with a shorter sibling. A word written ALL-CAPS (a
      *  shouted parameter, "STANDAARD TERMIJN") is title-cased FIRST — without that the camel form of the
      *  first word reads "sTANDAARD…". An empty result is "x". A camel result CAN equal a Java
      *  keyword ("final") — reconciling that is the fact-model generator's contract (the explicit fact-model contract), which must move

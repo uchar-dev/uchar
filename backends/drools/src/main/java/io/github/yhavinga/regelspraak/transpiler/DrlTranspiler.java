@@ -549,7 +549,7 @@ public final class DrlTranspiler {
         if (e instanceof Expr.AttribuutRef a) {
             NaviRef n = naviResolve(a, subject);
             if (n.soort() == NaviSoort.GENAVIGEERD) {
-                // §13.3.6/§8.2: a navigated TEMPORAL attribute is a List<Segment> — its leeg/vol form ("reis.loon == null")
+                // §13.3.6/§8.2: a navigated TEMPORAL attribute is a List<Segment> — its leeg/vol form ("partner.attr == null")
                 // would test the timeline's nullness, not its per-moment leegte, silently dropping the §8.2 period check.
                 // Marker it (the leeg/vol/waarde text is unused on a marker; companionDeel/schending bail on .marker()).
                 if (isTemporeelAttribuut(a)) return new OperandDeel(null, null, null, true, true);
@@ -614,7 +614,7 @@ public final class DrlTranspiler {
      *  an operand markers. Mirrors the exec navigated-comparison branches (a null relation -> leeg -> vergelijk). */
     private String genavigeerdeVergelijkingVoorwaarde(Acc acc, Conditie.Vergelijking v, Objecttype subject) {
         // Only GELIJK and ONGELIJK need the explicit form: ordering (<,>,<=,>=) of a leeg operand is onwaar (Tabel 33-42),
-        // which mvel's `!.` short-circuit ALREADY gives correctly — keep its compact `reis!.x op y` rendering. GELIJK
+        // which mvel's `!.` short-circuit ALREADY gives correctly — keep its compact `partner!.x op y` rendering. GELIJK
         // both-leeg -> WAAR (Tabel 37) and ONGELIJK one-leeg -> WAAR (Tabel 44) are the cells `!.` gets wrong.
         if (v.op() != Conditie.Operator.GELIJK && v.op() != Conditie.Operator.ONGELIJK) return null;
         String schending = genavigeerdeVergelijkingSchending(acc, v, subject);
@@ -948,8 +948,8 @@ public final class DrlTranspiler {
     private void feitCreatie(io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie fc) {
         Acc acc = new Acc();
         Objecttype anker = fc.anker(), doel = fc.doel();
-        // The voorwaarde selects which objects get the relation: a guard on the anker (Vlucht) stays on
-        // the anker pattern; a guard on the doel (the passengers) hosts on the $doel pattern. A guard that
+        // The voorwaarde selects which objects get the relation: a guard on the anker (the houder) stays on
+        // the anker pattern; a guard on the doel (the elements) hosts on the $doel pattern. A guard that
         // lowers to NEITHER must NOT be silently dropped — dropping it makes the rule fire unconditionally
         // and OVER-CREATE the relation. Instead the rule becomes an inert eval(false) no-op (carrying the
         // marker), the §-wide "an unresolved condition is a compilable no-op" discipline: better to create
@@ -957,7 +957,7 @@ public final class DrlTranspiler {
         String ankerC = "", doelExtra = "", noFire = "";
         List<String> ankerExtra = List.of();
         if (fc.voorwaarde() != null) {
-            // A §8.1.7 far-side anker guard ("indien de vlucht heeft een passagier") lowers to an EMPTY inline
+            // A §8.1.7 far-side anker guard ("indien de houder heeft een element") lowers to an EMPTY inline
             // plus a hoisted exists/not join, so lower the anker side with the FULL carrier and host its extra
             // after the anker pattern. conditieInline would degrade that join to a marker, dropping the rule to
             // an inert eval(false); a near anker guard yields empty extra and stays byte-identical.
@@ -1028,7 +1028,7 @@ public final class DrlTranspiler {
                     : temporeleWaarde(acc, r.waarde(), subject, td.objecttype().attribuutGranulariteit.get(td.attribuut()), td.type(), anker0);
         }
         // §8.4/§13.4.5 a TEMPORAL KENMERK doel (kenmerkGranulariteit — a List<Segment> TRUE-period timeline, not a
-        // boolean) is written the timeline of its voorwaarde's TRUE-periods: "Een reis is duur gedurende de tijd dat
+        // boolean) is written the timeline of its voorwaarde's TRUE-periods: "Een object is duur gedurende de tijd dat
         // <temporeel kenmerk>" makes the doel-kenmerk hold exactly where the gating kenmerk does (§3.8 kenmerk-tijdlijn
         // = boolean-tijdlijn; §3.4 default-onwaar OUTSIDE those periods, so the write is monotone — no complement to
         // seed). The producer is conditieTijdreeks (the SAME TRUE-period lowering the §7.1 gedurende READ uses), so the
@@ -1090,7 +1090,7 @@ public final class DrlTranspiler {
         } else {
             // Freshness: property reactivity listens only to CONSTRAINED properties, so an assignment whose
             // pattern does not constrain what its VALUE reads goes stale — it computes once (possibly against
-            // leeg) and never recomputes when another rule writes an input (the TOKA toka-45 -> toka-24 chain:
+            // leeg) and never recomputes when another rule writes an input (observed in a two-rule chain where
             // an unconditioned berekening kept 0 after its operand arrived). @watch the subject's OWN
             // attributes the value expression reads; no-loop still blocks the self-retrigger. A read-write
             // CYCLE between rules (x = y+1; y = x+1) would recompute divergently forever — the resolver
@@ -1231,7 +1231,7 @@ public final class DrlTranspiler {
     /** §6.8: a leeg startpunt-anker is een Fout — surfaced through the §9.5 Inconsistentie channel by a
      *  separate insert-only companion on every §9.9 startpunt write whose anchor decomposes to a
      *  re-readable leeg guard (the subject's OWN attribute or a to-ONE navigation). A datum-arithmetic
-     *  anchor ("datum van vertrek min DE TERMIJN") is leeg exactly when its leftmost datum operand is —
+     *  anchor ("de datum min DE TERMIJN") is leeg exactly when its leftmost datum operand is —
      *  Tabel 15: a leeg duration counts as 0/unchanged, only a leeg datum propagates. A parameter or
      *  function anchor still degrades to a leeg write but raises no Inconsistentie (the same scope limit
      *  as the §6.5/§6.6 companions). The write itself needs no change: a leeg anchor writes leeg. */
@@ -1494,7 +1494,7 @@ public final class DrlTranspiler {
      * first — it disambiguates an object-type pair joined by more than one feittype/role
      * AND covers a wederkerig self-relation ("zijn partner", where the navigated type
      * equals the subject's). But a definite back-reference to the subject by its OWN
-     * role name ("de reis", where the subject already fills the role reis) names the
+     * role name ("de houder", where the subject already fills the role houder) names the
      * same instance (§5.5.3), so when the by-name lookup finds nothing we fall through:
      * a same-type reference reads as the subject's own attribute, otherwise the by-pair
      * search applies. Returning null only when all three fail keeps an honestly
@@ -2103,7 +2103,7 @@ public final class DrlTranspiler {
                 && subject != null && subject.kenmerkGranulariteit.containsKey(k.kenmerk())) {
             waardeTijdreeks = kenmerkTijdKnip(waardeTijdreeks, k);
         } else if (f.filter() instanceof Conditie.Kenmerk kn && kn.navigatie() != null && subject != null) {
-            // §7.1 a NAVIGATED temporal kenmerk ("gedurende de tijd dat zijn reis een recht op korting heeft"): clip
+            // §7.1 a NAVIGATED temporal kenmerk ("gedurende de tijd dat zijn partner een recht op korting heeft"): clip
             // the value timeline to the to-one role's kenmerk timeline, read root-guarded (a null reference -> leeg).
             String cond = navigatieKenmerkTijdreeks(kn, subject);
             if (cond == null) return null;   // negated / to-many / non-temporal navigated kenmerk -> marker
@@ -2295,7 +2295,7 @@ public final class DrlTranspiler {
                     && ba.objecttype() != null && ba.objecttype().attribuutGranulariteit.containsKey(ba.attribuut())
                     && !ba.objecttype().attribuutTijdlijnAantal.containsKey(ba.attribuut())
                     && naviResolve(ba, subject).soort() == NaviSoort.GENAVIGEERD) {
-                // §7.3.2 a TO-ONE NAVIGATED base ("de X van zijn reis"): read the partner's temporal attribute,
+                // §7.3.2 a TO-ONE NAVIGATED base ("de X van zijn partner"): read the partner's temporal attribute,
                 // root-guarded (a null reference -> leeg). The gedurende condition stays over the SUBJECT. Mirrors exec navReader.
                 baseGran = ba.objecttype().attribuutGranulariteit.get(ba.attribuut());
                 baseType = ba.type();
@@ -2552,7 +2552,7 @@ public final class DrlTranspiler {
         return SUBJECT + "." + getter(k.kenmerk()) + "()";
     }
 
-    /** §7.1 the boolean-timeline getter for a NAVIGATED temporal kenmerk ("zijn reis een recht op korting heeft") —
+    /** §7.1 the boolean-timeline getter for a NAVIGATED temporal kenmerk ("zijn partner een recht op korting heeft") —
      *  the to-ONE role's kenmerk {@code List<Segment>}, root-guarded so a null reference reads as a leeg (null)
      *  timeline (rsTijdKnip then clips to empty). null for a negated / to-many / non-temporal navigated kenmerk. */
     private String navigatieKenmerkTijdreeks(Conditie.Kenmerk k, Objecttype subject) {
@@ -2804,7 +2804,7 @@ public final class DrlTranspiler {
         if (elem == null || fn == null) return null;
         Frag scope = scope(elem, subject, f);
         if (scope.marker()) return null;   // unresolvable join -> marker, never a global aggregate
-        // §13.4.2 "die/dat <predicaat>" subselectie on the element ("… van de reis die een kind
+        // §13.4.2 "die/dat <predicaat>" subselectie on the element ("… van de elementen die een kind
         // zijn") -> an extra constraint on the accumulate source pattern, so only the matching
         // instances are aggregated. A filter the resolver could not structure (Onopgelost) lowers to
         // a marker here -> bail, so the aggregation is a visible no-op rather than counting EVERY
@@ -2878,8 +2878,8 @@ public final class DrlTranspiler {
         return Frag.ok(var);
     }
 
-    /** The element scope: the join binding the element to the subject ("the passagiers
-     *  OF this reis" -> reis == $subject), if the connecting feittype is unambiguous;
+    /** The element scope: the join binding the element to the subject ("the elements
+     *  OF this houder" -> houder == $subject), if the connecting feittype is unambiguous;
      *  otherwise the source phrase as a marker. */
     private Frag scope(Objecttype elem, Objecttype subject, Expr.Functie f) {
         Expr.AttribuutRef arg = !f.argumenten().isEmpty() && f.argumenten().get(0) instanceof Expr.AttribuutRef a ? a : null;
@@ -2943,8 +2943,8 @@ public final class DrlTranspiler {
         // admitted, read null-safely (rsRelGetal / navReader). The global/navigated attr must be numeric (isNumeriek/
         // isPercentage -> a BigDecimal, matching rsAggVergelijk's `n`) and non-temporal; a global is also scalar
         // (granulariteit==null) — EXACTLY the set the exec tracks/reads. A tekst/datum/temporal/to-many RHS stays a marker.
-        // ALSO admitted: a numeric arithmetic EXPRESSION reading 2 DISTINCT scalar numeric globals ("de grensa plus de
-        // grensb") — DRL renders each global as a free mvel name in the eval (waarde() below), the exec binds each into
+        // ALSO admitted: a numeric arithmetic EXPRESSION reading 2 DISTINCT scalar numeric globals ("global A plus
+        // global B") — DRL renders each global as a free mvel name in the eval (waarde() below), the exec binds each into
         // its own Optional from-decl (aggMultiGlobalRhs). Capped at 2 distinct globals to match the exec Predicate-arity
         // ceiling; 3+ distinct stays a symmetric marker. A single global goes through the ParameterRef arm above.
         boolean multiGlobalRhs = !(ander instanceof Expr.AttribuutRef) && !(ander instanceof Expr.Literal)
@@ -3217,9 +3217,9 @@ public final class DrlTranspiler {
         }
         // §8.1.7 rolcheck: the subject fills the role iff its reference to the other end of the feittype is
         // set. This lowers to a bare null-test inside the subject's own pattern ONLY when that reference is a
-        // to-ONE FORWARD field on the subject — "is een passagier" -> "reis != null". When the subject is on
-        // the "één" side (the reference field lives on the other, MANY side: "de Vlucht is een reis", where
-        // `passagier` is a to-many role with no scalar field on Vlucht) a bare `passagier != null` would be
+        // to-ONE FORWARD field on the subject — "is een element" -> "houder != null". When the subject is on
+        // the "één" side (the reference field lives on the other, MANY side: "de Houder is een element", where
+        // `element` is a to-many role with no scalar field on Houder) a bare `element != null` would be
         // uncompilable DRL that sinks the package, so that far-side case stays an honest marker (carded) — an
         // exists-join would be needed, which does not fit a single in-pattern constraint.
         if (c instanceof Conditie.Rollidmaatschap r) {
@@ -3394,7 +3394,7 @@ public final class DrlTranspiler {
     }
 
     /** A condition operand: the subject's own attribute reads as a bare field name; a
-     *  related object's attribute reads as a property path ("reis.vluchtdatum"). */
+     *  related object's attribute reads as a property path ("partner.datum"). */
     /** A leeg/gevuld predicate over a TO-ONE navigated operand, with the navigation root guarded explicitly
      *  (so a null reference reads as an empty value per typeringen Tabel 53/54, not a Drools "!." non-match),
      *  or null when the operand is not such a navigation (own attribute, to-many, unresolved → the caller's
@@ -3405,7 +3405,7 @@ public final class DrlTranspiler {
         NaviRef n = naviResolve(a, subject);
         if (n.soort() != NaviSoort.GENAVIGEERD) return null;   // own/to-many/unresolved → the caller's plain form
         // §13.3.6/§8.2: a navigated TEMPORAL attribute is a List<Segment> — fall through to operand(), which markers it,
-        // rather than emit "reis.loon == null" (a list-nullness test that silently drops the §8.2 whole-period leeg check).
+        // rather than emit "partner.attr == null" (a list-nullness test that silently drops the §8.2 whole-period leeg check).
         if (isTemporeelAttribuut(a)) return null;
         String wortel = ident(n.rol(), false), pad = wortel + "." + ident(a.attribuut(), false);
         return p.soort() == Conditie.Predicaatsoort.LEEG
@@ -3517,8 +3517,8 @@ public final class DrlTranspiler {
      *  scalar-functie leg): identical to {@link #operand} EXCEPT a to-ONE NAVIGATED NUMERIC attribute reads through the
      *  null-safe {@link #registreerRelGetalFunctie rsRelGetal} helper instead of mvel's {@code rol!.attr}. Inside a +/-
      *  the §4.1 Tabel 3 leegwaarde reads an absent operand as 0, but mvel's {@code !.} short-circuits the WHOLE
-     *  constraint to a non-match on a null relation — dropping the leeg-as-0 (a latent bug: "de prijs van zijn reis plus
-     *  1" with no reis must compute 0+1, not silently fail). rsRelGetal yields a leeg (null) value the surrounding
+     *  constraint to a non-match on a null relation — dropping the leeg-as-0 (a latent bug: "de prijs van zijn partner plus
+     *  1" with no partner must compute 0+1, not silently fail). rsRelGetal yields a leeg (null) value the surrounding
      *  rsNul/rsVerminderd leegwaarde handling then applies, mirroring the exec's navReader. A non-numeric (datum/tekst)
      *  navigated leg, a non-navigated leaf, or a nested expression falls through to {@link #operand} unchanged — leeg-as-0
      *  is a numeric rule, and nested arithmetic re-enters here because operand's arithmetic cases lower through operandReken. */
