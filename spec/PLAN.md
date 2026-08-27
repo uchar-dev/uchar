@@ -191,7 +191,12 @@ uchar/
 │                     drift-guarded by gate 10's byte-identical
 │                     re-emission of every rgs-carrying golden
 └── backends/
-    └── clingo/  (Phase 3)
+    ├── clingo/  (Phase 3)
+    └── drools/  the transpiler + production runtime copied from the
+                 toolchain (2026-08-27), consuming the wire through its
+                 own ir.json loader; gate 12 plays the differential
+                 square over the carried subset with a loud exclusion
+                 list
 ```
 
 The layout borrows LLVM's shape — self-contained siblings around a core —
@@ -375,12 +380,14 @@ other and to pinned absolute values (both share the one v0 runtime —
 parity plus pins, not an independent oracle), while the
 emitter-golden conformance (`make uchar-conformance` at the
 `SPEC_REV` pin) plus gates 5–6 hold the same corpus *documents* to
-`ref/` and `clingo`. No gate runs Drools against uchar cases; that
-direct leg is a recorded open flank, not claimed — it needs the
-toolchain to *execute* uchar case files, the same machinery a
-ladder-producing frontend needs (Phase 5), and the divergence class
-it could catch is meanwhile fenced by the corpus-scoped agreement
-plus the spec-first delta regime.
+`ref/` and `clingo`. *(Flank closed 2026-08-27:)* gate 12 (`scripts/check-drools.sh`) now
+runs the copied Drools backend (`backends/drools`) directly against
+uchar cases — loading `ir.json` off the wire through its own loader,
+never the RegelSpraak source — and requires the same pinned
+expectations gates 5–6 verify, over the carried subset (41 goldens
+played at landing) with a reason-carrying exclusion list that fails
+when stale; the uncarried forms (ladders, folds, structs, and the
+listed v0 leeg-semantics divergences) stay loud, not silent.
 
 ### Phase 3 — Semantic anchor in ASP, then the Clingo backend
 
