@@ -1575,7 +1575,12 @@ Comparison, Predicate, and CharacteristicCheck only —
   (promotion):** in v1, "could not resolve" is either an explicit
   Unresolved node (honest) or ill-formed IR (a dangling reference in a
   structured node) — never a sentinel type inside an otherwise-structured
-  node; the unknown datatype does not exist in v1 (ch. 2.4).
+  node; the unknown datatype does not exist in v1 (ch. 2.4). The rule
+  covers the unknown type in both its spellings: a value node whose static
+  type is the explicit Onbekend sentinel and its unspelled twin, a value
+  node whose static type is plain null, are refused alike — the sole
+  structural exception is a Lambda, which is never a value and carries no
+  type by construction (its position is governed by WF-069).
 - **WF-080** A value-position `AttributeReference` MUST resolve to an
   **attribute** of its endpoint type, never a characteristic. A value
   position is where an expression yields a value: a rule/member value, a

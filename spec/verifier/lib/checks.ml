@@ -1826,7 +1826,15 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
     | Some (Datatype_onbekend _) ->
         [ v "WF-034" (sub "type") "unknown-type sentinel inside a structured node" ]
     | Some d -> check_number_form (sub "type") d
-    | None -> []
+    | None -> (
+        (* A value node without a static type is the unspelled twin of the
+           Onbekend sentinel — refused symmetrically (WF-034). A Lambda is
+           never a value: it is structurally typeless (special-cased by node
+           kind, not by the [typ_of_expr] None result) and stays admissible
+           here — its own position discipline is WF-069 below. *)
+        match e with
+        | Lambda _ -> []
+        | _ -> [ v "WF-034" (sub "type") "value node without a static type" ])
   in
   typ_checks
   @
