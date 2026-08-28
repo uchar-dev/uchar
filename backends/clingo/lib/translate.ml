@@ -1213,10 +1213,17 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          the result IS one contributed value, already inside 2^31 by the load
          fence. Unlike the listed eerste/laatste fold there is no scale
          harmonisation (one attribute, one scale, one unit), so no per-operand
-         multiplication and no range guard. A leegwaarde on min/max is ignored,
-         mirroring ref (agg_max/agg_min take no fallback). The presence guard is
-         MANDATORY: #max/#min over the empty set yields #inf/#sup, which must
-         never escape into a value — ref derives Empty there. *)
+         multiplication and no range guard. A leegwaarde on min/max is ignored
+         here: agg_max/agg_min take no fallback, so a BENIGN leegwaarde is
+         evaluated-and-discarded by ref (eval.ml's eager `let fallback = …
+         leegwaarde`, computed before the kind match) and both agree. The one
+         residual asymmetry — a leegwaarde whose OWN evaluation would fault, so
+         ref faults while this arm yields the extreme — has no v0 witness and no
+         frontend path onto min/max; faulting-on-present would instead diverge
+         on a benign leegwaarde, so ignore is the ref-faithful default for the
+         representable case. The presence guard is MANDATORY: #max/#min over the
+         empty set yields #inf/#sup, which must never escape into a value — ref
+         derives Empty there. *)
       let a = req "fold attribute" attribuut in
       let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty } in
       let role_name =

@@ -141,7 +141,8 @@ compares norm-equal, so both executors normalise at the same point),
 and a **boolean** the bare symbol `waar`/`onwaar`. An embedded
 **double-quote** or **backslash** in a text or enum value is lowered to
 its gringo escape (backslash-quote, doubled-backslash) — identically on
-this value side and on the literal side (`symbolic_literal_term`, S3),
+this value side and on the literal side (`symbolic_literal_term`, S4,
+where the literal lowers through `symbolic_term` to its S2 ground term),
 so the equality join stays sound; the expectation-check parser reads the
 same escaped shape back, escape-aware, and a control character < 0x20,
 which has no escape, still faults (S19). A boolean input
