@@ -22,7 +22,6 @@ leeg; J4 pins the skip leaving a real sum. ref = clingo over every expectation
 (gate 5 ≡ gate 6). NOOP-REFUTING: J1/J4 buitsom are computed, absent from the
 raw input.
 
-**Drools note:** the v0 Drools backend has no leegwaarde-less-som value distinct
-from 0; where it plays the form it would fire 0 on J2/J3 where ref/clingo derive
-leeg — a value divergence recorded in `scripts/check-drools.sh` (never a silent
-pass).
+**Drools note:** the v0 Drools backend PLAYS+PASSES this golden — its
+fallback-less som also derives leeg on the empty set (J2/J3), so
+ref ≡ clingo ≡ Drools here (gate 12, `played`), no divergence.

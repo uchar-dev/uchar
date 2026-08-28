@@ -70,6 +70,15 @@ EXCLUDE_KNOWN=(
   "anchor/jutterswet-waardestelling|v0-divergence: a gelijkstelling with a LEEG source overwrites the pre-filled doel with null; ref/clingo preserve it (leeg valt door). Original toolchain agrees with our port: DRL-oracle AND exec-model both write null (prijs:=basistarief[leeg] over prijs=40 -> null). v1-delta candidate: a leeg-source assignment is a no-op."
   "anchor/jutterswet-waardering-v0vorm|v0-divergence: the leeg-source gelijkstelling (writes null) oscillates against the INITIALISATIE (refills 25), so the EXEC-MODEL never reaches a fixpoint (fireAllRules hits 100k). Same leeg-write root as waardestelling. The toolchain DRL-oracle DOES settle at 25 (=ref); our port mirrors the exec-model back-end, which does not. v1-delta candidate: exec-model reactivity of a leeg-source assignment."
   "anchor/jutterswet-kustwacht|v0-divergence (CORRECTED: NOT a leeg operand): NEGATION-as-failure is not stratified — a geen-<kenmerk> rule fires before the positive kenmerk is derived and is never retracted, so rustwacht reads present though its post IS a risicopost. Original toolchain agrees with our port: DRL-oracle AND exec-model both fire the negated kenmerk true. v1-delta candidate: stratify negated-kenmerk reads."
+  # Added 2026-08-28 (card clingo-term-encoderingen): the quote-escaping golden. ref/clingo now
+  # escape an embedded double-quote in a text value/literal (backslash-quote, both sides, S2) and
+  # MATCH; the v0 Drools backend does NOT carry an embedded double-quote in text equality — it fires
+  # the comparison false, so gekeurd stays absent and afslag leeg (a FAIL: wrong value, never a crash
+  # at fire). EVIDENCE: the byte-identical golden with the double-quote stripped from BOTH the value
+  # and the literal PLAYS+PASSES through this same Drools jar, so the divergence is EXACTLY the
+  # embedded quote. Fixing the Drools exec-model string encoding is out of scope here
+  # (backends/drools code); recorded as a v0-backend limitation.
+  "jutterswet-keurmerk|v0-divergence: the v0 Drools backend does not carry an embedded double-quote in text equality — the comparison fires false, so gekeurd stays absent and afslag leeg, where ref/clingo (which now escape the quote on both sides, S2) match. The quote-free variant of this golden PLAYS+PASSES through the same Drools jar, so the divergence is exactly the embedded quote. v1-delta candidate: escape embedded quotes in the Drools exec-model text equality."
   # NB objectcreatie (§13.4.6) and wederkerig self-relations (§13.3.9.2) are NOT listed here: they do not
   # execute in the v0 backend at all (a navigated created-object read yields leeg / an intValue() NPE; a self-pair
   # role has no derived bean field), so they are LOUD PER-FORM auto-exclusions in CaseRunner, not value-divergences.
