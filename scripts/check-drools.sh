@@ -49,17 +49,20 @@ fi
 # Each entry: "<golden-relative-path>|<reason>". A golden here MUST diverge (FAIL/ERROR); if it
 # plays+passes the list is stale. Grouped by the divergence class the differential exposed.
 EXCLUDE_KNOWN=(
-  # leeg-semantics: the exec-model writes/asserts a value where ref/clingo pin the uchar leeg
-  # rule (leeg-valt-door: a gelijkstelling with a leeg source overwrites the target rather than
-  # preserving it — traced to the unconditional werkBij write; leeg-in-condition: a comparison/
-  # kenmerk over a leeg operand reads true rather than dropping the rule).
-  "anchor/jutterswet-waardestelling|leeg-valt-door: exec-model overwrites a leeg-sourced gelijkstelling; ref/clingo preserve the input"
-  "anchor/jutterswet-waardering-v0vorm|leeg-doorval: the leeg fall-through recompute does not reach a fixpoint in the exec-model"
-  "anchor/jutterswet-kustwacht|leeg-in-condition: a kenmerk over a leeg operand reads present where ref/clingo pin absent"
-  "jutterswet-borgvlag|leeg-in-condition: a kenmerk over a leeg operand reads present where ref/clingo pin absent"
-  "jutterswet-vondstetiket|leeg-in-condition: a kenmerk over a leeg operand reads present where ref/clingo pin absent"
-  "jutterswet-gelijkdeling|leeg in a verdeling restant: exec-model writes a value where ref/clingo pin leeg"
-  "jutterswet-voorwaardedeling|leeg under a conditional verdeling: exec-model writes a value where ref/clingo pin leeg"
+  # ALL SEVEN triaged 2026-08-28 (card leeg-divergentie-triage) by REPLAY through the original
+  # regelspraak-java toolchain (its DrlTranspiler oracle AND ExecModelTranspiler, fired over the
+  # equivalent minimal .rgs): in every case the original toolchain agrees with OUR PORT and NOT with
+  # ref/clingo — so each is a GENUINE v0 production-semantics divergence (class b), never a port bug.
+  # The uchar spec (ref/clingo) implements principled leeg semantics; production RegelSpraak's Drools
+  # lowering does not. Each is a named v1-delta candidate. NB two reason lines were CORRECTED here: the
+  # kustwacht/voorwaardedeling mechanism is NOT a leeg operand (see below).
+  "anchor/jutterswet-waardestelling|v0-divergence: a gelijkstelling with a LEEG source overwrites the pre-filled doel with null; ref/clingo preserve it (leeg valt door). Original toolchain agrees with our port: DRL-oracle AND exec-model both write null (prijs:=basistarief[leeg] over prijs=40 -> null). v1-delta candidate: a leeg-source assignment is a no-op."
+  "anchor/jutterswet-waardering-v0vorm|v0-divergence: the leeg-source gelijkstelling (writes null) oscillates against the INITIALISATIE (refills 25), so the EXEC-MODEL never reaches a fixpoint (fireAllRules hits 100k). Same leeg-write root as waardestelling. The toolchain DRL-oracle DOES settle at 25 (=ref); our port mirrors the exec-model back-end, which does not. v1-delta candidate: exec-model reactivity of a leeg-source assignment."
+  "anchor/jutterswet-kustwacht|v0-divergence (CORRECTED: NOT a leeg operand): NEGATION-as-failure is not stratified — a geen-<kenmerk> rule fires before the positive kenmerk is derived and is never retracted, so rustwacht reads present though its post IS a risicopost. Original toolchain agrees with our port: DRL-oracle AND exec-model both fire the negated kenmerk true. v1-delta candidate: stratify negated-kenmerk reads."
+  "jutterswet-borgvlag|v0-divergence: leeg ONGELIJK gevuld reads WAAR (Tabel 44 / Java null-ne-x) so betwist fires; ref/clingo pin it absent (leeg propagates). Original toolchain agrees with our port: DRL-oracle AND exec-model both fire the EIGEN attribuut-ne-literal cell. v1-delta candidate: a leeg-operand comparison yields leeg."
+  "jutterswet-vondstetiket|v0-divergence: leeg ONGELIJK the literal zeevondst reads WAAR (Tabel 44) so omstreden fires; ref/clingo pin it absent. Original toolchain agrees with our port: DRL-oracle AND exec-model both fire (Tekst attribuut-ne-literal, leeg). Same cell as borgvlag."
+  "jutterswet-gelijkdeling|v0-divergence: a verdeling with NO recipients still fires the onverdeelde-rest rule (sum of shares = 0), writing restant = totaal; ref/clingo pin restant leeg. Original toolchain agrees with our port: DRL-oracle AND exec-model both write 40. v1-delta candidate: a no-recipient restant is leeg."
+  "jutterswet-voorwaardedeling|v0-divergence (CORRECTED: NOT leeg): the verdeling VOORWAARDE is dropped — neither transpiler reads v.voorwaarde(), so the split runs even when the gate is false (a vrijgavescore of 7 >= 10 is false yet it still distributes). ref/clingo gate it. Original toolchain agrees with our port: DRL-oracle AND exec-model both distribute. v1-delta candidate: gate a verdeling on its voorwaarde."
   # NB objectcreatie (§13.4.6) and wederkerig self-relations (§13.3.9.2) are NOT listed here: they do not
   # execute in the v0 backend at all (a navigated created-object read yields leeg / an intValue() NPE; a self-pair
   # role has no derived bean field), so they are LOUD PER-FORM auto-exclusions in CaseRunner, not value-divergences.
