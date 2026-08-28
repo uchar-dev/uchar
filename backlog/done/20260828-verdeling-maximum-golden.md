@@ -36,3 +36,33 @@ Out of scope: backends/**, ref/, toka/**, spec/IR-SPEC.md,
 spec/RUNTIME-SEMANTICS.md, spec/schema/, spec/verifier/, frontends/**,
 scripts/check-noop.sh, spec/CONSTRUCTS.md, spec/PLAN.md, any toolchain
 commit.
+
+## Result (2026-08-28)
+
+Landed `corpus/golden/jutterswet-buitplafond` (own-authored Jutterswet,
+strandjutten domain, Dutch names): a single `NAAR_RATO` allocation,
+`afrondingDecimalen: null` (exact), maximum `buitplafond`, all attributes
+whole (0 decimals) so cdec = tdec = 0 — the cap floors to an exact integer
+at the target scale, the admitted branch. Two hand-computed cases (NOTE.md):
+
+- `case.json` — pot 120, weights 1:2:3 (Σ 6), raws 20/40/60 (exact
+  integers); caps 30/25/50 → shares **20** (under, b), **25** (clipped, a),
+  **50** (clipped, a); rest **25** into `buitrest` (ch. 4.4).
+- `case2-onbeperkt.json` — pot 90, same weights, caps 100 → the cap clips
+  nothing: shares **15/30/45**, rest **0** (pure proportional).
+
+No case supplies the allocation target, so both cases refute --noop (gate 7,
+no survivor entry). Values are hand-derived from RUNTIME-SEMANTICS ch. 4.2/
+4.3/4.4, never copied from an executor.
+
+All twelve gates green in the worktree: 1 self-contained, 2 schema
+round-trip, 3 verifier, 4 case schema, 5 ref oracle, 6 clingo differential
+(ref ≡ clingo), 7 noop, 8 rood, 9 catala, 10 regelspraak, 11 toka-parity,
+12 drools. Gate 12 **PLAYS both cases** through Drools (ref ≡ clingo ≡
+Drools — the square closed on the exact-with-cap branch), so no exclusion
+was needed and `scripts/check-drools.sh` is untouched.
+
+Spec touch (only): `spec/ASP-TRANSLATION.md` S12 Witnesses gains the
+golden's name for the exact (unrounded) proportional-share-under-a-cap
+class (cdec ≤ tdec). S19 unchanged. No code changes to `backends/**` or
+`ref/`.
