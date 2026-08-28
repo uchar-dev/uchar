@@ -120,7 +120,37 @@ clingo PASS (357) · 7 noop PASS (324/33) · 8 rood PASS (22) · 9 catala PASS
 toka-parity PASS (30 replay) · 12 drools PASS (53 played; 72 auto-excluded;
 4 value-divergence; 1 no-case).
 
-### Diff (4 files)
+### Review round (fix-and-close, 2026-08-28)
+Two adversarial lenses ran the diff and reproduced red-first; both found **no
+CRITICAL and no MAJOR** and reported merge-ready. Two minors, handled:
+- *Scope — the WF-index row (`spec/IR-SPEC.md`) is edited alongside the two
+  enumerated spots.* **Motivated keep.** The WF-index table is the spec's
+  WF → witness map; this card adds the negatief witness
+  `wf031-dagsoort-venster`, and leaving the index without it would itself be
+  a stale-index defect. The edit stays wholly inside the IR-SPEC.md zone and
+  is coherence-preserving.
+- *NOTE.md did not record that `geldigheid` is a required v0 field, so ALTIJD
+  is the explicit `vanaf: null, tot: null` object (an omitted field is a load
+  error, not ALTIJD).* **Processed.** One clarifying sentence added to
+  `corpus/negatief/wf031-dagsoort-venster/NOTE.md`; schema confirms
+  `ResolvedDagsoort.geldigheid` is required. No gate consumes NOTE.md content,
+  so no gate is affected.
+
+All twelve gates were re-run this round (opam env; frontend jars in place;
+Drools uber-jar rebuilt via `mvn -o … package`) and are green with the counts
+above. Red-first was reproduced first-hand this round: base `checks.ml`
+`verifier: PASS` (rc=0) on the bounded-window case, branch `checks.ml`
+`WF-031 FAIL … must be ALTIJD (vanaf and tot both null)` (rc=1); the tree was
+restored byte-identical after the base-build probe.
+
+### Deliberately left open (per card)
+The recursion/stratification question for day-kind conditions stays **OPEN**
+exactly as WF-031's delta note records it — decided with the stratification
+chapter (the ladder design round). No executor, schema, or window-semantics
+change: the wire stays v0 (`geldigheid` stays on the node; the verifier is
+the fence).
+
+### Diff (5 artifact files + this card)
 `backlog/` (this card), `corpus/negatief/wf031-dagsoort-venster/` (NOTE.md +
 ir.json), `spec/IR-SPEC.md` (WF-031 prose + §3.7 validity row + WF-index
 row), `spec/verifier/lib/checks.ml` (the validity arm), `spec/ASP-TRANSLATION.md`
