@@ -1,0 +1,62 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "vondsttarief": {
+            "number": "21"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "vondsttarief": {
+            "number": "9"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "bergingstarief",
+      "value": {
+        "number": "21"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "standaardbelast"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "bergingstarief",
+      "value": {
+        "number": "21"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V2",
+      "characteristic": "standaardbelast"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

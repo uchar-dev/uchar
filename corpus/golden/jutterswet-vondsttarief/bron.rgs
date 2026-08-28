@@ -1,0 +1,12 @@
+Objecttype de Vondst (mv: Vondsten)
+    is standaardbelast kenmerk (bijvoeglijk);
+    het vondsttarief Percentage (geheel getal);
+    het bergingstarief Percentage (geheel getal);
+
+Regel bergingstarief van een vondst
+    geldig altijd
+        Het bergingstarief van een Vondst moet berekend worden als 21%.
+
+Regel standaardbelast bij tarief
+    geldig altijd
+        Een Vondst is standaardbelast indien het vondsttarief van de Vondst gelijk is aan 21%.
