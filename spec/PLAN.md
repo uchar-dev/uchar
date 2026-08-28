@@ -666,7 +666,14 @@ empty-value discipline is frozen to the documented mirror with its coalesce
 whitelist (`RUNTIME-SEMANTICS.md` ch. 1.2–1.4); empty-as-unknown is a
 non-goal; numeric-zero division routes to the §9.5 channel in v1; the
 open/closed-world split is expressed through Phase-4 defaults, not operator
-behaviour.
+behaviour. **Amended (2026-08-28, source-verified against the official
+typeringen tables):** inequality with exactly one empty operand is WAAR,
+uniform over every type — Tabel 44 followed completely; the previous
+text/enum/boolean any-empty-false cell was an undocumented, internally
+inconsistent deviation (dates already followed the numeric rule) and its
+five corpus pins were re-pinned hand-computed, closing two gate-12
+divergences. The equality cells stand unchanged, including the
+non-numeric any-empty-equals-false mirror of v0's guard.
 
 New in v4. (8) **Decided:** the published corpus is rights-free by
 construction — the Jutterswet (plus its quantitative extensions) replaces
