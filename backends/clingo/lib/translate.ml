@@ -1140,11 +1140,18 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         1 )
   | Functie { kind = Som; argumenten = [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some el; leegwaarde; bron_rol; filter; _ } ->
       let a = req "fold attribute" attribuut in
-      (match leegwaarde with
-      | Some (Literal { waarde = Some "0"; _ }) -> ()
-      | Some _ -> fault "som fallback other than 0 is not translated yet"
-      | None ->
-          fault "som without the 0 fallback needs an explicit non-empty guard; no corpus case yet");
+      (* the empty set: #sum over no tuples is clingo's native 0, which is
+         exactly the leegwaarde-0 facet (ref agg_som (Some 0)). A som WITHOUT a
+         fallback yields ref's Empty (agg_som None → Empty), NOT 0, so it needs a
+         presence guard (below) that keeps the term underivable on the empty
+         set. A fallback other than 0 stays loud — ref would add the fallback,
+         which no encoding here carries. *)
+      let has_fallback =
+        match leegwaarde with
+        | Some (Literal { waarde = Some "0"; _ }) -> true
+        | Some _ -> fault "som fallback other than 0 is not translated yet"
+        | None -> false
+      in
       (* the connecting role: the node's explicit binding when present,
          else derived the same way ref/ derives it *)
       let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty } in
@@ -1179,7 +1186,64 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         (String.concat ", " (base :: ctx.rule_guard))
         x
         (String.concat ", " contrib_body);
-      ( [ Printf.sprintf "%s = #sum { %s,%s : %s }" v g x (String.concat ", " contrib_body) ],
+      (* the presence guard for the fallback-less som: a helper keyed by the
+         subject holds iff at least one contributor exists; the reading rule
+         carries it, so an empty set leaves the whole term underivable (ref's
+         Empty) instead of deriving #sum's 0. With a 0 fallback the bare #sum
+         (native 0 on the empty set) is exactly right, so no guard is added. *)
+      let guard =
+        if has_fallback then []
+        else begin
+          ctx.fresh <- ctx.fresh + 1;
+          let p = Printf.sprintf "somp%d" ctx.fresh in
+          emit ctx "%s(%s) :- %s." p subject (String.concat ", " (base :: contrib_body));
+          [ Printf.sprintf "%s(%s)" p subject ]
+        end
+      in
+      ( guard @ [ Printf.sprintf "%s = #sum { %s,%s : %s }" v g x (String.concat ", " contrib_body) ],
+        v,
+        pow10 (attr_decimals ctx ~otype:el ~attr:a) )
+  | Functie { kind = (Minimum | Maximum) as kind; argumenten = [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some el; bron_rol; filter; _ } ->
+      (* MAXIMUM/MINIMUM over a set-typed AttribuutRef (RUNTIME-SEMANTICS
+         ch. 1.2e, ref agg_max/agg_min = agg_extreme): the same contributor
+         gathering as the som arm, aggregated with #max/#min at the element
+         attribute's scale. Empty contributors contribute no tuple (the join is
+         the skip, exactly as the som), and the extreme is the max/min of the
+         contributed values. No fence: unlike #sum, min/max never accumulate —
+         the result IS one contributed value, already inside 2^31 by the load
+         fence. Unlike the listed eerste/laatste fold there is no scale
+         harmonisation (one attribute, one scale, one unit), so no per-operand
+         multiplication and no range guard. A leegwaarde on min/max is ignored,
+         mirroring ref (agg_max/agg_min take no fallback). The presence guard is
+         MANDATORY: #max/#min over the empty set yields #inf/#sup, which must
+         never escape into a value — ref derives Empty there. *)
+      let a = req "fold attribute" attribuut in
+      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty } in
+      let role_name =
+        role_canonical
+          (match bron_rol with
+          | Some rb -> Eval.bound_role env rb
+          | None -> Eval.connecting_role env ~from_type:subject_ot ~to_type:el)
+      in
+      let v = fresh ctx "M" in
+      let g = fresh ctx "G" and x = fresh ctx "X" in
+      let fatoms =
+        match filter with
+        | None -> []
+        | Some c -> cond_atoms ctx ~subject:x ~subject_ot:el c
+      in
+      let contrib_body =
+        Printf.sprintf "rol(%s,%s,%s)" subject (str role_name) x
+        :: Printf.sprintf "val(%s,%s,%s)" x (str a) g
+        :: fatoms
+      in
+      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      ctx.fresh <- ctx.fresh + 1;
+      let p = Printf.sprintf "extp%d" ctx.fresh in
+      emit ctx "%s(%s) :- %s." p subject (String.concat ", " (base :: contrib_body));
+      let agg = match kind with Minimum -> "#min" | _ -> "#max" in
+      ( [ Printf.sprintf "%s(%s)" p subject;
+          Printf.sprintf "%s = %s { %s : %s }" v agg g (String.concat ", " contrib_body) ],
         v,
         pow10 (attr_decimals ctx ~otype:el ~attr:a) )
   | Functie { kind = (Eerste | Laatste) as kind; argumenten = (_ :: _ :: _ as args); filter; _ }
@@ -1882,6 +1946,52 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               (String.concat ", " gbody)
               t);
         (b, rounded, target))
+  | Begrensd { basis; minimum; maximum; _ } ->
+      (* the clamp (RUNTIME-SEMANTICS ch. 2.7, ref Arith.clamp): the minimum
+         raises to at least the lower bound, THEN the maximum lowers to at most
+         the upper bound, via the integer identities max(a,b) = (a+b+|a−b|)/2
+         and min(a,b) = (a+b−|a−b|)/2 on the harmonised scale — a+b±|a−b| is
+         always even, so the /2 is exact on either sign. An empty base
+         propagates: its atoms leave the reading rule underivable, so ref's
+         Empty → Empty falls out of the bare join. ref restates each bound into
+         the base's UNIT by an exact factor; the integer encoding carries no
+         factor, so only identical (or a unitless-side) units pass — a real
+         factor faults, the additive-join fence. A bound must be non-empty by
+         construction: an empty bound is ref's NO-bound, which the bare join
+         would instead read as underivable (a silent divergence), so only an
+         atom-free ground literal/constant bound translates — a read that could
+         be empty faults loudly. *)
+      let basis_e = req "Begrensd.basis" basis in
+      numeric_ok basis;
+      let b_atoms, b_term, b_scale = expr_term ctx ~subject ~subject_ot basis_e in
+      let base_unit = eff_unit ctx basis_e in
+      let bound name = function
+        | None -> None
+        | Some e ->
+            numeric_ok (Some e);
+            units_identical_ok ~what:"a Begrensd bound" base_unit (eff_unit ctx e);
+            let atoms, term, scale = expr_term ctx ~subject ~subject_ot e in
+            if atoms <> [] then
+              fault
+                "a Begrensd %s bound that is not a ground literal could be empty; ref reads an empty \
+                 bound as no bound, which the bare join cannot express (no corpus case)"
+                name;
+            Some (term, scale)
+      in
+      let lo = bound "minimum" minimum and hi = bound "maximum" maximum in
+      let m = List.fold_left max b_scale (List.filter_map (Option.map snd) [ lo; hi ]) in
+      let scale_to t s = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
+      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      let fenced = (b_term, b_scale) :: List.filter_map Fun.id [ lo; hi ] in
+      range_guard ctx ~subject
+        ~body:((base :: ctx.rule_guard) @ b_atoms)
+        (List.map (fun (t, s) -> (t, 1073741823 / (m / s))) fenced);
+      let bh = scale_to b_term b_scale in
+      let mx a b = Printf.sprintf "((%s+%s+|%s-%s|)/2)" a b a b in
+      let mn a b = Printf.sprintf "((%s+%s-|%s-%s|)/2)" a b a b in
+      let after_lo = match lo with Some (t, s) -> mx bh (scale_to t s) | None -> bh in
+      let clamped = match hi with Some (t, s) -> mn after_lo (scale_to t s) | None -> after_lo in
+      (b_atoms, clamped, m)
   | Constante { naam = Some n; _ } when Ir_v0.Checks.norm n = Ir_v0.Checks.norm "Rekendatum" -> (
       (* ch. 8.2: the execution-date constant is a program constant — the
          session's one evaluation date as a civil day number *)
