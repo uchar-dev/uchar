@@ -4585,11 +4585,14 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
   let ddec = Option.value v.afronding_decimalen ~default:tdec in
   (* an unrounded (exact-share) allocation with a maximum: ref writes
      min(exact_share, cap) and faults a non-fitting write. Carried here for
-     the proportional method with a cap no finer than its target: the
-     clipped write is then the fitting cap (cdec ≤ tdec ⟹ capd is an exact
-     integer at the target scale), and where the cap does NOT clip, the
-     exactness viol still refuses a non-fitting uncapped share loudly —
-     exactly as ref faults it. A cap finer than the target (whose clipped
+     the proportional method with a cap no finer than its target:
+     cdec ≤ tdec ⟹ capd is an exact integer at the target scale, so a
+     clipped write always fits. The exactness viol (below) fires on the RAW
+     proportional share whenever it is inexact, independent of the cap — so
+     where the cap clips an inexact raw to a fitting integer, clingo refuses
+     LOUDLY though ref writes the fitting cap and passes: clingo is stricter
+     in that corner, a conservative loud refusal, never a silent floor (no
+     corpus case exercises it). A cap finer than the target (whose clipped
      write might itself not fit, a silent floor) and the ordered method
      keep faulting: no witness pins that corner. Only a fence narrows here;
      the emitted allocation machinery is unchanged. *)

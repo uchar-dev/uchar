@@ -104,3 +104,50 @@ Result (landed on branch card/clingo-allocatie-input):
   criteria or condition has no stratified negation-as-failure encoding...".
 - All twelve gates green in the worktree (gate 9 catala via the opam switch,
   gate 12 drools PLAYS the new golden).
+
+---
+
+Result — review round (fix-and-close, 2026-08-28):
+
+Two adversarial lenses (encoding-correctness; rights/scope/gates) each ran all
+gates themselves and rated the card MERGE-READY. No CRITICAL. One MAJOR and
+three minors; each handled with the narrowest fix or rejected with reason.
+
+- MAJOR (lens 1) — the exact+maximum fence comment (translate.ml) and the S19
+  spec sentence claimed the exactness viol refuses "exactly as ref faults it".
+  Inaccurate: the Naar_rato exactness viol fires on the RAW share
+  unconditionally (no cap guard), so in the clip-AND-inexact corner (e.g. pot
+  100, weights 1/2, cap 10 on both) clingo refuses LOUDLY while ref writes the
+  fitting integer cap and passes — clingo is STRICTER there, a conservative
+  loud refusal, never a silent floor, and no corpus case exercises it. NARROWEST
+  FIX = correct the claim in both places (translate.ml comment ~4586-4598 and
+  spec/ASP-TRANSLATION.md S19). The machinery is untouched: changing the viol to
+  match ref would alter the verdeling semantics the card forbids, and the corner
+  is loud-safe (gate 6 = 350, gate 11 zero silent divergence).
+- minor (lens 2, rights/process) — spec/ASP-TRANSLATION.md named `scenario-toka-35`,
+  a private-zone ID, the sole toka reference in the whole product spec. Removed;
+  the translation claim now stands on its mathematical argument (cdec <= tdec
+  floors to an exact integer) plus the loud residual fence, decoupled from the
+  private zone. Folded into the same S19 edit as the MAJOR.
+- minor (lens 2, coverage) — the exact-Naar_rato-with-fitting-cap translator
+  branch has only the private toka-35 witness. REJECTED for this round as a
+  maintainer follow-up: adding a public golden exceeds "de smalste fix" for a
+  card both lenses already blessed, and it is loud-safe with zero corpus
+  regression. A future own-authored Jutterswet golden (exact proportional split
+  with a clipping cap, exact-integer raws so clingo = ref) would close it.
+- minor (lens 1, timeline) — `case_supplies` also trips on a timeline-typed
+  target, but such input emits as tl/5 (never inputval/3) so the pass-through
+  matches nothing. REJECTED: latent, no reachable bug (allocation targets are
+  numeric scalars), out of this card's scope.
+
+Gate re-run in the worktree (opam env; frontend jars in place; drools jar via
+mvn -o package) — ALL TWELVE GREEN:
+  1 self-contained PASS · 2 ir-schema PASS (149) · 3 verifier PASS (149/161) ·
+  4 case-schema PASS (372) · 5 oracle PASS (350) · 6 clingo PASS (350) ·
+  7 noop PASS (317 refute / 33 survivors) · 8 rood PASS (22) ·
+  9 catala PASS (169 checks / 11 goldens) · 10 regelspraak PASS (130 tests /
+  19 goldens) · 11 toka-parity PASS (clingo 28 PASS / 2 loud / 0 silent) ·
+  12 drools PASS (played 50; the new golden PLAYS, no exclusion).
+
+This round changed only prose: translate.ml comment and the S19 spec sentence.
+No code semantics, corpus, manifest, or gate script changed. No merge, no push.

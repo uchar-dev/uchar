@@ -1787,16 +1787,19 @@ scales translate (S12), and what stays loud is rounding declared
 FINER than the target scale, a remainder declared coarser than the
 pot or rounding scale, and an unrounded (exact-share) allocation
 carrying a maximum — narrowed 2026-08-28: the **proportional** method
-with a cap no finer than its target now translates (`scenario-toka-35`,
-the parity zone), because a cap at cdec <= tdec floors to an exact
-integer at the target scale, so the clipped write fits and the
-exactness viol still refuses a non-fitting UNcapped share loudly,
-exactly as ref faults it; what stays loud is the ORDERED method's
-exact+maximum and a cap FINER than its target (whether the exact share
-or the clipped cap is the written minimum then decides ref's write
-fault, no corpus case) — while the unrounded aligned form, which used to floor
-silently where ref faults a non-fitting write, now carries the
-runtime exactness viol instead of a silent divergence;
+with a cap no finer than its target now translates, because a cap at
+cdec <= tdec floors to an exact integer at the target scale, so a
+clipped write always fits; the exactness viol then fires on the RAW
+proportional share whenever it is inexact, independent of the cap, so
+where the cap clips an inexact raw to a fitting integer clingo refuses
+LOUDLY though ref writes the fitting cap and passes — clingo is
+stricter in that corner, a conservative loud refusal, never a silent
+floor (no corpus golden witnesses it); what stays loud is the ORDERED
+method's exact+maximum and a cap FINER than its target (whether the
+exact share or the clipped cap is the written minimum then decides
+ref's write fault, no corpus case) — while the unrounded aligned form,
+which used to floor silently where ref faults a non-fitting write, now
+carries the runtime exactness viol instead of a silent divergence;
 a som fallback other than 0 — a NON-zero `leegwaarde` literal (the
 fallback-less som now translates via its presence guard, S8, and the
 fallback-0 facet rides `#sum`'s native 0); uniqueness key
