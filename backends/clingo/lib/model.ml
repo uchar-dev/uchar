@@ -29,23 +29,48 @@ and term =
   | T_str of string
   | T_func of string * term list
 
-(* split a functor's argument list on top-level commas — parenthesis-depth
-   and quote aware, so nested terms and quoted strings survive intact *)
+(* split a functor's argument list on top-level commas — parenthesis-depth,
+   quote and escape aware, so nested terms and quoted strings survive intact.
+   Inside a string an escaped double-quote (backslash-quote) or backslash
+   (doubled) — the shape translate.ml emits — must not be mistaken for a string
+   boundary, or a comma later in the same string would split it (a hunted
+   mis-parse). *)
 let split_top_commas (s : string) : string list =
   let n = String.length s in
   let out = ref [] and start = ref 0 and depth = ref 0 and in_str = ref false in
-  for i = 0 to n - 1 do
-    match s.[i] with
-    | '"' -> in_str := not !in_str
-    | '(' when not !in_str -> incr depth
-    | ')' when not !in_str -> decr depth
-    | ',' when !depth = 0 && not !in_str ->
-        out := String.sub s !start (i - !start) :: !out;
-        start := i + 1
-    | _ -> ()
+  let i = ref 0 in
+  while !i < n do
+    (if !in_str && s.[!i] = '\\' && !i + 1 < n then incr i (* skip the escaped char *)
+     else
+       match s.[!i] with
+       | '"' -> in_str := not !in_str
+       | '(' when not !in_str -> incr depth
+       | ')' when not !in_str -> decr depth
+       | ',' when !depth = 0 && not !in_str ->
+           out := String.sub s !start (!i - !start) :: !out;
+           start := !i + 1
+       | _ -> ());
+    incr i
   done;
   out := String.sub s !start (n - !start) :: !out;
   List.rev_map String.trim !out
+
+(* the inverse of translate.ml's [quote] escaping: backslash-quote becomes a
+   bare quote, doubled-backslash a single backslash, so a parsed string term
+   carries the same bytes the value model holds. A string with no escapes
+   (every corpus value before the encoding widened) is returned unchanged. *)
+let unescape_str (s : string) : string =
+  if not (String.contains s '\\') then s
+  else begin
+    let n = String.length s in
+    let b = Buffer.create n in
+    let i = ref 0 in
+    while !i < n do
+      if s.[!i] = '\\' && !i + 1 < n then (Buffer.add_char b s.[!i + 1]; i := !i + 2)
+      else (Buffer.add_char b s.[!i]; incr i)
+    done;
+    Buffer.contents b
+  end
 
 let rec parse_term (s : string) : term =
   let s = String.trim s in
@@ -53,7 +78,7 @@ let rec parse_term (s : string) : term =
   | Some v -> T_int v
   | None ->
       let n = String.length s in
-      if n >= 2 && s.[0] = '"' && s.[n - 1] = '"' then T_str (String.sub s 1 (n - 2))
+      if n >= 2 && s.[0] = '"' && s.[n - 1] = '"' then T_str (unescape_str (String.sub s 1 (n - 2)))
       else (
         match String.index_opt s '(' with
         | None ->

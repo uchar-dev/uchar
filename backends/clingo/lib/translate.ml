@@ -60,20 +60,32 @@ module Eval = Uchar_ref.Eval
 
 let norm = Ir_v0.Checks.norm
 let fault = Value.fault
-(* a declared name or case label lands between double quotes in the
-   generated ASP; a quote, backslash or control character would break
-   the program's syntax UNFENCED (a hunted crash), so such a name
-   faults with its reason instead of being emitted raw. For DECLARED
-   names WF-057 (IR-SPEC ch. 2.1) now rejects the document itself —
-   this fence remains as the last-line backstop, and it alone covers case
-   LABELS, which are case-side and outside WF-057's reach *)
+(* a declared name or case label lands between double-quotes in the
+   generated ASP. gringo's string syntax escapes an embedded
+   double-quote as backslash-quote and a backslash as doubled, so both
+   are lowered to their escape sequence — identically on the literal and
+   value sides (S2), which is what keeps the equality join sound. A
+   control character < 0x20 has no such escape and would break the
+   program's syntax UNFENCED (a hunted crash), so it still faults with
+   its reason. For DECLARED names WF-057 (IR-SPEC ch. 2.1) now rejects
+   the document itself — this remains the last-line backstop, and it
+   alone covers case LABELS, which are case-side and outside WF-057's
+   reach. The expectation-check parser (model.ml) reads the SAME escaped
+   shape back, escape-aware, so no independent encoding drifts. *)
 let quote s =
+  let b = Buffer.create (String.length s + 2) in
+  Buffer.add_char b '"';
   String.iter
     (fun c ->
-      if c = '"' || c = '\\' || Char.code c < 0x20 then
-        fault "name or label %S carries a character the ASP string encoding cannot quote" s)
+      if Char.code c < 0x20 then
+        fault "name or label %S carries a character the ASP string encoding cannot quote" s
+      else begin
+        if c = '"' || c = '\\' then Buffer.add_char b '\\';
+        Buffer.add_char b c
+      end)
     s;
-  "\"" ^ s ^ "\""
+  Buffer.add_char b '"';
+  Buffer.contents b
 
 let str s = quote (norm s)
 let str_raw s = quote s (* labels keep their case-sensitive spelling *)
