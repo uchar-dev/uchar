@@ -1,0 +1,105 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B1",
+        "objectType": "Strandbuit",
+        "attributes": {
+          "buitopbrengst": {
+            "number": "120"
+          }
+        },
+        "roles": {
+          "buitjutters": [
+            "J1",
+            "J2",
+            "J3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "aandeelgewicht": {
+            "number": "1"
+          },
+          "buitplafond": {
+            "number": "30"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "aandeelgewicht": {
+            "number": "2"
+          },
+          "buitplafond": {
+            "number": "25"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "aandeelgewicht": {
+            "number": "3"
+          },
+          "buitplafond": {
+            "number": "50"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "buitdeel",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "buitdeel",
+      "value": {
+        "number": "25"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "buitdeel",
+      "value": {
+        "number": "50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "buitrest",
+      "value": {
+        "number": "25"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

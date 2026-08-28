@@ -1007,7 +1007,11 @@ two temporal components (the same-moment tuple join has no corpus
 case).
 
 Witnesses: proportional allocation by `jutterswet-bergingstoezicht`,
-`jutterswet-berging`; equal shares by `jutterswet-gelijkdeling`
+`jutterswet-berging`, and the exact (unrounded) proportional share
+under a maximum no finer than its target by `jutterswet-buitplafond`
+(cdec ≤ tdec, so the clip writes a fitting integer and the surplus
+falls into the undivided rest, the raw shares themselves exact);
+equal shares by `jutterswet-gelijkdeling`
 (floor + remainder, the recipientless source writing nothing);
 ordered by `jutterswet-rangdeling` (depletion over year groups, the
 empty key last, the negative pot clamping to real 0s),
