@@ -1056,11 +1056,12 @@ corner); golden `jutterswet-vervaltermijn` pins the month-end clamp,
 the empty-duration standstill, the quarter step and the
 fractional truncation. The day-kind (dagsoort-as-unit) forms stay
 unexecuted, loud — tracked debt, never a silent skip. The datum-tijd
-millisecond layer is executed in ref per the paragraph below; in the
-ASP backend it stays a loud fault under the datum-tijd embargo
-(maintainer decision 2026-08-25, ratified; `spec/ASP-TRANSLATION.md`
-S19), so its behaviour is pinned by worked-example unit tests, not by
-a corpus golden.
+millisecond layer is executed in ref per the paragraph below and,
+since the pair-term encoding landed (2026-08-28, lifting the
+2026-08-25 embargo), in the ASP backend as well —
+`spec/ASP-TRANSLATION.md` S6a; corpus golden
+`jutterswet-getijdenpaar` pins it through both executors, the borrow
+corner included.
 
 **Duration in a day-kind** ("de tijdsduur van A tot B in werkdagen")
 counts the days d with `A < d ≤ B` — **start exclusive, end inclusive**
@@ -1157,13 +1158,17 @@ test verbatim):
   **fault**, and + 60 000 000 000 dagen = **fault** — the step leaves
   the ms range; a wrap-around never masquerades as a datetime.
 
-**Executed in ref only (2026-08-25; WF-035/WF-038):** the datum-tijd
-layer runs in `ref/`, pinned by the worked examples above as unit
-tests. The ASP backend keeps its loud fault — a datetime's ms value
-does not fit clingo's integer range — under the datum-tijd embargo
-(maintainer decision 2026-08-25, ratified): no datum-tijd corpus
-golden lands until a pair-term encoding exists (`spec/ASP-TRANSLATION.md`
-S19 records the embargo and names that registered future work).
+**Executed in both executors (ref 2026-08-25, WF-035/WF-038; ASP
+2026-08-28):** the datum-tijd layer runs in `ref/`, pinned by the
+worked examples above as unit tests, and in the ASP backend through
+the pair-term encoding `dt(civil day, ms-of-day)` — a datetime's ms
+value never enters clingo's integer range whole
+(`spec/ASP-TRANSLATION.md` S6a; the 2026-08-25 embargo is lifted, its
+record kept in S19). Corpus golden `jutterswet-getijdenpaar` replays
+through both. One loud asymmetry stands, documented in S6a: a sub-day
+span beyond the int31 fence (~23 civil days in uren-counts) faults in
+clingo where ref computes it — fail-fast, a corpus constraint, never
+a silent divergence.
 
 **Date-part extraction and the Easter builtin.** Year, month and day
 extraction ("het jaar / de maand / de dag uit") read the **civil
