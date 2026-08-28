@@ -66,3 +66,36 @@ Spec touch (only): `spec/ASP-TRANSLATION.md` S12 Witnesses gains the
 golden's name for the exact (unrounded) proportional-share-under-a-cap
 class (cdec ≤ tdec). S19 unchanged. No code changes to `backends/**` or
 `ref/`.
+
+## Review round (2026-08-28)
+
+Two lenses, no CRITICAL and no MAJOR. Hand-computation re-derived
+independently (case.json 120·{1,2,3}/6 = 20/40/60 → clip {30,25,50} →
+20/25/50, rest 25; case2 90·{1,2,3}/6 = 15/30/45, rest 0) — matches the
+case files, `NOTE.md`, and every executor. The maximum machinery is
+load-bearing: J2/J3 clip actively (raw 40/60 → cap 25/50), J1 stays under
+(req b), rest 25 into `buitrest` (req d), raws exact so clingo's exactness
+viol stays silent (req c). Directly played through the Drools jar:
+`PLAYED 2`, and the golden appears in none of gate 12's exclusion lists.
+
+Two minors were raised and **rejected with motivation** (both observations,
+no defect):
+
+- *witness covers only the equal-scale edge cdec = tdec = 0, not a strict
+  cdec < tdec cap.* Rejected: the card scopes exactly one witness for this
+  branch and excludes the finer/inexact corner by design; a strict
+  cdec < tdec case is future coverage, not a gap in this pin.
+- *the ref oracle (gate 5) cannot distinguish `afrondingDecimalen: null`
+  from `0` for these whole values (floor_0 = identity).* Rejected: this is
+  the card's intent — it witnesses a **clingo** translator branch. The IR
+  faithfully records `null`, and the distinction is carried by gate 6 (no
+  exactness viol emitted for the exact-null path) and gate 12, exactly where
+  the card places it.
+
+All twelve gates re-run green in the worktree: 1 self-contained · 2 ir-schema
+(152, round-trip) · 3 verifier (152 golden / 161 negatief) · 4 case-schema
+(379) · 5 oracle (357) · 6 clingo (357, ref ≡ clingo) · 7 noop (324 refute /
+33 survivors, no buitplafond entry) · 8 rood (22) · 9 catala (169 checks, 11
+goldens) · 10 regelspraak (130 tests, 19 rgs) · 11 toka-parity (30 loud
+excludes, 0 fail) · 12 drools (played 53 incl. jutterswet-buitplafond
+`PLAYED 2`, 0 exclusion added — `scripts/check-drools.sh` untouched).
