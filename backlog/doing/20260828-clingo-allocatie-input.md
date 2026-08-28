@@ -67,3 +67,40 @@ spec/verifier/, frontends/**, backends/drools/** (code), the remaining fault
 classes (datum-tijd fold, unit algebra / Onbekend), scripts/check-noop.sh
 survivor entries (design the case to refute noop), spec/CONSTRUCTS.md,
 spec/PLAN.md, any toolchain commit.
+
+---
+
+Result (landed on branch card/clingo-allocatie-input):
+- backends/clingo/lib/translate.ml: the case_supplies fence in
+  translate_verdeling is replaced by the S10 defeasible-input layer —
+  translate_case emits inputval/3 for an allocation target (ladder_target
+  extended with the alloc clause), emit_write derives a per-allocation
+  vdI_eff/1 helper with the same body as each val head, and
+  `val(D,da,V) :- inputval(D,da,V), is_a(D,dt), not vdI_eff(D)` re-admits
+  the input on unreached instances. STRATIFICATION FENCE (narrowest safe
+  form): the target read anywhere else, or written by a second form, still
+  faults loudly — read/write detection reuses the verifier's own
+  Ir_v0.Checks.dep_forms.
+- New golden corpus/golden/jutterswet-veilinginvoer (GELIJKE_DELEN, pot 100
+  over 3 jutters = 33 each, rest 1; J4 unreached keeps its input 5). Hand-
+  computed in NOTE.md from RUNTIME-SEMANTICS ch. 4; noop-refuting; PLAYS in
+  Drools (ref ≡ clingo ≡ Drools over all 6 expectations).
+- toka/cases/parity.manifest: toka-32..37 move clingo FAULT->PASS
+  (clingo 28 PASS / 2 loud faults).
+- spec/ASP-TRANSLATION.md: S12 gains the input-default paragraph; the S19
+  allocation-target sentence shrinks to the residual (read-elsewhere
+  feedback + second-writer overlap).
+- BIJVANGST (reported, in-scope as "what the six pins need"): toka-35 is the
+  only unrounded proportional-with-maximum case; it was shadowed by the old
+  case_supplies fence. A FENCE-ONLY narrowing (the emitted allocation
+  machinery is unchanged) carries the proportional method with a cap no
+  finer than its target (cdec <= tdec, so the clipped write is an exact
+  integer at the target scale); the ordered method and a finer cap keep
+  faulting. Zero corpus regression (gate 6 = 350 cases), zero silent
+  divergence (gate 11).
+- Stratification-fence RED WITNESS (not committed; verifier-dirty by design):
+  an IR whose pot reads the target via a navigated SOM faults loudly
+  "...read elsewhere: a feedback into the allocation's pot, weights,
+  criteria or condition has no stratified negation-as-failure encoding...".
+- All twelve gates green in the worktree (gate 9 catala via the opam switch,
+  gate 12 drools PLAYS the new golden).

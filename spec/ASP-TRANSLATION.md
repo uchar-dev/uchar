@@ -924,9 +924,22 @@ multipliers a misaligned form introduces (46340² < 2^31; equal
 scales keep the historical 46340 everywhere). The wrap fences stay
 UNGATED by the voorwaarde — grounding computes the scaled products
 whether or not the condition turns out true — so clingo refuses
-loudly where ref would merely skip the source. Case input on the
-allocation's target attribute is refused — the ch. 6d
-superset-model fence.
+loudly where ref would merely skip the source. **Case input on the
+allocation's target** enters defeasibly (S10): the value rides
+`inputval/3`, a per-allocation `vdI_eff(X)` fires with the SAME body
+as each val head — so it holds exactly where the allocation writes
+recipient X — and `val(D,da,V) :- inputval(D,da,V), is_a(D,dt), not
+vdI_eff(D)` re-admits the input on any target instance the allocation
+does not reach: a non-recipient, or a recipient the method excludes
+(a weightless proportional share — ref leaves those standing, never
+0). ref overwrites where it writes and leaves the input where it does
+not (`World.write_attr`, ch. 4); the layer is exactly that. It is
+engaged only where the case supplies the target, and fenced loudly
+where that target attribute is READ anywhere else (a feedback into the
+pot, weights, criteria or condition has no stratified `not vdI_eff`
+encoding — the read set is the verifier's own, `dep_forms`) or WRITTEN
+by a second form (the overlap's overwrite order is unpinned) — the
+narrowest acyclic form.
 
 **Uniqueness** (ch. 5.9): a collision is a pairwise join —
 `inconsistent("name",S1) :- is_a(S1,ot), is_a(S2,ot), S1 != S2,
@@ -1773,18 +1786,28 @@ all three methods, the voorwaarde and misaligned pot/target/cap/rest
 scales translate (S12), and what stays loud is rounding declared
 FINER than the target scale, a remainder declared coarser than the
 pot or rounding scale, and an unrounded (exact-share) allocation
-carrying a maximum (whether the exact share or the cap is the
-written minimum decides ref's write fault, a split with no corpus
-case) — while the unrounded aligned form, which used to floor
+carrying a maximum — narrowed 2026-08-28: the **proportional** method
+with a cap no finer than its target now translates (`scenario-toka-35`,
+the parity zone), because a cap at cdec <= tdec floors to an exact
+integer at the target scale, so the clipped write fits and the
+exactness viol still refuses a non-fitting UNcapped share loudly,
+exactly as ref faults it; what stays loud is the ORDERED method's
+exact+maximum and a cap FINER than its target (whether the exact share
+or the clipped cap is the written minimum then decides ref's write
+fault, no corpus case) — while the unrounded aligned form, which used to floor
 silently where ref faults a non-fitting write, now carries the
 runtime exactness viol instead of a silent divergence;
 a som fallback other than 0 — a NON-zero `leegwaarde` literal (the
 fallback-less som now translates via its presence guard, S8, and the
 fallback-0 facet rides `#sum`'s native 0); uniqueness key
 lists with more than one temporal component, and ever-unique keys
-served by a scalar; case input on non-standing computed targets
-(scalar, temporal, and allocation targets alike — the ch. 6d
-superset-model fence); to-many navigation in scalar slots (WF-053);
+served by a scalar; case input on non-standing SCALAR and TEMPORAL
+computed targets (the ch. 6d superset-model fence) — an ALLOCATION
+target now enters defeasibly instead (S10/S12, `jutterswet-veilinginvoer`),
+so what stays loud there is only the residual: a target attribute READ
+anywhere else (a feedback into the pot, weights, criteria or condition,
+which `not vdI_eff` cannot stratify) or WRITTEN by a second form (an
+unpinned overwrite order); to-many navigation in scalar slots (WF-053);
 bean-field-only fact creations (the symbolic ch. 3.4 form is what
 executes); the expression/condition catch-alls ("not translated — no
 corpus case exercises it") — narrowed 2026-08-25: the *scalar*

@@ -4488,17 +4488,51 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
   in
   let bt = req "bronType" v.bron_type and dt = req "doelType" v.doel_type in
   let ba = req "bronAttribuut" v.bron_attribuut and da = req "doelAttribuut" v.doel_attribuut in
-  (* the allocation-target input fence (the latent superset gap of the
-     PHASE4-DEFAULTS verification round): a case value on the target
-     would union with the allocation's own head into a superset model —
-     ref overwrites it, so the split would be silent wherever no
-     expectation pins the attribute. Refuse loudly, like the ch. 6d
-     computed-target fence. *)
-  if case_supplies ctx ~otype:dt ~attr:da then
-    fault
-      "the case supplies input for allocation target %S: ref (like v0) overwrites it, which \
-       has no monotone encoding here (no corpus case)"
-      da;
+  (* case input on the allocation target: ref (like v0) OVERWRITES the
+     target where the verdeling reaches an instance and the input stands
+     where it does not (World.write_attr, ch. 4). The S10 defeasible-input
+     layer carries exactly that — the case value enters as inputval/3
+     (translate_case), the allocation's own head wins on reached instances,
+     and the pass-through (below, once p is bound) re-admits the input on
+     unreached ones. Engaged only where the case actually supplies the
+     target, so a verdeling with no target input translates as before. *)
+  let default_input = case_supplies ctx ~otype:dt ~attr:da in
+  if default_input then begin
+    (* STRATIFICATION FENCE (the narrowest safe form): the pass-through
+       adds `not vdI_eff`, so if the target attribute feeds back into the
+       allocation's own inputs (pot, weights, cap, key or condition) the
+       negation has no stratified encoding. The verdeling never reads its
+       own target, so ANY read elsewhere is refused loudly — only a target
+       read nowhere else is provably acyclic. Read detection reuses the
+       verifier's dependency reads (the machinery WF-045/046 trusts), so
+       the fence cannot drift from the graph the verifier checks. *)
+    let target_node = Ir_v0.Checks.n_attr dt da in
+    let dforms = Ir_v0.Checks.dep_forms { doc = ctx.doc } in
+    if
+      List.exists
+        (fun (f : Ir_v0.Checks.dep_form) ->
+          List.exists (fun (node, _) -> node = target_node) f.df_reads)
+        dforms
+    then
+      fault
+        "the case supplies input for allocation target %S, which is read elsewhere: a feedback \
+         into the allocation's pot, weights, criteria or condition has no stratified \
+         negation-as-failure encoding (the S10 input default admits only a target read nowhere \
+         else)"
+        da;
+    (* a second writer of the same target — another verdeling, a rule, a
+       ladder or a creation — leaves the overwrite order unpinned: ref's
+       fixpoint decides it, no witness pins the ASP union, so refuse. *)
+    if
+      List.length
+        (List.filter (fun (f : Ir_v0.Checks.dep_form) -> List.mem target_node f.df_writes) dforms)
+      > 1
+    then
+      fault
+        "the case supplies input for allocation target %S, which a second form also writes: the \
+         overlap's overwrite order is unpinned (no witness), so the S10 input default is refused"
+        da
+  end;
   (* WF-025 field-validity backstops, rejected before translation on
      verifier-clean input *)
   (match (methode, v.rato_attribuut, v.maximum_attribuut) with
@@ -4524,6 +4558,15 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
       | None -> Eval.connecting_role env ~from_type:bt ~to_type:dt)
   in
   let p = Printf.sprintf "vd%d_" i in
+  (* the S10 pass-through: the case value stands on any target instance the
+     verdeling does not effectively write — a non-recipient the role never
+     reaches, or a recipient the method excludes (a weightless proportional
+     share, ref's leeg/standing, never 0). vdI_eff(X) fires with the SAME
+     body as each val head (emit_write below), so the input yields exactly
+     where the allocation decides. *)
+  if default_input then
+    emit ctx "val(D,%s,V) :- inputval(D,%s,V), is_a(D,%s), not %seff(D)." (str da) (str da)
+      (str dt) p;
   (* --- the scale layer ------------------------------------------------ *)
   let pdec = attr_decimals ctx ~otype:bt ~attr:ba in
   let tdec = attr_decimals ctx ~otype:dt ~attr:da in
@@ -4540,10 +4583,24 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
      floor *)
   let exact = v.afronding_decimalen = None in
   let ddec = Option.value v.afronding_decimalen ~default:tdec in
-  if exact && v.maximum_attribuut <> None then
-    fault
-      "an unrounded allocation with a maximum is not translated (whether the exact share or \
-       the cap is the written minimum decides the exactness fault; no corpus case)";
+  (* an unrounded (exact-share) allocation with a maximum: ref writes
+     min(exact_share, cap) and faults a non-fitting write. Carried here for
+     the proportional method with a cap no finer than its target: the
+     clipped write is then the fitting cap (cdec ≤ tdec ⟹ capd is an exact
+     integer at the target scale), and where the cap does NOT clip, the
+     exactness viol still refuses a non-fitting uncapped share loudly —
+     exactly as ref faults it. A cap finer than the target (whose clipped
+     write might itself not fit, a silent floor) and the ordered method
+     keep faulting: no witness pins that corner. Only a fence narrows here;
+     the emitted allocation machinery is unchanged. *)
+  (match (exact, v.maximum_attribuut) with
+  | true, Some cap when methode = Naar_rato && attr_decimals ctx ~otype:dt ~attr:cap <= tdec -> ()
+  | true, Some _ ->
+      fault
+        "an unrounded allocation with a maximum is not translated here (only the proportional \
+         method with a cap no finer than its target is carried; otherwise whether the exact share \
+         or the cap is the written minimum decides the exactness fault; no corpus case)"
+  | _ -> ());
   let cdec = Option.map (fun cap -> attr_decimals ctx ~otype:dt ~attr:cap) v.maximum_attribuut in
   let rdec = Option.map (fun ra -> attr_decimals ctx ~otype:bt ~attr:ra) v.restant_attribuut in
   (match rdec with
@@ -4609,8 +4666,12 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
   (* the target write and the remainder, shared across the methods; the
      remainder guard carries each method's Nothing case (ch. 4.4: zero
      recipients, or an absent/zero weight sum, write NO rest) *)
-  let emit_write share_atom =
-    emit ctx "val(X,%s,%s) :- %s." (str da) (scaled "S" m_val) share_atom
+  let emit_write ~eff_atom share_atom =
+    emit ctx "val(X,%s,%s) :- %s." (str da) (scaled "S" m_val) share_atom;
+    (* the effectiveness helper for the S10 pass-through above: same body as
+       the val head (the share atom, value anonymised), so it derives
+       exactly where the verdeling writes the target instance X *)
+    if default_input then emit ctx "%seff(X) :- %s." p eff_atom
   in
   let emit_rest ~guard ~sum =
     match (v.restant_attribuut, rdec) with
@@ -4676,7 +4737,7 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
           emit ctx "%sshare(X,C) :- %sraw(X,R), %scapd(X,C), R > C." p p p;
           emit ctx "%sshare(X,R) :- %sraw(X,R), not %sheeft_cap(X)." p p p
       | None -> emit ctx "%sshare(X,R) :- %sraw(X,R)." p p);
-      emit_write (Printf.sprintf "%sshare(X,S)" p);
+      emit_write ~eff_atom:(Printf.sprintf "%sshare(X,_)" p) (Printf.sprintf "%sshare(X,S)" p);
       emit_rest ~guard:(Printf.sprintf "%swsum(B,_)" p)
         ~sum:(Printf.sprintf "S,X : rol(B,%s,X), %sshare(X,S)" (str role) p)
   | Gelijke_delen ->
@@ -4694,7 +4755,7 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
       emit ctx "%sshare(X,(%s)/%s) :- %s." p num den raw_body;
       if exact then
         emit ctx "viol(\"%s\",X) :- %s, (%s) \\ %s != 0." exact_viol raw_body num den;
-      emit_write (Printf.sprintf "%sshare(X,S)" p);
+      emit_write ~eff_atom:(Printf.sprintf "%sshare(X,_)" p) (Printf.sprintf "%sshare(X,S)" p);
       emit_rest ~guard:(Printf.sprintf "%sn(B,_)" p)
         ~sum:(Printf.sprintf "S,X : rol(B,%s,X), %sshare(X,S)" (str role) p)
   | Op_volgorde ->
@@ -4790,7 +4851,7 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
         p p p p;
       emit ctx "%spot(B,R+1,0) :- %spot(B,R,P), %sspent(B,R,T), %sranks(B,N), R+1 < N, P-T < 0."
         p p p p;
-      emit_write (Printf.sprintf "%sshare(B,X,S)" p);
+      emit_write ~eff_atom:(Printf.sprintf "%sshare(B,X,_)" p) (Printf.sprintf "%sshare(B,X,S)" p);
       emit_rest ~guard:(Printf.sprintf "rol(B,%s,_)" (str role))
         ~sum:(Printf.sprintf "S,X : %sshare(B,X,S)" p)
 
@@ -4984,9 +5045,11 @@ let reify_list ctx ~lid ~element (xs : Value.t list) =
 
 let translate_case ctx (case : Case.t) =
   let doc = ctx.doc in
-  (* attribute-ladder targets — and the ch. 7.8 standing targets (the
-     bare scalar computing rule) — take their input values defeasibly
-     (inputval/3), standing unless the ladder/rule decides *)
+  (* attribute-ladder targets — the ch. 7.8 standing targets (the bare
+     scalar computing rule) and the allocation targets (S12, the verdeling
+     whose fence translate_verdeling has already cleared) — take their
+     input values defeasibly (inputval/3), standing unless the
+     ladder/rule/verdeling decides *)
   let standing = Ir_v0.Desugar.standing_targets doc in
   let ladder_target otype aname =
     List.exists
@@ -4996,6 +5059,11 @@ let translate_case ctx (case : Case.t) =
         | None -> false)
       doc.default_ladders
     || List.mem (norm otype, norm aname) standing
+    || List.exists
+         (fun (v : resolved_verdeling) ->
+           (match v.doel_type with Some dt -> norm dt = norm otype | None -> false)
+           && match v.doel_attribuut with Some da -> norm da = norm aname | None -> false)
+         doc.verdelingen
   in
   Eval.SMap.iter
     (fun label (i : Uchar_ref.World.instance) ->
