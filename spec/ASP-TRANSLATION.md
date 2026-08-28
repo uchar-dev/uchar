@@ -1910,7 +1910,12 @@ near-side Rollidmaatschap now rides the S7 rol/3 join, above — save
 its **to-many connecting reference**, which still faults loudly in
 both executors (`the rolcheck's connecting reference to … is the
 to-many role …`, RUNTIME-SEMANTICS ch. 5.8a rule 3; rood
-`near-side-rolcheck-to-many`)).
+`near-side-rolcheck-to-many`)). The **day-kind (DAGSOORT) predicate** — a
+reference to a declared day kind used as a condition — is itself a loud
+non-translation here: clingo reaches this condition catch-all and ref
+refuses the predicate outright, so a reference to a day kind faults loudly
+in both executors, never silently, even though a day kind's own definition
+is well-formed (WF-031).
 
 *Sum types (S14) — carriage and shapes without a corpus case:*
 **temporal sum carriage** is a recorded flank — the value model admits a

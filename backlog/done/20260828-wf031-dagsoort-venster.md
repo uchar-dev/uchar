@@ -69,3 +69,59 @@ Werkregels (bindend):
 - Rapporteer compact: rood-eerst-bewijs, gate-uitkomsten, diff-stat, wat bewust bleef liggen.
 
 Lees eerst de bestaande WF-031-check in spec/verifier/lib/checks.ml en de WF-031/§3.7-tekst in spec/IR-SPEC.md, corpus/golden/jutterswet-vormenkabinet/ir.json (de dagsoort-dragende golden), een bestaande negatief-case als vormvoorbeeld, en scripts/check-verifier.sh. Bouw daarna de kaart volledig.
+
+## Result
+
+Closed 2026-08-28. The verifier fence landed; all twelve gates are green in
+the worktree. NO merge, NO push — the maintainer lands the protected-path
+proposal (`spec/verifier/**`, `spec/IR-SPEC.md`) after the lens round.
+
+### The change (narrowest)
+`spec/verifier/lib/checks.ml`, `wf031`, the per-entry arm only: a
+ResolvedDagsoort whose `rd_geldigheid` bounds the window (`geld_vanaf` or
+`geld_tot` non-null) is now refused as WF-031 ("day-kind definition with a
+bounded validity window; must be ALTIJD (vanaf and tot both null)"),
+alongside the existing missing-condition, duplicate and undeclared clauses.
+No new WF number. `spec/IR-SPEC.md`: WF-031 prose gains the validity
+clause, the §3.7 dagsoort-table `validity` row is filled with the normative
+statement and its ground, and the WF-index row for WF-031 is kept coherent
+(new witness `wf031-dagsoort-venster`). The recursion OPEN note is left
+verbatim. `spec/ASP-TRANSLATION.md` S19: one sentence records the day-kind
+(DAGSOORT) predicate itself as a loud non-translation in clingo (the
+condition catch-all) and a loud refusal in ref. The v0 schema is untouched:
+`geldigheid` stays on the ResolvedDagsoort node (mirror-then-diverge; the
+verifier is the fence).
+
+### Red-first proof (verifier output, reproduced first-hand this round)
+New negatief case `corpus/negatief/wf031-dagsoort-venster/` — a
+ResolvedDagsoort (`schouwdag`) with a present condition but
+`geldigheid.vanaf = "2026-01-01"`, so the bounded window is the sole
+defect. Schema-valid and round-trips (gate 2 explicit: PASS, 1 file).
+- BEFORE (base `checks.ml`, rebuilt): `verifier: PASS` (rc=0) — the gap: a
+  bounded day-kind window passes silently.
+- AFTER (this branch): `WF-031 FAIL /resolvedDagsoorten/0: day-kind
+  definition with a bounded validity window; must be ALTIJD (vanaf and tot
+  both null)` (rc=1).
+Gate 3 green including it: 152 golden clean, 163 negatief rejected for their
+declared rule (count rose by one, 162 → 163).
+
+### Passing witness + zero regression
+`corpus/golden/jutterswet-vormenkabinet` (its `schouwdag` ResolvedDagsoort
+carries the ALTIJD validity, vanaf/tot both null) stays verifier-clean —
+proven in the gate-3 golden sweep. Corpus scan over golden+rood: 1
+ResolvedDagsoort total, 0 bounded windows — no golden/rood carries a
+bounded day-kind window, so the fence adds no regression.
+
+### Twelve gates — all green in the worktree
+1 self-contained PASS · 2 ir-schema PASS (152) · 3 verifier PASS (152 golden
+/ 163 negatief) · 4 case-schema PASS (379) · 5 oracle/ref PASS (357) · 6
+clingo PASS (357) · 7 noop PASS (324/33) · 8 rood PASS (22) · 9 catala PASS
+(169 checks; 11 goldens) · 10 regelspraak PASS (130 tests; 19 rgs) · 11
+toka-parity PASS (30 replay) · 12 drools PASS (53 played; 72 auto-excluded;
+4 value-divergence; 1 no-case).
+
+### Diff (4 files)
+`backlog/` (this card), `corpus/negatief/wf031-dagsoort-venster/` (NOTE.md +
+ir.json), `spec/IR-SPEC.md` (WF-031 prose + §3.7 validity row + WF-index
+row), `spec/verifier/lib/checks.ml` (the validity arm), `spec/ASP-TRANSLATION.md`
+(one S19 sentence). No out-of-scope path touched.

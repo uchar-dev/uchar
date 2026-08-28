@@ -1124,12 +1124,15 @@ condition over "the day". v0 name: `ResolvedDagsoort`.
 |---|---|---|
 | `dayKind` | day-kind ref | the declared name (ch. 2.9) |
 | `condition` | Condition | over the day; may reference other day kinds |
-| `validity` | Validity | — |
+| `validity` | Validity | MUST be ALTIJD (open on both ends); no evaluator reads a day-kind window, so a bounded one is refused (WF-031) |
 
 - **WF-031** The reference MUST resolve to a declared DayKind; the
   condition MUST be present; there MUST be exactly one definition per
-  DayKind. *v0 mirror note:* a missing condition is warn-and-drop; a
-  duplicate definition warns and appends with first-wins lookup.
+  DayKind; the validity MUST be ALTIJD — `vanaf` and `tot` both null (a
+  bounded window is refused, since no evaluator consults a day-kind
+  validity, so a bounded one would be silently dead). *v0 mirror note:* a
+  missing condition is warn-and-drop; a duplicate definition warns and
+  appends with first-wins lookup; the validity is not read at all.
   **Delta (promotion).** **OPEN:** whether mutually recursive day-kind
   definitions are admissible (v0 neither checks nor documents this) —
   decided with the stratification chapter.
@@ -2060,7 +2063,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-028 | symbolic fact creation all-or-nothing and resolvable; join chain reaches target; new ≠ final hop | gate 3 (symbolic extension form; a bean-field-only v0 record stays uncheckable — recorded) | `jutterswet-gemeenteberging` (anchor: the chain walk executes and folds over the created relation pin absolute values, gates 5–6) | `wf028-half-symbolic-creation` (all-or-nothing) + `wf028-create-along-final-hop` (the full chain walk) |
 | WF-029 | consistency assertion has a single subject | gate 3 | `jutterswet-vondstnummer` | `wf029-no-subject` |
 | WF-030 | uniqueness sources: keys resolve; arity, datatype kind and units agree per position; a union carries ≥ 2 sources | gate 3 | `jutterswet-vondstnummer` + `anchor/jutterswet-kustregister` (the union — including the per-source sum over two same-type sources — and both scoped forms, executed by gates 5–6) | `wf030-arity-mismatch` + `wf030-single-source-union` |
-| WF-031 | one definition per day kind; condition present (recursion OPEN) | gate 3 | `jutterswet-vormenkabinet` (the schouwdag definition) | `wf031-missing-condition` |
+| WF-031 | one definition per day kind; condition present; validity ALTIJD (recursion OPEN) | gate 3 | `jutterswet-vormenkabinet` (the schouwdag definition, ALTIJD validity) | `wf031-missing-condition` + `wf031-dagsoort-venster` (bounded validity window) |
 | WF-032 | start point: variable-start timeline, day-precision member, one per pair | gate 3 | `jutterswet-vormenkabinet` (the meetdatum anchor) | `wf032-fixed-start-anchor` |
 | WF-033 | (dialect) rule-group members resolve; recursive group has a creation member (either kind); object creations guarded, relation creations guard-free | gate 3 | `anchor/jutterswet-wachtersketen` (the recursive chain executes to its fixpoint, gates 5–6; the runaway budget fault is red-pinned, gate 8) + `anchor/jutterswet-erflijn` (the guard-free relation-creation member: the transitive closure reaches its fixpoint in both executors) | `wf033-unguarded-recursive` (the guard clause) + `wf033-no-creation-member` (the containment clause) |
 | WF-034 | every expression/condition reference resolves (no unknown-type sentinel) | gate 3 (partial: sentinel types and parameter/day-kind/element-type/own-member references; variable bindings and navigation paths are not serialized in v0; excepted: a v0 instance-fold source argument names a role and carries the sentinel by construction — the row-1 wart, resolved against declared roles with the ch. 4.3 type-pair fallback for a name that resolves nowhere) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondsttelling` (role source) + `jutterswet-kaveltelling` (the type-pair fallback: an undeclared synthesized plural over a unique pair, both executors) | `wf034-dangling-parameter` + `wf034-ambigu-typenpaar` (unresolved name, two connecting fact types) + `wf034-zelftype-typenpaar` (unresolved name, one self-typed two-role fact type — both roles are candidates, counted in roles not fact types) |

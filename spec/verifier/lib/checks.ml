@@ -1062,6 +1062,13 @@ let wf031 ctx =
         (match r.rd_voorwaarde with
          | None -> [ v "WF-031" at "day-kind definition without a condition" ]
          | Some _ -> [])
+        (* The validity MUST be ALTIJD: no executor consults a day-kind
+           window, so a bounded one would be silently dead. *)
+        @ (match r.rd_geldigheid with
+           | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
+               [ v "WF-031" at
+                   "day-kind definition with a bounded validity window; must be ALTIJD (vanaf and tot both null)" ]
+           | _ -> [])
         @ match r.rd_naam with
           | Some n when not (mem_ci (some_names ctx.doc.dagsoorten) n) ->
               [ v "WF-031" at ("definition for undeclared day kind '" ^ n ^ "'") ]

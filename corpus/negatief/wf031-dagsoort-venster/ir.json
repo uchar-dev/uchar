@@ -1,0 +1,58 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {},
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [
+    "schouwdag"
+  ],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [
+    {
+      "node": "ResolvedDagsoort",
+      "naam": "schouwdag",
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "EERDER",
+        "links": {
+          "node": "Literal",
+          "waarde": "2026-03-01",
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "2026-03-01"
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "2026-10-01",
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "2026-10-01"
+        },
+        "periode": null,
+        "bron": "voor de najaarsschouw"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": "2026-01-01",
+        "tot": null
+      }
+    }
+  ],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}
