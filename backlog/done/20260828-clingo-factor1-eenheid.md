@@ -81,3 +81,91 @@ factor != 1 (the ladder-round waist question), scripts/check-noop.sh
 survivor entries (design the case to refute noop), scripts/check-toka-parity.sh
 (findings reported, not patched), spec/CONSTRUCTS.md, spec/PLAN.md, any
 toolchain commit.
+
+## Result
+
+The factor-1 unit admission landed and its adversarial review round is
+handled. All twelve gates are green in the worktree, committed on branch
+`card/clingo-factor1-eenheid` (no push, no merge). The root checkout was
+only read from (jar copy), never modified.
+
+### The admission (backends/clingo/lib/translate.ml)
+
+1. `numeric_ok` made recursive — admits the `Datatype_onbekend` typing-
+   inability sentinel only when the node is a provably-numeric arithmetic
+   `Binair` (operands numeric recursively); a resolved non-numeric operand
+   still faults. Witnessed by toka-45 (gate 11).
+2. The rule-level `Maal` fence admits the factor-free unitless × unit-
+   carrying product (adopts the unit, value unchanged; `Arith.mul`
+   `(Unitless, Unit u) -> Num(v, u)`, no factor). `Percentage_van`,
+   closed-body `Maal`, divisions/rates and `Tot_de_macht` stay strict.
+3. `eff_unit` gains a `Maal` branch so the adopted product unit flows into
+   restating positions — this is what keeps the loud-witness firing.
+
+### Review round — one CRITICAL fixed (the narrowest sound fix)
+
+Lens 1 found a card-introduced silent divergence: the first `mul_units_ok`
+faulted only when BOTH operands had a *visible* unit (`eff_unit = Some`).
+Because `eff_unit` returns `None` for nodes it cannot analyse (a `Let`, a
+field access, a division, an Onbekend declaration), a unit hidden behind
+such a node on the "unitless" side made a real unit×unit product compute
+the raw integer silently. Reproduced on the branch before the fix, on a
+verifier-clean IR `MAAL(sleepafstand[km], Let g = sleepafstand[km] in g)`:
+ref FAULTS `incompatible units: km vs km*km`, clingo silently PASSED the
+raw product 144.
+
+Fix: a new `provably_unitless` predicate (mirrors `eff_unit`'s resolved
+forms but PROVES the absence of a unit — a declaration counts only when its
+datatype is explicitly Numeriek/Percentage with `eenheid` null; an Onbekend
+or unanalysable node is never proven). `mul_units_ok` now admits the
+one-visible-unit case ONLY when the other side is `provably_unitless`, else
+it faults loudly. After the fix the same witness FAULTS loudly ("a
+multiplicative operand … carries no statically resolvable unit …"); the
+golden and toka-45 are unaffected (both unitless sides are proven-free leaf
+declarations). `ref/`, `eff_unit`'s existing behaviour, and every other
+fence are untouched — the change only tightens the new admission.
+
+Lens 1's minor (the `numeric_ok` Onbekend-recursion leaf-gap) is a motivated
+non-fix: it is unreachable in the corpus (WF-034 rejects an Onbekend sentinel
+inside a golden, gate 3) and is the pre-existing `None -> ()` untyped-operand
+policy surfacing, not new corpus-reachable exposure; tightening it would
+regress every untyped-numeric case. The over-strong S19 clause it flagged is
+softened. Lens 2's minor (fence-1 has no rights-free golden witness — only the
+private toka-45) is recorded as a durability item for the public flip: a golden
+CANNOT witness the Onbekend sentinel because the verifier (correctly) rejects
+that sentinel in golden material, so no corpus artifact can pin fence-1 while
+the toka zone exists.
+
+### Loud-witness (demonstrated, not committed)
+
+A verifier-clean IR with two DIFFERENT convertible units (m vs km) in a
+restating position: the golden shape with the MIN's left literal carrying
+`m` instead of unitless. ref PASSES it (applies the real 1000 factor →
+−5,95 km); clingo still FAULTS with the units fragment ("non-identical
+units under the write …"). So it is neither golden nor rood.
+
+### New golden `corpus/golden/jutterswet-sleeprest/`
+
+Own Jutterswet strandjutten material (no TOKA): a unitless `bergingsfactor`
+MAAL a km `sleepafstand`, consumed by a unitless-adopting MIN; hand-computed
+44,00 / 40,00 in `NOTE.md`; noop-refuting; plays ref ≡ clingo ≡ Drools.
+`toka/cases/parity.manifest`: toka-45 clingo column FAULT→PASS.
+
+### Registered for the ladder design round (not built)
+
+The waist question — universal unit conversion as an IR-level decision
+(LLVM/MLIR-style canonical-unit core with static dimension tags, frontends
+converting at emission, versus a per-backend normalisation lowering pass).
+Maintainer (2026-08-28): "(a) nu en wie weet pakken we universele eenheid
+conversie in de ir aan samen met het ladder ontwerp."
+
+### Gates (all twelve green in the worktree)
+
+1 self-contained PASS · 2 ir-schema PASS (151) · 3 verifier PASS
+(151 golden / 161 negatief) · 4 case-schema PASS (377) · 5 oracle PASS
+(355) · 6 clingo PASS (355, ref ≡ clingo) · 7 noop PASS (322 refute /
+33 survivors) · 8 rood PASS (22) · 9 catala PASS (169 checks, 11 goldens) ·
+10 regelspraak PASS (130 tests, 19 rgs) · 11 toka-parity PASS (clingo
+30 PASS / 0 fault / 0 diverge; fault-class list EMPTY; script needed no
+change — no finding) · 12 drools PASS (52 played incl. jutterswet-sleeprest,
+0 exclusion added).

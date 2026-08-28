@@ -432,10 +432,16 @@ any conversion factor* (ch. 2.6):
   the product adopts the unit with the numeric value unchanged
   (`Arith.mul`, `(Unitless, Unit u) -> Num(v, u)` — no factor), and
   `eff_unit` carries that adopted unit onward so a restating position
-  consuming the product still sees the real unit. A product of TWO
-  unit-carrying operands (a rate cancellation `€/jr × jr`, an opaque
-  product unit `€ × m`) composes units / applies factors the integer
-  encoding does not carry, so it stays loud. Percentage-van keeps
+  consuming the product still sees the real unit. The operand admitted
+  AS the unitless side must be **provably** unit-free (`provably_unitless`
+  — a declaration whose datatype is Numeriek/Percentage with `eenheid`
+  null, or a sum/product of such), never merely one whose unit `eff_unit`
+  cannot resolve: a unit hidden behind an unanalysable node (a `Let`, a
+  field access, a division) would otherwise become a silent unit×unit
+  product with no downstream unit to fence it, so it stays loud. A
+  product of TWO unit-carrying operands (a rate cancellation `€/jr × jr`,
+  an opaque product unit `€ × m`) composes units / applies factors the
+  integer encoding does not carry, so it stays loud. Percentage-van keeps
   every unit-carrying operand refused.
 - **Restating positions** — the additive join, the comparison, the
   write boundary — accept a unitless side (it adopts the other unit,
@@ -1792,8 +1798,10 @@ date reaching the numeric path) — narrowed 2026-08-28: the v0
 **`Onbekend` typing-inability sentinel** (a composite unit the
 frontend could not name, not an actual non-numeric value) now
 translates when the node is a PROVABLY-numeric arithmetic `Binair`
-whose operands pass the numeric checks recursively, so only a
-genuinely non-numeric operand still faults here; and narrowed
+whose operands pass the numeric checks recursively, so an operand
+carrying a *resolved* non-numeric type still faults here (an operand
+the frontend left untyped passes as it always has, the standing S5
+numeric-typing policy); and narrowed
 2026-08-25: the
 **day-precision date family now translates** (date ± duration and
 tijdsduur/absolute-tijdsduur in dagen/weken/maanden/kwartalen/jaren,

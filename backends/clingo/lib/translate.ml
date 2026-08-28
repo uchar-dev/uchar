@@ -696,21 +696,65 @@ let units_identical_ok ~what (l : eenheid option) (r : eenheid option) =
         what
   | _ -> ()
 
+(* PROVABLY unit-free: distinguishes a genuinely unitless expression from one
+   eff_unit merely cannot analyse (a Let, a field/dimension access, a division,
+   an Onbekend-typed declaration), mirroring eff_unit's resolved forms but
+   proving the ABSENCE of a unit rather than reading one. A declaration counts
+   as proven unit-free only when its datatype is explicitly Numeriek/Percentage
+   with eenheid null — an Onbekend or non-numeric declaration is NOT proven
+   (its unit is unknown, possibly a composite the frontend could not name). *)
+let rec provably_unitless ctx (e : expr) : bool =
+  match e with
+  | Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ } -> (
+      match Ir_v0.Checks.find_ci (objecttype ctx ot).attributen a with
+      | Some (Some (Numeriek { eenheid = None; _ } | Percentage { eenheid = None; _ })) -> true
+      | _ -> false)
+  | Parameter_ref { parameter = Some p; _ } -> (
+      match Ir_v0.Checks.find_ci ctx.doc.parameters p with
+      | Some { par_datatype = Some (Numeriek { eenheid = None; _ } | Percentage { eenheid = None; _ }); _ }
+        ->
+          true
+      | _ -> false)
+  | Literal { typ = Some (Numeriek { eenheid = None; _ } | Percentage { eenheid = None; _ }); _ } -> true
+  | Binair { op = Plus | Min | Verminderd_met | Maal; links = Some l; rechts = Some r; _ } ->
+      (* a sum/difference/product is unit-free only when BOTH operands are *)
+      provably_unitless ctx l && provably_unitless ctx r
+  | Afgerond { basis = Some b; _ } | Begrensd { basis = Some b; _ } -> provably_unitless ctx b
+  | Temporal_read { basis; _ } -> provably_unitless ctx basis
+  | Functie { kind = Som | Totaal | Minimum | Maximum | Eerste | Laatste; argumenten = arg :: _; _ } ->
+      provably_unitless ctx arg
+  | _ -> false
+
 (* the admitted factor-free product (ch. 2.6; ASP-TRANSLATION S6): a unitless
    operand TIMES a unit-carrying operand adopts that unit with the numeric
    value unchanged (Arith.mul, (Unitless, Unit u) -> Num(v, u); NO conversion
    factor), so the integer encoding is exact and the product adopts the unit
-   (eff_unit above carries it onward). A product of TWO unit-carrying operands
-   — a rate cancellation (€/jr × jr), an opaque product unit (€ × m) — composes
-   units / applies factors this integer encoding does not carry, so it keeps
-   faulting loudly (the standing fence until the ladder-round waist question). *)
-let mul_units_ok ~what (l : eenheid option) (r : eenheid option) =
-  match (l, r) with
+   (eff_unit above carries it onward). Soundness fence: the operand admitted AS
+   the unitless side must be PROVABLY unit-free, never merely eff_unit-blind —
+   a unit hidden behind an unanalysable node (a Let, a field access, a division)
+   would otherwise become a silent unit×unit product with no downstream unit to
+   fence it. A product of TWO unit-carrying operands — a rate cancellation
+   (€/jr × jr), an opaque product unit (€ × m) — composes units / applies
+   factors this integer encoding does not carry, so it keeps faulting loudly
+   (the standing fence until the ladder-round waist question). *)
+let mul_units_ok ctx ~what (l : expr option) (r : expr option) =
+  let ul = Option.bind l (eff_unit ctx) and ur = Option.bind r (eff_unit ctx) in
+  let proven_free = function Some e -> provably_unitless ctx e | None -> true in
+  let hidden () =
+    fault
+      "a multiplicative operand under %s carries no statically resolvable unit, so the factor-free \
+       product admission cannot prove it unit-free (a unit hidden behind it — a Let, a field \
+       access, a division — would compute the raw integer product silently)"
+      what
+  in
+  match (ul, ur) with
   | Some _, Some _ ->
       fault
         "a product of two unit-carrying operands under %s is not translated (ref's unit \
          algebra composes units / applies conversion factors this integer encoding does not carry)"
         what
+  | Some _, None when not (proven_free r) -> hidden ()
+  | None, Some _ when not (proven_free l) -> hidden ()
   | _ -> ()
 
 (* the viol/2 range fence on emitted arithmetic: fires when an operand
@@ -1914,10 +1958,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          its right-operand unit adoption (ch. 2.6) has no eff_unit witness
          and no corpus case yet. *)
       (match op with
-      | Maal ->
-          mul_units_ok ~what:"a product"
-            (Option.bind links (eff_unit ctx))
-            (Option.bind rechts (eff_unit ctx))
+      | Maal -> mul_units_ok ctx ~what:"a product" links rechts
       | _ ->
           unit_free_ok ctx links;
           unit_free_ok ctx rechts);
