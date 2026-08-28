@@ -1,0 +1,37 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B1",
+        "objectType": "Berging",
+        "attributes": {
+          "sleepafstand": {
+            "number": "12"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "bergingsfactor": {
+        "number": "0.50"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "resterende sleepafstand",
+      "value": {
+        "number": "44.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

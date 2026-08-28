@@ -44,7 +44,7 @@ scenario-toka-41-duurzaamheidskorting-alternatief|PASS|PASS|-|EXCLUDE|wederkerig
 scenario-toka-42-passagier-18-24|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
 scenario-toka-43-startpunt-vertrek|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
 scenario-toka-44-startpunt-min-reserveringstermijn|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-45-belasting-op-afstand|PASS|FAULT|non-numeric arithmetic operand|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-45-belasting-op-afstand|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
 scenario-toka-46-woonregio-factor-1|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
 scenario-toka-46-woonregio-factor-2|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
 scenario-toka-46-woonregio-factor-3|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)

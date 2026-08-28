@@ -422,13 +422,34 @@ The safe side is pinned: `synth-grensrand` replays the largest
 translatable product (46340² = 2147395600) and `jutterswet-taxatie`
 case5 the largest translatable powers, so the guards provably do not
 fire early. The clamp is witnessed by `jutterswet-grensbedrag` (the
-three positions and the empty-base propagation). **Units:** operands of the multiplicative family must be
-effectively unit-free, and positions where ref *restates* one operand
-into the other's unit (the additive join, the comparison, the write
-boundary) accept only identical units or a unitless side — ref's
-conversion factors have no integer encoding (the hunted 1 m + 50 cm =
-51 of ch. 6c). The unit is derived recursively from declarations
-(`eff_unit`), never read from a node's static annotation.
+three positions and the empty-base propagation).
+
+**Units — the factor-1 admission (narrowed 2026-08-28).** The
+translation admits exactly the cases ref computes *without applying
+any conversion factor* (ch. 2.6):
+
+- **maal** admits a unitless operand times a unit-carrying operand:
+  the product adopts the unit with the numeric value unchanged
+  (`Arith.mul`, `(Unitless, Unit u) -> Num(v, u)` — no factor), and
+  `eff_unit` carries that adopted unit onward so a restating position
+  consuming the product still sees the real unit. A product of TWO
+  unit-carrying operands (a rate cancellation `€/jr × jr`, an opaque
+  product unit `€ × m`) composes units / applies factors the integer
+  encoding does not carry, so it stays loud. Percentage-van keeps
+  every unit-carrying operand refused.
+- **Restating positions** — the additive join, the comparison, the
+  write boundary — accept a unitless side (it adopts the other unit,
+  value unchanged, `restate_into`, `Unitless, Unit _ -> q`) or
+  identical units (factor 1). Two DIFFERENT units — a real
+  `factorNaarCanoniek` application — stay loud (the hunted 1 m + 50 cm
+  = 51 of ch. 6c), the standing fence until the ladder-round waist
+  question decides universal unit conversion in the IR.
+
+The unit is derived recursively from declarations (`eff_unit`), never
+read from a node's static annotation. Golden `jutterswet-sleeprest`
+pins the admitted shape (a unitless factor × a unit-carrying attribute,
+consumed by a unitless-adopting restating position, hand-computed
+absolute values).
 
 ### S6a. The calendar chains — date ± duration, tijdsduur, part extraction and Easter (ch. 3.8)
 
@@ -1723,8 +1744,15 @@ empty corner is a different shape — non-numeric scalar equality
 itself is since 2026-08-25 encoded, S5/S7, like the numeric
 asymmetry before it); runtime, negative and fractional
 power exponents (the runtime-exponent empty corner 4^leeg = leeg is
-thereby ref-only behaviour); ref's unit-conversion algebra (all
-restating positions refuse non-identical units); negative operands
+thereby ref-only behaviour); ref's unit-conversion algebra where a
+REAL factor applies — narrowed 2026-08-28 to the factor-carrying
+residue: a product of TWO unit-carrying operands (a rate cancellation,
+an opaque product unit), division/rate units, and any restating
+position (additive join, comparison, write boundary) over two
+DIFFERENT units; the FACTOR-FREE cases now translate — a unitless
+operand times a unit-carrying one (the product adopts the unit, value
+unchanged) and a unitless side adopting a restating sibling's unit
+(S6, golden `jutterswet-sleeprest`); negative operands
 under non-richting-nul rounded forms (runtime `viol/2` fences);
 non-exact bare division and non-fitting write results (runtime
 `viol/2` — an explicit rounding is mandated before precision is
@@ -1759,7 +1787,14 @@ clip/min-max now translates — the integer min/max identities on the
 harmonised scale, S6, `jutterswet-grensbedrag` — save a bound needing a
 real unit conversion factor or a non-ground, possibly-empty bound, which
 stay loud); a temporal attribute read in a scalar slot (ch. 3.3);
-non-numeric arithmetic operands — narrowed 2026-08-25: the
+genuinely non-numeric arithmetic operands (text/enum/boolean, or a
+date reaching the numeric path) — narrowed 2026-08-28: the v0
+**`Onbekend` typing-inability sentinel** (a composite unit the
+frontend could not name, not an actual non-numeric value) now
+translates when the node is a PROVABLY-numeric arithmetic `Binair`
+whose operands pass the numeric checks recursively, so only a
+genuinely non-numeric operand still faults here; and narrowed
+2026-08-25: the
 **day-precision date family now translates** (date ± duration and
 tijdsduur/absolute-tijdsduur in dagen/weken/maanden/kwartalen/jaren,
 the S6a calendar chains; the day-precision part extractors and

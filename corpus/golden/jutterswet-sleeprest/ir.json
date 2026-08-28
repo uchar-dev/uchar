@@ -1,0 +1,235 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Berging": {
+      "node": "Objecttype",
+      "naam": "Berging",
+      "attributen": {
+        "sleepafstand": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "km",
+            "stelsel": "Afstand",
+            "canoniek": "m",
+            "factorNaarCanoniek": 1000,
+            "noemer": null
+          }
+        },
+        "resterende sleepafstand": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "km",
+            "stelsel": "Afstand",
+            "canoniek": "m",
+            "factorNaarCanoniek": 1000,
+            "noemer": null
+          }
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Bergingen"
+    }
+  },
+  "domeinen": {},
+  "parameters": {
+    "bergingsfactor": {
+      "node": "Parameter",
+      "naam": "bergingsfactor",
+      "datatype": {
+        "node": "Numeriek",
+        "geheel": false,
+        "decimalen": 2,
+        "teken": "NIET_NEGATIEF",
+        "eenheid": null
+      },
+      "granulariteit": null
+    }
+  },
+  "eenheidstelsels": {
+    "Afstand": {
+      "node": "Eenheidstelsel",
+      "naam": "Afstand",
+      "eenheden": {
+        "m": {
+          "node": "Eenheid",
+          "afkorting": "m",
+          "stelsel": "Afstand",
+          "canoniek": "m",
+          "factorNaarCanoniek": 1,
+          "noemer": null
+        },
+        "km": {
+          "node": "Eenheid",
+          "afkorting": "km",
+          "stelsel": "Afstand",
+          "canoniek": "m",
+          "factorNaarCanoniek": 1000,
+          "noemer": null
+        }
+      },
+      "aliassen": {}
+    }
+  },
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "resterende sleepafstand van een berging",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "resterende sleepafstand van een berging",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "resterende sleepafstand",
+        "objecttype": "Berging",
+        "onderwerpBron": "een Berging",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "km",
+            "stelsel": "Afstand",
+            "canoniek": "m",
+            "factorNaarCanoniek": 1000,
+            "noemer": null
+          }
+        },
+        "bron": "De resterende sleepafstand van een Berging",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "MIN",
+        "links": {
+          "node": "Literal",
+          "waarde": "50",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "50"
+        },
+        "rechts": {
+          "node": "Binair",
+          "op": "MAAL",
+          "links": {
+            "node": "ParameterRef",
+            "parameter": "bergingsfactor",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            },
+            "bron": "de bergingsfactor"
+          },
+          "rechts": {
+            "node": "AttribuutRef",
+            "attribuut": "sleepafstand",
+            "objecttype": "Berging",
+            "onderwerpBron": "de Berging",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "km",
+                "stelsel": "Afstand",
+                "canoniek": "m",
+                "factorNaarCanoniek": 1000,
+                "noemer": null
+              }
+            },
+            "bron": "de sleepafstand van de Berging",
+            "set": false,
+            "navigatiePad": []
+          },
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "km",
+              "stelsel": "Afstand",
+              "canoniek": "m",
+              "factorNaarCanoniek": 1000,
+              "noemer": null
+            }
+          },
+          "bron": "de bergingsfactor maal de sleepafstand van de Berging"
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "km",
+            "stelsel": "Afstand",
+            "canoniek": "m",
+            "factorNaarCanoniek": 1000,
+            "noemer": null
+          }
+        },
+        "bron": "50 min de bergingsfactor maal de sleepafstand van de Berging"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

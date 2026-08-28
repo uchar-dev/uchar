@@ -305,6 +305,16 @@ let rec eff_unit ctx (e : expr) : eenheid option =
       match Option.bind links (eff_unit ctx) with
       | Some u -> Some u
       | None -> Option.bind rechts (eff_unit ctx))
+  | Binair { op = Maal; links; rechts; _ } -> (
+      (* the admitted factor-free product (ch. 2.6, Arith.mul): a unitless
+         operand times a unit-carrying operand adopts THAT unit, value
+         unchanged — so a restating position consuming the product sees the
+         real unit and its own fence still fires on a genuine mismatch (the
+         loud-witness). A two-unit product faults at its own translation
+         (mul_units_ok), so reporting the left there is moot. *)
+      match Option.bind links (eff_unit ctx) with
+      | Some u -> Some u
+      | None -> Option.bind rechts (eff_unit ctx))
   | Binair _ -> None
   | Afgerond { basis; _ } | Begrensd { basis; _ } -> Option.bind basis (eff_unit ctx)
   | Temporal_read { basis; _ } -> eff_unit ctx basis
@@ -593,12 +603,25 @@ let vergelijk_sym = function
 
 (* arithmetic operands must be statically numeric: ref faults date
    arithmetic under the additive/multiplicative operators, so a
-   non-numeric static type must not silently compute on day numbers *)
-let numeric_ok e =
+   non-numeric static type must not silently compute on day numbers.
+   The Datatype_onbekend sentinel is the v0 frontend's typing INABILITY
+   (a "samengestelde eenheid" it could not name), not an actual
+   non-numeric value: it is admitted ONLY when the node is provably
+   numeric — an arithmetic Binair whose operands themselves pass these
+   checks recursively (every bin_op is arithmetic, so its result is
+   numeric). Genuinely non-numeric arithmetic (Tekst/Boolean/enum/date
+   through the numeric path) keeps faulting with the existing fragment. *)
+let rec numeric_ok e =
   match e with
   | Some e -> (
       match Ir_v0.Checks.typ_of_expr e with
       | Some (Numeriek _ | Percentage _) | None -> ()
+      | Some (Datatype_onbekend _) -> (
+          match e with
+          | Binair { links; rechts; _ } ->
+              numeric_ok links;
+              numeric_ok rechts
+          | _ -> fault "non-numeric arithmetic operand is not translated (no corpus case)")
       | Some _ -> fault "non-numeric arithmetic operand is not translated (no corpus case)")
   | None -> ()
 
@@ -670,6 +693,23 @@ let units_identical_ok ~what (l : eenheid option) (r : eenheid option) =
       fault
         "non-identical units under %s are not translated (ref restates with an exact \
          conversion factor this integer encoding does not carry)"
+        what
+  | _ -> ()
+
+(* the admitted factor-free product (ch. 2.6; ASP-TRANSLATION S6): a unitless
+   operand TIMES a unit-carrying operand adopts that unit with the numeric
+   value unchanged (Arith.mul, (Unitless, Unit u) -> Num(v, u); NO conversion
+   factor), so the integer encoding is exact and the product adopts the unit
+   (eff_unit above carries it onward). A product of TWO unit-carrying operands
+   — a rate cancellation (€/jr × jr), an opaque product unit (€ × m) — composes
+   units / applies factors this integer encoding does not carry, so it keeps
+   faulting loudly (the standing fence until the ladder-round waist question). *)
+let mul_units_ok ~what (l : eenheid option) (r : eenheid option) =
+  match (l, r) with
+  | Some _, Some _ ->
+      fault
+        "a product of two unit-carrying operands under %s is not translated (ref's unit \
+         algebra composes units / applies conversion factors this integer encoding does not carry)"
         what
   | _ -> ()
 
@@ -1868,8 +1908,19 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          truncation can diverge from ref's exact rationals. *)
       numeric_ok links;
       numeric_ok rechts;
-      unit_free_ok ctx links;
-      unit_free_ok ctx rechts;
+      (* Maal admits the factor-free unitless × unit-carrying product (the
+         product adopts the unit, value unchanged); a two-unit product still
+         faults. Percentage-van keeps every unit-carrying operand refused —
+         its right-operand unit adoption (ch. 2.6) has no eff_unit witness
+         and no corpus case yet. *)
+      (match op with
+      | Maal ->
+          mul_units_ok ~what:"a product"
+            (Option.bind links (eff_unit ctx))
+            (Option.bind rechts (eff_unit ctx))
+      | _ ->
+          unit_free_ok ctx links;
+          unit_free_ok ctx rechts);
       let bl, tl, sl =
         coalesce0 ctx ~subject ~subject_ot
           (expr_term ctx ~subject ~subject_ot (req "Binair.links" links))
