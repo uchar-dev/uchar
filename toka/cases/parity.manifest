@@ -23,7 +23,7 @@ scenario-toka-18-minderjarig|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.
 scenario-toka-19-hoeveelheid-passagiers|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
 scenario-toka-20-totaal-te-betalen|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
 scenario-toka-21-oudste-passagier|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-22-datum-tijd-berekening|PASS|FAULT|a fold (eerste/laatste), a datum-met constructor or a navigated datum-tijd read is a loud flank|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-22-datum-tijd-berekening|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
 scenario-toka-24-te-betalen-belasting|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
 scenario-toka-25-verwachte-aankomst|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
 scenario-toka-26-hoogseizoen|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)

@@ -1,0 +1,58 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "H1",
+        "objectType": "Getijdendag",
+        "attributes": {
+          "ochtendhoogwater": {
+            "dateTime": "2026-03-15T06:12:00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "H2",
+        "objectType": "Getijdendag",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "H1",
+      "attribute": "eerstehoogwater",
+      "value": {
+        "dateTime": "2026-03-15T06:12:00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H1",
+      "attribute": "laatstehoogwater",
+      "value": {
+        "dateTime": "2026-03-15T06:12:00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "H2",
+      "attribute": "eerstehoogwater"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "H2",
+      "attribute": "laatstehoogwater"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

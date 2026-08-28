@@ -511,6 +511,24 @@ and this backend); declared factors and stelsel never enter.
     DB<DA & MSB>MSA, else 0)` fed to the day-precision whole-unit count,
     WITHOUT forming the whole ms difference (so a month/year span stays
     unbounded), exactly ref/'s `whole_units_between_ms`.
+  - **eerste/laatste over datum-tijd operands** (ch. 1.2e ordering fold):
+    the extreme instant over ≥ 2 datum-tijd operands, lowered
+    **lexicographically** because the pair cannot linearise into one integer
+    (`D·86 400 000+MS` overflows clingo's int range) — stage 1 takes the
+    extreme civil day `DE = #min/#max { D : dtfN(S,D,_) }`, stage 2 the
+    extreme ms-of-day among that day's operands
+    `ME = #min/#max { MS : dtfN(S,DE,MS) }`, the result `dt(DE,ME)` (`#min`
+    for eerste, `#max` for laatste). One helper `dtfN(S,D,MS) :- is_a(S,ot),
+    ⟨operand atoms⟩` per operand and a `dtfN_def(S)` definedness atom: an
+    empty operand derives no tuple and drops out (the empty-skip as the
+    join), all-empty leaves the pair underivable (leeg). Both stages range
+    over already-fenced pair components (each `D` and `MS` inside 2^31 by the
+    pair-term layer), so no product forms and no fence is added; the fold
+    returns the winning VALUE, so a civil-day tie is value-neutral (ref's
+    `agg_eerste`/`agg_laatste` over `scalar_cmp`). A non-datum-tijd or
+    mixed-granularity operand faults loudly (ref faults the unordered
+    comparison); a set-typed datum-tijd fold, a navigated datum-tijd read
+    and the `DATUM_MET` constructor stay the dt_term catch-all's loud flank.
   - **Fences**: the sub-day paths carry a `viol/2` range guard so the
     bounded ms sum/difference stays inside 2^31 (a sub-day span beyond ~23
     civil days faults loudly — ref, on 63-bit ints, reaches further; the
@@ -520,10 +538,10 @@ and this backend); declared factors and stelsel never enter.
     duration COALESCES through `coalesce0`.
 - **Loud flanks**: day-kind (dagsoort) durations/tijdsduren, the
   `DATUM_MET`/`DATUMTIJD_MET` constructors, the sub-day part extractors
-  (`uur/minuut/seconde/milliseconde-uit`), and a datum-tijd operand in a
-  fold (`eerste`/`laatste`) or an ordering/equality comparison still fault
-  at translation — outside the arithmetic the pair term carries, no corpus
-  case. Day-kind shapes ref refuses at evaluation too.
+  (`uur/minuut/seconde/milliseconde-uit`), and a datum-tijd operand in an
+  ordering/equality comparison still fault at translation — outside the
+  arithmetic and the fold ordering the pair term carries, no corpus case.
+  Day-kind shapes ref refuses at evaluation too.
 
 Witnesses: anchor `jutterswet-jutleeftijd` (the three ch. 3.8 worked
 examples — leap child, clamp-not-inverse, signed truncation — plus the
@@ -535,6 +553,11 @@ gates 5–6. The datum-tijd millisecond layer rides golden
 uren = 34 and hele dagen = 1, and their negatives — beside datetime +
 26 uur across the leap day and + 1 maand preserving the ms-of-day,
 hand-computed and replayed by gates 5–6 as the pair-term square). The
+datum-tijd ordering fold rides golden `jutterswet-hoogwaterpaar`
+(EERSTE/LAATSTE over a datum-tijd pair — the ms-of-day tie-break on one
+civil day, the civil-day-first ordering where the earlier day carries the
+later ms-of-day, and the empty-skip and all-empty corners; hand-computed
+from ch. 3.8, ref ≡ clingo). The
 extraction/Easter slice rides golden
 `jutterswet-paasvondst` (a maand-uit disjunction through the cqN
 counting composite, an eerste-paasdag∘jaar-uit date equality through
@@ -706,8 +729,9 @@ ever escapes into a value. Fences: one comparable family only (all
 operands statically dates or none — ref faults the unordered mixed
 comparison at runtime, and a day number must not silently order
 against a scaled numeric; text/boolean/enum operands fault; a
-datum-tijd operand faults too — the pair term carries the ms
-arithmetic, not a fold ordering, S6a loud flank), identical (or absent,
+datum-tijd operand faults in THIS numeric arm — the datum-tijd fold
+rides `dt_term`'s two-stage lexicographic pair term instead (S6a), not
+`expr_term`'s integer encoding), identical (or absent,
 adopting) units — ref
 restates into the first operand's unit with exact factors this
 integer encoding does not carry — and the S6 range bound on any
@@ -725,7 +749,8 @@ source by `jutterswet-aanmeldertelling`; sum by
 WF-055 negatiefs pin the clip's admissible condition shapes; the
 articulated eerste/laatste fold by `jutterswet-peildatum` (a date pair
 and a numeric pair, the ordering-vs-positional pin, the empty-skip and
-all-empty corners).
+all-empty corners); the datum-tijd sibling of that fold rides S6a's
+pair term instead (`jutterswet-hoogwaterpaar`).
 
 ### S9. Timelines
 
@@ -1751,9 +1776,10 @@ day-kind (dagsoort) durations and tijdsduren,
 `DATUM_MET`/`DATUMTIJD_MET`, the sub-day part extractors
 (uur/minuut/seconde/milliseconde-uit, still under the catch-all;
 outside ref too — the extractor slice is not the ms layer's
-arithmetic), and a datum-tijd operand in a fold (eerste/laatste) or an
-ordering/equality comparison (the pair term carries the arithmetic, not
-the fold ordering or the scalar comparison; no corpus case) — plus a
+arithmetic), and a datum-tijd operand in an ordering/equality comparison
+(the pair term carries the arithmetic and, since 2026-08-28, the
+eerste/laatste fold ordering — S6a — but not the scalar comparison; no
+corpus case) — plus a
 **text/enum/boolean literal in
 a NUMERIC term position** (a **date literal** translates as its civil
 day number — B2, the S4 date-comparison sibling — and since
@@ -1774,9 +1800,11 @@ datatype-less *declaration* is since 2026-08-21 rejected by WF-059
 with the shared loader refusing its input as backstop — the fault
 here remains the last line for a **dateTime** reaching `expr_term`'s
 scalar integer encoding (a slot OUTSIDE the pair-term arithmetic of
-S6a: an ordering/equality comparison or a fold operand, whose ms value
-has no bounded scalar form; the tijdsduur and datetime ± duration
-arithmetic rides `dt_term`'s pair term instead, since 2026-08-28),
+S6a: an ordering/equality comparison, or a datum-tijd operand reaching
+`expr_term`'s numeric eerste/laatste arm, whose ms value has no bounded
+scalar form; the tijdsduur, datetime ± duration arithmetic and the
+eerste/laatste fold over datum-tijd operands ride `dt_term`'s pair term
+instead, since 2026-08-28),
 and for text/enum/boolean **parameters**, which ref executes but the
 ASP parameter emission scales through `decimals_of_datatype` —
 ref-only until a corpus case demands a symbolic parameter carriage);

@@ -2224,6 +2224,48 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
       | None ->
           datetime_plus_calendar ctx ~subject ~subject_ot ~tu ~date_atoms:da ~dd ~dm
             ~dur_atoms:bn ~n:n_term)
+  | Functie { kind = (Eerste | Laatste) as kind; argumenten = (_ :: _ :: _ as args); filter; _ } ->
+      (* the datum-tijd ordering fold (RUNTIME-SEMANTICS ch. 1.2e + ch. 3.8):
+         EERSTE/LAATSTE over >= 2 datum-tijd operands. ref orders the pair
+         values totally — civil day first, ms-of-day as tie-break, one instant
+         being one (D, MS) pair — and the fold returns VALUES, so a tie is
+         value-neutral (agg_eerste/agg_laatste over scalar_cmp). The pair term
+         cannot be linearised into one integer (D*86 400 000+MS overflows
+         clingo's int range — the very reason dt(D, MS) exists), so the extreme
+         is two-stage and lexicographic: the extreme over the civil day, then
+         the extreme over the ms-of-day among the operands carrying that day.
+         Both stages range over the already-fenced pair components (D and MS
+         are each inside 2^31 by the pair-term layer), so no product forms and
+         no range guard is needed. An empty operand contributes no tuple (the
+         bare join skips it, never 0); all-empty derives no tuple and the
+         definedness atom keeps the pair underivable — leeg as absence, never a
+         #sup/#inf escaping into a value. *)
+      if filter <> None then
+        fault "a filter on a listed-operand datum-tijd fold has no v0 form (the subselection \
+               ranges over instances)";
+      List.iter
+        (fun a ->
+          if not (is_datetime_operand (Some a)) then
+            fault "a non-datum-tijd (or mixed-granularity) operand under a datum-tijd \
+                   eerste/laatste fold has no order here (ref faults the unordered comparison)")
+        args;
+      ctx.fresh <- ctx.fresh + 1;
+      let pred = Printf.sprintf "dtf%d" ctx.fresh in
+      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      List.iter
+        (fun a ->
+          let atoms, d, ms = dt_term ctx ~subject ~subject_ot a in
+          emit ctx "%s(%s,%s,%s) :- %s." pred subject d ms
+            (String.concat ", " (base :: atoms)))
+        args;
+      emit ctx "%s_def(%s) :- %s(%s,_,_)." pred subject pred subject;
+      let agg = match kind with Eerste -> "#min" | _ -> "#max" in
+      let dd = fresh ctx "DFD" and dm = fresh ctx "DFM" in
+      let ld = fresh ctx "DLD" and lm = fresh ctx "DLM" in
+      ( [ Printf.sprintf "%s_def(%s)" pred subject;
+          Printf.sprintf "%s = %s { %s : %s(%s,%s,_) }" dd agg ld pred subject ld;
+          Printf.sprintf "%s = %s { %s : %s(%s,%s,%s) }" dm agg lm pred subject dd lm ],
+        dd, dm )
   | _ ->
       fault
         "datum-tijd here is not the pair term's arithmetic (an own-subject read or datetime \
