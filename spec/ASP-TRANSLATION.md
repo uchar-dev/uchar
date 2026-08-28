@@ -138,7 +138,13 @@ the same `val/3` slot, beside the integer encoding
 string (ref compares `String.equal` — spelling and case are
 load-bearing), an **enum** label its NORMALISED quoted string (ref
 compares norm-equal, so both executors normalise at the same point),
-and a **boolean** the bare symbol `waar`/`onwaar`. A boolean input
+and a **boolean** the bare symbol `waar`/`onwaar`. An embedded
+**double-quote** or **backslash** in a text or enum value is lowered to
+its gringo escape (backslash-quote, doubled-backslash) — identically on
+this value side and on the literal side (`symbolic_literal_term`, S3),
+so the equality join stays sound; the expectation-check parser reads the
+same escaped shape back, escape-aware, and a control character < 0x20,
+which has no escape, still faults (S19). A boolean input
 additionally keeps its closed-world characteristic reading — `true` →
 `heeft/2`, `false` → absence (the `bool_atoms` read of S11) — because
 the equality read needs the three-way distinction (waar / onwaar /
@@ -172,8 +178,9 @@ arm); vintages by `jutterswet-aanmeldquotum`,
 the symbolic carriage by `jutterswet-vondstetiket` (text),
 `jutterswet-keurstaat` (enum, including the case2 norm-insensitive
 spelling), `jutterswet-borgvlag` (boolean — case2 pins `onwaar` as a
-value distinct from case3's absence) and `jutterswet-jutdatum` (the
-date-as-day-number sibling).
+value distinct from case3's absence), `jutterswet-jutdatum` (the
+date-as-day-number sibling) and `jutterswet-keurmerk` (the quote-escape
+witness — an embedded double-quote on both the value and literal sides).
 
 ### S3. Rules and write targets
 
@@ -382,6 +389,18 @@ rounding it cannot compute in one integer step.
 - **Rounding** (afgerond, ch. 2.5): scale surplus divided away by the
   mode's formula; an empty basis propagates; a finer target upscales
   exactly.
+- **Clamp** (begrensd, ch. 2.7): minimum first (raise to at least the
+  lower bound), then maximum (lower to at most the upper bound), in any
+  of the three positions (min-only, max-only, min+max), via the integer
+  identities max(a,b) = (a+b+|a−b|)/2 and min(a,b) = (a+b−|a−b|)/2 on the
+  harmonised scale — a+b±|a−b| is always even, so the /2 is exact on
+  either sign. An empty base propagates (the bare join). ref restates
+  each bound into the base's unit by an exact factor; the integer
+  encoding carries none, so only identical units or a unitless side pass
+  (the additive-join fence). A bound must be non-empty by construction:
+  ref reads an empty bound as NO bound, which the bare join cannot
+  express, so only an atom-free ground literal/constant bound translates
+  — a read that could be empty faults loudly (S19).
 
 The fence table — every emitted operation carries `viol/2` range
 guards on its operands ("arithmetic range exceeded (clingo grounds in
@@ -392,6 +411,7 @@ machine integers)"):
 | product factor (maal, percentage-van) | 46340 |
 | `#sum` contributor and contributor count | 46340 each (46340² < 2³¹) |
 | additive operand | 1073741823 / harmonisation factor |
+| clamp base/bound (begrensd) | 1073741823 / harmonisation factor |
 | division operand | 536870912 / its exact-quotient factor |
 | comparison / upscale / write fit | 2147483647 / harmonisation factor |
 | power base (exponent e) | ⌊(2³¹−1)^(1/e)⌋ (46340 for e=2, 1290 for e=3) |
@@ -400,7 +420,8 @@ machine integers)"):
 The safe side is pinned: `synth-grensrand` replays the largest
 translatable product (46340² = 2147395600) and `jutterswet-taxatie`
 case5 the largest translatable powers, so the guards provably do not
-fire early. **Units:** operands of the multiplicative family must be
+fire early. The clamp is witnessed by `jutterswet-grensbedrag` (the
+three positions and the empty-base propagation). **Units:** operands of the multiplicative family must be
 effectively unit-free, and positions where ref *restates* one operand
 into the other's unit (the additive join, the comparison, the write
 boundary) accept only identical units or a unitless side — ref's
@@ -616,14 +637,30 @@ arm); an away-pointing role keeps the loud translation fault.
 **Sum** (som): contributor body `rol(S,role,X), val(X,a,G), ⟨filter⟩`
 and `V = #sum { G,X : ⟨body⟩ }` at the element attribute's scale —
 an instance without the attribute contributes no tuple, and the empty
-tuple set is clingo's native 0, which is why only the fallback-0
-facet translates (a som without it would need an explicit non-empty
-guard to distinguish leeg from 0; faults until a corpus case demands
-it, S19). The *sum* is doubly fenced: each contributor at 46340 *and*
-the contributor count at 46340 (`viol` when `46340 < #count{...}`),
+tuple set is clingo's native 0, which the **fallback-0** facet reads
+directly (ref `agg_som (Some 0)`). A som WITHOUT a `leegwaarde` adds a
+**presence guard** — a per-subject helper `sompN(S)` that holds iff at
+least one contributor exists, carried by the reading rule — so the empty
+set leaves the term underivable and the result is leeg, not 0 (ref
+`agg_som None → Empty`; `jutterswet-buitsom`). A fallback OTHER than 0
+stays loud (S19). The *sum* is doubly fenced: each contributor at 46340
+*and* the contributor count at 46340 (`viol` when `46340 < #count{...}`),
 so the accumulated sum provably stays inside 2^31. The bare count
 carries no fence — a `#count` cannot approach 2^31 before grounding
 itself becomes infeasible (recorded, not guarded; ch. 6c).
+**Minimum / Maximum** (set-form, ch. 1.2e, ref `agg_min`/`agg_max`):
+the SAME contributor gathering as the som over a set-typed
+`AttribuutRef`, aggregated with `V = #min { G : ⟨body⟩ }` (resp.
+`#max`) at the element attribute's scale. An empty contributor is
+skipped (the join is the skip, as for the som), and the extreme IS one
+contributed value — no accumulation, so no range fence — with a
+**mandatory presence guard** `extpN(S)`: `#min`/`#max` over the empty
+set yield `#sup`/`#inf`, which must never escape into a value, so an
+all-empty or empty set derives nothing (ref → Empty). A `leegwaarde` on
+min/max is ignored, mirroring ref. Unlike the listed eerste/laatste
+fold there is one attribute, one scale, one unit — no harmonisation.
+Witnessed by `jutterswet-vondstpiek` (both extremes, the presence guard
+and the empty-skip corners).
 
 **Temporal total, clipped** (totaal ... gedurende, ch. 3.6): the
 clip predicates a fold over the subject's *own* temporal attribute on
@@ -1678,8 +1715,11 @@ value-side guard; loud in both executors) and the nested composite
 bullet (v0 markers it as Onopgelost; loud in both executors);
 gedurende condition shapes beyond WF-055; temporal
 totals over case-supplied full timelines, and non-year total
-granularity; `Begrensd` (clip/min-max) and rounded roots in term
-positions; a temporal attribute read in a scalar slot (ch. 3.3);
+granularity; rounded roots in term positions (`Begrensd`
+clip/min-max now translates — the integer min/max identities on the
+harmonised scale, S6, `jutterswet-grensbedrag` — save a bound needing a
+real unit conversion factor or a non-ground, possibly-empty bound, which
+stay loud); a temporal attribute read in a scalar slot (ch. 3.3);
 non-numeric arithmetic operands — narrowed 2026-08-25: the
 **day-precision date family now translates** (date ± duration and
 tijdsduur/absolute-tijdsduur in dagen/weken/maanden/kwartalen/jaren,
@@ -1737,7 +1777,9 @@ written minimum decides ref's write fault, a split with no corpus
 case) — while the unrounded aligned form, which used to floor
 silently where ref faults a non-fitting write, now carries the
 runtime exactness viol instead of a silent divergence;
-som fallbacks other than 0; uniqueness key
+a som fallback other than 0 — a NON-zero `leegwaarde` literal (the
+fallback-less som now translates via its presence guard, S8, and the
+fallback-0 facet rides `#sum`'s native 0); uniqueness key
 lists with more than one temporal component, and ever-unique keys
 served by a scalar; case input on non-standing computed targets
 (scalar, temporal, and allocation targets alike — the ch. 6d
@@ -1751,8 +1793,11 @@ translate through the cqN count encoding (S7:
 `jutterswet-rubriektabel`, `jutterswet-vrijgavetoets`,
 `jutterswet-sluimerwacht`, `jutterswet-tweevoudkeur`) and left this
 catch-all, as did the articulated eerste/laatste fold (S8,
-`jutterswet-peildatum`; minimum/maximum over listed operands stay
-under it — the same encoding would serve, no corpus case);
+`jutterswet-peildatum`; minimum/maximum over the SET-typed source now
+translate too — the `#min`/`#max` aggregation arm, S8,
+`jutterswet-vondstpiek` — while minimum/maximum over LISTED operands
+stay under this catch-all: the same listed-fold encoding would serve, no
+corpus case);
 what remains under it for composites is the member-less
 counting list (`a counting composite without members is not
 translated (no corpus case)`) and every member kind that keeps its
@@ -1960,8 +2005,11 @@ executors diverge here in *expressiveness*, never in *value*, the
 exact-to-the-rounding-point rule made visible on the backend that must
 round every step.
 
-*Environment and input fences:* names the ASP string encoding cannot
-quote (WF-057's backstop, sole cover for case labels); values that do
+*Environment and input fences:* a **control character < 0x20** in a
+name or label — the one character class the ASP string encoding cannot
+escape (an embedded double-quote or backslash now escapes to
+backslash-quote / doubled-backslash, S2; WF-057's backstop, sole cover
+for case labels); values that do
 not fit their declared decimals or exceed 2^31−1; scales beyond 10^9;
 unknown object types, attributes, parameters; malformed or missing
 `asOfDate` under Rekendatum; granular parameters in scalar slots and
