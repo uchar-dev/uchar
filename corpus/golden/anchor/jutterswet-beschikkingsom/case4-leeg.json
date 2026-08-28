@@ -34,7 +34,7 @@
       "characteristic": "bevoorschot"
     },
     {
-      "kind": "characteristicAbsent",
+      "kind": "characteristicPresent",
       "label": "J1",
       "characteristic": "afgehandeld"
     },

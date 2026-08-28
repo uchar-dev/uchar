@@ -36,7 +36,7 @@
       "characteristic": "openstaand"
     },
     {
-      "kind": "characteristicAbsent",
+      "kind": "characteristicPresent",
       "label": "B1",
       "characteristic": "betwist"
     },

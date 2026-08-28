@@ -44,7 +44,7 @@
       "characteristic": "dubbel"
     },
     {
-      "kind": "characteristicAbsent",
+      "kind": "characteristicPresent",
       "label": "J1",
       "characteristic": "afwijkend"
     },

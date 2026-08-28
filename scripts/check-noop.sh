@@ -69,11 +69,6 @@
 #   - jutterswet-dagentelling/case4-input-blijft.json: the temporal
 #     standing for the day count — a non-deciding count leaves the
 #     input timeline standing whole (ch. 7.8, timeline arm).
-#   - jutterswet-beschikkingsom/case4-leeg.json: the leeg-scrutinee
-#     corner (ch. 9.2) — with beschikking absent the match derives
-#     nothing, so uitkering stays empty and both = and ≠ against
-#     Aangehouden are false (Tabel 38); the expectation IS that absence,
-#     which a do-nothing executor satisfies.
 #   - jutterswet-staffelvergoeding/case3-afwezig.json: the leeg-list
 #     propagation of ch. 10.3 — with the staffelbedragen parameter absent
 #     (read leeg), the Fold propagates leeg and vergoeding stays empty; the
@@ -84,17 +79,6 @@
 #     MapList/Fold and the FilterList/ListLength both propagate leeg, so
 #     erkende som and aantal erkend stay empty. Its case2-leeg-lijst
 #     (supplied []) writes 0.00/0 and is not a survivor.
-#   - jutterswet-vondstdossier/case3-afwezig.json: the record no-hole
-#     absence (ch. 11) — with both struct inputs (dossier, dossiers) absent,
-#     premie's GEVULD(dossier)-guarded rule does not fire, waardekopie's bare
-#     FieldAccess on the leeg dossier propagates leeg, totaalwaarde's fold
-#     propagates leeg over the absent list, samenvatting's StructLiteral
-#     propagates leeg (its telling field |dossiers| evaluates leeg — the
-#     build-side no-hole witness), and dubbel/afwijkend are both false
-#     against the leeg struct operand (Tabel 38 — the both-directions
-#     corner). The absence IS the assertion; case1/case2 (both lists
-#     supplied) and case4 (dossier present, list absent) all decide and are
-#     not survivors.
 #   - jutterswet-nestuitzondering/case8-niets.json: the nested-group empty
 #     fall-through (ch. 7.9) — with no ground characteristic present, rung 0's
 #     sub-group is empty and its own grondX consequence does not fire, the base
@@ -166,10 +150,8 @@ corpus/golden/jutterswet-penningrecht/case4-hardheidsgrens.json
 corpus/golden/anchor/jutterswet-borgdeel/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-dagentelling/case3-leeg.json
 corpus/golden/anchor/jutterswet-dagentelling/case4-input-blijft.json
-corpus/golden/anchor/jutterswet-beschikkingsom/case4-leeg.json
 corpus/golden/anchor/jutterswet-staffelvergoeding/case3-afwezig.json
 corpus/golden/anchor/jutterswet-aanspraaktelling/case3-afwezig.json
-corpus/golden/anchor/jutterswet-vondstdossier/case3-afwezig.json
 corpus/golden/anchor/jutterswet-nestuitzondering/case8-niets.json
 corpus/golden/anchor/jutterswet-nestkenmerk/case1-y-wint.json
 corpus/golden/synth3-standtarief/case4-leeg.json

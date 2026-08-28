@@ -90,22 +90,32 @@ recorded as such.
 |---|---|---|
 | ordering (<, ≤, >, ≥, eerder/later) | any empty operand → false | leeg < 5 = onwaar; leeg < leeg = onwaar |
 | numeric equality | true iff **both** empty, else value equality | leeg = leeg → waar; leeg = 5 → onwaar |
-| numeric inequality | true iff **exactly one** empty, else value inequality | leeg ≠ 5 → waar; leeg ≠ leeg → onwaar; 5 ≠ 3 → waar |
 | non-numeric equality (text/enum/boolean, §5 Tabel 38) | any empty operand → false | leeg =ₜ leeg → onwaar |
-| date equality/inequality (v0's Tabel-38 guard on the date shape) | equality: any empty operand → false — in particular **both** empty, never the numeric two-empties-equal cell; inequality: the numeric rule (true iff exactly one empty) | leeg =ᴰ leeg → onwaar; leeg =ᴰ 2026-06-21 → onwaar; leeg ≠ᴰ 2026-06-21 → waar; leeg ≠ᴰ leeg → onwaar |
+| date equality (v0's Tabel-38 guard on the date shape) | any empty operand → false — in particular **both** empty, never the numeric two-empties-equal cell | leeg =ᴰ leeg → onwaar; leeg =ᴰ 2026-06-21 → onwaar |
+| **inequality — every datatype (§5.6 Tabel 44)** | true iff **exactly one** empty, else value inequality — uniform over numeric, percentage, text, enum, boolean, date, and the ch. 9/11 constructor and record values | leeg ≠ 5 → waar; 5 ≠ 3 → waar; leeg ≠ leeg → onwaar; leeg ≠ₜ "a" → waar; leeg ≠ᴰ 2026-06-21 → waar; leeg ≠ᴰ leeg → onwaar |
 | leeg / gevuld predicates | absence — including a failed to-one navigation — **is** leeg = waar | "de leeftijd van zijn partner is leeg" is waar for a partnerless person |
 
-Note the deliberate asymmetry: numeric equality treats two empties as
-equal; non-numeric equality does not. Both are mirrored, and the ch. 1.4
-decision keeps them: the equality rules where empty carries meaning are
-on its must-preserve list. Dates straddle the two: ordering and
-inequality ride the numeric rules on the civil day number, but date
-equality follows the any-empty-is-false rule — the mirror of v0's
-explicit guard `cmp && !(l == null && r == null)` on the date-vs-date
-comparison shape (its Tabel 38 classifies Datum non-numeric). Pinned by
-`jutterswet-paasvondst` case5 (both-empty gelijk-aan → onwaar, a
-dateless subject gains no kenmerk) beside `jutterswet-jutdatum` case3
-(one-empty: gelijk-aan onwaar, ongelijk-aan waar).
+Note the deliberate asymmetry, now confined to **equality**: numeric
+equality treats two empties as equal; non-numeric equality (text, enum,
+boolean, and — by v0's Tabel-38 guard on the date shape — date) does not.
+**Inequality carries no such asymmetry.** After the Tabel-44 ratification
+(2026-08-28, source-verified against RegelSpraak typeringen §5.6) it is
+uniform over *every* datatype: exactly one empty operand is waar, both
+empty is onwaar, else value inequality. So `≠` is no longer the exact
+complement of `=` over a single leeg operand: where exactly one operand is
+empty `=` is onwaar (numerically because two empties, not one, are the
+equal cell; non-numerically because any empty is false) yet `≠` is waar.
+Both equality rules are mirrored, and the ch. 1.4 decision keeps
+them: the equality rules where empty carries meaning are on its
+must-preserve list. Dates straddle the two only for equality: ordering
+rides the numeric rules on the civil day number and inequality rides the
+uniform Tabel-44 rule, but date equality follows the any-empty-is-false
+rule — the mirror of v0's explicit guard `cmp && !(l == null && r ==
+null)` on the date-vs-date comparison shape (its Tabel 38 classifies Datum
+non-numeric). Pinned by `jutterswet-paasvondst` case5 (both-empty
+gelijk-aan → onwaar, a dateless subject gains no kenmerk) beside
+`jutterswet-jutdatum` case3 (one-empty: gelijk-aan onwaar, ongelijk-aan
+waar).
 
 **Aggregations**
 
@@ -2868,9 +2878,13 @@ cross-sum-type comparison is ill-formed, never false). Then:
   are equal under the ordinary value equality of their payload
   datatype;
 - constructor values are **non-numeric** for the ch. 1.2 comparison
-  discipline: **any leeg operand makes both `=` and `≠` false** (the
-  Tabel 38 rule — deliberately not complements over leeg; the numeric
-  both-empty asymmetry does *not* apply);
+  discipline. Equality: **any leeg operand makes `=` false** (the Tabel 38
+  rule — the numeric both-empty asymmetry does *not* apply, so two empties
+  are unequal). Inequality: **the uniform Tabel-44 rule** (ch. 1.2d) —
+  exactly one empty operand makes `≠` waar, both empty makes it onwaar. So
+  `=` and `≠` no longer both fall to false over a single leeg operand: `=`
+  is onwaar there and `≠` is waar (the ratified 2026-08-28 change; the
+  equality cell is untouched);
 - constructor values are not orderable: `<`/`>` over a sum type is a
   typing fault, as for text and enumeration values.
 
@@ -2887,8 +2901,10 @@ Worked (the anchor's condition rules — `bevoorschot` iff `beschikking`
   onwaar.
 - `beschikking` = `Toegekend(1250.50)` → `bevoorschot` onwaar,
   `afgehandeld` waar (different tag).
-- `beschikking` leeg → **both onwaar** (the both-directions-false
-  corner, pinned absolutely in the anchor's case 4).
+- `beschikking` leeg → `bevoorschot` **onwaar** (equality: any leeg
+  operand → false, Tabel 38) but `afgehandeld` **waar** (inequality:
+  exactly one empty → waar, Tabel 44); pinned absolutely in the anchor's
+  case 4.
 
 ### 9.4 Carriage, ladders, timelines
 
@@ -3181,9 +3197,12 @@ Then:
   names match ci by declaration, so the comparison is positional over the
   shared declaration order);
 - record values are **non-numeric** for the ch. 1.2 comparison
-  discipline: **any leeg operand makes both `=` and `≠` false** (the
-  Tabel 38 rule — deliberately not complements over leeg; the numeric
-  both-empty asymmetry does *not* apply);
+  discipline. Equality: **any leeg operand makes `=` false** (the Tabel 38
+  rule — the numeric both-empty asymmetry does *not* apply). Inequality:
+  **the uniform Tabel-44 rule** (ch. 1.2d) — exactly one empty operand
+  makes `≠` waar, both empty makes it onwaar. So `=` and `≠` no longer both
+  fall to false over a single leeg operand: `=` is onwaar and `≠` is waar
+  there (the ratified 2026-08-28 change; the equality cell is untouched);
 - record values are not orderable: `<`/`>` over a struct is a typing
   fault, as for text, enumeration and sum-type values.
 
@@ -3199,9 +3218,9 @@ Worked (the anchor's `dubbel` iff `dossier` = `{waarde: 120.50, telling:
 - **case1/case2/case4** — `dossier` = `{120.50, 3}` → `dubbel`
   **aanwezig** (fieldwise equal within one domain), `afwijkend`
   **afwezig**.
-- **case3** — `dossier` **leeg** → **both afwezig** (the
-  both-directions-false corner: leeg makes `=` and `≠` both onwaar,
-  Tabel 38 — pinned absolutely).
+- **case3** — `dossier` **leeg** → `dubbel` **afwezig** (equality: leeg
+  makes `=` onwaar, Tabel 38) but `afwijkend` **aanwezig** (inequality:
+  exactly one empty makes `≠` waar, Tabel 44 — pinned absolutely).
 
 ### 11.3 Carriage, ladders, timelines
 

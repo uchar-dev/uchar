@@ -406,9 +406,16 @@ let compare_op ?static_numeric ?(static_date = false) (op : Ir_v0.Ast.vergelijk_
         | Empty, _ | _, Empty -> true
         | _ -> scalar_cmp l r <> 0
       else
-        (* non-numeric inequality with an empty operand: false (the
-           three-valued reading of Tabel 38's equality, mirrored) *)
-        (match (l, r) with Empty, _ | _, Empty -> false | _ -> not (eq_non_numeric l r))
+        (* inequality is uniform over every datatype (Tabel 44): exactly one
+           empty → waar, both empty → onwaar, else value inequality. Only the
+           value-inequality tail differs from the numeric branch above — it
+           routes through the non-numeric equality; the empty rule is shared.
+           The equality path (eq_non_numeric) is untouched: its any-empty →
+           false mirror of Tabel 38 stays. *)
+        (match (l, r) with
+        | Empty, Empty -> false
+        | Empty, _ | _, Empty -> true
+        | _ -> not (eq_non_numeric l r))
 
 (* --- aggregations (ch. 1.2e: the §5.8.2/§4.20 split) ------------------- *)
 

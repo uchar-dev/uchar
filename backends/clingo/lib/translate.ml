@@ -885,6 +885,26 @@ let let_binder ctx ~subject ~subject_ot ((va, vt, vs) : string list * string * i
     ([ Printf.sprintf "%s(%s,%s)" p subject v ], v, vs)
   end
 
+(* the ch. 1.2d NON-numeric inequality, Tabel 44 (uniform over every datatype):
+   ongelijk-aan with EXACTLY ONE empty operand is waar, both empty is onwaar,
+   else value inequality. The positive `!=` join used for gelijk-aan (both
+   operands must bind) yields any-empty → false and CANNOT express the
+   one-empty-true cell, so ongelijk-aan takes the numeric row's negation route:
+   a per-comparison helper eqN(S) holds iff both operand bodies bind and the
+   ground terms unify, OR neither binds (both empty); ongelijk-aan is `not
+   eqN`. eqN reads only the operand bodies (val atoms, ground literals), so the
+   NAF is stratified exactly as the numeric eqN is. Equality is untouched: it
+   keeps its positive == join (any empty → false, Tabel 38). *)
+let neq_helper ctx ~subject ~subject_ot (ll, tl) (rr, tr) : string list =
+  let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+  ctx.fresh <- ctx.fresh + 1;
+  let p = Printf.sprintf "eq%d" ctx.fresh in
+  emit ctx "%s_l(%s) :- %s." p subject (String.concat ", " (base :: ll));
+  emit ctx "%s_r(%s) :- %s." p subject (String.concat ", " (base :: rr));
+  emit ctx "%s(%s) :- %s, %s == %s." p subject (String.concat ", " (base :: (ll @ rr))) tl tr;
+  emit ctx "%s(%s) :- %s, not %s_l(%s), not %s_r(%s)." p subject base p subject p subject;
+  [ "not " ^ Printf.sprintf "%s(%s)" p subject ]
+
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   match e with
   | Literal { waarde; typ; _ } -> (
@@ -2062,41 +2082,48 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       (* ch. 11.2: record equality is POSITIVE ground-term unification, the
          sum-type pattern (S14). Both operands bind their record term (an own
          attribute read via its val atom, a StructLiteral as its computed
-         term); Gelijk tests ==, Ongelijk tests != — never `not gelijk`: a leeg
-         operand binds no term, so BOTH directions fail (Tabel 38's non-numeric
-         branch, the case3 dubbel-én-afwijkend-afwezig corner). Nominal identity
-         is carried by the functor itself (= the declaring domain); WF-072
-         precludes a cross-domain comparison statically. *)
+         term); Gelijk tests == — a leeg operand binds no term, so equality
+         fails (Tabel 38's non-numeric branch, the case3 dubbel-afwezig corner).
+         Ongelijk is now the Tabel-44 uniform inequality (neq_helper): exactly
+         one empty → waar (case3 afwijkend now aanwezig), both empty → onwaar.
+         Nominal identity is carried by the functor itself (= the declaring
+         domain); WF-072 precludes a cross-domain comparison statically. *)
       let ll, tl = struct_term ctx ~subject ~subject_ot (req "links" links) in
       let rr, tr = struct_term ctx ~subject ~subject_ot (req "rechts" rechts) in
-      ll @ rr @ [ Printf.sprintf "%s %s %s" tl (if op = Gelijk then "==" else "!=") tr ]
+      if op = Gelijk then ll @ rr @ [ Printf.sprintf "%s == %s" tl tr ]
+      else neq_helper ctx ~subject ~subject_ot (ll, tl) (rr, tr)
   | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ }
     when is_sum_operand links || is_sum_operand rechts ->
       (* ch. 9.3: sum-typed equality is POSITIVE ground-term unification.
          Both operand terms bind (an own attribute read via its val atom, a
-         Construct as a bare ground term); Gelijk tests T1 == T2, Ongelijk
-         tests T1 != T2. Ongelijk is NEVER `not gelijk`: a leeg operand must
-         make BOTH directions false (Tabel 38, the non-numeric branch), and a
-         val atom that does not bind fails the positive join in both — the
-         NAF complement would instead make Ongelijk TRUE on leeg (the S5
-         non-complement warning, honoured here). *)
+         Construct as a bare ground term); Gelijk tests T1 == T2 — a leeg
+         operand fails the positive join, so equality is false (Tabel 38, the
+         non-numeric branch). Ongelijk is the Tabel-44 uniform inequality
+         (neq_helper): exactly one empty → waar (beschikking leeg ≠ Aangehouden
+         fires afgehandeld), both empty → onwaar. The one-empty-true cell needs
+         the eqN-negation route — a bare `not gelijk` positive join could not
+         express it (S5's non-complement warning is why the numeric row already
+         goes through eqN, and the inequality is now uniform with it). *)
       let ll, tl = sum_term ctx ~subject ~subject_ot (req "links" links) in
       let rr, tr = sum_term ctx ~subject ~subject_ot (req "rechts" rechts) in
-      ll @ rr @ [ Printf.sprintf "%s %s %s" tl (if op = Gelijk then "==" else "!=") tr ]
+      if op = Gelijk then ll @ rr @ [ Printf.sprintf "%s == %s" tl tr ]
+      else neq_helper ctx ~subject ~subject_ot (ll, tl) (rr, tr)
   | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ }
     when is_symbolic_operand links || is_symbolic_operand rechts ->
-      (* ch. 1.2d's NON-numeric branch (§5 Tabel 38): text/enum/boolean
-         equality is POSITIVE ground-term comparison — both operands bind
-         (an own attribute read via its val atom, a literal as a ground
-         term); Gelijk tests ==, Ongelijk tests != and is NEVER `not
-         gelijk`: ANY empty operand must make BOTH directions false, which
-         the unbound positive join gives for free (the sum/struct pattern
-         of S14/S16, on the scalar datatypes). The numeric eqN asymmetry
-         below — leeg = leeg waar, its NAF complement for ongelijk — is
-         numeric-only and deliberately does NOT apply here. *)
+      (* ch. 1.2d text/enum/boolean comparison. Gelijk is POSITIVE ground-term
+         comparison — both operands bind (an own attribute read via its val
+         atom, a literal as a ground term) and Gelijk tests ==; ANY empty
+         operand fails the unbound positive join, so equality is false (Tabel
+         38, unchanged — the equality asymmetry between numeric leeg=leeg-waar
+         and this non-numeric leeg=leeg-onwaar stays). Ongelijk is now uniform
+         with the numeric row (Tabel 44): exactly one empty → waar (etiket leeg
+         ≠ 'zeevondst' fires omstreden), both empty → onwaar. It takes the
+         eqN-negation route (neq_helper) because a positive != join cannot
+         express the one-empty-true cell. *)
       let ll, tl = symbolic_term ctx ~subject ~subject_ot (req "links" links) in
       let rr, tr = symbolic_term ctx ~subject ~subject_ot (req "rechts" rechts) in
-      ll @ rr @ [ Printf.sprintf "%s %s %s" tl (if op = Gelijk then "==" else "!=") tr ]
+      if op = Gelijk then ll @ rr @ [ Printf.sprintf "%s == %s" tl tr ]
+      else neq_helper ctx ~subject ~subject_ot (ll, tl) (rr, tr)
   | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ }
     when not (op = Gelijk && (is_date_operand links || is_date_operand rechts)) ->
       (* the ch. 1.2d NUMERIC equality asymmetry (arith.compare_op):

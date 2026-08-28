@@ -115,7 +115,27 @@ let () =
    check "WV-1.2d-date-eq-2" (cmp Gelijk leeg d = false);
    check "WV-1.2d-date-eq-3" (cmp Gelijk d d = true);
    check "WV-1.2d-date-neq-1" (cmp Ongelijk leeg d = true);
-   check "WV-1.2d-date-neq-2" (cmp Ongelijk leeg leeg = false))
+   check "WV-1.2d-date-neq-2" (cmp Ongelijk leeg leeg = false));
+  (* Tabel 44 (§5.6): inequality is uniform over EVERY datatype — exactly
+     one empty operand → waar, both empty → onwaar. Text, enum and boolean
+     each mirror the numeric one-empty cell (WV-1.2d-neq-1 above); equality
+     stays any-empty → onwaar (§5 Tabel 38). static_numeric is false so a
+     value-carrying pair takes the non-numeric route; two empties are
+     typeless at runtime, so the shared both-empty cell is checked once. *)
+  let nn op a b = Arith.compare_op ~static_numeric:false op a b in
+  check "WV-1.2d-txt-neq-one-l" (nn Ongelijk leeg (Value.Text "zeevondst") = true);
+  check "WV-1.2d-txt-neq-one-r" (nn Ongelijk (Value.Text "zeevondst") leeg = true);
+  check "WV-1.2d-txt-neq-val" (nn Ongelijk (Value.Text "a") (Value.Text "b") = true);
+  check "WV-1.2d-txt-neq-eqval" (nn Ongelijk (Value.Text "a") (Value.Text "a") = false);
+  check "WV-1.2d-enum-neq-one-l" (nn Ongelijk leeg (Value.Enum "gaaf") = true);
+  check "WV-1.2d-enum-neq-val" (nn Ongelijk (Value.Enum "gaaf") (Value.Enum "wrakhout") = true);
+  check "WV-1.2d-bool-neq-one-l" (nn Ongelijk leeg (Value.Bool true) = true);
+  check "WV-1.2d-bool-neq-one-r" (nn Ongelijk (Value.Bool true) leeg = true);
+  check "WV-1.2d-nn-neq-both" (nn Ongelijk leeg leeg = false);
+  (* equality is untouched: any empty operand → onwaar for the same operands *)
+  check "WV-1.2d-txt-eq-one" (nn Gelijk leeg (Value.Text "zeevondst") = false);
+  check "WV-1.2d-enum-eq-one" (nn Gelijk leeg (Value.Enum "gaaf") = false);
+  check "WV-1.2d-bool-eq-one" (nn Gelijk leeg (Value.Bool true) = false)
 
 (* --- ch. 1.2e: aggregations (the §5.8.2/§4.20 split) -------------------- *)
 
@@ -1024,17 +1044,20 @@ let () =
     (Arith.compare_op ~static_numeric:false Gelijk toegekend aangehouden = false);
   check "WV-9.3-neq-diff-tag"
     (Arith.compare_op ~static_numeric:false Ongelijk toegekend aangehouden = true);
-  (* 9.3: a leeg operand makes BOTH = and ≠ false (Tabel 38 mirror,
-     deliberately not complements — the anchor's case 4 corner), in both
-     operand orders *)
+  (* 9.3: a leeg operand makes `=` false (Tabel 38, equality untouched) but
+     `≠` WAAR (Tabel 44, uniform inequality — the ratified 2026-08-28 change;
+     the anchor's case 4 now fires afgehandeld), in both operand orders *)
   check "WV-9.3-eq-empty-l"
     (Arith.compare_op ~static_numeric:false Gelijk leeg aangehouden = false);
   check "WV-9.3-neq-empty-l"
-    (Arith.compare_op ~static_numeric:false Ongelijk leeg aangehouden = false);
+    (Arith.compare_op ~static_numeric:false Ongelijk leeg aangehouden = true);
   check "WV-9.3-eq-empty-r"
     (Arith.compare_op ~static_numeric:false Gelijk aangehouden leeg = false);
   check "WV-9.3-neq-empty-r"
-    (Arith.compare_op ~static_numeric:false Ongelijk aangehouden leeg = false);
+    (Arith.compare_op ~static_numeric:false Ongelijk aangehouden leeg = true);
+  (* 9.3: both operands leeg → `≠` onwaar (Tabel 44 both-empty cell) *)
+  check "WV-9.3-neq-both-empty"
+    (Arith.compare_op ~static_numeric:false Ongelijk leeg leeg = false);
   (* 9.3: eq_non_numeric with an empty operand is false directly *)
   check "WV-9.3-teq-empty" (Arith.eq_non_numeric leeg aangehouden = false);
   (* 9.3: sum values are not orderable — scalar_cmp faults *)
@@ -1167,13 +1190,15 @@ let () =
   check "WV-11.2-neq-op" (Arith.compare_op ~static_numeric:false Ongelijk d1 d1' = false);
   check "WV-11.2-eq-op-diff" (Arith.compare_op ~static_numeric:false Gelijk d1 d_val = false);
   check "WV-11.2-neq-op-diff" (Arith.compare_op ~static_numeric:false Ongelijk d1 d_val = true);
-  (* 11.2: a leeg operand makes BOTH = and ≠ false (Tabel 38, deliberately
-     not complements — the anchor's case3 corner: dubbel AND afwijkend both
-     absent), in both operand orders *)
+  (* 11.2: a leeg operand makes `=` false (Tabel 38, equality untouched) but
+     `≠` WAAR (Tabel 44, uniform inequality — the ratified 2026-08-28 change;
+     the anchor's case3 keeps dubbel absent yet now fires afwijkend), in both
+     operand orders; both operands leeg → `≠` onwaar *)
   check "WV-11.2-eq-empty-l" (Arith.compare_op ~static_numeric:false Gelijk leeg d1 = false);
-  check "WV-11.2-neq-empty-l" (Arith.compare_op ~static_numeric:false Ongelijk leeg d1 = false);
+  check "WV-11.2-neq-empty-l" (Arith.compare_op ~static_numeric:false Ongelijk leeg d1 = true);
   check "WV-11.2-eq-empty-r" (Arith.compare_op ~static_numeric:false Gelijk d1 leeg = false);
-  check "WV-11.2-neq-empty-r" (Arith.compare_op ~static_numeric:false Ongelijk d1 leeg = false);
+  check "WV-11.2-neq-empty-r" (Arith.compare_op ~static_numeric:false Ongelijk d1 leeg = true);
+  check "WV-11.2-neq-both-empty" (Arith.compare_op ~static_numeric:false Ongelijk leeg leeg = false);
   check "WV-11.2-teq-empty" (Arith.eq_non_numeric leeg d1 = false);
   (* 11.2: records are not orderable — scalar_cmp faults *)
   expect_fault "WV-11.2-order-fault"

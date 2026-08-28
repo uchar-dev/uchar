@@ -31,7 +31,7 @@
       "characteristic": "erkend"
     },
     {
-      "kind": "characteristicAbsent",
+      "kind": "characteristicPresent",
       "label": "V1",
       "characteristic": "omstreden"
     },
