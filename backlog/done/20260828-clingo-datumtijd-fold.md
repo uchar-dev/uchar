@@ -59,3 +59,45 @@ class (non-numeric operand / unit algebra / Onbekend — the standing
 maintainer question), scripts/check-noop.sh survivor entries (design the
 cases to refute noop), spec/CONSTRUCTS.md, spec/PLAN.md, any toolchain
 commit.
+
+## Result (2026-08-28 — review round handled, card closed)
+
+Review round: two independent lens reports found no CRITICAL, no MAJOR. One
+sensible minor fixed with the narrowest change; the remaining minors
+motivated-rejected.
+
+- FIXED (Lens 2, prose accuracy) — the dt_term catch-all fault fragment
+  (backends/clingo/lib/translate.ml) read "a fold (eerste/laatste) ... is a
+  loud flank", which over-claims now that a listed >=2-operand datum-tijd
+  fold is carried. Tightened to "a set-typed fold (eerste/laatste)",
+  mirroring ASP-TRANSLATION.md S6a's exact residue wording. No test, manifest
+  or gate asserts the old string (toka-22 moved off it; toka-45 uses a
+  different fragment), so the change is inert to the differential — rebuilt,
+  gates 6 and 11 re-green.
+- REJECTED (Lens 1/2) — no dimensieSelectie guard on the new fold-arm: it
+  mirrors expr_term's existing numeric fold-arm (which likewise guards only
+  `filter`), a consistent pre-existing pattern, no new opening, no corpus
+  case, and gate 12 auto-refuses dimensioned input. Narrowest change is none.
+- REJECTED (Lens 1) — the >=2-operand match drops a degenerate 1-operand
+  listed fold to the catch-all (loud, where ref would return the single
+  value): frontends never emit a 1-arg eerste/laatste, it is a loud fault
+  (never silently wrong), and gate 6 would catch any corpus case. No
+  reachable defect; narrowest change is none.
+
+All twelve gates rerun green in the worktree (opam env; regelspraak jars in
+frontends/regelspraak/lib/; drools shaded jar via mvn -o package):
+1 self-contained PASS · 2 ir-schema PASS (150) · 3 verifier PASS (150 golden,
+161 negatief) · 4 case-schema PASS (375) · 5 oracle PASS (353) · 6 clingo
+PASS (353, ref=clingo) · 7 noop PASS (320 refute, 33 pinned survivors, none
+new) · 8 rood PASS (22) · 9 catala PASS (169 checks, 11 goldens regenerate) ·
+10 regelspraak PASS (130 tests, 19 goldens re-emit) · 11 toka-parity PASS —
+clingo 29 PASS / 1 loud fault (toka-45 non-numeric operand) / 0 silent
+diverge, toka-22 FAULT->PASS|- · 12 drools PASS — new golden
+jutterswet-hoogwaterpaar PLAYED 3 (ref=clingo=Drools, full square; not
+excluded), played 51 / auto-excluded 72 / value-divergence 4 / no-case 1.
+
+Red-first (from the build round, unchanged): toka-22 pre-change exited 1 on
+the dt_term catch-all fragment; the new golden's case1 faulted identically
+against the pre-change translator. Both restored before the fold arm landed.
+
+No merge, no push.

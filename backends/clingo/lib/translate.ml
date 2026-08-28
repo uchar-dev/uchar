@@ -2269,8 +2269,8 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
   | _ ->
       fault
         "datum-tijd here is not the pair term's arithmetic (an own-subject read or datetime \
-         \xc2\xb1 duration); a fold (eerste/laatste), a datum-met constructor or a navigated \
-         datum-tijd read is a loud flank, no corpus case"
+         \xc2\xb1 duration); a set-typed fold (eerste/laatste), a datum-met constructor or a \
+         navigated datum-tijd read is a loud flank, no corpus case"
 
 (* datetime + n sub-day units: linear on the ms value with the carry across
    the day boundary. The absolute ms value never forms — the step rides the
