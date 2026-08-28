@@ -1,0 +1,141 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "ruwbedrag": {
+            "number": "5.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "ruwbedrag": {
+            "number": "250.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "ruwbedrag": {
+            "number": "42.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "ondergrens",
+      "value": {
+        "number": "10.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "bovengrens",
+      "value": {
+        "number": "5.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "bandbreedte",
+      "value": {
+        "number": "10.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "ondergrens",
+      "value": {
+        "number": "250.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "bovengrens",
+      "value": {
+        "number": "100.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "bandbreedte",
+      "value": {
+        "number": "100.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "ondergrens",
+      "value": {
+        "number": "42.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "bovengrens",
+      "value": {
+        "number": "42.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "bandbreedte",
+      "value": {
+        "number": "42.00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J4",
+      "attribute": "ondergrens"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J4",
+      "attribute": "bovengrens"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J4",
+      "attribute": "bandbreedte"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

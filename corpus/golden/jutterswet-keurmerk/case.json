@@ -1,0 +1,76 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "keurmerk": {
+            "text": "merk \"AA\""
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "keurmerk": {
+            "text": "merk \"ZZ\""
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "gekeurd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "afslag",
+      "value": {
+        "text": "veiling \"Zee\""
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V2",
+      "characteristic": "gekeurd"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "afslag"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V3",
+      "characteristic": "gekeurd"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V3",
+      "attribute": "afslag"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
