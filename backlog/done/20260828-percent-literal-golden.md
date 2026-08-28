@@ -47,3 +47,62 @@ Werkregels (bindend):
 - OCaml: eval $(opam env); dune build vanaf de workspace-root. Gates: ALLE twaalf; voor 12: mvn -q -o -f backends/drools/pom.xml package.
 - Gate-12-eerlijkheid: verwachting NOOIT aanpassen; exclusie alleen reden-dragend met bewijs.
 - Rapporteer compact: de gekozen grammaticapositie + emit-bewijs, gate-uitkomsten (met de 19→20-telling van gate 10), handberekening, diff-stat.
+
+## Result (2026-08-28, card percent-literal-golden)
+
+Authored one rights-free, own-authored Jutterswet golden
+(`corpus/golden/jutterswet-vondsttarief/`, WITH `bron.rgs`) that witnesses
+the frontend's bare-percentage-literal path. NO code anywhere: frontends,
+backends, ref, spec, toka, `check-drools.sh`, `check-noop.sh` all untouched.
+
+### Grammar positions (both admitted; verified by emit test before authoring)
+- **berekening RHS**: `Het bergingstarief van een Vondst moet berekend worden als 21%.`
+- **comparison RHS**: `... indien het vondsttarief van de Vondst gelijk is aan 21%.`
+
+The frontend (`getalWaarde : NUMBER PERCENT_SIGN`, RegelSpraak.g4:973 ->
+`ExpressieBouwer.java:200`) emits a `Literal{waarde:"21", type: Percentage,
+bron:"21%"}` at both positions — the round-trip gate 10 never exercised (the
+two existing %-goldens use `%` only as the Numeriek left operand of
+`percentage van`). `diagnostics: []`. `ir.json` is the frontend emission
+itself, so gate 10 re-emits it byte-identically by construction.
+
+### Hand computation (spec, not copied from an executor)
+Bare `21%` is NOT `0,21`: RUNTIME-SEMANTICS ch. 2.2 (l.288) puts the `/100`
+in the `percentage van` operator ONLY; no operator applies here, so `21%`
+denotes magnitude **21** in `%` units. berekening `bergingstarief := 21`
+(0-dec into 0-dec, no rounding). comparison `vondsttarief = 21` true iff the
+input equals 21 (both operands gevuld, identical `%` unit factor 1). Cases:
+V1(21) -> bergingstarief 21, standaardbelast present; V2(9) -> bergingstarief
+21, standaardbelast absent; `consistent`. Computed outputs are absent from the
+input world -> noop-refuting (not a survivor). ref (gate 5) = clingo (gate 6).
+
+### Review round (both lens minors processed)
+- **NOTE.md gate-12 block (LENS 1)**: corrected — the CLI prints EXACTLY one
+  line (the berekening's `waarde buiten scope`, `:553`); the transpiler
+  short-circuits on the first regel it cannot lower, so the comparison's
+  `voorwaarde buiten Phase-B scope` (`:306`) is never reached or printed. The
+  earlier prose implying both messages appear was wrong; verified by direct
+  `java -jar` on the golden.
+- **NOTE.md percentage derivation (LENS 2)**: recast to rest on the spec
+  (ch. 2.2) alone; ref/clingo now cited as independent confirmation of the
+  hand-computed 21, not as the source. Dropped the `ref/lib/value.ml` /
+  `Arith.pct_of` executor-internal citations.
+
+### All twelve gates green in the worktree (re-run after the review fixes)
+1 self-contained PASS · 2 ir-schema PASS (152 validate+round-trip) ·
+3 verifier PASS (152 golden clean, 161 negatief) · 4 case-schema PASS (378) ·
+5 oracle PASS (356 exact) · 6 clingo PASS (356, ref=clingo) ·
+7 noop PASS (323 refute, 33 survivors — new golden is NOT a survivor) ·
+8 rood PASS (22) · 9 catala PASS (169 checks, 11 goldens) ·
+10 regelspraak **PASS — 19 -> 20 rgs-goldens byte-identical, 130 JUnit tests** ·
+11 toka-parity PASS (30 ref, 30 clingo, 30 drools-exclude) ·
+12 drools **PASS (52 played / 73 auto-excluded / 4 value-divergence / 1 no-case)**.
+
+Gate 12 auto-excludes the new golden via channel 1 (per-form transpiler SKIP,
+`waarde buiten scope`) — a bare-`%` witness is intrinsically Percentage-typed,
+so it cannot both carry the `%`-lexeme AND be lowered by the v0 Drools
+exec-model. Evidence it is exactly the `%`-form: the Numeriek-retyped shape
+plays. `scripts/check-drools.sh` is UNTOUCHED (not in the divergence list).
+
+NO merge, NO push. The registered anchor-vs-frontend `20% van` typing
+question was left for a later card (out of scope here).

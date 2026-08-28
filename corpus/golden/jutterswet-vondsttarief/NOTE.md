@@ -24,13 +24,16 @@ unit restatement is the identity.
 
 ## Percentage semantics used (spec, NOT copied from an executor)
 
-`spec/RUNTIME-SEMANTICS.md` ch. 2.2 defines the `/100` scaling as a property
-of the **`percentage van` operator** only (`l/100 × r`). A **bare**
-Percentage value carries no implicit `/100`: its stored magnitude is the
-per-hundred number itself (`ref/lib/value.ml` models every number, Percentage
-included, as `Num(q, unit)` with `q` the literal's own value; the `/100`
-lives solely in `Arith.pct_of`). So `21%` standing alone denotes the value
-**21** (in `%` units), NOT `0,21`.
+`spec/RUNTIME-SEMANTICS.md` ch. 2.2 (Operators, l.288) defines the `/100`
+scaling as a property of the **`percentage van` operator** only (`l/100 × r`,
+exactly). No operator applies here: `21%` stands alone in a value position,
+so nothing scales it. A **bare** Percentage value therefore carries no
+implicit `/100` — its magnitude is the per-hundred number itself. So `21%`
+standing alone denotes the value **21** (in `%` units), NOT `0,21`.
+
+This value is derived from the spec, not read off an executor. ref (gate 5)
+and clingo (gate 6) independently reproduce **21**, which is confirmation of
+the hand computation, never its source.
 
 - **berekening** `bergingstarief := 21%`: value **21**. Assignment gate
   (ch. 2.4): literal precision 0 dec = target precision 0 dec (geheel) →
@@ -60,19 +63,23 @@ ref (gate 5) ≡ clingo (gate 6) on the pinned values above.
 
 **Drools (gate 12) auto-excludes this golden** — a channel-1 per-form
 transpiler SKIP, printed loudly by the CLI, NOT a value-divergence and so
-NOT listed in `scripts/check-drools.sh` (that script is untouched):
+NOT listed in `scripts/check-drools.sh` (that script is untouched). The CLI
+prints exactly ONE line: the transpiler short-circuits on the first regel it
+cannot lower (the berekening, processed first), so that message alone is the
+exclusion reason:
 
 ```
-EXCLUDE transpiler SKIP: regel: bergingstarief van een vondst
-  — regel (waarde buiten scope): bergingstarief van een vondst
+EXCLUDE transpiler SKIP: regel: bergingstarief van een vondst — regel (waarde buiten scope): bergingstarief van een vondst
 ```
 
 The frontend types a `Percentage (geheel getal)` attribute and a bare `21%`
-literal with a `%` eenheid (see `ir.json`). The ported exec-model back-end's
-scalar-value lowering (`ExecModelTranspiler.java:553`, `waarde buiten scope`)
-and its Phase-B condition lowering (`:306`, `voorwaarde buiten Phase-B scope`)
-both decline a `%`-unit Percentage operand — so BOTH the berekening and the
-comparison are out of scope, and the whole golden auto-excludes.
+literal with a `%` eenheid (see `ir.json`). The berekening's scalar-value
+lowering (`ExecModelTranspiler.java:553`, `waarde buiten scope`) declines the
+`%`-unit Percentage operand and returns the skip above; transpilation stops
+there. The comparison rule's Phase-B condition lowering (`:306`, `voorwaarde
+buiten Phase-B scope`) would independently decline the same `%`-unit operand,
+but it is never reached or printed in this golden — it is why the golden could
+not play even if the berekening were carried, not a message the CLI emits here.
 
 EVIDENCE that the divergence is exactly the Percentage/`%`-unit form and
 nothing else: the byte-identical shape with the operands retyped Numeriek
