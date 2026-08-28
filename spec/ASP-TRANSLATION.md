@@ -465,19 +465,55 @@ and this backend); declared factors and stelsel never enter.
   the month step adds the year-zero fence (`date arithmetic reaches a
   year before 0000-03`, PMT < 2) guarding the re-encode's divisions.
   Both fire only where the rule fires (rule-guard discipline, S13).
-- **Loud flanks**: datum-tijd operands, sub-day units on either form,
-  and day-kind (dagsoort) durations/tijdsduren fault at translation.
-  Day-kind shapes ref refuses at evaluation too; the datum-tijd and
-  sub-day shapes ref executes since 2026-08-25 (RUNTIME-SEMANTICS
-  ch. 3.8, the millisecond layer) — here they stay loud under the
-  datum-tijd embargo (S19).
+- **The datum-tijd millisecond layer — the pair term** (RUNTIME-SEMANTICS
+  ch. 3.8; the A4 pair-term encoding, 2026-08-28, lifting the embargo).
+  A millisecond-precision date rides as `dt(D, MS)` — the civil day `D`
+  beside the ms-of-day `MS` with `0 <= MS < 86 400 000` — so a datetime's
+  absolute ms value (>= 1.7e12 for any modern date) NEVER enters clingo's
+  machine-int range whole: only the bounded parts and bounded differences
+  do. A datum-tijd input emits `val(l,a,dt(D,MS))` (the case loader's ms
+  split by floor division); a datum-tijd expression lowers to
+  `(atoms, D, MS)` through `dt_term`.
+  - **datetime ± duration**: a **sub-day** unit is linear on the ms value
+    with the carry across the day boundary — `TOT = MS + N·u`, then the
+    ms-of-day re-splits by floor division (`FMS = ((TOT \ P)+P) \ P`,
+    `ND = D + (TOT − FMS)/P`, `P = 86 400 000`) so `MS` never leaves
+    `[0, P)`; a **calendar** unit steps the civil day part exactly as a
+    day-precision date (linear days/weeks, the month-end clamp via the
+    shared `dpm` helper) and reattaches the ms-of-day unchanged — the S6a
+    day kernel.
+  - **tijdsduur van A tot B**: a **sub-day** unit counts linearly on the
+    bounded ms difference `T = (DB−DA)·P + (MSB−MSA)`, quot the unit's ms
+    size (toward zero); a **day-based** unit carries the **borrow rule** —
+    the borrow-adjusted B-day `DB' = DB + (−1 when DB>DA & MSB<MSA, +1 when
+    DB<DA & MSB>MSA, else 0)` fed to the day-precision whole-unit count,
+    WITHOUT forming the whole ms difference (so a month/year span stays
+    unbounded), exactly ref/'s `whole_units_between_ms`.
+  - **Fences**: the sub-day paths carry a `viol/2` range guard so the
+    bounded ms sum/difference stays inside 2^31 (a sub-day span beyond ~23
+    civil days faults loudly — ref, on 63-bit ints, reaches further; the
+    ch. 3.8 out-of-range fault as `viol/2`); the calendar path inherits the
+    packed decomposition's pre-epoch and year-zero fences. Emptiness is
+    unchanged: the datetime operand PROPAGATES by its bare `dt/2` join, the
+    duration COALESCES through `coalesce0`.
+- **Loud flanks**: day-kind (dagsoort) durations/tijdsduren, the
+  `DATUM_MET`/`DATUMTIJD_MET` constructors, the sub-day part extractors
+  (`uur/minuut/seconde/milliseconde-uit`), and a datum-tijd operand in a
+  fold (`eerste`/`laatste`) or an ordering/equality comparison still fault
+  at translation — outside the arithmetic the pair term carries, no corpus
+  case. Day-kind shapes ref refuses at evaluation too.
 
 Witnesses: anchor `jutterswet-jutleeftijd` (the three ch. 3.8 worked
 examples — leap child, clamp-not-inverse, signed truncation — plus the
 leeg corner) and golden `jutterswet-vervaltermijn` (month-end clamp in
 and out of a leap year, the empty-duration standstill, the quarter
 step, fractional truncation), each hand-computed and replayed by
-gates 5–6. The extraction/Easter slice rides golden
+gates 5–6. The datum-tijd millisecond layer rides golden
+`jutterswet-getijdenpaar` (the ch. 3.8 borrow corner — tijdsduur in hele
+uren = 34 and hele dagen = 1, and their negatives — beside datetime +
+26 uur across the leap day and + 1 maand preserving the ms-of-day,
+hand-computed and replayed by gates 5–6 as the pair-term square). The
+extraction/Easter slice rides golden
 `jutterswet-paasvondst` (a maand-uit disjunction through the cqN
 counting composite, an eerste-paasdag∘jaar-uit date equality through
 the positive date-equality join of S5/S7 — any empty operand false, so
@@ -631,8 +667,10 @@ derives, so all-empty stays leeg as absence and no `#sup`/`#inf`
 ever escapes into a value. Fences: one comparable family only (all
 operands statically dates or none — ref faults the unordered mixed
 comparison at runtime, and a day number must not silently order
-against a scaled numeric; text/boolean/enum operands fault; datum-tijd
-is the S6a embargo), identical (or absent, adopting) units — ref
+against a scaled numeric; text/boolean/enum operands fault; a
+datum-tijd operand faults too — the pair term carries the ms
+arithmetic, not a fold ordering, S6a loud flank), identical (or absent,
+adopting) units — ref
 restates into the first operand's unit with exact factors this
 integer encoding does not carry — and the S6 range bound on any
 harmonisation product. Minimum/maximum over listed operands would
@@ -1648,22 +1686,21 @@ tijdsduur/absolute-tijdsduur in dagen/weken/maanden/kwartalen/jaren,
 the S6a calendar chains; the day-precision part extractors and
 eerste-paasdag joined 2026-08-25 — the shared era decomposition and
 the Gauss chain, S6a, `jutterswet-paasvondst`, with eerste-paasdag's
-own year-before-1 `viol/2` fence), and what stays loud in the date
-family is datum-tijd operands and sub-day units — since 2026-08-25
-under the **datum-tijd embargo** (maintainer decision, ratified):
-ref executes the millisecond layer (RUNTIME-SEMANTICS ch. 3.8 —
-sub-day linearity, time-of-day preservation, the borrow rule),
-this backend keeps its loud fault because a datetime's ms value
-does not fit clingo's integer range, and **no datum-tijd corpus
-golden lands** until a pair-term encoding (the civil day beside the
-ms-of-day, the registered future work — its own card) closes the
-gap; ref's datum-tijd behaviour is pinned by worked-example unit
-tests, not by parity, until then — as well as
+own year-before-1 `viol/2` fence; the **datum-tijd millisecond layer**
+joined 2026-08-28 — the **pair-term encoding** `dt(D, MS)` lifted the
+former datum-tijd embargo, so datetime ± duration and sub-day/day-based
+tijdsduur over datetimes now translate WITHOUT a datetime's absolute ms
+value entering clingo's integer range whole, S6a, golden
+`jutterswet-getijdenpaar` — the ch. 3.8 borrow corner as the differential
+square, ref ≡ clingo), and what stays loud in the date family is
 day-kind (dagsoort) durations and tijdsduren,
-`DATUM_MET`/`DATUMTIJD_MET`, and the sub-day part extractors
+`DATUM_MET`/`DATUMTIJD_MET`, the sub-day part extractors
 (uur/minuut/seconde/milliseconde-uit, still under the catch-all;
 outside ref too — the extractor slice is not the ms layer's
-arithmetic) — plus a **text/enum/boolean literal in
+arithmetic), and a datum-tijd operand in a fold (eerste/laatste) or an
+ordering/equality comparison (the pair term carries the arithmetic, not
+the fold ordering or the scalar comparison; no corpus case) — plus a
+**text/enum/boolean literal in
 a NUMERIC term position** (a **date literal** translates as its civil
 day number — B2, the S4 date-comparison sibling — and since
 2026-08-25 the text/enum/boolean literals and own-subject reads
@@ -1681,8 +1718,11 @@ closed-world `heeft/2` read and a derived `val/3` would split — S3);
 unscalable datatypes in the integer encoding (a
 datatype-less *declaration* is since 2026-08-21 rejected by WF-059
 with the shared loader refusing its input as backstop — the fault
-here remains the last line for **dateTime** operand positions,
-whose millisecond values exceed clingo's integer range in any slot,
+here remains the last line for a **dateTime** reaching `expr_term`'s
+scalar integer encoding (a slot OUTSIDE the pair-term arithmetic of
+S6a: an ordering/equality comparison or a fold operand, whose ms value
+has no bounded scalar form; the tijdsduur and datetime ± duration
+arithmetic rides `dt_term`'s pair term instead, since 2026-08-28),
 and for text/enum/boolean **parameters**, which ref executes but the
 ASP parameter emission scales through `decimals_of_datatype` —
 ref-only until a corpus case demands a symbolic parameter carriage);

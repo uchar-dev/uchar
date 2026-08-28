@@ -269,6 +269,24 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
                 (Printf.sprintf "%s.%s = [%s], expected %s" label attr
                    (String.concat ";" (List.map render_arg got))
                    (render_arg want)))
+      | Attribute_value { label; attr; value = Value.Date_time t } -> (
+          (* ch. 3.8 the millisecond layer: a datum-tijd expectation is the
+             pair term dt(D, MS), built by the SAME split the translator emits
+             (Translate.datetime_term) and parsed by the SAME term parser — one
+             source of truth, a structural term equality with no independent
+             scaling path to drift (the ctor/struct pattern) *)
+          let want = parse_term (Translate.datetime_term t) in
+          match term_of model label attr with
+          | [ got ] when got = want -> None
+          | [] ->
+              Some
+                (Printf.sprintf "%s.%s is underived (leeg), expected %s" label attr
+                   (render_term want))
+          | got ->
+              Some
+                (Printf.sprintf "%s.%s = [%s], expected %s" label attr
+                   (String.concat ";" (List.map render_term got))
+                   (render_term want)))
       | Attribute_value { label; attr; value } -> (
           let want = scaled_expect ~label ~attr value in
           match val_of model label attr with

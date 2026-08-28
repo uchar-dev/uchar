@@ -1,0 +1,60 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "G1",
+        "objectType": "Getijdenpaar",
+        "attributes": {
+          "aankomst": {
+            "dateTime": "2024-03-01T10:15:00"
+          },
+          "vertrek": {
+            "dateTime": "2024-02-28T23:30:00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "G1",
+      "attribute": "uurspanne",
+      "value": {
+        "number": "-34"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "G1",
+      "attribute": "dagspanne",
+      "value": {
+        "number": "-1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "G1",
+      "attribute": "hersteltijd",
+      "value": {
+        "dateTime": "2024-03-02T12:15:00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "G1",
+      "attribute": "ijkdatum",
+      "value": {
+        "dateTime": "2024-04-01T10:15:00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
