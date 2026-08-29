@@ -97,7 +97,8 @@ public final class CaseRunner {
      *  Throws {@link Excluded} / {@link IrLoader.Refusal} for any form the v0 backend does not carry. */
     private static CaseRunner build(Path irPath) throws java.io.IOException {
         JsonNode ir = JSON.readTree(Files.readString(irPath));
-        RegelSpraakModel model = IrLoader.load(ir);
+        IrLoader.Loaded loaded = IrLoader.loadAll(ir);   // the model plus the ch. 7 ladder extension beside it
+        RegelSpraakModel model = loaded.model();
 
         // Two forms the v0 backend cannot REPLAY are refused up front — a LOUD per-form exclusion, never a
         // silent value-divergence in the gate. Carrying either to fire only to fault or misvalue there is
@@ -126,7 +127,7 @@ public final class CaseRunner {
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {
-            ExecModelTranspiler et = ExecModelTranspiler.build(model, cl);
+            ExecModelTranspiler et = ExecModelTranspiler.build(model, cl, loaded.defaultLadders());
             // every construct must LOWER — a marker means the exec KieBase silently omits it,
             // so the case's expectations could not be produced; that golden is not carried.
             for (Dekking d : et.dekking())
@@ -380,16 +381,60 @@ public final class CaseRunner {
                 + (aanwezigVerwacht ? "aanwezig" : "afwezig") + ", werkelijk " + (aanwezig ? "aanwezig" : "afwezig");
     }
 
+    /** The §9.5 consistency check. A {@code consistent} expectation demands NO Inconsistentie fact at all
+     *  (unchanged presence semantics). An {@code inconsistent} expectation is verified against the pinned §9.5
+     *  KEY (the {@code rule}) — a matching Inconsistentie fact must exist. For a LADDER conflict key (ch. 7.2/7.9,
+     *  the {@code Onderwerp.doel[/path]} form whose prefix is a declared objecttype, e.g. {@code Jutter.heffing/0})
+     *  the pinned SUBJECT (the {@code label}) is verified too (ratified Q4) — sharpening the third leg's witness to
+     *  the exact path key ref/clingo pin. For a rule-name key (a consistentie/uniciteit/verdeling violation), only
+     *  the key is checked: the subject the exec-model attaches can legitimately differ from ref's (a pre-existing,
+     *  presence-witnessed divergence), so demanding the label there would break currently-played goldens. An
+     *  expectation carrying no rule falls back to bare presence. */
     private String consistentie(KieSession sessie, boolean inconsistentVerwacht, JsonNode v) {
-        long aantal = 0;
+        List<Object> facts = new ArrayList<>();
         try {
             Class<?> inc = Class.forName(FactModelGenerator.PAKKET + ".Inconsistentie", true, cl);
-            aantal = sessie.getObjects(inc::isInstance).size();
+            facts.addAll(sessie.getObjects(inc::isInstance));
         } catch (ClassNotFoundException e) { /* no Inconsistentie bean -> none */ }
-        boolean inconsistent = aantal > 0;
-        return inconsistent == inconsistentVerwacht ? null
-                : "verwacht " + (inconsistentVerwacht ? "inconsistent" : "consistent")
-                + ", werkelijk " + (inconsistent ? "inconsistent (" + aantal + ")" : "consistent");
+        if (!inconsistentVerwacht)
+            return facts.isEmpty() ? null : "verwacht consistent, werkelijk inconsistent (" + renderIncs(facts) + ")";
+        String rule = v.has("rule") && !v.get("rule").isNull() ? v.get("rule").asText() : null;
+        String label = v.has("label") && !v.get("label").isNull() ? v.get("label").asText() : null;
+        if (facts.isEmpty())
+            return "verwacht inconsistent" + sleutelTekst(rule, label) + ", werkelijk consistent";
+        if (rule == null) return null;   // presence-only expectation, satisfied by any fact
+        boolean ladderSleutel = isLadderSleutel(rule);
+        for (Object f : facts) {
+            if (!rule.equals(lees(f, "getRegel"))) continue;
+            if (!ladderSleutel || label == null) return null;     // rule-name key: the key match suffices
+            if (label.equals(labelVanBean(lees(f, "getSubject")))) return null;
+        }
+        return "verwacht inconsistent" + sleutelTekst(rule, label) + ", niet gevonden onder " + renderIncs(facts);
+    }
+
+    /** Whether a §9.5 key is a ch. 7.2/7.9 ladder conflict key — the {@code Onderwerp.doel[/path]} form whose
+     *  prefix before the first {@code .} is a declared objecttype. Rule-name keys (free Dutch phrases) never match. */
+    private boolean isLadderSleutel(String rule) {
+        int dot = rule.indexOf('.');
+        return dot > 0 && model.objecttypeOpNaam(rule.substring(0, dot)) != null;
+    }
+
+    private static String sleutelTekst(String rule, String label) {
+        return rule == null ? "" : " (" + rule + (label != null ? " @ " + label : "") + ")";
+    }
+
+    /** The case label whose bean IS this fact's subject (identity) — the reverse of {@link #labelNaarBean},
+     *  so the §9.5 fact's subject can be checked against the expectation's {@code label}. null if not an input bean. */
+    private String labelVanBean(Object bean) {
+        if (bean == null) return null;
+        for (Map.Entry<String, Object> e : labelNaarBean.entrySet()) if (e.getValue() == bean) return e.getKey();
+        return null;
+    }
+
+    private String renderIncs(List<Object> facts) {
+        List<String> uit = new ArrayList<>();
+        for (Object f : facts) uit.add(lees(f, "getRegel") + " @ " + labelVanBean(lees(f, "getSubject")));
+        return String.join(", ", uit);
     }
 
     // ---------------- value helpers ----------------

@@ -1,9 +1,12 @@
 package io.github.yhavinga.regelspraak.transpiler.model;
 
 import io.github.yhavinga.regelspraak.ir.Conditie;
+import io.github.yhavinga.regelspraak.ir.DefaultLadder;
 import io.github.yhavinga.regelspraak.ir.Expr;
 import io.github.yhavinga.regelspraak.ir.ResolvedRegel;
 import io.github.yhavinga.regelspraak.ir.ResolvedVerdeling;
+import io.github.yhavinga.regelspraak.ir.Rung;
+import io.github.yhavinga.regelspraak.ir.SubLadder;
 import io.github.yhavinga.regelspraak.model.Datatype;
 import io.github.yhavinga.regelspraak.model.Eenheid;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
@@ -100,6 +103,10 @@ public final class ExecModelTranspiler {
      *  {@code geldig vanaf/tot} version), read by the per-construct {@link #geldigGuard} window guard. null when
      *  every construct is {@code geldig altijd} (no guard needed). Mirrors DrlTranspiler's {@code rekendatum} global. */
     private Global<java.time.LocalDate> rekendatumGlobal;
+    /** §6.1 (Phase 4) the ch. 7 default-ladder extension list — a top-level core-layer section the v0
+     *  {@link RegelSpraakModel} does not carry, so it is threaded in beside the model (see {@link #build}).
+     *  Empty by default (a flat program); lowered to reduce-rules in {@link #ladderGroepen} / {@link #ladderGroep}. */
+    private List<DefaultLadder> defaultLadders = List.of();
     private final List<String> overgeslagen = new ArrayList<>();
     /** Build-time-only gate: true WHILE lowering a scalar consequence value (the THEN-waarde), the single
      *  context where a §13.4.1 multi-hop navigation chain may lower ({@link #navKetenReader}) — mirroring
@@ -141,9 +148,19 @@ public final class ExecModelTranspiler {
     public static Model transpile(RegelSpraakModel m, ClassLoader beanLoader) { return new ExecModelTranspiler(m, beanLoader).run(); }
     /** As {@link #transpile} but also exposes the skipped-construct reasons (for the differential harness to
      *  decide a fixture is "not yet migrated" rather than a divergence). */
-    public static ExecModelTranspiler build(RegelSpraakModel m) { return build(m, null); }
+    public static ExecModelTranspiler build(RegelSpraakModel m) { return build(m, null, List.of()); }
     /** As {@link #build(RegelSpraakModel)} but resolves fact beans against {@code beanLoader} (card fase 1). */
-    public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader) { ExecModelTranspiler t = new ExecModelTranspiler(m, beanLoader); t.model0 = t.run(); return t; }
+    public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader) { return build(m, beanLoader, List.of()); }
+    /** As {@link #build(RegelSpraakModel, ClassLoader)} but also consumes the ch. 7 default-ladder extension
+     *  (loaded beside the model, see {@link io.github.yhavinga.regelspraak.loader.IrLoader#loadAll}); each ladder
+     *  group lowers to one reduce-rule (a port of ref's {@code run_ladder_group}). An empty/null list is the flat
+     *  v0 case (no ladder rules). */
+    public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<DefaultLadder> ladders) {
+        ExecModelTranspiler t = new ExecModelTranspiler(m, beanLoader);
+        t.defaultLadders = ladders == null ? List.of() : ladders;
+        t.model0 = t.run();
+        return t;
+    }
     private Model model0;
     public Model model() { return model0; }
     public List<String> overgeslagen() { return overgeslagen; }
@@ -253,6 +270,9 @@ public final class ExecModelTranspiler {
         }
         for (io.github.yhavinga.regelspraak.ir.ResolvedUniciteitUnie u : model.uniciteitUnies)  // §8.1.6 "verenigd met" (Phase H)
             for (Rule rule : meet("uniciteit-unie", u.naam(), () -> uniciteitUnie(u))) m.addRule(rule);
+        // §6.1 / ch. 7 default ladders: one reduce-rule per (group, subject), a port of ref's run_ladder_group.
+        for (List<DefaultLadder> groep : ladderGroepen())
+            for (Rule rule : meet("ladder", ladderConstructNaam(groep), () -> ladderGroep(groep))) m.addRule(rule);
         return m;
     }
 
@@ -5194,6 +5214,440 @@ public final class ExecModelTranspiler {
      *  the SAME derivation — the single-runtime principle for the agenda. */
     private int stratificatieSalience(ResolvedRegel r) {
         return strat.salience(r);
+    }
+
+    // ================= §6.1 / ch. 7 default ladders (reduce-rule port of ref's run_ladder_group) =================
+
+    /** Group the ch. 7 ladders by (kind, subject, target) — the ref grouping key (eval.ml:2212): a name-sharing
+     *  attribute and characteristic (WF-002) stay in separate groups, so the discriminant leads. First-seen order
+     *  is preserved (a LinkedHashMap), which is stable and deterministic. Each group becomes ONE reduce-rule. */
+    private List<List<DefaultLadder>> ladderGroepen() {
+        LinkedHashMap<String, List<DefaultLadder>> groepen = new LinkedHashMap<>();
+        for (DefaultLadder l : defaultLadders)
+            groepen.computeIfAbsent(ladderGroepSleutel(l), k -> new ArrayList<>()).add(l);
+        return new ArrayList<>(groepen.values());
+    }
+    private static String ladderGroepSleutel(DefaultLadder l) {
+        return (l.isKenmerk() ? "K:" : "A:") + ladderNorm(l.onderwerp()) + ":" + ladderNorm(l.doel());
+    }
+    /** The manifest/rule identity of a ladder group — the kind-discriminated target form, unique per group. */
+    private static String ladderConstructNaam(List<DefaultLadder> groep) {
+        DefaultLadder l0 = groep.get(0);
+        return "ladder " + (l0.isKenmerk() ? "K:" : "A:") + l0.onderwerp() + "." + l0.doel();
+    }
+    private static String ladderNorm(String s) {
+        return s == null ? "" : s.trim().replaceAll("\\s+", " ").toLowerCase(java.util.Locale.ROOT);
+    }
+
+    /** Lower one ladder group to its single reduce-rule (a port of ref's {@code run_ladder_group},
+     *  eval.ml:1630-1771): LHS the class-reactive subject pattern (freshness idiom), RHS the top-down rung walk
+     *  with leeg fall-through, recursion into {@code excepties}, member reconciliation, and one idempotent write
+     *  or one §9.5 {@code Inconsistentie}. Loud, reason-carrying {@code skipList} fences (the exec-back-end's skip
+     *  discipline, surfaced by {@link #meet} as a SKIP): a temporal ladder target (ref-parity), a
+     *  channel-depositing consequence (division), a justification/consequence not reducible to the subject-local
+     *  lambda machinery. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private List<Rule> ladderGroep(List<DefaultLadder> members) {
+        DefaultLadder l0 = members.get(0);
+        Objecttype onderwerp = model.objecttypeOpNaam(l0.onderwerp());
+        if (onderwerp == null) return skipList("ladder (onbekend onderwerp " + l0.onderwerp() + ")");
+        Class<?> factClass = factClass(onderwerp);
+        if (factClass == null) return skipList("ladder (geen fact-class " + onderwerp.naam + ")");
+
+        boolean isChar = l0.isKenmerk();
+        String doel = l0.doel();
+        String targetForm = l0.onderwerp() + "." + doel;
+
+        // fence: a characteristic target that NAME-SHARES an attribute (WF-002) — the exec-model bean carries a
+        // single field per name and the attribute wins (FactModelGenerator: attribute > kenmerk > referentie), so
+        // the boolean kenmerk has no bean field to write and the attribute/kenmerk cannot be told apart on read-back.
+        // A pre-existing v0 bean-model limitation, orthogonal to ladder lowering — a loud, reason-carrying fence.
+        if (isChar && onderwerp.attribuut(doel) != null)
+            return skipList("ladder (kenmerktarget " + targetForm + " deelt zijn naam met een attribuut — de exec-model "
+                    + "bean draagt één veld per naam (attribuut wint), dus het boolean kenmerk kan niet worden geschreven "
+                    + "of onderscheiden; v0 bean-model-limiet, geen ladder-divergentie)");
+        // fence: a temporal ladder target — temporal writes are not implemented (ref faults too; both fence).
+        if (!isChar && onderwerp.attribuutGranulariteit.containsKey(doel))
+            return skipList("ladder (temporeel laddertarget " + targetForm + " — temporele writes niet gedragen, ref-pariteit)");
+        // fence: a §3.6 gedimensioneerd (Map) target — out of the scalar-first scope.
+        if (!isChar && !onderwerp.dimensiesVan(doel).isEmpty())
+            return skipList("ladder (gedimensioneerd laddertarget " + targetForm + " — buiten scalar-first scope)");
+        // fence: a dated validity window — the flippable set is all `altijd`; a per-member rekendatum gate is not built.
+        for (DefaultLadder l : members)
+            if (l.geldigheid() != null && !l.geldigheid().altijd())
+                return skipList("ladder (gedateerde geldigheid op " + targetForm + " — laddervensters niet gedragen)");
+
+        // compile every member chain; a non-lowerable rung throws LadderOnvertaalbaar (one loud fence for the group).
+        List<List<GecompileerdeRung>> ledenRungs = new ArrayList<>();
+        Set<String> globalNamen = new LinkedHashSet<>();
+        try {
+            for (DefaultLadder l : members) {
+                List<GecompileerdeRung> rungs = compileRungs(l.rungs(), onderwerp, isChar, doel);
+                verzamelLadderGlobals(rungs, globalNamen);
+                ledenRungs.add(rungs);
+            }
+        } catch (LadderOnvertaalbaar e) {
+            return skipList("ladder (" + targetForm + "): " + e.getMessage());
+        }
+
+        java.util.function.Function<Object, Object> doelGetter = Accessors.getter(factClass, doel);
+        BiConsumer<Object, Object> doelSetter = Accessors.setter(factClass, doel);
+
+        seq = 0;
+        Variable sVar = DSL.declarationOf(factClass, "$subject");
+        // class-reactive: an opaque always-true expr keeps the pattern reactive to EVERY subject property change,
+        // so the reduce-rule re-fires when a producer writes any rung read (the freshness idiom). WF-051 keeps the
+        // target off the read set, so the ladder's own write never cycles it (NO_LOOP guards self-retrigger).
+        PatternDSL.PatternDef pattern = PatternDSL.pattern(sVar).expr(nextId("lfresh"), (Predicate1) (s -> true));
+
+        // resolve the globals the rung consequences read (empty for the scalar-first flip set).
+        List<String> gnames = new ArrayList<>(globalNamen);
+        List<Variable> vars = new ArrayList<>();
+        vars.add(sVar);
+        for (String gn : gnames) {
+            Global<?> g = waardeGlobal(gn);
+            if (g == null) return skipList("ladder (" + targetForm + "): consequentie leest niet-geregistreerde global " + gn);
+            vars.add((Variable) g);
+        }
+
+        boolean kanConflicteren = ledenRungs.size() >= 2 || bevatMeervoudigeSubgroep(ledenRungs);
+        final String fqcn = FACTS + ".Inconsistentie";
+        final List<List<GecompileerdeRung>> ledenRungsF = ledenRungs;
+        final boolean isCharF = isChar;
+        final String targetFormF = targetForm;
+        final List<String> gnamesF = gnames;
+        final java.util.function.Function<Object, Object> getterF = doelGetter;
+        final BiConsumer<Object, Object> setterF = doelSetter;
+
+        RuleItemBuilder<?> consequence = consequenceOf(vars.toArray(new Variable[0]), (drools, args) -> {
+            Object s = args[0];
+            Map<String, BigDecimal> gm = new LinkedHashMap<>();
+            vulGlobalMap(gm, gnamesF, args, 1);
+            LadderRun run = new LadderRun(s, gm, getterF, isCharF, targetFormF);
+            List<Uitkomst> memberResults = new ArrayList<>();
+            for (List<GecompileerdeRung> member : ledenRungsF) memberResults.add(run.decide(member, List.of()));
+            Uitkomst res = run.reconcile(memberResults, List.of());
+            switch (res.soort()) {
+                case Uitkomst.CONFLICT ->
+                    // over-determination (ch. 7.2/7.9): no write, one §9.5 fact — bare-keyed at the root,
+                    // path-keyed for a nested sub-group conflict.
+                    drools.insert(RegelSpraakRuntime.newInconsistentie(fqcn, res.conflictSleutel(), s));
+                case Uitkomst.DECIDED -> {
+                    Beslissing b = res.beslissing();
+                    if (isCharF) { if (b.charBesluit()) werkBij(drools, s, getterF, setterF, Boolean.TRUE); }
+                    else werkBij(drools, s, getterF, setterF, b.attrWaarde());
+                }
+                default -> { /* UNDECIDED: no write — the target keeps what the fact base holds */ }
+            }
+        });
+        if (consequence == null) return skipList("ladder (" + targetForm + "): te veel gebonden globals");
+
+        List<RuleItemBuilder<?>> items = new ArrayList<>();
+        items.add(pattern);
+        // §9.5 idempotency guard: a conflict-capable group inserts at most one Inconsistentie per subject — block a
+        // re-insert of the same (regel-family, subject). The family is targetForm (+/<path> for a nested conflict);
+        // only a conflict-capable group installs the guard, so a name-sharing non-conflicting group (a characteristic
+        // sharing an attribute's target form) is never blocked by the other's conflict fact.
+        if (kanConflicteren) {
+            Class<?> incClass = inconsistentieClass();
+            if (incClass != null) {
+                Variable incVar = DSL.declarationOf(incClass, "$linc_" + (seq++));
+                final String tf = targetForm;
+                PatternDSL.PatternDef guard = PatternDSL.pattern(incVar)
+                        .expr(nextId("lig"), (Predicate1) i -> {
+                            Object rg = RegelSpraakRuntime.get(i, "regel");
+                            return rg instanceof String s2 && (s2.equals(tf) || s2.startsWith(tf + "/"));
+                        })
+                        .expr(nextId("lig"), (Variable) sVar, (Predicate2) (i, s) -> RegelSpraakRuntime.get(i, "subject") == s);
+                items.add(DSL.not(guard));
+            }
+        }
+        items.add(consequence);
+
+        // ladder-local salience (§5.1 of the design): strictly below every PRODUCER of every rung
+        // justification/consequence read (recursed through excepties), so a monotone characteristic write cannot
+        // decide before its reads have settled. Derived locally from the ladder's reads, NOT the full dep_forms graph.
+        int salience = ladderSalience(members, onderwerp);
+        var bouwer = PatternDSL.rule(kop(ladderConstructNaam(members))).attribute(Rule.Attribute.NO_LOOP, true);
+        if (salience != 0) bouwer = bouwer.attribute(Rule.Attribute.SALIENCE, salience);
+        return List.of(bouwer.build(items.toArray(new RuleItemBuilder[0])));
+    }
+
+    private List<GecompileerdeRung> compileRungs(List<Rung> rungs, Objecttype onderwerp, boolean isChar, String doel) {
+        List<GecompileerdeRung> uit = new ArrayList<>();
+        for (Rung r : rungs) uit.add(compileRung(r, onderwerp, isChar, doel));
+        return uit;
+    }
+
+    /** Compile one rung to its build-time closures. A form the scalar-first back-end does not carry raises a loud
+     *  {@link LadderOnvertaalbaar} (caught in {@link #ladderGroep} as the group's fence reason). */
+    private GecompileerdeRung compileRung(Rung r, Objecttype onderwerp, boolean isChar, String doel) {
+        Predicate1<Object> just;
+        boolean init = r.initialisatie();
+        if (init) {
+            if (isChar) throw new LadderOnvertaalbaar("initialisatierung op een kenmerkladder (WF-075/ref-fault)");
+            just = null;   // justified via target-empty at fire time (ch. 7.3)
+        } else if (r.voorwaarde() == null) {
+            if (r.heeftEigenInhoud()) throw new LadderOnvertaalbaar("deciding rung zonder justificatie");
+            just = null;   // a contentless group-rung never evaluates justified
+        } else {
+            just = subjectConditie(r.voorwaarde(), onderwerp);
+            if (just == null)
+                throw new LadderOnvertaalbaar("niet-reduceerbare justificatie (far-side/aggregatie/global): " + ladderReden(r));
+        }
+        Boolean besluit = isChar ? r.besluit() : null;
+        WaardeFn conseq = null;
+        if (!isChar && r.consequentie() != null) {
+            if (bevatDeling(r.consequentie()))
+                throw new LadderOnvertaalbaar("kanaal-deponerende consequentie (deling) op laddertarget: " + ladderReden(r));
+            WaardeFn wf;
+            boolean prev = ketenWaardePad;
+            try { ketenWaardePad = true; wf = scalarWaarde(onderwerp, r.consequentie()); }
+            finally { ketenWaardePad = prev; }
+            if (wf == null)
+                throw new LadderOnvertaalbaar("niet-reduceerbare consequentie (far-side/aggregatie): " + ladderReden(r));
+            wf = wf.herschaald(r.consequentie().type(), onderwerp.attribuut(doel));   // §4 EXACT restate into the target unit
+            conseq = wf;
+        }
+        List<List<GecompileerdeRung>> exc = null;
+        if (r.excepties() != null) {
+            exc = new ArrayList<>();
+            for (SubLadder sl : r.excepties().leden()) exc.add(compileRungs(sl.rungs(), onderwerp, isChar, doel));
+        }
+        return new GecompileerdeRung(just, init, besluit, conseq, exc, r.heeftEigenInhoud());
+    }
+    private static String ladderReden(Rung r) { return r.bron() == null ? "<rung>" : r.bron(); }
+
+    /** A subject-local justification predicate ({@code subject -> boolean}): a compound recurses per its kwantor,
+     *  every leaf goes through the shared {@link #leafPredicate} (kenmerk / own-or-navigated comparison / predicaat).
+     *  null when ANY part is not reducible (a global-reading bullet, a deeper form leafPredicate declines) — the
+     *  caller then fences the whole ladder. Generalises {@link #leafCompound} to arbitrary nesting. */
+    private Predicate1<Object> subjectConditie(Conditie c, Objecttype subject) {
+        if (c == null) return null;
+        if (c instanceof Conditie.Samengesteld sam) {
+            List<Predicate1<Object>> kids = new ArrayList<>();
+            for (Conditie deel : sam.onderdelen()) {
+                Predicate1<Object> k = subjectConditie(deel, subject);
+                if (k == null) return null;
+                kids.add(k);
+            }
+            final Conditie.Kwantor kw = sam.kwantor();
+            final int n = sam.drempel();
+            final List<Predicate1<Object>> fk = kids;
+            return s -> {
+                int t = 0; for (Predicate1<Object> p : fk) if (p.test(s)) t++;
+                return switch (kw) {
+                    case ALLE, DE -> t == fk.size();
+                    case GEEN -> t == 0; case TEN_MINSTE -> t >= n; case TEN_HOOGSTE -> t <= n; case PRECIES -> t == n;
+                };
+            };
+        }
+        return leafPredicate(c, subject);
+    }
+
+    /** Whether an expression contains a §9.5 channel-depositing division (a deling-door-leeg raises the Fout on the
+     *  channel) — the speculative-deposit case the scalar-first port fences instead of building. */
+    private static boolean bevatDeling(Expr e) {
+        if (e == null) return false;
+        if (e instanceof Expr.Binair b) {
+            if (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS) return true;
+            return bevatDeling(b.links()) || bevatDeling(b.rechts());
+        }
+        if (e instanceof Expr.Afgerond af) return bevatDeling(af.basis());
+        if (e instanceof Expr.Begrensd bg) return bevatDeling(bg.basis()) || bevatDeling(bg.minimum()) || bevatDeling(bg.maximum());
+        if (e instanceof Expr.Functie f) { for (Expr a : f.argumenten()) if (bevatDeling(a)) return true; return false; }
+        if (e instanceof Expr.TekstReeks tr) {
+            for (Expr.TekstReeks.Deel d : tr.delen()) if (d instanceof Expr.TekstReeks.Ingevoegd i && bevatDeling(i.expr())) return true;
+            return false;
+        }
+        if (e instanceof Expr.DimensieCel dc) return bevatDeling(dc.attribuut());
+        return false;
+    }
+
+    private static void verzamelLadderGlobals(List<GecompileerdeRung> rungs, Set<String> out) {
+        for (GecompileerdeRung r : rungs) {
+            if (r.consequentie() != null) out.addAll(r.consequentie().globals());
+            if (r.excepties() != null) for (List<GecompileerdeRung> sub : r.excepties()) verzamelLadderGlobals(sub, out);
+        }
+    }
+
+    /** Whether the group can reach a conflict outcome — it has ≥2 members (a root declared-unordered group) or
+     *  carries anywhere a rung whose exception sub-group has ≥2 members (a nested group, ch. 7.9). */
+    private static boolean bevatMeervoudigeSubgroep(List<List<GecompileerdeRung>> leden) {
+        for (List<GecompileerdeRung> m : leden) if (bevatMeervoudigeSubgroepR(m)) return true;
+        return false;
+    }
+    private static boolean bevatMeervoudigeSubgroepR(List<GecompileerdeRung> rungs) {
+        for (GecompileerdeRung r : rungs) {
+            if (r.excepties() != null) {
+                if (r.excepties().size() >= 2) return true;
+                for (List<GecompileerdeRung> sub : r.excepties()) if (bevatMeervoudigeSubgroepR(sub)) return true;
+            }
+        }
+        return false;
+    }
+
+    /** Ladder-local salience: strictly below every producer of every rung read (§5.1). Collect the kenmerk/attribute
+     *  names the ladder reads (justifications + consequences, recursed through excepties), find the resolved rules
+     *  that WRITE them on this subject type, and sit one below the minimum of their salience — so a monotone
+     *  characteristic write decides only at the fixpoint of its reads. No producers (input-only reads) -> salience 0. */
+    private int ladderSalience(List<DefaultLadder> members, Objecttype onderwerp) {
+        Set<String> reads = new LinkedHashSet<>();
+        for (DefaultLadder l : members) verzamelLadderLeesnamen(l.rungs(), reads);
+        int minProd = 0; boolean any = false;
+        for (ResolvedRegel r : model.resolvedRegels) {
+            if (!(r.doel() instanceof Expr.AttribuutRef d) || d.attribuut() == null) continue;
+            if (!reads.contains(d.attribuut())) continue;
+            if (d.objecttype() == null || !gelijkeType(d.objecttype(), onderwerp)) continue;
+            any = true;
+            minProd = Math.min(minProd, strat.salience(r));
+        }
+        return any ? minProd - 1 : 0;
+    }
+    private static boolean gelijkeType(Objecttype a, Objecttype b) {
+        return a == b || (a != null && b != null && a.naam != null && a.naam.equalsIgnoreCase(b.naam));
+    }
+    private void verzamelLadderLeesnamen(List<Rung> rungs, Set<String> uit) {
+        for (Rung r : rungs) {
+            conditieLeesnamen(r.voorwaarde(), uit);
+            exprLeesnamen(r.consequentie(), uit);
+            if (r.excepties() != null) for (SubLadder sl : r.excepties().leden()) verzamelLadderLeesnamen(sl.rungs(), uit);
+        }
+    }
+    private void conditieLeesnamen(Conditie c, Set<String> uit) {
+        if (c == null) return;
+        if (c instanceof Conditie.Kenmerk k) { if (k.kenmerk() != null) uit.add(k.kenmerk()); }
+        else if (c instanceof Conditie.Samengesteld sam) { for (Conditie d : sam.onderdelen()) conditieLeesnamen(d, uit); }
+        else if (c instanceof Conditie.Vergelijking v) { exprLeesnamen(v.links(), uit); exprLeesnamen(v.rechts(), uit); }
+        else if (c instanceof Conditie.Predicaat p) { exprLeesnamen(p.operand(), uit); }
+        else if (c instanceof Conditie.Periode pd) { exprLeesnamen(pd.vanaf(), uit); exprLeesnamen(pd.tot(), uit); }
+    }
+    private void exprLeesnamen(Expr e, Set<String> uit) {
+        if (e == null) return;
+        if (e instanceof Expr.AttribuutRef a) { if (a.attribuut() != null) uit.add(a.attribuut()); }
+        else if (e instanceof Expr.Binair b) { exprLeesnamen(b.links(), uit); exprLeesnamen(b.rechts(), uit); }
+        else if (e instanceof Expr.Afgerond af) { exprLeesnamen(af.basis(), uit); }
+        else if (e instanceof Expr.Begrensd bg) { exprLeesnamen(bg.basis(), uit); exprLeesnamen(bg.minimum(), uit); exprLeesnamen(bg.maximum(), uit); }
+        else if (e instanceof Expr.Functie f) { for (Expr a : f.argumenten()) exprLeesnamen(a, uit); }
+        else if (e instanceof Expr.DimensieCel dc) { exprLeesnamen(dc.attribuut(), uit); }
+        else if (e instanceof Expr.TekstReeks tr) {
+            for (Expr.TekstReeks.Deel d : tr.delen()) if (d instanceof Expr.TekstReeks.Ingevoegd i) exprLeesnamen(i.expr(), uit);
+        }
+    }
+
+    /** A single ladder decision (ch. 7.1): a characteristic besluit XOR an attribute value. */
+    private record Beslissing(boolean isChar, boolean charBesluit, Object attrWaarde) {}
+
+    /** A chain/reconcile result (ch. 7.1/7.2/7.9): UNDECIDED (fall-through), DECIDED (the winning decision), or
+     *  CONFLICT (a differing declared-unordered group, keyed by its rung-index path). */
+    private record Uitkomst(int soort, Beslissing beslissing, String conflictSleutel) {
+        static final int UNDECIDED = 0, DECIDED = 1, CONFLICT = 2;
+        static Uitkomst undecided() { return new Uitkomst(UNDECIDED, null, null); }
+        static Uitkomst decided(Beslissing b) { return new Uitkomst(DECIDED, b, null); }
+        static Uitkomst conflict(String key) { return new Uitkomst(CONFLICT, null, key); }
+    }
+
+    /** A compiled rung: the subject-local justification (null on the initialisation rung — justified iff the target
+     *  is empty), the characteristic decision (or null), the attribute value fn (or null), and the nested exception
+     *  sub-group members (or null). {@code heeftEigenInhoud} separates a form-a rung from a contentless group-rung. */
+    private record GecompileerdeRung(Predicate1<Object> justificatie, boolean initialisatie, Boolean besluit,
+            WaardeFn consequentie, List<List<GecompileerdeRung>> excepties, boolean heeftEigenInhoud) {}
+
+    /** A loud, reason-carrying fence raised while compiling a ladder the scalar-first back-end does not carry. */
+    private static final class LadderOnvertaalbaar extends RuntimeException {
+        LadderOnvertaalbaar(String reden) { super(reden); }
+    }
+
+    /** One fire of a ladder group over one subject — the RHS port of ref's {@code run_ladder_group} per-subject
+     *  body (eval.ml:1645-1771): the top-down rung walk with leeg fall-through, recursion into exception sub-groups,
+     *  and member reconciliation. The flippable corpus has no channel-depositing consequence, so a rung's own
+     *  decision evaluates its consequence directly (no speculative buffer — that case is fenced, not built). */
+    private static final class LadderRun {
+        private final Object s;
+        private final Map<String, BigDecimal> gm;
+        private final java.util.function.Function<Object, Object> doelGetter;
+        private final boolean isChar;
+        private final String targetForm;
+        LadderRun(Object s, Map<String, BigDecimal> gm, java.util.function.Function<Object, Object> doelGetter,
+                  boolean isChar, String targetForm) {
+            this.s = s; this.gm = gm; this.doelGetter = doelGetter; this.isChar = isChar; this.targetForm = targetForm;
+        }
+
+        private boolean justified(GecompileerdeRung r) {
+            if (r.initialisatie()) return doelGetter.apply(s) == null;   // ch. 7.3: justified iff target empty in the input
+            if (r.justificatie() == null) return false;
+            try { return r.justificatie().test(s); }              // Drools Predicate1.test declares a checked Exception
+            catch (RuntimeException e) { throw e; }
+            catch (Exception e) { throw new RuntimeException(e); }
+        }
+
+        /** A rung's OWN decision (ch. 7.1), sub-group aside — a Beslissing when it decides, null when it falls through. */
+        private Beslissing ownDecision(GecompileerdeRung r) {
+            if (isChar) {
+                if (r.besluit() == null) return null;   // a group-rung has no own besluit
+                return justified(r) ? new Beslissing(true, r.besluit(), null) : null;
+            }
+            if (r.consequentie() == null || !justified(r)) return null;
+            Object v = collapseBreuk(r.consequentie().fn().apply(s, gm));
+            if (v == null) return null;   // ch. 7.1: a leeg consequence falls through
+            return new Beslissing(false, false, v);
+        }
+
+        Uitkomst decide(List<GecompileerdeRung> rungs, List<Integer> path) {
+            for (int i = 0; i < rungs.size(); i++) {
+                GecompileerdeRung r = rungs.get(i);
+                if (r.excepties() != null) {
+                    // the sub-group goes first (ch. 7.9): reconcile it at this rung's path; a settling sub-group
+                    // (deciding OR conflicting) displaces every lower rung.
+                    List<Integer> subPath = new ArrayList<>(path); subPath.add(i);
+                    List<Uitkomst> results = new ArrayList<>();
+                    for (List<GecompileerdeRung> sub : r.excepties()) results.add(decide(sub, subPath));
+                    Uitkomst reconciled = reconcile(results, subPath);
+                    if (reconciled.soort() != Uitkomst.UNDECIDED) return reconciled;
+                    // an empty sub-group falls back: a form-a rung to its own decision, a group-rung to the next rung.
+                    if (r.heeftEigenInhoud()) {
+                        Beslissing d = ownDecision(r);
+                        if (d != null) return Uitkomst.decided(d);
+                    }
+                } else {
+                    Beslissing d = ownDecision(r);
+                    if (d != null) return Uitkomst.decided(d);
+                }
+            }
+            return Uitkomst.undecided();
+        }
+
+        /** Reconcile a group's member results (ch. 7.2, applied recursively by ch. 7.9): a deeper conflict
+         *  propagates unchanged; otherwise the deciding members must agree — equal decisions are one decision,
+         *  differing decisions are a conflict keyed at {@code path}; members deciding nothing drop out. */
+        Uitkomst reconcile(List<Uitkomst> results, List<Integer> path) {
+            for (Uitkomst u : results) if (u.soort() == Uitkomst.CONFLICT) return u;
+            List<Beslissing> decided = new ArrayList<>();
+            for (Uitkomst u : results) if (u.soort() == Uitkomst.DECIDED) decided.add(u.beslissing());
+            if (decided.isEmpty()) return Uitkomst.undecided();
+            Beslissing d0 = decided.get(0);
+            for (int i = 1; i < decided.size(); i++)
+                if (!beslissingGelijk(d0, decided.get(i))) return Uitkomst.conflict(pathKey(path));
+            return Uitkomst.decided(d0);
+        }
+
+        private String pathKey(List<Integer> path) {
+            if (path.isEmpty()) return targetForm;
+            StringBuilder sb = new StringBuilder(targetForm);
+            for (int i : path) sb.append('/').append(i);
+            return sb.toString();
+        }
+
+        private static boolean beslissingGelijk(Beslissing a, Beslissing b) {
+            if (a.isChar() != b.isChar()) return false;
+            if (a.isChar()) return a.charBesluit() == b.charBesluit();
+            return waardeGelijk(a.attrWaarde(), b.attrWaarde());
+        }
+        private static boolean waardeGelijk(Object x, Object y) {
+            if (x == null) return y == null;
+            if (x instanceof BigDecimal bx && y instanceof BigDecimal by) return bx.compareTo(by) == 0;
+            return x.equals(y);
+        }
     }
 
     /** The subject's OWN declared attributes a value expression READS, as bean property names — the
