@@ -1,0 +1,12 @@
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
+Objecttype de Vondst (mv: Vondsten)
+    het basisbedrag Numeriek (geheel getal) met eenheid €;
+    het stuktal Numeriek (geheel getal);
+    de stukprijs Numeriek (geheel getal) met eenheid €;
+    de opbrengst Numeriek (geheel getal) met eenheid €;
+
+Regel opbrengst van een vondst
+    geldig altijd
+        De opbrengst van een Vondst moet berekend worden als het basisbedrag van de Vondst plus het stuktal van de Vondst maal de stukprijs van de Vondst.
