@@ -1961,10 +1961,33 @@ let wf077_condition at (c : conditie) : violation list =
   in
   walk at c
 
+(* The v0 "samengestelde eenheid" arithmetic sentinel (CONSTRUCTS row 27; the
+   Onbekend flip witness, LADDER-EVOLUTIE §9 Q13): the frontend degrades a
+   product/quotient of two unit-carrying operands — or a unitless ATTRIBUTE ×
+   unit operand — to Datatype_onbekend because its Eenheid model cannot NAME the
+   composite unit, not because the node is non-numeric. A faithful v0 dump
+   therefore carries such a Binair, and both executors compute it: this is the
+   verifier twin of clingo's [numeric_ok] (translate.ml). The sentinel is
+   admitted on an arithmetic Binair EXACTLY WHEN it is provably numeric — every
+   leaf operand is a Numeriek/Percentage node, or itself such a Binair,
+   recursively. An Onbekend LEAF (a dangling reference), or a Binair reaching a
+   non-numeric (Tekst/Booleaan/date) leaf, is NOT provably numeric and stays
+   WF-034-refused. Retired with the sentinel at the v1 WF-003 fail-fast
+   promotion (IR-SPEC ch. 2.4). *)
+let rec onbekend_numeriek (e : expr) : bool =
+  match typ_of_expr e with
+  | Some (Numeriek _ | Percentage _) -> true
+  | Some (Datatype_onbekend _) -> (
+      match e with
+      | Binair { links = Some l; rechts = Some r; _ } -> onbekend_numeriek l && onbekend_numeriek r
+      | _ -> false)
+  | _ -> false
+
 let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : violation list =
   let sub p = at ^ "/" ^ p in
   let typ_checks =
     match typ_of_expr e with
+    | Some (Datatype_onbekend _) when onbekend_numeriek e -> []
     | Some (Datatype_onbekend _) ->
         [ v "WF-034" (sub "type") "unknown-type sentinel inside a structured node" ]
     | Some d -> check_number_form (sub "type") d
@@ -5215,6 +5238,30 @@ let wf067 ctx =
               else []))
          fds)
 
+(* WF-086: a DefaultLadder MUST NOT target a temporal attribute — one carrying a
+   declared granularity (attribuutGranulariteit), whether anchor-only or on a
+   named timeline. A ladder is atemporal: it decides once, at one fixpoint
+   (RUNTIME-SEMANTICS ch. 7), and has no timeline coordinate to write. The
+   executors already refuse it — ref faults on a temporal ladder write (eval.ml,
+   kept as defense-in-depth), and the Drools ladder service fences it as a
+   reason-carrying Dekking.skip — so this document-layer rule refuses it FIRST,
+   at the ladder node, via the shared [attr_temporal] helper. Temporal ladder
+   targets are not yet scheduled (LADDER-EVOLUTIE §9 Q12a, ratified 2026-08-29);
+   the fence lifts, with witnesses, when they are. *)
+let wf086 ctx =
+  List.concat
+    (List.mapi
+       (fun i (l : default_ladder) ->
+         let at = Printf.sprintf "/defaultLadders/%d" i in
+         match (l.dl_attribuut, objecttype ctx l.dl_onderwerp) with
+         | Some a, Some ot when attr_temporal ot a ->
+             [ v "WF-086" at
+                 ("ladder target '" ^ a
+                ^ "' is a temporal attribute (declared granularity) — a ladder decides at one \
+                   fixpoint and cannot write a timeline (ch. 6)") ]
+         | _ -> [])
+       ctx.doc.default_ladders)
+
 let all (doc : document) : violation list =
   let ctx = { doc } in
   List.concat
@@ -5225,4 +5272,4 @@ let all (doc : document) : violation list =
       wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx; wf045_046 ctx;
       wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf079 ctx; wf082 ctx; wf054 ctx;
       wf057 ctx; wf059 ctx; wf060 ctx; wf061 ctx; wf065 ctx; wf067 ctx;
-      wf071 ctx; wf072 ctx; wf075 ctx; expression_layer ctx ]
+      wf071 ctx; wf072 ctx; wf075 ctx; wf086 ctx; expression_layer ctx ]

@@ -1599,9 +1599,21 @@ Comparison, Predicate, and CharacteristicCheck only —
   node; the unknown datatype does not exist in v1 (ch. 2.4). The rule
   covers the unknown type in both its spellings: a value node whose static
   type is the explicit Onbekend sentinel and its unspelled twin, a value
-  node whose static type is plain null, are refused alike — the sole
-  structural exception is a Lambda, which is never a value and carries no
-  type by construction (its position is governed by WF-069).
+  node whose static type is plain null, are refused alike — with two
+  structural exceptions. A Lambda is never a value and carries no type by
+  construction (its position is governed by WF-069). And the v0
+  **"samengestelde eenheid" arithmetic sentinel**: an Onbekend node that is
+  an arithmetic `Binair` whose operands are *provably numeric* — each a
+  Numeriek/Percentage node, or itself such a Binair, recursively — is
+  admitted. The v0 frontend degrades a composite-unit product it could not
+  NAME (a unitless attribute × a unit-carrying operand, or a two-unit
+  product) to Onbekend as a typing INABILITY, not a non-numeric value, and
+  both executors compute it (clingo's `numeric_ok`, the verifier's
+  `onbekend_numeriek` twin — one admission, checked identically). An
+  Onbekend *leaf* (a dangling reference) or a Binair reaching a non-numeric
+  (Tekst/Booleaan/date) leaf is not provably numeric and stays refused.
+  This tolerance is itself a v0-mirror concession that **retires with the
+  sentinel at the v1 WF-003 fail-fast promotion** (ch. 2.4).
 - **WF-080** A value-position `AttributeReference` MUST resolve to an
   **attribute** of its endpoint type, never a characteristic. A value
   position is where an expression yields a value: a rule/member value, a
@@ -2137,6 +2149,20 @@ so every existing document validates unchanged.
   content) is exempt from the content and justification requirements, and
   a contentless rung — neither content nor sub-group — is WF-075's
   concern.
+- **WF-086** A ladder MUST NOT target a **temporal attribute** — one
+  carrying a declared granularity (`attribuutGranulariteit`), whether
+  anchor-only or on a named timeline. A ladder is atemporal: it decides
+  once, at one fixpoint (`RUNTIME-SEMANTICS.md` ch. 7), and carries no
+  timeline coordinate at which to write. **Executor parity:** the
+  reference interpreter already faults on a temporal ladder write, and the
+  Drools ladder service fences it as a reason-carrying skip; this rule
+  refuses it FIRST, at the document layer, so an ill-formed ladder never
+  reaches an executor — ref keeps its fault as defense-in-depth. *v0 mirror
+  note:* the v0 emitter never produces `defaultLadders`, so no v0 dump can
+  carry this shape; the rule fences a frontend that emits ladders (the
+  Catala plugin, ch. 6.1). Temporal ladder targets are not yet scheduled
+  (`spec/proposals/LADDER-EVOLUTIE.md` §9 Q12a, ratified 2026-08-29); the
+  fence lifts, with witnesses, when they are.
 - **WF-051** Every rung-justification read — and, on an attribute
   ladder, every consequence read (the gevuld gate makes it
   decision-bearing) — joins the ch. 5 dependency graph (ch. 5.1) as a
@@ -2229,7 +2255,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-031 | one definition per day kind; condition present and **pure** (no attribute/characteristic read — the stratum-0 framing, ch. 5.4); validity ALTIJD | gate 3 | `jutterswet-vormenkabinet` (the schouwdag definition, ALTIJD validity) + `jutterswet-schouwkalender` (a pure day-kind chain, replayed by gates 5–6 over its ordinary rule) | `wf031-missing-condition` + `wf031-dagsoort-venster` (bounded validity window) + `wf031-dagsoort-leest-kenmerk` (the purity clause: a day-kind condition reading a characteristic) |
 | WF-032 | start point: variable-start timeline, day-precision member, one per pair | gate 3 | `jutterswet-vormenkabinet` (the meetdatum anchor) | `wf032-fixed-start-anchor` |
 | WF-033 | (dialect) rule-group members resolve; recursive group has a creation member (either kind); object creations guarded, relation creations guard-free | gate 3 | `anchor/jutterswet-wachtersketen` (the recursive chain executes to its fixpoint, gates 5–6; the runaway budget fault is red-pinned, gate 8) + `anchor/jutterswet-erflijn` (the guard-free relation-creation member: the transitive closure reaches its fixpoint in both executors) | `wf033-unguarded-recursive` (the guard clause) + `wf033-no-creation-member` (the containment clause) |
-| WF-034 | every expression/condition reference resolves (no unknown-type sentinel) | gate 3 (partial: sentinel types and parameter/day-kind/element-type/own-member references; variable bindings and navigation paths are not serialized in v0; excepted: a v0 instance-fold source argument names a role and carries the sentinel by construction — the row-1 wart, resolved against declared roles with the ch. 4.3 type-pair fallback for a name that resolves nowhere) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondsttelling` (role source) + `jutterswet-kaveltelling` (the type-pair fallback: an undeclared synthesized plural over a unique pair, both executors) | `wf034-dangling-parameter` + `wf034-ambigu-typenpaar` (unresolved name, two connecting fact types) + `wf034-zelftype-typenpaar` (unresolved name, one self-typed two-role fact type — both roles are candidates, counted in roles not fact types) |
+| WF-034 | every expression/condition reference resolves (no unknown-type sentinel) | gate 3 (partial: sentinel types and parameter/day-kind/element-type/own-member references; variable bindings and navigation paths are not serialized in v0; excepted: a v0 instance-fold source argument names a role and carries the sentinel by construction — the row-1 wart, resolved against declared roles with the ch. 4.3 type-pair fallback for a name that resolves nowhere; and the "samengestelde eenheid" arithmetic sentinel — a provably-numeric Onbekend Binair, mirroring clingo's `numeric_ok`) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondsttelling` (role source) + `jutterswet-kaveltelling` (the type-pair fallback: an undeclared synthesized plural over a unique pair, both executors) + `jutterswet-stukopbrengst` (the provably-numeric Onbekend arithmetic sentinel, the flip witness — ref ≡ clingo ≡ Drools) | `wf034-dangling-parameter` + `wf034-ambigu-typenpaar` (unresolved name, two connecting fact types) + `wf034-zelftype-typenpaar` (unresolved name, one self-typed two-role fact type — both roles are candidates, counted in roles not fact types) |
 | WF-035 | operator typing (numeric, unitless power, date±duration order/unit/precision, unit compatibility, clamp) | gate 3 (over serialized operand types) | `anchor/jutterswet-wachtersketen` (the numeric Plus, executed by gates 5–6) + `jutterswet-vervaltermijn` (date ± duration, the date-left plus and min forms, executed by gates 5–6) | `wf035-power-with-unit` + `wf035-datum-plus-datum` + `wf035-duur-plus-datum` + `wf035-duur-min-datum` + `wf035-uur-op-dagdatum` |
 | WF-036 | comparison/predicate typing (ordering, precision, family, domain, builtin operands) | gate 3 (over serialized operand types) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondstnummer` (date ordering) | `wf036-order-number-vs-text` |
 | WF-037 | aggregation/builtin shape: facet validity and arity per kind | gate 3 (fixed-arity kinds; date-construction arity OPEN) | `jutterswet-vondsttelling` | `wf037-fallback-on-minimum` |
@@ -2281,6 +2307,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-083 | a fold-source argument never navigates (ch. 4.3): a non-empty `navigatiePad` is ill-formed; a `navigatieRol`, when present, is self-denoting — it names a role (ci, declared name or plural) the argument's object type itself fills; away-pointing is ill-formed — closes the silent fall-through where a navigating fold source passed the verifier while ref faults on it | gate 3 | `jutterswet-aanmeldertelling` (the self-denoting count "het aantal vondsten van de aanmelder" through both executors) | `wf083-fold-source-navigates-away` |
 | WF-084 | a day-precision date literal's lexeme is the strict ISO form `yyyy-mm-dd` the executors parse (ch. 4.1) — fixed field widths (four-two-two digits), single `-` separators, month 1–12, day 1..days-in-month (leap-aware); the Dutch day-first source snippet is ill-formed, whether the bare `31-01-2024` (silently misread as year 31 → `0036-07-16`, a differential-blind wrong answer both executors agreed on) or the `dd. `-prefixed form (both executors fault) — closes that blind spot, the emitter now writing the bare ISO lexeme and keeping the snippet in `bron`; datetime lexemes out of scope | gate 3 | `jutterswet-vondstverjaring` (an ISO date literal through the fence, replayed by gates 5–6) | `wf084-source-snippet` + `wf084-bare-non-iso` |
 | WF-085 | the day-kind reference graph is acyclic (ch. 5.4 / ch. 3.7): a day-kind condition may reference other day kinds (a `Predicaat` of soort `DAGSOORT`), but mutually recursive definitions have no fixpoint — a loud refusal where the v0 toolchain resolves a cycle to a silent false (the §9.10 recursion prohibition unenforced for day kinds); diverge-from-v0 (v0 neither checks nor documents it) | gate 3 | `jutterswet-schouwkalender` (an acyclic `hoogschouwdag -> schouwdag` reference, verifier-clean, replayed by gates 5–6 over its ordinary rule) | `wf085-dagsoort-verwijzingscyclus` (two mutually referencing day kinds) |
+| WF-086 | a ladder MUST NOT target a temporal attribute (declared `attribuutGranulariteit`) — a ladder decides at one fixpoint and has no timeline coordinate to write (ch. 6); the document-layer fence ahead of the executors (ref faults, the Drools ladder service skips — parity, ref keeps its fault as defense-in-depth); temporal ladder targets are unscheduled (LADDER-EVOLUTIE §9 Q12a) | gate 3 (over the ladder node via the shared `attr_temporal` helper) | `anchor/jutterswet-vondstwaardering` (an attribute ladder on a non-temporal target — gate 3 witnesses WF-086 does not over-fire) | `wf086-temporele-laddertarget` (a ladder on an attribute carrying a declared granularity) |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is
