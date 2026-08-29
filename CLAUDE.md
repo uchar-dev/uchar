@@ -184,7 +184,11 @@ green. Current gates:
     gate 10) CONSUMES the uchar IR: it loads every golden's `ir.json` off
     the wire (never the RegelSpraak source — the source-compile path may
     serve only as an internal test comparison, NEVER as the gate path),
-    builds a KieBase through the ported exec-model back-end, and replays
+    builds a KieBase through the ported exec-model back-end — which, since
+    the ladder-service card (2026-08-29, LADDER-EVOLUTIE Q3), also carries a
+    spec-ch.-7 defaultLadder lowering the production toolchain does not
+    have: the backend implements the uchar spec beyond the ported
+    production semantics — and replays
     every `case*.json`. A golden whose forms the loader+transpiler carry
     MUST replay with EXACTLY the pinned expectations gates 5 (ref) and 6
     (clingo) verify — a played pass IS the square (ref ≡ clingo ≡ Drools
