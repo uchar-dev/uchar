@@ -484,6 +484,111 @@ let () =
   | [] -> check "jaar/maand: ref pins looptijd = 27" true
   | ms -> check ("jaar/maand: ref pins looptijd = 27 (" ^ String.concat "; " ms ^ ")") false)
 
+(* --- the retired Onbekend-arithmetic recursion arm (besluit 16Y+17b) --- *)
+
+(* An Onbekend-typed arithmetic Binair (a MAAL whose result unit the v0 frontend
+   could not name, "samengestelde eenheid", nested under a MIN) USED to translate
+   on the old code: numeric_ok recursed through the Onbekend arm because the
+   operands are themselves numeric. The eenheid-identiteit typerfix removed that
+   emitter gap — the frontend now types the product identity or faults at the
+   resolver — so no such node reaches the wire, and clingo faults loudly on it
+   ("unit unknown is never a wire type"). This synthetic doc pins the red→green. *)
+let onbekend_binair_doc =
+  {|{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Meting": {
+      "node": "Objecttype", "naam": "Meting",
+      "attributen": {
+        "tarief":      { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null },
+        "hoeveelheid": { "node": "Numeriek", "geheel": true,  "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+        "basis":       { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null },
+        "kosten":      { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null }
+      },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Metingen"
+    }
+  },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
+  "feittypen": {}, "dimensies": {}, "tijdlijnen": [], "dagsoorten": [],
+  "dagsoortPerEenheid": {}, "regels": [],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel", "naam": "kosten van een meting", "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef", "attribuut": "kosten", "objecttype": "Meting",
+        "onderwerpBron": "een Meting", "navigatieRol": null,
+        "type": { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null },
+        "bron": "De kosten van een Meting", "set": false, "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair", "op": "MIN",
+        "links": {
+          "node": "AttribuutRef", "attribuut": "basis", "objecttype": "Meting",
+          "onderwerpBron": "de Meting", "navigatieRol": null,
+          "type": { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null },
+          "bron": "de basis van de Meting", "set": false, "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Binair", "op": "MAAL",
+          "links": {
+            "node": "AttribuutRef", "attribuut": "tarief", "objecttype": "Meting",
+            "onderwerpBron": "de Meting", "navigatieRol": null,
+            "type": { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null },
+            "bron": "het tarief van de Meting", "set": false, "navigatiePad": []
+          },
+          "rechts": {
+            "node": "AttribuutRef", "attribuut": "hoeveelheid", "objecttype": "Meting",
+            "onderwerpBron": "de Meting", "navigatieRol": null,
+            "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+            "bron": "de hoeveelheid van de Meting", "set": false, "navigatiePad": []
+          },
+          "type": { "node": "Onbekend", "reden": "samengestelde eenheid" },
+          "bron": "het tarief van de Meting maal de hoeveelheid van de Meting"
+        },
+        "type": { "node": "Onbekend", "reden": "operand" },
+        "bron": "de basis van de Meting min het tarief van de Meting maal de hoeveelheid van de Meting"
+      },
+      "voorwaarde": null,
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null }
+    }
+  ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}
+|}
+
+let onbekend_binair_case =
+  {|{
+  "format": "uchar-case-v0", "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "M1", "objectType": "Meting",
+        "attributes": { "tarief": { "number": "2.00" }, "hoeveelheid": { "number": "3" }, "basis": { "number": "10.00" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [ { "kind": "consistent" } ]
+}
+|}
+
+let () =
+  let irf = write_temp ".ir.json" onbekend_binair_doc in
+  let casef = write_temp ".case.json" onbekend_binair_case in
+  let doc = Ir_v0.Loader.load_file irf in
+  let case = Uchar_ref.Case.load_file doc casef in
+  Sys.remove irf;
+  Sys.remove casef;
+  match Translate.translate doc case with
+  | (_ : string) -> check "Onbekend-arithmetic Binair: expected a loud fault, got a model" false
+  | exception Uchar_ref.Value.Fault m ->
+      check ("Onbekend-arithmetic Binair faults loudly (" ^ m ^ ")")
+        (Uchar_ref.Case.contains ~needle:"non-numeric arithmetic operand" m)
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

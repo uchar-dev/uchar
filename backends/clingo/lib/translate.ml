@@ -604,24 +604,19 @@ let vergelijk_sym = function
 (* arithmetic operands must be statically numeric: ref faults date
    arithmetic under the additive/multiplicative operators, so a
    non-numeric static type must not silently compute on day numbers.
-   The Datatype_onbekend sentinel is the v0 frontend's typing INABILITY
-   (a "samengestelde eenheid" it could not name), not an actual
-   non-numeric value: it is admitted ONLY when the node is provably
-   numeric — an arithmetic Binair whose operands themselves pass these
-   checks recursively (every bin_op is arithmetic, so its result is
-   numeric). Genuinely non-numeric arithmetic (Tekst/Boolean/enum/date
-   through the numeric path) keeps faulting with the existing fragment. *)
-let rec numeric_ok e =
+   The Datatype_onbekend-Binair recursion arm RETIRED with the eenheid-
+   identiteit typerfix (besluit 16Y+17b): the v0 frontend no longer
+   degrades a unit it cannot name to Onbekend on an arithmetic Binair — it
+   types the product identity (unitloos × E = E) or faults loudly at the
+   resolver, so "unit unknown is never a wire type". The sole reason this
+   arm ever admitted an Onbekend-typed arithmetic node ("samengestelde
+   eenheid") is gone; an Onbekend arithmetic type now faults here too,
+   like any other non-numeric operand — never silently computed. *)
+let numeric_ok e =
   match e with
   | Some e -> (
       match Ir_v0.Checks.typ_of_expr e with
       | Some (Numeriek _ | Percentage _) | None -> ()
-      | Some (Datatype_onbekend _) -> (
-          match e with
-          | Binair { links; rechts; _ } ->
-              numeric_ok links;
-              numeric_ok rechts
-          | _ -> fault "non-numeric arithmetic operand is not translated (no corpus case)")
       | Some _ -> fault "non-numeric arithmetic operand is not translated (no corpus case)")
   | None -> ()
 
