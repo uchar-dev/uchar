@@ -1961,35 +1961,10 @@ let wf077_condition at (c : conditie) : violation list =
   in
   walk at c
 
-(* The v0 "samengestelde eenheid" arithmetic sentinel (CONSTRUCTS row 27; the
-   Onbekend flip witness, LADDER-EVOLUTIE §9 Q13): the frontend degrades a
-   product/quotient of two unit-carrying operands — or a unitless ATTRIBUTE ×
-   unit operand — to Datatype_onbekend because its Eenheid model cannot NAME the
-   composite unit, not because the node is non-numeric. A faithful v0 dump
-   therefore carries such a Binair, and both executors compute it: this is the
-   verifier twin of clingo's [numeric_ok] (translate.ml) — strictly a SAFE SUBSET:
-   a None-typed or absent operand is numeric-ok for clingo but not admitted
-   here, so nothing verifier-clean can fault at execution. The sentinel is
-   admitted on an arithmetic Binair EXACTLY WHEN it is provably numeric — every
-   leaf operand is a Numeriek/Percentage node, or itself such a Binair,
-   recursively. An Onbekend LEAF (a dangling reference), or a Binair reaching a
-   non-numeric (Tekst/Booleaan/date) leaf, is NOT provably numeric and stays
-   WF-034-refused. Retired with the sentinel at the v1 WF-003 fail-fast
-   promotion (IR-SPEC ch. 2.4). *)
-let rec onbekend_numeriek (e : expr) : bool =
-  match typ_of_expr e with
-  | Some (Numeriek _ | Percentage _) -> true
-  | Some (Datatype_onbekend _) -> (
-      match e with
-      | Binair { links = Some l; rechts = Some r; _ } -> onbekend_numeriek l && onbekend_numeriek r
-      | _ -> false)
-  | _ -> false
-
 let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : violation list =
   let sub p = at ^ "/" ^ p in
   let typ_checks =
     match typ_of_expr e with
-    | Some (Datatype_onbekend _) when onbekend_numeriek e -> []
     | Some (Datatype_onbekend _) ->
         [ v "WF-034" (sub "type") "unknown-type sentinel inside a structured node" ]
     | Some d -> check_number_form (sub "type") d

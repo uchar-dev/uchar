@@ -1599,22 +1599,9 @@ Comparison, Predicate, and CharacteristicCheck only —
   node; the unknown datatype does not exist in v1 (ch. 2.4). The rule
   covers the unknown type in both its spellings: a value node whose static
   type is the explicit Onbekend sentinel and its unspelled twin, a value
-  node whose static type is plain null, are refused alike — with two
-  structural exceptions. A Lambda is never a value and carries no type by
-  construction (its position is governed by WF-069). And the v0
-  **"samengestelde eenheid" arithmetic sentinel**: an Onbekend node that is
-  an arithmetic `Binair` whose operands are *provably numeric* — each a
-  Numeriek/Percentage node, or itself such a Binair, recursively — is
-  admitted. The v0 frontend degrades a composite-unit product it could not
-  NAME (a unitless attribute × a unit-carrying operand, or a two-unit
-  product) to Onbekend as a typing INABILITY, not a non-numeric value, and
-  both executors compute it (clingo's `numeric_ok`, the verifier's
-  `onbekend_numeriek` twin — the verifier admits a safe SUBSET: a None-typed
-  or absent operand is numeric-ok for clingo but not admitted here). An
-  Onbekend *leaf* (a dangling reference) or a Binair reaching a non-numeric
-  (Tekst/Booleaan/date) leaf is not provably numeric and stays refused.
-  This tolerance is itself a v0-mirror concession that **retires with the
-  sentinel at the v1 WF-003 fail-fast promotion** (ch. 2.4).
+  node whose static type is plain null, are refused alike — the sole
+  structural exception is a Lambda, which is never a value and carries no
+  type by construction (its position is governed by WF-069).
 - **WF-080** A value-position `AttributeReference` MUST resolve to an
   **attribute** of its endpoint type, never a characteristic. A value
   position is where an expression yields a value: a rule/member value, a
@@ -2258,7 +2245,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-031 | one definition per day kind; condition present and **pure** (no attribute/characteristic read — the stratum-0 framing, ch. 5.4); validity ALTIJD | gate 3 | `jutterswet-vormenkabinet` (the schouwdag definition, ALTIJD validity) + `jutterswet-schouwkalender` (a pure day-kind chain, replayed by gates 5–6 over its ordinary rule) | `wf031-missing-condition` + `wf031-dagsoort-venster` (bounded validity window) + `wf031-dagsoort-leest-kenmerk` (the purity clause: a day-kind condition reading a characteristic) |
 | WF-032 | start point: variable-start timeline, day-precision member, one per pair | gate 3 | `jutterswet-vormenkabinet` (the meetdatum anchor) | `wf032-fixed-start-anchor` |
 | WF-033 | (dialect) rule-group members resolve; recursive group has a creation member (either kind); object creations guarded, relation creations guard-free | gate 3 | `anchor/jutterswet-wachtersketen` (the recursive chain executes to its fixpoint, gates 5–6; the runaway budget fault is red-pinned, gate 8) + `anchor/jutterswet-erflijn` (the guard-free relation-creation member: the transitive closure reaches its fixpoint in both executors) | `wf033-unguarded-recursive` (the guard clause) + `wf033-no-creation-member` (the containment clause) |
-| WF-034 | every expression/condition reference resolves (no unknown-type sentinel) | gate 3 (partial: sentinel types and parameter/day-kind/element-type/own-member references; variable bindings and navigation paths are not serialized in v0; excepted: a v0 instance-fold source argument names a role and carries the sentinel by construction — the row-1 wart, resolved against declared roles with the ch. 4.3 type-pair fallback for a name that resolves nowhere; and the "samengestelde eenheid" arithmetic sentinel — a provably-numeric Onbekend Binair, mirroring clingo's `numeric_ok`) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondsttelling` (role source) + `jutterswet-kaveltelling` (the type-pair fallback: an undeclared synthesized plural over a unique pair, both executors) + `jutterswet-stukopbrengst` (the provably-numeric Onbekend arithmetic sentinel, the flip witness — ref ≡ clingo ≡ Drools) | `wf034-dangling-parameter` + `wf034-ambigu-typenpaar` (unresolved name, two connecting fact types) + `wf034-zelftype-typenpaar` (unresolved name, one self-typed two-role fact type — both roles are candidates, counted in roles not fact types) |
+| WF-034 | every expression/condition reference resolves (no unknown-type sentinel) | gate 3 (partial: sentinel types and parameter/day-kind/element-type/own-member references; variable bindings and navigation paths are not serialized in v0; excepted: a v0 instance-fold source argument names a role and carries the sentinel by construction — the row-1 wart, resolved against declared roles with the ch. 4.3 type-pair fallback for a name that resolves nowhere) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondsttelling` (role source) + `jutterswet-kaveltelling` (the type-pair fallback: an undeclared synthesized plural over a unique pair, both executors) | `wf034-dangling-parameter` + `wf034-ambigu-typenpaar` (unresolved name, two connecting fact types) + `wf034-zelftype-typenpaar` (unresolved name, one self-typed two-role fact type — both roles are candidates, counted in roles not fact types) |
 | WF-035 | operator typing (numeric, unitless power, date±duration order/unit/precision, unit compatibility, clamp) | gate 3 (over serialized operand types) | `anchor/jutterswet-wachtersketen` (the numeric Plus, executed by gates 5–6) + `jutterswet-vervaltermijn` (date ± duration, the date-left plus and min forms, executed by gates 5–6) | `wf035-power-with-unit` + `wf035-datum-plus-datum` + `wf035-duur-plus-datum` + `wf035-duur-min-datum` + `wf035-uur-op-dagdatum` |
 | WF-036 | comparison/predicate typing (ordering, precision, family, domain, builtin operands) | gate 3 (over serialized operand types) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondstnummer` (date ordering) | `wf036-order-number-vs-text` |
 | WF-037 | aggregation/builtin shape: facet validity and arity per kind | gate 3 (fixed-arity kinds; date-construction arity OPEN) | `jutterswet-vondsttelling` | `wf037-fallback-on-minimum` |

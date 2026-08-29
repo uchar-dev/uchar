@@ -42,15 +42,17 @@ is nu VOLLEDIG verbatim (de ref-spiegel; corpus-breed gedragsgelijk —
 de lens bewees dat de gepaarde-delimiter-strip op geen enkel bestaand
 golden vuurde en ving het residu dat een geheel-omquote-de waarde alsnog
 zou strippen); keurmerk speelt tegen ongewijzigde pins,
-EXCLUDE_KNOWN 4→3, beide staleness-richtingen geboobytrapt. (3) De
-publieke Onbekend-getuige jutterswet-stukopbrengst (190/112,
-handberekend) doorloopt aantoonbaar de numeric_ok-rekenkunderecursie
-(break-the-arm-bewijs) en speelt het volle vierkant — MAAR vergde een
-WF-034-verruiming (onbekend_numeriek: een bewijsbaar-numerieke
-Onbekend-Binair is toegelaten, een veilige DEELverzameling van clingo's
-toelating; alle wf034/wf003-negatiefs blijven verwerpen) die NIET in de
-geratificeerde besluitenset zat — als genummerde vraag aan de maintainer
-voorgelegd vóór de merge. (4) WF-086 weigert temporele laddertargets op
+EXCLUDE_KNOWN 4→3, beide staleness-richtingen geboobytrapt. (3) De publieke
+Onbekend-getuige is GESCHRAPT op maintainer-besluit 15c (2026-08-29): de
+tijdens de bouw noodzakelijk gebleken WF-034-verruiming was een
+niet-geratificeerde normatieve wijziging; de maintainer koos de
+structurele route — Onbekend is altijd een typer-capitulatie, nooit een
+semantische noodzaak; het onderscheid is "bewust eenheidloos" (eerste-klas,
+de groepsidentiteit 1) versus "eenheid onbekend" (fail-fast error). De
+typerfix is de nieuwe kaart 20260829-eenheid-identiteit-typerfix; de
+numeric_ok-rekenarm en refs tolerantie pensioneren dáár, en het
+flip-checklistpunt verdampt (geen arm meer om te getuigen). WF-034 blijft
+onverkort streng. (4) WF-086 weigert temporele laddertargets op
 document-niveau, ná de lensvangst verbreed naar BEIDE armen: attribuut
 én kenmerk (het temporele kenmerk gleed er stil langs en zou atemporeel
 evalueren) — twee rood-eerst-negatiefs, ref draagt beide
