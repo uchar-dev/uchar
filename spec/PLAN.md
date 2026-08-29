@@ -219,10 +219,10 @@ Three things live deliberately outside the monorepo:
   in the monorepo as `frontends/regelspraak` on the copy route (four
   ratified decisions), dual-pinned against drift by gate 10 here and
   `uchar-conformance` there; the Drools backend and production runtime
-  stay outside. The planned upgrade, once the ladder-producing frontend
+  stay outside. The planned upgrade, once the defaults-producing frontend
   evolution starts, is inverting the dependency so the toolchain
   consumes this frontend — one source of frontend truth. Ratified
-  2026-08-29, `LADDER-EVOLUTIE.md` Q5: vendored-subtree consumption at the
+  2026-08-29, `PRIORITIZED-DEFAULTS-EVOLUTIE.md` Q5: vendored-subtree consumption at the
   SPEC_REV pin, scheduled ahead of the frontend evolution —
   freeze-invert-evolve.)*
 - **The held-out corpus split** — a separate private repository (e.g.
@@ -327,9 +327,9 @@ starting points, parameter vintages, day-kinds, uniqueness and consistency,
 object/fact creation, decision tables (the extension table lives in
 `corpus/jutterswet/README.md`). One real regulation joins as realism case
 (statute text is copyright-free under art. 11 Auteurswet; decided
-2026-08-29, `spec/proposals/LADDER-EVOLUTIE.md` Q14: **WW-herleving**,
+2026-08-29, `spec/proposals/PRIORITIZED-DEFAULTS-EVOLUTIE.md` Q14: **WW-herleving**,
 art. 15–21 WW — a genuine layered default/exception structure with
-termijnen, the ladder round's reality test — replacing the earlier
+termijnen, the defaults round's reality test — replacing the earlier
 zorgtoeslag candidate). Whether `regelspraak-java`'s *internal*
 gates also migrate off TOKA is that repo's own decision, out of scope here;
 this repo is TOKA-free from its first commit.
@@ -391,7 +391,7 @@ uchar cases — loading `ir.json` off the wire through its own loader,
 never the RegelSpraak source — and requires the same pinned
 expectations gates 5–6 verify, over the carried subset (41 goldens
 played at landing) with a reason-carrying exclusion list that fails
-when stale; the uncarried forms (ladders, folds, structs, and the
+when stale; the uncarried forms (defaults groups, folds, structs, and the
 listed v0 leeg-semantics divergences) stay loud, not silent.
 
 ### Phase 3 — Semantic anchor in ASP, then the Clingo backend
@@ -469,19 +469,19 @@ the model first — that is where it is tested.
 verified in the IR; the salience mechanism in the Drools backend is generated
 from IR-level defaults; interpreter and both engine backends agree on default
 resolution over new golden cases. **Met (2026-08-20), on the v0-expressible
-fragment:** the ladder rides the wire in both target kinds with WF-050/051
-(`defaultLadders`; anchors through both executors, incl. the ch. 7.8
-standing norm and the input rung — `RUNTIME-SEMANTICS.md` ch. 7,
+fragment:** the prioritized-defaults group rides the wire in both target kinds with WF-050/051
+(`prioritizedDefaults`; anchors through both executors, incl. the ch. 7.8
+standing norm and the input default — `RUNTIME-SEMANTICS.md` ch. 7,
 `spec/proposals/PHASE4-DEFAULTS.md`); the Drools salience is derived from
 the declared kenmerk graph (the WF-046 strata principle as a lowering,
 `CONSTRUCTS.md` row 6, toolchain pin `0b7f284`) instead of the syntactic
 trick this section names; and ref ≡ clingo holds over the defaults corpus
 (gates 5–6), with the Drools side agreeing over the shared v0 forms through
-its own differential. Deliberately open, recorded: full ladder service in
-the Drools backend waits for a ladder-producing frontend (Phase 5 — building
+its own differential. Deliberately open, recorded: full defaults service in
+the Drools backend waits for a defaults-producing frontend (Phase 5 — building
 it against hand-authored IR tests no production path) *(scheduled
 2026-08-29: the deferral premise is met by the Catala plugin —
-`LADDER-EVOLUTIE.md` Q3)*; temporal standing
+`PRIORITIZED-DEFAULTS-EVOLUTIE.md` Q3)*; temporal standing
 targets stay fenced (scalar-first, RS ch. 7.8); and one latent, non-defaults
 loader divergence is carded (`backlog/new/20260820-input-precision-fence.md`:
 ref accepts over-precise case input clingo faults — no corpus case exercises
@@ -529,7 +529,7 @@ full gate set. **The frontend-diff criterion is now discharged (card 5d):**
 `spec/proposals/PHASE5D-DIFF.md` runs the same law — Jutterswet art. 3 jo. 5
 (penningrecht / hardheid) — through both frontends (the RegelSpraak toolchain
 resolver, two flat `KENMERKTOEKENNING` rules; the Catala plugin, one
-`defaultLadder`) and diffs the two IR dumps, both carried through the full
+`prioritizedDefaults` group) and diffs the two IR dumps, both carried through the full
 gate set: every difference is administrative or a tracked v0↔v1 delta
 (`CONSTRUCTS.md` rows 8/2/7), no category-(iii) design flaw, and the resulting
 spec change is one besluit-free documentary note (no normative change, no
@@ -538,8 +538,8 @@ two frontends, two-plus backends, 2×2 through one waist instead of four
 translators.
 **Proposal adopted (2026-08-21):** `spec/proposals/PHASE5-CATALA.md`
 carries the design; its six decisions are all taken (attachment at the
-scopelang→dcalc boundary; context-override polarity as a top rung —
-Reading B as rung order, the input rung reserved for the case dossier;
+scopelang→dcalc boundary; context-override polarity as a top default —
+Reading B as default order, the input default reserved for the case dossier;
 the rights-clean corpus route: tutorial frontend-side, a
 Jutterswet-in-Catala article as the corpus case; `frontends/catala/`
 in this monorepo with the separate-repo escape hatch recorded; loud
@@ -685,7 +685,7 @@ non-numeric any-empty-equals-false mirror of v0's guard.
 New in v4. (8) **Decided:** the published corpus is rights-free by
 construction — the Jutterswet (plus its quantitative extensions) replaces
 TOKA as the golden corpus, and one statute-based case (art. 11 Auteurswet;
-2026-08-29: WW-herleving, `LADDER-EVOLUTIE.md` Q14 — previously
+2026-08-29: WW-herleving, `PRIORITIZED-DEFAULTS-EVOLUTIE.md` Q14 — previously
 zorgtoeslag) joins for realism; no ©-Belastingdienst material
 enters the uchar repos. (9) **Decided
 (2026-08-16):** Apache-2.0 for code (verifier, reference interpreter,

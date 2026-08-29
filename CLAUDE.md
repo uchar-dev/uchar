@@ -188,8 +188,8 @@ green. Current gates:
     the wire (never the RegelSpraak source — the source-compile path may
     serve only as an internal test comparison, NEVER as the gate path),
     builds a KieBase through the ported exec-model back-end — which, since
-    the ladder-service card (2026-08-29, LADDER-EVOLUTIE Q3), also carries a
-    spec-ch.-7 defaultLadder lowering the production toolchain does not
+    the defaults-service card (2026-08-29, PRIORITIZED-DEFAULTS-EVOLUTIE Q3), also carries a
+    spec-ch.-7 prioritizedDefaults lowering the production toolchain does not
     have: the backend implements the uchar spec beyond the ported
     production semantics — and replays
     every `case*.json`. A golden whose forms the loader+transpiler carry

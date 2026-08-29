@@ -19,7 +19,7 @@
 #
 # Survivors, each with the standing it pins:
 #   - jutterswet-vondstwaardering/case5-input-blijft.json: a
-#     non-deciding ladder leaves the input standing (ch. 7.1).
+#     non-deciding defaults group leaves the input standing (ch. 7.1).
 #   - jutterswet-waardering-v0vorm/case3-input-blijft.json: the v0
 #     initialisation leaves a filled input standing (ch. 5.4).
 #   - jutterswet-vondstnummer/case-consistent.json: a uniqueness that
@@ -40,7 +40,7 @@
 #   - jutterswet-waardering-v0vorm/case6-leeg-doorval-input.json: the
 #     same fall-through in the ch. 7.7 desugaring domain (fire-but-leeg
 #     beside an initialisation, input standing) — the corner that was a
-#     prose pin until ref carried the ladder reading natively.
+#     prose pin until ref carried the defaults reading natively.
 #   - jutterswet-hardheid/case3-stilte.json: the discretionary route
 #     stays silent without a decision (six finds, no strandvoogd act) —
 #     the silence IS the legislator's intent (the hardship pattern).
@@ -52,7 +52,7 @@
 #     finds stay short (the anchor's case4 reason, same corner)
 #   - jutterswet-penningrecht/case3-stilte.json: the RegelSpraak render
 #     of the same articles (the toolchain's two flat kenmerktoekenning
-#     rungs, not a ladder) — silence without a ground is the meaning,
+#     rules, not a defaults group) — silence without a ground is the meaning,
 #     exactly as the hardheid anchor and the Catala render pin it.
 #   - jutterswet-penningrecht/case4-hardheidsgrens.json: the same
 #     halved-threshold corner on the RegelSpraak side — a hardship
@@ -80,14 +80,14 @@
 #     erkende som and aantal erkend stay empty. Its case2-leeg-lijst
 #     (supplied []) writes 0.00/0 and is not a survivor.
 #   - jutterswet-nestuitzondering/case8-niets.json: the nested-group empty
-#     fall-through (ch. 7.9) — with no ground characteristic present, rung 0's
+#     fall-through (ch. 7.9) — with no ground characteristic present, default 0's
 #     sub-group is empty and its own grondX consequence does not fire, the base
-#     group-rung's sub-group is empty too, so nothing decides and heffing stays
+#     group-default's exception group is empty too, so nothing decides and heffing stays
 #     empty. The absence IS the assertion; the sibling cases all decide (a
 #     value or a conflict fact) and are not survivors.
 #   - jutterswet-nestkenmerk/case1-y-wint.json: the characteristic variant of
 #     the spurious-conflict test (ch. 7.9) — the sub-decision do-not-attribute
-#     (false, from ny) displaces rung 0's own true, so vrijgesteld stays absent.
+#     (false, from ny) displaces default 0's own true, so vrijgesteld stays absent.
 #     The observable outcome (absent + consistent) coincides with a do-nothing
 #     run, yet the case pins the nested reading against a FLATTENING executor,
 #     which would manufacture a conflict here (case2-conflict and case3-terugval
@@ -121,8 +121,8 @@
 #     again (ch. 10.6), here composed under a Match body — grondslag absent makes
 #     `Let g` leeg, so beslag is leeg before the Match ever dispatches.
 #   - jutterswet-samenloop/case6-geen-grond.json: the no-ground flank of the
-#     samenloop competition ladder (ch. 7.1) — with neither aanspraak ground
-#     present no rung decides and vergoeding stays empty, whatever amounts the
+#     samenloop competition defaults (ch. 7.1) — with neither aanspraak ground
+#     present no default decides and vergoeding stays empty, whatever amounts the
 #     input carries; the absence IS the assertion. The five sibling cases all
 #     decide (the hoogste under samenloop, or the sole ground's bedrag) and
 #     are not survivors.
@@ -133,11 +133,11 @@
 #     kenmerk attaches; the absence IS the assertion. The four sibling
 #     cases all decide and are not survivors.
 #   - jutterswet-bergingsdrempel/case3-onder-quotum.json: the frontend-authored
-#     ordered 'Uitzondering op' kenmerk ladder (§4) — 12 wrecks and no noodweer
-#     ground leave BOTH rungs unjustified (below the 20 quotum, the exception
+#     ordered 'Uitzondering op' kenmerk defaults (§4) — 12 wrecks and no noodweer
+#     ground leave BOTH defaults unjustified (below the 20 quotum, the exception
 #     inert without its ground), so bergingsbevoegd stays absent; the absence IS
 #     the assertion (the ordered analogue of the hardheid case3-stilte silence).
-#   - jutterswet-bergingsdrempel/case4-onder-noodweer.json: the same ladder's
+#   - jutterswet-bergingsdrempel/case4-onder-noodweer.json: the same defaults group's
 #     floor — 5 wrecks under noodweer stay short of the exception's lowered
 #     threshold 8, so nothing is attributed; the absence IS the assertion (the
 #     ordered analogue of hardheid case4-hardheidsgrens). The two deciding
