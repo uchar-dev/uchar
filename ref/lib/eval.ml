@@ -1642,6 +1642,16 @@ let run_ladder_group env world (members : default_ladder list) =
       Value.fault
         "temporal attribute %S as a ladder target: temporal writes are not implemented" a
   | _ -> ());
+  (* the WF-086 kenmerk arm's defense-in-depth: a temporal characteristic target would
+     otherwise evaluate silently atemporally *)
+  (match l0.dl_kenmerk with
+  | Some k
+    when List.exists
+           (fun (n, _) -> Ir_v0.Checks.norm n = Ir_v0.Checks.norm k)
+           (objecttype env l0.dl_onderwerp).kenmerk_granulariteit ->
+      Value.fault
+        "temporal characteristic %S as a ladder target: temporal writes are not implemented" k
+  | _ -> ());
   over_subjects world ~otype:l0.dl_onderwerp ~rule:target_form (fun w self cond_err ->
       let speculate f =
         let buf = ref [] in

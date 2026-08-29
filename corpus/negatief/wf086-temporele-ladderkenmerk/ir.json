@@ -1,0 +1,96 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "wachtgeld": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {
+        "wachtgeld": "MAAND"
+      },
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "kustwacht",
+        "onder toezicht"
+      ],
+      "kenmerkSoorten": {
+        "kustwacht": "BIJVOEGLIJK",
+        "onder toezicht": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {
+        "onder toezicht": "DAG"
+      },
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "wachtgeld voor kustwachters",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": [],
+  "defaultLadders": [
+    {
+      "node": "DefaultLadder",
+      "naam": "toezicht bij kustwacht",
+      "onderwerp": "Jutter",
+      "kenmerk": "onder toezicht",
+      "rungs": [
+        {
+          "node": "Rung",
+          "besluit": true,
+          "voorwaarde": {
+            "node": "Kenmerk",
+            "kenmerk": "kustwacht",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "hij kustwacht is"
+          },
+          "bron": null
+        }
+      ],
+      "ongeordend": false,
+      "bron": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ]
+}

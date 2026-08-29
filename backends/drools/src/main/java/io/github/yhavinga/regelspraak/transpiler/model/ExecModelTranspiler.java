@@ -2643,9 +2643,10 @@ public final class ExecModelTranspiler {
     private static String tekstOfEnumLabel(Expr e) {
         if (!(e instanceof Expr.Literal lit)) return null;
         if (lit.type().isTekst()) {
-            String w = lit.waarde();
-            int n = w.length();
-            return (n >= 2 && w.charAt(0) == '"' && w.charAt(n - 1) == '"') ? w.substring(1, n - 1) : w;
+            // Verbatim, exactly as ref reads the wire waarde (Value.Text): the corpus convention stores
+            // the raw text — no delimiters to strip, and an embedded quote must survive both sides of
+            // the comparison. The old shared reader stripped EVERY quote (the keurmerk divergence).
+            return lit.waarde();
         }
         return Literalen.enumLabel(lit.waarde());   // the shared enum reader (the shared kern)
     }
@@ -2997,7 +2998,7 @@ public final class ExecModelTranspiler {
             if (subject.attribuutGranulariteit.containsKey(la.attribuut())) return null;      // temporal -> Phase F
             if (!subject.dimensiesVan(la.attribuut()).isEmpty()) return null;                 // §3.6 gedimensioneerd -> marker
             String attr = la.attribuut();
-            String rhs = tekstOfEnumLabel(lit);   // the DRL strips the tekstwaarde "/enumeratiewaarde ' delimiters the same way
+            String rhs = tekstOfEnumLabel(lit);   // Tekst verbatim (the ref mirror); enum labels via the shared single-quote reader
             boolean gelijk = v.op() == Conditie.Operator.GELIJK;
             return s -> rhs.equals(RegelSpraakRuntime.get(s, attr)) == gelijk;   // attr may be null; rhs non-null
         }

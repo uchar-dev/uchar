@@ -1609,7 +1609,8 @@ Comparison, Predicate, and CharacteristicCheck only —
   NAME (a unitless attribute × a unit-carrying operand, or a two-unit
   product) to Onbekend as a typing INABILITY, not a non-numeric value, and
   both executors compute it (clingo's `numeric_ok`, the verifier's
-  `onbekend_numeriek` twin — one admission, checked identically). An
+  `onbekend_numeriek` twin — the verifier admits a safe SUBSET: a None-typed
+  or absent operand is numeric-ok for clingo but not admitted here). An
   Onbekend *leaf* (a dangling reference) or a Binair reaching a non-numeric
   (Tekst/Booleaan/date) leaf is not provably numeric and stays refused.
   This tolerance is itself a v0-mirror concession that **retires with the
@@ -2151,9 +2152,11 @@ so every existing document validates unchanged.
   concern.
 - **WF-086** A ladder MUST NOT target a **temporal attribute** — one
   carrying a declared granularity (`attribuutGranulariteit`), whether
-  anchor-only or on a named timeline. A ladder is atemporal: it decides
-  once, at one fixpoint (`RUNTIME-SEMANTICS.md` ch. 7), and carries no
-  timeline coordinate at which to write. **Executor parity:** the
+  anchor-only or on a named timeline — **nor a temporal characteristic**
+  (one carrying `kenmerkGranulariteit`; the lens catch 2026-08-29: it
+  would otherwise evaluate silently atemporally). A ladder is atemporal:
+  it decides once, at one fixpoint (`RUNTIME-SEMANTICS.md` ch. 7), and
+  carries no timeline coordinate at which to write. **Executor parity:** the
   reference interpreter already faults on a temporal ladder write, and the
   Drools ladder service fences it as a reason-carrying skip; this rule
   refuses it FIRST, at the document layer, so an ill-formed ladder never
@@ -2307,7 +2310,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-083 | a fold-source argument never navigates (ch. 4.3): a non-empty `navigatiePad` is ill-formed; a `navigatieRol`, when present, is self-denoting — it names a role (ci, declared name or plural) the argument's object type itself fills; away-pointing is ill-formed — closes the silent fall-through where a navigating fold source passed the verifier while ref faults on it | gate 3 | `jutterswet-aanmeldertelling` (the self-denoting count "het aantal vondsten van de aanmelder" through both executors) | `wf083-fold-source-navigates-away` |
 | WF-084 | a day-precision date literal's lexeme is the strict ISO form `yyyy-mm-dd` the executors parse (ch. 4.1) — fixed field widths (four-two-two digits), single `-` separators, month 1–12, day 1..days-in-month (leap-aware); the Dutch day-first source snippet is ill-formed, whether the bare `31-01-2024` (silently misread as year 31 → `0036-07-16`, a differential-blind wrong answer both executors agreed on) or the `dd. `-prefixed form (both executors fault) — closes that blind spot, the emitter now writing the bare ISO lexeme and keeping the snippet in `bron`; datetime lexemes out of scope | gate 3 | `jutterswet-vondstverjaring` (an ISO date literal through the fence, replayed by gates 5–6) | `wf084-source-snippet` + `wf084-bare-non-iso` |
 | WF-085 | the day-kind reference graph is acyclic (ch. 5.4 / ch. 3.7): a day-kind condition may reference other day kinds (a `Predicaat` of soort `DAGSOORT`), but mutually recursive definitions have no fixpoint — a loud refusal where the v0 toolchain resolves a cycle to a silent false (the §9.10 recursion prohibition unenforced for day kinds); diverge-from-v0 (v0 neither checks nor documents it) | gate 3 | `jutterswet-schouwkalender` (an acyclic `hoogschouwdag -> schouwdag` reference, verifier-clean, replayed by gates 5–6 over its ordinary rule) | `wf085-dagsoort-verwijzingscyclus` (two mutually referencing day kinds) |
-| WF-086 | a ladder MUST NOT target a temporal attribute (declared `attribuutGranulariteit`) — a ladder decides at one fixpoint and has no timeline coordinate to write (ch. 6); the document-layer fence ahead of the executors (ref faults, the Drools ladder service skips — parity, ref keeps its fault as defense-in-depth); temporal ladder targets are unscheduled (LADDER-EVOLUTIE §9 Q12a) | gate 3 (over the ladder node via the shared `attr_temporal` helper) | `anchor/jutterswet-vondstwaardering` (an attribute ladder on a non-temporal target — gate 3 witnesses WF-086 does not over-fire) | `wf086-temporele-laddertarget` (a ladder on an attribute carrying a declared granularity) |
+| WF-086 | a ladder MUST NOT target a temporal attribute (declared `attribuutGranulariteit`) nor a temporal characteristic (`kenmerkGranulariteit`) — a ladder decides at one fixpoint and has no timeline coordinate to write (ch. 6); the document-layer fence ahead of the executors (ref faults on both arms — defense-in-depth — and the Drools ladder service skips); temporal ladder targets are unscheduled (LADDER-EVOLUTIE §9 Q12a) | gate 3 (over the ladder node via the shared `attr_temporal` helper and the `kenmerkGranulariteit` table) | `anchor/jutterswet-vondstwaardering` (an attribute ladder on a non-temporal target — gate 3 witnesses WF-086 does not over-fire) | `wf086-temporele-laddertarget` (attribute arm), `wf086-temporele-ladderkenmerk` (characteristic arm) |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

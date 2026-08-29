@@ -33,3 +33,27 @@ backlog/. Beschermde paden: onder het mergemandaat na gates+lenzen.
 Out of scope: temporele laddertargets bouwen; het allocatie-invoerhek
 (wacht op de §9-executorkaart, per Q12b); gedeelde sub-root-basis (blijft
 geweigerd, per Q12c); CONSTRUCTS/PLAN (hoofdsessie serieel).
+
+Result: alle vier stukken geland op de branch. (1) De
+waardering-v0vorm-redenregel stelt nu onomwonden:
+exec-model-non-terminatie, DRL-oracle ≡ ref ≡ clingo op 25 — geen
+semantische divergentie. (2) De keurmerk-fix: de exec-model-tekstlezing
+is nu VOLLEDIG verbatim (de ref-spiegel; corpus-breed gedragsgelijk —
+de lens bewees dat de gepaarde-delimiter-strip op geen enkel bestaand
+golden vuurde en ving het residu dat een geheel-omquote-de waarde alsnog
+zou strippen); keurmerk speelt tegen ongewijzigde pins,
+EXCLUDE_KNOWN 4→3, beide staleness-richtingen geboobytrapt. (3) De
+publieke Onbekend-getuige jutterswet-stukopbrengst (190/112,
+handberekend) doorloopt aantoonbaar de numeric_ok-rekenkunderecursie
+(break-the-arm-bewijs) en speelt het volle vierkant — MAAR vergde een
+WF-034-verruiming (onbekend_numeriek: een bewijsbaar-numerieke
+Onbekend-Binair is toegelaten, een veilige DEELverzameling van clingo's
+toelating; alle wf034/wf003-negatiefs blijven verwerpen) die NIET in de
+geratificeerde besluitenset zat — als genummerde vraag aan de maintainer
+voorgelegd vóór de merge. (4) WF-086 weigert temporele laddertargets op
+document-niveau, ná de lensvangst verbreed naar BEIDE armen: attribuut
+én kenmerk (het temporele kenmerk gleed er stil langs en zou atemporeel
+evalueren) — twee rood-eerst-negatiefs, ref draagt beide
+defense-in-depth-faults. Lens-formuleringsfix: de
+"admits exactly"-claims versmald naar safe-subset. Gate 12: played 69,
+value-divergence 3. Alle twaalf gates groen op de branch.

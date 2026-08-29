@@ -1967,7 +1967,9 @@ let wf077_condition at (c : conditie) : violation list =
    unit operand — to Datatype_onbekend because its Eenheid model cannot NAME the
    composite unit, not because the node is non-numeric. A faithful v0 dump
    therefore carries such a Binair, and both executors compute it: this is the
-   verifier twin of clingo's [numeric_ok] (translate.ml). The sentinel is
+   verifier twin of clingo's [numeric_ok] (translate.ml) — strictly a SAFE SUBSET:
+   a None-typed or absent operand is numeric-ok for clingo but not admitted
+   here, so nothing verifier-clean can fault at execution. The sentinel is
    admitted on an arithmetic Binair EXACTLY WHEN it is provably numeric — every
    leaf operand is a Numeriek/Percentage node, or itself such a Binair,
    recursively. An Onbekend LEAF (a dangling reference), or a Binair reaching a
@@ -5253,12 +5255,18 @@ let wf086 ctx =
     (List.mapi
        (fun i (l : default_ladder) ->
          let at = Printf.sprintf "/defaultLadders/%d" i in
-         match (l.dl_attribuut, objecttype ctx l.dl_onderwerp) with
-         | Some a, Some ot when attr_temporal ot a ->
+         match (l.dl_attribuut, l.dl_kenmerk, objecttype ctx l.dl_onderwerp) with
+         | Some a, _, Some ot when attr_temporal ot a ->
              [ v "WF-086" at
                  ("ladder target '" ^ a
                 ^ "' is a temporal attribute (declared granularity) — a ladder decides at one \
                    fixpoint and cannot write a timeline (ch. 6)") ]
+         | _, Some k, Some ot
+           when List.exists (fun (n, _) -> norm n = norm k) ot.kenmerk_granulariteit ->
+             [ v "WF-086" at
+                 ("ladder target '" ^ k
+                ^ "' is a temporal characteristic (declared granularity) — a ladder decides at \
+                   one fixpoint and cannot write a timeline (ch. 6)") ]
          | _ -> [])
        ctx.doc.default_ladders)
 

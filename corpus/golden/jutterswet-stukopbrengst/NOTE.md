@@ -20,8 +20,10 @@ because the Eenheid model cannot NAME the composite — it is a typing INABILITY
 not a non-numeric value. The outer `+` then carries `Onbekend("operand")`
 (an Onbekend operand poisons the sum's type). Both nodes are provably numeric:
 clingo's `numeric_ok` recurses through them to the Numeriek leaves, and the
-verifier's WF-034 twin (`onbekend_numeriek`, spec/verifier) admits exactly the
-same shape — the two agree, so the document is well-formed.
+verifier's WF-034 twin (`onbekend_numeriek`, spec/verifier) admits it too —
+strictly a safe subset of clingo's admission (a None-typed operand is
+numeric-ok for clingo, not admitted by the verifier), so nothing
+verifier-clean can fault at execution and the document is well-formed.
 
 `eff_unit` reads the OPERAND units (unitless × EUR adopts EUR), independent of
 the declared `Onbekend` type, so the product lands in the EUR `opbrengst`
