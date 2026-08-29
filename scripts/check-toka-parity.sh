@@ -37,12 +37,18 @@
 #      manifest does not cover is a FAILURE, never silently green; a missing JDK,
 #      dune (ref/clingo), clingo, or the Drools jar fails loudly.
 #
-# The reason-carrying holdout mirrors gate 7's survivor list: the full casus
-# raises exactly ONE resolver ERROR — the §4.1 datum+datum casus-quirk in
-# toka-23 (CasusTest pins it as the single tolerated diagnostic) — so `--ir`
-# writes nothing for the whole set. The resolvable casus dump is therefore
-# emitted from every fragment EXCEPT that one; the holdout is asserted present
-# so the list fails when stale.
+# The reason-carrying holdout LIST mirrors gate 7's survivor list: the full casus
+# raises exactly these resolver ERRORs, so `--ir` writes nothing for the whole set.
+# The resolvable casus dump is therefore emitted from every fragment EXCEPT these,
+# each present-asserted so the list fails when stale (and CasusTest pins the same
+# two as its tolerated diagnostics, failing if either stops erroring):
+#   toka-23 — the §4.1 datum+datum casus-quirk (bevestigingsinterval, a Datum-tijd
+#             parameter added to a Datum-tijd, forbidden by Tabel 2).
+#   toka-45 — dimensionally inconsistent AS WRITTEN: a unitless Bedrag minus a
+#             km-typed product. The eenheid-identiteit typering (besluit 16Y) types
+#             the product (unitloos × km = km) and the min then fails the unit rule
+#             — uchar-v1 diverges from the toolchain here. The .rgs itself STAYS in
+#             original form; only its parity coverage moved to this holdout list.
 set -u
 cd "$(dirname "$0")/.."
 
@@ -57,7 +63,11 @@ TOKA=toka
 [ -d "$FE" ]   || fail "$FE is missing"
 [ -d "$TOKA" ] || fail "$TOKA is missing (the parity zone)"
 
-HOLDOUT='toka-23-regel-bevestigingstijdstip-vlucht.rgs'
+HOLDOUTS=(
+  'toka-23-regel-bevestigingstijdstip-vlucht.rgs'   # §4.1 datum+datum casus-quirk
+  'toka-45-regel-belasting-op-basis-van-afstand.rgs' # dimensioneel inconsistent (16Y): unitless Bedrag min km-product
+)
+is_holdout() { local base=$1 h; for h in "${HOLDOUTS[@]}"; do [ "$base" = "$h" ] && return 0; done; return 1; }
 
 # 1. build the frontend (main classes) and ensure both tool jars.
 build_out=$(make -C "$FE" compile 2>&1) || { printf '%s\n' "$build_out" | tail -20 >&2; fail "the frontend build is red"; }
@@ -103,7 +113,7 @@ while IFS= read -r dump; do
   d=$(dirname "$dump"); name=${d#"$TOKA"/}
   args=(); n=0
   while IFS= read -r rgs; do
-    if [ "$(basename "$rgs")" = "$HOLDOUT" ]; then continue; fi
+    if is_holdout "$(basename "$rgs")"; then continue; fi
     args+=("$rgs"); n=$((n + 1))
   done < <(find "$d" -maxdepth 1 -name '*.rgs' | sort)
   [ "$n" -gt 0 ] || fail "$name carries an ir.json but no re-emittable .rgs beside it"
@@ -121,8 +131,10 @@ while IFS= read -r dump; do
 done < <(find "$TOKA" -name ir.json -not -path "$TOKA/cases/*" | sort)
 
 [ "$casus_n" -gt 0 ] || fail "no toka/**/ir.json parity dumps found (an empty fixture set is a failure)"
-# stale-holdout guard: the reason-carrying holdout must still be present.
-find "$TOKA" -name "$HOLDOUT" | grep -q . || fail "holdout '$HOLDOUT' not found under $TOKA — the reason-carrying list is stale"
+# stale-holdout guard: every reason-carrying holdout must still be present.
+for h in "${HOLDOUTS[@]}"; do
+  find "$TOKA" -name "$h" | grep -q . || fail "holdout '$h' not found under $TOKA — the reason-carrying list is stale"
+done
 
 # 3b. schema + round-trip discipline over the replay slices. Gate 2 scans only
 #     corpus/; these newly-committed IR wire artifacts are otherwise unguarded.
@@ -226,7 +238,7 @@ fi
 
 echo ""
 echo "check-toka-parity: PASS"
-echo "  re-emission: $casus_n casus dump(s), $frag_n .rgs re-emitted byte-identical (holdout: $HOLDOUT); TOKA suite $tests tests"
+echo "  re-emission: $casus_n casus dump(s), $frag_n .rgs re-emitted byte-identical (holdouts: ${HOLDOUTS[*]}); TOKA suite $tests tests"
 echo "  schema: $slice_n replay slice(s) metaschema-valid + byte-round-trip (gate-2 discipline, explicit mode)"
 echo "  differential replay: $cases_n toka cases through ref, clingo, Drools (slices under $TOKA/cases/), ZERO silent divergences"
 echo "    ref    : $ref_pass PASS / 0 diverge  (the 100% oracle carries every toka case)"
