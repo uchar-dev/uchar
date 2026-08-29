@@ -172,8 +172,11 @@ green. Current gates:
     through uchar's own frontend byte-identically (frontend ≡ toolchain on
     the ©-Belastingdienst casus the public corpus may never carry); an empty
     fixture set, zero tests, or a stale holdout is a failure, never silently
-    green. The single reason-carrying holdout (`toka-23`, the §4.1
-    datum+datum casus-quirk that is the sole tolerated error) mirrors gate 7.
+    green. The reason-carrying holdout list (`toka-23`, the §4.1 datum+datum
+    casus-quirk; `toka-45`, dimensionally inconsistent as written — surfaced
+    by the identity unit typing, decision 16Y 2026-08-29, where uchar-v1
+    deliberately diverges from the toolchain) mirrors gate 7 and fails when
+    stale.
     CI leg unconditional and blocking. **This gate is the one documented
     exception to gate-set monotonicity: it leaves the set with the zone,
     ahead of any public flip.**

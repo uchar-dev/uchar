@@ -5,7 +5,13 @@ recommendation (1a; 2 confirmed; 3 yes; 4 extend; 5a; 6 defer to the flip;
 7 yes; 8 yes — Option A with the stratum-0 framing; 9 yes; 10 yes, as one
 package; 11 confirmed in full; 12 yes to all three; 13 yes; 14 yes). The
 build cards sit in `backlog/` (boekhouding card 2026-08-29); §10 gives
-their order. Companion
+their order. **Post-ratification amendment (besluiten 15c/16Y/17b,
+2026-08-29):** Q13's flip-witness item DISSOLVED — instead of witnessing
+the `numeric_ok` arithmetic tolerance, the frontend typer was fixed
+(identity products type properly; "cannot spell the unit" is a loud
+error) and the tolerance itself retired ahead of v1; the dimensionally
+inconsistent toka casus this surfaced became the second reason-carrying
+gate-11 holdout (a tracked v1 divergence from the toolchain). Companion
 to `PHASE4-DEFAULTS.md` (the adopted default-calculus design),
 `PRIORITY-RELATION.md` (the structural-priority decision), `PHASE5D-DIFF.md`
 (the frontend diff that seeded the frontend question), and
