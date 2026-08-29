@@ -63,15 +63,15 @@
   "resolvedStartpunten": [],
   "regelGroepen": [],
   "diagnostics": [],
-  "defaultLadders": [
+  "prioritizedDefaults": [
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "bergingsbevoegd bij quotum",
       "onderwerp": "Jutter",
       "kenmerk": "bergingsbevoegd",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": true,
           "voorwaarde": {
             "node": "Samengesteld",
@@ -128,7 +128,7 @@
           "bron": null
         },
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": true,
           "voorwaarde": {
             "node": "Vergelijking",

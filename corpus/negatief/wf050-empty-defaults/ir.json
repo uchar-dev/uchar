@@ -56,13 +56,13 @@
   "resolvedStartpunten": [],
   "regelGroepen": [],
   "diagnostics": [],
-  "defaultLadders": [
+  "prioritizedDefaults": [
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "uitsluiting van het penningrecht",
       "onderwerp": "Jutter",
       "kenmerk": "uitgesloten",
-      "rungs": [],
+      "defaults": [],
       "bron": "art. 4",
       "geldigheid": {
         "node": "Geldigheid",

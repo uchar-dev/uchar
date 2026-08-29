@@ -118,16 +118,16 @@
   "resolvedStartpunten": [],
   "regelGroepen": [],
   "diagnostics": [],
-  "defaultLadders": [
+  "prioritizedDefaults": [
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "waardering van een vondst",
       "onderwerp": "Jutter",
       "kenmerk": null,
       "attribuut": "waardering",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": {
             "node": "Kenmerk",
@@ -158,7 +158,7 @@
           "bron": "voor een erkend jutter: het basisbedrag"
         },
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": {
             "node": "Kenmerk",
@@ -189,7 +189,7 @@
           "bron": "voor een kandidaat: het kandidaatbedrag"
         },
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": null,
           "consequentie": {

@@ -358,15 +358,15 @@
   "resolvedStartpunten": [],
   "regelGroepen": [],
   "diagnostics": [],
-  "defaultLadders": [
+  "prioritizedDefaults": [
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "recht op uitkering bij herleving",
       "onderwerp": "Werknemer",
       "kenmerk": "recht op uitkering",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": true,
           "voorwaarde": {
             "node": "Kenmerk",
@@ -382,10 +382,10 @@
             "ongeordend": false,
             "leden": [
               {
-                "node": "SubLadder",
-                "rungs": [
+                "node": "ExceptionGroup",
+                "defaults": [
                   {
-                    "node": "Rung",
+                    "node": "Default",
                     "besluit": false,
                     "voorwaarde": {
                       "node": "Vergelijking",
@@ -432,10 +432,10 @@
                       "ongeordend": false,
                       "leden": [
                         {
-                          "node": "SubLadder",
-                          "rungs": [
+                          "node": "ExceptionGroup",
+                          "defaults": [
                             {
-                              "node": "Rung",
+                              "node": "Default",
                               "besluit": true,
                               "voorwaarde": {
                                 "node": "Kenmerk",
@@ -451,10 +451,10 @@
                                 "ongeordend": false,
                                 "leden": [
                                   {
-                                    "node": "SubLadder",
-                                    "rungs": [
+                                    "node": "ExceptionGroup",
+                                    "defaults": [
                                       {
-                                        "node": "Rung",
+                                        "node": "Default",
                                         "besluit": false,
                                         "voorwaarde": {
                                           "node": "Samengesteld",

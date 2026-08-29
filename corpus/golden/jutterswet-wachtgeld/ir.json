@@ -70,16 +70,16 @@
   "resolvedStartpunten": [],
   "regelGroepen": [],
   "diagnostics": [],
-  "defaultLadders": [
+  "prioritizedDefaults": [
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "wachtgeld voor kustwachters",
       "onderwerp": "Jutter",
       "kenmerk": null,
       "attribuut": "wachtgeld",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": {
             "node": "Kenmerk",
@@ -114,14 +114,14 @@
       }
     },
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "wachtgeld voor havenmeesters",
       "onderwerp": "Jutter",
       "kenmerk": null,
       "attribuut": "wachtgeld",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": {
             "node": "Kenmerk",
@@ -156,14 +156,14 @@
       }
     },
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "wachtgeld voor strandvoogden",
       "onderwerp": "Jutter",
       "kenmerk": null,
       "attribuut": "wachtgeld",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": {
             "node": "Kenmerk",

@@ -50,16 +50,16 @@
   "resolvedStartpunten": [],
   "regelGroepen": [],
   "diagnostics": [],
-  "defaultLadders": [
+  "prioritizedDefaults": [
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "heffing van een jutter",
       "onderwerp": "Jutter",
       "kenmerk": null,
       "attribuut": "heffing",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": {
             "node": "Kenmerk",
@@ -87,10 +87,10 @@
             "ongeordend": true,
             "leden": [
               {
-                "node": "SubLadder",
-                "rungs": [
+                "node": "ExceptionGroup",
+                "defaults": [
                   {
-                    "node": "Rung",
+                    "node": "Default",
                     "besluit": null,
                     "voorwaarde": null,
                     "consequentie": {

@@ -219,16 +219,16 @@
   "resolvedStartpunten": [],
   "regelGroepen": [],
   "diagnostics": [],
-  "defaultLadders": [
+  "prioritizedDefaults": [
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "heffing",
       "onderwerp": "Vondstaanslag",
       "kenmerk": null,
       "attribuut": "heffing",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": {
             "node": "Kenmerk",
@@ -288,7 +288,7 @@
           "bron": "heffing"
         },
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": {
             "node": "Samengesteld",

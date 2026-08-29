@@ -56,15 +56,15 @@
   "resolvedStartpunten": [],
   "regelGroepen": [],
   "diagnostics": [],
-  "defaultLadders": [
+  "prioritizedDefaults": [
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "uitsluiting van het penningrecht",
       "onderwerp": "Jutter",
       "kenmerk": "uitgesloten",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": true,
           "voorwaarde": {
             "node": "Samengesteld",
@@ -104,7 +104,7 @@
           "bron": "art. 4, derde laag"
         },
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": false,
           "voorwaarde": {
             "node": "Samengesteld",
@@ -135,7 +135,7 @@
           "bron": "art. 4, tweede laag"
         },
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": true,
           "voorwaarde": {
             "node": "Kenmerk",
@@ -157,13 +157,13 @@
       }
     },
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "uitsluiting, tweede ladder",
       "onderwerp": "Jutter",
       "kenmerk": "uitgesloten",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": true,
           "voorwaarde": {
             "node": "Samengesteld",
@@ -203,7 +203,7 @@
           "bron": "art. 4, derde laag"
         },
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": false,
           "voorwaarde": {
             "node": "Samengesteld",
@@ -234,7 +234,7 @@
           "bron": "art. 4, tweede laag"
         },
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": true,
           "voorwaarde": {
             "node": "Kenmerk",

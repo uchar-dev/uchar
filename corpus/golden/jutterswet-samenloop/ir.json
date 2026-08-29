@@ -72,16 +72,16 @@
   "resolvedStartpunten": [],
   "regelGroepen": [],
   "diagnostics": [],
-  "defaultLadders": [
+  "prioritizedDefaults": [
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "samenloop van aanspraken",
       "onderwerp": "Jutter",
       "kenmerk": null,
       "attribuut": "vergoeding",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": {
             "node": "Samengesteld",
@@ -169,7 +169,7 @@
           "bron": "bij samenloop van beide aanspraken geldt de hoogste: het wachtgeld, indien dat hoger is dan het berggeld"
         },
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": {
             "node": "Kenmerk",
@@ -200,7 +200,7 @@
           "bron": "de berger heeft aanspraak op het berggeld"
         },
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": {
             "node": "Kenmerk",

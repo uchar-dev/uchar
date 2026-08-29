@@ -54,15 +54,15 @@
   "resolvedStartpunten": [],
   "regelGroepen": [],
   "diagnostics": [],
-  "defaultLadders": [
+  "prioritizedDefaults": [
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "vrijstelling van een jutter",
       "onderwerp": "Jutter",
       "kenmerk": "vrijgesteld",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": true,
           "voorwaarde": {
             "node": "Kenmerk",
@@ -78,10 +78,10 @@
             "ongeordend": true,
             "leden": [
               {
-                "node": "SubLadder",
-                "rungs": [
+                "node": "ExceptionGroup",
+                "defaults": [
                   {
-                    "node": "Rung",
+                    "node": "Default",
                     "besluit": false,
                     "voorwaarde": {
                       "node": "Kenmerk",
@@ -98,10 +98,10 @@
                 "bron": "uitzondering ny: niet vrijgesteld"
               },
               {
-                "node": "SubLadder",
-                "rungs": [
+                "node": "ExceptionGroup",
+                "defaults": [
                   {
-                    "node": "Rung",
+                    "node": "Default",
                     "besluit": true,
                     "voorwaarde": {
                       "node": "Kenmerk",

@@ -62,15 +62,15 @@
   "resolvedStartpunten": [],
   "regelGroepen": [],
   "diagnostics": [],
-  "defaultLadders": [
+  "prioritizedDefaults": [
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "toezicht bij kustwacht",
       "onderwerp": "Jutter",
       "kenmerk": "onder toezicht",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": true,
           "voorwaarde": {
             "node": "Kenmerk",

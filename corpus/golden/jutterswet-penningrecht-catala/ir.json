@@ -52,15 +52,15 @@
   "resolvedStartpunten": [],
   "regelGroepen": [],
   "diagnostics": [],
-  "defaultLadders": [
+  "prioritizedDefaults": [
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "penninggerechtigd",
       "onderwerp": "Penningrecht",
       "kenmerk": "penninggerechtigd",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": true,
           "voorwaarde": {
             "node": "Samengesteld",
@@ -117,7 +117,7 @@
           "bron": "penninggerechtigd"
         },
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": true,
           "voorwaarde": {
             "node": "Vergelijking",
@@ -157,7 +157,7 @@
           "bron": "penninggerechtigd"
         },
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": false,
           "voorwaarde": {
             "node": "Samengesteld",

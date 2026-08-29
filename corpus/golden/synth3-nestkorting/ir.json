@@ -69,16 +69,16 @@
   "resolvedStartpunten": [],
   "regelGroepen": [],
   "diagnostics": [],
-  "defaultLadders": [
+  "prioritizedDefaults": [
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "korting van een jutter",
       "onderwerp": "Jutter",
       "kenmerk": null,
       "attribuut": "korting",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": {
             "node": "Kenmerk",
@@ -135,10 +135,10 @@
             "ongeordend": true,
             "leden": [
               {
-                "node": "SubLadder",
-                "rungs": [
+                "node": "ExceptionGroup",
+                "defaults": [
                   {
-                    "node": "Rung",
+                    "node": "Default",
                     "besluit": null,
                     "voorwaarde": {
                       "node": "Kenmerk",
@@ -196,10 +196,10 @@
                 "bron": "uitzondering P"
               },
               {
-                "node": "SubLadder",
-                "rungs": [
+                "node": "ExceptionGroup",
+                "defaults": [
                   {
-                    "node": "Rung",
+                    "node": "Default",
                     "besluit": null,
                     "voorwaarde": {
                       "node": "Kenmerk",
@@ -257,10 +257,10 @@
                 "bron": "uitzondering Q"
               },
               {
-                "node": "SubLadder",
-                "rungs": [
+                "node": "ExceptionGroup",
+                "defaults": [
                   {
-                    "node": "Rung",
+                    "node": "Default",
                     "besluit": null,
                     "voorwaarde": {
                       "node": "Kenmerk",
@@ -345,7 +345,7 @@
           }
         },
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": null,
           "consequentie": {

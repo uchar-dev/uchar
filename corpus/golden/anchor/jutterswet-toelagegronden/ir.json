@@ -91,16 +91,16 @@
   "resolvedStartpunten": [],
   "regelGroepen": [],
   "diagnostics": [],
-  "defaultLadders": [
+  "prioritizedDefaults": [
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "toelage voor vissers",
       "onderwerp": "Jutter",
       "kenmerk": null,
       "attribuut": "toelage",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": {
             "node": "Kenmerk",
@@ -135,14 +135,14 @@
       }
     },
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "toelage voor wachters",
       "onderwerp": "Jutter",
       "kenmerk": null,
       "attribuut": "toelage",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": {
             "node": "Kenmerk",
@@ -177,14 +177,14 @@
       }
     },
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "toelage voor duinwachters",
       "onderwerp": "Jutter",
       "kenmerk": null,
       "attribuut": "toelage",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": {
             "node": "Kenmerk",
@@ -219,13 +219,13 @@
       }
     },
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "gerechtigd als visser",
       "onderwerp": "Jutter",
       "kenmerk": "gerechtigd",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": true,
           "voorwaarde": {
             "node": "Kenmerk",
@@ -248,13 +248,13 @@
       }
     },
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "niet gerechtigd bij schorsing",
       "onderwerp": "Jutter",
       "kenmerk": "gerechtigd",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": false,
           "voorwaarde": {
             "node": "Kenmerk",
@@ -277,13 +277,13 @@
       }
     },
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "toelage-kenmerk voor vissers",
       "onderwerp": "Jutter",
       "kenmerk": "toelage",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": true,
           "voorwaarde": {
             "node": "Kenmerk",

@@ -322,16 +322,16 @@
   "resolvedStartpunten": [],
   "regelGroepen": [],
   "diagnostics": [],
-  "defaultLadders": [
+  "prioritizedDefaults": [
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "tarief",
       "onderwerp": "Penningplichtige",
       "kenmerk": null,
       "attribuut": "tarief",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": {
             "node": "Vergelijking",
@@ -385,10 +385,10 @@
             "ongeordend": true,
             "leden": [
               {
-                "node": "SubLadder",
-                "rungs": [
+                "node": "ExceptionGroup",
+                "defaults": [
                   {
-                    "node": "Rung",
+                    "node": "Default",
                     "besluit": null,
                     "voorwaarde": {
                       "node": "Vergelijking",
@@ -443,10 +443,10 @@
                 "bron": "tarief"
               },
               {
-                "node": "SubLadder",
-                "rungs": [
+                "node": "ExceptionGroup",
+                "defaults": [
                   {
-                    "node": "Rung",
+                    "node": "Default",
                     "besluit": null,
                     "voorwaarde": {
                       "node": "Vergelijking",
@@ -504,7 +504,7 @@
           }
         },
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": {
             "node": "Samengesteld",

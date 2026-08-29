@@ -2314,16 +2314,16 @@
   "resolvedStartpunten": [],
   "regelGroepen": [],
   "diagnostics": [],
-  "defaultLadders": [
+  "prioritizedDefaults": [
     {
-      "node": "DefaultLadder",
+      "node": "PrioritizedDefaults",
       "naam": "bedrag",
       "onderwerp": "Vangstheffing",
       "kenmerk": null,
       "attribuut": "bedrag",
-      "rungs": [
+      "defaults": [
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": {
             "node": "Vergelijking",
@@ -2417,7 +2417,7 @@
           "bron": "bedrag"
         },
         {
-          "node": "Rung",
+          "node": "Default",
           "besluit": null,
           "voorwaarde": {
             "node": "Samengesteld",
