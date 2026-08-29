@@ -1,0 +1,62 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W2",
+        "objectType": "Werknemer",
+        "attributes": {
+          "maandloon": {
+            "number": "2400.00"
+          },
+          "maandinkomen": {
+            "number": "1800.00"
+          },
+          "nieuw maandloon": {
+            "number": "0.00"
+          },
+          "maxdatum": {
+            "date": "2026-11-30"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "werkloos"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "W2",
+      "characteristic": "recht op uitkering"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W2",
+      "attribute": "inkomensgrens",
+      "value": {
+        "number": "2100.00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "W2",
+      "attribute": "verstreken periode"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W2",
+      "attribute": "nieuwe maxdatum",
+      "value": {
+        "date": "2026-11-30"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
