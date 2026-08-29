@@ -5248,6 +5248,10 @@ public final class ExecModelTranspiler {
      *  lambda machinery. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private List<Rule> ladderGroep(List<DefaultLadder> members) {
+        // The conflict path inserts one Inconsistentie and never un-writes a target, and the idempotency
+        // guard blocks re-insertion; that is only sound because ladderSalience holds the reduce-rule
+        // strictly below every producer of every rung read — a premature fire cannot happen. Keep that
+        // invariant in mind before weakening the salience derivation.
         DefaultLadder l0 = members.get(0);
         Objecttype onderwerp = model.objecttypeOpNaam(l0.onderwerp());
         if (onderwerp == null) return skipList("ladder (onbekend onderwerp " + l0.onderwerp() + ")");
@@ -5455,7 +5459,13 @@ public final class ExecModelTranspiler {
         }
         if (e instanceof Expr.Afgerond af) return bevatDeling(af.basis());
         if (e instanceof Expr.Begrensd bg) return bevatDeling(bg.basis()) || bevatDeling(bg.minimum()) || bevatDeling(bg.maximum());
-        if (e instanceof Expr.Functie f) { for (Expr a : f.argumenten()) if (bevatDeling(a)) return true; return false; }
+        if (e instanceof Expr.Functie f) {
+            for (Expr a : f.argumenten()) if (bevatDeling(a)) return true;
+            // leegwaarde is the §5.8.2 empty-set fallback; unreachable on a built ladder today (an
+            // aggregation consequence already declines via scalarWaarde) — checked anyway so a division
+            // can never hide in the fallback if that fence ever moves.
+            return bevatDeling(f.leegwaarde());
+        }
         if (e instanceof Expr.TekstReeks tr) {
             for (Expr.TekstReeks.Deel d : tr.delen()) if (d instanceof Expr.TekstReeks.Ingevoegd i && bevatDeling(i.expr())) return true;
             return false;

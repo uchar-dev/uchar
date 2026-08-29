@@ -35,3 +35,34 @@ records), scripts/check-drools.sh (exclusielijst-krimp), backlog/.
 
 Out of scope: temporele laddertargets bouwen; de WF-hekwerk-kaart (Q12a);
 frontend-emissie; toolchain-werk (de omdraaiing-kaart gaat vóór).
+
+Result: gate 12 speelt 64 (was 53): tiers 1/2/4 volledig geflipt (tien van
+de vijftien kaartkandidaten) plus het verse ww-herleving-inkomen-anker (4
+cases, het 4-laags geneste kenmerk-ladder — speelt schoon, de vierkant
+sluit erop). Lowering: reduce-rule-port van refs run_ladder_group
+(besluit/gevuld-doorval, exceptie-eerst-recursie, reconciliatie,
+pad-gesleutelde Inconsistentie, nooit-leeg-schrijven), records
+DefaultLadder/Rung/SubLadder in het gedeelde frontend-ir-pakket,
+ladder-lokale salience (min van producent-salienties − 1; de lens bewees
+de dekking van de hele producentenkegel via de monotonie van de
+stratificatiediepte), CaseRunner toetst nu conflictsleutel én subject
+(Q4; regelnaam-sleutels alleen op sleutel — het exec-model hangt daar
+legitiem een ander subject aan). EERLIJKE AFWIJKING van de
+kaartacceptatie (vijftien beloofd, tien geflipt): drie kandidaatklassen
+blokkeren op ladder-vreemde weigeringen, elk luid en reden-dragend —
+(a) toelagegronden: het doel deelt als kenmerk zijn naam met een
+attribuut en het bean-model draagt één veld per naam (nieuwe fence);
+tier 3 (ongeordend+conflict) heeft daarmee GEEN corpus-getuige in gate
+12 — de reconciliatie- en sleutelsemantiek is wél door de lens tegen ref
+gekruisvalideerd op eigen boobytraps; een naamdeel-vrije publieke
+ongeordend-getuige is geregistreerd vervolgwerk (jacht/synthese-golf);
+(b) tariefrecht-catala: pre-existente Let-weigering; (c) de drie
+tier-0-goldens: lege-lijst-acceptatie is gebouwd maar
+ListType/SumType/StructType weigeren eerst. Regressielens: exact +11,
+géén verlies onder de 53, de vier value-divergenties ongewijzigd,
+EXCLUDE_KNOWN faalt-bij-veroudering aangetoond, scope strikt binnen may
+touch, gate 10 byte-identiek (de records raken de emitter niet).
+Lens-MINORs verwerkt: bevatDeling kijkt nu ook in Functie.leegwaarde
+(defense-in-depth) en de salience-invariant van het conflictpad staat als
+comment op ladderGroep. Alle twaalf gates groen. CLAUDE.md-charterzin en
+toolchain-re-vendor+herpin: seriële landingsstappen van de hoofdsessie.
