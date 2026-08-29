@@ -42,3 +42,36 @@ kaartmandaat), backlog/.
 Out of scope: de count-positie-Onbekend (tien publieke goldens —
 geregistreerd vervolgpunt, lost op bij de v1-WF-003-promotie);
 CONSTRUCTS/PLAN; de toolchain-checkout (re-vendor door de hoofdsessie).
+
+Result: besluit 15c/16Y/17b volledig geland. Typering: MAAL-identiteit
+onvoorwaardelijk in beide richtingen (arbiter Tabel 11 rij 4, decimalen =
+som per Tabel 13; de literal/attribuut-splitsing en de 4-args
+reken-overload gepensioneerd); GEDEELD eenheidloos/E en de onspelbare
+rest-composieten (rate-factor/omgekeerde-noemer) zijn luide
+resolver-errors — de bewuste, dimensioneel zuivere divergentie van de
+onzuivere Tabel-14-rij-4-cel (17b), CONSTRUCTS-delta serieel bij de
+landing. Clingo's numeric_ok-Onbekend-Binair-arm gepensioneerd
+(rood-naar-groen bewezen); ref had geen tweeling (static_numeric is
+vergelijking-only en draagt de count-positie — onaangeraakt). Toka-45
+(16Y): tweede reden-dragende holdout naast toka-23 — de casus is
+dimensioneel inconsistent zoals geschreven (eenheidloos Bedrag min
+km-getypeerd product), door de identiteitstypering blootgelegd waar v0
+haar maskeerde met de Onbekend-degradatie; scenario-dir en manifestregel
+weg (30→29), casus-emissie hergenereerd zonder de regel (21→20, geen
+andere regel hergetypeerd, geen replaywaarde bewogen), de .rgs-bestanden
+in originele vorm, holdouts en JUnit-quirklijst falen-bij-veroudering.
+Getuige jutterswet-stukopbrengst terug via bron.rgs (stuktal — de
+aantal-functie-botsing vermeden), product getypeerd EUR, 190/112
+handberekend, volle vierkant (ref ≡ clingo ≡ Drools PLAYED). Geen
+Onbekend-getypeerde rekenkunde meer op enige committed wire; de
+count-positie (tien goldens + toka-44-datum-MIN) expliciet buiten scope
+tot de v1-WF-003-promotie. Drie rood-eerst-JUnit-getuigen
+(EenheidIdentiteitTest) aantoonbaar rood op de oude frontend. Alle
+twaalf gates groen (gate 11: 29 slices, 45 rgs byte-identiek, nul stille
+divergenties; gate 12: played 71). Lens-MINORs: de CONSTRUCTS-delta's
+(17b/17c) en de CLAUDE.md-gate-11-zin zijn seriële landingsplicht
+(gedaan bij deze landing); de getuige is integer-only en discrimineert
+som-vs-max-decimalen niet op de wire (de JUnit- en probegetuigen doen
+dat wél — geregistreerd jacht-punt); één rapportzin over de reststring
+was te breed (wire-claim klopt). Toolchain-nawerk (re-vendor + herpin +
+scenariosuite-holdout toka-45): hoofdsessie, direct hierna.
