@@ -123,3 +123,12 @@ ladder anchors.
 - Exception-on-exception (nested `Rung.excepties`) is not authored from source
   in this card; the wire form supports it and the hand anchors witness it.
 - Multi-version base/exception rules are refused (single-version only).
+- The new keyword tokens narrow the ordinary-name space: `Uitzonderingen`
+  (capitalised) and `ongeordend` are reserved and can no longer appear as
+  name words (e.g. a plural `(mv: Uitzonderingen)` or a kenmerk named
+  `ongeordend` now refuses loudly at the lexer) — the same loud posture the
+  existing `Regelgroep`/`recursief` extension tokens take. The corpus and
+  every committed source are free of these words.
+- An exception whose validity window differs from its base refuses loudly:
+  the ladder carries one window and a per-rung window is unrepresentable —
+  split per window or align the windows.

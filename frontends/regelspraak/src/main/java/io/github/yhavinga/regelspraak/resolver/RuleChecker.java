@@ -190,6 +190,21 @@ final class RuleChecker {
                 }
                 if (ex.size() > 1) { multiVersieFout("uitzondering", exNaam, u.getStart().getLine()); fout = true; break; }
                 LadderDoel exDoel = doelVan(ex.get(0));
+                if (exDoel == null || ex.get(0).soort() == ResolvedRegel.Soort.INITIALISATIE) {
+                    model.diagnostics.add(new Diagnostic(Severity.ERROR,
+                            "Uitzondering op '" + basisNaam + "': de uitzondering '" + exNaam + "' is geen "
+                            + "kenmerktoekenning of gelijkstelling (bv. een initialisatie) (§4)", u.getStart().getLine()));
+                    fout = true; break;
+                }
+                // Rung carries no per-rung geldigheid: mixed windows are unrepresentable on the ladder,
+                // so a diverging window must refuse — the same fence the multi-version case gets.
+                if (!ex.get(0).geldigheid().equals(basisRegel.geldigheid())) {
+                    model.diagnostics.add(new Diagnostic(Severity.ERROR,
+                            "Uitzondering op '" + basisNaam + "': uitzondering '" + exNaam + "' draagt een ander "
+                            + "geldigheidsvenster dan de basisregel — de ladder draagt één venster; splits per venster "
+                            + "of maak de vensters gelijk (§4)", u.getStart().getLine()));
+                    fout = true; break;
+                }
                 if (!doel.gelijk(exDoel)) {
                     model.diagnostics.add(new Diagnostic(Severity.ERROR,
                             "Uitzondering op '" + basisNaam + "': uitzondering '" + exNaam + "' schrijft een ander doel ("

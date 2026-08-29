@@ -64,3 +64,30 @@ case3-stilte/case4 en samenloop case6-geen-grond).
 
 Nog te doen (hoofdsessie serieel, buiten deze kaart): CONSTRUCTS-delta voor de
 v2.3.0-divergentie; toolchain-herpin/re-vendor bij landing.
+
+Result: de dialectextensie staat — Uitzondering op <basisregel>: <naam>
+(geordend: één ladder, latere blokken stapelen hoger, basis onderop) en
+Uitzonderingen ongeordend: (zusterladders met ongeordend:true, de
+toelagegronden-vorm). Grammatica additief en aantoonbaar inert: alle 20
+bestaande rgs-goldens plus de 46 toka-bronnen re-emitteren byte-identiek;
+de basisregel verlaat resolvedRegels (WF-050, door de lens geboobytrapt).
+Twee nieuwe bron.rgs-goldens — jutterswet-bergingsdrempel (geordende
+kenmerkuitzondering, 4 cases incl. beide afwezigheidsgrenzen) en
+jutterswet-wachtgeld (ongeordende attribuutgroep, §9.5-conflict mét
+sleutel Jutter.wachtgeld én idempotente overeenstemming) — spelen beide
+volledig in gate 12: de eerste bron.rgs → defaultLadders → ref ≡ clingo ≡
+Drools-route is dicht. Rood-eerst: 6/7 extensietests aantoonbaar rood op
+een gestubde ladders()-pass. Lensvangsten verwerkt vóór de merge:
+(MAJOR) een uitzondering met afwijkend geldigheidsvenster werd stil op
+het basisvenster gelegd — onvangbaar voor het vierkant omdat alle drie
+executors dezelfde foute IR lezen; nu een luide weigering (de ladder
+draagt één venster) met rood-eerst-test; (MINOR) een
+initialisatie-uitzondering glipte naar verifier-ongeldige IR — nu de
+spiegel van het basishek, met test; (MINOR) de naamruimte-versmalling
+door de nieuwe keywords staat in DIVERGENCES.md. Suite 139 groen.
+Beschermd pad in deze branch: scripts/check-noop.sh (+3 gemotiveerde
+defeasible-standing-survivors, het hardheid/samenloop-patroon) — gemerged
+onder het staande mandaat na gates+lenzen. Geregistreerd, niet gedaan:
+attribuut-geordende lowering (zelfde machinerie, geen golden — jacht),
+bron-geauthorde geneste excepties, multi-versie (geweigerd). CONSTRUCTS-
+notitie en toolchain-re-vendor+herpin: seriële landingsstappen.

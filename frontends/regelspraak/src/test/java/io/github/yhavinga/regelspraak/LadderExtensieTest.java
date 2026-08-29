@@ -93,6 +93,50 @@ class LadderExtensieTest {
                 () -> "diagnostiek benoemt de initialisatie-basis niet: " + m.errors());
     }
 
+    @Test void uitzondering_is_initialisatie_weigert_luid() {
+        // The mirror of the base guard: an exception whose body is an initialisation would lower to a rung
+        // the verifier rejects (WF-050) — the resolver must refuse it locally instead (lens catch 2026-08-29).
+        String src = """
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                is kustwacht kenmerk (bijvoeglijk);
+                het wachtgeld Numeriek (geheel getal);
+
+            Regel wachtgeld basis
+                geldig altijd
+                    Het wachtgeld van een Jutter moet gesteld worden op 30
+                    indien hij kustwacht is.
+
+            Uitzondering op wachtgeld basis: wachtgeld begin
+                geldig altijd
+                    Het wachtgeld van een Jutter moet geïnitialiseerd worden op 0.
+            """;
+        RegelSpraakModel m = Resolver.resolve(src);
+        assertFalse(m.isOk(), "een initialisatie-uitzondering hoort de resolver te laten falen");
+        assertTrue(enigeFout(m).contains("initialisatie"),
+                () -> "diagnostiek benoemt de initialisatie-uitzondering niet: " + m.errors());
+    }
+
+    @Test void afwijkend_geldigheidsvenster_weigert_luid() {
+        // Rung carries no per-rung geldigheid: a diverging validity window on the exception is
+        // unrepresentable and must refuse instead of silently riding the base window (lens catch 2026-08-29 —
+        // the amendment-adds-an-exception-effective-later pattern the differential square can never see).
+        String src = OBJ_ORDERED + """
+            Regel bergingsbevoegd bij drempel
+                geldig altijd
+                    Een Jutter is bergingsbevoegd
+                    indien zijn aantal geborgen wrakken groter of gelijk is aan 20.
+
+            Uitzondering op bergingsbevoegd bij drempel: bergingsbevoegd bij noodweer
+                geldig vanaf 2022
+                    Een Jutter is bergingsbevoegd
+                    indien zijn aantal geborgen wrakken groter of gelijk is aan 8.
+            """;
+        RegelSpraakModel m = Resolver.resolve(src);
+        assertFalse(m.isOk(), "een afwijkend geldigheidsvenster hoort de resolver te laten falen");
+        assertTrue(enigeFout(m).contains("geldigheidsvenster"),
+                () -> "diagnostiek benoemt het afwijkende venster niet: " + m.errors());
+    }
+
     @Test void groepslid_op_ander_doel_weigert_luid() {
         // An unordered group is over ONE shared target: a member writing a different attribute refuses.
         String src = """
