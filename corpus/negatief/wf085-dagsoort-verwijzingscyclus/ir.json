@@ -1,0 +1,80 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {},
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [
+    "vloeddag",
+    "ebdag"
+  ],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [
+    {
+      "node": "ResolvedDagsoort",
+      "naam": "vloeddag",
+      "voorwaarde": {
+        "node": "Predicaat",
+        "soort": "DAGSOORT",
+        "operand": {
+          "node": "Literal",
+          "waarde": "2026-06-21",
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "die dag"
+        },
+        "dagsoort": "ebdag",
+        "negatie": false,
+        "cijfers": 0,
+        "periode": null,
+        "bron": "die dag is een ebdag"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedDagsoort",
+      "naam": "ebdag",
+      "voorwaarde": {
+        "node": "Predicaat",
+        "soort": "DAGSOORT",
+        "operand": {
+          "node": "Literal",
+          "waarde": "2026-06-21",
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "die dag"
+        },
+        "dagsoort": "vloeddag",
+        "negatie": false,
+        "cijfers": 0,
+        "periode": null,
+        "bron": "die dag is een vloeddag"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

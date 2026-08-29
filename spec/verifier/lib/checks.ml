@@ -1047,6 +1047,76 @@ let wf030 ctx =
         count_v @ per_bron @ arity_v @ kind_v @ unit_v)
       (List.mapi (fun i r -> (i, r)) ctx.doc.uniciteit_unies)
 
+(* One structural pass over a day-kind voorwaarde (IR-SPEC par. 5, the
+   stratum-0 framing; ch. 3.7). It collects, in one walk:
+   - the WF-031 purity violations: a day-kind condition is evaluated against
+     a bare date before the rule graph, with no fact base, so it may
+     reference only dates, date-components, eerste-paasdag, literals,
+     parameters and other day-kind names — never derived object state. An
+     attribute read (AttribuutRef) or a characteristic check (Kenmerk) is
+     refused (loud, where v0 neither checks nor documents this);
+   - the day-kind names it references (a Predicaat DAGSOORT), for the
+     WF-085 reference graph. *)
+let dagsoort_scan at (c0 : conditie) : violation list * string list =
+  let viols = ref [] and refs = ref [] in
+  let impure kind name =
+    viols :=
+      v "WF-031" at
+        (Printf.sprintf
+           "day-kind condition reads %s '%s' — a day-kind voorwaarde references only dates, \
+            date-components, eerste-paasdag, literals, parameters and other day kinds, never \
+            derived object state (an attribute or characteristic read)"
+           kind name)
+      :: !viols
+  in
+  let rec ex (e : expr) =
+    let opt = function Some e -> ex e | None -> () in
+    match e with
+    | Attribuut_ref { attribuut; _ } -> impure "attribute" (Option.value attribuut ~default:"?")
+    | Literal _ | Parameter_ref _ | Variabele_ref _ | Constante _ | Expr_onopgelost _ | Binder_ref _
+      ->
+        ()
+    | Dimensie_cel { attribuut; _ } -> opt attribuut
+    | Binair { links; rechts; _ } -> opt links; opt rechts
+    | Afgerond { basis; _ } -> opt basis
+    | Begrensd { basis; minimum; maximum; _ } -> opt basis; opt minimum; opt maximum
+    | Field_access { base; _ } -> ex base
+    | Struct_literal { velden; _ } -> List.iter (fun (_, e) -> ex e) velden
+    | List_literal { elements; _ } -> List.iter ex elements
+    | Construct { argument; _ } -> opt argument
+    | Temporal_read { basis; datum; _ } -> ex basis; ex datum
+    | Invoke { arguments; _ } -> List.iter ex arguments
+    | Tekst_reeks { delen; _ } ->
+        List.iter (function Ingevoegd { expr = Some e } -> ex e | _ -> ()) delen
+    | Functie { argumenten; leegwaarde; filter; _ } ->
+        List.iter ex argumenten;
+        opt leegwaarde;
+        (match filter with Some c -> co c | None -> ())
+    | If_then_else { condition; then_; else_; _ } -> co condition; ex then_; ex else_
+    | List_length { list; _ } -> ex list
+    | Match { scrutinee; arms; _ } -> ex scrutinee; List.iter (fun (_, _, b) -> ex b) arms
+    | Lambda { body; _ } -> ex body
+    | Filter_list { list; condition; _ } -> ex list; co condition
+    | Fold { list; functie; init; _ } -> ex list; ex init; fold_fn functie
+    | Map_list { list; functie; _ } -> ex list; fold_fn functie
+    | Let { value; body; _ } -> ex value; ex body
+  and fold_fn = function Fn_lambda { body; _ } -> ex body | Fn_name _ -> ()
+  and co (c : conditie) =
+    let opt = function Some e -> ex e | None -> () in
+    match c with
+    | Vergelijking { links; rechts; _ } -> opt links; opt rechts
+    | Predicaat { soort = Dagsoort; dagsoort; operand; _ } ->
+        (match dagsoort with Some dk -> refs := dk :: !refs | None -> ());
+        opt operand
+    | Predicaat { operand; _ } -> opt operand
+    | Periode_conditie { vanaf; tot; _ } -> opt vanaf; opt tot
+    | Samengesteld { onderdelen; _ } -> List.iter co onderdelen
+    | Kenmerk_check { kenmerk; _ } -> impure "characteristic" (Option.value kenmerk ~default:"?")
+    | Rollidmaatschap _ | Verre_rollidmaatschap _ | Regelversie _ | Conditie_onopgelost _ -> ()
+  in
+  co c0;
+  (List.rev !viols, List.rev !refs)
+
 let wf031 ctx =
   let named =
     List.filter_map
@@ -1061,7 +1131,8 @@ let wf031 ctx =
         let at = Printf.sprintf "/resolvedDagsoorten/%d" i in
         (match r.rd_voorwaarde with
          | None -> [ v "WF-031" at "day-kind definition without a condition" ]
-         | Some _ -> [])
+         (* the purity clause (IR-SPEC par. 5): no derived-state read *)
+         | Some c -> fst (dagsoort_scan (at ^ "/voorwaarde") c))
         (* The validity MUST be ALTIJD: no executor consults a day-kind
            window, so a bounded one would be silently dead. *)
         @ (match r.rd_geldigheid with
@@ -1074,6 +1145,64 @@ let wf031 ctx =
               [ v "WF-031" at ("definition for undeclared day kind '" ^ n ^ "'") ]
           | _ -> [])
       (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_dagsoorten)
+
+(* WF-085 — the day-kind reference graph MUST be acyclic (IR-SPEC par. 5,
+   the stratum-0 framing / ch. 3.7). A day-kind condition may reference other
+   day kinds (a Predicaat DAGSOORT); mutually recursive definitions have no
+   fixpoint and are refused loudly, where the v0 toolchain resolves a cycle
+   to a silent false (§9.10 prohibition unenforced — the diverge-from-v0 delta
+   recorded on WF-031). Undeclared references are WF-034's concern and carry
+   no edge here (an unresolvable reference never hides a cycle in a clean
+   document, the dep_forms discipline). *)
+let wf085 ctx =
+  let defs = Array.of_list ctx.doc.resolved_dagsoorten in
+  let n = Array.length defs in
+  (* name (normalised) -> first defining index; duplicates are WF-031's concern *)
+  let index = Hashtbl.create 16 in
+  Array.iteri
+    (fun i (d : resolved_dagsoort) ->
+      match d.rd_naam with
+      | Some nm when not (Hashtbl.mem index (norm nm)) -> Hashtbl.add index (norm nm) i
+      | _ -> ())
+    defs;
+  let succ =
+    Array.map
+      (fun (d : resolved_dagsoort) ->
+        match d.rd_voorwaarde with
+        | None -> []
+        | Some c ->
+            snd (dagsoort_scan "" c)
+            |> List.filter_map (fun r -> Hashtbl.find_opt index (norm r))
+            |> List.sort_uniq compare)
+      defs
+  in
+  let color = Array.make n 0 in
+  let viols = ref [] in
+  let name i = Option.value defs.(i).rd_naam ~default:(Printf.sprintf "#%d" i) in
+  let rec dfs path i =
+    match color.(i) with
+    | 1 ->
+        let rec take acc = function
+          | [] -> acc
+          | j :: _ when j = i -> j :: acc
+          | j :: rest -> take (j :: acc) rest
+        in
+        let cyc = take [] path in
+        let names = String.concat " -> " (List.map name (cyc @ [ i ])) in
+        viols :=
+          v "WF-085"
+            (Printf.sprintf "/resolvedDagsoorten/%d" i)
+            ("day-kind reference cycle (no fixpoint; the toolchain resolves it to a silent false): "
+            ^ names)
+          :: !viols
+    | 2 -> ()
+    | _ ->
+        color.(i) <- 1;
+        List.iter (fun j -> dfs (i :: path) j) succ.(i);
+        color.(i) <- 2
+  in
+  Array.iteri (fun i _ -> if color.(i) = 0 then dfs [] i) defs;
+  List.rev !viols
 
 let wf032 ctx =
   let entries = List.mapi (fun i r -> (i, r)) ctx.doc.resolved_startpunten in
@@ -5087,7 +5216,7 @@ let all (doc : document) : violation list =
       wf007_model ctx; wf009 ctx; wf011 ctx; wf012 ctx; wf013 ctx; wf014 ctx;
       wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf020 ctx; wf021 ctx;
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
-      wf029 ctx; wf030 ctx; wf031 ctx; wf032 ctx; wf033 ctx; wf045_046 ctx;
+      wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx; wf045_046 ctx;
       wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf079 ctx; wf082 ctx; wf054 ctx;
       wf057 ctx; wf059 ctx; wf060 ctx; wf061 ctx; wf065 ctx; wf067 ctx;
       wf071 ctx; wf072 ctx; wf075 ctx; expression_layer ctx ]

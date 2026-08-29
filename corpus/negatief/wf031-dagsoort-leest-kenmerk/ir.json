@@ -1,0 +1,74 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "aantal aangemelde vondsten": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "penninggerechtigd"
+      ],
+      "kenmerkSoorten": {
+        "penninggerechtigd": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [
+    "feestdag"
+  ],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [
+    {
+      "node": "ResolvedDagsoort",
+      "naam": "feestdag",
+      "voorwaarde": {
+        "node": "Kenmerk",
+        "kenmerk": "penninggerechtigd",
+        "navigatie": null,
+        "negatie": false,
+        "eigenaar": "Jutter",
+        "periode": null,
+        "bron": "de dag valt op een dag waarop een Jutter penninggerechtigd is"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}
