@@ -5411,6 +5411,12 @@ let translate (doc : document) (case : Case.t) : string =
      natively. Gate 6's differential thereby witnesses the desugaring
      itself. Forms outside the desugaring's domain stay as they are
      and fault below like before. *)
+  (* the unit-normalisation lowering (LADDER-EVOLUTIE §8; Normalise): source
+     units stay on the wire, but the clingo leg canonicalises each declared
+     stelsel to its finest base unit (multiply-only, integer-encodable) so the
+     factor≠1 unit fences below translate. Run before the desugaring — the two
+     are orthogonal (units/literals vs ladder structure). *)
+  let doc = Normalise.document doc in
   let doc = Ir_v0.Desugar.document doc in
   let ctx =
     { doc; case; buf = Buffer.create 4096; fresh = 0; rule_guard = []; write_scale = 1;

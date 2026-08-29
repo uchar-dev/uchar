@@ -462,19 +462,67 @@ any conversion factor* (ch. 2.6):
   `synth2-afrondingscombinaties` pin the admitted shape (a `20%` literal times
   a unitless attribute), the frontend-faithful spelling
   `jutterswet-vondsttarief` witnesses.
-- **Restating positions** — the additive join, the comparison, the
-  write boundary — accept a unitless side (it adopts the other unit,
-  value unchanged, `restate_into`, `Unitless, Unit _ -> q`) or
-  identical units (factor 1). Two DIFFERENT units — a real
-  `factorNaarCanoniek` application — stay loud (the hunted 1 m + 50 cm
-  = 51 of ch. 6c), the standing fence until the ladder-round waist
-  question decides universal unit conversion in the IR.
+- **Restating positions** — the additive join, the clamp bounds, the
+  comparison, the eerste/laatste fold, the write boundary — accept a
+  unitless side (it adopts the other unit, value unchanged,
+  `restate_into`, `Unitless, Unit _ -> q`) or identical units. Two
+  DIFFERENT declared units meet here only AFTER the finest-canonical
+  normalisation pre-step (below) has failed to reduce them to one — a
+  factor-carrying residue the integer encoding still cannot restate — so
+  the loud fence holds for it (the hunted 1 m + 50 cm = 51 of ch. 6c).
 
 The unit is derived recursively from declarations (`eff_unit`), never
 read from a node's static annotation. Golden `jutterswet-sleeprest`
-pins the admitted shape (a unitless factor × a unit-carrying attribute,
-consumed by a unitless-adopting restating position, hand-computed
-absolute values).
+pins the admitted factor-free shape (a unitless factor × a unit-carrying
+attribute, consumed by a unitless-adopting restating position,
+hand-computed absolute values).
+
+**Units — the finest-canonical normalisation pre-step (LADDER-EVOLUTIE §8,
+Q9; `backends/clingo/lib/normalise.ml`).** The wire keeps its source units;
+the clingo leg runs a wire→wire lowering BEFORE emission (composed with the
+ch. 7.7 desugaring at the `translate` entry) that canonicalises each declared
+`eenheidstelsel` to its **finest base unit** — the declared unit `u_min` of
+smallest `factorNaarCanoniek`. Restating INTO the finest MULTIPLIES (2,5 km ⇒
+2500 m, ×1000; 2 jaar ⇒ 24 maand, ×12): exact and integer-encodable, whereas
+restating to a coarser unit would divide, possibly non-terminating — the
+property clingo's integer encoding cannot hold. The rule is normative for the
+clingo leg:
+
+- **Scope.** For a numeric Berekening/Gelijkstelling whose TARGET attribute is
+  declared in its stelsel's finest unit, every literal of that stelsel in the
+  value expression is restated into the finest unit — its value multiplied by
+  the exact integer `factor(u → u_min)`, its decimal scale adjusting with the
+  factor, its unit annotation set to the finest. The additive join, clamp
+  bounds and ordering folds then read one identical unit and translate as raw
+  integer arithmetic; the write boundary writes the finest unit into a finest
+  target.
+- **Proof obligations, fault-loud.** Each declared factor must have an exact
+  short-decimal reading (`Arith.q_of_wire_number`; a binary-double tail faults,
+  never a silent conversion); and every declared unit must restate into the
+  finest by a positive INTEGER (a stelsel with sibling factors like 2 and 3
+  admits no such finest and faults — never a silently divide-down canonical).
+- **What still refuses, loudly and unchanged.** A target NOT in the finest unit
+  (the restated finer value has no divide-down write-back the encoding can
+  hold); a coarser operand carried by an attribute/parameter rather than a
+  literal (its value rides the unit-blind case and is read in source units by
+  ref — restating it in clingo alone would split the executors); a rate unit
+  (noemer set — its numerator/denominator normalise per their own stelsels,
+  LADDER-EVOLUTIE §8.3, not built); the multiplicative positions (they demand a
+  unit-FREE operand, or pure-% for percentage-van, which restating cannot
+  satisfy); and cross-stelsel or opaque product units. Each keeps its existing
+  `units_identical_ok` / `unit_free_ok` fault.
+- **The differential is the proof — no new harness.** Gate 6 already demands
+  clingo-over-(normalised)-wire hit the SAME absolute expectations gate 5 pins
+  for ref-over-source, which restates natively on the write boundary
+  (`World.collapse`). Goldens `jutterswet-sleepbaan` (km/m, ×1000, a
+  decimal-scale interaction) and `jutterswet-vergunningsduur` (jaar/maand, ×12,
+  a non-power-of-ten factor) are refused by clingo before the pass and replay
+  exactly after — ref ≡ clingo ≡ Drools (both PLAY in gate 12, the production
+  runtime converting units natively). The pass is the identity on every
+  factor-1 wire (it only touches a coarser-than-finest literal of the target's
+  stelsel, which no already-translating rule carries), so the existing corpus
+  translates unchanged — gate 6 green over every prior case is the no-drift
+  proof.
 
 ### S6a. The calendar chains — date ± duration, tijdsduur, part extraction and Easter (ch. 3.8)
 
@@ -1774,14 +1822,20 @@ itself is since 2026-08-25 encoded, S5/S7, like the numeric
 asymmetry before it); runtime, negative and fractional
 power exponents (the runtime-exponent empty corner 4^leeg = leeg is
 thereby ref-only behaviour); ref's unit-conversion algebra where a
-REAL factor applies — narrowed 2026-08-28 to the factor-carrying
-residue: a product of TWO unit-carrying operands (a rate cancellation,
-an opaque product unit), division/rate units, and any restating
-position (additive join, comparison, write boundary) over two
-DIFFERENT units; the FACTOR-FREE cases now translate — a unitless
-operand times a unit-carrying one (the product adopts the unit, value
-unchanged) and a unitless side adopting a restating sibling's unit
-(S6, golden `jutterswet-sleeprest`); negative operands
+REAL factor survives the finest-canonical normalisation pre-step (S6,
+`Normalise`, LADDER-EVOLUTIE §8, Q9): a product of TWO unit-carrying
+operands (a rate cancellation, an opaque product unit), division/rate
+units, and a restating position (additive join, clamp bound, comparison,
+ordering fold, write boundary) over two DIFFERENT units the pass could
+NOT reduce to one — a target not in its stelsel's finest unit, a coarser
+operand carried by an attribute/parameter rather than a literal, or a
+cross-stelsel pair. The finest-canonical restatements now translate — the
+pass multiplies each coarser literal into the finest base unit by an exact
+integer (2,5 km ⇒ 2500 m, 2 jaar ⇒ 24 maand; goldens
+`jutterswet-sleepbaan`, `jutterswet-vergunningsduur`) — as do the
+FACTOR-FREE cases: a unitless operand times a unit-carrying one (the
+product adopts the unit, value unchanged) and a unitless side adopting a
+restating sibling's unit (S6, golden `jutterswet-sleeprest`); negative operands
 under non-richting-nul rounded forms (runtime `viol/2` fences);
 non-exact bare division and non-fitting write results (runtime
 `viol/2` — an explicit rounding is mandated before precision is

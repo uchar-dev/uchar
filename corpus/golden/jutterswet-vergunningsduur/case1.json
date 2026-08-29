@@ -1,0 +1,33 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Bergingsvergunning",
+        "attributes": {
+          "basisduur": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "looptijd",
+      "value": {
+        "number": "27"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
