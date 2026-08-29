@@ -32,3 +32,30 @@ kaart).
 Out of scope: elke wijziging aan uchar's `frontends/regelspraak` zelf (de
 frontend ligt stil tot de uitzondering-kaart); ladder-emissie; de
 Drools-ladderservice; publicatie van de slice (Q6: uitgesteld tot de flip).
+
+Result: geland in de toolchain als main dcd2167 (vier commits, ff). De slice
+frontends/regelspraak@39e303e is byte-identiek gevendord onder
+vendor/uchar-frontend/ (46 bestanden, driftgate-geverifieerd); de eigen
+frontend-kopie (35 bestanden: grammar, resolver, ir, model, emit, dubbele
+kern-klassen) is verwijderd; de nieuwe cli.RegelSpraakCli levert
+--drl/--facts/--graaf/--graaf-mmd rond de gevendorde resolver, make ir
+blijft op de gevendorde Resolver --ir; scenariotoetsen bleven
+toolchain-local (split package). SPEC_REV = 39e303e (enige pin);
+uchar-conformance is nu de driftgate: byte-identiteit gevendorde kopie ≡
+gepinde bron + bestandsset exact + de 20 emitter-goldens. Suites: jar-only
+549/550 (1 assumeTrue-env-skip), drools-it 959/0/0, engine 115, scenario
+30/30, conformance PASS. Lenzen (2 opus, adversarieel): geen
+CRITICAL/MAJOR; regressielens bewees byte-identieke IR/DRL/facts/graaf
+branch↔main incl. exit-codes, en beide driftrichtingen boobytrapped.
+Verwerkte MINORs: doc-sweep (Resolver→RegelSpraakCli; grammar-paden),
+grammar-section-command herschreven (grammar is vendored/read-only), de
+package-private koppeling ScenarioResolver→RuleChecker/KenmerkMatcher
+gedocumenteerd (vendor-README + NB-comment). Eerlijk gemeld: (1)
+FactModelCliTest.java (testbestand) is door de bouwagent hergericht op de
+wrapper — noodzakelijk voor compilatie na de CLI-verhuizing, maar buiten de
+nooit-testbestanden-zonder-vraag-regel om; de resterende verouderde
+javadoc-@link in datzelfde bestand staat nog open in afwachting van
+akkoord. (2) De toolchain-eigen frontend-tests (TOKA-gekleurd) leven
+voort naast de slapende gevendorde tests — bewust, gedocumenteerd in de
+vendor-README; geen gate houdt ze synchroon met uchar's variant. (3) De
+toolchain heeft geen CI; de driftgate is een make-doel (pre-existent).
