@@ -725,6 +725,52 @@ let rec provably_unitless ctx (e : expr) : bool =
       provably_unitless ctx arg
   | _ -> false
 
+(* the singleton %-unit: afkorting % / canoniek %, factor exactly 1, no
+   denominator — the one convertibility class %-space ever inhabits
+   (LADDER-EVOLUTIE §8.3). A hidden or unknown unit is never this; a rate
+   (%/jr) or a factor≠1 spelling is not pure-% either. *)
+let is_pure_pct (u : eenheid) : bool =
+  u.afkorting = Some "%" && u.canoniek = Some "%" && u.noemer = None
+  && match u.factor_naar_canoniek with Some f -> f = 1.0 | None -> false
+
+(* PROVABLY pure-%: the effective unit is decidably the singleton %-unit.
+   Mirrors provably_unitless's resolved leaf and unit-preserving forms but
+   PROVES the unit is % rather than absent — an unanalysable node (a Let, a
+   field access, a division, an Onbekend-typed declaration) is NOT proven and
+   the caller keeps faulting loudly. The multiplicative/additive arms are
+   deliberately omitted: % + % stays %, but % × % is %² (no ÷100 bridge), and
+   no corpus operand is a composite. *)
+let rec provably_pure_pct ctx (e : expr) : bool =
+  match e with
+  | Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ } -> (
+      match Ir_v0.Checks.find_ci (objecttype ctx ot).attributen a with
+      | Some (Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ })) ->
+          is_pure_pct u
+      | _ -> false)
+  | Parameter_ref { parameter = Some p; _ } -> (
+      match Ir_v0.Checks.find_ci ctx.doc.parameters p with
+      | Some { par_datatype = Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ }); _ }
+        ->
+          is_pure_pct u
+      | _ -> false)
+  | Literal { typ = Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ }); _ } ->
+      is_pure_pct u
+  | Afgerond { basis = Some b; _ } | Begrensd { basis = Some b; _ } -> provably_pure_pct ctx b
+  | Temporal_read { basis; _ } -> provably_pure_pct ctx basis
+  | Functie { kind = Som | Totaal | Minimum | Maximum | Eerste | Laatste; argumenten = arg :: _; _ } ->
+      provably_pure_pct ctx arg
+  | _ -> false
+
+(* PERCENTAGE_VAN's left operand: unit-free OR provably pure-% — the ÷100
+   bridge out of %-space, already folded into the sl·sr·100 scale
+   (LADDER-EVOLUTIE §8.3 / Q10), so the arithmetic is unchanged. Any other
+   unit on the left, and any unit reasoning that cannot PROVE pure-%, keeps
+   faulting loudly through unit_free_ok. The right operand rule is unchanged. *)
+let pct_van_left_ok ctx (e : expr option) =
+  match e with
+  | Some ex when provably_pure_pct ctx ex -> ()
+  | _ -> unit_free_ok ctx e
+
 (* the admitted factor-free product (ch. 2.6; ASP-TRANSLATION S6): a unitless
    operand TIMES a unit-carrying operand adopts that unit with the numeric
    value unchanged (Arith.mul, (Unitless, Unit u) -> Num(v, u); NO conversion
@@ -1954,13 +2000,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       numeric_ok rechts;
       (* Maal admits the factor-free unitless × unit-carrying product (the
          product adopts the unit, value unchanged); a two-unit product still
-         faults. Percentage-van keeps every unit-carrying operand refused —
-         its right-operand unit adoption (ch. 2.6) has no eff_unit witness
-         and no corpus case yet. *)
+         faults. Percentage-van admits a pure-% left operand (its ÷100 is
+         already the scale fold — LADDER-EVOLUTIE §8.3), else unit-free; its
+         right operand keeps every unit refused (the ch. 2.6 right-unit
+         adoption has no eff_unit witness and no corpus case yet). *)
       (match op with
       | Maal -> mul_units_ok ctx ~what:"a product" links rechts
       | _ ->
-          unit_free_ok ctx links;
+          pct_van_left_ok ctx links;
           unit_free_ok ctx rechts);
       let bl, tl, sl =
         coalesce0 ctx ~subject ~subject_ot
@@ -3294,7 +3341,9 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
          46340 range fence, grounded by [guard_body] and keyed by [witness]. *)
       numeric_ok links;
       numeric_ok rechts;
-      unit_free_ok ctx links;
+      (match op with
+      | Percentage_van -> pct_van_left_ok ctx links
+      | _ -> unit_free_ok ctx links);
       unit_free_ok ctx rechts;
       let bl, tl, sl = closed_term ctx ~guard_body ~witness (req "Binair.links" links) in
       let br, tr, sr = closed_term ctx ~guard_body ~witness (req "Binair.rechts" rechts) in

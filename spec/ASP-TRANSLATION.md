@@ -360,7 +360,9 @@ rounding it cannot compute in one integer step.
   max(sl,sr) by exact multiplication; emptiness per the whitelist.
 - **Multiplicative** (maal, percentage-van): scaled product at scale
   sl·sr; percentage-van folds its /100 into the scale (sl·sr·100) —
-  no division anywhere. Both operands coalesce.
+  no division anywhere. Both operands coalesce. Percentage-van's left
+  operand also admits a provably pure-% unit (that same /100 is its bridge
+  out of %-space; the fold is unchanged — see the units admission below).
 - **Division** (gedeeld-door): the three §6.5 edges ride beside the
   value — empty dividend → 0 *before* the divisor is read; empty
   divisor under a filled dividend → the rule-keyed channel fact and
@@ -441,8 +443,25 @@ any conversion factor* (ch. 2.6):
   product with no downstream unit to fence it, so it stays loud. A
   product of TWO unit-carrying operands (a rate cancellation `€/jr × jr`,
   an opaque product unit `€ × m`) composes units / applies factors the
-  integer encoding does not carry, so it stays loud. Percentage-van keeps
-  every unit-carrying operand refused.
+  integer encoding does not carry, so it stays loud.
+- **percentage-van** admits a **provably pure-%** left operand (LADDER-EVOLUTIE
+  §8.3 / Q10). `pct_of` computes `(l/100)·r` and discards the left unit
+  entirely (the result carries the RIGHT unit), so a `%` on the left is
+  arithmetically inert; and the `/100` bridge out of %-space is *already* the
+  `sl·sr·100` scale fold — no conversion factor is applied, the encoding is
+  unchanged. The proof obligation mirrors `provably_unitless` but proves the
+  unit rather than its absence (`provably_pure_pct`): the effective unit,
+  derived from the literal/attribute/parameter declaration, is the singleton
+  `%` — `afkorting` and `canoniek` both `%`, `factorNaarCanoniek` exactly 1,
+  no denominator. A hidden or unknown unit is NOT proven pure-% and stays a
+  loud fault; any other unit on the left (e.g. `km`), and any `%`-spelling
+  whose factor is not 1, keeps faulting with the unit-carrying multiplicative
+  message. The **right** operand rule is unchanged — every unit-carrying right
+  operand stays refused (its ch. 2.6 right-unit adoption has no `eff_unit`
+  witness and no corpus case yet). Anchors `jutterswet-vindersloon` and
+  `synth2-afrondingscombinaties` pin the admitted shape (a `20%` literal times
+  a unitless attribute), the frontend-faithful spelling
+  `jutterswet-vondsttarief` witnesses.
 - **Restating positions** — the additive join, the comparison, the
   write boundary — accept a unitless side (it adopts the other unit,
   value unchanged, `restate_into`, `Unitless, Unit _ -> q`) or

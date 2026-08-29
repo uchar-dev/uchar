@@ -378,7 +378,14 @@
             "node": "Percentage",
             "geheel": true,
             "decimalen": 0,
-            "eenheid": null
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "%",
+              "stelsel": null,
+              "canoniek": "%",
+              "factorNaarCanoniek": 1,
+              "noemer": null
+            }
           },
           "bron": "20%"
         },
