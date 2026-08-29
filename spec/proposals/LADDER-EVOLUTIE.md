@@ -66,10 +66,12 @@ capture (full citations in the track-A findings; normative sources
   input fence for non-standing targets.
 - **Drools** refuses ladders wholesale at the loader; its salience is still
   the kenmerk-negation heuristic, not derived from IR defaults.
-- Witness inventory: seven hand-written ladder anchors (uitsluiting,
-  vondstwaardering, toelagegronden, nestuitzondering, nestkenmerk,
-  nestdiepte, hardheid), two non-anchor goldens (samenloop,
-  synth3-nestkorting), six Catala-produced ladder goldens, seventeen
+- Witness inventory. "Ladder-carrying" in this document means a
+  **non-empty** `defaultLadders` list: fifteen goldens — seven hand-written
+  anchors (uitsluiting, vondstwaardering, toelagegronden, nestuitzondering,
+  nestkenmerk, nestdiepte, hardheid), two non-anchor goldens (samenloop,
+  synth3-nestkorting), six Catala-produced. Five further catala goldens
+  carry the key with an empty list (flat programs). Seventeen
   WF-050/051/075 negatiefs.
 - Recorded open holes: the Drools service (item 1 above); temporal ladder
   targets (executor fault with **no wire/WF fence and no witness**); the
@@ -153,8 +155,12 @@ the case must pin as an authored choice.
 First case: the income-termination path (art. 20-1-c → 21-1 first volzin,
 geen termijn) — a nested characteristic ladder for `recht op uitkering`
 (grant 15 → einde 20-1-c → herleving 21-1 → blokkade 21-2-a) plus ordinary
-date-arithmetic rules (inkomensgrens 0,875 × maandloon; eindigingsdatum;
-`tijdsduur`; nieuwe maxdatum). Graduation set beyond it: the
+date-arithmetic rules (inkomensgrens 0,875 × maandloon; `tijdsduur`;
+nieuwe maxdatum). Scope caveat, stated up front: the first case takes
+`maandloon`, the per-month income and the eindigingsdatum as **scalar
+input facts** — determining the termination month from a month-varying
+income stream is exactly the timeline machinery §3.3 defers, and the
+expressibility claim here does not cover it. Graduation set beyond it: the
 detentie/zesmaandstermijn boundary, the nieuw-recht blokkade, the
 AOW-jaargrens underlayer, consecutive-grounds samenloop, and the variable
 termijnen — each mapped to scenarios in the regelspraak-werkbank evaluation
@@ -168,21 +174,22 @@ once that lands.
 ### 4.1 Findings that bound the design
 
 - **Official RegelSpraak v2.3.0 has no exception, priority, default-override
-  or rule-ordering construct.** "tenzij" occurs only inside quoted statute
-  prose; §9.10 is recursion, and the regelgroep exists for recursion only.
+  or rule-ordering construct.** "tenzij" never appears as a language
+  construct — only as an ordinary conjunction in prose and quoted statute
+  text; §9.10 is recursion, and the regelgroep exists for recursion only.
 - **Kenmerk semantics forbid negative attribution** (§9.2: characteristics
-  default onwaar, assignment is monotone waar, "Een Vlucht is niet duurzaam"
-  is not admitted) — an exception can never *withdraw* a characteristic;
-  it can only live in the base rule's condition.
+  default onwaar, assignment is monotone waar, and a negated attribution is
+  explicitly not admitted) — an exception can never *withdraw* a
+  characteristic; it can only live in the base rule's condition.
 - The language therefore expresses rule-plus-exception as **condition
   duplication** (the exception ground folded, negated, into the base rule's
   `indien`), and the flat source carries **no priority whatsoever**. The
   order a ladder encodes does not exist in RegelSpraak source; Catala's
   plugin reads its ladder structure off a native default tree the source
   language actually has.
-- Corpus confirmation: of 20 ladder-carrying goldens, 11 are
-  Catala-sourced, 9 hand-authored, **0 from a `bron.rgs`**; all 20
-  `bron.rgs` goldens are flat.
+- Corpus confirmation: 20 goldens carry the `defaultLadders` key — 11
+  Catala-sourced (6 non-empty, 5 empty) and 9 hand-authored, **0 from a
+  `bron.rgs`**; separately, all 20 `bron.rgs` goldens are flat.
 
 ### 4.2 Options
 
@@ -207,8 +214,9 @@ Uitzondering op penninggerechtigd bij drempel: bij hardheid
 Purely additive grammar (new top-level alternatives beside
 `regel`/`regelGroep`/`beslistabel`; the inert-on-official-documents posture
 the grammar already takes for `regelGroep` and scenariotoetsen); a tracked
-divergence from the v2.3.0 arbiter, logged in CONSTRUCTS and
-`docs/grammar-divergences.md`. Resolver work is real but bounded (resolve
+divergence from the v2.3.0 arbiter, logged in CONSTRUCTS and in the
+frontend's grammar-divergence log (today that log exists only in the
+toolchain; the extension card creates it beside the frontend grammar). Resolver work is real but bounded (resolve
 the base rule, check same target, build the `DefaultLadder`, run the
 WF-050 writer checks, emit). No existing golden changes. Under R2 the
 per-onderdeel identity comes for free: each onderdeel is its own named
@@ -334,8 +342,12 @@ correct lowering MUST play-and-pass; a misvalue is a bug, never an
 
 - Today's topology is dual-copy, dual-drift-gated: byte-identical emitters
   in both repos, gate 10 here, `uchar-conformance` there. The copies are
-  *not* source-identical (the `--ir`-only Resolver trim; the kern-package
-  move) — any sync is a transform, not a `cp`.
+  *not* source-identical — the `--ir`-only Resolver trim, the kern-package
+  move, **and the scenariotoetsen layer**: the toolchain carries a tested,
+  CLI-exposed scenario harness (`ScenarioResolver`, `ResolvedScenario`,
+  `ScenarioRunner`, `make scenario-test`) that never came over (uchar's
+  frontend has the grammar tokens only). Any sync is a transform, not a
+  `cp`, and the inversion must decide the harness's home explicitly.
 - **The toolchain's Drools backend consumes the frontend's in-memory Java
   types, not the wire** (no `ir.json` loader exists there). "The toolchain
   consumes uchar's frontend" therefore means compiling uchar's
@@ -357,30 +369,44 @@ correct lowering MUST play-and-pass; a misvalue is a bug, never an
 
 ### 6.2 Options and recommendation
 
-**(A) Subtree-split source consumption** — split `frontends/regelspraak`
-into a standalone TOKA-clean repo, synced by push from uchar; the toolchain
-consumes it (submodule pin or vendored subtree) as a compiled source root à
-la `backends/drools/pom.xml`, and deletes its own
-`{grammar,resolver,ir,model,emit}`. **(B) Jar artifact at the pin** — fights
-the deliberately jar-only frontend build and turns "one source" into a
-compiled blob. **(C) Reversed scripted source-sync** — today's pattern with
-the authoritative label flipped: two physical copies persist, and source
-divergence in non-emitting code is invisible to an emitted-IR byte gate.
+**(A) Vendored-subtree source consumption at the pin.** The toolchain
+vendors the TOKA-clean `frontends/regelspraak` slice into its own tree
+(only the slice — a whole-repo submodule would drag the `toka/` zone into
+the toolchain checkout and is a rights violation), re-synced on every
+SPEC_REV bump, and compiles it as a source root à la
+`backends/drools/pom.xml`, deleting its own
+`{grammar,resolver,ir,model,emit}`. **Pin discipline:** SPEC_REV stays the
+single pin; its normative set grows to `frontends/regelspraak/**`, and —
+because a vendored copy is otherwise unverified against the pin — the
+repurposed conformance check verifies **byte-identity of the vendored copy
+against the pinned frontend source** (plus builds-and-emits-fixtures as
+smoke). A standalone split repo (`git subtree split` of the slice) is
+*not* needed for this mechanism; it remains the publication vehicle if the
+slice is ever published (Q6). The alternative — a submodule on a split
+repo — is honest but is a real **second pin** to reconcile with SPEC_REV.
+**(B) Jar artifact at the pin** — fights the deliberately jar-only
+frontend build and turns "one source" into a compiled blob. **(C) Reversed
+scripted source-sync** — today's pattern with the authoritative label
+flipped: two physical copies persist, and source divergence in
+non-emitting code is invisible to an emitted-IR byte gate.
 
 **Recommendation: (A), sequenced invert-first.** Inverting while the
 frontend is quiescent (flat, byte-identical, both gates green) is the
 low-risk moment; evolving ladders across two live copies is the high-risk
 path. Consequences to legislate up front: the toolchain re-provides
 `--drl/--facts/--graaf` in a toolchain-side wrapper around the consumed
-`--ir`-only resolver; the SPEC_REV normative set grows to
-`frontends/regelspraak/**` (one pin, no second pin); `uchar-conformance`
-repurposes into a "pinned frontend builds and emits my fixtures" smoke
-check (uchar gate 10 becomes the sole emitter-golden authority); the
-toolchain's execution path adopts the loud ladder Refusal until its own
-lowering exists. Split-repo visibility: **private for now** — both repos
-are private and CI tokens suffice; publishing the (provably TOKA-clean)
-slice is a maintainer visibility decision best taken together with the
-§9-decision-10 flip, not as a side effect here.
+`--ir`-only resolver; **the scenariotoetsen harness stays toolchain-local**
+(a test-harness layer over the consumed frontend — it is harness, not
+frontend truth; re-homing it into the slice is the recorded alternative);
+the SPEC_REV normative set grows to `frontends/regelspraak/**` with the
+vendored-copy byte-identity check closing the loop; `uchar-conformance`
+repurposes into exactly that check (uchar gate 10 becomes the sole
+emitter-golden authority); the toolchain's execution path adopts the loud
+ladder Refusal until its own lowering exists. Slice visibility: **no split
+repo now** — both repos are private and the vendored subtree needs none;
+publishing the (provably TOKA-clean) slice is a maintainer visibility
+decision best taken together with the §9-decision-10 flip, not as a side
+effect here.
 
 ## 7. The stratification chapter (agenda 4)
 
@@ -540,8 +566,9 @@ ref/clingo implement the decided norm):
 
 **The Onbekend flip item, corrected.** The blanket claim "the sentinel's
 only machine witness is in the parity zone" is false: ten public goldens
-execute Onbekend in the count position, and four negatiefs pin the
-rejections. The **refined** claim is true: the `numeric_ok`
+execute Onbekend in the count position, and public negatiefs (among them
+`wf003-unresolved-domain` and `wf018-parameter-onbekend`) pin the
+rejection paths. The **refined** claim is true: the `numeric_ok`
 arithmetic-recursion admission (Onbekend proven numeric on a Binair
 operand/result, `translate.ml:619-624`) has no public executing witness —
 its only one lives in the gate-11 parity zone and leaves with it.
@@ -555,8 +582,9 @@ promotion, which removes the sentinel entirely.
 After ratification, in dependency order (cards cut per WAY-OF-WORKING;
 protected-path deltas ride as proposals):
 
-1. **Inversion** (§6): subtree split, toolchain consumption, pin-set
-   growth, conformance repurpose. The frontend is quiescent; lowest risk.
+1. **Inversion** (§6): vendored-subtree consumption, pin-set growth,
+   conformance repurpose, scenariotoetsen disposition. The frontend is
+   quiescent; lowest risk.
 2. **Drools ladder service** (§5): tiers 0–4 against the existing 15-golden
    flip set; ladder records land in the now-single frontend `ir/` package;
    CaseRunner conflict-key extension. Independent of 1 in content but
@@ -619,19 +647,24 @@ protected-path deltas ride as proposals):
 
 **The inversion (§6)**
 
-5. **Mechanism and sequencing.** (a) Subtree-split of
-   `frontends/regelspraak` into a standalone TOKA-clean repo, consumed by
-   the toolchain as a compiled source root; performed *before* the frontend
-   evolution (freeze-invert-evolve); SPEC_REV's normative set grows to
-   `frontends/regelspraak/**` (one pin); `uchar-conformance` repurposed to
-   a smoke check; the toolchain re-provides `--drl/--facts/--graaf` in a
-   wrapper; its fire path adopts the loud ladder Refusal. (b) Jar
-   artifact. (c) Reversed source-sync. **Recommendation: (a).**
-6. **Split-repo visibility.** Keep the split frontend repo private for now
-   (CI tokens suffice), revisiting publication together with the
-   §9-decision-10 flip — or publish it immediately (it is provably
-   TOKA-clean), decoupling the toolchain from uchar's privacy timeline.
-   **Recommendation: private for now.**
+5. **Mechanism and sequencing.** (a) Vendored-subtree consumption of the
+   TOKA-clean `frontends/regelspraak` slice into the toolchain, compiled
+   as a source root; performed *before* the frontend evolution
+   (freeze-invert-evolve); SPEC_REV stays the single pin, its normative
+   set grows to `frontends/regelspraak/**`, and `uchar-conformance`
+   repurposes into the vendored-copy ≡ pinned-source byte-identity check
+   (plus build-and-emit smoke); the toolchain re-provides
+   `--drl/--facts/--graaf` in a wrapper; the scenariotoetsen harness stays
+   toolchain-local (re-homing into the slice is the alternative); its fire
+   path adopts the loud ladder Refusal. (b) Submodule on a standalone
+   split repo — honest, but a genuine second pin beside SPEC_REV. (c) Jar
+   artifact. (d) Reversed source-sync. **Recommendation: (a).**
+6. **Slice publication.** No standalone split repo now (the vendored
+   subtree needs none; both repos private, CI tokens suffice); a
+   `git subtree split` of the provably TOKA-clean slice remains available
+   as publication vehicle, revisited together with the §9-decision-10
+   flip — or split-and-publish immediately, decoupling the toolchain from
+   uchar's privacy timeline. **Recommendation: defer to the flip.**
 
 **Stratification (§7)**
 
@@ -689,9 +722,10 @@ protected-path deltas ride as proposals):
 14. **WW realism case.** Adopt the herleving-WW case as the realism case
     (replacing the zorgtoeslag candidate — plan sentence maintainer-serial):
     lifecycle modelled as a per-evaluation-date scalar decision over an
-    event-date fact base (no new temporal construct; timeline-lifecycle
-    deferred to a dedicated card once this shows where the atemporal ladder
-    pinches); termijnen as ordinary date-arithmetic rules feeding rung
+    event-date fact base — maandloon, per-month income and eindigingsdatum
+    as scalar input facts (no new temporal construct; the month-varying
+    income computation and timeline-lifecycle deferred to a dedicated card
+    once this shows where the atemporal ladder pinches); termijnen as ordinary date-arithmetic rules feeding rung
     justifications (a first-class per-ground termijn association recorded
     as a tracked question, not built); samenloop encoded as an ordered
     ladder (confirming the closed §9.5 non-readability decision); art. 19
