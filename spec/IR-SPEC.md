@@ -1208,7 +1208,7 @@ budget turning divergence into a fault in every executor.
   (`RUNTIME-SEMANTICS.md` ch. 5.5). The shared pass budget still bounds
   the walk: a closure needing more passes than the budget (a chain of
   ~100+ hops) faults in the reference interpreter where the ASP
-  grounding completes it — the recorded budget boundary of ch. 5.5,
+  grounding completes it — the recorded budget boundary of `RUNTIME-SEMANTICS.md` ch. 5.5,
   same family as the object-creation generation bound. *v0 mirror note:* containment is a
   v0 error; the unguarded case only warns. **Delta (promotion)** for the
   guard.
@@ -1317,7 +1317,7 @@ role name (`navigatieRol`, possibly a plural — single hop), a resolved
 chain of declared role names (`navigatiePad`, subject-outward, first hop
 included — multi-hop), or a directly named object type with no written
 role at all (the **by-pair** shape: the connecting relation is derived
-from the type pair). The characteristic check (ch. 5) carries the same
+from the type pair). The characteristic check (`RUNTIME-SEMANTICS.md` ch. 5) carries the same
 idea in its `navigatie` field — one written role hop.
 
 The symbolic route (extension fields per the Method):

@@ -1112,7 +1112,13 @@ let dagsoort_scan at (c0 : conditie) : violation list * string list =
     | Periode_conditie { vanaf; tot; _ } -> opt vanaf; opt tot
     | Samengesteld { onderdelen; _ } -> List.iter co onderdelen
     | Kenmerk_check { kenmerk; _ } -> impure "characteristic" (Option.value kenmerk ~default:"?")
-    | Rollidmaatschap _ | Verre_rollidmaatschap _ | Regelversie _ | Conditie_onopgelost _ -> ()
+    (* the WF-031 admission list is closed: relation membership and rule-version state are
+       derived fact-base reads, outside "dates, date-components, eerste-paasdag, literals,
+       parameters and other day kinds" — flag them like the attribute/characteristic reads *)
+    | Rollidmaatschap { rol; _ } -> impure "role membership" (Option.value rol ~default:"?")
+    | Verre_rollidmaatschap { filler; _ } -> impure "role membership" (Option.value filler ~default:"?")
+    | Regelversie { regel; _ } -> impure "rule-version state" (Option.value regel ~default:"?")
+    | Conditie_onopgelost _ -> ()
   in
   co c0;
   (List.rev !viols, List.rev !refs)

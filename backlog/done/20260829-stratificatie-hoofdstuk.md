@@ -36,3 +36,29 @@ mergemandaat na gates+lenzen.
 Out of scope: dagsoort-evaluatie in ref/clingo bouwen (de predicaten
 blijven geweigerd); Drools-stratifier verbreden (de clausule legitimeert de
 smalle vorm); CONSTRUCTS/PLAN (hoofdsessie serieel).
+
+Result: IR-SPEC ch. 5 "Stratification" vult het §4→§6-nummeringsgat —
+normatieve graafdefinities (vijf knoopsoorten; drie kantsoorten incl. de
+WF-051-laddervouw; WF-045/046 als cyclusregels), dagsoorten expliciet als
+stratum 0 buiten de graaf, en de executor-neutraliteitsclausule (smallere
+stratifier mét luide per-vorm-weigering is conform; Drools als de
+geratificeerde begrensde instantie — de lens toetste dat de formulering
+géén stille miswaarde legitimeert). WF-031 draagt de puurheidsclausule
+(gesloten toelatingslijst; de recursie-OPEN gesloten, LADDER-EVOLUTIE
+Q8), WF-085 (nieuw) eist acycliciteit van de dagsoort-verwijzingsgraaf —
+luid waar de toolchain stil false-in-cyclus is. Getuigen rood-eerst tegen
+de oude verifier: wf031-dagsoort-leest-kenmerk,
+wf085-dagsoort-verwijzingscyclus, en golden jutterswet-schouwkalender
+(acyclische verwijzing, mét case die door het volle vierkant speelt —
+gate 12 played 67). No-drift dubbel bewezen: additive diff én
+byte-identieke verifier-uitvoer over alle 319 pre-existente documenten.
+Lensvangsten verwerkt vóór de merge: (1) het proza beloofde een gesloten
+lijst maar de check vlagde alleen attribuut/kenmerk-reads —
+Rollidmaatschap, Verre_rollidmaatschap en Regelversie nu ook geweigerd,
+met rood-eerst-negatief wf031-dagsoort-leest-rolstaat (gate 3 faalde
+aantoonbaar zonder de fix; 166 negatiefs na); (2) twee pre-existente
+ongekwalificeerde ch.-5-terugverwijzingen die met het nieuwe hoofdstuk
+gingen botsen zijn gekwalificeerd naar RUNTIME-SEMANTICS. Bewust
+gelaten: dagsoort-predicaten blijven onuitvoerbaar in elke executor;
+roadmap-hernummering (Time 5→7) mechanisch gevolg van ch. 5. CONSTRUCTS-
+delta (diverge-from-v0: v0 checkt noch documenteert) maintainer-serieel.
