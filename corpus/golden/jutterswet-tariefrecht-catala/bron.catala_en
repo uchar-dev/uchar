@@ -22,7 +22,7 @@ die de tutorial nodig heeft. Het tarief (art. 2/3) is een vertakkende
 uitzonderingsboom over percentages: de onvoorwaardelijke basis (20%), één
 uitzondering dáárop (de kinderlast, 15%), en dáárop weer twee ongeordende
 uitzonderingen (het grootgezin, 10%, en de kleine beurs, 0%). Die boom
-rijdt op één `Rung.excepties` sub-groep (row 5c, ch. 7.9 — de vorm die de
+rijdt op één `Default.excepties` exception group (row 5c, ch. 7.9 — de vorm die de
 plugin vroeger luid weigerde). Bij `kindertal = 4` beslist alléén het
 grootgezin-sublid — de bindende spurious-conflict-lezing (PHASE4-DEFAULTS
 §7): platslaan zou hier een schijnconflict fabriceren. De aanslag (art. 4)

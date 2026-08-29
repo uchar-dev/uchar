@@ -30,7 +30,7 @@ NIEUWE emissies (een emitterwijziging beweegt gepinde goldens mee —
 expliciet getoond welke); geen Onbekend-getypeerde Binair meer op enige
 wire in corpus of toka; de clingo-arm weg mét test; geen verwachting
 verschoven (de typering verandert waarden niet). CONSTRUCTS-rij-27-notitie
-en LADDER-EVOLUTIE-statusnoot (Q13/flip-punt verdampt): hoofdsessie
+en PRIORITIZED-DEFAULTS-EVOLUTIE-statusnoot (Q13/flip-punt verdampt): hoofdsessie
 serieel bij de landing; toolchain re-vendor + herpin idem.
 
 May touch: frontends/regelspraak/ (Typering, emitter, tests),

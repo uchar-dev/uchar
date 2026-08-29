@@ -43,16 +43,17 @@ open/gesloten-wereld per predicaat), geen amendement.
 ## v2 — de gelaagde uitsluiting (in werking 1 januari 2022)
 
 De Eerste wijzigingsverordening vervangt art. 4 door een gelaagde tekst en
-voegt art. 4bis (schorsing) in. Tekst: `wet-v2.md`. De laddervorm —
+voegt art. 4bis (schorsing) in. Tekst: `wet-v2.md`. De defaultsvorm —
 weigering sluit uit; herroeping heft de uitsluiting op; verval van de
 herroeping heft dat weer op — is het klassieke regel/uitzondering/
 uitzondering-op-de-uitzondering-patroon.
 
 Semantische dekking die deze versie aan het corpus toevoegt:
 
-- **Twee representaties, één betekenis.** De ladder kan gecompileerd worden
-  (alle voorwaarden platgeslagen in de hoofdregels) of gelaagd (hoofdregel
-  plus afzonderlijke uitzonderingsregels met eigen hulpbegrippen). Beide
+- **Twee representaties, één betekenis.** De defaults kunnen gecompileerd
+  worden (alle voorwaarden platgeslagen in de hoofdregels) of gelaagd
+  (hoofdregel plus afzonderlijke uitzonderingsregels met eigen
+  hulpbegrippen). Beide
   moeten op elk dossier dezelfde uitkomst geven — corpusmateriaal voor
   differentiële toetsing.
 - **Wijzigingskosten.** De invoeging van art. 4bis kost in de gelaagde vorm

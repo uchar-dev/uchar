@@ -3449,41 +3449,42 @@ let expression_layer ctx =
         | None -> [])
       (List.mapi (fun i r -> (i, r)) ctx.doc.feit_creaties)
   @ List.concat_map
-      (fun (i, (l : default_ladder)) ->
-        (* the expression walk descends into sub-rungs (ch. 7.9): a
-           sub-rung's justification and consequence are checked exactly as
-           a root rung's, the sub-ladder inheriting the root subject *)
-        let rec rung_walk prefix (r : rung) =
-          (match r.rung_voorwaarde with
+      (fun (i, (l : prioritized_defaults)) ->
+        (* the expression walk descends into sub-defaults (ch. 7.9): a
+           sub-default's justification and consequence are checked exactly as
+           a root default's, the exception group inheriting the root subject *)
+        let rec default_walk prefix (r : default) =
+          (match r.default_voorwaarde with
           | Some c ->
-              walk_cond ctx ~binders:[] ~subject:(Some l.dl_onderwerp)
+              walk_cond ctx ~binders:[] ~subject:(Some l.pd_onderwerp)
                 (prefix ^ "/voorwaarde") c
           | None -> [])
-          @ (match r.rung_consequentie with
+          @ (match r.default_consequentie with
             | Some e ->
-                walk_expr ctx ~binders:[] ~subject:(Some l.dl_onderwerp)
+                walk_expr ctx ~binders:[] ~subject:(Some l.pd_onderwerp)
                   (prefix ^ "/consequentie") e
             | None -> [])
-          @ (match r.rung_excepties with
-            | Some sg ->
+          @ (match r.default_excepties with
+            | Some egs ->
                 List.concat
                   (List.mapi
-                     (fun k (sl : sub_ladder) ->
+                     (fun k (eg : exception_group) ->
                        List.concat
                          (List.mapi
-                            (fun m sr ->
-                              rung_walk
-                                (Printf.sprintf "%s/excepties/leden/%d/rungs/%d" prefix k m)
-                                sr)
-                            sl.sl_rungs))
-                     sg.sg_leden)
+                            (fun m d ->
+                              default_walk
+                                (Printf.sprintf "%s/excepties/leden/%d/defaults/%d" prefix k m)
+                                d)
+                            eg.eg_defaults))
+                     egs.egs_leden)
             | None -> [])
         in
         List.concat
           (List.mapi
-             (fun j r -> rung_walk (Printf.sprintf "/defaultLadders/%d/rungs/%d" i j) r)
-             l.rungs))
-      (List.mapi (fun i l -> (i, l)) ctx.doc.default_ladders)
+             (fun j r ->
+               default_walk (Printf.sprintf "/prioritizedDefaults/%d/defaults/%d" i j) r)
+             l.defaults))
+      (List.mapi (fun i l -> (i, l)) ctx.doc.prioritized_defaults)
 
 (* ===================================================================== *)
 (* WF-045 / WF-046 — the dependency graph (RUNTIME-SEMANTICS ch. 6).
@@ -3931,39 +3932,39 @@ let dep_forms ctx : dep_form list =
         })
       ctx.doc.feit_creaties
   in
-  let ladders =
-    (* ch. 7.4/WF-051: every rung-justification read — and, on an
-       attribute ladder, every consequence read (the gevuld gate makes
+  let defaults_groups =
+    (* ch. 7.4/WF-051: every default-justification read — and, on
+       attribute defaults, every consequence read (the gevuld gate makes
        it decision-bearing) — is a displacement read: a negative edge
-       toward the ladder's write. The initialisation rung's implicit
+       toward the group's write. The initialisation default's implicit
        input-emptiness justification reads nothing (ch. 7.3). Ch. 7.9:
        every DESCENDANT read (justifications and consequences, recursively
-       through sub-rungs) folds into the same root negative edges — so a
-       cycle through a sub-rung read is caught by WF-051 unchanged. *)
+       through sub-defaults) folds into the same root negative edges — so a
+       cycle through a sub-default read is caught by WF-051 unchanged. *)
     List.mapi
-      (fun i (l : default_ladder) ->
-        let at = Printf.sprintf "/defaultLadders/%d" i in
-        let name = Option.value l.dl_naam ~default:at in
-        let rec rung_reads (r : rung) =
-          (match r.rung_voorwaarde with
-          | Some c -> dep_cond ctx ~subject:(Some l.dl_onderwerp) ~neg:false [] c
+      (fun i (l : prioritized_defaults) ->
+        let at = Printf.sprintf "/prioritizedDefaults/%d" i in
+        let name = Option.value l.pd_naam ~default:at in
+        let rec default_reads (r : default) =
+          (match r.default_voorwaarde with
+          | Some c -> dep_cond ctx ~subject:(Some l.pd_onderwerp) ~neg:false [] c
           | None -> [])
-          @ (match r.rung_consequentie with
-            | Some e -> dep_expr ctx ~subject:(Some l.dl_onderwerp) [] e
+          @ (match r.default_consequentie with
+            | Some e -> dep_expr ctx ~subject:(Some l.pd_onderwerp) [] e
             | None -> [])
-          @ (match r.rung_excepties with
-            | Some sg ->
+          @ (match r.default_excepties with
+            | Some egs ->
                 List.concat_map
-                  (fun (sl : sub_ladder) -> List.concat_map rung_reads sl.sl_rungs)
-                  sg.sg_leden
+                  (fun (eg : exception_group) -> List.concat_map default_reads eg.eg_defaults)
+                  egs.egs_leden
             | None -> [])
         in
-        let reads = List.concat_map rung_reads l.rungs in
+        let reads = List.concat_map default_reads l.defaults in
         let writes =
-          (match l.dl_kenmerk with Some k -> [ n_char l.dl_onderwerp k ] | None -> [])
+          (match l.pd_kenmerk with Some k -> [ n_char l.pd_onderwerp k ] | None -> [])
           @
-          match l.dl_attribuut with
-          | Some a -> [ n_attr l.dl_onderwerp a ]
+          match l.pd_attribuut with
+          | Some a -> [ n_attr l.pd_onderwerp a ]
           | None -> []
         in
         {
@@ -3973,10 +3974,10 @@ let dep_forms ctx : dep_form list =
           df_writes = writes;
           df_reads = List.map (fun (node, _) -> (node, Dep_neg)) reads;
         })
-      ctx.doc.default_ladders
+      ctx.doc.prioritized_defaults
   in
   regels @ verdelingen @ consistenties @ uniciteiten @ uniciteit_unies @ creaties
-  @ feit_creaties @ ladders
+  @ feit_creaties @ defaults_groups
 
 let wf045_046 ctx =
   let forms = Array.of_list (dep_forms ctx) in
@@ -4197,108 +4198,110 @@ let wf028 ctx =
              created_checks @ chain_checks)
        ctx.doc.feit_creaties)
 
-(* WF-050: ladder well-formedness (IR-SPEC ch. 6): at least one rung;
-   exactly one target kind (characteristic or attribute), resolving on
-   the subject; rung shapes match the target kind; the initialisation
-   rung is lowest and unique; the target has no other writer; multiple
-   ladders on one target only when every member is declared unordered
+(* WF-050: defaults-group well-formedness (IR-SPEC ch. 6): at least one
+   default; exactly one target kind (characteristic or attribute), resolving
+   on the subject; default shapes match the target kind; the initialisation
+   default is lowest and unique; the target has no other writer; multiple
+   defaults groups on one target only when every member is declared unordered
    (ch. 7.2). *)
 let wf050 ctx =
   List.concat
     (List.mapi
-       (fun i (l : default_ladder) ->
-         let at = Printf.sprintf "/defaultLadders/%d" i in
+       (fun i (l : prioritized_defaults) ->
+         let at = Printf.sprintf "/prioritizedDefaults/%d" i in
          let target_name =
-           match (l.dl_kenmerk, l.dl_attribuut) with
+           match (l.pd_kenmerk, l.pd_attribuut) with
            | Some k, None -> Some k
            | None, Some a -> Some a
            | _ -> None
          in
-         (if l.rungs = [] then [ v "WF-050" at "a ladder carries at least one rung" ] else [])
+         (if l.defaults = [] then
+            [ v "WF-050" at "a defaults group carries at least one default" ]
+          else [])
          @ (match target_name with
            | None ->
                [ v "WF-050" at
-                   "a ladder targets exactly one of a characteristic or an attribute" ]
+                   "a defaults group targets exactly one of a characteristic or an attribute" ]
            | Some _ -> [])
-         @ (match objecttype ctx l.dl_onderwerp with
+         @ (match objecttype ctx l.pd_onderwerp with
            | None ->
                [ v "WF-050" at
-                   ("ladder subject '" ^ l.dl_onderwerp ^ "' is not a declared object type") ]
+                   ("defaults-group subject '" ^ l.pd_onderwerp ^ "' is not a declared object type") ]
            | Some ot -> (
-               (match l.dl_kenmerk with
+               (match l.pd_kenmerk with
                | Some k when not (mem_ci (some_names ot.kenmerken) k) ->
                    [ v "WF-050" at
-                       ("ladder target '" ^ k ^ "' is not a declared characteristic of '"
-                      ^ l.dl_onderwerp ^ "'") ]
+                       ("defaults target '" ^ k ^ "' is not a declared characteristic of '"
+                      ^ l.pd_onderwerp ^ "'") ]
                | _ -> [])
                @
-               match l.dl_attribuut with
+               match l.pd_attribuut with
                | Some a when not (has_attr ot a) ->
                    [ v "WF-050" at
-                       ("ladder target '" ^ a ^ "' is not a declared attribute of '"
-                      ^ l.dl_onderwerp ^ "'") ]
+                       ("defaults target '" ^ a ^ "' is not a declared attribute of '"
+                      ^ l.pd_onderwerp ^ "'") ]
                | _ -> []))
-         (* rung shapes per target kind (ch. 7.1); the content-kind and
-            justification-presence checks recurse into sub-rungs (ch. 7.9 —
-            a sub-ladder inherits the root target kind). A group-rung
+         (* default shapes per target kind (ch. 7.1); the content-kind and
+            justification-presence checks recurse into sub-defaults (ch. 7.9 —
+            an exception group inherits the root target kind). A group-default
             (excepties present, no own besluit/consequentie) delegates its
-            decision to its sub-group: it is exempt from the content and
-            justification requirements. A contentless rung (neither content
-            nor sub-group) is WF-075's concern. *)
-         @ (let is_char = l.dl_kenmerk <> None in
-            let rec shape prefix (rungs : rung list) =
+            decision to its exception group: it is exempt from the content and
+            justification requirements. A contentless default (neither content
+            nor exception group) is WF-075's concern. *)
+         @ (let is_char = l.pd_kenmerk <> None in
+            let rec shape prefix (defaults : default list) =
               List.concat
                 (List.mapi
-                   (fun j (r : rung) ->
-                     let rat = Printf.sprintf "%s/rungs/%d" prefix j in
+                   (fun j (r : default) ->
+                     let rat = Printf.sprintf "%s/defaults/%d" prefix j in
                      let has_content =
-                       r.rung_besluit <> None || r.rung_consequentie <> None
+                       r.default_besluit <> None || r.default_consequentie <> None
                      in
-                     let is_group = r.rung_excepties <> None && not has_content in
+                     let is_group = r.default_excepties <> None && not has_content in
                      (* present content must match the target kind *)
-                     (match (is_char, r.rung_besluit, r.rung_consequentie) with
+                     (match (is_char, r.default_besluit, r.default_consequentie) with
                      | true, _, Some _ ->
-                         [ v "WF-050" rat "a characteristic rung carries no consequentie" ]
+                         [ v "WF-050" rat "a characteristic default carries no consequentie" ]
                      | false, Some _, _ ->
-                         [ v "WF-050" rat "an attribute rung carries no besluit" ]
+                         [ v "WF-050" rat "an attribute default carries no besluit" ]
                      | _ -> [])
-                     @ (match (r.rung_initialisatie, is_group, r.rung_voorwaarde) with
+                     @ (match (r.default_initialisatie, is_group, r.default_voorwaarde) with
                        | true, _, Some _ ->
                            [ v "WF-050" rat
-                               "the initialisation rung carries no written justification (its \
+                               "the initialisation default carries no written justification (its \
                                 justification is input-emptiness, ch. 7.3)" ]
                        | false, false, None when has_content ->
-                           [ v "WF-050" rat "a non-initialisation rung carries a justification" ]
+                           [ v "WF-050" rat "a non-initialisation default carries a justification" ]
                        | _ -> [])
-                     @ (match r.rung_excepties with
-                       | Some sg ->
+                     @ (match r.default_excepties with
+                       | Some egs ->
                            List.concat
                              (List.mapi
-                                (fun k (sl : sub_ladder) ->
+                                (fun k (eg : exception_group) ->
                                   shape
                                     (Printf.sprintf "%s/excepties/leden/%d" rat k)
-                                    sl.sl_rungs)
-                                sg.sg_leden)
+                                    eg.eg_defaults)
+                                egs.egs_leden)
                        | None -> []))
-                   rungs)
+                   defaults)
             in
-            shape at l.rungs)
-         (* the initialisation rung's position is a root-ladder property
-            (a sub-rung initialisation is ill-formed, WF-075) *)
+            shape at l.defaults)
+         (* the initialisation default's position is a root-group property
+            (a sub-default initialisation is ill-formed, WF-075) *)
          @ List.concat
              (List.mapi
-                (fun j (r : rung) ->
-                  let rat = Printf.sprintf "%s/rungs/%d" at j in
-                  (if r.rung_initialisatie && l.dl_kenmerk <> None then
+                (fun j (r : default) ->
+                  let rat = Printf.sprintf "%s/defaults/%d" at j in
+                  (if r.default_initialisatie && l.pd_kenmerk <> None then
                      [ v "WF-050" rat
-                         "an initialisation rung on a characteristic ladder is meaningless \
+                         "an initialisation default on characteristic defaults is meaningless \
                           (characteristics start absent)" ]
                    else [])
                   @
-                  if r.rung_initialisatie && j <> List.length l.rungs - 1 then
-                    [ v "WF-050" rat "the initialisation rung sits lowest (last)" ]
+                  if r.default_initialisatie && j <> List.length l.defaults - 1 then
+                    [ v "WF-050" rat "the initialisation default sits lowest (last)" ]
                   else [])
-                l.rungs)
+                l.defaults)
          @ (match target_name with
            | None -> []
            | Some tn -> (
@@ -4306,40 +4309,40 @@ let wf050 ctx =
                   characteristic may share a name (WF-002), and then they
                   are two independent targets, not a group *)
                let key =
-                 (if l.dl_kenmerk <> None then "K:" else "A:")
-                 ^ norm l.dl_onderwerp ^ ":" ^ norm tn
+                 (if l.pd_kenmerk <> None then "K:" else "A:")
+                 ^ norm l.pd_onderwerp ^ ":" ^ norm tn
                in
                let group_size =
                  List.length
                    (List.filter
-                      (fun (o : default_ladder) ->
+                      (fun (o : prioritized_defaults) ->
                         match
-                          (o.dl_kenmerk, o.dl_attribuut)
+                          (o.pd_kenmerk, o.pd_attribuut)
                         with
-                        | Some k, None -> "K:" ^ norm o.dl_onderwerp ^ ":" ^ norm k = key
-                        | None, Some a -> "A:" ^ norm o.dl_onderwerp ^ ":" ^ norm a = key
+                        | Some k, None -> "K:" ^ norm o.pd_onderwerp ^ ":" ^ norm k = key
+                        | None, Some a -> "A:" ^ norm o.pd_onderwerp ^ ":" ^ norm a = key
                         | _ -> false)
-                      ctx.doc.default_ladders)
+                      ctx.doc.prioritized_defaults)
                in
-               (if group_size > 1 && not l.dl_ongeordend then
+               (if group_size > 1 && not l.pd_ongeordend then
                   [ v "WF-050" at
-                      ("multiple ladders on target '" ^ l.dl_onderwerp ^ "." ^ tn
+                      ("multiple defaults groups on target '" ^ l.pd_onderwerp ^ "." ^ tn
                      ^ "' without the declared-unordered marking — priority is explicit \
-                        (rungs) or explicitly absent ('ongeordend'), never implicit \
+                        (defaults) or explicitly absent ('ongeordend'), never implicit \
                         (ch. 7.2)") ]
                 else [])
                @
                (* the ch. 7.1 single-writer lift: any plain writer beside
-                  the ladder would silently defeat its decisions *)
+                  the defaults group would silently defeat its decisions *)
                (if
                   List.exists
                     (fun (r : resolved_regel) ->
                       match r.doel with
                       | Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }) ->
-                          norm ot = norm l.dl_onderwerp
+                          norm ot = norm l.pd_onderwerp
                           && norm a = norm tn
                           &&
-                          (match (l.dl_kenmerk, r.rr_soort) with
+                          (match (l.pd_kenmerk, r.rr_soort) with
                           | Some _, Some Kenmerktoekenning -> true
                           | Some _, _ -> false
                           | None, _ -> true)
@@ -4347,34 +4350,34 @@ let wf050 ctx =
                     ctx.doc.resolved_regels
                 then
                   [ v "WF-050" at
-                      ("a rule also writes ladder target '" ^ l.dl_onderwerp ^ "." ^ tn
-                     ^ "' — an unordered plain writer would silently defeat the ladder's \
+                      ("a rule also writes defaults target '" ^ l.pd_onderwerp ^ "." ^ tn
+                     ^ "' — an unordered plain writer would silently defeat the group's \
                         decisions") ]
                 else [])
                @ (if
                     List.exists
                       (fun (oc : resolved_object_creatie) ->
                         (match oc.nieuw_type with
-                        | Some nt -> norm nt = norm l.dl_onderwerp
+                        | Some nt -> norm nt = norm l.pd_onderwerp
                         | None -> false)
                         && List.exists
                              (fun (t : toekenning) ->
                                (match t.toe_attribuut with
                                | Some a -> norm a = norm tn
                                | None -> false)
-                               && t.toe_kenmerk = (l.dl_kenmerk <> None))
+                               && t.toe_kenmerk = (l.pd_kenmerk <> None))
                              oc.toekenningen)
                       ctx.doc.object_creaties
                   then
                     [ v "WF-050" at
-                        ("an object creation also initialises ladder target '"
-                       ^ l.dl_onderwerp ^ "." ^ tn
-                       ^ "' — a creation-time write would silently defeat the ladder's \
-                          decisions (and void the initialisation rung's input-emptiness \
+                        ("an object creation also initialises defaults target '"
+                       ^ l.pd_onderwerp ^ "." ^ tn
+                       ^ "' — a creation-time write would silently defeat the group's \
+                          decisions (and void the initialisation default's input-emptiness \
                           justification)") ]
                   else [])
                @
-               match l.dl_attribuut with
+               match l.pd_attribuut with
                | None -> []
                | Some a ->
                    if
@@ -4382,21 +4385,21 @@ let wf050 ctx =
                        (fun (vd : resolved_verdeling) ->
                          (match (vd.doel_type, vd.doel_attribuut) with
                          | Some dt, Some da ->
-                             norm dt = norm l.dl_onderwerp && norm da = norm a
+                             norm dt = norm l.pd_onderwerp && norm da = norm a
                          | _ -> false)
                          ||
                          match (vd.bron_type, vd.restant_attribuut) with
                          | Some bt, Some ra ->
-                             norm bt = norm l.dl_onderwerp && norm ra = norm a
+                             norm bt = norm l.pd_onderwerp && norm ra = norm a
                          | _ -> false)
                        ctx.doc.verdelingen
                    then
                      [ v "WF-050" at
-                         ("an allocation also writes ladder target '" ^ l.dl_onderwerp ^ "."
+                         ("an allocation also writes defaults target '" ^ l.pd_onderwerp ^ "."
                         ^ a ^ "'") ]
                    else []))
          )
-       ctx.doc.default_ladders)
+       ctx.doc.prioritized_defaults)
 
 (* WF-052 (the WF-026/WF-050 single-writer family): a connecting
    relation whose CREATED-side role is to-one has at most one
@@ -4454,25 +4457,26 @@ let wf052 ctx =
     writers
 
 (* WF-079 (the WF-026/WF-050/WF-052 single-writer family, RUNTIME-SEMANTICS
-   ch. 7.7): a (type, attribute) target that carries no ladder admits at most
-   one unconditional, version-free computing rule (Gelijkstelling/Berekening).
-   Two or more — the PHASE5D-DIFF §8.2 un-pinnable form — over-determine the
-   target with no explicit priority: ref oscillates (no fixpoint, ch. 5.7),
-   clingo is silently multi-valued, and the pair falls through every zone.
-   Characteristic attributions (Kenmerktoekenning) are exempt — a monotone
-   many-grounds-one-truth (the penningrecht pair) — and a ladder on the target
-   routes multiplicity through WF-050 instead. Conditional writers (a guarded
-   case split) carry their own priority and stay outside: only the bare
-   (unconditional) collision is statically over-determined. Mirrors WF-026's
-   version-stripped pairing. *)
+   ch. 7.7): a (type, attribute) target that carries no prioritized defaults
+   admits at most one unconditional, version-free computing rule
+   (Gelijkstelling/Berekening). Two or more — the PHASE5D-DIFF §8.2
+   un-pinnable form — over-determine the target with no explicit priority: ref
+   oscillates (no fixpoint, ch. 5.7), clingo is silently multi-valued, and the
+   pair falls through every zone. Characteristic attributions
+   (Kenmerktoekenning) are exempt — a monotone many-grounds-one-truth (the
+   penningrecht pair) — and a defaults group on the target routes multiplicity
+   through WF-050 instead. Conditional writers (a guarded case split) carry
+   their own priority and stay outside: only the bare (unconditional)
+   collision is statically over-determined. Mirrors WF-026's version-stripped
+   pairing. *)
 let wf079 ctx =
-  let laddered otn a =
+  let has_defaults otn a =
     List.exists
-      (fun (l : default_ladder) ->
-        match l.dl_attribuut with
-        | Some la -> norm l.dl_onderwerp = norm otn && norm la = norm a
+      (fun (l : prioritized_defaults) ->
+        match l.pd_attribuut with
+        | Some la -> norm l.pd_onderwerp = norm otn && norm la = norm a
         | None -> false)
-      ctx.doc.default_ladders
+      ctx.doc.prioritized_defaults
   in
   let writers =
     List.filter_map
@@ -4481,7 +4485,7 @@ let wf079 ctx =
         | ( Some (Gelijkstelling | Berekening),
             Some (Attribuut_ref { attribuut = Some a; objecttype = Some otn; _ }),
             None )
-          when not (laddered otn a) ->
+          when not (has_defaults otn a) ->
             Some
               ( Option.map strip_version r.rr_naam, norm otn, norm a, r.rr_geldigheid,
                 Printf.sprintf "/resolvedRegels/%d" i )
@@ -4501,9 +4505,9 @@ let wf079 ctx =
               Some
                 (v "WF-079" at1
                    (Printf.sprintf
-                      "two unconditional computing rules write target (%s, %s) with no ladder — \
-                       priority is explicit (a ladder) or explicitly absent, never implicit agenda \
-                       order (ch. 7.7)"
+                      "two unconditional computing rules write target (%s, %s) with no \
+                       prioritized defaults — priority is explicit (a defaults group) or \
+                       explicitly absent, never implicit agenda order (ch. 7.7)"
                       ot1 a1))
             else None)
           rest
@@ -4650,9 +4654,9 @@ let wf082 ctx =
                entries))
     (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_regels)
 
-(* WF-051: no dependency cycle may pass through a ladder — its
+(* WF-051: no dependency cycle may pass through prioritized defaults — their
    displacement edges are negative (dep_forms above), so any such cycle
-   also violates WF-046; this check names the ladder-specific rule. *)
+   also violates WF-046; this check names the defaults-specific rule. *)
 let wf051 ctx =
   let forms = Array.of_list (dep_forms ctx) in
   let nf = Array.length forms in
@@ -4674,8 +4678,8 @@ let wf051 ctx =
   in
   List.concat
     (List.mapi
-       (fun i (l : default_ladder) ->
-         let at = Printf.sprintf "/defaultLadders/%d" i in
+       (fun i (l : prioritized_defaults) ->
+         let at = Printf.sprintf "/prioritizedDefaults/%d" i in
          match
            Array.to_list forms
            |> List.mapi (fun fi f -> (fi, f))
@@ -4683,85 +4687,87 @@ let wf051 ctx =
          with
          | Some (fi, _) when reaches fi fi ->
              [ v "WF-051" at
-                 ("a dependency cycle passes through ladder '"
-                 ^ Option.value l.dl_naam ~default:at
+                 ("a dependency cycle passes through defaults group '"
+                 ^ Option.value l.pd_naam ~default:at
                  ^ "' — its displacement reads are negative edges; no strata exist") ]
          | _ -> [])
-       ctx.doc.default_ladders)
+       ctx.doc.prioritized_defaults)
 
-(* WF-075: the nested exception form (RUNTIME-SEMANTICS ch. 7.9). A rung's
-   [excepties] sub-group carries at least one member, and two or more
-   members require the unordered marking — the root regime (WF-050's
+(* WF-075: the nested exception form (RUNTIME-SEMANTICS ch. 7.9). A default's
+   [excepties] field carries at least one exception group, and two or more
+   groups require the unordered marking — the root regime (WF-050's
    declared-unordered rule) applied at every level; the flag rides the
-   sub-group object itself. A sub-rung carries no initialisation (the
-   initialisation and input rungs are root-only). Every rung carries its
-   own decision/consequence, a nested sub-group, or is the initialisation
-   rung — a contentless rung decides nothing. Recurses to any depth. (The
+   excepties object itself. A sub-default carries no initialisation (the
+   initialisation and input defaults are root-only). Every default carries its
+   own decision/consequence, a nested exception group, or is the initialisation
+   default — a contentless default decides nothing. Recurses to any depth. (The
    content-KIND per target and the WF-051 descendant-read folding land with
-   WF-050 and dep_forms; a differing sub-group's root propagation is
+   WF-050 and dep_forms; a differing exception group's root propagation is
    evaluation semantics, ch. 7.9.) *)
 let wf075 ctx =
   List.concat
     (List.mapi
-       (fun i (l : default_ladder) ->
-         let at = Printf.sprintf "/defaultLadders/%d" i in
-         let rec walk ~in_sub prefix (rungs : rung list) =
+       (fun i (l : prioritized_defaults) ->
+         let at = Printf.sprintf "/prioritizedDefaults/%d" i in
+         let rec walk ~in_sub prefix (defaults : default list) =
            List.concat
              (List.mapi
-                (fun j (r : rung) ->
-                  let rat = Printf.sprintf "%s/rungs/%d" prefix j in
+                (fun j (r : default) ->
+                  let rat = Printf.sprintf "%s/defaults/%d" prefix j in
                   let has_content =
-                    r.rung_besluit <> None || r.rung_consequentie <> None
+                    r.default_besluit <> None || r.default_consequentie <> None
                   in
-                  (if in_sub && r.rung_initialisatie then
+                  (if in_sub && r.default_initialisatie then
                      [ v "WF-075" rat
-                         "a sub-group rung carries no initialisation (the initialisation \
-                          and input rungs are root-only, ch. 7.9)" ]
+                         "a default inside an exception group carries no initialisation (the \
+                          initialisation and input defaults are root-only, ch. 7.9)" ]
                    else [])
-                  @ (if (not has_content) && r.rung_excepties = None
-                        && not r.rung_initialisatie
+                  @ (if (not has_content) && r.default_excepties = None
+                        && not r.default_initialisatie
                      then
                        [ v "WF-075" rat
-                           "a rung carries its own decision/consequence or a nested \
-                            exception sub-group (a contentless rung decides nothing, \
+                           "a default carries its own decision/consequence or a nested \
+                            exception group (a contentless default decides nothing, \
                             ch. 7.9)" ]
                      else [])
-                  @ (if r.rung_excepties <> None && (not has_content)
-                        && r.rung_voorwaarde <> None && not r.rung_initialisatie
+                  @ (if r.default_excepties <> None && (not has_content)
+                        && r.default_voorwaarde <> None && not r.default_initialisatie
                      then
                        [ v "WF-075" rat
-                           "a group-rung (an exception sub-group with no own decision or \
-                            consequence) carries no justification of its own: the sub-group \
-                            decides, so a condition here would be silently ignored (ch. 7.9)" ]
+                           "a group-default (an exception group with no own decision or \
+                            consequence) carries no justification of its own: the exception \
+                            group decides, so a condition here would be silently ignored \
+                            (ch. 7.9)" ]
                      else [])
-                  @ (match r.rung_excepties with
+                  @ (match r.default_excepties with
                     | None -> []
-                    | Some sg ->
-                        (if sg.sg_leden = [] then
+                    | Some egs ->
+                        (if egs.egs_leden = [] then
                            [ v "WF-075" (rat ^ "/excepties")
-                               "an exception sub-group carries at least one member (ch. 7.9)" ]
+                               "the excepties field carries at least one exception group \
+                                (ch. 7.9)" ]
                          else [])
-                        @ (if List.length sg.sg_leden >= 2 && not sg.sg_ongeordend then
+                        @ (if List.length egs.egs_leden >= 2 && not egs.egs_ongeordend then
                              [ v "WF-075" (rat ^ "/excepties")
-                                 "an exception sub-group with two or more members must be \
-                                  declared unordered (the root regime, ch. 7.9)" ]
+                                 "two or more exception groups must be declared unordered \
+                                  (the root regime, ch. 7.9)" ]
                            else [])
                         @ List.concat
                             (List.mapi
-                               (fun k (sl : sub_ladder) ->
+                               (fun k (eg : exception_group) ->
                                  walk ~in_sub:true
                                    (Printf.sprintf "%s/excepties/leden/%d" rat k)
-                                   sl.sl_rungs)
-                               sg.sg_leden)))
-                rungs)
+                                   eg.eg_defaults)
+                               egs.egs_leden)))
+                defaults)
          in
-         walk ~in_sub:false at l.rungs)
-       ctx.doc.default_ladders)
+         walk ~in_sub:false at l.defaults)
+       ctx.doc.prioritized_defaults)
 
 (* WF-057: declared names are target-text-safe (IR-SPEC ch. 2). A
    declared name — object type, attribute, characteristic, plural,
    role, fact type, parameter, domain, unit system, dimension,
-   timeline, day kind, or any form/group/ladder name — MUST NOT carry
+   timeline, day kind, or any form/group/defaults-group name — MUST NOT carry
    a double quote, a backslash, or a control character: such a name
    breaks a quoted target text (the hunted ASP crash the backend's
    quoting fence catches last-line; this rule catches it at the
@@ -4834,9 +4840,9 @@ let wf057 ctx =
           check "/regelGroepen" "rule group name" g.rgr_naam)
         ctx.doc.regel_groepen;
       List.mapi
-        (fun i (l : default_ladder) ->
-          check (Printf.sprintf "/defaultLadders/%d" i) "ladder name" l.dl_naam)
-        ctx.doc.default_ladders
+        (fun i (l : prioritized_defaults) ->
+          check (Printf.sprintf "/prioritizedDefaults/%d" i) "defaults-group name" l.pd_naam)
+        ctx.doc.prioritized_defaults
       |> List.concat ]
 
 (* WF-059: every declared attribute carries a datatype — the attribute
@@ -5215,35 +5221,36 @@ let wf067 ctx =
               else []))
          fds)
 
-(* WF-086: a DefaultLadder MUST NOT target a temporal attribute — one carrying a
-   declared granularity (attribuutGranulariteit), whether anchor-only or on a
-   named timeline. A ladder is atemporal: it decides once, at one fixpoint
-   (RUNTIME-SEMANTICS ch. 7), and has no timeline coordinate to write. The
-   executors already refuse it — ref faults on a temporal ladder write (eval.ml,
-   kept as defense-in-depth), and the Drools ladder service fences it as a
-   reason-carrying Dekking.skip — so this document-layer rule refuses it FIRST,
-   at the ladder node, via the shared [attr_temporal] helper. Temporal ladder
-   targets are not yet scheduled (LADDER-EVOLUTIE §9 Q12a, ratified 2026-08-29);
+(* WF-086: a PrioritizedDefaults group MUST NOT target a temporal attribute —
+   one carrying a declared granularity (attribuutGranulariteit), whether
+   anchor-only or on a named timeline. A defaults group is atemporal: it
+   decides once, at one fixpoint (RUNTIME-SEMANTICS ch. 7), and has no
+   timeline coordinate to write. The executors already refuse it — ref faults
+   on a temporal defaults write (eval.ml, kept as defense-in-depth), and the
+   Drools defaults service fences it as a reason-carrying Dekking.skip — so
+   this document-layer rule refuses it FIRST, at the PrioritizedDefaults node,
+   via the shared [attr_temporal] helper. Temporal defaults targets are not yet
+   scheduled (PRIORITIZED-DEFAULTS-EVOLUTIE §9 Q12a, ratified 2026-08-29);
    the fence lifts, with witnesses, when they are. *)
 let wf086 ctx =
   List.concat
     (List.mapi
-       (fun i (l : default_ladder) ->
-         let at = Printf.sprintf "/defaultLadders/%d" i in
-         match (l.dl_attribuut, l.dl_kenmerk, objecttype ctx l.dl_onderwerp) with
+       (fun i (l : prioritized_defaults) ->
+         let at = Printf.sprintf "/prioritizedDefaults/%d" i in
+         match (l.pd_attribuut, l.pd_kenmerk, objecttype ctx l.pd_onderwerp) with
          | Some a, _, Some ot when attr_temporal ot a ->
              [ v "WF-086" at
-                 ("ladder target '" ^ a
-                ^ "' is a temporal attribute (declared granularity) — a ladder decides at one \
-                   fixpoint and cannot write a timeline (ch. 6)") ]
+                 ("defaults target '" ^ a
+                ^ "' is a temporal attribute (declared granularity) — a defaults group decides \
+                   at one fixpoint and cannot write a timeline (ch. 6)") ]
          | _, Some k, Some ot
            when List.exists (fun (n, _) -> norm n = norm k) ot.kenmerk_granulariteit ->
              [ v "WF-086" at
-                 ("ladder target '" ^ k
-                ^ "' is a temporal characteristic (declared granularity) — a ladder decides at \
-                   one fixpoint and cannot write a timeline (ch. 6)") ]
+                 ("defaults target '" ^ k
+                ^ "' is a temporal characteristic (declared granularity) — a defaults group \
+                   decides at one fixpoint and cannot write a timeline (ch. 6)") ]
          | _ -> [])
-       ctx.doc.default_ladders)
+       ctx.doc.prioritized_defaults)
 
 let all (doc : document) : violation list =
   let ctx = { doc } in

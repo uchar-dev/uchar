@@ -64,7 +64,7 @@ negen gates groen: 76 ir.json round-trip, 136 negatiefs, 196 cases,
 179 dubbel (ref ≡ clingo), 157 no-op-refuters + 22 survivors, 17
 rood, 103 plugin-checks, 5 Catala-goldens byte-identiek. Bewust
 gelaten (luid, S19): Let in gesloten body's en Let→IfThenElse op
-ladder-rung-/creatie-/sum-/struct-posities (geen corpus-case);
+default-/creatie-/sum-/struct-posities (geen corpus-case);
 negatieve geldproducten en de magnitude-hekken faulten luid;
 ref/test/test_ref.ml gewijzigd (kaart-gesanctioneerd, gemeld). Herpin
 volgt direct na de merge.

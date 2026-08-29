@@ -2,13 +2,13 @@
 
 Goal: the fence at backends/clingo/lib/translate.ml (translate_verdeling,
 "the case supplies input for allocation target") is replaced by the S10
-defeasible-default machinery that already carries ladder/standing targets.
+defeasible-default machinery that already carries defaults/standing targets.
 ref is the meaning and is NOT touched: ref (like v0) simply OVERWRITES the
 target attribute when the verdeling writes it (World.write_attr,
 RUNTIME-SEMANTICS ch. 4), and case input stands where the verdeling does not
 reach. Concretely:
 (1) translate_case emits case input for an allocation target as inputval/3
-    instead of val/3 (extend the ladder_target test with an alloc_target
+    instead of val/3 (extend the defaults_target test with an alloc_target
     test).
 (2) A per-verdeling effectiveness helper (vd%d_eff-style) fires exactly when
     the verdeling derives a value for a target instance — same body shape as
@@ -73,7 +73,7 @@ spec/PLAN.md, any toolchain commit.
 Result (landed on branch card/clingo-allocatie-input):
 - backends/clingo/lib/translate.ml: the case_supplies fence in
   translate_verdeling is replaced by the S10 defeasible-input layer —
-  translate_case emits inputval/3 for an allocation target (ladder_target
+  translate_case emits inputval/3 for an allocation target (defaults_target
   extended with the alloc clause), emit_write derives a per-allocation
   vdI_eff/1 helper with the same body as each val head, and
   `val(D,da,V) :- inputval(D,da,V), is_a(D,dt), not vdI_eff(D)` re-admits

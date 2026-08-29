@@ -25,6 +25,6 @@ closed-body multiplicative forms (ASP-TRANSLATION S15):
 case2 (`kindertallen = []`): the fold base fires on `lpres`, so `heffing = 0.00`
 and `puntentotaal = 0` — the init, a present-but-empty list.
 
-Both cases match exactly in ref and clingo (gate 5 ≡ gate 6). The x=1 rung pins
-the cent rounding actually engaging (185.175 → 185.18), so the split encoding's
-REKENKUNDIG half-away is witnessed, not merely wired.
+Both cases match exactly in ref and clingo (gate 5 ≡ gate 6). The x=1 default
+pins the cent rounding actually engaging (185.175 → 185.18), so the split
+encoding's REKENKUNDIG half-away is witnessed, not merely wired.

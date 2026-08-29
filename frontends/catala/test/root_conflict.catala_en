@@ -1,7 +1,7 @@
 # Botsingwet — rechtenvrij, eigen auteurschap
 
 Twee ongeordende gronden met OVERLAPPENDE condities (n >= 10 en n >= 5):
-bij n = 12 beslissen beide ladders verschillend (10 vs 20). Dat is
+bij n = 12 beslissen beide defaults-bundels verschillend (10 vs 20). Dat is
 over-determinatie -> de §9.5-ConflictError-deviatie (mapping-rij 8:
 Catala aborteert, wij zetten niets + één kanaalfeit). Test asserteert
 `inconsistent` door beide executors.

@@ -6,8 +6,8 @@ door de plugin, drievoudig geverifieerd) spec-first uitwerkt: (1) de
 struct-representatie — de open kernkeuze: eigen record-datatype versus
 lowering op objecttypen; (2) subscope-calls langs de al in PLAN §6
 benoemde richting (object type + object creation + navigation),
-inclusief de geratificeerde top-rung-realisatie van besluit 6 als
-gegenereerde rung; (3) geneste ladder-groepen per de geratificeerde
+inclusief de geratificeerde top-default-realisatie van besluit 6 als
+gegenereerde default; (3) geneste defaults-groepen per de geratificeerde
 optie (i) van PHASE4-DEFAULTS §7 (WF-051-randklassen mechanisch
 uitgebreid); (4) de besluit-vrije restjes: TRat/decimals op de
 onbegrensde Numeriek-precisievorm, de no_stdlib-flip met
@@ -46,7 +46,7 @@ geld-vermenigvuldigingsafronding gevonden). De lensronde (2 opus) ving
 onbegrensde vorm had géén clingo-encodering (→ vraag 4); de
 stdlib-allowlist was misgefundeerd (de tutorial-som is de verouderde
 oppervlaktevorm, 5b-gedekt — live geverifieerd); de exitgetuige draagt
-zelf een meervoudige basisgroep (→ groep-rungs); de gesloten
+zelf een meervoudige basisgroep (→ groep-defaults); de gesloten
 body-whitelist miste FieldAccess; het guarded-consequence-werk in
 clingo was onderschat; en de corpus-plaatsing van de tutorialtekst
 botste met het geratificeerde rechtenhek (→ frontend-side). Vier
@@ -55,5 +55,5 @@ Let+decimals, subscopes+tutorial — de laatste sluit het formele
 5a-exitcriterium en markeert PLAN §6). Alle negen gates groen (geen
 artefactzone geraakt). Bewust gelaten: 2-4's multi-state en
 per-element-subscope-calls, de directe attribuut-guard, besluit-6's
-gegenereerde rung, en de gedeelde basis onder alle leden — alle als
+gegenereerde default, en de gedeelde basis onder alle leden — alle als
 luide recorded flanken in het voorstel.

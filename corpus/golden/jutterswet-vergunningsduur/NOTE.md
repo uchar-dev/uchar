@@ -1,7 +1,8 @@
 # jutterswet-vergunningsduur — hand computation
 
-Witnesses the **unit-normalisation lowering pass** (LADDER-EVOLUTIE §8.1–8.2,
-Q9; spec/ASP-TRANSLATION.md S6) with a **non-power-of-ten factor**: a `jaar`
+Witnesses the **unit-normalisation lowering pass**
+(PRIORITIZED-DEFAULTS-EVOLUTIE §8.1–8.2, Q9; spec/ASP-TRANSLATION.md S6)
+with a **non-power-of-ten factor**: a `jaar`
 literal (`= 12 maand`) added to a `maand`-declared attribute, written into a
 `maand` target. The `×12` restatement proves the finest-unit canonical is a
 genuine integer multiply, not a decimal shift. clingo refused it before the

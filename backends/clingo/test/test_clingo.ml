@@ -1,4 +1,4 @@
-(* PERCENTAGE_VAN left-operand unit fence (LADDER-EVOLUTIE §8.3 / Q10).
+(* PERCENTAGE_VAN left-operand unit fence (PRIORITIZED-DEFAULTS-EVOLUTIE §8.3 / Q10).
 
    The clingo translator admits a provably pure-% left operand — its ÷100 is
    already the sl·sr·100 scale fold, so the arithmetic is unchanged — and
@@ -286,7 +286,7 @@ let () =
   faults "km" km_eenheid;
   faults "%-factor-2" pct_factor2_eenheid
 
-(* --- the unit-normalisation lowering pass (Normalise; LADDER-EVOLUTIE §8) --- *)
+(* --- the unit-normalisation lowering pass (Normalise; PRIORITIZED-DEFAULTS-EVOLUTIE §8) --- *)
 
 let eenh ~stelsel ~canoniek afk factor : Ir_v0.Ast.eenheid =
   { afkorting = Some afk; stelsel = Some stelsel; canoniek = Some canoniek;

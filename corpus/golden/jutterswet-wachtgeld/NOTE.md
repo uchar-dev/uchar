@@ -1,10 +1,11 @@
 # jutterswet-wachtgeld — unordered exception group (Uitzonderingen ongeordend)
 
-Exercises the uchar-dialect **unordered group** form (LADDER-EVOLUTIE §4.2,
-the §9.5 surface): three grounds writing ONE shared attribute target
-`wachtgeld`, lowered by the RegelSpraak frontend to THREE sibling
-declared-unordered `DefaultLadder`s (the `toelagegronden` anchor shape). Own
-Jutterswet-flavoured domain, own numbers.
+Exercises the uchar-dialect **unordered group** form
+(PRIORITIZED-DEFAULTS-EVOLUTIE §4.2, the §9.5 surface): three grounds
+writing ONE shared attribute target `wachtgeld`, lowered by the RegelSpraak
+frontend to THREE sibling declared-unordered `PrioritizedDefaults` entries
+(the `toelagegronden` anchor shape). Own Jutterswet-flavoured domain, own
+numbers.
 
 ## Source (`bron.rgs`)
 
@@ -17,9 +18,10 @@ writing `wachtgeld`:
 
 ## Lowering
 
-Three sibling `DefaultLadder`s on `Jutter.wachtgeld`, each with `ongeordend:
-true` (WF-050: two-or-more ladders on one target require the marking on every
-one) and a single attribute rung (`besluit: null`, `consequentie` the value).
+Three sibling `PrioritizedDefaults` entries on `Jutter.wachtgeld`, each with
+`ongeordend: true` (WF-050: two-or-more default groups on one target require
+the marking on every one) and a single attribute default (`besluit: null`,
+`consequentie` the value).
 All three members leave `resolvedRegels`; each keeps a `Regel` stub in
 `regels`. Because a RegelSpraak kenmerk assignment is monotone `waar`, a
 genuine §9.5 conflict is only expressible on an **attribute** target (two
@@ -27,9 +29,9 @@ members writing different values) — hence the attribute group here.
 
 ## §9.5 reconciliation (RUNTIME-SEMANTICS ch. 7.2)
 
-For declared-unordered ladders on one target: members that fire and DECIDE
-THE SAME value reconcile idempotently (one write); members that fire and
-decide DIFFERENT values produce NO write plus one path-keyed §9.5
+For declared-unordered default groups on one target: members that fire and
+DECIDE THE SAME value reconcile idempotently (one write); members that fire
+and decide DIFFERENT values produce NO write plus one path-keyed §9.5
 Inconsistentie keyed `Jutter.wachtgeld`.
 
 ## Case derivations (hand-computed, absolute)

@@ -27,7 +27,7 @@ name — symmetric with the unknown-label refusal, through the shared
 loader, so both executors refuse identically (exit 2, same message
 naming the unknown pin AND a non-exhaustive sorted candidate list).
 The valid-name set is exactly what the channel can carry: every form
-name and the unordered ladder group's target-form key; ladder MEMBER
+name and the unordered default group's target-form key; defaults MEMBER
 names are deliberately absent (they never reach the channel — the
 lens's significant find: accepting them re-created the vague mismatch
 this card exists to kill; a member-name pin now refuses at load naming

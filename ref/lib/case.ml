@@ -516,17 +516,17 @@ let load_expectation (doc : document) (world : World.t) (j : Yojson.Safe.t) : ex
          refusal below (maintainer decision 2026-08-21): a typo
          surfaces as a named load error, never as a vague red
          mismatch. Valid names: every form name (version-stripped or
-         full), ladder names, and the target form key an unordered
-         ladder group deposits under. *)
+         full), prioritized-defaults names, and the target form key an
+         unordered default group deposits under. *)
       let channel_names () =
         (* every name a channel fact can carry: form names (the check
            matches version-stripped, per ch. 5.6's version-stripped
-           key), the bare target-form key a root-level unordered ladder
+           key), the bare target-form key a root-level unordered default
            group deposits under, and — since ch. 7.9 — the target form
-           plus a rung-index path for every nested exception sub-group
-           (the path-keyed conflict a differing sub-group propagates to
-           the root). Ladder MEMBER names never reach the channel and are
-           deliberately absent. *)
+           plus a default-index path for every nested exception group
+           (the path-keyed conflict a differing exception group propagates
+           to the root). Defaults MEMBER names never reach the channel and
+           are deliberately absent. *)
         List.filter_map (fun (x : resolved_regel) -> x.rr_naam) doc.resolved_regels
         @ List.filter_map (fun (x : resolved_object_creatie) -> x.oc_naam) doc.object_creaties
         @ List.filter_map (fun (x : resolved_verdeling) -> x.vd_naam) doc.verdelingen
@@ -535,33 +535,33 @@ let load_expectation (doc : document) (world : World.t) (j : Yojson.Safe.t) : ex
         @ List.filter_map (fun (x : resolved_uniciteit_unie) -> x.uu_naam) doc.uniciteit_unies
         @ List.filter_map (fun (x : resolved_feit_creatie) -> x.fc_naam) doc.feit_creaties
         @ List.concat_map
-            (fun (l : default_ladder) ->
+            (fun (l : prioritized_defaults) ->
               let target_form =
-                l.dl_onderwerp ^ "."
-                ^ match (l.dl_kenmerk, l.dl_attribuut) with
+                l.pd_onderwerp ^ "."
+                ^ match (l.pd_kenmerk, l.pd_attribuut) with
                   | Some k, _ -> k
                   | _, Some a -> a
                   | _ -> "?"
               in
-              (* the nested path keys, mirroring [Eval.path_key]: every rung
-                 carrying an exception sub-group can deposit a conflict under
-                 the target form plus its rung-index path (ch. 7.9) *)
-              let rec nested prefix (rungs : rung list) =
+              (* the nested path keys, mirroring [Eval.path_key]: every default
+                 carrying an exception group can deposit a conflict under
+                 the target form plus its default-index path (ch. 7.9) *)
+              let rec nested prefix (defaults : default list) =
                 List.concat
                   (List.mapi
-                     (fun i (r : rung) ->
-                       match r.rung_excepties with
+                     (fun i (r : default) ->
+                       match r.default_excepties with
                        | None -> []
-                       | Some sg ->
+                       | Some egs ->
                            let p = prefix @ [ i ] in
                            (target_form ^ "/" ^ String.concat "/" (List.map string_of_int p))
                            :: List.concat_map
-                                (fun (sl : sub_ladder) -> nested p sl.sl_rungs)
-                                sg.sg_leden)
-                     rungs)
+                                (fun (eg : exception_group) -> nested p eg.eg_defaults)
+                                egs.egs_leden)
+                     defaults)
               in
-              target_form :: nested [] l.rungs)
-            doc.default_ladders
+              target_form :: nested [] l.defaults)
+            doc.prioritized_defaults
       in
       let known_rule r =
         let module C = Ir_v0.Checks in

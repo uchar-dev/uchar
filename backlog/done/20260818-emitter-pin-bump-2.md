@@ -26,7 +26,7 @@ nieuwe emitter-golden), backlog/; en in regelspraak-java: de
 emitter/resolver plus zijn eigen tests, volgens de gate-set daar.
 
 Out of scope: v1-formaatwijzigingen; verifier/executor-wijzigingen in
-uchar (de acceptatiekant ligt er al); TemporalRead/defaultLadders-emissie
+uchar (de acceptatiekant ligt er al); TemporalRead/prioritizedDefaults-emissie
 (geen oppervlaktesyntax in de toolchain).
 
 Result: geland zoals gesneden. Werkpin nu toolchain fe46e49: de emitter
@@ -57,6 +57,6 @@ creatie-toekenning — kandidaat bij de volgende corpus-kaart); de
 verifier-wandeling van fold-filters vanaf het buitensubject (WF-053
 to-many-melding op element-eigen filterlezingen) is een bestaande,
 aparte kwestie die met de filter-implementatiekaart moet landen.
-TemporalRead en de ladders blijven anchor-pioneered (geen
+TemporalRead en de defaults blijven anchor-pioneered (geen
 oppervlaktesyntax). De toolchain-commits (144d517, 31f630a, 1f0d6ef,
 fe46e49) staan lokaal op main daar; pushen is aan de maintainer.

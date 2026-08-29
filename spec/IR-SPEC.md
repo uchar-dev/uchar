@@ -6,10 +6,10 @@ else is skeleton. New in v0.5: the wire-entry discipline for v1 constructs
 (Method) and the symbolic role bindings (ch. 2.6, 3.2, 3.4, 4.3;
 WF-047/048; WF-028's check). New in v0.6: the temporal-read node
 (ch. 4.3a, WF-049 — the decided row-11 point read). New in v0.7: the
-characteristic default ladder (ch. 6.1, WF-050/051 — the Phase-4 first
-cut). New in v0.8: the attribute ladder with leeg fall-through and the
-initialisation rung (ch. 6.1). New in v0.9: the declared-unordered
-ladder group and the §9.5 conflict path (ch. 6.1). This document reads stand-alone (graduated into the
+characteristic prioritized defaults (ch. 6.1, WF-050/051 — the Phase-4
+first cut). New in v0.8: the attribute defaults with leeg fall-through and
+the initialisation default (ch. 6.1). New in v0.9: the declared-unordered
+default group and the §9.5 conflict path (ch. 6.1). This document reads stand-alone (graduated into the
 self-containedness gate at the Phase-1 exit, 2026-08-19): behaviour it
 does not document is undocumented. The mirror's provenance — which
 toolchain, and the repo relation — lives in `spec/PLAN.md` §5; the
@@ -51,7 +51,7 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   (ch. 4.1a — the navigation hops), `scopeRol` on the scoped uniqueness
   (ch. 3.6, WF-054), `bronAnnotaties` on the resolved rule (ch. 3.1,
   WF-082 — the statute annotations); current extension nodes and
-  forms: `TemporalRead` (ch. 4.3a), the `defaultLadders` list
+  forms: `TemporalRead` (ch. 4.3a), the `prioritizedDefaults` list
   (ch. 6.1), the sum-type family — the `SumType` datatype
   (ch. 2.4) with the `Construct`/`Match`/`BinderRef` expression nodes
   (ch. 4.7) — and the fold family — the `ListType` datatype (ch. 2.4),
@@ -82,8 +82,8 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   dropped, the field omitted when none remain); `jutterswet-hardheid`
   is the emitter golden carrying one- and two-annotation rules — and an
   unannotated rule without a trace — through both executors.
-  The remaining extensions stay anchor-only: `TemporalRead` and the
-  ladders have no surface syntax in the toolchain yet.
+  The remaining extensions stay anchor-only: `TemporalRead` and
+  prioritized defaults have no surface syntax in the toolchain yet.
 
 ## Conventions (binding)
 
@@ -114,7 +114,7 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
 3. **The rule layer** — normative draft (since v0.2).
 4. **The expression and condition layer** — **this release.**
 5. **Stratification** — the dependency graph, its edge kinds and the illegal-cycle rules (WF-045/046/051); `RUNTIME-SEMANTICS.md` ch. 6 is the operational companion.
-6. **Defaults and defeasibility** — the ladder is normative in both target kinds, with unordered groups (ch. 6.1); the v0 desugaring is `RUNTIME-SEMANTICS.md` ch. 7.7.
+6. **Defaults and defeasibility** — prioritized defaults are normative in both target kinds, with unordered groups (ch. 6.1); the v0 desugaring is `RUNTIME-SEMANTICS.md` ch. 7.7.
 7. **Time** *(skeleton)*
 8. **Serialization** *(lands with `spec/schema/`)*
 9. **Well-formedness rules** — the WF index, at the end of this document.
@@ -170,8 +170,8 @@ declares names not to be case-distinguishing (§13.2.30).
 - **WF-057** Every declared name — object type, attribute,
   characteristic, plural, role, fact type, parameter, domain, unit
   system, dimension, timeline, day kind, and every form, rule-group and
-  ladder name — MUST be **target-text-safe**: free of the double quote
-  (`"`), the backslash (`\`) and control characters (below U+0020).
+  defaults-group name — MUST be **target-text-safe**: free of the double
+  quote (`"`), the backslash (`\`) and control characters (below U+0020).
   Such a name lands between quotes in generated target text (the ASP
   program, DRL string literals, diagnostics), where these characters
   break the syntax; a backend-side quoting fence catches them last-line
@@ -852,13 +852,13 @@ the literal true — mirrored.)
   errors via the §6/Tabel 61 typing tables — except for characteristic
   attribution, where v0 skips the check (harmless today: the value is a
   constructed constant).
-- **WF-079** A (type, attribute) target that carries no ladder MUST have
+- **WF-079** A (type, attribute) target that carries no defaults MUST have
   at most one **unconditional, version-free** computing rule
   (GELIJKSTELLING/BEREKENING). Two or more over-determine the target with
   no explicit priority — the single-writer discipline of WF-026/WF-050/
   WF-052 extended to bare attribute writers (`RUNTIME-SEMANTICS.md`
   ch. 7.7: the desugaring admits at most one version-free computing rule
-  per target). Priority is a ladder (explicit rungs) or `ongeordend`
+  per target). Priority is a defaults group (explicit defaults) or `ongeordend`
   (explicitly absent), never implicit agenda order. Characteristic
   attributions (KENMERKTOEKENNING) are exempt — a monotone
   many-grounds-one-truth — and a guarded case split (each writer carrying
@@ -1141,8 +1141,8 @@ condition over "the day". v0 name: `ResolvedDagsoort`.
   validity is not read at all; the purity of the condition is neither
   checked nor documented. **Delta (promotion).** The recursion question
   is **closed** (decided with the stratification chapter,
-  `spec/proposals/LADDER-EVOLUTIE.md` Q8): mutually recursive definitions
-  are refused by WF-085 below, derived-state reads by the purity clause
+  `spec/proposals/PRIORITIZED-DEFAULTS-EVOLUTIE.md` Q8): mutually recursive
+  definitions are refused by WF-085 below, derived-state reads by the purity clause
   here.
 - **WF-085** The day-kind **reference graph** MUST be acyclic. A day-kind
   voorwaarde may reference other day kinds (a `Predicaat` of soort
@@ -1605,7 +1605,7 @@ Comparison, Predicate, and CharacteristicCheck only —
 - **WF-080** A value-position `AttributeReference` MUST resolve to an
   **attribute** of its endpoint type, never a characteristic. A value
   position is where an expression yields a value: a rule/member value, a
-  rung consequence, a condition operand, and the source of a value-yielding
+  default consequence, a condition operand, and the source of a value-yielding
   aggregation (a `SOM`/`TOTAAL`/`MINIMUM`/… fold whose element values are
   folded — a count's source names a role, not a value, and is out of
   scope). A characteristic carries truth, not an attribute value; it is
@@ -1779,7 +1779,7 @@ untouched — the two never merge in v1.
 |---|---|---|
 | ListLiteral | `type` (the ListType), `elements` (list of expr), `source` | ordered; a leeg element evaluation propagates — the whole literal evaluates leeg (a list never carries a hole, ch. 10.1) |
 | Lambda | `parameters` (list of `{name, datatype}`), `body` (expr), `source` | **position-restricted**: admissible only as the `function` operand of `Fold`/`MapList`; the body is closed (the WF-067 clause); parameters bind via `BinderRef` |
-| IfThenElse | `type`, `condition` (Condition), `then` (expr), `else` (expr), `source` | **position-restricted**: admissible only inside lambda, function and (the Phase-5c widening) strict `Let` bodies (ch. 4.10) — bare rule expressions keep the ladder/voorwaarde idiom; the condition reuses the ch. 4.5 condition union (no boolean-typed expressions enter the IR), evaluated under the ordinary ch. 1.2 comparison discipline, its operands disciplined by WF-077; exactly the chosen branch is evaluated |
+| IfThenElse | `type`, `condition` (Condition), `then` (expr), `else` (expr), `source` | **position-restricted**: admissible only inside lambda, function and (the Phase-5c widening) strict `Let` bodies (ch. 4.10) — bare rule expressions keep the defaults/voorwaarde idiom; the condition reuses the ch. 4.5 condition union (no boolean-typed expressions enter the IR), evaluated under the ordinary ch. 1.2 comparison discipline, its operands disciplined by WF-077; exactly the chosen branch is evaluated |
 | Invoke | `type`, `function` (name), `arguments` (list of expr), `source` | calls a ch. 2.11 FunctionDef; strict — a leeg argument propagates without entering the body |
 | Fold | `type`, `list` (expr), `function` (an inline `Lambda`), `init` (expr), `source` | left fold, order normative; the function takes `(accumulator, element)`; the operand MUST be an inline `Lambda` (WF-069) — a named function reaches a fold through a lambda body that `Invoke`s it |
 | MapList | `type` (a ListType), `list` (expr), `function` (an inline `Lambda`), `source` | elementwise, order-preserving; the operand MUST be an inline `Lambda` (WF-069) — a named function reaches it through a lambda body that `Invoke`s it |
@@ -1964,15 +1964,15 @@ to every form that **reads** it — in one of three kinds:
   negation does not cancel. A negative edge is stratum-strict *and*
   forbidden on any cycle (WF-046).
 
-**The WF-051 ladder fold.** A default ladder (ch. 6;
+**The WF-051 defaults fold.** A defaults group (ch. 6;
 `RUNTIME-SEMANTICS.md` ch. 7) folds into this graph as the writer of its
-target: every rung-justification read — and, on an attribute ladder, every
-consequence read (the gevuld gate makes it decision-bearing) — is a
-**negative edge** toward the ladder's write, recursed through the nested
-`excepties` sub-rungs (ch. 6.1; `RUNTIME-SEMANTICS.md` ch. 7.9); the
-initialisation rung's implicit input-emptiness justification reads nothing.
-WF-051 names this ladder-specific rule; the WF-045/046 principles apply to
-the extended graph unchanged.
+target: every default-justification read — and, on attribute defaults,
+every consequence read (the gevuld gate makes it decision-bearing) — is a
+**negative edge** toward the group's write, recursed through the nested
+`excepties` sub-defaults (ch. 6.1; `RUNTIME-SEMANTICS.md` ch. 7.9); the
+initialisation default's implicit input-emptiness justification reads
+nothing. WF-051 names this defaults-specific rule; the WF-045/046
+principles apply to the extended graph unchanged.
 
 ### 5.3 Acyclicity and stratified negation
 
@@ -2017,8 +2017,8 @@ evaluates a day-kind predicate: the predicate kind is refused (`ref/`,
 `backends/clingo`), so a day kind is consulted, if ever, only as a
 stratum-0 classifier of an input date, never as a derived read inside the
 rule fixpoint. (Option A of the ratified stratification round,
-`spec/proposals/LADDER-EVOLUTIE.md` §7; the diverge-from-v0 delta — v0
-neither checks nor documents this — is recorded on WF-031.)
+`spec/proposals/PRIORITIZED-DEFAULTS-EVOLUTIE.md` §7; the diverge-from-v0
+delta — v0 neither checks nor documents this — is recorded on WF-031.)
 
 ### 5.5 Executor neutrality
 
@@ -2037,10 +2037,11 @@ either of two postures:
   mis-order one.
 
 The second posture is a **bounded, named** exception, ratified here
-(`LADDER-EVOLUTIE` §7). Its instance is `backends/drools`: a kenmerk-only
-salience for the negated-characteristic boundary plus a **ladder-local**
-salience for the ch. 6 ladder (strictly below every producer of every rung
-justification), each guarded by per-form auto-refusals — a loader Refusal
+(`PRIORITIZED-DEFAULTS-EVOLUTIE` §7). Its instance is `backends/drools`: a
+kenmerk-only salience for the negated-characteristic boundary plus a
+**defaults-local** salience for the ch. 6 defaults (strictly below every
+producer of every default justification), each guarded by per-form
+auto-refusals — a loader Refusal
 or transpiler marker naming the uncovered form, loudly excluded at gate 12,
 never played mis-stratified. A backend realising a **coarser**
 stratification than the graph mandates without refusing the uncovered forms
@@ -2050,24 +2051,28 @@ is non-conforming.
 
 ## 6. Defaults and defeasibility
 
-The model is `RUNTIME-SEMANTICS.md` ch. 7: a first-class **ladder** of
-prioritised defaults per target evaluating top-down with
-**fall-through** — the highest rung that *decides* wins (attribute
+The model is `RUNTIME-SEMANTICS.md` ch. 7: a first-class group of
+**prioritized defaults** per target evaluating top-down with
+**fall-through** — the highest default that *decides* wins (attribute
 target: justification holds and the consequence evaluates gevuld, leeg
-falls through; characteristic target: a justified rung always decides,
-attribute or do-not-attribute), so a single ladder cannot conflict and
-a ladder never writes leeg — initialisation as the lowest rung,
-priority either explicit (rungs) or explicitly absent (a
-declared-unordered ladder group on one target — the only
+falls through; characteristic target: a justified default always decides,
+attribute or do-not-attribute), so a single defaults group cannot conflict
+and never writes leeg — initialisation as the lowest default,
+priority either explicit (ordered defaults) or explicitly absent (a
+declared-unordered default group on one target — the only
 over-determination surface, routed to the §9.5 channel);
 under-determination is leeg (a tracked Catala deviation,
 `CONSTRUCTS.md` row 8).
 
-### 6.1 The ladder (Phase 4: characteristic and attribute forms landed)
+### 6.1 Prioritized defaults (Phase 4: characteristic and attribute forms landed)
+
+*Renamed 2026-08-29 from "ladder"/"rung"/"sub-ladder" (coined here
+2026-08-15/16; no term of art). Git history — commit messages and
+pre-rename revisions — uses the old names throughout.*
 
 `layer: core`; an **extension form** per the Method: an optional
-top-level list `defaultLadders` of `DefaultLadder` nodes — never
-emitter-produced.
+top-level list `prioritizedDefaults` of `PrioritizedDefaults` nodes —
+never emitter-produced.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -2075,119 +2080,121 @@ emitter-produced.
 | `subject` | type ref | v0 wire `onderwerp`: the iterated subject type |
 | `characteristic` | string? | v0 wire `kenmerk`: the target characteristic — **exactly one** of the two targets |
 | `attribute` | string? | v0 wire `attribuut`: the target attribute |
-| `rungs` | non-empty list of Rung | **descending** priority: highest first |
-| `unordered` | boolean | v0 wire `ongeordend`: declared-unordered (ch. 7.2 there) — multiple ladders on one target are admissible iff **every** one carries it; the group decides jointly, and differing simultaneous decisions route to the §9.5 channel (keyed by the target form; no write — the target keeps what the fact base holds) |
+| `defaults` | non-empty list of Default | **descending** priority: highest first |
+| `unordered` | boolean | v0 wire `ongeordend`: declared-unordered (ch. 7.2 there) — multiple defaults groups on one target are admissible iff **every** one carries it; the group decides jointly, and differing simultaneous decisions route to the §9.5 channel (keyed by the target form; no write — the target keeps what the fact base holds) |
 | `source`, `validity` | — | v0 wire `bron`, `geldigheid` |
 
-**Rung**: `decision` (v0 wire `besluit`, boolean? — characteristic
-rungs only: attribute vs do-not-attribute), `justification` (v0 wire
+**Default**: `decision` (v0 wire `besluit`, boolean? — characteristic
+defaults only: attribute vs do-not-attribute), `justification` (v0 wire
 `voorwaarde`, a condition; null only on the initialisation and
-group-rungs), `consequence` (v0 wire `consequentie`, expression? —
-attribute rungs only), `initialisation` (v0 wire `initialisatie`,
-boolean — the ch. 7.3 rung: justified iff the target is empty in the
+group-defaults), `consequence` (v0 wire `consequentie`, expression? —
+attribute defaults only), `initialisation` (v0 wire `initialisatie`,
+boolean — the ch. 7.3 default: justified iff the target is empty in the
 input facts; lowest only, **root-only**), `exceptions` (v0 wire
-`excepties`, the optional nested sub-group — the **Rung.exceptions and
-SubLadder** paragraph below), `source`. Semantics: `RUNTIME-SEMANTICS.md` ch. 7.1 —
-per subject the highest rung that **decides** wins: on a
-characteristic every justified rung decides (a false decision derives
-nothing and displaces); on an attribute a rung decides when its
+`excepties`, the optional nested sub-group — the **Default.exceptions and
+ExceptionGroup** paragraph below), `source`. Semantics:
+`RUNTIME-SEMANTICS.md` ch. 7.1 —
+per subject the highest default that **decides** wins: on a
+characteristic every justified default decides (a false decision derives
+nothing and displaces); on an attribute a default decides when its
 justification holds *and* its consequence evaluates gevuld — a leeg
-consequence **falls through**, a ladder without a decision **writes
-nothing** (the input value is left standing), and rung evaluation is
-speculative (only the deciding rung's channel deposits persist).
+consequence **falls through**, a defaults group without a decision **writes
+nothing** (the input value is left standing), and default evaluation is
+speculative (only the deciding default's channel deposits persist).
 
-**Rung.exceptions and SubLadder** (`RUNTIME-SEMANTICS.md` ch. 7.9,
-Phase 5c — the below-root branching form): a rung's `exceptions` slot
+**Default.exceptions and ExceptionGroup** (`RUNTIME-SEMANTICS.md` ch. 7.9,
+Phase 5c — the below-root branching form): a default's `exceptions` slot
 (v0 wire `excepties = { unordered, members }`, `ongeordend` + `leden`)
-holds a **sub-group** whose `members` are `SubLadder` nodes (v0 wire
-`SubLadder`: `rungs` — a non-empty rung chain, descending, highest
-first — and `source`). A sub-ladder inherits the root target and
-carries **none of its own**, and it may nest again via `Rung.exceptions`
-— the ladder is a rose tree. Two rung shapes: a **group-rung**
+holds a **sub-group** whose `members` are `ExceptionGroup` nodes (v0 wire
+`ExceptionGroup`: `defaults` — a non-empty default chain, descending,
+highest first — and `source`). An exception group inherits the root target
+and carries **none of its own**, and it may nest again via
+`Default.exceptions` — the defaults group is a rose tree. Two default shapes: a **group-default**
 (`exceptions`, no own condition/besluit/consequence — the sub-group *is*
 its decision, carrying a multi-member base or exception group as a chain
 position; a stray justification here is ill-formed, WF-075) and a
-**form-a rung** (own besluit/consequence too — the
+**form-a default** (own besluit/consequence too — the
 sub-group decides first, its own consequence the fall-back when the
-sub-group is empty). A rung reconciles its sub-group by the same rule
+sub-group is empty). A default reconciles its sub-group by the same rule
 the declared-unordered root group uses (ch. 7.2), recursively; a
 **differing** sub-group propagates the conflict to the **root** — no
-write, one path-keyed §9.5 fact `subject.target/<rung index path>`
-(ch. 7.9, vraag 5 A). The initialisation and input rungs are
-**root-only** — a sub-rung is never one. `Rung.required` is untouched,
+write, one path-keyed §9.5 fact `subject.target/<default index path>`
+(ch. 7.9, vraag 5 A). The initialisation and input defaults are
+**root-only** — a sub-default is never one. `Default.required` is untouched,
 so every existing document validates unchanged.
 
-- **WF-050** A ladder MUST carry at least one rung and MUST target
-  exactly one of a characteristic or an attribute, resolving on its
-  subject. Rung shapes MUST match the target kind (characteristic:
+- **WF-050** A defaults group MUST carry at least one default and MUST
+  target exactly one of a characteristic or an attribute, resolving on its
+  subject. Default shapes MUST match the target kind (characteristic:
   `besluit`, no `consequentie`; attribute: `consequentie`, no
-  `besluit`); the initialisation rung MUST be the lowest, MUST carry
-  no written justification, and MUST NOT sit on a characteristic
-  ladder. The target MUST have no other writer — no second ladder, no
-  rule, no allocation, and no object-creation initialisation on the
-  same target: an unordered plain writer would silently defeat the
-  ladder's decisions, and a creation-time write would void the
-  initialisation rung's input-emptiness justification (the ch. 7.1
-  single-writer lift). Multiple ladders on one target MUST all carry
-  the `unordered` marking — priority is explicit (rungs) or explicitly
-  absent (the declared-unordered group), never implicit. The rung-shape
-  checks (content per target kind; a non-init rung carries a
-  justification) **recurse into sub-rungs** (ch. 7.9, a sub-ladder
-  inheriting the root target kind); a group-rung (`exceptions`, no own
-  content) is exempt from the content and justification requirements, and
-  a contentless rung — neither content nor sub-group — is WF-075's
+  `besluit`); the initialisation default MUST be the lowest, MUST carry
+  no written justification, and MUST NOT sit on characteristic
+  defaults. The target MUST have no other writer — no second defaults
+  group, no rule, no allocation, and no object-creation initialisation on
+  the same target: an unordered plain writer would silently defeat the
+  group's decisions, and a creation-time write would void the
+  initialisation default's input-emptiness justification (the ch. 7.1
+  single-writer lift). Multiple defaults groups on one target MUST all
+  carry the `unordered` marking — priority is explicit (ordered defaults)
+  or explicitly absent (the declared-unordered group), never implicit. The
+  default-shape checks (content per target kind; a non-init default carries
+  a justification) **recurse into sub-defaults** (ch. 7.9, an exception
+  group inheriting the root target kind); a group-default (`exceptions`, no
+  own content) is exempt from the content and justification requirements,
+  and a contentless default — neither content nor sub-group — is WF-075's
   concern.
-- **WF-086** A ladder MUST NOT target a **temporal attribute** — one
-  carrying a declared granularity (`attribuutGranulariteit`), whether
+- **WF-086** A defaults group MUST NOT target a **temporal attribute** —
+  one carrying a declared granularity (`attribuutGranulariteit`), whether
   anchor-only or on a named timeline — **nor a temporal characteristic**
   (one carrying `kenmerkGranulariteit`; the lens catch 2026-08-29: it
-  would otherwise evaluate silently atemporally). A ladder is atemporal:
-  it decides once, at one fixpoint (`RUNTIME-SEMANTICS.md` ch. 7), and
-  carries no timeline coordinate at which to write. **Executor parity:** the
-  reference interpreter already faults on a temporal ladder write, and the
-  Drools ladder service fences it as a reason-carrying skip; this rule
-  refuses it FIRST, at the document layer, so an ill-formed ladder never
-  reaches an executor — ref keeps its fault as defense-in-depth. *v0 mirror
-  note:* the v0 emitter never produces `defaultLadders`, so no v0 dump can
-  carry this shape; the rule fences a frontend that emits ladders (the
-  Catala plugin, ch. 6.1). Temporal ladder targets are not yet scheduled
-  (`spec/proposals/LADDER-EVOLUTIE.md` §9 Q12a, ratified 2026-08-29); the
-  fence lifts, with witnesses, when they are.
-- **WF-051** Every rung-justification read — and, on an attribute
-  ladder, every consequence read (the gevuld gate makes it
+  would otherwise evaluate silently atemporally). A defaults group is
+  atemporal: it decides once, at one fixpoint (`RUNTIME-SEMANTICS.md`
+  ch. 7), and carries no timeline coordinate at which to write.
+  **Executor parity:** the reference interpreter already faults on a
+  temporal defaults write, and the Drools defaults service fences it as a
+  reason-carrying skip; this rule refuses it FIRST, at the document layer,
+  so ill-formed defaults never reach an executor — ref keeps its fault as
+  defense-in-depth. *v0 mirror note:* the v0 emitter never produces
+  `prioritizedDefaults`, so no v0 dump can carry this shape; the rule
+  fences a frontend that emits prioritized defaults (the Catala plugin,
+  ch. 6.1). Temporal defaults targets are not yet scheduled
+  (`spec/proposals/PRIORITIZED-DEFAULTS-EVOLUTIE.md` §9 Q12a, ratified
+  2026-08-29); the fence lifts, with witnesses, when they are.
+- **WF-051** Every default-justification read — and, on attribute
+  defaults, every consequence read (the gevuld gate makes it
   decision-bearing) — joins the ch. 5 dependency graph (ch. 5.1) as a
-  **negative edge** toward the ladder's write (the ch. 5.2 ladder fold;
+  **negative edge** toward the group's write (the ch. 5.2 defaults fold;
   operational companion `RUNTIME-SEMANTICS.md` ch. 6.1); the
-  initialisation rung's implicit input-emptiness justification reads
-  nothing. No dependency cycle may pass through a ladder — strata must
-  exist. The WF-045/046 principles apply to the extended graph (a
+  initialisation default's implicit input-emptiness justification reads
+  nothing. No dependency cycle may pass through a defaults group — strata
+  must exist. The WF-045/046 principles apply to the extended graph (a
   violating document typically trips those too; WF-051 names the
-  ladder-specific rule).
+  defaults-specific rule).
   This rule is **unchanged** by the nested form: `dep_forms` folds every
   descendant read (justifications and consequences, recursively through
-  sub-rungs) into the same root negative edges (ch. 7.9), so a cycle
-  through a sub-rung read is caught here.
-- **WF-075** A rung's `exceptions` sub-group (`RUNTIME-SEMANTICS.md`
+  sub-defaults) into the same root negative edges (ch. 7.9), so a cycle
+  through a sub-default read is caught here.
+- **WF-075** A default's `exceptions` sub-group (`RUNTIME-SEMANTICS.md`
   ch. 7.9) MUST carry at least one member; two or more members MUST
   carry the `unordered` marking (the root regime of WF-050, applied at
-  every level — the flag rides the sub-group itself). A sub-rung MUST
-  NOT be an initialisation (or input) rung — those are root-only. Every
-  rung MUST carry its own decision/consequence, a nested sub-group, or
-  be the initialisation rung — a contentless rung decides nothing. A
-  **group-rung** (a sub-group with no own decision or consequence) MUST
+  every level — the flag rides the sub-group itself). A sub-default MUST
+  NOT be an initialisation (or input) default — those are root-only. Every
+  default MUST carry its own decision/consequence, a nested sub-group, or
+  be the initialisation default — a contentless default decides nothing. A
+  **group-default** (a sub-group with no own decision or consequence) MUST
   NOT carry a justification (`condition`) of its own: its members decide,
   so a condition there is never read and would be silently ignored —
-  such a rung is neither a well-formed form-a rung nor a well-formed
-  group-rung and is rejected. The rule recurses to any depth. (The
+  such a default is neither a well-formed form-a default nor a well-formed
+  group-default and is rejected. The rule recurses to any depth. (The
   content-KIND per target and the descendant-read folding land with
   WF-050 and WF-051; a differing sub-group's root propagation is
   evaluation semantics, ch. 7.9.)
 
-The v0 desugaring of existing rule forms into ladders is
+The v0 desugaring of existing rule forms into prioritized defaults is
 `RUNTIME-SEMANTICS.md` ch. 7.7 (implemented as `Ir_v0.Desugar`, the
 ASP backend's reading; witnessed differentially by the
 `jutterswet-waardering-v0vorm` anchor); the bare computing rule
-carries the ladder reading directly through the ch. 7.8 standing norm
+carries the defaults reading directly through the ch. 7.8 standing norm
 (the shared `standing_targets` domain, anchor
 `jutterswet-waardestelling`). Rule-readability of the conflict fact is
 **closed** for v1 (`RUNTIME-SEMANTICS.md` ch. 7.2, decided
@@ -2261,8 +2268,8 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-047 | role binding resolves; fillers agree with the use site; written source denotes the bound role | gate 3 | `anchor/jutterswet-bergingstoezicht` (two fact types over one pair; allocation and fold bound, replayed by gates 5–6) + `anchor/jutterswet-maatschap` (the reciprocal binding: bound = opposite) + `anchor/jutterswet-wachtersketen` (the creation back-link binding) | `wf047-dangling-role-binding` (resolution) + `wf047-bound-role-fills-source` (filler agreement) + `wf047-reciprocal-wrong-filler` (the single-role filler clause) + `wf047-creation-binding-wrong-filler` (the creation site) |
 | WF-048 | bindingless allocation/instance fold: connecting relation uniquely derivable | gate 3 (contexts with a statically known fold subject; a subjectless context — none exists in v0 dumps, whose folds sit under a typed rule target — is left to the executors' runtime fault) | `jutterswet-berging` + `jutterswet-vondsttelling` (bindingless, uniquely derivable) + `anchor/jutterswet-maatschap` (bindingless over a reciprocal relation) | `wf048-ambiguous-connecting-relation` |
 | WF-049 | temporal read: basis temporal (attribute/granular parameter), day-precision date, element type | gate 3 | `anchor/jutterswet-aanmeldquotum` (attribute + parameter reads; hit, gap→leeg, empty date→leeg; replayed by gates 5–6) | `wf049-read-of-nontemporal` (basis) + `wf049-read-at-datetime` (date operand) + `wf049-type-not-element` (element type) |
-| WF-050 | ladder: ≥ 1 rung; exactly one target, resolving; rung shapes per kind (recursing into sub-rungs, ch. 7.9 — a group-rung carries `exceptions` and no own content); init rung lowest; no other writer; multiplicity only declared-unordered | gate 3 | `anchor/jutterswet-uitsluiting` (characteristic) + `anchor/jutterswet-vondstwaardering` (attribute + init) + `anchor/jutterswet-toelagegronden` (unordered groups, six conflict-path cases; all replayed by gates 5–6) | `wf050-empty-ladder` + `wf050-two-ladders-one-target` + `wf050-ladder-beside-rule` + `wf050-both-targets` + `wf050-init-not-lowest` + `wf050-rule-beside-attribute-ladder` + `wf050-allocation-beside-ladder` + `wf050-creation-beside-ladder` + `wf050-half-marked-group` + `wf050-subrung-wrong-shape` |
-| WF-051 | no dependency cycle through a ladder (justification and consequence reads are negative edges, folded recursively through sub-rungs, ch. 7.9) | gate 3 (over the extended dep_forms graph, shared with ref/'s strata) | `anchor/jutterswet-uitsluiting` (the ladder sits below its negated consumer — strata exist, oracle-replayed) | `wf051-ladder-reads-own-target` + `wf051-cycle-through-subrung` |
+| WF-050 | defaults group: ≥ 1 default; exactly one target, resolving; default shapes per kind (recursing into sub-defaults, ch. 7.9 — a group-default carries `exceptions` and no own content); init default lowest; no other writer; multiplicity only declared-unordered | gate 3 | `anchor/jutterswet-uitsluiting` (characteristic) + `anchor/jutterswet-vondstwaardering` (attribute + init) + `anchor/jutterswet-toelagegronden` (unordered groups, six conflict-path cases; all replayed by gates 5–6) | `wf050-empty-defaults` + `wf050-two-defaults-one-target` + `wf050-defaults-beside-rule` + `wf050-both-targets` + `wf050-init-not-lowest` + `wf050-rule-beside-attribute-defaults` + `wf050-allocation-beside-defaults` + `wf050-creation-beside-defaults` + `wf050-half-marked-group` + `wf050-subdefault-wrong-shape` |
+| WF-051 | no dependency cycle through a defaults group (justification and consequence reads are negative edges, folded recursively through sub-defaults, ch. 7.9) | gate 3 (over the extended dep_forms graph, shared with ref/'s strata) | `anchor/jutterswet-uitsluiting` (the defaults group sits below its negated consumer — strata exist, oracle-replayed) | `wf051-defaults-read-own-target` + `wf051-cycle-through-subdefault` |
 | WF-052 | a connecting relation with a to-one created-side role has at most one object-creation writer (fact creations are fault-paired already) | gate 3 | `anchor/jutterswet-penninguitgifte` (one writer per to-one relation, executed by gates 5–6) | `wf052-two-writers-one-to-one-relation` |
 | WF-053 | a navigated read resolves its walk: bindings resolve, chain-type, count and written names agree, the endpoint is reached; bindingless steps are uniquely derivable; scalar-slot hops are to-one; bindings on a non-navigating node are ill-formed; a single bindingless written step at zero far hits on a same-typed endpoint is the zero-hop self-reference iff the name denotes a role the subject itself fills (ch. 4.1a) | gate 3 | `anchor/jutterswet-kustwacht` (by-name, chain and by-pair shapes plus the navigated characteristic check, executed by gates 5–6 with leeg-on-absent and the negation asymmetry pinned) + `jutterswet-postwacht` (emitter-produced bindings since the 2026-08-18 pin bump) + `jutterswet-aanmelderkrediet` (the zero-hop self-reference beside the reciprocal far hop, executed by gates 5–6) | `wf053-dangling-navigation-binding` (resolution) + `wf053-chain-near-side-mismatch` (chain typing) + `wf053-to-many-hop-in-scalar` (cardinality) + `wf053-written-role-mismatch` (written-name denotation) + `wf053-bindingless-ambiguous` (unique derivability) + `wf053-zelfverwijzing-vreemde-rol` (the self-reference narrowing) |
 | WF-054 | parent-scoped uniqueness: the scope role resolves (bound or uniquely derivable from the written scope field), its near side fills the subject, the written name denotes the bound role, the scope role is to-one; a scope binding on an unscoped uniqueness is ill-formed | gate 3 | `anchor/jutterswet-kustregister` (bound and bindingless scoped forms, executed by gates 5–6 with the scope-less exclusion pinned) + `jutterswet-postwacht` (emitter-produced `scopeRol` since the 2026-08-18 pin bump) | `wf054-dangling-scope-binding` (resolution) + `wf054-to-many-scope-role` (cardinality) + `wf054-binding-on-unscoped` (the non-scoped guard) |
@@ -2286,18 +2293,18 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-072 | StructType use site agrees with its declaring domain; two struct-typed comparison operands name the same domain (the nominal rule, ch. 2.4) | gate 3 | `anchor/jutterswet-vondstdossier` | `wf072-use-site-drift` + `wf072-cross-struct-equality` |
 | WF-073 | StructLiteral: declared struct type; exactly the declared fields, each once; each value type matches the field declaration (ch. 4.9) | gate 3 | `anchor/jutterswet-vondstdossier` | `wf073-missing-field` + `wf073-alien-field` + `wf073-field-type-mismatch` |
 | WF-074 | FieldAccess: struct-typed base; field a declared field; node type = the field datatype (ch. 4.9) | gate 3 | `anchor/jutterswet-vondstdossier` | `wf074-unknown-field` + `wf074-nonstruct-base` |
-| WF-075 | nested exception form (ch. 7.9): a rung's `exceptions` sub-group carries ≥ 1 member; two or more require the `unordered` marking (the root regime, at every level); no initialisation/input rung in sub-rungs; every rung carries own content, a nested sub-group, or is the initialisation rung; a group-rung (sub-group, no own content) carries no own justification; recurses | gate 3 | `anchor/jutterswet-nestuitzondering` (attribute target) + `anchor/jutterswet-nestkenmerk` (characteristic target) + `anchor/jutterswet-nestdiepte` (three-level depth) — admitted through the Phase-5c executor card | `wf075-empty-leden` + `wf075-two-members-unmarked` + `wf075-init-in-subrung` + `wf075-contentless-rung` + `wf075-grouprung-with-justification` |
+| WF-075 | nested exception form (ch. 7.9): a default's `exceptions` sub-group carries ≥ 1 member; two or more require the `unordered` marking (the root regime, at every level); no initialisation/input default in sub-defaults; every default carries own content, a nested sub-group, or is the initialisation default; a group-default (sub-group, no own content) carries no own justification; recurses | gate 3 | `anchor/jutterswet-nestuitzondering` (attribute target) + `anchor/jutterswet-nestkenmerk` (characteristic target) + `anchor/jutterswet-nestdiepte` (three-level depth) — admitted through the Phase-5c executor card | `wf075-empty-leden` + `wf075-two-members-unmarked` + `wf075-init-in-subdefault` + `wf075-contentless-default` + `wf075-groupdefault-with-justification` |
 | WF-076 | `Let`: the node `type` equals its `body` type; the binder is visible only in the `body` (never in its own `value`); `value` and `body` well-formed; the binder joins WF-064 (ch. 4.10) | gate 3 | `anchor/jutterswet-tariefstelling` — admitted through the Phase-5c let/decimals executor card | `wf076-body-type-mismatch` + `wf076-unbound-binder-in-value` |
 | WF-077 | the condition-operand discipline: everywhere an `IfThenElse` is admissible (lambda, function or strict `Let` bodies), its condition READS only binders, parameters and literals (arithmetic combinators over those are admissible — the reads are what matter); an attribute/field/characteristic read routes through a strict `Let` binding first — the leeg-barrier (ch. 4.10) | gate 3 | `anchor/jutterswet-tariefstelling` + `anchor/jutterswet-staffelvergoeding` (a `Binair` over binders as a condition operand) | `wf077-attribute-in-condition` + `wf077-fieldaccess-in-condition` |
 | WF-078 | a `BinderRef`'s serialized `type` agrees in soort with its resolved binder's declared datatype (a match arm's constructor payload, a lambda/function parameter, a `Let` binder's value, a filter binder's element) — the leaf-ref cross-check WF-023/WF-027 do for a resolved `AttribuutRef`, soort only (decimals/units uncrossed, as there); closes the WF-035 additive-position exemption for binders (ch. 4.7) | gate 3 | `anchor/jutterswet-aanspraaktelling` (fold/match binders) + `anchor/jutterswet-tariefstelling` (`Let` binders) | `wf078-binderref-type-lie` |
-| WF-079 | at most one unconditional, version-free computing rule (Gelijkstelling/Berekening) per non-laddered (type, attribute) target — the single-writer discipline of WF-026/WF-050/WF-052 for bare attribute writers (ch. 7.7); Kenmerktoekenning exempt (monotone), guarded case splits and versioned forms outside; the PHASE5D-DIFF §8.2 un-pinnable form refused ahead of the square | gate 3 | `anchor/jutterswet-rekenkamer-overzee` (a guarded gewone/overzeese case split on one target — the fence does not over-fire on conditional writers) | `wf079-two-unconditional-writers` |
+| WF-079 | at most one unconditional, version-free computing rule (Gelijkstelling/Berekening) per (type, attribute) target without defaults — the single-writer discipline of WF-026/WF-050/WF-052 for bare attribute writers (ch. 7.7); Kenmerktoekenning exempt (monotone), guarded case splits and versioned forms outside; the PHASE5D-DIFF §8.2 un-pinnable form refused ahead of the square | gate 3 | `anchor/jutterswet-rekenkamer-overzee` (a guarded gewone/overzeese case split on one target — the fence does not over-fire on conditional writers) | `wf079-two-unconditional-writers` |
 | WF-080 | a value-position `AttribuutRef` resolves to an attribute, not a characteristic (a characteristic is read through a characteristic check, ch. 4.5) — closes the tolerated `has_attr||has_kenmerk` leak in both the generic value walk and the aggregation-source path (a value-yielding fold's source; a count's role source stays in scope of WF-034); the rule TARGET lvalue is out of scope (WF-022) | gate 3 | `jutterswet-vondsttelling` + `anchor/jutterswet-penninguitgifte` (a `SOM` folding an attribute source; gate 3 witnesses none over-rejects) | `wf080-value-position-kenmerk` + `wf080-aggregation-source-kenmerk` |
 | WF-081 | a numeric literal's lexeme is a bare number in the executors' shared grammar — after `,`→`.`: `'-'? digits`, `'-'? digits? '.' digits`, or `'-'? digits '/' digits` with a non-zero denominator (ch. 4.1); unit or currency tokens, whitespace, `+`, exponents and grouping are ill-formed (the unit belongs in the datatype's `eenheid`) — closes the gate blind spot where a unit written into the lexeme passed the verifier while both executors fault on it; date lexemes and `Tekst` literals out of scope | gate 3 | `anchor/jutterswet-tariefstelling` (integer and decimal lexemes through the fence; gate 3 witnesses none over-rejects) | `wf081-unit-in-lexeme` |
 | WF-082 | the `bronAnnotaties` extension field (ch. 3.1): when present a non-empty list of non-empty trimmed statute annotations; a rule without annotations omits the field — absence leaves no trace | gate 3 | `jutterswet-hardheid` (one- and two-annotation rules on the wire, the unannotated rule traceless; replayed by gates 5–6) | `wf082-empty-bron-annotaties` |
 | WF-083 | a fold-source argument never navigates (ch. 4.3): a non-empty `navigatiePad` is ill-formed; a `navigatieRol`, when present, is self-denoting — it names a role (ci, declared name or plural) the argument's object type itself fills; away-pointing is ill-formed — closes the silent fall-through where a navigating fold source passed the verifier while ref faults on it | gate 3 | `jutterswet-aanmeldertelling` (the self-denoting count "het aantal vondsten van de aanmelder" through both executors) | `wf083-fold-source-navigates-away` |
 | WF-084 | a day-precision date literal's lexeme is the strict ISO form `yyyy-mm-dd` the executors parse (ch. 4.1) — fixed field widths (four-two-two digits), single `-` separators, month 1–12, day 1..days-in-month (leap-aware); the Dutch day-first source snippet is ill-formed, whether the bare `31-01-2024` (silently misread as year 31 → `0036-07-16`, a differential-blind wrong answer both executors agreed on) or the `dd. `-prefixed form (both executors fault) — closes that blind spot, the emitter now writing the bare ISO lexeme and keeping the snippet in `bron`; datetime lexemes out of scope | gate 3 | `jutterswet-vondstverjaring` (an ISO date literal through the fence, replayed by gates 5–6) | `wf084-source-snippet` + `wf084-bare-non-iso` |
 | WF-085 | the day-kind reference graph is acyclic (ch. 5.4 / ch. 3.7): a day-kind condition may reference other day kinds (a `Predicaat` of soort `DAGSOORT`), but mutually recursive definitions have no fixpoint — a loud refusal where the v0 toolchain resolves a cycle to a silent false (the §9.10 recursion prohibition unenforced for day kinds); diverge-from-v0 (v0 neither checks nor documents it) | gate 3 | `jutterswet-schouwkalender` (an acyclic `hoogschouwdag -> schouwdag` reference, verifier-clean, replayed by gates 5–6 over its ordinary rule) | `wf085-dagsoort-verwijzingscyclus` (two mutually referencing day kinds) |
-| WF-086 | a ladder MUST NOT target a temporal attribute (declared `attribuutGranulariteit`) nor a temporal characteristic (`kenmerkGranulariteit`) — a ladder decides at one fixpoint and has no timeline coordinate to write (ch. 6); the document-layer fence ahead of the executors (ref faults on both arms — defense-in-depth — and the Drools ladder service skips); temporal ladder targets are unscheduled (LADDER-EVOLUTIE §9 Q12a) | gate 3 (over the ladder node via the shared `attr_temporal` helper and the `kenmerkGranulariteit` table) | `anchor/jutterswet-vondstwaardering` (an attribute ladder on a non-temporal target — gate 3 witnesses WF-086 does not over-fire) | `wf086-temporele-laddertarget` (attribute arm), `wf086-temporele-ladderkenmerk` (characteristic arm) |
+| WF-086 | a defaults group MUST NOT target a temporal attribute (declared `attribuutGranulariteit`) nor a temporal characteristic (`kenmerkGranulariteit`) — a defaults group decides at one fixpoint and has no timeline coordinate to write (ch. 6); the document-layer fence ahead of the executors (ref faults on both arms — defense-in-depth — and the Drools defaults service skips); temporal defaults targets are unscheduled (PRIORITIZED-DEFAULTS-EVOLUTIE §9 Q12a) | gate 3 (over the prioritized-defaults node via the shared `attr_temporal` helper and the `kenmerkGranulariteit` table) | `anchor/jutterswet-vondstwaardering` (attribute defaults on a non-temporal target — gate 3 witnesses WF-086 does not over-fire) | `wf086-temporele-defaultstarget` (attribute arm), `wf086-temporele-defaultskenmerk` (characteristic arm) |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

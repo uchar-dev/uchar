@@ -5,7 +5,7 @@ Vervolg op 20260821-asp-systematisch (Part I-kern geland).
 Goal: de aangekondigde secties van Part I schrijven — S8 aggregaties
 en folds (aantal/som/totaal-clip/asOfDate-bucket), S9 tijdlijnen
 (temporal read, pro-rata, dagentelling, de ch. 6d-machinerie
-systematisch), S10 defeasibility en standing (ladders, decides,
+systematisch), S10 defeasibility en standing (defaults, decides,
 conflict, inputval/inputtl), S11 creatie (object/feit, budget,
 backlinks), S12 allocatie en uniciteit — zelfde regime als deel 1:
 gedistilleerd uit backends/clingo, gate-getuigen per construct, geen
@@ -24,7 +24,7 @@ Out of scope: gedragswijzigingen in de backend; nieuwe constructen.
 Result (2026-08-21): Part I is compleet — S8 aggregaties en folds
 (count/som/clip/asOfDate-bucket), S9 tijdlijnen (point reads,
 pro-rata, dagentelling, de heel-tijdlijn-standing-arm), S10
-defeasibility (ladders, decides/conflict, de
+defeasibility (defaults, decides/conflict, de
 eff-body-is-de-semantiek-regel), S11 creatie (deterministische
 termen, budget, backlinks, feitcreatie-joins), S12 allocatie en
 uniciteit (de aggregaat-cascade, paarsgewijze botsingsjoins, de

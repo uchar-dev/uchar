@@ -1,6 +1,6 @@
 # Percent-operand: clingo laat puur-% toe + ankerherspelling
 
-Goal: de korte-termijnkaart uit LADDER-EVOLUTIE §8.3 / Q10 (geratificeerd
+Goal: de korte-termijnkaart uit PRIORITIZED-DEFAULTS-EVOLUTIE §8.3 / Q10 (geratificeerd
 2026-08-29), v0-compatibel: clingo's `Percentage_van`-arm accepteert een
 linkeroperand waarvan de eenheid bewijsbaar puur `%` is (factor 1,
 canoniek `%`) door de ÷100 in de bestaande schaalvouw op te nemen — elke

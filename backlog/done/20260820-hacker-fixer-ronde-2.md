@@ -55,7 +55,7 @@ proven). The translator now refuses loudly; deliberately over-broad
 (it also refuses the condition-false-everywhere subcase where the two
 agreed) because per-instance non-firing is undecidable at translation
 and the firing subcase has no monotone encoding — Phase 4's default
-calculus is the principled home (ladder targets already carry
+calculus is the principled home (defaults targets already carry
 inputval/3). Recorded loud asymmetry: prose-pinned in ch. 6d only, as
 with the 6c asymmetries — such cases cannot enter golden (clingo
 faults), rood (ref does not fault) or negatief (the document is
@@ -64,7 +64,7 @@ Hunted and HELD (honest negatives): the fold's own bucket-wall edges,
 base gaps at bucket starts, out-of-range condition periods, shared
 condition facts across rules, overlapping/unsorted ctl rejection,
 reverse-ordered timeline expectations, adjacent-equal-segment
-handling, pro-rata in operand/creation/ladder positions (loud on both
+handling, pro-rata in operand/creation/defaults positions (loud on both
 sides), and the year-clip-over-month-derived non-split (whole-units 0
 on both sides). Not hunted: granular-parameter bases, the negated
 clip complement (ref-only), Temporal_read of derived timelines

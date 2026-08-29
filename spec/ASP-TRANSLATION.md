@@ -39,7 +39,7 @@ stratifiable, so the program has exactly one stable model and the
 model checker (`backends/clingo/lib/model.ml`) *faults* on anything
 else — zero models and multiple witnesses are both translation bugs,
 never answers. The document is desugared first (`Ir_v0.Desugar`, the
-ch. 7.7 init+berekening → ladder rewrite): this translator evaluates
+ch. 7.7 init+berekening → defaults rewrite): this translator evaluates
 the desugared kernel while the reference interpreter replays the v0
 forms natively, so gate 6's differential witnesses the desugaring
 itself.
@@ -97,7 +97,7 @@ ch. 8.2 gates it at runtime against the session's `asOfDate`). One
 case, one program also fixes the evaluation date: the case's
 `asOfDate` is a translation-time constant, so ref's *runtime* gate is
 decided at translation, decision for decision (`applies`, the literal
-mirror of ref's `applies` in `ref/lib/eval.ml`). A rule, a ladder
+mirror of ref's `applies` in `ref/lib/eval.ml`). A rule, a defaults
 member, an object creation or a fact creation whose window excludes
 the date **does not apply**: nothing of it is emitted — no head, no
 helper predicate, no `viol/2` fence (ref never evaluates an excluded
@@ -110,10 +110,10 @@ time-free`), so the two executors refuse identically. Windowed forms
 never collide with the defeasible-input machinery: the ch. 7.7
 desugaring and the ch. 7.8 standing norm both demand *version-free*
 forms, so an excluded rule's target simply keeps its case input as
-the plain `val/3` fact — with one seam handled explicitly: a ladder
+the plain `val/3` fact — with one seam handled explicitly: a defaults
 *group* whose members are all excluded still emits the unconditional
 pass-through `val(S,a,V) :- inputval(S,a,V), is_a(S,ot).`, because
-the defeasible entry keys on the unfiltered ladder list (S10/S17).
+the defeasible entry keys on the unfiltered defaults list (S10/S17).
 Windows on the forms the gate does not carry — allocation,
 consistency checks, uniqueness — fault loudly (S19). Witness:
 `jutterswet-vensterheffing` (one rule inside its window, one before
@@ -160,7 +160,7 @@ refused — milliseconds since epoch exceed clingo's integer range.
 
 The standing-target routing is the one semantic decision made at
 input time (RS ch. 7.8; S10 carries the detail): if the target attribute of
-a defeasible producer — a ladder target, or a bare single-writer
+a defeasible producer — a defaults target, or a bare single-writer
 version-free computing rule (the standing norm) — receives case
 input, that input enters as `inputval/3` (scalar) or `inputtl/5`
 (timeline) instead of `val/3`/`tl/5`, so the producer can defeat it;
@@ -172,7 +172,7 @@ fillings are doubled as `inputrol/3` when object creation is present
 every input instance gets `depth(L,0)` under the creation budget.
 
 Witnesses: every golden case exercises this section (gate 6);
-standing routing by the ladder anchors, `jutterswet-waardestelling`
+standing routing by the defaults anchors, `jutterswet-waardestelling`
 (the scalar standing norm) and `jutterswet-borgdeel` (the temporal
 arm); vintages by `jutterswet-aanmeldquotum`,
 `jutterswet-penningvintage` and `corpus/rood/vintage-uncovered-date`;
@@ -444,8 +444,8 @@ any conversion factor* (ch. 2.6):
   product of TWO unit-carrying operands (a rate cancellation `€/jr × jr`,
   an opaque product unit `€ × m`) composes units / applies factors the
   integer encoding does not carry, so it stays loud.
-- **percentage-van** admits a **provably pure-%** left operand (LADDER-EVOLUTIE
-  §8.3 / Q10). `pct_of` computes `(l/100)·r` and discards the left unit
+- **percentage-van** admits a **provably pure-%** left operand
+  (PRIORITIZED-DEFAULTS-EVOLUTIE §8.3 / Q10). `pct_of` computes `(l/100)·r` and discards the left unit
   entirely (the result carries the RIGHT unit), so a `%` on the left is
   arithmetically inert; and the `/100` bridge out of %-space is *already* the
   `sl·sr·100` scale fold — no conversion factor is applied, the encoding is
@@ -478,8 +478,8 @@ pins the admitted factor-free shape (a unitless factor × a unit-carrying
 attribute, consumed by a unitless-adopting restating position,
 hand-computed absolute values).
 
-**Units — the finest-canonical normalisation pre-step (LADDER-EVOLUTIE §8,
-Q9; `backends/clingo/lib/normalise.ml`).** The wire keeps its source units;
+**Units — the finest-canonical normalisation pre-step
+(PRIORITIZED-DEFAULTS-EVOLUTIE §8, Q9; `backends/clingo/lib/normalise.ml`).** The wire keeps its source units;
 the clingo leg runs a wire→wire lowering BEFORE emission (composed with the
 ch. 7.7 desugaring at the `translate` entry) that canonicalises each declared
 `eenheidstelsel` to its **finest base unit** — the declared unit `u_min` of
@@ -512,8 +512,8 @@ clingo leg:
   literal (its value rides the unit-blind case and is read in source units by
   ref — restating it in clingo alone would split the executors); a rate unit
   (noemer set — its numerator/denominator normalise per their own stelsels,
-  LADDER-EVOLUTIE §8.3, not built); the multiplicative positions (they demand a
-  unit-FREE operand, or pure-% for percentage-van, which restating cannot
+  PRIORITIZED-DEFAULTS-EVOLUTIE §8.3, not built); the multiplicative positions
+  (they demand a unit-FREE operand, or pure-% for percentage-van, which restating cannot
   satisfy); and cross-stelsel or opaque product units. Each keeps its existing
   `units_identical_ok` / `unit_free_ok` fault.
 - **The differential is the proof — no new harness.** Gate 6 already demands
@@ -908,29 +908,29 @@ The Phase-4 default calculus translates as layered
 negation-as-failure — stratification (WF-045/046) is what makes every
 layer sound.
 
-**Ladders** (`defaultLadders`, RS ch. 7): ladder members are grouped
-by subject and target. A member whose validity window excludes the
+**Prioritized defaults** (`prioritizedDefaults`, RS ch. 7): the members
+are grouped by subject and target. A member whose validity window excludes the
 `asOfDate` leaves the member set before translation (ref's
-`member_decision` returns Undecided before a single rung is
+`member_decision` returns Undecided before a single default is
 evaluated — S1's validity gate); a group whose members are *all*
 excluded decides nothing and emits only the unconditional input
-pass-through. Per member i, rung n:
-`dlI_decides_n(S) :- is_a(S,ot), ⟨rung condition⟩[, ⟨consequence
-bindings⟩].` — for an *attribute* ladder the consequence's bindings
+pass-through. Per member i, default n:
+`dlI_decides_n(S) :- is_a(S,ot), ⟨default condition⟩[, ⟨consequence
+bindings⟩].` — for *attribute* defaults the consequence's bindings
 sit inside `decides`, so an empty consequence cannot decide (the
-filled-gate for free); higher rungs displace lower ones by `not
+filled-gate for free); higher defaults displace lower ones by `not
 dlI_decides_m` for every higher m. The decision projects into
 `dlI_dec(S,b)` (characteristic arm) or `dlI_out(S,term)` (attribute
 arm), and the head fires under the group's conflict guard:
 `heeft(S,k) :- dlI_dec(S,1), not grpG_conflict(S), ...` /
-`val(S,a,V) :- dlI_out(S,V), not grpG_conflict(S), ...`. Equal-rung
+`val(S,a,V) :- dlI_out(S,V), not grpG_conflict(S), ...`. Equal-priority
 disagreement between members derives
 `inconsistent("onderwerp.target",S) :- dlI_dec(S,X), dlJ_dec(S,Y),
 X != Y` — the §9.5 channel, never an arbitrary pick (a singleton
 group elides the conflict machinery entirely). An `initialisatie`
-rung additionally requires `not grpG_has_input(S)`: initialisation
+default additionally requires `not grpG_has_input(S)`: initialisation
 yields to case input by definition (RS ch. 7.3, and the virtual
-input rung of ch. 7.8 that sits above it).
+input default of ch. 7.8 that sits above it).
 
 **Standing input** (RS ch. 7.8): case input on a defeasible target
 enters as `inputval/3` (S2) and re-enters the model through
@@ -938,7 +938,7 @@ enters as `inputval/3` (S2) and re-enters the model through
 producer defeats the input exactly where it *decides*. The
 effectiveness atom's body **is** the semantic choice: it carries
 condition *and* value bindings, so a producer that fires but derives
-nothing (an empty ladder outcome, an empty computing rule) leaves the
+nothing (an empty defaults outcome, an empty computing rule) leaves the
 input standing — ref's no-write-on-empty. A condition-only body
 would encode v0's erase instead. The standing norm extends this to
 bare single-writer version-free computing rules (S3) and to the
@@ -948,7 +948,7 @@ Witnesses: `jutterswet-hardheid` (the §4.1 hardship pattern),
 `jutterswet-toelagegronden`, `jutterswet-uitsluiting`,
 `jutterswet-vondstwaardering` (conflict), `jutterswet-waardestelling`
 (scalar standing), `jutterswet-borgdeel` (temporal standing); the
-WF-050/051 negatiefs pin ladder well-formedness; gate 7's
+WF-050/051 negatiefs pin defaults well-formedness; gate 7's
 reason-carrying no-op survivors pin exactly the cases where standing
 input must survive an ineffective producer.
 
@@ -1116,13 +1116,13 @@ executors — the case format's rule pin reads both identically:
 | division: empty divisor under filled dividend | the enclosing rule's name |
 | consistency assertion failure | the consistency's name |
 | uniqueness / uniqueness-union collision | the uniqueness form's name |
-| ladder conflict (equal-priority disagreement) | `onderwerp.target` |
+| default-group conflict (equal-priority disagreement) | `onderwerp.target` |
 | allocation: weightless recipient, empty ordered tie weight, cap holes | the allocation's name |
 
 A channel head embedded in a rule's *value expression* — the
 division row — threads the enclosing rule's condition atoms (S3): a
 subject the condition excludes deposits nothing. The standalone forms
-(consistencies, uniqueness, ladder conflicts) have no
+(consistencies, uniqueness, default-group conflicts) have no
 enclosing voorwaarde to thread; their own bodies are the guard. An
 allocation's deposits ride its `vdI_src` gate (S12): a source its
 voorwaarde excludes deposits nothing, and a deposit out of the
@@ -1169,7 +1169,7 @@ atom that binds `P` — else `P` would be an unsafe variable in that guard
 rule). **A leeg scrutinee** binds no `val/3` atom: no arm rule fires,
 `matchN` stays underived, the target is leeg — propagation for free (the
 S5 point-1 pattern; ch. 9.2's leeg propagation, no implicit leeg-arm).
-The anchor's rung — `uitkering` := match on `beschikking`:
+The anchor's default — `uitkering` := match on `beschikking`:
 `Toegekend(bedrag)` → `bedrag` + parameter `vaste voet`, `Afgewezen` →
 0.00, `Aangehouden` → 12.00 — emits three `match1` rules; the payload
 `P` and the parameter share a scale (both 2 decimals), so the addition
@@ -1573,16 +1573,16 @@ flat-term encoding (S19).
 
 ### S17. Nested exception groups
 
-The flat ladder of S10 is the unary case of a rose tree (RS ch. 7.9, the
-ratified option i). A rung's `excepties` sub-group generalises the
-`decides_m` lowering recursively; the translation is a real extension of
+The flat defaults chain of S10 is the unary case of a rose tree (RS
+ch. 7.9, the ratified option i). A default's `excepties` sub-group
+generalises the `decides_m` lowering recursively; the translation is a real extension of
 S10, not an application of it.
 
-**Chains and groups.** A *chain* — a rung list, either a top-level member
-or a sub-ladder — lowers to two predicates: an outcome `T_out(S,V)` (the
-highest *settling* rung's decision: the 0/1 besluit on a characteristic
-ladder, the scaled consequence term on an attribute ladder) and a
-conflict flag `T_cfl(S)`. A *group* — a rung's sub-group, or the root
+**Chains and groups.** A *chain* — a default list, either a top-level
+member or an exception group — lowers to two predicates: an outcome
+`T_out(S,V)` (the highest *settling* default's decision: the 0/1 besluit on
+characteristic defaults, the scaled consequence term on attribute defaults)
+and a conflict flag `T_cfl(S)`. A *group* — a default's sub-group, or the root
 member set — reconciles its member chains exactly as S10's root group
 reconciles:
 
@@ -1601,7 +1601,7 @@ A member conflict propagates *before* differing decisions are read
 (`not mK_cfl` — the conflict-first ordering of ch. 7.9), so a deeper key
 wins over a shallower one.
 
-**The rung.** A rung carrying `excepties` reads its group first:
+**The default.** A default carrying `excepties` reads its group first:
 
 ```
 tN_dec(S,V) :- gU_out(S,V).                                        % adopt the sub decision
@@ -1609,14 +1609,14 @@ tN_conf(S)  :- gU_cfl(S).                                          % propagate t
 tN_dec(S,c) :- ⟨own justification⟩, ⟨own bindings⟩, not gU_any(S). % form-a fall-back only
 ```
 
-A *group-rung* (no own besluit/consequence — the multi-member base group
-of RS ch. 7.9, e.g. art. 6's B1/B2 basisgrond) omits the third rule and
-merely carries its group as a chain position. A rung *settles* the walk
-when it decides or conflicts (`tN_stl :- tN_dec(_)`;
+A *group-default* (no own besluit/consequence — the multi-member base
+group of RS ch. 7.9, e.g. art. 6's B1/B2 basisgrond) omits the third rule
+and merely carries its group as a chain position. A default *settles* the
+walk when it decides or conflicts (`tN_stl :- tN_dec(_)`;
 `tN_stl :- tN_conf`), and the chain's outcome takes the highest settling
-rung, higher rungs displacing lower ones by `not tM_stl` — the S10
-displacement, now carrying conflicts too, so a higher deciding rung
-displaces a lower rung's sub-group conflict (vraag 5-A). The form-a
+default, higher defaults displacing lower ones by `not tM_stl` — the S10
+displacement, now carrying conflicts too, so a higher deciding default
+displaces a lower default's sub-group conflict (vraag 5-A). The form-a
 fall-back's `not gU_any` restricts the own justification/consequence to a
 sub-group that decides *nothing*: a deciding or conflicting sub-group
 takes precedence.
@@ -1626,15 +1626,15 @@ takes precedence.
 atom `grpG_eff`: a differing sub-group therefore writes nothing on the
 target and leaves any case input standing (S10's `inputval` path), while
 the sole §9.5 fact is the `inconsistent` its *own* group deposits under a
-**path key** — `onderwerp.target` plus the rung-index path
-(`Jutter.heffing/0` for the sub-group of root rung 0, `Jutter.heffing/1`
-for rung 1's base group). The root's own differing decisions keep the
-bare key `Jutter.heffing` (S10). One conflict, one fact, one place —
+**path key** — `onderwerp.target` plus the default-index path
+(`Jutter.heffing/0` for the sub-group of root default 0,
+`Jutter.heffing/1` for default 1's base group). The root's own differing
+decisions keep the bare key `Jutter.heffing` (S10). One conflict, one fact, one place —
 uniform with the root reading and Catala's ⊛-propagation minus the
 fatality we already made observable.
 
 **Stratification.** Every negation points strictly *down* the tree
-(`not gU_cfl`, `not gU_any`) or at strictly *higher* rungs of the same
+(`not gU_cfl`, `not gU_any`) or at strictly *higher* defaults of the same
 chain (`not tM_stl` — disjoint subtrees). No conflict atom depends on the
 write it guards, so the program stays stratified and clingo keeps its one
 stable model — the soundness S10 has, extended by construction. The
@@ -1649,7 +1649,7 @@ reading yields `10.00`, consistent — PHASE4-DEFAULTS §7), case2-alleen-z
 the sole-exception route, case3-verschillend the propagated sub-group
 conflict (`heffing` leeg + `Jutter.heffing/0`), case4-gelijk the
 equal-decisions rule *at sub-group level*, case5-terugval the form-a
-fall-back to `40.00`, case6-basis and case7-basisconflict the group-rung
+fall-back to `40.00`, case6-basis and case7-basisconflict the group-default
 base group and its `Jutter.heffing/1` conflict, case8-niets the
 all-undecided no-op survivor; `anchor/jutterswet-nestkenmerk` (the
 characteristic arm, art. 7) — case1-y-wint the sub-besluit `false`
@@ -1657,9 +1657,9 @@ displacing the root `true` (vrijgesteld absent, consistent),
 case2-conflict the `Jutter.vrijgesteld/0` key, case3-terugval the
 empty-sub-group fall-back to `true`. The seven nested-group negatiefs
 pin what the verifier rejects before translation ever runs:
-`wf050-half-marked-group`, `wf050-subrung-wrong-shape`,
-`wf075-contentless-rung`, `wf075-empty-leden`,
-`wf075-grouprung-with-justification`, `wf075-init-in-subrung`,
+`wf050-half-marked-group`, `wf050-subdefault-wrong-shape`,
+`wf075-contentless-default`, `wf075-empty-leden`,
+`wf075-groupdefault-with-justification`, `wf075-init-in-subdefault`,
 `wf075-two-members-unmarked`.
 
 ### S18. The strict `Let`, guarded consequences, and the split money multiplication
@@ -1828,8 +1828,8 @@ asymmetry before it); runtime, negative and fractional
 power exponents (the runtime-exponent empty corner 4^leeg = leeg is
 thereby ref-only behaviour); ref's unit-conversion algebra where a
 REAL factor survives the finest-canonical normalisation pre-step (S6,
-`Normalise`, LADDER-EVOLUTIE §8, Q9): a product of TWO unit-carrying
-operands (a rate cancellation, an opaque product unit), division/rate
+`Normalise`, PRIORITIZED-DEFAULTS-EVOLUTIE §8, Q9): a product of TWO
+unit-carrying operands (a rate cancellation, an opaque product unit), division/rate
 units, and a restating position (additive join, clamp bound, comparison,
 ordering fold, write boundary) over two DIFFERENT units the pass could
 NOT reduce to one — a target not in its stelsel's finest unit, a coarser
@@ -1856,10 +1856,10 @@ together.
 validity windows on the forms OUTSIDE the ch. 8.2 gate — allocation,
 consistency checks, uniqueness and the uniqueness union (`… validity
 windows are not translated (no corpus case)`; before the gate landed
-for rules, ladder members and creations these forms silently ignored
+for rules, defaults members and creations these forms silently ignored
 their window, so the fault is new and load-bearing: an unwindowed
 translation would apply outside its window) — while windows on rules,
-ladder members and both creation forms now translate (S1's validity
+defaults members and both creation forms now translate (S1's validity
 gate, `jutterswet-vensterheffing`), including the time-free refusal
 both executors share; temporal targets
 outside the ch. 3.7/3.8 fold shapes; the negated gedurende clip (the
@@ -2118,18 +2118,18 @@ comparison, and inadmissible field datatypes are rejected by WF-071..074
 before translation is reached.
 
 *Nested exception groups (S17) — the backstops:* an **initialisation
-rung inside a sub-ladder** faults (`an initialisation rung inside a
-sub-ladder is ill-formed (WF-075)`) — the initialisation and ch. 7.8
-input rungs stay root-only, and WF-075 rejects the shape first, so the
-fault survives only as an unreachable backstop on WF-clean input; a
-**rung consequence scale** disagreeing with the target scale faults at
-every depth (`rung value scale … does not match target scale …`), a
-sub-ladder inheriting the root target's declared scale (RS ch. 7.9);
-a validity window on a ladder gates per top-level member since the
-ch. 8.2 landing (S1's validity gate; a sub-ladder carries no window of
-its own in the IR, so nothing nested is silently gated). The
+default inside an exception group** faults (`an initialisation default
+inside an exception group is ill-formed (WF-075)`) — the initialisation and
+ch. 7.8 input defaults stay root-only, and WF-075 rejects the shape first,
+so the fault survives only as an unreachable backstop on WF-clean input; a
+**default consequence scale** disagreeing with the target scale faults at
+every depth (`default value scale … does not match target scale …`), an
+exception group inheriting the root target's declared scale (RS ch. 7.9);
+a validity window on a defaults group gates per top-level member since the
+ch. 8.2 landing (S1's validity gate; an exception group carries no window
+of its own in the IR, so nothing nested is silently gated). The
 **shared non-trivial base under all members** stays a frontend refusal
-(PHASE5C-TUTORIAL §4), never a clingo shape: a group-rung carries a
+(PHASE5C-TUTORIAL §4), never a clingo shape: a group-default carries a
 multi-member base group here with no special encoding, so nothing new is
 refused for it.
 
@@ -2154,7 +2154,7 @@ binder self-contained (S15, golden `jutterswet-kinderlet`); the only closed-body
 shape both executors reject, the parallel verifier card's WF-064 gap). One
 `Let`-body shape an executor carries only in the bare rule-value position still
 faults elsewhere: a **`Let` whose
-body is an `IfThenElse` outside the bare rule value** (a ladder rung, a
+body is an `IfThenElse` outside the bare rule value** (a default, a
 creation member initialisation, a sum- or struct-target value —
 `expr_term` peels the `Let` but has no `If_then_else` arm) faults
 `expression kind not translated (no corpus case exercises it)`. ref
@@ -2405,7 +2405,7 @@ the statute's intent, reproduced under stable-model semantics.
    (rows 7/8). No priority or salience mechanism appears anywhere; the
    only ordering notion is stratification, which here holds because the
    contrary is an input. When contraries become *derived* (the art. 4
-   ladder of wet-v2), layering will need the standard
+   defaults of wet-v2), layering will need the standard
    exception-predicate pattern and stratification becomes the load-bearing
    WF condition (row 6) — that is the natural next hand exercise.
 4. **"Op dat tijdstip" did not translate** (row 11 — since decided). The
@@ -2424,26 +2424,26 @@ the statute's intent, reproduced under stable-model semantics.
    means false; the corpus's "world facts are open" register needs the
    row-18 empty/unknown decision before this translation can respect it.
 
-## 6. Hand exercise 2: the art. 4 exception ladder
+## 6. Hand exercise 2: the art. 4 exception defaults
 
 Source: `corpus/jutterswet/wet-v2.md` — art. 3 (penningrecht), art. 4
 (uitsluiting, gelaagd: "dit geldt niet indien …; dat laatste geldt weer
 niet indien …"), art. 4bis (schorsing). The test case is the Marrit
 dossier (`corpus/jutterswet/dossiers.md`) — the only dossier that walks
-the whole ladder — plus four synthetic single-difference variants. In IR
+the whole chain — plus four synthetic single-difference variants. In IR
 terms this exercises:
 
 | IR construct | Where it appears here | `CONSTRUCTS.md` row |
 |---|---|---|
 | Negation over a derived characteristic | "recht" negatively depends on the derived "uitgesloten" | 6 |
-| Exception layering (exception-on-exception) | the art. 4 ladder itself | 8 |
+| Exception layering (exception-on-exception) | the art. 4 defaults themselves | 8 |
 | Stratification as a WF condition | the four-stratum negative dependency chain below | 6 |
-| Parallel exclusion grounds | art. 4bis "evenmin" next to the art. 4 ladder | 8, 19 |
+| Parallel exclusion grounds | art. 4bis "evenmin" next to the art. 4 defaults | 8, 19 |
 | Numeric comparison in a condition | "ten minste twaalf vondsten" | 1 |
 
 ### 6.1 The translation, construct by construct
 
-- **The ladder is layered negation-as-failure over *derived* exception
+- **The defaults are layered negation-as-failure over *derived* exception
   predicates** — the standard abnormality pattern. Each textual layer
   becomes one rule; each "geldt niet indien" becomes one `not` over the
   next layer's head:
@@ -2464,7 +2464,7 @@ terms this exercises:
   This is exactly the condition `CONSTRUCTS.md` row 6 promotes to a WF
   rule: the text's "geldt niet / geldt weer niet" nesting *is* the
   stratification order, read off the statute.
-- **The compiled representation** flattens the ladder into classical
+- **The compiled representation** flattens the defaults into classical
   cases over input facts (refused-and-not-herroepen, or
   refused-and-herroepen-and-vervallen). Over complete inputs the two are
   equivalent by construction: unfolding layer 1 into layer 0 gives
@@ -2476,18 +2476,18 @@ terms this exercises:
   The equivalence is additionally *shown* under clingo by a difference
   test (run 3): any subject on which the two disagreed would surface as
   `verschil/1`.
-- **Art. 4bis is a parallel ground, not a ladder rung.** "Evenmin"
+- **Art. 4bis is a parallel ground, not a default.** "Evenmin"
   attaches a second, independent exclusion next to art. 4; it is
   translated as a separate `not geschorst_raapvergunning` in the art. 3
   rule, deliberately *not* as a case of `uitgesloten` — a suspension is
-  not subject to the herroeping ladder.
+  not subject to the herroeping defaults.
 - **"Ten minste twaalf vondsten"** is a plain arithmetic guard
   (`N >= 12`); the art. 5 hardheid variant (twaalf → zes) is out of
   scope here (ch. 7).
 
 ### 6.2 The programs
 
-`ladder.lp` — the layered representation:
+`defaults.lp` — the layered representation:
 
 ```prolog
 % Jutterswet wet-v2, art. 3 + art. 4 (gelaagd) + art. 4bis — clingo.
@@ -2530,7 +2530,7 @@ uitzondering_herroeping(P) :-
 `gecompileerd.lp` — the compiled representation plus the difference test:
 
 ```prolog
-% De gecompileerde lezing van art. 4: de ladder platgerekend tot twee
+% De gecompileerde lezing van art. 4: de defaults platgerekend tot twee
 % klassieke gevallen over invoerfeiten (weigering zonder herroeping, of
 % weigering met vervallen herroeping).
 uitgesloten_c(P) :-
@@ -2563,10 +2563,10 @@ raapvergunning_geweigerd(marrit).
 weigering_herroepen(marrit).
 ```
 
-`varianten.lp` — the ladder rung by rung:
+`varianten.lp` — the defaults, default by default:
 
 ```prolog
-% De ladder laagsgewijs: vier synthetische varianten van hetzelfde dossier.
+% De defaults laagsgewijs: vier synthetische varianten van hetzelfde dossier.
 % w: alleen weigering.               wh: weigering, herroepen.
 % whv: weigering, herroepen, vervallen.   s: geschorst (art. 4bis).
 erkend_jutter(w).   onbesproken_juttersgedrag(w).   aantal_vondsten(w, 14).
@@ -2589,7 +2589,7 @@ Executed with the clingo 5.8.2 binary; stratified, so every run has
 exactly one stable model. Answer sets verbatim, timing trimmed (ch. 4
 convention).
 
-**Run 1 — Marrit:** `clingo ladder.lp marrit.lp`
+**Run 1 — Marrit:** `clingo defaults.lp marrit.lp`
 
 ```
 Answer: 1
@@ -2602,7 +2602,7 @@ and of verval nothing is established: the layer-1 exception stands. The
 v0 statute (flat art. 4) would have excluded her; the layered v2 text
 exists to decide this dossier correctly, and does.
 
-**Run 2 — the ladder rung by rung:** `clingo ladder.lp varianten.lp`
+**Run 2 — the defaults, default by default:** `clingo defaults.lp varianten.lp`
 
 ```
 Answer: 1
@@ -2613,10 +2613,10 @@ SATISFIABLE
 `w` (weigering alone) → uitgesloten, no recht; `wh` (herroepen) →
 recht; `whv` (herroeping vervallen) → uitgesloten again, no recht; `s`
 (geschorst, art. 4bis) → no recht *without* being `uitgesloten` — the
-parallel ground blocks art. 3 directly and never touches the ladder.
+parallel ground blocks art. 3 directly and never touches the defaults.
 
 **Run 3 — the difference test:**
-`clingo ladder.lp gecompileerd.lp marrit.lp varianten.lp`
+`clingo defaults.lp gecompileerd.lp marrit.lp varianten.lp`
 
 ```
 Answer: 1
@@ -2642,18 +2642,18 @@ representations agree, as the ch. 6.1 unfolding argument says they must.
    requires stratification") is checkable on the IR as acyclicity of the
    negative dependency graph — the statute's own nesting supplies the
    strata.
-3. **What the ladder demands of the Phase-4 default model** (row 8): a
+3. **What the defaults demand of the Phase-4 default model** (row 8): a
    priority *chain* (rule < exception < exception-on-exception), not
    just pairwise defaults — Catala's exception trees express exactly
    this nesting, and the stable-model reading here gives the same
-   answers. No conflict arises anywhere in the ladder (the layers are
+   answers. No conflict arises anywhere in the chain (the layers are
    linearly ordered), so the §9.5 inconsistency channel is not
    exercised; over-determination needs *unordered* simultaneous
    exceptions, which this statute deliberately avoids.
 4. **Parallel grounds compose by conjunction of NAFs** (rows 8/19).
-   "Evenmin" (art. 4bis) is a second independent blocker, not a ladder
-   rung: `not uitgesloten, not geschorst`. Keeping it out of
-   `uitgesloten` preserves the ladder's meaning (a suspension cannot be
+   "Evenmin" (art. 4bis) is a second independent blocker, not one of the
+   defaults: `not uitgesloten, not geschorst`. Keeping it out of
+   `uitgesloten` preserves the defaults' meaning (a suspension cannot be
    "herroepen" away).
 5. **The two representations diverge in structure, not in models** —
    and only the layered one mirrors the statute's amendment history. For
@@ -2893,7 +2893,7 @@ superset model — a silent split both hunters reproduced symmetrically.
 The translator now refuses loudly when the case supplies input for a
 Berekening/Gelijkstelling target (scalar or temporal): overwrite
 semantics have no monotone encoding without the defeasibility
-machinery (Phase 4's default calculus is the principled home; ladder
+machinery (Phase 4's default calculus is the principled home; defaults
 targets already carry it via `inputval/3`). A recorded loud asymmetry:
 ref executes such cases, this backend refuses them, so they cannot
 enter the differential corpus.
@@ -2933,6 +2933,6 @@ core-IR-to-ASP mapping — all Phase-3 work. This document grows with
 each hand exercise until that systematic mapping replaces it. *That
 promise is kept: Part I (S1–S19) is the systematic mapping. The
 constructs this chapter deferred have long since landed — hardheid in
-the ladder anchors (S10), the temporalisation in the timeline
+the defaults anchors (S10), the temporalisation in the timeline
 machinery (S9, historically ch. 6d), the quantitative corpus
 throughout.*

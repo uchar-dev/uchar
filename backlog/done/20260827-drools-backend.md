@@ -23,7 +23,7 @@ bypass the waist and test the old chain instead of the IR). Deliver:
    of IrEmitter, parsing the wire (jackson; the record types live in
    frontends/regelspraak/ir, the normative shape in spec/schema +
    IR-SPEC) into RegelSpraakModel + Resolved* forms. Discipline: every
-   wire form the v0 transpiler does not carry (defaultLadders,
+   wire form the v0 transpiler does not carry (prioritizedDefaults,
    functionDefs/folds, struct types/literals, Let, MapList/Invoke, …)
    is a LOUD per-form refusal ("form not carried by the v0 Drools
    backend"), never a silent skip; purely additive provenance fields
@@ -69,7 +69,7 @@ May touch: `backends/drools/**` (new), `scripts/check-drools.sh` (new),
 `scripts/check-self-contained.sh` (tripwire), `.github/workflows/
 gates.yml`, `CLAUDE.md` (gate 12 + no-share restate).
 Out of scope: the red-path schema change (next card), the toka leg
-(third card), ladder-lowering (waits for the ladder-frontend
+(third card), defaults-lowering (waits for the defaults-frontend
 evolution), any toolchain commit, `spec/**` (schema untouched — the
 loader READS the existing wire), `spec/CONSTRUCTS.md` (serial at
 merge).

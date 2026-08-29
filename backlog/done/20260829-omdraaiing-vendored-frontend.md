@@ -1,6 +1,6 @@
 # Omdraaiing: de toolchain consumeert frontends/regelspraak (vendored subtree)
 
-Goal: de afhankelijkheids-omdraaiing van LADDER-EVOLUTIE §6 / Q5 (geratificeerd
+Goal: de afhankelijkheids-omdraaiing van PRIORITIZED-DEFAULTS-EVOLUTIE §6 / Q5 (geratificeerd
 2026-08-29), uitgevoerd terwijl de frontend stil ligt (freeze-invert-evolve).
 De toolchain (regelspraak-java) vendort de TOKA-schone slice
 `frontends/regelspraak` van uchar in zijn eigen boom op de SPEC_REV-pin,
@@ -30,8 +30,8 @@ branch, de hoofdsessie merget en pusht); in uchar alleen backlog/ (deze
 kaart).
 
 Out of scope: elke wijziging aan uchar's `frontends/regelspraak` zelf (de
-frontend ligt stil tot de uitzondering-kaart); ladder-emissie; de
-Drools-ladderservice; publicatie van de slice (Q6: uitgesteld tot de flip).
+frontend ligt stil tot de uitzondering-kaart); defaults-emissie; de
+Drools-defaults-service; publicatie van de slice (Q6: uitgesteld tot de flip).
 
 Result: geland in de toolchain als main dcd2167 (vier commits, ff). De slice
 frontends/regelspraak@39e303e is byte-identiek gevendord onder

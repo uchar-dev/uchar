@@ -1,4 +1,4 @@
-# LADDER-EVOLUTIE — the ladder design round
+# PRIORITIZED-DEFAULTS-EVOLUTIE — the prioritized-defaults design round
 
 *Status: **ratified 2026-08-29** — all fourteen §12 questions decided per
 recommendation (1a; 2 confirmed; 3 yes; 4 extend; 5a; 6 defer to the flip;
@@ -24,18 +24,20 @@ answered. All file:line citations are at uchar `main` db8675d and toolchain
 
 ## 1. Why this round
 
-Five recorded debts converge on the ladder, and one reality test now exists
+Five recorded debts converge on the prioritized defaults, and one reality
+test now exists
 to hold the design against.
 
-1. **The Phase-4 deferral premise is void.** Full Drools ladder service was
-   deferred "until a frontend emits ladders — realistically the Phase-5
+1. **The Phase-4 deferral premise is void.** Full Drools defaults service
+   was deferred "until a frontend emits defaults — realistically the Phase-5
    Catala plugin" (`PHASE4-DEFAULTS.md:449-453`, decision 6). The Catala
-   plugin emits ladders today (six ladder-carrying catala goldens), yet the
-   Drools loader refuses the entire `defaultLadders` section
-   (`IrLoader.java:74-95`): every ladder golden is a gate-12 auto-exclusion.
+   plugin emits defaults today (six defaults-carrying catala goldens), yet
+   the Drools loader refuses the entire `prioritizedDefaults` section
+   (`IrLoader.java:74-95`): every defaults golden is a gate-12
+   auto-exclusion.
    The condition has been met; the work was never scheduled.
 2. **The plan anticipates the inversion.** `spec/PLAN.md` §5: "The planned
-   upgrade, once the ladder-producing frontend evolution starts, is
+   upgrade, once the defaults-producing frontend evolution starts, is
    inverting the dependency so the toolchain consumes this frontend — one
    source of frontend truth."
 3. **WF-031 left an OPEN addressed here by name.** "OPEN: whether mutually
@@ -54,37 +56,38 @@ default-and-exception structure in living statute text, rights-free under
 art. 11 Auteurswet. §3 distils it into requirements; every proposal in
 §§4–8 is checked against them.
 
-## 2. Where the ladder stands
+## 2. Where the prioritized defaults stand
 
 The wire contract is mature and two-executor-proven. Summary of the state
 capture (full citations in the track-A findings; normative sources
 `IR-SPEC.md:1904-2005`, `RUNTIME-SEMANTICS.md` ch. 7):
 
-- `defaultLadders` is an optional top-level core-layer list the v0 emitter
-  never produces. A ladder = one writer, one target (characteristic XOR
-  attribute), rungs in descending priority, highest deciding rung wins;
-  attribute rungs fall through on leeg; a ladder never writes leeg; rung
-  evaluation is speculative (only the winner's §9.5 deposits persist).
-  Nested exception groups (`Rung.excepties`, WF-075) form a rose tree;
+- `prioritizedDefaults` is an optional top-level core-layer list the v0
+  emitter never produces. A defaults group = one writer, one target
+  (characteristic XOR attribute), defaults in descending priority, highest
+  deciding default wins; attribute defaults fall through on leeg; a defaults
+  group never writes leeg; default evaluation is speculative (only the
+  winner's §9.5 deposits persist).
+  Nested exception groups (`Default.excepties`, WF-075) form a rose tree;
   declared-unordered groups reconcile with equal-decisions-idempotent and
   differing-decisions → no write + one path-keyed §9.5 fact. Conflict-fact
   readability is closed for v1.
 - **ref** executes the full contract including nesting and the ch. 7.7/7.8
   standing/desugaring readings (`ref/lib/eval.ml:1630-1771`); it faults on a
-  temporal ladder target (`eval.ml:1640-1644`).
+  temporal defaults target (`eval.ml:1640-1644`).
 - **clingo** executes the same contract monotonically (S17 `decides_m`/NAF
   displacement, `translate.ml:4298-4594`), with the ch. 6d computed-target
   input fence for non-standing targets.
-- **Drools** refuses ladders wholesale at the loader; its salience is still
+- **Drools** refuses defaults wholesale at the loader; its salience is still
   the kenmerk-negation heuristic, not derived from IR defaults.
-- Witness inventory. "Ladder-carrying" in this document means a
-  **non-empty** `defaultLadders` list: fifteen goldens — seven hand-written
+- Witness inventory. "Defaults-carrying" in this document means a
+  **non-empty** `prioritizedDefaults` list: fifteen goldens — seven hand-written
   anchors (uitsluiting, vondstwaardering, toelagegronden, nestuitzondering,
   nestkenmerk, nestdiepte, hardheid), two non-anchor goldens (samenloop,
   synth3-nestkorting), six Catala-produced. Five further catala goldens
   carry the key with an empty list (flat programs). Seventeen
   WF-050/051/075 negatiefs.
-- Recorded open holes: the Drools service (item 1 above); temporal ladder
+- Recorded open holes: the Drools service (item 1 above); temporal defaults
   targets (executor fault with **no wire/WF fence and no witness**); the
   allocation-target input fence (`PHASE4-DEFAULTS.md` §4.4, latent superset
   gap, waits for the §9 executor card); sub-root shared base
@@ -120,21 +123,23 @@ current against the SRU service); statute text is rights-free.
   variable termijnen; art. 43 lid 1 shifts the maxdatum by the elapsed
   eindiging→herleving period.
 
-### 3.2 Ladder requirements distilled
+### 3.2 Defaults requirements distilled
 
 - **R1 — gate-sentence scoping.** "Met inachtneming van …" compiles to a
-  base rung displaced by higher rungs drawn from the referenced articles.
+  base default displaced by higher defaults drawn from the referenced
+  articles.
   *Expressible today* — the `jutterswet-uitsluiting` anchor is exactly this
   shape. Art. 21's embedded second gate sentence requires nesting (R3).
 - **R2 — aanhef-with-onderdelen as identifiable grounds.** Because the
   onderdelen carry different termijn regimes, a faithful encoding needs the
-  onderdelen as **separately identifiable rungs, each tied to its termijn
+  onderdelen as **separately identifiable defaults, each tied to its termijn
   regime** — not one flattened disjunction. This is the sharpest new
-  requirement WW places on the ladder; no jutterswet anchor exercises it.
+  requirement WW places on the prioritized defaults; no jutterswet anchor
+  exercises it.
 - **R3 — exception-to-the-termination.** grant (15) → do-not-attribute
   (19/20) → attribute again (21-1) → do-not-attribute (21-2) → gated by
-  (21-3): four-plus nesting levels. *Expressible* via `Rung.excepties`
-  (ch. 7.9); the deepest real nesting the ladder has faced (anchors nest
+  (21-3): four-plus nesting levels. *Expressible* via `Default.excepties`
+  (ch. 7.9); the deepest real nesting the defaults have faced (anchors nest
   two levels).
 - **R4 — samenloop is ordering, not conflict.** The "aaneensluitend …
   slechts één keer" clause wants "the earliest ground's window governs" —
@@ -143,19 +148,19 @@ current against the SRU service); statute text is rights-free.
   mechanism, confirming the closed v1 decision (`PRIORITY-RELATION.md`
   §10; `RUNTIME-SEMANTICS.md:2429-2435`).
 - **R5 — termijnen as per-ground guards.** (a) *which* termijn applies per
-  ground — ladder/lookup structure; (b) *the test* — "periode(eindiging,
+  ground — defaults/lookup structure; (b) *the test* — "periode(eindiging,
   vervallen) ≤ termijn" — date arithmetic (`tijdsduur` WF-038 + ordering
-  WF-036, both landed), fed into rung justifications as separate derived
-  attributes (WF-051 forbids the ladder reading its own write).
+  WF-036, both landed), fed into default justifications as separate derived
+  attributes (WF-051 forbids the defaults reading their own write).
 
-### 3.3 What ladders alone cannot carry
+### 3.3 What prioritized defaults alone cannot carry
 
-The ladder is atemporal: one decision at one fixpoint. Three things compose
-*around* it, not inside it: (1) the lifecycle over event-time
+The defaults group is atemporal: one decision at one fixpoint. Three things
+compose *around* it, not inside it: (1) the lifecycle over event-time
 (lopend → geëindigd → herleefd) — the IR has no event/state-machine
 construct, only anchor-only timelines; (2) the termijn deadline over two
 event-dates — input facts or prior date-arithmetic rules; (3) the art. 43
-maxdatum shift — plain date+duration arithmetic, not a ladder concern.
+maxdatum shift — plain date+duration arithmetic, not a defaults concern.
 Herleving is a good realism test precisely because it forces this
 composition end-to-end. The dossier also records a genuine
 statute-arithmetic ambiguity (days-vs-months in the art. 43 period) that
@@ -164,7 +169,7 @@ the case must pin as an authored choice.
 ### 3.4 The realism-case sketch
 
 First case: the income-termination path (art. 20-1-c → 21-1 first volzin,
-geen termijn) — a nested characteristic ladder for `recht op uitkering`
+geen termijn) — nested characteristic defaults for `recht op uitkering`
 (grant 15 → einde 20-1-c → herleving 21-1 → blokkade 21-2-a) plus ordinary
 date-arithmetic rules (inkomensgrens 0,875 × maandloon; `tijdsduur`;
 nieuwe maxdatum). Scope caveat, stated up front: the first case takes
@@ -177,10 +182,10 @@ AOW-jaargrens underlayer, consecutive-grounds samenloop, and the variable
 termijnen — each mapped to scenarios in the regelspraak-werkbank evaluation
 dataset (read-only reference). Authored from statute text and own casus
 facts only; handbook material never enters corpus or spec. Authoring
-channel: hand-written ladder anchor first; through the §4 dialect extension
-once that lands.
+channel: hand-written defaults anchor first; through the §4 dialect
+extension once that lands.
 
-## 4. The ladder-producing frontend (agenda 1)
+## 4. The defaults-producing frontend (agenda 1)
 
 ### 4.1 Findings that bound the design
 
@@ -195,10 +200,10 @@ once that lands.
 - The language therefore expresses rule-plus-exception as **condition
   duplication** (the exception ground folded, negated, into the base rule's
   `indien`), and the flat source carries **no priority whatsoever**. The
-  order a ladder encodes does not exist in RegelSpraak source; Catala's
-  plugin reads its ladder structure off a native default tree the source
-  language actually has.
-- Corpus confirmation: 20 goldens carry the `defaultLadders` key — 11
+  order prioritized defaults encode does not exist in RegelSpraak source;
+  Catala's plugin reads its defaults structure off a native default tree the
+  source language actually has.
+- Corpus confirmation: 20 goldens carry the `prioritizedDefaults` key — 11
   Catala-sourced (6 non-empty, 5 empty) and 9 hand-authored, **0 from a
   `bron.rgs`**; separately, all 20 `bron.rgs` goldens are flat.
 
@@ -228,25 +233,26 @@ the grammar already takes for `regelGroep` and scenariotoetsen); a tracked
 divergence from the v2.3.0 arbiter, logged in CONSTRUCTS and in the
 frontend's grammar-divergence log (today that log exists only in the
 toolchain; the extension card creates it beside the frontend grammar). Resolver work is real but bounded (resolve
-the base rule, check same target, build the `DefaultLadder`, run the
+the base rule, check same target, build the `PrioritizedDefaults`, run the
 WF-050 writer checks, emit). No existing golden changes. Under R2 the
 per-onderdeel identity comes for free: each onderdeel is its own named
 uitzondering.
 
-**(ii) Pattern recognition (flat → ladder folding in the resolver)** —
+**(ii) Pattern recognition (flat → defaults folding in the resolver)** —
 **rejected as a transformation.** Only the complementary-comparison split
 is soundly recognisable, and that case is an order-free partition needing
-no ladder. General mutual exclusivity needs a satisfiability check;
+no defaults. General mutual exclusivity needs a satisfiability check;
 negation-guard matching needs authorial intent; and above all the
 **priority itself is not recoverable** from a source that never encoded it
-— folding overlap into a ladder invents an order the author never wrote
+— folding overlap into prioritized defaults invents an order the author
+never wrote
 (exactly the "needs authorial intent, not a transformation" line ch. 7.7
 already draws). At most, recognition may *advise* ("these rules look like a
 defeasibility family — consider an `Uitzondering op` block"), never
 rewrite. A silent fold would also rewrite all 20 flat `.rgs` goldens
 (breaking gate-10 byte-identity) for no semantic gain.
 
-**(iii) Status quo** — ladders stay Catala/hand-authored. Zero cost, zero
+**(iii) Status quo** — defaults stay Catala/hand-authored. Zero cost, zero
 arbiter divergence, faithful to the source language's own expressive limit.
 Cost: no Dutch-CNL authoring channel for ordered exceptions; the WW realism
 case stays hand-anchor-only.
@@ -259,66 +265,66 @@ per-onderdeel exception identity is precisely what named `Uitzondering op`
 blocks provide, and a herleving case authored in the Dutch CNL — flowing
 frontend → wire → ref ≡ clingo ≡ Drools — is the strongest hourglass
 witness the programme can produce. The plan anticipated it (§1 item 2).
-And the main cost recorded against it — ladder-emitting goldens dropping
-out of Drools coverage — is removed by scheduling the Drools ladder service
-(§5) *first*. The extension is opt-in at the source level, so emission
+And the main cost recorded against it — defaults-emitting goldens dropping
+out of Drools coverage — is removed by scheduling the Drools defaults
+service (§5) *first*. The extension is opt-in at the source level, so emission
 changes nothing for documents that do not use it.
 
 ### 4.4 Disposition of the flat form
 
 **Both forms persist.** The flat KENMERKTOEKENNING/gelijkstelling wire form
 remains first-class (the v0-mirror invariant: the v0 emitter never produces
-`defaultLadders`); the ladder is the canonical *semantic reading*,
-delivered by the ch. 7.7/7.8 desugaring in consumers — "recorded, not
-transformed" (`RUNTIME-SEMANTICS.md:2573-2574`). WF-050 and WF-079 are
-written for exactly this coexistence. Canonicalising flat rules to one-rung
-ladders would break gate-10 byte-identity, drop 20 goldens out of Drools
-play, and obsolete the WF-079 regime, for no semantic gain.
+`prioritizedDefaults`); the defaults group is the canonical *semantic
+reading*, delivered by the ch. 7.7/7.8 desugaring in consumers — "recorded,
+not transformed" (`RUNTIME-SEMANTICS.md:2573-2574`). WF-050 and WF-079 are
+written for exactly this coexistence. Canonicalising flat rules to
+one-default groups would break gate-10 byte-identity, drop 20 goldens out of
+Drools play, and obsolete the WF-079 regime, for no semantic gain.
 
-## 5. Full Drools ladder service (agenda 2)
+## 5. Full Drools defaults service (agenda 2)
 
 ### 5.1 The lowering choice
 
-Four mechanisms were weighed for "no higher rung fired" in forward
+Four mechanisms were weighed for "no higher default fired" in forward
 chaining:
 
-- **(A) Per-rung control facts + NAF displacement** (the clingo mirror in
+- **(A) Per-default control facts + NAF displacement** (the clingo mirror in
   DRL): declarative and structurally identical to the verified S17
   encoding, but the speculative-deposit rule and nested `excepties` demand
   elaborate control-fact bookkeeping.
 - **(B) One reduce-rule per (group, subject)** — LHS the subject pattern
   with class-reactivity and navigated-read joins; RHS a direct Java port of
-  ref's `run_ladder_group` walk (`eval.ml:1685-1771`): top-down rung walk,
+  ref's `run_defaults_group` walk (`eval.ml:1685-1771`): top-down defaults walk,
   fall-through, recursion into `excepties`, member reconciliation, one
   idempotent write or one `Inconsistentie`. Speculative deposits become a
   trivial buffer-and-flush; nesting is plain recursion.
-- **(C) Per-rung salience** — the generalised "salience −1 trick", the
+- **(C) Per-default salience** — the generalised "salience −1 trick", the
   exact anti-pattern ch. 7.5 exists to replace, and it cannot express
   fall-through-on-leeg. **Rejected on spec grounds.**
 - **(D) Activation groups** — cancellation is agenda-order and a
-  fired-then-leeg rung has already cancelled the group; fall-through
+  fired-then-leeg default has already cancelled the group; fall-through
   inexpressible. **Rejected.**
 
 **Recommendation: (B), scalar-first, with loud fences.** A corpus scan
-shows every flippable ladder golden's rungs are subject-local scalar/
+shows every flippable defaults golden's defaults are subject-local scalar/
 kenmerk logic (no division in any consequence, no aggregation, one
 navigated read — itself blocked on an orthogonal refusal), so
 `leafPredicate`/`scalarWaarde` already cover the flippable set. Fences as
-reason-carrying `Dekking.skip`s: temporal ladder targets (ref parity —
+reason-carrying `Dekking.skip`s: temporal defaults targets (ref parity —
 both fence), channel-depositing consequences (no witness), non-reducible
-justifications. Salience: a minimal ladder-local "strictly below every
-producer of every rung justification" computation (the ch. 7.4 negative
+justifications. Salience: a minimal defaults-local "strictly below every
+producer of every default justification" computation (the ch. 7.4 negative
 edges), rather than rebuilding the full `dep_forms` graph in Java — the §7
 chapter then records the bounded-narrower-stratifier posture this
 instantiates.
 
 ### 5.2 Flip inventory and order
 
-Fifteen goldens / 67 cases flip on ladder work alone, risk-ascending:
-**Tier 0** loader-accepts an *empty* `defaultLadders` list (three catala
-goldens — no lowering at all); **Tier 1** ordered attribute ladder +
+Fifteen goldens / 67 cases flip on defaults work alone, risk-ascending:
+**Tier 0** loader-accepts an *empty* `prioritizedDefaults` list (three catala
+goldens — no lowering at all); **Tier 1** ordered attribute defaults +
 fall-through + initialisation (samenloop, vangstheffing-catala,
-vondstwaardering); **Tier 2** characteristic ladders — strata-critical, the
+vondstwaardering); **Tier 2** characteristic defaults — strata-critical, the
 monotone `set_char` cannot self-correct (uitsluiting, hardheid,
 penningrecht-catala); **Tier 3** declared-unordered + §9.5
 (toelagegronden); **Tier 4** nested `excepties` (tariefrecht-catala,
@@ -330,14 +336,14 @@ correct lowering MUST play-and-pass; a misvalue is a bug, never an
 
 ### 5.3 Charter and witnessing consequences
 
-- The production toolchain has **no** ladder concept; this lowering grows
+- The production toolchain has **no** defaults concept; this lowering grows
   `backends/drools` beyond ported production semantics into a
   uchar-spec-ch.-7 implementation. That is exactly what the third executor
   of the square is for, but the gate-12 charter wording ("the ported
   exec-model back-end") should be amended at landing — a maintainer-serial
   CLAUDE.md edit.
-- The new `DefaultLadder`/`Rung`/`SubLadder` Java records belong in the
-  **shared frontend `ir/` package** (the one-copy rule; and if §4's
+- The new `PrioritizedDefaults`/`Default`/`ExceptionGroup` Java records
+  belong in the **shared frontend `ir/` package** (the one-copy rule; and if §4's
   extension lands, the frontend emitter needs them anyway). This orders the
   work *after* the inversion (§6), so the types land once, in the single
   source.
@@ -372,10 +378,10 @@ correct lowering MUST play-and-pass; a misvalue is a bug, never an
   violation** (it would drag the `toka/` zone into the toolchain
   checkout); a `git subtree split` of the TOKA-clean frontend slice is
   mandatory for any source-consumption route.
-- Ladder *emission* is decoupled from Drools ladder *execution*: the
+- Defaults *emission* is decoupled from Drools defaults *execution*: the
   emitter is resolver-only. With §4's extension being source-opt-in,
   emission cannot surprise the toolchain's regression bed; the toolchain
-  fire path must still adopt the loud-Refusal posture for ladder-carrying
+  fire path must still adopt the loud-Refusal posture for defaults-carrying
   wire it cannot lower.
 
 ### 6.2 Options and recommendation
@@ -403,7 +409,7 @@ non-emitting code is invisible to an emitted-IR byte gate.
 
 **Recommendation: (A), sequenced invert-first.** Inverting while the
 frontend is quiescent (flat, byte-identical, both gates green) is the
-low-risk moment; evolving ladders across two live copies is the high-risk
+low-risk moment; evolving defaults across two live copies is the high-risk
 path. Consequences to legislate up front: the toolchain re-provides
 `--drl/--facts/--graaf` in a toolchain-side wrapper around the consumed
 `--ir`-only resolver; **the scenariotoetsen harness stays toolchain-local**
@@ -413,7 +419,7 @@ the SPEC_REV normative set grows to `frontends/regelspraak/**` with the
 vendored-copy byte-identity check closing the loop; `uchar-conformance`
 repurposes into exactly that check (uchar gate 10 becomes the sole
 emitter-golden authority); the toolchain's execution path adopts the loud
-ladder Refusal until its own lowering exists. Slice visibility: **no split
+defaults Refusal until its own lowering exists. Slice visibility: **no split
 repo now** — both repos are private and the vendored subtree needs none;
 publishing the (provably TOKA-clean) slice is a maintainer visibility
 decision best taken together with the §9-decision-10 flip, not as a side
@@ -439,14 +445,14 @@ A new normative **IR-SPEC §5 "Stratification"** (filling the numbering
 hole; RUNTIME-SEMANTICS ch. 6 stays as the operational companion), giving:
 the node kinds (attribute, characteristic, channel, population, relation —
 and the day-kind answer below); the three edge kinds (positive,
-stratum-strict, negative — plus the WF-051 ladder fold: every rung read a
-negative edge toward the ladder write); the illegal-cycle rule (WF-045
+stratum-strict, negative — plus the WF-051 defaults fold: every default read
+a negative edge toward the defaults write); the illegal-cycle rule (WF-045
 acyclicity modulo recursive creation; WF-046 no negative edge on any
 cycle); and an **executor-neutrality clause**: stratification is an IR
 property checked by the verifier, and a backend either realises a sound
 refinement of the graph strata or carries a *narrower* stratifier plus a
 loud auto-refusal for uncovered forms — ratifying, as a bounded and named
-exception, the posture Drools already has (and which §5.1's ladder-local
+exception, the posture Drools already has (and which §5.1's defaults-local
 salience extends).
 
 ### 7.3 The dagsoort answer
@@ -596,12 +602,13 @@ protected-path deltas ride as proposals):
 1. **Inversion** (§6): vendored-subtree consumption, pin-set growth,
    conformance repurpose, scenariotoetsen disposition. The frontend is
    quiescent; lowest risk.
-2. **Drools ladder service** (§5): tiers 0–4 against the existing 15-golden
-   flip set; ladder records land in the now-single frontend `ir/` package;
+2. **Drools defaults service** (§5): tiers 0–4 against the existing
+   15-golden flip set; defaults records land in the now-single frontend
+   `ir/` package;
    CaseRunner conflict-key extension. Independent of 1 in content but
    ordered after it so the types land once.
 3. **Frontend `Uitzondering op` extension** (§4): grammar + resolver +
-   emitter + first `.rgs`-sourced ladder goldens — which then *play* in
+   emitter + first `.rgs`-sourced defaults goldens — which then *play* in
    gate 12 thanks to 2.
 4. **WW realism case** (§3.4): the hand-anchor path needs nothing from 1–3
    and may start any time; the RegelSpraak-authored variant follows 3.
@@ -621,32 +628,33 @@ protected-path deltas ride as proposals):
 - `spec/PLAN.md` realism-case sentence: the candidate becomes the
   WW-herleving case (§3.4) in place of zorgtoeslag, if Q13 ratifies.
 - CLAUDE.md gate-12 wording ("the ported exec-model back-end") amended when
-  Q3 lands ladder machinery beyond the ported semantics.
+  Q3 lands defaults machinery beyond the ported semantics.
 
 ## 12. Ratification questions
 
 **The frontend (§4)**
 
-1. **Ladder production from RegelSpraak source.** (a) Adopt the
+1. **Defaults production from RegelSpraak source.** (a) Adopt the
    uchar-dialect extension — `Uitzondering op <regel>` ordered blocks plus
    an `ongeordend` group form — as a tracked, additive divergence from the
    v2.3.0 arbiter, scheduled after the inversion; recognition of flat
    families may only ever *advise*, never transform. (b) Status quo:
-   frontend stays flat; ladders remain Catala/hand-authored; the extension
-   waits for demonstrated demand. (c) Resolver-side flat→ladder folding —
+   frontend stays flat; defaults remain Catala/hand-authored; the extension
+   waits for demonstrated demand. (c) Resolver-side flat→defaults folding —
    rejected for the reasons of §4.2. **Recommendation: (a).**
 2. **Flat-form disposition (confirm).** Flat rules remain a first-class
-   wire form; the ladder is the canonical semantic reading via ch. 7.7/7.8;
+   wire form; the defaults group is the canonical semantic reading via
+   ch. 7.7/7.8;
    the v0-mirror invariant stands; no canonicalisation of flat goldens.
    **Recommendation: confirm.**
 
 **The Drools service (§5)**
 
-3. **Schedule and shape.** Schedule full ladder service now (the deferral
+3. **Schedule and shape.** Schedule full defaults service now (the deferral
    premise is void): lowering Option B (reduce-rule port of ref's
-   `run_ladder_group`), scalar-first with loud `Dekking.skip` fences
+   `run_defaults_group`), scalar-first with loud `Dekking.skip` fences
    (temporal targets, channel-depositing consequences, non-reducible
-   justifications), tiers 0→4 over the 15-golden flip set, ladder-local
+   justifications), tiers 0→4 over the 15-golden flip set, defaults-local
    salience ("strictly below all justification producers"), the new Java
    records in the shared frontend `ir/` package, and the backend charter
    amended to say it implements spec ch. 7 beyond the ported production
@@ -667,7 +675,7 @@ protected-path deltas ride as proposals):
    (plus build-and-emit smoke); the toolchain re-provides
    `--drl/--facts/--graaf` in a wrapper; the scenariotoetsen harness stays
    toolchain-local (re-homing into the slice is the alternative); its fire
-   path adopts the loud ladder Refusal. (b) Submodule on a standalone
+   path adopts the loud defaults Refusal. (b) Submodule on a standalone
    split repo — honest, but a genuine second pin beside SPEC_REV. (c) Jar
    artifact. (d) Reversed source-sync. **Recommendation: (a).**
 6. **Slice publication.** No standalone split repo now (the vendored
@@ -717,8 +725,8 @@ protected-path deltas ride as proposals):
     (non-termination, DRL-oracle ≡ ref); schedule the keurmerk exec-model
     string-encoding fix (moves it to played); CONSTRUCTS row-6 sharpening
     maintainer-serial. **Recommendation: confirm all.**
-12. **Ladder fences.** (a) Add a document-layer WF refusal for temporal
-    ladder targets (with negatief witness), replacing today's
+12. **Defaults fences.** (a) Add a document-layer WF refusal for temporal
+    defaults targets (with negatief witness), replacing today's
     executor-only fault, until temporal targets are actually scheduled;
     (b) the allocation-target input fence keeps waiting for the §9
     executor card as recorded; (c) sub-root shared base stays refused
@@ -736,11 +744,12 @@ protected-path deltas ride as proposals):
     event-date fact base — maandloon, per-month income and eindigingsdatum
     as scalar input facts (no new temporal construct; the month-varying
     income computation and timeline-lifecycle deferred to a dedicated card
-    once this shows where the atemporal ladder pinches); termijnen as ordinary date-arithmetic rules feeding rung
+    once this shows where the atemporal defaults group pinches); termijnen
+    as ordinary date-arithmetic rules feeding default
     justifications (a first-class per-ground termijn association recorded
-    as a tracked question, not built); samenloop encoded as an ordered
-    ladder (confirming the closed §9.5 non-readability decision); art. 19
-    onderdelen as separately identifiable rungs tied to their termijn
+    as a tracked question, not built); samenloop encoded as ordered
+    defaults (confirming the closed §9.5 non-readability decision); art. 19
+    onderdelen as separately identifiable defaults tied to their termijn
     regime (R2); authored first as a hand-written anchor from statute text
     and own casus facts only, handbook material barred from all artifacts.
     **Recommendation: yes.**

@@ -3,7 +3,7 @@
 Goal: de PLAN §8-synthesepijplijn in het klein maar echt: een eerste
 golf synthetische goldens (synth3-*) gericht op de constructen die
 nog dun gedekt zijn — sumtypes/match, folds over lijsten, structs
-(incl. geneste), geneste laddergroepen, strikte Let, subscope-creatie
+(incl. geneste), geneste defaults-groepen, strikte Let, subscope-creatie
 met kenmerk-init — elk geval met 2-3 cases met ABSOLUTE verwachtingen.
 Admissie drievoudig per PLAN §8: verifier-clean, ref ≡ clingo exact,
 en noop-refuter (of reden-dragende survivor); plus de coverage-eis:
@@ -50,7 +50,7 @@ door beide executors bevestigd.
 | `synth3-vondststaat` | vlakke struct: StructLiteral-bouw + FieldAccess + struct-gelijkheid-kenmerk | 3 |
 | `synth3-nestwaarde` | geneste struct: geneste StructLiteral-bouw + FieldAccess-over-FieldAccess (diepste scalair) | 3 |
 | `synth3-drempelheffing` | strikte Let ×3 genest; binder tweemaal gelezen; WF-077 conditie-operand; leeg-barrière; Afgerond load-bearing | 4 |
-| `synth3-nestkorting` | geneste laddergroep (Rung.excepties, ongeordend) met BEREKENDE exceptie-consequenties (Binair over invoer `grondslag`, geen kale Literal): berekend-enkel/waarde-gelijk-via-verschillende-expr/verschillend-conflict/berekende-terugval/init — zie lensronde 1 | 5 |
+| `synth3-nestkorting` | geneste defaults-groep (Default.excepties, ongeordend) met BEREKENDE exceptie-consequenties (Binair over invoer `grondslag`, geen kale Literal): berekend-enkel/waarde-gelijk-via-verschillende-expr/verschillend-conflict/berekende-terugval/init — zie lensronde 1 | 5 |
 | `synth3-kamerheffing` | subscope-lowering: ResolvedObjectCreatie + boolean-getypeerde-expressie kenmerk-init (WF-027-relaxatie) + genavigeerde teruglezing | 3 |
 | `synth3-besluitschakel` | Construct-in-regel (twee disjuncte writers) + downstream Match over berekend sum-attribuut | 4 |
 | `synth3-letbeslag` | strikte Let met Match-body; binder tweemaal gelezen; direct-afgeronde productarm; Match-leeg vs Let-leeg-barrière | 4 |
@@ -64,7 +64,7 @@ door beide executors bevestigd.
 3. `synth3-nestwaarde/case1-gevuld`: diepe FieldAccess ingekort naar één niveau
    → kernprijs 3 i.p.v. 12.5.
 4. `synth3-nestkorting/case2-conflict-pq`: excepties-subgroep verwijderd → de
-   conflict-fact `Jutter.korting/0` bestaat niet meer (rung 0 beslist 100.00).
+   conflict-fact `Jutter.korting/0` bestaat niet meer (default 0 beslist 100.00).
 5. `synth3-drempelheffing/case2-onder`: IfThenElse-guard weg → 26.00 (belasting
    altijd toegepast) i.p.v. 20.00.
 
@@ -139,9 +139,9 @@ regel 4) weigert ze als ref≢clingo. Geen ervan is een spec-fix binnen deze kaa
 
 **BEVINDING 1 [MINOR/CONFIRMED] — synth3-nestkorting was een re-skin van anchor
 jutterswet-nestuitzondering.** Zelf geverifieerd (beide IR's gelezen): de oude
-nestkorting was structureel isomorf — één kenmerk-gated rung (rechtA→100) met een
-`ongeordend`-excepties-groep van drie kale-Literal SubLadders (grondP=30,
-grondQ=45, grondR=30, twee-gelijk-één-verschillend) plus een init-rung; de vijf
+nestkorting was structureel isomorf — één kenmerk-gated default (rechtA→100) met een
+`ongeordend`-excepties-groep van drie kale-Literal ExceptionGroups (grondP=30,
+grondQ=45, grondR=30, twee-gelijk-één-verschillend) plus een init-default; de vijf
 cases vielen op een strikte deelverzameling van de negen van nestuitzondering.
 Alleen kenmerk-namen, doel-attribuut en bedragen verschilden; de beslisprocedure
 was identiek. **De bevinding is terecht.**
@@ -154,11 +154,11 @@ nesting is al geankerd door `jutterswet-nestdiepte`. Overblijft (b): **een
 exceptie-consequentie die een berekende expressie is i.p.v. een kale Literal** —
 in het hele corpus dragen álle exceptie-armen kale Literals (nestuitzondering,
 nestdiepte, nestkenmerk, toelagegronden, tariefrecht-catala). Beide executors
-evalueren de rung-consequentie via hun algemene expressiepad (ref `eval_expr`,
+evalueren de default-consequentie via hun algemene expressiepad (ref `eval_expr`,
 clingo `expr_term`), dus een berekende arm is toelaatbaar en verifier-clean.
 
 De geretargete golden: elke consequentie is nu een berekende `Binair` (PLUS) over
-een invoer-attribuut `grondslag` — de eigen terugval van de toprung
+een invoer-attribuut `grondslag` — de eigen terugval van de hoogste default
 (`grondslag+90`) en de drie armen P=`grondslag+20`, Q=`grondslag+35`,
 R=`(grondslag+15)+5`. **R en P berekenen dezelfde waarde via een verschillende
 expressie**, dus case2 oefent waarde-gelijkheid-reconciliatie over syntactisch
@@ -172,8 +172,8 @@ verschillende expressies — precies wat geen kale-Literal-anker kan raken (daar
 | `case1-berekend-enkel` | rechtA,grondP / 12.00 | 32.00 | enkele berekende exceptie-arm; waarde volgt de invoer |
 | `case2-gelijk-verschillende-expr` | rechtA,grondP,grondR / 10.00 | 30.00 | P=30 == R=30 via verschíllende expressie → geen conflict |
 | `case3-conflict-berekend` | rechtA,grondP,grondQ / 10.00 | leeg + `Jutter.korting/0` | P=30 ≠ Q=45 → conflict op berekende waarden |
-| `case4-terugval-berekend` | rechtA / 10.00 | 100.00 | terugval naar de berekende eigen consequentie van de toprung |
-| `case5-init-basis` | (geen) / 10.00 | 5.00 | init-rung beslist |
+| `case4-terugval-berekend` | rechtA / 10.00 | 100.00 | terugval naar de berekende eigen consequentie van de hoogste default |
+| `case5-init-basis` | (geen) / 10.00 | 5.00 | init-default beslist |
 
 Verifier-clean (95 golden clean). ref ≡ clingo exact op elke handberekende
 waarde (executors als bevestiging: alle vijf `oracle: PASS` / `clingo: PASS`).
@@ -216,7 +216,7 @@ een `inconsistent`-feit dat noop niet produceert). Gate 7 blijft 33 survivors.
 Result: de eerste synthesegolf staat: 11 synth3-goldens met 42 cases
 over de dun gedekte 5b/5c-constructen (Match/SumType, de
 fold-familie, vlakke en geneste structs, strikte Let, geneste
-laddergroepen met conflict en terugval, subscope-creatie met
+defaults-groepen met conflict en terugval, subscope-creatie met
 boolean-getypeerde kenmerk-init), elk met hand-berekende absolute
 verwachtingen en de drievoudige admissie van PLAN §8: verifier-clean,
 ref ≡ clingo exact op de handwaarde, en noop-refutatie of een

@@ -1,14 +1,14 @@
-# The v0 desugaring: existing rule forms read as ladders
+# The v0 desugaring: existing rule forms read as defaults
 
 Goal: land the last ch. 7 slice — the **desugaring of v0's
-initialisation-plus-computation pair into the ladder** — as a
+initialisation-plus-computation pair into the prioritized defaults** — as a
 specified, machine-checked lowering. `RUNTIME-SEMANTICS.md` gains
 ch. 7.7 (normative): on one (type, attribute) target, one
 version-free computing rule (Gelijkstelling/Berekening; its condition
-becomes the rung justification, an unconditional rule desugars to the
+becomes the default justification, an unconditional rule desugars to the
 vacuously-true empty-ALLE justification) plus at most one
-unconditional, version-free Initialisatie (the ch. 7.3 init rung)
-read as one attribute ladder. Out of the desugaring's domain, faulted
+unconditional, version-free Initialisatie (the ch. 7.3 init default)
+read as one attribute defaults group. Out of the desugaring's domain, faulted
 never guessed: conditional initialisations (their justification would
 need the input-emptiness guard, which is not a writable condition —
 WF-051), versioned forms, and multiple computing rules on one target
@@ -16,16 +16,16 @@ WF-051), versioned forms, and multiple computing rules on one target
 normative text: a computation that evaluates leeg beside an
 initialisation is *divergent* in the v0 reading (the empty write and
 the refill alternate — ref faults on the fixpoint budget), while the
-ladder reading defines it (fall-through; input left standing) — the
+defaults reading defines it (fall-through; input left standing) — the
 desugaring repairs a hole, and no case can pin the v0 side of it.
 The executable witness is a **differential across the desugaring**:
 `Ir_v0.Desugar` implements the lowering document-to-document; ref
 replays the v0 forms *natively* (run_rule's existing Initialisatie
 semantics) while clingo translates the *desugared* document through
-the ladder machinery (Initialisatie thereby becomes translatable for
+the defaults machinery (Initialisatie thereby becomes translatable for
 the first time) — gate 6 then demands both readings agree. Anchor:
 `jutterswet-waardering-v0vorm`, the v0-form twin of the
-`jutterswet-vondstwaardering` ladder anchor, four cases inside the
+`jutterswet-vondstwaardering` defaults anchor, four cases inside the
 confluent domain (computed 50; init 25 on empty; input 40 left by the
 init; computed 50 over input 40).
 
@@ -42,17 +42,17 @@ May touch: `spec/RUNTIME-SEMANTICS.md` (ch. 7.7 + status),
 
 Out of scope: desugaring versioned or multi-writer forms; conditional
 initialisations; characteristic-attribution desugaring (a single
-KENMERKTOEKENNING is already the one-rung ladder trivially — recorded,
+KENMERKTOEKENNING is already the one-default group trivially — recorded,
 not transformed); the emitter (pin-bump).
 
 Result: landed, and the adversarial round earned its keep. Ch. 7.7 is
 normative: exactly one unconditional, version-free Initialisatie plus
 at most one version-free computing rule on a target read as one
-attribute ladder (the init rung is what the desugaring exists for);
+attribute defaults group (the init default is what the desugaring exists for);
 conditional inits, versioned forms, and multi-writer targets stay
 native with their reasons; the pinned delta stands — computed-leeg
 beside an init is divergent in the v0 reading (ref faults on the
-fixpoint budget) while the ladder defines it. Ir_v0.Desugar implements
+fixpoint budget) while the defaults define it. Ir_v0.Desugar implements
 the table; the ASP backend desugars before translating (Initialisatie
 became translatable), ref replays the v0 forms natively, and the
 gate-6 differential over anchor jutterswet-waardering-v0vorm (four

@@ -2,10 +2,10 @@
 
 Het eerste WW-realisme-anker: het inkomens-eindigingspad
 art. 20 lid 1 onderdeel c → art. 21 lid 1 eerste volzin (geen termijn). Eén
-genest kenmerk-ladder-doel `recht op uitkering` — grondtoekenning (art. 15)
+genest kenmerk-defaults-doel `recht op uitkering` — grondtoekenning (art. 15)
 → do-not-attribute op de inkomensgrens (art. 20-1-c) → herleving bij
 vervallen omstandigheid (art. 21-1) → do-not-attribute op de blokkade
-(art. 21-2-a) — plus drie gewone scalaire rekenregels. Vier cases, elk op een andere sport beslist. Handgeschreven, met
+(art. 21-2-a) — plus drie gewone scalaire rekenregels. Vier cases, elk op een andere default beslist. Handgeschreven, met
 absolute verwachtingen; alle getallen en datums zijn eigen casusfeiten.
 
 ## Wetteksten (verbatim)
@@ -76,42 +76,42 @@ maxdatum). Invoerkenmerken: `werkloos`, `omstandigheid vervallen`, `nieuw
 recht ontstaan`.
 
 Afgeleide attributen: `inkomensgrens`, `verstreken periode` (in hele dagen),
-`nieuwe maxdatum`. Doel-kenmerk van de ladder: `recht op uitkering`.
+`nieuwe maxdatum`. Doel-kenmerk van de defaults: `recht op uitkering`.
 
-### De ladder (het genest kenmerk-doel `recht op uitkering`)
+### De defaults (het genest kenmerk-doel `recht op uitkering`)
 
-De rose tree van art. 15 → 20-1-c → 21-1 → 21-2-a, als één ladder met
-`Rung.excepties`-nesting (elke uitzondering wordt eerst beslist en verdringt
-haar drager wanneer zij beslist):
+De rose tree van art. 15 → 20-1-c → 21-1 → 21-2-a, als één defaults-bundel
+met `Default.excepties`-nesting (elke uitzondering wordt eerst beslist en
+verdringt haar drager wanneer zij beslist):
 
 ```
-Rung grant  (besluit waar,  als: werkloos)                         -- art. 15
-  exceptie -> Rung einde     (besluit onwaar, als: maandinkomen > inkomensgrens)   -- art. 20-1-c
-    exceptie -> Rung herleving (besluit waar,  als: omstandigheid vervallen)        -- art. 21-1
-      exceptie -> Rung blokkade (besluit onwaar, als: nieuw recht ontstaan
-                                 EN nieuw maandloon > inkomensgrens)                 -- art. 21-2-a
+Default grant  (besluit waar,  als: werkloos)                                          -- art. 15
+  exceptie -> Default einde     (besluit onwaar, als: maandinkomen > inkomensgrens)    -- art. 20-1-c
+    exceptie -> Default herleving (besluit waar,  als: omstandigheid vervallen)        -- art. 21-1
+      exceptie -> Default blokkade (besluit onwaar, als: nieuw recht ontstaan
+                                    EN nieuw maandloon > inkomensgrens)                -- art. 21-2-a
 ```
 
-De hoogste beslissende sport wint; een sport met een exceptie laat de
+De hoogste beslissende default wint; een default met een exceptie laat de
 exceptie eerst beslissen en valt alleen terug op haar eigen besluit als de
 exceptie niets beslist (RUNTIME-SEMANTICS ch. 7.9).
 
-**WF-050** — precies één ladder, één schrijver, één doel: het kenmerk
-`recht op uitkering` (exact één van kenmerk/attribuut). Geen enkele gewone
-regel of objectcreatie schrijft dat kenmerk; de drie rekenregels schrijven
-elk hun eigen attribuut, één keer.
+**WF-050** — precies één defaults-bundel, één schrijver, één doel: het
+kenmerk `recht op uitkering` (exact één van kenmerk/attribuut). Geen enkele
+gewone regel of objectcreatie schrijft dat kenmerk; de drie rekenregels
+schrijven elk hun eigen attribuut, één keer.
 
-**WF-051** — de ladder leest nooit haar eigen doel. De sport-condities lezen
+**WF-051** — de defaults lezen nooit hun eigen doel. De default-condities lezen
 `werkloos`, `maandinkomen`, `inkomensgrens`, `omstandigheid vervallen`,
 `nieuw recht ontstaan` en `nieuw maandloon` — geen daarvan is `recht op
 uitkering`. `inkomensgrens` is een *apart afgeleid* attribuut dat de
-sport-justificaties voedt (de termijn/grens-toets als eigen afleiding), niet
-het ladderdoel. De afhankelijkheidsgraaf blijft acyclisch.
+default-justificaties voedt (de termijn/grens-toets als eigen afleiding), niet
+het defaults-doel. De afhankelijkheidsgraaf blijft acyclisch.
 
 **WF-075** — elke exceptie-subgroep draagt precies één lid (één
-`SubLadder`), dus `ongeordend` is op elk niveau onwaar (twee of meer leden
-zouden de ongeordend-markering eisen). Elke sport is een form-a-sport (eigen
-besluit *plus* geneste subgroep), nooit een contentloze sport.
+`ExceptionGroup`), dus `ongeordend` is op elk niveau onwaar (twee of meer leden
+zouden de ongeordend-markering eisen). Elke default is een form-a-default (eigen
+besluit *plus* geneste subgroep), nooit een contentloze default.
 
 ### De gewone rekenregels (scalair, één schrijver elk)
 
@@ -136,7 +136,7 @@ casus 1, zodat de vergelijking direct tegen 87,5% van het maandloon loopt.
 In alle vier cases: `maandloon` = 2400,00, dus
 `inkomensgrens` = 0,875 × 2400,00 = **2100,00**.
 
-### case1-herleving.json — de herlevingscase (beslist op de herleving-sport)
+### case1-herleving.json — de herlevingscase (beslist op de herleving-default)
 
 Feiten: werkloos; `maandinkomen` = 2500,00; omstandigheid vervallen; geen
 nieuw recht (`nieuw maandloon` = 0,00); `eindigingsdatum` = 2025-05-01;
@@ -144,11 +144,11 @@ nieuw recht (`nieuw maandloon` = 0,00); `eindigingsdatum` = 2025-05-01;
 
 - Grond art. 20-1-c: 2500,00 > 2100,00 → de inkomensgrond geldt (het recht
   was geëindigd).
-- Herleving art. 21-1: de omstandigheid is vervallen → de herleving-sport
+- Herleving art. 21-1: de omstandigheid is vervallen → de herleving-default
   beslist `waar`.
 - Blokkade art. 21-2-a: geen nieuw recht (0,00 ≤ 2100,00) → geen blokkade.
 - Uitkomst: `recht op uitkering` **toegekend** (beslist op de
-  herleving-sport).
+  herleving-default).
 - `verstreken periode` = 2025-05-01 → 2025-09-01 =
   31 (mei) + 30 (juni) + 31 (juli) + 31 (augustus) = **123** dagen.
 - `nieuwe maxdatum` = 2026-11-30 + 123 dagen:
@@ -156,24 +156,24 @@ nieuw recht (`nieuw maandloon` = 0,00); `eindigingsdatum` = 2025-05-01;
   +28 → 2027-02-28 (rest 33); +31 → 2027-03-31 (rest 2); +2 →
   **2027-04-02**.
 
-### case2-geen-eindiging.json — grens niet overschreden (beslist op de grant-sport)
+### case2-geen-eindiging.json — grens niet overschreden (beslist op de grant-default)
 
 Feiten: werkloos; `maandinkomen` = 1800,00; geen nieuw recht
 (`nieuw maandloon` = 0,00); `maxdatum` = 2026-11-30; geen `eindigingsdatum`,
 geen `vervaldatum`.
 
 - Grond art. 20-1-c: 1800,00 ≤ 2100,00 → de inkomensgrond geldt NIET; de
-  einde-sport beslist niet, en haar herleving/blokkade-excepties beslissen
+  einde-default beslist niet, en haar herleving/blokkade-excepties beslissen
   evenmin (hun voorwaarden — omstandigheid vervallen, nieuw recht — zijn
   hier onwaar; in de rose tree worden zij wel geëvalueerd, maar niets in de
   keten beslist).
-- Basisgrond art. 15: werkloos → de grant-sport beslist `waar`.
-- Uitkomst: `recht op uitkering` **toegekend** (beslist op de grant-sport);
+- Basisgrond art. 15: werkloos → de grant-default beslist `waar`.
+- Uitkomst: `recht op uitkering` **toegekend** (beslist op de grant-default);
   geen verschuiving.
 - `verstreken periode` = leeg (geen `eindigingsdatum`) → **leeg**.
 - `nieuwe maxdatum` = 2026-11-30 + leeg = **2026-11-30** (ongewijzigd).
 
-### case3-blokkade.json — de blokkade (beslist op de blokkade-sport)
+### case3-blokkade.json — de blokkade (beslist op de blokkade-default)
 
 Feiten: werkloos; `maandinkomen` = 2500,00; omstandigheid vervallen; nieuw
 recht ontstaan met `nieuw maandloon` = 2300,00; `eindigingsdatum` =
@@ -182,10 +182,10 @@ recht ontstaan met `nieuw maandloon` = 2300,00; `eindigingsdatum` =
 - Grond art. 20-1-c: 2500,00 > 2100,00 → de inkomensgrond geldt.
 - Herleving art. 21-1: de omstandigheid is vervallen → zou herleven …
 - Blokkade art. 21-2-a: nieuw recht ontstaan ÉN 2300,00 > 2100,00 → de
-  blokkade geldt; de blokkade-sport beslist `onwaar` en verdringt de
+  blokkade geldt; de blokkade-default beslist `onwaar` en verdringt de
   herleving.
 - Uitkomst: `recht op uitkering` **niet toegekend** (beslist op de
-  blokkade-sport). (Het nieuwe maandloon 2300,00 ligt onder het oude
+  blokkade-default). (Het nieuwe maandloon 2300,00 ligt onder het oude
   2400,00 maar boven de grens 2100,00 — de blokkade hangt aan de grens, niet
   aan het oude maandloon.)
 - `verstreken periode` = 2024-03-01 → 2024-06-01 =
@@ -195,7 +195,7 @@ recht ontstaan met `nieuw maandloon` = 2300,00; `eindigingsdatum` =
   +31 → 2025-12-31 (rest 15); +15 → **2026-01-15**. (De verschuiving wordt
   wel berekend maar is hier zonder gevolg: het recht herleeft niet.)
 
-### case4-einde.json — de kale eindiging (beslist op de einde-sport)
+### case4-einde.json — de kale eindiging (beslist op de einde-default)
 
 Feiten: werkloos; `maandinkomen` = 2500,00; de omstandigheid is NIET
 vervallen (geen `vervaldatum`); geen nieuw recht (`nieuw maandloon` =
@@ -203,21 +203,21 @@ vervallen (geen `vervaldatum`); geen nieuw recht (`nieuw maandloon` =
 
 - Grond art. 20-1-c: 2500,00 > 2100,00 → de inkomensgrond geldt.
 - Herleving art. 21-1: de omstandigheid is niet vervallen → de
-  herleving-sport beslist niet (en haar blokkade-exceptie evenmin).
-- De einde-sport beslist dus zélf `onwaar` en verdringt de grant.
+  herleving-default beslist niet (en haar blokkade-exceptie evenmin).
+- De einde-default beslist dus zélf `onwaar` en verdringt de grant.
 - Uitkomst: `recht op uitkering` **niet toegekend** (beslist op de
-  **einde**-sport — onderscheiden van case3, waar de blokkade beslist).
+  **einde**-default — onderscheiden van case3, waar de blokkade beslist).
 - `verstreken periode` = tijdsduur(2026-02-01, leeg) → **leeg**
   (leeg-propagatie: de `vervaldatum` ontbreekt).
 - `nieuwe maxdatum` = 2026-08-31 + leeg = **2026-08-31** (ongewijzigd).
 
-De vier cases beslissen elk op een **andere** sport — grant, herleving,
-blokkade, einde — geen degenererende verzameling; elke sport van de ladder
+De vier cases beslissen elk op een **andere** default — grant, herleving,
+blokkade, einde — geen degenererende verzameling; elke default van de bundel
 is ergens de beslisser.
 
 ## Bewuste beperking (scope)
 
-De ladder is atemporeel: één beslissing op één fixpunt. `maandloon`,
+De defaults zijn atemporeel: één beslissing op één fixpunt. `maandloon`,
 `maandinkomen`, `eindigingsdatum` en `vervaldatum` zijn hier scalaire
 invoerfeiten. Het bepalen van de eindigingsmaand uit een maand-variërend
 inkomensverloop, en de lifecycle over gebeurtenistijd (lopend → geëindigd →

@@ -34,7 +34,7 @@ The per-individual deduction here is the full income tax; the household-level
 cap ($8,500) and the floor-at-zero ride the states — the book's own
 `total_deduction` / `household_tax` state chain, without the per-individual
 `min` (a per-element `min` needs a rule-level clamp no closed function body
-carries). `IncomeTaxComputation`'s rate ladder is an ordered chain (income and
+carries). `IncomeTaxComputation`'s rate defaults are an ordered chain (income and
 children only): a closed pure-function body carries no unordered exception
 group.
 

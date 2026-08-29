@@ -8,17 +8,17 @@ hardheidsaftrek vaststellen; die treedt dan in de plaats van de
 standaardaftrek.
 
 Modelleringsnotitie: de aftrek is een `context`-variabele van de rekenkamer —
-de rekenkamer draagt haar eigen standaardaftrek (de eigen ladder), en de
+de rekenkamer draagt haar eigen standaardaftrek (de eigen defaults), en de
 bergingsaanslag (de aanroeper) kan die overschrijven met de hardheidsaftrek.
 Dit is Reading B (Catala's C-Def): de aanroeper-waarde is de hoogste
 uitzondering, zij verslaat de eigen berekening van de rekenkamer. De plugin
-lowert de overschrijving naar een **gegenereerde top-rung** boven de eigen
-ladder van de rekenkamer op dat doel (PHASE5-CATALA besluit 6, het
+lowert de overschrijving naar een **gegenereerde top-default** boven de eigen
+defaults van de rekenkamer op dat doel (PHASE5-CATALA besluit 6, het
 §4.1-hardheidspatroon): de guard (`hardheid`) en de waarde (`hardheidsaftrek`)
-van de rung lezen de aanroeper, genavigeerd over de teruggekoppelde
+van de default lezen de aanroeper, genavigeerd over de teruggekoppelde
 `verbindendeRol` (callee → caller) — geen standing-machinerie, Reading B als
-rung-volgorde. Valt de guard weg, dan valt de top-rung door en beslist de eigen
-ladder van de rekenkamer. Eigen auteurschap, rechtenvrij; de rekenkamerregels
+default-volgorde. Valt de guard weg, dan valt de top-default door en beslissen de eigen
+defaults van de rekenkamer. Eigen auteurschap, rechtenvrij; de rekenkamerregels
 draaien in de fixpoint van de bergingsaanslag op de gemunte instantie.
 
 ```catala

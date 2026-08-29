@@ -17,7 +17,8 @@ The tutorial is the catala-book's cumulative income-tax example
 against what already lands:
 
 - **Already carried (5a + 5b):** scopes → object types; scalar default
-  chains and root-unordered groups → ladders; money/date arithmetic;
+  chains and root-unordered groups → prioritized defaults; money/date
+  arithmetic;
   assertions; sum types with total match; lists of scalars/sums with
   `MapList`/`FilterList`/`Fold`/`ListLength`; `IfThenElse` inside
   lambda/function bodies; named functions (`functionDefs`/`Invoke`).
@@ -26,8 +27,8 @@ against what already lands:
   and the inline subscope call (`EScopeCall` is an *expression* at
   scopelang; a declared subscope collapses into the same node).
 - **2-2 needs:** the branching exception tree — `article_3` carries
-  *two* exceptions, so the tutorial's central ladder branches below the
-  root: **nested groups are on the tutorial's critical path**, not an
+  *two* exceptions, so the tutorial's central defaults group branches
+  below the root: **nested groups are on the tutorial's critical path**, not an
   optional refinement.
 - **2-3 needs:** `list of Individual` (a struct as list element), the
   declared subscope with input definitions, `let … in` (with an
@@ -43,7 +44,8 @@ against what already lands:
   element* (`map each … to (output of … with {…}).household_tax`) —
   per-element instantiation, machinery nothing in the IR has.
 - **The tutorial does *not* use context/reentrant inputs.** Decision
-  6's generated top rung is therefore not on the tutorial's critical
+  6's generated highest-priority default is therefore not on the
+  tutorial's critical
   path; its implementation is deferred, not refused as policy (§3).
 - **The rights fence:** the tutorial text is upstream-licensed, so per
   the ratified decision 2 it never enters `corpus/golden/` — the exit
@@ -122,9 +124,9 @@ No new kernel node. A subscope call lowers onto three landed pieces —
 the PLAN §6 direction ("object type + object creation + navigation"),
 executed:
 
-1. the callee scope is (already) an object type; its rules and ladders
-   translate as they do for any scope and run in the caller's fixpoint
-   on the minted instance;
+1. the callee scope is (already) an object type; its rules and
+   prioritized defaults translate as they do for any scope and run in the
+   caller's fixpoint on the minted instance;
 2. the call becomes one `ResolvedObjectCreatie` of the callee type,
    with the call's `args` bound as member initialisations
    (`Toekenningen`) on the callee's input attributes, and the
@@ -141,9 +143,10 @@ creation-per-subject key. **Fences, all loud and recorded:** a subscope
 call per list element (2-4's shape) needs per-element instantiation
 that creation-per-subject cannot key — refused until designed; context/
 reentrant inputs stay refused (the 5a refusal — decision 6's generated
-top rung becomes *realisable* with this machinery but is not needed by
-the tutorial; its WF-050 interaction — a caller value feeding a
-laddered callee target must enter as a rung, never as a `MemberInit` —
+highest-priority default becomes *realisable* with this machinery but is
+not needed by the tutorial; its WF-050 interaction — a caller value
+feeding a callee target that carries defaults must enter as a default,
+never as a `MemberInit` —
 is recorded here as the design constraint for that later card);
 subscope outputs consumed as whole structs (rather than per-field
 reads) follow design 1 once both land.
@@ -222,8 +225,9 @@ lowerings, chosen by how the caller consumes the callee:
   fold-reducer case).
 
 **Pure function, defined.** A callee `S` is pure iff: every output is a
-chain / plain-ladder expressible as a closed `IfThenElse`/`Let`/`Match`
-body; it makes **no own object creation** (no subscope of its own); it
+chain / flat defaults group expressible as a closed
+`IfThenElse`/`Let`/`Match` body; it makes **no own object creation** (no
+subscope of its own); it
 performs **no non-input reads** (every read resolves to one of `S`'s
 inputs, mapped to the `FunctionDef` parameter binder); and it has a
 **total base**. The body walk maps an input read to its parameter
@@ -294,7 +298,8 @@ existing FunctionDef/Invoke pieces carry it:
   (`income_tax_computation.income_tax`) is then simply that Invoke's
   value. This narrows the old "own object creation" wall: **real
   creation** — a sub-callee that needs a *standing instance* (roles,
-  ladders on the instance, a §9.5 **conflict channel**), or that fails
+  prioritized defaults on the instance, a §9.5 **conflict channel**), or
+  that fails
   purity another way (a non-input read) — stays **refused, Direction B**.
 - **MULTI-OUTPUT.** A callee with more than one output declares **one
   FunctionDef per read output field**, named `<callee> <field>`
@@ -326,43 +331,44 @@ read), `refuse_perelement_wholestruct_output` (a whole-struct map as an
 OUTPUT), plus the retained `refuse_perelement_noninput` /
 `_conflict` / `_foldcall` / `_subtraction`.
 
-## 4. Design 3 — nested ladder groups (the ratified option i, executed)
+## 4. Design 3 — nested defaults groups (the ratified option i, executed)
 
-The additive wire form: an optional field **`excepties` on `Rung`** —
-`{ "ongeordend": bool, "leden": [ …sub-ladders… ] }` — making the
-ladder a rose tree: a member is itself a rung chain that may nest. Sub-
-ladders carry no target of their own (they inherit the root's);
-`Rung.required` is untouched, so every existing document validates
+The additive wire form: an optional field **`excepties` on `Default`** —
+`{ "ongeordend": bool, "leden": [ …exception groups… ] }` — making the
+defaults a rose tree: a member is itself a default chain that may nest.
+Exception groups carry no target of their own (they inherit the root's);
+`Default.required` is untouched, so every existing document validates
 unchanged.
 
-Semantics (RUNTIME-SEMANTICS ch. 7, generalised): a rung carrying
-`excepties` first reconciles its sub-group exactly as the root group
-reconciles today (each member's effective decision; all-equal → one
-decision); the sub-group's decision, if any, *is* the rung's decision;
-an empty sub-group falls through to the rung's own justification/
-consequence. **A rung may also be a pure group-rung** — `excepties`
-present, no own justification/consequence — which is what carries a
-*multi-member base group* (the exit witness's own root has one:
-article 2 old/new is a two-member `just = false` base group; the lens
-round caught that the first draft had no home for it): the base
-position of a chain is then a group-rung whose sub-group holds the
-base members, unordered, with the ordinary conflict reading if they
-overlap — no disjointness assumption. **What a differing sub-group
-does is vraag 5**: propagate to the root (no write, one path-keyed
-§9.5 fact — uniform with the root reading and Catala's ⊛-propagation
-minus fatality; the recommendation) or decide-nothing-and-fall-through
-to the parent rung. Either way the conflict-fact key gains a path
-suffix so a nested conflict is distinguishable from a root conflict,
-and the choice extends the tracked row-8 deviation record. The
-initialisation rung and the ch. 7.8 input rung stay root-only. WF-050
-recurses its shape checks (a group-rung carries `excepties` iff it
-carries no own consequence/besluit); WF-051 needs zero change once
-`dep_forms` folds every descendant read into the root ladder's
-negative edges (the recorded "every descendant read is a negative edge
-toward the root target"). On the ASP side the nested lowering is real
-design work, stated as such: the flat group's effectiveness/conflict
-atoms become a per-path predicate family, and a rung whose decision
-comes from a sub-group needs value-priority between the sub-group's
+Semantics (RUNTIME-SEMANTICS ch. 7, generalised): a default carrying
+`excepties` first reconciles its exception group exactly as the root
+group reconciles today (each member's effective decision; all-equal →
+one decision); the exception group's decision, if any, *is* the
+default's decision; an empty exception group falls through to the
+default's own justification/consequence. **A default may also be a pure
+group-default** — `excepties` present, no own justification/consequence
+— which is what carries a *multi-member base group* (the exit witness's
+own root has one: article 2 old/new is a two-member `just = false` base
+group; the lens round caught that the first draft had no home for it):
+the base position of a chain is then a group-default whose exception
+group holds the base members, unordered, with the ordinary conflict
+reading if they overlap — no disjointness assumption. **What a differing
+exception group does is vraag 5**: propagate to the root (no write, one
+path-keyed §9.5 fact — uniform with the root reading and Catala's
+⊛-propagation minus fatality; the recommendation) or
+decide-nothing-and-fall-through to the parent default. Either way the
+conflict-fact key gains a path suffix so a nested conflict is
+distinguishable from a root conflict, and the choice extends the tracked
+row-8 deviation record. The initialisation default and the ch. 7.8 input
+default stay root-only. WF-050 recurses its shape checks (a
+group-default carries `excepties` iff it carries no own
+consequence/besluit); WF-051 needs zero change once `dep_forms` folds
+every descendant read into the root defaults' negative edges (the
+recorded "every descendant read is a negative edge toward the root
+target"). On the ASP side the nested lowering is real design work,
+stated as such: the flat group's effectiveness/conflict atoms become a
+per-path predicate family, and a default whose decision comes from an
+exception group needs value-priority between the exception group's
 outcome and its own consequence — card 2 designs it, the anchor family
 proves it.
 
@@ -371,9 +377,9 @@ conflict example, pinned absolutely: the tree `b ← x`, `x ← {y, z}`
 with only `y` applicable and `x` justified must yield **`y`,
 consistent** in both executors — the exact input on which flattening
 manufactures a root conflict. The anchor family covers: only-y, only-z,
-both-differing (sub-group conflict: fall-through to the parent, one
-path-keyed inconsistent fact), both-equal (the equal-decisions rule at
-sub-group level), neither (fall-through to `x`), base-only — in both
+both-differing (exception-group conflict: fall-through to the parent,
+one path-keyed inconsistent fact), both-equal (the equal-decisions rule
+at exception-group level), neither (fall-through to `x`), base-only — in both
 target kinds. The plugin's two flat parsers become one recursive tree
 walk on the `just = true` (node) vs `just = false` (base-group)
 discriminator scopelang already provides, and the sub-root refusal
@@ -487,18 +493,18 @@ verruiming van het getrackte rij-8-deviatierecord). **Decided
 propageert naar de root** — geen schrijf, één pad-gesleuteld
 §9.5-feit; uniform met de root-lezing (conflict = geen schrijf) én
 Catala-getrouw (⊛ propageert door de boom) minus de fataliteit die we
-al eerder observeerbaar maakten. Verworpen: B (doorvallen naar het
-parent-rung — wijkt vérder van het paper af en maakt "conflict" op
+al eerder observeerbaar maakten. Verworpen: B (doorvallen naar de
+parent-default — wijkt vérder van het paper af en maakt "conflict" op
 twee niveaus twee verschillende dingen).
 
 Beslissingsvrij vastgelegd (geen vraag): subscope-calls als lowering
 op de bestaande kernel (creatie + init + genavigeerde read — de al in
 PLAN §6 en mapping-rij 9 benoemde richting; besluit-6's gegenereerde
-rung blijft geratificeerd en wordt met deze machinerie realiseerbaar —
+default blijft geratificeerd en wordt met deze machinerie realiseerbaar —
 5c stelt de implementatie uit omdat de tutorial hem niet nodig heeft,
 met de WF-050-randvoorwaarde vastgelegd); geneste groepen als
-`Rung.excepties` per de geratificeerde optie (i), incl. de
-groep-rung-vorm voor meervoudige basisgroepen, met het
+`Default.excepties` per de geratificeerde optie (i), incl. de
+groep-default-vorm voor meervoudige basisgroepen, met het
 spurious-conflict-anker als bindende toets; het `Afgerond`-omhulsel op
 geld-vermenigvuldiging (het Div-precedent, tegen de shipping runtime
 gemeten; byte-neutraal voor het bestaande corpus); géén

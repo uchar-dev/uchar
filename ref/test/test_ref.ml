@@ -490,7 +490,7 @@ let empty_doc : Ir_v0.Ast.document =
     resolved_startpunten = [];
     regel_groepen = [];
     diagnostics = [];
-    default_ladders = [];
+    prioritized_defaults = [];
     function_defs = [];
   }
 
@@ -806,11 +806,11 @@ let () =
   expect_fault "WV-6.4-c-cycle-fault" (fun () -> Eval.evaluate (env_of doc) w)
 
 (* WV-7.9: nested exception groups (ch. 7.9) — the PHASE4-DEFAULTS §7
-   spurious-conflict test at the unit level (b <- x, x <- {y, z}, a hand-built
-   attribute ladder). Only y applicable and x justified must yield y, never a
+   spurious-conflict test at the unit level (b <- x, x <- {y, z}, hand-built
+   attribute defaults). Only y applicable and x justified must yield y, never a
    manufactured root conflict; y and z deciding differently propagates the
    conflict to the root (no write, path-keyed Jutter.heffing/0); neither
-   applicable falls back to the rung's own consequence. The corpus anchors
+   applicable falls back to the default's own consequence. The corpus anchors
    jutterswet-nestuitzondering/nestkenmerk carry the full family; this isolates
    the reconciliation invariant in the fast suite. *)
 let () =
@@ -828,27 +828,27 @@ let () =
       { kenmerk = Some name; navigatie = None; negatie = false; eigenaar = Some "Jutter";
         periode = None; bron = None; navigatie_binding = None }
   in
-  let leaf name lex : Ir_v0.Ast.rung =
-    { rung_besluit = None; rung_voorwaarde = Some (kc name);
-      rung_consequentie = Some (litv lex num0); rung_initialisatie = false;
-      rung_excepties = None; rung_bron = None }
+  let leaf name lex : Ir_v0.Ast.default =
+    { default_besluit = None; default_voorwaarde = Some (kc name);
+      default_consequentie = Some (litv lex num0); default_initialisatie = false;
+      default_excepties = None; default_bron = None }
   in
-  let sub name lex : Ir_v0.Ast.sub_ladder = { sl_rungs = [ leaf name lex ]; sl_bron = None } in
-  let ladder : Ir_v0.Ast.default_ladder =
-    { dl_naam = Some "heffing"; dl_onderwerp = "Jutter"; dl_kenmerk = None;
-      dl_attribuut = Some "heffing";
-      rungs =
-        [ { rung_besluit = None; rung_voorwaarde = Some (kc "grondX");
-            rung_consequentie = Some (litv "40" num0); rung_initialisatie = false;
-            rung_excepties =
-              Some { sg_ongeordend = true; sg_leden = [ sub "grondY" "10"; sub "grondZ" "20" ] };
-            rung_bron = None } ];
-      dl_ongeordend = false; dl_bron = None; dl_geldigheid = None }
+  let sub name lex : Ir_v0.Ast.exception_group = { eg_defaults = [ leaf name lex ]; eg_bron = None } in
+  let defaults : Ir_v0.Ast.prioritized_defaults =
+    { pd_naam = Some "heffing"; pd_onderwerp = "Jutter"; pd_kenmerk = None;
+      pd_attribuut = Some "heffing";
+      defaults =
+        [ { default_besluit = None; default_voorwaarde = Some (kc "grondX");
+            default_consequentie = Some (litv "40" num0); default_initialisatie = false;
+            default_excepties =
+              Some { egs_ongeordend = true; egs_leden = [ sub "grondY" "10"; sub "grondZ" "20" ] };
+            default_bron = None } ];
+      pd_ongeordend = false; pd_bron = None; pd_geldigheid = None }
   in
   let doc =
     { empty_doc with
       objecttypen = [ ot "Jutter" [ ("heffing", Some num0) ] [ "grondX"; "grondY"; "grondZ" ] ];
-      default_ladders = [ ladder ] }
+      prioritized_defaults = [ defaults ] }
   in
   let run chars =
     let final = Eval.evaluate (env_of doc) (World.add_instance World.empty (inst_c "j" "Jutter" chars)) in

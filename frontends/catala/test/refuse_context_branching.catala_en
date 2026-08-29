@@ -1,10 +1,10 @@
 # Context override that branches below the root — a recorded besluit-6 flank
 
 Besluit 6 lowers a caller override of a `context` variable to a **chain** of
-plain-rung top rungs above the callee's own ladder. When the override itself
-is a **below-root branching** tree (a base rung carrying a nested exception
-sub-group — the ch. 7.9 shape) it is not a plain-rung chain: only a chain of
-plain-rung overrides lowers to top rungs, so the branching override stays
+plain highest defaults above the callee's own defaults. When the override itself
+is a **below-root branching** tree (a base default carrying a nested exception
+group — the ch. 7.9 shape) it is not a plain-default chain: only a chain of
+plain-default overrides lowers to highest defaults, so the branching override stays
 refused loudly, one of the narrowed remnants of the old blanket context
 refusal (CONSTRUCTS row 9 / `spec/proposals/PHASE5-CATALA.md` decision 6).
 

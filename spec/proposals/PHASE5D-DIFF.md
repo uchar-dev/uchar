@@ -15,7 +15,7 @@ analyses are already checked-in corpus goldens.*
 ## 1. The chosen fragment — and why it is the right one
 
 The law: **Jutterswet art. 3 jo. art. 5 (penningrecht / hardheid)** — the
-canonical **defeasibility ladder**, the Phase-4/5 core both frontends must
+canonical **defeasibility defaults group**, the Phase-4/5 core both frontends must
 carry:
 
 - base: geen recht (silence — no `penninggerechtigd` without a ground);
@@ -28,9 +28,9 @@ carry:
 The same law already lives in the corpus in **three** encodings, which is
 what makes it the diagnostic fragment:
 
-1. hand-written native uchar IR, a `defaultLadder` —
+1. hand-written native uchar IR, a `PrioritizedDefaults` —
    `corpus/golden/anchor/jutterswet-hardheid`;
-2. the **Catala** render through the plugin, a `defaultLadder` —
+2. the **Catala** render through the plugin, a `PrioritizedDefaults` —
    `corpus/golden/jutterswet-penningrecht-catala`;
 3. the **RegelSpraak-toolchain** render through the resolver, two flat
    `KENMERKTOEKENNING` rules — `corpus/golden/jutterswet-penningrecht`
@@ -40,11 +40,12 @@ The pair this exercise diffs is **(3) vs (2)** — the two *frontend* dumps of
 the same law.
 
 **Why this fragment, and not a richer one.** It is **provably semantically
-identical on every input**, not merely on the corpus cases. Both ladder
-rungs decide the same boolean (`waar` / attribute), so the ordered ladder
-collapses to a plain disjunction and no rung-conflict is reachable; the
-toolchain — which has no ladder construct — renders the same law as two flat
-same-valued attributions, and here disjunction ≡ ladder. The pair therefore
+identical on every input**, not merely on the corpus cases. Both defaults
+decide the same boolean (`waar` / attribute), so the ordered defaults
+collapse to a plain disjunction and no default-conflict is reachable; the
+toolchain — which has no defaults construct — renders the same law as two
+flat same-valued attributions, and here disjunction ≡ the defaults group.
+The pair therefore
 isolates a **pure form diff**: identical meaning on all inputs, two IR
 shapes, nothing else moving.
 
@@ -121,10 +122,11 @@ The five cases pin the boolean function
 `penninggerechtigd ⇔ (vondsten ≥ 12) ∨ (hardheid ∧ vondsten ≥ 6)`.
 
 **Whole-input equivalence (the argument the five cases stand in for).** The
-Catala ladder is `[rung: hardheid ∧ ≥6 → true] > [rung: ≥12 → true] >
-[base → false]`. It is a *characteristic* ladder, so every justified rung
-decides (RUNTIME-SEMANTICS ch. 7.1); the base rung (always-true condition)
-decides `false` only when no higher rung fires. Its extension is therefore
+Catala defaults group is `[default: hardheid ∧ ≥6 → true] >
+[default: ≥12 → true] > [base → false]`. It is a *characteristic* defaults
+group, so every justified default decides (RUNTIME-SEMANTICS ch. 7.1); the
+base default (always-true condition) decides `false` only when no higher
+default fires. Its extension is therefore
 exactly `(hardheid ∧ ≥6) ∨ (≥12)`. The toolchain's two flat
 `KENMERKTOEKENNING` rules each attribute `penninggerechtigd = waar` under
 one disjunct; a characteristic is monotone (ch. 5.3) and both rules write
@@ -134,7 +136,7 @@ input, not just the five. This is why the pair is a clean form diff.
 
 ## 4. The structural diff, classified
 
-Walking the tree — declarations, top-level rule/ladder container,
+Walking the tree — declarations, top-level rule/defaults container,
 condition/expression forms, types, source references — every difference
 falls into one of the three prescribed categories: (i) administrative,
 (ii) tracked v0↔v1 delta (confirmation, each verified against
@@ -176,42 +178,43 @@ Three structural differences, each an *expected and wanted* delta whose
 tracking in `CONSTRUCTS.md` was verified per case. Per the exercise's own
 rule, **a tracked delta is confirmation, not a finding.**
 
-**(ii-a) The core one — `defaultLadder` (Catala) vs two flat
+**(ii-a) The core one — `PrioritizedDefaults` (Catala) vs two flat
 `KENMERKTOEKENNING` `resolvedRegels` (toolchain).** This is the whole
 top-level shape:
 
-- Catala emits one `defaultLadders` entry — subject `Penningrecht`, kenmerk
-  `penninggerechtigd`, three `Rung`s (`hardheid ∧ ≥6 → besluit true`,
-  `≥12 → besluit true`, `base → besluit false`) — and `resolvedRegels: []`.
+- Catala emits one `prioritizedDefaults` entry — subject `Penningrecht`,
+  kenmerk `penninggerechtigd`, three `Default`s (`hardheid ∧ ≥6 → besluit
+  true`, `≥12 → besluit true`, `base → besluit false`) — and
+  `resolvedRegels: []`.
 - The toolchain emits two `resolvedRegels` of `soort: KENMERKTOEKENNING`
   (`penninggerechtigd bij drempel`, `penninggerechtigd bij hardheid`), each
   a `doel` (`AttribuutRef` to the characteristic) + `waarde`
-  (`Literal "waar"`) + `voorwaarde`, and **no `defaultLadders` key at all**.
+  (`Literal "waar"`) + `voorwaarde`, and **no `prioritizedDefaults` key at all**.
 
 The pieces of this one delta:
-- **container:** a first-class `DefaultLadder` (ordered rungs, fall-through
-  semantics) vs a flat `regels`/`resolvedRegels` list;
-- **decision carrier:** `Rung.besluit` (the boolean *is* the decision,
+- **container:** a first-class `PrioritizedDefaults` (ordered defaults,
+  fall-through semantics) vs a flat `regels`/`resolvedRegels` list;
+- **decision carrier:** `Default.besluit` (the boolean *is* the decision,
   ch. 7.1) vs `ResolvedRegel.waarde = Literal "waar"`;
-- **target carrier:** the ladder's `(onderwerp, kenmerk)` pair vs the rule's
-  `doel` `AttribuutRef`;
-- **the base rung:** Catala materialises an explicit `besluit: false` base
-  (empty-`ALLE` condition); the flat form has no base rung — an unfired
+- **target carrier:** the defaults group's `(onderwerp, kenmerk)` pair vs
+  the rule's `doel` `AttribuutRef`;
+- **the base default:** Catala materialises an explicit `besluit: false` base
+  (empty-`ALLE` condition); the flat form has no base default — an unfired
   characteristic is simply absent;
-- **priority:** the ladder orders art. 5 *above* art. 3 (the exception
+- **priority:** the defaults group orders art. 5 *above* art. 3 (the exception
   defeats the threshold); the flat rules carry no order. Here the priority
   is present in one form and absent in the other but **inert**, because both
-  rungs decide the same value — the very property that makes this a pure form
-  diff (§3).
+  defaults decide the same value — the very property that makes this a pure
+  form diff (§3).
 
 **Tracked:** `CONSTRUCTS.md` **row 8** (the adopted Catala default calculus:
-"a first-class ladder per target with Catala's fall-through", landed as the
-`defaultLadders` extension, IR-SPEC ch. 6.1 / WF-050/051; and explicitly
-"across compositions a Catala frontend **must compile it into ladder
-structure**" — the recorded Phase-5 reconciliation obligation); **row 2**
-(KENMERKTOEKENNING → the target's member kind); **row 7** (defaults). The v0
-mirror produces the flat rules; a v1-native frontend (Catala) produces the
-ladder. Semantics reconciled: RUNTIME-SEMANTICS ch. 7, with the **v0
+"a first-class defaults group per target with Catala's fall-through", landed
+as the `prioritizedDefaults` extension, IR-SPEC ch. 6.1 / WF-050/051; and
+explicitly "across compositions a Catala frontend **must compile it into
+defaults structure**" — the recorded Phase-5 reconciliation obligation);
+**row 2** (KENMERKTOEKENNING → the target's member kind); **row 7**
+(defaults). The v0 mirror produces the flat rules; a v1-native frontend
+(Catala) produces the defaults group. Semantics reconciled: RUNTIME-SEMANTICS ch. 7, with the **v0
 desugaring ch. 7.7** and the differential witness `jutterswet-waardering-v0vorm`.
 Confirmed carried.
 
@@ -222,28 +225,28 @@ forms; Catala emits `regels: []`. **Tracked:** `CONSTRUCTS.md` §2.3 —
 away". The v0-mirror toolchain carries the shell; a v1-native frontend does
 not. Confirmed.
 
-**(ii-c) The optional `defaultLadders` extension field, present vs
-never-produced.** Catala emits `defaultLadders` populated; the toolchain
+**(ii-c) The optional `prioritizedDefaults` extension field, present vs
+never-produced.** Catala emits `prioritizedDefaults` populated; the toolchain
 omits the key entirely (not `[]`) — while both emit the *required* core
 `resolvedRegels`, empty (`[]`) on the Catala side. **Tracked:** the schema
 description and the IR-SPEC wire-entry discipline (Method) — v1 extension
-top-level lists (`defaultLadders`, `functionDefs`) are optional and "the v0
+top-level lists (`prioritizedDefaults`, `functionDefs`) are optional and "the v0
 emitter never produces any of them", whereas core lists are always-emitted
 required keys. The present-vs-absent asymmetry is the designed convention,
 not a divergence. Confirmed (this is the wire face of ii-a).
 
 **A structural note that strengthens "pure form diff":** below the container,
 the condition trees are **identical in shape**. The toolchain's hardheid
-rule `voorwaarde` and the Catala rung-1 `voorwaarde` are both
+rule `voorwaarde` and the Catala default-1 `voorwaarde` are both
 `Samengesteld{kwantor: ALLE}[ Kenmerk(hardheid…), Vergelijking(≥, AttribuutRef,
-Literal "6") ]`; the drempel rule and rung-2 are both
+Literal "6") ]`; the drempel rule and default-2 are both
 `Vergelijking(≥, AttribuutRef, Literal "12")`. Modulo names — and modulo
 the category-(i) `teken` refinement of §4.1, which the emitter copies onto
 every `AttribuutRef.type` inside the conditions (`NIET_NEGATIEF` vs
 `ONBEPAALD`; lens-verified benign: negative, empty and boundary inputs
 agree across both forms and both executors) — byte-for-byte the same
 expression forms. Beyond that one copied field, the entire diff lives in
-the top-level wrapper (ladder vs flat rules).
+the top-level wrapper (defaults group vs flat rules).
 
 ### 4.3 Category (iii) — real design flaws
 
@@ -262,29 +265,30 @@ decision. Stated plainly so a later reader need not re-derive it:
 **The defeasible characteristic has two admissible IR encodings, reconciled
 only extensionally, and ch. 7.7's desugaring table does not name this
 case.** ch. 7.7 desugars *at most one* computing rule (plus an
-initialisation) into a ladder, and explicitly excludes **multiple computing
-rules on one target** because their v0 meaning is agenda order — "exactly
-what the ladder exists to replace". It also says a *single* characteristic
-attribution is trivially its own one-rung ladder, "recorded, not
-transformed". The penningrecht toolchain dump is neither: it is **two**
+initialisation) into a defaults group, and explicitly excludes **multiple
+computing rules on one target** because their v0 meaning is agenda order —
+"exactly what the defaults group exists to replace". It also says a *single*
+characteristic attribution is trivially its own one-default group,
+"recorded, not transformed". The penningrecht toolchain dump is neither: it is **two**
 `KENMERKTOEKENNING` rules on **one** characteristic target. So:
 
 - it is **well-formed** — WF-026's single-writer rule binds *allocations*
   only (IR-SPEC ch. 3.2), and WF-050's "no other writer" binds a target that
-  *carries a ladder*; neither forbids two flat characteristic attributions,
+  *carries defaults*; neither forbids two flat characteristic attributions,
   and the verifier (gate 3) passes the dump;
-- it is **not desugared** into the ladder (outside ch. 7.7's domain); it is
-  left native and executed as two monotone same-valued attributions —
+- it is **not desugared** into the defaults group (outside ch. 7.7's
+  domain); it is left native and executed as two monotone same-valued
+  attributions —
   covered by ch. 7.7's "outside the desugaring's domain the v0 forms are
   left as they are" catch-all, and *safe* precisely because the agenda-order
   exclusion rationale does not apply (same value, idempotent, confluent —
   ch. 5.1–5.3);
-- it agrees with the ladder form on every input (§3), machine-witnessed on
+- it agrees with the defaults form on every input (§3), machine-witnessed on
   both executors (gates 5–6).
 
 So the "two encodings, no canonical form" observation is **not** an
 undocumented two-form problem: the multiplicity is inherent to
-mirror-then-diverge (v0 has no ladder; v1 adds one), the reconciliation
+mirror-then-diverge (v0 has no defaults group; v1 adds one), the reconciliation
 obligation is already recorded (row 8), and the extensional equivalence is
 proven per-case. It is a *feature boundary*, not a flaw.
 
@@ -293,9 +297,9 @@ maintainer *may* fold a single clarifying sentence into ch. 7.7 (or
 `CONSTRUCTS.md` row 8) noting that **multiple same-valued characteristic
 attributions on one target are left native, not desugared — order-free and
 conflict-free by monotone idempotence (ch. 5.3), extensionally the
-disjunctive one-rung-equivalent of the ladder a v1-native frontend would
-emit.** This changes no semantics, adds no WF rule, and closes the one
-silence this diff surfaced. Because ch. 7.7 / `CONSTRUCTS.md` are
+disjunctive one-default-equivalent of the defaults group a v1-native
+frontend would emit.** This changes no semantics, adds no WF rule, and
+closes the one silence this diff surfaced. Because ch. 7.7 / `CONSTRUCTS.md` are
 maintainer-owned, even this documentary line lands as a maintainer edit, not
 a session merge — but it carries **no decision**: there is no option to
 weigh, only a fact to record. **No numbered maintainer question arises from
@@ -310,14 +314,16 @@ this exercise.**
   compare two independent v1-native frontends (that pairing does not yet
   exist).
 - **One fragment is not completeness.** A single law — a characteristic
-  defeasibility ladder — proves nothing about attribute ladders, allocation,
+  defeasibility defaults group — proves nothing about attribute defaults,
+  allocation,
   temporal writes, folds, structs, subscopes, or any construct family this
   pair does not touch. The absence of a flaw here is a data point, not a
   clearance.
 - **The clean case was chosen on purpose; the sharp case is out of scope.**
   The fragment was selected *because* the two forms cannot diverge (both
-  rungs decide the same value). The genuinely dangerous composition — two
-  *unordered, differently-deciding* exceptions, where the ladder faults on
+  defaults decide the same value). The genuinely dangerous composition — two
+  *unordered, differently-deciding* exceptions, where the defaults group
+  faults on
   §9.5 over-determination and flat rules would silently last-writer-win — is
   precisely `tariefrecht`, deliberately excluded (§1). The penningrecht
   exercise itself **does not** exercise the divergent-exception path, which is
@@ -355,9 +361,9 @@ this exercise.**
 carry: **two unordered, differently-deciding exceptions**, where Catala
 raises a `ConflictError` and uchar takes the §9.5 channel. That composition
 is `tariefrecht`, and it already lives in the corpus as a Catala golden
-(`corpus/golden/jutterswet-tariefrecht-catala`) — a `DefaultLadder` on
-`tarief` whose kinderlast rung (art. 2, 15 %) carries an **unordered
-`Rung.excepties` sub-group** (art. 3): `grootgezin` (kindertal ≥ 4 → 10 %)
+(`corpus/golden/jutterswet-tariefrecht-catala`) — a `PrioritizedDefaults` on
+`tarief` whose kinderlast default (art. 2, 15 %) carries an **unordered
+`Default.excepties` exception group** (art. 3): `grootgezin` (kindertal ≥ 4 → 10 %)
 and `kleine beurs` (inkomen ≤ 10000 → 0 %). The three cases the golden
 shipped with each fire **at most one** sub-exception, so the sharp corner was
 present in the IR but unexercised. This section exercises it.
@@ -373,7 +379,7 @@ copy of `bron.catala_en` that adds one `#[test]` scope feeding the overlap
 input (`clerk test` compiles the stdlib into `<scratch>/_build/libcatala`;
 the interpret call it then runs is quoted below). The scope does not
 evaluate to a value — the whole computation faults, pointing at the two
-conflicting exception rungs:
+conflicting exception defaults:
 
 ```
 $ catala interpret -I . tariefrecht-conflict.catala_en \
@@ -396,12 +402,13 @@ $ catala interpret -I . tariefrecht-conflict.catala_en \
 **uchar does not abort — it deposits one observable fact.** Both executors
 replay `case4-conflict` (gates 5–6, exact match):
 
-- `tarief` is **leeg**: the differing sub-group propagates its conflict to
-  the root rung and the ladder writes nothing (RUNTIME-SEMANTICS ch. 7.9);
-- the §9.5 channel carries exactly one fact, **path-keyed** to the rung that
-  hosts the sub-group: `Penningplichtige.tarief/0` — distinguishing a nested
-  sub-group conflict from a root-level one (`…/tarief` bare), the row-8
-  Phase-5c form;
+- `tarief` is **leeg**: the differing exception group propagates its conflict
+  to the root default and the defaults group writes nothing
+  (RUNTIME-SEMANTICS ch. 7.9);
+- the §9.5 channel carries exactly one fact, **path-keyed** to the default
+  that hosts the exception group: `Penningplichtige.tarief/0` —
+  distinguishing a nested exception-group conflict from a root-level one
+  (`…/tarief` bare), the row-8 Phase-5c form;
 - and, the sharpest half of the contrast, the computation **continues**:
   `aanslag` still resolves — to **0.00**. `aanslag = inkomen × tarief`, and
   `MAAL` coalesces the blanked (leeg) rate to zero (the v0 mirror reading,
@@ -425,17 +432,17 @@ is the proof that neither executor silently picks a winner.
 ### 8.2 Can the v0-flat form express this? No — and the way it fails is the
 finding
 
-§6 speculated that, without a ladder, "flat rules would silently
+§6 speculated that, without prioritized defaults, "flat rules would silently
 last-writer-win". The prediction was that the flat form loses the conflict;
 the empirical reality is **sharper and worse than last-writer-win**. Built as
-a scratch v0-flat IR — two flat `BEREKENING` rules on the same non-laddered
-`tarief` target, no ladder, no sub-group: `tarief bij grootgezin`
+a scratch v0-flat IR — two flat `BEREKENING` rules on the same defaults-free
+`tarief` target, no defaults, no exception group: `tarief bij grootgezin`
 (kindertal ≥ 4 → 0.1000) and `tarief bij kleine beurs` (inkomen ≤ 10000 →
 0.0000) — and replayed on the same overlap input:
 
 - **verifier: `PASS`.** The flat form is *well-formed*. WF-050's
-  single-writer rule binds a target that **carries a ladder**; two flat
-  computing writers on a non-laddered attribute violate no WF rule (the same
+  single-writer rule binds a target that **carries defaults**; two flat
+  computing writers on a defaults-free attribute violate no WF rule (the same
   reasoning as §5's characteristic case — but there the two writers were
   monotone and same-valued; here they differ).
 - **`ref`: `EVALUATION FAULT: no fixpoint within 100 passes — divergence is
@@ -455,7 +462,7 @@ adversarial triage, never to admission". The flat form is therefore
 **un-pinnable in every zone**: not a golden (ref ≢ clingo, and ref does not
 even terminate), not a `negatief` (verifier-clean), not a `rood` (clingo
 raises no fault). It falls through the whole corpus by construction — which
-is exactly why the ladder's `ongeordend` group is *not* optional sugar over
+is exactly why the `ongeordend` defaults group is *not* optional sugar over
 two flat rules but **the only IR form** in which this law's over-determination
 is expressible with the executors in agreement (one leeg target, one
 path-keyed §9.5 fact, both backends).
@@ -466,7 +473,7 @@ though the verifier admits it. Whether a *defensive* WF rule should reject
 two flat writers on one target ahead of the square was the latent design
 question this witness surfaced. **Decided (maintainer, 2026-08-24): yes.**
 It is now **WF-079** (`spec/IR-SPEC.md` ch. 3.1; `RUNTIME-SEMANTICS.md`
-ch. 7.7): a non-laddered (type, attribute) target admits at most one
+ch. 7.7): a defaults-free (type, attribute) target admits at most one
 unconditional, version-free computing rule (Gelijkstelling/Berekening); two
 or more are ill-formed. The rule is scoped to the soundly-detectable subset —
 **unconditional** ("bare") writers, where over-determination is certain
@@ -484,8 +491,8 @@ a differential-square catch. Negatief: `corpus/negatief/wf079-two-unconditional-
   exposes no untracked divergence. The Catala/uchar difference is the
   **already-tracked** row-8 deviation (over-determination → observable,
   non-fatal §9.5 channel fact, vs Catala's fatal `ConflictError`); the
-  flat-vs-ladder difference is the row-8 ladder rationale itself
-  (`Rung.excepties`, RS ch. 7.9, WF-075), now shown to be load-bearing
+  flat-vs-defaults difference is the row-8 defaults rationale itself
+  (`Default.excepties`, RS ch. 7.9, WF-075), now shown to be load-bearing
   rather than cosmetic.
 - **Normative changes: none.** The semantics this witness exercises
   (path-keyed §9.5 propagation from an unordered sub-group) landed in

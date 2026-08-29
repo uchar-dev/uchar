@@ -55,7 +55,7 @@ May touch: `frontends/regelspraak/**` (new), `scripts/
 check-regelspraak.sh` (new), `.github/workflows/gates.yml`,
 `CLAUDE.md` (the gate list line only).
 Out of scope: any toolchain change (copy route — read-only there), the
-ladder-producing evolution (the registered v1 path, later card), the
+defaults-producing evolution (the registered v1 path, later card), the
 dependency inversion (planned later upgrade per V1-A), ScenarioResolver/
 ResolvedScenario, `spec/CONSTRUCTS.md` (serial at merge),
 `WAY-OF-WORKING.md`.

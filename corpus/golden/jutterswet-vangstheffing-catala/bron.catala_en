@@ -12,7 +12,7 @@ opeenvolgende stappen (`state`) uit. Elke stap leest de uitkomst van de vorige
 en is louter suiker over gekoppelde toekenning: de plugin lowert elke stap als
 een gewoon intern attribuut met een eigen default-boom (`vangstheffing bruto`,
 `vangstheffing na_opslag`, `vangstheffing netto`), waarbij stap n stap n-1
-leest. De laatste stap draagt een uitzondering (een eigen ladder): de
+leest. De laatste stap draagt een uitzondering (eigen geprioriteerde defaults): de
 grootvangsttoeslag verdringt de drempelvrijstelling. Het fragment gebruikt geen
 subscope; de grootvangst is een kenmerk.
 

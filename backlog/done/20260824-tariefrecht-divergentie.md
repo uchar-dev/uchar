@@ -27,7 +27,7 @@ frontends/; backends/.
 
 Inventaris. `jutterswet-tariefrecht-catala` pinde drie cases
 (basistarief/grootgezin/vrijstelling) die stuk voor stuk **hooguit
-één** sub-uitzondering raken — de ongeordende `Rung.excepties`-groep
+één** sub-uitzondering raken — de ongeordende `Default.excepties`-groep
 (grootgezin 10 % / kleine beurs 0 %) zat wél in de IR maar bleef
 onbeproefd; er was nog géén conflict-case. `anchor/jutterswet-toelagegronden`
 pint de ongeordende top-level groep met het §9.5-conflictpad
@@ -48,10 +48,10 @@ Gedicht.
    eerst gepind op de naïeve `tarief=0.1000`+`consistent`; beide
    executors wezen dat af.
 2. **v0-platte-vorm empirisch getoetst** (scratch: twee vlakke
-   `BEREKENING`-schrijvers op één niet-ladder-doel): verifier-clean,
+   `BEREKENING`-schrijvers op één doel zonder defaults): verifier-clean,
    maar **ref divergeert** (geen fixpoint, ch. 5.7) terwijl **clingo
    stil multi-valued** (`tarief = [0;1000]`, `consistent`) — ref ≢
-   clingo, in géén corpus-zone toelaatbaar. De `ongeordend`-laddergroep
+   clingo, in géén corpus-zone toelaatbaar. De `ongeordend`-defaults-groep
    is dus de enige IR-vorm die deze over-determinatie met
    executor-overeenstemming uitdrukt, geen suiker over vlakke regels.
    Verfijnt §6's speculatie "silently last-writer-win".
@@ -106,10 +106,10 @@ pad-gesleutelde §9.5-feit Penningplichtige.tarief/0, het tarief
 blijft leeg, en de aanslag rekent dóór tot 0.00 — het observeerbare,
 niet-fatale contrast met Catala's scope-abort, letterlijk geciteerd
 in PHASE5D-DIFF §8. De scherpste vondst: de v0-platte vorm (twee
-vlakke schrijvers op één niet-ladder-doel) is verifier-clean maar
+vlakke schrijvers op één doel zonder defaults) is verifier-clean maar
 un-pinnable — ref bereikt geen fixpoint, clingo levert stil een
 multi-valued model zonder conflictfeit; ref ≢ clingo, in geen enkele
-corpuszone toelaatbaar. De ongeordende laddergroep is daarmee
+corpuszone toelaatbaar. De ongeordende defaults-groep is daarmee
 aantoonbaar de enige IR-vorm die deze over-determinatie met
 executor-overeenstemming uitdrukt; §8.2 corrigeert de eerdere
 "last-writer-win"-speculatie van §6. Rood-eerst met een opzettelijk

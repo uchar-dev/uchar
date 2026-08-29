@@ -1,15 +1,15 @@
 (* The v0 desugaring of RUNTIME-SEMANTICS ch. 7.7: on one
    (type, attribute) target, one version-free computing rule
    (Gelijkstelling/Berekening) plus at most one unconditional,
-   version-free Initialisatie read as one attribute ladder — the
-   computing rule's condition becomes the rung justification (an
+   version-free Initialisatie read as one attribute defaults group — the
+   computing rule's condition becomes the default justification (an
    unconditional rule gets the vacuously true empty-ALLE), the
-   initialisation becomes the ch. 7.3 init rung. Forms outside the
+   initialisation becomes the ch. 7.3 init default. Forms outside the
    domain are left untouched; a caller that needs totality checks
    [remainder] and faults, never guesses.
 
    The lowering is document-to-document so a backend can consume the
-   ladder machinery while the reference interpreter keeps replaying
+   defaults machinery while the reference interpreter keeps replaying
    the v0 forms natively — the differential (gate 6) then witnesses
    the desugaring itself. *)
 
@@ -62,9 +62,9 @@ let chosen_targets (doc : document) =
   let desugarable (_, (_, rs)) =
     let inits = List.filter (fun r -> r.rr_soort = Some Initialisatie) rs in
     let comps = List.filter is_computing rs in
-    (* exactly one initialisation: the init rung is what the desugaring
+    (* exactly one initialisation: the init default is what the desugaring
        exists for — the bare computation stays structurally outside the
-       desugaring and carries the ladder reading directly through the
+       desugaring and carries the defaults reading directly through the
        ch. 7.8 standing norm (standing_targets below) *)
     List.length rs = List.length inits + List.length comps
     && List.length inits = 1
@@ -75,7 +75,7 @@ let chosen_targets (doc : document) =
 
 (* The ch. 7.7 desugaring domain as target keys — shared with ref/,
    whose native replay gives these targets the same fall-through the
-   desugared ladder carries (RS ch. 7.7/7.8: a computing rule that
+   desugared defaults carry (RS ch. 7.7/7.8: a computing rule that
    evaluates leeg writes nothing, so the init/input decides and the
    fire-but-leeg corner is defined instead of divergent). *)
 let desugared_targets (doc : document) : (string * string) list =
@@ -92,62 +92,62 @@ let document (doc : document) : document =
       | Some t -> List.exists (fun (k, _) -> k = key t) chosen
       | None -> false
     in
-    let ladder_of (_, ((ot, a), rs)) : default_ladder =
-      let comp_rungs =
+    let defaults_of (_, ((ot, a), rs)) : prioritized_defaults =
+      let comp_defaults =
         List.filter_map
           (fun r ->
             if is_computing r then
               Some
                 {
-                  rung_besluit = None;
-                  rung_voorwaarde =
+                  default_besluit = None;
+                  default_voorwaarde =
                     Some (Option.value r.rr_voorwaarde ~default:always_true);
-                  rung_consequentie = Some (Option.get r.waarde);
-                  rung_initialisatie = false;
-                  rung_excepties = None;
-                  rung_bron = r.rr_naam;
+                  default_consequentie = Some (Option.get r.waarde);
+                  default_initialisatie = false;
+                  default_excepties = None;
+                  default_bron = r.rr_naam;
                 }
             else None)
           rs
       in
-      let init_rungs =
+      let init_defaults =
         List.filter_map
           (fun r ->
             if r.rr_soort = Some Initialisatie then
               Some
                 {
-                  rung_besluit = None;
-                  rung_voorwaarde = None;
-                  rung_consequentie = Some (Option.get r.waarde);
-                  rung_initialisatie = true;
-                  rung_excepties = None;
-                  rung_bron = r.rr_naam;
+                  default_besluit = None;
+                  default_voorwaarde = None;
+                  default_consequentie = Some (Option.get r.waarde);
+                  default_initialisatie = true;
+                  default_excepties = None;
+                  default_bron = r.rr_naam;
                 }
             else None)
           rs
       in
       {
-        dl_naam = Some ("desugared: " ^ a ^ " van " ^ ot);
-        dl_onderwerp = ot;
-        dl_kenmerk = None;
-        dl_attribuut = Some a;
-        rungs = comp_rungs @ init_rungs;
-        dl_ongeordend = false;
-        dl_bron = Some "ch. 7.7 v0 desugaring";
-        dl_geldigheid = None;
+        pd_naam = Some ("desugared: " ^ a ^ " van " ^ ot);
+        pd_onderwerp = ot;
+        pd_kenmerk = None;
+        pd_attribuut = Some a;
+        defaults = comp_defaults @ init_defaults;
+        pd_ongeordend = false;
+        pd_bron = Some "ch. 7.7 v0 desugaring";
+        pd_geldigheid = None;
       }
     in
     {
       doc with
       resolved_regels = List.filter (fun r -> not (in_chosen r)) doc.resolved_regels;
-      default_ladders = doc.default_ladders @ List.map ladder_of chosen;
+      prioritized_defaults = doc.prioritized_defaults @ List.map defaults_of chosen;
     }
 
 (* The standing domain of RUNTIME-SEMANTICS ch. 7.8: the bare scalar
    computing target — one version-free Gelijkstelling/Berekening as its
    target's only writer (no initialisation beside it: that pair is the
-   ch. 7.7 desugaring's domain above; no ladder, allocation, or
-   creation-time write). On these targets the rule decides like a rung —
+   ch. 7.7 desugaring's domain above; no prioritized defaults, allocation, or
+   creation-time write). On these targets the rule decides like a default —
    a leeg evaluation writes nothing and a case-supplied input value
    stands. Shared by ref/ (the no-write on leeg) and the ASP backend
    (the defeasible inputval/3 entry), so the domain has one definition. *)
@@ -164,10 +164,10 @@ let standing_targets_gen ~temporal (doc : document) : (string * string) list =
   let count k = List.length (List.filter (( = ) k) written_by_rules) in
   let other_writer (ot, a) =
     List.exists
-      (fun (l : default_ladder) ->
-        norm l.dl_onderwerp = norm ot
-        && match l.dl_attribuut with Some la -> norm la = norm a | None -> false)
-      doc.default_ladders
+      (fun (l : prioritized_defaults) ->
+        norm l.pd_onderwerp = norm ot
+        && match l.pd_attribuut with Some la -> norm la = norm a | None -> false)
+      doc.prioritized_defaults
     || List.exists
          (fun (v : resolved_verdeling) ->
            (match v.doel_type with Some dt -> norm dt = norm ot | None -> false)
@@ -221,6 +221,6 @@ let standing_targets = standing_targets_gen ~temporal:false
    decides only when its result timeline is GEVULD (>= 1 segment) — an
    empty result is the temporal leeg (empty == never-written, ch. 3.1) and
    writes nothing, so a case-supplied input timeline stands whole: the
-   ladder reading is per target, never per bucket (a rung decides once;
+   defaults reading is per target, never per bucket (a default decides once;
    ref's write_timeline replaces whole). *)
 let standing_temporal_targets = standing_targets_gen ~temporal:true

@@ -491,50 +491,50 @@ type diagnostic = {
 
 (* --- the document ------------------------------------------------------ *)
 
-(* Extension form (v1, Phase 4): the default ladder of
-   RUNTIME-SEMANTICS ch. 7 — rungs in descending priority. A
-   characteristic ladder's rungs carry a boolean [rung_besluit]
-   (attribute / do-not-attribute); an attribute ladder's rungs carry a
-   value [rung_consequentie] (a leeg-evaluating consequence falls
-   through). The initialisation rung ([rung_initialisatie], lowest
+(* Extension form (v1, Phase 4): the prioritized defaults of
+   RUNTIME-SEMANTICS ch. 7 — defaults in descending priority. On a
+   characteristic target the defaults carry a boolean [default_besluit]
+   (attribute / do-not-attribute); on an attribute target they carry a
+   value [default_consequentie] (a leeg-evaluating consequence falls
+   through). The initialisation default ([default_initialisatie], lowest
    only) has no written justification: it is justified iff the target
    is empty in the input facts (ch. 7.3). Never emitter-produced. *)
-type rung = {
-  rung_besluit : bool option;
-  rung_voorwaarde : conditie option;
-  rung_consequentie : expr option;
-  rung_initialisatie : bool;
-  rung_excepties : sub_group option;
-      (* extension (v1, Phase 5c): the nested exception sub-group
-         (RUNTIME-SEMANTICS ch. 7.9). A rung carrying it is a group-rung
-         (no own consequence/besluit — the sub-group is its decision) or a
-         form-a rung (own consequence/besluit too — the sub-group decides
-         first, the own consequence is the fall-back when it is empty). A
-         differing-deciding sub-group propagates the conflict to the root
-         (WF-075). Absent = a flat rung. *)
-  rung_bron : string option;
+type default = {
+  default_besluit : bool option;
+  default_voorwaarde : conditie option;
+  default_consequentie : expr option;
+  default_initialisatie : bool;
+  default_excepties : exception_groups option;
+      (* extension (v1, Phase 5c): the nested exception group
+         (RUNTIME-SEMANTICS ch. 7.9). A default carrying it is a group-default
+         (no own consequence/besluit — the exception group is its decision) or
+         a form-a default (own consequence/besluit too — the exception group
+         decides first, the own consequence is the fall-back when it is
+         empty). A differing-deciding exception group propagates the conflict
+         to the root (WF-075). Absent = a flat default. *)
+  default_bron : string option;
 }
 
-(* Extension records (v1, Phase 5c): a Rung's exception sub-group and its
-   members (RUNTIME-SEMANTICS ch. 7.9). [sg_ongeordend] carries the
+(* Extension records (v1, Phase 5c): a Default's [excepties] field and its
+   members (RUNTIME-SEMANTICS ch. 7.9). [egs_ongeordend] carries the
    declared-unordered flag itself (the root regime, recursed); each
-   [sub_ladder] is a rung chain (descending, highest first) inheriting the
-   root ladder's target — it carries no target of its own. Never
-   emitter-produced. *)
-and sub_group = { sg_ongeordend : bool; sg_leden : sub_ladder list }
-and sub_ladder = { sl_rungs : rung list; sl_bron : string option }
+   [exception_group] is a default chain (descending, highest first)
+   inheriting the root group's target — it carries no target of its own.
+   Never emitter-produced. *)
+and exception_groups = { egs_ongeordend : bool; egs_leden : exception_group list }
+and exception_group = { eg_defaults : default list; eg_bron : string option }
 
-type default_ladder = {
-  dl_naam : string option;
-  dl_onderwerp : string; (* subject object type *)
-  dl_kenmerk : string option; (* target characteristic — exactly one of the two *)
-  dl_attribuut : string option; (* target attribute *)
-  rungs : rung list; (* descending priority: highest first *)
-  dl_ongeordend : bool;
-      (* declared-unordered (ch. 7.2): multiple ladders on one target are
-         admissible iff every one carries this marking *)
-  dl_bron : string option;
-  dl_geldigheid : geldigheid option;
+type prioritized_defaults = {
+  pd_naam : string option;
+  pd_onderwerp : string; (* subject object type *)
+  pd_kenmerk : string option; (* target characteristic — exactly one of the two *)
+  pd_attribuut : string option; (* target attribute *)
+  defaults : default list; (* descending priority: highest first *)
+  pd_ongeordend : bool;
+      (* declared-unordered (ch. 7.2): multiple defaults groups on one target
+         are admissible iff every one carries this marking *)
+  pd_bron : string option;
+  pd_geldigheid : geldigheid option;
 }
 
 (* Extension form (v1, row 10): a named reusable function — DMN's Business
@@ -571,6 +571,6 @@ type document = {
   resolved_startpunten : resolved_startpunt list;
   regel_groepen : resolved_regel_groep list;
   diagnostics : diagnostic list;
-  default_ladders : default_ladder list; (* extension: absent = [] *)
+  prioritized_defaults : prioritized_defaults list; (* extension: absent = [] *)
   function_defs : function_def list; (* extension: absent = [] *)
 }

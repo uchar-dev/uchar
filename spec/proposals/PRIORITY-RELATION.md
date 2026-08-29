@@ -2,7 +2,7 @@
 
 *Status: PROPOSAL · 2026-08-25 · working prose, not normative. Answers
 LegalRuleML-audit candidate C2 (`LEGALRULEML-AUDIT.md` §7): uchar
-expresses override as *structure* — intra-target ladder priority — and
+expresses override as *structure* — intra-target defaults priority — and
 carries no free `r1 > r2` superiority relation across rules or targets
 and no strict/defeasible/defeater strength tags. This document maps the
 design space, recommends a design (**do not build**, with two small
@@ -61,7 +61,8 @@ The top level of `regelspraak-ir-v0.schema.json` is
 `additionalProperties: false`; no slot on the wire, no node in the
 verifier's AST, no vocabulary anywhere in `spec/schema/` or
 `spec/verifier/lib/` (grep for superiority/salience/priority terms:
-zero hits outside the ladder machinery). The gap is real; the question
+zero hits outside the prioritized-defaults machinery). The gap is real;
+the question
 is whether it is a defect.
 
 ## 2. What uchar has instead — the verified inventory
@@ -71,25 +72,26 @@ card; each carries its witness.
 
 | Priority phenomenon | uchar encoding | Witness (verified) |
 |---|---|---|
-| defeasible conclusion | ladder rung: holds unless a higher rung decides | `IR-SPEC.md` ch. 6.1; RS ch. 7.1; anchors `jutterswet-uitsluiting` (characteristic), `jutterswet-vondstwaardering` (attribute, leeg fall-through, init rung) |
-| explicit priority, intra-target | `rungs` — a **descending** list, highest first; below the root a rose tree via `Rung.excepties` | `IR-SPEC.md` ch. 6.1 (field table: "descending priority: highest first"); WF-075; anchors `jutterswet-nestuitzondering`, `-nestkenmerk`, `-nestdiepte` |
-| explicitly *absent* priority | the declared-unordered group (`ongeordend: true` on every member) — "priority is explicit (rungs) or explicitly absent … never implicit" | RS ch. 7.1; WF-050 multiplicity clause; anchor `jutterswet-toelagegronden` (six ladders on `ir.json`: five group members carry `ongeordend: true` on the wire, the sixth is a lone ladder needing no marking) |
+| defeasible conclusion | a default: holds unless a higher default decides | `IR-SPEC.md` ch. 6.1; RS ch. 7.1; anchors `jutterswet-uitsluiting` (characteristic), `jutterswet-vondstwaardering` (attribute, leeg fall-through, init default) |
+| explicit priority, intra-target | `defaults` — a **descending** list, highest first; below the root a rose tree via `Default.excepties` | `IR-SPEC.md` ch. 6.1 (field table: "descending priority: highest first"); WF-075; anchors `jutterswet-nestuitzondering`, `-nestkenmerk`, `-nestdiepte` |
+| explicitly *absent* priority | the declared-unordered group (`ongeordend: true` on every member) — "priority is explicit (defaults) or explicitly absent … never implicit" | RS ch. 7.1; WF-050 multiplicity clause; anchor `jutterswet-toelagegronden` (six defaults groups on `ir.json`: five group members carry `ongeordend: true` on the wire, the sixth is a lone defaults group needing no marking) |
 | conflict detection | differing simultaneous decisions → no write + one §9.5 channel fact, keyed by target form; nested conflicts path-keyed | RS ch. 7.2/7.9; `jutterswet-toelagegronden/case3-conflict.json` (expected `"inconsistent", "rule": "Jutter.toelage"`), `jutterswet-tariefrecht-catala/case4-conflict.json` (`"rule": "Penningplichtige.tarief/0"`) |
-| block-only defeat (defeater) | a characteristic rung with `besluit: false` — "derives nothing and displaces" | `IR-SPEC.md` ch. 6.1; RS ch. 7.1; anchor `jutterswet-uitsluiting` (art. 4 "geldt niet") |
-| indisputable conclusion (strict) | the single-writer bare form: WF-050's no-other-writer clause, WF-026, WF-052 and — for the unconditional collision — WF-079 fence the second writer; a guarded overlap escapes the static fences and falls to the differential square (fact 2 below); a deciding bare rule is displaced by nothing (a non-deciding one leaves the input standing, ch. 7.8) | `IR-SPEC.md` WF index; `spec/verifier/lib/checks.ml` (WF-050 from line ~3707, WF-079 from ~3963 — its comment scopes it to the bare collision); negatiefs `wf050-ladder-beside-rule`, `wf079-two-unconditional-writers` |
+| block-only defeat (defeater) | a characteristic default with `besluit: false` — "derives nothing and displaces" | `IR-SPEC.md` ch. 6.1; RS ch. 7.1; anchor `jutterswet-uitsluiting` (art. 4 "geldt niet") |
+| indisputable conclusion (strict) | the single-writer bare form: WF-050's no-other-writer clause, WF-026, WF-052 and — for the unconditional collision — WF-079 fence the second writer; a guarded overlap escapes the static fences and falls to the differential square (fact 2 below); a deciding bare rule is displaced by nothing (a non-deciding one leaves the input standing, ch. 7.8) | `IR-SPEC.md` WF index; `spec/verifier/lib/checks.ml` (WF-050 from line ~3707, WF-079 from ~3963 — its comment scopes it to the bare collision); negatiefs `wf050-defaults-beside-rule`, `wf079-two-unconditional-writers` |
 | priority vs. time | version selection is **temporal, never defeasible** — "a later version does not 'override' an earlier one … they never co-apply" | RS ch. 7.4; WF-021 |
-| priority vs. stratification | every rung read (justifications and consequences, recursively through sub-rungs) folds into **negative edges** toward the ladder's write; strata must exist | WF-051; `checks.ml` `dep_forms` (the `ladders` block, `rung_reads` recursing through `rung_excepties`); negatiefs `wf051-ladder-reads-own-target`, `wf051-cycle-through-subrung` |
-| displaced priority is speculative | a higher settling rung displaces a lower sub-group *including its conflict fact* | RS ch. 7.9; `jutterswet-nestuitzondering/case9-verdrongen-conflict.json` |
+| priority vs. stratification | every default read (justifications and consequences, recursively through sub-defaults) folds into **negative edges** toward the defaults' write; strata must exist | WF-051; `checks.ml` `dep_forms` (the `prioritized_defaults` block, `default_reads` recursing through `default_excepties`); negatiefs `wf051-defaults-read-own-target`, `wf051-cycle-through-subdefault` |
+| displaced priority is speculative | a higher settling default displaces a lower exception group *including its conflict fact* | RS ch. 7.9; `jutterswet-nestuitzondering/case9-verdrongen-conflict.json` |
 
 Three structural facts carry the whole analysis:
 
-1. **A single ladder cannot conflict** — at most one rung decides
+1. **A single defaults group cannot conflict** — at most one default
+   decides
    (RS ch. 7.1, "a property of the semantics, not a claim about
    authors").
-2. **Outside a ladder, competing writers are fenced — statically
-   where that is sound, by the differential square beyond it, never
-   arbitrated.** The static fences: WF-050 (no writer beside a
-   ladder), WF-026 (one allocation per target), WF-052 (one creation
+2. **Outside a defaults group, competing writers are fenced —
+   statically where that is sound, by the differential square beyond
+   it, never arbitrated.** The static fences: WF-050 (no writer beside
+   a defaults group), WF-026 (one allocation per target), WF-052 (one creation
    writer per to-one relation), WF-079 (one *unconditional* bare
    computing rule per target). WF-079 is deliberately scoped to the
    unconditional collision — "only the bare (unconditional) collision
@@ -117,7 +119,7 @@ Three structural facts carry the whole analysis:
    *with defined, pinnable semantics* is the declared-unordered
    group, and only that form reports its over-determination loudly
    (one leeg target, one §9.5 fact, both executors).
-3. **Priority is static structure.** Rung order is document shape;
+3. **Priority is static structure.** Default order is document shape;
    the verifier checks it (WF-050/075) and folds it into static strata
    (WF-051) both executors share. Nothing about who-beats-whom is
    computed at runtime from data.
@@ -126,7 +128,8 @@ Three structural facts carry the whole analysis:
 
 The absence of a free relation is not an oversight three times over:
 
-- **Catala dropped it first.** The ladder is Catala's default calculus
+- **Catala dropped it first.** The prioritized-defaults form is
+  Catala's default calculus
   (adopted, `CONSTRUCTS.md` row 8; RS ch. 7.1); the paper explicitly
   removed the run-time pre-order `⩽` of prioritised default logic in
   favour of purely structural priority — exception nesting — and calls
@@ -153,8 +156,8 @@ image of `<lrml:Override>`. Split by what the pair would relate:
 
 - **Same target.** The only same-target multiplicity with defined,
   pinnable semantics is the declared-unordered group (§2 fact 2). A
-  pair ordering two group members re-expresses what rung order in one
-  ladder already expresses
+  pair ordering two group members re-expresses what default order in
+  one defaults group already expresses
   — two encodings of one priority, which WF-050's "explicit or
   explicitly absent, never implicit" exists to prevent. Worse, a pair
   ordering *some* members creates the **partially ordered group**, a
@@ -171,8 +174,8 @@ image of `<lrml:Override>`. Split by what the pair would relate:
   free pair would genuinely have something to decide: the
   guarded-overlap residue of §2 fact 2 — two verifier-clean writers,
   no defined winner. But the IR already owns the arbitration form for
-  exactly that competition: put both writers on one ladder and the
-  rung order *is* the pair, statically checked (WF-050/075) and
+  exactly that competition: put both writers in one defaults group and
+  the default order *is* the pair, statically checked (WF-050/075) and
   pinned by both executors. A free `r1 > r2` there adds no
   expressiveness; it would instead legitimise, as a supported
   program, the form the differential square exists to keep out of
@@ -204,17 +207,18 @@ Catala plugin cannot emit one (the paper's calculus compiled priority
 into structure before we ever see it). The field would be authorable
 only by hand-written anchors — wire surface with no frontend behind it.
 
-### 4.2 O2 — strength tags on rules or rungs
+### 4.2 O2 — strength tags on rules or defaults
 
 A `strength ∈ {strict, defeasible, defeater}` enum. In this IR every
-value of the tag is already **derivable from structure**: a laddered
-target is defeasible (rungs above can displace); a `besluit: false`
-rung is the defeater (blocks, asserts nothing — RS ch. 7.1); a bare
+value of the tag is already **derivable from structure**: a target
+carrying defaults is defeasible (defaults above can displace); a
+`besluit: false` default is the defeater (blocks, asserts nothing — RS ch. 7.1); a bare
 single-writer form is as strict as this calculus gets (no displacer
 leaves a well-defined program, §2 fact 2). A wire tag therefore
 carries either zero information
 (it agrees with the structure — redundant) or a contradiction (a
-"strict" tag on a rung below another rung — and then the verifier must
+"strict" tag on a default below another default — and then the verifier
+must
 reject it, meaning the tag *still* carries zero information, at the
 price of new WF rules to keep two encodings synchronised). Evaluation
 would not read it: RS ch. 7's semantics is complete without it. The
@@ -226,9 +230,9 @@ missing, and the label does no work.
 
 If LegalRuleML *interchange* ever becomes a goal, the reification is
 mechanically derivable from structure, in the exporter, with no wire
-change: each adjacent pair in one ladder's `rungs` ↦ one
-`Override(over = higher, under = lower)`; a laddered target ↦
-`DefeasibleStrength`; a `besluit: false` rung ↦ `Defeater`; a bare
+change: each adjacent pair in one group's `defaults` ↦ one
+`Override(over = higher, under = lower)`; a target carrying defaults ↦
+`DefeasibleStrength`; a `besluit: false` default ↦ `Defeater`; a bare
 single-writer form ↦ `StrictStrength`; a declared-unordered group ↦
 deliberately **no** Override pairs (the absence is the declaration).
 The mapping is total on the landed forms because structure is the
@@ -254,13 +258,13 @@ The one genuinely valuable thing in `<lrml:Override>` for a
 traceability-first IR is not the semantics (structure has it) but the
 **assertion trace**: *which provision* ordered these grounds. That is
 source metadata, and the machinery exists or is already carded: every
-`Rung` carries `bron` (schema-verified), so the ordering provision's
-surface text rides the rung that encodes it today; the structured
+`Default` carries `bron` (schema-verified), so the ordering provision's
+surface text rides the default that encodes it today; the structured
 `Bron` is the tracked row-3 delta; and statute-article annotations on
 the wire are candidate **C1** (`LEGALRULEML-AUDIT.md` §7, seeded as
 `backlog/new/20260825-bron-wire.md`). A samenloop article that orders
-two grounds compiles to an ordered ladder whose rungs cite that
-article — provenance lands on row-3 machinery, and no new relation
+two grounds compiles to an ordered defaults group whose defaults cite
+that article — provenance lands on row-3 machinery, and no new relation
 object is needed.
 
 ## 5. The corpus test — does any law in scope demand it?
@@ -269,12 +273,13 @@ object is needed.
   `corpus/jutterswet/wet-v*.md` for samenloop/priority phrasing finds
   none. Its priority phenomena — art. 4's nested "geldt niet / geldt
   weer niet", art. 4bis's parallel grounds, art. 5/9bis's discretionary
-  hardship — are all landed as ladder structure and anchored
+  hardship — are all landed as prioritized-defaults structure and
+  anchored
   (`jutterswet-uitsluiting`, `-toelagegronden`, `anchor/jutterswet-hardheid`,
   `jutterswet-hardheidsaftrek-catala`).
 - The samenloop pattern itself ("bij samenloop van aanspraken geldt de
   hoogste") was analysed in `PHASE4-DEFAULTS.md` §6 and is a **priority
-  declaration, not a conflict reader**: an ordered ladder, or a rung
+  declaration, not a conflict reader**: ordered defaults, or a default
   whose justification compares the grounds. That analysis is currently
   prose; §9 Q4 offers to convert it into a machine-checked witness.
 - Both frontends compile priority structurally before the IR sees it
@@ -291,11 +296,11 @@ is additive), and equal decisions are no conflict (the tracked
 deviation). A free superiority pair is a repair mechanism: it would
 convert reported conflicts into silent resolutions, inverting the
 decided direction. Where LegalRuleML uses Override to *prevent* the
-conflict, uchar uses rung order — same effect, already expressible,
+conflict, uchar uses default order — same effect, already expressible,
 one encoding.
 
 **With stratification (WF-045/046/051).** A *static* relation is
-verifier-checkable but adds nothing: the ladder's displacement edges
+verifier-checkable but adds nothing: the defaults' displacement edges
 already make every priority decision a static negative edge
 (`dep_forms`, shared verbatim between the verifier and `ref/`'s
 strata). A *partially ordered group* would need a new edge class
@@ -318,8 +323,8 @@ companions:
    already carded, no new surface here;
 
 and one optional corpus strengthening: a hand-written samenloop witness
-(an own-authored Jutterswet-style samenloopartikel compiled as an
-ordered ladder, golden through `admit.sh`) that turns
+(an own-authored Jutterswet-style samenloopartikel compiled as
+ordered defaults, golden through `admit.sh`) that turns
 `PHASE4-DEFAULTS.md` §6's argument into a machine-checked case — §9 Q4.
 
 The consequence for the audit's consequence ledger: candidate C2
@@ -349,8 +354,8 @@ Near-zero, by design:
 ## 9. Ratification questions for the maintainer
 
 1. **The free superiority relation (O1).**
-   **A:** do not build — the structural encoding (rungs, nested groups,
-   declared-unordered) is the v1 priority mechanism, and cross-target
+   **A:** do not build — the structural encoding (defaults, nested
+   groups, declared-unordered) is the v1 priority mechanism, and cross-target
    override remains inexpressible by design;
    **B:** build the wire object (extension field + WF rules + RS ch. 7
    partial-order semantics + both executors, per the §4.1 cost sketch).
@@ -358,7 +363,8 @@ Near-zero, by design:
    "refinement" framing becomes a decided non-goal for v1 (recorded per
    §8); the audit's cluster-1 DEELS verdicts stand as boundaries, and
    any future frontend whose source carries free override assertions
-   must compile them into ladder structure or refuse loudly.
+   must compile them into prioritized-defaults structure or refuse
+   loudly.
    Consequence of B: the §4.1 cost lands on the roadmap ahead of any
    demand, with no producing frontend; the declared-unordered group
    acquires a partially-ordered sibling whose semantics must be
@@ -389,13 +395,13 @@ Near-zero, by design:
 4. **The samenloop witness (the optional corpus companion).**
    **A:** admit one own-authored samenloop golden — a
    Jutterswet-flavoured article ordering two grounds ("bij samenloop
-   geldt de hoogste"), compiled as an ordered ladder (or a
-   comparison-justified rung), through `admit.sh` under gates 2–8 — as
+   geldt de hoogste"), compiled as ordered defaults (or a
+   comparison-justified default), through `admit.sh` under gates 2–8 — as
    a small follow-up card;
    **B:** leave `PHASE4-DEFAULTS.md` §6's samenloop analysis as prose.
    *Recommendation: A, at low priority.* Consequence of A: the
    load-bearing claim behind declining O1 — "samenloop is a priority
-   declaration, hence an ordered ladder" — gains a machine-checked
+   declaration, hence ordered defaults" — gains a machine-checked
    witness, and the corpus gains its first statute-shaped ordered
    *competition* (the existing chain anchors order exceptions, not
    competing entitlements). Consequence of B: the claim stays argued,
@@ -420,10 +426,10 @@ The maintainer answered all five §9 questions with option **A** (numbered
 ratification round, 2026-08-25):
 
 1. **The free superiority relation: not built.** The structural encoding
-   (rungs, nested groups, declared-unordered) is the v1 priority
+   (defaults, nested groups, declared-unordered) is the v1 priority
    mechanism; cross-target override remains inexpressible by design. A
    future frontend whose source carries free override assertions must
-   compile them into ladder structure or refuse loudly.
+   compile them into prioritized-defaults structure or refuse loudly.
 2. **Strength tags: not built.** Strict/defeasible/defeater remain
    structural readings (§4.2), never wire labels; the audit's NIET on
    strength tagging is a decided deviation.
@@ -431,7 +437,7 @@ ratification round, 2026-08-25):
    structure→LegalRuleML direction; nothing is specified normatively
    until an interchange demand exists.
 4. **The samenloop witness: carded, low priority.** One own-authored
-   Jutterswet samenloop golden as an ordered ladder —
+   Jutterswet samenloop golden as ordered defaults —
    `backlog` card 20260825-samenloop-getuige.
 5. **Recording: this section plus the serial `CONSTRUCTS.md` row-8
    note.** RS ch. 7.4's existing sentence already carries the normative

@@ -24,7 +24,7 @@ worked examples, both executors, anchors through all nine gates — before
 the plugin translates them (PHASE5-CATALA §5.2/5.3).
 
 **The extension discipline decides the wire mechanics; nothing to
-ratify there.** Both designs enter exactly as `defaultLadders` and
+ratify there.** Both designs enter exactly as `prioritizedDefaults` and
 `TemporalRead` did (IR-SPEC Method): new optional members of the
 `datatype`/`expr` `oneOf`s and optional fields, never in `required`,
 never emitter-produced, written whole or not at all. The toolchain
@@ -38,7 +38,7 @@ CONSTRUCTS delta column in the row-6/row-8 stamp idiom.
 
 **The fences.**
 
-- **5c stays 5c.** No structs, no subscope calls, no nested ladder
+- **5c stays 5c.** No structs, no subscope calls, no nested defaults
   groups (PHASE4-DEFAULTS §7 option i). Catala constructors carry
   exactly one payload — the surface de-tuplifies n-ary payloads into
   one tuple and gives nullary constructors a unit payload
@@ -63,7 +63,7 @@ CONSTRUCTS delta column in the row-6/row-8 stamp idiom.
 - **Rule-level defeasibility stays rule-level.** The value-level
   conditional of §3.1 exists only inside lambda and function bodies,
   where no rule structure is available; in rule expressions the IR's
-  idiom remains conditions, ladders and voorwaarden. A value-level
+  idiom remains conditions, prioritized defaults and voorwaarden. A value-level
   conditional in an ordinary rule expression stays refused (the 5a
   refusal, unchanged).
 
@@ -72,7 +72,7 @@ CONSTRUCTS delta column in the row-6/row-8 stamp idiom.
 ### 2.1 Declaration: a `SumType` datatype, hosted by `domeinen`
 
 A new datatype node (English name, per the `TemporalRead`/
-`DefaultLadder` extension-node convention):
+`PrioritizedDefaults` extension-node convention):
 
 ```json
 { "node": "SumType",
@@ -194,11 +194,11 @@ Three new `expr` `oneOf` members (IR-SPEC ch. 4.7, new):
   (`<`/`>` faults), no coalescing. Structural equality feeds the three
   places that need it: idempotent writes, timeline segment
   change-detection ("numerically equal or both-leeg" generalises to
-  "equal under ch. 9 equality"), and the ladder's
+  "equal under ch. 9 equality"), and the defaults group's
   equal-decisions-are-no-conflict rule.
-- **Ladders carry sum-typed attributes with zero new ladder
-  semantics.** The decide-test is gevuld/leeg, tag-agnostic; a rung
-  wanting "decide only for constructor X" puts a match in its
+- **Prioritized defaults carry sum-typed attributes with zero new
+  defaults semantics.** The decide-test is gevuld/leeg, tag-agnostic; a
+  default wanting "decide only for constructor X" puts a match in its
   justification. The ch. 7.8 standing norm carries over unchanged.
 - **Timelines.** A sum-typed temporal attribute supports the
   non-arithmetic operations only (read, `TemporalRead`, whole-period
@@ -328,7 +328,7 @@ Seven additions, all core:
 2. **`ListLiteral`** — new expr: ordered element expressions, one
    shared element datatype (WF).
 3. **`FunctionDef`** — new optional top-level list `functionDefs`
-   (the `defaultLadders` pattern): `{name, parameters: [{name,
+   (the `prioritizedDefaults` pattern): `{name, parameters: [{name,
    datatype}], result: datatype, body: expr}`. **Bodies are closed**:
    a body may reference its own parameters (`BinderRef`), document
    parameters (`ParameterRef`), literals, operators, and other
@@ -346,7 +346,7 @@ Seven additions, all core:
    closed-body rule. Never a value, never storable (§1 fence).
 6. **`IfThenElse`** — new expr form admissible **only inside lambda
    and function bodies** (WF; §1's fence — rule expressions keep the
-   ladder/voorwaarde idiom): `{condition: conditie, then: expr,
+   defaults/voorwaarde idiom): `{condition: conditie, then: expr,
    else: expr}`, reusing the existing condition union in guard
    position, both branches one datatype (WF). This node is what makes
    Catala's reducer bodies expressible — `maximum`/`minimum` desugar
@@ -395,7 +395,7 @@ Catala list world; a later unification is a recorded non-goal for 5b.
   instance-world's own).
 - **IfThenElse**: evaluate the condition under the ordinary ch. 1.2
   comparison discipline, then evaluate exactly the chosen branch —
-  strict, no coalesce, the rung-justification mirror.
+  strict, no coalesce, the default-justification mirror.
 - **Invoke**: evaluate arguments strictly (a leeg argument propagates
   leeg without entering the body — the strict-operator default),
   bind, evaluate the closed body. No recursion exists (WF), so no
@@ -435,7 +435,7 @@ exact rationals do not (a first-draft omission the lens round caught);
 bodies guarantee the condition reads only bound terms, so no NAF over
 derived atoms enters and the stratification posture stays untouched.
 `Invoke` of a `FunctionDef` inlines (acyclic, so inlining terminates)
-or emits a parameterised helper predicate family (the ladder-group
+or emits a parameterised helper predicate family (the defaults-group
 pattern); chosen at implementation, semantics identical.
 
 **The honest coverage claim** (the first draft overstated this): the
@@ -509,7 +509,7 @@ lists; list-typed temporal attributes; list-typed fold accumulators;
 first-class/stored function values; attribute- and scope-reading
 lambda/function bodies (the closed-body fence — the frontend refuses
 capturing folds loudly); value-level `IfThenElse` outside lambda and
-function bodies (rule expressions keep the ladder idiom);
+function bodies (rule expressions keep the defaults idiom);
 `Sort`/`Find`/`Map2`/argmin; plain-value topdefs; wildcards in the IR;
 an explicit leeg-arm in match; unifying the `Functie` aggregation
 catalogue with the fold family; any new clingo encoding for

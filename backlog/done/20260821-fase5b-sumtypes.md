@@ -47,7 +47,7 @@ Result: rij 36 is kernel, end-to-end. Spec-first: IR-SPEC ch. 2.4
 functor-charset-flank) en ch. 4.7 (`Construct`/`Match`/`BinderRef`,
 WF-062/063/064; `VariabeleRef` onaangeroerd), RUNTIME-SEMANTICS ch. 9
 (constructorwaarden; totale match met leeg-propagatie; structurele én
-nominale gelijkheid met beide-richtingen-onwaar bij leeg; ladders
+nominale gelijkheid met beide-richtingen-onwaar bij leeg; defaults
 ongewijzigd; temporale sum-dracht als recorded flank), WF-index
 +5 rijen. Daarna de keten: schema's additief (datatype- en expr-oneOf,
 case-waarde-unie), verifier met WF-060..064 en veertien

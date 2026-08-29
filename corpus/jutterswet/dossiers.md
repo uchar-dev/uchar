@@ -60,7 +60,7 @@ geen afwijzende.*
   v0 zou de kale uitsluiting van art. 4 haar (tegen de latere bedoeling in)
   buiten de penning houden; de gelaagde tekst van v2 bestaat om deze zaak
   goed te beslissen.
-- **Dekking:** het enige dossier dat de art. 4-ladder daadwerkelijk
+- **Dekking:** het enige dossier dat de art. 4-defaults daadwerkelijk
   doorloopt — weigering, herroeping, en de niet-vastgestelde vervalgrond —
   en daarmee de gecompileerde en de gelaagde representatie tegen elkaar
   toetst.

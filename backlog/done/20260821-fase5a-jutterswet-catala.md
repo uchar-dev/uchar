@@ -30,19 +30,19 @@ plaats van beredeneerd, met catala-dap als stapdebugger wanneer de
 uitkomsten uiteenlopen.
 
 Besluit-6-notitie voor 5c (2026-08-21, uit kaart 1): het skelet
-weigert context-variabelen — ch. 7.8's input-rung is Reading A en een
+weigert context-variabelen — ch. 7.8's input-default is Reading A en een
 enkel-scope-programma heeft geen caller, dus de door de maintainer
-gekozen top-rung-mapping (optie A) wordt pas realiseerbaar wanneer
+gekozen top-default-mapping (optie A) wordt pas realiseerbaar wanneer
 subscope-calls vertalen: de caller-waarde wordt dan een GEGENEREERDE
-top-rung in de ladder van de aangeroepen scope, geen
+top-default in de defaults-groep van de aangeroepen scope, geen
 standing-machinerie. Wie 5c oppakt begint daar.
 
 Frontend-diff-triage (2026-08-21, de eerste 5d-oefening; hetzelfde
 artikel door twee frontends, structureel vergeleken):
 
 1. KERNUITKOMST: de defeasibiliteitsstructuur is isomorf — beide
-   frontends leveren een kenmerk-ladder met de art. 5-rung
-   (ALLE[hardheidsgrond, ≥6]) bóven de art. 3-rung (≥12), zelfde
+   frontends leveren een kenmerk-defaults-groep met de art. 5-default
+   (ALLE[hardheidsgrond, ≥6]) bóven de art. 3-default (≥12), zelfde
    besluiten, zelfde volgorde. De waist draagt twee bronnen.
 2. Dialectverschillen (geen actie): naamstijl (underscores vs
    spaties — identifier-regime van de brontaal); objecttype
@@ -51,12 +51,12 @@ artikel door twee frontends, structureel vergeleken):
    subject; bron-strings kaal vs verhalend.
 3. Structurele verschillen zonder gedragsverschil (lens-getoetst):
    (a) de Catala-render draagt een derde, onvoorwaardelijke
-   besluit-FALSE-basisrung (uit `equals false`) waar het anker
-   stilte impliciet laat — de lens BEWEES dat die rung gedragsmatig
+   besluit-FALSE-basisdefault (uit `equals false`) waar het anker
+   stilte impliciet laat — de lens BEWEES dat die default gedragsmatig
    inert is: kenmerkattributie is monotoon (Char false schrijft
    niets, identiek aan geen besluit; ref/lib/eval.ml), en de
    input-kenmerk-proef laat de input op BEIDE IRs staan in beide
-   executors — mijn eerdere lezing dat de rung input zou verdringen
+   executors — mijn eerdere lezing dat de default input zou verdringen
    was onjuist en is hier gecorrigeerd; (b) het tekenrooster:
    Catala's `integer` is voortekend, dus de vondstentelling draagt
    teken=ONBEPAALD waar het anker NIET_NEGATIEF authort — een echt
@@ -91,7 +91,7 @@ staan als reden-dragende no-op-survivors gepind (elk met zijn eigen
 precieze reden, naar het ankermodel). De frontend-diff-triage staat
 hierboven op de kaart: de defeasibiliteitsstructuur is isomorf tussen
 de twee frontends (de eerste echte 5d-validatie van de waist), de
-naam-/subjectverschillen zijn dialect, en de besluit-false-basisrung
+naam-/subjectverschillen zijn dialect, en de besluit-false-basisdefault
 bleek na lens-toetsing gedragsmatig inert — mijn eerdere
 verdringings-lezing was onjuist en is gecorrigeerd; het
 tekenroosterverschil (voortekend integer vs niet-negatief geauthord)
@@ -104,7 +104,7 @@ dat de scripts/check-noop.sh-verruiming expliciet op de kaart moest
 (genoteerd; gedekt door het staande mandaat — survivorpins zijn
 gate-onderhoud, geen ontwerpbesluit). Rood-eerst-notitie, eerlijk:
 de verwachte weigering bleef uit — het skelet bleek de boolean-keten
-al te dragen (base-false → besluit-false-rung); het "rood" van deze
+al te dragen (base-false → besluit-false-default); het "rood" van deze
 kaart was gate-niveau: check-ir-schema (stijl) en check-noop
 (ongepinde survivors) faalden eerst en zijn met de canonicalisatie en
 de pins groen gemaakt. Bewust gelaten: de kenmerk-input-hoek heeft

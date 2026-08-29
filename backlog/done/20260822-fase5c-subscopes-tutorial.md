@@ -6,7 +6,7 @@ callee-objecttype met args als Toekenningen op input-attributen +
 verbindendeRol + genavigeerde AttribuutRef voor outputs; de
 callee-regels draaien in de caller-fixpoint; per-element-calls,
 multi-state en context-inputs blijven luide recorded flanken
-(besluit-6's gegenereerde rung geratificeerd-maar-uitgesteld, met de
+(besluit-6's gegenereerde default geratificeerd-maar-uitgesteld, met de
 WF-050-randvoorwaarde). Daarbovenop de exitgetuige (vraag 3: A):
 tutorial_end_2_3 als frontend-side E2E-fixture (plugin → verifier →
 ref → clingo; het corpus blijft rechtenvrij per besluit 2), naast een
@@ -83,7 +83,7 @@ schóón door de plugin.
   de operand-vulanalyse de **uitputtende datum-complementaire basisgroep**
   (article_2 oud `< 2000` / nieuw `>= 2000`, fallback `false ⊢ ∅`) als
   "gevuld" erkent. Dat is een veilige, in-ontwerp verfijning van de
-  conservatieve `empty-operand`-hek (de ladder is totaal → nooit leeg →
+  conservatieve `empty-operand`-hek (de defaults-bundel is totaal → nooit leeg →
   geen coalesce-vs-hard-divergentie; het uitgestelde deviatiebesluit wordt
   niet geraakt). Bewijs met tijdelijke hek-relaxatie: ref `oracle: PASS`
   (income_tax = $4.000 / $7.500 / $30.000, tegen `catala interpret`
@@ -361,7 +361,7 @@ plus één clingo-uitbreiding.
   conditie gelezen wordt, weigert luid (gemengde carriage).
 - **Vulanalyse-verfijning (item 1b).** Een uitputtende datum-complementaire
   basisgroep (article_2 `< 2000` / `>= 2000` met `false ⊢ ∅`) wordt als 'gevuld'
-  erkend: `base_is_filled` herkent een twee-lid-`Group_rung` met
+  erkend: `base_is_filled` herkent een twee-lid-`Group_default` met
   complementaire vergelijkingsoperatoren (`< / >=`, `> / <=`) over
   structureel-gelijke operanden (`Expr.equal`). Totaal → nooit leeg → geen
   coalesce-vs-hard-divergentie (het uitgestelde besluit blijft ongeraakt).

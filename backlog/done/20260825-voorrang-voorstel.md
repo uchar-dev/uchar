@@ -1,13 +1,13 @@
 # C2 — design proposal: the free priority relation (read-only exploration)
 
 Goal: LRML-audit candidate C2 (`spec/proposals/LEGALRULEML-AUDIT.md` §7):
-uchar expresses override as *structure* (intra-target ladder priority,
+uchar expresses override as *structure* (intra-target defaults priority,
 WF-050/051/075) and carries no free `r1 > r2` superiority relation across
 targets/rules and no strict/defeasible/defeater strength tags
 (`CONSTRUCTS.md` row 8 records the shortfall). This card is a **design
 exploration and proposal only** — the 5b/5c pattern: read the existing
-machinery (ladders ch. 6.1/RS ch. 7, the §9.5 conflict channel,
-stratification WF-045/046/051, the Catala default calculus the ladder
+machinery (prioritized defaults ch. 6.1/RS ch. 7, the §9.5 conflict channel,
+stratification WF-045/046/051, the Catala default calculus the defaults
 adopted, Antoniou's derivable-override literature the audit cites), map
 the design space (free relation object vs structural encodings vs
 strength tags; interaction with conflict detection and stratification;
@@ -35,7 +35,7 @@ schema, verifier, corpus, backends, frontends, `spec/CONSTRUCTS.md`.
 exploration recommends NOT building the free `r1 > r2` relation or
 strength tags, with five numbered ratification questions (§9) awaiting
 the maintainer. The opus lens caught one MAJOR — §2 overclaimed that
-over-determination outside a ladder always reports loudly; two guarded
+over-determination outside a defaults group always reports loudly; two guarded
 writers with overlapping guards are verifier-clean yet split ref
 (divergence fault) from clingo (silent multi-value) — fixed with the
 mechanical witness written into the proposal itself. Deliberately left:

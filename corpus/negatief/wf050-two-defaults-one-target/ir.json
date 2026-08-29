@@ -158,7 +158,7 @@
     },
     {
       "node": "PrioritizedDefaults",
-      "naam": "uitsluiting, tweede ladder",
+      "naam": "uitsluiting, tweede defaults-groep",
       "onderwerp": "Jutter",
       "kenmerk": "uitgesloten",
       "defaults": [

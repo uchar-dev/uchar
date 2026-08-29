@@ -32,6 +32,6 @@ stratified, exactly one stable model per run). Findings fed into
 "op dat tijdstip" is the first corpus-driven demand on the timeline row
 (recorded gap — collapsed to atemporal qualification here, as the boolean
 dossiers do), and the open/closed-world boundary surfaced concretely.
-Deliberately left: the art. 4 exception ladder (the natural next hand
+Deliberately left: the art. 4 exception defaults (the natural next hand
 exercise, where stratification becomes load-bearing), art. 6/v3
 temporalisation, and the systematic core-IR mapping (Phase 3 proper).

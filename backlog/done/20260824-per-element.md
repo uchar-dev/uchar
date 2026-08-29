@@ -1,7 +1,7 @@
 # Per-element-subscope-aanroep: de functie-route (besluit 1-A)
 
 Goal: het maintainersbesluit van 2026-08-24 (vraag 1: A) uitvoeren —
-een ZUIVERE-FUNCTIE-callee (elke output een chain/plain-ladder als
+een ZUIVERE-FUNCTIE-callee (elke output een chain/plain-defaults-bundel als
 gesloten body uitdrukbaar; geen eigen creatie; geen
 niet-input-reads; totale basis) lowert bij per-element-aanroep naar
 een FunctionDef, en de map-body naar

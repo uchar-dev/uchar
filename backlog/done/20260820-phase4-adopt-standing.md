@@ -1,10 +1,10 @@
-# Adopt the Phase-4 standing norm: the input rung executes
+# Adopt the Phase-4 standing norm: the input default executes
 
 Goal: execute the maintainer-adopted core of
 `spec/proposals/PHASE4-DEFAULTS.md` (decisions 1–5 and 7 per its §10;
 decision 6 waits for a pin-bump card). Concretely: (a) the v1 norm "a
 version-free computing rule that is its target's only writer decides
-like a rung — a leeg evaluation writes nothing, the input value stands"
+like a default — a leeg evaluation writes nothing, the input value stands"
 lands in `RUNTIME-SEMANTICS.md` ch. 7.8 with the ch. 7.7/1.2 updates,
 executed for scalar targets in both executors (ref: a no-write on leeg
 in the rule arm over the shared domain predicate; clingo: `inputval/3`
@@ -39,7 +39,7 @@ execution of the norm (recorded, follow-up); the hardship anchor (own
 card); any schema change (the proposal adds zero wire surface).
 
 Result: the standing norm executes. Landed: RS ch. 7.8 (the virtual
-input rung + the norm, worked examples verbatim from the new anchor);
+input default + the norm, worked examples verbatim from the new anchor);
 conflict-fact readability closed for v1 (RS ch. 7.2, IS ch. 6.1);
 the ch. 1.2 assignment exception; CONSTRUCTS rows 8/18 delta entries
 (equal-decisions and observable-not-fatal named as tracked Catala

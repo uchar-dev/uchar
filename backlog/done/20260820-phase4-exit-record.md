@@ -10,8 +10,8 @@ chain that broke under the one-level heuristic), full suite green. This
 card lands the uchar-side records: the `CONSTRUCTS.md` row-6
 conformance pin (row 8's adoption pin predates this card), and the
 `PLAN.md` §6 Phase-4 exit note (met on the
-v0-expressible fragment; full ladder service in Drools awaits a
-ladder-producing frontend, Phase 5).
+v0-expressible fragment; full defaults service in Drools awaits a
+defaults-producing frontend, Phase 5).
 
 Acceptance: the two documents carry the records with the toolchain pin;
 all eight gates green; two verification lenses ran on the claims.
@@ -26,7 +26,7 @@ type-qualified with a cycle-local fallback; red-first
 `StratificatieKetenTest` — the two-layer chain broke under the
 one-level heuristic, full suite green) and PLAN §6 declares the Phase-4
 exit met on the v0-expressible fragment with THREE recorded open
-flanks: Drools ladder service awaits a ladder-producing frontend
+flanks: Drools defaults service awaits a defaults-producing frontend
 (Phase 5), temporal standing targets stay fenced (scalar-first), and
 the latent loader-precision divergence is carded. Toolchain lens ran
 clean; the uchar lens's two findings (the missing third flank, the

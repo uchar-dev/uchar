@@ -1,12 +1,12 @@
-# Ladder-ontwerpronde — het voorstel LADDER-EVOLUTIE
+# Defaults-ontwerpronde — het voorstel PRIORITIZED-DEFAULTS-EVOLUTIE
 
-Goal: één ontwerpvoorstel `spec/proposals/LADDER-EVOLUTIE.md` dat de volle
-ladder-agenda dekt en eindigt in genummerde ratificatievragen aan de
+Goal: één ontwerpvoorstel `spec/proposals/PRIORITIZED-DEFAULTS-EVOLUTIE.md` dat de volle
+defaults-agenda dekt en eindigt in genummerde ratificatievragen aan de
 maintainer — er wordt in deze ronde NIET gebouwd. De agenda, volledig:
-(1) de ladder-producerende frontend-evolutie (RegelSpraak-bron →
-defaultLadders, WF-050/051), inclusief de "tenzij"-taalvraag en de
+(1) de defaults-producerende frontend-evolutie (RegelSpraak-bron →
+prioritizedDefaults, WF-050/051), inclusief de "tenzij"-taalvraag en de
 verhouding tot v0's vlakke KENMERKTOEKENNING-vorm; (2) volledige
-ladder-service in de Drools-backend (het open Fase-4-punt: lowering naar het
+defaults-service in de Drools-backend (het open Fase-4-punt: lowering naar het
 exec-model); (3) de afhankelijkheids-omdraaiing — de toolchain gaat
 `frontends/regelspraak` consumeren (PLAN §5); (4) het
 stratificatie-hoofdstuk, mét de dagsoort-recursievraag die WF-031 expliciet
@@ -17,12 +17,12 @@ mee); (6) de v1-delta-kandidaten uit de gate-12-triage als geformaliseerde
 delta's (leeg-bron-toewijzing, leeg-operand-vergelijking, stratificatie van
 genegeerde kenmerk-reads, de keurmerk-vondst); (7) het flip-checklist-punt
 dat de Onbekend-sentinel zijn enige machine-getuige verliest bij de
-publiek-flip; (8) herleving-WW als ladder-toets: de uitzonderingsstructuur
-van WW art. 15–21 gedestilleerd tot laddereisen waaraan elk voorgesteld
+publiek-flip; (8) herleving-WW als defaults-toets: de uitzonderingsstructuur
+van WW art. 15–21 gedestilleerd tot defaults-eisen waaraan elk voorgesteld
 patroon expliciet getoetst wordt.
 
-Acceptance: `spec/proposals/LADDER-EVOLUTIE.md` bestaat, dekt alle acht
-agendapunten, toetst elk ladderpatroon aan de herleving-WW-artikelen, en
+Acceptance: `spec/proposals/PRIORITIZED-DEFAULTS-EVOLUTIE.md` bestaat, dekt alle acht
+agendapunten, toetst elk defaults-patroon aan de herleving-WW-artikelen, en
 sluit af met genummerde ratificatievragen (opties + aanbeveling per vraag);
 twee adversariële lensrondes zijn gedraaid en verwerkt; alle twaalf gates
 groen (`bash scripts/check-*.sh` — documentwijziging, geen code); geen
@@ -30,15 +30,15 @@ toka-scenario-ID's in het voorstel (alleen geaggregeerde tellingen en
 klassenamen); handboek-citaten blijven buiten het document (wettekst mag,
 art. 11 Auteurswet). Bouwen gebeurt pas ná ratificatie, op aparte kaarten.
 
-May touch: spec/proposals/LADDER-EVOLUTIE.md (nieuw), backlog/.
+May touch: spec/proposals/PRIORITIZED-DEFAULTS-EVOLUTIE.md (nieuw), backlog/.
 
 Out of scope: elke bouwactie (frontend, backends, ref, verifier, schema);
 spec/IR-SPEC.md, spec/RUNTIME-SEMANTICS.md, spec/CONSTRUCTS.md,
 spec/PLAN.md (registrynotities en plan-zinnen doet de hoofdsessie serieel,
 pas bij ratificatie-uitkomsten); de toolchain-checkout.
 
-Result: spec/proposals/LADDER-EVOLUTIE.md geland — alle acht agendapunten
-gedekt, elk ladderpatroon getoetst aan WW art. 15-21 (R1-R5 + de
+Result: spec/proposals/PRIORITIZED-DEFAULTS-EVOLUTIE.md geland — alle acht agendapunten
+gedekt, elk defaults-patroon getoetst aan WW art. 15-21 (R1-R5 + de
 atemporele grens), veertien genummerde ratificatievragen met opties en
 aanbeveling. Verkenningsgolf: acht read-only opus-sporen. Lensronde: twee
 adversariële opus-lenzen; lens 1 (feiten/citaten/rechten): mergeable,

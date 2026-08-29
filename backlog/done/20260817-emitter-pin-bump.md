@@ -21,7 +21,7 @@ May touch: `corpus/golden/{jutterswet-berging,jutterswet-penningdrempel,juttersw
 notes), `backlog/`.
 
 Out of scope: emitting the remaining extensions (`TemporalRead`,
-ladders, symbolic creation fields — their surface syntax does not exist
+prioritized defaults, symbolic creation fields — their surface syntax does not exist
 in the toolchain yet; recorded, not attempted); any v1 format bump;
 schema or verifier changes (the fields are already admitted).
 

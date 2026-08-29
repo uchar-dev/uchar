@@ -69,7 +69,7 @@ waarde-positie-tak niet.
   (art. 13, overzeetoeslag; eigen auteurschap, rechtenvrij):
   `bron.catala_en` + `ir.json` (byte-identiek geregenereerd onder gate
   9) + `case1-overzees.json` ($6000) + `case2-binnengaats.json`
-  ($3000), geijkt tegen `catala interpret`. De uitzonderingssport
+  ($3000), geijkt tegen `catala interpret`. De uitzonderings-default
   (overzee → verdubbeling) leest `overzees` van de gemunte eigenaar
   over de terugkoppeling; ref ≡ clingo op beide cases.
 

@@ -28,7 +28,7 @@ De vergelijk_sym-fault versmalt tot de clip-route. De lenzen: de
 breker bevestigde de encodering op alle geoefende routes (schalen,
 coalesce0-interactie — een gecoalescete operand bindt altijd, dus de
 beide-leeg-tak is daar terecht dood, differentieel gelijk aan ref —,
-datums, consistenties, ladder-rungs, element-filters, meervoudige
+datums, consistenties, defaults, element-filters, meervoudige
 gelijkheden) en kon alleen divergeren op verifier-VERWORPEN input
 (eigen-target-cykels, gemengde typen): de bestaande, nu expliciet
 vastgelegde vertrouwensaanname dat clingo verifier-schone input

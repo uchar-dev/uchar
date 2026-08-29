@@ -70,9 +70,9 @@
             "negatie": false,
             "eigenaar": null,
             "periode": null,
-            "bron": "stray justification on a group-rung"
+            "bron": "stray justification on a group default"
           },
-          "bron": "groep-rung met een verdwaalde voorwaarde",
+          "bron": "groep-default met een verdwaalde voorwaarde",
           "excepties": {
             "ongeordend": false,
             "leden": [

@@ -3,7 +3,7 @@
 Mandaat maintainer 2026-08-21 (mondeling, na besluitenronde 3): "geen
 besluiten meer — het plan moet klaar." Alle zes PHASE5-besluiten zijn
 in die ronde met de aanbevolen optie aangenomen (1A scopelang-grens,
-6A top-rung-polariteit, 2A Jutterswet-in-Catala, 3A monorepo, 4A
+6A top-default-polariteit, 2A Jutterswet-in-Catala, 3A monorepo, 4A
 luide weigeringen in 5a, 5A gefaseerd met interleaving).
 
 Goal: spec/PLAN.md draagt de werkelijke stand — de fase-0- en

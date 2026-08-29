@@ -108,10 +108,10 @@ let () =
       ("struct.catala_en", [ "cases/struct_gevuld.json"; "cases/struct_leeg.json" ]);
       (* row-5c/ch. 7.9 nested exception groups: the tutorial article-3 tree
          (a base with an exception carrying two unordered exceptions) rides one
-         [Rung.excepties] sub-group. The binding spurious-conflict test of
+         [Default.excepties] exception group. The binding spurious-conflict test of
          PHASE4-DEFAULTS §7 pinned frontend-side: only-one-sub-member (n=100)
          decides that member ($20 — flattening would fabricate a $20-vs-$10
-         conflict), the form-a own consequence fires when the sub-group is
+         conflict), the form-a own consequence fires when the exception group is
          empty (n=50 -> $10), the base carries the fall-through (n=5 -> $40),
          and two differing sub-members (n=200) propagate to the root — no
          write, one path-keyed §9.5 fact "Nestgroep.belasting/0" — through ref
@@ -141,19 +141,19 @@ let () =
          callee characteristic) read as a VOORWAARDE lowers to a navigated
          [Kenmerk] check over the synthesised back-link — the condition sibling
          of the value-position navigated AttribuutRef, no new node. The exception
-         rung's guard reads `overzees` of the minted eigenaar over the back-link;
+         default's guard reads `overzees` of the minted eigenaar over the back-link;
          overseas doubles the heffing (registratiezone 200 → $6000), binnengaats
          the base decides (zone 50 → $3000), both pinned against `catala
          interpret`. Through the full differential (ref AND clingo) *)
       ("overzeelezing.catala_en",
        [ "cases/overzee_hoog.json"; "cases/binnengaats.json" ]);
       (* besluit 6: a context (reentrant) subscope input lowered to a generated
-         top rung above the callee's own ladder (PHASE5-CATALA decision 6,
-         Reading B). The caller's override rides above the callee's own default
-         `drempel = 10`; the top rung's guard (`pas_toe`) and value
-         (`eigen_drempel`) read the caller navigated over the back-link. Both
-         polarities: pas_toe = true → the top rung decides (100 − 30 = 70), and
-         pas_toe = false → the top rung falls through and the callee base decides
+         highest default above the callee's own defaults group (PHASE5-CATALA
+         decision 6, Reading B). The caller's override rides above the callee's
+         own default `drempel = 10`; the highest default's guard (`pas_toe`) and
+         value (`eigen_drempel`) read the caller navigated over the back-link. Both
+         polarities: pas_toe = true → the highest default decides (100 − 30 = 70),
+         and pas_toe = false → it falls through and the callee base decides
          (100 − 10 = 90), pinned against `catala interpret`. Through the full
          differential (ref AND clingo) *)
       ("context.catala_en", [ "cases/context_wel.json"; "cases/context_niet.json" ]);
@@ -174,9 +174,9 @@ let () =
       (* CONSTRUCTS row 2: labeled variable states as sugar over chained
          assignment. A three-step chain (bruto → na_aftrek → definitief), each
          step an ordinary internal attribute reading the previous, with an
-         exception on the last step (its own ladder). Two cases pin both the
-         plain-chain values and the exception branch (verhoogd true → 95 via
-         the top rung, false → 180 via the base), calibrated against
+         exception on the last step (its own defaults group). Two cases pin both
+         the plain-chain values and the exception branch (verhoogd true → 95 via
+         the highest default, false → 180 via the base), calibrated against
          `catala interpret`. Through the full differential (ref AND clingo) *)
       ("states.catala_en",
        [ "cases/states_normaal.json"; "cases/states_verhoogd.json" ]);
@@ -237,13 +237,13 @@ let () =
      (the subscope call) still falls outside the fragment — decimals, let-in
      and branching exceptions now land (row 5c). *)
   let refusals =
-    [ (* besluit 6 landed the attribute-target top rung; three narrowed remnants
-         of the old blanket context refusal each stay recorded flanks, one fixture
-         per flank (CONSTRUCTS row 9): a context override on a CHARACTERISTIC
+    [ (* besluit 6 landed the attribute-target highest default; three narrowed
+         remnants of the old blanket context refusal each stay recorded flanks, one
+         fixture per flank (CONSTRUCTS row 9): a context override on a CHARACTERISTIC
          (boolean) callee target — a decided attribution, not a value; a caller
          override that BRANCHES BELOW THE ROOT (a nested exception tree, not a
-         plain-rung chain); and a callee OWN DEFAULT that is itself ROOT-UNORDERED
-         (no single base for a top rung to sit above) *)
+         plain-default chain); and a callee OWN DEFAULT that is itself ROOT-UNORDERED
+         (no single base for a highest default to sit above) *)
       ("refuse_context.catala_en", "characteristic");
       ("refuse_context_branching.catala_en", "branching tree");
       ("refuse_context_owndefault.catala_en", "root-level unordered own default");

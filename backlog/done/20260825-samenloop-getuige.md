@@ -3,17 +3,17 @@
 Goal: C2 ratification question 4, answered A (2026-08-25,
 `spec/proposals/PRIORITY-RELATION.md` §10): the load-bearing claim behind
 declining the free superiority relation — "samenloop is a priority
-declaration, hence an ordered ladder" — gains a machine-checked witness.
+declaration, hence ordered defaults" — gains a machine-checked witness.
 Write one own-authored Jutterswet article ordering two competing grounds
-("bij samenloop geldt de hoogste"), compile it as an ordered ladder (or a
-comparison-justified rung) per the `PHASE4-DEFAULTS.md` §6 samenloop
+("bij samenloop geldt de hoogste"), compile it as an ordered defaults group (or a
+comparison-justified default) per the `PHASE4-DEFAULTS.md` §6 samenloop
 analysis, and admit it as a golden with absolute expected values through
 both executors. This is the corpus's first statute-shaped ordered
-*competition* — the existing ladder anchors order exceptions, not
+*competition* — the existing defaults anchors order exceptions, not
 competing entitlements.
 
 Acceptance:
-- A new own-authored golden (anchor or plain) whose ladder orders two
+- A new own-authored golden (anchor or plain) whose defaults order two
   competing grounds, with cases pinning: the higher ground winning when
   both apply, the lower applying alone, and neither (leeg or the
   documented base). Both executors replay it exactly (gates 5–6); the
@@ -29,15 +29,15 @@ merge if needed); the free superiority relation and strength tags
 (decided non-goals, §10 of the proposal).
 
 Result: landed as the plain golden `corpus/golden/jutterswet-samenloop/`
-(hand-authored ir.json, extension form `defaultLadders` — the plain zone
-already carries hand-authored ladders, e.g. `synth3-nestkorting`; anchor
+(hand-authored ir.json, extension form `prioritizedDefaults` — the plain zone
+already carries hand-authored defaults, e.g. `synth3-nestkorting`; anchor
 was not needed and stays untouched). The own-authored samenloopbepaling
 ("berggeld voor de berger, wachtgeld voor de wachter; bij samenloop van
-beide aanspraken geldt de hoogste") compiles as a three-rung **ordered
+beide aanspraken geldt de hoogste") compiles as a three-default **ordered
 competition** on `Jutter.vergoeding`: a comparison-justified samenloop
-rung (both grounds AND wachtgeld > berggeld → wachtgeld) above the two
+default (both grounds AND wachtgeld > berggeld → wachtgeld) above the two
 grounds in article order (berger → berggeld, wachter → wachtgeld) — the
-ordering itself carries the samenloop meaning, no exception ladder. Six
+ordering itself carries the samenloop meaning, no exception defaults. Six
 hand-calculated cases pin all flanks: both grounds with the wachter
 claim highest (45), both with the berger claim highest (60), the tie at
 the strict-comparison boundary (40), each ground alone (a higher amount
@@ -47,5 +47,5 @@ six exactly (gates 5–6: 321 cases); five refute --noop, the geen-grond
 flank was shown red unpinned and then pinned as a reason-carrying
 survivor (gate 7: 287 refute / 34 survivors). Deliberately left: the
 wet itself did not grow a numbered article — the bepaling lives in the
-golden's bron prose like the other hand-authored ladder goldens; a
+golden's bron prose like the other hand-authored defaults goldens; a
 future wet-v5 can absorb it verbatim.

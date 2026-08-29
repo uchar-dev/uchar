@@ -37,7 +37,7 @@ Sluit af met het §3-antwoord in één alinea + kandidatenlijst:
   bestaat upstream (Phase 0) maar 0 corpus-goldens dragen het (geverifieerd);
   PLAN §4-belofte nog ongetuigd.
 - **C2** — de override/strength-vraag beslissen: uchar heeft alleen
-  intra-target ladder-prioriteit, geen vrije superioriteitsrelatie of
+  intra-target defaults-prioriteit, geen vrije superioriteitsrelatie of
   strict/defeasible/defeater-tags (CONSTRUCTS row 8 "refinements").
 
 Alle negen gates groen (slotregels):
@@ -104,7 +104,7 @@ replayende twee-versies-golden met asOfDate per geldigheidsvenster)
 erbij; de afleidbare Override bleek literatuur (Antoniou) en geen
 OASIS-machinerie, wat besluitvraag C2 verkleinde; plus citaat-,
 sectie- en telcorrecties. De kern van het antwoord staat:
-defeasibility, overrides-als-ladder, bronnen en jurisdictie-als-
+defeasibility, overrides-als-defaults, bronnen en jurisdictie-als-
 domeininhoud draagt de IR; de drie LegalRuleML-tijdassen dekt v1
 bewust niet volledig (de enkele as is PLAN-besluit 2, met het
 ontworpen uitbreidingspunt); deontische begrippen zijn een eerlijk

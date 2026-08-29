@@ -26,7 +26,7 @@ rationals; RUNTIME-SEMANTICS ch. 2.2/2.6). Two fences narrow:
       ref/lib/arith.ml:52-60: Unitless, Unit _ -> q).
     Unit x unit products, divisions/rates, and any restating pair of two
     DIFFERENT units (a real factorNaarCanoniek application) keep faulting
-    loudly — that is the standing fence until the ladder design round
+    loudly — that is the standing fence until the defaults design round
     decides the waist question below.
     Scale harmonisation stays exact: the adopting side follows the existing
     decimal-scale machinery unchanged; no new rounding may appear.
@@ -52,13 +52,13 @@ operands, the unit-algebra sentence to the factor-carrying residue. S19
 stays the highest section and shrinks only by translation. NO toka IDs in
 the spec text.
 
-Registered for the ladder design round (recorded here, NOT built): the
+Registered for the defaults design round (recorded here, NOT built): the
 waist question — universal unit conversion as an IR-level decision, LLVM/
 MLIR-style: a canonical-unit core where units are static dimension tags,
 frontends convert at emission, and the upper dialect keeps source units for
 verbalisation/traceability; versus a specified normalisation lowering pass
 per backend. Maintainer words (2026-08-28): "(a) nu en wie weet pakken we
-universele eenheid conversie in de ir aan samen met het ladder ontwerp."
+universele eenheid conversie in de ir aan samen met het defaults-ontwerp."
 
 Acceptance:
 - Red-first: BEFORE the change, the clingo runner on the toka-45 pair exits
@@ -77,7 +77,7 @@ toka/cases/parity.manifest, spec/ASP-TRANSLATION.md, scripts/check-drools.sh
 (ONLY for a reasoned exclusion of the new golden), backlog/.
 Out of scope: ref/, spec/IR-SPEC.md, spec/RUNTIME-SEMANTICS.md, spec/schema/,
 spec/verifier/, frontends/**, backends/drools/** (code), any conversion with
-factor != 1 (the ladder-round waist question), scripts/check-noop.sh
+factor != 1 (the defaults-round waist question), scripts/check-noop.sh
 survivor entries (design the case to refute noop), scripts/check-toka-parity.sh
 (findings reported, not patched), spec/CONSTRUCTS.md, spec/PLAN.md, any
 toolchain commit.
@@ -151,13 +151,13 @@ MAAL a km `sleepafstand`, consumed by a unitless-adopting MIN; hand-computed
 44,00 / 40,00 in `NOTE.md`; noop-refuting; plays ref ≡ clingo ≡ Drools.
 `toka/cases/parity.manifest`: toka-45 clingo column FAULT→PASS.
 
-### Registered for the ladder design round (not built)
+### Registered for the defaults design round (not built)
 
 The waist question — universal unit conversion as an IR-level decision
 (LLVM/MLIR-style canonical-unit core with static dimension tags, frontends
 converting at emission, versus a per-backend normalisation lowering pass).
 Maintainer (2026-08-28): "(a) nu en wie weet pakken we universele eenheid
-conversie in de ir aan samen met het ladder ontwerp."
+conversie in de ir aan samen met het defaults-ontwerp."
 
 ### Gates (all twelve green in the worktree)
 

@@ -62,7 +62,7 @@
           "node": "Default",
           "besluit": null,
           "voorwaarde": null,
-          "bron": "groep-rung",
+          "bron": "groep-default",
           "excepties": {
             "ongeordend": true,
             "leden": [
@@ -81,10 +81,10 @@
                       "periode": null,
                       "bron": "hij grondX heeft"
                     },
-                    "bron": "een rung die niets beslist: geen consequentie, geen sub-groep"
+                    "bron": "een default die niets beslist: geen consequentie, geen sub-groep"
                   }
                 ],
-                "bron": "lid met een inhoudsloze rung"
+                "bron": "lid met een inhoudsloze default"
               }
             ]
           }

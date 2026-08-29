@@ -71,7 +71,7 @@ else not (eq_non_numeric …)`. The equality path (`eq_non_numeric`, the
 `Gelijk` branch) and the structural-equality `equal` are untouched;
 verified the three `equal` consumers stay on GELIJKHEID — idempotent writes
 (`world.ml:94`), timeline/segment change-detection (`world.ml:107`,
-`timeline.ml:182`, `case.ml:691`), ladder equal-decisions (`eval.ml:1654`).
+`timeline.ml:182`, `case.ml:691`), defaults equal-decisions (`eval.ml:1654`).
 
 **clingo** (`backends/clingo/lib/translate.ml`) — a shared `neq_helper`
 emits the eqN-negation encoding (both bind and unify, OR neither binds;

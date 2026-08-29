@@ -4,11 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import io.github.yhavinga.regelspraak.ir.Bron;
 import io.github.yhavinga.regelspraak.ir.Conditie;
-import io.github.yhavinga.regelspraak.ir.DefaultLadder;
+import io.github.yhavinga.regelspraak.ir.Default;
+import io.github.yhavinga.regelspraak.ir.ExceptionGroup;
 import io.github.yhavinga.regelspraak.ir.Expr;
 import io.github.yhavinga.regelspraak.ir.Geldigheid;
-import io.github.yhavinga.regelspraak.ir.Rung;
-import io.github.yhavinga.regelspraak.ir.SubLadder;
+import io.github.yhavinga.regelspraak.ir.PrioritizedDefaults;
 import io.github.yhavinga.regelspraak.ir.ResolvedConsistentie;
 import io.github.yhavinga.regelspraak.ir.ResolvedDagsoort;
 import io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie;
@@ -48,7 +48,7 @@ import java.util.Map;
  *
  * <p><b>Refusal discipline.</b> Every wire form the v0 Drools backend does not carry is a LOUD, per-form
  * {@link Refusal} — never a silent skip. That covers a non-v0 {@code formaat}, an unknown top-level
- * section (a v1 extension: {@code defaultLadders}, {@code functionDefs}, …), and an unknown {@code node}
+ * section (a v1 extension: {@code prioritizedDefaults}, {@code functionDefs}, …), and an unknown {@code node}
  * discriminator inside the {@link Expr} / {@link Conditie} / {@link Datatype} sealed hierarchies
  * (a struct/list literal, a Let, a MapList/Invoke, …). The differential gate turns a Refusal into a
  * reason-carrying exclusion.
@@ -79,35 +79,35 @@ public final class IrLoader {
             "dimensies", "tijdlijnen", "dagsoorten", "dagsoortPerEenheid", "regels", "resolvedRegels",
             "resolvedDagsoorten", "objectCreaties", "verdelingen", "consistenties", "uniciteiten",
             "uniciteitUnies", "feitCreaties", "resolvedStartpunten", "regelGroepen", "diagnostics",
-            "defaultLadders");
+            "prioritizedDefaults");
 
     private final RegelSpraakModel m = new RegelSpraakModel();
-    /** §6.1 (Phase 4) the ladder extension list, parsed into the shared ir records — a top-level core-layer
-     *  section the {@link RegelSpraakModel} does not itself carry (the model is the v0 resolved shape), so it
-     *  rides beside the model via {@link Loaded}. An empty list is a legitimate flat program (accepted). */
-    private final List<DefaultLadder> defaultLadders = new ArrayList<>();
+    /** §6.1 (Phase 4) the prioritized-defaults extension list, parsed into the shared ir records — a top-level
+     *  core-layer section the {@link RegelSpraakModel} does not itself carry (the model is the v0 resolved shape),
+     *  so it rides beside the model via {@link Loaded}. An empty list is a legitimate flat program (accepted). */
+    private final List<PrioritizedDefaults> prioritizedDefaults = new ArrayList<>();
 
     private IrLoader() {}
 
-    /** A loaded document: the v0 resolved {@link RegelSpraakModel} plus the ch. 7 ladder extension. The ladders
-     *  ride beside the model — {@code RegelSpraakModel} is the faithful v0 shape and carries no ladder section —
-     *  so a consumer that lowers ladders reads them from here (see {@link #loadAll}). */
-    public record Loaded(RegelSpraakModel model, List<DefaultLadder> defaultLadders) {}
+    /** A loaded document: the v0 resolved {@link RegelSpraakModel} plus the ch. 7 prioritized-defaults extension.
+     *  The defaults bundles ride beside the model — {@code RegelSpraakModel} is the faithful v0 shape and carries
+     *  no defaults section — so a consumer that lowers them reads them from here (see {@link #loadAll}). */
+    public record Loaded(RegelSpraakModel model, List<PrioritizedDefaults> prioritizedDefaults) {}
 
     /** Parse a {@code regelspraak-ir-v0} tree into a resolved model, or throw {@link Refusal} for a form
-     *  the v0 backend does not carry. The ladder extension (if any) is parsed but not returned — use
-     *  {@link #loadAll} to obtain it beside the model. */
+     *  the v0 backend does not carry. The prioritized-defaults extension (if any) is parsed but not returned —
+     *  use {@link #loadAll} to obtain it beside the model. */
     public static RegelSpraakModel load(JsonNode root) {
         return new IrLoader().model(root);
     }
 
-    /** As {@link #load} but also returns the ch. 7 default-ladder extension list beside the model (an EMPTY
-     *  list when the document carries none — a flat program, accepted explicitly). A malformed ladder is a
-     *  loud {@link Refusal} raised while parsing, never a silent skip. */
+    /** As {@link #load} but also returns the ch. 7 prioritized-defaults extension list beside the model (an EMPTY
+     *  list when the document carries none — a flat program, accepted explicitly). A malformed defaults bundle is
+     *  a loud {@link Refusal} raised while parsing, never a silent skip. */
     public static Loaded loadAll(JsonNode root) {
         IrLoader l = new IrLoader();
         RegelSpraakModel model = l.model(root);
-        return new Loaded(model, l.defaultLadders);
+        return new Loaded(model, l.prioritizedDefaults);
     }
 
     private RegelSpraakModel model(JsonNode root) {
@@ -145,46 +145,46 @@ public final class IrLoader {
                 text(n, "naam"), bool(n, "recursief"), stringList(n.get("leden")), bron(n), intOf(n, "line"))));
         forEach(root.get("diagnostics"), n -> m.diagnostics.add(new Diagnostic(
                 enumOf(Severity.class, text(n, "severity")), text(n, "message"), intOf(n, "line"))));
-        // §6.1 (Phase 4) the ladder extension, parsed AFTER the declarations so a rung's condition/value
-        // resolves its objecttype/parameter references against the fully-built model. A malformed ladder
-        // (an unknown inner node, a missing target) raises a loud Refusal from these parsers.
-        forEach(root.get("defaultLadders"), n -> defaultLadders.add(defaultLadder(n)));
+        // §6.1 (Phase 4) the prioritized-defaults extension, parsed AFTER the declarations so a default's
+        // condition/value resolves its objecttype/parameter references against the fully-built model. A malformed
+        // defaults bundle (an unknown inner node, a missing target) raises a loud Refusal from these parsers.
+        forEach(root.get("prioritizedDefaults"), n -> prioritizedDefaults.add(prioritizedDefaults(n)));
         return m;
     }
 
-    // --- ladder extension (ch. 7) ------------------------------------------
+    // --- prioritized-defaults extension (ch. 7) ----------------------------
 
-    private DefaultLadder defaultLadder(JsonNode n) {
+    private PrioritizedDefaults prioritizedDefaults(JsonNode n) {
         String onderwerp = text(n, "onderwerp");
         String kenmerk = text(n, "kenmerk");
         String attribuut = text(n, "attribuut");
-        if (onderwerp == null) throw new Refusal("DefaultLadder", "ladder without a subject (onderwerp)");
+        if (onderwerp == null) throw new Refusal("PrioritizedDefaults", "defaults without a subject (onderwerp)");
         if ((kenmerk == null) == (attribuut == null))
-            throw new Refusal("DefaultLadder", "ladder must carry exactly one of kenmerk/attribuut (WF-050)");
-        List<Rung> rungs = new ArrayList<>();
-        forEach(n.get("rungs"), r -> rungs.add(rung(r)));
-        return new DefaultLadder(text(n, "naam"), onderwerp, kenmerk, attribuut, bool(n, "ongeordend"),
-                rungs, text(n, "bron"), geldigheid(n.get("geldigheid")));
+            throw new Refusal("PrioritizedDefaults", "defaults must carry exactly one of kenmerk/attribuut (WF-050)");
+        List<Default> defaults = new ArrayList<>();
+        forEach(n.get("defaults"), r -> defaults.add(dflt(r)));
+        return new PrioritizedDefaults(text(n, "naam"), onderwerp, kenmerk, attribuut, bool(n, "ongeordend"),
+                defaults, text(n, "bron"), geldigheid(n.get("geldigheid")));
     }
 
-    private Rung rung(JsonNode n) {
+    private Default dflt(JsonNode n) {
         JsonNode b = n.get("besluit");
         Boolean besluit = b == null || b.isNull() ? null : b.asBoolean();
-        return new Rung(besluit, conditie(n.get("voorwaarde")), expr(n.get("consequentie")),
+        return new Default(besluit, conditie(n.get("voorwaarde")), expr(n.get("consequentie")),
                 bool(n, "initialisatie"), excepties(n.get("excepties")), text(n, "bron"));
     }
 
-    private Rung.Excepties excepties(JsonNode n) {
+    private Default.Excepties excepties(JsonNode n) {
         if (n == null || n.isNull()) return null;
-        List<SubLadder> leden = new ArrayList<>();
-        forEach(n.get("leden"), s -> leden.add(subLadder(s)));
-        return new Rung.Excepties(bool(n, "ongeordend"), leden);
+        List<ExceptionGroup> leden = new ArrayList<>();
+        forEach(n.get("leden"), s -> leden.add(exceptionGroup(s)));
+        return new Default.Excepties(bool(n, "ongeordend"), leden);
     }
 
-    private SubLadder subLadder(JsonNode n) {
-        List<Rung> rungs = new ArrayList<>();
-        forEach(n.get("rungs"), r -> rungs.add(rung(r)));
-        return new SubLadder(rungs, text(n, "bron"));
+    private ExceptionGroup exceptionGroup(JsonNode n) {
+        List<Default> defaults = new ArrayList<>();
+        forEach(n.get("defaults"), r -> defaults.add(dflt(r)));
+        return new ExceptionGroup(defaults, text(n, "bron"));
     }
 
     // --- declaration side --------------------------------------------------

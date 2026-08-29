@@ -103,10 +103,10 @@
                       "periode": null,
                       "bron": "hij grondY heeft"
                     },
-                    "bron": "sub-rung met een besluit op een attribuutladder (onwelgevormd)"
+                    "bron": "sub-default met een besluit op attribuut-defaults (onwelgevormd)"
                   }
                 ],
-                "bron": "lid met een besluit-rung"
+                "bron": "lid met een besluit-default"
               }
             ]
           }

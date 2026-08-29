@@ -124,7 +124,7 @@ Verbreding (maintainersbesluit 2026-08-24, vraag 2 — alle drie
 gekozen): deze kaart draagt naast de BinderRef-kruiscontrole ook de
 twee zusterhekken: (a) het dubbelschrijvers-hek — twee of meer kale
 BEREKENING/GELIJKSTELLING-schrijvers op één attribuut-doel zonder
-ladder zijn onwelgevormd (de bewezen un-pinnable vorm uit
+defaults zijn onwelgevormd (de bewezen un-pinnable vorm uit
 PHASE5D-DIFF §8.2; gelijk-besluitende kenmerktoekenningen blijven
 legaal — het penningrecht-paar en de volle corpus moeten clean
 blijven, corpus-breed te valideren vóór de aanscherping); (b) de
@@ -153,15 +153,15 @@ gate 3 groen op alle 97 goldens vóór én na (corpus-breed schoon).
   `Numeriek`, `BinderRef` liegt `Tekst`).
   `WF-078 FAIL /resolvedRegels/0/waarde/body/type: binder reference 'b' is typed text, but its binder is number`
 - **WF-079 (fence 2)** — het dubbelschrijvers-hek: ≤ 1 onvoorwaardelijke,
-  versie-vrije BEREKENING/GELIJKSTELLING-schrijver per niet-ladder
-  (type, attribuut)-doel. Kenmerktoekenningen vrij; bewaakte case-splits
+  versie-vrije BEREKENING/GELIJKSTELLING-schrijver per
+  (type, attribuut)-doel zonder defaults. Kenmerktoekenningen vrij; bewaakte case-splits
   (rekenkamer-overzee, besluitschakel, kamerheffing) blijven schoon omdat
   ze een `voorwaarde` dragen — de smalste, klank-vrije lezing van "kaal"
   die de volle corpus schoon houdt (RUNTIME-SEMANTICS ch. 7.7: hoogstens
   één versie-vrije rekenregel). PHASE5D-DIFF §8.2 bijgewerkt: open vraag
   beslist.
   Negatief: `corpus/negatief/wf079-two-unconditional-writers/`.
-  `WF-079 FAIL /resolvedRegels/0: two unconditional computing rules write target (jutter, uitkomst) with no ladder`
+  `WF-079 FAIL /resolvedRegels/0: two unconditional computing rules write target (jutter, uitkomst) with no prioritized defaults`
 - **WF-080 (fence 3)** — waarde-positie-`AttribuutRef` moet op een attribuut
   resolveren; kenmerk-endpoint is onwelgevormd. `has_attr||has_kenmerk`-lek
   gesplitst (`checks.ml`). Doel-lvalue buiten bereik (WF-022), dus
@@ -211,7 +211,7 @@ Result: de drie hekken van het maintainersbesluit (vraag 2, alle
 drie) staan als WF-078 (BinderRef.type-kruiscontrole tegen het
 binder-datatype, de AttribuutRef-parallel zonder eigen verbreding),
 WF-079 (het dubbelschrijvers-hek: twee of meer kale schrijvers op
-één attribuut-doel zonder ladder onwelgevormd; kenmerktoekenningen
+één attribuut-doel zonder defaults onwelgevormd; kenmerktoekenningen
 expliciet vrij — corpus-breed vooraf gevalideerd, het
 penningrecht-paar blijft clean) en WF-080 (waarde-positie-verwijzing
 moet op een attribuut resolveren; het kenmerk-endpoint-lek dicht),

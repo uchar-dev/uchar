@@ -26,7 +26,7 @@ article texts verified verbatim against the canonical source, 18/18 exact),
 text change, so no `wet-v1.md` exists — deliberate deviation from the
 card's literal wording), and `dossiers.md` with nine dossiers (the card
 expected three; the source canon has eight plus Marrit, the only dossier
-exercising the art. 4 exception ladder). All files are self-contained: no
+exercising the art. 4 exception defaults). All files are self-contained: no
 course/lesson references, no rule-ids, no machine-local paths; only public
 literature (Sergot et al. 1986) is cited. One verifier finding fixed:
 Marrit's established "onbesproken juttersgedrag" fact restored so her

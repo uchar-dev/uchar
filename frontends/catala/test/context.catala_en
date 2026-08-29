@@ -1,16 +1,16 @@
-# Context (reentrant) input — the generated top rung (besluit 6)
+# Context (reentrant) input — the generated highest default (besluit 6)
 
 A `context` variable of a subscope carries the callee's OWN default, and
 the caller MAY override it. Reading B (Catala's C-Def): the caller's value
 is the HIGHEST-priority exception — it beats the callee's own computation.
-The plugin lowers this to a **generated top rung** above the callee's own
-ladder on that target (PHASE5-CATALA decision 6): the rung's guard and value
+The plugin lowers this to a **generated highest default** above the callee's own
+defaults on that target (PHASE5-CATALA decision 6): the default's guard and value
 read the caller, navigated over the synthesised back-link (callee → caller),
-with no standing machinery — Reading B expressed as rung order.
+with no standing machinery — Reading B expressed as default order.
 
 Both polarities ride one program: the caller overrides `drempel` under a
-case boolean, so `pas_toe` = true makes the top rung decide (the override
-wins) and `pas_toe` = false lets the callee's own ladder base decide.
+case boolean, so `pas_toe` = true makes the highest default decide (the override
+wins) and `pas_toe` = false lets the callee's own base default decide.
 Own-authored, rights-free.
 
 ```catala

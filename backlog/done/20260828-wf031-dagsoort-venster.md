@@ -40,7 +40,7 @@ Build, narrowest form:
     S19 moves. No toka IDs.
 NOT in this card: the recursion/stratification question for day-kind
 conditions stays OPEN exactly as WF-031's delta note records it (decided
-with the stratification chapter — the ladder design round); no executor
+with the stratification chapter — the defaults design round); no executor
 changes; no window semantics.
 
 Acceptance:
@@ -146,7 +146,7 @@ restored byte-identical after the base-build probe.
 ### Deliberately left open (per card)
 The recursion/stratification question for day-kind conditions stays **OPEN**
 exactly as WF-031's delta note records it — decided with the stratification
-chapter (the ladder design round). No executor, schema, or window-semantics
+chapter (the defaults design round). No executor, schema, or window-semantics
 change: the wire stays v0 (`geldigheid` stays on the node; the verifier is
 the fence).
 

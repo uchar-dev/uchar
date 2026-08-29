@@ -22,13 +22,13 @@
    - decimal (rational)             -> REFUSED (no declared decimals)
    - single unconditional numeric definition -> a Berekening rule
    - single boolean definition      -> a Kenmerktoekenning (its value is the guard)
-   - a chain (base + nested single exceptions) -> one attribute defaultLadder,
-                                       rungs high-to-low
+   - a chain (base + nested single exceptions) -> one attribute
+                                       prioritizedDefaults, defaults high-to-low
    - root-level unordered exceptions (no unconditional base) ->
-                                       a declared-unordered ladder group
+                                       a declared-unordered default group
    - below-root branching (a chain exception carrying an unordered exception
-     group) -> one ladder whose rung carries a nested [excepties] sub-group
-     (row 5c, ch. 7.9: form-a rung / group-rung; WF-075)
+     group) -> one defaults group whose default carries a nested [excepties]
+     exception group (row 5c, ch. 7.9: form-a default / group-default; WF-075)
    - a shared non-trivial base under all members of a root-level unordered
      group -> REFUSED (PHASE4-DEFAULTS §7; workable later by base-duplication)
    - context (reentrant) variable   -> REFUSED (see below; besluit 6 finding)
@@ -47,13 +47,13 @@
      scope-capturing bodies, plain-value topdefs -> REFUSED (§4 fences)
 
    The context (reentrant) finding. Besluit 6 wants a caller override of a
-   context variable compiled as a TOP rung (Reading B: the caller's value
+   context variable compiled as a TOP default (Reading B: the caller's value
    beats the scope's own computation). In a single-scope 5a program the
    only override source is the case dossier, and RUNTIME-SEMANTICS ch. 7.8
-   places the virtual input rung BELOW the ordinary rungs ("computation
-   displaces input" — Reading A). So a ladder-target with case input gives
+   places the virtual input default BELOW the ordinary defaults ("computation
+   displaces input" — Reading A). So a defaults target with case input gives
    Reading A, never Reading B; realising Reading B needs an actual
-   caller-override top rung, which needs a subscope call — refused in 5a.
+   caller-override highest default, which needs a subscope call — refused in 5a.
    Context variables are therefore refused loudly here.
 
    The empty-operand rule. Catala reads every variable hard (error_empty:
@@ -339,26 +339,26 @@ let rec check_cond_wf077 e =
         "WF-077: an if-then-else condition admits only binders, parameters, literals and arithmetic \
          over those; hoist any other read through a strict `let … in` binding first"
 
-(* --- the default tree, parsed into a rung tree (PHASE5C §4, ch. 7.9) -----
+(* --- the default tree, parsed into a defaults tree (PHASE5C §4, ch. 7.9) --
 
    The two flat parsers (a linear chain, a flat root-unordered group) become
-   one recursive walk over the scopelang default tree. A [prung] carries the
+   one recursive walk over the scopelang default tree. A [pdefault] carries the
    raw Catala (justification, consequence) exprs; [translate_def] lowers it to
-   [I.rung] once [value_expr]/[cond_rung] are in scope. A chain is highest
-   priority first, mirroring the ladder wire order. The three shapes:
-   - [Plain (just, cons)]      — an ordinary rung.
-   - [Form_a (just, cons, g)]  — own content PLUS a nested exception sub-group
-                                 [g] (the sub-group decides first, the own
+   [I.default] once [value_expr]/[cond_default] are in scope. A chain is
+   highest priority first, mirroring the wire order. The three shapes:
+   - [Plain (just, cons)]      — an ordinary default.
+   - [Form_a (just, cons, g)]  — own content PLUS a nested exception group
+                                 [g] (the exception group decides first, the own
                                  consequence is the fall-back — ch. 7.9 form a).
-   - [Group_rung g]            — a pure group-rung: no own content, only the
-                                 sub-group (a multi-member base/exception group
-                                 — ch. 7.9 form b).
-   Each sub-group member is itself a chain ([prung list]). *)
-type 'e prung =
+   - [Group_default g]         — a pure group-default: no own content, only the
+                                 exception group (a multi-member base/exception
+                                 group — ch. 7.9 form b).
+   Each exception-group member is itself a chain ([pdefault list]). *)
+type 'e pdefault =
   | Plain of 'e * 'e
   | Form_a of 'e * 'e * 'e pgroup
-  | Group_rung of 'e pgroup
-and 'e pgroup = 'e prung list list
+  | Group_default of 'e pgroup
+and 'e pgroup = 'e pdefault list list
 
 (* classify a stripped scopelang default node. Catala emits, per scope
    variable, one default tree: a priority node [⟨ excepts | true :- cons ⟩]
@@ -372,13 +372,13 @@ let default_kind e =
   | EDefault { excepts; just = _; cons } -> `Prio (excepts, cons)
   | _ -> `Other
 
-(* the recursive walk: a default subtree -> a rung chain (highest first), or
+(* the recursive walk: a default subtree -> a defaults chain (highest first), or
    None when the shape is outside the fragment (a loud refusal upstream). *)
-let rec parse_tree e : 'e prung list option =
+let rec parse_tree e : 'e pdefault list option =
   match default_kind e with
   | `Leaf (just, cons) -> Some [ Plain (just, cons) ]
   | `Group [ single ] -> parse_tree single (* a single-def group unwraps *)
-  | `Group members -> Option.map (fun g -> [ Group_rung g ]) (parse_group members)
+  | `Group members -> Option.map (fun g -> [ Group_default g ]) (parse_group members)
   | `Prio (excepts, cons) -> (
       match parse_tree cons with None -> None | Some lower -> attach excepts lower)
   | `Other -> None
@@ -391,10 +391,10 @@ and parse_group members : 'e pgroup option =
   go [] members
 
 (* attach higher-priority exceptions to a lower chain: a single chain exception
-   stacks above (strict priority — ordered rungs); an unordered group (>=2
-   alternatives) nests into the head rung's exception slot (form a — flattening
-   it to ordered rungs would suppress the very conflict the paper raises, the
-   spurious-conflict argument of PHASE4-DEFAULTS §7). *)
+   stacks above (strict priority — ordered defaults); an unordered group (>=2
+   alternatives) nests into the head default's exception slot (form a —
+   flattening it to ordered defaults would suppress the very conflict the paper
+   raises, the spurious-conflict argument of PHASE4-DEFAULTS §7). *)
 and attach excepts lower =
   match excepts with
   | [] -> Some lower
@@ -404,15 +404,16 @@ and attach excepts lower =
       | _ -> ( match parse_tree single with Some hi -> Some (hi @ lower) | None -> None))
   | _ -> nest excepts lower
 
-(* nest an unordered exception group as the [Form_a] sub-group of the rung it
-   excepts. Two shapes stay refused (recorded, PHASE4-DEFAULTS §7 — the
-   sub-root refusal narrows to exactly these):
-   - excepting a group-rung (the rung it excepts is itself a multi-member
+(* nest an unordered exception group as the [Form_a] exception group of the
+   default it excepts. Two shapes stay refused (recorded, PHASE4-DEFAULTS §7 —
+   the sub-root refusal narrows to exactly these):
+   - excepting a group-default (the default it excepts is itself a multi-member
      group), and
    - excepting the UNCONDITIONAL base directly (a shared non-trivial base
      under all members — the root-level limitation, workable later by
      base-duplication under the equal-decisions rule).
-   An unordered group only nests onto an ordinary conditional exception rung. *)
+   An unordered group only nests onto an ordinary conditional exception
+   default. *)
 and nest members lower =
   match (parse_group members, lower) with
   | Some g, Plain (j, c) :: rest when not (is_true j) -> Some (Form_a (j, c, g) :: rest)
@@ -443,21 +444,21 @@ let complementary_just j1 j2 =
       && Expr.equal a1 a2 && Expr.equal b1 b2
   | _ -> false
 
-(* does the tree carry an always-deciding base (the lowest rung)? Either an
-   unconditional base rung, or a two-member base GROUP whose members split the
+(* does the tree carry an always-deciding base (the lowest default)? Either an
+   unconditional base default, or a two-member base GROUP whose members split the
    domain exhaustively (the date-complementary [article_2] shape: old [< 2000]
    / new [>= 2000] with the [false ⊢ ∅] fallback — total, never empty). Recurses
    through the nested form — used for the operand-fill analysis. *)
 let base_is_filled e =
   match parse_tree (strip e) with
   | None -> false
-  | Some rungs ->
+  | Some defaults ->
       List.exists
         (function
           | Plain (j, _) | Form_a (j, _, _) -> is_true j
-          | Group_rung [ [ Plain (j1, _) ]; [ Plain (j2, _) ] ] -> complementary_just j1 j2
-          | Group_rung _ -> false)
-        rungs
+          | Group_default [ [ Plain (j1, _) ]; [ Plain (j2, _) ] ] -> complementary_just j1 j2
+          | Group_default _ -> false)
+        defaults
 
 (* a whole-struct per-element-map definition (FUSION, PHASE5C-TUTORIAL §3a): the
    unconditional [map each x among source to (output of Callee with {…})] shape,
@@ -1054,7 +1055,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
     | EIfThenElse { cond; etrue; efalse } ->
         if not (in_body || in_let) then
           refuse
-            "if-then-else in a rule expression: a value-level conditional is admissible only inside a lambda, function or strict let body (WF-069); a rule keeps the ladder/voorwaarde idiom (bind through a `let … in` to carry it)";
+            "if-then-else in a rule expression: a value-level conditional is admissible only inside a lambda, function or strict let body (WF-069); a rule keeps the defaults/voorwaarde idiom (bind through a `let … in` to carry it)";
         (* WF-077, the condition-operand discipline: a condition reads only
            binders, parameters and literals — an attribute/field read must be
            hoisted through a strict let first (checked before translation) *)
@@ -1078,7 +1079,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
     let e = strip e in
     match M.remove e with
     | ELit (LBool true) -> always_true
-    | ELit (LBool false) -> refuse "a literal-false condition is not expressible as a rung justification"
+    | ELit (LBool false) -> refuse "a literal-false condition is not expressible as a default justification"
     | ELocation (ScopelangScopeVar { name }) -> check_var ~in_body name
     | EAppOp { op; args; _ } -> (
         let vergelijking vop a b : I.conditie =
@@ -1128,10 +1129,11 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
 (* the rule-producing variable base-names of a scope: a [ScopeVarDefinition]
    that is neither a subscope instance (that becomes an object creation) nor a
    pure input (that carries no rule). Used across scopes to detect a
-   variable name that produces a rule in more than one scope, so its rule/ladder
-   name is qualified by subject and stays globally unique (WF-020). A state
-   step's rule name is the [state_attr_name]-mangled declared name (that is what
-   [rule_label] compares against [ambiguous]), so mangle here too — otherwise a
+   variable name that produces a rule in more than one scope, so its
+   rule/defaults name is qualified by subject and stays globally unique
+   (WF-020). A state step's rule name is the [state_attr_name]-mangled declared
+   name (that is what [rule_label] compares against [ambiguous]), so mangle here
+   too — otherwise a
    state variable shared across scopes never matches and collides on WF-020. *)
 let ruled_vnames_of (sd : untyped Sc.scope_decl) : string list =
   List.sort_uniq compare
@@ -1150,17 +1152,17 @@ let ruled_vnames_of (sd : untyped Sc.scope_decl) : string list =
          | Sc.Assertion _ -> None)
        sd.scope_decl_rules)
 
-(* one scope -> its object type, rules, ladders, consistencies. [ambiguous] is
-   the set of rule variable names that recur across scopes (rule names for them
-   are qualified by subject). *)
+(* one scope -> its object type, rules, defaults groups, consistencies.
+   [ambiguous] is the set of rule variable names that recur across scopes (rule
+   names for them are qualified by subject). *)
 let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (string * I.datatype) list)
-    ~(ambiguous : string list) ~(top_rung_vars : ScopeName.t -> ScopeVar.Set.t)
+    ~(ambiguous : string list) ~(top_default_vars : ScopeName.t -> ScopeVar.Set.t)
     ~(callee_multistate : ScopeName.t -> string list)
     ~(per_element_call : ScopeName.t -> StructField.t -> per_element_meta)
     (name : ScopeName.t) (sd : untyped Sc.scope_decl) =
   let ot_name = ScopeName.base name in
-  (* a rule/ladder name for [vname]: qualified by subject when [vname] produces a
-     rule in more than one scope, bare otherwise (existing single-scope names
+  (* a rule/defaults name for [vname]: qualified by subject when [vname] produces
+     a rule in more than one scope, bare otherwise (existing single-scope names
      are unchanged — byte-identity for the corpus goldens). *)
   let rule_label vname = if List.mem vname ambiguous then ot_name ^ " " ^ vname else vname in
   (* declared subscopes (PHASE5C-TUTORIAL §3): a declared subscope collapses at
@@ -1243,21 +1245,23 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
           let vname = state_attr_name (M.remove (ScopeVar.get_info v)) in
           (* a context (reentrant) variable is no longer refused (besluit 6):
              it is an ordinary attribute whose OWN default becomes the base of
-             a ladder, and a caller override rides above it as a generated top
-             rung ([build_subscope] below; the merge is in [file_to_document]).
-             The io_input is consulted through [top_rung_vars]. *)
+             a defaults group, and a caller override rides above it as a
+             generated highest default ([build_subscope] below; the merge is in
+             [file_to_document]). The io_input is consulted through
+             [top_default_vars]. *)
           ScopeVar.Map.add v (vname, catala_dt enums structs sv.svar_out_ty) acc
         end)
       sd.scope_sig ScopeVar.Map.empty
   in
   let lookup v = ScopeVar.Map.find v vars in
   (* besluit 6: the reentrant variables of THIS scope that carry an own
-     default — their own default becomes a ladder base (never a bare
-     Berekening/Kenmerktoekenning, so a caller top rung can prepend, ch. 7.9),
-     and a caller override lands as a generated top rung on that ladder. A
-     reentrant variable without an own default keeps the ladderless MemberInit
-     route (there is no own ladder to sit above). *)
-  let is_reentrant_top v = ScopeVar.Set.mem v (top_rung_vars name) in
+     default — their own default becomes a defaults-group base (never a bare
+     Berekening/Kenmerktoekenning, so a caller highest default can prepend,
+     ch. 7.9), and a caller override lands as a generated highest default on
+     that defaults group. A reentrant variable without an own default keeps the
+     groupless MemberInit route (there is no own defaults group to sit
+     above). *)
+  let is_reentrant_top v = ScopeVar.Set.mem v (top_default_vars name) in
   (* boolean caller variables read as a subscope-input VALUE (an arg of a
      declared subscope call). A boolean is a characteristic, and a value-position
      read of a characteristic has no expression image (read_var refuses it). The
@@ -1390,7 +1394,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
                navigatie_binding = Some { I.rb_feittype = subscope_feittype v; rb_rol = callee_role } })
   in
   (* variables that are always filled: inputs (the case dossier fulfils
-     Catala's input contract) or variables carrying an unconditional rung
+     Catala's input contract) or variables carrying an unconditional default
      (a base default that always decides). Only these are admitted as
      arithmetic/comparison operands — see the head comment's empty-operand
      rule. *)
@@ -1437,8 +1441,9 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
      closed body they are captures and refuse (WF-067). *)
   (* [nav = Some (feittype, rol)] wraps the read as a navigated one-hop read
      over the synthesised back-link (ch. 5.8), used for a caller override lowered
-     as a top rung on the callee ladder (besluit 6): the rung lives on the callee
-     (the ladder subject), so its caller reads navigate callee -> caller. *)
+     as a highest default on the callee's defaults group (besluit 6): the default
+     lives on the callee (the defaults-group subject), so its caller reads
+     navigate callee -> caller. *)
   let attr_ref ?nav vname dt : I.expr =
     let navigatie_rol, navigatie_bindingen =
       match nav with
@@ -1540,11 +1545,11 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
       ~check_subscope_output ~per_element_call ~fused_map:fused_lookup
   in
   (* besluit 6: the value/condition walk that lowers a caller override into a
-     top rung on the callee ladder. Same walk as the scope's own, but every
-     caller read navigates back over the back-link (feittype, caller role):
-     the override rung sits on the callee's ladder yet reads the caller's
-     override value and guard — Reading B expressed as rung order, no standing
-     machinery. *)
+     highest default on the callee's defaults group. Same walk as the scope's
+     own, but every caller read navigates back over the back-link (feittype,
+     caller role): the override default sits on the callee's defaults group yet
+     reads the caller's override value and guard — Reading B expressed as
+     default order, no standing machinery. *)
   let override_exprs ~feittype ~rol =
     make_exprs ~enums ~structs ~functions
       ~read_var:(fun ~operand ~in_body name ->
@@ -1563,10 +1568,10 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   in
   (* condition option: [true] is unconditional -> None (for plain rules) *)
   let cond_opt e = if is_true e then None else Some (cond_expr e) in
-  (* a ladder rung always carries a justification (WF-050): an
+  (* a default always carries a justification (WF-050): an
      unconditional base becomes the vacuously-true ALLE, never null —
-     null is reserved for the initialisation rung (ch. 7.3). *)
-  let cond_rung e = Some (if is_true e then always_true else cond_expr e) in
+     null is reserved for the initialisation default (ch. 7.3). *)
+  let cond_default e = Some (if is_true e then always_true else cond_expr e) in
   (* boolean value expression -> the guard condition it stands for *)
   let bool_value_guard value =
     match M.remove (strip value) with
@@ -1580,14 +1585,14 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
     | Some x, Some y -> Some (I.Samengesteld { kwantor = Alle; drempel = 0; onderdelen = [ x; y ]; bron = Some "en" })
   in
   (* accumulators *)
-  let regels = ref [] and ladders = ref [] and consistenties = ref [] in
+  let regels = ref [] and defaults_groups = ref [] and consistenties = ref [] in
   let feittypen = ref [] and creaties = ref [] in
-  (* besluit 6: caller override top rungs, keyed by (callee object type,
+  (* besluit 6: caller override highest defaults, keyed by (callee object type,
      callee attribute); [file_to_document] prepends them onto that callee's
-     own ladder once every scope is translated. *)
-  let override_contribs : (string * string * I.rung list) list ref = ref [] in
+     own defaults group once every scope is translated. *)
+  let override_contribs : (string * string * I.default list) list ref = ref [] in
   let add_regel r = regels := r :: !regels in
-  let add_ladder l = ladders := l :: !ladders in
+  let add_defaults_group g = defaults_groups := g :: !defaults_groups in
   let berekening vname dt value ~cond : I.resolved_regel =
     { rr_naam = Some ("berekening " ^ rule_label vname); rr_soort = Some Berekening;
       doel = Some (attr_ref vname dt);
@@ -1607,70 +1612,74 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
     let bool_besluit value =
       match M.remove (strip value) with
       | ELit (LBool b) -> b
-      | _ -> refuse "a characteristic ladder rung value must be a literal true/false"
+      | _ -> refuse "a characteristic default's value must be a literal true/false"
     in
-    (* lower a parsed rung tree to IR rungs (ch. 7.9): a plain rung, a form-a
-       rung (own content plus [excepties]), or a pure group-rung (no own
-       content). A sub-ladder inherits the root target kind (attribute vs
-       characteristic), so [is_bool] carries through the recursion. *)
-    let rec build_rung (pr : _ prung) : I.rung =
-      match pr with
-      | Plain (cond, value) -> content_rung cond value None
-      | Form_a (cond, value, g) -> content_rung cond value (Some (build_group g))
-      | Group_rung g ->
-          { rung_besluit = None; rung_voorwaarde = None; rung_consequentie = None;
-            rung_initialisatie = false; rung_excepties = Some (build_group g);
-            rung_bron = Some vname }
-    and content_rung cond value excepties : I.rung =
+    (* lower a parsed defaults tree to IR defaults (ch. 7.9): a plain default, a
+       form-a default (own content plus [excepties]), or a pure group-default (no
+       own content). An exception group inherits the root target kind (attribute
+       vs characteristic), so [is_bool] carries through the recursion. *)
+    let rec build_default (pdef : _ pdefault) : I.default =
+      match pdef with
+      | Plain (cond, value) -> content_default cond value None
+      | Form_a (cond, value, g) -> content_default cond value (Some (build_group g))
+      | Group_default g ->
+          { default_besluit = None; default_voorwaarde = None; default_consequentie = None;
+            default_initialisatie = false; default_excepties = Some (build_group g);
+            default_bron = Some vname }
+    and content_default cond value excepties : I.default =
       if is_bool then
-        { rung_besluit = Some (bool_besluit value); rung_voorwaarde = cond_rung cond;
-          rung_consequentie = None; rung_initialisatie = false;
-          rung_excepties = excepties; rung_bron = Some vname }
+        { default_besluit = Some (bool_besluit value); default_voorwaarde = cond_default cond;
+          default_consequentie = None; default_initialisatie = false;
+          default_excepties = excepties; default_bron = Some vname }
       else
-        { rung_besluit = None; rung_voorwaarde = cond_rung cond;
-          rung_consequentie = Some (value_expr value); rung_initialisatie = false;
-          rung_excepties = excepties; rung_bron = Some vname }
-    and build_group (g : _ pgroup) : I.sub_group =
-      { sg_ongeordend = List.length g >= 2;
-        sg_leden =
+        { default_besluit = None; default_voorwaarde = cond_default cond;
+          default_consequentie = Some (value_expr value); default_initialisatie = false;
+          default_excepties = excepties; default_bron = Some vname }
+    and build_group (g : _ pgroup) : I.exception_groups =
+      { egs_ongeordend = List.length g >= 2;
+        egs_leden =
           List.map
-            (fun member : I.sub_ladder ->
-              { sl_rungs = List.map build_rung member; sl_bron = Some vname })
+            (fun member : I.exception_group ->
+              { eg_defaults = List.map build_default member; eg_bron = Some vname })
             g }
     in
-    let build_ladder ?(ongeordend = false) suffix (chain : _ prung list) : I.default_ladder =
-      { dl_naam = Some (rule_label vname ^ suffix); dl_onderwerp = ot_name;
-        dl_kenmerk = (if is_bool then Some vname else None);
-        dl_attribuut = (if is_bool then None else Some vname);
-        rungs = List.map build_rung chain;
-        dl_ongeordend = ongeordend; dl_bron = Some vname; dl_geldigheid = Some geldig }
+    let build_defaults_group ?(ongeordend = false) suffix (chain : _ pdefault list) :
+        I.prioritized_defaults =
+      { pd_naam = Some (rule_label vname ^ suffix); pd_onderwerp = ot_name;
+        pd_kenmerk = (if is_bool then Some vname else None);
+        pd_attribuut = (if is_bool then None else Some vname);
+        defaults = List.map build_default chain;
+        pd_ongeordend = ongeordend; pd_bron = Some vname; pd_geldigheid = Some geldig }
     in
-    (* besluit 6: a reentrant variable's own default must be a LADDER (never a
-       bare Berekening), so a caller override can ride above it as a top rung.
-       The attribute-target chain own default is covered; a characteristic
-       context target and a root-unordered own default are recorded flanks. *)
+    (* besluit 6: a reentrant variable's own default must be a DEFAULTS GROUP
+       (never a bare Berekening), so a caller override can ride above it as a
+       highest default. The attribute-target chain own default is covered; a
+       characteristic context target and a root-unordered own default are
+       recorded flanks. *)
     if is_reentrant_top v && is_bool then
       refuse
         "context (reentrant) characteristic %S: a caller boolean override is a recorded besluit-6 \
-         flank (the generated top rung covers attribute targets — a characteristic top rung is not \
-         wired); refused"
+         flank (the generated highest default covers attribute targets — a characteristic \
+         highest default is not wired); refused"
         vname;
     match default_kind (strip e) with
     | `Group members when List.length members >= 2 ->
         if is_reentrant_top v then
           refuse
-            "context (reentrant) variable %S with a root-level unordered own default: a caller top \
-             rung above an unordered group is a recorded besluit-6 flank (a chain own default is \
-             covered); refused"
+            "context (reentrant) variable %S with a root-level unordered own default: a caller \
+             highest default above an unordered group is a recorded besluit-6 flank (a chain own \
+             default is covered); refused"
             vname;
-        (* a root-level unordered group -> the declared-unordered ladder group:
-           one [ongeordend] ladder per member (ch. 7.2, unchanged) — distinct
-           from a NESTED unordered group, which rides [excepties] on one rung *)
+        (* a root-level unordered group -> the declared-unordered default group:
+           one [ongeordend] defaults group per member (ch. 7.2, unchanged) —
+           distinct from a NESTED unordered group, which rides [excepties] on one
+           default *)
         List.iteri
           (fun i m ->
             let suffix = " #" ^ string_of_int (i + 1) in
             match parse_tree m with
-            | Some chain -> add_ladder (build_ladder ~ongeordend:true suffix chain)
+            | Some chain ->
+                add_defaults_group (build_defaults_group ~ongeordend:true suffix chain)
             | None ->
                 refuse
                   "variable %S: an unordered-group member is outside the fragment (besluit 4)"
@@ -1686,23 +1695,25 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
                declared-unordered group (besluit 4/vraag 5, PHASE5C §4)"
               vname
         | Some [ Plain (cond, value) ] ->
-            (* a single plain rung is a bare rule, not a ladder — unless the
-               target is a reentrant context variable, whose own default must be
-               a ladder base for the caller top rung to sit above (besluit 6) *)
+            (* a single plain default is a bare rule, not a defaults group —
+               unless the target is a reentrant context variable, whose own
+               default must be a defaults-group base for the caller highest
+               default to sit above (besluit 6) *)
             if is_bool then
               add_regel
                 (kenmerktoekenning vname
                    ~voorwaarde:(combine (cond_opt cond) (bool_value_guard value)))
             else if is_true cond && not (is_reentrant_top v) then
               add_regel (berekening vname dt value ~cond:None)
-            else add_ladder (build_ladder "" [ Plain (cond, value) ])
-        | Some chain -> add_ladder (build_ladder "" chain))
+            else add_defaults_group (build_defaults_group "" [ Plain (cond, value) ])
+        | Some chain -> add_defaults_group (build_defaults_group "" chain))
   in
   (* one declared subscope -> its synthesised fact type and object creation
      (PHASE5C-TUTORIAL §3.1): the call's args bind as member initialisations
      (Toekenningen) on the callee's INPUT attributes, plus the verbindendeRol
      back-link. A subscope input is an unconditional caller value; a conditional
-     or laddered target is out of scope (the WF-050 rung route is deferred). *)
+     target or one carrying a defaults group is out of scope (the WF-050 default
+     route is deferred). *)
   let build_subscope v (scope, args, _out_struct) =
     let callee_type = ScopeName.base scope in
     let instance_var = M.remove (ScopeVar.get_info v) in
@@ -1723,44 +1734,44 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
               rol_meervoud = None; rol_meervoudig = false } ] }
     in
     (* besluit 6: which of this callee's inputs are reentrant context targets
-       carrying an own default — those args become top rungs, not member
+       carrying an own default — those args become highest defaults, not member
        initialisations. *)
-    let ovr_set = top_rung_vars scope in
+    let ovr_set = top_default_vars scope in
     let ve_ov, ce_ov = override_exprs ~feittype ~rol:caller_role in
     (* a subscope input definition carries the ordinary scope-variable default
        shape [error_empty ⟨ ⟨true ⊢ ⟨X⟩⟩ | false ⊢ ∅ ⟩] — one unconditional
-       plain rung. Anything richer (a conditional base or a ladder) is a rung
-       target, which the WF-050 route (deferred) would carry, not a member
-       initialisation. *)
+       plain default. Anything richer (a conditional base or a defaults group) is
+       a defaults target, which the WF-050 route (deferred) would carry, not a
+       member initialisation. *)
     let arg_value e =
       match parse_tree (strip e) with
       | Some [ Plain (just, cons) ] when is_true just -> value_expr cons
       | _ ->
           refuse
-            "a subscope input to %S is not an unconditional value: conditional/laddered subscope \
-             inputs enter as a rung, never a member initialisation (the WF-050 route is deferred, \
-             PHASE5C-TUTORIAL §3) — refused"
+            "a subscope input to %S is not an unconditional value: a conditional subscope input, \
+             or one carrying a defaults group, enters as a default, never a member initialisation \
+             (the WF-050 route is deferred, PHASE5C-TUTORIAL §3) — refused"
             instance_var
     in
     (* besluit 6: a caller override of a reentrant callee variable that carries
        an own default (in [ovr_set]) does NOT bind as a member initialisation —
-       it becomes a generated top rung above the callee's own ladder (Reading B
-       as rung order, the §4.1 hardship-pattern shape; the WF-050 constraint).
-       Its guard and value read the caller, navigated over the back-link
-       (callee -> caller); no standing machinery. *)
-    let override_rung callee_var (pr : _ prung) : I.rung =
-      match pr with
+       it becomes a generated highest default above the callee's own defaults
+       group (Reading B as default order, the §4.1 hardship-pattern shape; the
+       WF-050 constraint). Its guard and value read the caller, navigated over
+       the back-link (callee -> caller); no standing machinery. *)
+    let override_default callee_var (pdef : _ pdefault) : I.default =
+      match pdef with
       | Plain (just, value) ->
-          { I.rung_besluit = None;
-            rung_voorwaarde = Some (if is_true just then always_true else ce_ov just);
-            rung_consequentie = Some (ve_ov value);
-            rung_initialisatie = false; rung_excepties = None;
-            rung_bron = Some ("context-override " ^ callee_var) }
-      | Form_a _ | Group_rung _ ->
+          { I.default_besluit = None;
+            default_voorwaarde = Some (if is_true just then always_true else ce_ov just);
+            default_consequentie = Some (ve_ov value);
+            default_initialisatie = false; default_excepties = None;
+            default_bron = Some ("context-override " ^ callee_var) }
+      | Form_a _ | Group_default _ ->
           refuse
             "a caller override of the context variable %S is a branching tree (a nested or \
-             root-unordered override): only a chain of plain-rung overrides lowers to top rungs \
-             (besluit 6 flank); refused"
+             root-unordered override): only a chain of plain-default overrides lowers to highest \
+             defaults (besluit 6 flank); refused"
             callee_var
     in
     ScopeVar.Map.iter
@@ -1770,7 +1781,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
           match parse_tree (strip argexpr) with
           | Some chain ->
               override_contribs :=
-                (callee_type, callee_var, List.map (override_rung callee_var) chain)
+                (callee_type, callee_var, List.map (override_default callee_var) chain)
                 :: !override_contribs
           | None ->
               refuse
@@ -1827,7 +1838,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
               cons_bron = Some "assertion"; cons_line = idx + 1; cons_geldigheid = Some geldig }
             :: !consistenties)
     sd.scope_decl_rules;
-  ( ot_name, objecttype, List.rev !regels, List.rev !ladders, List.rev !consistenties,
+  ( ot_name, objecttype, List.rev !regels, List.rev !defaults_groups, List.rev !consistenties,
     List.rev !feittypen, List.rev !creaties, List.rev !override_contribs )
 
 (* --- top-level definitions -> FunctionDefs (row 10, DMN's BKM) ---------- *)
@@ -1895,8 +1906,8 @@ let topdef_functions enums structs functions topdefs : I.function_def list =
    (the ratified weiger-grens): (1) no own object creation — the callee makes no
    subscope call of its own; (2) exactly one output — the multi-output form is
    the FieldAccess-on-StructLiteral shape, deferred (no clingo closed-body
-   image); (3) the output is an ordered plain-rung chain with a total base — an
-   unordered/conflict-group output refuses; (4) no non-input reads — every read
+   image); (3) the output is an ordered plain-default chain with a total base —
+   an unordered/conflict-group output refuses; (4) no non-input reads — every read
    in the body resolves to one of the callee's inputs, mapped to the FunctionDef
    parameter binder (a read of an internal/output variable refuses). Direction B
    (real per-element instances) stays deferred. Returns the FunctionDef plus the
@@ -2068,8 +2079,8 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
           cname)
   in
   (* (3) the output default tree -> a closed IfThenElse body: an ordered chain of
-     [Plain] rungs (highest first) bottoming at a total base; an
-     unordered/conflict-group rung refuses. *)
+     [Plain] defaults (highest first) bottoming at a total base; an
+     unordered/conflict-group default refuses. *)
   let out_e =
     match
       List.find_map
@@ -2081,9 +2092,9 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
     | Some e -> e
     | None -> refuse "per-element callee %S output %S has no definition" cname out_name
   in
-  let rungs =
+  let out_defaults =
     match parse_tree (strip out_e) with
-    | Some rs -> rs
+    | Some ds -> ds
     | None ->
         refuse
           "per-element callee %S output %S is not a plain default chain (outside the closed-body \
@@ -2095,26 +2106,26 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
         if is_true just then value_expr ~in_body:true cons
         else
           refuse
-            "per-element callee %S output %S has no total base (its lowest rung is conditional): a \
-             pure function needs a total base"
+            "per-element callee %S output %S has no total base (its lowest default is \
+             conditional): a pure function needs a total base"
             cname out_name
     | Plain (just, cons) :: rest ->
         if is_true just then
-          refuse "per-element callee %S output %S: an unconditional rung shadows lower rungs" cname
-            out_name
+          refuse "per-element callee %S output %S: an unconditional default shadows lower defaults"
+            cname out_name
         else
           let then_ = value_expr ~in_body:true cons in
           If_then_else
             { typ = ir_typ then_; condition = cond_expr ~in_body:true just; then_;
               else_ = body_of rest; bron = None }
-    | (Form_a _ | Group_rung _) :: _ ->
+    | (Form_a _ | Group_default _) :: _ ->
         refuse
           "per-element callee %S output %S carries an unordered/conflict exception group: refused \
            per element (weiger-grens; only an ordered plain chain lowers to a closed IfThenElse body)"
           cname out_name
-    | [] -> refuse "per-element callee %S output %S has an empty rung chain" cname out_name
+    | [] -> refuse "per-element callee %S output %S has an empty defaults chain" cname out_name
   in
-  let body = body_of rungs in
+  let body = body_of out_defaults in
   (* the closed-body arithmetic fence (besluit 1-A, 2026-08-24; NARROWED
      2026-08-25 by card clingo-bodymult). clingo's closed-body term
      ([closed_term], §S15) now carries — beyond the additive [Plus]/[Min] — the
@@ -2253,9 +2264,9 @@ let file_to_document (input : string) : I.document =
   in
   (* besluit 6: per callee scope, the reentrant context variables that carry an
      own default — those, and only those, take a caller override as a generated
-     top rung on the forced ladder base; a reentrant target without an own
-     default keeps the ladderless MemberInit route. *)
-  let top_rung_map =
+     highest default on the forced defaults-group base; a reentrant target
+     without an own default keeps the groupless MemberInit route. *)
+  let top_default_map =
     List.fold_left
       (fun acc (name, decl) ->
         let sd : untyped Sc.scope_decl = M.remove decl in
@@ -2281,8 +2292,8 @@ let file_to_document (input : string) : I.document =
         ScopeName.Map.add name with_default acc)
       ScopeName.Map.empty scopes
   in
-  let top_rung_vars sc =
-    try ScopeName.Map.find sc top_rung_map with Not_found -> ScopeVar.Set.empty
+  let top_default_vars sc =
+    try ScopeName.Map.find sc top_default_map with Not_found -> ScopeVar.Set.empty
   in
   (* row 2: per scope, the base names of its multi-state variables (a scopelang
      variable name carrying a '#'). A caller reading such a variable's bare
@@ -2345,44 +2356,45 @@ let file_to_document (input : string) : I.document =
         synth_fns := (key, (fd, meta)) :: !synth_fns;
         meta
   in
-  let objecttypen = ref [] and regels = ref [] and ladders = ref [] and cons = ref [] in
+  let objecttypen = ref [] and regels = ref [] and defaults_groups = ref [] and cons = ref [] in
   let feittypen = ref [] and creaties = ref [] and overrides = ref [] in
   List.iter
     (fun (name, decl) ->
-      let ot_name, ot, rs, ls, cs, fts, ocs, ovs =
-        translate_scope enums structs functions ~ambiguous ~top_rung_vars ~callee_multistate
+      let ot_name, ot, rs, gs, cs, fts, ocs, ovs =
+        translate_scope enums structs functions ~ambiguous ~top_default_vars ~callee_multistate
           ~per_element_call name (M.remove decl)
       in
       objecttypen := (ot_name, ot) :: !objecttypen;
       regels := !regels @ rs;
-      ladders := !ladders @ ls;
+      defaults_groups := !defaults_groups @ gs;
       cons := !cons @ cs;
       feittypen := !feittypen @ List.map (fun (ft : I.feittype) -> (Option.get ft.ft_naam, ft)) fts;
       creaties := !creaties @ ocs;
       overrides := !overrides @ ovs)
     scopes;
-  (* prepend each caller override's top rungs onto its callee's own ladder
-     (besluit 6): the highest rungs win (Reading B as rung order). Every
-     contribution must find its callee ladder — the reentrant target's own
-     default is forced to a ladder base above. *)
+  (* prepend each caller override's highest defaults onto its callee's own
+     defaults group (besluit 6): the highest defaults win (Reading B as default
+     order). Every contribution must find its callee defaults group — the
+     reentrant target's own default is forced to a defaults-group base above. *)
   List.iter
     (fun (ot, var, _) ->
       if not (List.exists
-                (fun (l : I.default_ladder) -> l.dl_onderwerp = ot && l.dl_attribuut = Some var)
-                !ladders)
-      then refuse "a context override on %s.%s found no callee ladder (besluit 6)" ot var)
+                (fun (g : I.prioritized_defaults) ->
+                  g.pd_onderwerp = ot && g.pd_attribuut = Some var)
+                !defaults_groups)
+      then refuse "a context override on %s.%s found no callee defaults group (besluit 6)" ot var)
     !overrides;
-  let ladders =
+  let defaults_groups =
     List.map
-      (fun (l : I.default_ladder) ->
+      (fun (g : I.prioritized_defaults) ->
         let extra =
           List.concat_map
-            (fun (ot, var, rungs) ->
-              if l.dl_onderwerp = ot && l.dl_attribuut = Some var then rungs else [])
+            (fun (ot, var, ds) ->
+              if g.pd_onderwerp = ot && g.pd_attribuut = Some var then ds else [])
             !overrides
         in
-        if extra = [] then l else { l with rungs = extra @ l.rungs })
-      !ladders
+        if extra = [] then g else { g with defaults = extra @ g.defaults })
+      !defaults_groups
   in
   let function_defs =
     topdef_functions enums structs functions prog.Sc.program_topdefs
@@ -2409,6 +2421,6 @@ let file_to_document (input : string) : I.document =
     object_creaties = !creaties; verdelingen = []; consistenties = !cons;
     uniciteiten = []; uniciteit_unies = []; feit_creaties = [];
     resolved_startpunten = []; regel_groepen = []; diagnostics = [];
-    default_ladders = ladders; function_defs }
+    prioritized_defaults = defaults_groups; function_defs }
 
 let run ~input ~output = Emit.to_file output (file_to_document input)

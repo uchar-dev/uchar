@@ -27,10 +27,10 @@ en amendementen; de data zijn door dit corpus vastgelegd.
 ## Semantische dekking
 
 Wat de wet v0–v3 al van nature toetst: defeasible defaults (art. 2 "zolang
-het tegendeel niet blijkt"), uitzonderingsladders (art. 4 gelaagd, art.
-4bis, art. 5), de twee soorten negatie en de open/gesloten-wereldkeuze per
-predicaat (de v1-lezing), discretionaire en open begrippen als eerlijke
-`Onopgelost`-grens ("onbesproken juttersgedrag", "bijzondere gevallen", in
+het tegendeel niet blijkt"), gelaagde uitzonderings-defaults (art. 4
+gelaagd, art. 4bis, art. 5), de twee soorten negatie en de
+open/gesloten-wereldkeuze per predicaat (de v1-lezing), discretionaire en
+open begrippen als eerlijke `Onopgelost`-grens ("onbesproken juttersgedrag", "bijzondere gevallen", in
 drie gradaties geijkt door Feiko/Gesa/Okko), verwijzing naar een andere
 regeling (de Strandvonderijverordening 1837), temporalisering met
 verwervings- en verliesgronden, persistentie en peildatum-aannames (v3), en

@@ -1,7 +1,8 @@
 # jutterswet-sleepbaan — hand computation
 
-Witnesses the **unit-normalisation lowering pass** (LADDER-EVOLUTIE §8.1–8.2,
-Q9; spec/ASP-TRANSLATION.md S6): a genuine **factor≠1** conversion — a
+Witnesses the **unit-normalisation lowering pass**
+(PRIORITIZED-DEFAULTS-EVOLUTIE §8.1–8.2, Q9; spec/ASP-TRANSLATION.md S6):
+a genuine **factor≠1** conversion — a
 `km` literal added to an `m`-declared attribute, written into an `m` target —
 that clingo refused before the pass and replays exactly after it, matching the
 absolute value ref computes over the source units (ref ≡ clingo).

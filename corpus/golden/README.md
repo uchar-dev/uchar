@@ -122,18 +122,19 @@ gap means the characteristic does not hold there.
 
 `jutterswet-penningrecht` (2026-08-24) is the frontend-diff emitter
 golden (toolchain `332db4c`) for Jutterswet art. 3 jo. 5 — the
-RegelSpraak-toolchain render of the defeasibility ladder that
+RegelSpraak-toolchain render of the defeasibility defaults that
 `jutterswet-penningrecht-catala` renders through the Catala plugin and
 `anchor/jutterswet-hardheid` pins by hand. The toolchain emits no
-ladder: the same law arrives as two flat `KENMERKTOEKENNING` rungs
+prioritized defaults: the same law arrives as two flat
+`KENMERKTOEKENNING` rules
 (`penninggerechtigd bij drempel`, >=12; `penninggerechtigd bij
-hardheid`, the compound hardheid AND >=6), with no `defaultLadders`
+hardheid`, the compound hardheid AND >=6), with no `prioritizedDefaults`
 field at all (the v0 emitter omits it, where the Catala dump carries it
 populated). The
-render is faithful on every input, not just the five cases: both rungs
-decide the same value (`waar`), so the ordered ladder collapses to a
-disjunction and no rung-conflict is reachable — the pair thus isolates a
-pure IR-form difference (two rungs vs one `defaultLadder`) over
+render is faithful on every input, not just the five cases: both rules
+decide the same value (`waar`), so the ordered defaults collapse to a
+disjunction and no default conflict is reachable — the pair thus isolates
+a pure IR-form difference (two rules vs one `PrioritizedDefaults`) over
 identical inputs and outcomes. Its five cases mirror the anchor's and
 the Catala render's one-for-one; case3-stilte and case4-hardheidsgrens
 are the two silence cases (no ground → nothing attributed), pinned as

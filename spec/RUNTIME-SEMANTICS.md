@@ -2013,7 +2013,7 @@ consistent (case 1 — the three exclusions).
 ## 6. Stratification
 
 > **Normative home:** the dependency graph, its three edge kinds, the
-> illegal-cycle rules (WF-045/046) and the WF-051 ladder fold are defined
+> illegal-cycle rules (WF-045/046) and the WF-051 defaults fold are defined
 > normatively in `IR-SPEC.md` ch. 5 (with the day-kind stratum-0 framing,
 > `IR-SPEC.md` ch. 5.4, and the executor-neutrality clause, ch. 5.5). This
 > chapter is the **operational companion**: the per-form read/write table
@@ -2167,7 +2167,7 @@ many strata as the chain is deep.
   puts the consistency at its reads' stratum and the reading rule
   strictly higher (channel edge); ch. 5.6's fixpoint (one error fact,
   both dossiers flagged) follows by construction.
-- A four-deep negation chain (the shape of the art. 4 ladder read in
+- A four-deep negation chain (the shape of the art. 4 defaults read in
   `ASP-TRANSLATION.md` ch. 6): k1 from an input comparison, k2 indien
   niet k1, k3 indien niet k2, k4 indien niet k3 — strata 0, 1, 2, 3;
   input x = 0 yields {k1 onwaar, k2 waar, k3 onwaar, k4 waar}, x = 1
@@ -2304,17 +2304,17 @@ date 2026-03-15; Parameterset `penningbedrag` = [2025: 4, 2026: 5]
 
 ## 7. Defaults and defeasibility (design — the Phase-4 gate)
 
-*Status: normative design, with the **ladder landed in both target
-kinds** (`IR-SPEC.md` ch. 6.1: the `defaultLadders` extension form,
-WF-050/051 with verifier checks and negatief cases). The art. 4
-characteristic ladder is the anchor
+*Status: normative design, with **prioritized defaults landed in both
+target kinds** (`IR-SPEC.md` ch. 6.1: the `prioritizedDefaults` extension
+form, WF-050/051 with verifier checks and negatief cases). The art. 4
+characteristic defaults are the anchor
 `corpus/golden/anchor/jutterswet-uitsluiting` (worked example 7.6.1
-machine-checked); the attribute ladder with **leeg fall-through**, the
-**initialisation rung**, and the **speculative-deposit rule** is the
+machine-checked); the attribute defaults with **leeg fall-through**, the
+**initialisation default**, and the **speculative-deposit rule** are the
 anchor `corpus/golden/anchor/jutterswet-vondstwaardering` (worked
 example 7.6.2's outcomes — computed wins, fall-through to
 initialisation on a computed leeg, input left standing, a deciding
-rung overwriting input — machine-checked through both executors).
+default overwriting input — machine-checked through both executors).
 The declared-unordered group and the §9.5 conflict path are the anchor
 `corpus/golden/anchor/jutterswet-toelagegronden` (worked example
 7.6.3's outcomes — differing grounds → no write + one channel fact,
@@ -2323,18 +2323,44 @@ conflict, the characteristic conflict — machine-checked through both
 executors; the wire marking is `ongeordend`, IR-SPEC ch. 6.1). The v0
 desugaring is ch. 7.7, machine-checked by the
 `jutterswet-waardering-v0vorm` anchor (ref replays the v0 forms
-natively, the ASP backend the desugared ladder — the gate-6
+natively, the ASP backend the desugared defaults — the gate-6
 differential witnesses the lowering). Rule-readability of the conflict
 fact is **closed** for v1 (ch. 7.2, decided 2026-08-20); the ch. 7.8
 standing norm executes on scalar targets through both executors
 (temporal targets stay fenced — recorded, scalar-first). Below-root
-exception branching is ch. 7.9 (Phase 5c): the `Rung.excepties` wire
+exception branching is ch. 7.9 (Phase 5c): the `Default.excepties` wire
 form and its well-formedness (WF-050 recursion, WF-051 unchanged,
 WF-075) land with this chapter; the anchors `jutterswet-nestuitzondering`
 and `jutterswet-nestkenmerk` prove both target kinds through the executor
 card.*
 
-### 7.1 The model: the ladder, and fall-through as its semantics
+### 7.1 The model: prioritized defaults, and fall-through as its semantics
+
+*Renamed 2026-08-29 from "ladder"/"rung"/"sub-ladder" (coined here
+2026-08-15/16; no term of art). Git history — commit messages and
+pre-rename revisions — uses the old names throughout.*
+
+*Naming.* "Prioritized defaults" replaces "ladder", coined in this
+project (2026-08-15/16) and no term of art. The family is prioritized
+default logic (Reiter; Brewka; Horty, *Reasons as Defaults*; Lawsky,
+*A Logic for Statutes*, 21 Fla. Tax Rev. 60 (2017)). A default here is
+a Horty-style pair — justification plus consequence — with priority
+doing the work of Reiter's consistency justifications: the lowering
+generates `not decides_m` for every higher default. The nearest named
+structure is Catala's default tree (Merigoux, Chataing & Protzenko,
+ICFP 2021), from which this deviates exactly on the tracked
+`CONSTRUCTS.md` row-8 deltas (observable non-fatal conflicts,
+equal-decision reconciliation, leeg fall-through across compositions).
+It is deliberately *not* a defeasible theory in the
+Antoniou–Billington–Governatori–Maher sense: priority is a total,
+structural, per-target order — never a free `r1 > r2` relation
+(`spec/proposals/PRIORITY-RELATION.md`, C2) — there is no
+strict/defeasible/defeater trichotomy, and a pure blocker on an
+attribute target is inexpressible by design (a defaults group never
+writes leeg). Operational kin, for the integrator: DMN hit policies
+FIRST (the ordered group) and ANY (the declared-unordered group), and
+XACML's `first-applicable` / `only-one-applicable` with
+`Indeterminate`-as-value. Unrelated to ladder logic (IEC 61131-3).
 
 Adopted direction (`PLAN.md` Phase 4, `IR-REVIEW.md`): Catala's default
 calculus — prioritised defaults with explicit conflict detection —
@@ -2344,66 +2370,66 @@ specialised by what the ASP hand-exercises established
 
 - A **default** is a pair (justification, consequence) aimed at one
   target (an attribute write or a characteristic attribution).
-- Defaults on one target organise as a **ladder**: a totally ordered
-  priority chain of rungs. The ladder is **one writer** computing **one
-  decision**, top-down: the **highest rung that decides** supplies it,
-  and every lower rung is displaced. What "decides" means differs by
+- Defaults on one target organise as a group of **prioritized defaults**:
+  a totally ordered priority chain. The group is **one writer** computing
+  **one decision**, top-down: the **highest default that decides** supplies
+  it, and every lower default is displaced. What "decides" means differs by
   target kind, and the distinction is normative:
-  - **attribute target:** a rung decides when its justification holds
-    *and* its consequence evaluates **gevuld**; a justified rung whose
+  - **attribute target:** a default decides when its justification holds
+    *and* its consequence evaluates **gevuld**; a justified default whose
     consequence evaluates leeg **falls through** (Catala's fall-through
     — this is what makes ch. 5.4 reproducible, ch. 7.3);
-  - **characteristic target:** a rung's consequence is the boolean
+  - **characteristic target:** a default's consequence is the boolean
     **decision itself** — attribute or do-not-attribute — and a
-    justified rung therefore *always* decides (there is no leeg
-    boolean); a do-not-attribute decision displaces lower rungs and
-    makes the ladder derive nothing, which is not a retraction
-    (ch. 5.3's monotone write regime is untouched — the ladder decides
+    justified default therefore *always* decides (there is no leeg
+    boolean); a do-not-attribute decision displaces lower defaults and
+    makes the group derive nothing, which is not a retraction
+    (ch. 5.3's monotone write regime is untouched — the group decides
     once, then at most one attribution happens).
 
-  At most one rung decides, so a single ladder can never conflict — a
+  At most one default decides, so a single group can never conflict — a
   property of the semantics, not a claim about authors.
-- If no rung decides, the ladder **writes nothing**: the target keeps
-  what the fact base holds — its input value, or leeg. A ladder never
-  writes leeg; consequently "deliberately assign leeg" is not
-  expressible as a rung (a recorded design limit: it needs an
-  ordinary, ladderless rule), and the fall-through deliberately does
-  **not** distinguish "rung inapplicable" from "rung applicable with
-  an empty value" — both fall through. *v0 mirror note (tracked with
-  the Phase-4 desugaring):* an unguarded v0 computation writes a
+- If no default decides, the group **writes nothing**: the target keeps
+  what the fact base holds — its input value, or leeg. A defaults group
+  never writes leeg; consequently "deliberately assign leeg" is not
+  expressible as a default (a recorded design limit: it needs an
+  ordinary rule, outside the defaults), and the fall-through deliberately
+  does **not** distinguish "default inapplicable" from "default
+  applicable with an empty value" — both fall through. *v0 mirror note
+  (tracked with the Phase-4 desugaring):* an unguarded v0 computation writes a
   computed leeg over an input value (ch. 1.2g); once desugared into a
-  ladder that case shifts to "input left standing" — a deliberate,
-  pinned delta, not drift. Input facts are **not** a rung: they are
-  the fact base the ladder's write meets under ch. 1.2g.
-- Rung evaluation is **speculative** until a rung decides: a
-  fallen-through rung's arithmetic channel deposits (a division by
+  defaults group that case shifts to "input left standing" — a deliberate,
+  pinned delta, not drift. Input facts are **not** a default: they are
+  the fact base the group's write meets under ch. 1.2g.
+- Default evaluation is **speculative** until a default decides: a
+  fallen-through default's arithmetic channel deposits (a division by
   leeg inside a consequence that then falls through, ch. 1.2) do
-  **not** persist — only the deciding rung's evaluation deposits on
+  **not** persist — only the deciding default's evaluation deposits on
   the §9.5 channel. This scopes the ch. 6.1 residual (b): transient
-  deposits keep persisting in ordinary evaluation (the v0 mirror); the
-  ladder is the one sanctioned speculative context.
-- The **base rule** is a rung like any other; the initialisation rung,
-  when present, sits below it (ch. 7.3). The textual nesting of
+  deposits keep persisting in ordinary evaluation (the v0 mirror);
+  prioritized defaults are the one sanctioned speculative context.
+- The **base rule** is a default like any other; the initialisation
+  default, when present, sits below it (ch. 7.3). The textual nesting of
   art. 4 — "geldt niet indien …, dat laatste geldt weer niet indien …"
   — is surface form: the frontend desugars each nested layer to a
   self-contained justification (conjoining its enclosing layer's), so
-  rungs carry independent conditions and top-down fall-through decides.
-  The ladder stays **first-class IR structure**: compiling it into a
+  defaults carry independent conditions and top-down fall-through decides.
+  The group stays **first-class IR structure**: compiling it into a
   DNF would erase exactly the layers legal amendments edit (the
   exercise-2 finding).
-- **Parallel grounds** (art. 4bis "evenmin") are *separate ladders*,
-  each on its own target, composing conjunctively downstream (each
-  ground guards its consumer independently). Multiple ladders on **the
-  same** target are admissible only as **declared-unordered** parallel
-  defaults — the IR makes priority explicit (rungs in one ladder) or
-  explicitly absent (separate ladders on one target); there is no
-  implicit order between ladders. That declared absence is exactly the
+- **Parallel grounds** (art. 4bis "evenmin") are *separate defaults
+  groups*, each on its own target, composing conjunctively downstream (each
+  ground guards its consumer independently). Multiple defaults groups on
+  **the same** target are admissible only as **declared-unordered**
+  parallel defaults — the IR makes priority explicit (ordered defaults in
+  one group) or explicitly absent (separate groups on one target); there is
+  no implicit order between groups. That declared absence is exactly the
   over-determination surface of ch. 7.2.
-- **Single-writer, reconciled (ch. 5.2):** the ladder *is* the
+- **Single-writer, reconciled (ch. 5.2):** the defaults group *is* the
   sanctioned form of "many grounds, one target". WF-026's single-writer
-  principle lifts from "one rule per target" to "one ladder — or one
-  declared-unordered ladder group — per target"; because a ladder
-  evaluates as one writer to one outcome, ch. 5.2's confluence argument
+  principle lifts from "one rule per target" to "one defaults group — or
+  one declared-unordered default group — per target"; because a defaults
+  group evaluates as one writer to one outcome, ch. 5.2's confluence argument
   carries over unchanged, and the declared-unordered group is the one
   place it deliberately does not (ch. 7.2's channel is the price, paid
   loudly).
@@ -2413,20 +2439,20 @@ specialised by what the ASP hand-exercises established
 The two failure directions stay distinct (row 8, the Catala
 EmptyError/ConflictError shape), mapped onto this IR's own discipline:
 
-- **Under-determination** — no rung of any ladder on the target
+- **Under-determination** — no default of any group on the target
   decides: nothing is written and the target ends as the fact base
   holds it — leeg absent an input value (ch. 7.1).
   **Decided here (a tracked deviation from Catala, `CONSTRUCTS.md`
   row 8):** Catala's catchable ∅ (EmptyError) maps to ordinary leeg,
   consistent in spirit with the ch. 1.4 empty-as-value decision but
-  decided in this chapter, not by it. *Within* a ladder, Catala's
+  decided in this chapter, not by it. *Within* a defaults group, Catala's
   ∅-fallback survives structurally as fall-through; *across*
   compositions it does not — a Catala frontend must compile
-  enclosing-default fallback into ladder structure, never into an
+  enclosing-default fallback into defaults structure, never into an
   error bit. That reconciliation is a recorded Phase-5 obligation.
   Honest inexpressibility stays with `Onopgelost` (WF-044) — a default
   never masks an Unresolved node (row 7, the OpenFisca lesson).
-- **Over-determination** — two ladders of one **declared-unordered
+- **Over-determination** — two defaults groups of one **declared-unordered
   group** on one target both decide and the decisions differ: the
   group **does not write** (the target keeps what the fact base
   holds — its input value, or leeg) and one **§9.5 channel fact**
@@ -2439,41 +2465,42 @@ EmptyError/ConflictError shape), mapped onto this IR's own discipline:
   deliberately fatal and uncatchable; a readable conflict fact would
   exceed even that, toward meta-defeasible repair rules, and the
   statute pattern that seems to want it (samenloop) is a priority
-  declaration — an ordered ladder — not a conflict reader. Reopening
+  declaration — an ordered defaults group — not a conflict reader. Reopening
   later is additive (`spec/proposals/PHASE4-DEFAULTS.md` §6). Equal
   decisions are no conflict (idempotence, ch. 5.1) — a tracked
   deviation from Catala, which conflicts on any two simultaneous
   non-empty exceptions regardless of value equality (`CONSTRUCTS.md`
   row 8). A
-  single ladder cannot reach this outcome (ch. 7.1); the channel is
+  single defaults group cannot reach this outcome (ch. 7.1); the channel is
   exercised exactly by declared-unordered simultaneity — and a linear
-  ladder never pays it (the exercise-2 finding, now by construction).
-  A sub-group nested in a rung (ch. 7.9) reconciles by this same rule at
+  chain never pays it (the exercise-2 finding, now by construction).
+  A sub-group nested in a default (ch. 7.9) reconciles by this same rule at
   its own level; a differing sub-group propagates the conflict to the
-  root — no write, one **path-keyed** §9.5 fact (`Onderwerp.doel/<rung
-  index path>`) distinguishing a nested conflict from a root one.
-- **Characteristic targets**: the ladder computes its one boolean
+  root — no write, one **path-keyed** §9.5 fact
+  (`Onderwerp.doel/<default index path>`) distinguishing a nested conflict
+  from a root one.
+- **Characteristic targets**: the defaults group computes its one boolean
   decision at the fixpoint of its justification strata (ch. 7.1);
-  do-not-attribute means the ladder derives nothing. On a
+  do-not-attribute means the group derives nothing. On a
   declared-unordered characteristic group, differing decisions
   (attribute vs do-not-attribute) are over-determination like any
   other; under-determination is the ordinary absent characteristic.
 
-### 7.3 Initialisation is the lowest rung
+### 7.3 Initialisation is the lowest default
 
 The §9.6 initialisation (ch. 5.4) *is* a default: justification "the
-target is empty in the input facts", consequence its value — the rung
+target is empty in the input facts", consequence its value — the default
 below the base rule. The fall-through semantics reproduces ch. 5.4's
-operational account case by case: a computing rung with a holding
+operational account case by case: a computing default with a holding
 condition and a gevuld outcome supplies the value (computed wins — 50
-in the ch. 5.1 chain example); a computing rung that evaluates **leeg
+in the ch. 5.1 chain example); a computing default that evaluates **leeg
 falls through**, so the initialisation still fills the empty target
 (25 — exactly ch. 5.4's "the initialisation still matches"); an
 input-supplied target fails the initialisation's own justification and
 is left standing; the initialisation alone fills the empty target
 (25). The worked pair of ch. 5.4 is binding unchanged. Phase 4 changes
 the *justification* from mechanism (a guard) to declaration (the
-lowest rung), so the Drools lowering derives the guard instead of
+lowest default), so the Drools lowering derives the guard instead of
 embodying it.
 
 ### 7.4 What defeasibility is *not* — and what it must not break
@@ -2484,83 +2511,83 @@ embodying it.
   Keeping these mechanisms apart is normative; conflating them is how
   salience leaked into v0.
 - **Stratification extends to displacement, it is not replaced by
-  priority.** Which rung decides depends on *every* rung's
-  justification — a read serves its own rung and the displacement of
-  every rung below it alike — so **all rung-justification reads join
-  the ch. 6 dependency graph as negative edges** toward the ladder's
+  priority.** Which default decides depends on *every* default's
+  justification — a read serves its own default and the displacement of
+  every default below it alike — so **all default-justification reads
+  join the ch. 6 dependency graph as negative edges** toward the group's
   write, regardless of whether they test characteristics or attributes
-  (the conservative reading: the ladder decides once, at the fixpoint
+  (the conservative reading: the group decides once, at the fixpoint
   of all its justification producers). This is an **extension of the
   ch. 6.1 edge classes** (which today carry only negated
   characteristic reads and channel tests) that lands together with the
-  ladder node. This is
-  precisely the debt ch. 6.1's residual note ("conditions on
+  prioritized-defaults node. This is precisely the debt ch. 6.1's residual note ("conditions on
   attribute-writing forms read positively here … await the default
-  model of ch. 7") assigns to this chapter: the ladder is where a
-  condition's failure becomes observable displacement, so the ladder's
+  model of ch. 7") assigns to this chapter: the defaults group is where a
+  condition's failure becomes observable displacement, so the group's
   edges carry the negativity. WF-045/046's *principles* — no negative
   edge on any cycle; strata exist — apply to the extended graph;
-  WF-051 states exactly that. A ladder whose rungs cyclically depend
-  on the ladder's own output is thereby ill-formed — no salience-like
+  WF-051 states exactly that. A defaults group whose defaults cyclically
+  depend on the group's own output is thereby ill-formed — no salience-like
   escape hatch. (Within one session evaluation there is still no
-  retraction: the ladder decides once, at the fixpoint of its
+  retraction: the group decides once, at the fixpoint of its
   justification strata, per ch. 5.3's staging.)
 - **Strict-versus-defeasible tagging and cross-rule override**
   (LegalRuleML) are recorded refinements, not v1-design scope.
 
 ### 7.5 The lowering table (each row a derivation, not a mechanism)
 
-One derived predicate carries the whole table: `decides_m` — rung *m*'s
+One derived predicate carries the whole table: `decides_m` — default *m*'s
 justification holds ∧ (attribute target: its consequence body derives a
 gevuld value; characteristic target: always — the boolean decision).
 
 | Declared (ch. 7) | ASP (`backends/clingo`) | Drools (the first-frontend toolchain) | Replaces |
 |---|---|---|---|
-| ladder rung *n* | its outcome rule carries `not decides_m` for each higher rung *m* (the nested art. 4 chain of `ASP-TRANSLATION.md` ch. 6.1 is the desugared characteristic special case) | generated guard from the higher rungs' `decides` conditions | the salience −1 trick — becomes derivable output |
+| default *n* | its outcome rule carries `not decides_m` for each higher default *m* (the nested art. 4 chain of `ASP-TRANSLATION.md` ch. 6.1 is the desugared characteristic special case) | generated guard from the higher defaults' `decides` conditions | the salience −1 trick — becomes derivable output |
 | fall-through on leeg (attribute) | `decides_n` is underivable when the consequence body is — absence composes | consequence-null guard | nothing (v0 cannot express it) |
-| speculative rung evaluation (ch. 7.1) | channel deposits of a rung's arithmetic are **guarded derivations** — the `inconsistent/2` rule for a rung's transient carries `decides_n` in its body (ASP has no retraction; the guard is the speculation) | evaluate the deciding rung only | v0's persist-always transients (the ch. 6.1 residual (b), here scoped) |
-| initialisation rung | NAF over the input fact | the empty-guard of ch. 5.4 | the hard-coded guard |
+| speculative default evaluation (ch. 7.1) | channel deposits of a default's arithmetic are **guarded derivations** — the `inconsistent/2` rule for a default's transient carries `decides_n` in its body (ASP has no retraction; the guard is the speculation) | evaluate the deciding default only | v0's persist-always transients (the ch. 6.1 residual (b), here scoped) |
+| initialisation default | NAF over the input fact | the empty-guard of ch. 5.4 | the hard-coded guard |
 | declared-unordered group | both `decides` ∧ decisions differ → `inconsistent/2`, no `val/3` | §9.5 channel insert, no write | silent last-writer-wins |
 
 ### 7.6 Worked examples (absolute; binding on the Phase-4 cards)
 
-1. **The art. 4 ladder** (the Marrit dossier and its four
+1. **The art. 4 defaults group** (the Marrit dossier and its four
    single-difference variants, `ASP-TRANSLATION.md` ch. 6.2), after
-   desugaring to self-contained justifications — a characteristic
-   ladder, so every justified rung decides (ch. 7.1): refused → the
-   base rung decides *excluded*; refused ∧ herroepen → the middle rung
-   decides *do-not-attribute* and displaces the base (Marrit: not
-   excluded, recht); refused ∧ herroepen ∧ vervallen → the top rung
-   decides *excluded* again. Each dossier variant's absolute outcome as
-   the hand-runs pin them (`ASP-TRANSLATION.md` ch. 6.3 runs match).
-   These become golden cases verbatim when the ladder node lands.
+   desugaring to self-contained justifications — characteristic
+   defaults, so every justified default decides (ch. 7.1): refused → the
+   base default decides *excluded*; refused ∧ herroepen → the middle
+   default decides *do-not-attribute* and displaces the base (Marrit: not
+   excluded, recht); refused ∧ herroepen ∧ vervallen → the highest
+   default decides *excluded* again. Each dossier variant's absolute
+   outcome as the hand-runs pin them (`ASP-TRANSLATION.md` ch. 6.3 runs match).
+   These become golden cases verbatim when the prioritized-defaults node
+   lands.
 2. **Initialisation**: the ch. 5.4 pair (50 with the chain, 25 alone)
-   unchanged, **plus** the fall-through case pinned: a computing rung
+   unchanged, **plus** the fall-through case pinned: a computing default
    whose outcome is leeg over an empty target with initialisation 25 →
    **25**, never leeg.
 3. **Conflict**: a declared-unordered group writing 10 and 20 to one
    empty target → the target stays **leeg**, the channel carries one
-   fact (target form × subject); the same two defaults ordered as a
-   ladder → **20 is the outcome iff it is the higher rung** and no
+   fact (target form × subject); the same two defaults ordered as one
+   group → **20 is the outcome iff it is the higher default** and no
    channel fact; the same group both writing 10 → **10**, no conflict
    (equal values).
 
 ### 7.7 The v0 desugaring
 
-How the existing v0 rule forms read as ladders — the lowering that
-retires ch. 5.4's guard as mechanism (ch. 7.3) and lets a backend
+How the existing v0 rule forms read as prioritized defaults — the lowering
+that retires ch. 5.4's guard as mechanism (ch. 7.3) and lets a backend
 serve the old forms through the new machinery:
 
-| v0 form(s) on one (type, attribute) target | Ladder reading |
+| v0 form(s) on one (type, attribute) target | Defaults reading |
 |---|---|
-| **exactly one** unconditional, version-free Initialisatie | the ch. 7.3 initialisation rung (lowest) |
-| plus at most one version-free computing rule (Gelijkstelling/Berekening) | plus one rung above it: justification = its condition (an unconditional rule gets the vacuously true empty-ALLE), consequence = its value |
+| **exactly one** unconditional, version-free Initialisatie | the ch. 7.3 initialisation default (lowest) |
+| plus at most one version-free computing rule (Gelijkstelling/Berekening) | plus one default above it: justification = its condition (an unconditional rule gets the vacuously true empty-ALLE), consequence = its value |
 
 The initialisation is what the desugaring exists for — and what keeps
 the two readings extensionally equal on the confluent domain. A **bare
 computation without one stays outside the desugaring** — but no longer
 native-v0: the ch. 7.8 standing norm (decided 2026-08-20) gives it the
-ladder reading directly — a computed leeg leaves the input standing —
+defaults reading directly — a computed leeg leaves the input standing —
 with the v0 erase-on-leeg retired as a tracked delta. What this
 chapter could not do silently, ch. 7.8 does openly. (The v0 erase
 itself had no absence encoding on the ASP native path — the recorded
@@ -2576,10 +2603,10 @@ guard conjoined, which is not a writable condition — WF-051 forbids
 reading the own target), **versioned forms** (version selection is
 temporal, ch. 7.4 — folding windows into justifications would conflate
 the two mechanisms), and **multiple computing rules on one target**
-(their v0 meaning is agenda order — exactly what the ladder exists to
-replace; ordering them needs authorial intent, not a transformation).
-A single characteristic attribution is trivially its own one-rung
-ladder — recorded, not transformed.
+(their v0 meaning is agenda order — exactly what prioritized defaults
+exist to replace; ordering them needs authorial intent, not a
+transformation). A single characteristic attribution is trivially its own
+one-default group — recorded, not transformed.
 
 **The pinned delta, and the mirror hole it repairs.** In the confluent
 domain — the computing rule evaluates gevuld or does not fire — the
@@ -2587,14 +2614,14 @@ two readings agree, and that agreement is machine-checked: the anchor
 `corpus/golden/anchor/jutterswet-waardering-v0vorm` carries the v0
 forms, `ref/` replays them **natively** (ch. 5.4 semantics) while the
 ASP backend translates the **desugared** document (`Ir_v0.Desugar`,
-the table above, through the ch. 6.1 ladder machinery) — gate 6
+the table above, through the ch. 6.1 defaults machinery) — gate 6
 demands both readings coincide. Outside it, a computing rule that
 evaluates **leeg** beside an initialisation was *divergent* in the v0
 reading: the empty write (ch. 1.2g) and the refill alternate and no
 fixpoint exists, so `ref/`'s native replay faulted on the pass budget
-while the desugared ladder answered cleanly — a corner only prose
+while the desugared defaults answered cleanly — a corner only prose
 could pin (a fault is not an expectation). **Closed with ch. 7.8
-(2026-08-20):** `ref/` now carries the ladder reading natively on the
+(2026-08-20):** `ref/` now carries the defaults reading natively on the
 desugaring domain too — the leeg-evaluating rule writes nothing (the
 shared `desugared_targets` predicate), the init or input decides, and
 the corner is machine-pinned by the anchor's
@@ -2604,25 +2631,25 @@ reason-carrying gate-7 survivor). The desugaring therefore repairs a
 hole rather than preserving it — and the repair is now witnessed
 differentially instead of recorded as prose.
 
-### 7.8 The input rung and the standing norm (decided 2026-08-20)
+### 7.8 The input default and the standing norm (decided 2026-08-20)
 
 The case input on a defaults-carrying target is itself a default —
-restated as the **virtual input rung**: between the lowest ordinary
-rung and the initialisation rung sits an implicit rung whose
+restated as the **virtual input default**: between the lowest ordinary
+default and the initialisation default sits an implicit default whose
 justification is "the target is **gevuld** in the input facts" and
 whose consequence is that input value — the exact dual of the
-initialisation rung (ch. 7.3). Like the initialisation rung's, its
+initialisation default (ch. 7.3). Like the initialisation default's, its
 justification reads the input world and contributes no dependency
 edges. This is a re-description of ch. 7.1's "the target keeps what
 the fact base holds" — every outcome of ch. 7.3 and 7.6.2 derives from
-"the highest rung that decides wins" alone — and it generalises beyond
-declared ladders:
+"the highest default that decides wins" alone — and it generalises beyond
+declared defaults:
 
 **The standing norm.** A **version-free scalar computing rule
 (Gelijkstelling/Berekening) that is its target's only writer** — no
 second rule, no initialisation beside it (that pair is the ch. 7.7
-desugaring's domain), no ladder, no allocation, no creation-time
-write — decides **like a rung**: its justification is its condition,
+desugaring's domain), no defaults group, no allocation, no creation-time
+write — decides **like a default**: its justification is its condition,
 and it decides only when its value evaluates **gevuld**. A **leeg
 evaluation writes nothing**: the target keeps what the fact base
 holds — the case-supplied input value, or leeg. The v0 mirror wrote
@@ -2630,9 +2657,9 @@ the computed leeg over the input (ch. 1.2g); that erase is retired on
 this domain as a **tracked delta** (`CONSTRUCTS.md` rows 8/18) —
 decided openly where ch. 7.7 records it as the reason the bare form
 could not be desugared silently. Channel deposits of the evaluation
-persist as in any ordinary evaluation — the ladder remains the one
-sanctioned speculative context (ch. 7.1). Together with ch. 7.7, every
-scalar single-writer form now carries the ladder reading:
+persist as in any ordinary evaluation — prioritized defaults remain the
+one sanctioned speculative context (ch. 7.1). Together with ch. 7.7, every
+scalar single-writer form now carries the defaults reading:
 initialisation alone and initialisation-beside-computation through the
 desugaring, the bare computation through this norm.
 
@@ -2647,8 +2674,8 @@ input, computing 50 → **50**. The two standing outcomes satisfy a
 do-nothing executor by construction — the standing *is* what they
 test — so they are reason-carrying gate-7 survivors. The domain
 predicate is shared between the executors (one definition), the ASP
-entry is the ladder's `inputval/3` with an effectiveness atom carrying
-condition **and** value bindings (a condition-only atom would encode
+entry is the defaults group's `inputval/3` with an effectiveness atom
+carrying condition **and** value bindings (a condition-only atom would encode
 the v0 erase instead — the atom's body is the semantic choice).
 **The timeline arm (decided by the maintainer 2026-08-21, the
 temporal-standing card's numbered question — whole-timeline over
@@ -2659,8 +2686,8 @@ count) as its only writer. The rule
 decides only when its result timeline is **gevuld** (at least one
 segment); an empty result is the temporal leeg (empty == never-written,
 ch. 3.1) and **writes nothing**, so a case-supplied input timeline
-stands — **whole**: the ladder reading is per target, never per bucket
-(a rung decides once, and ch. 3.11's timeline write replaces the whole
+stands — **whole**: the defaults reading is per target, never per bucket
+(a default decides once, and ch. 3.11's timeline write replaces the whole
 attribute timeline), so input and computed segments never interleave. A
 deciding fold displaces the input timeline entirely (worked, absolute —
 the anchor `jutterswet-borgdeel` verbatim: a non-deciding fold over
@@ -2672,78 +2699,78 @@ versioned targets (selection is temporal, ch. 7.4 — never defeasible).
 
 ### 7.9 Nested exception groups (design — the Phase-5c gate)
 
-*Status: normative design; the wire form is `Rung.excepties` (`IR-SPEC.md`
+*Status: normative design; the wire form is `Default.excepties` (`IR-SPEC.md`
 ch. 6.1, WF-075), an extension field, never emitter-produced. The worked
 examples below are the anchors `jutterswet-nestuitzondering` (attribute
 target) and `jutterswet-nestkenmerk` (characteristic target).*
 
-Ch. 7.1's ladder is a **chain**; ch. 7.2's declared-unordered group is
-**root-level branching**. What neither expresses is **branching below the
+Ch. 7.1's defaults group is a **chain**; ch. 7.2's declared-unordered group
+is **root-level branching**. What neither expresses is **branching below the
 root** — a chain whose exceptions themselves branch. Phase 5c adds it as
 one concept applied recursively (`PHASE4-DEFAULTS.md` §7 option i,
-ratified 2026-08-22): a rung's exception slot may hold a **sub-group** —
-`excepties = { ongeordend, leden }`, each member a `SubLadder` (a rung
-chain, descending, highest first, inheriting the root target and itself
-nesting via `Rung.excepties`). A sub-ladder carries **no target of its
-own**. Two rung shapes result:
+ratified 2026-08-22): a default's exception slot may hold a **sub-group** —
+`excepties = { ongeordend, leden }`, each member an `ExceptionGroup` (a
+default chain, descending, highest first, inheriting the root target and
+itself nesting via `Default.excepties`). An exception group carries **no
+target of its own**. Two default shapes result:
 
-- a **form-a rung** — own justification/consequence (or besluit) **and**
+- a **form-a default** — own justification/consequence (or besluit) **and**
   `excepties`: the sub-group goes first (below), and its own
   justification/consequence is the **fall-back** when the sub-group
   decides nothing;
-- a **group-rung** — `excepties` with no own justification/consequence/
+- a **group-default** — `excepties` with no own justification/consequence/
   besluit: a chain position carrying a *multi-member base group* (or a
   further exception group), whose members reconcile as an unordered
   group.
 
-**The recursive reading.** A rung carrying `excepties` first **reconciles
+**The recursive reading.** A default carrying `excepties` first **reconciles
 its sub-group exactly as the root group reconciles** (ch. 7.2): each
-member decides independently (its own highest deciding rung, recursively),
-and
+member decides independently (its own highest deciding default,
+recursively), and
 
 - if the deciding members **agree** — one member decides, or several
   decide **equal** values/besluiten — that is the sub-group's decision,
-  and it **is the rung's decision** (the equal-decisions rule of ch. 7.2
+  and it **is the default's decision** (the equal-decisions rule of ch. 7.2
   holds at every level: agreeing grounds are no conflict);
-- if **no member decides**, the sub-group is empty and the rung **falls
-  back**: a form-a rung to its own justification/consequence (deciding, or
-  falling through, like a plain rung); a group-rung decides nothing and
-  the ladder falls through to the next lower rung;
+- if **no member decides**, the sub-group is empty and the default **falls
+  back**: a form-a default to its own justification/consequence (deciding,
+  or falling through, like a plain default); a group-default decides
+  nothing and the chain falls through to the next lower default;
 - if two members **decide differently**, that is the branch-below-the-root
   conflict, and it **propagates to the root** (vraag 5, decided
-  2026-08-22, option A): the ladder **does not write** (the target keeps
+  2026-08-22, option A): the group **does not write** (the target keeps
   what the fact base holds — its input value, or leeg) and one **§9.5
-  channel fact** records it, keyed by the target form **plus the rung
-  index path** — `Onderwerp.doel/<rungindexpad>` (e.g. `Jutter.heffing/0`
-  for the sub-group of rung 0; a root-level conflict keeps its bare
-  `Jutter.heffing`). The path suffix keeps a nested conflict
+  channel fact** records it, keyed by the target form **plus the default
+  index path** — `Onderwerp.doel/<defaultindexpad>` (e.g.
+  `Jutter.heffing/0` for the sub-group of default 0; a root-level conflict
+  keeps its bare `Jutter.heffing`). The path suffix keeps a nested conflict
   distinguishable from a root one. This is **uniform with the root
   reading** (a differing group does not write) and **Catala-faithful**:
   Catala's `⊛` propagates up the default tree (D-ContextConflictError),
   and this reading follows that propagation **minus the fatality** we
   already made observable (ch. 7.2; the deviation extends the tracked
-  row-8 record in `CONSTRUCTS.md`). The initialisation rung (ch. 7.3) and
-  the input rung (ch. 7.8) stay **root-only** — a sub-rung is never an
-  initialisation or input rung (WF-075).
+  row-8 record in `CONSTRUCTS.md`). The initialisation default (ch. 7.3)
+  and the input default (ch. 7.8) stay **root-only** — a sub-default is
+  never an initialisation or input default (WF-075).
 
-**Displacement of a lower rung's sub-group.** Ch. 7.1's rule — the
-highest deciding rung of a chain wins, lower rungs never reached —
-extends to settling **by conflict**: a rung **settles** when its
-sub-group decides *or* conflicts. A strictly-higher settling rung
+**Displacement of a lower default's sub-group.** Ch. 7.1's rule — the
+highest deciding default of a chain wins, lower defaults never reached —
+extends to settling **by conflict**: a default **settles** when its
+sub-group decides *or* conflicts. A strictly-higher settling default
 (deciding or conflicting) therefore **displaces the entire sub-group of
-every lower rung, including that lower sub-group's path-keyed §9.5
+every lower default, including that lower sub-group's path-keyed §9.5
 fact** — a displaced sub-group is never reached, so neither its decision
 nor its conflict surfaces. This is the chain reading applied to the
 nested form: the conflict a lower sub-group *would* deposit is
-speculative until its rung is reached, and a higher settling rung keeps
+speculative until its default is reached, and a higher settling default keeps
 it from ever being reached. (The corollary the executors must honour:
 the path-keyed `subject.target/<path>` fact of a displaced sub-group
 must not be emitted — a bare differing-pair signal without the
 displacement wait is an incoherent model. Witnessed by
 `jutterswet-nestuitzondering/case9-verdrongen-conflict`: input
-`grondX + grondB1 + grondB2` settles rung 0 at **40.00** on its empty
-sub-group, so the base group-rung's `grondB1`-vs-`grondB2` conflict at
-`Jutter.heffing/1` is displaced — the ladder writes 40.00, consistent,
+`grondX + grondB1 + grondB2` settles default 0 at **40.00** on its empty
+sub-group, so the base group-default's `grondB1`-vs-`grondB2` conflict at
+`Jutter.heffing/1` is displaced — the group writes 40.00, consistent,
 **no** `/1` fact.)
 
 The **binding acceptance test** is `PHASE4-DEFAULTS.md` §7's spurious-
@@ -2760,60 +2787,61 @@ recursively.
 **Worked examples (absolute; the anchors verbatim, both target kinds).**
 
 *Attribute target* — `jutterswet-nestuitzondering`, `Jutter.heffing`
-(2 decimals). One ladder: rung 0 = form-a `grondX → 40.00` with an
-unordered sub-group `{ grondY → 10.00, grondZ → 20.00, grondW → 10.00 }`;
-rung 1 = a group-rung carrying the unordered base group
+(2 decimals). One defaults group: default 0 = form-a `grondX → 40.00` with
+an unordered sub-group `{ grondY → 10.00, grondZ → 20.00, grondW → 10.00 }`;
+default 1 = a group-default carrying the unordered base group
 `{ grondB1 → 15.00, grondB2 → 25.00 }`.
 
 | Case | Input characteristics | `heffing` | Channel |
 |---|---|---|---|
 | `case1-alleen-y` | grondX, grondY | **10.00** | consistent — the spurious-conflict test: only `y` decides in the sub-group |
 | `case2-alleen-z` | grondX, grondZ | **20.00** | consistent |
-| `case3-verschillend` | grondX, grondY, grondZ | **leeg** | inconsistent `Jutter.heffing/0` — the sub-group of rung 0 decides 10 and 20 |
+| `case3-verschillend` | grondX, grondY, grondZ | **leeg** | inconsistent `Jutter.heffing/0` — the sub-group of default 0 decides 10 and 20 |
 | `case4-gelijk` | grondX, grondY, grondW | **10.00** | consistent — equal sub-decisions (10 and 10) are no conflict |
-| `case5-terugval` | grondX | **40.00** | consistent — empty sub-group falls back to rung 0's own consequence |
-| `case6-basis` | grondB1 | **15.00** | consistent — rung 0 undecided, the base group-rung decides |
+| `case5-terugval` | grondX | **40.00** | consistent — empty sub-group falls back to default 0's own consequence |
+| `case6-basis` | grondB1 | **15.00** | consistent — default 0 undecided, the base group-default decides |
 | `case7-basisconflict` | grondB1, grondB2 | **leeg** | inconsistent `Jutter.heffing/1` — the base group decides 15 and 25 |
 | `case8-niets` | (none) | **leeg** | consistent — nothing decides; a no-op-survivor (gate 7) |
 
 *Characteristic target* — `jutterswet-nestkenmerk`, `Jutter.vrijgesteld`.
-One ladder: rung 0 = form-a `nx → attribute (besluit true)` with an
-unordered sub-group `{ ny → do-not-attribute (false), nz → attribute
+One defaults group: default 0 = form-a `nx → attribute (besluit true)` with
+an unordered sub-group `{ ny → do-not-attribute (false), nz → attribute
 (true) }`.
 
 | Case | Input characteristics | `vrijgesteld` | Channel |
 |---|---|---|---|
 | `case1-y-wint` | nx, ny | **absent** | consistent — the sub-decision `false` displaces `nx`'s `true` |
 | `case2-conflict` | nx, ny, nz | **absent** | inconsistent `Jutter.vrijgesteld/0` — the sub-group decides `false` and `true` |
-| `case3-terugval` | nx | **present** | consistent — empty sub-group falls back to rung 0's own besluit `true` |
+| `case3-terugval` | nx | **present** | consistent — empty sub-group falls back to default 0's own besluit `true` |
 
 *Nest depth* — `jutterswet-nestdiepte`, `Jutter.heffing` (2 decimals),
-three levels deep. One ladder: rung 0 = form-a `grondX → 40.00` with an
-unordered sub-group of two siblings `{ s0 = grondY → 10.00; s1 =
+three levels deep. One defaults group: default 0 = form-a `grondX → 40.00`
+with an unordered sub-group of two siblings `{ s0 = grondY → 10.00; s1 =
 grondP → 30.00 with its own unordered sub-group { grondQ → 5.00,
 grondR → 25.00 } }`. `s0` and `s1` are unordered siblings — they
 reconcile as a group, they do not displace each other. The path suffix
-is the **rung-index path**, so the innermost conflict keys at
-`Jutter.heffing/0/0` (rung 0 of the root chain, then rung 0 of `s1`).
+is the **default-index path**, so the innermost conflict keys at
+`Jutter.heffing/0/0` (default 0 of the root chain, then default 0 of `s1`).
 
 | Case | Input characteristics | `heffing` | Channel |
 |---|---|---|---|
-| `case1-diep-pad` | grondX, grondP, grondQ | **5.00** | consistent — the clean deep path: only `grondQ` decides in the innermost sub-group, and the single decision bubbles up unchanged (5.00 → s1 → rung 0) |
+| `case1-diep-pad` | grondX, grondP, grondQ | **5.00** | consistent — the clean deep path: only `grondQ` decides in the innermost sub-group, and the single decision bubbles up unchanged (5.00 → s1 → default 0) |
 | `case2-diep-conflict` | grondX, grondP, grondQ, grondR | **leeg** | inconsistent `Jutter.heffing/0/0` — the innermost sub-group decides 5.00 and 25.00; the deep conflict propagates through the sibling group to the root |
-| `case3-terugval` | grondX | **40.00** | consistent — nothing below decides; rung 0 falls back to its own consequence |
+| `case3-terugval` | grondX | **40.00** | consistent — nothing below decides; default 0 falls back to its own consequence |
 
-**Well-formedness and strata.** WF-050 recurses its rung-shape checks
-into sub-rungs (content per target kind; a group-rung carries `excepties`
-and no own content; a contentless rung is WF-075's concern). WF-051 needs
+**Well-formedness and strata.** WF-050 recurses its default-shape checks
+into sub-defaults (content per target kind; a group-default carries
+`excepties` and no own content; a contentless default is WF-075's
+concern). WF-051 needs
 **no change**: `dep_forms` folds **every descendant read** (justifications
-and consequences, recursively through sub-rungs) into the root ladder's
-negative edges, so a cycle through a sub-rung read is caught unchanged (a
-sub-rung reading its own root target is ill-formed). WF-075 governs the
-nested form itself (members ≥ 1, the unordered-multiplicity rule at every
-level, no initialisation in sub-rungs, the contentless rung). The ASP
-lowering of the nested form — a per-path predicate family, with value
-priority between a sub-group's outcome and a form-a rung's own consequence
-— is real design work carried by the executor card, proven by these
+and consequences, recursively through sub-defaults) into the root group's
+negative edges, so a cycle through a sub-default read is caught unchanged
+(a sub-default reading its own root target is ill-formed). WF-075 governs
+the nested form itself (members ≥ 1, the unordered-multiplicity rule at
+every level, no initialisation in sub-defaults, the contentless default).
+The ASP lowering of the nested form — a per-path predicate family, with
+value priority between a sub-group's outcome and a form-a default's own
+consequence — is real design work carried by the executor card, proven by these
 anchors.
 
 ## 9. Sum types and match
@@ -2833,7 +2861,7 @@ declared payload datatype. It is *gevuld* by construction, and it
 **never carries a leeg payload**: a `Construct` whose argument evaluates
 leeg propagates — the whole `Construct` evaluates leeg (the ch. 1.3
 strict default; constructing "a grant of nothing" is not expressible,
-exactly as a ladder never writes leeg, ch. 7.1).
+exactly as prioritized defaults never write leeg, ch. 7.1).
 
 Worked (the `jutterswet-beschikkingsom` anchor's declarations —
 `beschikking` = `Toegekend(bedrag: 2 decimals)` | `Afgewezen` |
@@ -2903,8 +2931,8 @@ cross-sum-type comparison is ill-formed, never false). Then:
 
 Structural equality is the equality used by the three consumers that
 need one: idempotent writes (ch. 5.1), timeline segment
-change-detection (ch. 3.1, as amended), and the ladder's
-equal-decisions-are-no-conflict rule (ch. 7.5) — two rungs both
+change-detection (ch. 3.1, as amended), and the defaults'
+equal-decisions-are-no-conflict rule (ch. 7.5) — two defaults both
 deciding `Toegekend(1250.50)` are equal decisions, not a conflict.
 
 Worked (the anchor's condition rules — `bevoorschot` iff `beschikking`
@@ -2919,11 +2947,11 @@ Worked (the anchor's condition rules — `bevoorschot` iff `beschikking`
   exactly one empty → waar, Tabel 44); pinned absolutely in the anchor's
   case 4.
 
-### 9.4 Carriage, ladders, timelines
+### 9.4 Carriage, defaults, timelines
 
-- **Ladders and standing.** A sum-typed attribute target changes no
-  ladder semantics: the decide-test stays gevuld/leeg and never
-  inspects the tag (ch. 7.1); a rung wanting "decide only for
+- **Defaults and standing.** A sum-typed attribute target changes no
+  defaults semantics: the decide-test stays gevuld/leeg and never
+  inspects the tag (ch. 7.1); a default wanting "decide only for
   constructor X" puts a match or a ch. 9.3 equality in its
   justification. The ch. 7.8 standing norm carries over unchanged.
 - **Case carriage.** Constructor values ride the case format's value
@@ -2998,7 +3026,7 @@ at the fold's boundary (init, source), never in its interior.
   strict `Let` bodies, ch. 10.6): evaluate the condition under the
   ordinary ch. 1.2 comparison discipline, its operands disciplined to
   bound-non-leeg reads by WF-077; evaluate exactly the chosen branch —
-  strict, no coalesce, the rung-justification mirror.
+  strict, no coalesce, the default-justification mirror.
 - **Invoke**: evaluate the arguments strictly (a leeg argument
   propagates leeg without entering the body), bind, evaluate the
   closed body. Recursion does not exist (WF-067), so termination is
@@ -3221,8 +3249,8 @@ Then:
 
 Structural equality is the equality used by the three consumers that need
 one: idempotent writes (ch. 5.1), timeline segment change-detection
-(ch. 3.1, as amended), and the ladder's equal-decisions-are-no-conflict
-rule (ch. 7.5) — two rungs both deciding `{waarde: 125.50, telling: 2}`
+(ch. 3.1, as amended), and the defaults' equal-decisions-are-no-conflict
+rule (ch. 7.5) — two defaults both deciding `{waarde: 125.50, telling: 2}`
 are equal decisions, not a conflict.
 
 Worked (the anchor's `dubbel` iff `dossier` = `{waarde: 120.50, telling:
@@ -3235,7 +3263,7 @@ Worked (the anchor's `dubbel` iff `dossier` = `{waarde: 120.50, telling:
   makes `=` onwaar, Tabel 38) but `afwijkend` **aanwezig** (inequality:
   exactly one empty makes `≠` waar, Tabel 44 — pinned absolutely).
 
-### 11.3 Carriage, ladders, timelines
+### 11.3 Carriage, defaults, timelines
 
 - **Case carriage.** Record values ride the case format's value union as
   `{ "struct": { field: value, … } }`; `list` already recurses, so a list
@@ -3257,8 +3285,8 @@ Worked (the anchor's `dubbel` iff `dossier` = `{waarde: 120.50, telling:
   backend's per-field/per-element scaling, which faulted there all along).
   The anchor's `dossier` rides as `{"struct": {"waarde": {"number":
   "120.50"}, "telling": {"number": "3"}}}`.
-- **Ladders and standing.** A struct-typed attribute target changes no
-  ladder semantics: the decide-test stays gevuld/leeg and never inspects a
+- **Defaults and standing.** A struct-typed attribute target changes no
+  defaults semantics: the decide-test stays gevuld/leeg and never inspects a
   field (ch. 7.1); the ch. 7.8 standing norm carries over unchanged.
 - **Timelines — recorded flank, not yet carried.** The value model admits
   a struct-typed temporal attribute and the case format can write one; no

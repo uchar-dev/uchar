@@ -81,28 +81,28 @@ Strength (not Override — Context's edge list §3.6 has `appliesStrength`,
 no `appliesOverride`) is attached either in a `<lrml:Context>`
 (localised) or via `<lrml:hasStrength>` (global).
 
-uchar's model is the **default ladder** (`IR-SPEC.md` ch. 6.1; RS ch. 7;
-`CONSTRUCTS.md` row 8): a first-class, per-target list of prioritised
-rungs evaluated top-down with fall-through — the highest rung that
-*decides* wins.
+uchar's model is **prioritized defaults** (`IR-SPEC.md` ch. 6.1; RS
+ch. 7; `CONSTRUCTS.md` row 8): a first-class, per-target list of
+prioritised defaults evaluated top-down with fall-through — the highest
+default that *decides* wins.
 
 | LegalRuleML concept | Verdict | Evidence and the honest boundary |
 |---|---|---|
-| **Defeasible rule** (`=>`) | **GEDEKT** | The ladder rung is exactly a defeasible conclusion: it holds unless a higher rung decides. WF-050/051; `IR-SPEC.md` ch. 6.1; RS ch. 7.1. Witnesses: `anchor/jutterswet-uitsluiting` (characteristic ladder, worked example 7.6.1), `anchor/jutterswet-vondstwaardering` (attribute ladder + leeg fall-through + initialisation rung), both replayed by gates 5–6. |
-| **Priority between conflicting rules** | **DEELS** | *Within one target* priority is first-class and explicit: `rungs` is a **descending** priority list (`IR-SPEC.md` ch. 6.1), and below-root branching nests it as a rose tree (WF-075, RS ch. 7.9; `anchor/jutterswet-nestuitzondering`, `-nestkenmerk`, `-nestdiepte`). *Across targets / across independently authored rules* there is **no** free superiority relation — see the Override row. LegalRuleML's third resolution method (preference relation) is the one uchar realises, but only intra-target; specificity and salience are not modelled (salience was deliberately removed — `CONSTRUCTS.md` row 6, PLAN §2/§4). |
-| **Override** (`<lrml:Override>`, a free `r1 > r2` pair) | **DEELS / NIET (as a free relation)** | uchar expresses override as **structure**, not as a standalone relation object: a higher rung *displaces* a lower one (RS ch. 7.1), and unordered co-writers with differing decisions route to the §9.5 conflict channel instead of silently overriding (WF-050, RS ch. 7.2; `anchor/jutterswet-toelagegronden`, six cases of which three pin the conflict path — root, kenmerk, and input-blijft conflict — while case4 pins the equal-grounds *no*-conflict flank, RS 7.6.3). What is **not** expressible: the standard's static, first-class superiority pair between two rules on **different** targets. (The *derivable* form `body => (r1 > r2)` is Antoniou's literature proposal cited in §4.2.1, not a standard requirement — see the cluster intro.) `CONSTRUCTS.md` row 8 records this precisely — "LegalRuleML adds strict-vs-defeasible tagging and cross-rule override as refinements." → candidate C2 (§7). |
-| **Defeater** (`~>`, block-only) | **DEELS** | The block-only effect exists *inside* a ladder: a characteristic rung with a false decision "derives nothing and displaces" (`IR-SPEC.md` ch. 6.1; RS ch. 7.1) — it defeats lower rungs without asserting a positive conclusion, which is the defeater's intent. But there is **no** standalone `Defeater` node that attaches to an arbitrary rule as a strength; the block is only a rung position within a target's ladder. Witness: `anchor/jutterswet-uitsluiting` (art. 4 "geen recht", a displacing non-attribution). |
-| **Strict rule** (`->`, indisputable) | **DEELS** | The nearest form is the **monotone** base: a bare computing rule decides like the lowest non-init rung (the ch. 7.8 standing norm, `anchor/jutterswet-waardestelling`), and a characteristic attribution (`KENMERKTOEKENNING`) is order-free and idempotent — extensionally a one-rung constitutive rule (`CONSTRUCTS.md` row 8, Phase-5d note). But uchar carries **no strength tag**: nothing marks a conclusion as *indisputable* vs *defeasible* on the wire. Defeasibility is expressed by *presence of a ladder*, not by a `StrictStrength`/`DefeasibleStrength` label — a structural encoding, not LegalRuleML's metadata one. |
-| **Strength tagging** (`hasStrength` / `appliesStrength`) | **NIET** | No wire slot tags a rule's strength; strength is implicit in structure (ladder ⇒ defeasible; bare rule ⇒ monotone base). Consequence: the strict/defeasible/defeater *vocabulary* is a refinement uchar does not carry — `CONSTRUCTS.md` row 8 ("strict-vs-defeasible tagging … as refinements"). Not needed for evaluation (the structure already decides); a documented deviation, folded into candidate C2. |
-| **Defeasibility over *derived* facts (stratification)** | **GEDEKT** (uchar-specific strength) | LegalRuleML leaves conflict *resolution order* to the strength model; uchar additionally guarantees a **stratified** negative-dependency graph so defeasible negation over derived characteristics is well-founded: WF-045 (acyclic), WF-046 (no negative edge on a cycle), WF-051 (no cycle through a ladder). RS ch. 6; `CONSTRUCTS.md` row 6; witness `jutterswet-penningjaar` (a verifier-clean negated read). This is where uchar is *stronger* than the LegalRuleML metamodel, which does not itself require stratification. |
-| **Discretionary defeat** (open-textured exception) | **GEDEKT** | The Jutterswet art. 5 / art. 9bis hardship power — a discretionary override — is a ladder rung whose justification is a supplied discretionary fact: `anchor/jutterswet-hardheid` (both executors), and through the Catala frontend `jutterswet-hardheidsaftrek-catala` (a `context` override lowered to a generated top rung, `CONSTRUCTS.md` row 9, gate 9). Divergence witness that the conflict channel is real: `jutterswet-tariefrecht-catala/case4-conflict` — an unordered exception sub-group where `catala interpret` aborts with `ConflictError` while uchar deposits the observable, non-fatal, path-keyed §9.5 fact (RS ch. 7.9). |
+| **Defeasible rule** (`=>`) | **GEDEKT** | A default is exactly a defeasible conclusion: it holds unless a higher default decides. WF-050/051; `IR-SPEC.md` ch. 6.1; RS ch. 7.1. Witnesses: `anchor/jutterswet-uitsluiting` (characteristic defaults, worked example 7.6.1), `anchor/jutterswet-vondstwaardering` (attribute defaults + leeg fall-through + initialisation default), both replayed by gates 5–6. |
+| **Priority between conflicting rules** | **DEELS** | *Within one target* priority is first-class and explicit: `defaults` is a **descending** priority list (`IR-SPEC.md` ch. 6.1), and below-root branching nests it as a rose tree (WF-075, RS ch. 7.9; `anchor/jutterswet-nestuitzondering`, `-nestkenmerk`, `-nestdiepte`). *Across targets / across independently authored rules* there is **no** free superiority relation — see the Override row. LegalRuleML's third resolution method (preference relation) is the one uchar realises, but only intra-target; specificity and salience are not modelled (salience was deliberately removed — `CONSTRUCTS.md` row 6, PLAN §2/§4). |
+| **Override** (`<lrml:Override>`, a free `r1 > r2` pair) | **DEELS / NIET (as a free relation)** | uchar expresses override as **structure**, not as a standalone relation object: a higher default *displaces* a lower one (RS ch. 7.1), and unordered co-writers with differing decisions route to the §9.5 conflict channel instead of silently overriding (WF-050, RS ch. 7.2; `anchor/jutterswet-toelagegronden`, six cases of which three pin the conflict path — root, kenmerk, and input-blijft conflict — while case4 pins the equal-grounds *no*-conflict flank, RS 7.6.3). What is **not** expressible: the standard's static, first-class superiority pair between two rules on **different** targets. (The *derivable* form `body => (r1 > r2)` is Antoniou's literature proposal cited in §4.2.1, not a standard requirement — see the cluster intro.) `CONSTRUCTS.md` row 8 records this precisely — "LegalRuleML adds strict-vs-defeasible tagging and cross-rule override as refinements." → candidate C2 (§7). |
+| **Defeater** (`~>`, block-only) | **DEELS** | The block-only effect exists *inside* a defaults group: a characteristic default with a false decision "derives nothing and displaces" (`IR-SPEC.md` ch. 6.1; RS ch. 7.1) — it defeats lower defaults without asserting a positive conclusion, which is the defeater's intent. But there is **no** standalone `Defeater` node that attaches to an arbitrary rule as a strength; the block is only a default position within a target's prioritized defaults. Witness: `anchor/jutterswet-uitsluiting` (art. 4 "geen recht", a displacing non-attribution). |
+| **Strict rule** (`->`, indisputable) | **DEELS** | The nearest form is the **monotone** base: a bare computing rule decides like the lowest non-init default (the ch. 7.8 standing norm, `anchor/jutterswet-waardestelling`), and a characteristic attribution (`KENMERKTOEKENNING`) is order-free and idempotent — extensionally a one-default constitutive rule (`CONSTRUCTS.md` row 8, Phase-5d note). But uchar carries **no strength tag**: nothing marks a conclusion as *indisputable* vs *defeasible* on the wire. Defeasibility is expressed by *presence of prioritized defaults*, not by a `StrictStrength`/`DefeasibleStrength` label — a structural encoding, not LegalRuleML's metadata one. |
+| **Strength tagging** (`hasStrength` / `appliesStrength`) | **NIET** | No wire slot tags a rule's strength; strength is implicit in structure (prioritized defaults ⇒ defeasible; bare rule ⇒ monotone base). Consequence: the strict/defeasible/defeater *vocabulary* is a refinement uchar does not carry — `CONSTRUCTS.md` row 8 ("strict-vs-defeasible tagging … as refinements"). Not needed for evaluation (the structure already decides); a documented deviation, folded into candidate C2. |
+| **Defeasibility over *derived* facts (stratification)** | **GEDEKT** (uchar-specific strength) | LegalRuleML leaves conflict *resolution order* to the strength model; uchar additionally guarantees a **stratified** negative-dependency graph so defeasible negation over derived characteristics is well-founded: WF-045 (acyclic), WF-046 (no negative edge on a cycle), WF-051 (no cycle through prioritized defaults). RS ch. 6; `CONSTRUCTS.md` row 6; witness `jutterswet-penningjaar` (a verifier-clean negated read). This is where uchar is *stronger* than the LegalRuleML metamodel, which does not itself require stratification. |
+| **Discretionary defeat** (open-textured exception) | **GEDEKT** | The Jutterswet art. 5 / art. 9bis hardship power — a discretionary override — is a default whose justification is a supplied discretionary fact: `anchor/jutterswet-hardheid` (both executors), and through the Catala frontend `jutterswet-hardheidsaftrek-catala` (a `context` override lowered to a generated highest-priority default, `CONSTRUCTS.md` row 9, gate 9). Divergence witness that the conflict channel is real: `jutterswet-tariefrecht-catala/case4-conflict` — an unordered exception group where `catala interpret` aborts with `ConflictError` while uchar deposits the observable, non-fatal, path-keyed §9.5 fact (RS ch. 7.9). |
 
 **Cluster verdict.** The *reasoning* content of LegalRuleML
 defeasibility — defeasible conclusions, priority, block-only defeat,
 conflict detection — is **GEDEKT**, and stratification exceeds the
 metamodel. The two honest shortfalls are both about *reification*, not
 computation: (i) uchar has **no free superiority relation** across rules
-or targets (only intra-target ladder priority), and (ii) uchar carries
+or targets (only intra-target defaults priority), and (ii) uchar carries
 **no strength tags** (`StrictStrength`/`Defeater`), encoding strength
 structurally. Both are flagged in `CONSTRUCTS.md` row 8 as refinements;
 neither blocks any Jutterswet witness. → candidate C2.
@@ -255,7 +255,7 @@ between metadata and rules.
 | LegalRuleML concept | Verdict | Evidence and consequence |
 |---|---|---|
 | **Alternatives** (divergent interpretations of one source) | **NIET** | uchar carries **one** interpretation per rule. Rule *versions* (WF-021) are **time-selected**, not competing interpretations; the §9.5 conflict channel records **over-determination** at runtime, not *authored interpretive alternatives*. Consequence: **documented non-goal** — `CONSTRUCTS.md` row 32 bundles "alternatives" into the deontic non-goal row. No card. |
-| **Context** (metadata-bundle indirection over a rule scope) | **NIET (subsumed inline)** | uchar has no Context/Association indirection layer. What LegalRuleML localises in a Context (strength, temporal, source), uchar attaches **inline**: a ladder *is* the strength structure (§1), `geldigheid` *is* the temporal window on the version (§2), `bron` *is* the source on the node (§5). The metadata-vs-rule "bridge" is collapsed into the rule, so there is nothing to express separately — and, without jurisdiction/authority/alternatives (rows 13/33/32), the Context has no distinct payload to carry at v1. |
+| **Context** (metadata-bundle indirection over a rule scope) | **NIET (subsumed inline)** | uchar has no Context/Association indirection layer. What LegalRuleML localises in a Context (strength, temporal, source), uchar attaches **inline**: the prioritized defaults *are* the strength structure (§1), `geldigheid` *is* the temporal window on the version (§2), `bron` *is* the source on the node (§5). The metadata-vs-rule "bridge" is collapsed into the rule, so there is nothing to express separately — and, without jurisdiction/authority/alternatives (rows 13/33/32), the Context has no distinct payload to carry at v1. |
 
 **Cluster verdict.** **NIET.** Both concepts are out — alternatives as an
 explicit non-goal (row 32), context as an indirection with no v1 payload
@@ -272,9 +272,10 @@ product.
 can?* On the **reasoning core** LegalRuleML exists to carry —
 defeasibility with priority, block-only defeat, and conflict detection —
 **yes**, and with a stratification guarantee the LegalRuleML metamodel
-does not itself impose (cluster 1, GEDEKT: WF-050/051/075/045/046, ladder
-ch. 6.1 / RS ch. 7, anchors `jutterswet-uitsluiting` /
-`-vondstwaardering` / `-toelagegronden` / `-nestdiepte`); and on the
+does not itself impose (cluster 1, GEDEKT: WF-050/051/075/045/046,
+prioritized defaults ch. 6.1 / RS ch. 7, anchors
+`jutterswet-uitsluiting` / `-vondstwaardering` / `-toelagegronden` /
+`-nestdiepte`); and on the
 **one time axis** LegalRuleML's applicability/efficacy machinery reduces
 to — **yes for vintage selection**, with richer content-event timelines
 than LegalRuleML models (cluster 2: WF-018, RS ch. 8,
@@ -283,7 +284,7 @@ specified and verifier-witnessed (WF-021, `jutterswet-vormenkabinet` —
 verifier-only by its own NOTE), while no replaying corpus case exercises
 the RS ch. 8.2 runtime gating (→ candidate C3).
 But the standing test's own three headline items split: **override** is
-only **DEELS** — uchar has intra-target ladder priority, not
+only **DEELS** — uchar has intra-target defaults priority, not
 LegalRuleML's free `r1 > r2` superiority relation or its
 strict/defeasible/defeater strength tags (`CONSTRUCTS.md` row 8);
 **multiple time axes** is a deliberate **NIET** — one axis by PLAN §9
@@ -309,7 +310,7 @@ than an oversight, with exactly three live loose ends worth a card.
 
 | Cluster | Concept | Verdict | Consequence |
 |---|---|---|---|
-| 1 Defeasibility | defeasible / priority (intra-target) / defeater-in-ladder / stratification / discretion | GEDEKT | — |
+| 1 Defeasibility | defeasible / priority (intra-target) / defeater-in-defaults / stratification / discretion | GEDEKT | — |
 | 1 | cross-rule Override, strength tags | DEELS/NIET | refinement, `CONSTRUCTS.md` row 8 → candidate **C2** |
 | 2 Time | vintage, content timelines | GEDEKT | — |
 | 2 | applicability gating (runtime, RS ch. 8.2) | DEELS | verifier-witnessed only (WF-021, witness cabinet); no replaying case → candidate **C3** |
@@ -341,17 +342,17 @@ here):
   negatief cases pin the failure modes. The machine-readable
   legal-source id (this candidate's optional tail) remains open.
 - **C2 — Decide the override/strength question.** uchar expresses
-  priority only *within* a per-target ladder and tags no strength.
-  Candidate: a design note (not a v1 build) settling whether
+  priority only *within* a per-target defaults group and tags no
+  strength. Candidate: a design note (not a v1 build) settling whether
   LegalRuleML's superiority relation (the static `<lrml:Override>` pair
   between Legal-Statement identifiers — the derivable
   `body => (r1 > r2)` form is Antoniou's literature proposal, outside
   the standard, and sets no requirement) and its
   strict/defeasible/defeater strength tags
   are a genuine requirement for the corpus's law, or whether the
-  intra-target ladder is sufficient by construction — `CONSTRUCTS.md`
-  row 8 already frames these as "refinements," so this is a scope
-  confirmation, not new machinery.
+  intra-target defaults group is sufficient by construction —
+  `CONSTRUCTS.md` row 8 already frames these as "refinements," so this
+  is a scope confirmation, not new machinery.
   **Proposed (2026-08-25):** `spec/proposals/PRIORITY-RELATION.md`
   recommends not building the free relation or strength tags; its five
   numbered ratification questions await the maintainer.

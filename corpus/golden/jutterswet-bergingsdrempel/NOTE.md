@@ -1,9 +1,10 @@
 # jutterswet-bergingsdrempel — ordered kenmerk exception (Uitzondering op)
 
-Exercises the uchar-dialect **ordered exception** form (LADDER-EVOLUTIE §4.2):
-a base rule with one `Uitzondering op` block, lowered by the RegelSpraak
-frontend to ONE `DefaultLadder` on the characteristic `bergingsbevoegd`.
-Own Jutterswet-flavoured domain (berging of wrecks), own numbers.
+Exercises the uchar-dialect **ordered exception** form
+(PRIORITIZED-DEFAULTS-EVOLUTIE §4.2): a base rule with one `Uitzondering
+op` block, lowered by the RegelSpraak frontend to ONE `PrioritizedDefaults`
+on the characteristic `bergingsbevoegd`. Own Jutterswet-flavoured domain
+(berging of wrecks), own numbers.
 
 ## Source (`bron.rgs`)
 
@@ -15,22 +16,24 @@ Own Jutterswet-flavoured domain (berging of wrecks), own numbers.
 
 ## Lowering
 
-One `DefaultLadder` (kenmerk `bergingsbevoegd`, onderwerp `Jutter`), rungs in
-descending priority:
+One `PrioritizedDefaults` (kenmerk `bergingsbevoegd`, onderwerp `Jutter`),
+defaults in descending priority:
 
-1. **exception rung** — `besluit true`, justified by `noodweer verklaard AND
-   aantal geborgen wrakken >= 8`.
-2. **base rung** — `besluit true`, justified by `aantal geborgen wrakken >= 20`.
+1. **exception default** — `besluit true`, justified by `noodweer verklaard
+   AND aantal geborgen wrakken >= 8`.
+2. **base default** — `besluit true`, justified by
+   `aantal geborgen wrakken >= 20`.
 
 Both the base rule and the exception leave `resolvedRegels` (WF-050
-single-writer: their semantics live in the ladder); each keeps a `Regel` stub
-in `regels`. The base rule's `geldig altijd` is carried onto the ladder as
-`geldigheid {vanaf:null, tot:null}`.
+single-writer: their semantics live in the defaults); each keeps a `Regel`
+stub in `regels`. The base rule's `geldig altijd` is carried onto the
+defaults as `geldigheid {vanaf:null, tot:null}`.
 
 ## Case derivations (hand-computed, absolute)
 
-Walk top-down; highest deciding rung wins. Both rungs decide `true`, so the
-ladder attributes `bergingsbevoegd` iff the exception OR the base is justified.
+Walk top-down; the highest deciding default wins. Both defaults decide
+`true`, so the defaults attribute `bergingsbevoegd` iff the exception OR the
+base is justified.
 
 | case | wrakken | noodweer verklaard | exception (>=8 & noodweer) | base (>=20) | bergingsbevoegd |
 |------|---------|--------------------|----------------------------|-------------|-----------------|
@@ -39,6 +42,7 @@ ladder attributes `bergingsbevoegd` iff the exception OR the base is justified.
 | case3-onder-quotum  | 12 | no  | no (no noodweer) | no (12<20) | **absent** |
 | case4-onder-noodweer| 5  | yes | no (5<8)         | no      | **absent** |
 
-All four are `consistent` — a single characteristic ladder never conflicts.
+All four are `consistent` — a single set of characteristic defaults never
+conflicts.
 case2 shows the exception lowering the threshold; case3 shows the exception is
 inert without the ground; case4 shows the lowered threshold still has a floor.

@@ -27,8 +27,8 @@ spec bug.
   overwriting an input value** (ch. 1.2g) has no absence encoding on
   the native rule path — the input fact would stand beside the
   underivable computation, so a case pinning that write goes red on
-  gate 6 (recorded limitation; the ladder path carries the same
-  situation correctly through its defeasible input).
+  gate 6 (recorded limitation; the prioritized-defaults path carries the
+  same situation correctly through its defeasible input).
 - Negated characteristic reads are negation-as-failure — sound because
   WF-045/046 guarantee stratifiability; the verifier is thereby also
   the guard that a document is clingo-suitable — as it is for the
@@ -84,9 +84,9 @@ spec bug.
   shared data-plane validation of `uchar-ref` (like the case loader),
   so an uncovered vintage read faults identically in both executors
   instead of ever reaching clingo.
-- The default ladder (IR-SPEC ch. 6.1) is the ch. 7.5 `decides_m`
-  lowering verbatim: one decides predicate per rung, outcome heads
-  guarded by `not decides_m` for every higher rung — sound NAF because
+- The prioritized defaults (IR-SPEC ch. 6.1) are the ch. 7.5 `decides_m`
+  lowering verbatim: one decides predicate per default, outcome heads
+  guarded by `not decides_m` for every higher default — sound NAF because
   WF-051 makes displacement edges negative (the verifier remains the
   guard that a document is clingo-suitable). A declared-unordered
   group adds the ch. 7.2 layer: per-member outcome predicates, a
@@ -96,14 +96,14 @@ spec bug.
   the input value stands, exactly ref/'s no-write.
 - v0's initialisation-plus-computation pairs are read through the
   ch. 7.7 desugaring (`Ir_v0.Desugar`) before translation, so the
-  ladder machinery carries them — while `ref/` replays the v0 forms
+  defaults machinery carries them — while `ref/` replays the v0 forms
   natively; the gate-6 differential thereby witnesses the desugaring
-  itself. On an attribute ladder
+  itself. On attribute defaults
   the consequence bindings sit inside `decides_n`, so a leeg
   consequence leaves it underivable — the gevuld gate for free — and
-  the input value of a ladder target enters as `inputval/3`, standing
+  the input value of a defaults target enters as `inputval/3`, standing
   defeasibly (`val :- inputval, not decided`) exactly where ref/'s
-  write overwrites it; the initialisation rung's justification is the
+  write overwrites it; the initialisation default's justification is the
   absence of that input. The ch. 7.8 **standing targets** (a bare
   scalar computing rule as its target's only writer,
   `Ir_v0.Desugar.standing_targets`) take the same entry: the rule's

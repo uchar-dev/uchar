@@ -9,7 +9,7 @@ dependency binnenhalen en het aanhechtpunt verifiëren tegen de
 actuele codebase (de scopelang→dcalc-grens; PHASE5-CATALA §2 — de
 module-namen zijn implementatietijd-werk); (2) het plugin-skelet dat
 scopes → objecttypen, scope-variabelen → attributen, platte
-default-bomen → ladders/groepen, context-overrides → top-rungs
+default-bomen → defaults-bundels/groepen, context-overrides → top-defaults
 (besluit 6), geld/datums → exacte rekenkunde en asserties →
 consistenties emit; (3) de luide weigeringen van besluit 4; (4) de
 Catala-tutorial draait frontend-side in de plugin-testsuite door
@@ -51,15 +51,15 @@ uchar-ir-v0 had geen AST→JSON-serializer; gate 2's round-trip is Python).
 Vertaalt (door verifier + ref + clingo, tenzij vermeld): scope→objecttype;
 niet-boolean var→attribuut, boolean→kenmerk; input→case-attribuut; enkele
 onvoorwaardelijke numerieke definitie→BEREKENING; boolean-definitie→
-KENMERKTOEKENNING (waarde is de guard); keten→één attribuut-defaultLadder
-(rungs hoog→laag); root-ongeordende excepties zonder basis→ongeordende
-laddergroep; geld→Numeriek 2 dec (+ Binair); assertie→consistentie;
+KENMERKTOEKENNING (waarde is de guard); keten→één attribuut-PrioritizedDefaults
+(defaults hoog→laag); root-ongeordende excepties zonder basis→ongeordende
+defaults-groep; geld→Numeriek 2 dec (+ Binair); assertie→consistentie;
 datum→DatumInDagen + Later/Eerder (ref-only: clingo vertaalt geen
 datum-literal in termpositie — bestaande backend-limiet).
 
 Weigert luid (WF-044-stijl): **context/reentrant-variabele** (bevinding:
-besluit 6 wil Reading B = caller-override als hoogste rung, maar ch. 7.8
-zet de virtuele input-rung ONDER de gewone rungs = Reading A; een
+besluit 6 wil Reading B = caller-override als hoogste default, maar ch. 7.8
+zet de virtuele input-default ONDER de gewone defaults = Reading A; een
 enkel-scope 5a-programma kan Reading B niet realiseren); subscope-call;
 sub-root-vertakking en basis-plus-ongeordend; decimal/rational; enums met
 payload, folds, functiewaarden, lijsten, structs, if-then-else.
@@ -102,8 +102,8 @@ tutorial weigert luid, exit 3, ter plekke gedemonstreerd). De
 tutorial-door-de-plugin verschuift daarmee expliciet naar het moment
 dat 5b (folds/enums) en de subscope-mapping landen. BESLUIT-6-NOTITIE:
 in de praktijk draait 5a optie B (context-variabelen weigeren) — de
-door de maintainer gekozen optie A (top-rung) blijkt pas realiseerbaar
-zodra subscope-calls vertalen, omdat ch. 7.8's input-rung Reading A
+door de maintainer gekozen optie A (top-default) blijkt pas realiseerbaar
+zodra subscope-calls vertalen, omdat ch. 7.8's input-default Reading A
 is en een enkel-scope-programma geen caller heeft; vastgelegd op
 kaart 2 voor 5c. Rood-eerst is historisch verifieerbaar: commit
 6c93b77 draagt de suite met stub-bin (5 checks, 5 failures) zónder

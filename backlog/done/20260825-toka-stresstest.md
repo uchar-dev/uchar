@@ -72,9 +72,9 @@ verifier-schoon. De weigeringen concentreren zich in 6 WF-klassen over 4
 constructclusters:
 
 - **WF-026 (15×)** — de zes allocatievarianten schrijven állemaal hetzelfde
-  doel-attribuut zonder expliciete ladder; elk van de 15 paren
+  doel-attribuut zonder expliciete defaults; elk van de 15 paren
   (C(6,2)) wordt gemeld. Dit is een GENUINE strengheidsdivergentie, geen
-  slicing-artefact: uchar eist een expliciete prioriteitsladder (ch. 7.7) bij
+  slicing-artefact: uchar eist expliciete geprioriteerde defaults (ch. 7.7) bij
   meerdere allocaties op één doel, terwijl de toolchain de zes co-declareert
   en op condities/agenda vertrouwt (in de praktijk scenario-gesliced, nooit
   gelijktijdig actief).
@@ -84,7 +84,7 @@ constructclusters:
   (unknown-type sentinel). Dit is de casus-omissie die de toolchain via haar
   eigen reconciliatie-extensie dicht.
 - **WF-079 (1×) + WF-053 (2×)** — het startpunt/variabele-periode-cluster:
-  twee onvoorwaardelijke rekenregels op één doel zonder ladder (WF-079) plus
+  twee onvoorwaardelijke rekenregels op één doel zonder defaults (WF-079) plus
   een navigatie die niet oplost (WF-053: rol niet bereikbaar vanuit het
   objecttype). Beide executors weigeren deze regels ook (zie b).
 - **WF-034/WF-036 (1 rule)** — de datum-tijd-rekenregel draagt unknown-type
@@ -190,9 +190,9 @@ hierboven benoemd.
 7. **clingo: decision-table / disjunctieve conditie** — 3.
 8. **clingo: niet-numerieke datatypes** (tekst/enum/datum-tijd) in ASP — 4.
 9. **clingo: validity-windows en som-zonder-0-fallback** — 2.
-10. **WF-026-strengheid vs Drools**: de expliciete-ladder-eis bij meerdere
+10. **WF-026-strengheid vs Drools**: de expliciete-defaults-eis bij meerdere
     allocaties op één doel is spec-strenger dan de toolchain. Spec-beslissing:
-    mist de casus een ladder, of moet de eis versoepeld/anders geplaatst?
+    mist de casus defaults, of moet de eis versoepeld/anders geplaatst?
 11. **WF-016 whole-model vs partiële scope**: scoping-beleid — moet de
     verifier een niet-verankerde variable-start tijdlijn weigeren wanneer geen
     regel die tijdlijn raakt?

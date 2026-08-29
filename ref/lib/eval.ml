@@ -1347,8 +1347,8 @@ let run_rule env world (r : resolved_regel) =
               | Some (Gelijkstelling | Berekening) ->
                   let v = eval_expr env w self ~err (req "waarde" r.waarde) in
                   (* ch. 7.8: on a standing target — and on a ch. 7.7
-                     desugaring-domain target, whose ladder reading ref
-                     replays natively — the rule decides like a rung: a
+                     desugaring-domain target, whose defaults reading ref
+                     replays natively — the rule decides like a default: a
                      leeg evaluation writes nothing (the init/input
                      decides); channel deposits of the evaluation
                      persist as in any ordinary evaluation *)
@@ -1608,51 +1608,51 @@ let run_object_creatie env ~world0 ~idx world (oc : resolved_object_creatie) =
         end)
   end
 
-(* ch. 7.1/7.9: a ladder member's decision, and the reconciled outcome of a
-   rung chain — [Decided] (the highest deciding rung), [Conflict] (a
-   differing sub-group, keyed by its rung-index path, propagating to the
-   root with no write), or [Undecided] (nothing decided; fall-through). *)
-type ladder_decision = Char_dec of bool | Attr_dec of Value.t
-type chain_result = Decided of ladder_decision | Conflict of string | Undecided
+(* ch. 7.1/7.9: a defaults-group member's decision, and the reconciled outcome
+   of a default chain — [Decided] (the highest deciding default), [Conflict] (a
+   differing exception group, keyed by its default-index path, propagating to
+   the root with no write), or [Undecided] (nothing decided; fall-through). *)
+type defaults_decision = Char_dec of bool | Attr_dec of Value.t
+type chain_result = Decided of defaults_decision | Conflict of string | Undecided
 
-(* ch. 7.1/7.2, the ladder group on one target (a singleton group is
-   the plain ladder): each member decides independently — highest rung
-   that decides wins, with fall-through and speculative deposits per
-   ch. 7.1 — then the group acts once: equal decisions write once;
-   differing decisions write nothing (the target keeps what the fact
+(* ch. 7.1/7.2, the defaults group on one target (a singleton group is
+   the plain prioritized defaults): each member decides independently —
+   highest default that decides wins, with fall-through and speculative
+   deposits per ch. 7.1 — then the group acts once: equal decisions write
+   once; differing decisions write nothing (the target keeps what the fact
    base holds) and deposit one §9.5 fact keyed by the target form
-   (ch. 7.2, an end-state observation). Ch. 7.9: a rung's exception
-   sub-group reconciles by the same rule recursively; a differing
-   sub-group propagates the conflict to the root — no write, one §9.5
-   fact keyed by the target form plus the rung-index path. The strata
+   (ch. 7.2, an end-state observation). Ch. 7.9: a default's exception
+   group reconciles by the same rule recursively; a differing exception
+   group propagates the conflict to the root — no write, one §9.5
+   fact keyed by the target form plus the default-index path. The strata
    machinery (WF-051) has already put every descendant justification and
    consequence producer strictly below every member. *)
-let run_ladder_group env world (members : default_ladder list) =
+let run_defaults_group env world (members : prioritized_defaults list) =
   let l0 = List.hd members in
   let target_form =
-    l0.dl_onderwerp ^ "."
+    l0.pd_onderwerp ^ "."
     ^
-    match (l0.dl_kenmerk, l0.dl_attribuut) with
+    match (l0.pd_kenmerk, l0.pd_attribuut) with
     | Some k, _ -> k
     | _, Some a -> a
     | _ -> "?"
   in
-  (match l0.dl_attribuut with
-  | Some a when Ir_v0.Checks.attr_temporal (objecttype env l0.dl_onderwerp) a ->
+  (match l0.pd_attribuut with
+  | Some a when Ir_v0.Checks.attr_temporal (objecttype env l0.pd_onderwerp) a ->
       Value.fault
-        "temporal attribute %S as a ladder target: temporal writes are not implemented" a
+        "temporal attribute %S as a defaults target: temporal writes are not implemented" a
   | _ -> ());
   (* the WF-086 kenmerk arm's defense-in-depth: a temporal characteristic target would
      otherwise evaluate silently atemporally *)
-  (match l0.dl_kenmerk with
+  (match l0.pd_kenmerk with
   | Some k
     when List.exists
            (fun (n, _) -> Ir_v0.Checks.norm n = Ir_v0.Checks.norm k)
-           (objecttype env l0.dl_onderwerp).kenmerk_granulariteit ->
+           (objecttype env l0.pd_onderwerp).kenmerk_granulariteit ->
       Value.fault
-        "temporal characteristic %S as a ladder target: temporal writes are not implemented" k
+        "temporal characteristic %S as a defaults target: temporal writes are not implemented" k
   | _ -> ());
-  over_subjects world ~otype:l0.dl_onderwerp ~rule:target_form (fun w self cond_err ->
+  over_subjects world ~otype:l0.pd_onderwerp ~rule:target_form (fun w self cond_err ->
       let speculate f =
         let buf = ref [] in
         let r = f (fun m -> buf := m :: !buf) in
@@ -1665,14 +1665,14 @@ let run_ladder_group env world (members : default_ladder list) =
         | _ -> false
       in
       (* the §9.5 conflict key (ch. 7.2/7.9): the bare target form for a
-         root-level over-determination, the target form plus the rung-index
-         path for a nested sub-group conflict *)
+         root-level over-determination, the target form plus the default-index
+         path for a nested exception group conflict *)
       let path_key = function
         | [] -> target_form
         | path -> target_form ^ "/" ^ String.concat "/" (List.map string_of_int path)
       in
       (* reconcile a group's member results (ch. 7.2, applied at every level
-         by ch. 7.9): a conflict from a deeper sub-group propagates unchanged;
+         by ch. 7.9): a conflict from a deeper exception group propagates unchanged;
          otherwise the deciding members must agree — equal decisions are one
          decision, differing decisions are a conflict keyed at [path] (no
          write). Members that decide nothing drop out. *)
@@ -1686,32 +1686,32 @@ let run_ladder_group env world (members : default_ladder list) =
                 if List.for_all (equal_dec d0) rest then Decided d0
                 else Conflict (path_key path))
       in
-      (* one member ladder's decision (ch. 7.1), recursive per ch. 7.9: the
-         highest rung that decides wins; a rung carrying [excepties]
-         reconciles its sub-group first, and its own justification/consequence
-         is the fall-back only when the sub-group decides nothing. Speculative
-         deposits flush when — and only when — a rung decides, composing
+      (* one member's decision (ch. 7.1), recursive per ch. 7.9: the
+         highest default that decides wins; a default carrying [excepties]
+         reconciles its exception group first, and its own justification/consequence
+         is the fall-back only when the exception group decides nothing. Speculative
+         deposits flush when — and only when — a default decides, composing
          through the recursion. *)
-      let member_decision (l : default_ladder) : chain_result =
-        if not (applies env l.dl_geldigheid) then Undecided
+      let member_decision (l : prioritized_defaults) : chain_result =
+        if not (applies env l.pd_geldigheid) then Undecided
         else
-          let is_char = l.dl_kenmerk <> None in
-          let justified (r : rung) err =
-            if r.rung_initialisatie then (
-              match l.dl_attribuut with
+          let is_char = l.pd_kenmerk <> None in
+          let justified (r : default) err =
+            if r.default_initialisatie then (
+              match l.pd_attribuut with
               | Some a -> World.attr self a = Value.Empty
-              | None -> Value.fault "initialisation rung on a characteristic ladder")
-            else eval_cond env w self ~err (req "rung justification" r.rung_voorwaarde)
+              | None -> Value.fault "initialisation default on characteristic defaults")
+            else eval_cond env w self ~err (req "default justification" r.default_voorwaarde)
           in
-          (* the rung's OWN decision, sub-group aside (a plain rung, the
-             initialisation rung, or a form-a rung's fall-back): Some when it
+          (* the default's OWN decision, exception group aside (a plain default, the
+             initialisation default, or a form-a default's fall-back): Some when it
              decides, None when it falls through *)
-          let own_decision (r : rung) : ladder_decision option =
+          let own_decision (r : default) : defaults_decision option =
             if is_char then (
               let j, flush = speculate (fun err -> justified r err) in
               if j then (
                 flush ();
-                Some (Char_dec (req "rung besluit" r.rung_besluit)))
+                Some (Char_dec (req "default besluit" r.default_besluit)))
               else None)
             else
               let outcome, flush =
@@ -1719,7 +1719,7 @@ let run_ladder_group env world (members : default_ladder list) =
                     if justified r err then
                       Some
                         (eval_expr env w self ~err
-                           (req "rung consequentie" r.rung_consequentie))
+                           (req "default consequentie" r.default_consequentie))
                     else None)
               in
               match outcome with
@@ -1728,30 +1728,30 @@ let run_ladder_group env world (members : default_ladder list) =
                   Some (Attr_dec v)
               | Some _ (* leeg: falls through *) | None -> None
           in
-          let rec decide ~path (rungs : rung list) : chain_result =
+          let rec decide ~path (defaults : default list) : chain_result =
             let rec go i = function
               | [] -> Undecided
-              | (r : rung) :: rest -> (
+              | (r : default) :: rest -> (
                   let fall_through () =
-                    (* a form-a rung falls back to its own decision; a
-                       group-rung (no own content) decides nothing (ch. 7.9) *)
+                    (* a form-a default falls back to its own decision; a
+                       group-default (no own content) decides nothing (ch. 7.9) *)
                     let has_content =
-                      r.rung_besluit <> None || r.rung_consequentie <> None
+                      r.default_besluit <> None || r.default_consequentie <> None
                     in
                     if has_content then
                       match own_decision r with Some d -> Decided d | None -> go (i + 1) rest
                     else go (i + 1) rest
                   in
-                  match r.rung_excepties with
-                  | Some sg -> (
-                      (* the sub-group goes first: reconcile it at this rung's
+                  match r.default_excepties with
+                  | Some egs -> (
+                      (* the exception group goes first: reconcile it at this default's
                          path, then propagate its conflict, adopt its decision,
                          or fall back when it decides nothing *)
                       let sub_path = path @ [ i ] in
                       let results =
                         List.map
-                          (fun (sl : sub_ladder) -> decide ~path:sub_path sl.sl_rungs)
-                          sg.sg_leden
+                          (fun (eg : exception_group) -> decide ~path:sub_path eg.eg_defaults)
+                          egs.egs_leden
                       in
                       match reconcile ~path:sub_path results with
                       | (Conflict _ | Decided _) as d -> d
@@ -1761,23 +1761,23 @@ let run_ladder_group env world (members : default_ladder list) =
                       | Some d -> Decided d
                       | None -> go (i + 1) rest))
             in
-            go 0 rungs
+            go 0 defaults
           in
-          decide ~path:[] l.rungs
+          decide ~path:[] l.defaults
       in
       match reconcile ~path:[] (List.map member_decision members) with
       | Undecided -> (w, false)
       | Conflict rule ->
           (* over-determination (ch. 7.2/7.9): no write, one channel fact —
-             bare-keyed at the root, path-keyed for a nested sub-group *)
+             bare-keyed at the root, path-keyed for a nested exception group *)
           (World.insert_error w ~rule ~subject:self.label, false)
       | Decided (Char_dec true) ->
-          World.set_char w ~label:self.label ~char:(req "ladder kenmerk" l0.dl_kenmerk)
+          World.set_char w ~label:self.label ~char:(req "defaults kenmerk" l0.pd_kenmerk)
       | Decided (Char_dec false) -> (w, false)
       | Decided (Attr_dec v) ->
-          let a = req "ladder attribuut" l0.dl_attribuut in
+          let a = req "defaults attribuut" l0.pd_attribuut in
           World.write_attr w ~label:self.label ~attr:a
-            ~decl:(attr_decl env ~otype:l0.dl_onderwerp ~attr:a)
+            ~decl:(attr_decl env ~otype:l0.pd_onderwerp ~attr:a)
             v)
 
 (* consistency and uniqueness fire at the computed fixpoint; violations
@@ -2209,23 +2209,23 @@ let evaluate env world =
   let kmax = Array.fold_left max 0 strata in
   let rule_stratum i = stratum_of (Printf.sprintf "/resolvedRegels/%d" i) in
   let verdeling_stratum i = stratum_of (Printf.sprintf "/verdelingen/%d" i) in
-  let ladder_stratum i = stratum_of (Printf.sprintf "/defaultLadders/%d" i) in
+  let defaults_stratum i = stratum_of (Printf.sprintf "/prioritizedDefaults/%d" i) in
   let fc_stratum i = stratum_of (Printf.sprintf "/feitCreaties/%d" i) in
   let oc_stratum i = stratum_of (Printf.sprintf "/objectCreaties/%d" i) in
   let cons_stratum i = stratum_of (Printf.sprintf "/consistenties/%d" i) in
   let uni_stratum i = stratum_of (Printf.sprintf "/uniciteiten/%d" i) in
   let uu_stratum i = stratum_of (Printf.sprintf "/uniciteitUnies/%d" i) in
   let indexed l = List.mapi (fun i x -> (i, x)) l in
-  (* ladder groups (ch. 7.2): members share one (subject, target); a
+  (* defaults groups (ch. 7.2): members share one (subject, target); a
      group runs at the max of its members' strata *)
-  let ladder_groups =
-    let key (l : default_ladder) =
+  let defaults_groups =
+    let key (l : prioritized_defaults) =
       (* the kind discriminant keeps a name-sharing attribute and
          characteristic (WF-002) in separate groups *)
-      (if l.dl_kenmerk <> None then "K:" else "A:")
-      ^ norm l.dl_onderwerp ^ ":"
+      (if l.pd_kenmerk <> None then "K:" else "A:")
+      ^ norm l.pd_onderwerp ^ ":"
       ^
-      match (l.dl_kenmerk, l.dl_attribuut) with
+      match (l.pd_kenmerk, l.pd_attribuut) with
       | Some k, _ -> norm k
       | _, Some a -> norm a
       | _ -> "?"
@@ -2237,11 +2237,11 @@ let evaluate env world =
         | Some _ ->
             List.map
               (fun (k', (s, ls)) ->
-                if k' = k then (k', (max s (ladder_stratum i), ls @ [ l ])) else (k', (s, ls)))
+                if k' = k then (k', (max s (defaults_stratum i), ls @ [ l ])) else (k', (s, ls)))
               acc
-        | None -> acc @ [ (k, (ladder_stratum i, [ l ])) ])
+        | None -> acc @ [ (k, (defaults_stratum i, [ l ])) ])
       []
-      (indexed env.doc.default_ladders)
+      (indexed env.doc.prioritized_defaults)
     |> List.map snd
   in
   let pass ~k world =
@@ -2270,9 +2270,9 @@ let evaluate env world =
         (fun (w, ch) (stratum, members) ->
           if stratum > k then (w, ch)
           else
-            let w, c = run_ladder_group env w members in
+            let w, c = run_defaults_group env w members in
             (w, ch || c))
-        (world, false) ladder_groups
+        (world, false) defaults_groups
     in
     let world, c4 =
       List.fold_left

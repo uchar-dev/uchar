@@ -1,10 +1,10 @@
 # Context own default that is root-unordered — a recorded besluit-6 flank
 
-Besluit 6's generated top rung forces a reentrant callee target's own default
-to a ladder **base** so a caller override can ride above it. That works for a
+Besluit 6's generated highest default forces a reentrant callee target's own
+default to a **base default** so a caller override can ride above it. That works for a
 CHAIN own default. When the callee's own default is itself a **root-level
 unordered** group (two unordered grounds, no unconditional base), there is no
-single base for a top rung to sit above: it stays refused loudly, one of the
+single base for a highest default to sit above: it stays refused loudly, one of the
 narrowed remnants of the old blanket context refusal (CONSTRUCTS row 9 /
 `spec/proposals/PHASE5-CATALA.md` decision 6).
 

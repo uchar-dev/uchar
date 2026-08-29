@@ -1,6 +1,6 @@
 (* The unit-normalisation lowering pass — the clingo backend's pre-step
-   (LADDER-EVOLUTIE §8.1–8.2, Q9; the unit algebra IR-SPEC ch. 2.5; the
-   lowering specified in spec/ASP-TRANSLATION.md S6).
+   (PRIORITIZED-DEFAULTS-EVOLUTIE §8.1–8.2, Q9; the unit algebra IR-SPEC
+   ch. 2.5; the lowering specified in spec/ASP-TRANSLATION.md S6).
 
    THE WIRE IS UNTOUCHED. Source units stay on disk; this is an internal
    wire→wire transform on the resolved model, applied inside [Translate.translate]
@@ -15,9 +15,10 @@
    literals of a write rule whose TARGET attribute is declared in its stelsel's
    FINEST base unit, restating each coarser-unit literal INTO that finest unit.
 
-   CANONICAL = THE FINEST BASE UNIT (LADDER-EVOLUTIE §8.1). Restating to a finer
-   unit MULTIPLIES by an integer (2,5 km ⇒ 2500 m, ×1000; 2 jaar ⇒ 24 maand,
-   ×12) — exact and integer-encodable, the property clingo needs. Restating to a
+   CANONICAL = THE FINEST BASE UNIT (PRIORITIZED-DEFAULTS-EVOLUTIE §8.1).
+   Restating to a finer unit MULTIPLIES by an integer (2,5 km ⇒ 2500 m, ×1000;
+   2 jaar ⇒ 24 maand, ×12) — exact and integer-encodable, the property clingo
+   needs. Restating to a
    COARSER unit would divide (possibly non-terminating), which the integer
    encoding cannot hold; so the pass normalises ONLY toward the finest, and only
    when the write target already IS the finest — otherwise it leaves the rule to
@@ -57,8 +58,9 @@ let unit_abbr (u : eenheid) = Option.value u.afkorting ~default:"?"
 
 (* the plain (non-rate) declared units of a stelsel — its base and derived
    spellings plus the alias table; a rate (noemer set) never enters stelsel
-   normalisation (LADDER-EVOLUTIE §8.3: its numerator/denominator normalise per
-   their own stelsels, out of scope here and left to the existing refusal). *)
+   normalisation (PRIORITIZED-DEFAULTS-EVOLUTIE §8.3: its numerator/denominator
+   normalise per their own stelsels, out of scope here and left to the existing
+   refusal). *)
 let plain_units (s : eenheidstelsel) : eenheid list =
   List.filter_map (fun (_, u) -> u) (s.eenheden @ s.aliassen)
   |> List.filter (fun (u : eenheid) -> u.noemer = None)
@@ -215,6 +217,7 @@ let norm_regel (doc : document) (r : resolved_regel) : resolved_regel =
 (* the pass entry: normalise every resolved rule; the rest of the document is
    carried through untouched. Composed before [Ir_v0.Desugar.document] at the
    [Translate.translate] entry — the two are orthogonal (this touches only unit
-   annotations and literal values; desugaring restructures ladders). *)
+   annotations and literal values; desugaring restructures prioritized
+   defaults). *)
 let document (doc : document) : document =
   { doc with resolved_regels = List.map (norm_regel doc) doc.resolved_regels }

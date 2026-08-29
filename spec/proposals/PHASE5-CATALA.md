@@ -67,9 +67,9 @@ The right column is existing kernel unless marked otherwise.
 | scope declaration | object type (one instance per scope invocation) | rows 9/21 — sugar over existing kernel |
 | scope variable (internal/output) | attribute of that object type | existing |
 | `input` variable (no own default; caller must supply) | attribute filled by the instantiation (member initialisation) | existing |
-| one default tree per variable (D-Label) | one ladder / declared-unordered ladder group on that attribute | landed (Phase 4); **sub-root branching: see §5.1** |
-| exception nesting (structural priority) | rung order; root branching = unordered group | landed (Phase 4) |
-| caller override of a `context` variable (C-Def: the caller's value as the **highest** exception — Reading B) | a **top rung** above the scope's own ladder (the §4.1 hardship pattern is the landed precedent of Reading B *as program structure*) — **not** the Phase-4 input rung, which is Reading A (computation displaces input) and runs the opposite direction; PHASE4-DEFAULTS §2.2 reserved this reconciliation for Phase 5 | **decision 6** (§8) |
+| one default tree per variable (D-Label) | prioritized defaults / a declared-unordered default group on that attribute | landed (Phase 4); **sub-root branching: see §5.1** |
+| exception nesting (structural priority) | default order; root branching = unordered group | landed (Phase 4) |
+| caller override of a `context` variable (C-Def: the caller's value as the **highest** exception — Reading B) | a **highest-priority default** above the scope's own defaults (the §4.1 hardship pattern is the landed precedent of Reading B *as program structure*) — **not** the Phase-4 input default, which is Reading A (computation displaces input) and runs the opposite direction; PHASE4-DEFAULTS §2.2 reserved this reconciliation for Phase 5 | **decision 6** (§8) |
 | subscope call (instantiate, bind inputs, read outputs) | object creation + member initialisation (the bound inputs) + role navigation (reading outputs) | row 9 — real design work, but over existing kernel nodes |
 | `ConflictError` (⊛) | the §9.5 channel fact, observable-not-fatal | landed; **tracked deviation** (row 8: Catala aborts, we continue) |
 | `EmptyError` (∅), catchable | ordinary leeg; fall-through | landed; **tracked deviation** (row 8) |
@@ -97,7 +97,7 @@ own-authored or art. 11 Auteurswet). Recommendation: the tutorial runs
 in the plugin's test suite (frontend-side), not in `corpus/golden/`.
 
 **(b) The Jutterswet in Catala.** Author a Jutterswet fragment —
-art. 3/5 (penningrecht with the hardship ladder) is the natural first
+art. 3/5 (penningrecht with the hardship defaults) is the natural first
 candidate: it is small, already anchored (`jutterswet-hardheid`), and
 exercises scopes, one default tree with an exception, and an input
 fact — *in Catala*, ourselves. Rights-free by construction, and it
@@ -111,7 +111,7 @@ is exposed — the exact feedback a second frontend exists to produce.
 ## 5. Frictions, honestly
 
 **5.1 Sub-root branching** (PHASE4-DEFAULTS §7). Catala trees branch
-at any depth; our ladders branch only at the root. The recorded
+at any depth; our prioritized defaults branch only at the root. The recorded
 resolution direction is nested groups as kernel structure (option i);
 the plugin's initial scope is option (iii): refuse programs whose
 trees branch below the root, loudly. A flattening fallback is rejected
@@ -150,7 +150,7 @@ observable-not-fatal and EmptyError-as-ordinary-leeg are tracked
 deviations (row 8), decided in Phase 4. The plugin does not re-open
 them. Precision on ∅: fall-through to the enclosing default is the
 *pervasive* core mechanism of the calculus (D-DefaultFalseNoExceptions)
-and maps onto ladder fall-through directly — nothing to settle there.
+and maps onto defaults fall-through directly — nothing to settle there.
 The corner that does not map is **cross-scope** ∅-fallback (an
 enclosing default in the *calling* scope catching a callee variable's
 emptiness): that translates to explicit emptiness conditions where
@@ -225,35 +225,40 @@ definition an IR design flaw for 5d's triage.
    reserved this for Phase 5). A caller override of a `context`
    variable is Reading B — the caller's value *beats* the scope's own
    computation (the highest exception) — which is the opposite of the
-   landed Phase-4 input rung (Reading A: computation displaces case
-   input). A: the plugin compiles a context override as a **top rung**
-   above the scope's own ladder (Reading B as program structure, the
-   §4.1 hardship-pattern shape; the input rung remains reserved for
-   the case dossier); B: refuse context overrides loudly in 5a and
-   design the mapping in 5c. Recommendation: A — it is
-   structure-preserving *because* the polarity is expressed as rung
-   order, and it keeps the two readings in the two distinct mechanisms
+   landed Phase-4 input default (Reading A: computation displaces case
+   input). A: the plugin compiles a context override as a
+   **highest-priority default** above the scope's own defaults
+   (Reading B as program structure, the §4.1 hardship-pattern shape;
+   the input default remains reserved for the case dossier); B: refuse
+   context overrides loudly in 5a and design the mapping in 5c.
+   Recommendation: A — it is structure-preserving *because* the
+   polarity is expressed as default order, and it keeps the two
+   readings in the two distinct mechanisms
    PHASE4-DEFAULTS §2.2 demands.
    **Decided (maintainer, 2026-08-21): A.**
 
-   **Executed (2026-08-24) — the generated top rung landed, triple-green.**
+   **Executed (2026-08-24) — the generated highest-priority default
+   landed, triple-green.**
    A Catala `context` (reentrant) subscope input now lowers to a generated
-   top rung above the callee's own ladder on that target (Reading B as rung
-   order, the §4.1 hardship-pattern shape). The plugin forces the reentrant
-   target's own default to a ladder **base** (never a bare Berekening, so a
-   rung can sit above it), and at the call site translates the caller's
-   override tree into top rung(s) prepended onto that ladder: the rung's
+   highest-priority default above the callee's own defaults on that target
+   (Reading B as default order, the §4.1 hardship-pattern shape). The plugin
+   forces the reentrant target's own default to the **base** of the
+   prioritized defaults (never a bare Berekening, so a default can sit above
+   it), and at the call site translates the caller's override tree into
+   highest-priority default(s) prepended onto those defaults: the default's
    guard (justification) and value (consequence) read the caller **navigated
    over the synthesised `verbindendeRol` back-link** (callee → caller) — no
-   standing machinery, so the ch. 7.8 input rung stays reserved for the case
-   dossier (Reading A). A caller value feeding a **ladderless** callee target
+   standing machinery, so the ch. 7.8 input default stays reserved for the
+   case dossier (Reading A). A caller value feeding a callee target
+   **without prioritized defaults**
    (a plain input, no own default) keeps the existing member-initialisation
    route — the WF-050 constraint PHASE5C-TUTORIAL §3 recorded. No verifier
-   change was needed: navigated reads inside a ladder rung are verifier-clean
+   change was needed: navigated reads inside a default are verifier-clean
    and both executors evaluate them, the differential agreeing with `catala
-   interpret` on both polarities (the top rung decides vs falls through to the
-   callee base). Witnesses: the frontend fixture `context.catala_en` (both
-   polarities through verifier → ref → clingo, gate 9) and the own-authored
+   interpret` on both polarities (the highest-priority default decides vs
+   falls through to the callee base). Witnesses: the frontend fixture
+   `context.catala_en` (both polarities through verifier → ref → clingo,
+   gate 9) and the own-authored
    corpus golden `jutterswet-hardheidsaftrek-catala` (art. 9bis — the
    discretionary hardship aftrek as a context override, both executors, gates
    2–6, plugin-regenerated byte-identically under gate 9). The old blanket

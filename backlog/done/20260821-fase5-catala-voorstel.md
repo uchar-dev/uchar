@@ -37,9 +37,9 @@ PHASE4-precedent. De twee lenzen vonden onafhankelijk dezelfde
 BLOCKING in het concept: de C-Def-mappingrij conflateerde de twee
 polariteiten die PHASE4-DEFAULTS §2.2 uitdrukkelijk scheidt — C-Def
 is Reading B (de caller-waarde als hóógste exceptie, verslaat de
-berekening), de gelande input-rung is Reading A (berekening verslaat
+berekening), de gelande input-default is Reading A (berekening verslaat
 input). Gefixt vóór de merge: de rij mapt een context-override nu op
-een top-rung (het §4.1-hardheidspatroon als Reading-B-precedent), de
+een top-default (het §4.1-hardheidspatroon als Reading-B-precedent), de
 input/context-variabelen zijn gesplitst, en de reconciliatie is het
 nieuwe genummerde besluit 6 — open voor de maintainer, niet langer
 een voldongen feit. Ook gefixt: de EmptyError-karakterisering

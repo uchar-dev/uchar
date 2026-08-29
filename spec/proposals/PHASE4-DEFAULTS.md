@@ -21,25 +21,27 @@ reduction rules D-\*, compilation rules C-\*).*
 The default calculus is not a future design — its core is landed and
 machine-checked. `RUNTIME-SEMANTICS.md` ch. 7 declares both target kinds,
 the declared-unordered group, and the v0 desugaring complete; the wire
-form is `defaultLadders` (`IR-SPEC.md` ch. 6.1, an extension form, never
-emitter-produced), guarded by WF-050 (shape, single writer, initialisation
-rung lowest, group multiplicity only declared-unordered) and WF-051
-(rung reads are negative edges; no cycle through a ladder). Four anchors
+form is `prioritizedDefaults` (`IR-SPEC.md` ch. 6.1, an extension form,
+never emitter-produced), guarded by WF-050 (shape, single writer,
+initialisation default lowest, group multiplicity only declared-unordered)
+and WF-051 (default reads are negative edges; no cycle through prioritized
+defaults). Four anchors
 pin it through both executors:
 
 | Anchor | What it pins |
 |---|---|
-| `jutterswet-uitsluiting` | the art. 4 characteristic ladder (worked example 7.6.1) |
-| `jutterswet-vondstwaardering` | the attribute ladder: leeg fall-through, the initialisation rung, input left standing (`case5-input-blijft`), a deciding rung overwriting input (`case6-rung-overschrijft`) |
+| `jutterswet-uitsluiting` | the art. 4 characteristic defaults (worked example 7.6.1) |
+| `jutterswet-vondstwaardering` | the attribute defaults: leeg fall-through, the initialisation default, input left standing (`case5-input-blijft`), a deciding default overwriting input (`case6-default-overschrijft`) |
 | `jutterswet-toelagegronden` | the declared-unordered group: differing decisions → no write + one §9.5 channel fact, equal decisions → one write, input kept standing under a conflict |
-| `jutterswet-waardering-v0vorm` | the ch. 7.7 v0 desugaring, witnessed differentially: `ref/` replays the v0 forms natively, the ASP backend the desugared ladder |
+| `jutterswet-waardering-v0vorm` | the ch. 7.7 v0 desugaring, witnessed differentially: `ref/` replays the v0 forms natively, the ASP backend the desugared defaults |
 
-Both executor encodings exist: `ref/`'s `run_ladder_group` (speculative
-rung evaluation, fall-through, over-determination as one channel fact and
-no write) and the ASP backend's `decides_m` lowering (rung outcomes
-guarded by `not decides_m` for every higher rung; the defeasible input as
-`inputval/3`, standing unless the group effectively writes). Stratification
-already extends to displacement: every rung-justification and
+Both executor encodings exist: `ref/`'s `run_defaults_group` (speculative
+default evaluation, fall-through, over-determination as one channel fact
+and no write) and the ASP backend's `decides_m` lowering (default outcomes
+guarded by `not decides_m` for every higher default; the defeasible input
+as `inputval/3`, standing unless the group effectively writes).
+Stratification already extends to displacement: every default-justification
+and
 attribute-consequence read is a `Dep_neg` edge in the shared dependency
 graph (`spec/verifier/lib/checks.ml` `dep_forms`, the same graph `ref/`
 derives its strata from — the two executors cannot drift there).
@@ -47,7 +49,7 @@ derives its strata from — the two executors cannot drift there).
 What remains of Phase 4 is therefore narrow and precise:
 
 1. **Input-as-default.** Case input on a computed target is handled
-   correctly only on ladder targets (`inputval/3`); on every other
+   correctly only on defaults targets (`inputval/3`); on every other
    Berekening/Gelijkstelling target the ASP backend refuses it loudly
    (`ASP-TRANSLATION.md` ch. 6d, the computed-target input fence) and
    `ref/` overwrites v0-faithfully — and on allocation targets it is
@@ -60,7 +62,7 @@ What remains of Phase 4 is therefore narrow and precise:
 4. **Exception-tree expressibility** — the recorded Phase-5 reconciliation
    obligation, whose design groundwork belongs here. §7.
 
-## 2. Fidelity: the landed ladder against the paper's calculus
+## 2. Fidelity: the landed defaults against the paper's calculus
 
 ### 2.1 The term-by-term map
 
@@ -80,14 +82,14 @@ and `exception` declarations into **one default tree per scope variable**.
 
 | Catala (paper) | uchar (landed) | Where |
 |---|---|---|
-| default `⟨ e⃗ \| e_just :- e_cons ⟩` | the rung: (justification, consequence) | RS ch. 7.1; IS ch. 6.1 |
-| exception nesting (structural priority) | rung order in one ladder — descending, highest first; no numeric priority anywhere | IS ch. 6.1 `rungs`; RS ch. 7.4 ("no salience-like escape hatch") |
-| one default tree per scope variable (D-Label) | one ladder (or one declared-unordered group) per target — WF-050's single-writer lift of WF-026 | RS ch. 7.1; IS ch. 6.1 |
-| `∅` (EmptyError): justification false → no value; catchable at the enclosing default | fall-through: a justified rung whose consequence evaluates leeg falls through; an undecided ladder writes nothing; under-determination is ordinary leeg | RS ch. 7.1/7.2 (tracked deviation, `CONSTRUCTS.md` row 8) |
+| default `⟨ e⃗ \| e_just :- e_cons ⟩` | the default: (justification, consequence) | RS ch. 7.1; IS ch. 6.1 |
+| exception nesting (structural priority) | default order in one defaults group — descending, highest first; no numeric priority anywhere | IS ch. 6.1 `defaults`; RS ch. 7.4 ("no salience-like escape hatch") |
+| one default tree per scope variable (D-Label) | one defaults group (or one declared-unordered group) per target — WF-050's single-writer lift of WF-026 | RS ch. 7.1; IS ch. 6.1 |
+| `∅` (EmptyError): justification false → no value; catchable at the enclosing default | fall-through: a justified default whose consequence evaluates leeg falls through; undecided defaults write nothing; under-determination is ordinary leeg | RS ch. 7.1/7.2 (tracked deviation, `CONSTRUCTS.md` row 8) |
 | `⊛` (ConflictError): ≥ 2 non-empty exceptions, fatal under any context (D-ContextConflictError) | over-determination in a declared-unordered group: no write + one §9.5 channel fact, evaluation continues | RS ch. 7.2, ch. 5.6 |
 | runtime, data-dependent conflict (paper §3.4: statically accepted, aborts at run-time) | same: the conflict is decided at the fixpoint on concrete facts, never statically | RS ch. 7.2 |
-| topological sort rejects dependency cycles | WF-045/046/051: strata must exist; no cycle through a ladder | RS ch. 6, 7.4 |
-| caller override of a context variable: C-Def compiles the caller's thunked value as the **single highest exception**, `let ℓ = ⟨ ℓ() \| true :- e ⟩` | case input is **not** a rung: it is the fact base the ladder's write meets; a deciding rung overwrites it | RS ch. 7.1; §4 below |
+| topological sort rejects dependency cycles | WF-045/046/051: strata must exist; no cycle through prioritized defaults | RS ch. 6, 7.4 |
+| caller override of a context variable: C-Def compiles the caller's thunked value as the **single highest exception**, `let ℓ = ⟨ ℓ() \| true :- e ⟩` | case input is **not** a default: it is the fact base the defaults' write meets; a deciding default overwrites it | RS ch. 7.1; §4 below |
 
 Metatheory, stated carefully: the paper mechanizes (in F*, not Coq) only
 the final compilation step, default calculus → lambda calculus with
@@ -101,9 +103,9 @@ the anchors.
 ### 2.2 Tracked deviations — two of them not yet named anywhere
 
 Recorded already (`CONSTRUCTS.md` row 8; RS ch. 7.2): Catala's catchable
-`∅` maps to ordinary leeg — within a ladder the fallback survives
+`∅` maps to ordinary leeg — within a defaults group the fallback survives
 structurally as fall-through, across compositions a Catala frontend must
-compile enclosing-default fallback into ladder structure (the Phase-5
+compile enclosing-default fallback into defaults structure (the Phase-5
 obligation §7 prepares).
 
 Two further deviations exist in the landed semantics and are **not yet in
@@ -138,9 +140,9 @@ the row-8 delta record**; this proposal asks to track them (decision 5):
 Not a deviation, but a polarity to keep straight (it drives §4): Catala's
 "input as default" runs the **opposite direction** from ours. There, a
 caller-supplied value is the *highest* exception (C-Def) — input beats
-the scope's own definition. Here, a deciding rung *overwrites* case input
-(`case6-rung-overschrijft`) — computation beats input, and input beats
-only the initialisation rung. No contradiction: Catala's mechanism serves
+the scope's own definition. Here, a deciding default *overwrites* case
+input (`case6-default-overschrijft`) — computation beats input, and input
+beats only the initialisation default. No contradiction: Catala's mechanism serves
 **scope composition** (one scope invoking another, Phase-5 territory,
 `CONSTRUCTS.md` row 9), ours serves **the fact base** (a case dossier the
 rules compute over). The two will meet at Phase 5 and must not be
@@ -160,7 +162,7 @@ The translator refuses loudly whenever the case supplies input for a
 Berekening/Gelijkstelling target. Ch. 6d names the principled home
 itself: "overwrite semantics have no monotone encoding without the
 defeasibility machinery (Phase 4's default calculus is the principled
-home; ladder targets already carry it via `inputval/3`)."
+home; defaults targets already carry it via `inputval/3`)."
 
 **(b) The conditional-rule-plus-input flank.** The fence is
 condition-blind: a rule whose condition is *false* over a case-supplied
@@ -170,18 +172,18 @@ interesting case — a rule that *would* overwrite input but doesn't apply
 to this subject — cannot enter the differential corpus at all. That is a
 coverage hole exactly where legal defaults live.
 
-**(c) The ladder's `inputval` already is the answer, locally.** On ladder
-targets the case value enters as `inputval/3` and stands by
+**(c) The defaults' `inputval` already is the answer, locally.** On
+defaults targets the case value enters as `inputval/3` and stands by
 negation-as-failure unless the group effectively writes — a monotone
 encoding of overwrite, differentially witnessed. Gate 7's survivor list
-pins the semantics from the other side: `case5-input-blijft` (a
-non-deciding ladder leaves the input standing) and the v0-form
+pins the semantics from the other side: `case5-input-blijft`
+(non-deciding defaults leave the input standing) and the v0-form
 `case3-input-blijft` (an initialisation leaves a filled input standing)
 legitimately satisfy a do-nothing executor — defeasible standing *is*
 what those cases test. The machinery exists; it is merely confined to
-declared ladders.
+declared defaults.
 
-## 4. Proposal A — the input rung: case input as a declared default
+## 4. Proposal A — the input default: case input as a declared default
 
 ### 4.1 The two readings
 
@@ -189,10 +191,10 @@ A case input on a computed target is a default. The question is its
 priority:
 
 - **Reading A — computation beats input** (v0, `ref/`, and the landed
-  ladder): a deciding writer displaces the input value; the input stands
+  defaults): a deciding writer displaces the input value; the input stands
   only when nothing decides; the initialisation fills only when even the
-  input is absent. Priority order, top to bottom: ordinary rungs —
-  input — initialisation rung.
+  input is absent. Priority order, top to bottom: ordinary defaults —
+  input — initialisation default.
 - **Reading B — input beats computation** (Catala's C-Def): the supplied
   value is the highest-priority exception; the computation is the
   fallback for absent data.
@@ -212,28 +214,30 @@ semantics.** The legal case that genuinely wants input-beats-computation
 authority ("menselijke maat") — is expressible with the landed machinery
 as it stands. The override is not a bare value on the target: it is a
 **decision**, and it enters the dossier as its own declared input fact
-(what was decided, beside the deciding act). The ladder then carries a
-**top rung** justified by that decision's presence, whose consequence is
+(what was decided, beside the deciding act). The defaults group then
+carries a **highest-priority default** justified by that decision's
+presence, whose consequence is
 the discretionary route — a decided value where the provision hands one
 down, or the standard computation under the provision's altered terms
 where the discretion modifies a parameter; the standard route sits on
-the rungs below. This is the classic two-rule treatment of discretionary
+the defaults below. This is the classic two-rule treatment of discretionary
 clauses — the standard case and the discretionary case as separate
 rules, with the exercise of discretion itself an input fact, so that
 absent a decision the discretionary route stays silent by design
 (Sergot, Sadri, Kowalski, Kriwaczek, Hammond & Cory, "The British
 Nationality Act as a Logic Program", CACM 29(5), 1986, on "the Secretary
-of State may…"). Nothing new is needed: the rung reads the decision
+of State may…"). Nothing new is needed: the default reads the decision
 attribute, never its own target — its reads add WF-051 negative edges
-like any rung's, but they terminate at an unwritten input fact, which no
-producer can close into a cycle, so WF-051 is satisfied by construction.
-The rung's priority *is* Catala's exception polarity — the override wins
-because it is the highest rung. What the pattern preserves, and a
-load-semantics Reading B would erase, is **grounding and traceability**:
-the ladder names which provision authorises the deviation and which act
-exercised it. One care for visibility: rung evaluation is speculative
-(RS ch. 7.1), so when the top rung wins, the displaced standard value is
-never persisted — a consistency on the ladder's own target cannot see
+like any default's, but they terminate at an unwritten input fact, which
+no producer can close into a cycle, so WF-051 is satisfied by
+construction. The default's priority *is* Catala's exception polarity —
+the override wins because it is the highest default. What the pattern
+preserves, and a load-semantics Reading B would erase, is **grounding and
+traceability**: the defaults group names which provision authorises the
+deviation and which act exercised it. One care for visibility: default
+evaluation is speculative (RS ch. 7.1), so when the highest default wins,
+the displaced standard value is never persisted — a consistency on the
+defaults group's own target cannot see
 the deviation. Where computed ≠ decided must surface on the §9.5
 channel, the standard route is materialised as its own attribute (a
 separate writer on a different target, admissible under WF-050) and the
@@ -241,46 +245,47 @@ consistency compares the two — still a trace a silently overriding case
 input could never leave. A hardship anchor is the natural corpus
 companion once decision 1 lands: art. 5 Jutterswet (no corpus case
 exercises it yet) fits the pattern's structure exactly — the
-strandvoogd's besluit as the input fact, the top rung's consequence the
-art. 3 computation with the threshold halved ("twaalf" read as "zes"),
+strandvoogd's besluit as the input fact, the highest default's consequence
+the art. 3 computation with the threshold halved ("twaalf" read as "zes"),
 a parameter-modifying discretion rather than a handed-down value.
 
-### 4.2 The input rung, formalized
+### 4.2 The input default, formalized
 
-Restate RS ch. 7.1's "input facts are not a rung: they are the fact base"
-as an equivalent, fully uniform reading — a **virtual input rung**:
+Restate RS ch. 7.1's "input facts are not a default: they are the fact
+base" as an equivalent, fully uniform reading — a **virtual input
+default**:
 
-> Every attribute ladder carries, between its lowest ordinary rung and
-> its initialisation rung (when present), an implicit rung whose
-> justification is "the target is **gevuld** in the input facts" and
-> whose consequence is that input value.
+> Every attribute defaults group carries, between its lowest ordinary
+> default and its initialisation default (when present), an implicit
+> default whose justification is "the target is **gevuld** in the input
+> facts" and whose consequence is that input value.
 
-This is the exact dual of the landed initialisation rung (justification:
-input-emptiness — IS ch. 6.1). Like the initialisation rung's, its
+This is the exact dual of the landed initialisation default (justification:
+input-emptiness — IS ch. 6.1). Like the initialisation default's, its
 justification reads the *input world*, not the evolving world, so it
 contributes no dependency edges and cannot create a WF-051 cycle. It is
 purely a re-description: with it, every landed outcome of
-ch. 7.1/7.3/7.6.2 derives from one rule — "the highest rung that decides
-wins" — with no side-text about fact bases:
+ch. 7.1/7.3/7.6.2 derives from one rule — "the highest default that
+decides wins" — with no side-text about fact bases:
 
-| Case (anchor) | Derivation with the input rung |
+| Case (anchor) | Derivation with the input default |
 |---|---|
-| deciding rung over input 40 → computed (`case6`) | an ordinary rung decides above the input rung |
-| no rung decides, input 40 → 40 (`case5`) | the input rung decides (gevuld) |
-| no rung decides, no input, initialisation 25 → 25 (`case4`) | input rung falls through (leeg justification fails), initialisation decides |
-| computed leeg, no input, initialisation 25 → 25 (`case3-doorval-init`) | ordinary rung falls through, input rung falls through, initialisation decides |
+| deciding default over input 40 → computed (`case6`) | an ordinary default decides above the input default |
+| no default decides, input 40 → 40 (`case5`) | the input default decides (gevuld) |
+| no default decides, no input, initialisation 25 → 25 (`case4`) | input default falls through (leeg justification fails), initialisation decides |
+| computed leeg, no input, initialisation 25 → 25 (`case3-doorval-init`) | ordinary default falls through, input default falls through, initialisation decides |
 
 The virtue is not elegance but **generalization**: the reading extends
-verbatim to targets that are not declared ladders.
+verbatim to targets that are not declared defaults.
 
-### 4.3 Generalization: every computing target reads as a ladder
+### 4.3 Generalization: every computing target reads as prioritized defaults
 
 Extend the ch. 7.7 desugaring domain: a **bare version-free computing
 rule** (Gelijkstelling/Berekening, with or without a beside-standing
-initialisation) on one (type, attribute) target reads as a ladder — one
-ordinary rung (justification: its condition, vacuously true when
-unconditional; consequence: its value), the input rung, and the
-initialisation rung when the v0 Initialisatie form is present. The
+initialisation) on one (type, attribute) target reads as prioritized
+defaults — one ordinary default (justification: its condition, vacuously
+true when unconditional; consequence: its value), the input default, and
+the initialisation default when the v0 Initialisatie form is present. The
 ch. 7.7 exclusions stay: conditional initialisations, versioned forms
 (temporal, never defeasible — RS ch. 7.4), multiple computing rules on
 one target (their v0 meaning is agenda order; ordering needs authorial
@@ -289,7 +294,7 @@ intent).
 The semantic consequence, and the one behavioural delta with the v0
 mirror, sits in a single corner: **a computed leeg over an
 input-supplied value**. v0 (ch. 1.2g) writes the leeg and erases the
-input; the ladder reading falls through and the input stands. Ch. 7.7
+input; the defaults reading falls through and the input stands. Ch. 7.7
 already pinned exactly this delta for the initialisation-paired case and
 excluded the bare case *because* desugaring it would silently change its
 meaning. This proposal asks to change it **openly** (decision 2): the v1
@@ -305,9 +310,10 @@ are monotonically encodable (§4.4: the effectiveness atom's body *is*
 the choice — value bindings give standing, condition-only gives v0's
 erase), so ch. 6d's "no monotone encoding" holds only for the legacy
 `val/3` scheme and decision 2 is a genuinely normative choice, not one
-forced by ASP. The grounds, then. First, **uniformity**: the ladder
-already norms fall-through (RS ch. 7.1) — one calculus should not carry
-two leeg-disciplines, displacing on declared ladders and erasing on bare
+forced by ASP. The grounds, then. First, **uniformity**: the defaults
+calculus already norms fall-through (RS ch. 7.1) — one calculus should not
+carry two leeg-disciplines, displacing on declared defaults and erasing on
+bare
 targets; and in the confluent domain (the rule evaluates gevuld or does
 not fire) the two readings agree extensionally, so the norm decides only
 the corner. Second, the neighbouring case is already fault-domain:
@@ -322,8 +328,8 @@ RS ch. 7.1).
 
 ### 4.4 The ASP encoding, sketched
 
-Generalize the existing `inputval/3` pattern from declared-ladder targets
-to every desugarable computing target. The case emits `inputval/3`
+Generalize the existing `inputval/3` pattern from declared-defaults
+targets to every desugarable computing target. The case emits `inputval/3`
 instead of `val/3` for any attribute some rule writes; per computing rule
 `r` on target `a`:
 
@@ -331,23 +337,23 @@ instead of `val/3` for any attribute some rule writes; per computing rule
 r_out(S,V) :- is_a(S,"t"), <condition atoms>, <value bindings V>.
 r_eff(S)   :- is_a(S,"t"), <condition atoms>, <value bindings V>.
 val(S,"a",V) :- r_out(S,V).
-val(S,"a",V) :- inputval(S,"a",V), not r_eff(S).   % the input rung
+val(S,"a",V) :- inputval(S,"a",V), not r_eff(S).   % the input default
 ```
 
 The load-bearing subtlety: the body of `r_eff` **is the semantic
 choice**. With the **value bindings** in it — "decides" as
-justification ∧ gevuld, the ladder's `decides_m` shape (RS ch. 7.5) — a
+justification ∧ gevuld, the defaults' `decides_m` shape (RS ch. 7.5) — a
 leeg-evaluating consequence leaves `r_eff` underivable (absence
 composes, exactly the ch. 6a coalescing machinery) and the input stands:
 the fall-through norm of §4.3. With only the **condition** in it, a leeg
-computation still derives `r_eff`, the input rung is blocked, no `val`
+computation still derives `r_eff`, the input default is blocked, no `val`
 derives, and the target is leeg — which is precisely v0's erase-on-leeg
 (ch. 1.2g), monotonically encoded. Both readings are therefore
 expressible once `inputval/3` is general; ch. 6d's impossibility is a
 statement about the legacy `val/3` scheme, and decision 2 picks the
 value-binding body on the §4.3 grounds, not out of necessity. Timelines
 take the same shape over `tl/5` with a per-rule effectiveness atom; the
-initialisation rung stays NAF over the input fact as in RS ch. 7.5.
+initialisation default stays NAF over the input fact as in RS ch. 7.5.
 
 The fence (`case_supplies`) then **retires for desugarable targets**;
 what stays fenced is the still-non-desugarable computing forms (multiple
@@ -363,7 +369,7 @@ members need no fence — minted instances live in the reserved `::`
 namespace (RS ch. 5.5), so no case-supplied fact can ever collide with
 them. Stratification is untouched: the new NAF is against `r_eff`, whose
 body is the rule's own — no new edges beyond the WF-051 classes the
-ladder already added.
+defaults already added.
 
 ### 4.5 The ref encoding, sketched
 
@@ -371,7 +377,7 @@ Two implementation routes, one semantics:
 
 - **Desugar-route (recommended):** extend `Ir_v0.Desugar` to the bare
   computing rule and let `ref/` replay desugarable targets through
-  `run_ladder_group` — one machinery, the fall-through and standing
+  `run_defaults_group` — one machinery, the fall-through and standing
   semantics already tested. The cost: `ref/` today replays v0 forms
   natively (the gate-6 differential deliberately witnesses the lowering
   by running desugared-vs-native); extending the desugar domain moves
@@ -379,7 +385,7 @@ Two implementation routes, one semantics:
 - **Write-path route:** keep native replay and add the one check in the
   computing-rule arm: a leeg-evaluating write over an input-supplied
   target is a no-op. Smaller diff, but a second encoding of the same
-  semantics beside `run_ladder_group` — the kind of duplication ch. 7
+  semantics beside `run_defaults_group` — the kind of duplication ch. 7
   exists to remove.
 
 Either way the change is executor work under a follow-up card with
@@ -416,21 +422,21 @@ toolchain does today (both Drools routes, deliberately identical):
   WF-045/046), not defaults.
 - **Initialisatie** is an LHS `== null` guard plus the ordinary setter —
   operationally the ch. 5.4 semantics, i.e. exactly the initialisation
-  rung's lowering (RS ch. 7.5 row 4 names it: "the empty-guard of
+  default's lowering (RS ch. 7.5 row 4 names it: "the empty-guard of
   ch. 5.4"). It is conformant behaviour that is not yet *derived from*
-  the declared rung.
+  the declared default.
 - **Conflicting ordinary writers are silently unarbitrated**: two rules
   writing different values ping-pong under the idempotence guard until
   the `fireAllRules` cap, with no Inconsistentie deposited —
   "one-writer-per-attribute" is a stated assumption, not an invariant.
-  RS ch. 7.5 row 5 specifies what the ladder replaces this with (§9.5
+  RS ch. 7.5 row 5 specifies what the defaults group replaces this with (§9.5
   channel insert, no write) — "silent last-writer-wins" retired.
-- The beslistabel ladder is emergent: per-row guarded rules with no
+- The beslistabel defaults group is emergent: per-row guarded rules with no
   default branch; standing input is the absence of a write.
 
 The criterion cannot be met wholesale today because no frontend produces
-ladders (`defaultLadders` is never emitter-produced) and RegelSpraak has
-no ladder authoring surface. The honest, staged path (decision 6):
+defaults (`prioritizedDefaults` is never emitter-produced) and RegelSpraak
+has no defaults authoring surface. The honest, staged path (decision 6):
 
 1. **The derivation card (pin-bump, satisfies the criterion on the
    v0-expressible fragment):** the Drools backends compute the WF-045/046
@@ -439,15 +445,15 @@ no ladder authoring surface. The honest, staged path (decision 6):
    `leestNegatieKenmerk` heuristic; behaviour-identical where the
    heuristic applies, and correct where it under-approximates (the
    heuristic sees only directly-negated kenmerk reads; the graph also
-   carries the regelversie channel test and, later, ladder edges). The
+   carries the regelversie channel test and, later, defaults edges). The
    initialisation `== null` guard is documented and conformance-tested as
-   the derived lowering of the ch. 7.3 rung. Deliverable: same emitted
+   the derived lowering of the ch. 7.3 default. Deliverable: same emitted
    behaviour, mechanism now derived — which is exactly what the exit
    criterion asks ("becomes a derivable lowering of a specified
    requirement instead of the bearer of it", PLAN §6).
-2. **Full ladder service in Drools** (generated displacement guards from
-   the higher rungs' decides-conditions, the group's channel insert)
-   waits until a frontend emits ladders — realistically the Phase-5
+2. **Full defaults service in Drools** (generated displacement guards from
+   the higher defaults' decides-conditions, the group's channel insert)
+   waits until a frontend emits defaults — realistically the Phase-5
    Catala plugin. Building it against hand-authored IR earlier is
    possible but tests no production path.
 
@@ -475,7 +481,7 @@ a declared-unordered group deposits? Recommendation (decision 4):
 - **The statute pattern that seems to want it doesn't.** Dutch samenloop
   provisions ("bij samenloop van aanspraken geldt de hoogste") look like
   conflict handlers but are priority declarations: the samenloop rule is
-  the *ordering*, hence an ordered ladder (or a rung whose justification
+  the *ordering*, hence ordered defaults (or a default whose justification
   compares the grounds), not a reader of a conflict channel. Modelling
   samenloop as conflict-then-repair would re-introduce two-phase
   evaluation through the back door.
@@ -497,8 +503,8 @@ additive if a real statute case ever demands it.
 What Catala's normalization produces (Fig. 2, D-Label): per variable one
 **tree** — a base default whose exception slots hold defaults, which may
 themselves hold exceptions, to any depth and with any branching. What our
-IR expresses today: a **chain** (one ladder; the unary tree) and
-**root-level branching** (a declared-unordered group of ladders on one
+IR expresses today: a **chain** (one defaults group; the unary tree) and
+**root-level branching** (a declared-unordered group of defaults groups on one
 target, siblings conflicting on differing simultaneous decisions —
 faithfully D-DefaultExceptionsConflict, modulo the equal-values deviation
 of §2.2).
@@ -512,7 +518,7 @@ displacing `x` inside member 1 is D-DefaultOneException, and member 1
 against member 2 is the root-level D-DefaultExceptionsConflict (what
 does *not* carry over is a shared non-trivial base `b` under all
 members — a root-level limitation, workable by duplicating `b` as each
-member's lowest rung under the equal-decisions rule). But a tree that
+member's lowest default under the equal-decisions rule). But a tree that
 branches **below** the root does not: `b ← x`, `x ← {y, z}` — a chain
 from the root, then an unordered pair as exceptions *to `x`* — has no
 image. Flattening it to the group `{[y, x], [z, x]}` is wrong, not just
@@ -526,14 +532,15 @@ structure amendments edit").
 Options for the Phase-5 design (decision 7 records the choice direction,
 the design itself stays at Phase 5 with rows 9/10/36):
 
-- **(i) Nested groups as kernel structure** — a rung's exception slot may
-  hold a sub-group. Faithful, one concept recursively applied; the WF-051
+- **(i) Nested groups as kernel structure** — a default's exception slot
+  may hold an exception group. Faithful, one concept recursively applied;
+  the WF-051
   edge classes extend mechanically (every descendant read is a negative
   edge toward the root target). Recommended direction.
 - **(ii) Flattening with derived conflict predicates** — encode depth in
   generated displacement conditions. No new IR surface, but erases
   amendment structure (the row-8 argument) — rejected for the same reason
-  the ladder stayed first-class.
+  the defaults group stayed first-class.
 - **(iii) Frontend restriction** — the Catala plugin refuses programs
   whose trees branch below the root, loudly (honest inexpressibility,
   WF-044 style). Acceptable as the *initial* plugin scope even under (i).
@@ -543,14 +550,14 @@ construct produces sub-root branching, so v1 loses nothing.
 
 ## 8. Wire form and well-formedness: what does not change
 
-Proposal A adds **zero wire surface**. The input rung is virtual — a
+Proposal A adds **zero wire surface**. The input default is virtual — a
 semantic reading, implicit per target, never serialized; the extension
 discipline (IS Method: additive, optional, never null, tracked in the
 `CONSTRUCTS.md` delta column) is not exercised because there is nothing
 to carry. No new WF rule is needed: the norm of §4.3 is evaluation
 semantics (RS ch. 7 text — a new ch. 7.8 plus the ch. 7.7 domain
 extension and a delta note at ch. 1.2g), not document well-formedness;
-WF-050/051 are untouched (the generalization creates no IR ladders, so
+WF-050/051 are untouched (the generalization creates no IR defaults, so
 the single-writer rule and the edge classes stand as they are). Should
 adoption want authorial opt-out (a rule that *demands* v0's
 erase-on-leeg), that would be the moment for an extension field — this
@@ -563,7 +570,7 @@ not in advance. The first new WF number, if any later part needs one, is
 
 | Artifact | Change on adoption | Card shape |
 |---|---|---|
-| `RUNTIME-SEMANTICS.md` ch. 7 (+ ch. 1.2g note) | ch. 7.8 input rung; ch. 7.7 domain extension; conflict-readability closed (§6); the §2.2 deviations named | proposal branch (protected) |
+| `RUNTIME-SEMANTICS.md` ch. 7 (+ ch. 1.2g note) | ch. 7.8 input default; ch. 7.7 domain extension; conflict-readability closed (§6); the §2.2 deviations named | proposal branch (protected) |
 | `CONSTRUCTS.md` row 8 (+ row 18) | delta entries: equal-values conflict; observable-not-fatal conflict; computed-leeg-over-input standing | ordinary card |
 | `backends/clingo` | `inputval/3` generalized (§4.4); `case_supplies` retired for desugarable targets, retained for non-desugarable computing forms; a **new** fence on allocation-target input (the latent gap of §4.4); ch. 6d note updated | ordinary card, red-first |
 | `ref/` | fall-through on desugarable computing targets (§4.5, desugar-route) | ordinary card, red-first |
@@ -576,14 +583,14 @@ today, which is exactly why the change is cheap now and dearer later.
 
 ## 10. Open decisions
 
-1. **The input-rung reading** — A: computation beats input (the landed
+1. **The input-default reading** — A: computation beats input (the landed
    anchors' reading; recommended); B: input beats computation (Catala's
    C-Def polarity). *Recommendation: A. B's home is the Phase-5 scope
-   call; adopting it for case input would flip `case6-rung-overschrijft`
+   call; adopting it for case input would flip `case6-default-overschrijft`
    and put the dossier above the law's arithmetic. Reading B's
    legitimate legal instance — the discretionary/hardship override — is
-   served by the §4.1 hardship pattern (a top rung reading a declared
-   decision fact), grounded and traceable, with no load-semantics
+   served by the §4.1 hardship pattern (a highest-priority default reading
+   a declared decision fact), grounded and traceable, with no load-semantics
    change.*
 2. **Norm the fall-through for bare computing targets** — "a computed
    leeg never displaces an input-supplied value", extending the ch. 7.7
@@ -593,7 +600,7 @@ today, which is exactly why the change is cheap now and dearer later.
    v0's erase is *also* monotonically encodable (condition-only
    effectiveness, §4.4), so the mirror could be kept — at the price of
    two leeg-disciplines in one calculus. *Recommendation: yes,
-   fall-through. Uniformity with the landed ladder, the observed-fact
+   fall-through. Uniformity with the landed defaults, the observed-fact
    argument, the fault-domain neighbour — and the corner is
    fence-blocked today, so no case can disagree; it is the last obstacle
    between the flank cases and the differential corpus.*
@@ -607,9 +614,9 @@ today, which is exactly why the change is cheap now and dearer later.
    is the contract that we never deviate silently.*
 6. **The Drools path** (§5) — schedule the derivation card at the next
    pin-bump (satisfying the exit criterion on the v0-expressible
-   fragment), defer full ladder service to the first ladder-producing
+   fragment), defer full defaults service to the first defaults-producing
    frontend. *Recommendation: exactly that split; hand-authored-IR-only
-   Drools ladder service tests no production path.*
+   Drools defaults service tests no production path.*
 7. **Exception-tree direction** (§7) — record nested groups (option i)
    as the intended Phase-5 kernel shape, with frontend restriction
    (option iii) as the admissible initial plugin scope.
@@ -627,8 +634,8 @@ computing rule:
 > gemeld is.
 
 Case input: instance `v1`, `geschatte waarde = 40.00`. Desugared reading
-(§4.3): rung 1 = (gemeld, taxatiewaarde); rung 2 = the input rung; no
-initialisation.
+(§4.3): default 1 = (gemeld, taxatiewaarde); default 2 = the input
+default; no initialisation.
 
 ASP program fragment (§4.4 sketch, scale 2):
 
@@ -641,11 +648,11 @@ val(S,"geschatte waarde",V) :- r1_out(S,V).
 val(S,"geschatte waarde",V) :- inputval(S,"geschatte waarde",V), not r1_eff(S).
 ```
 
-| Scenario (facts beside the input) | ref, ladder reading | ASP stable model | v0 mirror today |
+| Scenario (facts beside the input) | ref, defaults reading | ASP stable model | v0 mirror today |
 |---|---|---|---|
-| gemeld, taxatiewaarde 50.00 | rung 1 decides → **50.00** | `r1_eff(v1)` derives; `val(v1,…,5000)` from `r1_out`; input displaced by NAF | same (overwrite) — but the ASP side is fence-refused |
-| niet gemeld | rung 1 justification fails → input rung decides → **40.00** | `r1_eff` underivable → `val(v1,…,4000)` from `inputval` | ref same; ASP fence-refused (the §3b flank) |
-| gemeld, taxatiewaarde leeg | rung 1 falls through (consequence leeg) → input rung decides → **40.00** | `val(v1,"taxatiewaarde",_)` underivable → `r1_eff` underivable → input stands | **the delta**: v0/ref write leeg, input erased (ch. 1.2g) — encodable too, via a condition-only `r1_eff` (§4.4); decision 2 chooses standing |
+| gemeld, taxatiewaarde 50.00 | default 1 decides → **50.00** | `r1_eff(v1)` derives; `val(v1,…,5000)` from `r1_out`; input displaced by NAF | same (overwrite) — but the ASP side is fence-refused |
+| niet gemeld | default 1 justification fails → input default decides → **40.00** | `r1_eff` underivable → `val(v1,…,4000)` from `inputval` | ref same; ASP fence-refused (the §3b flank) |
+| gemeld, taxatiewaarde leeg | default 1 falls through (consequence leeg) → input default decides → **40.00** | `val(v1,"taxatiewaarde",_)` underivable → `r1_eff` underivable → input stands | **the delta**: v0/ref write leeg, input erased (ch. 1.2g) — encodable too, via a condition-only `r1_eff` (§4.4); decision 2 chooses standing |
 
 The three rows are the whole proposal in miniature: row 1 is the
 confluent domain where every reading agrees and only the encoding was

@@ -1,16 +1,16 @@
-# Besluit-6-context-inputs: de gegenereerde top-rung
+# Besluit-6-context-inputs: de gegenereerde top-default
 
 Goal: het geratificeerde-maar-uitgestelde besluit over Catala's
 context-inputs uitvoeren, nu de subscope-machinerie er is. Lees
 EERST spec/proposals/PHASE5-CATALA.md (het besluit over de
-context-override-polariteit als gegenereerde top-rung, Reading B als
-rung-volgorde) en de PHASE5C-TUTORIAL §3-randvoorwaarde: een
-caller-waarde op een GELADDERD callee-doel gaat als rung, nooit als
+context-override-polariteit als gegenereerde top-default, Reading B als
+default-volgorde) en de PHASE5C-TUTORIAL §3-randvoorwaarde: een
+caller-waarde op een callee-doel MET DEFAULTS gaat als default, nooit als
 MemberInit (de WF-050-randvoorwaarde). De plugin lowert een
 context-input op een subscope naar de geratificeerde vorm: de
-caller-waarde wordt een gegenereerde top-rung boven de callee-ladder
-(de bestaande refuse_context versmalt of klapt om); ladderloze
-callee-doelen blijven de MemberInit-route. E2E: fixture(s) plus een
+caller-waarde wordt een gegenereerde top-default boven de callee-defaults
+(de bestaande refuse_context versmalt of klapt om); callee-doelen
+zonder defaults blijven de MemberInit-route. E2E: fixture(s) plus een
 eigen catala-golden door plugin → verifier → ref → clingo. Wijk je
 ergens van het geratificeerde ontwerp af of blijkt een verifier-
 aanscherping (de randvoorwaarde als check) nodig die het proposal
@@ -29,30 +29,30 @@ spec/RUNTIME-SEMANTICS.md, spec/verifier/ (een noodzakelijk
 gebleken verifier-check = blokkade, eerst voorleggen).
 
 Result (2026-08-24): besluit 6 uitgevoerd — de gegenereerde
-top-rung. De rood-eerst is vastgelegd: het oude blanket-refuse gaf
+top-default. De rood-eerst is vastgelegd: het oude blanket-refuse gaf
 letterlijk `context (reentrant) variable "drempel": besluit 6 wants
 Reading B ... A single-scope 5a program cannot realise Reading B —
 refused.`
 
 Ontwerpkeuze (binnen het geratificeerde besluit, GEEN afwijking): de
-caller-arg wordt een gegenereerde top-rung IN de ladder van de
+caller-arg wordt een gegenereerde top-default IN de defaults-groep van de
 aangeroepen scope (besluit-6-notitie 2026-08-21) waarvan guard én
 waarde de caller lezen, GENAVIGEERD over de `verbindendeRol`-teruglus
 (callee → caller) — geen standing-machinerie. Dit is de meest letterlijke
-lezing van "de caller-waarde wordt een top-rung boven de callee-ladder"
-en het §4.1-hardheidspatroon (de rung leest een input-attribuut, hier
+lezing van "de caller-waarde wordt een top-default boven de callee-defaults"
+en het §4.1-hardheidspatroon (de default leest een input-attribuut, hier
 navigerend de caller-input). De navigatie-mechaniek is EMPIRISCH
 gevalideerd vóór implementatie: een handgebouwde IR met een genavigeerde
-top-rung is verifier-schoon en beide executors (ref ≡ clingo) matchen
+top-default is verifier-schoon en beide executors (ref ≡ clingo) matchen
 `catala interpret` (70 override-wint / 90 callee-basis). GEEN
 verifier-wijziging nodig — dus geen blokkade.
 
 Plumbing (`frontends/catala/lib/translate.ml`): het blanket
 reentrant-refuse is weg; een reentrant doel met eigen default wordt een
-ladder-basis geforceerd (nooit een kale Berekening); de caller-override
-lowert via een genavigeerde `override_exprs` naar top-rung(s), verzameld
+defaults-basis geforceerd (nooit een kale Berekening); de caller-override
+lowert via een genavigeerde `override_exprs` naar top-default(s), verzameld
 per (callee-objecttype, callee-attribuut) en in `file_to_document`
-vóórgeplakt op de ladder van dat doel. Een ladderloos callee-doel (kale
+vóórgeplakt op de defaults-groep van dat doel. Een callee-doel zonder defaults (kale
 input) houdt de MemberInit-route (WF-050). `attr_ref`/`read_var`/
 `check_var` zijn geherfactored tot gedeelde `scalar_read`/`kenmerk_read`
 + genavigeerde varianten (gedragsbehoud; 126 suite-checks groen).
@@ -84,7 +84,7 @@ Lensronde (2026-08-24, 2 MINOR verwerkt):
   daarvoor NIET vereist; het generieke 1446-None-pad ("outside the fragment")
   hoort bij de gedeelde-basis-vorm (een andere, reeds-elders-gedekte flank),
   niet bij onder-de-wortel-vertakking.
-- Bevinding 2 [PLAUSIBLE] — de top-rung leest de caller via back-link-navigatie
+- Bevinding 2 [PLAUSIBLE] — de top-default leest de caller via back-link-navigatie
   (een elaboratie boven het letterlijke §4.1-zelfde-subject-patroon).
   Geverifieerd: geen defect (de bevinding meldt zelf "geen code-actie"); de
   navigatie-mechaniek is al expliciet benoemd in de Executed-notitie
@@ -98,11 +98,11 @@ Open: (afgehandeld) de twee opus-lenzen zijn verwerkt.
 Result: besluit 6 is uitgevoerd exact zoals geratificeerd
 (PHASE5-CATALA §8, besluit 6-A, letterlijk geciteerd in de
 Executed-notitie): een Catala context-input op een subscope lowert
-naar een gegenereerde TOP-rung boven de eigen ladder van de callee
-(Reading B als rung-volgorde, het hardheidspatroon; de ch.
-7.8-input-rung blijft van het case-dossier), waarbij guard en waarde
-van de rung de caller genavigeerd lezen over de
-verbindendeRol-teruglus; een ladderloos callee-doel houdt de
+naar een gegenereerde TOP-default boven de eigen defaults-groep van de callee
+(Reading B als default-volgorde, het hardheidspatroon; de ch.
+7.8-input-default blijft van het case-dossier), waarbij guard en waarde
+van de default de caller genavigeerd lezen over de
+verbindendeRol-teruglus; een callee-doel zonder defaults houdt de
 MemberInit-route (de WF-050-randvoorwaarde). Géén verifier-wijziging
 nodig gebleken: de navigatie-mechaniek is vóór implementatie
 empirisch gevalideerd met een handgebouwde IR (verifier-schoon,

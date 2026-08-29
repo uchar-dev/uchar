@@ -62,7 +62,7 @@
           "node": "Default",
           "besluit": null,
           "voorwaarde": null,
-          "bron": "groep-rung",
+          "bron": "groep-default",
           "excepties": {
             "ongeordend": true,
             "leden": [
@@ -110,7 +110,7 @@
                       },
                       "bron": "10.00"
                     },
-                    "bron": "sub-rung die het eigen doel leest (zelf-cyclus)"
+                    "bron": "sub-default die het eigen doel leest (zelf-cyclus)"
                   }
                 ],
                 "bron": "lid dat het root-doel leest"

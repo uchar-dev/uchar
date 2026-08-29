@@ -1,9 +1,9 @@
 # WW-herleving: het realisme-anker (eerste casus, inkomenspad)
 
-Goal: de eerste WW-realisme-case van LADDER-EVOLUTIE §3.4 / Q14
+Goal: de eerste WW-realisme-case van PRIORITIZED-DEFAULTS-EVOLUTIE §3.4 / Q14
 (geratificeerd 2026-08-29) als handgeschreven anker:
 `corpus/golden/anchor/ww-herleving-inkomen/` — het pad art. 20-1-c →
-art. 21-1 eerste volzin (geen termijn). Eén genest kenmerk-ladder-doel
+art. 21-1 eerste volzin (geen termijn). Eén genest kenmerk-defaults-doel
 `recht op uitkering` (grondtoekenning art. 15 → do-not-attribute op de
 inkomensgrens 20-1-c → herleving 21-1 bij vervallen omstandigheid →
 do-not-attribute op de blokkade 21-2-a), plus gewone datumrekenregels
@@ -24,7 +24,7 @@ byte-roundtrip (gate 2), verifier-schoon (gate 3), case-schema (gate 4),
 ref replay exact (gate 5), clingo exact (gate 6), noop faalt op alle drie
 de cases (gate 7 — anders gemotiveerde survivor-entry), rood onaangeroerd
 (gate 8); gate 12 sluit het anker luid uit via het bestaande
-defaultLadders-weigerkanaal (geen scriptwijziging nodig); handberekening
+prioritizedDefaults-weigerkanaal (geen scriptwijziging nodig); handberekening
 van elke verwachting in de NOTE.md naast de artikelcitaten.
 
 May touch: corpus/golden/anchor/ww-herleving-inkomen/ (nieuw), backlog/.
@@ -34,15 +34,15 @@ samenloop — latere kaarten); tijdlijn-lifecycle; frontend- of
 backendwijzigingen; spec-tekst.
 
 Result: corpus/golden/anchor/ww-herleving-inkomen/ geland — het eerste
-WW-realisme-anker (LADDER-EVOLUTIE §3.4/Q14): één genest kenmerk-ladder
+WW-realisme-anker (PRIORITIZED-DEFAULTS-EVOLUTIE §3.4/Q14): één geneste kenmerk-defaults-groep
 (grant art. 15 → einde 20-1-c → herleving 21-1 → blokkade 21-2-a, rose
 tree, WF-050/051/075-schoon) + drie scalaire rekenregels (inkomensgrens
 0,875×maandloon; tijdsduur; datum+duur), VIER cases die elk op een andere
-sport beslissen (case4-einde toegevoegd op lensvondst: de kale eindiging
+default beslissen (case4-einde toegevoegd op lensvondst: de kale eindiging
 was onbediend), alle verwachtingen handberekend in NOTE.md naast de
 verbatim wetsartikelen (BWBR0004045, toestand 2026-07-01). Gates 1-8
 groen (362 cases ref≡clingo; alle vier cases weerleggen noop); gate 12
-sluit het anker luid uit via het bestaande defaultLadders-kanaal. Lenzen
+sluit het anker luid uit via het bestaande prioritizedDefaults-kanaal. Lenzen
 (2 opus): juridisch-rekenkundig — elke pin op papier nagerekend,
 wetscitaten byte-getrouw, WF-boobytraps in /tmp door de verifier
 verworpen; rechten/gates — eigen casusgetallen bevestigd (géén

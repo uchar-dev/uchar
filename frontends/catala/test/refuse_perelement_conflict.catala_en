@@ -1,6 +1,6 @@
 # Per-element callee with an unordered/conflict-group output — refused
 
-Only an ordered plain-rung chain with a total base lowers to a closed
+Only an ordered plain-default chain with a total base lowers to a closed
 IfThenElse body. `KamerConflict`'s output is a root-level unordered group of two
 OVERLAPPING conditions with no unconditional base — a conflict-bearing group, no
 single closed body. Refused per element (besluit 1-A weiger-grens).

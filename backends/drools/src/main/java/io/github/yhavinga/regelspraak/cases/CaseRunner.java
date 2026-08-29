@@ -97,7 +97,7 @@ public final class CaseRunner {
      *  Throws {@link Excluded} / {@link IrLoader.Refusal} for any form the v0 backend does not carry. */
     private static CaseRunner build(Path irPath) throws java.io.IOException {
         JsonNode ir = JSON.readTree(Files.readString(irPath));
-        IrLoader.Loaded loaded = IrLoader.loadAll(ir);   // the model plus the ch. 7 ladder extension beside it
+        IrLoader.Loaded loaded = IrLoader.loadAll(ir);   // the model plus the ch. 7 prioritized-defaults extension beside it
         RegelSpraakModel model = loaded.model();
 
         // Two forms the v0 backend cannot REPLAY are refused up front — a LOUD per-form exclusion, never a
@@ -127,7 +127,7 @@ public final class CaseRunner {
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {
-            ExecModelTranspiler et = ExecModelTranspiler.build(model, cl, loaded.defaultLadders());
+            ExecModelTranspiler et = ExecModelTranspiler.build(model, cl, loaded.prioritizedDefaults());
             // every construct must LOWER — a marker means the exec KieBase silently omits it,
             // so the case's expectations could not be produced; that golden is not carried.
             for (Dekking d : et.dekking())
@@ -383,7 +383,7 @@ public final class CaseRunner {
 
     /** The §9.5 consistency check. A {@code consistent} expectation demands NO Inconsistentie fact at all
      *  (unchanged presence semantics). An {@code inconsistent} expectation is verified against the pinned §9.5
-     *  KEY (the {@code rule}) — a matching Inconsistentie fact must exist. For a LADDER conflict key (ch. 7.2/7.9,
+     *  KEY (the {@code rule}) — a matching Inconsistentie fact must exist. For a DEFAULT-GROUP conflict key (ch. 7.2/7.9,
      *  the {@code Onderwerp.doel[/path]} form whose prefix is a declared objecttype, e.g. {@code Jutter.heffing/0})
      *  the pinned SUBJECT (the {@code label}) is verified too (ratified Q4) — sharpening the third leg's witness to
      *  the exact path key ref/clingo pin. For a rule-name key (a consistentie/uniciteit/verdeling violation), only
@@ -403,18 +403,18 @@ public final class CaseRunner {
         if (facts.isEmpty())
             return "verwacht inconsistent" + sleutelTekst(rule, label) + ", werkelijk consistent";
         if (rule == null) return null;   // presence-only expectation, satisfied by any fact
-        boolean ladderSleutel = isLadderSleutel(rule);
+        boolean defaultsSleutel = isDefaultsSleutel(rule);
         for (Object f : facts) {
             if (!rule.equals(lees(f, "getRegel"))) continue;
-            if (!ladderSleutel || label == null) return null;     // rule-name key: the key match suffices
+            if (!defaultsSleutel || label == null) return null;     // rule-name key: the key match suffices
             if (label.equals(labelVanBean(lees(f, "getSubject")))) return null;
         }
         return "verwacht inconsistent" + sleutelTekst(rule, label) + ", niet gevonden onder " + renderIncs(facts);
     }
 
-    /** Whether a §9.5 key is a ch. 7.2/7.9 ladder conflict key — the {@code Onderwerp.doel[/path]} form whose
+    /** Whether a §9.5 key is a ch. 7.2/7.9 default-group conflict key — the {@code Onderwerp.doel[/path]} form whose
      *  prefix before the first {@code .} is a declared objecttype. Rule-name keys (free Dutch phrases) never match. */
-    private boolean isLadderSleutel(String rule) {
+    private boolean isDefaultsSleutel(String rule) {
         int dot = rule.indexOf('.');
         return dot > 0 && model.objecttypeOpNaam(rule.substring(0, dot)) != null;
     }

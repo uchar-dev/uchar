@@ -45,7 +45,7 @@ rejected on the branch citing their rule; gate 3 at 40 negatief.
 ref/: evaluation by strata computed from the shared dep_forms (no
 drift); ch. 6.4 examples land as unit tests verbatim (WV-6.4-a..e:
 the 5.3 pair, the 5.6 channel read, the cycle fault, the four-deep
-ladder, order-independence of an emptiness read on a derived
+defaults, order-independence of an emptiness read on a derived
 attribute). Verification (3 adversarial opus lenses) found 2 blockers +
 1 major (XOR double-negation cancellation; positive classification of
 non-monotone emptiness/value reads by irrevocable writers — a

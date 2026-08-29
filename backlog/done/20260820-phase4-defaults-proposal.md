@@ -2,11 +2,11 @@
 
 Goal: one proposal document, `spec/proposals/PHASE4-DEFAULTS.md`, that maps
 Catala's default calculus (ICFP 2021) onto this repo's existing mechanisms
-(initialisation-as-default, the attribute ladders with `inputval/3` and
+(initialisation-as-default, the attribute defaults with `inputval/3` and
 defeasible standing, rule-version selection, the §9.5 conflict channel),
 motivates it from the three findings that structurally point at Phase 4
 (the computed-target input fence of ASP-TRANSLATION ch. 6d, the
-conditional-rule-plus-input flank, and the ladder input standing the no-op
+conditional-rule-plus-input flank, and the defaults input standing the no-op
 survivors already pin), sketches the IR wire form (additive extension
 fields), the ASP encoding, and the ref encoding, gives a migration path,
 and closes with numbered OPEN decisions for the maintainer. The document is
@@ -28,9 +28,9 @@ Out of scope: any change to `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`,
 Result: `spec/proposals/PHASE4-DEFAULTS.md` landed as a PROPOSAL (no
 normative text changed; adoption is the maintainer's, §10 carries seven
 numbered decisions with recommendations). Research established that the
-calculus core is already landed (RS ch. 7 complete, `defaultLadders`,
+calculus core is already landed (RS ch. 7 complete, `prioritizedDefaults`,
 WF-050/051, four anchors), so the document designs the *remainder*: the
-virtual input rung with computation-beats-input as the recommended
+virtual input default with computation-beats-input as the recommended
 reading, the fall-through norm for bare computing targets with the
 generalized `inputval/3` encoding, the staged Drools path for the one
 unmet PLAN exit criterion, closing conflict-fact readability, and the

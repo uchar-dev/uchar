@@ -2,7 +2,7 @@
 
 Twee ongeordende gronden op één doel: een root-vertakking zonder
 onvoorwaardelijke basis. De plugin maakt hiervan een declared-unordered
-laddergroep (twee ladders, elk `ongeordend`).
+defaults-groep (twee defaults-bundels, elk `ongeordend`).
 
 ```catala
 declaration scope Toeslag:

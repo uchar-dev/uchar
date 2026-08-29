@@ -1,6 +1,6 @@
 # Eenheden: de gespecificeerde normalisatiepas (fijnste canoniek)
 
-Goal: de taillebeslissing van LADDER-EVOLUTIE §8.2 / Q9 (geratificeerd
+Goal: de taillebeslissing van PRIORITIZED-DEFAULTS-EVOLUTIE §8.2 / Q9 (geratificeerd
 2026-08-29): broneenheden blijven op de wire; een gespecificeerde
 wire→wire-normalisatiepas canonicaliseert eenheden naar de FIJNSTE
 basiseenheid van elk stelsel (uitsluitend vermenigvuldigen — exact en

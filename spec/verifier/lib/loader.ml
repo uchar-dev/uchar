@@ -1071,11 +1071,11 @@ let diagnostic path j : diagnostic =
 
 (* --- the document ------------------------------------------------------- *)
 
-(* Extension form (Phase 4 first cut): the characteristic default
-   ladder. Strict: no nullable children beyond naam/bron/geldigheid. *)
-let rec rung path j : rung =
+(* Extension form (Phase 4 first cut): one default of the characteristic
+   defaults. Strict: no nullable children beyond naam/bron/geldigheid. *)
+let rec default path j : default =
   let kvs = obj path j in
-  expect_node path kvs "Rung";
+  expect_node path kvs "Default";
   check_keys path kvs ~ext:[ "consequentie"; "initialisatie"; "excepties" ]
     [ "node"; "besluit"; "voorwaarde"; "bron" ];
   let bool_opt path = function
@@ -1084,65 +1084,65 @@ let rec rung path j : rung =
     | j -> fail path ("expected boolean or null, got " ^ Yojson.Safe.to_string j)
   in
   {
-    rung_besluit = bool_opt (path / "besluit") (field path kvs "besluit");
-    rung_voorwaarde = opt (path / "voorwaarde") conditie (field path kvs "voorwaarde");
-    rung_consequentie = ext_field path kvs "consequentie" expr;
-    rung_initialisatie =
+    default_besluit = bool_opt (path / "besluit") (field path kvs "besluit");
+    default_voorwaarde = opt (path / "voorwaarde") conditie (field path kvs "voorwaarde");
+    default_consequentie = ext_field path kvs "consequentie" expr;
+    default_initialisatie =
       (match ext_field path kvs "initialisatie" (fun p j -> bool_ p j) with
       | Some b -> b
       | None -> false);
-    rung_excepties = ext_field path kvs "excepties" sub_group;
-    rung_bron = str_opt (path / "bron") (field path kvs "bron");
+    default_excepties = ext_field path kvs "excepties" exception_groups;
+    default_bron = str_opt (path / "bron") (field path kvs "bron");
   }
 
-(* The nested exception sub-group riding [excepties] (v1, Phase 5c;
-   RUNTIME-SEMANTICS ch. 7.9). The sub-group object carries no node
-   discriminator (it is the extension field's value); each member is a
-   [SubLadder] node. Strict: both keys required. *)
-and sub_group path j : sub_group =
+(* The nested exception groups riding [excepties] (v1, Phase 5c;
+   RUNTIME-SEMANTICS ch. 7.9). The excepties object carries no node
+   discriminator (it is the extension field's value); each member is an
+   [ExceptionGroup] node. Strict: both keys required. *)
+and exception_groups path j : exception_groups =
   let kvs = obj path j in
   check_keys path kvs [ "ongeordend"; "leden" ];
   {
-    sg_ongeordend = bool_ (path / "ongeordend") (field path kvs "ongeordend");
-    sg_leden =
+    egs_ongeordend = bool_ (path / "ongeordend") (field path kvs "ongeordend");
+    egs_leden =
       List.mapi
-        (fun i x -> sub_ladder (path / "leden" / string_of_int i) x)
+        (fun i x -> exception_group (path / "leden" / string_of_int i) x)
         (list_ (path / "leden") (field path kvs "leden"));
   }
 
-and sub_ladder path j : sub_ladder =
+and exception_group path j : exception_group =
   let kvs = obj path j in
-  expect_node path kvs "SubLadder";
-  check_keys path kvs [ "node"; "rungs"; "bron" ];
+  expect_node path kvs "ExceptionGroup";
+  check_keys path kvs [ "node"; "defaults"; "bron" ];
   {
-    sl_rungs =
+    eg_defaults =
       List.mapi
-        (fun i x -> rung (path / "rungs" / string_of_int i) x)
-        (list_ (path / "rungs") (field path kvs "rungs"));
-    sl_bron = str_opt (path / "bron") (field path kvs "bron");
+        (fun i x -> default (path / "defaults" / string_of_int i) x)
+        (list_ (path / "defaults") (field path kvs "defaults"));
+    eg_bron = str_opt (path / "bron") (field path kvs "bron");
   }
 
-let default_ladder path j : default_ladder =
+let prioritized_defaults path j : prioritized_defaults =
   let kvs = obj path j in
-  expect_node path kvs "DefaultLadder";
+  expect_node path kvs "PrioritizedDefaults";
   check_keys path kvs ~ext:[ "attribuut"; "ongeordend" ]
-    [ "node"; "naam"; "onderwerp"; "kenmerk"; "rungs"; "bron"; "geldigheid" ];
+    [ "node"; "naam"; "onderwerp"; "kenmerk"; "defaults"; "bron"; "geldigheid" ];
   let f name = field path kvs name in
   {
-    dl_naam = str_opt (path / "naam") (f "naam");
-    dl_onderwerp = str (path / "onderwerp") (f "onderwerp");
-    dl_kenmerk = str_opt (path / "kenmerk") (f "kenmerk");
-    dl_attribuut = ext_field path kvs "attribuut" str;
-    rungs =
+    pd_naam = str_opt (path / "naam") (f "naam");
+    pd_onderwerp = str (path / "onderwerp") (f "onderwerp");
+    pd_kenmerk = str_opt (path / "kenmerk") (f "kenmerk");
+    pd_attribuut = ext_field path kvs "attribuut" str;
+    defaults =
       List.mapi
-        (fun i x -> rung (path / "rungs" / string_of_int i) x)
-        (list_ (path / "rungs") (f "rungs"));
-    dl_ongeordend =
+        (fun i x -> default (path / "defaults" / string_of_int i) x)
+        (list_ (path / "defaults") (f "defaults"));
+    pd_ongeordend =
       (match ext_field path kvs "ongeordend" (fun p j -> bool_ p j) with
       | Some b -> b
       | None -> false);
-    dl_bron = str_opt (path / "bron") (f "bron");
-    dl_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
+    pd_bron = str_opt (path / "bron") (f "bron");
+    pd_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
   }
 
 (* Extension form (v1, row 10): a named reusable function (IR-SPEC ch. 2.11).
@@ -1163,7 +1163,7 @@ let function_def path j : function_def =
 let document (j : json) : document =
   let path = "" in
   let kvs = obj path j in
-  check_keys path kvs ~ext:[ "defaultLadders"; "functionDefs" ]
+  check_keys path kvs ~ext:[ "prioritizedDefaults"; "functionDefs" ]
     [ "formaat"; "objecttypen"; "domeinen"; "parameters"; "eenheidstelsels";
       "feittypen"; "dimensies"; "tijdlijnen"; "dagsoorten"; "dagsoortPerEenheid";
       "regels"; "resolvedRegels"; "resolvedDagsoorten"; "objectCreaties";
@@ -1198,12 +1198,12 @@ let document (j : json) : document =
     resolved_startpunten = arr "resolvedStartpunten" resolved_startpunt;
     regel_groepen = arr "regelGroepen" resolved_regel_groep;
     diagnostics = arr "diagnostics" diagnostic;
-    default_ladders =
-      (match List.assoc_opt "defaultLadders" kvs with
+    prioritized_defaults =
+      (match List.assoc_opt "prioritizedDefaults" kvs with
       | Some j ->
           List.mapi
-            (fun i x -> default_ladder (path / "defaultLadders" / string_of_int i) x)
-            (list_ (path / "defaultLadders") j)
+            (fun i x -> prioritized_defaults (path / "prioritizedDefaults" / string_of_int i) x)
+            (list_ (path / "prioritizedDefaults") j)
       | None -> []);
     function_defs =
       (match List.assoc_opt "functionDefs" kvs with

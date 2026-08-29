@@ -1,10 +1,10 @@
 # Stratificatie-hoofdstuk: IR-SPEC §5 + de dagsoort-WF
 
-Goal: het normatieve stratificatiehoofdstuk van LADDER-EVOLUTIE §7 /
+Goal: het normatieve stratificatiehoofdstuk van PRIORITIZED-DEFAULTS-EVOLUTIE §7 /
 Q7+Q8 (geratificeerd 2026-08-29). Een nieuw IR-SPEC §5 "Stratification"
 (het nummeringsgat §4→§6) tilt de afhankelijkheidsgraaf- en
 kantsoort-definities uit RUNTIME-SEMANTICS ch. 6 naar normatief niveau
-(knopen; positieve/stratum-strikte/negatieve kanten; de WF-051-laddervouw;
+(knopen; positieve/stratum-strikte/negatieve kanten; de WF-051-defaultsvouw;
 de illegale-cyclusregel), waarna WF-045/046/051 náár §5 citeren en ch. 6
 het operationele gezelschapsstuk blijft. Inclusief de
 executor-neutraliteitsclausule: een backend realiseert óf een correcte
@@ -39,12 +39,12 @@ smalle vorm); CONSTRUCTS/PLAN (hoofdsessie serieel).
 
 Result: IR-SPEC ch. 5 "Stratification" vult het §4→§6-nummeringsgat —
 normatieve graafdefinities (vijf knoopsoorten; drie kantsoorten incl. de
-WF-051-laddervouw; WF-045/046 als cyclusregels), dagsoorten expliciet als
+WF-051-defaultsvouw; WF-045/046 als cyclusregels), dagsoorten expliciet als
 stratum 0 buiten de graaf, en de executor-neutraliteitsclausule (smallere
 stratifier mét luide per-vorm-weigering is conform; Drools als de
 geratificeerde begrensde instantie — de lens toetste dat de formulering
 géén stille miswaarde legitimeert). WF-031 draagt de puurheidsclausule
-(gesloten toelatingslijst; de recursie-OPEN gesloten, LADDER-EVOLUTIE
+(gesloten toelatingslijst; de recursie-OPEN gesloten, PRIORITIZED-DEFAULTS-EVOLUTIE
 Q8), WF-085 (nieuw) eist acycliciteit van de dagsoort-verwijzingsgraaf —
 luid waar de toolchain stil false-in-cyclus is. Getuigen rood-eerst tegen
 de oude verifier: wf031-dagsoort-leest-kenmerk,

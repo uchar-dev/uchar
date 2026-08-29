@@ -9,7 +9,7 @@ The value-position member check accepted either an attribute or a
 characteristic endpoint; a characteristic is read through a characteristic
 check (ch. 4.5, a `KenmerkCheck` condition), never an `AttribuutRef` in a
 value slot. WF-080 fires only in value positions (the rule value, a member
-value, a condition operand, a rung consequence) — a rule TARGET lvalue is
+value, a condition operand, a default consequence) — a rule TARGET lvalue is
 WF-022's job and is not walked, so `KENMERKTOEKENNING` targets are unaffected.
 The serialized `type {Booleaan}` keeps the assignment kind-clean for WF-023,
 so the old verifier had nothing else to catch.

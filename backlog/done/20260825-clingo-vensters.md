@@ -1,8 +1,8 @@
 # Clingo real-world 2/4 — validity-window gating
 
-Goal: translate validity windows (`geldigheid` on rules, ladders,
+Goal: translate validity windows (`geldigheid` on rules, prioritized defaults,
 creations — RUNTIME-SEMANTICS ch. 8.2 runtime gating against `asOfDate`)
-in `backends/clingo`, removing the S19 "validity windows (rules, ladders,
+in `backends/clingo`, removing the S19 "validity windows (rules, defaults,
 creations)" refusal where ref carries the semantics. Today
 `jutterswet-vormenkabinet` is the only window-carrying corpus document
 and is verifier-only by its own NOTE (no case replays it); the TOKA
@@ -34,7 +34,7 @@ allocation.
 ---
 
 Result (2026-08-25): clingo draagt nu de geldigheidsvensters van
-RUNTIME-SEMANTICS ch. 8.2 op regels, ladder-leden en beide
+RUNTIME-SEMANTICS ch. 8.2 op regels, defaults-leden en beide
 creatievormen. De poort is de letterlijke spiegel van refs `applies`
 (ref/lib/eval.ml), beslissing voor beslissing: de vertaling is
 per-case, dus de asOfDate is een vertaaltijd-constante en refs
@@ -43,10 +43,10 @@ head, geen helper, geen viol/2-hek; ref evalueert hem ook nooit), een
 begrensd venster in een tijdvrije sessie fault met exact refs reden
 ("a validity-bounded form needs an evaluation date; this session is
 time-free"), beide grenzen inclusief als ISO-strings. De ene naad
-expliciet gedicht: een laddergroep waarvan ALLE leden uitgesloten
+expliciet gedicht: een defaults-groep waarvan ALLE leden uitgesloten
 zijn emitteert alleen de onvoorwaardelijke input-doorgang (inputval →
 val), omdat translate_case de defeasible entry op de ongefilterde
-ladderlijst sleutelt; gevensterde regels raken de
+defaults-lijst sleutelt; gevensterde regels raken de
 standing/desugar-machinerie nooit (ch. 7.7 én 7.8 eisen versievrije
 vormen).
 
@@ -67,7 +67,7 @@ validity windows are not translated (no corpus case)") — S19 draagt
 ze. S19 kromp met precies wat vertaalt; S1 draagt de poortconventie,
 S3/S10/S11/S17 de verwijzing per vorm; S19 bleef de hoogste sectie.
 
-Bewust gelaten: geen corpus-getuige voor gevensterde ladder-leden en
+Bewust gelaten: geen corpus-getuige voor gevensterde defaults-leden en
 creaties (dezelfde `applies`-poort; differentieel gerookt op
 /tmp-varianten van hardheid-, penninguitgifte- en erflijn-vormen —
 beide executors identiek binnen én buiten venster, plus de gedeelde

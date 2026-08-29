@@ -6,7 +6,7 @@ purity analysis — that is function composition. `InnerConflict`'s output is a
 root-level unordered group of two OVERLAPPING conditions with no unconditional
 base: a conflict-bearing group whose §9.5 conflict channel needs a STANDING
 instance, not a function. So `KamerCreatie.bedrag = inner.y` refuses at the
-nested read — real creation (a conflict channel / roles / ladders on the
+nested read — real creation (a conflict channel / roles / defaults on the
 instance) stays Direction B.
 
 ```catala

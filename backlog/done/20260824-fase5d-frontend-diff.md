@@ -31,20 +31,20 @@ dump-aanroep uitgezonderd).
 ## Voortgang — het paar-fragment (2026-08-24)
 
 Gekozen rechtsinhoud: **Jutterswet art. 3 jo. 5 (penningrecht /
-hardheid)** — de defeasibility-ladder (basis: geen recht; art. 3:
+hardheid)** — de defeasibility-defaults (basis: geen recht; art. 3:
 drempel van twaalf; art. 5: hardheid leest twaalf als zes, een
 uitzondering óp art. 3). Route (b): de bestaande Catala-golden
 `jutterswet-penningrecht-catala` (plugin) krijgt zijn
 RegelSpraak-tegenhanger, geschreven en door de toolchain-resolver
 gedumpt.
 
-Waarom dit fragment: het draagt de ladder + een voorwaarde (>=12/>=6,
+Waarom dit fragment: het draagt de defaults + een voorwaarde (>=12/>=6,
 met een samengestelde hardheid-EN-drempel in art. 5), en het is
-**bewijsbaar semantisch gelijk op élke invoer** — beide ladder-sporten
-beslissen dezelfde waarde (`waar`), dus de geordende ladder valt samen
-met een gewone disjunctie en er is geen sport-conflict bereikbaar. De
-toolchain kent geen ladder en rendert dezelfde wet als twee platte
-`KENMERKTOEKENNING`-regels; disjunctie ≡ ladder hier. Het paar isoleert
+**bewijsbaar semantisch gelijk op élke invoer** — beide defaults
+beslissen dezelfde waarde (`waar`), dus de geordende defaults-bundel valt samen
+met een gewone disjunctie en er is geen default-conflict bereikbaar. De
+toolchain kent geen defaults en rendert dezelfde wet als twee platte
+`KENMERKTOEKENNING`-regels; disjunctie ≡ defaults hier. Het paar isoleert
 zo een **zuivere vorm-diff**. `tariefrecht-catala` (met berekening) is
 bewust afgewezen: zijn twee ongeordende uitzonderingen geven op de
 overlap-invoer een Catala `ConflictError` (uchar §9.5), die platte,
@@ -63,9 +63,9 @@ Beide dumps reproduceerbaar geproduceerd:
   na `dune build`, gecanoniseerd met de gate-2-slice — gate 9
   regenereert byte-identiek).
 
-Kern-vondst voor de analyse-stap: **plugin → `defaultLadders` (één
-entry, twee rungs); toolchain → twee `resolvedRegels`
-(`KENMERKTOEKENNING`) en géén `defaultLadders`-veld (de v0-emitter laat
+Kern-vondst voor de analyse-stap: **plugin → `prioritizedDefaults` (één
+entry, twee defaults); toolchain → twee `resolvedRegels`
+(`KENMERKTOEKENNING`) en géén `prioritizedDefaults`-veld (de v0-emitter laat
 het weg, waar de Catala-dump het gevuld draagt).** Plus category-i-ruis
 (objecttypenaam Jutter vs Penningrecht, attribuutnaam met spatie vs
 underscore, `bron`-strings).
@@ -103,10 +103,10 @@ Uitkomst van de classificatie:
   ONBEPAALD — een auteursverschil in de twee bronteksten, benigne op dit
   corpus).
 - **(ii) getrackte v0↔v1-delta (bevestiging, geen vondst):** de kern —
-  `defaultLadder` (Catala) vs twee platte `KENMERKTOEKENNING`-regels
+  `PrioritizedDefaults` (Catala) vs twee platte `KENMERKTOEKENNING`-regels
   (toolchain), getrackt in CONSTRUCTS rij 8/2/7 + IR-SPEC ch. 6.1 +
   RUNTIME-SEMANTICS ch. 7/7.7; de parse-stage `Regel`-shells (§2.3
-  non-goal); het optionele `defaultLadders`-veld aanwezig vs
+  non-goal); het optionele `prioritizedDefaults`-veld aanwezig vs
   nooit-geproduceerd (schema/Method wire-discipline). Onder de container
   zijn de conditie-bomen vormidentiek — de hele diff zit in de wrapper.
 - **(iii) echte ontwerpfout: GEEN.** Elk verschil valt in (i) of een
@@ -115,7 +115,7 @@ Uitkomst van de classificatie:
 Eén beslissingsvrije documentaire aanbeveling (§5): een verhelderende
 zin in ch. 7.7 / CONSTRUCTS rij 8 dat meervoudige gelijk-waardige
 kenmerktoekenningen op één doel native blijven (idempotent, ordevrij),
-extensioneel de disjunctieve één-sport-ladder. Géén genummerde
+extensioneel de disjunctieve één-default-bundel. Géén genummerde
 maintainersvraag; `besluit_plichtig` leeg.
 
 Eerlijke grenzen (§6): v0-spiegel vs v1-vormen; één fragment ≠
@@ -135,11 +135,11 @@ Phase-5-markering geflipt (geen semantiekwijziging):
 
 - `spec/CONSTRUCTS.md` rij 8 draagt nu de getrackte Phase-5d-notitie: het
   penningrecht-paar (toolchain twee platte `KENMERKTOEKENNING` vs Catala's
-  ene `defaultLadder`) diffde tot **geen categorie-(iii)-ontwerpfout**; de
+  ene `PrioritizedDefaults`) diffde tot **geen categorie-(iii)-ontwerpfout**; de
   ene besluit-vrije observatie — meervoudige gelijk-waardige
   kenmerktoekenningen op één doel blijven native, niet gedesugared
   (ordevrij/conflictvrij per monotone idempotentie ch. 5.3, extensioneel de
-  disjunctieve één-sport-equivalent) — staat er verwijzend naar
+  disjunctieve één-default-equivalent) — staat er verwijzend naar
   `spec/proposals/PHASE5D-DIFF.md`. Geen genummerde maintainersvraag.
 - `spec/PLAN.md` §6 Phase 5: **"Met in part" → "Met" (2026-08-24)**, met
   beide getuigen — `spec/proposals/PHASE5C-TUTORIAL.md` (het eerste
@@ -165,8 +165,8 @@ ir.json byte-identiek reproduceerbaar, vijf cases die de
 catala-golden één-op-één spiegelen, twee reden-dragende
 no-op-survivor-pins), naast de bestaande
 jutterswet-penningrecht-catala. De vorm-diff: de toolchain emitteert
-twee platte KENMERKTOEKENNING-regels zonder defaultLadders-sleutel;
-de plugin één ladder met drie sporten — en de structurele
+twee platte KENMERKTOEKENNING-regels zonder prioritizedDefaults-sleutel;
+de plugin één defaults-bundel met drie defaults — en de structurele
 classificatie leverde géén categorie-(iii)-ontwerpfout: elk verschil
 is administratief of een getrackte v0↔v1-delta (CONSTRUCTS rijen
 8/2/7). Eén besluit-vrije observatie is op rij 8 vastgelegd

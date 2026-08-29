@@ -722,8 +722,8 @@ let rec provably_unitless ctx (e : expr) : bool =
 
 (* the singleton %-unit: afkorting % / canoniek %, factor exactly 1, no
    denominator — the one convertibility class %-space ever inhabits
-   (LADDER-EVOLUTIE §8.3). A hidden or unknown unit is never this; a rate
-   (%/jr) or a factor≠1 spelling is not pure-% either. *)
+   (PRIORITIZED-DEFAULTS-EVOLUTIE §8.3). A hidden or unknown unit is never
+   this; a rate (%/jr) or a factor≠1 spelling is not pure-% either. *)
 let is_pure_pct (u : eenheid) : bool =
   u.afkorting = Some "%" && u.canoniek = Some "%" && u.noemer = None
   && match u.factor_naar_canoniek with Some f -> f = 1.0 | None -> false
@@ -758,9 +758,10 @@ let rec provably_pure_pct ctx (e : expr) : bool =
 
 (* PERCENTAGE_VAN's left operand: unit-free OR provably pure-% — the ÷100
    bridge out of %-space, already folded into the sl·sr·100 scale
-   (LADDER-EVOLUTIE §8.3 / Q10), so the arithmetic is unchanged. Any other
-   unit on the left, and any unit reasoning that cannot PROVE pure-%, keeps
-   faulting loudly through unit_free_ok. The right operand rule is unchanged. *)
+   (PRIORITIZED-DEFAULTS-EVOLUTIE §8.3 / Q10), so the arithmetic is unchanged.
+   Any other unit on the left, and any unit reasoning that cannot PROVE
+   pure-%, keeps faulting loudly through unit_free_ok. The right operand rule
+   is unchanged. *)
 let pct_van_left_ok ctx (e : expr option) =
   match e with
   | Some ex when provably_pure_pct ctx ex -> ()
@@ -777,7 +778,7 @@ let pct_van_left_ok ctx (e : expr option) =
    fence it. A product of TWO unit-carrying operands — a rate cancellation
    (€/jr × jr), an opaque product unit (€ × m) — composes units / applies
    factors this integer encoding does not carry, so it keeps faulting loudly
-   (the standing fence until the ladder-round waist question). *)
+   (the standing fence until the defaults-round waist question). *)
 let mul_units_ok ctx ~what (l : expr option) (r : expr option) =
   let ul = Option.bind l (eff_unit ctx) and ur = Option.bind r (eff_unit ctx) in
   let proven_free = function Some e -> provably_unitless ctx e | None -> true in
@@ -1996,9 +1997,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* Maal admits the factor-free unitless × unit-carrying product (the
          product adopts the unit, value unchanged); a two-unit product still
          faults. Percentage-van admits a pure-% left operand (its ÷100 is
-         already the scale fold — LADDER-EVOLUTIE §8.3), else unit-free; its
-         right operand keeps every unit refused (the ch. 2.6 right-unit
-         adoption has no eff_unit witness and no corpus case yet). *)
+         already the scale fold — PRIORITIZED-DEFAULTS-EVOLUTIE §8.3), else
+         unit-free; its right operand keeps every unit refused (the ch. 2.6
+         right-unit adoption has no eff_unit witness and no corpus case
+         yet). *)
       (match op with
       | Maal -> mul_units_ok ctx ~what:"a product" links rechts
       | _ ->
@@ -4080,7 +4082,7 @@ let translate_regel ctx (r : resolved_regel) =
               let branches = value_branches ctx ~subject ~subject_ot:ot (req "waarde" r.waarde) in
               ctx.rule_guard <- [];
               ctx.write_scale <- 1;
-              (* ch. 7.8 standing target: the rule decides like a rung. The
+              (* ch. 7.8 standing target: the rule decides like a default. The
                  effectiveness atom carries the SAME body as each val head —
                  condition and value bindings — so a leeg evaluation derives
                  neither, and the case input (entered as inputval/3) stands by
@@ -4339,26 +4341,27 @@ let translate_feit_creatie ctx (fc : resolved_feit_creatie) =
   to_one_guard anker_rol (req "FeitCreatie.doel" fc.fc_doel)
   end
 
-(* the ladder group (RUNTIME-SEMANTICS ch. 7.1/7.2/7.9, IR-SPEC ch. 6.1;
+(* the defaults group (RUNTIME-SEMANTICS ch. 7.1/7.2/7.9, IR-SPEC ch. 6.1;
    ASP-TRANSLATION S17): the ch. 7.5 decides_m lowering generalised into a
-   recursive rose tree (ch. 7.9). A CHAIN — a rung list, a top-level member or a sub-ladder —
-   lowers to an outcome predicate `T_out(S,V)` (the highest settling rung's
-   decision: the 0/1 besluit on a characteristic ladder, the scaled
-   consequence term on an attribute ladder) and a conflict flag `T_cfl(S)`
-   (the highest settling rung's sub-group conflict, propagated upward). A
-   GROUP — a rung's exception sub-group, or the root member set —
+   recursive rose tree (ch. 7.9). A CHAIN — a default list, a top-level member
+   or an exception group — lowers to an outcome predicate `T_out(S,V)` (the
+   highest settling default's decision: the 0/1 besluit on characteristic
+   defaults, the scaled consequence term on attribute defaults) and a conflict
+   flag `T_cfl(S)` (the highest settling default's exception-group conflict,
+   propagated upward). A GROUP — a default's exception group, or the root
+   member set —
    reconciles its member chains exactly as ch. 7.2 reconciles the root:
    differing decisions derive a path-keyed inconsistent/2 and suppress the
    clean decision, and a member conflict propagates before differing
-   decisions are read (conflict-first). A rung SETTLES the walk when it
-   decides or conflicts; higher settling rungs displace lower ones by
+   decisions are read (conflict-first). A default SETTLES the walk when it
+   decides or conflicts; higher settling defaults displace lower ones by
    `not T_stl_m` — the flat encoding's displacement, now carrying conflicts
-   too (a higher deciding rung displaces a lower rung's sub-group conflict,
-   vraag 5-A). A differing sub-group therefore propagates one conflict atom
-   to the root, which suppresses EVERY write on the target (the `not
-   grpG_conflict` guard) and leaves the case input standing, while its own
-   group deposits the sole §9.5 fact under its rung-index path key. Every
-   negation points strictly down the tree or at strictly-higher rungs
+   too (a higher deciding default displaces a lower default's exception-group
+   conflict, vraag 5-A). A differing exception group therefore propagates one
+   conflict atom to the root, which suppresses EVERY write on the target (the
+   `not grpG_conflict` guard) and leaves the case input standing, while its
+   own group deposits the sole §9.5 fact under its default-index path key.
+   Every negation points strictly down the tree or at strictly-higher defaults
    (disjoint subtrees) — no conflict atom depends on the write it guards,
    so the program stays stratified and clingo keeps its one stable model.
    Sound NAF because WF-051 folds every descendant read into a negative
@@ -4369,7 +4372,7 @@ let path_key target_form = function
   | path -> target_form ^ "/" ^ String.concat "/" (List.map string_of_int path)
 
 let rec translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path ~root
-    ~target_form ~target_scale ~has_input ~outer_displaced (rungs : rung list) :
+    ~target_form ~target_scale ~has_input ~outer_displaced (defaults : default list) :
     string * string =
   let tag = fresh ctx "nl" in
   let out = Printf.sprintf "%s_out" tag in
@@ -4380,86 +4383,88 @@ let rec translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path ~root
   let stl n = Printf.sprintf "%s_stl%d" tag n in
   let dec n = Printf.sprintf "%s_dec%d" tag n in
   let conf n = Printf.sprintf "%s_conf%d" tag n in
-  let own_just (r : rung) =
-    if r.rung_initialisatie then (
+  let own_just (r : default) =
+    if r.default_initialisatie then (
       if not root then
-        fault "an initialisation rung inside a sub-ladder is ill-formed (WF-075)";
+        fault "an initialisation default inside an exception group is ill-formed (WF-075)";
       match has_input with
       | Some hi -> [ Printf.sprintf "not %s(%s)" hi subject ]
-      | None -> fault "initialisation rung on a characteristic ladder")
-    else cond_atoms ctx ~subject ~subject_ot (req "rung justification" r.rung_voorwaarde)
+      | None -> fault "initialisation default on characteristic defaults")
+    else cond_atoms ctx ~subject ~subject_ot (req "default justification" r.default_voorwaarde)
   in
-  (* a rung's OWN decision (a plain rung, an init rung, or a form-a
+  (* a default's OWN decision (a plain default, an init default, or a form-a
      fall-back): on the attribute arm the consequence bindings sit in the
      body, so a leeg consequence leaves the decision underivable — the
      fall-through gate for free; [extra] carries the `not U_any` guard that
-     restricts a form-a fall-back to an undecided sub-group (ch. 7.9) *)
-  let emit_own_dec n (r : rung) ~extra =
+     restricts a form-a fall-back to an undecided exception group (ch. 7.9) *)
+  let emit_own_dec n (r : default) ~extra =
     if is_char then
-      let b = if req "rung besluit" r.rung_besluit then 1 else 0 in
+      let b = if req "default besluit" r.default_besluit then 1 else 0 in
       head_body ctx (Printf.sprintf "%s(%s,%d)" (dec n) subject b)
         ((base :: own_just r) @ extra)
     else
       let bindings, term, scale =
-        expr_term ctx ~subject ~subject_ot (req "rung consequentie" r.rung_consequentie)
+        expr_term ctx ~subject ~subject_ot (req "default consequentie" r.default_consequentie)
       in
       if scale <> target_scale then
-        fault "rung value scale %d does not match target scale %d" scale target_scale;
+        fault "default value scale %d does not match target scale %d" scale target_scale;
       head_body ctx (Printf.sprintf "%s(%s,%s)" (dec n) subject term)
         ((base :: own_just r) @ bindings @ extra)
   in
   List.iteri
-    (fun n (r : rung) ->
-      (match r.rung_excepties with
+    (fun n (r : default) ->
+      (match r.default_excepties with
       | None -> emit_own_dec n r ~extra:[]
-      | Some sg ->
-          (* the displacement wait threaded into the sub-group: every
-             strictly-higher (lower-index) rung of this chain, accumulated
-             with the enclosing rungs' waits, so the sub-group's own §9.5
-             inconsistent deposit is suppressed when a higher rung settles —
-             exactly the guard the chain outcome below puts on [out]/[cfl] *)
-          let rung_displaced =
+      | Some egs ->
+          (* the displacement wait threaded into the exception group: every
+             strictly-higher (lower-index) default of this chain, accumulated
+             with the enclosing defaults' waits, so the exception group's own
+             §9.5 inconsistent deposit is suppressed when a higher default
+             settles — exactly the guard the chain outcome below puts on
+             [out]/[cfl] *)
+          let default_displaced =
             outer_displaced
             @ List.init n (fun m -> Printf.sprintf "not %s(%s)" (stl m) subject)
           in
           let u_out, u_cfl, u_any =
             translate_group ctx ~is_char ~subject ~subject_ot ~base
               ~group_path:(path @ [ n ]) ~target_form ~target_scale ~has_input
-              ~outer_displaced:rung_displaced sg
+              ~outer_displaced:default_displaced egs
           in
-          (* the sub-group goes first: adopt its clean decision, propagate its
-             conflict; the own justification/consequence is the fall-back only
-             when the sub-group decides nothing (ch. 7.9) *)
+          (* the exception group goes first: adopt its clean decision,
+             propagate its conflict; the own justification/consequence is the
+             fall-back only when the exception group decides nothing
+             (ch. 7.9) *)
           head_body ctx (Printf.sprintf "%s(%s,V)" (dec n) subject)
             [ Printf.sprintf "%s(%s,V)" u_out subject ];
           head_body ctx (Printf.sprintf "%s(%s)" (conf n) subject)
             [ Printf.sprintf "%s(%s)" u_cfl subject ];
           let has_own =
-            if is_char then r.rung_besluit <> None else r.rung_consequentie <> None
+            if is_char then r.default_besluit <> None else r.default_consequentie <> None
           in
           if has_own then
             emit_own_dec n r ~extra:[ Printf.sprintf "not %s(%s)" u_any subject ]);
       head_body ctx (Printf.sprintf "%s(%s)" (stl n) subject)
         [ Printf.sprintf "%s(%s,_)" (dec n) subject ];
-      if r.rung_excepties <> None then
+      if r.default_excepties <> None then
         head_body ctx (Printf.sprintf "%s(%s)" (stl n) subject)
           [ Printf.sprintf "%s(%s)" (conf n) subject ])
-    rungs;
-  (* the chain outcome: the highest settling rung wins — lower rungs are
+    defaults;
+  (* the chain outcome: the highest settling default wins — lower defaults are
      displaced by `not stl_m` for every strictly-higher m *)
   List.iteri
-    (fun n (r : rung) ->
+    (fun n (r : default) ->
       let displaced = List.init n (fun m -> Printf.sprintf "not %s(%s)" (stl m) subject) in
       head_body ctx (Printf.sprintf "%s(%s,V)" out subject)
         (Printf.sprintf "%s(%s,V)" (dec n) subject :: displaced);
-      if r.rung_excepties <> None then
+      if r.default_excepties <> None then
         head_body ctx (Printf.sprintf "%s(%s)" cfl subject)
           (Printf.sprintf "%s(%s)" (conf n) subject :: displaced))
-    rungs;
+    defaults;
   (out, cfl)
 
 and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
-    ~target_form ~target_scale ~has_input ~outer_displaced (sg : sub_group) :
+    ~target_form ~target_scale ~has_input ~outer_displaced (egs : exception_groups) :
     string * string * string =
   let tag = fresh ctx "ng" in
   let out = Printf.sprintf "%s_out" tag in
@@ -4471,18 +4476,18 @@ and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
   emit ctx "#defined %s/1." diff;
   let members =
     List.map
-      (fun (sl : sub_ladder) ->
+      (fun (eg : exception_group) ->
         translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path:group_path
           ~root:false ~target_form ~target_scale ~has_input
-          ~outer_displaced sl.sl_rungs)
-      sg.sg_leden
+          ~outer_displaced eg.eg_defaults)
+      egs.egs_leden
   in
   let no_member_cfl =
     List.map (fun (_, mc) -> Printf.sprintf "not %s(%s)" mc subject) members
   in
   (* differing member decisions are a conflict at THIS group, keyed by the
-     group's rung-index path — unless a member itself conflicts, whose deeper
-     key propagates instead (conflict-first, ch. 7.9) *)
+     group's default-index path — unless a member itself conflicts, whose
+     deeper key propagates instead (conflict-first, ch. 7.9) *)
   List.iteri
     (fun i (oi, _) ->
       List.iteri
@@ -4503,7 +4508,7 @@ and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
     [ Printf.sprintf "%s(%s)" diff subject ];
   (* the clean group decision (equal decisions collapse to one, differing are
      suppressed by the conflict); [any] = decided-or-conflicted, the fall-back
-     gate of a form-a parent rung *)
+     gate of a form-a parent default *)
   List.iter
     (fun (om, _) ->
       head_body ctx (Printf.sprintf "%s(%s,V)" out subject)
@@ -4513,75 +4518,79 @@ and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
     [ Printf.sprintf "%s(%s,_)" out subject ];
   head_body ctx (Printf.sprintf "%s(%s)" any subject)
     [ Printf.sprintf "%s(%s)" cfl subject ];
-  (* the sub-group's §9.5 deposit carries the SAME displacement wait the
+  (* the exception group's §9.5 deposit carries the SAME displacement wait the
      enclosing chain puts on its outcome (ch. 7.9): a strictly-higher settling
-     rung displaces this whole sub-group, path-keyed fact and all, so the
-     deposit must not fire on the bare [diff] atom alone (root members do not
-     displace each other, so the bare-keyed root deposit stays unguarded) *)
+     default displaces this whole exception group, path-keyed fact and all, so
+     the deposit must not fire on the bare [diff] atom alone (root members do
+     not displace each other, so the bare-keyed root deposit stays
+     unguarded) *)
   head_body ctx
     (Printf.sprintf "inconsistent(%s,%s)" (str (path_key target_form group_path)) subject)
     (Printf.sprintf "%s(%s)" diff subject :: outer_displaced);
   (out, cfl, any)
 
-let translate_ladder_group ctx gidx (members : (int * default_ladder) list) =
+let translate_defaults_group ctx gidx (members : (int * prioritized_defaults) list) =
   (* the ch. 8.2 validity gate, per member: an excluded member is
      Undecided — no decision, no conflict, no §9.5 deposit (ref's
-     member_decision returns Undecided before a single rung is
+     member_decision returns Undecided before a single default is
      evaluated), so it simply leaves the group's member set. The group
      reconciles the members that remain. *)
   let _, l0 = List.hd members in
   let members =
-    List.filter (fun ((_, l) : int * default_ladder) -> applies ctx l.dl_geldigheid) members
+    List.filter
+      (fun ((_, l) : int * prioritized_defaults) -> applies ctx l.pd_geldigheid)
+      members
   in
   if members = [] then (
     (* every member excluded: the group decides nothing. The attribute
        target's case input entered defeasibly (inputval/3 — translate_case
-       keys on the UNFILTERED ladder list), so the pass-through must still
+       keys on the UNFILTERED defaults list), so the pass-through must still
        be emitted, unconditionally, or the standing input would silently
        vanish. A characteristic target has no defeasible entry; nothing
        remains to emit. *)
-    match l0.dl_attribuut with
+    match l0.pd_attribuut with
     | Some a ->
         head_body ctx
           (Printf.sprintf "val(S,%s,V)" (str a))
           [ Printf.sprintf "inputval(S,%s,V)" (str a);
-            Printf.sprintf "is_a(S,%s)" (str l0.dl_onderwerp) ]
+            Printf.sprintf "is_a(S,%s)" (str l0.pd_onderwerp) ]
     | None -> ())
   else begin
   let _, l0 = List.hd members in
   let subject = "S" in
-  let base = Printf.sprintf "is_a(%s,%s)" subject (str l0.dl_onderwerp) in
+  let base = Printf.sprintf "is_a(%s,%s)" subject (str l0.pd_onderwerp) in
   let is_char, target_name =
-    match (l0.dl_kenmerk, l0.dl_attribuut) with
+    match (l0.pd_kenmerk, l0.pd_attribuut) with
     | Some k, None -> (true, k)
     | None, Some a -> (false, a)
-    | _ -> fault "a ladder targets exactly one of a characteristic or an attribute"
+    | _ ->
+        fault "prioritized defaults target exactly one of a characteristic or an attribute"
   in
-  let target_form = l0.dl_onderwerp ^ "." ^ target_name in
+  let target_form = l0.pd_onderwerp ^ "." ^ target_name in
   (* the attribute arm's input scaffolding: the target scale, and the input
-     predicate the initialisation rung and the defeasible-input rule read *)
+     predicate the initialisation default and the defeasible-input rule read *)
   let target_scale, has_input =
     if is_char then (0, None)
     else begin
       let hi = Printf.sprintf "grp%d_has_input" gidx in
       head_body ctx (Printf.sprintf "%s(%s)" hi subject)
         [ base; Printf.sprintf "inputval(%s,%s,_)" subject (str target_name) ];
-      (pow10 (attr_decimals ctx ~otype:l0.dl_onderwerp ~attr:target_name), Some hi)
+      (pow10 (attr_decimals ctx ~otype:l0.pd_onderwerp ~attr:target_name), Some hi)
     end
   in
   (* each top-level member is a chain reconciled at the root path [] *)
   let member_info =
     List.map
-      (fun ((_, l) : int * default_ladder) ->
+      (fun ((_, l) : int * prioritized_defaults) ->
         let out, cfl =
-          translate_chain ctx ~is_char ~subject ~subject_ot:l.dl_onderwerp ~base ~path:[]
-            ~root:true ~target_form ~target_scale ~has_input ~outer_displaced:[] l.rungs
+          translate_chain ctx ~is_char ~subject ~subject_ot:l.pd_onderwerp ~base ~path:[]
+            ~root:true ~target_form ~target_scale ~has_input ~outer_displaced:[] l.defaults
         in
-        (out, cfl, List.exists (fun (r : rung) -> r.rung_excepties <> None) l.rungs))
+        (out, cfl, List.exists (fun (r : default) -> r.default_excepties <> None) l.defaults))
       members
   in
   (* the root group (ch. 7.2): differing member decisions and any propagated
-     sub-group conflict block every write; a differing ROOT decision deposits
+     exception-group conflict block every write; a differing ROOT decision deposits
      the bare-keyed §9.5 fact. A conflict is possible only with ≥2 members or
      nested excepties — otherwise the guard is absent (the flat singleton). *)
   let nested = List.exists (fun (_, _, c) -> c) member_info in
@@ -4650,8 +4659,8 @@ let translate_ladder_group ctx gidx (members : (int * default_ladder) list) =
    never a silent floor (the aligned form used to floor silently). *)
 let translate_verdeling ctx i (v : resolved_verdeling) =
   (* windows on the untranslated-window forms fault LOUDLY (they were
-     silently ignored before the ch. 8.2 gate landed for rules, ladders
-     and creations): an unwindowed translation of a windowed allocation
+     silently ignored before the ch. 8.2 gate landed for rules, prioritized
+     defaults and creations): an unwindowed translation of a windowed allocation
      would silently apply outside its window *)
   (match v.vd_geldigheid with
   | Some { geld_vanaf = Some _; _ } | Some { geld_tot = Some _; _ } ->
@@ -4698,9 +4707,10 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
          negation-as-failure encoding (the S10 input default admits only a target read nowhere \
          else)"
         da;
-    (* a second writer of the same target — another verdeling, a rule, a
-       ladder or a creation — leaves the overwrite order unpinned: ref's
-       fixpoint decides it, no witness pins the ASP union, so refuse. *)
+    (* a second writer of the same target — another verdeling, a rule,
+       prioritized defaults or a creation — leaves the overwrite order
+       unpinned: ref's fixpoint decides it, no witness pins the ASP union, so
+       refuse. *)
     if
       List.length
         (List.filter (fun (f : Ir_v0.Checks.dep_form) -> List.mem target_node f.df_writes) dforms)
@@ -5226,19 +5236,19 @@ let reify_list ctx ~lid ~element (xs : Value.t list) =
 
 let translate_case ctx (case : Case.t) =
   let doc = ctx.doc in
-  (* attribute-ladder targets — the ch. 7.8 standing targets (the bare
+  (* attribute-defaults targets — the ch. 7.8 standing targets (the bare
      scalar computing rule) and the allocation targets (S12, the verdeling
      whose fence translate_verdeling has already cleared) — take their
      input values defeasibly (inputval/3), standing unless the
-     ladder/rule/verdeling decides *)
+     defaults/rule/verdeling decides *)
   let standing = Ir_v0.Desugar.standing_targets doc in
-  let ladder_target otype aname =
+  let defaults_target otype aname =
     List.exists
-      (fun (l : default_ladder) ->
-        match l.dl_attribuut with
-        | Some a -> norm l.dl_onderwerp = norm otype && norm a = norm aname
+      (fun (l : prioritized_defaults) ->
+        match l.pd_attribuut with
+        | Some a -> norm l.pd_onderwerp = norm otype && norm a = norm aname
         | None -> false)
-      doc.default_ladders
+      doc.prioritized_defaults
     || List.mem (norm otype, norm aname) standing
     || List.exists
          (fun (v : resolved_verdeling) ->
@@ -5318,7 +5328,7 @@ let translate_case ctx (case : Case.t) =
               emit ctx "val(%s,%s,%s)." (str_raw label) (str aname) (datetime_term t)
           | _ ->
               let d = attr_decimals ctx ~otype:i.otype ~attr:aname in
-              let pred = if ladder_target i.otype aname then "inputval" else "val" in
+              let pred = if defaults_target i.otype aname then "inputval" else "val" in
               emit ctx "%s(%s,%s,%d)." pred (str_raw label) (str aname)
                 (scaled_of_value ~decimals:d v))
         i.attrs;
@@ -5401,16 +5411,17 @@ let translate_case ctx (case : Case.t) =
 
 let translate (doc : document) (case : Case.t) : string =
   (* the ch. 7.7 v0 desugaring: initialisation-plus-computation pairs
-     read as ladders here, so the ladder machinery (including the
-     defeasible input) carries them — while ref/ replays the v0 forms
+     read as prioritized defaults here, so the defaults machinery (including
+     the defeasible input) carries them — while ref/ replays the v0 forms
      natively. Gate 6's differential thereby witnesses the desugaring
      itself. Forms outside the desugaring's domain stay as they are
      and fault below like before. *)
-  (* the unit-normalisation lowering (LADDER-EVOLUTIE §8; Normalise): source
-     units stay on the wire, but the clingo leg canonicalises each declared
-     stelsel to its finest base unit (multiply-only, integer-encodable) so the
-     factor≠1 unit fences below translate. Run before the desugaring — the two
-     are orthogonal (units/literals vs ladder structure). *)
+  (* the unit-normalisation lowering (PRIORITIZED-DEFAULTS-EVOLUTIE §8;
+     Normalise): source units stay on the wire, but the clingo leg
+     canonicalises each declared stelsel to its finest base unit
+     (multiply-only, integer-encodable) so the factor≠1 unit fences below
+     translate. Run before the desugaring — the two are orthogonal
+     (units/literals vs prioritized-defaults structure). *)
   let doc = Normalise.document doc in
   let doc = Ir_v0.Desugar.document doc in
   let ctx =
@@ -5447,13 +5458,13 @@ let translate (doc : document) (case : Case.t) : string =
   List.iter (translate_feit_creatie ctx) doc.feit_creaties;
   List.iteri (translate_object_creatie ctx) doc.object_creaties;
   List.iteri (translate_verdeling ctx) doc.verdelingen;
-  (let key (l : default_ladder) =
+  (let key (l : prioritized_defaults) =
      (* kind discriminant: a name-sharing attribute and characteristic
         (WF-002) are separate targets, never one group *)
-     (if l.dl_kenmerk <> None then "K:" else "A:")
-     ^ norm l.dl_onderwerp ^ ":"
+     (if l.pd_kenmerk <> None then "K:" else "A:")
+     ^ norm l.pd_onderwerp ^ ":"
      ^
-     match (l.dl_kenmerk, l.dl_attribuut) with
+     match (l.pd_kenmerk, l.pd_attribuut) with
      | Some k, _ -> norm k
      | _, Some a -> norm a
      | _ -> "?"
@@ -5469,9 +5480,9 @@ let translate (doc : document) (case : Case.t) : string =
                acc
          | None -> acc @ [ (k, [ (i, l) ]) ])
        []
-       (List.mapi (fun i l -> (i, l)) doc.default_ladders)
+       (List.mapi (fun i l -> (i, l)) doc.prioritized_defaults)
    in
-   List.iteri (fun gidx (_, ms) -> translate_ladder_group ctx gidx ms) groups);
+   List.iteri (fun gidx (_, ms) -> translate_defaults_group ctx gidx ms) groups);
   List.iteri (translate_consistentie ctx) doc.consistenties;
   List.iter (translate_uniciteit ctx) doc.uniciteiten;
   List.iteri (translate_uniciteit_unie ctx) doc.uniciteit_unies;

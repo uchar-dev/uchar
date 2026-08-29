@@ -345,46 +345,47 @@ let resolved_object_creatie (oc : resolved_object_creatie) : json =
        ("geldigheid", opt geldigheid oc.oc_geldigheid) ]
     @ vrb)
 
-let rec rung (r : rung) : json =
-  (* [besluit] is a required key (null on an attribute / group rung);
+let rec default (d : default) : json =
+  (* [besluit] is a required key (null on an attribute / group default);
      [consequentie], [initialisatie] and [excepties] are extension fields —
      written only when present, matching the loader's [ext] admission. *)
   let base =
-    [ ("node", `String "Rung");
-      ("besluit", (match r.rung_besluit with None -> `Null | Some x -> `Bool x));
-      ("voorwaarde", opt conditie r.rung_voorwaarde) ]
+    [ ("node", `String "Default");
+      ("besluit", (match d.default_besluit with None -> `Null | Some x -> `Bool x));
+      ("voorwaarde", opt conditie d.default_voorwaarde) ]
   in
   let conseq =
-    match r.rung_consequentie with None -> [] | Some e -> [ ("consequentie", expr e) ]
+    match d.default_consequentie with None -> [] | Some e -> [ ("consequentie", expr e) ]
   in
-  let init = if r.rung_initialisatie then [ ("initialisatie", `Bool true) ] else [] in
+  let init = if d.default_initialisatie then [ ("initialisatie", `Bool true) ] else [] in
   let excepties =
-    match r.rung_excepties with None -> [] | Some sg -> [ ("excepties", sub_group sg) ]
+    match d.default_excepties with
+    | None -> [] | Some egs -> [ ("excepties", exception_groups egs) ]
   in
-  `Assoc (base @ conseq @ init @ [ ("bron", so r.rung_bron) ] @ excepties)
+  `Assoc (base @ conseq @ init @ [ ("bron", so d.default_bron) ] @ excepties)
 
-(* the nested exception sub-group riding [excepties] (v1, Phase 5c): the
-   {ongeordend, leden} object (no node discriminator) and its [SubLadder]
-   members, mirroring the loader's [sub_group]/[sub_ladder]. *)
-and sub_group (sg : sub_group) : json =
+(* the nested exception group riding [excepties] (v1, Phase 5c): the
+   {ongeordend, leden} object (no node discriminator) and its [ExceptionGroup]
+   members, mirroring the loader's [exception_groups]/[exception_group]. *)
+and exception_groups (egs : exception_groups) : json =
   `Assoc
-    [ ("ongeordend", b sg.sg_ongeordend);
-      ("leden", `List (List.map sub_ladder sg.sg_leden)) ]
+    [ ("ongeordend", b egs.egs_ongeordend);
+      ("leden", `List (List.map exception_group egs.egs_leden)) ]
 
-and sub_ladder (sl : sub_ladder) : json =
-  node "SubLadder"
-    [ ("rungs", `List (List.map rung sl.sl_rungs)); ("bron", so sl.sl_bron) ]
+and exception_group (eg : exception_group) : json =
+  node "ExceptionGroup"
+    [ ("defaults", `List (List.map default eg.eg_defaults)); ("bron", so eg.eg_bron) ]
 
-let default_ladder (l : default_ladder) : json =
-  let attribuut = match l.dl_attribuut with None -> [] | Some a -> [ ("attribuut", `String a) ] in
-  let ongeordend = if l.dl_ongeordend then [ ("ongeordend", `Bool true) ] else [] in
+let prioritized_defaults (pd : prioritized_defaults) : json =
+  let attribuut = match pd.pd_attribuut with None -> [] | Some a -> [ ("attribuut", `String a) ] in
+  let ongeordend = if pd.pd_ongeordend then [ ("ongeordend", `Bool true) ] else [] in
   `Assoc
-    ([ ("node", `String "DefaultLadder"); ("naam", so l.dl_naam);
-       ("onderwerp", `String l.dl_onderwerp); ("kenmerk", so l.dl_kenmerk) ]
+    ([ ("node", `String "PrioritizedDefaults"); ("naam", so pd.pd_naam);
+       ("onderwerp", `String pd.pd_onderwerp); ("kenmerk", so pd.pd_kenmerk) ]
     @ attribuut
-    @ [ ("rungs", `List (List.map rung l.rungs)) ]
+    @ [ ("defaults", `List (List.map default pd.defaults)) ]
     @ ongeordend
-    @ [ ("bron", so l.dl_bron); ("geldigheid", opt geldigheid l.dl_geldigheid) ])
+    @ [ ("bron", so pd.pd_bron); ("geldigheid", opt geldigheid pd.pd_geldigheid) ])
 
 let function_def (fd : function_def) : json =
   node "FunctionDef"
@@ -394,7 +395,7 @@ let function_def (fd : function_def) : json =
 
 let document (d : document) : json =
   (* functionDefs is an extension top-level key, written only when non-empty —
-     the optional-field pattern the loader admits for defaultLadders. *)
+     the optional-field pattern the loader admits for prioritizedDefaults. *)
   let function_defs =
     match d.function_defs with [] -> [] | fds -> [ ("functionDefs", `List (List.map function_def fds)) ]
   in
@@ -422,7 +423,7 @@ let document (d : document) : json =
       ("resolvedStartpunten", `List []);
       ("regelGroepen", `List []);
       ("diagnostics", `List []);
-      ("defaultLadders", `List (List.map default_ladder d.default_ladders)) ])
+      ("prioritizedDefaults", `List (List.map prioritized_defaults d.prioritized_defaults)) ])
 
 let to_string (d : document) : string = Yojson.Safe.pretty_to_string (document d) ^ "\n"
 

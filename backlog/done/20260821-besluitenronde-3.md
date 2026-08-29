@@ -15,8 +15,8 @@ aanbevolen optie aangenomen:
 5. Fasering: A — 5a→5b→5c→5d, met 5b's kernontwerpen interleaved
    zodra de weigeringen staan.
 6. Override-polariteit: A — een context-override compileert naar een
-   top-rung boven de scope-eigen ladder (Reading B als rung-orde); de
-   input-rung blijft voor het case-dossier.
+   top-default boven de scope-eigen defaults (Reading B als default-orde); de
+   input-default blijft voor het case-dossier.
 
 Direct erna gaf de maintainer het slotmandaat: geen verdere
 besluiten — het plan moet klaar (→ 20260821-plan-op-orde.md).
