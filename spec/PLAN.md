@@ -221,7 +221,10 @@ Three things live deliberately outside the monorepo:
   `uchar-conformance` there; the Drools backend and production runtime
   stay outside. The planned upgrade, once the ladder-producing frontend
   evolution starts, is inverting the dependency so the toolchain
-  consumes this frontend — one source of frontend truth.)*
+  consumes this frontend — one source of frontend truth. Ratified
+  2026-08-29, `LADDER-EVOLUTIE.md` Q5: vendored-subtree consumption at the
+  SPEC_REV pin, scheduled ahead of the frontend evolution —
+  freeze-invert-evolve.)*
 - **The held-out corpus split** — a separate private repository (e.g.
   `uchar-corpus-heldout`), pulled only by the CI acceptance job (§8).
 - **The org profile** (`.github` repo) — the public landing page until the
@@ -323,9 +326,11 @@ maximum/rounding/remainder, units and dimensions, timelines and variable
 starting points, parameter vintages, day-kinds, uniqueness and consistency,
 object/fact creation, decision tables (the extension table lives in
 `corpus/jutterswet/README.md`). One real regulation joins as realism case
-(statute text is copyright-free under art. 11 Auteurswet; candidate:
-zorgtoeslag — compact, computation-heavy, with genuine annual parameter
-changes for the vintage machinery). Whether `regelspraak-java`'s *internal*
+(statute text is copyright-free under art. 11 Auteurswet; decided
+2026-08-29, `spec/proposals/LADDER-EVOLUTIE.md` Q14: **WW-herleving**,
+art. 15–21 WW — a genuine layered default/exception structure with
+termijnen, the ladder round's reality test — replacing the earlier
+zorgtoeslag candidate). Whether `regelspraak-java`'s *internal*
 gates also migrate off TOKA is that repo's own decision, out of scope here;
 this repo is TOKA-free from its first commit.
 
@@ -474,7 +479,9 @@ trick this section names; and ref ≡ clingo holds over the defaults corpus
 (gates 5–6), with the Drools side agreeing over the shared v0 forms through
 its own differential. Deliberately open, recorded: full ladder service in
 the Drools backend waits for a ladder-producing frontend (Phase 5 — building
-it against hand-authored IR tests no production path); temporal standing
+it against hand-authored IR tests no production path) *(scheduled
+2026-08-29: the deferral premise is met by the Catala plugin —
+`LADDER-EVOLUTIE.md` Q3)*; temporal standing
 targets stay fenced (scalar-first, RS ch. 7.8); and one latent, non-defaults
 loader divergence is carded (`backlog/new/20260820-input-precision-fence.md`:
 ref accepts over-precise case input clingo faults — no corpus case exercises
@@ -678,7 +685,8 @@ non-numeric any-empty-equals-false mirror of v0's guard.
 New in v4. (8) **Decided:** the published corpus is rights-free by
 construction — the Jutterswet (plus its quantitative extensions) replaces
 TOKA as the golden corpus, and one statute-based case (art. 11 Auteurswet;
-candidate: zorgtoeslag) joins for realism; no ©-Belastingdienst material
+2026-08-29: WW-herleving, `LADDER-EVOLUTIE.md` Q14 — previously
+zorgtoeslag) joins for realism; no ©-Belastingdienst material
 enters the uchar repos. (9) **Decided
 (2026-08-16):** Apache-2.0 for code (verifier, reference interpreter,
 backends, gate scripts — and the JSON schemas, which ship as functional

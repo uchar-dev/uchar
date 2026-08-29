@@ -1,6 +1,11 @@
 # LADDER-EVOLUTIE — the ladder design round
 
-*Status: proposal, 2026-08-29, awaiting maintainer ratification of §12. Companion
+*Status: **ratified 2026-08-29** — all fourteen §12 questions decided per
+recommendation (1a; 2 confirmed; 3 yes; 4 extend; 5a; 6 defer to the flip;
+7 yes; 8 yes — Option A with the stratum-0 framing; 9 yes; 10 yes, as one
+package; 11 confirmed in full; 12 yes to all three; 13 yes; 14 yes). The
+build cards sit in `backlog/` (boekhouding card 2026-08-29); §10 gives
+their order. Companion
 to `PHASE4-DEFAULTS.md` (the adopted default-calculus design),
 `PRIORITY-RELATION.md` (the structural-priority decision), `PHASE5D-DIFF.md`
 (the frontend diff that seeded the frontend question), and
