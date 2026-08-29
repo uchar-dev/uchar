@@ -5,5 +5,5 @@ inherits the root target kind), so a boolean decision belongs only on
 characteristic defaults, never on attribute ones.
 
 A minimal hand-built document: a form-a default (`grondX` → 40.00) on
-attribute defaults whose exception group holds a member chain with a
+attribute defaults whose `excepties` holds one exception group with a
 characteristic-style `besluit` default.

@@ -287,7 +287,7 @@ VOLDOEN : 'voldoen' ;
 // RECURSIEF marks a §9.10 Regelgroep recursief (DOCUMENTED EXTENSION — see docs/grammar-divergences.md).
 // Lowercase, only ever read in the group header "is recursief"; not a name word, so it never mis-splits a name.
 RECURSIEF : 'recursief' ;
-// ONGEORDEND marks a §9.5 unordered exception group (uchar DIALECT EXTENSION, PRIORITIZED-DEFAULTS-EVOLUTIE §4). Lowercase,
+// ONGEORDEND marks a §9.5 declared-unordered default group (uchar DIALECT EXTENSION, PRIORITIZED-DEFAULTS-EVOLUTIE §4). Lowercase,
 // only ever read in the group header 'Uitzonderingen ongeordend:'; not a name word, so it never mis-splits a name.
 ONGEORDEND : 'ongeordend' ;
 

@@ -82,7 +82,7 @@
 #   - jutterswet-nestuitzondering/case8-niets.json: the nested-group empty
 #     fall-through (ch. 7.9) — with no ground characteristic present, default 0's
 #     exception groups decide nothing and its own grondX consequence does not fire, the base
-#     group-default's exception group is empty too, so nothing decides and heffing stays
+#     group-default's exception groups decide nothing too, so nothing decides and heffing stays
 #     empty. The absence IS the assertion; the sibling cases all decide (a
 #     value or a conflict fact) and are not survivors.
 #   - jutterswet-nestkenmerk/case1-y-wint.json: the characteristic variant of

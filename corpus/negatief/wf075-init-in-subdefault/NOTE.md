@@ -4,5 +4,5 @@ true — the initialisation and input defaults are root-only; a nested
 default may never be an initialisation default.
 
 A minimal hand-built document: a form-a default (`grondX` → 40.00) whose
-exception group holds a single member chain consisting of one
+`excepties` holds a single exception group consisting of one
 initialisation default.

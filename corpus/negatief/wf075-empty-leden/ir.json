@@ -62,7 +62,7 @@
           "node": "Default",
           "besluit": null,
           "voorwaarde": null,
-          "bron": "groep-default met een lege sub-groep",
+          "bron": "groep-default met lege excepties",
           "excepties": {
             "ongeordend": true,
             "leden": []

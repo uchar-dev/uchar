@@ -505,12 +505,12 @@ type default = {
   default_consequentie : expr option;
   default_initialisatie : bool;
   default_excepties : exception_groups option;
-      (* extension (v1, Phase 5c): the nested exception group
-         (RUNTIME-SEMANTICS ch. 7.9). A default carrying it is a group-default
-         (no own consequence/besluit — the exception group is its decision) or
-         a form-a default (own consequence/besluit too — the exception group
-         decides first, the own consequence is the fall-back when it is
-         empty). A differing-deciding exception group propagates the conflict
+      (* extension (v1, Phase 5c): the nested exception groups
+         (RUNTIME-SEMANTICS ch. 7.9). A default carrying them is a group-default
+         (no own consequence/besluit — its exception groups are its decision) or
+         a form-a default (own consequence/besluit too — the exception groups
+         decide first, the own consequence is the fall-back when they decide
+         nothing). A differing-deciding exception group propagates the conflict
          to the root (WF-075). Absent = a flat default. *)
   default_bron : string option;
 }

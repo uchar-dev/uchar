@@ -26,9 +26,9 @@
                                        prioritizedDefaults, defaults high-to-low
    - root-level unordered exceptions (no unconditional base) ->
                                        a declared-unordered default group
-   - below-root branching (a chain exception carrying an unordered exception
-     group) -> one defaults group whose default carries a nested [excepties]
-     exception group (row 5c, ch. 7.9: form-a default / group-default; WF-075)
+   - below-root branching (a chain exception carrying unordered exceptions)
+     -> one defaults group whose default carries nested [excepties]
+     exception groups (row 5c, ch. 7.9: form-a default / group-default; WF-075)
    - a shared non-trivial base under all members of a root-level unordered
      group -> REFUSED (PHASE4-DEFAULTS §7; workable later by base-duplication)
    - context (reentrant) variable   -> REFUSED (see below; besluit 6 finding)
@@ -347,13 +347,13 @@ let rec check_cond_wf077 e =
    [I.default] once [value_expr]/[cond_default] are in scope. A chain is
    highest priority first, mirroring the wire order. The three shapes:
    - [Plain (just, cons)]      — an ordinary default.
-   - [Form_a (just, cons, g)]  — own content PLUS a nested exception group
-                                 [g] (the exception group decides first, the own
+   - [Form_a (just, cons, g)]  — own content PLUS nested exception groups
+                                 [g] (they decide first, the own
                                  consequence is the fall-back — ch. 7.9 form a).
-   - [Group_default g]         — a pure group-default: no own content, only the
-                                 exception group (a multi-member base/exception
-                                 group — ch. 7.9 form b).
-   Each exception-group member is itself a chain ([pdefault list]). *)
+   - [Group_default g]         — a pure group-default: no own content, only its
+                                 exception groups (a multi-member base or
+                                 exception position — ch. 7.9 form b).
+   Each exception group is itself a chain ([pdefault list]). *)
 type 'e pdefault =
   | Plain of 'e * 'e
   | Form_a of 'e * 'e * 'e pgroup
@@ -404,7 +404,7 @@ and attach excepts lower =
       | _ -> ( match parse_tree single with Some hi -> Some (hi @ lower) | None -> None))
   | _ -> nest excepts lower
 
-(* nest an unordered exception group as the [Form_a] exception group of the
+(* nest an unordered exception set as the [Form_a] excepties of the
    default it excepts. Two shapes stay refused (recorded, PHASE4-DEFAULTS §7 —
    the sub-root refusal narrows to exactly these):
    - excepting a group-default (the default it excepts is itself a multi-member
@@ -2120,7 +2120,7 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
               else_ = body_of rest; bron = None }
     | (Form_a _ | Group_default _) :: _ ->
         refuse
-          "per-element callee %S output %S carries an unordered/conflict exception group: refused \
+          "per-element callee %S output %S carries unordered/conflict exception groups: refused \
            per element (weiger-grens; only an ordered plain chain lowers to a closed IfThenElse body)"
           cname out_name
     | [] -> refuse "per-element callee %S output %S has an empty defaults chain" cname out_name

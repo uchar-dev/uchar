@@ -81,7 +81,7 @@
                       "periode": null,
                       "bron": "hij grondX heeft"
                     },
-                    "bron": "een default die niets beslist: geen consequentie, geen sub-groep"
+                    "bron": "een default die niets beslist: geen consequentie, geen excepties"
                   }
                 ],
                 "bron": "lid met een inhoudsloze default"

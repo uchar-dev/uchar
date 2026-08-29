@@ -37,7 +37,7 @@ WF-065/067/069-verbredingen); de strikte `Let`-knoop met de
 conditie-operand-discipline en het WF-069-herbereik; tutorial_end_2_3
 als frontend-side exitgetuige (het corpus blijft rechtenvrij per
 besluit 2); de gepinde clingo-decimaalschaal; geneste
-sub-groep-conflicten propageren naar de root (rij-8-deviatieverruiming).
+exception-group-conflicten propageren naar de root (rij-8-deviatieverruiming).
 De verkenning mat de tutorial exact op (de vertakkende
 artikel-3-boom zet geneste groepen op het kritieke pad; geen
 context-inputs, dus besluit-6-realisatie uitgesteld; de latente

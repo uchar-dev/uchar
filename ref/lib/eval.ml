@@ -1688,8 +1688,8 @@ let run_defaults_group env world (members : prioritized_defaults list) =
       in
       (* one member's decision (ch. 7.1), recursive per ch. 7.9: the
          highest default that decides wins; a default carrying [excepties]
-         reconciles its exception group first, and its own justification/consequence
-         is the fall-back only when the exception group decides nothing. Speculative
+         reconciles its exception groups first, and its own justification/consequence
+         is the fall-back only when they decide nothing. Speculative
          deposits flush when — and only when — a default decides, composing
          through the recursion. *)
       let member_decision (l : prioritized_defaults) : chain_result =
@@ -1703,7 +1703,7 @@ let run_defaults_group env world (members : prioritized_defaults list) =
               | None -> Value.fault "initialisation default on characteristic defaults")
             else eval_cond env w self ~err (req "default justification" r.default_voorwaarde)
           in
-          (* the default's OWN decision, exception group aside (a plain default, the
+          (* the default's OWN decision, exception groups aside (a plain default, the
              initialisation default, or a form-a default's fall-back): Some when it
              decides, None when it falls through *)
           let own_decision (r : default) : defaults_decision option =
@@ -1744,7 +1744,7 @@ let run_defaults_group env world (members : prioritized_defaults list) =
                   in
                   match r.default_excepties with
                   | Some egs -> (
-                      (* the exception group goes first: reconcile it at this default's
+                      (* the exception groups go first: reconcile them at this default's
                          path, then propagate its conflict, adopt its decision,
                          or fall back when it decides nothing *)
                       let sub_path = path @ [ i ] in

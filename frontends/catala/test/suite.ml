@@ -108,11 +108,11 @@ let () =
       ("struct.catala_en", [ "cases/struct_gevuld.json"; "cases/struct_leeg.json" ]);
       (* row-5c/ch. 7.9 nested exception groups: the tutorial article-3 tree
          (a base with an exception carrying two unordered exceptions) rides one
-         [Default.excepties] exception group. The binding spurious-conflict test of
+         [Default.excepties] slot. The binding spurious-conflict test of
          PHASE4-DEFAULTS §7 pinned frontend-side: only-one-sub-member (n=100)
          decides that member ($20 — flattening would fabricate a $20-vs-$10
-         conflict), the form-a own consequence fires when the exception group is
-         empty (n=50 -> $10), the base carries the fall-through (n=5 -> $40),
+         conflict), the form-a own consequence fires when the exception groups decide
+         nothing (n=50 -> $10), the base carries the fall-through (n=5 -> $40),
          and two differing sub-members (n=200) propagate to the root — no
          write, one path-keyed §9.5 fact "Nestgroep.belasting/0" — through ref
          AND clingo *)
@@ -269,8 +269,8 @@ let () =
          whole-struct per-element map declared as an OUTPUT (a list that must
          exist on the wire, no clingo image) *)
       ("refuse_perelement_noninput.catala_en", "non-input read");
-      ("refuse_perelement_conflict.catala_en", "unordered/conflict exception group");
-      ("refuse_perelement_creation.catala_en", "unordered/conflict exception group");
+      ("refuse_perelement_conflict.catala_en", "unordered/conflict exception groups");
+      ("refuse_perelement_creation.catala_en", "unordered/conflict exception groups");
       ("refuse_perelement_nested_noninput.catala_en", "non-input read");
       ("refuse_perelement_wholestruct_output.catala_en", "OUTPUT");
       (* the fusie-lowering lens flank (2026-08-25): a fused whole-struct

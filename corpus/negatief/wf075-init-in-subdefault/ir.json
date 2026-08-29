@@ -82,7 +82,7 @@
             },
             "bron": "40.00"
           },
-          "bron": "grondX: 40.00, met een sub-groep",
+          "bron": "grondX: 40.00, met excepties",
           "excepties": {
             "ongeordend": true,
             "leden": [

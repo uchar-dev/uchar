@@ -53,8 +53,7 @@ Semantische dekking die deze versie aan het corpus toevoegt:
 - **Twee representaties, één betekenis.** De defaults kunnen gecompileerd
   worden (alle voorwaarden platgeslagen in de hoofdregels) of gelaagd
   (hoofdregel plus afzonderlijke uitzonderingsregels met eigen
-  hulpbegrippen). Beide
-  moeten op elk dossier dezelfde uitkomst geven — corpusmateriaal voor
+  hulpbegrippen). Beide moeten op elk dossier dezelfde uitkomst geven — corpusmateriaal voor
   differentiële toetsing.
 - **Wijzigingskosten.** De invoeging van art. 4bis kost in de gelaagde vorm
   nul bestaande regels en één nieuwe; in de gecompileerde vorm raakt zij

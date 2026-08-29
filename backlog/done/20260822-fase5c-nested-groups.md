@@ -1,14 +1,14 @@
 # Fase 5c, kaart 2 — geneste defaults-groepen
 
 Goal: PHASE5C-TUTORIAL §4 end-to-end (optie i geratificeerd; vraag 5:
-A — sub-groep-conflict propageert naar de root, pad-gesleuteld
+A — exception-group-conflict propageert naar de root, pad-gesleuteld
 §9.5-feit, het rij-8-deviatierecord verruimd): `Default.excepties`
 {ongeordend, leden} incl. de groep-default-vorm (excepties zonder eigen
 consequentie — draagt meervoudige basisgroepen); RUNTIME-SEMANTICS
 ch. 7 gegeneraliseerd; WF-050-recursie en dep_forms-uitbreiding
 (descendant-reads als negatieve randen naar het root-doel; WF-051
 ongewijzigd); ref-recursie in member_decision; het clingo-ontwerp
-(per-pad-predicaatfamilies, waardeprioriteit sub-groep vs eigen
+(per-pad-predicaatfamilies, waardeprioriteit excepties vs eigen
 consequentie) — echt ontwerpwerk, geen toepassing; het
 spurious-conflict-ankergezin als bindende toets (only-y → y consistent;
 both-differing → root-no-write + pad-feit; both-equal; neither; base;
@@ -30,7 +30,7 @@ verwerkt, alle negen gates groen (73 ir.json; 132 negatief; 189 cases;
 oracle ≡ clingo = 173; survivors ongewijzigd 22).
 
 - FIX 1 (BLOCKING, ref ≢ clingo): het clingo `inconsistent/2`-deposit van
-  een sub-groep-conflict vuurde op het kale `diff`-atoom, zonder de
+  een exception-group-conflict vuurde op het kale `diff`-atoom, zonder de
   verdringingswacht die het keten-`cfl` wél droeg. `translate_group`/
   `translate_chain` dragen nu een geaccumuleerde `~outer_displaced`
   (`not stlM` van alle strikt-hogere defaults plus de omhullende); het
@@ -42,7 +42,7 @@ oracle ≡ clingo = 173; survivors ongewijzigd 22).
   (b) two-level inner-verdringing; (c) X+Y+Z+B1+B2 → alleen /0.
 - FIX 2: rood-eerst-getuige + nieuw anker `anchor/jutterswet-nestdiepte`
   (drielaags, drie cases tegen ref gepind); ch. 7.9-normzin over
-  verdringing van de sub-groep van een lagere default + nestdiepte-tabel.
+  verdringing van de excepties van een lagere default + nestdiepte-tabel.
 - FIX 3: de S17→S18-wezen (ASP-TRANSLATION, CONSTRUCTS rij 10, PLAN,
   twee rood-NOTEs); nul resterende wezen repo-breed (de nieuwe S17
   "Nested exception groups" en zijn backref blijven staan).
@@ -75,7 +75,7 @@ mét de spurious-conflict-toets frontend-side; de sub-root-weigering
 versmald tot de gedeelde-basis-vorm; 91 checks). Lensronde (2 opus):
 één BLOCKING, door beide lenzen onafhankelijk en empirisch bewezen op
 het gescheepte anker — clingo deponeerde het pad-feit van een
-VERDRONGEN sub-groep (het inconsistent-hoofd miste de
+VERDRONGEN excepties (het inconsistent-hoofd miste de
 verdringingswacht die het keten-conflictatoom wél droeg): ref 40.00 +
 consistent, clingo 40.00 ÉN het feit — een incoherent model. Fix: de
 geaccumuleerde not-stl-wachten doorgeregen tot in het deposit

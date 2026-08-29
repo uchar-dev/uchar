@@ -5327,7 +5327,7 @@ public final class ExecModelTranspiler {
             vars.add((Variable) g);
         }
 
-        boolean kanConflicteren = ledenDefaults.size() >= 2 || bevatMeervoudigeSubgroep(ledenDefaults);
+        boolean kanConflicteren = ledenDefaults.size() >= 2 || bevatMeervoudigeExcepties(ledenDefaults);
         final String fqcn = FACTS + ".Inconsistentie";
         final List<List<GecompileerdeDefault>> ledenDefaultsF = ledenDefaults;
         final boolean isCharF = isChar;
@@ -5495,16 +5495,16 @@ public final class ExecModelTranspiler {
     }
 
     /** Whether the group can reach a conflict outcome — it has ≥2 members (a root declared-unordered group) or
-     *  carries anywhere a default whose exception group has ≥2 members (a nested group, ch. 7.9). */
-    private static boolean bevatMeervoudigeSubgroep(List<List<GecompileerdeDefault>> leden) {
-        for (List<GecompileerdeDefault> m : leden) if (bevatMeervoudigeSubgroepR(m)) return true;
+     *  carries anywhere a default whose excepties holds ≥2 exception groups (a nested group, ch. 7.9). */
+    private static boolean bevatMeervoudigeExcepties(List<List<GecompileerdeDefault>> leden) {
+        for (List<GecompileerdeDefault> m : leden) if (bevatMeervoudigeExceptiesR(m)) return true;
         return false;
     }
-    private static boolean bevatMeervoudigeSubgroepR(List<GecompileerdeDefault> defaults) {
+    private static boolean bevatMeervoudigeExceptiesR(List<GecompileerdeDefault> defaults) {
         for (GecompileerdeDefault r : defaults) {
             if (r.excepties() != null) {
                 if (r.excepties().size() >= 2) return true;
-                for (List<GecompileerdeDefault> sub : r.excepties()) if (bevatMeervoudigeSubgroepR(sub)) return true;
+                for (List<GecompileerdeDefault> sub : r.excepties()) if (bevatMeervoudigeExceptiesR(sub)) return true;
             }
         }
         return false;

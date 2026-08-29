@@ -108,10 +108,10 @@ uitkering`. `inkomensgrens` is een *apart afgeleid* attribuut dat de
 default-justificaties voedt (de termijn/grens-toets als eigen afleiding), niet
 het defaults-doel. De afhankelijkheidsgraaf blijft acyclisch.
 
-**WF-075** — elke exceptie-subgroep draagt precies één lid (één
+**WF-075** — elke `excepties` draagt precies één exception group (één
 `ExceptionGroup`), dus `ongeordend` is op elk niveau onwaar (twee of meer leden
 zouden de ongeordend-markering eisen). Elke default is een form-a-default (eigen
-besluit *plus* geneste subgroep), nooit een contentloze default.
+besluit *plus* geneste excepties), nooit een contentloze default.
 
 ### De gewone rekenregels (scalair, één schrijver elk)
 

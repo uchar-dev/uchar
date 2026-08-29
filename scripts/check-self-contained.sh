@@ -131,6 +131,16 @@ rm -f "$RENAME_HITS"
 [ "$c_annex_close" -ge 1 ] || { echo "FAIL: rename tripwire stale — the annex-A naming paragraph (IEC 61131-3 line) is gone from spec/RUNTIME-SEMANTICS.md" >&2; status=1; }
 [ "$c_card" -ge 1 ] || { echo "FAIL: rename tripwire stale — the rename card is gone from backlog/doing|done/" >&2; status=1; }
 [ "$c_rungolden" -ge 1 ] || { echo "FAIL: rename tripwire stale — the runGolden false-positive allowance no longer matches anything; drop it from this list" >&2; status=1; }
+# Pathnames too: git grep sees content only, so a tracked PATH carrying the
+# old vocabulary (a future negatief dir, a fixture) would slip through the
+# scan above. The plan document itself and toka/ (original form) are the
+# only allowed carriers.
+BAD_RENAME_PATHS=$(git ls-files | grep -iE 'ladder|rung' | grep -v -e '^HERNOEM_LADDER_20260829\.md$' -e '^toka/' || true)
+if [ -n "$BAD_RENAME_PATHS" ]; then
+    echo "FAIL: tracked path carries pre-rename vocabulary:" >&2
+    echo "$BAD_RENAME_PATHS" >&2
+    status=1
+fi
 
 [ "$status" -eq 0 ] && echo 'check-self-contained: PASS'
 exit "$status"

@@ -63,7 +63,7 @@ door beide executors bevestigd.
    (alles opgeteld) i.p.v. 19.75.
 3. `synth3-nestwaarde/case1-gevuld`: diepe FieldAccess ingekort naar één niveau
    → kernprijs 3 i.p.v. 12.5.
-4. `synth3-nestkorting/case2-conflict-pq`: excepties-subgroep verwijderd → de
+4. `synth3-nestkorting/case2-conflict-pq`: `excepties` verwijderd → de
    conflict-fact `Jutter.korting/0` bestaat niet meer (default 0 beslist 100.00).
 5. `synth3-drempelheffing/case2-onder`: IfThenElse-guard weg → 26.00 (belasting
    altijd toegepast) i.p.v. 20.00.

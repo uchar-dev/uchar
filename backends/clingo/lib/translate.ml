@@ -4348,7 +4348,7 @@ let translate_feit_creatie ctx (fc : resolved_feit_creatie) =
    highest settling default's decision: the 0/1 besluit on characteristic
    defaults, the scaled consequence term on attribute defaults) and a conflict
    flag `T_cfl(S)` (the highest settling default's exception-group conflict,
-   propagated upward). A GROUP — a default's exception group, or the root
+   propagated upward). A GROUP — a default's excepties, or the root
    member set —
    reconciles its member chains exactly as ch. 7.2 reconciles the root:
    differing decisions derive a path-keyed inconsistent/2 and suppress the
@@ -4396,7 +4396,7 @@ let rec translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path ~root
      fall-back): on the attribute arm the consequence bindings sit in the
      body, so a leeg consequence leaves the decision underivable — the
      fall-through gate for free; [extra] carries the `not U_any` guard that
-     restricts a form-a fall-back to an undecided exception group (ch. 7.9) *)
+     restricts a form-a fall-back to exception groups that decide nothing (ch. 7.9) *)
   let emit_own_dec n (r : default) ~extra =
     if is_char then
       let b = if req "default besluit" r.default_besluit then 1 else 0 in
@@ -4416,9 +4416,9 @@ let rec translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path ~root
       (match r.default_excepties with
       | None -> emit_own_dec n r ~extra:[]
       | Some egs ->
-          (* the displacement wait threaded into the exception group: every
+          (* the displacement wait threaded into the exception groups: every
              strictly-higher (lower-index) default of this chain, accumulated
-             with the enclosing defaults' waits, so the exception group's own
+             with the enclosing defaults' waits, so the exception groups' own
              §9.5 inconsistent deposit is suppressed when a higher default
              settles — exactly the guard the chain outcome below puts on
              [out]/[cfl] *)
@@ -4431,9 +4431,9 @@ let rec translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path ~root
               ~group_path:(path @ [ n ]) ~target_form ~target_scale ~has_input
               ~outer_displaced:default_displaced egs
           in
-          (* the exception group goes first: adopt its clean decision,
+          (* the exception groups go first: adopt their clean decision,
              propagate its conflict; the own justification/consequence is the
-             fall-back only when the exception group decides nothing
+             fall-back only when they decide nothing
              (ch. 7.9) *)
           head_body ctx (Printf.sprintf "%s(%s,V)" (dec n) subject)
             [ Printf.sprintf "%s(%s,V)" u_out subject ];
@@ -4518,9 +4518,9 @@ and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
     [ Printf.sprintf "%s(%s,_)" out subject ];
   head_body ctx (Printf.sprintf "%s(%s)" any subject)
     [ Printf.sprintf "%s(%s)" cfl subject ];
-  (* the exception group's §9.5 deposit carries the SAME displacement wait the
+  (* the exception groups' §9.5 deposit carries the SAME displacement wait the
      enclosing chain puts on its outcome (ch. 7.9): a strictly-higher settling
-     default displaces this whole exception group, path-keyed fact and all, so
+     default displaces these exception groups entirely, path-keyed fact and all, so
      the deposit must not fire on the bare [diff] atom alone (root members do
      not displace each other, so the bare-keyed root deposit stays
      unguarded) *)

@@ -3,7 +3,7 @@
 De boom vertakt AAN de wortel in twee ongeordende uitzonderingen op één
 gedeelde, onvoorwaardelijke basis (`basis`, waarde 1). Geneste groepen
 dragen een vertakking ÓNDER de wortel (een gewone exceptie met eigen
-sub-groep), maar een gedeelde niet-triviale basis onder álle leden blijft
+excepties), maar een gedeelde niet-triviale basis onder álle leden blijft
 buiten deze kaart — werkbaar later door de basis in elk lid te dupliceren
 onder de gelijk-beslist-regel. Tot dan weigert de plugin luid.
 

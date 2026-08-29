@@ -489,7 +489,7 @@ rekenroute).
 
 **Vraag 5 — de geneste-conflictsemantiek** (de tweede lensvondst; een
 verruiming van het getrackte rij-8-deviatierecord). **Decided
-(2026-08-22): A —** **een verschillend-beslissende sub-groep
+(2026-08-22): A —** **een verschillend-beslissende exception group
 propageert naar de root** — geen schrijf, één pad-gesleuteld
 §9.5-feit; uniform met de root-lezing (conflict = geen schrijf) én
 Catala-getrouw (⊛ propageert door de boom) minus de fataliteit die we
