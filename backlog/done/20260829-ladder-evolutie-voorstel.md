@@ -36,3 +36,25 @@ Out of scope: elke bouwactie (frontend, backends, ref, verifier, schema);
 spec/IR-SPEC.md, spec/RUNTIME-SEMANTICS.md, spec/CONSTRUCTS.md,
 spec/PLAN.md (registrynotities en plan-zinnen doet de hoofdsessie serieel,
 pas bij ratificatie-uitkomsten); de toolchain-checkout.
+
+Result: spec/proposals/LADDER-EVOLUTIE.md geland — alle acht agendapunten
+gedekt, elk ladderpatroon getoetst aan WW art. 15-21 (R1-R5 + de
+atemporele grens), veertien genummerde ratificatievragen met opties en
+aanbeveling. Verkenningsgolf: acht read-only opus-sporen. Lensronde: twee
+adversariële opus-lenzen; lens 1 (feiten/citaten/rechten): mergeable,
+vier MINORs — alle verwerkt (tellingen 6/11/15/20 ontward, tenzij-claim
+verzacht, Onbekend-negatief-telling gecorrigeerd, het
+RegelSpraak-spec-citaatvoorbeeld verwijderd); lens 2 (ontwerp): twee
+MAJORs, beide in §6 — (1) de scenariotoetsen-laag van de toolchain zou
+stilzwijgend sneuvelen bij de omdraaiing → expliciet belegd
+(toolchain-local, re-home als alternatief, in Q5); (2) "één pin" klopte
+niet onder een submodule → mechanisme herschreven naar vendored subtree
+met byte-identiteitscheck tegen de gepinde bron (uchar-conformance wordt
+precies die check), losse split-repo alleen nog als publicatievehikel
+(Q6). Plus vier MINORs verwerkt (grammar-divergences-log bestaat alleen
+in de toolchain; WW-eerste-case expliciet op scalaire invoerfeiten;
+telling-consistentie; §3.4/Q14-voorbehoud). Bewust gelaten: Q2 en Q11
+blijven als expliciete bevestigingsvragen in de set (lens-2 suggereerde
+ze naar §11 te verplaatsen) — goedkoop voor de maintainer en de
+Q1-context raakt ze echt. NIET gebouwd, per kaart: bouwkaarten worden pas
+gesneden na ratificatie van §12.
