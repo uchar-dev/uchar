@@ -1,0 +1,21 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is kustwacht kenmerk (bijvoeglijk);
+    is havenmeester kenmerk (bijvoeglijk);
+    is strandvoogd kenmerk (bijvoeglijk);
+    het wachtgeld Numeriek (geheel getal);
+
+Uitzonderingen ongeordend:
+Regel wachtgeld voor kustwachters
+    geldig altijd
+        Het wachtgeld van een Jutter moet gesteld worden op 30
+        indien hij kustwacht is.
+
+Regel wachtgeld voor havenmeesters
+    geldig altijd
+        Het wachtgeld van een Jutter moet gesteld worden op 45
+        indien hij havenmeester is.
+
+Regel wachtgeld voor strandvoogden
+    geldig altijd
+        Het wachtgeld van een Jutter moet gesteld worden op 30
+        indien hij strandvoogd is.

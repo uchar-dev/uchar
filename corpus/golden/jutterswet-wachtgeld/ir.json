@@ -1,0 +1,201 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "wachtgeld": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "kustwacht",
+        "havenmeester",
+        "strandvoogd"
+      ],
+      "kenmerkSoorten": {
+        "kustwacht": "BIJVOEGLIJK",
+        "havenmeester": "BIJVOEGLIJK",
+        "strandvoogd": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "wachtgeld voor kustwachters",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "wachtgeld voor havenmeesters",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "wachtgeld voor strandvoogden",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": [],
+  "defaultLadders": [
+    {
+      "node": "DefaultLadder",
+      "naam": "wachtgeld voor kustwachters",
+      "onderwerp": "Jutter",
+      "kenmerk": null,
+      "attribuut": "wachtgeld",
+      "rungs": [
+        {
+          "node": "Rung",
+          "besluit": null,
+          "voorwaarde": {
+            "node": "Kenmerk",
+            "kenmerk": "kustwacht",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "hij kustwacht is"
+          },
+          "consequentie": {
+            "node": "Literal",
+            "waarde": "30",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "30"
+          },
+          "bron": null
+        }
+      ],
+      "ongeordend": true,
+      "bron": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "DefaultLadder",
+      "naam": "wachtgeld voor havenmeesters",
+      "onderwerp": "Jutter",
+      "kenmerk": null,
+      "attribuut": "wachtgeld",
+      "rungs": [
+        {
+          "node": "Rung",
+          "besluit": null,
+          "voorwaarde": {
+            "node": "Kenmerk",
+            "kenmerk": "havenmeester",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "hij havenmeester is"
+          },
+          "consequentie": {
+            "node": "Literal",
+            "waarde": "45",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "45"
+          },
+          "bron": null
+        }
+      ],
+      "ongeordend": true,
+      "bron": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "DefaultLadder",
+      "naam": "wachtgeld voor strandvoogden",
+      "onderwerp": "Jutter",
+      "kenmerk": null,
+      "attribuut": "wachtgeld",
+      "rungs": [
+        {
+          "node": "Rung",
+          "besluit": null,
+          "voorwaarde": {
+            "node": "Kenmerk",
+            "kenmerk": "strandvoogd",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "hij strandvoogd is"
+          },
+          "consequentie": {
+            "node": "Literal",
+            "waarde": "30",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "30"
+          },
+          "bron": null
+        }
+      ],
+      "ongeordend": true,
+      "bron": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ]
+}

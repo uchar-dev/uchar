@@ -1,0 +1,179 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "aantal geborgen wrakken": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "bergingsbevoegd",
+        "noodweer verklaard"
+      ],
+      "kenmerkSoorten": {
+        "bergingsbevoegd": "BIJVOEGLIJK",
+        "noodweer verklaard": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "bergingsbevoegd bij quotum",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "bergingsbevoegd bij noodweer",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": [],
+  "defaultLadders": [
+    {
+      "node": "DefaultLadder",
+      "naam": "bergingsbevoegd bij quotum",
+      "onderwerp": "Jutter",
+      "kenmerk": "bergingsbevoegd",
+      "rungs": [
+        {
+          "node": "Rung",
+          "besluit": true,
+          "voorwaarde": {
+            "node": "Samengesteld",
+            "kwantor": "ALLE",
+            "drempel": 0,
+            "onderdelen": [
+              {
+                "node": "Kenmerk",
+                "kenmerk": "noodweer verklaard",
+                "navigatie": null,
+                "negatie": false,
+                "eigenaar": null,
+                "periode": null,
+                "bron": "hij is noodweer verklaard"
+              },
+              {
+                "node": "Vergelijking",
+                "op": "GROTER_OF_GELIJK",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "aantal geborgen wrakken",
+                  "objecttype": "Jutter",
+                  "onderwerpBron": "zijn",
+                  "navigatieRol": null,
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  },
+                  "bron": "zijn aantal geborgen wrakken",
+                  "set": false,
+                  "navigatiePad": []
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "waarde": "8",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "8"
+                },
+                "periode": null,
+                "bron": "zijn aantal geborgen wrakken is groter of gelijk aan 8"
+              }
+            ],
+            "bron": "hij aan alle volgende voorwaarden voldoet: - hij is noodweer verklaard - zijn aantal geborgen wrakken is groter of gelijk aan 8."
+          },
+          "bron": null
+        },
+        {
+          "node": "Rung",
+          "besluit": true,
+          "voorwaarde": {
+            "node": "Vergelijking",
+            "op": "GROTER_OF_GELIJK",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "aantal geborgen wrakken",
+              "objecttype": "Jutter",
+              "onderwerpBron": "zijn",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "bron": "zijn aantal geborgen wrakken",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "20",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "20"
+            },
+            "periode": null,
+            "bron": "zijn aantal geborgen wrakken groter of gelijk is aan 20"
+          },
+          "bron": null
+        }
+      ],
+      "bron": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ]
+}

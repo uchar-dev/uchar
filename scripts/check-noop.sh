@@ -132,6 +132,21 @@
 #     numeric two-empties-equal cell), so nothing is written and no
 #     kenmerk attaches; the absence IS the assertion. The four sibling
 #     cases all decide and are not survivors.
+#   - jutterswet-bergingsdrempel/case3-onder-quotum.json: the frontend-authored
+#     ordered 'Uitzondering op' kenmerk ladder (§4) — 12 wrecks and no noodweer
+#     ground leave BOTH rungs unjustified (below the 20 quotum, the exception
+#     inert without its ground), so bergingsbevoegd stays absent; the absence IS
+#     the assertion (the ordered analogue of the hardheid case3-stilte silence).
+#   - jutterswet-bergingsdrempel/case4-onder-noodweer.json: the same ladder's
+#     floor — 5 wrecks under noodweer stay short of the exception's lowered
+#     threshold 8, so nothing is attributed; the absence IS the assertion (the
+#     ordered analogue of hardheid case4-hardheidsgrens). The two deciding
+#     siblings (case1-quotum, case2-noodweer) are not survivors.
+#   - jutterswet-wachtgeld/case4-geen.json: the frontend-authored unordered
+#     'Uitzonderingen ongeordend' attribute group (§4, §9.5) — with no ground
+#     characteristic present no member fires, so wachtgeld stays empty; the
+#     absence IS the assertion (the group analogue of samenloop case6-geen-grond).
+#     The value/conflict siblings (case1/2/3) all decide and are not survivors.
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
@@ -164,7 +179,10 @@ corpus/golden/synth3-besluitschakel/case4-afwezig.json
 corpus/golden/synth3-letbeslag/case3-leeg-regime.json
 corpus/golden/synth3-letbeslag/case4-leeg-grondslag.json
 corpus/golden/jutterswet-samenloop/case6-geen-grond.json
-corpus/golden/jutterswet-paasvondst/case5-leeg.json'
+corpus/golden/jutterswet-paasvondst/case5-leeg.json
+corpus/golden/jutterswet-bergingsdrempel/case3-onder-quotum.json
+corpus/golden/jutterswet-bergingsdrempel/case4-onder-noodweer.json
+corpus/golden/jutterswet-wachtgeld/case4-geen.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2

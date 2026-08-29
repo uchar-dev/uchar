@@ -1,0 +1,31 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "M",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "kustwacht",
+          "havenmeester"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "M",
+      "attribute": "wachtgeld"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "Jutter.wachtgeld",
+      "label": "M"
+    }
+  ]
+}

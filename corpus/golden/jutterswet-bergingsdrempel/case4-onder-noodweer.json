@@ -1,0 +1,32 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "M",
+        "objectType": "Jutter",
+        "attributes": {
+          "aantal geborgen wrakken": {
+            "number": "5"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "noodweer verklaard"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "M",
+      "characteristic": "bergingsbevoegd"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
