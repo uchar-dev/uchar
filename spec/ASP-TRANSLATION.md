@@ -1574,7 +1574,7 @@ flat-term encoding (S19).
 ### S17. Nested exception groups
 
 The flat defaults chain of S10 is the unary case of a rose tree (RS
-ch. 7.9, the ratified option i). A default's `excepties` sub-group
+ch. 7.9, the ratified option i). A default's `excepties` field
 generalises the `decides_m` lowering recursively; the translation is a real extension of
 S10, not an application of it.
 
@@ -1582,9 +1582,9 @@ S10, not an application of it.
 member or an exception group — lowers to two predicates: an outcome
 `T_out(S,V)` (the highest *settling* default's decision: the 0/1 besluit on
 characteristic defaults, the scaled consequence term on attribute defaults)
-and a conflict flag `T_cfl(S)`. A *group* — a default's sub-group, or the root
-member set — reconciles its member chains exactly as S10's root group
-reconciles:
+and a conflict flag `T_cfl(S)`. A *group* — a default's `excepties` field,
+or the root member set — reconciles its member chains exactly as S10's root
+group reconciles:
 
 ```
 gU_diff(S) :- mI_out(S,X), mJ_out(S,Y), X != Y, not mK_cfl(S)…   % I<J, every K
@@ -1616,18 +1616,18 @@ walk when it decides or conflicts (`tN_stl :- tN_dec(_)`;
 `tN_stl :- tN_conf`), and the chain's outcome takes the highest settling
 default, higher defaults displacing lower ones by `not tM_stl` — the S10
 displacement, now carrying conflicts too, so a higher deciding default
-displaces a lower default's sub-group conflict (vraag 5-A). The form-a
-fall-back's `not gU_any` restricts the own justification/consequence to a
-sub-group that decides *nothing*: a deciding or conflicting sub-group
-takes precedence.
+displaces a lower default's exception-group conflict (vraag 5-A). The form-a
+fall-back's `not gU_any` restricts the own justification/consequence to the
+case where the exception groups decide *nothing*: a deciding or conflicting
+exception group takes precedence.
 
 **Vraag 5-A — propagation to the root.** `T_cfl` climbs the tree to
 `grpG_conflict`, which guards *every* write head and the effectiveness
-atom `grpG_eff`: a differing sub-group therefore writes nothing on the
-target and leaves any case input standing (S10's `inputval` path), while
+atom `grpG_eff`: differing exception groups therefore write nothing on the
+target and leave any case input standing (S10's `inputval` path), while
 the sole §9.5 fact is the `inconsistent` its *own* group deposits under a
 **path key** — `onderwerp.target` plus the default-index path
-(`Jutter.heffing/0` for the sub-group of root default 0,
+(`Jutter.heffing/0` for the exception groups of root default 0,
 `Jutter.heffing/1` for default 1's base group). The root's own differing
 decisions keep the bare key `Jutter.heffing` (S10). One conflict, one fact, one place —
 uniform with the root reading and Catala's ⊛-propagation minus the
@@ -1646,17 +1646,18 @@ Witnesses: `anchor/jutterswet-nestuitzondering` (the attribute arm,
 art. 6) — case1-alleen-y is **the binding spurious-conflict test**
 (flattening `{y,x}∥{z,x}` manufactures a root conflict; the nested
 reading yields `10.00`, consistent — PHASE4-DEFAULTS §7), case2-alleen-z
-the sole-exception route, case3-verschillend the propagated sub-group
+the sole-exception route, case3-verschillend the propagated exception-group
 conflict (`heffing` leeg + `Jutter.heffing/0`), case4-gelijk the
-equal-decisions rule *at sub-group level*, case5-terugval the form-a
+equal-decisions rule *at exception-group level*, case5-terugval the form-a
 fall-back to `40.00`, case6-basis and case7-basisconflict the group-default
 base group and its `Jutter.heffing/1` conflict, case8-niets the
 all-undecided no-op survivor; `anchor/jutterswet-nestkenmerk` (the
 characteristic arm, art. 7) — case1-y-wint the sub-besluit `false`
 displacing the root `true` (vrijgesteld absent, consistent),
 case2-conflict the `Jutter.vrijgesteld/0` key, case3-terugval the
-empty-sub-group fall-back to `true`. The seven nested-group negatiefs
-pin what the verifier rejects before translation ever runs:
+fall-back to `true` when the exception groups decide nothing. The seven
+nested-group negatiefs pin what the verifier rejects before translation
+ever runs:
 `wf050-half-marked-group`, `wf050-subdefault-wrong-shape`,
 `wf075-contentless-default`, `wf075-empty-leden`,
 `wf075-groupdefault-with-justification`, `wf075-init-in-subdefault`,

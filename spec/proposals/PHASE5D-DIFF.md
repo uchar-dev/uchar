@@ -495,7 +495,7 @@ a differential-square catch. Negatief: `corpus/negatief/wf079-two-unconditional-
   (`Default.excepties`, RS ch. 7.9, WF-075), now shown to be load-bearing
   rather than cosmetic.
 - **Normative changes: none.** The semantics this witness exercises
-  (path-keyed §9.5 propagation from an unordered sub-group) landed in
+  (path-keyed §9.5 propagation from unordered exception groups) landed in
   Phase 5c; `case4-conflict` is a new *witness*, not a new rule.
 - **Maintainer questions: none forced** (the one latent observation §8.2
   recorded was decided 2026-08-24 — the defensive rule landed as WF-079).

@@ -5347,7 +5347,7 @@ public final class ExecModelTranspiler {
             switch (res.soort()) {
                 case Uitkomst.CONFLICT ->
                     // over-determination (ch. 7.2/7.9): no write, one §9.5 fact — bare-keyed at the root,
-                    // path-keyed for a nested sub-group conflict.
+                    // path-keyed for a nested exception-group conflict.
                     drools.insert(RegelSpraakRuntime.newInconsistentie(fqcn, res.conflictSleutel(), s));
                 case Uitkomst.DECIDED -> {
                     Beslissing b = res.beslissing();

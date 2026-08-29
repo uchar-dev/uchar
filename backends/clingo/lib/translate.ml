@@ -4598,7 +4598,7 @@ let translate_defaults_group ctx gidx (members : (int * prioritized_defaults) li
   let root_cfl = Printf.sprintf "grp%d_conflict(%s)" gidx subject in
   let root_diff = Printf.sprintf "grp%d_diff(%s)" gidx subject in
   if conflict_possible then begin
-    (* propagate a member (sub-group) conflict up to the root *)
+    (* propagate a member exception group's conflict up to the root *)
     List.iter
       (fun (_, cfl, can) ->
         if can then head_body ctx root_cfl [ Printf.sprintf "%s(%s)" cfl subject ])

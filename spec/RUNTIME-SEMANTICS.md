@@ -2474,9 +2474,9 @@ EmptyError/ConflictError shape), mapped onto this IR's own discipline:
   single defaults group cannot reach this outcome (ch. 7.1); the channel is
   exercised exactly by declared-unordered simultaneity — and a linear
   chain never pays it (the exercise-2 finding, now by construction).
-  A sub-group nested in a default (ch. 7.9) reconciles by this same rule at
-  its own level; a differing sub-group propagates the conflict to the
-  root — no write, one **path-keyed** §9.5 fact
+  The exception groups nested in a default (ch. 7.9) reconcile by this same
+  rule at their own level; differing exception groups propagate the conflict
+  to the root — no write, one **path-keyed** §9.5 fact
   (`Onderwerp.doel/<default index path>`) distinguishing a nested conflict
   from a root one.
 - **Characteristic targets**: the defaults group computes its one boolean
@@ -2708,32 +2708,33 @@ Ch. 7.1's defaults group is a **chain**; ch. 7.2's declared-unordered group
 is **root-level branching**. What neither expresses is **branching below the
 root** — a chain whose exceptions themselves branch. Phase 5c adds it as
 one concept applied recursively (`PHASE4-DEFAULTS.md` §7 option i,
-ratified 2026-08-22): a default's exception slot may hold a **sub-group** —
-`excepties = { ongeordend, leden }`, each member an `ExceptionGroup` (a
+ratified 2026-08-22): a default's exception slot may hold **exception
+groups** — `excepties = { ongeordend, leden }`, each member an `ExceptionGroup` (a
 default chain, descending, highest first, inheriting the root target and
 itself nesting via `Default.excepties`). An exception group carries **no
 target of its own**. Two default shapes result:
 
 - a **form-a default** — own justification/consequence (or besluit) **and**
-  `excepties`: the sub-group goes first (below), and its own
-  justification/consequence is the **fall-back** when the sub-group
-  decides nothing;
+  `excepties`: the exception groups go first (below), and its own
+  justification/consequence is the **fall-back** when they
+  decide nothing;
 - a **group-default** — `excepties` with no own justification/consequence/
   besluit: a chain position carrying a *multi-member base group* (or a
   further exception group), whose members reconcile as an unordered
   group.
 
 **The recursive reading.** A default carrying `excepties` first **reconciles
-its sub-group exactly as the root group reconciles** (ch. 7.2): each
+its exception groups exactly as the root group reconciles** (ch. 7.2): each
 member decides independently (its own highest deciding default,
 recursively), and
 
 - if the deciding members **agree** — one member decides, or several
-  decide **equal** values/besluiten — that is the sub-group's decision,
+  decide **equal** values/besluiten — that is the exception groups' decision,
   and it **is the default's decision** (the equal-decisions rule of ch. 7.2
   holds at every level: agreeing grounds are no conflict);
-- if **no member decides**, the sub-group is empty and the default **falls
-  back**: a form-a default to its own justification/consequence (deciding,
+- if **no member decides**, the exception groups decide nothing and the
+  default **falls back**: a form-a default to its own
+  justification/consequence (deciding,
   or falling through, like a plain default); a group-default decides
   nothing and the chain falls through to the next lower default;
 - if two members **decide differently**, that is the branch-below-the-root
@@ -2742,7 +2743,7 @@ recursively), and
   what the fact base holds — its input value, or leeg) and one **§9.5
   channel fact** records it, keyed by the target form **plus the default
   index path** — `Onderwerp.doel/<defaultindexpad>` (e.g.
-  `Jutter.heffing/0` for the sub-group of default 0; a root-level conflict
+  `Jutter.heffing/0` for the exception groups of default 0; a root-level conflict
   keeps its bare `Jutter.heffing`). The path suffix keeps a nested conflict
   distinguishable from a root one. This is **uniform with the root
   reading** (a differing group does not write) and **Catala-faithful**:
@@ -2753,23 +2754,24 @@ recursively), and
   and the input default (ch. 7.8) stay **root-only** — a sub-default is
   never an initialisation or input default (WF-075).
 
-**Displacement of a lower default's sub-group.** Ch. 7.1's rule — the
+**Displacement of a lower default's exception groups.** Ch. 7.1's rule — the
 highest deciding default of a chain wins, lower defaults never reached —
 extends to settling **by conflict**: a default **settles** when its
-sub-group decides *or* conflicts. A strictly-higher settling default
-(deciding or conflicting) therefore **displaces the entire sub-group of
-every lower default, including that lower sub-group's path-keyed §9.5
-fact** — a displaced sub-group is never reached, so neither its decision
-nor its conflict surfaces. This is the chain reading applied to the
-nested form: the conflict a lower sub-group *would* deposit is
-speculative until its default is reached, and a higher settling default keeps
+exception groups decide *or* conflict. A strictly-higher settling default
+(deciding or conflicting) therefore **displaces the exception groups of
+every lower default entirely, including their path-keyed §9.5
+fact** — displaced exception groups are never reached, so neither their
+decision nor their conflict surfaces. This is the chain reading applied to the
+nested form: the conflict lower exception groups *would* deposit is
+speculative until their default is reached, and a higher settling default keeps
 it from ever being reached. (The corollary the executors must honour:
-the path-keyed `subject.target/<path>` fact of a displaced sub-group
+the path-keyed `subject.target/<path>` fact of displaced exception groups
 must not be emitted — a bare differing-pair signal without the
 displacement wait is an incoherent model. Witnessed by
 `jutterswet-nestuitzondering/case9-verdrongen-conflict`: input
-`grondX + grondB1 + grondB2` settles default 0 at **40.00** on its empty
-sub-group, so the base group-default's `grondB1`-vs-`grondB2` conflict at
+`grondX + grondB1 + grondB2` settles default 0 at **40.00** on exception
+groups that decide nothing, so the base group-default's
+`grondB1`-vs-`grondB2` conflict at
 `Jutter.heffing/1` is displaced — the group writes 40.00, consistent,
 **no** `/1` fact.)
 
@@ -2779,45 +2781,45 @@ justified): flattening the tree to a root group `{[y, x], [z, x]}`
 manufactures a conflict — member 1 decides `y`, member 2 decides `x` —
 where the paper's calculus yields **`y`** (the `z` slot is ∅, the sole
 non-empty exception wins). The nested reading yields `y`, consistent: the
-sub-group of `x` reconciles first, only `y` decides, and that is `x`'s
+exception groups of `x` reconcile first, only `y` decides, and that is `x`'s
 decision — no spurious conflict. Ch. 7.2's reference here: a declared-
-unordered *root* group reconciles by the same rule the sub-group now uses
-recursively.
+unordered *root* group reconciles by the same rule the exception groups now
+use recursively.
 
 **Worked examples (absolute; the anchors verbatim, both target kinds).**
 
 *Attribute target* — `jutterswet-nestuitzondering`, `Jutter.heffing`
 (2 decimals). One defaults group: default 0 = form-a `grondX → 40.00` with
-an unordered sub-group `{ grondY → 10.00, grondZ → 20.00, grondW → 10.00 }`;
+unordered exception groups `{ grondY → 10.00, grondZ → 20.00, grondW → 10.00 }`;
 default 1 = a group-default carrying the unordered base group
 `{ grondB1 → 15.00, grondB2 → 25.00 }`.
 
 | Case | Input characteristics | `heffing` | Channel |
 |---|---|---|---|
-| `case1-alleen-y` | grondX, grondY | **10.00** | consistent — the spurious-conflict test: only `y` decides in the sub-group |
+| `case1-alleen-y` | grondX, grondY | **10.00** | consistent — the spurious-conflict test: only `y` decides among the exception groups |
 | `case2-alleen-z` | grondX, grondZ | **20.00** | consistent |
-| `case3-verschillend` | grondX, grondY, grondZ | **leeg** | inconsistent `Jutter.heffing/0` — the sub-group of default 0 decides 10 and 20 |
+| `case3-verschillend` | grondX, grondY, grondZ | **leeg** | inconsistent `Jutter.heffing/0` — the exception groups of default 0 decide 10 and 20 |
 | `case4-gelijk` | grondX, grondY, grondW | **10.00** | consistent — equal sub-decisions (10 and 10) are no conflict |
-| `case5-terugval` | grondX | **40.00** | consistent — empty sub-group falls back to default 0's own consequence |
+| `case5-terugval` | grondX | **40.00** | consistent — the exception groups decide nothing, so default 0 falls back to its own consequence |
 | `case6-basis` | grondB1 | **15.00** | consistent — default 0 undecided, the base group-default decides |
 | `case7-basisconflict` | grondB1, grondB2 | **leeg** | inconsistent `Jutter.heffing/1` — the base group decides 15 and 25 |
 | `case8-niets` | (none) | **leeg** | consistent — nothing decides; a no-op-survivor (gate 7) |
 
 *Characteristic target* — `jutterswet-nestkenmerk`, `Jutter.vrijgesteld`.
 One defaults group: default 0 = form-a `nx → attribute (besluit true)` with
-an unordered sub-group `{ ny → do-not-attribute (false), nz → attribute
+unordered exception groups `{ ny → do-not-attribute (false), nz → attribute
 (true) }`.
 
 | Case | Input characteristics | `vrijgesteld` | Channel |
 |---|---|---|---|
 | `case1-y-wint` | nx, ny | **absent** | consistent — the sub-decision `false` displaces `nx`'s `true` |
-| `case2-conflict` | nx, ny, nz | **absent** | inconsistent `Jutter.vrijgesteld/0` — the sub-group decides `false` and `true` |
-| `case3-terugval` | nx | **present** | consistent — empty sub-group falls back to default 0's own besluit `true` |
+| `case2-conflict` | nx, ny, nz | **absent** | inconsistent `Jutter.vrijgesteld/0` — the exception groups decide `false` and `true` |
+| `case3-terugval` | nx | **present** | consistent — the exception groups decide nothing, so default 0 falls back to its own besluit `true` |
 
 *Nest depth* — `jutterswet-nestdiepte`, `Jutter.heffing` (2 decimals),
 three levels deep. One defaults group: default 0 = form-a `grondX → 40.00`
-with an unordered sub-group of two siblings `{ s0 = grondY → 10.00; s1 =
-grondP → 30.00 with its own unordered sub-group { grondQ → 5.00,
+with an unordered pair of sibling exception groups `{ s0 = grondY → 10.00; s1 =
+grondP → 30.00 with its own unordered exception groups { grondQ → 5.00,
 grondR → 25.00 } }`. `s0` and `s1` are unordered siblings — they
 reconcile as a group, they do not displace each other. The path suffix
 is the **default-index path**, so the innermost conflict keys at
@@ -2825,8 +2827,8 @@ is the **default-index path**, so the innermost conflict keys at
 
 | Case | Input characteristics | `heffing` | Channel |
 |---|---|---|---|
-| `case1-diep-pad` | grondX, grondP, grondQ | **5.00** | consistent — the clean deep path: only `grondQ` decides in the innermost sub-group, and the single decision bubbles up unchanged (5.00 → s1 → default 0) |
-| `case2-diep-conflict` | grondX, grondP, grondQ, grondR | **leeg** | inconsistent `Jutter.heffing/0/0` — the innermost sub-group decides 5.00 and 25.00; the deep conflict propagates through the sibling group to the root |
+| `case1-diep-pad` | grondX, grondP, grondQ | **5.00** | consistent — the clean deep path: only `grondQ` decides among the innermost exception groups, and the single decision bubbles up unchanged (5.00 → s1 → default 0) |
+| `case2-diep-conflict` | grondX, grondP, grondQ, grondR | **leeg** | inconsistent `Jutter.heffing/0/0` — the innermost exception groups decide 5.00 and 25.00; the deep conflict propagates through the sibling group to the root |
 | `case3-terugval` | grondX | **40.00** | consistent — nothing below decides; default 0 falls back to its own consequence |
 
 **Well-formedness and strata.** WF-050 recurses its default-shape checks
@@ -2840,7 +2842,7 @@ negative edges, so a cycle through a sub-default read is caught unchanged
 the nested form itself (members ≥ 1, the unordered-multiplicity rule at
 every level, no initialisation in sub-defaults, the contentless default).
 The ASP lowering of the nested form — a per-path predicate family, with
-value priority between a sub-group's outcome and a form-a default's own
+value priority between the exception groups' outcome and a form-a default's own
 consequence — is real design work carried by the executor card, proven by these
 anchors.
 

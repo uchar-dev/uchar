@@ -2091,7 +2091,7 @@ group-defaults), `consequence` (v0 wire `consequentie`, expression? —
 attribute defaults only), `initialisation` (v0 wire `initialisatie`,
 boolean — the ch. 7.3 default: justified iff the target is empty in the
 input facts; lowest only, **root-only**), `exceptions` (v0 wire
-`excepties`, the optional nested sub-group — the **Default.exceptions and
+`excepties`, the optional nested exception groups — the **Default.exceptions and
 ExceptionGroup** paragraph below), `source`. Semantics:
 `RUNTIME-SEMANTICS.md` ch. 7.1 —
 per subject the highest default that **decides** wins: on a
@@ -2105,19 +2105,19 @@ speculative (only the deciding default's channel deposits persist).
 **Default.exceptions and ExceptionGroup** (`RUNTIME-SEMANTICS.md` ch. 7.9,
 Phase 5c — the below-root branching form): a default's `exceptions` slot
 (v0 wire `excepties = { unordered, members }`, `ongeordend` + `leden`)
-holds a **sub-group** whose `members` are `ExceptionGroup` nodes (v0 wire
+holds its **exception groups** — its `members` are `ExceptionGroup` nodes (v0 wire
 `ExceptionGroup`: `defaults` — a non-empty default chain, descending,
 highest first — and `source`). An exception group inherits the root target
 and carries **none of its own**, and it may nest again via
 `Default.exceptions` — the defaults group is a rose tree. Two default shapes: a **group-default**
-(`exceptions`, no own condition/besluit/consequence — the sub-group *is*
-its decision, carrying a multi-member base or exception group as a chain
+(`exceptions`, no own condition/besluit/consequence — the exception groups
+*are* its decision, carrying a multi-member base or exception group as a chain
 position; a stray justification here is ill-formed, WF-075) and a
 **form-a default** (own besluit/consequence too — the
-sub-group decides first, its own consequence the fall-back when the
-sub-group is empty). A default reconciles its sub-group by the same rule
-the declared-unordered root group uses (ch. 7.2), recursively; a
-**differing** sub-group propagates the conflict to the **root** — no
+exception groups decide first, its own consequence the fall-back when they
+decide nothing). A default reconciles its exception groups by the same rule
+the declared-unordered root group uses (ch. 7.2), recursively;
+**differing** exception groups propagate the conflict to the **root** — no
 write, one path-keyed §9.5 fact `subject.target/<default index path>`
 (ch. 7.9, vraag 5 A). The initialisation and input defaults are
 **root-only** — a sub-default is never one. `Default.required` is untouched,
@@ -2141,8 +2141,8 @@ so every existing document validates unchanged.
   a justification) **recurse into sub-defaults** (ch. 7.9, an exception
   group inheriting the root target kind); a group-default (`exceptions`, no
   own content) is exempt from the content and justification requirements,
-  and a contentless default — neither content nor sub-group — is WF-075's
-  concern.
+  and a contentless default — neither content nor exception group — is
+  WF-075's concern.
 - **WF-086** A defaults group MUST NOT target a **temporal attribute** —
   one carrying a declared granularity (`attribuutGranulariteit`), whether
   anchor-only or on a named timeline — **nor a temporal characteristic**
@@ -2174,20 +2174,21 @@ so every existing document validates unchanged.
   descendant read (justifications and consequences, recursively through
   sub-defaults) into the same root negative edges (ch. 7.9), so a cycle
   through a sub-default read is caught here.
-- **WF-075** A default's `exceptions` sub-group (`RUNTIME-SEMANTICS.md`
-  ch. 7.9) MUST carry at least one member; two or more members MUST
-  carry the `unordered` marking (the root regime of WF-050, applied at
-  every level — the flag rides the sub-group itself). A sub-default MUST
-  NOT be an initialisation (or input) default — those are root-only. Every
-  default MUST carry its own decision/consequence, a nested sub-group, or
-  be the initialisation default — a contentless default decides nothing. A
-  **group-default** (a sub-group with no own decision or consequence) MUST
+- **WF-075** A default's `exceptions` field (`RUNTIME-SEMANTICS.md`
+  ch. 7.9) MUST carry at least one exception group; two or more exception
+  groups MUST carry the `unordered` marking (the root regime of WF-050,
+  applied at every level — the flag rides the `exceptions` field itself). A
+  sub-default MUST NOT be an initialisation (or input) default — those are
+  root-only. Every
+  default MUST carry its own decision/consequence, a nested exception group,
+  or be the initialisation default — a contentless default decides nothing. A
+  **group-default** (`exceptions`, no own decision or consequence) MUST
   NOT carry a justification (`condition`) of its own: its members decide,
   so a condition there is never read and would be silently ignored —
   such a default is neither a well-formed form-a default nor a well-formed
   group-default and is rejected. The rule recurses to any depth. (The
   content-KIND per target and the descendant-read folding land with
-  WF-050 and WF-051; a differing sub-group's root propagation is
+  WF-050 and WF-051; a differing exception group's root propagation is
   evaluation semantics, ch. 7.9.)
 
 The v0 desugaring of existing rule forms into prioritized defaults is
@@ -2293,7 +2294,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-072 | StructType use site agrees with its declaring domain; two struct-typed comparison operands name the same domain (the nominal rule, ch. 2.4) | gate 3 | `anchor/jutterswet-vondstdossier` | `wf072-use-site-drift` + `wf072-cross-struct-equality` |
 | WF-073 | StructLiteral: declared struct type; exactly the declared fields, each once; each value type matches the field declaration (ch. 4.9) | gate 3 | `anchor/jutterswet-vondstdossier` | `wf073-missing-field` + `wf073-alien-field` + `wf073-field-type-mismatch` |
 | WF-074 | FieldAccess: struct-typed base; field a declared field; node type = the field datatype (ch. 4.9) | gate 3 | `anchor/jutterswet-vondstdossier` | `wf074-unknown-field` + `wf074-nonstruct-base` |
-| WF-075 | nested exception form (ch. 7.9): a default's `exceptions` sub-group carries ≥ 1 member; two or more require the `unordered` marking (the root regime, at every level); no initialisation/input default in sub-defaults; every default carries own content, a nested sub-group, or is the initialisation default; a group-default (sub-group, no own content) carries no own justification; recurses | gate 3 | `anchor/jutterswet-nestuitzondering` (attribute target) + `anchor/jutterswet-nestkenmerk` (characteristic target) + `anchor/jutterswet-nestdiepte` (three-level depth) — admitted through the Phase-5c executor card | `wf075-empty-leden` + `wf075-two-members-unmarked` + `wf075-init-in-subdefault` + `wf075-contentless-default` + `wf075-groupdefault-with-justification` |
+| WF-075 | nested exception form (ch. 7.9): a default's `exceptions` field carries ≥ 1 exception group; two or more require the `unordered` marking (the root regime, at every level); no initialisation/input default in sub-defaults; every default carries own content, a nested exception group, or is the initialisation default; a group-default (`exceptions`, no own content) carries no own justification; recurses | gate 3 | `anchor/jutterswet-nestuitzondering` (attribute target) + `anchor/jutterswet-nestkenmerk` (characteristic target) + `anchor/jutterswet-nestdiepte` (three-level depth) — admitted through the Phase-5c executor card | `wf075-empty-leden` + `wf075-two-members-unmarked` + `wf075-init-in-subdefault` + `wf075-contentless-default` + `wf075-groupdefault-with-justification` |
 | WF-076 | `Let`: the node `type` equals its `body` type; the binder is visible only in the `body` (never in its own `value`); `value` and `body` well-formed; the binder joins WF-064 (ch. 4.10) | gate 3 | `anchor/jutterswet-tariefstelling` — admitted through the Phase-5c let/decimals executor card | `wf076-body-type-mismatch` + `wf076-unbound-binder-in-value` |
 | WF-077 | the condition-operand discipline: everywhere an `IfThenElse` is admissible (lambda, function or strict `Let` bodies), its condition READS only binders, parameters and literals (arithmetic combinators over those are admissible — the reads are what matter); an attribute/field/characteristic read routes through a strict `Let` binding first — the leeg-barrier (ch. 4.10) | gate 3 | `anchor/jutterswet-tariefstelling` + `anchor/jutterswet-staffelvergoeding` (a `Binair` over binders as a condition operand) | `wf077-attribute-in-condition` + `wf077-fieldaccess-in-condition` |
 | WF-078 | a `BinderRef`'s serialized `type` agrees in soort with its resolved binder's declared datatype (a match arm's constructor payload, a lambda/function parameter, a `Let` binder's value, a filter binder's element) — the leaf-ref cross-check WF-023/WF-027 do for a resolved `AttribuutRef`, soort only (decimals/units uncrossed, as there); closes the WF-035 additive-position exemption for binders (ch. 4.7) | gate 3 | `anchor/jutterswet-aanspraaktelling` (fold/match binders) + `anchor/jutterswet-tariefstelling` (`Let` binders) | `wf078-binderref-type-lie` |

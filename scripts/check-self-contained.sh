@@ -85,5 +85,52 @@ if [ -e toka ]; then
     fi
 fi
 
+# The RENAME tripwire (card 2026-08-29 hernoem-prioritized-defaults; wire
+# epoch v0.10). The ladder/rung vocabulary was renamed to prioritized
+# defaults / default / exception group; HERNOEM_LADDER_20260829.md §6
+# promises the remaining old-term lines as a reason-carrying,
+# fails-when-stale list — mechanised here the gate-7 way. Every old-term
+# line must match an allowance below (a reintroduction fails), and every
+# allowance must still match at least once (a stale list fails). The
+# allowances: the two formerly notes and the annex-A naming paragraph (the
+# bridge to git history), the rename card itself (it names its own
+# subject), and the runGolden substring false positive (no ladder
+# vocabulary; the allowance re-greps the line with that token stripped).
+# This script excludes itself: it necessarily spells the patterns it hunts.
+RENAME_HITS=$(mktemp) || exit 2
+git grep -inE 'ladder|rung' -- . ':(exclude)toka' ':(exclude)HERNOEM_LADDER_20260829.md' ':(exclude)scripts/check-self-contained.sh' > "$RENAME_HITS" || true
+c_formerly_ir=0; c_formerly_rs=0; c_annex_open=0; c_annex_close=0; c_card=0; c_rungolden=0
+while IFS= read -r hit; do
+    hitfile=${hit%%:*}
+    allowed=''
+    case "$hitfile" in
+        spec/IR-SPEC.md)
+            case "$hit" in *'Renamed 2026-08-29 from'*) allowed=y; c_formerly_ir=$((c_formerly_ir+1));; esac ;;
+        spec/RUNTIME-SEMANTICS.md)
+            case "$hit" in
+                *'Renamed 2026-08-29 from'*) allowed=y; c_formerly_rs=$((c_formerly_rs+1));;
+                *'replaces "ladder", coined in this'*) allowed=y; c_annex_open=$((c_annex_open+1));;
+                *'ladder logic (IEC 61131-3)'*) allowed=y; c_annex_close=$((c_annex_close+1));;
+            esac ;;
+        backlog/doing/20260829-hernoem-prioritized-defaults.md|backlog/done/20260829-hernoem-prioritized-defaults.md)
+            allowed=y; c_card=$((c_card+1)) ;;
+        backends/drools/src/main/java/io/github/yhavinga/regelspraak/cases/CaseRunner.java|backends/drools/src/main/java/io/github/yhavinga/regelspraak/cases/DroolsBackendMain.java|backlog/done/20260827-drools-backend.md)
+            if ! printf '%s' "$hit" | sed 's/runGolden//g' | grep -qiE 'ladder|rung'; then
+                allowed=y; c_rungolden=$((c_rungolden+1))
+            fi ;;
+    esac
+    if [ -z "$allowed" ]; then
+        echo "FAIL: pre-rename vocabulary reintroduced (not on the reason-carrying list): $hit" >&2
+        status=1
+    fi
+done < "$RENAME_HITS"
+rm -f "$RENAME_HITS"
+[ "$c_formerly_ir" -eq 1 ] || { echo "FAIL: rename tripwire stale — expected exactly 1 formerly note in spec/IR-SPEC.md, found $c_formerly_ir" >&2; status=1; }
+[ "$c_formerly_rs" -eq 1 ] || { echo "FAIL: rename tripwire stale — expected exactly 1 formerly note in spec/RUNTIME-SEMANTICS.md, found $c_formerly_rs" >&2; status=1; }
+[ "$c_annex_open" -ge 1 ] || { echo "FAIL: rename tripwire stale — the annex-A naming paragraph (opening line) is gone from spec/RUNTIME-SEMANTICS.md" >&2; status=1; }
+[ "$c_annex_close" -ge 1 ] || { echo "FAIL: rename tripwire stale — the annex-A naming paragraph (IEC 61131-3 line) is gone from spec/RUNTIME-SEMANTICS.md" >&2; status=1; }
+[ "$c_card" -ge 1 ] || { echo "FAIL: rename tripwire stale — the rename card is gone from backlog/doing|done/" >&2; status=1; }
+[ "$c_rungolden" -ge 1 ] || { echo "FAIL: rename tripwire stale — the runGolden false-positive allowance no longer matches anything; drop it from this list" >&2; status=1; }
+
 [ "$status" -eq 0 ] && echo 'check-self-contained: PASS'
 exit "$status"

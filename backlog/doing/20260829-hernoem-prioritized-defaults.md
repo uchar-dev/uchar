@@ -20,7 +20,8 @@ vals-positieven; rood getoond bij aanvang); geen verwachtingswaarde
 gewijzigd.
 
 May touch: spec/ integraal (IR-REVIEW.md: nulmeting), corpus/golden,
-corpus/negatief, ref/, backends/, frontends/, scripts/, CLAUDE.md,
+corpus/negatief, corpus/jutterswet (NL-casusprose — valt onder de
+§6-grep), ref/, backends/, frontends/, scripts/, CLAUDE.md,
 backlog/new/*.md, backlog/done/**, spec/proposals/**, backlog/
 (kaartverplaatsing), HERNOEM_LADDER_20260829.md.
 

@@ -4245,7 +4245,7 @@ let wf050 ctx =
             justification-presence checks recurse into sub-defaults (ch. 7.9 —
             an exception group inherits the root target kind). A group-default
             (excepties present, no own besluit/consequentie) delegates its
-            decision to its exception group: it is exempt from the content and
+            decision to its exception groups: it is exempt from the content and
             justification requirements. A contentless default (neither content
             nor exception group) is WF-075's concern. *)
          @ (let is_char = l.pd_kenmerk <> None in
@@ -4734,9 +4734,9 @@ let wf075 ctx =
                         && r.default_voorwaarde <> None && not r.default_initialisatie
                      then
                        [ v "WF-075" rat
-                           "a group-default (an exception group with no own decision or \
+                           "a group-default (excepties present, no own decision or \
                             consequence) carries no justification of its own: the exception \
-                            group decides, so a condition here would be silently ignored \
+                            groups decide, so a condition here would be silently ignored \
                             (ch. 7.9)" ]
                      else [])
                   @ (match r.default_excepties with
