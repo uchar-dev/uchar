@@ -465,11 +465,12 @@ any conversion factor* (ch. 2.6):
 - **Restating positions** — the additive join, the clamp bounds, the
   comparison, the eerste/laatste fold, the write boundary — accept a
   unitless side (it adopts the other unit, value unchanged,
-  `restate_into`, `Unitless, Unit _ -> q`) or identical units. Two
-  DIFFERENT declared units meet here only AFTER the finest-canonical
-  normalisation pre-step (below) has failed to reduce them to one — a
-  factor-carrying residue the integer encoding still cannot restate — so
-  the loud fence holds for it (the hunted 1 m + 50 cm = 51 of ch. 6c).
+  `restate_into`, `Unitless, Unit _ -> q`) or identical units. In a write
+  rule's VALUE expression, two different declared units may first be
+  reduced to one by the finest-canonical normalisation pre-step (below);
+  everything the pass does not reduce — including every CONDITION and
+  comparison position, which the pass never descends — keeps the loud
+  fence outright (the hunted 1 m + 50 cm = 51 of ch. 6c).
 
 The unit is derived recursively from declarations (`eff_unit`), never
 read from a node's static annotation. Golden `jutterswet-sleeprest`
@@ -492,9 +493,13 @@ clingo leg:
   declared in its stelsel's finest unit, every literal of that stelsel in the
   value expression is restated into the finest unit — its value multiplied by
   the exact integer `factor(u → u_min)`, its decimal scale adjusting with the
-  factor, its unit annotation set to the finest. The additive join, clamp
-  bounds and ordering folds then read one identical unit and translate as raw
-  integer arithmetic; the write boundary writes the finest unit into a finest
+  factor, its unit annotation set to the finest. The additive join then reads
+  one identical unit and translates as raw integer arithmetic (witnessed:
+  `jutterswet-sleepbaan`, `jutterswet-vergunningsduur`); the descent also
+  covers clamp bounds and ordering folds — code-covered and fault-safe but
+  corpus-unwitnessed as yet, a registered hunt-wave witness. Conditions and
+  comparison positions are NEVER descended: a mixed-unit comparison keeps the
+  loud refusal. The write boundary writes the finest unit into a finest
   target.
 - **Proof obligations, fault-loud.** Each declared factor must have an exact
   short-decimal reading (`Arith.q_of_wire_number`; a binary-double tail faults,
@@ -1828,7 +1833,8 @@ operands (a rate cancellation, an opaque product unit), division/rate
 units, and a restating position (additive join, clamp bound, comparison,
 ordering fold, write boundary) over two DIFFERENT units the pass could
 NOT reduce to one — a target not in its stelsel's finest unit, a coarser
-operand carried by an attribute/parameter rather than a literal, or a
+operand carried by an attribute/parameter rather than a literal, a
+condition/comparison position (never descended by the pass), or a
 cross-stelsel pair. The finest-canonical restatements now translate — the
 pass multiplies each coarser literal into the finest base unit by an exact
 integer (2,5 km ⇒ 2500 m, 2 jaar ⇒ 24 maand; goldens

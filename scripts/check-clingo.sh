@@ -42,6 +42,24 @@ if ! dune build backends 2>&1; then
     echo 'check-clingo: FAIL (build)' >&2
     exit 1
 fi
+
+# The backend's own unit suite carries the fault-mode proof obligations of the
+# normalisation pass (no-finest stelsel, inexact factor) that no corpus witness
+# can exercise — an un-run suite is a silent green, so the gate runs it and
+# demands a non-zero check count (the gate-9 zero-checks discipline).
+SUITE_BIN=_build/default/backends/clingo/test/test_clingo.exe
+SUITE_OUT=$("$SUITE_BIN" 2>&1)
+if [ $? -ne 0 ]; then
+    echo "$SUITE_OUT" >&2
+    echo 'check-clingo: FAIL (backend unit suite)' >&2
+    exit 1
+fi
+SUITE_CHECKS=$(printf '%s' "$SUITE_OUT" | grep -Eo '[0-9]+ checks' | grep -Eo '[0-9]+' | head -1)
+if [ -z "$SUITE_CHECKS" ] || [ "$SUITE_CHECKS" -eq 0 ]; then
+    echo "$SUITE_OUT" >&2
+    echo 'check-clingo: FAIL (backend unit suite ran zero checks — a silent green is not green)' >&2
+    exit 1
+fi
 BIN=_build/default/backends/clingo/bin/clingo_runner.exe
 
 if [ "$#" -eq 2 ]; then
