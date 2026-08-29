@@ -44,7 +44,7 @@ property the v0 emitter never produces — currently `verbindendeRol` on
 fact-creation fields (`feittype`/`ankerRol`/`doelRol`/`joinRol`,
 `Tussenstap.rolBinding`), all carrying the `RolBinding` node, the
 `TemporalRead` expression node (the row-11 point read), and the
-top-level `defaultLadders` list (the Phase-4 characteristic ladder).
+top-level `prioritizedDefaults` list (the Phase-4 defaults groups).
 When present they are written whole, never null; the loaders admit
 exactly these keys and nothing else. Mirror purity holds per file: an emitter
 dump carries none of them, a hand-written anchor case may carry them,
