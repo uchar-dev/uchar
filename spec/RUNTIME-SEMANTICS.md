@@ -2012,6 +2012,14 @@ consistent (case 1 — the three exclusions).
 
 ## 6. Stratification
 
+> **Normative home:** the dependency graph, its three edge kinds, the
+> illegal-cycle rules (WF-045/046) and the WF-051 ladder fold are defined
+> normatively in `IR-SPEC.md` ch. 5 (with the day-kind stratum-0 framing,
+> `IR-SPEC.md` ch. 5.4, and the executor-neutrality clause, ch. 5.5). This
+> chapter is the **operational companion**: the per-form read/write table
+> (ch. 6.1) and the worked evaluations (ch. 6.4) that realise those
+> definitions.
+
 A rule set holds as one system of equations (ch. 5); this chapter
 states the well-formedness that makes its fixpoint well-defined in the
 presence of negation and creation: the dependency graph, acyclicity

@@ -113,12 +113,13 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
 2. **The model layer** — normative draft (since v0.1).
 3. **The rule layer** — normative draft (since v0.2).
 4. **The expression and condition layer** — **this release.**
-5. **Time** *(skeleton)*
+5. **Stratification** — the dependency graph, its edge kinds and the illegal-cycle rules (WF-045/046/051); `RUNTIME-SEMANTICS.md` ch. 6 is the operational companion.
 6. **Defaults and defeasibility** — the ladder is normative in both target kinds, with unordered groups (ch. 6.1); the v0 desugaring is `RUNTIME-SEMANTICS.md` ch. 7.7.
-7. **Serialization** *(lands with `spec/schema/`)*
-8. **Well-formedness rules** — the WF index, at the end of this document.
-9. **The RegelSpraak dialect** *(skeleton)*
-10. **Versioning policy** *(skeleton)*
+7. **Time** *(skeleton)*
+8. **Serialization** *(lands with `spec/schema/`)*
+9. **Well-formedness rules** — the WF index, at the end of this document.
+10. **The RegelSpraak dialect** *(skeleton)*
+11. **Versioning policy** *(skeleton)*
 
 ---
 
@@ -1123,19 +1124,36 @@ condition over "the day". v0 name: `ResolvedDagsoort`.
 | Field | Type | Meaning |
 |---|---|---|
 | `dayKind` | day-kind ref | the declared name (ch. 2.9) |
-| `condition` | Condition | over the day; may reference other day kinds |
+| `condition` | Condition | over the day; **pure** (WF-031) and may reference other day kinds **acyclically** (WF-085) |
 | `validity` | Validity | MUST be ALTIJD (open on both ends); no evaluator reads a day-kind window, so a bounded one is refused (WF-031) |
 
 - **WF-031** The reference MUST resolve to a declared DayKind; the
-  condition MUST be present; there MUST be exactly one definition per
-  DayKind; the validity MUST be ALTIJD — `vanaf` and `tot` both null (a
-  bounded window is refused, since no evaluator consults a day-kind
-  validity, so a bounded one would be silently dead). *v0 mirror note:* a
-  missing condition is warn-and-drop; a duplicate definition warns and
-  appends with first-wins lookup; the validity is not read at all.
-  **Delta (promotion).** **OPEN:** whether mutually recursive day-kind
-  definitions are admissible (v0 neither checks nor documents this) —
-  decided with the stratification chapter.
+  condition MUST be present and **pure** — a day-kind voorwaarde
+  references only dates, date-components, eerste-paasdag, literals,
+  parameters and other day-kind names, and MUST NOT read an attribute or
+  a characteristic (the stratum-0 framing, ch. 5.4: a day kind classifies a
+  bare date before the rule graph, with no fact base); there MUST be
+  exactly one definition per DayKind; the validity MUST be ALTIJD —
+  `vanaf` and `tot` both null (a bounded window is refused, since no
+  evaluator consults a day-kind validity, so a bounded one would be
+  silently dead). *v0 mirror note:* a missing condition is warn-and-drop;
+  a duplicate definition warns and appends with first-wins lookup; the
+  validity is not read at all; the purity of the condition is neither
+  checked nor documented. **Delta (promotion).** The recursion question
+  is **closed** (decided with the stratification chapter,
+  `spec/proposals/LADDER-EVOLUTIE.md` Q8): mutually recursive definitions
+  are refused by WF-085 below, derived-state reads by the purity clause
+  here.
+- **WF-085** The day-kind **reference graph** MUST be acyclic. A day-kind
+  voorwaarde may reference other day kinds (a `Predicaat` of soort
+  `DAGSOORT`), which builds an edge from the defined day kind to each day
+  kind it names; mutually recursive definitions have no fixpoint and are
+  refused (ch. 5.4). An undeclared reference is WF-034's concern and carries
+  no edge here. *v0 mirror note:* v0 permits the references and resolves a
+  cycle to a **silent false** (the §9.10 recursion prohibition unenforced
+  for day kinds); WF-085 makes the refusal structural. **Delta
+  (diverge-from-v0):** v0 neither checks nor documents this
+  (`CONSTRUCTS.md`).
 
 ### 3.8 Start-point determination
 
@@ -1671,17 +1689,17 @@ Comparison, Predicate, and CharacteristicCheck only —
   one is non-conforming. This is the unsolved-state harness guard
   (`PLAN.md` §8) written as a rule; its check is behavioural (CI), not
   structural.
-- **WF-045** The rule-form dependency graph — over attribute,
-  characteristic, channel and population nodes
-  (`RUNTIME-SEMANTICS.md` ch. 6.1) — MUST be acyclic after removing the
-  object-creation members of recursive rule groups: a dependency cycle
-  is admissible only when it passes through recursive creation
-  (ch. 6.2; mirror: v0 warns at build time and caps firing).
+- **WF-045** The rule-form dependency graph (ch. 5.1 — attribute,
+  characteristic, channel, population and relation nodes; operational
+  companion `RUNTIME-SEMANTICS.md` ch. 6.1) MUST be acyclic after
+  removing the creation members of recursive rule groups: a dependency
+  cycle is admissible only when it passes through recursive creation
+  (ch. 5.3; mirror: v0 warns at build time and caps firing).
 - **WF-046** No dependency cycle — including a WF-045-admissible one —
   may carry a negative edge (a negated or negation-quantified
   characteristic read, or a regelversie channel test): evaluation
-  strata MUST exist (`RUNTIME-SEMANTICS.md` ch. 6.3). v0's single
-  agenda boundary is the two-stratum special case.
+  strata MUST exist (ch. 5.3; operational reading `RUNTIME-SEMANTICS.md`
+  ch. 6.3). v0's single agenda boundary is the two-stratum special case.
 
 ### 4.7 Sum-type expressions — Construct, Match, BinderRef
 
@@ -1886,6 +1904,150 @@ an `IfThenElse` within it is disciplined, by WF-077).
 
 ---
 
+## 5. Stratification
+
+A rule set is one system of equations (`RUNTIME-SEMANTICS.md` ch. 5);
+this chapter states, **normatively**, the well-formedness that makes its
+fixpoint well-defined in the presence of negation and creation: the
+**dependency graph**, its three **edge kinds**, and the two illegal-cycle
+rules (WF-045, WF-046). Stratification is a property of the IR, **checked
+by the verifier** — never an engine agenda trick; it is the declared
+replacement for v0's single "salience −1" boundary (`IR-REVIEW.md`;
+`RUNTIME-SEMANTICS.md` ch. 5.3). `RUNTIME-SEMANTICS.md` ch. 6 is the
+operational companion: the same graph and strata read off the statute,
+with the per-form read/write table and worked evaluations.
+
+### 5.1 The dependency graph
+
+The graph has one node per derivable value, identified up to name
+normalisation (ch. 2.1):
+
+- **attribute** — object type × attribute;
+- **characteristic** — object type × characteristic;
+- **channel** — a rule name (version-stripped): the §9.5 error entries the
+  named consistency/uniqueness rule can deposit
+  (`RUNTIME-SEMANTICS.md` ch. 5.6);
+- **population** — object type: the instance set an instance fold (ch. 4.3)
+  or an allocation's recipient derivation reads, and object creation grows;
+- **relation** — a declared fact type: its link set, written by the fact
+  creations that create it and read by every symbolic hop, fold or
+  allocation that names it in a role binding (ch. 3.4).
+
+Which form writes and reads which nodes is the producer→consumer table of
+`RUNTIME-SEMANTICS.md` ch. 6.1, whose rows the edge-kind rules below
+govern. **Parameters and input-only nodes** — nodes no form writes —
+contribute no edges. **Day kinds are not graph nodes** (ch. 5.4).
+
+### 5.2 Edge kinds
+
+An edge runs producer → consumer — from every form that **writes** a node
+to every form that **reads** it — in one of three kinds:
+
+- **positive** (the default): a read by an attribute-writing form
+  (assignment, initialisation, allocation) and any positive characteristic
+  read. Attribute writes are revocable — idempotent, re-evaluated under
+  freshness (`RUNTIME-SEMANTICS.md` ch. 5.1) — so a transient self-corrects
+  within a stratum, and a positive characteristic read is monotone-safe
+  (ch. 5.3).
+- **stratum-strict**: any non-characteristic read (attribute value,
+  emptiness/gevuld predicate, comparison) by a form whose write is
+  **irrevocable** — a characteristic attribution (monotone), a consistency
+  or uniqueness (channel facts are never retracted), or a creation. Such a
+  form MUST evaluate strictly above the producers of what it reads: a
+  transient it acted on would persist. Within a WF-045-admissible
+  recursive-creation cycle the strictness is discharged by the
+  one-generation-per-instance progression (ch. 5.5), not a stratum boundary.
+- **negative**: a negated characteristic read, a characteristic read under
+  a negation-like quantifier (*geen*, *ten hoogste*, *precies* — their
+  truth can be lost by a later monotone write), or a channel test
+  (regelversie). **Once negative, conservatively negative** — a double
+  negation does not cancel. A negative edge is stratum-strict *and*
+  forbidden on any cycle (WF-046).
+
+**The WF-051 ladder fold.** A default ladder (ch. 6;
+`RUNTIME-SEMANTICS.md` ch. 7) folds into this graph as the writer of its
+target: every rung-justification read — and, on an attribute ladder, every
+consequence read (the gevuld gate makes it decision-bearing) — is a
+**negative edge** toward the ladder's write, recursed through the nested
+`excepties` sub-rungs (ch. 6.1; `RUNTIME-SEMANTICS.md` ch. 7.9); the
+initialisation rung's implicit input-emptiness justification reads nothing.
+WF-051 names this ladder-specific rule; the WF-045/046 principles apply to
+the extended graph unchanged.
+
+### 5.3 Acyclicity and stratified negation
+
+- **WF-045 (acyclicity).** The dependency graph MUST be acyclic after
+  removing every creation form — object creation or relation creation —
+  that is a member of a recursive rule group (ch. 3.9): a cycle is
+  admissible **only** when it passes through such a form. That is the one
+  controlled exception — recursive creation advances exactly one generation
+  per instance, WF-033 guards the author's termination obligation, and the
+  runtime's bounded budget makes divergence a fault
+  (`RUNTIME-SEMANTICS.md` ch. 5.5/6.2). With WF-045 and the single-writer
+  disciplines (WF-026, WF-079) the fixpoint of the positive part is
+  unique: rule, activation and insertion order do not matter.
+- **WF-046 (stratified negation).** No dependency cycle — including a
+  WF-045-admissible one — may carry a negative edge. Equivalently, **a
+  stratum assignment exists**: give every form the smallest stratum such
+  that along every positive edge the consumer's stratum is ≥ the producer's,
+  and along every stratum-strict or negative edge strictly greater
+  (strictness on an admissible creation cycle discharged by the generation
+  progression, not a boundary). "No negative edge on a cycle" is exactly
+  the stratifiability condition; the verifier rejects a program for which no
+  assignment exists. Evaluation then proceeds by strata
+  (`RUNTIME-SEMANTICS.md` ch. 6.3): a negated read sees a settled producer,
+  a channel test a complete channel. v0's single agenda boundary is the
+  two-stratum special case.
+
+*v0 mirror note:* v0 warns on a circular reference at build time and bounds
+execution with a fire cap; WF-045/046 make the refusal structural.
+
+### 5.4 Day kinds are stratum 0
+
+A day-kind definition (ch. 3.7) classifies a bare date; it is **input,
+evaluated before the rule graph** — stratum 0 — and is therefore **not** a
+dependency-graph node and carries **no** edges. Two well-formedness rules,
+both at WF-031's home (ch. 3.7), keep that framing sound: a day-kind
+voorwaarde is **pure** — it references only dates, date-components,
+eerste-paasdag, literals, parameters and other day-kind names, never
+derived object state (WF-031) — and the **day-kind reference graph is
+acyclic** — a day-kind condition may reference other day kinds, but
+mutually recursive definitions have no fixpoint (WF-085). No executor
+evaluates a day-kind predicate: the predicate kind is refused (`ref/`,
+`backends/clingo`), so a day kind is consulted, if ever, only as a
+stratum-0 classifier of an input date, never as a derived read inside the
+rule fixpoint. (Option A of the ratified stratification round,
+`spec/proposals/LADDER-EVOLUTIE.md` §7; the diverge-from-v0 delta — v0
+neither checks nor documents this — is recorded on WF-031.)
+
+### 5.5 Executor neutrality
+
+Stratification is an IR property **checked by the verifier**; a backend is
+conforming when it produces the stratified result the graph mandates, by
+either of two postures:
+
+- it realises a **sound refinement** of the graph strata — any evaluation
+  order that respects the edge constraints, a finer stratification being
+  admissible (`ref/` walks the graph strata directly; `backends/clingo`
+  lets the ASP stable-model semantics realise them,
+  `RUNTIME-SEMANTICS.md` ch. 6); **or**
+- it carries a **narrower stratifier plus a loud auto-refusal** for the
+  forms that stratifier does not cover — it MUST refuse, with a reason,
+  every document outside its covered fragment, and MUST NOT silently
+  mis-order one.
+
+The second posture is a **bounded, named** exception, ratified here
+(`LADDER-EVOLUTIE` §7). Its instance is `backends/drools`: a kenmerk-only
+salience for the negated-characteristic boundary plus a **ladder-local**
+salience for the ch. 6 ladder (strictly below every producer of every rung
+justification), each guarded by per-form auto-refusals — a loader Refusal
+or transpiler marker naming the uncovered form, loudly excluded at gate 12,
+never played mis-stratified. A backend realising a **coarser**
+stratification than the graph mandates without refusing the uncovered forms
+is non-conforming.
+
+---
+
 ## 6. Defaults and defeasibility
 
 The model is `RUNTIME-SEMANTICS.md` ch. 7: a first-class **ladder** of
@@ -1977,13 +2139,14 @@ so every existing document validates unchanged.
   concern.
 - **WF-051** Every rung-justification read — and, on an attribute
   ladder, every consequence read (the gevuld gate makes it
-  decision-bearing) — joins the ch. 6 dependency graph of
-  `RUNTIME-SEMANTICS.md` as a **negative edge** toward the ladder's
-  write (the ch. 6.1 edge-class extension); the initialisation rung's
-  implicit input-emptiness justification reads nothing. No dependency
-  cycle may pass through a ladder — strata must exist. The WF-045/046
-  principles apply to the extended graph (a violating document
-  typically trips those too; WF-051 names the ladder-specific rule).
+  decision-bearing) — joins the ch. 5 dependency graph (ch. 5.1) as a
+  **negative edge** toward the ladder's write (the ch. 5.2 ladder fold;
+  operational companion `RUNTIME-SEMANTICS.md` ch. 6.1); the
+  initialisation rung's implicit input-emptiness justification reads
+  nothing. No dependency cycle may pass through a ladder — strata must
+  exist. The WF-045/046 principles apply to the extended graph (a
+  violating document typically trips those too; WF-051 names the
+  ladder-specific rule).
   This rule is **unchanged** by the nested form: `dep_forms` folds every
   descendant read (justifications and consequences, recursively through
   sub-rungs) into the same root negative edges (ch. 7.9), so a cycle
@@ -2063,7 +2226,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-028 | symbolic fact creation all-or-nothing and resolvable; join chain reaches target; new ≠ final hop | gate 3 (symbolic extension form; a bean-field-only v0 record stays uncheckable — recorded) | `jutterswet-gemeenteberging` (anchor: the chain walk executes and folds over the created relation pin absolute values, gates 5–6) | `wf028-half-symbolic-creation` (all-or-nothing) + `wf028-create-along-final-hop` (the full chain walk) |
 | WF-029 | consistency assertion has a single subject | gate 3 | `jutterswet-vondstnummer` | `wf029-no-subject` |
 | WF-030 | uniqueness sources: keys resolve; arity, datatype kind and units agree per position; a union carries ≥ 2 sources | gate 3 | `jutterswet-vondstnummer` + `anchor/jutterswet-kustregister` (the union — including the per-source sum over two same-type sources — and both scoped forms, executed by gates 5–6) | `wf030-arity-mismatch` + `wf030-single-source-union` |
-| WF-031 | one definition per day kind; condition present; validity ALTIJD (recursion OPEN) | gate 3 | `jutterswet-vormenkabinet` (the schouwdag definition, ALTIJD validity) | `wf031-missing-condition` + `wf031-dagsoort-venster` (bounded validity window) |
+| WF-031 | one definition per day kind; condition present and **pure** (no attribute/characteristic read — the stratum-0 framing, ch. 5.4); validity ALTIJD | gate 3 | `jutterswet-vormenkabinet` (the schouwdag definition, ALTIJD validity) + `jutterswet-schouwkalender` (a pure day-kind chain, replayed by gates 5–6 over its ordinary rule) | `wf031-missing-condition` + `wf031-dagsoort-venster` (bounded validity window) + `wf031-dagsoort-leest-kenmerk` (the purity clause: a day-kind condition reading a characteristic) |
 | WF-032 | start point: variable-start timeline, day-precision member, one per pair | gate 3 | `jutterswet-vormenkabinet` (the meetdatum anchor) | `wf032-fixed-start-anchor` |
 | WF-033 | (dialect) rule-group members resolve; recursive group has a creation member (either kind); object creations guarded, relation creations guard-free | gate 3 | `anchor/jutterswet-wachtersketen` (the recursive chain executes to its fixpoint, gates 5–6; the runaway budget fault is red-pinned, gate 8) + `anchor/jutterswet-erflijn` (the guard-free relation-creation member: the transitive closure reaches its fixpoint in both executors) | `wf033-unguarded-recursive` (the guard clause) + `wf033-no-creation-member` (the containment clause) |
 | WF-034 | every expression/condition reference resolves (no unknown-type sentinel) | gate 3 (partial: sentinel types and parameter/day-kind/element-type/own-member references; variable bindings and navigation paths are not serialized in v0; excepted: a v0 instance-fold source argument names a role and carries the sentinel by construction — the row-1 wart, resolved against declared roles with the ch. 4.3 type-pair fallback for a name that resolves nowhere) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondsttelling` (role source) + `jutterswet-kaveltelling` (the type-pair fallback: an undeclared synthesized plural over a unique pair, both executors) | `wf034-dangling-parameter` + `wf034-ambigu-typenpaar` (unresolved name, two connecting fact types) + `wf034-zelftype-typenpaar` (unresolved name, one self-typed two-role fact type — both roles are candidates, counted in roles not fact types) |
@@ -2117,6 +2280,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-082 | the `bronAnnotaties` extension field (ch. 3.1): when present a non-empty list of non-empty trimmed statute annotations; a rule without annotations omits the field — absence leaves no trace | gate 3 | `jutterswet-hardheid` (one- and two-annotation rules on the wire, the unannotated rule traceless; replayed by gates 5–6) | `wf082-empty-bron-annotaties` |
 | WF-083 | a fold-source argument never navigates (ch. 4.3): a non-empty `navigatiePad` is ill-formed; a `navigatieRol`, when present, is self-denoting — it names a role (ci, declared name or plural) the argument's object type itself fills; away-pointing is ill-formed — closes the silent fall-through where a navigating fold source passed the verifier while ref faults on it | gate 3 | `jutterswet-aanmeldertelling` (the self-denoting count "het aantal vondsten van de aanmelder" through both executors) | `wf083-fold-source-navigates-away` |
 | WF-084 | a day-precision date literal's lexeme is the strict ISO form `yyyy-mm-dd` the executors parse (ch. 4.1) — fixed field widths (four-two-two digits), single `-` separators, month 1–12, day 1..days-in-month (leap-aware); the Dutch day-first source snippet is ill-formed, whether the bare `31-01-2024` (silently misread as year 31 → `0036-07-16`, a differential-blind wrong answer both executors agreed on) or the `dd. `-prefixed form (both executors fault) — closes that blind spot, the emitter now writing the bare ISO lexeme and keeping the snippet in `bron`; datetime lexemes out of scope | gate 3 | `jutterswet-vondstverjaring` (an ISO date literal through the fence, replayed by gates 5–6) | `wf084-source-snippet` + `wf084-bare-non-iso` |
+| WF-085 | the day-kind reference graph is acyclic (ch. 5.4 / ch. 3.7): a day-kind condition may reference other day kinds (a `Predicaat` of soort `DAGSOORT`), but mutually recursive definitions have no fixpoint — a loud refusal where the v0 toolchain resolves a cycle to a silent false (the §9.10 recursion prohibition unenforced for day kinds); diverge-from-v0 (v0 neither checks nor documents it) | gate 3 | `jutterswet-schouwkalender` (an acyclic `hoogschouwdag -> schouwdag` reference, verifier-clean, replayed by gates 5–6 over its ordinary rule) | `wf085-dagsoort-verwijzingscyclus` (two mutually referencing day kinds) |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is
