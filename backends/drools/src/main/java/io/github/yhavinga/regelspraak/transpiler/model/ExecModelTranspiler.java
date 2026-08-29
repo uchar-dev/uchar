@@ -2632,11 +2632,22 @@ public final class ExecModelTranspiler {
      *  counting-quantifier fold, so the two stay in lock-step. Covers §8.1.8 own + to-one navigated kenmerkcheck,
      *  §8.1.2 LEEG/GEVULD on an own attribute, §8.1.1 comparison of an own attribute vs a numeric literal, and the
      *  §8.1.7 near-side rolcheck. A temporal (List<Segment>) operand returns null (Phase F). */
-    /** The string label of a comparison RHS that is a §13.3.3.4 Tekst literal (double quotes stripped) or a §13.2.14
-     *  enumeratiewaarde 'X' (single quotes stripped, straight or typographic). null otherwise — both compare by
-     *  VALUE equality — the shared {@link Literalen#tekstOfEnumLabel} reader (the shared kern). */
+    /** The string label of a comparison RHS that is a §13.3.3.4 Tekst literal or a §13.2.14 enumeratiewaarde 'X'
+     *  (single quotes stripped, via the shared reader). null otherwise — both compare by VALUE equality.
+     *  A Tekst literal's waarde is its RAW value; strip ONLY the paired double-quote DELIMITERS (exactly as
+     *  {@link Literalen#enumLabel} strips paired single quotes), so an EMBEDDED double quote survives into the
+     *  equality AND the computed-text write. The WIRE may carry such a quote (a hand-authored golden), which the
+     *  frontend's quote-free STRING_TEXT never can — so the shared reader's blanket {@code replace("\"","")} would
+     *  drop it and fire the comparison false. Mirrors ref (Value.Text lex verbatim) and clingo (quote escapes both
+     *  sides, S2): both compare the embedded quote, so the exec-model must too. */
     private static String tekstOfEnumLabel(Expr e) {
-        return e instanceof Expr.Literal lit ? Literalen.tekstOfEnumLabel(lit) : null;   // the shared reader (the shared kern)
+        if (!(e instanceof Expr.Literal lit)) return null;
+        if (lit.type().isTekst()) {
+            String w = lit.waarde();
+            int n = w.length();
+            return (n >= 2 && w.charAt(0) == '"' && w.charAt(n - 1) == '"') ? w.substring(1, n - 1) : w;
+        }
+        return Literalen.enumLabel(lit.waarde());   // the shared enum reader (the shared kern)
     }
     /** §5.3/§5.6 TEKST equality with the leegwaarde tables (the String analogue of the datum equality): GELIJK is Tabel 38
      *  (both present and equal; one/both-leeg -> onwaar); ONGELIJK is Tabel 44 (exactly-one-leeg -> WAAR, both-leeg ->

@@ -68,17 +68,14 @@ EXCLUDE_KNOWN=(
   # Drools now on both — they PLAY+PASS. The official RegelSpraak spec (§9.7.5) is silent on the
   # zero-recipient case, so the no-recipient rest becoming leeg is a bugfix, not a v1 delta.
   "anchor/jutterswet-waardestelling|v0-divergence: a gelijkstelling with a LEEG source overwrites the pre-filled doel with null; ref/clingo preserve it (leeg valt door). Original toolchain agrees with our port: DRL-oracle AND exec-model both write null (prijs:=basistarief[leeg] over prijs=40 -> null). v1-delta candidate: a leeg-source assignment is a no-op."
-  "anchor/jutterswet-waardering-v0vorm|v0-divergence: the leeg-source gelijkstelling (writes null) oscillates against the INITIALISATIE (refills 25), so the EXEC-MODEL never reaches a fixpoint (fireAllRules hits 100k). Same leeg-write root as waardestelling. The toolchain DRL-oracle DOES settle at 25 (=ref); our port mirrors the exec-model back-end, which does not. v1-delta candidate: exec-model reactivity of a leeg-source assignment."
+  "anchor/jutterswet-waardering-v0vorm|v0-EXEC-MODEL NON-TERMINATION, not a semantic divergence (LADDER-EVOLUTIE §9 Q11, ratified 2026-08-29): the leeg-source gelijkstelling (writes null) oscillates against the INITIALISATIE (refills 25), so the exec-model back-end never reaches a fixpoint (fireAllRules hits its 100k cap) and returns the wrong value at fire. Unlike the other entries here this is NOT a genuine v0 production-semantics difference: the original toolchain's DRL-oracle DOES settle at 25 (= ref = clingo) — only the exec-model's reactivity of a leeg-source assignment diverges. It stays in this value-divergence list solely because the gate classifies a non-terminating fire as a wrong-value FAIL rather than an auto-exclusion; reclassifying it out of this list waits for a CaseRunner-taxonomy revisit (per the ratified decision), not a spec change."
   "anchor/jutterswet-kustwacht|v0-divergence (CORRECTED: NOT a leeg operand): NEGATION-as-failure is not stratified — a geen-<kenmerk> rule fires before the positive kenmerk is derived and is never retracted, so rustwacht reads present though its post IS a risicopost. Original toolchain agrees with our port: DRL-oracle AND exec-model both fire the negated kenmerk true. v1-delta candidate: stratify negated-kenmerk reads."
-  # Added 2026-08-28 (card clingo-term-encoderingen): the quote-escaping golden. ref/clingo now
-  # escape an embedded double-quote in a text value/literal (backslash-quote, both sides, S2) and
-  # MATCH; the v0 Drools backend does NOT carry an embedded double-quote in text equality — it fires
-  # the comparison false, so gekeurd stays absent and afslag leeg (a FAIL: wrong value, never a crash
-  # at fire). EVIDENCE: the byte-identical golden with the double-quote stripped from BOTH the value
-  # and the literal PLAYS+PASSES through this same Drools jar, so the divergence is EXACTLY the
-  # embedded quote. Fixing the Drools exec-model string encoding is out of scope here
-  # (backends/drools code); recorded as a v0-backend limitation.
-  "jutterswet-keurmerk|v0-divergence: the v0 Drools backend does not carry an embedded double-quote in text equality — the comparison fires false, so gekeurd stays absent and afslag leeg, where ref/clingo (which now escape the quote on both sides, S2) match. The quote-free variant of this golden PLAYS+PASSES through the same Drools jar, so the divergence is exactly the embedded quote. v1-delta candidate: escape embedded quotes in the Drools exec-model text equality."
+  # jutterswet-keurmerk LEFT the list 2026-08-29 (card triage-sluiting, LADDER-EVOLUTIE §9 Q11): the
+  # embedded-double-quote divergence was a backends/drools string-encoding defect, not a v0 semantic
+  # difference. ExecModelTranspiler.tekstOfEnumLabel now strips only the paired Tekst DELIMITERS (as
+  # Literalen.enumLabel does for single quotes) instead of every quote, so an embedded quote survives
+  # the equality AND the computed-text write — ref ≡ clingo ≡ Drools on the quote-bearing golden, which
+  # now PLAYS+PASSES. Removing this entry is mandatory: a listed golden that plays trips the stale guard.
   # NB objectcreatie (§13.4.6) and wederkerig self-relations (§13.3.9.2) are NOT listed here: they do not
   # execute in the v0 backend at all (a navigated created-object read yields leeg / an intValue() NPE; a self-pair
   # role has no derived bean field), so they are LOUD PER-FORM auto-exclusions in CaseRunner, not value-divergences.
