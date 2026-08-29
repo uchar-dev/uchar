@@ -5,7 +5,7 @@ art. 20 lid 1 onderdeel c → art. 21 lid 1 eerste volzin (geen termijn). Eén
 genest kenmerk-ladder-doel `recht op uitkering` — grondtoekenning (art. 15)
 → do-not-attribute op de inkomensgrens (art. 20-1-c) → herleving bij
 vervallen omstandigheid (art. 21-1) → do-not-attribute op de blokkade
-(art. 21-2-a) — plus drie gewone scalaire rekenregels. Handgeschreven, met
+(art. 21-2-a) — plus drie gewone scalaire rekenregels. Vier cases, elk op een andere sport beslist. Handgeschreven, met
 absolute verwachtingen; alle getallen en datums zijn eigen casusfeiten.
 
 ## Wetteksten (verbatim)
@@ -123,12 +123,17 @@ besluit *plus* geneste subgroep), nooit een contentloze sport.
 3. `nieuwe maxdatum` = `maxdatum` plus `verstreken periode` (datum plus
    duur — de verschuiving van art. 43 lid 1).
 
-Een ontbrekende `eindigingsdatum` laat `verstreken periode` leeg
-(leeg-propagatie); `maxdatum` plus leeg is `maxdatum` (geen verschuiving).
+Een ontbrekende `eindigingsdatum` óf `vervaldatum` laat `verstreken
+periode` leeg (leeg-propagatie); `maxdatum` plus leeg is `maxdatum` (geen
+verschuiving).
 
-## De drie cases — handberekening
+Vereenvoudiging bij art. 20-1-c: `maandinkomen` is hier het inkomen ná
+vermenigvuldiging met de factor C / D uit art. 47 — de factor is in deze
+casus 1, zodat de vergelijking direct tegen 87,5% van het maandloon loopt.
 
-In alle drie cases: `maandloon` = 2400,00, dus
+## De vier cases — handberekening
+
+In alle vier cases: `maandloon` = 2400,00, dus
 `inkomensgrens` = 0,875 × 2400,00 = **2100,00**.
 
 ### case1-herleving.json — de herlevingscase (beslist op de herleving-sport)
@@ -158,8 +163,10 @@ Feiten: werkloos; `maandinkomen` = 1800,00; geen nieuw recht
 geen `vervaldatum`.
 
 - Grond art. 20-1-c: 1800,00 ≤ 2100,00 → de inkomensgrond geldt NIET; de
-  einde-sport valt door en haar herleving/blokkade-excepties komen niet aan
-  beslissen toe.
+  einde-sport beslist niet, en haar herleving/blokkade-excepties beslissen
+  evenmin (hun voorwaarden — omstandigheid vervallen, nieuw recht — zijn
+  hier onwaar; in de rose tree worden zij wel geëvalueerd, maar niets in de
+  keten beslist).
 - Basisgrond art. 15: werkloos → de grant-sport beslist `waar`.
 - Uitkomst: `recht op uitkering` **toegekend** (beslist op de grant-sport);
   geen verschuiving.
@@ -188,8 +195,25 @@ recht ontstaan met `nieuw maandloon` = 2300,00; `eindigingsdatum` =
   +31 → 2025-12-31 (rest 15); +15 → **2026-01-15**. (De verschuiving wordt
   wel berekend maar is hier zonder gevolg: het recht herleeft niet.)
 
-De drie cases beslissen elk op een **andere** sport — grant, herleving,
-blokkade — geen degenererende verzameling.
+### case4-einde.json — de kale eindiging (beslist op de einde-sport)
+
+Feiten: werkloos; `maandinkomen` = 2500,00; de omstandigheid is NIET
+vervallen (geen `vervaldatum`); geen nieuw recht (`nieuw maandloon` =
+0,00); `eindigingsdatum` = 2026-02-01; `maxdatum` = 2026-08-31.
+
+- Grond art. 20-1-c: 2500,00 > 2100,00 → de inkomensgrond geldt.
+- Herleving art. 21-1: de omstandigheid is niet vervallen → de
+  herleving-sport beslist niet (en haar blokkade-exceptie evenmin).
+- De einde-sport beslist dus zélf `onwaar` en verdringt de grant.
+- Uitkomst: `recht op uitkering` **niet toegekend** (beslist op de
+  **einde**-sport — onderscheiden van case3, waar de blokkade beslist).
+- `verstreken periode` = tijdsduur(2026-02-01, leeg) → **leeg**
+  (leeg-propagatie: de `vervaldatum` ontbreekt).
+- `nieuwe maxdatum` = 2026-08-31 + leeg = **2026-08-31** (ongewijzigd).
+
+De vier cases beslissen elk op een **andere** sport — grant, herleving,
+blokkade, einde — geen degenererende verzameling; elke sport van de ladder
+is ergens de beslisser.
 
 ## Bewuste beperking (scope)
 
