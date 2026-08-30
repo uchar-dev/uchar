@@ -115,6 +115,15 @@ public final class CaseRunner {
         }
     }
 
+    /** The comparator seam of {@code backends/drools/src/test}: one authored in-memory case through the FULL
+     *  replay (build, inputs, fire, compare), returning the per-case failure line — null on a match. The
+     *  read-back comparator has no other directly observable surface: gate 12 pins post-fire values on corpus
+     *  cases whose pinned lists happen to match segment-for-segment, so a comparator that ignores waarde or
+     *  order survives the whole gate set (lens 1 proved it by mutation) — its verdicts are asserted here. */
+    static String speelCase(Path irPath, JsonNode c) throws java.io.IOException {
+        return build(irPath).runCase("case", c);
+    }
+
     /** Load {@code irPath}, refuse the two non-replayable forms, generate+contract-check the beans, lower every
      *  construct, and build the {@link KieBase} — the shared prelude of both the green replay and the red probe.
      *  Throws {@link Excluded} / {@link IrLoader.Refusal} for any form the v0 backend does not carry. */
@@ -340,8 +349,11 @@ public final class CaseRunner {
         }
         JsonNode ctls = i.get("characteristicTimelines");
         if (ctls != null) for (Map.Entry<String, JsonNode> e : ctls.properties()) {
+            // a CASE defect, not an uncarried form — ref refuses this shape at load (case.ml: "a
+            // characteristic timeline on a non-temporal characteristic"), so it is hard here too; an
+            // Excluded would file a broken corpus case under "not carried", silently green.
             if (!ot.kenmerkGranulariteit.containsKey(e.getKey()))
-                throw new Excluded("characteristic timeline on non-temporal kenmerk '" + e.getKey() + "'");
+                throw new IllegalArgumentException("kenmerktijdlijn op niet-temporeel kenmerk '" + e.getKey() + "'");
             roep(bean, Namen.setter(e.getKey()), List.class, kenmerkTijdreeks(e.getValue(), e.getKey()));
         }
     }
@@ -409,10 +421,13 @@ public final class CaseRunner {
      *        {@code List<Segment>} field, so the bucket is materialised here and
      *        {@link RegelSpraakRuntime#rsTijdTotaal} folds the identical segment to the identical scalar.</li>
      *  </ul>
-     *  Deliberate consequence of that materialisation: a POINT read of such an attribute would see the bucket
-     *  value inside the bucket and leeg outside, where ref sees the bare scalar everywhere. The convention's
-     *  scalar serves the dedicated collapse alone — no corpus case reads one pointwise — so the two agree
-     *  wherever the corpus looks; a case that did read one pointwise would be a divergence, not a silent pass. */
+     *  Deliberate consequence of that materialisation: the bean now carries a shape ref REFUSES to serve —
+     *  ref has no point-in-time read at all (ch. 3.3: a temporal attribute in a scalar slot is refused, the
+     *  collapses are the only bridges), and its no-filter ch. 3.6 total even faults on a case-supplied FULL
+     *  timeline ("the asOfDate-bucket convention carries the total", eval.ml). The divergence surface is thus
+     *  not a wrong value but a read Drools would answer where ref faults; such a case can never become a
+     *  golden, because gate 5 replays every case through ref first — the executors agree wherever the corpus
+     *  looks, by construction. */
     private List<Object> temporeleInvoer(JsonNode w, String attr, Granulariteit gran) {
         if (w == null || w.isNull()) return null;   // an absent value is an absent timeline (leeg, ch. 3.1)
         if (w.has("timeline")) return tijdreeks(w.get("timeline"), attr, gran, false);
@@ -564,9 +579,14 @@ public final class CaseRunner {
     private String tijdlijn(JsonNode v) {
         String attr = v.get("attribute").asText(), label = v.get("label").asText();
         Objecttype ot = labelType.get(label);
-        if (ot != null && !temporeel(ot, attr))
-            throw new Excluded("attributeTimeline read-back of non-temporal attribute '" + attr + "'");
-        Granulariteit gran = ot == null ? null : ot.attribuutGranulariteit.get(attr);
+        // both are CASE defects, not uncarried forms — ref rejects the same shapes at load ("expected
+        // timeline on %S, which declares no granularity"), so they are hard failures here too, and the
+        // unknown-label arm would otherwise reach emmer() with a null granularity (an unnamed NPE).
+        if (ot == null)
+            throw new IllegalArgumentException("attributeTimeline-verwachting op onbekend label '" + label + "'");
+        if (!temporeel(ot, attr))
+            throw new IllegalArgumentException("attributeTimeline-verwachting op niet-temporeel attribuut '" + attr + "'");
+        Granulariteit gran = ot.attribuutGranulariteit.get(attr);
         List<Object> verwacht = tijdreeks(v.get("timeline"), attr, gran, true);
         Object gelezen = labelNaarBean.containsKey(label) ? lees(labelNaarBean.get(label), Namen.getter(attr)) : null;
         if (gelezen == null)

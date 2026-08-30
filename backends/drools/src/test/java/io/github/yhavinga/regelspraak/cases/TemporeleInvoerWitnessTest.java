@@ -28,8 +28,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>The models are corpus goldens (their {@code ir.json} off the wire, as {@code RoundTripWitnessTest} does);
  * the cases are authored here — no corpus expectation is read or touched. The {@code attributeTimeline}
- * READ-BACK comparator has its witness in gate 12, where {@code jutterswet-bakenmeester} and
- * {@code synth2-clip-over-prorata} pass only if it compares van/tot and value exactly.
+ * READ-BACK comparator is witnessed here as well, through {@link CaseRunner#speelCase}: gate 12's corpus
+ * pins only lists that happen to match segment-for-segment, so a comparator blinded to waarde, order, or
+ * boundaries survives the whole gate set (lens 1 proved it by mutation) — its verdicts on a wrong value, a
+ * shifted boundary, a length mismatch, and a never-written field are asserted directly below.
  */
 class TemporeleInvoerWitnessTest {
 
@@ -112,6 +114,21 @@ class TemporeleInvoerWitnessTest {
                 () -> tijdreeks("jutterswet-getijdenwacht", c, "J1", "wachtvergoeding per maand"));
     }
 
+    @Test void maand_emmer_loopt_van_de_eerste_tot_de_eerste() throws Exception {
+        // the MAAND grid, calendar-bound like the JAAR one: first-of-month to first-of-next, never [d, d+1m).
+        String c = """
+                { "format": "uchar-case-v0", "asOfDate": "2024-03-15",
+                  "input": { "instances": [
+                      { "label": "J1", "objectType": "Jutter",
+                        "attributes": { "wachtvergoeding per maand": { "number": "10" } },
+                        "roles": {}, "characteristics": [] } ],
+                    "parameters": {} } }
+                """;
+        List<?> tl = tijdreeks("jutterswet-getijdenwacht", c, "J1", "wachtvergoeding per maand");
+        assertEquals(1, tl.size(), "the scalar becomes exactly one month-bucket segment");
+        pinSegment(tl.get(0), "2024-03-01", "2024-04-01", "10");
+    }
+
     @Test void kenmerktijdlijn_landt_dagprecies_op_het_kenmerkveld() throws Exception {
         // a true period is DAY-precise regardless of the kenmerk's granularity (the ch. 3.7 pro-rata's whole
         // point): 16 April on a MAAND-granular kenmerk must survive unrounded. The segments carry no value —
@@ -130,6 +147,120 @@ class TemporeleInvoerWitnessTest {
         assertEquals(2, tl.size());
         pinSegment(tl.get(0), "2025-03-01", "2025-04-16", null);
         pinSegment(tl.get(1), "2025-08-01", "2025-09-01", null);
+    }
+
+    @Test void overlappende_kenmerkperioden_falen_luid() throws Exception {
+        // ref rejects overlapping true periods at load; a silent union here would hide a broken case.
+        String c = """
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [
+                      { "label": "B1", "objectType": "Bakenmeester",
+                        "attributes": {}, "roles": {}, "characteristics": [],
+                        "characteristicTimelines": { "dienstdoend": [
+                            { "from": "2025-03-01", "to": "2025-06-01" },
+                            { "from": "2025-05-01", "to": "2025-08-01" } ] } } ],
+                    "parameters": {} } }
+                """;
+        assertThrows(IllegalArgumentException.class,
+                () -> tijdreeks("jutterswet-bakenmeester", c, "B1", "dienstdoend"));
+    }
+
+    @Test void kenmerktijdlijn_op_niet_temporeel_kenmerk_is_hard() throws Exception {
+        // a case defect, not an uncarried form: ref refuses this shape at load, so an Excluded would file a
+        // broken corpus case under "not carried" — hard failure, mirrored.
+        String c = """
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [
+                      { "label": "J1", "objectType": "Jutter",
+                        "attributes": {}, "roles": {}, "characteristics": [],
+                        "characteristicTimelines": { "penninggerechtigd": [
+                            { "from": "2026-01-01", "to": "2027-01-01" } ] } } ],
+                    "parameters": {} } }
+                """;
+        assertThrows(IllegalArgumentException.class,
+                () -> tijdreeks("jutterswet-penningjaar", c, "J1", "penninggerechtigd"));
+    }
+
+    // ---------------- the attributeTimeline read-back comparator (via speelCase) ----------------
+
+    @Test void vergelijker_matcht_schaalveilig() throws Exception {
+        // the same timeline at another scale matches: waarde compares by compareTo, never equals.
+        assertNull(speelBakenmeester("""
+                { "kind": "attributeTimeline", "label": "B1", "attribute": "onderhoudstarief", "timeline": [
+                    { "from": "2025-01-01", "to": "2026-01-01", "value": { "number": "24.00" } } ] }"""));
+    }
+
+    @Test void vergelijker_ziet_een_verkeerde_waarde() throws Exception {
+        String fout = speelBakenmeester("""
+                { "kind": "attributeTimeline", "label": "B1", "attribute": "onderhoudstarief", "timeline": [
+                    { "from": "2025-01-01", "to": "2026-01-01", "value": { "number": "25" } } ] }""");
+        assertTrue(fout != null && fout.contains("verwacht") && fout.contains("werkelijk"),
+                "a wrong waarde is a named mismatch, never a pass: " + fout);
+    }
+
+    @Test void vergelijker_ziet_een_verschoven_grens() throws Exception {
+        // on-grid but one year long shifted: van/tot compare exactly, so this is a mismatch.
+        assertTrue(speelBakenmeester("""
+                { "kind": "attributeTimeline", "label": "B1", "attribute": "onderhoudstarief", "timeline": [
+                    { "from": "2025-01-01", "to": "2027-01-01", "value": { "number": "24" } } ] }""") != null);
+    }
+
+    @Test void vergelijker_ziet_een_lengteverschil() throws Exception {
+        assertTrue(speelBakenmeester("""
+                { "kind": "attributeTimeline", "label": "B1", "attribute": "onderhoudstarief", "timeline": [
+                    { "from": "2025-01-01", "to": "2026-01-01", "value": { "number": "24" } },
+                    { "from": "2026-01-01", "to": "2027-01-01", "value": { "number": "24" } } ] }""") != null);
+    }
+
+    @Test void nooit_geschreven_veld_matcht_alleen_de_lege_verwachting() throws Exception {
+        // a never-written List<Segment> member is null: it reads leeg on every day (ch. 3.1), so it matches
+        // the explicitly empty expectation and nothing else.
+        assertNull(speelKaal("""
+                { "kind": "attributeTimeline", "label": "B1", "attribute": "onderhoudstarief", "timeline": [] }"""));
+        String fout = speelKaal("""
+                { "kind": "attributeTimeline", "label": "B1", "attribute": "onderhoudstarief", "timeline": [
+                    { "from": "2025-01-01", "to": "2026-01-01", "value": { "number": "24" } } ] }""");
+        assertTrue(fout != null && fout.contains("draagt geen tijdreeks"), "absence is named: " + fout);
+    }
+
+    @Test void verwachting_op_onbekend_label_is_hard() throws Exception {
+        // an expectation naming no case instance is a case defect; before this check it reached emmer()
+        // with a null granularity and died as an unnamed NPE.
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> speelBakenmeester("""
+                { "kind": "attributeTimeline", "label": "B9", "attribute": "onderhoudstarief", "timeline": [] }"""));
+        assertTrue(e.getMessage().contains("onbekend label"), e.getMessage());
+    }
+
+    /** One authored bakenmeester case — the case1 input (tarief timeline + dienstdoend period) with the given
+     *  expectation nodes — through the full replay; returns the failure line, null on a match. */
+    private static String speelBakenmeester(String expectedNode) throws Exception {
+        String c = """
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [
+                      { "label": "B1", "objectType": "Bakenmeester",
+                        "attributes": { "onderhoudstarief": { "timeline": [
+                            { "from": "2025-01-01", "to": "2026-01-01", "value": { "number": "24" } } ] } },
+                        "roles": {}, "characteristics": [],
+                        "characteristicTimelines": { "dienstdoend": [
+                            { "from": "2025-03-01", "to": "2025-04-16" } ] } } ],
+                    "parameters": {} },
+                  "expected": [ %s ] }
+                """.formatted(expectedNode);
+        return CaseRunner.speelCase(CORPUS.resolve("jutterswet-bakenmeester").resolve("ir.json"), JSON.readTree(c));
+    }
+
+    /** The same replay with NO tarief input, so the read-back field was never written. */
+    private static String speelKaal(String expectedNode) throws Exception {
+        String c = """
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [
+                      { "label": "B1", "objectType": "Bakenmeester",
+                        "attributes": {}, "roles": {}, "characteristics": [],
+                        "characteristicTimelines": {} } ],
+                    "parameters": {} },
+                  "expected": [ %s ] }
+                """.formatted(expectedNode);
+        return CaseRunner.speelCase(CORPUS.resolve("jutterswet-bakenmeester").resolve("ir.json"), JSON.readTree(c));
     }
 
     /** The penningjaar case with one scalar input on its JAAR-granular attribute, at {@code asOf} (or none). */
