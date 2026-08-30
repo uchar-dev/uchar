@@ -109,10 +109,10 @@ near-side-rolcheck-to-many|EXCLUDE the rolcheck rule (bemand met jutter) does no
 runaway-recursion|EXCLUDE objectcreatie (§13.4.6) refused up front — the recursive generator does not execute in the v0 backend
 struct-field-overprecision|EXCLUDE the v0 loader refuses the model's record datatype (StructType) — the record/struct form is not carried
 to-one-second-filler|EXCLUDE the case's role (aangemelde vondsten) has no uniquely derivable reference field in the v0 bean model — the role input is refused before the second-filler violation is reached
-uni-temporal-key-scalar|EXCLUDE the case sets a temporal attribute (kavelnummer) as a scalar — a temporal/dimensioned attribute input the v0 backend does not carry
-uni-two-temporal-keys|EXCLUDE the case sets a temporal attribute (vondstnummer) as a scalar — a temporal attribute input the v0 backend does not carry
-uu-temporal-key-scalar|EXCLUDE the case sets a temporal attribute (vondstnummer) as a scalar — a temporal attribute input the v0 backend does not carry
-uu-two-temporal-keys|EXCLUDE the case sets a temporal attribute (vondstnummer) as a scalar — a temporal attribute input the v0 backend does not carry
+uni-temporal-key-scalar|EXCLUDE the case sets a temporal attribute (kavelnummer) as a scalar while carrying NO asOfDate — the bucket convention (corpus/golden/README.md) gives that scalar no evaluation date to sit in, so the input is not carried and the ever-unique key is never reached
+uni-two-temporal-keys|NOFAULT the v0 backend enforces no ARITY restriction on temporal key components — ExecModelTranspiler.uniciteit lowers an rsOoitBotst ever-collision predicate per component, where ref/clingo reject the key SHAPE itself; the case's single instance collides with nothing, so it runs to a model
+uu-temporal-key-scalar|EXCLUDE the case sets a temporal attribute (vondstnummer) as a scalar while carrying NO asOfDate — the bucket convention (corpus/golden/README.md) gives that scalar no evaluation date to sit in, so the input is not carried and the ever-unique key is never reached
+uu-two-temporal-keys|NOFAULT the v0 backend enforces no ARITY restriction on temporal key components — ExecModelTranspiler.uniciteitUnie lowers an rsOoitBotst ever-collision predicate per component, where ref/clingo reject the key SHAPE itself; the union's single instance collides with nothing, so it runs to a model
 vintage-uncovered-date|EXCLUDE the v0 loader refuses the TemporalRead expression node (the vintage read) — the temporal-read form is not carried
 wf044-onopgelost-reached|EXCLUDE the reaching rule (waardering van een vondst) does not lower — a transpiler SKIP (waarde buiten scope); the Onopgelost marker never fires, so it is not Drools-carried (the WF-044 guard: listed, not fragment-pinned)
 EOF
