@@ -61,8 +61,25 @@ buiten Phase-D scope)`. Het gaat om twee assertievormen in één golden:
 - `houderscontrole`: een AANTAL-aggregatie over de `houder`-rol
   vergeleken met 1 ("elke Penning heeft een houder") — een
   aggregatie-assertie.
-De consistentie-lowering is het enige wat deze golden nog van PLAYED
-scheidt.
+
+**AMENDEMENT 2026-08-30 (lens, trap 1).** De oorspronkelijke aanname hier —
+"de consistentie-lowering is het enige wat deze golden nog van PLAYED
+scheidt" — is GEFALSIFIEERD. De `houderscontrole` stuit op de
+§13.3.9-GEDEELDE-BEANVELD-GRENS, niet op een ontbrekende lowering:
+`penningbezit` paart een to-one `houder` met een to-many `penning`, dus
+draagt de relatie precies ÉÉN beanveld (`Penning.houder`) dat noodzakelijk
+BEIDE richtingen dient. `case2` levert de koppeling aan de JUTTER-kant
+(`J3{penningen:[P1]}`) en pint tóch `inconsistent houderscontrole @ P1` —
+ref leest P1's EIGEN links onder de `houder`-sleutel leeg (ref-geverifieerd:
+`oracle: PASS (5 expectations)` op de ongewijzigde pins). Dat ene veld kan
+die twee lezingen niet tegelijk uitdrukken: de CaseRunner schrijft de
+jutterzijdige levering juist WEL op `Penning.houder`, waarna een
+presentietelling 1 zou lezen waar ref 0 leest. De assertie wordt daarom per
+constructie BIJ NAAM geweigerd (gepind in
+`ObjectCreatieWitnessTest.een_aantalassertie_over_een_gedeeld_veld_wordt_luid_geweigerd`);
+de `penningcontrole`-arm speelt wel. De golden blijft dus uitgesloten op een
+WARE reden, en sluiten vergt de OPSLAGRICHTING zelf — dezelfde restlacune
+als hieronder — niet de consistentie-lowering.
 
 Daarnaast hoort hier de rood-case `corpus/rood/ambiguous-backlink`: ref en
 clingo FAULTen daar bij evaluatie ("the created object's back-link is
@@ -71,6 +88,55 @@ feittype") en staat daarom als EXCLUDE in `scripts/check-rood.sh` (r129).
 Dezelfde ontwerpvraag als hierboven, aan de rode kant: hoort een ch.-5.5-
 terugkoppelingsbesluit bij lowering (een eerlijke weigering) of bij fire
 (een gepinde fault)? Beantwoord die vraag één keer, voor beide zijden.
+
+## Restlacunes (expliciet benoemd, met meting — geen van drieën gesloten)
+
+Drie grenzen die deze kaart NIET sluit en die zonder deze paragraaf
+stilzwijgend zouden blijven. Alle drie zijn pre-existent, geen regressie.
+
+1. **De to-many-spiegelvorm (§13.3.9 opslagrichting).** Het comment bij de
+   to-ONE-weigeringsarm in `ExecModelTranspiler.aggregatie` noemde het gevaar
+   ("een van de verre kant geleverde koppeling leest hier als de eigen") en
+   noemde de to-many-backref-arm "unchanged" — maar dat gevaar is een
+   eigenschap van de VORM, niet van de to-one-rol, en geldt daar onverkort.
+   Daar wordt hij WEL stil meegeteld. Gemeten op
+   `corpus/golden/jutterswet-vondsttelling` (elementrol `vondst` meervoudig,
+   het ene veld `Vondst.aanmelder`), levering aan de ELEMENT-kant
+   (`V1{aanmelder:[J1]}`, `V2{aanmelder:[J1]}`):
+   ref `J1 aantal 0, gewicht 0` — Drools `aantal 2, gewicht 3.75`.
+   GEEN corpusgetuige: elke golden levert een to-many-relatie aan de
+   ÉÉN-kant, waar beide executors het eens zijn, dus geen gate ziet het. Het
+   comment is nu eerlijk gescoped en de meting staat als characterisation in
+   `OpslagrichtingWitnessTest` (faalt zodra de lacune sluit).
+   **Kandidaat-kaartpunt, bewust niet hier:** sluiten betekent bijhouden AAN
+   WELKE KANT een koppeling geleverd is, en dat verschuift het opslagmodel
+   onder ELKE bestaande aggregatie — een eigen afweging, geen zijdelingse
+   patch.
+
+2. **De Q4-lege-wereld-versmalling.** Een Drools-regel heeft een matchend
+   feit nodig, dus in een LEGE wereld wordt de ch.-5.5-fout ("the created
+   object's back-link is ambiguous") nooit bereikt, waar ref — die het
+   rolpaar oplost vóór hij de subjecten loopt — óók op een lege wereld
+   FAULT. Niets in het corpus hangt ervan af; gepind in
+   `ObjectCreatieWitnessTest.diezelfde_ambiguiteit_zonder_subject_bereikt_de_fout_niet`,
+   zodat het een besluit op de rol is en geen stille lacune.
+
+3. **De dubbel-meervoudige zelfrelatie (nieuwe vondst 2026-08-30).**
+   `anchor/jutterswet-erflijn`: het feittype `erflijn` relateert Wachter aan
+   Wachter via TWEE MEERVOUDIGE rollen (`erflater`, `erfvolger`), dus leidt
+   het beanmodel aan GEEN van beide uiteinden een veld af — de opslag van een
+   to-many-rol is het veld van de andere kant, en hier zijn beide kanten
+   to-many. De verwachting dat de zetRollen-by-name-route deze golden op
+   PLAYED zou zetten is daarmee GEFALSIFIEERD: de case-INVOER wordt nu wel
+   gedragen (`W1{opvolger:[W2]}` landt gericht op `Wachter.opvolger`), maar de
+   aggregatie over `erfvolgers` heeft geen joinveld. Vóór deze kaart lowerde
+   die join tóch en stierf bij de eerste fire ("geen getter voor 'erflater'")
+   — een ongeclassificeerde ERROR die gate 12 terecht weigert te excuseren;
+   nu is het een reden-dragende lowering-SKIP. **Kandidaat-kaartpunt:** de
+   `feitCreatie`-arm draagt dezelfde latente vorm (`zetVeld`, `joinVeld` en
+   het `tussenstap`-veld worden niet op veldbestaan getoetst). Geen artefact
+   bereikt hem — de aggregatie-SKIP sluit de golden al uit — dus bewust NIET
+   speculatief gehard.
 
 Acceptance:
 - Rood-eerst: de huidige EXCLUDE-regels en gate-tellingen eerst getoond
