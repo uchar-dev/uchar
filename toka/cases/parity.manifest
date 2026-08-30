@@ -14,36 +14,43 @@
 #   drools  = PLAYED : the uchar-IR-loading Drools backend lowered every form and matched, OR
 #           = EXCLUDE : a form the v0 backend does not carry is refused LOUDLY per form; the
 #                      fragment MUST appear. Every toka slice bundles the whole structural model,
-#                      including the wederkerig Partnerrelatie feittype (§13.3.9.2), so the backend
-#                      refuses each slice up front; toka-28 additionally carries an objectcreatie
-#                      (§13.4.6), checked first. A FAIL/ERROR (a value difference without a fault)
+#                      including the wederkerig Partnerrelatie feittype (§13.3.9.2). That feittype
+#                      used to refuse each slice up front; since the self-pair reference field is
+#                      derived (FactModelGenerator.zelfpaarRol) the slices PLAY, and the only
+#                      remaining EXCLUDE is toka-28's objectcreatie (§13.4.6). NB the toka casus
+#                      DECLARES the reciprocal relation but no case establishes a partner link and
+#                      no rule navigates one, so what these slices witness is that the derived field
+#                      is inert where unused — the EXERCISED reciprocal semantics (the mirrored fill
+#                      and the partner read) are pinned by the two corpus goldens and by
+#                      backends/drools/src/test WederkerigZelfpaarWitnessTest, not here.
+#                      A FAIL/ERROR (a value difference without a fault)
 #                      is NEVER listed and always reddens the gate — the hard zero-silent-divergence rule.
-scenario-toka-17-bepaal-leeftijd|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-18-minderjarig|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-19-hoeveelheid-passagiers|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-20-totaal-te-betalen|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-21-oudste-passagier|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-22-datum-tijd-berekening|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-24-te-betalen-belasting|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-25-verwachte-aankomst|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-26-hoogseizoen|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-27-paaskorting|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-17-bepaal-leeftijd|PASS|PASS|-|PLAYED|-
+scenario-toka-18-minderjarig|PASS|PASS|-|PLAYED|-
+scenario-toka-19-hoeveelheid-passagiers|PASS|PASS|-|PLAYED|-
+scenario-toka-20-totaal-te-betalen|PASS|PASS|-|PLAYED|-
+scenario-toka-21-oudste-passagier|PASS|PASS|-|PLAYED|-
+scenario-toka-22-datum-tijd-berekening|PASS|PASS|-|PLAYED|-
+scenario-toka-24-te-betalen-belasting|PASS|PASS|-|PLAYED|-
+scenario-toka-25-verwachte-aankomst|PASS|PASS|-|PLAYED|-
+scenario-toka-26-hoogseizoen|PASS|PASS|-|PLAYED|-
+scenario-toka-27-paaskorting|PASS|PASS|-|PLAYED|-
 scenario-toka-28-vastgestelde-contingent|PASS|PASS|-|EXCLUDE|objectcreatie (§13.4.6)
-scenario-toka-29-passagier-met-recht|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-30-geen-rondvlucht|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-31-initialiseer|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-32-gelijke-delen|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-33-naar-rato-woonregio|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-34-leeftijd-en-woonregio|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-35-woonregio-met-maximum|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-36-naar-rato-afronding|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-37-leeftijd-woonregio-max-afronding|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-39-belaste-reis|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-40-duurzaamheidskorting|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-41-duurzaamheidskorting-alternatief|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-42-passagier-18-24|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-43-startpunt-vertrek|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-44-startpunt-min-reserveringstermijn|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-46-woonregio-factor-1|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-46-woonregio-factor-2|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
-scenario-toka-46-woonregio-factor-3|PASS|PASS|-|EXCLUDE|wederkerig self-relation (§13.3.9.2)
+scenario-toka-29-passagier-met-recht|PASS|PASS|-|PLAYED|-
+scenario-toka-30-geen-rondvlucht|PASS|PASS|-|PLAYED|-
+scenario-toka-31-initialiseer|PASS|PASS|-|PLAYED|-
+scenario-toka-32-gelijke-delen|PASS|PASS|-|PLAYED|-
+scenario-toka-33-naar-rato-woonregio|PASS|PASS|-|PLAYED|-
+scenario-toka-34-leeftijd-en-woonregio|PASS|PASS|-|PLAYED|-
+scenario-toka-35-woonregio-met-maximum|PASS|PASS|-|PLAYED|-
+scenario-toka-36-naar-rato-afronding|PASS|PASS|-|PLAYED|-
+scenario-toka-37-leeftijd-woonregio-max-afronding|PASS|PASS|-|PLAYED|-
+scenario-toka-39-belaste-reis|PASS|PASS|-|PLAYED|-
+scenario-toka-40-duurzaamheidskorting|PASS|PASS|-|PLAYED|-
+scenario-toka-41-duurzaamheidskorting-alternatief|PASS|PASS|-|PLAYED|-
+scenario-toka-42-passagier-18-24|PASS|PASS|-|PLAYED|-
+scenario-toka-43-startpunt-vertrek|PASS|PASS|-|PLAYED|-
+scenario-toka-44-startpunt-min-reserveringstermijn|PASS|PASS|-|PLAYED|-
+scenario-toka-46-woonregio-factor-1|PASS|PASS|-|PLAYED|-
+scenario-toka-46-woonregio-factor-2|PASS|PASS|-|PLAYED|-
+scenario-toka-46-woonregio-factor-3|PASS|PASS|-|PLAYED|-
