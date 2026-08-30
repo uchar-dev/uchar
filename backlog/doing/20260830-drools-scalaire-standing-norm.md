@@ -38,7 +38,14 @@ Acceptance:
 May touch: `backends/drools/src/main/java/**` (ExecModelTranspiler,
 runtime-helpers), `backends/drools/src/test/**` (nieuwe testbestanden),
 `scripts/check-drools.sh` (uitsluitend het verwijderen/bijwerken van de
-entries), `backlog/`.
+entries), `backlog/`. *(Uitzondering, hoofdsessiebesluit bij de landing
+2026-08-30: één methode in het bestaande
+`TemporeelFixpuntWitnessTest.java` — de bewaker die pinde dat de
+waardering-v0vorm-oscillatie observeerbaar bleef — vervalt met zijn
+object: deze kaart heft die toestand per besloten spec op, en dezelfde
+dwang die de gate-12-entry verwijdert (het stale-regime) geldt voor de
+witness die dezelfde toestand bewaakte. Aparte commit, door lens 1
+getoetst en akkoord bevonden.)*
 
 Out of scope: kustwacht (echte v0-divergentie, blijft), de
 CaseRunner-taxonomie-herziening als zodanig, temporele vormen (gedaan),

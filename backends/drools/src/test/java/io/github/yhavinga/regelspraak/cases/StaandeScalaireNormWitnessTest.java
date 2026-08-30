@@ -109,6 +109,52 @@ class StaandeScalaireNormWitnessTest {
         assertTrue(fout.contains("geschatte waarde"), "the mismatch names the wiped attribute: " + fout);
     }
 
+    // ---------------- 4. the other_writer clause: a defaults group evicts the target ----------------
+
+    @Test void een_defaults_groep_haalt_het_doel_uit_het_staande_domein() throws Exception {
+        // ref's other_writer clause, witnessed on its OBSERVABLE consequence: with a prioritizedDefaults
+        // group on the same target the RULE writer count stays 1, yet the target leaves the standing domain,
+        // so the leeg write is NOT suppressed — the group refills what the rule erases and BOTH executors
+        // diverge (ref on this exact model: "no fixpoint within 100 passes — divergence is a fault
+        // (ch. 5.7)"; verified before pinning). WITHOUT the clause the write would be suppressed, the input
+        // would stand at 77.00 and nothing would oscillate — a silent divergence from ref, invisible to
+        // every other check in the gate set. The group node is copied off a PLAYED golden's wire
+        // (nestdiepte), so its shape is demonstrably carried by loader and transpiler.
+        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(
+                CORPUS.resolve("anchor").resolve("jutterswet-waardestelling").resolve("ir.json")));
+        ObjectNode groep = ((ObjectNode) JSON.readTree(Files.readString(
+                CORPUS.resolve("anchor").resolve("jutterswet-nestdiepte").resolve("ir.json")))
+                .get("prioritizedDefaults").get(0)).deepCopy();
+        groep.put("naam", "geschatte waarde default (witness)");
+        groep.put("onderwerp", "Vondst");
+        groep.put("attribuut", "geschatte waarde");
+        groep.put("bron", "witness: gemeld geeft 12.00");
+        ObjectNode d = ((ObjectNode) groep.get("defaults").get(0)).deepCopy();
+        d.set("voorwaarde", JSON.readTree(
+                "{\"node\":\"Kenmerk\",\"kenmerk\":\"gemeld\",\"navigatie\":null,\"negatie\":false,"
+                        + "\"eigenaar\":null,\"periode\":null,\"bron\":\"hij gemeld is\"}"));
+        ((ObjectNode) d.get("consequentie")).put("waarde", "12.00");
+        d.put("bron", "gemeld: 12.00");
+        d.remove("excepties");   // absent, not null/[] — the only wire shape a childless Default carries
+        ArrayNode defaults = JSON.createArrayNode();
+        defaults.add(d);
+        groep.set("defaults", defaults);
+        ArrayNode pds = JSON.createArrayNode();
+        pds.add(groep);
+        ir.set("prioritizedDefaults", pds);
+        Path tmp = Files.createTempFile("other-writer-witness", ".json");
+        try {
+            Files.writeString(tmp, ir.toString());
+            String fout = CaseRunner.speelCase(tmp, JSON.readTree(
+                    vondst("\"geschatte waarde\": { \"number\": \"77.00\" }", "\"gemeld\"", waarde("12.00"))));
+            assertNotNull(fout, "the target must have LEFT the standing domain: the erase-refill oscillation "
+                    + "must be observable, exactly as ref faults on this model (ch. 5.7)");
+            assertTrue(fout.contains("geen fixpunt"), fout);
+        } finally {
+            Files.deleteIfExists(tmp);
+        }
+    }
+
     // ---------------- helpers ----------------
 
     /** One authored case over a corpus golden's {@code ir.json}; the per-case failure line, null on a match. */
