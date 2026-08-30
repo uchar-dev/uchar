@@ -60,3 +60,58 @@ TemporalRead-expressienode (v1-vorm; `anchor/jutterswet-aanmeldquotum` en
 wederkerig self-relation (volgkaart
 `backlog/new/20260830-drools-wederkerig-selfrelation.md`), elke wijziging aan
 ref/clingo/verifier/spec/corpusverwachtingen.
+
+Result (2026-08-30): Geland op main na één bouwronde en twee seriële
+adversariële lensrondes met elk een fixronde. De temporele case-inputlaag
+van `backends/drools` is open: timeline-JSON → `List<Segment>` met ref's
+load-validaties gespiegeld (≥1 segment, from<to, beide grenzen op het
+granulariteitsraster, geordend/niet-overlappend), scalar-op-temporeel →
+het asOfDate-emmersegment (JAAR/MAAND kalendergebonden; DAG/WEEK/KWARTAAL
+en scalar-zonder-asOfDate luid geweigerd — zonder corpusgetuige, alleen
+door lezing geverifieerd), `characteristicTimelines` → dag-precieze
+true-period-segmenten met waarde null, en een
+`attributeTimeline`-read-back-vergelijker (lengte, van/tot exact, waarde
+`compareTo==0`, index-voor-index; ordeblindheid is niet-observeerbaar —
+beide zijden komen geordend binnen — en wordt dus nergens geclaimd). De
+gedimensioneerde arm bleef een luide weigering met gesplitste reden.
+
+Gate 12: 71→79 played / 63→52 auto-excluded / 3→6 value-divergence / 1
+no-case. Acht goldens bereikten fire i.p.v. de voorziene vijf: de vijf
+kaartgoldens spelen alle tegen hun ongewijzigde pins, plus dubbelwacht,
+nummerregister en strandregister; drie legden reeds bestaande
+backend-defecten bloot en staan reden-dragend in `EXCLUDE_KNOWN`
+(borgdeel + synth2-prorata-breed: exec-model-non-terminatie — de
+§9.9-freshness-expr laat ongeankerde temporele writes class-reactief
+terwijl de `rsTijdreeksGelijk`-garde alleen geankerde dekt; dagentelling
+case4: de ch.-7.8-standing-target-arm ontbreekt in dit backend). Beide
+klassen — (c) terminatiedefect, (d) implementatiegap tegen besloten spec —
+staan benoemd in de banner en zijn gepaard gecard in
+`backlog/new/20260830-drools-fixpunt-en-ch78.md` (verwacht 82/3 na die
+kaart). Geen verwachting, pin of WF-nummer bewogen (beide lenzen
+onafhankelijk bevestigd); corpus, spec, ref, clingo, toolchain en toka/
+onaangeroerd. Gate 8: vier temporeel-getinte Drools-entries eerlijk
+bijgewerkt — twee EXCLUDE-redenen gecorrigeerd (scalar zonder asOfDate
+heeft geen emmer), twee hercategoriseerd naar NOFAULT (geen
+ariteitshandhaving op temporele sleutelcomponenten waar ref/clingo de
+sleutelvorm afwijzen); geen rood-case werd FAULT, dus geen
+`expectedFault.drools` gepind en geen corpus/rood-bestand geraakt.
+
+Lens 1 (3 MAJOR, 6 MINOR) bewees per mutatie dat de
+read-back-vergelijker onbewaakt was en twee prozaclaims onwaar; fixronde
+1 bracht de `speelCase`-seam met zes vergelijker-witnesses (blinde-mutant
+rood herbewezen), de gecorrigeerde ref-beschrijving (ref wéígert
+puntlezingen, ch. 3.3) en hardere case-defect-kanalen
+(`IllegalArgumentException` i.p.v. `Excluded` voor onbekend label en
+niet-temporele vormen — regressievrij, door lens 2 corpus-breed
+bevestigd). Lens 2 (1 MAJOR, 2 MINOR) ving de nog onbewaakte van-arm; de
+van-witness is rood/groen bewezen en de ordeclaim getrimd tot het
+falsifieerbare. JUnit-suite: 20/0 (17 witness + 3 roundtrip).
+
+Bewust gelaten: de DAG/WEEK/KWARTAAL- en scalar-zonder-asOfDate-armen aan
+de golden-kant zijn corpusgetuigeloos; granular (timeline) parameters en
+gedimensioneerde input blijven dicht; de witness-suite hangt aan `mvn
+package`/CI, niet aan een gate-testtelling (gate-10-model —
+volgkaartmateriaal); de ariteitsrestrictie op temporele sleutels (de twee
+NOFAULT-rood-cases) heeft geen volgkaart. Alle twaalf gates integraal
+groen op de eindstand (160/168, 396, 374, 374, 338+36, 22, 169+11,
+144+23, 29-toka met Drools 0/29, 79/52/6/1).
