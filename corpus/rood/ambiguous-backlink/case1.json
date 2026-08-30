@@ -15,6 +15,7 @@
   },
   "expectedFault": {
     "ref": "the created object's back-link is ambiguous",
-    "clingo": "the created object's back-link is ambiguous"
+    "clingo": "the created object's back-link is ambiguous",
+    "drools": "the created object's back-link is ambiguous"
   }
 }

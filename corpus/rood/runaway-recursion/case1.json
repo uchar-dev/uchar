@@ -15,6 +15,7 @@
   },
   "expectedFault": {
     "ref": "no fixpoint within",
-    "clingo": "generation budget exhausted"
+    "clingo": "generation budget exhausted",
+    "drools": "geen fixpunt (kringverwijzing?)"
   }
 }

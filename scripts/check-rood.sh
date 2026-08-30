@@ -126,19 +126,17 @@ if command -v java >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
         excl=$(mktemp) || exit 2
         # <rood-case-dir>|<reason the v0 Drools backend does not fault-pin this red form>
         cat > "$excl" <<'EOF'
-ambiguous-backlink|EXCLUDE the creation consequence EXECUTES since 2026-08-30, and this is the one shape it refuses per creation: no unique feittype connects the pair, so no back-link is derivable and ch. 5.5 does not guess. The refusal lands at lowering (a transpiler SKIP), not at fire, so the backend REJECTS the model rather than fault-pinning it — the same verdict ref/clingo reach by a different route
 ambiguous-fold-role-name|NOFAULT the v0 backend resolves the fold role without detecting the cross-type ambiguity ref/clingo reject; it runs to a model
 closed-nonexact-division|EXCLUDE the v0 loader refuses the model's list datatype (ListType) — the fold-over-a-list form is not carried
 closed-runtime-division-by-zero|EXCLUDE the v0 loader refuses the model's list datatype (ListType) — the fold-over-a-list form is not carried
 closed-runtime-nonexact-division|EXCLUDE the v0 loader refuses the model's list datatype (ListType) — the fold-over-a-list form is not carried
 decimal-nonterminating|NOFAULT the v0 backend has no §6.1.2 write-precision guard — a non-terminating quotient collapses to DECIMAL64 (Breuk.naarDecimal) instead of faulting; it runs to a model
 division-by-numeric-zero|EXCLUDE the reaching rule (vindersloon van een vondst) does not lower — a transpiler SKIP (waarde buiten scope); fire is never reached
-finite-chain-over-budget|EXCLUDE the chain is SELF-TYPED (Wachter creates Wachter over two same-typed roles), and the v0 bean model derives no reference field for that pair — the creation is refused at lowering, so the generation budget is never reached
+finite-chain-over-budget|NOFAULT the self-typed generative chain now RUNS (2026-08-30: the creation's symbolic verbindendeRol binding rides beside the model, so the back-link resolves and both ends are written) — and it terminates: the chain is FINITE at rank < 105, so 104 generations are minted and the session reaches a fixpoint well inside the 100k fire cap. The v0 backend has no ch. 5.5 GENERATION budget, the boundary this case exists to pin; ref exhausts its pass budget and clingo its generation depth where Drools simply finishes. Its runaway twin (runaway-recursion) has no such end and IS fault-pinned, so the cap itself is fenced
 input-overprecision|NOFAULT the v0 case runner does not enforce declared attribute input precision — it accepts the over-precise value and runs to a model
 input-overprecision-param|NOFAULT the v0 case runner does not enforce declared parameter input precision — it accepts the over-precise value and runs to a model
 list-element-overprecision|EXCLUDE the v0 loader refuses the model's record datatype (StructType) before any list-element precision is reached — the record/struct form is not carried
 near-side-rolcheck-to-many|EXCLUDE the rolcheck rule (bemand met jutter) does not lower — a transpiler SKIP (voorwaarde buiten Phase-B scope); fire is never reached
-runaway-recursion|EXCLUDE same self-typed shape as finite-chain-over-budget (Wachter creates Wachter): no derivable back-link field, so the recursive generator is refused at lowering and the runaway is never reached
 struct-field-overprecision|EXCLUDE the v0 loader refuses the model's record datatype (StructType) — the record/struct form is not carried
 to-one-second-filler|EXCLUDE the case's role (aangemelde vondsten) has no uniquely derivable reference field in the v0 bean model — the role input is refused before the second-filler violation is reached
 uni-temporal-key-scalar|EXCLUDE the case sets a temporal attribute (kavelnummer) as a scalar while carrying NO asOfDate — the bucket convention (corpus/golden/README.md) gives that scalar no evaluation date to sit in, so the input is not carried and the ever-unique key is never reached
