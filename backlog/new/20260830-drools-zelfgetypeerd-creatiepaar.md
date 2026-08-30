@@ -75,7 +75,7 @@ terugkoppelingsbesluit bij lowering (een eerlijke weigering) of bij fire
 Acceptance:
 - Rood-eerst: de huidige EXCLUDE-regels en gate-tellingen eerst getoond
   (nulmeting bij het schrijven van deze kaart: gate 12 = played 92 /
-  auto-excluded 44 / value-divergence 1 / no-case 1, JUnit 71+; gate 8 =
+  auto-excluded 44 / value-divergence 1 / no-case 1, JUnit 82; gate 8 =
   3 gepind / 19 gelijst), per werkstuk een falende toestand vóór en de
   groene erna.
 - Elke verwachting EERST door ref (`_build/default/ref/bin/runner.exe
@@ -105,6 +105,10 @@ May touch: `backends/drools/src/main/java/**`,
 
 Out of scope: ref/clingo/verifier/spec en alle corpusverwachtingen en
 -pins, toka-ir's (byte-identiek), de v1-loadervormen (ListType/StructType/
-SumType/Let/functionDefs/TemporalRead), de meervoudige-subjectrol-
-weigering (geland en gepind op de objectcreatie-kaart),
+SumType/Let/functionDefs/TemporalRead), de terugveld-degradatie (een
+meervoudige subjectzijdige én een meervoudige gecreëerde rol SPELEN nu —
+het schrijfbare uiteinde draagt ch. 5.5's koppeling, het meervoudige wordt
+overgeslagen — beide gepind in `ObjectCreatieWitnessTest`; alleen het paar
+met TWEE meervoudige rollen blijft een reden-dragende weigering ("beide
+rollen zijn meervoudig", buiten scope van deze kaart)),
 gate-scriptgedrag buiten de lijsten.
