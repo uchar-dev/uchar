@@ -228,3 +228,65 @@ overgeslagen — beide gepind in `ObjectCreatieWitnessTest`; alleen het paar
 met TWEE meervoudige rollen blijft een reden-dragende weigering ("beide
 rollen zijn meervoudig", buiten scope van deze kaart)),
 gate-scriptgedrag buiten de lijsten.
+
+Result (2026-08-30): Geland op main na één bouwronde en twee seriële
+adversariële lensrondes met elk een fixronde. Het zelfgetypeerde
+creatiepaar landt via het zijkanaal: `IrLoader.Loaded` draagt naast model
+en defaults nu `rolBindingen` (IdentityHashMap, knoop-identiteit — door
+lens 2 als load-bearing bewezen), gevuld met de symbolische
+`verbindendeRol` op creaties en `bronRol` op aggregaties; de vendored
+frontend-slice is byte-onaangeroerd. `FactModelGenerator.zelfpaarRollen`
+leidt per to-one rol één scalair veld af, by-name, met de afgewezen
+alternatieven in de code; `verbindendeRol(ot,ot)` blijft bewust null.
+WF-047 sluit de "wie wint"-vraag structureel (lens 2: een binding kan een
+geslaagde by-pair-afleiding op verifier-schone IR nooit tegenspreken).
+De by-name-route bedient ook case-invoerrollen; het gewone zelfpaar
+spiegelt NIET (ref-gearbitreerd: links zijn gericht per rolsleutel).
+
+Gate 12: 92 → 94 played / 44 → 42 auto-excluded (wachtersketen en
+synth2-budgetgrens-onder spelen — creatiebinding én de gedichte
+aggregatie over de gebonden rol); JUnit 82 → 99. Gate 8: 3 → 5
+fault-pinned — ambiguous-backlink lowert nu naar een fire-fault met refs
+bewoording (het lowering-vs-fire-antwoord: een ambigue terugkoppeling is
+een programma-eigenschap, geen backend-gat; de lege-wereld-versmalling is
+gepind), runaway-recursion pint "geen fixpunt" (de fire-cap, eerlijk
+benoemd), finite-chain-over-budget werd reden-dragende NOFAULT (104
+generaties — v0 kent geen generatiebudget; ref/clingo pinnen daar hun
+eigen budgetfaults, spec-conform per lens-2-analyse). Corpusdiff:
+uitsluitend twee expectedFault.drools-velden.
+
+De §13.3.9-OPSLAGRICHTINGSWET (bijvangst, door beide lenzen
+gearbitreerd): ref leest een aggregatieset als de eigen gerichte links
+van het subject onder de elementrol; het beanmodel slaat per relatie één
+veld op. De to-one-elementrol-arm joint nu voorwaarts (ref-conform in
+beide leveringsrichtingen, acht witnesses in OpslagrichtingWitnessTest);
+de to-many-spiegelarm blijft een BENOEMDE pre-existente divergentie
+zonder corpusgetuige (element-kant-levering telt daar mee waar ref 0
+leest) — restlacune, kandidaat-kaart. Als derde anchor verschoof
+jutterswet-gemeenteberging van uitsluitingsgrond — waarbij een LATENTE
+fire-crash dichtging (main lowerde een join op een veld dat de bean niet
+draagt; jar-tegen-jar bewezen).
+
+NIET geland, met de ware reden: penninguitgifte — de kaart-aanname bleek
+onjuist; een to-one rol met meervoudige zusterrol deelt één beanveld
+voor beide richtingen, en refs gerichte halve koppeling is daarin
+onuitdrukbaar (trap-bewezen: de case levert J3→P1 en pint alsnog
+houderscontrole@P1 waar het veld 1 leest). De kenmerk-negatie-assertie
+speelt; de AANTAL-assertie is gebouwd voor 1:1-vormen en weigert de
+gedeelde-veldvorm met precies die reden. erflijn bleek dubbel-meervoudig
+(geen beanveld aan weerszijden) — de aggregatie kreeg een
+veldbestaan-poort en skipt met een gescherpte §13.3.9-reden waar eerst
+een latente crash wachtte. Lens 2's naam-botsingsvondst is gedicht:
+`heeftReferentieVeld` is typebewust en alle drie de lezers (creatiearm,
+case-rolarm, fold-join) weigeren een naamdelend veld luid
+(naamdelings-precedent) waar eerst twee ongeclassificeerde ERRORs
+ontstonden op verifier- en ref-schone IR.
+
+Open kandidaten, vastgelegd: de gedeelde-veldgrens (gerichte
+link-representatie naast de beans — het penninguitgifte-besluit),
+consistentie-salience op berekende waarden, bronRol-precedentie
+(terugval i.p.v. winnaar — WF-047 hekt het werkelijke verschil), de
+to-many-spiegelarm, en de zelfgetypeerde verdeling (derde bindingdrager
+op de wire, geen zijkanaal). Alle twaalf gates integraal groen op de
+eindstand (160/168, 396, 374, 374, 338+36, 22+5/17, 169+11, 144+23,
+toka 29/0/0, drools 94/42/1/1, JUnit 99).
