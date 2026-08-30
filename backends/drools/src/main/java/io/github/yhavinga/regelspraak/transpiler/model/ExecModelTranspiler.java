@@ -4987,10 +4987,20 @@ public final class ExecModelTranspiler {
         if (subjClass == null || nieuwClass == null) return skip("objectcreatie (geen fact-class): " + oc.naam());
         String backRef = model.verbindendeRol(nieuw, subject);   // field on $new -> subject
         String fwdRef = model.verbindendeRol(subject, nieuw);    // field on $subject -> $new (ch. 5.5: BOTH ends)
-        // Only a to-ONE forward role has a bean field at all: FactModelGenerator.leden derives the scalar
-        // reference on the many side, so a to-many forward role is stored solely as the created object's backRef.
+        // Only a to-ONE role has a bean field at all: FactModelGenerator.leden derives the scalar reference on
+        // the MANY side, so a to-many role is stored solely as the OTHER end's field. BOTH ends need that
+        // filter. Forward: a to-many forward role leaves the link on the created object's backRef alone.
         boolean fwdScalar = fwdRef != null && !model.naarVeelRol(subject, nieuw, fwdRef);
         if (!fwdScalar) fwdRef = null;
+        // Backward: a MEERVOUDIGE subject-side role derives no reference field on the created type either, so
+        // writing the back-reference would reach a setter no bean carries — an unclassified "geen setter voor"
+        // ERROR at fire, on a verifier-clean model that ref plays (it stores the link symbolically, not as a
+        // bean field). An ERROR is never a valid not-carried outcome under the gate-12 regime, so the shape is
+        // refused per CREATION with its own reason, like the two orphan shapes below.
+        if (backRef != null && model.naarVeelRol(nieuw, subject, backRef))
+            return skip("objectcreatie (het beanmodel draagt het terugveld niet: de subjectzijdige rol '" + backRef
+                    + "' is meervoudig, dus FactModelGenerator leidt op het gecreëerde type geen referentieveld"
+                    + " af en ch. 5.5's terugkoppeling is niet te schrijven): " + oc.naam());
         // Neither end derivable (a self-typed or ambiguous role pair: FactModelGenerator derives no reference
         // field for either side) means the mint would be an ORPHAN — inserted but reachable from nothing, so no
         // navigated read or fold could ever see it. RUNTIME-SEMANTICS ch. 5.5 links both ends; a link the bean
@@ -5066,6 +5076,9 @@ public final class ExecModelTranspiler {
             // delivers the link solely on the created side must NOT block (the storage-direction narrowing the
             // spec records), and reading the subject side also makes the write below safe — it can never hand
             // an already-filled to-one role a second filler.
+            // Only the DIRECTION follows ref; the MOMENT does not. RUNTIME-SEMANTICS.md r1673-1680 notes the two
+            // narrowings apart: ref reads the world0 SNAPSHOT (a link written during the run is invisible to its
+            // guard), this predicate reads the LIVE fact base. Deliberate — a Drools LHS has no world0 to read.
             final String fFwdRef1 = fwdRef;
             pattern = pattern.expr(nextId("idem"), (Predicate1) o -> RegelSpraakRuntime.get(o, fFwdRef1) == null);
         } else {

@@ -143,7 +143,10 @@ public final class CaseRunner {
             runner.spiegelWederkerigeRollen();
             runner.zetGlobals(sessie, c);
             for (Object bean : runner.labelNaarBean.values()) sessie.insert(bean);
-            sessie.fireAllRules(100_000);
+            int n = sessie.fireAllRules(100_000);
+            // The sister runCase path reports the cap as a case failure; this seam has no verdict to return, so
+            // a run that never reached a fixpoint must not hand back a half-fired fact base as if it had settled.
+            if (n >= 100_000) throw new IllegalStateException("geen fixpunt (kringverwijzing?)");
             return new NaFire(new LinkedHashMap<>(runner.labelNaarBean), new ArrayList<>(sessie.getObjects()));
         } finally {
             sessie.dispose();
