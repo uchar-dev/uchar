@@ -46,6 +46,9 @@ class OpslagrichtingWitnessTest {
     /** A to-many element role: `vondstaanmelding` pairs a to-one `aanmelder` with a to-many `vondst`, so the
      *  relation has exactly ONE bean field (Vondst.aanmelder) serving both directions. */
     private static final String VONDSTTELLING = "jutterswet-vondsttelling";
+    /** The SELF-TYPED creation: a Wachter creates a Wachter over `opvolging` (roles `voorganger`/`opvolger`,
+     *  both to-one), reads the fold over its opvolgers, and carries a consistentie. */
+    private static final String WACHTERSKETEN = "anchor/jutterswet-wachtersketen";
 
     // ---------------- 1. the case-input write on an ordinary self-typed pair ----------------
 
@@ -89,10 +92,15 @@ class OpslagrichtingWitnessTest {
         // to-many role's storage is the far end's field, and here both ends are to-many. The aggregation over
         // `erfvolgers` therefore has no join field: before the guard it lowered anyway and died at first fire
         // ("geen getter voor 'erflater'"), an unclassified ERROR. It must be a lowering SKIP, i.e. a
-        // reason-carrying per-form exclusion of the whole golden.
+        // reason-carrying per-form exclusion of the whole golden — and the REASON must name the §13.3.9
+        // storage-direction limit it is, not the generic "aggregatie buiten Phase-C scope" bucket that reads as
+        // an arm nobody has built yet (the schendingReden distinction, on the fold side).
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.speelCase(ir(ERFLIJN), JSON.readTree(ketenMetVerwachting("1", "0"))));
         assertTrue(e.getMessage().contains("erfvolgeraantal van een wachter"), e.getMessage());
+        assertTrue(e.getMessage().contains("de aggregatie-join heeft geen beanveld"), e.getMessage());
+        assertTrue(e.getMessage().contains("de rol 'erflater' op Wachter is meervoudig"), e.getMessage());
+        assertTrue(e.getMessage().contains("§13.3.9 opslagrichting"), e.getMessage());
     }
 
     @Test void een_meervoudige_zelfpaarrol_wordt_luid_geweigerd_met_de_ware_reden() throws Exception {
@@ -145,6 +153,51 @@ class OpslagrichtingWitnessTest {
         assertNull(CaseRunner.speelCase(ir(VONDSTTELLING),
                         JSON.readTree(telling("", "\"aanmelder\": [\"J1\"]", "\"aanmelder\": [\"J1\"]", "2", "3.75"))),
                 "the backend still folds the far-end supply; ref reads 0 / 0 on this case");
+    }
+
+    // ---------------- 3. the name-sharing displacement: a role name a declared member already owns ----------------
+
+    // The trap, in one sentence: FactModelGenerator.leden ports every member through a NAME-DEDUP (attribuut >
+    // kenmerk > referentie, because a bean carries one field per name), so a Wachter that declares a Numeriek
+    // attribute `opvolger` keeps the PROPERTY and loses the self-pair REFERENCE — `opvolger` is a BigDecimal
+    // field. Nothing upstream stops such a model: the verifier PASSES it and ref plays it (measured below).
+    // Every reader that asked only for the NAME then wrote a fact into a BigDecimal. Measured on the pre-card
+    // jar (HEAD 71c9ad9), both arms produced UNCLASSIFIED ERRORs where main gave a clean per-form EXCLUDE:
+    //     creation arm : ERROR ConsequenceException … ClassCastException: Cannot cast …facts.Wachter to
+    //                    java.math.BigDecimal   (rule "estafette: werf de opvolger")
+    //     case-role arm: ERROR RuntimeException: kon setter setOpvolger(Wachter) niet aanroepen op Wachter
+    // Gate 12 fails on an ERROR by construction ("a fault at fire is not a value-divergence"), so each arm must
+    // refuse the FORM instead — loudly, naming the member that displaced the reference.
+
+    @Test void de_creatiearm_weigert_een_naamdelende_terugkoppeling() throws Exception {
+        // The §13.4.6 arm: the creation's own verbindendeRol binding names `opvolger`, whose field the attribute
+        // took. ref on exactly this model and case: `oracle: PASS (1 expectations)` — the model is ref-clean AND
+        // verifier-clean (`verifier: PASS`), so this is not a broken program filed under "not carried": it is a
+        // bean-model limit of THIS backend, which must therefore say so per creation.
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(naamdelendeWachter(false), JSON.readTree(ketenZonderRollen(false))));
+        assertTrue(e.getMessage().contains("objectcreatie: werf de opvolger"), e.getMessage());
+        assertTrue(e.getMessage().contains("deelt haar naam met een gedeclareerd lid"), e.getMessage());
+    }
+
+    @Test void de_case_rolinvoer_weigert_hetzelfde_veld() throws Exception {
+        // The case-input arm, on the same collision with the rules and the creation stripped away (they refuse
+        // first, and each arm must be witnessed on its own). ref on exactly this model and case: `oracle: PASS
+        // (2 expectations)` — ref keys the link under the role name and the attribute beside it, untroubled.
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.invoerBeans(naamdelendeInvoerWachter(), JSON.readTree(ketenMetOpvolgerrol())));
+        assertTrue(e.getMessage().contains("role 'opvolger' resolves to the to-one role 'opvolger'"), e.getMessage());
+        assertTrue(e.getMessage().contains("name-sharing bean limit"), e.getMessage());
+    }
+
+    @Test void de_foldjoin_weigert_hetzelfde_veld_met_dezelfde_reden() throws Exception {
+        // The third reader of that field — the §5.8 fold's join (`het aantal opvolgers`) — asked for the name
+        // only, so it lowered a join reading a BigDecimal. On the FULL model this is the first refusal reached,
+        // which is why the creation witness above strips the rules. ref: `oracle: PASS (2 expectations)`.
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(naamdelendeWachter(true), JSON.readTree(ketenZonderRollen(true))));
+        assertTrue(e.getMessage().contains("de aggregatie-join heeft geen beanveld"), e.getMessage());
+        assertTrue(e.getMessage().contains("deelt haar naam met een gedeclareerd lid"), e.getMessage());
     }
 
     // ---------------- fixtures ----------------
@@ -222,6 +275,70 @@ class OpslagrichtingWitnessTest {
         ((ObjectNode) waarde.get("argumenten").get(0)).put("attribuut", "opvolgers");
         ((ObjectNode) waarde.get("bronRol")).put("feittype", "opvolging").put("rol", "opvolger");
         return tijdelijk("erflijn-telling-op-opvolgers", ir);
+    }
+
+    /** The wachtersketen model with a Numeriek attribute that SHARES the self-pair role name `opvolger`, so
+     *  leden()'s name-dedup displaces the reference field. {@code metFold} keeps the §5.8 fold rule (whose join
+     *  reads that same field, and refuses FIRST); without it the §13.4.6 creation arm is the refusal reached.
+     *  Both are in-memory variants; the corpus ir.json is untouched. Both are verifier-clean and ref-clean. */
+    private static Path naamdelendeWachter(boolean metFold) throws Exception {
+        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(WACHTERSKETEN)));
+        ((ObjectNode) ir.get("objecttypen").get("Wachter").get("attributen")).set("opvolger", numeriek());
+        if (!metFold) {
+            ir.putArray("resolvedRegels");
+            com.fasterxml.jackson.databind.node.ArrayNode regels = ir.putArray("regels");
+            for (JsonNode r : JSON.readTree(Files.readString(ir(WACHTERSKETEN))).get("regels"))
+                if (!"opvolgerrang van een wachter".equals(r.get("naam").asText())) regels.add(r);
+        }
+        return tijdelijk("wachter-naamdeling-" + (metFold ? "fold" : "creatie"), ir);
+    }
+
+    /** The same collision on an INPUT-ONLY model — creation, rules, group and consistentie dropped — so the
+     *  case-input arm is reached instead of a lowering refusal. Verifier-clean and ref-clean. */
+    private static Path naamdelendeInvoerWachter() throws Exception {
+        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(WACHTERSKETEN)));
+        ((ObjectNode) ir.get("objecttypen").get("Wachter").get("attributen")).set("opvolger", numeriek());
+        ir.putArray("objectCreaties"); ir.putArray("resolvedRegels"); ir.putArray("regels");
+        ir.putArray("consistenties"); ir.putArray("regelGroepen");
+        return tijdelijk("wachter-naamdeling-invoer", ir);
+    }
+
+    private static ObjectNode numeriek() {
+        return JSON.createObjectNode().put("node", "Numeriek").put("geheel", true)
+                .put("decimalen", 0).put("teken", "ONBEPAALD").putNull("eenheid");
+    }
+
+    /** W1 (rang 1), no roles — the golden's own case1, with the fold expectation dropped where that rule is. */
+    private static String ketenZonderRollen(boolean metFold) {
+        return """
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [
+                      { "label": "W1", "objectType": "Wachter", "attributes": { "rang": { "number": "1" } },
+                        "roles": {}, "characteristics": [] } ],
+                    "parameters": {} },
+                  "expected": [ %s
+                      { "kind": "inconsistent", "rule": "rangdetector" } ] }
+                """.formatted(metFold
+                ? "{ \"kind\": \"attributeValue\", \"label\": \"W1\", \"attribute\": \"opvolgerrang\","
+                  + " \"value\": { \"number\": \"2\" } },"
+                : "");
+    }
+
+    /** Two wachters with the self-pair role written BY NAME onto the displaced field, expectations echoing the
+     *  inputs (the input-only model computes nothing). */
+    private static String ketenMetOpvolgerrol() {
+        return """
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [
+                      { "label": "W1", "objectType": "Wachter", "attributes": { "rang": { "number": "1" } },
+                        "roles": { "opvolger": ["W2"] }, "characteristics": [] },
+                      { "label": "W2", "objectType": "Wachter", "attributes": { "rang": { "number": "2" } },
+                        "roles": {}, "characteristics": [] } ],
+                    "parameters": {} },
+                  "expected": [
+                      { "kind": "attributeValue", "label": "W1", "attribute": "rang", "value": { "number": "1" } },
+                      { "kind": "attributeValue", "label": "W2", "attribute": "rang", "value": { "number": "2" } } ] }
+                """;
     }
 
     private static Path tijdelijk(String naam, ObjectNode ir) throws Exception {

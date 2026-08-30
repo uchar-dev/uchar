@@ -137,6 +137,24 @@ public final class FactModelGenerator {
     }
 
     /**
+     * §13.3.9 — whether {@code ot}'s bean really carries the SCALAR REFERENCE field for role {@code rol} pointing
+     * at {@code doel}: the property name AND its type, asked of {@link #leden}, the ONE derivation this generator
+     * renders and {@link ContractValidator} demands.
+     *
+     * <p>The TYPE half is the whole point. {@code leden} ports every member through a name-dedup — attribuut &gt;
+     * kenmerk &gt; referentie, because a bean can carry only one field per name — so a declared member that shares
+     * the role's name DISPLACES the reference: the property still exists, but it holds a {@code BigDecimal} or a
+     * {@code boolean}. A name-only test therefore reads "field present" and sends a FACT into it, which is an
+     * unclassified ERROR at fire ({@code ClassCastException} on the creation arm, "kon setter set&lt;X&gt;(…) niet
+     * aanroepen" on the case-input arm — lens 2, 2026-08-30), where the honest outcome is a loud per-form refusal.
+     */
+    public static boolean heeftReferentieVeld(RegelSpraakModel model, Objecttype ot, String rol, Objecttype doel) {
+        if (model == null || ot == null || rol == null || doel == null) return false;
+        String eigenschap = Namen.ident(rol, false), type = Namen.ident(doel.naam, true);
+        return leden(model, ot).stream().anyMatch(l -> l.eigenschap().equals(eigenschap) && l.javaType().equals(type));
+    }
+
+    /**
      * §13.3.9.2 — the scalar to-one SELF-PAIR role a wederkerig feittype implies on {@code ot} (the role name,
      * hence the bean field name), or null when the model implies none.
      *

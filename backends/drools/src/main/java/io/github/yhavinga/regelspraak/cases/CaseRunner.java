@@ -191,10 +191,7 @@ public final class CaseRunner {
             if (zelf == null)
                 throw new Excluded("wederkerig self-relation (§13.3.9.2) on " + ot.naam + " derives no scalar "
                         + "reference field (an ambiguous or to-many self-pair role) — not carried by the v0 backend");
-            boolean gedragen = FactModelGenerator.leden(model, ot).stream().anyMatch(l ->
-                    l.eigenschap().equals(Namen.ident(zelf, false))
-                            && l.javaType().equals(Namen.ident(ot.naam, true)));
-            if (!gedragen)
+            if (!FactModelGenerator.heeftReferentieVeld(model, ot, zelf, ot))
                 throw new Excluded("wederkerig self-pair role '" + zelf + "' on " + ot.naam + " shares its name "
                         + "with a declared member — the bean cannot carry the self-typed reference field "
                         + "(name-sharing bean limit)");
@@ -434,17 +431,49 @@ public final class CaseRunner {
                 // the field on THIS bean (to-one from here): the written self-pair role, else the type pair
                 String rolIL = zelfpaar ? viaNaam : model.verbindendeRol(tI, tL);
                 if (rolIL != null && !model.naarVeelRol(tI, tL, rolIL)) {
+                    naamdelingsPoort(tI, rolIL, tL, e.getKey());
                     zetToOne(bean, rolIL, doel);
                 } else {
                     String rolLI = model.verbindendeRol(tL, tI);  // the field lives on the target (this is the one side)
                     if (rolLI == null || model.naarVeelRol(tL, tI, rolLI))
+                        // NOT UNIQUE and UNIQUE BUT TO-MANY are different failures and are reported apart (lens 2,
+                        // 2026-08-30): the erflijn shape resolves `erfvolger` by name PERFECTLY, and what stops it
+                        // is its CARDINALITY — a to-many role's storage is the far end's field — where the old
+                        // single sentence blamed a non-unique derivation that had in fact succeeded.
                         throw new Excluded("role '" + e.getKey() + "' (" + tI.naam + " -> " + tL.naam + ") reaches no "
-                                + "to-one reference field: the written role name derives no §13.3.9 self-pair field, "
-                                + "and neither direction of the type pair derives a unique to-one role");
+                                + "to-one reference field: " + (viaNaam == null
+                                    ? "the written role name resolves to no unique role"
+                                    : model.naarVeelRol(tI, tL, viaNaam)
+                                    ? "the written role name resolves to '" + viaNaam + "', which is TO-MANY — its "
+                                      + "storage is the far end's field, not a scalar reference here"
+                                    : "the written role name resolves to the to-one role '" + viaNaam + "', which is "
+                                      + "not one of the §13.3.9 reference fields the bean model derives")
+                                + ", and " + (rolIL != null
+                                    ? "this direction resolves the to-many role '" + rolIL + "'"
+                                    : rolLI != null
+                                    ? "the far direction resolves the to-many role '" + rolLI + "'"
+                                    : "neither direction of the type pair derives a to-one role"));
+                    naamdelingsPoort(tL, rolLI, tI, e.getKey());
                     zetToOne(doel, rolLI, bean);
                 }
             }
         }
+    }
+
+    /** The §13.3.9 NAME-SHARING gate on a resolved to-one role write: {@code drager}'s bean must carry the
+     *  reference field for {@code rol} TYPED (a field of {@code doel}'s class), not merely a property of that
+     *  name. Both roles here come from the very authorities {@link FactModelGenerator#leden} derives the fields
+     *  from ({@code zelfpaarRollen} / {@code verbindendeRol}), so the ONE thing that can still be missing is the
+     *  reference itself, displaced by a declared member of the same name (leden()'s dedup: attribute >
+     *  characteristic > reference). Without this gate the write below reaches {@code set<X>(BigDecimal)} with a
+     *  fact — "kon setter setOpvolger(Wachter) niet aanroepen", an unclassified ERROR the gate refuses to excuse
+     *  — where the honest outcome is a loud, reason-carrying exclusion (lens 2, 2026-08-30). The §13.3.9.2
+     *  wederkerig twin of this limit is refused in {@link #build} for the whole model. */
+    private void naamdelingsPoort(Objecttype drager, String rol, Objecttype doel, String geschreven) {
+        if (FactModelGenerator.heeftReferentieVeld(model, drager, rol, doel)) return;
+        throw new Excluded("role '" + geschreven + "' resolves to the to-one role '" + rol + "' on " + drager.naam
+                + ", which shares its name with a declared member — the bean cannot carry the reference field "
+                + "(name-sharing bean limit: attribute > characteristic > reference)");
     }
 
     /** One to-one role write, WF-013-guarded: a second, DIFFERENT filler on the same to-one field is a case

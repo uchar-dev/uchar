@@ -519,7 +519,11 @@ public final class ExecModelTranspiler {
             // (a ≥2-operand MINIMUM/MAXIMUM is a §5.8.3 LISTED concatenation fold, not an instance accumulate — it
             //  flows to the scalar path / concatenatieFold below.)
             Agg agg = aggregatie(fx, doel.objecttype(), sVar, false);   // value side: bare fold (empty -> no-op)
-            if (agg == null) return skip("regel (aggregatie buiten Phase-C scope): " + r.naam());
+            // the sharpened §13.3.9 reason where there is one (read immediately, see the field's contract), else
+            // the generic Phase-C note — a bean-MODEL limit and an unbuilt arm are different things to whoever
+            // reads the gate's exclusion line and decides what to card next.
+            if (agg == null) return skip("regel (" + (aggregatieReden != null ? aggregatieReden
+                    : "aggregatie buiten Phase-C scope") + "): " + r.naam());
             extra.add(agg.accItem());
             if (agg.isSom()) {
                 // §5.8.2 sommatie: an empty sum (0 non-empty contributors) is the leegwaarde fallback, not 0.
@@ -876,17 +880,37 @@ public final class ExecModelTranspiler {
      *  count Variable + the empty-sum fallback. */
     private record Agg(RuleItemBuilder<?> accItem, Variable resultVar, Variable countVar, WaardeFn somFallback, boolean isSom) {}
 
-    /** Whether the bean model derives a member named after role {@code rol} on {@code ot} — asked of
-     *  {@link io.github.yhavinga.regelspraak.schema.FactModelGenerator#leden}, the ONE derivation the generator
-     *  renders and the ContractValidator demands, so a lowered read can never drift from what the beans carry.
+    /** Whether the bean model derives the scalar REFERENCE field for role {@code rol} on {@code ot}, pointing at
+     *  {@code doel} — asked of {@link io.github.yhavinga.regelspraak.schema.FactModelGenerator#heeftReferentieVeld},
+     *  which reads the ONE member derivation the generator renders and the ContractValidator demands, so a lowered
+     *  read can never drift from what the beans carry.
      *  A derived ROLE is not yet a derived FIELD: a to-many role's storage is the far end's field, and where BOTH
-     *  ends are to-many there is no field at all. */
-    private boolean heeftReferentieVeld(Objecttype ot, String rol) {
-        if (ot == null || rol == null) return false;
-        String prop = Namen.ident(rol, false);
-        return io.github.yhavinga.regelspraak.schema.FactModelGenerator.leden(model, ot).stream()
-                .anyMatch(l -> l.eigenschap().equals(prop));
+     *  ends are to-many there is no field at all. Nor is a derived NAME yet a derived reference: leden()'s
+     *  name-dedup lets a declared member of the same name displace it, which is why the TYPE is part of the
+     *  question (see that method). */
+    private boolean heeftReferentieVeld(Objecttype ot, String rol, Objecttype doel) {
+        return io.github.yhavinga.regelspraak.schema.FactModelGenerator.heeftReferentieVeld(model, ot, rol, doel);
     }
+
+    /** Why {@code ot}'s bean carries no reference field for the to-ONE role {@code rol} toward {@code doel} — the
+     *  precise §13.3.9 reason, so a per-form refusal names the bean-model limit instead of the generic scope note
+     *  (the {@code schendingReden} pattern, and the defaults arm's kenmerktarget SKIP, applied to the reference
+     *  fields). The two causes are DIFFERENT and are named apart: a declared member of the same name DISPLACED the
+     *  reference (leden()'s dedup), or the model derives no unique field for that role at all. */
+    private String geenReferentieveldReden(Objecttype ot, String rol, Objecttype doel) {
+        return ot.heeftLid(rol)
+                ? "de rol '" + rol + "' op " + ot.naam + " deelt haar naam met een gedeclareerd lid — het beanveld"
+                  + " draagt dat attribuut/kenmerk en niet de referentie (leden(): attribuut > kenmerk >"
+                  + " referentie), dus de koppeling naar " + doel.naam + " heeft geen veld"
+                : "het beanmodel leidt voor de enkelvoudige rol '" + rol + "' op " + ot.naam
+                  + " geen referentieveld naar " + doel.naam + " af";
+    }
+
+    /** Why the last {@link #aggregatie} call returned null, when the cause is a §13.3.9 bean-MODEL limit rather
+     *  than an arm nobody has built yet — the {@code schendingReden} distinction, on the fold side. Set at the two
+     *  storage-direction gates and RESET at every entry, so a caller may read it only immediately after a null
+     *  return; a null field means the generic Phase-C scope note stands. */
+    private String aggregatieReden;
 
     /** §5.8/§13.4.17 lower an aggregation over the subject's related elements to a {@code DSL.accumulate} CE: the
      *  source pattern joins the element to {@code $subject} (the §9.4 backref role), an optional §13.4.2 die-filter
@@ -895,6 +919,7 @@ public final class ExecModelTranspiler {
      *  multi-operand fold, or a non-literal SOM fallback) — never a silently-wrong aggregate over EVERY instance. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Agg aggregatie(Expr.Functie f, Objecttype subject, Variable subjectVar, boolean leegCount) {
+        aggregatieReden = null;                      // a stale reason must never be attached to another skip
         Objecttype elem = f.elementObjecttype();
         if (elem == null) return null;
         Class<?> elemClass = factClass(elem);
@@ -961,15 +986,31 @@ public final class ExecModelTranspiler {
             if (paar != null) elemRol = paar[0].naam();
         }
         boolean voorwaarts = elemRol != null && !model.naarVeelRol(subject, elem, elemRol);
-        if (voorwaarts && model.naarVeelRol(elem, subject, backref)) return null;   // one shared field, both directions
+        if (voorwaarts && model.naarVeelRol(elem, subject, backref)) {              // one shared field, both directions
+            aggregatieReden = "aggregatie over de enkelvoudige elementrol '" + elemRol + "' wiens zusterrol '"
+                    + backref + "' meervoudig is: dat feittype heeft ÉÉN beanveld en dat draagt noodzakelijk BEIDE"
+                    + " richtingen, dus de gerichte lezing — ref leest de eigen links van het subject onder de"
+                    + " elementrol — is in het v0 beanmodel niet uit te drukken (§13.3.9 opslagrichting)";
+            return null;
+        }
         // ...and the join field must actually EXIST. Both arms above derive a ROLE, which is not the same as a bean
         // MEMBER: the generator derives a scalar reference only where the role is to-one AND uniquely reachable
-        // (FactModelGenerator.leden — the by-pair loop, plus zelfpaarRollen for a self-typed pair). A self-typed
-        // relation whose BOTH roles are to-many (jutterswet-erflijn's `erflijn`: erflater and erfvolger both
-        // meervoudig) therefore has NO field at either end, and lowering its join produced a rule that built fine
-        // and died at first fire ("geen getter voor 'erflater'") — an ERROR gate 12 rightly refuses to excuse.
+        // (FactModelGenerator.leden — the by-pair loop, plus zelfpaarRollen for a self-typed pair) AND its name is
+        // not taken by a declared member (leden()'s dedup displaces the reference — hence the TYPED question). A
+        // self-typed relation whose BOTH roles are to-many (jutterswet-erflijn's `erflijn`: erflater and erfvolger
+        // both meervoudig) therefore has NO field at either end, and lowering its join produced a rule that built
+        // fine and died at first fire ("geen getter voor 'erflater'") — an ERROR gate 12 rightly refuses to excuse.
         // Asked of the ONE shared member derivation, so this can never drift from what the beans carry.
-        if (!heeftReferentieVeld(voorwaarts ? subject : elem, voorwaarts ? elemRol : backref)) return null;
+        Objecttype joinDrager = voorwaarts ? subject : elem, joinDoel = voorwaarts ? elem : subject;
+        String joinRol = voorwaarts ? elemRol : backref;
+        if (!heeftReferentieVeld(joinDrager, joinRol, joinDoel)) {
+            aggregatieReden = "de aggregatie-join heeft geen beanveld — " + (model.naarVeelRol(joinDrager, joinDoel, joinRol)
+                    ? "de rol '" + joinRol + "' op " + joinDrager.naam + " is meervoudig, dus haar opslag is het veld"
+                      + " aan de overzijde, en ook daar leidt het beanmodel er geen af (beide zijden meervoudig)"
+                    : geenReferentieveldReden(joinDrager, joinRol, joinDoel))
+                    + " (§13.3.9 opslagrichting)";
+            return null;
+        }
         final String fwdVeld = elemRol;
 
         Variable elemVar = DSL.declarationOf(elemClass, "$e_" + (seq++));
@@ -5158,9 +5199,26 @@ public final class ExecModelTranspiler {
      *  names (the created object's / the aggregated element's) and the one the ANCHOR plays. The sibling's NAME is
      *  the reference field on the bound end, and vice versa, which is exactly how {@link FactModelGenerator#leden}
      *  names them. A §13.3.9.2 wederkerig fact type carries ONE role that is its own sibling. null when the binding
-     *  names no such fact type / role, or when a non-wederkerig fact type has no sibling role at all — a loud
-     *  refusal for the caller, never a guess. Mirrors {@code ref/lib/eval.ml}'s {@code bound_role} +
-     *  {@code resolve_binding}, whose Error flank is a fault there. */
+     *  names no such fact type / role, or when a non-wederkerig fact type has no sibling role at all — for those
+     *  RESOLUTION failures the caller refuses loudly, never guesses. Mirrors {@code ref/lib/eval.ml}'s
+     *  {@code bound_role} + {@code resolve_binding}, whose Error flank is a fault there.
+     *
+     *  <p><b>What this does NOT check, and why (lens 2, 2026-08-30).</b> The FILLERS. A binding may resolve
+     *  perfectly and still be wrong for its use site — the bound role filled by the anchor's type instead of the
+     *  created object's — and this method hands that pair back without a word. That is not an oversight but the
+     *  division of labour: <b>WF-047 is the fence</b> ("role binding resolves; fillers agree with the use site"),
+     *  checked by gate 3 with its own negatief cases, {@code wf047-bound-role-fills-source} and
+     *  {@code wf047-creation-binding-wrong-filler}, so no corpus artefact can reach this method mis-filled.
+     *  Measured on an {@code anchor/jutterswet-rekenkamer} variant whose creation binding names the SIBLING role
+     *  ({@code taxatieopdracht.opdrachtgever} instead of {@code .rekenkamer}): the verifier
+     *  FAILS it twice on WF-047; ref does not fault at all — it takes the wrong binding silently and reads
+     *  {@code J1.heffing = leeg} (a MISMATCH, not an error); this backend, before the typed field gate, died deep
+     *  and unattributed ("ConstraintEvaluationException: Error evaluating constraint ''"). A duplicate filler check
+     *  HERE was weighed and rejected: it would need the expected filler pair at each of the three call sites
+     *  (creation, fold source ×2), i.e. a second fence that can drift from gate 3's. What the callers DO carry is
+     *  the typed reference-field gate, which catches the usual downstream consequence — on that same variant the
+     *  creation now refuses loudly ("geen referentieveld naar Jutter af") instead of crashing — but that is a
+     *  bean-model question, not a filler check, and does not claim to be one. */
     private RegelSpraakModel.Rol[] gebondenRolpaar(RegelSpraakModel.RolBindingRef rb) {
         if (rb == null || rb.feittype() == null || rb.rol() == null) return null;
         RegelSpraakModel.Feittype ft = null;
@@ -5243,6 +5301,18 @@ public final class ExecModelTranspiler {
         // creation and the navigated read from the subject reaches the mint).
         String backRef = backRol != null && !backVeel ? backRol : null;
         String fwdRef = fwdRol != null && !fwdVeel ? fwdRol : null;
+        // ...and a to-ONE role is only a WRITABLE end when the bean carries its reference field TYPED. leden()'s
+        // name-dedup (attribuut > kenmerk > referentie) lets a declared member of the same name displace it — a
+        // Wachter whose self-pair role `opvolger` is also a Numeriek attribute keeps the PROPERTY and loses the
+        // REFERENCE — and the writes below would then push a fact into a BigDecimal field: ClassCastException at
+        // fire, an unclassified ERROR where main gave a clean per-form EXCLUDE (lens 2, 2026-08-30). Refused per
+        // creation, with the displacing member named, never guessed and never crashed. NOT nulled-out like a
+        // to-many end either: that end's link is stored elsewhere BY DESIGN, while this one cannot be stored at
+        // all, so writing only the other half would leave ch. 5.5's link silently one-sided.
+        if (backRef != null && !heeftReferentieVeld(nieuw, backRef, subject))
+            return skip("objectcreatie (" + geenReferentieveldReden(nieuw, backRef, subject) + "): " + oc.naam());
+        if (fwdRef != null && !heeftReferentieVeld(subject, fwdRef, nieuw))
+            return skip("objectcreatie (" + geenReferentieveldReden(subject, fwdRef, nieuw) + "): " + oc.naam());
         // Only when NEITHER end carries a bean field is the mint truly an ORPHAN — inserted but reachable from
         // nothing, so no navigated read or fold could ever see it. RUNTIME-SEMANTICS ch. 5.5 links both ends; a
         // link the bean model cannot hold ANYWHERE is NOT-CARRIED, refused loudly, never a silently wrong value.
