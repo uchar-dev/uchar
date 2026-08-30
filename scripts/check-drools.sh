@@ -80,6 +80,20 @@ EXCLUDE_KNOWN=(
   # execute in the v0 backend at all (a navigated created-object read yields leeg / an intValue() NPE; a self-pair
   # role has no derived bean field), so they are LOUD PER-FORM auto-exclusions in CaseRunner, not value-divergences.
   # A crash-at-fire is a not-carried form, never a "genuine exec-model semantic difference" — see the ERROR arm below.
+  #
+  # --- Surfaced 2026-08-30 by the temporal case-input port (card drools-temporale-inputpoort) ---------
+  # Opening the temporal input layer let three goldens REACH fire that the input refusal had hidden. They
+  # are NOT the class the banner above describes: neither is a genuine v0 production-semantics divergence,
+  # so neither is a v1-delta candidate. Two further classes are named here, honestly:
+  #   (c) an exec-model TERMINATION defect (as jutterswet-waardering-v0vorm above), where the values
+  #       themselves are not in dispute and the original toolchain's DRL lowering converges;
+  #   (d) a Drools-side IMPLEMENTATION GAP against a SETTLED spec chapter — ref AND clingo implement it,
+  #       nothing is left to decide, only to build. (The back-end already carries ch. 7 prioritizedDefaults
+  #       beyond production semantics, so implementing a decided chapter here is precedented, not a delta.)
+  # Both classes were triaged to the line and rule: see the entries. No expectation was moved.
+  "anchor/jutterswet-borgdeel|(c)+(d) TWO defects stacked, neither a v0 production-semantics divergence. (c) TERMINATION: two UNANCHORED temporal writes on one Jutter (borgdeel, jaardeel) each acquire ExecModelTranspiler's §9.9 freshness expr — their tijdsevenredig value reads an own attribute — which leaves both patterns CLASS-reactive, while the rsTijdreeksGelijk idempotency guard is scoped to ANCHORED writes only (the 'geankerd &&' at ExecModelTranspiler.java:442/452). Each unconditional update re-activates the sibling and fireAllRules hits its 100k cap; NO_LOOP blocks only self-retrigger. Values are not in dispute: with either rule alone the golden PLAYS and reproduces the pinned ref≡clingo timelines exactly, and the DRL lowering converges (its narrow @watch(borgtarief)/@watch(jaartarief) watches neither doel). (d) Underneath the cap, case5-input-blijft pins the ch. 7.8 timeline arm this back-end does not implement — see the dagentelling entry — so fixing termination alone does NOT green this golden."
+  "synth2-prorata-breed|(c) EXEC-MODEL NON-TERMINATION, not a semantic divergence: the jutterswet-borgdeel ping-pong three ways (ligdeel, heffingdeel, toeslagdeel over one Ligplaats) — the freshness expr makes every pro-rata pattern class-reactive while the rsTijdreeksGelijk guard fires for ANCHORED writes only, so the three siblings re-activate one another past the 100k cap. Values are NOT in dispute: run one rule at a time and each reproduces its pinned ref≡clingo timeline exactly, and the DRL lowering's narrow @watch converges. Listed rather than auto-excluded only because the gate classifies a non-terminating fire as a wrong-value FAIL — the same CaseRunner-taxonomy revisit jutterswet-waardering-v0vorm waits on."
+  "anchor/jutterswet-dagentelling|(d) SETTLED-SPEC ARM NOT IMPLEMENTED in this back-end (case4-input-blijft only; the other three cases play+pass): on a STANDING temporal target a fold whose result is empty writes nothing and the case-supplied input timeline stands whole (ch. 7.8, decided 2026-08-20/21; ref/lib/eval.ml's pro-rata and day-count arms over Desugar.standing_temporal_targets — clingo implements it too). backends/drools has no counterpart (zero hits on the predicate), so the ch. 3.8 day count over an absent borgplichtig overwrites the pinned input [2024-03-01,2024-04-01)=99 with the empty timeline. NOT caused by the new input layer: at fireAllRules(0) the bean carries the input, at fireAllRules(1) the rule has overwritten it."
 )
 
 known_reason() { local n="$1"; for e in "${EXCLUDE_KNOWN[@]}"; do [ "${e%%|*}" = "$n" ] && { echo "${e#*|}"; return 0; }; done; return 1; }
