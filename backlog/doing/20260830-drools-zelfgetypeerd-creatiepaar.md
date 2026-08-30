@@ -138,6 +138,56 @@ stilzwijgend zouden blijven. Alle drie zijn pre-existent, geen regressie.
    bereikt hem — de aggregatie-SKIP sluit de golden al uit — dus bewust NIET
    speculatief gehard.
 
+## Amendement 2026-08-30 (lens 2)
+
+**De naam-botsingspoort (het zwaarste lek van deze ronde).** De
+zelfpaarvelden werden op NAAM afgeleid en op NAAM gelezen, terwijl `leden()`
+elke naam door een dedup haalt (attribuut > kenmerk > referentie). Een
+Wachter die óók een Numeriek attribuut `opvolger` declareert houdt dus de
+PROPERTY en verliest de REFERENTIE — en beide armen schreven er een feit in.
+Gemeten op een verifier-schone én ref-schone variant van
+`anchor/jutterswet-wachtersketen` (`verifier: PASS`, `oracle: PASS`), jar
+`71c9ad9`: de creatiearm `ERROR … ClassCastException: Cannot cast …
+facts.Wachter to java.math.BigDecimal`, de case-rolarm `ERROR
+RuntimeException: kon setter setOpvolger(Wachter) niet aanroepen op Wachter`
+— twee ongeclassificeerde ERRORs waar main een schone EXCLUDE gaf.
+`FactModelGenerator.heeftReferentieVeld` toetst nu naam ÉN type (één
+afleiding, gedeeld door transpiler en CaseRunner), en creatiearm, fold-join
+en `zetRollen` weigeren luid met het lid dat de referentie verdrong. Gepind
+in `OpslagrichtingWitnessTest` §3, beide paden.
+
+**De DERDE verschoven anchor: `anchor/jutterswet-gemeenteberging`.** Naast
+penninguitgifte (de assertie) en erflijn (de dubbel-meervoudige zelfrelatie)
+is dit de derde golden wiens uitsluitingsreden door deze kaart VAN PLAATS
+verandert, en hij stond nergens benoemd. Gemeten, jar tegen jar op dezelfde
+golden:
+
+- main (`8fcce2f`): `EXCLUDE role 'aangemelde vondsten' has no uniquely
+  derivable reference field` — een CASE-INVOER-weigering (`aanmelding` heeft
+  twee meervoudige rollen);
+- deze kaart: `EXCLUDE transpiler SKIP: regel: aantal bergende gemeenten van
+  een vondst — … de enkelvoudige elementrol 'bergende gemeente' wiens
+  zusterrol 'geborgen vondst' meervoudig is … (§13.3.9 opslagrichting)` — de
+  GEDEELDE-VELD-aggregatieweigering.
+
+De verschuiving is geen kosmetiek: zij dichtte een **LATENTE fire-crash**.
+main droeg géén veldbestaans- of opslagrichtingspoort in `aggregatie` (de
+poort komt uit `0203fd9`), dus lowerde daar een join op een veld dat de bean
+niet draagt; alleen de case-invoerweigering hield hem buiten schot. Met
+diezelfde golden en een case waaruit uitsluitend de geweigerde rolinvoer is
+weggelaten fireert main wél, en dan: `ERROR ConstraintEvaluationException:
+Error evaluating constraint ''` — precies de ongeclassificeerde ERROR die
+gate 12 weigert te excuseren. Op deze kaart is het een reden-dragende
+lowering-SKIP.
+
+**NOTE-9, bewoordingscorrectie (gedaan, niet alleen genoteerd).** De
+rest-weigering van `zetRollen` schreef "neither direction of the type pair
+derives a unique to-one role" ook waar de by-name-afleiding juist perfect
+UNIEK was en alleen de CARDINALITEIT hem stopte (`erfvolger` op de
+erflijn-vorm: uniek, maar meervoudig, dus opgeslagen aan de overzijde). Niet
+uniek en uniek-maar-meervoudig zijn verschillende gebreken; de weigering
+meldt ze nu apart, met de rol bij naam.
+
 Acceptance:
 - Rood-eerst: de huidige EXCLUDE-regels en gate-tellingen eerst getoond
   (nulmeting bij het schrijven van deze kaart: gate 12 = played 92 /
