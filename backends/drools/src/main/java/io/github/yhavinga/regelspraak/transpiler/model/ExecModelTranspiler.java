@@ -711,16 +711,16 @@ public final class ExecModelTranspiler {
     }
 
     /** The {@code "<objecttype>|<attribuut>"} key of a rule doel (ref's {@code target_of} + {@code key}), or null
-     *  when the doel is not an objecttype-bound attribuutreferentie. */
+     *  when the doel is not an objecttype-bound attribuutreferentie. Normalisation is {@link #defaultsNorm} —
+     *  the file's one ref-{@code Checks.norm} mirror, null-safe. */
     private static String doelSleutel(Expr doel) {
         return doel instanceof Expr.AttribuutRef d && d.objecttype() != null && d.attribuut() != null
-                ? norm(d.objecttype().naam) + "|" + norm(d.attribuut()) : null;
+                ? defaultsNorm(d.objecttype().naam) + "|" + defaultsNorm(d.attribuut()) : null;
     }
 
-    private static boolean gelijkeNaam(String a, String b) { return a != null && b != null && norm(a).equals(norm(b)); }
-
-    /** ref's {@code Checks.norm}: lowercase, whitespace collapsed — so a name compares as the spec compares it. */
-    private static String norm(String s) { return s.trim().replaceAll("\\s+", " ").toLowerCase(java.util.Locale.ROOT); }
+    private static boolean gelijkeNaam(String a, String b) {
+        return a != null && b != null && defaultsNorm(a).equals(defaultsNorm(b));
+    }
 
     /** Reflective analogue of {@link #werkBij} for the verdeling / feitcreatie consequences, which read+write a
      *  recipient/relation attribute by NAME via the runtime's property resolver (a multi-word property the typed

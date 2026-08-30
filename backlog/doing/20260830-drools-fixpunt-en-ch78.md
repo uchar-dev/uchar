@@ -21,7 +21,9 @@ hem ook), maar `backends/drools` heeft er geen spoor van
 (`anchor/jutterswet-dagentelling` case4; `anchor/jutterswet-borgdeel`
 case5-input-blijft). Na beide fixes verlaten de drie entries de
 value-divergence-lijst (het stale-regime dwingt dat af) en stijgt gate 12
-naar 82 played / 3 value-divergence.
+naar 84 played / 3 value-divergence *(bij het schrijven stond hier 82, op
+de verouderde nulmeting 79 — de werkelijke nulmeting is 81, zie de NB
+onder Acceptance; 81+3=84, geamendeerd bij de landing)*.
 
 Maintainerratificaties 2026-08-30, hier verankerd: de bannerklassen
 (c)/(d) in `EXCLUDE_KNOWN` zijn geratificeerd zoals geland (deze kaart
@@ -33,10 +35,12 @@ op de twee bestaande bestanden (testbestanden noemen die naam dus nooit).
 Acceptance:
 - Rood-eerst: de drie huidige FAIL-uitkomsten (2× geen fixpunt, 1×
   overschreven input-tijdlijn) vóór de fix getoond.
-- `bash scripts/check-drools.sh` → PASS met played 82, value-divergence 3
+- `bash scripts/check-drools.sh` → PASS met played 84, value-divergence 3
   (uitsluitend de drie pre-existente v0-divergentie-entries), auto-excluded
   50, no-case 1; geen verwachtingswaarde gewijzigd. NB: de nulmeting is
-  81/50/6/1 sinds de wederkerig-self-relation-kaart (2026-08-30).
+  81/50/6/1 sinds de wederkerig-self-relation-kaart (2026-08-30); het
+  eerdere "82" hier was een rekenfout op de verouderde nulmeting 79
+  (geamendeerd bij de landing: 81+3=84).
 - Gate 12 eist voortaan een niet-nul testtelling van de backend-JUnit-suite
   (het gate-10-model; maintainerbesluit 2026-08-30): het script draait de
   suite of verifieert een verse run, en een nul-testrun of overgeslagen

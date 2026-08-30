@@ -29,9 +29,10 @@
 # The backend's own JUnit suite must ALSO pass with a NON-ZERO test count (maintainer decision
 # 2026-08-30, the gate-10 model): a zero-test or skipped suite is a failure, never silently green.
 #
-# Runs JAR-ONLY (decision V2-B, the gate-10 pattern): the shaded runtime uber-jar is built once
-#   mvn -o -f backends/drools/pom.xml package        # -> target/uchar-drools-backend-*-shaded.jar
-# and the gate invokes `java -jar` per golden. Absent the jar the gate builds it once (offline).
+# The REPLAY runs JAR-ONLY (decision V2-B, the gate-10 pattern): the gate invokes `java -jar` per
+# golden against target/uchar-drools-backend-*-shaded.jar. Since 2026-08-30 the gate itself rebuilds
+# that jar unconditionally (the one `mvn package` below, which also runs the suite), so the replay
+# can never run a jar that predates the source under review.
 set -u
 cd "$(dirname "$0")/.."
 
@@ -39,35 +40,34 @@ fail() { echo "check-drools: FAIL — $*" >&2; exit 1; }
 
 command -v java >/dev/null 2>&1 || fail "java not found (the Drools runtime needs a JDK/JRE 21+)"
 
-JAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | head -1)
-if [ -z "$JAR" ]; then
-  command -v mvn >/dev/null 2>&1 || fail "no shaded jar and mvn not found — build it: mvn -o -f backends/drools/pom.xml package"
-  echo "check-drools: shaded jar absent — building it once (offline)…" >&2
-  mvn -o -q -f backends/drools/pom.xml package >/dev/null 2>&1 || fail "the shaded-jar build is red — run: mvn -o -f backends/drools/pom.xml package"
-  JAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | head -1)
-  [ -n "$JAR" ] || fail "the build produced no shaded jar"
-fi
-
-# --- the backend's own JUnit suite, with a NON-ZERO test count (maintainer decision 2026-08-30) ----
+# --- build + the backend's own JUnit suite, with a NON-ZERO test count (maintainer decision 2026-08-30) ----
 # The gate-10 obligation, mirrored: the witness tests carry what the corpus replay cannot see — the
 # shape a case input became, a write-guard branch no golden exercises — so a suite that ran NOTHING
 # would be a silent greenlight for exactly the checks the corpus does not duplicate.
-# DESIGN: run the suite here rather than trust a report on disk. The gate stays JAR-only for the
-# corpus replay (the jar is built only when absent), and an incremental `mvn test` next to that costs
-# ~4s against a multi-minute replay — cheap enough that a freshness heuristic over surefire's reports
-# (which can call a report fresh that predates an edit) would buy nothing but a way to be wrong.
-# It runs FIRST so a red or empty suite fails in seconds. CI already builds through mvn, so this adds
-# no tool requirement there; locally it makes mvn a hard requirement of the gate, deliberately.
-command -v mvn >/dev/null 2>&1 || fail "mvn not found — gate 12 runs the backend's JUnit suite (a skipped suite is a silent greenlight)"
-suite_out=$(mvn -o -f backends/drools/pom.xml test 2>&1)
+# DESIGN: ONE `mvn package` runs the suite AND refreshes the shaded jar, unconditionally. Building
+# only-when-absent let the replay run a stale jar that predates the source under review (lens finding
+# 2026-08-30), and a suite-only `mvn test` compiled fresh source while the replay stayed stale — one
+# command closes both flanks, incrementally a few seconds against a multi-minute replay. Trusting a
+# surefire report on disk instead would buy nothing but a way to be wrong (a report can be "fresh"
+# yet predate an edit). It runs FIRST so a red or empty suite fails in seconds. The summary line is
+# matched WITHOUT its log-level prefix (surefire demotes it to [WARNING] when anything is skipped)
+# and skipped tests fail the gate: a skipped witness is a green subset, and a green subset is not
+# green. CI already builds through mvn; locally mvn is a hard requirement of the gate, deliberately.
+command -v mvn >/dev/null 2>&1 || fail "mvn not found — gate 12 builds the jar and runs the backend's JUnit suite (a skipped suite is a silent greenlight)"
+suite_out=$(mvn -o -f backends/drools/pom.xml package 2>&1)
 suite_status=$?
 if [ $suite_status -ne 0 ]; then
   echo "$suite_out" | tail -25 >&2
-  fail "the backend's JUnit suite is red"
+  fail "the backend's build+JUnit suite is red"
 fi
-tests=$(printf '%s\n' "$suite_out" | sed -n 's/^\[INFO\] Tests run: \([0-9][0-9]*\), Failures.*/\1/p' | tail -1)
-[ -n "$tests" ] || fail "the suite produced no 'Tests run: N' summary — it did not run"
+summary=$(printf '%s\n' "$suite_out" | sed -n 's/^\[[A-Z]*\] Tests run: \([0-9][0-9]*\), Failures: [0-9]*, Errors: [0-9]*, Skipped: \([0-9][0-9]*\).*/\1 \2/p' | tail -1)
+[ -n "$summary" ] || fail "the suite produced no 'Tests run: N' summary — it did not run"
+tests=${summary%% *}; skipped=${summary##* }
 [ "$tests" -gt 0 ] || fail "the suite ran zero tests (an empty test set is a failure, never silently green)"
+[ "$skipped" -eq 0 ] || fail "the suite skipped $skipped test(s) — a skipped witness is a silent greenlight"
+
+JAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | head -1)
+[ -n "$JAR" ] || fail "the build produced no shaded jar"
 
 # --- the value-divergence exclusion list (reason-carrying; fails when stale) -------------------
 # Each entry: "<golden-relative-path>|<reason>". A golden here MUST diverge (FAIL/ERROR); if it
