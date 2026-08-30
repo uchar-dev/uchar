@@ -19,8 +19,9 @@ import java.util.Map;
  * {@code LocalDateTime}; a {@code Map<String,BigDecimal>} for a §3.6 gedimensioneerd attribute; a
  * {@code List<Segment>} for a §13.3.6 tijdsafhankelijk attribute), an {@code is<X>}/{@code set<X>} boolean
  * pair per kenmerk (a temporal kenmerk is a {@code List<Segment>} true-period timeline), and — per §13.3.9
- * feittype — the to-one REFERENCE field on the MANY side, named after the ONE side's role. {@code Segment}
- * and {@code Inconsistentie} are emitted alongside.
+ * feittype — the to-one REFERENCE field on the MANY side, named after the ONE side's role, including the
+ * §13.3.9.2 wederkerig SELF-PAIR field (see {@link #zelfpaarRol}). {@code Segment} and
+ * {@code Inconsistentie} are emitted alongside.
  *
  * <p>The MEMBER DERIVATION ({@link #leden}) is shared with {@link ContractValidator}, so what this
  * generator emits and what the validator demands can never drift apart.
@@ -61,9 +62,9 @@ public final class FactModelGenerator {
         // navigate by (verbindendeRol + naarVeelRol): for every other objecttype reachable through exactly
         // one feittype, the houder carries a field named after the doelwit's role ("Eén houder betreft
         // meerdere elementen" -> Element.houder : Houder), UNLESS that navigation crosses a to-many role
-        // (then the scalar reference lives on the other side). A self-referential or ambiguous pair derives
-        // nothing: the transpilers navigate those only via the WRITTEN role name, which a static bean
-        // derivation cannot know — under-implied, never over-implied.
+        // (then the scalar reference lives on the other side). An AMBIGUOUS pair derives nothing: the
+        // transpilers navigate those only via the WRITTEN role name, which a static bean derivation cannot
+        // know — under-implied, never over-implied.
         for (Objecttype doelwit : model.objecttypen.values()) {
             if (doelwit == ot) continue;
             String rol = model.verbindendeRol(ot, doelwit);
@@ -71,7 +72,35 @@ public final class FactModelGenerator {
             if (gezien.add(Namen.ident(rol, false)))
                 uit.add(new Lid(Namen.ident(rol, false), Namen.ident(doelwit.naam, true), false));
         }
+        // §13.3.9.2: the SELF-PAIR reference field, which the loop above cannot reach because it skips
+        // ot itself. It is derivable for exactly one shape — a wederkerig feittype — see zelfpaarRol.
+        String zelf = zelfpaarRol(model, ot);
+        if (zelf != null && gezien.add(Namen.ident(zelf, false)))
+            uit.add(new Lid(Namen.ident(zelf, false), Namen.ident(ot.naam, true), false));
         return uit;
+    }
+
+    /**
+     * §13.3.9.2 — the scalar to-one SELF-PAIR role a wederkerig feittype implies on {@code ot} (the role name,
+     * hence the bean field name), or null when the model implies none.
+     *
+     * <p>A wederkerig feittype carries a single role that is ITS OWN OPPOSITE (WF: exactly one role), so the
+     * pair (ot, ot) resolves through the very same authority the transpilers navigate by —
+     * {@code verbindendeRol}, whose {@code feittypeRelateert} admits the reciprocal role as its own sibling.
+     * That makes the field name knowable SYMBOLICALLY, from the role alone. An ordinary (non-wederkerig)
+     * self-pair stays underived: there two distinct sibling roles both fill the holder, so the by-pair search
+     * is ambiguous by construction and the transpilers reach it only through the written role name.
+     *
+     * <p>The wederkerig guard is therefore not redundant with {@code verbindendeRol}'s own uniqueness — it
+     * states the shape this derivation claims, so a future non-wederkerig self-pair cannot slip in unnoticed.
+     * A to-many reciprocal role derives nothing either: that read is an aggregation, not a scalar field.
+     */
+    public static String zelfpaarRol(RegelSpraakModel model, Objecttype ot) {
+        boolean wederkerigZelf = model.feittypen.values().stream().anyMatch(ft -> ft.wederkerig
+                && ft.rollen.stream().anyMatch(r -> ot.naam.equalsIgnoreCase(r.objecttypeNaam())));
+        if (!wederkerigZelf) return null;
+        String rol = model.verbindendeRol(ot, ot);
+        return rol == null || model.naarVeelRol(ot, ot, rol) ? null : rol;
     }
 
     /** The scalar Java type of a datatype — the same mapping the DRL back-end assumes of the beans. */

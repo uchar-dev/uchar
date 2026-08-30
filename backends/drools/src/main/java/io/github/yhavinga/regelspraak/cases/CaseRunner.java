@@ -94,12 +94,13 @@ public final class CaseRunner {
         }
     }
 
-    /** The witness seam of {@code backends/drools/src/test}: the beans one case's attribute and characteristic
-     *  INPUT produces, before any rule fires. Every gate observes this layer only through post-fire expectation
-     *  matches, so what a temporal input BECAME — the bucket a scalar landed in, the segments a timeline placed
-     *  on a {@code List<Segment>} member — has no other observable surface: a wrong bucket that happens to fold
-     *  to the right total would pass unseen. Roles and globals are deliberately not set: they are not this
-     *  layer's subject, and leaving them out keeps the seam to what it witnesses. */
+    /** The witness seam of {@code backends/drools/src/test}: the beans one case's INPUT produces, before any
+     *  rule fires. Every gate observes this layer only through post-fire expectation matches, so what an input
+     *  BECAME has no other observable surface: the bucket a scalar landed in, the segments a timeline placed on
+     *  a {@code List<Segment>} member, or WHICH LEG of a §13.3.9.2 reciprocal pair a role filled — each could be
+     *  wrong and still fold to the right total, passing unseen. Roles are therefore set here too, in the replay's
+     *  own order (attributes, then roles), so the mirrored self-pair fill is assertable bean-by-bean. Globals
+     *  stay out: they live on a {@link KieSession}, which is fire's concern, not this layer's. */
     static Map<String, Object> invoerBeans(Path irPath, JsonNode c) throws java.io.IOException {
         CaseRunner runner = build(irPath);
         runner.rekendatum = asOfDatum(c);
@@ -109,6 +110,8 @@ public final class CaseRunner {
             JsonNode instances = c.get("input").get("instances");
             for (JsonNode i : instances) runner.beanVoor(i);
             for (JsonNode i : instances) runner.zetAttributenEnKenmerken(i);
+            for (JsonNode i : instances) runner.zetRollen(i);
+            runner.spiegelWederkerigeRollen();
             return runner.labelNaarBean;
         } finally {
             Thread.currentThread().setContextClassLoader(vorige);
@@ -124,7 +127,7 @@ public final class CaseRunner {
         return build(irPath).runCase("case", c);
     }
 
-    /** Load {@code irPath}, refuse the two non-replayable forms, generate+contract-check the beans, lower every
+    /** Load {@code irPath}, refuse the non-replayable forms, generate+contract-check the beans, lower every
      *  construct, and build the {@link KieBase} — the shared prelude of both the green replay and the red probe.
      *  Throws {@link Excluded} / {@link IrLoader.Refusal} for any form the v0 backend does not carry. */
     private static CaseRunner build(Path irPath) throws java.io.IOException {
@@ -132,8 +135,8 @@ public final class CaseRunner {
         IrLoader.Loaded loaded = IrLoader.loadAll(ir);   // the model plus the ch. 7 prioritized-defaults extension beside it
         RegelSpraakModel model = loaded.model();
 
-        // Two forms the v0 backend cannot REPLAY are refused up front — a LOUD per-form exclusion, never a
-        // silent value-divergence in the gate. Carrying either to fire only to fault or misvalue there is
+        // A form the v0 backend cannot REPLAY is refused up front — a LOUD per-form exclusion, never a
+        // silent value-divergence in the gate. Carrying it to fire only to fault or misvalue there is
         // honestly NOT-CARRIED, not a semantic exec-model difference, so it belongs in the auto-excluded
         // channel with a reason, not the value-divergence list whose banner claims a genuine ref/clingo delta:
         //   §13.4.6 objectcreatie — the creation consequence does not execute in this backend: a navigated
@@ -144,12 +147,6 @@ public final class CaseRunner {
             throw new Excluded("objectcreatie (§13.4.6) is not replayed by the v0 Drools backend — the creation "
                     + "consequence does not execute (a navigated created-object read yields leeg, or an intValue() "
                     + "NPE is raised on a leeg member); it lowers and reaches fire but never reproduces the pinned value");
-        //   §13.3.9.2 wederkerig self-relation — FactModelGenerator derives no scalar reference field for a
-        //     self-pair role, so a rule reading it has no getter (the exec-model build itself throws); refuse
-        //     before building rather than let the build crash into an unclassified ERROR.
-        if (model.feittypen.values().stream().anyMatch(ft -> ft.wederkerig))
-            throw new Excluded("wederkerig self-relation (§13.3.9.2) is not carried by the v0 Drools backend — "
-                    + "FactModelGenerator derives no scalar reference field for a self-pair role");
 
         Map<String, String> bronnen = FactModelGenerator.genereer(model);
         ClassLoader cl = BeanCompiler.compileer(bronnen);
@@ -227,6 +224,7 @@ public final class CaseRunner {
             for (JsonNode i : instances) beanVoor(i);
             for (JsonNode i : instances) zetAttributenEnKenmerken(i);
             for (JsonNode i : instances) zetRollen(i);
+            spiegelWederkerigeRollen();
             zetGlobals(sessie, c);
             for (Object bean : labelNaarBean.values()) sessie.insert(bean);
             int n = sessie.fireAllRules(100_000);
@@ -274,6 +272,7 @@ public final class CaseRunner {
             for (JsonNode i : instances) beanVoor(i);
             for (JsonNode i : instances) zetAttributenEnKenmerken(i);
             for (JsonNode i : instances) zetRollen(i);
+            spiegelWederkerigeRollen();
             zetGlobals(sessie, c);
             for (Object bean : labelNaarBean.values()) sessie.insert(bean);
             int n = sessie.fireAllRules(100_000);
@@ -378,6 +377,30 @@ public final class CaseRunner {
                     roep(doel, Namen.setter(rolLI), bean.getClass(), bean);
                 }
             }
+        }
+    }
+
+    /** §13.3.9.2 mirrored: ONE reciprocal entry holds in BOTH directions, so every self-pair leg the case wrote
+     *  gets its reverse materialised — exactly what {@code Case.materialise_reciprocal} does in ref, and what
+     *  RUNTIME-SEMANTICS §4.1 requires ("the pinned runtime writes both to-one legs so navigation never reads a
+     *  spuriously empty side"). Both goldens pin it: a partner that declares no roles of its own still reads its
+     *  side, and the reverse read {@code Jutter( maat == $subject )} an aggregation lowers to needs the leg
+     *  present. Run as a SEPARATE PASS over the finished links, like ref's, so the outcome cannot depend on the
+     *  order instances appear in: a conflict must be seen wherever the colliding leg was written. Idempotent
+     *  (a case supplying both legs means one relation), and a CONFLICTING leg on the to-one role is hard — ref
+     *  refuses that case at load (WF-013), so overwriting it here would file a broken case under a green replay. */
+    private void spiegelWederkerigeRollen() {
+        for (Object bean : labelNaarBean.values()) {
+            String rol = FactModelGenerator.zelfpaarRol(model, objecttypeVanBean(bean));
+            if (rol == null) continue;
+            Object partner = lees(bean, Namen.getter(rol));
+            if (partner == null) continue;
+            Object terug = lees(partner, Namen.getter(rol));
+            if (terug == bean) continue;
+            if (terug != null)
+                throw new IllegalArgumentException("wederkerige rol '" + rol + "': het doel is al verbonden met "
+                        + "een ander — de omgekeerde poot botst (WF-013 to-one)");
+            roep(partner, Namen.setter(rol), bean.getClass(), bean);
         }
     }
 
