@@ -116,10 +116,16 @@ class StaandeScalaireNormWitnessTest {
         // group on the same target the RULE writer count stays 1, yet the target leaves the standing domain,
         // so the leeg write is NOT suppressed — the group refills what the rule erases and BOTH executors
         // diverge (ref on this exact model: "no fixpoint within 100 passes — divergence is a fault
-        // (ch. 5.7)"; verified before pinning). WITHOUT the clause the write would be suppressed, the input
-        // would stand at 77.00 and nothing would oscillate — a silent divergence from ref, invisible to
-        // every other check in the gate set. The group node is copied off a PLAYED golden's wire
-        // (nestdiepte), so its shape is demonstrably carried by loader and transpiler.
+        // (ch. 5.7)"; verified before pinning). WITHOUT the clause the erase is suppressed and the group
+        // decides 12.00 unopposed — no oscillation, a quiet match with this very expectation — so the
+        // assertNotNull below is what catches the clause's removal (lens-proven red), while ref still
+        // diverges: a silent executor split no other check in the gate set can see.
+        // HONESTY NOTE: this model is WF-050-INVALID (a rule beside a defaults target — the verifier rejects
+        // it), which is exactly WHY the pd branch of other_writer is unreachable on valid IR; the witness
+        // pins the clause's mechanics on the one shape that makes it observable, outside the gated corpus
+        // zone. The verdeling/objectcreatie branches are legal but carry no corpus model (see the Result).
+        // The group node is copied off a PLAYED golden's wire (nestdiepte), so its shape is demonstrably
+        // carried by loader and transpiler.
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(
                 CORPUS.resolve("anchor").resolve("jutterswet-waardestelling").resolve("ir.json")));
         ObjectNode groep = ((ObjectNode) JSON.readTree(Files.readString(
