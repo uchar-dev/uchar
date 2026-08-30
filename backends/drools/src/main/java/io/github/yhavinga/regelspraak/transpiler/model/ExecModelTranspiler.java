@@ -4959,15 +4959,17 @@ public final class ExecModelTranspiler {
     // ---------------- §13.4.6 objectcreatie / §13.4.7 feitcreatie (Phase G) ----------------
     /** §13.4.6 objectcreatie: the subject creates a NEW object of {@code nieuwType}, sets each toekenning value, links
      *  new object and subject over the back-link relation, and inserts it. Gated by the voorwaarde (incl. a §8.1.7
-     *  far-side exists). null -> skip (unresolved type / no fact class / no back-link the bean model can hold / a
-     *  toekenning value out of the scalar scope / >1 global).
+     *  far-side exists). null -> skip (unresolved type / no fact class / NEITHER link end the bean model can hold /
+     *  a toekenning value out of the scalar scope / >1 global).
      *
      *  <p>Three deliberate departures from {@code DrlTranspiler.objectCreatie} (the ported production semantics),
      *  each implementing {@code RUNTIME-SEMANTICS.md} ch. 5.5 where production does not — the spec is the product:
      *  <ul>
-     *    <li><b>Both ends</b> of the back-link are written. Production writes only the created object's
-     *        back-reference, so a fold over the created type finds the mint but a to-one navigation FROM the
-     *        subject reads leeg. The forward field is written and the subject updated.</li>
+     *    <li><b>Both ends</b> of the back-link are written — each end the bean model carries a field for.
+     *        Production writes only the created object's back-reference, so a fold over the created type finds the
+     *        mint but a to-one navigation FROM the subject reads leeg. The forward field is written and the
+     *        subject updated. A to-many end has no field at all (it is stored as the other end's), so it is left
+     *        alone; only a pair with NO writable end is refused.</li>
      *    <li>The <b>1:1 idempotence guard</b> reads the SUBJECT-side stored link (the forward field) rather than
      *        the created object's back-reference, which is how the interpreter reads it and what the spec's
      *        storage-direction narrowing records.</li>
@@ -4985,35 +4987,41 @@ public final class ExecModelTranspiler {
         if (subject == null || nieuw == null) return skip("objectcreatie (onopgelost type): " + oc.naam());
         Class<?> subjClass = factClass(subject), nieuwClass = factClass(nieuw);
         if (subjClass == null || nieuwClass == null) return skip("objectcreatie (geen fact-class): " + oc.naam());
-        String backRef = model.verbindendeRol(nieuw, subject);   // field on $new -> subject
-        String fwdRef = model.verbindendeRol(subject, nieuw);    // field on $subject -> $new (ch. 5.5: BOTH ends)
+        String backRol = model.verbindendeRol(nieuw, subject);   // the subject-side role: field on $new -> subject
+        String fwdRol = model.verbindendeRol(subject, nieuw);    // the created-side role: field on $subject -> $new
         // Only a to-ONE role has a bean field at all: FactModelGenerator.leden derives the scalar reference on
-        // the MANY side, so a to-many role is stored solely as the OTHER end's field. BOTH ends need that
-        // filter. Forward: a to-many forward role leaves the link on the created object's backRef alone.
-        boolean fwdScalar = fwdRef != null && !model.naarVeelRol(subject, nieuw, fwdRef);
-        if (!fwdScalar) fwdRef = null;
-        // Backward: a MEERVOUDIGE subject-side role derives no reference field on the created type either, so
-        // writing the back-reference would reach a setter no bean carries — an unclassified "geen setter voor"
-        // ERROR at fire, on a verifier-clean model that ref plays (it stores the link symbolically, not as a
-        // bean field). An ERROR is never a valid not-carried outcome under the gate-12 regime, so the shape is
-        // refused per CREATION with its own reason, like the two orphan shapes below.
-        if (backRef != null && model.naarVeelRol(nieuw, subject, backRef))
-            return skip("objectcreatie (het beanmodel draagt het terugveld niet: de subjectzijdige rol '" + backRef
-                    + "' is meervoudig, dus FactModelGenerator leidt op het gecreëerde type geen referentieveld"
-                    + " af en ch. 5.5's terugkoppeling is niet te schrijven): " + oc.naam());
-        // Neither end derivable (a self-typed or ambiguous role pair: FactModelGenerator derives no reference
-        // field for either side) means the mint would be an ORPHAN — inserted but reachable from nothing, so no
-        // navigated read or fold could ever see it. RUNTIME-SEMANTICS ch. 5.5 links both ends; a link the bean
-        // model cannot hold is NOT-CARRIED, refused loudly, never a silently wrong value at fire.
+        // the ONE side, so a to-many role is stored solely as the OTHER end's field, and writing it anyway would
+        // reach a setter no bean carries (an unclassified "geen setter voor" ERROR at fire, never a valid
+        // not-carried outcome under the gate-12 regime). BOTH ends get that filter, SYMMETRICALLY: the end whose
+        // role is meervoudig is simply NOT written; the other end still carries ch. 5.5's link, and a creation
+        // with one writable end is played, not refused — a refusal there would withhold a value the backend can
+        // produce (checked: on a verifier-clean model whose SUBJECT-side role is meervoudig, ref plays the
+        // creation and the navigated read from the subject reaches the mint).
+        String backRef = backRol != null && !model.naarVeelRol(nieuw, subject, backRol) ? backRol : null;
+        String fwdRef = fwdRol != null && !model.naarVeelRol(subject, nieuw, fwdRol) ? fwdRol : null;
+        // Only when NEITHER end carries a bean field is the mint truly an ORPHAN — inserted but reachable from
+        // nothing, so no navigated read or fold could ever see it. RUNTIME-SEMANTICS ch. 5.5 links both ends; a
+        // link the bean model cannot hold ANYWHERE is NOT-CARRIED, refused loudly, never a silently wrong value.
         if (backRef == null && fwdRef == null)
-            // The two shapes are DIFFERENT refusals and are named apart: an ambiguous pair is ch. 5.5's refusal
-            // to guess (the interpreter faults there), a self-typed pair is a bean-model gap (the reference field
-            // is derivable only from the creation's symbolic role binding, which this bean model does not carry).
+            // The three causes are DIFFERENT and are named apart: an ambiguous pair is ch. 5.5's refusal to guess
+            // (the interpreter faults there), a self-typed pair is a bean-model gap (the reference field is
+            // derivable only from the creation's symbolic role binding, which this bean model does not carry),
+            // and a pair whose BOTH roles are meervoudig resolves fine but derives no field on either side.
             return skip("objectcreatie (" + (subject == nieuw
                     ? "zelfgetypeerd rollenpaar: uit twee gelijkgetypeerde rollen leidt de bean geen referentieveld af"
-                    : "geen uniek verbindend feittype: de terugkoppeling is niet af te leiden en ch. 5.5 gist niet")
+                    : backRol == null || fwdRol == null
+                    ? "geen uniek verbindend feittype: de terugkoppeling is niet af te leiden en ch. 5.5 gist niet"
+                    : "beide rollen zijn meervoudig ('" + backRol + "' en '" + fwdRol + "'), dus FactModelGenerator"
+                      + " leidt aan geen van beide zijden een referentieveld af")
                     + ", dus het gecreëerde object zou onbereikbaar zijn): " + oc.naam());
-        boolean eenOpEen = backRef != null && !model.subjectNaarVeelCreatie(subject, nieuw);   // §9 guard shape (see doc)
+        // §9 guard shape (see doc). INVARIANT: model.subjectNaarVeelCreatie is by construction the negation of
+        // "the created-side role resolves AND is to-one", i.e. !subjectNaarVeelCreatie ≡ fwdRef != null — so the
+        // 1:1 arm below always HAS the forward field its guard reads. Checked, not assumed: the two derivations
+        // sit in different classes and the guard would otherwise read a null field name.
+        boolean eenOpEen = !model.subjectNaarVeelCreatie(subject, nieuw);
+        if (eenOpEen != (fwdRef != null))
+            throw new IllegalStateException("objectcreatie " + oc.naam() + ": subjectNaarVeelCreatie(" + eenOpEen
+                    + ") en het voorwaartse veld (" + fwdRef + ") spreken elkaar tegen");
 
         // Lower each toekenning value to a §13.4.6.2 value producer (TkLower). The runtime receiver is the anchor
         // $subject (body below applies it to args[0]), so the anchor objecttype rides as the VALUE-path subject — a

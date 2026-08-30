@@ -250,20 +250,94 @@ class ObjectCreatieWitnessTest {
         assertTrue(e.getMessage().contains("geen uniek verbindend feittype"), e.getMessage());
     }
 
-    @Test void een_meervoudige_subjectzijdige_rol_wordt_luid_geweigerd() throws Exception {
-        // The THIRD shape, and it does not present as an orphan: the FORWARD field exists, only the back-
-        // reference has nowhere to live — FactModelGenerator puts a to-many pair's scalar reference on the
-        // other side, so the created type carries no `opdrachtgever` member. Writing it anyway reached a setter
-        // no bean has, an unclassified fire-time ERROR ("geen setter voor 'opdrachtgever' op Rekenkamer") on a
-        // model that is verifier-clean (checked) and that ref plays straight through (150 on the plain case,
-        // where the link is symbolic rather than a bean field). Under the gate-12 regime an ERROR is never a
-        // valid not-carried outcome, so the shape is refused per creation, by its own reason.
-        // A POPULATED case, unlike the two refusals above: the crash this replaces happens at FIRE, so an
-        // empty fact base would let the un-refused shape pass silently and leave the witness proving nothing.
+    @Test void twee_meervoudige_rollen_worden_luid_geweigerd() throws Exception {
+        // The THIRD shape, and the only cardinality one that IS an orphan: with BOTH roles meervoudig neither
+        // end derives a bean field, so the mint would be inserted and reachable from nothing. Its reason is
+        // named apart from the two above — the feittype here is unique and the pair is not self-typed, so
+        // either of those messages would report the wrong limit. The model is verifier-clean (its navigating
+        // rule removed; WITH that rule the verifier rejects it, WF-053) and ref replays it without a fault,
+        // leaving J1.heffing leeg — with no navigating rule no case expectation reaches the mint at all.
         CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.naFire(meervoudigeSubjectrol(), jutter("240", "90")));
-        assertTrue(e.getMessage().contains("het beanmodel draagt het terugveld niet"), e.getMessage());
-        assertTrue(e.getMessage().contains("opdrachtgever"), e.getMessage());
+                () -> CaseRunner.naFire(beideRollenMeervoudig(), jutterMetLegeVerwachting("240", "90")));
+        assertTrue(e.getMessage().contains("beide rollen zijn meervoudig"), e.getMessage());
+        assertTrue(e.getMessage().contains("onbereikbaar"), e.getMessage());
+    }
+
+    // ---------------- 5b. the shapes with ONE writable end: degraded, not refused ----------------
+
+    @Test void een_meervoudige_subjectzijdige_rol_degradeert_en_speelt() throws Exception {
+        // A MEERVOUDIGE subject-side role (one Rekenkamer serves many Jutters) leaves the CREATED type without
+        // an `opdrachtgever` member — FactModelGenerator puts a to-many pair's scalar reference on the other
+        // side. Only the back-reference has nowhere to live; the jutter's `rekenkamer` field still exists and
+        // still carries ch. 5.5's link, so the creation plays with the value ref gives. Refusing the whole
+        // creation here (which this backend did until the asymmetry was found) withheld a value it can
+        // produce. The model is verifier-clean (checked); ref on this exact model + case: J1.heffing = 150.
+        Path ir = meervoudigeSubjectrol();
+        CaseRunner.NaFire na = CaseRunner.naFire(ir, jutter("240", "90"));
+        Object mint = enigeMint(na);
+        assertSame(mint, RegelSpraakRuntime.get(na.invoer().get("J1"), "rekenkamer"),
+                "the writable end still links subject and mint");
+        // and the un-writable end is SKIPPED, not attempted: the created type has no such member at all, so a
+        // symmetric "write both ends" would reach a setter no bean carries (the fire-time ERROR this replaces).
+        assertTrue(java.util.Arrays.stream(mint.getClass().getMethods())
+                        .noneMatch(m -> m.getName().equals("getOpdrachtgever")),
+                "the created type carries no back-reference field for the to-many role");
+        assertNull(CaseRunner.speelCase(ir, jutter("240", "90")), "ref agrees: 150");
+        // not vacuous: the comparator does reject the wrong value on this very model and case.
+        assertNotNull(CaseRunner.speelCase(ir, jutterMetVerwachting("240", "90", "149")));
+    }
+
+    @Test void de_gedegradeerde_vorm_houdt_de_een_op_een_wacht() throws Exception {
+        // The invariant the degradation rests on: the 1:1 wait is decided by the CREATED-side role
+        // (subjectNaarVeelCreatie reads that one), and that is exactly the end still writable here — so the
+        // guard keeps a field to read and the wait survives. ref on this model with the link already supplied
+        // on the subject: J1.heffing = 6 (the supplied kamer's own rule), NOT 150. Live, not decorative: gate
+        // the wait on the back-reference (as the pre-degradation formula did) and this arm falls to the marker
+        // path and mints a second Rekenkamer beside the supplied one — measured.
+        Path ir = meervoudigeSubjectrol();
+        CaseRunner.NaFire na = CaseRunner.naFire(ir, koppelingOpSubject("6"));
+        assertTrue(mints(na).isEmpty(), "an already-linked subject mints nothing: " + mints(na));
+        assertNull(CaseRunner.speelCase(ir, koppelingOpSubject("6")));
+    }
+
+    @Test void een_meervoudige_gecreeerde_rol_degradeert_naar_het_markerpad() throws Exception {
+        // The MIRROR degradation, and the §9 guard it selects: a to-many CREATED-side role gives the subject
+        // no forward field, so the 1:1 wait has nothing to read and idempotence keys on the per-(rule,subject)
+        // {@link CreationMarker} instead. That marker is a fact like any other — a mint census that merely
+        // excludes the case's own input beans counts it as a mint, so {@link #enigeMint} would fail on every
+        // marker-path model; it is excluded by TYPE. Model: created-side role meervoudig, the navigating rule
+        // removed (with it the verifier rejects the model, WF-053). Verifier-clean; ref: J1.heffing leeg.
+        Path ir = markerPad();
+        CaseRunner.NaFire na = CaseRunner.naFire(ir, jutterMetLegeVerwachting("240", "90"));
+        Object mint = enigeMint(na);
+        assertEquals("Rekenkamer", mint.getClass().getSimpleName());
+        assertSame(na.invoer().get("J1"), RegelSpraakRuntime.get(mint, "opdrachtgever"),
+                "the writable end (the back-reference) links mint and subject");
+        assertTrue(na.feiten().stream().anyMatch(f -> f instanceof io.github.yhavinga.regelspraak.runtime.CreationMarker),
+                "and the guard's marker IS in the fact base — the census must exclude it by type, not by luck");
+        assertNull(CaseRunner.speelCase(ir, jutterMetLegeVerwachting("240", "90")));
+    }
+
+    // ---------------- 6. the §4.2 validity window ON the creation ----------------
+
+    @Test void een_creatie_buiten_haar_venster_munt_niet() throws Exception {
+        // §4.2 geldigheid on the objectcreatie itself: `geldig vanaf 2030`, replayed as of 2026. Nothing is
+        // minted, so the navigated read finds nothing and J1.heffing stays leeg — ref on this exact model and
+        // case pins that (and rejects 150 on it). Without an asOfDate ref faults outright ("a validity-bounded
+        // form needs an evaluation date"), so both arms carry one.
+        Path ir = vanaf2030();
+        CaseRunner.NaFire na = CaseRunner.naFire(ir, jutterOp("2026-01-01", null));
+        assertTrue(mints(na).isEmpty(), "outside its window the creation mints nothing: " + mints(na));
+        assertNull(RegelSpraakRuntime.get(na.invoer().get("J1"), "rekenkamer"), "and links nothing");
+        assertNull(CaseRunner.speelCase(ir, jutterOp("2026-01-01", null)));
+    }
+
+    @Test void dezelfde_creatie_binnen_haar_venster_munt_wel() throws Exception {
+        // the other side of the same window — without it the arm above would also pass on a creation that
+        // never fires at all. ref as of 2031 on the same model: J1.heffing = 150.
+        Path ir = vanaf2030();
+        assertEquals(1, mints(CaseRunner.naFire(ir, jutterOp("2031-06-01", "150"))).size());
+        assertNull(CaseRunner.speelCase(ir, jutterOp("2031-06-01", "150")), "ref agrees: 150");
     }
 
     // ---------------- fixtures ----------------
@@ -289,9 +363,13 @@ class ObjectCreatieWitnessTest {
         return sb.toString();
     }
 
-    /** Every post-fire fact that is NOT one of the case's own input beans — the mints. */
+    /** Every post-fire fact that is NOT one of the case's own input beans — the mints. The §9 idempotence
+     *  {@link io.github.yhavinga.regelspraak.runtime.CreationMarker} is a fact too, and equally not an input
+     *  bean, so it is excluded by TYPE: it is bookkeeping the guard inserts, never a created object. */
     private static List<Object> mints(CaseRunner.NaFire na) {
-        return na.feiten().stream().filter(f -> na.invoer().values().stream().noneMatch(b -> b == f)).toList();
+        return na.feiten().stream()
+                .filter(f -> !(f instanceof io.github.yhavinga.regelspraak.runtime.CreationMarker))
+                .filter(f -> na.invoer().values().stream().noneMatch(b -> b == f)).toList();
     }
 
     private static Object enigeMint(CaseRunner.NaFire na) {
@@ -411,10 +489,65 @@ class ObjectCreatieWitnessTest {
      *  serves many Jutters, so the pair's scalar reference lives on the Jutter and the created type carries no
      *  back-reference field at all. */
     private static Path meervoudigeSubjectrol() throws Exception {
+        return schrijf(metCardinaliteit(true, false), "meervoudige-subjectrol");
+    }
+
+    /** The mirror: the CREATED-side role (`rekenkamer`) made meervoudig, so the reference lives on the
+     *  Rekenkamer and the subject has no forward field. The jutter's navigating rule ("de heffing van haar
+     *  rekenkamer") is removed with it — a scalar read over a to-many role is WF-053, so the model would not
+     *  be verifier-clean and the witness would pin a shape no corpus document may have. */
+    private static Path markerPad() throws Exception {
+        return schrijf(zonderNavigerendeRegel(metCardinaliteit(false, true)), "marker-pad");
+    }
+
+    /** Both roles meervoudig: neither end derives a bean field. Same WF-053 removal as {@link #markerPad}. */
+    private static Path beideRollenMeervoudig() throws Exception {
+        return schrijf(zonderNavigerendeRegel(metCardinaliteit(true, true)), "beide-meervoudig");
+    }
+
+    /** The rekenkamer model with the taxatieopdracht roles' cardinality set: role 0 is the subject side
+     *  (`opdrachtgever`), role 1 the created side (`rekenkamer`). */
+    private static com.fasterxml.jackson.databind.node.ObjectNode metCardinaliteit(boolean subjectVeel, boolean gemunteVeel) throws Exception {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(REKENKAMER)));
-        ((com.fasterxml.jackson.databind.node.ObjectNode)
-                ir.get("feittypen").get("taxatieopdracht").get("rollen").get(0)).put("meervoudig", true);
-        return schrijf(ir, "meervoudige-subjectrol");
+        JsonNode rollen = ir.get("feittypen").get("taxatieopdracht").get("rollen");
+        ((com.fasterxml.jackson.databind.node.ObjectNode) rollen.get(0)).put("meervoudig", subjectVeel);
+        ((com.fasterxml.jackson.databind.node.ObjectNode) rollen.get(1)).put("meervoudig", gemunteVeel);
+        return ir;
+    }
+
+    /** Drops "heffing van een jutter" — the rule that reads THROUGH the created-side role — from both the
+     *  raw and the resolved rule list. Its scalar read is only well-formed while that role is to-one. */
+    private static com.fasterxml.jackson.databind.node.ObjectNode zonderNavigerendeRegel(com.fasterxml.jackson.databind.node.ObjectNode ir) {
+        for (String sleutel : List.of("regels", "resolvedRegels")) {
+            var behouden = JSON.createArrayNode();
+            for (JsonNode r : ir.get(sleutel))
+                if (!"heffing van een jutter".equals(r.path("naam").asText())) behouden.add(r);
+            ir.set(sleutel, behouden);
+        }
+        return ir;
+    }
+
+    /** The rekenkamer model with a §4.2 validity window ON the creation: it exists from 2030 onward. */
+    private static Path vanaf2030() throws Exception {
+        var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(REKENKAMER)));
+        ((com.fasterxml.jackson.databind.node.ObjectNode) ir.get("objectCreaties").get(0))
+                .set("geldigheid", JSON.readTree("""
+                        { "node": "Geldigheid", "vanaf": "2030-01-01", "tot": null }"""));
+        return schrijf(ir, "vanaf-2030");
+    }
+
+    /** J1 (240/90) replayed AS OF {@code datum}; {@code heffing} null expects the attribute to stay leeg. */
+    private static JsonNode jutterOp(String datum, String heffing) throws Exception {
+        String verwachting = heffing == null
+                ? "{ \"kind\": \"attributeEmpty\", \"label\": \"J1\", \"attribute\": \"heffing\" }"
+                : "{ \"kind\": \"attributeValue\", \"label\": \"J1\", \"attribute\": \"heffing\", \"value\": { \"number\": \"" + heffing + "\" } }";
+        return JSON.readTree(("""
+                { "format": "uchar-case-v0", "asOfDate": "%s",
+                  "input": { "instances": [ { "label": "J1", "objectType": "Jutter",
+                      "attributes": { "grondslag": { "number": "240" }, "aftrek": { "number": "90" } },
+                      "roles": {}, "characteristics": [] } ], "parameters": {} },
+                  "expected": [ %s, { "kind": "consistent" } ] }
+                """).formatted(datum, verwachting));
     }
 
     /** The rekenkamer model with a §8.1.1 comparison guarding the creation. */
