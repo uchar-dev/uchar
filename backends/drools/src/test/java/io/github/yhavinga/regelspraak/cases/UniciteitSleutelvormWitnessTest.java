@@ -34,8 +34,11 @@ class UniciteitSleutelvormWitnessTest {
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
     private static final Path ROOD = Path.of("..", "..", "corpus", "rood");
 
-    /** The sentence ref and clingo both raise; the red fence pins this fragment for all three executors. */
+    /** The red fence's pinned fragment; {@link #VOLLE_ZIN} pins the complete shared wording, byte-equal to
+     *  ref's (eval.ml, ever_tuples) — lens 2 proved a reworded message survives the fragment alone. */
     private static final String FRAGMENT = "at most one temporal key component";
+    private static final String VOLLE_ZIN = "a uniqueness key list carries at most one temporal key component "
+            + "(the same-moment tuple join has no corpus case; ch. 5.9)";
 
     // ---------------- 1. two temporal components -> a fault AT FIRE ----------------
 
@@ -45,17 +48,18 @@ class UniciteitSleutelvormWitnessTest {
         // regardless of whether anything collides (this very case ran clean to a model before the guard).
         Throwable t = assertThrows(RuntimeException.class,
                 () -> speel(ROOD, "uni-two-temporal-keys", geval("Strandvondst", "kavelnummer")));
-        assertTrue(oorzaakKeten(t).contains(FRAGMENT),
+        assertTrue(oorzaakKeten(t).contains(VOLLE_ZIN),
                 "the single form must fault with the shared ch. 5.9 wording, got: " + oorzaakKeten(t));
     }
 
     @Test void twee_temporele_sleutelcomponenten_in_een_unie_falen_bij_het_vuren() throws Exception {
-        // the union arm of the same guard: vondstnummer + volgnummer over Strandvondst ∪ Wrakvondst. Only the
-        // Strandvondst source has an instance, so this also pins that the guard rides each SOURCE's own key
-        // list — ref runs ever_tuples per source, not once for the construct.
+        // the union arm of the same guard: vondstnummer + volgnummer over Strandvondst ∪ Wrakvondst. NB both
+        // sources are malformed here, so per-source vs per-construct arity is indistinguishable on this case —
+        // the per-source placement mirrors ref (ever_tuples per source) but is pinned nowhere (see the Result);
+        // WF-030 keeps the asymmetric-arity union out of the corpus.
         Throwable t = assertThrows(RuntimeException.class,
                 () -> speel(ROOD, "uu-two-temporal-keys", geval("Strandvondst", "volgnummer")));
-        assertTrue(oorzaakKeten(t).contains(FRAGMENT),
+        assertTrue(oorzaakKeten(t).contains(VOLLE_ZIN),
                 "the union form must fault with the shared ch. 5.9 wording, got: " + oorzaakKeten(t));
     }
 
@@ -104,7 +108,9 @@ class UniciteitSleutelvormWitnessTest {
     }
 
     @Test void een_temporeel_component_naast_een_scalair_blijft_botsingen_vinden() throws Exception {
-        // the MIXED tuple across the union: reekscode (scalar) + volgnummer (temporal) is exactly one temporal
+        // the MIXED tuple WITHIN one key list (both union types declare identical granularities — the
+        // cross-source mixed form is a separate, pre-existing crash, see the Result): reekscode (scalar) +
+        // volgnummer (temporal) is exactly one temporal
         // component, so the arity holds and the cross-type ever-collision must still be found. An arity read as
         // "no temporal component beside another key" would wrongly fault right here.
         String c = """
@@ -136,7 +142,8 @@ class UniciteitSleutelvormWitnessTest {
     @Test void buiten_het_geldigheidsvenster_zwijgt_de_vormfout() throws Exception {
         // the guard rule carries the same geldigGuard as the rule it replaces: ref applies the construct's
         // window at document level (applies env u.uni_geldigheid), so a malformed key OUTSIDE its window
-        // faults in neither executor — verified against ref on this exact model (lens 1, 2026-08-30, who
+        // faults in neither ref nor Drools — clingo faults on it for an UNRELATED reason (uniqueness validity
+        // windows are not translated) — verified against ref on this exact model (lens 1, 2026-08-30, who
         // also proved by mutation that no gate covers this arm: dropping the guard leaves gate 8 green).
         // Authored on an in-memory ir copy; the corpus rood case itself stays unwindowed.
         com.fasterxml.jackson.databind.node.ObjectNode ir = (com.fasterxml.jackson.databind.node.ObjectNode)
@@ -151,6 +158,27 @@ class UniciteitSleutelvormWitnessTest {
                     .replace("\"asOfDate\": null", "\"asOfDate\": \"2024-06-01\"");
             assertNull(CaseRunner.speelCase(tmp, JSON.readTree(c)),
                     "outside its validity window the malformed key must stay silent, as ref does");
+        } finally {
+            java.nio.file.Files.deleteIfExists(tmp);
+        }
+    }
+
+    @Test void buiten_het_geldigheidsvenster_zwijgt_de_unie_vormfout_ook() throws Exception {
+        // the union arm of the window witness: lens 2 proved that dropping the geldigGuard on the UNION
+        // guard rule alone survived every gate and the single-form window witness — this pins that arm.
+        // Same construction: window from 2030, evaluation date 2024 — ref stays silent, so must Drools.
+        com.fasterxml.jackson.databind.node.ObjectNode ir = (com.fasterxml.jackson.databind.node.ObjectNode)
+                JSON.readTree(java.nio.file.Files.readString(
+                        ROOD.resolve("uu-two-temporal-keys").resolve("ir.json")));
+        ((com.fasterxml.jackson.databind.node.ObjectNode) ir.get("uniciteitUnies").get(0).get("geldigheid"))
+                .put("vanaf", "2030-01-01");
+        Path tmp = java.nio.file.Files.createTempFile("venster-unie-sleutelvorm", ".json");
+        try {
+            java.nio.file.Files.writeString(tmp, ir.toString());
+            String c = geval("Strandvondst", "volgnummer")
+                    .replace("\"asOfDate\": null", "\"asOfDate\": \"2024-06-01\"");
+            assertNull(CaseRunner.speelCase(tmp, JSON.readTree(c)),
+                    "outside its validity window the malformed union key must stay silent, as ref does");
         } finally {
             java.nio.file.Files.deleteIfExists(tmp);
         }
