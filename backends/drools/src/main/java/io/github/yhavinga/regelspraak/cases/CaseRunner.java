@@ -118,6 +118,39 @@ public final class CaseRunner {
         }
     }
 
+    /** One case's input beans plus every fact the session holds AFTER fire — the §13.4.6 witness seam of
+     *  {@code backends/drools/src/test}. A MINTED object carries no case label (ref mints into the reserved
+     *  {@code "::"} namespace, which the case loader refuses as a label), so no expectation kind the case
+     *  schema can express names it: every corpus observation of a creation is INDIRECT, through a fold or a
+     *  navigated read on a labelled input. Neither other seam reaches it either — {@link #invoerBeans} stops
+     *  before any rule fires, {@link #speelCase} returns only the comparator's verdict. So THAT the mint
+     *  exists, WHICH members its toekenningen filled, and that BOTH ends of its back-link were written have
+     *  no other observable surface, while each could be wrong and still leave the pinned total right (a mint
+     *  reachable one way only; a member written on the subject instead of the mint). */
+    record NaFire(Map<String, Object> invoer, List<Object> feiten) {}
+
+    static NaFire naFire(Path irPath, JsonNode c) throws java.io.IOException {
+        CaseRunner runner = build(irPath);
+        runner.rekendatum = asOfDatum(c);
+        ClassLoader vorige = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(runner.cl);
+        KieSession sessie = runner.kieBase.newKieSession();
+        try {
+            JsonNode instances = c.get("input").get("instances");
+            for (JsonNode i : instances) runner.beanVoor(i);
+            for (JsonNode i : instances) runner.zetAttributenEnKenmerken(i);
+            for (JsonNode i : instances) runner.zetRollen(i);
+            runner.spiegelWederkerigeRollen();
+            runner.zetGlobals(sessie, c);
+            for (Object bean : runner.labelNaarBean.values()) sessie.insert(bean);
+            sessie.fireAllRules(100_000);
+            return new NaFire(new LinkedHashMap<>(runner.labelNaarBean), new ArrayList<>(sessie.getObjects()));
+        } finally {
+            sessie.dispose();
+            Thread.currentThread().setContextClassLoader(vorige);
+        }
+    }
+
     /** The comparator seam of {@code backends/drools/src/test}: one authored in-memory case through the FULL
      *  replay (build, inputs, fire, compare), returning the per-case failure line — null on a match. The
      *  read-back comparator has no other directly observable surface: gate 12 pins post-fire values on corpus
