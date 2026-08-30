@@ -574,8 +574,10 @@ public final class CaseRunner {
 
     /** The §13.3.6 timeline read-back: the doel's {@code List<Segment>} against the pinned segment list, with
      *  ref's comparison discipline — equal length, van/tot EXACT, waarde scale-safe ({@code compareTo == 0}),
-     *  order significant. A never-written target (a null field) matches an explicitly empty expectation: both
-     *  read leeg on every day (ch. 3.1), exactly as ref and clingo pin it. */
+     *  compared index-for-index. Both sides arrive ordered (the expectation through the validator, the bean
+     *  list through the runtime's ordered writes), so an order-blind comparator has no observable witness —
+     *  the claim stops at what is falsifiable. A never-written target (a null field) matches an explicitly
+     *  empty expectation: both read leeg on every day (ch. 3.1), exactly as ref and clingo pin it. */
     private String tijdlijn(JsonNode v) {
         String attr = v.get("attribute").asText(), label = v.get("label").asText();
         Objecttype ot = labelType.get(label);

@@ -25,6 +25,13 @@ Acceptance:
 - `bash scripts/check-drools.sh` → PASS met played 76, auto-excluded 58,
   value-divergence 3, no-case 1. Speelt een van de vijf niet door een échte
   divergentie, dan reden-dragend in `EXCLUDE_KNOWN` én benoemd in de Result.
+  *(Geamendeerd bij de landing, 2026-08-30: de poort liet ACHT goldens fire
+  bereiken, niet vijf — drie extra speelden mee (dubbelwacht, nummerregister,
+  strandregister) en drie legden een reeds bestaand backend-defect bloot en
+  staan reden-dragend in `EXCLUDE_KNOWN` (borgdeel, synth2-prorata-breed,
+  dagentelling; zie de volgkaart 20260830-drools-fixpunt-en-ch78). De
+  gate-uitkomst is daarmee played 79, auto-excluded 52, value-divergence 6,
+  no-case 1.)*
 - `bash scripts/check-rood.sh` → PASS; de vijf temporeel-getinte entries in
   de Drools-exclusielijst eerlijk bijgewerkt: een case die nu écht FAULT
   verliest zijn entry en pint zijn `expectedFault.drools`-fragment in de case

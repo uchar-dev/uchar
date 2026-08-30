@@ -29,9 +29,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>The models are corpus goldens (their {@code ir.json} off the wire, as {@code RoundTripWitnessTest} does);
  * the cases are authored here — no corpus expectation is read or touched. The {@code attributeTimeline}
  * READ-BACK comparator is witnessed here as well, through {@link CaseRunner#speelCase}: gate 12's corpus
- * pins only lists that happen to match segment-for-segment, so a comparator blinded to waarde, order, or
- * boundaries survives the whole gate set (lens 1 proved it by mutation) — its verdicts on a wrong value, a
- * shifted boundary, a length mismatch, and a never-written field are asserted directly below.
+ * pins only lists that happen to match segment-for-segment, so a comparator blinded to waarde or boundaries
+ * survives the whole gate set (lenses 1 and 2 proved it by mutation) — its verdicts on a wrong value, a
+ * shifted van, a shifted tot, a length mismatch, and a never-written field are asserted directly below.
+ * Order-blindness alone has no observable witness (both compared lists arrive ordered), so no test claims it.
  */
 class TemporeleInvoerWitnessTest {
 
@@ -203,6 +204,16 @@ class TemporeleInvoerWitnessTest {
         assertTrue(speelBakenmeester("""
                 { "kind": "attributeTimeline", "label": "B1", "attribute": "onderhoudstarief", "timeline": [
                     { "from": "2025-01-01", "to": "2027-01-01", "value": { "number": "24" } } ] }""") != null);
+    }
+
+    @Test void vergelijker_ziet_een_verschoven_van() throws Exception {
+        // same length, same tot, same waarde, ONLY van differs (on-grid, so the validator admits it): the
+        // van clause of segGelijk is the sole discriminator here — lens 2 proved its removal survived every
+        // other check in the gate set, so this witness is what guards it.
+        assertTrue(speelBakenmeester("""
+                { "kind": "attributeTimeline", "label": "B1", "attribute": "onderhoudstarief", "timeline": [
+                    { "from": "2024-01-01", "to": "2026-01-01", "value": { "number": "24" } } ] }""") != null,
+                "a segment that STARTS on the wrong day is a mismatch");
     }
 
     @Test void vergelijker_ziet_een_lengteverschil() throws Exception {
