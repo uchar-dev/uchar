@@ -115,6 +115,48 @@ class WederkerigZelfpaarWitnessTest {
         assertTrue(e.getMessage().contains("WF-013"), "the refusal names the rule it enforces: " + e.getMessage());
     }
 
+    @Test void de_botsing_wordt_gezien_ongeacht_de_aanlevervolgorde() throws Exception {
+        // the same WF-013 chain with the instance ORDER reversed: spiegelWederkerigeRollen's separate-pass
+        // rationale claims order independence, and together with the test above this is its falsifiable
+        // witness — a per-write inline mirror sees the colliding leg in only one of the two orders.
+        String c = """
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [
+                      { "label": "J2", "objectType": "Jutter", "attributes": { "vondstwaarde": { "number": "12" } },
+                        "roles": { "maat": ["J3"] }, "characteristics": [] },
+                      { "label": "J3", "objectType": "Jutter", "attributes": { "vondstwaarde": { "number": "7" } },
+                        "roles": {}, "characteristics": [] },
+                      { "label": "J1", "objectType": "Jutter", "attributes": { "vondstwaarde": { "number": "30" } },
+                        "roles": { "maat": ["J2"] }, "characteristics": [] } ],
+                    "parameters": {} } }
+                """;
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> beans("anchor/jutterswet-maatschap", c));
+        assertTrue(e.getMessage().contains("WF-013"), e.getMessage());
+    }
+
+    @Test void een_naamdelend_kenmerk_verdringt_het_veld_en_wordt_luid_geweigerd() throws Exception {
+        // leden() ports every member through a name-dedup (attribute > kenmerk > reference), so a kenmerk
+        // sharing the reciprocal role's name displaces the self-pair field. That shape must be a loud
+        // per-form Excluded (the name-sharing bean limit), never an unclassified ERROR at mirror time —
+        // authored on an in-memory copy of the golden's ir, the corpus itself untouched.
+        com.fasterxml.jackson.databind.node.ObjectNode ir = (com.fasterxml.jackson.databind.node.ObjectNode)
+                JSON.readTree(Files.readString(CORPUS.resolve("anchor/jutterswet-maatschap").resolve("ir.json")));
+        com.fasterxml.jackson.databind.node.ObjectNode jutter =
+                (com.fasterxml.jackson.databind.node.ObjectNode) ir.get("objecttypen").get("Jutter");
+        ((com.fasterxml.jackson.databind.node.ArrayNode) jutter.get("kenmerken")).add("maat");
+        ((com.fasterxml.jackson.databind.node.ObjectNode) jutter.get("kenmerkSoorten")).put("maat", "BIJVOEGLIJK");
+        Path tmp = Files.createTempFile("naamdeling-maat", ".json");
+        try {
+            Files.writeString(tmp, ir.toString());
+            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                    () -> CaseRunner.invoerBeans(tmp, JSON.readTree(maatschap("", "{}"))));
+            assertTrue(e.getMessage().contains("name-sharing"), e.getMessage());
+        } finally {
+            Files.deleteIfExists(tmp);
+        }
+    }
+
     // ---------------- the read: what the rules do with the filled field ----------------
 
     @Test void de_gevulde_rol_wordt_aan_beide_kanten_gelezen() throws Exception {

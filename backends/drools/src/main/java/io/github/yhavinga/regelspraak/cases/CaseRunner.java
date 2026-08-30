@@ -147,6 +147,21 @@ public final class CaseRunner {
             throw new Excluded("objectcreatie (§13.4.6) is not replayed by the v0 Drools backend — the creation "
                     + "consequence does not execute (a navigated created-object read yields leeg, or an intValue() "
                     + "NPE is raised on a leeg member); it lowers and reaches fire but never reproduces the pinned value");
+        //   §13.3.9.2 name-sharing bean limit — leden() ports every member through a name-dedup (attribute >
+        //     kenmerk > reference), so a declared member sharing the reciprocal role's name displaces the
+        //     self-pair reference field; the mirror pass would then read a Boolean or set an impossible type,
+        //     an unclassified ERROR at best. Refuse the shape loudly instead (lens finding, 2026-08-30).
+        for (Objecttype ot : model.objecttypen.values()) {
+            String zelf = FactModelGenerator.zelfpaarRol(model, ot);
+            if (zelf == null) continue;
+            boolean gedragen = FactModelGenerator.leden(model, ot).stream().anyMatch(l ->
+                    l.eigenschap().equals(Namen.ident(zelf, false))
+                            && l.javaType().equals(Namen.ident(ot.naam, true)));
+            if (!gedragen)
+                throw new Excluded("wederkerig self-pair role '" + zelf + "' on " + ot.naam + " shares its name "
+                        + "with a declared member — the bean cannot carry the self-typed reference field "
+                        + "(name-sharing bean limit)");
+        }
 
         Map<String, String> bronnen = FactModelGenerator.genereer(model);
         ClassLoader cl = BeanCompiler.compileer(bronnen);
