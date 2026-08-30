@@ -20,7 +20,8 @@ import java.util.Map;
  * {@code List<Segment>} for a §13.3.6 tijdsafhankelijk attribute), an {@code is<X>}/{@code set<X>} boolean
  * pair per kenmerk (a temporal kenmerk is a {@code List<Segment>} true-period timeline), and — per §13.3.9
  * feittype — the to-one REFERENCE field on the MANY side, named after the ONE side's role, including the
- * §13.3.9.2 wederkerig SELF-PAIR field (see {@link #zelfpaarRol}). {@code Segment} and
+ * §13.3.9.2 wederkerig SELF-PAIR field (see {@link #zelfpaarRol}) and the ORDINARY self-typed pair's one
+ * field per to-one role (see {@link #zelfpaarRollen}). {@code Segment} and
  * {@code Inconsistentie} are emitted alongside.
  *
  * <p>The MEMBER DERIVATION ({@link #leden}) is shared with {@link ContractValidator}, so what this
@@ -77,6 +78,61 @@ public final class FactModelGenerator {
         String zelf = zelfpaarRol(model, ot);
         if (zelf != null && gezien.add(Namen.ident(zelf, false)))
             uit.add(new Lid(Namen.ident(zelf, false), Namen.ident(ot.naam, true), false));
+        for (String rol : zelfpaarRollen(model, ot))                                                   // §13.3.9 self-typed
+            if (gezien.add(Namen.ident(rol, false)))
+                uit.add(new Lid(Namen.ident(rol, false), Namen.ident(ot.naam, true), false));
+        return uit;
+    }
+
+    /**
+     * §13.3.9 — the scalar to-one reference fields an ORDINARY (non-wederkerig) SELF-TYPED feittype implies on
+     * {@code ot}: two DISTINCT sibling roles both filled by {@code ot} ({@code voorganger} and {@code opvolger}
+     * on {@code Wachter}). The by-pair loop in {@link #leden} cannot reach them (it skips {@code ot} itself) and
+     * {@link #zelfpaarRol} does not cover them (it is the one-role wederkerig shape).
+     *
+     * <p><b>The decision (card drools-zelfgetypeerd-creatiepaar):</b> the bean carries ONE SCALAR FIELD PER
+     * TO-ONE ROLE, named after the role, exactly as the by-pair loop names a reference after the role of the
+     * thing it POINTS AT — {@code Wachter.opvolger} is the Wachter that plays {@code opvolger} (the successor),
+     * {@code Wachter.voorganger} the one that plays {@code voorganger}. Derived through the SAME authority the
+     * transpilers navigate by, here its BY-NAME form ({@code verbindendeRolViaNaam} + {@code naarVeelRol}), so a
+     * role name that does not resolve UNIQUELY derives nothing and a to-many role derives nothing (its storage is
+     * the other end's field). {@code verbindendeRol(ot, ot)} — the BY-PAIR search — is deliberately left as it
+     * is: still null, still ambiguous. So these fields exist but nothing reaches them by accident; only a WRITTEN
+     * role name or the creation's symbolic {@code verbindendeRol} wire binding does. Under-implied, never
+     * over-implied — the same law the by-pair comment above states.
+     *
+     * <p>Alternatives considered and REJECTED:
+     * <ul>
+     *   <li><b>One field named after the FEITTYPE</b> ({@code Wachter.opvolging}): cannot represent both
+     *       directions at once (one Wachter is simultaneously someone's opvolger and someone's voorganger), and
+     *       the transpilers navigate by ROLE name, so such a field would be symbolically unreachable.</li>
+     *   <li><b>One field for the FIRST role only</b>: arbitrary and wire-order dependent, and it silently drops
+     *       one navigation direction — over-implied in one direction, under-implied in the other.</li>
+     *   <li><b>Teaching {@code verbindendeRol(ot, ot)} to pick a winner</b> (prefer the to-one / the first role):
+     *       that authority is SHARED by every navigated read, feitcreatie, verdeling and by
+     *       {@link ContractValidator}; making it guess would turn an honest ambiguity into a silent wrong join
+     *       across the whole back-end — precisely what RUNTIME-SEMANTICS ch. 5.5 forbids and what the reference
+     *       interpreter refuses ({@code connecting_pair} BLOCKS a self-typed two-role fact type and takes the
+     *       explicit binding instead).</li>
+     *   <li><b>A collection-valued field per self-pair</b>: a to-one role's storage IS a scalar; a collection
+     *       would misreport cardinality to every {@code naarVeelRol} consumer and to the §9 creation idempotence
+     *       guard, which keys a 1:1 target on that very field being empty.</li>
+     * </ul>
+     */
+    public static List<String> zelfpaarRollen(RegelSpraakModel model, Objecttype ot) {
+        List<String> uit = new ArrayList<>();
+        for (Feittype ft : model.feittypen.values()) {
+            if (ft.wederkerig) continue;                       // the one-role shape: zelfpaarRol owns it
+            for (Rol r : ft.rollen) {
+                if (!ot.naam.equalsIgnoreCase(r.objecttypeNaam())) continue;
+                // the by-NAME authority: null when the name does not resolve uniquely, or when the feittype does
+                // not relate ot to ot at all (a role of ot in a feittype whose sibling is another type is the
+                // by-pair loop's business, and is reached from THAT side).
+                String rol = model.verbindendeRolViaNaam(ot, ot, r.naam());
+                if (rol == null || model.naarVeelRol(ot, ot, rol)) continue;
+                if (!uit.contains(rol)) uit.add(rol);
+            }
+        }
         return uit;
     }
 

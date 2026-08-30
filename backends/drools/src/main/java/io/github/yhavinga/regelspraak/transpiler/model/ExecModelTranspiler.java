@@ -107,6 +107,12 @@ public final class ExecModelTranspiler {
      *  {@link RegelSpraakModel} does not carry, so it is threaded in beside the model (see {@link #build}).
      *  Empty by default (a flat program); lowered to reduce-rules in {@link #defaultsGroepen} / {@link #defaultsGroep}. */
     private List<PrioritizedDefaults> prioritizedDefaults = List.of();
+    /** The wire's symbolic (feittype, rol) bindings per IR node, riding beside the model
+     *  ({@code IrLoader.Loaded.rolBindingen}) because the vendored records cannot carry them: an objectcreatie's
+     *  IR-SPEC ch. 3.3 {@code verbindendeRol} and an aggregation Functie's {@code bronRol}. Keyed by IDENTITY (the
+     *  nodes are records with value equality). Empty by default — every node then uses the by-pair derivation,
+     *  which is exactly the pre-2026-08-30 behaviour. */
+    private Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen = new java.util.IdentityHashMap<>();
     private final List<String> overgeslagen = new ArrayList<>();
     /** Build-time-only gate: true WHILE lowering a scalar consequence value (the THEN-waarde), the single
      *  context where a §13.4.1 multi-hop navigation chain may lower ({@link #navKetenReader}) — mirroring
@@ -164,8 +170,20 @@ public final class ExecModelTranspiler {
      *  group lowers to one reduce-rule (a port of ref's {@code run_defaults_group}). An empty/null list is the flat
      *  v0 case (no defaults rules). */
     public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults) {
+        return build(m, beanLoader, defaults, java.util.Map.of());
+    }
+    /** As {@link #build(RegelSpraakModel, ClassLoader, List)} but also consumes the symbolic role bindings loaded
+     *  beside the model ({@code IrLoader.Loaded.rolBindingen}). An empty map is the by-pair-derivation-only case. */
+    public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
+            Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen) {
         ExecModelTranspiler t = new ExecModelTranspiler(m, beanLoader);
         t.prioritizedDefaults = defaults == null ? List.of() : defaults;
+        if (rolBindingen != null && !rolBindingen.isEmpty()) {
+            // copied into an IdentityHashMap: the caller's map is identity-keyed, and a plain copy into a
+            // value-keyed map would merge two structurally identical nodes into one binding.
+            t.rolBindingen = new java.util.IdentityHashMap<>();
+            t.rolBindingen.putAll(rolBindingen);
+        }
         t.model0 = t.run();
         return t;
     }
@@ -885,12 +903,47 @@ public final class ExecModelTranspiler {
         String rol = null;
         if (subject != null && arg != null && count) rol = model.verbindendeRolViaElementnaam(subject, arg.attribuut());
         if (rol == null && subject != null) rol = model.verbindendeRol(elem, subject);
+        if (rol == null) {
+            // The wire's symbolic bronRol, LAST — so every join the model already derives stays exactly as it was.
+            // It names the role the ELEMENT plays; the SIBLING is the role the SUBJECT plays, i.e. the backref
+            // FIELD on the element (the same reading gebondenRolpaar gives the creation's back-link). This is the
+            // only route for a SELF-TYPED aggregation ("de som van de rang van alle opvolgers van de Wachter"),
+            // whose by-pair search counts two same-typed sibling roles and derives null by construction.
+            RegelSpraakModel.Rol[] paar = gebondenRolpaar(rolBindingen.get(f));
+            if (paar != null && !paar[1].meervoudig()) rol = paar[1].naam();   // to-many: no scalar field to join on
+        }
         if (rol == null) return null;
         final String backref = rol;
+        // §13.3.9 STORAGE DIRECTION. ref reads an aggregation's set as the SUBJECT's own links under the ELEMENT's
+        // role key (role_links self elem_role); the bean model stores that same set on whichever end is the ONE
+        // side (FactModelGenerator.leden). So:
+        //   element role TO-MANY  -> the field lives on each element, named after the subject's role: the backref
+        //                            join below, unchanged.
+        //   element role TO-ONE   -> the relation's field lives on the SUBJECT, named after the element's role, and
+        //                            the join must read THAT. The backref join would probe the element's own
+        //                            reference — a DIFFERENT field, filled only when the case (or a creation)
+        //                            happened to supply the link from the element's side — and fold the wrong set.
+        // A to-one element role is only FAITHFUL, though, when its sibling is to-one as well: then each direction
+        // owns a field and a one-sided supply stays one-sided, exactly as ref stores it. With a TO-MANY sibling the
+        // relation has exactly ONE field, which necessarily serves both directions, so a link supplied from the far
+        // end reads here as this end's own — where ref reads nothing. That shape is refused, not silently counted.
+        // NB the by-NAME lookup only for a COUNT: there arg.attribuut() IS the written element role (the same
+        // reading verbindendeRolViaElementnaam applies above); for a sum/min/max it is an ATTRIBUTE name, which
+        // must never be matched against role names.
+        String elemRol = count && arg != null ? model.verbindendeRolViaNaam(subject, elem, arg.attribuut()) : null;
+        if (elemRol == null) elemRol = model.verbindendeRol(subject, elem);
+        if (elemRol == null) {
+            RegelSpraakModel.Rol[] paar = gebondenRolpaar(rolBindingen.get(f));
+            if (paar != null) elemRol = paar[0].naam();
+        }
+        boolean voorwaarts = elemRol != null && !model.naarVeelRol(subject, elem, elemRol);
+        if (voorwaarts && model.naarVeelRol(elem, subject, backref)) return null;   // one shared field, both directions
+        final String fwdVeld = elemRol;
 
         Variable elemVar = DSL.declarationOf(elemClass, "$e_" + (seq++));
         PatternDSL.PatternDef src = PatternDSL.pattern(elemVar).expr(nextId("join"), (Variable) subjectVar,
-                (Predicate2) (e, subj) -> RegelSpraakRuntime.get(e, backref) == subj);
+                voorwaarts ? (Predicate2) (e, subj) -> RegelSpraakRuntime.get(subj, fwdVeld) == e
+                           : (Predicate2) (e, subj) -> RegelSpraakRuntime.get(e, backref) == subj);
         if (f.filter() != null) {                       // §13.4.2 die/dat <predicaat> on the element
             src = filterSource(src, f.filter(), elem);
             if (src == null) return null;               // unstructured / unbindable filter -> skip (mirror the DRL marker)
@@ -4209,7 +4262,7 @@ public final class ExecModelTranspiler {
             // §9.5 a vs-PARAMETER assertie ("X moet kleiner zijn dan de <parameter>") needs the global bound as a
             // pattern variable (a 2-var expr) — schending returns a fact-only Predicate1, so it cannot carry it.
             SchendingGlobal sg = schendingMetGlobal(c.assertie(), subject);
-            if (sg == null) return skip("consistentie (schending buiten Phase-D scope): " + c.naam());
+            if (sg == null) return skip("consistentie (" + schendingReden(c.assertie(), subject) + "): " + c.naam());
             Global<BigDecimal> g = globals.get(sg.global());
             java.util.function.BiPredicate<Object, BigDecimal> pred = sg.pred();
             pattern = PatternDSL.pattern(sVar).expr(nextId("schending"), (Variable) g,
@@ -4263,7 +4316,34 @@ public final class ExecModelTranspiler {
             boolean assertGevuld = p.soort() == Conditie.Predicaatsoort.GEVULD;
             return s -> (read.apply(s) == null) == assertGevuld;   // leeg violates GEVULD; gevuld violates LEEG
         }
+        // §9.5 a KENMERK assertie ("elke Penning is uitgereikt"): the violation is EXACTLY its negation. A mark is
+        // TWO-VALUED under the closed-world reading the whole back-end applies (§13.4.6.4: an absent
+        // kenmerkinitialisatie IS onwaar; the bean field is a primitive boolean with no leeg state), so unlike a
+        // numeric ordering — where Tabel 37/38's leeg flank makes BOTH the criterion and its negation a violation,
+        // which is why those arms are written out longhand below — the kenmerkcheck has no third flank and
+        // !leafPredicate IS the schending. Reusing the §8.1.8 condition lowering itself (own or to-one navigated,
+        // negatie honoured, temporal refused) keeps assertion and condition from ever drifting apart.
+        if (assertie instanceof Conditie.Kenmerk kc) {
+            if (kc.periode() != null) return null;                           // §8.2-qualified -> the geheelPeriode arm above
+            Predicate1<Object> houdt = leafPredicate(kc, subject);
+            return houdt == null ? null : s -> !houdt.test(s);
+        }
         if (!(assertie instanceof Conditie.Vergelijking v)) return null;     // other compound: later
+        // §9.5 an AANTAL-over-a-role assertie ("het aantal houder van de Penning is groter of gelijk aan 1"): the
+        // count of a TO-ONE role is its PRESENCE count — 0 or 1 — read straight off the subject's own scalar
+        // reference field. Checked before the AttribuutRef-LHS forms below, which this LHS is not.
+        if (v.links() instanceof Expr.Functie af && af.kind() == Expr.FunctieKind.AANTAL
+                && isNumeriekOp(v.op()) && v.rechts() instanceof Expr.Literal cnt && cnt.type() != null
+                && cnt.type().isNumeriek()) {
+            java.util.function.Function<Object, BigDecimal> telling = toOneAantalReader(af, subject).lezer();
+            BigDecimal grens = bd(cnt);
+            if (telling != null && grens != null) {
+                // the count is never leeg (0 is a count, not an absence), so the violation is the plain negation:
+                // vergelijk against the FLIPPED operator. No Tabel-37 leeg flank applies.
+                Conditie.Operator flipA = Operatoren.flip(v.op());
+                return s -> vergelijk(telling.apply(s), grens, flipA);
+            }
+        }
         // §13.4.8 a DATUM comparison assertie where an operand is a §6/§13.4.16 date-arithmetic EXPRESSION ("X moet
         // later zijn dan Y plus Z"): the violation is the negation of the assertion. datumVergelijkTemporal already
         // encodes mvel's leeg/ordering/equality semantics, so !it IS the schending (either operand leeg, or the
@@ -4367,6 +4447,18 @@ public final class ExecModelTranspiler {
         return null;
     }
 
+    /** Why a §9.5 assertie did not lower: the generic Phase-D scope note, SHARPENED for the AANTAL shapes, whose
+     *  refusal is a §13.3.9 bean-MODEL limit rather than an arm nobody has built yet — the difference matters to
+     *  whoever reads the gate's exclusion line and decides what to card next. */
+    private String schendingReden(Conditie assertie, Objecttype subject) {
+        if (assertie instanceof Conditie.Vergelijking v && v.links() instanceof Expr.Functie af
+                && af.kind() == Expr.FunctieKind.AANTAL) {
+            String reden = toOneAantalReader(af, subject).reden();
+            if (reden != null) return reden;
+        }
+        return "schending buiten Phase-D scope";
+    }
+
     /** A §9.5 consistentie violation predicate that reads a Parameter-GLOBAL: the global name + a {@code (subject,
      *  globalValue) -> violated} test. */
     private record SchendingGlobal(String global, java.util.function.BiPredicate<Object, BigDecimal> pred) {}
@@ -4440,6 +4532,58 @@ public final class ExecModelTranspiler {
         return gelijk ? (gelijkeWaarden && !bothLeeg)                 // Tabel 38: WAAR only both-present-and-equal
                       : (!gelijkeWaarden && !bothLeeg);               // Tabel 44: WAAR for one-leeg OR both-present-unequal
     }
+
+    /** §5.8/§9.5 the PRESENCE count of a TO-ONE role read as an AANTAL ("het aantal houder van de Penning"):
+     *  {@code 1} when the subject's scalar reference field is filled, {@code 0} when it is empty — never null, so
+     *  the comparison that consumes it has no leeg flank. The role is resolved through the same authority
+     *  {@link FactModelGenerator#leden} derives the field from: the WRITTEN role name first (the §13.4.1 reading —
+     *  the AANTAL's argument NAMES the role), the by-pair search second.
+     *
+     *  <p>null for every other shape, deliberately:
+     *  <ul>
+     *    <li>a TO-MANY role's count is an accumulate over the element type, which the {@link #aggregatie} machinery
+     *        builds and a fact-only {@code Predicate1} cannot carry (the §9.5 violation predicate has no rule items
+     *        to hang a CE on) — an honest skip;</li>
+     *    <li>a to-one role whose SIBLING is to-many — the §13.3.9 storage-direction limit {@link #aggregatie}
+     *        states in full: such a relation has exactly ONE bean field, so it necessarily serves BOTH directions
+     *        and a link supplied from the far end reads here as this end's own, where ref (which stores links per
+     *        instance per role key) reads nothing. A presence count over a shared field is not a directional count;
+     *        refuse it rather than assert a violation that is not there — or, worse, miss one that is;</li>
+     *    <li>a filter, a navigated argument, a multi-operand count, or a name the subject also declares as a member
+     *        (the bean would then carry the ATTRIBUTE under that name, per {@code leden}'s name-dedup, and this
+     *        would read it instead of the reference).</li>
+     *  </ul> */
+    private Telling toOneAantalReader(Expr.Functie f, Objecttype subject) {
+        String generiek = "AANTAL-assertie buiten Phase-D scope";
+        if (subject == null || f.filter() != null || f.argumenten().size() != 1) return new Telling(null, generiek);
+        if (!(f.argumenten().get(0) instanceof Expr.AttribuutRef a) || a.navigatieRol() != null)
+            return new Telling(null, generiek);
+        Objecttype elem = f.elementObjecttype();
+        if (elem == null || a.attribuut() == null) return new Telling(null, generiek);
+        if (subject.heeftLid(a.attribuut()))                               // a declared member displaces the reference field
+            return new Telling(null, "'" + a.attribuut() + "' is ook een gedeclareerd lid van " + subject.naam
+                    + ", dus het beanveld draagt het attribuut/kenmerk en niet de referentie");
+        String rol = model.verbindendeRolViaNaam(subject, elem, a.attribuut());
+        if (rol == null) rol = model.verbindendeRol(subject, elem);
+        if (rol == null) return new Telling(null, generiek);
+        if (model.naarVeelRol(subject, elem, rol))
+            return new Telling(null, "AANTAL over de meervoudige rol '" + rol + "' vergt een accumulate-CE, die een"
+                    + " fact-only schendingpredicaat niet kan dragen");
+        String zuster = model.verbindendeRolViaElementnaam(subject, a.attribuut());
+        if (zuster == null) zuster = model.verbindendeRol(elem, subject);
+        if (zuster == null) return new Telling(null, generiek);
+        if (model.naarVeelRol(elem, subject, zuster))
+            return new Telling(null, "AANTAL over de enkelvoudige rol '" + rol + "' wiens zusterrol '" + zuster
+                    + "' meervoudig is: dat feittype heeft ÉÉN beanveld en dat draagt noodzakelijk BEIDE richtingen,"
+                    + " dus een gerichte telling — ref telt de eigen links van het subject onder de elementrol — is in"
+                    + " het v0 beanmodel niet uit te drukken (§13.3.9 opslagrichting)");
+        final String veld = rol;
+        return new Telling(s -> RegelSpraakRuntime.get(s, veld) == null ? BigDecimal.ZERO : BigDecimal.ONE, null);
+    }
+
+    /** Either the §9.5 presence-count reader, or the precise reason there is none — so the transpiler's SKIP names
+     *  the shape instead of the generic Phase-D note (the gate prints it as the golden's exclusion reason). */
+    private record Telling(java.util.function.Function<Object, BigDecimal> lezer, String reden) {}
 
     /** A §13.4.8 consistentie comparison-operand reader: the subject's OWN attribute (get) or a to-ONE NAVIGATED read
      *  (navReader — its null IS the operand's leeg, since DRL's {@code l.leeg} = {@code rol == null || rol.attr ==
@@ -4956,6 +5100,51 @@ public final class ExecModelTranspiler {
 
     private List<Rule> skipList(String reason) { overgeslagen.add(reason); return List.of(); }
 
+    /** How many fact types RELATE {@code van} and {@code naar} in ch. 5.5's sense — the same count ref's
+     *  {@code connecting_pair} takes: a TWO-role fact type whose two roles are filled by the two types (in either
+     *  order), plus, when both types are the same, a §13.3.9.2 wederkerig ONE-role fact type. 0 is the LINKLESS
+     *  creation shape (ref mints without a link, no fault); 1 is derivable; more than one is ch. 5.5's AMBIGUITY,
+     *  which ref faults on. Deliberately NOT {@code verbindendeRol}, which collapses 0 and >1 into one null. */
+    private int verbindendeFeittypen(Objecttype van, Objecttype naar) {
+        if (van == null || naar == null) return 0;
+        int n = 0;
+        for (RegelSpraakModel.Feittype ft : model.feittypen.values()) {
+            List<RegelSpraakModel.Rol> r = ft.rollen;
+            if (r.size() == 2) {
+                boolean ab = van.naam.equalsIgnoreCase(r.get(0).objecttypeNaam()) && naar.naam.equalsIgnoreCase(r.get(1).objecttypeNaam());
+                boolean ba = van.naam.equalsIgnoreCase(r.get(1).objecttypeNaam()) && naar.naam.equalsIgnoreCase(r.get(0).objecttypeNaam());
+                if (ab || ba) n++;
+            } else if (r.size() == 1 && ft.wederkerig && van == naar
+                    && van.naam.equalsIgnoreCase(r.get(0).objecttypeNaam())) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    /** The role PAIR a symbolic (feittype, rol) wire binding names: {@code [bound, sibling]} — the role the wire
+     *  names (the created object's / the aggregated element's) and the one the ANCHOR plays. The sibling's NAME is
+     *  the reference field on the bound end, and vice versa, which is exactly how {@link FactModelGenerator#leden}
+     *  names them. A §13.3.9.2 wederkerig fact type carries ONE role that is its own sibling. null when the binding
+     *  names no such fact type / role, or when a non-wederkerig fact type has no sibling role at all — a loud
+     *  refusal for the caller, never a guess. Mirrors {@code ref/lib/eval.ml}'s {@code bound_role} +
+     *  {@code resolve_binding}, whose Error flank is a fault there. */
+    private RegelSpraakModel.Rol[] gebondenRolpaar(RegelSpraakModel.RolBindingRef rb) {
+        if (rb == null || rb.feittype() == null || rb.rol() == null) return null;
+        RegelSpraakModel.Feittype ft = null;
+        for (Map.Entry<String, RegelSpraakModel.Feittype> e : model.feittypen.entrySet())
+            if (e.getKey().equalsIgnoreCase(rb.feittype())) { ft = e.getValue(); break; }
+        if (ft == null) return null;
+        RegelSpraakModel.Rol gebonden = null;
+        for (RegelSpraakModel.Rol r : ft.rollen)
+            if (r.naam() != null && r.naam().equalsIgnoreCase(rb.rol())) { gebonden = r; break; }
+        if (gebonden == null) return null;
+        if (ft.wederkerig) return new RegelSpraakModel.Rol[]{gebonden, gebonden};
+        for (RegelSpraakModel.Rol r : ft.rollen)
+            if (r != gebonden) return new RegelSpraakModel.Rol[]{gebonden, r};
+        return null;
+    }
+
     // ---------------- §13.4.6 objectcreatie / §13.4.7 feitcreatie (Phase G) ----------------
     /** §13.4.6 objectcreatie: the subject creates a NEW object of {@code nieuwType}, sets each toekenning value, links
      *  new object and subject over the back-link relation, and inserts it. Gated by the voorwaarde (incl. a §8.1.7
@@ -4987,8 +5176,31 @@ public final class ExecModelTranspiler {
         if (subject == null || nieuw == null) return skip("objectcreatie (onopgelost type): " + oc.naam());
         Class<?> subjClass = factClass(subject), nieuwClass = factClass(nieuw);
         if (subjClass == null || nieuwClass == null) return skip("objectcreatie (geen fact-class): " + oc.naam());
-        String backRol = model.verbindendeRol(nieuw, subject);   // the subject-side role: field on $new -> subject
-        String fwdRol = model.verbindendeRol(subject, nieuw);    // the created-side role: field on $subject -> $new
+        // ch. 5.5's two link roles, resolved by ONE of two routes.
+        //   Route 1 — the creation's own symbolic verbindendeRol binding (IR-SPEC ch. 3.3, riding beside the model
+        //   because the vendored record cannot carry it). It names the role the CREATED object plays; the SIBLING
+        //   role in the same feittype is the one the subject plays. AUTHORITATIVE, exactly as ref reads it
+        //   (eval.ml run_object_creatie: "the explicit back-link binding wins over the type-pair derivation — the
+        //   only route for a self-typed pair"). For a SELF-TYPED pair it is the only route there is: the by-pair
+        //   search counts two same-typed sibling roles and derives null by construction, and
+        //   FactModelGenerator.zelfpaarRollen deliberately leaves that search ambiguous while deriving the FIELDS.
+        //   Route 2 — the by-pair derivation, for a creation whose wire record carries no binding (v0's shape).
+        String backRol, fwdRol;                                  // subject-side (field on $new) / created-side (field on $subject)
+        boolean backVeel, fwdVeel;
+        RegelSpraakModel.RolBindingRef vr = rolBindingen.get(oc);
+        if (vr != null) {
+            RegelSpraakModel.Rol[] paar = gebondenRolpaar(vr);
+            if (paar == null)
+                return skip("objectcreatie (de verbindendeRol-binding '" + vr.feittype() + "." + vr.rol()
+                        + "' wijst geen rolpaar aan): " + oc.naam());
+            fwdRol = paar[0].naam(); fwdVeel = paar[0].meervoudig();
+            backRol = paar[1].naam(); backVeel = paar[1].meervoudig();
+        } else {
+            backRol = model.verbindendeRol(nieuw, subject);
+            fwdRol = model.verbindendeRol(subject, nieuw);
+            backVeel = backRol != null && model.naarVeelRol(nieuw, subject, backRol);
+            fwdVeel = fwdRol != null && model.naarVeelRol(subject, nieuw, fwdRol);
+        }
         // Only a to-ONE role has a bean field at all: FactModelGenerator.leden derives the scalar reference on
         // the ONE side, so a to-many role is stored solely as the OTHER end's field, and writing it anyway would
         // reach a setter no bean carries (an unclassified "geen setter voor" ERROR at fire, never a valid
@@ -4997,28 +5209,45 @@ public final class ExecModelTranspiler {
         // with one writable end is played, not refused — a refusal there would withhold a value the backend can
         // produce (checked: on a verifier-clean model whose SUBJECT-side role is meervoudig, ref plays the
         // creation and the navigated read from the subject reaches the mint).
-        String backRef = backRol != null && !model.naarVeelRol(nieuw, subject, backRol) ? backRol : null;
-        String fwdRef = fwdRol != null && !model.naarVeelRol(subject, nieuw, fwdRol) ? fwdRol : null;
+        String backRef = backRol != null && !backVeel ? backRol : null;
+        String fwdRef = fwdRol != null && !fwdVeel ? fwdRol : null;
         // Only when NEITHER end carries a bean field is the mint truly an ORPHAN — inserted but reachable from
         // nothing, so no navigated read or fold could ever see it. RUNTIME-SEMANTICS ch. 5.5 links both ends; a
         // link the bean model cannot hold ANYWHERE is NOT-CARRIED, refused loudly, never a silently wrong value.
+        if (backRef == null && fwdRef == null && vr == null && subject != nieuw
+                && verbindendeFeittypen(subject, nieuw) > 1)
+            // ch. 5.5's REFUSAL TO GUESS — and the card's lowering-vs-fire question, answered ONCE for both sides.
+            // The MOMENT already differs across the square (ref raises it during evaluation, the ASP backend at
+            // translation), so it is a phase-structure detail. The CATEGORY is not: an ambiguous back-link is a
+            // property of the PROGRAM, not a gap in this backend — the §13.4.6 form IS carried, every other
+            // creation lowers and fires — so reporting it as "not carried" would file a faulty program under
+            // "unsupported". It therefore lowers to a rule that FAULTS at fire (the shape uniciteit's invalid key
+            // shape already uses), worded as ref words it so the red fence pins ONE fragment across all three
+            // executors. NARROWING, recorded: this rule needs a subject instance to fire, where ref faults even on
+            // an empty world. The neighbouring shapes below stay honest lowering REFUSALS, because those really are
+            // backend gaps — a link no bean field can hold anywhere, which ref does not fault on either (a
+            // self-typed pair without a binding mints unlinked there; a to-many pair links through role lists).
+            return vormFoutRegel(kop(oc.naam()), subjClass, oc.geldigheid(), "more than one fact type relates \""
+                    + subject.naam + "\" to \"" + nieuw.naam + "\"; the created object's back-link is ambiguous (ch. 5.5)");
         if (backRef == null && fwdRef == null)
             // The three causes are DIFFERENT and are named apart: an ambiguous pair is ch. 5.5's refusal to guess
             // (the interpreter faults there), a self-typed pair is a bean-model gap (the reference field is
             // derivable only from the creation's symbolic role binding, which this bean model does not carry),
             // and a pair whose BOTH roles are meervoudig resolves fine but derives no field on either side.
-            return skip("objectcreatie (" + (subject == nieuw
-                    ? "zelfgetypeerd rollenpaar: uit twee gelijkgetypeerde rollen leidt de bean geen referentieveld af"
-                    : backRol == null || fwdRol == null
+            return skip("objectcreatie (" + (vr == null && subject == nieuw
+                    ? "zelfgetypeerd rollenpaar zonder verbindendeRol-binding: uit twee gelijkgetypeerde rollen leidt"
+                      + " de bean geen referentieveld af en de draad wijst geen rol aan"
+                    : vr == null && (backRol == null || fwdRol == null)
                     ? "geen uniek verbindend feittype: de terugkoppeling is niet af te leiden en ch. 5.5 gist niet"
                     : "beide rollen zijn meervoudig ('" + backRol + "' en '" + fwdRol + "'), dus FactModelGenerator"
                       + " leidt aan geen van beide zijden een referentieveld af")
                     + ", dus het gecreëerde object zou onbereikbaar zijn): " + oc.naam());
-        // §9 guard shape (see doc). INVARIANT: model.subjectNaarVeelCreatie is by construction the negation of
-        // "the created-side role resolves AND is to-one", i.e. !subjectNaarVeelCreatie ≡ fwdRef != null — so the
-        // 1:1 arm below always HAS the forward field its guard reads. Checked, not assumed: the two derivations
-        // sit in different classes and the guard would otherwise read a null field name.
-        boolean eenOpEen = !model.subjectNaarVeelCreatie(subject, nieuw);
+        // §9 guard shape (see doc). With a BINDING the cardinality is read off the bound role itself — the same
+        // reading ref applies (`Some (_, new_role, _) when not new_role.rol_meervoudig`); without one, the by-pair
+        // subjectNaarVeelCreatie stands. INVARIANT (either route): !to-many(created-side role) ≡ fwdRef != null, so
+        // the 1:1 arm below always HAS the forward field its guard reads. Checked, not assumed: on the by-pair route
+        // the two derivations sit in different classes and the guard would otherwise read a null field name.
+        boolean eenOpEen = vr != null ? !fwdVeel : !model.subjectNaarVeelCreatie(subject, nieuw);
         if (eenOpEen != (fwdRef != null))
             throw new IllegalStateException("objectcreatie " + oc.naam() + ": subjectNaarVeelCreatie(" + eenOpEen
                     + ") en het voorwaartse veld (" + fwdRef + ") spreken elkaar tegen");

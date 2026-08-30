@@ -60,6 +60,14 @@ import java.util.Map;
  * {@code navigatieBindingen}, a Functie's {@code bronRol}, a Kenmerk's {@code navigatieBinding}, a
  * verdeling's {@code verbindendeRol}) it is ignored — the transpiler re-derives it from the model. The
  * additive {@code bronAnnotaties} provenance field is carried through.
+ *
+ * <p>TWO extensions escape that dichotomy, both because the model cannot ALWAYS re-derive them: an
+ * OBJECTCREATIE's {@code verbindendeRol} (IR-SPEC ch. 3.3, which RUNTIME-SEMANTICS ch. 5.5 makes AUTHORITATIVE)
+ * and an aggregation {@link Expr.Functie}'s {@code bronRol}. On a SELF-TYPED role pair — two same-typed sibling
+ * roles of one fact type — the by-pair search is ambiguous by construction and the symbolic binding is the only
+ * route there is. Their records belong to the vendored frontend slice (extending them would drag a re-vendor +
+ * pin bump through the toolchain), so both ride BESIDE the model in {@link Loaded#rolBindingen()} — the same
+ * side-channel shape {@code prioritizedDefaults} already uses.
  */
 public final class IrLoader {
 
@@ -86,13 +94,35 @@ public final class IrLoader {
      *  core-layer section the {@link RegelSpraakModel} does not itself carry (the model is the v0 resolved shape),
      *  so it rides beside the model via {@link Loaded}. An empty list is a legitimate flat program (accepted). */
     private final List<PrioritizedDefaults> prioritizedDefaults = new ArrayList<>();
+    /** The wire's symbolic role bindings — see {@link Loaded#rolBindingen()}. An IDENTITY map: every IR node here
+     *  is a RECORD with VALUE equality, so two structurally identical nodes in one document would collapse into
+     *  one entry and the second would silently inherit the first's binding. */
+    private final Map<Object, RolBindingRef> rolBindingen = new java.util.IdentityHashMap<>();
 
     private IrLoader() {}
 
-    /** A loaded document: the v0 resolved {@link RegelSpraakModel} plus the ch. 7 prioritized-defaults extension.
-     *  The defaults bundles ride beside the model — {@code RegelSpraakModel} is the faithful v0 shape and carries
-     *  no defaults section — so a consumer that lowers them reads them from here (see {@link #loadAll}). */
-    public record Loaded(RegelSpraakModel model, List<PrioritizedDefaults> prioritizedDefaults) {}
+    /** A loaded document: the v0 resolved {@link RegelSpraakModel}, the ch. 7 prioritized-defaults extension, and
+     *  the symbolic role bindings the wire carries beside the v0 bean fields. All three ride BESIDE the model —
+     *  {@code RegelSpraakModel} is the faithful v0 shape, and the frontend records that would host these
+     *  extensions belong to a VENDORED slice the toolchain consumes at a pin, so they cannot grow a field here.
+     *  A consumer that needs them reads them from here (see {@link #loadAll}).
+     *
+     *  @param rolBindingen the symbolic (feittype, rol) binding per loaded IR NODE, by IDENTITY. Two node kinds
+     *         carry one:
+     *         <ul>
+     *           <li>a {@link ResolvedObjectCreatie} — IR-SPEC ch. 3.3 {@code verbindendeRol}, naming the role the
+     *               CREATED object plays. It is the only route to the back-link of a SELF-TYPED pair, whose
+     *               by-pair derivation is ambiguous by construction (two same-typed sibling roles); ch. 5.5 makes
+     *               it authoritative, and {@code ref/lib/eval.ml}'s {@code run_object_creatie} lets it WIN over
+     *               the type-pair derivation.</li>
+     *           <li>an {@link Expr.Functie} aggregation — {@code bronRol}, naming the role the aggregated ELEMENT
+     *               plays. Same self-typed gap: "de som van de rang van alle opvolgers van de Wachter" joins two
+     *               Wachters, which no by-pair search can disambiguate.</li>
+     *         </ul>
+     *         In both cases the SIBLING role — the one the anchor (subject) plays — is the bean field on the other
+     *         end. Absent for a node whose wire record carries no binding; the by-pair derivation then stands. */
+    public record Loaded(RegelSpraakModel model, List<PrioritizedDefaults> prioritizedDefaults,
+                         Map<Object, RolBindingRef> rolBindingen) {}
 
     /** Parse a {@code regelspraak-ir-v0} tree into a resolved model, or throw {@link Refusal} for a form
      *  the v0 backend does not carry. The prioritized-defaults extension (if any) is parsed but not returned —
@@ -101,13 +131,14 @@ public final class IrLoader {
         return new IrLoader().model(root);
     }
 
-    /** As {@link #load} but also returns the ch. 7 prioritized-defaults extension list beside the model (an EMPTY
-     *  list when the document carries none — a flat program, accepted explicitly). A malformed defaults bundle is
-     *  a loud {@link Refusal} raised while parsing, never a silent skip. */
+    /** As {@link #load} but also returns the ch. 7 prioritized-defaults extension list and the ch. 3.3 creation
+     *  role bindings beside the model (EMPTY when the document carries none — a flat program, accepted
+     *  explicitly). A malformed defaults bundle is a loud {@link Refusal} raised while parsing, never a silent
+     *  skip. */
     public static Loaded loadAll(JsonNode root) {
         IrLoader l = new IrLoader();
         RegelSpraakModel model = l.model(root);
-        return new Loaded(model, l.prioritizedDefaults);
+        return new Loaded(model, l.prioritizedDefaults, l.rolBindingen);
     }
 
     private RegelSpraakModel model(JsonNode root) {
@@ -278,10 +309,16 @@ public final class IrLoader {
             case "Functie" -> {
                 List<Expr> args = new ArrayList<>();
                 forEach(n.get("argumenten"), a -> args.add(expr(a)));
-                yield new Expr.Functie(enumOf(Expr.FunctieKind.class, text(n, "kind")), args,
+                Expr.Functie f = new Expr.Functie(enumOf(Expr.FunctieKind.class, text(n, "kind")), args,
                         ot(text(n, "elementObjecttype")), expr(n.get("leegwaarde")), conditie(n.get("filter")),
                         dimensieSelectie(n.get("dimensieSelectie")), datatype(n.get("type")), bron(n),
                         enumOf(Granulariteit.class, text(n, "granulariteit")));
+                // the aggregation's symbolic bronRol — see Loaded#rolBindingen. It stays OUT of the record (that
+                // one is vendored) and the transpiler still re-derives the join by pair FIRST; the binding is the
+                // fallback for the pair no by-pair search can disambiguate, a SELF-TYPED one.
+                RolBindingRef br = rolBinding(n.get("bronRol"));
+                if (br != null) rolBindingen.put(f, br);
+                yield f;
             }
             case "Afgerond" -> new Expr.Afgerond(expr(n.get("basis")),
                     enumOf(Expr.AfrondModus.class, text(n, "modus")), intOf(n, "decimalen"), bron(n));
@@ -361,8 +398,16 @@ public final class IrLoader {
         List<ResolvedObjectCreatie.Toekenning> tk = new ArrayList<>();
         forEach(n.get("toekenningen"), t -> tk.add(new ResolvedObjectCreatie.Toekenning(
                 text(t, "attribuut"), expr(t.get("waarde")), bool(t, "kenmerk"))));
-        return new ResolvedObjectCreatie(text(n, "naam"), ot(text(n, "nieuwType")), ot(text(n, "subject")),
-                tk, conditie(n.get("voorwaarde")), geldigheid(n.get("geldigheid")));
+        ResolvedObjectCreatie oc = new ResolvedObjectCreatie(text(n, "naam"), ot(text(n, "nieuwType")),
+                ot(text(n, "subject")), tk, conditie(n.get("voorwaarde")), geldigheid(n.get("geldigheid")));
+        // IR-SPEC ch. 3.3: the symbolic verbindendeRol is NOT a field of the (vendored, pinned)
+        // ResolvedObjectCreatie record, so it cannot be reconstructed INTO the model the way a feitcreatie's
+        // joinRol can. It is not emitter-derived either — ch. 5.5 makes it AUTHORITATIVE (the reference
+        // interpreter lets it win over the type-pair derivation, and it is the only route for a self-typed
+        // pair) — so it rides BESIDE the model instead of being dropped by the authority paragraph above.
+        RolBindingRef vr = rolBinding(n.get("verbindendeRol"));
+        if (vr != null) rolBindingen.put(oc, vr);
+        return oc;
     }
 
     private ResolvedVerdeling verdeling(JsonNode n) {
