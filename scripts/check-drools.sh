@@ -185,6 +185,11 @@ echo ""
 echo "check-drools: PASS"
 echo "  played $played  (loaded off the wire, wholly lowered, matched the pinned ref≡clingo expectations)"
 echo "  auto-excluded $auto_excl  (per-form refusals: loader / transpiler marker / contract / unsupported input)"
+# the reasons themselves, grouped — "not-carried forms never vanish silently" means the gate SHOWS them,
+# not merely counts them (before 2026-08-30 AUTO_REASONS was collected and never printed)
+if [ ${#AUTO_REASONS[@]} -gt 0 ]; then
+  printf '%s\n' "${AUTO_REASONS[@]}" | sort | uniq -c | sort -rn | sed 's/^ *\([0-9][0-9]*\) /    \1x  /'
+fi
 echo "  value-divergence $div_excl  (listed with reason — the exec-model differs from ref/clingo)"
 echo "  no-case $nocase  (goldens without a case file)"
 echo "  JUnit $tests tests  (the backend's own suite, green with a non-zero count)"

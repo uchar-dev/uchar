@@ -297,8 +297,9 @@ public final class ExecModelTranspiler {
         BiConsumer<Object, Object> doelSetter = Accessors.setter(factClass, doelProp);   // typed write (Phase-H codegen)
         java.util.function.Function<Object, Object> doelGetter = Accessors.getter(factClass, doelProp);   // read-back for the idempotent update
         // ch. 7.8 (the timeline arm): on a STANDING temporal target an empty fold result decides nothing and the
-        // case-supplied input timeline stands whole. The domain itself requires a temporal attribuut doel, so the
-        // lookup is inert on every other shape (a kenmerk doel included — ref excludes Kenmerktoekenning).
+        // case-supplied input timeline stands whole. The domain holds only ATTRIBUTE targets, but the lookup key
+        // carries no member kind while WF-002 admits a kenmerk sharing an attribute's name — so the kenmerk
+        // callsite below passes false explicitly (ref structurally cannot apply the arm to a Kenmerktoekenning).
         final boolean staandDoel = staandeTemporeleDoelen().contains(doelSleutel(doel));
         seq = 0;
         Variable sVar = DSL.declarationOf(factClass, "$subject");
@@ -380,8 +381,10 @@ public final class ExecModelTranspiler {
             if (kenmerkTl == null)
                 return skip("regel (temporele kenmerktoekenning — §8.4/§13.4.5 onbepaalde write-producer): " + r.naam());
             final java.util.function.Function<Object, List<?>> tl = kenmerkTl;
+            // NEVER the standing arm here: this is a KENMERK write, and the standing domain holds attribute
+            // targets only — a name-sharing temporal kenmerk (WF-002) must not inherit the attribute's status.
             consequence = DSL.on(sVar).execute((Block2<org.drools.model.Drools, Object>) (drools, s) ->
-                    werkBijTijdlijn(drools, s, doelGetter, doelSetter, tl.apply(s), staandDoel));
+                    werkBijTijdlijn(drools, s, doelGetter, doelSetter, tl.apply(s), false));
             List<RuleItemBuilder<?>> items = new ArrayList<>();
             items.add(pattern);
             items.addAll(extra);

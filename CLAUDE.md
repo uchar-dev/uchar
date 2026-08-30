@@ -198,16 +198,17 @@ green. Current gates:
     over the corpus). Not-carried forms never vanish silently: per-form
     auto-refusals (a loader Refusal on a v1 node/section, a transpiler
     marker, a contract violation, a dimensioned/rational/list/struct or
-    granular-parameter input, an objectcreatie, a name-sharing or
-    ambiguous-reciprocal bean limit — temporal case input and the
-    wederkerig self-relation are CARRIED since 2026-08-30) each print
-    their reason, and a reason-carrying value-divergence list IN THE
-    SCRIPT (the check-noop survivor pattern) names each golden whose
-    fired outcome differs from ref/clingo and FAILS WHEN STALE. The gate
-    rebuilds the jar and runs the backend's own JUnit suite, which must
-    pass with a non-zero, zero-skip test count (maintainer decision
-    2026-08-30). An empty played set is a failure. CI leg unconditional
-    and blocking.
+    granular-parameter input, an objectcreatie, an underivable role
+    reference, a name-sharing or ambiguous-reciprocal bean limit — the
+    corpus-exercised temporal case-input forms and the wederkerig
+    self-relation are CARRIED since 2026-08-30) each print their reason,
+    grouped, in the gate report, and a reason-carrying value-divergence
+    list IN THE SCRIPT (the check-noop survivor pattern) names each
+    golden whose fired outcome differs from ref/clingo and FAILS WHEN
+    STALE. The gate rebuilds the jar and runs the backend's own JUnit
+    suite, which must pass with a non-zero, zero-skip test count
+    (maintainer decision 2026-08-30). An empty played set is a failure.
+    CI leg unconditional and blocking.
 
 ## Repo relationships
 
