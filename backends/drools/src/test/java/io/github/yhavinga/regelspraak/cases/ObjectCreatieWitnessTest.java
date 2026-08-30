@@ -166,7 +166,36 @@ class ObjectCreatieWitnessTest {
         assertNull(CaseRunner.speelCase(ir, jutterMetLegeVerwachting("50", "20")));
     }
 
+    // ---------------- 5. the shapes the bean model cannot hold: refused per creation, by name ----------------
+
+    @Test void een_zelfgetypeerd_rollenpaar_wordt_luid_geweigerd() throws Exception {
+        // ch. 5.5 links BOTH ends, so a creation whose back-link no bean field can hold would mint an ORPHAN —
+        // inserted, and reachable from nothing. A self-typed pair (Wachter creates Wachter over `opvolging`'s
+        // two same-typed roles) is one such shape: the by-pair derivation is ambiguous by construction. The
+        // refusal is per CREATION and names WHICH shape, so the gate reports the real limit, not a blanket
+        // "objectcreatie is not carried" for every model that happens to contain one.
+        CaseRunner.Excluded e = weigering(Path.of("..", "..", "corpus", "rood", "runaway-recursion", "ir.json"));
+        assertTrue(e.getMessage().contains("zelfgetypeerd rollenpaar"), e.getMessage());
+    }
+
+    @Test void een_niet_uniek_verbindend_feittype_wordt_luid_geweigerd() throws Exception {
+        // the other shape, and a DIFFERENT reason: two feittypen relate the pair, so the back-link is ambiguous
+        // and ch. 5.5 refuses to guess. Both must be separable — one message for two causes would report the
+        // wrong limit for whichever model hits the other.
+        CaseRunner.Excluded e = weigering(Path.of("..", "..", "corpus", "rood", "ambiguous-backlink", "ir.json"));
+        assertTrue(e.getMessage().contains("geen uniek verbindend feittype"), e.getMessage());
+    }
+
     // ---------------- fixtures ----------------
+
+    /** The refusal building {@code irPath} raises — an assertion failure if it builds at all. */
+    private static CaseRunner.Excluded weigering(Path irPath) {
+        return org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.naFire(irPath, JSON.readTree("""
+                        { "format": "uchar-case-v0", "asOfDate": null,
+                          "input": { "instances": [], "parameters": {} }, "expected": [] }
+                        """)));
+    }
 
     /** Every post-fire fact that is NOT one of the case's own input beans — the mints. */
     private static List<Object> mints(CaseRunner.NaFire na) {
