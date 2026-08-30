@@ -3770,7 +3770,7 @@ public final class ExecModelTranspiler {
      *  {@code [aggOff, aggOff+aggCnt)} of the consequence's aggsAll[], then §4-restated from {@code van} (the value type)
      *  into {@code naar} (the new object's attribuut unit). */
     private record TkLower(String attr, BiFunction<Object, Map<String, BigDecimal>, Object> fn, Eval eval,
-                           int aggOff, int aggCnt, Datatype van, Datatype naar) {}
+                           int aggOff, int aggCnt, Datatype van, Datatype naar, boolean kenmerk) {}
 
     private static boolean isScalarSoort(ResolvedRegel.Soort s) {
         return s == ResolvedRegel.Soort.GELIJKSTELLING || s == ResolvedRegel.Soort.BEREKENING || s == ResolvedRegel.Soort.INITIALISATIE;
@@ -4957,23 +4957,52 @@ public final class ExecModelTranspiler {
     private List<Rule> skipList(String reason) { overgeslagen.add(reason); return List.of(); }
 
     // ---------------- §13.4.6 objectcreatie / §13.4.7 feitcreatie (Phase G) ----------------
-    /** §13.4.6 objectcreatie: the subject creates a NEW object of {@code nieuwType}, sets each toekenning value, sets
-     *  the back-reference to {@code $subject} (the §9.4 feittype role on the new object), and inserts it. An
-     *  insert-only rule (NO no-loop — it never modifies the subject, so it cannot self-retrigger), gated by the
-     *  voorwaarde (incl. a §8.1.7 far-side exists). null -> skip (unresolved type / no fact class / a toekenning value
-     *  out of the scalar scope / >1 global). Mirrors DrlTranspiler.objectCreatie.
+    /** §13.4.6 objectcreatie: the subject creates a NEW object of {@code nieuwType}, sets each toekenning value, links
+     *  new object and subject over the back-link relation, and inserts it. Gated by the voorwaarde (incl. a §8.1.7
+     *  far-side exists). null -> skip (unresolved type / no fact class / no back-link the bean model can hold / a
+     *  toekenning value out of the scalar scope / >1 global).
+     *
+     *  <p>Three deliberate departures from {@code DrlTranspiler.objectCreatie} (the ported production semantics),
+     *  each implementing {@code RUNTIME-SEMANTICS.md} ch. 5.5 where production does not — the spec is the product:
+     *  <ul>
+     *    <li><b>Both ends</b> of the back-link are written. Production writes only the created object's
+     *        back-reference, so a fold over the created type finds the mint but a to-one navigation FROM the
+     *        subject reads leeg. The forward field is written and the subject updated.</li>
+     *    <li>The <b>1:1 idempotence guard</b> reads the SUBJECT-side stored link (the forward field) rather than
+     *        the created object's back-reference, which is how the interpreter reads it and what the spec's
+     *        storage-direction narrowing records.</li>
+     *    <li>A <b>kenmerkwaardetoekenning</b> (§13.4.6.4) sets the mark only when its value is true; false or
+     *        empty leaves it unset, instead of unboxing a leeg into the primitive boolean field.</li>
+     *  </ul>
      *
      *  <p>§9 idempotence: no-loop does not stop the rule re-firing when ANOTHER rule later modifies a matched subject
-     *  (which would mint a duplicate), so the LHS carries an absence guard — a 1:1 target keys on the linked
-     *  instance's absence ({@code not <NieuwType>(backRef == $subject)}); a to-many target (or a missing back-ref)
-     *  keys on a per-rule per-subject {@link CreationMarker} (inserted in the consequence). Mirrors DrlTranspiler. */
+     *  (which would mint a duplicate), so the LHS carries an absence guard — a 1:1 target keys on the subject's
+     *  forward link being empty; a to-many target (or a missing forward field) keys on a per-rule per-subject
+     *  {@link CreationMarker} (inserted in the consequence). */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Rule objectCreatie(io.github.yhavinga.regelspraak.ir.ResolvedObjectCreatie oc) {
         Objecttype nieuw = oc.nieuwType(), subject = oc.subject();
         if (subject == null || nieuw == null) return skip("objectcreatie (onopgelost type): " + oc.naam());
         Class<?> subjClass = factClass(subject), nieuwClass = factClass(nieuw);
         if (subjClass == null || nieuwClass == null) return skip("objectcreatie (geen fact-class): " + oc.naam());
-        String backRef = model.verbindendeRol(nieuw, subject);   // field on $new -> subject (null -> orphan insert, like DRL)
+        String backRef = model.verbindendeRol(nieuw, subject);   // field on $new -> subject
+        String fwdRef = model.verbindendeRol(subject, nieuw);    // field on $subject -> $new (ch. 5.5: BOTH ends)
+        // Only a to-ONE forward role has a bean field at all: FactModelGenerator.leden derives the scalar
+        // reference on the many side, so a to-many forward role is stored solely as the created object's backRef.
+        boolean fwdScalar = fwdRef != null && !model.naarVeelRol(subject, nieuw, fwdRef);
+        if (!fwdScalar) fwdRef = null;
+        // Neither end derivable (a self-typed or ambiguous role pair: FactModelGenerator derives no reference
+        // field for either side) means the mint would be an ORPHAN — inserted but reachable from nothing, so no
+        // navigated read or fold could ever see it. RUNTIME-SEMANTICS ch. 5.5 links both ends; a link the bean
+        // model cannot hold is NOT-CARRIED, refused loudly, never a silently wrong value at fire.
+        if (backRef == null && fwdRef == null)
+            // The two shapes are DIFFERENT refusals and are named apart: an ambiguous pair is ch. 5.5's refusal
+            // to guess (the interpreter faults there), a self-typed pair is a bean-model gap (the reference field
+            // is derivable only from the creation's symbolic role binding, which this bean model does not carry).
+            return skip("objectcreatie (" + (subject == nieuw
+                    ? "zelfgetypeerd rollenpaar: uit twee gelijkgetypeerde rollen leidt de bean geen referentieveld af"
+                    : "geen uniek verbindend feittype: de terugkoppeling is niet af te leiden en ch. 5.5 gist niet")
+                    + ", dus het gecreëerde object zou onbereikbaar zijn): " + oc.naam());
         boolean eenOpEen = backRef != null && !model.subjectNaarVeelCreatie(subject, nieuw);   // §9 guard shape (see doc)
 
         // Lower each toekenning value to a §13.4.6.2 value producer (TkLower). The runtime receiver is the anchor
@@ -5003,12 +5032,12 @@ public final class ExecModelTranspiler {
                     Eval eval = lowerVal(t.waarde(), subject, sVar, gNames, accItems, tAccVars);
                     if (eval == null) return skip("objectcreatie (aggregatie-toekenning buiten scope): " + oc.naam());
                     int off = accVars.size(); accVars.addAll(tAccVars);   // remember offset BEFORE appending
-                    tks.add(new TkLower(t.attribuut(), null, eval, off, tAccVars.size(), t.waarde().type(), naar));
+                    tks.add(new TkLower(t.attribuut(), null, eval, off, tAccVars.size(), t.waarde().type(), naar, t.kenmerk()));
                 } else {
                     WaardeFn wf = scalarWaarde(subject, t.waarde());
                     if (wf == null) return skip("objectcreatie (toekenning-waarde buiten scope): " + oc.naam());
                     gNames.addAll(wf.globals());
-                    tks.add(new TkLower(t.attribuut(), wf.fn(), null, 0, 0, t.waarde().type(), naar));
+                    tks.add(new TkLower(t.attribuut(), wf.fn(), null, 0, 0, t.waarde().type(), naar, t.kenmerk()));
                 }
             }
         } finally {
@@ -5029,13 +5058,16 @@ public final class ExecModelTranspiler {
         // §9 idempotence guard: 1:1 -> not <NieuwType>(backRef == $subject); to-many/orphan -> not CreationMarker(
         // regel == naam, subject == $subject). The marker case ALSO inserts the marker in the consequence body.
         final String ruleNaam = oc.naam();
-        RuleItemBuilder<?> idemGuard;
+        RuleItemBuilder<?> idemGuard = null;
         if (eenOpEen) {
-            final String fBackRef1 = backRef;
-            Variable linkVar = DSL.declarationOf(nieuwClass, "$link_" + (seq++));
-            PatternDSL.PatternDef linkPat = PatternDSL.pattern(linkVar)
-                    .expr(nextId("idem"), (Variable) sVar, (Predicate2) (n, s) -> RegelSpraakRuntime.get(n, fBackRef1) == s);
-            idemGuard = DSL.not(linkPat);
+            // ch. 5.5, the 1:1 linked-instance guard read as the interpreter reads it: the SUBJECT-side stored
+            // link on the created-side role (ref's role_links over new_role), i.e. the forward field the
+            // consequence below writes. Deliberately NOT the created object's back-reference: a case that
+            // delivers the link solely on the created side must NOT block (the storage-direction narrowing the
+            // spec records), and reading the subject side also makes the write below safe — it can never hand
+            // an already-filled to-one role a second filler.
+            final String fFwdRef1 = fwdRef;
+            pattern = pattern.expr(nextId("idem"), (Predicate1) o -> RegelSpraakRuntime.get(o, fFwdRef1) == null);
         } else {
             Variable markVar = DSL.declarationOf(CreationMarker.class, "$mark_" + (seq++));
             PatternDSL.PatternDef markPat = PatternDSL.pattern(markVar)
@@ -5046,7 +5078,7 @@ public final class ExecModelTranspiler {
         final boolean fMarker = !eenOpEen;
 
         final List<TkLower> fTks = tks;
-        final String fBackRef = backRef; final Class<?> fNieuwClass = nieuwClass;
+        final String fBackRef = backRef; final String fFwdRef = fwdRef; final Class<?> fNieuwClass = nieuwClass;
         final List<String> fG = gList; final int nG = gList.size(); final int nAgg = accVars.size();
         java.util.function.BiConsumer<org.drools.model.Drools, Object[]> body = (drools, args) -> {
             Object s = args[0];
@@ -5063,6 +5095,18 @@ public final class ExecModelTranspiler {
                     Object[] slice = java.util.Arrays.copyOfRange(aggsAll, tk.aggOff(), tk.aggOff() + tk.aggCnt());
                     v = herschaalWaarde(tk.eval().apply(s, gm, slice), tk.van(), tk.naar());   // §4 EXACT restate the aggregate into the attribuut unit
                 }
+                if (tk.kenmerk()) {
+                    // §13.4.6.4 kenmerkwaardetoekenning, ch. 5.5's reading: the mark is SET when the value
+                    // evaluates true; false OR EMPTY leaves it unset — equivalent to an absent initialisation
+                    // under the closed-world reading a characteristic check applies. The bean field is a
+                    // primitive boolean whose default IS unset, so "leave it" is literally a skipped write;
+                    // writing the leeg through would unbox null (the intValue() NPE this arm replaces).
+                    if (Boolean.TRUE.equals(v)) RegelSpraakRuntime.set(newObj, tk.attr(), Boolean.TRUE);
+                    else if (v != null && !(v instanceof Boolean))
+                        throw new IllegalStateException("kenmerkinitialisatie van '" + tk.attr()
+                                + "' is niet booleaans: " + v + " (WF-027)");
+                    continue;
+                }
                 // §6.1.2 write boundary: collapse a remaining exact Breuk (a computed met-clause value) to its decimal
                 // form before the reflective set, so it never reaches a BigDecimal field (mirrors werkBij).
                 RegelSpraakRuntime.set(newObj, tk.attr(), collapseBreuk(v));
@@ -5070,6 +5114,17 @@ public final class ExecModelTranspiler {
             if (fBackRef != null) RegelSpraakRuntime.set(newObj, fBackRef, s);
             drools.insert(newObj);
             if (fMarker) drools.insert(new CreationMarker(ruleNaam, s));   // §9 mark this (rule, subject) created
+            if (fFwdRef != null) {
+                // ch. 5.5: new object and subject are linked over the back-link relation — BOTH ends, so a
+                // navigated read from the subject reaches the mint. The production toolchain writes only the
+                // created object's end (a fold over the created type still finds it, a to-one navigation never
+                // does); this backend implements the spec. The update is required, not cosmetic: the subject is
+                // an already-matched fact, so without it every rule that navigates to the mint keeps its
+                // pre-creation match. It cannot re-trigger this rule — the guard above reads exactly the field
+                // just filled (1:1), and the marker cancels the activation otherwise.
+                RegelSpraakRuntime.set(s, fFwdRef, newObj);
+                drools.update(s);
+            }
         };
         List<Variable> vars = new ArrayList<>();
         vars.add(sVar);
@@ -5084,8 +5139,11 @@ public final class ExecModelTranspiler {
 
         // accumulate CEs join the related elements to $subject, so they follow the subject pattern + idempotence guard
         // (like the regel path's extra.addAll(accItems) after the doel pattern). Order: pattern; extra; idemGuard; accItems; consequence.
+        // idemGuard is null on the 1:1 path — that guard now rides the subject pattern itself (see above).
         List<RuleItemBuilder<?>> items = new ArrayList<>();
-        items.add(pattern); items.addAll(extra); items.add(idemGuard); items.addAll(accItems); items.add(consequence);
+        items.add(pattern); items.addAll(extra);
+        if (idemGuard != null) items.add(idemGuard);
+        items.addAll(accItems); items.add(consequence);
         return PatternDSL.rule(kop(oc.naam())).build(items.toArray(new RuleItemBuilder[0]));
     }
 

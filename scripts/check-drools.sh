@@ -11,10 +11,10 @@
 # NOT-CARRIED forms never vanish silently. Two reason-carrying channels, both loud:
 #   1. PER-FORM auto-exclusions — the CLI itself refuses a form the v0 backend does not carry
 #      (a loader Refusal on a v1 node/section, a transpiler MARKER/SKIP, a contract violation, a
-#      temporal/dimensioned/rational/list/struct input, an OBJECTCREATIE (§13.4.6) that does not
-#      execute, a WEDERKERIG self-relation (§13.3.9.2), an attributeTimeline read-back). The reason
-#      is printed; these self-document per form. A form that lowers but faults / yields the wrong
-#      value at fire — objectcreatie among them — is not carried and lands HERE, not in channel 2.
+#      temporal/dimensioned/rational/list/struct input, an OBJECTCREATIE (§13.4.6) whose back-link
+#      the bean model cannot hold, a WEDERKERIG self-relation (§13.3.9.2), an attributeTimeline
+#      read-back). The reason is printed; these self-document per form. A form that lowers but
+#      faults / yields the wrong value at fire is not carried and lands HERE, not in channel 2.
 #   2. VALUE-DIVERGENCE exclusions — a golden that loads, lowers, fires WITHOUT faulting, and
 #      produces a WRONG VALUE (a FAIL: verwacht X, werkelijk Y). The exec-model (the production
 #      RegelSpraak semantics) genuinely differs from ref/clingo here; each such golden is listed
@@ -98,9 +98,11 @@ EXCLUDE_KNOWN=(
   # Literalen.enumLabel does for single quotes) instead of every quote, so an embedded quote survives
   # the equality AND the computed-text write — ref ≡ clingo ≡ Drools on the quote-bearing golden, which
   # now PLAYS+PASSES. Removing this entry is mandatory: a listed golden that plays trips the stale guard.
-  # NB objectcreatie (§13.4.6) and wederkerig self-relations (§13.3.9.2) are NOT listed here: they do not
-  # execute in the v0 backend at all (a navigated created-object read yields leeg / an intValue() NPE; a self-pair
-  # role has no derived bean field), so they are LOUD PER-FORM auto-exclusions in CaseRunner, not value-divergences.
+  # NB objectcreatie (§13.4.6) EXECUTES since 2026-08-30 (card drools-objectcreatie): both ends of the back-link
+  # are written and the kenmerkinitialisatie is honoured, so its goldens PLAY against their unchanged pins. What
+  # remains not-carried is per creation, not per model — a back-link the bean model cannot hold (a self-typed or
+  # non-unique role pair) — and, like the wederkerig self-relation (§13.3.9.2, no derived bean field), it is a
+  # LOUD PER-FORM auto-exclusion (transpiler SKIP / CaseRunner refusal), never a value-divergence.
   # A crash-at-fire is a not-carried form, never a "genuine exec-model semantic difference" — see the ERROR arm below.
   #
   # The three goldens the temporal case-input port surfaced 2026-08-30 (jutterswet-borgdeel,

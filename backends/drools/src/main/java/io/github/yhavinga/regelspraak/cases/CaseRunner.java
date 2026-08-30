@@ -138,15 +138,10 @@ public final class CaseRunner {
         // A form the v0 backend cannot REPLAY is refused up front — a LOUD per-form exclusion, never a
         // silent value-divergence in the gate. Carrying it to fire only to fault or misvalue there is
         // honestly NOT-CARRIED, not a semantic exec-model difference, so it belongs in the auto-excluded
-        // channel with a reason, not the value-divergence list whose banner claims a genuine ref/clingo delta:
-        //   §13.4.6 objectcreatie — the creation consequence does not execute in this backend: a navigated
-        //     read of the created object yields leeg, or the creation rule raises an intValue() NPE on a leeg
-        //     member. It lowers without a marker and reaches fire, but never reproduces the pinned value;
-        //     scoped not-carried pending triage, so the gate makes NO claim the backend executes objectcreatie.
-        if (!model.objectCreaties.isEmpty())
-            throw new Excluded("objectcreatie (§13.4.6) is not replayed by the v0 Drools backend — the creation "
-                    + "consequence does not execute (a navigated created-object read yields leeg, or an intValue() "
-                    + "NPE is raised on a leeg member); it lowers and reaches fire but never reproduces the pinned value");
+        // channel with a reason, not the value-divergence list whose banner claims a genuine ref/clingo delta.
+        // (§13.4.6 objectcreatie was refused here until 2026-08-30; the creation consequence now executes —
+        // both back-link ends written, the kenmerkinitialisatie honoured — so the shapes it still cannot carry
+        // are refused per creation by the transpiler, which knows WHICH one, not blanket for every model.)
         //   §13.3.9.2 name-sharing bean limit — leden() ports every member through a name-dedup (attribute >
         //     kenmerk > reference), so a declared member sharing the reciprocal role's name displaces the
         //     self-pair reference field; the mirror pass would then read a Boolean or set an impossible type,
