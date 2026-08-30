@@ -48,6 +48,14 @@ class ObjectCreatieWitnessTest {
     /** The same shape plus a §13.4.6.4 kenmerkwaardetoekenning: the mint's `overzees` mark comes from a
      *  NULLABLE Booleaan attribute on the subject, and the mint's own heffing rule branches on the mark. */
     private static final String OVERZEE = "anchor/jutterswet-rekenkamer-overzee";
+    /** The SELF-TYPED creation: a Wachter creates a Wachter over `opvolging`, whose two DISTINCT sibling roles
+     *  (`voorganger`, `opvolger`) are both filled by Wachter — the pair no by-pair derivation can resolve. */
+    private static final String WACHTERSKETEN = "anchor/jutterswet-wachtersketen";
+    /** The §9.5 Phase-D model: two consistenties (a kenmerk assertie, an AANTAL-over-a-role assertie) beside two
+     *  creations, one of them toekenningloos. */
+    private static final String PENNING = "anchor/jutterswet-penninguitgifte";
+    /** The red model whose creation subject and created type are related by TWO feittypen. */
+    private static final Path AMBIGU = Path.of("..", "..", "corpus", "rood", "ambiguous-backlink", "ir.json");
 
     // ---------------- 1. the mint itself: a fact, its members, both link ends ----------------
 
@@ -232,22 +240,52 @@ class ObjectCreatieWitnessTest {
 
     // ---------------- 5. the shapes the bean model cannot hold: refused per creation, by name ----------------
 
-    @Test void een_zelfgetypeerd_rollenpaar_wordt_luid_geweigerd() throws Exception {
-        // ch. 5.5 links BOTH ends, so a creation whose back-link no bean field can hold would mint an ORPHAN —
-        // inserted, and reachable from nothing. A self-typed pair (Wachter creates Wachter over `opvolging`'s
-        // two same-typed roles) is one such shape: the by-pair derivation is ambiguous by construction. The
-        // refusal is per CREATION and names WHICH shape, so the gate reports the real limit, not a blanket
-        // "objectcreatie is not carried" for every model that happens to contain one.
-        CaseRunner.Excluded e = weigering(Path.of("..", "..", "corpus", "rood", "runaway-recursion", "ir.json"));
-        assertTrue(e.getMessage().contains("zelfgetypeerd rollenpaar"), e.getMessage());
+    @Test void een_zelfgetypeerd_rollenpaar_koppelt_beide_uiteinden() throws Exception {
+        // WAS a refusal witness until 2026-08-30 (card drools-zelfgetypeerd-creatiepaar): a self-typed pair
+        // (Wachter creates Wachter over `opvolging`'s two same-typed roles) is now CARRIED, because the creation's
+        // own symbolic verbindendeRol binding rides beside the model and names the role the MINT plays — the only
+        // route there is, since the by-pair derivation counts two candidates and yields null by construction (ref
+        // reads it exactly so: "the explicit back-link binding wins ... the only route for a self-typed pair").
+        // Both ends are the point: `opvolger` and `voorganger` are DISTINCT sibling roles filled by the same type,
+        // so a lowering that wrote one end twice, or that picked the wrong sibling, would still produce a linked
+        // pair — and the corpus totals would still land, because the chain is symmetric in rank. Only the two
+        // assertSames below separate them. ref on this model+case: W1.opvolgerrang = 5, rangdetector violated
+        // (by the mint, rank 5).
+        CaseRunner.NaFire na = CaseRunner.naFire(ir(WACHTERSKETEN), wachter("4"));
+        Object w1 = na.invoer().get("W1");
+        Object mint = enigeMint(na);
+
+        assertEquals("Wachter", mint.getClass().getSimpleName());
+        assertEquals(0, bedrag(mint, "rang").compareTo(new java.math.BigDecimal("5")));
+        assertSame(mint, RegelSpraakRuntime.get(w1, "opvolger"),
+                "the subject references the mint over the BOUND role (the one the created object plays)");
+        assertSame(w1, RegelSpraakRuntime.get(mint, "voorganger"),
+                "and the mint references the subject over that role's SIBLING — not over the bound role again");
+        assertNull(CaseRunner.speelCase(ir(WACHTERSKETEN), wachter("4")), "ref agrees: opvolgerrang 5");
     }
 
-    @Test void een_niet_uniek_verbindend_feittype_wordt_luid_geweigerd() throws Exception {
-        // the other shape, and a DIFFERENT reason: two feittypen relate the pair, so the back-link is ambiguous
-        // and ch. 5.5 refuses to guess. Both must be separable — one message for two causes would report the
-        // wrong limit for whichever model hits the other.
-        CaseRunner.Excluded e = weigering(Path.of("..", "..", "corpus", "rood", "ambiguous-backlink", "ir.json"));
-        assertTrue(e.getMessage().contains("geen uniek verbindend feittype"), e.getMessage());
+    @Test void een_niet_uniek_verbindend_feittype_faalt_bij_fire() throws Exception {
+        // WAS an Excluded witness until 2026-08-30. The card's lowering-vs-fire question, pinned: two feittypen
+        // relate the pair, so ch. 5.5 refuses to guess — but that is a property of the PROGRAM, not a gap in this
+        // backend (the §13.4.6 form is carried; every other creation lowers and fires). So it must NOT be reported
+        // as a not-carried form; it lowers to a rule that FAULTS at fire, worded as ref words it, so the red fence
+        // pins ONE fragment across all three executors.
+        RuntimeException e = org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
+                () -> CaseRunner.naFire(AMBIGU, jutterZonderVerwachting()));
+        assertTrue(!(e instanceof CaseRunner.Excluded),
+                "an ambiguous back-link is a faulty program, not an unsupported form: " + e);
+        assertTrue(oorzaken(e).contains("the created object's back-link is ambiguous"), oorzaken(e));
+    }
+
+    @Test void diezelfde_ambiguiteit_zonder_subject_bereikt_de_fout_niet() throws Exception {
+        // The NARROWING that choice records, stated rather than left to be discovered: a Drools rule needs a
+        // matching fact, so an empty world never reaches the fault — where ref, which resolves the pair before it
+        // walks the subjects, faults on an empty world too. Nothing in the corpus depends on it; it is pinned so
+        // the difference is a decision on the record, not a silent gap.
+        org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> CaseRunner.naFire(AMBIGU, JSON.readTree("""
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [], "parameters": {} }, "expected": [] }
+                """)));
     }
 
     @Test void twee_meervoudige_rollen_worden_luid_geweigerd() throws Exception {
@@ -318,6 +356,63 @@ class ObjectCreatieWitnessTest {
         assertNull(CaseRunner.speelCase(ir, jutterMetLegeVerwachting("240", "90")));
     }
 
+    // ---------------- 5c. the §9.5 / §13.4.8 Phase-D consistentie assertions ----------------
+
+    @Test void een_kenmerkassertie_vlagt_de_genegeerde_lezing() throws Exception {
+        // §9.5 form (a): "elke Penning is uitgereikt". The VIOLATION is the negated kenmerk read — and a mark is
+        // two-valued under the closed-world reading, so unlike a numeric ordering (whose leeg flank makes BOTH the
+        // criterion and its negation a violation) the schending is exactly !leafPredicate. Model: the
+        // penninguitgifte golden with the OTHER consistentie removed, so this arm is what decides. ref on this
+        // model+case: the supplied P1 (never uitgereikt) is inconsistent under `penningcontrole`; the MINTED
+        // penning, whose kenmerkinitialisatie sets the mark, is not.
+        Path ir = zonderHouderscontrole();
+        assertNull(CaseRunner.speelCase(ir, penningCase(false)), "ref agrees: penningcontrole @ P1");
+    }
+
+    @Test void dezelfde_kenmerkassertie_vlagt_de_vervulde_lezing_niet() throws Exception {
+        // The flank that keeps the arm from being a rule that always fires: the SAME model and instances with the
+        // mark supplied on P1 leaves every Penning consistent. ref pins the same.
+        assertNull(CaseRunner.speelCase(zonderHouderscontrole(), penningCase(true)), "ref agrees: consistent");
+    }
+
+    @Test void een_aantalassertie_over_een_enkelvoudige_rol_vlagt_de_lege_telling() throws Exception {
+        // §9.5 form (b): an AANTAL over a role compared with 1. Over a TO-ONE role the count is the PRESENCE
+        // count — 0 or 1 — read from the subject's own scalar reference field, which is where ref reads it too
+        // (its role_links are per instance per role key). Model: penninguitgifte with the houderscontrole
+        // rewritten onto `dossiervoering`, the 1:1 relation where each direction owns a field (see the refusal
+        // witness below for why the penningbezit form cannot be carried). A jutter who is not penninggerechtigd
+        // gets no dossier minted, so the count is 0 and the assertion is violated. ref agrees: inconsistent @ J1.
+        Path ir = dossierAantalAssertie();
+        assertNull(CaseRunner.speelCase(ir, jutterMetDossierVerwachting(false, "0")), "ref agrees: houderscontrole @ J1");
+    }
+
+    @Test void dezelfde_aantalassertie_vlagt_een_gevulde_telling_niet() throws Exception {
+        // and its flank: a jutter whose dossier the CASE supplies counts 1 and is not flagged. Without this arm a
+        // lowering that always counted 0 would pass the one above.
+        // Deliberately an INPUT dossier, not a minted one. A consistentie rule in this back-end carries no
+        // salience, so on a MINTED dossier the flag is order-dependent: fire the consistentie before the creation
+        // and the (insert-only, idempotence-guarded) Inconsistentie is never retracted, where ref evaluates every
+        // consistentie at the computed fixpoint. That exposure is PRE-EXISTING and orthogonal to this card — it
+        // applies to any consistentie over a rule-computed value, and no corpus golden has one (checked: no
+        // golden asserts over an attribute that is also a rule target) — so it is recorded here rather than
+        // smuggled into a witness whose subject is the assertion form.
+        assertNull(CaseRunner.speelCase(dossierAantalAssertie(), jutterMetIngevoerdDossier()),
+                "ref agrees: consistent");
+    }
+
+    @Test void een_aantalassertie_over_een_gedeeld_veld_wordt_luid_geweigerd() throws Exception {
+        // The §13.3.9 STORAGE-DIRECTION limit, named rather than silently answered. `penningbezit` pairs a to-one
+        // `houder` with a to-many `penning`, so the relation has exactly ONE bean field (Penning.houder) and it
+        // necessarily carries BOTH directions: a link the case supplies from the JUTTER's side lands there and
+        // would be counted as the penning's own houder, where ref — storing links per instance per role key —
+        // counts none. A presence count over a shared field is not a directional count, so the assertion is
+        // refused per construct, by name, instead of asserting a violation that is not there or missing one that
+        // is. (This is why the penninguitgifte golden stays gate-12 excluded; its OTHER consistentie plays.)
+        CaseRunner.Excluded e = weigering(ir(PENNING));
+        assertTrue(e.getMessage().contains("houderscontrole"), e.getMessage());
+        assertTrue(e.getMessage().contains("zusterrol 'penning' meervoudig"), e.getMessage());
+    }
+
     // ---------------- 6. the §4.2 validity window ON the creation ----------------
 
     @Test void een_creatie_buiten_haar_venster_munt_niet() throws Exception {
@@ -363,12 +458,14 @@ class ObjectCreatieWitnessTest {
         return sb.toString();
     }
 
-    /** Every post-fire fact that is NOT one of the case's own input beans — the mints. The §9 idempotence
-     *  {@link io.github.yhavinga.regelspraak.runtime.CreationMarker} is a fact too, and equally not an input
-     *  bean, so it is excluded by TYPE: it is bookkeeping the guard inserts, never a created object. */
+    /** Every post-fire fact that is NOT one of the case's own input beans — the mints. Two other fact kinds are
+     *  equally not input beans and equally not created objects, so both are excluded by TYPE: the §9 idempotence
+     *  {@link io.github.yhavinga.regelspraak.runtime.CreationMarker} the guard inserts, and the §9.5
+     *  {@code Inconsistentie} a consistentie rule inserts (a generated class, so it is matched by name). */
     private static List<Object> mints(CaseRunner.NaFire na) {
         return na.feiten().stream()
                 .filter(f -> !(f instanceof io.github.yhavinga.regelspraak.runtime.CreationMarker))
+                .filter(f -> !"Inconsistentie".equals(f.getClass().getSimpleName()))
                 .filter(f -> na.invoer().values().stream().noneMatch(b -> b == f)).toList();
     }
 
@@ -567,6 +664,114 @@ class ObjectCreatieWitnessTest {
                           "periode": null, "bron": "de grondslag van de Jutter is groter dan 100" }
                         """));
         return schrijf(ir, "met-voorwaarde");
+    }
+
+    /** W1 with the given rank, replayed against the ref-verified wachtersketen expectations: the chain advances
+     *  ONE generation from rank 4 (the creation's voorwaarde is rank &lt; 5), so exactly one mint exists. */
+    private static JsonNode wachter(String rang) throws Exception {
+        return JSON.readTree(("""
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [ { "label": "W1", "objectType": "Wachter",
+                      "attributes": { "rang": { "number": "%s" } }, "roles": {}, "characteristics": [] } ],
+                      "parameters": {} },
+                  "expected": [ { "kind": "attributeValue", "label": "W1", "attribute": "opvolgerrang",
+                                  "value": { "number": "5" } },
+                                { "kind": "inconsistent", "rule": "rangdetector" } ] }
+                """).formatted(rang));
+    }
+
+    /** One Jutter, no expectations asserted — the input a fault witness needs (the rule must have a subject). */
+    private static JsonNode jutterZonderVerwachting() throws Exception {
+        return JSON.readTree("""
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [ { "label": "J1", "objectType": "Jutter",
+                      "attributes": {}, "roles": {}, "characteristics": [] } ], "parameters": {} },
+                  "expected": [] }
+                """);
+    }
+
+    /** The penninguitgifte model with the AANTAL consistentie removed, so the KENMERK assertion is the only
+     *  §9.5 construct and the model lowers whole. */
+    private static Path zonderHouderscontrole() throws Exception {
+        var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(PENNING)));
+        ir.set("consistenties", zonder(ir.get("consistenties"), "houderscontrole"));
+        ir.set("regels", zonder(ir.get("regels"), "houderscontrole"));
+        return schrijf(ir, "zonder-houderscontrole");
+    }
+
+    /** The same model with the AANTAL consistentie REWRITTEN onto `dossiervoering` — the 1:1 relation where both
+     *  directions own a bean field, so a directional presence count IS expressible. */
+    private static Path dossierAantalAssertie() throws Exception {
+        var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(PENNING)));
+        for (JsonNode c : ir.get("consistenties")) {
+            if (!"houderscontrole".equals(c.path("naam").asText())) continue;
+            var k = (com.fasterxml.jackson.databind.node.ObjectNode) c;
+            k.put("subject", "Jutter");
+            var f = (com.fasterxml.jackson.databind.node.ObjectNode) k.get("assertie").get("links");
+            f.put("elementObjecttype", "Dossier");
+            f.set("bronRol", JSON.readTree("""
+                    { "node": "RolBinding", "feittype": "dossiervoering", "rol": "dossier" }"""));
+            var arg = (com.fasterxml.jackson.databind.node.ObjectNode) f.get("argumenten").get(0);
+            arg.put("attribuut", "dossiers");
+            arg.put("objecttype", "Jutter");
+        }
+        return schrijf(ir, "dossier-aantal");
+    }
+
+    private static com.fasterxml.jackson.databind.node.ArrayNode zonder(JsonNode lijst, String naam) {
+        var behouden = JSON.createArrayNode();
+        for (JsonNode n : lijst) if (!naam.equals(n.path("naam").asText())) behouden.add(n);
+        return behouden;
+    }
+
+    /** J3 with a supplied penning P1 and dossier D1; {@code uitgereikt} marks P1, which decides whether the
+     *  kenmerk assertion is violated. The pinned values are ref's on the houderscontrole-less model. */
+    private static JsonNode penningCase(boolean uitgereikt) throws Exception {
+        return JSON.readTree(("""
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [
+                      { "label": "J3", "objectType": "Jutter", "attributes": { "vondstwaarde": { "number": "7" } },
+                        "roles": { "penningen": ["P1"], "dossier": ["D1"] }, "characteristics": ["penninggerechtigd"] },
+                      { "label": "P1", "objectType": "Penning", "attributes": { "bedrag": { "number": "5" } },
+                        "roles": {}, "characteristics": [%s] },
+                      { "label": "D1", "objectType": "Dossier", "attributes": {}, "roles": {}, "characteristics": [] } ],
+                      "parameters": {} },
+                  "expected": [ { "kind": "attributeValue", "label": "J3", "attribute": "aantal penningen",
+                                  "value": { "number": "2" } }, %s ] }
+                """).formatted(uitgereikt ? "\"uitgereikt\"" : "",
+                uitgereikt ? "{ \"kind\": \"consistent\" }"
+                           : "{ \"kind\": \"attributeValue\", \"label\": \"J3\", \"attribute\": \"aantal dossiers\", \"value\": { \"number\": \"1\" } },"
+                             + " { \"kind\": \"inconsistent\", \"rule\": \"penningcontrole\", \"label\": \"P1\" }"));
+    }
+
+    /** One dossierless Jutter against the rewritten dossier assertion: the count is 0 and the assertion violated. */
+    private static JsonNode jutterMetDossierVerwachting(boolean gerechtigd, String aantal) throws Exception {
+        return JSON.readTree(("""
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [ { "label": "J1", "objectType": "Jutter",
+                      "attributes": { "vondstwaarde": { "number": "5" } }, "roles": {},
+                      "characteristics": [%s] } ], "parameters": {} },
+                  "expected": [ { "kind": "attributeValue", "label": "J1", "attribute": "aantal dossiers",
+                                  "value": { "number": "%s" } }, %s ] }
+                """).formatted(gerechtigd ? "\"penninggerechtigd\"" : "", aantal,
+                gerechtigd ? "{ \"kind\": \"consistent\" }"
+                           : "{ \"kind\": \"inconsistent\", \"rule\": \"houderscontrole\", \"label\": \"J1\" }"));
+    }
+
+    /** The same jutter with the dossier delivered as INPUT (so no creation, hence no rule-ordering dependence):
+     *  the count is 1 and nothing is flagged. */
+    private static JsonNode jutterMetIngevoerdDossier() throws Exception {
+        return JSON.readTree("""
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [
+                      { "label": "J1", "objectType": "Jutter", "attributes": { "vondstwaarde": { "number": "5" } },
+                        "roles": { "dossier": ["D1"] }, "characteristics": [] },
+                      { "label": "D1", "objectType": "Dossier", "attributes": {}, "roles": {}, "characteristics": [] } ],
+                      "parameters": {} },
+                  "expected": [ { "kind": "attributeValue", "label": "J1", "attribute": "aantal dossiers",
+                                  "value": { "number": "1" } },
+                                { "kind": "consistent" } ] }
+                """);
     }
 
     private static Path schrijf(JsonNode ir, String naam) throws Exception {
