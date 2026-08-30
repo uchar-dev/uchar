@@ -122,6 +122,8 @@ public final class ExecModelTranspiler {
      *  constraint and silently use the first rule's predicate for both — the cross-rule analog of the within-rule
      *  id-collision. A global counter makes every constraint id unique, so no rule ever inherits another's predicate. */
     private int idSeq;
+    /** ch. 7.8's standing-temporal-target domain, computed once per model (see {@link #staandeTemporeleDoelen}). */
+    private Set<String> staandeDoelen;
 
     /** A lowered voorwaarde: the subject pattern with its in-pattern constraints, plus zero or more SEPARATE
      *  rule items (the §8.1.7 far-side {@code exists}/{@code not} joins) appended after it — the model analog of
@@ -294,6 +296,10 @@ public final class ExecModelTranspiler {
         String doelProp = doel.attribuut();
         BiConsumer<Object, Object> doelSetter = Accessors.setter(factClass, doelProp);   // typed write (Phase-H codegen)
         java.util.function.Function<Object, Object> doelGetter = Accessors.getter(factClass, doelProp);   // read-back for the idempotent update
+        // ch. 7.8 (the timeline arm): on a STANDING temporal target an empty fold result decides nothing and the
+        // case-supplied input timeline stands whole. The domain itself requires a temporal attribuut doel, so the
+        // lookup is inert on every other shape (a kenmerk doel included — ref excludes Kenmerktoekenning).
+        final boolean staandDoel = staandeTemporeleDoelen().contains(doelSleutel(doel));
         seq = 0;
         Variable sVar = DSL.declarationOf(factClass, "$subject");
         PatternDSL.PatternDef pattern = PatternDSL.pattern(sVar);
@@ -374,12 +380,8 @@ public final class ExecModelTranspiler {
             if (kenmerkTl == null)
                 return skip("regel (temporele kenmerktoekenning — §8.4/§13.4.5 onbepaalde write-producer): " + r.naam());
             final java.util.function.Function<Object, List<?>> tl = kenmerkTl;
-            consequence = DSL.on(sVar).execute((Block2<org.drools.model.Drools, Object>) (drools, s) -> {
-                Object nieuw = tl.apply(s);
-                if (RegelSpraakRuntime.rsTijdreeksGelijk((List<?>) doelGetter.apply(s), (List<?>) nieuw)) return;
-                doelSetter.accept(s, nieuw);
-                drools.update(s);
-            });
+            consequence = DSL.on(sVar).execute((Block2<org.drools.model.Drools, Object>) (drools, s) ->
+                    werkBijTijdlijn(drools, s, doelGetter, doelSetter, tl.apply(s), staandDoel));
             List<RuleItemBuilder<?>> items = new ArrayList<>();
             items.add(pattern);
             items.addAll(extra);
@@ -415,7 +417,8 @@ public final class ExecModelTranspiler {
                     final java.util.function.Function<Object, Object> getr = doelGetter;
                     final boolean fbNul = sas.fallbackNul();
                     RuleItemBuilder<?> cons = DSL.on(sVar, sas.tijdlijnenVar()).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, s, tls) ->
-                            werkBij(drools, s, getr, setter, RegelSpraakRuntime.rsTijdSomAlle((List<? extends List<?>>) tls, fbNul, segmentClass())));
+                            werkBijTijdlijn(drools, s, getr, setter,
+                                    RegelSpraakRuntime.rsTijdSomAlle((List<? extends List<?>>) tls, fbNul, segmentClass()), staandDoel));
                     List<RuleItemBuilder<?>> items = new ArrayList<>();
                     items.add(pattern);
                     items.addAll(extra);
@@ -431,28 +434,19 @@ public final class ExecModelTranspiler {
             TemporeleWaarde tw = temporeleWaarde(r.waarde(), doel.objecttype(), doelGran, doel.type(), ankerReader);
             if (tw == null) return skip("regel (temporele toekenning buiten Phase-F scope): " + r.naam());
             BiFunction<Object, Object, Object> twf = tw.fn();
-            // IDEMPOTENT anchored write (mirror DRL): the §9.9 freshness expr above makes this pattern
-            // class-reactive, and an unconditional update would ping-pong with a sibling anchored writer.
-            // rsTijdreeksGelijk compares per-segment (Segment has no equals); scoped to ANCHORED writes only —
-            // an unanchored temporal write keeps its bare (non-reactive) pattern and write-once update.
-            final boolean geankerd = ankerLid != null;
+            // IDEMPOTENT timeline write (mirror DRL): the §9.9 freshness expr above makes this pattern class-reactive
+            // whenever the value reads an own attribute, and an unconditional update ping-pongs with a sibling temporal
+            // writer on the same subject (NO_LOOP blocks only self-retrigger) — ANCHORED OR NOT. werkBijTijdlijn holds
+            // both the per-segment idempotency guard and the ch. 7.8 standing arm.
             if (tw.global() == null) {
-                consequence = DSL.on(sVar).execute((Block2<org.drools.model.Drools, Object>) (drools, s) -> {
-                    Object nieuw = twf.apply(s, null);
-                    if (geankerd && RegelSpraakRuntime.rsTijdreeksGelijk((List<?>) doelGetter.apply(s), (List<?>) nieuw)) return;
-                    doelSetter.accept(s, nieuw);
-                    drools.update(s);
-                });
+                consequence = DSL.on(sVar).execute((Block2<org.drools.model.Drools, Object>) (drools, s) ->
+                        werkBijTijdlijn(drools, s, doelGetter, doelSetter, twf.apply(s, null), staandDoel));
             } else {
                 // §7.3.2 the tijdsevenredig base is a TEMPORAL PARAMETER (a List<Segment> global) — bind it.
                 Global<java.util.List> g = listGlobals.get(tw.global());
                 if (g == null) return skip("regel (temporele basis-parameter niet geregistreerd " + tw.global() + "): " + r.naam());
-                consequence = DSL.on(sVar, (Variable) g).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, s, gv) -> {
-                    Object nieuw = twf.apply(s, gv);
-                    if (geankerd && RegelSpraakRuntime.rsTijdreeksGelijk((List<?>) doelGetter.apply(s), (List<?>) nieuw)) return;
-                    doelSetter.accept(s, nieuw);
-                    drools.update(s);
-                });
+                consequence = DSL.on(sVar, (Variable) g).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, s, gv) ->
+                        werkBijTijdlijn(drools, s, doelGetter, doelSetter, twf.apply(s, gv), staandDoel));
             }
         } else if (dimAgg != null) {
             // §5.8.5 a dimensie-fold (SOM/MIN/MAX over a gedimensioneerd attribuut's selected labels) collapses a
@@ -634,6 +628,99 @@ public final class ExecModelTranspiler {
     private static Object collapseBreuk(Object v) {
         return v instanceof io.github.yhavinga.regelspraak.runtime.Breuk b ? b.naarDecimal() : v;
     }
+
+    /** Write a TIMELINE doel ({@code List<Segment>}) — the timeline analogue of {@link #werkBij}, holding the two
+     *  rules a timeline write obeys that a scalar write does not.
+     *
+     *  <p>(1) The ch. 7.8 STANDING arm: on a standing temporal target ({@link #staandeTemporeleDoelen}) an EMPTY
+     *  result is the temporal leeg and decides nothing, so NOTHING is written and the case-supplied input timeline
+     *  stands whole (ref: {@code ref/lib/eval.ml}'s pro-rata and day-count arms).
+     *
+     *  <p>(2) IDEMPOTENCY: {@link java.util.Objects#equals} — the guard {@link #werkBij} uses — is ALWAYS unequal on
+     *  two timelines ({@code Segment} declares no {@code equals}), so a timeline write would re-propagate its subject
+     *  on every recompute. A temporal write's pattern is class-reactive whenever its value reads an own attribute
+     *  (the §9.9 freshness expr), so two temporal rules over one subject would then re-activate each other past the
+     *  engine's fire cap. {@link RegelSpraakRuntime#rsTijdreeksGelijk} compares per segment instead, which reaches
+     *  the same fixpoint the DRL back-end reaches through its narrow {@code @watch}: it never UNDER-updates (an
+     *  unequal timeline always writes+propagates), so no computed value moves. */
+    // package-private, not private: the §5.8.2 rsTijdSomAlle write reaches this helper on a shape NO corpus golden
+    // carries (every corpus temporal target is a pro-rata or day-count fold), so the model-level replay cannot
+    // witness it — TijdlijnWerkBijWitnessTest pins the helper's behaviour directly instead.
+    static void werkBijTijdlijn(org.drools.model.Drools drools, Object s,
+            java.util.function.Function<Object, Object> getter, BiConsumer<Object, Object> setter,
+            Object nieuw, boolean staandDoel) {
+        if (staandDoel && (nieuw == null || ((List<?>) nieuw).isEmpty())) return;
+        if (RegelSpraakRuntime.rsTijdreeksGelijk((List<?>) getter.apply(s), (List<?>) nieuw)) return;
+        setter.accept(s, nieuw);
+        drools.update(s);
+    }
+
+    /** RUNTIME-SEMANTICS ch. 7.8 (the timeline arm, decided 2026-08-21) — the STANDING TEMPORAL TARGET domain, a
+     *  port of ref's {@code Desugar.standing_temporal_targets} ({@code spec/verifier/lib/desugar.ml:226} over
+     *  {@code standing_targets_gen}), clause for clause: a temporal attribute written by EXACTLY ONE version-free
+     *  computing rule (GELIJKSTELLING/BEREKENING carrying a value) whose value has the ch. 3.7 pro-rata / ch. 3.8
+     *  day-count shape (ref's {@code executable} — the only temporal writers that execute), with NO other writer:
+     *  no prioritized-defaults group, no verdeling, no creation-time write on that attribute. Kenmerk targets are
+     *  outside the domain (ref excludes {@code Kenmerktoekenning} from both the writer count and {@code is_computing}).
+     *  Keys normalise like ref's {@code norm}, so the two domains coincide construct for construct. */
+    private Set<String> staandeTemporeleDoelen() {
+        if (staandeDoelen != null) return staandeDoelen;
+        Map<String, Integer> schrijvers = new LinkedHashMap<>();
+        for (ResolvedRegel r : model.resolvedRegels) {
+            if (r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING) continue;
+            String k = doelSleutel(r.doel());
+            if (k != null) schrijvers.merge(k, 1, Integer::sum);
+        }
+        Set<String> uit = new LinkedHashSet<>();
+        for (ResolvedRegel r : model.resolvedRegels) {
+            boolean rekenend = (r.soort() == ResolvedRegel.Soort.GELIJKSTELLING || r.soort() == ResolvedRegel.Soort.BEREKENING)
+                    && (r.geldigheid() == null || r.geldigheid().altijd()) && r.waarde() != null;
+            boolean uitvoerbaar = r.waarde() instanceof Expr.Functie f
+                    && (f.kind() == Expr.FunctieKind.TIJDSEVENREDIG_DEEL || f.kind() == Expr.FunctieKind.AANTAL_DAGEN_IN);
+            String k = doelSleutel(r.doel());
+            if (!rekenend || !uitvoerbaar || k == null || schrijvers.getOrDefault(k, 0) != 1) continue;
+            Expr.AttribuutRef d = (Expr.AttribuutRef) r.doel();
+            if (!temporeelAttribuut(d.objecttype(), d.attribuut())) continue;   // ref's wanted_shape
+            if (andereSchrijver(d.objecttype().naam, d.attribuut())) continue;
+            uit.add(k);
+        }
+        staandeDoelen = uit;
+        return uit;
+    }
+
+    /** ref's {@code other_writer}: a prioritized-defaults group, a verdeling or an object-creatie toekenning
+     *  writing the same objecttype × attribuut — any of them takes the target out of the standing domain. */
+    private boolean andereSchrijver(String ot, String attr) {
+        for (PrioritizedDefaults pd : prioritizedDefaults)
+            if (gelijkeNaam(pd.onderwerp(), ot) && pd.attribuut() != null && gelijkeNaam(pd.attribuut(), attr)) return true;
+        for (ResolvedVerdeling v : model.verdelingen)
+            if (v.doelType() != null && gelijkeNaam(v.doelType().naam, ot)
+                    && v.doelAttribuut() != null && gelijkeNaam(v.doelAttribuut(), attr)) return true;
+        for (io.github.yhavinga.regelspraak.ir.ResolvedObjectCreatie oc : model.objectCreaties)
+            if (oc.nieuwType() != null && gelijkeNaam(oc.nieuwType().naam, ot))
+                for (var t : oc.toekenningen())
+                    if (!t.kenmerk() && gelijkeNaam(t.attribuut(), attr)) return true;
+        return false;
+    }
+
+    /** ref's {@code Checks.attr_temporal}: the attribuut carries a declared granulariteit. */
+    private static boolean temporeelAttribuut(Objecttype ot, String attr) {
+        if (ot == null || attr == null) return false;
+        for (String k : ot.attribuutGranulariteit.keySet()) if (gelijkeNaam(k, attr)) return true;
+        return false;
+    }
+
+    /** The {@code "<objecttype>|<attribuut>"} key of a rule doel (ref's {@code target_of} + {@code key}), or null
+     *  when the doel is not an objecttype-bound attribuutreferentie. */
+    private static String doelSleutel(Expr doel) {
+        return doel instanceof Expr.AttribuutRef d && d.objecttype() != null && d.attribuut() != null
+                ? norm(d.objecttype().naam) + "|" + norm(d.attribuut()) : null;
+    }
+
+    private static boolean gelijkeNaam(String a, String b) { return a != null && b != null && norm(a).equals(norm(b)); }
+
+    /** ref's {@code Checks.norm}: lowercase, whitespace collapsed — so a name compares as the spec compares it. */
+    private static String norm(String s) { return s.trim().replaceAll("\\s+", " ").toLowerCase(java.util.Locale.ROOT); }
 
     /** Reflective analogue of {@link #werkBij} for the verdeling / feitcreatie consequences, which read+write a
      *  recipient/relation attribute by NAME via the runtime's property resolver (a multi-word property the typed
