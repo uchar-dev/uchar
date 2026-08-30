@@ -78,17 +78,27 @@ fi
 # silent green, never a blocker. .github/ is a protected path this card may not touch, and the
 # hosted gate-8 runner carries no JDK; so the leg is the reviewer's pre-merge duty on a machine
 # that has java. The ref/clingo legs above remain the CI blocker.
-JAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | head -1)
-if command -v java >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1 \
-   && { [ -n "$JAR" ] || command -v mvn >/dev/null 2>&1; }; then
-    if [ -z "$JAR" ]; then
-        echo 'check-rood: Drools leg — shaded jar absent, building it once (offline)…' >&2
-        mvn -o -q -f backends/drools/pom.xml package >/dev/null 2>&1
-        JAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | head -1)
+if command -v java >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
+    # When the leg runs, the jar is rebuilt UNCONDITIONALLY (the gate-12 model, 2026-08-30): a
+    # build-only-when-absent jar can silently predate the source under review — the lens-proven
+    # stale-jar flank. mvn is therefore a hard requirement of the leg, exactly as it is of gate 12;
+    # a machine with java but no mvn cannot vouch for jar freshness and must not pretend to.
+    if ! command -v mvn >/dev/null 2>&1; then
+        echo 'check-rood: FAIL — Drools leg: java present but mvn missing; the leg rebuilds the jar unconditionally (stale-jar guard)' >&2
+        status=1
+        JAR=''
+    else
+        echo 'check-rood: Drools leg — rebuilding the shaded jar (unconditional, offline)…' >&2
+        if ! mvn -o -q -f backends/drools/pom.xml package >/dev/null 2>&1; then
+            echo 'check-rood: FAIL — Drools leg: the shaded-jar build is red — run: mvn -o -f backends/drools/pom.xml package' >&2
+            status=1
+            JAR=''
+        else
+            JAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | head -1)
+        fi
     fi
     if [ -z "$JAR" ]; then
-        echo 'check-rood: FAIL — Drools leg: java present but no shaded jar (build it: mvn -o -f backends/drools/pom.xml package)' >&2
-        status=1
+        [ $status -eq 1 ] || { echo 'check-rood: FAIL — Drools leg: the build produced no shaded jar' >&2; status=1; }
     else
         MAIN=io.github.yhavinga.regelspraak.cases.DroolsRoodMain
         excl=$(mktemp) || exit 2

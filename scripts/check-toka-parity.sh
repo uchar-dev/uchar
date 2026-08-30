@@ -165,15 +165,14 @@ REF=_build/default/ref/bin/runner.exe
 CLINGO=_build/default/backends/clingo/bin/clingo_runner.exe
 [ -x "$REF" ] && [ -x "$CLINGO" ] || fail "ref/clingo binaries missing after the build"
 
-# the Drools backend jar — consumes the uchar IR off the wire (gate-12 pattern), built once offline.
+# the Drools backend jar — consumes the uchar IR off the wire, rebuilt UNCONDITIONALLY (the gate-12
+# model, 2026-08-30): a build-only-when-absent jar can silently predate the source under review —
+# the lens-proven stale-jar flank. mvn is a hard requirement, exactly as it is of gate 12.
+command -v mvn >/dev/null 2>&1 || fail "mvn not found — the Drools leg rebuilds the shaded jar unconditionally (stale-jar guard)"
+echo "check-toka-parity: rebuilding the Drools shaded jar (unconditional, offline)…" >&2
+mvn -o -q -f backends/drools/pom.xml package >/dev/null 2>&1 || fail "the Drools shaded-jar build is red — run: mvn -o -f backends/drools/pom.xml package"
 DJAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | head -1)
-if [ -z "$DJAR" ]; then
-  command -v mvn >/dev/null 2>&1 || fail "no Drools shaded jar and mvn not found — build it: mvn -o -f backends/drools/pom.xml package"
-  echo "check-toka-parity: Drools shaded jar absent — building it once (offline)…" >&2
-  mvn -o -q -f backends/drools/pom.xml package >/dev/null 2>&1 || fail "the Drools shaded-jar build is red"
-  DJAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | head -1)
-  [ -n "$DJAR" ] || fail "the build produced no Drools shaded jar"
-fi
+[ -n "$DJAR" ] || fail "the build produced no Drools shaded jar"
 
 REPLAY_TMP=$(mktemp -d -t toka-replay-XXXXXX)
 CFRAGS="$REPLAY_TMP/clingo-faults"; DFRAGS="$REPLAY_TMP/drools-excludes"; : >"$CFRAGS"; : >"$DFRAGS"
