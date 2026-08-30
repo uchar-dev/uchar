@@ -26,6 +26,9 @@
 # An empty played set is a FAILURE, never silently green. Report: played N, auto-excluded M,
 # value-divergence K (per reason), no-case L.
 #
+# The backend's own JUnit suite must ALSO pass with a NON-ZERO test count (maintainer decision
+# 2026-08-30, the gate-10 model): a zero-test or skipped suite is a failure, never silently green.
+#
 # Runs JAR-ONLY (decision V2-B, the gate-10 pattern): the shaded runtime uber-jar is built once
 #   mvn -o -f backends/drools/pom.xml package        # -> target/uchar-drools-backend-*-shaded.jar
 # and the gate invokes `java -jar` per golden. Absent the jar the gate builds it once (offline).
@@ -44,6 +47,27 @@ if [ -z "$JAR" ]; then
   JAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | head -1)
   [ -n "$JAR" ] || fail "the build produced no shaded jar"
 fi
+
+# --- the backend's own JUnit suite, with a NON-ZERO test count (maintainer decision 2026-08-30) ----
+# The gate-10 obligation, mirrored: the witness tests carry what the corpus replay cannot see — the
+# shape a case input became, a write-guard branch no golden exercises — so a suite that ran NOTHING
+# would be a silent greenlight for exactly the checks the corpus does not duplicate.
+# DESIGN: run the suite here rather than trust a report on disk. The gate stays JAR-only for the
+# corpus replay (the jar is built only when absent), and an incremental `mvn test` next to that costs
+# ~4s against a multi-minute replay — cheap enough that a freshness heuristic over surefire's reports
+# (which can call a report fresh that predates an edit) would buy nothing but a way to be wrong.
+# It runs FIRST so a red or empty suite fails in seconds. CI already builds through mvn, so this adds
+# no tool requirement there; locally it makes mvn a hard requirement of the gate, deliberately.
+command -v mvn >/dev/null 2>&1 || fail "mvn not found — gate 12 runs the backend's JUnit suite (a skipped suite is a silent greenlight)"
+suite_out=$(mvn -o -f backends/drools/pom.xml test 2>&1)
+suite_status=$?
+if [ $suite_status -ne 0 ]; then
+  echo "$suite_out" | tail -25 >&2
+  fail "the backend's JUnit suite is red"
+fi
+tests=$(printf '%s\n' "$suite_out" | sed -n 's/^\[INFO\] Tests run: \([0-9][0-9]*\), Failures.*/\1/p' | tail -1)
+[ -n "$tests" ] || fail "the suite produced no 'Tests run: N' summary — it did not run"
+[ "$tests" -gt 0 ] || fail "the suite ran zero tests (an empty test set is a failure, never silently green)"
 
 # --- the value-divergence exclusion list (reason-carrying; fails when stale) -------------------
 # Each entry: "<golden-relative-path>|<reason>". A golden here MUST diverge (FAIL/ERROR); if it
@@ -81,19 +105,21 @@ EXCLUDE_KNOWN=(
   # role has no derived bean field), so they are LOUD PER-FORM auto-exclusions in CaseRunner, not value-divergences.
   # A crash-at-fire is a not-carried form, never a "genuine exec-model semantic difference" — see the ERROR arm below.
   #
-  # --- Surfaced 2026-08-30 by the temporal case-input port (card drools-temporale-inputpoort) ---------
-  # Opening the temporal input layer let three goldens REACH fire that the input refusal had hidden. They
-  # are NOT the class the banner above describes: neither is a genuine v0 production-semantics divergence,
-  # so neither is a v1-delta candidate. Two further classes are named here, honestly:
-  #   (c) an exec-model TERMINATION defect (as jutterswet-waardering-v0vorm above), where the values
-  #       themselves are not in dispute and the original toolchain's DRL lowering converges;
-  #   (d) a Drools-side IMPLEMENTATION GAP against a SETTLED spec chapter — ref AND clingo implement it,
-  #       nothing is left to decide, only to build. (The back-end already carries ch. 7 prioritizedDefaults
-  #       beyond production semantics, so implementing a decided chapter here is precedented, not a delta.)
-  # Both classes were triaged to the line and rule: see the entries. No expectation was moved.
-  "anchor/jutterswet-borgdeel|(c)+(d) TWO defects stacked, neither a v0 production-semantics divergence. (c) TERMINATION: two UNANCHORED temporal writes on one Jutter (borgdeel, jaardeel) each acquire ExecModelTranspiler's §9.9 freshness expr — their tijdsevenredig value reads an own attribute — which leaves both patterns CLASS-reactive, while the rsTijdreeksGelijk idempotency guard is scoped to ANCHORED writes only (the 'geankerd &&' at ExecModelTranspiler.java:442/452). Each unconditional update re-activates the sibling and fireAllRules hits its 100k cap; NO_LOOP blocks only self-retrigger. Values are not in dispute where (c) is the only defect: single-ruled, the jaardeel arm reproduces its pinned ref≡clingo segments exactly, and the borgdeel arm does too EXCEPT on case5-input-blijft, where the (d) gap below — not termination — yields leeg for the pinned standing input; the other single-ruled failures are the missing rule's own absences or its unoverwritten input, never a wrong computed segment. The DRL lowering converges (its narrow @watch(borgtarief)/@watch(jaartarief) watches neither doel). (d) Underneath the cap, case5-input-blijft pins the ch. 7.8 timeline arm this back-end does not implement — see the dagentelling entry — so fixing termination alone does NOT green this golden."
-  "synth2-prorata-breed|(c) EXEC-MODEL NON-TERMINATION, not a semantic divergence: the jutterswet-borgdeel ping-pong three ways (ligdeel, heffingdeel, toeslagdeel over one Ligplaats) — the freshness expr makes every pro-rata pattern class-reactive while the rsTijdreeksGelijk guard fires for ANCHORED writes only, so the three siblings re-activate one another past the 100k cap. Values are NOT in dispute: run one rule at a time and each reproduces its pinned ref≡clingo timeline exactly, and the DRL lowering's narrow @watch converges. Listed rather than auto-excluded only because the gate classifies a non-terminating fire as a wrong-value FAIL — the same CaseRunner-taxonomy revisit jutterswet-waardering-v0vorm waits on."
-  "anchor/jutterswet-dagentelling|(d) SETTLED-SPEC ARM NOT IMPLEMENTED in this back-end (case4-input-blijft only; the other three cases play+pass): on a STANDING temporal target a fold whose result is empty writes nothing and the case-supplied input timeline stands whole (ch. 7.8, decided 2026-08-20/21; ref/lib/eval.ml's pro-rata and day-count arms over Desugar.standing_temporal_targets — clingo implements it too). backends/drools has no counterpart (zero hits on the predicate), so the ch. 3.8 day count over an absent borgplichtig overwrites the pinned input [2024-03-01,2024-04-01)=99 with the empty timeline. NOT caused by the new input layer: at fireAllRules(0) the bean carries the input, at fireAllRules(1) the rule has overwritten it."
+  # The three goldens the temporal case-input port surfaced 2026-08-30 (jutterswet-borgdeel,
+  # synth2-prorata-breed, jutterswet-dagentelling) LEFT this list 2026-08-30 (card drools-fixpunt-en-ch78).
+  # They were never the class the banner above describes — neither carried a v0 production-semantics
+  # divergence — and both underlying defects were BUILT, so all three PLAY+PASS and removing them is
+  # mandatory (a listed golden that plays trips the stale guard):
+  #   (c) TERMINATION: ExecModelTranspiler's rsTijdreeksGelijk idempotency guard was scoped to ANCHORED
+  #       temporal writes, while the §9.9 freshness expr leaves EVERY temporal write whose value reads an
+  #       own attribute class-reactive — so unanchored siblings on one subject re-activated each other past
+  #       the 100k cap. The guard now covers every timeline write (werkBijTijdlijn), which is
+  #       semantics-neutral: it skips a write only when the recomputed timeline is segment-for-segment equal.
+  #   (d) The ch. 7.8 timeline arm (settled spec: ref's Desugar.standing_temporal_targets + eval.ml's
+  #       pro-rata/day-count arms, and clingo) is now implemented in the same helper — on a standing temporal
+  #       target an empty fold result writes nothing and the case-supplied input timeline stands whole.
+  # jutterswet-waardering-v0vorm above is a DIFFERENT oscillation (a scalar leeg-source gelijkstelling
+  # against an INITIALISATIE) and stays listed, unchanged and witness-pinned.
 )
 
 known_reason() { local n="$1"; for e in "${EXCLUDE_KNOWN[@]}"; do [ "${e%%|*}" = "$n" ] && { echo "${e#*|}"; return 0; }; done; return 1; }
@@ -161,3 +187,4 @@ echo "  played $played  (loaded off the wire, wholly lowered, matched the pinned
 echo "  auto-excluded $auto_excl  (per-form refusals: loader / transpiler marker / contract / unsupported input)"
 echo "  value-divergence $div_excl  (listed with reason — the exec-model differs from ref/clingo)"
 echo "  no-case $nocase  (goldens without a case file)"
+echo "  JUnit $tests tests  (the backend's own suite, green with a non-zero count)"
