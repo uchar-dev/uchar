@@ -4463,7 +4463,12 @@ public final class ExecModelTranspiler {
             + "(the same-moment tuple join has no corpus case; ch. 5.9)";
 
     /** How many of {@code sleutels} are temporal on {@code ot} — a declared attribuutGranulariteit, the same
-     *  notion the key-join lowering below branches on. */
+     *  notion the key-join lowering below branches on. KNOWN REST GAP (lens 1, 2026-08-30): this is an exact
+     *  String match where ref/clingo normalise case and whitespace, so a key spelled in another
+     *  capitalisation passes the verifier yet counts as non-temporal here — the guard then stays silent
+     *  where ref/clingo fault. Deliberately NOT normalised in isolation: {@code containsKey} is the ruling
+     *  convention on every key site (the join below, both DrlTranspiler sites), and normalising this one
+     *  check would let it diverge from the join it guards. Fixing the convention is a card of its own. */
     private static int temporeleSleutels(Objecttype ot, List<String> sleutels) {
         return (int) sleutels.stream().filter(k -> ot.attribuutGranulariteit.containsKey(k)).count();
     }

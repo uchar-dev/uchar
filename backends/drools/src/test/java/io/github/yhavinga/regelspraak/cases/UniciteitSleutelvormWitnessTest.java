@@ -65,6 +65,9 @@ class UniciteitSleutelvormWitnessTest {
         // the placement witness: ref raises the shape error per instance during evaluation, so a subject type
         // with no instances never reaches it. A build-time guard would fault here too — and would reach gate 8
         // as an ERROR (a backend crash), never as the pinnable FAULT the red fence requires.
+        // NB the moment is NOT shared by all three executors: clingo's uni_key_guards fires at TRANSLATION
+        // time, instance-independent — this backend sides with ref (lens 1, 2026-08-30), and the red fence
+        // only pins cases that carry instances, so the split is unobservable there.
         String leeg = """
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [], "parameters": {} },
@@ -126,6 +129,31 @@ class UniciteitSleutelvormWitnessTest {
                 """;
         assertNull(speel(GOLDEN, "anchor/jutterswet-nummerregister", c),
                 "a scalar + one temporal key component is the carried shape — the union collision must still be found");
+    }
+
+    // ---------------- 4. the validity window rides the guard rule too ----------------
+
+    @Test void buiten_het_geldigheidsvenster_zwijgt_de_vormfout() throws Exception {
+        // the guard rule carries the same geldigGuard as the rule it replaces: ref applies the construct's
+        // window at document level (applies env u.uni_geldigheid), so a malformed key OUTSIDE its window
+        // faults in neither executor — verified against ref on this exact model (lens 1, 2026-08-30, who
+        // also proved by mutation that no gate covers this arm: dropping the guard leaves gate 8 green).
+        // Authored on an in-memory ir copy; the corpus rood case itself stays unwindowed.
+        com.fasterxml.jackson.databind.node.ObjectNode ir = (com.fasterxml.jackson.databind.node.ObjectNode)
+                JSON.readTree(java.nio.file.Files.readString(
+                        ROOD.resolve("uni-two-temporal-keys").resolve("ir.json")));
+        ((com.fasterxml.jackson.databind.node.ObjectNode) ir.get("uniciteiten").get(0).get("geldigheid"))
+                .put("vanaf", "2030-01-01");
+        Path tmp = java.nio.file.Files.createTempFile("venster-sleutelvorm", ".json");
+        try {
+            java.nio.file.Files.writeString(tmp, ir.toString());
+            String c = geval("Strandvondst", "kavelnummer")
+                    .replace("\"asOfDate\": null", "\"asOfDate\": \"2024-06-01\"");
+            assertNull(CaseRunner.speelCase(tmp, JSON.readTree(c)),
+                    "outside its validity window the malformed key must stay silent, as ref does");
+        } finally {
+            java.nio.file.Files.deleteIfExists(tmp);
+        }
     }
 
     // ---------------- helpers ----------------
