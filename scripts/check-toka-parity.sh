@@ -177,8 +177,9 @@ build_out=$(mvn -o -f backends/drools/pom.xml package 2>&1) || {
 # exactly ONE shaded jar, or the measurement is ambiguous: ls|head-1 picks the lexicographic
 # first, which after an artifact-version bump is the STALE one, not the fresh build (lens).
 DJAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null)
-[ "$(printf '%s\n' "$DJAR" | grep -c .)" -eq 1 ] \
-  || fail "expected exactly one Drools shaded jar, found: ${DJAR:-none} — clean backends/drools/target"
+n=$(printf '%s\n' "$DJAR" | grep -c .)
+[ "$n" -eq 0 ] && fail "the build produced no Drools shaded jar"
+[ "$n" -gt 1 ] && fail "expected exactly one Drools shaded jar, found: $DJAR (a leftover jar from an earlier artifact version would be measured instead of the fresh build — clean backends/drools/target)"
 
 REPLAY_TMP=$(mktemp -d -t toka-replay-XXXXXX)
 CFRAGS="$REPLAY_TMP/clingo-faults"; DFRAGS="$REPLAY_TMP/drools-excludes"; : >"$CFRAGS"; : >"$DFRAGS"

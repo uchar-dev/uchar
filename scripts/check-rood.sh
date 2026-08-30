@@ -74,16 +74,20 @@ fi
 # gone, fails the gate; a case that is neither pinned nor listed fails the gate (completeness).
 #
 # Conditional on a JDK + python3 (gate-9 pattern for the RUNNER: skip loudly where java is
-# absent — the hosted gate-8 runner carries no JDK, so the leg is the reviewer's pre-merge duty
-# on a machine that has java; the ref/clingo legs above remain the CI blocker). WITHIN the leg,
-# though, mvn is a hard requirement since 2026-08-30 (the stale-jar guard): a missing tool there
-# is a FAILURE, no longer a skip — a machine with java but no mvn cannot vouch for jar freshness.
+# absent; the ref/clingo legs above remain the CI blocker). WITHIN the leg, mvn is a hard
+# requirement since 2026-08-30 (the stale-jar guard): a missing tool there is a FAILURE, no
+# longer a skip — a machine with java but no mvn cannot vouch for jar freshness. NB the hosted
+# ubuntu runner DOES carry a JDK and Maven (lens finding 2026-08-30 — the earlier "carries no
+# JDK" premise was untrue), so on hosted CI this leg RUNS and needs a warm ~/.m2; the gate-8
+# workflow job provides none today, so hosted gate 8 goes red the day CI revives until that job
+# gains a maven cache/build step (a .github card, out of this card's reach). Not hidden: red,
+# never a silent skip.
 if command -v java >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
     # When the leg runs, the jar is rebuilt UNCONDITIONALLY (the gate-12 model, 2026-08-30): a
     # build-only-when-absent jar can silently predate the source under review — the lens-proven
-    # stale-jar flank. legfail is leg-LOCAL: the empty-JAR verdict below must print regardless of
-    # earlier red-case failures elsewhere in the gate (lens finding: keying on the global status
-    # let the leg evaporate without a verdict).
+    # stale-jar flank. legfail is leg-LOCAL so the leg always leaves a verdict of its own,
+    # regardless of earlier red-case failures elsewhere in the gate (lens finding: keying on the
+    # global status let the leg evaporate without one).
     legfail=0
     if ! command -v mvn >/dev/null 2>&1; then
         echo 'check-rood: FAIL — Drools leg: java present but mvn missing; the leg rebuilds the jar unconditionally (stale-jar guard)' >&2
@@ -101,15 +105,22 @@ if command -v java >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
             # exactly ONE shaded jar, or the measurement is ambiguous: ls|head-1 picks the
             # lexicographic first, which after an artifact-version bump is the STALE one (lens).
             JAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null)
-            if [ "$(printf '%s\n' "$JAR" | grep -c .)" -ne 1 ]; then
-                echo "check-rood: FAIL — Drools leg: expected exactly one shaded jar, found: ${JAR:-none} (a leftover jar from an earlier artifact version would be measured instead of the fresh build — clean backends/drools/target)" >&2
+            n=$(printf '%s\n' "$JAR" | grep -c .)
+            if [ "$n" -eq 0 ]; then
+                echo 'check-rood: FAIL — Drools leg: the build produced no shaded jar' >&2
+                status=1; legfail=1
+                JAR=''
+            elif [ "$n" -gt 1 ]; then
+                echo "check-rood: FAIL — Drools leg: expected exactly one shaded jar, found: $JAR (a leftover jar from an earlier artifact version would be measured instead of the fresh build — clean backends/drools/target)" >&2
                 status=1; legfail=1
                 JAR=''
             fi
         fi
     fi
     if [ -z "$JAR" ]; then
-        [ $legfail -eq 1 ] || { echo 'check-rood: FAIL — Drools leg: the build produced no shaded jar' >&2; status=1; }
+        # every empty-JAR path above set legfail and printed its own verdict; this arm only guards
+        # against a future edit that forgets to — belt and braces, never the primary reporter
+        [ $legfail -eq 1 ] || { echo 'check-rood: FAIL — Drools leg: no shaded jar and no verdict printed (script defect)' >&2; status=1; }
     else
         MAIN=io.github.yhavinga.regelspraak.cases.DroolsRoodMain
         excl=$(mktemp) || exit 2
@@ -214,7 +225,7 @@ EOF
         fi
     fi
 else
-    echo 'check-rood: Drools leg SKIPPED — needs java + python3 (and, once running, mvn: the leg rebuilds the jar unconditionally). Not a blocker (the hosted gate-8 runner carries no JDK; the leg is the reviewer pre-merge duty). The ref/clingo legs above are the CI blocker.' >&2
+    echo 'check-rood: Drools leg SKIPPED — needs java + python3 (and, once running, mvn: the leg rebuilds the jar unconditionally). Not a blocker on a machine without java; the ref/clingo legs above are the CI blocker. NB hosted ubuntu runners DO carry java, so there the leg runs (and needs a warm ~/.m2).' >&2
 fi
 
 if [ "$status" -eq 0 ]; then
