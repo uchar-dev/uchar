@@ -124,6 +124,12 @@ public final class ExecModelTranspiler {
     private int idSeq;
     /** ch. 7.8's standing-temporal-target domain, computed once per model (see {@link #staandeTemporeleDoelen}). */
     private Set<String> staandeDoelen;
+    /** ch. 7.8's standing-SCALAR-target domain, computed once per model (see {@link #staandeScalaireDoelen}). */
+    private Set<String> staandeScalaire;
+    /** ch. 7.7's desugaring domain, computed once per model (see {@link #ontsuikerdeDoelen}). */
+    private Set<String> ontsuikerde;
+    /** ref's {@code written_by_rules} tally, shared by both standing domains (see {@link #schrijversPerDoel}). */
+    private Map<String, Integer> schrijversCache;
 
     /** A lowered voorwaarde: the subject pattern with its in-pattern constraints, plus zero or more SEPARATE
      *  rule items (the §8.1.7 far-side {@code exists}/{@code not} joins) appended after it — the model analog of
@@ -301,6 +307,16 @@ public final class ExecModelTranspiler {
         // carries no member kind while WF-002 admits a kenmerk sharing an attribute's name — so the kenmerk
         // callsite below passes false explicitly (ref structurally cannot apply the arm to a Kenmerktoekenning).
         final boolean staandDoel = staandeTemporeleDoelen().contains(doelSleutel(doel));
+        // ch. 7.8 (the scalar arm), together with the ch. 7.7 desugaring domain ref's scalar arm consults beside it:
+        // on such a target a LEEG (null) computed value decides nothing and the case-supplied input — or, in the
+        // desugaring domain, the initialisatie — stands. Only a computing rule is in ref's arm: a KENMERKTOEKENNING
+        // must NEVER inherit it (the key carries no member kind while WF-002 admits a kenmerk sharing an attribute's
+        // name, and ref reaches its arm structurally only from the Gelijkstelling/Berekening branch), and an
+        // INITIALISATIE keeps its own §9.6 leeg-guard (ref's Initialisatie branch carries no standing arm either).
+        final boolean staandScalairDoel =
+                (r.soort() == ResolvedRegel.Soort.GELIJKSTELLING || r.soort() == ResolvedRegel.Soort.BEREKENING)
+                        && (staandeScalaireDoelen().contains(doelSleutel(doel))
+                            || ontsuikerdeDoelen().contains(doelSleutel(doel)));
         seq = 0;
         Variable sVar = DSL.declarationOf(factClass, "$subject");
         PatternDSL.PatternDef pattern = PatternDSL.pattern(sVar);
@@ -457,7 +473,7 @@ public final class ExecModelTranspiler {
             dimAgg = dimAgg.herschaald(r.waarde().type(), doel.type());   // §4 EXACT restate the fold into the doel unit
             BiFunction<Object, Map<String, BigDecimal>, Object> fn = dimAgg.fn();
             consequence = DSL.on(sVar).execute((Block2<org.drools.model.Drools, Object>) (drools, s) ->
-                    werkBij(drools, s, doelGetter, doelSetter, fn.apply(s, Map.of())));
+                    werkBij(drools, s, doelGetter, doelSetter, fn.apply(s, Map.of()), staandScalairDoel));
         } else if (tijdTotaal != null) {
             // §7.1 a TOTAAL over a TEMPORAL attribute is a SCALAR timeline fold (rsTijdTotaal over the subject's own/
             // navigated List<Segment>, optionally gedurende-clipped) — NOT an instance accumulate. It reads no globals
@@ -478,7 +494,7 @@ public final class ExecModelTranspiler {
                 Object s = args[0];
                 Map<String, BigDecimal> gm = new LinkedHashMap<>();
                 vulGlobalMap(gm, fgn, args, 1);
-                werkBij(drools, s, doelGetter, doelSetter, fn.apply(s, gm));
+                werkBij(drools, s, doelGetter, doelSetter, fn.apply(s, gm), staandScalairDoel);
             });
             if (consequence == null) return skip("regel (totaal: te veel gebonden globals): " + r.naam());
         } else if (isAggregatieWaarde(r) && r.waarde() instanceof Expr.Functie fx && !isGelisteFold(fx)) {
@@ -496,14 +512,14 @@ public final class ExecModelTranspiler {
                             ? (fallback == null ? null : (BigDecimal) fallback.fn().apply(s, Map.of()))
                             : RegelSpraakRuntime.toBd(sum);
                     Object v = herschaalWaarde(v0, fx.type(), doel.type());   // §4 EXACT restate the aggregate into the doel unit
-                    werkBij(drools, s, doelGetter, doelSetter, v);
+                    werkBij(drools, s, doelGetter, doelSetter, v, staandScalairDoel);
                 };
                 consequence = DSL.on(sVar, (Variable) cntVar, (Variable) sumVar).execute(body);
             } else {
                 Variable resVar = agg.resultVar();
                 Block3<org.drools.model.Drools, Object, Object> body = (drools, s, res) -> {
                     Object v = herschaalWaarde(RegelSpraakRuntime.toBd(res), fx.type(), doel.type());   // §4 EXACT restate the aggregate into the doel unit
-                    werkBij(drools, s, doelGetter, doelSetter, v);
+                    werkBij(drools, s, doelGetter, doelSetter, v, staandScalairDoel);
                 };
                 consequence = DSL.on(sVar, (Variable) resVar).execute(body);
             }
@@ -536,7 +552,7 @@ public final class ExecModelTranspiler {
                 for (int i = 0; i < nAgg; i++) aggs[i] = args[1 + nG + i];
                 Object v = eval.apply(s, gm, aggs);
                 v = herschaalWaarde(v, r.waarde().type(), doel.type());   // §4 EXACT restate the whole value into the doel unit
-                werkBij(drools, s, doelGetter, doelSetter, v);
+                werkBij(drools, s, doelGetter, doelSetter, v, staandScalairDoel);
             });
             if (consequence == null) return skip("regel (aggregatie-waarde: te veel gebonden variabelen): " + r.naam());
             extra.addAll(accItems);
@@ -549,7 +565,7 @@ public final class ExecModelTranspiler {
             // with its concrete type so the setter resolves — both back-ends used to decline this: DRL build-error / exec skip.)
             Global<?> g = nietNumeriekeGlobal(globalNaam(tpr.parameter().naam()));
             consequence = DSL.on(sVar, (Variable) g).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, s, gv) ->
-                    werkBij(drools, s, doelGetter, doelSetter, gv));
+                    werkBij(drools, s, doelGetter, doelSetter, gv, staandScalairDoel));
         } else {
             // scalar value path: a WaardeFn(subject, global-values -> value) plus the Parameter-globals it reads.
             // the doel's objecttype rides along as the VALUE-path subject (no-mutable-build-state: a parameter, no field),
@@ -592,7 +608,7 @@ public final class ExecModelTranspiler {
                 Object s = args[0];
                 Map<String, BigDecimal> gm = new LinkedHashMap<>();
                 vulGlobalMap(gm, fgn, args, 1);
-                werkBij(drools, s, doelGetter, doelSetter, fn.apply(s, gm));
+                werkBij(drools, s, doelGetter, doelSetter, fn.apply(s, gm), staandScalairDoel);
             });
             if (consequence == null) return skip("regel (THEN-waarde: te veel gebonden globals): " + r.naam());
         }
@@ -615,10 +631,19 @@ public final class ExecModelTranspiler {
      *  same subject ping-pong forever — a navigated-comparison constraint is a black-box lambda Drools re-evaluates on
      *  EVERY update of the subject, so NO_LOOP (which blocks only the rule's OWN re-trigger) + class reactivity is not
      *  enough to reach a fixpoint. {@link java.util.Objects#equals} only ever OVER-updates (a same-valued but different-
-     *  scale BigDecimal re-propagates harmlessly); it never UNDER-updates, so the fixpoint outcome still matches DRL. */
+     *  scale BigDecimal re-propagates harmlessly); it never UNDER-updates, so the fixpoint outcome still matches DRL.
+     *
+     *  <p>{@code staandDoel} carries the ch. 7.8 STANDING arm (the scalar twin of {@link #werkBijTijdlijn}'s): on a
+     *  standing scalar target ({@link #staandeScalaireDoelen}) or a ch. 7.7 desugaring-domain target
+     *  ({@link #ontsuikerdeDoelen}) a LEEG computed value decides nothing, so NOTHING is written and what the fact
+     *  base holds — the case-supplied input, or the initialisatie's value — stands (ref: the {@code Value.Empty}
+     *  arm of {@code ref/lib/eval.ml}'s Gelijkstelling/Berekening branch). Scalar leeg is {@code null}, tested
+     *  AFTER {@link #collapseBreuk} so the write boundary is one place, not two. */
     private static void werkBij(org.drools.model.Drools drools, Object s,
-            java.util.function.Function<Object, Object> getter, BiConsumer<Object, Object> setter, Object v) {
+            java.util.function.Function<Object, Object> getter, BiConsumer<Object, Object> setter, Object v,
+            boolean staandDoel) {
         v = collapseBreuk(v);   // §6.1.2 write boundary: a remaining exact rational collapses to its decimal value
+        if (staandDoel && v == null) return;
         Object oud = getter.apply(s);
         setter.accept(s, v);
         if (!java.util.Objects.equals(oud, v)) drools.update(s);
@@ -668,20 +693,13 @@ public final class ExecModelTranspiler {
      *  Keys normalise like ref's {@code norm}, so the two domains coincide construct for construct. */
     private Set<String> staandeTemporeleDoelen() {
         if (staandeDoelen != null) return staandeDoelen;
-        Map<String, Integer> schrijvers = new LinkedHashMap<>();
-        for (ResolvedRegel r : model.resolvedRegels) {
-            if (r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING) continue;
-            String k = doelSleutel(r.doel());
-            if (k != null) schrijvers.merge(k, 1, Integer::sum);
-        }
+        Map<String, Integer> schrijvers = schrijversPerDoel();
         Set<String> uit = new LinkedHashSet<>();
         for (ResolvedRegel r : model.resolvedRegels) {
-            boolean rekenend = (r.soort() == ResolvedRegel.Soort.GELIJKSTELLING || r.soort() == ResolvedRegel.Soort.BEREKENING)
-                    && (r.geldigheid() == null || r.geldigheid().altijd()) && r.waarde() != null;
             boolean uitvoerbaar = r.waarde() instanceof Expr.Functie f
                     && (f.kind() == Expr.FunctieKind.TIJDSEVENREDIG_DEEL || f.kind() == Expr.FunctieKind.AANTAL_DAGEN_IN);
             String k = doelSleutel(r.doel());
-            if (!rekenend || !uitvoerbaar || k == null || schrijvers.getOrDefault(k, 0) != 1) continue;
+            if (!isRekenend(r) || !uitvoerbaar || k == null || schrijvers.getOrDefault(k, 0) != 1) continue;
             Expr.AttribuutRef d = (Expr.AttribuutRef) r.doel();
             if (!temporeelAttribuut(d.objecttype(), d.attribuut())) continue;   // ref's wanted_shape
             if (andereSchrijver(d.objecttype().naam, d.attribuut())) continue;
@@ -689,6 +707,85 @@ public final class ExecModelTranspiler {
         }
         staandeDoelen = uit;
         return uit;
+    }
+
+    /** RUNTIME-SEMANTICS ch. 7.8 (the scalar norm, decided 2026-08-20) — the STANDING SCALAR TARGET domain, a port
+     *  of ref's {@code Desugar.standing_targets} ({@code spec/verifier/lib/desugar.ml:216} over
+     *  {@code standing_targets_gen ~temporal:false}), clause for clause: a NON-temporal attribute written by EXACTLY
+     *  ONE version-free computing rule (GELIJKSTELLING/BEREKENING carrying a value) with NO other writer — no
+     *  prioritized-defaults group, no verdeling, no creation-time write. Two clauses differ from the temporal twin:
+     *  ref's {@code executable} is vacuously true off the temporal path (every scalar value shape executes, so the
+     *  domain is NOT restricted to particular Functie kinds), and {@code wanted_shape} demands the ABSENCE of a
+     *  declared granulariteit. Kenmerk targets are outside the domain exactly as there. */
+    private Set<String> staandeScalaireDoelen() {
+        if (staandeScalaire != null) return staandeScalaire;
+        Map<String, Integer> schrijvers = schrijversPerDoel();
+        Set<String> uit = new LinkedHashSet<>();
+        for (ResolvedRegel r : model.resolvedRegels) {
+            String k = doelSleutel(r.doel());
+            if (!isRekenend(r) || k == null || schrijvers.getOrDefault(k, 0) != 1) continue;
+            Expr.AttribuutRef d = (Expr.AttribuutRef) r.doel();
+            if (temporeelAttribuut(d.objecttype(), d.attribuut())) continue;   // ref's wanted_shape, ~temporal:false
+            if (andereSchrijver(d.objecttype().naam, d.attribuut())) continue;
+            uit.add(k);
+        }
+        staandeScalaire = uit;
+        return uit;
+    }
+
+    /** RUNTIME-SEMANTICS ch. 7.7 — the v0 DESUGARING domain, a port of ref's {@code Desugar.desugared_targets}
+     *  ({@code spec/verifier/lib/desugar.ml:81} over {@code chosen_targets}): a target carried ENTIRELY by exactly
+     *  one unconditional version-free Initialisatie plus AT MOST one version-free computing rule. ref's scalar arm
+     *  consults this set BESIDE the standing one ({@code ref/lib/eval.ml}: the leeg-evaluating computing rule writes
+     *  nothing, so the initialisation or the input decides and the fire-but-leeg corner has a fixpoint instead of an
+     *  oscillation). Unlike the standing domain this one has NO shape and NO other-writer clause — ref does not test
+     *  them here either, and its scalar arm is the only consumer, so a temporal target never reaches it. */
+    private Set<String> ontsuikerdeDoelen() {
+        if (ontsuikerde != null) return ontsuikerde;
+        Map<String, List<ResolvedRegel>> perDoel = new LinkedHashMap<>();
+        for (ResolvedRegel r : model.resolvedRegels) {
+            if (r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING) continue;
+            String k = doelSleutel(r.doel());
+            if (k != null) perDoel.computeIfAbsent(k, x -> new ArrayList<>()).add(r);
+        }
+        Set<String> uit = new LinkedHashSet<>();
+        for (Map.Entry<String, List<ResolvedRegel>> e : perDoel.entrySet()) {
+            List<ResolvedRegel> inits = new ArrayList<>(), comps = new ArrayList<>();
+            for (ResolvedRegel r : e.getValue()) {
+                if (r.soort() == ResolvedRegel.Soort.INITIALISATIE) inits.add(r);
+                if (isRekenend(r)) comps.add(r);
+            }
+            // ref's `desugarable`: no rule outside the two families (a versioned computing rule falls in neither and
+            // breaks the tally), exactly one initialisation, that initialisation PLAIN, at most one computing rule.
+            if (e.getValue().size() != inits.size() + comps.size() || inits.size() != 1 || comps.size() > 1) continue;
+            ResolvedRegel init = inits.get(0);
+            boolean kaal = init.voorwaarde() == null && (init.geldigheid() == null || init.geldigheid().altijd())
+                    && init.waarde() != null;   // ref's is_plain_init
+            if (kaal) uit.add(e.getKey());
+        }
+        ontsuikerde = uit;
+        return uit;
+    }
+
+    /** ref's {@code written_by_rules} count per target key: every rule EXCEPT a Kenmerktoekenning that writes an
+     *  objecttype-bound attribuut — an Initialisatie counts as a writer here (which is what keeps an
+     *  init-beside-computation target out of the standing domain and inside the ch. 7.7 desugaring's). */
+    private Map<String, Integer> schrijversPerDoel() {
+        if (schrijversCache != null) return schrijversCache;
+        Map<String, Integer> schrijvers = new LinkedHashMap<>();
+        for (ResolvedRegel r : model.resolvedRegels) {
+            if (r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING) continue;
+            String k = doelSleutel(r.doel());
+            if (k != null) schrijvers.merge(k, 1, Integer::sum);
+        }
+        schrijversCache = schrijvers;
+        return schrijvers;
+    }
+
+    /** ref's {@code is_computing}: a version-free Gelijkstelling/Berekening carrying a value. */
+    private static boolean isRekenend(ResolvedRegel r) {
+        return (r.soort() == ResolvedRegel.Soort.GELIJKSTELLING || r.soort() == ResolvedRegel.Soort.BEREKENING)
+                && (r.geldigheid() == null || r.geldigheid().altijd()) && r.waarde() != null;
     }
 
     /** ref's {@code other_writer}: a prioritized-defaults group, a verdeling or an object-creatie toekenning
@@ -5441,8 +5538,11 @@ public final class ExecModelTranspiler {
                     drools.insert(RegelSpraakRuntime.newInconsistentie(fqcn, res.conflictSleutel(), s));
                 case Uitkomst.DECIDED -> {
                     Beslissing b = res.beslissing();
-                    if (isCharF) { if (b.charBesluit()) werkBij(drools, s, getterF, setterF, Boolean.TRUE); }
-                    else werkBij(drools, s, getterF, setterF, b.attrWaarde());
+                    // NEVER the standing arm here: this is a ch. 7 DEFAULTS-group write, not a computing rule — a
+                    // deciding default writes its consequence as it stands (ref's run_defaults_group likewise
+                    // carries no ch. 7.8 arm; a defaults group also takes its target OUT of the standing domain).
+                    if (isCharF) { if (b.charBesluit()) werkBij(drools, s, getterF, setterF, Boolean.TRUE, false); }
+                    else werkBij(drools, s, getterF, setterF, b.attrWaarde(), false);
                 }
                 default -> { /* UNDECIDED: no write — the target keeps what the fact base holds */ }
             }
