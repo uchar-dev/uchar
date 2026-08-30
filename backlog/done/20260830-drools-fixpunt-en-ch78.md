@@ -56,3 +56,54 @@ Out of scope: de DRL-transpiler (convergeert al), ref/clingo/spec/corpus,
 de CaseRunner-taxonomie-herziening (geratificeerd uitstel bij
 `jutterswet-waardering-v0vorm` — die entry blijft), objectcreatie,
 wederkerig self-relation.
+
+Result (2026-08-30): Geland op main na één bouwronde en twee seriële
+adversariële lensrondes met elk een fixronde. (c) TERMINATIE: één gedeelde
+`werkBijTijdlijn`-helper vervangt vier losse tijdlijn-writes; de
+`rsTijdreeksGelijk`-idempotentiegarde geldt nu voor elke tijdlijn-write
+(de `geankerd &&`-scoping is weg) — bewijsbaar semantiek-neutraal: de
+garde slaat alleen segment-voor-segment-gelijke herberekeningen over
+(lens 1 verifieerde veldcompleetheid van de vergelijking; lens 2 de
+null≡[]-flank). De verwante, corpusloze `rsTijdSomAlle`/`Segment.equals`-
+bug loopt door dezelfde helper en is op unit-niveau gepind (geen
+corpus-golden draagt die vorm — een corpusgetuige vergt een nieuwe golden
+door frontend+ref+clingo, bewust gelaten). (d) DE CH.-7.8-TIJDLIJN-ARM:
+`staandeTemporeleDoelen()` poort ref's `Desugar.standing_temporal_targets`
+clausule-voor-clausule (beide lenzen legden ref er regel voor regel naast;
+lens 1 draaide bovendien een eigen ref-probe op de niet-staande flank:
+ref wist daar, Drools ook); op een staand doel schrijft een lege opbrengst
+niets en blijft de case-input staan — beide kanten witness-gepind én door
+lens 2 als losse cases door ref bevestigd. De kenmerk-callsite krijgt de
+arm expliciet nooit (WF-002-naamdeling, lens-2-vondst; corpus-neutraal,
+het domein draagt alleen attribuut-doelen). GATE-12-TESTTELLING: de gate
+bouwt jar én suite in één onvoorwaardelijke `mvn package` (de
+stale-jar-flank die lens 1 vond is daarmee dicht), parseert de
+surefire-samenvatting niveau-onafhankelijk en eist tests>0 én skipped==0
+(rood bewezen: skip-vorm, nul-vorm, geen-samenvatting-vorm); de
+auto-exclusieredenen worden nu gegroepeerd geprint (de dode AUTO_REASONS
+uit de landing van de gate, lens-2-vondst).
+
+Gate 12: 81/50/6/1 → 84 played / 50 auto-excluded / 3 value-divergence /
+1 no-case; de drie resterende divergenties zijn exact waardestelling,
+waardering-v0vorm en kustwacht — de drie geratificeerde entries van vóór
+de temporele poort. Backend-JUnit 32 → 45/0 (8 corpus- + 5
+unit-witnesses). Alle twaalf gates integraal groen (160/168, 396, 374,
+374, 338+36, 22, 169+11, 144+23, toka 28/1/0); beide lenzen
+reproduceerden de tellingen onafhankelijk. Geen corpus-, rood-, toka- of
+spec-bestand geraakt; geen verwachting, pin of WF-nummer bewogen.
+CLAUDE.md's gate-12-paragraaf is feitelijk bijgewerkt (gedragen vormen,
+testtelling, geprinte redenen, underivable-role-arm) — beschermd pad,
+onder het mergemandaat na de lensronde. De kaarttekst zelf is geamendeerd:
+het oorspronkelijke "82" was een rekenfout op een verouderde nulmeting
+(81+3=84, lens-1-MAJOR).
+
+Bewust gelaten en vastgelegd: de `count==1`-schrijverspoort en
+`andereSchrijver` zijn corpus-onfalsifieerbaar (geen golden draagt twee
+schrijvers op één temporeel doel — lens-2-NOTE); de zes resterende
+temporele weigeringsvormen in de case-inputlaag treffen geen golden; de
+attribuut/kenmerk-naamdeling op één beanveld blijft een pre-existente,
+gemaskeerde limiet. Nieuw kaartvoorstel uit de bouwronde, door lens 2
+onderschreven: `backlog/new/20260830-drools-scalaire-standing-norm.md` —
+de scalaire ch.-7.8-poort die waardestelling (nu verkeerd geklasseerd als
+v1-delta-kandidaat) en mogelijk waardering-v0vorm uit de divergentielijst
+haalt.
