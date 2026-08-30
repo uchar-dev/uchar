@@ -157,6 +157,39 @@ class WederkerigZelfpaarWitnessTest {
         }
     }
 
+    @Test void een_tweede_ander_doel_op_een_to_one_rol_faalt_luid() throws Exception {
+        // "maat": ["J2","J3"] on a to-one reciprocal role: ref refuses this case at load (a to-one role
+        // carrying 2 labels), so last-wins here would drop a leg and play a broken case green — the mirror
+        // pass's argument, applied to the forward leg.
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> beans("anchor/jutterswet-maatschap", maatschap("\"maat\": [\"J2\", \"J3\"]", "{}")));
+        assertTrue(e.getMessage().contains("WF-013"), e.getMessage());
+    }
+
+    @Test void een_ambigue_zelfpaarvorm_wordt_luid_geweigerd() throws Exception {
+        // two wederkerig feittypen on one objecttype: §13.3.9.2 admits the shape, but the by-pair derivation
+        // is ambiguous (verbindendeRol counts two candidates) and no field is derivable — before this refusal
+        // the transpilers navigated by the written role name toward a getter no bean carries, an unclassified
+        // fire-time ERROR. Authored on an in-memory ir copy, the corpus untouched.
+        com.fasterxml.jackson.databind.node.ObjectNode ir = (com.fasterxml.jackson.databind.node.ObjectNode)
+                JSON.readTree(Files.readString(CORPUS.resolve("anchor/jutterswet-maatschap").resolve("ir.json")));
+        com.fasterxml.jackson.databind.node.ObjectNode ft2 = ((com.fasterxml.jackson.databind.node.ObjectNode)
+                ir.get("feittypen").get("maatschap")).deepCopy();
+        ft2.put("naam", "maatschap2");
+        ((com.fasterxml.jackson.databind.node.ObjectNode) ft2.get("rollen").get(0)).put("naam", "tweedemaat");
+        ((com.fasterxml.jackson.databind.node.ObjectNode) ft2.get("rollen").get(0)).put("meervoud", "tweedematen");
+        ((com.fasterxml.jackson.databind.node.ObjectNode) ir.get("feittypen")).set("maatschap2", ft2);
+        Path tmp = Files.createTempFile("ambigu-zelfpaar", ".json");
+        try {
+            Files.writeString(tmp, ir.toString());
+            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                    () -> CaseRunner.invoerBeans(tmp, JSON.readTree(maatschap("", "{}"))));
+            assertTrue(e.getMessage().contains("derives no scalar reference field"), e.getMessage());
+        } finally {
+            Files.deleteIfExists(tmp);
+        }
+    }
+
     // ---------------- the read: what the rules do with the filled field ----------------
 
     @Test void de_gevulde_rol_wordt_aan_beide_kanten_gelezen() throws Exception {

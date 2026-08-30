@@ -91,16 +91,25 @@ public final class FactModelGenerator {
      * self-pair stays underived: there two distinct sibling roles both fill the holder, so the by-pair search
      * is ambiguous by construction and the transpilers reach it only through the written role name.
      *
-     * <p>The wederkerig guard is therefore not redundant with {@code verbindendeRol}'s own uniqueness — it
-     * states the shape this derivation claims, so a future non-wederkerig self-pair cannot slip in unnoticed.
-     * A to-many reciprocal role derives nothing either: that read is an aggregation, not a scalar field.
+     * <p>The wederkerig guard is belt-and-braces: {@code verbindendeRol}'s own uniqueness already yields null
+     * for a non-wederkerig self-pair (two sibling roles), so the guard adds no reachable behaviour — it only
+     * states the shape this derivation claims. A to-many reciprocal role derives nothing either: that read is
+     * an aggregation, not a scalar field.
+     *
+     * <p>Null with {@link #noemtWederkerig} true is the UNDERIVABLE half of the shape (an ambiguous pair —
+     * two wederkerig feittypen on one objecttype — or a to-many role): callers must refuse it loudly, because
+     * the transpilers then navigate by the written role name toward a getter no bean carries.
      */
     public static String zelfpaarRol(RegelSpraakModel model, Objecttype ot) {
-        boolean wederkerigZelf = model.feittypen.values().stream().anyMatch(ft -> ft.wederkerig
-                && ft.rollen.stream().anyMatch(r -> ot.naam.equalsIgnoreCase(r.objecttypeNaam())));
-        if (!wederkerigZelf) return null;
+        if (!noemtWederkerig(model, ot)) return null;
         String rol = model.verbindendeRol(ot, ot);
         return rol == null || model.naarVeelRol(ot, ot, rol) ? null : rol;
+    }
+
+    /** Whether any wederkerig feittype names {@code ot} — the §13.3.9.2 shape itself, field-derivable or not. */
+    public static boolean noemtWederkerig(RegelSpraakModel model, Objecttype ot) {
+        return model.feittypen.values().stream().anyMatch(ft -> ft.wederkerig
+                && ft.rollen.stream().anyMatch(r -> ot.naam.equalsIgnoreCase(r.objecttypeNaam())));
     }
 
     /** The scalar Java type of a datatype — the same mapping the DRL back-end assumes of the beans. */

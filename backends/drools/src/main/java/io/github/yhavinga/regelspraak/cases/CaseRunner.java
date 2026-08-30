@@ -152,8 +152,14 @@ public final class CaseRunner {
         //     self-pair reference field; the mirror pass would then read a Boolean or set an impossible type,
         //     an unclassified ERROR at best. Refuse the shape loudly instead (lens finding, 2026-08-30).
         for (Objecttype ot : model.objecttypen.values()) {
+            if (!FactModelGenerator.noemtWederkerig(model, ot)) continue;
             String zelf = FactModelGenerator.zelfpaarRol(model, ot);
-            if (zelf == null) continue;
+            //   the UNDERIVABLE half of the same shape — an ambiguous pair (two wederkerig feittypen on one
+            //   objecttype) or a to-many reciprocal role: the transpilers navigate by the written role name
+            //   toward a getter no bean carries, an unclassified fire-time ERROR (lens 2, 2026-08-30).
+            if (zelf == null)
+                throw new Excluded("wederkerig self-relation (§13.3.9.2) on " + ot.naam + " derives no scalar "
+                        + "reference field (an ambiguous or to-many self-pair role) — not carried by the v0 backend");
             boolean gedragen = FactModelGenerator.leden(model, ot).stream().anyMatch(l ->
                     l.eigenschap().equals(Namen.ident(zelf, false))
                             && l.javaType().equals(Namen.ident(ot.naam, true)));
@@ -384,15 +390,26 @@ public final class CaseRunner {
                 Objecttype tL = objecttypeVanBean(doel);
                 String rolIL = model.verbindendeRol(tI, tL);      // the field on THIS bean (to-one from here)
                 if (rolIL != null && !model.naarVeelRol(tI, tL, rolIL)) {
-                    roep(bean, Namen.setter(rolIL), doel.getClass(), doel);
+                    zetToOne(bean, rolIL, doel);
                 } else {
                     String rolLI = model.verbindendeRol(tL, tI);  // the field lives on the target (this is the one side)
                     if (rolLI == null || model.naarVeelRol(tL, tI, rolLI))
                         throw new Excluded("role '" + e.getKey() + "' has no uniquely derivable reference field");
-                    roep(doel, Namen.setter(rolLI), bean.getClass(), bean);
+                    zetToOne(doel, rolLI, bean);
                 }
             }
         }
+    }
+
+    /** One to-one role write, WF-013-guarded: a second, DIFFERENT filler on the same to-one field is a case
+     *  shape ref refuses at load, so last-wins here would play a broken case green — the mirror pass's own
+     *  argument, applied to the forward leg (lens 2, 2026-08-30). The same filler twice stays idempotent. */
+    private void zetToOne(Object drager, String rol, Object doel) {
+        Object huidig = lees(drager, Namen.getter(rol));
+        if (huidig != null && huidig != doel)
+            throw new IllegalArgumentException("to-one rol '" + rol + "' krijgt een tweede, ander doel — "
+                    + "ref weigert die case bij het laden (WF-013)");
+        roep(drager, Namen.setter(rol), doel.getClass(), doel);
     }
 
     /** §13.3.9.2 mirrored: ONE reciprocal entry holds in BOTH directions, so every self-pair leg the case wrote
