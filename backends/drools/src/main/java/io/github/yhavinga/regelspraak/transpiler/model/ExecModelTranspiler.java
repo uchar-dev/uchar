@@ -4456,6 +4456,31 @@ public final class ExecModelTranspiler {
         return navReader(a, subject);   // to-one navigated; null == leeg
     }
 
+    /** The ch. 5.9 ever-uniqueness key-SHAPE violation, worded as ref ({@code Eval.ever_tuples}) and clingo
+     *  ({@code uni_key_guards}) word it, so the red fence pins ONE fragment across all three executors. */
+    private static final String TE_VEEL_TEMPORELE_SLEUTELS =
+            "a uniqueness key list carries at most one temporal key component "
+            + "(the same-moment tuple join has no corpus case; ch. 5.9)";
+
+    /** How many of {@code sleutels} are temporal on {@code ot} — a declared attribuutGranulariteit, the same
+     *  notion the key-join lowering below branches on. */
+    private static int temporeleSleutels(Objecttype ot, List<String> sleutels) {
+        return (int) sleutels.stream().filter(k -> ot.attribuutGranulariteit.containsKey(k)).count();
+    }
+
+    /** A construct whose key SHAPE is invalid, lowered to a rule that FAULTS as soon as a subject instance
+     *  reaches it. Fire is the mirroring moment: ref raises the same form error per instance DURING evaluation
+     *  (so a type without instances never reaches it), and a transpile-time throw would surface as a backend
+     *  crash — an ERROR — where the red fence must observe a genuine runtime FAULT. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Rule vormFoutRegel(String regelNaam, Class<?> factClass,
+                               io.github.yhavinga.regelspraak.ir.Geldigheid g, String melding) {
+        Variable sVar = DSL.declarationOf(factClass, "$subject");
+        PatternDSL.PatternDef pat = geldigGuard(PatternDSL.pattern(sVar), g);   // §4.2 window, as the real rule
+        Block2<org.drools.model.Drools, Object> body = (drools, s) -> { throw new IllegalStateException(melding); };
+        return PatternDSL.rule(regelNaam).build(pat, DSL.on(sVar).execute(body));
+    }
+
     /** §8.1.6 uniciteitscontrole: "is uniek" is violated when ≥2 DISTINCT instances share a (non-null) key. The
      *  subject binds each non-null key part (+ a parent scope field), an accumulate COUNTS the instances whose key
      *  matches, and the rule fires (inserts an Inconsistentie) when that count > 1 — flagging every instance in the
@@ -4467,6 +4492,12 @@ public final class ExecModelTranspiler {
         if (subject == null || u.sleutels().isEmpty()) return skip("uniciteit (geen subject/sleutel): " + u.naam());
         Class<?> factClass = factClass(subject);
         if (factClass == null) return skip("uniciteit (geen fact-class " + subject.naam + "): " + u.naam());
+        // ch. 5.9 key-shape arity, the guard ref and clingo already hold: at most ONE temporal key component.
+        // Placed at the earliest point the fault rule is constructible (it needs no Inconsistentie fact) —
+        // the form error screams before any duplicate is looked for, as it does in ref.
+        if (temporeleSleutels(subject, u.sleutels()) > 1)
+            return vormFoutRegel(kop(u.naam()), factClass, u.geldigheid(),
+                    TE_VEEL_TEMPORELE_SLEUTELS + ": " + u.naam());
         Class<?> incClass = inconsistentieClass();
         if (incClass == null) return skip("uniciteit (geen Inconsistentie-fact): " + u.naam());
 
@@ -4547,6 +4578,13 @@ public final class ExecModelTranspiler {
             var subj = bronnen.get(s);
             Class<?> subjClass = factClass(subj.type());
             seq = 0;
+            // the same ch. 5.9 arity guard, per SOURCE: ref runs ever_tuples over each source's OWN key list,
+            // so a source whose list carries two temporal components faults on ITS instances
+            if (temporeleSleutels(subj.type(), subj.sleutels()) > 1) {
+                rules.add(vormFoutRegel(kop(naam + " (" + subj.type().naam + " " + (s + 1) + ")"),
+                        subjClass, u.geldigheid(), TE_VEEL_TEMPORELE_SLEUTELS + ": " + naam));
+                continue;
+            }
             Variable sVar = DSL.declarationOf(subjClass, "$subject");
             PatternDSL.PatternDef subjPat = geldigGuard(PatternDSL.pattern(sVar), u.geldigheid());   // §4.2 window
             List<Variable> keyVars = new ArrayList<>();
