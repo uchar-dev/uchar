@@ -7,7 +7,9 @@ import io.github.yhavinga.regelspraak.engine.BeanCompiler;
 import io.github.yhavinga.regelspraak.loader.IrLoader;
 import io.github.yhavinga.regelspraak.model.Datatype;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
+import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Granulariteit;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
+import io.github.yhavinga.regelspraak.runtime.RegelSpraakRuntime;
 import io.github.yhavinga.regelspraak.schema.ContractValidator;
 import io.github.yhavinga.regelspraak.schema.FactModelGenerator;
 import io.github.yhavinga.regelspraak.transpiler.kern.Dekking;
@@ -185,6 +187,7 @@ public final class CaseRunner {
     private String fireRood(JsonNode c) {
         labelNaarBean.clear();
         labelType.clear();
+        rekendatum = asOfDatum(c);
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         KieSession sessie = kieBase.newKieSession();
@@ -224,10 +227,14 @@ public final class CaseRunner {
 
     private final Map<String, Object> labelNaarBean = new LinkedHashMap<>();
     private final Map<String, Objecttype> labelType = new LinkedHashMap<>();
+    /** The case's evaluation date, read BEFORE the inputs are set: the asOfDate-bucket convention places a
+     *  scalar input on a temporal attribute in the bucket this date falls in ({@link #temporeleInvoer}). */
+    private LocalDate rekendatum;
 
     private String runCase(String naam, JsonNode c) {
         labelNaarBean.clear();
         labelType.clear();
+        rekendatum = asOfDatum(c);
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         KieSession sessie = kieBase.newKieSession();
@@ -271,10 +278,17 @@ public final class CaseRunner {
         return bean;
     }
 
-    /** Whether {@code attr} on {@code ot} is a §13.3.6 temporal (List&lt;Segment&gt;) or §3.6 dimensioned
-     *  (Map) bean member — the two non-scalar fact shapes the v0 case runner does not carry as scalars. */
-    private boolean nietScalair(Objecttype ot, String attr) {
-        return ot.attribuutGranulariteit.containsKey(attr) || !ot.dimensiesVan(attr).isEmpty();
+    /** Whether {@code attr} on {@code ot} is a §13.3.6 temporal bean member — a {@code List<Segment>} field,
+     *  the shape {@link FactModelGenerator} derives from a declared attribuutGranulariteit. */
+    private boolean temporeel(Objecttype ot, String attr) {
+        return ot.attribuutGranulariteit.containsKey(attr);
+    }
+
+    /** Whether {@code attr} on {@code ot} is a §3.6 dimensioned bean member — a {@code Map<String, BigDecimal>}
+     *  field. Checked BEFORE {@link #temporeel}: the generator gives a dimensioned declaration the Map shape
+     *  even when a granularity is declared beside it. */
+    private boolean gedimensioneerd(Objecttype ot, String attr) {
+        return !ot.dimensiesVan(attr).isEmpty();
     }
 
     private void zetAttributenEnKenmerken(JsonNode i) {
@@ -284,15 +298,31 @@ public final class CaseRunner {
         if (attrs != null) for (Map.Entry<String, JsonNode> e : attrs.properties()) {
             Datatype dt = ot.attribuut(e.getKey());
             if (dt == null) throw new Excluded("case sets undeclared attribute '" + e.getKey() + "' on " + ot.naam);
-            if (nietScalair(ot, e.getKey()))
-                throw new Excluded("temporal/dimensioned attribute input '" + e.getKey() + "' is not carried by the v0 backend");
+            if (gedimensioneerd(ot, e.getKey()))
+                throw new Excluded("dimensioned attribute input '" + e.getKey() + "' (§3.6, a Map bean member) "
+                        + "is not carried by the v0 backend");
+            if (temporeel(ot, e.getKey())) {
+                roep(bean, Namen.setter(e.getKey()), List.class,
+                        temporeleInvoer(e.getValue(), e.getKey(), ot.attribuutGranulariteit.get(e.getKey())));
+                continue;
+            }
             roep(bean, Namen.setter(e.getKey()), argType(dt), waardeNaarArg(e.getValue(), e.getKey()));
         }
         JsonNode kenmerken = i.get("characteristics");
-        if (kenmerken != null) for (JsonNode k : kenmerken)
+        if (kenmerken != null) for (JsonNode k : kenmerken) {
+            // a TEMPORAL kenmerk's bean member is a List<Segment>, so the scalar-true form has no setter here;
+            // refuse with the reason rather than crash on the missing setBoolean overload
+            if (ot.kenmerkGranulariteit.containsKey(k.asText()))
+                throw new Excluded("scalar characteristic input '" + k.asText() + "' on a temporal kenmerk is "
+                        + "not carried by the v0 backend — the bean holds a List<Segment> true-period timeline");
             roep(bean, Namen.setter(k.asText()), boolean.class, Boolean.TRUE);
-        if (i.has("characteristicTimelines") && i.get("characteristicTimelines").size() > 0)
-            throw new Excluded("temporal characteristic timelines are not carried by the v0 Drools backend");
+        }
+        JsonNode ctls = i.get("characteristicTimelines");
+        if (ctls != null) for (Map.Entry<String, JsonNode> e : ctls.properties()) {
+            if (!ot.kenmerkGranulariteit.containsKey(e.getKey()))
+                throw new Excluded("characteristic timeline on non-temporal kenmerk '" + e.getKey() + "'");
+            roep(bean, Namen.setter(e.getKey()), List.class, kenmerkTijdreeks(e.getValue(), e.getKey()));
+        }
     }
 
     private void zetRollen(JsonNode i) {
@@ -331,14 +361,142 @@ public final class CaseRunner {
                 throw new Excluded("granular (timeline) parameter '" + e.getKey() + "' is not carried by the v0 backend");
             setGlobalVeilig(sessie, Namen.ident(e.getKey(), false), waardeNaarArg(e.getValue(), e.getKey()));
         }
+        if (rekendatum != null) setGlobalVeilig(sessie, "rekendatum", rekendatum);
+    }
+
+    /** The case's {@code asOfDate}, or null when it carries none. */
+    private static LocalDate asOfDatum(JsonNode c) {
         JsonNode asOf = c.get("asOfDate");
-        if (asOf != null && !asOf.isNull())
-            setGlobalVeilig(sessie, "rekendatum", LocalDate.parse(asOf.asText()));
+        return asOf == null || asOf.isNull() ? null : LocalDate.parse(asOf.asText());
     }
 
     private static void setGlobalVeilig(KieSession sessie, String naam, Object waarde) {
         try { sessie.setGlobal(naam, waarde); }
         catch (RuntimeException onbekend) { /* global not declared: no rule reads it */ }
+    }
+
+    // ---------------- §13.3.6 temporal input (the List<Segment> bean members) ----------------
+
+    /** The {@code List<Segment>} a case value denotes for a temporal attribute at {@code gran} — the two input
+     *  forms {@code ref} carries (ref/lib/case.ml), mirrored so both executors read the SAME timeline:
+     *  <ul>
+     *    <li>a {@code {"timeline":[…]}} value: the written segments, validated exactly as ref validates them;</li>
+     *    <li>a SCALAR value: the asOfDate-bucket convention recorded in {@code corpus/golden/README.md} — the
+     *        scalar IS the value of the bucket the evaluation date falls in. ref keeps that scalar aside and
+     *        folds precisely this one-bucket timeline inside the ch. 3.6 collapse ({@code Eval}'s temporal
+     *        total: value × whole units of its own grid); the bean model has no scalar slot beside the
+     *        {@code List<Segment>} field, so the bucket is materialised here and
+     *        {@link RegelSpraakRuntime#rsTijdTotaal} folds the identical segment to the identical scalar.</li>
+     *  </ul>
+     *  Deliberate consequence of that materialisation: a POINT read of such an attribute would see the bucket
+     *  value inside the bucket and leeg outside, where ref sees the bare scalar everywhere. The convention's
+     *  scalar serves the dedicated collapse alone — no corpus case reads one pointwise — so the two agree
+     *  wherever the corpus looks; a case that did read one pointwise would be a divergence, not a silent pass. */
+    private List<Object> temporeleInvoer(JsonNode w, String attr, Granulariteit gran) {
+        if (w == null || w.isNull()) return null;   // an absent value is an absent timeline (leeg, ch. 3.1)
+        if (w.has("timeline")) return tijdreeks(w.get("timeline"), attr, gran, false);
+        if (rekendatum == null)
+            throw new Excluded("scalar input on temporal attribute '" + attr + "' without an asOfDate: the "
+                    + "bucket convention (corpus/golden/README.md) has no evaluation date to place it in");
+        LocalDate[] emmer = emmer(gran, rekendatum, attr);
+        return List.of(segment(emmer[0], emmer[1], segmentWaarde(w, attr)));
+    }
+
+    /** The segments of a timeline value, with ref's load-time validation mirrored: at least one segment (an
+     *  EXPECTATION may be empty — {@code leegToegestaan}), {@code from} before {@code to}, both boundaries on the
+     *  declared granularity grid, and the list ordered and non-overlapping as written. A malformed timeline is a
+     *  hard failure, never a silent acceptance: the case schema (gate 4) and ref (gate 5) reject it first, so
+     *  reaching it here means the corpus and this reader disagree. */
+    private List<Object> tijdreeks(JsonNode segs, String veld, Granulariteit gran, boolean leegToegestaan) {
+        if (segs == null || !segs.isArray())
+            throw new IllegalArgumentException("misvormde tijdlijnwaarde op '" + veld + "'");
+        if (segs.isEmpty() && !leegToegestaan)
+            throw new IllegalArgumentException("tijdlijnwaarde op '" + veld + "' draagt geen enkel segment");
+        List<Object> uit = new ArrayList<>();
+        LocalDate vorigeTot = null;
+        for (JsonNode sj : segs) {
+            LocalDate van = grensDatum(sj, "from", veld), tot = grensDatum(sj, "to", veld);
+            if (!van.isBefore(tot))
+                throw new IllegalArgumentException("segment 'to' op '" + veld + "' ligt niet na 'from'");
+            if (!emmer(gran, van, veld)[0].equals(van) || !emmer(gran, tot, veld)[0].equals(tot))
+                throw new IllegalArgumentException("segmentgrens op '" + veld + "' ligt niet op het "
+                        + gran + "-raster");
+            if (vorigeTot != null && vorigeTot.isAfter(van))
+                throw new IllegalArgumentException("tijdlijnsegmenten op '" + veld + "' zijn ongeordend of overlappen");
+            vorigeTot = tot;
+            uit.add(segment(van, tot, segmentWaarde(sj.get("value"), veld)));
+        }
+        return uit;
+    }
+
+    /** The TRUE-period {@code List<Segment>} a {@code characteristicTimelines} entry denotes. True periods are
+     *  DAY-precise regardless of the declared granularity (ref: the granularity governs the kenmerk's bucketing,
+     *  never its period grid — the ch. 3.7 pro-rata's whole point), so no grid check applies; ref sorts the
+     *  periods and rejects overlap, and this does the same. The segments carry a null waarde: the runtime builds
+     *  its own true-period timelines that way (rsTijdOfUnie) and every consumer reads van/tot only (rsTijdKnip). */
+    private List<Object> kenmerkTijdreeks(JsonNode periodes, String kenmerk) {
+        if (periodes == null || !periodes.isArray())
+            throw new IllegalArgumentException("misvormde kenmerktijdlijn op '" + kenmerk + "'");
+        List<LocalDate[]> gesorteerd = new ArrayList<>();
+        for (JsonNode pj : periodes) {
+            LocalDate van = grensDatum(pj, "from", kenmerk), tot = grensDatum(pj, "to", kenmerk);
+            if (!van.isBefore(tot))
+                throw new IllegalArgumentException("periode 'to' op '" + kenmerk + "' ligt niet na 'from'");
+            gesorteerd.add(new LocalDate[]{ van, tot });
+        }
+        gesorteerd.sort((a, b) -> a[0].equals(b[0]) ? a[1].compareTo(b[1]) : a[0].compareTo(b[0]));
+        List<Object> uit = new ArrayList<>();
+        LocalDate vorigeTot = null;
+        for (LocalDate[] p : gesorteerd) {
+            if (vorigeTot != null && p[0].isBefore(vorigeTot))
+                throw new IllegalArgumentException("perioden op '" + kenmerk + "' overlappen");
+            vorigeTot = p[1];
+            uit.add(segment(p[0], p[1], null));
+        }
+        return uit;
+    }
+
+    /** The calendar bucket {@code [van, tot)} containing {@code d} (ch. 3.2): year buckets run 1 Jan → 1 Jan,
+     *  month buckets first-of-month → first-of-next. Bucketing is DEFINED for month and year only — ref faults on
+     *  the other granularities — so a DAG/WEEK/KWARTAAL declaration is a loud not-carried, never a guessed grid. */
+    private static LocalDate[] emmer(Granulariteit gran, LocalDate d, String veld) {
+        switch (gran) {
+            case JAAR:
+                return new LocalDate[]{ LocalDate.of(d.getYear(), 1, 1), LocalDate.of(d.getYear() + 1, 1, 1) };
+            case MAAND:
+                LocalDate van = d.withDayOfMonth(1);
+                return new LocalDate[]{ van, van.plusMonths(1) };
+            default:
+                throw new Excluded("granularity " + gran + " on '" + veld + "' is not carried by the v0 backend: "
+                        + "bucketing is defined for month and year only (ch. 3.2)");
+        }
+    }
+
+    /** The numeric value of one segment. The generated {@code Segment} holds a {@code BigDecimal} waarde, so a
+     *  non-numeric timeline value has no bean representation — a reason-carrying not-carried, never a coercion. */
+    private BigDecimal segmentWaarde(JsonNode w, String veld) {
+        Object v = waardeNaarArg(w, veld);
+        if (v == null || v instanceof BigDecimal) return (BigDecimal) v;
+        throw new Excluded("non-numeric timeline value on '" + veld + "' is not carried by the v0 backend — "
+                + "the generated Segment holds a BigDecimal waarde");
+    }
+
+    private static LocalDate grensDatum(JsonNode seg, String veld, String waar) {
+        JsonNode d = seg == null ? null : seg.get(veld);
+        if (d == null || !d.isTextual())
+            throw new IllegalArgumentException("segment op '" + waar + "' mist een '" + veld + "'-datum");
+        return LocalDate.parse(d.asText());
+    }
+
+    /** One {@code Segment} fact of the generated bean model, built through the runtime's own reflective
+     *  constructor — the Segment class is a runtime objecttype, unknown at compile time. */
+    private Object segment(LocalDate van, LocalDate tot, BigDecimal waarde) {
+        try {
+            return RegelSpraakRuntime.newSegment(
+                    Class.forName(FactModelGenerator.PAKKET + ".Segment", true, cl), van, tot, waarde);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("de gegenereerde Segment-factklasse ontbreekt", e);
+        }
     }
 
     // ---------------- comparison ----------------
@@ -352,7 +510,7 @@ public final class CaseRunner {
             case "characteristicAbsent" -> kenmerk(v, false);
             case "consistent" -> consistentie(sessie, false, v);
             case "inconsistent" -> consistentie(sessie, true, v);
-            case "attributeTimeline" -> throw new Excluded("attributeTimeline read-back is not carried by the v0 backend");
+            case "attributeTimeline" -> tijdlijn(v);
             default -> throw new Excluded("unknown expectation kind: " + kind);
         };
     }
@@ -361,8 +519,14 @@ public final class CaseRunner {
         String attr = v.get("attribute").asText();
         String label = v.get("label").asText();
         Objecttype ot = labelType.get(label);
-        if (ot != null && nietScalair(ot, attr))
-            throw new Excluded("temporal/dimensioned attribute read-back '" + attr + "' is not carried by the v0 backend");
+        if (ot != null && gedimensioneerd(ot, attr))
+            throw new Excluded("dimensioned attribute read-back '" + attr + "' (§3.6, a Map bean member) "
+                    + "is not carried by the v0 backend");
+        // a temporal attribute's bean member is the List<Segment> timeline itself: the scalar comparison below
+        // would compare a list against a scalar. Its read-back form is the attributeTimeline expectation.
+        if (ot != null && temporeel(ot, attr))
+            throw new Excluded("scalar read-back of temporal attribute '" + attr + "' is not carried by the v0 "
+                    + "backend — the bean holds a List<Segment>; use an attributeTimeline expectation");
         Object bean = labelNaarBean.get(label);
         Object werkelijk = bean == null ? null : lees(bean, Namen.getter(attr));
         if (leegVerwacht)
@@ -370,6 +534,47 @@ public final class CaseRunner {
         Object verwacht = waardeNaarArg(v.get("value"), attr);
         return gelijk(verwacht, werkelijk) ? null
                 : "attribuut " + attr + ": verwacht " + render(verwacht) + ", werkelijk " + render(werkelijk);
+    }
+
+    /** The §13.3.6 timeline read-back: the doel's {@code List<Segment>} against the pinned segment list, with
+     *  ref's comparison discipline — equal length, van/tot EXACT, waarde scale-safe ({@code compareTo == 0}),
+     *  order significant. A never-written target (a null field) matches an explicitly empty expectation: both
+     *  read leeg on every day (ch. 3.1), exactly as ref and clingo pin it. */
+    private String tijdlijn(JsonNode v) {
+        String attr = v.get("attribute").asText(), label = v.get("label").asText();
+        Objecttype ot = labelType.get(label);
+        if (ot != null && !temporeel(ot, attr))
+            throw new Excluded("attributeTimeline read-back of non-temporal attribute '" + attr + "'");
+        Granulariteit gran = ot == null ? null : ot.attribuutGranulariteit.get(attr);
+        List<Object> verwacht = tijdreeks(v.get("timeline"), attr, gran, true);
+        Object gelezen = labelNaarBean.containsKey(label) ? lees(labelNaarBean.get(label), Namen.getter(attr)) : null;
+        if (gelezen == null)
+            return verwacht.isEmpty() ? null
+                    : "attribuut " + attr + ": draagt geen tijdreeks, verwacht " + renderTl(verwacht);
+        List<?> werkelijk = (List<?>) gelezen;
+        boolean gelijk = werkelijk.size() == verwacht.size();
+        for (int k = 0; gelijk && k < verwacht.size(); k++)
+            gelijk = segGelijk(verwacht.get(k), werkelijk.get(k));
+        return gelijk ? null
+                : "attribuut " + attr + ": verwacht " + renderTl(verwacht) + ", werkelijk " + renderTl(werkelijk);
+    }
+
+    private static boolean segGelijk(Object verw, Object werkelijk) {
+        return java.util.Objects.equals(segVeld(verw, "van"), segVeld(werkelijk, "van"))
+                && java.util.Objects.equals(segVeld(verw, "tot"), segVeld(werkelijk, "tot"))
+                && gelijk(segVeld(verw, "waarde"), segVeld(werkelijk, "waarde"));
+    }
+
+    /** One field of a {@code Segment} fact, read through the runtime's property bridge (the class is a runtime
+     *  objecttype — no compile-time type to cast to). */
+    private static Object segVeld(Object seg, String veld) { return RegelSpraakRuntime.get(seg, veld); }
+
+    private static String renderTl(List<?> segs) {
+        if (segs.isEmpty()) return "(leeg)";
+        List<String> uit = new ArrayList<>();
+        for (Object s : segs)
+            uit.add("[" + segVeld(s, "van") + "," + segVeld(s, "tot") + ")=" + render(segVeld(s, "waarde")));
+        return String.join(" ", uit);
     }
 
     private String kenmerk(JsonNode v, boolean aanwezigVerwacht) {
