@@ -94,10 +94,41 @@ class ObjectCreatieWitnessTest {
 
     @Test void een_subject_munt_precies_een_object() throws Exception {
         // §9 idempotence: the creation is a function of the fact base, not of the fire count. The rule that
-        // writes the jutter's heffing MODIFIES a matched subject, which re-activates an unguarded creation —
-        // so "exactly one" is a live property here, not a tautology.
-        CaseRunner.NaFire na = CaseRunner.naFire(ir(REKENKAMER), jutter("240", "90"));
+        // writes the jutter's heffing MODIFIES a matched subject, which re-activates an unguarded creation.
+        // On the GUARDED model (metVoorwaarde) that re-activation is real and this assertion is live: with the
+        // §9 guard removed the model never reaches a fixpoint. On the plain REKENKAMER model the same
+        // assertion is VACUOUS — it survives the guard's removal — so the witness lives here, on the model
+        // where the property it claims is the one doing the work.
+        CaseRunner.NaFire na = CaseRunner.naFire(metVoorwaarde(), jutter("240", "90"));
         assertEquals(1, mints(na).size(), "one creation per rule per subject: " + mints(na));
+    }
+
+    // ---------------- 1b. WHICH end of the link the 1:1 wait reads ----------------
+
+    @Test void een_koppeling_op_de_subjectzijde_blokkeert_de_creatie() throws Exception {
+        // ch. 5.5's 1:1 guard is a STORAGE-DIRECTION narrowing, and the direction is free — twelve green gates
+        // do not hold it — until a case delivers the link on ONE end only. Subject end: an existing Rekenkamer
+        // already fills the jutter's `rekenkamer` field, so nothing is minted and the navigated read reaches
+        // the SUPPLIED kamer. ref on this exact model+case: J1.heffing = 6 (10 - 4, the supplied kamer's own
+        // rule). Read the created side instead and this arm mints anyway and lands on 150.
+        CaseRunner.NaFire na = CaseRunner.naFire(ir(REKENKAMER), koppelingOpSubject("6"));
+        assertTrue(mints(na).isEmpty(), "an already-linked 1:1 subject mints nothing: " + mints(na));
+        assertSame(na.invoer().get("R1"), RegelSpraakRuntime.get(na.invoer().get("J1"), "rekenkamer"),
+                "and the supplied link is left as delivered");
+        assertNull(CaseRunner.speelCase(ir(REKENKAMER), koppelingOpSubject("6")));
+    }
+
+    @Test void een_koppeling_op_de_gemunte_zijde_blokkeert_de_creatie_niet() throws Exception {
+        // The other end, which the created-side reading gets wrong in the OPPOSITE direction: the same relation
+        // delivered solely on the Rekenkamer bean leaves the subject's to-one field empty, so ch. 5.5 still
+        // mints — and the MINT, not the supplied kamer, is what the jutter then navigates to. ref: J1.heffing
+        // = 150 (240 - 90). Read the created side and this arm blocks, leaving the heffing leeg. Together the
+        // two arms fix the direction: neither reading passes both.
+        CaseRunner.NaFire na = CaseRunner.naFire(ir(REKENKAMER), koppelingOpGemunteZijde("150"));
+        assertEquals(1, mints(na).size(), "a created-side link does not block the mint: " + mints(na));
+        assertSame(mints(na).get(0), RegelSpraakRuntime.get(na.invoer().get("J1"), "rekenkamer"),
+                "and the forward field points at the mint, not at the supplied kamer");
+        assertNull(CaseRunner.speelCase(ir(REKENKAMER), koppelingOpGemunteZijde("150")));
     }
 
     // ---------------- 2. the §13.4.6.4 kenmerkwaardetoekenning ----------------
@@ -127,6 +158,39 @@ class ObjectCreatieWitnessTest {
         CaseRunner.NaFire na = CaseRunner.naFire(ir(OVERZEE), overzee("800", Boolean.FALSE));
         assertEquals(Boolean.FALSE, RegelSpraakRuntime.get(enigeMint(na), "overzees"));
         assertNull(CaseRunner.speelCase(ir(OVERZEE), overzeeMetVerwachting("800", Boolean.FALSE, "800")));
+    }
+
+    @Test void een_ware_literal_kenmerktoekenning_zet_de_markering_ook() throws Exception {
+        // The same three-way flank once more, now with the initialisation value a LITERAL instead of a read of
+        // a nullable attribute — the arms no case input can reach, so only a pin holds them. ref on this
+        // mutated model: 1800 (800 + the overzeese arm's 1000).
+        Path ir = kenmerkWaarde("""
+                { "node": "Literal", "waarde": "waar", "type": { "node": "Booleaan" }, "bron": "waar" }""", "lit-waar");
+        assertEquals(Boolean.TRUE, RegelSpraakRuntime.get(enigeMint(CaseRunner.naFire(ir, overzeeMetVerwachting("800", null, "1800"))), "overzees"));
+        assertNull(CaseRunner.speelCase(ir, overzeeMetVerwachting("800", null, "1800")));
+    }
+
+    @Test void een_onware_literal_kenmerktoekenning_laat_de_markering_ongezet() throws Exception {
+        // and its literal false — the arm a "write whatever the value is" lowering would set (the primitive
+        // field would then hold false anyway, so ONLY the branch value separates the two). ref: 800.
+        Path ir = kenmerkWaarde("""
+                { "node": "Literal", "waarde": "onwaar", "type": { "node": "Booleaan" }, "bron": "onwaar" }""", "lit-onwaar");
+        assertEquals(Boolean.FALSE, RegelSpraakRuntime.get(enigeMint(CaseRunner.naFire(ir, overzeeMetVerwachting("800", null, "800"))), "overzees"));
+        assertNull(CaseRunner.speelCase(ir, overzeeMetVerwachting("800", null, "800")));
+    }
+
+    @Test void een_niet_booleaanse_kenmerktoekenning_faalt_met_wf027() throws Exception {
+        // The fourth value, and the one the empty arm must stay SEPARABLE from: a non-boolean initialisation is
+        // a FAULT, never a silently unset mark. ref on this mutated model faults too, with the same rule:
+        // "EVALUATION FAULT: characteristic initialisation of "overzees" is not boolean: 5 (WF-027)".
+        Path ir = kenmerkWaarde("""
+                { "node": "Literal", "waarde": "5",
+                  "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+                  "bron": "5" }""", "lit-getal");
+        RuntimeException e = org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
+                () -> CaseRunner.naFire(ir, overzeeMetVerwachting("800", null, "800")));
+        String keten = oorzaken(e);
+        assertTrue(keten.contains("niet booleaans") && keten.contains("(WF-027)"), keten);
     }
 
     // ---------------- 3. a creation with NO toekenningen ----------------
@@ -186,6 +250,22 @@ class ObjectCreatieWitnessTest {
         assertTrue(e.getMessage().contains("geen uniek verbindend feittype"), e.getMessage());
     }
 
+    @Test void een_meervoudige_subjectzijdige_rol_wordt_luid_geweigerd() throws Exception {
+        // The THIRD shape, and it does not present as an orphan: the FORWARD field exists, only the back-
+        // reference has nowhere to live — FactModelGenerator puts a to-many pair's scalar reference on the
+        // other side, so the created type carries no `opdrachtgever` member. Writing it anyway reached a setter
+        // no bean has, an unclassified fire-time ERROR ("geen setter voor 'opdrachtgever' op Rekenkamer") on a
+        // model that is verifier-clean (checked) and that ref plays straight through (150 on the plain case,
+        // where the link is symbolic rather than a bean field). Under the gate-12 regime an ERROR is never a
+        // valid not-carried outcome, so the shape is refused per creation, by its own reason.
+        // A POPULATED case, unlike the two refusals above: the crash this replaces happens at FIRE, so an
+        // empty fact base would let the un-refused shape pass silently and leave the witness proving nothing.
+        CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.naFire(meervoudigeSubjectrol(), jutter("240", "90")));
+        assertTrue(e.getMessage().contains("het beanmodel draagt het terugveld niet"), e.getMessage());
+        assertTrue(e.getMessage().contains("opdrachtgever"), e.getMessage());
+    }
+
     // ---------------- fixtures ----------------
 
     /** The refusal building {@code irPath} raises — an assertion failure if it builds at all. */
@@ -195,6 +275,18 @@ class ObjectCreatieWitnessTest {
                         { "format": "uchar-case-v0", "asOfDate": null,
                           "input": { "instances": [], "parameters": {} }, "expected": [] }
                         """)));
+    }
+
+    /** The full cause chain of a throwable as one string — a Drools rule fault wraps the runtime's own
+     *  exception, so the pinned fragment sits at the deepest level. */
+    private static String oorzaken(Throwable t) {
+        StringBuilder sb = new StringBuilder();
+        for (Throwable c = t; c != null; ) {
+            sb.append(c).append(" <- ");
+            Throwable volgende = c.getCause();
+            c = volgende == c ? null : volgende;
+        }
+        return sb.toString();
     }
 
     /** Every post-fire fact that is NOT one of the case's own input beans — the mints. */
@@ -246,6 +338,35 @@ class ObjectCreatieWitnessTest {
                 """).formatted(grondslag, aftrek));
     }
 
+    /** J1 (240/90) plus an EXISTING Rekenkamer R1 (10/4, so its own rule gives it heffing 6), with the
+     *  taxatieopdracht relation delivered on the SUBJECT: the case writes the jutter's `rekenkamer` to-one
+     *  field and leaves the kamer's `opdrachtgever` empty. */
+    private static JsonNode koppelingOpSubject(String heffing) throws Exception {
+        return tweeInstanties("\"rekenkamer\": [\"R1\"]", "", heffing);
+    }
+
+    /** The same two instances and the SAME relation, delivered on the CREATED side: the case writes the
+     *  Rekenkamer bean's `opdrachtgever` field and leaves the jutter's to-one role empty. */
+    private static JsonNode koppelingOpGemunteZijde(String heffing) throws Exception {
+        return tweeInstanties("", "\"opdrachtgever\": [\"J1\"]", heffing);
+    }
+
+    private static JsonNode tweeInstanties(String jutterRol, String kamerRol, String heffing) throws Exception {
+        return JSON.readTree(("""
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [
+                      { "label": "J1", "objectType": "Jutter",
+                        "attributes": { "grondslag": { "number": "240" }, "aftrek": { "number": "90" } },
+                        "roles": { %s }, "characteristics": [] },
+                      { "label": "R1", "objectType": "Rekenkamer",
+                        "attributes": { "grondslag": { "number": "10" }, "aftrek": { "number": "4" } },
+                        "roles": { %s }, "characteristics": [] } ], "parameters": {} },
+                  "expected": [ { "kind": "attributeValue", "label": "J1", "attribute": "heffing",
+                                  "value": { "number": "%s" } },
+                                { "kind": "consistent" } ] }
+                """).formatted(jutterRol, kamerRol, heffing));
+    }
+
     /** The overzee case: `overzees` is a nullable Booleaan ATTRIBUTE on the subject — null means unsupplied. */
     private static JsonNode overzee(String grondslag, Boolean overzees) throws Exception {
         return overzeeMetVerwachting(grondslag, overzees, Boolean.TRUE.equals(overzees)
@@ -273,6 +394,27 @@ class ObjectCreatieWitnessTest {
         ((com.fasterxml.jackson.databind.node.ObjectNode) ir.get("objectCreaties").get(0))
                 .set("toekenningen", JSON.createArrayNode());
         return schrijf(ir, "zonder-toekenningen");
+    }
+
+    /** The overzee model with the §13.4.6.4 kenmerk toekenning's VALUE replaced — the arms no case input can
+     *  reach (a literal true/false, a non-boolean). In memory: no corpus file is read for its expectations,
+     *  moved, or touched. */
+    private static Path kenmerkWaarde(String waardeJson, String naam) throws Exception {
+        var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(OVERZEE)));
+        for (JsonNode t : ir.get("objectCreaties").get(0).get("toekenningen"))
+            if (t.get("kenmerk").asBoolean())
+                ((com.fasterxml.jackson.databind.node.ObjectNode) t).set("waarde", JSON.readTree(waardeJson));
+        return schrijf(ir, naam);
+    }
+
+    /** The rekenkamer model with the SUBJECT-side role (`opdrachtgever`) made MEERVOUDIG — one Rekenkamer
+     *  serves many Jutters, so the pair's scalar reference lives on the Jutter and the created type carries no
+     *  back-reference field at all. */
+    private static Path meervoudigeSubjectrol() throws Exception {
+        var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(REKENKAMER)));
+        ((com.fasterxml.jackson.databind.node.ObjectNode)
+                ir.get("feittypen").get("taxatieopdracht").get("rollen").get(0)).put("meervoudig", true);
+        return schrijf(ir, "meervoudige-subjectrol");
     }
 
     /** The rekenkamer model with a §8.1.1 comparison guarding the creation. */
