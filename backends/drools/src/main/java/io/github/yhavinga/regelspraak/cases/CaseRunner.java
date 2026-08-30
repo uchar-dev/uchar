@@ -94,6 +94,27 @@ public final class CaseRunner {
         }
     }
 
+    /** The witness seam of {@code backends/drools/src/test}: the beans one case's attribute and characteristic
+     *  INPUT produces, before any rule fires. Every gate observes this layer only through post-fire expectation
+     *  matches, so what a temporal input BECAME — the bucket a scalar landed in, the segments a timeline placed
+     *  on a {@code List<Segment>} member — has no other observable surface: a wrong bucket that happens to fold
+     *  to the right total would pass unseen. Roles and globals are deliberately not set: they are not this
+     *  layer's subject, and leaving them out keeps the seam to what it witnesses. */
+    static Map<String, Object> invoerBeans(Path irPath, JsonNode c) throws java.io.IOException {
+        CaseRunner runner = build(irPath);
+        runner.rekendatum = asOfDatum(c);
+        ClassLoader vorige = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(runner.cl);
+        try {
+            JsonNode instances = c.get("input").get("instances");
+            for (JsonNode i : instances) runner.beanVoor(i);
+            for (JsonNode i : instances) runner.zetAttributenEnKenmerken(i);
+            return runner.labelNaarBean;
+        } finally {
+            Thread.currentThread().setContextClassLoader(vorige);
+        }
+    }
+
     /** Load {@code irPath}, refuse the two non-replayable forms, generate+contract-check the beans, lower every
      *  construct, and build the {@link KieBase} — the shared prelude of both the green replay and the red probe.
      *  Throws {@link Excluded} / {@link IrLoader.Refusal} for any form the v0 backend does not carry. */
