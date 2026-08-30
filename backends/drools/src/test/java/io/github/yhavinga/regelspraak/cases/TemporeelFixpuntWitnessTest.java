@@ -34,9 +34,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       one of the two.</li>
  * </ol>
  *
- * <p>The oscillation of {@code jutterswet-waardering-v0vorm} — a leeg-source gelijkstelling against an
- * INITIALISATIE, a SCALAR write and a different mechanism (ratified as a listed gate-12 divergence) — is
- * asserted UNCHANGED here, so the termination fix cannot silently move that listed entry.
+ * <p>This class used to ALSO pin the scalar oscillation of {@code jutterswet-waardering-v0vorm} — a
+ * leeg-source gelijkstelling against an INITIALISATIE — as a cross-domain non-interference witness: the
+ * timeline guard was not to move that then-listed gate-12 divergence. The card drools-scalaire-standing-norm
+ * (2026-08-30) BUILT the scalar arm of the same ch. 7.8 norm, which retires that oscillation by construction
+ * (the leeg write is suppressed, so the initialisatie decides once). Its subject is gone, so the witness is
+ * gone with it; the outcome that replaced it is pinned by {@code StaandeScalaireNormWitnessTest}.
  */
 class TemporeelFixpuntWitnessTest {
 
@@ -90,23 +93,6 @@ class TemporeelFixpuntWitnessTest {
                   "expected": [ { "kind": "consistent" } ] }
                 """;
         assertNull(speel("synth2-prorata-breed", c), "three temporal siblings must settle, not run away");
-    }
-
-    @Test void de_gelijste_scalar_oscillatie_blijft_oscilleren() throws Exception {
-        // NOT a timeline write and NOT this fix's domain: a leeg-source gelijkstelling (writes null) against an
-        // INITIALISATIE (refills 25) on a SCALAR attribute. It is a ratified, listed gate-12 divergence; the
-        // timeline guard must leave it exactly where it was, so its non-termination is pinned rather than assumed.
-        String c = """
-                { "format": "uchar-case-v0", "asOfDate": null,
-                  "input": { "instances": [
-                      { "label": "J1", "objectType": "Jutter",
-                        "attributes": {}, "roles": {}, "characteristics": [ "erkend" ] } ],
-                    "parameters": {} },
-                  "expected": [ { "kind": "consistent" } ] }
-                """;
-        String fout = speel("anchor/jutterswet-waardering-v0vorm", c);
-        assertNotNull(fout, "the listed scalar oscillation must still be observable");
-        assertTrue(fout.contains("geen fixpunt"), "unchanged in kind, not merely in outcome: " + fout);
     }
 
     // ---------------- 2. the ch. 7.8 timeline arm, both sides ----------------
