@@ -420,13 +420,27 @@ public final class CaseRunner {
                 Object doel = labelNaarBean.get(labelNode.asText());
                 if (doel == null) throw new Excluded("role '" + e.getKey() + "' names unknown label " + labelNode.asText());
                 Objecttype tL = objecttypeVanBean(doel);
-                String rolIL = model.verbindendeRol(tI, tL);      // the field on THIS bean (to-one from here)
+                // §13.4.1 the WRITTEN role IS the navigation — and for a SELF-TYPED pair it is the ONLY route:
+                // the by-pair search below counts both same-typed sibling roles and derives null by construction
+                // (RegelSpraakModel.verbindendeRol; ref BLOCKS the same derivation in connecting_pair). Resolved
+                // through the very authority FactModelGenerator.zelfpaarRollen derived those fields from, and
+                // ACCEPTED ONLY when it names one of them, so a hit can only write a field the bean carries. That
+                // membership test is what keeps this from being a general by-name override: a by-pair-AMBIGUOUS
+                // cross-type pair derives no bean field at all, so resolving it by name would call a setter no
+                // bean has. Where the by-pair search already succeeds the outcome is unchanged — a by-name hit is
+                // always one of the by-pair candidates, so a unique pair resolves to the same role either way.
+                String viaNaam = model.verbindendeRolViaNaam(tI, tL, e.getKey());
+                boolean zelfpaar = viaNaam != null && FactModelGenerator.zelfpaarRollen(model, tI).contains(viaNaam);
+                // the field on THIS bean (to-one from here): the written self-pair role, else the type pair
+                String rolIL = zelfpaar ? viaNaam : model.verbindendeRol(tI, tL);
                 if (rolIL != null && !model.naarVeelRol(tI, tL, rolIL)) {
                     zetToOne(bean, rolIL, doel);
                 } else {
                     String rolLI = model.verbindendeRol(tL, tI);  // the field lives on the target (this is the one side)
                     if (rolLI == null || model.naarVeelRol(tL, tI, rolLI))
-                        throw new Excluded("role '" + e.getKey() + "' has no uniquely derivable reference field");
+                        throw new Excluded("role '" + e.getKey() + "' (" + tI.naam + " -> " + tL.naam + ") reaches no "
+                                + "to-one reference field: the written role name derives no §13.3.9 self-pair field, "
+                                + "and neither direction of the type pair derives a unique to-one role");
                     zetToOne(doel, rolLI, bean);
                 }
             }
@@ -452,7 +466,14 @@ public final class CaseRunner {
      *  present. Run as a SEPARATE PASS over the finished links, like ref's, so the outcome cannot depend on the
      *  order instances appear in: a conflict must be seen wherever the colliding leg was written. Idempotent
      *  (a case supplying both legs means one relation), and a CONFLICTING leg on the to-one role is hard — ref
-     *  refuses that case at load (WF-013), so overwriting it here would file a broken case under a green replay. */
+     *  refuses that case at load (WF-013), so overwriting it here would file a broken case under a green replay.
+     *
+     *  <p>Scoped to the WEDERKERIG shape on purpose, and ref-arbitrated: an ORDINARY self-typed pair (two distinct
+     *  sibling roles, {@code voorganger}/{@code opvolger}) must NOT mirror. ref's {@code Case.materialise_reciprocal}
+     *  mirrors only when {@code ft.wederkerig}, so a case writing {@code W1{opvolger:[W2]}} leaves W2's voorganger
+     *  reading EMPTY — measured on the erflijn shape (card lens 2026-08-30: the counting probe reads 1 opvolger on
+     *  W1 and 0 voorgangers on W2; the mirrored hypothesis MISMATCHes in ref). {@link #zetRollen} therefore writes
+     *  that leg directed, on the written role's field only. */
     private void spiegelWederkerigeRollen() {
         for (Object bean : labelNaarBean.values()) {
             String rol = FactModelGenerator.zelfpaarRol(model, objecttypeVanBean(bean));

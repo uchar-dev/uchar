@@ -876,6 +876,18 @@ public final class ExecModelTranspiler {
      *  count Variable + the empty-sum fallback. */
     private record Agg(RuleItemBuilder<?> accItem, Variable resultVar, Variable countVar, WaardeFn somFallback, boolean isSom) {}
 
+    /** Whether the bean model derives a member named after role {@code rol} on {@code ot} — asked of
+     *  {@link io.github.yhavinga.regelspraak.schema.FactModelGenerator#leden}, the ONE derivation the generator
+     *  renders and the ContractValidator demands, so a lowered read can never drift from what the beans carry.
+     *  A derived ROLE is not yet a derived FIELD: a to-many role's storage is the far end's field, and where BOTH
+     *  ends are to-many there is no field at all. */
+    private boolean heeftReferentieVeld(Objecttype ot, String rol) {
+        if (ot == null || rol == null) return false;
+        String prop = Namen.ident(rol, false);
+        return io.github.yhavinga.regelspraak.schema.FactModelGenerator.leden(model, ot).stream()
+                .anyMatch(l -> l.eigenschap().equals(prop));
+    }
+
     /** §5.8/§13.4.17 lower an aggregation over the subject's related elements to a {@code DSL.accumulate} CE: the
      *  source pattern joins the element to {@code $subject} (the §9.4 backref role), an optional §13.4.2 die-filter
      *  becomes a source constraint, and the accumulate function (count / BigDecimal sum / min / max) binds the
@@ -927,6 +939,18 @@ public final class ExecModelTranspiler {
         // owns a field and a one-sided supply stays one-sided, exactly as ref stores it. With a TO-MANY sibling the
         // relation has exactly ONE field, which necessarily serves both directions, so a link supplied from the far
         // end reads here as this end's own — where ref reads nothing. That shape is refused, not silently counted.
+        //
+        // HONEST SCOPE (card lens 2026-08-30). "Refused, not silently counted" is a claim about THIS arm only. The
+        // one-shared-field hazard is not created by the to-one element role: it is inherent to the SHAPE, so it
+        // holds unchanged for the to-many backref arm above — and THERE the far-end supply IS silently counted.
+        // Measured on jutterswet-vondsttelling (element role `vondst` to-many, the single field Vondst.aanmelder),
+        // a case supplying the link from the ELEMENT end (V1{aanmelder:[J1]}, V2{aanmelder:[J1]}) reads in
+        //   ref:    J1 aantal 0, gewicht 0   (ref keys the set on the SUBJECT's own links — nothing was written there)
+        //   Drools: J1 aantal 2, gewicht 3.75 (the backref join probes the one shared field and folds both)
+        // A KNOWN, PRE-EXISTING divergence with NO corpus witness: every golden supplies a to-many relation from
+        // the ONE side, where both executors agree, so the corpus never looks at it and no gate can see it. It is
+        // NOT closed here — closing it would mean tracking WHICH end a link was supplied from, which changes the
+        // storage model under every existing aggregation. Carded as a residual gap, not as a regression.
         // NB the by-NAME lookup only for a COUNT: there arg.attribuut() IS the written element role (the same
         // reading verbindendeRolViaElementnaam applies above); for a sum/min/max it is an ATTRIBUTE name, which
         // must never be matched against role names.
@@ -938,6 +962,14 @@ public final class ExecModelTranspiler {
         }
         boolean voorwaarts = elemRol != null && !model.naarVeelRol(subject, elem, elemRol);
         if (voorwaarts && model.naarVeelRol(elem, subject, backref)) return null;   // one shared field, both directions
+        // ...and the join field must actually EXIST. Both arms above derive a ROLE, which is not the same as a bean
+        // MEMBER: the generator derives a scalar reference only where the role is to-one AND uniquely reachable
+        // (FactModelGenerator.leden — the by-pair loop, plus zelfpaarRollen for a self-typed pair). A self-typed
+        // relation whose BOTH roles are to-many (jutterswet-erflijn's `erflijn`: erflater and erfvolger both
+        // meervoudig) therefore has NO field at either end, and lowering its join produced a rule that built fine
+        // and died at first fire ("geen getter voor 'erflater'") — an ERROR gate 12 rightly refuses to excuse.
+        // Asked of the ONE shared member derivation, so this can never drift from what the beans carry.
+        if (!heeftReferentieVeld(voorwaarts ? subject : elem, voorwaarts ? elemRol : backref)) return null;
         final String fwdVeld = elemRol;
 
         Variable elemVar = DSL.declarationOf(elemClass, "$e_" + (seq++));
