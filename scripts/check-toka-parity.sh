@@ -170,9 +170,15 @@ CLINGO=_build/default/backends/clingo/bin/clingo_runner.exe
 # the lens-proven stale-jar flank. mvn is a hard requirement, exactly as it is of gate 12.
 command -v mvn >/dev/null 2>&1 || fail "mvn not found — the Drools leg rebuilds the shaded jar unconditionally (stale-jar guard)"
 echo "check-toka-parity: rebuilding the Drools shaded jar (unconditional, offline)…" >&2
-mvn -o -q -f backends/drools/pom.xml package >/dev/null 2>&1 || fail "the Drools shaded-jar build is red — run: mvn -o -f backends/drools/pom.xml package"
-DJAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | head -1)
-[ -n "$DJAR" ] || fail "the build produced no Drools shaded jar"
+build_out=$(mvn -o -f backends/drools/pom.xml package 2>&1) || {
+  printf '%s\n' "$build_out" | tail -25 >&2
+  fail "the Drools shaded-jar build is red — run: mvn -o -f backends/drools/pom.xml package"
+}
+# exactly ONE shaded jar, or the measurement is ambiguous: ls|head-1 picks the lexicographic
+# first, which after an artifact-version bump is the STALE one, not the fresh build (lens).
+DJAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null)
+[ "$(printf '%s\n' "$DJAR" | grep -c .)" -eq 1 ] \
+  || fail "expected exactly one Drools shaded jar, found: ${DJAR:-none} — clean backends/drools/target"
 
 REPLAY_TMP=$(mktemp -d -t toka-replay-XXXXXX)
 CFRAGS="$REPLAY_TMP/clingo-faults"; DFRAGS="$REPLAY_TMP/drools-excludes"; : >"$CFRAGS"; : >"$DFRAGS"
