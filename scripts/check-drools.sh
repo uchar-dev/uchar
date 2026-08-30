@@ -91,8 +91,6 @@ EXCLUDE_KNOWN=(
   # ExecModelTranspiler) and the identical diffs synced into backends/drools here, so ref ≡ clingo ≡
   # Drools now on both — they PLAY+PASS. The official RegelSpraak spec (§9.7.5) is silent on the
   # zero-recipient case, so the no-recipient rest becoming leeg is a bugfix, not a v1 delta.
-  "anchor/jutterswet-waardestelling|v0-divergence: a gelijkstelling with a LEEG source overwrites the pre-filled doel with null; ref/clingo preserve it (leeg valt door). Original toolchain agrees with our port: DRL-oracle AND exec-model both write null (prijs:=basistarief[leeg] over prijs=40 -> null). v1-delta candidate: a leeg-source assignment is a no-op."
-  "anchor/jutterswet-waardering-v0vorm|v0-EXEC-MODEL NON-TERMINATION, not a semantic divergence (PRIORITIZED-DEFAULTS-EVOLUTIE §9 Q11, ratified 2026-08-29): the leeg-source gelijkstelling (writes null) oscillates against the INITIALISATIE (refills 25), so the exec-model back-end never reaches a fixpoint (fireAllRules hits its 100k cap) and returns the wrong value at fire. Unlike the other entries here this is NOT a genuine v0 production-semantics difference: the original toolchain's DRL-oracle DOES settle at 25 (= ref = clingo) — only the exec-model's reactivity of a leeg-source assignment diverges. It stays in this value-divergence list solely because the gate classifies a non-terminating fire as a wrong-value FAIL rather than an auto-exclusion; reclassifying it out of this list waits for a CaseRunner-taxonomy revisit (per the ratified decision), not a spec change."
   "anchor/jutterswet-kustwacht|v0-divergence (CORRECTED: NOT a leeg operand): NEGATION-as-failure is not stratified — a geen-<kenmerk> rule fires before the positive kenmerk is derived and is never retracted, so rustwacht reads present though its post IS a risicopost. Original toolchain agrees with our port: DRL-oracle AND exec-model both fire the negated kenmerk true. v1-delta candidate: stratify negated-kenmerk reads."
   # jutterswet-keurmerk LEFT the list 2026-08-29 (card triage-sluiting, PRIORITIZED-DEFAULTS-EVOLUTIE §9 Q11): the
   # embedded-double-quote divergence was a backends/drools string-encoding defect, not a v0 semantic
@@ -118,8 +116,23 @@ EXCLUDE_KNOWN=(
   #   (d) The ch. 7.8 timeline arm (settled spec: ref's Desugar.standing_temporal_targets + eval.ml's
   #       pro-rata/day-count arms, and clingo) is now implemented in the same helper — on a standing temporal
   #       target an empty fold result writes nothing and the case-supplied input timeline stands whole.
-  # jutterswet-waardering-v0vorm above is a DIFFERENT oscillation (a scalar leeg-source gelijkstelling
-  # against an INITIALISATIE) and stays listed, unchanged and witness-pinned.
+  #
+  # jutterswet-waardestelling and jutterswet-waardering-v0vorm LEFT this list 2026-08-30 (card
+  # drools-scalaire-standing-norm) — the SCALAR twin of (d), so the whole leeg-doorval class is now built and
+  # only kustwacht (a genuine v0 divergence: negation stratification) remains. Both PLAY+PASS against their
+  # UNCHANGED pins; removing them is mandatory (a listed golden that plays trips the stale guard):
+  #   (d') The ch. 7.8 SCALAR standing norm — ref's Desugar.standing_targets (~temporal:false) — plus the
+  #       ch. 7.7 desugaring domain (Desugar.desugared_targets) that ref's scalar arm consults BESIDE it, both
+  #       ported into ExecModelTranspiler and read at the scalar write boundary (werkBij): on such a target a
+  #       leeg (null) computed value decides nothing, so the case input — or, in the desugaring domain, the
+  #       initialisatie — stands. waardestelling was class (d) all along, not the class (b) its old reason
+  #       line claimed: the spec DECIDED the doorval at ch. 7.8 and the backend simply had not built it.
+  #       waardering-v0vorm's non-termination was a CONSEQUENCE of the same gap (the leeg write and the
+  #       INITIALISATIE's refill alternated); with the write suppressed the init decides once and the
+  #       oscillation is gone — so the ratified PRIORITIZED-DEFAULTS-EVOLUTIE §9 Q11 note is discharged by
+  #       construction rather than by the CaseRunner-taxonomy revisit it was waiting for. Note the domain
+  #       gate is what carries this: with a SECOND computing rule on the target the v0 erase is unretired and
+  #       a leeg source still wipes the input (ref agrees) — pinned by StaandeScalaireNormWitnessTest.
 )
 
 known_reason() { local n="$1"; for e in "${EXCLUDE_KNOWN[@]}"; do [ "${e%%|*}" = "$n" ] && { echo "${e#*|}"; return 0; }; done; return 1; }
