@@ -119,6 +119,12 @@ A new datatype node (English name, per the `TemporalRead`/
   enum family in full, including all-nullary enums; the two forms
   never convert into each other on the wire.
 
+> **Superseded (2026-09-01, keuzetype-familie card):** all-nullary now
+> normalises to `Enumeratie` — WF-087; Match widens to enumeration
+> scrutinees — WF-063. "Never convert" survives as its payload half
+> only. Proposals are history: the paragraph above stands as written,
+> and the ratified rules are IR-SPEC ch. 2.4 with CONSTRUCTS row 36.
+
 ### 2.2 Expressions: `Construct`, `Match`, `BinderRef`
 
 Three new `expr` `oneOf` members (IR-SPEC ch. 4.7, new):
@@ -283,6 +289,13 @@ work list:
 - New ASP-TRANSLATION section per the S-numbering rule in §5.
 
 ### 2.7 Plugin mapping
+
+> **Superseded (2026-09-01, keuzetype-familie card):** all-nullary now
+> normalises to `Enumeratie` — WF-087; Match widens to enumeration
+> scrutinees — WF-063, so a two-formed scrutinee is no longer an
+> objection. Proposals are history: the paragraph below stands as
+> written; the plugin's ratified mapping is `keuzetype_of` in
+> `frontends/catala/lib/translate.ml`.
 
 `TEnum` → `SumType`, built from `ctx_enums` — **uniformly, including
 all-nullary enums** (the first draft mapped all-nullary onto
