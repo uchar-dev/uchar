@@ -434,7 +434,7 @@ final class RuleChecker {
             // when a rule has several, give each a unique name.
             String versieNaam = versies.size() > 1 ? naam + " #" + (i + 1) : naam;
             bouwer.setSubject(subjectVan(rsr.resultaatDeel())); // so "zijn …" resolves against the rule subject
-            bouwer.zetVariabelen(rsr.variabeleDeel());          // §11 inline "Daarbij geldt:" vars into voorwaarde + resultaat (clears per rule)
+            bouwer.zetVariabelen(rsr.variabeleDeel());          // §11 capture "Daarbij geldt:" vars in BOTH forms (clears per rule)
             Conditie voorwaarde = rsr.voorwaardeDeel() != null ? bouwVoorwaarde(rsr.voorwaardeDeel()) : null;
             resultaat(naam, versieNaam, rsr.resultaatDeel(), rsr.voorwaardeDeel(), voorwaarde, geldigheid);
             voorwaarden(rsr);   // exhaustive condition type-check (§5), unchanged
@@ -1288,7 +1288,7 @@ final class RuleChecker {
                     + "' is geen objecttype of rol (regel '" + naam + "')", line));
             return;
         }
-        Expr anker = bouwer.bouw(sb.expressie());
+        Expr anker = bouwer.bouwResultaat(sb.expressie());   // §11: the anchor IS a rule's `waarde` slot (see registreer)
         if (!anker.type().isOnbekend() && !(anker.type() instanceof Datatype.DatumInDagen))
             model.diagnostics.add(new Diagnostic(Severity.ERROR,
                     "startpuntbepaling: de expressie moet datum in dagen zijn, niet "
@@ -1333,7 +1333,13 @@ final class RuleChecker {
     private void registreer(String naam, ResolvedRegel.Soort soort, AttribuutVanOnderwerpContext doel,
                             ExpressieContext waarde, int line, Conditie voorwaarde, Geldigheid geldigheid) {
         Expr doelExpr = bouwer.bouwAttribuut(doel);
-        Expr waardeExpr = bouwer.bouw(waarde);
+        // §11 the RESULT-part value: variable reads become BinderRefs under the variabelendeel's ch. 4.10 Let chain.
+        // This is the ONE wire slot that hosts the chain — a rule's `waarde`. The other resultaatdeel kinds
+        // (verdeling amounts, objectcreatie toekenningen, feitcreatie, a consistentieregel's asserted expression)
+        // keep the v0 inline route: a consistentie assertion is a Conditie, which cannot host an Expr Let at all,
+        // and the remaining ones carry several independent value slots that no single chain spans. Documented as a
+        // scope limit rather than lowered half-way; no corpus or parity material exercises them.
+        Expr waardeExpr = bouwer.bouwResultaat(waarde);
         model.resolvedRegels.add(new ResolvedRegel(naam, soort, doelExpr, waardeExpr, voorwaarde, geldigheid, huidigeBronAnnotaties));
         Datatype doelType = doelExpr.type(), waardeType = waardeExpr.type();
         // §13.3.4.2 membership runs BEFORE the Onbekend bail: an enum literal is deliberately typed
