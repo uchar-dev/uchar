@@ -1,0 +1,13 @@
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
+Objecttype de Vondst (mv: Vondsten)
+    het grondrecht Numeriek (geheel getal) met eenheid €;
+    de meerprijs Numeriek (geheel getal) met eenheid €;
+    het vondstrecht Numeriek (geheel getal) met eenheid €;
+
+Regel vondstrecht van een vondst
+    geldig altijd
+        Het vondstrecht van een Vondst moet berekend worden als het grondrecht van de Vondst plus de toeslag.
+        Daarbij geldt:
+            de toeslag is de meerprijs van de Vondst.

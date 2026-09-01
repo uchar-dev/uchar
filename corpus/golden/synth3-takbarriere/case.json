@@ -1,0 +1,46 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "grondslag": { "number": "100.00" }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "grondslag": { "number": "20.00" }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "grondslag": { "number": "20.00" },
+          "opslag": { "number": "5.00" }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "drempel": { "number": "50.00" },
+      "basisheffing": { "number": "10.00" }
+    }
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "heffing", "value": { "number": "10.00" } },
+    { "kind": "attributeEmpty", "label": "J2", "attribute": "heffing" },
+    { "kind": "attributeValue", "label": "J3", "attribute": "heffing", "value": { "number": "15.00" } },
+    { "kind": "consistent" }
+  ]
+}

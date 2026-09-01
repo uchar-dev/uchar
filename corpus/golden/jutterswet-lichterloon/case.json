@@ -1,0 +1,36 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "L1",
+        "objectType": "Lichterbeurt",
+        "attributes": {
+          "vrachttal": { "number": "3" },
+          "spoedtal": { "number": "2" },
+          "eenheidsloon": { "number": "40" }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "L2",
+        "objectType": "Lichterbeurt",
+        "attributes": {
+          "vrachttal": { "number": "5" },
+          "spoedtal": { "number": "0" },
+          "eenheidsloon": { "number": "20" }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "L1", "attribute": "lichterloon", "value": { "number": "360" } },
+    { "kind": "attributeValue", "label": "L2", "attribute": "lichterloon", "value": { "number": "100" } },
+    { "kind": "consistent" }
+  ]
+}

@@ -1,0 +1,339 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Lichterbeurt": {
+      "node": "Objecttype",
+      "naam": "Lichterbeurt",
+      "attributen": {
+        "vrachttal": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "spoedtal": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "eenheidsloon": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Munt",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "lichterloon": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Munt",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Lichterbeurten"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {
+    "Munt": {
+      "node": "Eenheidstelsel",
+      "naam": "Munt",
+      "eenheden": {
+        "EUR": {
+          "node": "Eenheid",
+          "afkorting": "EUR",
+          "stelsel": "Munt",
+          "canoniek": "EUR",
+          "factorNaarCanoniek": 1,
+          "noemer": null
+        },
+        "\u20ac": {
+          "node": "Eenheid",
+          "afkorting": "EUR",
+          "stelsel": "Munt",
+          "canoniek": "EUR",
+          "factorNaarCanoniek": 1,
+          "noemer": null
+        }
+      },
+      "aliassen": {
+        "euro": {
+          "node": "Eenheid",
+          "afkorting": "EUR",
+          "stelsel": "Munt",
+          "canoniek": "EUR",
+          "factorNaarCanoniek": 1,
+          "noemer": null
+        },
+        "euros": {
+          "node": "Eenheid",
+          "afkorting": "EUR",
+          "stelsel": "Munt",
+          "canoniek": "EUR",
+          "factorNaarCanoniek": 1,
+          "noemer": null
+        }
+      }
+    }
+  },
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "lichterloon van een lichterbeurt",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "lichterloon van een lichterbeurt",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "lichterloon",
+        "objecttype": "Lichterbeurt",
+        "onderwerpBron": "een Lichterbeurt",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Munt",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "bron": "Het lichterloon van een Lichterbeurt",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Let",
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Munt",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "binder": "grondloon",
+        "value": {
+          "node": "Binair",
+          "op": "MAAL",
+          "links": {
+            "node": "AttribuutRef",
+            "attribuut": "vrachttal",
+            "objecttype": "Lichterbeurt",
+            "onderwerpBron": "de Lichterbeurt",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            },
+            "bron": "het vrachttal van de Lichterbeurt",
+            "set": false,
+            "navigatiePad": []
+          },
+          "rechts": {
+            "node": "AttribuutRef",
+            "attribuut": "eenheidsloon",
+            "objecttype": "Lichterbeurt",
+            "onderwerpBron": "de Lichterbeurt",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "EUR",
+                "stelsel": "Munt",
+                "canoniek": "EUR",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            },
+            "bron": "het eenheidsloon van de Lichterbeurt",
+            "set": false,
+            "navigatiePad": []
+          },
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "EUR",
+              "stelsel": "Munt",
+              "canoniek": "EUR",
+              "factorNaarCanoniek": 1,
+              "noemer": null
+            }
+          },
+          "bron": "het vrachttal van de Lichterbeurt maal het eenheidsloon van de Lichterbeurt"
+        },
+        "body": {
+          "node": "Binair",
+          "op": "PLUS",
+          "links": {
+            "node": "BinderRef",
+            "name": "grondloon",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "EUR",
+                "stelsel": "Munt",
+                "canoniek": "EUR",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            },
+            "bron": "het grondloon"
+          },
+          "rechts": {
+            "node": "Binair",
+            "op": "MAAL",
+            "links": {
+              "node": "BinderRef",
+              "name": "grondloon",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": {
+                  "node": "Eenheid",
+                  "afkorting": "EUR",
+                  "stelsel": "Munt",
+                  "canoniek": "EUR",
+                  "factorNaarCanoniek": 1,
+                  "noemer": null
+                }
+              },
+              "bron": "het grondloon"
+            },
+            "rechts": {
+              "node": "AttribuutRef",
+              "attribuut": "spoedtal",
+              "objecttype": "Lichterbeurt",
+              "onderwerpBron": "de Lichterbeurt",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "bron": "het spoedtal van de Lichterbeurt",
+              "set": false,
+              "navigatiePad": []
+            },
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "EUR",
+                "stelsel": "Munt",
+                "canoniek": "EUR",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            },
+            "bron": "het grondloon maal het spoedtal van de Lichterbeurt"
+          },
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "EUR",
+              "stelsel": "Munt",
+              "canoniek": "EUR",
+              "factorNaarCanoniek": 1,
+              "noemer": null
+            }
+          },
+          "bron": "het grondloon plus het grondloon maal het spoedtal van de Lichterbeurt"
+        },
+        "bron": "het grondloon is het vrachttal van de Lichterbeurt maal het eenheidsloon van de Lichterbeurt."
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

@@ -1,0 +1,14 @@
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
+Objecttype de Lichterbeurt (mv: Lichterbeurten)
+    het vrachttal Numeriek (niet-negatief geheel getal);
+    het spoedtal Numeriek (niet-negatief geheel getal);
+    het eenheidsloon Numeriek (geheel getal) met eenheid €;
+    het lichterloon Numeriek (geheel getal) met eenheid €;
+
+Regel lichterloon van een lichterbeurt
+    geldig altijd
+        Het lichterloon van een Lichterbeurt moet berekend worden als het grondloon plus het grondloon maal het spoedtal van de Lichterbeurt.
+        Daarbij geldt:
+            het grondloon is het vrachttal van de Lichterbeurt maal het eenheidsloon van de Lichterbeurt.

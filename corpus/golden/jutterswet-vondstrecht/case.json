@@ -1,0 +1,33 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "grondrecht": { "number": "30" },
+          "meerprijs": { "number": "12" }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "grondrecht": { "number": "30" }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "V1", "attribute": "vondstrecht", "value": { "number": "42" } },
+    { "kind": "attributeEmpty", "label": "V2", "attribute": "vondstrecht" },
+    { "kind": "consistent" }
+  ]
+}
