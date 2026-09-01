@@ -3538,7 +3538,7 @@ and filter_condition ctx (c : conditie) : string list =
         "a FilterList condition here is a sum-typed (in)equality over the bound element (no \
          corpus case for more)"
 
-(* is [basis] a money × rate product (possibly under strict Lets)? — a
+(* is [basis] a money × rate product (possibly under ch. 10.6 Lets)? — a
    2-decimal money multiplied by a 4-decimal rate, the [Mult_mon_rat] shape
    the plugin wraps in Afgerond{REKENKUNDIG,2} (§5). The naive scale-6 product
    wraps int31 at tutorial magnitude, so it takes the split encoding. *)
@@ -3563,8 +3563,10 @@ and money_mult_shape (basis : expr) : bool =
    C = qA + (100·rA + M·Rl + 5000)/10^4 with A = M·Rh, qA = A/100, rA = A\100:
    demonstrably round(M·R/10^4) half-up for non-negative operands (ref's
    round_z Rekenkundig), each partial product fenced by a viol/2 witness so no
-   term wraps silently. Strict Lets around the product are peeled with their
-   binders in scope, exactly as ref evaluates the Let body. *)
+   term wraps silently. Lets around the product are peeled under call-by-need
+   (ch. 10.6): an UNREAD binder is dropped unevaluated (clause 3) and a read
+   one is bound with its value's atoms riding [rule_guard], so the barrier sits
+   at the READ (clause 2) — exactly as ref evaluates the Let body. *)
 and translate_money_mult ctx ~subject ~subject_ot ~basis : string list * string * int =
   let saved_b = ctx.binders and saved_g = ctx.rule_guard in
   let rec peel = function

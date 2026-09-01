@@ -185,3 +185,41 @@ Meetpunten uit golf B (Drools van strikt naar L, 2026-09-01):
   aangeraakt (kaartrandvoorwaarde); een herformulering is
   maintainerwerk, bij voorkeur samen met
   `20260901-companion-onder-drager`, die de vorm sowieso oplost.
+
+Result (aanzet) — lens 1 + fixronde (2026-09-01):
+- **De DERDE lowering-grens, gevonden als échte regressie.** Pass 2's
+  BinderRef is een opake blad, dus elke positie waar de resolver op de
+  VORM van de deelboom beslist viel om: het rechterlid van een
+  §5.6-subselectievergelijking, de aggregatie-setbepaling, de
+  temporele-operandvorm en de bijbehorende instanceof-sites. Gemeten:
+  een som met "die groter zijn dan de drempel" (drempel uit
+  `Daarbij geldt:`) rekende op main 19 en degradeerde op de branch naar
+  `Conditie.Onopgelost` → WF-044-fault. Fix: `bouwFunctie` bouwt een
+  AGGREGATIE (de zeven instantie-aggregaties + de twee §7-temporele
+  operatoren) in `ingelijnd()`-scope — daarbinnen substitueert `naamRef`
+  weer, precies zoals v0. Pass 2 kijkt daarbij naar een groeiend PREFIX
+  van de ingelijnde definities, zodat een voorwaartse verwijzing in
+  beide passes identiek onopgelost blijft. Normatief vastgelegd als
+  grens (c) in IR-SPEC ch. 4.10 + RS ch. 10.6 tracked delta 1; getuige
+  `corpus/golden/jutterswet-drempelvangst` (beide kanten in één golden).
+- **De sharing van `jutterswet-lichterloon` is niet waarde-observeerbaar.**
+  Eén Let met twee BinderRefs rekent hetzelfde getal als twee
+  gesubstitueerde deelbomen; gates 5/6/12 kunnen het verschil dus niet
+  zien. De dekking van die getuige is daarom *volledig* gate 10
+  (byte-identieke re-emissie van `bron.rgs`) plus de frontend-JUnit
+  (`VariabeledeelLoweringTest`, die op de wire-vorm asserteert) — niet
+  de differentiële vierkant. Dat is geen gat, maar het moet gezegd zijn:
+  wie de emitter terugdraait naar inlining ziet de goldens groen blijven
+  en alleen gate 10 en de JUnit rood worden.
+- **Twee flanken zijn PRE-EXISTENT, niet door deze kaart geopend.**
+  (a) De §6.5/§6.6-companion ontbreekt onder een drager — de
+  Drools-voorwaarde-companion; opgeschreven in de golf-B-restpost
+  hierboven en opgelost door `20260901-companion-onder-drager`.
+  (b) De WF-076-shadowingweigering: de shadowing-grens rond een binder
+  die een gelijknamige buitenbinder overschaduwt. Beide bestonden vóór
+  de lowering en bewegen er niet door; ze zijn hier genoteerd zodat de
+  fixronde ze niet als eigen schade opvoert.
+- **Bewust ongemoeid:** `spec/verifier/**` (kaartrandvoorwaarde) draagt
+  nog de strikte L-terminologie ("the strict let", "Strict: a leeg …" in
+  `lib/ast.ml` en `lib/checks.ml`) — waar, maar verouderd sinds besluit
+  O3. Maintainerwerk op een beschermd pad.
