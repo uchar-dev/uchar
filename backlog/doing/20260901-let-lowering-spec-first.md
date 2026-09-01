@@ -223,3 +223,63 @@ Result (aanzet) — lens 1 + fixronde (2026-09-01):
   nog de strikte L-terminologie ("the strict let", "Strict: a leeg …" in
   `lib/ast.ml` en `lib/checks.ml`) — waar, maar verouderd sinds besluit
   O3. Maintainerwerk op een beschermd pad.
+
+Result — lens 2 + fixronde 2 (2026-09-01):
+- **F1: drie STILLE resolver-controles hersteld.** Drie `RuleChecker`-
+  inspecties toetsen de regelwaarde op VORM en zagen sinds de lowering
+  een Let-wortel, dus rapporteerden ze niets. Gemeten, elk tegen zijn
+  kale tweeling: (i) `verzamelEigenReads` stopte bij de Let, waardoor
+  elke lezing in een variabelendeel-definitie uit de kringgraaf viel —
+  ook de `drempelaandeel → drempelgewicht`-boog van de gecommitte golden
+  `jutterswet-drempelvangst`; (ii) `keurTeken` en (iii) `keurEnumLabel`
+  zagen geen `Expr.Literal` meer. Het teken-geval is het ergste: de wire
+  die eruit komt is **verifier-schoon**, dus geen enkele gate ving hem.
+  Fix: een `Let`-arm (value én body) plus `afgepeld()`, dat de keten
+  afpelt en een body die niets dan een lezing van een eigen binder is
+  volgt. Drie JUnit-getuigen, alle drie mutant-rood tegen HEAD zonder de
+  fix (lege diagnostieklijst waar de kale bron zijn melding geeft).
+- **F2: grens (c) is het CONSTRUCT, niet drie posities.** IR-SPEC ch.
+  4.10 (c) en RS ch. 10.6 delta 1 beloofden "three such positions …
+  exhaustive"; `ingelijnd()` omvat in werkelijkheid de HELE aggregatie-/
+  §7-operator-subtree, dus ook zuivere waardeposities. Gemeten door ref,
+  één Jutter zonder vondsten met afwezige `bonusgrond`, `… of de bonus
+  plus 1 als die er niet zijn`: de geëmitteerde wire draagt **0 Lets** en
+  geeft `totaal = 1` (v0-coalesce); dezelfde IR met die leegwaarde in een
+  Let gewikkeld geeft **leeg**. Beide rijen staan nu als gewerkt
+  tegenvoorbeeld in RS ch. 10.6, en de spec zegt expliciet dat delta 1
+  alleen over lezingen BUITEN een aggregatie-subtree gaat.
+- **O3: de pass-2-prefix heeft zijn getuige.** De mutant
+  `zichtbaar = variabelen` overleefde alle twaalf gates; hij is nu
+  JUnit-rood op een voorwaartse verwijzing in definitie 1's subselectie
+  (pass 1 laat hem onopgelost, pass 2 moest dat ook doen; de mutant bindt
+  hem wél). De spiegel — dezelfde verwijzing achterwaarts, die wél in het
+  prefix zit — staat in dezelfde test.
+- **N4: de prioritizedDefaults-consequentie is de TWEEDE wire-plek van de
+  Let-keten**, naast `ResolvedRegel.waarde` — `defaultVan` kopieert de
+  waarde rechtstreeks. De scope-comment noemde alleen de eerste; nu
+  beide. **GEEN golden dekt hem.** Gemeten werkend op een geordende
+  `Uitzondering op`-groep met een variabelendeel in de uitzonderingswaarde:
+  verifier PASS, ref 28/100, clingo 28/100 (`Let toeslag = grondtal × 2 in
+  toeslag + toeslag`, kustwacht/niet-kustwacht). Kandidaat-golden voor een
+  vervolgkaart; deze kaart voegt geen corpusmateriaal meer toe.
+- **N6: grens (a)'s motivering afgezwakt.** "A condition read evaluates
+  once anyway" wringt met clause 1: een variabele die tweemaal in één
+  voorwaarde gelezen wordt, wordt tweemaal gesubstitueerd en dus tweemaal
+  geëvalueerd. Geen case observeert het (de waarden zijn gelijk), maar een
+  §9.5-kanaalreden zou per lezing gedeponeerd worden. Zo staat het nu in
+  IR-SPEC, RS en de `zetVariabelen`-javadoc.
+- **N5: terminologie-sweep buiten `spec/verifier`.** "strikte Let" en
+  "never emitter-produced" waargemaakt in `frontends/catala` (incl. de
+  vier weigerteksten — de gate-9-fixtures pinnen alleen de fragmenten
+  `WF-077` en `if-then-else`, die letterlijk blijven staan), de twee
+  proposal-documenten (superseded-stempel, historie niet herschreven),
+  de drie negatief-NOTE's, `corpus/golden/README.md`,
+  `ref/test/test_ref.ml`, `backends/drools` (`LetVorm`'s verwijzing naar
+  een `Expr.bevat`-default-arm die niet meer bestaat, plus
+  `LetClusterWitnessTest`-comments) en de vier survivorredenen in
+  `scripts/check-noop.sh` — de survivor-SET zelf onaangeroerd, gate 7
+  ongewijzigd op 344/36.
+- **Bewust NIET aangeraakt:** `corpus/golden/jutterswet-tariefrecht-catala/
+  bron.catala_en` draagt óók een "strikte"-comment, maar is een bestaande
+  golden-pin (gate-9 byte-identiteit) — kaartrandvoorwaarde. Idem
+  `spec/verifier/**`.

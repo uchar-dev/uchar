@@ -1340,7 +1340,9 @@ final class RuleChecker {
                             ExpressieContext waarde, int line, Conditie voorwaarde, Geldigheid geldigheid) {
         Expr doelExpr = bouwer.bouwAttribuut(doel);
         // §11 the RESULT-part value: variable reads become BinderRefs under the variabelendeel's ch. 4.10 Let chain.
-        // This is the ONE wire slot that hosts the chain — a rule's `waarde`. The other resultaatdeel kinds
+        // This is the ONE slot the chain is BUILT for — a rule's `waarde` — and it reaches the wire in two shapes:
+        // as the ResolvedRegel's own value, and (when the §4 defaults pass lifts this rule) as a Default's
+        // `consequentie`, which {@link #defaultVan} copies straight from it. The other resultaatdeel kinds
         // (verdeling amounts, objectcreatie toekenningen, feitcreatie, a consistentieregel's asserted expression)
         // keep the v0 inline route: a consistentie assertion is a Conditie, which cannot host an Expr Let at all,
         // and the remaining ones carry several independent value slots that no single chain spans. Documented as a
