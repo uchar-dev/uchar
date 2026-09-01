@@ -31,12 +31,14 @@ import io.github.yhavinga.regelspraak.model.Datatype;
  * salience — sinks further), {@code kanBreukOpleveren} (exact-comparison routing — at worst takes the exact
  * path where the plain one would also have served; blind, it takes a {@code (BigDecimal)} cast that throws).
  *
- * <p><b>(b) Descend via {@code letKinderenZeker}</b> — only the CERTAINLY evaluated children (a Binding's
- * value, since ch. 10.6 runs the body only past the leeg-barrier; a Keuze's condition operands, since ch. 10.2
- * runs exactly one branch; nothing for a Lezing). Their output is an ANSWER — a fout-companion rule — and one
- * built off a path that never runs makes this backend say INCONSISTENT where ref says consistent:
- * {@code verzamelDelingen} (§6.5) and {@code verzamelWortels} (§6.6). The converse limit (a fault on a branch
- * that IS taken gets no companion either) is recorded at that accessor.
+ * <p><b>(b) Descend via {@code letKinderenZeker}</b> — only the CERTAINLY evaluated children (a Binding's value
+ * when, and only when, the body reads its binder on every path, since ch. 10.6 is call-by-need and an unread
+ * need is never evaluated; a Keuze's condition operands, since ch. 10.2 runs exactly one branch; nothing for a
+ * Lezing). Their output is an ANSWER — a fout-companion rule — and one built off a path that never runs makes
+ * this backend say INCONSISTENT where ref says consistent: {@code verzamelDelingen} (§6.5) and
+ * {@code verzamelWortels} (§6.6). The converse limit — a fault on a branch that IS taken, in a Let BODY (which
+ * under call-by-need always runs), or in a value read on some but not every path — is recorded, in its widened
+ * form, at that accessor.
  *
  * <p><b>(c) Deliberately do NOT descend</b>, each for a checked reason:
  * <ul>

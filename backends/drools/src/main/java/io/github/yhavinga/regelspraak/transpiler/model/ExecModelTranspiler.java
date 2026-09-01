@@ -3922,35 +3922,137 @@ public final class ExecModelTranspiler {
 
     /**
      * The {@link Expr} children a ch. 4.10 CARRIER hides that are CERTAIN to be evaluated whenever the carrier
-     * itself is — a strict subset of {@link #letKinderen}. A Binding contributes its {@code value} ONLY: ch. 10.6
-     * runs the {@code body} exclusively when the value is non-leeg (the leeg-barrier). A Keuze contributes its
-     * CONDITION operands only: ch. 10.2 evaluates exactly ONE of the two branches, so neither branch qualifies.
-     * A Lezing contributes nothing (it reads the environment).
+     * itself is — a strict subset of {@link #letKinderen}. A Binding contributes its {@code value} only when the
+     * body reads its binder on EVERY path ({@link #leestAltijd}): ch. 10.6 is call-by-need, so an unread — or
+     * only-conditionally-read — binder never forces the value at all. A Keuze contributes its CONDITION operands
+     * only: ch. 10.2 evaluates exactly ONE of the two branches, so neither branch qualifies. A Lezing
+     * contributes nothing (it reads the environment).
      *
      * <p><b>Why two accessors.</b> Seeing MORE than runs is safe exactly where a walk's output is a REFUSAL or a
      * REGISTRATION: {@code bevatDeling} (the ch. 7 defaults division fence) then refuses more often,
      * {@code navRefs} watches more, {@code exprLeesnamen} sinks a salience further, {@code kanBreukOpleveren}
      * routes a comparison through the exact helper where the plain one would also have served — each still a
      * CORRECT answer. It is NOT safe for the §6.5/§6.6 fout-companions, because a companion IS an answer: one
-     * built off a branch that is never taken, or a body behind a leeg-barrier that never runs, makes this
-     * backend report INCONSISTENT where ref reports consistent. {@link #verzamelDelingen} and
-     * {@link #verzamelWortels} therefore ask HERE.
+     * built off a branch that is never taken, or off a value no read ever forces, makes this backend report
+     * INCONSISTENT where ref reports consistent. {@link #verzamelDelingen} and {@link #verzamelWortels}
+     * therefore ask HERE.
      *
-     * <p><b>The converse limit, stated because it is real.</b> A §6.5/§6.6 fault inside a branch that IS taken,
-     * or inside a body whose value IS filled, gets no companion either: a companion is a SEPARATE static rule
-     * keyed on the operands' leegte (see {@link #delingCompanions}) and has no way to test which branch ran.
-     * Under-reporting a conditional path is the price of never fabricating on an unrun one — the
-     * certainly-evaluated set is exactly the boundary at which a static companion can still be honest.
+     * <p><b>The converse limit, stated because it is real — and WIDER under call-by-need.</b> A companion is a
+     * SEPARATE static rule keyed on the operands' leegte (see {@link #delingCompanions}) with no way to test
+     * which path ran, so three shapes get no companion where ref does raise the fault: (a) a fault inside the
+     * branch ch. 10.2 DOES take; (b) a fault inside a {@code Let} BODY — under ch. 10.6 the body always runs, so
+     * this is now a miss on every Let-body division/wortel, where under the strict binding it was a miss only
+     * when the value was filled; (c) a fault inside a value whose binder is read on SOME but not every path, or
+     * whose read {@link #leestAltijd} cannot certify. Under-reporting is the price of never fabricating on a
+     * path that does not run — the certainly-evaluated set is exactly the boundary at which a static companion
+     * can still be honest.
      */
     private List<Expr> letKinderenZeker(Expr e) {
         io.github.yhavinga.regelspraak.loader.LetVorm lv = e == null ? null : letVormen.get(e);
-        if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Binding b) return List.of(b.value());
+        if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Binding b) {
+            // ch. 10.6 clause 1: the value runs exactly when some read forces it — so it is CERTAIN only when
+            // the body reads this binder on every path, ahead of anything that could end the path first.
+            return leestAltijd(b.body(), binderSleutel(b.binder())) == Lees.ALTIJD_DEZE
+                    ? List.of(b.value()) : List.of();
+        }
         if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Keuze k) {
             List<Expr> uit = new ArrayList<>();
             conditieOperanden(k.conditie(), uit);   // the condition ALWAYS runs; the two branches do not
             return uit;
         }
         return List.of();   // a non-carrier, or a BinderRef (it reads only the environment)
+    }
+
+    /**
+     * What {@link #leestAltijd} can certify about one expression and one binder slot {@code s} that is bound
+     * OUTSIDE that expression. Three answers, and the two definite ones are what compose.
+     */
+    private enum Lees {
+        /** Every evaluation reaches a read of {@code s}, with no read of another outside-bound binder anywhere
+         *  before it — so nothing can raise a foreign barrier and end the expression short of that read. */
+        ALTIJD_DEZE,
+        /** The expression reads no outside-bound binder at all: it can neither reach {@code s} nor raise a
+         *  barrier that would truncate a sibling. (Reads of binders bound INSIDE it do not count — their
+         *  barrier is caught by their own {@code Let} and evaluation continues with a leeg value.) */
+        GEEN_LEZING,
+        /** Anything else — the never-fabricate answer. */
+        ONZEKER
+    }
+
+    /**
+     * Does every evaluation path of {@code e} read the binder slot {@code sleutel}? The question ch. 10.6's
+     * call-by-need forces on {@link #letKinderenZeker}: a value is certainly evaluated exactly when some read
+     * certainly demands it.
+     *
+     * <p>Deliberately conservative — {@link Lees#ONZEKER} at any doubt, because the consumer's output is an
+     * ANSWER (a §6.5/§6.6 companion) and a wrong one is INCONSISTENT where ref says consistent. Three points
+     * carry the conservatism:
+     * <ul>
+     *   <li><b>a foreign read can end the path.</b> Reading ANOTHER binder whose need is leeg raises THAT Let's
+     *       barrier, which unwinds past everything after it — so {@code ALTIJD_DEZE} requires the subtree to
+     *       hold no other outside-bound read at all, not merely to hold this one. That also makes the answer
+     *       independent of evaluation ORDER, which no walk here should have to know;</li>
+     *   <li><b>an IfThenElse condition counts as always-read</b> (ch. 10.2 evaluates it on both paths), a branch
+     *       only when BOTH branches read;</li>
+     *   <li><b>a nested Let respects shadowing</b>: inside its body the name resolves to the INNER binder, so an
+     *       outer read there is not this one. The outer binder is still reachable through the inner VALUE, which
+     *       the enclosing path forces exactly when the inner body certainly reads the inner binder.</li>
+     * </ul>
+     *
+     * <p>Ordinary (non-carrier) nodes: the forms whose every {@code Expr} child is certainly evaluated compose
+     * their children; anything else answers {@code GEEN_LEZING} when it provably hides no carrier at all
+     * ({@code Expr.bevat}, whose leaf arms are exactly the child-less records) and {@code ONZEKER} otherwise —
+     * an aggregation's element expression may run zero times, a leegwaarde fallback conditionally, so neither
+     * may claim certainty.
+     */
+    private Lees leestAltijd(Expr e, String sleutel) {
+        if (e == null) return Lees.GEEN_LEZING;
+        io.github.yhavinga.regelspraak.loader.LetVorm lv = letVormen.get(e);
+        if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Lezing lz) {
+            return binderSleutel(lz.naam()).equals(sleutel) ? Lees.ALTIJD_DEZE : Lees.ONZEKER;
+        }
+        if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Keuze k) {
+            List<Expr> operanden = new ArrayList<>();
+            conditieOperanden(k.conditie(), operanden);
+            Lees conditie = samen(operanden, sleutel);
+            if (conditie == Lees.ALTIJD_DEZE || conditie == Lees.ONZEKER) return conditie;
+            return samenTakken(leestAltijd(k.dan(), sleutel), leestAltijd(k.anders(), sleutel));
+        }
+        if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Binding b) {
+            String binnen = binderSleutel(b.binder());
+            Lees naarBinnen = leestAltijd(b.body(), binnen);
+            // the inner body reads nothing outside itself: the inner need is never forced, so neither the
+            // inner value nor any barrier of its own can play a part.
+            if (naarBinnen == Lees.GEEN_LEZING) return Lees.GEEN_LEZING;
+            // the inner need IS forced first on every path, and (by ALTIJD_DEZE) nothing else is read before
+            // it — so what the enclosing path certainly reaches is the inner VALUE, in the enclosing scope.
+            if (naarBinnen == Lees.ALTIJD_DEZE) return leestAltijd(b.value(), sleutel);
+            // otherwise the outer binder can still be read in the body — unless the inner binder shadows it.
+            // (GEEN_LEZING is impossible below: it is name-independent and would have returned above.)
+            return binnen.equals(sleutel) ? Lees.ONZEKER : leestAltijd(b.body(), sleutel);
+        }
+        if (e instanceof Expr.Binair bin) return samen(List.of(bin.links(), bin.rechts()), sleutel);
+        if (e instanceof Expr.Afgerond a) return leestAltijd(a.basis(), sleutel);
+        if (e instanceof Expr.Begrensd bg) return samen(List.of(bg.basis(), bg.minimum(), bg.maximum()), sleutel);
+        return Expr.bevat(e, letVormen::containsKey) ? Lees.ONZEKER : Lees.GEEN_LEZING;
+    }
+
+    /** {@link #leestAltijd} over children that ALL certainly run: one doubt poisons, no read anywhere is
+     *  read-free, and otherwise the read is certain (order-independently — see the "foreign read" point). */
+    private Lees samen(List<Expr> kinderen, String sleutel) {
+        Lees uit = Lees.GEEN_LEZING;
+        for (Expr k : kinderen) {
+            Lees deel = leestAltijd(k, sleutel);
+            if (deel == Lees.ONZEKER) return Lees.ONZEKER;
+            if (deel == Lees.ALTIJD_DEZE) uit = Lees.ALTIJD_DEZE;
+        }
+        return uit;
+    }
+
+    /** {@link #leestAltijd} over the two ch. 10.2 branches, of which exactly ONE runs: only an answer both
+     *  agree on survives. */
+    private static Lees samenTakken(Lees dan, Lees anders) {
+        return dan == anders ? dan : Lees.ONZEKER;
     }
 
     /**
