@@ -362,4 +362,59 @@ class VariabeledeelLoweringTest {
         assertTrue(meldt(meldingen(viaVariabele), "ERROR: 'paars' is geen waarde van Enumeratie Kleur"),
                 () -> "§13.3.4.2 ongemeld: " + meldingen(viaVariabele));
     }
+
+    // ---- boundary (c): the whole construct, and the prefix the two passes share -------------------------
+
+    @Test void een_voorwaartse_verwijzing_blijft_in_beide_passes_onopgelost() {
+        // The pass-2 guard: pass 2 substitutes from a growing PREFIX of the inlined definitions, not from the
+        // (by then FULLY populated) pass-1 map. Definition 1's subselectie names `de tweede`, which is declared
+        // AFTER it — pass 1 leaves it unbound and the filter degrades to a marker, so pass 2 must too. Reading
+        // the full map instead would let the forward reference bind in the Let VALUE while pass 1's WARNING
+        // still stands: two passes disagreeing about the same source text.
+        String vooruit = """
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                het drempelgewicht Numeriek (geheel getal);
+            Objecttype de Vondst (mv: Vondsten)
+                het gewicht Numeriek (geheel getal);
+            Feittype aanmelding
+                de aanmeldende jutter Jutter
+                de vondst (mv: vondsten) Vondst
+            Eén aanmeldende jutter telt meerdere vondsten
+            Regel drempelgewicht
+                geldig altijd
+                    Het drempelgewicht van een Jutter moet berekend worden als de eerste plus 0.
+                    Daarbij geldt:
+                        de eerste is de som van het gewicht van alle vondsten van de Jutter die groter zijn dan de tweede of 0 als die er niet zijn.
+                        de tweede is 5.
+            """;
+        String c = emitCompact(vooruit);
+        assertEquals(1, tel(c, "\"node\":\"Let\""), () -> "de gelezen variabele krijgt haar Let:\n" + c);
+        assertTrue(c.contains("\"filter\":{\"node\":\"Onopgelost\",\"bron\":\"groterzijndandetweede\"}"),
+                () -> "de voorwaartse verwijzing moet ook in pass 2 onopgelost blijven:\n" + c);
+        assertTrue(meldt(meldingen(vooruit), "wordt nog niet omgezet"),
+                () -> "pass 1 meldt de degradatie: " + meldingen(vooruit));
+        // The mirror: declared BEFORE the use, the same reference IS in the prefix and the filter resolves —
+        // so the assertion above pins the prefix, not a blanket refusal to substitute in pass 2.
+        String achteruit = """
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                het drempelgewicht Numeriek (geheel getal);
+            Objecttype de Vondst (mv: Vondsten)
+                het gewicht Numeriek (geheel getal);
+            Feittype aanmelding
+                de aanmeldende jutter Jutter
+                de vondst (mv: vondsten) Vondst
+            Eén aanmeldende jutter telt meerdere vondsten
+            Regel drempelgewicht
+                geldig altijd
+                    Het drempelgewicht van een Jutter moet berekend worden als de tweede plus 0.
+                    Daarbij geldt:
+                        de eerste is 5.
+                        de tweede is de som van het gewicht van alle vondsten van de Jutter die groter zijn dan de eerste of 0 als die er niet zijn.
+            """;
+        String d = emitCompact(achteruit);
+        assertTrue(d.contains("\"filter\":{\"node\":\"Vergelijking\",\"op\":\"GROTER\""),
+                () -> "een achterwaartse verwijzing zit WEL in het prefix:\n" + d);
+        assertTrue(d.contains("\"rechts\":{\"node\":\"Literal\",\"waarde\":\"5\""),
+                () -> "het rechterlid is de gesubstitueerde eerdere definitie:\n" + d);
+    }
 }
