@@ -1351,6 +1351,49 @@ let enum_decl ctx domein : (string * datatype option) list option =
       Some (List.map (fun w -> (w, None)) (some_names waarden))
   | _ -> None
 
+(* WF-088: the enumeration sibling of WF-061. Every Enumeratie datatype
+   OUTSIDE the domain registry is a use site — an attribute or parameter
+   datatype, a literal's or reference's `type`, a Match scrutinee's type — and
+   it repeats the declared value list inline, exactly as a SumType use site
+   repeats its constructors. That inline copy is a repetition, never a second
+   opinion: it MUST carry the declared values, ci, in the declared (normative,
+   WF-006) order. Without the rule a drifted copy is verifier-clean and
+   reaches the executors, because WF-039 reads the LOCAL list while WF-063
+   reads the DECLARATION — an alien label then passes both and ref faults at
+   evaluation while clingo derives nothing.
+
+   Nested datatypes are use sites too, so the walk recurses through list
+   elements, sum payloads and struct fields (WF-060/065/071 fence enumerations
+   out of those positions, so the recursion is belt-and-braces). A use site
+   whose `domein` is null or names no declared enumeration is not ours —
+   WF-003 and WF-063 own the unresolved reference. *)
+let rec enum_use_site ctx at (d : datatype) : violation list =
+  match d with
+  | Enumeratie { domein = Some dn; waarden } -> (
+      match find_ci ctx.doc.domeinen dn with
+      | Some (Some (Enumeratie { waarden = declared; _ })) ->
+          if
+            List.length waarden = List.length declared
+            && List.for_all2
+                 (fun a b ->
+                   match (a, b) with Some x, Some y -> norm x = norm y | _ -> false)
+                 waarden declared
+          then []
+          else
+            [ v "WF-088" at
+                ("enumeration use site disagrees with the declaration of domain '" ^ dn
+               ^ "' (the same values, in declaration order, required)") ]
+      | _ -> [])
+  | Enumeratie { domein = None; _ } -> []
+  | List_type { element } -> enum_use_site ctx at element
+  | Sum_type { constructoren; _ } ->
+      List.concat_map
+        (function _, Some p -> enum_use_site ctx at p | _, None -> [])
+        constructoren
+  | Struct_type { velden; _ } ->
+      List.concat_map (fun (_, fd) -> enum_use_site ctx at fd) velden
+  | _ -> []
+
 (* Two constructor lists agree when they carry the same constructors in the
    same order with structurally equal payloads (names case-insensitively,
    the WF-001 identity rule; payloads by the datatype equality WF-049 uses). *)
@@ -1979,7 +2022,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
     match typ_of_expr e with
     | Some (Datatype_onbekend _) ->
         [ v "WF-034" (sub "type") "unknown-type sentinel inside a structured node" ]
-    | Some d -> check_number_form (sub "type") d
+    | Some d -> check_number_form (sub "type") d @ enum_use_site ctx (sub "type") d
     | None -> (
         (* A value node without a static type is the unspelled twin of the
            Onbekend sentinel — refused symmetrically (WF-034). A Lambda is
@@ -5039,6 +5082,32 @@ let wf061 ctx =
         | None -> [])
       ctx.doc.parameters
 
+(* WF-088: the model-layer half of the enumeration use-site rule (the
+   expression half rides walk_expr's type prologue, where WF-007 collects
+   every expression `type` — the same "every datatype in the document" split).
+   The declarations in [domeinen] are the source of truth and are therefore
+   not walked here. *)
+let wf088 ctx =
+  let site at = function Some d -> enum_use_site ctx at d | None -> [] in
+  List.concat_map
+    (fun (otname, (ot : objecttype)) ->
+      List.concat_map
+        (fun (an, dt) -> site ("/objecttypen/" ^ otname ^ "/attributen/" ^ an) dt)
+        ot.attributen)
+    ctx.doc.objecttypen
+  @ List.concat_map
+      (fun (pn, (p : parameter)) -> site ("/parameters/" ^ pn) p.par_datatype)
+      ctx.doc.parameters
+  @ List.concat
+      (List.mapi
+         (fun i (fd : function_def) ->
+           let at = Printf.sprintf "/functionDefs/%d" i in
+           List.concat_map
+             (fun (pn, dt) -> enum_use_site ctx (at ^ "/parameters/" ^ pn) dt)
+             fd.fd_parameters
+           @ enum_use_site ctx (at ^ "/result") fd.fd_result)
+         ctx.doc.function_defs)
+
 (* WF-071: a StructType declaration (a domain whose datatype is a StructType)
    MUST carry at least one field, ci-unique field names, admissible field
    datatypes (Number, day-precision Date, a declared SumType, or a declared
@@ -5323,5 +5392,5 @@ let all (doc : document) : violation list =
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx; wf045_046 ctx;
       wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf079 ctx; wf082 ctx; wf054 ctx;
-      wf057 ctx; wf059 ctx; wf060 ctx; wf087 ctx; wf061 ctx; wf065 ctx; wf067 ctx;
+      wf057 ctx; wf059 ctx; wf060 ctx; wf087 ctx; wf061 ctx; wf088 ctx; wf065 ctx; wf067 ctx;
       wf071 ctx; wf072 ctx; wf075 ctx; wf086 ctx; expression_layer ctx ]

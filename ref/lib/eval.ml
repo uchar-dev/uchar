@@ -682,7 +682,13 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           match List.find_opt (fun (c, _, _) -> norm c = norm label) arms with
           | None ->
               Value.fault
-                "match has no arm for enumeration value %S (WF-063 totality should preclude this)"
+                (* unreachable on a verifier-clean document, but only since
+                   WF-088: WF-063 checks the arms against the DECLARED value
+                   list while WF-039 checks a literal's label against the
+                   use site's inline copy, so it takes the use-site identity
+                   rule to close the gap between the two lists *)
+                "match has no arm for enumeration value %S (WF-063 totality over the WF-088 \
+                 use-site identity should preclude this)"
                 label
           | Some (_, Some b, _) ->
               Value.fault "match arm for enumeration value %S carries a binder %S (WF-063)" label b
