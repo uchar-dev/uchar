@@ -1,0 +1,137 @@
+{
+  "functionDefs": [
+    {
+      "node": "FunctionDef",
+      "name": "Meldstand",
+      "parameters": [
+        {
+          "name": "melding",
+          "datatype": {
+            "node": "SumType",
+            "domain": "bergingsmelding",
+            "constructors": [
+              {
+                "name": "Gemeld",
+                "payload": {
+                  "node": "Enumeratie",
+                  "domein": "bergingsstatus",
+                  "waarden": [
+                    "Geborgen",
+                    "Vermist",
+                    "Verspoeld"
+                  ]
+                }
+              },
+              {
+                "name": "Ingetrokken",
+                "payload": null
+              }
+            ]
+          }
+        }
+      ],
+      "result": {
+        "node": "SumType",
+        "domain": "bergingsmelding",
+        "constructors": [
+          {
+            "name": "Gemeld",
+            "payload": {
+              "node": "Enumeratie",
+              "domein": "bergingsstatus",
+              "waarden": [
+                "Geborgen",
+                "Vermist",
+                "Verspoeld"
+              ]
+            }
+          },
+          {
+            "name": "Ingetrokken",
+            "payload": null
+          }
+        ]
+      },
+      "body": {
+        "node": "BinderRef",
+        "name": "melding",
+        "type": {
+          "node": "SumType",
+          "domain": "bergingsmelding",
+          "constructors": [
+            {
+              "name": "Gemeld",
+              "payload": {
+                "node": "Enumeratie",
+                "domein": "bergingsstatus",
+                "waarden": [
+                  "Geborgen",
+                  "Vermist",
+                  "Verspoeld"
+                ]
+              }
+            },
+            {
+              "name": "Ingetrokken",
+              "payload": null
+            }
+          ]
+        },
+        "bron": "melding"
+      },
+      "bron": "Meldstand"
+    }
+  ],
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {},
+  "domeinen": {
+    "bergingsstatus": {
+      "node": "Enumeratie",
+      "domein": "bergingsstatus",
+      "waarden": [
+        "Geborgen",
+        "Vermist"
+      ]
+    },
+    "bergingsmelding": {
+      "node": "SumType",
+      "domain": "bergingsmelding",
+      "constructors": [
+        {
+          "name": "Gemeld",
+          "payload": {
+            "node": "Enumeratie",
+            "domein": "bergingsstatus",
+            "waarden": [
+              "Geborgen",
+              "Vermist"
+            ]
+          }
+        },
+        {
+          "name": "Ingetrokken",
+          "payload": null
+        }
+      ]
+    }
+  },
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "dagsoortPerEenheid": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "regels": [],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}
