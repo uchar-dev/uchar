@@ -64,7 +64,13 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   expression nodes (ch. 4.9) — the Phase-5c kernel extension, likewise
   never emitter-produced (`spec/proposals/PHASE5C-TUTORIAL.md`); and the
   value-level binding `Let` (ch. 4.10), the same Phase-5c kernel
-  extension. **First pin bump (2026-08-17, toolchain `edecb46`):** the
+  extension. **`Let` and `BinderRef` are the exception to
+  "emitter-free" (2026-09-01, the let-lowering card):** the RegelSpraak
+  frontend lowers a §13.4.2.10 variabelendeel (`Daarbij geldt:`) to a
+  `Let` chain whose reads are `BinderRef`s, so those two nodes are
+  emitter-borne — with hand-written and emitted goldens both — while
+  the rest of the 5b/5c kernel stays emitter-free. **First pin bump
+  (2026-08-17, toolchain `edecb46`):** the
   emitter produces `verbindendeRol` and `bronRol` where uniquely
   derivable from declared names (absent otherwise — never null, never a
   guessed plural); the emitter goldens carry them since that pin. **Second pin
@@ -1784,15 +1790,18 @@ Comparison, Predicate, and CharacteristicCheck only —
 ### 4.7 Sum-type expressions — Construct, Match, BinderRef
 
 `layer: core`; **extension nodes** per the Method (wire nodes
-`Construct`, `Match`, `BinderRef` — never emitter-produced; CONSTRUCTS
+`Construct`, `Match`, `BinderRef`; CONSTRUCTS
 row 36; semantics `RUNTIME-SEMANTICS.md` ch. 9; design and ratified
-decisions `spec/proposals/PHASE5B-KERNEL.md` §2).
+decisions `spec/proposals/PHASE5B-KERNEL.md` §2). `Construct` and
+`Match` are never emitter-produced; `BinderRef` **is**, since
+2026-09-01 — it is how the RegelSpraak emitter spells a read of a
+§13.4.2.10 variabele under the `Let` chain of ch. 4.10.
 
 | Node | Fields | Notes |
 |---|---|---|
 | Construct | `type` (the SumType), `constructor`, `argument?` (expr), `source` | builds a constructor value; a leeg argument propagates (the whole node evaluates leeg — a constructor value never carries a leeg payload) |
 | Match | `type` (the result datatype), `scrutinee` (expr), `arms`, `source` | takes a **keuzetype** value apart (ch. 2.4) — the scrutinee is sum-typed *or* enumeration-typed. Each arm: `{constructor, binder: string \| null, body: expr}`; on an enumeration scrutinee `constructor` carries the declared value label and `binder` is always null (enumeration alternatives are nullary). Evaluation `RUNTIME-SEMANTICS.md` ch. 9.2 — a leeg scrutinee propagates, no implicit leeg-arm, in both variants |
-| BinderRef | `name`, `type`, `source` | reads the nearest enclosing binder (a unary match arm's `binder`; the row-10 card adds lambda and function parameters). Deliberately distinct from `VariabeleRef`, which stays the rule-local let-binding of row 24 with its unserialized definitions and its motivated OPEN — the two roles never share a node |
+| BinderRef | `name`, `type`, `source` | reads the nearest enclosing binder (a unary match arm's `binder`; the row-10 card adds lambda and function parameters; the 5c widening adds a `Let` binder, ch. 4.10 — which is what the RegelSpraak emitter now produces for a §13.4.2.10 variabele read). Deliberately distinct from `VariabeleRef`, which since the let-lowering card carries only what a `BinderRef` cannot: a row-24 variable reference the resolver could **not** bind (a forward or cyclic definition) — an honest residual marker, never a bound read; the two roles never share a node |
 
 There are no wildcards: the arms enumerate the declared alternatives
 literally (a wildcard would make totality a runtime property again).
@@ -1945,11 +1954,33 @@ still following the closed-body discipline).
 
 ### 4.10 The value-level binding — Let
 
-`layer: core`; **extension node** per the Method (wire node `Let` —
-never emitter-produced; Phase-5c core; semantics
+`layer: core`; **extension node** per the Method (wire node `Let`;
+Phase-5c core; semantics
 `RUNTIME-SEMANTICS.md` ch. 10.6 — **call-by-need**, maintainer decision
 O3 2026-09-01; design and ratified decision
-`spec/proposals/PHASE5C-TUTORIAL.md` §6, question 2 = A). A `Let` is an
+`spec/proposals/PHASE5C-TUTORIAL.md` §6, question 2 = A).
+
+**Emitter-produced since 2026-09-01** (the let-lowering card) — the one
+kernel node that is: the RegelSpraak frontend lowers a §13.4.2.10
+variabelendeel (`Daarbij geldt: X is …`) to **one `Let` per declared
+variable that the rule's RESULT part reads**, nested in declaration
+order (§11.1 rule 1, first-declared outermost), every read a
+`BinderRef` (ch. 4.7) — so a variable read twice is one `Let` with two
+reads and sharing is visible on the wire. Two lowering facts follow from
+the wire's own shape and are normative for the frontend, not for the
+node: (a) a variable read only in the **voorwaarde** is *substituted*
+at its use site instead, because a rule's `condition` and its value are
+separate fields and no expression node spans them — a condition read
+evaluates once anyway, so what substitution costs there is sharing, not
+an answer; (b) a variable **no** read reaches gets no `Let` at all — an
+unread binder evaluates nothing (clause 3 below), so such a node would
+be a guaranteed no-op on the wire. Witnesses:
+`corpus/golden/jutterswet-lichterloon` (sharing),
+`corpus/golden/jutterswet-vondstrecht` (the barrier the v0 inlining
+does not have) and `corpus/golden/synth3-takbarriere` (the unread
+binder in the branch not taken).
+
+A `Let` is an
 ordinary expression, admissible **anywhere** an expression is (unlike
 `IfThenElse`, which stays position-restricted). It carries the
 tutorial's `let … in …` at rule level and everywhere else. That

@@ -3250,25 +3250,41 @@ the discipline exists. `factor` still writes `2,0000` (it reads
 defeasible no-op survivor.
 
 **Tracked delta 1 — the RegelSpraak variable part inherits the barrier
-(a v1 divergence).** The v0 toolchain has no wire `Let`: its frontend
-*inlines* the variable part (the source language's `Daarbij geldt:`,
-§11/§13.4.2) by substituting the resolved subtree at every use site, so a
-variable whose expression reads an absent attribute **coalesces** per use
-site exactly as a bare read would (the `maal` row above), and sharing is
-lost. Lowering the variable part to a `Let` (CONSTRUCTS rows 24 and 10,
-one construct under two names) therefore gives it the leeg-barrier of
-clause 2: a use site that *reads* a variable whose expression evaluates
-leeg now empties the whole rule value instead of coalescing to 0. That is
-a **deliberate v1 divergence** from the v0 inlining-coalesce, tracked in
-`spec/CONSTRUCTS.md`, never a silent rewrite — and it is the discipline
-three corpus cases already pin:
-`corpus/golden/anchor/jutterswet-tariefstelling` case3,
+(a v1 divergence, LANDED 2026-09-01).** The v0 toolchain has no wire
+`Let`: its frontend *inlines* the variable part (the source language's
+`Daarbij geldt:`, §11/§13.4.2) by substituting the resolved subtree at
+every use site, so a variable whose expression reads an absent attribute
+**coalesces** per use site exactly as a bare read would (the `maal` row
+above), and sharing is lost. uchar's own RegelSpraak frontend now lowers
+that variable part to a `Let` chain instead (CONSTRUCTS rows 24 and 10,
+one construct under two names; `IR-SPEC.md` ch. 4.10), which gives it
+the leeg-barrier of clause 2: a use site that *reads* a variable whose
+expression evaluates leeg empties the whole rule value instead of
+coalescing to 0. That is a **deliberate v1 divergence** from the v0
+inlining-coalesce, tracked in `spec/CONSTRUCTS.md`, never a silent
+rewrite — the divergence is *witnessed* by
+`corpus/golden/jutterswet-vondstrecht` (a `Daarbij geldt:` variable
+reading an absent attribute: the target stays leeg where the inlined
+form would have computed the bare `grondrecht`), and the same discipline
+is pinned by `corpus/golden/anchor/jutterswet-tariefstelling` case3,
 `corpus/golden/synth3-drempelheffing` case4 and
 `corpus/golden/synth3-letbeslag` case4. Clause 3 is the *other* half of
 the divergence and the friendlier one: the inlined form recomputes a
 variable at every use site and computes it even where no use site is
 reached, while a `Let` computes it once and only if some read demands it
-— the source language's own "niet onnodig berekenen" (§11.1).
+— the source language's own "niet onnodig berekenen" (§11.1);
+`corpus/golden/jutterswet-lichterloon` pins the once (one `Let`, two
+reads) and `corpus/golden/synth3-takbarriere` pins the only-if (an
+unread binder in the branch ch. 10.2 does not take raises no barrier,
+so the target is written).
+
+The lowering is not total, and the wire is why: a rule's condition and
+its value are separate fields, so no `Let` can span them. A variable
+read **only** in the voorwaarde is therefore still substituted there,
+which under call-by-need costs nothing but sharing (a condition read
+evaluates its definition once either way), and a variable **no** read
+reaches gets no `Let` at all (clause 3 makes it a no-op). Both are
+stated normatively for the frontend in `IR-SPEC.md` ch. 4.10.
 
 **Tracked delta 2 — Catala's `let` is call-by-value (a fidelity delta).**
 Catala evaluates a `let … in …` eagerly: the bound expression is computed
