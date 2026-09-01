@@ -1414,26 +1414,36 @@ let () =
     (Eval.eval_expr env w self ~err:no_err probe)
     "7";
   (* (iv) call-by-need: the need is evaluated ONCE however often it is read.
-     The value is a filled dividend over an empty divisor — ch. 5.6/§9.5: it
-     deposits a channel reason and yields no value — so the deposit COUNT is
-     the evaluation count. Reading the binder twice deposits exactly one
-     reason and yields exactly the single-read outcome (leeg, the barrier at
-     the FIRST read). *)
-  let deel_lege_deler : Ir_v0.Ast.expr =
-    Binair
-      { op = Gedeeld_door; links = Some (aref "g" "J" num0); rechts = Some (aref "d" "J" num0);
-        typ = Some num0; bron = None }
+     The need must be GEVULD for the question to arise at all. A LEEG need
+     ends the Let at the FIRST read (clause 2), so a second read never happens
+     and one evaluation is forced by the barrier, not by the memo — such a
+     probe witnesses nothing. So: a filled dividend over an EMPTY divisor
+     (ch. 5.6/§9.5 — it deposits a channel reason and yields no value, which
+     makes the deposit COUNT the evaluation count), and a `plus 0` that
+     COALESCES that leeg to a filled 0 (the ch. 1.2 plus row). The read then
+     hands back 0, the barrier stays silent, and the SECOND read really
+     happens — yet exactly ONE reason is deposited. Drop the memo and this
+     very expression deposits TWO. *)
+  let deel_lege_deler_gecoalesceerd : Ir_v0.Ast.expr =
+    plus
+      (Binair
+         { op = Gedeeld_door; links = Some (aref "g" "J" num0); rechts = Some (aref "d" "J" num0);
+           typ = Some num0; bron = None })
+      (litv "0" num0)
   in
   let twice, n_twice =
     with_errs (fun err ->
         Eval.eval_expr env w self ~err
-          (letexpr "q" deel_lege_deler (plus (binder_ref "q" num0) (binder_ref "q" num0)) num0))
+          (letexpr "q" deel_lege_deler_gecoalesceerd
+             (plus (binder_ref "q" num0) (binder_ref "q" num0)) num0))
   in
   let once, n_once =
     with_errs (fun err ->
-        Eval.eval_expr env w self ~err (letexpr "q" deel_lege_deler (binder_ref "q" num0) num0))
+        Eval.eval_expr env w self ~err
+          (letexpr "q" deel_lege_deler_gecoalesceerd (binder_ref "q" num0) num0))
   in
-  expect_leeg "WV-10.6-need-kanaalfeit-tweemaal-gelezen" twice;
+  (* both reads landed: 0 + 0 = 0, not the leeg a barrier would have produced *)
+  expect_num "WV-10.6-need-kanaalfeit-tweemaal-gelezen" twice "0";
   check "WV-10.6-need-eenmaal-geevalueerd" (n_twice = 1 && n_once = 1 && twice = once)
 
 (* --- ch. 2.9: the afrondingsnorm — exact to the rounding point

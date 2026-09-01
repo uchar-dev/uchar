@@ -3203,7 +3203,7 @@ guard is always a definite waar/onwaar over non-leeg operands (the
 NAF-free exact-complement encoding).
 
 **Worked example — call-by-need against strict (absolute; `ref/` tests
-verbatim).** One instance of an object type carrying 2-decimal inputs
+verbatim).** One instance of an object type carrying whole-number inputs
 `a`, `d` (both **absent**) and `g` = 100.
 
 | # | expression | value | why — and what strict gave |
@@ -3213,7 +3213,15 @@ verbatim).** One instance of an object type carrying 2-decimal inputs
 | i | `Let q = 100 ÷ 0 in 42` | **42**, no fault | clause 3 over a *faulting* value (strict: **faults**) |
 | ii | `Let q = 100 ÷ 0 in q` | **fault** *"division by numeric zero"* | the read forces the value; fail-fast, unchanged |
 | iii | `Let k = 2 in Let x = a in if k > 1 then 7 else x maal 2` | **7** | the condition reads `k` on *every* branch; `x` is read only on the branch not chosen (strict: **leeg**) |
-| iv | `Let q = g ÷ d in q plus q` | **leeg**, exactly **one** §9.5 reason | clause 1: the need is evaluated once — same outcome and same single reason as `Let q = g ÷ d in q` |
+| iv | `Let q = (g ÷ d) plus 0 in q plus q` | **0**, exactly **one** §9.5 reason | clause 1, and only clause 1: `g ÷ d` deposits a reason and yields leeg, which the `plus 0` coalesces to a filled **0** — so the barrier stays silent, the second read really happens, and the single reason is the memo's doing. Without the memo: **two** reasons |
+
+Row iv is stated with the coalesce for a reason. Over the bare
+`Let q = g ÷ d in q plus q` the need is **leeg**, so the first read ends
+the `Let` (clause 2) and the second read never happens: that expression
+also deposits exactly one reason, but by the *barrier*, not by the
+*memo*. It witnesses clause 2 twice over and clause 1 not at all. Only a
+**gevuld** need can be read more than once, which is what makes the
+coalesced form the once-ness witness.
 
 Rows i, iii and iv are the differential witnesses of the change: ref and
 clingo agree on each, where the strict lowering faulted on i and derived
