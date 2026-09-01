@@ -1339,6 +1339,18 @@ let sum_decl ctx domein : (string * datatype option) list option =
   | Some (Some (Sum_type { constructoren; _ })) -> Some constructoren
   | _ -> None
 
+(* The declared value list of a domain, iff it is declared (in [domeinen]) as
+   an Enumeratie — the nominal source of truth for the enumeration arm of
+   WF-063, the keuzetype sibling of [sum_decl] (ch. 2.4). An enumeration
+   alternative is nullary by construction, so its "payload" is always None:
+   returning the (label, payload) shape lets the Match totality and binder
+   checks read one alternative list for both wire variants. *)
+let enum_decl ctx domein : (string * datatype option) list option =
+  match find_ci ctx.doc.domeinen domein with
+  | Some (Some (Enumeratie { waarden; _ })) ->
+      Some (List.map (fun w -> (w, None)) (some_names waarden))
+  | _ -> None
+
 (* Two constructor lists agree when they carry the same constructors in the
    same order with structurally equal payloads (names case-insensitively,
    the WF-001 identity rule; payloads by the datatype equality WF-049 uses). *)
@@ -2647,23 +2659,46 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
          | Some a -> walk_expr ctx ~binders ~subject ~body (sub "argument") a
          | None -> [])
   | Match { typ; scrutinee; arms; _ } ->
+      (* WF-063 is well-formed over BOTH wire variants of the keuzetype
+         family (ch. 2.4): a sum-typed scrutinee matches declared
+         constructors (a unary arm binds its payload), an enumeration-typed
+         scrutinee matches the declared value list (every alternative is
+         nullary, so an enum arm's binder is ALWAYS null). Both read one
+         declared alternative list — the DECLARATION, never the use site's
+         inline copy — so totality, duplicate and binder checks are shared;
+         only the words in the messages differ. *)
       let decl =
         match typ_of_expr scrutinee with
         | Some (Sum_type { domein; _ }) -> `Sum (domein, sum_decl ctx domein)
-        | Some d -> `NotSum d
+        | Some (Enumeratie { domein = Some d; _ }) -> `Enum (d, enum_decl ctx d)
+        | Some (Enumeratie { domein = None; _ }) -> `NoDomain
+        | Some d -> `NotKeuzetype d
         | None -> `NoType
+      in
+      let alt, family =
+        match decl with
+        | `Enum _ | `NoDomain -> ("enumeration value", "enumeration domain")
+        | _ -> ("constructor", "sum type")
       in
       let scrutinee_checks, ctors =
         match decl with
         | `NoType -> ([ v "WF-063" (sub "scrutinee") "match scrutinee carries no type" ], None)
-        | `NotSum d ->
+        | `NotKeuzetype d ->
             ([ v "WF-063" (sub "scrutinee")
-                 ("match scrutinee is " ^ datatype_kind d ^ ", not a sum type") ], None)
+                 ("match scrutinee is " ^ datatype_kind d
+                ^ ", which is no keuzetype (a sum type or an enumeration)") ], None)
+        | `NoDomain ->
+            ([ v "WF-063" (sub "scrutinee")
+                 "match scrutinee is an enumeration naming no declaring domain" ], None)
         | `Sum (domein, None) ->
             ([ v "WF-063" (sub "scrutinee")
                  ("match scrutinee names sum-type domain '" ^ domein
                 ^ "', which is not a declared sum type") ], None)
-        | `Sum (_, Some cs) -> ([], Some cs)
+        | `Enum (domein, None) ->
+            ([ v "WF-063" (sub "scrutinee")
+                 ("match scrutinee names enumeration domain '" ^ domein
+                ^ "', which is not a declared enumeration domain") ], None)
+        | `Sum (_, Some cs) | `Enum (_, Some cs) -> ([], Some cs)
       in
       let arm_names = List.map (fun (c, _, _) -> c) arms in
       (* WF-063: the arms cover exactly the declared constructors, each once *)
@@ -2674,7 +2709,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
             let declared = List.map fst cs in
             List.map
               (fun (_, dup, _) ->
-                v "WF-063" at ("constructor '" ^ dup ^ "' is matched by more than one arm"))
+                v "WF-063" at (alt ^ " '" ^ dup ^ "' is matched by more than one arm"))
               (dups_by norm (List.map (fun c -> (c, at)) arm_names))
             @ List.filter_map
                 (fun c ->
@@ -2682,15 +2717,16 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                   else
                     Some
                       (v "WF-063" at
-                         ("arm '" ^ c ^ "' is not a declared constructor of the sum type")))
+                         ("arm '" ^ c ^ "' is not a declared " ^ alt ^ " of the " ^ family)))
                 arm_names
             @ List.filter_map
                 (fun d ->
                   if mem_ci arm_names d then None
-                  else Some (v "WF-063" at ("constructor '" ^ d ^ "' is not covered by any arm")))
+                  else Some (v "WF-063" at (alt ^ " '" ^ d ^ "' is not covered by any arm")))
                 declared
       in
-      (* WF-063: an arm carries a binder iff its constructor is unary *)
+      (* WF-063: an arm carries a binder iff its alternative is unary — so on
+         an enumeration scrutinee, whose alternatives are all nullary, never *)
       let binder_checks =
         match ctors with
         | None -> []
@@ -2704,9 +2740,9 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                     | None, None | Some _, Some _ -> []
                     | None, Some b ->
                         [ v "WF-063" at
-                            ("nullary constructor '" ^ c ^ "' carries a binder '" ^ b ^ "'") ]
+                            ("nullary " ^ alt ^ " '" ^ c ^ "' carries a binder '" ^ b ^ "'") ]
                     | Some _, None ->
-                        [ v "WF-063" at ("unary constructor '" ^ c ^ "' carries no binder") ]))
+                        [ v "WF-063" at ("unary " ^ alt ^ " '" ^ c ^ "' carries no binder") ]))
               arms
       in
       (* WF-064: all arm bodies agree on one result datatype — the Match's own type *)
@@ -4940,6 +4976,32 @@ let wf060 ctx =
       | _ -> [])
     ctx.doc.domeinen
 
+(* WF-087: a SumType declaration whose constructors ALL carry a null payload
+   is ill-formed ON THE WIRE. The keuzetype family (IR-SPEC ch. 2.4) has
+   exactly one nullary wire form — the v0 Enumeratie domain — and an
+   all-nullary sum is sugar for it: it MUST normalise to an Enumeratie domain
+   carrying the constructor names as its values. That is what keeps two
+   frontends from expressing one meaning in two shapes, without a wire epoch
+   (maintainer decision 2026-09-01). Payload-carrying sums are untouched:
+   payload never converts.
+
+   The rule is stated over the DECLARATION and needs no use-site arm: WF-061
+   forces every SumType use site to agree with its declaring domain, and a use
+   site naming no declared sum type is rejected there. *)
+let wf087 ctx =
+  List.concat_map
+    (fun (name, dt) ->
+      match dt with
+      | Some (Sum_type { constructoren; _ })
+        when constructoren <> [] && List.for_all (fun (_, p) -> p = None) constructoren ->
+          [ v "WF-087" ("/domeinen/" ^ name)
+              ("sum type '" ^ name
+             ^ "' declares only nullary constructors — the nullary keuzetype has one wire form: \
+                normalise it to an Enumeratie domain carrying those names as its values (ch. 2.4)")
+          ]
+      | _ -> [])
+    ctx.doc.domeinen
+
 (* WF-061: a SumType use site (an attribute or parameter datatype that is a
    SumType) MUST name a declared domain whose declaration it agrees with —
    same constructors, same payloads, same order (IR-SPEC ch. 2.4). The
@@ -5261,5 +5323,5 @@ let all (doc : document) : violation list =
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx; wf045_046 ctx;
       wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf079 ctx; wf082 ctx; wf054 ctx;
-      wf057 ctx; wf059 ctx; wf060 ctx; wf061 ctx; wf065 ctx; wf067 ctx;
+      wf057 ctx; wf059 ctx; wf060 ctx; wf087 ctx; wf061 ctx; wf065 ctx; wf067 ctx;
       wf071 ctx; wf072 ctx; wf075 ctx; wf086 ctx; expression_layer ctx ]

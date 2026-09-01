@@ -355,6 +355,44 @@ This is deliberate (an
 ordered use of a non-orderable type is a rule-layer WF violation,
 specified with that layer).
 
+**The keuzetype family (spec structure; maintainer decision
+2026-09-01).** `Enumeration` and `SumType` are two wire forms of one
+idea, and the spec names that idea once. A **keuzetype** is a declared,
+closed set of labelled alternatives: it is hosted by a domain (ch. 2.3),
+each alternative carries a label unique (ci) within the declaration and
+at most one payload datatype, and wherever a keuzetype value is taken
+apart the alternatives are covered exhaustively and literally — there
+are no wildcards (`Match`, ch. 4.7, WF-063 over both variants). Naming
+the family is what lets one rule govern both shapes; the family itself
+is **not a wire node** — no document ever serializes an abstract
+keuzetype, and every keuzetype on the wire is exactly one of these two
+concrete variants:
+
+| Variant | Alternatives | Leeg | Wire node |
+|---|---|---|---|
+| enumeration | all **nullary**: a label and nothing else | an enumeration-typed slot **can hold leeg** — it is an ordinary v0 value slot under the ch. 1.2 empty regime, the §5.6 Tabel-44 row listing enum among every datatype | `Enumeration` (the v0 mirror form, byte-unchanged) |
+| sum type | **payload-carrying**: at least one alternative carries a payload datatype | a constructor value is gevuld by construction and reaches leeg only by **propagation** (`RUNTIME-SEMANTICS.md` ch. 9.1); optionality is an explicit variant, never an implicit third state | `SumType` (v1 extension, CONSTRUCTS row 36) |
+
+The leeg difference is a *parameter* of the family, stated here rather
+than hidden: the two variants differ in how a value can be absent, and
+that is why the abstraction stops at declaration shape and totality and
+does not reach into the value model.
+
+Two rules make the split total, and both are one-directional:
+
+- **Nullary lives in one form only** — WF-087 below. A keuzetype all of
+  whose alternatives are nullary is an `Enumeration` domain; the
+  all-nullary `SumType` is ill-formed on the wire and normalises to it.
+  Nullary-as-sum is sugar, the enumeration is the kernel, so two
+  frontends cannot express one meaning in two shapes.
+- **Payload never converts.** A keuzetype with even one payload-carrying
+  alternative is a `SumType` and stays one: no `Enumeration` gains a
+  payload, and no payload-carrying declaration is rewritten to an
+  enumeration. The two variants are distinct type identities across the
+  split as well — enumeration compatibility is nominal per domain
+  (WF-008) and so is sum-type identity (WF-061); a value of one is never
+  a value of the other.
+
 **SumType (extension; CONSTRUCTS row 36, design
 `spec/proposals/PHASE5B-KERNEL.md` §2).** A declared, nominal variant
 family: each constructor carries a `name` and either no payload
@@ -362,9 +400,10 @@ family: each constructor carries a `name` and either no payload
 the ratified single-payload decision — n-ary payloads are the 5c
 struct territory and are ill-formed here). A `SumType` is declared as a
 domain (ch. 2.3) and repeated whole at every use site, exactly as
-`Enumeration` repeats `values`. It is a different family from
-`Enumeration`, which stays the payload-less v0 mirror form; the two
-never convert.
+`Enumeration` repeats `values`. It is the payload-carrying variant of
+the keuzetype family above: `Enumeration` stays the payload-less v0
+mirror form, payload never converts, and the nullary shape belongs to
+the enumeration alone (WF-087).
 
 - **WF-060** A `SumType` declaration MUST carry at least one
   constructor; constructor names MUST be unique (ci) within the
@@ -375,6 +414,17 @@ never convert.
   extensible); and the declaration graph over sum-type payloads MUST be
   acyclic (no recursive sum types — Catala has none, and acyclicity is
   what statically bounds constructor-term depth for the ASP encoding).
+- **WF-087** A `SumType` declaration whose constructors ALL carry no
+  payload is ill-formed: the nullary keuzetype has one wire form, and it
+  is the `Enumeration` domain. Such a declaration MUST be normalised to
+  an `Enumeration` domain carrying the constructor names as its
+  `values`, with its use sites; a `Match` over it stays well-formed
+  under the enumeration arm of WF-063 (ch. 4.7), so nothing is lost in
+  the move. The rule is stated over the declaration and needs no
+  use-site arm: WF-061 forces every use site to agree with its declaring
+  domain. Its converse is deliberately absent — an `Enumeration` is
+  never rewritten to a `SumType`, and a payload-carrying declaration is
+  never rewritten at all. **Delta (v1 normalisation).**
 - **WF-061** A `SumType` use site MUST name a declared domain whose
   datatype is a `SumType` that agrees with the use site (same
   constructors, same payload datatypes, same order); and two sum-typed
@@ -1711,19 +1761,37 @@ decisions `spec/proposals/PHASE5B-KERNEL.md` §2).
 | Node | Fields | Notes |
 |---|---|---|
 | Construct | `type` (the SumType), `constructor`, `argument?` (expr), `source` | builds a constructor value; a leeg argument propagates (the whole node evaluates leeg — a constructor value never carries a leeg payload) |
-| Match | `type` (the result datatype), `scrutinee` (expr), `arms`, `source` | each arm: `{constructor, binder: string \| null, body: expr}`; evaluation `RUNTIME-SEMANTICS.md` ch. 9.2 — a leeg scrutinee propagates, no implicit leeg-arm |
+| Match | `type` (the result datatype), `scrutinee` (expr), `arms`, `source` | takes a **keuzetype** value apart (ch. 2.4) — the scrutinee is sum-typed *or* enumeration-typed. Each arm: `{constructor, binder: string \| null, body: expr}`; on an enumeration scrutinee `constructor` carries the declared value label and `binder` is always null (enumeration alternatives are nullary). Evaluation `RUNTIME-SEMANTICS.md` ch. 9.2 — a leeg scrutinee propagates, no implicit leeg-arm, in both variants |
 | BinderRef | `name`, `type`, `source` | reads the nearest enclosing binder (a unary match arm's `binder`; the row-10 card adds lambda and function parameters). Deliberately distinct from `VariabeleRef`, which stays the rule-local let-binding of row 24 with its unserialized definitions and its motivated OPEN — the two roles never share a node |
 
-There are no wildcards: the arms enumerate the declared constructors
+There are no wildcards: the arms enumerate the declared alternatives
 literally (a wildcard would make totality a runtime property again).
+
+`Match` is the family node — it deconstructs either keuzetype variant
+(ch. 2.4). `Construct` and `BinderRef` are **sum-only**: an enumeration
+value is built by an ordinary `Literal` carrying the label (WF-039
+checks it against the declared value list) and an enumeration arm binds
+nothing, so neither node has an enumeration reading.
 
 - **WF-062** A `Construct` MUST name a declared constructor of its
   `SumType`; the `argument` MUST be present iff the constructor is
   unary, and its static type MUST match the declared payload datatype.
-- **WF-063** A `Match` scrutinee MUST be sum-typed, and the arms MUST
-  cover exactly the declared constructors of that sum type — each
-  exactly once, none missing, none alien; an arm MUST carry a `binder`
-  iff its constructor is unary.
+  A `Construct` whose `type` is an `Enumeration` is ill-formed —
+  building an enumeration value is a `Literal`.
+- **WF-063** A `Match` scrutinee MUST be **keuzetype-typed** — sum-typed
+  or enumeration-typed (ch. 2.4) — naming a domain declared in that same
+  variant, and the arms MUST cover exactly the declared alternatives of
+  that domain — each exactly once, none missing, none alien. The
+  declaration is the source of truth in both variants, never the use
+  site's inline copy. On a **sum-typed** scrutinee the alternatives are
+  the declared constructors and an arm MUST carry a `binder` iff its
+  constructor is unary. On an **enumeration-typed** scrutinee the
+  alternatives are the declared `values` (compared ci, the WF-001
+  identity rule) and an arm's `binder` MUST be null — enumeration
+  alternatives are nullary by construction, so there is no payload to
+  name. **Delta (v1 widening, 2026-09-01):** the enumeration arm is what
+  keeps a match over a pure choice expressible after the WF-087
+  normalisation folds every all-nullary sum into an enumeration domain.
 - **WF-064** Every `BinderRef` MUST resolve to an enclosing binder of
   its name, and all arm bodies of a `Match` MUST agree on one result
   datatype — the `Match`'s own `type`. (This rule governs the new
@@ -2282,7 +2350,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-060 | SumType declaration: ≥ 1 constructor, unique names (ci), admissible payload datatypes (Number, day-precision Date, declared SumType), acyclic payload graph (ch. 2.4) | gate 3 | `anchor/jutterswet-beschikkingsom` (executed by gates 5–6) | `wf060-duplicate-constructor` + `wf060-text-payload` + `wf060-recursive-sumtype` |
 | WF-061 | SumType use site agrees with its declaring domain; two sum-typed comparison operands name the same domain (the nominal rule, ch. 2.4) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf061-use-site-drift` + `wf061-cross-sumtype-equality` + `wf061-undeclared-domain` |
 | WF-062 | Construct: declared constructor; argument present iff unary; argument type matches the declared payload (ch. 4.7) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf062-nullary-with-argument` + `wf062-payload-type-mismatch` |
-| WF-063 | Match totality: sum-typed scrutinee; arms cover the declared constructors exactly, each once; binder iff unary (ch. 4.7) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf063-missing-arm` + `wf063-alien-constructor` + `wf063-binder-on-nullary` + `wf063-duplicate-arm` |
+| WF-063 | Match totality over BOTH keuzetype variants (ch. 2.4/4.7): keuzetype-typed scrutinee (sum type or enumeration) naming a domain declared in that variant; arms cover the declared alternatives exactly, each once, none alien; on a sum scrutinee binder iff unary, on an enumeration scrutinee binder always null | gate 3 | `anchor/jutterswet-beschikkingsom` (the sum arm) — the enumeration arm's replayed golden lands with the Catala keuzetype plugin (the 2026-09-01 card's second wave); until then its positive witness is the verifier's own acceptance of a well-formed enum match | `wf063-missing-arm` + `wf063-alien-constructor` + `wf063-binder-on-nullary` + `wf063-duplicate-arm` (sum) + `wf063-enum-missing-value` + `wf063-enum-binder-on-arm` + `wf063-enum-alien-value` (enumeration) |
 | WF-064 | every BinderRef resolves to an enclosing binder (a match arm's binder, a lambda/function parameter, or — the 5c widening — a `Let` binder scoped to its body); the closure clause: inside a closed lambda/function body the set is closed at the boundary, so a BinderRef reaching an enclosing rule's Let binder or an outer fold's parameter is ill-formed (an inside-body Let stays in scope); match arm bodies agree on one result datatype (ch. 4.7/4.8/4.10; VariabeleRef stays outside — row 24) | gate 3 | `anchor/jutterswet-beschikkingsom` + `anchor/jutterswet-tariefstelling` (Let binders) | `wf064-unbound-binderref` + `wf064-mixed-arm-types` + `wf064-enclosing-binder-in-closed-body` (the closure clause) |
 | WF-065 | ListType: first-order non-list element (Number, day-precision Date, declared SumType, or — the 5c widening — declared StructType); no granularity on a list-typed attribute (ch. 2.4) | gate 3 | `anchor/jutterswet-staffelvergoeding` (executed by gates 5–6) + `anchor/jutterswet-vondstdossier` (the list-of-struct widening) | `wf065-list-of-list` + `wf065-temporal-list-attribute` |
 | WF-066 | ListLiteral elements carry the declared element datatype (ch. 4.8) | gate 3 | `anchor/jutterswet-aanspraaktelling` | `wf066-heterogeneous-literal` |
@@ -2306,6 +2374,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-084 | a day-precision date literal's lexeme is the strict ISO form `yyyy-mm-dd` the executors parse (ch. 4.1) — fixed field widths (four-two-two digits), single `-` separators, month 1–12, day 1..days-in-month (leap-aware); the Dutch day-first source snippet is ill-formed, whether the bare `31-01-2024` (silently misread as year 31 → `0036-07-16`, a differential-blind wrong answer both executors agreed on) or the `dd. `-prefixed form (both executors fault) — closes that blind spot, the emitter now writing the bare ISO lexeme and keeping the snippet in `bron`; datetime lexemes out of scope | gate 3 | `jutterswet-vondstverjaring` (an ISO date literal through the fence, replayed by gates 5–6) | `wf084-source-snippet` + `wf084-bare-non-iso` |
 | WF-085 | the day-kind reference graph is acyclic (ch. 5.4 / ch. 3.7): a day-kind condition may reference other day kinds (a `Predicaat` of soort `DAGSOORT`), but mutually recursive definitions have no fixpoint — a loud refusal where the v0 toolchain resolves a cycle to a silent false (the §9.10 recursion prohibition unenforced for day kinds); diverge-from-v0 (v0 neither checks nor documents it) | gate 3 | `jutterswet-schouwkalender` (an acyclic `hoogschouwdag -> schouwdag` reference, verifier-clean, replayed by gates 5–6 over its ordinary rule) | `wf085-dagsoort-verwijzingscyclus` (two mutually referencing day kinds) |
 | WF-086 | a defaults group MUST NOT target a temporal attribute (declared `attribuutGranulariteit`) nor a temporal characteristic (`kenmerkGranulariteit`) — a defaults group decides at one fixpoint and has no timeline coordinate to write (ch. 6); the document-layer fence ahead of the executors (ref faults on both arms — defense-in-depth — and the Drools defaults service skips); temporal defaults targets are unscheduled (PRIORITIZED-DEFAULTS-EVOLUTIE §9 Q12a) | gate 3 (over the prioritized-defaults node via the shared `attr_temporal` helper and the `kenmerkGranulariteit` table) | `anchor/jutterswet-vondstwaardering` (attribute defaults on a non-temporal target — gate 3 witnesses WF-086 does not over-fire) | `wf086-temporele-defaultstarget` (attribute arm), `wf086-temporele-defaultskenmerk` (characteristic arm) |
+| WF-087 | the keuzetype family's nullary rule (ch. 2.4): a `SumType` declaration whose constructors ALL carry a null payload is ill-formed — the nullary keuzetype has one wire form, the `Enumeration` domain, so such a declaration normalises to it (nullary-as-sum is sugar, the enumeration is the kernel; two frontends cannot express one meaning in two shapes). Stated over the declaration; WF-061 carries the use sites. No converse: payload never converts | gate 3 (over `domeinen`, beside WF-060) | every payload-carrying SumType golden — `anchor/jutterswet-beschikkingsom`, `anchor/jutterswet-aanspraaktelling`, the `synth3-*` sum witnesses (gate 3 witnesses WF-087 does not over-fire on a keuzetype with payload) | `wf087-all-nullary-sumtype` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is
