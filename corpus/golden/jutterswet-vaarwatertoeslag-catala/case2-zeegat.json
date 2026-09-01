@@ -1,0 +1,49 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B",
+        "objectType": "Bergingstoeslag",
+        "attributes": {
+          "vaarwater": {
+            "enumeration": "Zeegat"
+          },
+          "geborgen_tonnage": {
+            "number": "8"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "B",
+      "attribute": "vaarwatertarief",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B",
+      "attribute": "bergingstoeslag",
+      "value": {
+        "number": "71"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "B",
+      "characteristic": "zeewaardige_berging"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

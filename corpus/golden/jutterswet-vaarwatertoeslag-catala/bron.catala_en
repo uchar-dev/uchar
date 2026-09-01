@@ -1,0 +1,46 @@
+# Jutterswet, artikelen 16 en 17 — de bergingstoeslag naar vaarwater
+
+Art. 16 (vaarwaterindeling). Voor de toepassing van deze wet wordt het
+zeegebied ingedeeld in drie vaarwateren: het wad, het zeegat en de
+ruimzee. Elke berging valt in precies één vaarwater.
+
+Art. 17 (bergingstoeslag). Boven op het bergloon komt de
+bergingstoeslag. Deze bedraagt het tarief van het vaarwater waarin de
+berging plaatsvond — op het wad drie penningen, in het zeegat zeven
+penningen en op de ruimzee twaalf penningen — vermenigvuldigd met het
+geborgen tonnage, vermeerderd met het vaste opruimingsgeld van vijftien
+penningen. Een berging op de ruimzee geldt als zeewaardige berging.
+
+Modelleringsnotitie: de vaarwaterindeling van artikel 16 is een gesloten
+verzameling gelabelde alternatieven zonder bijbehorende gegevens — een
+zuiver keuzetype. Zo'n opsomming heeft precies één wire-vorm: het
+enumeratiedomein (WF-087). Het tarief van artikel 17 wordt daarom een
+match over een enumeratie-scrutinee — de armlabels staan in
+`constructor`, de binder is leeg — en de laatste volzin is de gewone
+enumeratiegelijkheid.
+
+```catala
+declaration enumeration Vaarwater:
+  -- Wad
+  -- Zeegat
+  -- Ruimzee
+
+declaration scope Bergingstoeslag:
+  input vaarwater content Vaarwater
+  input geborgen_tonnage content integer
+  internal vaarwatertarief content integer
+  output bergingstoeslag content integer
+  output zeewaardige_berging content boolean
+
+scope Bergingstoeslag:
+  definition vaarwatertarief equals
+    match vaarwater with pattern
+    -- Wad : 3
+    -- Zeegat : 7
+    -- Ruimzee : 12
+
+  definition bergingstoeslag equals
+    (vaarwatertarief * geborgen_tonnage) + 15
+
+  definition zeewaardige_berging equals vaarwater = Ruimzee
+```
