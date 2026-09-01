@@ -937,6 +937,54 @@ let datatype_detail dt =
   | Percentage { decimalen; eenheid; _ } -> "percentage" ^ dec_unit decimalen eenheid
   | other -> datatype_kind other
 
+(* The keuzetype domain a datatype names (IR-SPEC ch. 2.4): an Enumeratie's
+   or SumType's declaring domain, looked up THROUGH a ListType's element — a
+   list of a keuzetype names that keuzetype's domain, and a drifted element
+   domain on a list-typed reference is the wrong-answer flank the card
+   measured (clingo folded 0 where ref faulted). None for every other
+   datatype and for an Enumeratie carrying no domain. *)
+let rec keuzetype_domain = function
+  | Enumeratie { domein; _ } -> domein
+  | Sum_type { domein; _ } -> Some domein
+  | List_type { element } -> keuzetype_domain element
+  | _ -> None
+
+(* WF-089 (domain identity, IR-SPEC ch. 2.4): a reference expression's
+   serialized [typ] and the datatype of the declaration it READS FROM must
+   name the same keuzetype domain (ci) whenever either of them names one —
+   the domain extension of the soort cross-check WF-023/WF-027/WF-078
+   perform. WF-088 and WF-061 bind a use site to the domain it NAMES; this
+   is the other half, binding it to the declaration it reads, which is what
+   makes ref's "match has no arm" fault unreachable on a verifier-clean
+   document. Either side unknown (the v0 sentinel), an unresolved
+   declaration, or a reference carrying no type defers, exactly as WF-023
+   and WF-078 do. [what] names the reference in the message. *)
+let wf089_domain_identity at ~what ~decl ~typ =
+  match (decl, typ) with
+  | None, _ | _, None | Some (Datatype_onbekend _), _ | _, Some (Datatype_onbekend _) -> []
+  | Some d, Some t -> (
+      match (keuzetype_domain t, keuzetype_domain d) with
+      | None, None -> []
+      | Some a, Some b when norm a = norm b -> []
+      | Some a, Some b ->
+          [ v "WF-089" at
+              (Printf.sprintf
+                 "%s is typed with keuzetype domain '%s', but the declaration it reads from names \
+                  domain '%s'"
+                 what a b) ]
+      | Some a, None ->
+          [ v "WF-089" at
+              (Printf.sprintf
+                 "%s is typed with keuzetype domain '%s', but the declaration it reads from is %s \
+                  and names no keuzetype domain"
+                 what a (datatype_kind d)) ]
+      | None, Some b ->
+          [ v "WF-089" at
+              (Printf.sprintf
+                 "%s is typed %s, naming no keuzetype domain, but the declaration it reads from \
+                  names domain '%s'"
+                 what (datatype_kind t) b) ])
+
 let wf030 ctx =
   let key_checks at otn keys =
     match objecttype ctx otn with
@@ -2501,7 +2549,15 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
           [ ("basis", basis); ("minimum", minimum); ("maximum", maximum) ]
   | Attribuut_ref
       { attribuut; objecttype = otn; navigatie_rol; navigatie_pad; navigatie_bindingen;
-        set; _ } -> (
+        set; typ; _ } -> (
+      (* WF-089: the reference's type names the keuzetype domain of the
+         attribute it reads (resolved at the endpoint type, so a navigated
+         read crosses against the attribute it lands on); an unresolvable
+         reference — a role-name fold source, a characteristic — defers *)
+      wf089_domain_identity (sub "type")
+        ~what:("attribute reference '" ^ Option.value attribuut ~default:"?" ^ "'")
+        ~decl:(resolved_attr_datatype ctx e) ~typ
+      @
       match otn with
       | Some otn -> (
           match objecttype ctx otn with
@@ -2550,9 +2606,16 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                       ~bindings:navigatie_bindingen ~navigatie_rol ~navigatie_pad
                       ~endpoint:(Some otn)))
       | None -> [])
-  | Dimensie_cel { attribuut; labels; _ } ->
+  | Dimensie_cel { attribuut; labels; typ; _ } ->
       (match attribuut with
        | Some (Attribuut_ref { attribuut = Some a; objecttype = Some otn; _ } as inner) ->
+           (* WF-089: a cell of a dimensioned attribute carries that
+              attribute's datatype, so the cell read's own type crosses
+              against the declaration too (the inner reference crosses its
+              own type in its walk below) *)
+           wf089_domain_identity (sub "type") ~what:("dimension-cell read of '" ^ a ^ "'")
+             ~decl:(resolved_attr_datatype ctx inner) ~typ
+           @
            (match objecttype ctx otn with
             | Some ot -> (
                 match find_ci ot.attribuut_dimensies a with
@@ -2586,11 +2649,17 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
            @ walk_expr ctx ~binders ~subject (sub "attribuut") inner
        | Some inner -> walk_expr ctx ~binders ~subject (sub "attribuut") inner
        | None -> [])
-  | Parameter_ref { parameter; _ } -> (
+  | Parameter_ref { parameter; typ; _ } -> (
       match parameter with
-      | Some p when find_ci ctx.doc.parameters p = None ->
-          [ v "WF-034" at ("reference to undeclared parameter '" ^ p ^ "'") ]
-      | _ -> [])
+      | Some p -> (
+          match find_ci ctx.doc.parameters p with
+          | None -> [ v "WF-034" at ("reference to undeclared parameter '" ^ p ^ "'") ]
+          | Some (par : parameter) ->
+              (* WF-089: the reference's type names the keuzetype domain of
+                 the parameter it reads *)
+              wf089_domain_identity (sub "type") ~what:("parameter reference '" ^ p ^ "'")
+                ~decl:par.par_datatype ~typ)
+      | None -> [])
   | Variabele_ref _ -> [] (* binding sites are not serialized in v0 — OPEN *)
   | Constante _ -> []
   | Expr_onopgelost _ -> [] (* honest marker; WF-044 is behavioural *)
@@ -2857,12 +2926,18 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
              Soort only (decimals and units stay uncrossed, exactly as for the
              AttribuutRef cross-check); a binder whose declared type is unknown
              defers, as does a reference carrying no type. *)
-          match (bdt, typ) with
-          | Some d, Some t when datatype_kind t <> datatype_kind d ->
-              [ v "WF-078" (sub "type")
-                  (Printf.sprintf "binder reference '%s' is typed %s, but its binder is %s" naam
-                     (datatype_kind t) (datatype_kind d)) ]
-          | _ -> []))
+          (match (bdt, typ) with
+           | Some d, Some t when datatype_kind t <> datatype_kind d ->
+               [ v "WF-078" (sub "type")
+                   (Printf.sprintf "binder reference '%s' is typed %s, but its binder is %s" naam
+                      (datatype_kind t) (datatype_kind d)) ]
+           | _ -> [])
+          (* WF-089: the domain half of the same cross — the binder's declared
+             datatype is a match arm's declared payload, a lambda/function
+             parameter's declared type, a Let value's type or a filter's
+             element type, and the reference names its keuzetype domain *)
+          @ wf089_domain_identity (sub "type") ~what:("binder reference '" ^ naam ^ "'")
+              ~decl:bdt ~typ))
   | Struct_literal { typ; velden; _ } ->
       (* WF-073: the type is a declared struct; the supplied fields are
          exactly the declared fields, each once; each value's static type

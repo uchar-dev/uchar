@@ -1227,7 +1227,15 @@ free, exactly as above. The enum form is ch. 9.2's **comparison chain**
 written out: the chain needs no encoding of its own because mutually
 exclusive ground equalities *are* the chain. WF-063 guarantees the arms
 are the declared values exactly, each once, and every arm nullary — so no
-arm binds anything, and no `P` variable enters the guard.
+arm binds anything, and no `P` variable enters the guard. And WF-089
+(IR-SPEC ch. 2.4) guarantees, for both variants, that the domain the
+scrutinee's `type` names is the domain of the declaration the scrutinee
+*reads from* — so on a verifier-clean document an underived `matchN`
+means a **leeg scrutinee and nothing else**. Without it a scrutinee typed
+with a second, internally consistent domain left every arm's pattern
+unmatched and `matchN` silently underived (leeg for the wrong reason, and
+on a list-typed source a folded 0 — a wrong answer where ref faulted);
+the verifier now refuses that document before translation.
 
 The route difference costs a **narrower carrier**, and the narrowing is
 pre-existing rather than new: `symbolic_term` carries only a literal or

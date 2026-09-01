@@ -693,19 +693,17 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           match List.find_opt (fun (c, _, _) -> norm c = norm label) arms with
           | None ->
               Value.fault
-                (* The arms cover the domain THIS node's type names: WF-063
-                   reads that domain's declaration, WF-039 reads the use
-                   site's inline copy, and WF-088 makes the two lists agree.
-                   What stays reachable is the other axis — a scrutinee whose
-                   type names a different (internally consistent) domain than
-                   the attribute it reads was declared with. Nothing
-                   cross-validates a use-site type against the declaration it
-                   reads from, so the label can be alien to the arms and this
-                   arm fires on a verifier-clean document. Backlog:
-                   20260901-use-site-declaratie-identiteit. *)
-                "match has no arm for enumeration value %S (the arms cover the enumeration domain \
-                 this node's type names — WF-063/WF-088; a use-site type naming a different domain \
-                 than the read attribute's declaration is not verifier-checked)"
+                (* Unreachable on a verifier-clean document: WF-063 makes the
+                   arms cover the declaration of the domain this node's type
+                   names, WF-088 makes the use site's inline copy repeat that
+                   declaration, and WF-089 makes that domain the one of the
+                   declaration the scrutinee READS FROM (attribute, parameter
+                   or binder, IR-SPEC ch. 2.4) — so the label is always one of
+                   the arms. Kept as an honest fault, never an assert: an
+                   unverified document can still reach it. *)
+                "match has no arm for enumeration value %S (unreachable on a verifier-clean \
+                 document: WF-063/WF-088/WF-089 bind the arms to the declaration the scrutinee \
+                 reads from)"
                 label
           | Some (_, Some b, _) ->
               Value.fault "match arm for enumeration value %S carries a binder %S (WF-063)" label b
@@ -714,13 +712,14 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           match List.find_opt (fun (c, _, _) -> norm c = norm tag) arms with
           | None ->
               Value.fault
-                (* the sum-side twin of the enumeration arm above, and the
-                   same honest limit: WF-063 totality is over the sum domain
-                   this node's type names, and WF-061 pins that type against
-                   its declaration only at attribute and parameter use sites *)
-                "match has no arm for constructor %S (the arms cover the sum-type domain this \
-                 node's type names — WF-063; a use-site type naming a different domain than the \
-                 read attribute's declaration is not verifier-checked)"
+                (* the sum-side twin of the enumeration arm above, unreachable
+                   on a verifier-clean document by the same three rules: WF-063
+                   totality over the named domain's declaration, WF-061 for the
+                   use-site copy, WF-089 for the domain of the declaration the
+                   scrutinee reads from. An honest fault for an unverified
+                   document, never an assert. *)
+                "match has no arm for constructor %S (unreachable on a verifier-clean document: \
+                 WF-063/WF-061/WF-089 bind the arms to the declaration the scrutinee reads from)"
                 tag
           | Some (_, binder, body) ->
               let locals =
