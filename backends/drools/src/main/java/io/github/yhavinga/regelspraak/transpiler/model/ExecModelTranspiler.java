@@ -3840,10 +3840,11 @@ public final class ExecModelTranspiler {
         return new LetConditie((s, gm) -> RegelSpraakRuntime.rsAggVergelijk(lfn.apply(s, gm), rfn.apply(s, gm), opStr), g);
     }
 
-    /** The {@link Expr} children a ch. 4.10 CARRIER hides from the generic tree walks: a Let's value+body, an
-     *  IfThenElse's two branches and EVERY Expr operand of its condition. Empty for a non-carrier. Every
-     *  structural walk that must see THROUGH a carrier asks here — the list is enumerated on {@code LetVorm};
-     *  a walk that did not would silently under-report and answer wrong. */
+    /** ALL {@link Expr} children a ch. 4.10 CARRIER hides from the generic tree walks: a Let's value+body, an
+     *  IfThenElse's two branches and EVERY Expr operand of its condition. Empty for a non-carrier. The
+     *  POSSIBLY-evaluated set, not the certainly-evaluated one — {@link #letKinderenZeker} is that, and which
+     *  accessor a walk takes is decided by what its output IS (the inventory is enumerated on {@code LetVorm}).
+     *  A walk that consults neither silently under-reports and answers wrong. */
     private List<Expr> letKinderen(Expr e) {
         io.github.yhavinga.regelspraak.loader.LetVorm lv = e == null ? null : letVormen.get(e);
         if (lv == null) return List.of();
@@ -3857,16 +3858,51 @@ public final class ExecModelTranspiler {
     }
 
     /**
+     * The {@link Expr} children a ch. 4.10 CARRIER hides that are CERTAIN to be evaluated whenever the carrier
+     * itself is — a strict subset of {@link #letKinderen}. A Binding contributes its {@code value} ONLY: ch. 10.6
+     * runs the {@code body} exclusively when the value is non-leeg (the leeg-barrier). A Keuze contributes its
+     * CONDITION operands only: ch. 10.2 evaluates exactly ONE of the two branches, so neither branch qualifies.
+     * A Lezing contributes nothing (it reads the environment).
+     *
+     * <p><b>Why two accessors.</b> Seeing MORE than runs is safe exactly where a walk's output is a REFUSAL or a
+     * REGISTRATION: {@code bevatDeling} (the ch. 7 defaults division fence) then refuses more often,
+     * {@code navRefs} watches more, {@code exprLeesnamen} sinks a salience further, {@code kanBreukOpleveren}
+     * routes a comparison through the exact helper where the plain one would also have served — each still a
+     * CORRECT answer. It is NOT safe for the §6.5/§6.6 fout-companions, because a companion IS an answer: one
+     * built off a branch that is never taken, or a body behind a leeg-barrier that never runs, makes this
+     * backend report INCONSISTENT where ref reports consistent. {@link #verzamelDelingen} and
+     * {@link #verzamelWortels} therefore ask HERE.
+     *
+     * <p><b>The converse limit, stated because it is real.</b> A §6.5/§6.6 fault inside a branch that IS taken,
+     * or inside a body whose value IS filled, gets no companion either: a companion is a SEPARATE static rule
+     * keyed on the operands' leegte (see {@link #delingCompanions}) and has no way to test which branch ran.
+     * Under-reporting a conditional path is the price of never fabricating on an unrun one — the
+     * certainly-evaluated set is exactly the boundary at which a static companion can still be honest.
+     */
+    private List<Expr> letKinderenZeker(Expr e) {
+        io.github.yhavinga.regelspraak.loader.LetVorm lv = e == null ? null : letVormen.get(e);
+        if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Binding b) return List.of(b.value());
+        if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Keuze k) {
+            List<Expr> uit = new ArrayList<>();
+            conditieOperanden(k.conditie(), uit);   // the condition ALWAYS runs; the two branches do not
+            return uit;
+        }
+        return List.of();   // a non-carrier, or a BinderRef (it reads only the environment)
+    }
+
+    /**
      * Every {@link Expr} operand a {@link Conditie} carries, recursively through a Samengesteld. Deliberately
      * form-COMPLETE rather than restricted to the {@link #letConditie} shapes the ch. 10.2 guard actually
      * lowers: coupling the two would make a structural collector depend, silently, on which condition forms a
      * VALUE lowering happens to accept today — the next widening of letConditie would leave every walk blind
      * again with nothing to notice it.
      *
-     * <p>Over-approximating here is SAFE in the one direction that matters: a condition form letConditie
-     * refuses never plays at all (its Keuze lowers to null, a loud skip), so the extra operands can only add a
-     * §9.5 companion or a defaults fence — an honest refusal or an extra fault at worst, never a silent
-     * answer. Under-approximating is the failure mode with no floor.
+     * <p>Being form-complete here is SAFE because of what a refused form does: a condition shape letConditie
+     * will not lower makes its Keuze lower to null, which skips the whole rule LOUDLY — so operands collected
+     * from such a shape never reach a rule that plays. It is emphatically NOT an "extra fault is harmless"
+     * argument: an extra §6.5/§6.6 companion is a WRONG ANSWER (inconsistent where ref says consistent), not a
+     * refusal. That is why the two companion walks reach a condition only through {@link #letKinderenZeker},
+     * where the operands are the ones that certainly run.
      */
     private static void conditieOperanden(Conditie c, List<Expr> uit) {
         if (c instanceof Conditie.Vergelijking v) {
@@ -5936,9 +5972,11 @@ public final class ExecModelTranspiler {
      *  DrlTranspiler.verzamelWortels over the shared v0 forms; the ch. 4.10 CARRIER descent is additional
      *  (the DRL back-end has no Let lowering at all — it markers such a rule whole — so there is nothing to
      *  keep in step there). Without the descent a Let-wrapped wortel loses its §9.5 companion while ref still
-     *  raises the fault: silently consistent, the worst failure mode. See letKinderen. */
+     *  raises the fault: silently consistent. The descent takes {@link #letKinderenZeker}, NOT the full
+     *  {@code letKinderen}: a companion is an ANSWER, and one built off a path that never runs is inconsistent
+     *  where ref is consistent — the mirror-image wrong. */
     private void verzamelWortels(Expr e, List<Expr.Functie> uit) {
-        for (Expr k : letKinderen(e)) verzamelWortels(k, uit);
+        for (Expr k : letKinderenZeker(e)) verzamelWortels(k, uit);
         if (e instanceof Expr.Functie f) {
             if (f.kind() == Expr.FunctieKind.WORTEL) uit.add(f);
             for (Expr a : f.argumenten()) verzamelWortels(a, uit);
@@ -5980,9 +6018,11 @@ public final class ExecModelTranspiler {
      *  §6.5 fout) — byte-identical to DrlTranspiler.verzamelDelingen over the shared v0 forms; the ch. 4.10 CARRIER
      *  descent is additional (the DRL back-end has no Let lowering at all — it markers such a rule whole — so there
      *  is nothing to keep in step there). Without the descent a Let-wrapped division loses its §6.5/§9.5 companion
-     *  while ref still raises the fault: silently consistent, the worst failure mode. See letKinderen. */
+     *  while ref still raises the fault: silently consistent. The descent takes {@link #letKinderenZeker}, NOT the
+     *  full {@code letKinderen}: a companion is an ANSWER, and one built off a path that never runs is
+     *  inconsistent where ref is consistent — the mirror-image wrong. */
     private void verzamelDelingen(Expr e, List<Expr.Binair> uit) {
-        for (Expr k : letKinderen(e)) verzamelDelingen(k, uit);
+        for (Expr k : letKinderenZeker(e)) verzamelDelingen(k, uit);
         if (e instanceof Expr.Binair b) {
             // §6.5 "gedeeld door" AND "gedeeld door (ABS)" both lower to a leeg-divisor fout (mirror DRL).
             if (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS) uit.add(b);
