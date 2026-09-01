@@ -100,7 +100,7 @@ consequentie bindt de globals van de drager zoals de gastregel de zijne
 (`consequenceOf`/`vulGlobalMap`); een drager die niet lowert of een
 global die de gast niet kon binden is een invariantschending en faalt
 hard. Het patroon krijgt de freshness-expr (klasse-reactief), de
-§9.5-idempotentiegaurd blijft. De buitenste drager is de juiste eenheid:
+§9.5-idempotentieguard blijft. De buitenste drager is de juiste eenheid:
 alle niet-dragervormen die de walk afdaalt (Binair, Afgerond, Begrensd,
 Functie-argumenten) evalueren hun kinderen onvoorwaardelijk, hier en in
 ref, en een barrière ontsnapt nooit aan haar eigen Let; `lowerVal` (de
