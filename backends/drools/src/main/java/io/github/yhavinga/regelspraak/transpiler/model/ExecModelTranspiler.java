@@ -113,6 +113,11 @@ public final class ExecModelTranspiler {
      *  nodes are records with value equality). Empty by default — every node then uses the by-pair derivation,
      *  which is exactly the pre-2026-08-30 behaviour. */
     private Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen = new java.util.IdentityHashMap<>();
+    /** IR-SPEC ch. 4.10: the Let cluster per {@link Expr.Onopgelost} CARRIER, riding beside the model
+     *  ({@code IrLoader.Loaded.letVormen}) because the vendored, sealed {@link Expr} union cannot grow the three
+     *  wire nodes. Keyed by IDENTITY (the carriers are value-equal records). Empty by default — every carrier is
+     *  then an ordinary unresolved leaf and every value path refuses it loudly, the pre-2026-09-01 behaviour. */
+    private Map<Object, io.github.yhavinga.regelspraak.loader.LetVorm> letVormen = new java.util.IdentityHashMap<>();
     private final List<String> overgeslagen = new ArrayList<>();
     /** Build-time-only gate: true WHILE lowering a scalar consequence value (the THEN-waarde), the single
      *  context where a §13.4.1 multi-hop navigation chain may lower ({@link #navKetenReader}) — mirroring
@@ -176,6 +181,14 @@ public final class ExecModelTranspiler {
      *  beside the model ({@code IrLoader.Loaded.rolBindingen}). An empty map is the by-pair-derivation-only case. */
     public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
             Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen) {
+        return build(m, beanLoader, defaults, rolBindingen, java.util.Map.of());
+    }
+    /** As {@link #build(RegelSpraakModel, ClassLoader, List, Map)} but also consumes the IR-SPEC ch. 4.10 Let cluster
+     *  loaded beside the model ({@code IrLoader.Loaded.letVormen}). An empty map leaves every carrier an unresolved
+     *  leaf, i.e. a loud per-form refusal. */
+    public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
+            Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen,
+            Map<Object, io.github.yhavinga.regelspraak.loader.LetVorm> letVormen) {
         ExecModelTranspiler t = new ExecModelTranspiler(m, beanLoader);
         t.prioritizedDefaults = defaults == null ? List.of() : defaults;
         if (rolBindingen != null && !rolBindingen.isEmpty()) {
@@ -183,6 +196,10 @@ public final class ExecModelTranspiler {
             // value-keyed map would merge two structurally identical nodes into one binding.
             t.rolBindingen = new java.util.IdentityHashMap<>();
             t.rolBindingen.putAll(rolBindingen);
+        }
+        if (letVormen != null && !letVormen.isEmpty()) {
+            t.letVormen = new java.util.IdentityHashMap<>();   // identity, for the same reason as rolBindingen
+            t.letVormen.putAll(letVormen);
         }
         t.model0 = t.run();
         return t;
@@ -3527,6 +3544,10 @@ public final class ExecModelTranspiler {
     /** Scalar value: Literal | own-attr read | Parameter-global read | a {@code +} of those (rsNul leegwaarde).
      *  null -> skip. The global read pulls its value from the consequence-bound map (see {@link #regel}). */
     private WaardeFn scalarWaarde(Objecttype valueSubject, Expr e) {
+        // IR-SPEC ch. 4.10: a Let-cluster CARRIER (an Onopgelost registered in the letVormen side channel).
+        // Asked FIRST so no later arm can mistake the carrier for an ordinary unresolved leaf.
+        io.github.yhavinga.regelspraak.loader.LetVorm letVorm = e == null ? null : letVormen.get(e);
+        if (letVorm != null) return letWaarde(valueSubject, letVorm);
         if (e instanceof Expr.Literal lit && lit.type().isNumeriek()) {
             // §13.2.5/§389: a non-terminating rational literal (1/3) becomes an EXACT Breuk so downstream +,-,×,÷
             // stay exact (9 maal 1/3 = 3); a terminating one (4/2, 3/2) stays a plain BigDecimal (fast path).
@@ -3725,6 +3746,127 @@ public final class ExecModelTranspiler {
             if (sf != null) return sf;
         }
         return scalarWrapper(valueSubject, e);   // §13.4.17.25 afronding / §13.4.17.13 wortel
+    }
+
+    // --- IR-SPEC ch. 4.10 / RUNTIME-SEMANTICS ch. 10.6 + 10.2: the Let cluster -----------------------------
+
+    /**
+     * The binder ENVIRONMENT slot for {@code binder} inside the (name -&gt; value) map every {@link WaardeFn}
+     * already threads. Reusing that map is what keeps the binder environment PURELY FUNCTIONAL: a {@code Let}
+     * evaluation copies the incoming map, adds its own slot and hands the copy to the body, so no cell, field
+     * or thread-local is shared — a KieBase lambda may be fired by any number of sessions and threads at once.
+     *
+     * <p>The slot name carries a SPACE, which {@code Namen.ident} can never produce, so it cannot collide with a
+     * Parameter global (nor with the {@code "rekendatum"} pseudo-slot). Lower-cased, mirroring ref's {@code norm}
+     * over {@code locals}, so binder resolution is case-insensitive on both sides.
+     */
+    private static String binderSleutel(String binder) {
+        return "binder " + (binder == null ? "" : binder.toLowerCase(java.util.Locale.ROOT));
+    }
+
+    /**
+     * Lower one ch. 4.10 Let-cluster node to the ordinary {@link WaardeFn}, so the whole existing value machinery
+     * (the leegwaarde tables, the §4 unit restatement, the Breuk-aware rs* helpers) applies to a Let body
+     * unchanged — the arbiter is {@code ref/lib/eval.ml}, never a second arithmetic written here.
+     *
+     * <p><b>Globals hygiene.</b> A {@code WaardeFn}'s globals set is what {@link #regel} (and the ch. 7 defaults
+     * lowering) binds on the consequence; a forgotten name would read null and answer a silent leeg. So the sets
+     * are UNIONED across value, body, condition and both branches — and a {@code Let} REMOVES its own binder slot
+     * from what it reports, since it binds that slot itself. A binder slot that somehow escaped its Let would
+     * therefore surface as an unregistered global and become a loud skip, never a null read.
+     */
+    private WaardeFn letWaarde(Objecttype valueSubject, io.github.yhavinga.regelspraak.loader.LetVorm vorm) {
+        if (vorm instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Lezing lz) {
+            // WF-064: the nearest enclosing binder of this name. "Nearest" is exactly what the map gives —
+            // an inner Let's put SHADOWS the outer one in the copy the body sees.
+            String sleutel = binderSleutel(lz.naam());
+            return new WaardeFn((s, gm) -> ((Map<?, ?>) gm).get(sleutel), Set.of(sleutel));
+        }
+        if (vorm instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Binding b) {
+            // ch. 10.6: [value] is evaluated in the ENCLOSING scope (WF-076 — the binder is not visible in its
+            // own value), so it compiles against the untouched incoming map.
+            WaardeFn vf = scalarWaarde(valueSubject, b.value());
+            if (vf == null) return null;
+            WaardeFn bf = scalarWaarde(valueSubject, b.body());
+            if (bf == null) return null;
+            String sleutel = binderSleutel(b.binder());
+            BiFunction<Object, Map<String, BigDecimal>, Object> vfn = vf.fn(), bfn = bf.fn();
+            Set<String> g = new LinkedHashSet<>(vf.globals());
+            for (String n : bf.globals()) if (!n.equals(sleutel)) g.add(n);
+            return new WaardeFn((s, gm) -> {
+                Object v = vfn.apply(s, gm);
+                if (v == null) return null;   // ch. 10.6 the leeg-barrier: a leeg value propagates, the body NEVER runs
+                Map<String, BigDecimal> omgeving = new LinkedHashMap<>(gm);
+                // no BigDecimal cast — the map is erased (see bindGlobal/vulGlobalMap); a binder value is whatever
+                // its own expression computed (a BigDecimal, an exact Breuk, a date, a label) and only this slot's
+                // reader touches it. By construction it is never null here.
+                ((Map<String, Object>) (Map) omgeving).put(sleutel, v);
+                return bfn.apply(s, omgeving);
+            }, g);
+        }
+        io.github.yhavinga.regelspraak.loader.LetVorm.Keuze k = (io.github.yhavinga.regelspraak.loader.LetVorm.Keuze) vorm;
+        LetConditie c = letConditie(valueSubject, k.conditie());
+        if (c == null) return null;
+        WaardeFn dan = scalarWaarde(valueSubject, k.dan());
+        if (dan == null) return null;
+        WaardeFn anders = scalarWaarde(valueSubject, k.anders());
+        if (anders == null) return null;
+        BiFunction<Object, Map<String, BigDecimal>, Object> dfn = dan.fn(), afn = anders.fn();
+        java.util.function.BiPredicate<Object, Map<String, BigDecimal>> test = c.test();
+        Set<String> g = new LinkedHashSet<>(c.globals());
+        g.addAll(dan.globals());
+        g.addAll(anders.globals());
+        // ch. 10.2: evaluate EXACTLY the chosen branch — strict, no coalesce, no evaluation of the other arm.
+        return new WaardeFn((s, gm) -> test.test(s, gm) ? dfn.apply(s, gm) : afn.apply(s, gm), g);
+    }
+
+    /** A lowered ch. 10.2 branch guard: a (subject, globals+binders) -&gt; waar/onwaar test plus the global names
+     *  its operands read (a Let binder slot among them — {@link #letWaarde} strips those at its own node). */
+    private record LetConditie(java.util.function.BiPredicate<Object, Map<String, BigDecimal>> test, Set<String> globals) {}
+
+    /**
+     * Lower an {@code IfThenElse} condition (ch. 10.2, its operands disciplined to bound-non-leeg reads by
+     * WF-077). Both sides lower through {@link #scalarWaarde} — so a binder, a parameter, a literal and the
+     * arithmetic combinators over them all work — and the verdict comes from
+     * {@link RegelSpraakRuntime#rsAggVergelijk}, the SAME shared helper the aggregation-comparison path uses.
+     * That helper mirrors ref's Tabel 33/37/44 leeg semantics AND compares an exact {@link
+     * io.github.yhavinga.regelspraak.runtime.Breuk} exactly, so no cast can throw at fire.
+     *
+     * <p>null (an honest, reason-carrying skip at the caller) for anything else: a non-comparison condition, a
+     * datum operator, a non-numeric operand, an operand that does not lower — and for a comparison that would
+     * need a §5.1 Tabel 32 UNIT restatement, which {@code rsAggVergelijk} does not apply. No half lowering.
+     */
+    private LetConditie letConditie(Objecttype valueSubject, Conditie c) {
+        if (!(c instanceof Conditie.Vergelijking v) || !isNumeriekOp(v.op())) return null;
+        if (!getalachtigVergelijkbaar(v.links()) || !getalachtigVergelijkbaar(v.rechts())) return null;
+        BigDecimal[] f = restatement(v.links().type(), v.rechts().type());
+        if (f[0].compareTo(BigDecimal.ONE) != 0 || f[1].compareTo(BigDecimal.ONE) != 0) return null;   // cross-unit guard
+        WaardeFn lw = scalarWaarde(valueSubject, v.links()), rw = scalarWaarde(valueSubject, v.rechts());
+        if (lw == null || rw == null) return null;
+        BiFunction<Object, Map<String, BigDecimal>, Object> lfn = lw.fn(), rfn = rw.fn();
+        String opStr = Operatoren.symbool(v.op());
+        Set<String> g = new LinkedHashSet<>(lw.globals());
+        g.addAll(rw.globals());
+        return new LetConditie((s, gm) -> RegelSpraakRuntime.rsAggVergelijk(lfn.apply(s, gm), rfn.apply(s, gm), opStr), g);
+    }
+
+    /** The {@link Expr} children a ch. 4.10 CARRIER hides from the generic tree walks: a Let's value+body, an
+     *  IfThenElse's two branches and its comparison operands. Empty for a non-carrier. Every structural walk that
+     *  must see THROUGH a carrier — the freshness watch, the far-side reactivity, the defaults salience and the
+     *  defaults division fence — asks here; a walk that did not would silently under-report and answer wrong. */
+    private List<Expr> letKinderen(Expr e) {
+        io.github.yhavinga.regelspraak.loader.LetVorm lv = e == null ? null : letVormen.get(e);
+        if (lv == null) return List.of();
+        if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Binding b) return List.of(b.value(), b.body());
+        if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Keuze k) {
+            List<Expr> uit = new ArrayList<>(List.of(k.dan(), k.anders()));
+            if (k.conditie() instanceof Conditie.Vergelijking v) {
+                if (v.links() != null) uit.add(v.links());
+                if (v.rechts() != null) uit.add(v.rechts());
+            }
+            return uit;
+        }
+        return List.of();   // a BinderRef reads only the environment
     }
 
     /** §13.4.17 single-value builtin Functies as a value: §13.4.17.17 ABSOLUTE_WAARDE (rsAbs), §13.4.17.18-.24
@@ -6110,8 +6252,11 @@ public final class ExecModelTranspiler {
 
     /** Whether an expression contains a §9.5 channel-depositing division (a deling-door-leeg raises the Fout on the
      *  channel) — the speculative-deposit case the scalar-first port fences instead of building. */
-    private static boolean bevatDeling(Expr e) {
+    private boolean bevatDeling(Expr e) {
         if (e == null) return false;
+        // ch. 4.10: the fence must see a division hidden inside a Let value/body or an IfThenElse branch —
+        // otherwise a Let-wrapped deling-door-leeg would deposit on the channel speculatively.
+        for (Expr k : letKinderen(e)) if (bevatDeling(k)) return true;
         if (e instanceof Expr.Binair b) {
             if (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS) return true;
             return bevatDeling(b.links()) || bevatDeling(b.rechts());
@@ -6193,6 +6338,8 @@ public final class ExecModelTranspiler {
     }
     private void exprLeesnamen(Expr e, Set<String> uit) {
         if (e == null) return;
+        // ch. 4.10: a Let-wrapped read is still a read — the group's salience must sit below its producer.
+        for (Expr k : letKinderen(e)) exprLeesnamen(k, uit);
         if (e instanceof Expr.AttribuutRef a) { if (a.attribuut() != null) uit.add(a.attribuut()); }
         else if (e instanceof Expr.Binair b) { exprLeesnamen(b.links(), uit); exprLeesnamen(b.rechts(), uit); }
         else if (e instanceof Expr.Afgerond af) { exprLeesnamen(af.basis(), uit); }
@@ -6324,12 +6471,16 @@ public final class ExecModelTranspiler {
 
     /** The subject's OWN declared attributes a value expression READS, as bean property names — the
      *  {@code .watch} set for an otherwise constraint-less pattern (mirrors the DRL's verzamelEigenReads). */
-    private static java.util.Set<String> eigenReads(Expr e, Objecttype subject) {
+    private java.util.Set<String> eigenReads(Expr e, Objecttype subject) {
         java.util.LinkedHashSet<String> uit = new java.util.LinkedHashSet<>();
         eigenReads(e, subject, uit);
         return uit;
     }
-    private static void eigenReads(Expr e, Objecttype subject, java.util.Set<String> uit) {
+    private void eigenReads(Expr e, Objecttype subject, java.util.Set<String> uit) {
+        // ch. 4.10: a Let-cluster carrier hides its reads from this walk. Missing them would leave a chained
+        // berekening ("het gewogen inkomen is (Let ink = inkomen in ink maal de factor)") with an EMPTY
+        // reactivity mask — computed once against a leeg factor and never recomputed. See letKinderen.
+        for (Expr k : letKinderen(e)) eigenReads(k, subject, uit);
         if (e instanceof Expr.AttribuutRef a) {
             if (a.navigatieRol() == null && a.objecttype() == subject && subject.attribuut(a.attribuut()) != null)
                 uit.add(prop(a.attribuut()));
@@ -6357,7 +6508,8 @@ public final class ExecModelTranspiler {
      *  the freshness watch CANNOT cover: property/class reactivity is per fact TYPE, so a subject pattern never
      *  re-fires on the FAR fact's update. Each is turned into a far-side JOIN pattern (see {@link #navReactiviteit})
      *  so the rule reacts to the navigated fact's mutation. Walks the SAME tree shape as {@link #eigenReads}. */
-    private static void navRefs(Expr e, Objecttype subject, java.util.List<Expr.AttribuutRef> uit) {
+    private void navRefs(Expr e, Objecttype subject, java.util.List<Expr.AttribuutRef> uit) {
+        for (Expr k : letKinderen(e)) navRefs(k, subject, uit);   // ch. 4.10: see through a Let-cluster carrier
         if (e instanceof Expr.AttribuutRef a) {
             if (a.navigatieRol() != null || (a.objecttype() != null && a.objecttype() != subject)) uit.add(a);
         } else if (e instanceof Expr.Binair b) {

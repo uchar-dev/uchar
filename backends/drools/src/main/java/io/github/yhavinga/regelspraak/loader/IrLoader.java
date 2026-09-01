@@ -50,7 +50,7 @@ import java.util.Map;
  * {@link Refusal} — never a silent skip. That covers a non-v0 {@code formaat}, an unknown top-level
  * section (a v1 extension: {@code prioritizedDefaults}, {@code functionDefs}, …), and an unknown {@code node}
  * discriminator inside the {@link Expr} / {@link Conditie} / {@link Datatype} sealed hierarchies
- * (a struct/list literal, a Let, a MapList/Invoke, …). The differential gate turns a Refusal into a
+ * (a struct/list literal, a MapList/Invoke, …). The differential gate turns a Refusal into a
  * reason-carrying exclusion.
  *
  * <p><b>Authority.</b> The v0 BEAN fields are authoritative: where the emitter also writes a symbolic
@@ -98,6 +98,10 @@ public final class IrLoader {
      *  is a RECORD with VALUE equality, so two structurally identical nodes in one document would collapse into
      *  one entry and the second would silently inherit the first's binding. */
     private final Map<Object, RolBindingRef> rolBindingen = new java.util.IdentityHashMap<>();
+    /** The ch. 4.10 Let cluster, keyed by its {@link Expr.Onopgelost} carrier — see {@link Loaded#letVormen()}.
+     *  IDENTITY-keyed for the same reason as {@link #rolBindingen}, and more sharply so: two carriers of one
+     *  datatype and one bron are VALUE-equal records, and a Let chain produces exactly such twins. */
+    private final Map<Object, LetVorm> letVormen = new java.util.IdentityHashMap<>();
 
     private IrLoader() {}
 
@@ -120,9 +124,13 @@ public final class IrLoader {
      *               Wachters, which no by-pair search can disambiguate.</li>
      *         </ul>
      *         In both cases the SIBLING role — the one the anchor (subject) plays — is the bean field on the other
-     *         end. Absent for a node whose wire record carries no binding; the by-pair derivation then stands. */
+     *         end. Absent for a node whose wire record carries no binding; the by-pair derivation then stands.
+     *  @param letVormen the IR-SPEC ch. 4.10 {@link LetVorm} per {@link Expr.Onopgelost} CARRIER, by IDENTITY —
+     *         the third side channel, and for the same reason as the second: {@link Expr} is a sealed union in the
+     *         vendored frontend slice and cannot grow the three wire nodes {@code Let}/{@code BinderRef}/
+     *         {@code IfThenElse}. Empty for a document that carries none. */
     public record Loaded(RegelSpraakModel model, List<PrioritizedDefaults> prioritizedDefaults,
-                         Map<Object, RolBindingRef> rolBindingen) {}
+                         Map<Object, RolBindingRef> rolBindingen, Map<Object, LetVorm> letVormen) {}
 
     /** Parse a {@code regelspraak-ir-v0} tree into a resolved model, or throw {@link Refusal} for a form
      *  the v0 backend does not carry. The prioritized-defaults extension (if any) is parsed but not returned —
@@ -138,7 +146,7 @@ public final class IrLoader {
     public static Loaded loadAll(JsonNode root) {
         IrLoader l = new IrLoader();
         RegelSpraakModel model = l.model(root);
-        return new Loaded(model, l.prioritizedDefaults, l.rolBindingen);
+        return new Loaded(model, l.prioritizedDefaults, l.rolBindingen, l.letVormen);
     }
 
     private RegelSpraakModel model(JsonNode root) {
@@ -332,8 +340,26 @@ public final class IrLoader {
             case "VariabeleRef" -> new Expr.VariabeleRef(text(n, "naam"), datatype(n.get("type")), bron(n));
             case "Constante" -> new Expr.Constante(text(n, "naam"), datatype(n.get("type")), bron(n));
             case "Onopgelost" -> new Expr.Onopgelost(datatype(n.get("type")), bron(n));
+            // IR-SPEC ch. 4.10 the Let cluster. The sealed, VENDORED Expr union cannot grow these three nodes, so
+            // each parses into an Onopgelost CARRIER plus its real shape in the letVormen side channel (see
+            // {@link LetVorm}). Note the wire's field names: a BinderRef's is "name", an IfThenElse's are
+            // "condition"/"then"/"else" — the condition reuses the ordinary conditie union.
+            case "Let" -> letDrager(n, new LetVorm.Binding(text(n, "binder"), expr(n.get("value")),
+                    expr(n.get("body")), datatype(n.get("type"))));
+            case "BinderRef" -> letDrager(n, new LetVorm.Lezing(text(n, "name"), datatype(n.get("type"))));
+            case "IfThenElse" -> letDrager(n, new LetVorm.Keuze(conditie(n.get("condition")), expr(n.get("then")),
+                    expr(n.get("else")), datatype(n.get("type"))));
             default -> throw new Refusal("Expr:" + node, "unknown expression node");
         };
+    }
+
+    /** Register one ch. 4.10 Let-cluster node beside the model and return its carrier — a fresh
+     *  {@link Expr.Onopgelost} typed with the node's own datatype, so a consumer that never consults
+     *  {@link Loaded#letVormen()} sees an unresolved leaf and refuses loudly rather than guessing. */
+    private Expr letDrager(JsonNode n, LetVorm vorm) {
+        Expr drager = new Expr.Onopgelost(vorm.type(), bron(n));
+        letVormen.put(drager, vorm);
+        return drager;
     }
 
     private Expr.TekstReeks.Deel tekstReeksDeel(JsonNode d) {
