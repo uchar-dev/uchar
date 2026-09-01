@@ -103,8 +103,9 @@ per regel.
 
 `letKinderen` is losgekoppeld van `letConditie` (besluit hoofdsessie):
 een nieuwe `conditieOperanden` daalt af in de Expr-operanden van álle
-conditievormen. Over-approximatie in een structurele verzamelaar is
-veilig; onder-approximatie is de faalwijze zonder bodem.
+conditievormen. Dat is veilig omdat een conditievorm die `letConditie`
+weigert de hele regel lúid laat vallen — niet omdat "een extra fout
+onschuldig" zou zijn.
 
 Nieuw `LetDragerWandelingWitnessTest` (7 witnesses) pint wat de drager
 *verbergt* — de twee construeerbare hekken als luide weigering, de twee
@@ -112,3 +113,43 @@ al gebouwde wandelingen, en de drie nieuwe fixes naast hun kale
 tweelingen. Elk model is verifier-clean en elke gepinde waarde is eerst
 door ref gedraaid; elke witness is mutant-rood bewezen in een
 /tmp-kopie.
+
+## Fixronde na lens 2 (2026-09-01)
+
+Gate 12 blijft **played 98 / auto-excluded 38 / value-divergence 1 /
+no-case 1**; JUnit **118 → 120**, nul skipped. Alle twaalf gates groen.
+
+Lens 1's fix over-corrigeerde. `verzamelDelingen` en `verzamelWortels`
+daalden af via het volle `letKinderen`, dat voor een Keuze BEIDE takken
+en voor een Binding óók de body levert — paden die per ch. 10.2 / ch.
+10.6 niet altijd draaien. Zij bouwen §6.5/§6.6-**fout-companions**, en
+een companion op een pad dat nooit draait is INCONSISTENT waar ref
+consistent zegt: een fout antwoord, geen behoedzame weigering. Nieuw
+`letKinderenZeker` levert alleen de zeker geëvalueerde kinderen (Binding
+→ value; Keuze → de conditie-operanden; Lezing → niets) en exact die
+twee wandelingen gebruiken het. De vier andere blijven op het volle
+`letKinderen`: hun uitkomst is een weigering of een registratie, en daar
+is meer-zien nog steeds een correct antwoord. Twee nieuwe witnesses
+(beide ref-bevestigd, beide mutant-rood met de strikte accessor
+teruggezet) pinnen het.
+
+**De restpost, gemeten en bewust geaccepteerd.** Een companion is een
+losse statische regel op de leegte van de operanden; hij kan niet testen
+wélke tak draaide. Dus krijgt een §6.5/§6.6-fout in een tak die WEL
+genomen wordt, of in een body waarvan de value WEL gevuld is, evenmin
+een companion: op `Let d = deler in inkomen gedeeld door tweede` met
+`deler` = 2,00 en `tweede` leeg zegt ref *inconsistent* en Drools
+*consistent* (vóór deze fix zei Drools daar toevallig goed). Beide
+richtingen zijn fout op een andere vorm; nooit-verzinnen is de gekozen
+kant. Een companion die ook de barrière/tak-conditie meedraagt is de
+echte oplossing — eigen kaart, geen corpus-golden draagt de vorm.
+
+De opsomming op `LetVorm` is herschreven in drie gecheckte categorieën
+(via `letKinderen` / via `letKinderenZeker` / gemotiveerd niet), met
+`heeftTijdgebonden`, `parityOnveilig`, `containsAggregatie`,
+`isDatumRekenExpr`, `lowerVal`, `companionOperand` en
+`Stratificatie.verzamelReads` erbij naast `startpuntCompanions`. De
+loader controleert nu de verplichte velden van Let/BinderRef/IfThenElse
+(luide Refusal met vorm + veld, in plaats van een naamloze NPE of — bij
+een BinderRef zonder type — een stil doorspelende drager), en de twee
+aanroeperloze `transpile`-overloads zijn weg.
