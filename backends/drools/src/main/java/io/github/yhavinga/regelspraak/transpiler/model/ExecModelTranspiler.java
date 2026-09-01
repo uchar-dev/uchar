@@ -147,7 +147,6 @@ public final class ExecModelTranspiler {
      *  {@code DrlTranspiler.LoweredConditie}'s inline + extra split. */
     private record Gate(PatternDSL.PatternDef pattern, List<RuleItemBuilder<?>> extra) {}
 
-    private ExecModelTranspiler(RegelSpraakModel m) { this(m, null); }
     private ExecModelTranspiler(RegelSpraakModel m, ClassLoader beanLoader) {
         this.model = m;
         this.dagsoorten = new Dagsoorten(m);
@@ -161,12 +160,9 @@ public final class ExecModelTranspiler {
      *  keeps the bare name, so all name-keyed mechanisms are unaffected. Mirrors DrlTranspiler's header prefix. */
     private String kop(String geëmitteerdeNaam) { return model.geëmitteerdeRegelNaam(geëmitteerdeNaam); }
 
-    public static Model transpile(RegelSpraakModel m) { return transpile(m, null); }
-    /** As {@link #transpile(RegelSpraakModel)} but resolves fact beans against {@code beanLoader} (card fase 1:
-     *  the child-loaded-bean shape); null routes to this transpiler's own loader (identical to the 1-arg form). */
-    public static Model transpile(RegelSpraakModel m, ClassLoader beanLoader) { return new ExecModelTranspiler(m, beanLoader).run(); }
-    /** As {@link #transpile} but also exposes the skipped-construct reasons (for the differential harness to
-     *  decide a fixture is "not yet migrated" rather than a divergence). */
+    /** Build the exec {@link Model} AND expose the skipped-construct reasons (for the differential harness to
+     *  decide a fixture is "not yet migrated" rather than a divergence). Fact beans resolve against
+     *  {@code beanLoader}; null routes to this transpiler's own loader. */
     public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader) {
         return build(m, beanLoader, List.of(), java.util.Map.of(), java.util.Map.of());
     }
