@@ -12,9 +12,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * IR-SPEC ch. 4.10 — the four FENCES and the three structural WALKS that must see through a Let-cluster
- * CARRIER, witnessed through {@link CaseRunner#speelCase} over models authored HERE (no corpus file is read,
- * moved or touched).
+ * IR-SPEC ch. 4.10 — the FENCES a Let-cluster CARRIER must keep, the structural WALKS that must see through
+ * it, and the two paths a walk must NOT see through, witnessed via {@link CaseRunner#speelCase} over models
+ * authored HERE (no corpus file is read, moved or touched).
  *
  * <p>The sibling {@code LetClusterWitnessTest} pins what the Let cluster COMPUTES. This file pins the other
  * half — what the carrier HIDES. To every generic {@code Expr} tree walk the carrier is an opaque
@@ -35,7 +35,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       of a negative number (§6.6) must raise the SAME Inconsistentie as the bare form — each is pinned
  *       beside its bare twin in one method, so an implementation that raises neither fails on the twin too —
  *       and a Breuk behind a Let must route the comparison through the exact helper instead of a
- *       {@code (BigDecimal)} cast that throws.</li>
+ *       {@code (BigDecimal)} cast that throws;</li>
+ *   <li><b>the two paths those walks must NOT see through.</b> A §6.5 division in the branch ch. 10.2 does not
+ *       take, and one in a body ch. 10.6's leeg-barrier never lets run: descending there fabricates a
+ *       companion for code that never executes — INCONSISTENT where ref says consistent, which is a wrong
+ *       ANSWER, not an over-cautious refusal. Each is pinned beside the flank where the fault IS real.</li>
  * </ul>
  */
 class LetDragerWandelingWitnessTest {
@@ -127,6 +131,37 @@ class LetDragerWandelingWitnessTest {
         String invoer = inst("J1", "Jutter", "\"saldo\": { \"number\": \"-4.00\" }", "");
         assertNull(speel(wortelModel(false), geval(invoer, verwacht)), "de kale wortel van negatief");
         assertNull(speel(wortelModel(true), geval(invoer, verwacht)), "dezelfde wortel achter een Let");
+    }
+
+    // ---------------- 4. the other half: a companion the walk must NOT fabricate ----------------
+
+    @Test void een_deling_in_de_niet_genomen_tak_levert_geen_fout() throws Exception {
+        // ch. 10.2 evaluates EXACTLY the chosen branch. The DAN branch divides by `deler`, which is absent; the
+        // condition is false (a = 1,00, not > 100), so that division never runs. A §6.5 companion built off it
+        // would fire anyway — the companion rule is a SEPARATE rule keyed on "dividend present, divisor leeg"
+        // and cannot see which branch ran — and this backend would answer INCONSISTENT where ref answers
+        // consistent. So the walk descends only into the CERTAINLY evaluated children (the condition operands).
+        // ref on BOTH models with `deler` absent: uit = 7.0000, CONSISTENT. Pinned bare (the IfThenElse as the
+        // rule value) AND inside a Let body, because the carrier hides the branches in both shapes.
+        String verwacht = waarde("J1", "uit", "7.0000") + ", " + consistent();
+        String invoer = inst("J1", "Jutter",
+                "\"a\": { \"number\": \"1.00\" }, \"inkomen\": { \"number\": \"10.00\" }", "");
+        assertNull(speel(nietGenomenTakModel(false), geval(invoer, verwacht)), "de kale keuze");
+        assertNull(speel(nietGenomenTakModel(true), geval(invoer, verwacht)), "dezelfde keuze in een Let-body");
+    }
+
+    @Test void een_deling_achter_een_nooit_gepasseerde_leeg_barriere_levert_geen_fout() throws Exception {
+        // ch. 10.6: a leeg value makes the whole Let leeg and the BODY NEVER RUNS. Here `deler` (the value) is
+        // absent, so the body's division by the equally absent `tweede` never happens — no §6.5 fault. The bare
+        // twin is the same division WITHOUT the barrier, where the fault is real: pinning both in one method
+        // keeps the fix honest in both directions (an implementation that simply stopped collecting divisions
+        // would pass the first flank and fail the second).
+        // ref: bare -> uit leeg + INCONSISTENT; behind the barrier -> uit leeg + CONSISTENT.
+        String invoer = inst("J1", "Jutter", "\"inkomen\": { \"number\": \"10.00\" }", "");
+        assertNull(speel(leegBarriereModel(false), geval(invoer, leeg("J1", "uit") + ", " + inconsistent())),
+                "de kale deling door leeg");
+        assertNull(speel(leegBarriereModel(true), geval(invoer, leeg("J1", "uit") + ", " + consistent())),
+                "dezelfde deling in een body achter een leeg-barriere");
     }
 
     @Test void een_breuk_achter_een_let_vergelijkt_exact_in_plaats_van_te_crashen() throws Exception {
@@ -412,6 +447,36 @@ class LetDragerWandelingWitnessTest {
         String waarde = achterLet ? let("t", w, bref("t", num(4)), num(4)) : w;
         return doc(objecttype("Jutter", "Jutters",
                         "\"saldo\":%s,\"uit\":%s".formatted(num(2), num(4)), "", ""),
+                "", "", new String[]{"uit van een jutter"},
+                new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), waarde)}, "");
+    }
+
+    /** ch. 10.2: a §6.5 division in the branch the condition does NOT take — the IfThenElse bare as the rule
+     *  value, or wrapped in a Let whose binder feeds the condition. */
+    private static String nietGenomenTakModel(boolean inLetBody) {
+        String deling = binair("GEDEELD_DOOR", attr("Jutter", "inkomen", pos(2)),
+                attr("Jutter", "deler", pos(2)), num(4));
+        String links = inLetBody ? bref("a", pos(2)) : attr("Jutter", "a", pos(2));
+        String keuze = ite(verg("GROTER", links, lit("100", GEHEEL_POS)),
+                deling, lit("7.0000", num(4)), num(4));
+        String waarde = inLetBody ? let("a", attr("Jutter", "a", pos(2)), keuze, num(4)) : keuze;
+        return doc(objecttype("Jutter", "Jutters",
+                        "\"a\":%s,\"inkomen\":%s,\"deler\":%s,\"uit\":%s"
+                                .formatted(pos(2), pos(2), pos(2), num(4)), "", ""),
+                "", "", new String[]{"uit van een jutter"},
+                new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), waarde)}, "");
+    }
+
+    /** ch. 10.6: the same §6.5 division, bare or as the BODY of a Let whose value is leeg (the barrier). */
+    private static String leegBarriereModel(boolean achterBarriere) {
+        String deling = binair("GEDEELD_DOOR", attr("Jutter", "inkomen", pos(2)),
+                attr("Jutter", "tweede", pos(2)), num(4));
+        String waarde = achterBarriere
+                ? let("d", attr("Jutter", "deler", pos(2)), deling, num(4))
+                : deling;
+        return doc(objecttype("Jutter", "Jutters",
+                        "\"inkomen\":%s,\"deler\":%s,\"tweede\":%s,\"uit\":%s"
+                                .formatted(pos(2), pos(2), pos(2), num(4)), "", ""),
                 "", "", new String[]{"uit van een jutter"},
                 new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), waarde)}, "");
     }
