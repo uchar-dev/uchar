@@ -95,6 +95,70 @@ Meetpunten uit fase 1 (Let-node-kaart, done 2026-09-01):
   (vervolgkaart 20260901-companion-onder-drager) — nieuwe goldens met
   delingen ín Let-bodies raken die grens.
 
+Meetpunten uit golf C (de frontend lowert het variabelendeel, 2026-09-01):
+- **De union groeide met TWEE nodes, niet drie.** `Expr` draagt nu
+  `Let(binder, value, body, type, bron)` en `BinderRef(naam, type, bron)`;
+  `IfThenElse` NIET (die blijft emitter-vrij). Rimpel: alleen
+  `IrEmitter.expr` viel om (de enige exhaustieve switch op `Expr` in de
+  hele boom); `Expr.bevat` kreeg met de hand een `Let`-arm (value én body
+  — elke aanroeper stelt een STRUCTURELE vraag). In `backends/drools`
+  brak niets: elke walk daar is een instanceof-cascade met een
+  fall-through. Dat is precies het gevaar (een onbekende node is er een
+  opake LEAF, dus stille onderrapportage), dus
+  `ExecModelTranspiler.geenUnieLet` faalt nu hard op een union-Let/
+  BinderRef, aangeroepen vanuit de vier plekken die `letVormen`
+  raadplegen (`scalarWaarde`, `letKinderen`, `letKinderenZeker`,
+  `leestAltijd`). De loader blijft de wire-Let naar drager+zijkanaal
+  parsen: één vorm voor het hele ch.-4.10-cluster in plaats van een
+  half-union/half-kanaal (reden bijgewerkt op `LetVorm`/`IrLoader`).
+- **Resolverkeuze 1 — voorwaarde-variabelen blijven substitutie.** De
+  wire heeft twee velden (`voorwaarde`: Conditie, `waarde`: Expr) en geen
+  Expr-node overspant ze. Een variabele die alleen de voorwaarde leest
+  houdt dus de v0-route. Eerlijk gezegd: dat kost SHARING (een variabele
+  die tweemaal in één voorwaarde gelezen wordt, wordt tweemaal
+  uitgerekend), geen antwoord — een voorwaarde-lezing evalueert sowieso
+  één keer, en de leeg-barrière op de leesplek valt daar samen met de
+  §5-leeg-operanddiscipline die de vergelijking al toepast.
+- **Resolverkeuze 2 — GEEN dode Lets, ook niet bij nul lezingen.** Het
+  besluit-5-woord "élke variabele wordt een Let, ook bij nul lezingen"
+  is één stap verder gegeneraliseerd: een Let wordt geëmitteerd voor
+  elke variabele die het resultaat leest (direct of via de value van een
+  latere Let — de keten wordt van binnen naar buiten gebouwd, dus dat is
+  transitief gratis), en voor géén andere. Reden: de kaart geeft zelf de
+  motivatie ("vervuilt de wire") voor de voorwaarde-only-variabele, en
+  die geldt woordelijk net zo hard voor de nergens-gelezen variabele;
+  één uniforme regel is eerlijker uit te leggen dan een uitzondering op
+  een uitzondering. **Afwijking van de letterlijke besluittekst,
+  expliciet gemeld.**
+- **BEVINDING: toka-18 wordt GEEN derde holdout.** Gemeten: toka-18's
+  `X` wordt UITSLUITEND in de voorwaarde gelezen en zijn resultaatdeel
+  is een kenmerktoekenning (waarde = de synthetische `Literal "waar"`),
+  dus onder keuze 1+2 verandert er niets aan zijn wire-vorm. De hele
+  casusdump re-emitteert byte-identiek (45 fragmenten, gate 11 groen met
+  de bestaande TWEE holdouts). Besluit 5's verwachting berustte op de
+  "volle lowering"-lezing zonder de voorwaarde-carve-out. Geen andere
+  toka-slice draagt een variabelendeel (18/23/45 zijn de enige drie).
+- **Scope-grens, bewust:** de Let-keten omhult de `waarde`-slot van een
+  ResolvedRegel (gelijkstelling/berekening/initialisatie + het
+  startpunt-anker). Verdeling-bedragen, objectcreatie-toekenningen,
+  feitcreatie en de consistentie-assertie houden de inline-route — een
+  assertie is een Conditie (kan geen Expr-Let dragen) en de andere
+  dragen meerdere onafhankelijke waardeslots die één keten niet
+  overspant. Geen corpus- of pariteitsmateriaal raakt ze.
+- **Getuigen:** `corpus/golden/jutterswet-lichterloon` (sharing: één Let,
+  twee BinderRefs), `corpus/golden/jutterswet-vondstrecht` (de
+  leeg-barrière — gemeten tegen de ingelijnde variant van dezelfde IR:
+  30 vs. leeg), `corpus/golden/synth3-takbarriere` (probe B1,
+  handgeschreven: ongelezen binder in de niet-genomen tak → doel
+  geschreven).
+- **Tellingen (alle twaalf groen):** 2 = 164 (was 161); 3 = 164/178;
+  4 = 402 casebestanden; 5/6 = 380 (was 377); 7 = 344 weerleggend / 36
+  survivors (ONGEWIJZIGD — alle drie nieuwe cases weerleggen de no-op);
+  8 = 22 rood; 9 = 201/12; 10 = 152 tests (was 144) / 25 rgs-goldens
+  (was 23, de 23 oude byte-identiek); 11 = 45 fragmenten / 2 holdouts /
+  27 tests / 29 replays; 12 = played 101 (was 98 — alle drie de nieuwe
+  goldens spelen) / 39 auto-excluded / 1 value-divergence / JUnit 125.
+
 Meetpunten uit golf B (Drools van strikt naar L, 2026-09-01):
 - **De spiegelrestpost, herschreven en GROTER.** `letKinderenZeker`
   levert onder L een Binding-value alleen nog als de body de binder op
