@@ -3721,8 +3721,10 @@ public final class ExecModelTranspiler {
                     case MIN            -> RegelSpraakRuntime.rsMin(lv, rv);
                     case VERMINDERD_MET -> RegelSpraakRuntime.rsVerminderd(lv, rv);
                     case MAAL           -> RegelSpraakRuntime.rsMaal(lv, rv);
-                    case GEDEELD_DOOR   -> RegelSpraakRuntime.rsGedeeld(lv, rv);
-                    case GEDEELD_DOOR_ABS -> RegelSpraakRuntime.rsGedeeldAbs(lv, rv);   // §6.5 (5 dec, toward zero)
+                    // §6.5 Tabel 12: a filled dividend over a leeg divisor is the Fout the value side degrades to
+                    // leeg — reported to the path probe of the site's companion (a no-op without one, see Sonde).
+                    case GEDEELD_DOOR   -> { if (lv != null && rv == null) Sonde.meld(gm, b); yield RegelSpraakRuntime.rsGedeeld(lv, rv); }
+                    case GEDEELD_DOOR_ABS -> { if (lv != null && rv == null) Sonde.meld(gm, b); yield RegelSpraakRuntime.rsGedeeldAbs(lv, rv); }   // §6.5 (5 dec, toward zero)
                     case PERCENTAGE_VAN -> RegelSpraakRuntime.rsPercentageVan(lv, rv);
                     default             -> null;   // unreachable (arithmeticOp gates)
                 };
@@ -3749,6 +3751,48 @@ public final class ExecModelTranspiler {
      */
     private static String binderSleutel(String binder) {
         return "binder " + (binder == null ? "" : binder.toLowerCase(java.util.Locale.ROOT));
+    }
+
+    /**
+     * The §6.5/§6.6 fout-companion's <b>path probe</b>. A division or wortel that sits under a ch. 4.10 carrier
+     * (a Let, an IfThenElse) faults only if its site is actually EVALUATED, and under ch. 10.2 (exactly one
+     * branch runs) and ch. 10.6 (call-by-need; the leeg-barrier at the read) that depends on which branch the
+     * guard takes, which reads force which needs, and in what ORDER — a read left of the site can end the Let
+     * before the site is reached, a read right of it cannot. No static predicate over the operands can say
+     * that; the value lowering can, because it IS that operational semantics ({@link #letWaarde}: the
+     * {@link Binderslot} thunk, the per-evaluation {@link Barriere}, the branch guard). So such a companion
+     * re-evaluates the OUTERMOST carrier's own {@link WaardeFn} on the subject with a probe planted in the
+     * environment map under {@link #SLEUTEL}, and every §6.5/§6.6 site that faults while running reports
+     * itself here (the division arm of {@link #scalarWaarde}, the wortel arm of {@link #scalarWrapper}). A site
+     * on a path that does not run — the branch not taken, a value no read forces, anything behind a read that
+     * raised a barrier first — never executes, so it never reports: the companion's condition is exactly
+     * ref's ({@code ref/lib/eval.ml}), including evaluation order, which is measured, not modelled.
+     *
+     * <p>The outermost carrier is the right unit to probe: every non-carrier form the companion walks descend
+     * (Binair, Afgerond, Begrensd, a Functie's arguments) evaluates ALL its children unconditionally, here and
+     * in ref, and a barrier never escapes the Let that raised it — so a carrier at the top of its path runs
+     * exactly when the host value runs, and a site with no carrier above it keeps its static leeg/negatief
+     * predicate (unchanged v0 behaviour, DRL parity). The aggregation-arithmetic path ({@link #lowerVal})
+     * lowers no carrier at all (a host with one there skips, and skips its companions with it), so every
+     * carrier-hosted site is under {@link #scalarWaarde}, which is what the probe re-lowers.
+     *
+     * <p>Session-safe for the same reason {@link Binderslot} is: created inside the companion's consequence,
+     * planted in that invocation's own map (which a {@code Let} copies, carrying the reference along), and
+     * discarded with it. The host rule's own evaluation carries no probe, so a report there is a null-checked
+     * no-op. Identity-keyed: two structurally equal sites in one value are two companions.
+     */
+    private static final class Sonde {
+        /** The environment slot the probe rides in — a space, which {@code Namen.ident} can never produce, so
+         *  no Parameter global and no {@link #binderSleutel binder slot} can collide with it. */
+        static final String SLEUTEL = "sonde fout";
+        private final Set<Expr> gemeld = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+
+        /** Report a §6.5/§6.6 fault at {@code plek} — a no-op when no probe rides this evaluation. */
+        static void meld(Map<?, ?> gm, Expr plek) {
+            if (gm.get(SLEUTEL) instanceof Sonde sonde) sonde.gemeld.add(plek);
+        }
+
+        boolean heeftGemeld(Expr plek) { return gemeld.contains(plek); }
     }
 
     /**
@@ -3923,10 +3967,12 @@ public final class ExecModelTranspiler {
     }
 
     /** ALL {@link Expr} children a ch. 4.10 CARRIER hides from the generic tree walks: a Let's value+body, an
-     *  IfThenElse's two branches and EVERY Expr operand of its condition. Empty for a non-carrier. The
-     *  POSSIBLY-evaluated set, not the certainly-evaluated one — {@link #letKinderenZeker} is that, and which
-     *  accessor a walk takes is decided by what its output IS (the inventory is enumerated on {@code LetVorm}).
-     *  A walk that consults neither silently under-reports and answers wrong. */
+     *  IfThenElse's two branches and EVERY Expr operand of its condition. Empty for a non-carrier. This is the
+     *  POSSIBLY-evaluated set — which children actually run is a fire-time question (ch. 10.2/10.6), and the
+     *  one walk whose output is an ANSWER rather than a refusal or registration (the §6.5/§6.6 companions)
+     *  settles it at fire time through the path probe ({@link Sonde}), never by seeing less here. The
+     *  inventory of walks is enumerated on {@code LetVorm}; a walk that does not consult this silently
+     *  under-reports and answers wrong. */
     private List<Expr> letKinderen(Expr e) {
         geenUnieLet(e);
         io.github.yhavinga.regelspraak.loader.LetVorm lv = e == null ? null : letVormen.get(e);
@@ -3941,143 +3987,6 @@ public final class ExecModelTranspiler {
     }
 
     /**
-     * The {@link Expr} children a ch. 4.10 CARRIER hides that are CERTAIN to be evaluated whenever the carrier
-     * itself is — a strict subset of {@link #letKinderen}. A Binding contributes its {@code value} only when the
-     * body reads its binder on EVERY path ({@link #leestAltijd}): ch. 10.6 is call-by-need, so an unread — or
-     * only-conditionally-read — binder never forces the value at all. A Keuze contributes its CONDITION operands
-     * only: ch. 10.2 evaluates exactly ONE of the two branches, so neither branch qualifies. A Lezing
-     * contributes nothing (it reads the environment).
-     *
-     * <p><b>Why two accessors.</b> Seeing MORE than runs is safe exactly where a walk's output is a REFUSAL or a
-     * REGISTRATION: {@code bevatDeling} (the ch. 7 defaults division fence) then refuses more often,
-     * {@code navRefs} watches more, {@code exprLeesnamen} sinks a salience further, {@code kanBreukOpleveren}
-     * routes a comparison through the exact helper where the plain one would also have served — each still a
-     * CORRECT answer. It is NOT safe for the §6.5/§6.6 fout-companions, because a companion IS an answer: one
-     * built off a branch that is never taken, or off a value no read ever forces, makes this backend report
-     * INCONSISTENT where ref reports consistent. {@link #verzamelDelingen} and {@link #verzamelWortels}
-     * therefore ask HERE.
-     *
-     * <p><b>The converse limit, stated because it is real — and WIDER under call-by-need.</b> A companion is a
-     * SEPARATE static rule keyed on the operands' leegte (see {@link #delingCompanions}) with no way to test
-     * which path ran, so three shapes get no companion where ref does raise the fault: (a) a fault inside the
-     * branch ch. 10.2 DOES take; (b) a fault inside a {@code Let} BODY — under ch. 10.6 the body always runs, so
-     * this is now a miss on every Let-body division/wortel, where under the strict binding it was a miss only
-     * when the value was filled; (c) a fault inside a value whose binder is read on SOME but not every path, or
-     * whose read {@link #leestAltijd} cannot certify. Under-reporting is the price of never fabricating on a
-     * path that does not run — the certainly-evaluated set is exactly the boundary at which a static companion
-     * can still be honest.
-     */
-    private List<Expr> letKinderenZeker(Expr e) {
-        geenUnieLet(e);
-        io.github.yhavinga.regelspraak.loader.LetVorm lv = e == null ? null : letVormen.get(e);
-        if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Binding b) {
-            // ch. 10.6 clause 1: the value runs exactly when some read forces it — so it is CERTAIN only when
-            // the body reads this binder on every path, ahead of anything that could end the path first.
-            return leestAltijd(b.body(), binderSleutel(b.binder())) == Lees.ALTIJD_DEZE
-                    ? List.of(b.value()) : List.of();
-        }
-        if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Keuze k) {
-            List<Expr> uit = new ArrayList<>();
-            conditieOperanden(k.conditie(), uit);   // the condition ALWAYS runs; the two branches do not
-            return uit;
-        }
-        return List.of();   // a non-carrier, or a BinderRef (it reads only the environment)
-    }
-
-    /**
-     * What {@link #leestAltijd} can certify about one expression and one binder slot {@code s} that is bound
-     * OUTSIDE that expression. Three answers, and the two definite ones are what compose.
-     */
-    private enum Lees {
-        /** Every evaluation reaches a read of {@code s}, with no read of another outside-bound binder anywhere
-         *  before it — so nothing can raise a foreign barrier and end the expression short of that read. */
-        ALTIJD_DEZE,
-        /** The expression reads no outside-bound binder at all: it can neither reach {@code s} nor raise a
-         *  barrier that would truncate a sibling. (Reads of binders bound INSIDE it do not count — their
-         *  barrier is caught by their own {@code Let} and evaluation continues with a leeg value.) */
-        GEEN_LEZING,
-        /** Anything else — the never-fabricate answer. */
-        ONZEKER
-    }
-
-    /**
-     * Does every evaluation path of {@code e} read the binder slot {@code sleutel}? The question ch. 10.6's
-     * call-by-need forces on {@link #letKinderenZeker}: a value is certainly evaluated exactly when some read
-     * certainly demands it.
-     *
-     * <p>Deliberately conservative — {@link Lees#ONZEKER} at any doubt, because the consumer's output is an
-     * ANSWER (a §6.5/§6.6 companion) and a wrong one is INCONSISTENT where ref says consistent. Three points
-     * carry the conservatism:
-     * <ul>
-     *   <li><b>a foreign read can end the path.</b> Reading ANOTHER binder whose need is leeg raises THAT Let's
-     *       barrier, which unwinds past everything after it — so {@code ALTIJD_DEZE} requires the subtree to
-     *       hold no other outside-bound read at all, not merely to hold this one. That also makes the answer
-     *       independent of evaluation ORDER, which no walk here should have to know;</li>
-     *   <li><b>an IfThenElse condition counts as always-read</b> (ch. 10.2 evaluates it on both paths), a branch
-     *       only when BOTH branches read;</li>
-     *   <li><b>a nested Let respects shadowing</b>: inside its body the name resolves to the INNER binder, so an
-     *       outer read there is not this one. The outer binder is still reachable through the inner VALUE, which
-     *       the enclosing path forces exactly when the inner body certainly reads the inner binder.</li>
-     * </ul>
-     *
-     * <p>Ordinary (non-carrier) nodes: the forms whose every {@code Expr} child is certainly evaluated compose
-     * their children; anything else answers {@code GEEN_LEZING} when it provably hides no carrier at all
-     * ({@code Expr.bevat}, whose leaf arms are exactly the child-less records) and {@code ONZEKER} otherwise —
-     * an aggregation's element expression may run zero times, a leegwaarde fallback conditionally, so neither
-     * may claim certainty.
-     */
-    private Lees leestAltijd(Expr e, String sleutel) {
-        if (e == null) return Lees.GEEN_LEZING;
-        geenUnieLet(e);   // the final fall-through treats any unknown node as a leaf — a union Let must never get there
-        io.github.yhavinga.regelspraak.loader.LetVorm lv = letVormen.get(e);
-        if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Lezing lz) {
-            return binderSleutel(lz.naam()).equals(sleutel) ? Lees.ALTIJD_DEZE : Lees.ONZEKER;
-        }
-        if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Keuze k) {
-            List<Expr> operanden = new ArrayList<>();
-            conditieOperanden(k.conditie(), operanden);
-            Lees conditie = samen(operanden, sleutel);
-            if (conditie == Lees.ALTIJD_DEZE || conditie == Lees.ONZEKER) return conditie;
-            return samenTakken(leestAltijd(k.dan(), sleutel), leestAltijd(k.anders(), sleutel));
-        }
-        if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Binding b) {
-            String binnen = binderSleutel(b.binder());
-            Lees naarBinnen = leestAltijd(b.body(), binnen);
-            // the inner body reads nothing outside itself: the inner need is never forced, so neither the
-            // inner value nor any barrier of its own can play a part.
-            if (naarBinnen == Lees.GEEN_LEZING) return Lees.GEEN_LEZING;
-            // the inner need IS forced first on every path, and (by ALTIJD_DEZE) nothing else is read before
-            // it — so what the enclosing path certainly reaches is the inner VALUE, in the enclosing scope.
-            if (naarBinnen == Lees.ALTIJD_DEZE) return leestAltijd(b.value(), sleutel);
-            // otherwise the outer binder can still be read in the body — unless the inner binder shadows it.
-            // (GEEN_LEZING is impossible below: it is name-independent and would have returned above.)
-            return binnen.equals(sleutel) ? Lees.ONZEKER : leestAltijd(b.body(), sleutel);
-        }
-        if (e instanceof Expr.Binair bin) return samen(List.of(bin.links(), bin.rechts()), sleutel);
-        if (e instanceof Expr.Afgerond a) return leestAltijd(a.basis(), sleutel);
-        if (e instanceof Expr.Begrensd bg) return samen(List.of(bg.basis(), bg.minimum(), bg.maximum()), sleutel);
-        return Expr.bevat(e, letVormen::containsKey) ? Lees.ONZEKER : Lees.GEEN_LEZING;
-    }
-
-    /** {@link #leestAltijd} over children that ALL certainly run: one doubt poisons, no read anywhere is
-     *  read-free, and otherwise the read is certain (order-independently — see the "foreign read" point). */
-    private Lees samen(List<Expr> kinderen, String sleutel) {
-        Lees uit = Lees.GEEN_LEZING;
-        for (Expr k : kinderen) {
-            Lees deel = leestAltijd(k, sleutel);
-            if (deel == Lees.ONZEKER) return Lees.ONZEKER;
-            if (deel == Lees.ALTIJD_DEZE) uit = Lees.ALTIJD_DEZE;
-        }
-        return uit;
-    }
-
-    /** {@link #leestAltijd} over the two ch. 10.2 branches, of which exactly ONE runs: only an answer both
-     *  agree on survives. */
-    private static Lees samenTakken(Lees dan, Lees anders) {
-        return dan == anders ? dan : Lees.ONZEKER;
-    }
-
-    /**
      * Every {@link Expr} operand a {@link Conditie} carries, recursively through a Samengesteld. Deliberately
      * form-COMPLETE rather than restricted to the {@link #letConditie} shapes the ch. 10.2 guard actually
      * lowers: coupling the two would make a structural collector depend, silently, on which condition forms a
@@ -4088,8 +3997,9 @@ public final class ExecModelTranspiler {
      * will not lower makes its Keuze lower to null, which skips the whole rule LOUDLY — so operands collected
      * from such a shape never reach a rule that plays. It is emphatically NOT an "extra fault is harmless"
      * argument: an extra §6.5/§6.6 companion is a WRONG ANSWER (inconsistent where ref says consistent), not a
-     * refusal. That is why the two companion walks reach a condition only through {@link #letKinderenZeker},
-     * where the operands are the ones that certainly run.
+     * refusal. The two companion walks therefore never decide from this collection alone: a site they find
+     * under a carrier gets a companion whose condition is the path probe ({@link Sonde}), which fires only
+     * when the site actually ran.
      */
     private static void conditieOperanden(Conditie c, List<Expr> uit) {
         if (c instanceof Conditie.Vergelijking v) {
@@ -4412,7 +4322,14 @@ public final class ExecModelTranspiler {
             WaardeFn rad = scalarWaarde(valueSubject, f.argumenten().get(0));
             if (rad == null) return null;
             BiFunction<Object, Map<String, BigDecimal>, Object> rfn = rad.fn();
-            return new WaardeFn((s, gm) -> RegelSpraakRuntime.rsWortel(rfn.apply(s, gm)), rad.globals());
+            return new WaardeFn((s, gm) -> {
+                Object radicand = rfn.apply(s, gm);
+                // §6.6: a negative radicand is the Fout the value side degrades to leeg — reported to the path
+                // probe of the site's companion (a no-op without one, see Sonde). toBd reduces a Breuk exactly.
+                BigDecimal getal = RegelSpraakRuntime.toBd(radicand);
+                if (getal != null && getal.signum() < 0) Sonde.meld(gm, f);
+                return RegelSpraakRuntime.rsWortel(radicand);
+            }, rad.globals());
         }
         return null;
     }
@@ -5969,9 +5886,16 @@ public final class ExecModelTranspiler {
         return navReader(a, subject);   // own attribute or to-one navigated (null for to-many / absent / unresolvable)
     }
 
+    /** A §6.5 division or §6.6 wortel SITE in a rule value, with the OUTERMOST ch. 4.10 carrier on the path from
+     *  the value root down to it — null when there is none, in which case the site runs whenever the value does
+     *  and its companion keeps the static leeg/negatief predicate; otherwise the companion's condition is the
+     *  path probe over that carrier ({@link Sonde}). */
+    private record Plek<T extends Expr>(T site, Expr drager) {}
+
     /** §6.5 Tabel 12 "waarde gedeeld door leeg" companion: the value side already degrades the division to leeg
      *  (rsGedeeld), so this surfaces the Fout via the §9.5 Inconsistentie channel — a SEPARATE insert-only rule per
-     *  division that fires when the dividend is present and the divisor is empty (and the host voorwaarde holds).
+     *  division that fires when the dividend is present and the divisor is empty (and the host voorwaarde holds),
+     *  and — for a division under a ch. 4.10 carrier — only when the division's path actually RAN ({@link Sonde}).
      *  Scope: each operand is the subject's OWN attribute or one reached by a to-ONE navigation (companionOperand).
      *  Mirrors DrlTranspiler.deelDoorLeegFout. */
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -5981,41 +5905,34 @@ public final class ExecModelTranspiler {
         Class<?> factClass = factClass(subject);
         Class<?> incClass = inconsistentieClass();
         if (factClass == null || incClass == null) return List.of();
-        List<Expr.Binair> delingen = new ArrayList<>();
-        verzamelDelingen(r.waarde(), delingen);
+        List<Plek<Expr.Binair>> delingen = new ArrayList<>();
+        verzamelDelingen(r.waarde(), null, delingen);
         // First collect the QUALIFYING divisions (both operands a re-readable own OR to-one navigated attribute),
         // mirroring DRL's `patronen` (companionDeel accepts EIGEN and GENAVIGEERD), so the companion-name suffix
         // indexes over the SAME filtered list in BOTH back-ends. Indexing over the raw `delingen` count diverged from
         // DRL when a rule mixes qualifying and non-qualifying divisions (e.g. a §11 division variable inlined next to a
         // parameter division): DRL named the lone qualifier "(deling door leeg)", the model "(deling door leeg 1)".
-        List<Expr.Binair> kwalificeren = new ArrayList<>();
-        for (Expr.Binair d : delingen)
-            if (companionOperand(d.links(), subject) != null && companionOperand(d.rechts(), subject) != null)
-                kwalificeren.add(d);
+        // A carrier-hosted division counts in the same index (DRL lowers no Let at all, so there is no parity to
+        // keep there): the suffix is per qualifying site, whatever decides its condition.
+        List<Plek<Expr.Binair>> kwalificeren = new ArrayList<>();
+        for (Plek<Expr.Binair> p : delingen)
+            if (companionOperand(p.site().links(), subject) != null && companionOperand(p.site().rechts(), subject) != null)
+                kwalificeren.add(p);
         List<Rule> companions = new ArrayList<>();
         String naam = r.naam();
         for (int i = 0; i < kwalificeren.size(); i++) {
-            Expr.Binair d = kwalificeren.get(i);
+            Plek<Expr.Binair> plek = kwalificeren.get(i);
+            Expr.Binair d = plek.site();
             // null-safe readers for the dividend/divisor — own attribute or a to-one navigated read (a null relation
             // collapses to leeg, exactly as DRL's root-guarded "(partner != null && partner.x != null)" / "partner.x" forms).
             java.util.function.Function<Object, Object> dividend = companionOperand(d.links(), subject);
             java.util.function.Function<Object, Object> divisor = companionOperand(d.rechts(), subject);
-            seq = 0;
-            Variable sVar = DSL.declarationOf(factClass, "$subject");
-            PatternDSL.PatternDef pattern = PatternDSL.pattern(sVar);
-            List<RuleItemBuilder<?>> gateExtra = List.of();
-            if (r.voorwaarde() != null) {                       // the division only fires when the host gate holds
-                Gate gate = voorwaarde(r.voorwaarde(), pattern, subject, sVar);
-                if (gate == null) continue;                     // unlowerable host voorwaarde -> no companion (DRL: voorwaardeMarker -> return)
-                pattern = gate.pattern();
-                gateExtra = gate.extra();                       // a §8.1.7 far-side membership exists/not -> thread it into the companion (mirror DRL lc.extra())
-            }
-            pattern = geldigGuard(pattern, r.geldigheid());   // §4.2 the companion only flags inside the host's window
             // dividend present AND divisor empty (an empty LEFT short-circuits to 0 -> no fout, so guard the dividend too).
-            pattern = pattern.expr(nextId("dvd"), (Predicate1) s -> dividend.apply(s) != null)
-                    .expr(nextId("dvs"), (Predicate1) s -> divisor.apply(s) == null);
             String compNaam = naam + " (deling door leeg" + (kwalificeren.size() > 1 ? " " + (i + 1) : "") + ")";
-            companions.add(companionRule(compNaam, naam, incClass, sVar, pattern, gateExtra));
+            Rule companion = padCompanion(r, subject, factClass, incClass, compNaam, plek,
+                    pattern -> pattern.expr(nextId("dvd"), (Predicate1) s -> dividend.apply(s) != null)
+                            .expr(nextId("dvs"), (Predicate1) s -> divisor.apply(s) == null));
+            if (companion != null) companions.add(companion);
         }
         return companions;
     }
@@ -6023,7 +5940,8 @@ public final class ExecModelTranspiler {
     /** §6.6 "wortel van een negatief getal" companion: the value side degrades a negative-radicand root to leeg
      *  (rsWortel), so this surfaces the Fout via the §9.5 Inconsistentie channel — a SEPARATE insert-only rule per
      *  wortel whose radicand (own attribute or a to-ONE navigation, companionOperand) is &lt; 0 (and the host
-     *  voorwaarde holds). Mirrors DrlTranspiler.wortelNegatiefFout. */
+     *  voorwaarde holds), and — for a wortel under a ch. 4.10 carrier — only when its path actually RAN
+     *  ({@link Sonde}). Mirrors DrlTranspiler.wortelNegatiefFout. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private List<Rule> wortelCompanions(ResolvedRegel r) {
         if (!(r.doel() instanceof Expr.AttribuutRef doel) || doel.objecttype() == null) return List.of();
@@ -6031,37 +5949,28 @@ public final class ExecModelTranspiler {
         Class<?> factClass = factClass(subject);
         Class<?> incClass = inconsistentieClass();
         if (factClass == null || incClass == null) return List.of();
-        List<Expr.Functie> wortels = new ArrayList<>();
-        verzamelWortels(r.waarde(), wortels);
+        List<Plek<Expr.Functie>> wortels = new ArrayList<>();
+        verzamelWortels(r.waarde(), null, wortels);
         // Collect the QUALIFYING wortels (radicand a re-readable own OR to-one navigated attribute), so the
         // companion-name suffix indexes over the SAME filtered list as DRL's wortelNegatiefFout `guards`.
-        List<Expr.Functie> kwalificeren = new ArrayList<>();
-        for (Expr.Functie w : wortels)
-            if (w.argumenten().size() == 1 && companionOperand(w.argumenten().get(0), subject) != null)
-                kwalificeren.add(w);
+        List<Plek<Expr.Functie>> kwalificeren = new ArrayList<>();
+        for (Plek<Expr.Functie> p : wortels)
+            if (p.site().argumenten().size() == 1 && companionOperand(p.site().argumenten().get(0), subject) != null)
+                kwalificeren.add(p);
         List<Rule> companions = new ArrayList<>();
         String naam = r.naam();
         for (int i = 0; i < kwalificeren.size(); i++) {
+            Plek<Expr.Functie> plek = kwalificeren.get(i);
             // null-safe reader for the radicand — own attribute or a to-one navigated read (null relation -> leeg).
-            java.util.function.Function<Object, Object> radicand = companionOperand(kwalificeren.get(i).argumenten().get(0), subject);
-            seq = 0;
-            Variable sVar = DSL.declarationOf(factClass, "$subject");
-            PatternDSL.PatternDef pattern = PatternDSL.pattern(sVar);
-            List<RuleItemBuilder<?>> gateExtra = List.of();
-            if (r.voorwaarde() != null) {
-                Gate gate = voorwaarde(r.voorwaarde(), pattern, subject, sVar);
-                if (gate == null) continue;                     // unlowerable host voorwaarde -> no companion (DRL: voorwaardeMarker -> return)
-                pattern = gate.pattern();
-                gateExtra = gate.extra();                       // a §8.1.7 far-side membership exists/not -> thread it into the companion (mirror DRL lc.extra())
-            }
-            pattern = geldigGuard(pattern, r.geldigheid());   // §4.2 the companion only flags inside the host's window
+            java.util.function.Function<Object, Object> radicand = companionOperand(plek.site().argumenten().get(0), subject);
             // radicand < 0 (a null radicand is leeg, not negative -> no fout; signum guards null out).
-            pattern = pattern.expr(nextId("rad"), (Predicate1) s -> {
-                Object v = radicand.apply(s);
-                return v != null && ((BigDecimal) v).signum() < 0;
-            });
             String compNaam = naam + " (wortel van negatief" + (kwalificeren.size() > 1 ? " " + (i + 1) : "") + ")";
-            companions.add(companionRule(compNaam, naam, incClass, sVar, pattern, gateExtra));
+            Rule companion = padCompanion(r, subject, factClass, incClass, compNaam, plek,
+                    pattern -> pattern.expr(nextId("rad"), (Predicate1) s -> {
+                        Object v = radicand.apply(s);
+                        return v != null && ((BigDecimal) v).signum() < 0;
+                    }));
+            if (companion != null) companions.add(companion);
         }
         return companions;
     }
@@ -6155,27 +6064,107 @@ public final class ExecModelTranspiler {
         return List.of(PatternDSL.rule(kop(naam + " (gevuurd)")).build(items.toArray(new RuleItemBuilder[0])));
     }
 
-    /** Collect the WORTEL nodes through the arithmetic-wrapper layers of a value (for the §6.6 fout). Mirrors
-     *  DrlTranspiler.verzamelWortels over the shared v0 forms; the ch. 4.10 CARRIER descent is additional
-     *  (the DRL back-end has no Let lowering at all — it markers such a rule whole — so there is nothing to
-     *  keep in step there). Without the descent a Let-wrapped wortel loses its §9.5 companion while ref still
-     *  raises the fault: silently consistent. The descent takes {@link #letKinderenZeker}, NOT the full
-     *  {@code letKinderen}: a companion is an ANSWER, and one built off a path that never runs is inconsistent
-     *  where ref is consistent — the mirror-image wrong. */
-    private void verzamelWortels(Expr e, List<Expr.Functie> uit) {
-        for (Expr k : letKinderenZeker(e)) verzamelWortels(k, uit);
+    /** Collect the WORTEL nodes through the arithmetic-wrapper layers of a value (for the §6.6 fout), each with
+     *  the outermost ch. 4.10 carrier above it. Mirrors DrlTranspiler.verzamelWortels over the shared v0 forms; the
+     *  CARRIER descent is additional (the DRL back-end has no Let lowering at all — it markers such a rule whole —
+     *  so there is nothing to keep in step there). Without the descent a Let-wrapped wortel loses its §9.5
+     *  companion while ref still raises the fault: silently consistent. The descent takes the FULL
+     *  {@link #letKinderen} — every child that MAY run — because a companion is an ANSWER and which child DID
+     *  run is decided at fire time by the path probe over the carrier ({@link Sonde}), never by this walk. */
+    private void verzamelWortels(Expr e, Expr drager, List<Plek<Expr.Functie>> uit) {
+        // the OUTERMOST carrier on the path is fixed once entered; a nested carrier stays under it
+        Expr onder = drager != null ? drager : (e != null && letVormen.containsKey(e) ? e : null);
+        for (Expr k : letKinderen(e)) verzamelWortels(k, onder, uit);
         if (e instanceof Expr.Functie f) {
-            if (f.kind() == Expr.FunctieKind.WORTEL) uit.add(f);
-            for (Expr a : f.argumenten()) verzamelWortels(a, uit);
+            if (f.kind() == Expr.FunctieKind.WORTEL) uit.add(new Plek<>(f, drager));
+            for (Expr a : f.argumenten()) verzamelWortels(a, drager, uit);
         } else if (e instanceof Expr.Binair b) {
-            verzamelWortels(b.links(), uit); verzamelWortels(b.rechts(), uit);
+            verzamelWortels(b.links(), drager, uit); verzamelWortels(b.rechts(), drager, uit);
         } else if (e instanceof Expr.Afgerond a) {
-            verzamelWortels(a.basis(), uit);
+            verzamelWortels(a.basis(), drager, uit);
         } else if (e instanceof Expr.Begrensd g) {
-            verzamelWortels(g.basis(), uit);
-            verzamelWortels(g.minimum(), uit);   // mirror DRL verzamelWortels — a wortel inside a min/max bound
-            verzamelWortels(g.maximum(), uit);
+            verzamelWortels(g.basis(), drager, uit);
+            verzamelWortels(g.minimum(), drager, uit);   // mirror DRL verzamelWortels — a wortel inside a min/max bound
+            verzamelWortels(g.maximum(), drager, uit);
         }
+    }
+
+    /** One §6.5/§6.6 companion rule over the host's own gate (voorwaarde + §4.2 window). A site OUTSIDE every
+     *  carrier gets {@code statisch} — the static leeg/negatief predicate on its re-readable operands, the
+     *  unchanged v0 companion (DRL parity); a site UNDER a carrier gets the path probe instead: the companion
+     *  fires when re-evaluating that carrier on the subject reports this very site ({@link Sonde}), which is
+     *  ref's own condition under ch. 10.2/10.6. null when the host gate does not lower (DRL: voorwaardeMarker
+     *  -> no companion). */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Rule padCompanion(ResolvedRegel r, Objecttype subject, Class<?> factClass, Class<?> incClass,
+                              String compNaam, Plek<? extends Expr> plek,
+                              java.util.function.UnaryOperator<PatternDSL.PatternDef> statisch) {
+        seq = 0;
+        Variable sVar = DSL.declarationOf(factClass, "$subject");
+        PatternDSL.PatternDef pattern = PatternDSL.pattern(sVar);
+        List<RuleItemBuilder<?>> gateExtra = List.of();
+        if (r.voorwaarde() != null) {                       // the site only fires when the host gate holds
+            Gate gate = voorwaarde(r.voorwaarde(), pattern, subject, sVar);
+            if (gate == null) return null;                  // unlowerable host voorwaarde -> no companion (DRL: voorwaardeMarker -> return)
+            pattern = gate.pattern();
+            gateExtra = gate.extra();                       // a §8.1.7 far-side membership exists/not -> thread it into the companion (mirror DRL lc.extra())
+        }
+        pattern = geldigGuard(pattern, r.geldigheid());   // §4.2 the companion only flags inside the host's window
+        String naam = r.naam();
+        if (plek.drager() == null)
+            return companionRule(compNaam, naam, incClass, sVar, statisch.apply(pattern), gateExtra);
+        // The probe decides in the CONSEQUENCE, which binds the carrier's Parameter globals the way the host
+        // binds its own (a pattern expr hosts one global at most). The opaque always-true expr keeps the pattern
+        // class-reactive (the freshness idiom), so the probe re-runs whenever the subject is updated and the
+        // insert-only companion still lands once a producer fills what the path reads; the §9.5 idempotency
+        // guard in companionRule stops a second insert.
+        pattern = pattern.expr(nextId("fresh"), (Predicate1) (s -> true));
+        return companionRule(compNaam, naam, incClass, sVar, pattern, gateExtra,
+                sondeConsequentie(compNaam, naam, subject, sVar, plek));
+    }
+
+    /** The consequence of a carrier-hosted companion: re-evaluate the outermost carrier on the subject with a
+     *  {@link Sonde} planted in the environment, and insert the host's Inconsistentie iff the probe reports THIS
+     *  site. The carrier lowers through the same {@link #scalarWaarde} the host lowered it with (under the same
+     *  §13.4.1 keten flag), so its globals are a subset of the host's; a carrier that does not lower here, or a
+     *  global the host could not have bound, is an invariant violation and fails fast — never a silently missing
+     *  companion. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private RuleItemBuilder<?> sondeConsequentie(String compNaam, String hostNaam, Objecttype subject, Variable sVar,
+                                                 Plek<? extends Expr> plek) {
+        WaardeFn wf;
+        boolean prev = ketenWaardePad;
+        try { ketenWaardePad = true; wf = scalarWaarde(subject, plek.drager()); }
+        finally { ketenWaardePad = prev; }
+        if (wf == null)
+            throw new IllegalStateException(compNaam + ": de drager van de §6.5/§6.6-plek lowert niet, terwijl de gastregel"
+                    + " lowerde — bron: " + plek.drager().bron());
+        List<String> gnames = new ArrayList<>(wf.globals());
+        List<Variable> vars = new ArrayList<>();
+        vars.add(sVar);
+        for (String gn : gnames) {
+            Global<?> g = waardeGlobal(gn);   // numeric Parameter or the §5.3 rekendatum pseudo-slot
+            if (g == null)
+                throw new IllegalStateException(compNaam + ": de drager leest de niet-geregistreerde global " + gn
+                        + " die de gastregel wel bond");
+            vars.add((Variable) g);
+        }
+        BiFunction<Object, Map<String, BigDecimal>, Object> fn = wf.fn();
+        Expr site = plek.site();
+        String fqcn = FACTS + ".Inconsistentie";
+        RuleItemBuilder<?> consequence = consequenceOf(vars.toArray(new Variable[0]), (drools, args) -> {
+            Object s = args[0];
+            Map<String, BigDecimal> gm = new LinkedHashMap<>();
+            vulGlobalMap(gm, gnames, args, 1);
+            Sonde sonde = new Sonde();
+            ((Map<String, Object>) (Map) gm).put(Sonde.SLEUTEL, sonde);
+            fn.apply(s, gm);   // the value is discarded: only whether THIS site ran and faulted matters
+            if (sonde.heeftGemeld(site)) drools.insert(RegelSpraakRuntime.newInconsistentie(fqcn, hostNaam, s));
+        });
+        if (consequence == null)
+            throw new IllegalStateException(compNaam + ": te veel gebonden globals voor de sonde (" + gnames.size()
+                    + "), meer dan de gastregel kon binden");
+        return consequence;
     }
 
     /** Build a §9.5 fout-companion rule: an insert-only rule (NO no-loop) on the given subject pattern that inserts
@@ -6188,38 +6177,50 @@ public final class ExecModelTranspiler {
     private Rule companionRule(String compNaam, String hostNaam, Class<?> incClass, Variable sVar,
                               PatternDSL.PatternDef pattern, List<RuleItemBuilder<?>> gateExtra) {
         String fqcn = FACTS + ".Inconsistentie";
+        Block2<org.drools.model.Drools, Object> body = (drools, s) ->
+                drools.insert(RegelSpraakRuntime.newInconsistentie(fqcn, hostNaam, s));
+        return companionRule(compNaam, hostNaam, incClass, sVar, pattern, gateExtra, DSL.on(sVar).execute(body));
+    }
+
+    /** {@link #companionRule(String, String, Class, Variable, PatternDSL.PatternDef, List)} with the consequence
+     *  supplied — the path-probe companion decides its insert there ({@link #sondeConsequentie}); the guard and
+     *  the far-side gate are the same. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Rule companionRule(String compNaam, String hostNaam, Class<?> incClass, Variable sVar,
+                              PatternDSL.PatternDef pattern, List<RuleItemBuilder<?>> gateExtra,
+                              RuleItemBuilder<?> consequence) {
         Variable incVar = DSL.declarationOf(incClass, "$inc_" + (seq++));
         PatternDSL.PatternDef guard = PatternDSL.pattern(incVar)
                 .expr(nextId("ig"), (Predicate1) i -> hostNaam.equals(RegelSpraakRuntime.get(i, "regel")))
                 .expr(nextId("ig"), (Variable) sVar, (Predicate2) (i, s) -> RegelSpraakRuntime.get(i, "subject") == s);
-        Block2<org.drools.model.Drools, Object> body = (drools, s) ->
-                drools.insert(RegelSpraakRuntime.newInconsistentie(fqcn, hostNaam, s));
         List<RuleItemBuilder<?>> items = new ArrayList<>();
         items.add(pattern);
         items.addAll(gateExtra);                          // the host rule's far-side membership gate, if any
         items.add(DSL.not(guard));
-        items.add(DSL.on(sVar).execute(body));
+        items.add(consequence);
         return PatternDSL.rule(kop(compNaam)).build(items.toArray(new RuleItemBuilder[0]));
     }
     /** Collect the GEDEELD_DOOR / GEDEELD_DOOR_ABS nodes through the arithmetic-wrapper layers of a value (for the
-     *  §6.5 fout) — byte-identical to DrlTranspiler.verzamelDelingen over the shared v0 forms; the ch. 4.10 CARRIER
-     *  descent is additional (the DRL back-end has no Let lowering at all — it markers such a rule whole — so there
-     *  is nothing to keep in step there). Without the descent a Let-wrapped division loses its §6.5/§9.5 companion
-     *  while ref still raises the fault: silently consistent. The descent takes {@link #letKinderenZeker}, NOT the
-     *  full {@code letKinderen}: a companion is an ANSWER, and one built off a path that never runs is
-     *  inconsistent where ref is consistent — the mirror-image wrong. */
-    private void verzamelDelingen(Expr e, List<Expr.Binair> uit) {
-        for (Expr k : letKinderenZeker(e)) verzamelDelingen(k, uit);
+     *  §6.5 fout), each with the outermost ch. 4.10 carrier above it — byte-identical to DrlTranspiler.verzamelDelingen
+     *  over the shared v0 forms; the CARRIER descent is additional (the DRL back-end has no Let lowering at all — it
+     *  markers such a rule whole — so there is nothing to keep in step there). Without the descent a Let-wrapped
+     *  division loses its §6.5/§9.5 companion while ref still raises the fault: silently consistent. The descent
+     *  takes the FULL {@link #letKinderen} — every child that MAY run — because a companion is an ANSWER and which
+     *  child DID run is decided at fire time by the path probe over the carrier ({@link Sonde}), never by this walk. */
+    private void verzamelDelingen(Expr e, Expr drager, List<Plek<Expr.Binair>> uit) {
+        // the OUTERMOST carrier on the path is fixed once entered; a nested carrier stays under it
+        Expr onder = drager != null ? drager : (e != null && letVormen.containsKey(e) ? e : null);
+        for (Expr k : letKinderen(e)) verzamelDelingen(k, onder, uit);
         if (e instanceof Expr.Binair b) {
             // §6.5 "gedeeld door" AND "gedeeld door (ABS)" both lower to a leeg-divisor fout (mirror DRL).
-            if (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS) uit.add(b);
-            verzamelDelingen(b.links(), uit); verzamelDelingen(b.rechts(), uit);
+            if (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS) uit.add(new Plek<>(b, drager));
+            verzamelDelingen(b.links(), drager, uit); verzamelDelingen(b.rechts(), drager, uit);
         } else if (e instanceof Expr.Afgerond a) {
-            verzamelDelingen(a.basis(), uit);
+            verzamelDelingen(a.basis(), drager, uit);
         } else if (e instanceof Expr.Begrensd g) {
-            verzamelDelingen(g.basis(), uit);
-            verzamelDelingen(g.minimum(), uit);   // mirror DRL — a division inside a min/max bound
-            verzamelDelingen(g.maximum(), uit);
+            verzamelDelingen(g.basis(), drager, uit);
+            verzamelDelingen(g.minimum(), drager, uit);   // mirror DRL — a division inside a min/max bound
+            verzamelDelingen(g.maximum(), drager, uit);
         }
     }
 

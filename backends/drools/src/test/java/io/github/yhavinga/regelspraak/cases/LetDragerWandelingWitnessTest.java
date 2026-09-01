@@ -150,18 +150,33 @@ class LetDragerWandelingWitnessTest {
         assertNull(speel(nietGenomenTakModel(true), geval(invoer, verwacht)), "dezelfde keuze in een Let-body");
     }
 
-    @Test void een_deling_achter_een_nooit_gepasseerde_leeg_barriere_levert_geen_fout() throws Exception {
-        // ch. 10.6: a leeg value makes the whole Let leeg and the BODY NEVER RUNS. Here `deler` (the value) is
-        // absent, so the body's division by the equally absent `tweede` never happens — no §6.5 fault. The bare
-        // twin is the same division WITHOUT the barrier, where the fault is real: pinning both in one method
-        // keeps the fix honest in both directions (an implementation that simply stopped collecting divisions
-        // would pass the first flank and fail the second).
-        // ref: bare -> uit leeg + INCONSISTENT; behind the barrier -> uit leeg + CONSISTENT.
+    @Test void een_deling_in_een_letbody_met_ongelezen_binder_levert_de_fout_wel() throws Exception {
+        // ch. 10.6 under call-by-need (maintainer decision O3): "Let d = deler in inkomen gedeeld door tweede",
+        // `deler` AND `tweede` absent. The binder `d` is never read, so clause 3 never evaluates `deler`, no
+        // barrier is raised, and the body ALWAYS runs — its division by the absent `tweede` is real: a §6.5
+        // fault. (Under the strict binding this chapter stated before, the leeg value ended the Let at the bind
+        // place and the body never ran; that is what this witness pinned until the L-unification.) The bare twin
+        // is the same division WITHOUT the Let — same fault — so an implementation that simply stopped
+        // collecting divisions fails on both. Rewritten under maintainer decision 2026-09-01 (card
+        // companion-onder-drager); the sister witness below pins the barrier that IS passed first.
+        // ref (the L-ref, 2026-09-02): bare -> uit leeg + INCONSISTENT; in the Let body -> uit leeg + INCONSISTENT.
         String invoer = inst("J1", "Jutter", "\"inkomen\": { \"number\": \"10.00\" }", "");
         assertNull(speel(leegBarriereModel(false), geval(invoer, leeg("J1", "uit") + ", " + inconsistent())),
                 "de kale deling door leeg");
-        assertNull(speel(leegBarriereModel(true), geval(invoer, leeg("J1", "uit") + ", " + consistent())),
-                "dezelfde deling in een body achter een leeg-barriere");
+        assertNull(speel(leegBarriereModel(true), geval(invoer, leeg("J1", "uit") + ", " + inconsistent())),
+                "dezelfde deling in een Let-body waarvan de binder niet gelezen wordt");
+    }
+
+    @Test void een_deling_achter_een_gepasseerde_leeg_barriere_levert_geen_fout() throws Exception {
+        // the sister: "Let d = deler in d plus (inkomen gedeeld door tweede)", `deler` and `tweede` absent. Now the
+        // body READS `d` — and reads it FIRST (the left operand; ref evaluates a Binair left before right). That
+        // read forces the leeg need, raises the barrier at the read (clause 2) and ends the Let before the
+        // division is ever reached: no §6.5 fault, uit leeg. This is the ch. 10.6-L shape of "a barrier the
+        // division sits behind" — the read place, not the bind place, is where the path is cut.
+        // ref (the L-ref, 2026-09-02): uit leeg + CONSISTENT.
+        String invoer = inst("J1", "Jutter", "\"inkomen\": { \"number\": \"10.00\" }", "");
+        assertNull(speel(gepasseerdeBarriereModel(), geval(invoer, leeg("J1", "uit") + ", " + consistent())),
+                "de deling achter de lezing die de barriere opwerpt");
     }
 
     @Test void een_breuk_achter_een_let_vergelijkt_exact_in_plaats_van_te_crashen() throws Exception {
@@ -467,13 +482,28 @@ class LetDragerWandelingWitnessTest {
                 new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), waarde)}, "");
     }
 
-    /** ch. 10.6: the same §6.5 division, bare or as the BODY of a Let whose value is leeg (the barrier). */
+    /** ch. 10.6: the same §6.5 division, bare or as the BODY of a Let whose leeg value is never read (so the
+     *  body runs and the fault is real under call-by-need). */
     private static String leegBarriereModel(boolean achterBarriere) {
         String deling = binair("GEDEELD_DOOR", attr("Jutter", "inkomen", pos(2)),
                 attr("Jutter", "tweede", pos(2)), num(4));
         String waarde = achterBarriere
                 ? let("d", attr("Jutter", "deler", pos(2)), deling, num(4))
                 : deling;
+        return doc(objecttype("Jutter", "Jutters",
+                        "\"inkomen\":%s,\"deler\":%s,\"tweede\":%s,\"uit\":%s"
+                                .formatted(pos(2), pos(2), pos(2), num(4)), "", ""),
+                "", "", new String[]{"uit van een jutter"},
+                new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), waarde)}, "");
+    }
+
+    /** ch. 10.6 clause 2: the same division, but the body reads the leeg binder FIRST — the barrier is raised at
+     *  that read and the division behind it is never reached. */
+    private static String gepasseerdeBarriereModel() {
+        String deling = binair("GEDEELD_DOOR", attr("Jutter", "inkomen", pos(2)),
+                attr("Jutter", "tweede", pos(2)), num(4));
+        String waarde = let("d", attr("Jutter", "deler", pos(2)),
+                binair("PLUS", bref("d", pos(2)), deling, num(4)), num(4));
         return doc(objecttype("Jutter", "Jutters",
                         "\"inkomen\":%s,\"deler\":%s,\"tweede\":%s,\"uit\":%s"
                                 .formatted(pos(2), pos(2), pos(2), num(4)), "", ""),

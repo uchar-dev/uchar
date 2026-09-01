@@ -24,25 +24,27 @@ import io.github.yhavinga.regelspraak.model.Datatype;
  *
  * <p>That guarantee does <b>not</b> extend to the STRUCTURAL walks. To every generic {@code Expr} tree walk a
  * carrier is an opaque LEAF, so a walk that does not descend explicitly under-reports in SILENCE — a missing
- * §9.5 fout-companion reads as "consistent", a missing read reads as "nothing to watch". Two accessors on
- * {@code ExecModelTranspiler} do that descent, and which one a walk takes is decided by what the walk's output
- * IS. The FULL inventory, so the next addition sees it:
+ * §9.5 fout-companion reads as "consistent", a missing read reads as "nothing to watch". ONE accessor on
+ * {@code ExecModelTranspiler} does that descent — {@code letKinderen}, every hidden child: a Binding's value+body,
+ * a Keuze's two branches and every Expr operand of its condition — and every walk that must see through a
+ * carrier takes it. The FULL inventory, so the next addition sees it:
  *
- * <p><b>(a) Descend via {@code letKinderen}</b> — every hidden child (a Binding's value+body, a Keuze's two
- * branches and every Expr operand of its condition). Their output is a REFUSAL or a REGISTRATION, so seeing
- * more than actually runs is still a correct answer: {@code bevatDeling} (the ch. 7 defaults division fence —
- * refuses more often), {@code navRefs} (far-side reactivity — watches more), {@code exprLeesnamen} (defaults
- * salience — sinks further), {@code kanBreukOpleveren} (exact-comparison routing — at worst takes the exact
- * path where the plain one would also have served; blind, it takes a {@code (BigDecimal)} cast that throws).
+ * <p><b>(a) Descend via {@code letKinderen}</b>, output a REFUSAL or a REGISTRATION, where seeing more than
+ * actually runs is still a correct answer: {@code bevatDeling} (the ch. 7 defaults division fence — refuses
+ * more often), {@code navRefs} (far-side reactivity — watches more), {@code exprLeesnamen} (defaults salience —
+ * sinks further), {@code kanBreukOpleveren} (exact-comparison routing — at worst takes the exact path where
+ * the plain one would also have served; blind, it takes a {@code (BigDecimal)} cast that throws).
  *
- * <p><b>(b) Descend via {@code letKinderenZeker}</b> — only the CERTAINLY evaluated children (a Binding's value
- * when, and only when, the body reads its binder on every path, since ch. 10.6 is call-by-need and an unread
- * need is never evaluated; a Keuze's condition operands, since ch. 10.2 runs exactly one branch; nothing for a
- * Lezing). Their output is an ANSWER — a fout-companion rule — and one built off a path that never runs makes
- * this backend say INCONSISTENT where ref says consistent: {@code verzamelDelingen} (§6.5) and
- * {@code verzamelWortels} (§6.6). The converse limit — a fault on a branch that IS taken, in a Let BODY (which
- * under call-by-need always runs), or in a value read on some but not every path — is recorded, in its widened
- * form, at that accessor.
+ * <p><b>(b) Descend via {@code letKinderen}</b>, output an ANSWER — a §6.5/§6.6 fout-companion rule, which is
+ * WRONG (inconsistent where ref says consistent) if built off a path that never runs: {@code verzamelDelingen}
+ * and {@code verzamelWortels}. They see every site that MAY run, and the companion of a site under a carrier
+ * carries the PATH: its condition re-evaluates the outermost carrier on the subject with a probe
+ * ({@code ExecModelTranspiler.Sonde}) and fires only when that very site ran and faulted — ch. 10.2 (exactly
+ * one branch), ch. 10.6 (call-by-need, the barrier at the read) and the evaluation order all come from the
+ * value lowering itself, which is ref's operational semantics. A site outside every carrier keeps the static
+ * leeg/negatief predicate (the unchanged v0 companion). Before the companion-onder-drager card these two walks
+ * took a "certainly evaluated" subset ({@code letKinderenZeker}) and so MISSED every real fault in a body, a
+ * taken branch or a partially-read value; that accessor is gone.
  *
  * <p><b>(c) Deliberately do NOT descend</b>, each for a checked reason:
  * <ul>
@@ -59,8 +61,11 @@ import io.github.yhavinga.regelspraak.model.Datatype;
  *       {@code scalarWaarde}, which consults this side channel FIRST, and {@code lowerVal}'s own fall-through
  *       is a null, i.e. an honest skip;</li>
  *   <li>{@code companionOperand} — a carrier is not an {@code AttribuutRef}, so a division/wortel operand
- *       hidden behind one never qualifies and raises no Inconsistentie. That is the §6.5/§6.6 scope limit
- *       already documented there for a literal / parameter / to-many / temporal operand, not a new gap;</li>
+ *       hidden behind one (a {@code BinderRef} dividend, say) never qualifies and raises no Inconsistentie.
+ *       That is the §6.5/§6.6 scope limit already documented there for a literal / parameter / to-many /
+ *       temporal operand, kept deliberately (maintainer scope of the companion-onder-drager card) — the path
+ *       probe would make widening it a one-line change, since it observes the evaluation rather than
+ *       re-reading the operands;</li>
  *   <li>{@code transpiler.Stratificatie.verzamelReads} (§9.2) — a {@code Conditie} walk over a rule's
  *       {@code voorwaarde} only, so a Keuze's condition (which lives in the VALUE) never reaches it. Doubly
  *       unreachable today: {@code letConditie} refuses every condition form but a bare numeric Vergelijking,
