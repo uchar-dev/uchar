@@ -64,7 +64,8 @@ class LetClusterWitnessTest {
     @Test void een_binnenste_binder_schaduwt_en_de_buitenste_geldt_er_weer_buiten() throws Exception {
         // geschaduwd := Let x = inkomen in (Let y = (Let x = 5,00 in x) in y plus x).
         // ref: 1005.00 — the INNER x wins inside its own body (5,00), the OUTER x is intact again outside it
-        // (1000,00). Reading the outer binder inside would give 2000.00; losing the outer one, 5.00.
+        // (1000,00). Reading the outer binder inside would give 2000.00; binding the inner x IN PLACE of the
+        // outer — the in-place-mutation bug — leaves x = 5,00 for the trailing read and gives 10.00.
         assertNull(speel(rekenModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }, \"kindertal\": { \"number\": \"7\" }",
                 waarde("geschaduwd", "1005.00"))));
     }
