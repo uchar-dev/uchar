@@ -2852,8 +2852,11 @@ anchors.
 `spec/proposals/PHASE5B-KERNEL.md` §2). No v0 counterpart exists — the
 toolchain has no source construct that produces these forms — so this
 chapter mirrors nothing; it is normative from first writing. Node forms
-and well-formedness: IR-SPEC ch. 2.4 (`SumType`) and ch. 4.7
-(`Construct`, `Match`, `BinderRef`), WF-060..064.*
+and well-formedness: IR-SPEC ch. 2.4 (`SumType`, the keuzetype family
+and its WF-087 normalisation) and ch. 4.7 (`Construct`, `Match`,
+`BinderRef`), WF-060..064. `Match` is the one node of this chapter that
+also serves the family's other wire variant, the enumeration — its
+evaluation is ch. 9.2; everything else here is sum-only.*
 
 ### 9.1 Constructor values
 
@@ -2910,6 +2913,51 @@ Worked (the anchor's rule — `uitkering` := match `beschikking`:
 
 The body's own operators keep their ordinary ch. 1–2 discipline; the
 match adds no empty policy of its own beyond step 1.
+
+**The enumeration scrutinee (2026-09-01).** `Match` is the keuzetype
+family's node (IR-SPEC ch. 2.4): the scrutinee may equally be
+*enumeration*-typed, and WF-063 then demands the arms cover the declared
+values exactly, each once, every arm nullary. The evaluation is
+**literally steps 1 and 2 above**, with the label in place of the tag:
+
+1. Evaluate the scrutinee. **If it is leeg, the match evaluates leeg** —
+   the same propagation, no implicit leeg-arm, no coalesce to a default
+   label.
+2. Otherwise the scrutinee is an enumeration value; evaluate the unique
+   arm whose label equals it (compared ci, the WF-001 identity rule
+   under which the arms were checked). No binder is bound — an
+   enumeration alternative carries nothing to bind.
+
+**This step 1 is where the family's leeg difference becomes visible, and
+it is deliberately not a difference in the rule.** The two variants
+reach leeg by different routes: an enumeration-typed slot is an ordinary
+value slot and *can hold* leeg (ch. 1.2 — the §5.6 Tabel-44 row lists
+enum among every datatype, and a case may simply not supply the
+attribute), whereas a sum-typed slot holds a constructor value that is
+gevuld by construction and only becomes leeg by propagation (ch. 9.1).
+So a leeg enumeration scrutinee is the *common* case and a leeg sum
+scrutinee the *derived* one — and the match treats both identically:
+leeg in, leeg out.
+
+**The lowering.** For a *gevulde* scrutinee the meaning of an
+enumeration match is the comparison chain over the labels: for arms
+`v₁ → e₁, …, vₙ → eₙ` it is "if scrutinee = `v₁` then `e₁` else if
+scrutinee = `v₂` then `e₂` … else `eₙ`", with `=` the ch. 1.2d
+enumeration equality (ci label equality within one declaring domain,
+WF-008). The chain is total by WF-063 — the final `else` is reached only
+by the last declared value — and it is order-independent, the labels
+being mutually exclusive. This is a *definition of meaning*, not a
+required implementation: an executor may dispatch on the label directly
+(both `ref` and the ASP backend do), and must agree with the chain.
+
+Worked (`waarde` := match `staat`: `gaaf` → 10.00; `beschadigd` →
+4.00; `wrakhout` → 1.00, over a `keurklasse` enumeration domain
+declaring exactly those three values):
+
+- `staat` = `gaaf` → `waarde` = **10.00**.
+- `staat` = `beschadigd` → `waarde` = **4.00**.
+- `staat` leeg → `waarde` **leeg** — nothing is written (the ch. 7.8
+  standing norm applies unchanged), *not* the last arm and *not* 0.00.
 
 ### 9.3 Equality — structural and nominal
 

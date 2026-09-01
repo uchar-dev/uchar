@@ -1201,6 +1201,29 @@ parser, then compared structurally — one source of truth, no independent
 scaling path to drift. A sum-typed target that stays leeg reports as
 underived (the emptiness test sees any `val/3`, not only numeric ones).
 
+**The enumeration scrutinee** (the keuzetype family's other wire
+variant, IR-SPEC ch. 2.4; ch. 9.2's enum arm) takes the **same
+mechanic**, deliberately. An enum label is already a ground symbolic
+term in S2 (`str` — the normalised quoted string both executors compare
+under), so the arm pattern is that term where the nullary functor sits:
+one rule per arm, mutually exclusive ground patterns, **no NAF**, and a
+leeg scrutinee binds no `val/3` atom so `matchN` stays underived —
+propagation for free, exactly as above. Only the pattern *alphabet*
+differs, never the shape. The scrutinee rides the S2 symbolic operand
+(`symbolic_term`), which binds the label out of the `val/3` atom and
+carries that family's fences (temporal text/enum/boolean carriage among
+them), and the arm's label is matched against it by builtin equality:
+
+```
+matchN(S,⟨arm term⟩) :- is_a(S,ot), val(S,scrut,V), V = "label_k", ⟨arm body⟩.
+```
+
+which is ch. 9.2's **comparison chain** written out: the chain needs no
+encoding of its own because mutually exclusive ground patterns *are* the
+chain. WF-063 guarantees the arms are the declared values exactly, each
+once, and every arm nullary — so no arm binds anything, and no `P`
+variable enters the guard.
+
 Witnesses: the anchor `jutterswet-beschikkingsom` — case1 `Toegekend`
 (the unary arm, payload + parameter → 1275.50), case2 `Afgewezen` (0.00)
 and case3 `Aangehouden` (12.00) (the nullary arms and the two
@@ -2029,7 +2052,16 @@ at scale 0 (the day integer) — so there the gap is only that no corpus
 case exercises it. Nullary-with-argument and
 unary-without-argument constructs, an alien or missing arm, a binder on a
 nullary arm and its converse are rejected by WF-062..064 before
-translation is reached.
+translation is reached. The keuzetype family's **enumeration** match
+translates at rule level (S14's enum arm) but **not inside a closed
+lambda/function body**: a closed body has no subject to read the
+scrutinee's `val/3` atom from and the S2 symbolic operand has no
+closed-body carrier, so `body_branches` faults with `an enumeration match
+inside a closed lambda/function body is not translated (the symbolic
+operand has no closed-body carrier; no corpus case)` — verifier-clean
+input (WF-063 admits it, WF-069 admits a `Match` there) that ref executes
+and clingo refuses loudly; a named executor asymmetry, never a wrong
+answer, lifted when a case wants it.
 
 *Folds and function values (S15) — shapes without a corpus case:* a
 **`ListLiteral`** list source (the reified-list encoding covers it, but

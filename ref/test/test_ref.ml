@@ -1064,6 +1064,53 @@ let () =
   expect_fault "WV-9.3-order-fault"
     (fun () -> Arith.compare_op ~static_numeric:false Kleiner toegekend aangehouden)
 
+(* --- ch. 9.2 (enumeration scrutinee): the keuzetype family's other wire
+   variant (IR-SPEC ch. 2.4). The chapter's worked example verbatim —
+   `waarde` := match `staat`: gaaf -> 10.00, beschadigd -> 4.00,
+   wrakhout -> 1.00 over the three-value `keurklasse` domain — evaluated
+   against a document, because the leeg corner is the point: an
+   enumeration-typed slot CAN simply hold leeg (a case that does not supply
+   the attribute), where a sum-typed slot only reaches leeg by propagation.
+   Nothing is written there — not the last arm, not 0.00. Card-sanctioned
+   test touch (20260901-keuzetype-familie). *)
+let () =
+  let num2 : Ir_v0.Ast.datatype =
+    Numeriek { geheel = false; decimalen = 2; teken = None; eenheid = None }
+  in
+  let keurklasse : Ir_v0.Ast.datatype =
+    Enumeratie
+      { domein = Some "keurklasse"; waarden = [ Some "gaaf"; Some "beschadigd"; Some "wrakhout" ] }
+  in
+  let enum_match : Ir_v0.Ast.expr =
+    Match
+      { typ = Some num2;
+        scrutinee = aref "staat" "Vondst" keurklasse;
+        arms =
+          [ ("gaaf", None, litv "10.00" num2);
+            ("beschadigd", None, litv "4.00" num2);
+            ("wrakhout", None, litv "1.00" num2) ];
+        bron = None }
+  in
+  let doc =
+    { empty_doc with
+      domeinen = [ ("keurklasse", Some keurklasse) ];
+      objecttypen =
+        [ ot "Vondst" [ ("staat", Some keurklasse); ("waarde", Some num2) ] [] ] }
+  in
+  let env = env_of doc in
+  let eval staat =
+    let attrs = match staat with None -> [] | Some s -> [ ("staat", Value.Enum s) ] in
+    let w = World.add_instance World.empty (inst "V1" "Vondst" attrs) in
+    Eval.eval_expr env w (World.get w "V1") ~err:no_err enum_match
+  in
+  expect_num "WV-9.2-enum-gaaf" (eval (Some "gaaf")) "10.00";
+  expect_num "WV-9.2-enum-beschadigd" (eval (Some "beschadigd")) "4.00";
+  expect_num "WV-9.2-enum-wrakhout" (eval (Some "wrakhout")) "1.00";
+  (* the label match is ci — the norm WF-063 checked the arms under *)
+  expect_num "WV-9.2-enum-ci" (eval (Some "GAAF")) "10.00";
+  (* step 1: leeg in, leeg out — no implicit leeg-arm, no coalesce *)
+  expect_leeg "WV-9.2-enum-leeg" (eval None)
+
 (* --- ch. 10: folds and function values (RUNTIME-SEMANTICS ch. 10) -------
    Value-level worked examples: list rendering (10.1) and the list-equality
    corners — elementwise and IN ORDER, with the Tabel 38 Empty corners ([] is

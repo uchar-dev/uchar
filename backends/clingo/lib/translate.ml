@@ -3003,39 +3003,69 @@ and scrutinee_pattern ctx ~subject ~subject_ot ~scrutinee ~pattern =
    scrutinee binds no val atom, no arm rule fires, matchN stays underived —
    propagation for free. The unary arm's payload variable rides both the
    binder environment (so a BinderRef resolves to it) and the rule guard (so
-   any viol/2 the arm body emits carries the scrutinee atom that binds it). *)
+   any viol/2 the arm body emits carries the scrutinee atom that binds it).
+
+   The ENUMERATION scrutinee (the keuzetype family's other wire variant,
+   IR-SPEC ch. 2.4) rides the SAME mechanic, deliberately: an enum label is
+   already a ground symbolic term (S2 — [str], the normalised quoted string
+   both executors compare under), so the arm pattern is that term in the
+   scrutinee's val atom, exactly where the nullary constructor's bare functor
+   sits. One rule per arm, unification selects it, no NAF, leeg propagates by
+   underivability — only the pattern alphabet differs (a quoted label instead
+   of a functor), and never the shape. That is why the ch. 9.2 comparison-chain
+   lowering needs no encoding of its own here: mutually exclusive ground
+   patterns ARE the chain. *)
 and translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms =
-  let constructoren = sum_constructors (Ir_v0.Checks.typ_of_expr scrutinee) in
+  let scrut_typ = Ir_v0.Checks.typ_of_expr scrutinee in
+  let enum_scrutinee = match scrut_typ with Some (Enumeratie _) -> true | _ -> false in
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "match%d" ctx.fresh in
   let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
   let out_scale = value_scale typ in
-  (* the scrutinee's pattern carrier: an own-subject sum-typed attribute read
-     carries the constructor pattern in its val atom (functor unification); any
-     other sum-valued scrutinee (a Fold — the reduce lowering's extraction,
-     ch. 10.4) is evaluated once to a bound term matched by builtin equality. *)
+  (* the scrutinee's pattern carrier. Sum: an own-subject attribute read
+     carries the constructor pattern in its val atom (functor unification);
+     any other sum-valued scrutinee (a Fold — the reduce lowering's
+     extraction, ch. 10.4) is evaluated once to a bound term matched by
+     builtin equality. Enumeration: the S2 symbolic operand — it binds the
+     label out of the val atom (or is a ground literal) and carries the
+     text/enum/boolean fences, temporal carriage among them — and the arm's
+     label is matched against it by builtin equality, which is the ch. 9.2
+     comparison chain written out. *)
   let arm_scrut =
-    match scrutinee with
-    | Attribuut_ref
-        { attribuut = Some _; objecttype = Some ot; navigatie_rol = None; navigatie_pad = [];
-          navigatie_bindingen = None; set = false; _ }
-      when norm ot = norm subject_ot ->
-        fun pattern -> scrutinee_pattern ctx ~subject ~subject_ot ~scrutinee ~pattern
-    | _ ->
-        let satoms, sterm, _ = expr_term ctx ~subject ~subject_ot scrutinee in
-        fun pattern -> satoms @ [ Printf.sprintf "%s = %s" sterm pattern ]
+    if enum_scrutinee then (
+      let satoms, sterm = symbolic_term ctx ~subject ~subject_ot scrutinee in
+      fun pattern -> satoms @ [ Printf.sprintf "%s = %s" sterm pattern ])
+    else
+      match scrutinee with
+      | Attribuut_ref
+          { attribuut = Some _; objecttype = Some ot; navigatie_rol = None; navigatie_pad = [];
+            navigatie_bindingen = None; set = false; _ }
+        when norm ot = norm subject_ot ->
+          fun pattern -> scrutinee_pattern ctx ~subject ~subject_ot ~scrutinee ~pattern
+      | _ ->
+          let satoms, sterm, _ = expr_term ctx ~subject ~subject_ot scrutinee in
+          fun pattern -> satoms @ [ Printf.sprintf "%s = %s" sterm pattern ]
   in
   List.iter
     (fun (ctor, binder, body) ->
-      let f = ctor_functor ctor in
       let pattern, binding =
-        match (ctor_payload_datatype constructoren ctor, binder) with
-        | None, None -> (f, None)
-        | Some d, Some b ->
-            let pv = fresh ctx "P" in
-            (Printf.sprintf "%s(%s)" f pv, Some (norm b, ([], pv, pow10 (decimals_of_datatype (Some d)))))
-        | Some _, None -> fault "unary match arm %S lacks a binder (WF-063)" ctor
-        | None, Some _ -> fault "nullary match arm %S carries a binder (WF-063)" ctor
+        if enum_scrutinee then (
+          (* WF-063: an enumeration alternative is nullary, so its arm binds
+             nothing; the pattern is the label's own ground term *)
+          match binder with
+          | Some b -> fault "enumeration match arm %S carries a binder %S (WF-063)" ctor b
+          | None -> (symbolic_literal_term (Option.get scrut_typ) ctor, None))
+        else
+          let constructoren = sum_constructors scrut_typ in
+          let f = ctor_functor ctor in
+          match (ctor_payload_datatype constructoren ctor, binder) with
+          | None, None -> (f, None)
+          | Some d, Some b ->
+              let pv = fresh ctx "P" in
+              ( Printf.sprintf "%s(%s)" f pv,
+                Some (norm b, ([], pv, pow10 (decimals_of_datatype (Some d)))) )
+          | Some _, None -> fault "unary match arm %S lacks a binder (WF-063)" ctor
+          | None, Some _ -> fault "nullary match arm %S carries a binder (WF-063)" ctor
       in
       let scrut_atoms = arm_scrut pattern in
       let saved_guard = ctx.rule_guard and saved_binders = ctx.binders in
@@ -3147,6 +3177,18 @@ and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * 
       arm pos (body_branches ctx ~guard_body ~witness then_)
       @ arm neg (body_branches ctx ~guard_body ~witness else_)
   | Match { scrutinee; arms; _ } ->
+      (* the enumeration variant of the keuzetype family is carried at rule
+         level (translate_match, via the S2 symbolic operand) but not inside a
+         closed body: a closed body has no subject to read the val atom from,
+         and the S2 operand has no closed-body carrier. Fenced loudly here so
+         the reason names the shape rather than [sum_operand]'s sum wording
+         (S19; no corpus case). *)
+      (match Ir_v0.Checks.typ_of_expr scrutinee with
+      | Some (Enumeratie _) ->
+          fault
+            "an enumeration match inside a closed lambda/function body is not translated (the \
+             symbolic operand has no closed-body carrier; no corpus case)"
+      | _ -> ());
       let sv = sum_operand ctx scrutinee in
       let constructoren = sum_constructors (Ir_v0.Checks.typ_of_expr scrutinee) in
       List.concat_map

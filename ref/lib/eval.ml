@@ -674,6 +674,19 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
          its binder bound to the payload for this evaluation only *)
       match eval_expr env world self ~err scrutinee with
       | Value.Empty -> Value.Empty
+      | Value.Enum label -> (
+          (* ch. 9.2, the enumeration scrutinee: the SAME two steps with the
+             label in place of the tag (the keuzetype family, IR-SPEC ch. 2.4).
+             The declared alternatives are nullary, so no binder is bound; the
+             label match is ci, the norm WF-063 checked the arms under. *)
+          match List.find_opt (fun (c, _, _) -> norm c = norm label) arms with
+          | None ->
+              Value.fault
+                "match has no arm for enumeration value %S (WF-063 totality should preclude this)"
+                label
+          | Some (_, Some b, _) ->
+              Value.fault "match arm for enumeration value %S carries a binder %S (WF-063)" label b
+          | Some (_, None, body) -> eval_expr env world self ~err body)
       | Value.Ctor (tag, payload) -> (
           match List.find_opt (fun (c, _, _) -> norm c = norm tag) arms with
           | None ->
