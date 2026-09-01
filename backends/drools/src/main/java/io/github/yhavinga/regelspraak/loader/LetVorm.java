@@ -14,10 +14,21 @@ import io.github.yhavinga.regelspraak.model.Datatype;
  * beside the model in an identity-keyed map, exactly the side-channel {@code IrLoader.Loaded.rolBindingen}
  * already uses for the symbolic role bindings.
  *
- * <p><b>Why {@code Onopgelost} is the right carrier.</b> Nothing in the transpiler lowers an
- * {@code Onopgelost}: every value path returns null for it, which is an HONEST, reason-carrying skip. So a
- * consultation of this side channel that is ever missed degrades to a loud refusal in the gate report — never
- * to a silently wrong answer.
+ * <p><b>What the carrier does and does not guarantee.</b> On the VALUE paths it is safe by construction:
+ * nothing in the transpiler lowers an {@code Onopgelost}, so a missed consultation of this side channel
+ * returns null and degrades to a LOUD, reason-carrying skip in the gate report.
+ *
+ * <p>That guarantee does <b>not</b> extend to the STRUCTURAL walks. To every generic {@code Expr} tree walk a
+ * carrier is an opaque LEAF, so a walk that does not descend explicitly under-reports in SILENCE — a missing
+ * §9.5 fout-companion reads as "consistent", a missing read reads as "nothing to watch". Each such walk must
+ * therefore descend via {@code ExecModelTranspiler.letKinderen} as its FIRST step, and each one that does is
+ * listed here so the next addition sees the list:
+ * {@code eigenReads} (the freshness watch), {@code navRefs} (far-side reactivity),
+ * {@code exprLeesnamen} (defaults salience), {@code bevatDeling} (the defaults division fence),
+ * {@code verzamelDelingen} (§6.5), {@code verzamelWortels} (§6.6) and {@code kanBreukOpleveren}
+ * (the exact-comparison routing; blind, it takes a {@code (BigDecimal)} cast that throws).
+ * The one walk that deliberately does NOT descend is {@code startpuntCompanions} (§6.8) — its reason, and the
+ * two-flank measurement behind it, are recorded at that method.
  */
 public sealed interface LetVorm {
 

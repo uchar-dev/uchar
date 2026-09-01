@@ -4334,8 +4334,13 @@ public final class ExecModelTranspiler {
      *  routing a numeric comparison through the Breuk-aware rsAggVergelijk (mirrors DrlTranspiler.kanBreukOpleveren).
      *  A KNOWN non-numeric result (datum/text) is never a Breuk; arithmetic / begrenzing / afronding / abs / a
      *  NON-terminating rational literal can be. */
-    private static boolean kanBreukOpleveren(Expr e) {
+    private boolean kanBreukOpleveren(Expr e) {
         if (e == null) return false;
+        // ch. 4.10: descend THROUGH a Let-cluster carrier first. A carrier is an Onopgelost leaf to the
+        // pattern matches below, so a Breuk-producing division behind a Let read "cannot be a Breuk" and the
+        // caller took the (BigDecimal) cast path — which THROWS a ConstraintEvaluationException on the Breuk
+        // the value side actually computes (an unexplained crash, not a refusal). See letKinderen.
+        for (Expr k : letKinderen(e)) if (kanBreukOpleveren(k)) return true;
         if (e instanceof Expr.Binair b) {
             if (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.PERCENTAGE_VAN) return true;
             return kanBreukOpleveren(b.links()) || kanBreukOpleveren(b.rechts());
@@ -5828,7 +5833,18 @@ public final class ExecModelTranspiler {
      *  leeg guard (companionOperand: own attribute or a to-ONE navigation). A datum-arithmetic anchor is
      *  leeg exactly when its leftmost datum operand is (Tabel 15: a leeg duration is 0/unchanged); a
      *  parameter or function anchor still degrades to a leeg write but raises no Inconsistentie (the same
-     *  scope limit as the §6.5/§6.6 companions). Mirrors DrlTranspiler.startpuntLeegFout. */
+     *  scope limit as the §6.5/§6.6 companions). Mirrors DrlTranspiler.startpuntLeegFout.
+     *
+     *  <p><b>Why the leftmost peel below does NOT descend through a ch. 4.10 Let carrier</b> (unlike
+     *  {@link #verzamelDelingen} / {@link #verzamelWortels} / {@link #kanBreukOpleveren}). Measured, not
+     *  assumed: on a two-flank pair — a startpunt-lid rule whose anchor is a leeg own attribute, once bare and
+     *  once wrapped in {@code Let d = basis in d} — ref answers CONSISTENT on BOTH (it has no §6.8
+     *  leeg-anchor check at all; the fault is production-RegelSpraak semantics this port carries and the spec
+     *  does not). The bare flank therefore already diverges — Drools inconsistent, ref consistent — and the
+     *  carrier-blindness of the peel is what makes the WRAPPED flank agree with ref. So this walk does NOT
+     *  share the §6.5/§6.6/§Breuk gap class (blind walk → missing fault → silently wrong); descending would
+     *  ADD a ref-divergence rather than remove one. Left as is deliberately: the §6.8-vs-ref question is a
+     *  spec matter, out of this card's scope, and no corpus golden writes a startpunt lid by rule. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private List<Rule> startpuntCompanions(ResolvedRegel r) {
         if (!(r.doel() instanceof Expr.AttribuutRef doel) || doel.objecttype() == null
@@ -5902,7 +5918,13 @@ public final class ExecModelTranspiler {
         return List.of(PatternDSL.rule(kop(naam + " (gevuurd)")).build(items.toArray(new RuleItemBuilder[0])));
     }
 
-    private static void verzamelWortels(Expr e, List<Expr.Functie> uit) {
+    /** Collect the WORTEL nodes through the arithmetic-wrapper layers of a value (for the §6.6 fout). Mirrors
+     *  DrlTranspiler.verzamelWortels over the shared v0 forms; the ch. 4.10 CARRIER descent is additional
+     *  (the DRL back-end has no Let lowering at all — it markers such a rule whole — so there is nothing to
+     *  keep in step there). Without the descent a Let-wrapped wortel loses its §9.5 companion while ref still
+     *  raises the fault: silently consistent, the worst failure mode. See letKinderen. */
+    private void verzamelWortels(Expr e, List<Expr.Functie> uit) {
+        for (Expr k : letKinderen(e)) verzamelWortels(k, uit);
         if (e instanceof Expr.Functie f) {
             if (f.kind() == Expr.FunctieKind.WORTEL) uit.add(f);
             for (Expr a : f.argumenten()) verzamelWortels(a, uit);
@@ -5941,8 +5963,12 @@ public final class ExecModelTranspiler {
         return PatternDSL.rule(kop(compNaam)).build(items.toArray(new RuleItemBuilder[0]));
     }
     /** Collect the GEDEELD_DOOR / GEDEELD_DOOR_ABS nodes through the arithmetic-wrapper layers of a value (for the
-     *  §6.5 fout) — byte-identical to DrlTranspiler.verzamelDelingen so both back-ends surface the SAME divisions. */
-    private static void verzamelDelingen(Expr e, List<Expr.Binair> uit) {
+     *  §6.5 fout) — byte-identical to DrlTranspiler.verzamelDelingen over the shared v0 forms; the ch. 4.10 CARRIER
+     *  descent is additional (the DRL back-end has no Let lowering at all — it markers such a rule whole — so there
+     *  is nothing to keep in step there). Without the descent a Let-wrapped division loses its §6.5/§9.5 companion
+     *  while ref still raises the fault: silently consistent, the worst failure mode. See letKinderen. */
+    private void verzamelDelingen(Expr e, List<Expr.Binair> uit) {
+        for (Expr k : letKinderen(e)) verzamelDelingen(k, uit);
         if (e instanceof Expr.Binair b) {
             // §6.5 "gedeeld door" AND "gedeeld door (ABS)" both lower to a leeg-divisor fout (mirror DRL).
             if (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS) uit.add(b);
