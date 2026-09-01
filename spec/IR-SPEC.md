@@ -1966,19 +1966,37 @@ variabelendeel (`Daarbij geldt: X is …`) to **one `Let` per declared
 variable that the rule's RESULT part reads**, nested in declaration
 order (§11.1 rule 1, first-declared outermost), every read a
 `BinderRef` (ch. 4.7) — so a variable read twice is one `Let` with two
-reads and sharing is visible on the wire. Two lowering facts follow from
-the wire's own shape and are normative for the frontend, not for the
-node: (a) a variable read only in the **voorwaarde** is *substituted*
-at its use site instead, because a rule's `condition` and its value are
-separate fields and no expression node spans them — a condition read
-evaluates once anyway, so what substitution costs there is sharing, not
-an answer; (b) a variable **no** read reaches gets no `Let` at all — an
-unread binder evaluates nothing (clause 3 below), so such a node would
-be a guaranteed no-op on the wire. Witnesses:
+reads and sharing is visible on the wire. **Three** lowering boundaries
+follow from the wire's own shape and are normative for the frontend, not
+for the node: (a) a variable read only in the **voorwaarde** is
+*substituted* at its use site instead, because a rule's `condition` and
+its value are separate fields and no expression node spans them — a
+condition read evaluates once anyway, so what substitution costs there
+is sharing, not an answer; (b) a variable **no** read reaches gets no
+`Let` at all — an unread binder evaluates nothing (clause 3 below), so
+such a node would be a guaranteed no-op on the wire; (c) a variable read
+in a **structure-sensitive position** — one where the frontend resolves
+against the *shape* of the read subtree rather than against its value —
+is substituted **at that use site**, per use site, exactly as v0 did.
+There are three such positions, and they are exhaustive for this wire:
+the right-hand side of a §5.6 subselectie comparison (admissible only as
+a literal or a parameter, since an attribute would mis-bind against the
+element), an aggregation's operand (its element type, its set-ness and
+its dimension selection are all read off the operand's form), and a §7
+temporal operator's operand or clip condition (which must be a
+single-period timeline read). A `BinderRef` is an opaque leaf, so
+lowering there would fail every such shape test and silently degrade the
+construct to an unresolved marker — a **wrong answer**, not a lost
+optimisation. Boundary (c) costs sharing only; the same variable read
+elsewhere in the same rule still binds. Witnesses:
 `corpus/golden/jutterswet-lichterloon` (sharing),
 `corpus/golden/jutterswet-vondstrecht` (the barrier the v0 inlining
-does not have) and `corpus/golden/synth3-takbarriere` (the unread
-binder in the branch not taken).
+does not have), `corpus/golden/synth3-takbarriere` (the unread
+binder in the branch not taken) and
+`corpus/golden/jutterswet-drempelvangst` (boundary (c) from both sides:
+one rule whose variable is a subselectie RHS and keeps the v0
+substitution, one whose variable is read twice in arithmetic and becomes
+one `Let` with two `BinderRef`s).
 
 A `Let` is an
 ordinary expression, admissible **anywhere** an expression is (unlike

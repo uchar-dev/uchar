@@ -3282,9 +3282,15 @@ The lowering is not total, and the wire is why: a rule's condition and
 its value are separate fields, so no `Let` can span them. A variable
 read **only** in the voorwaarde is therefore still substituted there,
 which under call-by-need costs nothing but sharing (a condition read
-evaluates its definition once either way), and a variable **no** read
-reaches gets no `Let` at all (clause 3 makes it a no-op). Both are
-stated normatively for the frontend in `IR-SPEC.md` ch. 4.10.
+evaluates its definition once either way); a variable **no** read
+reaches gets no `Let` at all (clause 3 makes it a no-op); and a read in
+a **structure-sensitive position** — a subselectie comparison's
+right-hand side, an aggregation operand, a temporal operator's operand
+or clip — is substituted *there*, because the frontend resolves those
+against the read's syntactic shape and an opaque `BinderRef` would
+degrade the construct to an unresolved marker. All three are stated
+normatively for the frontend in `IR-SPEC.md` ch. 4.10 and witnessed
+together by `corpus/golden/jutterswet-drempelvangst`.
 
 **Tracked delta 2 — Catala's `let` is call-by-value (a fidelity delta).**
 Catala evaluates a `let … in …` eagerly: the bound expression is computed
