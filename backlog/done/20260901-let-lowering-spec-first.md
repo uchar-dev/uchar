@@ -283,3 +283,48 @@ Result — lens 2 + fixronde 2 (2026-09-01):
   bron.catala_en` draagt óók een "strikte"-comment, maar is een bestaande
   golden-pin (gate-9 byte-identiteit) — kaartrandvoorwaarde. Idem
   `spec/verifier/**`.
+
+## Afronding (hoofdsessie, 2026-09-01)
+
+Eindstand na verkenning + herziene ratificatie + drie bouwgolven + twee
+lensrondes + twee fixrondes, alle twaalf gates groen: gate 2/3 = **167**
+goldens / 178 negatief; gates 5/6 = **383** cases; gate 7 = 347
+weerleggend / 36 survivors (ongewijzigd); gate 10 = **159 tests / 26
+rgs-goldens** (25 oude byte-identiek); gate 11 = 45 fragmenten / **2**
+holdouts (toka-18 bleef byte-identiek — gemeten, dus GEEN derde holdout
+nodig; besluit-5-middel vervallen, doel gehaald); gate 12 = **played
+104** / 39 / 1 / 1, JUnit 125.
+
+Geland: de Let-semantiek geünificeerd naar **L** (call-by-need,
+leeg-barrière op de leesplek; O3, gemeten pin-neutraal 399/399) door
+spec, ref, clingo én Drools; de emitter lowert het variabelendeel naar
+een Let-keten om het resultaatdeel met drie genormeerde grenzen (a:
+voorwaarde-substitutie; b: geen dode Lets — afwijking van de letterlijke
+besluit-5-tekst, semantiekvrije wire-hygiëne; c: binnen
+aggregatie-/§7-subtrees geldt substitutie en dus v0-coalesce — de
+tracked delta geldt alleen daarbuiten, met gewerkt tegenvoorbeeld);
+zes nieuwe goldens (lichterloon, vondstrecht, drempelvangst,
+synth3-takbarriere, synth3-barrierebezit, synth3-conditielezing) elk
+mutant-rood bewezen; Expr.bevat exhaustive (uniegroei wordt
+compilerfout); CONSTRUCTS rij 24 canoniek (samenvoeging met rij 10) en
+rij 36 gecorrigeerd.
+
+Lensvangsten die het regime rechtvaardigen: de
+subselectie/aggregatie-regressie (legale bron rekende op main, weigerde
+op de branch — grens (c) + regressie-golden); drie stille
+RuleChecker-controles achter de Let-wortel (kring/teken/enum — het
+teken-geval was verifier-schoon onvangbaar); de lege once-ness-getuige;
+twee normatieve clausules zonder artefact (barrière-eigenaarschap,
+clingo-per-tak) — nu corpusgepind.
+
+Open en vastgelegd: de toolchain blijft op v0-N via route R3
+(LetInliner; vervolgkaart 20260901-toolchain-let-port voor de echte
+convergentie; de N-vs-L-delta is CONSTRUCTS rij 24 delta 3); de
+§11.1-kortsluiting is een eigen kaart
+(20260901-samengesteld-kortsluiting); spec/verifier draagt nog
+strikte-Let-terminologie in meldingsteksten (buiten May touch —
+maintainerwerk of opruimkaartje); de prioritizedDefaults-consequentie
+draagt Lets gemeten-werkend maar corpus-ongedekt (goldenkandidaat);
+clingo's S18(a')-residuen (partieel gelezen binder deponeert
+side-conditions op niet-lezende takken — extra kanaalfeit, nooit een
+andere waarde) blijven gedocumenteerd conservatief.
