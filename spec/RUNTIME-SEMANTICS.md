@@ -3289,16 +3289,44 @@ so the target is written).
 The lowering is not total, and the wire is why: a rule's condition and
 its value are separate fields, so no `Let` can span them. A variable
 read **only** in the voorwaarde is therefore still substituted there,
-which under call-by-need costs nothing but sharing (a condition read
-evaluates its definition once either way); a variable **no** read
-reaches gets no `Let` at all (clause 3 makes it a no-op); and a read in
-a **structure-sensitive position** — a subselectie comparison's
-right-hand side, an aggregation operand, a temporal operator's operand
-or clip — is substituted *there*, because the frontend resolves those
-against the read's syntactic shape and an opaque `BinderRef` would
-degrade the construct to an unresolved marker. All three are stated
-normatively for the frontend in `IR-SPEC.md` ch. 4.10 and witnessed
-together by `corpus/golden/jutterswet-drempelvangst`.
+which costs sharing but no value — a variable read twice in one
+condition is evaluated twice, where one `Let` would evaluate it once
+(clause 1); no case observes it, though a definition that deposited a
+§9.5 channel reason would deposit one per read. A variable **no** read
+reaches gets no `Let` at all (clause 3 makes it a no-op). And a read
+anywhere inside a **shape-reading construct** — an aggregation or a §7
+temporal operator — is substituted *there*, because the frontend
+resolves such a construct against the syntactic shape of its operand and
+an opaque `BinderRef` would degrade it to an unresolved marker. All
+three are stated normatively for the frontend in `IR-SPEC.md` ch. 4.10
+and witnessed together by `corpus/golden/jutterswet-drempelvangst`.
+
+The third is a **construct** boundary, not a position one, and that is
+what bounds this delta. Substitution is switched on for the *whole*
+aggregation sub-tree, so **inside** it the v0 inlining-coalesce still
+governs and the barrier of clause 2 does not reach — including in
+positions that are pure *value* positions and decide nothing about
+shape. This delta is therefore a statement about reads **outside** an
+aggregation sub-tree.
+
+**Worked counter-example — the boundary as a value (absolute; measured
+through `ref/`).** Object type `Jutter` with `bonusgrond` (whole number,
+input) and derived `totaal`; one `Jutter` with **no** vondsten and an
+**absent** `bonusgrond`.
+
+  `totaal` := *de som van het gewicht van alle vondsten van de Jutter of
+  de bonus plus 1 als die er niet zijn*, with
+  *Daarbij geldt: de bonus is de bonusgrond van de Jutter*.
+
+| wire | `totaal` |
+|---|---|
+| what the frontend emits — **no** `Let` at all: the only read of `de bonus` sits in the §5.8.2 leegwaarde, a pure value position under the aggregation, so it is substituted | **1** — the absent read coalesces to 0 inside the `plus` (the ch. 1.2 `plus` row), exactly as v0 |
+| the same IR with that leegwaarde wrapped as `Let bonus = bonusgrond in bonus plus 1` | **leeg** — the read fires clause 2 and empties the rule value |
+
+The barrier would have promised the second row; the frontend emits the
+first. Both rows are `ref/`-measured on the identical case, and the
+frontend's own suite pins the emitted wire
+(`VariabeledeelLoweringTest.de_grens_is_het_hele_aggregatieconstruct_ook_zijn_zuivere_waardeposities`).
 
 **Tracked delta 2 — Catala's `let` is call-by-value (a fidelity delta).**
 Catala evaluates a `let … in …` eagerly: the bound expression is computed

@@ -417,4 +417,37 @@ class VariabeledeelLoweringTest {
         assertTrue(d.contains("\"rechts\":{\"node\":\"Literal\",\"waarde\":\"5\""),
                 () -> "het rechterlid is de gesubstitueerde eerdere definitie:\n" + d);
     }
+
+    @Test void de_grens_is_het_hele_aggregatieconstruct_ook_zijn_zuivere_waardeposities() {
+        // ch. 4.10 boundary (c) is a CONSTRUCT boundary, not a list of positions: the resolver builds an
+        // aggregation (and a §7 temporal operator) wholly in the inlined scope, so every variable read anywhere
+        // under it is substituted — including a §5.8.2 leegwaarde fallback, which is a pure VALUE position that
+        // decides nothing about shape. That is deliberate (one scope, no half-inlined subtree) and it is why
+        // the tracked delta's leeg-barrier does not reach inside an aggregation subtree.
+        //
+        // Measured through ref (this exact wire, one Jutter with no vondsten and an absent bonusgrond):
+        // `totaal` = 1 — the substituted read coalesces leeg to 0 in the `plus`, v0-style. The Let-wrapped
+        // variant of the SAME IR gives leeg. The barrier claim would have promised the latter.
+        String src = """
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                de bonusgrond Numeriek (geheel getal);
+                het totaal Numeriek (geheel getal);
+            Objecttype de Vondst (mv: Vondsten)
+                het gewicht Numeriek (geheel getal);
+            Feittype aanmelding
+                de aanmeldende jutter Jutter
+                de vondst (mv: vondsten) Vondst
+            Eén aanmeldende jutter telt meerdere vondsten
+            Regel totaal
+                geldig altijd
+                    Het totaal van een Jutter moet berekend worden als de som van het gewicht van alle vondsten van de Jutter of de bonus plus 1 als die er niet zijn.
+                    Daarbij geldt:
+                        de bonus is de bonusgrond van de Jutter.
+            """;
+        String c = emitCompact(src);
+        assertEquals(0, tel(c, "\"node\":\"Let\""), () -> "geen Let: het enige gebruik zit onder de aggregatie:\n" + c);
+        assertEquals(0, tel(c, "\"node\":\"BinderRef\""), () -> "geen BinderRef onder een aggregatie:\n" + c);
+        assertTrue(c.contains("\"leegwaarde\":{\"node\":\"Binair\",\"op\":\"PLUS\",\"links\":{\"node\":\"AttribuutRef\",\"attribuut\":\"bonusgrond\""),
+                () -> "de leegwaarde draagt de gesubstitueerde definitie:\n" + c);
+    }
 }

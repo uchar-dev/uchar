@@ -1970,24 +1970,36 @@ reads and sharing is visible on the wire. **Three** lowering boundaries
 follow from the wire's own shape and are normative for the frontend, not
 for the node: (a) a variable read only in the **voorwaarde** is
 *substituted* at its use site instead, because a rule's `condition` and
-its value are separate fields and no expression node spans them — a
-condition read evaluates once anyway, so what substitution costs there
-is sharing, not an answer; (b) a variable **no** read reaches gets no
+its value are separate fields and no expression node spans them. What
+substitution costs there is sharing: a variable read twice in one
+condition is resolved twice and therefore evaluated twice, where one
+`Let` would evaluate it once (`RUNTIME-SEMANTICS.md` ch. 10.6 clause 1).
+No corpus case observes the difference — the two agree on every value —
+but they are not identical in theory: a definition whose evaluation
+deposits a §9.5 channel reason would deposit it once *per read*, not
+once; (b) a variable **no** read reaches gets no
 `Let` at all — an unread binder evaluates nothing (clause 3 below), so
 such a node would be a guaranteed no-op on the wire; (c) a variable read
-in a **structure-sensitive position** — one where the frontend resolves
-against the *shape* of the read subtree rather than against its value —
-is substituted **at that use site**, per use site, exactly as v0 did.
-There are three such positions, and they are exhaustive for this wire:
-the right-hand side of a §5.6 subselectie comparison (admissible only as
-a literal or a parameter, since an attribute would mis-bind against the
-element), an aggregation's operand (its element type, its set-ness and
-its dimension selection are all read off the operand's form), and a §7
-temporal operator's operand or clip condition (which must be a
-single-period timeline read). A `BinderRef` is an opaque leaf, so
-lowering there would fail every such shape test and silently degrade the
-construct to an unresolved marker — a **wrong answer**, not a lost
-optimisation. Boundary (c) costs sharing only; the same variable read
+anywhere inside a **shape-reading construct** — an aggregation (the
+seven instance/dimension aggregations) or a §7 temporal operator — is
+substituted **at that use site**, per use site, exactly as v0 did. Such
+a construct resolves against the *shape* of its operand rather than
+against its value: its element type, its set-ness, its dimension
+selection, its "gedurende" clip and the right-hand side of a §5.6
+subselectie comparison are all read off form. A `BinderRef` is an opaque
+leaf, so lowering there would fail every such shape test and silently
+degrade the construct to an unresolved marker — a **wrong answer**, not
+a lost optimisation. The boundary is the **whole sub-tree**, not the
+shape-reading positions within it: the frontend switches substitution
+back on for the construct and leaves it on until the construct is built,
+so a *pure value* position underneath — a §5.8.2 leegwaarde fallback,
+say — is substituted too, though it decides nothing about shape. One
+scope, no half-inlined sub-tree; and the consequence is normative, not
+incidental: **inside** an aggregation sub-tree the v0 inlining-coalesce
+still governs, so the tracked v1 divergence of `RUNTIME-SEMANTICS.md`
+ch. 10.6 (delta 1, the leeg-barrier) is a statement about reads
+**outside** such a sub-tree, worked there against an absolute value.
+Boundary (c) costs sharing only; the same variable read
 elsewhere in the same rule still binds. Witnesses:
 `corpus/golden/jutterswet-lichterloon` (sharing),
 `corpus/golden/jutterswet-vondstrecht` (the barrier the v0 inlining

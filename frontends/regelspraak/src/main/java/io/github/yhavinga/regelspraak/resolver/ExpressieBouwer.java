@@ -84,11 +84,12 @@ final class ExpressieBouwer {
      * ({@code ResolvedRegel.voorwaarde} is a {@link Conditie}, {@code .waarde} an {@link Expr}), and a ch. 4.10
      * {@code Let} is an Expr node — so no Let can span them. A variable read in the RESULT part therefore becomes a
      * {@link Expr.BinderRef} under the Let chain {@link #omhulMetVariabelen} builds (sharing survives: two reads,
-     * one Let); a variable read in the VOORWAARDE keeps the v0 route and is SUBSTITUTED at its use site. That
-     * substitution is not a semantic compromise under ch. 10.6's call-by-need: a condition read evaluates the
-     * definition exactly once anyway, and the leeg-barrier a Let would raise at the read place coincides with the
-     * §5 leeg-operand discipline the comparison already applies — what it costs is only the SHARING of a variable
-     * read twice inside one condition, which is re-evaluation, not a different answer.
+     * one Let); a variable read in the VOORWAARDE keeps the v0 route and is SUBSTITUTED at its use site. What that
+     * costs is SHARING: a variable read twice inside one condition is substituted twice and so evaluated twice,
+     * where one Let would evaluate it once (ch. 10.6 clause 1). No case observes the difference — the values agree
+     * — but they are not identical in theory: a definition whose evaluation deposits a §9.5 channel reason would
+     * deposit one PER READ. The leeg-barrier a Let would raise at the read place is no loss either way: it
+     * coincides with the §5 leeg-operand discipline the comparison already applies.
      *
      * <p><b>Pass 1</b> resolves each definition in declaration order (§11.1 rule 1) with earlier variables INLINED
      * — byte-for-byte the v0 behaviour, and the map {@link #naamRef} reads on the voorwaarde route. <b>Pass 2</b>
@@ -174,12 +175,18 @@ final class ExpressieBouwer {
     }
 
     /**
-     * §11/ch. 4.10 build {@code f} in a STRUCTURE-SENSITIVE position: one where the resolver decides on the SHAPE of
-     * the resolved subtree, not on its value. A variable read there is SUBSTITUTED (the v0 route), never handed back
+     * §11/ch. 4.10 build {@code f} as a SHAPE-READING CONSTRUCT: one where the resolver decides on the SHAPE of the
+     * resolved subtree, not on its value. A variable read there is SUBSTITUTED (the v0 route), never handed back
      * as a {@link Expr.BinderRef} — a BinderRef is an opaque leaf, so every {@code instanceof Expr.AttribuutRef} /
      * {@code Literal} / {@code ParameterRef} test would fail and the construct would silently degrade to an
      * Onopgelost marker (a wrong answer, not a lost optimisation). This is the THIRD lowering boundary, beside the
      * voorwaarde-only variable and the never-read one; it is normative in {@code IR-SPEC.md} ch. 4.10.
+     *
+     * <p>The boundary is the WHOLE SUBTREE, not the shape-reading positions inside it: the scope stays off until
+     * the construct is built, so a pure VALUE position underneath — a §5.8.2 leegwaarde fallback, say — is
+     * substituted too, though it decides nothing about shape. One scope, no half-inlined subtree. The consequence
+     * is normative: inside an aggregation subtree the v0 inlining-coalesce still governs, so the ch. 10.6 tracked
+     * delta 1 (the leeg-barrier on the variabelendeel) speaks only about reads OUTSIDE such a subtree.
      */
     private <T> T ingelijnd(java.util.function.Supplier<T> f) {
         boolean vorige = binderModus;
