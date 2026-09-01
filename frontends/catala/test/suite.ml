@@ -133,8 +133,8 @@ let () =
       ("nested_group.catala_en",
        [ "cases/nested_100.json"; "cases/nested_50.json";
          "cases/nested_5.json"; "cases/nested_200.json" ]);
-      (* row-5c §6: the tutorial's rule-level let-if over money — nested strict
-         Let nodes whose body is an IfThenElse (WF-069 widens into Let bodies)
+      (* row-5c §6: the tutorial's rule-level let-if over money — nested
+         [Let] nodes whose body is an IfThenElse (WF-069 widens into Let bodies)
          with a binder-only condition (WF-077). Both branches through the full
          differential *)
       ("let_if.catala_en", [ "cases/letif_60.json"; "cases/letif_0.json" ]);
@@ -385,12 +385,12 @@ let () =
          precision) *)
       ("refuse_nonterminating.catala_en", "terminate");
       (* row-5c §6: WF-077, the condition-operand discipline — an if-then-else
-         condition that reads an attribute directly (not through a strict let)
+         condition that reads an attribute directly (not through a `let … in`)
          is refused with the hoist instruction *)
       ("refuse_condition_read.catala_en", "WF-077");
       (* an if-then-else in a BARE rule expression (not under a let) stays
          refused (WF-069: value conditionals live only inside lambda, function
-         or strict Let bodies) *)
+         or [Let] bodies) *)
       ("refuse_ifthenelse.catala_en", "if-then-else");
       ("refuse_boolfalse.catala_en", "false");
       (* row-10 fences (§4): list sorting, a plain-value topdef, and a

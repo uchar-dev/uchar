@@ -48,8 +48,9 @@ import io.github.yhavinga.regelspraak.model.Datatype;
  * <ul>
  *   <li>{@code startpuntCompanions} (§6.8) — measured on a two-flank pair: ref carries no leeg-anchor check at
  *       all, so descending would ADD a ref-divergence instead of removing one. Recorded at that method;</li>
- *   <li>{@code heeftTijdgebonden} (§4.2) — it descends through the VENDORED {@code Expr.bevat}, whose default
- *       arm makes an {@code Onopgelost} a leaf. A §5.3 Rekendatum/Rekenjaar behind a carrier therefore leaves
+ *   <li>{@code heeftTijdgebonden} (§4.2) — it descends through the VENDORED {@code Expr.bevat}, whose
+ *       {@code Onopgelost} arm is a leaf (the switch is exhaustive since the let-lowering card; an
+ *       {@code Onopgelost} maps to {@code false} explicitly). A §5.3 Rekendatum/Rekenjaar behind a carrier therefore leaves
  *       the rekendatum global unregistered — and the value lowering that needs it then skips LOUDLY ("regel
  *       (THEN-waarde refereert niet-geregistreerde global rekendatum)"), never quietly;</li>
  *   <li>{@code parityOnveilig}, {@code containsAggregatie}, {@code isDatumRekenExpr}, {@code lowerVal} — each

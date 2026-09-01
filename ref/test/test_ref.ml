@@ -1336,7 +1336,8 @@ let () =
   expect_num "WV-10.6-maal-coalesce-bare"
     (Eval.eval_expr env w self ~err:no_err (maal a_leeg (litv "5" num0)))
     "0";
-  (* (3b) ... but the SAME read through a strict Let binding propagates leeg *)
+  (* (3b) ... but the SAME read through a Let binding propagates leeg — the
+     barrier at the READ (ch. 10.6 clause 2) *)
   expect_leeg "WV-10.6-let-barrier"
     (Eval.eval_expr env w self ~err:no_err
        (letexpr "x" a_leeg (maal (binder_ref "x" num0) (litv "5" num0)) num0));
@@ -1453,7 +1454,7 @@ let () =
    intermediate step; the sole collapse in this witness is its endpoint
    Afgerond node (ch. 2.5; ch. 2.1 also admits the ch. 2.2 abs-division,
    not exercised here). Witness: the non-terminating quotient 100 ÷ 3 = 33,333…, bound
-   in a strict Let whose value is DECLARED at two decimals, read at the
+   in a Let whose value is DECLARED at two decimals, read at the
    endpoint through a single Afgerond. Rounded to 2 the endpoint is 33,33;
    rounded to 4 it is 33,3333 — not 33,3300, the value a scale that bound the
    intermediate step would have forced (ref ignores the binder's declared

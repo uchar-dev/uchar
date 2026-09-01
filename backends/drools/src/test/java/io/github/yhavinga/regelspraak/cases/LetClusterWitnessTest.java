@@ -209,7 +209,7 @@ class LetClusterWitnessTest {
                 .formatted(op, links, rechts, num(dec), op.toLowerCase());
     }
 
-    /** ch. 4.10 the strict binding. Its {@code type} is the BODY's type (WF-076). */
+    /** ch. 4.10 the value-level binding. Its {@code type} is the BODY's type (WF-076). */
     private static String let(String binder, String value, String body, int dec) {
         return "{\"node\":\"Let\",\"type\":%s,\"binder\":\"%s\",\"value\":%s,\"body\":%s,\"bron\":\"%s is …\"}"
                 .formatted(num(dec), binder, value, body, binder);
@@ -288,7 +288,7 @@ class LetClusterWitnessTest {
                 "");
     }
 
-    /** ch. 10.6's contrast: the same product with and without the strict binding, on one subject. */
+    /** ch. 10.6's contrast: the same product with and without the Let binding, on one subject. */
     private static String barriereModel() {
         String inkomen = attr("inkomen", 2, false, "NIET_NEGATIEF");
         return model("\"inkomen\":%s,\"metlet\":%s,\"zonderlet\":%s".formatted(

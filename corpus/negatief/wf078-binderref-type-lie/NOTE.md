@@ -1,5 +1,5 @@
 Violates WF-078 (`spec/IR-SPEC.md` ch. 4.7): a `BinderRef`'s serialized
-`type` lies about the soort of the binder it resolves to. The strict `Let`
+`type` lies about the soort of the binder it resolves to. The `Let`
 binds `b` to `de basis van de Jutter`, a `Numeriek` attribute, so `b`'s
 declared datatype is `Numeriek`; the body then reads `b` with a serialized
 `type {Tekst}`.

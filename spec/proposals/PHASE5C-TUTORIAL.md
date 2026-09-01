@@ -451,6 +451,20 @@ binder → term); in ref it is `locals`. The alternatives — inlining
 and unrestricted rule-level conditionals (reopens NAF-over-derived-
 atoms and the leeg-divergence class) — are rejected in the question.
 
+> **Superseded in part (maintainer decision O3, 2026-09-01 — the
+> let-lowering card).** The word **strict** above is the record of what
+> was ratified on 2026-08-22 and is left standing as history; it is no
+> longer the semantics. `Let` unified to **call-by-need with the
+> leeg-barrier at the READ** (`RUNTIME-SEMANTICS.md` ch. 10.6,
+> `IR-SPEC.md` ch. 4.10): the value is evaluated at the first read of
+> the binder and reused, an **unread** binder evaluates nothing at all,
+> and a read of a leeg value empties the whole `Let`. Measured
+> pin-neutral (399 of 399 corpus cases identical to strict). Everything
+> this section builds on the barrier — WF-077, the never-leeg body
+> binder, the NAF-free exact-complement branch encoding — is unchanged;
+> only *where* the barrier sits moved, from the bind place to the read
+> place.
+
 ## 7. The decisions (numbered; ratified by the maintainer 2026-08-22 — all five as recommended)
 
 **Vraag 1 — de struct-representatie. Decided (2026-08-22): A — eigen record-datatype**

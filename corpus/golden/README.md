@@ -94,7 +94,9 @@ is scaffolding for the WF index, never a place for semantics.
 
 `jutterswet-postwacht` is the second pin bump's emitter golden
 (toolchain `fe46e49`, 2026-08-18): a re-emittable source whose dump
-carries all four emitter-produced extension families — navigation
+carries all four extension families the emitter produced at that pin bump
+(the ch. 4.10 `Let`/`BinderRef` cluster joined them at the let-lowering
+card, 2026-09-01, and is not in this dump) — navigation
 bindings on the scalar read and the navigated characteristic check
 (and, witness by absence, NOT on the fold sources), `scopeRol` on the
 parent-scoped uniqueness, and the whole-or-not symbolic fact-creation

@@ -166,7 +166,21 @@ Three new `expr` `oneOf` members (IR-SPEC ch. 4.7, new):
   (WF). `VariabeleRef` (row 24, the rule-local let-binding whose
   definitions v0 does not serialize — the WF-034 caveat) is left
   entirely untouched: still accepted by the verifier as the motivated
-  OPEN, still a runtime fault in ref. The first draft overloaded
+  OPEN, still a runtime fault in ref.
+
+  > **Superseded in part (2026-09-01, the let-lowering card).**
+  > `BinderRef` **is** emitter-produced since the row-24 variabelendeel
+  > lowering: the RegelSpraak frontend emits one per read of a
+  > `Daarbij geldt:` variable under a ch. 4.10 `Let` chain
+  > (`spec/CONSTRUCTS.md` rows 24/36, `IR-SPEC.md` ch. 4.7). The
+  > blanket "never emitter-produced" of §1 above therefore no longer
+  > covers `BinderRef`; the rest of the 5b set still stands. And
+  > `VariabeleRef` is narrowed rather than untouched — since that card
+  > it carries only what a `BinderRef` cannot, a variable reference the
+  > resolver could **not** bind (a forward or cyclic definition): an
+  > honest residual marker, never a bound read.
+
+  The first draft overloaded
   `VariabeleRef` for both roles; both lenses rejected that as
   non-additive (a resolution WF would newly reject legitimate v0
   let-refs, and the two roles would be indistinguishable on the wire

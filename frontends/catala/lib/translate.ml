@@ -318,11 +318,13 @@ let is_true e = match M.remove (strip e) with ELit (LBool true) -> true | _ -> f
 let is_empty e = match M.remove (strip e) with EEmpty -> true | _ -> false
 
 (* WF-077, the condition-operand discipline (IR-SPEC ch. 4.10). Everywhere an
-   [IfThenElse] is admissible (a lambda, function or strict [Let] body), its
+   [IfThenElse] is admissible (a lambda, function or [Let] body), its
    condition may READ only binders, parameters and literals; arithmetic
    combinators over those are admissible. An attribute/field/characteristic/
    aggregation/temporal read as (or inside) a condition operand must be hoisted
-   through a strict [let … in] binding first — the leeg-barrier. Enforced here
+   through a [let … in] binding first — the leeg-barrier, which since
+   maintainer decision O3 sits at the READ (RUNTIME-SEMANTICS ch. 10.6
+   clause 2), not at the bind. Enforced here
    as a pre-walk over the raw scopelang condition, refusing loudly with the
    hoist instruction; the translation that follows then meets only bound reads
    and literals. *)
@@ -335,23 +337,23 @@ let rec check_cond_wf077 e =
   | ELocation (ScopelangScopeVar { name; _ }) ->
       refuse
         "WF-077: the condition of an if-then-else reads the scope variable %S directly; bind it \
-         through a strict `let … in` first and compare the binder — a condition may read only \
+         through a `let … in` first and compare the binder — a condition may read only \
          binders, parameters and literals (the condition-operand discipline, the leeg-barrier)"
         (M.remove (ScopeVar.get_info (M.remove name)))
   | ELocation _ ->
       refuse
         "WF-077: an if-then-else condition may read only binders, parameters and literals; hoist \
-         this read through a strict `let … in` binding first"
+         this read through a `let … in` binding first"
   | EStructAccess { field; _ } ->
       refuse
         "WF-077: the condition of an if-then-else reads the struct field %S directly; hoist it \
-         through a strict `let … in` binding first (a condition reads only binders, parameters and \
+         through a `let … in` binding first (a condition reads only binders, parameters and \
          literals)"
         (StructField.to_string field)
   | _ ->
       refuse
         "WF-077: an if-then-else condition admits only binders, parameters, literals and arithmetic \
-         over those; hoist any other read through a strict `let … in` binding first"
+         over those; hoist any other read through a `let … in` binding first"
 
 (* --- the default tree, parsed into a defaults tree (PHASE5C §4, ch. 7.9) --
 
@@ -587,7 +589,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
   let rec value_expr ?(operand = false) ?(in_body = false) ?(in_let = false)
       ?(in_map_body = false) ?(env = Var.Map.empty) e : I.expr =
     (* [in_body]: a closed lambda/function body — scope reads refuse (WF-067),
-       IfThenElse admissible. [in_let]: a strict Let body — scope reads are
+       IfThenElse admissible. [in_let]: a [Let] body — scope reads are
        allowed (a Let body is NOT closed), IfThenElse admissible (WF-069, the
        5c widening). IfThenElse is admissible iff [in_body || in_let].
        [in_map_body]: this node IS the map lambda's body expression (the
@@ -780,12 +782,15 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
     | EApp { f; args; _ } -> (
         match M.remove (strip f) with
         | EAbs { binder; tys; _ } ->
-            (* the strict Let (IR-SPEC ch. 4.10): Catala lowers [let x = v in
+            (* the value-level binding (IR-SPEC ch. 4.10): Catala lowers [let x = v in
                body] to [EApp{EAbs[x], [v]}], a chain nesting one per binding.
                Each binder joins the WF-064 regime for its body; the value is
                evaluated in the enclosing position (the binder is NOT visible in
                its own value, WF-076), the body in a Let position where
-               IfThenElse widens in (WF-069). A leeg value propagates strictly.
+               IfThenElse widens in (WF-069). uchar's [Let] is call-by-need, so
+               a leeg value propagates at the READ (ch. 10.6 clause 2) while
+               Catala's own [let] is call-by-value — tracked delta 2 there,
+               unobservable over the corpus (every binder is read).
                The node type equals the body type (WF-076), read off the body. *)
             let vars, body = Bindlib.unmbind binder in
             if Array.length vars <> List.length args then
@@ -1080,10 +1085,10 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
     | EIfThenElse { cond; etrue; efalse } ->
         if not (in_body || in_let) then
           refuse
-            "if-then-else in a rule expression: a value-level conditional is admissible only inside a lambda, function or strict let body (WF-069); a rule keeps the defaults/voorwaarde idiom (bind through a `let … in` to carry it)";
+            "if-then-else in a rule expression: a value-level conditional is admissible only inside a lambda, function or `let … in` body (WF-069); a rule keeps the defaults/voorwaarde idiom (bind through a `let … in` to carry it)";
         (* WF-077, the condition-operand discipline: a condition reads only
            binders, parameters and literals — an attribute/field read must be
-           hoisted through a strict let first (checked before translation) *)
+           hoisted through a `let … in` first (checked before translation) *)
         check_cond_wf077 cond;
         let then_ = value_expr ~in_body ~in_let ~env etrue in
         let else_ = value_expr ~in_body ~in_let ~env efalse in

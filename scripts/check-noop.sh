@@ -108,18 +108,19 @@
 #     — both scalar inputs absent, the StructLiteral build propagates leeg, the
 #     FieldAccess reads leeg, and the struct-equality characteristic is false
 #     against a leeg operand; the absence IS the assertion.
-#   - synth3-drempelheffing/case4-leeg-grondslag.json: the strict Let leeg-barrier
-#     (ch. 10.6) — `Let g = grondslag` reads leeg, so the whole heffing chain is
-#     leeg regardless of the other strict bindings; the absence IS the assertion.
+#   - synth3-drempelheffing/case4-leeg-grondslag.json: the Let leeg-barrier
+#     (ch. 10.6, at the READ) — the body reads `g`, whose value `grondslag` is
+#     leeg, so the whole heffing chain is leeg regardless of the other
+#     bindings; the absence IS the assertion.
 #   - synth3-besluitschakel/case4-afwezig.json: a score absent leaves both
 #     disjoint Construct writers unjustified, so uitkomst is undecided and the
 #     downstream Match propagates leeg to bedrag; the absence IS the assertion.
 #   - synth3-letbeslag/case3-leeg-regime.json: a leeg Match scrutinee propagates
-#     (ch. 9.2) even while the strict Let binding stays gevuld — regime absent,
+#     (ch. 9.2) even while the Let binding stays gevuld — regime absent,
 #     beslag empty; the value cases decide and are not survivors.
-#   - synth3-letbeslag/case4-leeg-grondslag.json: the strict Let leeg-barrier
-#     again (ch. 10.6), here composed under a Match body — grondslag absent makes
-#     `Let g` leeg, so beslag is leeg before the Match ever dispatches.
+#   - synth3-letbeslag/case4-leeg-grondslag.json: the Let leeg-barrier
+#     again (ch. 10.6), here composed under a Match body — grondslag absent, so
+#     the read of `g` empties the Let before the Match ever dispatches.
 #   - jutterswet-samenloop/case6-geen-grond.json: the no-ground flank of the
 #     samenloop competition defaults (ch. 7.1) — with neither aanspraak ground
 #     present no default decides and vergoeding stays empty, whatever amounts the
