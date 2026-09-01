@@ -122,7 +122,10 @@ A new datatype node (English name, per the `TemporalRead`/
 > **Superseded (2026-09-01, keuzetype-familie card):** all-nullary now
 > normalises to `Enumeratie` — WF-087; Match widens to enumeration
 > scrutinees — WF-063. "Never convert" survives as its payload half
-> only. Proposals are history: the paragraph above stands as written,
+> only. The parenthetical "still without a clingo value encoding" is
+> false as well: enumeration values ride the S2 symbolic operand and are
+> replayed by gate 6 (`jutterswet-vaarwatertoeslag-catala`). Proposals
+> are history: the paragraph above stands as written,
 > and the ratified rules are IR-SPEC ch. 2.4 with CONSTRUCTS row 36.
 
 ### 2.2 Expressions: `Construct`, `Match`, `BinderRef`
@@ -293,7 +296,11 @@ work list:
 > **Superseded (2026-09-01, keuzetype-familie card):** all-nullary now
 > normalises to `Enumeratie` — WF-087; Match widens to enumeration
 > scrutinees — WF-063, so a two-formed scrutinee is no longer an
-> objection. Proposals are history: the paragraph below stands as
+> objection. **Both** premises of the paragraph below are now false, not
+> just the second: `Enumeratie` values *do* have a clingo encoding (the S2
+> symbolic operand — the normalised quoted string), and the golden
+> `jutterswet-vaarwatertoeslag-catala` plays the whole enum path through
+> gate 6. Proposals are history: the paragraph below stands as
 > written; the plugin's ratified mapping is `keuzetype_of` in
 > `frontends/catala/lib/translate.ml`.
 

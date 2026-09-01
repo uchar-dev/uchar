@@ -73,5 +73,35 @@ enumeratie (de WF-061-analoog). De verbreding van WF-063 maakte een
 verifier-schoon document bereikbaar waarop ref hard faultte en clingo
 stil leeg afleidde, omdat WF-039 de lokale `waarden`-kopie leest waar
 WF-063 de declaratie leest. De regel is breed geland — de meting gaf
-hem gratis: geen enkele van de 161 goldens (noch de 94 enum-use-sites
-in `toka/`) draagt drift. Drie negatief-gevallen, één per as.
+hem gratis: geen enkel document dat gate 3 leest (161 = 139 goldens +
+22 rood) draagt drift, en `toka/` evenmin (94 `Enumeratie`-knopen in 30
+fixtures: 64 use-sites plus de 30 domeindeclaraties die per definitie
+geen use-site zijn). Vier negatief-gevallen: drie assen plus, sinds
+fixronde 2, de `FunctionDef`-positie die alleen via de
+sum-payload-recursie bereikbaar is (`wf088-functiondef-drift`).
+
+Wat de regel bewust NIET doet, elk gemeten in plaats van aangenomen
+(fixronde 2):
+
+- **Het doel-type van een regel loopt niet mee.** De target-lvalue is
+  WF-022's werk, niet dat van de expressiewandeling. Drift daar is
+  onschadelijk: het `doel`-type van `jutterswet-keurstaat` opgerekt met
+  een vierde waarde blijft verifier-schoon en alle drie de cases spelen
+  in ref én clingo naar dezelfde gepinde verwachtingen, omdat beide
+  executors door het GEDECLAREERDE attribuutdatatype schrijven.
+- **Een use-site die een ánder domein noemt dan de declaratie waaruit
+  hij leest, is ongecontroleerd.** WF-088 bindt een use-site aan het
+  domein dat hij NOEMT; niets kruist dat tegen de declaratie waarvan
+  hij LEEST. Ref's Match-fault is dus bereikbaar op een verifier-schoon
+  document — de melding in `ref/lib/eval.ml` zegt dat nu ook, in beide
+  armen (de som-kant is pre-existent: WF-061 loopt attributen en
+  parameters). Vervolgkaart
+  `20260901-use-site-declaratie-identiteit`.
+- **De ci-helft is onfalsifieerbaar gelaten.** WF-088 vergelijkt
+  hoofdletterongevoelig (WF-001), maar van de 82 oplosbare
+  enum-use-sites in golden + rood + `toka/` wijkt er geen enkele
+  uitsluitend in kapitalisatie af — er is dus geen getuige dat de
+  ci-vergelijking iets TOELAAT. Een kunstgolden daarvoor zou dood
+  gewicht zijn (een document zonder eigen betekenis, alleen om een
+  `String.equal`-mutant te vangen); gemotiveerd gelaten in plaats van
+  stil gelaten.

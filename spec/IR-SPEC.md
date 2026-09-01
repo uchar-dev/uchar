@@ -351,8 +351,8 @@ false`, `decimals = 0` (no precision ceiling; §13.3.3 form (c)). The
 - **WF-088** An `Enumeration` **use site** — every `Enumeration` datatype
   in the document other than the domain declaration itself: an attribute
   or parameter datatype, a `FunctionDef` parameter or result, an
-  expression's `type`, a `Match` scrutinee's type — MUST name a declared
-  enumeration domain and repeat its value list exactly: the same values,
+  expression's `type`, a `Match` scrutinee's type — MUST repeat, exactly,
+  the value list of the enumeration domain it names: the same values,
   compared case-insensitively (WF-001), in the declared order (which
   WF-006 makes normative). The inline `values` copy is a repetition of
   the declaration, never a second opinion — **the declaration is the
@@ -364,8 +364,16 @@ false`, `decimals = 0` (no precision ceiling; §13.3.3 form (c)). The
   match's arms against the **declaration**. A drifted use site therefore
   passed both — verifier-clean, yet ref faulted at evaluation ("match has
   no arm for enumeration value …") and clingo silently derived nothing.
-  A use site whose `domain` names no declared enumeration domain is not
-  this rule's business: WF-003 and WF-063 own the unresolved reference.
+  This is a **repeat check and nothing more**: a use site whose `domain`
+  names no declared enumeration domain is silently not this rule's
+  business, and the cover elsewhere is partial — WF-003 owns an
+  attribute's ghost domain, WF-018 a parameter's, WF-063 a `Match`
+  scrutinee's, while a `FunctionDef` parameter or result and an ordinary
+  expression `type` naming a ghost domain are **unenforced**. Recorded
+  here rather than repaired: backlog
+  `20260901-use-site-declaratie-identiteit`, which also carries the other
+  open half — that this rule binds a use site to the domain it *names*,
+  never to the declaration it *reads from*.
   *v0 mirror note:* unchecked in v0. **Delta (promotion).**
 
 Orderability: `Number` and `Date` are orderable; `Text`, `Boolean`,
@@ -441,7 +449,10 @@ the enumeration alone (WF-087).
   under the enumeration arm of WF-063 (ch. 4.7), so nothing is lost in
   the move. The rule is stated over the declaration and needs no
   use-site arm: WF-061 forces every use site to agree with its declaring
-  domain. Its converse is deliberately absent — an `Enumeration` is
+  domain. It starts at **one** constructor and stops below it: a
+  declaration with *no* constructor at all is WF-060's terrain (it has no
+  enumeration to normalise to), so WF-087 leaves the empty case alone
+  rather than reporting both. Its converse is deliberately absent — an `Enumeration` is
   never rewritten to a `SumType`, and a payload-carrying declaration is
   never rewritten at all. **Delta (v1 normalisation).**
 - **WF-061** A `SumType` use site MUST name a declared domain whose
@@ -2394,7 +2405,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-085 | the day-kind reference graph is acyclic (ch. 5.4 / ch. 3.7): a day-kind condition may reference other day kinds (a `Predicaat` of soort `DAGSOORT`), but mutually recursive definitions have no fixpoint — a loud refusal where the v0 toolchain resolves a cycle to a silent false (the §9.10 recursion prohibition unenforced for day kinds); diverge-from-v0 (v0 neither checks nor documents it) | gate 3 | `jutterswet-schouwkalender` (an acyclic `hoogschouwdag -> schouwdag` reference, verifier-clean, replayed by gates 5–6 over its ordinary rule) | `wf085-dagsoort-verwijzingscyclus` (two mutually referencing day kinds) |
 | WF-086 | a defaults group MUST NOT target a temporal attribute (declared `attribuutGranulariteit`) nor a temporal characteristic (`kenmerkGranulariteit`) — a defaults group decides at one fixpoint and has no timeline coordinate to write (ch. 6); the document-layer fence ahead of the executors (ref faults on both arms — defense-in-depth — and the Drools defaults service skips); temporal defaults targets are unscheduled (PRIORITIZED-DEFAULTS-EVOLUTIE §9 Q12a) | gate 3 (over the prioritized-defaults node via the shared `attr_temporal` helper and the `kenmerkGranulariteit` table) | `anchor/jutterswet-vondstwaardering` (attribute defaults on a non-temporal target — gate 3 witnesses WF-086 does not over-fire) | `wf086-temporele-defaultstarget` (attribute arm), `wf086-temporele-defaultskenmerk` (characteristic arm) |
 | WF-087 | the keuzetype family's nullary rule (ch. 2.4): a `SumType` declaration whose constructors ALL carry a null payload is ill-formed — the nullary keuzetype has one wire form, the `Enumeration` domain, so such a declaration normalises to it (nullary-as-sum is sugar, the enumeration is the kernel; two frontends cannot express one meaning in two shapes). Stated over the declaration; WF-061 carries the use sites. No converse: payload never converts | gate 3 (over `domeinen`, beside WF-060) | every payload-carrying SumType golden — `anchor/jutterswet-beschikkingsom`, `anchor/jutterswet-aanspraaktelling`, the `synth3-*` sum witnesses (gate 3 witnesses WF-087 does not over-fire on a keuzetype with payload) | `wf087-all-nullary-sumtype` + `wf087-unit-sumtype` (the lower boundary: ONE nullary constructor — a unit type is a nullary keuzetype too, and it is what a `List.length > 1` weakening of the rule would let through) |
-| WF-088 | an `Enumeration` use site repeats the value list of the domain it names — same values (ci), declaration order (ch. 2.4). The enumeration sibling of WF-061, and what makes "the declaration is the source of truth" mechanically true for this variant: WF-039 reads the LOCAL list where WF-063 reads the DECLARATION, so a drifted copy passed both while ref faulted at evaluation and clingo derived nothing | gate 3 (model layer: attribute, parameter and `FunctionDef` datatypes; expression layer: every node's `type`, beside WF-007's number-form check — the same "every datatype in the document" split) | `jutterswet-vaarwatertoeslag-catala` (the `Vaarwater` domain repeated identically at the attribute, the literals and the match scrutinee) + `jutterswet-vormenkabinet` (the `kwaliteit` domain) | `wf088-use-site-value-drift` (a value the declaration lacks) + `wf088-use-site-value-order` (the same values, reordered — WF-006 order is normative) + `wf088-literal-type-drift` (an impeccable model layer, a drifted `Literal` type deep in a rule: the expression-layer arm) |
+| WF-088 | an `Enumeration` use site repeats the value list of the domain it names — same values (ci), declaration order (ch. 2.4). The enumeration sibling of WF-061, and what makes "the declaration is the source of truth" mechanically true for this variant: WF-039 reads the LOCAL list where WF-063 reads the DECLARATION, so a drifted copy passed both while ref faulted at evaluation and clingo derived nothing | gate 3 (model layer: attribute, parameter and `FunctionDef` datatypes; expression layer: every node's `type`, beside WF-007's number-form check — the same "every datatype in the document" split). One position stays deliberately outside the walk: a rule's TARGET `type`, which is WF-022's lvalue, not part of the expression walk — a drifted copy there is verifier-clean and measured harmless (drift the `doel` type of `jutterswet-keurstaat` and all three cases still replay to their pinned expectations in ref AND clingo, because both write through the target attribute's DECLARED datatype) | `jutterswet-vaarwatertoeslag-catala` (the `Vaarwater` domain repeated identically at FOUR use sites: the attribute datatype, the `Match` scrutinee's type, and the two operands of the equality — an `AttribuutRef` type and a `Literal` type) + `jutterswet-vormenkabinet` (the `kwaliteit` domain) | `wf088-use-site-value-drift` (a value the declaration lacks) + `wf088-use-site-value-order` (the same values, reordered — WF-006 order is normative) + `wf088-literal-type-drift` (an impeccable model layer, a drifted `Literal` type deep in a rule: the expression-layer arm) + `wf088-functiondef-drift` (three violations on one `FunctionDef` — parameter, result and body type — all reached through the walk's recursion into sum-type payloads, the arm no other case exercises) |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is
