@@ -20,14 +20,25 @@ module SMap = World.SMap
 
 let norm = Ir_v0.Checks.norm
 
+(* what a lexical binder is bound to. Every binder form but one binds a value
+   that is already computed and known non-leeg — a match-arm payload, a
+   lambda/function parameter, a filter element ([Now]). A `Let` binds a NEED
+   (ch. 10.6): the value is evaluated at the FIRST read of the binder and
+   reused after (call-by-need), and a read whose value evaluates leeg raises
+   the owning Let's barrier instead of yielding leeg. [Later] carries that
+   read as a closure, so the barrier it raises is the owning Let's own local
+   exception — a nested Let can never catch an enclosing one's. *)
+type binding = Now of Value.t | Later of (unit -> Value.t)
+
 type env = {
   doc : document;
   params : Value.t SMap.t; (* by norm name *)
   param_tls : Timeline.t SMap.t; (* granular parameters' full timelines (norm name) *)
   as_of : string option; (* ISO date; None = time-free session *)
-  locals : Value.t SMap.t;
+  locals : binding SMap.t;
       (* lexical binders bound per match-arm evaluation (ch. 9.2), by norm
-         name; the row-10 card extends this to lambda/function parameters *)
+         name; the row-10 card extends this to lambda/function parameters,
+         the ch. 10.6 Let adds the deferred [Later] form *)
 }
 
 let req what = function Some x -> x | None -> Value.fault "missing %s in IR node" what
@@ -715,7 +726,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
               let locals =
                 match (binder, payload) with
                 | None, None -> env.locals
-                | Some b, Some v -> SMap.add (norm b) v env.locals
+                | Some b, Some v -> SMap.add (norm b) (Now v) env.locals
                 | Some _, None ->
                     Value.fault "match arm for nullary constructor %S carries a binder (WF-063)" tag
                 | None, Some _ ->
@@ -725,20 +736,32 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       | v -> Value.fault "match scrutinee is %s, not a constructor value" (Value.to_string v))
   | Binder_ref { naam; _ } -> (
       (* ch. 9.2: the nearest enclosing binder; WF-064 makes the miss
-         statically impossible, so an unbound read is a fail-fast fault *)
+         statically impossible, so an unbound read is a fail-fast fault. A
+         [Later] binding is a ch. 10.6 need: reading it forces the value (once)
+         and raises the owning Let's barrier if that value is leeg. *)
       match SMap.find_opt (norm naam) env.locals with
-      | Some v -> v
+      | Some (Now v) -> v
+      | Some (Later read) -> read ()
       | None -> Value.fault "unbound binder %S (WF-064 should preclude this)" naam)
-  | Let { binder; value; body; _ } -> (
-      (* ch. 10.6: the strict let. Evaluate [value] first; a leeg value
-         propagates — the whole Let is leeg and the body never runs (WF-076,
-         the leeg-barrier). Otherwise the binder — never leeg — joins the
-         locals (the WF-064 regime) and the body is evaluated under it. *)
-      match eval_expr env world self ~err value with
-      | Value.Empty -> Value.Empty
-      | v ->
-          let locals = SMap.add (norm binder) v env.locals in
-          eval_expr { env with locals } world self ~err body)
+  | Let { binder; value; body; _ } ->
+      (* ch. 10.6, the three clauses. (1) LAZY, ONCE: [value] is evaluated in
+         the ENCLOSING scope (WF-076 — the binder is invisible in its own
+         value) at the first read of the binder, and [Lazy] memoises that one
+         result for every further read, so a value whose evaluation deposits a
+         §9.5 channel fact deposits it exactly once. (2) THE BARRIER AT THE
+         READ: a read whose value is leeg raises [Barrier], caught HERE, so the
+         whole Let is leeg — the body binder is never leeg, which is what keeps
+         WF-077's condition operands total. [Barrier] is a LOCAL exception,
+         freshly generated per evaluation of this arm, so a nested Let's
+         barrier passes an enclosing handler by (it belongs to the Let that
+         bound the binder that was read). (3) AN UNREAD BINDER EVALUATES
+         NOTHING: a body that never reads the binder never forces [memo] — no
+         leeg, no fault, no channel fact — and its outcome IS the Let's. *)
+      let exception Barrier in
+      let memo = lazy (eval_expr env world self ~err value) in
+      let read () = match Lazy.force memo with Value.Empty -> raise Barrier | v -> v in
+      let locals = SMap.add (norm binder) (Later read) env.locals in
+      (try eval_expr { env with locals } world self ~err body with Barrier -> Value.Empty)
   | Struct_literal { velden; _ } ->
       (* ch. 11.1: a record value; a field evaluating leeg propagates — the
          whole literal evaluates leeg (a record carries no hole). The field
@@ -814,7 +837,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           Value.Lijst
             (List.filter
                (fun x ->
-                 let locals = SMap.add (norm binder) x env.locals in
+                 let locals = SMap.add (norm binder) (Now x) env.locals in
                  eval_cond { env with locals } world self ~err condition)
                xs)
       | v -> Value.fault "filter-list operand is %s, not a list value" (Value.to_string v))
@@ -846,7 +869,9 @@ and eval_closed_body env world self ~err (parameters : (string * datatype) list)
     Value.fault "closed body applied to %d arguments, expected %d (WF-068/069/070)"
       (List.length args) (List.length parameters);
   let locals =
-    List.fold_left2 (fun acc (pname, _) v -> SMap.add (norm pname) v acc) SMap.empty parameters args
+    List.fold_left2
+      (fun acc (pname, _) v -> SMap.add (norm pname) (Now v) acc)
+      SMap.empty parameters args
   in
   eval_expr { env with locals } world self ~err body
 

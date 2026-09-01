@@ -1272,22 +1272,30 @@ let () =
   check "WV-11.2-list-render"
     (Value.to_string ds = "[{waarde: 10, telling: 1}, {waarde: 2.5, telling: 2}]")
 
-(* --- ch. 10.6: the strict Let (RUNTIME-SEMANTICS ch. 10.6; PHASE5C §6) ---
-   Three worked examples pinning the strict-Let discipline the
-   jutterswet-tariefstelling anchor rests on:
+(* --- ch. 10.6: the call-by-need Let (RUNTIME-SEMANTICS ch. 10.6; PHASE5C §6,
+   the L unification ratified 2026-09-01) ---------------------------------
+   The worked examples pinning the discipline the jutterswet-tariefstelling
+   anchor rests on:
    (1) binder-lookup — a bound value is read through BinderRef in the body;
-   (2) a leeg value propagates WITHOUT the body running — the body reads an
-       unbound binder that would fault if evaluated, so returning leeg (not
-       raising) is the proof the body never ran (the leeg-barrier, WF-076);
+   (2) the clause-2/clause-3 PAIR that distinguishes call-by-need from the
+       strict binding this rule used to state: a leeg value under a READ
+       binder empties the whole Let (the barrier, at the read), while a leeg
+       value under an UNREAD binder is never evaluated at all and the body's
+       outcome is the Let's;
    (3) the maal-coalesce CONTRAST — a bare AttribuutRef reading leeg times a
        literal coalesces to 0 (the ch. 1.2 coalesce table's maal row),
-       whereas the SAME read routed through a strict Let binding propagates
+       whereas the SAME read routed through a Let binding propagates
        leeg: the very reason the discipline exists (anchor case3);
    (4) shadowing — a nested Let reusing a binder name: the inner binding
        wins inside its body and the outer is restored once that body ends;
    (5) shadowing across a fold parameter — a Let in the lambda body reusing
        the fold's element binder wins over it (ref semantics; the ASP side
-       carries a Let only in the bare rule value, ASP-TRANSLATION S19). *)
+       carries a Let only in the bare rule value, ASP-TRANSLATION S19);
+   (i)–(iv) the four L witnesses, each replayed differentially against clingo:
+       a faulting value under an unread binder does not fault, the same value
+       under a read binder does, a leeg value read only in the branch the
+       condition does NOT choose leaves the chosen branch standing, and the
+       need is evaluated exactly ONCE however often it is read. *)
 let () =
   let binder_ref name typ : Ir_v0.Ast.expr =
     Binder_ref { naam = name; typ = Some typ; bron = None }
@@ -1298,10 +1306,14 @@ let () =
   let maal l r : Ir_v0.Ast.expr =
     Binair { op = Maal; links = Some l; rechts = Some r; typ = Some num0; bron = None }
   in
-  let doc = { empty_doc with objecttypen = [ ot "J" [ ("a", Some num0) ] [] ] } in
+  let doc =
+    { empty_doc with
+      objecttypen = [ ot "J" [ ("a", Some num0); ("g", Some num0); ("d", Some num0) ] [] ] }
+  in
   let env = env_of doc in
-  (* the instance leaves attribute "a" absent, so a bare read is leeg *)
-  let w = World.add_instance World.empty (inst "j" "J" []) in
+  (* the instance leaves "a" and "d" absent (a bare read is leeg) and supplies
+     "g" = 100 — the filled dividend witness (iv)'s channel deposit needs *)
+  let w = World.add_instance World.empty (inst "j" "J" [ ("g", n "100") ]) in
   let self = World.get w "j" in
   let a_leeg = aref "a" "J" num0 in
   (* (1) let x = 7 in x -> 7 *)
@@ -1309,10 +1321,17 @@ let () =
     (Eval.eval_expr env w self ~err:no_err
        (letexpr "x" (litv "7" num0) (binder_ref "x" num0) num0))
     "7";
-  (* (2) leeg value -> leeg, and the unbound-binder body never runs (no fault) *)
-  expect_leeg "WV-10.6-leeg-value-no-body"
+  (* (2a) clause 2 — a leeg value under a READ binder: the barrier fires at the
+     read and the WHOLE Let is leeg (so a body read never sees leeg) *)
+  expect_leeg "WV-10.6-leeg-value-gelezen-binder"
     (Eval.eval_expr env w self ~err:no_err
-       (letexpr "x" a_leeg (binder_ref "y" num0) num0));
+       (letexpr "x" a_leeg (binder_ref "x" num0) num0));
+  (* (2b) clause 3 — the SAME leeg value under an UNREAD binder: nothing is
+     evaluated and the body's outcome IS the Let's. Under the strict binding
+     this rule stated before the L unification, this was leeg. *)
+  expect_num "WV-10.6-leeg-value-ongelezen-binder"
+    (Eval.eval_expr env w self ~err:no_err (letexpr "x" a_leeg (litv "42" num0) num0))
+    "42";
   (* (3a) the bare maal coalesces the leeg read to 0 (ch. 1.2a) ... *)
   expect_num "WV-10.6-maal-coalesce-bare"
     (Eval.eval_expr env w self ~err:no_err (maal a_leeg (litv "5" num0)))
@@ -1356,7 +1375,66 @@ let () =
   in
   expect_num "WV-10.6-shadow-fold-parameter"
     (Eval.eval_expr env w self ~err:no_err shadow_fold)
-    "300"
+    "300";
+  (* --- the four L witnesses (ref ≡ clingo differentially on each) --------- *)
+  let deel_door_nul : Ir_v0.Ast.expr =
+    Binair
+      { op = Gedeeld_door; links = Some (litv "100" num0); rechts = Some (litv "0" num0);
+        typ = Some num0; bron = None }
+  in
+  (* (i) clause 3 with a FAULTING value: `let q = 100 / 0 in 42` never
+     evaluates the division, so it yields 42 rather than faulting *)
+  expect_num "WV-10.6-ongelezen-faultende-value"
+    (Eval.eval_expr env w self ~err:no_err (letexpr "q" deel_door_nul (litv "42" num0) num0))
+    "42";
+  (* (ii) the same value READ: the fault surfaces, fail-fast *)
+  expect_fault "WV-10.6-gelezen-faultende-value" (fun () ->
+      Eval.eval_expr env w self ~err:no_err
+        (letexpr "q" deel_door_nul (binder_ref "q" num0) num0));
+  (* (iii) a leeg value whose binder is read ONLY in the branch the condition
+     does not choose: `let k = 2 in let x = a in if k > 1 then 7 else x maal 2`
+     -> 7. The condition is read on EVERY branch (k), the else-branch operand on
+     none — under the strict binding the whole Let was leeg here. *)
+  let groter l r : Ir_v0.Ast.conditie =
+    Vergelijking { op = Groter; links = Some l; rechts = Some r; periode = None; bron = None }
+  in
+  let probe : Ir_v0.Ast.expr =
+    letexpr "k" (litv "2" num0)
+      (letexpr "x" a_leeg
+         (If_then_else
+            { typ = Some num0;
+              condition = groter (binder_ref "k" num0) (litv "1" num0);
+              then_ = litv "7" num0;
+              else_ = maal (binder_ref "x" num0) (litv "2" num0);
+              bron = None })
+         num0)
+      num0
+  in
+  expect_num "WV-10.6-ongelezen-in-niet-gekozen-tak"
+    (Eval.eval_expr env w self ~err:no_err probe)
+    "7";
+  (* (iv) call-by-need: the need is evaluated ONCE however often it is read.
+     The value is a filled dividend over an empty divisor — ch. 5.6/§9.5: it
+     deposits a channel reason and yields no value — so the deposit COUNT is
+     the evaluation count. Reading the binder twice deposits exactly one
+     reason and yields exactly the single-read outcome (leeg, the barrier at
+     the FIRST read). *)
+  let deel_lege_deler : Ir_v0.Ast.expr =
+    Binair
+      { op = Gedeeld_door; links = Some (aref "g" "J" num0); rechts = Some (aref "d" "J" num0);
+        typ = Some num0; bron = None }
+  in
+  let twice, n_twice =
+    with_errs (fun err ->
+        Eval.eval_expr env w self ~err
+          (letexpr "q" deel_lege_deler (plus (binder_ref "q" num0) (binder_ref "q" num0)) num0))
+  in
+  let once, n_once =
+    with_errs (fun err ->
+        Eval.eval_expr env w self ~err (letexpr "q" deel_lege_deler (binder_ref "q" num0) num0))
+  in
+  expect_leeg "WV-10.6-need-kanaalfeit-tweemaal-gelezen" twice;
+  check "WV-10.6-need-eenmaal-geevalueerd" (n_twice = 1 && n_once = 1 && twice = once)
 
 (* --- ch. 2.9: the afrondingsnorm — exact to the rounding point
    (RUNTIME-SEMANTICS ch. 2.9; maintainer decision 2026-08-24, vraag 3-A).
