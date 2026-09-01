@@ -395,6 +395,12 @@ final class RuleChecker {
                 if (d instanceof Expr.TekstReeks.Ingevoegd i) verzamelEigenReads(i.expr(), subject, zelf, uit);
         } else if (e instanceof Expr.DimensieCel dc) {
             verzamelEigenReads(dc.attribuut(), subject, zelf, uit);
+        } else if (e instanceof Expr.Let l) {
+            // ch. 4.10: since the let-lowering card a rule value is a Let CHAIN, so both halves carry reads —
+            // a variabelendeel definition (the value) as much as the expression that reads it (the body).
+            // Stopping at the Let would drop every §11 variable's edge out of the cycle graph.
+            verzamelEigenReads(l.value(), subject, zelf, uit);
+            verzamelEigenReads(l.body(), subject, zelf, uit);
         }
     }
 
@@ -1342,15 +1348,31 @@ final class RuleChecker {
         Expr waardeExpr = bouwer.bouwResultaat(waarde);
         model.resolvedRegels.add(new ResolvedRegel(naam, soort, doelExpr, waardeExpr, voorwaarde, geldigheid, huidigeBronAnnotaties));
         Datatype doelType = doelExpr.type(), waardeType = waardeExpr.type();
+        // Both static checks below judge the value's SHAPE, so they see through the ch. 4.10 Let chain the
+        // variabelendeel lowering wraps around it: `Daarbij geldt: de keuze is -49` denotes the same literal
+        // the bare -49 does, and the lowering changed the wire, not what is statically decidable.
+        Expr statisch = afgepeld(waardeExpr);
         // §13.3.4.2 membership runs BEFORE the Onbekend bail: an enum literal is deliberately typed
         // Onbekend (its domain is context-dependent), and the doel IS that context here.
-        if (waardeExpr instanceof Expr.Literal lit)
+        if (statisch instanceof Expr.Literal lit)
             keurEnumLabel(doelType, Literalen.enumLabel(lit.waarde()), line);
-        keurTeken(doelType, waardeExpr, line);   // §3.3.1 Teken-beperking, static over a literal value
+        keurTeken(doelType, statisch, line);   // §3.3.1 Teken-beperking, static over a literal value
         if (doelType.isOnbekend() || waardeType.isOnbekend()) return; // not enough resolved to judge
         String fout = Typering.toekenning(doelType, waardeType);
         if (fout != null)
             model.diagnostics.add(new Diagnostic(Severity.ERROR, soort.name().toLowerCase() + ": " + fout, line));
+    }
+
+    /** The expression a ch. 4.10 {@code Let} chain ultimately DENOTES, for the shape-sensitive static checks:
+     *  peel the chain, then follow a body that is nothing but a read of one of its own binders. Under ch. 10.6
+     *  such a chain evaluates to exactly that expression, so `Daarbij geldt: de keuze is -49` must fail the
+     *  Teken-beperking precisely as the bare literal does. Following REMOVES the binding, which bounds the walk
+     *  (each binder is followed at most once) without relying on WF-076's value/body scoping. */
+    private static Expr afgepeld(Expr e) {
+        Map<String, Expr> gebonden = new LinkedHashMap<>();
+        while (e instanceof Expr.Let l) { gebonden.put(l.binder(), l.value()); e = l.body(); }
+        while (e instanceof Expr.BinderRef b && gebonden.containsKey(b.naam())) e = gebonden.remove(b.naam());
+        return e;
     }
 
     /** §3.3.1 / §13.3.3.7: the optional Teken-beperking (negatief / niet-negatief / positief) narrows the

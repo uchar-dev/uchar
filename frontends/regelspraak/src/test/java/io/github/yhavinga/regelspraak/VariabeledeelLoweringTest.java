@@ -35,6 +35,18 @@ class VariabeledeelLoweringTest {
         return n;
     }
 
+    /** Every diagnostic the resolver raises, as "SEVERITY: message" — the resolver-check witnesses below assert
+     *  on these rather than on the wire, because what the lowering broke there was the REPORTING, not the IR. */
+    private static java.util.List<String> meldingen(String src) {
+        return Resolver.resolve(src).diagnostics.stream()
+                .map(d -> d.severity() + ": " + d.message()).toList();
+    }
+
+    /** Whether some diagnostic contains {@code fragment}. */
+    private static boolean meldt(java.util.List<String> ds, String fragment) {
+        return ds.stream().anyMatch(m -> m.contains(fragment));
+    }
+
     @Test void een_variabele_die_het_resultaat_tweemaal_leest_wordt_een_let_met_twee_binderrefs() {
         // The point of the lowering: the definition is carried ONCE and read twice, instead of the
         // definition subtree being duplicated at both use sites (the v0 inlining).
@@ -266,5 +278,88 @@ class VariabeledeelLoweringTest {
         assertEquals(1, tel(c, "\"node\":\"Let\""), () -> "één variabele, één Let:\n" + c);
         assertEquals(2, tel(c, "\"node\":\"BinderRef\",\"name\":\"grondloon\""),
                 () -> "beide schrijfwijzen binden op dezelfde binder:\n" + c);
+    }
+
+    // ---- the resolver's own checks under a Let root ----------------------------------------------------
+    // Three RuleChecker inspections read a rule value's SHAPE. Before the Let arm / the chain peel they saw a
+    // Let root, matched nothing, and reported NOTHING — silently, and in the teken case behind a wire that is
+    // verifier-clean, so no gate would have caught it. Each test below is paired with its un-lowered twin: the
+    // lowering changed the wire, so it must not change what is statically decidable about the same rule.
+
+    @Test void een_kringverwijzing_door_een_variabelendeel_heen_wordt_nog_steeds_gemeld() {
+        // keurKringverwijzingen builds its read-graph with verzamelEigenReads, which walks the value expression.
+        // Under the lowering the whole value is a Let CHAIN, so the edge "Jutter.a reads Jutter.b" lives inside a
+        // Let VALUE — invisible to a walk that stops at the Let, and the run-away cycle goes unwarned.
+        String kring = """
+            Objecttype de Jutter
+                de a Numeriek (geheel getal);
+                de b Numeriek (geheel getal);
+            Regel a
+                geldig altijd
+                    De a van een Jutter moet gesteld worden op de hulp plus 1.
+                    Daarbij geldt:
+                        de hulp is de b van de Jutter.
+            Regel b
+                geldig altijd
+                    De b van een Jutter moet gesteld worden op de a van de Jutter plus 1.
+            """;
+        assertTrue(meldt(meldingen(kring), "kringverwijzing tussen berekeningen: Jutter.a -> Jutter.b -> Jutter.a"),
+                () -> "de kring loopt door een variabelendeel en moet gemeld worden: " + meldingen(kring));
+    }
+
+    @Test void de_tekenbeperking_ziet_door_de_letketen_heen() {
+        // §3.3.1 is resolver-static over a LITERAL value; `Daarbij geldt: de keuze is -49` denotes exactly that
+        // literal (ch. 10.6: the chain's body is a single read of the binder), so it must fail the same way the
+        // bare -49 does. This is the case with NO other guard: the emitted wire is verifier-clean.
+        String viaVariabele = """
+            Objecttype de Jutter
+                de keuzewaarde Numeriek (niet-negatief geheel getal);
+            Regel keuze
+                geldig altijd
+                    De keuzewaarde van een Jutter moet gesteld worden op de keuze.
+                    Daarbij geldt:
+                        de keuze is -49.
+            """;
+        String kaal = """
+            Objecttype de Jutter
+                de keuzewaarde Numeriek (niet-negatief geheel getal);
+            Regel keuze
+                geldig altijd
+                    De keuzewaarde van een Jutter moet gesteld worden op -49.
+            """;
+        assertEquals(meldingen(kaal), meldingen(viaVariabele),
+                () -> "het variabelendeel mag de teken-beperking niet wegnemen: " + meldingen(viaVariabele));
+        assertTrue(meldt(meldingen(viaVariabele), "ERROR: waarde -49 voldoet niet aan de teken-beperking 'niet-negatief'"),
+                () -> "§3.3.1 ongemeld: " + meldingen(viaVariabele));
+    }
+
+    @Test void de_enumdomeincontrole_ziet_door_de_letketen_heen() {
+        // §13.3.4.2 likewise: the membership check runs on the value's literal, and the doel supplies the domain.
+        String viaVariabele = """
+            Domein Kleur is van het type Enumeratie
+                'rood'
+                'groen'
+            Objecttype de Jutter
+                de kleur Kleur;
+            Regel kleur
+                geldig altijd
+                    De kleur van een Jutter moet gesteld worden op de tint.
+                    Daarbij geldt:
+                        de tint is 'paars'.
+            """;
+        String kaal = """
+            Domein Kleur is van het type Enumeratie
+                'rood'
+                'groen'
+            Objecttype de Jutter
+                de kleur Kleur;
+            Regel kleur
+                geldig altijd
+                    De kleur van een Jutter moet gesteld worden op 'paars'.
+            """;
+        assertEquals(meldingen(kaal), meldingen(viaVariabele),
+                () -> "het variabelendeel mag de domeincontrole niet wegnemen: " + meldingen(viaVariabele));
+        assertTrue(meldt(meldingen(viaVariabele), "ERROR: 'paars' is geen waarde van Enumeratie Kleur"),
+                () -> "§13.3.4.2 ongemeld: " + meldingen(viaVariabele));
     }
 }
