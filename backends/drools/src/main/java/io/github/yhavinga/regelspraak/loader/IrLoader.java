@@ -344,13 +344,31 @@ public final class IrLoader {
             // each parses into an Onopgelost CARRIER plus its real shape in the letVormen side channel (see
             // {@link LetVorm}). Note the wire's field names: a BinderRef's is "name", an IfThenElse's are
             // "condition"/"then"/"else" — the condition reuses the ordinary conditie union.
-            case "Let" -> letDrager(n, new LetVorm.Binding(text(n, "binder"), expr(n.get("value")),
-                    expr(n.get("body")), datatype(n.get("type"))));
-            case "BinderRef" -> letDrager(n, new LetVorm.Lezing(text(n, "name"), datatype(n.get("type"))));
-            case "IfThenElse" -> letDrager(n, new LetVorm.Keuze(conditie(n.get("condition")), expr(n.get("then")),
-                    expr(n.get("else")), datatype(n.get("type"))));
+            case "Let" -> letDrager(n, new LetVorm.Binding(
+                    verplicht("Let", "binder", text(n, "binder")),
+                    verplicht("Let", "value", expr(n.get("value"))),
+                    verplicht("Let", "body", expr(n.get("body"))),
+                    verplicht("Let", "type", datatype(n.get("type")))));
+            case "BinderRef" -> letDrager(n, new LetVorm.Lezing(
+                    verplicht("BinderRef", "name", text(n, "name")),
+                    verplicht("BinderRef", "type", datatype(n.get("type")))));
+            case "IfThenElse" -> letDrager(n, new LetVorm.Keuze(
+                    verplicht("IfThenElse", "condition", conditie(n.get("condition"))),
+                    verplicht("IfThenElse", "then", expr(n.get("then"))),
+                    verplicht("IfThenElse", "else", expr(n.get("else"))),
+                    verplicht("IfThenElse", "type", datatype(n.get("type")))));
             default -> throw new Refusal("Expr:" + node, "unknown expression node");
         };
+    }
+
+    /** Assert that a ch. 4.10 Let-cluster node carries a field the shape REQUIRES (WF-076/WF-064/WF-069), naming
+     *  both the form and the field. Without it a malformed document fails downstream and namelessly: a null
+     *  {@code value}/{@code body}/branch throws an unattributed NPE out of the transpiler's {@code List.of}
+     *  child accessor, and a missing {@code type} silently produces a carrier typed null — a leaf every walk
+     *  then mis-reads. Fail fast, with the form and the field in the message. */
+    private static <T> T verplicht(String vorm, String veld, T waarde) {
+        if (waarde == null) throw new Refusal(vorm, "malformed node: missing required field '" + veld + "'");
+        return waarde;
     }
 
     /** Register one ch. 4.10 Let-cluster node beside the model and return its carrier — a fresh
