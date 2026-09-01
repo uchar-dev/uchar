@@ -457,12 +457,12 @@ with the executor card).
 vraag 3-A).** A declared scale `S` — the pin above, or any attribute's
 own `decimalen` — binds only a *declaration* and the *write boundary* it
 guards (ch. 2.4); every intermediate value stays the exact rational of
-ch. 2.1 — a strict-`Let` binder (ch. 10.6) and a `Match`-arm result
+ch. 2.1 — a `Let` binder (ch. 10.6) and a `Match`-arm result
 (ch. 9.2) among them, rounded to no scale — and a declared scale is never
 itself a collapse point: those stay exactly the three of ch. 2.1 — an
 explicit `Afgerond` node (ch. 2.5), the ch. 2.2 abs-division operator, and
 the ch. 2.4 write boundary already named. Worked example: `100 ÷
-3` (non-terminating) bound through a strict `Let` at a 2-decimal
+3` (non-terminating) bound through a `Let` at a 2-decimal
 declaration and rounded once at the endpoint — `afgerond op 2
 rekenkundig` → **33,33**; the same binder `afgerond op 4` → **33,3333**,
 never the 33,3300 a step-binding scale would have pre-collapsed; while
@@ -3073,7 +3073,7 @@ at the fold's boundary (init, source), never in its interior.
 - **ListLength**: the element count; `[]` counts 0; a leeg source
   propagates leeg.
 - **IfThenElse** (inside lambda, function or — the Phase-5c widening —
-  strict `Let` bodies, ch. 10.6): evaluate the condition under the
+  `Let` bodies, ch. 10.6): evaluate the condition under the
   ordinary ch. 1.2 comparison discipline, its operands disciplined to
   bound-non-leeg reads by WF-077; evaluate exactly the chosen branch —
   strict, no coalesce, the default-justification mirror.
@@ -3146,38 +3146,78 @@ chapter translates — the differential (gates 5 ≡ 6) covers the whole
 kernel, and whatever a future corner cannot carry lands as a loud
 fault in the ASP inventory, never a silent skip.
 
-### 10.6 Let — the strict value-level binding
+### 10.6 Let — the value-level binding, call-by-need
 
 *A v1 kernel extension (Phase-5c; design and ratified decision:
-`spec/proposals/PHASE5C-TUTORIAL.md` §6, question 2 = A). Node form and
-well-formedness: IR-SPEC ch. 4.10, WF-076/WF-077. Normative from first
-writing.*
+`spec/proposals/PHASE5C-TUTORIAL.md` §6, question 2 = A). The semantics
+unified to **call-by-need with the leeg-barrier at the read** by
+maintainer decision O3 (2026-09-01), replacing the strict binding this
+chapter stated before; the change is measured **pin-neutral** — 399 of
+399 corpus cases evaluate identically. Node form and well-formedness:
+IR-SPEC ch. 4.10, WF-076/WF-077. Normative from first writing.*
 
-A `Let` evaluates its `value` in the enclosing scope, then — **only if
-that value is gevuld** — binds the `binder` to it and evaluates the
-`body`. It is **strict**: `Let x = leeg in body` evaluates **leeg**, and
-the `body` never runs. The binder is therefore never leeg inside the
-body — the **leeg-barrier**, which is what makes a `Let`-body binder a
-safe operand for an `IfThenElse` condition (WF-077) and makes ref's leeg
-propagation coincide with clingo's underivability (an underivable value
-atom simply never binds). In `ref` a `Let` is a `locals` entry; in the
-ASP encoding it is a bound intermediate (its value term and atoms, the
-body translated with `binder → term`).
+A `Let` binds its `binder` to its `value` as a **need**: one evaluation,
+performed at the **first read** of the binder and reused by every further
+read. Three clauses, all normative.
 
-The strictness is **not** a coalesce, and that is the point. Compare,
+1. **Lazy, and once.** The `value` is evaluated in the enclosing scope —
+   the binder is not visible in its own `value` (WF-076) — at the moment
+   the `body` first **reads** the binder, and that single result serves
+   every further read. Evaluating it exactly once is observable: a value
+   whose evaluation deposits a §9.5 channel reason (ch. 5.6) deposits it
+   **once**, however many times the binder is read.
+2. **The leeg-barrier, at the read.** A read of a binder whose `value`
+   evaluates **leeg** makes the **whole `Let`** evaluate leeg. The read
+   never yields leeg — it ends the `Let`. The barrier belongs to the
+   `Let` that bound the binder that was read: a nested `Let` empties
+   *itself*, never an enclosing one.
+3. **An unread binder evaluates nothing.** A `body` that completes
+   without reading the binder never evaluates the `value`: no leeg, no
+   fault, no §9.5 channel reason — and the `Let`'s outcome **is** the
+   body's.
+
+Clause 2 is what keeps a `Let`-body binder **never leeg**: every read
+either yields a gevuld value or ends the `Let`. That is what makes such a
+binder a safe operand for an `IfThenElse` condition (WF-077), and it
+keeps ref's leeg propagation coinciding with clingo's underivability —
+an underivable value atom simply never binds *at the read site*, so
+exactly the reading positions die (`ASP-TRANSLATION.md` S18(a)). The
+NAF-free exact-complement branch encoding is untouched: a condition's
+operands are still total. What moved is only **where** the barrier sits
+— the read place, not the bind place — and with it clause 3, which is
+the "niet onnodig berekenen" of the source language's §11.1.
+
+The binding is **not** a coalesce, and that is the point. Compare,
 over an absent `inkomen` (leeg):
 
 - `inkomen maal 0,21` — a bare `maal`: empty **coalesces** to 0
   (the ch. 1.2 coalesce table's `maal` row), so the product is **0**.
-- `Let ink = inkomen in ink maal 0,21` — the strict binding: the leeg
-  `value` **propagates**, so the whole `Let` is **leeg**.
+- `Let ink = inkomen in ink maal 0,21` — the body **reads** `ink`, so
+  the barrier fires: the whole `Let` is **leeg**.
 
-The two disagree on exactly the empty input. Routing the read through a
-strict `Let` is how an author (or the Catala frontend) chooses
-propagation over coalescing; WF-077 makes that routing mandatory for
-`IfThenElse` condition operands, so the branch guard is always a
-definite waar/onwaar over non-leeg operands (the NAF-free
-exact-complement encoding).
+The two disagree on exactly the empty input. Routing a read through a
+`Let` whose binder the expression then reads is how an author (or the
+Catala frontend) chooses propagation over coalescing; WF-077 makes that
+routing mandatory for `IfThenElse` condition operands, so the branch
+guard is always a definite waar/onwaar over non-leeg operands (the
+NAF-free exact-complement encoding).
+
+**Worked example — call-by-need against strict (absolute; `ref/` tests
+verbatim).** One instance of an object type carrying 2-decimal inputs
+`a`, `d` (both **absent**) and `g` = 100.
+
+| # | expression | value | why — and what strict gave |
+|---|---|---|---|
+| 2a | `Let x = a in x` | **leeg** | clause 2: the read fires the barrier (strict: leeg too) |
+| 2b | `Let x = a in 42` | **42** | clause 3: `x` is never read, so `a` is never evaluated (strict: **leeg**) |
+| i | `Let q = 100 ÷ 0 in 42` | **42**, no fault | clause 3 over a *faulting* value (strict: **faults**) |
+| ii | `Let q = 100 ÷ 0 in q` | **fault** *"division by numeric zero"* | the read forces the value; fail-fast, unchanged |
+| iii | `Let k = 2 in Let x = a in if k > 1 then 7 else x maal 2` | **7** | the condition reads `k` on *every* branch; `x` is read only on the branch not chosen (strict: **leeg**) |
+| iv | `Let q = g ÷ d in q plus q` | **leeg**, exactly **one** §9.5 reason | clause 1: the need is evaluated once — same outcome and same single reason as `Let q = g ÷ d in q` |
+
+Rows i, iii and iv are the differential witnesses of the change: ref and
+clingo agree on each, where the strict lowering faulted on i and derived
+nothing on iii.
 
 **Worked example — the `jutterswet-tariefstelling` anchor.** Object
 type `Jutter` with `inkomen` (2 dec, input), `kindertal` (whole, input),
@@ -3198,13 +3238,48 @@ and derived `aanslag` (2 dec), `factor` (4 dec), `gewogen` (2 dec).
 | 2 | inkomen 1000,00; kindertal 3 | 750,00 | 210,00 | **0,00** (then: aftrek > belasting) | 2,5000 | 2500,00 |
 | 3 | inkomen **absent**; kindertal 2 | — | — | **leeg** | 2,0000 | **leeg** |
 
-Case 3 is the barrier pinned: `Let ink = inkomen` reads leeg, so the
-whole `aanslag` chain is leeg — and likewise `Let ink2 = inkomen` makes
-`gewogen` leeg. **Without** the `Let`, the bare `inkomen × 0,2100` would
-*coalesce* to 0 and `belasting`/`gewogen` would compute a spurious
-`0,00` — this is why the discipline exists. `factor` still writes
-`2,0000` (it reads `kindertal`, which is present), so case 3 **decides**
-and is **not** a defeasible no-op survivor.
+Case 3 is the barrier pinned: `ink` is read (inside `belasting`'s value,
+which the `IfThenElse` condition reads on both branches), so the barrier
+fires and the whole `aanslag` chain is leeg — and likewise reading
+`ink2` makes `gewogen` leeg. Every binder in this chain is read, which
+is why call-by-need reproduces the strict outcome here exactly.
+**Without** the `Let`, the bare `inkomen × 0,2100` would *coalesce* to 0
+and `belasting`/`gewogen` would compute a spurious `0,00` — this is why
+the discipline exists. `factor` still writes `2,0000` (it reads
+`kindertal`, which is present), so case 3 **decides** and is **not** a
+defeasible no-op survivor.
+
+**Tracked delta 1 — the RegelSpraak variable part inherits the barrier
+(a v1 divergence).** The v0 toolchain has no wire `Let`: its frontend
+*inlines* the variable part (the source language's `Daarbij geldt:`,
+§11/§13.4.2) by substituting the resolved subtree at every use site, so a
+variable whose expression reads an absent attribute **coalesces** per use
+site exactly as a bare read would (the `maal` row above), and sharing is
+lost. Lowering the variable part to a `Let` (CONSTRUCTS rows 24 and 10,
+one construct under two names) therefore gives it the leeg-barrier of
+clause 2: a use site that *reads* a variable whose expression evaluates
+leeg now empties the whole rule value instead of coalescing to 0. That is
+a **deliberate v1 divergence** from the v0 inlining-coalesce, tracked in
+`spec/CONSTRUCTS.md`, never a silent rewrite — and it is the discipline
+three corpus cases already pin:
+`corpus/golden/anchor/jutterswet-tariefstelling` case3,
+`corpus/golden/synth3-drempelheffing` case4 and
+`corpus/golden/synth3-letbeslag` case4. Clause 3 is the *other* half of
+the divergence and the friendlier one: the inlined form recomputes a
+variable at every use site and computes it even where no use site is
+reached, while a `Let` computes it once and only if some read demands it
+— the source language's own "niet onnodig berekenen" (§11.1).
+
+**Tracked delta 2 — Catala's `let` is call-by-value (a fidelity delta).**
+Catala evaluates a `let … in …` eagerly: the bound expression is computed
+before the body runs, whatever the body reads. The `frontends/catala`
+plugin lowers it to this chapter's call-by-need `Let`, so the two differ
+exactly where a bound expression is **unread** and its evaluation would
+have been observable — an empty result, a fault, or a §9.5 channel
+reason. Over the corpus the difference is **unobservable**: 0 of 399
+cases move (every Catala-golden binder is read). The delta is recorded
+here rather than hidden; a fixture that made it observable would be a
+frontend question, not a semantics one.
 
 ## 11. Record values
 
