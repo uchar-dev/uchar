@@ -3751,6 +3751,52 @@ public final class ExecModelTranspiler {
     }
 
     /**
+     * ch. 10.6 clause 2's <b>leeg-barrier</b> as control flow: a read of a binder whose value is leeg ends the
+     * {@code Let} that bound it, wherever in the body that read sits. One INSTANCE is created per {@code Let}
+     * EVALUATION — the local-exception discipline {@code ref/lib/eval.ml} gets from OCaml's {@code let
+     * exception} — and a handler rethrows anything that is not its own instance, so a nested {@code Let}'s
+     * barrier passes an enclosing handler by: the barrier belongs to the Let that bound the binder that was
+     * read, never to an enclosing one. Stackless: it is a signal, not a diagnosis.
+     */
+    private static final class Barriere extends RuntimeException {
+        Barriere() { super(null, null, false, false); }
+    }
+
+    /**
+     * ch. 10.6 clause 1's <b>need</b>: what a binder slot carries under call-by-need. The value is evaluated at
+     * the FIRST {@link #lees()} and that one result serves every further read, so a value whose evaluation
+     * deposits a §9.5 channel reason deposits it once; a body that never reads the binder never evaluates the
+     * value at all (clause 3 — no leeg, no fault, no channel reason).
+     *
+     * <p><b>Why this mutable cell is session-safe.</b> It is created INSIDE the {@link WaardeFn} invocation that
+     * binds it and reaches only that invocation's own copy of the environment map, which is discarded when the
+     * call returns — it is never a field, never a capture of the KieBase lambda, never shared. The lambdas
+     * themselves stay stateless (they close over the two compiled fns and the slot name only), so one KieBase
+     * may be fired by any number of sessions and threads at once, exactly as before this went lazy.
+     */
+    private static final class Binderslot {
+        private final java.util.function.Supplier<Object> waardeFn;
+        private final Barriere barriere;
+        private boolean geforceerd;
+        private Object waarde;
+
+        Binderslot(java.util.function.Supplier<Object> waardeFn, Barriere barriere) {
+            this.waardeFn = waardeFn;
+            this.barriere = barriere;
+        }
+
+        /** The need, forced at most once; a leeg value raises the OWNING Let's barrier instead of answering null. */
+        Object lees() {
+            if (!geforceerd) {
+                waarde = waardeFn.get();
+                geforceerd = true;
+            }
+            if (waarde == null) throw barriere;
+            return waarde;
+        }
+    }
+
+    /**
      * Lower one ch. 4.10 Let-cluster node to the ordinary {@link WaardeFn}, so the whole existing value machinery
      * (the leegwaarde tables, the §4 unit restatement, the Breuk-aware rs* helpers) applies to a Let body
      * unchanged — the arbiter is {@code ref/lib/eval.ml}, never a second arithmetic written here.
@@ -3759,14 +3805,26 @@ public final class ExecModelTranspiler {
      * lowering) binds on the consequence; a forgotten name would read null and answer a silent leeg. So the sets
      * are UNIONED across value, body, condition and both branches — and a {@code Let} REMOVES its own binder slot
      * from what it reports, since it binds that slot itself. A binder slot that somehow escaped its Let would
-     * therefore surface as an unregistered global and become a loud skip, never a null read.
+     * therefore surface as an unregistered global and become a loud skip, never a null read. Under ch. 10.6's
+     * call-by-need the value's OWN globals stay in that union even though the value may never run: the thunk is
+     * built from the enclosing map, so every name it could read must still be bound on the consequence.
      */
     private WaardeFn letWaarde(Objecttype valueSubject, io.github.yhavinga.regelspraak.loader.LetVorm vorm) {
         if (vorm instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Lezing lz) {
             // WF-064: the nearest enclosing binder of this name. "Nearest" is exactly what the map gives —
-            // an inner Let's put SHADOWS the outer one in the copy the body sees.
+            // an inner Let's put SHADOWS the outer one in the copy the body sees. ch. 10.6 clause 1+2: the read
+            // FORCES the need (once) and, if that value is leeg, raises the owning Let's barrier rather than
+            // answering leeg — which is what keeps a bound binder never-leeg (WF-077's condition operands total).
             String sleutel = binderSleutel(lz.naam());
-            return new WaardeFn((s, gm) -> ((Map<?, ?>) gm).get(sleutel), Set.of(sleutel));
+            return new WaardeFn((s, gm) -> {
+                Object slot = ((Map<?, ?>) gm).get(sleutel);
+                if (!(slot instanceof Binderslot need)) {
+                    // unreachable by the globals hygiene above (an escaped binder slot is refused at build
+                    // time, loudly); fail fast rather than answer a silent leeg if it ever is reached.
+                    throw new IllegalStateException("Let-binder '" + sleutel + "' is niet gebonden bij het lezen");
+                }
+                return need.lees();
+            }, Set.of(sleutel));
         }
         if (vorm instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Binding b) {
             // ch. 10.6: [value] is evaluated in the ENCLOSING scope (WF-076 — the binder is not visible in its
@@ -3780,14 +3838,23 @@ public final class ExecModelTranspiler {
             Set<String> g = new LinkedHashSet<>(vf.globals());
             for (String n : bf.globals()) if (!n.equals(sleutel)) g.add(n);
             return new WaardeFn((s, gm) -> {
-                Object v = vfn.apply(s, gm);
-                if (v == null) return null;   // ch. 10.6 the leeg-barrier: a leeg value propagates, the body NEVER runs
+                // ch. 10.6 call-by-need: the slot carries the THUNK, not the value. The body ALWAYS runs (clause
+                // 3: an unread binder evaluates nothing — no leeg, no fault, no §9.5 reason, and the Let's
+                // outcome IS the body's); a read forces the need (clause 1, once) and a leeg need raises THIS
+                // Let's barrier (clause 2), caught here — and only here, since the token is this evaluation's own.
+                Barriere barriere = new Barriere();
+                Binderslot need = new Binderslot(() -> vfn.apply(s, gm), barriere);
                 Map<String, BigDecimal> omgeving = new LinkedHashMap<>(gm);
                 // no BigDecimal cast — the map is erased (see bindGlobal/vulGlobalMap); a binder value is whatever
                 // its own expression computed (a BigDecimal, an exact Breuk, a date, a label) and only this slot's
-                // reader touches it. By construction it is never null here.
-                ((Map<String, Object>) (Map) omgeving).put(sleutel, v);
-                return bfn.apply(s, omgeving);
+                // reader touches it, through the cell.
+                ((Map<String, Object>) (Map) omgeving).put(sleutel, need);
+                try {
+                    return bfn.apply(s, omgeving);
+                } catch (Barriere raised) {
+                    if (raised != barriere) throw raised;   // an enclosing Let's barrier, only passing through
+                    return null;                            // the read emptied THIS Let
+                }
             }, g);
         }
         io.github.yhavinga.regelspraak.loader.LetVorm.Keuze k = (io.github.yhavinga.regelspraak.loader.LetVorm.Keuze) vorm;

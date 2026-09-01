@@ -65,15 +65,18 @@ public sealed interface LetVorm {
     /** The node's own datatype (a {@code Let}'s is its body's — WF-076). */
     Datatype type();
 
-    /** ch. 10.6 the strict value-level binding: evaluate {@code value} in the ENCLOSING scope; a leeg value
-     *  propagates (the whole Let is leeg and {@code body} never runs — the leeg-barrier), otherwise bind
-     *  {@code binder} and evaluate {@code body}. The binder is visible only in {@code body} (WF-076). */
+    /** ch. 10.6 the value-level binding as a NEED (call-by-need, maintainer decision O3): bind {@code binder}
+     *  and evaluate {@code body}; the {@code value} — in the ENCLOSING scope, so the binder is invisible in it
+     *  (WF-076) — is evaluated at the FIRST read of the binder and that one result serves every further read.
+     *  A read of a leeg need makes the whole Let leeg (the leeg-barrier, at the READ place); an unread binder
+     *  evaluates nothing at all and the Let's outcome IS the body's. */
     record Binding(String binder, Expr value, Expr body, Datatype type) implements LetVorm {}
 
-    /** WF-064: a read of the nearest enclosing binder of {@code naam}. A bound binder is never leeg. */
+    /** WF-064: a read of the nearest enclosing binder of {@code naam}. A bound binder is never leeg — the read
+     *  either yields a gevuld value or ends its owning Let. */
     record Lezing(String naam, Datatype type) implements LetVorm {}
 
-    /** ch. 10.2 the value-level conditional inside a strict Let body (the WF-069 widening): evaluate the
+    /** ch. 10.2 the value-level conditional inside a Let body (the WF-069 widening): evaluate the
      *  condition under the ordinary comparison discipline — its operands disciplined to bound-non-leeg reads
      *  by WF-077 — then evaluate EXACTLY the chosen branch, strict, no coalesce. */
     record Keuze(Conditie conditie, Expr dan, Expr anders, Datatype type) implements LetVorm {}
