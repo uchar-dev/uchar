@@ -3530,6 +3530,7 @@ public final class ExecModelTranspiler {
     /** Scalar value: Literal | own-attr read | Parameter-global read | a {@code +} of those (rsNul leegwaarde).
      *  null -> skip. The global read pulls its value from the consequence-bound map (see {@link #regel}). */
     private WaardeFn scalarWaarde(Objecttype valueSubject, Expr e) {
+        geenUnieLet(e);
         // IR-SPEC ch. 4.10: a Let-cluster CARRIER (an Onopgelost registered in the letVormen side channel).
         // Asked FIRST so no later arm can mistake the carrier for an ordinary unresolved leaf.
         io.github.yhavinga.regelspraak.loader.LetVorm letVorm = e == null ? null : letVormen.get(e);
@@ -3903,12 +3904,31 @@ public final class ExecModelTranspiler {
         return new LetConditie((s, gm) -> RegelSpraakRuntime.rsAggVergelijk(lfn.apply(s, gm), rfn.apply(s, gm), opStr), g);
     }
 
+    /**
+     * ch. 4.10: the UNION forms {@link Expr.Let} and {@link Expr.BinderRef} — which the shared frontend slice grew
+     * when the RegelSpraak emitter learned to lower a §13.4.2.10 variabelendeel — MUST NOT occur in this backend.
+     * {@link io.github.yhavinga.regelspraak.loader.IrLoader} parses every wire Let cluster into an
+     * {@link Expr.Onopgelost} CARRIER plus the {@code letVormen} side channel (see
+     * {@link io.github.yhavinga.regelspraak.loader.LetVorm}), and nothing here builds an Expr tree of its own, so
+     * the union forms are unreachable by construction. One that DID arrive would mean the loader changed under this
+     * backend — and every walk below treats an unrecognised node as an opaque LEAF, i.e. it would under-report in
+     * SILENCE (a missing §6.5/§6.6 companion reads as "consistent"; a missing read reads as "nothing to watch"),
+     * exactly the failure mode the carrier design exists to prevent. So: fail fast, never a quiet skip.
+     */
+    private static void geenUnieLet(Expr e) {
+        if (e instanceof Expr.Let || e instanceof Expr.BinderRef)
+            throw new IllegalStateException("IR-SPEC ch. 4.10: a union " + e.getClass().getSimpleName()
+                    + " reached the Drools transpiler; the loader must deliver a carrier + letVormen entry — bron: "
+                    + e.bron());
+    }
+
     /** ALL {@link Expr} children a ch. 4.10 CARRIER hides from the generic tree walks: a Let's value+body, an
      *  IfThenElse's two branches and EVERY Expr operand of its condition. Empty for a non-carrier. The
      *  POSSIBLY-evaluated set, not the certainly-evaluated one — {@link #letKinderenZeker} is that, and which
      *  accessor a walk takes is decided by what its output IS (the inventory is enumerated on {@code LetVorm}).
      *  A walk that consults neither silently under-reports and answers wrong. */
     private List<Expr> letKinderen(Expr e) {
+        geenUnieLet(e);
         io.github.yhavinga.regelspraak.loader.LetVorm lv = e == null ? null : letVormen.get(e);
         if (lv == null) return List.of();
         if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Binding b) return List.of(b.value(), b.body());
@@ -3948,6 +3968,7 @@ public final class ExecModelTranspiler {
      * can still be honest.
      */
     private List<Expr> letKinderenZeker(Expr e) {
+        geenUnieLet(e);
         io.github.yhavinga.regelspraak.loader.LetVorm lv = e == null ? null : letVormen.get(e);
         if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Binding b) {
             // ch. 10.6 clause 1: the value runs exactly when some read forces it — so it is CERTAIN only when
@@ -4007,6 +4028,7 @@ public final class ExecModelTranspiler {
      */
     private Lees leestAltijd(Expr e, String sleutel) {
         if (e == null) return Lees.GEEN_LEZING;
+        geenUnieLet(e);   // the final fall-through treats any unknown node as a leaf — a union Let must never get there
         io.github.yhavinga.regelspraak.loader.LetVorm lv = letVormen.get(e);
         if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Lezing lz) {
             return binderSleutel(lz.naam()).equals(sleutel) ? Lees.ALTIJD_DEZE : Lees.ONZEKER;

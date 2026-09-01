@@ -126,9 +126,10 @@ public final class IrLoader {
      *         In both cases the SIBLING role — the one the anchor (subject) plays — is the bean field on the other
      *         end. Absent for a node whose wire record carries no binding; the by-pair derivation then stands.
      *  @param letVormen the IR-SPEC ch. 4.10 {@link LetVorm} per {@link Expr.Onopgelost} CARRIER, by IDENTITY —
-     *         the third side channel, and for the same reason as the second: {@link Expr} is a sealed union in the
-     *         vendored frontend slice and cannot grow the three wire nodes {@code Let}/{@code BinderRef}/
-     *         {@code IfThenElse}. Empty for a document that carries none. */
+     *         the third side channel: {@link Expr} is a sealed union in the vendored frontend slice, which carries
+     *         {@code Let} and {@code BinderRef} but not {@code IfThenElse}, and this backend keeps ONE shape for the
+     *         whole ch. 4.10 cluster rather than half a union and half a channel (see {@link LetVorm}). Empty for a
+     *         document that carries none. */
     public record Loaded(RegelSpraakModel model, List<PrioritizedDefaults> prioritizedDefaults,
                          Map<Object, RolBindingRef> rolBindingen, Map<Object, LetVorm> letVormen) {}
 

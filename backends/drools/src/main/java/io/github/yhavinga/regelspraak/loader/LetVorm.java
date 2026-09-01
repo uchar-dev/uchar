@@ -9,10 +9,14 @@ import io.github.yhavinga.regelspraak.model.Datatype;
  * and {@code IfThenElse} (semantics {@code RUNTIME-SEMANTICS.md} ch. 10.6 / ch. 10.2).
  *
  * <p><b>Why a shape of our own.</b> {@link Expr} is a SEALED union in the vendored frontend slice, which the
- * toolchain consumes at a pin; it cannot grow three nodes here. So the loader parses each wire node into a
- * CARRIER — an {@link Expr.Onopgelost} typed with the node's own datatype — and registers the real shape
- * beside the model in an identity-keyed map, exactly the side-channel {@code IrLoader.Loaded.rolBindingen}
- * already uses for the symbolic role bindings.
+ * toolchain consumes at a pin. It has since grown {@code Let} and {@code BinderRef} — the RegelSpraak emitter
+ * lowers a §13.4.2.10 variabelendeel to them — but NOT {@code IfThenElse} (still emitter-free, IR-SPEC ch. 4.10),
+ * and this backend keeps ONE shape for the whole cluster rather than half a union and half a side channel. So the
+ * loader parses each wire node into a CARRIER — an {@link Expr.Onopgelost} typed with the node's own datatype —
+ * and registers the real shape beside the model in an identity-keyed map, exactly the side-channel
+ * {@code IrLoader.Loaded.rolBindingen} already uses for the symbolic role bindings. A union {@code Expr.Let} /
+ * {@code Expr.BinderRef} therefore never reaches the transpiler; one that did would under-report in silence
+ * through the walks below, so {@code ExecModelTranspiler.geenUnieLet} fails fast on it at every entry point.
  *
  * <p><b>What the carrier does and does not guarantee.</b> On the VALUE paths it is safe by construction:
  * nothing in the transpiler lowers an {@code Onopgelost}, so a missed consultation of this side channel

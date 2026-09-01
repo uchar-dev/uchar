@@ -43,7 +43,12 @@ public sealed interface Expr {
             case Begrensd b    -> bevat(b.basis(), toets) || bevat(b.minimum(), toets) || bevat(b.maximum(), toets);
             case TekstReeks t  -> t.delen().stream().anyMatch(d -> d instanceof TekstReeks.Ingevoegd i && bevat(i.expr(), toets));
             case DimensieCel c -> bevat(c.attribuut(), toets);
-            default            -> false;   // Literal / refs / Constante / Onopgelost: leaves
+            // A Let's binding is a child on BOTH sides: the value may never be evaluated (ch. 10.6 is
+            // call-by-need) but it is structurally present, and every caller of this scan asks a
+            // STRUCTURAL question ("does this tree mention X?"). A scan that stopped at the binder would
+            // under-report a Rekendatum/parameter read hidden in a Let value.
+            case Let l         -> bevat(l.value(), toets) || bevat(l.body(), toets);
+            default            -> false;   // Literal / refs / BinderRef / Constante / Onopgelost: leaves
         };
     }
 
@@ -195,8 +200,30 @@ public sealed interface Expr {
         @Override public Datatype type() { return parameter.datatype(); }
     }
 
-    /** A local rule variable introduced by a §13.4.2.10 variabeledeel ("Daarbij geldt: …"). */
+    /** A local rule variable introduced by a §13.4.2.10 variabeledeel ("Daarbij geldt: …") that the
+     *  resolver could NOT bind to a definition — a forward or cyclic reference. A BOUND variable read in
+     *  a rule's result part is an {@link BinderRef} under its {@link Let}; one read in the voorwaarde is
+     *  substituted at its use site (see {@link Let}). This node is therefore a residual marker only. */
     record VariabeleRef(String naam, Datatype type, Bron bron) implements Expr {}
+
+    /**
+     * IR-SPEC ch. 4.10 / RUNTIME-SEMANTICS ch. 10.6: the value-level binding. {@code binder} is visible
+     * only in {@code body}, never in its own {@code value} (WF-076), and the node's {@code type} is the
+     * body's (WF-076).
+     *
+     * Semantics is call-by-need (maintainer decision O3, 2026-09-01): the {@code value} is evaluated in
+     * the ENCLOSING scope at the FIRST read of the binder and reused for every further read; a read whose
+     * value evaluates leeg makes the WHOLE Let leeg (the leeg-barrier sits at the READ place); a binder
+     * the body never reads is never evaluated at all.
+     *
+     * This is what a §13.4.2.10 variabelendeel lowers to — one Let per declared variable that the result
+     * part reads, nested in DECLARATION order (§11.1 rule 1), outermost first.
+     */
+    record Let(String binder, Expr value, Expr body, Datatype type, Bron bron) implements Expr {}
+
+    /** WF-064: a read of the nearest enclosing {@link Let} binder (or match-arm binder) of this name.
+     *  A bound binder is never leeg — the read either yields a gevuld value or ends its owning Let. */
+    record BinderRef(String naam, Datatype type, Bron bron) implements Expr {}
 
     /** A built-in reckoning constant or referent: Rekendatum, Rekenjaar, hij, de dag. */
     record Constante(String naam, Datatype type, Bron bron) implements Expr {}
