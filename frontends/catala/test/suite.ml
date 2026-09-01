@@ -101,6 +101,13 @@ let () =
       ("enum_nullair.catala_en",
        [ "cases/getij_eb.json"; "cases/getij_vloed.json";
          "cases/getij_doodtij.json" ]);
+      (* WF-087's LOWER boundary on the plugin side: ONE nullary constructor.
+         A unit type is a nullary keuzetype too, so it lands on the Enumeratie
+         domain as well — the shape a [List.length > 1] weakening of
+         [keuzetype_of] would let escape into a SumType (its verifier twin is
+         negatief `wf087-unit-sumtype`). The wire assertion below is what
+         makes that weakening red *)
+      ("enum_unit.catala_en", [ "cases/meld_gemeld.json" ]);
       (* row-10 fold family: a map + explicit numeric fold (MapList as a fold
          source, the aanspraaktelling pattern) *)
       ("lijst.catala_en", [ "cases/lijst_twee.json"; "cases/lijst_leeg.json" ]);
@@ -250,6 +257,12 @@ let () =
     [ ("enum_nullair.catala_en",
        [ "\"node\": \"Enumeratie\""; "\"domein\": \"Getijstand\"";
          "\"constructor\": \"Doodtij\""; "\"binder\": null" ],
+       [ "SumType"; "Construct" ]);
+      (* the same assertion at the rule's LOWER boundary — one constructor is
+         still all-nullary, so still the Enumeratie domain and never a SumType *)
+      ("enum_unit.catala_en",
+       [ "\"node\": \"Enumeratie\""; "\"domein\": \"Meldstatus\"";
+         "\"constructor\": \"Gemeld\""; "\"binder\": null" ],
        [ "SumType"; "Construct" ]);
       ("enum.catala_en",
        [ "\"node\": \"SumType\""; "\"node\": \"Construct\"" ],

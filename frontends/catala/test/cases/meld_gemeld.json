@@ -1,0 +1,16 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "M", "objectType": "Meldplicht",
+        "attributes": { "status": { "enumeration": "Gemeld" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "M", "attribute": "tarief", "value": { "number": "7" } },
+    { "kind": "consistent" }
+  ]
+}
