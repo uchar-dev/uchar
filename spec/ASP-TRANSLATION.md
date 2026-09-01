@@ -26,7 +26,7 @@ aggregations and folds, S9 timelines, S10 defeasibility and standing,
 S11 creation, S12 allocation and uniqueness; S13 the §9.5 channel;
 S14 sum types and total match; S15 folds and function values; S16
 structs (the record datatype); S17 nested exception groups; S18 the
-strict `Let`, guarded consequences and the split money multiplication;
+`Let`, guarded consequences and the split money multiplication;
 S19 the complete inventory of loud non-translations — what the backend
 does not translate is stated there, never silently absent.
 
@@ -1700,21 +1700,25 @@ ever runs:
 `wf075-groupdefault-with-justification`, `wf075-init-in-subdefault`,
 `wf075-two-members-unmarked`.
 
-### S18. The strict `Let`, guarded consequences, and the split money multiplication
+### S18. The `Let`, guarded consequences, and the split money multiplication
 
 Three capabilities land here (design `PHASE5C-TUTORIAL.md` §5–6, the
-ratified vragen 2-A and 4-A), all sharing one discipline: **the strict
-`Let` is the leeg barrier, and an underivable value atom simply never
-binds** — so ref's leeg propagation and clingo's underivability coincide
-*by construction*, the S5 lesson carried into the value position.
+ratified vragen 2-A and 4-A), all sharing one discipline: **the `Let`'s
+leeg barrier is an underivable value atom that simply never binds** — so
+ref's leeg propagation and clingo's underivability coincide *by
+construction*, the S5 lesson carried into the value position. Since the
+O3 unification (2026-09-01) the barrier sits at the **read**, which this
+section's encoding realises in two places: an unread binder is not
+translated at all, and a read binder's value atoms guard exactly the
+branches that read it.
 
 **(a) `Let` as a self-contained bound intermediate.** A
 `Let { binder; value; body }` translates the `value` to
 `(atoms, term, scale)` and binds the binder in the binder environment
 (the S14/S15 regime, WF-064). The value's atoms also thread into the rule
 guard, so a leeg value (an underivable read) leaves every rule carrying
-the body underivable — exactly ref's strict `Let`, where a leeg value
-propagates and the body never runs (RUNTIME-SEMANTICS ch. 10.6). But the
+the reading body underivable — exactly ref's `Let`, where the barrier
+fires at the read (RUNTIME-SEMANTICS ch. 10.6 clause 2). But the
 rule guard alone does not reach every position the binder is read: a
 coalesce (S5), a range fence (S6) and the money-product partials build
 their helper rules from the operand's *local* atoms only, so a binder
@@ -1738,10 +1742,52 @@ way; the anchor's `aanslag` rule threads three (`ink`, `aftrek`,
 binder read inside a product (`heffing = 100.00 · (aantal_posten +
 number of posten)`, 600.00 / 0.00, ref ≡ clingo).
 
+**(a′) Call-by-need: the unread binder and the per-branch guard.** Two
+refinements carry ch. 10.6's clauses 1–3 into the encoding.
+
+*Clause 3 — an unread binder evaluates nothing.* Before translating a
+`Let`, the backend asks whether the `body` reads the binder at all
+(`reads_binder`). If it does not, the `value` is **not translated**: no
+value atoms, no `letN` helper, no range fence and — the observable part
+— no §9.5 `inconsistent/2` deposit and no `viol/2` divisor fence. The
+body's translation *is* the `Let`'s. Witness: `Let q = 100,00 ÷ 0,00 in
+42,00` writes **42,00** in both executors, where the strict lowering
+faulted in both (ref *"division by numeric zero"*, clingo the `viol/2`
+UNSAT).
+
+*Clause 2 — the barrier at the read, hence per branch.* `value_branches`
+carries, per branch, whether that branch reads a given binder, and the
+`Let` arm prefixes the value atoms to **only the reading branches**. An
+`IfThenElse` condition is evaluated on every branch, so a binder the
+condition reads counts as read on both; a binder read only in `then`
+guards only the `then` rule. A branch that never reads the binder
+therefore survives a leeg value — the shape the strict lowering could not
+express. Witness: `Let k = kindertal in Let x = leegwaarde in if k > 1
+then 7,00 else x maal 2,00` with `kindertal` = 2 and `leegwaarde` absent
+writes **7,00** in both executors (strict: nothing derived).
+
+`reads_binder` refines the verifier's `mentions_binder` on exactly the
+shape the skip creates — a nested `Let` whose own binder is unread never
+evaluates its value, so a mention buried there is not a read — which
+makes the analysis agree with the translation that consults it. Below a
+node it does not descend through (a `Match` arm, a fold body) it falls
+back to the syntactic mention. That fallback is conservative in the safe
+direction: an extra guard atom can only make clingo derive **less**,
+never a different value, so a divergence would show up as a missing
+write under gate 6, never as a silent agreement on a wrong one. Two
+residues stay recorded rather than hidden: the value's own side
+conditions (its §9.5 deposit, its fences) are emitted once, under the
+rule guard, so on a **partially** read binder they fire on branches that
+do not read it; and ref's within-branch evaluation order (a deposit made
+*before* the read that fires the barrier) has no order in ASP. Neither
+has a corpus case; both are the same class as the S19 inventory —
+report-and-fail territory the moment a witness exists.
+
 **(b) Guarded consequences.** A rule value now reaches an `IfThenElse`
 through `Let` bodies (WF-069 widened). At value position it lowers to
-**one guarded outcome rule per branch** (`value_branches`): the shared
-`Let` value atoms sit in *both* branch bodies, the condition is a builtin
+**one guarded outcome rule per branch** (`value_branches`): the
+`Let` value atoms sit in the bodies of the branches that READ the binder
+((a′) above), the condition is a builtin
 comparison over the branches' bound terms, and the else-branch carries
 its *exact complement* (`cmp_complement`) — no NAF over derived atoms.
 WF-077 is what makes this sound: a value-position `IfThenElse` condition
@@ -1782,10 +1828,12 @@ fenced by a `viol/2` witness so no term wraps silently: `A = M·Rh` by
 zero), and `M·Rl` (with `Rl < 100`) by `|M| ≤ (max_int31−20000)/99`,
 keeping the rounded numerator `100·rA + M·Rl + 5000` inside 2³¹. The
 operands coalesce leeg → 0 exactly as ref's `Arith.mul` (a leeg rate
-makes the product 0, not leeg); the strict-`Let` barrier that makes a
+makes the product 0, not leeg); the `Let` barrier that makes a
 leeg *money* leeg lives one level up, in the peeled value atoms, never in
-these direct operands. Strict `Let`s around the product are peeled with
-their binders in scope. Negative operands are not encoded (ref rounds
+these direct operands — a coalescing operand swallows the read's own
+`letN` atom, so the peel is where the read-place barrier survives the
+product. `Let`s around the product are peeled with their binders in
+scope (an unread one is skipped whole, (a′)). Negative operands are not encoded (ref rounds
 either sign; the tutorial's money and rate are ≥ 0) — a `viol/2` fence,
 S19.
 
@@ -1794,7 +1842,8 @@ else branch (`aanslag` 3700.00 from belasting 4200.00 − aftrek 500.00,
 the split money product €20.000 × 21% = €4.200 exact), **case2-dantak**
 the then branch (aftrek 750.00 > belasting 210.00 → `aanslag` 0.00),
 **case3-leegbarriere** the double leeg barrier (inkomen absent → both
-`aanslag` and `gewogen` leeg through the strict `Let`, while `factor`
+`aanslag` and `gewogen` leeg through the `Let` (every binder in the
+chain is read), while `factor`
 2.0000 still writes — the case that pins *why* the discipline exists:
 without the `Let`, the bare `maal` would coalesce a leeg inkomen to 0.00,
 ch. 1.2a). Gate 6 replays all three (ref ≡ clingo); gate 8 the red
@@ -2188,7 +2237,7 @@ of its own in the IR, so nothing nested is silently gated). The
 multi-member base group here with no special encoding, so nothing new is
 refused for it.
 
-*The strict `Let`, guarded consequences and the split money
+*The `Let`, guarded consequences and the split money
 multiplication (S18) — shapes and fences without a corpus case:* a
 **value-position `IfThenElse` condition** that is not a comparison
 (`a value-position IfThenElse condition is a comparison over bound
@@ -2231,7 +2280,7 @@ at a finite integer scale** (the value's out-scale, RUNTIME-SEMANTICS
 ch. 2.4), and that is where the afrondingsnorm (RUNTIME-SEMANTICS ch. 2.9,
 vraag 3-A: intermediate values are exact-rational, the scale binds
 declarations and write boundaries, never a step) becomes a **loud backend
-limit**. The minimised synthesis find: a strict `Let` binding the
+limit**. The minimised synthesis find: a `Let` binding the
 **non-terminating** quotient `100 ÷ 3 = 33,333…`, read at an endpoint
 `Afgerond op 2 rekenkundig`. ref carries the exact rational through the
 `Let` and the single endpoint `Afgerond` collapses it once to 33,33; the

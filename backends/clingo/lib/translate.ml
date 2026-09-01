@@ -1057,6 +1057,32 @@ let cmp_complement = function
   | Gelijk -> "!="
   | Ongelijk -> "=="
 
+(* ch. 10.6 (call-by-need): does evaluating [e] READ the binder [b]? The
+   answer decides both halves of the L semantics in this backend — whether the
+   value is translated at all (clause 3: an unread binder evaluates nothing)
+   and which branches carry its atoms (clause 2: the barrier sits at the read).
+   It refines [Ir_v0.Checks.mentions_binder] on exactly the shape the skip
+   creates: a nested `Let` whose OWN binder is unread never evaluates its
+   value, so a mention buried in that value is not a read — the refinement
+   makes this function agree with the translation that consults it. Below a
+   node this function does not descend through (a Match arm, a fold body) it
+   falls back to the syntactic mention, which is conservative in the safe
+   direction: an extra guard atom can only make clingo derive LESS, never a
+   different value, and gate 6 would show it as a missing write. *)
+let rec reads_binder b (e : expr) : bool =
+  let opt = function Some x -> reads_binder b x | None -> false in
+  match e with
+  | Let { binder; value; body; _ } ->
+      (reads_binder binder body && reads_binder b value)
+      || (norm binder <> norm b && reads_binder b body)
+  | If_then_else { condition; then_; else_; _ } ->
+      Ir_v0.Checks.mentions_binder_cond b condition
+      || reads_binder b then_ || reads_binder b else_
+  | Binair { links; rechts; _ } -> opt links || opt rechts
+  | Afgerond { basis; _ } -> opt basis
+  | Begrensd { basis; minimum; maximum; _ } -> opt basis || opt minimum || opt maximum
+  | _ -> Ir_v0.Checks.mentions_binder b e
+
 (* B3: a Let binder must be SELF-CONTAINED wherever it is read. A bare value
    term (a ListLength count, a Fold result, an attribute read) is bound only by
    its value atoms [va]; the Let keeps those in [rule_guard], but coalesce0 (and
@@ -2183,15 +2209,23 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       match List.assoc_opt (norm naam) ctx.binders with
       | Some (atoms, var, scale) -> (atoms, var, scale)
       | None -> fault "unbound binder %S in the ASP translation (WF-064 should preclude this)" naam)
+  | Let { binder; body; _ } when not (reads_binder binder body) ->
+      (* ch. 10.6 clause 3: an UNREAD binder evaluates nothing. The value is
+         not translated at all — no atoms, no range fence, no §9.5 deposit —
+         and the body IS the Let. *)
+      expr_term ctx ~subject ~subject_ot body
   | Let { binder; value; body; _ } ->
-      (* ch. 10.6: the strict Let as a bound intermediate (S-section (a)).
-         The value is translated to (atoms, term, scale); the binder resolves
-         to that term, and the value's atoms are threaded into [rule_guard] so
-         any helper emitted while translating the body binds the value's
-         variables. A leeg value binds no atom, so every rule carrying the body
-         is underivable — ref's strict-Let leeg and clingo's underivability
-         coincide by construction. Returned atoms carry both the value's and
-         the body's, so the caller's rule body binds every variable it uses. *)
+      (* ch. 10.6: the Let as a bound intermediate (S-section (a)). The value
+         is translated to (atoms, term, scale); the binder resolves to that
+         term, and the value's atoms are threaded into [rule_guard] so any
+         helper emitted while translating the body binds the value's variables.
+         A leeg value binds no atom, so — this arm being the READ case, where
+         the whole body is one straight-line outcome — every rule carrying the
+         body is underivable: ref's read-place barrier and clingo's
+         underivability coincide by construction. Returned atoms carry both the
+         value's and the body's, so the caller's rule body binds every variable
+         it uses (and a coalescing position that swallows the read's own letN
+         atom cannot swallow these). *)
       let va, vt, vs = expr_term ctx ~subject ~subject_ot value in
       let saved_b = ctx.binders and saved_g = ctx.rule_guard in
       ctx.binders <- (norm binder, let_binder ctx ~subject ~subject_ot (va, vt, vs)) :: ctx.binders;
@@ -3216,11 +3250,17 @@ and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * 
           ctx.binders <- saved;
           List.map (fun (g, t, s) -> (pattern :: g, t, s)) branches)
         arms
+  | Let { binder; body; _ } when not (reads_binder binder body) ->
+      (* ch. 10.6 clause 3: an unread binder evaluates nothing, closed body or
+         not — no inlined value, no fence *)
+      body_branches ctx ~guard_body ~witness body
   | Let { binder; value; body; _ } ->
       (* a Let whose body still branches (an IfThenElse reducer, a Match under a
          Let): the value is inlined by the closed_term Let discipline, the binder
          bound with empty atoms, and the value's binding atoms thread into every
-         branch's body *)
+         branch's body. The per-branch barrier of ch. 10.6 has nothing to do
+         here — a closed body is leeg-free (ch. 10.1), so a value that binds at
+         all binds on every branch. *)
       let va, vt, vs = closed_term ctx ~guard_body ~witness value in
       let saved = ctx.binders in
       ctx.binders <- (norm binder, ([], vt, vs)) :: ctx.binders;
@@ -3439,6 +3479,10 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
         let term, scale = go tl sl (e - 1) in
         (bl, term, scale)
       end
+  | Let { binder; body; _ } when not (reads_binder binder body) ->
+      (* ch. 10.6 clause 3: an unread binder evaluates nothing — the value is
+         not inlined and its fences are not emitted *)
+      closed_term ctx ~guard_body ~witness body
   | Let { binder; value; body; _ } ->
       (* a Let INSIDE a closed body (ch. 10.6, the let_binder discipline carried
          into the body context): the value is itself a closed-body term, so it is
@@ -3446,8 +3490,9 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
          recurrence-bound convention, so a nested read is self-contained), and the
          value's binding atoms thread into every read site through the returned
          atom list. No subject-keyed let helper (that is the rule level's shape,
-         where a leeg value must break the body); a closed-body binder is never
-         leeg. *)
+         where a leeg value must break the reading positions); a closed-body
+         binder is never leeg (ch. 10.1), so the read-place barrier is vacuous
+         here and call-by-need coincides with call-by-value. *)
       let va, vt, vs = closed_term ctx ~guard_body ~witness value in
       let saved = ctx.binders in
       ctx.binders <- (norm binder, ([], vt, vs)) :: ctx.binders;
@@ -3523,9 +3568,15 @@ and money_mult_shape (basis : expr) : bool =
 and translate_money_mult ctx ~subject ~subject_ot ~basis : string list * string * int =
   let saved_b = ctx.binders and saved_g = ctx.rule_guard in
   let rec peel = function
+    | Let { binder; body; _ } when not (reads_binder binder body) ->
+        (* ch. 10.6 clause 3: an unread binder evaluates nothing *)
+        peel body
     | Let { binder; value; body; _ } ->
         let va, vt, vs = expr_term ctx ~subject ~subject_ot value in
         ctx.binders <- (norm binder, let_binder ctx ~subject ~subject_ot (va, vt, vs)) :: ctx.binders;
+        (* the peeled value's atoms ride [rule_guard] into the product helper's
+           own body (below): a coalescing operand swallows the read's letN atom,
+           so this is where the read-place barrier survives the money product *)
         ctx.rule_guard <- ctx.rule_guard @ va;
         peel body
     | Binair { op = Maal; links; rechts; _ } ->
@@ -3674,16 +3725,32 @@ and closed_division ctx ~guard_body ~witness ~rounding ~links ~rechts : string l
 
 let head_body ctx head body = emit ctx "%s :- %s." head (String.concat ", " body)
 
+(* one guarded outcome of a rule value: the atoms its rule body joins, the
+   result term and its scale, plus [vb_reads] — does THIS branch read the
+   named Let binder? Under ch. 10.6 the leeg-barrier sits at the READ, so a
+   branch that never reads a binder must not carry that binder's value atoms;
+   [vb_reads] is what tells the [Let] arm below which branches to guard. *)
+type vbranch = {
+  vb_guard : string list;
+  vb_term : string;
+  vb_scale : int;
+  vb_reads : string -> bool;
+}
+
 (* the rule VALUE position (§6, guarded consequences): a Let binds an
-   intermediate whose value atoms are shared across the branches; an
+   intermediate whose value atoms guard the branches that READ it; an
    IfThenElse (now reachable through Let bodies, WF-069) lowers to one guarded
    outcome per branch — the condition a builtin over bound/parameter/literal
    operands (WF-077) and its exact complement, NAF-free, so the leeg barrier
    and clingo's underivability coincide by construction. Any other value is a
-   single branch via [expr_term]. Returns (guard atoms, result term, scale)
-   per branch, mirroring [body_branches] at value position. *)
-let rec value_branches ctx ~subject ~subject_ot (e : expr) : (string list * string * int) list =
+   single branch via [expr_term]. Mirrors [body_branches] at value position. *)
+let rec value_branches ctx ~subject ~subject_ot (e : expr) : vbranch list =
   match e with
+  | Let { binder; body; _ } when not (reads_binder binder body) ->
+      (* ch. 10.6 clause 3: an unread binder evaluates nothing — the value is
+         not translated, so it deposits no atoms, no fence and no §9.5 channel
+         fact, and the body's branches ARE the Let's *)
+      value_branches ctx ~subject ~subject_ot body
   | Let { binder; value; body; _ } ->
       let va, vt, vs = expr_term ctx ~subject ~subject_ot value in
       let saved_b = ctx.binders and saved_g = ctx.rule_guard in
@@ -3692,15 +3759,38 @@ let rec value_branches ctx ~subject ~subject_ot (e : expr) : (string list * stri
       let branches = value_branches ctx ~subject ~subject_ot body in
       ctx.binders <- saved_b;
       ctx.rule_guard <- saved_g;
-      List.map (fun (g, t, s) -> (va @ g, t, s)) branches
+      (* ch. 10.6 clause 2: the value atoms guard exactly the READING branches
+         — a branch that never reads the binder survives a leeg value, which is
+         where L parts company with the old strict lowering. The read set moves
+         outward too: an outer binder is read on this branch either directly,
+         or because THIS binder is read and its value reads it. *)
+      List.map
+        (fun b ->
+          let read = b.vb_reads binder in
+          { b with
+            vb_guard = (if read then va else []) @ b.vb_guard;
+            vb_reads =
+              (fun o ->
+                (norm o <> norm binder && b.vb_reads o) || (read && reads_binder o value)) })
+        branches
   | If_then_else { condition; then_; else_; _ } ->
       let catoms, pos, neg = value_condition ctx ~subject ~subject_ot condition in
-      let arm extra branches = List.map (fun (g, t, s) -> (catoms @ (extra :: g), t, s)) branches in
+      (* the condition is evaluated on EVERY branch, so a binder it reads is
+         read on every branch — the exactness the per-branch guard needs *)
+      let arm extra branches =
+        List.map
+          (fun b ->
+            { b with
+              vb_guard = catoms @ (extra :: b.vb_guard);
+              vb_reads =
+                (fun o -> Ir_v0.Checks.mentions_binder_cond o condition || b.vb_reads o) })
+          branches
+      in
       arm pos (value_branches ctx ~subject ~subject_ot then_)
       @ arm neg (value_branches ctx ~subject ~subject_ot else_)
   | _ ->
       let a, t, s = expr_term ctx ~subject ~subject_ot e in
-      [ (a, t, s) ]
+      [ { vb_guard = a; vb_term = t; vb_scale = s; vb_reads = (fun o -> reads_binder o e) } ]
 
 (* a value-position IfThenElse condition (WF-077): a comparison whose operands
    are bound binders, parameters or literals — never a bare attribute read.
@@ -4150,7 +4240,7 @@ let translate_regel ctx (r : resolved_regel) =
                 else None
               in
               List.iter
-                (fun (bindings, term, scale) ->
+                (fun { vb_guard = bindings; vb_term = term; vb_scale = scale; _ } ->
                   let body = (base :: cond) @ bindings in
                   let term, fit_guards = fitted ctx ~subject ~what:a ~body term scale target_scale in
                   head_body ctx
