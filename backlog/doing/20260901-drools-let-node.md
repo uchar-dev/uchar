@@ -77,3 +77,38 @@ verre-zijde-reactiviteit (`navRefs`), de defaults-salience
 (`exprLeesnamen`) en het defaults-delingshek (`bevatDeling`). Alleen de
 eerste is corpus-observeerbaar gemaakt — met een eigen witness waarin
 stratificatie de producent ná de consument laat vuren.
+
+## Fixronde na lens 1 (2026-09-01)
+
+Gate 12 blijft **played 98 / auto-excluded 38 / value-divergence 1 /
+no-case 1**; JUnit **111 → 118**, nul skipped. Gates 1 t/m 11 groen.
+
+Drie wandelingen bleken nog drager-blind, en elk gat is met een
+ref-differentieel bewezen vóór de fix: `verzamelDelingen` (§6.5) en
+`verzamelWortels` (§6.6) verloren de fout-companion achter een Let —
+Drools zei stil *consistent* waar ref *inconsistent* zegt — en
+`kanBreukOpleveren` liet een Breuk achter een Let op de harde
+`(BigDecimal)`-cast crashen. Alle drie dalen nu als eerste stap via
+`letKinderen` af.
+
+`startpuntCompanions` (§6.8) daalt bewust **niet** af. Gemeten op een
+twee-flank-paar (leeg startpunt-anker, kaal en achter een Let): ref zegt
+op beide kanten *consistent* — ref kent de leeg-anker-fout helemaal
+niet, die is productie-RegelSpraak-semantiek die deze port draagt. De
+kale flank divergeert dus al (Drools inconsistent), en juist de
+drager-blindheid laat de omhulde flank mét ref meelopen. Afdalen zou een
+ref-divergentie tóevoegen. De §6.8-vs-ref-vraag is een spec-kwestie,
+buiten deze kaart; geen enkele corpus-golden schrijft een startpunt-lid
+per regel.
+
+`letKinderen` is losgekoppeld van `letConditie` (besluit hoofdsessie):
+een nieuwe `conditieOperanden` daalt af in de Expr-operanden van álle
+conditievormen. Over-approximatie in een structurele verzamelaar is
+veilig; onder-approximatie is de faalwijze zonder bodem.
+
+Nieuw `LetDragerWandelingWitnessTest` (7 witnesses) pint wat de drager
+*verbergt* — de twee construeerbare hekken als luide weigering, de twee
+al gebouwde wandelingen, en de drie nieuwe fixes naast hun kale
+tweelingen. Elk model is verifier-clean en elke gepinde waarde is eerst
+door ref gedraaid; elke witness is mutant-rood bewezen in een
+/tmp-kopie.
