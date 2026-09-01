@@ -3851,22 +3851,46 @@ public final class ExecModelTranspiler {
     }
 
     /** The {@link Expr} children a ch. 4.10 CARRIER hides from the generic tree walks: a Let's value+body, an
-     *  IfThenElse's two branches and its comparison operands. Empty for a non-carrier. Every structural walk that
-     *  must see THROUGH a carrier — the freshness watch, the far-side reactivity, the defaults salience and the
-     *  defaults division fence — asks here; a walk that did not would silently under-report and answer wrong. */
+     *  IfThenElse's two branches and EVERY Expr operand of its condition. Empty for a non-carrier. Every
+     *  structural walk that must see THROUGH a carrier asks here — the list is enumerated on {@code LetVorm};
+     *  a walk that did not would silently under-report and answer wrong. */
     private List<Expr> letKinderen(Expr e) {
         io.github.yhavinga.regelspraak.loader.LetVorm lv = e == null ? null : letVormen.get(e);
         if (lv == null) return List.of();
         if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Binding b) return List.of(b.value(), b.body());
         if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Keuze k) {
             List<Expr> uit = new ArrayList<>(List.of(k.dan(), k.anders()));
-            if (k.conditie() instanceof Conditie.Vergelijking v) {
-                if (v.links() != null) uit.add(v.links());
-                if (v.rechts() != null) uit.add(v.rechts());
-            }
+            conditieOperanden(k.conditie(), uit);
             return uit;
         }
         return List.of();   // a BinderRef reads only the environment
+    }
+
+    /**
+     * Every {@link Expr} operand a {@link Conditie} carries, recursively through a Samengesteld. Deliberately
+     * form-COMPLETE rather than restricted to the {@link #letConditie} shapes the ch. 10.2 guard actually
+     * lowers: coupling the two would make a structural collector depend, silently, on which condition forms a
+     * VALUE lowering happens to accept today — the next widening of letConditie would leave every walk blind
+     * again with nothing to notice it.
+     *
+     * <p>Over-approximating here is SAFE in the one direction that matters: a condition form letConditie
+     * refuses never plays at all (its Keuze lowers to null, a loud skip), so the extra operands can only add a
+     * §9.5 companion or a defaults fence — an honest refusal or an extra fault at worst, never a silent
+     * answer. Under-approximating is the failure mode with no floor.
+     */
+    private static void conditieOperanden(Conditie c, List<Expr> uit) {
+        if (c instanceof Conditie.Vergelijking v) {
+            if (v.links() != null) uit.add(v.links());
+            if (v.rechts() != null) uit.add(v.rechts());
+        } else if (c instanceof Conditie.Predicaat p) {
+            if (p.operand() != null) uit.add(p.operand());
+        } else if (c instanceof Conditie.Periode p) {
+            if (p.vanaf() != null) uit.add(p.vanaf());
+            if (p.tot() != null) uit.add(p.tot());
+        } else if (c instanceof Conditie.Samengesteld s) {
+            for (Conditie onderdeel : s.onderdelen()) conditieOperanden(onderdeel, uit);
+        }
+        // Kenmerk / Rollidmaatschap / VerreRollidmaatschap / Regelversie / Onopgelost carry NO Expr operand.
     }
 
     /** §13.4.17 single-value builtin Functies as a value: §13.4.17.17 ABSOLUTE_WAARDE (rsAbs), §13.4.17.18-.24
