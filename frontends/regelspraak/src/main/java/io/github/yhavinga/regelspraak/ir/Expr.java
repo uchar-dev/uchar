@@ -31,7 +31,12 @@ public sealed interface Expr {
 
     /** Whether {@code e} is or contains a sub-expression matching {@code toets} — a generic IR-tree scan over
      *  every Expr-carrying component (arithmetic operands, functie argumenten + leegwaarde-fallback + its
-     *  filter-conditie's operands, rounding/clamp bases, tekst-interpolaties, the dimensiecel base). Null-safe. */
+     *  filter-conditie's operands, rounding/clamp bases, tekst-interpolaties, the dimensiecel base). Null-safe.
+     *
+     *  <p>The switch is EXHAUSTIVE over the sealed union — no {@code default} arm — so the next node the union
+     *  grows is a COMPILE ERROR here rather than a silent leaf. That is deliberate: a missing arm under-reports
+     *  ("this tree does not mention X") and every caller reads a false as a licence to omit something. The seven
+     *  leaves are spelled out for the same reason; each is a genuine leaf, not an unhandled case. */
     static boolean bevat(Expr e, java.util.function.Predicate<Expr> toets) {
         if (e == null) return false;
         if (toets.test(e)) return true;
@@ -48,7 +53,13 @@ public sealed interface Expr {
             // STRUCTURAL question ("does this tree mention X?"). A scan that stopped at the binder would
             // under-report a Rekendatum/parameter read hidden in a Let value.
             case Let l         -> bevat(l.value(), toets) || bevat(l.body(), toets);
-            default            -> false;   // Literal / refs / BinderRef / Constante / Onopgelost: leaves
+            case Literal ignored      -> false;
+            case AttribuutRef ignored -> false;
+            case ParameterRef ignored -> false;
+            case VariabeleRef ignored -> false;
+            case BinderRef ignored    -> false;
+            case Constante ignored    -> false;
+            case Onopgelost ignored   -> false;
         };
     }
 

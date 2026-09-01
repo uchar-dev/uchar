@@ -219,6 +219,36 @@ class VariabeledeelLoweringTest {
         assertFalse(c.contains("\"node\":\"BinderRef\""), () -> "geen BinderRef in een structuurgevoelige positie:\n" + c);
     }
 
+    @Test void een_binder_die_alleen_via_een_geneste_let_body_gelezen_wordt_krijgt_zijn_let() {
+        // The Let arm of Expr.bevat is load-bearing on BOTH sides, and this pins the BODY half (the value half
+        // is pinned by the declaratievolgorde test above, where "basis" is reachable only through the inner
+        // Let's VALUE). Here "basis" and "totaal" are read ONLY in the outermost body, so by the time the chain
+        // is built inside-out they are reachable only THROUGH an already-built Let's body. A scan that stopped
+        // at a Let (or descended only into its value) reports "not read", drops those Lets, and emits a wire
+        // whose BinderRefs resolve to nothing — a WF-064 violation the verifier then rejects.
+        String src = """
+            Objecttype de Jutter
+                de grondslag Numeriek (geheel getal);
+                de heffing Numeriek (geheel getal);
+            Regel heffing
+                geldig altijd
+                    De heffing van een Jutter moet gesteld worden op de basis plus het totaal plus de opslag.
+                    Daarbij geldt:
+                        de basis is de grondslag van de Jutter maal 2.
+                        het totaal is de basis plus 5.
+                        de opslag is 7.
+            """;
+        String c = emitCompact(src);
+        assertEquals(3, tel(c, "\"node\":\"Let\""), () -> "drie gelezen variabelen, drie Lets:\n" + c);
+        int basis = c.indexOf("\"binder\":\"basis\"");
+        int totaal = c.indexOf("\"binder\":\"totaal\"");
+        int opslag = c.indexOf("\"binder\":\"opslag\"");
+        assertTrue(basis >= 0 && totaal > basis && opslag > totaal,
+                () -> "declaratievolgorde: basis ⊃ totaal ⊃ opslag:\n" + c);
+        // every BinderRef the wire carries names one of the three binders — nothing is left unbound (WF-064).
+        assertEquals(4, tel(c, "\"node\":\"BinderRef\""), () -> "vier lezingen verwacht (3 in de body, 1 in een value):\n" + c);
+    }
+
     @Test void lidwoordvarianten_van_een_verwijzing_binden_op_een_binder() {
         // §11 "Mogelijkheid van lidwoord bij naam variabele": "het grondloon" and the bare "grondloon"
         // are ONE variable, so both reads carry the same binder name (the declared name minus the article).
