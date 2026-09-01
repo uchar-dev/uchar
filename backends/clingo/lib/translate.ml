@@ -3006,15 +3006,19 @@ and scrutinee_pattern ctx ~subject ~subject_ot ~scrutinee ~pattern =
    any viol/2 the arm body emits carries the scrutinee atom that binds it).
 
    The ENUMERATION scrutinee (the keuzetype family's other wire variant,
-   IR-SPEC ch. 2.4) rides the SAME mechanic, deliberately: an enum label is
-   already a ground symbolic term (S2 — [str], the normalised quoted string
-   both executors compare under), so the arm pattern is that term in the
-   scrutinee's val atom, exactly where the nullary constructor's bare functor
-   sits. One rule per arm, unification selects it, no NAF, leeg propagates by
-   underivability — only the pattern alphabet differs (a quoted label instead
-   of a functor), and never the shape. That is why the ch. 9.2 comparison-chain
-   lowering needs no encoding of its own here: mutually exclusive ground
-   patterns ARE the chain. *)
+   IR-SPEC ch. 2.4) reaches the SAME guarantees by a DIFFERENT route, and the
+   two rule shapes differ (S14). The sum arm puts the constructor pattern
+   INSIDE the val atom (val(S,scrut,ctor(P)) — term unification selects the
+   arm). The enum arm cannot: [symbolic_term] binds the label OUT of the val
+   atom into a fresh variable and the arm's ground label term is matched
+   against it by a builtin equality (val(S,scrut,V), V = "label"). Shared is
+   what the semantics rests on: one rule per arm, mutually exclusive ground
+   patterns, no NAF, leeg propagates by underivability. That is why the ch. 9.2
+   comparison-chain lowering needs no encoding of its own here: mutually
+   exclusive ground equalities ARE the chain. The route costs a narrower
+   carrier — [symbolic_term] takes a literal or an own-subject attribute read
+   only, so an enum-typed PARAMETER scrutinee refuses there where the sum
+   route's expr_term fallback would carry it (S19; no corpus case). *)
 and translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms =
   let scrut_typ = Ir_v0.Checks.typ_of_expr scrutinee in
   let enum_scrutinee = match scrut_typ with Some (Enumeratie _) -> true | _ -> false in

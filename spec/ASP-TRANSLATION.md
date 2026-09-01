@@ -1202,27 +1202,41 @@ scaling path to drift. A sum-typed target that stays leeg reports as
 underived (the emptiness test sees any `val/3`, not only numeric ones).
 
 **The enumeration scrutinee** (the keuzetype family's other wire
-variant, IR-SPEC ch. 2.4; ch. 9.2's enum arm) takes the **same
-mechanic**, deliberately. An enum label is already a ground symbolic
-term in S2 (`str` — the normalised quoted string both executors compare
-under), so the arm pattern is that term where the nullary functor sits:
-one rule per arm, mutually exclusive ground patterns, **no NAF**, and a
-leeg scrutinee binds no `val/3` atom so `matchN` stays underived —
-propagation for free, exactly as above. Only the pattern *alphabet*
-differs, never the shape. The scrutinee rides the S2 symbolic operand
-(`symbolic_term`), which binds the label out of the `val/3` atom and
-carries that family's fences (temporal text/enum/boolean carriage among
-them), and the arm's label is matched against it by builtin equality:
+variant, IR-SPEC ch. 2.4; ch. 9.2's enum arm) reaches the **same
+guarantees** by a *different* route, and the difference is worth stating
+plainly because the two rules do not look alike. The sum arm puts the
+constructor pattern **inside** the `val/3` atom, so ASP's own
+term unification selects the arm and a unary arm's `P` is bound by that
+atom. The enum arm cannot: the scrutinee rides the S2 symbolic operand
+(`symbolic_term`), which binds the label **out** of the `val/3` atom into
+a fresh variable and carries that family's fences (temporal
+text/enum/boolean carriage among them), and the arm's label — a ground
+symbolic term in S2 (`str`, the normalised quoted string both executors
+compare under) — is then matched against that variable by a **builtin
+equality**. Two shapes, one per variant:
 
 ```
-matchN(S,⟨arm term⟩) :- is_a(S,ot), val(S,scrut,V), V = "label_k", ⟨arm body⟩.
+matchN(S,⟨arm term⟩) :- is_a(S,ot), val(S,scrut,ctor_k(P…)), ⟨arm body⟩.   (sum)
+matchN(S,⟨arm term⟩) :- is_a(S,ot), val(S,scrut,V), V = "label_k", ⟨arm body⟩.   (enum)
 ```
 
-which is ch. 9.2's **comparison chain** written out: the chain needs no
-encoding of its own because mutually exclusive ground patterns *are* the
-chain. WF-063 guarantees the arms are the declared values exactly, each
-once, and every arm nullary — so no arm binds anything, and no `P`
-variable enters the guard.
+What *is* shared is everything the semantics rests on: one rule per arm,
+mutually exclusive ground patterns, **no NAF**, and a leeg scrutinee
+binding no `val/3` atom so `matchN` stays underived — propagation for
+free, exactly as above. The enum form is ch. 9.2's **comparison chain**
+written out: the chain needs no encoding of its own because mutually
+exclusive ground equalities *are* the chain. WF-063 guarantees the arms
+are the declared values exactly, each once, and every arm nullary — so no
+arm binds anything, and no `P` variable enters the guard.
+
+The route difference costs a **narrower carrier**, and the narrowing is
+pre-existing rather than new: `symbolic_term` carries only a literal or
+an **own-subject attribute read**, so an enumeration-typed *parameter*
+used as a match scrutinee is refused loudly by that fence (`a
+text/enum/boolean operand here is an own-subject attribute read or a
+literal (no corpus case for more)`) where the sum route's fallback would
+have evaluated it to a bound term. No corpus case exercises it; it is
+listed with S14's other uncarried shapes in the S19 inventory.
 
 Witnesses: the anchor `jutterswet-beschikkingsom` — case1 `Toegekend`
 (the unary arm, payload + parameter → 1275.50), case2 `Afgewezen` (0.00)
@@ -2061,7 +2075,15 @@ inside a closed lambda/function body is not translated (the symbolic
 operand has no closed-body carrier; no corpus case)` — verifier-clean
 input (WF-063 admits it, WF-069 admits a `Match` there) that ref executes
 and clingo refuses loudly; a named executor asymmetry, never a wrong
-answer, lifted when a case wants it.
+answer, lifted when a case wants it. At rule level the enum arm's carrier
+is likewise **narrower than the sum arm's**, by the same pre-existing
+`symbolic_term` fence: an enumeration match scrutinee is an own-subject
+attribute read or a literal, so an **enumeration-typed parameter** as
+scrutinee refuses loudly (`a text/enum/boolean operand here is an
+own-subject attribute read or a literal (no corpus case for more)`) where
+the sum route's `expr_term` fallback carries a `Fold`. No corpus case;
+recorded here rather than fixed, because the fence predates the enum arm
+and firing it is a loud refusal, never a wrong answer.
 
 *Folds and function values (S15) — shapes without a corpus case:* a
 **`ListLiteral`** list source (the reified-list encoding covers it, but
