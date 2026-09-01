@@ -51,3 +51,24 @@ re-vendor + herpin door de hoofdsessie.
 
 Out of scope: de overige v1-vormen; de keuzetype-familie (eigen kaart);
 elke wijziging aan bestaande golden-pins of toka/.
+
+Meetpunten uit fase 1 (Let-node-kaart, done 2026-09-01):
+- SPANNING die deze kaart moet beslechten: de bestaande wire-Let is
+  STRIKT (leeg-barrière, corpus-gepind in de Catala-goldens en nu in
+  drie executors identiek), het geratificeerde besluit voor het
+  variabelendeel is GEBRUIKSPLEK. Eén node met twee semantieken kan
+  niet; de kaart kiest expliciet (bv. een tweede vorm/vlag, of de
+  lowering bewaakt gedragsbehoud per gebruiksplek) — bestaande
+  strikte-barrière-pins zijn onaantastbaar. Genummerde vraag als het
+  besluit spec-tekst raakt.
+- Gate-12-druk, gemeten (lens-1-injectiesweep fase 1): een Let om een
+  aggregatie-/temporele waarde of in een conditie-/patroonpositie
+  weigert in Drools luid ("waarde buiten scope"; letConditie draagt
+  alleen de kale numerieke Vergelijking) — ~20 van de 98 spelende
+  goldens vallen bij zo'n omhulling uit. Een emitter die
+  variabelendelen breed naar Let lowert drukt die goldens uit de
+  played-set; meet en rapporteer de verschuiving expliciet, of verbreed
+  eerst de Drools-dekking.
+- De §6.5/§6.6-companions kennen geen tak-/barrièreconditie
+  (vervolgkaart 20260901-companion-onder-drager) — nieuwe goldens met
+  delingen ín Let-bodies raken die grens.

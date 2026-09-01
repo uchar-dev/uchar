@@ -153,3 +153,32 @@ loader controleert nu de verplichte velden van Let/BinderRef/IfThenElse
 (luide Refusal met vorm + veld, in plaats van een naamloze NPE of — bij
 een BinderRef zonder type — een stil doorspelende drager), en de twee
 aanroeperloze `transpile`-overloads zijn weg.
+
+## Afronding (hoofdsessie, 2026-09-01)
+
+Eindstand na bouwgolf + twee lensrondes + twee fixrondes: **gate 12
+played 98 / auto-excluded 38 / value-divergence 1 (kustwacht) / no-case 1,
+JUnit 120, nul skipped; alle twaalf gates groen.** De vier nieuw spelende
+goldens: `synth3-drempelheffing`, `jutterswet-tariefrecht-catala`,
+`jutterswet-kinderweging`, `anchor/jutterswet-tariefstelling`.
+
+Twee kaartaannames bleken onwaar en zijn hier gecorrigeerd:
+(1) de voorspelde verschuivingen (letbeslag → SumType, kinderlet →
+ListType) waren al de **nulmeting** — objecttypes parseren vóór
+`resolvedRegels`, dus die goldens weigerden nooit op `Expr:Let`;
+(2) `jutterswet-tariefrecht-catala` draagt zijn Lets in
+`resolvedRegels[0].waarde`, niet in `prioritizedDefaults`-waarden — dat
+het defaults-pad meelift is met een zelfgebouwd witness-drietal bewezen,
+niet met een corpus-golden.
+
+Bekende grenzen, expliciet gelaten (elk luid of ongepind, nooit stil
+gepind-fout): een Let in conditie-/patroonpositie en een Let over een
+aggregatie-/temporele waarde weigeren luid ("waarde buiten scope" —
+relevant voor fase 2, zie de bijgewerkte lowering-kaart); de
+§6.5/§6.6-companion kent geen tak-/barrièreconditie (restpost hierboven —
+vervolgkaart `20260901-companion-onder-drager`); `startpuntCompanions`
+blijft bewust drager-blind (§6.8 is productie-semantiek die ref niet
+kent — de kale flank divergeert vandaag al); de pre-existente
+eenheden-ongecontroleerde referentie (lens-1-flank, ref 550 vs Drools
+500.05 op een verifier-clean model) kreeg vervolgkaart
+`20260901-eenheden-op-refs`.
