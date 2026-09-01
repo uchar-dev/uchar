@@ -167,25 +167,15 @@ public final class ExecModelTranspiler {
     public static Model transpile(RegelSpraakModel m, ClassLoader beanLoader) { return new ExecModelTranspiler(m, beanLoader).run(); }
     /** As {@link #transpile} but also exposes the skipped-construct reasons (for the differential harness to
      *  decide a fixture is "not yet migrated" rather than a divergence). */
-    public static ExecModelTranspiler build(RegelSpraakModel m) { return build(m, null, List.of()); }
-    /** As {@link #build(RegelSpraakModel)} but resolves fact beans against {@code beanLoader} (card fase 1). */
-    public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader) { return build(m, beanLoader, List.of()); }
-    /** As {@link #build(RegelSpraakModel, ClassLoader)} but also consumes the ch. 7 prioritized-defaults extension
-     *  (loaded beside the model, see {@link io.github.yhavinga.regelspraak.loader.IrLoader#loadAll}); each defaults
-     *  group lowers to one reduce-rule (a port of ref's {@code run_defaults_group}). An empty/null list is the flat
-     *  v0 case (no defaults rules). */
-    public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults) {
-        return build(m, beanLoader, defaults, java.util.Map.of());
+    public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader) {
+        return build(m, beanLoader, List.of(), java.util.Map.of(), java.util.Map.of());
     }
-    /** As {@link #build(RegelSpraakModel, ClassLoader, List)} but also consumes the symbolic role bindings loaded
-     *  beside the model ({@code IrLoader.Loaded.rolBindingen}). An empty map is the by-pair-derivation-only case. */
-    public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
-            Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen) {
-        return build(m, beanLoader, defaults, rolBindingen, java.util.Map.of());
-    }
-    /** As {@link #build(RegelSpraakModel, ClassLoader, List, Map)} but also consumes the IR-SPEC ch. 4.10 Let cluster
-     *  loaded beside the model ({@code IrLoader.Loaded.letVormen}). An empty map leaves every carrier an unresolved
-     *  leaf, i.e. a loud per-form refusal. */
+    /** As {@link #build(RegelSpraakModel, ClassLoader)} but also consumes what the loader carries BESIDE the model
+     *  (see {@code IrLoader.Loaded}): the ch. 7 prioritized-defaults extension — each group lowers to one
+     *  reduce-rule, a port of ref's {@code run_defaults_group} — the symbolic role bindings, and the IR-SPEC
+     *  ch. 4.10 Let cluster. An empty/null defaults list is the flat v0 case; an empty {@code rolBindingen} is the
+     *  by-pair-derivation-only case; an empty {@code letVormen} leaves every carrier an unresolved leaf, i.e. a
+     *  loud per-form refusal. */
     public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
             Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen,
             Map<Object, io.github.yhavinga.regelspraak.loader.LetVorm> letVormen) {
