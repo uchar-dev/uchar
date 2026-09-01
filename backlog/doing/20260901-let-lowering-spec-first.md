@@ -10,14 +10,36 @@ deze kaart lowert de frontend het variabelendeel naar de `Let`-node —
 CONSTRUCTS rij 24 ("Local variables") en rij 10 blijken twee namen voor
 één construct en worden samengevoegd.
 
-Maintainerbesluiten 2026-09-01 (geratificeerd): (1) de route is gefaseerd
-— fase 1 (20260901-drools-let-node) leert Drools de node eerst; (2) de
-evaluatiesemantiek is normatief OP GEBRUIKSPLEK: een gebonden expressie
-wordt alleen geëvalueerd waar de naam werkelijk gelezen wordt
-(§11.1-conform — geen onnodige berekening; het deling-door-nul-voorbeeld
-uit de officiële spec blijft werken; gedragsbehoudend t.o.v. de huidige
-inlining). ref en clingo worden hierop getoetst en zo nodig bijgesteld —
-een strikte Let die het §11.1-voorbeeld zou laten faulten is fout.
+Maintainerbesluiten (herzien en geratificeerd 2026-09-01, na de gemeten
+verkenning — de eerdere formulering "gedragsbehoudend t.o.v. de huidige
+inlining" bleek onhaalbaar: inlining is coalesce-zonder-barrière (N) en
+N beweegt drie pins waaronder een anchor):
+(1) de route is gefaseerd — fase 1 (20260901-drools-let-node, done)
+leerde Drools de strikte node eerst;
+(2) O3: de Let-semantiek UNIFICEERT naar L — lui met de leeg-barrière
+op de LEESPLEK: een value wordt pas geëvalueerd (éénmalig, call-by-need)
+bij de eerste lezing van de binder; een gelezen binder wiens value leeg
+is maakt de hele Let leeg (de barrière verhuist van bind- naar
+leesplek); een ongelezen binder evalueert niets. Gemeten pin-neutraal
+(399/399 corpus-cases identiek aan strikt; WF-077 en de NAF-vrije
+complement-eigenschap blijven — probe G). Het variabelendeel krijgt
+daarmee de leeg-barrière: een bewuste v1-divergentie t.o.v. de
+v0-inlining-coalesce, als tracked delta in CONSTRUCTS. Catala's
+call-by-value-let wordt eveneens een tracked getrouwheidsdelta;
+(3) het §11.1-deling-door-nul-voorbeeld wordt NIET door deze kaart
+geleverd — dat is kortsluiting van Samengesteld ALLE (eigen kaart
+20260901-samengesteld-kortsluiting); deze kaart levert §11.1's
+"niet onnodig berekenen";
+(4) ref-unittest WV-10.6-leeg-value-no-body wordt geherformuleerd tot
+de L-getuige (toestemming maintainer): lege value + gelezen binder →
+leeg; lege value + ongelezen binder → body-uitkomst;
+(5) de emitter lowert VOL (elke bronvariabele → Let); toka-18 wordt de
+derde reden-dragende gate-11-holdout (de toolchain-gepinde
+toka/casus/ir.json draagt X ingelijnd en kan nooit een Let dragen).
+De clingo-kant krijgt de per-tak-leesanalyse en een nieuwe
+synth-getuige-golden sluit de false-green-window (de probe-B1-vorm:
+lege value, binder alleen in de niet-gekozen tak gelezen — onder L
+schrijft het doel, onder strikt niet).
 
 Dit is SPEC-FIRST werk: (a) RUNTIME-SEMANTICS krijgt de normatieve
 gebruiksplek-semantiek met een gewerkt voorbeeld (de deling-door-nul-
