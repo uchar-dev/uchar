@@ -105,3 +105,40 @@ Wat de regel bewust NIET doet, elk gemeten in plaats van aangenomen
   gewicht zijn (een document zonder eigen betekenis, alleen om een
   `String.equal`-mutant te vangen); gemotiveerd gelaten in plaats van
   stil gelaten.
+
+## Afronding (hoofdsessie, 2026-09-01)
+
+Eindstand na twee bouwgolven + twee lensrondes + twee fixrondes, alle
+twaalf gates groen: gate 3 = 161 golden clean / **178 negatief** (was
+168 — tien nieuwe: wf087×2, wf063-enum×3, wf088×4, wf062×1); gate 9 =
+**201 checks / 12 catala-goldens** byte-identiek (was 169/11); gates
+5/6 = 377 cases (was 374 — de drie vaarwatertoeslag-cases); gate 12 =
+98 played / **39** auto-excluded (de nieuwe golden valt eerlijk op
+`Expr:Match`) / 1 / 1, JUnit 120.
+
+Geland: WF-087 (nullair bestaat in één wire-vorm; plugin normaliseert
+all-nullary→Enumeratie), de WF-063-enum-verbreding met de
+vergelijkingsketen-lowering en het expliciete leeg-verschil (RS ch.
+9.2; leeg propageert, geen impliciete leeg-arm), **WF-088** (de
+WF-061-analoog: elke Enumeratie-use-site herhaalt de gedeclareerde
+waardenlijst, ci en volgordegevoelig per WF-006) — lens-1-vangst: de
+verbreding maakte zonder die regel een verifier-schone ref≢clingo-
+splitsing bereikbaar. Getuige `jutterswet-vaarwatertoeslag-catala`
+(pins onafhankelijk herrekend en arm-swap-bewezen door lens 1).
+
+De kaartaanname "vijf SumType-goldens her-beoordelen" bleek leeg: ALLE
+tien SumType-dragende goldens zijn payload-dragend per domein — er
+her-emitteert niets, er speelt niets extra in Drools. Twee gemeten
+frontend-versmallingen (lijst/structveld van een nullaire enum weigeren
+nu luid, WF-065/071) zijn fixture-gepind en in de indexrijen vastgelegd.
+
+Open, elk gemeten en vastgelegd: de use-site≡ATTRIBUUTdeclaratie-
+kruiscontrole ontbreekt voor béide varianten (pre-existent voor sums,
+op main gereproduceerd; vervolgkaart
+`20260901-use-site-declaratie-identiteit`); doel-type-drift is gemeten
+onschadelijk (bewust buiten de WF-088-wandeling); de ci-helft van
+WF-088 is onfalsifieerbaar op dit corpus (gemotiveerd gelaten); een
+enum-parameter-scrutinee weigert clingo luid via het pre-existente
+symbolic_term-hek (S14/S19 vermelden het); Drools draagt Match niet —
+de familie-kant daarvan is bestaand gate-12-exclusiegebied
+(ListType/StructType/SumType/Match, zie de v1-restcampagne).
