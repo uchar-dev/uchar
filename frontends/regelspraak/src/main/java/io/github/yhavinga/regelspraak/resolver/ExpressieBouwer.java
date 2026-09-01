@@ -46,8 +46,14 @@ final class ExpressieBouwer {
     // carries, in which a read of an EARLIER variable is a BinderRef rather than that variable's inlined subtree.
     private final Map<String, Variabele> binders = new LinkedHashMap<>();
     // Which of the two forms naamRef hands back. false (the default) inlines — the VOORWAARDE route; true yields a
-    // BinderRef — the RESULTAAT route, under the Let chain omhulMetVariabelen builds. Scoped by bouwResultaat.
+    // BinderRef — the RESULTAAT route, under the Let chain omhulMetVariabelen builds. Scoped by bouwResultaat,
+    // and turned back OFF inside a structure-sensitive position by ingelijnd().
     private boolean binderModus;
+    // The inlined definitions naamRef may substitute RIGHT NOW. It is `variabelen` itself everywhere a rule's own
+    // text is built (the voorwaarde and the resultaat see every declaration, as they did in v0), and a growing
+    // PREFIX while pass 2 rebuilds the definitions themselves — so a structure-sensitive position INSIDE a
+    // definition sees exactly what pass 1 saw there: earlier declarations only, a forward reference still unbound.
+    private Map<String, Expr> zichtbaar = variabelen;
 
     /** One §13.4.2.10 declared variable in BINDER form: its lookup {@code sleutel}, the {@code naam} the Let binder
      *  and every BinderRef carry (the written name minus a leading bepaald lidwoord), the resolved value, and the
@@ -101,16 +107,24 @@ final class ExpressieBouwer {
         }
         int naInline = model.diagnostics.size();
         boolean vorige = binderModus;
+        Map<String, Expr> vorigZichtbaar = zichtbaar;
+        // Pass 2 sees the same growing PREFIX of inlined definitions pass 1 saw, so a structure-sensitive position
+        // inside definition i substitutes exactly the earlier definitions (never a forward one, which stays unbound
+        // in both passes) — the two passes then differ ONLY in what naamRef hands back, never in what it can see.
+        Map<String, Expr> prefix = new LinkedHashMap<>();
         binderModus = true;
+        zichtbaar = prefix;
         try {
             for (VariabeleOnderdeelContext vo : ctx.variabeleOnderdeel()) {
                 if (vo.variabeleNaam() == null || vo.expressie() == null) continue;
                 String geschreven = src(vo.variabeleNaam());
                 String sleutel = variabeleSleutel(geschreven);
                 binders.put(sleutel, new Variabele(sleutel, binderNaam(geschreven), bouw(vo.expressie()), bron(vo)));
+                prefix.put(sleutel, variabelen.get(sleutel));
             }
         } finally {
             binderModus = vorige;
+            zichtbaar = vorigZichtbaar;
         }
         // Pass 2 re-resolves the same source text, so a diagnostic it repeats VERBATIM is pass 1's own — report it
         // once. A diagnostic pass 2 raises that pass 1 did not is a REAL difference (a BinderRef is opaque where
@@ -157,6 +171,32 @@ final class ExpressieBouwer {
         } finally {
             binderModus = vorige;
         }
+    }
+
+    /**
+     * §11/ch. 4.10 build {@code f} in a STRUCTURE-SENSITIVE position: one where the resolver decides on the SHAPE of
+     * the resolved subtree, not on its value. A variable read there is SUBSTITUTED (the v0 route), never handed back
+     * as a {@link Expr.BinderRef} — a BinderRef is an opaque leaf, so every {@code instanceof Expr.AttribuutRef} /
+     * {@code Literal} / {@code ParameterRef} test would fail and the construct would silently degrade to an
+     * Onopgelost marker (a wrong answer, not a lost optimisation). This is the THIRD lowering boundary, beside the
+     * voorwaarde-only variable and the never-read one; it is normative in {@code IR-SPEC.md} ch. 4.10.
+     */
+    private <T> T ingelijnd(java.util.function.Supplier<T> f) {
+        boolean vorige = binderModus;
+        binderModus = false;
+        try { return f.get(); } finally { binderModus = vorige; }
+    }
+
+    /** The functie kinds that range over a SET or a TIMELINE and therefore read their operand's shape: the seven
+     *  instance/dimension aggregations, plus the two §7 temporal operators whose operand must be a single-period
+     *  temporal attribuut ({@code TIJDSEVENREDIG_DEEL}) or whose "dat …" condition clips one
+     *  ({@code AANTAL_DAGEN_IN}). {@link #ingelijnd} covers exactly these. */
+    private static boolean aggregeert(Expr.FunctieKind kind) {
+        return switch (kind) {
+            case AANTAL, SOM, TOTAAL, MINIMUM, MAXIMUM, EERSTE, LAATSTE,
+                 TIJDSEVENREDIG_DEEL, AANTAL_DAGEN_IN -> true;
+            default -> false;
+        };
     }
 
     /** Whether {@code e} reads the binder keyed {@code sleutel} anywhere — including inside a nested Let's value,
@@ -382,6 +422,13 @@ final class ExpressieBouwer {
     private Expr bouwFunctie(FunctieAanroepContext f) {
         Bron bron = bron(f);
         Expr.FunctieKind kind = functieKind(f);
+        // §11/ch. 4.10 an AGGREGATION is a structure-sensitive position through and through: its element type, its
+        // set-ness, its dimensieselectie, its "gedurende" clip and its "die …" subselectie are all read off the
+        // SHAPE of the resolved operand (and of the subselectie's right-hand side), never off a value. Resolve the
+        // whole construct with variable reads SUBSTITUTED — see {@link #ingelijnd}. A non-aggregating functie
+        // (wortel, absolute waarde, a date component, a tijdsduur) decides on TYPES only, which a BinderRef carries
+        // faithfully, so it keeps the sharing a Let gives it.
+        if (binderModus && aggregeert(kind)) return ingelijnd(() -> bouwFunctie(f));
         List<Expr> argumenten = args(f);
         Objecttype elem = aggregatieElement(kind, argumenten);
         // §13.4.17.47 telling vs a declared parameter whose name begins with "aantal": the spec
@@ -1731,7 +1778,7 @@ final class ExpressieBouwer {
             Variabele v = binders.get(sleutel);
             if (v != null) return new Expr.BinderRef(v.naam(), v.waarde().type(), bron);
         } else {
-            Expr inlined = variabelen.get(sleutel);
+            Expr inlined = zichtbaar.get(sleutel);
             if (inlined != null) return inlined;
         }
         String stripped = naam.replaceFirst("^(?i)(de|het|een)\\s+", "");

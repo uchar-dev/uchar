@@ -187,6 +187,38 @@ class VariabeledeelLoweringTest {
                 () -> "WF-076: het Let-type is het body-type (Numeriek), niet dat van zijn value (Datum):\n" + c);
     }
 
+    @Test void een_variabele_in_een_structuurgevoelige_positie_blijft_gesubstitueerd() {
+        // ch. 4.10 boundary (c). The RHS of a §5.6 subselectie comparison is resolved on the SHAPE of the read
+        // subtree — only a Literal or a ParameterRef may stand there, because an attribute would mis-bind
+        // against the aggregated element. A BinderRef is an opaque leaf, so lowering the read would fail that
+        // shape test and degrade the whole aggregation to a Conditie.Onopgelost marker: a WRONG ANSWER, not a
+        // lost optimisation. The variable is therefore substituted AT THAT USE SITE, exactly as v0 did.
+        String src = """
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                het drempelgewicht Numeriek (geheel getal);
+            Objecttype de Vondst (mv: Vondsten)
+                het gewicht Numeriek (geheel getal);
+            Feittype aanmelding
+                de aanmeldende jutter Jutter
+                de vondst (mv: vondsten) Vondst
+            Eén aanmeldende jutter telt meerdere vondsten
+            Regel drempelgewicht
+                geldig altijd
+                    Het drempelgewicht van een Jutter moet berekend worden als de som van het gewicht van alle vondsten van de Jutter die groter zijn dan de drempel of 0 als die er niet zijn.
+                    Daarbij geldt:
+                        de drempel is 5.
+            """;
+        String c = emitCompact(src);
+        // the filter SURVIVES as a comparison against the substituted literal …
+        assertTrue(c.contains("\"filter\":{\"node\":\"Vergelijking\",\"op\":\"GROTER\""),
+                () -> "de subselectie mag niet degraderen tot een marker:\n" + c);
+        assertTrue(c.contains("\"rechts\":{\"node\":\"Literal\",\"waarde\":\"5\""),
+                () -> "het rechterlid moet de gesubstitueerde definitie zijn:\n" + c);
+        // … and precisely because it did, there is no read left to bind: no Let, no BinderRef.
+        assertFalse(c.contains("\"node\":\"Let\""), () -> "geen Let om een enkel structuurgevoelig gebruik:\n" + c);
+        assertFalse(c.contains("\"node\":\"BinderRef\""), () -> "geen BinderRef in een structuurgevoelige positie:\n" + c);
+    }
+
     @Test void lidwoordvarianten_van_een_verwijzing_binden_op_een_binder() {
         // §11 "Mogelijkheid van lidwoord bij naam variabele": "het grondloon" and the bare "grondloon"
         // are ONE variable, so both reads carry the same binder name (the declared name minus the article).
