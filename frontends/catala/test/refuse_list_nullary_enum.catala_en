@@ -1,0 +1,25 @@
+# Lijst van een all-nullary opsomming — de eerste van de twee eerlijke
+# versmallingen die de WF-087-normalisatie meebrengt (rechtenvrij, eigen
+# auteurschap). Vóór het besluit van 2026-09-01 mapte de plugin ELKE
+# Catala-opsomming op een SumType, en een SumType is een toegelaten
+# lijstelement; sinds de normalisatie is `Getijstand` een Enumeratie, en
+# WF-065 laat een enumeratie niet toe als elementtype. De lijstdrager vergt
+# dus de payload-vorm.
+#
+# Dat is de spec die spreekt, niet de plugin: de weigering citeert WF-065 en
+# noemt het toegelaten stel. De versmalling staat in de WF-065-indexrij van
+# `spec/IR-SPEC.md`.
+
+```catala
+declaration enumeration Getijstand:
+  -- Eb
+  -- Vloed
+  -- Doodtij
+
+declaration scope Getijreeks:
+  input standen content list of Getijstand
+  output aantal content integer
+
+scope Getijreeks:
+  definition aantal equals number of standen
+```

@@ -1,0 +1,27 @@
+# Structveld van een all-nullary opsomming — de tweede eerlijke versmalling
+# van de WF-087-normalisatie (rechtenvrij, eigen auteurschap). Vóór het
+# besluit van 2026-09-01 was `Getijstand` een SumType en dus een toegelaten
+# structveld; sinds de normalisatie is zij een Enumeratie, en WF-071 laat een
+# enumeratie niet toe als veldtype. De structdrager vergt, net als de
+# lijstdrager, de payload-vorm.
+#
+# De weigering citeert WF-071 en noemt struct én veld bij naam. De
+# versmalling staat in de WF-071-indexrij van `spec/IR-SPEC.md`.
+
+```catala
+declaration enumeration Getijstand:
+  -- Eb
+  -- Vloed
+  -- Doodtij
+
+declaration structure Peiling:
+  data stand content Getijstand
+  data hoogte content integer
+
+declaration scope Peilstaat:
+  input peiling content Peiling
+  output hoogte content integer
+
+scope Peilstaat:
+  definition hoogte equals peiling.hoogte
+```

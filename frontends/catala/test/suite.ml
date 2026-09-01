@@ -359,6 +359,14 @@ let () =
          each refuse loudly *)
       ("refuse_partialmatch.catala_en", "total");
       ("refuse_tuple.catala_en", "tuple");
+      (* the two honest narrowings of the WF-087 normalisation (maintainer
+         decision 2026-09-01): an all-nullary opsomming is an Enumeratie, not
+         a SumType, and WF-065/WF-071 admit no enumeration as a list element
+         or a struct field. Both carriers demand the payload form; before the
+         normalisation both of these lowered. The spec speaks, not the
+         plugin — each refusal cites its rule *)
+      ("refuse_list_nullary_enum.catala_en", "WF-065");
+      ("refuse_struct_nullary_enum.catala_en", "WF-071");
       (* row-5c §5: a decimal literal that does not terminate at the pinned
          scale S = 4 is refused loudly at the source (the leeg-barrier for
          precision) *)
