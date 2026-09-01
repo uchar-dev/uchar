@@ -1,0 +1,71 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Vondst": {
+      "node": "Objecttype",
+      "naam": "Vondst",
+      "attributen": {
+        "status": {
+          "node": "SumType",
+          "domain": "keurstatus",
+          "constructors": [
+            {
+              "name": "Gaaf",
+              "payload": null
+            },
+            {
+              "name": "Beschadigd",
+              "payload": null
+            }
+          ]
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Vondsten"
+    }
+  },
+  "domeinen": {
+    "keurstatus": {
+      "node": "SumType",
+      "domain": "keurstatus",
+      "constructors": [
+        {
+          "name": "Gaaf",
+          "payload": null
+        },
+        {
+          "name": "Beschadigd",
+          "payload": null
+        }
+      ]
+    }
+  },
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}
