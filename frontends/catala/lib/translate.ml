@@ -33,7 +33,9 @@
      group -> REFUSED (PHASE4-DEFAULTS §7; workable later by base-duplication)
    - context (reentrant) variable   -> REFUSED (see below; besluit 6 finding)
    - assertion                      -> consistency rule
-   - enum (payload or nullary)      -> SumType + Construct/Match (row 36)
+   - enum (payload-carrying)        -> SumType + Construct/Match (row 36)
+   - enum (all-nullary)             -> Enumeratie domain + value Literal/Match
+                                       (WF-087, the keuzetype-familie card)
    - list-typed variable            -> ListType (row 10, WF-065)
    - map / filter / explicit fold   -> MapList / FilterList / Fold (row 10)
    - sum / maximum / minimum        -> the reduce lowering: a Fold over an
@@ -90,8 +92,8 @@ let refuse fmt = Printf.ksprintf (fun s -> raise (Refuse s)) fmt
 let state_attr_name (vname : string) : string =
   String.map (function '#' -> ' ' | c -> c) vname
 
-(* Enums referenced by the translated document, recorded as [sum_type_of]
-   builds each SumType; [file_to_document] resets it per run and reads it to
+(* Enums referenced by the translated document, recorded as [keuzetype_of]
+   builds each keuzetype; [file_to_document] resets it per run and reads it to
    emit exactly the used enums as domains — [ctx_enums] also carries built-in
    enums (e.g. the desugarer's Optional), which no 5b program references. *)
 let used_enums = ref EnumName.Set.empty
@@ -104,7 +106,7 @@ let used_structs = ref StructName.Set.empty
 
 (* The reduce lowering (§3.5) needs a nominal Optional sum type carrying the
    concrete element datatype; Catala's builtin [option_enum] carries a
-   *universal* Present payload (Expr.option_enum_config), so [sum_type_of] on
+   *universal* Present payload (Expr.option_enum_config), so [keuzetype_of] on
    it would refuse. We build the concrete Optional here and record its element
    datatype so [file_to_document] declares the domain. One element datatype per
    document — a second, different one has no nominal home (recorded flank). *)
@@ -143,13 +145,20 @@ let note_optional (element : I.datatype) : unit =
 
 (* --- Catala type -> IR datatype ---------------------------------------- *)
 
-(* Every Catala enum maps to the row-36 SumType, uniformly — including
-   all-nullary enums (PHASE5B-KERNEL §2.7): Enumeratie stays the untouched
-   v0 mirror form and the two never convert. The declaring enum's base name
-   is the domain; constructor payloads recurse through [catala_dt]; a
-   TLit TUnit payload is nullary (None); a TTuple payload is an n-ary
-   constructor — 5c struct territory — and refuses loudly. A [TStruct] is the
-   row-5c record datatype ([struct_type_of]). *)
+(* A Catala enum is a keuzetype (IR-SPEC ch. 2.4) and lands on ONE of its two
+   wire variants — which one is decided by the payloads, not by the frontend
+   (maintainer decision 2026-09-01, the keuzetype-familie card; this supersedes
+   the uniform SumType mapping of PHASE5B-KERNEL §2.7). An enum with at least
+   one payload-carrying constructor is the row-36 SumType. An ALL-NULLARY enum
+   has NO SumType image: WF-087 declares a payloadless SumType ill-formed, so
+   it normalises to the v0 Enumeratie domain — the enum's base name is the
+   domain, its constructor names in declaration order are the values. Payload
+   never converts; the nullary keuzetype exists in exactly one form.
+   The declaring enum's base name is the domain either way; constructor
+   payloads recurse through [catala_dt]; a TLit TUnit payload is nullary
+   (None); a TTuple payload is an n-ary constructor — 5c struct territory —
+   and refuses loudly. A [TStruct] is the row-5c record datatype
+   ([struct_type_of]). *)
 let rec catala_dt (enums : enum_ctx) (structs : struct_ctx) (t : typ) : I.datatype =
   match M.remove t with
   | TLit TInt -> num_int
@@ -162,7 +171,7 @@ let rec catala_dt (enums : enum_ctx) (structs : struct_ctx) (t : typ) : I.dataty
   | TDefault inner -> catala_dt enums structs inner
   | TArrow _ -> refuse "function-valued variable: new kernel (row 10), designed spec-first in 5b"
   | TStruct name -> struct_type_of enums structs name
-  | TEnum name -> sum_type_of enums structs name
+  | TEnum name -> keuzetype_of enums structs name
   | TTuple _ ->
       refuse
         "tuple payload: an n-ary constructor payload de-tuplifies to a Catala tuple — 5c struct territory, single-payload constructors only (WF); refused"
@@ -177,9 +186,10 @@ let rec catala_dt (enums : enum_ctx) (structs : struct_ctx) (t : typ) : I.dataty
   | TOption _ -> refuse "option-typed variable: not supported in the 5a skeleton"
   | _ -> refuse "unsupported variable type"
 
-(* An enum -> its SumType datatype: constructors in declaration order
-   (EnumConstructor ids are generative, so the map folds declaration-first). *)
-and sum_type_of (enums : enum_ctx) (structs : struct_ctx) (name : EnumName.t) : I.datatype =
+(* An enum -> its keuzetype datatype: alternatives in declaration order
+   (EnumConstructor ids are generative, so the map folds declaration-first).
+   All-nullary normalises to Enumeratie (WF-087), otherwise SumType. *)
+and keuzetype_of (enums : enum_ctx) (structs : struct_ctx) (name : EnumName.t) : I.datatype =
   used_enums := EnumName.Set.add name !used_enums;
   let sig_ =
     try EnumName.Map.find name enums
@@ -195,7 +205,11 @@ and sum_type_of (enums : enum_ctx) (structs : struct_ctx) (name : EnumName.t) : 
            (EnumConstructor.to_string c, payload) :: acc)
          sig_ [])
   in
-  Sum_type { domein = EnumName.base name; constructoren }
+  if List.for_all (fun (_, payload) -> Option.is_none payload) constructoren then
+    Enumeratie
+      { domein = Some (EnumName.base name);
+        waarden = List.map (fun (c, _) -> Some c) constructoren }
+  else Sum_type { domein = EnumName.base name; constructoren }
 
 (* A struct -> its StructType datatype: fields in declaration order
    (StructField ids are generative, so the map folds declaration-first). Field
@@ -548,7 +562,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
     | ELit (LRat _) -> Some num_rat
     | EVar v -> Option.map snd (Var.Map.find_opt v env)
     | ELocation (ScopelangScopeVar { name }) -> lookup_var (M.remove name)
-    | EInj { name; _ } -> Some (sum_type_of enums structs name)
+    | EInj { name; _ } -> Some (keuzetype_of enums structs name)
     | EStruct { name; _ } -> Some (struct_type_of enums structs name)
     | EStructAccess { name; field; _ } ->
         Option.map (catala_dt enums structs)
@@ -890,18 +904,24 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
               { typ = Some veld_ty; base = value_expr ~operand ~in_body ~in_let ~env inner;
                 veld = StructField.to_string field; bron = None }))
     | EInj { name; e = payload; cons } ->
-        (* a constructor value; unit payload = nullary (argument None) *)
-        let sig_ = EnumName.Map.find name enums in
-        let payload_ty = EnumConstructor.Map.find cons sig_ in
-        let argument =
-          match M.remove payload_ty with
-          | TLit TUnit -> None
-          | _ -> Some (value_expr ~in_body ~in_let ~env payload)
-        in
-        Construct
-          { typ = Some (sum_type_of enums structs name);
-            constructor_ = EnumConstructor.to_string cons; argument;
-            bron = Some (EnumConstructor.to_string cons) }
+        (* a constructor value. On a normalised all-nullary enum (WF-087) the
+           keuzetype IS the Enumeratie domain, so the alternative is an ordinary
+           enumeration-value Literal (WF-039) — Construct stays sum-only. On a
+           payload enum it is the row-36 Construct; unit payload = nullary
+           (argument None). *)
+        let dt = keuzetype_of enums structs name in
+        let cons_name = EnumConstructor.to_string cons in
+        (match dt with
+         | I.Enumeratie _ -> Literal { waarde = Some cons_name; typ = Some dt; bron = Some cons_name }
+         | _ ->
+             let sig_ = EnumName.Map.find name enums in
+             let payload_ty = EnumConstructor.Map.find cons sig_ in
+             let argument =
+               match M.remove payload_ty with
+               | TLit TUnit -> None
+               | _ -> Some (value_expr ~in_body ~in_let ~env payload)
+             in
+             Construct { typ = Some dt; constructor_ = cons_name; argument; bron = Some cons_name })
     | EMatch { name; e = scrut; cases } when EnumName.equal name ConstantNames.option_enum ->
         (* the §3.5 reduce lowering: [match (reduce f l) with Absent -> D |
            Present x -> x] — Catala's sum/maximum/minimum desugaring
@@ -986,7 +1006,12 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
             (EnumName.base name) (String.concat ", " missing);
         (* arms in declared-constructor order; each case is a one-argument
            EAbs (the desugarer wraps the payload binder — nullary carries a
-           unit binder, which becomes binder: null) *)
+           unit binder, which becomes binder: null). This is the ONE Match node
+           for both keuzetype variants (WF-063 over both): on a normalised
+           all-nullary enum every payload is unit, so every arm comes out with
+           the value label in [constructor] and [binder] null — exactly the
+           enumeration arm of WF-063, with the scrutinee typed Enumeratie by
+           [keuzetype_of]. *)
         let arms_rev, inferred =
           EnumConstructor.Map.fold
             (fun c payload_ty (arms, inf) ->
@@ -2400,15 +2425,17 @@ let file_to_document (input : string) : I.document =
     topdef_functions enums structs functions prog.Sc.program_topdefs
     @ List.rev_map (fun (_, (fd, _)) -> fd) !synth_fns
   in
-  (* the enums and structs actually referenced above become SumType/StructType
-     domains, in declaration order (PHASE5B-KERNEL §2.7); the reduce lowering's
-     Optional (built with the concrete element datatype) joins them when used. *)
+  (* the enums and structs actually referenced above become keuzetype/StructType
+     domains, in declaration order — each enum on the variant [keuzetype_of]
+     decided (SumType, or Enumeratie when all-nullary, WF-087); the reduce
+     lowering's Optional (payload-carrying, built with the concrete element
+     datatype) joins them when used. *)
   let domeinen =
     (match !used_optional with
      | Some elt -> [ (optional_domain, Some (optional_dt elt)) ]
      | None -> [])
     @ List.map
-        (fun name -> (EnumName.base name, Some (sum_type_of enums structs name)))
+        (fun name -> (EnumName.base name, Some (keuzetype_of enums structs name)))
         (EnumName.Set.elements !used_enums)
     @ List.map
         (fun name -> (StructName.base name, Some (struct_type_of enums structs name)))

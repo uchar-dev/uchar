@@ -94,6 +94,13 @@ let () =
          the plugin never sees a wildcard *)
       ("enum_wildcard.catala_en",
        [ "cases/wild_een.json"; "cases/wild_twee.json" ]);
+      (* WF-087: an ALL-NULLARY enum normalises to the Enumeratie domain — the
+         value Literal, the enumeration-scrutinee Match and the ordinary enum
+         equality through the full differential. The wire SHAPE is asserted
+         separately below (an E2E run is blind to which variant carried it) *)
+      ("enum_nullair.catala_en",
+       [ "cases/getij_eb.json"; "cases/getij_vloed.json";
+         "cases/getij_doodtij.json" ]);
       (* row-10 fold family: a map + explicit numeric fold (MapList as a fold
          source, the aanspraaktelling pattern) *)
       ("lijst.catala_en", [ "cases/lijst_twee.json"; "cases/lijst_leeg.json" ]);
@@ -231,6 +238,47 @@ let () =
       ("functie.catala_en", [ "cases/functie_tien.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:true src cases) passing_ref_only;
+  (* Wire-shape assertions for the keuzetype normalisation (WF-087, maintainer
+     decision 2026-09-01). Which of the two wire variants a Catala enum lands
+     on is decided by its payloads, and an E2E replay cannot see that choice —
+     both programs below evaluate identically whichever form carried them. So
+     the emitted JSON is asserted directly, in both directions: an all-nullary
+     enum is the Enumeratie domain and carries NO SumType/Construct anywhere,
+     a payload-carrying enum keeps the row-36 SumType and never becomes an
+     Enumeratie. *)
+  let wire =
+    [ ("enum_nullair.catala_en",
+       [ "\"node\": \"Enumeratie\""; "\"domein\": \"Getijstand\"";
+         "\"constructor\": \"Doodtij\""; "\"binder\": null" ],
+       [ "SumType"; "Construct" ]);
+      ("enum.catala_en",
+       [ "\"node\": \"SumType\""; "\"node\": \"Construct\"" ],
+       [ "Enumeratie" ]) ]
+  in
+  List.iter
+    (fun (src, present, absent) ->
+      Printf.printf "[wire] %s\n%!" src;
+      let out = Filename.temp_file "catfe" ".ir.json" in
+      let code, o = run [ plugin; src; out ] in
+      check (src ^ " : translate (wire)") (code = 0) (Printf.sprintf "exit %d\n%s" code o);
+      if code = 0 then begin
+        let ic = open_in_bin out in
+        let ir = read_all ic in
+        close_in ic;
+        List.iter
+          (fun needle ->
+            check
+              (Printf.sprintf "%s : wire carries %s" src needle)
+              (contains ~needle ir) "absent from the emitted IR")
+          present;
+        List.iter
+          (fun needle ->
+            check
+              (Printf.sprintf "%s : wire free of %s" src needle)
+              (not (contains ~needle ir)) "present in the emitted IR")
+          absent
+      end)
+    wire;
   (* refusal programs: source -> expected reason fragment. Besluit 4's four
      forms plus the empty-operand and literal-false refusals; the subscope
      fence carries the boundary proof that the remaining tutorial construct

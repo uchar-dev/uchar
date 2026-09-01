@@ -1,0 +1,30 @@
+# All-nullary enum -> the Enumeratie domain (WF-087) — rechtenvrij, eigen
+# auteurschap. Een Catala-opsomming waarvan elke constructor payloadloos is,
+# heeft geen SumType-beeld: zij normaliseert naar het v0-enumeratiedomein
+# (domein = de basisnaam, waarden = de constructornamen in declaratievolgorde).
+# Gevolg op de wire: de constructorwaarde is een gewone enumeratiewaarde-
+# Literal, de match blijft een Match maar met enumeratie-scrutinee — armlabel
+# in `constructor`, `binder` altijd null (de enumeratie-arm van WF-063) — en de
+# gelijkheid is de gewone enumeratiegelijkheid. De vorm zelf wordt in de
+# wire-assertie van deze suite gepind; hier draait hij door verifier, ref EN
+# clingo.
+
+```catala
+declaration enumeration Getijstand:
+  -- Eb
+  -- Vloed
+  -- Doodtij
+
+declaration scope Getijheffing:
+  input getijstand content Getijstand
+  output opslag content integer
+  output stilstand content boolean
+
+scope Getijheffing:
+  definition opslag equals
+    match getijstand with pattern
+    -- Eb : 1
+    -- Vloed : 4
+    -- Doodtij : 0
+  definition stilstand equals getijstand = Doodtij
+```

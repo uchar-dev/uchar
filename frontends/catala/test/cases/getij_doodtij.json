@@ -1,0 +1,17 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "G", "objectType": "Getijheffing",
+        "attributes": { "getijstand": { "enumeration": "Doodtij" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "G", "attribute": "opslag", "value": { "number": "0" } },
+    { "kind": "characteristicPresent", "label": "G", "characteristic": "stilstand" },
+    { "kind": "consistent" }
+  ]
+}
