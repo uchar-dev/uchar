@@ -94,3 +94,30 @@ Meetpunten uit fase 1 (Let-node-kaart, done 2026-09-01):
 - De §6.5/§6.6-companions kennen geen tak-/barrièreconditie
   (vervolgkaart 20260901-companion-onder-drager) — nieuwe goldens met
   delingen ín Let-bodies raken die grens.
+
+Meetpunten uit golf B (Drools van strikt naar L, 2026-09-01):
+- **De spiegelrestpost, herschreven en GROTER.** `letKinderenZeker`
+  levert onder L een Binding-value alleen nog als de body de binder op
+  ELK pad leest (`leestAltijd`, conservatief: bij twijfel niet-zeker).
+  Drie vormen krijgen daardoor géén §6.5/§6.6-companion waar ref de
+  fout wél stelt: (a) een fout in de tak die ch. 10.2 WEL neemt
+  (ongewijzigd); (b) een fout in een Let-BODY — onder L draait de body
+  altijd, dus dit is nu een misser op élke deling/wortel in een body,
+  waar het onder de strikte binding alleen een misser was als de value
+  gevuld was; (c) een fout in een value wiens binder op sommige maar
+  niet alle paden gelezen wordt (of wiens lezing `leestAltijd` niet kan
+  certificeren — een lezing van een ANDERE binder ervóór kan het pad via
+  diens barrière afbreken). Nooit-verzinnen blijft de gekozen kant; de
+  echte oplossing blijft `20260901-companion-onder-drager`.
+- **BEVINDING (maintainer): een fase-1-witness pint nu een
+  ref-divergentie.** `LetDragerWandelingWitnessTest.
+  een_deling_achter_een_nooit_gepasseerde_leeg_barriere_levert_geen_fout`
+  speelt `Let d = deler in (inkomen gedeeld door tweede)` met `deler` én
+  `tweede` leeg. De binder wordt NIET gelezen, dus onder L draait de
+  body wél: ref geeft daar nu **leeg + INCONSISTENT** (gemeten met de
+  L-ref). De Drools-pin (leeg + CONSISTENT) blijft gróén — maar via
+  restpost (b), niet meer via overeenstemming met ref. De assertie is
+  dus niet omgevallen; de reden erboven is verouderd. Testbestand niet
+  aangeraakt (kaartrandvoorwaarde); een herformulering is
+  maintainerwerk, bij voorkeur samen met
+  `20260901-companion-onder-drager`, die de vorm sowieso oplost.
