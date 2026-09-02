@@ -305,3 +305,31 @@ de rondecommits raakt `spec/verifier/lib/{ast,checks}.ml`, de kaart en
 `corpus/golden/jutterswet-bergingstoeslag/NOTE.md`. `spec/verifier/` is
 een protected path — deze commits zijn een voorstel, niet iets dat de
 sessie zelf mergt.
+
+## Result (hoofdsessie, 2026-09-02)
+
+Drie punten geland, elk met bewijs. (1) De twee testbestanden dragen
+ch.-10.6-L-conform commentaar: vier hunks, uitsluitend commentaarregels
+(git diff -U0-bewijs in de Bouwnotitie), suite ongewijzigd 153/0/0.
+(2) `grep -ri "strict let" spec/verifier/` is leeg; de meldteksten van
+WF-077 (beide armen) en WF-069 volgen de spec-terminologie, en de
+opruiming ving twee ONWARE commentaren die de kaart niet eens noemde:
+ast.ml's "Never emitter-produced" op de Let (onwaar sinds de
+Catala-plugin, correct gedateerd na lens 2) en de loader-"Strict" die nu
+expliciet sleuteldiscipline betekent, niet semantiek. Verifier-gedrag
+byte-gelijk (168→168 vóór de golden). (3) De golden
+`jutterswet-bergingstoeslag` pint het corpus-ongedekte pad — een Let in
+een prioritizedDefaults-consequentie — en SPEELT in gate 12 (played
+104 → 105). De dragende meting: met lege grondslag valt de barrière op
+de leesplek en beslist het lid niet (ref 0,00), waar de inline-vorm
+coalescet naar 100,00 — het L-gedrag in de defaults-consequentie is nu
+door alle drie de executors heen gepind.
+
+Lensvangsten: de pre-L-sectiekop in LetDragerWandelingWitnessTest
+(binnen het mandaat gecorrigeerd), een verkeerde clausuleverwijzing, de
+emitter-productie-datering, en de dekking van de beslistakken van de
+defaults-groep in de golden zelf (fixronde-secties hierboven). Eindstand op de branch: alle
+twaalf gates groen; verschuivingen exact de golden — gate 2/3 = 169
+goldens (negatief 206 onveranderd), gates 5/6 = 388, gate 7 = 352/36
+(survivorlijst niet stale), gate 12 = played 105 / auto-excluded 40 /
+value-divergence 1 / no-case 1, JUnit 153.
