@@ -59,8 +59,9 @@ see which branch ran" en "the walk descends only into the CERTAINLY
 evaluated children"). In `LetClusterWitnessTest` r. 93: "the body never
 runs" → de body draait wél, maar de lezing van `ink` forceert de lege
 need en de barrière valt op die LEESPLEK (clause 2). De sectiekop "4. the
-other half: a companion the walk must NOT fabricate" is blijven staan —
-die klopt nog als eis. Bewijs: `git diff -U0` op commit 2996a44 toont
+other half: a companion the walk must NOT fabricate" bleef in deze ronde
+staan — ten onrechte; fixronde 1 (L1-1, onder) haalt hem alsnog om.
+Bewijs: `git diff -U0` op commit 2996a44 toont
 uitsluitend `//`- en ` *`-regels; geen assertie, methode, helper of pin
 beweegt; de suite draait ongewijzigd **153 tests, 0 failures, 0 errors,
 0 skipped** (BUILD SUCCESS).
@@ -99,7 +100,8 @@ voorwaardeloos (`Samengesteld ALLE` over nul onderdelen) met `0,00`,
 zodat de groep altijd beslist en een doorval ergens landt.
 
 Drie cases, elke verwachting **eerst door ref** gemeten (runner exit 0
-op alle drie):
+op alle drie; fixronde 1 voegt er per case één verwachting aan toe, zie
+L1-4):
 
 | case | grondslag | wrakken | lid 1 | bergingstoeslag |
 |---|---|---|---|---|
@@ -133,9 +135,90 @@ PASS · gate 12 PASS (105/40/1/1, JUnit 153). Tellingsverschuivingen
 t.o.v. de baseline: **+1 ir.json** (gates 2, 3), **+3 cases** (gates 4,
 5, 6, 7), **+1 played** (gate 12); al het andere ongewijzigd.
 
-**Bewust gelaten.** De sectiekop "4. the other half …" in
-`LetDragerWandelingWitnessTest` (klopt nog als eis, alleen niet meer als
-mechanisme — en het is een kop, geen bewering). De open punten van de
-companion-kaart die géén commentaarkwestie zijn (`startpuntCompanions`
-drager-blind, de DRL-naamdivergentie, companions zonder
-stratificatie-salience) blijven staan; die horen bij hun eigen kaarten.
+**Bewust gelaten.** De open punten van de companion-kaart die géén
+commentaarkwestie zijn (`startpuntCompanions` drager-blind, de
+DRL-naamdivergentie, companions zonder stratificatie-salience) blijven
+staan; die horen bij hun eigen kaarten.
+
+## Fixronde 1 (2026-09-02)
+
+Vier lensbevindingen, alle vier verwerkt; geen ervan weerlegd.
+
+**L1-1 (middel) — de sectiekop was de laatste onware zin, en ik had hem
+bewust laten staan. Terecht teruggedraaid.** De kop luidde "a companion
+the walk must NOT fabricate" terwijl de bullet er vlak boven zegt dat de
+wandelingen wél afdalen en de padsonde de companion stil houdt. De lens
+mat het mechanisme direct na (één KieBase, twee cases die alleen in de
+data verschillen: de companion bestaat en zwijgt); mijn "klopt nog als
+eis" was dus fout — als eis was hij juist onjuist. Kop nu: "4. the other
+half: a companion the walk DOES build and the path probe must keep
+SILENT". Commentaar-only, binnen het mandaat.
+
+**L1-2 (laag) — verkeerde clausuleverwijzing + spanning met clausule 2.**
+"under call-by-need a Let body always runs (ch. 10.6 clause 3)" dekte
+twee paden, en op het tweede (de gepasseerde barrière) draait de body
+juist niet af — clausule 2 kapt hem op de leesplek. En de afdaling in de
+niet-genomen ch. 10.2-tak wordt niet door de Let-clausules gedragen maar
+door de statische wandeling. Bullet 4 nu: "a STATIC walk cannot know
+which ch. 10.2 branch will run, and under call-by-need a Let body is
+always ENTERED (ch. 10.6 clauses 1+3; clause 2 may still cut it short at
+a read)". Gecheckt tegen RUNTIME-SEMANTICS r. 3163-3180.
+
+Bij dezelfde bevinding meegenomen (de lens noemde het expliciet als
+"geen bevinding, wel het vermelden waard"): in
+`een_deling_in_de_niet_genomen_tak_levert_geen_fout` staat nu dat DIE
+methode de UITKOMST pint en ook onder een nooit-fabricerende
+implementatie zou slagen; wat het mechanisme pint is de zuster
+`CompanionPadWitnessTest.een_deling_in_de_genomen_tak_is_inconsistent_en_in_de_niet_genomen_niet`.
+Daarmee is het commentaar zelfdragend. Alles commentaar-only: `git diff
+-U0` op `*.java` (zowel `main...HEAD` als werkboom) door een parser die
+elke +/- regel op `//`, `*`, `/*` toetst → **0 niet-commentaarregels**,
+en alleen de twee toegestane bestanden staan erin. Geen testbestand
+noemt de replay-API-methode.
+
+**L1-3 (laag) — de BinderRef-type week af van de value-type; nagemeten
+en rechtgezet in de golden.** Eigen meting over alle
+`corpus/golden/**/ir.json` (26 Lets, BinderRef-type vs value-type):
+`jutterswet-bergingstoeslag` was de **enige** afwijking — value
+`teken: NIET_NEGATIEF`, BinderRef `teken: ONBEPAALD`. WF-078 kruist
+alleen de `datatype_kind`, dus geen poort zag het; de NOTE-zin "exactly
+the shape an emitter writes" was in dat detail dus onwaar. Gekozen voor
+de sterke variant: BinderRef nu `NIET_NEGATIEF`, gelijk aan de value,
+zoals de vijf emitter-geproduceerde dragers het doen. Corpusbrede
+hermeting na de fix: **0 afwijkende BinderRefs op 26 Lets**.
+
+**L1-4 (laag) — de golden onderscheidde Let-vs-inlining, maar niet
+L-vs-S binnen de defaults-doorval; die as is nu toegevoegd.** Tweede
+attribuut `bergingsforfait` met een eigen `prioritizedDefaults`-groep:
+lid 1 voorwaardeloos met `Let bergingsgrond = zijn bergingsgrondslag in
+42,00` — binder **ongelezen** — en lid 2 het bodembedrag `0,00`. Onder
+ch. 10.6 clausule 3 wordt de value nooit geëvalueerd en is de uitkomst
+die van de body: **42,00 op alle drie de cases, óók op case3** waar
+`bergingsgrondslag` afwezig is. Onder de strikte binding zou dezelfde
+default op de bindplek leeg evalueren, niet beslissen en naar de bodem
+doorvallen (0,00).
+
+Niet aangenomen maar gemeten, eerst door `ref/`: de pin 42,00 op alle
+drie de cases (runner PASS, 3 verwachtingen per case). En de
+S-tegenhanger als surrogaat — dezelfde groep met de body veranderd in
+`bergingsgrond plus 0,00 maal bergingsgrond`, die de need forceert
+zonder de rekenkunde te verplaatsen — meet door ref **0,00 op case3** en
+200,00 op case1, precies de doorval die een strikte uitvoerder hier zou
+geven. 42,00 tegen 0,00 is dus de L-vs-S-discriminant; de bestaande
+0,00-tegen-100,00 op `bergingstoeslag` blijft de
+binding-vs-substitutie-discriminant. NOTE.md draagt beide assen nu
+expliciet, inclusief de zin dat case3 op `bergingstoeslag` tegen
+SUBSTITUTIE discrimineert en niet tegen de strikte binding.
+
+**Poorten na de fixronde (in de worktree gedraaid).** Gate 1 PASS ·
+gate 2 PASS (169 files) · gate 3 PASS (169 golden clean, 206 negatief) ·
+gate 4 PASS (410 cases) · gate 5 PASS (388 replayed, vormenkabinet
+no-case) · gate 6 PASS (388 door clingo) · gate 7 PASS (352 / 36) ·
+gate 8 PASS (22 rode cases; Drools-been 5 fault-pinned, 17 not-carried) ·
+gate 10 PASS (159 tests, 26 rgs-goldens) · gate 12 PASS (played **105**,
+auto-excluded 40, value-divergence 1, no-case 1, **JUnit 153**). Alle
+tellingen gelijk aan de eerste ronde: de extra groep en het extra
+attribuut zitten in de bestaande ir.json en de bestaande drie cases, dus
+er komt geen bestand bij — alleen drie verwachtingen (zes → negen op
+deze golden). Gates 9 en 11 niet opnieuw gedraaid: geen catala-bron,
+geen `toka/`-bestand en geen frontend-code geraakt.
