@@ -78,6 +78,16 @@ that second axis, over the same composition:
   bergingsgrond`, which forces the need without moving the arithmetic)
   gives `ref` **0,00** on case3 and 200,00 on case1.
 
+  Honest about what this axis does **not** pin: under call-by-need
+  `bergingsforfait`'s default 1 decides on every case, so its floor
+  (default 2) is reachable on **no** pinned input — it is there purely so
+  the counterfactual strict executor lands on a DECISION instead of on
+  nothing-written. Measured: with that member deleted all three cases
+  still pass through `ref`. Contrast `bergingstoeslag`, whose floor **is**
+  pinned — delete it and case2 and case3 both mismatch (`leeg` where 0,00
+  is expected). So a change that damages or drops `bergingsforfait`'s
+  floor will not be caught by a gate; a change to its default 1 will.
+
 So 42,00 versus 0,00 on case3 is the L-versus-S discriminant inside the
 ch. 7 fall-through, and 0,00 versus 100,00 on `bergingstoeslag` is the
 binding-versus-substitution one. Both need the defaults composition to
