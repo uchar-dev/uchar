@@ -1,0 +1,43 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "meldreeks": {
+        "list": [
+          {
+            "constructor": "Dagverloop",
+            "payload": {
+              "number": "30"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "meldpositie",
+      "value": {
+        "constructor": "Openstaand",
+        "payload": {
+          "number": "0"
+        }
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
