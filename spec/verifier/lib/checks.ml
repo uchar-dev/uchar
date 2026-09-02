@@ -3163,7 +3163,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
        | Closed_pos _ | Let_pos -> []
        | Rule_pos ->
            [ v "WF-069" at
-               "an IfThenElse is admissible only inside a lambda, function or let body" ])
+               "an IfThenElse is admissible only inside a lambda, function or Let body" ])
       @ wf077_condition (sub "condition") condition
       @ (let branch name e =
            match typ, typ_of_expr e with

@@ -182,8 +182,9 @@ type expr =
      [value] (WF-076); it joins the WF-064 binder regime. Call-by-need
      (decision O3, 2026-09-01): the [value] is evaluated at the first READ of
      the binder and a read of a leeg [value] empties the whole Let there, so an
-     unread binder evaluates nothing. Emitter-produced since the let-lowering
-     card (the RegelSpraak variabelendeel). *)
+     unread binder evaluates nothing. Emitter-produced: by the Catala plugin
+     since Phase-5c card 3, and by the RegelSpraak emitter since the
+     let-lowering card (the variabelendeel). *)
   | Let of {
       typ : datatype option;
       binder : string;
