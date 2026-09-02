@@ -39,7 +39,8 @@ import io.github.yhavinga.regelspraak.model.Datatype;
  * WRONG (inconsistent where ref says consistent) if built off a path that never runs: {@code verzamelDelingen}
  * and {@code verzamelWortels}. They see every site that MAY run, and the companion of a site under a carrier
  * carries the PATH: its condition re-evaluates the outermost carrier on the subject with a probe
- * ({@code ExecModelTranspiler.Sonde}) and fires only when that very site ran and faulted — ch. 10.2 (exactly
+ * ({@code ExecModelTranspiler.Sonde}) and fires only when a §6.5/§6.6 site under that carrier actually ran and
+ * faulted (the probe answers per CARRIER, not per site — the reason is at {@code Sonde}) — ch. 10.2 (exactly
  * one branch) and ch. 10.6 (call-by-need, the barrier at the read) come from the value lowering itself, and the
  * evaluation ORDER within each form is mirrored from ref, measured per form (a Binair left before right; a
  * Begrensd basis, then maximum, then minimum) — the lowering is ref's operational semantics only where that
@@ -62,12 +63,15 @@ import io.github.yhavinga.regelspraak.model.Datatype;
  *       None of the four can fabricate a fault: what the carrier hides is lowered — or refused, loudly — by
  *       {@code scalarWaarde}, which consults this side channel FIRST, and {@code lowerVal}'s own fall-through
  *       is a null, i.e. an honest skip;</li>
- *   <li>{@code companionOperand} — a carrier is not an {@code AttribuutRef}, so a division/wortel operand
- *       hidden behind one (a {@code BinderRef} dividend, say) never qualifies and raises no Inconsistentie.
- *       That is the §6.5/§6.6 scope limit already documented there for a literal / parameter / to-many /
- *       temporal operand, kept deliberately (maintainer scope of the companion-onder-drager card) — the path
- *       probe would make widening it a one-line change, since it observes the evaluation rather than
- *       re-reading the operands;</li>
+ *   <li>{@code companionOperand} — the STATIC leeg/vol predicate over a site's operands, which stays a walk
+ *       over {@code AttribuutRef} only (DRL parity), so a carrier is a non-match there. The scope question
+ *       moved one level up, to {@code ExecModelTranspiler.kwalificeertOperand}: outside a carrier that static
+ *       predicate still decides, but UNDER one a ch. 4.10 binder READ qualifies as well, because the path probe
+ *       observes the evaluation instead of re-reading the operands (fix round 1 of the companion-onder-drager
+ *       card, witness (j): {@code Let n = inkomen in n gedeeld door tweede} DOES raise the Inconsistentie).
+ *       What stays out — bare and under a carrier alike — is enumerated at that method, not here, so there is
+ *       one list: a Literal, a ParameterRef, a to-many navigation, a temporal or dimensioned attribute, and any
+ *       compound operand, a Let node above every carrier among them;</li>
  *   <li>{@code transpiler.Stratificatie.verzamelReads} (§9.2) — a {@code Conditie} walk over a rule's
  *       {@code voorwaarde} only, so a Keuze's condition (which lives in the VALUE) never reaches it. Doubly
  *       unreachable today: {@code letConditie} refuses every condition form but a bare numeric Vergelijking,

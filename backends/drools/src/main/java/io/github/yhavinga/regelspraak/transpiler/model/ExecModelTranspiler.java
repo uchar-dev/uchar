@@ -3731,8 +3731,8 @@ public final class ExecModelTranspiler {
                     case MAAL           -> RegelSpraakRuntime.rsMaal(lv, rv);
                     // §6.5 Tabel 12: a filled dividend over a leeg divisor is the Fout the value side degrades to
                     // leeg — reported to the path probe of the site's companion (a no-op without one, see Sonde).
-                    case GEDEELD_DOOR   -> { if (lv != null && rv == null) Sonde.meld(gm, b); yield RegelSpraakRuntime.rsGedeeld(lv, rv); }
-                    case GEDEELD_DOOR_ABS -> { if (lv != null && rv == null) Sonde.meld(gm, b); yield RegelSpraakRuntime.rsGedeeldAbs(lv, rv); }   // §6.5 (5 dec, toward zero)
+                    case GEDEELD_DOOR   -> { if (lv != null && rv == null) Sonde.meld(gm); yield RegelSpraakRuntime.rsGedeeld(lv, rv); }
+                    case GEDEELD_DOOR_ABS -> { if (lv != null && rv == null) Sonde.meld(gm); yield RegelSpraakRuntime.rsGedeeldAbs(lv, rv); }   // §6.5 (5 dec, toward zero)
                     case PERCENTAGE_VAN -> RegelSpraakRuntime.rsPercentageVan(lv, rv);
                     default             -> null;   // unreachable (arithmeticOp gates)
                 };
@@ -3789,23 +3789,44 @@ public final class ExecModelTranspiler {
      * lowers no carrier at all (a host with one there skips, and skips its companions with it), so every
      * carrier-hosted site is under {@link #scalarWaarde}, which is what the probe re-lowers.
      *
+     * <p><b>What the gate asks, and what it therefore does and does not guarantee.</b> The companion fires when
+     * SOME §6.5/§6.6 site under this carrier ran and faulted — not when the one syntactic site the companion is
+     * named after did. Measured, fix round 2 of the companion-onder-drager card: on
+     * {@code Let d = deler in ((inkomen ÷ tweede) plus (5,00 ÷ leegding))} with {@code leegding} absent, ref says
+     * INCONSISTENT and a per-site gate says consistent in SILENCE — the second site has a Literal dividend, so it
+     * qualifies for no companion of its own ({@link #kwalificeertOperand}), yet it runs and faults, and
+     * {@link #meld} sits in the operand-blind division arm, so the probe SEES it (witness (a'')). Neither object
+     * nor structural site identity recovers that: the reported site is a different site by either notion
+     * (both candidates measured; the structural one leaves the flank red and would additionally conflate two
+     * structurally equal sites). What the wide gate keeps is the no-fabrication half — every report is a real
+     * fault on a path that really ran, so a barrier that cuts the sites off fires nothing (the twin of (a'')).
+     * What it gives up is per-site attribution: two qualifying sites under one carrier make two companions that
+     * both fire on either one's fault. That is not observable — the inserted Inconsistentie carries the HOST
+     * rule name and subject, never the companion name, and {@link #companionRule}'s §9.5 idempotency guard
+     * collapses them to one fact — but a case pin cannot see it either, so it is stated here rather than
+     * witnessed. The remaining coverage limit is unchanged: a carrier with NO qualifying site gets no companion
+     * at all, so a lone non-qualifying site under it still misses its fault.
+     *
      * <p>Session-safe for the same reason {@link Binderslot} is: created inside the companion's consequence,
      * planted in that invocation's own map (which a {@code Let} copies, carrying the reference along), and
      * discarded with it. The host rule's own evaluation carries no probe, so a report there is a null-checked
-     * no-op. Identity-keyed: two structurally equal sites in one value are two companions.
+     * no-op.
      */
     private static final class Sonde {
-        /** The environment slot the probe rides in — a space, which {@code Namen.ident} can never produce, so
-         *  no Parameter global and no {@link #binderSleutel binder slot} can collide with it. */
+        /** The environment slot the probe rides in — it carries a space, which {@code Namen.ident} can never
+         *  produce, so no Parameter global can collide with it, and it lacks the {@code "binder "} prefix every
+         *  {@link #binderSleutel binder slot} carries, so no binder slot can either. */
         static final String SLEUTEL = "sonde fout";
-        private final Set<Expr> gemeld = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        private boolean gemeld;
 
-        /** Report a §6.5/§6.6 fault at {@code plek} — a no-op when no probe rides this evaluation. */
-        static void meld(Map<?, ?> gm, Expr plek) {
-            if (gm.get(SLEUTEL) instanceof Sonde sonde) sonde.gemeld.add(plek);
+        /** Report a §6.5/§6.6 fault at the site being evaluated — a no-op when no probe rides this evaluation. */
+        static void meld(Map<?, ?> gm) {
+            if (gm.get(SLEUTEL) instanceof Sonde sonde) sonde.gemeld = true;
         }
 
-        boolean heeftGemeld(Expr plek) { return gemeld.contains(plek); }
+        /** Whether a §6.5/§6.6 site under the probed carrier ran and faulted (see the class comment on why this
+         *  is not per-site). */
+        boolean heeftFoutGemeld() { return gemeld; }
     }
 
     /**
@@ -4340,7 +4361,7 @@ public final class ExecModelTranspiler {
                 // §6.6: a negative radicand is the Fout the value side degrades to leeg — reported to the path
                 // probe of the site's companion (a no-op without one, see Sonde). toBd reduces a Breuk exactly.
                 BigDecimal getal = RegelSpraakRuntime.toBd(radicand);
-                if (getal != null && getal.signum() < 0) Sonde.meld(gm, f);
+                if (getal != null && getal.signum() < 0) Sonde.meld(gm);
                 return RegelSpraakRuntime.rsWortel(radicand);
             }, rad.globals());
         }
@@ -5940,8 +5961,16 @@ public final class ExecModelTranspiler {
         // indexes over the SAME filtered list in BOTH back-ends. Indexing over the raw `delingen` count diverged from
         // DRL when a rule mixes qualifying and non-qualifying divisions (e.g. a §11 division variable inlined next to a
         // parameter division): DRL named the lone qualifier "(deling door leeg)", the model "(deling door leeg 1)".
-        // A carrier-hosted division counts in the same index (DRL lowers no Let at all, so there is no parity to
-        // keep there): the suffix is per qualifying site, whatever decides its condition.
+        // A carrier-hosted division counts in the SAME index, which BREAKS that suffix parity for a rule mixing
+        // bare and carrier-hosted qualifiers. Measured with both transpilers on one model (fix round 2 of the
+        // companion-onder-drager card), "(inkomen ÷ deler) plus (Let d = leegding in d plus (inkomen ÷ tweede))":
+        // DRL emits one companion, "(deling door leeg)", this back-end two, "(deling door leeg 1)" and
+        // "(deling door leeg 2)". DRL lowers no Let, true — but DrlTranspiler.deelDoorLeegFout returns early only
+        // on a voorwaardeMarker, so it still emits the companion of the BARE site while its own verzamelDelingen
+        // never descends into the Let; there IS a name to keep in step, and this does not keep it. Accepted, not
+        // worked around: the companion NAME is not observable — the Inconsistentie both back-ends insert carries
+        // the HOST rule name and the subject — and a separate suffix space for carrier-hosted sites would make a
+        // bare site's name depend on which OTHER sites lower. Recorded as an open point on the card.
         List<Plek<Expr.Binair>> kwalificeren = new ArrayList<>();
         for (Plek<Expr.Binair> p : delingen)
             if (kwalificeertOperand(p.site().links(), p.drager(), subject) && kwalificeertOperand(p.site().rechts(), p.drager(), subject))
@@ -6098,9 +6127,10 @@ public final class ExecModelTranspiler {
 
     /** Collect the WORTEL nodes through the arithmetic-wrapper layers of a value (for the §6.6 fout), each with
      *  the outermost ch. 4.10 carrier above it. Mirrors DrlTranspiler.verzamelWortels over the shared v0 forms; the
-     *  CARRIER descent is additional (the DRL back-end has no Let lowering at all — it markers such a rule whole —
-     *  so there is nothing to keep in step there). Without the descent a Let-wrapped wortel loses its §9.5
-     *  companion while ref still raises the fault: silently consistent. The descent takes the FULL
+     *  CARRIER descent is additional — the DRL back-end lowers no Let: it writes a TODO-expressie marker for the
+     *  carrier INSIDE the host rule's value and still emits the companions of the sites OUTSIDE it (measured;
+     *  the companion-name consequence is at {@link #delingCompanions}). Without the descent a Let-wrapped
+     *  wortel loses its §9.5 companion while ref still raises the fault: silently consistent. The descent takes the FULL
      *  {@link #letKinderen} — every child that MAY run — because a companion is an ANSWER and which child DID
      *  run is decided at fire time by the path probe over the carrier ({@link Sonde}), never by this walk. */
     private void verzamelWortels(Expr e, Expr drager, List<Plek<Expr.Functie>> uit) {
@@ -6124,7 +6154,7 @@ public final class ExecModelTranspiler {
     /** One §6.5/§6.6 companion rule over the host's own gate (voorwaarde + §4.2 window). A site OUTSIDE every
      *  carrier gets {@code statisch} — the static leeg/negatief predicate on its re-readable operands, the
      *  unchanged v0 companion (DRL parity); a site UNDER a carrier gets the path probe instead: the companion
-     *  fires when re-evaluating that carrier on the subject reports this very site ({@link Sonde}), which is
+     *  fires when re-evaluating that carrier on the subject reports a §6.5/§6.6 fault ({@link Sonde}), which is
      *  ref's own condition under ch. 10.2/10.6. null when the host gate does not lower (DRL: voorwaardeMarker
      *  -> no companion). */
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -6156,8 +6186,9 @@ public final class ExecModelTranspiler {
     }
 
     /** The consequence of a carrier-hosted companion: re-evaluate the outermost carrier on the subject with a
-     *  {@link Sonde} planted in the environment, and insert the host's Inconsistentie iff the probe reports THIS
-     *  site. The carrier lowers through the same {@link #scalarWaarde} the host lowered it with (under the same
+     *  {@link Sonde} planted in the environment, and insert the host's Inconsistentie iff the probe reports a
+     *  §6.5/§6.6 fault under that carrier (not per site — see {@link Sonde}). The carrier lowers through the same
+     *  {@link #scalarWaarde} the host lowered it with (under the same
      *  §13.4.1 keten flag), so its globals are a subset of the host's; a carrier that does not lower here, or a
      *  global the host could not have bound, is an invariant violation and fails fast — never a silently missing
      *  companion. */
@@ -6182,7 +6213,6 @@ public final class ExecModelTranspiler {
             vars.add((Variable) g);
         }
         BiFunction<Object, Map<String, BigDecimal>, Object> fn = wf.fn();
-        Expr site = plek.site();
         String fqcn = FACTS + ".Inconsistentie";
         RuleItemBuilder<?> consequence = consequenceOf(vars.toArray(new Variable[0]), (drools, args) -> {
             Object s = args[0];
@@ -6190,8 +6220,8 @@ public final class ExecModelTranspiler {
             vulGlobalMap(gm, gnames, args, 1);
             Sonde sonde = new Sonde();
             ((Map<String, Object>) (Map) gm).put(Sonde.SLEUTEL, sonde);
-            fn.apply(s, gm);   // the value is discarded: only whether THIS site ran and faulted matters
-            if (sonde.heeftGemeld(site)) drools.insert(RegelSpraakRuntime.newInconsistentie(fqcn, hostNaam, s));
+            fn.apply(s, gm);   // the value is discarded: only whether the path faulted matters
+            if (sonde.heeftFoutGemeld()) drools.insert(RegelSpraakRuntime.newInconsistentie(fqcn, hostNaam, s));
         });
         if (consequence == null)
             throw new IllegalStateException(compNaam + ": te veel gebonden globals voor de sonde (" + gnames.size()
@@ -6234,9 +6264,11 @@ public final class ExecModelTranspiler {
     }
     /** Collect the GEDEELD_DOOR / GEDEELD_DOOR_ABS nodes through the arithmetic-wrapper layers of a value (for the
      *  §6.5 fout), each with the outermost ch. 4.10 carrier above it — byte-identical to DrlTranspiler.verzamelDelingen
-     *  over the shared v0 forms; the CARRIER descent is additional (the DRL back-end has no Let lowering at all — it
-     *  markers such a rule whole — so there is nothing to keep in step there). Without the descent a Let-wrapped
-     *  division loses its §6.5/§9.5 companion while ref still raises the fault: silently consistent. The descent
+     *  over the shared v0 forms; the CARRIER descent is additional — the DRL back-end lowers no Let: it writes a
+     *  TODO-expressie marker for the carrier INSIDE the host rule's value and still emits the companions of the
+     *  sites OUTSIDE it (measured; the companion-name consequence is at {@link #delingCompanions}). Without the
+     *  descent a Let-wrapped division loses its §6.5/§9.5 companion while ref still raises the fault: silently
+     *  consistent. The descent
      *  takes the FULL {@link #letKinderen} — every child that MAY run — because a companion is an ANSWER and which
      *  child DID run is decided at fire time by the path probe over the carrier ({@link Sonde}), never by this walk. */
     private void verzamelDelingen(Expr e, Expr drager, List<Plek<Expr.Binair>> uit) {

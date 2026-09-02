@@ -154,6 +154,55 @@ class CompanionPadWitnessTest {
                 waarde("uit", "7.0000") + ", " + consistent())), "de niet-genomen tak");
     }
 
+    // ---------------- (a'') a second, NON-qualifying site under the same carrier ----------------
+
+    @Test void een_niet_kwalificerende_plek_onder_dezelfde_drager_meldt_zijn_fout_ook() throws Exception {
+        // "Let d = deler in ((inkomen ÷ tweede) plus (5,00 ÷ leegding))", inkomen 10,00 and tweede 2,00 present,
+        // `leegding` absent. Site 1 qualifies (two attributes) and does NOT fault; site 2 has a LITERAL dividend,
+        // so no static predicate can guard it and it carries no companion of its own — but it RUNS and faults.
+        // ref: uit 5.0000, INCONSISTENT. The probe sees that fault (Sonde.meld sits in the division arm, which is
+        // operand-blind), so the carrier's companion reports on "a §6.5/§6.6 site under this carrier ran and
+        // faulted", not on "THIS site did": a per-site identity gate throws the observation away and answers a
+        // silent consistent. Twin: with `leegding` = 5,00 nothing faults -> ref 6.0000, CONSISTENT.
+        assertNull(speel(medePlekModel(), jutter(INKOMEN + ", " + n("tweede", "2.00"),
+                        waarde("uit", "5.0000") + ", " + inconsistent())),
+                "de literal-deling onder dezelfde drager faalt: de sonde ziet haar");
+        assertNull(speel(medePlekModel(), jutter(INKOMEN + ", " + n("tweede", "2.00") + ", " + n("leegding", "5.00"),
+                        waarde("uit", "6.0000") + ", " + consistent())),
+                "niets faalt: de verbrede poort mag niet vuren");
+    }
+
+    @Test void de_verbrede_poort_vuurt_niet_als_de_barriere_beide_plekken_afkapt() throws Exception {
+        // the fabricage twin of (a''): the same two sites behind a read of `d`,
+        // "Let d = deler in (d plus ((inkomen ÷ tweede) plus (5,00 ÷ leegding)))". `deler` absent -> the read
+        // raises the barrier before either site runs: ref uit leeg, CONSISTENT — nothing reports, nothing fires.
+        // `deler` = 2,00 -> both sites run, only the non-qualifying one faults: ref uit 7.0000 (2 + 5 + leeg-as-0),
+        // INCONSISTENT.
+        assertNull(speel(medePlekAchterBarriereModel(), jutter(INKOMEN + ", " + n("tweede", "2.00"),
+                        leeg("uit") + ", " + consistent())),
+                "de barriere kapt beide plekken af");
+        assertNull(speel(medePlekAchterBarriereModel(), jutter(INKOMEN + ", " + n("tweede", "2.00") + ", " + n("deler", "2.00"),
+                        waarde("uit", "7.0000") + ", " + inconsistent())),
+                "het pad loopt door: de niet-kwalificerende plek faalt");
+    }
+
+    // ---------------- (e') a nested Let must pass a FOREIGN barrier through ----------------
+
+    @Test void een_binnenste_let_laat_de_vreemde_barriere_door_naar_de_buitenste() throws Exception {
+        // "Let x = leegding in ((Let q = 1,0000 in x plus q) plus (inkomen ÷ tweede))", `leegding` and `tweede`
+        // absent. The read of x sits INSIDE the inner Let but binds to the OUTER one, so ch. 10.6 clause 2 ends
+        // the OUTER Let: the inner handler must RETHROW a barrier that is not its own instance. Then the division
+        // to its right never runs. ref: uit leeg, CONSISTENT. An inner handler that swallows every barrier would
+        // answer leeg for the inner Let and go on to the division — a fabricated fault.
+        assertNull(speel(vreemdeBarriereDoorgifteModel(true), jutter(INKOMEN, leeg("uit") + ", " + consistent())),
+                "de sonde-kant: de doorgegeven barriere kapt de deling af");
+        // the value-side twin (no §6.5 site at all): swallowing the barrier would let the outer body finish at
+        // 1 + 5 = 6.0000 instead of emptying the Let. ref: uit leeg. (This flank belongs beside the ch. 10.6
+        // barrier witnesses of LetClusterWitnessTest — that file is out of this card's mandate, see the card.)
+        assertNull(speel(vreemdeBarriereDoorgifteModel(false), jutter(INKOMEN, leeg("uit") + ", " + consistent())),
+                "de waarde-kant: de buitenste Let wordt leeg, niet 6.0000");
+    }
+
     // ---------------- (h) two sites in one rule value: each carries its OWN path ----------------
 
     @Test void twee_delingen_in_een_regelwaarde_krijgen_elk_hun_eigen_padconditie() throws Exception {
@@ -262,6 +311,19 @@ class CompanionPadWitnessTest {
                 "het maximum deelt door nul voordat het minimum de barriere opwerpt: " + oorzaakTekst(fout));
         assertNull(speel(begrensdNulModel(false), jutter(invoer, leeg("uit") + ", " + consistent())),
                 "de lezing in het maximum kapt af voordat het minimum door nul deelt");
+    }
+
+    @Test void de_basis_van_een_begrenzing_evalueert_voor_het_maximum() throws Exception {
+        // the third point of the same order: basis BEFORE maximum. (i) above pins only the PAIR minimum/maximum,
+        // which an implementation evaluating maximum, basis, minimum still satisfies. "Let d = deler in
+        // begrensd(basis inkomen ÷ tweede, minimum 0,0000, maximum d)", deler and tweede absent: the basis
+        // division runs and faults FIRST, then the maximum's read ends the Let -> ref uit leeg, INCONSISTENT.
+        // Mirror (basis the read, maximum the division): the basis read ends the Let before the maximum's
+        // division runs -> ref uit leeg, CONSISTENT.
+        assertNull(speel(begrensdBasisModel(true), jutter(INKOMEN, leeg("uit") + ", " + inconsistent())),
+                "deling in de basis, lezing in het maximum: de deling draait eerst");
+        assertNull(speel(begrensdBasisModel(false), jutter(INKOMEN, leeg("uit") + ", " + consistent())),
+                "lezing in de basis, deling in het maximum: de barriere komt eerst");
     }
 
     @Test void de_operanden_van_een_keuzeconditie_evalueren_links_voor_rechts() throws Exception {
@@ -531,6 +593,9 @@ class CompanionPadWitnessTest {
     private static final String DELING_ABS = binair("GEDEELD_DOOR_ABS", attr("inkomen"), attr("tweede"), num(4));
     private static final String DELING_LEEGDING = binair("GEDEELD_DOOR", attr("leegding"), attr("tweede"), num(4));
     private static final String DELING_NUL = binair("GEDEELD_DOOR", attr("inkomen"), attr("nul"), num(4));
+    /** (a'') "5,00 gedeeld door het leegding" — a LITERAL dividend, so companionOperand refuses it and the site
+     *  qualifies for no companion of its own, bare or under a carrier. */
+    private static final String DELING_LITERAAL = binair("GEDEELD_DOOR", lit("5.00", pos(2)), attr("leegding"), num(4));
     private static final String ZEVEN = lit("7.0000", num(4));
     private static final String WORTEL = wortel(attr("saldo", num(2)), num(4));
 
@@ -592,6 +657,35 @@ class CompanionPadWitnessTest {
         String lezing = bref("d", pos(2));
         String body = lezingInMinimum ? begrensd(attr("inkomen"), lezing, DELING) : begrensd(attr("inkomen"), DELING, lezing);
         return uitModel(let("d", attr("deler"), body, num(4)));
+    }
+
+    /** (i') the same carrier with the read and the §6.5 division in the BASIS / MAXIMUM pair instead. */
+    private static String begrensdBasisModel(boolean delingInBasis) {
+        String lezing = bref("d", pos(2));
+        String nul = lit("0.0000", num(4));
+        String body = delingInBasis ? begrensd(DELING, nul, lezing) : begrensd(lezing, nul, DELING);
+        return uitModel(let("d", attr("deler"), body, num(4)));
+    }
+
+    /** (a'') "Let d = deler in ((inkomen ÷ tweede) plus (5,00 ÷ leegding))" — the second site's dividend is a
+     *  LITERAL, so it qualifies for no companion of its own; it still runs and reports to the probe. */
+    private static String medePlekModel() {
+        return uitModel(let("d", attr("deler"), binair("PLUS", DELING, DELING_LITERAAL, num(4)), num(4)));
+    }
+
+    /** (a'') the same two sites behind the read of {@code d}, so a barrier can cut both off. */
+    private static String medePlekAchterBarriereModel() {
+        String rechts = binair("PLUS", DELING, DELING_LITERAAL, num(4));
+        return uitModel(let("d", attr("deler"), binair("PLUS", bref("d", pos(2)), rechts, num(4)), num(4)));
+    }
+
+    /** (e') "Let x = leegding in ((Let q = 1,0000 in x plus q) plus …)" — the read of the OUTER binder sits
+     *  inside the INNER Let, whose handler must let that foreign barrier through. */
+    private static String vreemdeBarriereDoorgifteModel(boolean metDeling) {
+        String binnen = let("q", lit("1.0000", num(4)),
+                binair("PLUS", bref("x", pos(2)), bref("q", num(4)), num(4)), num(4));
+        String rechts = metDeling ? DELING : lit("5.0000", num(4));
+        return uitModel(let("x", attr("leegding"), binair("PLUS", binnen, rechts, num(4)), num(4)));
     }
 
     /** (i) the same, with the division by NUMERIC zero ("inkomen gedeeld door nul") as the other bound. */

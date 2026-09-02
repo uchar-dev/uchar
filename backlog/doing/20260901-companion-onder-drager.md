@@ -92,8 +92,9 @@ een drager krijgt een companion die in zijn consequentie de
 `Sonde` in de omgevingsmap (sleutel `"sonde fout"`, met spatie); de
 delingsarm van `scalarWaarde` en de wortelarm van `scalarWrapper` melden
 een §6.5/§6.6-fout aan de sonde (no-op zonder sonde — de gastregel zelf
-draagt er geen), en de companion insert de Inconsistentie alleen als
-precies díe plek gemeld is. Barrières en call-by-need komen zo uit de
+draagt er geen), en de companion insert de Inconsistentie alleen als er
+gemeld is — bij deze bouwnotitie nog per plek, sinds fixronde 2 (L2-F5,
+gemeten) per DRAGER. Barrières en call-by-need komen zo uit de
 value-lowering zelf; de evaluatievolgorde BINNEN een vorm is dat alleen
 waar de lowering ref's volgorde spiegelt — per vorm gemeten, niet
 automatisch (fixronde 1: Begrensd evalueerde minimum vóór maximum, ref
@@ -124,29 +125,56 @@ wel fout-gevoeliger.
 de kwalificerende lijst nu ook plekken in takken/values die
 letKinderenZeker uitsloot; het suffix blijft per kwalificerende plek
 (flank h: `(deling door leeg 1)` statisch, `(deling door leeg 2)` sonde,
-in één KieBase gebouwd). DRL lowert geen Let, dus daar is geen pariteit
-te bewaren.
+in één KieBase gebouwd). **Gecorrigeerd in fixronde 2 (L2-F4):** de
+oorspronkelijke motivering hier ("DRL lowert geen Let, dus daar is geen
+pariteit te bewaren") is onjuist en met beide transpilers over hetzelfde
+model weerlegd. Gemeten op de (h)-vorm:
+
+| stand | DRL | exec-model |
+|---|---|---|
+| main | `(deling door leeg)` | `(deling door leeg)` |
+| deze kaart | `(deling door leeg)` | `(deling door leeg 1)` + `(deling door leeg 2)` |
+
+`DrlTranspiler.deelDoorLeegFout` keert alleen vroeg terug op een
+`voorwaardeMarker`; de WAARDE-marker (de `/* TODO expressie */` die de
+drager in de gastregel achterlaat) stopt de companion-emissie niet, dus
+DRL emitteert wél de companion van de KALE plek in een Let-dragende
+regel. De suffix-pariteit breekt daarmee voor een regel die kale én
+dragergehoste kwalificeerders mengt. Aanvaard, niet weggewerkt (optie
+(a)): de companionNAAM is geen observabele — de Inconsistentie draagt in
+beide backends de GASTregelnaam plus subject — en een eigen suffixruimte
+voor dragergehoste plekken zou de naam van een kale plek laten afhangen
+van welke ándere plekken lowerden. Staat als open punt hieronder en als
+gemeten comment bij `delingCompanions`.
 
 **Vervallen.** `letKinderenZeker`, `Lees`, `leestAltijd`, `samen`,
 `samenTakken` (137 regels); de `LetVorm`-javadoc herschreven naar
 (a) refusal/registratie-walks via letKinderen, (b) de twee
 answer-walks via letKinderen mét sonde, (c) bewust niet afdalen.
 
-**Mutanten** (in /tmp-kopieën via git archive): (1) padconditie uit
-(`if (true || plek.drager() == null)`): 9 rood, precies de
-fabricage-flanken (niet-genomen tak, ongelezen value, één-tak
-niet-genomen, barrière-vóór, vreemde lezing eerst, wortel niet-genomen,
-h3, plus de twee nooit-verzinnen-witnesses in LetDragerWandeling); de
-misser-flanken groen. (2) afdaling weg: 14 rood, precies de
-misser-flanken (11 in CompanionPad, 3 in LetDragerWandeling); de
+**Mutanten** (in /tmp-kopieën via git archive; de tellingen zijn
+gedateerd, want elke fixronde voegt witnesses toe). (1) padconditie uit
+(`if (true || plek.drager() == null)`): 9 rood bij deze bouwnotitie
+(12 witnesses), 13 op de stand ná fixronde 1 (lens 2), **18 rood ná
+fixronde 2** (15 failures + 3 errors) — precies de fabricage-familie
+(niet-genomen tak, ongelezen value, één-tak niet-genomen, barrière-vóór,
+vreemde lezing eerst, wortel niet-genomen, h3, de twee grensvolgorde-
+spiegels, de doorgegeven barrière, de twee nooit-verzinnen-witnesses in
+LetDragerWandeling); de misser-flanken groen. (2) afdaling weg
+(`letKinderen`-descent uit beide walks): 14 rood hier, 21 ná fixronde 1
+(lens 2), **24 rood ná fixronde 2** — precies de misser-familie; de
 fabricage-flanken groen.
 
 **Gates.** Gate 1 PASS. Gate 12 PASS: played 104 / auto-excluded 39 /
 value-divergence 1 / no-case 1, JUnit 125 → 138, nul skipped
 (12 nieuwe witnesses + 1 zuster-witness). Geen spelende golden draagt
-een kwalificerende deling/wortel onder een drager (gecontroleerd:
-kinderweging en tariefstelling delen door een literal), dus de telling
-kon niet bewegen.
+een kwalificerende deling/wortel onder een drager, dus de telling kon
+niet bewegen. Gecontroleerd (fixronde 2, opnieuw over de hele
+goldenverzameling): precies drie goldens dragen zowel een `Let` als een
+deling/wortel — kinderweging, tariefstelling én kamerhuishouden-catala —
+en alle drie delen door een **literal** (2,0000 / 2,0000 / 4,0000; de
+derde met een `FieldAccess`-dividend), die `kwalificeertOperand` afwijst.
+Geen enkele golden draagt een `WORTEL`.
 
 **Open punten.**
 - `companionOperand`-scope: de BinderRef-verbreding onder een drager is
@@ -183,6 +211,26 @@ kon niet bewegen.
   bewust (invariant: de gast lowerde die drager via dezelfde
   scalarWaarde), maar het is een throw in de transpile-fase, geen
   Dekking-skip.
+- *(fixronde 2, L2-F4)* De companion-NAAMpariteit met DRL breekt voor
+  een regel die kale én dragergehoste kwalificeerders mengt — gemeten,
+  zie de tabel onder *Indexering*. Aanvaard omdat de naam geen
+  observabele is; herstellen zou een eigen suffixruimte per drager
+  vergen.
+- *(fixronde 2, L2-F5)* De companionnaam dekt niet meer één syntactische
+  plek: de sonde antwoordt per DRAGER. Niet observabel via de case-pins
+  (de Inconsistentie draagt de gastregelnaam), dus gedocumenteerd in de
+  `Sonde`-javadoc in plaats van gewitnesst.
+- *(fixronde 2, L2-F2)* De waarde-kant-witness van de doorgegeven
+  barrière staat nu in `CompanionPadWitnessTest` (e'); ze hoort náást de
+  ch.-10.6-barrière-witnesses in `LetClusterWitnessTest` —
+  maintainerwerk, bestaand testbestand.
+- *(fixronde 2, L2-F8)* S-semantiek-rest, zelfde klasse als de drie
+  LetDrager-zinnen hierboven: `LetClusterWitnessTest:93` zegt "the leeg
+  value propagates, THE BODY NEVER RUNS". Onder de L-unificatie (besluit
+  O3, call-by-need) draait de body wél — de lezing van `ink` forceert de
+  lege need en de barrière valt op de LEESPLEK. Uitkomst en assertie
+  kloppen, het mechanisme in de zin niet. Bestaand testbestand,
+  maintainerwerk.
 
 ## Fixronde 1 (subagent, 2026-09-02)
 
@@ -272,3 +320,114 @@ binder-radicand, defaults-wortelhek); F2..F5 via mutanten.
 **Gates fixronde 1.** Gate 1 PASS. Gate 12 PASS: played 104 /
 auto-excluded 39 / value-divergence 1 / no-case 1, JUnit 138 → 149, nul
 skipped (11 nieuwe witnesses in CompanionPadWitnessTest: 23 totaal).
+
+## Fixronde 2 (subagent, 2026-09-02)
+
+Lensbevindingen L2-F1..F8. Acht nieuwe pins, elk eerst door de L-ref
+gemeten (`/tmp/fr2/`, model+case uit de testhelpers zelf gedumpt,
+runner exit 0 = exacte match). Rood-eerst tegen de ongefixte transpiler:
+2 van de 4 nieuwe witnessmethodes rood (de twee (a'')-flanken); (e') en
+(i') zijn mutant-dragend, niet HEAD-rood — zo waren ze bedoeld.
+
+- **L2-F5 gefixt (ref-divergentie, het enige echte keuzepunt).** Eerst
+  gemeten wáárom `gemeld.contains(plek)` op de (a'')-vorm mist, met een
+  diagnostische print in een /tmp-kopie: de sonde meldt op
+  `Let d = deler in ((inkomen ÷ tweede) plus (5,00 ÷ leegding))` precies
+  ÉÉN plek — de literal-deling — terwijl de companion voor de ándere
+  plek staat; `identiteit=false` én `structureel=false`. Het is dus geen
+  object-vs-structuur-kwestie: de her-gelowerde drager levert dezelfde
+  Expr-objecten, de gemelde plek is gewoon een andere plek. Beide
+  kandidaten daarna gemeten op de hele suite:
+  - kandidaat B (structurele plek-identiteit, `LinkedHashSet` i.p.v. de
+    identity-set): 153 tests, **2 rood** — de (a'')-flanken blijven
+    rood, en hij zou bovendien twee structureel gelijke plekken in één
+    waarde samenvouwen;
+  - kandidaat C (de ruimere poort: "een §6.5/§6.6-plek ónder deze
+    drager draaide en faalde"): 153 tests, **0 rood**.
+  Gekozen: C. `Sonde` draagt nu één boolean; `heeftGemeld(Expr)` is
+  `heeftFoutGemeld()`. Witnesses (a''), ref-gemeten: de literal-deling
+  onder dezelfde drager faalt → uit 5.0000 + INCONSISTENT (vóór de fix
+  "verwacht inconsistent, werkelijk consistent"); `leegding` gevuld →
+  6.0000 + CONSISTENT; plus de fabricage-tweeling áchter een lezing van
+  `d`: `deler` leeg → leeg + CONSISTENT (niets meldt, niets vuurt),
+  `deler` 2,00 → 7.0000 + INCONSISTENT. Wat de poort wél garandeert
+  (geen fabricage: elke melding is een echte fout op een echt gedraaid
+  pad) en wat niet (géén per-plek-attributie: twee kwalificerende
+  plekken onder één drager geven twee companions die op elkaars fout
+  vuren) staat in de `Sonde`-javadoc, mét de eerlijke bijsluiter dat de
+  case-pins dat verschil niet kúnnen zien — de Inconsistentie draagt de
+  gastregelnaam plus subject, en de §9.5-idempotentiepoort vouwt ze tot
+  één feit. De resterende dekkingsgrens is ongewijzigd: een drager
+  zónder kwalificerende plek krijgt geen companion, dus een eenzame
+  niet-kwalificerende plek mist haar fout nog steeds.
+- **L2-F2 gefixt (witness).** (e'): "een binnenste Let laat de vreemde
+  barrière door naar de buitenste".
+  `Let x = leegding in ((Let q = 1,0000 in x plus q) plus (inkomen ÷
+  tweede))`, ref uit leeg + CONSISTENT — de lezing van `x` staat ín de
+  binnenste Let maar bindt aan de buitenste, dus de binnenste handler
+  moet de vreemde barrière RETHROWEN. Mutant M4 (`if (raised !=
+  barriere) throw raised;` weg) overleefde de suite en is nu rood:
+  "verwacht leeg, werkelijk 0; verwacht consistent, werkelijk
+  inconsistent". De waarde-kant-tweeling (dezelfde vorm zonder
+  §6.5-plek, rechts een literal 5,0000; ref uit leeg, geslikte barrière
+  zou 6.0000 geven) staat als tweede assertie in dezelfde methode; ze
+  hoort inhoudelijk náást de ch.-10.6-barrière-witnesses in
+  `LetClusterWitnessTest`, maar dat is een bestaand testbestand buiten
+  het mandaat van deze kaart — **maintainerwerk**, zie open punten.
+- **L2-F3 gefixt (witness).** (i'): de Begrensd-tweeling voor het derde
+  punt van de volgorde, basis vóór maximum.
+  `Let d = deler in begrensd(basis = inkomen ÷ tweede, minimum =
+  0,0000, maximum = d)` → ref leeg + INCONSISTENT; spiegel (lezing in de
+  basis, deling in het maximum) → ref leeg + CONSISTENT. Mutant M11
+  (volgorde maximum, basis, minimum) overleefde de suite en is nu rood
+  ("verwacht inconsistent, werkelijk consistent"). Samen met (i) pint de
+  suite nu de volledige driepuntsvolgorde in plaats van één paar.
+- **L2-F4 gefixt (onwaar commentaar), optie (a).** Zie de gemeten tabel
+  onder *Indexering* hierboven; comment bij `delingCompanions`
+  vervangen door de meting, en de twee javadocs die zeiden dat DRL "zo'n
+  regel whole markert" gecorrigeerd (DRL zet een TODO-expressie-marker
+  vóór de drager IN de gastregelwaarde en emitteert de companions van de
+  plekken daarbuiten gewoon).
+- **L2-F7 gefixt (onwaar commentaar).** De sonde-sleutel botst niet met
+  een Parameter-global dankzij de spatie, en niet met een binderslot
+  dankzij het `"binder "`-prefix dat elk binderslot draagt (de spatie
+  alleen sluit die niet uit — `binderSleutel` levert zelf een spatie).
+- **L2-F1 gefixt (onwaar commentaar).** Het (c)-bullet in `LetVorm`
+  beweerde nog dat een BinderRef-operand nooit kwalificeert en "kept
+  deliberately" is, terwijl fixronde 1 precies die verbreding deed. Het
+  bullet verwijst nu naar `kwalificeertOperand` — buiten een drager het
+  statische predicaat (DRL-pariteit), ónder een drager kwalificeert ook
+  een binder-lezing (witness (j)) — met de restlijst uit die methode
+  zelf, zodat er één lijst is. Ook de (b)-alinea aangepast: de sonde
+  antwoordt per DRAGER, niet per plek.
+- **L2-F6 gefixt (kaart).** Mutantgetallen gedateerd en geactualiseerd
+  (zie *Mutanten*); kamerhuishouden-catala aan de gecontroleerde
+  goldens toegevoegd (zie *Gates*); de §6.8-meting hieronder klaargezet
+  voor de Result; de gemeten gates opgesomd.
+- **L2-F8 bewust gelaten.** `LetClusterWitnessTest:93` zegt nog "the
+  body never runs" waar de body onder call-by-need juist wél draait (de
+  barrière valt op de LEZING van `ink`). De uitkomst en de assertie
+  kloppen; alleen het mechanisme in de zin niet. Bestaand testbestand
+  buiten het mandaat — opgenomen in de open-puntenlijst naast de drie
+  LetDrager-zinnen, zodat de S-resten op één lijst staan.
+
+**§6.8-notitie mét meting (voor de Result).** `startpuntCompanions` is
+productie-RegelSpraak-semantiek die ref in het geheel niet kent. Gemeten
+op een twee-flanken-paar — een startpunt-lid-regel wiens anker een leeg
+eigen attribuut is, één keer kaal en één keer omhuld als
+`Let d = basis in d`: **ref antwoordt CONSISTENT op BEIDE flanken.** De
+KALE flank divergeert dus vandaag al (Drools inconsistent, ref
+consistent), en juist de drager-BLINDHEID van de leftmost-peel is wat de
+OMHULDE flank mét ref laat kloppen. Afdalen zou hier een ref-divergentie
+TOEVOEGEN in plaats van er een weg te nemen — daarom niet aangeraakt.
+De vraag zelf (hoort §6.8 in RUNTIME-SEMANTICS, of is de port te ruim?)
+is een spec-kwestie buiten deze kaart.
+
+**Gates fixronde 2** (alle in de worktree gemeten, niet aangenomen).
+Gate 1 PASS. Gate 12 PASS: played 104 / auto-excluded 39 /
+value-divergence 1 / no-case 1 — ongewijzigd — JUnit 149 → **153**, nul
+skipped (4 nieuwe witnessmethodes). Verder gemeten: gate 2 PASS (167
+files), gate 3 PASS (167 golden clean, 178 negatief), gate 4 PASS (405
+cases), gate 5 PASS (383 cases replayed), gate 6 PASS, gate 7 PASS,
+gate 8 PASS. Gates 9, 10 en 11 raken `backends/drools/**` niet en zijn
+niet gedraaid — dat is een gemeten-uitspraak-grens, geen groenverklaring.
