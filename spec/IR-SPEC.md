@@ -374,22 +374,38 @@ false`, `decimals = 0` (no precision ceiling; §13.3.3 form (c)). The
   names no declared enumeration domain is silently not this rule's
   business, and the cover elsewhere is partial — WF-003 owns an
   attribute's ghost domain, WF-018 a parameter's, WF-063 a `Match`
-  scrutinee's, while a `FunctionDef` parameter or result and an ordinary
-  expression `type` naming a ghost domain are **unenforced**. Recorded
-  here rather than repaired: backlog
-  `20260901-use-site-declaratie-identiteit`. The other half — that this
-  rule binds a use site to the domain it *names*, never to the
-  declaration it *reads from* — is WF-089 below.
+  scrutinee's, and — since the domain identity landed — WF-089 a
+  reference's (against the declaration it reads) and WF-023/WF-067 a
+  written value's (against the declaration it enters), each of which
+  refuses a ghost domain on the spot because the identity with a declared
+  domain fails. What stays **unenforced** is the residue those crossings
+  cannot see: a keuzetype `type` naming a ghost domain where it touches no
+  declaration at all — a literal compared with another such literal —
+  which is measured harmless (both executors read the node's own inline
+  copy and agree; a `Match` over it is refused by WF-063, which resolves
+  the *named* domain). The other half — that this rule binds a use site to
+  the domain it *names*, never to the declaration it *reads from* — is
+  WF-089 below.
   *v0 mirror note:* unchecked in v0. **Delta (promotion).**
 - **WF-089** A **reference expression** whose `type` names a keuzetype
   domain — an `Enumeration` or `SumType` domain, looked up *through* a
-  `ListType`'s element — MUST name the domain of the declaration it
-  **reads from**, compared ci (WF-001); and conversely a reference that
-  reads a keuzetype-typed declaration MUST name that domain. This is the
-  **domain identity** rule: the domain extension of the soort cross
-  WF-023/WF-027/WF-078 perform, and the other half of WF-088/WF-061 —
-  those bind a use site to the domain it *names*, this binds it to the
-  declaration it *reads*. The declaration source per reference shape: for
+  `ListType`'s element — MUST name the **same keuzetype** as the
+  declaration it **reads from**: the same variant *and* the same domain
+  name, compared ci (WF-001); and conversely a reference that reads a
+  keuzetype-typed declaration MUST name that keuzetype. The variant
+  travels with the name because `domeinen` is **one namespace** — a domain
+  is declared as an enumeration or as a sum type, never both, so an
+  `Enumeration`-typed reference over a sum-typed declaration of the same
+  name (or the mirror) is a lie whatever the spelling agrees on. This is
+  the **domain identity** rule, read half: the domain extension of the
+  soort cross WF-023/WF-027/WF-078 perform, and the other half of
+  WF-088/WF-061 — those bind a use site to the domain it *names*, this
+  binds it to the declaration it *reads*. Its **write half** — every value
+  entering such a declaration names the same keuzetype — is WF-023 (rule
+  target, object-creation member, defaults consequence) and WF-067 (a
+  function body against its declared result); read and write half together
+  are one maintainer decision (2026-09-02), and neither is sufficient
+  alone. The declaration source per reference shape: for
   an `AttributeReference` — and the `DimensionCellRead` over one, whose
   cell carries the attribute's datatype — the attribute at the
   reference's endpoint type (ch. 4.1a: a navigated read crosses against
@@ -415,11 +431,22 @@ false`, `decimals = 0` (no precision ceiling; §13.3.3 form (c)). The
   reference whose element domain drifts, folds a **wrong answer** (0
   where 35.00 was expected); the one-sided lie (a reference typed number
   over an enumeration attribute) had ref write the label into a numeric
-  attribute, clingo fault the translation and Drools crash at fire. With
-  it, ref's "no arm" fault is unreachable on a verifier-clean document
-  (`ref/lib/eval.ml`, both `Match` arms) and an underived `matchN` in
-  the ASP encoding means a leeg scrutinee and nothing else
-  (`ASP-TRANSLATION.md` S14). **The declaration side needs no rule** —
+  attribute, clingo fault the translation and Drools crash at fire; the
+  variant lie (an enumeration-typed reference over a sum-typed
+  declaration of the same name) faulted both executors in different
+  words. With the read half **and** the write half — the second measured
+  necessary, not assumed: with the read half alone a `Literal` or
+  `Construct` of another domain, a ghost-domain literal and a list of
+  another domain still entered the read declaration verifier-clean at a
+  rule target, an object-creation member and a defaults consequence, and a
+  drifted function body did the same through a truthful `Invoke` — ref's
+  "no arm" fault is unreachable on a verifier-clean document
+  (`ref/lib/eval.ml`, both `Match` arms) and an underived `matchN` in the
+  ASP encoding means a leeg scrutinee and nothing else
+  (`ASP-TRANSLATION.md` S14). One route stays outside the WF layer and is
+  named rather than claimed away: the **case input**, where the shared
+  loader — not a WF rule — refuses a label or constructor the declaration
+  does not carry. **The declaration side needs no rule** —
   measured, not assumed: a keuzetype nested *inside* a declaration is
   fenced out before it can drift — an `Enumeration` as a sum payload
   (WF-060), as a struct field (WF-071) or as a list element (WF-065) is
@@ -883,7 +910,12 @@ and invoked by name; design `spec/proposals/PHASE5B-KERNEL.md` §3).
   binders and parameters keeps the body closed), `Let` (a call-by-need binding
   over closed operands stays closed, ch. 4.10), and other functions via
   `Invoke`; any attribute, characteristic, aggregation, temporal or
-  variable read is ill-formed — and the invocation graph over
+  variable read is ill-formed; the **body's static type MUST equal the
+  declared `result`** — full datatype equality, soort and keuzetype domain
+  alike, as WF-068/069/070 cross their operands (the body is the write
+  into the result every `Invoke` reads: the write half of ch. 2.4's domain
+  identity for functions, where WF-068 is the read half; the v0 unknown
+  sentinel defers, as under WF-023) — and the invocation graph over
   `functionDefs` MUST be acyclic (no recursion: the Catala mirror, and
   what keeps termination and stratification trivial — a closed body
   contributes no dependency edges, so WF-045/046 are untouched).
@@ -977,15 +1009,38 @@ the literal true — mirrored.)
   check silently skips it; only the *typing* of a resolved target errors
   (that is WF-023). The characteristic-value shape is constructed, not
   checked. **Delta (promotion).**
-- **WF-023** Assignment typing: the value's type MUST be assignable to the
-  target's declared type — same family, compatible units, enumeration
-  labels from the target's domain, sign constraint respected, and the
-  precision gate of `RUNTIME-SEMANTICS.md` ch. 2.4 (including its
-  candidate rule: a possibly non-terminating value passes explicit
-  rounding before a bounded write). *v0 mirror note:* enforced as resolver
-  errors via the §6/Tabel 61 typing tables — except for characteristic
-  attribution, where v0 skips the check (harmless today: the value is a
-  constructed constant).
+- **WF-023** Assignment typing, at **every attribute write position** — a
+  rule version's `target`, an `ObjectCreation`'s attribute `member` (a
+  characteristic member's value is WF-027's boolean check), and a
+  `PrioritizedDefaults` **consequence**, a nested exception group's
+  included (it inherits the root target, ch. 7.9): the value's type MUST
+  be assignable to the target's **declared** type — same family,
+  compatible units, sign constraint respected, **the same keuzetype**
+  wherever either side names one (an `Enumeration` or `SumType` domain,
+  looked up *through* a `ListType` element — the same variant and the same
+  domain name, compared ci), and the precision gate of
+  `RUNTIME-SEMANTICS.md` ch. 2.4 (including its candidate rule: a possibly
+  non-terminating value passes explicit rounding before a bounded write).
+  The keuzetype clause is the **write half** of the domain identity WF-089
+  states for the read side: WF-089 crosses what a reference *reads*, this
+  crosses what is *written* into the declaration it reads. It is also what
+  makes "labels from the target's domain" mechanically true — a `Literal`'s
+  label belongs to the domain the literal itself names (WF-039 against the
+  local list, WF-088 for that list against the declaration), so once the
+  value's domain **is** the target's, its labels are the target's. The
+  cross uses the target's DECLARED datatype, never its serialized `type`:
+  a matching pair of lies — target and value both typed with the same
+  foreign domain — is exactly the shape a serialized-against-serialized
+  slice admits. Deferrals, as elsewhere: the v0 unknown sentinel on either
+  side (WF-034 refuses that sentinel at all three positions anyway —
+  measured), a target that does not resolve (WF-022), a value carrying no
+  `type`. The precision gate needs expression-shape analysis and stays
+  OPEN. *v0 mirror note:* enforced as resolver errors via the §6/Tabel 61
+  typing tables — except for characteristic attribution, where v0 skips
+  the check (harmless today: the value is a constructed constant); the
+  object-creation member and the defaults consequence carry no value
+  typing in v0 at all. **Delta (promotion)** for those two positions and
+  for the keuzetype clause.
 - **WF-079** A (type, attribute) target that carries no defaults MUST have
   at most one **unconditional, version-free** computing rule
   (GELIJKSTELLING/BEREKENING). Two or more over-determine the target with
@@ -1098,7 +1153,10 @@ link — so the binding is the only linked route for a recursive chain.
 
 - **WF-027** Every `member` MUST be a declared attribute or characteristic
   of `createdType`; a characteristic initialisation's value MUST be a
-  boolean-typed expression (a boolean constant is the v0 form). The value
+  boolean-typed expression (a boolean constant is the v0 form). An
+  **attribute** member's value typing — family, units, sign and keuzetype
+  domain against the declared attribute — is WF-023's second write
+  position, not this rule. The value
   evaluates on the creation subject, exactly as an attribute initialisation
   does (`RUNTIME-SEMANTICS.md` ch. 5.5): true attributes the characteristic,
   false **or empty** leaves it unattributed — equivalent to an absent
@@ -2472,11 +2530,11 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-020 | rule names unique across all rule forms (ci) | gate 3 (via the v0 " #i" strip-and-group migration reading) | `jutterswet-vondstnummer` | `wf020-crossform-collision` |
 | WF-021 | a named form's version validity windows do not overlap | gate 3 | `jutterswet-vormenkabinet` (two dated versions of one rule name); `anchor/jutterswet-jutheffing` (the replaying runtime witness: per-window absolute values through both executors, gates 5–6) | `wf021-version-overlap` |
 | WF-022 | rule target resolves; characteristic value is the constant true | gate 3 | `corpus/golden/jutterswet-penningdrempel/` | `wf022-target-unresolvable` |
-| WF-023 | assignment typing (family, units, labels, sign, precision gate) | gate 3 (the shallow slice between the serialized target and value types: family — numeric kinds as one — unit compatibility with literal adoption, contradictory sign restrictions; the precision gate needs expression-shape analysis and stays OPEN) | `jutterswet-vondsttelling` (numeric assignments) + `jutterswet-vormenkabinet` (the enum assignment) | `wf023-text-into-numeric` |
+| WF-023 | assignment typing (family, units, sign, keuzetype domain, precision gate) at every attribute write position: a rule target, an object-creation attribute member, a defaults consequence (recursing into exception groups) | gate 3 (the shallow slice between the target's DECLARED datatype — its serialized type only where the target does not resolve, which WF-022 forbids — and the value's serialized type: family (numeric kinds as one), unit compatibility with literal adoption, contradictory sign restrictions, and the keuzetype clause (same variant, same domain name, ci, through a `ListType` element; one-sided only within a family, where the family message would not already name the defect). The unknown sentinel defers — WF-034 refuses it at all three positions anyway. The precision gate needs expression-shape analysis and stays OPEN) | `jutterswet-vondsttelling` (numeric assignments) + `jutterswet-vormenkabinet` (the enum assignment) + `jutterswet-penninguitgifte` (anchor: object-creation members) + every prioritizedDefaults golden — and a measured zero over-rejection across every golden and rood document and, read-only, the parity zone | `wf023-text-into-numeric` + `wf023-schrijf-enum-domein` + `wf023-schrijf-som-domein` + `wf023-schrijf-spookdomein` (a ghost domain at a write) + `wf023-schrijf-doeltype-leugen` (target type and value type share the lie: the cross is against the DECLARED datatype) + `wf023-schrijf-lijst-domein` + `wf023-schrijf-lijst-geen-domein-doel` + `wf023-schrijf-lijst-geen-domein-waarde` (the two one-sided arms within the list family) + `wf023-objectcreatie-domein` + `wf023-objectcreatie-soort` + `wf023-defaults-domein` + `wf023-defaults-soort` (positions 2 and 3, domain and family) |
 | WF-024 | allocation method is one of the three real methods (no COMPLEX) | gate 3 | `jutterswet-berging` | `wf024-complex` |
 | WF-025 | allocation fields valid per method; ordering key orderable; share typing | gate 3 (field validity and orderability; share typing is WF-023) | `jutterswet-berging` | `wf025-max-without-ratio` |
 | WF-026 | at most one allocation per written target | gate 3 | `jutterswet-berging` | `wf026-two-allocations-one-target` |
-| WF-027 | object-creation members declared on the created type; characteristic init boolean | gate 3 | `jutterswet-penninguitgifte` (anchor: the mint, its member initialisations and both guards execute, gates 5–6) | `wf027-ghost-member` |
+| WF-027 | object-creation members declared on the created type; characteristic init boolean (an attribute member's value typing is WF-023's second write position) | gate 3 | `jutterswet-penninguitgifte` (anchor: the mint, its member initialisations and both guards execute, gates 5–6) | `wf027-ghost-member` |
 | WF-028 | symbolic fact creation all-or-nothing and resolvable; join chain reaches target; new ≠ final hop | gate 3 (symbolic extension form; a bean-field-only v0 record stays uncheckable — recorded) | `jutterswet-gemeenteberging` (anchor: the chain walk executes and folds over the created relation pin absolute values, gates 5–6) | `wf028-half-symbolic-creation` (all-or-nothing) + `wf028-create-along-final-hop` (the full chain walk) |
 | WF-029 | consistency assertion has a single subject | gate 3 | `jutterswet-vondstnummer` | `wf029-no-subject` |
 | WF-030 | uniqueness sources: keys resolve; arity, datatype kind and units agree per position; a union carries ≥ 2 sources | gate 3 | `jutterswet-vondstnummer` + `anchor/jutterswet-kustregister` (the union — including the per-source sum over two same-type sources — and both scoped forms, executed by gates 5–6) | `wf030-arity-mismatch` + `wf030-single-source-union` |
@@ -2516,7 +2574,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-064 | every BinderRef resolves to an enclosing binder (a match arm's binder, a lambda/function parameter, or — the 5c widening — a `Let` binder scoped to its body); the closure clause: inside a closed lambda/function body the set is closed at the boundary, so a BinderRef reaching an enclosing rule's Let binder or an outer fold's parameter is ill-formed (an inside-body Let stays in scope); match arm bodies agree on one result datatype (ch. 4.7/4.8/4.10; VariabeleRef stays outside — row 24) | gate 3 | `anchor/jutterswet-beschikkingsom` + `anchor/jutterswet-tariefstelling` (Let binders) | `wf064-unbound-binderref` + `wf064-mixed-arm-types` + `wf064-enclosing-binder-in-closed-body` (the closure clause) |
 | WF-065 | ListType: first-order non-list element (Number, day-precision Date, declared SumType, or — the 5c widening — declared StructType); no granularity on a list-typed attribute (ch. 2.4). Since WF-087 (2026-09-01) an all-nullary keuzetype normalises to `Enumeration`, so it is no longer an admissible element type: the list carrier demands the payload form (`frontends/catala/test/refuse_list_nullary_enum.catala_en`) | gate 3 | `anchor/jutterswet-staffelvergoeding` (executed by gates 5–6) + `anchor/jutterswet-vondstdossier` (the list-of-struct widening) | `wf065-list-of-list` + `wf065-temporal-list-attribute` |
 | WF-066 | ListLiteral elements carry the declared element datatype (ch. 4.8) | gate 3 | `anchor/jutterswet-aanspraaktelling` | `wf066-heterogeneous-literal` |
-| WF-067 | FunctionDef: ci-unique names, typed unique parameters, resolvable result, closed body (the 5c widening admits FieldAccess/StructLiteral), acyclic invocation graph (ch. 2.11) | gate 3 | `anchor/jutterswet-aanspraaktelling` | `wf067-recursive-functions` + `wf067-attribute-read-in-body` |
+| WF-067 | FunctionDef: ci-unique names, typed unique parameters, resolvable result, body type EQUALS the declared result (soort and keuzetype domain alike — the write half of ch. 2.4's domain identity for functions, where WF-068 is the read half), closed body (the 5c widening admits FieldAccess/StructLiteral), acyclic invocation graph (ch. 2.11) | gate 3 | `anchor/jutterswet-aanspraaktelling` | `wf067-recursive-functions` + `wf067-attribute-read-in-body` + `wf067-body-result-drift` (a body of a second enumeration domain under a truthful `Invoke`) |
 | WF-068 | Invoke: resolvable function, arity, argument types, result type (ch. 4.8) | gate 3 | `anchor/jutterswet-aanspraaktelling` | `wf068-unresolved-invoke` + `wf068-arity-mismatch` |
 | WF-069 | Lambda only as a Fold/MapList operand and the operand only an inline Lambda (no bare FunctionDef name); IfThenElse only inside lambda, function or (the 5c widening) `Let` bodies; lambda arity per host, typed parameters, closed bodies (the 5c widening admits FieldAccess/StructLiteral); IfThenElse branch agreement (ch. 4.8/4.10) | gate 3 | `anchor/jutterswet-staffelvergoeding` + `anchor/jutterswet-vondstdossier` (the map-over-struct-field body) + `anchor/jutterswet-tariefstelling` (the Let-body IfThenElse) | `wf069-lambda-outside-fold` + `wf069-ifthenelse-outside-body` + `wf069-named-function-operand` |
 | WF-070 | fold-family shapes: list-typed source; Fold accumulator first-order non-list shared with init/body/type, element parameter = source element; MapList/FilterList/ListLength result typing (ch. 4.8) | gate 3 | `anchor/jutterswet-staffelvergoeding` + `anchor/jutterswet-aanspraaktelling` | `wf070-list-accumulator` + `wf070-scalar-source` |
@@ -2537,8 +2595,8 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-085 | the day-kind reference graph is acyclic (ch. 5.4 / ch. 3.7): a day-kind condition may reference other day kinds (a `Predicaat` of soort `DAGSOORT`), but mutually recursive definitions have no fixpoint — a loud refusal where the v0 toolchain resolves a cycle to a silent false (the §9.10 recursion prohibition unenforced for day kinds); diverge-from-v0 (v0 neither checks nor documents it) | gate 3 | `jutterswet-schouwkalender` (an acyclic `hoogschouwdag -> schouwdag` reference, verifier-clean, replayed by gates 5–6 over its ordinary rule) | `wf085-dagsoort-verwijzingscyclus` (two mutually referencing day kinds) |
 | WF-086 | a defaults group MUST NOT target a temporal attribute (declared `attribuutGranulariteit`) nor a temporal characteristic (`kenmerkGranulariteit`) — a defaults group decides at one fixpoint and has no timeline coordinate to write (ch. 6); the document-layer fence ahead of the executors (ref faults on both arms — defense-in-depth — and the Drools defaults service skips); temporal defaults targets are unscheduled (PRIORITIZED-DEFAULTS-EVOLUTIE §9 Q12a) | gate 3 (over the prioritized-defaults node via the shared `attr_temporal` helper and the `kenmerkGranulariteit` table) | `anchor/jutterswet-vondstwaardering` (attribute defaults on a non-temporal target — gate 3 witnesses WF-086 does not over-fire) | `wf086-temporele-defaultstarget` (attribute arm), `wf086-temporele-defaultskenmerk` (characteristic arm) |
 | WF-087 | the keuzetype family's nullary rule (ch. 2.4): a `SumType` declaration whose constructors ALL carry a null payload is ill-formed — the nullary keuzetype has one wire form, the `Enumeration` domain, so such a declaration normalises to it (nullary-as-sum is sugar, the enumeration is the kernel; two frontends cannot express one meaning in two shapes). Stated over the declaration; WF-061 carries the use sites. No converse: payload never converts | gate 3 (over `domeinen`, beside WF-060) | every payload-carrying SumType golden — `anchor/jutterswet-beschikkingsom`, `anchor/jutterswet-aanspraaktelling`, the `synth3-*` sum witnesses (gate 3 witnesses WF-087 does not over-fire on a keuzetype with payload) | `wf087-all-nullary-sumtype` + `wf087-unit-sumtype` (the lower boundary: ONE nullary constructor — a unit type is a nullary keuzetype too, and it is what a `List.length > 1` weakening of the rule would let through) |
-| WF-088 | an `Enumeration` use site repeats the value list of the domain it names — same values (ci), declaration order (ch. 2.4). The enumeration sibling of WF-061, and what makes "the declaration is the source of truth" mechanically true for this variant: WF-039 reads the LOCAL list where WF-063 reads the DECLARATION, so a drifted copy passed both while ref faulted at evaluation and clingo derived nothing | gate 3 (model layer: attribute, parameter and `FunctionDef` datatypes; expression layer: every node's `type`, beside WF-007's number-form check — the same "every datatype in the document" split). One position stays deliberately outside the walk: a rule's TARGET `type`, which is WF-022's lvalue, not part of the expression walk — a drifted copy there is verifier-clean and measured harmless (drift the `doel` type of `jutterswet-keurstaat` and all three cases still replay to their pinned expectations in ref AND clingo, because both write through the target attribute's DECLARED datatype) | `jutterswet-vaarwatertoeslag-catala` (the `Vaarwater` domain repeated identically at FOUR use sites: the attribute datatype, the `Match` scrutinee's type, and the two operands of the equality — an `AttribuutRef` type and a `Literal` type) + `jutterswet-vormenkabinet` (the `kwaliteit` domain) | `wf088-use-site-value-drift` (a value the declaration lacks) + `wf088-use-site-value-order` (the same values, reordered — WF-006 order is normative) + `wf088-literal-type-drift` (an impeccable model layer, a drifted `Literal` type deep in a rule: the expression-layer arm) + `wf088-functiondef-drift` (three violations on one `FunctionDef` — parameter, result and body type — all reached through the walk's recursion into sum-type payloads, the arm no other case exercises) |
-| WF-089 | domain identity (ch. 2.4): a reference expression's `type` names the keuzetype domain of the declaration it READS FROM — attribute (at the endpoint type; the dimension-cell read over it), parameter, binder (a match arm's payload, a lambda/function parameter, a `Let` value, a filter element) — whenever either side names one, ci, looked up through a `ListType` element; the domain extension of the WF-023/027/078 soort cross and the other half of WF-088/WF-061 (which bind a use site to the domain it NAMES). `TemporalRead`, `Invoke` and `Lambda` parameters are already crossed structurally (WF-049/068/070); `Construct` reads no declaration. The declaration side needs no rule: WF-060/065/071 fence a nested `Enumeration` out of every declaration position | gate 3 (the expression walk's `AttribuutRef`, `DimensieCel`, `ParameterRef` and `BinderRef` arms; the unknown sentinel, an unresolvable reference or an absent `type` defers) | every keuzetype golden — `jutterswet-vaarwatertoeslag-catala` + `jutterswet-vormenkabinet` (enumeration references), `anchor/jutterswet-beschikkingsom` + `anchor/jutterswet-aanspraaktelling` (sum references: attribute, list-typed attribute, arm/lambda/function binders) — and a measured zero over-rejection across every golden and rood document and, read-only, the parity zone | `wf089-attribuutref-enum` + `wf089-attribuutref-sum` + `wf089-parameterref-enum` + `wf089-binderref-sum` (a `Let` binder) + `wf089-dimensiecel-enum` (verifier-only: the case format carries no cell input) + `wf089-attribuutref-lijst-sum` (the element-domain look-through: verifier-clean before, ref faulted, clingo folded 0 for 35.00 — a wrong answer) + `wf089-attribuutref-geen-domein` (the one-sided arm: typed number over an enumeration attribute — ref wrote the label into the numeric target, clingo faulted, Drools crashed at fire) |
+| WF-088 | an `Enumeration` use site repeats the value list of the domain it names — same values (ci), declaration order (ch. 2.4). The enumeration sibling of WF-061, and what makes "the declaration is the source of truth" mechanically true for this variant: WF-039 reads the LOCAL list where WF-063 reads the DECLARATION, so a drifted copy passed both while ref faulted at evaluation and clingo derived nothing | gate 3 (model layer: attribute, parameter and `FunctionDef` datatypes; expression layer: every node's `type`, beside WF-007's number-form check — the same "every datatype in the document" split). One position stays deliberately outside the walk: a rule's TARGET `type`, which is WF-022's lvalue, not part of the expression walk — a drifted copy there is verifier-clean and measured harmless (drift the `doel` type of `jutterswet-keurstaat` and all three cases still replay to their pinned expectations in ref AND clingo, because both write through the target attribute's DECLARED datatype — and a value that shares the target type's lie is refused by WF-023's keuzetype clause, which crosses that same declared datatype: `wf023-schrijf-doeltype-leugen`) | `jutterswet-vaarwatertoeslag-catala` (the `Vaarwater` domain repeated identically at FOUR use sites: the attribute datatype, the `Match` scrutinee's type, and the two operands of the equality — an `AttribuutRef` type and a `Literal` type) + `jutterswet-vormenkabinet` (the `kwaliteit` domain) | `wf088-use-site-value-drift` (a value the declaration lacks) + `wf088-use-site-value-order` (the same values, reordered — WF-006 order is normative) + `wf088-literal-type-drift` (an impeccable model layer, a drifted `Literal` type deep in a rule: the expression-layer arm) + `wf088-functiondef-drift` (three violations on one `FunctionDef` — parameter, result and body type — all reached through the walk's recursion into sum-type payloads, the arm no other case exercises) |
+| WF-089 | domain identity, read half (ch. 2.4): a reference expression's `type` names the keuzetype — variant AND domain name — of the declaration it READS FROM — attribute (at the endpoint type; the dimension-cell read over it), parameter, binder (a match arm's payload, a lambda/function parameter, a `Let` value, a filter element) — whenever either side names one, ci, looked up through a `ListType` element; the domain extension of the WF-023/027/078 soort cross and the other half of WF-088/WF-061 (which bind a use site to the domain it NAMES). Its write half — every value entering such a declaration names the same keuzetype — is WF-023 (rule target, object-creation member, defaults consequence) and WF-067 (function body); neither half suffices alone, and only the two together make ref's "no arm" fault unreachable on a verifier-clean document whose case input the shared loader admitted. `TemporalRead`, `Invoke` and `Lambda` parameters are already crossed structurally (WF-049/068/070); `Construct` reads no declaration. The declaration side needs no rule: WF-060/065/071 fence a nested `Enumeration` out of every declaration position | gate 3 (the expression walk's `AttribuutRef`, `DimensieCel`, `ParameterRef` and `BinderRef` arms, each crossing a NAVIGATED read at its endpoint attribute; the unknown sentinel, an unresolvable reference or an absent `type` defers). One clause is **unpinned**: the ci comparison of the two domain names has no witness — no golden, rood or parity document spells a use-site domain differently from its declaration, and making the comparison case-sensitive leaves gate 3 green (measured mutant; a synth golden would pin it, and `corpus/golden` is outside this card's may-touch) | every keuzetype golden — `jutterswet-vaarwatertoeslag-catala` + `jutterswet-vormenkabinet` (enumeration references), `anchor/jutterswet-beschikkingsom` + `anchor/jutterswet-aanspraaktelling` (sum references: attribute, list-typed attribute, arm/lambda/function binders) — and a measured zero over-rejection across every golden and rood document and, read-only, the parity zone | `wf089-attribuutref-enum` + `wf089-attribuutref-sum` + `wf089-parameterref-enum` + `wf089-binderref-sum` (a `Let` binder) + `wf089-dimensiecel-enum` (verifier-only: the case format carries no cell input) + `wf089-attribuutref-lijst-sum` (the element-domain look-through: verifier-clean before, ref faulted, clingo folded 0 for 35.00 — a wrong answer) + `wf089-attribuutref-geen-domein` (one one-sided arm: typed number over an enumeration attribute — ref wrote the label into the numeric target, clingo faulted, Drools crashed at fire) + `wf089-attribuutref-geen-keuzetype-declaratie` (the mirror one-sided arm, which the other case does not pin: typed enumeration over a numeric attribute) + `wf089-attribuutref-navigatie-enum` (the navigated read, crossed at the endpoint attribute) + `wf089-enum-over-som` + `wf089-som-over-enum` (the variant half: one namespace, so the same name under the other variant is a lie — verifier-clean while both executors faulted in different words) |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

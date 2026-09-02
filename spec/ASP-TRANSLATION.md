@@ -1227,15 +1227,22 @@ free, exactly as above. The enum form is ch. 9.2's **comparison chain**
 written out: the chain needs no encoding of its own because mutually
 exclusive ground equalities *are* the chain. WF-063 guarantees the arms
 are the declared values exactly, each once, and every arm nullary — so no
-arm binds anything, and no `P` variable enters the guard. And WF-089
-(IR-SPEC ch. 2.4) guarantees, for both variants, that the domain the
-scrutinee's `type` names is the domain of the declaration the scrutinee
-*reads from* — so on a verifier-clean document an underived `matchN`
-means a **leeg scrutinee and nothing else**. Without it a scrutinee typed
-with a second, internally consistent domain left every arm's pattern
-unmatched and `matchN` silently underived (leeg for the wrong reason, and
-on a list-typed source a folded 0 — a wrong answer where ref faulted);
-the verifier now refuses that document before translation.
+arm binds anything, and no `P` variable enters the guard. And the domain
+identity of IR-SPEC ch. 2.4 guarantees, for both variants, both halves of
+what the scrutinee is: WF-089 (read half) that the domain the scrutinee's
+`type` names is the domain of the declaration it *reads from*, and
+WF-023/WF-067 (write half) that every value **entering** that declaration
+— at a rule target, an object-creation member, a defaults consequence, a
+function body — names that domain too. Together they make an underived
+`matchN` on a verifier-clean document mean a **leeg scrutinee and nothing
+else**. Neither half does that alone, measured: a scrutinee typed with a
+second, internally consistent domain left every arm's pattern unmatched
+and `matchN` silently underived (leeg for the wrong reason, and on a
+list-typed source a folded 0 — a wrong answer where ref faulted), and
+with only that half repaired a value of a second domain *written into*
+the truthfully-read declaration produced the same underived `matchN` with
+a non-leeg scrutinee. The verifier now refuses both documents before
+translation.
 
 The route difference costs a **narrower carrier**, and the narrowing is
 pre-existing rather than new: `symbolic_term` carries only a literal or

@@ -1,0 +1,234 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Werf": {
+      "node": "Objecttype",
+      "naam": "Werf",
+      "attributen": {
+        "vaarwater": {
+          "node": "Enumeratie",
+          "domein": "Vaarwater",
+          "waarden": [
+            "Wad",
+            "Zeegat",
+            "Ruimzee"
+          ]
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Werven"
+    },
+    "Schuit": {
+      "node": "Objecttype",
+      "naam": "Schuit",
+      "attributen": {
+        "premie": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Schuiten"
+    }
+  },
+  "domeinen": {
+    "Vaarwater": {
+      "node": "Enumeratie",
+      "domein": "Vaarwater",
+      "waarden": [
+        "Wad",
+        "Zeegat",
+        "Ruimzee"
+      ]
+    },
+    "Kust": {
+      "node": "Enumeratie",
+      "domein": "Kust",
+      "waarden": [
+        "Noord",
+        "Zuid",
+        "West"
+      ]
+    }
+  },
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {
+    "ligplaats": {
+      "node": "Feittype",
+      "naam": "ligplaats",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "werf",
+          "objecttypeNaam": "Werf",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "schuit",
+          "objecttypeNaam": "Schuit",
+          "meervoud": "schuiten",
+          "meervoudig": true
+        }
+      ]
+    }
+  },
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "premie",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "premie",
+        "objecttype": "Schuit",
+        "onderwerpBron": "de premie",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de premie",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Match",
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "scrutinee": {
+          "node": "AttribuutRef",
+          "attribuut": "vaarwater",
+          "objecttype": "Werf",
+          "onderwerpBron": "de Schuit",
+          "navigatieRol": "Schuit",
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Kust",
+            "waarden": [
+              "Noord",
+              "Zuid",
+              "West"
+            ]
+          },
+          "bron": "de vaarwater",
+          "set": false,
+          "navigatiePad": [
+            "werf"
+          ],
+          "navigatieBindingen": [
+            {
+              "node": "RolBinding",
+              "feittype": "ligplaats",
+              "rol": "werf"
+            }
+          ]
+        },
+        "arms": [
+          {
+            "constructor": "Noord",
+            "binder": null,
+            "body": {
+              "node": "Literal",
+              "waarde": "3",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "3"
+            }
+          },
+          {
+            "constructor": "Zuid",
+            "binder": null,
+            "body": {
+              "node": "Literal",
+              "waarde": "7",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "7"
+            }
+          },
+          {
+            "constructor": "West",
+            "binder": null,
+            "body": {
+              "node": "Literal",
+              "waarde": "12",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "12"
+            }
+          }
+        ],
+        "bron": "match"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

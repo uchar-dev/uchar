@@ -1,0 +1,201 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "beschikking": {
+          "node": "SumType",
+          "domain": "beschikking",
+          "constructors": [
+            {
+              "name": "Toegekend",
+              "payload": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "Afgewezen",
+              "payload": null
+            },
+            {
+              "name": "Aangehouden",
+              "payload": null
+            }
+          ]
+        },
+        "uitkering": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": null
+    }
+  },
+  "domeinen": {
+    "beschikking": {
+      "node": "SumType",
+      "domain": "beschikking",
+      "constructors": [
+        {
+          "name": "Toegekend",
+          "payload": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          }
+        },
+        {
+          "name": "Afgewezen",
+          "payload": null
+        },
+        {
+          "name": "Aangehouden",
+          "payload": null
+        }
+      ]
+    },
+    "oordeel": {
+      "node": "SumType",
+      "domain": "oordeel",
+      "constructors": [
+        {
+          "name": "Goedgekeurd",
+          "payload": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          }
+        },
+        {
+          "name": "Verworpen",
+          "payload": null
+        },
+        {
+          "name": "Uitgesteld",
+          "payload": null
+        }
+      ]
+    }
+  },
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "uitkering",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "uitkering",
+        "objecttype": "Jutter",
+        "onderwerpBron": "de uitkering",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de uitkering",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "5.00",
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "5.00"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "GELIJK",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "beschikking",
+          "objecttype": "Jutter",
+          "onderwerpBron": "de beschikking",
+          "navigatieRol": null,
+          "type": {
+            "node": "Enumeratie",
+            "domein": "beschikking",
+            "waarden": [
+              "Toegekend",
+              "Afgewezen",
+              "Aangehouden"
+            ]
+          },
+          "bron": "de beschikking",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "Afgewezen",
+          "type": {
+            "node": "Enumeratie",
+            "domein": "beschikking",
+            "waarden": [
+              "Toegekend",
+              "Afgewezen",
+              "Aangehouden"
+            ]
+          },
+          "bron": "Afgewezen"
+        },
+        "periode": null,
+        "bron": null
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

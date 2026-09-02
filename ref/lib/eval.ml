@@ -693,17 +693,26 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           match List.find_opt (fun (c, _, _) -> norm c = norm label) arms with
           | None ->
               Value.fault
-                (* Unreachable on a verifier-clean document: WF-063 makes the
-                   arms cover the declaration of the domain this node's type
-                   names, WF-088 makes the use site's inline copy repeat that
-                   declaration, and WF-089 makes that domain the one of the
-                   declaration the scrutinee READS FROM (attribute, parameter
-                   or binder, IR-SPEC ch. 2.4) — so the label is always one of
-                   the arms. Kept as an honest fault, never an assert: an
+                (* Unreachable on a verifier-clean document whose case input
+                   the shared loader admitted (case.ml refuses a label outside
+                   the declaration): WF-063 makes the arms cover the
+                   declaration of the domain this node's type names, WF-088
+                   makes the use site's inline copy repeat that declaration,
+                   WF-089 makes that domain the one of the declaration the
+                   scrutinee READS FROM (attribute, parameter or binder,
+                   IR-SPEC ch. 2.4), and the write half of the same identity
+                   makes every value ENTERING that declaration name its domain
+                   — WF-023 at a rule target, an object-creation member and a
+                   defaults consequence, WF-067 for a function body. The read
+                   half alone was measured insufficient (the card's fix
+                   round), and every composite scrutinee route is crossed with
+                   full datatype equality (Let WF-076, IfThenElse WF-069,
+                   Match WF-064, Invoke WF-068, struct WF-073/074, fold family
+                   WF-070). Kept as an honest fault, never an assert: an
                    unverified document can still reach it. *)
                 "match has no arm for enumeration value %S (unreachable on a verifier-clean \
                  document: WF-063/WF-088/WF-089 bind the arms to the declaration the scrutinee \
-                 reads from)"
+                 reads from, WF-023/WF-067 bind every value written into it)"
                 label
           | Some (_, Some b, _) ->
               Value.fault "match arm for enumeration value %S carries a binder %S (WF-063)" label b
@@ -713,13 +722,17 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           | None ->
               Value.fault
                 (* the sum-side twin of the enumeration arm above, unreachable
-                   on a verifier-clean document by the same three rules: WF-063
+                   on a verifier-clean document by the same rules: WF-063
                    totality over the named domain's declaration, WF-061 for the
                    use-site copy, WF-089 for the domain of the declaration the
-                   scrutinee reads from. An honest fault for an unverified
-                   document, never an assert. *)
+                   scrutinee READS FROM, and the write half of that identity —
+                   WF-023 at a rule target, an object-creation member and a
+                   defaults consequence, WF-067 for a function body — for every
+                   value ENTERING that declaration. An honest fault for an
+                   unverified document, never an assert. *)
                 "match has no arm for constructor %S (unreachable on a verifier-clean document: \
-                 WF-063/WF-061/WF-089 bind the arms to the declaration the scrutinee reads from)"
+                 WF-063/WF-061/WF-089 bind the arms to the declaration the scrutinee reads from, \
+                 WF-023/WF-067 bind every value written into it)"
                 tag
           | Some (_, binder, body) ->
               let locals =

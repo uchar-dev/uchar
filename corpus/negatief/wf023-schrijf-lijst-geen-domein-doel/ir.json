@@ -1,0 +1,271 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "aanspraken": {
+          "node": "ListType",
+          "element": {
+            "node": "SumType",
+            "domain": "beschikking",
+            "constructors": [
+              {
+                "name": "Toegekend",
+                "payload": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              },
+              {
+                "name": "Afgewezen",
+                "payload": null
+              },
+              {
+                "name": "Aangehouden",
+                "payload": null
+              }
+            ]
+          }
+        },
+        "som": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bedragen": {
+          "node": "ListType",
+          "element": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          }
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": null
+    }
+  },
+  "domeinen": {
+    "beschikking": {
+      "node": "SumType",
+      "domain": "beschikking",
+      "constructors": [
+        {
+          "name": "Toegekend",
+          "payload": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          }
+        },
+        {
+          "name": "Afgewezen",
+          "payload": null
+        },
+        {
+          "name": "Aangehouden",
+          "payload": null
+        }
+      ]
+    },
+    "oordeel": {
+      "node": "SumType",
+      "domain": "oordeel",
+      "constructors": [
+        {
+          "name": "Goedgekeurd",
+          "payload": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          }
+        },
+        {
+          "name": "Verworpen",
+          "payload": null
+        },
+        {
+          "name": "Uitgesteld",
+          "payload": null
+        }
+      ]
+    }
+  },
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "bedragen",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "bedragen",
+        "objecttype": "Jutter",
+        "onderwerpBron": "de bedragen",
+        "navigatieRol": null,
+        "type": {
+          "node": "ListType",
+          "element": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          }
+        },
+        "bron": "de bedragen",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "ListLiteral",
+        "type": {
+          "node": "ListType",
+          "element": {
+            "node": "SumType",
+            "domain": "oordeel",
+            "constructors": [
+              {
+                "name": "Goedgekeurd",
+                "payload": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              },
+              {
+                "name": "Verworpen",
+                "payload": null
+              },
+              {
+                "name": "Uitgesteld",
+                "payload": null
+              }
+            ]
+          }
+        },
+        "elements": [
+          {
+            "node": "Construct",
+            "type": {
+              "node": "SumType",
+              "domain": "oordeel",
+              "constructors": [
+                {
+                  "name": "Goedgekeurd",
+                  "payload": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "Verworpen",
+                  "payload": null
+                },
+                {
+                  "name": "Uitgesteld",
+                  "payload": null
+                }
+              ]
+            },
+            "constructor": "Goedgekeurd",
+            "argument": {
+              "node": "Literal",
+              "waarde": "10.00",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "bron": "10.00"
+            },
+            "bron": "goedgekeurd"
+          },
+          {
+            "node": "Construct",
+            "type": {
+              "node": "SumType",
+              "domain": "oordeel",
+              "constructors": [
+                {
+                  "name": "Goedgekeurd",
+                  "payload": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "Verworpen",
+                  "payload": null
+                },
+                {
+                  "name": "Uitgesteld",
+                  "payload": null
+                }
+              ]
+            },
+            "constructor": "Verworpen",
+            "argument": null,
+            "bron": "verworpen"
+          }
+        ],
+        "bron": "lijst"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

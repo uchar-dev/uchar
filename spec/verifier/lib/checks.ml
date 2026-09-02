@@ -920,8 +920,11 @@ let datatype_kind = function
 (* like [datatype_kind] but carrying the decimal count and unit a numeric type
    turns on: a WF-076 mismatch on precision or unit renders as "number differs
    from number" under the bare kind, hiding exactly the discrepancy the check
-   catches — so a numeric type also shows its decimals and unit. *)
-let datatype_detail dt =
+   catches — so a numeric type also shows its decimals and unit. A keuzetype
+   shows its domain for the same reason (a WF-064/069/070 mismatch between
+   two enumeration domains rendered as "enumeration, but ... enumeration"),
+   and a list shows its element. *)
+let rec datatype_detail dt =
   let dec_unit decimalen eenheid =
     let u =
       match eenheid with
@@ -935,55 +938,85 @@ let datatype_detail dt =
   match dt with
   | Numeriek { decimalen; eenheid; _ } -> "number" ^ dec_unit decimalen eenheid
   | Percentage { decimalen; eenheid; _ } -> "percentage" ^ dec_unit decimalen eenheid
+  | Enumeratie { domein = Some d; _ } -> "enumeration '" ^ d ^ "'"
+  | Sum_type { domein; _ } -> "sumtype '" ^ domein ^ "'"
+  | List_type { element } -> "list of " ^ datatype_detail element
   | other -> datatype_kind other
 
-(* The keuzetype domain a datatype names (IR-SPEC ch. 2.4): an Enumeratie's
-   or SumType's declaring domain, looked up THROUGH a ListType's element — a
-   list of a keuzetype names that keuzetype's domain, and a drifted element
-   domain on a list-typed reference is the wrong-answer flank the card
-   measured (clingo folded 0 where ref faulted). None for every other
-   datatype and for an Enumeratie carrying no domain. *)
+(* The keuzetype a datatype names (IR-SPEC ch. 2.4) — its VARIANT and its
+   declaring domain: an Enumeratie's or SumType's domain, looked up THROUGH a
+   ListType's element — a list of a keuzetype names that keuzetype, and a
+   drifted element domain on a list-typed reference is the wrong-answer flank
+   the card measured (clingo folded 0 where ref faulted). None for every
+   other datatype and for an Enumeratie carrying no domain. The variant
+   travels with the name because `domeinen` is ONE namespace: a domain
+   declared as one variant and used as the other is never the same keuzetype
+   (fix round 1: an enumeration-typed reference over a sum-typed attribute
+   of the same name was verifier-clean and faulted in both executors). *)
+type keuzetype = Kt_enum of string | Kt_sum of string
+
 let rec keuzetype_domain = function
-  | Enumeratie { domein; _ } -> domein
-  | Sum_type { domein; _ } -> Some domein
+  | Enumeratie { domein = Some d; _ } -> Some (Kt_enum d)
+  | Enumeratie { domein = None; _ } -> None
+  | Sum_type { domein; _ } -> Some (Kt_sum domein)
   | List_type { element } -> keuzetype_domain element
   | _ -> None
 
+let keuzetype_name = function Kt_enum d | Kt_sum d -> d
+
+let keuzetype_variant = function
+  | Kt_enum _ -> "enumeration domain"
+  | Kt_sum _ -> "sum-type domain"
+
+(* the identity: the same variant and the same name, compared ci (WF-001) *)
+let keuzetype_same a b =
+  norm (keuzetype_name a) = norm (keuzetype_name b)
+  && match (a, b) with Kt_enum _, Kt_enum _ | Kt_sum _, Kt_sum _ -> true | _ -> false
+
 (* WF-089 (domain identity, IR-SPEC ch. 2.4): a reference expression's
    serialized [typ] and the datatype of the declaration it READS FROM must
-   name the same keuzetype domain (ci) whenever either of them names one —
-   the domain extension of the soort cross-check WF-023/WF-027/WF-078
-   perform. WF-088 and WF-061 bind a use site to the domain it NAMES; this
-   is the other half, binding it to the declaration it reads, which is what
-   makes ref's "match has no arm" fault unreachable on a verifier-clean
-   document. Either side unknown (the v0 sentinel), an unresolved
-   declaration, or a reference carrying no type defers, exactly as WF-023
-   and WF-078 do. [what] names the reference in the message. *)
+   name the same keuzetype (variant and domain, ci) whenever either of them
+   names one — the domain extension of the soort cross-check
+   WF-023/WF-027/WF-078 perform. WF-088 and WF-061 bind a use site to the
+   domain it NAMES; this is the read half of the other binding, to the
+   declaration it reads — the write half is WF-023's domain clause
+   ([wf023_assignment]), and the two together are what make ref's "match has
+   no arm" fault unreachable on a verifier-clean document. Either side
+   unknown (the v0 sentinel), an unresolved declaration, or a reference
+   carrying no type defers, exactly as WF-023 and WF-078 do. [what] names
+   the reference in the message. *)
 let wf089_domain_identity at ~what ~decl ~typ =
   match (decl, typ) with
   | None, _ | _, None | Some (Datatype_onbekend _), _ | _, Some (Datatype_onbekend _) -> []
   | Some d, Some t -> (
       match (keuzetype_domain t, keuzetype_domain d) with
       | None, None -> []
-      | Some a, Some b when norm a = norm b -> []
+      | Some a, Some b when keuzetype_same a b -> []
+      | Some a, Some b when norm (keuzetype_name a) = norm (keuzetype_name b) ->
+          [ v "WF-089" at
+              (Printf.sprintf
+                 "%s is typed as the %s '%s', but the declaration it reads from is the %s '%s' \
+                  (one namespace: a domain has one variant)"
+                 what (keuzetype_variant a) (keuzetype_name a) (keuzetype_variant b)
+                 (keuzetype_name b)) ]
       | Some a, Some b ->
           [ v "WF-089" at
               (Printf.sprintf
                  "%s is typed with keuzetype domain '%s', but the declaration it reads from names \
                   domain '%s'"
-                 what a b) ]
+                 what (keuzetype_name a) (keuzetype_name b)) ]
       | Some a, None ->
           [ v "WF-089" at
               (Printf.sprintf
                  "%s is typed with keuzetype domain '%s', but the declaration it reads from is %s \
                   and names no keuzetype domain"
-                 what a (datatype_kind d)) ]
+                 what (keuzetype_name a) (datatype_kind d)) ]
       | None, Some b ->
           [ v "WF-089" at
               (Printf.sprintf
                  "%s is typed %s, naming no keuzetype domain, but the declaration it reads from \
                   names domain '%s'"
-                 what (datatype_kind t) b) ])
+                 what (datatype_kind t) (keuzetype_name b)) ])
 
 let wf030 ctx =
   let key_checks at otn keys =
@@ -2868,8 +2901,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                 | Some bt when bt <> mt ->
                     Some
                       (v "WF-064" at
-                         ("the '" ^ c ^ "' arm body is " ^ datatype_kind bt
-                        ^ ", but the match result type is " ^ datatype_kind mt))
+                         ("the '" ^ c ^ "' arm body is " ^ datatype_detail bt
+                        ^ ", but the match result type is " ^ datatype_detail mt))
                 | _ -> None)
               arms
       in
@@ -2978,8 +3011,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                          match typ_of_expr value with
                          | Some vt when vt <> fdt ->
                              [ v "WF-073" at
-                                 ("field '" ^ fname ^ "' value is " ^ datatype_kind vt
-                                ^ ", but the declared field datatype is " ^ datatype_kind fdt) ]
+                                 ("field '" ^ fname ^ "' value is " ^ datatype_detail vt
+                                ^ ", but the declared field datatype is " ^ datatype_detail fdt) ]
                          | _ -> []))
                    velden)
        | Some d ->
@@ -3009,8 +3042,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                    match typ with
                    | Some t when t <> fdt ->
                        [ v "WF-074" (sub "type")
-                           ("field access type " ^ datatype_kind t
-                          ^ " differs from the declared field datatype " ^ datatype_kind fdt) ]
+                           ("field access type " ^ datatype_detail t
+                          ^ " differs from the declared field datatype " ^ datatype_detail fdt) ]
                    | None -> [ v "WF-074" (sub "type") "field access carries no type" ]
                    | _ -> [])))
        | Some d ->
@@ -3067,8 +3100,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                     match typ_of_expr e with
                     | Some t when t <> ed ->
                         [ v "WF-066" (sub (Printf.sprintf "elements/%d" i))
-                            ("element type " ^ datatype_kind t ^ " differs from the declared element "
-                           ^ datatype_kind ed) ]
+                            ("element type " ^ datatype_detail t
+                           ^ " differs from the declared element " ^ datatype_detail ed) ]
                     | _ -> [])
                   elements))
       @ List.concat
@@ -3094,8 +3127,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
            match typ, typ_of_expr e with
            | Some t, Some bt when t <> bt ->
                [ v "WF-069" (sub name)
-                   ("the " ^ name ^ " branch is " ^ datatype_kind bt ^ ", but the IfThenElse type is "
-                  ^ datatype_kind t) ]
+                   ("the " ^ name ^ " branch is " ^ datatype_detail bt
+                  ^ ", but the IfThenElse type is " ^ datatype_detail t) ]
            | _ -> []
          in
          branch "then" then_ @ branch "else" else_)
@@ -3119,8 +3152,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                      match typ_of_expr a with
                      | Some at' when at' <> pt ->
                          [ v "WF-068" (sub (Printf.sprintf "arguments/%d" i))
-                             ("argument type " ^ datatype_kind at'
-                            ^ " does not match the parameter datatype " ^ datatype_kind pt) ]
+                             ("argument type " ^ datatype_detail at'
+                            ^ " does not match the parameter datatype " ^ datatype_detail pt) ]
                      | _ -> [])
                    (List.combine arguments fd.fd_parameters)))
            @ (match typ with
@@ -3210,14 +3243,15 @@ and check_fold_fn ctx ~binders ~subject at ~params ~result (fn : fold_fn) : viol
                 match exp with
                 | Some e when e <> pt ->
                     [ v "WF-070" at
-                        ("lambda parameter '" ^ pn ^ "' is " ^ datatype_kind pt ^ ", expected "
-                       ^ datatype_kind e) ]
+                        ("lambda parameter '" ^ pn ^ "' is " ^ datatype_detail pt ^ ", expected "
+                       ^ datatype_detail e) ]
                 | _ -> [])
               parameters params))
       @ (match result, typ_of_expr lbody with
         | Some r, Some b when r <> b ->
             [ v "WF-070" at
-                ("lambda body is " ^ datatype_kind b ^ ", but the fold requires " ^ datatype_kind r) ]
+                ("lambda body is " ^ datatype_detail b ^ ", but the fold requires "
+               ^ datatype_detail r) ]
         | _ -> [])
       (* the lambda body is CLOSED (WF-069): it sees only its own parameters,
          never the enclosing scope's binders. Dropping the enclosing [binders]
@@ -4730,13 +4764,26 @@ let wf054 ctx =
               else []))
     (List.mapi (fun i r -> (i, r)) ctx.doc.uniciteiten)
 
-(* WF-023 (the shallow slice): assignment typing between the target's and
-   the value's serialized types — same family (numeric kinds count as
-   one), compatible units (a unitless literal adopts), no contradictory
-   sign restriction. The precision gate needs expression-shape analysis
-   and stays OPEN (the WF index records the reason). *)
-let wf023 ctx =
-  ignore ctx;
+(* WF-023 (the shallow slice), at every attribute WRITE position — a rule's
+   target, an object creation's attribute member, a defaults consequence:
+   assignment typing between the target's DECLARED type and the value's
+   serialized type — same family (numeric kinds count as one), compatible
+   units (a unitless literal adopts), no contradictory sign restriction, and
+   the DOMAIN clause: a keuzetype-typed side names the same keuzetype
+   (variant and domain, ci, through a ListType element) as the other. The
+   domain clause is the write half of WF-089's domain identity — WF-089
+   crosses what a reference READS, this crosses what is WRITTEN into the
+   declaration it reads — and the two together make ref's "match has no arm"
+   fault unreachable on a verifier-clean document (fix round 1 of the card:
+   without it a Literal or Construct of another domain, a ghost-domain
+   literal and a list of another domain entered the read declaration
+   verifier-clean at all three positions, and the object-creation and
+   defaults positions crossed no soort at all). The precision gate needs
+   expression-shape analysis and stays OPEN (the WF index records the
+   reason). [target]/[value] are the expressions, for literal unit adoption
+   (a defaults consequence and a member initialisation have no target
+   expression). *)
+let wf023_assignment at ~target ~value (dt : datatype) (wt : datatype) =
   let sign_conflict d w =
     match (d, w) with
     | Numeriek { teken = Some (Niet_negatief | Positief); _ },
@@ -4746,39 +4793,123 @@ let wf023 ctx =
         true
     | _ -> false
   in
+  match (dt, wt) with
+  | Datatype_onbekend _, _ | _, Datatype_onbekend _ -> []
+  | _ ->
+      let same_family =
+        datatype_kind dt = datatype_kind wt || (is_number_like dt && is_number_like wt)
+      in
+      (if not same_family then
+         [ v "WF-023" at
+             (Printf.sprintf "a %s value is assigned to a %s target" (datatype_kind wt)
+                (datatype_kind dt)) ]
+       else [])
+      @ (if
+           is_number_like dt && is_number_like wt
+           && not (units_compatible_adopting target value (unit_of dt) (unit_of wt))
+         then [ v "WF-023" at "assignment across incompatible units" ]
+         else [])
+      @ (if sign_conflict dt wt then
+           [ v "WF-023" at "the value's sign restriction contradicts the target's" ]
+         else [])
+      @
+      (* the domain clause; a one-sided keuzetype is reported only within
+         one family (a list of a keuzetype against a list of something else,
+         an enumeration without a domain) — across families the family
+         message already names the defect *)
+      match (keuzetype_domain dt, keuzetype_domain wt) with
+      | None, None -> []
+      | Some a, Some b when keuzetype_same a b -> []
+      | Some a, Some b ->
+          [ v "WF-023" at
+              (Printf.sprintf "a value of the %s '%s' is assigned to a target of the %s '%s'"
+                 (keuzetype_variant b) (keuzetype_name b) (keuzetype_variant a)
+                 (keuzetype_name a)) ]
+      | Some a, None when same_family ->
+          [ v "WF-023" at
+              (Printf.sprintf
+                 "a %s value naming no keuzetype domain is assigned to a target of the %s '%s'"
+                 (datatype_kind wt) (keuzetype_variant a) (keuzetype_name a)) ]
+      | None, Some b when same_family ->
+          [ v "WF-023" at
+              (Printf.sprintf
+                 "a value of the %s '%s' is assigned to a %s target naming no keuzetype domain"
+                 (keuzetype_variant b) (keuzetype_name b) (datatype_kind dt)) ]
+      | _ -> []
+
+let wf023 ctx =
+  (* position 1: the rule target — its declared datatype where the target
+     resolves (WF-022), its serialized type otherwise *)
   List.concat_map
     (fun (i, (r : resolved_regel)) ->
       let at = Printf.sprintf "/resolvedRegels/%d" i in
       match (r.rr_soort, r.doel, r.waarde) with
       | Some (Gelijkstelling | Berekening | Initialisatie), Some doel, Some w -> (
-          match (typ_of_expr doel, typ_of_expr w) with
-          | Some dt, Some wt -> (
-              match (dt, wt) with
-              | Datatype_onbekend _, _ | _, Datatype_onbekend _ -> []
-              | _ ->
-                  (if
-                     datatype_kind dt <> datatype_kind wt
-                     && not (is_number_like dt && is_number_like wt)
-                   then
-                     [ v "WF-023" at
-                         (Printf.sprintf "a %s value is assigned to a %s target"
-                            (datatype_kind wt) (datatype_kind dt)) ]
-                   else [])
-                  @ (if
-                       is_number_like dt && is_number_like wt
-                       && not
-                            (units_compatible_adopting r.doel r.waarde (unit_of dt)
-                               (unit_of wt))
-                     then [ v "WF-023" at "assignment across incompatible units" ]
-                     else [])
-                  @
-                  if sign_conflict dt wt then
-                    [ v "WF-023" at
-                        "the value's sign restriction contradicts the target's" ]
-                  else [])
+          let dt =
+            match resolved_attr_datatype ctx doel with
+            | Some d -> Some d
+            | None -> typ_of_expr doel
+          in
+          match (dt, typ_of_expr w) with
+          | Some dt, Some wt -> wf023_assignment at ~target:r.doel ~value:r.waarde dt wt
           | _ -> [])
       | _ -> [])
     (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_regels)
+  (* position 2: an object creation's attribute member (WF-027 owns the
+     characteristic member and the member's existence) *)
+  @ List.concat_map
+      (fun (i, (r : resolved_object_creatie)) ->
+        match Option.bind r.nieuw_type (objecttype ctx) with
+        | None -> []
+        | Some ot ->
+            List.concat_map
+              (fun (j, (t : toekenning)) ->
+                let tat = Printf.sprintf "/objectCreaties/%d/toekenningen/%d" i j in
+                match (t.toe_kenmerk, t.toe_attribuut, t.toe_waarde) with
+                | false, Some m, Some w -> (
+                    match (attr_of ot m, typ_of_expr w) with
+                    | Some (Some dt), Some wt ->
+                        wf023_assignment tat ~target:None ~value:(Some w) dt wt
+                    | _ -> [])
+                | _ -> [])
+              (List.mapi (fun j t -> (j, t)) r.toekenningen))
+      (List.mapi (fun i r -> (i, r)) ctx.doc.object_creaties)
+  (* position 3: a defaults consequence, recursing into sub-defaults (ch.
+     7.9 — an exception group inherits the root target) *)
+  @ List.concat_map
+      (fun (i, (l : prioritized_defaults)) ->
+        match
+          Option.bind l.pd_attribuut (fun a ->
+              Option.bind (objecttype ctx l.pd_onderwerp) (fun ot -> attr_of ot a))
+        with
+        | Some (Some dt) ->
+            let rec walk prefix (r : default) =
+              (match Option.bind r.default_consequentie (fun e -> Option.map (fun wt -> (e, wt)) (typ_of_expr e)) with
+              | Some (e, wt) ->
+                  wf023_assignment (prefix ^ "/consequentie") ~target:None ~value:(Some e) dt wt
+              | None -> [])
+              @
+              match r.default_excepties with
+              | Some egs ->
+                  List.concat
+                    (List.mapi
+                       (fun k (eg : exception_group) ->
+                         List.concat
+                           (List.mapi
+                              (fun m d ->
+                                walk
+                                  (Printf.sprintf "%s/excepties/leden/%d/defaults/%d" prefix k m)
+                                  d)
+                              eg.eg_defaults))
+                       egs.egs_leden)
+              | None -> []
+            in
+            List.concat
+              (List.mapi
+                 (fun j r -> walk (Printf.sprintf "/prioritizedDefaults/%d/defaults/%d" i j) r)
+                 l.defaults)
+        | _ -> [])
+      (List.mapi (fun i l -> (i, l)) ctx.doc.prioritized_defaults)
 
 (* WF-082: the bronAnnotaties extension field (IR-SPEC ch. 3.1) — the
    `// Bron:` statute annotations on a resolved rule. When present it is a
@@ -5412,6 +5543,21 @@ let wf067 ctx =
                  [ v "WF-067" at
                      ("result names sum-type domain '" ^ domein ^ "', which is not a declared sum \
                        type") ]
+             | _ -> [])
+           (* the body's static type IS the declared result — full datatype
+              equality, soort and keuzetype domain alike, as WF-068/069/070
+              cross their operands. The body is the write into the result
+              WF-068 lets every Invoke read (the domain identity of ch. 2.4,
+              write half): without this cross a body of another domain than
+              the declared result was verifier-clean and reached ref's "no
+              arm" fault through a truthful Invoke (the card's fix round 1,
+              probe P7). The v0 unknown sentinel defers, as under WF-023. *)
+           @ (match (typ_of_expr fd.fd_body, fd.fd_result) with
+             | Some (Datatype_onbekend _), _ | _, Datatype_onbekend _ | None, _ -> []
+             | Some bt, r when bt <> r ->
+                 [ v "WF-067" (at ^ "/body/type")
+                     ("the body is " ^ datatype_detail bt ^ ", but the declared result is "
+                    ^ datatype_detail r) ]
              | _ -> [])
            (* a FunctionDef body is closed and top-level: it sees only its own
               parameters, so there are no outer binders to remember (WF-064's

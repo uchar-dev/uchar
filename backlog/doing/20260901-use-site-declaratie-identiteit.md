@@ -177,3 +177,108 @@ vertaling afgewezen. Niets anders in dat bestand geraakt.
    "noemt geen domein" en vuurt eenzijdig tegen een domein-dragende
    declaratie; geen corpus- of parity-document draagt die vorm (0
    treffers), dus onfalsifieerbaar gelaten.
+
+## Fixronde 1 (2026-09-02, lensbevindingen L1-F1..F9)
+
+Kern van de ronde: het maintainerbesluit is één principe —
+keuzetype-**domein-identiteit** — en dat geldt aan de lees- én de
+schrijfzijde. WF-089 dekte alleen de leeszijde; de lens bouwde zeven
+verifier-schone documenten die een waarde van domein B in een declaratie
+van domein A schrijven en daarmee precies de ref-fout bereikten wier
+melding "unreachable" beloofde. Geland: de schrijfhelft.
+
+### Wat er landde
+
+- **WF-023 draagt de schrijfhelft**, op drie posities: regeldoel,
+  objectcreatie-toekenning (attribuut; het kenmerk blijft WF-027) en
+  prioritizedDefaults-consequentie (recursief door exceptiegroepen, die
+  het worteldoel erven). De kruising gaat tegen het **gedeclareerde**
+  doeldatatype, niet tegen het geserialiseerde `type` — een passend paar
+  leugens (doel én waarde getypeerd met hetzelfde vreemde domein) is
+  precies de vorm die de oude slice doorliet. Posities 2 en 3 hadden
+  daarvóór *geen enkele* waarde-typering (ook geen soort): de familie- en
+  eenheden-/tekenclausule geldt daar nu ook.
+- **WF-067 kreeg zijn lichaamskruising** (`body`-type = gedeclareerd
+  `result`, volledige datatypegelijkheid). Gevonden door ná de
+  schrijfarmen opnieuw naar een route naar de "no arm"-fout te zoeken:
+  WF-068 kruist de *lezing* van een functie, niets kruiste de
+  *schrijving* in het resultaat.
+- **WF-089 vergelijkt variant én naam** (`keuzetype = Kt_enum | Kt_sum`);
+  `domeinen` is één naamruimte, dus dezelfde naam onder de andere variant
+  is altijd een leugen. Eigen melding.
+- **`datatype_detail` toont het keuzetype-domein en het lijstelement**;
+  toegepast op de structurele gelijkheidsmeldingen WF-064/066/068/069/
+  070/073/074 ("enumeration, but ... enumeration" is weg).
+- **Zestien negatiefs erbij** (185 → 201 in gate 3), elk met NOTE en een
+  falsificatie-recept.
+
+### Meting per lensbevinding
+
+| bevinding | actie | meting |
+|---|---|---|
+| F1 schrijfzijde | gefixt | de zeven lensdocumenten (`/tmp/lens1a-1/exp`) zijn nu alle zeven WF-023 FAIL; de trouwe tweelingen E0/E2/E5c/E24c blijven verifier-schoon |
+| F2 onwaar ref-commentaar | gefixt | beide Match-armen noemen nu lees- én schrijfhelft; sondes P1-P8 vonden geen verifier-schone route meer naar de fout |
+| F3 onwaar spec | gefixt | S14, WF-089-motivatie, WF-023-clausule + indexrij, WF-088's bungelende kaartverwijzing vervangen door de gemeten reststand |
+| F4 variant | gefixt | E3 en E3r nu WF-089 FAIL met de variantmelding; negatiefs `wf089-enum-over-som`, `wf089-som-over-enum` |
+| F5 eenzijdige tak | gefixt | negatief `wf089-attribuutref-geen-keuzetype-declaratie` (E27) |
+| F6 genavigeerde lezing | gefixt | negatief `wf089-attribuutref-navigatie-enum` (E5) |
+| F7 ci-clausule ongepind | **bewust gelaten** | mutant H (ci → hoofdlettergevoelig) laat gate 3 groen; E2-ci-domein passeert in alle drie. Een getuige vergt een synth-**golden** en `corpus/golden` valt buiten de may-touch van deze kaart; de WF-089-indexrij noteert de clausule nu expliciet als ongepind, zoals WF-088 dat voor zijn doel-type-uitzondering doet |
+| F8 soort op positie 2/3 | gefixt | negatiefs `wf023-objectcreatie-soort`, `wf023-defaults-soort` |
+| F9 melding zonder domein | gefixt | `datatype_detail` (zie boven) |
+
+### Mutanten (gate 3 in /tmp/M, git-archive-kopie + de werkboomwijziging)
+
+| mutant | gate 3 | gevangen door |
+|---|---|---|
+| A domeinclausule van `wf023_assignment` uit | rood | de negen `wf023-*-domein`/`-lijst-*`/`-doeltype-leugen`/`-spookdomein` |
+| B schrijfpositie 2 uit | rood | `wf023-objectcreatie-domein` + `-soort` |
+| C schrijfpositie 3 uit | rood | `wf023-defaults-domein` + `-soort` |
+| D WF-067-lichaamsarm uit | rood | `wf067-body-result-drift` |
+| E variantvergelijking uit | rood | `wf089-enum-over-som` + `wf089-som-over-enum` |
+| F eenzijdige arm `Some _, None` uit | rood | `wf089-attribuutref-geen-keuzetype-declaratie` |
+| G genavigeerde referenties overslaan | rood | `wf089-attribuutref-navigatie-enum` |
+| H ci → hoofdlettergevoelig | **groen** | niets (F7) |
+
+### Bereikbaarheidssondes ná de fix (/tmp/fr1a/probe)
+
+Elke poging om opnieuw een verifier-schoon document te bouwen dat ref's
+"no arm" bereikt, wordt bij naam afgewezen: P1 onbekend-sentinel als
+regelwaarde → **WF-034**; P7/P8 dezelfde sentinel op de objectcreatie- en
+defaults-positie → **WF-034** (de `Datatype_onbekend`-deferral van WF-023
+is dus een verdedigingslaag, geen open route); P2 referentie die over een
+ander attribuut liegt → **WF-089**; P4 onopgelost doel → **WF-022** (+
+WF-023); P5 `Match`-waarde en P6b `Let`/`IfThenElse`-waarde van het
+vreemde domein → **WF-023** (samengestelde waarden dragen hun eigen type,
+dat de schrijfarm kruist); P3 waarde zonder `type` → LOAD ERROR. De enige
+route die buiten de WF-laag blijft is de **case-invoer**, en die sluit de
+gedeelde loader (`ref/lib/case.ml` weigert een label of constructor die de
+declaratie niet draagt) — zo staat het nu ook in de melding en in de
+WF-089-clausule, als benoemde route, niet als stilzwijgende belofte.
+
+### Over-afwijzing
+
+197 documenten (145 golden + 22 rood + 30 parity, read-only door de
+verifier): **0 treffers** van WF-023, WF-067 of WF-089. De 28 niet-schone
+parity-documenten die de meting passeert dragen WF-016/WF-022/WF-024 —
+pre-existent en buiten deze kaart (die regels zijn niet aangeraakt).
+
+### Open punten na deze ronde
+
+1. ~~WF-023 domein-identiteit van de toekenning (F13b)~~ — geland; F13b is
+   nu `wf023-schrijf-som-domein`.
+2. WF-061 expressielaag/declaratiekant (F16, D4, D5) — ongewijzigd open.
+3. ASP-dragerhek Let-over-enum (F6b) — ongewijzigd open (S19-inventaris).
+4. Drools' `ClassCastException` op een soort-leugen — ongewijzigd
+   robuustheidsnotitie.
+5. ~~WF-070-melding verbergt het domein~~ — geland (`datatype_detail`).
+6. WF-089 en `Enumeratie` zonder `domein` — ongewijzigd onfalsifieerbaar.
+7. **Nieuw:** de ci-clausule van WF-089/WF-023 is ongepind (F7); een
+   synth-golden met een ci-gespeld use-site-domein zou hem pinnen.
+8. **Nieuw:** `RUNTIME-SEMANTICS.md` ch. 9.2 noemt voor de
+   "no arm"-onbereikbaarheid alleen WF-063; de zin is ná deze ronde waar,
+   maar de verwijzing is smal (WF-063/088/089 + WF-023/067). Buiten de
+   may-touch van deze kaart.
+
+Gates in de werkboom: 1 PASS, 2 PASS (167), 3 PASS (167 golden clean; 201
+negatief rejected), 4 PASS (405 cases), 5 PASS (383), 6 PASS (383), 7 PASS
+(347 + 36 survivors), 8 PASS (22), 9 PASS (201 checks; 12 catala-goldens).
