@@ -432,3 +432,61 @@ onveranderd 36), gate 12 auto-excluded 40 met de nieuwe golden erin
 (played onveranderd 104, dus de golden wordt geweigerd en niet gespeeld;
 de stand vóór deze ronde is niet apart nagemeten).
 Gates 8, 9, 10 en 11 ongewijzigd.
+
+## Result (hoofdsessie, 2026-09-02)
+
+Geland: **WF-089, domein-identiteit voor de keuzetype-familie, over alle
+drie de zijden.** De LEESzijde (bouwgolf): elke referentie-expressie —
+AttribuutRef incl. navigatie-eindpunt, ParameterRef, BinderRef,
+DimensieCel, met doorkijk door ListType — noemt het domein van de
+declaratie waaruit hij leest, ci én per variant (Enumeratie ≠ SumType,
+één naamruimte), met eenzijdige armen voor
+referentie-zonder-domein-op-domein-declaratie en omgekeerd. De
+SCHRIJFzijde (fixronde 1, lens-1-vangst): WF-023 kruist op drie
+schrijfposities — regeldoel, objectcreatie-toekenning en
+prioritizedDefaults-consequentie incl. exceptiegroepen en initialisatie —
+tegen het GEDECLAREERDE doeldatatype; twee van die posities hadden
+voorheen géén enkele waarde-typering (ook de soortlaag is daar nieuw), en
+WF-067 pint het functielichaam op het gedeclareerde resultaat. De
+DOORGEEFzijde (fixronde 2, lens-2-vangst): de element-doorgevende
+aggregaties (EERSTE/LAATSTE/MINIMUM/MAXIMUM) en de foldbron kruisen hun
+knooptype tegen de operanden. Elke gedichte route is vóóraf als
+verifier-schone ref≢clingo-flank gemeten (meettabel F0–F16: ref fault of
+schrijft het vreemde label, clingo leidt niets af, vouwt 0 of crasht de
+vertaling; Drools tot ClassCastException aan toe); de
+onbereikbaarheidsclaims in `ref/lib/eval.ml` (beide Match-armen), de
+IR-SPEC-motivatie en S14 zijn pas ná hermeting met sondes teruggezet, en
+RS ch. 9.2 noemt nu de volledige keten (hoofdsessie-commit).
+
+Omvang: 28 nieuwe negatiefs (13× wf089, 14× wf023-schrijfposities, 1×
+wf067) elk mutant-bewezen arm-exact; één nieuwe golden
+`jutterswet-vaarwaterspelling` (May-touch-uitbreiding hoofdsessie) die
+de ci-clausule falsifieerbaar maakt — pins eerst door ref, bevestigd
+door clingo; de declaratiekant gemeten al dicht (WF-060/065/071);
+`datatype_detail` toont domeinen in negen gelijkheidsmeldingen;
+over-afwijzing driemaal gemeten nul over 197 documenten (golden + rood +
+toka read-only). CONSTRUCTS rij 36 draagt de amendering
+(hoofdsessie-commit; de kaart-May-touch is door de hoofdsessie verbreed
+met de golden, CONSTRUCTS en de RS-regel).
+
+Eindstand na bouw + 2 lensronden + 2 fixronden: **alle twaalf gates
+groen** (eindgate-run vóór de rebase op 284508c; na de rebase op main
+met de companion-kaart erin opnieuw volledig gedraaid — zie de
+merge-commit). Tellingen: gate 2/3 = 168 goldens, 206 negatiefs (was
+167/178); gates 5/6 = 385 (was 383); gate 7 = 349/36; gate 12 = played
+104 / auto-excluded 40 (de nieuwe golden draagt een Match en wordt
+reden-dragend geweigerd) / value-divergence 1 / no-case 1.
+
+Open gebleven, elk gemeten en genoteerd: de structdomein-tweeling
+(gemeten gratis maar buiten de maintainerterm — **eigen kaart**
+`20260902-struct-domein-identiteit`); de orderbaarheid van de
+doorgeeffamilie over equality-only-typen (**eigen kaart**
+`20260902-doorgeeffold-orderbaarheid`); WF-061's expressielaag/
+declaratiekant (F16/D4/D5, gemeten onschadelijk); het pre-existente
+ASP-dragerhek Let-over-enum plus de twee nieuwe hekken
+(S19-inventariswerk); Drools' ClassCastException op een soort-leugen (na
+WF-089 onbereikbaar op verifier-schone documenten; robuustheidsnotitie);
+`Enumeratie` zonder `domein` (onfalsifieerbaar, 0 dragers); twee
+WF-089-armen zonder positieve getuige (ParameterRef/DimensieCel —
+onoplosbaar zolang het ASP-hek een keuzetype-parameter weigert; in de
+indexrij genoteerd).
