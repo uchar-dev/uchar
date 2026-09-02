@@ -91,8 +91,11 @@ full term.
 `Openstaand(30)` → 30 ≤ 30 → `Openstaand(0)` → `Melding` → **`Vervuld`**.
 
 **case7 — `[Dagverloop(12)]`** (part of the term used): 12 ≤ 30 →
-**`Openstaand(18)`** — the only case that pins a counted-down term rather than
-the init.
+**`Openstaand(18)`** — the only case whose pinned value reveals the
+subtraction's DIRECTION. case5 pins a counted-down term too, but `30 − 30 = 0`
+is symmetric under a swap of the operands, so that value refutes the
+boundary-day reading and not the arithmetic one; case7's `18` becomes `−18`
+when the operands swap.
 
 **case8 — `[Melding, Dagverloop(31)]`** (discharged, then the term runs out):
 `Openstaand(30)` → `Melding` → `Vervuld` → the outer `Vervuld` arm →
@@ -143,23 +146,52 @@ drawn narrowly, it is that there is no kind of value to widen the fence
 towards. The value can carry the term and the outcome; it cannot carry who owes
 and to whom.
 
-What this golden does instead is what the landed kernel allows: the **holder is
-the rule subject** — the Jutter the attribute hangs on — and the
-**counterparty is fixed by the rule itself**, nowhere named in the value. The
-same limit shows a second time here from the other side: the event register is a
-document-level list, so the position is indexed per subject while the evidence
-that moves it is not indexed at all.
+What this golden does instead is the simplest thing the landed kernel allows:
+the **holder is the rule subject** — the Jutter the attribute hangs on — and
+the **counterparty is fixed by the rule itself**, nowhere named in the value.
+The register is a document-level parameter, and that is a choice of this
+golden, not a limit of the kernel. The choice is what makes the form new: this
+is the only fold in `corpus/golden` and `corpus/rood` whose source is a list
+PARAMETER with sum-typed elements. A per-subject register carries just as well
+— moving `meldreeks` to an attribute and the fold source to an attribute
+reference leaves the document verifier-clean and replays all eight cases
+exactly in both executors — and
+`corpus/golden/anchor/jutterswet-aanspraaktelling` already delivers a
+per-instance list of sum-typed values as an attribute.
 
-That is the sharpest argument a later kernel extension has to answer. A position
-that is genuinely relational — one duty per pair of parties, several such duties
-on one holder at once, each with its own term — is not expressible today, and
-not because the fold, the match or the sum type fall short: they carry the whole
-state machine above without a single extension. It falls short on **identity**.
-The residual question is therefore narrow and testable, and it is not a fence
-widening: a NEW kind of datatype — an object reference — has to enter the
-universe before a position can name its own parties; only then does admitting
-it as a payload or a field become a question at all, and only then does the
-acyclicity that bounds constructor- and record-term depth for the ASP encoding
-have to be re-argued over a graph that now reaches instances. The text half of
-the existing payload fence is already pinned negatively by
+The boundary has to be stated narrowly or it is not true, because a position
+that is genuinely relational — one duty per pair of parties, several such
+duties on one holder at once, the parties readable from the duty — IS
+expressible today, and not by widening any fence. It is REIFIED: make the duty
+an object type of its own, give it a role to its holder and a role to its
+counterparty, and hang the fold on the duty rather than on the holder. Measured
+that way — two duties on one holder at once, each with its own register and its
+own counterparty, and each reading an attribute of its own holder across the
+role — the document is verifier-clean and both executors replay it exactly.
+The whole state machine above moves over unchanged. **Identity is not what
+stops a relational position; it is what stops a relational position from being
+a VALUE.**
+
+Two things are left, and both are smaller and sharper than "not expressible".
+
+**(a) A position cannot be a value that names its parties.** Reification puts
+the parties in the OBJECT GRAPH, where roles already live; it cannot put them
+in a payload or a record field, because there is no object-reference datatype
+to put there. Anything that wants a duty to travel as a value — inside another
+constructor, in a list of duties folded or compared against each other, as a
+parameter — needs a NEW kind of datatype in the universe, not a wider fence.
+Only then does admitting it as a payload or a field become a question at all,
+and only then does the acyclicity that bounds constructor- and record-term
+depth for the ASP encoding have to be re-argued over a graph that now reaches
+instances.
+
+**(b) A per-instance term does not fold today, and the obstacle is not
+identity.** Giving the reified duty its own term attribute and using it as the
+fold's init — `Openstaand(<the term of this duty>)` instead of
+`Openstaand(30)` — stays verifier-clean and replays in `ref`, while the ASP
+carrier refuses ahead of translation: a `Construct` payload other than a
+literal is not translated. That is a carrier fence over constructor arguments,
+no corpus case pins it today, and it is its own question — not this one.
+
+The text half of the existing payload fence is already pinned negatively by
 `corpus/negatief/wf060-text-payload`.

@@ -167,43 +167,59 @@ casussen erbij veranderen het rapport niet).
 
 ### De geraakte grens
 
-Zoals voorspeld in (b): **IDENTITEIT**, en niets anders. De hele
-toestandsmachine — open positie met termijn, aftellen, kwijting,
+Zoals voorspeld in (b) raakt de vorm IDENTITEIT — maar de grens ligt
+smaller dan fixronde 1 hem optekende, en fixronde 2 heeft hem
+teruggebracht tot wat gemeten waar is (zie de verwerking hieronder). De
+hele toestandsmachine — open positie met termijn, aftellen, kwijting,
 schending, absorberende eindtoestanden, de lege reeks als basis — draagt
 de gelande kern zonder één uitbreiding, exact, door beide executors. Wat
-zij níet draagt is WIE. WF-060 laat als somtype-lading alleen een getal,
-een dagpreciezige datum of een gedeclareerd somtype toe, en WF-071 voor
-structvelden diezelfde verzameling plus structs; geen van beide laat een
-objectverwijzing toe. De partijen van een verplichting kunnen dus niet ín
-de positiewaarde zitten. Daarom is hier de houder het REGELSUBJECT (de
-Jutter waaraan het attribuut hangt) en de wederpartij per regel vast,
-nergens in de waarde genoemd. De grens toont zich hier een tweede keer
-van de andere kant: de gebeurtenisreeks is een documentparameter, dus de
-positie is per subject geïndexeerd terwijl haar bewijs helemaal niet
-geïndexeerd is. Onuitdrukbaar blijft: één verplichting per partijenpaar,
-meerdere zulke verplichtingen tegelijk op één houder, elk met een eigen
-termijn.
+zij níet draagt is WIE **als waarde**. WF-060 laat als somtype-lading
+alleen een getal, een dagpreciezige datum of een gedeclareerd somtype
+toe, en WF-071 voor structvelden diezelfde verzameling plus structs; geen
+van beide laat een objectverwijzing toe, en de `datatype`-unie kent zo'n
+soort nergens. De partijen kunnen dus niet ín de positiewaarde zitten.
+Daarom is hier de houder het REGELSUBJECT en de wederpartij per regel
+vast.
+
+Wat NIET klopte en nu geschrapt is: dat een relationele positie daarmee
+onuitdrukbaar zou zijn. Zij is uitdrukbaar door REIFICATIE — de plicht
+als eigen objecttype met een rol naar haar houder en een rol naar haar
+wederpartij — en dat speelt vandaag exact door beide executors. Ook de
+"tweede kant" (het register als documentparameter) is geen grens maar
+een keuze van deze golden. Wat overblijft is (a) de positie als WAARDE
+die haar partijen noemt, en (b) een per-instantie termijn als fold-init,
+die op een ASP-drager-hek over niet-literale `Construct`-lading loopt —
+een ánder hek dan identiteit.
 
 ### Wat dit bewijs doet met de vier posten van §5
 
-- **`PositionType` — WAARSCHIJNLIJKER**, en van de vier het enige dat dit
-  bewijs echt draagt. Niet om zijn `conduct`/`deadline`-velden (die deed
-  de fold met de hand), maar om `holder`/`counterparty`. Let op de
-  PRECIEZE diagnose (aangescherpt in fixronde 1): het is niet zo dat
-  WF-060/WF-071 een hek te smal trekken rond een bestaande waardesoort —
-  de `datatype`-unie van het schema telt elf leden en een
-  OBJECTVERWIJZING zit er niet bij, nergens. `holder`/`counterparty`
-  vragen dus een NIEUWE datatypesoort in de kern, en pas dáárna wordt
-  toelating als lading of veld een vraag, en pas dáárna moet de
-  acycliciteit die de termdiepte voor de ASP-codering begrenst opnieuw
-  worden beargumenteerd over een graaf die instanties raakt. Dat maakt
-  de post niet minder waarschijnlijk maar wél duurder dan een
-  hekverbreding.
-- **`ActType` — GESPLITST.** Zijn `actor`/`recipient`-helft wordt
-  waarschijnlijker om dezelfde identiteitsreden (de reeks kon niet per
-  partij worden geïndexeerd); zijn `effects`-helft
-  (`initiates`/`terminates`) wordt ONWAARSCHIJNLIJKER: de absorberende
-  armen deden dat hier met bestaande knopen.
+- **`PositionType` — ONBESLIST, en zwakker dan fixronde 1 schreef.** Zijn
+  `conduct`/`deadline`-velden deed de fold met de hand. Zijn
+  `holder`/`counterparty` zijn vandaag ook al uitdrukbaar — niet als
+  velden, maar als ROLLEN op een gereïficeerde plicht, gemeten door beide
+  executors (twee plichten tegelijk op één houder, elk met eigen
+  wederpartij en eigen register, en de plicht leest haar houder over de
+  rol). Het bewijs dat fixronde 1 voor deze post aanvoerde is dus geen
+  bewijs: het toonde alleen dat de door DEZE golden gekozen modellering
+  de partijen niet noemt. Wat een `PositionType` bovenop reificatie zou
+  toevoegen is de positie als EERSTE-KLAS WAARDE — een plicht die in een
+  lading, een veld, een lijst of een parameter reist. Dát argument is nog
+  niet gemaakt en moet apart worden gemaakt; deze kaart maakt het niet.
+  Wat wél overeind blijft en gemeten is: zo'n waarde vraagt een NIEUWE
+  datatypesoort (de `datatype`-unie telt elf leden en een
+  OBJECTVERWIJZING zit er niet bij, nergens), geen hekverbreding van
+  WF-060/WF-071, en pas dáárna moet de acycliciteit die de termdiepte
+  voor de ASP-codering begrenst opnieuw worden beargumenteerd over een
+  graaf die instanties raakt. De post is dus vooral DUURDER geworden,
+  niet waarschijnlijker.
+- **`ActType` — zijn `effects`-helft ONWAARSCHIJNLIJKER, zijn
+  `actor`/`recipient`-helft ONBESLIST.** De `effects`-helft
+  (`initiates`/`terminates`) wordt onwaarschijnlijker: de absorberende
+  armen deden dat hier met bestaande knopen. De `actor`/`recipient`-helft
+  krijgt van dit bewijs GEEN steun meer — fixronde 1 leunde op "de reeks
+  kon niet per partij worden geïndexeerd", en dat is gemeten onwaar: het
+  register draagt even goed als attribuut van een gereïficeerde plicht,
+  en dan is het per partijenpaar geïndexeerd.
 - **Schending als gedefinieerde semantiek — ONWAARSCHIJNLIJKER als
   KNOOP.** De schendingstoestand is hier gewoon een constructorwaarde die
   beide executors afleiden en die een casus absoluut pint. Wat overblijft
@@ -318,3 +334,102 @@ Niets in `scripts/`, `spec/`, `ir.json` of enig testbestand gewijzigd: de
 fixronde is vier casusbestanden plus prose. De vier nieuwe verwachtingen
 zijn EERST met de hand gerekend, daarna door `ref` bevestigd, en pas daarna
 door clingo — geen pin is aangepast om een executor te laten slagen.
+
+## Fixronde 2 (lensronde)
+
+De lens vond de VORM in orde en de acceptatie regel voor regel gehaald,
+maar de OPGETEKENDE GRENS — het enige niet-corpus-deliverable van deze
+kaart — te sterk. Terecht. Ik heb elke meting zelf opnieuw gedaan in een
+gesanctioneerde `git archive`-kopie (`/tmp/K`, eigen `dune build` van
+`ref`, `backends` en de verifier); de werkkopie is nergens aangeraakt.
+De fixronde is PROSE ONLY: geen IR-, casus-, schema-, verifier- of
+scriptwijziging, en de acht gepinde verwachtingen staan onaangeroerd.
+
+### Verwerking per bevinding
+
+- **M2-1 RELATIONELE-POSITIE-WEL-UITDRUKBAAR — GEFIXT (tekst), en de
+  bevinding is nog sterker dan gemeld.** De NOTE stelde dat een positie
+  die "genuinely relational" is — één plicht per partijenpaar, meerdere
+  zulke plichten tegelijk op één houder, elk met een eigen termijn —
+  vandaag niet uitdrukbaar is. Zelf gebouwd en gemeten: dat is voor twee
+  van de drie conjuncten ONWAAR. Ik heb de plicht GEREÏFICEERD —
+  objecttype `Meldplicht` met `meldreeks` (`ListType` van `gebeurtenis`)
+  en `meldpositie` (`SumType meldstatus`), plus twee feittypen,
+  `meldplichtvan` (`houder`: Jutter ↔ `meldplichten`: Meldplicht,
+  meervoudig) en `meldplichtjegens` (`schuldeiser` ↔ `vorderingen`) — met
+  de vouwregel ONVERANDERD op het subject na. Casus: J1 draagt P1 én P2
+  tegelijk, met verschillende wederpartijen en elk een eigen reeks.
+  `verifier: PASS` | `oracle: PASS (3 expectations)` | `clingo: PASS (3
+  expectations)` (P1 = `Vervuld`, P2 = `Geschonden`, `consistent`).
+  Daarna waterdicht gemaakt met een DISCRIMINERENDE navigatie: de plicht
+  leest de `strafpunten` van haar eigen houder over de rol (`AttribuutRef`
+  met `navigatieRol: "houder"` en een `RolBinding` op `meldplichtvan`),
+  met een derde plicht P3 op een ándere houder zodat de gelezen waarde
+  moet verschillen (J1 = 7, J2 = 3). `verifier: PASS` | `oracle: PASS (7
+  expectations)` | `clingo: PASS (7 expectations)`. Het derde conjunct
+  ("elk met een eigen termijn") strandt wél, maar op een ÁNDER hek dan
+  identiteit: met `init = Openstaand(<de termijn van deze meldplicht>)`
+  is de document verifier-clean en speelt `ref` (`oracle: PASS (3
+  expectations)`), terwijl de ASP-drager weigert met
+  `TRANSLATION FAULT: a Construct payload other than a literal is not
+  translated (a bound payload would need underivability propagation; no
+  corpus case)`. De grensparagraaf in de NOTE is daarop herschreven tot
+  wat gemeten waar is: de positie kan haar partijen niet als WAARDE
+  dragen (post (a), en dáár klopt de elf-leden-diagnose onverkort), en
+  een per-instantie termijn loopt op het dragershek (post (b)). Het
+  `PositionType`-oordeel is meegegaan — zie hieronder. De derde
+  aanbeveling van de lens is opgevolgd: de weigering van (b) is een
+  echte, nu ongepinde executor-asymmetrie en krijgt een eigen kaart,
+  `backlog/new/20260902-construct-lading-asp-hek.md`.
+- **M2-2 DOCUMENTREGISTER-IS-KEUZE-GEEN-GRENS — GEFIXT (tekst).** De zin
+  "The same limit shows a second time here from the other side" maakte
+  van een modelleerkeuze een kernbeperking. Zelf hermeten: `meldreeks`
+  van documentparameter naar attribuut `Jutter.meldreeks` verplaatst en
+  de foldbron van `ParameterRef` naar `AttribuutRef` — verder niets —
+  levert `verifier: PASS` en alle ACHT casussen `oracle: PASS (2
+  expectations)` én `clingo: PASS (2 expectations)`. Het precedent klopt
+  ook: `corpus/golden/anchor/jutterswet-aanspraaktelling` levert al een
+  per-instantie `list` van somtypewaarden ALS ATTRIBUUT aan. De NOTE zegt
+  nu wat de keuze wél is: zij is wat de vorm NIEUW maakt. Nagemeten over
+  `corpus/golden` + `corpus/rood`: dit is de ENIGE `Fold` met een
+  `ParameterRef`-bron én `SumType`-elementen (de verdeling is
+  `ParameterRef`/`Numeriek` 12×, `MapList`/`Numeriek` 10×,
+  `AttribuutRef`/`Numeriek` 2×, `AttribuutRef`/`SumType` 1× —
+  `synth3-vangstsom` — en `ParameterRef`/`SumType` 1×, deze golden). De
+  "tweede kant" is geschrapt.
+- **M2-3 CASE7-ENIGE-CASUS-CLAIM-ONJUIST — GEFIXT (tekst).** Letterlijk
+  nagerekend uit de casusbestanden: `case5` pint
+  `Openstaand(0)` en de init is `Openstaand(30)`, dus `case5` pint óók
+  een AFGETELDE termijn en `case7` is niet "the only case that pins a
+  counted-down term rather than the init". Waarom `case7` de
+  aftrekmutant tóch als enige doodt, heb ik gemeten door de
+  `MIN`-operanden om te wisselen: `case5` speelt door (`oracle: PASS (2
+  expectations)` — `30 − 30` is symmetrisch), `case7` valt om
+  (`MISMATCH: J1.meldpositie = Openstaand(-18), expected
+  Openstaand(18)`). De NOTE zegt nu dat `case7` de enige is wiens
+  gepinde waarde de RICHTING van de aftrekking verraadt, met die reden
+  erbij. De vier regels lager staande formulering ("cases 1–4 pin no
+  `Openstaand` other than the init") klopt en blijft.
+- **M2-4 ZONE-EXECUTORNAMEN-IN-GOLDEN-MAP — BEWUST GELATEN, ter
+  beslissing aan de maintainer.** De lens vraagt hier zelf geen
+  tekstwijziging en constateert een REGELCONFLICT in de kaart: de
+  verscherpte zoneregel verbiedt externe projectnamen in de golden-map,
+  terwijl de acceptatie (r. 42) "de gate-verwijzingen" IN de NOTE EIST en
+  gate 6/12 geen andere naam hebben. Ik laat de NOTE dus staan — met
+  `clingo` 4× en `Drools` 1× — omdat ik anders een acceptatiecriterium
+  breek om een ander te halen, en omdat dit gemeten geen datalek is:
+  gate 1 is groen, en 28 van de 35 golden-NOTEs noemen clingo, 10 noemen
+  Drools. De regel die het conflict oplost hoort in `WAY-OF-WORKING.md`
+  of in de kaart, en beide zijn protected: executor- en gatenamen van
+  DEZE repo zijn gate-vocabulaire, geen herkomst; herkomst is de bron
+  waaruit materiaal komt (externe normtalen, onderzoeksprogramma's,
+  paden buiten de repo). Dat is de enige openstaande post van deze
+  kaart, en zij vraagt één maintainerszin, geen diff.
+
+De lens meldt bovendien dat álles wat de bouwnotitie opschreef
+reproduceert: de 6×8 mutatiematrix cel voor cel in beide executors, de
+WF-089-getuige (onvoorwaardelijke `ParameterRef`-arm → precies één rood
+document, deze golden), gate 7 op alle acht casussen, en alle twaalf
+gates met exact de gemelde getallen. Ik heb dat niet nog een derde keer
+overgedaan; wat ik wél opnieuw heb gedraaid zijn de metingen waarop de
+bevindingen rusten, hierboven, plus de gates na de tekstwijziging.
