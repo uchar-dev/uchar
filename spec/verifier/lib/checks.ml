@@ -1989,7 +1989,7 @@ let wf053_attribuut_ref ctx at ~subject ~set ~bindings ~navigatie_rol ~navigatie
    whether an IfThenElse is admissible (everywhere but rule level) and whether
    the surrounding body is CLOSED (a function or lambda body denies attribute,
    dimension-cell, aggregation, temporal and variable reads, and conditions
-   beyond Vergelijking/Predicaat). A strict Let body admits IfThenElse without
+   beyond Vergelijking/Predicaat). A Let body admits IfThenElse without
    closing — its reads stay open (the leeg-barrier there is WF-077, not
    closure). *)
 type body_pos =
@@ -2000,7 +2000,7 @@ type body_pos =
          (WF-064's closure clause): a closed body sees only its own parameters
          and inner bindings, so a BinderRef to an outer binder is rejected —
          the names are kept only to sharpen that diagnostic *)
-  | Let_pos               (* strict Let body: IfThenElse ok, reads open *)
+  | Let_pos               (* Let body: IfThenElse ok, reads open *)
 
 (* Does [e] read the binder [b] anywhere (ci), skipping subtrees that lexically
    rebind the name (a match arm, lambda/fold parameter, filter or nested let of
@@ -2069,9 +2069,10 @@ and mentions_binder_cond b (c : conditie) : bool =
    IfThenElse is admissible, its condition may READ only binders, parameters
    and literals; arithmetic combinators (Binair/Afgerond/Begrensd) over those
    are fine — the reads are what matter. An attribute/field/characteristic read
-   must pass through a strict Let binding first: that is the leeg-barrier that
-   makes ref's leeg propagation and clingo's underivability coincide by
-   construction, keeping the NAF-free exact-complement branches honest. *)
+   must pass through a Let binding first: that is the leeg-barrier — at the
+   READ under ch. 10.6's call-by-need — that makes ref's leeg propagation and
+   clingo's underivability coincide by construction, keeping the NAF-free
+   exact-complement branches honest. *)
 let rec bound_only_expr (e : expr) : bool =
   let opt = function Some e -> bound_only_expr e | None -> true in
   match e with
@@ -2088,7 +2089,7 @@ let wf077_condition at (c : conditie) : violation list =
     | Some e when not (bound_only_expr e) ->
         [ v "WF-077" slot
             "an IfThenElse condition operand reads more than a binder, parameter or literal — an \
-             attribute, field or characteristic read must pass through a strict Let binding first" ]
+             attribute, field or characteristic read must pass through a Let binding first" ]
     | _ -> []
   in
   let rec walk at (c : conditie) =
@@ -2104,7 +2105,7 @@ let wf077_condition at (c : conditie) : violation list =
     | Conditie_onopgelost _ ->
         [ v "WF-077" at
             "an IfThenElse condition reads a characteristic, role or channel — not admissible (only \
-             binders, parameters and literals may be read; route state reads through a strict Let \
+             binders, parameters and literals may be read; route state reads through a Let \
              binding)" ]
   in
   walk at c
@@ -2131,7 +2132,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
   (let closed =
      (* inside a closed body: the reads that break closure short-circuit,
         citing the host rule (WF-067 for a function body, WF-069 for a
-        lambda body). A strict Let body (Let_pos) is NOT closed — its reads
+        lambda body). A Let body (Let_pos) is NOT closed — its reads
         stay open; rule level (Rule_pos) never closes either. *)
      match body with
      | Rule_pos | Let_pos -> None
@@ -3093,7 +3094,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
        | None -> [ v "WF-074" (sub "base") "field access base carries no type" ])
       @ walk_expr ctx ~binders ~subject ~body (sub "base") base
   | Let { typ; binder; value; body = lbody; _ } ->
-      (* WF-076: the strict let (IR-SPEC ch. 4.10). The node type equals the
+      (* WF-076: the Let binding (IR-SPEC ch. 4.10). The node type equals the
          body type; the binder is visible only in the body (never in its own
          value); the binder joins the WF-064 regime for the body. *)
       (match typ, typ_of_expr lbody with
@@ -3115,7 +3116,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
          closed body stays closed) *)
       @ walk_expr ctx ~binders ~subject ~body (sub "value") value
       (* the body: the binder joins the scope carrying its value's datatype
-         (WF-078); a strict Let body admits IfThenElse (Let_pos) unless already
+         (WF-078); a Let body admits IfThenElse (Let_pos) unless already
          inside a closed body (stay closed) *)
       @ walk_expr ctx ~binders:((binder, typ_of_expr value) :: binders) ~subject
           ~body:(match body with Closed_pos (wf, o) -> Closed_pos (wf, o) | Rule_pos | Let_pos -> Let_pos)
@@ -3155,14 +3156,14 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
       [ v "WF-069" at "a Lambda is admissible only as the function operand of a Fold or MapList" ]
   | If_then_else { typ; condition; then_; else_; _ } ->
       (* WF-069: position-restricted to lambda, function and (the Phase-5c
-         widening) strict Let bodies; both branches agree on the node's own
+         widening) Let bodies; both branches agree on the node's own
          type. WF-077: the condition-operand discipline holds wherever an
          IfThenElse is admissible. *)
       (match body with
        | Closed_pos _ | Let_pos -> []
        | Rule_pos ->
            [ v "WF-069" at
-               "an IfThenElse is admissible only inside a lambda, function or strict let body" ])
+               "an IfThenElse is admissible only inside a lambda, function or let body" ])
       @ wf077_condition (sub "condition") condition
       @ (let branch name e =
            match typ, typ_of_expr e with
@@ -3330,7 +3331,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) at (c : conditie) : viola
     (* inside a closed body a condition is limited to Vergelijking/Predicaat
        over admissible operands (IR-SPEC ch. 2.11): a characteristic,
        role-membership, period, composite or regelversie read breaks closure.
-       A strict Let body (Let_pos) is open; rule level (Rule_pos) too. *)
+       A Let body (Let_pos) is open; rule level (Rule_pos) too. *)
     match body with
     | Rule_pos | Let_pos -> None
     | Closed_pos (wf, _) -> (
@@ -3851,8 +3852,10 @@ let rec dep_expr ctx ~subject acc (e : expr) =
   | Struct_literal { velden; _ } ->
       List.fold_left (fun acc (_, value) -> dep_expr ctx ~subject acc value) acc velden
   | Field_access { base; _ } -> dep_expr ctx ~subject acc base
-  (* the strict let (Phase 5c): its reads live in the value and the body; the
-     binder is lexical, contributing no attribute/parameter edge of its own *)
+  (* the Let binding (Phase 5c): its reads live in the value and the body; the
+     binder is lexical, contributing no attribute/parameter edge of its own.
+     Call-by-need does not narrow this: a read that never happens still needs
+     its producer stratified below (ch. 6.1 is a static over-approximation) *)
   | Let { value; body = lbody; _ } ->
       dep_expr ctx ~subject (dep_expr ctx ~subject acc value) lbody
   (* the fold family (row 10): the reads live in the list source, the init and

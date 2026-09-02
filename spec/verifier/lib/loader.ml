@@ -569,8 +569,9 @@ let rec expr path j : expr =
       check_keys path kvs [ "node"; "type"; "list"; "bron" ];
       List_length { typ = typ (); list = expr (path / "list") (f "list"); bron = bron () }
   | "Let" ->
-      (* extension node (v1, Phase 5c): strict; type required not-null, binder a
-         plain string, value and value/body non-null exprs *)
+      (* extension node (v1, Phase 5c). Strict, in this loader's sense of the
+         word (never the Let's semantics — ch. 10.6 is call-by-need): type
+         required not-null, binder a plain string, value/body non-null exprs *)
       check_keys path kvs [ "node"; "type"; "binder"; "value"; "body"; "bron" ];
       Let
         {
