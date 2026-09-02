@@ -1,0 +1,36 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "bergingsgrondslag": {
+            "number": "200.00"
+          },
+          "aantal geborgen wrakken": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "bergingstoeslag",
+      "value": {
+        "number": "300.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
