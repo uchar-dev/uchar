@@ -74,12 +74,14 @@ beweegt; de suite draait ongewijzigd **153 tests, 0 failures, 0 errors,
 |---|---|---|
 | WF-077 operand | "… an attribute, field or characteristic read must pass through a **strict** Let binding first" | "… must pass through a Let binding first" |
 | WF-077 conditie | "… route state reads through a **strict** Let binding)" | "… route state reads through a Let binding)" |
-| WF-069 | "an IfThenElse is admissible only inside a lambda, function or **strict** let body" | "… only inside a lambda, function or let body" |
+| WF-069 | "an IfThenElse is admissible only inside a lambda, function or **strict** let body" | "… only inside a lambda, function or `Let` body" |
 
 Verder alleen commentaar: `ast.ml` (de Let-node beschrijft nu
 call-by-need mét de barrière op de leesplek, en is **emitter-produced**
-sinds de let-lowering — de oude zin "Never emitter-produced" was óók
-onwaar geworden), `loader.ml` (het woord "strict" daar expliciet in de
+— door de Catala-plugin al sinds Fase-5c kaart 3 (`ffaebe2`,
+2026-08-23), door de RegelSpraak-emitter sinds de let-lowering; de oude
+zin "Never emitter-produced" was dus al negen dagen vóór deze kaart
+onwaar), `loader.ml` (het woord "strict" daar expliciet in de
 loader-betekenis gezet, want dat is de betekenis die de rest van dat
 bestand eraan geeft), `checks.ml` (`body_pos`-doc, `Let_pos`, de
 WF-077-kop, de twee closure-commentaren, de WF-076-kop, de WF-069-kop en
@@ -178,14 +180,16 @@ noemt de replay-API-methode.
 
 **L1-3 (laag) — de BinderRef-type week af van de value-type; nagemeten
 en rechtgezet in de golden.** Eigen meting over alle
-`corpus/golden/**/ir.json` (26 Lets, BinderRef-type vs value-type):
+`corpus/golden/**/ir.json` (toen 26 Lets, BinderRef-type vs value-type):
 `jutterswet-bergingstoeslag` was de **enige** afwijking — value
 `teken: NIET_NEGATIEF`, BinderRef `teken: ONBEPAALD`. WF-078 kruist
 alleen de `datatype_kind`, dus geen poort zag het; de NOTE-zin "exactly
 the shape an emitter writes" was in dat detail dus onwaar. Gekozen voor
 de sterke variant: BinderRef nu `NIET_NEGATIEF`, gelijk aan de value,
 zoals de vijf emitter-geproduceerde dragers het doen. Corpusbrede
-hermeting na de fix: **0 afwijkende BinderRefs op 26 Lets**.
+hermeting na de fix, mét de tweede Let die L1-4 erbij zette: **27 Lets
+in 15 goldens, waarvan 26 met een BinderRef, 0 afwijkend** (de 27e is de
+`bergingsforfait`-Let, binder ongelezen — die heeft er geen).
 
 **L1-4 (laag) — de golden onderscheidde Let-vs-inlining, maar niet
 L-vs-S binnen de defaults-doorval; die as is nu toegevoegd.** Tweede
@@ -222,3 +226,82 @@ attribuut zitten in de bestaande ir.json en de bestaande drie cases, dus
 er komt geen bestand bij — alleen drie verwachtingen (zes → negen op
 deze golden). Gates 9 en 11 niet opnieuw gedraaid: geen catala-bron,
 geen `toka/`-bestand en geen frontend-code geraakt.
+
+## Fixronde 2 (2026-09-02)
+
+Vier lensbevindingen, alle vier laag, alle vier verwerkt; geen ervan
+weerlegd. Alle vier raken tekst — kaart, commentaar, meldtekst, NOTE —
+en geen enkele raakt gedrag; de acceptatie van ronde 1 staat.
+
+**L2-1 (laag) — de telling in het L1-3-blok was de PRE-fix-telling.**
+De zin claimde "0 afwijkende BinderRefs op 26 Lets" te meten ná de fix,
+maar 26 was het getal van vóór L1-4, die er een tweede Let bijzette.
+Eigen hermeting over alle `corpus/golden/**/ir.json`, met een script dat
+per Let de BinderRef in de body opzoekt (velden `name`/`type`, niet
+`binder`/`typ` — die naamgeving kostte twee pogingen) en het type kruist:
+`lets 27 with binderref 26 noref 1 mismatch 0`, verdeeld over **15
+goldens**. De 27e is `bergingsforfait`, wiens binder per constructie
+ongelezen is. De nulmelding zelf klopte; het getal ernaast niet. Blok
+L1-3 draagt nu de post-fix-toestand en zegt erbij dat het oude getal de
+meting van vóór L1-4 was.
+
+**L2-2 (laag) — de emitter-datering in `ast.ml` wees de verkeerde
+frontend en de verkeerde mijlpaal aan.** De nieuwe zin luidde
+"Emitter-produced since the let-lowering card (the RegelSpraak
+variabelendeel)", maar de Catala-plugin bouwt de node zelf al langer:
+`frontends/catala/lib/translate.ml:807` construeert `I.Let {...}`, en
+`git log --diff-filter=A` op `corpus/golden/jutterswet-tariefrecht-catala/ir.json`
+wijst **`ffaebe2`, 2026-08-23** — negen dagen vóór deze kaart. Die
+golden en `jutterswet-kamerhuishouden-catala` dragen nu 2 respectievelijk
+4 `Let`-knopen naast een `bron.catala_en`, dus gate 9 regenereert ze uit
+de bron: het ís emitter-output. De oude zin "Never emitter-produced" was
+dus al onwaar vóór de let-lowering, en om een andere reden dan de
+vervanger noemde. Nu: "Emitter-produced: by the Catala plugin since
+Phase-5c card 3, and by the RegelSpraak emitter since the let-lowering
+card (the variabelendeel)." De kaartalinea (2) draagt dezelfde correctie,
+met commit en datum.
+
+**L2-3 (laag) — `let body` in kleine letters las als de brontaalvorm, niet
+als de IR-nodenaam.** De herschreven WF-069-melding schreef "lambda,
+function or let body" terwijl de twee WF-077-meldingen uit dezelfde
+commit `Let binding` schrijven en IR-SPEC in de WF-069-rij `Let` voert.
+Kleine letters is in dit repo verder alleen de Catala-schrijfwijze. Nu
+`Let body`, gelijk aan zijn zusters; de kaarttabel-rij is meegelezen.
+Gedragsneutraal: gate 3 matcht blijkens `scripts/check-verifier.sh` op
+`WF-%03d` uit de mapnaam, niet op meldtekst, en draait ongewijzigd
+**169 golden clean / 206 negatief**.
+
+**L2-4 (laag) — het bodemlid van de forfait-groep is op geen enkele
+gepinde case bereikbaar; de NOTE zei niet dat hij dat niet dekt.** Onder
+ch. 10.6 clausule 3 beslist `bergingsforfait`'s default 1 altijd met
+42,00, dus lid 2 vuurt nooit — het is uitsluitend de landingsplaats van
+de contrafeitelijke strikte uitvoerder. Zelf nagemeten, niet aangenomen:
+met lid 2 verwijderd blijven alle drie de cases door `ref` **PASS (3
+verwachtingen)**. Ter contrast dezelfde proef op de andere groep — met
+`bergingstoeslag`'s bodem verwijderd meet ref case1 PASS maar case2 en
+case3 `MISMATCH: J1.bergingstoeslag = leeg, expected 0`: dáár is de
+doorval wél gepind. NOTE.md draagt nu één alinea die precies dit zegt,
+mét beide mutantmetingen, zodat de pin eerlijk is over wat hij niet
+dekt. De golden zelf wijzigt niet — alleen de NOTE.
+
+**Poorten na fixronde 2 (in de worktree gedraaid).** Gate 1 PASS ·
+gate 2 PASS (169 files) · gate 3 PASS (169 golden clean, 206 negatief) ·
+gate 4 PASS (410 cases) · gate 5 PASS (388 replayed, vormenkabinet
+no-case) · gate 6 PASS (388 door clingo) · gate 7 PASS (352 / 36) ·
+gate 8 PASS (22 rode cases; Drools-been 5 fault-pinned, 17 not-carried) ·
+gate 10 PASS (159 tests, 26 rgs-goldens) · gate 12 PASS (played 105,
+JUnit **153**). Alle tellingen identiek aan ronde 1 — deze ronde raakt
+geen enkel getal, precies zoals een tekstronde hoort. Gates 9 en 11 niet
+gedraaid: geen catala-bron, geen `toka/`-bestand geraakt; gate 9 blijft
+de pre-merge-plicht op een catala-dragende machine.
+
+Eerlijk gemeld: gate 1 tripte in eerste aanleg op déze Bouwnotitie —
+mijn eigen L2-4-kop droeg het pre-rename-woord voor een
+prioritizedDefaults-groep. De tripwire deed precies zijn werk, ook op
+werkende prosa; kop herschreven naar "groep", daarna PASS.
+
+**Mandaat.** Geen `*.java` gewijzigd in deze ronde: `git diff --stat` op
+de rondecommits raakt `spec/verifier/lib/{ast,checks}.ml`, de kaart en
+`corpus/golden/jutterswet-bergingstoeslag/NOTE.md`. `spec/verifier/` is
+een protected path — deze commits zijn een voorstel, niet iets dat de
+sessie zelf mergt.
