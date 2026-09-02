@@ -61,7 +61,8 @@ entirely absent today: ObjectType, FactType and roles (IR-SPEC ch. 2.2,
 2.6) already carry rechtssubject, rechtsobject and the *relational*
 skeleton of a rechtsbetrekking. What uchar genuinely lacks is the
 rechtsfeit — a juridical fact with consequences, however
-operationalised — and the deontic subtyping of the relation — E4 details why that gap is real.
+operationalised — and the deontic subtyping of the relation; E4
+details why that gap is real.
 
 ## 1. The four requirements
 
@@ -84,9 +85,9 @@ cross-checked against frameworks that owe eFLINT nothing.
 **Source (eFLINT, measured):** since its v3 the interpreter *always
 manifests* the effects of an act, permitted or not, and reports the
 violation separately (measured exceptions: Physical acts never carry a
-violation report themselves, and Events have no actor) (the `Force` keyword — an override that used to
-force effects through — fell into disuse as a consequence and survives
-only as a reserved word). The violation is *derived and reported*, not
+violation report themselves, and Events have no actor). The `Force`
+keyword — an override that used to force effects through — fell into
+disuse as a consequence and survives only as a reserved word. The violation is *derived and reported*, not
 stored as a fact in the state — a distinction that matters for row 32:
 the design question is precisely whether a schending is a deposited
 fact or a computed view. eFLINT distinguishes three violation kinds:

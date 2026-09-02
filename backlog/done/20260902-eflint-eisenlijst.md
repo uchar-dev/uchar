@@ -50,3 +50,50 @@ Out of scope: `spec/CONSTRUCTS.md` (wacht op meldplichtspoor-bewijs);
 elke IR-/schema-/verifier-wijziging; rij 32 openen (dat is R2); alles
 uit het verkenningsrapport dat de spec niet raakt; excerpten uit het
 Wetsanalyse-boek of uit eFLINT-repos.
+
+## Result (hoofdsessie, 2026-09-02)
+
+Geleverd: `spec/proposals/DEONTIEK-EISENLIJST.md` — vier eisen (E1
+schending als afgeleid observeerbaar domeinfeit; E2 bevoegdheid als
+act-enabledness; E3 geen declaratieve regelvoorrang bij eFLINT; E4 twee
+partijen plus een inhoudsslot) met per eis de bron en de kruistoets, een
+verdicttabel mét Source-kolom, een betrouwbaarheidscaveat over de
+eFLINT-bron vooraan, vier aanpalende observaties (waaronder de
+positie-als-waarde als belangrijkste vondst, met verwijzing naar de
+meldplichtspoor-kaart) en de staande toets naast de LegalRuleML-toets.
+`spec/PLAN.md` §3 kreeg exact één verwijzingsrij; `spec/CONSTRUCTS.md`
+bleef ongemoeid. Uitvoering hoofdsessie-serieel per de kaart; twee
+adversariële leeslenzen (33 + 17 bevindingen) met twee fixronden.
+
+De kruistoets deed waarvoor hij was ingericht — vier Goal-formuleringen
+van deze kaart zelf bleken te sterk en zijn in het document gecorrigeerd:
+(1) het §9.5-kanaal is de juiste VORM-analogie maar niet het thuis van
+een schending — die is een gewoon afgeleid domeinfeit (kanaal blijft
+voor assertie en overbepaaldheid, CONSTRUCTS rijen 19 en 8; alleen
+eFLINT's invariantschending mapt op §9.5); (2) de twee implementaties
+divergeren juist op de rand van de enabledness-vraag (de
+voorwaarden-conjunct is de referentie-lezing); (3) gemeten heeft ook
+het uitgeleverde L4 geen declaratieve voorrang (spec-voorstel, geen
+lexer-sleutelwoord) — de kloof onder uitvoerbare buren is dus breder
+dan eFLINT alleen, wat de prioritizedDefaults-differentiator versterkt;
+(4) eFLINT-plichten zijn ternair-of-hoger met een lijstwaardige derde
+component. Twee echte spanningen staan genoteerd in plaats van
+weggekozen: E2 (de Hohfeld-afgeleide rasters — eerlijk als één
+classificatietraditie geteld — tegenover de gemeten implementatie, met
+falsificatievoorwaarde) en E1/LegalRuleML (bevestigt de
+afleidingsvorm, spreekt de nooit-een-modaliteit-helft tegen). De
+JAS-verfijning die geen ander kader heeft: drie afdwingbaarheids-
+varianten — het schendingsfeit moet weten welke handhavingsroute opent.
+
+Lensvangsten van betekenis, beide richtingen: lens 1 ving o.a. de
+gate-1-vocabulairetripwire op het gecommitte document (de grep ziet
+alleen getrackte bestanden — pre-commit-runs zijn misleidend), zes
+weggelaten JAS-klassen (waaronder delegatiebevoegdheid, extra steun
+voor de E2-spanning, en plaatsaanduiding, die een te sterke
+één-op-één-claim brak), de scenario's/concrete-voorbeelden-verwarring
+en twee te dichte parafrases; lens 2 ving drie fouten die fixronde 1
+zelf introduceerde (de L4-voorrangsclaim tegen de eigen meting in; een
+niet-reproduceerbaar getallenpaar; een verkeerde CONSTRUCTS-rij).
+Bewust gelaten: de "calculemus"-naamdubbelzinnigheid is opgelost door
+de term te vermijden; de TOEKOMST-notitie blijft untracked en elke
+eraan ontleende correctie staat zelfstandig in het document.
