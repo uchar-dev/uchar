@@ -433,3 +433,59 @@ document, deze golden), gate 7 op alle acht casussen, en alle twaalf
 gates met exact de gemelde getallen. Ik heb dat niet nog een derde keer
 overgedaan; wat ik wél opnieuw heb gedraaid zijn de metingen waarop de
 bevindingen rusten, hierboven, plus de gates na de tekstwijziging.
+
+## Result (hoofdsessie, 2026-09-02)
+
+**De vorm speelde.** De golden `jutterswet-meldplichtspoor` draagt de
+meldplicht als gevouwen positiewaarde met uitsluitend gelande
+constructen: een somtype-accumulator (Openstaand(dagen) / Vervuld /
+Geschonden) over een lijst van gebeurteniswaarden, Match op de
+accumulator, geneste Match op het element, IfThenElse op de termijn —
+nul IR-wijziging, nul spec-wijziging. Acht casussen, elk eerst met de
+hand gerekend en dan door ref én clingo exact gereproduceerd; na lens 1
+pinnen ze ook de grensdag (≤ tegen <, beide flanken), de
+aftelrekenkunde, de vouwrichting en beide absorberende armen —
+mutanten die eerst álle casussen overleefden in beide executors. In
+gate 12 is de vorm een reden-dragende weigering (de SumType-groep), dus
+de vierkant-claim blijft eerlijk: twee van drie executors dragen haar.
+
+**De geraakte grens — smaller dan voorspeld, en dat is de hoofdvondst.**
+De kaart verwachtte: houder en wederpartij kunnen niet in de waarde,
+dus geen plicht per partijenpaar. De eerste helft klopt (de
+datatype-unie kent geen objectverwijzing; de tekst-flank was al gepind
+door het wf060-negatief). De tweede helft is door fixronde 2 GEMETEN
+WEERLEGD: reïficeer de plicht als objecttype met feittypen naar houder
+en wederpartij, en meerdere plichten per houder, elk jegens een eigen
+partij, elk met een eigen reeks, spelen door verifier, ref én clingo —
+óók discriminerend (de plicht leest via zijn houder-rol
+per-houder-verschillende waarden). Het gebeurtenisregister als
+documentparameter bleek evenzeer een keuze, geen grens (de
+attribuutvariant speelt; anchor-precedent in-repo). Wat wél strandt:
+een EIGEN termijn per plicht — Construct met een payload uit een
+attribuutlezing — en dat strandt op een clingo-VERTAALgrens
+(payload-anders-dan-literal), niet op de IR: vervolgkaart
+`20260902-construct-lading-asp-hek`. De tweede vervolgkaart
+(`20260902-wf089-parameterref-getuige`) draagt de verouderde
+eerlijkheidsnotitie die deze golden falsificeerde.
+
+**De weging van de vier geschetste knopen, zoals de kaart eist.** De
+positie-knoop als OPSLAGvorm is onwaarschijnlijker geworden: het
+gereïficeerde patroon draagt vandaag al partijen, meervoud en
+discriminatie — wat rest is de canoniek-vraag (samenhang afdwingen,
+niet uitdrukbaarheid). De handeling-knoop splitst: de effects-helft
+(creëert/beëindigt) is onwaarschijnlijker (absorberende armen doen het
+in de waarde), de partij-helft verliest zijn sterkste argument nu het
+register per subject kan. Schending als eigen semantiekclausule is
+onwaarschijnlijker als KNOOP (het is een constructorwaarde die beide
+executors afleiden); hoogstens resteert een normatieve clausule over
+bestaande vormen. Reparatie als mechanisme is onwaarschijnlijker (het
+schendingsfeit lezen is een gewone somtype-lezing, gespeeld). De
+niveau-0-conclusie voor de deontische route: de vouwweg draagt méér dan
+verwacht, de reïficatieweg dicht het partijen-gat, en de eerstvolgende
+echte versperring ligt in de ASP-vertaling, niet in de IR.
+
+Bewust gelaten, elk genoteerd in NOTE/Bouwnotitie: de leeg-hoek van de
+reeks (ongepind — beide executors dragen haar, maar de keuze
+verdient een eigen meting), de executornamen in de NOTE (bestaand
+NOTE-idioom won van de verscherpte kaartregel, expliciet gemotiveerd),
+en de per-subject-registervariant als gemeten alternatief.
