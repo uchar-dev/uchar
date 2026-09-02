@@ -13,8 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * IR-SPEC ch. 4.10 — the FENCES a Let-cluster CARRIER must keep, the structural WALKS that must see through
- * it, and the two paths a walk must NOT see through, witnessed via {@link CaseRunner#speelCase} over models
- * authored HERE (no corpus file is read, moved or touched).
+ * it, and the two paths on which a companion must NOT FIRE, witnessed via {@link CaseRunner#speelCase} over
+ * models authored HERE (no corpus file is read, moved or touched).
  *
  * <p>The sibling {@code LetClusterWitnessTest} pins what the Let cluster COMPUTES. This file pins the other
  * half — what the carrier HIDES. To every generic {@code Expr} tree walk the carrier is an opaque
@@ -36,10 +36,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       beside its bare twin in one method, so an implementation that raises neither fails on the twin too —
  *       and a Breuk behind a Let must route the comparison through the exact helper instead of a
  *       {@code (BigDecimal)} cast that throws;</li>
- *   <li><b>the two paths those walks must NOT see through.</b> A §6.5 division in the branch ch. 10.2 does not
- *       take, and one in a body ch. 10.6's leeg-barrier never lets run: descending there fabricates a
- *       companion for code that never executes — INCONSISTENT where ref says consistent, which is a wrong
- *       ANSWER, not an over-cautious refusal. Each is pinned beside the flank where the fault IS real.</li>
+ *   <li><b>the two paths on which a companion must NOT fire.</b> A §6.5 division in the branch ch. 10.2 does
+ *       not take, and one sitting behind a read that raised ch. 10.6's leeg-barrier first. The walks DO
+ *       descend into both — under call-by-need a Let body always runs (ch. 10.6 clause 3), so blindness there
+ *       would MISS a real fault — and what keeps the companion silent is its path probe, which re-evaluates
+ *       the carrier and deposits only when a §6.5/§6.6 site under it really ran. A companion fired for code
+ *       that never executed is INCONSISTENT where ref says consistent, which is a wrong ANSWER, not an
+ *       over-cautious refusal. Each is pinned beside the flank where the fault IS real.</li>
  * </ul>
  */
 class LetDragerWandelingWitnessTest {
@@ -137,10 +140,11 @@ class LetDragerWandelingWitnessTest {
 
     @Test void een_deling_in_de_niet_genomen_tak_levert_geen_fout() throws Exception {
         // ch. 10.2 evaluates EXACTLY the chosen branch. The DAN branch divides by `deler`, which is absent; the
-        // condition is false (a = 1,00, not > 100), so that division never runs. A §6.5 companion built off it
-        // would fire anyway — the companion rule is a SEPARATE rule keyed on "dividend present, divisor leeg"
-        // and cannot see which branch ran — and this backend would answer INCONSISTENT where ref answers
-        // consistent. So the walk descends only into the CERTAINLY evaluated children (the condition operands).
+        // condition is false (a = 1,00, not > 100), so that division never runs. The walk DOES descend into the
+        // branch — the §9.5 companion for that division exists — and what keeps it silent is its path probe:
+        // the companion re-evaluates the carrier (a ch. 10.2 Keuze is one) and deposits only when a §6.5 site
+        // under it really ran. A companion deciding on the static "dividend present, divisor leeg" predicate
+        // alone cannot see which branch ran and would answer INCONSISTENT where ref answers consistent.
         // ref on BOTH models with `deler` absent: uit = 7.0000, CONSISTENT. Pinned bare (the IfThenElse as the
         // rule value) AND inside a Let body, because the carrier hides the branches in both shapes.
         String verwacht = waarde("J1", "uit", "7.0000") + ", " + consistent();

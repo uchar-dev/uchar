@@ -90,8 +90,9 @@ class LetClusterWitnessTest {
 
     @Test void een_lege_letwaarde_maakt_de_hele_let_leeg_terwijl_dezelfde_maal_zonder_let_nul_rekent() throws Exception {
         // ch. 10.6's normative contrast, in ONE model over ONE case with `inkomen` ABSENT:
-        //   metlet   := Let ink = inkomen in ink maal 0,21  -> the leeg value PROPAGATES, the body never runs,
-        //               and on this standing scalar target nothing is written (ref: leeg).
+        //   metlet   := Let ink = inkomen in ink maal 0,21  -> the body DOES run (ch. 10.6 is call-by-need), but
+        //               its read of `ink` forces the leeg need and raises the barrier AT THAT READ (clause 2):
+        //               the whole Let is leeg, so on this standing scalar target nothing is written (ref: leeg).
         //   zonderlet := inkomen maal 0,21                  -> the bare maal COALESCES leeg to 0 (ref: 0.0000).
         // A Let lowered as plain substitution would write 0.0000 on BOTH.
         assertNull(speel(barriereModel(), jutter("",
