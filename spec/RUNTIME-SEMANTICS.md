@@ -2887,8 +2887,10 @@ threefold).
 ### 9.2 Match
 
 `Match(scrutinee, arms)` — the arms cover the declared constructors
-exactly (WF-063: compile-time totality; a runtime "no arm" state is
-unreachable on well-formed input):
+exactly (WF-063: compile-time totality over the domain the scrutinee's type
+names; WF-088/WF-089 pin that type to the declaration it reads from, and
+WF-023/WF-067 pin every value written into it — a runtime "no arm" state
+is unreachable on well-formed input):
 
 1. Evaluate the scrutinee. **If it is leeg, the match evaluates leeg**
    — propagation, the ch. 1.3 default. There is no implicit leeg-arm
