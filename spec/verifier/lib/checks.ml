@@ -973,19 +973,23 @@ let keuzetype_same a b =
   norm (keuzetype_name a) = norm (keuzetype_name b)
   && match (a, b) with Kt_enum _, Kt_enum _ | Kt_sum _, Kt_sum _ -> true | _ -> false
 
-(* WF-089 (domain identity, IR-SPEC ch. 2.4): a reference expression's
-   serialized [typ] and the datatype of the declaration it READS FROM must
-   name the same keuzetype (variant and domain, ci) whenever either of them
-   names one — the domain extension of the soort cross-check
-   WF-023/WF-027/WF-078 perform. WF-088 and WF-061 bind a use site to the
-   domain it NAMES; this is the read half of the other binding, to the
-   declaration it reads — the write half is WF-023's domain clause
-   ([wf023_assignment]), and the two together are what make ref's "match has
-   no arm" fault unreachable on a verifier-clean document. Either side
-   unknown (the v0 sentinel), an unresolved declaration, or a reference
-   carrying no type defers, exactly as WF-023 and WF-078 do. [what] names
-   the reference in the message. *)
-let wf089_domain_identity at ~what ~decl ~typ =
+(* WF-089 (domain identity, IR-SPEC ch. 2.4): a use site's serialized [typ]
+   and the datatype of the source it TAKES its value from must name the same
+   keuzetype (variant and domain, ci) whenever either of them names one — the
+   domain extension of the soort cross-check WF-023/WF-027/WF-078 perform.
+   WF-088 and WF-061 bind a use site to the domain it NAMES; this is the read
+   half of the other binding. Two use sites call it: a reference expression,
+   whose source is the DECLARATION it reads (the [source] default), and an
+   element-passing fold, whose source is each OPERAND it hands through — the
+   operand being anchored in turn, so the fold chains to a declaration. The
+   write half is WF-023's domain clause ([wf023_assignment]); all of them
+   together are what make ref's "match has no arm" fault unreachable on a
+   verifier-clean document — the read half alone was measured insufficient
+   (fix round 1), the reference positions alone were too (fix round 2).
+   Either side unknown (the v0 sentinel), an unresolved source, or a use site
+   carrying no type defers, exactly as WF-023 and WF-078 do. [what] names the
+   use site in the message, [source] what it reads. *)
+let wf089_domain_identity ?(source = "the declaration it reads from") at ~what ~decl ~typ =
   match (decl, typ) with
   | None, _ | _, None | Some (Datatype_onbekend _), _ | _, Some (Datatype_onbekend _) -> []
   | Some d, Some t -> (
@@ -995,28 +999,26 @@ let wf089_domain_identity at ~what ~decl ~typ =
       | Some a, Some b when norm (keuzetype_name a) = norm (keuzetype_name b) ->
           [ v "WF-089" at
               (Printf.sprintf
-                 "%s is typed as the %s '%s', but the declaration it reads from is the %s '%s' \
+                 "%s is typed as the %s '%s', but %s is the %s '%s' \
                   (one namespace: a domain has one variant)"
-                 what (keuzetype_variant a) (keuzetype_name a) (keuzetype_variant b)
+                 what (keuzetype_variant a) (keuzetype_name a) source (keuzetype_variant b)
                  (keuzetype_name b)) ]
       | Some a, Some b ->
           [ v "WF-089" at
               (Printf.sprintf
-                 "%s is typed with keuzetype domain '%s', but the declaration it reads from names \
-                  domain '%s'"
-                 what (keuzetype_name a) (keuzetype_name b)) ]
+                 "%s is typed with keuzetype domain '%s', but %s names domain '%s'"
+                 what (keuzetype_name a) source (keuzetype_name b)) ]
       | Some a, None ->
           [ v "WF-089" at
               (Printf.sprintf
-                 "%s is typed with keuzetype domain '%s', but the declaration it reads from is %s \
-                  and names no keuzetype domain"
-                 what (keuzetype_name a) (datatype_kind d)) ]
+                 "%s is typed with keuzetype domain '%s', but %s is %s and names no keuzetype \
+                  domain"
+                 what (keuzetype_name a) source (datatype_kind d)) ]
       | None, Some b ->
           [ v "WF-089" at
               (Printf.sprintf
-                 "%s is typed %s, naming no keuzetype domain, but the declaration it reads from \
-                  names domain '%s'"
-                 what (datatype_kind t) (keuzetype_name b)) ])
+                 "%s is typed %s, naming no keuzetype domain, but %s names domain '%s'"
+                 what (datatype_kind t) source (keuzetype_name b)) ])
 
 let wf030 ctx =
   let key_checks at otn keys =
@@ -1519,6 +1521,16 @@ let scalar_one_arg_kinds =
     Uur_uit; Minuut_uit; Seconde_uit; Milliseconde_uit ]
 
 let aggregation_kinds = [ Som; Totaal; Aantal; Minimum; Maximum; Eerste; Laatste ]
+
+(* The folds that hand an ELEMENT through unchanged: they select a
+   contributor, they never compute a new value, so the node's own type is
+   the operand's type. (`Som`/`Totaal`/`Aantal` compute, and their result is
+   numeric by construction — no keuzetype travels through them.) With one
+   contributor `Arith.agg_extreme` makes no comparison at all, so a
+   passthrough node whose type names another domain than its operand hands
+   an alien label to whatever reads it — WF-089's aggregation position. *)
+let passthrough_folds =
+  [ (Eerste, "EERSTE"); (Laatste, "LAATSTE"); (Minimum, "MINIMUM"); (Maximum, "MAXIMUM") ]
 
 (* Does [name] match a declared role's name or plural (ci)? *)
 let is_role_name ctx name =
@@ -2396,12 +2408,41 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
              in
              walk_cond ctx ~binders ~subject:fsubject (sub "filter") c
          | None -> [])
+      (* WF-089 (domain identity, ch. 2.4), aggregation position: an
+         element-passing fold's own type against each operand's type. The
+         operand's type is itself bound to the declaration it reads (the
+         reference arms below, or a structural equality for a composite),
+         so crossing the node against its operand chains the node to that
+         declaration — without this the fold is a laundering step: its
+         value comes from a Kust attribute and its type says Vaarwater. *)
+      @ (match List.assoc_opt f.kind passthrough_folds with
+         | None -> []
+         | Some kn ->
+             List.concat
+               (List.mapi
+                  (fun i a ->
+                    wf089_domain_identity (sub "type")
+                      ~source:(Printf.sprintf "operand %d" i)
+                      ~what:(Printf.sprintf "the %s aggregation" kn)
+                      ~decl:(typ_of_expr a) ~typ:f.typ)
+                  f.argumenten))
       @ List.concat
           (List.mapi
              (fun i a ->
                let p = Printf.sprintf "%s/argumenten/%d" at i in
                match a, f.element_objecttype with
-               | Attribuut_ref _, Some el -> aggregation_source_check ctx p ~element_type:el a
+               | Attribuut_ref { attribuut; typ; _ }, Some el ->
+                   (* the fold source never reaches [walk_expr] (this branch
+                      replaces it), so WF-089's AttribuutRef arm has to be
+                      applied here too — otherwise a fold source is the one
+                      reference position that may lie about the attribute it
+                      reads *)
+                   wf089_domain_identity (p ^ "/type")
+                     ~what:
+                       ("fold-source attribute reference '"
+                      ^ Option.value attribuut ~default:"?" ^ "'")
+                     ~decl:(resolved_attr_datatype ctx a) ~typ
+                   @ aggregation_source_check ctx p ~element_type:el a
                | _ -> walk_expr ctx ~binders ~subject p a)
              f.argumenten)
       (* WF-055: the gedurende clip — a filter on the temporal total is a
@@ -2786,9 +2827,9 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                             match typ_of_expr a with
                             | Some ad when ad <> pd ->
                                 [ v "WF-062" at
-                                    ("argument type " ^ datatype_kind ad
+                                    ("argument type " ^ datatype_detail ad
                                    ^ " does not match the declared payload "
-                                   ^ datatype_kind pd) ]
+                                   ^ datatype_detail pd) ]
                             | _ -> [])
                         | _ -> [])
                    | None, Some _ ->

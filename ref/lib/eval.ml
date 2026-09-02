@@ -699,14 +699,18 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                    declaration of the domain this node's type names, WF-088
                    makes the use site's inline copy repeat that declaration,
                    WF-089 makes that domain the one of the declaration the
-                   scrutinee READS FROM (attribute, parameter or binder,
-                   IR-SPEC ch. 2.4), and the write half of the same identity
+                   value COMES FROM — the reference positions (attribute,
+                   dimension cell, parameter, binder and the fold source,
+                   IR-SPEC ch. 2.4) and the element-passing aggregation, whose
+                   own type is crossed against its operand so the fold cannot
+                   launder a domain — and the write half of the same identity
                    makes every value ENTERING that declaration name its domain
                    — WF-023 at a rule target, an object-creation member and a
                    defaults consequence, WF-067 for a function body. The read
-                   half alone was measured insufficient (the card's fix
-                   round), and every composite scrutinee route is crossed with
-                   full datatype equality (Let WF-076, IfThenElse WF-069,
+                   half alone was measured insufficient (fix round 1), and the
+                   reference half alone was too (fix round 2: the aggregation
+                   and its source). Every composite scrutinee route is crossed
+                   with full datatype equality (Let WF-076, IfThenElse WF-069,
                    Match WF-064, Invoke WF-068, struct WF-073/074, fold family
                    WF-070). Kept as an honest fault, never an assert: an
                    unverified document can still reach it. *)
@@ -725,11 +729,13 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                    on a verifier-clean document by the same rules: WF-063
                    totality over the named domain's declaration, WF-061 for the
                    use-site copy, WF-089 for the domain of the declaration the
-                   scrutinee READS FROM, and the write half of that identity —
-                   WF-023 at a rule target, an object-creation member and a
-                   defaults consequence, WF-067 for a function body — for every
-                   value ENTERING that declaration. An honest fault for an
-                   unverified document, never an assert. *)
+                   value COMES FROM — the reference positions, the fold source
+                   and the element-passing aggregation alike — and the write
+                   half of that identity — WF-023 at a rule target, an
+                   object-creation member and a defaults consequence, WF-067
+                   for a function body — for every value ENTERING that
+                   declaration. An honest fault for an unverified document,
+                   never an assert. *)
                 "match has no arm for constructor %S (unreachable on a verifier-clean document: \
                  WF-063/WF-061/WF-089 bind the arms to the declaration the scrutinee reads from, \
                  WF-023/WF-067 bind every value written into it)"
@@ -790,7 +796,19 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           match List.find_opt (fun (n, _) -> norm n = norm veld) fs with
           | Some (_, v) -> v
           | None ->
-              Value.fault "field %S is not present on the record value (WF-074 should preclude this)"
+              (* NOT unreachable, measured (fix round 2): WF-074 crosses the
+                 field against the struct domain the BASE NAMES, and WF-073
+                 crosses a literal against the domain IT names — but no rule
+                 crosses a struct-typed value against the struct-typed
+                 declaration it is written into. WF-023's domain clause is
+                 keuzetype-only (ch. 2.4's family: Enumeration and SumType),
+                 so a StructLiteral of domain B assigned to an attribute of
+                 domain A is verifier-clean and lands here; the ASP backend
+                 derives nothing at all for it. The struct twin of domain
+                 identity is a recorded open point, not a claim. *)
+              Value.fault
+                "field %S is not present on the record value (a struct value of another struct \
+                 domain reached this read: WF-023's domain clause is keuzetype-only)"
                 veld)
       | v -> Value.fault "field access base is %s, not a record value" (Value.to_string v))
   | List_literal { elements; _ } ->

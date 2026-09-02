@@ -1,0 +1,178 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Kadeplaats": {
+      "node": "Objecttype",
+      "naam": "Kadeplaats",
+      "attributen": {
+        "vaarwater": {
+          "node": "Enumeratie",
+          "domein": "Vaarwater",
+          "waarden": [
+            "Wad",
+            "Zeegat",
+            "Ruimzee"
+          ]
+        },
+        "kadegeld": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": null
+    }
+  },
+  "domeinen": {
+    "Vaarwater": {
+      "node": "Enumeratie",
+      "domein": "Vaarwater",
+      "waarden": [
+        "Wad",
+        "Zeegat",
+        "Ruimzee"
+      ]
+    }
+  },
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "berekening kadegeld",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "kadegeld",
+        "objecttype": "Kadeplaats",
+        "onderwerpBron": "de kadegeld",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de kadegeld",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Match",
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "scrutinee": {
+          "node": "AttribuutRef",
+          "attribuut": "vaarwater",
+          "objecttype": "Kadeplaats",
+          "onderwerpBron": "de vaarwater",
+          "navigatieRol": null,
+          "type": {
+            "node": "Enumeratie",
+            "domein": "VAARWATER",
+            "waarden": [
+              "Wad",
+              "Zeegat",
+              "Ruimzee"
+            ]
+          },
+          "bron": "de vaarwater",
+          "set": false,
+          "navigatiePad": []
+        },
+        "arms": [
+          {
+            "constructor": "Wad",
+            "binder": null,
+            "body": {
+              "node": "Literal",
+              "waarde": "2",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "2"
+            }
+          },
+          {
+            "constructor": "Zeegat",
+            "binder": null,
+            "body": {
+              "node": "Literal",
+              "waarde": "5",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "5"
+            }
+          },
+          {
+            "constructor": "Ruimzee",
+            "binder": null,
+            "body": {
+              "node": "Literal",
+              "waarde": "9",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "9"
+            }
+          }
+        ],
+        "bron": "match VAARWATER"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": [],
+  "prioritizedDefaults": []
+}

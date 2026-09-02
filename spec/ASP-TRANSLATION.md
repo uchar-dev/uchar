@@ -1228,21 +1228,31 @@ written out: the chain needs no encoding of its own because mutually
 exclusive ground equalities *are* the chain. WF-063 guarantees the arms
 are the declared values exactly, each once, and every arm nullary — so no
 arm binds anything, and no `P` variable enters the guard. And the domain
-identity of IR-SPEC ch. 2.4 guarantees, for both variants, both halves of
-what the scrutinee is: WF-089 (read half) that the domain the scrutinee's
-`type` names is the domain of the declaration it *reads from*, and
-WF-023/WF-067 (write half) that every value **entering** that declaration
-— at a rule target, an object-creation member, a defaults consequence, a
-function body — names that domain too. Together they make an underived
-`matchN` on a verifier-clean document mean a **leeg scrutinee and nothing
-else**. Neither half does that alone, measured: a scrutinee typed with a
-second, internally consistent domain left every arm's pattern unmatched
-and `matchN` silently underived (leeg for the wrong reason, and on a
-list-typed source a folded 0 — a wrong answer where ref faulted), and
-with only that half repaired a value of a second domain *written into*
-the truthfully-read declaration produced the same underived `matchN` with
-a non-leeg scrutinee. The verifier now refuses both documents before
-translation.
+identity of IR-SPEC ch. 2.4 guarantees, for both variants, every half of
+what the scrutinee is: WF-089 (read half) that the domain a use site's
+`type` names is the domain of the source it takes its value from — the
+declaration a reference *reads from*, and the operand an
+element-passing fold (`EERSTE`/`LAATSTE`/`MINIMUM`/`MAXIMUM`) hands
+through — and WF-023/WF-067 (write half) that every value **entering**
+that declaration — at a rule target, an object-creation member, a
+defaults consequence, a function body — names that domain too. Together
+they make an underived `matchN` on a verifier-clean document mean a
+**leeg scrutinee and nothing else**. No half does that alone, measured
+in three rounds: a scrutinee typed with a second, internally consistent
+domain left every arm's pattern unmatched and `matchN` silently
+underived (leeg for the wrong reason, and on a list-typed source a
+folded 0 — a wrong answer where ref faulted); with only that half
+repaired a value of a second domain *written into* the truthfully-read
+declaration produced the same underived `matchN` with a non-leeg
+scrutinee; and with both repaired an element-passing fold — whose own
+`type` claimed one domain while its truthfully typed operand named
+another — still handed an alien label to the scrutinee, as did a fold
+source, the one reference position the expression walk hands off. Those
+last two reached ref's fault but not this encoding, because the carrier
+refuses an enum operand in a fold ahead of translation (the fence named
+below); the guarantee above rests on the verifier refusing all of them,
+not on that fence. The verifier now refuses every one of these documents
+before translation.
 
 The route difference costs a **narrower carrier**, and the narrowing is
 pre-existing rather than new: `symbolic_term` carries only a literal or
