@@ -431,3 +431,48 @@ files), gate 3 PASS (167 golden clean, 178 negatief), gate 4 PASS (405
 cases), gate 5 PASS (383 cases replayed), gate 6 PASS, gate 7 PASS,
 gate 8 PASS. Gates 9, 10 en 11 raken `backends/drools/**` niet en zijn
 niet gedraaid — dat is een gemeten-uitspraak-grens, geen groenverklaring.
+
+## Result (hoofdsessie, 2026-09-02)
+
+Geland: de §6.5/§6.6-fout-companions dragen de padconditie mee via de
+sonde — een companion onder een ch.-4.10-drager her-evalueert in zijn
+consequentie de buitenste drager met de bestaande value-lowering
+(Binderslot, per-evaluatie-barrière, takguard) en deponeert de
+Inconsistentie alleen wanneer een §6.5/§6.6-plek onder die drager écht
+draaide en faalde. Beide flankfamilies zijn daarmee ref-conform: de
+fabricage-kant (niet-genomen tak, ongelezen value, lezing vóór de
+barrière) én de misser-kant (draaiende body, genomen tak, lezing ná de
+deling) — meettabel en rood-eerst-uitvoer hierboven.
+`letKinderenZeker`/`leestAltijd` zijn vervallen; de ene toegestane
+bestaande witness is herschreven naar ch. 10.6-L met een zuster-witness
+voor de écht nooit gepasseerde barrière (maintainerbesluit 2026-09-01).
+
+Bijvangst van de lensrondes, elk ref-gemeten en gewitnesst: de
+Begrensd-volgorde (ref evalueert basis, maximum, minimum — de
+waarde-kant deelde de fout), het defaults-hek dat nu ook een wortel in
+de consequentie weigert, de binder-lezing die onder een drager als
+companion-operand kwalificeert (de vorm die de emitter voor het
+variabelendeel schrijft), en de drager-brede sonde-poort (per-plek gooit
+de fout van een niet-kwalificerende mede-plek weg — kandidaten B/C
+gemeten, C gekozen, grenzen in de Sonde-javadoc). 21 mutanten gedraaid;
+elke dragende component is nu door een witness gedekt.
+
+Acceptatie gehaald: rood-eerst getoond (10/12); beide flankfamilies
+mutant-rood; gate 12 beter dan de kaarttekst vroeg (98 → 104 played,
+zelfde exclusies); de §6.8-notitie mét meting staat hierboven. Eindstand
+na bouw + 2 lensronden + 2 fixronden: **alle twaalf gates groen** op
+8eb7e80 (eindgate-run in de worktree, tellingen identiek aan de
+main-baseline; gate 12 played 104 / auto-excluded 39 / value-divergence
+1 / no-case 1, JUnit 125 → **153**, nul skips).
+
+Bewust gelaten, elk luid of gedocumenteerd: géén per-plek-attributie
+binnen één drager (case-pins kunnen het verschil niet zien; javadoc);
+een eenzame niet-kwalificerende plek (literal/parameter-operand) mist
+haar fout zoals in v0; `startpuntCompanions` blijft drager-blind (de
+gemeten §6.8-flank hierboven — spec-kwestie); de defaults-consequentie
+weigert via het hek waar ref de speculatieve deponering laat vervallen
+(defaults-kaartkwestie); de gemeten DRL-naamdivergentie op Let-dragende
+regels (DRL is niet het gate-pad); companions zonder
+stratificatie-salience (pre-existent). Maintainerwerk (bestaande
+testbestanden, buiten mandaat): de verouderde S-semantiek-zinnen in de
+LetDragerWandeling-klassejavadoc en LetClusterWitnessTest:93.
