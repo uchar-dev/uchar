@@ -38,10 +38,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       {@code (BigDecimal)} cast that throws;</li>
  *   <li><b>the two paths on which a companion must NOT fire.</b> A §6.5 division in the branch ch. 10.2 does
  *       not take, and one sitting behind a read that raised ch. 10.6's leeg-barrier first. The walks DO
- *       descend into both — under call-by-need a Let body always runs (ch. 10.6 clause 3), so blindness there
- *       would MISS a real fault — and what keeps the companion silent is its path probe, which re-evaluates
- *       the carrier and deposits only when a §6.5/§6.6 site under it really ran. A companion fired for code
- *       that never executed is INCONSISTENT where ref says consistent, which is a wrong ANSWER, not an
+ *       descend into both — a STATIC walk cannot know which ch. 10.2 branch will run, and under call-by-need a
+ *       Let body is always ENTERED (ch. 10.6 clauses 1+3; clause 2 may still cut it short at a read) — so
+ *       blindness there would MISS a real fault, and what keeps the companion silent is its path probe, which
+ *       re-evaluates the carrier and deposits only when a §6.5/§6.6 site under it really ran. A companion
+ *       fired for code that never executed is INCONSISTENT where ref says consistent, which is a wrong ANSWER, not an
  *       over-cautious refusal. Each is pinned beside the flank where the fault IS real.</li>
  * </ul>
  */
@@ -136,7 +137,7 @@ class LetDragerWandelingWitnessTest {
         assertNull(speel(wortelModel(true), geval(invoer, verwacht)), "dezelfde wortel achter een Let");
     }
 
-    // ---------------- 4. the other half: a companion the walk must NOT fabricate ----------------
+    // ------- 4. the other half: a companion the walk DOES build and the path probe must keep SILENT -------
 
     @Test void een_deling_in_de_niet_genomen_tak_levert_geen_fout() throws Exception {
         // ch. 10.2 evaluates EXACTLY the chosen branch. The DAN branch divides by `deler`, which is absent; the
@@ -147,6 +148,10 @@ class LetDragerWandelingWitnessTest {
         // alone cannot see which branch ran and would answer INCONSISTENT where ref answers consistent.
         // ref on BOTH models with `deler` absent: uit = 7.0000, CONSISTENT. Pinned bare (the IfThenElse as the
         // rule value) AND inside a Let body, because the carrier hides the branches in both shapes.
+        // NB what this method pins is the OUTCOME; it would also pass under a never-fabricating walk. The probe
+        // MECHANISM is pinned by the sister {@code CompanionPadWitnessTest} —
+        // een_deling_in_de_genomen_tak_is_inconsistent_en_in_de_niet_genomen_niet — which drives both flanks
+        // through one and the same rule base, so only the path decides.
         String verwacht = waarde("J1", "uit", "7.0000") + ", " + consistent();
         String invoer = inst("J1", "Jutter",
                 "\"a\": { \"number\": \"1.00\" }, \"inkomen\": { \"number\": \"10.00\" }", "");
