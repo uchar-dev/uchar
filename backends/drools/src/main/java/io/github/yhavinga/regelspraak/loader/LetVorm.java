@@ -30,8 +30,8 @@ import io.github.yhavinga.regelspraak.model.Datatype;
  * carrier takes it. The FULL inventory, so the next addition sees it:
  *
  * <p><b>(a) Descend via {@code letKinderen}</b>, output a REFUSAL or a REGISTRATION, where seeing more than
- * actually runs is still a correct answer: {@code bevatDeling} (the ch. 7 defaults division fence — refuses
- * more often), {@code navRefs} (far-side reactivity — watches more), {@code exprLeesnamen} (defaults salience —
+ * actually runs is still a correct answer: {@code foutplekSoort} (the ch. 7 defaults division/wortel fence —
+ * refuses more often), {@code navRefs} (far-side reactivity — watches more), {@code exprLeesnamen} (defaults salience —
  * sinks further), {@code kanBreukOpleveren} (exact-comparison routing — at worst takes the exact path where
  * the plain one would also have served; blind, it takes a {@code (BigDecimal)} cast that throws).
  *
@@ -40,8 +40,10 @@ import io.github.yhavinga.regelspraak.model.Datatype;
  * and {@code verzamelWortels}. They see every site that MAY run, and the companion of a site under a carrier
  * carries the PATH: its condition re-evaluates the outermost carrier on the subject with a probe
  * ({@code ExecModelTranspiler.Sonde}) and fires only when that very site ran and faulted — ch. 10.2 (exactly
- * one branch), ch. 10.6 (call-by-need, the barrier at the read) and the evaluation order all come from the
- * value lowering itself, which is ref's operational semantics. A site outside every carrier keeps the static
+ * one branch) and ch. 10.6 (call-by-need, the barrier at the read) come from the value lowering itself, and the
+ * evaluation ORDER within each form is mirrored from ref, measured per form (a Binair left before right; a
+ * Begrensd basis, then maximum, then minimum) — the lowering is ref's operational semantics only where that
+ * order agrees. A site outside every carrier keeps the static
  * leeg/negatief predicate (the unchanged v0 companion). Before the companion-onder-drager card these two walks
  * took a "certainly evaluated" subset ({@code letKinderenZeker}) and so MISSED every real fault in a body, a
  * taken branch or a partially-read value; that accessor is gone.

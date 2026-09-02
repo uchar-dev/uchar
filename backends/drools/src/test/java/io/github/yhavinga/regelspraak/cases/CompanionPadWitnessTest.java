@@ -33,9 +33,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * </ul>
  * <b>Every pinned value was produced by {@code ref/} on this exact model+case first</b> (2026-09-02, the
  * L-ref) — ref is the arbiter, this backend the third executor. Evaluation ORDER matters for the barrier
- * flanks and was measured rather than assumed: ref evaluates a {@code Binair} left before right
- * ({@code ref/lib/eval.ml}), so a read left of a division ends the Let before the division, and a read
- * right of it does not.
+ * flanks and was measured rather than assumed, PER FORM ({@code ref/lib/eval.ml}, 2026-09-02): a
+ * {@code Binair} left before right, a {@code Vergelijking} in a ch. 10.2 guard left before right, and a
+ * {@code Begrensd} basis, then MAXIMUM, then minimum — so a read evaluated before a division ends the Let
+ * before the division, and a read evaluated after it does not. This backend mirrors each measured order
+ * (fix round 1 of the companion-onder-drager card: the Begrensd arm evaluated minimum first and fabricated
+ * on one Begrensd flank while missing its mirror).
  */
 class CompanionPadWitnessTest {
 
@@ -190,10 +193,162 @@ class CompanionPadWitnessTest {
         // card are RULE machinery that must not start playing a defaults consequence. The honest outcome is
         // still the refusal, naming the fence.
         CaseRunner.Excluded weigering = assertThrows(CaseRunner.Excluded.class,
-                () -> speel(defaultsModel(), jutter(INKOMEN + ", " + n("kindertal", "3"),
+                () -> speel(defaultsModel(let("d", attr("deler"), DELING, num(4))), jutter(INKOMEN + ", " + n("kindertal", "3"),
                         waarde("toeslag", "0.0000") + ", " + consistent())));
         assertTrue(weigering.getMessage().contains("deling"),
                 "de weigering noemt het delingshek: " + weigering.getMessage());
+    }
+
+    // ---------------- (a') the §6.5 predicate's edges under a carrier: the ABS variant, the leeg dividend ----------------
+
+    @Test void een_abs_deling_in_een_draaiende_letbody_is_even_inconsistent_als_de_kale() throws Exception {
+        // "gedeeld door (ABS)" is the second §6.5 variant and lowers through its own arm; under a carrier its
+        // fault must reach the probe exactly like the plain division's. ref, both models (tweede absent):
+        // uit leeg, INCONSISTENT.
+        String verwacht = leeg("uit") + ", " + inconsistent();
+        assertNull(speel(uitModel(DELING_ABS), jutter(INKOMEN, verwacht)), "de kale ABS-deling door leeg");
+        assertNull(speel(uitModel(let("d", attr("deler"), DELING_ABS, num(4))), jutter(INKOMEN, verwacht)),
+                "dezelfde ABS-deling in een Let-body");
+    }
+
+    @Test void een_leeg_dividend_onder_een_drager_is_nul_zonder_fout() throws Exception {
+        // §6.5 / ch. 1.2: the LEFT operand is tested first — leeg ÷ x coalesces to 0 and deposits nothing, even
+        // when the divisor is leeg too. The probe must keep that guard: a report on "divisor leeg" alone would
+        // fabricate. ref: "Let d = deler in leegding gedeeld door tweede", both absent -> 0.0000, CONSISTENT;
+        // tweede 2,00 -> 0.0000, CONSISTENT; the bare twin -> 0.0000, CONSISTENT.
+        String verwacht = waarde("uit", "0.0000") + ", " + consistent();
+        assertNull(speel(uitModel(DELING_LEEGDING), jutter(INKOMEN, verwacht)), "de kale deling met leeg dividend");
+        assertNull(speel(leegDividendModel(), jutter(INKOMEN, verwacht)), "leeg dividend, lege deler, in een Let-body");
+        assertNull(speel(leegDividendModel(), jutter(INKOMEN + ", " + n("tweede", "2.00"), verwacht)),
+                "leeg dividend, gevulde deler, in een Let-body");
+    }
+
+    // ---------------- (f') the §6.6 predicate's edge under a carrier: the zero radicand ----------------
+
+    @Test void een_wortel_van_nul_onder_een_drager_is_nul_zonder_fout() throws Exception {
+        // §6.6 faults on a NEGATIVE radicand only; zero is a real root. The probe must not widen the predicate.
+        // ref, saldo = 0,00: bare -> 0.0000, CONSISTENT; in a Let body -> 0.0000, CONSISTENT.
+        String verwacht = waarde("uit", "0.0000") + ", " + consistent();
+        String invoer = n("saldo", "0.00");
+        assertNull(speel(wortelModel(false), jutter(invoer, verwacht)), "de kale wortel van nul");
+        assertNull(speel(wortelModel(true), jutter(invoer, verwacht)), "dezelfde wortel in een Let-body");
+    }
+
+    // ---------------- (i) evaluation ORDER inside a non-carrier form: Begrensd, maximum before minimum ----------------
+
+    @Test void de_grenzen_van_een_begrenzing_evalueren_maximum_voor_minimum() throws Exception {
+        // ref evaluates a Begrensd as basis, then MAXIMUM, then minimum (ref/lib/eval.ml, Begrensd arm —
+        // measured 2026-09-02). With a barrier read in one bound and a division in the other, that order decides
+        // whether the division runs. "Let d = deler in begrensd(inkomen, minimum d, maximum inkomen ÷ tweede)",
+        // deler and tweede absent: the maximum's division runs and faults, THEN the minimum's read ends the
+        // Let -> ref uit leeg, INCONSISTENT. Mirror (minimum the division, maximum the read): the read ends the
+        // Let first and the division never runs -> ref uit leeg, CONSISTENT.
+        assertNull(speel(begrensdModel(true), jutter(INKOMEN, leeg("uit") + ", " + inconsistent())),
+                "lezing in het minimum, deling in het maximum: de deling draait eerst");
+        assertNull(speel(begrensdModel(false), jutter(INKOMEN, leeg("uit") + ", " + consistent())),
+                "deling in het minimum, lezing in het maximum: de barriere komt eerst");
+    }
+
+    @Test void dezelfde_grensvolgorde_beslist_tussen_harde_fout_en_barriere() throws Exception {
+        // the value-side twin: a division by NUMERIC zero (a hard fault, not a channel deposit) in one bound,
+        // the barrier read in the other, nul = 0,00. "… minimum d, maximum inkomen ÷ nul": ref evaluates the
+        // maximum first and dies — EVALUATION FAULT "division by numeric zero" — mirrored here by the runtime's
+        // own ArithmeticException out of fire. Mirror "… minimum inkomen ÷ nul, maximum d": the maximum's read
+        // ends the Let first and the zero division never runs -> ref uit leeg, CONSISTENT.
+        String invoer = INKOMEN + ", " + n("nul", "0.00");
+        RuntimeException fout = assertThrows(RuntimeException.class,
+                () -> speel(begrensdNulModel(true), jutter(invoer, leeg("uit") + ", " + consistent())));
+        assertTrue(oorzaakTekst(fout).contains("deling door 0"),
+                "het maximum deelt door nul voordat het minimum de barriere opwerpt: " + oorzaakTekst(fout));
+        assertNull(speel(begrensdNulModel(false), jutter(invoer, leeg("uit") + ", " + consistent())),
+                "de lezing in het maximum kapt af voordat het minimum door nul deelt");
+    }
+
+    @Test void de_operanden_van_een_keuzeconditie_evalueren_links_voor_rechts() throws Exception {
+        // the ch. 10.2 guard's Vergelijking: ref evaluates links before rechts (ref/lib/eval.ml, eval_cond).
+        // "Let d = deler in (als d groter dan (inkomen ÷ tweede) dan 1 anders 2)", deler and tweede absent: the
+        // read of d is the LEFT operand, raises the barrier, the division never runs -> ref uit leeg,
+        // CONSISTENT. Mirror "(inkomen ÷ tweede) groter dan d": the division runs and faults, then the read
+        // ends the Let -> ref uit leeg, INCONSISTENT.
+        assertNull(speel(conditieVolgordeModel(true), jutter(INKOMEN, leeg("uit") + ", " + consistent())),
+                "lezing links, deling rechts");
+        assertNull(speel(conditieVolgordeModel(false), jutter(INKOMEN, leeg("uit") + ", " + inconsistent())),
+                "deling links, lezing rechts");
+    }
+
+    // ---------------- (r) class-reactive: the probe re-runs after a producer that fires AFTER the companion ----------------
+
+    @Test void de_sonde_hersondeert_de_drager_na_een_producent_die_na_de_companion_vuurt() throws Exception {
+        // `deler` is DERIVED by a rule that §9.2 stratification FORCES to fire after this companion (its
+        // voorwaarde reads a negated kenmerk that has a producer -> salience -1; the LetClusterWitnessTest
+        // idiom). At the companion's first activation `deler` is still leeg: the body's read of d raises the
+        // barrier and the division is cut off — no fault yet. Then the producer writes deler = 2,00, the subject
+        // is updated, and only a CLASS-REACTIVE companion pattern (the always-true freshness expr) re-probes:
+        // now the read succeeds, the division by the absent `tweede` runs and faults. Without the freshness
+        // expr the companion activates once and the fault is lost (verified by mutation).
+        // ref: "Let d = deler in d plus (inkomen ÷ tweede)" -> uit 2.0000, INCONSISTENT;
+        //      "Let d = deler in (als d groter dan 1 dan inkomen ÷ tweede anders 7)" -> uit leeg, INCONSISTENT.
+        assertNull(speel(lateProducentModel(false), jutter(INKOMEN, waarde("uit", "2.0000") + ", " + inconsistent())),
+                "de barriere-vorm: de late producent opent het pad naar de deling");
+        assertNull(speel(lateProducentModel(true), jutter(INKOMEN, leeg("uit") + ", " + inconsistent())),
+                "de tak-vorm: de late producent kiest de delende tak");
+    }
+
+    // ---------------- (g') the defaults fence covers the §6.6 wortel too ----------------
+
+    @Test void het_defaults_hek_weigert_ook_een_wortel_in_de_consequentie() throws Exception {
+        // the §6.6 sibling of the division fence: a default whose consequence is "wortel(saldo) plus 0,0000",
+        // taken (kindertal 3 >= 2) with saldo = -4,00. ref: toeslag 0.0000 (leeg + 0), INCONSISTENT — the §6.6
+        // deposit stands. This backend lowers no §9.5 channel for a defaults consequence, so playing the group
+        // would answer CONSISTENT in silence; the honest outcome is the same loud refusal the division gets,
+        // naming the wortel.
+        CaseRunner.Excluded weigering = assertThrows(CaseRunner.Excluded.class,
+                () -> speel(defaultsModel(binair("PLUS", WORTEL, lit("0.0000", num(4)), num(4))),
+                        jutter(n("saldo", "-4.00") + ", " + n("kindertal", "3"),
+                                waarde("toeslag", "0.0000") + ", " + inconsistent())));
+        assertTrue(weigering.getMessage().contains("wortel"),
+                "de weigering noemt de wortel: " + weigering.getMessage());
+    }
+
+    // ---------------- (j) a BINDER as the operand of a site under its Let: the variabelendeel shape ----------------
+
+    @Test void een_binder_als_dividend_onder_zijn_let_krijgt_de_padconditie() throws Exception {
+        // "Let n = inkomen in n gedeeld door tweede" — the shape the RegelSpraak emitter produces for a
+        // "Daarbij geldt" variabelendeel. The dividend is a binder READ, not an attribute: there is no operand
+        // to re-read for a static leeg/vol predicate, but under a carrier the probe observes the division itself,
+        // so the site qualifies. ref: inkomen 10,00, tweede absent -> the read succeeds and the division faults:
+        // uit leeg, INCONSISTENT; inkomen absent -> the read raises the barrier before the division: uit leeg,
+        // CONSISTENT; inkomen 10,00, tweede 2,00 -> 5.0000, CONSISTENT. The bare twin of (a) is repeated first.
+        assertNull(speel(delingModel(), jutter(INKOMEN, leeg("uit") + ", " + inconsistent())), "de kale deling door leeg");
+        assertNull(speel(binderDividendModel(), jutter(INKOMEN, leeg("uit") + ", " + inconsistent())),
+                "de binder als dividend, de deler leeg: de deling draait en faalt");
+        assertNull(speel(binderDividendModel(), jutter("", leeg("uit") + ", " + consistent())),
+                "de binder zelf leeg: de barriere komt voor de deling");
+        assertNull(speel(binderDividendModel(), jutter(INKOMEN + ", " + n("tweede", "2.00"),
+                        waarde("uit", "5.0000") + ", " + consistent())), "beide gevuld: geen fout");
+    }
+
+    @Test void een_binder_als_deler_onder_zijn_let_faalt_nooit_op_leeg() throws Exception {
+        // "Let d = deler in inkomen gedeeld door d": a binder read never ANSWERS leeg — a leeg need raises the
+        // barrier at the read (ch. 10.6 clause 2) — so the division never sees a leeg divisor and §6.5 has
+        // nothing to deposit. The widened companion must not fabricate here. ref: deler absent -> uit leeg,
+        // CONSISTENT; deler 2,00 -> 5.0000, CONSISTENT.
+        assertNull(speel(binderDelerModel(), jutter(INKOMEN, leeg("uit") + ", " + consistent())),
+                "de deler-binder leeg: de barriere, geen fout");
+        assertNull(speel(binderDelerModel(), jutter(INKOMEN + ", " + n("deler", "2.00"),
+                        waarde("uit", "5.0000") + ", " + consistent())), "gevuld: de deling rekent");
+    }
+
+    @Test void een_binder_als_radicand_onder_zijn_let_krijgt_de_padconditie() throws Exception {
+        // the §6.6 sibling: "Let s = saldo in de wortel van s". ref: saldo -4,00 -> the read succeeds and the
+        // negative radicand faults: uit leeg, INCONSISTENT; saldo absent -> the barrier: uit leeg, CONSISTENT.
+        // The bare twin of (f) is repeated first.
+        assertNull(speel(wortelModel(false), jutter(n("saldo", "-4.00"), leeg("uit") + ", " + inconsistent())),
+                "de kale wortel van negatief");
+        assertNull(speel(binderRadicandModel(), jutter(n("saldo", "-4.00"), leeg("uit") + ", " + inconsistent())),
+                "de binder als radicand, negatief: de wortel draait en faalt");
+        assertNull(speel(binderRadicandModel(), jutter("", leeg("uit") + ", " + consistent())),
+                "de binder zelf leeg: de barriere komt voor de wortel");
     }
 
     // ---------------- helpers: replay ----------------
@@ -207,6 +362,16 @@ class CompanionPadWitnessTest {
         } finally {
             Files.deleteIfExists(tmp);
         }
+    }
+
+    /** Every message down the cause chain (Drools wraps a consequence's exception). */
+    private static String oorzaakTekst(Throwable t) {
+        StringBuilder sb = new StringBuilder();
+        for (Throwable c = t; c != null; c = c.getCause()) {
+            sb.append(c.getClass().getSimpleName()).append(": ").append(c.getMessage()).append(" <- ");
+            if (c.getCause() == c) break;
+        }
+        return sb.toString();
     }
 
     // ---------------- helpers: the case shapes (uchar-case-v0) ----------------
@@ -295,6 +460,11 @@ class CompanionPadWitnessTest {
                 + "\"bron\":\"als … dan … anders …\"}").formatted(type, conditie, dan, anders);
     }
 
+    private static String begrensd(String basis, String minimum, String maximum) {
+        return "{\"node\":\"Begrensd\",\"basis\":%s,\"minimum\":%s,\"maximum\":%s,\"type\":%s,\"bron\":\"begrensd\"}"
+                .formatted(basis, minimum, maximum, num(4));
+    }
+
     private static String verg(String op, String links, String rechts) {
         return "{\"node\":\"Vergelijking\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"periode\":null,\"bron\":\"%s\"}"
                 .formatted(op, links, rechts, op.toLowerCase(java.util.Locale.ROOT));
@@ -304,16 +474,20 @@ class CompanionPadWitnessTest {
             "{\"node\":\"Samengesteld\",\"kwantor\":\"ALLE\",\"drempel\":0,\"onderdelen\":[],\"bron\":\"altijd\"}";
 
     private static String regel(String naam, String doel, String waarde) {
-        return ("{\"node\":\"ResolvedRegel\",\"naam\":\"%s\",\"soort\":\"BEREKENING\",\"doel\":%s,\"waarde\":%s,"
-                + "\"voorwaarde\":null,\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}")
-                .formatted(naam, doel, waarde);
+        return regel(naam, "BEREKENING", doel, waarde, "null");
+    }
+
+    private static String regel(String naam, String soort, String doel, String waarde, String voorwaarde) {
+        return ("{\"node\":\"ResolvedRegel\",\"naam\":\"%s\",\"soort\":\"%s\",\"doel\":%s,\"waarde\":%s,"
+                + "\"voorwaarde\":%s,\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}")
+                .formatted(naam, soort, doel, waarde, voorwaarde);
     }
 
     /** The one Jutter every model here uses, carrying every attribute any flank reads. */
     private static final String ATTRIBUTEN =
-            ("\"a\":%s,\"inkomen\":%s,\"deler\":%s,\"tweede\":%s,\"leegding\":%s,\"saldo\":%s,"
+            ("\"a\":%s,\"inkomen\":%s,\"deler\":%s,\"tweede\":%s,\"leegding\":%s,\"saldo\":%s,\"nul\":%s,"
                     + "\"kindertal\":%s,\"uit\":%s,\"toeslag\":%s")
-                    .formatted(pos(2), pos(2), pos(2), pos(2), pos(2), num(2), GEHEEL_POS, num(4), num(4));
+                    .formatted(pos(2), pos(2), pos(2), pos(2), pos(2), num(2), pos(2), GEHEEL_POS, num(4), num(4));
 
     /** A one-objecttype document over {@code Jutter}; {@code parameters} and {@code prioritizedDefaults} are
      *  spliced verbatim (empty for the plain shapes). */
@@ -336,6 +510,12 @@ class CompanionPadWitnessTest {
                 .formatted(ATTRIBUTEN, parameters, namen, String.join(",", regels), prioritizedDefaults);
     }
 
+    /** {@link #model} with the kenmerk {@code vermist} declared (BIJVOEGLIJK) — the §9.2 forcing idiom of (r). */
+    private static String modelK(String[] regelNamen, String[] regels) {
+        return model(regelNamen, regels, "", "")
+                .replace("\"kenmerken\":[],\"kenmerkSoorten\":{}", "\"kenmerken\":[\"vermist\"],\"kenmerkSoorten\":{\"vermist\":\"BIJVOEGLIJK\"}");
+    }
+
     /** "uit van een jutter" over the given value. */
     private static String uitModel(String waarde) { return uitModel(waarde, ""); }
     private static String uitModel(String waarde, String parameters) {
@@ -348,6 +528,9 @@ class CompanionPadWitnessTest {
     /** "het inkomen gedeeld door de tweede" — the §6.5 site every Let-shaped model here wraps. */
     private static final String DELING = binair("GEDEELD_DOOR", attr("inkomen"), attr("tweede"), num(4));
     private static final String DELING_DELER = binair("GEDEELD_DOOR", attr("inkomen"), attr("deler"), num(4));
+    private static final String DELING_ABS = binair("GEDEELD_DOOR_ABS", attr("inkomen"), attr("tweede"), num(4));
+    private static final String DELING_LEEGDING = binair("GEDEELD_DOOR", attr("leegding"), attr("tweede"), num(4));
+    private static final String DELING_NUL = binair("GEDEELD_DOOR", attr("inkomen"), attr("nul"), num(4));
     private static final String ZEVEN = lit("7.0000", num(4));
     private static final String WORTEL = wortel(attr("saldo", num(2)), num(4));
 
@@ -400,6 +583,68 @@ class CompanionPadWitnessTest {
         return uitModel(inLetBody ? let("d", attr("deler"), WORTEL, num(4)) : WORTEL);
     }
 
+    /** (a') the leeg dividend as the BODY of a Let whose binder is never read. */
+    private static String leegDividendModel() { return uitModel(let("d", attr("deler"), DELING_LEEGDING, num(4))); }
+
+    /** (i) "Let d = deler in begrensd(inkomen, …)" with the read of d in one bound and the §6.5 division in the
+     *  other — {@code lezingInMinimum} puts the read in the minimum and the division in the maximum. */
+    private static String begrensdModel(boolean lezingInMinimum) {
+        String lezing = bref("d", pos(2));
+        String body = lezingInMinimum ? begrensd(attr("inkomen"), lezing, DELING) : begrensd(attr("inkomen"), DELING, lezing);
+        return uitModel(let("d", attr("deler"), body, num(4)));
+    }
+
+    /** (i) the same, with the division by NUMERIC zero ("inkomen gedeeld door nul") as the other bound. */
+    private static String begrensdNulModel(boolean lezingInMinimum) {
+        String lezing = bref("d", pos(2));
+        String body = lezingInMinimum ? begrensd(attr("inkomen"), lezing, DELING_NUL) : begrensd(attr("inkomen"), DELING_NUL, lezing);
+        return uitModel(let("d", attr("deler"), body, num(4)));
+    }
+
+    /** (i) a ch. 10.2 guard "d groter dan (inkomen ÷ tweede)" ({@code lezingLinks}) or its mirror, in a Let on d. */
+    private static String conditieVolgordeModel(boolean lezingLinks) {
+        String lezing = bref("d", pos(2));
+        String conditie = lezingLinks ? verg("GROTER", lezing, DELING) : verg("GROTER", DELING, lezing);
+        String keuze = ite(conditie, lit("1.0000", num(4)), lit("2.0000", num(4)), num(4));
+        return uitModel(let("d", attr("deler"), keuze, num(4)));
+    }
+
+    /** (r) `deler` produced by a rule that §9.2 forces to fire AFTER the consumer's companion: its voorwaarde reads
+     *  the negated kenmerk {@code vermist}, whose producer (never true for the case input) exists. The consumer is
+     *  the (b) barrier body ("d plus (inkomen ÷ tweede)") or, with {@code tak}, the (c) choice on d. */
+    private static String lateProducentModel(boolean tak) {
+        String vermistDoel = ("{\"node\":\"AttribuutRef\",\"attribuut\":\"vermist\",\"objecttype\":\"Jutter\","
+                + "\"onderwerpBron\":\"Een Jutter\",\"navigatieRol\":null,\"type\":{\"node\":\"Booleaan\"},"
+                + "\"bron\":\"Een Jutter is vermist\",\"set\":false,\"navigatiePad\":[]}");
+        String waar = "{\"node\":\"Literal\",\"waarde\":\"waar\",\"type\":{\"node\":\"Booleaan\"},\"bron\":\"waar\"}";
+        String nietVermist = ("{\"node\":\"Kenmerk\",\"kenmerk\":\"vermist\",\"navigatie\":null,\"negatie\":true,"
+                + "\"eigenaar\":null,\"periode\":null,\"bron\":\"hij niet vermist is\"}");
+        String body = tak
+                ? ite(verg("GROTER", bref("d", pos(2)), lit("1", GEHEEL_POS)), DELING, ZEVEN, num(4))
+                : binair("PLUS", bref("d", pos(2)), DELING, num(4));
+        return modelK(new String[]{"vermissing van een jutter", "deler van een jutter", "uit van een jutter"},
+                new String[]{
+                        regel("vermissing van een jutter", "KENMERKTOEKENNING", vermistDoel, waar,
+                                verg("GROTER", attr("inkomen"), lit("999999.00", pos(2)))),
+                        regel("deler van een jutter", "BEREKENING", attr("deler"), lit("2.00", pos(2)), nietVermist),
+                        regel("uit van een jutter", attr("uit", num(4)), let("d", attr("deler"), body, num(4)))});
+    }
+
+    /** (j) "Let n = inkomen in n gedeeld door tweede" — the binder is the DIVIDEND. */
+    private static String binderDividendModel() {
+        return uitModel(let("n", attr("inkomen"), binair("GEDEELD_DOOR", bref("n", pos(2)), attr("tweede"), num(4)), num(4)));
+    }
+
+    /** (j) "Let d = deler in inkomen gedeeld door d" — the binder is the DIVISOR. */
+    private static String binderDelerModel() {
+        return uitModel(let("d", attr("deler"), binair("GEDEELD_DOOR", attr("inkomen"), bref("d", pos(2)), num(4)), num(4)));
+    }
+
+    /** (j) "Let s = saldo in de wortel van s" — the binder is the RADICAND. */
+    private static String binderRadicandModel() {
+        return uitModel(let("s", attr("saldo", num(2)), wortel(bref("s", num(2)), num(4)), num(4)));
+    }
+
     /** (h) a bare division plus a Let-wrapped one behind a read. */
     private static String tweeDelingenModel() {
         String omhuld = let("d", attr("leegding"), binair("PLUS", bref("d", pos(2)), DELING, num(4)), num(4));
@@ -414,10 +659,9 @@ class CompanionPadWitnessTest {
                         .formatted(GEHEEL_POS));
     }
 
-    /** (g) a ch. 7 group over {@code Jutter.toeslag}: a justified first default whose consequence wraps the
-     *  division in a Let with an unread binder, then an unconditional 0. */
-    private static String defaultsModel() {
-        String consequentie = let("d", attr("deler"), DELING, num(4));
+    /** (g) a ch. 7 group over {@code Jutter.toeslag}: a justified first default with the given consequence, then
+     *  an unconditional 0. */
+    private static String defaultsModel(String consequentie) {
         String groep = ("{\"node\":\"PrioritizedDefaults\",\"naam\":\"toeslag\",\"onderwerp\":\"Jutter\",\"kenmerk\":null,"
                 + "\"attribuut\":\"toeslag\",\"defaults\":["
                 + "{\"node\":\"Default\",\"besluit\":null,\"voorwaarde\":%s,\"consequentie\":%s,\"bron\":\"toeslag\"},"

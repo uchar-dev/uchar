@@ -3692,10 +3692,18 @@ public final class ExecModelTranspiler {
             Set<String> g = new LinkedHashSet<>(baseF.globals());
             if (minF != null) g.addAll(minF.globals());
             if (maxF != null) g.addAll(maxF.globals());
-            return new WaardeFn((s, gm) -> RegelSpraakRuntime.rsBegrens(
-                    bfn.apply(s, gm),
-                    mnfn == null ? null : mnfn.apply(s, gm),
-                    mxfn == null ? null : mxfn.apply(s, gm)), g);
+            return new WaardeFn((s, gm) -> {
+                // Evaluation ORDER mirrors ref, measured (ref/lib/eval.ml, the Begrensd arm: a let-bound basis,
+                // then `Arith.clamp ~min_:(bound minimum) ~max_:(bound maximum) v`, whose labelled arguments OCaml
+                // applies right to left): basis, then MAXIMUM, then minimum. Under a ch. 4.10 carrier that order
+                // decides whether a binder read in one bound raises the barrier before a §6.5 site in the other
+                // bound runs (CompanionPadWitnessTest (i)) — and, on the value side, whether a division by numeric
+                // zero there is reached at all. Java's left-to-right argument order would invert it.
+                Object basis = bfn.apply(s, gm);
+                Object maximum = mxfn == null ? null : mxfn.apply(s, gm);
+                Object minimum = mnfn == null ? null : mnfn.apply(s, gm);
+                return RegelSpraakRuntime.rsBegrens(basis, minimum, maximum);
+            }, g);
         }
         if (e instanceof Expr.Binair b && arithmeticOp(b.op())) {
             // §6.2-6.5 binary arithmetic with the leegwaarde tables. Datum arithmetic (datum ± tijdsduur) lowers
@@ -3766,7 +3774,12 @@ public final class ExecModelTranspiler {
      * itself here (the division arm of {@link #scalarWaarde}, the wortel arm of {@link #scalarWrapper}). A site
      * on a path that does not run — the branch not taken, a value no read forces, anything behind a read that
      * raised a barrier first — never executes, so it never reports: the companion's condition is exactly
-     * ref's ({@code ref/lib/eval.ml}), including evaluation order, which is measured, not modelled.
+     * ref's ({@code ref/lib/eval.ml}) — PROVIDED this lowering evaluates each form's children in ref's order.
+     * That order is not inherited automatically: it is measured per form and mirrored here (a Binair left
+     * before right; a Begrensd basis, then MAXIMUM, then minimum — the arm above, corrected in fix round 1 of
+     * the companion-onder-drager card, where the Java argument order had it minimum-first and the probe both
+     * fabricated and missed on the two Begrensd flanks). A form whose child order differs from ref's makes the
+     * probe wrong on exactly the flank where a barrier read and a site sit in different children.
      *
      * <p>The outermost carrier is the right unit to probe: every non-carrier form the companion walks descend
      * (Binair, Afgerond, Begrensd, a Functie's arguments) evaluates ALL its children unconditionally, here and
@@ -5886,6 +5899,21 @@ public final class ExecModelTranspiler {
         return navReader(a, subject);   // own attribute or to-one navigated (null for to-many / absent / unresolvable)
     }
 
+    /** Whether a §6.5/§6.6 site's operand lets the site QUALIFY for a companion. Outside a carrier that is
+     *  {@link #companionOperand} — a re-readable own or to-one attribute for the static predicate (DRL parity).
+     *  UNDER a carrier the companion's condition is the path probe, which observes the site's evaluation instead
+     *  of re-reading its operands, so a ch. 4.10 binder READ qualifies too: the "Daarbij geldt" variabelendeel
+     *  shape the RegelSpraak emitter produces ({@code Let n = teller in n gedeeld door deler}) — a read that,
+     *  under ch. 10.6, either answers the bound value or raises the barrier before the site runs, exactly as ref
+     *  evaluates it (CompanionPadWitnessTest (j)). Everything else stays out, bare and under a carrier alike, and
+     *  raises no Inconsistentie in this backend where ref may: a Literal, a ParameterRef, a to-MANY navigation, a
+     *  temporal or dimensioned attribute, and any compound operand (a nested Binair, a Functie, a Let node as the
+     *  operand of a site that itself sits ABOVE every carrier — there the site has no probe unit). */
+    private boolean kwalificeertOperand(Expr e, Expr drager, Objecttype subject) {
+        if (companionOperand(e, subject) != null) return true;
+        return drager != null && e != null && letVormen.get(e) instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Lezing;
+    }
+
     /** A §6.5 division or §6.6 wortel SITE in a rule value, with the OUTERMOST ch. 4.10 carrier on the path from
      *  the value root down to it — null when there is none, in which case the site runs whenever the value does
      *  and its companion keeps the static leeg/negatief predicate; otherwise the companion's condition is the
@@ -5896,8 +5924,8 @@ public final class ExecModelTranspiler {
      *  (rsGedeeld), so this surfaces the Fout via the §9.5 Inconsistentie channel — a SEPARATE insert-only rule per
      *  division that fires when the dividend is present and the divisor is empty (and the host voorwaarde holds),
      *  and — for a division under a ch. 4.10 carrier — only when the division's path actually RAN ({@link Sonde}).
-     *  Scope: each operand is the subject's OWN attribute or one reached by a to-ONE navigation (companionOperand).
-     *  Mirrors DrlTranspiler.deelDoorLeegFout. */
+     *  Scope: each operand is the subject's OWN attribute or one reached by a to-ONE navigation (companionOperand),
+     *  or — under a carrier only — a binder read ({@link #kwalificeertOperand}). Mirrors DrlTranspiler.deelDoorLeegFout. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private List<Rule> delingCompanions(ResolvedRegel r) {
         if (!(r.doel() instanceof Expr.AttribuutRef doel) || doel.objecttype() == null) return List.of();
@@ -5916,7 +5944,7 @@ public final class ExecModelTranspiler {
         // keep there): the suffix is per qualifying site, whatever decides its condition.
         List<Plek<Expr.Binair>> kwalificeren = new ArrayList<>();
         for (Plek<Expr.Binair> p : delingen)
-            if (companionOperand(p.site().links(), subject) != null && companionOperand(p.site().rechts(), subject) != null)
+            if (kwalificeertOperand(p.site().links(), p.drager(), subject) && kwalificeertOperand(p.site().rechts(), p.drager(), subject))
                 kwalificeren.add(p);
         List<Rule> companions = new ArrayList<>();
         String naam = r.naam();
@@ -5925,6 +5953,8 @@ public final class ExecModelTranspiler {
             Expr.Binair d = plek.site();
             // null-safe readers for the dividend/divisor — own attribute or a to-one navigated read (a null relation
             // collapses to leeg, exactly as DRL's root-guarded "(partner != null && partner.x != null)" / "partner.x" forms).
+            // Consulted by the STATIC predicate only, i.e. for a bare site, where both are non-null by
+            // kwalificeertOperand; a carrier-hosted site (a binder operand has no reader) decides by the probe.
             java.util.function.Function<Object, Object> dividend = companionOperand(d.links(), subject);
             java.util.function.Function<Object, Object> divisor = companionOperand(d.rechts(), subject);
             // dividend present AND divisor empty (an empty LEFT short-circuits to 0 -> no fout, so guard the dividend too).
@@ -5939,9 +5969,10 @@ public final class ExecModelTranspiler {
 
     /** §6.6 "wortel van een negatief getal" companion: the value side degrades a negative-radicand root to leeg
      *  (rsWortel), so this surfaces the Fout via the §9.5 Inconsistentie channel — a SEPARATE insert-only rule per
-     *  wortel whose radicand (own attribute or a to-ONE navigation, companionOperand) is &lt; 0 (and the host
-     *  voorwaarde holds), and — for a wortel under a ch. 4.10 carrier — only when its path actually RAN
-     *  ({@link Sonde}). Mirrors DrlTranspiler.wortelNegatiefFout. */
+     *  wortel whose radicand (own attribute or a to-ONE navigation, companionOperand; under a carrier also a
+     *  binder read, {@link #kwalificeertOperand}) is &lt; 0 (and the host voorwaarde holds), and — for a wortel
+     *  under a ch. 4.10 carrier — only when its path actually RAN ({@link Sonde}). Mirrors
+     *  DrlTranspiler.wortelNegatiefFout. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private List<Rule> wortelCompanions(ResolvedRegel r) {
         if (!(r.doel() instanceof Expr.AttribuutRef doel) || doel.objecttype() == null) return List.of();
@@ -5955,13 +5986,14 @@ public final class ExecModelTranspiler {
         // companion-name suffix indexes over the SAME filtered list as DRL's wortelNegatiefFout `guards`.
         List<Plek<Expr.Functie>> kwalificeren = new ArrayList<>();
         for (Plek<Expr.Functie> p : wortels)
-            if (p.site().argumenten().size() == 1 && companionOperand(p.site().argumenten().get(0), subject) != null)
+            if (p.site().argumenten().size() == 1 && kwalificeertOperand(p.site().argumenten().get(0), p.drager(), subject))
                 kwalificeren.add(p);
         List<Rule> companions = new ArrayList<>();
         String naam = r.naam();
         for (int i = 0; i < kwalificeren.size(); i++) {
             Plek<Expr.Functie> plek = kwalificeren.get(i);
-            // null-safe reader for the radicand — own attribute or a to-one navigated read (null relation -> leeg).
+            // null-safe reader for the radicand — own attribute or a to-one navigated read (null relation -> leeg);
+            // consulted by the STATIC predicate only (a bare site), see delingCompanions.
             java.util.function.Function<Object, Object> radicand = companionOperand(plek.site().argumenten().get(0), subject);
             // radicand < 0 (a null radicand is leeg, not negative -> no fout; signum guards null out).
             String compNaam = naam + " (wortel van negatief" + (kwalificeren.size() > 1 ? " " + (i + 1) : "") + ")";
@@ -6471,8 +6503,9 @@ public final class ExecModelTranspiler {
         Boolean besluit = isChar ? r.besluit() : null;
         WaardeFn conseq = null;
         if (!isChar && r.consequentie() != null) {
-            if (bevatDeling(r.consequentie()))
-                throw new DefaultsOnvertaalbaar("kanaal-deponerende consequentie (deling) op defaults-target: " + defaultsReden(r));
+            String foutplek = foutplekSoort(r.consequentie());
+            if (foutplek != null)
+                throw new DefaultsOnvertaalbaar("kanaal-deponerende consequentie (" + foutplek + ") op defaults-target: " + defaultsReden(r));
             WaardeFn wf;
             boolean prev = ketenWaardePad;
             try { ketenWaardePad = true; wf = scalarWaarde(onderwerp, r.consequentie()); }
@@ -6518,32 +6551,43 @@ public final class ExecModelTranspiler {
         return leafPredicate(c, subject);
     }
 
-    /** Whether an expression contains a §9.5 channel-depositing division (a deling-door-leeg raises the Fout on the
-     *  channel) — the speculative-deposit case the scalar-first port fences instead of building. */
-    private boolean bevatDeling(Expr e) {
-        if (e == null) return false;
-        // ch. 4.10: the fence must see a division hidden inside a Let value/body or an IfThenElse branch —
+    /** The kind ({@code "deling"} / {@code "wortel"}) of the first §9.5 channel-depositing site in an expression —
+     *  a §6.5 deling-door-leeg or a §6.6 wortel-van-negatief raises the Fout on the channel — or null when there
+     *  is none: the speculative-deposit case the scalar-first port fences instead of building. A defaults
+     *  consequence lowers no companion (static or probe), so a site here would fault in SILENCE; measured with
+     *  ref on a taken default "wortel(saldo) plus 0" with saldo -4: ref toeslag 0.0000 + INCONSISTENT, this
+     *  backend without the fence 0.0000 + consistent (fix round 1 of the companion-onder-drager card). */
+    private String foutplekSoort(Expr e) {
+        if (e == null) return null;
+        // ch. 4.10: the fence must see a site hidden inside a Let value/body or an IfThenElse branch —
         // otherwise a Let-wrapped deling-door-leeg would deposit on the channel speculatively.
-        for (Expr k : letKinderen(e)) if (bevatDeling(k)) return true;
+        for (Expr k : letKinderen(e)) { String r = foutplekSoort(k); if (r != null) return r; }
         if (e instanceof Expr.Binair b) {
-            if (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS) return true;
-            return bevatDeling(b.links()) || bevatDeling(b.rechts());
+            if (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS) return "deling";
+            String r = foutplekSoort(b.links());
+            return r != null ? r : foutplekSoort(b.rechts());
         }
-        if (e instanceof Expr.Afgerond af) return bevatDeling(af.basis());
-        if (e instanceof Expr.Begrensd bg) return bevatDeling(bg.basis()) || bevatDeling(bg.minimum()) || bevatDeling(bg.maximum());
+        if (e instanceof Expr.Afgerond af) return foutplekSoort(af.basis());
+        if (e instanceof Expr.Begrensd bg) {
+            String r = foutplekSoort(bg.basis());
+            if (r == null) r = foutplekSoort(bg.minimum());
+            return r != null ? r : foutplekSoort(bg.maximum());
+        }
         if (e instanceof Expr.Functie f) {
-            for (Expr a : f.argumenten()) if (bevatDeling(a)) return true;
+            if (f.kind() == Expr.FunctieKind.WORTEL) return "wortel";
+            for (Expr a : f.argumenten()) { String r = foutplekSoort(a); if (r != null) return r; }
             // leegwaarde is the §5.8.2 empty-set fallback; unreachable on a built defaults group today (an
-            // aggregation consequence already declines via scalarWaarde) — checked anyway so a division
+            // aggregation consequence already declines via scalarWaarde) — checked anyway so a site
             // can never hide in the fallback if that fence ever moves.
-            return bevatDeling(f.leegwaarde());
+            return foutplekSoort(f.leegwaarde());
         }
         if (e instanceof Expr.TekstReeks tr) {
-            for (Expr.TekstReeks.Deel d : tr.delen()) if (d instanceof Expr.TekstReeks.Ingevoegd i && bevatDeling(i.expr())) return true;
-            return false;
+            for (Expr.TekstReeks.Deel d : tr.delen())
+                if (d instanceof Expr.TekstReeks.Ingevoegd i) { String r = foutplekSoort(i.expr()); if (r != null) return r; }
+            return null;
         }
-        if (e instanceof Expr.DimensieCel dc) return bevatDeling(dc.attribuut());
-        return false;
+        if (e instanceof Expr.DimensieCel dc) return foutplekSoort(dc.attribuut());
+        return null;
     }
 
     private static void verzamelDefaultsGlobals(List<GecompileerdeDefault> defaults, Set<String> out) {

@@ -93,9 +93,12 @@ een drager krijgt een companion die in zijn consequentie de
 delingsarm van `scalarWaarde` en de wortelarm van `scalarWrapper` melden
 een §6.5/§6.6-fout aan de sonde (no-op zonder sonde — de gastregel zelf
 draagt er geen), en de companion insert de Inconsistentie alleen als
-precies díe plek gemeld is. Barrières, call-by-need en evaluatievolgorde
-komen zo uit de value-lowering zelf, die ref's operationele semantiek
-is; de value-side is niet verbouwd (twee meldregels erbij). De
+precies díe plek gemeld is. Barrières en call-by-need komen zo uit de
+value-lowering zelf; de evaluatievolgorde BINNEN een vorm is dat alleen
+waar de lowering ref's volgorde spiegelt — per vorm gemeten, niet
+automatisch (fixronde 1: Begrensd evalueerde minimum vóór maximum, ref
+andersom); de value-side is niet verbouwd (twee meldregels erbij, en in
+fixronde 1 de Begrensd-volgorde). De
 consequentie bindt de globals van de drager zoals de gastregel de zijne
 (`consequenceOf`/`vulGlobalMap`); een drager die niet lowert of een
 global die de gast niet kon binden is een invariantschending en faalt
@@ -146,12 +149,9 @@ kinderweging en tariefstelling delen door een literal), dus de telling
 kon niet bewegen.
 
 **Open punten.**
-- `companionOperand`-scope bewust gehouden (kaartgrens): een BinderRef
-  als dividend (`Let n = teller in n ÷ deler`, de vorm die de
-  emitter voor "Daarbij geldt" produceert) kwalificeert niet en krijgt
-  geen companion waar ref wél inconsistent zegt. Met de sonde is de
-  verbreding triviaal (zij observeert de evaluatie in plaats van de
-  operanden opnieuw te lezen) — kandidaat voor een vervolgkaart.
+- `companionOperand`-scope: de BinderRef-verbreding onder een drager is
+  in fixronde 1 gedaan (`kwalificeertOperand`, zie hieronder); wat
+  daarbuiten blijft staat daar exact opgesomd.
 - `startpuntCompanions` (§6.8) blijft drager-blind; niet aangeraakt,
   alleen gedocumenteerd (de spec-vraag staat in de kaarttekst).
 - Companions (statisch én sonde) dragen géén stratificatie-salience
@@ -164,12 +164,111 @@ kon niet bewegen.
   doorgevallen default vervallen (0.0000, consistent); Drools blijft
   het delingshek weigeren (waarde niet geproduceerd) — een
   defaults-kaart, niet deze.
-- De klasse-javadoc van `LetDragerWandelingWitnessTest` (punt 4, "must
-  NOT see through … descending there fabricates") beschrijft het
+- De klasse-javadoc van `LetDragerWandelingWitnessTest` beschrijft het
   vóór-fix-mechanisme; de witnesses erin gelden nog. Tekst buiten de
-  toegestane methode, dus niet aangeraakt.
+  toegestane methode, dus niet aangeraakt (maintainerwerk). Verouderd
+  zijn precies: (1) de eerste zin, "the two paths a walk must NOT see
+  through"; (2) bullet 4, "the two paths those walks must NOT see
+  through … descending there fabricates a companion for code that never
+  executes" — de walks dalen nu volledig af en de sonde beslist bij het
+  vuren; (3) in `een_deling_in_de_niet_genomen_tak_levert_geen_fout` de
+  zinnen "A §6.5 companion built off it would fire anyway — the companion
+  rule is a SEPARATE rule keyed on 'dividend present, divisor leeg' and
+  cannot see which branch ran" en "So the walk descends only into the
+  CERTAINLY evaluated children (the condition operands)". De
+  sectiekop "4. the other half: a companion the walk must NOT fabricate"
+  klopt nog als eis, niet meer als mechanisme.
 - De `Excluded`-vraag: een dragerplek waarvan de drager niet her-lowert
   faalt hard (`IllegalStateException`) in plaats van luid te skippen;
   bewust (invariant: de gast lowerde die drager via dezelfde
   scalarWaarde), maar het is een throw in de transpile-fase, geen
   Dekking-skip.
+
+## Fixronde 1 (subagent, 2026-09-02)
+
+Lensbevindingen L1-F1..F6 plus het open punt "BinderRef als operand".
+Elke pin eerst door de L-ref (51 model+case-paren uit het testbestand
+zelf gedumpt en gemeten, `/tmp/fr1-metingen/`, ref-runner exit 0 = exacte
+match; de harde-fout-flank exit 1 met "EVALUATION FAULT: division by
+numeric zero"). Rood-eerst tegen de ongefixte transpiler: 5 van 23
+witnesses rood (Begrensd-sonde, Begrensd-waarde, binder-dividend,
+binder-radicand, defaults-wortelhek); F2..F5 via mutanten.
+
+- **L1-F1 gefixt (ref-divergentie).** De Begrensd-arm van `scalarWaarde`
+  evalueert nu basis, dan MAXIMUM, dan minimum — ref's gemeten volgorde
+  (`ref/lib/eval.ml`, Begrensd-arm: `Arith.clamp ~min_:… ~max_:… v` na
+  een let-gebonden basis; OCaml past gelabelde argumenten rechts-naar-
+  links toe). Witness (i) in CompanionPadWitnessTest: sonde-kant
+  tweeling (`Let d = deler in begrensd(inkomen, min d, max inkomen ÷
+  tweede)`: ref leeg + INCONSISTENT, vóór de fix "verwacht inconsistent,
+  werkelijk consistent"; spiegel: ref leeg + CONSISTENT, vóór de fix een
+  fabricage) en waarde-kant tweeling (`max inkomen ÷ nul`, nul 0,00: ref
+  EVALUATION FAULT, Drools nu ArithmeticException "Breuk deling door 0"
+  uit de consequentie, vóór de fix stil leeg; spiegel: ref leeg +
+  CONSISTENT, Drools nu idem, vóór de fix de exception). Javadoc van
+  `Sonde` en de LetVorm-inventaris gecorrigeerd: de volgorde is per vorm
+  gemeten en gespiegeld, niet geërfd. Extra witness, ook ref-gemeten: de
+  Vergelijking van een ch.-10.2-guard links vóór rechts (lezing links
+  kapt af: leeg + CONSISTENT; deling links: leeg + INCONSISTENT).
+  *Vervolg buiten deze kaart (ref + RUNTIME-SEMANTICS):* ref's
+  grensvolgorde is een artefact van OCaml's ongespecificeerde
+  argumentvolgorde — expliciet let-binden en normatief vastleggen (ch.
+  1.2 begrensd of ch. 10.6), waarna Drools de vastgelegde volgorde
+  spiegelt.
+- **L1-F2 gefixt (witness).** De freshness-expr van de sonde-companion
+  is nu gewitnesst (r): `deler` afgeleid door een regel die §9.2 ná de
+  companion dwingt (negatief kenmerk met producent, salience -1 — de
+  reactiviteitModel-vorm van LetClusterWitnessTest). ref: barrière-vorm
+  `Let d = deler in d plus (inkomen ÷ tweede)` 2.0000 + INCONSISTENT;
+  tak-vorm `als d > 1 dan inkomen ÷ tweede anders 7` leeg + INCONSISTENT.
+  Mutant A (expr weg): 22/23 groen, (r) rood "verwacht inconsistent,
+  werkelijk consistent". "Klasse-reactief" is daarmee bewezen, niet
+  alleen beweerd.
+- **L1-F3 gefixt (witness).** ABS-tweeling (a'): `Let d = deler in
+  inkomen ÷(abs) tweede`, ref leeg + INCONSISTENT, naast de kale. Mutant
+  B (melding in de ABS-arm weg): alleen (a') rood.
+- **L1-F4 gefixt (witness).** Nul-radicand onder een Let (f'), saldo
+  0,00: ref 0.0000 + CONSISTENT, kaal én in de body. Mutant C
+  (`signum() <= 0`): alleen (f') rood (fabricage).
+- **L1-F5 gefixt (witness).** Leeg dividend onder een Let (a'):
+  `Let d = deler in leegding ÷ tweede`, beide leeg / tweede 2,00: ref
+  0.0000 + CONSISTENT, plus de kale. Mutant D (`lv != null` weg): alleen
+  (a') rood (fabricage).
+- **L1-F6 gefixt (hek).** Het delingshek van de defaults-consequentie
+  spiegelt één-op-één naar de wortel: `bevatDeling` is `foutplekSoort`
+  geworden (levert "deling"/"wortel"/null) en de weigering noemt de
+  soort. Meting: default 1 (kindertal ≥ 2) met consequentie
+  `wortel(saldo) plus 0,0000`, saldo -4,00: ref toeslag 0.0000 +
+  INCONSISTENT; Drools vóór de fix 0.0000 + consistent (stil), nu de
+  luide weigering "kanaal-deponerende consequentie (wortel)". Witness
+  (g'). De wáárde blijft voor de defaults-kaart (open punt (g)); dit hek
+  maakt het stille consistent luid, meer niet. Geen golden draagt een
+  wortel in een defaults-consequentie (gecontroleerd), gate 12 ongewijzigd.
+- **BinderRef als operand onder een drager gedaan.** `kwalificeertOperand`:
+  buiten een drager blijft `companionOperand` (statisch predicaat,
+  DRL-pariteit); ónder een drager kwalificeert ook een binder-lezing
+  (`LetVorm.Lezing`), want de sonde observeert de plek. Witnesses (j),
+  ref-gemeten: dividend `Let n = inkomen in n ÷ tweede` (tweede leeg:
+  leeg + INCONSISTENT, vóór de fix misser; inkomen leeg: barrière, leeg +
+  CONSISTENT; beide gevuld 5.0000), deler `Let d = deler in inkomen ÷ d`
+  (deler leeg: barrière vóór de deling, leeg + CONSISTENT — een binder
+  antwoordt nooit leeg, dus §6.5 kan hier niet deponeren; de verbrede
+  companion mag niet fabriceren), radicand `Let s = saldo in wortel(s)`
+  (-4: leeg + INCONSISTENT, vóór de fix misser; leeg: CONSISTENT), elk
+  naast zijn kale tweeling. **Buiten bereik, exact:** een Literal,
+  ParameterRef, to-many-navigatie, temporeel of gedimensioneerd attribuut
+  en elke samengestelde operand (geneste Binair, Functie) — kaal én onder
+  een drager, zoals vóór deze kaart; een Let-node als operand van een
+  plek die zelf bóven elke drager staat (`(Let q = a in q) ÷ tweede`,
+  lens m5: ref inconsistent, Drools consistent — de plek heeft geen
+  sonde-eenheid); een deling in de regel-VOORWAARDE (lens m11a); een
+  deling als Functie-argument, `wortel(… ÷ …)` (lens m22, verzamelDelingen
+  daalt niet in Functie-argumenten af, DRL-pariteit).
+- **Weerlegd/bewust gelaten:** niets weerlegd; alle zes bevindingen
+  gefixt. Bewust gelaten (gedocumenteerd, geen semantisch gevolg binnen
+  de kaart): de bovenstaande buiten-bereik-vormen en de verouderde
+  LetDrager-javadoc (maintainerwerk, zie open punten).
+
+**Gates fixronde 1.** Gate 1 PASS. Gate 12 PASS: played 104 /
+auto-excluded 39 / value-divergence 1 / no-case 1, JUnit 138 → 149, nul
+skipped (11 nieuwe witnesses in CompanionPadWitnessTest: 23 totaal).
