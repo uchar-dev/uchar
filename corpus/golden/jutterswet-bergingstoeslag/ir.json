@@ -25,6 +25,13 @@
           "decimalen": 2,
           "teken": "ONBEPAALD",
           "eenheid": null
+        },
+        "bergingsforfait": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
         }
       },
       "attribuutMeervoud": {},
@@ -52,6 +59,11 @@
     {
       "node": "Regel",
       "naam": "bergingstoeslag van een jutter",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "bergingsforfait van een jutter",
       "soort": "regel"
     }
   ],
@@ -149,7 +161,7 @@
                   "node": "Numeriek",
                   "geheel": false,
                   "decimalen": 2,
-                  "teken": "ONBEPAALD",
+                  "teken": "NIET_NEGATIEF",
                   "eenheid": null
                 },
                 "bron": "bergingsgrond"
@@ -178,6 +190,98 @@
             "bron": "de bergingsgrond is zijn bergingsgrondslag"
           },
           "bron": "de bergingsgrond plus 100,00, indien hij ten minste twee wrakken heeft geborgen"
+        },
+        {
+          "node": "Default",
+          "besluit": null,
+          "voorwaarde": {
+            "node": "Samengesteld",
+            "kwantor": "ALLE",
+            "drempel": 0,
+            "onderdelen": [],
+            "bron": "altijd"
+          },
+          "consequentie": {
+            "node": "Literal",
+            "waarde": "0.00",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "0.00"
+          },
+          "bron": "0,00 (het bodembedrag)"
+        }
+      ],
+      "bron": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "PrioritizedDefaults",
+      "naam": "bergingsforfait van een jutter",
+      "onderwerp": "Jutter",
+      "kenmerk": null,
+      "attribuut": "bergingsforfait",
+      "defaults": [
+        {
+          "node": "Default",
+          "besluit": null,
+          "voorwaarde": {
+            "node": "Samengesteld",
+            "kwantor": "ALLE",
+            "drempel": 0,
+            "onderdelen": [],
+            "bron": "altijd"
+          },
+          "consequentie": {
+            "node": "Let",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "binder": "bergingsgrond",
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "bergingsgrondslag",
+              "objecttype": "Jutter",
+              "onderwerpBron": "zijn",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "bron": "zijn bergingsgrondslag",
+              "set": false,
+              "navigatiePad": []
+            },
+            "body": {
+              "node": "Literal",
+              "waarde": "42.00",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "42,00"
+            },
+            "bron": "de bergingsgrond is zijn bergingsgrondslag"
+          },
+          "bron": "42,00 (het forfait, ongeacht de bergingsgrond)"
         },
         {
           "node": "Default",

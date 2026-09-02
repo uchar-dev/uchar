@@ -27,6 +27,14 @@
       }
     },
     {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "bergingsforfait",
+      "value": {
+        "number": "42.00"
+      }
+    },
+    {
       "kind": "consistent"
     }
   ]
