@@ -266,3 +266,31 @@ noemt (`Borgdeel` op `jutterswet-borgdeel`) is verifier-schoon en speelt in
 ref, en Drools weigert de golden dan LUID (`transpiler SKIP: regel (waarde
 buiten scope)`) — een eerlijke niet-gedragen uitkomst, geen stille misser en
 geen ERROR. De familie als geheel is niet systematisch gemeten.
+
+## Result (hoofdsessie, 2026-09-03)
+
+Beide lacunes gedicht, en de unie-keuze viel op DRAGEN. (1) De
+temporaliteitstoets van álle sleutelsites (de twee exec-model-joins, de
+twee DRL-joins én de ch.-5.9-ariteitsguard, die de mis-gekapitaliseerde
+component evenmin telde — een derde vangst boven de kaart) loopt nu via
+één ref-getrouwe normalisatie; lens 1 bewees dat de eerste versie dáárvan
+zelf niet ref-getrouw was (Unicode-kastvouwing, witruimte) en de
+hermeting is differentieel tegen ref's norm gedaan, nul verschillen over
+de randgevallen. (2) De kruis-bron gemengde unie (temporeel op bron A,
+scalair op bron B) wordt gedragen in beide richtingen: de crash-arm én
+de stille spiegel-arm, gepind met botsende en niet-botsende tweelingen
+(vlaggenverzameling exact, want de case-comparator matcht op regelnaam
+alleen — de reden dat de getuigen de gevuurde vlaggen lezen). De
+schaalhoek (7 tegen 7.00) en de nul-sleutel-poort kregen hun eigen
+getuigen na lens 2.
+
+Rood-eerst getoond per lacune (de stil-verkeerde uitkomsten en de
+letterlijke ConstraintEvaluationException staan in de Bouwnotitie);
+negen mutanten arm-exact gevangen, waaronder de mutant die aanvankelijk
+overleefde en zijn eigen getuige afdwong. Eindstand: JUnit 153 → 178,
+nul skips; alle twaalf gates groen met ONGEWIJZIGDE corpustellingen
+(played 105 / auto-excluded 41 / value-divergence 1 / no-case 1) —
+precies wat de kaart eiste: geen corpusgetuige nodig gebleken, de
+JUnit-getuigen dragen beide vormen tegen ref-gemeten verwachtingen.
+Bewust gelaten (Bouwnotitie): de sluimerende DRL-route blijft
+tekst-gerenderd getuigd (geen KieBase-run), zoals heel DrlTranspiler.
