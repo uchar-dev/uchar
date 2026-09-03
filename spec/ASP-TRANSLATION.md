@@ -2115,17 +2115,21 @@ case exercises it, so the ASP case emission (and any sum scrutinee or
 operand over an own temporal attribute) faults with the literal reason
 `temporal sum carriage is a recorded flank; no corpus case` rather than
 silently omitting the constructor-valued segments (RUNTIME-SEMANTICS
-ch. 9.4). A **non-literal `Construct` payload** meets FIVE distinct places
+ch. 9.4). A **non-literal `Construct` payload** meets SIX distinct places
 in the translator: two carry it — the positions that can hold the payload's
-binding atoms — and three refuse it, each for a different reason. Before
-2026-09-03 this inventory described one of the three and gave it a reason
+binding atoms — and four refuse it, each for a different reason. Before
+2026-09-03 this inventory described one of the refusals and gave it a reason
 that was not the true one, so the boundary it stated was wrong in both
 directions. Carried: (i) at RULE level an own-subject attribute read rides
 its `val` atom — the anchor's `herbeschikking` rule
 `val(S,herbeschikking,toegekend(V)) :- …, val(S,borg,V)`; (ii) in a
-CLOSED-BODY term the payload lowers recursively through the closed-body
-grammar, so a document parameter or an arithmetic combination rides in a
-fold's `init`. Refused, each with its own true reason:
+CLOSED-BODY term the payload lowers RECURSIVELY through the closed-body
+grammar and its binding atoms travel out with the term, so the caller's rule
+body binds them. The pinned witness of (ii) is a document parameter in a
+fold's `init` — golden `jutterswet-meldtermijnen`, rule `standaardpositie van
+een meldplicht`, whose fold base rule carries the payload's
+`param("standaardtermijn",P)` atom in its body; the same arm lowers any other
+closed-body payload shape, and those shapes have no corpus case. Refused, each with its own true reason:
 
 - a **subject-dependent fold `init` over a source that is not
   subject-keyed**. The fold's accumulator and result facts are keyed by
@@ -2139,7 +2143,12 @@ fold's `init`. Refused, each with its own true reason:
   recursion would derive EVERY subject's outcome for EVERY subject.
   Measured before the fence existed, on two instances with terms 30 and
   10: both came back carrying both outcomes. This is refused because the
-  answer would be WRONG, not because it would be missing.
+  answer would be WRONG, not because it would be missing. A DERIVED source
+  — a mapped list over an own attribute list, id `lm(alist(S,"attr"))` —
+  keeps the subject in its id and would be safe, but the carrier admits
+  exactly ONE source shape and the refusal says so, rather than claiming a
+  collision that shape does not have: a widening nothing asks for is a
+  widening no gate can see.
 - a **rule-level payload that is neither a literal nor an own-subject
   attribute read** — a document parameter read, a `Match`, a composite.
   No corpus case; the rule-level `Construct` arm carries only the two.
@@ -2147,8 +2156,21 @@ fold's `init`. Refused, each with its own true reason:
   sum-typed comparison operand, or a sum-typed operand inside a closed
   body. Those positions return a term and NO body atoms, so a payload
   that must be bound has nowhere to hang its atom.
+- an **attribute read at the LEAF of a closed-body term**, reached
+  THROUGH forms the closed body does carry. `Openstaand(<attr> + 1)` as a
+  fold `init` is not itself an attribute read, so it takes the closed
+  route of (ii); the constructor arm lowers recursively, the additive arm
+  lowers its operands, and the leaf asks for a subject in a scope that has
+  none. The route between (i) and (ii) is chosen on the init's SHAPE — an
+  attribute read, bare or directly under a constructor — and this refusal
+  states that rule as its reason. Widening the shape test to "reads the
+  subject anywhere" would only move forms from one loud refusal to
+  another, except for the semantically inert ones (an unread `Let` around
+  a carried init), which it would newly carry with no witness; the shape
+  test is therefore deliberate. `ref` plays every such form; the carrier
+  refuses it and names the boundary.
 
-The three refusals are not observable from any corpus document (a
+The four refusals are not observable from any corpus document (a
 refusal has no golden), so each is pinned by a fault fixture asserting
 its literal text in `backends/clingo/test/test_clingo.ml`, which gate 6
 runs: a text that drifts or a refusal that quietly disappears fails the
