@@ -431,3 +431,34 @@ in de indexrij.
   buiten `corpus/golden/anchor/`, met de reden erbij: de ci-getuige van
   openstaand punt 1 kan alleen een golden zijn. De scopeverruiming stond
   in de diff maar nergens opgeschreven.
+
+## Result (hoofdsessie, 2026-09-03)
+
+Geland: **WF-090, struct-domein-identiteit als eigen nummer**
+(maintainerbesluit 2026-09-03; de ch.-2.4-term "keuzetype-familie"
+ongewijzigd), met de machinerie gedeeld met WF-089/WF-023 en de
+ListType-doorkijk. Beide zijden gemeten en gedicht: de SCHRIJFzijde op
+alle drie posities (regeldoel, objectcreatie, defaults-consequentie —
+inclusief de flank waar clingo volledig groen meldde op een document dat
+ref niet eens kon evalueren) en de LEESzijde op zes referentievormen
+(AttribuutRef scalair en door een lijst, BinderRef, ParameterRef,
+DimensieCel, foldbron én het aggregatie-doorgeefluik). Tien
+wf090-negatiefs, elk arm-exact mutant-bewezen; de veldvormen bleken al
+gedekt door WF-073/074 (geen dubbele regels — wel kregen hun meldingen
+de domeinnamen erbij).
+
+Lensvangsten van gewicht: S2 — een verifier-schoon FOUT antwoord via een
+inline StructType-kopie met omgekeerde veldVOLGORDE (ref slaagde, clingo
+week af), een flank die de bouw miste en die nu gedicht en gepind is; S1
+— de onbereikbaarheidsclaim in ref was opnieuw te vroeg en is pas na
+hermeting teruggezet; S4 — de ci-clausule gepind met de golden
+`jutterswet-dossierspelling` (May-touch-uitbreiding, als bevinding
+gemeld en verwerkt). Over-afwijzing driemaal nul gemeten over golden +
+rood + toka.
+
+Eindstand op de branch: alle twaalf gates groen; goldens 170 → 171,
+negatiefs 206 → 220 (tien uit de bouw, vier uit de fixronden), en de hoofdsessie-commits dragen de rij-32-annotatie
+(de gemeten niveau-0-weging, non-goal blijft staan). Bewust gelaten:
+de niet-doorgeef-aggregatie over gemengde structoperanden (S5 — de
+orderbaarheidsvraag van de doorgeeffamilie, al gekaart als
+`20260902-doorgeeffold-orderbaarheid`).
