@@ -2269,26 +2269,37 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          plist(p) and the subject drops out of the head, so two subjects' init
          facts land on one key and the recursion hands every subject every
          subject's outcome — a WRONG answer, measured, not a missing one. That
-         collision is refused loudly here (S19). *)
-      let rec init_reads_subject e =
+         collision is refused loudly here (S19).
+         [init_is_subject_read] is deliberately a SHAPE test — it names the two
+         shapes [expr_term] is known to carry with a subject read, and it picks
+         the ROUTE, not the semantics. An init that merely CONTAINS a subject
+         read deeper down (under arithmetic, under a Let) takes the closed
+         route and is refused there by [closed_term]'s attribute-read arm,
+         which states this same shape rule as its reason. Widening the test
+         would move those forms to a refusal with a different wording and would
+         newly CARRY only forms no corpus document has — and a carried form
+         without a witness is exactly the drift this fence exists to stop. *)
+      let rec init_is_subject_read e =
         match e with
         | Attribuut_ref _ -> true
-        | Construct { argument = Some a; _ } -> init_reads_subject a
+        | Construct { argument = Some a; _ } -> init_is_subject_read a
         | _ -> false
       in
-      let rec source_subject_keyed e =
-        match e with
-        | Attribuut_ref _ -> true
-        | Map_list { list; _ } -> source_subject_keyed list
-        | _ -> false
-      in
+      (* deliberately ONE shape, not a walk down derived sources: a mapped list
+         over an own attribute list keeps the subject in its id (lm7(alist(S,a)))
+         and would be safe, but nothing asks for it and a carried path without a
+         corpus witness is a path that drifts unseen. The refusal below says so
+         rather than claiming a collision that shape does not have. *)
+      let source_subject_keyed e = match e with Attribuut_ref _ -> true | _ -> false in
       let init_atoms, init_term, init_scale =
-        if init_reads_subject init then begin
+        if init_is_subject_read init then begin
           if not (source_subject_keyed list) then
             fault
-              "a subject-dependent Fold init over a list that is not subject-keyed is not \
-               translated (the accumulator is keyed by the list id alone, so two subjects' init \
-               facts collide on that one key and every subject reads every subject's outcome)";
+              "a subject-dependent Fold init is carried only over an own attribute list, whose id \
+               alist(S,attr) carries the subject: over a list parameter the id is plist(p) alone, \
+               so two subjects' init facts collide on that one key and every subject reads every \
+               subject's outcome — a wrong answer, not a missing one; a derived source (a mapped \
+               list) keeps the subject in its id but has no corpus case";
           expr_term ctx ~subject ~subject_ot init
         end
         else closed_term ctx ~guard_body:[ Printf.sprintf "lpres(%s)" lterm ] ~witness:lterm init
@@ -3552,6 +3563,21 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
       let ba, bt, bs = closed_term ctx ~guard_body:(guard_body @ va) ~witness body in
       ctx.binders <- saved;
       (va @ ba, bt, bs)
+  | Attribuut_ref _ ->
+      (* the fourth refusing place of the S19 inventory, split out of the
+         catch-all below so the reason names the SHAPE instead of listing forms
+         (a Construct, a Let, a sum) that this position does carry — the read
+         that fails is the LEAF, reached through them. A closed body has no
+         subject: a lambda/function body reads its binders, a fold init is
+         evaluated once beside the list, so there is no S to hang a val atom
+         on. The one subject-reading init that IS carried never arrives here —
+         it takes the rule-level route of S19 ([expr_term]) when its own SHAPE
+         is an attribute read, bare or directly under a Construct, and the fold
+         source is subject-keyed. *)
+      fault
+        "an attribute read inside a closed body has no subject to read from (a lambda or function \
+         body and a fold init are subject-free); only a Fold init whose own SHAPE is an attribute \
+         read, bare or directly under a Construct, takes the subject-keyed rule-level route"
   | _ ->
       fault
         "a closed-body term here is a bound binder, a literal, a parameter, a +/-/×/percentage-of \

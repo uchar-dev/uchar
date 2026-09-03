@@ -593,8 +593,8 @@ let () =
    The carrier lowers a non-literal Construct payload wherever the position
    can carry the payload's binding atoms: a closed-body term (the fold init,
    corpus/golden/jutterswet-meldtermijnen) and a rule-level own-attribute
-   read. Three positions still refuse, each for a DIFFERENT reason, and none
-   of the three has a corpus witness that could pin it — a refusal nobody
+   read. FOUR positions still refuse, each for a DIFFERENT reason, and none
+   of the four has a corpus witness that could pin it — a refusal nobody
    observes can drift or vanish unnoticed, so each refusal text is pinned
    here instead. A changed text or a changed behaviour fails this suite. *)
 
@@ -769,13 +769,70 @@ let sum_operand_case =
   "expected": [ { "kind": "consistent" } ] }
 |}
 
+(* DOOR 4 — a subject read reached THROUGH a form the closed body does carry.
+   The init Openstaand(<termijn> + 1) is not itself an attribute read, so it
+   takes the closed route; the Construct arm lowers recursively, the Binair
+   arm lowers its operands, and the LEAF is an attribute read in a scope that
+   has no subject. The source here IS an own attribute list, so door 1 is not
+   what fires — this is a fourth place, and until 2026-09-03 it answered with
+   the catch-all's list of carried forms, which named the very Construct it
+   had just lowered through. *)
+let closed_attr_doc =
+  door_doc
+    ~attributen:
+      ({|"termijn": |} ^ num0 ^ {|, "meldreeks": { "node": "ListType", "element": |} ^ gebeurtenis
+     ^ {| }, "meldpositie": |} ^ meldstatus)
+    ~parameters:""
+    ~regel:
+      ({|{ "node": "ResolvedRegel", "naam": "meldpositie van een meldplicht", "soort": "BEREKENING",
+      "doel": |} ^ doel_meldpositie
+     ^ {|,
+      "waarde": { "node": "Fold", "type": |} ^ meldstatus
+     ^ {|,
+        "list": |}
+     ^ aref "meldreeks" ({|{ "node": "ListType", "element": |} ^ gebeurtenis ^ {| }|})
+     ^ {|,
+        "function": { "node": "Lambda", "parameters": [
+            { "name": "stand", "datatype": |} ^ meldstatus
+     ^ {| },
+            { "name": "gebeurtenis", "datatype": |} ^ gebeurtenis
+     ^ {| } ],
+          "body": { "node": "BinderRef", "name": "stand", "type": |} ^ meldstatus
+     ^ {|, "bron": "de stand" },
+          "bron": "de vouwstap" },
+        "init": { "node": "Construct", "type": |} ^ meldstatus
+     ^ {|, "constructor": "Openstaand",
+          "argument": { "node": "Binair", "op": "PLUS",
+            "links": |} ^ aref "termijn" num0
+     ^ {|,
+            "rechts": { "node": "Literal", "waarde": "1", "type": |} ^ num0
+     ^ {|, "bron": "1" },
+            "type": |} ^ num0
+     ^ {|, "bron": "de termijn plus een dag" },
+          "bron": "Openstaand met de termijn plus een dag" },
+        "bron": "de meldreeks gevouwen" },
+      "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|})
+
+let closed_attr_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+      { "label": "M1", "objectType": "Meldplicht",
+        "attributes": { "termijn": { "number": "30" },
+          "meldreeks": { "list": [ { "constructor": "Melding" } ] } },
+        "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }
+|}
+
 let () =
   faults_with ~name:"S19 door 1 (subject-dependent fold init over a list parameter)"
     ~ir:plist_init_doc ~case_text:plist_init_case
     ~needle:
-      "a subject-dependent Fold init over a list that is not subject-keyed is not translated (the \
-       accumulator is keyed by the list id alone, so two subjects' init facts collide on that one \
-       key and every subject reads every subject's outcome)";
+      "a subject-dependent Fold init is carried only over an own attribute list, whose id \
+       alist(S,attr) carries the subject: over a list parameter the id is plist(p) alone, so two \
+       subjects' init facts collide on that one key and every subject reads every subject's \
+       outcome — a wrong answer, not a missing one; a derived source (a mapped list) keeps the \
+       subject in its id but has no corpus case";
   faults_with ~name:"S19 door 2 (rule-level Construct with a parameter payload)"
     ~ir:param_payload_doc ~case_text:param_payload_case
     ~needle:
@@ -785,7 +842,13 @@ let () =
     ~ir:sum_operand_doc ~case_text:sum_operand_case
     ~needle:
       "a Construct payload other than a literal is not a ground term (a payload that must be \
-       bound needs a body atom this position cannot carry; no corpus case)"
+       bound needs a body atom this position cannot carry; no corpus case)";
+  faults_with ~name:"S19 door 4 (attribute read at the leaf of a closed-body init)"
+    ~ir:closed_attr_doc ~case_text:closed_attr_case
+    ~needle:
+      "an attribute read inside a closed body has no subject to read from (a lambda or function \
+       body and a fold init are subject-free); only a Fold init whose own SHAPE is an attribute \
+       read, bare or directly under a Construct, takes the subject-keyed rule-level route"
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
