@@ -2197,8 +2197,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           (atoms, Printf.sprintf "%s(%s)" f term, 0))
   | Construct _ ->
       fault
-        "a Construct payload other than a literal or an own attribute read is not translated (a \
-         Match or composite payload has no corpus case)"
+        "a Construct payload other than a literal or an own attribute read is not translated at \
+         rule level (a parameter read, a Match or a composite payload has no corpus case)"
   | Match { typ; scrutinee; arms; _ } ->
       translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms
   | Binder_ref { naam; _ } -> (
@@ -2260,8 +2260,38 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let lterm, elem_scale = list_source ctx ~subject ~subject_ot list in
       ctx.fresh <- ctx.fresh + 1;
       let fa = Printf.sprintf "fa%d" ctx.fresh and fr = Printf.sprintf "fr%d" ctx.fresh in
+      (* the init is normally a CLOSED term: the fold's own scope has no
+         subject. A SUBJECT-DEPENDENT init — the reified duty folded with its
+         OWN term, Openstaand(<the termijn of this duty>) — rides [expr_term],
+         which carries the form at rule level, but ONLY when the fold source is
+         SUBJECT-KEYED (an own attribute list, whose list id is alist(S,attr)).
+         fa/fr are keyed by the LIST ID alone: over a list PARAMETER the id is
+         plist(p) and the subject drops out of the head, so two subjects' init
+         facts land on one key and the recursion hands every subject every
+         subject's outcome — a WRONG answer, measured, not a missing one. That
+         collision is refused loudly here (S19). *)
+      let rec init_reads_subject e =
+        match e with
+        | Attribuut_ref _ -> true
+        | Construct { argument = Some a; _ } -> init_reads_subject a
+        | _ -> false
+      in
+      let rec source_subject_keyed e =
+        match e with
+        | Attribuut_ref _ -> true
+        | Map_list { list; _ } -> source_subject_keyed list
+        | _ -> false
+      in
       let init_atoms, init_term, init_scale =
-        closed_term ctx ~guard_body:[ Printf.sprintf "lpres(%s)" lterm ] ~witness:lterm init
+        if init_reads_subject init then begin
+          if not (source_subject_keyed list) then
+            fault
+              "a subject-dependent Fold init over a list that is not subject-keyed is not \
+               translated (the accumulator is keyed by the list id alone, so two subjects' init \
+               facts collide on that one key and every subject reads every subject's outcome)";
+          expr_term ctx ~subject ~subject_ot init
+        end
+        else closed_term ctx ~guard_body:[ Printf.sprintf "lpres(%s)" lterm ] ~witness:lterm init
       in
       if init_scale <> out_scale then
         fault "fold init scale %d does not match the fold's declared scale %d" init_scale out_scale;
@@ -2887,8 +2917,11 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
 
 (* the ground term of a Construct (ch. 9.1): a Literal payload scaled to the
    constructor's DECLARED payload datatype; the nullary case is the bare
-   functor. A non-literal payload would need underivability propagation and
-   has no corpus case. *)
+   functor. This route returns a term and NO binding atoms, so it admits only
+   a payload that is already ground; a payload that must be BOUND (an
+   attribute read, a parameter, an arithmetic combination) needs an atom the
+   calling position has nowhere to put — the callers that can carry atoms
+   ([expr_term], [closed_term]) lower such a payload themselves. *)
 and construct_ground_term ctx typ constructor_ argument =
   let constructoren = sum_constructors typ in
   let f = ctor_functor constructor_ in
@@ -2903,8 +2936,8 @@ and construct_ground_term ctx typ constructor_ argument =
            (Value.Num (Value.q_of_lexeme lex, Value.Unitless)))
   | Some _, Some _ ->
       fault
-        "a Construct payload other than a literal is not translated (a bound payload would need \
-         underivability propagation; no corpus case)"
+        "a Construct payload other than a literal is not a ground term (a payload that must be \
+         bound needs a body atom this position cannot carry; no corpus case)"
 
 (* a sum-typed comparison operand → (body atoms binding a term, the term):
    an own-subject attribute read binds its val atom's value; a Construct is a
@@ -3396,8 +3429,28 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
         ~body:(guard_body @ bl @ br)
         [ (tl', 1073741823 / (m / sl)); (tr', 1073741823 / (m / sr)) ];
       (bl @ br, Printf.sprintf "(%s%s%s)" tl' (if op = Plus then "+" else "-") tr', m)
-  | Construct { typ; constructor_; argument; _ } ->
+  | Construct { typ; constructor_; argument = (None | Some (Literal _)) as argument; _ } ->
       ([], construct_ground_term ctx typ constructor_ argument, 0)
+  | Construct { typ; constructor_; argument = Some arg; _ } -> (
+      (* ch. 9.1 in a closed body: a NON-literal payload is itself a
+         closed-body term — a document parameter, a bound binder, an additive
+         or multiplicative combination of those — so it lowers RECURSIVELY
+         through this same function and the constructor wraps the resulting
+         term. Scaled to the DECLARED payload datatype; the constructor value's
+         own scale is 0 (a sum term is not numeric), the [expr_term] posture.
+         The payload's binding atoms travel out with the term, so the caller's
+         rule body binds them (the fold base rule is the corpus site). *)
+      match ctor_payload_datatype (sum_constructors typ) constructor_ with
+      | None -> fault "nullary constructor %S built with an argument (WF-062)" constructor_
+      | Some d ->
+          let payload_scale = pow10 (decimals_of_datatype (Some d)) in
+          let atoms, term, scale = closed_term ctx ~guard_body ~witness arg in
+          if scale <> payload_scale then
+            fault
+              "a Construct payload at scale %d does not match the declared payload scale %d \
+               (rescaling a bound sum payload has no corpus case)"
+              scale payload_scale;
+          (atoms, Printf.sprintf "%s(%s)" (ctor_functor constructor_) term, 0))
   | Field_access { base; veld; _ } ->
       (* ch. 11.1 inside a closed body (the MapList-over-struct-field lelem
          route, λd. d.veld): the base is a bound struct binder; project its
