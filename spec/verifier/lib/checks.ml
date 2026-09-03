@@ -1068,13 +1068,208 @@ let wf090_struct_identity ?(source = "the declaration it reads from") at ~what ~
                  "%s is typed %s, naming no struct domain, but %s names struct domain '%s'" what
                  (datatype_kind t) source b) ])
 
-(* the two use-site identities at one call: WF-089 for the keuzetype family,
-   WF-090 for struct domains. Every reference position calls this, so the two
-   rules stay mechanically in step; each is falsifiable on its own because the
-   two helpers are separate. *)
-let use_site_identity ?source at ~what ~decl ~typ =
-  wf089_domain_identity ?source at ~what ~decl ~typ
-  @ wf090_struct_identity ?source at ~what ~decl ~typ
+(* --- the facet engine (WF-091 and the numbers it defers to) ------------- *)
+
+(* Structural identity of a unit (ch. 2.5): abbreviation, declaring system,
+   canonical unit, conversion factor and — recursively — the denominator of a
+   composite rate. EXACT, never converting, which is the whole point: `kg`
+   and `t` share a canonical unit and a shape, so [units_convertible] (what
+   WF-035 and WF-023 cross) calls them compatible, and a lie inside the
+   convertible class is compatible by construction. Only identity sees it. *)
+let rec eenheid_identical (a : eenheid) (b : eenheid) =
+  a.afkorting = b.afkorting && a.stelsel = b.stelsel && a.canoniek = b.canoniek
+  && a.factor_naar_canoniek = b.factor_naar_canoniek
+  &&
+  match (a.noemer, b.noemer) with
+  | None, None -> true
+  | Some x, Some y -> eenheid_identical x y
+  | _ -> false
+
+let rec eenheid_render (u : eenheid) =
+  (match u.afkorting with Some a -> "'" ^ a ^ "'" | None -> "an unnamed unit")
+  ^ (match u.stelsel with Some s -> " of system '" ^ s ^ "'" | None -> "")
+  ^ (match (u.factor_naar_canoniek, u.canoniek) with
+    | Some f, Some c -> Printf.sprintf " (factor %g to '%s')" f c
+    | Some f, None -> Printf.sprintf " (factor %g)" f
+    | None, Some c -> Printf.sprintf " (canonical '%s')" c
+    | None, None -> "")
+  ^ match u.noemer with Some n -> " per " ^ eenheid_render n | None -> ""
+
+let unit_render = function None -> "no unit" | Some u -> eenheid_render u
+
+let teken_render = function
+  | None -> "no sign restriction"
+  | Some Onbepaald -> "ONBEPAALD"
+  | Some Negatief -> "NEGATIEF"
+  | Some Niet_negatief -> "NIET_NEGATIEF"
+  | Some Positief -> "POSITIEF"
+
+(* The numeric facets a type turns on. A Percentage carries no sign
+   restriction on the wire, so its sign facet is vacuously "none". *)
+type num_facets = {
+  nf_geheel : bool;
+  nf_decimalen : int;
+  nf_teken : teken option;
+  nf_eenheid : eenheid option;
+}
+
+let num_facets_of = function
+  | Numeriek { geheel; decimalen; teken; eenheid } ->
+      Some { nf_geheel = geheel; nf_decimalen = decimalen; nf_teken = teken; nf_eenheid = eenheid }
+  | Percentage { geheel; decimalen; eenheid } ->
+      Some { nf_geheel = geheel; nf_decimalen = decimalen; nf_teken = None; nf_eenheid = eenheid }
+  | _ -> None
+
+(* the numeric facets are read THROUGH matching ListType layers, exactly as
+   the domain facets are: a list of kilograms and a list of tonnes differ in
+   their unit, not in some nameless residual *)
+let rec peel_lists a b =
+  match (a, b) with
+  | List_type { element = x }, List_type { element = y } -> peel_lists x y
+  | _ -> (a, b)
+
+(* The residual facet's comparison form: the datatype with every declared
+   NAME folded to the WF-001 form. Names are compared case-insensitively
+   everywhere else in this file, and two goldens pin exactly that spelling
+   freedom between a use site and its declaration. *)
+let rec dt_ci = function
+  | Enumeratie { domein; waarden } ->
+      Enumeratie
+        { domein = Option.map norm domein; waarden = List.map (Option.map norm) waarden }
+  | Sum_type { domein; constructoren } ->
+      Sum_type
+        { domein = norm domein;
+          constructoren = List.map (fun (n, p) -> (norm n, Option.map dt_ci p)) constructoren }
+  | Struct_type { domein; velden } ->
+      Struct_type
+        { domein = norm domein; velden = List.map (fun (n, d) -> (norm n, dt_ci d)) velden }
+  | List_type { element } -> List_type { element = dt_ci element }
+  | other -> other
+
+(* the whole structure spelled out — what the residual facet reports, where
+   [datatype_detail]'s summary would render a difference as "X vs X" *)
+let rec datatype_full = function
+  | Numeriek { geheel; decimalen; teken; eenheid } ->
+      Printf.sprintf "number(%s, %d decimals, %s, %s)"
+        (if geheel then "whole" else "fractional")
+        decimalen (teken_render teken) (unit_render eenheid)
+  | Percentage { geheel; decimalen; eenheid } ->
+      Printf.sprintf "percentage(%s, %d decimals, %s)"
+        (if geheel then "whole" else "fractional")
+        decimalen (unit_render eenheid)
+  | Enumeratie { domein; waarden } ->
+      Printf.sprintf "enumeration '%s' [%s]"
+        (Option.value domein ~default:"?")
+        (String.concat ", " (List.map (Option.value ~default:"?") waarden))
+  | Sum_type { domein; constructoren } ->
+      Printf.sprintf "sumtype '%s' [%s]" domein
+        (String.concat ", "
+           (List.map
+              (fun (n, p) -> match p with None -> n | Some d -> n ^ " of " ^ datatype_full d)
+              constructoren))
+  | Struct_type { domein; velden } ->
+      Printf.sprintf "struct '%s' {%s}" domein
+        (String.concat ", " (List.map (fun (n, d) -> n ^ ": " ^ datatype_full d) velden))
+  | List_type { element } -> "list of " ^ datatype_full element
+  | other -> datatype_kind other
+
+(* WF-091 (reference-type identity, IR-SPEC ch. 4.1) and the numbers it
+   defers to. ONE comparison of a use site's serialized [typ] against the
+   declaration it takes its value from, facet by facet in one fixed order —
+   soort, domain, unit, decimals, wholeness, sign, residual structure — of
+   which the FIRST differing facet is reported, once: one divergence is one
+   message, never two for one path.
+
+   The rule NUMBER follows the facet and the arm, not this function. A facet
+   that already carries a number on this arm keeps that number and its
+   wording verbatim: the domain facet is WF-089 (keuzetype family) and
+   WF-090 (struct domains) on every arm, and the soort facet is WF-078 on a
+   `BinderRef` (the caller passes [soort]). Every facet without one is
+   WF-091's, its name in the message — which is what lets a further facet
+   land without a further rule number.
+
+   The soort facet deliberately stops short of the domain-carrying kinds:
+   `domeinen` is ONE namespace, so enumeration-versus-sum-type and
+   domain-versus-no-domain are the domain facet's own clauses (WF-089's
+   variant and one-sided arms, WF-090's), stated and numbered there.
+
+   Deferrals are the family's, unchanged: either side absent or the v0
+   unknown sentinel, or a declaration that does not resolve. *)
+let use_site_identity ?(source = "the declaration it reads from") ?soort at ~what ~decl ~typ =
+  match (decl, typ) with
+  | None, _ | _, None | Some (Datatype_onbekend _), _ | _, Some (Datatype_onbekend _) -> []
+  | Some d, Some t ->
+      let mismatch facet shown_t shown_d =
+        [ v "WF-091" at
+            (Printf.sprintf "%s mismatch: %s is typed %s, but %s is %s" facet what shown_t source
+               shown_d) ]
+      in
+      let names_a_domain x = keuzetype_domain x <> None || struct_domain x <> None in
+      let soort_facet () =
+        if names_a_domain t || names_a_domain d then []
+        else if datatype_kind t = datatype_kind d then []
+        else
+          match soort with
+          | Some (rule, render) -> [ v rule at (render (datatype_kind t) (datatype_kind d)) ]
+          | None -> mismatch "soort" (datatype_kind t) (datatype_kind d)
+      in
+      let domain_facet () =
+        match wf089_domain_identity ~source at ~what ~decl ~typ with
+        | [] -> wf090_struct_identity ~source at ~what ~decl ~typ
+        | vs -> vs
+      in
+      let tl, dl = peel_lists t d in
+      let numeric pick facet render =
+        match (num_facets_of tl, num_facets_of dl) with
+        | Some ft, Some fd when pick ft <> pick fd -> mismatch facet (render ft) (render fd)
+        | _ -> []
+      in
+      let unit_facet () =
+        match (num_facets_of tl, num_facets_of dl) with
+        | Some ft, Some fd
+          when not
+                 (match (ft.nf_eenheid, fd.nf_eenheid) with
+                 | None, None -> true
+                 | Some a, Some b -> eenheid_identical a b
+                 | _ -> false) ->
+            mismatch "unit" (unit_render ft.nf_eenheid) (unit_render fd.nf_eenheid)
+        | _ -> []
+      in
+      let decimals_facet () =
+        numeric
+          (fun f -> f.nf_decimalen)
+          "decimals"
+          (fun f -> Printf.sprintf "%d decimals" f.nf_decimalen)
+      in
+      let whole_facet () =
+        numeric
+          (fun f -> f.nf_geheel)
+          "wholeness"
+          (fun f -> if f.nf_geheel then "whole" else "fractional")
+      in
+      let sign_facet () =
+        numeric (fun f -> f.nf_teken) "sign" (fun f -> teken_render f.nf_teken)
+      in
+      let residual_facet () =
+        if dt_ci t <> dt_ci d then
+          mismatch "residual structure" (datatype_full t) (datatype_full d)
+        else []
+      in
+      let rec first = function
+        | [] -> []
+        | f :: rest -> ( match f () with [] -> first rest | vs -> vs)
+      in
+      first
+        [ soort_facet; domain_facet; unit_facet; decimals_facet; whole_facet; sign_facet;
+          residual_facet ]
+
+(* the soort facet's WF-078 wording on a `BinderRef` arm — the number and the
+   sentence WF-078 has carried since the sum-type card, kept verbatim so the
+   engine absorbs the rule rather than renaming it *)
+let binder_soort naam =
+  ( "WF-078",
+    fun kt kd -> Printf.sprintf "binder reference '%s' is typed %s, but its binder is %s" naam kt kd
+  )
 
 let wf030 ctx =
   let key_checks at otn keys =
@@ -3094,25 +3289,17 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                ^ "' is bound outside the enclosing closed body — a closed function or lambda body \
                   reads only its own parameters and inner bindings") ]
           else [ v "WF-064" at ("binder reference '" ^ naam ^ "' resolves to no enclosing binder") ]
-      | Some (_, bdt) -> (
-          (* WF-078: the serialized [type] must not lie about the binder's
-             soort — the leaf-ref cross-check WF-023/WF-027 perform for a
-             resolved AttribuutRef, applied to a binder's declared datatype.
-             Soort only (decimals and units stay uncrossed, exactly as for the
-             AttribuutRef cross-check); a binder whose declared type is unknown
-             defers, as does a reference carrying no type. *)
-          (match (bdt, typ) with
-           | Some d, Some t when datatype_kind t <> datatype_kind d ->
-               [ v "WF-078" (sub "type")
-                   (Printf.sprintf "binder reference '%s' is typed %s, but its binder is %s" naam
-                      (datatype_kind t) (datatype_kind d)) ]
-           | _ -> [])
-          (* WF-089: the domain half of the same cross — the binder's declared
+      | Some (_, bdt) ->
+          (* the identity engine on the binder arm. The binder's declared
              datatype is a match arm's declared payload, a lambda/function
              parameter's declared type, a Let value's type or a filter's
-             element type, and the reference names its keuzetype domain *)
-          @ use_site_identity (sub "type") ~what:("binder reference '" ^ naam ^ "'")
-              ~decl:bdt ~typ))
+             element type; the reference's serialized [type] repeats it on
+             every facet. Soort is WF-078's facet here (its number and its
+             sentence, kept), the domain facet WF-089/WF-090's, every other
+             facet WF-091's — the decimals and the unit WF-078 deliberately
+             left uncrossed among them. *)
+          use_site_identity (sub "type") ~soort:(binder_soort naam)
+            ~what:("binder reference '" ^ naam ^ "'") ~decl:bdt ~typ)
   | Struct_literal { typ; velden; _ } ->
       (* WF-073: the type is a declared struct; the supplied fields are
          exactly the declared fields, each once; each value's static type
@@ -5009,9 +5196,31 @@ let wf023_assignment at ~target ~value (dt : datatype) (wt : datatype) =
       | _ -> []
 
 let wf023 ctx =
+  (* position 0, the write TARGET's own annotation: a rule target is a
+     reference like any other, so its serialized [type] is a use site of the
+     attribute declaration it WRITES and the identity engine crosses it facet
+     by facet (WF-091, and WF-089/WF-090 for the domain facet). The
+     expression walk deliberately never enters the target — the lvalue is
+     WF-022's — which left it the one reference type in a document that
+     nothing crossed: the card measured a convertible unit lie there passing
+     gate 3 while a consumer honouring the annotation rescales the written
+     value. The three positions below cross what is WRITTEN against the same
+     declaration; this crosses what the target CLAIMS to be. *)
+  List.concat_map
+    (fun (i, (r : resolved_regel)) ->
+      match r.doel with
+      | Some (Attribuut_ref { attribuut; _ } as doel) ->
+          use_site_identity
+            (Printf.sprintf "/resolvedRegels/%d/doel/type" i)
+            ~source:"the attribute declaration it writes"
+            ~what:("rule target '" ^ Option.value attribuut ~default:"?" ^ "'")
+            ~decl:(resolved_attr_datatype ctx doel)
+            ~typ:(typ_of_expr doel)
+      | _ -> [])
+    (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_regels)
   (* position 1: the rule target — its declared datatype where the target
      resolves (WF-022), its serialized type otherwise *)
-  List.concat_map
+  @ List.concat_map
     (fun (i, (r : resolved_regel)) ->
       let at = Printf.sprintf "/resolvedRegels/%d" i in
       match (r.rr_soort, r.doel, r.waarde) with
