@@ -56,3 +56,40 @@ een losse eenheidsregel:
    (RUNTIME-SEMANTICS), het verdraai-harnas en de herschaal-werklijst
    worden een eigen kaart, net als het pinnen van de getuigeloze armen
    en het WF-007-doelgat uit de bijvangst.
+
+## Bouwnotitie (2026-09-03)
+
+Geland: de facetmotor in `use_site_identity`, twaalf wf091-negatiefs, de
+IR-SPEC-clausule + WF-091-indexrij + WF-078-herformulering (voorstel).
+Alle twaalf gates groen; gate 3 172 golden / 232 negatief.
+
+Drie afwijkingen van de opdracht, met reden:
+
+1. **Zeven armen, geen negen.** Van de drie schrijfposities draagt
+   alleen het REGELDOEL een eigen geserialiseerd type (`doel` is een
+   expr). Een objectcreatie-lid (`Toekenning.attribuut`) en een
+   defaults-consequentie (`PrioritizedDefaults.attribuut`) NOEMEN hun
+   doel — er is daar geen referentietype om tegen de declaratie te
+   leggen. Wat op die twee posities kruist is de TOEWIJZING (waarde
+   tegen declaratie) onder WF-023/WF-090, en dat is compatibiliteit, geen
+   identiteit: identiteit eisen zou elk literal-in-attribuut afwijzen. De
+   motor is dus geregistreerd op zes leesarmen + het regeldoel; de
+   `wf090-schrijf-*`-negatiefs blijven onaangeraakt bij hun eigen wet.
+2. **Twee extra negatiefs** buiten de opgedragen lijst: `-teken` en
+   `-reststructuur`. Zonder die twee zou de clausule zeven facetten
+   noemen waarvan er twee door geen artefact falsifieerbaar zijn.
+3. **De facetvolgorde pint het NUMMER, niet de weigering.** Gemeten: de
+   reststructuurfacet is een vangnet dat elk verschil ziet, dus het
+   uitschakelen van een genoemd facet degradeert alleen de MELDING
+   (`residual structure mismatch`) — het document blijft geweigerd.
+   Alleen de reststructuurfacet uitschakelen laat een document passeren.
+   Het nummerkeuze-deel is wél falsifieerbaar (soortfacet uit →
+   `wf078-binderref-type-lie` wordt WF-091; domeinfacet uit → alle 21
+   wf089/wf090-gevallen worden WF-091). Zo staat het in de indexrij.
+
+Bijvangst voor een eigen kaart: (a) de armen zonder positieve
+golden-getuige voor de eenheidsfacet — `ParameterRef`, `DimensieCel` en
+de doorgeef-aggregatie (gemeten nul; de pariteitszone heeft ze wel);
+(b) WF-078 defereerde tot nu toe NIET op een binder met het
+onbekend-sentinel terwijl ch. 4.7 zegt dat het defereert — de motor
+volgt de spec en defereert nu wel.
