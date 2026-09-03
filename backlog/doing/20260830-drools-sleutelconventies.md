@@ -146,7 +146,7 @@ faalt: ref met een ch.-5.9-fault, Drools met een ERROR — zie restgat 1).
 
 **Fixronde 2: de twee poorten van `rsOoitBevat` kregen hun getuige, en de
 niet-numerieke poort zijn bereikbare motivering.** Beide eigenschappen werden
-als waarheid geclaimd (javadoc en deze notitie) maar hield geen enkele test
+als waarheid geclaimd (javadoc en deze notitie), maar geen enkele test hield ze
 vast: `stripTrailingZeros()` weghalen en de suite blijft groen. Gemeten op de
 gemengde unie (`jutterswet-nummerregister` zonder `Wrakvondst`-granulariteit,
 verifier PASS):
@@ -228,11 +228,14 @@ getuige):**
 13. de DRL-unie-VELD zonder `sleutelVeld` → dezelfde getuige op de andere
     assertie (4 matches `rsOoitBotst(vondstnummer, $k0)` worden er 2).
 
-**Gates.** Alle twaalf groen in de worktree, corpustellingen ongewijzigd:
-gate 12 `played 105 / auto-excluded 41 / value-divergence 1 / no-case 1`;
+**Gates.** Alle twaalf groen in de worktree na fixronde 1, corpustellingen
+ongewijzigd. Fixronde 2 raakt alleen `backends/drools/src/**` en `backlog/`, dus
+zijn de twee gates die dat kunnen zien opnieuw gedraaid: gate 1 PASS en gate 12
+PASS met `played 105 / auto-excluded 41 / value-divergence 1 / no-case 1`;
 JUnit 178 tests zonder skips (was 165, dan 175 met de tien getuigen van
-fixronde 1, nu 178 met de drie van fixronde 2). Gate
-1 PASS. Er is nog steeds geen corpusgetuige voor beide vormen — geverifieerd
+fixronde 1, nu 178 met de drie van fixronde 2). De drie modellen van deze ronde
+zijn los langs verifier, ref en clingo gegaan (de tabel hierboven). Er is nog
+steeds geen corpusgetuige voor beide vormen — geverifieerd
 doordat die tellingen niet bewogen; een synthese-getuige zou een uitbreiding
 van May-touch vergen en is niet gedaan. Óók de vijf sleutelconventie-vormen
 van fixronde 1 en de twee randvormen van fixronde 2 (de schaal-flank en de
