@@ -29,7 +29,11 @@ Acceptance:
   alle twaalf gates groen.
 
 May touch: `spec/verifier/**` (proposal), `spec/IR-SPEC.md` (proposal),
-`corpus/negatief/**`, `ref/**` (meldteksten), `backlog/`.
+`corpus/negatief/**`, `ref/**` (meldteksten), `backlog/`, en — verruimd
+in fixronde 1 — `corpus/golden/**` BUITEN `corpus/golden/anchor/` (dat
+blijft beschermd): de ci-getuige van openstaand punt 1 kan alleen een
+golden zijn, dezelfde vorm die `jutterswet-vaarwaterspelling` voor
+WF-089 heeft. Zie §9.
 
 Out of scope: keuzetype-armen (geland), de WF-061-expressielaag/
 declaratiekant (eigen open punt), nieuwe struct-constructen.
@@ -126,29 +130,38 @@ Elf mutanten in de git-archive-kopie `/tmp/K`, elk arm-exact:
   negatief …)`). Anders dan bij WF-089, waar
   `jutterswet-vaarwaterspelling` die clausule pint.
 - **Vier van de zes leesarmen hebben geen positieve getuige.** Gemeten
-  telling over golden + rood + toka: `AttribuutRef` 46 struct-getypeerde
+  telling over golden + rood + toka (EINDstand, na de golden van §9):
+  `AttribuutRef` 50 struct-getypeerde
   referenties, `BinderRef` 9, `ParameterRef` 0, `DimensieCel` 0,
   foldbron 0, doorgeeffold 0. Mutanten die op elke struct-getypeerde use
-  site vuren maken `anchor/jutterswet-vondstdossier` rood bij de eerste
-  twee armen en laten gate 3 groen bij de vier andere. Een golden is daar
-  vandaag niet toe te voegen: het ASP-dragerhek weigert de vormen vóór de
-  vertaling (gemeten op de trouwe tweelingen).
+  site vuren maken TIEN documenten rood bij de `AttribuutRef`-arm en VIJF
+  bij de `BinderRef`-arm (fixronde 2 — de getuigenis is dus breed, niet
+  één document), en laten gate 3 groen bij de vier andere. Een golden is
+  daar vandaag niet toe te voegen: het ASP-dragerhek weigert de vormen
+  vóór de vertaling (gemeten op de trouwe tweelingen).
 
 ### 5. Over-afwijzing
 
-Nul, met de gelande verifier:
+Nul, met de gelande verifier (EINDstand, hermeten in fixronde 2):
 
-    golden+rood: 170 documenten, WF-090-treffers=0
+    golden+rood: 171 documenten, WF-090-treffers=0
     toka:         30 documenten, WF-090-treffers=0
 
-De struct-lading die daar doorheen ging: 9 documenten, 55
-struct-getypeerde referenties, 15 `StructLiteral`s
-(`anchor/jutterswet-vondstdossier`, `jutterswet-vangstwaardering`,
+De struct-lading die daar doorheen ging: 10 documenten, 59
+struct-getypeerde referenties (`AttribuutRef` 50 + `BinderRef` 9), 16
+`StructLiteral`s
+(`anchor/jutterswet-vondstdossier`, `jutterswet-dossierspelling` — de
+golden van §9 —, `jutterswet-vangstwaardering`,
 `jutterswet-waarderingsinvoer`, `jutterswet-dossierrecht-catala`,
 `jutterswet-kamerhuishouden-catala`, `synth3-nestwaarde`,
 `synth3-vondststaat`, `rood/list-element-overprecision`,
-`rood/struct-field-overprecision`) — exact het getal dat de vorige ronde
-al mat.
+`rood/struct-field-overprecision`). De vorige ronde mat 9 / 55 / 15 —
+dat was de stand VÓÓR de eigen ci-golden; op main reproduceert dat getal
+nog exact.
+
+De toka-poot draagt hier NIETS bij: gemeten draagt geen van de 30
+pariteitsdocumenten één `StructType`, dus "nul treffers" is daar leeg,
+geen bevestiging.
 
 ### 6. Gates (stand na fixronde 1)
 
@@ -289,9 +302,16 @@ wordt precies dit document rood, in beide helften, en géén ander:
     WF-090 FAIL /resolvedRegels/1: a value of the struct domain 'DOSSIER' is assigned to a target of the struct domain 'dossier'
     WF-090 FAIL /resolvedRegels/0/waarde/base/type: attribute reference 'dossier' is typed with struct domain 'DOSSIER', but the declaration it reads from names struct domain 'dossier'
 
-De val die de lens onderweg mat en die de kaart vermijdt: drift óók aan
-de declaratiekant pint WF-072's ci-opzoeking in `domeinen`, niet
-WF-090's kruising — dat document blijft onder de mutant groen.
+De val die de lens onderweg mat en die de kaart vermijdt, in fixronde 2
+scherper gemeten: alleen een UNIFORME herspelling (élke `StructType` op
+de draad op `DOSSIER`, de sleutel in `domeinen` nog `dossier`) blijft
+onder de mutant groen — die pint WF-072's ci-opzoeking in `domeinen`,
+niet WF-090's kruising. Een PARTIËLE herschrijving van alleen de twee
+attribuutdeclaraties doet iets ánders: dan worden de twee
+`FieldAccess`-bases binnen de `StructLiteral` zelf de gedrifte use
+sites en gaat het document juist ROOD op
+`/resolvedRegels/1/waarde/fields/{0,1}/value/base/type`. De NOTE draagt
+beide varianten met hun uitvoer.
 
 ### 10. S5 — bewust gelaten, met motivering
 
@@ -307,3 +327,107 @@ executors falen waarneembaar, en de vraag is WF-038's operandtypering
 Geen eigen WF-090-arm; wel expliciet genoteerd in openstaand punt 3, in
 de WF-090-clausule (ch. 2.4) en in de WF-090-indexrij, want "de
 aggregatie-positie" klonk zonder die zin volledig.
+
+## Fixronde 2 (2026-09-03)
+
+De lens bevestigde opnieuw de REGEL en de vorige fixronde — geen fout
+antwoord, geen verifier-schone ref≢clingo-splitsing, alle twaalf gates
+groen — en falsifieerde zes afsluitende CLAIMS in de PROZA. Alle zes
+verwerkt; alles hieronder zelf hermeten.
+
+### 11. S6 — de derde ongelopen positie: het `type` van een regel-DOEL
+
+De kernzin "every `StructType` on the wire, at every depth and in every
+section" was te sterk. `wf072` loopt de modellaag plus, via het
+typeprefix van `walk_expr`, de expressielaag — en een regel-DOEL is in
+die wandeling geen expressieknoop maar WF-022's lvalue. Gemeten:
+
+    struct-getypeerde `doel/type` in het corpus: 5 goldens + 2 rood
+      anchor/jutterswet-vondstdossier   /resolvedRegels/2/doel/type
+      jutterswet-dossierspelling        /resolvedRegels/1/doel/type
+      jutterswet-vangstwaardering       /resolvedRegels/0/doel/type (+ velddatatype)
+      synth3-nestwaarde                 /resolvedRegels/0/doel/type (+ velddatatype)
+      synth3-vondststaat                /resolvedRegels/0/doel/type
+      rood/list-element-overprecision, rood/struct-field-overprecision
+
+Twee sondes op `jutterswet-dossierspelling`, beide schema-geldig
+(gate 2's schema):
+
+| sonde | verifier | ref | clingo |
+|---|---|---|---|
+| A1 `/resolvedRegels/1/doel/type.fields` omgedraaid | PASS | `oracle: PASS (3 expectations)` | `clingo: PASS (3 expectations)` |
+| A2 dezelfde velden hernoemd naar `bedrag`/`aantal` | PASS | `oracle: PASS (3 expectations)` | `clingo: PASS (3 expectations)` |
+
+Dus: verifier-schoon en GEMETEN onschadelijk — precies de stand die de
+zusterrij WF-088 voor enums al eerlijk opschrijft, want beide executors
+schrijven door het GEDECLAREERDE attribuutdatatype. En de leugen laat
+zich niet meesmokkelen: sonde B (`wf090-schrijf-regeldoel` met een
+`doel/type` dat de leugen van de waarde DEELT, `logboek` op beide) blijft
+rood —
+
+    WF-090 FAIL /resolvedRegels/2: a value of the struct domain 'logboek'
+    is assigned to a target of the struct domain 'dossier'
+
+— want `wf023_assignment` kruist tegen het gedeclareerde datatype. De
+positie is nu op alle vier de plaatsen genoemd met deze meting: de
+WF-072-clausule, de WF-072-indexrij, de WF-090-clausule en de meldtekst
+in `ref/lib/eval.ml`. De zin zegt nu "model- en expressielaag" in plaats
+van "the wire".
+
+### 12. S7 — de getallen hermeten op de EINDstand
+
+De geciteerde getallen beschreven de corpusstand VÓÓR de eigen
+ci-golden. Zelfde teller op beide checkouts:
+
+    main (170 docs):  9 documenten,  55 referenties, 15 StructLiterals  (AttribuutRef 46, BinderRef 9)
+    HEAD (171 docs): 10 documenten,  59 referenties, 16 StructLiterals  (AttribuutRef 50, BinderRef 9)
+
+Bijgezet in de WF-090-indexrij en in §4/§5 hierboven. En "the only
+positive witness" is met een echte over-vuurmutant weerlegd (extra
+WF-090-melding zodra het use-site-`type` een structdomein noemt,
+`dune build spec/verifier`):
+
+    AttribuutRef-arm: 10 documenten rood (8 goldens + 2 rood)
+    BinderRef-arm:     5 documenten rood
+
+`anchor/jutterswet-vondstdossier` is dus de RIJKSTE getuige, niet de
+enige. Ten slotte: de pariteitszone draagt nul `StructType`-knopen
+(0 van 30 documenten), dus "read-only, the parity zone" bevestigt voor
+WF-090/WF-072 niets — dat staat er nu bij.
+
+### 13. S8 — het valrecept in de golden-NOTE stond omgekeerd
+
+Zie §9. Gemeten onder de ci-mutant: het hoofdrecept reproduceert
+letterlijk (`totaal rood onder ci-mutant: 1`, beide meldingen, alle 220
+negatiefs blijven op hun eigen regel falen), maar de PARTIËLE
+declaratieherschrijving maakt het document juist rood en alleen de
+UNIFORME herspelling is mutant-schoon (`verifier: PASS`). De NOTE draagt
+nu beide varianten met uitvoer.
+
+### 14. S9 — de tweede buurflank: orderbaarheid
+
+De WF-090-clausule zei "One neighbouring gap" waar er twee zijn; de
+kaart (openstaand punt 3) was hier al eerlijker dan de spec. De trouwe
+tweeling van `wf090-doorgeefluik` — `EERSTE` over `kern` van alle
+Schuiten, alles domein `dossier`, met twee bijdragers — gemeten:
+
+    verifier: PASS
+    ref:      EVALUATION FAULT: unordered comparison: {waarde: 20, telling: 2} vs {waarde: 10, telling: 1}
+    clingo:   TRANSLATION FAULT: expression kind not translated (no corpus case exercises it)
+
+Verifier-schoon, geen fout antwoord, beide executors falen waarneembaar:
+een WF-038-operandvraag, exact de tweeling van de flank die WF-089 wél
+opschrijft. Nu "Two neighbouring gaps" in de clausule, met een halve zin
+in de indexrij.
+
+### 15. S10/S11 — twee eenregelige rechtzettingen
+
+- De docstring van `wf072` noemde een sompayload-arm die
+  `struct_use_site` niet heeft en die het commentaar tien regels hoger
+  uitdrukkelijk wegmotiveert. "or sum payload" geschrapt; de docstring
+  verwijst nu naar dat commentaar en noemt de doel-`type` als derde
+  ongelopen positie.
+- De "May touch" van deze kaart is bijgewerkt naar `corpus/golden/**`
+  buiten `corpus/golden/anchor/`, met de reden erbij: de ci-getuige van
+  openstaand punt 1 kan alleen een golden zijn. De scopeverruiming stond
+  in de diff maar nergens opgeschreven.

@@ -44,11 +44,27 @@ WF-089.
     while every other golden stays clean and every negatief case keeps
     failing for its own declared rule.
 
-A drift on the declaration side would NOT pin it: rewriting the
-attribute declarations to `DOSSIER` as well leaves the document clean
-under that mutant, because it exercises WF-072's ci lookup into
-`domeinen` rather than WF-090's crossing. Only drift at a use site
-against an unchanged declaration does.
+What does NOT pin it, both variants measured under that same mutant:
+
+- a UNIFORM respelling — every `StructType` on the wire on `DOSSIER`,
+  the key in `domeinen` still `dossier` — is mutant-clean
+  (`verifier: PASS`), because it exercises WF-072's ci lookup into
+  `domeinen` rather than WF-090's crossing;
+- a PARTIAL respelling of only the two attribute declarations
+  (`dossier`, `spiegel`) does not leave the document clean either — it
+  turns it red at two OTHER positions, because the two `FieldAccess`
+  bases inside the `StructLiteral` still spell `dossier` and become the
+  drifted use sites themselves:
+
+        WF-090 FAIL /resolvedRegels/1/waarde/fields/0/value/base/type:
+        attribute reference 'dossier' is typed with struct domain
+        'dossier', but the declaration it reads from names struct domain
+        'DOSSIER'
+        WF-090 FAIL /resolvedRegels/1/waarde/fields/1/value/base/type:
+        ... (idem)
+
+Only drift at a use site against an unchanged declaration pins the ci
+clause — which is what this document, and only this document, carries.
 
 Deliberately carries no `bron.rgs` and no `bron.catala_en`: the drift is
 a wire-level spelling that neither frontend emits — both derive a
