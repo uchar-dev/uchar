@@ -589,6 +589,204 @@ let () =
       check ("Onbekend-arithmetic Binair faults loudly (" ^ m ^ ")")
         (Uchar_ref.Case.contains ~needle:"non-numeric arithmetic operand" m)
 
+(* --- the Construct-payload doors that STAY refused (ASP-TRANSLATION S19) ---
+   The carrier lowers a non-literal Construct payload wherever the position
+   can carry the payload's binding atoms: a closed-body term (the fold init,
+   corpus/golden/jutterswet-meldtermijnen) and a rule-level own-attribute
+   read. Three positions still refuse, each for a DIFFERENT reason, and none
+   of the three has a corpus witness that could pin it — a refusal nobody
+   observes can drift or vanish unnoticed, so each refusal text is pinned
+   here instead. A changed text or a changed behaviour fails this suite. *)
+
+let num0 =
+  {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }|}
+
+let meldstatus =
+  {|{ "node": "SumType", "domain": "meldstatus", "constructors": [
+        { "name": "Openstaand", "payload": |} ^ num0
+  ^ {| }, { "name": "Vervuld", "payload": null },
+        { "name": "Geschonden", "payload": null } ] }|}
+
+let gebeurtenis =
+  {|{ "node": "SumType", "domain": "gebeurtenis", "constructors": [
+        { "name": "Dagverloop", "payload": |} ^ num0
+  ^ {| }, { "name": "Melding", "payload": null } ] }|}
+
+(* attributes / parameters / rule body are spliced per door; the frame is one *)
+let door_doc ~attributen ~parameters ~regel =
+  {|{ "formaat": "regelspraak-ir-v0",
+  "objecttypen": { "Meldplicht": {
+    "node": "Objecttype", "naam": "Meldplicht",
+    "attributen": { |} ^ attributen
+  ^ {| },
+    "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+    "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+    "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+    "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Meldplichten" } },
+  "domeinen": { "meldstatus": |} ^ meldstatus ^ {|, "gebeurtenis": |} ^ gebeurtenis
+  ^ {| },
+  "parameters": { |} ^ parameters
+  ^ {| },
+  "eenheidstelsels": {}, "feittypen": {}, "dimensies": {}, "tijdlijnen": [],
+  "dagsoorten": [], "dagsoortPerEenheid": {}, "regels": [],
+  "resolvedRegels": [ |} ^ regel
+  ^ {| ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}
+|}
+
+let aref naam typ =
+  {|{ "node": "AttribuutRef", "attribuut": "|} ^ naam
+  ^ {|", "objecttype": "Meldplicht", "onderwerpBron": "de Meldplicht", "navigatieRol": null,
+      "type": |} ^ typ ^ {|, "bron": "de |} ^ naam
+  ^ {| van de Meldplicht", "set": false, "navigatiePad": [] }|}
+
+let doel_meldpositie =
+  {|{ "node": "AttribuutRef", "attribuut": "meldpositie", "objecttype": "Meldplicht",
+      "onderwerpBron": "een Meldplicht", "navigatieRol": null, "type": |} ^ meldstatus
+  ^ {|, "bron": "De meldpositie van een Meldplicht", "set": false, "navigatiePad": [] }|}
+
+let faults_with ~name ~ir ~case_text ~needle =
+  let irf = write_temp ".ir.json" ir in
+  let casef = write_temp ".case.json" case_text in
+  let doc = Ir_v0.Loader.load_file irf in
+  let case = Uchar_ref.Case.load_file doc casef in
+  Sys.remove irf;
+  Sys.remove casef;
+  match Translate.translate doc case with
+  | (_ : string) -> check (name ^ ": expected a loud fault, got a model") false
+  | exception Uchar_ref.Value.Fault m ->
+      check (name ^ " faults loudly (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle m)
+
+(* DOOR 1 — a SUBJECT-DEPENDENT fold init over a list PARAMETER. fa/fr are
+   keyed by the list id alone; plist(p) drops the subject out of the head, so
+   two Meldplichten with different termijnen would put two init facts on ONE
+   key and each would read the other's outcome. Measured before the fence:
+   both instances came back carrying BOTH outcomes. Refused, not answered. *)
+let plist_init_doc =
+  door_doc
+    ~attributen:({|"termijn": |} ^ num0 ^ {|, "meldpositie": |} ^ meldstatus)
+    ~parameters:
+      ({|"meldreeks": { "node": "Parameter", "naam": "meldreeks",
+          "datatype": { "node": "ListType", "element": |} ^ gebeurtenis
+     ^ {| }, "granulariteit": null }|})
+    ~regel:
+      ({|{ "node": "ResolvedRegel", "naam": "meldpositie van een meldplicht", "soort": "BEREKENING",
+      "doel": |} ^ doel_meldpositie
+     ^ {|,
+      "waarde": { "node": "Fold", "type": |} ^ meldstatus
+     ^ {|,
+        "list": { "node": "ParameterRef", "parameter": "meldreeks",
+          "type": { "node": "ListType", "element": |} ^ gebeurtenis
+     ^ {| }, "bron": "de meldreeks" },
+        "function": { "node": "Lambda", "parameters": [
+            { "name": "stand", "datatype": |} ^ meldstatus
+     ^ {| },
+            { "name": "gebeurtenis", "datatype": |} ^ gebeurtenis
+     ^ {| } ],
+          "body": { "node": "BinderRef", "name": "stand", "type": |} ^ meldstatus
+     ^ {|, "bron": "de stand" },
+          "bron": "de vouwstap" },
+        "init": { "node": "Construct", "type": |} ^ meldstatus
+     ^ {|, "constructor": "Openstaand",
+          "argument": |} ^ aref "termijn" num0
+     ^ {|, "bron": "Openstaand met de eigen termijn" },
+        "bron": "de meldreeks gevouwen" },
+      "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|})
+
+let plist_init_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+      { "label": "M1", "objectType": "Meldplicht",
+        "attributes": { "termijn": { "number": "30" } }, "roles": {}, "characteristics": [] } ],
+    "parameters": { "meldreeks": { "list": [ { "constructor": "Melding" } ] } } },
+  "expected": [ { "kind": "consistent" } ] }
+|}
+
+(* DOOR 2 — a rule-level Construct whose payload is a document PARAMETER
+   read. The rule-level Construct arm carries a literal and an own-attribute
+   read; anything else (a parameter, a Match, a composite) has no witness. *)
+let param_payload_doc =
+  door_doc
+    ~attributen:({|"meldpositie": |} ^ meldstatus)
+    ~parameters:
+      ({|"volle termijn": { "node": "Parameter", "naam": "volle termijn",
+          "datatype": |} ^ num0 ^ {|, "granulariteit": null }|})
+    ~regel:
+      ({|{ "node": "ResolvedRegel", "naam": "meldpositie van een meldplicht", "soort": "BEREKENING",
+      "doel": |} ^ doel_meldpositie
+     ^ {|,
+      "waarde": { "node": "Construct", "type": |} ^ meldstatus
+     ^ {|, "constructor": "Openstaand",
+        "argument": { "node": "ParameterRef", "parameter": "volle termijn", "type": |} ^ num0
+     ^ {|, "bron": "de volle termijn" },
+        "bron": "Openstaand met de volle termijn" },
+      "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|})
+
+let param_payload_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+      { "label": "M1", "objectType": "Meldplicht",
+        "attributes": {}, "roles": {}, "characteristics": [] } ],
+    "parameters": { "volle termijn": { "number": "30" } } },
+  "expected": [ { "kind": "consistent" } ] }
+|}
+
+(* DOOR 3 — a Construct with a bound payload as a sum-typed COMPARISON
+   operand. That position returns a bare ground term and no body atoms, so a
+   payload that must be bound has nowhere to hang its atom. *)
+let sum_operand_doc =
+  door_doc
+    ~attributen:
+      ({|"termijn": |} ^ num0 ^ {|, "meldpositie": |} ^ meldstatus ^ {|, "boete": |} ^ num0)
+    ~parameters:""
+    ~regel:
+      ({|{ "node": "ResolvedRegel", "naam": "boete van een meldplicht", "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "boete", "objecttype": "Meldplicht",
+        "onderwerpBron": "een Meldplicht", "navigatieRol": null, "type": |} ^ num0
+     ^ {|, "bron": "De boete van een Meldplicht", "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Literal", "waarde": "100", "type": |} ^ num0 ^ {|, "bron": "100" },
+      "voorwaarde": { "node": "Vergelijking", "op": "GELIJK",
+        "links": |} ^ aref "meldpositie" meldstatus
+     ^ {|,
+        "rechts": { "node": "Construct", "type": |} ^ meldstatus
+     ^ {|, "constructor": "Openstaand",
+          "argument": |} ^ aref "termijn" num0
+     ^ {|, "bron": "Openstaand met de eigen termijn" },
+        "periode": null, "bron": "de meldpositie gelijk aan Openstaand met de eigen termijn" },
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|})
+
+let sum_operand_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+      { "label": "M1", "objectType": "Meldplicht",
+        "attributes": { "termijn": { "number": "30" },
+          "meldpositie": { "constructor": "Openstaand", "payload": { "number": "30" } } },
+        "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }
+|}
+
+let () =
+  faults_with ~name:"S19 door 1 (subject-dependent fold init over a list parameter)"
+    ~ir:plist_init_doc ~case_text:plist_init_case
+    ~needle:
+      "a subject-dependent Fold init over a list that is not subject-keyed is not translated (the \
+       accumulator is keyed by the list id alone, so two subjects' init facts collide on that one \
+       key and every subject reads every subject's outcome)";
+  faults_with ~name:"S19 door 2 (rule-level Construct with a parameter payload)"
+    ~ir:param_payload_doc ~case_text:param_payload_case
+    ~needle:
+      "a Construct payload other than a literal or an own attribute read is not translated at \
+       rule level (a parameter read, a Match or a composite payload has no corpus case)";
+  faults_with ~name:"S19 door 3 (Construct with a bound payload as a sum-typed operand)"
+    ~ir:sum_operand_doc ~case_text:sum_operand_case
+    ~needle:
+      "a Construct payload other than a literal is not a ground term (a payload that must be \
+       bound needs a body atom this position cannot carry; no corpus case)"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
