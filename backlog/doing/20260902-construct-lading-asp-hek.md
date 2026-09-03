@@ -278,3 +278,153 @@ in dezelfde case valt om, dus de case als geheel weerlegt en
 - **Deur B en C** (regelniveau-parameterlading, grondterm-positie) hebben
   geen casus. Beide zijn goedkoop te dragen langs dezelfde recursieve lijn
   als 1a zodra er één is.
+
+## Fixronde 1 (2026-09-03) — vijf lensbevindingen
+
+De lens draaide mutanten en boobytraps over deze kaart en vond twee echte
+gaten van dezelfde soort als het gat dat de kaart kwam dichten, plus drie
+kleinere. Alles hieronder is gemeten, met de letterlijke uitvoer.
+
+### L1-F1 (hoog) — 1a had geen enkel artefact: GEFIXT
+
+Onafhankelijk gereproduceerd in een wegwerpkopie (`git archive` van de
+worktree): de recursieve `Construct`-arm van `closed_term` vervangen door een
+fault, en poort 6 bleef volledig groen —
+
+```
+check-clingo: PASS (401 cases replay exactly through clingo — ref = clingo over the corpus)
+```
+
+De reden is scherper dan gedacht: `body_branches` heeft een EIGEN
+`Construct`-arm voor een berekende lading, dus de vouwSTAP van de golden
+(`Openstaand(resterend - dagen)`) komt nooit bij `closed_term`. Alleen een
+positie die `closed_term` rechtstreeks aanroept — de vouw-INIT — bereikt de
+nieuwe arm, en geen corpusdocument deed dat.
+
+De golden heeft er nu een tweede regel bij: `standaardpositie van een
+meldplicht`, dezelfde vouw over hetzelfde register met
+`init = Openstaand(de standaardtermijn)` — een documentparameter als lading,
+dus de gesloten route. Gemeten met de arm eruit gemuteerd, alle vijf cases:
+
+```
+case1-eigen-termijnen.json: TRANSLATION FAULT: MUTANT-1A: closed_term Construct recursion removed
+… (idem case2 t/m case5)
+```
+
+en met de arm erin, handrekening eerst (de tabellen staan in de NOTE), daarna
+`ref`, daarna clingo:
+
+| case | verwachtingen | `ref` | clingo |
+|---|---|---|---|
+| case1 | 5 | PASS | PASS |
+| case2 | 7 | PASS | PASS |
+| case3 | 3 | PASS | PASS |
+| case4 | 5 | PASS | PASS |
+| case5 | 5 | PASS | PASS |
+
+De basisregel, uit de drager zelf gehaald, is het bewijs dat de lading haar
+bindingsatoom meeneemt naar buiten:
+
+```
+fa6(alist(S,"meldreeks"),0,openstaand(P7)) :- lpres(alist(S,"meldreeks")), param("standaardtermijn",P7).
+```
+
+Drie documentmutanten gemeten in `ref`: de init van `standaardpositie` laten
+lezen wat `meldpositie` leest → geen enkele case overleeft; de twee routes
+verwisselen → geen enkele case overleeft; de parameterlezing vervangen door de
+constante 21 → case1/2/3/5 overleven, case4 weerlegt (die case zet de
+parameter op 30, juist daarvoor).
+
+### L1-F2 (hoog) — een VIERDE weigerende plek, met een misleidende tekst: GEFIXT
+
+De catch-all van `closed_term` weigerde een subject-lezing en somde daarbij
+"a Construct or a Let" op als gedragen — precies de vormen waar de weigering
+doorheen kwam. De lezing die faalt is het BLAD, bereikt dóór die gedragen
+vormen heen. Er staat nu een eigen arm vóór de catch-all die dat zegt:
+
+```
+TRANSLATION FAULT: an attribute read inside a closed body has no subject to read from
+(a lambda or function body and a fold init are subject-free); only a Fold init whose own
+SHAPE is an attribute read, bare or directly under a Construct, takes the subject-keyed
+rule-level route
+```
+
+Gemeten op `init = Openstaand(de termijn + 1)` (verifier: PASS): `ref`
+`oracle: PASS (2 expectations)` op `Openstaand(8)`, clingo bovenstaande
+weigering. Een vierde faults-fixture pint die letterlijke tekst; met "ZZZ" in
+de needle meldt de suite hem terug, dus de fixture pint de tekst en niet de
+vorm van het falen. S19 telt nu zes plekken: twee die dragen, VIER die
+weigeren, met de vierde als eigen bullet.
+
+### L1-F3 (middel) — de vormtoets: BEWUST GELATEN, met de weigering als grens
+
+`init_reads_subject` heet nu `init_is_subject_read`, want dat is wat hij doet:
+hij kiest de ROUTE en noemt de twee vormen die `expr_term` mét subjectlezing
+draagt. Verbreden naar "leest dit ergens het subject" is gemeten en
+afgewogen:
+
+- `Openstaand(de termijn + 1)` en `Let t = de termijn in Openstaand(t)`
+  verhuizen dan van de ene luide weigering naar de andere (de
+  regelniveau-`Construct`-arm draagt een samengestelde lading niet) — geen
+  winst, wel een minder precieze reden.
+- `Let ongebruikt = 1 in Openstaand(de termijn)` zou WEL nieuw gedragen
+  worden. Gemeten: verifier PASS, `ref` `oracle: PASS (3 expectations)` op
+  case1 en `PASS (2)` op case3, clingo de nieuwe deur-4-weigering. Maar per
+  ch. 10.6 clause 3 is die Let gedragsloos, en dragen zonder getuige is exact
+  de drift die deze kaart bestrijdt; een getuige ervoor zou een kunstmatige
+  zesde regel in de golden zijn.
+
+Wat wél moest gebeuren is gebeurd: de weigering noemt nu zelf de as waarop de
+grens ligt, en een fixture pint hem. De asymmetrie is daarmee vastgelegd —
+precies de dispositie die de kaart voorschrijft ("de drager draagt de vorm, óf
+de weigering wordt als weigering vastgelegd").
+
+### L1-F4 (laag) — de ongedekte `Map_list`-tak: GESCHRAPT
+
+De tak was een verbreding die geen poort zag. Hij is weg; het hek erkent nu
+één bronvorm. De weigeringstekst was zonder die tak ONWAAR geworden (voor een
+afgebeelde lijst is de id `lm(alist(S,attr))` en botst er niets), dus de tekst
+noemt die vorm nu apart en met haar ware reden:
+
+```
+TRANSLATION FAULT: a subject-dependent Fold init is carried only over an own attribute
+list, whose id alist(S,attr) carries the subject: over a list parameter the id is
+plist(p) alone, so two subjects' init facts collide on that one key and every subject
+reads every subject's outcome — a wrong answer, not a missing one; a derived source
+(a mapped list) keeps the subject in its id but has no corpus case
+```
+
+Gemeten op de golden met een identiteits-`MapList` om de bron heen: verifier
+PASS, `ref` `oracle: PASS (3 expectations)`, clingo bovenstaande weigering.
+Fixture 1 pint de nieuwe tekst (dat is de fixture die deze kaart zelf zette;
+de vijftien checks van vóór de kaart zijn onaangeroerd).
+
+### L1-F5 (laag) — de afwezige-bron-flank: GEPIND
+
+case2 draagt er een derde instantie bij: M10, mét termijn en ZONDER
+`meldreeks`. Beide posities leeg, om een andere reden dan M3's lege init — daar
+derft de init niets, hier derft de LIJST geen aanwezigheid. `ref` en clingo
+beide `PASS (7 expectations)`. Poort 7 krijgt er geen overlever bij: M4 blijft
+de weerlegger in dezelfde case.
+
+En de scherpste bijvangst van de tweede regel zit in dezelfde case: M3's
+`meldpositie` is leeg terwijl zijn `standaardpositie` `Openstaand(16)` is — op
+één instantie, in één case. Daarmee is de leegte bewijsbaar die van de
+init-lezing en van niets anders.
+
+### Poorten na fixronde 1
+
+| poort | uitkomst |
+|---|---|
+| 1 self-contained | `check-self-contained: PASS` |
+| 2 ir-schema | `PASS (schema valid; 171 file(s) validate and round-trip)` |
+| 3 verifier | `PASS (171 golden clean; 206 negatief rejected for their declared rule)` |
+| 4 case-schema | `PASS (schema valid; 423 case file(s) validate)` |
+| 5 oracle | `PASS (401 cases replayed exactly …)` |
+| 6 clingo | `test_clingo: 19 checks, 0 failures` + `PASS (401 cases replay exactly …)` |
+| 7 no-op | `PASS (365 cases refute a do-nothing executor; 36 pinned survivors …)` |
+| 8 rood | `PASS (22 red cases fault observably in ref and clingo)` |
+
+Geen tellingen verschoven: de golden groeide in REGELS en VERWACHTINGEN, niet
+in bestanden (5, 7, 3, 5 en 5 verwachtingen, was 3, 3, 2, 3 en 3). De suite
+gaat van 18 naar 19 checks.
