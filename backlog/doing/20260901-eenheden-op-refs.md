@@ -75,6 +75,8 @@ Drie afwijkingen van de opdracht, met reden:
    identiteit: identiteit eisen zou elk literal-in-attribuut afwijzen. De
    motor is dus geregistreerd op zes leesarmen + het regeldoel; de
    `wf090-schrijf-*`-negatiefs blijven onaangeraakt bij hun eigen wet.
+   *Bijgesteld in de fixronde: vijf leesarmen + het regeldoel — de
+   doorgeef-aggregatie is eruit, zie onder.*
 2. **Twee extra negatiefs** buiten de opgedragen lijst: `-teken` en
    `-reststructuur`. Zonder die twee zou de clausule zeven facetten
    noemen waarvan er twee door geen artefact falsifieerbaar zijn.
@@ -86,10 +88,59 @@ Drie afwijkingen van de opdracht, met reden:
    Het nummerkeuze-deel is wél falsifieerbaar (soortfacet uit →
    `wf078-binderref-type-lie` wordt WF-091; domeinfacet uit → alle 21
    wf089/wf090-gevallen worden WF-091). Zo staat het in de indexrij.
+   *Bijgesteld in de fixronde: 18 van de 24, niet 21 — de drie
+   doorgeefluik-gevallen en de drie `wf090-schrijf-*`-gevallen lopen niet
+   door de motor.*
+
+Extra incidentele meldingen op BESTAANDE negatiefs, nagemeten tegen de
+verifier van vóór de motor (`b3648f8`): ACHT bij de landing, niet zes —
+zeven met een extra WF-091 (`wf007-whole-with-decimals`,
+`wf027-lying-attribuutref-type`, `wf035-power-with-unit`,
+`wf036-order-number-vs-text`, `wf037-fallback-on-minimum`,
+`wf040-unpinned-cell`, `wf072-expressietype-volgorde`) en
+`wf023-schrijf-doeltype-leugen` met een extra WF-089 via de regeldoelarm.
+Na de fixronde zijn het er ZEVEN: de extra op `wf037-fallback-on-minimum`
+liep via de doorgeef-aggregatiearm op de tekenfacet en vervalt met F1.
+Elk van de zeven behoudt zijn eigen nummer; gate 3 staat extra meldingen
+naast de gedeclareerde regel toe.
 
 Bijvangst voor een eigen kaart: (a) de armen zonder positieve
-golden-getuige voor de eenheidsfacet — `ParameterRef`, `DimensieCel` en
-de doorgeef-aggregatie (gemeten nul; de pariteitszone heeft ze wel);
-(b) WF-078 defereerde tot nu toe NIET op een binder met het
-onbekend-sentinel terwijl ch. 4.7 zegt dat het defereert — de motor
-volgt de spec en defereert nu wel.
+golden-getuige voor de eenheidsfacet — `ParameterRef` en `DimensieCel`
+(gemeten nul; de pariteitszone heeft twaalf eenheiddragende
+`ParameterRef`-posities); (b) WF-078 defereerde tot nu toe NIET op een
+binder met het onbekend-sentinel terwijl ch. 4.7 zegt dat het defereert —
+de motor volgt de spec en defereert nu wel; (c) **twee ongepinde
+deferral-kanalen** (gevonden in de leesronde, hier bewust NIET gedicht —
+eigen kaart). Ten eerste: een `AttribuutRef` met `objecttype: null`
+defereert de motor (de declaratie is niet op te zoeken) én ontloopt de
+resolutiecheck, dus een `t`-voor-`kg`-eenheidsleugen op zo'n referentie
+is verifier-schoon (gemeten); geen enkel golden-, rood- of
+pariteitsdocument gebruikt de vorm (gemeten nul), en ref faalt er hard
+op. Ten tweede: het regeldoel is de enige positie waar het
+v0-Onbekend-sentinel op een TYPE mag staan — dezelfde sentinel op een
+declaratie wordt door WF-003 geweigerd (`unresolved datatype`), op een
+`doel/type` passeert hij (gemeten).
+
+## Fixronde (2026-09-03)
+
+1. **De doorgeef-aggregatie terug naar het domeinfacet.** De motor
+   kruiste daar élk facet tegen élke operand, wat structureel
+   onvervulbaar is: een foldtype is een AFGELEIDE over een operandenlijst
+   (de eigen frontend: min-decimalen, AND-geheel, teken en eenheid van
+   operand 0; EERSTE/LAATSTE nemen operand 0 geheel), geen kopie van één
+   declaratie. Gemeten over-afwijzing op de door ch. 4.6 gezegende vorm
+   "het minimum van het gewicht en 0". De arm roept nu `use_site_domain`
+   aan; de drie doorgeefluik-negatiefs blijven rood op hun eigen nummer
+   en er bestond geen wf091-negatief op deze arm.
+2. **Eenheidsnamen vouwen ci** in `eenheid_identical` én in `dt_ci` —
+   beide beloofd door de clausule, geen van beide waargemaakt. Factor en
+   noemerstructuur blijven exact, dus kg/t blijft een leugen.
+3. **Zeven NOTE-correcties.** Zes NOTE's beweerden "drop the facet and
+   this case alone turns clean"; gemeten is dat het vangnet elk verschil
+   ziet, dus de melding degradeert naar `residual structure mismatch` en
+   het geval blijft WF-091. Plus een verouderd meldcitaat.
+4. **Indexrij-getallen zelf nagemeten** (per-arm-teller in de motor,
+   over beide corpuszones en de pariteitszone). De 1.047 uit de rij is
+   door geen definitie te reproduceren; de rij draagt nu 921 uitgevoerde
+   vergelijkingen (826 golden + 95 rood, 38 eenheiddragend) + 147 in de
+   pariteitszone (30 eenheiddragend), met erbij wat de telling uitsluit.
