@@ -2116,39 +2116,41 @@ operand over an own temporal attribute) faults with the literal reason
 `temporal sum carriage is a recorded flank; no corpus case` rather than
 silently omitting the constructor-valued segments (RUNTIME-SEMANTICS
 ch. 9.4). A **non-literal `Construct` payload** meets SIX distinct places
-in the translator: two carry it — the positions that can hold the payload's
-binding atoms — and four refuse it, each for a different reason. Before
-2026-09-03 this inventory described one of the refusals and gave it a reason
-that was not the true one, so the boundary it stated was wrong in both
-directions. Carried: (i) at RULE level an own-subject attribute read rides
-its `val` atom — the anchor's `herbeschikking` rule
-`val(S,herbeschikking,toegekend(V)) :- …, val(S,borg,V)`; (ii) in a
-CLOSED-BODY term the payload lowers RECURSIVELY through the closed-body
-grammar and its binding atoms travel out with the term, so the caller's rule
-body binds them. The pinned witness of (ii) is a document parameter in a
-fold's `init` — golden `jutterswet-meldtermijnen`, rule `standaardpositie van
-een meldplicht`, whose fold base rule carries the payload's
-`param("standaardtermijn",P)` atom in its body; the same arm lowers any other
-closed-body payload shape, and those shapes have no corpus case. Refused, each with its own true reason:
+in the translator: THREE carry it — the positions that can hold the payload's
+binding atoms — and THREE refuse it, each for a different reason. A SEVENTH
+place, the fold-init source fence, refuses a shape that need not contain a
+`Construct` at all; it is inventoried with them below because a fold `init`
+reaches it and (iii) alike. Before 2026-09-03 this inventory described one of the
+refusals and gave it a reason that was not the true one, and it counted the two
+closed-body arms as one, so the boundary it stated was wrong in both
+directions. Carried:
 
-- a **subject-dependent fold `init` over a source that is not
-  subject-keyed**. The fold's accumulator and result facts are keyed by
-  the LIST ID alone. For an own attribute list that id is
-  `alist(S,"attr")` and the subject rides in it, so the init read joins on
-  the same `S` as the head — safe, and this is the carried case (golden
-  `jutterswet-meldtermijnen`: two duties, one register shape, different
-  own terms, opposite outcomes). For a
-  list PARAMETER the id is `plist(p)` and the subject drops out of the
-  head: two subjects' init facts would collide on that one key and the
-  recursion would derive EVERY subject's outcome for EVERY subject.
-  Measured before the fence existed, on two instances with terms 30 and
-  10: both came back carrying both outcomes. This is refused because the
-  answer would be WRONG, not because it would be missing. A DERIVED source
-  — a mapped list over an own attribute list, id `lm(alist(S,"attr"))` —
-  keeps the subject in its id and would be safe, but the carrier admits
-  exactly ONE source shape and the refusal says so, rather than claiming a
-  collision that shape does not have: a widening nothing asks for is a
-  widening no gate can see.
+- **(i) at RULE level** an own-subject attribute read rides its `val` atom —
+  the anchor's `herbeschikking` rule
+  `val(S,herbeschikking,toegekend(V)) :- …, val(S,borg,V)`.
+- **(ii) in a BRANCHING closed body** — a fold STEP, a function body — the
+  payload goes through `body_branches` and EACH branch is wrapped in the
+  constructor functor (the reduce lowering's `present(⟨body⟩)` step, above).
+  This is the broadest of the three: four goldens' folds build a constructor
+  value in the step — `jutterswet-penningstaffel-catala`,
+  `jutterswet-kamerhuishouden-catala`, `jutterswet-meldplichtspoor`, and
+  `jutterswet-meldtermijnen` itself (`Openstaand(⟨resterend⟩ - ⟨dagen⟩)` under
+  an `IfThenElse`).
+- **(iii) in a NON-branching closed-body term** the payload lowers RECURSIVELY
+  through the closed-body grammar and its binding atoms travel out with the
+  term, so the caller's rule body binds them. The pinned witness is a document
+  parameter in a fold's `init` — golden `jutterswet-meldtermijnen`, rule
+  `standaardpositie van een meldplicht`, whose fold base rule carries the
+  payload's `param("standaardtermijn",P)` atom in its body; the same arm lowers
+  any other closed-body payload shape, and those shapes have no corpus case.
+
+(ii) and (iii) are separate arms in separate functions, and a fold STEP never
+reaches (iii). That is why (iii) needed a witness of its own: while this
+inventory merged the two, the step's arm passed for the init's and (iii) had no
+artifact at all.
+
+Refused, each with its own true reason:
+
 - a **rule-level payload that is neither a literal nor an own-subject
   attribute read** — a document parameter read, a `Match`, a composite.
   No corpus case; the rule-level `Construct` arm carries only the two.
@@ -2159,9 +2161,9 @@ closed-body payload shape, and those shapes have no corpus case. Refused, each w
 - an **attribute read at the LEAF of a closed-body term**, reached
   THROUGH forms the closed body does carry. `Openstaand(<attr> + 1)` as a
   fold `init` is not itself an attribute read, so it takes the closed
-  route of (ii); the constructor arm lowers recursively, the additive arm
+  route of (iii); the constructor arm lowers recursively, the additive arm
   lowers its operands, and the leaf asks for a subject in a scope that has
-  none. The route between (i) and (ii) is chosen on the init's SHAPE — an
+  none. The route between (i) and (iii) is chosen on the init's SHAPE — an
   attribute read, bare or directly under a constructor — and this refusal
   states that rule as its reason. Widening the shape test to "reads the
   subject anywhere" would only move forms from one loud refusal to
@@ -2170,7 +2172,28 @@ closed-body payload shape, and those shapes have no corpus case. Refused, each w
   test is therefore deliberate. `ref` plays every such form; the carrier
   refuses it and names the boundary.
 
-The four refusals are not observable from any corpus document (a
+Beside those three stands a fourth refusal that is NOT about the payload: the
+**fold-init source fence**. It fires on the init's SHAPE — an attribute read,
+bare or directly under a constructor — so a BARE attribute read as init trips
+it with no `Construct` anywhere in the document. A subject-dependent init takes
+the rule-level route, and that route is sound only over a SUBJECT-KEYED source.
+The fold's accumulator and result facts are keyed by the LIST ID alone. For an
+own attribute list that id is `alist(S,"attr")` and the subject rides in it, so
+the init read joins on the same `S` as the head — safe, and this is the carried
+case (golden `jutterswet-meldtermijnen`: two duties, one register shape,
+different own terms, opposite outcomes). For a list PARAMETER the id is
+`plist(p)` and the subject drops out of the head: two subjects' init facts
+would collide on that one key and the recursion would derive EVERY subject's
+outcome for EVERY subject. Measured before the fence existed, on two instances
+with terms 30 and 10: both came back carrying both outcomes. This is refused
+because the answer would be WRONG, not because it would be missing. A DERIVED
+source — a mapped list over an own attribute list — keeps the subject in its id
+(`lm(alist(S,"attr"))`, `list_source`), so the collision this refusal describes
+does not apply to it; the carrier nevertheless admits exactly ONE source shape,
+and the refusal says so rather than claiming a collision that shape does not
+have. A widening nothing asks for is a widening no gate can see.
+
+All four refusals are unobservable from any corpus document (a
 refusal has no golden), so each is pinned by a fault fixture asserting
 its literal text in `backends/clingo/test/test_clingo.ml`, which gate 6
 runs: a text that drifts or a refusal that quietly disappears fails the
