@@ -1556,6 +1556,47 @@ let fields_agree (a : (string * datatype) list) (b : (string * datatype) list) =
   List.length a = List.length b
   && List.for_all2 (fun (n1, d1) (n2, d2) -> norm n1 = norm n2 && d1 = d2) a b
 
+(* WF-072's use-site cross, as a datatype WALK — the struct sibling of
+   [enum_use_site], and for the same measured reason. A `StructType` carries an
+   inline copy of the domain's field list on the wire, and the consumers read
+   that copy rather than the declaration: ref's shared case loader crosses a
+   record against the inline `velden` of the use site (case.ml), and the ASP
+   backend encodes struct terms POSITIONALLY out of it. So a drifted copy is
+   not decoration — it splits the executors. Measured, before this walk
+   existed: a `ListType`-element copy renaming the fields let ref fault at the
+   field read while clingo passed green; one expression `type` with the fields
+   in REVERSED order left the verifier, ref and the schema clean while clingo
+   derived 5.03 for 125.50 — a wrong answer on a verifier-clean document.
+   Hence every `StructType` in a datatype tree, not just a top-level attribute
+   or parameter datatype: through a `ListType` element too. A use site naming
+   no declared struct domain is caught at the same spot (the pre-walk clause
+   of the rule).
+
+   Two positions are deliberately NOT walked, each because no negatief could
+   isolate it. A matched struct's own `velden`: [fields_agree] is an equality
+   on the WHOLE field datatype, so a drifted nested copy already makes the
+   enclosing copy disagree — the argument WF-073/074 make for their nested
+   forms. And a sum-type PAYLOAD: WF-060 admits no struct payload in a
+   declaration at all (measured — a hand-built one is refused there), so the
+   only place such a payload can sit is a drifted inline sum copy, which is
+   WF-061's already-recorded open flank, not this rule's. *)
+let rec struct_use_site ctx at (d : datatype) : violation list =
+  match d with
+  | Struct_type { domein; velden } -> (
+      match struct_decl ctx domein with
+      | None ->
+          [ v "WF-072" at
+              ("struct-type use site names domain '" ^ domein
+             ^ "', which is not a declared struct type") ]
+      | Some decl ->
+          if fields_agree decl velden then []
+          else
+            [ v "WF-072" at
+                ("struct-type use site disagrees with the declaration of domain '" ^ domein
+               ^ "' (same fields, datatypes and order required)") ])
+  | List_type { element } -> struct_use_site ctx at element
+  | _ -> []
+
 (* The declared FunctionDef of [name], iff present (WF-067..068/070). *)
 let function_decl ctx name : function_def option =
   List.find_opt (fun (fd : function_def) -> norm fd.fd_naam = norm name) ctx.doc.function_defs
@@ -2172,7 +2213,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
     match typ_of_expr e with
     | Some (Datatype_onbekend _) ->
         [ v "WF-034" (sub "type") "unknown-type sentinel inside a structured node" ]
-    | Some d -> check_number_form (sub "type") d @ enum_use_site ctx (sub "type") d
+    | Some d ->
+        check_number_form (sub "type") d
+        @ enum_use_site ctx (sub "type") d
+        @ struct_use_site ctx (sub "type") d
     | None -> (
         (* A value node without a static type is the unspelled twin of the
            Onbekend sentinel — refused symmetrically (WF-034). A Lambda is
@@ -5493,42 +5537,55 @@ let wf071 ctx =
       | _ -> [])
     ctx.doc.domeinen
 
-(* WF-072: a StructType use site (an attribute or parameter datatype that is a
-   StructType) MUST name a declared domain whose declaration it agrees with —
-   same fields, datatypes, order (IR-SPEC ch. 2.4). The nominal-comparison
-   half (two struct-typed operands of one comparison name the same domain)
-   rides the expression walk, walk_cond. *)
+(* WF-072: a StructType use site MUST name a declared domain whose declaration
+   it agrees with — same fields, datatypes, order (IR-SPEC ch. 2.4). The
+   nominal-comparison half (two struct-typed operands of one comparison name
+   the same domain) rides the expression walk, walk_cond.
+
+   The model-layer half is here and reaches EVERY StructType in the datatype
+   tree via [struct_use_site]: an attribute or parameter datatype, a
+   `ListType` element or sum payload inside one, a `FunctionDef` parameter or
+   result, and — unlike WF-088, whose enumerations WF-060/065/071 fence out of
+   every declaration position — a struct field datatype inside `domeinen`,
+   which WF-071 admits and which is therefore a use site of ANOTHER domain's
+   declaration. The expression-layer half rides walk_expr's type prologue,
+   beside [enum_use_site] (the same "every datatype in the document" split
+   WF-088 uses). *)
 let wf072 ctx =
-  let use_site at = function
-    | Struct_type { domein; velden } -> (
-        match struct_decl ctx domein with
-        | None ->
-            [ v "WF-072" at
-                ("struct-type use site names domain '" ^ domein
-               ^ "', which is not a declared struct type") ]
-        | Some decl ->
-            if fields_agree decl velden then []
-            else
-              [ v "WF-072" at
-                  ("struct-type use site disagrees with the declaration of domain '" ^ domein
-                 ^ "' (same fields, datatypes and order required)") ])
-    | _ -> []
-  in
+  let site at = function Some d -> struct_use_site ctx at d | None -> [] in
   List.concat_map
     (fun (otname, (ot : objecttype)) ->
       List.concat_map
-        (fun (an, dt) ->
-          match dt with
-          | Some st -> use_site ("/objecttypen/" ^ otname ^ "/attributen/" ^ an) st
-          | None -> [])
+        (fun (an, dt) -> site ("/objecttypen/" ^ otname ^ "/attributen/" ^ an) dt)
         ot.attributen)
     ctx.doc.objecttypen
   @ List.concat_map
-      (fun (pn, (p : parameter)) ->
-        match p.par_datatype with
-        | Some st -> use_site ("/parameters/" ^ pn) st
-        | None -> [])
+      (fun (pn, (p : parameter)) -> site ("/parameters/" ^ pn) p.par_datatype)
       ctx.doc.parameters
+  @ List.concat
+      (List.mapi
+         (fun i (fd : function_def) ->
+           let at = Printf.sprintf "/functionDefs/%d" i in
+           List.concat_map
+             (fun (pn, dt) -> struct_use_site ctx (at ^ "/parameters/" ^ pn) dt)
+             fd.fd_parameters
+           @ struct_use_site ctx (at ^ "/result") fd.fd_result)
+         ctx.doc.function_defs)
+  @ List.concat_map
+      (fun (name, dt) ->
+        (* A declaration is its own source of truth, so the node itself is not
+           crossed; what is reached is a struct-typed FIELD of it — WF-071
+           admits declared struct domains there, and that field carries an
+           inline copy of ANOTHER domain's declaration. (A sum-type payload
+           needs no walk: WF-060 admits no struct payload at all.) *)
+        match dt with
+        | Some (Struct_type { velden; _ }) ->
+            List.concat_map
+              (fun (fname, fdt) ->
+                struct_use_site ctx ("/domeinen/" ^ name ^ "/velden/" ^ fname) fdt)
+              velden
+        | _ -> [])
+      ctx.doc.domeinen
 
 (* WF-065: a ListType element MUST be first-order and non-list (Number,
    day-precision Date, a declared SumType, or a declared StructType — the
