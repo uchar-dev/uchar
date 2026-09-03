@@ -16,5 +16,10 @@ them. Note the scope: this is the READ side. The assignment precision gate
 of WF-023 (a computed VALUE against a target's declared precision) needs
 expression-shape analysis and stays OPEN; it is a different question.
 
-Falsifiable: drop the decimals facet from the engine and this case alone
-turns clean.
+Falsifiable, facet-exact and arm-exact: neuter the decimals facet and this
+case degrades to `residual structure mismatch` — still WF-091, still red,
+because the residual facet is the backstop that sees every difference; what
+the facet pins is the DIAGNOSIS, not the refusal. Disable the
+`Attribuut_ref` arm and it turns clean together with the other
+`wf091-attribuutref-*` cases, while the binder, parameter, fold-source and
+write-target cases stay red.

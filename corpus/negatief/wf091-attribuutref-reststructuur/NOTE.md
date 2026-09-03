@@ -6,8 +6,10 @@ repeat the domain declaration faithfully, so WF-061 has nothing to say.
 
     WF-091 FAIL /resolvedRegels/0/waarde/type: residual structure
     mismatch: attribute reference 'aanspraken' is typed sumtype 'oordeel'
-    [...], but the declaration it reads from is list of sumtype 'oordeel'
-    [...]
+    [Goedgekeurd of number(fractional, 2 decimals, NIET_NEGATIEF, no
+    unit), Verworpen, Uitgesteld], but the declaration it reads from is
+    list of sumtype 'oordeel' [Goedgekeurd of number(fractional, 2
+    decimals, NIET_NEGATIEF, no unit), Verworpen, Uitgesteld]
 
 Why it has to exist: it is the exact hole the facet order leaves open by
 design. The soort facet stands aside wherever either side names a domain —

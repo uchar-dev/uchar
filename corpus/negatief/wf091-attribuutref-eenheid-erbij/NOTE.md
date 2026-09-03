@@ -14,5 +14,12 @@ one-sided directions are separate — a rule that only refused a DROPPED
 unit would admit this one, and an invented unit is what lets an unqualified
 number enter a dimensioned computation as if it had always been a weight.
 
-Falsifiable: make the unit facet fire only when the DECLARATION carries a
-unit and this case alone turns clean.
+Falsifiable, facet-exact and arm-exact: make the unit facet fire only when
+the DECLARATION carries a unit and this case degrades to `residual
+structure mismatch` — still WF-091, still red, because the residual facet
+is the backstop that sees every difference — while
+`wf091-attribuutref-eenheid-ontbreekt` keeps its own `unit mismatch`. What
+the one-sided arm pins is the DIAGNOSIS, not the refusal. Disable the
+`Attribuut_ref` arm and it turns clean together with the other
+`wf091-attribuutref-*` cases, while the binder, parameter, fold-source and
+write-target cases stay red.

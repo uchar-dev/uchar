@@ -14,5 +14,11 @@ zero decimals and fractional with zero decimals. A rule that crossed only
 the decimal count would call those two identical, which is exactly the
 weakening this case refutes.
 
-Falsifiable: drop the wholeness facet from the engine and this case alone
-turns clean; `wf091-attribuutref-decimalen` stays red.
+Falsifiable, facet-exact and arm-exact: neuter the wholeness facet and this
+case degrades to `residual structure mismatch` — still WF-091, still red,
+because the residual facet is the backstop that sees every difference; what
+the facet pins is the DIAGNOSIS, not the refusal, and
+`wf091-attribuutref-decimalen` keeps its own `decimals mismatch`. Disable
+the `Attribuut_ref` arm and it turns clean together with the other
+`wf091-attribuutref-*` cases, while the binder, parameter, fold-source and
+write-target cases stay red.

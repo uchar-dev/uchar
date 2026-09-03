@@ -14,6 +14,12 @@ half a weakening that only compares two PRESENT units would let through.
 A dropped unit is what turns a quantity into a bare number downstream —
 the annotation stops saying which quantity was read.
 
-Falsifiable: make the unit facet compare only the case where both sides
-carry a unit and this case turns clean together with
-`wf091-attribuutref-eenheid-erbij`, while the convertible case stays red.
+Falsifiable, facet-exact and arm-exact: make the unit facet compare only
+the case where both sides carry a unit and this case degrades to `residual
+structure mismatch` together with `wf091-attribuutref-eenheid-erbij` —
+still WF-091, still red, because the residual facet is the backstop that
+sees every difference — while the convertible case keeps its own `unit
+mismatch`. What the one-sided arms pin is the DIAGNOSIS, not the refusal.
+Disable the `Attribuut_ref` arm and it turns clean together with the other
+`wf091-attribuutref-*` cases, while the binder, parameter, fold-source and
+write-target cases stay red.

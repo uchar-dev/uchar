@@ -13,5 +13,10 @@ nothing. On the read side the widening is the whole defect: the annotation
 drops a guarantee the declaration gives, and a consumer that trusts it
 admits a value the declaration excludes.
 
-Falsifiable: drop the sign facet from the engine and this case alone turns
-clean.
+Falsifiable, facet-exact and arm-exact: neuter the sign facet and this case
+degrades to `residual structure mismatch` — still WF-091, still red,
+because the residual facet is the backstop that sees every difference; what
+the facet pins is the DIAGNOSIS, not the refusal. Disable the
+`Attribuut_ref` arm and it turns clean together with the other
+`wf091-attribuutref-*` cases, while the binder, parameter, fold-source and
+write-target cases stay red.
