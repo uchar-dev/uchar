@@ -1087,12 +1087,18 @@ let use_site_domain ?(source = "the declaration it reads from") at ~what ~decl ~
    WF-035 and WF-023 cross) calls them compatible, and a lie inside the
    convertible class is compatible by construction. Only identity sees it.
 
-   The three NAMES fold to their WF-001 form, as every declared name does in
-   this file — [units_convertible] normalises its canonical names too. The
-   factor and the denominator shape stay exact: those are not names. *)
+   The three NAMES are compared BYTE for BYTE, where every other declared
+   name in this file folds to its WF-001 form. Name RESOLUTION is
+   case-insensitive — that is WF-001's domain — but this rule is about COPY
+   FIDELITY, a different question: a consumer that reads these three names
+   literally to pick its conversion diverges silently on a copy that lies in
+   case alone. Measured: the Drools unit logic compares abbreviation and
+   canonical name case-sensitively and falls back to factor one where they
+   do not match, so a `KG`/`GEWICHT`/`KG` copy of a `kg`/`Gewicht`/`kg`
+   declaration answers 3750.00 where ref and clingo answer 3.75. The factor
+   and the denominator shape stay exact as well: those are not names. *)
 let rec eenheid_identical (a : eenheid) (b : eenheid) =
-  let n = Option.map norm in
-  n a.afkorting = n b.afkorting && n a.stelsel = n b.stelsel && n a.canoniek = n b.canoniek
+  a.afkorting = b.afkorting && a.stelsel = b.stelsel && a.canoniek = b.canoniek
   && a.factor_naar_canoniek = b.factor_naar_canoniek
   &&
   match (a.noemer, b.noemer) with
@@ -1143,24 +1149,13 @@ let rec peel_lists a b =
   | List_type { element = x }, List_type { element = y } -> peel_lists x y
   | _ -> (a, b)
 
-(* the unit's three NAMES folded, its factor and denominator shape kept
-   exact — the same split [eenheid_identical] makes, so the backstop cannot
-   refuse a spelling the unit facet has already let through *)
-let rec eenheid_ci (u : eenheid) =
-  { u with
-    afkorting = Option.map norm u.afkorting;
-    stelsel = Option.map norm u.stelsel;
-    canoniek = Option.map norm u.canoniek;
-    noemer = Option.map eenheid_ci u.noemer }
-
-(* The residual facet's comparison form: the datatype with every declared
-   NAME folded to the WF-001 form. Names are compared case-insensitively
-   everywhere else in this file, and two goldens pin exactly that spelling
-   freedom between a use site and its declaration. *)
+(* The residual facet's comparison form: the datatype with every DOMAIN name
+   folded to the WF-001 form. Two goldens pin exactly that spelling freedom
+   between a use site and its declaration. The three UNIT names are left
+   alone — the same split [eenheid_identical] makes, so the backstop refuses
+   exactly the spellings the unit facet refuses and lets through exactly the
+   ones it lets through. *)
 let rec dt_ci = function
-  | Numeriek ({ eenheid; _ } as n) -> Numeriek { n with eenheid = Option.map eenheid_ci eenheid }
-  | Percentage ({ eenheid; _ } as p) ->
-      Percentage { p with eenheid = Option.map eenheid_ci eenheid }
   | Enumeratie { domein; waarden } ->
       Enumeratie
         { domein = Option.map norm domein; waarden = List.map (Option.map norm) waarden }
