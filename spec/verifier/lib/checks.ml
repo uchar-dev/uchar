@@ -1068,6 +1068,16 @@ let wf090_struct_identity ?(source = "the declaration it reads from") at ~what ~
                  "%s is typed %s, naming no struct domain, but %s names struct domain '%s'" what
                  (datatype_kind t) source b) ])
 
+(* The DOMAIN facet alone: WF-089 for the keuzetype family, WF-090 for
+   struct domains, first difference reported. The facet engine below uses
+   this as its domain step; the element-passing aggregation arm uses it as
+   its WHOLE cross, because there the node's type is not a copy of one
+   declaration — see [use_site_identity]'s note on that arm. *)
+let use_site_domain ?(source = "the declaration it reads from") at ~what ~decl ~typ =
+  match wf089_domain_identity ~source at ~what ~decl ~typ with
+  | [] -> wf090_struct_identity ~source at ~what ~decl ~typ
+  | vs -> vs
+
 (* --- the facet engine (WF-091 and the numbers it defers to) ------------- *)
 
 (* Structural identity of a unit (ch. 2.5): abbreviation, declaring system,
@@ -1178,7 +1188,9 @@ let rec datatype_full = function
    declaration it takes its value from, facet by facet in one fixed order —
    soort, domain, unit, decimals, wholeness, sign, residual structure — of
    which the FIRST differing facet is reported, once: one divergence is one
-   message, never two for one path.
+   message per comparison, never two facets for one comparison. (A caller
+   that compares one path repeatedly — the aggregation walk, once per
+   operand — can still report more than one.)
 
    The rule NUMBER follows the facet and the arm, not this function. A facet
    that already carries a number on this arm keeps that number and its
@@ -1213,11 +1225,7 @@ let use_site_identity ?(source = "the declaration it reads from") ?soort at ~wha
           | Some (rule, render) -> [ v rule at (render (datatype_kind t) (datatype_kind d)) ]
           | None -> mismatch "soort" (datatype_kind t) (datatype_kind d)
       in
-      let domain_facet () =
-        match wf089_domain_identity ~source at ~what ~decl ~typ with
-        | [] -> wf090_struct_identity ~source at ~what ~decl ~typ
-        | vs -> vs
-      in
+      let domain_facet () = use_site_domain ~source at ~what ~decl ~typ in
       let tl, dl = peel_lists t d in
       let numeric pick facet render =
         match (num_facets_of tl, num_facets_of dl) with
@@ -2704,20 +2712,32 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
              in
              walk_cond ctx ~binders ~subject:fsubject (sub "filter") c
          | None -> [])
-      (* WF-089 (domain identity, ch. 2.4), aggregation position: an
+      (* WF-089/WF-090 (domain identity, ch. 2.4), aggregation position: an
          element-passing fold's own type against each operand's type. The
          operand's type is itself bound to the declaration it reads (the
          reference arms below, or a structural equality for a composite),
          so crossing the node against its operand chains the node to that
          declaration — without this the fold is a laundering step: its
-         value comes from a Kust attribute and its type says Vaarwater. *)
+         value comes from a Kust attribute and its type says Vaarwater.
+
+         The DOMAIN facet only, deliberately, where every other arm crosses
+         the whole type (WF-091): a fold node's type is not a copy of one
+         declaration but a DERIVED type over the operand list — the
+         frontend takes MINIMUM/MAXIMUM decimals as the least operand
+         precision, wholeness as the conjunction, sign and unit from
+         operand 0 — so identity against EVERY operand is unsatisfiable the
+         moment two operands differ, which the blessed "het minimum van het
+         gewicht en 0" form (ch. 4.6, a unitless literal beside a kg
+         attribute) does by construction. A domain, by contrast, is handed
+         through unchanged: the winning contributor's label IS the node's
+         label, whichever contributor wins. *)
       @ (match List.assoc_opt f.kind passthrough_folds with
          | None -> []
          | Some kn ->
              List.concat
                (List.mapi
                   (fun i a ->
-                    use_site_identity (sub "type")
+                    use_site_domain (sub "type")
                       ~source:(Printf.sprintf "operand %d" i)
                       ~what:(Printf.sprintf "the %s aggregation" kn)
                       ~decl:(typ_of_expr a) ~typ:f.typ)
