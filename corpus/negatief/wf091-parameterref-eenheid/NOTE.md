@@ -7,10 +7,11 @@ reference that reads it is typed in `t` (same canonical `kg`, factor 1000).
     1000 to 'kg'), but the declaration it reads from is 'kg' of system
     'Gewicht' (factor 1 to 'kg')
 
-Why it has to exist: the parameter arm has no positive golden witness (no
-golden, rood or parity document carries a unit-bearing
-`ParameterReference`), so the negatief is the only thing that holds the arm
-in place — the same honesty note WF-089 and WF-090 carry for this arm.
+Why it has to exist: the parameter arm has no positive golden witness — no
+golden and no rood document carries a unit-bearing `ParameterReference`
+(measured; the read-only parity zone does, 12 of them, but it is not a
+golden and pins nothing) — so the negatief is the only thing that holds the
+arm in place, the same honesty note WF-089 and WF-090 carry for this arm.
 
 Falsifiable, arm-exact: disable the `Parameter_ref` arm's
 `use_site_identity` call and this case turns clean together with
