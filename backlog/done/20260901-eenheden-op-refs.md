@@ -186,3 +186,31 @@ foldresultaatklasse — de afleidingswet voor resultaattypen; (b) de stille
 factor-één-terugval in de Drools-eenheidslogica, die van een
 naamverschil een verkeerd antwoord maakt in plaats van een fout; (c) het
 verdraai-harnas.
+
+## Result (2026-09-03)
+
+Geland: de facetmotor — één identiteitsvergelijking van het
+geserialiseerde referentietype tegen zijn declaratie (facetvolgorde
+soort → domein → eenheid → decimalen → geheel → teken → reststructuur;
+het eerste afwijkende facet kiest het nummer: domein → WF-089/090,
+binder-soort → WF-078, elk overig facet → WF-091 met facetnaam) op vijf
+volle leesarmen plus het regeldoel, met de doorgeef-aggregatie op
+domein-alleen (het resultaattype is een afgeleide). Eenheidsnamen
+byte-vergeleken; het domeinfacet ci, gepind door twee goldens. Veertien
+wf091-negatiefs (negatiefs 220 → 234), elk arm-exact met byte-getrouwe
+meldcitaten; rood-eerst in `b3648f8`. IR-SPEC (voorstel): de ch.
+4.1-clausule "Reference-type identity (WF-091)", de
+WF-078-herformulering, en de indexrij met nagemeten tellingen en vier
+eerlijkheidsnotities. Regime: meetfase-agent, bouwgolf, twee
+adversariële lenzen, twee fixronden — lens 1 ving over-afwijzing op de
+aggregatiearm tegen de eigen frontend en de ci-belofte-mismatch; lens 2
+ving de onware foldklasse-toeschrijving en het kastkanaal (ref 3,75
+tegen 3.750,00 in het Drools-pad). Bewust gebleven en gecard: de
+foldresultaat-/composietklasse met de Drools-herschaalwerklijst en het
+verdraai-harnas (`20260903-reftype-consument-drools`), de getuigeloze
+armen en de twee deferral-kanalen (`20260903-identiteitsarmen-getuigen`),
+het WF-007-doelgat (`20260903-wf007-schrijfdoel`), de
+filter-LHS-emitterplek (`20260903-filter-lhs-declaratietype`); de
+v1-delta — het referentietype verdwijnt van de wire — staat in
+CONSTRUCTS rij 1. Drools, frontends, ref, scripts, bestaande goldens en
+bestaande negatiefs: onaangeraakt.
