@@ -1,0 +1,378 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "dossier": {
+          "node": "StructType",
+          "domain": "dossier",
+          "fields": [
+            {
+              "name": "waarde",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "telling",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            }
+          ]
+        },
+        "waardekopie": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "spiegel": {
+          "node": "StructType",
+          "domain": "dossier",
+          "fields": [
+            {
+              "name": "waarde",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "telling",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            }
+          ]
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    }
+  },
+  "domeinen": {
+    "dossier": {
+      "node": "StructType",
+      "domain": "dossier",
+      "fields": [
+        {
+          "name": "waarde",
+          "datatype": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          }
+        },
+        {
+          "name": "telling",
+          "datatype": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          }
+        }
+      ]
+    }
+  },
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "waardekopie van een jutter",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "waardekopie",
+        "objecttype": "Jutter",
+        "onderwerpBron": null,
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": null,
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "FieldAccess",
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "base": {
+          "node": "AttribuutRef",
+          "attribuut": "dossier",
+          "objecttype": "Jutter",
+          "onderwerpBron": null,
+          "navigatieRol": null,
+          "type": {
+            "node": "StructType",
+            "domain": "DOSSIER",
+            "fields": [
+              {
+                "name": "waarde",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              },
+              {
+                "name": "telling",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              }
+            ]
+          },
+          "bron": null,
+          "set": false,
+          "navigatiePad": []
+        },
+        "field": "waarde",
+        "bron": null
+      },
+      "voorwaarde": null,
+      "geldigheid": null
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "spiegel van een jutter",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "spiegel",
+        "objecttype": "Jutter",
+        "onderwerpBron": null,
+        "navigatieRol": null,
+        "type": {
+          "node": "StructType",
+          "domain": "dossier",
+          "fields": [
+            {
+              "name": "waarde",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "telling",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            }
+          ]
+        },
+        "bron": null,
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "StructLiteral",
+        "type": {
+          "node": "StructType",
+          "domain": "DOSSIER",
+          "fields": [
+            {
+              "name": "waarde",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "telling",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            }
+          ]
+        },
+        "fields": [
+          {
+            "name": "waarde",
+            "value": {
+              "node": "FieldAccess",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "base": {
+                "node": "AttribuutRef",
+                "attribuut": "dossier",
+                "objecttype": "Jutter",
+                "onderwerpBron": null,
+                "navigatieRol": null,
+                "type": {
+                  "node": "StructType",
+                  "domain": "dossier",
+                  "fields": [
+                    {
+                      "name": "waarde",
+                      "datatype": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "NIET_NEGATIEF",
+                        "eenheid": null
+                      }
+                    },
+                    {
+                      "name": "telling",
+                      "datatype": {
+                        "node": "Numeriek",
+                        "geheel": true,
+                        "decimalen": 0,
+                        "teken": "NIET_NEGATIEF",
+                        "eenheid": null
+                      }
+                    }
+                  ]
+                },
+                "bron": null,
+                "set": false,
+                "navigatiePad": []
+              },
+              "field": "waarde",
+              "bron": null
+            }
+          },
+          {
+            "name": "telling",
+            "value": {
+              "node": "FieldAccess",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "base": {
+                "node": "AttribuutRef",
+                "attribuut": "dossier",
+                "objecttype": "Jutter",
+                "onderwerpBron": null,
+                "navigatieRol": null,
+                "type": {
+                  "node": "StructType",
+                  "domain": "dossier",
+                  "fields": [
+                    {
+                      "name": "waarde",
+                      "datatype": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "NIET_NEGATIEF",
+                        "eenheid": null
+                      }
+                    },
+                    {
+                      "name": "telling",
+                      "datatype": {
+                        "node": "Numeriek",
+                        "geheel": true,
+                        "decimalen": 0,
+                        "teken": "NIET_NEGATIEF",
+                        "eenheid": null
+                      }
+                    }
+                  ]
+                },
+                "bron": null,
+                "set": false,
+                "navigatiePad": []
+              },
+              "field": "telling",
+              "bron": null
+            }
+          }
+        ],
+        "bron": null
+      },
+      "voorwaarde": null,
+      "geldigheid": null
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

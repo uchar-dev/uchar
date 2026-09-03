@@ -1,0 +1,55 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "dossier": {
+            "struct": {
+              "waarde": {
+                "number": "120.50"
+              },
+              "telling": {
+                "number": "3"
+              }
+            }
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "waardekopie",
+      "value": {
+        "number": "120.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "spiegel",
+      "value": {
+        "struct": {
+          "waarde": {
+            "number": "120.50"
+          },
+          "telling": {
+            "number": "3"
+          }
+        }
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
