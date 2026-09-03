@@ -144,3 +144,45 @@ declaratie wordt door WF-003 geweigerd (`unresolved datatype`), op een
    door geen definitie te reproduceren; de rij draagt nu 921 uitgevoerde
    vergelijkingen (826 golden + 95 rood, 38 eenheiddragend) + 147 in de
    pariteitszone (30 eenheiddragend), met erbij wat de telling uitsluit.
+
+## Fixronde 2 (2026-09-03)
+
+Twee kanalen die fixronde 1 openliet, elk gemeten.
+
+1. **Het kastkanaal is dicht.** Punt 2 hierboven is TERUGGEDRAAID: de drie
+   eenheidsnamen worden weer byte voor byte vergeleken, in
+   `eenheid_identical` én in de reststructuurvorm (`eenheid_ci` vervalt).
+   Naamresolutie is ci — WF-001's domein — maar WF-091 gaat over
+   kopie-getrouwheid, en dat is een andere vraag: een kopie die alleen in
+   kast liegt (`KG`/`GEWICHT`/`KG` tegen `kg`/`Gewicht`/`kg`, factor 1 aan
+   beide kanten) was na fixronde 1 verifier-schoon terwijl ref 3,75
+   antwoordt en het Drools-pad 3.750,00 — de eenheidslogica daar vergelijkt
+   case-sensitief en valt bij mismatch stil terug op factor één. Het
+   domeinfacet blijft ci, gepind door `jutterswet-dossierspelling` en
+   `jutterswet-vaarwaterspelling` (opnieuw nagemeten: precies die twee).
+2. **De foldresultaatklasse is heropend en eerlijk gecard.** De clausule
+   schreef de liegende NUMERIEKE facetten van een foldwortel toe aan
+   WF-035/WF-038; dat is meetbaar onwaar (die kruisen convertibiliteit, en
+   kg/t zijn convertibel). Op beide plekken — clausule en indexrij — staat
+   nu een ongedekt-notitie: een resultaattype is een afgeleide zonder één
+   declaratie tegenover zich, de klasse is gemeten divergent (3,75 in ref
+   tegen 3.750,00 in het Drools-pad op een eenheidsleugen op een
+   waardefoldwortel) en het sluiten ervan vraagt een AFLEIDINGSwet voor
+   resultaattypen. Vierde honesty-notitie erbij: het domein-alleen-besluit
+   op de doorgeef-aggregatiearm is door geen artefact gepind — een golden
+   kan de tegenvorm niet dragen (de ASP-vertaling weigert de multi-operand
+   `MINIMUM`/`MAXIMUM` vóór vertaling) en een negatief pint geen
+   niet-weigering.
+
+Twee nieuwe negatiefs (232 → 234): `wf091-attribuutref-eenheid-kast` (de
+kastleugen; vouw de namen weer ci en dit ene geval passeert — gate 3 rood,
+gemeten) en `wf091-dimensiecel-eenheid` (de celLEZING met een trouwe
+binnenreferentie), waarmee elke vol-kruisende arm een eenheidsgeval heeft.
+Alle 232 bestaande negatief-meldingen letterlijk nagemeten vóór en ná de
+byte-vergelijking: geen enkele verandert.
+
+Voor de vervolgkaart, naast de bijvangst hierboven: (a) de
+foldresultaatklasse — de afleidingswet voor resultaattypen; (b) de stille
+factor-één-terugval in de Drools-eenheidslogica, die van een
+naamverschil een verkeerd antwoord maakt in plaats van een fout; (c) het
+verdraai-harnas.

@@ -16,11 +16,14 @@ mechanically. Fold those names case-insensitively — as every other declared
 name in the verifier is folded — and this case, and only this case,
 passes. That is not a harmless liberty. The target `Jutter.kopie` is
 declared in `t`, so the value is CONVERTED on the way in, and a consumer
-picks the conversion by reading the reference's own unit names: `ref` and
-clingo read the DECLARATION and answer `3.75` for an input of `3750.00`
-kg, while the Drools path compares abbreviation and canonical name
-case-sensitively, finds no match and falls back to factor one — `3750.00`.
-Verifier-clean and ref ≢ Drools, measured on exactly this shape. Name
+picks the conversion by reading the reference's own unit names: `ref`
+reads the DECLARATION and answers `3.75` for an input of `3750.00` kg,
+while the Drools path compares abbreviation and canonical name
+case-sensitively, finds no match and falls back to factor one — `3750.00`
+(`FAIL case.json: attribuut kopie: verwacht 3.75, werkelijk 3750.00`).
+Verifier-clean and ref ≢ Drools, measured on exactly this shape. The ASP
+backend is silent here rather than agreeing: it carries no cross-unit
+write and refuses the form ahead of translation. Name
 RESOLUTION is case-insensitive (WF-001's domain, and the DOMAIN facet of
 this very rule stays ci, pinned by `jutterswet-dossierspelling` and
 `jutterswet-vaarwaterspelling`); copy FIDELITY is a different question, and
