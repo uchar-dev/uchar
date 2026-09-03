@@ -675,10 +675,19 @@ public final class RegelSpraakRuntime {
      *  its own value, so the collision is membership of that value in the timeline's ever-set — which is what
      *  ref computes per source ({@code ever_tuples}: one tuple per ever-value on the temporal side, one tuple
      *  with the value on the scalar side, compared as lexemes). Scale-insensitive like {@link #rsOoitWaarden},
-     *  so 7 and 7.00 collide. A NON-numeric scalar claims nothing here: ref compares a Tekst lexeme quoted and
-     *  a Datum as ISO, neither of which ever equals a number's. The timeline side still fails fast on a
-     *  non-List (through {@link #rsOoitWaarden}) — a declared-temporal key supplied as a bucket scalar stays
-     *  the loud form error it is. */
+     *  so 7 and 7.00 collide (ref's Num is a RATIONAL and its lexeme carries no scale, where
+     *  {@code BigDecimal.equals} does).
+     *
+     *  <p>Anything that is not a number claims NOTHING, and the reachable reason is an ABSENT key: only the
+     *  SUBJECT of a union rule binds its key parts non-null, the element side inside the accumulate has no
+     *  such binder, so an instance that supplies no value at all arrives here as {@code null} and must not be
+     *  counted (ref and clingo call that document consistent). A non-numeric VALUE would be the second
+     *  reason — ref compares a Tekst lexeme quoted and a Datum as ISO, neither of which ever equals a
+     *  number's — but that shape is shielded: WF-030 rejects a union whose sources disagree on a key
+     *  position's datatype kind, so it never reaches a played model.
+     *
+     *  <p>The timeline side still fails fast on a non-List (through {@link #rsOoitWaarden}) — a
+     *  declared-temporal key supplied as a bucket scalar stays the loud form error it is. */
     public static boolean rsOoitBevat(Object tijdlijn, Object scalair) {
         if (!(scalair instanceof BigDecimal w)) return false;
         return rsOoitWaarden(tijdlijn).contains(w.stripTrailingZeros());
