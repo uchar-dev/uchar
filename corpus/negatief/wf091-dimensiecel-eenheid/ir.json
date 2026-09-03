@@ -1,0 +1,190 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Berging": {
+      "node": "Objecttype",
+      "naam": "Berging",
+      "attributen": {
+        "kern": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "kg",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "tarief": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "t",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1000,
+            "noemer": null
+          }
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {
+        "kern": [
+          "seizoen"
+        ]
+      },
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": null
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {
+    "Gewicht": {
+      "node": "Eenheidstelsel",
+      "naam": "Gewicht",
+      "eenheden": {
+        "kg": {
+          "node": "Eenheid",
+          "afkorting": "kg",
+          "stelsel": "Gewicht",
+          "canoniek": "kg",
+          "factorNaarCanoniek": 1,
+          "noemer": null
+        },
+        "t": {
+          "node": "Eenheid",
+          "afkorting": "t",
+          "stelsel": "Gewicht",
+          "canoniek": "kg",
+          "factorNaarCanoniek": 1000,
+          "noemer": null
+        }
+      },
+      "aliassen": {}
+    }
+  },
+  "feittypen": {},
+  "dimensies": {
+    "seizoen": {
+      "node": "Dimensie",
+      "naam": "seizoen",
+      "naamMeervoud": "seizoenen",
+      "voorzetsel": "in",
+      "waarden": [
+        "voorjaar",
+        "najaar"
+      ]
+    }
+  },
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "tarief van een berging",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "tarief",
+        "objecttype": "Berging",
+        "onderwerpBron": null,
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "t",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1000,
+            "noemer": null
+          }
+        },
+        "bron": null,
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "DimensieCel",
+        "attribuut": {
+          "node": "AttribuutRef",
+          "attribuut": "kern",
+          "objecttype": "Berging",
+          "onderwerpBron": "de kern",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "kg",
+              "stelsel": "Gewicht",
+              "canoniek": "kg",
+              "factorNaarCanoniek": 1,
+              "noemer": null
+            }
+          },
+          "bron": "de kern",
+          "set": false,
+          "navigatiePad": []
+        },
+        "labels": [
+          "voorjaar"
+        ],
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "t",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1000,
+            "noemer": null
+          }
+        },
+        "bron": "cel"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}
