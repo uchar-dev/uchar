@@ -940,6 +940,7 @@ let rec datatype_detail dt =
   | Percentage { decimalen; eenheid; _ } -> "percentage" ^ dec_unit decimalen eenheid
   | Enumeratie { domein = Some d; _ } -> "enumeration '" ^ d ^ "'"
   | Sum_type { domein; _ } -> "sumtype '" ^ domein ^ "'"
+  | Struct_type { domein; _ } -> "struct '" ^ domein ^ "'"
   | List_type { element } -> "list of " ^ datatype_detail element
   | other -> datatype_kind other
 
@@ -1019,6 +1020,61 @@ let wf089_domain_identity ?(source = "the declaration it reads from") at ~what ~
               (Printf.sprintf
                  "%s is typed %s, naming no keuzetype domain, but %s names domain '%s'"
                  what (datatype_kind t) source (keuzetype_name b)) ])
+
+(* The struct domain a datatype names (IR-SPEC ch. 2.4) — a StructType's
+   declaring domain, looked up THROUGH a ListType's element exactly as
+   [keuzetype_domain] is. A struct domain is NOT a keuzetype (the ch. 2.4
+   family term covers Enumeratie and SumType only, maintainer decision), and
+   `domeinen` being one namespace there is no variant to carry: a domain
+   declared as a struct and named as a struct is the same domain iff the
+   names agree (ci, WF-001). *)
+let rec struct_domain = function
+  | Struct_type { domein; _ } -> Some domein
+  | List_type { element } -> struct_domain element
+  | _ -> None
+
+(* WF-090 (struct-domain identity, IR-SPEC ch. 2.4): the struct sibling of
+   WF-089's read half and WF-023's domain clause, sharing their machinery and
+   their call sites but carrying its own rule number (maintainer decision
+   2026-09-03). A struct-typed use site and the declaration it crosses MUST
+   name the same struct domain whenever either of them names one. WF-072
+   binds a use site to the declaration it NAMES, WF-073 a literal to the
+   domain IT names and WF-074 a field read to the domain the BASE names —
+   none of them crosses a struct value against the struct-typed declaration
+   it comes from or enters, which is why a StructLiteral of domain B written
+   into an attribute of domain A was verifier-clean while ref faulted at the
+   field read and the ASP backend gave a wrong answer (measured, the card).
+   Either side unknown (the v0 sentinel), an unresolved source, or a use site
+   carrying no type defers, exactly as WF-089 and WF-023 do. *)
+let wf090_struct_identity ?(source = "the declaration it reads from") at ~what ~decl ~typ =
+  match (decl, typ) with
+  | None, _ | _, None | Some (Datatype_onbekend _), _ | _, Some (Datatype_onbekend _) -> []
+  | Some d, Some t -> (
+      match (struct_domain t, struct_domain d) with
+      | None, None -> []
+      | Some a, Some b when norm a = norm b -> []
+      | Some a, Some b ->
+          [ v "WF-090" at
+              (Printf.sprintf "%s is typed with struct domain '%s', but %s names struct domain '%s'"
+                 what a source b) ]
+      | Some a, None ->
+          [ v "WF-090" at
+              (Printf.sprintf
+                 "%s is typed with struct domain '%s', but %s is %s and names no struct domain" what
+                 a source (datatype_kind d)) ]
+      | None, Some b ->
+          [ v "WF-090" at
+              (Printf.sprintf
+                 "%s is typed %s, naming no struct domain, but %s names struct domain '%s'" what
+                 (datatype_kind t) source b) ])
+
+(* the two use-site identities at one call: WF-089 for the keuzetype family,
+   WF-090 for struct domains. Every reference position calls this, so the two
+   rules stay mechanically in step; each is falsifiable on its own because the
+   two helpers are separate. *)
+let use_site_identity ?source at ~what ~decl ~typ =
+  wf089_domain_identity ?source at ~what ~decl ~typ
+  @ wf090_struct_identity ?source at ~what ~decl ~typ
 
 let wf030 ctx =
   let key_checks at otn keys =
@@ -2422,7 +2478,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
              List.concat
                (List.mapi
                   (fun i a ->
-                    wf089_domain_identity (sub "type")
+                    use_site_identity (sub "type")
                       ~source:(Printf.sprintf "operand %d" i)
                       ~what:(Printf.sprintf "the %s aggregation" kn)
                       ~decl:(typ_of_expr a) ~typ:f.typ)
@@ -2438,7 +2494,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                       applied here too — otherwise a fold source is the one
                       reference position that may lie about the attribute it
                       reads *)
-                   wf089_domain_identity (p ^ "/type")
+                   use_site_identity (p ^ "/type")
                      ~what:
                        ("fold-source attribute reference '"
                       ^ Option.value attribuut ~default:"?" ^ "'")
@@ -2629,7 +2685,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
          attribute it reads (resolved at the endpoint type, so a navigated
          read crosses against the attribute it lands on); an unresolvable
          reference — a role-name fold source, a characteristic — defers *)
-      wf089_domain_identity (sub "type")
+      use_site_identity (sub "type")
         ~what:("attribute reference '" ^ Option.value attribuut ~default:"?" ^ "'")
         ~decl:(resolved_attr_datatype ctx e) ~typ
       @
@@ -2688,7 +2744,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
               attribute's datatype, so the cell read's own type crosses
               against the declaration too (the inner reference crosses its
               own type in its walk below) *)
-           wf089_domain_identity (sub "type") ~what:("dimension-cell read of '" ^ a ^ "'")
+           use_site_identity (sub "type") ~what:("dimension-cell read of '" ^ a ^ "'")
              ~decl:(resolved_attr_datatype ctx inner) ~typ
            @
            (match objecttype ctx otn with
@@ -2732,7 +2788,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
           | Some (par : parameter) ->
               (* WF-089: the reference's type names the keuzetype domain of
                  the parameter it reads *)
-              wf089_domain_identity (sub "type") ~what:("parameter reference '" ^ p ^ "'")
+              use_site_identity (sub "type") ~what:("parameter reference '" ^ p ^ "'")
                 ~decl:par.par_datatype ~typ)
       | None -> [])
   | Variabele_ref _ -> [] (* binding sites are not serialized in v0 — OPEN *)
@@ -3011,7 +3067,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
              datatype is a match arm's declared payload, a lambda/function
              parameter's declared type, a Let value's type or a filter's
              element type, and the reference names its keuzetype domain *)
-          @ wf089_domain_identity (sub "type") ~what:("binder reference '" ^ naam ^ "'")
+          @ use_site_identity (sub "type") ~what:("binder reference '" ^ naam ^ "'")
               ~decl:bdt ~typ))
   | Struct_literal { typ; velden; _ } ->
       (* WF-073: the type is a declared struct; the supplied fields are
@@ -4856,6 +4912,33 @@ let wf023_assignment at ~target ~value (dt : datatype) (wt : datatype) =
       @ (if sign_conflict dt wt then
            [ v "WF-023" at "the value's sign restriction contradicts the target's" ]
          else [])
+      @ (* WF-090's write half (struct-domain identity, ch. 2.4): the same
+           three write positions, the struct sibling of the keuzetype clause
+           below. Its own rule number, so the two are falsifiable apart; the
+           one-sided arms follow the keuzetype clause and report only within
+           one family. *)
+      (match (struct_domain dt, struct_domain wt) with
+       | None, None -> []
+       | Some a, Some b when norm a = norm b -> []
+       | Some a, Some b ->
+           [ v "WF-090" at
+               (Printf.sprintf
+                  "a value of the struct domain '%s' is assigned to a target of the struct domain \
+                   '%s'"
+                  b a) ]
+       | Some a, None when same_family ->
+           [ v "WF-090" at
+               (Printf.sprintf
+                  "a %s value naming no struct domain is assigned to a target of the struct domain \
+                   '%s'"
+                  (datatype_kind wt) a) ]
+       | None, Some b when same_family ->
+           [ v "WF-090" at
+               (Printf.sprintf
+                  "a value of the struct domain '%s' is assigned to a %s target naming no struct \
+                   domain"
+                  b (datatype_kind dt)) ]
+       | _ -> [])
       @
       (* the domain clause; a one-sided keuzetype is reported only within
          one family (a list of a keuzetype against a list of something else,
