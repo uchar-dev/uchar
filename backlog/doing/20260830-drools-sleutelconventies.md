@@ -139,53 +139,104 @@ waarde, membership in de ooit-verzameling), tegenover een weigering die drie
 takken en een reden-tekst kost én een vorm die ref én clingo gewoon spelen uit
 het differentiaalvierkant snijdt. `rsOoitBevat` is scale-ongevoelig zoals de
 temporele kant (7 en 7.00 botsen, en ref's `lexeme_of_q` doet hetzelfde omdat
-Num een rationaal is), een niet-numerieke scalair claimt niets (ref's Tekst-
-lexeem staat tussen aanhalingstekens en is nooit een getal), en de
-tijdlijn-kant blijft fail-fast: een gedeclareerd-temporele sleutel die als
-bak-scalair wordt aangeleverd wordt niet stil doorgespeeld (fixronde 1 heeft
-gemeten hóe hij faalt: ref met een ch.-5.9-fault, Drools met een ERROR — zie
-restgat 1).
+Num een rationaal is), wat niet-numeriek is claimt niets, en de tijdlijn-kant
+blijft fail-fast: een gedeclareerd-temporele sleutel die als bak-scalair wordt
+aangeleverd wordt niet stil doorgespeeld (fixronde 1 heeft gemeten hóe hij
+faalt: ref met een ch.-5.9-fault, Drools met een ERROR — zie restgat 1).
 
-**Getuigen.** Twaalf in `SleutelconventieWitnessTest` en tien in
-`NaamNormWitnessTest` (fixronde 1), elke verwachting eerst door ref en clingo. Ze lezen het §9.5-kanaal via `naFire`, niet via de
+**Fixronde 2: de twee poorten van `rsOoitBevat` kregen hun getuige, en de
+niet-numerieke poort zijn bereikbare motivering.** Beide eigenschappen werden
+als waarheid geclaimd (javadoc en deze notitie) maar hield geen enkele test
+vast: `stripTrailingZeros()` weghalen en de suite blijft groen. Gemeten op de
+gemengde unie (`jutterswet-nummerregister` zonder `Wrakvondst`-granulariteit,
+verifier PASS):
+
+| geval | ref | clingo | Drools zonder de poort |
+|---|---|---|---|
+| S1 tijdlijn 7, W1 scalair `7.00` | `PASS (2 expectations)` — S1 + W1 | idem | `consistent` — stil gemist |
+| S1 tijdlijn 7, W1 zónder `vondstnummer` | `PASS (1 expectations)` — consistent | idem | valse botsing op S1 |
+
+De niet-numerieke poort is dus dragend om een reden die er niet stond. De
+javadoc noemde uitsluitend een niet-numerieke WAARDE, en die vorm is gemeten
+ONBEREIKBAAR: een `Tekst`-scalair tegenover een numerieke tijdlijn in dezelfde
+unie wordt geweigerd met `WF-030 FAIL /uniciteitUnies/0: union sources disagree
+on a key position's datatype kind`. De bereikbare grond is de AFWEZIGE sleutel:
+alleen het SUBJECT van een unieregel bindt zijn sleuteldelen non-null, de
+element-kant in de accumulate niet, dus een instantie zonder waarde komt hier
+als `null` binnen. De javadoc noemt nu die grond eerst en de niet-numerieke
+waarde als tweede, door WF-030 afgeschermde reden.
+
+**Getuigen.** Twaalf in `SleutelconventieWitnessTest`, tien in
+`NaamNormWitnessTest` (fixronde 1) en drie in `GemengdeUnieRandWitnessTest`
+(fixronde 2), elke verwachting eerst door ref en clingo. Ze lezen het
+§9.5-kanaal via `naFire`, niet via de
 case-comparator: die matcht een regelnaam-sleutel op de NAAM ALLEEN, dus een
-half gevonden botsing komt daar groen doorheen (mutant 3a bewees dat: met
+half gevonden botsing komt daar groen doorheen (mutant 3 bewijst dat: met
 alleen de spiegel-tak weg verdwijnt S1 en blijft W1 staan — de comparator zou
-dat niet zien). Vóór de fix: 4 kale tweelingen groen, 3 naamnormalisatie rood,
-2 gemengde unie rood.
+dat niet zien). Vóór de fix, gemeten op de negen getuigen die er toen waren:
+4 kale tweelingen groen, 3 naamnormalisatie rood, 2 gemengde unie rood. De drie
+DRL-tekstgetuigen van deze klasse hebben geen rode voorgeschiedenis — twee
+landden mét de fix, één kwam uit de mutantentest. Fixronde 1 is wél volledig
+rood-eerst (10 getuigen, 5 Failures + 5 Errors vóór haar fix), en de drie
+getuigen van fixronde 2 zijn rood tegen hun mutant (elk gemeten, hieronder).
 
-**Mutanten (in een /tmp-kopie, elk gedood):**
+**Mutanten (in een /tmp-kopie, elk gedood; de doden HERMETEN in fixronde 2 op
+de suite van 178 tests):**
 
-1. exacte match terug in `Namen.bevatNaam` → 4 doden (de drie
-   naamnormalisatie-getuigen plus de DRL-renderingsgetuige);
-2. de gemengde takken uit `uniciteitUnie` → de `ConstraintEvaluationException`
-   is letterlijk terug op beide gemengde getuigen;
-3. alleen de spiegel-tak weg → `[S1, W1]` wordt `[W1]` (de stille misser
-   zonder de crash);
-4. de gemengde takken uit de DRL-tweeling → de renderingsgetuige valt;
-5. `containsKey` terug op alleen de DRL-UNIE-plek → **overleefde** elke
-   getuige; daar is de getuige `de_drl_tweeling_normaliseert_ook_de_uniesleutel`
-   voor bijgekomen (de twaalfde), die de mutant nu doodt.
+1. exacte match terug in `Namen.bevatNaam` → 7 doden (de vier
+   naamnormalisatie- en DRL-getuigen van de eerste ronde, de kastvariant van de
+   uniesleutel, de DRL-veldnaamgetuige, en de uniesleutel-veldgetuige van
+   fixronde 2). Sinds fix (c) OVERLEEFT
+   `een_anders_gekapitaliseerde_sleutel_vindt_dezelfde_botsing` hem: de
+   sleutelresolutie dekt die vorm nu al;
+2. de twee gemengde takken uit `uniciteitUnie` → 2 doden, en STIL: een lege
+   vlaggenverzameling, geen exception, en `…_zonder_botsing_zwijgt` blijft
+   groen. De `ConstraintEvaluationException` komt pas terug bij een VOLLEDIGE
+   terugdraai van fix (b) (ook de conditie `elementTemporeel &&
+   subjectTemporeel` terug naar `elementTemporeel`) → 3 Errors, alle drie
+   `ConstraintEvaluation Error evaluating constraint ''`;
+3. alleen de spiegel-tak weg → 2 doden: `[S1, W1]` wordt `[W1]` (de stille
+   misser zonder de crash);
+4. de gemengde takken uit de DRL-tweeling → 1 dode, de renderingsgetuige;
+5. `containsKey` terug op de DRL-UNIE-temporaliteitsplekken → **overleefde**
+   aanvankelijk elke getuige; nu 2 doden
+   (`de_drl_tweeling_normaliseert_ook_de_uniesleutel`, de twaalfde, plus de
+   uniesleutel-veldgetuige van fixronde 2).
 
 **Mutanten fixronde 1 (dezelfde /tmp-kopie, elk gedood):**
 
-6. de brede `norm` terug (`trim` + `\s+` + `Locale.ROOT`) → 5 doden: de twee
-   norm-contractgetuigen, de diakriet- en de newline-getuige, en de
-   ariteitsgetuige (plus een dode in `SleutelconventieWitnessTest`);
-7. `gedeclareerdeNaam` teruggebracht tot identiteit → 8 doden (het contract
+6. de brede `norm` terug (`trim` + `\s+` + `Locale.ROOT`) → 5 doden, alle vijf
+   in `NaamNormWitnessTest`: de twee norm-contractgetuigen, de diakriet- en de
+   newline-getuige, en de ariteitsgetuige;
+7. `gedeclareerdeNaam` teruggebracht tot identiteit → 9 doden (het contract
    draagt ook `bevatNaam`);
-8. alleen de sleutel-RESOLUTIE weg (de twee `sleutelVeld`-spiegels naar
-   identiteit, `bevatNaam` intact) → 3 doden: de vijf-spellingen-getuige, de
-   uniesleutel-getuige en de DRL-veldnaamgetuige;
+8. alleen de sleutel-RESOLUTIE weg (de twee declaratie-spiegels `sleutelVeld` /
+   `gedeclareerdAttribuut` naar identiteit, `bevatNaam` intact) → 4 doden: de
+   vijf-spellingen-getuige, de uniesleutel-getuige, de DRL-veldnaamgetuige en
+   de uniesleutel-veldgetuige van fixronde 2;
 9. beide DRL-ariteitsguards weg → 2 doden (enkelvoudig en unie).
+
+**Mutanten fixronde 2 (dezelfde /tmp-kopie, elk gedood door precies één
+getuige):**
+
+10. `stripTrailingZeros()` weg uit `rsOoitBevat` → de schaalgetuige:
+    `[S1, W1]` wordt de lege verzameling;
+11. de niet-numerieke poort van `rsOoitBevat` naar `true` → de
+    afwezige-sleutelgetuige: de lege verzameling wordt `[S1]`;
+12. de DRL-unie-BINDER zonder `sleutelVeld` → de veldnaamtelling van de
+    uniegetuige (2 binders `$k0 : vondstnummer != null` worden er 1);
+13. de DRL-unie-VELD zonder `sleutelVeld` → dezelfde getuige op de andere
+    assertie (4 matches `rsOoitBotst(vondstnummer, $k0)` worden er 2).
 
 **Gates.** Alle twaalf groen in de worktree, corpustellingen ongewijzigd:
 gate 12 `played 105 / auto-excluded 41 / value-divergence 1 / no-case 1`;
-JUnit 175 tests zonder skips (was 165 — de tien getuigen van fixronde 1). Gate
+JUnit 178 tests zonder skips (was 165, dan 175 met de tien getuigen van
+fixronde 1, nu 178 met de drie van fixronde 2). Gate
 1 PASS. Er is nog steeds geen corpusgetuige voor beide vormen — geverifieerd
 doordat die tellingen niet bewogen; een synthese-getuige zou een uitbreiding
 van May-touch vergen en is niet gedaan. Óók de vijf sleutelconventie-vormen
-van fixronde 1 leven uitsluitend in getuigen, niet in het corpus.
+van fixronde 1 en de twee randvormen van fixronde 2 (de schaal-flank en de
+afwezige scalaire sleutel) leven uitsluitend in getuigen, niet in het corpus.
 
 **Restgat 1, gemeten: het beanveld en de case-invoer typeren nog exact.**
 `FactModelGenerator` (het `List<Segment>`-veld) en `CaseRunner.temporeel` (de
