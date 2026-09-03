@@ -182,6 +182,18 @@ class SleutelconventieWitnessTest {
         assertTrue(!drl.contains("vondstnummer == $k0"), "the mis-capitalised key must not render a scalar join: " + drl);
     }
 
+    @Test void de_drl_tweeling_normaliseert_ook_de_uniesleutel() throws Exception {
+        // the union has its OWN key site in the twin, and it reads the pair: with an exact match the
+        // mis-capitalised source turns the whole union MIXED (one arm rendering rsOoitBevat, the other a
+        // scalar ==) where both sources are in truth temporal. Mutation-checked: without this arm a
+        // containsKey restored at that one site survives every other witness here.
+        Path ir = metSleutels(NUMMERREGISTER, o -> ((ObjectNode) o.get("uniciteitUnies").get(0)
+                .get("bronnen").get(0)).set("sleutels", JSON.createArrayNode().add("Vondstnummer")));
+        String drl = drl(ir);
+        assertTrue(!drl.contains("rsOoitBevat"), "both sources are temporal — no mixed arm may appear: " + drl);
+        assertTrue(!drl.contains("vondstnummer == $k0"), "nor a scalar join: " + drl);
+    }
+
     @Test void de_drl_tweeling_rendert_de_gemengde_unie_in_beide_richtingen() throws Exception {
         // both mixed arms, in one union: the Strandvondst rule counts Wrakvondsten with its own timeline as
         // the haystack, the Wrakvondst rule counts Strandvondsten with its own value as the needle.
