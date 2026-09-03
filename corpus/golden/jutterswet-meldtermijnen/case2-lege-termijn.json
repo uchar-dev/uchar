@@ -1,0 +1,69 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "M3",
+        "objectType": "Meldplicht",
+        "attributes": {
+          "meldreeks": {
+            "list": [
+              {
+                "constructor": "Dagverloop",
+                "payload": {
+                  "number": "5"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M4",
+        "objectType": "Meldplicht",
+        "attributes": {
+          "termijn": {
+            "number": "20"
+          },
+          "meldreeks": {
+            "list": [
+              {
+                "constructor": "Dagverloop",
+                "payload": {
+                  "number": "5"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "M3",
+      "attribute": "meldpositie"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M4",
+      "attribute": "meldpositie",
+      "value": {
+        "constructor": "Openstaand",
+        "payload": {
+          "number": "15"
+        }
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

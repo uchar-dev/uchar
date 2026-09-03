@@ -1,0 +1,78 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "M8",
+        "objectType": "Meldplicht",
+        "attributes": {
+          "termijn": {
+            "number": "30"
+          },
+          "meldreeks": {
+            "list": [
+              {
+                "constructor": "Melding"
+              },
+              {
+                "constructor": "Dagverloop",
+                "payload": {
+                  "number": "31"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M9",
+        "objectType": "Meldplicht",
+        "attributes": {
+          "termijn": {
+            "number": "3"
+          },
+          "meldreeks": {
+            "list": [
+              {
+                "constructor": "Dagverloop",
+                "payload": {
+                  "number": "4"
+                }
+              },
+              {
+                "constructor": "Melding"
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "M8",
+      "attribute": "meldpositie",
+      "value": {
+        "constructor": "Vervuld"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M9",
+      "attribute": "meldpositie",
+      "value": {
+        "constructor": "Geschonden"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
