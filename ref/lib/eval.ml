@@ -796,31 +796,47 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           match List.find_opt (fun (n, _) -> norm n = norm veld) fs with
           | Some (_, v) -> v
           | None ->
-              (* Unreachable on a verifier-clean document since WF-090
-                 (struct-domain identity, IR-SPEC ch. 2.4, 2026-09-03) — the
-                 struct twin of what WF-089/WF-023 do for keuzetypes, and the
-                 same three-way construction. WF-074 crosses the field against
+              (* Two rules have to hold together for this to be unreachable on
+                 a verifier-clean document, and both landed 2026-09-03 —
+                 measured, because the first alone was not enough.
+
+                 WF-090 (struct-domain identity, IR-SPEC ch. 2.4) settles WHICH
+                 DOMAIN the record belongs to: WF-074 crosses the field against
                  the struct domain the BASE NAMES and WF-073 a literal against
-                 the domain IT names; WF-090 adds the two crossings neither
+                 the domain IT names, and WF-090 adds the two crossings neither
                  does — every struct-typed READ (attribute, dimension cell,
                  parameter, binder, fold source, element-passing aggregation)
-                 names the domain of the declaration it reads, and every
-                 struct value WRITTEN into a declaration (rule target,
-                 object-creation member, defaults consequence) names that
-                 declaration's domain. Before it, a StructLiteral of domain B
-                 assigned to an attribute of domain A was verifier-clean and
-                 landed here while the ASP backend answered wrong (measured;
-                 the wf090 cases under corpus/negatief). Two routes stay
-                 outside the WF
-                 layer and are named rather than claimed away: the CASE INPUT,
-                 where the shared loader — not a WF rule — refuses a record
-                 whose fields the declaration does not carry, and a document
-                 that was never verified. Kept as an honest fault, never an
-                 assert. *)
+                 names the domain of the declaration it reads, and every struct
+                 value WRITTEN into a declaration (rule target, object-creation
+                 member, defaults consequence) names that declaration's domain.
+                 Before it, a StructLiteral of domain B assigned to an
+                 attribute of domain A was verifier-clean and landed here while
+                 the ASP backend answered wrong (the wf090 cases under
+                 corpus/negatief).
+
+                 WF-072's widened walk (same chapter, same day) settles WHICH
+                 FIELDS that domain has ON THE WIRE. It has to, because the
+                 loader below does not consult the declaration: value_of_json
+                 builds a record against the INLINE `velden` of the use site
+                 (case.ml), so before the walk widened, an attribute typed
+                 ListType<StructType dossier> with a renamed inline copy let a
+                 case input through whose fields the declaration does not carry
+                 — verifier-clean, ref faulting HERE, clingo passing green
+                 (measured, fix round 1). The walk now pins every StructType on
+                 the wire — through a list element, inside `domeinen`, at a
+                 FunctionDef, at every expression `type` — to its declaration,
+                 so the loader's cross IS the declaration's.
+
+                 What stays outside the WF layer, named rather than claimed
+                 away: a document that was never verified, and a case input the
+                 loader itself refuses (it fails fast on a missing, extra or
+                 wrong-typed field — not a WF rule, but the same fence in both
+                 executors). Kept as an honest fault, never an assert. *)
               Value.fault
                 "field %S is not present on the record value (unreachable on a verifier-clean \
-                 document: WF-090 binds every struct-typed read and every struct value written \
-                 into a declaration to that declaration's struct domain)"
+                 document: WF-090 binds every struct value to the struct domain of the declaration \
+                 it comes from or enters, and WF-072 binds every struct type on the wire to that \
+                 domain's declared field list)"
                 veld)
       | v -> Value.fault "field access base is %s, not a record value" (Value.to_string v))
   | List_literal { elements; _ } ->

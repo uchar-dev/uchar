@@ -118,12 +118,13 @@ Elf mutanten in de git-archive-kopie `/tmp/K`, elk arm-exact:
 
 ### 4. Twee eerlijkheidsnotities (gemeten)
 
-- **De ci-clausule is ONgepind.** Geen enkel golden-, rood- of
-  pariteitsdocument spelt een struct-use-site anders dan zijn declaratie;
-  de mutant die de vergelijking hoofdlettergevoelig maakt laat gate 3
-  groen (`check-verifier: PASS (170 golden clean; 216 negatief …)`).
-  Anders dan bij WF-089, waar `jutterswet-vaarwaterspelling` die clausule
-  pint.
+- ~~**De ci-clausule is ONgepind.**~~ **Gesloten in fixronde 1** — zie
+  §8. Stand vóór die ronde: geen enkel golden-, rood- of
+  pariteitsdocument spelde een struct-use-site anders dan zijn
+  declaratie; de mutant die de vergelijking hoofdlettergevoelig maakt
+  liet gate 3 groen (`check-verifier: PASS (170 golden clean; 216
+  negatief …)`). Anders dan bij WF-089, waar
+  `jutterswet-vaarwaterspelling` die clausule pint.
 - **Vier van de zes leesarmen hebben geen positieve getuige.** Gemeten
   telling over golden + rood + toka: `AttribuutRef` 46 struct-getypeerde
   referenties, `BinderRef` 9, `ParameterRef` 0, `DimensieCel` 0,
@@ -149,25 +150,28 @@ struct-getypeerde referenties, 15 `StructLiteral`s
 `rood/struct-field-overprecision`) — exact het getal dat de vorige ronde
 al mat.
 
-### 6. Gates
+### 6. Gates (stand na fixronde 1)
 
     check-self-contained: PASS
-    check-ir-schema:      PASS (schema valid; 170 file(s) validate and round-trip)
-    check-verifier:       PASS (170 golden clean; 216 negatief rejected for their declared rule)
-    check-case-schema:    PASS (schema valid; 418 case file(s) validate)
-    check-oracle:         PASS (396 cases replayed exactly; NOT replayed, no case file yet: corpus/golden/jutterswet-vormenkabinet)
-    check-clingo:         PASS (396 cases replay exactly through clingo — ref = clingo over the corpus)
-    check-noop:           PASS (360 cases refute a do-nothing executor; 36 pinned survivors pin defeasible standing)
+    check-ir-schema:      PASS (schema valid; 171 file(s) validate and round-trip)
+    check-verifier:       PASS (171 golden clean; 220 negatief rejected for their declared rule)
+    check-case-schema:    PASS (schema valid; 419 case file(s) validate)
+    check-oracle:         PASS (397 cases replayed exactly; NOT replayed, no case file yet: corpus/golden/jutterswet-vormenkabinet)
+    check-clingo:         PASS (397 cases replay exactly through clingo — ref = clingo over the corpus)
+    check-noop:           PASS (361 cases refute a do-nothing executor; 36 pinned survivors pin defeasible standing)
     check-rood:           PASS (22 red cases fault observably in ref and clingo); Drools leg PASS (5 fault-pinned, 17 not-carried with reason)
+    check-catala:         PASS (frontend suite green, 201 checks; 12 catala goldens regenerate byte-identically)
+    check-regelspraak:    PASS (JUnit 159 tests; 26 rgs goldens re-emit byte-identically)
+    check-toka-parity:    PASS (29 toka cases through ref, clingo en Drools; nul stille divergenties)
+    check-drools:         PASS (105 played, 42 auto-excluded met reden, 1 gelijste waardedivergentie)
 
-`dune runtest`: 201 checks, 0 failures.
+`dune runtest`: 201 checks, 0 failures (waarvan `test_ref` 376 worked
+examples).
 
 ### 7. Open gebleven
 
-1. **De ci-clausule van WF-090 is ongepind** — er is geen golden met een
-   struct-use-site die alleen in hoofdlettergebruik van zijn declaratie
-   verschilt. Op te lossen zoals `jutterswet-vaarwaterspelling` dat voor
-   WF-089 deed: één golden erbij.
+1. ~~**De ci-clausule van WF-090 is ongepind**~~ — **gesloten in
+   fixronde 1**: `corpus/golden/jutterswet-dossierspelling`, zie §8.
 2. **Vier leesarmen zonder positieve getuige** (ParameterRef,
    DimensieCel, foldbron, doorgeeffold) — geblokkeerd door het
    ASP-dragerhek, dat drie van die vormen vóór de vertaling weigert.
@@ -177,7 +181,129 @@ al mat.
    een ORDENENDE fold en `StructType` is equality-only (ch. 2.4), dus een
    volstrekt trouwe struct-`EERSTE` met twee bijdragers is een
    WF-038-operandvraag — kaart `20260902-doorgeeffold-orderbaarheid`,
-   niet deze regel.
+   niet deze regel. Dezelfde grens aan de andere kant, gemeten in
+   fixronde 1: WF-090's aggregatie-arm hangt bewust aan de
+   DOORGEEFfolds, dus een REKENENDE fold (`SOM`, `TOTAAL`) met
+   structoperanden van twee domeinen is verifier-schoon. Ook dat is een
+   WF-038-operandvraag en geen fout antwoord — ref faalt fail-fast
+   (`plus: expected a number, got {waarde: 120.5, telling: 3}`) en het
+   ASP-dragerhek weigert de vorm (`TRANSLATION FAULT: expression kind
+   not translated`). Genoteerd in de WF-090-clausule en -indexrij, geen
+   eigen arm.
 4. **Het clingo-dragerhek op struct-defaults, struct-parameters en
    struct-folds** — `TRANSLATION FAULT` op de trouwe tweelingen, dus geen
    divergentie maar wel een lege plek in het differentiaalvierkant.
+
+## Fixronde 1 (2026-09-03)
+
+De lens bevestigde de REGEL — elf mutanten reproduceren arm-exact, tien
+negatiefs falen elk op precies één WF-090-melding, nul over-afwijzing
+over 170 golden+rood- en 30 toka-documenten, alle twaalf gates groen —
+en falsifieerde drie afsluitende CLAIMS. Alle vijf bevindingen verwerkt.
+
+### 8. S1/S2/S3 — de inline structkopie, gesloten met een regel
+
+De drie zwaarste bevindingen waren één route: het `StructType`-knooppunt
+draagt een INLINE kopie van de domeindeclaratie, en de consumenten lezen
+die kopie in plaats van de declaratie — refs gedeelde case-loader kruist
+een record veldsgewijs tegen `velden` van de use site (`ref/lib/case.ml`)
+en de ASP-backend codeert structtermen POSITIONEEL uit dezelfde lijst.
+WF-072 kruiste die kopie alleen op een attribuut- of parameterdatatype
+op TOP-niveau. Drie gemeten, schema-geldige tegenvoorbeelden:
+
+| document | verifier vóór | ref | clingo |
+|---|---|---|---|
+| gedrifte `ListType`-elementkopie (`dossiers`) | PASS | `EVALUATION FAULT: field "waarde" is not present…` | **`PASS (3 expectations)`** |
+| één expressie-`type`, veldnamen hernoemd | PASS | `oracle: PASS (8)` | `TRANSLATION FAULT: field "waarde" is not a declared field of struct "dossier" (WF-074)` |
+| één expressie-`type`, alleen VOLGORDE gedraaid | PASS | `oracle: PASS (8)` | **`MISMATCH: J1.samenvatting = [dossier(503,2)], expected dossier(12550,2)`** |
+
+De derde is een fout antwoord op een verifier-schoon document: de
+backend leest positioneel `telling`=3 waar `waarde`=120.50 bedoeld was.
+Voorbestaand op main — maar dat is precies waarom een claim van
+onbereikbaarheid er niet overheen mocht.
+
+Gekozen uitweg: de flank sluiten, niet de zin herschrijven.
+`struct_use_site` is nu een datatypewandeling (spiegel van
+`enum_use_site`) die door een `ListType`-element heen kijkt, aangeroepen
+op de vier posities die WF-088 al liep — attribuut, parameter,
+`FunctionDef` — plus twee die WF-088 niet nodig heeft: een struct-veld
+binnen `domeinen` (WF-071 laat daar een ánder domein toe, terwijl
+WF-060/065/071 enumeraties uit elke declaratiepositie hekken) en elke
+expressie-`type`, via het typeprefix van `walk_expr`.
+
+Twee posities bewust NIET gelopen, elk omdat geen negatief ze kan
+isoleren: de eigen `velden` van een gematchte struct (`fields_agree` is
+een gelijkheid op het HELE velddatatype, dus een gedrifte geneste kopie
+laat de omhullende kopie al afwijken — het argument dat WF-073/074 voor
+hun geneste vormen maken) en een sompayload (WF-060 laat een
+structpayload in een declaratie helemáál niet toe — gemeten op een
+handgebouwd document, `WF-060 FAIL … constructor payload is struct` —
+dus zo'n payload kan alleen in een gedrifte inline somkopie zitten, en
+dat is WF-061's al opgetekende open flank).
+
+Vier negatiefs erbij, elk op precies één WF-072-melding en niets anders,
+plus vijf mutanten in `/tmp/K`, elk arm-exact en met nul rode goldens:
+
+| mutant | schoon geworden negatiefs |
+|---|---|
+| N1 `List_type`-recursie uit `struct_use_site` | alleen `wf072-lijstelement-drift` |
+| N2 de `domeinen`-aanroep weg | alleen `wf072-domeinveld-drift` |
+| N3 de `functionDefs`-aanroep weg | alleen `wf072-functiondef-drift` |
+| N4 de expressielaag-aanroep weg | alleen `wf072-expressietype-volgorde` |
+| N5 `struct_use_site` levert altijd `[]` | alle vijf (incl. het bestaande `wf072-use-site-drift`) |
+
+Over-afwijzing na de verbreding, gemeten: 170 golden+rood-documenten
+schoon (nu 171 met de nieuwe golden) en 30 toka-documenten zonder één
+WF-072-treffer. Gate 3: 216 -> 220 negatiefs.
+
+Daarmee vervalt de gefalsifieerde zin in de WF-090-clausule ("WF-072
+pins every declared struct use site against its declaration") niet door
+hem te schrappen maar door hem WAAR te maken; de WF-072-clausule zelf
+draagt nu de gemeten motivering, en de ch.-4.9-alinea zegt erbij dat
+WF-073/074 tegen de DECLARATIE kruisen en de backend tegen de kopie —
+de reden dat de wandeling tot de expressielaag moest reiken.
+
+De melding + het commentaar in `ref/lib/eval.ml` noemen nu beide regels
+(WF-090 voor het DOMEIN, WF-072 voor de VELDLIJST van dat domein op de
+draad) en beschrijven de loader-route de goede kant op: de loader
+consulteert de declaratie niet, hij kruist tegen de inline kopie — en
+die is nu aan de declaratie gepind.
+
+### 9. S4 — de ci-getuige, openstaand punt 1 gesloten
+
+`corpus/golden/jutterswet-dossierspelling`: klein en handgeschreven in
+het Jutterswet-vocabulaire (geen kopie van de anker-golden, de vorm die
+`jutterswet-vaarwaterspelling` voor WF-089 heeft). Twee use-sites
+spellen hun domein `DOSSIER` waar de declaratie `dossier` zegt, met de
+veldlijst exact herhaald — de leeshelft (`type` van de `AttribuutRef`
+onder een veldlezing) en de schrijfhelft (`type` van de `StructLiteral`
+die in een struct-getypeerd attribuut wordt geschreven).
+
+    verifier: PASS   ref: oracle: PASS (3)   clingo: PASS (3)
+
+Onder de hoofdlettergevoelige mutant (`norm a = norm b` -> `a = b` in
+`wf090_struct_identity` én in de structklem van `wf023_assignment`)
+wordt precies dit document rood, in beide helften, en géén ander:
+
+    FAIL: document corpus/golden/jutterswet-dossierspelling/ir.json is not verifier-clean:
+    WF-090 FAIL /resolvedRegels/1: a value of the struct domain 'DOSSIER' is assigned to a target of the struct domain 'dossier'
+    WF-090 FAIL /resolvedRegels/0/waarde/base/type: attribute reference 'dossier' is typed with struct domain 'DOSSIER', but the declaration it reads from names struct domain 'dossier'
+
+De val die de lens onderweg mat en die de kaart vermijdt: drift óók aan
+de declaratiekant pint WF-072's ci-opzoeking in `domeinen`, niet
+WF-090's kruising — dat document blijft onder de mutant groen.
+
+### 10. S5 — bewust gelaten, met motivering
+
+De aggregatie-arm van WF-090 hangt aan `passthrough_folds`, dus een
+REKENENDE fold met structoperanden van twee domeinen is verifier-schoon.
+Gemeten: `SOM` met operanden `dossier` en `logboek` geeft `verifier:
+PASS`, ref `EVALUATION FAULT: plus: expected a number, got {waarde:
+120.5, telling: 3}` en clingo `TRANSLATION FAULT: expression kind not
+translated`; dezelfde vorm met `MINIMUM` geeft wél `WF-090 FAIL … but
+operand 1 names struct domain 'logboek'`. Geen fout antwoord, beide
+executors falen waarneembaar, en de vraag is WF-038's operandtypering
+(`SOM` eist numerieke operanden) — dezelfde as als openstaand punt 3.
+Geen eigen WF-090-arm; wel expliciet genoteerd in openstaand punt 3, in
+de WF-090-clausule (ch. 2.4) en in de WF-090-indexrij, want "de
+aggregatie-positie" klonk zonder die zin volledig.
