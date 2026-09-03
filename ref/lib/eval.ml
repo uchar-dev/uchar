@@ -796,19 +796,31 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           match List.find_opt (fun (n, _) -> norm n = norm veld) fs with
           | Some (_, v) -> v
           | None ->
-              (* NOT unreachable, measured (fix round 2): WF-074 crosses the
-                 field against the struct domain the BASE NAMES, and WF-073
-                 crosses a literal against the domain IT names — but no rule
-                 crosses a struct-typed value against the struct-typed
-                 declaration it is written into. WF-023's domain clause is
-                 keuzetype-only (ch. 2.4's family: Enumeration and SumType),
-                 so a StructLiteral of domain B assigned to an attribute of
-                 domain A is verifier-clean and lands here; the ASP backend
-                 derives nothing at all for it. The struct twin of domain
-                 identity is a recorded open point, not a claim. *)
+              (* Unreachable on a verifier-clean document since WF-090
+                 (struct-domain identity, IR-SPEC ch. 2.4, 2026-09-03) — the
+                 struct twin of what WF-089/WF-023 do for keuzetypes, and the
+                 same three-way construction. WF-074 crosses the field against
+                 the struct domain the BASE NAMES and WF-073 a literal against
+                 the domain IT names; WF-090 adds the two crossings neither
+                 does — every struct-typed READ (attribute, dimension cell,
+                 parameter, binder, fold source, element-passing aggregation)
+                 names the domain of the declaration it reads, and every
+                 struct value WRITTEN into a declaration (rule target,
+                 object-creation member, defaults consequence) names that
+                 declaration's domain. Before it, a StructLiteral of domain B
+                 assigned to an attribute of domain A was verifier-clean and
+                 landed here while the ASP backend answered wrong (measured;
+                 the wf090 cases under corpus/negatief). Two routes stay
+                 outside the WF
+                 layer and are named rather than claimed away: the CASE INPUT,
+                 where the shared loader — not a WF rule — refuses a record
+                 whose fields the declaration does not carry, and a document
+                 that was never verified. Kept as an honest fault, never an
+                 assert. *)
               Value.fault
-                "field %S is not present on the record value (a struct value of another struct \
-                 domain reached this read: WF-023's domain clause is keuzetype-only)"
+                "field %S is not present on the record value (unreachable on a verifier-clean \
+                 document: WF-090 binds every struct-typed read and every struct value written \
+                 into a declaration to that declaration's struct domain)"
                 veld)
       | v -> Value.fault "field access base is %s, not a record value" (Value.to_string v))
   | List_literal { elements; _ } ->
