@@ -2115,11 +2115,48 @@ case exercises it, so the ASP case emission (and any sum scrutinee or
 operand over an own temporal attribute) faults with the literal reason
 `temporal sum carriage is a recorded flank; no corpus case` rather than
 silently omitting the constructor-valued segments (RUNTIME-SEMANTICS
-ch. 9.4); a `Construct` payload other than a literal or an own-subject
-attribute read (a bound own-attribute read in write position rides its
-`val` atom, the anchor's `herbeschikking` rule
-`val(S,herbeschikking,toegekend(V)) :- …, val(S,borg,V)`; a `Match` or
-composite payload still has no corpus case); a sum-typed equality operand other than an own-subject
+ch. 9.4). A **non-literal `Construct` payload** meets FIVE distinct places
+in the translator: two carry it — the positions that can hold the payload's
+binding atoms — and three refuse it, each for a different reason. Before
+2026-09-03 this inventory described one of the three and gave it a reason
+that was not the true one, so the boundary it stated was wrong in both
+directions. Carried: (i) at RULE level an own-subject attribute read rides
+its `val` atom — the anchor's `herbeschikking` rule
+`val(S,herbeschikking,toegekend(V)) :- …, val(S,borg,V)`; (ii) in a
+CLOSED-BODY term the payload lowers recursively through the closed-body
+grammar, so a document parameter or an arithmetic combination rides in a
+fold's `init`. Refused, each with its own true reason:
+
+- a **subject-dependent fold `init` over a source that is not
+  subject-keyed**. The fold's accumulator and result facts are keyed by
+  the LIST ID alone. For an own attribute list that id is
+  `alist(S,"attr")` and the subject rides in it, so the init read joins on
+  the same `S` as the head — safe, and this is the carried case (golden
+  `jutterswet-meldtermijnen`: two duties, one register shape, different
+  own terms, opposite outcomes). For a
+  list PARAMETER the id is `plist(p)` and the subject drops out of the
+  head: two subjects' init facts would collide on that one key and the
+  recursion would derive EVERY subject's outcome for EVERY subject.
+  Measured before the fence existed, on two instances with terms 30 and
+  10: both came back carrying both outcomes. This is refused because the
+  answer would be WRONG, not because it would be missing.
+- a **rule-level payload that is neither a literal nor an own-subject
+  attribute read** — a document parameter read, a `Match`, a composite.
+  No corpus case; the rule-level `Construct` arm carries only the two.
+- a **`Construct` with a bound payload in a ground-term position** — a
+  sum-typed comparison operand, or a sum-typed operand inside a closed
+  body. Those positions return a term and NO body atoms, so a payload
+  that must be bound has nowhere to hang its atom.
+
+The three refusals are not observable from any corpus document (a
+refusal has no golden), so each is pinned by a fault fixture asserting
+its literal text in `backends/clingo/test/test_clingo.ml`, which gate 6
+runs: a text that drifts or a refusal that quietly disappears fails the
+suite. Note that empty propagation is NOT among the reasons — an empty
+init derives no base fact and the whole fold is thereby empty, which is
+the intended reading (RUNTIME-SEMANTICS ch. 10.1/10.2) and needs no extra
+machinery; an earlier version of this inventory and of the reason string
+claimed otherwise and was wrong. Also refused: a sum-typed equality operand other than an own-subject
 attribute read or a `Construct`, and a match scrutinee other than an
 own-subject attribute read or a `Fold` result (the reduce extraction —
 navigated sum reads await a case); a
