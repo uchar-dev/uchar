@@ -208,8 +208,10 @@ Over a list PARAMETER the id is `plist(p)` and the subject drops out of the
 head. Two duties' init facts would then land on ONE key and the recursion would
 hand every subject every subject's outcome — measured, before the fence
 existed, as both instances carrying both `geschonden` and `vervuld`. That
-shape is refused loudly rather than answered wrongly, and it is one of four
-constructor-payload positions that still refuse; all four are inventoried in
+shape is refused loudly rather than answered wrongly. It is the one refusal of
+the four that is not about a constructor payload at all — it fires on the
+init's SHAPE, so a BARE attribute read as init trips it with no constructor in
+sight; the other three are payload positions. All four are inventoried in
 `spec/ASP-TRANSLATION.md` S19 and pinned by the fault fixtures in
 `backends/clingo/test/test_clingo.ml`, since no corpus document can witness a
 refusal.
