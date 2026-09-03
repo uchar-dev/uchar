@@ -605,3 +605,39 @@ nieuwe golden blijft in de reden-dragende weigeringsgroep (SumType), nu met
 Geen pin aangepast; het corpus kent nul verwijderde regels. Deze ronde raakte
 uitsluitend tekst: `spec/ASP-TRANSLATION.md` (binnen S19), de NOTE van de
 nieuwe golden, en deze kaart.
+
+## Result (hoofdsessie, 2026-09-03)
+
+Route 1+3 per maintainerbesluit, en de kaartpremisse ging er eerst aan:
+de Premissecorrectie-sectie draagt de gemeten waarheid — het hek was
+niet de Construct-lading (een kale attribuutlezing als vouw-init
+weigerde net zo hard) maar de subjectloze closed-term-route van de
+fold-init, en "underivability propagation" was een onware reden die nu
+uit de weigeringsteksten is verdwenen.
+
+Geland, route 1: de subject-gesleutelde fold-init DRAAGT — de
+gereïficeerde meldplicht met eigen termijn speelt als golden
+`jutterswet-meldtermijnen` (vijf cases, elk handgerekend en door ref én
+clingo exact: eigen termijnen per plicht, de lege termijn die de hele
+vouw leeg maakt, de lege reeks, de laatste dag op de grens, de
+gesettelde stand; vijf ref-mutanten gedood). De parametrische init (E4)
+en de kale attribuutlezing-init (E9) dragen gratis mee. De dragende
+ASP-regel sleutelt kop en init-lezing op hetzelfde subject, dus de
+botsing kán er niet meer zijn.
+
+Geland, route 3: de plist-rest weigert met de WARE reden
+(sleutelbotsing, voluit in de tekst) en elke blijvende deur — het werden
+er VIER, lens 1 vond er een die de meting miste — is geïnventariseerd in
+S19 én gepind met een faults-fixture in de clingo-testsuite (alleen
+toevoegingen, per het testbestand-mandaat); de 1b-valstrik
+(beide-uitkomsten-voor-beide-subjecten) is als motivering zelf
+gereproduceerd en in de Bouwnotitie vastgelegd. Lens 1 dwong ook af dat
+increment 1a een eigen artefact kreeg (de mutant overleefde eerst
+poort 6) en dat de MapList-tak van de bron-sleuteling niet ongedekt
+bleef (geschrapt in plaats van ongetoetst beweerd).
+
+Eindstand op de branch: alle twaalf gates groen; goldens +1, cases +5,
+gate 12 played 105 ongewijzigd met auto-excluded +1 (de golden draagt
+een SumType — reden-dragend geweigerd, precies zoals voorspeld);
+survivorlijst 36 onaangeroerd. Route 2 (WF-verbod) is in de kaart
+expliciet afgewogen en verworpen op de gemeten gronden.
