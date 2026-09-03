@@ -15,6 +15,7 @@ import io.github.yhavinga.regelspraak.kern.Literalen;
 import io.github.yhavinga.regelspraak.transpiler.kern.Operatoren;
 import io.github.yhavinga.regelspraak.kern.Tijdrekening;
 
+import static io.github.yhavinga.regelspraak.transpiler.kern.Namen.bevatNaam;
 import static io.github.yhavinga.regelspraak.transpiler.kern.Namen.commentVeilig;
 import static io.github.yhavinga.regelspraak.transpiler.kern.Namen.drlString;
 import static io.github.yhavinga.regelspraak.transpiler.kern.Namen.escapeRegelNaam;
@@ -367,7 +368,7 @@ public final class DrlTranspiler {
         for (int i = 0; i < u.sleutels().size(); i++) {
             String prop = ident(u.sleutels().get(i), false);
             binders.append("$k").append(i).append(" : ").append(prop).append(" != null");
-            if (u.subject().attribuutGranulariteit.containsKey(u.sleutels().get(i)))
+            if (bevatNaam(u.subject().attribuutGranulariteit, u.sleutels().get(i)))
                 // ever-uniqueness (uchar RS ch. 5.9, both forms): a temporal key joins on the
                 // EVER-value intersection — the same shared predicate the union emits
                 matchers.append(fnImport("rsOoitBotst")).append("(").append(prop).append(", $k").append(i).append(")");
@@ -409,11 +410,21 @@ public final class DrlTranspiler {
                 for (int i = 0; i < arity; i++) {
                     if (i > 0) match.append(", ");
                     String veld = ident(b.sleutels().get(i), false);
-                    if (b.type().attribuutGranulariteit.containsKey(b.sleutels().get(i)))
+                    // each source declares its own key list, so the component's temporality is a property of
+                    // the PAIR (this source's key, the subject source's key) — mirrors ExecModelTranspiler.
+                    boolean elementTemporeel = bevatNaam(b.type().attribuutGranulariteit, b.sleutels().get(i));
+                    boolean subjectTemporeel = bevatNaam(subj.type().attribuutGranulariteit, subj.sleutels().get(i));
+                    if (elementTemporeel && subjectTemporeel)
                         // ever-uniqueness (uchar RS ch. 5.9): a temporal key joins on the EVER-value
                         // intersection, not on List identity (Segment has no equals — the bare == never
                         // fired, silently missing every collision)
                         match.append(fnImport("rsOoitBotst")).append("(").append(veld).append(", $k").append(i).append(")");
+                    else if (elementTemporeel)
+                        // MIXED: this source's timeline against the subject's plain value
+                        match.append(fnImport("rsOoitBevat")).append("(").append(veld).append(", $k").append(i).append(")");
+                    else if (subjectTemporeel)
+                        // MIXED, the mirror: this source's plain value against the subject's timeline
+                        match.append(fnImport("rsOoitBevat")).append("($k").append(i).append(", ").append(veld).append(")");
                     else
                         match.append(veld).append(" == $k").append(i);
                 }

@@ -169,7 +169,35 @@ class SleutelconventieWitnessTest {
                 "two timelines that ever carry 7 collide across the sources, as they always did");
     }
 
+    // ---------------- 5. the dormant DRL twin carries the same two conventions ----------------
+
+    @Test void de_drl_tweeling_leest_een_anders_gekapitaliseerde_sleutel_temporeel() throws Exception {
+        // the DRL back-end is the golden-text twin; it is not fired by any gate, so its two key sites have no
+        // behavioural witness — only the emitted text can say which join it chose. An exact-match temporality
+        // test rendered "vondstnummer == $k0", the List-identity compare that never fires.
+        Path ir = metSleutels(STRANDREGISTER, o -> ((ObjectNode) o.get("uniciteiten").get(0))
+                .set("sleutels", JSON.createArrayNode().add("Vondstnummer")));
+        String drl = drl(ir);
+        assertTrue(drl.contains("rsOoitBotst(vondstnummer, $k0)"), drl);
+        assertTrue(!drl.contains("vondstnummer == $k0"), "the mis-capitalised key must not render a scalar join: " + drl);
+    }
+
+    @Test void de_drl_tweeling_rendert_de_gemengde_unie_in_beide_richtingen() throws Exception {
+        // both mixed arms, in one union: the Strandvondst rule counts Wrakvondsten with its own timeline as
+        // the haystack, the Wrakvondst rule counts Strandvondsten with its own value as the needle.
+        String drl = drl(gemengdeUnie());
+        assertTrue(drl.contains("Wrakvondst( rsOoitBevat($k0, vondstnummer) )"), drl);
+        assertTrue(drl.contains("Strandvondst( rsOoitBevat(vondstnummer, $k0) )"), drl);
+    }
+
     // ---------------- models ----------------
+
+    /** The dormant DRL back-end's rendering of one model. */
+    private static String drl(Path ir) throws Exception {
+        return io.github.yhavinga.regelspraak.transpiler.DrlTranspiler.transpile(
+                io.github.yhavinga.regelspraak.loader.IrLoader.loadAll(
+                        JSON.readTree(Files.readString(ir))).model());
+    }
 
     /** {@code vondstnummer} temporal on Strandvondst, SCALAR on Wrakvondst: the cross-source mixed key. The
      *  document stays verifier-clean (measured 2026-09-03) — each source declares its own key list. */

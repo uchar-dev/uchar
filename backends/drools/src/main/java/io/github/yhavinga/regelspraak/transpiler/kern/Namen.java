@@ -69,4 +69,22 @@ public final class Namen {
     public static String drlString(String s) {
         return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
     }
+
+    /** ref's {@code Checks.norm}: the form in which two DECLARED names are the same name — trimmed, inner
+     *  whitespace collapsed, case-folded. The IR spells every name as the author wrote it (there is no
+     *  canonical spelling on the wire), so a name-keyed lookup that compares raw Strings reads a
+     *  differently-capitalised reference as ABSENT where ref, clingo and the verifier all resolve it. */
+    public static String norm(String naam) {
+        return naam == null ? "" : naam.trim().replaceAll("\\s+", " ").toLowerCase(java.util.Locale.ROOT);
+    }
+
+    /** ref's {@code Checks.attr_temporal} as a name contract: whether {@code naam} occurs among the keys of a
+     *  declared-name-keyed map, compared with {@link #norm}. THE one temporality test of both back-ends' key
+     *  sites — deriving it locally is how the DRL text and the executable model came to disagree with ref
+     *  about a mis-capitalised uniqueness key (backlog: drools-sleutelconventies). */
+    public static boolean bevatNaam(java.util.Map<String, ?> perNaam, String naam) {
+        if (perNaam == null || naam == null) return false;
+        for (String k : perNaam.keySet()) if (norm(k).equals(norm(naam))) return true;
+        return false;
+    }
 }

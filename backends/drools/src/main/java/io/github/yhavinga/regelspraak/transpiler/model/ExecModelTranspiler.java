@@ -828,11 +828,11 @@ public final class ExecModelTranspiler {
         return false;
     }
 
-    /** ref's {@code Checks.attr_temporal}: the attribuut carries a declared granulariteit. */
+    /** ref's {@code Checks.attr_temporal}: the attribuut carries a declared granulariteit. Delegates to the
+     *  SHARED name contract ({@link Namen#bevatNaam}), which the DRL back-end's key sites call too — one
+     *  implementation, so the two back-ends can no longer drift apart on what a written key names. */
     private static boolean temporeelAttribuut(Objecttype ot, String attr) {
-        if (ot == null || attr == null) return false;
-        for (String k : ot.attribuutGranulariteit.keySet()) if (gelijkeNaam(k, attr)) return true;
-        return false;
+        return ot != null && Namen.bevatNaam(ot.attribuutGranulariteit, attr);
     }
 
     /** The {@code "<objecttype>|<attribuut>"} key of a rule doel (ref's {@code target_of} + {@code key}), or null
@@ -5015,17 +5015,11 @@ public final class ExecModelTranspiler {
             + "(the same-moment tuple join has no corpus case; ch. 5.9)";
 
     /** How many of {@code sleutels} are temporal on {@code ot} — a declared attribuutGranulariteit, the same
-     *  notion the key-join lowering below branches on. KNOWN REST GAP (lenses, 2026-08-30): this is an exact
-     *  String match where ref/clingo normalise case and whitespace, so a key spelled in another
-     *  capitalisation passes the verifier yet counts as non-temporal here — the guard then stays silent
-     *  where ref/clingo fault, AND (the heavier half) the join below takes the scalar branch on a VALID
-     *  one-component model, silently missing collisions ref/clingo find. Deliberately NOT normalised in
-     *  isolation: {@code containsKey} is the convention on all four key sites (the two joins below and the
-     *  two in the dormant DrlTranspiler), and normalising this one check would let it diverge from the join
-     *  it guards; the ref-true mirror ({@code temporeelAttribuut}, above) already exists in this file for
-     *  when the convention card lands (backlog: drools-sleutelconventies). */
+     *  notion the key-join lowering below branches on, tested through the same ref-true mirror
+     *  ({@link #temporeelAttribuut}) so the guard and the join it guards can never read one key list
+     *  differently. */
     private static int temporeleSleutels(Objecttype ot, List<String> sleutels) {
-        return (int) sleutels.stream().filter(k -> ot.attribuutGranulariteit.containsKey(k)).count();
+        return (int) sleutels.stream().filter(k -> temporeelAttribuut(ot, k)).count();
     }
 
     /** A construct whose key SHAPE is invalid, lowered to a rule that FAULTS as soon as a subject instance
@@ -5086,7 +5080,7 @@ public final class ExecModelTranspiler {
         PatternDSL.PatternDef src = PatternDSL.pattern(oVar);
         for (int i = 0; i < u.sleutels().size(); i++) {
             String key = u.sleutels().get(i);
-            if (subject.attribuutGranulariteit.containsKey(key))
+            if (temporeelAttribuut(subject, key))
                 // ever-uniqueness (uchar RS ch. 5.9, both forms): the shared ever-value predicate
                 src = src.expr(nextId("kj"), (Variable) keyVars.get(i),
                         (Predicate2) (o, k) -> RegelSpraakRuntime.rsOoitBotst(RegelSpraakRuntime.get(o, key), k));
@@ -5164,11 +5158,24 @@ public final class ExecModelTranspiler {
                 PatternDSL.PatternDef src = PatternDSL.pattern(oVar);
                 for (int i = 0; i < arity; i++) {
                     String key = b.sleutels().get(i);
-                    if (b.type().attribuutGranulariteit.containsKey(key))
+                    // each source declares its OWN key list, so a component's temporality is a property of the
+                    // PAIR (this source's key, the subject source's key) — all four combinations occur, and
+                    // ref plays every one of them (ever_tuples runs per source).
+                    boolean elementTemporeel = temporeelAttribuut(b.type(), key);
+                    boolean subjectTemporeel = temporeelAttribuut(subj.type(), subj.sleutels().get(i));
+                    if (elementTemporeel && subjectTemporeel)
                         // ever-uniqueness (uchar RS ch. 5.9): a temporal key joins on the EVER-value
                         // intersection — the same shared-runtime predicate the DRL route calls
                         src = src.expr(nextId("ukj"), (Variable) keyVars.get(i),
                                 (Predicate2) (e, k) -> RegelSpraakRuntime.rsOoitBotst(RegelSpraakRuntime.get(e, key), k));
+                    else if (elementTemporeel)
+                        // MIXED: this source's timeline against the subject's plain value
+                        src = src.expr(nextId("ukj"), (Variable) keyVars.get(i),
+                                (Predicate2) (e, k) -> RegelSpraakRuntime.rsOoitBevat(RegelSpraakRuntime.get(e, key), k));
+                    else if (subjectTemporeel)
+                        // MIXED, the mirror: this source's plain value against the subject's timeline
+                        src = src.expr(nextId("ukj"), (Variable) keyVars.get(i),
+                                (Predicate2) (e, k) -> RegelSpraakRuntime.rsOoitBevat(k, RegelSpraakRuntime.get(e, key)));
                     else
                         src = src.expr(nextId("ukj"), (Variable) keyVars.get(i),
                                 (Predicate2) (e, k) -> RegelSpraakRuntime.gelijkWaarde(RegelSpraakRuntime.get(e, key), k));

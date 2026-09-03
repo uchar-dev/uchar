@@ -669,6 +669,20 @@ public final class RegelSpraakRuntime {
         for (BigDecimal w : rsOoitWaarden(b)) if (sa.contains(w)) return true;
         return false;
     }
+
+    /** §8.1.6 the CROSS-SOURCE MIXED key component of a "verenigd met" union: every source declares its own
+     *  key list, so one component can be temporal on source A and plain on source B. A scalar claims exactly
+     *  its own value, so the collision is membership of that value in the timeline's ever-set — which is what
+     *  ref computes per source ({@code ever_tuples}: one tuple per ever-value on the temporal side, one tuple
+     *  with the value on the scalar side, compared as lexemes). Scale-insensitive like {@link #rsOoitWaarden},
+     *  so 7 and 7.00 collide. A NON-numeric scalar claims nothing here: ref compares a Tekst lexeme quoted and
+     *  a Datum as ISO, neither of which ever equals a number's. The timeline side still fails fast on a
+     *  non-List (through {@link #rsOoitWaarden}) — a declared-temporal key supplied as a bucket scalar stays
+     *  the loud form error it is. */
+    public static boolean rsOoitBevat(Object tijdlijn, Object scalair) {
+        if (!(scalair instanceof BigDecimal w)) return false;
+        return rsOoitWaarden(tijdlijn).contains(w.stripTrailingZeros());
+    }
     /** Construct a Segment(van, tot, waarde) of the given fact class reflectively — the model analog of the DRL
      *  {@code new ….Segment(van, tot, waarde)} (the class is a runtime objecttype, unknown at compile time). */
     public static Object newSegment(Class<?> segCls, LocalDate van, LocalDate tot, BigDecimal waarde) {
