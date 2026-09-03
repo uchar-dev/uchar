@@ -70,12 +70,30 @@ public final class Namen {
         return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
     }
 
-    /** ref's {@code Checks.norm}: the form in which two DECLARED names are the same name — trimmed, inner
-     *  whitespace collapsed, case-folded. The IR spells every name as the author wrote it (there is no
-     *  canonical spelling on the wire), so a name-keyed lookup that compares raw Strings reads a
-     *  differently-capitalised reference as ABSENT where ref, clingo and the verifier all resolve it. */
+    /** ref's {@code Checks.norm} ({@code checks.ml}: {@code lowercase_ascii (collapse_ws s)}): the form in
+     *  which two DECLARED names are the same name. The IR spells every name as the author wrote it (there
+     *  is no canonical spelling on the wire), so a name-keyed lookup that compares raw Strings reads a
+     *  differently-capitalised reference as ABSENT where ref, clingo and the verifier all resolve it.
+     *
+     *  <p>Deliberately NARROWER than the obvious Java one-liner, because ref is the arbiter and a name
+     *  equality WIDER than ref's is not a fix but a new divergence: {@code collapse_ws} splits on SPACE and
+     *  TAB only (a newline inside a name is a character, not a separator) and {@code lowercase_ascii} folds
+     *  A-Z only (so "COÖRDINAAT" and "coördinaat" are DIFFERENT names to ref, the verifier and clingo).
+     *  {@code toLowerCase(Locale.ROOT)} + {@code \s+} folds both pairs together, and a key site that reads
+     *  "temporal" where ref reads "scalar" then joins a timeline against a {@code BigDecimal} bean member —
+     *  a bare backend ERROR on a document all three other executors play. */
     public static String norm(String naam) {
-        return naam == null ? "" : naam.trim().replaceAll("\\s+", " ").toLowerCase(java.util.Locale.ROOT);
+        if (naam == null) return "";
+        StringBuilder uit = new StringBuilder();
+        for (String woord : naam.split("[ \t]+")) {
+            if (woord.isEmpty()) continue;                       // a leading separator run yields ""
+            if (uit.length() > 0) uit.append(' ');
+            for (int i = 0; i < woord.length(); i++) {
+                char c = woord.charAt(i);
+                uit.append(c >= 'A' && c <= 'Z' ? (char) (c + 32) : c);
+            }
+        }
+        return uit.toString();
     }
 
     /** ref's {@code Checks.attr_temporal} as a name contract: whether {@code naam} occurs among the keys of a
@@ -84,7 +102,21 @@ public final class Namen {
      *  about a mis-capitalised uniqueness key (backlog: drools-sleutelconventies). */
     public static boolean bevatNaam(java.util.Map<String, ?> perNaam, String naam) {
         if (perNaam == null || naam == null) return false;
-        for (String k : perNaam.keySet()) if (norm(k).equals(norm(naam))) return true;
-        return false;
+        return perNaam.containsKey(gedeclareerdeNaam(perNaam.keySet(), naam));
+    }
+
+    /** The DECLARED spelling of a WRITTEN name: the member of {@code gedeclareerd} that IS this name under
+     *  {@link #norm}, or {@code naam} unchanged when nothing declares it. The naming contract above turns a
+     *  DECLARED name into a bean member, so every name that reaches {@link #ident}, {@link #getter} or the
+     *  runtime's property resolver must first be brought back to its declaration: a reference written in
+     *  another capitalisation ("vondstNummer" for a declared "vondstnummer") resolves for ref, clingo and
+     *  the verifier but pascal-cases into a getter the generated fact class does not have. Unchanged when
+     *  absent, so an undeclared name still reaches the runtime's own loud "geen getter voor …". */
+    public static String gedeclareerdeNaam(java.util.Collection<String> gedeclareerd, String naam) {
+        if (gedeclareerd == null || naam == null) return naam;
+        if (gedeclareerd.contains(naam)) return naam;            // the common case: written as declared
+        String n = norm(naam);
+        for (String k : gedeclareerd) if (norm(k).equals(n)) return k;
+        return naam;
     }
 }

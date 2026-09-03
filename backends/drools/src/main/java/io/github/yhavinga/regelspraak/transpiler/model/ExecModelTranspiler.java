@@ -835,6 +835,15 @@ public final class ExecModelTranspiler {
         return ot != null && Namen.bevatNaam(ot.attribuutGranulariteit, attr);
     }
 
+    /** A written attribute name brought back to its DECLARED spelling on {@code ot} — the same shared name
+     *  contract ({@link Namen#gedeclareerdeNaam}). Every reflective read below hands the name to the
+     *  runtime's pascal-based property resolver, and the bean member was generated from the DECLARATION
+     *  ({@link io.github.yhavinga.regelspraak.schema.FactModelGenerator}), so a key written in another
+     *  capitalisation must be resolved here or it looks for a getter that does not exist. */
+    private static String gedeclareerdAttribuut(Objecttype ot, String attr) {
+        return ot == null ? attr : Namen.gedeclareerdeNaam(ot.attributen.keySet(), attr);
+    }
+
     /** The {@code "<objecttype>|<attribuut>"} key of a rule doel (ref's {@code target_of} + {@code key}), or null
      *  when the doel is not an objecttype-bound attribuutreferentie. Normalisation is {@link #defaultsNorm} —
      *  the file's one ref-{@code Checks.norm} mirror, null-safe. */
@@ -5062,7 +5071,8 @@ public final class ExecModelTranspiler {
         PatternDSL.PatternDef subjPat = geldigGuard(PatternDSL.pattern(sVar), u.geldigheid());   // §4.2 window
         // bind + non-null each key part (and the parent scope field, if any).
         List<Variable> keyVars = new ArrayList<>();
-        for (String key : u.sleutels()) {
+        for (String geschreven : u.sleutels()) {
+            String key = gedeclareerdAttribuut(subject, geschreven);
             Variable kVar = DSL.declarationOf(Object.class, "$k_" + (seq++));
             subjPat = subjPat.bind(kVar, (Function1) s -> RegelSpraakRuntime.get(s, key))
                     .expr(nextId("knn"), (Predicate1) s -> RegelSpraakRuntime.get(s, key) != null);
@@ -5079,7 +5089,7 @@ public final class ExecModelTranspiler {
         Variable oVar = DSL.declarationOf(factClass, "$o_" + (seq++));
         PatternDSL.PatternDef src = PatternDSL.pattern(oVar);
         for (int i = 0; i < u.sleutels().size(); i++) {
-            String key = u.sleutels().get(i);
+            String key = gedeclareerdAttribuut(subject, u.sleutels().get(i));
             if (temporeelAttribuut(subject, key))
                 // ever-uniqueness (uchar RS ch. 5.9, both forms): the shared ever-value predicate
                 src = src.expr(nextId("kj"), (Variable) keyVars.get(i),
@@ -5143,7 +5153,7 @@ public final class ExecModelTranspiler {
             PatternDSL.PatternDef subjPat = geldigGuard(PatternDSL.pattern(sVar), u.geldigheid());   // §4.2 window
             List<Variable> keyVars = new ArrayList<>();
             for (int i = 0; i < arity; i++) {
-                String key = subj.sleutels().get(i);
+                String key = gedeclareerdAttribuut(subj.type(), subj.sleutels().get(i));
                 Variable kVar = DSL.declarationOf(Object.class, "$k_" + (seq++));
                 subjPat = subjPat.bind(kVar, (Function1) o -> RegelSpraakRuntime.get(o, key))
                         .expr(nextId("uknn"), (Predicate1) o -> RegelSpraakRuntime.get(o, key) != null);   // null key cannot collide
@@ -5157,7 +5167,7 @@ public final class ExecModelTranspiler {
                 Variable oVar = DSL.declarationOf(factClass(b.type()), "$o" + j + "_" + (seq++));
                 PatternDSL.PatternDef src = PatternDSL.pattern(oVar);
                 for (int i = 0; i < arity; i++) {
-                    String key = b.sleutels().get(i);
+                    String key = gedeclareerdAttribuut(b.type(), b.sleutels().get(i));
                     // each source declares its OWN key list, so a component's temporality is a property of the
                     // PAIR (this source's key, the subject source's key) — all four combinations occur, and
                     // ref plays every one of them (ever_tuples runs per source).
@@ -6372,8 +6382,11 @@ public final class ExecModelTranspiler {
         PrioritizedDefaults l0 = groep.get(0);
         return "defaults " + (l0.isKenmerk() ? "K:" : "A:") + l0.onderwerp() + "." + l0.doel();
     }
+    /** Delegates to the SHARED name contract: a second, byte-identical copy of ref's {@code Checks.norm}
+     *  here is how the doel/defaults keys and the uniqueness keys would come to disagree the moment one of
+     *  the two is corrected. */
     private static String defaultsNorm(String s) {
-        return s == null ? "" : s.trim().replaceAll("\\s+", " ").toLowerCase(java.util.Locale.ROOT);
+        return Namen.norm(s);
     }
 
     /** Lower one defaults group to its single reduce-rule (a port of ref's {@code run_defaults_group},

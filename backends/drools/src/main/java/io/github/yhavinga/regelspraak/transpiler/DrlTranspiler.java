@@ -19,6 +19,7 @@ import static io.github.yhavinga.regelspraak.transpiler.kern.Namen.bevatNaam;
 import static io.github.yhavinga.regelspraak.transpiler.kern.Namen.commentVeilig;
 import static io.github.yhavinga.regelspraak.transpiler.kern.Namen.drlString;
 import static io.github.yhavinga.regelspraak.transpiler.kern.Namen.escapeRegelNaam;
+import static io.github.yhavinga.regelspraak.transpiler.kern.Namen.gedeclareerdeNaam;
 import static io.github.yhavinga.regelspraak.transpiler.kern.Namen.getter;
 import static io.github.yhavinga.regelspraak.transpiler.kern.Namen.ident;
 import static io.github.yhavinga.regelspraak.transpiler.kern.Namen.setter;
@@ -358,6 +359,14 @@ public final class DrlTranspiler {
      *  never matches a null-keyed instance, so a null key is neither flagged nor counted as a match. */
     private void uniciteit(io.github.yhavinga.regelspraak.ir.ResolvedUniciteit u) {
         String type = ident(u.subject().naam, true);
+        // ch. 5.9 key-SHAPE arity, the guard ref, clingo and the exec model hold: at most ONE temporal key
+        // component. The text route has no fire moment to fault in, so it refuses in ITS loud idiom — an
+        // onopgelost marker (a manifest MARKER + warning) rather than a join that pretends to lower a shape
+        // all three executors reject.
+        if (temporeleSleutels(u.subject(), u.sleutels()) > 1) {
+            out.append(onopgelosteSleutelvorm(u.naam(), u.geldigheid()));
+            return;
+        }
         StringBuilder binders = new StringBuilder();   // op de subject: "$k0 : p != null, …"
         StringBuilder matchers = new StringBuilder();  // in de accumulate: "p == $k0, …"
         if (u.scopeVeld() != null) {                   // parent-scoped: count only within the subject's scope
@@ -366,7 +375,7 @@ public final class DrlTranspiler {
             matchers.append(sv).append(" == $scope, ");
         }
         for (int i = 0; i < u.sleutels().size(); i++) {
-            String prop = ident(u.sleutels().get(i), false);
+            String prop = ident(sleutelVeld(u.subject(), u.sleutels().get(i)), false);
             binders.append("$k").append(i).append(" : ").append(prop).append(" != null");
             if (bevatNaam(u.subject().attribuutGranulariteit, u.sleutels().get(i)))
                 // ever-uniqueness (uchar RS ch. 5.9, both forms): a temporal key joins on the
@@ -394,13 +403,19 @@ public final class DrlTranspiler {
         int arity = bronnen.get(0).sleutels().size();
         for (int s = 0; s < bronnen.size(); s++) {                   // the source whose instances this rule judges
             var subj = bronnen.get(s);
+            // DRL rule names must be unique; the 1-based source index disambiguates even a same-type union.
+            String ruleNaam = u.naam() + " (" + subj.type().naam + " " + (s + 1) + ")";
+            // the same ch. 5.9 arity guard, per SOURCE (ref runs ever_tuples over each source's OWN key list).
+            if (temporeleSleutels(subj.type(), subj.sleutels()) > 1) {
+                out.append(onopgelosteSleutelvorm(ruleNaam, u.geldigheid()));
+                continue;
+            }
             StringBuilder binders = new StringBuilder();             // bind the subject's non-null key parts
             for (int i = 0; i < arity; i++) {
                 if (i > 0) binders.append(", ");
-                binders.append("$k").append(i).append(" : ").append(ident(subj.sleutels().get(i), false)).append(" != null");
+                binders.append("$k").append(i).append(" : ")
+                       .append(ident(sleutelVeld(subj.type(), subj.sleutels().get(i)), false)).append(" != null");
             }
-            // DRL rule names must be unique; the 1-based source index disambiguates even a same-type union.
-            String ruleNaam = u.naam() + " (" + subj.type().naam + " " + (s + 1) + ")";
             Regel rule = new Regel(ruleNaam)
                     .clausule(SUBJECT + " : " + ident(subj.type().naam, true) + "( " + binders + " )");
             StringBuilder som = new StringBuilder();
@@ -409,7 +424,7 @@ public final class DrlTranspiler {
                 StringBuilder match = new StringBuilder();
                 for (int i = 0; i < arity; i++) {
                     if (i > 0) match.append(", ");
-                    String veld = ident(b.sleutels().get(i), false);
+                    String veld = ident(sleutelVeld(b.type(), b.sleutels().get(i)), false);
                     // each source declares its own key list, so the component's temporality is a property of
                     // the PAIR (this source's key, the subject source's key) — mirrors ExecModelTranspiler.
                     boolean elementTemporeel = bevatNaam(b.type().attribuutGranulariteit, b.sleutels().get(i));
@@ -438,6 +453,32 @@ public final class DrlTranspiler {
                 .dan(inconsistentieDan(u.naam()));
             out.append(rule.render());
         }
+    }
+
+    /** A written uniqueness-key component brought back to its DECLARED spelling — the SAME shared name
+     *  contract the temporality test above uses ({@link io.github.yhavinga.regelspraak.transpiler.kern.Namen}).
+     *  The emitted property name is {@link #ident} of the DECLARATION (that is what the fact class carries),
+     *  so a key written in another capitalisation must be resolved here or the rule names a field that does
+     *  not exist. Mirrors {@code ExecModelTranspiler.gedeclareerdAttribuut}. */
+    private static String sleutelVeld(Objecttype ot, String sleutel) {
+        return ot == null ? sleutel : gedeclareerdeNaam(ot.attributen.keySet(), sleutel);
+    }
+
+    /** How many components of {@code sleutels} are temporal on {@code ot} — the ch. 5.9 key-SHAPE count,
+     *  over the shared temporality test so the twin cannot read a key list differently than the exec model. */
+    private static int temporeleSleutels(Objecttype ot, List<String> sleutels) {
+        return (int) sleutels.stream().filter(k -> ot != null && bevatNaam(ot.attribuutGranulariteit, k)).count();
+    }
+
+    /** The text route's refusal of an invalid ch. 5.9 key SHAPE: an inert rule carrying the {@code onopgelost}
+     *  sentinel, so {@link #meet} books it as a MARKER with a reason and raises the warning — the twin of the
+     *  exec model's fire-time vormfout, in the idiom this route actually has. */
+    private String onopgelosteSleutelvorm(String naam, io.github.yhavinga.regelspraak.ir.Geldigheid g) {
+        return new Regel(naam)
+                .clausule("// onopgelost uniciteitscontrole (ch. 5.9: at most one temporal key component)")
+                .clausule("eval(true)")
+                .geldigheid(g)
+                .render();
     }
 
     /** A "when" guard that makes an Inconsistentie-inserting rule IDEMPOTENT across fire cycles: it
