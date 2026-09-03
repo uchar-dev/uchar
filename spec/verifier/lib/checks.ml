@@ -5544,13 +5544,17 @@ let wf071 ctx =
 
    The model-layer half is here and reaches EVERY StructType in the datatype
    tree via [struct_use_site]: an attribute or parameter datatype, a
-   `ListType` element or sum payload inside one, a `FunctionDef` parameter or
+   `ListType` element inside one, a `FunctionDef` parameter or
    result, and — unlike WF-088, whose enumerations WF-060/065/071 fence out of
    every declaration position — a struct field datatype inside `domeinen`,
    which WF-071 admits and which is therefore a use site of ANOTHER domain's
    declaration. The expression-layer half rides walk_expr's type prologue,
    beside [enum_use_site] (the same "every datatype in the document" split
-   WF-088 uses). *)
+   WF-088 uses). For the positions deliberately NOT walked — a matched
+   struct's own `velden` and a sum-type payload — see the comment on
+   [struct_use_site], which motivates both; a rule TARGET's `type` is a third,
+   outside the expression walk exactly as it is under WF-088 (IR-SPEC ch. 2.4
+   records all three with their measurements). *)
 let wf072 ctx =
   let site at = function Some d -> struct_use_site ctx at d | None -> [] in
   List.concat_map

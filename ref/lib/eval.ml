@@ -822,10 +822,15 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                  ListType<StructType dossier> with a renamed inline copy let a
                  case input through whose fields the declaration does not carry
                  — verifier-clean, ref faulting HERE, clingo passing green
-                 (measured, fix round 1). The walk now pins every StructType on
-                 the wire — through a list element, inside `domeinen`, at a
-                 FunctionDef, at every expression `type` — to its declaration,
-                 so the loader's cross IS the declaration's.
+                 (measured, fix round 1). The walk now pins every StructType in
+                 the model and expression layers — through a list element,
+                 inside `domeinen`, at a FunctionDef, at every expression
+                 `type` — to its declaration, so the loader's cross IS the
+                 declaration's. A rule TARGET's `type` stays outside that walk
+                 (WF-022's lvalue, not an expression node), as it does under
+                 WF-088: measured, drift there does not reach this fault —
+                 the loader reads the ATTRIBUTE's declared datatype and both
+                 executors write through it.
 
                  What stays outside the WF layer, named rather than claimed
                  away: a document that was never verified, and a case input the
@@ -835,8 +840,8 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
               Value.fault
                 "field %S is not present on the record value (unreachable on a verifier-clean \
                  document: WF-090 binds every struct value to the struct domain of the declaration \
-                 it comes from or enters, and WF-072 binds every struct type on the wire to that \
-                 domain's declared field list)"
+                 it comes from or enters, and WF-072 binds every struct type in the model and \
+                 expression layers to that domain's declared field list)"
                 veld)
       | v -> Value.fault "field access base is %s, not a record value" (Value.to_string v))
   | List_literal { elements; _ } ->
