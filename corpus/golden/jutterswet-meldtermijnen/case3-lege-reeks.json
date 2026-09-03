@@ -18,7 +18,11 @@
         "characteristics": []
       }
     ],
-    "parameters": {}
+    "parameters": {
+      "standaardtermijn": {
+        "number": "21"
+      }
+    }
   },
   "expected": [
     {
@@ -29,6 +33,17 @@
         "constructor": "Openstaand",
         "payload": {
           "number": "7"
+        }
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M5",
+      "attribute": "standaardpositie",
+      "value": {
+        "constructor": "Openstaand",
+        "payload": {
+          "number": "21"
         }
       }
     },

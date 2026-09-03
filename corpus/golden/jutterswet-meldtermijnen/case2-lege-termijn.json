@@ -41,9 +41,24 @@
         },
         "roles": {},
         "characteristics": []
+      },
+      {
+        "label": "M10",
+        "objectType": "Meldplicht",
+        "attributes": {
+          "termijn": {
+            "number": "7"
+          }
+        },
+        "roles": {},
+        "characteristics": []
       }
     ],
-    "parameters": {}
+    "parameters": {
+      "standaardtermijn": {
+        "number": "21"
+      }
+    }
   },
   "expected": [
     {
@@ -61,6 +76,38 @@
           "number": "15"
         }
       }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M3",
+      "attribute": "standaardpositie",
+      "value": {
+        "constructor": "Openstaand",
+        "payload": {
+          "number": "16"
+        }
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M4",
+      "attribute": "standaardpositie",
+      "value": {
+        "constructor": "Openstaand",
+        "payload": {
+          "number": "16"
+        }
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "M10",
+      "attribute": "meldpositie"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "M10",
+      "attribute": "standaardpositie"
     },
     {
       "kind": "consistent"

@@ -52,7 +52,11 @@
         "characteristics": []
       }
     ],
-    "parameters": {}
+    "parameters": {
+      "standaardtermijn": {
+        "number": "21"
+      }
+    }
   },
   "expected": [
     {
@@ -69,6 +73,22 @@
       "attribute": "meldpositie",
       "value": {
         "constructor": "Geschonden"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M8",
+      "attribute": "standaardpositie",
+      "value": {
+        "constructor": "Vervuld"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M9",
+      "attribute": "standaardpositie",
+      "value": {
+        "constructor": "Vervuld"
       }
     },
     {
