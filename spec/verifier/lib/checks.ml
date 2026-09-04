@@ -1219,7 +1219,10 @@ let rec datatype_full = function
    variant and one-sided arms, WF-090's), stated and numbered there.
 
    Deferrals are the family's, unchanged: either side absent or the v0
-   unknown sentinel, or a declaration that does not resolve. *)
+   unknown sentinel, or a declaration that does not resolve. Since the
+   WF-034 widening (2026-09-04) none of them is self-served: the two shapes
+   a document could choose them with — a reference naming no objecttype,
+   the sentinel on a rule target's type — are ill-formed. *)
 let use_site_identity ?(source = "the declaration it reads from") ?soort at ~what ~decl ~typ =
   match (decl, typ) with
   | None, _ | _, None | Some (Datatype_onbekend _), _ | _, Some (Datatype_onbekend _) -> []
@@ -3008,7 +3011,18 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                     wf053_attribuut_ref ctx at ~subject:st ~set
                       ~bindings:navigatie_bindingen ~navigatie_rol ~navigatie_pad
                       ~endpoint:(Some otn)))
-      | None -> [])
+      | None ->
+          (* WF-034 (widened, maintainer decision 2026-09-04): the absent
+             endpoint is not one rule's deferral but a generic exemption —
+             it skips the whole branch above (member resolution, WF-053,
+             WF-080) and makes [resolved_attr_datatype] None, which defers
+             WF-089/090/091 too. Five rules fall silent on one empty field,
+             and the shape is measured answer-changing: a unit lie on such
+             a reference was verifier-clean while one executor played it. *)
+          [ v "WF-034" at
+              ("attribute reference '"
+              ^ Option.value attribuut ~default:"?"
+              ^ "' without an object type: it resolves against no declaration") ])
   | Dimensie_cel { attribuut; labels; typ; _ } ->
       (match attribuut with
        | Some (Attribuut_ref { attribuut = Some a; objecttype = Some otn; _ } as inner) ->
@@ -3885,8 +3899,21 @@ let expression_layer ctx =
         | Some (Attribuut_ref { objecttype; _ }) -> objecttype
         | _ -> None
       in
-      (* The target lvalue is WF-022's job, not part of the WF-034 walk. *)
-      (* WF-056 (rule level): a pro-rata value on a temporal target MUST
+      (* The target lvalue is WF-022's job, not part of the WF-034 walk —
+         which left the target's own [type] the one position in a document
+         where the v0 unknown sentinel survived (the walk refuses it on
+         every value node it enters, WF-003 on every declaration). Nobody
+         READS the field, but the identity family crosses it (WF-091's
+         rule-target arm) and defers on the sentinel, so writing it there
+         switched the unit and domain checks off one's own write targets.
+         WF-034 covers that one position too (maintainer decision
+         2026-09-04); its unspelled twin, a target with no type at all, is
+         not this clause's — an lvalue is not a value node. *)
+      (match r.doel with
+      | Some (Attribuut_ref { typ = Some (Datatype_onbekend _); _ }) ->
+          [ v "WF-034" (at ^ "/doel/type") "unknown-type sentinel on a rule target" ]
+      | _ -> [])
+      @ (* WF-056 (rule level): a pro-rata value on a temporal target MUST
          bucket at the target's declared granularity; WF-058 states the
          same facet for the ch. 3.8 day count *)
       (match (r.doel, r.waarde) with
