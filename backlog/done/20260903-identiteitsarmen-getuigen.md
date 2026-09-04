@@ -604,3 +604,36 @@ door "byte-identiek hersteld, geverifieerd met `git status`/`git diff`"
 Eén verschil met de dichtingsgolf: gate 3 telt 237 negatiefs in plaats
 van 236 — het foldbron-getuige erbij. Alle overige tellingen zijn
 ongewijzigd; de fixronde raakte geen enkele pin.
+
+## Result (2026-09-04)
+
+Geland in drie golven plus twee lens-fixronden. (1) De getuigen: golden
+`jutterswet-aanvoergeld` (eenheiddragende ParameterRef, speelt
+drie-executor-breed; handberekening 322,50 / 99,90 / 12,50 met de
+500,00-kg-grens) en golden `jutterswet-seizoenvondst` (eenheiddragende
+dimensiecel-lezing, verifier-only — ref, clingo én Drools weigeren de
+vorm, letterlijk geciteerd in de NOTE); armbreedte van de
+WF-091-familie nu 15/13/2/1/1/1 over de zes armen, tweezijdig gepind
+(arm-mutant én leugenkant gemeten). (2) De dichting (maintainerbesluit
+2026-09-04): WF-034 verbreed met drie clausules — objecttype-loze
+AttribuutRef op waardeposities, dezelfde vorm in een foldbron (eigen
+arm; lens 1 ving dat de aggregatietak de generieke wandeling vervangt
+en het lege veld door beide hekken viel — dáár speelden alle drie
+executors het document), en het Onbekend-sentinel op het regeldoel —
+elk rood-eerst met een eigen negatief (negatiefs 234 → 237), mutant- en
+clausule-exact bewezen; de 718-veldenmeting ging van 43 verifier-schone
+overlevenden naar nul. (3) Eerlijkheid: de universele
+"self-served"-claim is niet-exhaustief gemaakt (gemeten restvormen
+attribuut:null, parameter:null en het doel-zonder-type — die laatste
+speelt schoon in ref/clingo en NPE't alleen Drools — staan open
+genoteerd), de sentinel-kwalificatie draagt de foldbron-wart én de
+SumType-payload-positie (2.159 injecties, 21 overlevenden), en lens 2
+ving nog de drachtzin die de getuigen-negatiefs meetelde (vier
+plaatsen) plus het label van de 9 overlevenden (8 doorgeef-operanden,
+1 echte foldbron). Alle twaalf gates groen: gate 3 = 174 golden / 237
+negatief; gate 5 = 403 + 2 no-case; gate 10 = 28 rgs-goldens; gate 12 =
+played 106 / 43 / 1 / no-case 2. Open gebleven, bewust: de
+SumType-payload-positie en de drie restvormen (bijvangst in de
+notities), en de deferral van de identiteitsfamilie op deze vormen is
+nu onbereikbaar in verifier-schone documenten. Herpin volgt bij de
+gebundelde landing (hoofdsessie).
