@@ -991,6 +991,109 @@ let wf034_verdeling_namen ctx =
          @ filled "groepeerAttribuut" r.groepeer_attribuut)
        ctx.doc.verdelingen)
 
+(* WF-034 on the allocation's two TYPE fields (maintainer decision 2026-09-04,
+   fourth wave). The empty-reference class of the earlier waves, one field
+   further along: an allocation whose `bronType` or `doelType` is null names
+   the object type it distributes FROM, or TO, nowhere. An UNDECLARED type is
+   already caught — WF-047 crosses it against the connecting role's fillers on
+   the bound form, WF-048 against the derivable fact type on the bindingless
+   one — but both of those read `Some t` and a null slips past them together
+   with everything else keyed on the type: WF-025's ordering-key datatype,
+   WF-050's defaults overlap, the dependency graph's read and write edges, and
+   this card's own name resolution below, which has no scope to resolve
+   against without it.
+
+   Measured: 11 of 11 golden allocations stay verifier-clean with either type
+   emptied, while both executors fault loudly on the same document (`ref`
+   "missing bronType in IR node" / "missing doelType in IR node", clingo
+   "missing bronType" / "missing doelType"). The clause makes the verifier say
+   before the run what both executors say during it. *)
+let wf034_verdeling_typen ctx =
+  List.concat
+    (List.mapi
+       (fun i (r : resolved_verdeling) ->
+         let at = Printf.sprintf "/verdelingen/%d" i in
+         (match r.bron_type with
+          | None ->
+              [ v "WF-034" (at ^ "/bronType")
+                  "allocation without a source object type: it resolves against no declaration" ]
+          | Some _ -> [])
+         @
+         match r.doel_type with
+         | None ->
+             [ v "WF-034" (at ^ "/doelType")
+                 "allocation without a target object type: it resolves against no declaration" ]
+         | Some _ -> [])
+       ctx.doc.verdelingen)
+
+(* WF-034 on the allocation's six attribute names, the RESOLUTION half
+   (maintainer decision 2026-09-04, fourth wave). The two arms above ask
+   whether a name is there and whether it is more than blanks; this one asks
+   the question the rule is actually about — does the name resolve? Each field
+   resolves against the declaration scope of ITS OWN SIDE, the sides both
+   executors read it on:
+
+     bronType   bronAttribuut     the pot that is distributed (read)
+                restantAttribuut  the remainder written back on the source
+     doelType   doelAttribuut     the share written on each recipient
+                ratoAttribuut     the proportional weight (read per recipient)
+                maximumAttribuut  the cap (read per recipient)
+                groepeerAttribuut the ordering key (read per recipient)
+
+   An undeclared TYPE is another rule's business (WF-047 on the bound form,
+   WF-048 on the bindingless one, both measured loud), and a null type is the
+   sibling arm above; this one resolves only where there is a scope to resolve
+   in.
+
+   Measured on the golden allocations, one field at a time set to a name no
+   declaration carries: all 11 + 11 + 7 + 4 + 9 + 3 positions stayed
+   verifier-CLEAN before this clause, and 0 after. The executor consequence is
+   the reason it is a clause and not a note, and it is not uniformly loud:
+
+     bronAttribuut     11/11  both fault (empty source amount / unknown attribute)
+     doelAttribuut     11/11  both fault (unknown attribute)
+     restantAttribuut   9/9   both fault (unknown attribute)
+     ratoAttribuut      7/7   BOTH SILENT: the shares stay underived
+                              (anchor jutterswet-bergingstoezicht: leeg where
+                              60 and 40 are pinned)
+     maximumAttribuut   4/4   ref SILENT (jutterswet-berging: 600 for a pinned
+                              300, the cap simply gone), clingo refuses to
+                              translate — ref != clingo on a document the
+                              verifier called well-formed
+     groepeerAttribuut  3/3   BOTH SILENT AND AGREED (jutterswet-rangaflopend:
+                              300 apiece where 1200/0/0/0 is pinned)
+
+   The three silent rows are where the differential square is blind: backend
+   agreement proves nothing there, and only the hand-pinned anchor
+   expectations stand between the corpus and the defect. *)
+let wf034_verdeling_naamresolutie ctx =
+  List.concat
+    (List.mapi
+       (fun i (r : resolved_verdeling) ->
+         let at = Printf.sprintf "/verdelingen/%d" i in
+         let resolve ~side ~scope field name =
+           match (scope, name) with
+           | Some tn, Some a when norm a <> "" -> (
+               match objecttype ctx tn with
+               | None -> [] (* the type itself is undeclared: WF-047/WF-048 *)
+               | Some ot ->
+                   if has_attr ot a then []
+                   else
+                     [ v "WF-034" (at ^ "/" ^ field)
+                         (Printf.sprintf
+                            "'%s' is not a declared attribute of the %s type '%s': the \
+                             allocation's %s resolves against no declaration"
+                            a side tn field) ])
+           | _ -> []
+         in
+         resolve ~side:"source" ~scope:r.bron_type "bronAttribuut" r.bron_attribuut
+         @ resolve ~side:"source" ~scope:r.bron_type "restantAttribuut" r.restant_attribuut
+         @ resolve ~side:"target" ~scope:r.doel_type "doelAttribuut" r.doel_attribuut
+         @ resolve ~side:"target" ~scope:r.doel_type "ratoAttribuut" r.rato_attribuut
+         @ resolve ~side:"target" ~scope:r.doel_type "maximumAttribuut" r.maximum_attribuut
+         @ resolve ~side:"target" ~scope:r.doel_type "groepeerAttribuut" r.groepeer_attribuut)
+       ctx.doc.verdelingen)
+
 (* The type an expression carries, iff it is a value (a Lambda is not). The
    sole nominal source for static typing; WF-027 uses it to admit a
    boolean-TYPED characteristic value, and the expression walk (WF-034..) below
@@ -2487,7 +2590,7 @@ let aggregation_source_check ctx at ~element_type e =
           "a fold source never navigates: a non-empty navigatiePad on a fold-source argument \
            is ill-formed (the fold's relation is bronRol)" ]
   | Attribuut_ref { attribuut = Some a; objecttype = Some otn;
-                    navigatie_rol; navigatie_pad = []; _ } -> (
+                    navigatie_rol; navigatie_pad = []; typ; _ } -> (
       (* the self-denoting fold source (WF-083): navigatieRol here is the
          written form naming the fold subject by its own role name — an
          away-pointing role would be navigation, which a fold source
@@ -2504,7 +2607,38 @@ let aggregation_source_check ctx at ~element_type e =
       match objecttype ctx otn with
       | None -> [ v "WF-034" at ("object type '" ^ otn ^ "' is not declared") ]
       | Some ot ->
-          if has_attr ot a || is_role_name ctx a then []
+          (* IR-SPEC ch. 4.6: "the one scoped exception is the fold-source role
+             name (ch. 4.3)", and ch. 4.3 scopes it to the v0 INSTANCE-fold
+             source — the row-1 wart, which writes a role name in the
+             argument's `attribuut` slot and carries the unknown sentinel on
+             its own type BY CONSTRUCTION. That sentinel is how the wart is
+             spelled on the wire and how both executors key their
+             role-naming branch (ref's contributor match, the ASP backend's
+             count arm); the verifier now keys it the same way instead of
+             offering the exception to every fold source.
+
+             Measured before this narrowing (maintainer decision 2026-09-04,
+             fourth wave), on `corpus/golden/anchor/jutterswet-maatschap`
+             whose SOM source is a genuine attribute read carrying a real
+             datatype: `attribuut` set to `bestaatniet` (the type-pair
+             branch — the one reciprocal self-relation over Jutter offers
+             exactly one candidate role) or to `maat` (the role-name branch —
+             a declared role of another position entirely) both stayed
+             verifier-CLEAN, while `ref` silently summed 0 where 12 and 30 are
+             pinned and the ASP backend refused to translate. Outside the
+             wart the source is an ordinary attribute reference and resolves
+             like one.
+
+             The regression boundary, measured over all four zones: 29 wart
+             sources (22 through the role name, 7 through the type pair) and
+             53 typed sources, of which every single typed one already
+             resolves as a declared attribute — the two counting folds that
+             lean on the fallback (`jutterswet-kaveltelling`'s synthesized
+             plural, and the role-name route of `jutterswet-aanmeldertelling`
+             and `jutterswet-vondsttelling`) are warts and keep both
+             routes. *)
+          let wart = match typ with Some (Datatype_onbekend _) -> true | _ -> false in
+          if has_attr ot a || (wart && is_role_name ctx a) then []
           else if has_kenmerk ot a then
             (* WF-080: an aggregation source is a value position — a
                value-yielding fold reads each element's attribute value
@@ -2517,6 +2651,12 @@ let aggregation_source_check ctx at ~element_type e =
                 ("'" ^ a ^ "' is a characteristic of '" ^ otn
                ^ "', not an attribute — a characteristic endpoint is ill-formed in an \
                   aggregation source position") ]
+          else if not wart then
+            [ v "WF-034" at
+                ("'" ^ a ^ "' is not a declared attribute of '" ^ otn
+               ^ "': outside the v0 instance-fold source (the unknown-typed row-1 wart) a \
+                  fold-source argument is an ordinary attribute reference — the ch. 4.3 \
+                  role-name exception and its type-pair fallback do not reach here") ]
           else (
             (* the narrowed type-pair fallback (IR-SPEC ch. 4.3): a written
                source name that resolves to no declared role — v0's
@@ -6758,7 +6898,8 @@ let all (doc : document) : violation list =
       wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf020 ctx; wf021 ctx;
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx;
-      wf034_verdelingen ctx; wf034_verdeling_namen ctx; wf045_046 ctx;
+      wf034_verdelingen ctx; wf034_verdeling_namen ctx; wf034_verdeling_typen ctx;
+      wf034_verdeling_naamresolutie ctx; wf045_046 ctx;
       wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf079 ctx; wf082 ctx; wf054 ctx;
       wf057 ctx; wf059 ctx; wf060 ctx; wf087 ctx; wf061 ctx; wf088 ctx; wf065 ctx; wf067 ctx;
       wf071 ctx; wf072 ctx; wf075 ctx; wf086 ctx; expression_layer ctx ]

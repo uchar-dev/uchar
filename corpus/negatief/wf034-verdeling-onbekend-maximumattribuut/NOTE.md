@@ -1,0 +1,49 @@
+Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): an **allocation** (ch. 3.2) whose
+cap names an attribute *no declaration carries*.
+
+    WF-034 FAIL /verdelingen/0/maximumAttribuut: 'bestaatniet' is not a
+    declared attribute of the target type 'Berger': the allocation's
+    maximumAttribuut resolves against no declaration
+
+The clause is the one described in full in the sibling NOTE
+(`wf034-verdeling-onbekend-ratoattribuut`): every filled attribute name on the
+allocation's six name fields resolves against the declaration scope of its own
+side. `maximumAttribuut` is the per-recipient cap of a `NAAR_RATO`
+allocation — the ceiling above which a share is not paid out and the excess
+falls to the remainder.
+
+This is the witness for the **divergent** row: the one place in this class
+where the two executors disagree about whether the document exists at all.
+Measured on this document, against `corpus/golden/jutterswet-berging/case.json`:
+
+    ref    : MISMATCH: W.bergingsaandeel = 600, expected 300
+             MISMATCH: D.bergingsaandeel = 400, expected 300
+             MISMATCH: B1.onverdeelde rest = 0, expected 400
+             MISMATCH: expected consistent, but the channel carries:
+                       verdeel de opbrengst van een berging × D;
+                       verdeel de opbrengst van een berging × H;
+                       verdeel de opbrengst van een berging × W
+    clingo : TRANSLATION FAULT: unknown attribute "bestaatniet" on "Berger"
+
+`ref` plays on with the cap simply gone: W is paid 600 where the declared
+ceiling is 300, the remainder that should have been 400 is 0, and the run
+reports a *value*, not a refusal. The ASP backend refuses to translate the
+same document. One document, two executors, two incompatible verdicts — on
+input the verifier called well-formed. The differential square cannot arbitrate
+this: it is not a disagreement about an answer, it is a disagreement about
+whether there is a question.
+
+Measured breadth for this field: **4 of 4** golden allocations that carry a
+`maximumAttribuut` stayed verifier-clean when it was pointed at an undeclared
+name. **0** stay clean after the clause.
+
+*Measured breadth of the shape itself:* zero outside the four new
+`-onbekend-` witnesses; see the sibling NOTE for the four-zone sweep.
+
+A hand-broken variant of `corpus/golden/jutterswet-berging/ir.json` — one
+field repointed, a one-line diff; schema-valid, since
+`ResolvedVerdeling.maximumAttribuut` is `["string","null"]` on the v0 wire.
+
+Falsifiable, clause-exact: drop `wf034_verdeling_naamresolutie` from the
+verifier's check list and this case and its three `-onbekend-` allocation
+siblings, those four and nothing else, turn clean.
