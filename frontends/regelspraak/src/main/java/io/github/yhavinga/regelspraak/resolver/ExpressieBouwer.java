@@ -1305,7 +1305,9 @@ final class ExpressieBouwer {
             // row 1 result eenheid "-", row 2 "Eenheid1" (the numerator). "het totaal van <EUR/mnd>" types EUR
             // and assigns cleanly to a EUR target (a EUR/mnd target is now the unit mismatch it should be).
             // A non-rate operand type passes through unchanged (the §7.1 unitless-Bedrag path).
-            // The strip belongs to the TIME AGGREGATION ALONE (maintainer decision 2026-09-04): the SET reading
+            // The strip is suppressed on the NON-TEMPORAL SET READING alone (maintainer decision 2026-09-04,
+            // read narrowly: a non-set non-temporal rate read keeps the strip and both executors refuse it
+            // loudly — the §4.20 operand contract): the SET reading
             // "het totaal van <x> van alle <elementen>" over a PLAIN (non-timeline) attribute — which the grammar
             // admits — is an ALIAS of "de som van", an instance fold that integrates over nothing, so it carries
             // the ELEMENT's type verbatim exactly as SOM does. Stripping there invented a wire type no executor

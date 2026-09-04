@@ -23,8 +23,11 @@ bewaartarief — `de som van` resolves clean, `het totaal van` says
 Read the first and third together: **the §4.20 noemer strip belongs to the
 TIME AGGREGATION alone** — the same operator over the subject's own
 timeline still drops the `/tijdseenheid` (Tabel 30 row 2, result
-`Eenheid1`). The dividing line is *integrating over time*, not the `set()`
-flag: a set read over a **temporal** attribute is the §7.1 per-element
+`Eenheid1`). The dividing line the predicate draws is the **non-temporal SET
+reading**: only there is the strip suppressed. A non-set, non-temporal
+rate read keeps the strip and is refused loudly by both executors (the
+shape the toolchain's own rate-operand test pins), and a set read over
+a **temporal** attribute is the §7.1 per-element
 timeline fold (each element's tijdreeks summed over time first, then over
 the set — the Drools transpilers' `rsTijdTotaal` path), so it integrates
 too and keeps the strip. That fourth form is deliberately not in this

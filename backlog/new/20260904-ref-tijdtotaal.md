@@ -23,7 +23,7 @@ Twee lekken maken het één kaart:
   |---|---|
   | Drools | `PLAYED` op **150** (120 + 30 + 0) |
   | `ref` | `MISMATCH: J1.bewaarlast = 0, expected 150` |
-  | `backends/clingo` | weigert reden-dragend (`TRANSLATION FAULT: non-identical units under the write …`) — **pre-existent**, de ASP-laag draagt de vorm sowieso niet |
+  | `backends/clingo` | weigert op déze vorm reden-dragend (`TRANSLATION FAULT: non-identical units under the write …`) — pre-existent. NB (lens 2): de `Totaal`-arm in `translate.ml` (~:1682) mist een `set = false`-guard; op een EENHEIDLOZE, jaar-granulaire set-operand vuurt hij tegen het subject i.p.v. het element en antwoordt FOUT (`underived` waar ref en Drools 15 geven) — die guard hoort bij deze kaart of een eigen regel |
 
   Drools is hier de **gemeten referentie**: zijn twee transpilers
   (`ExecModelTranspiler` r. 962/1060-1065, `DrlTranspiler` r. 2882/2917)

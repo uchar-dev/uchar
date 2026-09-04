@@ -139,8 +139,10 @@ gehaald en houden:
   schoon.
 * `RuleCheckTest.totaal_van_rate_operand_integreert_naar_de_teller_eenheid`
   — dit is de test die de strip wél pint, maar met de operand `de tarief
-  van een Ding`: een scalaire eigen-lezing (`set = false`), dus de
-  temporele arm. Gemeten: arm A resolvet schoon, arm B geeft nog steeds
+  van een Ding`: een scalaire eigen-lezing (`set = false`), een
+  NIET-temporele niet-set-vorm — daar blijft de strip staan (lens 2:
+  de scheidslijn is de niet-temporele set-lezing, niet
+  tijdsintegratie). Gemeten: arm A resolvet schoon, arm B geeft nog steeds
   `… niet in elkaar om te rekenen`.
 * `RuleCheckTest.totaal_van_niet_tijdseenheid_rate_wordt_gemeld` — raakt
   alleen `totaalOperandFout`, ongewijzigd.
