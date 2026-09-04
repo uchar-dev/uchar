@@ -1777,21 +1777,31 @@ write-side **precision gate** of WF-023 — a computed value against its
 target's declared precision — needs expression-shape analysis and is a
 different question that stays OPEN. Deferrals are the family's: either
 side absent or the v0 unknown sentinel, or a declaration that does not
-resolve — and since 2026-09-04 three shapes that let a document
-**self-serve** one are WF-034-ill-formed: a reference naming no
-`objecttype`, in a value position and in a fold source alike (two arms,
-because the aggregation branch replaces the generic walk), and the
-sentinel on a rule target's `type` (measured: outside their own
-negatief witnesses, carried by zero documents either way). That is the list of channels closed **here**, not a claim
-that no deferral can be self-served. *Measured, still open:* a
-reference naming no `attribuut` (409 of 751 golden positions stay
-verifier-clean when emptied one at a time; `ref` and clingo then fault
-loudly and Drools skips the rule or throws), a `ParameterRef` naming no
-`parameter` (35 of 37; the same loud pair, Drools throws), and the
-unspelled twin of the sentinel — a rule target carrying **no** `type`
-at all (295 of 295, and here the loud pair falls away: `ref` and clingo
-replay the document clean, only Drools throws). Closing those is a
-decision of its own, deliberately not taken with this one.
+resolve — and since 2026-09-04 the shapes measured to let a document
+**self-serve** one are WF-034-ill-formed. Both halves of the resolving
+pair, in a value position and in a fold source alike (four arms: the
+aggregation branch replaces the generic walk, so each half needs a clause
+on both paths) — a reference naming no `objecttype`, and a reference
+naming no `attribuut`. A `ParameterRef` naming no `parameter`, the same
+shape one node kind over. And both spellings of the unknown type on a
+rule target's `type`: the sentinel and its unspelled twin, an absent
+type. Measured on the goldens, one position emptied at a time: 409 of 751
+`attribuut` positions, 35 of 37 `parameter` positions and 295 of 295
+rule-target types stayed verifier-clean before these clauses, and none
+does after; outside their own negatief witnesses the shapes are carried
+by zero documents either way. Their executor behaviour was measured too,
+and it is not uniform: the two `attribuut` shapes and the `parameter` one
+are refused by `ref` and clingo (Drools skips the rule or throws), while a
+target with no type replays **clean** in `ref` and clingo and only throws
+in Drools — a verifier-clean document that crashes one executor, which is
+why the quiet shape was the urgent one. That is again the list of channels
+closed **here**, not a claim that no deferral can be self-served.
+*Measured, still open:* a `DimensieCel` whose `attribuut` is null. The cell
+arm crosses the cell's own type only through a resolved inner reference, so
+an empty one leaves the cell's type uncrossed, and the shape is schema-valid
+(`anyOf [expr, null]`) and verifier-clean at both golden positions that carry
+a cell read. Closing it is a decision of its own, deliberately not taken with
+this one.
 
 **The numeric-literal lexeme (WF-081).** A `Literal` whose `type` is
 numeric (`Numeriek` or `Percentage`) MUST carry as its value a **bare
@@ -2167,17 +2177,52 @@ Comparison, Predicate, and CharacteristicCheck only —
   kilogrammes with nothing refusing anywhere. Third: the sentinel is refused
   on a rule **TARGET's `type`** as well — the one position the expression
   walk does not enter (the lvalue is WF-022's), and the last place it
-  survived outside the documented row-1 fold-source wart (and the `SumType`
-  constructor payload). *Measured* by injecting the sentinel at every type
-  position of every golden: 21 of 2159 injections stay verifier-clean, 9 of
-  them on fold-/aggregation argument types (8 element-passing aggregation
-  operands, 1 true instance-fold source) and 12 on constructor payloads,
-  and none anywhere else. No executor reads the target field (all three write
+  survived outside the documented row-1 fold-source wart. No executor reads
+  the target field (all three write
   through the DECLARED datatype), but the identity family crosses it
   (WF-091's rule-target arm) and defers on the sentinel, so writing it there
   switched the unit, precision and domain checks off one's own write
-  targets. Its unspelled twin is deliberately NOT this clause's: an lvalue
-  is not a value node.
+  targets.
+  **Widened again 2026-09-04** (same decision, second wave), with the four
+  shapes the first wave measured and left open — each, like the first three,
+  carried by **zero** documents outside its own negatief witness (152 golden
+  + 22 rood + 238 negatief + 30 parity, measured before and after), so no
+  clause can over-reject. (a) An `AttributeReference` MUST name the
+  **`attribuut`** it reads — the other half of the resolving pair, silencing
+  the same rules from the other side, and needing the same TWO arms as the
+  first half (the fold source never reaches the generic walk: with the
+  value-position arm alone, 43 of the goldens' 751 emptied `attribuut`
+  positions stayed verifier-clean, all of them fold-/aggregation arguments;
+  with both arms, none of 751). (b) A `ParameterReference` MUST name its
+  **`parameter`** — the same shape one node kind over (35 of 37 positions
+  survived emptying, now none). (c) The unspelled twin on a rule **target**,
+  a target with **no `type`** at all (295 of 295 survived, now none): the
+  first wave left it out for want of a witness, and it is the more dangerous
+  half — besides WF-091's rule-target arm it also switches off WF-007's
+  target clause, and the document it produces replays CLEAN in `ref` and
+  clingo while the Drools backend throws on it, so the verifier is the only
+  place it can be caught before an engine crashes on well-formed input.
+  (d) The sentinel is refused on a `SumType` **constructor payload** inside a
+  value node's type: the fence was a match on the type's top level, and a
+  datatype is a tree — the walk now descends through payloads, the descent
+  WF-088's use-site check already makes for the same reason (the consumers
+  read the use site's inline constructor copy, while WF-062 crosses only the
+  declaration). *Measured* by injecting the sentinel at all 2650
+  datatype-valued positions of every golden: 36 injections stayed
+  verifier-clean, of which 15 are no-ops (the position already holds the
+  sentinel by construction — a count fold's role source, the row-1 wart), so
+  21 real survivors: 12 on constructor payloads, which (d) closes, and 9 on
+  fold-/aggregation argument types (8 element-passing aggregation operands,
+  1 true instance-fold source), which stay open — the aggregation branch
+  replaces the generic walk for those arguments. The descent stops at the
+  payload: a sentinel in a `ListType` element or a `StructType` field is
+  refused today by a neighbour (WF-091's residual-structure cross, WF-060..
+  070), so an arm there would carry no witness of its own. *Measured and
+  still open at the same twelve positions:* WF-007's precision-form check,
+  which is a per-datatype predicate rather than a walk (`{"geheel": true,
+  "decimalen": 2}` on a payload stays verifier-clean at all twelve); its
+  blind spot spans list elements and struct fields as well, so sharing this
+  descent is not one movement.
 - **WF-080** A value-position `AttributeReference` MUST resolve to an
   **attribute** of its endpoint type, never a characteristic. A value
   position is where an expression yields a value: a rule/member value, a
@@ -2945,7 +2990,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-031 | one definition per day kind; condition present and **pure** (no attribute/characteristic read — the stratum-0 framing, ch. 5.4); validity ALTIJD | gate 3 | `jutterswet-vormenkabinet` (the schouwdag definition, ALTIJD validity) + `jutterswet-schouwkalender` (a pure day-kind chain, replayed by gates 5–6 over its ordinary rule) | `wf031-missing-condition` + `wf031-dagsoort-venster` (bounded validity window) + `wf031-dagsoort-leest-kenmerk` (the purity clause: a day-kind condition reading a characteristic) |
 | WF-032 | start point: variable-start timeline, day-precision member, one per pair | gate 3 | `jutterswet-vormenkabinet` (the meetdatum anchor) | `wf032-fixed-start-anchor` |
 | WF-033 | (dialect) rule-group members resolve; recursive group has a creation member (either kind); object creations guarded, relation creations guard-free | gate 3 | `anchor/jutterswet-wachtersketen` (the recursive chain executes to its fixpoint, gates 5–6; the runaway budget fault is red-pinned, gate 8) + `anchor/jutterswet-erflijn` (the guard-free relation-creation member: the transitive closure reaches its fixpoint in both executors) | `wf033-unguarded-recursive` (the guard clause) + `wf033-no-creation-member` (the containment clause) |
-| WF-034 | every expression/condition reference resolves (no unknown-type sentinel; a reference NAMES the object type it resolves against) | gate 3 (partial: sentinel types and parameter/day-kind/element-type/own-member references; variable bindings and navigation paths are not serialized in v0; excepted: a v0 instance-fold source argument names a role and carries the sentinel by construction — the row-1 wart, resolved against declared roles with the ch. 4.3 type-pair fallback for a name that resolves nowhere). **Widened 2026-09-04** (maintainer decision) with three clauses that close three measured deferral channels — an `AttributeReference` without an `objecttype` in a value position, the same in a FOLD SOURCE (its own arm: the aggregation branch replaces the generic walk and resolves only a named endpoint, so the empty field fell through both fences), and the sentinel on a rule TARGET's `type` — no new rule number, no documented deferral. All three were **self-served exemptions from the identity family**: the empty field makes the declaration unresolvable and the sentinel is a deferring type, so WF-089/WF-090/WF-091 stood down on a document's own say-so while it stayed verifier-clean. These are the channels closed HERE, not every way a deferral can be self-served: measured and still open are a reference without an `attribuut` (409 of 751 golden positions survive one-at-a-time emptying), a `ParameterRef` without a `parameter` (35 of 37) and the unspelled twin of the target sentinel, a target with no `type` at all (295 of 295 — and unlike the other two, that one replays clean in `ref` and clingo instead of faulting). All three closed shapes are carried by **zero** documents outside their own negatief witnesses (152 golden + 22 rood + 30 parity, plus every negatief that predates this card, measured before and after; a sweep nulling all 718 `objecttype` fields of the goldens one at a time left 43 verifier-clean survivors before the fold-source arm and 0 after), so over-rejection is impossible by measurement and nothing repinned; the frontend can reach neither shape in an otherwise-clean document (`objecttype: null` only ever accompanies an `Onbekend` node type, which the walk already refuses; the sentinel target only ever accompanies an undeclared target, which WF-022 refuses) — the shapes are open to any other conforming emitter, which is the audience of an engine-neutral IR | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondsttelling` (role source) + `jutterswet-kaveltelling` (the type-pair fallback: an undeclared synthesized plural over a unique pair, both executors) — and, for the three widened clauses, every golden and rood document is a non-over-rejection witness at once, since all three shapes carry zero | `wf034-dangling-parameter` + `wf034-ambigu-typenpaar` (unresolved name, two connecting fact types) + `wf034-zelftype-typenpaar` (unresolved name, one self-typed two-role fact type — both roles are candidates, counted in roles not fact types) + `wf034-typeloos-literal` (the unspelled twin of the sentinel, on a value node) + `wf034-attribuutref-zonder-objecttype` (the missing endpoint, carrying the measured answer-changing `t`-for-`kg` lie the empty field hid: `ref` faults, clingo refuses, Drools played it) + `wf034-foldbron-zonder-objecttype` (the same field emptied in a fold source, the same lie, and the worse measurement: `ref` PASS, clingo PASS, Drools PLAYED — all three answer off it) + `wf034-onbekend-regeldoel` (the sentinel on `/resolvedRegels/1/doel/type`, the last position where it survived outside the documented row-1 fold-source wart and the `SumType` constructor payload — measured: of 2159 sentinel injections over the goldens, 21 stayed clean, 9 on fold-/aggregation argument types and 12 on constructor payloads) |
+| WF-034 | every expression/condition reference resolves (no unknown-type sentinel, at any depth of a value node's type; a reference NAMES both halves of what it resolves through — the object type and the member — a parameter reference names its parameter, and a rule target carries a type) | gate 3 (partial: sentinel types and parameter/day-kind/element-type/own-member references; variable bindings and navigation paths are not serialized in v0; excepted: a v0 instance-fold source argument names a role and carries the sentinel by construction — the row-1 wart, resolved against declared roles with the ch. 4.3 type-pair fallback for a name that resolves nowhere). **Widened 2026-09-04** (maintainer decision) in TWO waves, eight arms, no new rule number and no documented deferral; every one of them closes a **self-served exemption from the identity family** (WF-089/WF-090/WF-091), which defers on an unresolvable declaration and on a deferring type — so an emptied field or a sentinel switched the unit, precision and domain checks off on a document's own say-so while it stayed verifier-clean. *Wave 1* — an `AttributeReference` without an `objecttype` in a value position, the same in a FOLD SOURCE (its own arm: the aggregation branch replaces the generic walk and resolves only a named endpoint, so the empty field fell through both fences), and the sentinel on a rule TARGET's `type`. *Wave 2* — the same for the OTHER half of the pair, an `AttributeReference` without an `attribuut`, again in both positions (with the value-position arm alone 43 of the goldens' 751 emptied `attribuut` positions stayed clean, all fold-/aggregation arguments; with both, 0 of 751 — the same lesson the fold source taught in wave 1); a `ParameterRef` without a `parameter` (35 of 37 → 0); the UNSPELLED TWIN of the target sentinel, a target with no `type` at all (295 of 295 → 0), which wave 1 left out for want of a witness and which is the more dangerous half — it also switches off WF-007's target clause, and unlike every other shape here it replays CLEAN in `ref` and clingo while the Drools backend throws, so the verifier is the only place it can be caught before an engine crashes on well-formed input; and the sentinel one level DOWN, on a `SumType` constructor payload inside a value node's type (the fence matched the type's top level only; the walk now descends through payloads, WF-088's descent for the same reason). All eight shapes are carried by **zero** documents outside their own negatief witnesses (152 golden + 22 rood + 30 parity, plus every negatief that predates the wave, measured before and after each), so over-rejection is impossible by measurement and nothing repinned — and the wave-2 over-rejection check is direct: the verifier's report over all 447 documents of golden + rood + negatief + parity is byte-identical before and after but for the five new negatiefs. Nor does anything this repo's own frontends emit carry them (28 rgs goldens, 12 catala goldens, 45 parity fragments, all measured clean) — the shapes are open to any other conforming emitter, which is the audience of an engine-neutral IR. *Measured and still open:* the sentinel survives on 9 fold-/aggregation argument types (8 element-passing aggregation operands, 1 true instance-fold source) — of 2650 datatype-valued golden positions injected one at a time, 36 stayed clean, 15 of them no-ops on positions that already hold the sentinel (the row-1 wart), 12 the payloads wave 2 closed, and these 9; a `DimensieCel` with a null `attribuut`, which leaves the cell's own type uncrossed by the identity family and is schema-valid and verifier-clean at both golden cell-read positions (the sixth self-serve channel, a decision of its own); and WF-007's precision-form check, which has the identical blind spot at those same 12 payload positions and is its walk to make, not this rule's | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondsttelling` (role source) + `jutterswet-kaveltelling` (the type-pair fallback: an undeclared synthesized plural over a unique pair, both executors) — and, for the eight widened arms, every golden and rood document is a non-over-rejection witness at once, since all eight shapes carry zero | `wf034-dangling-parameter` + `wf034-ambigu-typenpaar` (unresolved name, two connecting fact types) + `wf034-zelftype-typenpaar` (unresolved name, one self-typed two-role fact type — both roles are candidates, counted in roles not fact types) + `wf034-typeloos-literal` (the unspelled twin of the sentinel, on a value node) + `wf034-attribuutref-zonder-objecttype` (the missing endpoint, carrying the measured answer-changing `t`-for-`kg` lie the empty field hid: `ref` faults, clingo refuses, Drools played it) + `wf034-foldbron-zonder-objecttype` (the same field emptied in a fold source, the same lie, and the worse measurement: `ref` PASS, clingo PASS, Drools PLAYED — all three answer off it) + `wf034-onbekend-regeldoel` (the sentinel on `/resolvedRegels/1/doel/type`; its NOTE names the `SumType` constructor payload as a second surviving position, which is true of the wave it was written in — since wave 2 the payload half is closed and only the row-1 fold-source wart remains) + `wf034-attribuutref-zonder-attribuut` + `wf034-foldbron-zonder-attribuut` (the other half of the pair, once per path, each carrying the same `t`-for-`kg` lie: `ref` and clingo fault, Drools skips the rule or throws) + `wf034-parameterref-zonder-parameter` (same lie on a parameter operand; `ref` and clingo fault, Drools throws) + `wf034-regeldoel-zonder-type` (the unspelled twin: `ref` PASS, clingo PASS, Drools throws — verifier-clean input crashing an executor) + `wf034-sentinel-sumtype-payload` (the sentinel a level down: `ref` replays it, clingo refuses to translate it — one document, two executors disagreeing about whether it exists) |
 | WF-035 | operator typing (numeric, unitless power, date±duration order/unit/precision, unit compatibility, clamp) | gate 3 (over serialized operand types) | `anchor/jutterswet-wachtersketen` (the numeric Plus, executed by gates 5–6) + `jutterswet-vervaltermijn` (date ± duration, the date-left plus and min forms, executed by gates 5–6) | `wf035-power-with-unit` + `wf035-datum-plus-datum` + `wf035-duur-plus-datum` + `wf035-duur-min-datum` + `wf035-uur-op-dagdatum` |
 | WF-036 | comparison/predicate typing (ordering, precision, family, domain, builtin operands) | gate 3 (over serialized operand types) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondstnummer` (date ordering) | `wf036-order-number-vs-text` |
 | WF-037 | aggregation/builtin shape: facet validity and arity per kind | gate 3 (fixed-arity kinds; date-construction arity OPEN) | `jutterswet-vondsttelling` | `wf037-fallback-on-minimum` |
