@@ -613,18 +613,28 @@ position (documents may narrow it truthfully; crossing it turns seven
 golden+rood documents red), and the multiplicative precision follows
 the stated ch. 2.3 formula only in prose (crossing it costs eleven
 documents across three producers with three precision policies). The
-fourth class — node kinds whose result unit v0 does not derive — stays
-uncrossed and named, and WF-091's honesty note 4 is now a coverage
+fourth class — **positions** whose result unit v0 does not derive —
+stays uncrossed and named; positions, not node kinds, for the reason
+that class already gives above (`GEDEELD_DOOR` and `PLUS` are one node
+kind and only one of them derives, which is why the enforcing clamp
+keys on **(node, op)**), and WF-091's honesty note 4 is now a coverage
 note rather than a deferral. The element-passing aggregation keeps its
-domain-only cross (its type is a derivation with its own formula, the
-lesson of the facet-engine card).
+domain-only cross under WF-089/WF-090 — once per operand, the domain
+being the one facet a pass-through fold hands on unchanged — and since
+the derivation law landed the same position also carries **soort, unit,
+decimals and wholeness**, crossed once against the derivation by
+WF-091's `eerste`/`laatste` and `minimum`/`maximum` arms rather than
+once per operand.
 
 *History:* this clause is the consumer half of the WF-091 work. Before it,
 the Drools backend read the wire annotation at its write boundary, its
 additive operand boundary, its `Let` cluster and its aggregation result
 type, and answered **3.750,00** where `ref` and clingo answered **3,75** on
-a unit-lying aggregation result — a divergence the verifier cannot see,
+a unit-lying aggregation result — a divergence the verifier could not see,
 because a derived type has no single declaration to be crossed against.
+It could not until the derivation law landed (2026-09-04): that shape is
+`wf091-foldwortel-eenheid`'s negatief today, refused at the fold root on
+the unit facet.
 
 ---
 
