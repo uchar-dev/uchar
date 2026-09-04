@@ -85,7 +85,7 @@ van deze notitie en van het gelande commentaar beweerden dat élke
 de set-wachter `Onopgelost` wordt. Beide beweringen zijn onwaar. De twee
 wachters op `:1038-1039` (`agg.objecttype() == elem`,
 `agg.navigatieRol() == null`) sluiten inderdaad de navigatie-, keten- en
-rolbouwers uit, maar het `onbekend()`-vangnet op `:1642` haalt de plek
+rolbouwers uit, maar het `onbekend()`-vangnet op `:1637` haalt de plek
 lángs twee routes wél:
 
 *Route 1 — een KENMERKnaam glipt door de set-wachter.* De wachter in
@@ -93,7 +93,7 @@ lángs twee routes wél:
 `!sa.objecttype().heeftLid(sa.attribuut())`, en `heeftLid`
 (`RegelSpraakModel.java:620`) is `attribuut(naam) != null ||
 kenmerken.anyMatch(…)`. Een kenmerknaam IS dus een lid: de wachter zwijgt,
-`ot.attribuut(naam)` geeft `null`, en `:1642` synthetiseert een VERS
+`ot.attribuut(naam)` geeft `null`, en `:1637` synthetiseert een VERS
 `onbekend()`. Gereproduceerd op "de som van het waardevol van alle
 vondsten van de Jutter die groter zijn dan 5", met `waardevol` als
 kenmerk (niet attribuut) van `Vondst`: de emitter schrijft nul
@@ -139,7 +139,7 @@ en voegt niets toe.
 Uitkomst (a) van de kaart. De plek (nu `ExpressieBouwer:1066`)
 SYNTHETISEERT geen referentie, hij KOPIEERT er een: de filter-LHS is de
 foldbron, herankerd op het element
-(alleen `onderwerpBron`/`bron` gereset), met de drieslag
+(`onderwerpBron`/`bron` gereset, en `set=false` — de LHS leest ÉÉN element, niet de verzameling), met de drieslag
 `(objecttype, attribuut, type)` letterlijk overgenomen. Een kopie kan
 geen afwijking introduceren die de bron niet al heeft, en de verifier
 kruist hem op zijn eigen gebruiksplek als elke andere referentie.
