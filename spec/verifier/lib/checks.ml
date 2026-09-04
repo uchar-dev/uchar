@@ -1768,14 +1768,13 @@ let rec enum_use_site ctx at (d : datatype) : violation list =
    reason — a use site's inline constructor copy is what the consumers read,
    while WF-062 crosses only the DECLARATION.
 
-   The descent stops at the payload deliberately. Sentinels in a `ListType`
-   element or a `StructType` field are refused today by neighbours — measured
-   by injecting the sentinel at all 2650 datatype-valued positions of the
-   goldens: the only verifier-clean survivors sit on constructor payloads (12)
-   and on fold-/aggregation argument types (9), never in a container — so an
-   descent covers the sum-in-sum chain only; a sentinel inside a ListType
-   element or StructType field nested under a payload is measured
-   verifier-clean (ref replays, clingo refuses) and stays OPEN. *)
+   The descent covers the sum-in-sum chain only. A sentinel inside a
+   `ListType` element or a `StructType` field nested under a payload is
+   measured schema-valid and verifier-clean (ref replays, clingo refuses)
+   and stays OPEN — container witnesses exist. What this walk closes is
+   the payload chain itself (12 survivors to 0); the 9 fold-/aggregation
+   argument survivors belong to the aggregation branch, not to this
+   descent. *)
 let rec payload_sentinel at (d : datatype) : violation list =
   match d with
   | Sum_type { constructoren; _ } ->

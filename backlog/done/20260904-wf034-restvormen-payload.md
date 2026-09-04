@@ -92,9 +92,11 @@ aggregatietak.
    veld.
 5. `payload_sentinel`, de sentinelwandeling: daalt af in
    `SumType`-constructor-payloads, exact de afdaling die `enum_use_site`
-   al maakt. Stopt daar bewust: een sentinel in een `ListType`-element of
-   een `StructType`-veld wordt vandaag door een buurregel geweigerd
-   (gemeten), dus een arm daar zou geen eigen getuige hebben.
+   al maakt. De afdaling dekt de sum-in-sum-keten; lens 1 mat dat een
+   sentinel in een `ListType`-element of `StructType`-veld GENEST ONDER
+   een payload wél verifier-schoon blijft (containergetuigen: ref
+   speelt, clingo weigert) — die containerhelft staat OPEN en is
+   derde-golf-materiaal.
 
 De vijf meldingen, letterlijk, elk één per document:
 
@@ -135,7 +137,7 @@ eigen regels), dus de 409 waren van meet af aan uitsluitend
 | `attribuut` genuld (alle sleutels met stringwaarde) | 751 | 409 schoon | **0** |
 | `parameter` genuld | 37 | 35 schoon | **0** |
 | regeldoel-`type` op expliciet null | 295 | 295 schoon | **0** |
-| `Onbekend`-sentinel geïnjecteerd op elke datatypepositie | 2650 | 36 schoon | 24 schoon |
+| `Onbekend`-sentinel geïnjecteerd op elke datatypepositie | 2758 | 36 schoon | 24 schoon |
 
 De twee parameter-posities die al vóór deze kaart werden geweigerd zijn
 allebei een `TemporalRead`-basis: WF-049's vormclausule eist daar een
