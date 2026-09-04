@@ -1324,14 +1324,32 @@ let binder_soort naam =
    DERIVATION where the declaration sits: the expectation is computed from
    the operands' own serialized types by the ch. 2.3 precision table and the
    ch. 2.6 unit rules, and the node's annotation is crossed against it by the
-   SAME engine, in the same facet order, under the same rule number. The
-   chain is what makes it sound: an operand's own type is anchored in turn —
-   a reference arm against its declaration, a composite against its own
-   operands — so a composite is bound to the declarations underneath it.
+   SAME engine, in the same facet order, under the same number-follows-the-
+   facet rule — so the DOMAIN facet reports under WF-089/WF-090 at a composite
+   exactly as it does at a reference (`wf089-composiet-domein`).
 
-   The deferral is not self-servable: an operand carrying the unknown
-   sentinel or no type at all is already WF-034-ill-formed at every value
-   node, so a document cannot switch this cross off by emptying a type. *)
+   How far the chain reaches. An operand's own type may be anchored in turn —
+   a reference arm against its declaration, a composite against its own
+   operands — and where every operand underneath is anchored that way, the
+   composite is bound to the declarations beneath it. That is the good case,
+   not a theorem: the chain reaches only through operands something actually
+   crosses, and it BREAKS at a fourth-class operand. A GEDEELD_DOOR over two
+   unitless operands may be annotated `kg`, nothing crosses it, and a rounding
+   above it then derives `kg` all the way into a `kg` target, verifier-clean
+   (measured 2026-09-04: 26 such operand positions over 19 of the 174
+   golden+rood documents). The deferral proper is not self-servable — an
+   operand carrying the unknown sentinel or no type at all is already
+   WF-034-ill-formed at every value node — but a fabricated fourth-class
+   annotation is the stronger escape and stays OPEN: it does not switch the
+   cross off, it feeds it a premise.
+
+   The SIGN is claimed at no arm below, and therefore neither is [residual]:
+   the backstop would re-report exactly the facet every formula here declines.
+   A derivation mostly under-claims a sign restriction while a document
+   narrows it truthfully (a clamp with a minimum of 0 IS non-negative whatever
+   its base says), and it over-claims at the AANTAL arm, where two anchor
+   goldens widen NIET_NEGATIEF to ONBEPAALD. Measured 2026-09-04: crossing it
+   costs 5 golden+rood documents on the additive arm, 7 over all arms. *)
 
 let dt_decimals = function Numeriek { decimalen; _ } | Percentage { decimalen; _ } -> decimalen | _ -> 0
 let dt_whole = function Numeriek { geheel; _ } | Percentage { geheel; _ } -> geheel | _ -> false
@@ -1389,19 +1407,16 @@ let composite_expectation (e : expr) : (string * string * datatype * string list
       match (operand_t links, operand_t rechts) with
       | Some l, Some r ->
           if op <> Verminderd_met && is_date l && is_number_like r && unit_of r <> None then
-            (* date +/- duration (ch. 2.2): the result IS the date operand,
-               whole — the duration operand carries the calendar unit and
-               contributes nothing to the result type *)
-            Some (what, "the type derived from its date operand", l, [])
+            (* date +/- duration (ch. 2.2): the result IS the date operand's
+               type, unchanged — the duration operand carries the calendar
+               unit and contributes nothing to the result type *)
+            Some (what, "the type derived from its date operand", l, [ "sign"; "residual" ])
           else if
             is_number_like l && is_number_like r && units_compatible (unit_of l) (unit_of r)
           then
             (* ch. 2.3: maxDec, whole iff both operands are; ch. 2.6: the
-               result carries the LEFT unit. The SIGN is deliberately not
-               claimed: a derivation can only under-claim it (ONBEPAALD),
-               while a document may narrow it truthfully — measured, 12
-               golden+rood+negatief documents do exactly that over two
-               non-negative operands. *)
+               result carries the LEFT unit. The SIGN is not claimed here or
+               at any other arm — see the header note. *)
             Some
               ( what, "the type derived from its operands",
                 Numeriek
@@ -1444,7 +1459,8 @@ let composite_expectation (e : expr) : (string * string * datatype * string list
       | Some (Numeriek { teken; eenheid; _ }) ->
           Some
             ( "the rounding", "the type derived from its base and its decimal count",
-              Numeriek { geheel = decimalen = 0; decimalen; teken; eenheid }, [] )
+              Numeriek { geheel = decimalen = 0; decimalen; teken; eenheid },
+              [ "sign"; "residual" ] )
       | Some (Percentage { eenheid; _ }) ->
           (* the percentage arm carries NO corpus witness (measured 2026-09-04:
              zero roundings over a percentage base in any zone); it keeps the
@@ -1453,19 +1469,22 @@ let composite_expectation (e : expr) : (string * string * datatype * string list
              a divergence recorded rather than followed *)
           Some
             ( "the rounding", "the type derived from its base and its decimal count",
-              Percentage { geheel = decimalen = 0; decimalen; eenheid }, [] )
-      | Some other -> Some ("the rounding", "the type derived from its base", other, [])
+              Percentage { geheel = decimalen = 0; decimalen; eenheid },
+              [ "sign"; "residual" ] )
+      | Some other ->
+          Some ("the rounding", "the type derived from its base", other, [ "sign"; "residual" ])
       | None -> None)
   | Begrensd { basis = Some b; _ } -> (
-      (* ch. 2.7: a clamp returns one of three values of the base's own type *)
+      (* ch. 2.7: a clamp returns one of three values of the base's own type.
+         Its SIGN is the sharpest case for the exclusion the header states: a
+         clamp with a minimum of 0 IS non-negative whatever its base says. *)
       match known (typ_of_expr b) with
-      | Some d -> Some ("the clamp", "the type derived from its base", d, [])
+      | Some d -> Some ("the clamp", "the type derived from its base", d, [ "sign"; "residual" ])
       | None -> None)
   | Functie { kind = Aantal; _ } ->
-      (* ch. 2.3: a count is a whole, non-negative, unitless number. The sign
-         is skipped for the same reason as everywhere else here: two anchor
-         goldens write ONBEPAALD on a count, a widening no derivation may
-         refuse on its own authority. *)
+      (* ch. 2.3: a count is a whole, non-negative, unitless number. Two
+         anchor goldens write ONBEPAALD on a count — the header's exclusion in
+         its widening direction. *)
       Some
         ( "the AANTAL aggregation", "the type a count derives",
           Numeriek { geheel = true; decimalen = 0; teken = Some Niet_negatief; eenheid = None },
@@ -1483,15 +1502,17 @@ let composite_expectation (e : expr) : (string * string * datatype * string list
       | Some t0 -> (
           match k with
           | Som ->
-              (* §4.6 Eenheid1: a sum is its first operand's type whole *)
-              Some (what, "the type derived from its first operand", t0, [])
+              (* §4.6 Eenheid1: a sum is its first operand's type, unchanged *)
+              Some (what, "the type derived from its first operand", t0, [ "sign"; "residual" ])
           | Eerste | Laatste ->
               (* an element-passing fold returns a contributor unchanged. The
                  DOMAIN facet is skipped here and only here because it is
                  already crossed at this position, once per operand and under
                  its own number, by WF-089/WF-090's aggregation arm — this
                  cross adds the facets that arm deliberately left out. *)
-              Some (what, "the type derived from its first operand", t0, [ "domain"; "residual" ])
+              Some
+                ( what, "the type derived from its first operand", t0,
+                  [ "domain"; "sign"; "residual" ] )
           | Totaal ->
               (* §4.20: the temporal total INTEGRATES a rate over time, so the
                  result drops the /tijdseenheid and keeps the numerator. The
@@ -1505,9 +1526,12 @@ let composite_expectation (e : expr) : (string * string * datatype * string list
                     Numeriek { n with eenheid = Some { u with noemer = None } }
                 | other -> other
               in
-              Some (what, "the type derived from its first operand", d, [])
+              Some (what, "the type derived from its first operand", d, [ "sign"; "residual" ])
           | Minimum | Maximum ->
-              if rest = [] then Some (what, "the type derived from its operand", t0, [ "domain"; "residual" ])
+              if rest = [] then
+                Some
+                  ( what, "the type derived from its operand", t0,
+                    [ "domain"; "sign"; "residual" ] )
               else
                 let ts = List.map typ_of_expr (a0 :: rest) in
                 if List.exists (fun x -> known x = None) ts then None
@@ -1525,7 +1549,10 @@ let composite_expectation (e : expr) : (string * string * datatype * string list
                                  List.fold_left (fun m x -> min m (dt_decimals x)) max_int ts;
                                teken; eenheid },
                            [ "domain"; "sign"; "residual" ] )
-                   | _ -> Some (what, "the type derived from its first operand", t0, [ "domain"; "residual" ]))
+                   | _ ->
+                       Some
+                         ( what, "the type derived from its first operand", t0,
+                           [ "domain"; "sign"; "residual" ] ))
           | _ -> None))
   | _ -> None
 
