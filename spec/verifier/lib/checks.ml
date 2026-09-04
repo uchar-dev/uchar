@@ -2763,6 +2763,18 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
              (fun i a ->
                let p = Printf.sprintf "%s/argumenten/%d" at i in
                match a, f.element_objecttype with
+               | Attribuut_ref { attribuut; objecttype = None; _ }, Some _ ->
+                   (* WF-034 (widened, maintainer decision 2026-09-04): K1's
+                      arm has to be applied here for the same reason WF-089's
+                      is — this branch replaces [walk_expr] for the fold
+                      source, and [aggregation_source_check] matches only on
+                      `objecttype = Some`, so the absent endpoint fell through
+                      BOTH. Measured: the shape plays in all three executors
+                      (ref, clingo, Drools) off a unit lie no rule fenced. *)
+                   [ v "WF-034" p
+                       ("attribute reference '"
+                       ^ Option.value attribuut ~default:"?"
+                       ^ "' without an object type: it resolves against no declaration") ]
                | Attribuut_ref { attribuut; typ; _ }, Some el ->
                    (* the fold source never reaches [walk_expr] (this branch
                       replaces it), so WF-089's AttribuutRef arm has to be
