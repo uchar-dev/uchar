@@ -3930,6 +3930,22 @@ let expression_layer ctx =
       | Some (Attribuut_ref { typ = Some (Datatype_onbekend _); _ }) ->
           [ v "WF-034" (at ^ "/doel/type") "unknown-type sentinel on a rule target" ]
       | _ -> [])
+      (* WF-007 at the same position, and for a different reason than its
+         neighbour above: the precision form is a SHAPE law on a datatype —
+         every Number in the document — not a cross against a declaration,
+         so nothing else can stand in for it. Its two halves reached the
+         declarations ([wf007_model]) and the types the walk enters (the
+         prologue), which left the target out on the lvalue argument.
+         Measured 2026-09-03: whole + 2 decimals passes here and is refused
+         on every walked expression type. Where the target's declaration
+         resolves the identity family masks the shape incidentally (a facet
+         mismatch, WF-091's number and a comparison message); on a
+         CHARACTERISTIC target it defers by construction and this clause is
+         the only guard. The sentinel and an absent type fall through it —
+         [check_number_form] has nothing to say about either. *)
+      @ (match r.doel with
+        | Some (Attribuut_ref { typ = Some d; _ }) -> check_number_form (at ^ "/doel/type") d
+        | _ -> [])
       @ (* WF-056 (rule level): a pro-rata value on a temporal target MUST
          bucket at the target's declared granularity; WF-058 states the
          same facet for the ch. 3.8 day count *)
