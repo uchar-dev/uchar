@@ -1292,6 +1292,19 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         1 )
   | Functie { kind = Som; argumenten = [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some el; leegwaarde; bron_rol; filter; _ } ->
       let a = req "fold attribute" attribuut in
+      (* the §7.1 per-element fold, refused (the sister of the Totaal arm's
+         guard below): over a TEMPORAL element attribute ref folds TWICE —
+         each member's own timeline collapses over time first (ch. 3.6) —
+         while this arm sums bare val/3 facts. On a timeline-carrying case
+         those facts do not exist and the sum answers underived (silently
+         leeg where ref sums the collapsed totals); on a bucket case it
+         would sum un-integrated scalars. Translating the fold is its own
+         card; until then the refusal is loud. *)
+      if attr_temporal ctx ~otype:el ~attr:a then
+        fault
+          "the per-element temporal fold over a set (§7.1) is not translated: %S is a temporal \
+           attribute, whose members' timelines collapse over time before the set fold (ch. 3.6)"
+          a;
       (* the empty set: #sum over no tuples is clingo's native 0, which is
          exactly the leegwaarde-0 facet (ref agg_som (Some 0)). A som WITHOUT a
          fallback yields ref's Empty (agg_som None → Empty), NOT 0, so it needs a
@@ -1377,6 +1390,17 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          empty set yields #inf/#sup, which must never escape into a value — ref
          derives Empty there. *)
       let a = req "fold attribute" attribuut in
+      (* a TEMPORAL element attribute has no defined moment to rank at, so
+         ref refuses the form outright (ch. 3.6: only som and totaal carry
+         the per-element timeline fold). This arm would rank the asOfDate
+         buckets instead — an answer where the other executor refuses.
+         Refuse in step. *)
+      if attr_temporal ctx ~otype:el ~attr:a then
+        fault
+          "a minimum/maximum over the temporal attribute %S of a set has no defined moment to \
+           fold (ch. 3.6); ref refuses the form, so this arm must not answer from the asOfDate \
+           buckets"
+          a;
       let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty } in
       let role_name =
         role_canonical
@@ -1691,7 +1715,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       if set then
         fault
           "the per-element temporal total over a set (§7.1) is not translated: this arm totals \
-           the SUBJECT's own timeline, and %S is the element type's attribute"
+           the SUBJECT's own timeline, and %S is read off each set MEMBER — a different instance \
+           even where the element type IS the subject's own type (a self-relation)"
           a;
       refuse_attr_timeline ctx ~otype:aot ~attr:a;
       let f = total_factor (attr_granularity ctx ~otype:aot ~attr:a) in
