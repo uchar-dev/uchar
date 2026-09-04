@@ -481,6 +481,71 @@ the scale-2 × scale-4 product so the intermediate stays inside the
 int31 fences — e.g. `M × R = M × R_hi/10² + M × R_lo/10⁴`, each part
 within the existing bound, the sum exact.)
 
+### 2.10 The consumer clause — a type annotation is never the source
+
+A v0 node carries its result type on the wire at every position. At a
+**reference** position that type is a *copy* of a declaration; at a
+**composite** position it is a *derivation* over the node's operands.
+Neither is a source. A consumer of the IR therefore derives the unit, the
+soort and the precision it computes with:
+
+1. **Reference positions** — an `AttribuutRef` (bare, navigated, or the one
+   a rule names as its `doel`), a `ParameterRef`, a `DimensieCel` read, a
+   `BinderRef` — take unit, soort and precision from the **declaration**
+   the reference names: the object type's declared attribute datatype, the
+   parameter's declared datatype, the attribute's element datatype, the
+   binding `Let`'s value. `IR-SPEC.md` WF-091 makes the repetition
+   mechanically faithful, so on a verifier-clean document the two agree —
+   which is exactly why reading the repetition is *invisibly* wrong when
+   they do not.
+2. **Composite positions** — an arithmetic node, a `Let`, a value
+   aggregation, a rounding, a clamp — take the **effective** type computed
+   from those declarations through the ch. 2.3 precision table and the
+   ch. 2.6 unit rules, never the node's own annotation. An additive result
+   carries the left operand's unit and a unitless side adopts the other; a
+   `Let` carries its body's; a value aggregation carries its first
+   operand's (§4.6 *Eenheid1*); a rounding and a clamp carry their basis's.
+
+**Three positions where the annotation IS the source**, and a consumer
+reads it there:
+
+- a **`Literal`**: its type is the lexeme's own carrier (`"3,5 EUR"`), a
+  copy of no declaration;
+- the **duration operand of a date ± duration**: the calendar unit that
+  routes the arithmetic is that operand's static type (`IR-SPEC.md`
+  WF-035);
+- a **`Tijdsduur` / `Absolute tijdsduur` node's own type**: its unit is the
+  operator's parameter — "de tijdsduur van A tot B **in jaren**"
+  (WF-038) — not a derived result.
+
+Two further readings are recorded rather than blessed, because they are a
+backend's encoding rather than a semantic claim: the ASP translator sizes
+its integer scale from a `Fold`'s and a `Match`'s own annotated `decimalen`
+(`ASP-TRANSLATION.md` S19). They stay legitimate only while that scale is
+an encoding detail; the moment a unit-bearing witness reaches those nodes
+they fall under clause 2.
+
+**The enforcing artifact** is `scripts/check-reftype-derivation.sh`: it
+grafts a systematic unit lie onto every twistable annotation of a corpus
+golden — leaving every declaration byte-identical — and demands that `ref`,
+clingo and the Drools backend each reproduce, on the lying copy, exactly
+the outcome they produce on the untouched one. Its reason-carrying survivor
+list is empty: measured 2026-09-04, all three are indifferent over 46 unit
+annotations in ten goldens. The harness twists the **unit** facet only, and
+says at its head why the other two facets are not machine-checked this way:
+a soort lie is a different document (WF-078/WF-091 cross it in the
+verifier, and `ref` legitimately routes ch. 1.2d and date arithmetic on the
+static soort), and a precision lie collides with the ASP integer encoding
+above. Soort and precision are no less normative here; they are crossed by
+the verifier's identity engine instead.
+
+*History:* this clause is the consumer half of the WF-091 work. Before it,
+the Drools backend read the wire annotation at its write boundary, its
+additive operand boundary, its `Let` cluster and its aggregation result
+type, and answered **3.750,00** where `ref` and clingo answered **3,75** on
+a unit-lying aggregation result — a divergence the verifier cannot see,
+because a derived type has no single declaration to be crossed against.
+
 ---
 
 ## 3. Timeline algebra

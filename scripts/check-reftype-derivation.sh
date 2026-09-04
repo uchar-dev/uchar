@@ -1,5 +1,5 @@
 #!/bin/sh
-# The reference-type derivation harness (RUNTIME-SEMANTICS ch. 2.7, "the consumer clause").
+# The reference-type derivation harness (RUNTIME-SEMANTICS ch. 2.10, "the consumer clause").
 #
 # A v0 IR node repeats its type on the wire at positions where that type is a COPY of a
 # declaration — an AttribuutRef, a ParameterRef, a DimensieCel read, a binder read — or a
@@ -56,7 +56,7 @@
 #   [1e9] (the ch. 4.10 Let/BinderRef nodes reach this backend as carriers, and their wire
 #   annotation is what the carrier holds).
 #
-# NOT twisted, each because the annotation IS the source there (ch. 2.7's exceptions):
+# NOT twisted, each because the annotation IS the source there (ch. 2.10's exceptions):
 #   - a Literal: its type is the lexeme's own carrier ("3,5 EUR"), a copy of nothing. All three
 #     executors read it, and must.
 #   - the DURATION operand of a date +/- duration Binair: ref (eval.ml) and the ASP translator

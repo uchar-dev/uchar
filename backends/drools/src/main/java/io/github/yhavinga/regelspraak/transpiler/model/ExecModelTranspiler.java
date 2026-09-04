@@ -118,6 +118,12 @@ public final class ExecModelTranspiler {
      *  wire nodes. Keyed by IDENTITY (the carriers are value-equal records). Empty by default — every carrier is
      *  then an ordinary unresolved leaf and every value path refuses it loudly, the pre-2026-09-01 behaviour. */
     private Map<Object, io.github.yhavinga.regelspraak.loader.LetVorm> letVormen = new java.util.IdentityHashMap<>();
+    /** RUNTIME-SEMANTICS ch. 2.10: the §4 EFFECTIVE-unit derivation — declarations plus the ch. 2.6 join rules.
+     *  Every unit restatement below takes its datatypes from here; a bare {@code e.type()} at a restatement site
+     *  reads the wire's REPETITION of a declaration instead of the declaration, which is what made this backend
+     *  answer 3.750,00 where ref and clingo answer 3,75 on a unit-lying aggregation result type. */
+    private io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid eff =
+            new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(java.util.Map.of());
     private final List<String> overgeslagen = new ArrayList<>();
     /** Build-time-only gate: true WHILE lowering a scalar consequence value (the THEN-waarde), the single
      *  context where a §13.4.1 multi-hop navigation chain may lower ({@link #navKetenReader}) — mirroring
@@ -160,6 +166,12 @@ public final class ExecModelTranspiler {
      *  keeps the bare name, so all name-keyed mechanisms are unaffected. Mirrors DrlTranspiler's header prefix. */
     private String kop(String geëmitteerdeNaam) { return model.geëmitteerdeRegelNaam(geëmitteerdeNaam); }
 
+    /** The §4 restatement datatype of {@code e}: its annotation with the EFFECTIVE unit grafted on
+     *  ({@link io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid}). Every restatement argument in
+     *  this file goes through here — a bare {@code e.type()} feeding {@code herschaald} / {@code herschaalWaarde} /
+     *  {@code restatement} / {@code eenheidOf} is the defect this replaces. Null-safe (null in, null out). */
+    private Datatype effType(Expr e) { return eff.van(e); }
+
     /** Build the exec {@link Model} AND expose the skipped-construct reasons (for the differential harness to
      *  decide a fixture is "not yet migrated" rather than a divergence). Fact beans resolve against
      *  {@code beanLoader}; null routes to this transpiler's own loader. */
@@ -187,6 +199,8 @@ public final class ExecModelTranspiler {
             t.letVormen = new java.util.IdentityHashMap<>();   // identity, for the same reason as rolBindingen
             t.letVormen.putAll(letVormen);
         }
+        // after letVormen: the derivation reads a binder's unit through that side channel (ch. 4.10).
+        t.eff = new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(t.letVormen);
         t.model0 = t.run();
         return t;
     }
@@ -491,7 +505,7 @@ public final class ExecModelTranspiler {
         } else if (dimAgg != null) {
             // §5.8.5 a dimensie-fold (SOM/MIN/MAX over a gedimensioneerd attribuut's selected labels) collapses a
             // Map<label,value> to a SCALAR — a fixed fold, NOT an instance accumulate, reading no globals.
-            dimAgg = dimAgg.herschaald(r.waarde().type(), doel.type());   // §4 EXACT restate the fold into the doel unit
+            dimAgg = dimAgg.herschaald(effType(r.waarde()), effType(doel));   // §4 EXACT restate the fold into the doel unit
             BiFunction<Object, Map<String, BigDecimal>, Object> fn = dimAgg.fn();
             consequence = DSL.on(sVar).execute((Block2<org.drools.model.Drools, Object>) (drools, s) ->
                     werkBij(drools, s, doelGetter, doelSetter, fn.apply(s, Map.of()), staandScalairDoel));
@@ -500,7 +514,7 @@ public final class ExecModelTranspiler {
             // navigated List<Segment>, optionally gedurende-clipped) — NOT an instance accumulate. It reads no globals
             // EXCEPT a §7.1 EUR71 gedurende-comparison vs a Parameter grens ("... groter is dan de grens"), which the
             // WaardeFn surfaces; bind those like the scalar path so the consequence reads them from the global map.
-            tijdTotaal = tijdTotaal.herschaald(r.waarde().type(), doel.type());   // §4 EXACT restate the totaal into the doel unit
+            tijdTotaal = tijdTotaal.herschaald(effType(r.waarde()), effType(doel));   // §4 EXACT restate the totaal into the doel unit
             BiFunction<Object, Map<String, BigDecimal>, Object> fn = tijdTotaal.fn();
             List<String> gnames = new ArrayList<>(tijdTotaal.globals());
             List<Variable> vars = new ArrayList<>();
@@ -528,6 +542,7 @@ public final class ExecModelTranspiler {
             if (agg == null) return skip("regel (" + (aggregatieReden != null ? aggregatieReden
                     : "aggregatie buiten Phase-C scope") + "): " + r.naam());
             extra.add(agg.accItem());
+            final Datatype aggVan = effType(fx), aggNaar = effType(doel);   // §4 declaration-derived, once at build
             if (agg.isSom()) {
                 // §5.8.2 sommatie: an empty sum (0 non-empty contributors) is the leegwaarde fallback, not 0.
                 Variable cntVar = agg.countVar(), sumVar = agg.resultVar();
@@ -536,14 +551,14 @@ public final class ExecModelTranspiler {
                     BigDecimal v0 = ((Number) cnt).longValue() == 0L
                             ? (fallback == null ? null : (BigDecimal) fallback.fn().apply(s, Map.of()))
                             : RegelSpraakRuntime.toBd(sum);
-                    Object v = herschaalWaarde(v0, fx.type(), doel.type());   // §4 EXACT restate the aggregate into the doel unit
+                    Object v = herschaalWaarde(v0, aggVan, aggNaar);   // §4 EXACT restate the aggregate into the doel unit
                     werkBij(drools, s, doelGetter, doelSetter, v, staandScalairDoel);
                 };
                 consequence = DSL.on(sVar, (Variable) cntVar, (Variable) sumVar).execute(body);
             } else {
                 Variable resVar = agg.resultVar();
                 Block3<org.drools.model.Drools, Object, Object> body = (drools, s, res) -> {
-                    Object v = herschaalWaarde(RegelSpraakRuntime.toBd(res), fx.type(), doel.type());   // §4 EXACT restate the aggregate into the doel unit
+                    Object v = herschaalWaarde(RegelSpraakRuntime.toBd(res), aggVan, aggNaar);   // §4 EXACT restate the aggregate into the doel unit
                     werkBij(drools, s, doelGetter, doelSetter, v, staandScalairDoel);
                 };
                 consequence = DSL.on(sVar, (Variable) resVar).execute(body);
@@ -569,6 +584,7 @@ public final class ExecModelTranspiler {
             }
             vars.addAll(accVars);
             final List<String> fgn = gnames; final int nG = gnames.size(); final int nAgg = accVars.size();
+            final Datatype mixVan = effType(r.waarde()), mixNaar = effType(doel);   // §4 declaration-derived, once at build
             consequence = consequenceOf(vars.toArray(new Variable[0]), (drools, args) -> {
                 Object s = args[0];
                 Map<String, BigDecimal> gm = new LinkedHashMap<>();
@@ -576,7 +592,7 @@ public final class ExecModelTranspiler {
                 Object[] aggs = new Object[nAgg];
                 for (int i = 0; i < nAgg; i++) aggs[i] = args[1 + nG + i];
                 Object v = eval.apply(s, gm, aggs);
-                v = herschaalWaarde(v, r.waarde().type(), doel.type());   // §4 EXACT restate the whole value into the doel unit
+                v = herschaalWaarde(v, mixVan, mixNaar);   // §4 EXACT restate the whole value into the doel unit
                 werkBij(drools, s, doelGetter, doelSetter, v, staandScalairDoel);
             });
             if (consequence == null) return skip("regel (aggregatie-waarde: te veel gebonden variabelen): " + r.naam());
@@ -615,7 +631,7 @@ public final class ExecModelTranspiler {
             extra.addAll(navReactiviteit(r.waarde(), doel.objecttype(), sVar));
             // §4 value-side unit restatement, EXACT (a kenmerk value is Boolean, no unit). Mirrors DrlTranspiler.omrekenWaarde.
             if (r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING)
-                wf = wf.herschaald(r.waarde().type(), doel.type());
+                wf = wf.herschaald(effType(r.waarde()), effType(doel));
             // resolve the referenced globals; an unregistered one (e.g. a temporal parameter) -> honest skip. The
             // consequence binds [subject, g0, g1, ...] via consequenceOf (up to Block10 = 9 vars); the body rebuilds
             // the name->value map. >1 distinct global is now supported (e.g. a value of two parameters).
@@ -1127,12 +1143,13 @@ public final class ExecModelTranspiler {
         String rol = model.verbindendeRol(elem, subject);
         if (rol == null) return null;
         // §4.1 the per-element unit restatement factor (equal unit -> no scale; incompatible -> not this fold).
-        Eenheid eu = a.type().eenheidOf(), du = doelType == null ? null : doelType.eenheidOf();
+        Datatype aType = effType(a);
+        Eenheid eu = aType.eenheidOf(), du = doelType == null ? null : doelType.eenheidOf();
         BigDecimal factor = null; boolean deel = false;
         if (!java.util.Objects.equals(eu, du)) {
             if (eu == null || du == null || !eu.convertibleNaar(du)) return null;
             if (eu.vereistOmrekening(du)) {
-                BigDecimal fwd = valueFactor(a.type(), doelType), inv = valueFactor(doelType, a.type());
+                BigDecimal fwd = valueFactor(aType, doelType), inv = valueFactor(doelType, aType);
                 deel = inv != null && inv.precision() < fwd.precision();
                 factor = deel ? inv : fwd;
             }
@@ -1511,7 +1528,7 @@ public final class ExecModelTranspiler {
         if (g == null) return null;   // non-numeric / unregistered global -> skip (DRL needs the global declared too)
         String attr = la.attribuut();
         Conditie.Operator op = v.op();
-        BigDecimal[] ff = restatement(la.type(), pr.parameter().datatype());        // §5.1 Tabel 32 unit restatement
+        BigDecimal[] ff = restatement(effType(la), pr.parameter().datatype());        // §5.1 Tabel 32 unit restatement
         return new GlobalVergelijking(g, (e, gv) -> vergelijk(scale(num(e, attr), ff[0]), scale(gv, ff[1]), op));
     }
 
@@ -1634,7 +1651,7 @@ public final class ExecModelTranspiler {
         else return null;
         if (!(tijd.type().isNumeriek() || tijd.type().isPercentage())) return null;
         if (ander instanceof Expr.AttribuutRef ar && isTemporeel82(ar)) return null;   // both-temporal (timeline vs timeline) -> skip
-        io.github.yhavinga.regelspraak.model.Eenheid el = tijd.type().eenheidOf(), er = ander.type().eenheidOf();
+        io.github.yhavinga.regelspraak.model.Eenheid el = eff.eenheidVan(tijd), er = eff.eenheidVan(ander);
         if (el != null && er != null && el.vereistOmrekening(er)) return null;   // cross-unit -> skip (raw-magnitude would be wrong)
         Integer code = Tijdrekening.toets(linksTemp ? v.op() : Operatoren.omkeren(v.op()));        // temporal operand on the left (REVERSE)
         if (code == null) return null;                                           // datum ordering -> skip
@@ -1873,7 +1890,7 @@ public final class ExecModelTranspiler {
                     && subject.attribuutGranulariteit.containsKey(ba.attribuut())
                     && !subject.attribuutTijdlijnAantal.containsKey(ba.attribuut())) {
                 baseGran = subject.attribuutGranulariteit.get(ba.attribuut());
-                baseType = ba.type();
+                baseType = effType(ba);
                 String baseAttr = ba.attribuut();
                 baseReader = (s, gv) -> (List<?>) RegelSpraakRuntime.get(s, baseAttr);
             } else if (base instanceof Expr.AttribuutRef ba && ba.navigatieRol() != null && !ba.set()
@@ -1884,7 +1901,7 @@ public final class ExecModelTranspiler {
                 java.util.function.Function<Object, Object> nav = navReader(ba, subject);
                 if (nav != null) {
                     baseGran = ba.objecttype().attribuutGranulariteit.get(ba.attribuut());
-                    baseType = ba.type();
+                    baseType = effType(ba);
                     baseReader = (s, gv) -> (List<?>) nav.apply(s);
                 }
             } else if (base instanceof Expr.ParameterRef bp && bp.parameter().granulariteit() != null) {
@@ -1956,7 +1973,7 @@ public final class ExecModelTranspiler {
         // LEFT operand's unit (restate the right into it), THEN restate the SUM ONCE to the doel unit — scaling each
         // operand to the doel FIRST double-rounds a non-terminating factor (review wf_115473d5-eee F1). Mirrors DRL.
         if (w instanceof Expr.Binair bin && (bin.op() == Expr.BinOp.PLUS || bin.op() == Expr.BinOp.MIN) && subject != null) {
-            Datatype sumType = bin.links().type();
+            Datatype sumType = effType(bin.links());
             java.util.function.Function<Object, List<?>> l = temporeelRekenOperand(bin.links(), subject, gran, sumType);
             java.util.function.Function<Object, List<?>> rr = temporeelRekenOperand(bin.rechts(), subject, gran, sumType);
             Class<?> segCls = segmentClass();
@@ -1980,7 +1997,7 @@ public final class ExecModelTranspiler {
         // §5.1.4 an N-operand chain ("a plus b plus c" = Binair(Binair(a,b), c)): the operand is itself a temporal sub-sum.
         // Recurse — sum in the LEFT sub-operand's unit, then restate the sub-sum ONCE to unitTarget. Mirrors DRL.
         if (e instanceof Expr.Binair bin && (bin.op() == Expr.BinOp.PLUS || bin.op() == Expr.BinOp.MIN)) {
-            Datatype subSum = bin.links().type();
+            Datatype subSum = effType(bin.links());
             java.util.function.Function<Object, List<?>> l = temporeelRekenOperand(bin.links(), subject, gran, subSum);
             java.util.function.Function<Object, List<?>> r = temporeelRekenOperand(bin.rechts(), subject, gran, subSum);
             Class<?> segCls = segmentClass();
@@ -2003,7 +2020,7 @@ public final class ExecModelTranspiler {
         if (og == null || og.ordinal() < gran.ordinal()) return null;
         if (ot.attribuutTijdlijnAantal.containsKey(a.attribuut())) return null;   // multi-period -> out of scope
         final java.util.function.Function<Object, Object> fr = reader;
-        return schaalTijd(s -> (List<?>) fr.apply(s), a.type(), unitTarget);   // §4.1 restate into the sum unit (null -> marker)
+        return schaalTijd(s -> (List<?>) fr.apply(s), effType(a), unitTarget);   // §4.1 restate into the sum unit (null -> marker)
     }
 
     /** §4.1/§5.1.4.2 wrap a (subject -&gt; List&lt;Segment&gt;) timeline producer to restate it from {@code van}'s unit into
@@ -2174,14 +2191,14 @@ public final class ExecModelTranspiler {
             if (v.rechts() instanceof Expr.Literal lit && lit.type().isNumeriek()) {
                 BigDecimal rhs = bd(lit);
                 if (rhs == null) return null;
-                BigDecimal[] f = restatement(la.type(), lit.type());
+                BigDecimal[] f = restatement(effType(la), effType(lit));
                 BigDecimal rhsS = scale(rhs, f[1]);
                 return s -> vergelijk(scale(num(s, lattr), f[0]), rhsS, op);
             }
             if (v.rechts() instanceof Expr.AttribuutRef ra && ra.navigatieRol() == null) {
                 if (subject != null && subject.attribuutGranulariteit.containsKey(ra.attribuut())) return null;
                 String rattr = ra.attribuut();
-                BigDecimal[] f = restatement(la.type(), ra.type());
+                BigDecimal[] f = restatement(effType(la), effType(ra));
                 return s -> vergelijk(scale(num(s, lattr), f[0]), scale(num(s, rattr), f[1]), op);
             }
             return null;
@@ -2313,6 +2330,9 @@ public final class ExecModelTranspiler {
         if (durExpr.type().isDatum() || (!optellen && !datumLinks)) return null;   // datum-datum / duur-min-datum
         // §6.11 datum ± N <dagsoort> ("5 werkdagen"): step day-by-day counting the §9.8 dagsoort days. A dagsoort is
         // day-granular -> a Datum in dagen (LocalDate) operand only. Both back-ends call rsDatumPlusDagsoort (single-runtime principle).
+        // ANNOTATION BY DESIGN (WF-035, RUNTIME-SEMANTICS ch. 2.10 exception 2): the duration operand's calendar
+        // unit is what routes date arithmetic, and ref routes on the same static type — deriving it here would
+        // split the two. scripts/check-reftype-derivation.sh leaves this position untwisted for that reason.
         io.github.yhavinga.regelspraak.model.Eenheid durEenheid = durExpr.type().eenheidOf();
         String dagsoortUnit = durEenheid != null ? model.dagsoortVoorEenheid(durEenheid.afkorting()) : null;
         if (dagsoortUnit != null) {
@@ -2426,7 +2446,7 @@ public final class ExecModelTranspiler {
             else if (v.rechts() instanceof Expr.AttribuutRef ra && isTemporeel82(ra)) { tijd = ra; ander = v.links();  linksTemp = false; }
             else return null;
             if (!(tijd.type().isNumeriek() || tijd.type().isPercentage())) return null;
-            io.github.yhavinga.regelspraak.model.Eenheid el = tijd.type().eenheidOf(), er = ander.type().eenheidOf();
+            io.github.yhavinga.regelspraak.model.Eenheid el = eff.eenheidVan(tijd), er = eff.eenheidVan(ander);
             // §8.2 cross-unit grens: restate it from er into the timeline's unit el via the EXACT factor (mirrors DRL
             // herschaalExact); an OPAQUE product unit (no exact factors) stays a marker (symmetric with DRL).
             boolean crossUnit = el != null && er != null && el.vereistOmrekening(er);
@@ -2450,7 +2470,7 @@ public final class ExecModelTranspiler {
                 }
                 if (g == null) return null;
             }
-            if (crossUnit) g = g.herschaald(ander.type(), tijd.type());   // §4 EXACT restate the grens into the timeline's unit
+            if (crossUnit) g = g.herschaald(effType(ander), effType(tijd));   // §4 EXACT restate the grens into the timeline's unit
             return new Gp82(tl, code, g, gran, gp.niet());
         }
         if (c instanceof Conditie.Predicaat p && p.soort() == Conditie.Predicaatsoort.GEVULD
@@ -2494,7 +2514,7 @@ public final class ExecModelTranspiler {
             else return null;   // not a temporal-set comparison -> scalar path
             if (!(tijd.type().isNumeriek() || tijd.type().isPercentage())) return null;
             if (ander instanceof Expr.AttribuutRef ar && isTemporeel82(ar)) return null;   // timeline-vs-timeline -> skip (symmetric marker)
-            Eenheid el = tijd.type().eenheidOf(), er = ander.type().eenheidOf();
+            Eenheid el = eff.eenheidVan(tijd), er = eff.eenheidVan(ander);
             boolean crossUnit = el != null && er != null && el.vereistOmrekening(er);
             if (crossUnit && er.exacteHerschaalFactoren(el) == null) return null;
             Integer code = Tijdrekening.toets(linksTemp ? v.op() : Operatoren.omkeren(v.op()));
@@ -2506,7 +2526,7 @@ public final class ExecModelTranspiler {
                 return null;
             WaardeFn g = scalarWaarde(null, ander);
             if (g == null) return null;   // unlowerable grens -> skip (symmetric marker)
-            if (crossUnit) g = g.herschaald(ander.type(), tijd.type());
+            if (crossUnit) g = g.herschaald(effType(ander), effType(tijd));
             toets = code; grensFn = g; tijdType = tijd.type();
         } else if (c instanceof Conditie.Predicaat p && p.soort() == Conditie.Predicaatsoort.GEVULD
                 && p.operand() instanceof Expr.AttribuutRef pa && pa.set() && isTemporeelSet82(pa)) {
@@ -2824,7 +2844,7 @@ public final class ExecModelTranspiler {
             if (g == null) return null;
             String attr = la.attribuut();
             Conditie.Operator op = v.op();
-            BigDecimal[] f = restatement(la.type(), pr.parameter().datatype());  // §5.1 Tabel 32 unit restatement
+            BigDecimal[] f = restatement(effType(la), pr.parameter().datatype());  // §5.1 Tabel 32 unit restatement
             return new Gate(pattern.expr(nextId("c"), (Variable) g,
                     (Predicate2) (s, gv) -> vergelijk(scale(num(s, attr), f[0]), scale((BigDecimal) gv, f[1]), op)), List.of());
         }
@@ -2841,7 +2861,7 @@ public final class ExecModelTranspiler {
             if (g == null) return null;
             String attr = la.attribuut();
             Conditie.Operator op = v.op();
-            BigDecimal[] f = restatement(la.type(), pr.parameter().datatype());  // §5.1 Tabel 32 unit restatement
+            BigDecimal[] f = restatement(effType(la), pr.parameter().datatype());  // §5.1 Tabel 32 unit restatement
             return new Gate(pattern.expr(nextId("c"), (Variable) g, (Predicate2) (s, gv) -> {
                 // §5.5.5 an ABSENT relation reads the navigated attribute as LEEG (null), then vergelijk's §5 leegwaarde
                 // tables decide — NOT a blanket short-circuit-to-false (which was WRONG for ONGELIJK: leeg != global is
@@ -2875,7 +2895,7 @@ public final class ExecModelTranspiler {
                     String gn = gset.iterator().next();
                     Global<?> g = waardeGlobal(gn);   // numeric Parameter or the §5.3 rekendatum pseudo-slot
                     if (g != null) {   // (a date/tekst Parameter-global -> null -> fall through -> skip)
-                        BigDecimal[] f = restatement(v.links().type(), v.rechts().type());   // §5.1 Tabel 32 unit restatement
+                        BigDecimal[] f = restatement(effType(v.links()), effType(v.rechts()));   // §5.1 Tabel 32 unit restatement
                         BiFunction<Object, Map<String, BigDecimal>, Object> lfn = lw.fn(), rfn = rw.fn();
                         Conditie.Operator op = v.op();
                         return new Gate(pattern.expr(nextId("c"), (Variable) g, (Predicate2) (s, gv) ->
@@ -2886,7 +2906,7 @@ public final class ExecModelTranspiler {
                     // §8.1.1 a comparison reading 2..3 DISTINCT numeric globals ("zijn basistarief plus de toeslag groter
                     // is dan de grens") — bind each via DSL.from into its own declaration (no exec-model collapse), the
                     // comparison rides the last from-declaration's pattern. DRL reads each global as a free name.
-                    BigDecimal[] f = restatement(v.links().type(), v.rechts().type());
+                    BigDecimal[] f = restatement(effType(v.links()), effType(v.rechts()));
                     BiFunction<Object, Map<String, BigDecimal>, Object> lfn = lw.fn(), rfn = rw.fn();
                     Conditie.Operator op = v.op();
                     Gate g = nGlobalGate(new ArrayList<>(gset), pattern, subjectVar, (s, gm) ->
@@ -3098,7 +3118,7 @@ public final class ExecModelTranspiler {
             if (rhs == null) return null;
             String attr = la.attribuut();
             Conditie.Operator op = v.op();
-            BigDecimal[] f = restatement(la.type(), lit.type());   // §5.1 Tabel 32 unit restatement (e.g. mnd vs jr)
+            BigDecimal[] f = restatement(effType(la), effType(lit));   // §5.1 Tabel 32 unit restatement (e.g. mnd vs jr)
             BigDecimal rhsScaled = scale(rhs, f[1]);
             return s -> vergelijk(scale(num(s, attr), f[0]), rhsScaled, op);
         }
@@ -3117,7 +3137,7 @@ public final class ExecModelTranspiler {
             if (rhs == null) return null;
             String attr = la.attribuut();
             Conditie.Operator op = v.op();
-            BigDecimal[] f = restatement(la.type(), lit.type());
+            BigDecimal[] f = restatement(effType(la), effType(lit));
             BigDecimal rhsScaled = scale(rhs, f[1]);
             return s -> {
                 Object rel = RegelSpraakRuntime.get(s, rol);
@@ -3143,7 +3163,7 @@ public final class ExecModelTranspiler {
             if (rol == null) return null;
             String lattr = la.attribuut(), rattr = ra.attribuut();
             Conditie.Operator op = v.op();
-            BigDecimal[] f = restatement(la.type(), ra.type());
+            BigDecimal[] f = restatement(effType(la), effType(ra));
             return s -> {
                 Object rel = RegelSpraakRuntime.get(s, rol);
                 Object lval = rel == null ? null : RegelSpraakRuntime.get(rel, lattr);   // §5.5.5 null relation -> leeg -> vergelijk (Tabel 44)
@@ -3163,7 +3183,7 @@ public final class ExecModelTranspiler {
             if (!subject.dimensiesVan(la.attribuut()).isEmpty() || !subject.dimensiesVan(ra.attribuut()).isEmpty()) return null;  // §3.6 -> marker
             String lattr = la.attribuut(), rattr = ra.attribuut();
             Conditie.Operator op = v.op();
-            BigDecimal[] f = restatement(la.type(), ra.type());
+            BigDecimal[] f = restatement(effType(la), effType(ra));
             return s -> vergelijk(scale(num(s, lattr), f[0]), scale(num(s, rattr), f[1]), op);
         }
         // §8.1.1 a DATUM ordering comparison (eerder/later/eerder-of-gelijk/later-of-gelijk) of an OWN or to-one
@@ -3261,7 +3281,7 @@ public final class ExecModelTranspiler {
             if (parityOnveilig(v.links())) return null;   // §3.6 dimensiecel / cross-unit +/- -> DRL markers -> skip (symmetric)
             WaardeFn lw = scalarWaarde(subject, v.links());   // the value-path subject rides as a parameter (no-mutable-build-state)
             if (lw == null || !lw.globals().isEmpty()) return null;   // unlowerable / unresolvable navigation / needs a global -> skip
-            BigDecimal[] f = restatement(v.links().type(), lit.type());
+            BigDecimal[] f = restatement(effType(v.links()), effType(lit));
             BiFunction<Object, Map<String, BigDecimal>, Object> lfn = lw.fn();
             Conditie.Operator op = v.op();
             // §389/§486: a Breuk-capable left operand (a non-terminating division/percentage or a rational literal)
@@ -3298,7 +3318,7 @@ public final class ExecModelTranspiler {
             if (parityOnveilig(v.links()) || parityOnveilig(v.rechts())) return null;   // §3.6 dimensiecel / cross-unit +/- -> DRL markers -> skip (symmetric)
             WaardeFn lw = scalarWaarde(subject, v.links()), rw = scalarWaarde(subject, v.rechts());
             if (lw == null || rw == null || !lw.globals().isEmpty() || !rw.globals().isEmpty()) return null;   // unlowerable / unresolvable navigation / needs a global -> skip
-            BigDecimal[] f = restatement(v.links().type(), v.rechts().type());
+            BigDecimal[] f = restatement(effType(v.links()), effType(v.rechts()));
             BiFunction<Object, Map<String, BigDecimal>, Object> lfn = lw.fn(), rfn = rw.fn();
             Conditie.Operator op = v.op();
             // §389/§486: when an operand can carry an exact Breuk (a non-terminating division/percentage or a
@@ -3683,17 +3703,17 @@ public final class ExecModelTranspiler {
             // (min-then-max, a leeg basis stays leeg). Mirrors DrlTranspiler's value-side clamp ternaries.
             WaardeFn baseF = scalarWaarde(valueSubject, bg.basis());
             if (baseF == null) return null;
-            Datatype bt = bg.basis().type();
+            Datatype bt = effType(bg.basis());
             WaardeFn minF = null, maxF = null;
             if (bg.minimum() != null) {
                 minF = scalarWaarde(valueSubject, bg.minimum());
                 if (minF == null) return null;
-                minF = minF.herschaald(bg.minimum().type(), bt);   // §4 EXACT restate the bound into the basis unit
+                minF = minF.herschaald(effType(bg.minimum()), bt);   // §4 EXACT restate the bound into the basis unit
             }
             if (bg.maximum() != null) {
                 maxF = scalarWaarde(valueSubject, bg.maximum());
                 if (maxF == null) return null;
-                maxF = maxF.herschaald(bg.maximum().type(), bt);   // §4 EXACT restate the bound into the basis unit
+                maxF = maxF.herschaald(effType(bg.maximum()), bt);   // §4 EXACT restate the bound into the basis unit
             }
             BiFunction<Object, Map<String, BigDecimal>, Object> bfn = baseF.fn();
             BiFunction<Object, Map<String, BigDecimal>, Object> mnfn = minF == null ? null : minF.fn();
@@ -3724,7 +3744,7 @@ public final class ExecModelTranspiler {
             if (lf == null || rf == null) return null;
             Expr.BinOp op = b.op();
             if (op == Expr.BinOp.PLUS || op == Expr.BinOp.MIN || op == Expr.BinOp.VERMINDERD_MET)
-                rf = rf.herschaald(b.rechts().type(), b.links().type());   // §4 EXACT restate rhs into lhs unit (self-noops if same)
+                rf = rf.herschaald(effType(b.rechts()), effType(b.links()));   // §4 EXACT restate rhs into lhs unit (self-noops if same)
             BiFunction<Object, Map<String, BigDecimal>, Object> lfn = lf.fn(), rfn = rf.fn();
             Set<String> g = new LinkedHashSet<>(lf.globals()); g.addAll(rf.globals());
             return new WaardeFn((s, gm) -> {
@@ -3980,7 +4000,7 @@ public final class ExecModelTranspiler {
     private LetConditie letConditie(Objecttype valueSubject, Conditie c) {
         if (!(c instanceof Conditie.Vergelijking v) || !isNumeriekOp(v.op())) return null;
         if (!getalachtigVergelijkbaar(v.links()) || !getalachtigVergelijkbaar(v.rechts())) return null;
-        BigDecimal[] f = restatement(v.links().type(), v.rechts().type());
+        BigDecimal[] f = restatement(effType(v.links()), effType(v.rechts()));
         if (f[0].compareTo(BigDecimal.ONE) != 0 || f[1].compareTo(BigDecimal.ONE) != 0) return null;   // cross-unit guard
         WaardeFn lw = scalarWaarde(valueSubject, v.links()), rw = scalarWaarde(valueSubject, v.rechts());
         if (lw == null || rw == null) return null;
@@ -4112,6 +4132,8 @@ public final class ExecModelTranspiler {
                 // a TIME unit (uur/.../ms) demanding datum-tijd operands. A kwartaal/unrecognised non-dagsoort unit -> skip.
                 if (a.size() != 2) return null;
                 boolean absoluut = f.kind() == Expr.FunctieKind.ABSOLUTE_TIJDSDUUR;
+                // ANNOTATION BY DESIGN (WF-038, ch. 2.10 exception 3): a tijdsduur's own unit IS the operator's
+                // parameter ("in jaren"), not a derived result type — ref reads the same node type here.
                 io.github.yhavinga.regelspraak.model.Eenheid e = f.type().eenheidOf();
                 String dagsoortUnit = e != null ? model.dagsoortVoorEenheid(e.afkorting()) : null;
                 if (dagsoortUnit != null) {
@@ -4177,14 +4199,14 @@ public final class ExecModelTranspiler {
         boolean kleinste = f.kind() == Expr.FunctieKind.MINIMUM || f.kind() == Expr.FunctieKind.EERSTE;
         boolean grootste = f.kind() == Expr.FunctieKind.MAXIMUM || f.kind() == Expr.FunctieKind.LAATSTE;
         if ((!kleinste && !grootste) || f.argumenten().size() < 2 || f.filter() != null) return null;
-        Datatype doel = f.argumenten().get(0).type();   // Eenheid1: result carries the first operand's unit
+        Datatype doel = effType(f.argumenten().get(0));   // Eenheid1: result carries the first operand's unit
         List<BiFunction<Object, Map<String, BigDecimal>, Object>> fns = new ArrayList<>();
         Set<String> g = new LinkedHashSet<>();
         for (int i = 0; i < f.argumenten().size(); i++) {
             Expr arg = f.argumenten().get(i);
             WaardeFn wf = scalarWaarde(valueSubject, arg);
             if (wf == null) return null;   // a set/instance-aggregation or unlowerable operand -> skip (DRL markers too)
-            if (i > 0) wf = wf.herschaald(arg.type(), doel);   // §4 EXACT restate operand i into the result unit (Eenheid1)
+            if (i > 0) wf = wf.herschaald(effType(arg), doel);   // §4 EXACT restate operand i into the result unit (Eenheid1)
             fns.add(wf.fn());
             g.addAll(wf.globals());
         }
@@ -4406,10 +4428,11 @@ public final class ExecModelTranspiler {
     /** Whether a begrenzing {@code grens} (min/max) is parity-UNSAFE to restate into {@code basisType}'s unit inside a
      *  CONSTRAINT: it needs a unit restatement (a different convertible unit) that is NOT exact (an opaque composite —
      *  DRL markers it, the exec must skip symmetrically). A null/same-unit/exactly-restatable bound is safe (FIRES). */
-    private static boolean grensOnveilig(Expr grens, Datatype basisType) {
+    private boolean grensOnveilig(Expr grens, Datatype basisType) {
         if (grens == null || grens.type() == null || basisType == null) return false;
-        Eenheid eb = basisType.eenheidOf(), eg = grens.type().eenheidOf();
-        return eb != null && eg != null && eb.vereistOmrekening(eg) && !eenheidExactHerschaalbaar(grens.type(), basisType);
+        Datatype gt = effType(grens);   // the DECLARED unit, never the node's repetition of it
+        Eenheid eb = basisType.eenheidOf(), eg = gt.eenheidOf();
+        return eb != null && eg != null && eb.vereistOmrekening(eg) && !eenheidExactHerschaalbaar(gt, basisType);
     }
 
     /** The EXACT canonical-unit restatement factors {fv, fn} to restate a value in {@code van} into {@code naar}
@@ -4484,17 +4507,17 @@ public final class ExecModelTranspiler {
      *  constraint — review F1), or a CROSS-UNIT +/- (DrlTranspiler.omrekenConditie markers it; the right operand restated
      *  into the left's unit truncates a non-terminating ratio mnd→jr = 1/12, a wrong firing — review F2). MAAL/GEDEELD do
      *  NOT restate units (§6.4), so they are unit-safe. Recurses through arithmetic / begrenzing / afronding / functie args. */
-    private static boolean parityOnveilig(Expr e) {
+    private boolean parityOnveilig(Expr e) {
         if (e instanceof Expr.DimensieCel) return true;
         if (e instanceof Expr.Binair b) {
             if (b.op() == Expr.BinOp.PLUS || b.op() == Expr.BinOp.MIN || b.op() == Expr.BinOp.VERMINDERD_MET) {
-                Eenheid el = b.links().type() == null ? null : b.links().type().eenheidOf();
-                Eenheid er = b.rechts().type() == null ? null : b.rechts().type().eenheidOf();
+                Eenheid el = eff.eenheidVan(b.links());
+                Eenheid er = eff.eenheidVan(b.rechts());
                 // A SIMPLE convertible cross-unit +/- now restates EXACTLY (×÷ canonical) and FIRES at parity with DRL's
                 // rsHerschaalExact; only a COMPOSITE (rate) / unknown-factor cross-unit +/- still restates lossily -> the
                 // exec keeps the symmetric skip (DRL herschaalConditiePlus markers it).
                 if (el != null && er != null && el.vereistOmrekening(er)
-                        && !eenheidExactHerschaalbaar(b.links().type(), b.rechts().type())) return true;
+                        && !eenheidExactHerschaalbaar(effType(b.links()), effType(b.rechts()))) return true;
             }
             return parityOnveilig(b.links()) || parityOnveilig(b.rechts());
         }
@@ -4506,13 +4529,13 @@ public final class ExecModelTranspiler {
             // must SKIP symmetrically with DRL's marker — but two such units are never inter-convertible, so a
             // convertible cross-unit bound never hits that branch (grensOnveilig). The VALUE-side begrenzing is
             // unaffected (it never reaches parityOnveilig).
-            Datatype bt = bg.basis().type();
+            Datatype bt = effType(bg.basis());
             return grensOnveilig(bg.minimum(), bt) || grensOnveilig(bg.maximum(), bt)
                     || parityOnveilig(bg.basis())
                     || (bg.minimum() != null && parityOnveilig(bg.minimum())) || (bg.maximum() != null && parityOnveilig(bg.maximum()));
         }
         if (e instanceof Expr.Afgerond af) return parityOnveilig(af.basis());
-        if (e instanceof Expr.Functie f) return f.argumenten().stream().anyMatch(ExecModelTranspiler::parityOnveilig);
+        if (e instanceof Expr.Functie f) return f.argumenten().stream().anyMatch(this::parityOnveilig);
         return false;
     }
     /** The six numeric comparison operators the model lowers; EERDER/LATER (datum) are a later phase (caller skips). */
@@ -4845,7 +4868,7 @@ public final class ExecModelTranspiler {
         if (v.rechts() instanceof Expr.AttribuutRef ra) {
             java.util.function.Function<Object, Object> rRead = consistentieReader(ra, subject);
             if (rRead == null) return null;
-            BigDecimal[] f = restatement(la.type(), ra.type());
+            BigDecimal[] f = restatement(effType(la), effType(ra));
             return s -> {
                 BigDecimal a = scale(RegelSpraakRuntime.toBd(lRead.apply(s)), f[0]), b = scale(RegelSpraakRuntime.toBd(rRead.apply(s)), f[1]);
                 return gelijkheid ? vergelijk(a, b, flip) : (a == null || b == null || vergelijk(a, b, flip));
@@ -4854,7 +4877,7 @@ public final class ExecModelTranspiler {
         if (v.rechts() instanceof Expr.Literal lit && lit.type().isNumeriek()) {
             BigDecimal rhs = bd(lit);
             if (rhs == null) return null;
-            BigDecimal[] f = restatement(la.type(), lit.type());
+            BigDecimal[] f = restatement(effType(la), effType(lit));
             BigDecimal rhsS = scale(rhs, f[1]);
             return s -> {
                 BigDecimal a = scale(RegelSpraakRuntime.toBd(lRead.apply(s)), f[0]);
@@ -4930,7 +4953,7 @@ public final class ExecModelTranspiler {
         if (!globals.containsKey(gn)) return null;
         Conditie.Operator flip = Operatoren.flip(v.op());
         boolean gelijkheid = v.op() == Conditie.Operator.GELIJK || v.op() == Conditie.Operator.ONGELIJK;
-        BigDecimal[] f = restatement(la.type(), pr.parameter().datatype());
+        BigDecimal[] f = restatement(effType(la), pr.parameter().datatype());
         return new SchendingGlobal(gn, (s, gv) -> {
             BigDecimal a = scale(RegelSpraakRuntime.toBd(lRead.apply(s)), f[0]), b = scale(gv, f[1]);
             return gelijkheid ? vergelijk(a, b, flip) : (a == null || b == null || vergelijk(a, b, flip));

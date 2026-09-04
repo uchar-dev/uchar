@@ -52,8 +52,20 @@ public final class DrlTranspiler {
      *  the contract between the generated rules and the runtime. */
     public static final String FACT_PACKAGE = "io.github.yhavinga.regelspraak.facts";
     private final RegelSpraakModel model;
+    /** RUNTIME-SEMANTICS ch. 2.10: the §4 EFFECTIVE-unit derivation — declarations plus the ch. 2.6 join rules,
+     *  the ONE source every unit restatement below consults instead of a node's own wire annotation. The DRL
+     *  back-end consumes the v0 model alone (no ch. 4.10 Let side channel), so the derivation gets an empty one. */
+    private final io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid eff =
+            new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(java.util.Map.of());
     /** §9.2: the salience derivation over the declared kenmerk graph, shared with ExecModelTranspiler. */
     private final Stratificatie strat;
+
+    /** The §4 restatement datatype of {@code e}: its annotation with the EFFECTIVE unit grafted on. Every
+     *  restatement argument in this file goes through here — a bare {@code e.type()} feeding
+     *  {@code omrekenWaarde} / {@code herschaalConditie} / {@code herschaalExact} / {@code vergelijkingsOperanden}
+     *  is the defect this replaces. The two documented exceptions keep their annotation and say so at the site:
+     *  a date ± duration operand's calendar unit (WF-035) and a tijdsduur's own "in &lt;eenheid&gt;" (WF-038). */
+    private Datatype effType(Expr e) { return eff.van(e); }
     private final StringBuilder out = new StringBuilder();
     /** The {@link io.github.yhavinga.regelspraak.runtime.RegelSpraakRuntime} static helpers the rules called (method
      *  names), emitted once after the fact imports as {@code import function …RegelSpraakRuntime.<naam>;}
@@ -638,7 +650,7 @@ public final class DrlTranspiler {
         OperandDeel l = operandDeel(acc, v.links(), subject), r = operandDeel(acc, v.rechts(), subject);
         if (!l.genavigeerd() && !r.genavigeerd()) return null;
         if (l.marker() || r.marker()) return null;
-        String[] ov = vergelijkingsOperanden(l.waarde(), v.links().type(), r.waarde(), v.rechts().type());
+        String[] ov = vergelijkingsOperanden(l.waarde(), effType(v.links()), r.waarde(), effType(v.rechts()));
         String lv = ov[0], rv = ov[1];
         if (ordeningOfDatum(v.op()))   // Tabel 40-43: any empty operand -> onwaar -> violation
             return "(" + l.leeg() + " || " + r.leeg() + " || " + lv + " " + Operatoren.symbool(Operatoren.flip(v.op())) + " " + rv + ")";
@@ -1264,7 +1276,7 @@ public final class DrlTranspiler {
             // restate the value in the target's unit (§4); §6.1.2 forbids AUTO-rounding —
             // if the result has too many decimals the author must add an explicit afronding.
             if (r.waarde().type().isNumeriek())
-                valueStr = omrekenWaarde(valueStr, r.waarde().type(), a.type());
+                valueStr = omrekenWaarde(valueStr, effType(r.waarde()), effType(a));
             // §6.1.2 write boundary: collapse any remaining exact Breuk to its decimal value BEFORE the setter, so a
             // Breuk never reaches a BigDecimal field (mvel strict-mode resolves setX(BigDecimal), never setX(Object))
             // and the idempotent Objects.equals guard compares like-typed values. Only a COMPUTED value can be a Breuk
@@ -1751,6 +1763,8 @@ public final class DrlTranspiler {
             // §6.11 datum ± N <dagsoort> ("5 werkdagen"): not a fixed ChronoUnit — step day-by-day counting only the
             // dagsoort days (the §9.8 predicate). X never counts; the result is always a dagsoort day; 0/leeg -> X
             // unchanged. A dagsoort is day-granular, so the date operand must be a Datum in dagen (a LocalDate).
+            // ANNOTATION BY DESIGN (WF-035, RUNTIME-SEMANTICS ch. 2.10 exception 2): the duration operand's
+            // calendar unit is what routes date arithmetic, and ref routes on the same static type.
             io.github.yhavinga.regelspraak.model.Eenheid durEenheid = durExpr.type().eenheidOf();
             String dagsoortUnit = durEenheid != null ? model.dagsoortVoorEenheid(durEenheid.afkorting()) : null;
             if (dagsoortUnit != null) {
@@ -1779,7 +1793,7 @@ public final class DrlTranspiler {
         // §4: restate the right operand in the left operand's unit before +/- so a convertible-but-different unit
         // (mnd vs jr) is scaled, not added raw.
         Frag links = arg.apply(b.links());
-        Frag rechts = omrekenen.apply(arg.apply(b.rechts()), b.rechts().type(), b.links().type());
+        Frag rechts = omrekenen.apply(arg.apply(b.rechts()), effType(b.rechts()), effType(b.links()));
         if (links.marker() || rechts.marker())     // a marker propagates unwrapped (no leegwaarde noise)
             return Frag.from("(" + links.text() + " " + infix(b.op()) + " " + rechts.text() + ")", links, rechts);
         // §6.3 Tabel 7/8 — the ONE place "min" and "verminderd met" differ: both subtract, but a "verminderd met"
@@ -1864,9 +1878,9 @@ public final class DrlTranspiler {
             // rsBegrens (single-runtime, shared with the exec back-end): an inline mvel ternary
             // `r < m ? m : r` cannot compare a Breuk basis/bound, and clamps EXACTLY inside the helper.
             Frag r = waarde(acc, bg.basis(), subject);
-            Datatype bt = bg.basis().type();
-            Frag min = bg.minimum() == null ? null : omrekenWaarde(waarde(acc, bg.minimum(), subject), bg.minimum().type(), bt);
-            Frag max = bg.maximum() == null ? null : omrekenWaarde(waarde(acc, bg.maximum(), subject), bg.maximum().type(), bt);
+            Datatype bt = effType(bg.basis());
+            Frag min = bg.minimum() == null ? null : omrekenWaarde(waarde(acc, bg.minimum(), subject), effType(bg.minimum()), bt);
+            Frag max = bg.maximum() == null ? null : omrekenWaarde(waarde(acc, bg.maximum(), subject), effType(bg.maximum()), bt);
             java.util.List<Frag> delen = new java.util.ArrayList<>(); delen.add(r);
             if (min != null) delen.add(min);
             if (max != null) delen.add(max);
@@ -2004,6 +2018,8 @@ public final class DrlTranspiler {
         // §6.10 tijdsduur in N <dagsoort> ("in hele werkdagen"): COUNT the §9.8 dagsoort days in the interval
         // (signed; absolute when asked). The spec leaves the dagsoort boundary undefined; per §6.11's "X telt niet
         // mee" the interval is half-open (van, tot] (the §6.11-consistent reading). Day-granular -> Datum operands.
+        // ANNOTATION BY DESIGN (WF-038, ch. 2.10 exception 3): a tijdsduur's own unit IS the operator's parameter
+        // ("in hele werkdagen"), not a derived result type.
         io.github.yhavinga.regelspraak.model.Eenheid dagE = f.type().eenheidOf();
         String dagsoortUnit = dagE != null ? model.dagsoortVoorEenheid(dagE.afkorting()) : null;
         if (dagsoortUnit != null) {
@@ -2115,13 +2131,13 @@ public final class DrlTranspiler {
             default -> null;
         };
         if (cmp == null || f.argumenten().size() < 2) return null;
-        Datatype doel = f.argumenten().get(0).type();          // Eenheid1: result carries the first operand's unit
+        Datatype doel = effType(f.argumenten().get(0));          // Eenheid1: result carries the first operand's unit
         Frag accF = waarde(acc, f.argumenten().get(0), subject);
         if (accF.marker()) return null;
         String vouw = accF.text();
         for (int i = 1; i < f.argumenten().size(); i++) {
             Expr arg = f.argumenten().get(i);
-            Frag xF = omrekenWaarde(waarde(acc, arg, subject), arg.type(), doel);
+            Frag xF = omrekenWaarde(waarde(acc, arg, subject), effType(arg), doel);
             if (xF.marker()) return null;
             String x = xF.text();
             // null-skipping: fold empty → take x; x empty → keep fold; else compare. All-empty stays null.
@@ -2250,7 +2266,7 @@ public final class DrlTranspiler {
         else if (v.rechts() instanceof Expr.AttribuutRef ra && isTemporeelAttribuut(ra)) { tijd = ra; ander = v.links();  linksTemp = false; }
         else return null;
         if (!(tijd.type().isNumeriek() || tijd.type().isPercentage())) return null;   // datum/tekst temporal cmp -> marker
-        io.github.yhavinga.regelspraak.model.Eenheid el = tijd.type().eenheidOf(), er = ander.type().eenheidOf();
+        io.github.yhavinga.regelspraak.model.Eenheid el = eff.eenheidVan(tijd), er = eff.eenheidVan(ander);
         if (ander instanceof Expr.AttribuutRef ar && isTemporeelAttribuut(ar)) return null;   // both-temporal (timeline vs timeline) -> marker
         if (el != null && er != null && el.vereistOmrekening(er)) return null;        // cross-unit -> marker (raw-magnitude would be wrong)
         Integer code = Tijdrekening.toets(linksTemp ? v.op() : Operatoren.omkeren(v.op()));               // temporal operand on the left (REVERSE, not negate)
@@ -2293,7 +2309,7 @@ public final class DrlTranspiler {
         Frag lvF = waarde(acc, v.links(), subject), rvF = waarde(acc, v.rechts(), subject);
         if (lvF.marker() || rvF.marker()) return null;
         String lv = lvF.text(), rv = rvF.text();
-        String[] ov = vergelijkingsOperanden(lv, v.links().type(), rv, v.rechts().type());
+        String[] ov = vergelijkingsOperanden(lv, effType(v.links()), rv, effType(v.rechts()));
         String volBeide = "(" + lv + " != null && " + rv + " != null && " + ov[0] + " " + Operatoren.symbool(v.op()) + " " + ov[1] + ")";
         if (ordeningOfDatum(v.op())) {
             // §5.7 Tabel 46: a DATUM ordering (eerder/later) with BOTH operands empty-capable (an attr-vs-attr compare,
@@ -2367,7 +2383,7 @@ public final class DrlTranspiler {
                     && subject.attribuutGranulariteit.containsKey(ba.attribuut())
                     && !subject.attribuutTijdlijnAantal.containsKey(ba.attribuut())) {
                 baseGran = subject.attribuutGranulariteit.get(ba.attribuut());
-                baseType = ba.type();
+                baseType = effType(ba);
                 baseExpr = SUBJECT + "." + getter(ba.attribuut()) + "()";
             } else if (base instanceof Expr.AttribuutRef ba && ba.navigatieRol() != null && !ba.set()
                     && ba.objecttype() != null && ba.objecttype().attribuutGranulariteit.containsKey(ba.attribuut())
@@ -2376,7 +2392,7 @@ public final class DrlTranspiler {
                 // §7.3.2 a TO-ONE NAVIGATED base ("de X van zijn partner"): read the partner's temporal attribute,
                 // root-guarded (a null reference -> leeg). The gedurende condition stays over the SUBJECT. Mirrors exec navReader.
                 baseGran = ba.objecttype().attribuutGranulariteit.get(ba.attribuut());
-                baseType = ba.type();
+                baseType = effType(ba);
                 String root = SUBJECT + "." + getter(naviResolve(ba, subject).rol()) + "()";
                 baseExpr = "(" + root + " == null ? null : " + root + "." + getter(ba.attribuut()) + "())";
             } else if (base instanceof Expr.ParameterRef bp && bp.parameter().granulariteit() != null) {
@@ -2430,7 +2446,7 @@ public final class DrlTranspiler {
         // naar €/jr"). Scaling each operand to the doel FIRST would DOUBLE-ROUND a non-terminating factor (÷12) — the
         // spec sums first, converts once (review wf_115473d5-eee F1). Mixed granularity rides the merged-knip union.
         if (w instanceof Expr.Binair bin && (bin.op() == Expr.BinOp.PLUS || bin.op() == Expr.BinOp.MIN) && subject != null) {
-            Datatype sumType = bin.links().type();
+            Datatype sumType = effType(bin.links());
             String l = temporeelRekenOperand(bin.links(), subject, gran, sumType);
             String rr = temporeelRekenOperand(bin.rechts(), subject, gran, sumType);
             if (l != null && rr != null) {
@@ -2494,7 +2510,7 @@ public final class DrlTranspiler {
         // Recurse — sum in the LEFT sub-operand's unit (restate the right into it), then restate the sub-sum ONCE to
         // unitTarget (the enclosing sum unit). Arbitrary depth + mixed +/- fall out of the recursion, each Binair its own op.
         if (e instanceof Expr.Binair bin && (bin.op() == Expr.BinOp.PLUS || bin.op() == Expr.BinOp.MIN)) {
-            Datatype subSum = bin.links().type();
+            Datatype subSum = effType(bin.links());
             String l = temporeelRekenOperand(bin.links(), subject, gran, subSum);
             String r = temporeelRekenOperand(bin.rechts(), subject, gran, subSum);
             if (l == null || r == null) return null;
@@ -2682,7 +2698,7 @@ public final class DrlTranspiler {
             // attribute's unit el), so restate it from its own unit er into el via the EXACT factor (the same
             // restatement the scalar comparison path uses — exacteHerschaalFactoren ×÷, one DECIMAL64 rounding). An
             // OPAQUE product unit (no exact factors) stays an honest marker, kept symmetric in both back-ends.
-            io.github.yhavinga.regelspraak.model.Eenheid el = tijd.type().eenheidOf(), er = ander.type().eenheidOf();
+            io.github.yhavinga.regelspraak.model.Eenheid el = eff.eenheidVan(tijd), er = eff.eenheidVan(ander);
             boolean crossUnit = el != null && er != null && el.vereistOmrekening(er);
             if (crossUnit && er.exacteHerschaalFactoren(el) == null)
                 return Frag.todo("§8.2 gehele-periodevergelijking met eenheidsomrekening", c.bron());
@@ -2692,7 +2708,7 @@ public final class DrlTranspiler {
             if (getter == null) return Frag.todo("§8.2 navigatie", c.bron());
             Frag g = operand(acc, ander, subject);    // the scalar grenswaarde (literal / parameter-global / own attribute)
             if (g.marker()) return Frag.todo("§8.2 grenswaarde", c.bron());
-            toets = code; grens = crossUnit ? herschaalExact(g.text(), ander.type(), tijd.type()) : g.text();
+            toets = code; grens = crossUnit ? herschaalExact(g.text(), effType(ander), effType(tijd)) : g.text();
         } else if (c instanceof Conditie.Predicaat p && p.soort() == Conditie.Predicaatsoort.GEVULD
                 && p.operand() instanceof Expr.AttribuutRef pa && isTemporeelAttribuut(pa)) {
             getter = temporeelTijdlijnGetter(pa, subject);
@@ -2736,7 +2752,7 @@ public final class DrlTranspiler {
                 return LoweredConditie.marker("§8.2 niet-numerieke gehele-periode over verzameling", c.bron());
             if (ander instanceof Expr.AttribuutRef ar && isTemporeelAttribuut(ar))
                 return LoweredConditie.marker("§8.2 tijdlijn-vs-tijdlijn over verzameling", c.bron());   // timeline-vs-timeline -> marker
-            io.github.yhavinga.regelspraak.model.Eenheid el = tijd.type().eenheidOf(), er = ander.type().eenheidOf();
+            io.github.yhavinga.regelspraak.model.Eenheid el = eff.eenheidVan(tijd), er = eff.eenheidVan(ander);
             boolean crossUnit = el != null && er != null && el.vereistOmrekening(er);
             if (crossUnit && er.exacteHerschaalFactoren(el) == null)
                 return LoweredConditie.marker("§8.2 gehele-periode over verzameling met eenheidsomrekening", c.bron());
@@ -2750,7 +2766,7 @@ public final class DrlTranspiler {
             Frag g = waarde(acc, ander, subject);   // $subject-free value (literal / global) valid in a standalone eval
             if (g.marker()) return LoweredConditie.marker("§8.2 grenswaarde over verzameling", c.bron());
             toets = code;
-            grens = crossUnit ? herschaalExact(g.text(), ander.type(), tijd.type()) : g.text();
+            grens = crossUnit ? herschaalExact(g.text(), effType(ander), effType(tijd)) : g.text();
         } else if (c instanceof Conditie.Predicaat p && p.soort() == Conditie.Predicaatsoort.GEVULD
                 && p.operand() instanceof Expr.AttribuutRef pa && pa.set() && isTemporeelSetAttribuut(pa)) {
             tijd = pa; toets = 6;
@@ -3215,7 +3231,7 @@ public final class DrlTranspiler {
             if (navVw != null) return LoweredConditie.van(navVw);
             // §5.1 Tabel 32: a comparison across convertible-but-different units restates
             // the right operand in the left's unit first ("24 mnd > 2 jr", not "24 > 2").
-            String[] o = vergelijkingsOperanden(lo.text(), v.links().type(), ro.text(), v.rechts().type());
+            String[] o = vergelijkingsOperanden(lo.text(), effType(v.links()), ro.text(), effType(v.rechts()));
             // §389/§486: when a numeric operand is arithmetic that can carry an exact Breuk (a non-terminating
             // division/percentage or a rational literal), an inline mvel "l OP r" would throw on a Breuk (mvel's
             // == casts to BigDecimal) — so compare EXACTLY via the Breuk-aware rsAggVergelijk (single-runtime; it
@@ -3541,10 +3557,10 @@ public final class DrlTranspiler {
             // +/- and value-side begrenzing paths), so a "min van 24 mnd" clamp on a jr basis compares against an
             // exact 2 jr — it FIRES, not markers (only an OPAQUE composite bound, or a marker basis/bound, propagates).
             fnImport("rsBegrens");
-            Datatype bt = bg.basis().type();
+            Datatype bt = effType(bg.basis());
             Frag basis = operandReken(acc, bg.basis(), subject);
-            Frag min = bg.minimum() != null ? herschaalConditie(operandReken(acc, bg.minimum(), subject), bg.minimum().type(), bt) : Frag.ok("null");
-            Frag max = bg.maximum() != null ? herschaalConditie(operandReken(acc, bg.maximum(), subject), bg.maximum().type(), bt) : Frag.ok("null");
+            Frag min = bg.minimum() != null ? herschaalConditie(operandReken(acc, bg.minimum(), subject), effType(bg.minimum()), bt) : Frag.ok("null");
+            Frag max = bg.maximum() != null ? herschaalConditie(operandReken(acc, bg.maximum(), subject), effType(bg.maximum()), bt) : Frag.ok("null");
             if (basis.marker() || min.marker() || max.marker()) return Frag.todo("begrenzing in voorwaarde", bg.bron());
             return Frag.ok("rsBegrens(" + basis.text() + ", " + min.text() + ", " + max.text() + ")");
         }
