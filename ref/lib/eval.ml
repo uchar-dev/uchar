@@ -1128,6 +1128,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
       ) ->
         let name = req "fold attribute" attribuut in
         let el_decl = objecttype env el in
+        let members = List.filter keep (linked ?binding:bron_rol env world self ~to_type:el) in
         (* §7.1: a set read of a TEMPORAL attribute folds TWICE — each
            member's own timeline collapses over time first (ch. 3.6, at
            that attribute's granularity), and only those scalars fold over
@@ -1135,46 +1136,46 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
            value at all and silently totals 0. A ranking or counting fold
            has no defined moment to rank, so it is refused rather than
            reading a value the timeline does not have at one instant. *)
-        let element_value =
-          if not (Ir_v0.Checks.attr_temporal el_decl name) then fun i -> World.attr i name
-          else begin
-            (match kind with
-            | Som | Totaal -> ()
-            | _ ->
-                Value.fault
-                  "this aggregation over the temporal attribute %S of a set has no defined moment \
-                   to fold (ch. 3.6: only som and totaal carry the per-element timeline fold)"
-                  name);
-            let gran = attr_granulariteit el_decl name in
-            let grid = Timeline.grid_unit env.doc gran in
-            fun i ->
-              match World.timeline i name with
-              | Some tl -> Timeline.totaal ~grid_unit:grid gran tl
-              | None -> (
-                  (* the case supplied the asOfDate bucket instead of the
-                     full timeline: total that one-bucket timeline, the
-                     same convention the subject's own fold uses *)
-                  match World.attr i name with
-                  | Value.Empty -> Value.Empty (* absent timeline totals to leeg *)
-                  | v -> (
-                      match env.as_of with
-                      | None ->
-                          Value.fault
-                            "the per-element temporal total of %S needs the evaluation date: the \
-                             case carries the asOfDate bucket's value"
-                            name
-                      | Some d ->
-                          let day =
-                            match Value.date_of_iso d with Value.Date z -> z | _ -> assert false
-                          in
-                          let van, tot = Timeline.bucket gran day in
-                          Timeline.totaal ~grid_unit:grid gran
-                            [ { Timeline.s_van = van; s_tot = tot; s_waarde = v } ]))
-          end
-        in
-        `Values
-          (List.map element_value
-             (List.filter keep (linked ?binding:bron_rol env world self ~to_type:el)))
+        if not (Ir_v0.Checks.attr_temporal el_decl name) then
+          `Values (List.map (fun i -> World.attr i name) members)
+        else begin
+          (match kind with
+          | Som | Totaal -> ()
+          | _ ->
+              Value.fault
+                "this aggregation over the temporal attribute %S of a set has no defined moment \
+                 to fold (ch. 3.6: only som and totaal carry the per-element timeline fold)"
+                name);
+          let gran = attr_granulariteit el_decl name in
+          let grid = Timeline.grid_unit env.doc gran in
+          (* the convention of the per-element fold (ch. 3.6/§8.4): every
+             member must bring its OWN horizon, because the integration
+             runs per member and there is no single bucket to borrow. The
+             case format's full-timeline variant is the one self-describing
+             form (it states its segments' bounds); the asOfDate-bucket
+             SCALAR states no period at all, so a member carrying one is
+             the exact "needs the one, finds the other" case of ch. 8.4 —
+             refused, naming the member, never silently bucketed at the
+             session date. An ABSENT member contributes nothing (leeg), and
+             timelines mix freely with any other horizon-carrying form.
+             The SUBJECT's own fold above keeps the opposite convention —
+             the asOfDate bucket carries that total — and the asymmetry is
+             deliberate: there the session date IS the horizon. *)
+          `Values
+            (List.map
+               (fun (i : World.instance) ->
+                 match World.timeline i name with
+                 | Some tl -> Timeline.totaal ~grid_unit:grid gran tl
+                 | None ->
+                     if World.attr i name = Value.Empty then Value.Empty
+                     else
+                       Value.fault
+                         "the per-element temporal total of %S over %S: the case supplies an \
+                          asOfDate-bucket scalar, which carries no period of its own; a set fold \
+                          needs each member's own timeline (ch. 3.6/§7.1, ch. 8.4)"
+                         name i.label)
+               members)
+        end
     | _, (_ :: _ :: _ as args)
       when (match kind with Eerste | Laatste | Minimum | Maximum -> true | _ -> false) ->
         (* the articulated value fold (§5.8.3: ≥2 listed operands) is

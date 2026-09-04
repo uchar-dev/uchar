@@ -1134,7 +1134,9 @@ let () =
    timeline collapses over time FIRST, then the scalars fold over the
    set. Three set members: 10 €/mnd across 2024 → 120 €, 5 €/mnd over
    the first half → 30 €, one without a timeline → contributes nothing;
-   total 150 €. A ranking fold over the same shape is refused. *)
+   total 150 €. A ranking or counting fold over the same shape is
+   refused, and so is a member that brings no horizon of its own
+   (maintainer decision 2026-09-04, the convention of this fold). *)
 let () =
   let eur_per_mnd = { eur with noemer = Some mnd } in
   let num_eur_mnd : Ir_v0.Ast.datatype =
@@ -1147,6 +1149,13 @@ let () =
     let nm, o = ot "Vondst" [ ("bewaartarief", Some num_eur_mnd) ] [] in
     (nm, { o with attribuut_granulariteit = [ ("bewaartarief", Some Ir_v0.Ast.Maand) ] })
   in
+  (* a SAME-NAMED temporal attribute at a DIFFERENT granularity elsewhere:
+     the fold takes the grid off the ELEMENT type's declaration, never off
+     the name *)
+  let kist =
+    let nm, o = ot "Kist" [ ("bewaartarief", Some num_eur_mnd) ] [] in
+    (nm, { o with attribuut_granulariteit = [ ("bewaartarief", Some Ir_v0.Ast.Jaar) ] })
+  in
   let stelsels : (string * Ir_v0.Ast.eenheidstelsel) list =
     [ ("Munt", { es_naam = Some "Munt"; eenheden = [ ("€", Some eur) ]; aliassen = [] });
       ("Tijd", { es_naam = Some "Tijd"; eenheden = [ ("mnd", Some mnd) ]; aliassen = [] }) ]
@@ -1155,7 +1164,7 @@ let () =
     {
       empty_doc with
       eenheidstelsels = stelsels;
-      objecttypen = [ ot "Jutter" [ ("bewaarlast", Some num_eur) ] []; vondst ];
+      objecttypen = [ ot "Jutter" [ ("bewaarlast", Some num_eur) ] []; vondst; kist ];
       feittypen =
         [ ( "bewaring",
             {
@@ -1185,24 +1194,65 @@ let () =
   in
   let tl_of segs label = { (inst label "Vondst" []) with
                            tls = World.SMap.add "bewaartarief" segs World.SMap.empty } in
-  let w =
-    World.add_instance
-      (World.add_instance
-         (World.add_instance
-            (World.add_instance World.empty
-               { (inst "j1" "Jutter" []) with
-                 links = World.SMap.add "vondsten" [ "v1"; "v2"; "v3" ] World.SMap.empty })
-            (tl_of [ seg "2024-01-01" "2025-01-01" (nu eur_per_mnd "10") ] "v1"))
-         (tl_of [ seg "2024-01-01" "2024-07-01" (nu eur_per_mnd "5") ] "v2"))
-      (inst "v3" "Vondst" [])
+  let jutter labels =
+    { (inst "j1" "Jutter" []) with
+      links = World.SMap.add "vondsten" labels World.SMap.empty }
   in
+  let world_of j members = List.fold_left World.add_instance (World.add_instance World.empty j) members in
+  let v1 = tl_of [ seg "2024-01-01" "2025-01-01" (nu eur_per_mnd "10") ] "v1" in
+  let v2 = tl_of [ seg "2024-01-01" "2024-07-01" (nu eur_per_mnd "5") ] "v2" in
+  let v3 = inst "v3" "Vondst" [] in
+  let w = world_of (jutter [ "v1"; "v2"; "v3" ]) [ v1; v2; v3 ] in
   let env = env_of doc in
-  (match Eval.eval_expr env w (World.get w "j1") ~err:no_err (fold Totaal) with
+  let run w kind = Eval.eval_expr env w (World.get w "j1") ~err:no_err (fold kind) in
+  (match run w Totaal with
   | Value.Num (v, Value.Unit u) ->
       check "WV-3.6-h" (Q.equal v (q "150") && u.afkorting = Some "€" && u.noemer = None)
   | other -> check ("WV-3.6-h (got " ^ Value.to_string other ^ ")") false);
-  expect_fault "WV-3.6-h-rangschikking" (fun () ->
-      Eval.eval_expr env w (World.get w "j1") ~err:no_err (fold Maximum))
+  (* de som van over the same shape folds identically inside *)
+  (match run w Som with
+  | Value.Num (v, Value.Unit u) ->
+      check "WV-3.6-h-som" (Q.equal v (q "150") && u.afkorting = Some "€" && u.noemer = None)
+  | other -> check ("WV-3.6-h-som (got " ^ Value.to_string other ^ ")") false);
+  (* every ranking or counting fold over the same shape is refused: there
+     is no defined moment of the timeline to rank or count at *)
+  List.iter
+    (fun (label, kind) -> expect_fault ("WV-3.6-h-rangschikking-" ^ label) (fun () -> run w kind))
+    [ ("minimum", Ir_v0.Ast.Minimum); ("maximum", Maximum); ("eerste", Eerste);
+      ("laatste", Laatste); ("aantal", Aantal) ];
+  (* the convention of this fold: a member carrying the asOfDate-bucket
+     SCALAR brings no horizon of its own, so the integration cannot run —
+     refused loudly, NAMING the member (ch. 8.4's "needs the one, finds
+     the other"), never silently bucketed at the session date *)
+  let bucket_lid label =
+    { (inst label "Vondst" []) with
+      attrs = World.SMap.add "bewaartarief" (nu eur_per_mnd "10") World.SMap.empty }
+  in
+  let w_bucket = world_of (jutter [ "v9" ]) [ bucket_lid "v9" ] in
+  (match run w_bucket Totaal with
+  | exception Value.Fault m ->
+      check "WV-3.6-h-bucketlid"
+        (m
+        = "the per-element temporal total of \"bewaartarief\" over \"v9\": the case supplies an \
+           asOfDate-bucket scalar, which carries no period of its own; a set fold needs each \
+           member's own timeline (ch. 3.6/§7.1, ch. 8.4)")
+  | _ -> check "WV-3.6-h-bucketlid" false);
+  (* mixing a full timeline with a horizonless bucket member fails on the
+     bucket member alone — timelines stay admissible beside it *)
+  let w_menging = world_of (jutter [ "v1"; "v9" ]) [ v1; bucket_lid "v9" ] in
+  expect_fault "WV-3.6-h-menging" (fun () -> run w_menging Totaal);
+  (* an ABSENT member contributes nothing: all-absent totals 0 (the §4.20
+     unconditional 0), while de som van keeps its leeg rule outside *)
+  let w_afwezig = world_of (jutter [ "v3"; "v4" ]) [ v3; inst "v4" "Vondst" [] ] in
+  expect_num "WV-3.6-h-afwezig-totaal" (run w_afwezig Totaal) "0";
+  expect_leeg "WV-3.6-h-afwezig-som" (run w_afwezig Som);
+  (* the empty set: the same two answers *)
+  let w_leeg = world_of (jutter []) [] in
+  expect_num "WV-3.6-h-lege-set-totaal" (run w_leeg Totaal) "0";
+  expect_leeg "WV-3.6-h-lege-set-som" (run w_leeg Som);
+  (* the same attribute NAME at a different granularity on another object
+     type leaves this fold untouched: 150 stays *)
+  expect_num "WV-3.6-h-eigen-granulariteit" (run w Totaal) "150"
 
 (* verification-round regression: a true-period boundary that merely
    splits a bucket must not make the total undercount — clip coalesces
