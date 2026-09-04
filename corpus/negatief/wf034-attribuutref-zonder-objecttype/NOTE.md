@@ -27,8 +27,10 @@ The measured consequence of that silence, before the closure (card
 refuses (`TRANSLATION FAULT: missing objecttype`), and the Drools backend
 PLAYS the document and answers off the lie — a differential wrong answer
 no executor and no other rule fenced. Corpus dracht of the shape is zero
-(152 golden + 22 rood + 234 negatief + 30 parity documents, measured), so
-the widening cannot over-reject.
+(152 golden + 22 rood + 237 negatief + 30 parity documents, measured), so
+the widening cannot over-reject. The same empty field in a **fold source**
+needed a clause of its own — see `wf034-foldbron-zonder-objecttype`, where
+all three executors play it.
 
 A hand-broken variant of `corpus/golden/jutterswet-aanvoergeld/ir.json`
 (one field emptied, one unit abbreviation and factor changed); the shape

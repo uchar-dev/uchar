@@ -1219,10 +1219,15 @@ let rec datatype_full = function
    variant and one-sided arms, WF-090's), stated and numbered there.
 
    Deferrals are the family's, unchanged: either side absent or the v0
-   unknown sentinel, or a declaration that does not resolve. Since the
-   WF-034 widening (2026-09-04) none of them is self-served: the two shapes
-   a document could choose them with — a reference naming no objecttype,
-   the sentinel on a rule target's type — are ill-formed. *)
+   unknown sentinel, or a declaration that does not resolve. The WF-034
+   widening (2026-09-04) closes THREE shapes a document could choose one
+   with — a reference naming no objecttype in a value position, the same in
+   a fold source (its own arm: the aggregation branch replaces the walk),
+   the sentinel on a rule target's type — not the self-serving of deferrals
+   as such. Measured and still open: no attribuut (409 of 751 golden
+   positions), no parameter (35 of 37), and a target with no type at all
+   (295 of 295, the shape both OCaml executors replay clean). Those are a
+   maintainer decision of their own. *)
 let use_site_identity ?(source = "the declaration it reads from") ?soort at ~what ~decl ~typ =
   match (decl, typ) with
   | None, _ | _, None | Some (Datatype_onbekend _), _ | _, Some (Datatype_onbekend _) -> []

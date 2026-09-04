@@ -4,15 +4,26 @@ sentinel on a rule TARGET's `type`.
     WF-034 FAIL /resolvedRegels/1/doel/type: unknown-type sentinel on a
     rule target
 
-Why it has to exist: the target's `type` was the one position in a document
-where the sentinel survived. The expression walk refuses it on every value
-node it enters (`unknown-type sentinel inside a structured node`) and WF-003
-refuses it on a declaration (`unresolved datatype (v0 'Onbekend' sentinel:
-…)`), but the walk deliberately never enters the target — the lvalue is
-WF-022's — so the sentinel there passed (measured, card
-`20260903-identiteitsarmen-getuigen`: verifier `PASS`, and all three
-executors replay the document unchanged, because each writes through the
-target's DECLARED datatype).
+Why it has to exist: the target's `type` was the last place the sentinel
+survived **outside the documented row-1 fold-source wart** — and, as the
+fix round measured, outside the `SumType` constructor payload. The
+expression walk refuses it on every value node it enters (`unknown-type
+sentinel inside a structured node`) and WF-003 refuses it on a declaration
+(`unresolved datatype (v0 'Onbekend' sentinel: …)`), but the walk
+deliberately never enters the target — the lvalue is WF-022's — so the
+sentinel there passed (measured, card `20260903-identiteitsarmen-getuigen`:
+verifier `PASS`, and all three executors replay the document unchanged,
+because each writes through the target's DECLARED datatype).
+
+The qualification is measured, not hedged. Injecting the sentinel at every
+type position of every golden — 2159 injections — leaves 21 verifier-clean:
+9 on fold-source argument types (`…/argumenten/N/type`, the v0 instance-fold
+wart `CONSTRUCTS.md` row 1 describes and the WF-034 index row itself names
+as an exception; 18 such sentinels sit in the corpus by construction) and 12
+on `SumType` constructor payloads (`…/type/constructors/N/payload`). None
+anywhere else, and none on a rule target once this clause stands. The
+payload position is open, unfenced and unclaimed here; closing it is a
+decision of its own.
 
 That no executor reads the field is exactly why it needed a fence rather
 than a shrug: the target `type` is a use site the identity family crosses
@@ -20,7 +31,7 @@ than a shrug: the target `type` is a use site the identity family crosses
 defers on the sentinel. An emitter writing `Onbekend` there therefore
 switched the unit, precision and domain checks off its own write targets
 and stayed verifier-clean — a self-served exemption, not a design. Corpus
-dracht of the shape is zero (152 golden + 22 rood + 234 negatief + 30
+dracht of the shape is zero (152 golden + 22 rood + 237 negatief + 30
 parity documents, measured), so the widening cannot over-reject.
 
 A hand-broken variant of `corpus/golden/jutterswet-aanvoergeld/ir.json`:
