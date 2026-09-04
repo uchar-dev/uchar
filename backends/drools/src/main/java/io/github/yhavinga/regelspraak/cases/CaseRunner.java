@@ -12,13 +12,16 @@ import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
 import io.github.yhavinga.regelspraak.runtime.RegelSpraakRuntime;
 import io.github.yhavinga.regelspraak.schema.ContractValidator;
 import io.github.yhavinga.regelspraak.schema.FactModelGenerator;
+import io.github.yhavinga.regelspraak.transpiler.DrlTranspiler;
 import io.github.yhavinga.regelspraak.transpiler.kern.Dekking;
 import io.github.yhavinga.regelspraak.transpiler.kern.Namen;
 import io.github.yhavinga.regelspraak.transpiler.model.ExecModelTranspiler;
 
 import org.drools.modelcompiler.KieBaseBuilder;
 import org.kie.api.KieBase;
+import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.KieSession;
+import org.kie.internal.utils.KieHelper;
 
 import java.math.BigDecimal;
 import java.nio.file.Files;
@@ -65,16 +68,32 @@ public final class CaseRunner {
     private final RegelSpraakModel model;
     private final KieBase kieBase;
     private final ClassLoader cl;
+    /** §9.8 the dagsoort predicates the DRL-text branch declares as globals (name -> predicate). The exec-model
+     *  branch wires those predicates straight into its lambdas and needs none, so it passes an empty map. */
+    private final Map<String, java.util.function.Predicate<LocalDate>> dagsoortGlobalen;
 
-    private CaseRunner(RegelSpraakModel model, KieBase kieBase, ClassLoader cl) {
-        this.model = model; this.kieBase = kieBase; this.cl = cl;
+    private CaseRunner(RegelSpraakModel model, KieBase kieBase, ClassLoader cl,
+                       Map<String, java.util.function.Predicate<LocalDate>> dagsoortGlobalen) {
+        this.model = model; this.kieBase = kieBase; this.cl = cl; this.dagsoortGlobalen = dagsoortGlobalen;
     }
 
     /** Load {@code irPath}, build the KieBase, and replay each of {@code casePaths}. Any {@link Excluded}
      *  (loader refusal, transpiler marker, contract violation, unsupported form) becomes an EXCLUDE result. */
     public static Result runGolden(Path irPath, List<Path> casePaths) {
+        return replay(irPath, casePaths, false);
+    }
+
+    /** The same replay through the OTHER transpiler branch: {@link DrlTranspiler} emits DRL TEXT, which is
+     *  compiled to a {@link KieBase} here (the classic DRL build; the exec-model branch is untouched). The
+     *  gate path never calls this — it is the harness/measurement entry (a {@code --drl} run of
+     *  {@link DroolsBackendMain}), so gate 12's numbers cannot move with it. */
+    public static Result viaDrlTekst(Path irPath, List<Path> casePaths) {
+        return replay(irPath, casePaths, true);
+    }
+
+    private static Result replay(Path irPath, List<Path> casePaths, boolean viaDrl) {
         try {
-            CaseRunner runner = build(irPath);
+            CaseRunner runner = build(irPath, viaDrl);
             List<String> failures = new ArrayList<>();
             int played = 0;
             for (Path cp : casePaths) {
@@ -167,6 +186,12 @@ public final class CaseRunner {
      *  construct, and build the {@link KieBase} — the shared prelude of both the green replay and the red probe.
      *  Throws {@link Excluded} / {@link IrLoader.Refusal} for any form the v0 backend does not carry. */
     private static CaseRunner build(Path irPath) throws java.io.IOException {
+        return build(irPath, false);
+    }
+
+    /** As above, with {@code viaDrl} choosing WHICH transpiler branch produces the KieBase: the exec-model
+     *  back-end (false — every gate path) or {@link DrlTranspiler}'s DRL TEXT compiled here (true). */
+    private static CaseRunner build(Path irPath, boolean viaDrl) throws java.io.IOException {
         JsonNode ir = JSON.readTree(Files.readString(irPath));
         IrLoader.Loaded loaded = IrLoader.loadAll(ir);   // the model plus the ch. 7 prioritized-defaults extension beside it
         RegelSpraakModel model = loaded.model();
@@ -205,6 +230,7 @@ public final class CaseRunner {
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {
+            if (viaDrl) return drlTak(model, loaded, cl);
             ExecModelTranspiler et = ExecModelTranspiler.build(model, cl, loaded.prioritizedDefaults(),
                     loaded.rolBindingen(), loaded.letVormen());
             // every construct must LOWER — a marker means the exec KieBase silently omits it,
@@ -213,10 +239,40 @@ public final class CaseRunner {
                 if (!d.lowered()) throw new Excluded("transpiler " + d.verdict() + ": " + d.sleutel()
                         + (d.reden().isEmpty() ? "" : " — " + d.reden()));
             KieBase kieBase = KieBaseBuilder.createKieBaseFromModel(et.model());
-            return new CaseRunner(model, kieBase, cl);
+            return new CaseRunner(model, kieBase, cl, Map.of());
         } finally {
             Thread.currentThread().setContextClassLoader(vorige);
         }
+    }
+
+    /** The DRL-TEXT branch of the same prelude: {@link DrlTranspiler} emits DRL, which is compiled to a
+     *  {@link KieBase} by the classic DRL build ({@code KieHelper}, mvel dialect). Three forms are refused
+     *  here, each loudly and with the reason, because the text branch is NARROWER than the exec-model one:
+     *  <ul>
+     *    <li>a ch. 7 prioritizedDefaults extension — that lowering exists only in the exec branch, so a DRL
+     *        KieBase would silently omit the default and answer with an unwritten attribute;</li>
+     *    <li>any construct the text branch markers (its {@code TODO} discipline) — the DRL still compiles,
+     *        which is exactly why the marker must be refused rather than fired;</li>
+     *    <li>a DRL the Drools compiler rejects — a text-branch limit, not a semantic divergence.</li>
+     *  </ul> */
+    private static CaseRunner drlTak(RegelSpraakModel model, IrLoader.Loaded loaded, ClassLoader cl) {
+        if (!loaded.prioritizedDefaults().isEmpty())
+            throw new Excluded("drl: ch. 7 prioritizedDefaults — the DRL-text branch has no defaults lowering");
+        DrlTranspiler t = DrlTranspiler.build(model);
+        for (Dekking d : t.dekking())
+            if (!d.lowered()) throw new Excluded("drl-transpiler " + d.verdict() + ": " + d.sleutel()
+                    + (d.reden().isEmpty() ? "" : " — " + d.reden()));
+        KieHelper helper = new KieHelper();
+        helper.setClassLoader(cl);
+        helper.addContent(t.drl(), ResourceType.DRL);
+        KieBase kieBase;
+        try {
+            kieBase = helper.build();
+        } catch (RuntimeException e) {
+            String m = String.valueOf(e.getMessage()).replace('\n', ' ');
+            throw new Excluded("drl compile: " + (m.length() > 200 ? m.substring(0, 200) + "…" : m));
+        }
+        return new CaseRunner(model, kieBase, cl, t.dagsoortGlobalen());
     }
 
     // ---------------- the red path (corpus/rood, gate 8's Drools leg) ----------------
@@ -532,6 +588,10 @@ public final class CaseRunner {
             setGlobalVeilig(sessie, Namen.ident(e.getKey(), false), waardeNaarArg(e.getValue(), e.getKey()));
         }
         if (rekendatum != null) setGlobalVeilig(sessie, "rekendatum", rekendatum);
+        // §9.8 the DRL-text branch reaches its dagsoort predicates through globals (the exec branch closes over
+        // them); empty for the exec branch, so this loop is a no-op on every gate path.
+        for (Map.Entry<String, java.util.function.Predicate<LocalDate>> e : dagsoortGlobalen.entrySet())
+            setGlobalVeilig(sessie, e.getKey(), e.getValue());
     }
 
     /** The case's {@code asOfDate}, or null when it carries none. */

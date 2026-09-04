@@ -21,15 +21,20 @@ public final class DroolsBackendMain {
     private DroolsBackendMain() {}
 
     public static void main(String[] args) {
+        // --drl replays through the OTHER transpiler branch (DrlTranspiler's DRL text, compiled here) instead of
+        // the exec-model back-end. It is a measurement/harness entry, never the gate-12 path: gate 12 passes no
+        // flag and reaches exactly the code it always did.
+        boolean viaDrl = args.length > 0 && args[0].equals("--drl");
+        if (viaDrl) args = java.util.Arrays.copyOfRange(args, 1, args.length);
         if (args.length < 2) {
-            System.err.println("usage: DroolsBackendMain <ir.json> <case*.json>...");
+            System.err.println("usage: DroolsBackendMain [--drl] <ir.json> <case*.json>...");
             System.exit(3);
         }
         Path ir = Path.of(args[0]);
         List<Path> cases = new ArrayList<>();
         for (int i = 1; i < args.length; i++) cases.add(Path.of(args[i]));
         try {
-            CaseRunner.Result r = CaseRunner.runGolden(ir, cases);
+            CaseRunner.Result r = viaDrl ? CaseRunner.viaDrlTekst(ir, cases) : CaseRunner.runGolden(ir, cases);
             switch (r.status()) {
                 case "PLAYED" -> { System.out.println("PLAYED " + r.casesPlayed()); System.exit(0); }
                 case "EXCLUDE" -> { System.out.println("EXCLUDE " + r.reason()); System.exit(2); }

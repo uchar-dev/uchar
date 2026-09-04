@@ -45,6 +45,15 @@
       <artifactId>drools-engine</artifactId>
       <version>${drools.version}</version>
     </dependency>
+    <!-- The mvel DIALECT, needed only by the SECOND transpiler branch: DrlTranspiler emits DRL text with
+         `dialect "mvel"`, and compiling that text (KieHelper, the classic DRL build the DRL measurement
+         entry drives) needs the dialect implementation, which drools-engine does not carry. The exec-model
+         path gate 12 runs builds its KieBase from a Java model and never reaches a dialect. -->
+    <dependency>
+      <groupId>org.drools</groupId>
+      <artifactId>drools-mvel</artifactId>
+      <version>${drools.version}</version>
+    </dependency>
     <!-- the loader + parametersetlader parse the wire with Jackson -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
