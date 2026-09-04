@@ -1229,8 +1229,17 @@ let rec datatype_full = function
    on a rule target, the sentinel and an absent type. Measured on the
    goldens, one field at a time: 409 of 751 attribuut positions, 35 of 37
    parameter positions and 295 of 295 target types stayed verifier-clean
-   before, none after. *)
-let use_site_identity ?(source = "the declaration it reads from") ?soort at ~what ~decl ~typ =
+   before, none after.
+
+   [skip] names facets this comparison does NOT make. It exists for the
+   DERIVED arm ([composite_expectation] below), where the expectation is a
+   formula over the operands rather than a copy of one declaration, and a
+   formula may be silent on a facet while speaking on the rest. Every entry
+   is reason-carrying at its call site; a caller that skips a NAMED facet
+   also skips [residual], since the backstop would otherwise re-report the
+   very facet the caller declined to claim. No reference arm passes it. *)
+let use_site_identity ?(source = "the declaration it reads from") ?soort ?(skip = []) at ~what
+    ~decl ~typ =
   match (decl, typ) with
   | None, _ | _, None | Some (Datatype_onbekend _), _ | _, Some (Datatype_onbekend _) -> []
   | Some d, Some t ->
@@ -1291,8 +1300,11 @@ let use_site_identity ?(source = "the declaration it reads from") ?soort at ~wha
         | f :: rest -> ( match f () with [] -> first rest | vs -> vs)
       in
       first
-        [ soort_facet; domain_facet; unit_facet; decimals_facet; whole_facet; sign_facet;
-          residual_facet ]
+        (List.filter_map
+           (fun (n, f) -> if List.mem n skip then None else Some f)
+           [ ("soort", soort_facet); ("domain", domain_facet); ("unit", unit_facet);
+             ("decimals", decimals_facet); ("wholeness", whole_facet); ("sign", sign_facet);
+             ("residual", residual_facet) ])
 
 (* the soort facet's WF-078 wording on a `BinderRef` arm — the number and the
    sentence WF-078 has carried since the sum-type card, kept verbatim so the
@@ -1301,6 +1313,228 @@ let binder_soort naam =
   ( "WF-078",
     fun kt kd -> Printf.sprintf "binder reference '%s' is typed %s, but its binder is %s" naam kt kd
   )
+
+(* --- the DERIVED expectation on composite positions (WF-091) ------------ *)
+
+(* A reference type is a COPY of one declaration; a composite type is a
+   DERIVATION over its operands (RUNTIME-SEMANTICS ch. 2.10, clause 2). The
+   facet engine above needs a [decl] to compare against, and at a composite
+   there is none — which is why WF-091's honesty note 4 recorded the numeric
+   facets of a derived type as crossed by nothing. What follows puts the
+   DERIVATION where the declaration sits: the expectation is computed from
+   the operands' own serialized types by the ch. 2.3 precision table and the
+   ch. 2.6 unit rules, and the node's annotation is crossed against it by the
+   SAME engine, in the same facet order, under the same rule number. The
+   chain is what makes it sound: an operand's own type is anchored in turn —
+   a reference arm against its declaration, a composite against its own
+   operands — so a composite is bound to the declarations underneath it.
+
+   The deferral is not self-servable: an operand carrying the unknown
+   sentinel or no type at all is already WF-034-ill-formed at every value
+   node, so a document cannot switch this cross off by emptying a type. *)
+
+let dt_decimals = function Numeriek { decimalen; _ } | Percentage { decimalen; _ } -> decimalen | _ -> 0
+let dt_whole = function Numeriek { geheel; _ } | Percentage { geheel; _ } -> geheel | _ -> false
+
+(* The ch. 2.6 MAAL join, in the two shapes the IR fixes: a unitless operand
+   hands the other unit through (the dimensionless 1 absorbs), and a rate
+   times its convertible denominator unit CANCELS to the numerator ("€/jr
+   maal jr = €"). The third shape — two plain units — is ch. 2.5's opaque
+   PRODUCT, whose algebra the spec fixes (sorted multiset of atomic factors,
+   no canonical, no factor) but whose wire SPELLING it does not: an identity
+   cross there would pin an `afkorting` and a `stelsel` ch. 2.5 does not
+   require. The fourth — an unspellable rate factor — is the shape the
+   frontend refuses outright (RUNTIME-SEMANTICS ch. 2.10). This function
+   makes no claim at either, and the corpus carries zero of both (measured
+   2026-09-04: no MAAL node in golden, rood, negatief or the parity zone has
+   two unit-bearing operands, so the cancel arm is pinned by a negatief and
+   nothing else). *)
+let maal_unit (a : eenheid option) (b : eenheid option) : eenheid option option =
+  match (a, b) with
+  | None, x | x, None -> Some x
+  | Some x, Some y ->
+      let cancel (rate : eenheid) (plain : eenheid) =
+        match rate.noemer with
+        | Some n when plain.noemer = None && units_convertible plain n ->
+            Some (Some { rate with noemer = None })
+        | _ -> None
+      in
+      (match cancel x y with Some u -> Some u | None -> cancel y x)
+
+(* The expectation for one composite position, or [None] where v0 derives
+   nothing there. The tuple is (what the message names, what the message
+   calls the source, the derived datatype, the facets NOT claimed).
+
+   What is NOT here, and why — the fourth class of RUNTIME-SEMANTICS
+   ch. 2.10, kept identical to the exception set of gate 13
+   (`scripts/check-reftype-derivation.sh`, which keys on (node, op) and
+   (node, kind) for exactly this reason): a division, a power, a
+   percentage-of, a root, an absolute value and the seven date/time
+   extractors, where v0 states no result-unit rule; and TIJDSDUUR /
+   ABSOLUTE_TIJDSDUUR, where the annotation IS the source (the operator's
+   own parameter, WF-038). Not derived means not crossed — and named, never
+   silently skipped. Two node kinds are left out for the opposite reason:
+   an IfThenElse and a Let already cross their whole type against their
+   branches and their body under WF-069 and WF-076. *)
+let composite_expectation (e : expr) : (string * string * datatype * string list) option =
+  let known x = match x with Some (Datatype_onbekend _) -> None | x -> x in
+  let operand_t x = known (Option.bind x typ_of_expr) in
+  match e with
+  | Binair { op = (Plus | Min | Verminderd_met) as op; links; rechts; _ } -> (
+      let what =
+        "the "
+        ^ (match op with Plus -> "PLUS" | Min -> "MIN" | _ -> "VERMINDERD_MET")
+        ^ " composite"
+      in
+      match (operand_t links, operand_t rechts) with
+      | Some l, Some r ->
+          if op <> Verminderd_met && is_date l && is_number_like r && unit_of r <> None then
+            (* date +/- duration (ch. 2.2): the result IS the date operand,
+               whole — the duration operand carries the calendar unit and
+               contributes nothing to the result type *)
+            Some (what, "the type derived from its date operand", l, [])
+          else if
+            is_number_like l && is_number_like r && units_compatible (unit_of l) (unit_of r)
+          then
+            (* ch. 2.3: maxDec, whole iff both operands are; ch. 2.6: the
+               result carries the LEFT unit. The SIGN is deliberately not
+               claimed: a derivation can only under-claim it (ONBEPAALD),
+               while a document may narrow it truthfully — measured, 12
+               golden+rood+negatief documents do exactly that over two
+               non-negative operands. *)
+            Some
+              ( what, "the type derived from its operands",
+                Numeriek
+                  { geheel = dt_whole l && dt_whole r;
+                    decimalen = max (dt_decimals l) (dt_decimals r);
+                    teken = Some Onbepaald;
+                    eenheid = unit_of l },
+                [ "sign"; "residual" ] )
+          else
+            (* a one-sided unit pair: WF-035's literal-adoption clause
+               (ch. 4.6) admits the shape, but the four sources of the
+               result unit disagree on it — the frontend and ch. 2.6 say
+               "the LEFT unit", the ASP translator and the Drools backend
+               say "the left, else the right". No claim on a contested
+               formula. *)
+            None
+      | _ -> None)
+  | Binair { op = Maal; links; rechts; _ } -> (
+      match (operand_t links, operand_t rechts) with
+      | Some l, Some r when is_number_like l && is_number_like r -> (
+          match maal_unit (unit_of l) (unit_of r) with
+          | None -> None
+          | Some u ->
+              (* the UNIT only. The precision facets are measured
+                 non-derived: ch. 2.3's "sum of the operands' decimals" and
+                 the frontend's "never whole" are under-claims two other
+                 producers in this very corpus do not share (the Catala
+                 plugin writes its pinned ch. 2.9 scale), 9 decimals and 9
+                 wholeness witnesses over golden+rood+negatief. *)
+              Some
+                ( "the MAAL composite", "the type derived from its operands",
+                  Numeriek { geheel = false; decimalen = 0; teken = Some Onbepaald; eenheid = u },
+                  [ "decimals"; "wholeness"; "sign"; "residual" ] ))
+      | _ -> None)
+  | Afgerond { basis = Some b; decimalen; _ } -> (
+      (* ch. 2.4 clause 2: a rounding changes the FACING precision to its own
+         decimal count (whole when 0) and touches nothing else — ch. 2.10:
+         it carries its basis's unit. *)
+      match known (typ_of_expr b) with
+      | Some (Numeriek { teken; eenheid; _ }) ->
+          Some
+            ( "the rounding", "the type derived from its base and its decimal count",
+              Numeriek { geheel = decimalen = 0; decimalen; teken; eenheid }, [] )
+      | Some (Percentage { eenheid; _ }) ->
+          (* the percentage arm carries NO corpus witness (measured 2026-09-04:
+             zero roundings over a percentage base in any zone); it keeps the
+             base's unit, which is what ch. 2.10, the ASP translator and the
+             Drools backend all say — the RegelSpraak frontend drops it there,
+             a divergence recorded rather than followed *)
+          Some
+            ( "the rounding", "the type derived from its base and its decimal count",
+              Percentage { geheel = decimalen = 0; decimalen; eenheid }, [] )
+      | Some other -> Some ("the rounding", "the type derived from its base", other, [])
+      | None -> None)
+  | Begrensd { basis = Some b; _ } -> (
+      (* ch. 2.7: a clamp returns one of three values of the base's own type *)
+      match known (typ_of_expr b) with
+      | Some d -> Some ("the clamp", "the type derived from its base", d, [])
+      | None -> None)
+  | Functie { kind = Aantal; _ } ->
+      (* ch. 2.3: a count is a whole, non-negative, unitless number. The sign
+         is skipped for the same reason as everywhere else here: two anchor
+         goldens write ONBEPAALD on a count, a widening no derivation may
+         refuse on its own authority. *)
+      Some
+        ( "the AANTAL aggregation", "the type a count derives",
+          Numeriek { geheel = true; decimalen = 0; teken = Some Niet_negatief; eenheid = None },
+          [ "sign"; "residual" ] )
+  | Functie { kind = (Som | Eerste | Laatste | Totaal | Minimum | Maximum) as k;
+              argumenten = a0 :: rest; _ } -> (
+      let name =
+        match k with
+        | Som -> "SOM" | Eerste -> "EERSTE" | Laatste -> "LAATSTE"
+        | Totaal -> "TOTAAL" | Minimum -> "MINIMUM" | _ -> "MAXIMUM"
+      in
+      let what = "the " ^ name ^ " aggregation" in
+      match known (typ_of_expr a0) with
+      | None -> None
+      | Some t0 -> (
+          match k with
+          | Som ->
+              (* §4.6 Eenheid1: a sum is its first operand's type whole *)
+              Some (what, "the type derived from its first operand", t0, [])
+          | Eerste | Laatste ->
+              (* an element-passing fold returns a contributor unchanged. The
+                 DOMAIN facet is skipped here and only here because it is
+                 already crossed at this position, once per operand and under
+                 its own number, by WF-089/WF-090's aggregation arm — this
+                 cross adds the facets that arm deliberately left out. *)
+              Some (what, "the type derived from its first operand", t0, [ "domain"; "residual" ])
+          | Totaal ->
+              (* §4.20: the temporal total INTEGRATES a rate over time, so the
+                 result drops the /tijdseenheid and keeps the numerator. The
+                 two executor-side derivations do NOT strip it (measured: both
+                 answer the first operand's unit whole) — a divergence recorded
+                 at the card, harmless on this corpus, where every TOTAAL's own
+                 annotation follows the emitter. *)
+              let d =
+                match t0 with
+                | Numeriek ({ eenheid = Some ({ noemer = Some _; _ } as u); _ } as n) ->
+                    Numeriek { n with eenheid = Some { u with noemer = None } }
+                | other -> other
+              in
+              Some (what, "the type derived from its first operand", d, [])
+          | Minimum | Maximum ->
+              if rest = [] then Some (what, "the type derived from its operand", t0, [ "domain"; "residual" ])
+              else
+                let ts = List.map typ_of_expr (a0 :: rest) in
+                if List.exists (fun x -> known x = None) ts then None
+                else
+                  let ts = List.filter_map (fun x -> x) ts in
+                  (* ch. 2.3 / ch. 4.1: the least operand precision, the
+                     conjunction of wholeness, operand 0's sign and unit *)
+                  (match t0 with
+                   | Numeriek { teken; eenheid; _ } ->
+                       Some
+                         ( what, "the type derived from its operands",
+                           Numeriek
+                             { geheel = List.for_all dt_whole ts;
+                               decimalen =
+                                 List.fold_left (fun m x -> min m (dt_decimals x)) max_int ts;
+                               teken; eenheid },
+                           [ "domain"; "sign"; "residual" ] )
+                   | _ -> Some (what, "the type derived from its first operand", t0, [ "domain"; "residual" ]))
+          | _ -> None))
+  | _ -> None
+
+let composite_identity at (e : expr) =
+  match composite_expectation e with
+  | None -> []
+  | Some (what, source, derived, skip) ->
+      use_site_identity ~source ~skip (at ^ "/type") ~what ~decl:(Some derived)
+        ~typ:(typ_of_expr e)
 
 let wf030 ctx =
   let key_checks at otn keys =
@@ -2483,6 +2717,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
         | _ -> [ v "WF-034" (sub "type") "value node without a static type" ])
   in
   typ_checks
+  (* WF-091 at a COMPOSITE position: the annotation against the expectation
+     its operands DERIVE (ch. 4.1, "derived-type identity"). Beside the type
+     prologue, for the same reason: this is a claim about the node's own
+     [type], not about its children, and it holds wherever the walk reaches
+     a covered node kind. *)
+  @ composite_identity at e
   @
   (let closed =
      (* inside a closed body: the reads that break closure short-circuit,

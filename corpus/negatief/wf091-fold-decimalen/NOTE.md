@@ -1,9 +1,9 @@
 Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1) at a **composite** position,
 `Aggregation`/MINIMUM arm, decimals facet: a minimum over operands
-declared at 2 and 4 decimals, annotated 4. ch. 2.3 takes a min/max at the
-**least** operand precision — the winner may be either operand, so only
-the floor is knowable — and claiming the higher one over-reports a
-precision the value need not have.
+declared at 4 and 2 decimals, in that order, annotated 4. ch. 2.3 takes a
+min/max at the **least** operand precision — the winner may be either
+operand, so only the floor is knowable — and claiming the higher one
+over-reports a precision the value need not have.
 
     WF-091 FAIL /resolvedRegels/0/waarde/type: decimals mismatch: the MINIMUM
     aggregation is typed 4 decimals, but the type derived from its operands is
@@ -26,5 +26,7 @@ the sentence WF-091's own clause already stated informally about
 
 Falsifiable: drop `decimals` and this case turns clean (the min/max arm
 skips sign and residual, so nothing stands behind it) while
-`wf091-foldwortel-eenheid` stays red on the same arm; replace the `min` fold
-with the first operand's precision and it turns clean too.
+`wf091-foldwortel-eenheid` stays red on the same arm. And the FORMULA is
+pinned as sharply as the facet: replace the `min` fold over the operands
+with operand 0's own precision and this case turns clean too — which is
+why the operands stand in this order, the higher precision first.
