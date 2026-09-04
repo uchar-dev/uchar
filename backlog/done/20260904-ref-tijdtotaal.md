@@ -23,7 +23,7 @@ Twee lekken maken het één kaart:
   |---|---|
   | Drools | `PLAYED` op **150** (120 + 30 + 0) |
   | `ref` | `MISMATCH: J1.bewaarlast = 0, expected 150` |
-  | `backends/clingo` | weigert op déze vorm reden-dragend (`TRANSLATION FAULT: non-identical units under the write …`) — pre-existent. NB (lens 2): de `Totaal`-arm in `translate.ml` (~:1682) mist een `set = false`-guard; op een EENHEIDLOZE, jaar-granulaire set-operand vuurt hij tegen het subject i.p.v. het element en antwoordt FOUT (`underived` waar ref en Drools 15 geven) — die guard hoort bij deze kaart of een eigen regel |
+  | `backends/clingo` | weigert op déze vorm reden-dragend (`TRANSLATION FAULT: non-identical units under the write …`) — pre-existent. NB (lens 2): de `Totaal`-arm in `translate.ml` (~:1682) mist een `set = false`-guard; op een EENHEIDLOZE, jaar-granulaire set-operand vuurt hij tegen het subject i.p.v. het element en antwoordt FOUT (`underived` waar ref en Drools 15 geven) — die guard hoort bij deze kaart of een eigen regel. **Geland** in commit `e124372` van deze tak, en de fixronde trok hem door naar de `Som`- en `Min`/`Max`-arm (zie Results, "Fixronde"); wat er nog aan armvernauwing openstaat is `backlog/new/20260904-clingo-setfold-armen.md` |
 
   Drools is hier de **gemeten referentie**: zijn twee transpilers
   (`ExecModelTranspiler` r. 962/1060-1065, `DrlTranspiler` r. 2882/2917)
@@ -164,23 +164,30 @@ Per-maand-rooster, halfopen segmenten, hele eenheden per segment:
 | per-element totaal | — | — | 120 + 30 + 0 | **150 €** |
 
 De noemer `mnd` valt in elke rij weg tegen de duur in maanden; het
-resultaat draagt `€`. Het GETAL is in alle rijen precies de bestaande
-eenheidloze telling — de kaart verandert alleen de eenheid, nooit het
-getal. Daarom veranderen de vijf eenheidloze temporele TOTAAL-getuigen
-niet (gemeten: poort 5 blijft 403 cases).
+resultaat draagt `€`. In deze rijen — en alleen daar — is het GETAL
+precies de bestaande eenheidloze telling: de noemer is hier de
+roostereenheid zelf, dus de omrekenfactor is 1. **De ruimere claim "de
+kaart verandert alleen de eenheid, nooit het getal" is onwaar** en is in
+de fixronde ingetrokken; hij geldt uitsluitend voor de segment-collapse
+waar noemer en roostereenheid samenvallen. Vier gemeten tegenvoorbeelden
+staan onder "Fixronde" (`€/jr` → 10 i.p.v. 120, `€/dg` met een
+gedeclareerde factor → 3600, en de twee weigerende vormen). Wat wél
+volgt: de vijf eenheidloze temporele TOTAAL-getuigen veranderen niet,
+want een eenheidloze waarde raakt de roostereenheid nooit (gemeten:
+poort 5 blijft 403 cases).
 
 ### Wat landde — route A: de eigen-tijdlijnvouw
 
 `Timeline.totaal` vermenigvuldigt elk segment niet meer met een
-eenheidloze telling maar met een **duur in de noemer-eenheid van de
-segmentwaarde**; `Arith.mul` laat de noemer wegvallen (de bestaande
-`€/mnd × mnd = €`-tak). Een noemer die niet de eigen
-granulariteitseenheid noemt — `€/jr` op een maandrooster — weigert luid
-in plaats van een niet-verklaarde omrekening te verzinnen. De frontend
-laat die vorm wél door (gemeten: `€/jr voor elke maand` emitteert
-schoon), dus de weigering is bereikbaar uit geldige bron; Drools
-vermenigvuldigt daar stil met de maandtelling. Dat is een bewuste,
-luide divergentie, geen stille.
+eenheidloze telling maar met een **duur in een tijdseenheid**;
+`Arith.mul` laat de noemer wegvallen (de bestaande `€/mnd × mnd =
+€`-tak). *In deze commit* was die duur nog uitgedrukt in de noemer van
+de segmentwaarde en moest de noemer de eigen granulariteitseenheid
+noemen — `€/jr` op een maandrooster weigerde. **De fixronde heeft dat
+vervangen** (maintainerbesluit 2: de duur staat in de ROOSTEReenheid en
+elke convertibele noemer integreert exact); zie "Fixronde" hieronder.
+De frontend laat de `€/jr`-vorm door (gemeten: `€/jr voor elke maand`
+emitteert schoon), dus beide takken zijn bereikbaar uit geldige bron.
 
 ```
 voor : EVALUATION FAULT: incompatible units: EUR vs EUR
@@ -332,6 +339,195 @@ vóór de implementatie (commit 2 van deze tak):
 Plus twee gewerkte voorbeelden (120 € en 150 €), die `ref/test` verbatim
 reproduceert. De maintainer merget dit; de tak is het voorstel.
 
+**Bullets 2 en 3 zijn in de fixronde herschreven** — de exacte
+integratie over de roostereenheid, de twee conventies naast elkaar, de
+Drools-executor-note en de coverage-note. Wat hierboven staat beschrijft
+de tussenstand van commit `bac25b1`, niet de eindtekst.
+
+### Fixronde (2026-09-04, ná de twee lenzen)
+
+Twee lenzen bevestigden de landing en maten vijf punten; de maintainer
+nam er twee ontwerpbesluiten op. Alles hieronder is gemeten vóór en ná,
+letterlijk.
+
+#### Blokkerend: de subject-arm schaduwde de set-vouw
+
+`eval.ml`'s eigen-attribuut-arm matchte op `navigatie_rol = None`,
+`navigatie_pad = []` en `norm aot = norm subject`, maar **niet** op
+`set = false`. Bij een **zelfrelatie** (elementtype = subjecttype) is dat
+precies de §7.1-vorm, en de arm vuurde eerst: hij telde de tijdlijn van
+het SUBJECT. De vorm is bereikbaar — poort 12 draagt de wederkerige
+zelfrelatie. Gemeten op een wederkerige zelfrelatie (eigen bron,
+`het totaal van het bewaartarief van alle strandmaten van de Jutter`;
+J1 eigen bucketwaarde 99, lid J2 = 7; de §7.1-bullet eist 7):
+
+```
+bucketleden      voor : MISMATCH: J1.bewaarlast = 99, expected 7
+                 na   : (met besluit 1) luide horizon-fault op lid "J2"
+tijdlijnleden    voor : EVALUATION FAULT: the temporal total of "bewaartarief"
+                        over a case-supplied full timeline is not exercised …
+                 na   : oracle: PASS  (84 = 12 × 7, de §7.1-route)
+clingo, beide    voor én na : TRANSLATION FAULT (de guard van deze tak)
+```
+
+Sinds de guard was dit óók `ref ≢ clingo`: ref antwoordde stil fout waar
+clingo luid weigerde. `set = false` in het patroon sluit het.
+
+#### Maintainerbesluit 1 — de conventie van de per-element-vouw
+
+*"Een bucket in de per-element-vouw is toegestaan mits hij zijn eigen
+horizon draagt. Een bucket zonder horizon in een set-vouw faalt luid —
+de executor kan de integratie niet uitvoeren zonder te raden. Volle
+tijdlijnen blijven altijd toegestaan. Mengen mag. §8.4 blijft intact."*
+
+Uitgevoerd. Het case-schema (`spec/schema/uchar-case-v0.schema.json`)
+kent voor een temporeel attribuut precies twee invoervormen: de
+`value`-scalar (draagt géén tijdvak) en de `timelineValue`-variant (per
+segment `from`/`to` — de enige zelfbeschrijvende, horizon-dragende
+vorm). Dus: tijdlijnen mogen en mengen, de horizonloze bucketscalar
+faalt luid mét het lid-label, een afwezig lid draagt 0 bij. De
+subject-eigen route blijft ongewijzigd bucket-eisend; §8.4 en
+`spec/schema/README.md` zijn niet aangeraakt.
+
+Gemeten (eigen bron, `Vondst.bewaartarief` = `€/mnd voor elke maand`):
+
+```
+drie tijdlijnleden (120 + 30 + 0)  voor: 150   na: 150
+één bucketlid                      voor:  10   na: EVALUATION FAULT … over "V1":
+                                                   the case supplies an asOfDate-bucket
+                                                   scalar, which carries no period of its
+                                                   own …
+menging tijdlijn + bucketlid       voor: 125   na: dezelfde fault, over "V2"
+alle leden afwezig                 voor:   0   na:   0
+```
+
+De generieke `bucketing is defined for month and year only (ch. 3.2)`
+die een DAG/WEEK/KWARTAAL-bucketlid opleverde is mee vervallen: die tak
+bestaat niet meer. Gemeten op een `voor elke dag`-attribuut met een
+bucketlid — vóór die melding, ná de horizon-fault.
+
+#### Maintainerbesluit 2 — de vreemde noemer: volledig exact integreren
+
+*"Elke naar de roostereenheid CONVERTIBELE noemer integreert exact via
+de gedeclareerde factoren; alleen een niet-convertibele noemer weigert
+luid."*
+
+De rekenkracht bestond al (`Arith.mul`'s rate-cancel via `conv_factor`,
+exact over rationalen); wat ontbrak was een eenheid-record voor de
+ROOSTEReenheid. `Timeline.totaal` heeft nu een `?grid_unit`, eenmaal per
+vouw opgelost door `Timeline.grid_unit` over `doc.eenheidstelsels` met de
+ch.-3.8-spellingstabel, doorgegeven op alle drie de aanroepplekken in
+`eval.ml`. De opzoeking kent drie uitkomsten en elke mislukking is luid:
+geen roostereenheid gedeclareerd, meerdere met verschillende canonieke
+ketens, of een noemer die de declaraties nergens aan die eenheid
+verbinden — die laatste melding noemt nu **beide** eenheidsnamen (dat
+deed hij niet). De onjuiste motiveringszin *"a conversion the
+declaration does not state"* is weg: bij `€/jr` op een maandrooster
+staat die omrekening er wél, in het eenheidstelsel.
+
+Eerst met de hand, daarna door `ref` (unitniveau én end-to-end door de
+runner op een eigen bron):
+
+| vorm | handberekening | `ref` |
+|---|---|---|
+| `10 €/mnd`, heel 2024, maandrooster | 12 mnd × 10 = 120 € | **120 €** |
+| `10 €/jr` (`jr = 12 mnd`), heel 2024 | 12 mnd = 1 jr → 10 €/jr × 1 jr = 10 € | **10 €** (`oracle: PASS`) |
+| `10 €/bm` (`bm` canoniek mnd, factor 1), heel 2024 | 12 bm × 10 = 120 € | **120 €** |
+| `10 €/bm`, één maandbucket | 1 bm × 10 = 10 € | **10 €** |
+| `10 €/mnd` op een **kwartaal**rooster, heel 2024 | 4 kw × 3 mnd/kw × 10 = 120 € | **120 €** |
+| `10 €/dg` met `mnd = 30 dg`, heel 2024 | 12 mnd × 30 dg/mnd × 10 = 3600 € | **3600 €** |
+| `10 €/dg` zónder omrekening naar mnd | niet convertibel → weigering | `EVALUATION FAULT: the temporal total of a EUR/dg value cannot integrate over a mnd grid: the declarations connect no conversion between its denominator and the grid unit (ch. 3.6)` |
+| `10 €/jr` zónder `jr = 12 mnd` | idem | dezelfde fault, met `EUR/jr` |
+
+Kwartaal→maand blijkt dus convertibel zodra het stelsel het zegt (`kw`
+canoniek mnd, factor 3), en dan is de uitkomst exact gelijk aan de
+per-maand-lezing — een grover rooster verandert het getal niet. `€/dag`
+op een maandrooster hangt volledig aan de declaratie: zonder
+`mnd = 30 dg` blijft het de luide weigering, mét die regel integreert
+het exact naar wat de declaratie zegt (3600, niet 3650) — de factor
+regeert, niet de kalender.
+
+**GEVOLG, prominent: de Drools-divergentie is nu SEMANTISCH.** De
+gemeten backend weegt unit-blind: op een `€/jr`-per-maand-tijdlijn
+antwoordt hij 120 waar deze regel 10 geeft — 12× te veel, en geen
+weigering maar een getal. **Geen corpusvorm draagt hem** (elke temporele
+TOTAAL in het corpus is eenheidloos), dus **poort 12 kan hem niet zien**.
+Dat is kaartmateriaal voor de backend-kant; het staat ook als
+executor-note in de spec-clausule.
+
+#### Mandaatverruiming: clingo-symmetrie op alle vouwarmen
+
+Van dezelfde klasse als de gemandateerde `Totaal`-guard, en hier
+expliciet genoteerd als verruiming. De ref-fix landde op de GEDEELDE
+vouwtak, dus `Som` erfde de §7.1-vouw mee; clingo's `Som`-arm (~:1293)
+en `Min`/`Max`-arm (~:1358) hadden geen temporele controle:
+
+```
+Som, tijdlijnleden      voor: ref 150             clingo MISMATCH underived (leeg)
+                        na  : ref 150             clingo TRANSLATION FAULT (luid)
+Som, bucketleden        voor: ref  15             clingo 15  (toevallig gelijk)
+                        na  : ref luide fault     clingo TRANSLATION FAULT (luid)
+Min/Max, bucketleden    voor: ref luide weigering clingo PASS op 10 / 5
+                        na  : ref luide weigering clingo TRANSLATION FAULT (luid)
+Min/Max, tijdlijnleden  voor: ref luide weigering clingo underived
+                        na  : ref luide weigering clingo TRANSLATION FAULT (luid)
+Aantal, set-vorm        voor én na: beide luid (ref "unsupported AttribuutRef shape",
+                                    clingo de catch-all) — mag zo blijven
+```
+
+`Eerste`/`Laatste` kennen geen set-arm (hun arm dispatcht op ≥2
+opgesomde operanden), dus daar is niets te bewaken. Eindbeeld: op elke
+temporele set-vouwvorm antwoordt clingo **luid of exact gelijk aan
+ref** — nooit meer stil fout of leeg. Geen enkele corpus- óf
+toka-golden draagt een set-vouw over een temporeel attribuut (opnieuw
+gescand over alle `ir.json`), dus geen verwachting beweegt.
+
+Ook meegenomen: de meldingstekst van de `Totaal`-guard was half-juist
+bij een zelfrelatie ("… is the element type's attribute" terwijl
+elementtype = subjecttype); hij zegt nu dat het attribuut van elk **LID**
+gelezen wordt — een ander object, ook waar de typen samenvallen.
+
+#### De kleinere punten
+
+* **`timeline.ml`'s wildcard.** De duur-match ving naast `Unitless` ook
+  `Product` stil onder de plain-regel. De match is expliciet gemaakt;
+  een `Product` wordt uitsluitend door `Arith.mul` uit twee noemerloze
+  eenheden gebouwd (dat staat nu in commentaar) en een guard faalt luid
+  als een representatiewijziging die aanname breekt.
+* **De dubbele foutstring.** `"temporal attribute %S without a
+  granularity"` stond letterlijk op twee plekken; het is één helper
+  (`Eval.attr_granulariteit`).
+* **Segment-eenheidsmenging.** Gemeten en als precieze spec-zin
+  vastgelegd: binnen één collapse worden de per-segment-producten met de
+  gewone ch.-2.6-optelling gesommeerd, dus een **convertibele** zuster-
+  eenheid wordt exact ge-restate'd (120 € + 500 ct = **125 €**), een
+  **vreemde** weigert luid, en alleen de **unitless**-kant adopteert
+  stil (10 + 5 € = 15 €). De case-loader hangt de éne gedeclareerde
+  eenheid aan elk segment, dus geen case kan de vorm bereiken; de regel
+  geldt voor berekende tijdlijnen.
+* **De onpinbare zin.** *"the frontend's static claim and this rule are
+  the same statement"* is niet end-to-end te dekken zolang geen
+  `uchar-case-v0`-case de vorm kan dragen (poort 6 heeft geen
+  weigerkanaal, en clingo vertaalt noch de set-vouw noch de
+  eenheid-veranderende schrijf). De zin is vervangen door een eerlijke
+  coverage-note: de regel is op `ref`-unitniveau gepind, de
+  end-to-end-claim blijft proza.
+* **De opruimkaart.** Het pre-existente verkeerd-object-lek van de
+  filterloze temporele `Totaal`-arm is uitgeschreven als
+  `backlog/new/20260904-clingo-setfold-armen.md`, met de reproductie
+  erin: `clingo` levert bij naamdeling het getal van het VERKEERDE
+  object (`V1.bewaarlast = [99]` waar de bron de Jutters 10 leest) en
+  zonder naamdeling stil `underived`, terwijl `ref` de vorm weigert
+  (`unsupported instance-fold source shape`).
+
+#### Wat de fixronde openliet
+
+* **De Drools-divergentie hierboven** — semantisch, onzichtbaar voor de
+  poorten, backend-kaartmateriaal.
+* **De §7.1-vouw in clingo** blijft onvertaald voor álle vouwsoorten;
+  alle armen weigeren nu luid.
+* **De armvernauwing** van `translate.ml` — eigen kaart (zie hierboven).
+
 ### Wat openbleef
 
 * **De volle-tijdlijnfence op de eigen-tijdlijnvouw zonder filter.** Een
@@ -351,7 +547,7 @@ reproduceert. De maintainer merget dit; de tak is het voorstel.
   bij de casebeslissing — is de echte poortwachter voor een case op
   deze golden.
 
-### Poorten (alle dertien groen)
+### Poorten (alle dertien groen — hermeten ná de fixronde)
 
 ```
 check-self-contained: PASS
@@ -363,12 +559,23 @@ check-oracle: PASS (403 cases replayed exactly; NOT replayed, no case file yet:
   corpus/golden/jutterswet-vormenkabinet)
 check-clingo: PASS (403 cases replay exactly through clingo — ref = clingo over the corpus)
 check-noop: PASS (367 cases refute a do-nothing executor; 36 pinned survivors)
-check-rood: PASS (22 red cases fault observably in ref and clingo)
+check-rood: PASS (22 red cases fault observably in ref and clingo;
+  Drools leg 5 fault-pinned, 17 not-carried with reason)
 check-catala: PASS — frontend suite green (201 checks); 12 catala golden(s) regenerate byte-identically
 check-regelspraak: PASS — JUnit suite green (171 tests); 29 rgs golden(s) re-emit byte-identically
-check-toka-parity: PASS (45 .rgs byte-identical; 29 toka cases: ref 29 PASS, clingo 29 PASS, Drools 29 PLAYED)
-check-drools: PASS (played 106; auto-excluded 43; value-divergence 1; JUnit 199 tests)
-check-reftype-derivation: PASS (52 annotations twisted over 11 goldens; 0 pinned survivors)
+check-toka-parity: PASS (45 .rgs byte-identical, 2 holdouts; TOKA suite 27 tests;
+  29 toka cases: ref 29 PASS, clingo 29 PASS, Drools 29 PLAYED, zero silent divergences)
+check-drools: PASS (played 106; auto-excluded 43; value-divergence 1; no-case 3; JUnit 199 tests)
+check-reftype-derivation: PASS (52 unit annotations twisted over 11 goldens; 50 executor
+  replays reproduce the untouched outcome, 9 of them PLAYED by the DRL-text branch;
+  0 pinned survivors)
 ```
 
-`ref/test`: 378 → **382** gewerkte voorbeelden (vier nieuwe getuigen).
+Geen enkel poortgetal beweegt ten opzichte van vóór de fixronde: de
+nieuwe weigeringen liggen alle op vormen die het corpus niet draagt.
+
+`ref/test`: main draagt **376** gewerkte voorbeelden, de tak vóór de
+fixronde **382** (zes nieuwe getuigen — de kaart claimde eerder ten
+onrechte "378 → 382, vier"), en ná de fixronde **410** (nog eens
+achtentwintig: zestien voor besluit 2 en de kleinere punten, twaalf voor
+besluit 1).
