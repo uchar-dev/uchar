@@ -87,7 +87,7 @@ gate 3 rood met precies één passerend negatief, dit; elk ander
 `wf007-*`-geval blijft rood. **Over-afwijzing**: de verifier over alle 204
 documenten van `corpus/golden`, `corpus/rood` én `toka` (174 + 30) geeft
 byte-identieke uitvoer vóór en na — nul nieuwe klachten, de 28 al-rode
-toka-fixtures incluis (die om WF-016/022/024/026/034/045/079 rood zijn en
+toka-fixtures incluis (die om WF-016/022/024/025/026/034/045/079 rood zijn en
 dat onveranderd blijven).
 
 Eerlijk over de reikwijdte: het gat is echt, maar het venster waarin het
@@ -96,9 +96,9 @@ doel oplost, maskeerde de identiteitsfamilie de misvorm al sinds WF-091 —
 met een facetmelding onder een ander regelnummer, die niets over de
 precisievorm zegt (gemeten op `jutterswet-vondsttarief`: "decimals
 mismatch: rule target 'bergingstarief' is typed 2 decimals"). Op een
-KENMERK-doel defert die familie by construction; daar — 44 doelen over 29
+KENMERK-doel defert die familie by construction; daar — 54 doelen over 34
 golden+rood-documenten — is deze check het enige hek, en daar zit het
-negatief. De positieve kant draagt 175 numeriek-getypeerde doelen over 91
+negatief. De positieve kant draagt 239 numeriek-getypeerde doelen over 119
 documenten die de nieuwe arm schoon passeren.
 
 Voorstel op beschermde paden (`spec/verifier/`, `spec/IR-SPEC.md`): de
