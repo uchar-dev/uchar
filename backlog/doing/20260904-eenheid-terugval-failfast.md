@@ -118,7 +118,8 @@ en niets kost.
   in één zin de vier gaten die 1 gaven: geen target, teller-mismatch,
   noemer-mismatch, en tarief-tegen-kale-eenheid.
 - `tellerFactorNaar` (private, ook aangeroepen voor de NOEMER) weigert de twee
-  resterende: een andere canoniek ("ze herleiden niet tot dezelfde canonieke
+  resterende — waarvan lens 2 mat dat alleen de tweede bereikbaar is; de
+  eerste is een defensieve assertie: een andere canoniek ("ze herleiden niet tot dezelfde canonieke
   eenheid") en een ontbrekende `factorNaarCanoniek` bij gelijke canoniek —
   een wirevorm die het schema toestaat (`canoniek` en `factorNaarCanoniek` zijn
   allebei nullable) en die de buitenste poortwacht juist doorlaat.
@@ -230,7 +231,7 @@ ná de commentaarnaregel van §8.
 toka-heruitgiften) zijn byte-identiek; gate 12 staat op elk getal gelijk aan de
 gedocumenteerde main-basislijn (`played 106 / auto-excluded 43 /
 value-divergence 1 / no-case 2`, zie `20260903-wf007-schrijfdoel`), met dezelfde
-43 weigergronden in dezelfde vormen. Gate 13's tellingen (52/11/39/84) zijn
+43 weigergronden in dezelfde vormen. Gate 13's tellingen (52/11/39/0; de aparte boekhoudregel telt 84 eenheiddragende annotaties) zijn
 structureel — het aantal verdraaide annotaties — en zijn ongevoelig voor deze
 wijziging; wat zij bewaakt is de nul-divergentie, en die staat.
 
@@ -319,12 +320,15 @@ Geland in `frontends/regelspraak/src/**`, `backlog/` en — na de
 May-touch-verruiming van 2026-09-04 — één commentaarregel in
 `backends/drools/src/**`. (1) `Eenheid.omrekenfactorNaar` gooit bij een niet-inwisselbaar
 paar een `IllegalStateException` met beide eenheidsnamen in plaats van factor
-één terug te geven; `tellerFactorNaar` — ook de noemerlezing — weigert de twee
-resterende gaten (andere canoniek, en de wirevorm canoniek-zonder-factor die
-het schema toestaat en de buitenste poortwacht doorlaat); `vereistOmrekening`,
-de enige aanroeper die de vraag legitiem kaal stelt, doet de
-convertibiliteitscheck expliciet en reden-dragend, met gemeten ongewijzigd
-antwoord. (2) De kaartnotitie met de tien-rijige aanroepersinventaris, de
+één terug te geven; `tellerFactorNaar` — ook de noemerlezing — weigert het
+resterende bereikbare gat (de wirevorm canoniek-zonder-factor die het schema
+toestaat en de buitenste poortwacht doorlaat) en draagt daarnaast een
+defensieve, onder de preconditie onbereikbare andere-canoniek-assertie
+(gemeten over 8,8 miljoen paren: nul treffers; geen getuige pint hem);
+`vereistOmrekening`, de enige aanroeper die de vraag legitiem kaal stelt,
+doet de convertibiliteitscheck expliciet en reden-dragend, met gemeten
+ongewijzigd antwoord op elk niet-inwisselbaar paar — de wirevorm is de
+gemelde uitzondering, die gooit nu ook via het predikaat. (2) De kaartnotitie met de tien-rijige aanroepersinventaris, de
 sondemeting (224 factorvragen over gate 10/11/12, nul mismatches; de enige
 niet-identieke paren zijn `m ↔ km` en `jaar ↔ maand`) en de letterlijke
 voor/na-probe. (3) Na het maintainer-ja op de testbestanden-vraag:

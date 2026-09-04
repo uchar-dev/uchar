@@ -92,7 +92,10 @@ public record Eenheid(String afkorting, String stelsel, String canoniek, BigDeci
      *  same case read 3,75 in the reference interpreter against 3.750,00 down the Drools path. Every caller in
      *  this repo gates already (measured); this precondition keeps that path dead rather than assuming it is.
      *
-     *  @throws IllegalStateException when {@code target} is absent or not inter-convertible with this unit. */
+     *  @throws IllegalStateException when {@code target} is absent or not inter-convertible with this unit —
+     *  and ALSO on the one shape the outer gate admits: an inter-convertible pair whose shared canonical
+     *  carries no declared factorNaarCanoniek (the wire form). Gating on {@link #convertibleNaar} is therefore
+     *  necessary but not sufficient; the wire form has no factor to give either way. */
     public BigDecimal omrekenfactorNaar(Eenheid target) {
         if (!convertibleNaar(target))
             throw new IllegalStateException("geen omrekenfactor van eenheid '" + weergave() + "' naar '"
@@ -126,10 +129,12 @@ public record Eenheid(String afkorting, String stelsel, String canoniek, BigDeci
 
     /** Numerator-only conversion factor (the simple-unit rule), for a numerator pair that
      *  {@link #tellerConvertibel} has already accepted: the identity when the two abbreviations are the same,
-     *  otherwise the ratio of the two declared factors. Everything else has no factor and says so — reducing
-     *  to a DIFFERENT canonical (the abbreviations differ and nothing ties them), or a factor the declaration
-     *  left unknown (the wire admits a canonical without a factorNaarCanoniek). Both used to answer 1, which
-     *  is how a name mismatch became a wrong magnitude instead of a fault. Called for the DENOMINATOR too, so
+     *  otherwise the ratio of the two declared factors. Everything else has no factor and says so — a factor
+     *  the declaration left unknown (the wire admits a canonical without a factorNaarCanoniek), which used to
+     *  answer 1: that is how a name mismatch became a wrong magnitude instead of a fault. The
+     *  DIFFERENT-canonical throw below is a defensive assertion, unreachable under the callers' precondition
+     *  (tellerConvertibel already accepted the pair, so unequal abbreviations imply one shared non-null
+     *  canonical — measured over 8.8M constructed pairs, zero hits; no witness pins it and none claims to). Called for the DENOMINATOR too, so
      *  it names its own pair rather than the composite the caller asked about. */
     private BigDecimal tellerFactorNaar(Eenheid target) {
         if (afkorting.equals(target.afkorting)) return BigDecimal.ONE;
@@ -152,8 +157,13 @@ public record Eenheid(String afkorting, String stelsel, String canoniek, BigDeci
      *  factor of 1. This is the one legitimate caller of the unguarded question: the transpilers ask it as
      *  "is this a cross-unit site?" on operand pairs whose convertibility they have not established (a §8.2
      *  timeline bound, an additive pair, a begrenzing bound) — and "no common unit" is precisely where no
-     *  factor exists. The answer is unchanged from the fallback it replaces (false either way, measured);
-     *  a caller that must tell "same unit" from "no common unit" apart asks {@link #convertibleNaar}. */
+     *  factor exists. On such pairs the answer is unchanged from the fallback it replaces (false either way,
+     *  measured). The one exception is the wire form: a CONVERTIBLE pair whose canonical has no declared
+     *  factorNaarCanoniek now throws here too, via the factor question, where it used to answer false — the
+     *  method is no longer total, and it sits behind every gated call site as well.
+     *  @throws IllegalStateException on the wire form: convertible, but the shared canonical carries no
+     *  declared factorNaarCanoniek. A caller that must tell "same unit" from "no common unit" apart asks
+     *  {@link #convertibleNaar}. */
     public boolean vereistOmrekening(Eenheid target) {
         return convertibleNaar(target) && omrekenfactorNaar(target).compareTo(BigDecimal.ONE) != 0;
     }
