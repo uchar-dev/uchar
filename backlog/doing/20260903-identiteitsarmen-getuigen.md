@@ -147,6 +147,9 @@ catala-dragende machine, conform CLAUDE.md.
 
 ## Deel 2 — de twee deferral-kanalen: alleen gemeten
 
+*Historie: dit is de meetgolf, vóór het besluit. Beide kanalen zijn op
+2026-09-04 gedicht — zie "Dichtingsgolf" onderaan.*
+
 Niets gedicht; geen regel toegevoegd; `spec/verifier/**` onaangeraakt.
 Alle reproducties zijn /tmp-mutaties van een corpus-golden.
 
@@ -290,3 +293,137 @@ identiteitsfamilie**, schema-geldig en verifier-schoon. Kanaal (a) is
 bovendien gemeten antwoordveranderend in één van de drie executors.
 Beide dichtingen kosten samen twee clausules en twee negatiefs, en per
 meting nul corpuswijziging.
+
+## Dichtingsgolf (2026-09-04)
+
+Maintainerbesluit op de genummerde vraag: **beide kanalen dicht via een
+VERBREDING van WF-034** — geen nieuw nummer (dus geen `WF-092`), geen
+gedocumenteerde deferral. Optie A′ voor kanaal (a), optie A voor kanaal
+(b); de argumentatie staat hierboven in Deel 2 en is niet herhaald.
+
+### Rood eerst, zichtbaar in de historie
+
+Commit `3b5bfa5` voegt de twee negatiefs toe vóór één regel motorcode:
+
+    corpus/negatief/wf034-attribuutref-zonder-objecttype/  (ir.json + NOTE.md)
+    corpus/negatief/wf034-onbekend-regeldoel/              (ir.json + NOTE.md)
+
+Beide zijn hand-gebroken varianten van `jutterswet-aanvoergeld`, beide
+schema-geldig op de v0-wire (`AttribuutRef.objecttype` is
+`["string","null"]`; `Onbekend` is een geldige datatype-knoop). De eerste
+draagt de **gemeten gevaarlijke vorm**: `objecttype: null` op de
+`aangevoerd gewicht`-referentie MÉT een `t`-voor-`kg`-leugen op een echt,
+eenheiddragend type — precies het document dat Drools speelde. De tweede
+zet `{"node":"Onbekend","reden":"niet opgelost"}` op
+`/resolvedRegels/1/doel/type`.
+
+Gate 3 was daarmee ROOD (exit 1), de motor nog ongewijzigd:
+
+    FAIL: negatief case corpus/negatief/wf034-attribuutref-zonder-objecttype/ir.json passed the verifier (must violate WF-034):
+    verifier: PASS
+    FAIL: negatief case corpus/negatief/wf034-onbekend-regeldoel/ir.json passed the verifier (must violate WF-034):
+    verifier: PASS
+
+### De twee verbredingen (commit `186ba7b`)
+
+**K1 — `walk_expr`, de `Attribuut_ref`-arm.** De tak `| None -> []` (geen
+`objecttype`) meldt nu. Waarom het geen deferral van één regel was: die
+ene lege waarde slaat de hele `Some otn`-tak over — ledenresolutie
+(WF-034), navigatiediscipline (WF-053), kenmerk-in-waardepositie (WF-080)
+— én maakt `resolved_attr_datatype` `None`, waarop WF-089/090/091
+defereren. Vijf regels stil op één leeg veld.
+
+**K2 — `expression_layer`, de regeldoel-registratie.** Naast het bestaande
+commentaar "the target lvalue is WF-022's job, not part of the WF-034
+walk" staat nu de clausule die precies dát gat dicht: het
+v0-Onbekend-sentinel op `doel/type` is WF-034-ill-formed. De ongespelde
+tweeling (een doel zonder type) is bewust NIET meegenomen — een lvalue is
+geen waardeknoop, en de gemeten dracht is daar óók nul, dus zonder
+negatief zou het een ongepinde clausule zijn.
+
+De twee meldingen, letterlijk, in de stijl van de bestaande
+WF-034-meldingen:
+
+    WF-034 FAIL /resolvedRegels/0/voorwaarde/links: attribute reference 'aangevoerd gewicht' without an object type: it resolves against no declaration
+    WF-034 FAIL /resolvedRegels/1/doel/type: unknown-type sentinel on a rule target
+
+Eén melding per document, geen dubbelen: de identiteitsfamilie blijft op
+beide vormen defereren (dat is haar bestaande gedrag, en de sentinel-arm
+doet het niet anders), en WF-034 weigert het document toch al.
+
+### Mutantbewijs, clausule-exact
+
+Per negatief één gerichte verzwakking; `checks.ml` daarna byte-identiek
+hersteld (`sha256 d970d25c…`, gecontroleerd).
+
+| mutant | gate 3 | welk geval passeert |
+|---|---|---|
+| K1 terug naar `| None -> []` | ROOD (exit 1) | **alleen** `wf034-attribuutref-zonder-objecttype`; alle 235 andere negatiefs blijven geweigerd, alle 174 golden+rood blijven schoon |
+| K2-clausule uit `expression_layer` verwijderd | ROOD (exit 1) | **alleen** `wf034-onbekend-regeldoel`; idem |
+| geen mutant (hersteld) | GROEN | — (174 golden clean; 236 negatief rejected for their declared rule) |
+
+Elke clausule draagt dus precies één geval, en geen van beide draagt het
+geval van de ander.
+
+### Nameting van de gevaarlijke flank
+
+De vorm die Drools speelde is nu gate-3-onbereikbaar. Drie metingen:
+
+    [1] het document zelf, door de verifier:
+        WF-034 FAIL /resolvedRegels/0/voorwaarde/links: attribute reference 'aangevoerd gewicht' without an object type: it resolves against no declaration
+
+    [2] controle — dezelfde leugen MET objecttype gevuld (de leugen is niet onschuldig):
+        WF-091 FAIL /resolvedRegels/0/voorwaarde/links/type: unit mismatch: attribute reference 'aangevoerd gewicht' is typed 't' of system 'Gewicht' (factor 1000 to 'kg'), but the declaration it reads from is 'kg' of system 'Gewicht' (factor 1 to 'kg')
+
+    [3] dezelfde vorm als GOLDEN aangeboden (tijdelijke map, daarna verwijderd):
+        FAIL: document corpus/golden/zz-tmp-flank/ir.json is not verifier-clean:
+        WF-034 FAIL /resolvedRegels/0/voorwaarde/links: attribute reference 'aangevoerd gewicht' without an object type: it resolves against no declaration
+
+De klasse "verifier stil, twee executors weigeren om een ander gebrek, de
+derde rekent door en antwoordt verkeerd" bestaat niet meer: de weigering
+valt nu vóór elke executor.
+
+### Spec (commits `69b1298`, `1bc5ac7`)
+
+- **ch. 4.6, WF-034** — de clausule verbreed met twee zinnen: een
+  `AttributeReference` NOEMT het objecttype waarop zijn waarde leeft
+  (ch. 4.1a), en het sentinel wordt ook op een regeldoel-`type`
+  geweigerd. Met de reden erbij (generieke vrijstelling; gemeten
+  antwoordveranderend) en de expliciete afbakening van de ongespelde
+  tweeling.
+- **indexrij WF-034** — regelkolom, gatekolom (de verbreding, het
+  maintainerbesluit met datum, de nulmeting over 152 golden + 22 rood +
+  234 negatief + 30 pariteit, en de gemeten frontend-onbereikbaarheid van
+  beide vormen), goldenkolom en negatiefkolom (de twee nieuwe gevallen
+  plus `wf034-typeloos-literal`, dat al bestond maar in de rij ontbrak).
+- **ch. 4.1, WF-091-prosa** — de familiedeferral is niet langer
+  ZELFBEDIEND: de twee vormen waarmee een document hem kon kiezen zijn
+  ill-formed.
+- Geen spec-passage beschreef deze kanalen als OPEN — gecontroleerd:
+  `objecttype` komt in `IR-SPEC.md` alleen voor in ch. 4.1a en WF-053, en
+  het sentinel alleen in de deferral-formuleringen, die feitelijk juist
+  blijven. De kaartbijvangst stond in `backlog/done/20260901-eenheden-op-refs.md`
+  en in Deel 2 hierboven; beide zijn historie en blijven staan, met een
+  vooruitwijzing bovenaan Deel 2.
+
+### Poorten, alle twaalf
+
+    1  check-self-contained: PASS
+    2  check-ir-schema: PASS (schema valid; 174 file(s) validate and round-trip)
+    3  check-verifier: PASS (174 golden clean; 236 negatief rejected for their declared rule)
+    4  check-case-schema: PASS (schema valid; 425 case file(s) validate)
+    5  check-oracle: PASS (403 cases replayed exactly; NOT replayed, no case file yet: corpus/golden/jutterswet-seizoenvondst corpus/golden/jutterswet-vormenkabinet)
+    6  check-clingo: PASS (403 cases replay exactly through clingo — ref = clingo over the corpus)
+    7  check-noop: PASS (367 cases refute a do-nothing executor; 36 pinned survivors pin defeasible standing)
+    8  check-rood: PASS (22 red cases fault observably in ref and clingo); Drools leg PASS (5 fault-pinned, 17 not-carried with reason)
+    9  check-catala: PASS — frontend suite green (201 checks); 12 catala golden(s) regenerate byte-identically
+    10 check-regelspraak: PASS — JUnit suite green (159 tests); 28 rgs golden(s) re-emit byte-identically
+    11 check-toka-parity: PASS (45 .rgs byte-identiek, 2 holdouts; TOKA suite 27 tests; 29 replay-slices door ref/clingo/Drools, nul stille divergenties)
+    12 check-drools: PASS — played 106, auto-excluded 43, value-divergence 1, no-case 2, JUnit 178 tests
+
+Twee verschillen met de bouwgolf: gate 3 telt 236 negatiefs in plaats van
+234 (de twee nieuwe), en **gate 9 is dit keer wél gedraaid** — `catala` en
+`clerk` staan niet op de kale PATH maar wél in de opam-switch
+(`~/.opam/default/bin`), dus na `eval $(opam env)` draait hij en is hij
+groen. De bouwnotitie hierboven meldt hem als niet-gedraaid; dat was een
+onvolledige meting, niet een ontbrekende installatie.
