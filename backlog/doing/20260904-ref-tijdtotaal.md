@@ -79,7 +79,73 @@ May touch: `ref/**`, `corpus/golden/jutterswet-tempototaal/case*`,
 `backlog/`. (`spec/RUNTIME-SEMANTICS.md` alleen als **voorstel** —
 beschermd pad, de maintainer merget.)
 
+**Verruimingen op de may-touch, met reden:**
+
+* `backends/clingo/lib/translate.ml` — **één guard**, expliciet
+  maintainermandaat (zie Results, "de clingo-guard"): de `Totaal`-arm mist
+  een `set`-guard en antwoordt op de §7.1-vorm stil fout tegen het
+  verkeerde subject. De verruiming is precies die ene fail-fast-regel;
+  de set-vouw zelf blijft onvertaald (eigen kaart).
+* `corpus/golden/jutterswet-tempototaal/NOTE.md` — de NOTE draagt de
+  gemeten `ref`-weigering (`incompatible units: EUR vs EUR`) als
+  vaststaand feit. Die meting is ná deze kaart onwaar; een NOTE die een
+  opgeheven defect als staand beschrijft is een leugen in een
+  artefactzone. Alleen die passage wordt bijgewerkt, met de nieuwe
+  metingen erin.
+
 Out of scope: clingo's tijdgranulariteitsgrens (de ASP-laag draagt de
 set-fold `Totaal` niet en dat is een eigen kaart), de frontends — de
 typering is per maintainerbesluit 2026-09-04 beslist en staat hier niet
 opnieuw ter discussie.
+
+## Results
+
+### Rood eerst — de drie metingen vóór één regel code veranderde
+
+Alle drie op de commit waar de kaart geclaimd werd, met de
+`scripts/check-oracle.sh`-aanroepvorm (`runner.exe <ir> <case>`).
+
+**(1) De eigen-tijdlijnvouw, `bewaargeld` van
+`corpus/golden/jutterswet-tempototaal` — asOfDate-bucketcase**
+(J1, `bewaarvergoeding per maand` = 10 €/mnd als bucketwaarde,
+asOfDate 2024-01-01, verwacht 10):
+
+```
+EVALUATION FAULT: incompatible units: EUR vs EUR
+```
+
+**(1b) Dezelfde regel met een VOLLE tijdlijn** (10 €/mnd over heel 2024,
+verwacht 120) loopt op een tweede, oudere hek — niet op de eenheden:
+
+```
+EVALUATION FAULT: the temporal total of "bewaarvergoeding per maand" over a
+case-supplied full timeline is not exercised by any corpus case; the
+asOfDate-bucket convention carries the total
+```
+
+**(2) De per-element-vouw over een set** (§7.1). Eigen bron in `/tmp`,
+door de frontend geëmit: `bewaartarief` van `Vondst` is
+`€/mnd voor elke maand`, `bewaarlast` van `Jutter` is `€`, regel
+`het totaal van het bewaartarief van alle vondsten van de Jutter`. De
+frontend typeert het resultaat `€` (de strip vuurt — `setLezing` sluit
+de temporele set-lezing uit). Case: V1 = 10 €/mnd over heel 2024,
+V2 = 5 €/mnd over het eerste halfjaar, V3 zonder tijdlijn; verwacht 150:
+
+```
+MISMATCH: J1.bewaarlast = 0, expected 150
+```
+
+**(3) De clingo-`Totaal`-arm zonder `set`-guard** (`translate.ml` ~:1682).
+Eigen bron in `/tmp`: `bewaartarief` van `Vondst` **eenheidloos,
+`voor elk jaar`**, `bewaarlast` van `Jutter` eenheidloos, dezelfde
+set-vouw; V1 = 10, V2 = 5 als bucketwaarden op asOfDate 2024-06-15;
+handberekend 10×1 + 5×1 = **15**:
+
+```
+ref    : oracle: PASS (2 expectations)
+clingo : MISMATCH: J1.bewaarlast is underived (leeg), expected 15
+```
+
+De arm matcht op `attr_temporal` van het ELEMENT-objecttype maar emitteert
+`val(<subject>, ...)`, dus hij leest het attribuut van het verkeerde
+object. Geen weigering, geen melding — een stil fout antwoord.
