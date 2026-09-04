@@ -42,7 +42,7 @@ placed there would be admitted by either branch and would pin neither.)
 
 *Measured breadth of the shape itself:* zero outside this witness and its
 sibling. Over all 483 documents of golden + rood + negatief + parity the
-narrowing changes exactly those two verdicts and nothing else; the 29
+narrowing changes exactly those two verdicts and nothing else; the 32
 wart sources in the corpus — among them the counting folds of
 `jutterswet-kaveltelling`, `jutterswet-aanmeldertelling` and this very
 golden's first rule — keep both routes and replay unchanged.

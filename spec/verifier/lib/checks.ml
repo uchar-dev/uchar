@@ -2629,14 +2629,17 @@ let aggregation_source_check ctx at ~element_type e =
              wart the source is an ordinary attribute reference and resolves
              like one.
 
-             The regression boundary, measured over all four zones: 29 wart
-             sources (22 through the role name, 7 through the type pair) and
-             53 typed sources, of which every single typed one already
-             resolves as a declared attribute — the two counting folds that
-             lean on the fallback (`jutterswet-kaveltelling`'s synthesized
-             plural, and the role-name route of `jutterswet-aanmeldertelling`
-             and `jutterswet-vondsttelling`) are warts and keep both
-             routes. *)
+             The regression boundary, counted over all four zones: of 89
+             named fold sources, 32 carry the wart (24 resolving through a
+             declared role name, 5 through the type pair, 3 already
+             ill-formed under this rule's older arms) and 57 do not — and of
+             those 57, 54 already resolve as a declared attribute and one
+             names a characteristic (WF-080's arm above, unchanged), leaving
+             only the two witnesses this narrowing adds. The counting folds
+             that lean on the fallback (`jutterswet-kaveltelling`'s
+             synthesized plural; the declared-plural route of
+             `jutterswet-aanmeldertelling` and `jutterswet-vondsttelling`)
+             are warts and keep both routes. *)
           let wart = match typ with Some (Datatype_onbekend _) -> true | _ -> false in
           if has_attr ot a || (wart && is_role_name ctx a) then []
           else if has_kenmerk ot a then

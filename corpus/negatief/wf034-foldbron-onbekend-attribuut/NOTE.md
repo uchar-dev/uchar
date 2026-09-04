@@ -37,13 +37,15 @@ returned confidently, where 12 and 30 are pinned by hand on an **anchor**
 golden. The ASP backend refuses the same document outright. Divergence again,
 and again on input the verifier called well-formed.
 
-The regression boundary, measured over all four zones before and after: 29
-fold sources carry the wart (22 resolving through a declared role name, 7
-through the type pair) and 53 do not — and every one of those 53 already
-resolves as a declared attribute of its object type. The counting folds that
-lean on the fallback keep both routes: `jutterswet-kaveltelling`'s
+The regression boundary, counted over all four zones before and after: of 89
+named fold sources, 32 carry the wart — 24 resolving through a declared role
+name, 5 through the type pair, 3 already ill-formed under this rule's older
+arms — and 57 do not; of those 57, 54 already resolve as a declared attribute
+of their object type and one names a characteristic (WF-080's business,
+untouched), leaving only this witness and its sibling. The counting folds
+that lean on the fallback keep both routes: `jutterswet-kaveltelling`'s
 synthesized plural `duinkavels` over a role with no declared plural (the
-canonical fallback witness) and the declared-plural route of
+corpus's one golden fallback user) and the declared-plural route of
 `jutterswet-aanmeldertelling` and `jutterswet-vondsttelling` are warts, and
 all three replay unchanged in `ref` and clingo after the narrowing
 (5, 3 and 7 expectations respectively, and the untouched
