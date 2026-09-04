@@ -194,3 +194,27 @@ uit elkaar liggen; het corpus draagt hem niet (beide bestaande
 filter-LHS-getuigen zijn eenheidloze gehele getallen), dus de
 equivalentieverklaring is nu door commentaar en meting gedekt, niet door
 een artefact.
+
+## Result (2026-09-04)
+
+Geland: een premissecorrectie plus een gedragsvrije vastlegging. De
+gemeten waarheid: `agg` op de filter-LHS-plek is de foldbron-OPERAND,
+niet de aggregatie, en zijn drieslag (objecttype, attribuut, type) wordt
+letterlijk gekopieerd — object-identiek aan de declaratie op elk
+corpusgeval (73 .rgs over beide re-emissiezones, nul afwijkingen; de
+€/mnd-flank bevestigt dat de plek de declaratie-eenheid mét noemer
+houdt waar het aggregaattype hem stript). Herschrijven naar een
+herlookup zou de filterterm en de accumulate-foldbron uiteen kunnen
+laten lopen; gekozen is de equivalentie als broncommentaar op de plek.
+Twee lenzen corrigeerden het bewijs: de wachterketen-invariant was
+onwaar (twee construeerbare routes — een kenmerknaam door `heeftLid`,
+en `AANTAL` met `set == false` — bereiken de plek met een gesynthetiseerd
+Onbekend-type; de verifier vangt beide hard, dus geen golden kan de vorm
+dragen), de kopie is bij een rolnaam-foldbron juist het ENIGE kanaal dat
+vuurt, en de resetlijst en superlatief zijn op de maat van de code
+gebracht. Commentaar-only bevestigd (diff zonder commentaarregels leeg);
+gates 10/11/2/1 groen, 26 rgs-goldens byte-identiek. Bijvangst gecard:
+`backlog/new/20260904-totaalvan-setfold.md` (de ongepinde
+noemerstrip-flank, het frontend/ref-gat op set-fold `totaal van`, en de
+spec-voorvraag). De twaalf eindgates en de herpin volgen bij de merge
+(hoofdsessie).
