@@ -842,6 +842,61 @@ let wf034_verdelingen ctx =
          | Some _ -> [])
        ctx.doc.verdelingen)
 
+(* WF-034 on the allocation's SIX attribute-name fields, the filled half of the
+   same defect (maintainer decision 2026-09-04, third wave, fix round). The arm
+   above reads `Some a` as "a name is there"; an empty string satisfies it and
+   names nothing, so every rule behind `Some a` stays as silent as it is on
+   null. This clause is the other half: a PRESENT attribute name is not empty.
+   Absence keeps its meaning — null on `ratoAttribuut`, `maximumAttribuut`,
+   `restantAttribuut` and `groepeerAttribuut` is a facet switched off, and
+   `ratoAttribuut: null` under NAAR_RATO is already WF-025's business — but a
+   field that is present must name something.
+
+   Emptiness is decided by the verifier's own name identity (whitespace
+   collapsed, lowercased, ch. 2.4): a blank spelling is the same empty name and
+   resolves against the same nothing.
+
+   Measured on the golden allocations, one field emptied to "" at a time, every
+   one of them verifier-CLEAN before this clause and 0 after — and the executor
+   consequence is worse than the null half's, because it is not uniformly loud:
+
+     bronAttribuut     11/11  ref and clingo both fault (empty source amount /
+                              unknown attribute "")
+     doelAttribuut     11/11  both fault (unknown attribute "")
+     restantAttribuut   9/9   both fault (unknown attribute "")
+     ratoAttribuut      7/7   BOTH SILENT: no fault, a wrong value
+                              (anchor jutterswet-bergingstoezicht:
+                              bergingsaandeel underived, 60 pinned)
+     maximumAttribuut   4/4   ref SILENT (jutterswet-berging: 600 for 300),
+                              clingo faults — ref != clingo on a document the
+                              verifier called well-formed
+     groepeerAttribuut  3/3   BOTH SILENT (jutterswet-rangaflopend: 300 for
+                              1200; the ordering key vanishes and the whole
+                              pot goes to one recipient)
+
+   The three silent rows are where the differential square is blind: only the
+   hand-pinned anchor expectations catch them, never backend agreement. *)
+let wf034_verdeling_namen ctx =
+  List.concat
+    (List.mapi
+       (fun i (r : resolved_verdeling) ->
+         let at = Printf.sprintf "/verdelingen/%d" i in
+         let filled field = function
+           | Some a when norm a = "" ->
+               [ v "WF-034" (at ^ "/" ^ field)
+                   (field
+                  ^ " is present but empty: an attribute name that names nothing \
+                     resolves against no declaration") ]
+           | _ -> []
+         in
+         filled "bronAttribuut" r.bron_attribuut
+         @ filled "doelAttribuut" r.doel_attribuut
+         @ filled "ratoAttribuut" r.rato_attribuut
+         @ filled "maximumAttribuut" r.maximum_attribuut
+         @ filled "restantAttribuut" r.restant_attribuut
+         @ filled "groepeerAttribuut" r.groepeer_attribuut)
+       ctx.doc.verdelingen)
+
 (* The type an expression carries, iff it is a value (a Lambda is not). The
    sole nominal source for static typing; WF-027 uses it to admit a
    boolean-TYPED characteristic value, and the expression walk (WF-034..) below
@@ -6587,7 +6642,7 @@ let all (doc : document) : violation list =
       wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf020 ctx; wf021 ctx;
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx;
-      wf034_verdelingen ctx; wf045_046 ctx;
+      wf034_verdelingen ctx; wf034_verdeling_namen ctx; wf045_046 ctx;
       wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf079 ctx; wf082 ctx; wf054 ctx;
       wf057 ctx; wf059 ctx; wf060 ctx; wf087 ctx; wf061 ctx; wf088 ctx; wf065 ctx; wf067 ctx;
       wf071 ctx; wf072 ctx; wf075 ctx; wf086 ctx; expression_layer ctx ]
