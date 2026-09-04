@@ -1,0 +1,51 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "aangevoerd gewicht": { "number": "640.25" },
+          "aanvoerwaarde": { "number": "310.00" }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "aangevoerd gewicht": { "number": "499.99" },
+          "aanvoerwaarde": { "number": "87.40" }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "aangevoerd gewicht": { "number": "500.00" },
+          "aanvoerwaarde": { "number": "0.00" }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "aanvoerdrempel": { "number": "500.00" },
+      "aanvoertarief": { "number": "12.50" }
+    }
+  },
+  "expected": [
+    { "kind": "characteristicPresent", "label": "J1", "characteristic": "aanvoerplichtig" },
+    { "kind": "characteristicAbsent", "label": "J2", "characteristic": "aanvoerplichtig" },
+    { "kind": "characteristicPresent", "label": "J3", "characteristic": "aanvoerplichtig" },
+    { "kind": "attributeValue", "label": "J1", "attribute": "aanvoergeld", "value": { "number": "322.50" } },
+    { "kind": "attributeValue", "label": "J2", "attribute": "aanvoergeld", "value": { "number": "99.90" } },
+    { "kind": "attributeValue", "label": "J3", "attribute": "aanvoergeld", "value": { "number": "12.50" } },
+    { "kind": "consistent" }
+  ]
+}

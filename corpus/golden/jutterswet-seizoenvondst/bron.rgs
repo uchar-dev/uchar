@@ -1,0 +1,14 @@
+Eenheidsysteem Gewicht
+    het kilogram (mv: kilogrammen) kg
+
+Dimensie het seizoen, bestaande uit de seizoenen (na het attribuut met voorzetsel in):
+    1. voorjaar
+    2. najaar
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het vondstgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg gedimensioneerd met seizoen;
+    het voorjaarsgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+
+Regel voorjaarsgewicht van een jutter
+    geldig altijd
+        Het voorjaarsgewicht van een Jutter moet berekend worden als zijn vondstgewicht in voorjaar.

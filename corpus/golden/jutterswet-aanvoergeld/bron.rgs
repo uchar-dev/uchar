@@ -1,0 +1,23 @@
+Eenheidsysteem Gewicht
+    het kilogram (mv: kilogrammen) kg
+
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is aanvoerplichtig kenmerk (bijvoeglijk);
+    het aangevoerd gewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+    de aanvoerwaarde Numeriek (niet-negatief getal met 2 decimalen) met eenheid €;
+    het aanvoergeld Numeriek (getal met 2 decimalen) met eenheid €;
+
+Parameter de aanvoerdrempel : Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg
+Parameter het aanvoertarief : Numeriek (getal met 2 decimalen) met eenheid €
+
+Regel aanvoerplichtig bij drempel
+    geldig altijd
+        Een Jutter is aanvoerplichtig
+        indien zijn aangevoerd gewicht groter of gelijk is aan de aanvoerdrempel.
+
+Regel aanvoergeld van een jutter
+    geldig altijd
+        Het aanvoergeld van een Jutter moet berekend worden als zijn aanvoerwaarde plus het aanvoertarief.
