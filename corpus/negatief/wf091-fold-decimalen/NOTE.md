@@ -1,0 +1,30 @@
+Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1) at a **composite** position,
+`Aggregation`/MINIMUM arm, decimals facet: a minimum over operands
+declared at 2 and 4 decimals, annotated 4. ch. 2.3 takes a min/max at the
+**least** operand precision — the winner may be either operand, so only
+the floor is knowable — and claiming the higher one over-reports a
+precision the value need not have.
+
+    WF-091 FAIL /resolvedRegels/0/waarde/type: decimals mismatch: the MINIMUM
+    aggregation is typed 4 decimals, but the type derived from its operands is
+    2 decimals
+
+Why it has to exist. A composite type is not a copy of one declaration
+but a **derivation** over its operands, so until this card nothing crossed
+it — WF-091's honesty note 4 said so in as many words, and the four rules
+that come nearest all stop short: WF-035 crosses operand *convertibility*
+(and `kg`/`t` are convertible by construction), WF-023 crosses the value
+against the target for *compatibility*, WF-007 crosses the precision
+*form* and not its value, and WF-089/WF-090 reach a fold node on the
+domain facet alone. Measured before the law landed: this document is
+verifier-clean.
+
+This pins the one aggregation formula that is not a pass-through: the least
+operand precision, the conjunction of wholeness, operand 0's sign and unit —
+the sentence WF-091's own clause already stated informally about
+`MINIMUM`/`MAXIMUM` and nothing enforced.
+
+Falsifiable: drop `decimals` and this case turns clean (the min/max arm
+skips sign and residual, so nothing stands behind it) while
+`wf091-foldwortel-eenheid` stays red on the same arm; replace the `min` fold
+with the first operand's precision and it turns clean too.
