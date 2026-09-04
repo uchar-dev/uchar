@@ -7,15 +7,29 @@ byte-identically):
 
 | rule | operator | operand | operand type | result type |
 |---|---|---|---|---|
-| `bewaarlast` | `het totaal van` | `het bewaartarief van alle vondsten van de Jutter` (`set = true`) | `€/mnd` | **`€/mnd`** |
+| `bewaarlast` | `het totaal van` | `het bewaartarief van alle vondsten van de Jutter` (`set = true`, **not** timeline-declared) | `€/mnd` | **`€/mnd`** |
 | `bewaarsom`  | `de som van`     | the same set read | `€/mnd` | `€/mnd` |
 | `bewaargeld` | `het totaal van` | `zijn bewaarvergoeding per maand` (`set = false`, timeline-declared) | `€/mnd` | **`€`** |
 
 Read the first two rows together: **the set reading of "het totaal van" is
 an alias of "de som van"** — same operand, same result type, on the wire.
+The alias covers the **result type only**, not the §4.20 operand contract:
+`het totaal van` still demands a per-tijdseenheid operand where `de som
+van` takes any unit. Measured on the same shape with a plain `€`
+bewaartarief — `de som van` resolves clean, `het totaal van` says
+`totaal van vereist een eenheid per tijdseenheid (§4.20 Tabel 30), kreeg
+'EUR'`.
+
 Read the first and third together: **the §4.20 noemer strip belongs to the
-temporal route alone** — the same operator over the subject's own timeline
-still drops the `/tijdseenheid` (Tabel 30 row 2, result `Eenheid1`).
+TIME AGGREGATION alone** — the same operator over the subject's own
+timeline still drops the `/tijdseenheid` (Tabel 30 row 2, result
+`Eenheid1`). The dividing line is *integrating over time*, not the `set()`
+flag: a set read over a **temporal** attribute is the §7.1 per-element
+timeline fold (each element's tijdreeks summed over time first, then over
+the set — the Drools transpilers' `rsTijdTotaal` path), so it integrates
+too and keeps the strip. That fourth form is deliberately not in this
+document; it is the subject of `backlog/new/20260904-ref-tijdtotaal.md`,
+which has to close its value divergence first.
 
 That is the maintainer decision of 2026-09-04, and this golden is what
 makes it machine-checkable.
@@ -86,14 +100,19 @@ EVALUATION FAULT: incompatible units: EUR vs EUR
 `Timeline.totaal` multiplies each segment's value by a **unitless** whole-unit
 count, so the `€/mnd` unit survives the collapse and the `€` target then
 rejects it. In other words the §4.20 strip is, today, a static claim of the
-frontend that the oracle does not implement on either route. No gate saw
+frontend that `ref` implements on neither route. No gate saw
 this before, because every temporal `TOTAAL` in the corpus is unitless (in
 `jutterswet-getijdenwacht`, `jutterswet-penningjaar`, `synth2-clip-over-prorata`,
 `synth2-clip-cond-over-prorata` and `anchor/jutterswet-dubbelwacht` the
-operand carries no unit at all, so the strip is a no-op). This golden makes
-the claim visible on the wire; closing it is a spec-and-oracle question
-(does `ref` learn the Tabel-30 integration, or does the strip go?), not an
-emitter one, and it is deliberately left open here.
+operand carries no unit at all, so the strip is a no-op).
+
+This is a `ref` **defect**, not an open question about the strip: the
+Drools backend plays the same rule off the same wire. On `J1` with a
+`bewaarvergoeding per maand` timeline of 10 €/mnd across 2024, Drools
+answers `bewaargeld = 120` (10 × 12 months, `PLAYED 1`) — the integration
+the strip's `€` result type describes. This golden makes the gap visible on
+the wire; closing it belongs to `ref`, and is carded as
+`backlog/new/20260904-ref-tijdtotaal.md`.
 
 ## Hand-computed absolutes, ready for the case
 

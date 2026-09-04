@@ -92,17 +92,29 @@ operand (WF-043). When one of these constructs becomes executable, its
 witness moves into an executing document and the cabinet shrinks — it
 is scaffolding for the WF index, never a place for semantics.
 
-`jutterswet-seizoenvondst` (2026-09-04) is the cabinet's **second**
-verifier-only golden, and the only other one: a UNIT-bearing dimensioned
-attribute read through a dimension cell, which is the positive witness
-WF-091's `DimensieCel` arm had nowhere (`IR-SPEC.md` ch. 4.1, honesty
-note 3). It carries no case for the same measured reason the cabinet
-does — `ref`, clingo and the Drools backend each decline a cell read in
-their own words, and `uchar-case-v0` has no per-cell input variant — so
-gate 5 lists it, beside `jutterswet-vormenkabinet`, as not replayed. Its
-`NOTE.md` carries the three refusals verbatim. A verifier-only golden is
-admitted ONLY when that measurement is in its NOTE: silence there would
-make an unexecuted document look like an executed one.
+Two more goldens joined the cabinet on 2026-09-04, so gate 5 now lists
+**three** as not replayed.
+
+`jutterswet-seizoenvondst` is a UNIT-bearing dimensioned attribute read
+through a dimension cell, which is the positive witness WF-091's
+`DimensieCel` arm had nowhere (`IR-SPEC.md` ch. 4.1, honesty note 3). It
+carries no case for the same measured reason the cabinet does — `ref`,
+clingo and the Drools backend each decline a cell read in their own
+words, and `uchar-case-v0` has no per-cell input variant. Its `NOTE.md`
+carries the three refusals verbatim.
+
+`jutterswet-tempototaal` is the route-split witness of `het totaal van`:
+the set reading and the temporal reading of one operator over one unit
+(`€/mnd`), side by side, so neither route can move unnoticed. It is
+caseless for a different measured reason — `ref` and the Drools backend
+carry the set fold, but `backends/clingo` refuses it reason-bearing and
+gate 6 has no refusal channel — and its `NOTE.md` carries the refusal
+verbatim plus the hand-computed absolutes the case gets the day clingo
+carries the form.
+
+A verifier-only golden is admitted ONLY when that measurement is in its
+NOTE: silence there would make an unexecuted document look like an
+executed one.
 
 `jutterswet-postwacht` is the second pin bump's emitter golden
 (toolchain `fe46e49`, 2026-08-18): a re-emittable source whose dump
