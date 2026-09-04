@@ -36,9 +36,14 @@ it**. Measured on this document against
 That is strictly worse than the sibling channel, where the two OCaml
 executors at least fault loudly and only Drools plays: here the tonne-typed
 sum answers in kilogrammes in all three, and no rule and no executor fences
-it. Corpus dracht of the shape is zero (152 golden + 22 rood + 236 negatief
-+ 30 parity documents scanned, the only occurrence being the sibling
-negatief itself), so the widening cannot over-reject.
+it. Corpus dracht of the shape is zero: 152 golden + 22 rood + 30 parity
+documents plus the 236 negatief cases that existed before this one were
+scanned for an `AttribuutRef` with `objecttype: null` in any position, and
+the only occurrence anywhere is the sibling negatief — in a value position,
+not a fold source. So the widening cannot over-reject. Confirmed the other
+way round after the fact: nulling all 718 `objecttype` fields of the goldens
+one at a time leaves 43 verifier-clean survivors before this clause and 0
+after, and gate 3 stays at 174 golden clean.
 
 A hand-broken variant of `corpus/golden/jutterswet-vondsttelling/ir.json`
 (one field emptied, one unit abbreviation and factor changed); the shape is
