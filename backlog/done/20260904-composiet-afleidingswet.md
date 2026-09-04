@@ -315,6 +315,11 @@ staan tot de maintainer hem fast-forward merget.
 
 ## Fixronde (2026-09-04)
 
+*Meetnoemers: alle tellingen in kaart en indexrij dateren op de
+174-documentenstand van 2026-09-04; de rebase van fixronde 3 bracht
+`jutterswet-tempototaal` (175, twee TOTAAL-knopen) — de strip-getuige
+meet op die 175-stand, expliciet gedateerd in de indexrij.*
+
 Lens 1 bevestigde de motor en elk mutantgetal en blokkeerde op prosa- en
 randpunten. Zeven daarvan zijn hier gerepareerd; elk punt is éérst
 gereproduceerd.
