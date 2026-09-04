@@ -332,6 +332,172 @@ survivors)` plus de boekhoudregel. JUnit: **198**, nul overgeslagen (195 +
 3 getuigen). Gate 12: `played 105 / auto-excluded 43 / value-divergence 1`
 — ongewijzigd op elk getal.
 
+## Fixronde 3 (2026-09-04) — na lens 2
+
+Lens 2 verklaarde de Java-kern bevindingloos en blokkeerde op vier
+normatieve punten. Elk is eerst gereproduceerd, daarna gefixt.
+
+**B3-1 — de boekhoudklem sleutelde op de verkeerde eenheid**
+(`scripts/check-reftype-derivation.sh`, stap 6). De klem en de
+verdraaitabel sleutelden op `node`. Maar §2.10's vierde uitzonderingsklasse
+bestaat niet uit knoopsoorten: `GEDEELD_DOOR` en `PLUS` zijn dezelfde
+knoopsoort (`Binair`), en alleen de tweede leidt af. Gevolg: een
+eenheiddragende vierde-klasse-tak stond gewoon in de tabel en werd
+verdraaid.
+
+*Reproductie.* De twister uit het scripthoofd geëxtraheerd en losgelaten op
+een `/tmp`-document met één eenheiddragende `Binair{op: GEDEELD_DOOR}`:
+
+    1 2 1 0
+
+Eén treffer — de annotatie kreeg de `Binair`-klassefactor 1e5 op zich
+(`EUR` → `EUR-verdraaid5`, `factorNaarCanoniek` 1 → 100000) — en géén
+klemregel. Precies de verdraaiing die niets kan bewijzen: §2.10 zegt dat
+ref/clingo daar *faulten* en Drools mét de annotatie rekent, dus wat er ook
+uitkomt, het harnas zou het als consumentendefect melden (verkeerde
+diagnose) of er niets over zeggen (stilte waar de getuige hoort te klinken).
+
+*Fix.* Tabel én klem sleutelen nu op de POSITIEKLASSE: `(node, op)` voor
+een `Binair`, `(node, kind)` voor een `Functie`, de kale knoopsoort
+daarbuiten. Afgeleid blijft twistbaar (`PLUS`/`MIN`/`VERMINDERD_MET`/`MAAL`
+en de zes waarde-aggregaties); alles daarbuiten van die twee knoopsoorten
+is een KLEMtreffer met een eigen, van de onbekende-knoopsoort gescheiden
+melding. De klassefactor blijft per KNOOPSOORT — een herschaalgrens ligt
+tussen twee knoopsoorten, nooit tussen twee operatoren van één soort — dus
+de verdraaiverzameling die het corpus pint beweegt niet.
+
+*Demonstratie, beide kanten.* (a) Een `/tmp`-corpus met twee echte goldens
+plus de vierde-klasse-getuige, gedraaid door een scriptkopie die alleen in
+de corpuswortel verschilt (twee regels; `diff` in de sessie):
+
+    FAIL: a unit-bearing annotation sits at a node kind whose result unit
+          v0 does not derive — the §2.10 fourth-class witness has arrived.
+          …
+       1   vierde-klasse-getuige Binair/GEDEELD_DOOR
+
+(b) Het echte corpus: `PASS (46 unit annotations twisted over 10 goldens;
+36 executor replays reproduce the untouched outcome; 0 pinned survivors)`.
+
+*De nieuwe boekhoudregel*, eerlijk gerapporteerd — de 75-telling verschuift
+NIET, want het corpus draagt vandaag geen enkele vierde-klasse-positie
+(nagemeten per positieklasse: 35 `AttribuutRef`, 7 `Binair/PLUS`, 4
+`Binair/MAAL`, 2 `Binair/MIN`, 3 `BinderRef`, 1 `Functie/SOM`, 2 `Let`, 15
+`Literal`, 5 `Functie/TIJDSDUUR`, 1 `Functie/ABSOLUTE_TIJDSDUUR`). De regel
+telt de klasse voortaan apart, met een eigen kolom die op nul staat:
+
+    75 unit-bearing annotations = 46 twistable + 23 exempt (the annotation
+    IS the source) + 6 without a convertible sister + 0 at a §2.10
+    fourth-class branch (v0 derives no result unit) + 0 outside the twist
+    table
+
+(23 exempt = 15 `Literal` + 6 tijdsduur-Functies + 2 WF-035-duuroperanden.)
+
+**B3-2 — de marker-zin was onwaar voor de gate-tak**
+(`EffectieveEenheid`-javadoc). De javadoc claimde dat *elke*
+§4-herschaalplek in *beide* backends op `convertibleNaar` /
+`exacteHerschaalFactoren` poortwacht en bij een opaak product een eerlijke
+marker geeft. Voor de tak die de gates draaien is dat niet zo:
+`ExecModelTranspiler.restatement` (~:4633) geeft bij niet-converteerbaar de
+IDENTITEIT `{1, 1}`, en `herschaalWaarde` valt via `valueFactor`'s null
+door op de ongewijzigde waarde. `CaseRunner` bouwt uitsluitend de
+exec-model-tak (geen enkele `DrlTranspiler`-import), dus dát is de weg van
+elke replay.
+
+*Gemeten paar* (hoort hier, niet in de javadoc). Een `/tmp`-document met
+`oppervlakte (m) = lengte (m) maal breedte (m)`, invoer 300 m × 300 m:
+
+    ref     EVALUATION FAULT: incompatible units: m vs m*m
+    clingo  TRANSLATION FAULT: a product of two unit-carrying operands
+            under a product is not translated
+    Drools  PLAYED 1   (d.w.z. 90000,00 — de gepinde verwachting gehaald)
+
+*Afwijking van de briefing, eerlijk.* De briefing zei "de DRL-tak markeert
+luid". Nagemeten op `Eenheid` klopt dat niet voor deze vorm: voor `m·m`
+tegen `m` is `convertibleNaar` false, `vereistOmrekening` false,
+`omrekenfactorNaar` 1 en `exacteHerschaalFactoren` null. Elke geciteerde
+markerplek in `DrlTranspiler` zit ACHTER een van die twee poorten
+(`herschaalExact`:3808, `herschaalConditie`:3856 → `return expr`, de
+identiteit, één regel bóven hun markertak; de §8.2-plekken 2705/2759 achter
+`vereistOmrekening`), dus een opaak product bereikt de markerregel nooit.
+De scheiding loopt niet tussen de backends maar tussen de SOORTEN plek:
+- een plek die op `convertibleNaar` WEIGERT — de §4.1/§5.1.4 temporele
+  herschalingen (`schaalbaarNaarDoel`/`schaalTijd` in DRL, de fold- en
+  tijdlijnwachten in exec) — krijgt false en markert/skipt het hele
+  construct. Symmetrisch in beide takken;
+- een plek die alleen een FACTOR rekent — de scalaire schrijfgrens, de
+  additieve operandgrens, de §5.1-Tabel-32-vergelijking — krijgt de
+  identiteit en de herschaling wordt een NO-OP. Geen marker, aan geen van
+  beide kanten.
+
+De javadoc zegt dat nu zo, met de meting erbij: conservatief (geen
+uitgevonden factor, dus geen leugen-gestuurde magnitude — de waarde blijft
+onherschaald staan), maar een STILLE ref/Drools-divergentie, op een vorm
+die frontend-`Typering`, `ref` en clingo alle drie weigeren en die het
+corpus niet draagt.
+
+**B3-3 — de MAAL-zin in §2.10 was een tweeledige disjunctie** (cancel |
+opaak product). De vierde uitkomst ontbrak: de onspelbare tariefsfactor.
+Gemeten met een `/tmp`-document `uitkomst (€) = tarief (€/jr) maal doorzet
+(kg/jr)`, invoer 10 en 3:
+
+    ref     EVALUATION FAULT: unit product not modelled: EUR * kg
+    clingo  TRANSLATION FAULT: non-identical units under the write to
+            "uitkomst" are not translated
+    Drools  PLAYED 1   (30,00 — onherschaald)
+
+En de noemer-val, tegen de gebouwde jar gemeten: `Eenheid.product` houdt de
+tellerfactoren en laat de noemer vallen, dus `€/jr × kg` en `€/jr × kg/jr`
+worden **beide** `EUR·kg` (`noemer=null`, `canoniek=null`, `equals` true).
+§2.10 draagt die vierde uitkomst nu, met de frontend-`Typering`-fout
+("een producteenheid met een noemer kan het Eenheid-model niet uitdrukken")
+erbij en met de eerlijke kwalificatie: het noemerloze opake product is de
+conservatieve, niet-herschaalbare uitkomst — geen bewering dat het product
+spelbaar is — en de drie andere consumenten weigeren.
+
+**B3-4 — ont-"never"-d.** De §2.10-sectietitel ("a type annotation is never
+the source") en de openingsjavadoc van `EffectieveEenheid` ("never from the
+node's own wire annotation") werden vier alinea's later door hun eigen
+uitzonderingslijst weersproken. Titel is nu "**where** a type annotation is
+not the source"; de openingsalinea's van beide dragen de gescopete
+waarheid: bij een REFERENTIE- of COMPOSIET-positie is de annotatie niet de
+bron, en de uitzonderingsklassen zijn *benoemde posities* — een
+scopegrens, geen ontsnappingsluik. De vierde-klasse-alinea zegt nu ook
+hardop dat zij een verzameling POSITIES is en geen verzameling
+knoopsoorten, en waarom de klem daarom op `(node, op)` sleutelt.
+
+**B3-5 — de dekkingsalinea, en de S19-kruisverwijzing.** Het scripthoofd
+verzweeg hoeveel van de Drools-tak een groene regel dekt. Gemeten met een
+tijdelijke `StackWalker`-sonde op `ExecModelTranspiler.effType` (daarna
+teruggedraaid): op het ONVERDRAAIDE corpus wijkt de afleiding NERGENS van
+de annotatie af (nul divergenties — precies wat WF-091 belooft); op de
+liegende kopieën overrulet zij de annotatie op exact VIER call-sites, en
+die vier zijn het hele bereik van wat dit harnas de exec-tak oplegt:
+
+| call-site | wat | treffers |
+|---|---|---|
+| `regel`:635 | de SCHRIJFGRENS (`wf.herschaald(effType(waarde), effType(doel))`) | 18 |
+| `scalarWaarde`:3748 | de ADDITIEVE OPERANDGRENS (rhs in de lhs-eenheid) | 13 |
+| `regel`:546 | de AGGREGATIE-HERSCHALING (`aggVan`/`aggNaar`) | 2 |
+| `leafPredicate`:3187 | de ATTR-vs-ATTR-VERGELIJKING (§5.1 Tabel 32) | 2 |
+
+Elke andere `effType`-aanroep is op dit corpus een doorgeefluik: gestéld,
+niet gemeten. En `DrlTranspiler` wordt door dit harnas alleen GECOMPILEERD
+— `CaseRunner` bouwt geen DRL-pakket — dus zijn eenheidsgedrag, inclusief
+de "OPAQUE product … honest marker"-plekken, leunt op de JUnit-getuigen
+(gate 12's plicht), niet op een groene regel hier. Beide alinea's staan nu
+in het scripthoofd naast de bestaande no-op-twistklassen-alinea.
+
+Tot slot de kruisverwijzing: §2.10 wees de `Fold`/`Match`-schaallezing van
+de ASP-vertaler naar `ASP-TRANSLATION.md` **S19**. Nagekeken: S19 is "What
+does not translate — the complete loud inventory"; de schaalcodering staat
+in **S2** (`val/3` geschaald) en **S4** (de `expr_term`-triple ⟨body, term,
+scale⟩). Gecorrigeerd, met de reden erbij.
+
+**Stand na fixronde 3.** Harnas groen met ongewijzigde boekhouding (46
+verdraaid over 10 goldens, 36 replays, 0 survivors; 75 = 46 + 23 + 6 + 0 +
+0). JUnit **198**, nul overgeslagen, nul fouten. Gates 1, 3, 6 en 12 groen;
+gate 12 ongewijzigd op elk getal.
+
 ## Result (2026-09-04)
 
 Geland: (1) `scripts/check-reftype-derivation.sh` — het verdraai-harnas,
