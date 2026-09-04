@@ -267,3 +267,31 @@ de kaart repareert en wat zij expliciet ongemoeid laat.
   morgen: nul treffers zegt dat het corpus + de toka-zone de mismatch niet
   aanbieden, niet dat geen enkel document dat kan. Dat is precies waarom de
   terugval een fout werd in plaats van een aanname.
+
+## Result (2026-09-04)
+
+Geland in twee commits, alleen in `frontends/regelspraak/src/**` en
+`backlog/`. (1) `Eenheid.omrekenfactorNaar` gooit bij een niet-inwisselbaar
+paar een `IllegalStateException` met beide eenheidsnamen in plaats van factor
+één terug te geven; `tellerFactorNaar` — ook de noemerlezing — weigert de twee
+resterende gaten (andere canoniek, en de wirevorm canoniek-zonder-factor die
+het schema toestaat en de buitenste poortwacht doorlaat); `vereistOmrekening`,
+de enige aanroeper die de vraag legitiem kaal stelt, doet de
+convertibiliteitscheck expliciet en reden-dragend, met gemeten ongewijzigd
+antwoord. (2) De kaartnotitie met de tien-rijige aanroepersinventaris, de
+sondemeting (224 factorvragen over gate 10/11/12, nul mismatches; de enige
+niet-identieke paren zijn `m ↔ km` en `jaar ↔ maand`) en de letterlijke
+voor/na-probe.
+
+Alle dertien gates groen; frontend-JUnit 159, backend-JUnit 198, beide nul
+overgeslagen. **Geen byte bewogen**: gate 10 (28 rgs) en gate 11 (45 toka-rgs)
+byte-identiek, gate 12 op elk getal gelijk aan de main-basislijn (played 106 /
+auto-excluded 43 / value-divergence 1 / no-case 2), gate 13 nul divergenties.
+
+Voor de landing: de herpin van `regelspraak-java` op `SPEC_REV` (het gedeelde
+model wijzigde) en de testbestanden-vraag uit §7. Niet aangeraakt: backends,
+`ref/`, `spec/`, `corpus/`, `toka/`, scripts, bestaande testbestanden.
+Bewust niet meegenomen, met reden in §8: de verouderde meetzin in
+`EffectieveEenheid`'s javadoc en de acht ongepoortwachte predikaatplekken die
+bij een niet-inwisselbaar paar nog steeds stil "geen omrekening nodig"
+antwoorden.
