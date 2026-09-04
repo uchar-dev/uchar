@@ -81,13 +81,22 @@ public record Eenheid(String afkorting, String stelsel, String canoniek, BigDeci
         return canoniek != null && other.canoniek != null && canoniek.equals(other.canoniek);
     }
 
-    /** Multiplier to restate a quantity in THIS unit as a quantity in {@code target}
-     *  (1 when not convertible or factors are unknown — caller should gate on
-     *  {@link #convertibleNaar}). For a plain unit jr→mnd is 12, mnd→jr is 1/12; for a
-     *  rate the numerator factor is multiplied by the INVERSE denominator factor, so
-     *  €/mnd→€/jr is 12 (the denominator jr is 12 of the mnd it replaces). */
+    /** Multiplier to restate a quantity in THIS unit as a quantity in {@code target}. For a plain unit
+     *  jr→mnd is 12, mnd→jr is 1/12; for a rate the numerator factor is multiplied by the INVERSE denominator
+     *  factor, so €/mnd→€/jr is 12 (the denominator jr is 12 of the mnd it replaces).
+     *
+     *  <p>The caller MUST gate on {@link #convertibleNaar}: between two units that do not inter-convert there
+     *  is NO factor, and answering 1 turns a name mismatch into a wrong magnitude instead of a fault. Measured:
+     *  a reference-type copy that lied only in CASE ("KG" against the declared "kg") compares unequal both on
+     *  the abbreviation and on the canonical, so a due restatement silently became the identity and one and the
+     *  same case read 3,75 in the reference interpreter against 3.750,00 down the Drools path. Every caller in
+     *  this repo gates already (measured); this precondition keeps that path dead rather than assuming it is.
+     *
+     *  @throws IllegalStateException when {@code target} is absent or not inter-convertible with this unit. */
     public BigDecimal omrekenfactorNaar(Eenheid target) {
-        if (target == null) return BigDecimal.ONE;
+        if (!convertibleNaar(target))
+            throw new IllegalStateException("geen omrekenfactor van eenheid '" + weergave() + "' naar '"
+                    + (target == null ? "(geen eenheid)" : target.weergave()) + "': niet inwisselbaar");
         BigDecimal f = tellerFactorNaar(target);
         if (noemer != null && target.noemer != null)
             // denominator inverts: per-this.noemer -> per-target.noemer is target.noemer -> this.noemer
@@ -101,7 +110,8 @@ public record Eenheid(String afkorting, String stelsel, String canoniek, BigDeci
      *  = 1/12 = 0.0833…). For a simple unit num/den are the two declared factorNaarCanoniek; for a RATE the inverted
      *  denominator contributes its factor too (€/jr→€/mnd: num=€·mnd factors, den=€·jr factors -> ÷12 exactly). Returns
      *  {@code null} when not exactly restatable here: not convertible, an unknown factor, or an opaque product unit
-     *  (no canonical) — the caller then keeps the single-ratio fallback. */
+     *  (no canonical) — the caller then keeps the single-ratio fallback, which is available only on a CONVERTIBLE
+     *  pair: between units with no common unit there is no ratio either, and {@link #omrekenfactorNaar} says so. */
     public BigDecimal[] exacteHerschaalFactoren(Eenheid target) {
         if (target == null || !convertibleNaar(target)
                 || factorNaarCanoniek == null || target.factorNaarCanoniek == null) return null;
@@ -114,18 +124,37 @@ public record Eenheid(String afkorting, String stelsel, String canoniek, BigDeci
         return new BigDecimal[]{num, den};
     }
 
-    /** Numerator-only conversion factor (the simple-unit rule). */
+    /** Numerator-only conversion factor (the simple-unit rule), for a numerator pair that
+     *  {@link #tellerConvertibel} has already accepted: the identity when the two abbreviations are the same,
+     *  otherwise the ratio of the two declared factors. Everything else has no factor and says so — reducing
+     *  to a DIFFERENT canonical (the abbreviations differ and nothing ties them), or a factor the declaration
+     *  left unknown (the wire admits a canonical without a factorNaarCanoniek). Both used to answer 1, which
+     *  is how a name mismatch became a wrong magnitude instead of a fault. Called for the DENOMINATOR too, so
+     *  it names its own pair rather than the composite the caller asked about. */
     private BigDecimal tellerFactorNaar(Eenheid target) {
         if (afkorting.equals(target.afkorting)) return BigDecimal.ONE;
-        if (factorNaarCanoniek == null || target.factorNaarCanoniek == null
-                || canoniek == null || !canoniek.equals(target.canoniek)) return BigDecimal.ONE;
+        if (canoniek == null || !canoniek.equals(target.canoniek))
+            throw new IllegalStateException("geen omrekenfactor van '" + afkorting + "' (canoniek " + canoniek
+                    + ") naar '" + target.afkorting + "' (canoniek " + target.canoniek
+                    + "): ze herleiden niet tot dezelfde canonieke eenheid");
+        if (factorNaarCanoniek == null || target.factorNaarCanoniek == null)
+            throw new IllegalStateException("onbekende omrekenfactor van '" + afkorting + "' ("
+                    + factorNaarCanoniek + ") naar '" + target.afkorting + "' (" + target.factorNaarCanoniek
+                    + "): canoniek '" + canoniek + "' zonder gedeclareerde factorNaarCanoniek");
         return factorNaarCanoniek.divide(target.factorNaarCanoniek, MathContext.DECIMAL64);
     }
 
     /** True when restating this unit in {@code target} is not the identity (factor ≠ 1) —
      *  composite-aware, so €/jr→€/mnd (factor 1/12) requires conversion even though the
-     *  numerators share an abbreviation. */
+     *  numerators share an abbreviation.
+     *
+     *  <p>Two units that do NOT inter-convert answer false, now explicitly rather than through an invented
+     *  factor of 1. This is the one legitimate caller of the unguarded question: the transpilers ask it as
+     *  "is this a cross-unit site?" on operand pairs whose convertibility they have not established (a §8.2
+     *  timeline bound, an additive pair, a begrenzing bound) — and "no common unit" is precisely where no
+     *  factor exists. The answer is unchanged from the fallback it replaces (false either way, measured);
+     *  a caller that must tell "same unit" from "no common unit" apart asks {@link #convertibleNaar}. */
     public boolean vereistOmrekening(Eenheid target) {
-        return target != null && omrekenfactorNaar(target).compareTo(BigDecimal.ONE) != 0;
+        return convertibleNaar(target) && omrekenfactorNaar(target).compareTo(BigDecimal.ONE) != 0;
     }
 }
