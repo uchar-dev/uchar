@@ -503,8 +503,16 @@ soort and the precision it computes with:
    from those declarations through the ch. 2.3 precision table and the
    ch. 2.6 unit rules, never the node's own annotation. An additive result
    carries the left operand's unit and a unitless side adopts the other; a
-   `Let` carries its body's; a value aggregation carries its first
+   product of two unit-bearing operands *cancels* against a rate's
+   denominator ("€/jr maal jr = €") or is the **opaque product** ("€ maal
+   kg = €·kg", ch. 2.5: no canonical, convertible only to an identical
+   product — the marker that stops a restatement instead of scaling by a
+   wrong factor); a `Let` carries its body's, and a binder read carries
+   what its binding derived, unit-bearing **or unitless** — bound to a
+   unitless value is not the same fact as unbound, and only the second
+   falls back to an annotation; a value aggregation carries its first
    operand's (§4.6 *Eenheid1*); a rounding and a clamp carry their basis's.
+   Where v0 states no join rule at all, the **fourth class** below applies.
 
 **Three positions where the annotation IS the source**, and a consumer
 reads it there:
@@ -517,6 +525,26 @@ reads it there:
 - a **`Tijdsduur` / `Absolute tijdsduur` node's own type**: its unit is the
   operator's parameter — "de tijdsduur van A tot B **in jaren**"
   (WF-038) — not a derived result.
+
+**A fourth class, and it says something weaker.** A node kind whose result
+unit v0 does not *derive* at all — a division (`GEDEELD_DOOR`), a power
+(`TOT_DE_MACHT`), a percentage-of (`PERCENTAGE_VAN`), an absolute value, a
+root, the date/time extractors — keeps its own annotation, because clause 2
+has nothing to put in its place. That is not the annotation being the
+source; it is v0 having no rule, and the two consumers answer it
+differently while both stay conform: the ASP translator's `eff_unit`
+returns `None` at those kinds and its fences (`unit_free_ok`,
+`units_identical_ok`) then *fault* rather than compute with a unit it could
+not derive, whereas the Drools backend has no such fence and computes with
+the annotation — the behaviour it had before this clause, deliberately
+unchanged. Measured 2026-09-04: **zero** unit-bearing annotations in the
+corpus sit at such a node kind, so the class is empty today and the
+difference between the two answers is unobservable. The clamp that reports
+the first witness is step 6 of `scripts/check-reftype-derivation.sh`: a
+unit-bearing annotation at a node kind outside its twist table and outside
+its exception set fails the gate with the kind and the golden named. What
+that witness must then buy is a derivation rule (or a fence) — never a
+wider licence to read the wire.
 
 Two further readings are recorded rather than blessed, because they are a
 backend's encoding rather than a semantic claim: the ASP translator sizes
@@ -536,8 +564,25 @@ says at its head why the other two facets are not machine-checked this way:
 a soort lie is a different document (WF-078/WF-091 cross it in the
 verifier, and `ref` legitimately routes ch. 1.2d and date arithmetic on the
 static soort), and a precision lie collides with the ASP integer encoding
-above. Soort and precision are no less normative here; they are crossed by
-the verifier's identity engine instead.
+above.
+
+Soort and precision are no less normative here, but the two clauses hold
+them in different ways, and the difference is not a detail. **Clause 1**
+(reference positions) is crossed in full: WF-091's identity engine compares
+soort, domain, unit, decimals, wholeness and sign against the declaration,
+facet by facet, so a lie there is a *rejected document* rather than a
+divergent answer. **Clause 2** (composite positions) is derived and
+machine-checked for the **unit** alone. Soort and precision at a *derived*
+type are crossed by nothing: `IR-SPEC.md` WF-091 stops at the domain facet
+for the element-passing aggregation and leaves such a node's numeric facets
+uncrossed on purpose — its **honesty note 4**, which records that
+non-crossing as an open deferral pinned by no artifact today (measured: of
+the corpus's element-passing folds none is unit-bearing, and the
+counter-shape cannot be built while the ASP backend refuses a multi-operand
+`MINIMUM`/`MAXIMUM` ahead of translation). Clause 2 therefore *states* the
+rule for all three facets and is *enforced* for one; closing the other two
+needs the derivation law for result types that note calls for, and until it
+lands the gap is written down here rather than papered over.
 
 *History:* this clause is the consumer half of the WF-091 work. Before it,
 the Drools backend read the wire annotation at its write boundary, its

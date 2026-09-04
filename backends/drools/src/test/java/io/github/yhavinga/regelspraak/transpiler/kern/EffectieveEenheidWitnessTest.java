@@ -16,8 +16,10 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * RUNTIME-SEMANTICS ch. 2.10, the consumer clause, at the unit the corpus cannot reach.
@@ -39,6 +41,10 @@ class EffectieveEenheidWitnessTest {
     // 3,75 -> 3.750,00 shape).
     private static final Eenheid KG = new Eenheid("kg", "Gewicht", "kg", BigDecimal.ONE);
     private static final Eenheid TON = new Eenheid("t", "Gewicht", "kg", new BigDecimal("1000"));
+    // "Geld" and "Tijd", for the §4.4 product rules: € per jaar is a RATE (a numerator over a denominator).
+    private static final Eenheid EUR = new Eenheid("EUR", "Geld", "EUR", BigDecimal.ONE);
+    private static final Eenheid JR = new Eenheid("jr", "Tijd", "mnd", new BigDecimal("12"));
+    private static final Eenheid EUR_PER_JR = Eenheid.samengesteld(EUR, JR);
 
     private static Datatype num(Eenheid e) {
         return new Datatype.Numeriek(false, 2, Datatype.Teken.ONBEPAALD, e);
@@ -58,6 +64,22 @@ class EffectieveEenheidWitnessTest {
     /** A reference to Vondst.gewicht whose ANNOTATION claims tonnes. */
     private static Expr.AttribuutRef liegendeRef(Objecttype ot) {
         return new Expr.AttribuutRef("gewicht", ot, "een vondst", null, num(TON), bron());
+    }
+
+    /** A Vracht declaring a RATE ("tarief" in €/jr), a plain time ("looptijd" in jr), a plain weight and a
+     *  plain amount — the four declarations the §4.4 product rules need. */
+    private static Objecttype vracht() {
+        Objecttype ot = new Objecttype("Vracht");
+        ot.attributen.put("tarief", num(EUR_PER_JR));
+        ot.attributen.put("looptijd", num(JR));
+        ot.attributen.put("gewicht", num(KG));
+        ot.attributen.put("prijs", num(EUR));
+        return ot;
+    }
+
+    /** A reference to {@code ot.attr} whose ANNOTATION lies (tonnes, always). */
+    private static Expr.AttribuutRef liegendeRef(Objecttype ot, String attr) {
+        return new Expr.AttribuutRef(attr, ot, "een vracht", null, num(TON), bron());
     }
 
     // ---------------- clause 1: reference positions read the declaration ----------------
@@ -102,6 +124,34 @@ class EffectieveEenheidWitnessTest {
         Expr.Literal getal = new Expr.Literal("2", num(null), bron());
         Expr.Binair prod = new Expr.Binair(Expr.BinOp.MAAL, getal, liegendeRef(ot), num(TON), bron());
         assertEquals(KG, kaal().eenheidVan(prod), "ch. 2.6: het factorvrije product draagt de eenheid door");
+    }
+
+    @Test void een_maal_met_twee_eenheden_valt_weg_tegen_zijn_noemer() {
+        // §4.4 / ch. 2.6, the cancel clause the frontend's Typering.samengesteldeEenheid spells: a RATE times its
+        // (convertible) denominator unit is the numerator — "€/jr maal jr = €". Reading left-then-right here (the
+        // additive rule) would answer €/jr, a unit the result does NOT have.
+        Objecttype ot = vracht();
+        assertEquals(EUR, kaal().eenheidVan(new Expr.Binair(Expr.BinOp.MAAL,
+                liegendeRef(ot, "tarief"), liegendeRef(ot, "looptijd"), num(TON), bron())));
+        assertEquals(EUR, kaal().eenheidVan(new Expr.Binair(Expr.BinOp.MAAL,
+                liegendeRef(ot, "looptijd"), liegendeRef(ot, "tarief"), num(TON), bron())),
+                "de cancel-clausule is symmetrisch (jr maal €/jr = €)");
+    }
+
+    @Test void een_maal_van_twee_losse_eenheden_geeft_het_opake_product() {
+        // §4.4: two plain units multiply to an OPAQUE product ("€·kg") — no canonical, so it restates against an
+        // IDENTICAL product and nothing else. That opacity is this backend's only protection against a two-unit
+        // product silently rescaling into a €-target (DrlTranspiler's four "an OPAQUE product unit stays an honest
+        // marker" sites); handing back the LEFT unit would hand that protection away.
+        Objecttype ot = vracht();
+        Eenheid uit = kaal().eenheidVan(new Expr.Binair(Expr.BinOp.MAAL,
+                liegendeRef(ot, "prijs"), liegendeRef(ot, "gewicht"), num(TON), bron()));
+        assertEquals(Eenheid.product(EUR, KG), uit);
+        assertNull(uit.canoniek(), "een opaak product draagt geen canoniek");
+        assertNull(uit.exacteHerschaalFactoren(EUR), "en dus geen exacte herschaalfactoren naar een concrete eenheid");
+        assertFalse(uit.convertibleNaar(EUR), "€·kg herschaalt niet naar €");
+        assertFalse(uit.convertibleNaar(KG), "en niet naar kg");
+        assertTrue(uit.convertibleNaar(Eenheid.product(KG, EUR)), "alleen een identiek product is converteerbaar");
     }
 
     @Test void een_waarde_aggregatie_draagt_de_eenheid_van_operand_nul() {
@@ -166,6 +216,21 @@ class EffectieveEenheidWitnessTest {
         assertEquals(TON, eff.eenheidVan(lezing), "de nabijste binder (t) wint van de buitenste (kg)");
         assertEquals(TON, eff.eenheidVan(binnen));
         assertEquals(TON, eff.eenheidVan(buiten));
+    }
+
+    @Test void een_binder_op_een_eenheidloze_waarde_leest_eenheidloos() {
+        // "Gebonden aan een eenheidloze waarde" and "ongebonden" are two different facts and must stay apart: the
+        // first HAS a source (a unitless one) and the annotation may not speak over it; only the second falls back.
+        // Let n = <2, unitless> in <read n, annotated t> — both the read AND the carrier lie about tonnes.
+        Map<Object, LetVorm> vormen = new IdentityHashMap<>();
+        Expr.Literal getal = new Expr.Literal("2", num(null), bron());
+        Expr lezing = drager(num(TON), vormen, new LetVorm.Lezing("n", num(TON)));
+        Expr let = drager(num(TON), vormen, new LetVorm.Binding("n", getal, lezing, num(TON)));
+        EffectieveEenheid eff = new EffectieveEenheid(vormen);
+
+        assertNull(eff.eenheidVan(lezing), "de binding is eenheidloos; de annotatie (t) is haar leugen");
+        assertNull(eff.eenheidVan(let), "en de Let draagt haar body");
+        assertNull(eff.van(lezing).eenheidOf(), "ook op de datatype-route (van) blijft de eenheid weg");
     }
 
     @Test void een_ongebonden_binderlezing_houdt_haar_annotatie() {

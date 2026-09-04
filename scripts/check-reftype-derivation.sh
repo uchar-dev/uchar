@@ -21,6 +21,30 @@
 #      outside the list is a failure; a listed survivor that no longer diverges, or no longer
 #      exists, is a stale entry and also a failure (the check-noop pattern).
 #   5. an empty twist set is a failure, never silently green.
+#   6. every unit-bearing annotation the twister MEETS must sit either in the twist table below
+#      or in the explicit, reason-carrying exception set (where the annotation IS the source).
+#      A node kind outside both is a position this harness cannot probe, so nothing holds a
+#      consumer to the declaration there — the gate fails with the kind and the golden named.
+#      That clamp is what keeps a NEW wire form from entering the corpus with its consumer side
+#      silently unmeasured; measured 2026-09-04 it costs nothing (zero such kinds).
+#
+# --- what a PASS means, and what it does not ------------------------------------------------
+# This harness measures INDIFFERENCE: with every declaration held byte-identical, no executor's
+# answer moves when the repetition lies. It does NOT measure NECESSITY — it cannot separate a
+# consumer that derives from one that ignores units altogether, because both are indifferent to
+# a unit lie. Necessity is pinned elsewhere and must stay there: gates 5 and 6 hold ref and
+# clingo to the corpus's ABSOLUTE hand-written expectations, and gate 12 holds the Drools
+# backend to exactly those same values, so an executor that dropped unit restatement is red
+# there on the UNTOUCHED corpus long before it is green here. Indifference is the half no other
+# gate can see, precisely because a lying document is one no other gate may hold.
+#
+# Four twist classes are, for the DROOLS leg specifically, a no-op by construction: the Java IR
+# records for ParameterRef, DimensieCel, Afgerond and Begrensd DERIVE their type() (from the
+# parameter's declaration, from the inner reference, from the basis) and hold no wire annotation
+# at all, so the graft cannot reach that leg — it still probes ref and clingo, which do read the
+# wire there. The Drools side of those four rests on the EffectieveEenheidWitnessTest witnesses,
+# which build the nodes directly. Said out loud so a green line is not read as coverage it has
+# not got.
 #
 # The verifier does NOT run here. This harness asks an EXECUTION question — is the outcome a
 # function of the declarations? — outside the validity question, exactly as gate 7's --noop
@@ -56,7 +80,8 @@
 #   [1e9] (the ch. 4.10 Let/BinderRef nodes reach this backend as carriers, and their wire
 #   annotation is what the carrier holds).
 #
-# NOT twisted, each because the annotation IS the source there (ch. 2.10's exceptions):
+# NOT twisted, each because the annotation IS the source there (ch. 2.10's exceptions), and each
+# therefore EXEMPT from the clamp of step 6:
 #   - a Literal: its type is the lexeme's own carrier ("3,5 EUR"), a copy of nothing. All three
 #     executors read it, and must.
 #   - the DURATION operand of a date +/- duration Binair: ref (eval.ml) and the ASP translator
@@ -64,10 +89,11 @@
 #     measure that routing, not a declaration reading.
 #   - a TIJDSDUUR / ABSOLUTE_TIJDSDUUR Functie's own type: its unit is the OPERATOR's parameter
 #     ("de tijdsduur van A tot B in jaren", WF-038), not a derived result type.
-#   - every node kind with no unit-bearing annotation in the corpus (Fold, Match, Construct and
-#     the rest of the v1 nodes): nothing to graft. NB the ASP translator does read Fold's and
-#     Match's own type — for its integer SCALE (value_scale, S19) — so those two would need the
-#     same reason-carrying treatment the moment a unit-bearing witness appears.
+# A node kind that is neither twisted nor exempt is NOT silently skipped any more (step 6): every
+# v1 node the corpus does not yet carry with a unit (Fold, Match, Construct, ...) trips the clamp
+# on its first unit-bearing witness, and must then be given a twist class or an exception with its
+# reason. NB the ASP translator already reads Fold's and Match's own type for its integer SCALE
+# (value_scale, S19) — that is the reading the clamp will surface first.
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
@@ -111,7 +137,9 @@ TWISTER=$(mktemp) || exit 2
 WORK=$(mktemp -d) || exit 2
 LIST=$(mktemp) || exit 2
 CASES=$(mktemp) || exit 2
-trap 'rm -rf "$TWISTER" "$WORK" "$LIST" "$CASES"' EXIT
+ONGEDEKT=$(mktemp) || exit 2   # "<golden> <node>" per unit-bearing annotation outside table + exceptions
+RAKERS=$(mktemp) || exit 2     # "<golden>|<executor>" per survivor entry that ACTUALLY diverged
+trap 'rm -rf "$TWISTER" "$WORK" "$LIST" "$CASES" "$ONGEDEKT" "$RAKERS"' EXIT
 
 cat > "$TWISTER" <<'PY'
 import json, os, sys
@@ -120,6 +148,9 @@ from decimal import Decimal
 # the position classes and their restatement-factor exponents (see the script header)
 KLASSE = {"AttribuutRef": 1, "ParameterRef": 2, "DimensieCel": 3, "BinderRef": 4,
           "Binair": 5, "Let": 6, "Functie": 7, "Afgerond": 8, "Begrensd": 9}
+# The reason-carrying exception set of the step-6 clamp: node kinds OUTSIDE the twist table whose
+# annotation IS the source, so leaving them unprobed is a statement and not a gap.
+UITZONDERING = {"Literal": "the lexeme's own carrier (\"3,5 EUR\") is a copy of no declaration"}
 # WF-038: a tijdsduur's own unit is the operator's parameter, not a derived result type
 GEEN_FUNCTIE = {"TIJDSDUUR", "ABSOLUTE_TIJDSDUUR"}
 DATUM = ("DatumInDagen", "DatumTijd")
@@ -166,10 +197,15 @@ def datum_getypeerd(e):
     return isinstance(e, dict) and isinstance(e.get("type"), dict) and e["type"].get("node") in DATUM
 
 
-def loop(x, treffers, sla_eigen_over=False):
+def eenheiddragend(dt):
+    return isinstance(dt, dict) and dt.get("node") in ("Numeriek", "Percentage") \
+        and dt.get("eenheid") is not None
+
+
+def loop(x, telling, sla_eigen_over=False):
     if isinstance(x, list):
         for v in x:
-            loop(v, treffers)
+            loop(v, telling)
         return
     if not isinstance(x, dict):
         return
@@ -182,16 +218,30 @@ def loop(x, treffers, sla_eigen_over=False):
             duur = r
         elif datum_getypeerd(r) and not datum_getypeerd(l):
             duur = l
-    if node in KLASSE and not sla_eigen_over \
-            and not (node == "Functie" and x.get("kind") in GEEN_FUNCTIE):
+    vrijgesteld = sla_eigen_over or node in UITZONDERING \
+        or (node == "Functie" and x.get("kind") in GEEN_FUNCTIE)
+    if node is not None and eenheiddragend(x.get("type")):
+        # step 6, the clamp: account for EVERY unit-bearing annotation, so a kind that is neither
+        # twisted nor exempt cannot pass unnoticed.
+        telling["eenheid"] += 1
+        if vrijgesteld:
+            telling["vrijgesteld"] += 1
+        elif node not in KLASSE:
+            telling["ongedekt"].append(node)
+        elif zusje(x["type"].get("eenheid"), KLASSE[node]) is None:
+            # in the table, but no convertible SISTER exists (a unit with no canonical/factor —
+            # a unit system declares no conversion for it). A non-convertible lie would measure
+            # refusal routing, not a declaration reading, so it is counted and not twisted.
+            telling["zonderzusje"] += 1
+    if node in KLASSE and not vrijgesteld:
         nieuw, hoe = verdraai(x.get("type"), KLASSE[node])
         if hoe:
             x["type"] = nieuw
-            treffers.append(hoe)
+            telling["treffers"].append(hoe)
     for k, v in list(x.items()):
         if k == "type":        # a DECLARATION never sits under an expression's own type
             continue
-        loop(v, treffers, sla_eigen_over=(v is duur))
+        loop(v, telling, sla_eigen_over=(v is duur))
 
 
 def stukken(o):
@@ -231,18 +281,22 @@ def stukken(o):
         raise TypeError(repr(o))
 
 
-bron, doel = sys.argv[1], sys.argv[2]
+bron, doel, naam = sys.argv[1], sys.argv[2], sys.argv[3]
 with open(bron, encoding="utf-8") as fh:
     doc = json.load(fh, parse_int=RuweNum, parse_float=RuweNum)
-treffers = []
-loop(doc, treffers)
+telling = {"treffers": [], "ongedekt": [], "eenheid": 0, "vrijgesteld": 0, "zonderzusje": 0}
+loop(doc, telling)
 map_ = os.path.dirname(doel)
 if map_:
     os.makedirs(map_, exist_ok=True)
 with open(doel, "w", encoding="utf-8") as fh:
     for c in stukken(doc):
         fh.write(c)
-print(len(treffers))
+# line 1: the four counters the shell sums; then one line per UNCOVERED occurrence (the clamp)
+print("%d %d %d %d" % (len(telling["treffers"]), telling["eenheid"],
+                       telling["vrijgesteld"], telling["zonderzusje"]))
+for node in telling["ongedekt"]:
+    print("%s %s" % (naam, node))
 PY
 
 # Is <golden> x <executor> a pinned survivor? Read LINE by line, never word by word: a
@@ -263,13 +317,26 @@ n_goldens=0
 n_twists=0
 n_gecontroleerd=0
 n_survivors=0
+n_eenheid=0
+n_vrijgesteld=0
+n_zonderzusje=0
 find corpus/golden -name ir.json 2>/dev/null | sort > "$LIST"
 while IFS= read -r ir; do
     dir=$(dirname "$ir")
     naam=${dir#corpus/golden/}
     tw="$WORK/$dir/ir.json"
-    treffers=$(python3 "$TWISTER" "$ir" "$tw") || { echo "FAIL: the twister could not read $ir" >&2; exit 2; }
-    [ "$treffers" -gt 0 ] || continue          # no unit-bearing annotation: nothing to probe here
+    uit=$(python3 "$TWISTER" "$ir" "$tw" "$naam") || { echo "FAIL: the twister could not read $ir" >&2; exit 2; }
+    kop=$(printf '%s\n' "$uit" | head -1)
+    # the clamp's accounting runs over EVERY golden, replayable or not: an unprobed node kind is a
+    # gap wherever it sits.
+    staart=$(printf '%s\n' "$uit" | tail -n +2)
+    [ -z "$staart" ] || printf '%s\n' "$staart" >> "$ONGEDEKT"
+    set -- $kop
+    treffers=$1
+    n_eenheid=$((n_eenheid + $2))
+    n_vrijgesteld=$((n_vrijgesteld + $3))
+    n_zonderzusje=$((n_zonderzusje + $4))
+    [ "$treffers" -gt 0 ] || continue          # no twistable annotation: nothing to probe here
     find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
     [ -s "$CASES" ] || continue                # no case file: not replayable (gate 5 lists those)
     n_goldens=$((n_goldens + 1))
@@ -279,15 +346,19 @@ while IFS= read -r ir; do
     # run must exit 0 too. Any other outcome is the executor reading the repetition.
     while IFS= read -r case; do
         n_gecontroleerd=$((n_gecontroleerd + 2))
-        if ! uit=$("$RUNNER_REF" "$tw" "$case" 2>&1); then
-            if vermeld "$naam" ref; then n_survivors=$((n_survivors + 1)); else
-                printf 'FAIL: %s — ref answers differently on the lying copy:\n%s\n' "$case" "$uit" >&2
+        if ! rapport=$("$RUNNER_REF" "$tw" "$case" 2>&1); then
+            if vermeld "$naam" ref; then
+                n_survivors=$((n_survivors + 1)); echo "$naam|ref" >> "$RAKERS"
+            else
+                printf 'FAIL: %s — ref answers differently on the lying copy:\n%s\n' "$case" "$rapport" >&2
                 status=1
             fi
         fi
-        if ! uit=$("$RUNNER_CLINGO" "$tw" "$case" 2>&1); then
-            if vermeld "$naam" clingo; then n_survivors=$((n_survivors + 1)); else
-                printf 'FAIL: %s — clingo answers differently on the lying copy:\n%s\n' "$case" "$uit" >&2
+        if ! rapport=$("$RUNNER_CLINGO" "$tw" "$case" 2>&1); then
+            if vermeld "$naam" clingo; then
+                n_survivors=$((n_survivors + 1)); echo "$naam|clingo" >> "$RAKERS"
+            else
+                printf 'FAIL: %s — clingo answers differently on the lying copy:\n%s\n' "$case" "$rapport" >&2
                 status=1
             fi
         fi
@@ -303,7 +374,9 @@ while IFS= read -r ir; do
     basis=$(java -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
     verdraaid=$(java -jar "$JAR" "$tw" "$@" 2>/dev/null | tail -1)
     if [ "$basis" != "$verdraaid" ]; then
-        if vermeld "$naam" drools; then n_survivors=$((n_survivors + 1)); else
+        if vermeld "$naam" drools; then
+            n_survivors=$((n_survivors + 1)); echo "$naam|drools" >> "$RAKERS"
+        else
             printf 'FAIL: %s — Drools answers differently on the lying copy:\n  untouched: %s\n  lying:     %s\n' \
                 "$naam" "$basis" "$verdraaid" >&2
             status=1
@@ -311,13 +384,25 @@ while IFS= read -r ir; do
     fi
 done < "$LIST"
 
+# The survivor list, BOTH halves (the check-noop pattern): an entry whose golden is gone is stale,
+# and so is an entry that no longer diverges — it then admits an exception nothing needs any more,
+# which is exactly how a list stops describing the system it pins.
 weg=$(printf '%s\n' "$SURVIVORS" | while IFS= read -r s; do
     [ -n "$s" ] || continue
-    d="corpus/golden/${s%%|*}"
-    [ -d "$d" ] || echo "$d"
+    g=${s%%|*}
+    rest=${s#*|}
+    ex=${rest%%|*}
+    # (no `case` here: /bin/sh on macOS is bash 3.2, whose parser cannot read one inside $(...))
+    if [ "$ex" != ref ] && [ "$ex" != clingo ] && [ "$ex" != drools ]; then
+        echo "  $g|$ex — unknown executor (expected ref, clingo or drools)"
+    elif [ ! -d "corpus/golden/$g" ]; then
+        echo "  $g|$ex — no such golden"
+    elif ! grep -qxF "$g|$ex" "$RAKERS" 2>/dev/null; then
+        echo "  $g|$ex — no longer diverges under the twist; drop the entry"
+    fi
 done)
 if [ -n "$weg" ]; then
-    printf 'FAIL: stale survivor entry — no such golden:\n%s\n' "$weg" >&2
+    printf 'FAIL: stale survivor entry:\n%s\n' "$weg" >&2
     status=1
 fi
 
@@ -326,8 +411,21 @@ if [ "$n_twists" -eq 0 ]; then
     exit 1
 fi
 
+n_ongedekt=$(awk 'END {print NR}' "$ONGEDEKT")
+if [ "$n_ongedekt" -gt 0 ]; then
+    echo 'FAIL: a unit-bearing annotation sits at a node kind the twist table does not carry, and that' >&2
+    echo '      the exception set does not exempt — this harness probes nothing there, so no consumer is' >&2
+    echo '      held to the declaration at that position. Give the kind a twist class (with its own' >&2
+    echo '      factor exponent) or an exception with the reason its annotation IS the source:' >&2
+    sort "$ONGEDEKT" | uniq -c >&2
+    status=1
+fi
+
 if [ "$status" -eq 0 ]; then
     printf 'check-reftype-derivation: PASS (%s unit annotations twisted over %s goldens; %s executor replays reproduce the untouched outcome; %s pinned survivors)\n' \
         "$n_twists" "$n_goldens" "$n_gecontroleerd" "$n_survivors"
+    printf '  corpus-wide accounting: %s unit-bearing annotations = %s twistable + %s exempt (the annotation IS the source) + %s without a convertible sister; %s outside the twist table\n' \
+        "$n_eenheid" "$((n_eenheid - n_vrijgesteld - n_zonderzusje - n_ongedekt))" \
+        "$n_vrijgesteld" "$n_zonderzusje" "$n_ongedekt"
 fi
 exit "$status"

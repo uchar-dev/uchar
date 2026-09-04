@@ -464,7 +464,8 @@ public final class ExecModelTranspiler {
             // A collectList accumulate binds the element timelines; rsTijdSomAlle folds them per merged-knip period with
             // the §5.8.2 leeg rule. Anchored doelen stay a skip (set-fold × per-object bucket out of scope — mirror DRL).
             if (startpuntAnker == null) {
-                SomAlleSet sas = tijdreeksSomAlleSet(r.waarde(), doel.objecttype(), sVar, doel.type(), doelGran);
+                // ch. 2.10: the doel is a REFERENCE position — restate into the DECLARED attribute datatype.
+                SomAlleSet sas = tijdreeksSomAlleSet(r.waarde(), doel.objecttype(), sVar, effType(doel), doelGran);
                 if (sas != null) {
                     extra.add(sas.accItem());
                     final BiConsumer<Object, Object> setter = doelSetter;
@@ -485,7 +486,7 @@ public final class ExecModelTranspiler {
             final String ankerLid = startpuntAnker;
             java.util.function.Function<Object, Object> ankerReader =
                     ankerLid == null ? null : s -> RegelSpraakRuntime.get(s, ankerLid);
-            TemporeleWaarde tw = temporeleWaarde(r.waarde(), doel.objecttype(), doelGran, doel.type(), ankerReader);
+            TemporeleWaarde tw = temporeleWaarde(r.waarde(), doel.objecttype(), doelGran, effType(doel), ankerReader);
             if (tw == null) return skip("regel (temporele toekenning buiten Phase-F scope): " + r.naam());
             BiFunction<Object, Object, Object> twf = tw.fn();
             // IDEMPOTENT timeline write (mirror DRL): the §9.9 freshness expr above makes this pattern class-reactive
@@ -4320,7 +4321,7 @@ public final class ExecModelTranspiler {
             if (l == null || r == null) return null;
             Expr.BinOp op = b.op();
             if (op == Expr.BinOp.PLUS || op == Expr.BinOp.MIN || op == Expr.BinOp.VERMINDERD_MET) {
-                Datatype rt = b.rechts().type(), lt = b.links().type();
+                Datatype rt = effType(b.rechts()), lt = effType(b.links());   // ch. 2.10: derived, never the repetition
                 if (valueFactor(rt, lt) != null || exactHerschaalFactoren(rt, lt) != null) {   // a real conversion is due
                     Eval inner = r; r = (s, g, a) -> { Object x = inner.apply(s, g, a); return x == null ? null : herschaalWaarde(x, rt, lt); };
                 }
@@ -5756,12 +5757,12 @@ public final class ExecModelTranspiler {
                     Eval eval = lowerVal(t.waarde(), subject, sVar, gNames, accItems, tAccVars);
                     if (eval == null) return skip("objectcreatie (aggregatie-toekenning buiten scope): " + oc.naam());
                     int off = accVars.size(); accVars.addAll(tAccVars);   // remember offset BEFORE appending
-                    tks.add(new TkLower(t.attribuut(), null, eval, off, tAccVars.size(), t.waarde().type(), naar, t.kenmerk()));
+                    tks.add(new TkLower(t.attribuut(), null, eval, off, tAccVars.size(), effType(t.waarde()), naar, t.kenmerk()));
                 } else {
                     WaardeFn wf = scalarWaarde(subject, t.waarde());
                     if (wf == null) return skip("objectcreatie (toekenning-waarde buiten scope): " + oc.naam());
                     gNames.addAll(wf.globals());
-                    tks.add(new TkLower(t.attribuut(), wf.fn(), null, 0, 0, t.waarde().type(), naar, t.kenmerk()));
+                    tks.add(new TkLower(t.attribuut(), wf.fn(), null, 0, 0, effType(t.waarde()), naar, t.kenmerk()));
                 }
             }
         } finally {
@@ -6587,7 +6588,10 @@ public final class ExecModelTranspiler {
             finally { ketenWaardePad = prev; }
             if (wf == null)
                 throw new DefaultsOnvertaalbaar("niet-reduceerbare consequentie (far-side/aggregatie): " + defaultsReden(r));
-            wf = wf.herschaald(r.consequentie().type(), onderwerp.attribuut(doel));   // §4 EXACT restate into the target unit
+            // §4 EXACT restate into the target unit. The TARGET side already reads the declaration
+            // (onderwerp.attribuut); the SOURCE side is a consequence VALUE — an ordinary composite position, so it
+            // takes the ch. 2.10 derivation like every other restatement site in this file.
+            wf = wf.herschaald(effType(r.consequentie()), onderwerp.attribuut(doel));
             conseq = wf;
         }
         List<List<GecompileerdeDefault>> exc = null;

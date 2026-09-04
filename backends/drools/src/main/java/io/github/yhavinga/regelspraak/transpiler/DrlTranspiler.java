@@ -1114,8 +1114,10 @@ public final class DrlTranspiler {
             String ankerLid0 = model.startpuntAnkerLid(td.objecttype(), td.attribuut());
             temporeelOngeankerd = ankerLid0 == null && model.heeftVariabelStartpunt(td.objecttype(), td.attribuut());
             String anker0 = ankerLid0 == null ? null : SUBJECT + "." + getter(ankerLid0) + "()";
+            // ch. 2.10: the doel is a REFERENCE position — the §4 restate target is the DECLARED attribute
+            // datatype, never the doel node's repetition of it.
             temporeelTl = temporeelOngeankerd ? null
-                    : temporeleWaarde(acc, r.waarde(), subject, td.objecttype().attribuutGranulariteit.get(td.attribuut()), td.type(), anker0);
+                    : temporeleWaarde(acc, r.waarde(), subject, td.objecttype().attribuutGranulariteit.get(td.attribuut()), effType(td), anker0);
         }
         // §8.4/§13.4.5 a TEMPORAL KENMERK doel (kenmerkGranulariteit — a List<Segment> TRUE-period timeline, not a
         // boolean) is written the timeline of its voorwaarde's TRUE-periods: "Een object is duur gedurende de tijd dat
@@ -2470,8 +2472,8 @@ public final class DrlTranspiler {
         if (eg == null) return null;                                   // non-temporal element -> the scalar accumulate path
         if (a.objecttype().attribuutTijdlijnAantal.containsKey(a.attribuut())) return null;   // multi-period element -> out of scope
         if (eg != gran) return null;                                   // §5.1.4 the element tijdlijn must match the doel's (no set-fold gran promotion yet)
-        if (!a.type().isNumeriek()) return null;                       // §5.8.2 a sommatie is over numeriek operands
-        if (!schaalbaarNaarDoel(a.type(), doelType)) return null;      // §4.1 element unit must restate to the doel unit (else marker)
+        if (!a.type().isNumeriek()) return null;                       // §5.8.2 a sommatie is over numeriek operands (soort = routing)
+        if (!schaalbaarNaarDoel(effType(a), doelType)) return null;    // §4.1 element unit must restate to the doel unit (else marker)
         Objecttype elem = f.elementObjecttype();
         if (elem == null || subject == null) return null;
         String rol = model.verbindendeRol(elem, subject);
@@ -2486,7 +2488,7 @@ public final class DrlTranspiler {
         }
         // §4.1 restate each element timeline into the doel unit BEFORE folding (the §5.8.2 sum is unit-homogeneous;
         // an equal unit scales by factor 1 -> the getter verbatim). collectList binds the List<List<Segment>>.
-        String elemTijdlijn = schaalTijd(ev + "." + getter(a.attribuut()) + "()", a.type(), doelType);
+        String elemTijdlijn = schaalTijd(ev + "." + getter(a.attribuut()) + "()", effType(a), doelType);
         acc.clausules.add("accumulate( " + ev + " : " + ident(elem.naam, true) + "( " + filterScope + " ) ; "
                 + var + " : collectList( " + elemTijdlijn + " ) )");
         boolean fallbackNul = f.leegwaarde() != null;                  // §5.8.2 "of 0 als die er niet zijn"
@@ -2532,7 +2534,7 @@ public final class DrlTranspiler {
         RegelSpraakModel.Granulariteit og = ot.attribuutGranulariteit.get(a.attribuut());
         if (og == null || og.ordinal() < gran.ordinal()) return null;
         if (ot.attribuutTijdlijnAantal.containsKey(a.attribuut())) return null;   // multi-period -> out of scope
-        return schaalTijd(getter, a.type(), unitTarget);   // §4.1 restate into the sum unit (null -> incompatible -> marker)
+        return schaalTijd(getter, effType(a), unitTarget);   // §4.1 restate into the sum unit (null -> incompatible -> marker)
     }
 
     /** §4.1/§5.1.4.2 restate a temporal timeline expr from {@code van}'s unit into {@code naar}'s (rsTijdSchaal by the

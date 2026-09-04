@@ -36,8 +36,13 @@ import java.util.Objects;
  *   <li>a {@link Expr.Literal}: its type is the lexeme's own carrier ("3,5 EUR"), a copy of nothing;</li>
  *   <li>a duration function ({@code TIJDSDUUR} / {@code ABSOLUTE_TIJDSDUUR}): the node type's unit is the
  *       OPERATOR's parameter ("de tijdsduur van A tot B in jaren", WF-038), not a derived result;</li>
- *   <li>every node kind whose result unit v0 does not derive (a division, a power, a percentage-of, the
- *       date/time extractors): the annotation stands, exactly as it did before this class.</li>
+ *   <li>ch. 2.10's FOURTH class, which says something weaker: every node kind whose result unit v0 does not
+ *       DERIVE (a division, a power, a percentage-of, a root, an absolute value, the date/time extractors)
+ *       keeps the annotation because there is nothing to put in its place — not because the annotation is the
+ *       source. The ASP translator answers {@code None} there and fences; this backend has no such fence and
+ *       computes with the annotation, exactly as it did before this class. Measured 2026-09-04: no corpus
+ *       annotation at such a kind carries a unit, and {@code check-reftype-derivation.sh} fails on the first
+ *       one that does.</li>
  * </ul>
  *
  * <p><b>Scope.</b> This derives the UNIT only. The soort and the precision of an annotation are equally
@@ -63,7 +68,8 @@ public final class EffectieveEenheid {
     /** The derived unit of every binder READ (a {@code Lezing} carrier), by identity — precomputed, because a
      *  restatement site deep inside a Let body asks for a binder's unit without the binding in hand. Built by
      *  walking each {@code Binding} with a proper scope, so shadowing resolves the way WF-064 says (nearest
-     *  enclosing binder wins). Null until first use. */
+     *  enclosing binder wins). Null until first use. A recorded NULL value means "bound to a unitless value" —
+     *  membership, not the value, is what separates a bound read from an unbound one. */
     private Map<Object, Eenheid> lezingEenheden;
 
     public EffectieveEenheid(Map<Object, LetVorm> letVormen) {
@@ -116,14 +122,15 @@ public final class EffectieveEenheid {
         if (e instanceof Expr.Afgerond af) return eenheid(af.basis(), omgeving, diepte + 1);
         if (e instanceof Expr.Begrensd bg) return eenheid(bg.basis(), omgeving, diepte + 1);
         if (e instanceof Expr.Binair b) {
-            // §4 / ch. 2.6: an additive result carries the left unit and a unitless side adopts the other; the
-            // admitted factor-free product does the same (one unit-carrying operand hands its unit through).
+            // §4 / ch. 2.6: an additive result carries the left unit and a unitless side adopts the other.
             // Every other operator (division, power, percentage-of) has no v0 join rule here — annotation.
             return switch (b.op()) {
-                case PLUS, MIN, VERMINDERD_MET, MAAL -> {
+                case PLUS, MIN, VERMINDERD_MET -> {
                     Eenheid l = eenheid(b.links(), omgeving, diepte + 1);
                     yield l != null ? l : eenheid(b.rechts(), omgeving, diepte + 1);
                 }
+                case MAAL -> maalEenheid(eenheid(b.links(), omgeving, diepte + 1),
+                                         eenheid(b.rechts(), omgeving, diepte + 1));
                 default -> annotatie;
             };
         }
@@ -141,15 +148,39 @@ public final class EffectieveEenheid {
         return annotatie;
     }
 
+    /**
+     * §4.4 / ch. 2.6, the MAAL join — the Java twin of the frontend's {@code Typering.samengesteldeEenheid}, which
+     * is where this rule is authored. One unit-bearing operand hands its unit through (the factor-free product).
+     * TWO of them do NOT: a rate times its (convertible) denominator unit CANCELS to the numerator ("€/jr maal jr
+     * = €"), and anything else is the OPAQUE product ("€ maal kg = €·kg") — a unit with no canonical, convertible
+     * only to an identical product.
+     *
+     * <p>That opacity is load-bearing here, not cosmetic. It is the only thing standing between a two-unit product
+     * and a silent restatement: every §4 restatement site in both back-ends gates on {@code convertibleNaar} /
+     * {@code exacteHerschaalFactoren}, and an opaque product answers "no" to both, so the site emits an honest
+     * marker instead of a wrong number (the four "an OPAQUE product unit stays an honest marker" sites in
+     * {@code DrlTranspiler}). Handing back the left operand's unit would restate €·kg into a € target by a live
+     * factor. The unspellable case the frontend rejects loudly (a rate factor, "€·m/jr") reaches a consumer only
+     * on a document the frontend never wrote; the opaque product is the conservative answer there too — it
+     * refuses to restate rather than inventing a factor.
+     */
+    private static Eenheid maalEenheid(Eenheid el, Eenheid er) {
+        if (el == null) return er;
+        if (er == null) return el;
+        if (el.noemer() != null && er.noemer() == null && er.convertibleNaar(el.noemer())) return el.teller();
+        if (er.noemer() != null && el.noemer() == null && el.convertibleNaar(er.noemer())) return er.teller();
+        return Eenheid.product(el, er);
+    }
+
     private Eenheid letEenheid(Expr drager, LetVorm lv, Map<String, Eenheid> omgeving, int diepte, Eenheid annotatie) {
         if (lv instanceof LetVorm.Binding b) return eenheid(b.body(), metBinder(omgeving, b, diepte), diepte + 1);
         if (lv instanceof LetVorm.Lezing lz) {
-            Eenheid uit = omgeving.get(sleutel(lz.naam()));
-            if (uit != null) return uit;
-            if (omgeving.containsKey(sleutel(lz.naam()))) return null;   // bound to a unitless value
+            // BOUND (to a unit, or to a unitless value) and UNBOUND are different facts, so both tables are asked
+            // with containsKey: a binder bound to a unitless value HAS a source and the annotation may not speak
+            // over it; only a read no Binding anywhere binds falls back. Both maps hold nulls for exactly this.
+            if (omgeving.containsKey(sleutel(lz.naam()))) return omgeving.get(sleutel(lz.naam()));
             if (lezingEenheden == null) bouwLezingen();
-            Eenheid gevonden = lezingEenheden.get(drager);
-            return gevonden != null ? gevonden : annotatie;
+            return lezingEenheden.containsKey(drager) ? lezingEenheden.get(drager) : annotatie;
         }
         // ch. 10.2: exactly one branch runs; both must agree on the unit, so either arm derives it.
         LetVorm.Keuze k = (LetVorm.Keuze) lv;
@@ -160,9 +191,10 @@ public final class EffectieveEenheid {
     private Map<String, Eenheid> metBinder(Map<String, Eenheid> omgeving, LetVorm.Binding b, int diepte) {
         Map<String, Eenheid> binnen = new HashMap<>(omgeving);
         // WF-076: the value is derived in the ENCLOSING scope (the binder is not visible in its own value).
-        Eenheid u = eenheid(b.value(), omgeving, diepte + 1);
-        String k = sleutel(b.binder());
-        if (u == null) binnen.remove(k); else binnen.put(k, u);
+        // A UNITLESS value binds null (HashMap carries it) rather than removing the key: removing would report
+        // the binder as unbound, and an unbound read falls back to its own annotation — the very repetition this
+        // class exists to not read. Removal would also un-shadow an outer binder of the same name (WF-064).
+        binnen.put(sleutel(b.binder()), eenheid(b.value(), omgeving, diepte + 1));
         return binnen;
     }
 

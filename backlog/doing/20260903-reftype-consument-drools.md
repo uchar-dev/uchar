@@ -60,8 +60,11 @@ statusregel gelegd, niet tegen `PLAYED`: een golden die gate 12 per vorm
 weigert of in haar waardedivergentielijst draagt, moet onder de verdraaiing
 precies even weigerend blijven — dit harnas herkauwt gate 12 niet.
 
-**Eerste uitvoer, het faalrapport dat de werklijst IS** (46 verdraaiingen,
-10 goldens, 402 ref- + 402 clingo-replays):
+**Eerste uitvoer, het faalrapport dat de werklijst IS** (46 verdraaiingen
+over 10 goldens; 36 executor-replays — 13 case-bestanden maal ref+clingo,
+plus één Drools-statusregel per golden. Het getal 402 hieronder in de
+precisie-alinea is een ánder getal: de corpusbrede casustelling waarmee de
+precisieleugen is gemeten, niet de omvang van dit harnas):
 
 | golden | ref | clingo | Drools onverdraaid → verdraaid |
 |---|---|---|---|
@@ -110,7 +113,7 @@ nergens — alleen `Afgerond.decimalen`, een knoopveld.
 | `vergelijkingClip` + de twee §8.2-grenzen (beide backends) | `tijd/ander.type().eenheidOf()` | `eff.eenheidVan(...)` |
 | `parityOnveilig` / `grensOnveilig` | annotatie (en `static`) | `effType(...)`, nu instantiemethoden |
 | `DrlTranspiler` schrijfgrens, `binairTerm`, drie `vergelijkingsOperanden`, `temporeelBasis`, de temporele som | `.type()` | `effType(...)` |
-| defaults-consequentie (`:6567`) | *las de declaratie al* | ongewijzigd |
+| defaults-consequentie (`:6590`) | DOEL las de declaratie (`onderwerp.attribuut`), BRON las `r.consequentie().type()` | `effType(r.consequentie())` (fixronde) |
 
 ### Wat een uitzondering bleef, en waarom
 
@@ -155,8 +158,8 @@ zijn PASS-regel.
 
 ### JUnit-stand
 
-178 → **195**, nul overgeslagen. Nieuw testbestand
-`EffectieveEenheidWitnessTest` (17 getuigen) pint wat de corpusreplay niet
+178 → **195** (na de fixronde **198**), nul overgeslagen. Nieuw testbestand
+`EffectieveEenheidWitnessTest` (17 getuigen, na de fixronde 20) pint wat de corpusreplay niet
 kan zien: de declaratielezing per referentievorm, de ch.-2.6-afleiding per
 composietvorm, de binderlezing diep in een body, WF-064-shadowing, de drie
 uitzonderingen, en dat een KLOPPENDE annotatie hetzelfde object teruggeeft
@@ -172,6 +175,162 @@ stand vóór deze kaart (nagemeten: de volledige onverdraaide sweep over alle
 dezelfde ene FAIL). De kustwacht-divergentie is niet opgelost en niet
 verplaatst; de reden-dragende lijst in `check-drools.sh` blijft
 ongewijzigd, en haar verouderingswacht bevestigt dat.
+
+## Fixronde (2026-09-04) — na lens 1
+
+Vijf blokkerende en zes kleinere punten. Elk blokkerend punt is eerst
+gereproduceerd (rood), daarna gefixt.
+
+**B2-1 — de MAAL-afleiding.** `eenheid()` behandelde `MAAL` als `PLUS`:
+links, anders rechts. Fout tegen ch. 2.6 én het sloopte de enige
+bescherming die deze backend tegen een tweeledig product had — de
+OPAAKHEID van `Eenheid.product` (vier `DrlTranspiler`-plekken rond
+`:2700`/`:3808`/`:3849`/`:3855` leunen erop: "an OPAQUE product unit stays
+an honest marker"). Reproductie, twee nieuwe getuigen rood:
+
+```
+€/jr maal jr  expected: <Eenheid[afkorting=EUR, …, noemer=null]>
+              but was:  <Eenheid[afkorting=EUR, …, noemer=Eenheid[jr…]]>
+€ maal kg     expected: <Eenheid[afkorting=EUR·kg, canoniek=null, …]>
+              but was:  <Eenheid[afkorting=EUR, canoniek=EUR, factor=1, …]>
+```
+
+Fix: bij twee eenheiddragende operanden de frontend-`Typering.
+samengesteldeEenheid` spiegelen — de cancel-clausule (beide richtingen)
+naar `el.teller()`, anders `Eenheid.product(el, er)`; één eenheiddragende
+operand blijft doorgeven. De onuitspreekbare vorm die de frontend luid
+weigert (een tariefsfactor) landt hier óók op het opake product: dat
+weigert te herschalen in plaats van een factor te verzinnen. Getuigen:
+`een_maal_met_twee_eenheden_valt_weg_tegen_zijn_noemer` en
+`een_maal_van_twee_losse_eenheden_geeft_het_opake_product`, die het opake
+gedrag zelf pint (geen canoniek, geen exacte herschaalfactoren naar €,
+niet convertibel naar € of kg, wél naar een identiek product).
+
+**B2-2 — de eenheidloze binder.** `metBinder` deed `binnen.remove(k)` bij
+een null-eenheid, waardoor de `containsKey`-bewaking in `letEenheid`
+("bound to a unitless value") dode code was: zo'n lezing viel terug op de
+annotatie, en een gelijknamige BUITENSTE binder werd bovendien
+ont-overschaduwd (WF-064). Reproductie (nieuwe getuige rood): `de binding
+is eenheidloos; de annotatie (t) is haar leugen ==> expected: <null> but
+was: <Eenheid[afkorting=t, …]>`. Fix: `binnen.put(k, null)` (HashMap
+draagt null), en `letEenheid` vraagt bij BEIDE tabellen `containsKey` in
+plaats van `get() != null`, zodat "gebonden aan eenheidloos" en
+"ongebonden" gescheiden blijven. `noteer` legde het onderscheid al goed
+vast; het lezerspad wist er alleen niets mee te doen.
+
+**B2-3 — de faalklem voor nieuwe knoopsoorten** (`check-…-derivation.sh`
+stap 6). De twister boekt nu ELKE eenheiddragende annotatie: verdraaid,
+vrijgesteld (de reden-dragende uitzonderingsset: `Literal`, de
+duur-operand van datum±duur, `TIJDSDUUR`/`ABSOLUTE_TIJDSDUUR`), zonder
+converteerbaar zusje, of ONGEDEKT — een knoopsoort buiten de tabel én
+buiten de uitzonderingen. Ongedekt > 0 → FAIL met knoopsoort + golden.
+Gemeten stand, en het harnas zegt ze nu hardop in zijn PASS-regel:
+
+```
+corpus-wide accounting: 75 unit-bearing annotations = 46 twistable
+  + 23 exempt (the annotation IS the source) + 6 without a convertible
+  sister; 0 outside the twist table
+```
+
+(75 = 46 verdraaid + 8 eigen `Literal` + 7 `Literal`-duuroperanden + 2
+`AttribuutRef`-duuroperanden + 6 `tijdsduur` + 6 zonder zusje — dat
+laatste zijn eenheden zonder canoniek/factor, waarvoor geen
+CONVERTEERBAAR zusje bestaat; een niet-converteerbare leugen zou
+weigergedrag meten in plaats van een declaratielezing.) De klem is dus
+vandaag gratis. Demonstratie dat hij bijt — `Binair` tijdelijk uit de
+tabel gehaald, exit 1:
+
+```
+FAIL: a unit-bearing annotation sits at a node kind the twist table does
+      not carry, and that the exception set does not exempt …
+   3 jutterswet-lichterloon Binair
+   2 jutterswet-meldloon Binair      (… 8 goldens, 13 voorkomens)
+```
+
+**B2-4 — de survivorklem afgemaakt.** Het script controleerde alleen het
+BESTAAN van de survivor-golden. Nu houdt het per lijstpositie bij of hij
+daadwerkelijk RAAKTE (`$RAKERS`, één regel per divergentie) en faalt op
+drie manieren, het check-noop-patroon compleet: onbekende executor,
+verdwenen golden, en een entry die niet meer divergeert. Demonstratie met
+drie verzonnen entries, exit 1:
+
+```
+FAIL: stale survivor entry:
+  jutterswet-vondsttelling|drools — no longer diverges under the twist; drop the entry
+  verdwenen-golden|ref — no such golden
+  jutterswet-meldloon|drool — unknown executor (expected ref, clingo or drools)
+```
+
+De POSITIEVE helft is apart gemeten (zie de mutatiemeting hieronder): met
+een mutant die de annotatie weer leest, en `jutterswet-vondsttelling|
+drools` als enige gepinde entry, meldt het harnas acht divergenties en
+accepteert die ene — geen verouderingsklacht.
+
+**B2-5 — §2.10 aan de code** (`spec/RUNTIME-SEMANTICS.md`, voorstel).
+(a) "never the node's own annotation" klopte niet op composietposities:
+de default-tak laat `GEDEELD_DOOR`, `TOT_DE_MACHT`, `PERCENTAGE_VAN`,
+`WORTEL`, `ABSOLUTE_WAARDE` en de datum-extractors op de annotatie staan
+(status quo van vóór de kaart). Dat staat er nu als de VIERDE
+uitzonderingsklasse, expliciet zwakker geformuleerd: niet "de annotatie
+is de bron" maar "v0 heeft daar geen regel" — met de reden (clingo's
+`eff_unit` geeft er `None` en zijn hekken `unit_free_ok` /
+`units_identical_ok` FAULTEN; deze backend heeft dat hek niet en rekent
+met de annotatie) en de gemeten bereikbaarheid (nul eenheiddragende
+voorkomens; B2-3's klem meldt de eerste getuige). (b) De soort/precisie-
+zin is gesplitst: clausule 1 (referentieposities) wordt door WF-091's
+identiteitsmotor over ALLE facetten gekruist; clausule 2
+(composietposities) is voor de EENHEID afgeleid en machinaal gecontroleerd,
+terwijl soort en precisie op een AFGELEID type door niets gekruist worden
+— de open deferral van WF-091's eerlijkheidsnotitie 4, met verwijzing.
+Clausule 2 kreeg er bovendien de MAAL-regel (cancel + opaak product) en
+de binderlezing-met-eenheidloze-binding bij, zodat B2-1 en B2-2 ook
+normatief staan en niet alleen in Java.
+
+**B2-6 — de vier gemiste annotatielezingen** (alle gemeten onbereikbaar
+vandaag, JUnit en harnas identiek groen): `DrlTranspiler.
+tijdreeksSomAlleSet` (`schaalbaarNaarDoel` + `schaalTijd`) en
+`temporeelRekenOperand` — de DRL-tweelingen van al omgezette
+exec-plekken; het temporele DOEL-type (`td.type()` in DRL,
+`doel.type()` op de twee exec-plekken — §2.10 noemt de doel expliciet
+referentiepositie); `ExecModelTranspiler.lowerVal` (rechts/links aan de
+additieve grens); en de objectcreatie-`TkLower` (`t.waarde().type()`, twee
+takken). De soort-lezingen ernaast (`isNumeriek`, `isDatum`) blijven staan:
+routeringspredicaten, geen herschaling.
+
+**B2-7 — het defaults-pad.** De bron las `r.consequentie().type()` → nu
+`effType(...)`. De bouwnotitie-zin "las al de declaratie" gold alleen het
+DOEL (`onderwerp.attribuut(doel)`); de tabelregel is gecorrigeerd.
+
+**B2-8 — bouwnotitie eerlijk.** Het 402-getal is gecorrigeerd (36
+executor-replays; 402 is de corpusbrede casustelling van de
+precisiemeting). Het scripthoofd zegt nu twee dingen hardop die het
+verzweeg: (1) vier verdraaiklassen zijn voor de DROOLS-tak per constructie
+een no-op — `ParameterRef`, `DimensieCel`, `Afgerond` en `Begrensd`
+LEIDEN hun `type()` in de Java-IR-records af (uit de parameterdeclaratie,
+uit de binnenreferentie, uit de basis) en dragen dus helemaal geen
+wire-annotatie; de graft bereikt die tak daar niet, en hun Drools-dekking
+leunt volledig op de `EffectieveEenheidWitnessTest`-getuigen (ref en
+clingo worden er wél door geprobed); (2) het harnas meet
+ONVERSCHILLIGHEID, niet noodzakelijkheid — het kan een consument die
+afleidt niet onderscheiden van een die eenheden helemaal negeert. Dat mag,
+omdat de noodzakelijkheid elders gepind staat: gates 5/6 houden ref en
+clingo aan de absolute handgeschreven verwachtingen en gate 12 houdt Drools
+aan diezelfde waarden, dus een eenheden-negerende backend is daar rood op
+het ONVERDRAAIDE corpus. Onverschilligheid is de helft die geen andere
+gate kan zien, juist omdat een liegend document er geen mag halen.
+
+**Mutatiemeting van het harnas (de tanden).** `van()` tijdelijk
+teruggezet op `e.type()` (de stand van vóór de kaart) → het harnas meldt
+exact de negen bekende divergenties terug, inclusief `PLAYED 1 → FAIL
+… verwacht 3,75, werkelijk 3750000,00`-klasse en de acht andere; met één
+gepinde survivor blijven er acht FAILs over en klaagt de
+verouderingswacht niet. Bron hersteld, harnas weer PASS.
+
+**Stand na de fixronde.** Harnas: `PASS (46 unit annotations twisted over
+10 goldens; 36 executor replays reproduce the untouched outcome; 0 pinned
+survivors)` plus de boekhoudregel. JUnit: **198**, nul overgeslagen (195 +
+3 getuigen). Gate 12: `played 105 / auto-excluded 43 / value-divergence 1`
+— ongewijzigd op elk getal.
 
 ## Result (2026-09-04)
 
