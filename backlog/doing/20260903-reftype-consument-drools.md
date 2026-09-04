@@ -342,10 +342,14 @@ Drools-takken, zodat elke §4-herschaling zijn eenheid uit de declaratie of
 de ch.-2.6-afleiding haalt in plaats van uit de wire-herhaling — het
 3,75/3.750,00-paar divergeert niet meer; (3) RUNTIME-SEMANTICS **§2.10 "The
 consumer clause"** als voorstel (protected path), met de drie
-reden-dragende uitzonderingen, de twee opgetekende ASP-schaallezingen, en
-het harnas benoemd als afdwingend artefact; (4) 17 nieuwe
-JUnit-getuigen (178 → 195). Alle twaalf gates groen; gate 12 ongewijzigd op
-elk getal.
+reden-dragende uitzonderingen, de VIERDE (zwakkere) klasse voor de
+knoopsoorten die v0 niet afleidt, de per-clausule gesplitste soort/precisie-
+stand, de twee opgetekende ASP-schaallezingen, en het harnas benoemd als
+afdwingend artefact; (4) 20 nieuwe JUnit-getuigen (178 → **198**). Alle
+twaalf gates groen; gate 12 ongewijzigd op elk getal (`played 105 /
+auto-excluded 43 / value-divergence 1`, JUnit 198). De fixronde hierboven
+hoort bij deze landing: zij bracht de MAAL-afleiding, de eenheidloze
+binder, twee klemmen in het harnas en de §2.10-correcties.
 
 Voor de hoofdsessie: de gate-registratie (nummer 13) en de
 CONSTRUCTS-delta. Niet aangeraakt: `ref/`, `backends/clingo/`,
@@ -355,4 +359,8 @@ testbestanden, `CLAUDE.md`, `.github/`.
 Open, met reden: het bereik van het harnas is de eenheidsfacet over tien
 goldens — de andere twee facetten zijn hierboven gemeten weggelaten, en de
 `Fold`/`Match`-schaallezing van de ASP-vertaler wacht op een
-eenheiddragende getuige.
+eenheiddragende getuige. Even open, en nu expliciet in §2.10: soort en
+precisie op een AFGELEID type worden door niets gekruist (WF-091's
+eerlijkheidsnotitie 4), en de vierde uitzonderingsklasse — de knoopsoorten
+zonder v0-afleidingsregel — is vandaag leeg maar niet leeg van betekenis;
+B2-3's klem meldt haar eerste getuige.
