@@ -245,11 +245,17 @@ with open(doel, "w", encoding="utf-8") as fh:
 print(len(treffers))
 PY
 
+# Is <golden> x <executor> a pinned survivor? Read LINE by line, never word by word: a
+# reason carries spaces, so splitting $SURVIVORS on whitespace would shred every entry the
+# moment the list stops being empty.
 vermeld() {
-    for s in $SURVIVORS; do
-        [ "${s%%|*}" = "$1" ] && [ "$(echo "$s" | cut -d'|' -f2)" = "$2" ] && return 0
-    done
-    return 1
+    treffer=$(printf '%s\n' "$SURVIVORS" | while IFS= read -r s; do
+        [ -n "$s" ] || continue
+        [ "${s%%|*}" = "$1" ] || continue
+        rest=${s#*|}
+        [ "${rest%%|*}" = "$2" ] && echo hit
+    done)
+    [ -n "$treffer" ]
 }
 
 status=0
@@ -305,13 +311,15 @@ while IFS= read -r ir; do
     fi
 done < "$LIST"
 
-for s in $SURVIVORS; do
+weg=$(printf '%s\n' "$SURVIVORS" | while IFS= read -r s; do
+    [ -n "$s" ] || continue
     d="corpus/golden/${s%%|*}"
-    if [ ! -d "$d" ]; then
-        echo "FAIL: stale survivor entry — $d does not exist" >&2
-        status=1
-    fi
-done
+    [ -d "$d" ] || echo "$d"
+done)
+if [ -n "$weg" ]; then
+    printf 'FAIL: stale survivor entry — no such golden:\n%s\n' "$weg" >&2
+    status=1
+fi
 
 if [ "$n_twists" -eq 0 ]; then
     echo 'FAIL: no annotation was twisted — the harness probed nothing (an empty twist set is never green)' >&2
