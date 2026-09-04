@@ -27,15 +27,19 @@ Acceptance:
 - De terugval vervangen door een luide fout (of de dode-pad-conclusie
   met een fail-fast-klem die hem dood hóúdt).
 - Gate 10 én 11 byte-identiek (beweegt één golden-emissie: stoppen en
-  de vraag stellen); beide JUnit-suites groen (frontend 159, backend
-  198); alle dertien gates groen; herpin + re-vendor (frontends
-  geraakt).
+  de vraag stellen); beide JUnit-suites groen (frontend 159 → 171 met
+  §7's testbestand, backend 198); alle dertien gates groen; herpin +
+  re-vendor (frontends geraakt).
 
 May touch: `frontends/regelspraak/src/**`, `backlog/`. Nieuwe
-frontend-tests alleen na de testbestanden-vraag aan de maintainer.
+frontend-tests alleen na de testbestanden-vraag aan de maintainer — die vraag
+is 2026-09-04 met ja beantwoord (§7). Bij hetzelfde besluit verruimd met één
+commentaarcorrectie in
+`backends/drools/src/main/java/io/github/yhavinga/regelspraak/transpiler/kern/EffectieveEenheid.java`
+(§8): alleen commentaar, geen code.
 
 Out of scope: backends (consumeren het model; hun JUnit bewaakt de
-uitkomst), verifier, spec, corpus.
+uitkomst — op de commentaarcorrectie hierboven na), verifier, spec, corpus.
 
 ## Bouwnotitie (2026-09-04)
 
@@ -214,6 +218,14 @@ BUILD SUCCESS.
 13 check-reftype-derivation: PASS (52 unit annotations twisted over 11 goldens; 39 executor replays reproduce the untouched outcome; 0 pinned survivors)
 ```
 
+Dat is de telling van de code-landing. Met §7's testbestand erbij staat de
+frontend op **171/171** (0 overgeslagen) en leest gate 10 `JUnit suite green
+(171 tests); 28 rgs golden(s) re-emit byte-identically` — dezelfde 28 bytes,
+alleen de suite groeide. Gate 11 (27 TOKA-tests, 45 heruitgiften, 29 replays),
+gate 12 (played 106 / auto-excluded 43 / value-divergence 1 / no-case 2 / JUnit
+198) en gate 1 staan op elk getal ongewijzigd, nagemeten ná het testbestand en
+ná de commentaarnaregel van §8.
+
 **Er is geen byte bewogen.** Gate 10 (28 rgs-heruitgiften) en gate 11 (45
 toka-heruitgiften) zijn byte-identiek; gate 12 staat op elk getal gelijk aan de
 gedocumenteerde main-basislijn (`played 106 / auto-excluded 43 /
@@ -222,42 +234,62 @@ value-divergence 1 / no-case 2`, zie `20260903-wf007-schrijfdoel`), met dezelfde
 structureel — het aantal verdraaide annotaties — en zijn ongevoelig voor deze
 wijziging; wat zij bewaakt is de nul-divergentie, en die staat.
 
-### 7. De test die ik zou toevoegen (testbestanden-vraag staat open)
+### 7. Het testbestand (maintainer-ja 2026-09-04) en de mutatiemeting
 
-Geen nieuw testbestand gemaakt, geen bestaand testbestand aangeraakt. Wat ik
-zou toevoegen, als de maintainer het toestaat:
+De testbestanden-vraag is beantwoord met ja. Geland:
 `frontends/regelspraak/src/test/java/io/github/yhavinga/regelspraak/EenheidFactorTest.java`,
-~12 getuigen (159 → ~171):
+twaalf getuigen, **159 → 171** tests, nul overgeslagen. Geen bestaand
+testbestand aangeraakt.
 
-1. zes weiger-getuigen, één per mismatchvorm uit §4 (kastleugen `KG`→`t`, twee
-   stelsels, twee canonieken in één stelsel, de kale corpusvorm, het opake
-   product, de noemer-mismatch), elk `assertThrows` + `assertTrue` dat BEIDE
-   namen in de melding staan;
-2. de wirevorm-getuige (canoniek zonder factor) met haar eigen melding —
-   de klem die de dode tak dood houdt;
-3. `omrekenfactorNaar(null)` gooit;
-4. drie behoud-getuigen: `jr→mnd` = 12, `mnd→jr` = 1/12 op DECIMAL64,
-   `€/jr→€/mnd` = 1/12 (de noemerinversie);
-5. één predikaat-getuige: `vereistOmrekening` is false op alle zes de
-   mismatchvormen — het contract waar rij 10 van de inventaris op leunt, en
-   precies wat een latere "gooi ook daar maar" onbedoeld zou breken.
+1. zes weiger-getuigen, één per mismatchvorm (kastleugen `KG`→`t`; twee
+   stelsels `EUR`→`kg`; twee canonieken in één stelsel `jr`→`dg`; kale eenheid
+   tegen tarief `EUR`→`EUR/jr` — de vormtak van `convertibleNaar` die §4's
+   probe niet apart aftastte; het opake product `m·m`→`m`; tarief tegen ander
+   tarief `EUR/jr`→`EUR/kg`), elk `assertThrows` + de assertie dat de melding
+   BEIDE `weergave()`-namen draagt. De kale corpusvorm (`jaar`, canoniek null)
+   uit §4 loopt door dezelfde tak als het opake product en is dáár mee gepind,
+   niet als zevende getuige;
+2. de wirevorm-getuige (canoniek gevuld, factor null): de buitenste
+   poortwacht laat hem door, de factorvraag én `vereistOmrekening` gooien, met
+   dezelfde melding — de klem op de enige plek waar deze kaart een publiek
+   antwoord verandert;
+3. `omrekenfactorNaar(null)` gooit, met bron en `(geen eenheid)` in de melding;
+4. drie behoud-getuigen: `jr→mnd` = 12, `mnd→jr` = `0.08333333333333333` (de
+   DECIMAL64-afronding letterlijk gepind, plus het exacte paar {1, 12}), en de
+   noemerinversie `EUR/mnd→EUR/jr` = 12 — de richting waarin de tellers een
+   afkorting DELEN, dus precies de vorm die een tellergerichte klem zou
+   platslaan;
+5. één predikaat-getuige: `vereistOmrekening` false op alle zes de
+   mismatchvormen én op `null` (en `convertibleNaar` daar ook false, want dát
+   blijft de manier om "geen gedeelde eenheid" van "zelfde eenheid" te
+   onderscheiden) — het contract waar rij 10's acht kale plekken op leunen.
 
-Mutatiemeting die erbij hoort: met `return BigDecimal.ONE` teruggezet vallen 1,
-2 en 3 om (negen getuigen) en blijven 4 en 5 staan — de scheiding tussen wat
-de kaart repareert en wat zij expliciet ongemoeid laat.
+**Mutatiemeting** (tijdelijk, niet gecommit: `return BigDecimal.ONE` terug op
+alle drie de gooiplekken, daarna `git checkout`): **acht getuigen rood**,
+namelijk exact de zes weiger-getuigen, de wirevorm-getuige en de
+null-getuige — elk met "Expected java.lang.IllegalStateException to be thrown,
+but nothing was thrown". De drie behoud-getuigen en de predikaat-getuige
+blijven groen (171 gevonden, 163 geslaagd, 8 gefaald, 0 overgeslagen). De
+voorspelling in de vorige versie van deze paragraaf zei "negen"; dat was een
+telfout — haar eigen opsomming was toen al 6 + 1 + 1 = 8. Bijvangst van dezelfde meting: van de 159
+bestaande tests viel er géén om onder de mutant. Dat is de sonde uit §2 nog
+eens langs een andere weg: de terugval was tot vandaag door geen enkele
+frontend-getuige bedekt.
 
 ### 8. Eerlijk open
 
-- **Eén verouderde zin in een bestand dat deze kaart niet mag aanraken.**
-  `backends/drools/.../kern/EffectieveEenheid.java:165-167` citeert een meting:
+- **De verouderde meetzin in de backend — nagelopen (May-touch-verruiming,
+  maintainerbesluit 2026-09-04).**
+  `backends/drools/.../kern/EffectieveEenheid.java:165-167` citeerde een meting:
   "for m·m against m, `convertibleNaar` is false, `vereistOmrekening` is false,
   `omrekenfactorNaar` is 1 and `exacteHerschaalFactoren` is null". Na deze kaart
-  klopt de derde clausule niet meer: `omrekenfactorNaar` GOOIT daar nu. De
-  eerste, tweede en vierde staan nog (probe §4, rij `m*m -> m`), en de conclusie
-  die de alinea trekt — het exec-pad maakt een niet-converteerbare herschaling
-  tot een no-op — is ongewijzigd, want dat pad komt uit `restatement`'s eigen
-  identiteit (rij 6), niet uit de factorvraag. Eenregelige naregel voor de
-  maintainer of een volgende backendkaart.
+  klopte de derde clausule niet meer: `omrekenfactorNaar` GOOIT daar nu. Die ene
+  clausule is herschreven naar de werkelijkheid — commentaar, geen code. De
+  eerste, tweede en vierde staan onveranderd (probe §4, rij `m*m -> m`), en de
+  conclusie die de alinea trekt — het exec-pad maakt een niet-converteerbare
+  herschaling tot een no-op — óók, want die no-op komt uit `restatement`'s eigen
+  identiteit (rij 6), één regel vóór de factorvraag, niet uit de factorvraag
+  zelf. De herschreven clausule zegt dat er nu bij.
 - **De ongepoortwachte rij-10-plekken blijven stil.** Zij geven bij een
   niet-inwisselbaar paar nog steeds "geen omrekening nodig" en vergelijken dan
   rauwe magnitudes — B3-2's gemeten stille ref/Drools-divergentie. Deze kaart
@@ -283,8 +315,9 @@ de kaart repareert en wat zij expliciet ongemoeid laat.
 
 ## Result (2026-09-04)
 
-Geland in twee commits, alleen in `frontends/regelspraak/src/**` en
-`backlog/`. (1) `Eenheid.omrekenfactorNaar` gooit bij een niet-inwisselbaar
+Geland in `frontends/regelspraak/src/**`, `backlog/` en — na de
+May-touch-verruiming van 2026-09-04 — één commentaarregel in
+`backends/drools/src/**`. (1) `Eenheid.omrekenfactorNaar` gooit bij een niet-inwisselbaar
 paar een `IllegalStateException` met beide eenheidsnamen in plaats van factor
 één terug te geven; `tellerFactorNaar` — ook de noemerlezing — weigert de twee
 resterende gaten (andere canoniek, en de wirevorm canoniek-zonder-factor die
@@ -294,17 +327,28 @@ convertibiliteitscheck expliciet en reden-dragend, met gemeten ongewijzigd
 antwoord. (2) De kaartnotitie met de tien-rijige aanroepersinventaris, de
 sondemeting (224 factorvragen over gate 10/11/12, nul mismatches; de enige
 niet-identieke paren zijn `m ↔ km` en `jaar ↔ maand`) en de letterlijke
-voor/na-probe.
+voor/na-probe. (3) Na het maintainer-ja op de testbestanden-vraag:
+`EenheidFactorTest`, twaalf getuigen (§7) — zes weigervormen die elk BEIDE
+eenheidsnamen in hun melding eisen, de wirevorm-klem die ook door
+`vereistOmrekening` heen gooit, het ontbrekende doel, drie behoud-getuigen
+(12, `0.08333333333333333`, en de noemerinversie 12) en de predikaat-getuige
+die `vereistOmrekening` op alle zes de vormen én op `null` op false pint.
+Mutatiegemeten met de terugval terug: precies die eerste acht vallen om, de
+vier andere niet, en géén van de 159 bestaande tests — de terugval was tot nu
+door geen enkele getuige bedekt. (4) De naregel op §8's verouderde meetzin in
+`EffectieveEenheid`'s javadoc: die ene clausule (`omrekenfactorNaar` is 1)
+zegt nu dat hij gooit en dat de no-op uit `restatement`'s eigen identiteit
+komt; commentaar, geen code.
 
-Alle dertien gates groen; frontend-JUnit 159, backend-JUnit 198, beide nul
+Alle dertien gates groen; frontend-JUnit **171**, backend-JUnit 198, beide nul
 overgeslagen. **Geen byte bewogen**: gate 10 (28 rgs) en gate 11 (45 toka-rgs)
 byte-identiek, gate 12 op elk getal gelijk aan de main-basislijn (played 106 /
 auto-excluded 43 / value-divergence 1 / no-case 2), gate 13 nul divergenties.
 
 Voor de landing: de herpin van `regelspraak-java` op `SPEC_REV` (het gedeelde
-model wijzigde) en de testbestanden-vraag uit §7. Niet aangeraakt: backends,
+model wijzigde). Niet aangeraakt: backendcode (alleen één javadoc-clausule),
 `ref/`, `spec/`, `corpus/`, `toka/`, scripts, bestaande testbestanden.
-Bewust niet meegenomen, met reden in §8: de verouderde meetzin in
-`EffectieveEenheid`'s javadoc en de acht ongepoortwachte predikaatplekken die
-bij een niet-inwisselbaar paar nog steeds stil "geen omrekening nodig"
-antwoorden.
+Bewust niet meegenomen, met reden in §8: de acht ongepoortwachte
+predikaatplekken die bij een niet-inwisselbaar paar nog steeds stil "geen
+omrekening nodig" antwoorden, en de ref-asymmetrie op de wirevorm
+(`ref/lib/arith.ml`) — beide kaartmateriaal buiten deze May-touch.
