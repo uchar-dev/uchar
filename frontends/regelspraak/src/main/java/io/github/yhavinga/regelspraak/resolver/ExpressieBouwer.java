@@ -1284,6 +1284,14 @@ final class ExpressieBouwer {
                 || (a.type() instanceof Datatype.Percentage p && p.geheel()));
     }
 
+    /** Whether an aggregation's operand is a SET read — "&lt;attribuut&gt; van alle &lt;elementen&gt;", the instance
+     *  fold — as opposed to the single (own or navigated) attribute read the §7 temporal operators integrate
+     *  over. The same {@code set()} flag {@link #gedurendeKenmerkFilter} tests negatively to admit the temporal
+     *  clip, so the two routes are told apart by ONE predicate on ONE wire field. */
+    private static boolean setLezing(List<Expr> args) {
+        return args.size() == 1 && args.get(0) instanceof Expr.AttribuutRef a && a.set();
+    }
+
     private Datatype functieType(Expr.FunctieKind kind, List<Expr> args) {
         Datatype eerste = args.isEmpty() ? onbekend() : args.get(0).type();
         return switch (kind) {
@@ -1292,7 +1300,15 @@ final class ExpressieBouwer {
             // row 1 result eenheid "-", row 2 "Eenheid1" (the numerator). "het totaal van <EUR/mnd>" types EUR
             // and assigns cleanly to a EUR target (a EUR/mnd target is now the unit mismatch it should be).
             // A non-rate operand type passes through unchanged (the §7.1 unitless-Bedrag path).
-            case TOTAAL -> eerste instanceof Datatype.Numeriek n && n.eenheid() != null && n.eenheid().noemer() != null
+            // The strip belongs to that TEMPORAL route ALONE (maintainer decision 2026-09-04): the SET reading
+            // "het totaal van <x> van alle <elementen>" — which the grammar admits and the toolchain accepts —
+            // is an ALIAS of "de som van", an instance fold that never integrates over time, so it carries the
+            // ELEMENT's type verbatim exactly as SOM does. Stripping there invented a wire type no executor can
+            // produce: the fold adds EUR/mnd values and the EUR target then faults on assignment
+            // ("incompatible units: EUR vs EUR"), while an honest EUR/mnd target was rejected by the §6.1.2
+            // assignment check. One predicate, no other behaviour moves.
+            case TOTAAL -> setLezing(args) ? eerste
+                    : eerste instanceof Datatype.Numeriek n && n.eenheid() != null && n.eenheid().noemer() != null
                     ? new Datatype.Numeriek(n.geheel(), n.decimalen(), n.teken(), n.eenheid().teller())
                     : eerste;
             // §4.12/§4.13: a multi-operand min/max result is the SMALLEST/LARGEST VALUE, whose
