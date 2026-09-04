@@ -52,5 +52,24 @@ the v0 wire — which is precisely why the verifier, not the schema, is the
 fence.
 
 Falsifiable, clause-exact: remove the `attribuut = None` arm from the
-aggregation branch of `walk_expr`'s `Functie` case and this case alone turns
-clean, every other `wf034-*` case staying red.
+aggregation branch of `walk_expr`'s `Functie` case and this case alone loses
+its WF-034 citation, every other `wf034-*` case staying red — gate 3 turns
+red on it, since the directory declares a rule the report then no longer
+names.
+
+*Honesty correction (2026-09-04), against the paragraph above.* It does not
+turn CLEAN, and "the whole identity family defers" is no longer true: since
+WF-091 gained its DERIVED-type half (`spec/IR-SPEC.md` ch. 4.1, composite
+positions) the tonne-for-kilogramme lie is caught a second time at the fold
+ROOT, which crosses the aggregation's own type against the type derived from
+operand 0 and needs no resolved declaration to do it. Measured with the arm
+removed:
+
+    WF-091 FAIL /resolvedRegels/1/waarde/type: unit mismatch: the SOM
+    aggregation is typed 'kg' of system 'Gewicht' (factor 1 to 'kg'), but the
+    type derived from its first operand is 't' of system 'Gewicht' (factor
+    1000 to 'kg')
+
+What still defers on `resolved_attr_datatype` yielding `None` is the family's
+REFERENCE half — WF-089/WF-090 and WF-091's reference arms — which is what
+that paragraph should be read as saying.
