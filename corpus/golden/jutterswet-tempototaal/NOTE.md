@@ -31,8 +31,8 @@ a **temporal** attribute is the §7.1 per-element
 timeline fold (each element's tijdreeks summed over time first, then over
 the set — the Drools transpilers' `rsTijdTotaal` path), so it integrates
 too and keeps the strip. That fourth form is deliberately not in this
-document; it is the subject of `backlog/new/20260904-ref-tijdtotaal.md`,
-which has to close its value divergence first.
+document; `ref` learned it separately (`backlog/done/20260904-ref-tijdtotaal.md`,
+which closed its 0-vs-150 value divergence).
 
 That is the maintainer decision of 2026-09-04, and this golden is what
 makes it machine-checkable.
@@ -93,29 +93,52 @@ replay through clingo. So a case file here would take gate 6 red, and
 weakening the expectations to suit an executor is not on the table. The
 case waits for the executor, not the other way round.
 
-**The temporal route** — `bewaargeld` — is refused by `ref` as well, and
-for a different reason worth recording:
+**The temporal route** — `bewaargeld` — was refused by `ref` as well when
+this golden was admitted, and that refusal is what carded the fix:
 
 ```
 EVALUATION FAULT: incompatible units: EUR vs EUR
 ```
 
-`Timeline.totaal` multiplies each segment's value by a **unitless** whole-unit
-count, so the `€/mnd` unit survives the collapse and the `€` target then
-rejects it. In other words the §4.20 strip is, today, a static claim of the
-frontend that `ref` implements on neither route. No gate saw
-this before, because every temporal `TOTAAL` in the corpus is unitless (in
+`Timeline.totaal` multiplied each segment's value by a **unitless**
+whole-unit count, so the `€/mnd` unit survived the collapse and the `€`
+target rejected it. The §4.20 strip was a static claim of the frontend
+that `ref` performed on neither route. No gate saw it, because every
+other temporal `TOTAAL` in the corpus is unitless (in
 `jutterswet-getijdenwacht`, `jutterswet-penningjaar`, `synth2-clip-over-prorata`,
 `synth2-clip-cond-over-prorata` and `anchor/jutterswet-dubbelwacht` the
 operand carries no unit at all, so the strip is a no-op).
 
-This is a `ref` **defect**, not an open question about the strip: the
-Drools backend plays the same rule off the same wire. On `J1` with a
-`bewaarvergoeding per maand` timeline of 10 €/mnd across 2024, Drools
-answers `bewaargeld = 120` (10 × 12 months, `PLAYED 1`) — the integration
-the strip's `€` result type describes. This golden makes the gap visible on
-the wire; closing it belongs to `ref`, and is carded as
-`backlog/new/20260904-ref-tijdtotaal.md`.
+**Closed 2026-09-04.** `ref` now performs the integration on both
+timeline folds: the whole-unit count is a **duration in the value's own
+denominator**, so the denominator cancels and the total carries the
+numerator (RUNTIME-SEMANTICS ch. 3.6, "Units, the explicit rate
+operand"). On `J1` with a per-month `bewaarvergoeding per maand` of
+10 €/mnd, `bewaargeld` is `10 €` over a one-month asOfDate bucket and
+**120 €** over a full 2024 timeline — the value the Drools backend plays
+off the same wire (`PLAYED 1`). The unit fault above is gone; the
+non-unit fence on a case-supplied full timeline under the *no-filter*
+route (the asOfDate-bucket convention carries that total) is older than
+this golden and still stands.
+
+**`ref` and clingo still disagree on which forms they carry**, which is
+why the case file below still waits. Measured on this document after the
+fix:
+
+* the whole document, `bewaargeld` bucket case — `ref`: `oracle: PASS`;
+  `backends/clingo`:
+  `TRANSLATION FAULT: expression kind not translated (no corpus case exercises it)`
+  (still the set-fold `Totaal` of `bewaarlast`).
+* `bewaargeld` isolated into its own document — `ref`: `oracle: PASS`;
+  `backends/clingo`:
+  `TRANSLATION FAULT: non-identical units under the write to "bewaargeld"
+  are not translated (ref restates with an exact conversion factor this
+  integer encoding does not carry)`. The ASP layer carries the temporal
+  `Totaal` only where the write's unit is identical to the value's, and
+  the whole point of this fold is that it is not.
+
+So clingo refuses **both** routes of this document, each for its own
+reason, and the golden stays caseless.
 
 ## Hand-computed absolutes, ready for the case
 
