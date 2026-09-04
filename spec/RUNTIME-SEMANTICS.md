@@ -1035,11 +1035,42 @@ segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
   true-periods (a boolean timeline: a characteristic's true-periods, its
   complement under negation, or the true-periods of a comparison over a
   timeline), and the clipped timeline is then totalled.
-- **Units.** The rate obligation of WF-038 is satisfied *structurally*
-  here: the timeline's granularity is the "per time unit", so a plain
-  `€`-valued per-month timeline totals to `€` by value × month-count. An
-  explicit rate unit (`€/mnd`) is what the *non-temporal* totaal operand
-  requires; the temporal collapse must not be misread as requiring it.
+- **Units, the plain operand.** The rate obligation of WF-038 is satisfied
+  *structurally* here: the timeline's granularity is the "per time unit",
+  so a plain `€`-valued per-month timeline totals to `€` by value ×
+  month-count. An explicit rate unit (`€/mnd`) is what the *non-temporal*
+  totaal operand requires; the temporal collapse must not be misread as
+  requiring it.
+- **Units, the explicit rate operand.** When the timeline's value *does*
+  carry a rate unit, the collapse is an **integration**, and the
+  whole-unit count is not a bare number but a **duration stated in the
+  value unit's denominator**: `value × duration` cancels the denominator
+  and the total carries the **numerator alone** — `€/mnd` over a per-month
+  timeline totals to `€`. This is the one collapse that changes the unit,
+  and it is the runtime half of the §4.20 Tabel-30 result type (row 2,
+  `Eenheid1`): the frontend's static claim and this rule are the same
+  statement, so a `€`-declared target accepts the total without any
+  restatement. The denominator MUST name the timeline's **own granularity
+  unit** (resolved by the ch. 3.8 spelling table): `€/mnd` on a per-month
+  timeline cancels, and `€/jr` on a per-month timeline is refused loudly
+  — weighing this grid's units against a foreign rate would need a
+  conversion the declaration does not state, and no executor may invent
+  one. A denominator that names no time unit at all is refused the same
+  way. A value unit **without** a denominator keeps the plain rule above,
+  and a unitless value keeps a unitless total; the numbers are identical
+  in every case, only the unit differs.
+- **The per-element fold over a set (§7.1).** `het totaal van <temporal
+  attribute> van alle <set>` folds **twice**: each set member's own
+  timeline collapses over time first — by the rule above, at that
+  attribute's own granularity — and only the resulting scalars fold over
+  the set. The outer fold is the ordinary ch. 1.2e aggregation: for
+  `het totaal van` a member without a timeline contributes nothing and an
+  empty set totals **0**; `de som van` over the same shape folds
+  identically inside and keeps the som's leeg rule outside. Every other
+  aggregation over a temporal set member — min, max, eerste, laatste,
+  aantal — is **refused**: there is no defined moment of the timeline for
+  it to rank or count, and silently reading the segment list instead of a
+  value is the error this rule exists to prevent.
 
 Worked examples (absolute, `ref/` tests verbatim; per-month timeline):
 
@@ -1060,6 +1091,14 @@ Worked examples (absolute, `ref/` tests verbatim; per-month timeline):
   asymmetry, applied per period): value 100 on [2024-01-01, 2024-07-01);
   tested timeline 1000 on [2024-01-01, 2024-02-01), leeg elsewhere → ≠
   1000 holds feb–jun → 5×100 = **500,00**.
+- explicit rate unit: `10 €/mnd` on [2024-01-01, 2025-01-01) → 12 months
+  × 10 €/mnd = **120 €** — the denominator cancels, so a `€`-declared
+  target takes it unchanged. The same timeline declared `€/jr` instead is
+  refused: the grid counts months.
+- the §7.1 per-element fold, three set members with per-month `€/mnd`
+  timelines: `10` over [2024-01-01, 2025-01-01) → 120 €, `5` over
+  [2024-01-01, 2024-07-01) → 30 €, and a member without a timeline →
+  contributes nothing. Total **150 €**.
 
 *v0 mirror note:* the totaal of a multi-period timeline is refused with
 the grid (ch. 3.2), never mis-weighted as single-period.
