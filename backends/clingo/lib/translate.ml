@@ -1679,10 +1679,20 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       ( [ Printf.sprintf "%s_tot(%s,%s)" p subject q ],
         q,
         pow10 (attr_decimals ctx ~otype:aot ~attr:a) )
-  | Functie { kind = Totaal; argumenten = [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; _ } ]; _ }
+  | Functie { kind = Totaal; argumenten = [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; set; _ } ]; _ }
     when attr_temporal ctx ~otype:aot ~attr:a ->
       (* ch. 3.6 over the asOfDate bucket: value × whole-units (= 1 for
          the year bucket); an absent timeline stays underivable = leeg *)
+      (* a SET operand is the §7.1 per-element fold, where [aot] is the
+         ELEMENT type — this arm reads the SUBJECT's own attribute, so on
+         a set operand it derives against the wrong instance and answers
+         silently (underived where ref and Drools fold the members).
+         Refuse instead; translating the fold itself is its own card. *)
+      if set then
+        fault
+          "the per-element temporal total over a set (§7.1) is not translated: this arm totals \
+           the SUBJECT's own timeline, and %S is the element type's attribute"
+          a;
       refuse_attr_timeline ctx ~otype:aot ~attr:a;
       let f = total_factor (attr_granularity ctx ~otype:aot ~attr:a) in
       let v = fresh ctx "T" in
