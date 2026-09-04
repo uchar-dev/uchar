@@ -1379,6 +1379,34 @@ let maal_unit (a : eenheid option) (b : eenheid option) : eenheid option option 
       in
       (match cancel x y with Some u -> Some u | None -> cancel y x)
 
+(* The RegelSpraak frontend's `setLezing` (`ExpressieBouwer`), mirrored — the
+   scheidslijn the §4.20 denominator strip below turns on, taken from the
+   emitter rather than restated beside it. An aggregation operand list is a
+   NON-TEMPORAL SET reading when it is ONE attribute reference carrying `set`
+   over an attribute its objecttype declares NO granularity for. Both halves
+   are the frontend's and both are load-bearing: a set read over a TEMPORAL
+   attribute is the §7.1 per-element timeline fold (each element's tijdreeks
+   summed over time FIRST), which DOES integrate, and the non-set read is the
+   §4.20 rate read proper — so neither is this shape.
+
+   [None] wherever a SET read's granularity is UNREADABLE — an objecttype
+   this document does not declare, or a half of the resolving pair left
+   empty. The two arms disagree exactly there, so this one defers rather
+   than picking one: the family's own treatment of an unresolvable
+   declaration, and no silent choice of a strip on an unread premise. The
+   frontend cannot reach the case (it holds a RESOLVED objecttype, whose
+   null branch means the reference did not resolve at all) and no
+   verifier-admissible document can either — an empty half is WF-034-
+   ill-formed in a fold source since the widening. The corpus carries none
+   of the three shapes: every TOTAAL operand in golden, rood, negatief and
+   the parity zone resolves (measured 2026-09-04). *)
+let set_lezing ctx (args : expr list) : bool option =
+  match args with
+  | [ Attribuut_ref { set = true; objecttype = Some otn; attribuut = Some a; _ } ] -> (
+      match objecttype ctx otn with Some ot -> Some (not (attr_temporal ot a)) | None -> None)
+  | [ Attribuut_ref { set = true; _ } ] -> None
+  | _ -> Some false
+
 (* The expectation for one composite position, or [None] where v0 derives
    nothing there. The tuple is (what the message names, what the message
    calls the source, the derived datatype, the facets NOT claimed).
@@ -1394,7 +1422,7 @@ let maal_unit (a : eenheid option) (b : eenheid option) : eenheid option option 
    silently skipped. Two node kinds are left out for the opposite reason:
    an IfThenElse and a Let already cross their whole type against their
    branches and their body under WF-069 and WF-076. *)
-let composite_expectation (e : expr) : (string * string * datatype * string list) option =
+let composite_expectation ctx (e : expr) : (string * string * datatype * string list) option =
   let known x = match x with Some (Datatype_onbekend _) -> None | x -> x in
   let operand_t x = known (Option.bind x typ_of_expr) in
   match e with
@@ -1513,20 +1541,35 @@ let composite_expectation (e : expr) : (string * string * datatype * string list
               Some
                 ( what, "the type derived from its first operand", t0,
                   [ "domain"; "sign"; "residual" ] )
-          | Totaal ->
+          | Totaal -> (
               (* §4.20: the temporal total INTEGRATES a rate over time, so the
-                 result drops the /tijdseenheid and keeps the numerator. The
-                 two executor-side derivations do NOT strip it (measured: both
+                 result drops the /tijdseenheid and keeps the numerator — but
+                 only where the operand integrates. The scheidslijn is the
+                 emitter's own, [set_lezing] above: the NON-TEMPORAL SET
+                 reading ("het totaal van <x> van alle <elementen>" over a
+                 plain attribute) is an ALIAS of the sum, an instance fold
+                 over nothing, and carries the element type verbatim exactly
+                 as the SOM arm does; every other reading — the non-set rate
+                 read and the set read over a temporal attribute — keeps the
+                 strip. Stripping unconditionally invented a wire type no
+                 executor can produce (`jutterswet-tempototaal`, whose set
+                 fold adds EUR/mnd values into a EUR/mnd target). The two
+                 executor-side derivations do not strip at ALL (measured: both
                  answer the first operand's unit whole) — a divergence recorded
                  at the card, harmless on this corpus, where every TOTAAL's own
                  annotation follows the emitter. *)
-              let d =
-                match t0 with
-                | Numeriek ({ eenheid = Some ({ noemer = Some _; _ } as u); _ } as n) ->
-                    Numeriek { n with eenheid = Some { u with noemer = None } }
-                | other -> other
-              in
-              Some (what, "the type derived from its first operand", d, [ "sign"; "residual" ])
+              match set_lezing ctx (a0 :: rest) with
+              | None -> None
+              | Some true ->
+                  Some (what, "the type derived from its first operand", t0, [ "sign"; "residual" ])
+              | Some false ->
+                  let d =
+                    match t0 with
+                    | Numeriek ({ eenheid = Some ({ noemer = Some _; _ } as u); _ } as n) ->
+                        Numeriek { n with eenheid = Some { u with noemer = None } }
+                    | other -> other
+                  in
+                  Some (what, "the type derived from its first operand", d, [ "sign"; "residual" ]))
           | Minimum | Maximum ->
               if rest = [] then
                 Some
@@ -1556,8 +1599,8 @@ let composite_expectation (e : expr) : (string * string * datatype * string list
           | _ -> None))
   | _ -> None
 
-let composite_identity at (e : expr) =
-  match composite_expectation e with
+let composite_identity ctx at (e : expr) =
+  match composite_expectation ctx e with
   | None -> []
   | Some (what, source, derived, skip) ->
       use_site_identity ~source ~skip (at ^ "/type") ~what ~decl:(Some derived)
@@ -2749,7 +2792,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
      prologue, for the same reason: this is a claim about the node's own
      [type], not about its children, and it holds wherever the walk reaches
      a covered node kind. *)
-  @ composite_identity at e
+  @ composite_identity ctx at e
   @
   (let closed =
      (* inside a closed body: the reads that break closure short-circuit,
