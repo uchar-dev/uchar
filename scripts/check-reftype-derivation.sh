@@ -23,10 +23,20 @@
 #   5. an empty twist set is a failure, never silently green.
 #   6. every unit-bearing annotation the twister MEETS must sit either in the twist table below
 #      or in the explicit, reason-carrying exception set (where the annotation IS the source).
-#      A node kind outside both is a position this harness cannot probe, so nothing holds a
-#      consumer to the declaration there — the gate fails with the kind and the golden named.
-#      That clamp is what keeps a NEW wire form from entering the corpus with its consumer side
-#      silently unmeasured; measured 2026-09-04 it costs nothing (zero such kinds).
+#      Table and clamp key on the POSITION CLASS, which for a Binair is (node, op) and for a
+#      Functie is (node, kind) — ch. 2.10 splits those two node kinds by OPERATOR, not by node.
+#      PLUS/MIN/VERMINDERD_MET/MAAL and the six value aggregations derive their result unit;
+#      GEDEELD_DOOR, TOT_DE_MACHT, PERCENTAGE_VAN, an absolute value, a root and the date/time
+#      extractors are ch. 2.10's FOURTH class, where v0 derives nothing. Keying on the node alone
+#      would twist a unit-bearing GEDEELD_DOOR as though it sat at a derived position, and then
+#      report whatever came out as a consumer defect — a wrong diagnosis where the honest answer
+#      is "v0 states no join rule here" (or, when nothing observable moved, silence where the
+#      fourth-class witness should have been announced). A position in neither set is one this
+#      harness cannot probe, so nothing holds a consumer to the declaration there — the gate
+#      fails with the class and the golden named, and says WHICH of the two arrivals it is.
+#      That clamp is what keeps a new wire form, and the first fourth-class witness, from
+#      entering the corpus with its consumer side silently unmeasured; measured 2026-09-04 it
+#      costs nothing (zero of either).
 #
 # --- what a PASS means, and what it does not ------------------------------------------------
 # This harness measures INDIFFERENCE: with every declaration held byte-identical, no executor's
@@ -45,6 +55,23 @@
 # wire there. The Drools side of those four rests on the EffectieveEenheidWitnessTest witnesses,
 # which build the nodes directly. Said out loud so a green line is not read as coverage it has
 # not got.
+#
+# And the same honesty about HOW MUCH of the Drools leg a green line covers. On the UNTOUCHED
+# corpus the derivation never disagrees with the annotation — WF-091 makes the repetition faithful,
+# so effType(e) equals e.type() at every call (measured 2026-09-04 with a StackWalker probe on
+# ExecModelTranspiler.effType: zero divergences over every replayable golden). On the LYING copies
+# the same probe shows the derivation overriding the annotation at exactly FOUR call sites, and
+# those four are the whole of what this harness holds the exec-model back-end to:
+#   - the WRITE boundary (a consequence value restated into its doel's declared unit) — 18 hits;
+#   - the ADDITIVE OPERAND boundary (the rhs of a +/- restated into the lhs unit) — 13 hits;
+#   - the AGGREGATION restatement (a fold's per-element and total unit into the doel's) — 2 hits;
+#   - the ATTRIBUTE-vs-ATTRIBUTE comparison (§5.1 Tabel 32 operand restatement) — 2 hits.
+# Every other effType call in that file is a pass-through on this corpus, so its derivation is
+# STATED but not measured here. And the DRL back-end is not measured here at all: this harness
+# builds the jar and runs the exec-model path only (CaseRunner builds no DRL package), so
+# DrlTranspiler is COMPILED and never executed by it — its unit behaviour, including the four
+# "an OPAQUE product unit stays an honest marker" sites, rests on the backend's JUnit witnesses
+# (gate 12's obligation), not on a green line here.
 #
 # The verifier does NOT run here. This harness asks an EXECUTION question — is the outcome a
 # function of the declarations? — outside the validity question, exactly as gate 7's --noop
@@ -76,12 +103,16 @@
 # Twisted positions (the class factor in brackets):
 #   reference positions — AttribuutRef [10] (bare, navigated, and the one a rule names as its
 #   doel), ParameterRef [100], DimensieCel [1000], BinderRef [10000];
-#   composite positions — Binair [1e5], Let [1e6], Functie [1e7], Afgerond [1e8], Begrensd
-#   [1e9] (the ch. 4.10 Let/BinderRef nodes reach this backend as carriers, and their wire
-#   annotation is what the carrier holds).
+#   composite positions — Binair/{PLUS,MIN,VERMINDERD_MET,MAAL} [1e5], Let [1e6],
+#   Functie/{SOM,TOTAAL,MINIMUM,MAXIMUM,EERSTE,LAATSTE} [1e7], Afgerond [1e8], Begrensd [1e9]
+#   (the ch. 4.10 Let/BinderRef nodes reach this backend as carriers, and their wire annotation
+#   is what the carrier holds).
+# The factor stays per NODE KIND even though membership is per (node, op): a restatement boundary
+# sits between two node kinds, never between two operators of one kind, so splitting the factor as
+# well would buy nothing and would move the twist set the corpus already pins.
 #
-# NOT twisted, each because the annotation IS the source there (ch. 2.10's exceptions), and each
-# therefore EXEMPT from the clamp of step 6:
+# NOT twisted, each because the annotation IS the source there (ch. 2.10's named exceptions), and
+# each therefore EXEMPT from the clamp of step 6:
 #   - a Literal: its type is the lexeme's own carrier ("3,5 EUR"), a copy of nothing. All three
 #     executors read it, and must.
 #   - the DURATION operand of a date +/- duration Binair: ref (eval.ml) and the ASP translator
@@ -89,11 +120,19 @@
 #     measure that routing, not a declaration reading.
 #   - a TIJDSDUUR / ABSOLUTE_TIJDSDUUR Functie's own type: its unit is the OPERATOR's parameter
 #     ("de tijdsduur van A tot B in jaren", WF-038), not a derived result type.
-# A node kind that is neither twisted nor exempt is NOT silently skipped any more (step 6): every
-# v1 node the corpus does not yet carry with a unit (Fold, Match, Construct, ...) trips the clamp
-# on its first unit-bearing witness, and must then be given a twist class or an exception with its
-# reason. NB the ASP translator already reads Fold's and Match's own type for its integer SCALE
-# (value_scale, S19) — that is the reading the clamp will surface first.
+#
+# Neither twisted nor exempt is NOT silently skipped any more (step 6), and the clamp separates
+# two different arrivals:
+#   - a ch. 2.10 FOURTH-CLASS branch of a node kind the table otherwise carries — a unit-bearing
+#     Binair/GEDEELD_DOOR, /TOT_DE_MACHT, /PERCENTAGE_VAN, or a Functie absolute value, root or
+#     date/time extractor. v0 derives no result unit there, so a twist would probe a rule that
+#     does not exist; the gate reports the witness instead. What that witness must buy is a
+#     derivation rule (or a fence) — never a wider licence to read the wire.
+#   - a node kind outside the table altogether: every v1 node the corpus does not yet carry with a
+#     unit (Fold, Match, Construct, ...) trips on its first unit-bearing witness, and must then be
+#     given a twist class or an exception with its reason. NB the ASP translator already reads
+#     Fold's and Match's own type for its integer SCALE (value_scale, ASP-TRANSLATION.md S2/S4) —
+#     that is the reading the clamp will surface first.
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
@@ -145,9 +184,17 @@ cat > "$TWISTER" <<'PY'
 import json, os, sys
 from decimal import Decimal
 
-# the position classes and their restatement-factor exponents (see the script header)
+# the position classes and their restatement-factor exponents (see the script header). The exponent
+# is per NODE KIND; MEMBERSHIP is per position class, which for Binair/Functie is finer (below).
 KLASSE = {"AttribuutRef": 1, "ParameterRef": 2, "DimensieCel": 3, "BinderRef": 4,
           "Binair": 5, "Let": 6, "Functie": 7, "Afgerond": 8, "Begrensd": 9}
+# ch. 2.10 clause 2 splits Binair and Functie by OPERATOR, not by node: only these branches DERIVE a
+# result unit (an additive result carries the left unit / a unitless side adopts the other; a MAAL
+# cancels or forms the opaque product; §4.6 Eenheid1 hands a value aggregation its first operand's).
+# Every OTHER op/kind of those two node kinds is ch. 2.10's FOURTH class — v0 derives nothing there,
+# so it is neither twistable nor exempt, and the clamp reports it.
+AFGELEIDE_OP = {"PLUS", "MIN", "VERMINDERD_MET", "MAAL"}
+AFGELEIDE_KIND = {"SOM", "TOTAAL", "MINIMUM", "MAXIMUM", "EERSTE", "LAATSTE"}
 # The reason-carrying exception set of the step-6 clamp: node kinds OUTSIDE the twist table whose
 # annotation IS the source, so leaving them unprobed is a statement and not a gap.
 UITZONDERING = {"Literal": "the lexeme's own carrier (\"3,5 EUR\") is a copy of no declaration"}
@@ -155,6 +202,28 @@ UITZONDERING = {"Literal": "the lexeme's own carrier (\"3,5 EUR\") is a copy of 
 GEEN_FUNCTIE = {"TIJDSDUUR", "ABSOLUTE_TIJDSDUUR"}
 DATUM = ("DatumInDagen", "DatumTijd")
 ACHTERVOEGSEL = "-verdraaid"
+
+
+def positieklasse(x):
+    """The key table and clamp agree on: (node, op) for a Binair, (node, kind) for a Functie, the
+       bare node kind otherwise. Printed as the clamp's witness, so a report names the BRANCH."""
+    node = x.get("node")
+    if node == "Binair":
+        return "Binair/%s" % x.get("op")
+    if node == "Functie":
+        return "Functie/%s" % x.get("kind")
+    return node
+
+
+def afgeleid(x):
+    """True iff this position's result unit is one ch. 2.10 clause 2 DERIVES — the only positions a
+       twist may probe, because a twist asks whether a consumer follows a rule that exists."""
+    node = x.get("node")
+    if node == "Binair":
+        return x.get("op") in AFGELEIDE_OP
+    if node == "Functie":
+        return x.get("kind") in AFGELEIDE_KIND
+    return node in KLASSE
 
 
 class RuweNum:
@@ -221,19 +290,21 @@ def loop(x, telling, sla_eigen_over=False):
     vrijgesteld = sla_eigen_over or node in UITZONDERING \
         or (node == "Functie" and x.get("kind") in GEEN_FUNCTIE)
     if node is not None and eenheiddragend(x.get("type")):
-        # step 6, the clamp: account for EVERY unit-bearing annotation, so a kind that is neither
-        # twisted nor exempt cannot pass unnoticed.
+        # step 6, the clamp: account for EVERY unit-bearing annotation, so a position that is
+        # neither twisted nor exempt cannot pass unnoticed. The two arrivals are reported apart:
+        # a FOURTH-CLASS branch of a carried node kind (v0 derives no result unit there) and a
+        # node kind the table does not carry at all (a v1 form reaching the corpus).
         telling["eenheid"] += 1
         if vrijgesteld:
             telling["vrijgesteld"] += 1
-        elif node not in KLASSE:
-            telling["ongedekt"].append(node)
+        elif not afgeleid(x):
+            telling["vierde" if node in KLASSE else "ongedekt"].append(positieklasse(x))
         elif zusje(x["type"].get("eenheid"), KLASSE[node]) is None:
             # in the table, but no convertible SISTER exists (a unit with no canonical/factor —
             # a unit system declares no conversion for it). A non-convertible lie would measure
             # refusal routing, not a declaration reading, so it is counted and not twisted.
             telling["zonderzusje"] += 1
-    if node in KLASSE and not vrijgesteld:
+    if afgeleid(x) and not vrijgesteld:
         nieuw, hoe = verdraai(x.get("type"), KLASSE[node])
         if hoe:
             x["type"] = nieuw
@@ -284,7 +355,8 @@ def stukken(o):
 bron, doel, naam = sys.argv[1], sys.argv[2], sys.argv[3]
 with open(bron, encoding="utf-8") as fh:
     doc = json.load(fh, parse_int=RuweNum, parse_float=RuweNum)
-telling = {"treffers": [], "ongedekt": [], "eenheid": 0, "vrijgesteld": 0, "zonderzusje": 0}
+telling = {"treffers": [], "ongedekt": [], "vierde": [], "eenheid": 0, "vrijgesteld": 0,
+           "zonderzusje": 0}
 loop(doc, telling)
 map_ = os.path.dirname(doel)
 if map_:
@@ -292,11 +364,14 @@ if map_:
 with open(doel, "w", encoding="utf-8") as fh:
     for c in stukken(doc):
         fh.write(c)
-# line 1: the four counters the shell sums; then one line per UNCOVERED occurrence (the clamp)
+# line 1: the four counters the shell sums; then one TAGGED line per uncovered occurrence (the
+# clamp), the tag separating ch. 2.10's fourth class from a node kind the table does not carry.
 print("%d %d %d %d" % (len(telling["treffers"]), telling["eenheid"],
                        telling["vrijgesteld"], telling["zonderzusje"]))
-for node in telling["ongedekt"]:
-    print("%s %s" % (naam, node))
+for klasse in telling["vierde"]:
+    print("vierde %s %s" % (naam, klasse))
+for klasse in telling["ongedekt"]:
+    print("onbekend %s %s" % (naam, klasse))
 PY
 
 # Is <golden> x <executor> a pinned survivor? Read LINE by line, never word by word: a
@@ -411,21 +486,35 @@ if [ "$n_twists" -eq 0 ]; then
     exit 1
 fi
 
-n_ongedekt=$(awk 'END {print NR}' "$ONGEDEKT")
-if [ "$n_ongedekt" -gt 0 ]; then
+n_vierde=$(awk '$1 == "vierde" {n++} END {print n+0}' "$ONGEDEKT")
+n_onbekend=$(awk '$1 == "onbekend" {n++} END {print n+0}' "$ONGEDEKT")
+n_ongedekt=$((n_vierde + n_onbekend))
+if [ "$n_vierde" -gt 0 ]; then
+    echo 'FAIL: a unit-bearing annotation sits at a node kind whose result unit v0 does not derive —' >&2
+    echo '      the §2.10 fourth-class witness has arrived. The node kind is one the twist table carries,' >&2
+    echo '      but THIS operator/kind branch has no join rule (GEDEELD_DOOR, TOT_DE_MACHT,' >&2
+    echo '      PERCENTAGE_VAN, an absolute value, a root, a date/time extractor), so a twist here would' >&2
+    echo '      probe a rule that does not exist and report its absence as a consumer defect. What the' >&2
+    echo '      witness must buy is a derivation rule (or a fence) — never a wider licence to read the' >&2
+    echo '      wire. ref/clingo and the Drools backend answer such a position DIFFERENTLY today (ch.' >&2
+    echo '      2.10), so the divergence is now observable and must be settled:' >&2
+    awk '$1 == "vierde" {print "  " $2 " " $3}' "$ONGEDEKT" | sort | uniq -c >&2
+    status=1
+fi
+if [ "$n_onbekend" -gt 0 ]; then
     echo 'FAIL: a unit-bearing annotation sits at a node kind the twist table does not carry, and that' >&2
     echo '      the exception set does not exempt — this harness probes nothing there, so no consumer is' >&2
     echo '      held to the declaration at that position. Give the kind a twist class (with its own' >&2
     echo '      factor exponent) or an exception with the reason its annotation IS the source:' >&2
-    sort "$ONGEDEKT" | uniq -c >&2
+    awk '$1 == "onbekend" {print "  " $2 " " $3}' "$ONGEDEKT" | sort | uniq -c >&2
     status=1
 fi
 
 if [ "$status" -eq 0 ]; then
     printf 'check-reftype-derivation: PASS (%s unit annotations twisted over %s goldens; %s executor replays reproduce the untouched outcome; %s pinned survivors)\n' \
         "$n_twists" "$n_goldens" "$n_gecontroleerd" "$n_survivors"
-    printf '  corpus-wide accounting: %s unit-bearing annotations = %s twistable + %s exempt (the annotation IS the source) + %s without a convertible sister; %s outside the twist table\n' \
+    printf '  corpus-wide accounting: %s unit-bearing annotations = %s twistable + %s exempt (the annotation IS the source) + %s without a convertible sister + %s at a §2.10 fourth-class branch (v0 derives no result unit) + %s outside the twist table\n' \
         "$n_eenheid" "$((n_eenheid - n_vrijgesteld - n_zonderzusje - n_ongedekt))" \
-        "$n_vrijgesteld" "$n_zonderzusje" "$n_ongedekt"
+        "$n_vrijgesteld" "$n_zonderzusje" "$n_vierde" "$n_onbekend"
 fi
 exit "$status"
