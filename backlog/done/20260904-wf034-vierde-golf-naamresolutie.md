@@ -184,7 +184,59 @@ willekeurige naam gewoon blijft staan, waarvan **twee** golden:
 `jutterswet-aanmeldertelling` en `jutterswet-kaveltelling`, de twee
 bindingloze telfolds. Dat is precies wat de wrat een document nog oplevert.
 
-**Gates** (alle dertien, na de spec-commit):
+**Fixronde (2026-09-04, na twee lenzen).** Beide lenzen bevestigden de
+landing — elk cijfer in dit Result gereproduceerd, nul over-afwijzing
+opnieuw gemeten — en leverden één inhoudelijke vangst plus een lijst stale
+zinnen. Alles hieronder is opnieuw gemeten, niet overgeschreven.
+
+*Gefixt, met getuige.* Drie deelarmen droegen een clausule zonder document:
+`restantAttribuut` en `doelAttribuut` binnen `wf034_verdeling_naamresolutie`,
+en de `doelType`-arm van `wf034_verdeling_typen`. Voor `restantAttribuut` was
+dat letterlijk zichtbaar: die ene `resolve`-regel weghalen veranderde géén
+enkel document in de vier zones. Elk kreeg een eenregelige getuige vanaf
+`corpus/golden/jutterswet-berging`, elk rood-eerst aangetoond — PASS onder de
+verifier van vóór deze branch (`ec7d188`), één regel eronder — en elk
+arm-exact: alleen die arm weg → alleen dat document schoon (1, 2 en 4
+rapporten, telkens 1 verdict).
+
+*Gefixt, tekstueel.* Zes reparaties, elk gemeten gefalsifieerd: het
+commentaarblok van `wf034_verdelingen` noemde de naamresolutie en de
+typevelden "OPEN" terwijl beide zeventig regels lager gesloten zijn; "IN
+THESE THREE WAVES" telde de eigen golf niet mee; "one witness carries both
+halves of the pair" werd door de derde getuige onwaar; de kale getallenreeks
+`11/11/9/7/4/3` botste met de veldopsomming ervoor (doel en restant wisselen
+positioneel) en draagt nu namen; "both measured loud" gold voor de regels,
+niet voor de uitvoerders (een ongedeclareerd `bronType` laat `ref` stil met
+alle aandelen leeg waar 300/200/300 + 400 gepind staat, clingo weigert); en
+"every executor keys on that sentinel" is onwaar voor de derde uitvoerder —
+de Drools-backend sleutelt op `kind = AANTAL` plus eigen rolafleiding en
+speelt een echt-datatype-bron die `ref` en clingo weigeren. Daarnaast vijf
+kleine bijzinnen: de census-lezing (89/57 geldt onder "spelt attribuut ÉN
+objecttype"; anders 90/58), de restwijdte van de wrat (hierboven), de
+zesvoudige parity-regel, de lezingsafhankelijkheid van de terugval-mutant, en
+de KENMERKnaam op een verdelingsveld (valt onder deze WF-034-arm waar de
+zusterposities WF-080 melden — gemeten onschadelijk, 5/5 afgewezen, maar
+afwijkend en nu opgeschreven).
+
+*Nieuwe tellingen.* Negatiefzone 278 → **281**, vier zones 483 → **486**; de
+sweep tegen `ec7d188` leest daarmee 15 rapporten en 10 verdicts in plaats van
+12 en 7. De clausule-mutanten hermeten: naamresolutie geschrapt 7 rapporten /
+6 verdicts, typen geschrapt 6 / 2. Alle vermeldingen van 483 en 278 in
+IR-SPEC, kaart en NOTE's zijn meegetrokken.
+
+*Open gebleven.* De open-lijst van de vierde golf staat ongewijzigd
+hierboven. Wat de lenzen daarnaast maten hoort niet bij deze kaart en staat
+in `backlog/new/20260904-wf034-vijfde-golf-v0-naamvelden.md`: de vier
+naamvelden van een `ResolvedFeitCreatie` (14 golden-posities, nul
+verifier-dekking, beide OCaml-uitvoerders blind, de Drools-backend crasht op
+alle vier — verifier-schone invoer die een uitvoerder laat crashen);
+`objectCreaties[].subject` op de toekenningsloze creatie (1 van de 11, een
+anker-golden, `ref` en clingo eens over hetzelfde foute antwoord);
+`Rollidmaatschap.anderTeFiller` (4/4 schoon, beide uitvoerders luid); en het
+WF-028-gat — een feitCreatie in kale v0-beanvorm is verifier-PASS terwijl
+`ref` en clingo hem weigeren en de Drools-backend hem speelt.
+
+**Gates** (alle dertien, na de fixronde):
 
     check-self-contained: PASS
     check-ir-schema: PASS (schema valid; 175 file(s) validate and round-trip)
