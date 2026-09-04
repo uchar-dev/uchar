@@ -17,9 +17,10 @@ because each writes through the target's DECLARED datatype).
 
 The qualification is measured, not hedged. Injecting the sentinel at every
 type position of every golden — 2159 injections — leaves 21 verifier-clean:
-9 on fold-source argument types (`…/argumenten/N/type`, the v0 instance-fold
-wart `CONSTRUCTS.md` row 1 describes and the WF-034 index row itself names
-as an exception; 18 such sentinels sit in the corpus by construction) and 12
+9 on fold-/aggregation argument types (`…/argumenten/N/type`: 8
+element-passing aggregation operands, 1 true instance-fold source — next
+door to the v0 instance-fold wart the WF-034 index row names as an
+exception, whose 18 by-construction sentinels are a separate set) and 12
 on `SumType` constructor payloads (`…/type/constructors/N/payload`). None
 anywhere else, and none on a rule target once this clause stands. The
 payload position is open, unfenced and unclaimed here; closing it is a
@@ -30,9 +31,10 @@ than a shrug: the target `type` is a use site the identity family crosses
 (WF-091's rule-target arm, `wf091-schrijfdoel-eenheid`), and that family
 defers on the sentinel. An emitter writing `Onbekend` there therefore
 switched the unit, precision and domain checks off its own write targets
-and stayed verifier-clean — a self-served exemption, not a design. Corpus
-dracht of the shape is zero (152 golden + 22 rood + 237 negatief + 30
-parity documents, measured), so the widening cannot over-reject.
+and stayed verifier-clean — a self-served exemption, not a design. The shape
+is carried by zero documents outside this witness (152 golden + 22 rood +
+30 parity documents, plus every negatief that predates this card,
+measured), so the widening cannot over-reject.
 
 A hand-broken variant of `corpus/golden/jutterswet-aanvoergeld/ir.json`:
 `/resolvedRegels/1/doel/type` — declared `Numeriek`, 2 decimals, `EUR` —

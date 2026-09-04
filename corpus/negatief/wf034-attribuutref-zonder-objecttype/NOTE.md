@@ -26,9 +26,9 @@ The measured consequence of that silence, before the closure (card
 (`EVALUATION FAULT: missing AttribuutRef.objecttype in IR node`), clingo
 refuses (`TRANSLATION FAULT: missing objecttype`), and the Drools backend
 PLAYS the document and answers off the lie — a differential wrong answer
-no executor and no other rule fenced. Corpus dracht of the shape is zero
-(152 golden + 22 rood + 237 negatief + 30 parity documents, measured), so
-the widening cannot over-reject. The same empty field in a **fold source**
+no executor and no other rule fenced. The shape is carried by zero documents outside this witness
+(152 golden + 22 rood + 30 parity documents, plus every negatief that
+predates this card, measured), so the widening cannot over-reject. The same empty field in a **fold source**
 needed a clause of its own — see `wf034-foldbron-zonder-objecttype`, where
 all three executors play it.
 
