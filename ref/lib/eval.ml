@@ -80,6 +80,15 @@ let function_def env name : function_def =
 let kenmerk_temporal (ot : objecttype) name =
   List.exists (fun (k, _) -> norm k = norm name) ot.kenmerk_granulariteit
 
+(* the grid a temporal attribute declares (ch. 3.6): both temporal-total
+   routes — the subject's own timeline and the §7.1 per-element fold —
+   need it, and a temporal attribute without one is a wire defect the
+   collapse must never paper over *)
+let attr_granulariteit (ot : objecttype) name =
+  match Ir_v0.Checks.find_ci ot.attribuut_granulariteit name with
+  | Some (Some g) -> g
+  | _ -> Value.fault "temporal attribute %S without a granularity" name
+
 (* the unique connecting role between two object types; deriving it —
    rather than naming the role in the IR — is the recorded v0 wart of
    ch. 4.1, mirrored here for both allocation recipients and instance
@@ -962,11 +971,8 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
          arm would then total the SUBJECT's own timeline and answer for
          the wrong instance. *)
       let ot_decl = objecttype env aot in
-      let gran =
-        match Ir_v0.Checks.find_ci ot_decl.attribuut_granulariteit a with
-        | Some (Some g) -> g
-        | _ -> Value.fault "temporal attribute %S without a granularity" a
-      in
+      let gran = attr_granulariteit ot_decl a in
+      let grid = Timeline.grid_unit env.doc gran in
       (match filter with
       | Some c -> (
           (* ch. 3.6, the gedurende clip: intersect the value timeline
@@ -1047,7 +1053,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                    or an ALLE composite of such shapes)"
           in
           let true_periods = true_periods_of_cond c in
-          Timeline.totaal gran (Timeline.clip tl true_periods))
+          Timeline.totaal ~grid_unit:grid gran (Timeline.clip tl true_periods))
       | None -> (
       if World.timeline self a <> None then
         Value.fault
@@ -1066,7 +1072,8 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
           | v ->
               let day = match Value.date_of_iso d with Value.Date z -> z | _ -> assert false in
               let van, tot = Timeline.bucket gran day in
-              Timeline.totaal gran [ { Timeline.s_van = van; s_tot = tot; s_waarde = v } ]))))
+              Timeline.totaal ~grid_unit:grid gran
+                [ { Timeline.s_van = van; s_tot = tot; s_waarde = v } ]))))
   | _ ->
   (* non-temporal aggregation *)
   (* contributors: an instance fold over a role (element_objecttype set),
@@ -1138,14 +1145,11 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                   "this aggregation over the temporal attribute %S of a set has no defined moment \
                    to fold (ch. 3.6: only som and totaal carry the per-element timeline fold)"
                   name);
-            let gran =
-              match Ir_v0.Checks.find_ci el_decl.attribuut_granulariteit name with
-              | Some (Some g) -> g
-              | _ -> Value.fault "temporal attribute %S without a granularity" name
-            in
+            let gran = attr_granulariteit el_decl name in
+            let grid = Timeline.grid_unit env.doc gran in
             fun i ->
               match World.timeline i name with
-              | Some tl -> Timeline.totaal gran tl
+              | Some tl -> Timeline.totaal ~grid_unit:grid gran tl
               | None -> (
                   (* the case supplied the asOfDate bucket instead of the
                      full timeline: total that one-bucket timeline, the
@@ -1164,7 +1168,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                             match Value.date_of_iso d with Value.Date z -> z | _ -> assert false
                           in
                           let van, tot = Timeline.bucket gran day in
-                          Timeline.totaal gran
+                          Timeline.totaal ~grid_unit:grid gran
                             [ { Timeline.s_van = van; s_tot = tot; s_waarde = v } ]))
           end
         in

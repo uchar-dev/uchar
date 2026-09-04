@@ -266,7 +266,19 @@ let unit_ ?noemer ?(factor = 1.0) ~canoniek afk : Ir_v0.Ast.eenheid =
 
 let mnd = unit_ ~canoniek:"mnd" "mnd"
 let jr = unit_ ~canoniek:"mnd" ~factor:12.0 "jr"
+let kw = unit_ ~canoniek:"mnd" ~factor:3.0 "kw"
+
+(* a declared month-sized unit that is NOT spelled as a calendar unit: the
+   ch. 3.6 integration cancels it through the declared factor, never
+   through the spelling table *)
+let bm = unit_ ~canoniek:"mnd" "bm"
+
+(* a day unit in its OWN canonical chain: the declarations connect it to
+   nothing month-sized, so nothing may convert it *)
+let dg = unit_ ~canoniek:"dg" "dg"
+let kg = unit_ ~canoniek:"kg" "kg"
 let eur = unit_ ~canoniek:"EUR" "€"
+let cent = unit_ ~canoniek:"EUR" ~factor:0.01 "ct"
 let meter = unit_ ~canoniek:"m" "m"
 let eur_per_jr = { eur with noemer = Some jr }
 let nu u s = Value.Num (Value.q_of_lexeme s, Value.Unit u)
@@ -988,16 +1000,135 @@ let () =
   let tp = Timeline.true_periods_of tested ~span (fun v -> Arith.compare_op Ongelijk v (n "1000")) in
   expect_num "WV-3.6-f" (Timeline.totaal month (Timeline.clip vals tp)) "500";
   (* the explicit rate operand: 10 €/mnd across 2024 integrates to 120 €,
-     denominator cancelled — the number is the same 12×10 the plain rule
-     gives, only the unit differs *)
+     denominator cancelled against the grid's own unit *)
   let eur_per_mnd = { eur with noemer = Some mnd } in
-  (match Timeline.totaal month [ seg "2024-01-01" "2025-01-01" (nu eur_per_mnd "10") ] with
+  let jaar_2024 v = [ seg "2024-01-01" "2025-01-01" v ] in
+  let grid u = Ok u in
+  (match Timeline.totaal ~grid_unit:(grid mnd) month (jaar_2024 (nu eur_per_mnd "10")) with
   | Value.Num (v, Value.Unit u) ->
       check "WV-3.6-g" (Q.equal v (q "120") && u.afkorting = Some "€" && u.noemer = None)
   | other -> check ("WV-3.6-g (got " ^ Value.to_string other ^ ")") false);
-  (* the same timeline declared €/jr counts against a foreign grid *)
-  expect_fault "WV-3.6-g-vreemde-noemer" (fun () ->
-      Timeline.totaal month [ seg "2024-01-01" "2025-01-01" (nu eur_per_jr "10") ])
+  (* a plain € value on the same per-month timeline keeps the plain rule:
+     the same 120, and no denominator to cancel *)
+  (match Timeline.totaal ~grid_unit:(grid mnd) month (jaar_2024 (nu eur "10")) with
+  | Value.Num (v, Value.Unit u) ->
+      check "WV-3.6-g-plain-unit"
+        (Q.equal v (q "120") && u.afkorting = Some "€" && u.noemer = None)
+  | other -> check ("WV-3.6-g-plain-unit (got " ^ Value.to_string other ^ ")") false);
+  (* the three readings of the SAME grid: unitless, plain €, and the €/mnd
+     rate. The plain rule and the €/mnd integration agree on the NUMBER
+     (12×10); the claim only holds where the denominator matches the grid
+     one-for-one — WV-3.6-g-vreemde-noemer below is the counter-example. *)
+  check "WV-3.6-g-getallen-identiek"
+    (List.for_all
+       (fun v ->
+         match Timeline.totaal ~grid_unit:(grid mnd) month (jaar_2024 v) with
+         | Value.Num (got, _) -> Q.equal got (q "120")
+         | _ -> false)
+       [ n "10"; nu eur "10"; nu eur_per_mnd "10" ]);
+  (* the FOREIGN but CONVERTIBLE denominator integrates EXACTLY through the
+     declared factor: 12 months IS one year, so 10 €/jr over 2024 is 10 €,
+     not 120 (maintainer decision 2026-09-04) *)
+  (match Timeline.totaal ~grid_unit:(grid mnd) month (jaar_2024 (nu eur_per_jr "10")) with
+  | Value.Num (v, Value.Unit u) ->
+      check "WV-3.6-g-jaarnoemer-exact"
+        (Q.equal v (q "10") && u.afkorting = Some "€" && u.noemer = None)
+  | other -> check ("WV-3.6-g-jaarnoemer-exact (got " ^ Value.to_string other ^ ")") false);
+  (* a month-sized denominator that is NOT a calendar spelling (factor 1 to
+     the same canonical month): the declared factor carries it, the
+     spelling table never enters *)
+  let eur_per_bm = { eur with noemer = Some bm } in
+  expect_num "WV-3.6-g-bm-jaar"
+    (Timeline.totaal ~grid_unit:(grid mnd) month (jaar_2024 (nu eur_per_bm "10")))
+    "120";
+  expect_num "WV-3.6-g-bm-bucket"
+    (Timeline.totaal ~grid_unit:(grid mnd)
+       month
+       [ seg "2024-01-01" "2024-02-01" (nu eur_per_bm "10") ])
+    "10";
+  (* a COARSER grid: 10 €/mnd over 2024 on a per-quarter grid is 4 quarters
+     × 3 months × 10 = 120 €, exactly the per-month reading *)
+  (match Timeline.totaal ~grid_unit:(grid kw) Kwartaal (jaar_2024 (nu eur_per_mnd "10")) with
+  | Value.Num (v, Value.Unit u) ->
+      check "WV-3.6-g-kwartaalrooster"
+        (Q.equal v (q "120") && u.afkorting = Some "€" && u.noemer = None)
+  | other -> check ("WV-3.6-g-kwartaalrooster (got " ^ Value.to_string other ^ ")") false);
+  (* a denominator the declarations connect to nothing month-sized is
+     refused loudly, and the refusal NAMES BOTH units — the value's and
+     the grid's *)
+  let eur_per_dg = { eur with noemer = Some dg } in
+  (match Timeline.totaal ~grid_unit:(grid mnd) month (jaar_2024 (nu eur_per_dg "10")) with
+  | exception Value.Fault m ->
+      check "WV-3.6-g-vreemde-noemer"
+        (m
+        = "the temporal total of a €/dg value cannot integrate over a mnd grid: the \
+           declarations connect no conversion between its denominator and the grid unit \
+           (ch. 3.6)")
+  | _ -> check "WV-3.6-g-vreemde-noemer" false);
+  (* a denominator that names no time unit at all is refused the same way *)
+  expect_fault "WV-3.6-g-noemer-zonder-tijdseenheid" (fun () ->
+      Timeline.totaal ~grid_unit:(grid mnd) month (jaar_2024 (nu { eur with noemer = Some kg } "10")));
+  (* no grid unit to integrate against: the refusal carries the lookup's
+     own reason, and it bites the RATE operand only — the plain and
+     unitless readings above total in a document that declares no unit *)
+  expect_fault "WV-3.6-g-geen-roostereenheid" (fun () ->
+      Timeline.totaal ~grid_unit:(Error "the document declares no mnd unit") month
+        (jaar_2024 (nu eur_per_mnd "10")));
+  expect_num "WV-3.6-g-geen-roostereenheid-plain"
+    (Timeline.totaal ~grid_unit:(Error "the document declares no mnd unit") month
+       (jaar_2024 (n "10")))
+    "120";
+  (* segments of ONE timeline carrying DIFFERENT units: the collapse sums
+     the per-segment products with the ordinary ch. 2.6 addition, so a
+     convertible sister unit is restated EXACTLY (120 € + 500 ct = 125 €)
+     and a foreign one is refused loudly; only the unitless side adopts
+     silently. The case loader attaches the declaration's ONE unit to
+     every segment, so no case can reach these shapes. *)
+  let ct_per_mnd = { cent with noemer = Some mnd } in
+  expect_num "WV-3.6-g-segmentmenging-convertibel"
+    (Timeline.totaal ~grid_unit:(grid mnd) month
+       [ seg "2024-01-01" "2025-01-01" (nu eur_per_mnd "10");
+         seg "2025-01-01" "2025-02-01" (nu ct_per_mnd "500") ])
+    "125";
+  expect_fault "WV-3.6-g-segmentmenging-niet-convertibel" (fun () ->
+      Timeline.totaal ~grid_unit:(grid mnd) month
+        [ seg "2024-01-01" "2024-02-01" (nu eur "10");
+          seg "2024-02-01" "2024-03-01" (nu meter "3") ]);
+  expect_num "WV-3.6-g-segmentmenging-unitless-adopteert"
+    (Timeline.totaal ~grid_unit:(grid mnd) month
+       [ seg "2024-01-01" "2024-02-01" (n "10");
+         seg "2024-02-01" "2024-03-01" (nu eur "5") ])
+    "15"
+
+(* the grid unit is looked up in the DOCUMENT's declared unit systems
+   (ch. 3.6 / ch. 3.8 spelling table), once per fold: present, absent, and
+   ambiguous each have their own answer — never a first-match guess *)
+let () =
+  let stelsel name eenheden : string * Ir_v0.Ast.eenheidstelsel =
+    ( name,
+      { es_naam = Some name;
+        eenheden =
+          List.map
+            (fun (e : Ir_v0.Ast.eenheid) -> (Option.value e.afkorting ~default:"?", Some e))
+            eenheden;
+        aliassen = [] } )
+  in
+  let doc_of stelsels = { empty_doc with eenheidstelsels = stelsels } in
+  (match Timeline.grid_unit (doc_of [ stelsel "Munt" [ eur ]; stelsel "Tijd" [ mnd; jr ] ]) Maand with
+  | Ok u -> check "WV-3.6-rooster-lookup" (u.afkorting = Some "mnd")
+  | Error _ -> check "WV-3.6-rooster-lookup" false);
+  (match Timeline.grid_unit (doc_of [ stelsel "Munt" [ eur ]; stelsel "Tijd" [ mnd; jr ] ]) Jaar with
+  | Ok u -> check "WV-3.6-rooster-lookup-jaar" (u.afkorting = Some "jr")
+  | Error _ -> check "WV-3.6-rooster-lookup-jaar" false);
+  (match Timeline.grid_unit (doc_of [ stelsel "Munt" [ eur ] ]) Maand with
+  | Error _ -> check "WV-3.6-rooster-ongedeclareerd" true
+  | Ok _ -> check "WV-3.6-rooster-ongedeclareerd" false);
+  (* two systems spelling the same grid unit with different canonical
+     chains: no single grid, so the lookup refuses instead of picking *)
+  let mnd_in_dagen = unit_ ~canoniek:"dg" ~factor:30.0 "mnd" in
+  (match Timeline.grid_unit (doc_of [ stelsel "A" [ mnd ]; stelsel "B" [ mnd_in_dagen ] ]) Maand with
+  | Error _ -> check "WV-3.6-rooster-ambigu" true
+  | Ok _ -> check "WV-3.6-rooster-ambigu" false)
 
 (* WV-3.6-h: the §7.1 per-element fold over a set — each member's own
    timeline collapses over time FIRST, then the scalars fold over the
@@ -1016,9 +1147,14 @@ let () =
     let nm, o = ot "Vondst" [ ("bewaartarief", Some num_eur_mnd) ] [] in
     (nm, { o with attribuut_granulariteit = [ ("bewaartarief", Some Ir_v0.Ast.Maand) ] })
   in
+  let stelsels : (string * Ir_v0.Ast.eenheidstelsel) list =
+    [ ("Munt", { es_naam = Some "Munt"; eenheden = [ ("€", Some eur) ]; aliassen = [] });
+      ("Tijd", { es_naam = Some "Tijd"; eenheden = [ ("mnd", Some mnd) ]; aliassen = [] }) ]
+  in
   let doc =
     {
       empty_doc with
+      eenheidstelsels = stelsels;
       objecttypen = [ ot "Jutter" [ ("bewaarlast", Some num_eur) ] []; vondst ];
       feittypen =
         [ ( "bewaring",

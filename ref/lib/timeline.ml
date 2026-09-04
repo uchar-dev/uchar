@@ -306,36 +306,110 @@ let granularity_time_unit : Ir_v0.Ast.granulariteit -> Ir_v0.Checks.time_unit = 
   | Kwartaal -> Tu_kwartaal
   | Jaar -> Tu_jaar
 
+let time_unit_name : Ir_v0.Checks.time_unit -> string = function
+  | Tu_jaar -> "jr"
+  | Tu_kwartaal -> "kw"
+  | Tu_maand -> "mnd"
+  | Tu_week -> "wk"
+  | Tu_dag -> "dg"
+  | Tu_uur -> "u"
+  | Tu_minuut -> "min"
+  | Tu_seconde -> "sec"
+  | Tu_milliseconde -> "ms"
+
+(* The unit RECORD of a granularity's grid (ch. 3.6, the integration
+   below). The grid counts in a calendar unit, but the exact conversion
+   factors that let a foreign denominator cancel live in the DOCUMENT's
+   declared unit systems, not in the granularity — so the grid unit is
+   looked up there, keyed by the ch. 3.8 spelling table, once per fold.
+   [Error] carries the reason, and the caller raises it only where a rate
+   value actually needs the grid: a unitless or plain-unit timeline
+   totals in a document that declares no time unit at all. Two systems
+   spelling the same grid unit with different canonical chains give the
+   fold no single grid — loud, never a first-match guess. *)
+let grid_unit (doc : Ir_v0.Ast.document) (g : Ir_v0.Ast.granulariteit) :
+    (Ir_v0.Ast.eenheid, string) result =
+  let want = granularity_time_unit g in
+  let candidates =
+    List.concat_map
+      (fun (_, (es : Ir_v0.Ast.eenheidstelsel)) -> es.eenheden @ es.aliassen)
+      doc.eenheidstelsels
+    |> List.filter_map (fun (_, e) -> e)
+    |> List.filter (fun (e : Ir_v0.Ast.eenheid) ->
+           e.noemer = None && Ir_v0.Checks.time_unit_of_eenheid e = Some want)
+  in
+  let key (e : Ir_v0.Ast.eenheid) =
+    (Option.map Ir_v0.Checks.norm e.canoniek, e.factor_naar_canoniek)
+  in
+  match (candidates, List.sort_uniq compare (List.map key candidates)) with
+  | e :: _, [ _ ] -> Ok e
+  | _, [] ->
+      Error
+        (Printf.sprintf
+           "the document declares no %s unit, so this timeline's grid has no unit to integrate \
+            against (ch. 3.6)"
+           (time_unit_name want))
+  | _, ks ->
+      Error
+        (Printf.sprintf
+           "the document declares %d different %s units, so this timeline's grid has no single \
+            unit to integrate against (ch. 3.6)"
+           (List.length ks) (time_unit_name want))
+
 (* the multiplier of one segment (ch. 3.6 "Units"): a plain or unitless
    value is weighted by a bare count, but a RATE value is INTEGRATED —
-   the count is a duration stated in the value's own denominator, so the
-   denominator cancels and the total carries the numerator alone
-   (€/mnd × mnd = €, the §4.20 Tabel 30 row-2 result the frontend types
-   statically). The denominator must name this timeline's granularity
-   unit: weighing months against a per-year rate would need a conversion
-   the declaration never states, so it faults instead of inventing one. *)
-let duration (g : Ir_v0.Ast.granulariteit) units (v : Value.t) : Value.t =
+   the count is a duration stated in the GRID's own unit, so a
+   denominator convertible to it cancels through the declared factors and
+   the total carries the numerator alone (€/mnd × mnd = €, the §4.20
+   Tabel 30 row-2 result the frontend types statically; €/jr over a
+   per-month grid cancels exactly as well — 12 months IS one year by the
+   declared factor). A denominator the declarations do not connect to the
+   grid unit is refused loudly, naming BOTH units: no executor may invent
+   a factor nobody declared. *)
+let duration ?(grid_unit : (Ir_v0.Ast.eenheid, string) result option) units (v : Value.t) : Value.t
+    =
+  let plain = Num (Q.of_int units, Unitless) in
   match v with
-  | Num (_, Unit ({ noemer = Some noemer; _ } as u)) ->
-      (match Ir_v0.Checks.time_unit_of_eenheid noemer with
-      | Some tu when tu = granularity_time_unit g -> Num (Q.of_int units, Unit noemer)
-      | _ ->
-          fault
-            "the temporal total of a %s value needs its denominator to name the timeline's own \
-             granularity unit (ch. 3.6)"
-            (Arith.show_unit (Unit u)))
-  | _ -> Num (Q.of_int units, Unitless)
+  | Num (_, Unit ({ noemer = Some noemer; _ } as u)) -> (
+      match grid_unit with
+      | None ->
+          fault "the temporal total of a %s value reached the collapse without a grid unit (ch. 3.6)"
+            (Arith.show_unit (Unit u))
+      | Some (Error why) -> fault "the temporal total of a %s value: %s" (Arith.show_unit (Unit u)) why
+      | Some (Ok gu) ->
+          if Arith.convertible noemer gu then Num (Q.of_int units, Unit gu)
+          else
+            fault
+              "the temporal total of a %s value cannot integrate over a %s grid: the declarations \
+               connect no conversion between its denominator and the grid unit (ch. 3.6)"
+              (Arith.show_unit (Unit u))
+              (Arith.show_eenheid gu))
+  (* a value unit without a denominator keeps the plain rule, and so does
+     a unitless value. A Product is built ONLY by Arith.mul out of two
+     denominator-free units, so it never carries a denominator either —
+     the guard below is the fail-fast for a representation change that
+     would silently drop one. *)
+  | Num (_, Unit { noemer = None; _ }) | Num (_, Unitless) -> plain
+  | Num (_, Product (a, b)) ->
+      if a.noemer <> None || b.noemer <> None then
+        fault "the temporal total of a %s value: a unit product with a denominator has no \
+               integration rule (ch. 3.6)"
+          (Arith.show_unit (Product (a, b)));
+      plain
+  | _ -> plain
 
 (* totaal(tl) = Σ value(s) × duration(van, tot); a leeg segment
    contributes 0; a segmentless timeline totals to 0 (the absent-timeline
-   leeg case is the caller's, ch. 3.6) *)
-let totaal (g : Ir_v0.Ast.granulariteit) (tl : t) : Value.t =
+   leeg case is the caller's, ch. 3.6). [grid_unit] is resolved once per
+   fold by the caller (it needs the document); its absence only bites a
+   rate-valued segment. *)
+let totaal ?grid_unit (g : Ir_v0.Ast.granulariteit) (tl : t) : Value.t =
   List.fold_left
     (fun acc s ->
       match s.s_waarde with
       | Empty -> acc
       | v ->
           let units = whole_units g s.s_van s.s_tot in
-          Arith.add acc (Arith.mul v (duration g units v)))
+          Arith.add acc (Arith.mul v (duration ?grid_unit units v)))
     (Num (Q.zero, Unitless))
     (normalise tl)
