@@ -163,8 +163,9 @@ public final class EffectieveEenheid {
      * restatement by a live factor. Handing back the left operand's unit would scale €·kg into a € target.
      * But what an opaque product buys downstream is NOT uniformly an honest marker, and the two shapes must
      * not be conflated (measured 2026-09-04 on {@code Eenheid}: for m·m against m, {@code convertibleNaar} is
-     * false, {@code vereistOmrekening} is false, {@code omrekenfactorNaar} is 1 and
-     * {@code exacteHerschaalFactoren} is null):
+     * false, {@code vereistOmrekening} is false, {@code omrekenfactorNaar} FAULTS rather than answering 1 —
+     * the fail-fast card of the same day, and the reason the no-op below is each site's OWN identity, taken
+     * before it ever asks, and never an invented factor — and {@code exacteHerschaalFactoren} is null):
      * <ul>
      *   <li>a site that REFUSES on {@code convertibleNaar} — the §4.1/§5.1.4 TEMPORAL restatements
      *       ({@code DrlTranspiler.schaalbaarNaarDoel} / {@code schaalTijd}, and the fold- and
