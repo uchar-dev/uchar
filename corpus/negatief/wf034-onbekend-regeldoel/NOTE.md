@@ -1,0 +1,33 @@
+Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): the v0 `Onbekend` unknown-type
+sentinel on a rule TARGET's `type`.
+
+    WF-034 FAIL /resolvedRegels/1/doel/type: unknown-type sentinel on a
+    rule target
+
+Why it has to exist: the target's `type` was the one position in a document
+where the sentinel survived. The expression walk refuses it on every value
+node it enters (`unknown-type sentinel inside a structured node`) and WF-003
+refuses it on a declaration (`unresolved datatype (v0 'Onbekend' sentinel:
+…)`), but the walk deliberately never enters the target — the lvalue is
+WF-022's — so the sentinel there passed (measured, card
+`20260903-identiteitsarmen-getuigen`: verifier `PASS`, and all three
+executors replay the document unchanged, because each writes through the
+target's DECLARED datatype).
+
+That no executor reads the field is exactly why it needed a fence rather
+than a shrug: the target `type` is a use site the identity family crosses
+(WF-091's rule-target arm, `wf091-schrijfdoel-eenheid`), and that family
+defers on the sentinel. An emitter writing `Onbekend` there therefore
+switched the unit, precision and domain checks off its own write targets
+and stayed verifier-clean — a self-served exemption, not a design. Corpus
+dracht of the shape is zero (152 golden + 22 rood + 234 negatief + 30
+parity documents, measured), so the widening cannot over-reject.
+
+A hand-broken variant of `corpus/golden/jutterswet-aanvoergeld/ir.json`:
+`/resolvedRegels/1/doel/type` — declared `Numeriek`, 2 decimals, `EUR` —
+replaced by `{"node": "Onbekend", "reden": "niet opgelost"}`, which is
+schema-valid on the v0 wire.
+
+Falsifiable, clause-exact: drop the rule-target sentinel clause from
+`expression_layer` and this case alone turns clean, every other `wf034-*`
+case staying red.
