@@ -999,6 +999,75 @@ let () =
   expect_fault "WV-3.6-g-vreemde-noemer" (fun () ->
       Timeline.totaal month [ seg "2024-01-01" "2025-01-01" (nu eur_per_jr "10") ])
 
+(* WV-3.6-h: the §7.1 per-element fold over a set — each member's own
+   timeline collapses over time FIRST, then the scalars fold over the
+   set. Three set members: 10 €/mnd across 2024 → 120 €, 5 €/mnd over
+   the first half → 30 €, one without a timeline → contributes nothing;
+   total 150 €. A ranking fold over the same shape is refused. *)
+let () =
+  let eur_per_mnd = { eur with noemer = Some mnd } in
+  let num_eur_mnd : Ir_v0.Ast.datatype =
+    Numeriek { geheel = true; decimalen = 0; teken = None; eenheid = Some eur_per_mnd }
+  in
+  let num_eur : Ir_v0.Ast.datatype =
+    Numeriek { geheel = true; decimalen = 0; teken = None; eenheid = Some eur }
+  in
+  let vondst =
+    let nm, o = ot "Vondst" [ ("bewaartarief", Some num_eur_mnd) ] [] in
+    (nm, { o with attribuut_granulariteit = [ ("bewaartarief", Some Ir_v0.Ast.Maand) ] })
+  in
+  let doc =
+    {
+      empty_doc with
+      objecttypen = [ ot "Jutter" [ ("bewaarlast", Some num_eur) ] []; vondst ];
+      feittypen =
+        [ ( "bewaring",
+            {
+              ft_naam = Some "bewaring";
+              wederkerig = false;
+              rollen =
+                [
+                  { rol_naam = Some "bewarende jutter"; rol_objecttype_naam = Some "Jutter";
+                    rol_meervoud = None; rol_meervoudig = false };
+                  { rol_naam = Some "vondst"; rol_objecttype_naam = Some "Vondst";
+                    rol_meervoud = Some "vondsten"; rol_meervoudig = true };
+                ];
+            } ) ];
+    }
+  in
+  let fold kind : Ir_v0.Ast.expr =
+    Functie
+      { kind;
+        argumenten =
+          [ Attribuut_ref
+              { attribuut = Some "bewaartarief"; objecttype = Some "Vondst";
+                onderwerp_bron = None; navigatie_rol = None; typ = Some num_eur_mnd;
+                bron = None; set = true; navigatie_pad = []; navigatie_bindingen = None } ];
+        element_objecttype = Some "Vondst"; leegwaarde = None; filter = None;
+        dimensie_selectie = None; typ = Some num_eur; bron = None; granulariteit = None;
+        bron_rol = None }
+  in
+  let tl_of segs label = { (inst label "Vondst" []) with
+                           tls = World.SMap.add "bewaartarief" segs World.SMap.empty } in
+  let w =
+    World.add_instance
+      (World.add_instance
+         (World.add_instance
+            (World.add_instance World.empty
+               { (inst "j1" "Jutter" []) with
+                 links = World.SMap.add "vondsten" [ "v1"; "v2"; "v3" ] World.SMap.empty })
+            (tl_of [ seg "2024-01-01" "2025-01-01" (nu eur_per_mnd "10") ] "v1"))
+         (tl_of [ seg "2024-01-01" "2024-07-01" (nu eur_per_mnd "5") ] "v2"))
+      (inst "v3" "Vondst" [])
+  in
+  let env = env_of doc in
+  (match Eval.eval_expr env w (World.get w "j1") ~err:no_err (fold Totaal) with
+  | Value.Num (v, Value.Unit u) ->
+      check "WV-3.6-h" (Q.equal v (q "150") && u.afkorting = Some "€" && u.noemer = None)
+  | other -> check ("WV-3.6-h (got " ^ Value.to_string other ^ ")") false);
+  expect_fault "WV-3.6-h-rangschikking" (fun () ->
+      Eval.eval_expr env w (World.get w "j1") ~err:no_err (fold Maximum))
+
 (* verification-round regression: a true-period boundary that merely
    splits a bucket must not make the total undercount — clip coalesces
    adjacent equal fragments *)

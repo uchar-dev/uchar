@@ -1115,9 +1115,56 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
         [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]
       ) ->
         let name = req "fold attribute" attribuut in
+        let el_decl = objecttype env el in
+        (* §7.1: a set read of a TEMPORAL attribute folds TWICE — each
+           member's own timeline collapses over time first (ch. 3.6, at
+           that attribute's granularity), and only those scalars fold over
+           the set. Without this the fold sees the segment list as no
+           value at all and silently totals 0. A ranking or counting fold
+           has no defined moment to rank, so it is refused rather than
+           reading a value the timeline does not have at one instant. *)
+        let element_value =
+          if not (Ir_v0.Checks.attr_temporal el_decl name) then fun i -> World.attr i name
+          else begin
+            (match kind with
+            | Som | Totaal -> ()
+            | _ ->
+                Value.fault
+                  "this aggregation over the temporal attribute %S of a set has no defined moment \
+                   to fold (ch. 3.6: only som and totaal carry the per-element timeline fold)"
+                  name);
+            let gran =
+              match Ir_v0.Checks.find_ci el_decl.attribuut_granulariteit name with
+              | Some (Some g) -> g
+              | _ -> Value.fault "temporal attribute %S without a granularity" name
+            in
+            fun i ->
+              match World.timeline i name with
+              | Some tl -> Timeline.totaal gran tl
+              | None -> (
+                  (* the case supplied the asOfDate bucket instead of the
+                     full timeline: total that one-bucket timeline, the
+                     same convention the subject's own fold uses *)
+                  match World.attr i name with
+                  | Value.Empty -> Value.Empty (* absent timeline totals to leeg *)
+                  | v -> (
+                      match env.as_of with
+                      | None ->
+                          Value.fault
+                            "the per-element temporal total of %S needs the evaluation date: the \
+                             case carries the asOfDate bucket's value"
+                            name
+                      | Some d ->
+                          let day =
+                            match Value.date_of_iso d with Value.Date z -> z | _ -> assert false
+                          in
+                          let van, tot = Timeline.bucket gran day in
+                          Timeline.totaal gran
+                            [ { Timeline.s_van = van; s_tot = tot; s_waarde = v } ]))
+          end
+        in
         `Values
-          (List.map
-             (fun i -> World.attr i name)
+          (List.map element_value
              (List.filter keep (linked ?binding:bron_rol env world self ~to_type:el)))
     | _, (_ :: _ :: _ as args)
       when (match kind with Eerste | Laatste | Minimum | Maximum -> true | _ -> false) ->
