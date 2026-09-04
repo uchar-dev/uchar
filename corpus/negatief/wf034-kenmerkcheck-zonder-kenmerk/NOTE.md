@@ -41,6 +41,8 @@ field emptied, a one-field diff. The shape is schema-valid: `Kenmerk.kenmerk`
 is `["string","null"]` on the v0 wire, like nearly every reference field,
 which is precisely why the verifier, not the schema, is the fence.
 
-Falsifiable, clause-exact: remove the `kenmerk = None` arm from `walk_expr`'s
-`Kenmerk_check` case and this case alone turns clean — measured over all four
-zones, with every other document keeping its verdict and its cited rules.
+Falsifiable, clause-exact: remove the `kenmerk = None` arm from `walk_cond`'s
+`Kenmerk_check` case — a characteristic check is a CONDITION node, so the arm
+lives in the condition walk, not in the expression walk — and this case alone
+turns clean; measured over all four zones, with every other document keeping
+its verdict and its cited rules.
