@@ -850,6 +850,185 @@ let () =
        body and a fold init are subject-free); only a Fold init whose own SHAPE is an attribute \
        read, bare or directly under a Construct, takes the subject-keyed rule-level route"
 
+(* --- the temporal totaal's SUBJECT anchor (the fold-arm narrowing) ---------
+
+   The temporal-total arm emits val(<SUBJECT>,attr,V): it totals the asOfDate
+   bucket of the SUBJECT's OWN timeline. Before this narrowing it matched any
+   single-AttribuutRef TOTAAL over a temporal attribute — a navigated operand
+   and a §7.1 set operand included — and read the subject's own attribute of
+   that name anyway. Measured on "de bewaarlast van een Vondst = het totaal
+   van het bewaartarief van de bewarende jutter" (J1 = 10, V1 = 99, year
+   granularity), against a ref that refuses the shape outright:
+
+     Jutter AND Vondst carry 'bewaartarief':  clingo answered 99 — the wrong
+                                              object, silently
+     only Jutter carries it:                  clingo answered leeg, silently
+
+   Neither form can become a corpus golden: gate 6 has no refusal channel and
+   ref faults on the shape, so gates 5 and 6 would both go red on it. The
+   refusal texts are pinned here instead, one per excluded shape, the way the
+   S19 doors above are pinned — and the own-subject form is pinned beside
+   them, so an over-narrowing fails here too and not only in gate 6. *)
+
+let jaar_num =
+  {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }|}
+
+(* [vondst_attribuut] is the Vondst-side temporal attribute: spelling it
+   "bewaartarief" shares the name with the Jutter's (the wrong-value form),
+   spelling it "vondsttarief" does not (the silent-leeg form). *)
+let totaal_doc ~vondst_attribuut ~operand =
+  {|{ "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": { "node": "Objecttype", "naam": "Jutter",
+      "attributen": { "bewaartarief": |}
+  ^ jaar_num
+  ^ {| },
+      "attribuutMeervoud": {}, "attribuutDimensies": {},
+      "attribuutGranulariteit": { "bewaartarief": "JAAR" },
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": { "bewaartarief": "penningjaar" },
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {}, "bezield": true, "meervoud": "Jutters" },
+    "Vondst": { "node": "Objecttype", "naam": "Vondst",
+      "attributen": { "bewaarlast": |}
+  ^ jaar_num ^ {|, "|} ^ vondst_attribuut ^ {|": |} ^ jaar_num
+  ^ {| },
+      "attribuutMeervoud": {}, "attribuutDimensies": {},
+      "attribuutGranulariteit": { "|} ^ vondst_attribuut
+  ^ {|": "JAAR" },
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": { "|} ^ vondst_attribuut
+  ^ {|": "penningjaar" },
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" } },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
+  "feittypen": { "bewaring": { "node": "Feittype", "naam": "bewaring", "wederkerig": false,
+    "rollen": [
+      { "node": "Rol", "naam": "bewarende jutter", "objecttypeNaam": "Jutter",
+        "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
+        "meervoud": "vondsten", "meervoudig": true } ] } },
+  "dimensies": {},
+  "tijdlijnen": [ { "node": "Tijdlijn", "naam": "het penningjaar", "variabelStartpunt": false,
+    "granulariteit": "JAAR", "aantal": 1 } ],
+  "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [ { "node": "Regel", "naam": "bewaarlast van een vondst", "soort": "regel" } ],
+  "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "bewaarlast van een vondst",
+    "soort": "BEREKENING",
+    "doel": { "node": "AttribuutRef", "attribuut": "bewaarlast", "objecttype": "Vondst",
+      "onderwerpBron": "een Vondst", "navigatieRol": null, "type": |}
+  ^ jaar_num
+  ^ {|,
+      "bron": "De bewaarlast van een Vondst", "set": false, "navigatiePad": [] },
+    "waarde": { "node": "Functie", "kind": "TOTAAL", "argumenten": [ |}
+  ^ operand
+  ^ {| ],
+      "elementObjecttype": "Jutter", "leegwaarde": null, "filter": null,
+      "dimensieSelectie": null, "type": |}
+  ^ jaar_num
+  ^ {|,
+      "bron": "het totaal van het bewaartarief van de bewarende jutter",
+      "granulariteit": null },
+    "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}
+|}
+
+let totaal_operand ~attribuut ~objecttype ~navigatie_rol ~set =
+  {|{ "node": "AttribuutRef", "attribuut": "|} ^ attribuut ^ {|", "objecttype": "|} ^ objecttype
+  ^ {|", "onderwerpBron": "de bewarende jutter", "navigatieRol": |}
+  ^ (match navigatie_rol with None -> "null" | Some r -> {|"|} ^ r ^ {|"|})
+  ^ {|, "type": |} ^ jaar_num ^ {|, "bron": "het |} ^ attribuut
+  ^ {| van de bewarende jutter", "set": |}
+  ^ (if set then "true" else "false")
+  ^ {|, "navigatiePad": [] }|}
+
+let totaal_case vondst_attribuut =
+  {|{ "format": "uchar-case-v0", "asOfDate": "2026-03-15",
+  "input": { "instances": [
+    { "label": "J1", "objectType": "Jutter", "attributes": { "bewaartarief": { "number": "10" } },
+      "roles": { "vondsten": [ "V1" ] }, "characteristics": [] },
+    { "label": "V1", "objectType": "Vondst", "attributes": { "|}
+  ^ vondst_attribuut
+  ^ {|": { "number": "99" } },
+      "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "V1", "attribute": "bewaarlast",
+      "value": { "number": "10" } },
+    { "kind": "consistent" } ] }
+|}
+
+let translates_with ~name ~ir ~case_text =
+  let irf = write_temp ".ir.json" ir in
+  let casef = write_temp ".case.json" case_text in
+  let doc = Ir_v0.Loader.load_file irf in
+  let case = Uchar_ref.Case.load_file doc casef in
+  Sys.remove irf;
+  Sys.remove casef;
+  match Translate.translate doc case with
+  | (_ : string) -> check (name ^ ": translates") true
+  | exception Uchar_ref.Value.Fault m ->
+      check (name ^ ": translates (unexpected fault: " ^ m ^ ")") false
+
+let () =
+  (* the wrong-VALUE form: both types carry 'bewaartarief', so reading it off
+     the subject found 99 where the navigated object holds 10 *)
+  faults_with ~name:"temporal totaal, navigated operand (attribute name shared)"
+    ~ir:
+      (totaal_doc ~vondst_attribuut:"bewaartarief"
+         ~operand:
+           (totaal_operand ~attribuut:"bewaartarief" ~objecttype:"Jutter"
+              ~navigatie_rol:(Some "bewarende jutter") ~set:false))
+    ~case_text:(totaal_case "bewaartarief")
+    ~needle:
+      {|the temporal total of the NAVIGATED "bewaartarief" is not translated: the carried arm |}
+    ;
+  (* the silent-LEEG form: the same navigation, no shared name — the val atom
+     simply found nothing and the target stayed underived *)
+  faults_with ~name:"temporal totaal, navigated operand (no shared name)"
+    ~ir:
+      (totaal_doc ~vondst_attribuut:"vondsttarief"
+         ~operand:
+           (totaal_operand ~attribuut:"bewaartarief" ~objecttype:"Jutter"
+              ~navigatie_rol:(Some "bewarende jutter") ~set:false))
+    ~case_text:(totaal_case "vondsttarief")
+    ~needle:
+      {|totals the SUBJECT's own timeline, so it would read "bewaartarief" off the subject instead of off the navigated object|}
+    ;
+  (* the §7.1 set operand — the reason that used to live inside the arm *)
+  faults_with ~name:"temporal totaal, set operand (the §7.1 per-element fold)"
+    ~ir:
+      (totaal_doc ~vondst_attribuut:"vondsttarief"
+         ~operand:
+           (totaal_operand ~attribuut:"bewaartarief" ~objecttype:"Jutter" ~navigatie_rol:None
+              ~set:true))
+    ~case_text:(totaal_case "vondsttarief")
+    ~needle:
+      {|the per-element temporal total over a set (§7.1) is not translated: the carried arm totals the SUBJECT's own timeline|}
+    ;
+  (* no navigation written, but the operand is declared on another type: the
+     ci-control the gedurende sister arm has always carried *)
+  faults_with ~name:"temporal totaal, foreign-typed operand without navigation"
+    ~ir:
+      (totaal_doc ~vondst_attribuut:"vondsttarief"
+         ~operand:
+           (totaal_operand ~attribuut:"bewaartarief" ~objecttype:"Jutter" ~navigatie_rol:None
+              ~set:false))
+    ~case_text:(totaal_case "vondsttarief")
+    ~needle:
+      {|the temporal total of "bewaartarief" is declared on "Jutter", not on the subject type "Vondst"|}
+    ;
+  (* the form the arm DOES carry, in the same frame: the subject's own
+     temporal attribute, no navigation, no set — an over-narrowing fails here *)
+  translates_with ~name:"temporal totaal, the subject's own timeline"
+    ~ir:
+      (totaal_doc ~vondst_attribuut:"bewaartarief"
+         ~operand:
+           (totaal_operand ~attribuut:"bewaartarief" ~objecttype:"Vondst" ~navigatie_rol:None
+              ~set:false))
+    ~case_text:(totaal_case "bewaartarief")
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
