@@ -1747,7 +1747,10 @@ write-side **precision gate** of WF-023 — a computed value against its
 target's declared precision — needs expression-shape analysis and is a
 different question that stays OPEN. Deferrals are the family's: either
 side absent or the v0 unknown sentinel, or a declaration that does not
-resolve.
+resolve — and since 2026-09-04 none of them can be **self-served**: the
+two shapes that let a document choose its own deferral, a reference
+naming no `objecttype` and the sentinel on a rule target's `type`, are
+WF-034-ill-formed (measured, zero corpus dracht either way).
 
 **The numeric-literal lexeme (WF-081).** A `Literal` whose `type` is
 numeric (`Numeriek` or `Percentage`) MUST carry as its value a **bare
@@ -2101,6 +2104,27 @@ Comparison, Predicate, and CharacteristicCheck only —
   node whose static type is plain null, are refused alike — the sole
   structural exception is a Lambda, which is never a value and carries no
   type by construction (its position is governed by WF-069).
+  **Widened 2026-09-04** (maintainer decision), closing the two measured
+  channels through which a document could *serve itself* an exemption from
+  the identity family (WF-089/WF-090/WF-091), each with a corpus dracht of
+  **zero** — 152 golden + 22 rood + 234 negatief + 30 parity documents,
+  measured — so neither clause can over-reject. First: an
+  `AttributeReference` MUST name the **`objecttype`** its value lives on
+  (ch. 4.1a); a reference naming none resolves against no declaration, and
+  the absent field is not one rule's deferral but a generic exemption — it
+  silences the member check, WF-053, WF-080 and the whole identity family
+  at once, and the shape is measured **answer-changing**: a `t`-for-`kg`
+  annotation on such a reference was verifier-clean while `ref` and the ASP
+  backend faulted on the missing field and the Drools backend played the
+  document and answered off the lie. Second: the sentinel is refused on a
+  rule **TARGET's `type`** as well — the one position the expression walk
+  does not enter (the lvalue is WF-022's) and therefore the last place it
+  survived. No executor reads that field (all three write through the
+  DECLARED datatype), but the identity family crosses it (WF-091's
+  rule-target arm) and defers on the sentinel, so writing it there switched
+  the unit, precision and domain checks off one's own write targets. Its
+  unspelled twin is deliberately NOT this clause's: an lvalue is not a
+  value node.
 - **WF-080** A value-position `AttributeReference` MUST resolve to an
   **attribute** of its endpoint type, never a characteristic. A value
   position is where an expression yields a value: a rule/member value, a
@@ -2868,7 +2892,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-031 | one definition per day kind; condition present and **pure** (no attribute/characteristic read — the stratum-0 framing, ch. 5.4); validity ALTIJD | gate 3 | `jutterswet-vormenkabinet` (the schouwdag definition, ALTIJD validity) + `jutterswet-schouwkalender` (a pure day-kind chain, replayed by gates 5–6 over its ordinary rule) | `wf031-missing-condition` + `wf031-dagsoort-venster` (bounded validity window) + `wf031-dagsoort-leest-kenmerk` (the purity clause: a day-kind condition reading a characteristic) |
 | WF-032 | start point: variable-start timeline, day-precision member, one per pair | gate 3 | `jutterswet-vormenkabinet` (the meetdatum anchor) | `wf032-fixed-start-anchor` |
 | WF-033 | (dialect) rule-group members resolve; recursive group has a creation member (either kind); object creations guarded, relation creations guard-free | gate 3 | `anchor/jutterswet-wachtersketen` (the recursive chain executes to its fixpoint, gates 5–6; the runaway budget fault is red-pinned, gate 8) + `anchor/jutterswet-erflijn` (the guard-free relation-creation member: the transitive closure reaches its fixpoint in both executors) | `wf033-unguarded-recursive` (the guard clause) + `wf033-no-creation-member` (the containment clause) |
-| WF-034 | every expression/condition reference resolves (no unknown-type sentinel) | gate 3 (partial: sentinel types and parameter/day-kind/element-type/own-member references; variable bindings and navigation paths are not serialized in v0; excepted: a v0 instance-fold source argument names a role and carries the sentinel by construction — the row-1 wart, resolved against declared roles with the ch. 4.3 type-pair fallback for a name that resolves nowhere) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondsttelling` (role source) + `jutterswet-kaveltelling` (the type-pair fallback: an undeclared synthesized plural over a unique pair, both executors) | `wf034-dangling-parameter` + `wf034-ambigu-typenpaar` (unresolved name, two connecting fact types) + `wf034-zelftype-typenpaar` (unresolved name, one self-typed two-role fact type — both roles are candidates, counted in roles not fact types) |
+| WF-034 | every expression/condition reference resolves (no unknown-type sentinel; a reference NAMES the object type it resolves against) | gate 3 (partial: sentinel types and parameter/day-kind/element-type/own-member references; variable bindings and navigation paths are not serialized in v0; excepted: a v0 instance-fold source argument names a role and carries the sentinel by construction — the row-1 wart, resolved against declared roles with the ch. 4.3 type-pair fallback for a name that resolves nowhere). **Widened 2026-09-04** (maintainer decision) with the two clauses that close the measured deferral channels — an `AttributeReference` without an `objecttype`, and the sentinel on a rule TARGET's `type` — no new rule number, no documented deferral. Both were **self-served exemptions from the identity family**: the empty field makes the declaration unresolvable and the sentinel is a deferring type, so WF-089/WF-090/WF-091 stood down on a document's own say-so while it stayed verifier-clean. Corpus dracht of both shapes is **zero** (152 golden + 22 rood + 234 negatief + 30 parity documents, measured before and after), so over-rejection is impossible by measurement and nothing repinned; the frontend can reach neither shape in an otherwise-clean document (`objecttype: null` only ever accompanies an `Onbekend` node type, which the walk already refuses; the sentinel target only ever accompanies an undeclared target, which WF-022 refuses) — the shapes are open to any other conforming emitter, which is the audience of an engine-neutral IR | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondsttelling` (role source) + `jutterswet-kaveltelling` (the type-pair fallback: an undeclared synthesized plural over a unique pair, both executors) — and, for the two widened clauses, every golden and rood document is a non-over-rejection witness at once, since both shapes carry zero | `wf034-dangling-parameter` + `wf034-ambigu-typenpaar` (unresolved name, two connecting fact types) + `wf034-zelftype-typenpaar` (unresolved name, one self-typed two-role fact type — both roles are candidates, counted in roles not fact types) + `wf034-typeloos-literal` (the unspelled twin of the sentinel, on a value node) + `wf034-attribuutref-zonder-objecttype` (the missing endpoint, carrying the measured answer-changing `t`-for-`kg` lie the empty field hid: `ref` faults, clingo refuses, Drools played it) + `wf034-onbekend-regeldoel` (the sentinel on `/resolvedRegels/1/doel/type`, the last position where it survived) |
 | WF-035 | operator typing (numeric, unitless power, date±duration order/unit/precision, unit compatibility, clamp) | gate 3 (over serialized operand types) | `anchor/jutterswet-wachtersketen` (the numeric Plus, executed by gates 5–6) + `jutterswet-vervaltermijn` (date ± duration, the date-left plus and min forms, executed by gates 5–6) | `wf035-power-with-unit` + `wf035-datum-plus-datum` + `wf035-duur-plus-datum` + `wf035-duur-min-datum` + `wf035-uur-op-dagdatum` |
 | WF-036 | comparison/predicate typing (ordering, precision, family, domain, builtin operands) | gate 3 (over serialized operand types) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondstnummer` (date ordering) | `wf036-order-number-vs-text` |
 | WF-037 | aggregation/builtin shape: facet validity and arity per kind | gate 3 (fixed-arity kinds; date-construction arity OPEN) | `jutterswet-vondsttelling` | `wf037-fallback-on-minimum` |
