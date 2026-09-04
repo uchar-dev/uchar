@@ -3346,8 +3346,15 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                       replaces it), so WF-089's AttribuutRef arm has to be
                       applied here too — otherwise a fold source is the one
                       reference position that may lie about the attribute it
-                      reads *)
-                   use_site_identity (p ^ "/type")
+                      reads. WF-092 rides along for exactly the same reason:
+                      without it the fold source's own `type` is the one
+                      walked expression type at which the unit shape law does
+                      not hold. Measured: 27 of the goldens' 2161 datatype
+                      positions were unreachable through this arm. *)
+                   (match typ with
+                    | Some d -> check_datatype_units (p ^ "/type") d
+                    | None -> [])
+                   @ use_site_identity (p ^ "/type")
                      ~what:
                        ("fold-source attribute reference '"
                       ^ Option.value attribuut ~default:"?" ^ "'")
@@ -4248,6 +4255,15 @@ and check_fold_fn ctx ~binders ~subject at ~params ~result (fn : fold_fn) : viol
                        ^ datatype_detail e) ]
                 | _ -> [])
               parameters params))
+      (* WF-092 at the lambda's own parameter datatypes: they are declared
+         here and nowhere else — [walk_expr] never sees them (it walks the
+         BODY), so without this call the unit shape law does not hold at a
+         lambda parameter. Measured: 58 of the goldens' 2161 datatype
+         positions were unreachable, this arm's parameters and the composite
+         element/field/payload datatypes nested inside them. *)
+      @ List.concat_map
+          (fun (pn, pt) -> check_datatype_units (at ^ "/parameters/" ^ pn) pt)
+          parameters
       @ (match result, typ_of_expr lbody with
         | Some r, Some b when r <> b ->
             [ v "WF-070" at
