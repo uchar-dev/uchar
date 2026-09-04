@@ -14,9 +14,11 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * The <b>effective unit</b> of an expression: derived from the DECLARATIONS the document carries
- * (an attribute's declared datatype, a parameter's declared datatype) plus the §4 / RUNTIME-SEMANTICS
- * ch. 2.6 derivation rules — <b>never</b> from the node's own wire annotation.
+ * The <b>effective unit</b> of an expression: at a REFERENCE or COMPOSITE position, derived from the
+ * DECLARATIONS the document carries (an attribute's declared datatype, a parameter's declared datatype)
+ * plus the §4 / RUNTIME-SEMANTICS ch. 2.6 derivation rules — <b>not</b> from the node's own wire
+ * annotation. The named positions where that annotation IS the source, and is returned unchanged, are
+ * listed below; they are exactly ch. 2.10's, and they are a scope boundary rather than an escape hatch.
  *
  * <p><b>Why.</b> A v0 IR node repeats its type on the wire at positions where that type is a COPY of a
  * declaration (an {@code AttribuutRef}, a {@code ParameterRef}, a {@code DimensieCel} read, a binder read)
@@ -30,19 +32,21 @@ import java.util.Objects;
  * unit from declarations and the join rules. This class is that same derivation for the Drools backend,
  * and {@code scripts/check-reftype-derivation.sh} is what holds all three to it.
  *
- * <p><b>The reason-carrying exceptions</b> (RUNTIME-SEMANTICS ch. 2.10, the consumer clause) — positions
- * where the annotation IS the source and is therefore returned unchanged:
+ * <p><b>The reason-carrying exceptions</b> (RUNTIME-SEMANTICS ch. 2.10, the consumer clause) — the named
+ * positions this class returns the annotation at, with the reason each is not a wire read in disguise:
  * <ul>
  *   <li>a {@link Expr.Literal}: its type is the lexeme's own carrier ("3,5 EUR"), a copy of nothing;</li>
  *   <li>a duration function ({@code TIJDSDUUR} / {@code ABSOLUTE_TIJDSDUUR}): the node type's unit is the
  *       OPERATOR's parameter ("de tijdsduur van A tot B in jaren", WF-038), not a derived result;</li>
- *   <li>ch. 2.10's FOURTH class, which says something weaker: every node kind whose result unit v0 does not
+ *   <li>ch. 2.10's FOURTH class, which says something weaker: every POSITION whose result unit v0 does not
  *       DERIVE (a division, a power, a percentage-of, a root, an absolute value, the date/time extractors)
  *       keeps the annotation because there is nothing to put in its place — not because the annotation is the
- *       source. The ASP translator answers {@code None} there and fences; this backend has no such fence and
- *       computes with the annotation, exactly as it did before this class. Measured 2026-09-04: no corpus
- *       annotation at such a kind carries a unit, and {@code check-reftype-derivation.sh} fails on the first
- *       one that does.</li>
+ *       source. A position, not a node kind: {@code GEDEELD_DOOR} and {@code PLUS} are both {@code Binair}
+ *       and only one of them derives, which is why the {@code switch}es below dispatch on the OP and the
+ *       KIND, and why the harness's clamp keys on (node, op) / (node, kind) too. The ASP translator answers
+ *       {@code None} there and fences; this backend has no such fence and computes with the annotation,
+ *       exactly as it did before this class. Measured 2026-09-04: no corpus annotation at such a position
+ *       carries a unit, and {@code check-reftype-derivation.sh} fails on the first one that does.</li>
  * </ul>
  *
  * <p><b>Scope.</b> This derives the UNIT only. The soort and the precision of an annotation are equally
@@ -155,14 +159,41 @@ public final class EffectieveEenheid {
      * = €"), and anything else is the OPAQUE product ("€ maal kg = €·kg") — a unit with no canonical, convertible
      * only to an identical product.
      *
-     * <p>That opacity is load-bearing here, not cosmetic. It is the only thing standing between a two-unit product
-     * and a silent restatement: every §4 restatement site in both back-ends gates on {@code convertibleNaar} /
-     * {@code exacteHerschaalFactoren}, and an opaque product answers "no" to both, so the site emits an honest
-     * marker instead of a wrong number (the four "an OPAQUE product unit stays an honest marker" sites in
-     * {@code DrlTranspiler}). Handing back the left operand's unit would restate €·kg into a € target by a live
-     * factor. The unspellable case the frontend rejects loudly (a rate factor, "€·m/jr") reaches a consumer only
-     * on a document the frontend never wrote; the opaque product is the conservative answer there too — it
-     * refuses to restate rather than inventing a factor.
+     * <p>That opacity is load-bearing here, not cosmetic: it is what stands between a two-unit product and a
+     * restatement by a live factor. Handing back the left operand's unit would scale €·kg into a € target.
+     * But what an opaque product buys downstream is NOT uniformly an honest marker, and the two shapes must
+     * not be conflated (measured 2026-09-04 on {@code Eenheid}: for m·m against m, {@code convertibleNaar} is
+     * false, {@code vereistOmrekening} is false, {@code omrekenfactorNaar} is 1 and
+     * {@code exacteHerschaalFactoren} is null):
+     * <ul>
+     *   <li>a site that REFUSES on {@code convertibleNaar} — the §4.1/§5.1.4 TEMPORAL restatements
+     *       ({@code DrlTranspiler.schaalbaarNaarDoel} / {@code schaalTijd}, and the fold- and
+     *       timeline-restatement guards in {@code ExecModelTranspiler}) — gets a false and turns the whole
+     *       construct into an honest marker/skip. Symmetric in both back-ends;</li>
+     *   <li>a site that merely COMPUTES a factor — the scalar §4 write boundary, the additive operand
+     *       boundary, the §5.1 Tabel 32 comparison restatement — gets the IDENTITY and the restatement becomes
+     *       a NO-OP. {@code ExecModelTranspiler.restatement} returns {1, 1} and {@code herschaalWaarde} falls
+     *       through {@code valueFactor}'s null to the unchanged value; {@code DrlTranspiler.herschaalExact}
+     *       and {@code herschaalConditie} likewise return the expression unchanged, one
+     *       line ABOVE their "an OPAQUE product unit stays an honest marker" branch (which an opaque product
+     *       never reaches, having already failed the convertibility guard). No marker on either side.</li>
+     * </ul>
+     *
+     * <p>So on a scalar restatement the value simply stands UNRESTATED, in whatever unit it was computed in.
+     * That is conservative in the sense that matters — no lie-driven magnitude, because no factor was invented
+     * — but it is a SILENT ref/Drools divergence, not a loud one, and this class must not claim otherwise.
+     * Its blast radius is bounded by who else accepts the form: the frontend's
+     * {@code Typering.samengesteldeEenheid} flags the unit mismatch, {@code ref} faults, and the ASP
+     * translator refuses ahead of translation, so no corpus golden carries it and the divergence is
+     * unobservable in every gate. {@code CaseRunner} builds only the exec-model back-end, so that is the leg
+     * every replay takes.
+     *
+     * <p>The unspellable case (a rate factor, "€·m/jr") reaches a consumer only on a document the frontend
+     * never wrote — {@code Typering} makes it a loud error rather than a type. This join answers it with a
+     * DENOMINATOR-LESS opaque product ({@code Eenheid.product} keeps the numerator factors and drops the
+     * noemer, so "€/jr maal kg" and "€/jr maal kg/jr" both yield €·kg): again the conservative,
+     * non-restatable outcome rather than an invented factor. RUNTIME-SEMANTICS ch. 2.10 records it as the
+     * fourth MAAL outcome and names the three consumers that refuse it.
      */
     private static Eenheid maalEenheid(Eenheid el, Eenheid er) {
         if (el == null) return er;

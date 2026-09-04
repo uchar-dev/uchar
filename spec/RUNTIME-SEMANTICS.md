@@ -481,13 +481,17 @@ the scale-2 × scale-4 product so the intermediate stays inside the
 int31 fences — e.g. `M × R = M × R_hi/10² + M × R_lo/10⁴`, each part
 within the existing bound, the sum exact.)
 
-### 2.10 The consumer clause — a type annotation is never the source
+### 2.10 The consumer clause — where a type annotation is not the source
 
 A v0 node carries its result type on the wire at every position. At a
 **reference** position that type is a *copy* of a declaration; at a
 **composite** position it is a *derivation* over the node's operands.
-Neither is a source. A consumer of the IR therefore derives the unit, the
-soort and the precision it computes with:
+Neither is a source, and at those two the consumer must not read it. The
+clause is scoped, not absolute: there are **named positions** — three where
+the annotation genuinely *is* the source, and a fourth where v0 states no
+rule to put in its place — and they are listed below rather than left to a
+consumer's discretion. Everywhere else a consumer of the IR derives the
+unit, the soort and the precision it computes with:
 
 1. **Reference positions** — an `AttribuutRef` (bare, navigated, or the one
    a rule names as its `doel`), a `ParameterRef`, a `DimensieCel` read, a
@@ -506,8 +510,26 @@ soort and the precision it computes with:
    product of two unit-bearing operands *cancels* against a rate's
    denominator ("€/jr maal jr = €") or is the **opaque product** ("€ maal
    kg = €·kg", ch. 2.5: no canonical, convertible only to an identical
-   product — the marker that stops a restatement instead of scaling by a
-   wrong factor); a `Let` carries its body's, and a binder read carries
+   product — what stops a restatement instead of scaling by a wrong
+   factor), and in a **fourth** shape it is neither: an *unspellable rate
+   factor* ("€/jr maal kg/jr" — a product whose honest unit would need a
+   denominator). The producing frontend and two of the three consumers
+   refuse that shape outright, each loudly (all three measured
+   2026-09-04): the RegelSpraak frontend's `Typering` makes it a **type
+   error** rather than a type ("een producteenheid met een noemer kan het
+   Eenheid-model niet uitdrukken"), so no frontend ever writes the
+   document; `ref` faults
+   (`unit product not modelled: EUR * kg`); and clingo's unit fence
+   refuses ahead of translation. The Drools backend, having no such fence,
+   answers a **denominator-less opaque product**: its `Eenheid.product`
+   keeps the numerator factors and drops the noemer, so "€/jr maal kg" and
+   "€/jr maal kg/jr" both yield €·kg. That is the *conservative*
+   outcome, not a claim that the product is spellable — €·kg carries no
+   canonical, so no restatement site will scale it by an invented factor,
+   and the value simply stands in the unit it was computed in. It is
+   therefore a silent divergence from the other three on a shape the
+   corpus does not carry and no frontend can emit; a `Let` carries its
+   body's, and a binder read carries
    what its binding derived, unit-bearing **or unitless** — bound to a
    unitless value is not the same fact as unbound, and only the second
    falls back to an annotation; a value aggregation carries its first
@@ -526,30 +548,39 @@ reads it there:
   operator's parameter — "de tijdsduur van A tot B **in jaren**"
   (WF-038) — not a derived result.
 
-**A fourth class, and it says something weaker.** A node kind whose result
+**A fourth class, and it says something weaker.** A *position* whose result
 unit v0 does not *derive* at all — a division (`GEDEELD_DOOR`), a power
 (`TOT_DE_MACHT`), a percentage-of (`PERCENTAGE_VAN`), an absolute value, a
 root, the date/time extractors — keeps its own annotation, because clause 2
 has nothing to put in its place. That is not the annotation being the
 source; it is v0 having no rule, and the two consumers answer it
 differently while both stay conform: the ASP translator's `eff_unit`
-returns `None` at those kinds and its fences (`unit_free_ok`,
+returns `None` at those positions and its fences (`unit_free_ok`,
 `units_identical_ok`) then *fault* rather than compute with a unit it could
 not derive, whereas the Drools backend has no such fence and computes with
 the annotation — the behaviour it had before this clause, deliberately
 unchanged. Measured 2026-09-04: **zero** unit-bearing annotations in the
-corpus sit at such a node kind, so the class is empty today and the
+corpus sit at such a position, so the class is empty today and the
 difference between the two answers is unobservable. The clamp that reports
-the first witness is step 6 of `scripts/check-reftype-derivation.sh`: a
-unit-bearing annotation at a node kind outside its twist table and outside
-its exception set fails the gate with the kind and the golden named. What
-that witness must then buy is a derivation rule (or a fence) — never a
-wider licence to read the wire.
+the first witness is step 6 of `scripts/check-reftype-derivation.sh`. Note
+that this class is a set of *positions*, not of node kinds: `GEDEELD_DOOR`
+and `PLUS` are the same node kind (`Binair`), and only one of them derives.
+The clamp therefore keys on **(node, op)** for a `Binair` and on
+**(node, kind)** for a `Functie`, and it separates the two arrivals it can
+see — a fourth-class *branch* of a node kind the twist table otherwise
+carries, and a node kind outside the table altogether — each failing the
+gate with the position class and the golden named. Keying on the node alone
+would twist a unit-bearing `GEDEELD_DOOR` as though it sat at a derived
+position and report the result as a consumer defect, which is a wrong
+diagnosis of a real gap. What the witness must then buy is a derivation
+rule (or a fence) — never a wider licence to read the wire.
 
 Two further readings are recorded rather than blessed, because they are a
 backend's encoding rather than a semantic claim: the ASP translator sizes
 its integer scale from a `Fold`'s and a `Match`'s own annotated `decimalen`
-(`ASP-TRANSLATION.md` S19). They stay legitimate only while that scale is
+(`value_scale`, the scaled-integer encoding of `ASP-TRANSLATION.md` S2 and
+the `expr_term` triple of S4 — *not* S19, which is the not-translated
+inventory). They stay legitimate only while that scale is
 an encoding detail; the moment a unit-bearing witness reaches those nodes
 they fall under clause 2.
 
