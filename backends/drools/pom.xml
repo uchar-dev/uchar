@@ -49,7 +49,7 @@
          that text (KieHelper, the classic DRL build the DRL-measurement entry drives, behind the runner's
          `drl` flag) needs the dialect implementation, which drools-engine does not carry.
          WHAT it changes is NOT confined to that branch, and this comment must not pretend otherwise
-         (measured 2026-09-04 against a jar built without the artifact). It registers FIVE global KieServices
+         (measured 2026-09-04 against a jar built without the artifact). It lands SIX service entries in META-INF/services — five global KieServices plus javax.script.ScriptEngineFactory (MvelScriptEngineFactory, non-Kie) —
          in META-INF/services, each resolved ONCE PER JVM, so they are in force on the FLAGLESS exec path too.
          Three had no provider at all before — CoreComponentsBuilder (whose get() threw "compile a Drools
          asset without mvel"), FieldAccessorFactory and ClassBuilderFactory — and two DISPLACE a built-in

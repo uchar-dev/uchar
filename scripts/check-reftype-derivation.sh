@@ -79,12 +79,15 @@
 #     - the ADDITIVE OPERAND boundary (binairTerm) — 10 hits;
 #     - the §5.1 Tabel 32 comparison operand restatement (conditie) — 4 hits.
 # Every other effType call in either file is a pass-through on this corpus, so its derivation is
-# STATED but not measured here. For the DRL branch, measured over the whole corpus: 11 of its 27
-# converted call sites are REACHED at all, 3 of those ever override. The OTHER 24 rest on the backend's
-# JUnit witnesses (gate 12's obligation), not on a green line here, and they are two different facts:
-# 8 ARE reached but on this corpus always UNITLESS — the temporal §4.1/§5.1.4 rescalings, the Begrensd
-# value arm, the §8.2 timeline comparison, the two concatenation-aggregation sites — while the remaining
-# 16 no golden reaches at all.
+# STATED but not measured here. For the DRL branch, measured TRANSPILE-ONLY over every golden the
+# loader accepts (118; a replay-based sweep misses the no-case goldens): 12 of its 26 converted call
+# sites are REACHED at all, 3 of those ever override. The OTHER 23 rest on the backend's JUnit
+# witnesses (gate 12's obligation), not on a green line here, and they are two different facts:
+# 9 ARE reached but on this corpus always UNITLESS — the temporal §4.1/§5.1.4 rescalings, the Begrensd
+# value arm, the §8.2 timeline comparison and its geheelPeriodeCall sibling (reached only through a
+# no-case golden), the two concatenation-aggregation sites — while the remaining 14 no golden
+# reaches at all. A leg that stops PLAYING entirely fails the floor below; a leg that merely shrinks
+# stays green and only the printed count moves.
 #
 # The DRL leg is NOT a repetition of the exec one. It reaches a golden the exec branch cannot play
 # at all (jutterswet-vondsttarief, which the exec transpiler SKIPs as "waarde buiten scope" while the

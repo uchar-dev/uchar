@@ -2,7 +2,7 @@
 
 Goal: gate 13 (het annotatie-onverschilligheidsharnas) speelt
 uitsluitend de exec-model-tak — de replay-runner bouwt alleen die — en
-de ~27 EffectieveEenheid-omzettingen in `DrlTranspiler` zijn daardoor
+de 26 EffectieveEenheid-omzettingen in `DrlTranspiler` zijn daardoor
 enkel gecompileerd, gedragen door drie JUnit-getuigen die geen eenheden
 raken (B-lens-2-meting 2026-09-04: op het corpus wijken vier call-sites
 ooit van de annotatie af, alle vier exec-model). Maak de DRL-tak
@@ -121,9 +121,12 @@ transpilerframe toeschrijft. Over het HELE corpus, onverdraaid:
 | `DrlTranspiler.vergelijkingTijdreeks:2271` | 4 | **0** | 2 |
 | `DrlTranspiler.waarde:1883/1884/1885` (Begrensd) | 3+2+2 | **0** | 1 |
 
-Dat is de hele bereikte verzameling: **11 van de 27 omgezette plekken
+Dat is de via replay bereikte verzameling — lens 2 mat TRANSPILE-ONLY
+(elke golden die de loader neemt, 118, dus ook de caseloze) en vond er
+één meer: `geheelPeriodeCall:2703` (4 aanroepen, 0 eenheiddragend, via
+`jutterswet-vormenkabinet`). De juiste telling: **12 van de 26 omgezette plekken
 worden ooit aangeroepen, en slechts 3 zien ooit een eenheiddragende
-expressie.** De andere 8 bereikte plekken zijn op dit corpus doorgeefluiken
+expressie.** De andere 9 bereikte plekken zijn op dit corpus doorgeefluiken
 per constructie, niet per toeval — er is geen eenheid om te herschalen. 16
 plekken worden door geen enkele golden bereikt.
 
@@ -251,7 +254,7 @@ zo in de javadoc, niet als belofte maar als meting.
 
 ## Wat ongedekt blijft, en waarom dat een meting is
 
-24 van de 27 omgezette DRL-plekken zijn door geen corpusartefact te dekken,
+23 van de 26 omgezette DRL-plekken zijn door geen corpusartefact te dekken,
 omdat het corpus ze niet met een eenheid bereikt (M2-tabel). Acht daarvan
 worden wél aangeroepen maar altijd eenheidloos — de temporele §4.1/§5.1.4-
 herschalingen, de Begrensd-waardetak, de §4.6-Eenheid1-fold, de
@@ -308,7 +311,7 @@ Geland: (1) de meting die de kaart vroeg — de DRL-teksttak IS speelbaar: 69
 goldens spelen door beide takken met dezelfde gepinde verwachtingen, langs
 de KLASSIEKE DRL-route (de exec-model-codegen-route strandt op de eigen
 tekst, de klassieke vraagt alleen `drools-mvel`) — met haar vormgrenzen en
-de 27-plekken-inventaris (11 bereikt, 3 eenheiddragend); (2)
+de 26-plekken-inventaris (12 bereikt, 3 eenheiddragend — hertelling lens 2); (2)
 spoor (a): een `--drl`-ingang in `CaseRunner`/`DroolsBackendMain` naast — niet
 in — het gate-12-pad, en een DRL-leg in `scripts/check-reftype-derivation.sh`
 (voorstel) die de mutant vangt op negen goldens, waaronder één die de
