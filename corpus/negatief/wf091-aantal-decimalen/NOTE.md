@@ -25,6 +25,11 @@ a sign restriction may not refuse a document that narrows it truthfully.
 That is the same reason the sign facet is skipped at every derived position
 in the rule.
 
-Falsifiable: drop `decimals` and this case turns clean (the count arm skips
-sign and residual) while every other case stays red; remove the `Aantal`
-branch and only this case turns clean.
+Falsifiable: drop `decimals` and this case degrades to a `wholeness
+mismatch` — still WF-091, still red (measured: a count derives a *whole*
+number and this annotation is fractional, so the next facet catches it),
+which also means the decimals facet is pinned here by the *message* and not
+by the refusal. That same drop does clear two other cases —
+`wf091-binair-decimalen` and `wf091-fold-decimalen`, whose annotations agree
+with their derivation on wholeness and had only the decimal count to differ
+on. Remove the `Aantal` branch and only this case turns clean.

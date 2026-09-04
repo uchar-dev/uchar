@@ -20,17 +20,39 @@ domain facet alone. Measured before the law landed: this document is
 verifier-clean.
 
 The denominator strip is a **measured four-source divergence**, recorded at
-the card and not resolved by it: the RegelSpraak frontend and §4.20 strip
-the denominator, while the ASP translator's `eff_unit` and the Drools
-backend's `EffectieveEenheid` both hand the first operand's unit through
-whole. The verifier follows the two sources that state a TOTAAL rule; the
-two executor-side derivations state none for the integration and are a
-consumer-side question, not a well-formedness one. Every `TOTAAL` in the
-corpus agrees with the emitter (7 golden, 5 negatief, measured), so nothing
-observable turns on it today.
+the card and not resolved by it: §4.20 states the strip, and the RegelSpraak
+frontend applies it — but, since the *set-fold "totaal van"* card, not
+unconditionally. The frontend strips on every reading **except** the
+non-temporal set one, tested by one predicate
+(`ExpressieBouwer.setLezing`: exactly one operand, an attribute reference
+carrying `set`, over an attribute its object type declares no granularity
+for), because that reading is an alias of the sum and integrates over
+nothing. The ASP translator's `eff_unit` and the Drools backend's
+`EffectieveEenheid` strip in neither reading: both hand the first operand's
+unit through whole. The verifier follows the source that states a `TOTAAL`
+rule and mirrors its predicate rather than restating the strip — an
+unconditional strip is *not* what §4.20 plus the emitter say together, and
+writing one made `jutterswet-tempototaal` red on a wire type no executor can
+produce. The two executor-side derivations state no integration rule at all
+and are a consumer-side question, not a well-formedness one.
 
-Falsifiable: drop `unit` and this case turns CLEAN — the derived arms
-carry no backstop since the sign round, so the unit facet alone carries
-this refusal (measured); remove the denominator strip from the `Totaal` branch and this
-case turns **clean** while every other aggregation case stays red — the
-sharpest possible pin on the strip itself.
+This document reaches the strip on the arity half of that predicate: it
+totals **two** operands, both `set: false`, so no reading of it is the set
+alias. *Measured 2026-09-04:* 15 `TOTAAL` nodes over the four zones — 9
+golden, 6 negatief, none in rood or the parity zone — of which only three
+carry a rate unit at all (the two in `jutterswet-tempototaal`, one per
+reading, and this one), so at the other twelve the strip is a no-op either
+way.
+
+Falsifiable, and each clause differently. Drop `unit` and this case turns
+CLEAN — the derived arms carry no backstop since the sign round, so the unit
+facet alone carries this refusal (measured). Remove the denominator strip
+from the `Totaal` branch and this case turns clean while every other
+aggregation case stays red — **and** `jutterswet-tempototaal`'s temporal
+node turns red, so gate 3 fails from both ends at once. Make the strip
+unconditional instead (delete the `set_lezing` guard, the shape before fix
+round 3) and this case stays red while that same golden's non-temporal set
+fold turns red. The strip is therefore pinned on both sides by one negatief
+and one golden; the **granularity** half of the guard is not pinned here at
+all — no `TOTAAL` in any zone reads a temporal attribute as a set, so
+dropping that half leaves gate 3 green, and ch. 4.1 says so.
