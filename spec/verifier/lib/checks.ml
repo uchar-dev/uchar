@@ -1757,6 +1757,33 @@ let rec enum_use_site ctx at (d : datatype) : violation list =
       List.concat_map (fun (_, fd) -> enum_use_site ctx at fd) velden
   | _ -> []
 
+(* WF-034's sentinel fence, one level down: the v0 unknown type on a `SumType`
+   CONSTRUCTOR PAYLOAD (maintainer decision 2026-09-04, second wave). The fence
+   in [walk_expr]'s type prologue matches the node's type at the top level, so
+   it sees the sentinel only when the WHOLE type is the sentinel; a datatype is
+   a tree, and a sum type carries its payloads as children. The descent is
+   [enum_use_site]'s, through the same payloads and for the same measured
+   reason — a use site's inline constructor copy is what the consumers read,
+   while WF-062 crosses only the DECLARATION.
+
+   The descent stops at the payload deliberately. Sentinels in a `ListType`
+   element or a `StructType` field are refused today by neighbours — measured
+   by injecting the sentinel at all 2650 datatype-valued positions of the
+   goldens: the only verifier-clean survivors sit on constructor payloads (12)
+   and on fold-/aggregation argument types (9), never in a container — so an
+   arm there would carry no witness of its own. *)
+let rec payload_sentinel at (d : datatype) : violation list =
+  match d with
+  | Sum_type { constructoren; _ } ->
+      List.concat_map
+        (function
+          | n, Some (Datatype_onbekend _) ->
+              [ v "WF-034" at ("unknown-type sentinel on the payload of constructor '" ^ n ^ "'") ]
+          | _, Some p -> payload_sentinel at p
+          | _, None -> [])
+        constructoren
+  | _ -> []
+
 (* Two constructor lists agree when they carry the same constructors in the
    same order with structurally equal payloads (names case-insensitively,
    the WF-001 identity rule; payloads by the datatype equality WF-049 uses). *)
@@ -2438,7 +2465,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
     | Some (Datatype_onbekend _) ->
         [ v "WF-034" (sub "type") "unknown-type sentinel inside a structured node" ]
     | Some d ->
-        check_number_form (sub "type") d
+        payload_sentinel (sub "type") d
+        @ check_number_form (sub "type") d
         @ enum_use_site ctx (sub "type") d
         @ struct_use_site ctx (sub "type") d
     | None -> (
@@ -2780,6 +2808,18 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                        ("attribute reference '"
                        ^ Option.value attribuut ~default:"?"
                        ^ "' without an object type: it resolves against no declaration") ]
+               | Attribuut_ref { attribuut = None; objecttype = Some otn; _ }, Some _ ->
+                   (* the second half of the pair, in the fold source, and its
+                      own arm for the same reason as the first: this branch
+                      replaces [walk_expr] here, and
+                      [aggregation_source_check] resolves only on
+                      `attribuut = Some a`. Measured: with the generic arm
+                      alone, 43 of the goldens' 751 emptied `attribuut`
+                      positions stayed verifier-clean — every one of them a
+                      fold-/aggregation argument. *)
+                   [ v "WF-034" p
+                       ("attribute reference on '" ^ otn
+                      ^ "' without an attribute name: it resolves against no declaration") ]
                | Attribuut_ref { attribuut; typ; _ }, Some el ->
                    (* the fold source never reaches [walk_expr] (this branch
                       replaces it), so WF-089's AttribuutRef arm has to be
@@ -3007,7 +3047,18 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                      [ v "WF-034" at
                          ("'" ^ a ^ "' is neither an attribute nor a characteristic of '" ^ otn
                         ^ "'") ]
-               | None -> [])
+               | None ->
+                   (* WF-034 (widened, maintainer decision 2026-09-04, second
+                      wave): the OTHER half of the resolving pair. A reference
+                      resolves through `objecttype` AND `attribuut`; with the
+                      member name absent it lands on a declared type and reads
+                      nothing there. The absent name silences the same rules
+                      from the other side — this member check and WF-080 both
+                      sit behind `Some a`, and [resolved_attr_datatype] is
+                      None, on which WF-089/090/091 defer. *)
+                   [ v "WF-034" at
+                       ("attribute reference on '" ^ otn
+                      ^ "' without an attribute name: it resolves against no declaration") ])
               @
               (* WF-053: the navigated shapes — a written role, a declared
                  chain, or a directly named off-subject type (by-pair) *)
@@ -3093,7 +3144,17 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                  the parameter it reads *)
               use_site_identity (sub "type") ~what:("parameter reference '" ^ p ^ "'")
                 ~decl:par.par_datatype ~typ)
-      | None -> [])
+      | None ->
+          (* WF-034 (widened, 2026-09-04, second wave): the same shape one node
+             kind over. A parameter reference resolves through exactly one
+             field; the arm above reports a name that resolves nowhere, and
+             sits behind `Some p`, so an ABSENT name walked past it — and past
+             the identity family with it, which crosses this node's type
+             against the parameter's declared datatype and defers on an
+             unresolvable declaration. *)
+          [ v "WF-034" at
+              "parameter reference without a parameter name: it resolves against no declaration"
+          ])
   | Variabele_ref _ -> [] (* binding sites are not serialized in v0 — OPEN *)
   | Constante _ -> []
   | Expr_onopgelost _ -> [] (* honest marker; WF-044 is behavioural *)
@@ -3924,11 +3985,22 @@ let expression_layer ctx =
          rule-target arm) and defers on the sentinel, so writing it there
          switched the unit and domain checks off one's own write targets.
          WF-034 covers that one position too (maintainer decision
-         2026-09-04); its unspelled twin, a target with no type at all, is
-         not this clause's — an lvalue is not a value node. *)
+         2026-09-04).
+
+         Both spellings of the unknown type, since the second wave of the
+         same decision: the explicit sentinel and its UNSPELLED TWIN, a
+         target with no type at all. The first wave left the twin out for
+         want of a witness; it has one now, and it is the worse of the two —
+         besides WF-091's rule-target arm it also switches off WF-007's
+         target clause below (a shape law that reads `Some d`), and the
+         document it produces replays clean in ref and clingo while the
+         Drools backend throws on it. Measured before this arm: all 295
+         golden rule-target types stay verifier-clean when emptied. *)
       (match r.doel with
       | Some (Attribuut_ref { typ = Some (Datatype_onbekend _); _ }) ->
           [ v "WF-034" (at ^ "/doel/type") "unknown-type sentinel on a rule target" ]
+      | Some (Attribuut_ref { typ = None; _ }) ->
+          [ v "WF-034" (at ^ "/doel/type") "rule target without a static type" ]
       | _ -> [])
       (* WF-007 at the same position, and for a different reason than its
          neighbour above: the precision form is a SHAPE law on a datatype —
