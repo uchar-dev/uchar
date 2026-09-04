@@ -448,6 +448,100 @@ let check_number_form at = function
       else []
   | _ -> []
 
+(* WF-092 (IR-SPEC ch. 2.5): the conversion pair of a unit is ONE fact in
+   two fields — the canonical unit it converts into and the factor that
+   does the converting. Filled together or null together; either half
+   alone is not a unit. The kale form (both null) is the legitimate
+   self-standing spelling every WF-038 duration parameter and WF-035
+   duration operand carries.
+
+   The rule exists because neither half is reachable by a neighbour.
+   WF-009 walks the declared systems but only ever looks at a factor it
+   FINDS (positivity) and at a canonical chain it can FOLLOW; a missing
+   half is simply nothing to look at. WF-035/WF-023 cross units for
+   COMPATIBILITY through [units_convertible], which reads a missing
+   [canoniek] as the abbreviation and a missing factor not at all — so a
+   half-filled unit is compatible with its whole sibling by construction.
+   WF-091 compares two units BYTE for byte, which passes the moment the
+   half-form is copied consistently across the arms it crosses. *)
+let rec check_eenheid_form at (u : eenheid) =
+  let named =
+    match u.afkorting with Some a -> "'" ^ a ^ "'" | None -> "an unnamed unit"
+  in
+  (match (u.canoniek, u.factor_naar_canoniek) with
+  | Some c, None ->
+      [ v "WF-092" at
+          (Printf.sprintf
+             "unit %s names canonical unit '%s' but carries no conversion factor into it: a \
+              half-filled conversion pair is not a unit (both fields, or neither)"
+             named c) ]
+  | None, Some f ->
+      [ v "WF-092" at
+          (Printf.sprintf
+             "unit %s carries conversion factor %g but names no canonical unit to convert into: a \
+              half-filled conversion pair is not a unit (both fields, or neither)"
+             named f) ]
+  | Some _, Some _ | None, None -> [])
+  @ (match u.noemer with Some n -> check_eenheid_form (at ^ "/noemer") n | None -> [])
+
+(* every unit a datatype carries, denominators and composite element/field/
+   payload datatypes included — WF-092 reaches strictly further into a
+   datatype than [check_number_form] does, so the form law holds at unit
+   positions WF-007's row records as out of its own reach. *)
+let rec check_datatype_units at = function
+  | Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ } ->
+      check_eenheid_form (at ^ "/eenheid") u
+  | List_type { element } -> check_datatype_units (at ^ "/element") element
+  | Struct_type { velden; _ } ->
+      List.concat_map (fun (f, d) -> check_datatype_units (at ^ "/velden/" ^ f) d) velden
+  | Sum_type { constructoren; _ } ->
+      List.concat_map
+        (fun (c, p) ->
+          match p with Some d -> check_datatype_units (at ^ "/constructoren/" ^ c) d | None -> [])
+        constructoren
+  | Numeriek _ | Percentage _ | Tekst | Booleaan | Datum_in_dagen | Datum_tijd | Enumeratie _
+  | Datatype_onbekend _ ->
+      []
+
+(* WF-092's model half: the declared unit systems (the source of truth for
+   every conversion) plus every model-layer datatype. The expression half
+   rides walk_expr's type prologue and the rule-target clause, where WF-007
+   collects the same "every datatype in the document" split. *)
+let wf092 ctx =
+  let site at = function Some d -> check_datatype_units at d | None -> [] in
+  List.concat_map
+    (fun (sn, es) ->
+      let at = "/eenheidstelsels/" ^ sn in
+      List.concat_map
+        (fun (kind, table) ->
+          List.concat_map
+            (fun (un, e) ->
+              match e with
+              | Some e -> check_eenheid_form (at ^ "/" ^ kind ^ "/" ^ un) e
+              | None -> [])
+            table)
+        [ ("eenheden", es.eenheden); ("aliassen", es.aliassen) ])
+    ctx.doc.eenheidstelsels
+  @ List.concat_map
+      (fun (otn, ot) ->
+        List.concat_map
+          (fun (a, dt) -> site ("/objecttypen/" ^ otn ^ "/attributen/" ^ a) dt)
+          ot.attributen)
+      ctx.doc.objecttypen
+  @ List.concat_map (fun (d, dt) -> site ("/domeinen/" ^ d) dt) ctx.doc.domeinen
+  @ List.concat_map
+      (fun (p, par) -> site ("/parameters/" ^ p) par.par_datatype)
+      ctx.doc.parameters
+  @ List.concat
+      (List.mapi
+         (fun i (fd : function_def) ->
+           let at = Printf.sprintf "/functionDefs/%d" i in
+           List.concat_map
+             (fun (pn, dt) -> check_datatype_units (at ^ "/parameters/" ^ pn) dt)
+             fd.fd_parameters
+           @ check_datatype_units (at ^ "/result") fd.fd_result)
+         ctx.doc.function_defs)
+
 let wf007_model ctx =
   List.concat_map
     (fun (otn, ot) ->
@@ -2887,6 +2981,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
     | Some d ->
         payload_sentinel (sub "type") d
         @ check_number_form (sub "type") d
+        @ check_datatype_units (sub "type") d
         @ enum_use_site ctx (sub "type") d
         @ struct_use_site ctx (sub "type") d
     | None -> (
@@ -4483,8 +4578,13 @@ let expression_layer ctx =
          CHARACTERISTIC target it defers by construction and this clause is
          the only guard. The sentinel and an absent type fall through it —
          [check_number_form] has nothing to say about either. *)
-      @ (match r.doel with
-        | Some (Attribuut_ref { typ = Some d; _ }) -> check_number_form (at ^ "/doel/type") d
+      @ (* WF-092 rides the same lvalue position for the same reason: the
+           unit's conversion pair is a SHAPE law on every unit in the
+           document, and the target's own `type` is the one datatype the
+           expression walk never enters. *)
+      (match r.doel with
+        | Some (Attribuut_ref { typ = Some d; _ }) ->
+            check_number_form (at ^ "/doel/type") d @ check_datatype_units (at ^ "/doel/type") d
         | _ -> [])
       @ (* WF-056 (rule level): a pro-rata value on a temporal target MUST
          bucket at the target's declared granularity; WF-058 states the
@@ -6638,7 +6738,7 @@ let all (doc : document) : violation list =
   let ctx = { doc } in
   List.concat
     [ wf001 ctx; wf002 ctx; wf003 ctx; wf004 ctx; wf005 ctx; wf006 ctx;
-      wf007_model ctx; wf009 ctx; wf011 ctx; wf012 ctx; wf013 ctx; wf014 ctx;
+      wf007_model ctx; wf009 ctx; wf092 ctx; wf011 ctx; wf012 ctx; wf013 ctx; wf014 ctx;
       wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf020 ctx; wf021 ctx;
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx;
