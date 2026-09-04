@@ -1,0 +1,198 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Sleepbaan": {
+      "node": "Objecttype",
+      "naam": "Sleepbaan",
+      "attributen": {
+        "aanloop": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "m",
+            "stelsel": "Afstand",
+            "canoniek": null,
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "sleeplengte": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "m",
+            "stelsel": "Afstand",
+            "canoniek": null,
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Sleepbanen"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {
+    "Afstand": {
+      "node": "Eenheidstelsel",
+      "naam": "Afstand",
+      "eenheden": {
+        "m": {
+          "node": "Eenheid",
+          "afkorting": "m",
+          "stelsel": "Afstand",
+          "canoniek": null,
+          "factorNaarCanoniek": 1,
+          "noemer": null
+        },
+        "km": {
+          "node": "Eenheid",
+          "afkorting": "km",
+          "stelsel": "Afstand",
+          "canoniek": "m",
+          "factorNaarCanoniek": 1000,
+          "noemer": null
+        }
+      },
+      "aliassen": {}
+    }
+  },
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "sleeplengte van een sleepbaan",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "sleeplengte van een sleepbaan",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "sleeplengte",
+        "objecttype": "Sleepbaan",
+        "onderwerpBron": "een Sleepbaan",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "m",
+            "stelsel": "Afstand",
+            "canoniek": null,
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "bron": "De sleeplengte van een Sleepbaan",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "PLUS",
+        "links": {
+          "node": "Literal",
+          "waarde": "2,5",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 1,
+            "teken": "ONBEPAALD",
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "km",
+              "stelsel": "Afstand",
+              "canoniek": "m",
+              "factorNaarCanoniek": 1000,
+              "noemer": null
+            }
+          },
+          "bron": "2,5 km"
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "aanloop",
+          "objecttype": "Sleepbaan",
+          "onderwerpBron": "de Sleepbaan",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "m",
+              "stelsel": "Afstand",
+              "canoniek": null,
+              "factorNaarCanoniek": 1,
+              "noemer": null
+            }
+          },
+          "bron": "de aanloop van de Sleepbaan",
+          "set": false,
+          "navigatiePad": []
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 1,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "km",
+            "stelsel": "Afstand",
+            "canoniek": "m",
+            "factorNaarCanoniek": 1000,
+            "noemer": null
+          }
+        },
+        "bron": "2,5 km plus de aanloop van de Sleepbaan"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}
