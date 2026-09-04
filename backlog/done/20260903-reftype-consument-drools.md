@@ -530,3 +530,42 @@ precisie op een AFGELEID type worden door niets gekruist (WF-091's
 eerlijkheidsnotitie 4), en de vierde uitzonderingsklasse — de knoopsoorten
 zonder v0-afleidingsregel — is vandaag leeg maar niet leeg van betekenis;
 B2-3's klem meldt haar eerste getuige.
+
+## Result (2026-09-04)
+
+Geland in een bouwgolf en drie fixronden onder twee lenzen. (1) Het
+verdraai-harnas `scripts/check-reftype-derivation.sh`, rood-eerst: 46
+verdraaide eenheidsannotaties over 10 goldens gaven negen
+Drools-divergenties (waaronder de foldwortel 3,75 → 3.750.000) terwijl
+ref en clingo onverstoorbaar bleven — dat faalrapport was de werklijst.
+(2) `EffectieveEenheid` (het Java-evenbeeld van de ASP-eff_unit):
+declaratie voor referentieposities, ch.-4.10-scope met WF-064-shadowing
+voor binders (inclusief de levend gemaakte eenheidloze-binding), de
+ch.-2.6-afleiding voor composieten met MAAL als cancel-of-opaak-product
+(spiegel van de frontend-Typering; de tariefsfactor blijft een
+noemerloos opaak product waar frontend, ref en clingo weigeren —
+eerlijk in 2.10 genoteerd), doorgevoerd op ~45 plekken in beide
+transpilertakken; het defaults-bronpad incluis. (3) De consumentenclausule
+RUNTIME-SEMANTICS 2.10 (voorstel): referentieposities lezen de
+declaratie, composietposities het effectieve type, met de vier benoemde
+uitzonderingsklassen en de gesplitste soort/precisie-zin. (4) Twee
+klemmen in het harnas: de boekhoudklem op (knoop, operator/soort) — de
+eerste eenheiddragende vierde-klasse-positie (bijv. een deling) is een
+gate-FAIL, geen stille twist — en de vierdelige
+survivor-verouderingsklem; boekhouding 75 = 46 twistbaar + 23
+vrijgesteld + 6 zonder converteerbaar zusje + 0 vierde-klasse + 0
+ongedekt. (5) Gate 13 geregistreerd (CLAUDE.md + CI-leg,
+maintainerbesluit 2026-09-04); CONSTRUCTS rij 1 bijgesteld. JUnit 178 →
+198 (EffectieveEenheidWitnessTest, mutatiegemeten), gate 12 op elk getal
+ongewijzigd (played 105 / 43 / 1). Lens-vangsten, verwerkt: de
+MAAL-links-lezing die de opaak-productbescherming sloopte; de dode
+containsKey-bewaking; de klem die de §2.10-vierde-klasse-getuige niet
+kon melden; de marker-zin die per pleksoort bleek te lopen, niet per
+backend (het exec-pad maakt een niet-converteerbare herschaling een
+no-op — gemeten ref-fault tegen Drools 90000 op een vorm die het corpus
+niet draagt en drie consumenten weigeren). Eerlijk open: de
+DRL-teksttak leunt op de JUnit-getuigen (het harnas meet de
+exec-model-tak; vier call-sites wijken ooit af), precisie/soort op
+composieten blijven de WF-091-notitie-4-deferral, en de stille
+factor-één-terugval in de frontend-eenheidslogica is
+frontendkaart-materiaal. Herpin bij de gebundelde landing.
