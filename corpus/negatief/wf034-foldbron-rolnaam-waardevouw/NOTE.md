@@ -41,11 +41,11 @@ self-relation makes the fallback succeed for any name at all, so a witness
 placed there would be admitted by either branch and would pin neither.)
 
 *Measured breadth of the shape itself:* zero outside this witness and its
-sibling. Over all 483 documents of golden + rood + negatief + parity the
+sibling. Over all 486 documents of golden + rood + negatief + parity the
 narrowing changes exactly those two verdicts and nothing else; the 32
-wart sources in the corpus — among them the counting folds of
-`jutterswet-kaveltelling`, `jutterswet-aanmeldertelling` and this very
-golden's first rule — keep both routes and replay unchanged.
+wart sources counted over those same four zones — among them the counting
+folds of `jutterswet-kaveltelling`, `jutterswet-aanmeldertelling` and this
+very golden's first rule — keep both routes and replay unchanged.
 
 A hand-broken variant of `corpus/golden/jutterswet-vondsttelling/ir.json` —
 one name repointed, a one-line diff; schema-valid, since
@@ -56,4 +56,4 @@ own arm, which replaces the generic `walk_expr` for this position — drop the
 wart guard from the role-name test alone (`has_attr ot a || is_role_name ctx a`
 instead of `has_attr ot a || (wart && is_role_name ctx a)`). This case, alone
 in all four zones, turns clean; its type-pair sibling stays rejected. Measured:
-483 documents compared, 1 report changes.
+486 documents compared, 1 report changes, 1 verdict.

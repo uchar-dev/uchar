@@ -42,14 +42,15 @@ clause. The same silence was measured on `groepeerAttribuut` (3 of 3, its own
 witness) and half of it on `maximumAttribuut` (4 of 4, `ref` silent while
 clingo refuses — the divergent witness). The loud rows — `bronAttribuut` 11 of
 11, `doelAttribuut` 11 of 11, `restantAttribuut` 9 of 9 — were equally clean
-in the verifier and are equally closed.
+in the verifier, are equally closed, and since the fix round each carries its
+own witness too: one document per sub-arm, six in all.
 
-*Measured breadth of the shape itself:* zero outside the four new
-`-onbekend-` witnesses. Over all 483 documents of golden + rood + negatief +
-parity the clause changes exactly seven verdicts (the seven witnesses this
-card adds) and five further reports that keep their verdict — four
-pre-existing allocation negatiefs and one parity fixture gaining a truthful
-incidental line.
+*Measured breadth of the shape itself:* zero outside the six `-onbekend-`
+allocation witnesses. Over all 486 documents of golden + rood + negatief +
+parity the card and its fix round change exactly ten verdicts (their ten
+witnesses) and five further reports that keep their verdict — four
+pre-existing allocation negatiefs and the parity casus, which gains six
+truthful incidental lines, one per allocation.
 
 A hand-broken variant of `corpus/golden/anchor/jutterswet-bergingstoezicht/`
 — one field repointed, a one-line diff; schema-valid, since
@@ -57,7 +58,7 @@ A hand-broken variant of `corpus/golden/anchor/jutterswet-bergingstoezicht/`
 
 Falsifiable, clause-exact: drop `wf034_verdeling_naamresolutie` from the
 verifier's check list — its own function beside the expression walk, because
-an allocation is not an expression — and this case and its three
-`-onbekend-` allocation siblings, those four and nothing else, turn clean.
-Measured over all four zones: 483 documents compared, 5 reports change, 4
+an allocation is not an expression — and this case and its five
+`-onbekend-` allocation siblings, those six and nothing else, turn clean.
+Measured over all four zones: 486 documents compared, 7 reports change, 6
 verdicts.

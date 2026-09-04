@@ -38,13 +38,13 @@ Measured breadth for this field: **3 of 3** golden allocations that carry a
 name (`jutterswet-rangaflopend`, `jutterswet-rangdeling`,
 `jutterswet-rangmaximering`). **0** stay clean after the clause.
 
-*Measured breadth of the shape itself:* zero outside the four new
-`-onbekend-` witnesses; see the sibling NOTE for the four-zone sweep.
+*Measured breadth of the shape itself:* zero outside the six `-onbekend-`
+allocation witnesses; see the sibling NOTE for the four-zone sweep.
 
 A hand-broken variant of `corpus/golden/jutterswet-rangaflopend/ir.json` — one
 field repointed, a one-line diff; schema-valid, since
 `ResolvedVerdeling.groepeerAttribuut` is `["string","null"]` on the v0 wire.
 
 Falsifiable, clause-exact: drop `wf034_verdeling_naamresolutie` from the
-verifier's check list and this case and its three `-onbekend-` allocation
-siblings, those four and nothing else, turn clean.
+verifier's check list and this case and its five `-onbekend-` allocation
+siblings, those six and nothing else, turn clean.

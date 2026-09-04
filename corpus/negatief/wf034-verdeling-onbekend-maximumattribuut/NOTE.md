@@ -37,13 +37,13 @@ Measured breadth for this field: **4 of 4** golden allocations that carry a
 `maximumAttribuut` stayed verifier-clean when it was pointed at an undeclared
 name. **0** stay clean after the clause.
 
-*Measured breadth of the shape itself:* zero outside the four new
-`-onbekend-` witnesses; see the sibling NOTE for the four-zone sweep.
+*Measured breadth of the shape itself:* zero outside the six `-onbekend-`
+allocation witnesses; see the sibling NOTE for the four-zone sweep.
 
 A hand-broken variant of `corpus/golden/jutterswet-berging/ir.json` — one
 field repointed, a one-line diff; schema-valid, since
 `ResolvedVerdeling.maximumAttribuut` is `["string","null"]` on the v0 wire.
 
 Falsifiable, clause-exact: drop `wf034_verdeling_naamresolutie` from the
-verifier's check list and this case and its three `-onbekend-` allocation
-siblings, those four and nothing else, turn clean.
+verifier's check list and this case and its five `-onbekend-` allocation
+siblings, those six and nothing else, turn clean.

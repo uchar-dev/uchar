@@ -12,9 +12,10 @@ side. `bronAttribuut` is a **source-side** field — it names the pot on the
 `bronType` instance, as `restantAttribuut` names the remainder written back
 there; the other four resolve against `doelType`.
 
-This is the **loud** witness of the four, and it is here for exactly that
-reason: the class has three observability rows, and the two silent ones must
-not be mistaken for the whole story. Measured on this document, against
+This is a **loud** witness — one of three, since the fix round gave
+`doelAttribuut` and `restantAttribuut` their own — and it is here for exactly
+that reason: the class has three observability rows, and the two silent ones
+must not be mistaken for the whole story. Measured on this document, against
 `corpus/golden/jutterswet-berging/case.json`:
 
     ref    : EVALUATION FAULT: empty source amount in proportional allocation
@@ -34,13 +35,15 @@ verifier-clean when `bronAttribuut` was pointed at an undeclared name; the
 same 11 of 11 for `doelAttribuut` and 9 of 9 for `restantAttribuut`, all three
 loud in both executors. **0** stay clean after the clause.
 
-*Measured breadth of the shape itself:* zero outside the four new
-`-onbekend-` witnesses; see the sibling NOTE for the four-zone sweep.
+*Measured breadth of the shape itself:* zero outside the six `-onbekend-`
+allocation witnesses; see the sibling NOTE for the four-zone sweep.
 
 A hand-broken variant of `corpus/golden/jutterswet-berging/ir.json` — one
 field repointed, a one-line diff; schema-valid, since
 `ResolvedVerdeling.bronAttribuut` is `["string","null"]` on the v0 wire.
 
 Falsifiable, clause-exact: drop `wf034_verdeling_naamresolutie` from the
-verifier's check list and this case and its three `-onbekend-` allocation
-siblings, those four and nothing else, turn clean.
+verifier's check list and this case and its five `-onbekend-` allocation
+siblings, those six and nothing else, turn clean. Arm-exact instead: delete
+the single `resolve … "bronAttribuut" …` line and this case, alone in all
+four zones, turns clean.

@@ -913,11 +913,16 @@ let wf026 ctx =
 
    What this arm does NOT close, measured the same day and stated so the
    silence is not mistaken for coverage: a NAME that resolves against no
-   declaration (`bronAttribuut: "bestaatniet"` is verifier-clean while `ref`
-   faults and clingo reports `unknown attribute`), and the two TYPE fields
-   `bronType`/`doelType`, which are equally emptyable and equally clean. Those
-   are name resolution against the object-type table, a wider movement than
-   this card's empty-field class, and they stay OPEN. *)
+   declaration (`bronAttribuut: "bestaatniet"` was verifier-clean while `ref`
+   faulted and clingo reported `unknown attribute`), and the two TYPE fields
+   `bronType`/`doelType`, equally emptyable and equally clean. Both are name
+   resolution against the object-type table, a wider movement than this arm's
+   empty-field class — and both are CLOSED by the fourth wave seventy lines
+   below, [wf034_verdeling_typen] and [wf034_verdeling_naamresolutie]
+   (maintainer decision 2026-09-04, IR-SPEC ch. 4.6 (j)–(k)). What stays this
+   arm's own is the NULL half: an absent field names nothing to resolve, so
+   there is no scope question to ask and no message to phrase in terms of a
+   declaration table. *)
 let wf034_verdelingen ctx =
   List.concat
     (List.mapi
@@ -1007,7 +1012,14 @@ let wf034_verdeling_namen ctx =
    emptied, while both executors fault loudly on the same document (`ref`
    "missing bronType in IR node" / "missing doelType in IR node", clingo
    "missing bronType" / "missing doelType"). The clause makes the verifier say
-   before the run what both executors say during it. *)
+   before the run what both executors say during it.
+
+   Two arms, two witnesses: `wf034-verdeling-zonder-brontype` and
+   `wf034-verdeling-zonder-doeltype`. Each arm is exact — replacing one of the
+   two matches by [] frees only its own document over the four zones (486
+   compared; the type-less allocation negatiefs lose an incidental line and
+   keep their verdict) — and dropping the whole clause frees those two and
+   nothing else: 6 reports, 2 verdicts. *)
 let wf034_verdeling_typen ctx =
   List.concat
     (List.mapi
@@ -1041,13 +1053,20 @@ let wf034_verdeling_typen ctx =
                 groepeerAttribuut the ordering key (read per recipient)
 
    An undeclared TYPE is another rule's business (WF-047 on the bound form,
-   WF-048 on the bindingless one, both measured loud), and a null type is the
-   sibling arm above; this one resolves only where there is a scope to resolve
-   in.
+   WF-048 on the bindingless one — both RULES measured loud, though the
+   executors are not: an undeclared `bronType` leaves `ref` silent with every
+   share *leeg* where 300/200/300 and a 400 remainder are pinned, while clingo
+   refuses to translate), and a null type is the sibling arm above; this one
+   resolves only where there is a scope to resolve in. A declared KENMERK name
+   lands here too and is reported as WF-034, where the sibling reference
+   positions split the member kinds and report WF-080 — an allocation field
+   asks only whether the name is a declared attribute. Measured harmless
+   (5 of 5 refused on `jutterswet-berging` with a characteristic declared on
+   either side) and deliberately worded so; IR-SPEC ch. 4.6 (j).
 
    Measured on the golden allocations, one field at a time set to a name no
-   declaration carries: all 11 + 11 + 7 + 4 + 9 + 3 positions stayed
-   verifier-CLEAN before this clause, and 0 after. The executor consequence is
+   declaration carries: all 45 positions — the six rows tabulated below —
+   stayed verifier-CLEAN before this clause, and 0 after. The executor consequence is
    the reason it is a clause and not a note, and it is not uniformly loud:
 
      bronAttribuut     11/11  both fault (empty source amount / unknown attribute)
@@ -1065,7 +1084,15 @@ let wf034_verdeling_typen ctx =
 
    The three silent rows are where the differential square is blind: backend
    agreement proves nothing there, and only the hand-pinned anchor
-   expectations stand between the corpus and the defect. *)
+   expectations stand between the corpus and the defect.
+
+   Each of the six sub-arms carries its own negatief witness
+   (`corpus/negatief/wf034-verdeling-onbekend-<field>`), and each is ARM-exact:
+   deleting one [resolve] line frees that one document and no other over the
+   four zones (486 documents compared; the `doelAttribuut` line additionally
+   costs the parity casus its six incidental lines, without moving its
+   verdict). Deleting the whole clause frees those six and nothing else —
+   7 reports, 6 verdicts. *)
 let wf034_verdeling_naamresolutie ctx =
   List.concat
     (List.mapi
@@ -2630,7 +2657,11 @@ let aggregation_source_check ctx at ~element_type e =
              like one.
 
              The regression boundary, counted over all four zones: of 89
-             named fold sources, 32 carry the wart (24 resolving through a
+             named fold sources — NAMED being the argument that spells both
+             its `attribuut` and its `objecttype`, the pair this arm resolves
+             through; count in the one source spelling an attribute and no
+             object type (a wave-1 shape, refused there) and the totals read
+             90 and 58 — 32 carry the wart (24 resolving through a
              declared role name, 5 through the type pair, 3 already
              ill-formed under this rule's older arms) and 57 do not — and of
              those 57, 54 already resolve as a declared attribute and one

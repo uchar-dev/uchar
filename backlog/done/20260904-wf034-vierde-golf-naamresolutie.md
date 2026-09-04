@@ -90,6 +90,12 @@ onbekend-sentinel op zijn eigen type draagt — de discriminator waarop
 beide uitvoerders hun rolnaam-tak al sleutelen — en buiten die wrat is een
 foldbron een gewone attribuutreferentie.
 
+**Census-lezing:** "benoemde foldbron" = het argument spelt zowel zijn
+`attribuut` als zijn `objecttype` — het paar waarop deze arm resolveert.
+Tel de ene bron mee die wél een attribuut en géén objecttype spelt (een
+golf-1-vorm, daar al afgewezen) en de telling leest 90/58 in plaats van
+89/57.
+
 **Regressiegrens gemeten (de twee telfolds en hun buren), ná de
 vernauwing:** `jutterswet-kaveltelling` verifier PASS, ref 5 / clingo 5
 verwachtingen; `jutterswet-aanmeldertelling` PASS, 3 / 3;
@@ -100,27 +106,40 @@ PASS, 7 / 7. Exacte census over de vier zones: 89 benoemde foldbronnen —
 getuigen). `jutterswet-kaveltelling` is de énige golden die op de
 typenpaar-terugval leunt en is daarmee de staande regressiegetuige.
 
-**Nul over-afwijzing, byte-sweep over alle vier zones (483 documenten:
-153 golden + 22 rood + 278 negatief + 30 parity):** 12 rapporten
-veranderen, 7 verdicts — de zeven nieuwe getuigen. Geen enkel golden- of
-rood-document beweegt. Vijf documenten houden hun verdict en krijgen een
-waarachtige incidentele regel: `wf020-crossform-collision`,
+**Nul over-afwijzing, byte-sweep over alle vier zones (486 documenten:
+153 golden + 22 rood + 281 negatief + 30 parity — de tellingen ná de
+fixronde):** 15 rapporten veranderen, 10 verdicts — de tien nieuwe
+getuigen (zeven van de golf, drie van de fixronde). Geen enkel golden- of
+rood-document beweegt. Vijf documenten houden hun verdict en krijgen
+waarachtige incidentele regels: `wf020-crossform-collision`,
 `wf024-complex`, `wf025-max-without-ratio`,
 `wf026-two-allocations-one-target` (minimale fragmenten zonder typen, elk
 nog steeds afgewezen voor de regel die zijn map declareert) en de
 parity-casus, waarvan het eigen `doelAttribuut` een attribuut noemt dat
-het doeltype niet declareert.
+het doeltype niet declareert — daar **zes** regels, één per verdeling,
+niet één.
 
-**Mutantbewijs, elk over de volle 483-document-sweep:**
+**Mutantbewijs, elk over de volle 486-document-sweep (hermeten in de
+fixronde):**
 
-    wf034_verdeling_naamresolutie geschrapt   5 rapporten, 4 verdicts
-                                              (de vier -onbekend- getuigen)
-    wf034_verdeling_typen geschrapt           5 rapporten, 1 verdict
-                                              (wf034-verdeling-zonder-brontype)
-    wrat-guard van de rolnaam-tak weg         1 rapport
+    wf034_verdeling_naamresolutie geschrapt   7 rapporten, 6 verdicts
+                                              (de zes -onbekend- getuigen)
+    wf034_verdeling_typen geschrapt           6 rapporten, 2 verdicts
+                                              (de twee -zonder-type-getuigen)
+    wrat-guard van de rolnaam-tak weg         1 rapport, 1 verdict
                                               (wf034-foldbron-rolnaam-waardevouw)
-    terugval weer buiten de wrat bereikbaar   1 rapport
+    terugval weer buiten de wrat bereikbaar   1 rapport, 1 verdict
                                               (wf034-foldbron-onbekend-attribuut)
+
+De laatste regel citeert de formulering van de NOTE, want het rapportgetal
+is lezingsafhankelijk: precies zoals de NOTE de mutant voorschrijft (de
+"gewone attribuutreferentie"-arm óók bewaken met "geen unieke verbindende
+rol") verandert er 1 rapport; schrap je in plaats daarvan de hele
+buiten-de-wrat-arm, dan wisselt de zustergetuige van boodschap en worden
+het 2 rapporten. Het verdict is in beide lezingen hetzelfde ene document.
+De arm-exacte mutanten per deelarm staan in de zes NOTE's: één [resolve]-
+regel weg vrijwaart precies één document (op `doelAttribuut` plus de zes
+incidentele parity-regels), één type-arm weg idem.
 
 De twee foldbron-takken zijn tak-exact doordat hun getuigen op
 verschillende goldens staan: op `vondsttelling` levert het paar
@@ -133,7 +152,8 @@ de meting erbij.
 **Afwijkingen van de kaart, alle gerapporteerd:**
 - Zeven negatiefs in plaats van de geschatte ~5: de foldbron-vernauwing
   heeft twee apart falsifieerbare takken en die verdienen elk een getuige;
-  negatiefzone 271 → **278**, niet 276.
+  negatiefzone 271 → **278**, niet 276 (en 278 → **281** in de fixronde,
+  die de drie deelarmen zonder getuige er alsnog een gaf).
 - De kaart noemde `jutterswet-aanmeldertelling` en `jutterswet-kaveltelling`
   als de twee telfolds "die vandaag op de brede terugval leunen". Gemeten:
   alleen `kaveltelling` gebruikt de typenpaar-terugval (het gesynthetiseerde
@@ -155,7 +175,14 @@ de meting erbij.
 **Open gebleven, ongewijzigd en gemeten in de open-lijst:** de sentinel op
 de 9 fold-/aggregatie-argumenttypes; de rij-1-wrat zelf (nu binnen zijn
 vernauwde scoping) met zijn 15 no-op-posities; WF-007's
-payload-blindevlek.
+payload-blindevlek. Restwijdte van de wrat, in de fixronde geteld over de
+vier zones: van de 32 wratbronnen staan er **26** op een typenpaar met
+precies één verbindende rol — daar aanvaardt de terugval élke naam — en op
+**18** daarvan kruist WF-047 de geschreven naam tegen de gebonden rol van
+een expliciete binding. Netto blijven **acht** posities over waar een
+willekeurige naam gewoon blijft staan, waarvan **twee** golden:
+`jutterswet-aanmeldertelling` en `jutterswet-kaveltelling`, de twee
+bindingloze telfolds. Dat is precies wat de wrat een document nog oplevert.
 
 **Gates** (alle dertien, na de spec-commit):
 

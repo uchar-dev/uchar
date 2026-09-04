@@ -38,9 +38,13 @@ golden. The ASP backend refuses the same document outright. Divergence again,
 and again on input the verifier called well-formed.
 
 The regression boundary, counted over all four zones before and after: of 89
-named fold sources, 32 carry the wart — 24 resolving through a declared role
-name, 5 through the type pair, 3 already ill-formed under this rule's older
-arms — and 57 do not; of those 57, 54 already resolve as a declared attribute
+named fold sources — *named* meaning the argument spells both its `attribuut`
+and its `objecttype`, which is what makes it a position this arm can resolve;
+count the one source that spells an attribute and no object type (a wave-1
+shape, refused there) and the totals read 90 and 58 — 32 carry the wart, 24
+resolving through a declared role name, 5 through the type pair, 3 already
+ill-formed under this rule's older arms, and 57 do not; of those 57, 54 already
+resolve as a declared attribute
 of their object type and one names a characteristic (WF-080's business,
 untouched), leaving only this witness and its sibling. The counting folds
 that lean on the fallback keep both routes: `jutterswet-kaveltelling`'s
@@ -52,7 +56,7 @@ all three replay unchanged in `ref` and clingo after the narrowing
 `anchor/jutterswet-maatschap` 7).
 
 *Measured breadth of the shape itself:* zero outside this witness and its
-sibling `wf034-foldbron-rolnaam-waardevouw`. Over all 483 documents of golden
+sibling `wf034-foldbron-rolnaam-waardevouw`. Over all 486 documents of golden
 + rood + negatief + parity the narrowing changes exactly those two verdicts
 and nothing else.
 
@@ -66,4 +70,8 @@ type-pair fallback reachable outside the wart again (guard the new
 "ordinary attribute reference" arm with `not (unique connecting role)` as well
 as `not wart`). This case, alone in all four zones, turns clean; its role-name
 sibling stays rejected, because the pair `Vondst`/`Vondst` it lives on derives
-no connecting role at all. Measured: 483 documents compared, 1 report changes.
+no connecting role at all. Measured: 486 documents compared, 1 report changes,
+1 verdict. (Read the mutant more coarsely — delete the whole "ordinary
+attribute reference" arm instead of guarding it — and the sibling's *message*
+changes to the fallback's while its verdict holds: 2 reports, still the same
+1 verdict, still this document.)
