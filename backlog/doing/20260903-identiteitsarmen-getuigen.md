@@ -122,6 +122,16 @@ vergelijkingen" — geen enkele aggregatie-invocatie in die zone defereert
 — dus het lijkt een telfout van de vorige meting. Buiten scope van deze
 kaart; ter beoordeling van de maintainer.
 
+> **Opgelost in fixronde 2 (C2-5).** De rij had gelijk en deze alinea
+> niet: er defereert er wél één. Een probe die per aanroep het
+> deferral-motief meeprint, geeft in de pariteitszone zes invocaties,
+> waarvan `toka/casus/ir.json`, `/resolvedRegels/5/waarde/type`, de derde
+> is met `decl=SENTINEL` — een `Onbekend`-declaratie op een operand, dus
+> een deferral vóór er iets vergeleken wordt. Zes betredingen, vijf
+> uitgevoerde vergelijkingen. In golden+rood vallen de twee getallen
+> samen op 14, wat verklaart waarom alleen deze zone het verschil liet
+> zien. De rij noemt nu beide getallen mét het onderscheid.
+
 ## Poorten
 
 Gates 1–8 en 10–12 gedraaid, alle groen:
@@ -244,11 +254,24 @@ schema-geldig gecontroleerd):
     clingo   : clingo: PASS (7 expectations)
     Drools   : PLAYED 1
 
-Controles, die laten zien dat dit de ENIGE positie is waar het sentinel
-overleeft: hetzelfde sentinel op een gewandeld expressietype geeft
+Controles: hetzelfde sentinel op een gewandeld expressietype geeft
 `WF-034 FAIL … unknown-type sentinel inside a structured node`, en op een
 attribuutdeclaratie `WF-003 FAIL … unresolved datatype (v0 'Onbekend'
 sentinel: niet opgelost)`.
+
+> **Gecorrigeerd in fixronde 2 (C2-3).** Deze alinea zei "de ENIGE
+> positie waar het sentinel overleeft". Dat is onwaar en de twee
+> controles hierboven dragen het niet: ze tonen twee posities waar hij
+> WÉL wordt geweigerd, niet dat er geen derde is. Gemeten met
+> sentinel-injectie op elke type-positie van elke golden — 2159
+> injecties — blijven er 21 verifier-schoon: 9 op
+> foldbron-argumenttypes (`…/argumenten/N/type`, de gedocumenteerde
+> rij-1-wart, waarvan er van nature al 18 in golden+rood zitten) en 12
+> op `SumType`-constructor-payloads (`…/type/constructors/N/payload`).
+> De juiste formulering is dus: het regeldoel-`type` is de laatste
+> positie BUITEN de gedocumenteerde rij-1-foldbronwart en de
+> SumType-payload. Zo staat het nu in ch. 4.6, in de WF-034-indexrij en
+> in het NOTE van dit negatief.
 
 **Wat het kost.** Geen verkeerd antwoord vandaag: geen enkele executor
 leest het doel-type (ze lezen alle drie de GEDECLAREERDE datatype, wat de
@@ -354,7 +377,7 @@ doet het niet anders), en WF-034 weigert het document toch al.
 ### Mutantbewijs, clausule-exact
 
 Per negatief één gerichte verzwakking; `checks.ml` daarna byte-identiek
-hersteld (`sha256 d970d25c…`, gecontroleerd).
+hersteld, geverifieerd met `git status`/`git diff` (schoon).
 
 | mutant | gate 3 | welk geval passeert |
 |---|---|---|
@@ -427,3 +450,138 @@ Twee verschillen met de bouwgolf: gate 3 telt 236 negatiefs in plaats van
 (`~/.opam/default/bin`), dus na `eval $(opam env)` draait hij en is hij
 groen. De bouwnotitie hierboven meldt hem als niet-gedraaid; dat was een
 onvolledige meting, niet een ontbrekende installatie.
+
+## Fixronde 2 (2026-09-04), na lens 1
+
+Zes fixpunten, elk eerst gereproduceerd. Twee blockers in de spec-tekst,
+één in de motor; drie getalscorrecties.
+
+### C2-1 (BLOCKER) — K1 ontbrak op de foldbron-arm
+
+**Reproductie.** De dichtingsgolf zette K1 in de `Attribuut_ref`-arm van
+`walk_expr`, maar de foldbron bereikt `walk_expr` nooit: de
+aggregatietak vervangt de wandeling voor dat argument (het comment daar
+zegt dat zelf, voor WF-089), en `aggregation_source_check` matcht alleen
+op `objecttype = Some otn`. Het lege veld viel dus door BEIDE hekken.
+Het gevaarsdocument — `jutterswet-vondsttelling` met foldbron
+`objecttype: null` én de `t`-voor-`kg`-leugen op het brontype — mat:
+
+    verifier : verifier: PASS
+    ref      : oracle: PASS (7 expectations)
+    clingo   : clingo: PASS (7 expectations)
+    Drools   : PLAYED 1
+
+Alle drie de executors spelen hem. Dat is strikt erger dan het gedichte
+kanaal (a), waar ref faalt en clingo weigert en alleen Drools speelt:
+hier antwoordt een in tonnen getypeerde som in kilogrammen en weigert
+niemand.
+
+**Rood eerst.** `corpus/negatief/wf034-foldbron-zonder-objecttype/`
+(commit `82f7db5`), afgeleid van de golden met een diff van drie regels
+(één veld leeg, één afkorting en één factor). Gate 3 daarop rood, exit 1:
+
+    FAIL: negatief case corpus/negatief/wf034-foldbron-zonder-objecttype/ir.json
+          passed the verifier (must violate WF-034): verifier: PASS
+
+**De clausule** (commit `e11ec68`): een arm
+`| Attribuut_ref { attribuut; objecttype = None; _ }, Some _ ->` vóór de
+bestaande foldbron-tak, met exact de K1-meldtekst. Gemeten melding:
+
+    WF-034 FAIL /resolvedRegels/1/waarde/argumenten/0: attribute reference
+    'gewicht' without an object type: it resolves against no declaration
+
+**Mutantbewijs.** Clausule weg, al het andere gelijk: gate 3 rood met
+precies ÉÉN `FAIL`-regel, dit negatief alleen; alle 236 andere
+negatiefs blijven geweigerd en alle 174 golden+rood blijven schoon.
+
+**Nameting met de armmutant-methode van de lens.** Alle 718
+`objecttype`-velden van alle 152 goldens één voor één genuld en door de
+verifier gehaald: **43 overlevenden vóór deze clausule, 0 erna**. Het
+kanaal is dicht, niet versmald. Gate 3: 174 golden clean; 237 negatief.
+
+### C2-2 (BLOCKER) — de universele claim ingeperkt
+
+**Reproductie.** "none of them can be self-served" (ch. 4.1, r. ~1750),
+het gelijkluidende `checks.ml`-commentaar en de WF-034-indexrij
+suggereerden dat de twee vormen het sluitstuk waren. Gemeten met
+dezelfde nul-de-veldmethode over de goldens:
+
+| restvorm | verifier-schoon | ref | clingo | Drools |
+|---|---|---|---|---|
+| `attribuut: null` | 409 van 751 posities | `EVALUATION FAULT: missing AttribuutRef.attribuut` / `missing fold attribute` | `TRANSLATION FAULT: missing fold attribute` | transpiler-SKIP op een waardelezing, `ERROR ConstraintEvaluationException` op een foldbron |
+| `parameter: null` | 35 van 37 | `EVALUATION FAULT: missing ParameterRef.parameter` | `TRANSLATION FAULT: missing ParameterRef.parameter` | `NullPointerException … ParameterRef.parameter() is null` |
+| doel zonder `type` (de ongespelde tweeling) | 295 van 295 | **PASS** | **PASS** | `NullPointerException … Datatype.eenheidOf() because "naar" is null` |
+
+De derde is de gevaarlijke: dáár valt het luide paar weg en spelen ref
+én clingo het document schoon. Hij is bewust uitgesloten van K2 (een
+lvalue is geen waardeknoop) en blijft dus open.
+
+**Bijvangst voor een later kaartje.** Deze drie restvormen zijn NIET
+gedicht — dat is een nieuw maintainerbesluit. De tekst is herschreven
+tot niet-exhaustief: dit zijn de kanalen die HIER dicht zijn (nu drie:
+de twee plus de foldbron-arm), de restvormen staan gemeten benoemd, met
+executorgedrag, in ch. 4.1, ch. 4.6-indexrij en het
+`checks.ml`-commentaar.
+
+### C2-3 (BLOCKER) — "the last place it survived" gekwalificeerd
+
+**Reproductie.** Sentinel-injectie op elke type-positie van elke golden:
+2159 injecties, **21 overlevenden** — 9 op foldbron-argumenttypes
+(`…/argumenten/N/type`) en 12 op `SumType`-constructor-payloads
+(`…/type/constructors/N/payload`), en nergens anders. Van de eerste soort
+zitten er van nature al 18 in golden+rood (17 in `resolvedRegels`, 1 in
+een `consistenties`-assertie): de rij-1-foldbronwart die de
+WF-034-indexrij zélf als uitzondering noemt — de rij sprak dus met
+zichzelf.
+
+Gekwalificeerd in ch. 4.6, in de WF-034-indexrij en in
+`corpus/negatief/wf034-onbekend-regeldoel/NOTE.md` (kaart-eigen
+materiaal) tot "the last place it survived outside the documented row-1
+fold-source wart (and the `SumType` constructor payload)", met de meting
+erbij. De kaartzin "de ENIGE positie" (Deel 2, kanaal (b)) is ter plekke
+gecorrigeerd in plaats van weggepoetst.
+
+### C2-4 — armbreedte-getallen hermeten
+
+WF-091-eerlijkheidsnotitie 3 zei regeldoel 13 / `AttribuutRef` 11.
+Hermeten met de armmutant-methode (een mutant die op elke
+eenheiddragende use site van één arm vuurt) over golden+rood, 174
+documenten:
+
+    rule target                      15
+    attribute reference              13
+    binder reference                  2
+    fold-source attribute reference   1   (jutterswet-vondsttelling)
+    parameter reference               1   (jutterswet-aanvoergeld)
+    dimension-cell read               1   (jutterswet-seizoenvondst)
+
+Kanttekening, in de rij opgenomen: de twee nieuwe goldens tellen in
+meerdere lijsten tegelijk. `jutterswet-aanvoergeld` en
+`jutterswet-seizoenvondst` dragen óók eenheiddragende regeldoelen en
+attribuutreferenties, dus 13→15 en 11→13 is exact die twee documenten —
+de breedte van de gevestigde armen is verder niet veranderd.
+
+### C2-5 — de pariteits-aggregatietelling
+
+De rij zei 5, lens en bouwgolf maten 6 en noteerden dat als vermoedelijke
+telfout van de rij. Hermeten met een probe op de aggregatie-aanroepplaats
+die per aanroep het deferral-motief meeprint: in de pariteitszone wordt
+die plaats **6 keer betreden** en voeren **5** van die aanroepen een
+vergelijking uit. De zesde is `toka/casus/ir.json`,
+`/resolvedRegels/5/waarde/type`, met `decl=SENTINEL` — een
+`Onbekend`-declaratie op een operand, dus een deferral vóór er iets
+vergeleken wordt. In golden+rood vallen de twee getallen samen op 14
+(geen enkele deferral daar) — dáárom liet alleen de pariteitszone het
+verschil zien.
+
+Onder de definitie die de rij zelf hanteert ("comparisons the engine
+PERFORMED … excludes invocations that DEFER") is 5 dus juist en was de
+kaartalinea van de bouwgolf onjuist. Beide zijn gecorrigeerd: de rij
+noemt nu beide getallen mét het onderscheid, en de kaartalinea (Deel
+"De indexrij-getallen, nagemeten") draagt de oplossing ter plekke.
+
+### C2-6 — de restore-hash
+
+`sha256 d970d25c…` matchte niets op deze branch. De zin is vervangen
+door "byte-identiek hersteld, geverifieerd met `git status`/`git diff`"
+— een controle die ter plekke navolgbaar is en niet veroudert.
