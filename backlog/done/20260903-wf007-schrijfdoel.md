@@ -66,9 +66,12 @@ het schrijfdoel, om dezelfde reden (de lvalue is WF-022's). Stand nu:
 Bijvangst, gemeten en OPEN (tweede flank van WF-007 zelf, orthogonaal aan
 deze kaart): `check_number_form` daalt niet af in een `ListType`-element,
 dus een misvormd `Number` binnen een lijst passeert op élke positie —
-declaratie zowel als expressie. Eén regel om te dichten, maar het vraagt
-een eigen negatief en een eigen spec-zin; genoteerd in de WF-007-clausule
-als OPEN.
+declaratie zowel als expressie. Lens 2 verbreedde de meting tot zes
+onbereikte positieklassen, waarvan twee vandaag een verifier-schoon
+document opleveren (getuigen `jutterswet-postenheffing` en
+`jutterswet-waarderingsinvoer`) en vier overal door buurregels worden
+geweigerd; dichten vraagt een recursieve wandeling plus eigen negatiefs
+per klasse. Genoteerd in de WF-007-clausule als OPEN.
 
 ## Result (2026-09-04)
 

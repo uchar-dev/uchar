@@ -31,7 +31,7 @@ Hence a CHARACTERISTIC target here: `resolved_attr_datatype` yields None
 for a characteristic (it is not in `attributen`), so the identity family
 defers by construction and this clause is the only thing standing between
 the wire and a nonsense datatype. That is not a corner: golden + rood carry
-44 characteristic targets over 29 documents, each of which the fix now
+54 characteristic targets over 34 documents, each of which the fix now
 covers and nothing covered before.
 
 A hand-broken variant of `corpus/golden/jutterswet-penningdrempel/ir.json`,
