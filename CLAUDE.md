@@ -210,6 +210,23 @@ green. Current gates:
     (maintainer decision 2026-08-30). An empty played set is a failure.
     CI leg unconditional and blocking.
 
+13. `scripts/check-reftype-derivation.sh` — the annotation-indifference
+    harness (maintainer decision 2026-09-04). For every golden with case
+    files, every unit-bearing `type` annotation on reference and
+    composite positions is deterministically twisted (a convertible
+    sister unit, or decimals+1) and ref, clingo and the Drools backend
+    MUST all reproduce the pinned, untwisted outcomes — consumers derive
+    units from declarations and the effective-type law
+    (`RUNTIME-SEMANTICS.md` §2.10), never from the wire annotation.
+    Reason-carrying exemption positions (the Literal lexeme, the
+    duration operand of date arithmetic, TIJDSDUUR's own unit) are named
+    in the script; a bookkeeping clamp FAILS the gate when a
+    unit-bearing annotation appears at a node/operator class outside the
+    twist table (the §2.10 fourth-class witness arriving), and a
+    reason-carrying survivor list fails when stale (the check-noop
+    pattern). An empty twist set is a failure, never silently green. CI
+    leg unconditional and blocking.
+
 ## Repo relationships
 
 - `regelspraak-java` (separate repository) is the first frontend + Drools

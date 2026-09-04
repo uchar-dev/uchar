@@ -238,3 +238,33 @@ jobs:
         run: mvn -B -f backends/drools/pom.xml package
       - name: check-drools
         run: bash scripts/check-drools.sh
+
+  reftype-derivation:
+    # Gate 13 — the annotation-indifference harness (maintainer decision
+    # 2026-09-04): every unit-bearing type annotation on reference and
+    # composite positions is twisted and all three executors must still
+    # reproduce the pinned outcomes — consumers derive units from
+    # declarations (RUNTIME-SEMANTICS 2.10). Needs all three executors:
+    # OCaml for ref and the ASP translator, gringo for clingo, the JDK
+    # for the Drools jar.
+    name: "Gate 13: reference-type derivation (annotation-indifference)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5"
+      - name: install yojson + zarith
+        run: opam install -y yojson zarith
+      - name: install clingo
+        # Ubuntu ships the clingo binary in the gringo package
+        run: sudo apt-get update && sudo apt-get install -y gringo && clingo --version
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: build the shaded Drools-runtime uber-jar
+        run: mvn -B -f backends/drools/pom.xml package
+      - name: check-reftype-derivation
+        run: opam exec -- bash scripts/check-reftype-derivation.sh
