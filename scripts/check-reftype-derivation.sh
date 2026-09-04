@@ -10,8 +10,8 @@
 #
 #   1. every corpus/golden/**/ir.json is copied into a temporary directory with a systematic
 #      LIE grafted onto every twistable type annotation (below);
-#   2. ref, clingo and the Drools backend replay the golden's ORIGINAL case files against the
-#      LYING copy;
+#   2. ref, clingo and BOTH Drools transpiler branches — the exec-model back-end and the DRL text
+#      compiled to a KieBase — replay the golden's ORIGINAL case files against the LYING copy;
 #   3. each executor must produce EXACTLY the outcome it produces on the untouched ir.json —
 #      the same pinned values, or the same per-form refusal. A twist that changes an answer is
 #      an executor reading the repetition instead of the declaration, and the gate goes red
@@ -48,30 +48,50 @@
 # there on the UNTOUCHED corpus long before it is green here. Indifference is the half no other
 # gate can see, precisely because a lying document is one no other gate may hold.
 #
-# Four twist classes are, for the DROOLS leg specifically, a no-op by construction: the Java IR
-# records for ParameterRef, DimensieCel, Afgerond and Begrensd DERIVE their type() (from the
-# parameter's declaration, from the inner reference, from the basis) and hold no wire annotation
-# at all, so the graft cannot reach that leg — it still probes ref and clingo, which do read the
-# wire there. The Drools side of those four rests on the EffectieveEenheidWitnessTest witnesses,
-# which build the nodes directly. Said out loud so a green line is not read as coverage it has
-# not got.
+# With ONE exception, and this script carries it: the DRL-TEXT branch has no value gate at all —
+# gate 12 replays the exec-model path only. Comparing that branch against its own untouched status
+# line would therefore be satisfied by a branch that had stopped restating units altogether, whose
+# baseline is simply wrong in both runs. So its BASELINE is pinned here too, for exactly the goldens
+# this harness probes (the DRL_BASIS_UIT list below).
 #
-# And the same honesty about HOW MUCH of the Drools leg a green line covers. On the UNTOUCHED
+# Four twist classes are, for BOTH DROOLS legs, a no-op by construction: the Java IR records for
+# ParameterRef, DimensieCel, Afgerond and Begrensd DERIVE their type() (from the parameter's
+# declaration, from the inner reference, from the basis) and hold no wire annotation at all, so the
+# graft cannot reach either of them — it still probes ref and clingo, which do read the wire there.
+# The Drools side of those four rests on the EffectieveEenheidWitnessTest witnesses, which build the
+# nodes directly. Said out loud so a green line is not read as coverage it has not got.
+#
+# And the same honesty about HOW MUCH of the two Drools legs a green line covers. On the UNTOUCHED
 # corpus the derivation never disagrees with the annotation — WF-091 makes the repetition faithful,
 # so effType(e) equals e.type() at every call (measured 2026-09-04 with a StackWalker probe on
-# ExecModelTranspiler.effType: zero divergences over every replayable golden). On the LYING copies
-# the same probe shows the derivation overriding the annotation at exactly FOUR call sites, and
-# those four are the whole of what this harness holds the exec-model back-end to:
-#   - the WRITE boundary (a consequence value restated into its doel's declared unit) — 18 hits;
-#   - the ADDITIVE OPERAND boundary (the rhs of a +/- restated into the lhs unit) — 13 hits;
-#   - the AGGREGATION restatement (a fold's per-element and total unit into the doel's) — 2 hits;
-#   - the ATTRIBUTE-vs-ATTRIBUTE comparison (§5.1 Tabel 32 operand restatement) — 2 hits.
-# Every other effType call in that file is a pass-through on this corpus, so its derivation is
-# STATED but not measured here. And the DRL back-end is not measured here at all: this harness
-# builds the jar and runs the exec-model path only (CaseRunner builds no DRL package), so
-# DrlTranspiler is COMPILED and never executed by it — its unit behaviour, including the four
-# "an OPAQUE product unit stays an honest marker" sites, rests on the backend's JUnit witnesses
-# (gate 12's obligation), not on a green line here.
+# EffectieveEenheid.van, attributing each call to its transpiler frame: zero divergences over every
+# replayable golden, in BOTH branches). On the LYING copies the same probe shows the derivation
+# overriding the annotation at a handful of call sites, and those are the whole of what this harness
+# holds each branch to (re-measured 2026-09-04 over the 11 twistable replayable goldens):
+#   exec-model branch — 5 sites
+#     - the WRITE boundary (a consequence value restated into its doel's declared unit) — 20 hits;
+#     - the ADDITIVE OPERAND boundary (the rhs of a +/- restated into the lhs unit) — 14 hits;
+#     - the AGGREGATION restatement (a fold's per-element and total unit into the doel's) — 2 hits;
+#     - the ATTRIBUTE-vs-ATTRIBUTE comparison (§5.1 Tabel 32 operand restatement) — 2 hits;
+#     - the ATTRIBUTE-vs-PARAMETER comparison (the same Tabel 32 restatement against a global) — 1 hit.
+#   DRL-text branch — 3 sites
+#     - the WRITE boundary (regel, omrekenWaarde over value and doel) — 20 hits;
+#     - the ADDITIVE OPERAND boundary (binairTerm) — 10 hits;
+#     - the §5.1 Tabel 32 comparison operand restatement (conditie) — 4 hits.
+# Every other effType call in either file is a pass-through on this corpus, so its derivation is
+# STATED but not measured here. For the DRL branch, measured over the whole corpus: 11 of its 27
+# converted call sites are REACHED at all, 3 of those ever override. The remaining 16 — the temporal
+# §4.1/§5.1.4 rescalings, the Begrensd condition arm, the §8.2 period comparisons, the four "an
+# OPAQUE product unit stays an honest marker" sites — rest on the backend's JUnit witnesses (gate
+# 12's obligation), not on a green line here.
+#
+# The DRL leg is NOT a repetition of the exec one. It reaches a golden the exec branch cannot play
+# at all (jutterswet-vondsttarief, which the exec transpiler SKIPs as "waarde buiten scope" while the
+# text branch lowers and plays it), and its three live sites are different code. Measured by mutation
+# on 2026-09-04 — EffectieveEenheid.van() put back on the node's own annotation, the state before the
+# derivation existed — the DRL leg alone goes red on NINE of the eleven twistable goldens, including
+# that one. The two that stay green under the mutant are the two the text branch markers (the ch. 4.10
+# Let: lichterloon, vondstrecht), which is the honest reading of a branch that does not lower them.
 #
 # The verifier does NOT run here. This harness asks an EXECUTION question — is the outcome a
 # function of the declarations? — outside the validity question, exactly as gate 7's --noop
@@ -143,6 +163,18 @@ cd "$(git rev-parse --show-toplevel)" || exit 2
 # the right reading — not merely that it is the current one.
 SURVIVORS=''
 
+# --- the DRL-branch baseline list (reason-carrying; fails when stale) ------------------------
+# A twistable golden's DRL-TEXT baseline must be PLAYED (the branch ran and matched the corpus's
+# ABSOLUTE expectations — the same ones gates 5, 6 and 12 pin) or EXCLUDE (the branch does not carry
+# the form, and says which). Anything else is a value the corpus does not pin anywhere, and must be
+# listed here with the reason. Entries are "<golden-dir>|<reason>"; an entry whose golden is gone, or
+# whose baseline is back in line, is stale and fails. EMPTY today, measured 2026-09-04: of the 11
+# twistable replayable goldens the text branch PLAYS 9 and markers 2 (the ch. 4.10 Let, which it does
+# not lower). NB this pins the branch on the twistable subset only — over the WHOLE corpus it has 7
+# value divergences and 2 fire-time errors, which is gate-12 territory and deliberately not re-fought
+# here.
+DRL_BASIS_UIT=''
+
 RUNNER_REF=_build/default/ref/bin/runner.exe
 RUNNER_CLINGO=_build/default/backends/clingo/bin/clingo_runner.exe
 
@@ -178,7 +210,8 @@ LIST=$(mktemp) || exit 2
 CASES=$(mktemp) || exit 2
 ONGEDEKT=$(mktemp) || exit 2   # "<golden> <node>" per unit-bearing annotation outside table + exceptions
 RAKERS=$(mktemp) || exit 2     # "<golden>|<executor>" per survivor entry that ACTUALLY diverged
-trap 'rm -rf "$TWISTER" "$WORK" "$LIST" "$CASES" "$ONGEDEKT" "$RAKERS"' EXIT
+DRLRAKERS=$(mktemp) || exit 2  # "<golden>" per DRL-baseline entry whose baseline is ACTUALLY off
+trap 'rm -rf "$TWISTER" "$WORK" "$LIST" "$CASES" "$ONGEDEKT" "$RAKERS" "$DRLRAKERS"' EXIT
 
 cat > "$TWISTER" <<'PY'
 import json, os, sys
@@ -387,11 +420,21 @@ vermeld() {
     [ -n "$treffer" ]
 }
 
+# The same read for the DRL baseline list, which is keyed on the golden alone.
+basisvrij() {
+    treffer=$(printf '%s\n' "$DRL_BASIS_UIT" | while IFS= read -r s; do
+        [ -n "$s" ] || continue
+        [ "${s%%|*}" = "$1" ] && echo hit
+    done)
+    [ -n "$treffer" ]
+}
+
 status=0
 n_goldens=0
 n_twists=0
 n_gecontroleerd=0
 n_survivors=0
+n_drl=0
 n_eenheid=0
 n_vrijgesteld=0
 n_zonderzusje=0
@@ -457,6 +500,40 @@ while IFS= read -r ir; do
             status=1
         fi
     fi
+
+    # The SECOND Drools transpiler branch, through the same twist: DrlTranspiler emits DRL TEXT, which the
+    # runner's --drl entry compiles to a KieBase (the classic DRL build) and replays against the SAME pinned
+    # expectations. Same baseline discipline as the exec leg — its OWN untwisted status line, never PLAYED —
+    # and for the same reason, twice over: the text branch is NARROWER than the exec one (it has no ch. 7
+    # prioritizedDefaults lowering, and it markers constructs the exec branch lowers, the ch. 4.10 Let among
+    # them), and on a handful of goldens it also answers differently. Neither is this harness's question. What
+    # IS its question is whether the answer it does give follows the declarations, and for that a refusal that
+    # stays exactly as refusing is a perfectly good observation.
+    n_gecontroleerd=$((n_gecontroleerd + 1))
+    dbasis=$(java -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
+    dverdraaid=$(java -jar "$JAR" --drl "$tw" "$@" 2>/dev/null | tail -1)
+    dkop=${dbasis%% *}
+    if [ "$dkop" = PLAYED ]; then
+        n_drl=$((n_drl + 1))
+    elif [ "$dkop" != EXCLUDE ]; then
+        # the baseline pin: nothing else holds this branch to the corpus's absolute values
+        if basisvrij "$naam"; then
+            echo "$naam" >> "$DRLRAKERS"
+        else
+            printf 'FAIL: %s — the DRL-text branch neither played nor refused the UNTOUCHED golden, so its\n      value is pinned by nothing:\n  %s\n' \
+                "$naam" "$dbasis" >&2
+            status=1
+        fi
+    fi
+    if [ "$dbasis" != "$dverdraaid" ]; then
+        if vermeld "$naam" drl; then
+            n_survivors=$((n_survivors + 1)); echo "$naam|drl" >> "$RAKERS"
+        else
+            printf 'FAIL: %s — the DRL-text branch answers differently on the lying copy:\n  untouched: %s\n  lying:     %s\n' \
+                "$naam" "$dbasis" "$dverdraaid" >&2
+            status=1
+        fi
+    fi
 done < "$LIST"
 
 # The survivor list, BOTH halves (the check-noop pattern): an entry whose golden is gone is stale,
@@ -468,8 +545,8 @@ weg=$(printf '%s\n' "$SURVIVORS" | while IFS= read -r s; do
     rest=${s#*|}
     ex=${rest%%|*}
     # (no `case` here: /bin/sh on macOS is bash 3.2, whose parser cannot read one inside $(...))
-    if [ "$ex" != ref ] && [ "$ex" != clingo ] && [ "$ex" != drools ]; then
-        echo "  $g|$ex — unknown executor (expected ref, clingo or drools)"
+    if [ "$ex" != ref ] && [ "$ex" != clingo ] && [ "$ex" != drools ] && [ "$ex" != drl ]; then
+        echo "  $g|$ex — unknown executor (expected ref, clingo, drools or drl)"
     elif [ ! -d "corpus/golden/$g" ]; then
         echo "  $g|$ex — no such golden"
     elif ! grep -qxF "$g|$ex" "$RAKERS" 2>/dev/null; then
@@ -478,6 +555,21 @@ weg=$(printf '%s\n' "$SURVIVORS" | while IFS= read -r s; do
 done)
 if [ -n "$weg" ]; then
     printf 'FAIL: stale survivor entry:\n%s\n' "$weg" >&2
+    status=1
+fi
+
+# The DRL baseline list, the same both halves.
+drlweg=$(printf '%s\n' "$DRL_BASIS_UIT" | while IFS= read -r s; do
+    [ -n "$s" ] || continue
+    g=${s%%|*}
+    if [ ! -d "corpus/golden/$g" ]; then
+        echo "  $g — no such golden"
+    elif ! grep -qxF "$g" "$DRLRAKERS" 2>/dev/null; then
+        echo "  $g — the DRL-text branch plays or refuses it again; drop the entry"
+    fi
+done)
+if [ -n "$drlweg" ]; then
+    printf 'FAIL: stale DRL-baseline entry:\n%s\n' "$drlweg" >&2
     status=1
 fi
 
@@ -511,8 +603,8 @@ if [ "$n_onbekend" -gt 0 ]; then
 fi
 
 if [ "$status" -eq 0 ]; then
-    printf 'check-reftype-derivation: PASS (%s unit annotations twisted over %s goldens; %s executor replays reproduce the untouched outcome; %s pinned survivors)\n' \
-        "$n_twists" "$n_goldens" "$n_gecontroleerd" "$n_survivors"
+    printf 'check-reftype-derivation: PASS (%s unit annotations twisted over %s goldens; %s executor replays reproduce the untouched outcome, %s of them PLAYED by the DRL-text branch; %s pinned survivors)\n' \
+        "$n_twists" "$n_goldens" "$n_gecontroleerd" "$n_drl" "$n_survivors"
     printf '  corpus-wide accounting: %s unit-bearing annotations = %s twistable + %s exempt (the annotation IS the source) + %s without a convertible sister + %s at a §2.10 fourth-class branch (v0 derives no result unit) + %s outside the twist table\n' \
         "$n_eenheid" "$((n_eenheid - n_vrijgesteld - n_zonderzusje - n_ongedekt))" \
         "$n_vrijgesteld" "$n_zonderzusje" "$n_vierde" "$n_onbekend"
