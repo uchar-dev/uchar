@@ -1044,21 +1044,46 @@ segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
 - **Units, the explicit rate operand.** When the timeline's value *does*
   carry a rate unit, the collapse is an **integration**, and the
   whole-unit count is not a bare number but a **duration stated in the
-  value unit's denominator**: `value × duration` cancels the denominator
-  and the total carries the **numerator alone** — `€/mnd` over a per-month
+  grid's own unit**: `value × duration` cancels the denominator and the
+  total carries the **numerator alone** — `€/mnd` over a per-month
   timeline totals to `€`. This is the one collapse that changes the unit,
   and it is the runtime half of the §4.20 Tabel-30 result type (row 2,
-  `Eenheid1`): the frontend's static claim and this rule are the same
-  statement, so a `€`-declared target accepts the total without any
-  restatement. The denominator MUST name the timeline's **own granularity
-  unit** (resolved by the ch. 3.8 spelling table): `€/mnd` on a per-month
-  timeline cancels, and `€/jr` on a per-month timeline is refused loudly
-  — weighing this grid's units against a foreign rate would need a
-  conversion the declaration does not state, and no executor may invent
-  one. A denominator that names no time unit at all is refused the same
-  way. A value unit **without** a denominator keeps the plain rule above,
-  and a unitless value keeps a unitless total; the numbers are identical
-  in every case, only the unit differs.
+  `Eenheid1`), so a `€`-declared target accepts the total without any
+  restatement.
+  The grid's unit is the one the document's declared unit systems spell
+  for this granularity (ch. 3.8 spelling table), resolved **once per
+  fold**. The integration is then **exact over every denominator the
+  declarations connect to it**, through those declared factors and
+  nothing else: `€/mnd` on a per-month grid cancels one-for-one; `€/jr`
+  on a per-month grid cancels too where the document declares
+  `jr = 12 mnd` — twelve months *are* one year, so `10 €/jr` over 2024 is
+  **10 €**, not 120; and a month-sized unit that is not a calendar
+  spelling at all (`€/bm` with `bm` canonically a month) cancels by its
+  declared factor, the spelling table never entering. Three things are
+  refused **loudly**, never guessed: a denominator the declarations
+  connect to no grid-sized unit (the refusal NAMES both the value's unit
+  and the grid's), a document that declares **no** unit for this grid,
+  and a document that declares **several** grid units with different
+  canonical chains. A value unit **without** a denominator keeps the
+  plain rule above, and a unitless value keeps a unitless total — those
+  two need no grid unit at all, so they total in a document that declares
+  none.
+  Within one collapse, per-segment products are summed by the ordinary
+  ch. 2.6 addition: a segment in a **convertible** sister unit is
+  restated exactly (120 € + 500 ct = 125 €), a **foreign** one is refused
+  loudly, and only a **unitless** side adopts silently. The case format
+  cannot reach a mixed-unit timeline — the loader attaches the
+  declaration's one unit to every segment — so this rule governs
+  computed timelines alone.
+  *Executor note (2026-09-04):* the number the collapse produces is not
+  always the bare whole-unit count. Where the denominator is the grid
+  unit itself the two coincide, but a convertible foreign denominator
+  scales by the declared factor. The v0 Drools backend weights
+  unit-blind, so on a `€/jr` per-month timeline it answers 120 where this
+  rule gives 10 — a **semantic** divergence, not a refusal. No corpus
+  form carries it (every corpus temporal total is unitless), so gate 12
+  cannot see it; it is backend-card material, recorded here rather than
+  silently absent.
 - **The per-element fold over a set (§7.1).** `het totaal van <temporal
   attribute> van alle <set>` folds **twice**: each set member's own
   timeline collapses over time first — by the rule above, at that
@@ -1071,6 +1096,20 @@ segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
   aantal — is **refused**: there is no defined moment of the timeline for
   it to rank or count, and silently reading the segment list instead of a
   value is the error this rule exists to prevent.
+  The two temporal-total routes carry **opposite** input conventions, and
+  the asymmetry is deliberate (ch. 8.4 keeps the two case conventions
+  strictly apart):
+  - the **subject's own** collapse takes the asOfDate-bucket scalar: the
+    session date *is* the horizon, so one bucket of the subject's grid
+    carries the total;
+  - the **per-element** fold requires every member to bring its **own**
+    horizon, because the integration runs once per member and there is no
+    single bucket to borrow. The case format's full-timeline variant is
+    the one self-describing form (it states each segment's bounds); a
+    member carrying the horizonless bucket scalar is refused loudly,
+    naming that member — the exact "needs the one, finds the other" case
+    of ch. 8.4. An **absent** member still contributes nothing (leeg),
+    and horizon-carrying members mix freely.
 
 Worked examples (absolute, `ref/` tests verbatim; per-month timeline):
 
@@ -1093,15 +1132,38 @@ Worked examples (absolute, `ref/` tests verbatim; per-month timeline):
   1000 holds feb–jun → 5×100 = **500,00**.
 - explicit rate unit: `10 €/mnd` on [2024-01-01, 2025-01-01) → 12 months
   × 10 €/mnd = **120 €** — the denominator cancels, so a `€`-declared
-  target takes it unchanged. The same timeline declared `€/jr` instead is
-  refused: the grid counts months.
+  target takes it unchanged.
+- the same timeline declared `€/jr`, in a document declaring
+  `jr = 12 mnd` → the 12 months are one year → **10 €**. Declared
+  `€/bm` with `bm` canonically a month (factor 1) → **120 €**, and over
+  one month bucket → **10 €**.
+- the same `10 €/mnd` value on a per-**quarter** grid across 2024 → 4
+  quarters × 3 months × 10 = **120 €**: a coarser grid gives the same
+  number, because the conversion is exact.
+- `10 €/dg` on a per-month grid, in a document that declares no
+  conversion between `dg` and `mnd` → **refused**, naming both units
+  (`€/dg` against the `mnd` grid). Where the document *does* declare
+  `mnd = 30 dg`, the same timeline integrates to 12 × 30 × 10 =
+  **3600 €** — the declared factor governs, not the calendar.
 - the §7.1 per-element fold, three set members with per-month `€/mnd`
-  timelines: `10` over [2024-01-01, 2025-01-01) → 120 €, `5` over
+  **timelines**: `10` over [2024-01-01, 2025-01-01) → 120 €, `5` over
   [2024-01-01, 2024-07-01) → 30 €, and a member without a timeline →
-  contributes nothing. Total **150 €**.
+  contributes nothing. Total **150 €**. Replace any one member's timeline
+  by the asOfDate-bucket scalar and the fold is **refused**, naming that
+  member; all members absent → **0** (and `de som van` → leeg).
 
 *v0 mirror note:* the totaal of a multi-period timeline is refused with
 the grid (ch. 3.2), never mis-weighted as single-period.
+
+*Coverage note (2026-09-04):* the §4.20 Tabel-30 row-2 typing and this
+integration are meant to be the same statement — the frontend types the
+result `Eenheid1`, this rule produces it — but that identity is **not**
+covered end to end. No `uchar-case-v0` case can carry it today: the ASP
+backend translates neither the §7.1 set fold nor a write whose target
+unit differs from the value unit, so no golden of this shape can replay
+in both executors (gate 6 has no refusal channel). The rule is pinned at
+`ref/` unit level (`WV-3.6-g*`, `WV-3.6-h*`); the end-to-end claim stays
+prose until a backend carries the form.
 
 ### 3.7 Pro-rata — the time-proportional part
 

@@ -110,10 +110,15 @@ other temporal `TOTAAL` in the corpus is unitless (in
 operand carries no unit at all, so the strip is a no-op).
 
 **Closed 2026-09-04.** `ref` now performs the integration on both
-timeline folds: the whole-unit count is a **duration in the value's own
-denominator**, so the denominator cancels and the total carries the
+timeline folds: the whole-unit count is a **duration in the grid's own
+unit**, so a denominator the document's unit systems connect to that
+grid cancels through the declared factors and the total carries the
 numerator (RUNTIME-SEMANTICS ch. 3.6, "Units, the explicit rate
-operand"). On `J1` with a per-month `bewaarvergoeding per maand` of
+operand"). Here denominator and grid are the same `mnd`, so the factor
+is 1 and the number is the plain whole-month count; a foreign but
+convertible denominator (`€/jr` where `jr = 12 mnd`) scales instead, and
+a denominator connected to nothing month-sized is refused loudly, naming
+both units. On `J1` with a per-month `bewaarvergoeding per maand` of
 10 €/mnd, `bewaargeld` is `10 €` over a one-month asOfDate bucket and
 **120 €** over a full 2024 timeline — the value the Drools backend plays
 off the same wire (`PLAYED 1`). The unit fault above is gone; the
