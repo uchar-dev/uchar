@@ -186,8 +186,10 @@ public final class EffectieveEenheid {
      * Its blast radius is bounded by who else accepts the form: the frontend's
      * {@code Typering.samengesteldeEenheid} flags the unit mismatch, {@code ref} faults, and the ASP
      * translator refuses ahead of translation, so no corpus golden carries it and the divergence is
-     * unobservable in every gate. {@code CaseRunner} builds only the exec-model back-end, so that is the leg
-     * every replay takes.
+     * unobservable in every gate. {@code CaseRunner} builds BOTH transpiler branches since the DRL-measurement
+     * card (2026-09-04), so the form has two legs to reach rather than one — the split above is stated for each
+     * — while the gate-12 replay path passes no flag and stays exec-model-only; the {@code --drl} flag is what
+     * selects the DRL-text leg (the harness/measurement entry).
      *
      * <p>The unspellable case (a rate factor, "€·m/jr") reaches a consumer only on a document the frontend
      * never wrote — {@code Typering} makes it a loud error rather than a type. This join answers it with a

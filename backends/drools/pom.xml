@@ -45,10 +45,24 @@
       <artifactId>drools-engine</artifactId>
       <version>${drools.version}</version>
     </dependency>
-    <!-- The mvel DIALECT, needed only by the SECOND transpiler branch: DrlTranspiler emits DRL text with
-         `dialect "mvel"`, and compiling that text (KieHelper, the classic DRL build the DRL measurement
-         entry drives) needs the dialect implementation, which drools-engine does not carry. The exec-model
-         path gate 12 runs builds its KieBase from a Java model and never reaches a dialect. -->
+    <!-- The mvel DIALECT. WHY it is here: DrlTranspiler emits DRL text with `dialect "mvel"`, and compiling
+         that text (KieHelper, the classic DRL build the DRL-measurement entry drives, behind the runner's
+         `drl` flag) needs the dialect implementation, which drools-engine does not carry.
+         WHAT it changes is NOT confined to that branch, and this comment must not pretend otherwise
+         (measured 2026-09-04 against a jar built without the artifact). It registers FIVE global KieServices
+         in META-INF/services, each resolved ONCE PER JVM, so they are in force on the FLAGLESS exec path too.
+         Three had no provider at all before — CoreComponentsBuilder (whose get() threw "compile a Drools
+         asset without mvel"), FieldAccessorFactory and ClassBuilderFactory — and two DISPLACE a built-in
+         default: CoreComponentFactory (DroolsCoreComponentFactory -> MVELCoreComponentFactory, whose
+         knowledge packages become MVELKnowledgePackageImpl carrying an mvel ClassFieldAccessorStore where
+         the default carried none) and ConstraintBuilder (DummyConstraintBuilder -> MVELConstraintBuilder).
+         Class-load measured on gate 12's own exec runs: that CoreComponentFactory swap is live on ALL 106
+         played goldens, and 11 of them also reach mvel's LambdaIntrospector (the exec model's lambda
+         fingerprinting).
+         So the claim this dependency is entitled to is not "the exec path never reaches it" but "reaching it
+         moves nothing": each of the 150 goldens carrying a case file prints a BYTE-IDENTICAL exec status line
+         with and without the artifact, and gate 12 is unchanged on every number (106 played / 43
+         auto-excluded / 1 value-divergence). It costs the shaded jar 13.8 -> 15.3 MB. -->
     <dependency>
       <groupId>org.drools</groupId>
       <artifactId>drools-mvel</artifactId>

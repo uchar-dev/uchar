@@ -41,7 +41,12 @@ public final class DroolsBackendMain {
                 default -> { System.out.println("FAIL " + String.join(" | ", r.caseFailures())); System.exit(1); }
             }
         } catch (RuntimeException e) {
-            System.out.println("ERROR " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            // Flattened and bounded exactly as the DRL compile path does it (CaseRunner.drlTak): every caller
+            // reads the LAST line of this output as the status line, so a multi-line exception message would
+            // push the ERROR head off it and hand the harness a fragment of a stack trace to diagnose with.
+            String m = String.valueOf(e.getMessage()).replace('\n', ' ');
+            System.out.println("ERROR " + e.getClass().getSimpleName() + ": "
+                    + (m.length() > 200 ? m.substring(0, 200) + "…" : m));
             System.exit(3);
         }
     }
