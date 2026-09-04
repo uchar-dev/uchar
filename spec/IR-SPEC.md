@@ -348,7 +348,22 @@ false`, `decimals = 0` (no precision ceiling; §13.3.3 form (c)). The
 
 - **WF-007** A `Number` MUST satisfy one of the three precision forms;
   `decimals` < 0 is ill-formed. A source declaration of "0 decimals"
-  normalizes to the whole form (v0 behaviour, kept and specified).
+  normalizes to the whole form (v0 behaviour, kept and specified). The
+  form is a property of the datatype ITSELF, not a cross against a
+  declaration, so it holds at **every** `Number` in the document — since
+  2026-09-04 including a rule TARGET's own `type`, which the expression
+  walk deliberately never enters (the lvalue is WF-022's). Measured
+  2026-09-03: `whole` with 2 decimals was verifier-clean there while the
+  identical form on any walked expression type was refused. Where the
+  target's attribute declaration resolves, the identity family had been
+  masking the shape incidentally since WF-091 — a facet mismatch under
+  WF-091's number, in a comparison message that says nothing about the
+  precision form; on a CHARACTERISTIC target it defers by construction
+  (no attribute declaration to compare with), and there — 44 such targets
+  over 29 golden+rood documents — this check is the only guard. Measured
+  and still OPEN, a second flank of the same rule: the check does not
+  descend into a `ListType` element, so an ill-formed `Number` inside one
+  passes at EVERY position, declaration and expression alike.
 - **WF-008** Two `Enumeration` types are compatible only when they name the
   same declaring domain; value-set equality does not create compatibility.
   (v0 behaviour at use-time, lifted into the type identity rule.) This is a
@@ -2888,7 +2903,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-004 | dimensioned attribute: non-empty, duplicate-free, resolving dimension list | gate 3 | `jutterswet-vormenkabinet` (the dimensioned opbrengst) | `wf004-duplicate-dimension` |
 | WF-005 | timeline facet: count ≥ 1; named adoption total and consistent | gate 3 (attributes; characteristic and parameter facets are under-represented in v0 — ch. 2.10) | `jutterswet-penningjaar` | `wf005-count-zero` |
 | WF-006 | enumeration domain: ≥ 1 value, values unique | gate 3 | `jutterswet-vormenkabinet` (the kwaliteit domain) | `wf006-duplicate-enum-value` |
-| WF-007 | number precision is exactly one of whole / fixed / unbounded | gate 3 | `jutterswet-vondstnummer` | `wf007-whole-with-decimals` |
+| WF-007 | number precision is exactly one of whole / fixed / unbounded — at every `Number` in the document: the declarations (model layer), every `type` the expression walk enters, and, since 2026-09-04, a rule TARGET's own `type`, the position the walk never enters. Measured and OPEN: a `ListType` element is not descended into, at any position | gate 3 (model layer + the walk's type prologue + the rule-target arm) | `jutterswet-vondstnummer` (declarations) + `jutterswet-vondsttarief` (the rule-target arm crossing a `Percentage` target clean; 175 numeric-typed targets over 91 golden+rood documents ride it) | `wf007-whole-with-decimals` + `wf007-doeltype-geheel-met-decimalen` (the rule-target arm, on a CHARACTERISTIC target — the window where the shape is observable, since the identity family defers there by construction; on an attribute target WF-091 masks it with a facet mismatch, measured) |
 | WF-008 | enumeration compatibility = same declaring domain (use-time; expression layer) | OPEN (no document carries two enum operands in one expression; the WF-036 guard already covers the equality site — fold WF-008 into the expression layer when such a witness lands) | OPEN | OPEN |
 | WF-009 | unit conversions reduce: no cycles, no unknown targets, positive rational factors | gate 3 (positivity and termination; exactness is not representable in v0's float factor) | `jutterswet-berging` | `wf009-conversion-cycle` |
 | WF-010 | no restatement between non-convertible units (use-time; expression layer) | OPEN (v0 has no restatement node to anchor the check) | OPEN | OPEN |
