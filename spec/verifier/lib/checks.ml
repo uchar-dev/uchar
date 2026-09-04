@@ -1773,7 +1773,9 @@ let rec enum_use_site ctx at (d : datatype) : violation list =
    by injecting the sentinel at all 2650 datatype-valued positions of the
    goldens: the only verifier-clean survivors sit on constructor payloads (12)
    and on fold-/aggregation argument types (9), never in a container — so an
-   arm there would carry no witness of its own. *)
+   descent covers the sum-in-sum chain only; a sentinel inside a ListType
+   element or StructType field nested under a payload is measured
+   verifier-clean (ref replays, clingo refuses) and stays OPEN. *)
 let rec payload_sentinel at (d : datatype) : violation list =
   match d with
   | Sum_type { constructoren; _ } ->
