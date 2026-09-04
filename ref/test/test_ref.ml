@@ -290,7 +290,16 @@ let () =
   (* plus restates the right operand into the left unit: 2 jr + 12 mnd = 3 jr *)
   (match Arith.add (nu jr "2") (nu mnd "12") with
   | Value.Num (v, Value.Unit u) -> check "ch2.6-add-restate" (Q.equal v (q "3") && u.afkorting = Some "jr")
-  | _ -> check "ch2.6-add-restate" false)
+  | _ -> check "ch2.6-add-restate" false);
+  (* a unit fault must NAME the two units apart: a rate and its numerator
+     both printed as the numerator's abbreviation, so every mismatch
+     between them read "€ vs €" and said nothing *)
+  check "verify-show-unit-noemer"
+    (Arith.show_unit (Value.Unit eur_per_jr) = "€/jr" && Arith.show_unit (Value.Unit eur) = "€");
+  (match Arith.restate_into (Value.Unit eur) (q "1") (Value.Unit eur_per_jr) with
+  | exception Value.Fault m ->
+      check "verify-show-unit-in-fault" (m = "incompatible units: € vs €/jr")
+  | _ -> check "verify-show-unit-in-fault" false)
 
 (* --- ch. 2.7: clamping -------------------------------------------------- *)
 

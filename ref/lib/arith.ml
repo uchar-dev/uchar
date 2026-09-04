@@ -16,10 +16,15 @@ open Value
 let unit_name (e : Ir_v0.Ast.eenheid) =
   match e.afkorting with Some a -> a | None -> "?"
 
+(* a rate prints its denominator: without it "€/mnd" and "€" both read
+   "EUR", and every unit fault between them reads "EUR vs EUR" *)
+let rec show_eenheid (e : Ir_v0.Ast.eenheid) =
+  match e.noemer with Some n -> unit_name e ^ "/" ^ show_eenheid n | None -> unit_name e
+
 let show_unit = function
   | Unitless -> "(unitless)"
-  | Unit e -> unit_name e
-  | Product (a, b) -> unit_name a ^ "*" ^ unit_name b
+  | Unit e -> show_eenheid e
+  | Product (a, b) -> show_eenheid a ^ "*" ^ show_eenheid b
 
 (* The wire carries the canonical factor as a JSON number, which the
    loader hands us as a float. The intended value is the *decimal* the
@@ -45,7 +50,7 @@ let rec conv_factor (a : Ir_v0.Ast.eenheid) (b : Ir_v0.Ast.eenheid) =
   match (a.noemer, b.noemer) with
   | None, None -> base
   | Some na, Some nb -> Q.mul base (conv_factor nb na)
-  | _ -> fault "rate/plain unit mismatch: %s vs %s" (unit_name a) (unit_name b)
+  | _ -> fault "rate/plain unit mismatch: %s vs %s" (show_eenheid a) (show_eenheid b)
 
 (* restate a number in unit [ub] into unit [ua] (ch. 2.6: the right operand
    is restated into the left operand's unit, with exact factors) *)
