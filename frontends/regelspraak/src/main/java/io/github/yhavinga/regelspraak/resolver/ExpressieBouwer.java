@@ -1055,6 +1055,19 @@ final class ExpressieBouwer {
         // context-independent (a session global in both back-ends), so it does not mis-bind. Anything else stays an
         // honest, symmetric marker.
         if (!(rhs instanceof Expr.Literal) && !(rhs instanceof Expr.ParameterRef)) return null;
+        // WF-091 (reference-type identity, IR-SPEC ch. 4.1): this is the one reference the emitter SYNTHESIZES
+        // rather than resolves, so it must not be able to invent a type. It cannot: it is the FOLD SOURCE
+        // re-anchored on the element (onderwerpBron/bron reset to the predicaat), carrying that node's
+        // (objecttype, attribuut, type) TRIPLE verbatim — the guards above pin agg.objecttype() == elem, and
+        // every AttribuutRef that can reach them is typed by an ot.attribuut(…) DECLARATION lookup
+        // (attribuutRef/possessief/onderwerpAlsWaarde; the navigated, chained and role builders all set a
+        // navigatieRol, which the guards exclude, and an unresolvable fold source is already Onopgelost at the
+        // set-guard in bouwFunctie). So agg.type() IS elem.attribuut(agg.attribuut()) — measured 2026-09-04 as
+        // OBJECT identity on every filter-LHS the gate-10 and gate-11 re-emission sets carry, and on a
+        // "totaal van <€/mnd>" flank, where the AGGREGATE type (€, §4.20 strips the noemer) and this one
+        // (€/mnd) genuinely differ — this position takes the latter. Re-looking-up the
+        // declaration here would be no safer: it would let this term and the accumulate's fold source drift
+        // apart, and both back-ends need them to denote ONE read of ONE attribute.
         Expr lhs = new Expr.AttribuutRef(agg.attribuut(), elem, "", null, agg.type(), bron(p));
         // §5.6 getal/datum/tekstpredicaat: enforce the typeringen comparison legality (as the normal voorwaarde path
         // does), so a type-mismatched filter (a Numeriek attribute vs a Tekst literal) is an ERROR, not silent bad DRL.
