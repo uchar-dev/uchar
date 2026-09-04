@@ -805,6 +805,43 @@ let wf026 ctx =
   in
   pairs named
 
+(* WF-034 on the allocation's two ENDPOINT attributes (maintainer decision
+   2026-09-04, third wave). An allocation is not an expression, so the
+   expression walk never reaches it; its source and target attributes are
+   references all the same, and each is spelled in one field. Every rule that
+   reads them — WF-025's ordering-key type check, WF-026's same-target
+   comparison, WF-050's defaults overlap, and the dependency graph's read and
+   write edges — sits behind `Some a` and falls silent together on an empty
+   one. Measured: all 11 golden allocations stay verifier-clean with either
+   field emptied, while both executors fault loudly on the same document
+   (`ref` "missing bronAttribuut"/"missing doelAttribuut", clingo the same two
+   names).
+
+   What this arm does NOT close, measured the same day and stated so the
+   silence is not mistaken for coverage: a NAME that resolves against no
+   declaration (`bronAttribuut: "bestaatniet"` is verifier-clean while `ref`
+   faults and clingo reports `unknown attribute`), and the two TYPE fields
+   `bronType`/`doelType`, which are equally emptyable and equally clean. Those
+   are name resolution against the object-type table, a wider movement than
+   this card's empty-field class, and they stay OPEN. *)
+let wf034_verdelingen ctx =
+  List.concat
+    (List.mapi
+       (fun i (r : resolved_verdeling) ->
+         let at = Printf.sprintf "/verdelingen/%d" i in
+         (match r.bron_attribuut with
+          | None ->
+              [ v "WF-034" (at ^ "/bronAttribuut")
+                  "allocation without a source attribute: it resolves against no declaration" ]
+          | Some _ -> [])
+         @
+         match r.doel_attribuut with
+         | None ->
+             [ v "WF-034" (at ^ "/doelAttribuut")
+                 "allocation without a target attribute: it resolves against no declaration" ]
+         | Some _ -> [])
+       ctx.doc.verdelingen)
+
 (* The type an expression carries, iff it is a value (a Lambda is not). The
    sole nominal source for static typing; WF-027 uses it to admit a
    boolean-TYPED characteristic value, and the expression walk (WF-034..) below
@@ -2072,23 +2109,44 @@ let rec enum_use_site ctx at (d : datatype) : violation list =
    reason — a use site's inline constructor copy is what the consumers read,
    while WF-062 crosses only the DECLARATION.
 
-   The descent covers the sum-in-sum chain only. A sentinel inside a
-   `ListType` element or a `StructType` field nested under a payload is
-   measured schema-valid and verifier-clean (ref replays, clingo refuses)
-   and stays OPEN — container witnesses exist. What this walk closes is
-   the payload chain itself (12 survivors to 0); the 9 fold-/aggregation
-   argument survivors belong to the aggregation branch, not to this
-   descent. *)
+   The CONTAINER half followed one wave later (maintainer decision
+   2026-09-04, third wave): a payload is a datatype, so it may be a
+   `ListType` or a `StructType`, and the sentinel then sits one further
+   level down — measured schema-valid and verifier-clean on three
+   hand-built witnesses over a sum-typed golden, with `ref` replaying to
+   its pinned expectations while clingo refuses the same document
+   (`TRANSLATION FAULT: unscalable datatype in the ASP translation`).
+   [payload_descent] therefore walks the WHOLE payload subtree, not just
+   the sum chain, and a container that contains a further sum re-enters
+   [payload_sentinel] — which keeps the sum-chain message naming the
+   innermost constructor, as before.
+
+   Only the payload subtree: a sentinel at a `ListType` element or a
+   `StructType` field that is NOT under a payload is caught by the
+   declaration and identity rules (measured — of the goldens' datatype
+   positions only the payload chain and the fold-/aggregation argument
+   types ever survived sentinel injection), and the 9 fold-/aggregation
+   survivors belong to the aggregation branch, not to this descent. *)
 let rec payload_sentinel at (d : datatype) : violation list =
   match d with
   | Sum_type { constructoren; _ } ->
       List.concat_map
         (function
-          | n, Some (Datatype_onbekend _) ->
-              [ v "WF-034" at ("unknown-type sentinel on the payload of constructor '" ^ n ^ "'") ]
-          | _, Some p -> payload_sentinel at p
+          | n, Some p -> payload_descent at ("the payload of constructor '" ^ n ^ "'") p
           | _, None -> [])
         constructoren
+  | _ -> []
+
+(* One payload subtree, [where] naming the position in the reader's terms. *)
+and payload_descent at where (d : datatype) : violation list =
+  match d with
+  | Datatype_onbekend _ -> [ v "WF-034" at ("unknown-type sentinel on " ^ where) ]
+  | Sum_type _ -> payload_sentinel at d
+  | List_type { element } -> payload_descent at ("the list element inside " ^ where) element
+  | Struct_type { velden; _ } ->
+      List.concat_map
+        (fun (fn, fd) -> payload_descent at ("field '" ^ fn ^ "' inside " ^ where) fd)
+        velden
   | _ -> []
 
 (* Two constructor lists agree when they carry the same constructors in the
@@ -3445,8 +3503,34 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                     [ v "WF-040" at ("cell read of undimensioned attribute '" ^ a ^ "'") ])
             | None -> [])
            @ walk_expr ctx ~binders ~subject (sub "attribuut") inner
-       | Some inner -> walk_expr ctx ~binders ~subject (sub "attribuut") inner
-       | None -> [])
+       | Some (Attribuut_ref _ as inner) ->
+           (* an attribute reference with an empty half: the walk's own
+              WF-034 arms report that endpoint, so this arm stays silent
+              rather than reporting the same defect twice *)
+           walk_expr ctx ~binders ~subject (sub "attribuut") inner
+       | Some inner ->
+           (* WF-034 (widened, maintainer decision 2026-09-04, third wave):
+              a cell read reads ONE dimensioned attribute, so its `attribuut`
+              child is a reference position, not a general expression slot.
+              Anything else there resolves against no declaration and takes
+              the arm above down with it: WF-040's dimension/label cross and
+              the identity family's cross of the cell's OWN type both sit
+              behind the `Some/Some` reference pattern. Measured on
+              `wf091-dimensiecel-eenheid`, whose pinned unit lie sits on the
+              cell type: replacing the reference by a literal turns that
+              refusal off and the document CLEAN. *)
+           [ v "WF-034" (sub "attribuut")
+               "dimension-cell read whose attribute position is not an attribute reference: it \
+                resolves against no declaration" ]
+           @ walk_expr ctx ~binders ~subject (sub "attribuut") inner
+       | None ->
+           (* the empty half of the same position, and the same consequence
+              one field further: measured verifier-clean on both golden cell
+              positions and on `wf091-dimensiecel-eenheid`, which turns
+              CLEAN when its cell's `attribuut` is emptied *)
+           [ v "WF-034" at
+               "dimension-cell read without an attribute reference: it resolves against no \
+                declaration" ])
   | Parameter_ref { parameter; typ; _ } -> (
       match parameter with
       | Some p -> (
@@ -4151,14 +4235,30 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) at (c : conditie) : viola
       @ whole_period_check periode [ operand ]
       @ (match operand with Some e -> walk_expr ctx ~binders ~subject ~body (sub "operand") e | None -> [])
   | Kenmerk_check { kenmerk; navigatie; periode; navigatie_binding; _ } ->
-      (match kenmerk, navigatie, subject with
-       | Some k, None, Some otn -> (
-           match objecttype ctx otn with
-           | Some ot when not (has_kenmerk ot k) ->
-               [ v "WF-034" at
-                   ("'" ^ k ^ "' is not a declared characteristic of '" ^ otn ^ "'") ]
-           | _ -> [])
-       | _ -> [])
+      (match kenmerk with
+       | None ->
+           (* WF-034 (widened, maintainer decision 2026-09-04, third wave):
+              a characteristic check resolves through exactly one field, and
+              every arm below — the declared-characteristic cross here,
+              WF-043's granularity cross, WF-053's navigated hop, and the
+              dependency graph's edge — sits behind `Some k`, so an ABSENT
+              name walked past all of them at once. Measured: 89 of the
+              goldens' 96 characteristic-check positions stayed
+              verifier-clean when emptied, while both executors fault
+              loudly on the same document (`ref`
+              "missing KenmerkCheck.kenmerk", clingo "missing kenmerk"). *)
+           [ v "WF-034" at
+               "characteristic check without a characteristic name: it resolves against no \
+                declaration" ]
+       | Some _ -> [])
+      @ (match kenmerk, navigatie, subject with
+        | Some k, None, Some otn -> (
+            match objecttype ctx otn with
+            | Some ot when not (has_kenmerk ot k) ->
+                [ v "WF-034" at
+                    ("'" ^ k ^ "' is not a declared characteristic of '" ^ otn ^ "'") ]
+            | _ -> [])
+        | _ -> [])
       @ (match periode, kenmerk, navigatie, subject with
          | Some _, Some k, None, Some otn -> (
              match objecttype ctx otn with
@@ -6486,7 +6586,8 @@ let all (doc : document) : violation list =
       wf007_model ctx; wf009 ctx; wf011 ctx; wf012 ctx; wf013 ctx; wf014 ctx;
       wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf020 ctx; wf021 ctx;
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
-      wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx; wf045_046 ctx;
+      wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx;
+      wf034_verdelingen ctx; wf045_046 ctx;
       wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf079 ctx; wf082 ctx; wf054 ctx;
       wf057 ctx; wf059 ctx; wf060 ctx; wf087 ctx; wf061 ctx; wf088 ctx; wf065 ctx; wf067 ctx;
       wf071 ctx; wf072 ctx; wf075 ctx; wf086 ctx; expression_layer ctx ]
