@@ -585,3 +585,22 @@ noemt nu beide getallen mét het onderscheid, en de kaartalinea (Deel
 `sha256 d970d25c…` matchte niets op deze branch. De zin is vervangen
 door "byte-identiek hersteld, geverifieerd met `git status`/`git diff`"
 — een controle die ter plekke navolgbaar is en niet veroudert.
+
+### Poorten, alle twaalf (fixronde 2)
+
+    1  check-self-contained: PASS
+    2  check-ir-schema: PASS (schema valid; 174 file(s) validate and round-trip)
+    3  check-verifier: PASS (174 golden clean; 237 negatief rejected for their declared rule)
+    4  check-case-schema: PASS (schema valid; 425 case file(s) validate)
+    5  check-oracle: PASS (403 cases replayed exactly; NOT replayed, no case file yet: corpus/golden/jutterswet-seizoenvondst corpus/golden/jutterswet-vormenkabinet)
+    6  check-clingo: PASS (403 cases replay exactly through clingo — ref = clingo over the corpus)
+    7  check-noop: PASS (367 cases refute a do-nothing executor; 36 pinned survivors pin defeasible standing)
+    8  check-rood: PASS (22 red cases fault observably in ref and clingo); Drools leg PASS (5 fault-pinned, 17 not-carried with reason)
+    9  check-catala: PASS — frontend suite green (201 checks); 12 catala golden(s) regenerate byte-identically
+    10 check-regelspraak: PASS — JUnit suite green (159 tests); 28 rgs golden(s) re-emit byte-identically
+    11 check-toka-parity: PASS (45 .rgs byte-identiek, 2 holdouts; TOKA suite 27 tests; 29 replay-slices door ref/clingo/Drools, nul stille divergenties)
+    12 check-drools: PASS — played 106, auto-excluded 43, value-divergence 1, no-case 2, JUnit 178 tests
+
+Eén verschil met de dichtingsgolf: gate 3 telt 237 negatiefs in plaats
+van 236 — het foldbron-getuige erbij. Alle overige tellingen zijn
+ongewijzigd; de fixronde raakte geen enkele pin.
