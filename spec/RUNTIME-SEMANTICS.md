@@ -602,18 +602,22 @@ them in different ways, and the difference is not a detail. **Clause 1**
 (reference positions) is crossed in full: WF-091's identity engine compares
 soort, domain, unit, decimals, wholeness and sign against the declaration,
 facet by facet, so a lie there is a *rejected document* rather than a
-divergent answer. **Clause 2** (composite positions) is derived and
-machine-checked for the **unit** alone. Soort and precision at a *derived*
-type are crossed by nothing: `IR-SPEC.md` WF-091 stops at the domain facet
-for the element-passing aggregation and leaves such a node's numeric facets
-uncrossed on purpose — its **honesty note 4**, which records that
-non-crossing as an open deferral pinned by no artifact today (measured: of
-the corpus's element-passing folds none is unit-bearing, and the
-counter-shape cannot be built while the ASP backend refuses a multi-operand
-`MINIMUM`/`MAXIMUM` ahead of translation). Clause 2 therefore *states* the
-rule for all three facets and is *enforced* for one; closing the other two
-needs the derivation law for result types that note calls for, and until it
-lands the gap is written down here rather than papered over.
+divergent answer. **Clause 2** (composite positions) is, since the
+derivation law landed (2026-09-04), derived and machine-checked for
+soort, domain, unit, decimals and wholeness at eleven composite
+positions — `IR-SPEC.md` WF-091's DERIVED ARMS, each crossing the
+annotation against the type derived from the operands per that
+clause's table. Two priced exclusions stay open there, measured and
+recorded in the clause itself: the SIGN is crossed at no derived
+position (documents may narrow it truthfully; crossing it turns seven
+golden+rood documents red), and the multiplicative precision follows
+the stated ch. 2.3 formula only in prose (crossing it costs eleven
+documents across three producers with three precision policies). The
+fourth class — node kinds whose result unit v0 does not derive — stays
+uncrossed and named, and WF-091's honesty note 4 is now a coverage
+note rather than a deferral. The element-passing aggregation keeps its
+domain-only cross (its type is a derivation with its own formula, the
+lesson of the facet-engine card).
 
 *History:* this clause is the consumer half of the WF-091 work. Before it,
 the Drools backend read the wire annotation at its write boundary, its

@@ -18,6 +18,7 @@ against the target for *compatibility*, WF-007 crosses the precision
 domain facet alone. Measured before the law landed: this document is
 verifier-clean.
 
-Falsifiable: drop `unit` and this case degrades to `residual structure
-mismatch` (the clamp claims the whole type and keeps the backstop); remove
+Falsifiable: drop `unit` and this case turns CLEAN — the derived arms
+carry no backstop since the sign round, so the unit facet alone carries
+this refusal (measured); remove
 the `Begrensd` branch and it turns clean while every other case stays red.

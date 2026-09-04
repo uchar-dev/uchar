@@ -23,7 +23,7 @@ attribute reference inside the fold, a *reference* position) while the fold
 root stayed honest. Here the source is honest and the ROOT lies — the half
 no reference arm can reach.
 
-Falsifiable: drop `unit` and this case degrades to `residual structure
-mismatch` (a `SOM` claims the whole first-operand type and keeps the
-backstop); remove `Som` from the aggregation branch and it turns clean while
+Falsifiable: drop `unit` and this case turns CLEAN — the derived arms
+carry no backstop since the sign round, so the unit facet alone carries
+this refusal (measured); remove `Som` from the aggregation branch and it turns clean while
 the MAXIMUM, TOTAAL, MINIMUM and AANTAL cases stay red.

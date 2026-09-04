@@ -24,7 +24,7 @@ The rounding is the one covered position whose derivation reads a NODE field
 (`decimals`) beside its operand: the base supplies soort, unit and sign, the
 node's own count supplies the precision.
 
-Falsifiable: drop `decimals` and this case degrades to `residual structure
-mismatch` — still WF-091, still red, because the rounding arm claims the
-WHOLE type and therefore keeps the residual backstop; remove the `Afgerond`
+Falsifiable: drop `decimals` and this case degrades to a `wholeness
+mismatch` — still WF-091, still red (measured: the narrowed rounding type
+disagrees in wholeness too, and that facet catches it); remove the `Afgerond`
 branch and it turns clean together with `wf091-afgerond-eenheid`.

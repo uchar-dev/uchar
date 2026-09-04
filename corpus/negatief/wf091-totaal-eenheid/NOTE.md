@@ -29,7 +29,8 @@ consumer-side question, not a well-formedness one. Every `TOTAAL` in the
 corpus agrees with the emitter (7 golden, 5 negatief, measured), so nothing
 observable turns on it today.
 
-Falsifiable: drop `unit` and this case degrades to `residual structure
-mismatch`; remove the denominator strip from the `Totaal` branch and this
+Falsifiable: drop `unit` and this case turns CLEAN — the derived arms
+carry no backstop since the sign round, so the unit facet alone carries
+this refusal (measured); remove the denominator strip from the `Totaal` branch and this
 case turns **clean** while every other aggregation case stays red — the
 sharpest possible pin on the strip itself.

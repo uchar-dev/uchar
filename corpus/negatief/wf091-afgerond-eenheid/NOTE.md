@@ -19,6 +19,7 @@ against the target for *compatibility*, WF-007 crosses the precision
 domain facet alone. Measured before the law landed: this document is
 verifier-clean.
 
-Falsifiable: drop `unit` and this case degrades to `residual structure
-mismatch` (the rounding arm keeps the backstop); remove the `Afgerond`
+Falsifiable: drop `unit` and this case turns CLEAN — since the sign
+round removed the backstop from every derived arm, the unit facet alone
+carries this refusal (measured; the stronger, facet-exact pin); remove the `Afgerond`
 branch and it turns clean with `wf091-afgerond-decimalen`.
