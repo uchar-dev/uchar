@@ -949,13 +949,18 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
   if granulariteit <> None then Value.fault "granularity-bucketed aggregation not implemented in this card";
   match (kind, argumenten) with
   | ( Totaal,
-      [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; navigatie_rol = None; navigatie_pad = []; _ } ] )
+      [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; navigatie_rol = None; navigatie_pad = []; set = false; _ } ] )
     when norm aot = norm self.otype
          && Ir_v0.Checks.attr_temporal (objecttype env aot) a -> (
       (* ch. 3.6, the temporal total — the one v0-mirrored bridge from a
          timeline to a scalar. The case carries the asOfDate bucket's
          value (corpus/golden/README.md); the collapse folds that
-         one-bucket timeline: value × whole-units of its own grid. *)
+         one-bucket timeline: value × whole-units of its own grid.
+         [set = false] is load-bearing: a SET operand is the §7.1
+         per-element fold, and on a self-relation (element type = subject
+         type) the two shapes are otherwise indistinguishable here — this
+         arm would then total the SUBJECT's own timeline and answer for
+         the wrong instance. *)
       let ot_decl = objecttype env aot in
       let gran =
         match Ir_v0.Checks.find_ci ot_decl.attribuut_granulariteit a with
