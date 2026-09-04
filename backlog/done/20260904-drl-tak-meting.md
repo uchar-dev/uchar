@@ -165,7 +165,10 @@ gewoon, en dat is juist waarom een marker geweigerd moet worden in plaats
 van gevuurd), en een DRL die de compiler afkeurt. `DroolsBackendMain`
 krijgt de vlag; zonder vlag verandert er niets aan zijn pad.
 `backends/drools/pom.xml` krijgt `drools-mvel` erbij, met de reden ter
-plaatse.
+plaatse — en dat is een **overschrijding van May touch**, hier hardop gemeld:
+`backends/drools/pom.xml` valt buiten `backends/drools/src/**`; overschrijding
+gemeld en door de hoofdsessie gezegend (2026-09-04) — pom.xml is geen protected
+path.
 
 ### 2. De DRL-leg in het harnas (voorstel, `scripts/`)
 
@@ -290,10 +293,14 @@ statusregels extra (39 → 50), elk uit een basis- en een verdraaide DRL-run.
 
 ## Voor de hoofdsessie
 
-`CLAUDE.md`'s gate-13-alinea (beschermd pad, niet aangeraakt) zegt "ref,
-clingo and the Drools backend MUST all reproduce". Dat is nu te smal: het
-zijn ref, clingo en BEIDE Drools-transpilertakken, plus de basisklem op de
-teksttak. Eén zin, als de leg landt.
+- `CLAUDE.md`'s gate-13-alinea (beschermd pad, niet aangeraakt) zegt "ref,
+  clingo and the Drools backend MUST all reproduce". Dat is nu te smal: het
+  zijn ref, clingo en BEIDE Drools-transpilertakken, plus de basisklem op de
+  teksttak. Eén zin, als de leg landt.
+- De May-touch-overschrijding hierboven: `backends/drools/pom.xml` valt buiten
+  `backends/drools/src/**`; overschrijding gemeld en door de hoofdsessie
+  gezegend (2026-09-04) — pom.xml is geen protected path. De wijziging is één
+  dependency (`drools-mvel`), met de gemeten consequentie in de pom zelf.
 
 ## Result (2026-09-04)
 
@@ -320,3 +327,96 @@ van de teksttak over het hele corpus (gate-12-terrein, hier bewust niet
 overgedaan); en de twee DRL-compileweigeringen (`erflijn`,
 `gemeenteberging`) die op een ontbrekend beanveld wijzen dat de exec-tak
 langs een andere weg oplost.
+
+## Fixronde (2026-09-04)
+
+Na lens 1, die alle metingen reproduceerde en één blokkerend punt vond plus
+vier kleinere.
+
+### F1 (blokkerend) — de DRL-leg had geen bodem
+
+De basisklem eist PLAYED óf EXCLUDE **per golden**, dus een teksttak die
+ÁLLES weigert haalt hem voor élke golden, is per constructie onverschillig
+(beide runs weigeren gelijk) en laat de leg stil groen achter terwijl hij
+niets meet. Gereproduceerd met precies die mutant — een weigering vooraan de
+DRL-tak van `CaseRunner` — vóór er iets gerepareerd werd:
+
+```
+check-reftype-derivation: PASS (52 unit annotations twisted over 11 goldens; 50 executor
+  replays reproduce the untouched outcome, 0 of them PLAYED by the DRL-text branch;
+  0 pinned survivors)                                                        exit 0
+```
+
+Negen gespeelde goldens naar nul, en de gate zei PASS. Gerepareerd met een
+bodem naast de bestaande `n_twists`-wacht. Dezelfde mutant, mét de bodem:
+
+```
+FAIL: the DRL-text branch PLAYED no golden — the leg measured nothing (an empty played
+      set is never green)                                                    exit 1
+```
+
+Mutant weer weg (`git diff` op `CaseRunner.java` leeg), gate weer groen met
+`n_drl` = 9 — de leg meet weer wat hij vóór de mutant mat.
+
+Lens-bevinding 5 staat in het commentaar bij de bodem: geteld wordt de
+STATUSKOP, dus een golden waarvan élk casebestand `expectedFault` draagt
+speelt niets en drukt tóch "PLAYED 0" af. De zonediscipline die gate 4 pint
+(golden draagt `expected`, rood draagt `expectedFault`) maakt die vorm vandaag
+onbereikbaar — genoemd zodat de bodem er niet ongemerkt op gaat leunen.
+
+### F2 — het scripthoofd telde verkeerd
+
+"The remaining 16" sloeg acht plekken over: 27 − 3 = **24** ongedekt, en dat
+zijn twee verschillende feiten. Acht plekken wórden bereikt maar zijn op dit
+corpus altijd eenheidloos (de temporele §4.1/§5.1.4-herschalingen, de
+Begrensd-waardetak, de §8.2-tijdreeksvergelijking, de twee
+concatenatie-aggregatieplekken); zestien worden door geen enkele golden
+bereikt. Het scripthoofd zegt het nu zo, gelijk aan "Wat ongedekt blijft".
+
+### F3 — de May-touch-overschrijding staat er nu
+
+Zie sectie 1 en "Voor de hoofdsessie": `backends/drools/pom.xml` valt buiten
+`backends/drools/src/**`, gemeld en gezegend.
+
+### F4 — wat `drools-mvel` werkelijk verwisselt
+
+Hermeten tegen een jar die zonder de dependency is gebouwd, want "alleen de
+teksttak" was te mooi. Het artefact registreert **vijf** globale KieServices in
+`META-INF/services`, elk één keer per JVM opgelost, dus óók op het vlagloze
+exec-pad in werking. Drie hadden helemaal geen provider (`CoreComponentsBuilder`
+— wiens `get()` "compile a Drools asset without mvel" wierp —,
+`FieldAccessorFactory`, `ClassBuilderFactory`); twee verdringen een ingebouwde
+standaard: `CoreComponentFactory` (`DroolsCoreComponentFactory` →
+`MVELCoreComponentFactory`, waarmee knowledge packages `MVELKnowledgePackageImpl`
+worden mét een mvel-`ClassFieldAccessorStore` waar de standaard er geen had) en
+`ConstraintBuilder` (`DummyConstraintBuilder` → `MVELConstraintBuilder`).
+Klassenlading gemeten op gate 12's eigen exec-runs (`-Xlog:class+load`): die
+eerste verwisseling is levend op **alle 106** gespeelde goldens, en 11 daarvan
+raken bovendien mvel's `LambdaIntrospector`.
+
+De aanspraak is dus niet "het exec-pad raakt hem nooit" maar "raken verandert
+niets": elk van de 150 goldens met een casebestand drukt een **byte-identieke**
+exec-statusregel af mét en zonder het artefact, en gate 12 is op elk getal
+gelijk (106 / 43 / 1). Kosten: de shaded jar 13,8 → 15,3 MB. Dat staat nu zo in
+de pom, in plaats van de te smalle claim.
+
+### F5 en F6 — twee kleine
+
+`EffectieveEenheid`'s "CaseRunner builds only the exec-model back-end, so that
+is the leg every replay takes" is sinds deze kaart onwaar: `CaseRunner` bouwt
+beide takken. Herschreven — het gate-12-pad blijft exec-only, de vlag kiest de
+teksttak. En `DroolsBackendMain`'s ERROR-regel wordt platgeslagen en begrensd
+zoals het DRL-compileerpad het al deed: elke lezer neemt de LAATSTE regel als
+statusregel, dus een meerregelig exceptiebericht duwde de ERROR-kop eraf en de
+klem-diagnose met zich mee.
+
+### Gates na de fixronde
+
+```
+1  check-self-contained: PASS
+12 check-drools: PASS — played 106 / auto-excluded 43 / value-divergence 1 /
+                 no-case 2 / JUnit 199 (op elk getal ongewijzigd)
+13 check-reftype-derivation: PASS (52 unit annotations twisted over 11 goldens;
+                 50 executor replays reproduce the untouched outcome, 9 of them
+                 PLAYED by the DRL-text branch; 0 pinned survivors)
+```
