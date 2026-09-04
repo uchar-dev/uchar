@@ -145,3 +145,111 @@ liet die derde expliciet open en falsifieerbaarheid per tak eiste hem;
 (2) de kaart voorzag mogelijk werk in `backends/clingo/lib/**`, dat bleek
 niet nodig (de gemeten afwezigheid staat hierboven); (3) de kaartcijfers
 204/32 zijn na hermeting 205/34 — het corpus groeide met één golden.
+
+**Fixronde (2026-09-04).** Twee lenzen lazen de landing na. Ze bevestigden de
+kern — mutantbewijs tak-exact, alle tellingen op één na, rood-eerst echt — en
+maten daarnaast twee blinde vlekken, een asymmetrie en een reeks
+gefalsifieerde zinnen. Alles hieronder is opnieuw gemeten in deze ronde, niet
+overgenomen.
+
+*De twee blinde vlekken.* De regel gold niet op elke positie die een eenheid
+kan bezetten. Een injectiesweep — zet op elk van de **2161**
+`Numeriek`/`Percentage`-posities van de goldens om beurten een halfgevulde
+eenheid en eis een WF-092-citaat — meldde **85 onbereikt**: 27 op de
+foldbron-tak (die `walk_expr` vervángt voor het bronargument, en WF-034/WF-089
+daar al handmatig herhaalt) en 58 op de inline-lambdaparameters (die nergens
+anders gedeclareerd worden; `walk_expr` loopt de body, niet de parameterlijst
+— de 58 tellen de geneste element/veld/payload-datatypes mee). Twee regels
+verifiercode later: injectiesweep **0/2161 onbereikt**. De byte-sweep over
+alle 476 `ir.json` van de vier zones verandert precies ÉÉN document —
+`wf092-noemer-zonder-factor` 8 → **11** citaten, totaal 16 → **19** — en laat
+elk ander document byte-identiek; gate 3 blijft 175 golden clean / 271
+negatief verworpen. Gerichte injectieproef op de twee geopende posities:
+`/resolvedRegels/0/waarde/argumenten/0/type/eenheid` en
+`/resolvedRegels/0/waarde/function/parameters/acc/eenheid` worden nu allebei
+geciteerd; de lambdaparameter-aanroep staat bewust BUITEN de ariteitstak, dus
+een lambda met verkeerde ariteit citeert óók (gemeten).
+
+*De positiemutanten hermeten.* De zes call sites partitioneren de 19 citaten
+exact: eenheidstelsels **2**, modellaag **6**, expressieprologue **5**,
+foldbron **3**, regeldoel **3**, lambdaparameters **0**. Die nul is de
+eerlijke: geen document in geen enkele zone draagt een eenheid op een
+lambdaparameter, dus die aanroep verliest geen citaat als je hem weghaalt en
+zijn hele bewijs is de injectiesweep. Breedtemeting per positie (sonde die op
+ELKE eenheid op één positie vuurt) idem hermeten: 15 / 20 / 19 / 16 / **2** /
+**0** golden-documenten. Drie RESTPOSITIES blijven bewust buiten de
+totaliteit, met reden benoemd in de indexrij in plaats van dichtgetimmerd:
+een foldbron zonder `objecttype`, een foldbron zonder `attribuut` en een
+misplaatste Lambda. Elk zit achter een arm die het knooppunt AL afwijst
+(WF-034 tweemaal, WF-069 eenmaal). De drie negatiefs die die armen bereiken:
+de twee foldbron-gevallen dragen elk 8 eenheden, alle heel, en het
+lambda-geval draagt er geen enkele — de branch zou dus in geen enkele zone
+een getuige kunnen krijgen.
+
+*Tak-(b)-symmetrie in `ref/lib/arith.ml`.* Tak (a) faalde luid, tak (b) — een
+factor zonder canoniek doel — gaf die factor gewoon terug. Gemeten op
+`wf092-factor-zonder-canoniek` met de sleepbaan-case: **ref PASS 2800 /
+clingo PASS 2800** vóór, **ref EVALUATION FAULT / clingo TRANSLATION FAULT**
+ná, met dezelfde melding (`unit m carries conversion factor 1 but names no
+canonical unit to convert into (WF-092)`); clingo erft via `normalise.ml`,
+geen regel onder `backends/clingo` gewijzigd. Dracht hermeten over alle 476
+documenten: de halfvorm (b) komt vijf keer voor en uitsluitend in zijn eigen
+negatief, de halfvorm (a) veertien keer in haar twee negatiefs — daarbuiten
+nul. Gates 5 en 6 blijven 403. `ref/test` 414 → **417**; met de terugval terug
+vallen precies de twee nieuwe tak-b-getuigen om en geen enkele andere.
+
+*Bijvangst: de kale vorm is geen eiland.* De zin "converts into itself and
+nothing else" (in `arith.ml`, in de testnotitie en als "reduces to nothing but
+itself" in de spec) is gemeten onjuist. `units_convertible` leest een
+ontbrekende `canoniek` als de AFKORTING, dus een kale eenheid is een canoniek
+DOEL voor elke gedeclareerde eenheid wiens canoniek-string haar afkorting
+spelt, en de overstekende hoeveelheid herstelt op DIENS factor. Getuige: de
+`jutterswet-vergunningsduur`-golden met alle vijf `maand`-records kaal geeft
+nog steeds 27 (verifier PASS, ref 27, clingo 27), en met de factor van `jaar`
+van 12 naar 6 geven ref én clingo **15** — de kale eenheid is waar die 6
+tegenaan telt. **Afwijking van het recept:** de lens verwachtte dat clingo
+deze vorm zou weigeren (de bestaande executor-asymmetrieklasse); gemeten doet
+hij dat niet — bij een consistent doorgevoerde kale vorm zijn de
+eenheidsrecords identiek, dus zijn eenheidshek zwijgt en hij is het met ref
+eens. Geen asymmetrie hier. De drie zinnen zijn herschreven, en de spec noemt
+nu ook de tweede ch.-2.5-betekenis van de kale vorm: het opake product.
+
+*De herschreven zinnen.* Naast de kale-vorm-zin: "Of the four combinations
+three are units and one is not" sprak zijn eigen opsomming tegen (twee/twee);
+WF-091 vergelijkt niet alleen de drie namen en de factor maar ook de noemer
+recursief (`eenheid_identical`); de positie-opsomming van de WF-092-bullet
+noemt de foldbron en de lambdaparameters nu expliciet en houdt "refused ONCE
+PER POSITION" mét het injectiebewijs; eerlijkheidsnoot 1 draagt het
+rec-detail van mutant 3 (de noemer-afdaling weghalen maakt de `rec`-vlag
+ongebruikt, wat deze build als error behandelt — wie alleen de aanroep
+weghaalt krijgt een gefaalde build en een sweep die stil de oude binary
+draait); noot 4 draagt beide halfvormen; de v0-mirror-noot is genuanceerd
+(het gedeelde Java-model gooit sinds de failfast-kaart op tak (a); de
+spiegelhelft rekent daar nog stil door). De volgorde-asymmetrie tussen WF-091
+en WF-092 is gemeten en benoemd: op een gewandeld expressietype gaat WF-092
+vóór, op het regeldoel erna — onschadelijk, want een rapport is een verzameling
+citaten. En de citaatpaden zijn logische posities, geen JSON-Pointers; die
+huisconventie staat nu in de NOTE die de elf citaten opsomt.
+
+*Nog één lezing van hetzelfde paar.* `ref/lib/timeline.ml:342` leest
+`(canoniek, factorNaarCanoniek)` zelfstandig als roostersleutel — buiten
+`Arith.factor` om — maar faalt daar LUID: twee stelsels die dezelfde
+roostereenheid verschillend spellen geven `Error` met de reden, nooit een
+eerste-treffer-gok. Geen tweede stille terugval.
+
+*Wat open bleef.* De derde uitvoerder rekent op de spiegelhelft nog steeds
+stil 302,5, via het gedocumenteerde rij-10-predikaatgedrag van de
+failfast-kaart (`convertibleNaar` leest de canoniek; `null` maakt het paar
+niet-inwisselbaar en dat lezen de ongepoortwachte plekken als "geen
+omrekening nodig"). Dat blijft kaartmateriaal aan de frontend-/backendkant en
+staat nu eerlijk genoemd in eerlijkheidsnoot 4. In
+`20260904-eenheid-terugval-failfast.md` staat een gedateerde correctie-alinea:
+de §8-redenclausule "een vorm die ref én clingo weigeren" was voor deze helft
+gemeten onwaar en klopt sinds deze fix.
+
+*May-touch-verruiming.* `ref/test/` stond niet in de May-touch van deze
+kaart. De verruiming is genomen om tak (b) een getuige te geven: zonder
+testbestand zou de nieuwe fout alleen door een handmatige probe gedekt zijn
+en dat is precies het gat waar de terugval al die tijd in zat (de
+failfast-kaart mat hetzelfde in Java: geen van de 159 bestaande tests raakte
+hem). Drie getuigen erbij, geen bestaande test gewijzigd.

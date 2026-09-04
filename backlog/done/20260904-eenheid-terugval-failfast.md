@@ -356,3 +356,33 @@ Bewust niet meegenomen, met reden in §8: de acht ongepoortwachte
 predikaatplekken die bij een niet-inwisselbaar paar nog steeds stil "geen
 omrekening nodig" antwoorden, en de ref-asymmetrie op de wirevorm
 (`ref/lib/arith.ml`) — beide kaartmateriaal buiten deze May-touch.
+
+## Correctie (2026-09-04, fixronde van de kaart `eenheid-wirevorm`)
+
+De tekst hierboven blijft staan zoals hij geschreven is; deze alinea corrigeert
+één gemeten-onware clausule erin.
+
+**§8, tweede bullet.** De reden waarom de acht ongepoortwachte
+rij-10-predikaatplekken kaartmateriaal mochten blijven luidde: het gaat om
+"een vorm die het corpus niet draagt en die ref én clingo weigeren". De eerste
+helft klopte, de tweede helft niet — en dat is precies gemeten. De vorm heeft
+twee helften. Op de canoniek-zonder-factor-helft weigerden ref en clingo
+inderdaad. Op de SPIEGELHELFT — een factor zonder canoniek doel — deed geen
+van beide dat: `ref/lib/arith.ml`'s factorvraag beantwoordde
+`Some f, _` met die factor, ongevraagd waarheen hij omrekent, en clingo erfde
+dat antwoord via `normalise.ml`. Gemeten op `corpus/negatief/`
+`wf092-factor-zonder-canoniek` met de sleepbaan-case: **ref PASS 2800, clingo
+PASS 2800** — twee uitvoerders die stil doorrekenden op een vorm die de
+verifier sinds WF-092 afkeurt. De clausule was dus voor de helft van de vorm
+onwaar op het moment dat hij werd opgeschreven.
+
+Sinds de fixronde klopt hij wel: `Arith.factor` splitst nu op beide velden en
+weigert BEIDE halfvormen bij naam (`ref` EVALUATION FAULT, `clingo`
+TRANSLATION FAULT, dezelfde melding, geen regel onder `backends/clingo`
+gewijzigd). Wat onveranderd blijft en dus onveranderd kaartmateriaal is: de
+DERDE uitvoerder rekent op de spiegelhelft nog steeds stil 302,5 — via
+precies het rij-10-gedrag dat §1 documenteert, want `convertibleNaar` leest
+de canoniek, `null` maakt het paar niet-inwisselbaar en dat lezen de
+ongepoortwachte plekken als "geen omrekening nodig". Dat is een
+backendbesluit (weigeren of markeren) op een vorm die het corpus niet draagt
+en die de verifier nu vóór elke executor afkeurt.
