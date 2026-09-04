@@ -71,8 +71,9 @@ een mismatch niet onmogelijk: twee GEDECLAREERDE eenheden hoeven niet
 inwisselbaar te zijn. Het corpus draagt de vormen die dat kunnen:
 
 - negen eenheidsvormen met `canoniek: null` en `factorNaarCanoniek: null`
-  (`dag`, `dagen`, `jaar`/`jr`, `kw`, `maand`, `mnd`, `uur`, `week`, `wk` — de
-  WF-038-tijdsduurparameters en de WF-035-duuroperanden; 24 voorkomens);
+  (`dag`, `dagen`, `jr`, `kw`, `maand`, `mnd`, `uur`, `week`, `wk` — de
+  WF-038-tijdsduurparameters en de WF-035-duuroperanden; 28 voorkomens,
+  waarvan 13 in de anchor-subset);
 - twee canonieken binnen één stelsel (`Tijd` heeft `mnd` én `dg` — precies de
   appel/peer-vorm die `tellerConvertibel`'s eigen javadoc benoemt);
 - het opake product (`Eenheid.product`: geen canoniek, geen factor).
@@ -267,6 +268,18 @@ de kaart repareert en wat zij expliciet ongemoeid laat.
   morgen: nul treffers zegt dat het corpus + de toka-zone de mismatch niet
   aanbieden, niet dat geen enkel document dat kan. Dat is precies waarom de
   terugval een fout werd in plaats van een aanname.
+- **De ref-asymmetrie op de wirevorm (lens-1-meting).** `ref/lib/arith.ml:37`
+  draagt letterlijk dezelfde terugval die deze kaart in Java wegneemt
+  (`None -> Q.one`). Gemeten op een sleepbaan-variant met `canoniek: "m"` en
+  `factorNaarCanoniek: null` op `km`: de verifier laat de vorm door
+  (`verifier: PASS`), ref rekent met factor 1 (605/2 = 302,5 en fault dan op
+  de decimalen-declaratie), en het Drools-pad gooit nu de nieuwe luide fout —
+  het orakel is op deze vorm de toegeeflijke en één backend faalt, wat gate
+  12's ERROR-contract tot een harde gate-val maakt zodra zo'n document ooit
+  het corpus in wil. Het natuurlijke vervolg, kaartmateriaal: een WF-regel
+  met negatief op `canoniek` zonder `factorNaarCanoniek` (dan valt de fout
+  bij verificatie, vóór elke executor) plus dezelfde fail-fast in
+  `ref/lib/arith.ml` — beide buiten deze kaart-May-touch.
 
 ## Result (2026-09-04)
 
