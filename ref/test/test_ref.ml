@@ -986,7 +986,18 @@ let () =
   let tested = [ seg "2024-01-01" "2024-02-01" (n "1000") ] in
   let span = [ (day "2024-01-01", day "2024-07-01") ] in
   let tp = Timeline.true_periods_of tested ~span (fun v -> Arith.compare_op Ongelijk v (n "1000")) in
-  expect_num "WV-3.6-f" (Timeline.totaal month (Timeline.clip vals tp)) "500"
+  expect_num "WV-3.6-f" (Timeline.totaal month (Timeline.clip vals tp)) "500";
+  (* the explicit rate operand: 10 €/mnd across 2024 integrates to 120 €,
+     denominator cancelled — the number is the same 12×10 the plain rule
+     gives, only the unit differs *)
+  let eur_per_mnd = { eur with noemer = Some mnd } in
+  (match Timeline.totaal month [ seg "2024-01-01" "2025-01-01" (nu eur_per_mnd "10") ] with
+  | Value.Num (v, Value.Unit u) ->
+      check "WV-3.6-g" (Q.equal v (q "120") && u.afkorting = Some "€" && u.noemer = None)
+  | other -> check ("WV-3.6-g (got " ^ Value.to_string other ^ ")") false);
+  (* the same timeline declared €/jr counts against a foreign grid *)
+  expect_fault "WV-3.6-g-vreemde-noemer" (fun () ->
+      Timeline.totaal month [ seg "2024-01-01" "2025-01-01" (nu eur_per_jr "10") ])
 
 (* verification-round regression: a true-period boundary that merely
    splits a bucket must not make the total undercount — clip coalesces

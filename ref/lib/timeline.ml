@@ -298,7 +298,35 @@ let complement (true_periods : (int * int) list) ~(span : (int * int) list) : (i
       List.rev (walk sv [] inside))
     span
 
-(* totaal(tl) = Σ value(s) × whole-units(van, tot); a leeg segment
+(* the time unit the granularity's grid counts in (ch. 3.2 job 1) *)
+let granularity_time_unit : Ir_v0.Ast.granulariteit -> Ir_v0.Checks.time_unit = function
+  | Dag -> Tu_dag
+  | Week -> Tu_week
+  | Maand -> Tu_maand
+  | Kwartaal -> Tu_kwartaal
+  | Jaar -> Tu_jaar
+
+(* the multiplier of one segment (ch. 3.6 "Units"): a plain or unitless
+   value is weighted by a bare count, but a RATE value is INTEGRATED —
+   the count is a duration stated in the value's own denominator, so the
+   denominator cancels and the total carries the numerator alone
+   (€/mnd × mnd = €, the §4.20 Tabel 30 row-2 result the frontend types
+   statically). The denominator must name this timeline's granularity
+   unit: weighing months against a per-year rate would need a conversion
+   the declaration never states, so it faults instead of inventing one. *)
+let duration (g : Ir_v0.Ast.granulariteit) units (v : Value.t) : Value.t =
+  match v with
+  | Num (_, Unit ({ noemer = Some noemer; _ } as u)) ->
+      (match Ir_v0.Checks.time_unit_of_eenheid noemer with
+      | Some tu when tu = granularity_time_unit g -> Num (Q.of_int units, Unit noemer)
+      | _ ->
+          fault
+            "the temporal total of a %s value needs its denominator to name the timeline's own \
+             granularity unit (ch. 3.6)"
+            (Arith.show_unit (Unit u)))
+  | _ -> Num (Q.of_int units, Unitless)
+
+(* totaal(tl) = Σ value(s) × duration(van, tot); a leeg segment
    contributes 0; a segmentless timeline totals to 0 (the absent-timeline
    leeg case is the caller's, ch. 3.6) *)
 let totaal (g : Ir_v0.Ast.granulariteit) (tl : t) : Value.t =
@@ -308,6 +336,6 @@ let totaal (g : Ir_v0.Ast.granulariteit) (tl : t) : Value.t =
       | Empty -> acc
       | v ->
           let units = whole_units g s.s_van s.s_tot in
-          Arith.add acc (Arith.mul v (Num (Q.of_int units, Unitless))))
+          Arith.add acc (Arith.mul v (duration g units v)))
     (Num (Q.zero, Unitless))
     (normalise tl)
