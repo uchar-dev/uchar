@@ -118,7 +118,7 @@ kolommen (c)/(d) leeg staan is dat geen stilzwijgende instemming.
 
 ## Fase 2 — de zonevergelijking
 
-Alle vier zones (golden 152, rood 22, negatief 244, toka 30), per
+Alle vier zones (golden 152, rood 22, negatief 243, toka 30), per
 composietknoop de afgeleide verwachting naast de geserialiseerde
 annotatie, facet voor facet in de WF-091-volgorde.
 
@@ -166,10 +166,13 @@ bestaande foldbron-getuigen hierboven).
 
 ### Mutanttabel (schoon / naar `residual` / rood, van dertien)
 
+*Getallen op de eindstand van de fixronde; waar die van de landing
+afwijken staat de oude waarde erbij.*
+
 | mutant | schoon | residual | rood | golden+rood vuil |
 |---|---|---|---|---|
 | 0. ongemuteerd | 0 | 0 | 13 | 0 |
-| facet `unit` uit | 3 | 4 | 6 | 0 |
+| facet `unit` uit | 7 (was 3) | 0 (was 4) | 6 | 0 |
 | facet `decimals` uit | 2 | 0 | 11 | 0 |
 | facet `wholeness` uit | 1 | 0 | 12 | 0 |
 | facet `soort` uit | 1 | 0 | 12 | 0 |
@@ -181,18 +184,20 @@ bestaande foldbron-getuigen hierboven).
 | arm aggregatie uit | 4 | 0 | 9 | 0 |
 | TOTAAL-noemerstrip uit | 1 | 0 | 12 | 0 |
 | MIN/MAX: operand 0 i.p.v. minste precisie | 1 | 0 | 12 | 0 |
-| hele afleidingskruising uit | **13** | 0 | 0 | 0 |
+| hele afleidingskruising uit | **13** (14 met het nieuwe wf089-geval) | 0 | 0 | 0 |
 | *over-afwijzing:* teken WEL gekruist (additief) | 0 | 0 | 13 | **5** |
-| *over-afwijzing:* MAAL-precisie WEL gekruist | 0 | 0 | 13 | **20** |
+| *over-afwijzing:* teken WEL gekruist (alle armen) | 0 | 0 | 13 | **7** |
+| *over-afwijzing:* MAAL-precisie WEL gekruist, ch. 2.3-FORMULE | 0 | 0 | 13 | **11** |
+| *over-afwijzing:* MAAL-precisie WEL gekruist, placeholder | 0 | 0 | 13 | **20** |
 | *over-afwijzing:* alle skiplijsten leeg | — | — | — | **27** |
 
-De `unit`-mutant splitst precies langs de "claimt elk facet"-kolom van
-de ch. 4.1-tabel: waar de formule het hele type claimt degradeert het
-geval naar `residual structure mismatch` (afronding, begrenzing, SOM,
-TOTAAL), waar zij een facet niet claimt wordt het SCHOON (additief,
-MAAL, MAXIMUM). Geen enkele mutant raakt een bestaande referentie-arm:
-de zes `wf091-*ref*`-gevallen en `wf078-binderref-type-lie` blijven in
-elke run rood.
+Na de fixronde staat de `unit`-mutant niet meer op vier `residual`-gevallen:
+geen enkele afgeleide arm houdt het vangnet nog, want geen enkele claimt het
+teken. De "claimt elk facet"-kolom van de ch. 4.1-tabel bestaat daarmee niet
+meer; bij de landing splitste de mutant er nog precies langs (afronding,
+begrenzing, SOM, TOTAAL degradeerden; additief, MAAL, MAXIMUM werden schoon).
+Geen enkele mutant raakt een bestaande referentie-arm: de zes
+`wf091-*ref*`-gevallen en `wf078-binderref-type-lie` blijven in elke run rood.
 
 ### Dekking, eerlijk
 
@@ -267,8 +272,8 @@ verwachting die haar operanden AFLEIDEN — zelfde motor, zelfde
 facetvolgorde, zelfde regelnummer, want het is dezelfde wet met een
 formule op de plek van de declaratie. Dertien negatiefs, rood-eerst en
 mutant-exact, één per (positie, facet); over-afwijzing nul, direct
-gemeten als een byte-identiek verifierrapport over 477 documenten in
-vier zones.
+gemeten als een byte-identiek verifierrapport over de 447 documenten in
+vier zones die er vóór de kaart waren.
 
 De meetfase leverde vijf bevindingen op waar de vier bronnen uiteenlopen
 (het eenzijdige eenheidspaar, de TOTAAL-noemerstrip, de absolute waarde
@@ -278,11 +283,11 @@ stil beslecht: waar de bronnen het eens zijn kruist de wet, waar zij
 uiteenlopen claimt zij niets en staat de splitsing in de spec.
 
 Twee uitsluitingen zijn gemeten en geprijsd in plaats van gekozen: het
-teken (5 tot 27 golden+rood-documenten) en de precisie van maal (20) —
-dit corpus draagt drie producenten met drie precisiepolitieken. De
-vierde klasse van ch. 2.10 blijft ongekruist met een uitzonderingsset
-die letterlijk gelijk is aan die van gate 13, zodat verifier en
-executor-harnas dezelfde posities benoemen.
+teken (5 tot 27 golden+rood-documenten) en de precisie van maal (11 voor
+de ch. 2.3-formule, 20 voor de placeholder — zie de fixronde) — dit corpus
+draagt drie producenten met drie precisiepolitieken. De vierde klasse van
+ch. 2.10 blijft ongekruist; die lijst en die van gate 13 zijn met de hand
+op elkaar gelegd, niet mechanisch gekoppeld (zie de fixronde).
 
 Wat open blijft staat er met zoveel woorden: acht van de elf armen
 hebben voor het eenheidsfacet alleen een negatief; de MAAL-cancel heeft
@@ -292,3 +297,142 @@ eenheidspaar zijn eenbron-formules; en ch. 2.10's slotalinea in
 op de verbodslijst van deze kaart. Alle dertien poorten groen. Voorstel
 op beschermde paden (`spec/verifier/`, `spec/IR-SPEC.md`): de tak blijft
 staan tot de maintainer hem fast-forward merget.
+
+## Fixronde (2026-09-04)
+
+Lens 1 bevestigde de motor en elk mutantgetal en blokkeerde op prosa- en
+randpunten. Zeven daarvan zijn hier gerepareerd; elk punt is éérst
+gereproduceerd.
+
+**1. Het teken verdween van ALLE afgeleide armen (blocker, code naar
+spec).** De ch. 4.1-bullet zei dat het teken nergens geclaimd wordt; de
+code kruiste het op zes van de elf armen (begrenzing, afronding, SOM,
+EERSTE/LAATSTE, TOTAAL, MIN/MAX met één operand — de twee min/max-takken
+stonden bovendien ongelijk, `["domain";"residual"]` naast
+`["domain";"sign";"residual"]`). Gereproduceerd met zes probes, één per
+arm; de begrenzingsprobe vóór:
+
+    WF-091 FAIL /resolvedRegels/0/waarde/type: sign mismatch: the clamp is
+    typed ONBEPAALD, but the type derived from its base is NIET_NEGATIEF
+
+en de over-afwijzing die lens 1 bouwde — een clamp met een minimum van 0
+over een ONBEPAALD-basis, dus echt niet-negatief, geannoteerd
+NIET_NEGATIEF — vóór:
+
+    WF-091 FAIL /resolvedRegels/0/waarde/type: sign mismatch: the clamp is
+    typed NIET_NEGATIEF, but the type derived from its base is ONBEPAALD
+
+ná de fix: `verifier: PASS`, alle zeven. `sign` staat nu in élke
+skiplijst, en met `sign` gaat `residual` mee (de motor kan het vangnet
+niet één facet blind maken, en het vangnet zou anders precies het
+gedeclineerde facet terugmelden). De twee min/max-takken zijn gelijk
+getrokken op `["domain";"sign";"residual"]`.
+
+Prijs, gemeten: de zes gerepareerde armen dragen NUL golden+rood-getuigen —
+het volledige verifierrapport over alle 461 documenten in vier zones is
+byte-identiek vóór en na. De klasse die zij ten onrechte weigerden is dus
+met een probe gepind, niet met het corpus. Teken kruisen kost 5 documenten
+op de additieve arm, 7 over alle armen (de twee extra zijn de
+AANTAL-verbredingen), 27 met alle skiplijsten leeg. Geen negatief hing
+eraan: de dertien zijn 7 unit / 4 decimalen / 1 geheel / 1 soort —
+gecontroleerd, en alle dertien blijven rood.
+
+**2. De ketenzin was onwaar via vierde-klasse-operanden (blocker).** "a
+composite is bound to the declarations underneath it" stond op drie
+plekken (ch. 4.1, de WF-091-indexrij, de `checks.ml`-kop). Gereproduceerd
+met de a24-vorm van lens 1: een `GEDEELD_DOOR` over twee eenheidloze
+operanden geannoteerd `kg`, een afronding erboven die daar `kg` uit
+afleidt, een `kg`-doel dat het aanneemt — `verifier: PASS`. De keten
+verankert alleen door operanden die zelf gekruist zijn; een
+vierde-klasse-operand breekt hem. Gemeten: **26** zulke operandposities
+over **19** van de 174 golden+rood-documenten (23 onder een deling, 1
+onder deling-met-absolute-waarde, 1 onder een macht, 1 onder een
+percentage-van; 12 gelezen door een afronding, 14 door een additieve
+knoop). De sentinel-/leeg-deur is wél dicht (WF-034), maar een fabricage
+is de sterkere ontsnapping: zij zet de kruising niet uit, zij voedt haar
+een premisse. Alle drie de plekken zeggen dat nu, met "OPEN" erbij.
+
+**3. De maal-prijs prees een placeholder.** "crossing them turns 20
+golden+rood documents red" mat het leeghalen van de skiplijst tegen wat de
+code bij een niet-geclaimd facet schrijft (0 decimalen, niet-geheel) — niet
+de gestelde ch. 2.3-regel. Beide gemeten en beide opgeschreven: tegen de
+FORMULE (som van de operanddecimalen, nooit geheel) **11**
+golden+rood-documenten rood (3 op decimalen, 8 op geheel, disjunct);
+tegen de PLACEHOLDER **20**. De 9+9-divergentiegetallen over de vier zones
+horen bij de formule (8+0+1+0 decimalen, 8+1+0+0 geheel) — nagerekend.
+
+**4. WF-089/WF-090 kruisen nu óók op composieten.** Gereproduceerd: een
+`PLUS` en een `Afgerond` geannoteerd met keuzetypedomein `Vaarwater`
+melden beide WF-089's eenzijdige arm op de composietpositie. Beide
+indexrijen dragen dat bereik nu, en de DERIVED-ARMS-alinea zegt niet meer
+"same number" maar "dezelfde nummer-volgt-het-facet-regel". Er was geen
+negatief voor die composiet-domeinweigering; er is er nu één:
+`corpus/negatief/wf089-composiet-domein` (een `PLUS` over twee getallen
+geannoteerd `Vaarwater`, één regel, arm-exact). Mutant-bewijs: de hele
+afleidingskruising uit → schoon samen met de dertien `wf091-*` en niets
+anders; de additieve arm uit → schoon met de vier `wf091-binair-*` en niets
+anders; `domain` in de skiplijst van die arm → dit geval, en als enige van
+alle 257 negatiefs, schoon. WF-090's composietarm heeft geen artefact en
+zegt waarom: de enige twee struct-rakende composieten in vier zones zijn
+`EERSTE`-folds, precies de positie waar de afgeleide kruising het
+domeinfacet overslaat.
+
+**5. Vijf kleinere punten.**
+
+- De **soort-instorting** staat in de additief- en maal-rij: `Percentage +
+  Percentage` leidt `number` af, dus een getal is de enige annotatie die
+  die posities toelaten (gereproduceerd: `soort mismatch: the PLUS
+  composite is typed percentage, but the type derived from its operands is
+  number`; met `number` geannoteerd passeert dezelfde vorm).
+- De **gate-13-koppeling** is geen "identical exception set" meer. De sets
+  verschillen, gemeten: gate 13 kent geen `AANTAL` (het verdraait alleen
+  eenheden), het zondert een as uit die deze wet niet kent (de
+  DUUR-operand van datum ± duur), het verdraait een `Let` die hier bij
+  WF-076 hoort, en zijn prosa noemt `GEDEELD_DOOR_ABS` niet terwijl zijn
+  complement hem dekt. Nu: twee onafhankelijk onderhouden lijsten, met de
+  hand op elkaar gelegd, vandaag zonder tripwire.
+- Het **eenzijdige eenheidspaar** is versmald tot de betwiste volgorde.
+  Alleen "eenheidloos links, eenheid rechts" is omstreden; met de eenheid
+  LINKS zijn alle vier bronnen het eens. De wet claimt toch geen van beide
+  — haar guard is de eenheidscompatibiliteit van het paar, en de
+  onbetwiste helft draagt nul golden+rood-voorkomens, dus splitsen koopt
+  niets en pint iets. De ene knoop die het corpus draagt staat in de
+  betwiste volgorde en annoteert de RECHTER eenheid, tegen ch. 2.6 in
+  (`jutterswet-sleeprest`, `50 min <km>`) — en is bovendien een vorm die
+  WF-035's adoptieclausule zelfstandig beslecht.
+- "operand 0's type, **whole**" → "unchanged"/"in full" overal in ch. 4.1
+  en in de indexrij; het botste met het facet `wholeness`, dat wél gekruist
+  wordt.
+- De **Percentage-afronding** en de **8-van-11-getuigeloosheid** van het
+  eenheidsfacet staan nu in de "Measured, and open"-alinea van ch. 4.1,
+  niet alleen in de indexrij.
+- De **doorval van `Afgerond` over een niet-numerieke basis** heeft een
+  eigen tabelregel gekregen (hij claimde elk facet zonder rij). Gemeten:
+  alle 32 afrondingen in vier zones staan over een `Numeriek`-basis, dus
+  zowel die doorval als de Percentage-tak heeft nul voorkomens.
+- Fase 2 zei "negatief 244"; dat was 243.
+
+**Gemeld, NIET gerepareerd (verbodslijst).** Vier bestaande negatief-NOTEs
+dragen sinds fix 1 een onware falsifieerbaarheidszin — zij zeggen "drop
+`unit` and this case degrades to `residual structure mismatch`", en die
+gevallen worden nu SCHOON, want geen afgeleide arm houdt het vangnet nog:
+`wf091-afgerond-eenheid`, `wf091-begrensd-eenheid`, `wf091-som-eenheid`,
+`wf091-totaal-eenheid`. Een vijfde, `wf091-afgerond-decimalen`, was al vóór
+deze ronde onnauwkeurig: met `decimals` uit meldt hij `wholeness mismatch`,
+niet `residual structure mismatch` (gemeten vóór én na). Bestaande
+negatiefs staan op de verbodslijst van deze kaart, dus dit is gemeld in
+plaats van gewijzigd — vier plus één regels voor de maintainer.
+
+En, ongewijzigd sinds de landing: `RUNTIME-SEMANTICS.md` ch. 2.10's
+slotalinea blijft onwaar en blijft verboden voor de fixronde.
+
+**Poorten na de fixronde**
+
+     1 check-self-contained: PASS
+     2 check-ir-schema: PASS (schema valid; 174 file(s) validate and round-trip)
+     3 check-verifier: PASS (174 golden clean; 257 negatief rejected for their declared rule)
+     5 check-oracle: PASS (403 cases replayed exactly; 2 no-case goldens)
+
+Gate 3 gaat van 256 naar 257 negatiefs (het ene nieuwe
+`wf089-composiet-domein`); geen andere teller beweegt. De volle dertien
+draait de hoofdsessie op de eindstand.
