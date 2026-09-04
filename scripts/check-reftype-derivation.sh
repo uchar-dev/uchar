@@ -80,10 +80,11 @@
 #     - the §5.1 Tabel 32 comparison operand restatement (conditie) — 4 hits.
 # Every other effType call in either file is a pass-through on this corpus, so its derivation is
 # STATED but not measured here. For the DRL branch, measured over the whole corpus: 11 of its 27
-# converted call sites are REACHED at all, 3 of those ever override. The remaining 16 — the temporal
-# §4.1/§5.1.4 rescalings, the Begrensd condition arm, the §8.2 period comparisons, the four "an
-# OPAQUE product unit stays an honest marker" sites — rest on the backend's JUnit witnesses (gate
-# 12's obligation), not on a green line here.
+# converted call sites are REACHED at all, 3 of those ever override. The OTHER 24 rest on the backend's
+# JUnit witnesses (gate 12's obligation), not on a green line here, and they are two different facts:
+# 8 ARE reached but on this corpus always UNITLESS — the temporal §4.1/§5.1.4 rescalings, the Begrensd
+# value arm, the §8.2 timeline comparison, the two concatenation-aggregation sites — while the remaining
+# 16 no golden reaches at all.
 #
 # The DRL leg is NOT a repetition of the exec one. It reaches a golden the exec branch cannot play
 # at all (jutterswet-vondsttarief, which the exec transpiler SKIPs as "waarde buiten scope" while the
@@ -575,6 +576,20 @@ fi
 
 if [ "$n_twists" -eq 0 ]; then
     echo 'FAIL: no annotation was twisted — the harness probed nothing (an empty twist set is never green)' >&2
+    exit 1
+fi
+
+# The same bottom for the DRL leg, and it is NOT implied by the baseline clamp above. That clamp demands
+# PLAYED or EXCLUDE per golden, so a text branch that REFUSED EVERY golden would satisfy it for all of
+# them, be indifferent by construction (both runs refuse identically), and leave the leg silently green
+# while measuring nothing at all. Measured 2026-09-04 with exactly that mutant — a refusal at the front of
+# CaseRunner's DRL branch: the leg fell from 9 played goldens to 0 and the gate still said PASS. NB the
+# count is the STATUS HEAD, so a golden whose every case file carried expectedFault would replay nothing
+# and still print "PLAYED 0", counting here — the corpus zone discipline gate 4 pins (golden carries
+# expected, rood carries expectedFault) makes that shape unreachable today, and this bottom must not come
+# to lean on it.
+if [ "$n_drl" -eq 0 ]; then
+    echo 'FAIL: the DRL-text branch PLAYED no golden — the leg measured nothing (an empty played set is never green)' >&2
     exit 1
 fi
 
