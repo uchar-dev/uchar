@@ -303,7 +303,15 @@ geworden: `backlog/new/20260904-ref-tijdtotaal.md`.
     12 check-drools: PASS (played 106, auto-excluded 43, value-divergence 1, no-case 3, JUnit 198 tests)
     13 check-reftype-derivation: PASS (52 unit-annotaties gedraaid over 11 goldens; 39 executor-replays; 0 gepinde overlevenden)
 
-Vier tellers bewegen, alle vier door de nieuwe golden: poort 2 en 3 van
+Na de fixronde opnieuw gedraaid, alle dertien: **elke teller identiek**.
+Dat is precies wat de versmalling belooft — zij raakt uitsluitend de vorm
+"set-lezing over een tijdlijnattribuut", die geen enkel corpusartefact
+draagt. Poort 5 en 12 noemen de drie caseloze goldens nu bij naam
+(`jutterswet-seizoenvondst`, `jutterswet-tempototaal`,
+`jutterswet-vormenkabinet`).
+
+Vier tellers bewegen ten opzichte van vóór de kaart, alle vier door de
+nieuwe golden: poort 2 en 3 van
 174 naar 175 bestanden, poort 5 en 12 van 2 naar 3 caseloze goldens,
 poort 10 van 28 naar 29 `.rgs`-goldens. Poort 13's **twistelling** blijft
 52 over 11 goldens — een caseloze golden wordt niet herspeeld — maar de
@@ -317,22 +325,25 @@ alle 28 eerdere `.rgs`-goldens her-emitteren byte-identiek.
 ## Result (2026-09-04)
 
 De voorvraag beantwoord en het besluit gebouwd: de set-lezing van `het
-totaal van` is een alias van `de som van` en houdt de noemer; de strip
-blijft de temporele route. Eén predicaat in `functieType`, geen ander
-gedrag beweegt — 28 bestaande `.rgs`-goldens en 45 pariteits-`.rgs`
-byte-identiek. De flank is omgeklapt en gemeten: waar eerst de eerlijke
-declaratie (`€/mnd`-doel) statisch werd afgewezen en de geaccepteerde
-(`€`-doel) bij de oracle faalde, is het nu precies andersom. Het
-herpin-risico is nul: alle drie de toolchain-tests die deze vorm raken
-zijn read-only gemeten en houden — `ScenarioOrakelTest:765` pint alleen
-de waarde-uitkomst over unitloze operanden, en de test die de strip wél
-pint gebruikt een scalaire (`set = false`) operand. De golden
-`jutterswet-tempototaal` zet de drie lezingen naast elkaar op de wire en
-is caseloos met reden: `ref` en Drools dragen de set-fold, `clingo`
-weigert hem reden-dragend en poort 6 heeft geen weigerkanaal. Eén
-nevenmeting is de moeite waard om apart te karten: de §4.20-noemerstrip
-is een statische claim die `ref` op **geen** route uitvoert
-(`Timeline.totaal` vermenigvuldigt met een unitloze telling), onzichtbaar
-zolang elke temporele `TOTAAL` in het corpus unitloos is — deze golden
-maakt hem zichtbaar. Alle dertien poorten groen; frontend geraakt, dus
-herpin bij de landing.
+totaal van` over een **niet-temporeel** attribuut is een alias van `de som
+van` en houdt de noemer; de strip blijft de **tijdsaggregatie**. Eén
+predicaat in `functieType` — na de fixronde met twee helften, want de
+per-element-tijdlijnvouw over een set integreert wél en hoort onder de
+strip. Geen ander gedrag beweegt: 28 bestaande `.rgs`-goldens en 45
+pariteits-`.rgs` byte-identiek, en na de versmalling ook de kaart-eigen
+golden. De flank is omgeklapt en gemeten, in beide richtingen: op de
+scalaire set-lezing werd eerst de eerlijke declaratie (`€/mnd`-doel)
+statisch afgewezen en faalde de geaccepteerde (`€`-doel) bij de oracle —
+nu andersom; op de temporele set-lezing typeerde de eerste fix `€/mnd`
+waar Drools naar `€` integreert (`PLAYED` op 150) — nu weer `€`. Het
+herpin-risico is nul: vier toolchain-raakvlakken read-only gemeten en alle
+vier houden, waaronder de Phase-PE-differential, wier operand unitloos is
+zodat de strip er een no-op blijft. De golden `jutterswet-tempototaal` zet
+de drie lezingen naast elkaar op de wire en is caseloos met reden: `ref` en
+Drools dragen de set-fold, `clingo` weigert hem reden-dragend en poort 6
+heeft geen weigerkanaal. De nevenmeting is een eigen kaart geworden
+(`backlog/new/20260904-ref-tijdtotaal.md`): de §4.20-integratie is een
+`ref`-defect, geen open vraag — Drools voert haar uit (120 op de
+tijdlijnvouw, 150 op de per-element-vouw) terwijl `ref` `EUR vs EUR`
+faultet respectievelijk 0 geeft. Alle dertien poorten groen; frontend
+geraakt, dus herpin bij de landing.
