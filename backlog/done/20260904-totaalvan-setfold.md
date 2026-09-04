@@ -16,12 +16,19 @@ grammatica laat hem toe en de frontend typeert hem volwaardig
 ## Het antwoord (maintainerbesluit 2026-09-04)
 
 De set-lezing van `het totaal van` is een **alias van `de som van`,
-ZONDER noemerstrip**. De noemerstrip blijft **exclusief voor de temporele
-route** (de waardepertijdseenheid-aggregatie van §4.20 Tabel 30). De
-toolchain accepteert de set-vorm al en die lijn volgen we; wat gecorrigeerd
-wordt is de **typering op de set-route**. De twee sporen uit de oude kaart
-(ref leert de vorm dragen / de frontend weigert de vorm) vervallen daarmee
-allebei.
+ZONDER noemerstrip**. De noemerstrip blijft **exclusief voor de
+tijdsaggregatie** (de waardepertijdseenheid-aggregatie van §4.20 Tabel 30).
+Wat gecorrigeerd wordt is de **typering op de set-route**. De twee sporen
+uit de oude kaart (ref leert de vorm dragen / de frontend weigert de vorm)
+vervallen daarmee allebei.
+
+**Wat "de toolchain" hier wel en niet zegt.** De toolchain *accepteert* de
+set-vorm — grammatica en operandcontrole laten hem door — maar zij
+**typeert hem gestript**: `vendor/uchar-frontend/**/ExpressieBouwer.java`
+op de huidige pin (`SPEC_REV 904ecc3`) draagt de arm `case TOTAAL ->`
+onvoorwaardelijk. Deze fix **divergeert daar bewust van**, per
+maintainerbesluit; de pin-bump brengt de nieuwe typering mee. De
+acceptatie volgen we, de typering corrigeren we.
 
 ## De flank vóór de fix (rood-eerst, gemeten)
 
@@ -87,14 +94,19 @@ case TOTAAL -> setLezing(args) ? eerste
         : eerste instanceof Datatype.Numeriek n && n.eenheid() != null && n.eenheid().noemer() != null
         ? new Datatype.Numeriek(n.geheel(), n.decimalen(), n.teken(), n.eenheid().teller())
         : eerste;
+
+private static boolean setLezing(List<Expr> args) {
+    return args.size() == 1 && args.get(0) instanceof Expr.AttribuutRef a && a.set()
+            && !(a.objecttype() != null && a.objecttype().attribuutGranulariteit.containsKey(a.attribuut()));
+}
 ```
 
-`setLezing(args)` is `args.size() == 1 && args.get(0) instanceof
-Expr.AttribuutRef a && a.set()` — hetzelfde `set()`-veld dat
-`gedurendeKenmerkFilter` negatief test om de temporele clip toe te laten,
-dus de twee routes worden door **één** predicaat op **één** wire-veld uit
-elkaar gehouden. `eerste` is letterlijk wat de SOM-arm doet: eenheid,
-decimalen, geheel en teken van het element, ongewijzigd. De
+`setLezing(args)` is een set-lezing over een **niet-tijdlijn**-attribuut
+(zie de fixronde hieronder voor de tweede helft en waarom die er moest
+zijn) — het `set()`-veld dat `gedurendeKenmerkFilter` negatief test om de
+temporele clip toe te laten, plús dezelfde granulariteitstoets die
+`totaalOperandFout` al toepast. `eerste` is letterlijk wat de SOM-arm doet:
+eenheid, decimalen, geheel en teken van het element, ongewijzigd. De
 operandcontrole (`totaalOperandFout`, §4.20 Tabel 30) is **niet**
 aangeraakt — dit besluit gaat over de typering.
 
@@ -133,9 +145,20 @@ gehaald en houden:
 * `RuleCheckTest.totaal_van_niet_tijdseenheid_rate_wordt_gemeld` — raakt
   alleen `totaalOperandFout`, ongewijzigd.
 
-**Herpin-risico dus nul voor de bekende toolchain-tests.** Extra
-empirisch bewijs uit poort 11: de 45 `.rgs` van de pariteitszone
-her-emitteren byte-identiek. De pin-bump is een gewone conformance-PR.
+Vierde raakvlak, gemeten na de fixronde: de differentialtest
+`ExecModelDifferentialTest` Phase PE (`het totaal van <temporeel attr> van
+alle <set>`, 120+30+0=150). Die vorm is precies de vorm die de fixronde
+terug onder de strip bracht, maar haar operand is een **unitloos** `Bedrag`
+— door de gefixte frontend gehaald typeert de knoop
+`Numeriek(decimalen=2, eenheid=null)`, dus de strip is er een no-op en de
+typering beweegt niet.
+
+**Herpin-risico dus nul voor de bekende toolchain-tests.** Poort 11 zegt
+hier **niets** over: de pariteitszone draagt **nul** `TOTAAL`-knopen (`grep`
+over `toka/`: 0 hits op `"kind": "TOTAAL"` en 0 `.rgs` met "totaal van"),
+dus haar byte-identiteit is geen bewijs voor deze wijziging — ze bewijst
+alleen dat er niets anders is meegeschoven. De pin-bump is een gewone
+conformance-PR, die de nieuwe typering meebrengt.
 
 ## De golden
 
@@ -144,13 +167,16 @@ rechtenvrij. Drie regels, één document, één eenheid (`€/mnd`):
 
 | regel | operator | operand | operandtype | resultaattype |
 |---|---|---|---|---|
-| `bewaarlast` | `het totaal van` | set-lezing (`set = true`) | `€/mnd` | **`€/mnd`** |
+| `bewaarlast` | `het totaal van` | set-lezing over een **niet-temporeel** attribuut (`set = true`) | `€/mnd` | **`€/mnd`** |
 | `bewaarsom`  | `de som van`     | dezelfde set-lezing | `€/mnd` | `€/mnd` |
 | `bewaargeld` | `het totaal van` | eigen tijdlijnattribuut (`set = false`) | `€/mnd` | **`€`** |
 
 Rij 1 naast rij 2 pint het besluit (de alias); rij 1 naast rij 3 pint de
-routesplitsing (de strip is temporeel-exclusief). Poort 10 her-emitteert
-`bron.rgs` byte-identiek, dus geen van beide kan nog stil bewegen.
+routesplitsing (de strip is de tijdsaggregatie alleen). Poort 10
+her-emitteert `bron.rgs` byte-identiek, dus geen van beide kan nog stil
+bewegen. De **vierde** vorm — een set-lezing over een *temporeel*
+attribuut, die wél integreert — staat niet in deze golden; zij hoort bij
+de ref-kaart die haar waarde-divergentie dicht.
 
 **Caseloos, met reden.** Handberekend (J1 bewaart V1 = 12, V2 = 7,
 V3 zonder tarief; J2 bewaart niets): `bewaarlast` J1 = 19 €/mnd, J2 = 0
@@ -170,12 +196,15 @@ leegbron-regel. Uitvoerdersdracht, per route gemeten:
 * temporele route — `ref` weigert óók, en om een andere reden:
   `EVALUATION FAULT: incompatible units: EUR vs EUR`. `Timeline.totaal`
   vermenigvuldigt elk segment met een **unitloze** telling, dus de
-  `€/mnd`-eenheid overleeft de collapse en het `€`-doel weigert hem. De
-  §4.20-strip is vandaag een statische claim van de frontend die de
-  oracle op **geen van beide** routes uitvoert. Geen poort zag dat, omdat
+  `€/mnd`-eenheid overleeft de collapse en het `€`-doel weigert hem.
+  Drools speelt diezelfde regel wél: op J1 met een tijdlijn van 10 €/mnd
+  over 2024 geeft `bewaargeld` **120** — `PLAYED 1` — dus de strip is
+  precies wat de derde executor uitvoert. Het is dus **geen open muntworp**
+  ("strip of geen strip") maar een **ref-defect**: `ref` voert de
+  Tabel-30-integratie op geen enkele route uit. Geen poort zag dat, omdat
   elke temporele `TOTAAL` in het corpus unitloos is. Deze golden maakt de
-  claim zichtbaar op de wire; hem dichten is een spec-en-oracle-vraag,
-  geen emittervraag, en blijft hier bewust open.
+  claim zichtbaar op de wire; hem dichten is een ref-taak en staat als
+  eigen kaart in `backlog/new/20260904-ref-tijdtotaal.md`.
 
 `NOTE.md` draagt de vóór/na-flank, de weigerteksten letterlijk en de
 handberekening — klaar om als case te landen zodra clingo de set-fold
@@ -192,6 +221,71 @@ hierboven (doel `€/mnd` schoon, doel `€` de eenheidsmismatch), plus de
 zusterassertie dat de `SOM`- en `TOTAAL`-knoop over dezelfde set een
 **identiek** type dragen. De golden pint dat vandaag op de wire (poort
 10); de unittest zou de diagnostiekkant erbij pinnen zonder een corpusrun.
+
+## Fixronde (2026-09-04) — de blocker van lens 1
+
+Lens 1 vond dat het gelande predicaat te **breed** was: het testte alleen
+`a.set()` en doodde de noemerstrip daarmee óók op een vierde vorm die de
+kaart niet in beeld had — de set-lezing over een **temporeel** attribuut.
+Die vorm is geen instance-vouw maar de §7.1 **per-element-tijdlijnvouw**:
+elk element wordt éérst over de tijd gevouwen (`rsTijdTotaal` op de
+granulariteit van het attribuut) en pas daarna over de set. Zij
+**integreert dus wél** over de tijd, en hoort onder de strip.
+
+**De reproductie, vóór de fix** — dezelfde bron als de flank hierboven,
+maar met `het bewaartarief … met eenheid €/mnd voor elke maand`:
+
+```
+doel €/mnd:  ir: … geschreven   →   argument.type.eenheid = EUR/mnd
+                                    functie.type.eenheid  = EUR/mnd   ← FOUT
+doel €:      ERROR (line 20): berekening: toekenning:
+             eenheden 'EUR' en 'EUR/mnd' zijn niet in elkaar om te rekenen
+```
+
+Fout, want de uitvoerder integreert: op drie vondsten (10 €/mnd over heel
+2024, 5 €/mnd over het eerste halfjaar, één zonder tijdlijn) speelt Drools
+**150** (`PLAYED 1`) — 120 + 30 + 0, de per-element-vouw. Drie artefacten
+zeggen hetzelfde: `ExecModelTranspiler` r. 962 en r. 1060-1065
+("a SOM/TOTAAL over a temporal attribute of a set is a PER-ELEMENT timeline
+fold"), `DrlTranspiler` r. 2882 en r. 2917, en de toolchain-differential
+`ExecModelDifferentialTest` Phase PE, die 120+30+0=150 absoluut pint.
+
+**Na de fix**, dezelfde twee doeldeclaraties, omgeklapt zoals het hoort:
+
+```
+doel €/mnd:  ERROR (line 20): berekening: toekenning:
+             eenheden 'EUR/mnd' en 'EUR' zijn niet in elkaar om te rekenen
+doel €:      ir: … geschreven   →   argument.type.eenheid = EUR/mnd
+                                    functie.type.eenheid  = EUR   (gestript)
+```
+
+**De lezing van het besluit, expliciet genoteerd.** Het maintainerbesluit
+zegt "de strip blijft alleen voor de tijdsaggregatie". Dat dekt deze vorm:
+de per-element-vouw **ís** een tijdsintegratie, ook al staat er `set = true`
+op de wire. De scheidslijn is dus niet `set()` maar *integreert deze vouw
+over de tijd*, en het predicaat draagt beide helften.
+
+De remedie is de granulariteitstoets die `totaalOperandFout` (r. ~1164-1165)
+al toepast, hergebruikt in `setLezing` — één toets, geen tweede begrip. De
+onware javadoczin ("an instance fold that never integrates over time") is
+weg; de comment noemt nu de per-element-vouw met naam.
+
+Gemeten na de fix: de golden `jutterswet-tempototaal` re-emitteert
+**byte-identiek** (haar set-regel leest een scalair `€/mnd`-attribuut, dus
+`setLezing` blijft daar waar), de twee toolchain-armen van
+`RuleCheckTest.totaal_van_rate_operand_integreert_naar_de_teller_eenheid`
+houden (A schoon, B `… niet in elkaar om te rekenen`), en de Phase-PE-bron
+typeert `Numeriek(decimalen=2, eenheid=null)` — unitloos, dus de strip is
+er een no-op en de differential beweegt niet.
+
+Vier prosafixes liften mee: de getuigenkast-sectie van
+`corpus/golden/README.md` telde twee verifier-only goldens waar er nu drie
+zijn; de vacuüme poort-11-bewijsclaim en de onjuiste toolchain-typeringszin
+hierboven; het NOTE-zinnetje dat de alias het **resultaattype** dekt en niet
+het §4.20-operandcontract (gemeten: `de som van <€>` resolvet schoon, `het
+totaal van <€>` geeft `totaal van vereist een eenheid per tijdseenheid
+(§4.20 Tabel 30), kreeg 'EUR'`). En de losse meting is een eigen kaart
+geworden: `backlog/new/20260904-ref-tijdtotaal.md`.
 
 ## Poorten, alle dertien
 
