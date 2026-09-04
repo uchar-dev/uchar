@@ -214,10 +214,14 @@ green. Current gates:
     harness (maintainer decision 2026-09-04). For every golden with case
     files, every unit-bearing `type` annotation on reference and
     composite positions is deterministically twisted (a convertible
-    sister unit, or decimals+1) and ref, clingo and the Drools backend
-    MUST all reproduce the pinned, untwisted outcomes — consumers derive
-    units from declarations and the effective-type law
+    sister unit, or decimals+1) and ref, clingo and BOTH Drools
+    transpiler branches (the exec-model gate-12 path and, since
+    2026-09-04, the classic DRL-text branch behind the runner's own
+    flag) MUST all reproduce the pinned, untwisted outcomes — consumers
+    derive units from declarations and the effective-type law
     (`RUNTIME-SEMANTICS.md` §2.10), never from the wire annotation.
+    Each leg is compared against its OWN untouched status line, with a
+    floor: a DRL-text branch that PLAYS nothing fails the gate.
     Reason-carrying exemption positions (the Literal lexeme, the
     duration operand of date arithmetic, TIJDSDUUR's own unit) are named
     in the script; a bookkeeping clamp FAILS the gate when a
