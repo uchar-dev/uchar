@@ -240,7 +240,7 @@ WF-028-gat — een feitCreatie in kale v0-beanvorm is verifier-PASS terwijl
 
     check-self-contained: PASS
     check-ir-schema: PASS (schema valid; 175 file(s) validate and round-trip)
-    check-verifier: PASS (175 golden clean; 278 negatief rejected for their declared rule)
+    check-verifier: PASS (175 golden clean; 281 negatief rejected for their declared rule)
     check-case-schema: PASS (schema valid; 425 case file(s) validate)
     check-oracle: PASS (403 cases replayed exactly; 3 goldens without a case file)
     check-clingo: PASS (403 cases replay exactly through clingo)
