@@ -2000,29 +2000,59 @@ the four channels that list left open, each measured the same way: a
 expression** — two spellings of one escape, since the cell arm resolves only
 through a complete inner `AttribuutRef` and an empty field misses that
 pattern by being absent while any other node misses it by being the wrong
-constructor, and either way the cell's OWN type goes uncrossed (measured on
-`wf091-dimensiecel-eenheid`: emptying or overwriting its `attribuut` turns
-that pinned unit refusal off and the document CLEAN); a `Kenmerk` check
+constructor, and either way the cell's OWN type goes uncrossed — measured on
+**four** existing artifacts, each of which turns `verifier: PASS` outright
+under either spelling: `wf091-dimensiecel-eenheid` (unit lie),
+`wf089-dimensiecel-enum` (keuzetype-domain lie), `wf090-dimensiecel`
+(struct-domain lie) and `wf040-unpinned-cell`, whose WF-040 label/dimension
+cross rides on the same match and goes with them; a `Kenmerk` check
 naming no `kenmerk` (89 of the goldens' 96 positions stayed clean when
 emptied, 0 after); a `ResolvedVerdeling` naming no source or target
 attribute, the one reference pair the expression walk cannot reach because an
 allocation is not an expression (11 of 11 each, 0 after); and the CONTAINER
 half of the payload descent, a sentinel in a `ListType` element or
 `StructType` field under a constructor payload, plus a sum reached back
-through such a container. Zero over-rejection, measured directly: the
-verifier's verdict over all **462** documents of golden + rood + negatief +
-parity is unchanged but for the eight new negatiefs — four pre-existing
+through such a container. The FIX ROUND of the same day added the filled half
+of the allocation clause: a present attribute name on any of the allocation's
+six name fields is not blank, since `""` satisfies every consumer's `Some a`
+and names nothing (`bronAttribuut` 11 of 11, `doelAttribuut` 11 of 11,
+`restantAttribuut` 9 of 9, `ratoAttribuut` 7 of 7, `maximumAttribuut` 4 of 4,
+`groepeerAttribuut` 3 of 3 stayed clean before, 0 after — and on the last
+three the executors do not fault at all, ch. 4.6 (i)). Zero over-rejection,
+measured directly: the verifier's verdict over all **462** documents of
+golden + rood + negatief + parity that PREDATE this card (153 + 22 + 257 +
+30) is unchanged; the eleven new negatiefs the card and its fix round add are
+the only additions, and four pre-existing
 allocation negatiefs gain a truthful incidental WF-034 line and keep both
 their verdict and the rule their directory declares. That is again the list
 of channels closed **here**, not a claim that no deferral can be
 self-served. *Measured, still open:* the sentinel on the 9 fold-/aggregation
 argument types (the aggregation branch replaces the generic walk there — its
-own question, not this descent's); an allocation endpoint naming an attribute
-that no declaration carries, and an allocation with an empty `bronType` or
-`doelType` — name resolution against the object-type table rather than this
-class's empty-field escape, measured verifier-clean while both executors
-fault; and WF-007's precision-form check, which has the identical blind spot
+own question, not this descent's); a name that no declaration carries on any
+of the allocation's SIX attribute-name fields, and an allocation with an
+empty `bronType` or `doelType` — name resolution against the object-type
+table rather than this class's blank-field escape, measured verifier-clean
+while the executors fault on the two endpoints and on `restantAttribuut` but
+go SILENT on `ratoAttribuut`, `maximumAttribuut` and `groepeerAttribuut`
+(where `ref` and clingo either agree on a wrong answer or diverge outright,
+so the differential square is blind and only the anchor pins catch it);
+the **fold-source fallback's own width** (see below); and WF-007's
+precision-form check, which has the identical blind spot
 in containers and is its walk to make, not this rule's.
+
+*Pre-existing, measured 2026-09-04 during this card's fix round, not touched
+by it — its own card.* The ch. 4.3 type-pair fallback is scoped in this
+specification to the **fold-source ROLE name** (the row-1 wart), but the
+verifier applies it to **every** fold-source name: on
+`corpus/golden/anchor/jutterswet-maatschap`, whose only fact type is a
+reciprocal self-relation over `Jutter` and therefore derives its one
+connecting role from the type pair alone, setting the SOM source's
+`attribuut` to `""` or to `bestaatniet` leaves the document verifier-CLEAN,
+while `ref` silently sums to 0 where 12 and 30 are pinned and the ASP backend
+refuses to translate. A wrong answer and a refusal on one verifier-clean
+document. Narrowing the fallback to the position the specification scopes it
+to is a separate movement from this rule's blank-field class and is recorded
+here as an OPEN measured gap, not closed.
 
 **The numeric-literal lexeme (WF-081).** A `Literal` whose `type` is
 numeric (`Numeriek` or `Percentage`) MUST carry as its value a **bare
@@ -2284,7 +2314,9 @@ ParameterReference by the frontend — surface disambiguation, not IR.
 
 **DimensionCellRead** (`attribute`, `labels`, `type`, `source`) — dialect
 (row 28): a single-cell read of a dimensioned attribute; every dimension
-pinned (WF-040); no storage layout implied. The cell carries the
+pinned (WF-040); no storage layout implied. `attribute` is an attribute
+reference and nothing else — neither absent nor any other expression node
+(WF-034, ch. 4.6 (g)). The cell carries the
 attribute's datatype, so the node's own `type` is a use site of that
 declaration under WF-089 (ch. 2.4), beside the inner reference's.
 
@@ -2428,10 +2460,14 @@ Comparison, Predicate, and CharacteristicCheck only —
   datatype is a tree — the walk now descends through payloads, the descent
   WF-088's use-site check already makes for the same reason (the consumers
   read the use site's inline constructor copy, while WF-062 crosses only the
-  declaration). *Measured* by injecting the sentinel at all 2758
-  datatype-valued positions of every golden (2650 in the model and
-  rules sections; `functionDefs`, `parameters` and `consistenties`
-  carry the remaining 108): 36 injections stayed
+  declaration). *Measured at the wave-2 corpus state (2026-09-04)* by
+  injecting the sentinel at all 2758
+  datatype-valued positions of every golden then present (2650 in the model
+  and rules sections; `functionDefs`, `parameters` and `consistenties`
+  carry the remaining 108) — the denominator is that state's, and a later
+  count over a grown corpus or a differently drawn position set will differ;
+  what is invariant, and re-confirmed in the fix round, is the numerator:
+  36 injections stayed
   verifier-clean, of which 15 are no-ops (the position already holds the
   sentinel by construction — a count fold's role source, the row-1 wart), so
   21 real survivors: 12 on constructor payloads, which (d) closes, and 9 on
@@ -2446,12 +2482,15 @@ Comparison, Predicate, and CharacteristicCheck only —
   blind spot spans list elements and struct fields as well, so sharing this
   descent is not one movement.
   **Widened again 2026-09-04** (same decision, third wave), with the four
-  channels the second wave measured and left open. Over-rejection is settled
+  channels the second wave measured and left open, plus the fix round's (i).
+  Over-rejection is settled
   by direct measurement rather than by argument: the verifier's verdict over
-  all **462** documents of the four zones (153 golden + 22 rood + 257
-  negatief + 30 parity) is unchanged by these arms but for the eight new
-  negatief witnesses — the only pre-existing documents whose report changes
-  at all are four minimal allocation negatiefs, which gain a truthful
+  all **462** documents that predate this card (153 golden + 22 rood + 257
+  negatief + 30 parity) is unchanged by these arms; the **eleven** new
+  negatief witnesses the card and its fix round add — taking the negatief
+  zone to 268 and the four zones to 473 — are the only additions. The only
+  pre-existing documents whose report changes at all are four minimal
+  allocation negatiefs, which gain a truthful
   incidental line and keep both their verdict and the rule their directory
   declares. (e) A **characteristic check** (ch. 4.5) MUST name its
   `kenmerk`. It is the only field the node resolves through, and behind it
@@ -2470,31 +2509,75 @@ Comparison, Predicate, and CharacteristicCheck only —
   edges keyed on the pair all fall silent together. 11 of 11 golden
   allocations survived emptying either field, and none does now; both
   executors fault on the field's own name. NOT closed here, and measured the
-  same day: an endpoint naming an attribute **no declaration carries**, and
-  an empty `bronType` or `doelType`, are equally clean and equally
-  loud in both executors — name resolution against the object-type table,
-  a wider movement that stays OPEN. (g) A **dimension-cell read** MUST hold
+  same day: a **name that no declaration carries** on any of the allocation's
+  SIX attribute-name fields — `bronAttribuut`, `doelAttribuut`,
+  `ratoAttribuut`, `maximumAttribuut`, `restantAttribuut`,
+  `groepeerAttribuut` — and an empty `bronType` or `doelType` are equally
+  clean; that is name resolution against the object-type table, a wider
+  movement that stays OPEN, and (i) below records which of the six are loud
+  and which are silent. (g) A **dimension-cell read** MUST hold
   an attribute reference in its `attribuut` position — refused in BOTH
   spellings, an absent field and a non-reference node, because the cell arm
   resolves only through a complete inner `AttributeReference` and an empty
   field misses that pattern by being absent while any other node misses it
-  by being the wrong constructor. Either way the cell's OWN type goes
+  by being the wrong constructor. The reference frontend's IR types this
+  field as an attribute reference, so its own emissions cannot reach the
+  second spelling; the clause is for the wire, which any conforming producer
+  may write, and that is the argument that also covers producers this corpus
+  has never seen. Either way the cell's OWN type goes
   uncrossed by the identity family and WF-040's label/dimension cross goes
-  with it; the harm is pinned on an existing artifact — emptying or
-  overwriting the cell reference of `wf091-dimensiecel-eenheid` turns its
-  pinned unit refusal off and the document CLEAN. This is the one wave-3
-  channel with **no executor witness and none possible**: a cell read is
-  declined as a FORM by both OCaml executors, so no golden carrying one has
-  or could have a case file, and the argument for the clause is the identity
-  family's silence, not an engine divergence. (h) The **container half** of
+  with it; the harm is pinned on existing artifacts — **four** of them, each
+  measured under both spellings with the verifier of the day before this
+  card: `wf091-dimensiecel-eenheid` (unit lie), `wf089-dimensiecel-enum`
+  (keuzetype-domain lie), `wf090-dimensiecel` (struct-domain lie) and
+  `wf040-unpinned-cell` (an unpinned dimension plus a sign lie) each turn
+  `verifier: PASS` — the whole refusal gone — when the cell's `attribuut` is
+  emptied or overwritten with a literal. WF-040 travels with the identity
+  family here, which is why the loss is a label/dimension cross as well as a
+  type cross. This is the one wave-3
+  channel with **no executor witness under today's executors**: a cell read
+  is declined as a FORM by both OCaml executors, so no golden carrying one
+  has or could have a case file today, and the argument for the clause is the
+  identity family's silence, not an engine divergence. (h) The **container half** of
   (d): the sentinel is refused in a `ListType` element or a `StructType`
   field nested under a constructor payload, and in a sum reached back
   THROUGH such a container. The descent is mutually recursive over the whole
   payload subtree now; the sum-chain wordings (d) pinned are unchanged. Three
   hand-built witnesses on a sum-typed golden measured the gap the same way
   (d)'s did — `ref` replays each to its pinned expectations, the ASP backend
-  refuses to translate it — and the corpus carries no container payload at
-  all in any of the four zones, so the new branches cannot over-reject.
+  refuses to translate it — and no document **predating this card** carries a
+  container payload at all in any of the four zones, so the new branches
+  cannot over-reject; the only container payloads anywhere are the card's own
+  three witnesses (two `ListType`, one `StructType`, one of them reached back
+  through a container into a sum), which is what they are for. The three
+  witnesses are separately falsifiable: the branches are the list element,
+  the record field, and the container→sum re-entry, and only the last one
+  pins `wf034-sentinel-payload-onder-lijst` on its own.
+  **Fix round 2026-09-04.** (i) A present attribute name on an
+  **allocation** is not blank. (f) closes the null half of the same defect;
+  every consumer of these fields is written as `Some a`, which reads as "a
+  name is there", and `""` satisfies it while naming nothing — so the empty
+  string walked through (f) into exactly the same silence one layer on. The
+  clause covers all SIX name fields at once — `bronAttribuut`,
+  `doelAttribuut`, `ratoAttribuut`, `maximumAttribuut`, `restantAttribuut`,
+  `groepeerAttribuut` — with emptiness decided by the ch. 2.4 name identity
+  (whitespace collapsed, lowercased), so a blank spelling is the same empty
+  name. Absence keeps its meaning where it carries one: null on the four
+  facet fields is a facet switched OFF and stays legal, and
+  `ratoAttribuut: null` under `NAAR_RATO` is already WF-025's business.
+  *Measured, one field blanked at a time over the golden allocations, every
+  position verifier-clean before and none after:* `bronAttribuut` 11 of 11
+  and `doelAttribuut` 11 of 11 and `restantAttribuut` 9 of 9, on all of which
+  both executors fault loudly; `ratoAttribuut` **7 of 7** and
+  `groepeerAttribuut` **3 of 3**, on which BOTH executors play on and agree
+  on a wrong answer (an ordered allocation loses its rank and pays every
+  recipient the same 300 where 1200/0/0/0 is pinned); and
+  `maximumAttribuut` **4 of 4**, on which `ref` plays on uncapped and returns
+  600 for a pinned 300 while the ASP backend refuses to translate — ref and
+  clingo **diverging** on a document the verifier had called well-formed.
+  Those three rows are the one place in this rule where the differential
+  square is structurally blind and only the hand-pinned anchor expectations
+  catch the defect, which is the whole argument for a document-layer fence.
 - **WF-080** A value-position `AttributeReference` MUST resolve to an
   **attribute** of its endpoint type, never a characteristic. A value
   position is where an expression yields a value: a rule/member value, a
@@ -3262,7 +3345,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-031 | one definition per day kind; condition present and **pure** (no attribute/characteristic read — the stratum-0 framing, ch. 5.4); validity ALTIJD | gate 3 | `jutterswet-vormenkabinet` (the schouwdag definition, ALTIJD validity) + `jutterswet-schouwkalender` (a pure day-kind chain, replayed by gates 5–6 over its ordinary rule) | `wf031-missing-condition` + `wf031-dagsoort-venster` (bounded validity window) + `wf031-dagsoort-leest-kenmerk` (the purity clause: a day-kind condition reading a characteristic) |
 | WF-032 | start point: variable-start timeline, day-precision member, one per pair | gate 3 | `jutterswet-vormenkabinet` (the meetdatum anchor) | `wf032-fixed-start-anchor` |
 | WF-033 | (dialect) rule-group members resolve; recursive group has a creation member (either kind); object creations guarded, relation creations guard-free | gate 3 | `anchor/jutterswet-wachtersketen` (the recursive chain executes to its fixpoint, gates 5–6; the runaway budget fault is red-pinned, gate 8) + `anchor/jutterswet-erflijn` (the guard-free relation-creation member: the transitive closure reaches its fixpoint in both executors) | `wf033-unguarded-recursive` (the guard clause) + `wf033-no-creation-member` (the containment clause) |
-| WF-034 | every expression/condition reference resolves (no unknown-type sentinel, at the top level and anywhere in the PAYLOAD SUBTREE of a value node's type — the sum chain and the `ListType`/`StructType` containers under it alike; a reference NAMES both halves of what it resolves through — the object type and the member — a parameter reference names its parameter, a characteristic check names its characteristic, a dimension-cell read holds an attribute reference and nothing else, an allocation names its source and target attribute, and a rule target carries a type) | gate 3 (partial: sentinel types and parameter/day-kind/element-type/own-member references; variable bindings and navigation paths are not serialized in v0; excepted: a v0 instance-fold source argument names a role and carries the sentinel by construction — the row-1 wart, resolved against declared roles with the ch. 4.3 type-pair fallback for a name that resolves nowhere). **Widened 2026-09-04** (maintainer decision) in THREE waves, fourteen arms, no new rule number and no documented deferral; every one of them closes a **self-served exemption from the identity family** (WF-089/WF-090/WF-091), which defers on an unresolvable declaration and on a deferring type — so an emptied field or a sentinel switched the unit, precision and domain checks off on a document's own say-so while it stayed verifier-clean. *Wave 1* — an `AttributeReference` without an `objecttype` in a value position, the same in a FOLD SOURCE (its own arm: the aggregation branch replaces the generic walk and resolves only a named endpoint, so the empty field fell through both fences), and the sentinel on a rule TARGET's `type`. *Wave 2* — the same for the OTHER half of the pair, an `AttributeReference` without an `attribuut`, again in both positions (with the value-position arm alone 43 of the goldens' 751 emptied `attribuut` positions stayed clean, all fold-/aggregation arguments; with both, 0 of 751 — the same lesson the fold source taught in wave 1); a `ParameterRef` without a `parameter` (35 of 37 → 0); the UNSPELLED TWIN of the target sentinel, a target with no `type` at all (295 of 295 → 0), which wave 1 left out for want of a witness and which is the more dangerous half — it also switches off WF-007's target clause, and unlike every other shape here it replays CLEAN in `ref` and clingo while the Drools backend throws, so the verifier is the only place it can be caught before an engine crashes on well-formed input; and the sentinel one level DOWN, on a `SumType` constructor payload inside a value node's type (the fence matched the type's top level only; the walk now descends through payloads, WF-088's descent for the same reason). *Wave 3* — the four channels wave 2 measured and left open, six arms. A `Kenmerk` CHECK naming no `kenmerk` (89 of the goldens' 96 positions, in twelve position shapes over five top-level sections, stayed clean when emptied one at a time; 0 after), where one empty field silenced four readers at once — this rule's own declared-characteristic cross, WF-043's granularity cross, WF-053's navigated hop and the dependency edge. A `ResolvedVerdeling` naming no `bronAttribuut` or no `doelAttribuut` (11 of 11 each; 0 after) — its own function beside the expression walk, because an ALLOCATION is not an expression and its two endpoint attributes are the one reference pair `walk_expr` cannot reach, so WF-025's ordering-key check, WF-026's same-target comparison, WF-050's defaults overlap and both stratification edges keyed on them fell silent together. A `DimensieCel` whose `attribuut` is null **or holds a non-reference node** — two arms for two ways of missing one pattern, the cell arm resolving only through a complete inner `AttribuutRef`; measured on an existing artifact rather than argued, since emptying or overwriting `wf091-dimensiecel-eenheid`'s cell reference turns its pinned unit refusal off and the document CLEAN, and this is the one wave-3 channel with **no executor witness and none possible** (a cell read is declined as a FORM by both OCaml executors, so no golden carrying one can have a case file). And the CONTAINER half of wave 2's payload descent: the sentinel in a `ListType` element or `StructType` field under a constructor payload, and a sum reached back THROUGH such a container — the descent is now mutually recursive over the whole payload subtree, and the sum-chain messages it already pinned are unchanged. Wave 3's over-rejection check is direct and total: the verifier's verdict over all **462** documents of golden + rood + negatief + parity (153 + 22 + 257 + 30) is unchanged but for the eight new negatiefs, with four pre-existing allocation negatiefs gaining a truthful incidental WF-034 line while keeping their verdict and the rule their directory declares. All eight wave-1/2 shapes are carried by **zero** documents outside their own negatief witnesses (152 golden + 22 rood + 30 parity, plus every negatief that predates the wave, measured before and after each), so over-rejection is impossible by measurement and nothing repinned — and the wave-2 over-rejection check is direct: the verifier's report over all 447 documents of golden + rood + negatief + parity is byte-identical before and after but for the five new negatiefs. Nor does anything this repo's own frontends emit carry them (28 rgs goldens, 12 catala goldens, 45 parity fragments, all measured clean) — the shapes are open to any other conforming emitter, which is the audience of an engine-neutral IR. *Measured and still open:* the sentinel survives on 9 fold-/aggregation argument types (8 element-passing aggregation operands, 1 true instance-fold source) — of 2758 datatype-valued golden positions injected one at a time, 36 stayed clean, 15 of them no-ops on positions that already hold the sentinel (the row-1 wart), 12 the payloads wave 2 closed, and these 9; the row-1 wart itself, the 15 no-op positions that carry the sentinel by construction, gedoogd and documented; and — surfaced by wave 3 and NOT closed by it, because it is name resolution against the object-type table rather than this class's empty-field escape — an allocation endpoint naming an attribute no declaration carries (`bronAttribuut: "bestaatniet"` is verifier-clean while `ref` faults and clingo reports `unknown attribute`) and an allocation with an empty `bronType` or `doelType` (equally clean; both executors fault with `missing bronType`). Also still open, and another rule's walk to make: WF-007's precision-form check, which has the identical blind spot at the payload positions wave 2 closed and in the containers wave 3 closed | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondsttelling` (role source) + `jutterswet-kaveltelling` (the type-pair fallback: an undeclared synthesized plural over a unique pair, both executors) — and, for the fourteen widened arms, every golden and rood document is a non-over-rejection witness at once, since all fourteen shapes carry zero occurrences in those two zones (the only occurrences anywhere are the wave-3 arms' four pre-existing allocation negatiefs, which gain an incidental line and keep their verdict) | `wf034-dangling-parameter` + `wf034-ambigu-typenpaar` (unresolved name, two connecting fact types) + `wf034-zelftype-typenpaar` (unresolved name, one self-typed two-role fact type — both roles are candidates, counted in roles not fact types) + `wf034-typeloos-literal` (the unspelled twin of the sentinel, on a value node) + `wf034-attribuutref-zonder-objecttype` (the missing endpoint, carrying the measured answer-changing `t`-for-`kg` lie the empty field hid: `ref` faults, clingo refuses, Drools played it) + `wf034-foldbron-zonder-objecttype` (the same field emptied in a fold source, the same lie, and the worse measurement: `ref` PASS, clingo PASS, Drools PLAYED — all three answer off it) + `wf034-onbekend-regeldoel` (the sentinel on `/resolvedRegels/1/doel/type`; its NOTE names the `SumType` constructor payload as a second surviving position, which is true of the wave it was written in — since wave 2 the payload half is closed and only the row-1 fold-source wart remains) + `wf034-attribuutref-zonder-attribuut` + `wf034-foldbron-zonder-attribuut` (the other half of the pair, once per path, each carrying the same `t`-for-`kg` lie: `ref` and clingo fault, Drools skips the rule or throws) + `wf034-parameterref-zonder-parameter` (same lie on a parameter operand; `ref` and clingo fault, Drools throws) + `wf034-regeldoel-zonder-type` (the unspelled twin: `ref` PASS, clingo PASS, Drools throws — verifier-clean input crashing an executor) + `wf034-sentinel-sumtype-payload` (the sentinel a level down: `ref` replays it, clingo refuses to translate it — one document, two executors disagreeing about whether it exists) — and, for wave 3, eight more, one per form and per spelling: `wf034-kenmerkcheck-zonder-kenmerk` (`ref` "missing KenmerkCheck.kenmerk", clingo "missing kenmerk") + `wf034-verdeling-zonder-bronattribuut` + `wf034-verdeling-zonder-doelattribuut` (the allocation pair, each half its own document, `ref` and clingo faulting on the field's own name) + `wf034-dimensiecel-zonder-attribuut` + `wf034-dimensiecel-geen-referentie` (the two spellings of the cell escape, both VERIFIER-ONLY — a cell read is declined as a form by both executors, so the harm is pinned by `wf091-dimensiecel-eenheid` turning CLEAN when its cell reference is removed, not by a replay) + `wf034-sentinel-lijstelement-payload` + `wf034-sentinel-structveld-payload` + `wf034-sentinel-payload-onder-lijst` (the container half: the list branch, the record branch, and the container→sum direction of the recursion, each with `ref` replaying to its pinned expectations while clingo refuses to translate) |
+| WF-034 | every expression/condition reference resolves (no unknown-type sentinel, at the top level and anywhere in the PAYLOAD SUBTREE of a value node's type — the sum chain and the `ListType`/`StructType` containers under it alike; a reference NAMES both halves of what it resolves through — the object type and the member — a parameter reference names its parameter, a characteristic check names its characteristic, a dimension-cell read holds an attribute reference and nothing else, an allocation names its source and target attribute and spells no blank name in any of its six attribute-name fields, and a rule target carries a type) | gate 3 (partial: sentinel types and parameter/day-kind/element-type/own-member references; variable bindings and navigation paths are not serialized in v0; excepted: a v0 instance-fold source argument names a role and carries the sentinel by construction — the row-1 wart, resolved against declared roles with the ch. 4.3 type-pair fallback for a name that resolves nowhere). **Widened 2026-09-04** (maintainer decision) in THREE waves plus a fix round, fifteen arms, no new rule number and no documented deferral; every one of them closes a **self-served exemption from the identity family** (WF-089/WF-090/WF-091), which defers on an unresolvable declaration and on a deferring type — so an emptied field or a sentinel switched the unit, precision and domain checks off on a document's own say-so while it stayed verifier-clean. *Wave 1* — an `AttributeReference` without an `objecttype` in a value position, the same in a FOLD SOURCE (its own arm: the aggregation branch replaces the generic walk and resolves only a named endpoint, so the empty field fell through both fences), and the sentinel on a rule TARGET's `type`. *Wave 2* — the same for the OTHER half of the pair, an `AttributeReference` without an `attribuut`, again in both positions (with the value-position arm alone 43 of the goldens' 751 emptied `attribuut` positions stayed clean, all fold-/aggregation arguments; with both, 0 of 751 — the same lesson the fold source taught in wave 1); a `ParameterRef` without a `parameter` (35 of 37 → 0); the UNSPELLED TWIN of the target sentinel, a target with no `type` at all (295 of 295 → 0), which wave 1 left out for want of a witness and which is the more dangerous half — it also switches off WF-007's target clause, and unlike every other shape here it replays CLEAN in `ref` and clingo while the Drools backend throws, so the verifier is the only place it can be caught before an engine crashes on well-formed input; and the sentinel one level DOWN, on a `SumType` constructor payload inside a value node's type (the fence matched the type's top level only; the walk now descends through payloads, WF-088's descent for the same reason). *Wave 3* — the four channels wave 2 measured and left open, six arms (the container half of them carrying three separately falsifiable branches: the list element, the record field, and the container→sum re-entry, which alone pins `wf034-sentinel-payload-onder-lijst`). A `Kenmerk` CHECK naming no `kenmerk` (89 of the goldens' 96 positions, in twelve position shapes over five top-level sections, stayed clean when emptied one at a time; 0 after), where one empty field silenced four readers at once — this rule's own declared-characteristic cross, WF-043's granularity cross, WF-053's navigated hop and the dependency edge. A `ResolvedVerdeling` naming no `bronAttribuut` or no `doelAttribuut` (11 of 11 each; 0 after) — its own function beside the expression walk, because an ALLOCATION is not an expression and its two endpoint attributes are the one reference pair `walk_expr` cannot reach, so WF-025's ordering-key check, WF-026's same-target comparison, WF-050's defaults overlap and both stratification edges keyed on them fell silent together. A `DimensieCel` whose `attribuut` is null **or holds a non-reference node** — two arms for two ways of missing one pattern, the cell arm resolving only through a complete inner `AttribuutRef`; measured on an existing artifact rather than argued, since emptying or overwriting `wf091-dimensiecel-eenheid`'s cell reference turns its pinned unit refusal off and the document CLEAN, and this is the one wave-3 channel with **no executor witness under today's executors** (a cell read is declined as a FORM by both OCaml executors, so no golden carrying one has or could have a case file today). The harm is pinned on FOUR existing artifacts, each measured under both spellings with the verifier of the day before this card and each turning `verifier: PASS` outright: `wf091-dimensiecel-eenheid`, `wf089-dimensiecel-enum`, `wf090-dimensiecel` and `wf040-unpinned-cell` — WF-040's label/dimension cross rides on the same match and goes with the identity family. The structural half of the argument, beyond the corpus: the reference frontend's IR types this field as an attribute reference, so its own emissions cannot reach the non-reference spelling; the clause is for the wire, which any conforming producer may write. And the CONTAINER half of wave 2's payload descent: the sentinel in a `ListType` element or `StructType` field under a constructor payload, and a sum reached back THROUGH such a container — the descent is now mutually recursive over the whole payload subtree, and the sum-chain messages it already pinned are unchanged. *Fix round, same day, same decision* — the FILLED half of wave 3's allocation arm: a present attribute name on any of the allocation's six name fields (`bronAttribuut`, `doelAttribuut`, `ratoAttribuut`, `maximumAttribuut`, `restantAttribuut`, `groepeerAttribuut`) is not blank, emptiness decided by the ch. 2.4 name identity, while a null on the four facet fields keeps its meaning of a facet switched off. `""` satisfied every consumer's `Some a` and named nothing, so it walked through the null arm into the same silence: 11 of 11, 11 of 11, 7 of 7, 4 of 4, 9 of 9 and 3 of 3 golden positions stayed verifier-clean when blanked one at a time, and none does now. The executor consequence is the reason this needed a clause rather than a note: loud on the two endpoints and on `restantAttribuut`, but on `ratoAttribuut` and `groepeerAttribuut` BOTH executors play on and agree on a wrong answer, and on `maximumAttribuut` `ref` plays on (600 for a pinned 300) while the ASP backend refuses — ref and clingo diverging on a verifier-clean document. Wave 3's over-rejection check is direct and total: the verifier's verdict over all **462** documents of golden + rood + negatief + parity that PREDATE this card (153 + 22 + 257 + 30) is unchanged, with four pre-existing allocation negatiefs gaining a truthful incidental WF-034 line while keeping their verdict and the rule their directory declares; the eleven new negatiefs the card and its fix round add — negatief zone 257 → 268, four zones 462 → 473 — are the only additions, and a byte-level comparison of the two verifiers' reports over all 473 documents changes exactly those 15 reports and nothing else. All eight wave-1/2 shapes are carried by **zero** documents outside their own negatief witnesses (152 golden + 22 rood + 30 parity, plus every negatief that predates the wave, measured before and after each), so over-rejection is impossible by measurement and nothing repinned — and the wave-2 over-rejection check is direct: the verifier's report over all 447 documents of golden + rood + negatief + parity is byte-identical before and after but for the five new negatiefs. Nor does anything this repo's own frontends emit carry them (28 rgs goldens, 12 catala goldens, 45 parity fragments, all measured clean) — the shapes are open to any other conforming emitter, which is the audience of an engine-neutral IR. *Measured and still open:* the sentinel survives on 9 fold-/aggregation argument types (8 element-passing aggregation operands, 1 true instance-fold source) — of 2758 datatype-valued golden positions injected one at a time (the denominator is the WAVE-2 corpus state of 2026-09-04 and a later or differently drawn count will differ; the numerator is what carries the claim and is re-confirmed) 36 stayed clean, 15 of them no-ops on positions that already hold the sentinel (the row-1 wart), 12 the payloads wave 2 closed, and these 9; the row-1 wart itself, the 15 no-op positions that carry the sentinel by construction, gedoogd and documented; and — surfaced by wave 3 and NOT closed by it or by the fix round, because it is name resolution against the object-type table rather than this class's blank-field escape — a name **no declaration carries** on ANY of the allocation's six attribute-name fields, and an allocation with an empty `bronType` or `doelType` (equally clean; both executors fault with `missing bronType`). All six are open, and they are not equally observable: on `bronAttribuut`, `doelAttribuut` and `restantAttribuut` both executors fault (`bronAttribuut: "bestaatniet"` is verifier-clean while `ref` faults and clingo reports `unknown attribute`), but on `ratoAttribuut`, `maximumAttribuut` and `groepeerAttribuut` they do NOT — the first and third have both executors agreeing on a wrong answer and the second has `ref` playing while clingo refuses, so at those three positions the differential square is blind and the ONLY thing that catches a defect is the hand-pinned anchor expectation. Also open, pre-existing and its own card (measured 2026-09-04 in this card's fix round): the ch. 4.3 type-pair fallback is scoped in this specification to the fold-source ROLE name, but the check applies it to EVERY fold-source name — on `corpus/golden/anchor/jutterswet-maatschap`, whose one reciprocal self-relation over `Jutter` derives its connecting role from the type pair alone, a SOM source with `attribuut` set to `""` or to `bestaatniet` stays verifier-CLEAN while `ref` silently sums to 0 where 12 and 30 are pinned and the ASP backend refuses to translate. Also still open, and another rule's walk to make: WF-007's precision-form check, which has the identical blind spot at the payload positions wave 2 closed and in the containers wave 3 closed | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondsttelling` (role source) + `jutterswet-kaveltelling` (the type-pair fallback: an undeclared synthesized plural over a unique pair, both executors) — and, for the fifteen widened arms, every golden and rood document is a non-over-rejection witness at once, since all fifteen shapes carry zero occurrences in those two zones (the only occurrences anywhere are the wave-3 arms' four pre-existing allocation negatiefs, which gain an incidental line and keep their verdict) | `wf034-dangling-parameter` + `wf034-ambigu-typenpaar` (unresolved name, two connecting fact types) + `wf034-zelftype-typenpaar` (unresolved name, one self-typed two-role fact type — both roles are candidates, counted in roles not fact types) + `wf034-typeloos-literal` (the unspelled twin of the sentinel, on a value node) + `wf034-attribuutref-zonder-objecttype` (the missing endpoint, carrying the measured answer-changing `t`-for-`kg` lie the empty field hid: `ref` faults, clingo refuses, Drools played it) + `wf034-foldbron-zonder-objecttype` (the same field emptied in a fold source, the same lie, and the worse measurement: `ref` PASS, clingo PASS, Drools PLAYED — all three answer off it) + `wf034-onbekend-regeldoel` (the sentinel on `/resolvedRegels/1/doel/type`; its NOTE names the `SumType` constructor payload as a second surviving position, which is true of the wave it was written in — since wave 2 the payload half is closed and only the row-1 fold-source wart remains) + `wf034-attribuutref-zonder-attribuut` + `wf034-foldbron-zonder-attribuut` (the other half of the pair, once per path, each carrying the same `t`-for-`kg` lie: `ref` and clingo fault, Drools skips the rule or throws) + `wf034-parameterref-zonder-parameter` (same lie on a parameter operand; `ref` and clingo fault, Drools throws) + `wf034-regeldoel-zonder-type` (the unspelled twin: `ref` PASS, clingo PASS, Drools throws — verifier-clean input crashing an executor) + `wf034-sentinel-sumtype-payload` (the sentinel a level down: `ref` replays it, clingo refuses to translate it — one document, two executors disagreeing about whether it exists) — and, for wave 3, eight more, one per form and per spelling: `wf034-kenmerkcheck-zonder-kenmerk` (`ref` "missing KenmerkCheck.kenmerk", clingo "missing kenmerk") + `wf034-verdeling-zonder-bronattribuut` + `wf034-verdeling-zonder-doelattribuut` (the allocation pair, each half its own document, `ref` and clingo faulting on the field's own name) + `wf034-dimensiecel-zonder-attribuut` + `wf034-dimensiecel-geen-referentie` (the two spellings of the cell escape, both VERIFIER-ONLY — a cell read is declined as a form by both executors, so the harm is pinned by `wf091-dimensiecel-eenheid` turning CLEAN when its cell reference is removed, not by a replay) + `wf034-sentinel-lijstelement-payload` + `wf034-sentinel-structveld-payload` + `wf034-sentinel-payload-onder-lijst` (the container half: the list branch, the record branch, and the container→sum direction of the recursion, each with `ref` replaying to its pinned expectations while clingo refuses to translate) — and, for the fix round, three more, one per measured executor shape of the blank name: `wf034-verdeling-lege-bronattribuut` (the loud shape: both executors fault) + `wf034-verdeling-lege-maximumattribuut` (the DIVERGENT shape: `ref` plays on and returns 600 for a pinned 300 while clingo refuses to translate) + `wf034-verdeling-lege-groepeerattribuut` (the SILENT shape: both executors play on and agree on the same wrong distribution — 300 apiece where 1200/0/0/0 is pinned — which is the one place only the anchor pinning stands between the corpus and a defect) |
 | WF-035 | operator typing (numeric, unitless power, date±duration order/unit/precision, unit compatibility, clamp) | gate 3 (over serialized operand types) | `anchor/jutterswet-wachtersketen` (the numeric Plus, executed by gates 5–6) + `jutterswet-vervaltermijn` (date ± duration, the date-left plus and min forms, executed by gates 5–6) | `wf035-power-with-unit` + `wf035-datum-plus-datum` + `wf035-duur-plus-datum` + `wf035-duur-min-datum` + `wf035-uur-op-dagdatum` |
 | WF-036 | comparison/predicate typing (ordering, precision, family, domain, builtin operands) | gate 3 (over serialized operand types) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondstnummer` (date ordering) | `wf036-order-number-vs-text` |
 | WF-037 | aggregation/builtin shape: facet validity and arity per kind | gate 3 (fixed-arity kinds; date-construction arity OPEN) | `jutterswet-vondsttelling` | `wf037-fallback-on-minimum` |
