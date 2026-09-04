@@ -39,21 +39,39 @@ let q_of_wire_number f =
   else Value.q_of_lexeme s
 
 (* A unit's conversion pair is ONE fact in two fields: the canonical unit
-   it converts into and the factor that does the converting (WF-092). The
-   KALE form — both null — is the legitimate self-standing spelling (every
-   duration parameter and duration operand carries it) and reads as factor
-   1: such a unit converts into itself and nothing else. A unit that NAMES
-   a canonical unit and carries no factor is the half-filled wire form
-   WF-092 refuses, and reading it as 1 is a silent lie: measured on a
-   `km` declared canonical-`m` without its factor, the value 2,5 km + 300 m
-   came out as 302,5 instead of 2,8 km, surfacing — if at all — as a
-   DECIMALS complaint about a number whose unit was already wrong. So it
-   faults here, by name. This is the second line of defence behind the
+   it converts into and the factor that does the converting (WF-092).
+
+   The BARE form — both null — is the legitimate self-standing spelling
+   (every duration parameter and duration operand carries it, and it is
+   also ch. 2.5's opaque product: no canonical, no factor) and reads as
+   factor 1. That does NOT make it inert. [units_convertible] reads a
+   missing canonical as the ABBREVIATION, so a bare unit is a canonical
+   TARGET for every declared unit whose canonical string spells that
+   abbreviation, and a quantity crossing into it restates on THAT unit's
+   factor. Measured on a vergunningsduur variant with all five `maand`
+   records bared: `2 jaar + 3 maand` still yields 27 (verifier PASS, ref 27,
+   ASP backend 27), and with `jaar`'s factor moved from 12 to 6 both
+   executors yield 15 — the bare unit is what the 6 counts against, not a
+   unit that converts into itself alone. Factor 1 is therefore the right
+   reading, and the only one that keeps that arithmetic exact.
+
+   EITHER HALF alone is the wire form WF-092 refuses, and inventing the
+   missing half is a silent lie in both directions. Measured on a `km`
+   declared canonical-`m` without its factor, the value 2,5 km + 300 m came
+   out as 302,5 instead of 2,8 km, surfacing — if at all — as a DECIMALS
+   complaint about a number whose unit was already wrong; measured on the
+   mirror half (a self-canonical `m` keeping its factor 1 and losing its
+   canonical) ref and the ASP backend both computed 2800 while a third
+   executor computed 302.5 — a wrong value nothing refused. So both halves
+   fault here, by name. This is the second line of defence behind the
    verifier, not a dead letter: an executor must never compute quietly on
    a shape the verifier rejects. *)
 let factor (e : Ir_v0.Ast.eenheid) =
   match (e.factor_naar_canoniek, e.canoniek) with
-  | Some f, _ -> q_of_wire_number f
+  | Some f, Some _ -> q_of_wire_number f
+  | Some f, None ->
+      fault "unit %s carries conversion factor %g but names no canonical unit to convert into (WF-092)"
+        (show_eenheid e) f
   | None, None -> Q.one
   | None, Some c ->
       fault "unit %s names canonical unit %S but carries no conversion factor into it (WF-092)"

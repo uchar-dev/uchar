@@ -316,32 +316,48 @@ let () =
 (* WF-092, the executor's half: the canonical unit and the factor are one
    fact in two fields, and the factor question refuses to guess.
 
-   The KALE form — both null — keeps its meaning and its old behaviour: a
-   unit that names no canonical target converts into itself, factor 1.
-   That branch is live, not decorative: making it fault turns 9 corpus
-   cases over 3 goldens red (the duration parameters and duration
-   operands).
+   The BARE form — both null — keeps its meaning and its old behaviour:
+   factor 1. It is NOT a unit that converts into itself alone, though:
+   convertibility reads a missing canonical as the ABBREVIATION, so a bare
+   unit is a canonical TARGET for every declared unit whose canonical
+   string spells that abbreviation, and the crossing quantity restates on
+   THAT unit's factor — the `kaal-is-canoniek-doel` witness below pins that
+   reading (2 jr into a bare `mnd` is 24, not 2). The branch is live, not
+   decorative: making it fault turns 9 corpus cases over 3 goldens red (the
+   duration parameters and duration operands).
 
-   The HALF-FILLED form — a canonical target with no factor — used to read
-   as factor 1 silently. Measured on a corpus copy with a canonical-`m`
-   `km` stripped of its factor: 2,5 km + 300 m came out 302,5 instead of
-   2,8 km, and surfaced only as a DECIMALS complaint about a number whose
-   unit was already wrong. It now faults by name, so no executor computes
-   quietly on a shape the verifier rejects. *)
+   Either HALF-FILLED form is what WF-092 refuses, and both used to read
+   silently. (a) A canonical target with no factor: measured on a corpus
+   copy with a canonical-`m` `km` stripped of its factor, 2,5 km + 300 m
+   came out 302,5 instead of 2,8 km, and surfaced only as a DECIMALS
+   complaint about a number whose unit was already wrong. (b) A factor with
+   no canonical target: measured on the wf092-factor-zonder-canoniek
+   negatief, ref and the ASP backend both replayed a clean 2800 while a
+   third executor computed 302.5 — nothing refused. Both now fault by name,
+   so no executor computes quietly on a shape the verifier rejects. *)
 let mnd_kaal : Ir_v0.Ast.eenheid =
   { afkorting = Some "mnd"; stelsel = Some "test"; canoniek = None;
     factor_naar_canoniek = None; noemer = None }
 
 let jr_half : Ir_v0.Ast.eenheid = { jr with factor_naar_canoniek = None }
+let mnd_half_b : Ir_v0.Ast.eenheid = { mnd with canoniek = None }
 
 let () =
-  (* the kale form: unchanged, factor 1, converts into itself *)
+  (* the bare form: unchanged, factor 1 *)
   check "verify-wf092-kaal-is-factor-1" (Q.equal (Arith.factor mnd_kaal) Q.one);
   (match Arith.add (nu mnd_kaal "2") (nu mnd_kaal "12") with
   | Value.Num (v, Value.Unit u) ->
       check "verify-wf092-kaal-telt-op" (Q.equal v (q "14") && u.afkorting = Some "mnd")
   | _ -> check "verify-wf092-kaal-telt-op" false);
-  (* the half-filled form: a loud fault naming the unit and its target *)
+  (* …and it is a canonical TARGET, not an island: `jr` declares canonical
+     "mnd", the bare unit spells "mnd" as its abbreviation, so they are
+     convertible and 2 jr restates on jr's own factor 12 *)
+  (match Arith.add (nu mnd_kaal "3") (nu jr "2") with
+  | Value.Num (v, Value.Unit u) ->
+      check "verify-wf092-kaal-is-canoniek-doel"
+        (Q.equal v (q "27") && u.afkorting = Some "mnd")
+  | _ -> check "verify-wf092-kaal-is-canoniek-doel" false);
+  (* half-filled (a): a loud fault naming the unit and its target *)
   (match Arith.factor jr_half with
   | exception Value.Fault m ->
       check "verify-wf092-halfvorm-faalt-luid"
@@ -350,7 +366,19 @@ let () =
   (* and it faults where it would otherwise have lied: the restatement
      that used to read the missing factor as 1 (2 jr + 12 mnd = 3 jr) *)
   expect_fault "verify-wf092-halfvorm-faalt-in-omrekening" (fun () ->
-      Arith.add (nu jr_half "2") (nu mnd "12"))
+      Arith.add (nu jr_half "2") (nu mnd "12"));
+  (* half-filled (b), the mirror: a factor with nothing to convert into.
+     Symmetric to (a) and equally loud — the arm that used to answer the
+     factor question with the stray factor itself, unasked what it converts
+     into *)
+  (match Arith.factor mnd_half_b with
+  | exception Value.Fault m ->
+      check "verify-wf092-halfvorm-b-faalt-luid"
+        (m
+       = "unit mnd carries conversion factor 1 but names no canonical unit to convert into (WF-092)")
+  | _ -> check "verify-wf092-halfvorm-b-faalt-luid" false);
+  expect_fault "verify-wf092-halfvorm-b-faalt-in-omrekening" (fun () ->
+      Arith.add (nu mnd_half_b "12") (nu jr "2"))
 
 (* --- ch. 2.7: clamping -------------------------------------------------- *)
 
