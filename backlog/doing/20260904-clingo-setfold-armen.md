@@ -25,6 +25,26 @@ Twee stille antwoorden waar de andere executor luid weigert: het ene
 fout, het andere leeg. Pre-existent — ouder dan de
 `ref-tijdtotaal`-kaart, die de arm alleen een `set`-guard gaf.
 
+**Rood-eerst, gereproduceerd bij de claim van deze kaart** (eigen bron
+`/tmp/setfold/{a-naamdeling,b-geen-naamdeling}.rgs`, door gate 10's
+frontend naar IR geëmitteerd; één Jutter J1 met `bewaartarief` = 10 op
+het penningjaar, één Vondst V1 met 99, `Eén bewarende jutter bewaart
+meerdere vondsten`, verwachting `V1.bewaarlast = 10`):
+
+```
+variant a (Jutter EN Vondst dragen 'bewaartarief')
+  ref    : EVALUATION FAULT: unsupported instance-fold source shape
+  clingo : MISMATCH: V1.bewaarlast = [99], expected 10
+variant b (Vondst draagt 'vondsttarief')
+  ref    : EVALUATION FAULT: unsupported instance-fold source shape
+  clingo : MISMATCH: V1.bewaarlast is underived (leeg), expected 10
+```
+
+Woord voor woord de meting uit de kaartkop — de vorm is stabiel en de
+wire-vorm die hem draagt is `Functie{kind: TOTAAL}` met een operand
+`AttribuutRef{objecttype: "Jutter", navigatieRol: "bewarende jutter",
+set: false}` onder subject `Vondst`.
+
 Dezelfde klasse zit op de armen die de fixronde van die kaart nu
 temporeel bewaakt: de `Som`-arm (~:1293) en de `Minimum`/`Maximum`-arm
 (~:1358) matchen `navigatie_rol = None, navigatie_pad = []` wél, maar
