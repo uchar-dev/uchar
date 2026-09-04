@@ -1290,6 +1290,23 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             (String.concat ", " (Printf.sprintf "rol(%s,%s,%s)" subject (str role) x :: fatoms)) ],
         v,
         1 )
+  (* The set folds below carry navigatie_rol/navigatie_pad but deliberately
+     NOT the temporal total's ci-control [norm aot = norm subject_ot], and
+     not its sister [norm aot = norm element_objecttype] either: they never
+     emit val(<subject>,…) — every read is anchored at the ELEMENT variable,
+     with the attribute's declaration looked up on [el], exactly as ref
+     anchors it (its set-source arm binds no objecttype either). The
+     operand's own [objecttype] is therefore INERT on both sides, so a
+     control on it could only refuse forms ref answers. Measured on
+     jutterswet-vondsttelling's shape and on jutterswet-vondstpiek, twisting
+     the operand's objecttype to a name-sharing sister type, with and
+     without the explicit bron_rol binding: ref and clingo both keep
+     answering the pinned value. What the twist CAN break — an
+     element_objecttype whose type does not declare the folded attribute —
+     is already loud on both sides (a case-load error, or attr_decimals'
+     "unknown attribute"), never a silent value. The Aantal arm above is the
+     same story one field over: it binds no objecttype at all and mirrors
+     ref's role-source arm field for field. *)
   | Functie { kind = Som; argumenten = [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some el; leegwaarde; bron_rol; filter; _ } ->
       let a = req "fold attribute" attribuut in
       (* the §7.1 per-element fold, refused (the sister of the Totaal arm's
@@ -1368,6 +1385,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       ( guard @ [ Printf.sprintf "%s = #sum { %s,%s : %s }" v g x (String.concat ", " contrib_body) ],
         v,
         pow10 (attr_decimals ctx ~otype:el ~attr:a) )
+  (* element-anchored like the som arm above, and unnarrowed on the
+     operand's objecttype for the reason measured there *)
   | Functie { kind = (Minimum | Maximum) as kind; argumenten = [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some el; bron_rol; filter; _ } ->
       (* MAXIMUM/MINIMUM over a set-typed AttribuutRef (RUNTIME-SEMANTICS
          ch. 1.2e, ref agg_max/agg_min = agg_extreme): the same contributor
@@ -1703,21 +1722,24 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       ( [ Printf.sprintf "%s_tot(%s,%s)" p subject q ],
         q,
         pow10 (attr_decimals ctx ~otype:aot ~attr:a) )
-  | Functie { kind = Totaal; argumenten = [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; set; _ } ]; _ }
-    when attr_temporal ctx ~otype:aot ~attr:a ->
+  | Functie { kind = Totaal; argumenten = [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; navigatie_rol = None; navigatie_pad = []; set = false; _ } ]; _ }
+    when norm aot = norm subject_ot && attr_temporal ctx ~otype:aot ~attr:a ->
       (* ch. 3.6 over the asOfDate bucket: value × whole-units (= 1 for
-         the year bucket); an absent timeline stays underivable = leeg *)
-      (* a SET operand is the §7.1 per-element fold, where [aot] is the
-         ELEMENT type — this arm reads the SUBJECT's own attribute, so on
-         a set operand it derives against the wrong instance and answers
-         silently (underived where ref and Drools fold the members).
-         Refuse instead; translating the fold itself is its own card. *)
-      if set then
-        fault
-          "the per-element temporal total over a set (§7.1) is not translated: this arm totals \
-           the SUBJECT's own timeline, and %S is read off each set MEMBER — a different instance \
-           even where the element type IS the subject's own type (a self-relation)"
-          a;
+         the year bucket); an absent timeline stays underivable = leeg.
+         The pattern is the gedurende sister arm's above minus its filter,
+         and ref's own temporal-total arm narrowing for narrowing, because
+         the body emits val(<SUBJECT>,…): a form that reaches here without
+         BEING the subject's own attribute reads the wrong instance.
+         [set = false] keeps the §7.1 per-element fold out ([aot] is the
+         ELEMENT type there, read off each member — a different instance
+         even on a self-relation); navigatie_rol/navigatie_pad and
+         [norm aot = norm subject_ot] keep a navigated or foreign-typed
+         operand out (measured before the narrowing: 99 instead of 10 where
+         the two types share the attribute name, silently leeg where they
+         do not). Every excluded form is refused by reason in the arm
+         below. [navigatie_bindingen] is deliberately NOT narrowed: with
+         navigatie_rol = None ref reads the subject too, so the executors
+         agree and a refusal here would be the divergence. *)
       refuse_attr_timeline ctx ~otype:aot ~attr:a;
       let f = total_factor (attr_granularity ctx ~otype:aot ~attr:a) in
       let v = fresh ctx "T" in
@@ -1725,6 +1747,38 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       ( [ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ],
         term,
         pow10 (attr_decimals ctx ~otype:aot ~attr:a) )
+  | Functie
+      { kind = Totaal;
+        argumenten =
+          [ Attribuut_ref
+              { attribuut = Some a; objecttype = Some aot; set; navigatie_rol; navigatie_pad; _ } ];
+        _ }
+    when attr_temporal ctx ~otype:aot ~attr:a ->
+      (* every temporal totaal the two arms above deliberately do not
+         carry. Each of these used to fall INTO the arm above and be
+         answered off val(<SUBJECT>,…) — the wrong instance — so each is
+         refused here by its own reason instead: never a silent value,
+         never a silent leeg. A NON-temporal totaal is not this arm's
+         business and reaches the catch-all below, as it always has. *)
+      if set then
+        fault
+          "the per-element temporal total over a set (§7.1) is not translated: the carried arm \
+           totals the SUBJECT's own timeline, and %S is read off each set MEMBER — a different \
+           instance even where the element type IS the subject's own type (a self-relation)"
+          a;
+      if navigatie_rol <> None || navigatie_pad <> [] then
+        fault
+          "the temporal total of the NAVIGATED %S is not translated: the carried arm totals the \
+           SUBJECT's own timeline, so it would read %S off the subject instead of off the \
+           navigated object — a wrong value where the two types share the attribute name, a \
+           silent leeg where they do not; ref refuses the shape outright (an instance-fold source \
+           it does not carry), so this arm must not answer either"
+          a a;
+      fault
+        "the temporal total of %S is declared on %S, not on the subject type %S: the carried arm \
+         totals the SUBJECT's own timeline and would answer for the wrong object; ref refuses the \
+         shape outright, so this arm must not answer either"
+        a aot subject_ot
   | Temporal_read { basis; datum; typ = _; bron = _ } -> (
       (* ch. 3.3 read(tl, d): join the segment relation on containment.
          A gap or an empty date leaves the body underivable — leeg as
