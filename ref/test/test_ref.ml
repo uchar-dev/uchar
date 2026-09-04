@@ -313,6 +313,45 @@ let () =
       check "verify-show-unit-in-fault" (m = "incompatible units: € vs €/jr")
   | _ -> check "verify-show-unit-in-fault" false)
 
+(* WF-092, the executor's half: the canonical unit and the factor are one
+   fact in two fields, and the factor question refuses to guess.
+
+   The KALE form — both null — keeps its meaning and its old behaviour: a
+   unit that names no canonical target converts into itself, factor 1.
+   That branch is live, not decorative: making it fault turns 9 corpus
+   cases over 3 goldens red (the duration parameters and duration
+   operands).
+
+   The HALF-FILLED form — a canonical target with no factor — used to read
+   as factor 1 silently. Measured on a corpus copy with a canonical-`m`
+   `km` stripped of its factor: 2,5 km + 300 m came out 302,5 instead of
+   2,8 km, and surfaced only as a DECIMALS complaint about a number whose
+   unit was already wrong. It now faults by name, so no executor computes
+   quietly on a shape the verifier rejects. *)
+let mnd_kaal : Ir_v0.Ast.eenheid =
+  { afkorting = Some "mnd"; stelsel = Some "test"; canoniek = None;
+    factor_naar_canoniek = None; noemer = None }
+
+let jr_half : Ir_v0.Ast.eenheid = { jr with factor_naar_canoniek = None }
+
+let () =
+  (* the kale form: unchanged, factor 1, converts into itself *)
+  check "verify-wf092-kaal-is-factor-1" (Q.equal (Arith.factor mnd_kaal) Q.one);
+  (match Arith.add (nu mnd_kaal "2") (nu mnd_kaal "12") with
+  | Value.Num (v, Value.Unit u) ->
+      check "verify-wf092-kaal-telt-op" (Q.equal v (q "14") && u.afkorting = Some "mnd")
+  | _ -> check "verify-wf092-kaal-telt-op" false);
+  (* the half-filled form: a loud fault naming the unit and its target *)
+  (match Arith.factor jr_half with
+  | exception Value.Fault m ->
+      check "verify-wf092-halfvorm-faalt-luid"
+        (m = "unit jr names canonical unit \"mnd\" but carries no conversion factor into it (WF-092)")
+  | _ -> check "verify-wf092-halfvorm-faalt-luid" false);
+  (* and it faults where it would otherwise have lied: the restatement
+     that used to read the missing factor as 1 (2 jr + 12 mnd = 3 jr) *)
+  expect_fault "verify-wf092-halfvorm-faalt-in-omrekening" (fun () ->
+      Arith.add (nu jr_half "2") (nu mnd "12"))
+
 (* --- ch. 2.7: clamping -------------------------------------------------- *)
 
 let () =

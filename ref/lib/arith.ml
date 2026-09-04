@@ -38,8 +38,26 @@ let q_of_wire_number f =
     fault "unit conversion factor %h has no short decimal reading" f
   else Value.q_of_lexeme s
 
+(* A unit's conversion pair is ONE fact in two fields: the canonical unit
+   it converts into and the factor that does the converting (WF-092). The
+   KALE form — both null — is the legitimate self-standing spelling (every
+   duration parameter and duration operand carries it) and reads as factor
+   1: such a unit converts into itself and nothing else. A unit that NAMES
+   a canonical unit and carries no factor is the half-filled wire form
+   WF-092 refuses, and reading it as 1 is a silent lie: measured on a
+   `km` declared canonical-`m` without its factor, the value 2,5 km + 300 m
+   came out as 302,5 instead of 2,8 km, surfacing — if at all — as a
+   DECIMALS complaint about a number whose unit was already wrong. So it
+   faults here, by name. This is the second line of defence behind the
+   verifier, not a dead letter: an executor must never compute quietly on
+   a shape the verifier rejects. *)
 let factor (e : Ir_v0.Ast.eenheid) =
-  match e.factor_naar_canoniek with None -> Q.one | Some f -> q_of_wire_number f
+  match (e.factor_naar_canoniek, e.canoniek) with
+  | Some f, _ -> q_of_wire_number f
+  | None, None -> Q.one
+  | None, Some c ->
+      fault "unit %s names canonical unit %S but carries no conversion factor into it (WF-092)"
+        (show_eenheid e) c
 
 let convertible a b = Ir_v0.Checks.units_convertible a b
 
