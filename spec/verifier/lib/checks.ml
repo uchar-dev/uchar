@@ -448,6 +448,10 @@ let check_number_form at = function
       else []
   | _ -> []
 
+(* the declared unit systems, by name — the table every unit's `stelsel`
+   back-reference resolves against (WF-034, ch. 4.6 (r)). *)
+let stelsel_namen ctx = List.map fst ctx.doc.eenheidstelsels
+
 (* WF-092 (IR-SPEC ch. 2.5): the conversion pair of a unit is ONE fact in
    two fields — the canonical unit it converts into and the factor that
    does the converting. Filled together or null together; either half
@@ -463,12 +467,30 @@ let check_number_form at = function
    [canoniek] as the abbreviation and a missing factor not at all — so a
    half-filled unit is compatible with its whole sibling by construction.
    WF-091 compares two units BYTE for byte, which passes the moment the
-   half-form is copied consistently across the arms it crosses. *)
-let rec check_eenheid_form at (u : eenheid) =
+   half-form is copied consistently across the arms it crosses.
+
+   This function also carries WF-034's arm on the unit's `stelsel`
+   (maintainer decision 2026-09-05, sixth wave; IR-SPEC ch. 4.6 (r)), for the
+   same reason WF-092 lives here: [check_eenheid_form] is the ONE walk that
+   reaches every unit record in a document, denominators included, and the
+   `stelsel` is a reference like any other — it names the declared unit system
+   whose conversion table gives the unit its meaning. [stelsels] is the
+   declared-system name list, threaded from the context; it is a required
+   argument rather than an optional one so a new call site cannot silently opt
+   out of the cross. *)
+let rec check_eenheid_form ~stelsels at (u : eenheid) =
   let named =
     match u.afkorting with Some a -> "'" ^ a ^ "'" | None -> "an unnamed unit"
   in
-  (match (u.canoniek, u.factor_naar_canoniek) with
+  (match u.stelsel with
+   | Some s when not (mem_ci stelsels s) ->
+       [ v "WF-034" (at ^ "/stelsel")
+           (Printf.sprintf
+              "unit %s declares unit system '%s', which no declaration carries: the unit \
+               resolves against no conversion table"
+              named s) ]
+   | _ -> [])
+  @ (match (u.canoniek, u.factor_naar_canoniek) with
   | Some c, None ->
       [ v "WF-092" at
           (Printf.sprintf
@@ -482,22 +504,24 @@ let rec check_eenheid_form at (u : eenheid) =
               half-filled conversion pair is not a unit (both fields, or neither)"
              named f) ]
   | Some _, Some _ | None, None -> [])
-  @ (match u.noemer with Some n -> check_eenheid_form (at ^ "/noemer") n | None -> [])
+  @ (match u.noemer with Some n -> check_eenheid_form ~stelsels (at ^ "/noemer") n | None -> [])
 
 (* every unit a datatype carries, denominators and composite element/field/
    payload datatypes included — WF-092 reaches strictly further into a
    datatype than [check_number_form] does, so the form law holds at unit
    positions WF-007's row records as out of its own reach. *)
-let rec check_datatype_units at = function
+let rec check_datatype_units ~stelsels at = function
   | Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ } ->
-      check_eenheid_form (at ^ "/eenheid") u
-  | List_type { element } -> check_datatype_units (at ^ "/element") element
+      check_eenheid_form ~stelsels (at ^ "/eenheid") u
+  | List_type { element } -> check_datatype_units ~stelsels (at ^ "/element") element
   | Struct_type { velden; _ } ->
-      List.concat_map (fun (f, d) -> check_datatype_units (at ^ "/velden/" ^ f) d) velden
+      List.concat_map (fun (f, d) -> check_datatype_units ~stelsels (at ^ "/velden/" ^ f) d) velden
   | Sum_type { constructoren; _ } ->
       List.concat_map
         (fun (c, p) ->
-          match p with Some d -> check_datatype_units (at ^ "/constructoren/" ^ c) d | None -> [])
+          match p with
+          | Some d -> check_datatype_units ~stelsels (at ^ "/constructoren/" ^ c) d
+          | None -> [])
         constructoren
   | Numeriek _ | Percentage _ | Tekst | Booleaan | Datum_in_dagen | Datum_tijd | Enumeratie _
   | Datatype_onbekend _ ->
@@ -508,7 +532,8 @@ let rec check_datatype_units at = function
    rides walk_expr's type prologue and the rule-target clause, where WF-007
    collects the same "every datatype in the document" split. *)
 let wf092 ctx =
-  let site at = function Some d -> check_datatype_units at d | None -> [] in
+  let stelsels = stelsel_namen ctx in
+  let site at = function Some d -> check_datatype_units ~stelsels at d | None -> [] in
   List.concat_map
     (fun (sn, es) ->
       let at = "/eenheidstelsels/" ^ sn in
@@ -517,7 +542,7 @@ let wf092 ctx =
           List.concat_map
             (fun (un, e) ->
               match e with
-              | Some e -> check_eenheid_form (at ^ "/" ^ kind ^ "/" ^ un) e
+              | Some e -> check_eenheid_form ~stelsels (at ^ "/" ^ kind ^ "/" ^ un) e
               | None -> [])
             table)
         [ ("eenheden", es.eenheden); ("aliassen", es.aliassen) ])
@@ -537,9 +562,9 @@ let wf092 ctx =
          (fun i (fd : function_def) ->
            let at = Printf.sprintf "/functionDefs/%d" i in
            List.concat_map
-             (fun (pn, dt) -> check_datatype_units (at ^ "/parameters/" ^ pn) dt)
+             (fun (pn, dt) -> check_datatype_units ~stelsels (at ^ "/parameters/" ^ pn) dt)
              fd.fd_parameters
-           @ check_datatype_units (at ^ "/result") fd.fd_result)
+           @ check_datatype_units ~stelsels (at ^ "/result") fd.fd_result)
          ctx.doc.function_defs)
 
 let wf007_model ctx =
@@ -899,6 +924,88 @@ let wf026 ctx =
   in
   pairs named
 
+(* WF-034 on the EIGHT SIDE-TABLE KEYS of an object type (maintainer decision
+   2026-09-05, sixth wave; IR-SPEC ch. 4.6 (p)). An object type declares its
+   members in two places — `attributen` (name -> datatype) and `kenmerken` (a
+   name list) — and then hangs eight per-member FACET maps beside them, each
+   keyed by a member name. Nothing required those keys to name a declared
+   member. They are references: every one of them is looked up by member name
+   and by nothing else, so a key that names no member is a reference resolving
+   against no declaration.
+
+   The harm is a SILENT SEMANTIC CHANGE, not a missing value, and that is what
+   separates this arm from the empty-field class of the earlier waves. A key in
+   `kenmerkGranulariteit` spelled `verjaart` where the declared characteristic
+   is `verjaard` says "this characteristic is time-dependent" about a
+   characteristic that does not exist — and leaves the declared one
+   NON-temporal, silently. No consumer complains: every reader looks the facet
+   up BY the declared member's name, finds nothing, and takes the default. That
+   is a different program, not a fault.
+
+   EIGHT arms, not one, because the eight tables are eight independent readers
+   and a mutant that removes one must free exactly one document. Measured over
+   the four zones (2026-09-05): the readers per table are
+
+     attribuutMeervoud       WF-057 (target-text-safety of the plural); the
+                             Drools loader reads it and no consumer consults it
+     attribuutDimensies      WF-004 (the dimension list) and WF-040's
+                             label/dimension cross inside [walk_expr]
+     attribuutGranulariteit  [attr_temporal], WF-005's named-timeline
+                             adoption, WF-043 in [walk_expr], the temporal
+                             prologue of [expression_layer], WF-065 — and all
+                             three executors (`ref` eval/case, the ASP
+                             translator, the Drools transpiler + contract
+                             validator + fact-model generator)
+     attribuutTijdlijnAantal WF-005; the two Drools transpiler branches
+     attribuutTijdlijnNaam   WF-003 (the timeline reference) and WF-005; the
+                             Drools loader reads it and no consumer consults it
+     kenmerkSoorten          NO reader in any of the four consumers — the
+                             Drools loader parses it and stops there
+     kenmerkGranulariteit    WF-043 in [walk_expr] and [walk_cond],
+                             [expression_layer], WF-086 — and all three
+                             executors
+     kenmerkTijdlijnAantal   WF-005; the two Drools transpiler branches
+
+   so the arms differ in how much they switch off, from "everything a temporal
+   member has" down to `kenmerkSoorten`, which today no consumer reads at all
+   and which is here for the wire: the table is keyed by member name in the
+   serialization contract, and a conforming consumer may read it tomorrow.
+   Cost: none. All 924 keys the four zones hold (24 + 9 + 74 + 2 + 2 + 788 + 24
+   + 1) resolve against a declared member today; the only orphans anywhere are
+   this wave's own eight witnesses.
+
+   Identity is the ch. 2.4 name identity — whitespace-collapsed,
+   case-insensitive — because that is how every reader looks the facet up
+   ([find_ci] / [norm]); a key that differs from the declared member only in
+   case is the same key to all of them and is not an orphan. *)
+let wf034_zijtabelsleutels ctx =
+  let orphan otn tab kind present table =
+    List.filter_map
+      (fun (key, _) ->
+        if present key then None
+        else
+          Some
+            (v "WF-034"
+               ("/objecttypen/" ^ otn ^ "/" ^ tab ^ "/" ^ key)
+               (Printf.sprintf
+                  "%s key '%s' names no declared %s of '%s': the side table resolves against no \
+                   declaration"
+                  tab key kind otn)))
+      table
+  in
+  List.concat_map
+    (fun (otn, ot) ->
+      let a = has_attr ot and k = has_kenmerk ot in
+      orphan otn "attribuutMeervoud" "attribute" a ot.attribuut_meervoud
+      @ orphan otn "attribuutDimensies" "attribute" a ot.attribuut_dimensies
+      @ orphan otn "attribuutGranulariteit" "attribute" a ot.attribuut_granulariteit
+      @ orphan otn "attribuutTijdlijnAantal" "attribute" a ot.attribuut_tijdlijn_aantal
+      @ orphan otn "attribuutTijdlijnNaam" "attribute" a ot.attribuut_tijdlijn_naam
+      @ orphan otn "kenmerkSoorten" "characteristic" k ot.kenmerk_soorten
+      @ orphan otn "kenmerkGranulariteit" "characteristic" k ot.kenmerk_granulariteit
+      @ orphan otn "kenmerkTijdlijnAantal" "characteristic" k ot.kenmerk_tijdlijn_aantal)
+    ctx.doc.objecttypen
+
 (* WF-034 on the allocation's two ENDPOINT attributes (maintainer decision
    2026-09-04, third wave). An allocation is not an expression, so the
    expression walk never reaches it; its source and target attributes are
@@ -1144,13 +1251,18 @@ let wf034_verdeling_naamresolutie ctx =
    differential square is blind and only the hand-pinned anchor expectation
    stands between the corpus and the defect.
 
-   One arm, one witness (`wf034-objectcreatie-onbekend-subject`). What it does
-   NOT close, measured the same day and stated so the silence is not mistaken
-   for coverage: `subject: null`, equally verifier-clean on the same document,
-   with both executors loud (`ref` "missing ObjectCreatie.subject in IR node",
-   clingo "missing ObjectCreatie.subject"). That is the empty-reference class
-   of the earlier waves, a different question from resolution, and it has no
-   witness yet. *)
+   TWO arms now, one per spelling. The second (maintainer decision 2026-09-05,
+   sixth wave; IR-SPEC ch. 4.6 (n), its empty half) is `subject: null` — the
+   empty-reference class of the earlier waves, which the fifth wave measured
+   and left without a witness. It is a separate arm because it is a separate
+   question: a name that resolves against nothing has a declaration table to
+   be missing from, an ABSENT name has nothing to look up, and the two are
+   observed differently — a wrong subject makes both OCaml executors agree on
+   a wrong ANSWER, while an absent one makes both of them LOUD (`ref` "missing
+   ObjectCreatie.subject in IR node", clingo "missing ObjectCreatie.subject").
+   Carried by zero of the 30 object creations the four zones hold on
+   2026-09-05; witnesses `wf034-objectcreatie-onbekend-subject` and
+   `wf034-objectcreatie-loos-subject`. *)
 let wf034_objectcreatie_subject ctx =
   List.concat
     (List.mapi
@@ -1161,7 +1273,11 @@ let wf034_objectcreatie_subject ctx =
              [ v "WF-034" at
                  ("object creation's subject type '" ^ s
                 ^ "' is not declared: the creation resolves against no declaration") ]
-         | _ -> [])
+         | None ->
+             [ v "WF-034" at
+                 "object creation without a subject: the population it runs over, and the type \
+                  its member values evaluate on, resolve against no declaration" ]
+         | Some _ -> [])
        ctx.doc.object_creaties)
 
 (* The type an expression carries, iff it is a value (a Lambda is not). The
@@ -3303,7 +3419,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
     | Some d ->
         payload_sentinel (sub "type") d
         @ check_number_form (sub "type") d
-        @ check_datatype_units (sub "type") d
+        @ check_datatype_units ~stelsels:(stelsel_namen ctx) (sub "type") d
         @ enum_use_site ctx (sub "type") d
         @ struct_use_site ctx (sub "type") d
     | None -> (
@@ -3755,7 +3871,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                       not hold. Measured: 27 of the goldens' 2161 datatype
                       positions were unreachable through this arm. *)
                    (match typ with
-                    | Some d -> check_datatype_units (p ^ "/type") d
+                    | Some d -> check_datatype_units ~stelsels:(stelsel_namen ctx) (p ^ "/type") d
                     | None -> [])
                    @ use_site_identity (p ^ "/type")
                      ~what:
@@ -4706,7 +4822,7 @@ and check_fold_fn ctx ~binders ~subject at ~params ~result (fn : fold_fn) : viol
          positions were unreachable, this arm's parameters and the composite
          element/field/payload datatypes nested inside them. *)
       @ List.concat_map
-          (fun (pn, pt) -> check_datatype_units (at ^ "/parameters/" ^ pn) pt)
+          (fun (pn, pt) -> check_datatype_units ~stelsels:(stelsel_namen ctx) (at ^ "/parameters/" ^ pn) pt)
           parameters
       @ (match result, typ_of_expr lbody with
         | Some r, Some b when r <> b ->
@@ -4870,8 +4986,46 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) at (c : conditie) : viola
          | _ -> [])
       @ whole_period_check periode [ operand ]
       @ (match operand with Some e -> walk_expr ctx ~binders ~subject ~body (sub "operand") e | None -> [])
-  | Kenmerk_check { kenmerk; navigatie; periode; navigatie_binding; _ } ->
-      (match kenmerk with
+  | Kenmerk_check { kenmerk; navigatie; periode; navigatie_binding; eigenaar; _ } ->
+      (* WF-034 (widened, maintainer decision 2026-09-05, sixth wave; IR-SPEC
+         ch. 4.6 (q)): a characteristic check's EXPLICIT OWNER. `eigenaar`
+         names the object type the characteristic is read on when it is not
+         the enclosing form's subject. It is a reference, and it is READ — as
+         the node key of the dependency edge this check contributes
+         ([dep_cond] below keys `n_char` on it, falling back to the subject
+         when it is absent; the Drools backend does the identical thing in its
+         own stratification and producer/consumer graphs) — but nothing
+         crossed it against the object-type table.
+
+         An undeclared owner therefore builds a dependency edge on a node no
+         form writes: the stratification reads an empty neighbour, and the
+         check's producer is invisible to it. In the Drools backend the same
+         name degrades one step further and SILENTLY: its loader resolves the
+         field through a by-name object-type lookup that yields null for an
+         unknown name, so `eigenaar` becomes absent, the two transpiler
+         branches stop emitting their "hosted elsewhere" marker, and the check
+         is re-attributed to the subject — a different reading of the same
+         document, with nothing said.
+
+         Carried by 2 of the 190 characteristic checks the four zones hold
+         (2026-09-05), both of them in the negatief zone, and both resolving:
+         `wf031-dagsoort-leest-kenmerk` (a day-kind condition, where the walk
+         knows no subject at all, so this field is the only owner there is)
+         and `wf046-negated-read-in-recursive-cycle` (where it repeats the
+         subject). No golden carries the form.
+
+         What this arm does NOT close, stated so the silence is not mistaken
+         for coverage: whether the named type DECLARES the characteristic. The
+         cross below is keyed on `subject`, and making an explicit `eigenaar`
+         override the subject for it decides which owner is authoritative —
+         a semantics question, not a resolution one, and not this card's. *)
+      (match eigenaar with
+       | Some e when objecttype ctx e = None ->
+           [ v "WF-034" (sub "eigenaar")
+               ("characteristic check's owner '" ^ e
+              ^ "' is not a declared object type: the check resolves against no declaration") ]
+       | _ -> [])
+      @ (match kenmerk with
        | None ->
            (* WF-034 (widened, maintainer decision 2026-09-04, third wave):
               a characteristic check resolves through exactly one field, and
@@ -5010,7 +5164,19 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) at (c : conditie) : viola
          this arm's report — it is exactly `ref`'s `[]` fault. A candidate
          list with SEVERAL entries is a different defect (ambiguity, ch. 4.1)
          and stays WF-048's business; a subject the walk does not know keeps
-         the arm silent. *)
+         the arm silent.
+
+         The EMPTY half is its own arm (maintainer decision 2026-09-05, sixth
+         wave; IR-SPEC ch. 4.6 (o), its empty half) and needs no subject: with
+         the field absent there is no type to derive a connecting role TO, and
+         the written `rol` being presentation, the node then carries no
+         reference at all. Carried by 1 of the 10 role checks the four zones
+         hold on 2026-09-05, and that one is a day-kind condition
+         (`wf031-dagsoort-leest-rolstaat`) that WF-031 already refuses
+         outright — a day-kind voorwaarde may not read role state at all,
+         which is precisely why no subject was there to derive the filler
+         from. So no legitimate document carries the shape; the one that does
+         keeps its own verdict and gains a truthful incidental line. *)
       match (ander_te_filler, subject) with
       | Some f, Some st when connecting_role_candidates ctx ~from_type:st ~to_type:f = [] ->
           [ v "WF-034" (sub "anderTeFiller")
@@ -5018,6 +5184,10 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) at (c : conditie) : viola
                  "no fact type relates the subject '%s' to '%s': the role check's anderTeFiller \
                   resolves against no declaration"
                  st f) ]
+      | None, _ ->
+          [ v "WF-034" (sub "anderTeFiller")
+              "role check without an anderTeFiller: the connecting role is derived from that \
+               type and from nothing else, so the check resolves against no declaration" ]
       | _ -> [])
   | Verre_rollidmaatschap _ -> []
   | Periode_conditie { vanaf; tot; _ } ->
@@ -5100,7 +5270,8 @@ let expression_layer ctx =
            expression walk never enters. *)
       (match r.doel with
         | Some (Attribuut_ref { typ = Some d; _ }) ->
-            check_number_form (at ^ "/doel/type") d @ check_datatype_units (at ^ "/doel/type") d
+            check_number_form (at ^ "/doel/type") d
+            @ check_datatype_units ~stelsels:(stelsel_namen ctx) (at ^ "/doel/type") d
         | _ -> [])
       @ (* WF-056 (rule level): a pro-rata value on a temporal target MUST
          bucket at the target's declared granularity; WF-058 states the
@@ -7503,6 +7674,7 @@ let all (doc : document) : violation list =
       wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf020 ctx; wf021 ctx;
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx;
+      wf034_zijtabelsleutels ctx;
       wf034_verdelingen ctx; wf034_verdeling_namen ctx; wf034_verdeling_typen ctx;
       wf034_verdeling_naamresolutie ctx; wf034_objectcreatie_subject ctx;
       wf034_feitcreatie_beanvelden ctx; wf045_046 ctx;
