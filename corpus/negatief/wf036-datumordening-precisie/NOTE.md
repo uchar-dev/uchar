@@ -21,23 +21,32 @@ exactly one defect.
 
 Measured on 2026-09-05, before the clause, verifier-clean, and answered
 by no executor. The golden's own case inputs were replayed with
-`vondstdag` restated as a `dateTime` value, which the changed declaration
-demands:
+`vondstdag` restated as the `dateTime` value `2025-03-01T00:00:00`,
+which the changed declaration demands — that instant is what the
+millisecond number below spells:
 
   * `ref` faults at evaluation —
     `EVALUATION FAULT: unordered comparison: 2025-03-05 vs
-    @1740787200000ms`;
+    @1740787200000ms`. It is the only leg that meets the defect itself:
+    a same-precision `DatumTijd` ordering plays here, and only the mixed
+    pair faults;
   * the ASP backend refuses ahead of translation —
-    `TRANSLATION FAULT: unscalable datatype in the ASP translation`;
-  * the Drools backend never reaches the comparison: it refuses this
-    document's form outright (`EXCLUDE transpiler SKIP: consistentie
-    (schending buiten Phase-D scope)`). Measured separately, so the
-    refusal is not mistaken for coverage: the same defect placed in a
-    rule condition — a hand-broken
-    `corpus/golden/jutterswet-vondstverjaring` — is refused there too
-    (`EXCLUDE transpiler SKIP: regel (voorwaarde buiten Phase-B scope)`),
-    and so is the same-precision `DatumTijd` control, so that backend
-    carries no millisecond-precision date comparison at all.
+    `TRANSLATION FAULT: unscalable datatype in the ASP translation`.
+    That is a FORM refusal, not a verdict on this defect: the same
+    message comes on the CLEAN same-precision ordering, because the ASP
+    scale table hands `DatumTijd` no scale — a `DatumTijd` ordering FOLD
+    (`corpus/golden/jutterswet-hoogwaterpaar`) does translate and play;
+  * the Drools backend refuses the crossing on an explicit guard of its
+    own. It SKIPS this document (`EXCLUDE transpiler SKIP: consistentie
+    (schending buiten Phase-D scope)`), while the SAME document with
+    BOTH operands at millisecond precision PLAYS — measured in this
+    consistency and in a rule condition alike, discriminating a
+    one-millisecond difference a day reading would call equal (the
+    reversed expectation fails on that input, so the comparison really
+    is evaluated). Only the mixed pair is refused, at a guard whose own
+    comment names it a §5.3 Tabel 36 type mismatch never to be lossily
+    coerced: a third executor, built for another engine, fencing where
+    this rule fences.
 
 Unlike the ordering-fold sister under WF-038, the RegelSpraak frontend
 does NOT refuse this shape: its comparison typing lets the four ordering
@@ -48,7 +57,12 @@ emit — the wire fence moving ahead of the frontend, recorded rather than
 hidden — and it settles the question the WF-036 text carried as OPEN.
 It costs the corpus nothing: over the four verified zones (golden, rood,
 negatief and parity — 504 documents on 2026-09-05) the only report that
-moved was this one.
+moved was this one. What the corpus does not carry: all seven of its
+date orderings put two DAY-precision operands side by side, so the
+ADMITTED millisecond half rests on the executors, not here — refusing
+the same-precision `DatumTijd` pair too moves zero of those 504 reports.
+A same-precision `DatumTijd` ordering golden is the missing regression
+witness.
 
 Falsifiable, clause-exact: let the date-ordering arm read the two
 representations as one family — `Datum_in_dagen` and `Datum_tijd` both
