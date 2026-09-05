@@ -26,6 +26,19 @@ let check name ok =
     Printf.printf "FAIL %s\n" name
   end
 
+(* A CRASH is not a fault, and every check below matches on Fault alone. An
+   uncaught exception — Division_by_zero out of a scale harmonisation was the
+   measured one — therefore walks past every handler, kills the process at the
+   check that raised it and takes every later check with it: measured as
+   `Fatal error: exception Division_by_zero`, exit 2, and NO
+   `test_clingo: N checks` line at all — the loudest possible silence. Every
+   call site goes through here, so a crash arrives as a Fault that no needle
+   matches: one NAMED failing check, and the suite still finishes and totals. *)
+let translate doc case =
+  try Translate.translate doc case with
+  | Uchar_ref.Value.Fault _ as f -> raise f
+  | e -> raise (Uchar_ref.Value.Fault ("a CRASH, not a fault: " ^ Printexc.to_string e))
+
 (* the frontend-faithful pure-% spelling (jutterswet-vondsttarief) *)
 let pct_eenheid =
   {|{
@@ -249,14 +262,14 @@ let load left_eenheid =
 
 let translates name left =
   let doc, case = load left in
-  match Translate.translate doc case with
+  match translate doc case with
   | (_ : string) -> check (name ^ ": clingo translates") true
   | exception Uchar_ref.Value.Fault m ->
       check (name ^ ": clingo translates (unexpected fault: " ^ m ^ ")") false
 
 let faults name left =
   let doc, case = load left in
-  match Translate.translate doc case with
+  match translate doc case with
   | (_ : string) -> check (name ^ ": expected a loud fault, got a model") false
   | exception Uchar_ref.Value.Fault m ->
       check (name ^ ": faults loudly (" ^ m ^ ")")
@@ -470,7 +483,7 @@ let () =
   Sys.remove irf;
   Sys.remove casef;
   (* the pass makes the factor≠1 jaar/maand join+write translate at all *)
-  (match Translate.translate doc case with
+  (match translate doc case with
   | (_ : string) -> check "jaar/maand doc translates end-to-end (pass lifts the factor≠1 fence)" true
   | exception Uchar_ref.Value.Fault m ->
       check ("jaar/maand doc translates (unexpected fault: " ^ m ^ ")") false);
@@ -583,7 +596,7 @@ let () =
   let case = Uchar_ref.Case.load_file doc casef in
   Sys.remove irf;
   Sys.remove casef;
-  match Translate.translate doc case with
+  match translate doc case with
   | (_ : string) -> check "Onbekend-arithmetic Binair: expected a loud fault, got a model" false
   | exception Uchar_ref.Value.Fault m ->
       check ("Onbekend-arithmetic Binair faults loudly (" ^ m ^ ")")
@@ -655,18 +668,10 @@ let faults_with ~name ~ir ~case_text ~needle =
   let case = Uchar_ref.Case.load_file doc casef in
   Sys.remove irf;
   Sys.remove casef;
-  match Translate.translate doc case with
+  match translate doc case with
   | (_ : string) -> check (name ^ ": expected a loud fault, got a model") false
   | exception Uchar_ref.Value.Fault m ->
       check (name ^ " faults loudly (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle m)
-  (* a CRASH is not a fault. Without this arm an uncaught exception —
-     Division_by_zero out of a scale harmonisation was the measured one — walks
-     past the Fault handler, kills the process at the check that raised it and
-     takes every later check with it: the run reports no failure count at all,
-     the loudest possible silence. Named here, so a crash counts as one failure
-     and the suite still finishes and totals. *)
-  | exception e ->
-      check (name ^ ": expected a loud fault, got a CRASH (" ^ Printexc.to_string e ^ ")") false
 
 (* DOOR 1 — a SUBJECT-DEPENDENT fold init over a list PARAMETER. fa/fr are
    keyed by the list id alone; plist(p) drops the subject out of the head, so
@@ -1159,7 +1164,7 @@ let clingo_matches ~name ~ir ~case_text =
   let label = name ^ ": clingo pins the values" in
   let doc, case = load_pair ~ir ~case_text in
   match
-    let program = Translate.translate doc case in
+    let program = translate doc case in
     match Solve.run_clingo program with
     | out, Unix.WEXITED (10 | 30) ->
         Model.check doc case (Model.model_of_outf2 (Yojson.Safe.from_string out))
@@ -1179,7 +1184,7 @@ let translates_with ~name ~ir ~case_text =
   let case = Uchar_ref.Case.load_file doc casef in
   Sys.remove irf;
   Sys.remove casef;
-  match Translate.translate doc case with
+  match translate doc case with
   | (_ : string) -> check (name ^ ": translates") true
   | exception Uchar_ref.Value.Fault m ->
       check (name ^ ": translates (unexpected fault: " ^ m ^ ")") false
@@ -1502,7 +1507,7 @@ let v1_bucket_scalar = {|{ "number": "12" }|}
    anchors translate, and only one of them integrates timelines. *)
 let translates_carrying ~name ~ir ~case_text ~needle =
   let doc, case = load_pair ~ir ~case_text in
-  match Translate.translate doc case with
+  match translate doc case with
   | program -> check (name ^ ": translates, program carries " ^ needle)
                  (Uchar_ref.Case.contains ~needle program)
   | exception Uchar_ref.Value.Fault m ->
