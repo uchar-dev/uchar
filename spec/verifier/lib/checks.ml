@@ -4654,9 +4654,18 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) at (c : conditie) : viola
               well-formed alone; their combination is not, so it is
               reported at the comparison node. The sibling equality arm
               below crosses the same seam ("equality across date
-              precisions"); this arm is its ordering half. An untyped or
-              unknown-typed operand DEFERS through the outer match, as
-              every other arm of this comparison does. *)
+              precisions"); this arm is its ordering half.
+
+              NO deferral on the sentinel here — deliberately unlike
+              WF-038's ordering fold. An operand with no type at all does
+              defer (the outer match skips it) and WF-034 reports it
+              ("value node without a static type", measured); the unknown
+              SENTINEL is REPORTED by the is_date guard just above
+              ("date-ordering operand is unknown", measured, beside
+              WF-034's "unknown-type sentinel inside a structured node"),
+              so this precision clause never meets one. The fold arm
+              defers because only the ch. 4.3 row-1 wart reaches it;
+              every operand here is walked as an ordinary expression. *)
            @ (match l, r with
               | Datum_in_dagen, Datum_tijd | Datum_tijd, Datum_in_dagen ->
                   [ v "WF-036" at
