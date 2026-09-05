@@ -331,6 +331,27 @@ gelede vouw tijdelijk uit:
 Suite 45 → 47 checks (additief), plus de wrapper en één needle die met de
 verbrede melding meebeweegt. Poort 6 onveranderd op 405.
 
+### De dertien poorten, ná commit
+
+| poort | uitslag |
+| --- | --- |
+| 1 self-contained | PASS |
+| 2 ir-schema | PASS (176 bestanden valideren en round-trippen) |
+| 3 verifier | PASS (176 golden clean; 287 negatief afgewezen op hun eigen regel) |
+| 4 case-schema | PASS (427 casusbestanden) |
+| 5 oracle | PASS (405 casussen exact herspeeld) |
+| 6 clingo | PASS (405 casussen — ref ≡ clingo over het corpus) |
+| 7 noop | PASS (369 weerleggen een niets-doener; 36 gepinde overlevers) |
+| 8 rood | PASS (22 rode casussen; Drools-been 5 fault-gepind, 17 met reden niet gedragen) |
+| 9 catala | PASS (201 checks; 12 goldens byte-identiek) |
+| 10 regelspraak | PASS (171 tests; 30 rgs-goldens byte-identiek) |
+| 11 toka-pariteit | PASS (29/29 ref, 29/29 clingo, 29 PLAYED Drools) |
+| 12 drools | PASS (108 played; JUnit 199 tests) |
+| 13 reftype-afleiding | PASS (64 annotaties getwist over 13 goldens; 0 overlevers) |
+
+Elke telling gelijk aan die van de landing — de fixronde beweegt niets
+behalve de suite (45 → 47).
+
 ## Afwijkingen van de kaart
 
 - **May touch verruimd** met `backends/clingo/test/**` (additief): de
