@@ -996,8 +996,16 @@ let () =
     ~needle:
       {|totals the SUBJECT's own timeline, so it would read "bewaartarief" off the subject instead of off the navigated object|}
     ;
-  (* the §7.1 set operand — the reason that used to live inside the arm *)
-  faults_with ~name:"temporal totaal, set operand (the §7.1 per-element fold)"
+  (* the §7.1 set operand. Until 2026-09-05 this arm REFUSED the shape
+     outright and the pin held that refusal text. The fold is carried
+     now, so what this document still pins is the HORIZON rule inside
+     it: the case gives J1 an asOfDate-bucket scalar, which states no
+     period of its own, and a per-element fold needs each member's own
+     timeline. ref refuses the very same document for the very same
+     reason (EVALUATION FAULT, same sentence), so the two executors
+     still refuse in step — that is what changed, from "clingo cannot"
+     to "neither may guess a horizon". *)
+  faults_with ~name:"§7.1 per-element fold, member with an asOfDate-bucket scalar"
     ~ir:
       (totaal_doc ~vondst_attribuut:"vondsttarief"
          ~operand:
@@ -1005,7 +1013,7 @@ let () =
               ~set:true))
     ~case_text:(totaal_case "vondsttarief")
     ~needle:
-      {|the per-element temporal total over a set (§7.1) is not translated: the carried arm totals the SUBJECT's own timeline|}
+      {|the case supplies an asOfDate-bucket scalar, which carries no period of its own; a set fold needs each member's own timeline|}
     ;
   (* no navigation written, but the operand is declared on another type: the
      ci-control the gedurende sister arm has always carried *)
