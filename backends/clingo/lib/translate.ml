@@ -121,6 +121,33 @@ let value_scale = function
   | Some (Sum_type _ | Struct_type _) -> 0
   | t -> pow10 (decimals_of_datatype t)
 
+(* the harmonisation fence. Scale 0 marks a SYMBOLIC term — a sum-type
+   constructor term, a struct record term, and whatever future datatype
+   [value_scale] hands no numeric scale. Carrying such a term is legitimate (a
+   fold accumulator, a sum-typed write, an equality join), but every
+   arithmetic, ordering, rounding and fitting step HARMONISES scales by
+   dividing by them, and a divisor of 0 raises Division_by_zero: an uncaught
+   exception, exit 2, no rule and no reason — measured on the articulated
+   ordering fold over two sum-typed operands, whose own operand fence knew the
+   ch. 1.2d scalars but not SumType.
+
+   The fence hangs on the SCALE and not on a wire `type` annotation, which is
+   what makes it the smallest cut that holds. The annotation-shaped fences
+   beside it ([numeric_ok], [is_symbolic_operand]) read [typ_of_expr] — the
+   wire — while the scale is derived from the DECLARATION, so an absent or
+   lying annotation walks straight past them into the division (§2.10: a
+   consumer derives from declarations). Every divisor position routes through
+   here instead, so a new unscaled datatype is refused the day it is added
+   rather than the day it crashes. *)
+let numeric_scale ~what s =
+  if s < 1 then
+    fault
+      "a symbolic operand reaches %s: a sum-type or record value carries no numeric scale, so it \
+       cannot be harmonised against one (ref faults the operation; this arm refuses it rather \
+       than divide by the absent scale)"
+      what;
+  s
+
 let scaled_of_value ~decimals (v : Value.t) : int =
   match v with
   | Num (q, _) ->
@@ -494,8 +521,13 @@ let grid_strip_ok ctx ~what ~(gran : granulariteit) (u : eenheid option) =
               (Uchar_ref.Arith.show_eenheid gu))
   | _ -> ()
 
-(* harmonise two scaled terms for comparison *)
+(* harmonise two scaled terms for comparison. Self-fenced: every caller
+   already fences its own operands where it reads them (the range guards
+   divide by the scales one line earlier), but the helper must not become a
+   crash site for a caller that forgets. *)
 let harmonised (b1, t1, s1) (b2, t2, s2) =
+  let s1 = numeric_scale ~what:"a scale harmonisation" s1 in
+  let s2 = numeric_scale ~what:"a scale harmonisation" s2 in
   let m = max s1 s2 in
   let scale t s = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
   (b1 @ b2, scale t1 s1, scale t2 s2)
@@ -750,7 +782,12 @@ let rec gcd a b = if b = 0 then a else gcd b (a mod b)
    scale from inflating the numerator; the fold is exact (dividing numerator and
    denominator constants by a common factor preserves both the integer quotient
    and its divisibility test). Shared by the rule-level bare division and the
-   closed-body division — one reduction. *)
+   closed-body division — one reduction.
+
+   No [numeric_scale] fence of its own: both callers fence [sl] and [sr] the
+   moment they read their operands, so [den_c] is 0 only if [c] is, and a
+   zero [c] never reaches here ([const_div] admits c > 0 only). The gcd is
+   therefore never gcd 0 0, whose 0 would make this the divide-by-zero. *)
 let const_div_reduce ~sl ~sr ~out_scale ~c =
   let num_c = sr * out_scale and den_c = c * sl in
   let g = gcd num_c den_c in
@@ -1788,7 +1825,18 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         (fun a ->
           units_identical_ok ~what:"an eerste/laatste fold" first_unit (eff_unit ctx a))
         args;
-      let ops = List.map (expr_term ctx ~subject ~subject_ot) args in
+      (* the operand fence above reads the wire `type`, which covers the ch.
+         1.2d scalars but never saw a sum/struct operand — and could not, since
+         an absent or lying annotation walks past it either way. The scale is
+         the declaration's own, so it fences what the annotation cannot: an
+         unscaled operand here divided by 0 while harmonising, and crashed. *)
+      let ops =
+        List.map
+          (fun a ->
+            let atoms, t, s = expr_term ctx ~subject ~subject_ot a in
+            (atoms, t, numeric_scale ~what:"an eerste/laatste fold" s))
+          args
+      in
       let m = List.fold_left (fun acc (_, _, s) -> max acc s) 1 ops in
       ctx.fresh <- ctx.fresh + 1;
       let pred = Printf.sprintf "fl%d" ctx.fresh in
@@ -1874,6 +1922,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               (attr_unit ctx ~otype:botn ~attr:b)
               (eff_unit ctx grens);
             let gb, gt, gs = expr_term ctx ~subject ~subject_ot grens in
+            let gs = numeric_scale ~what:"a gedurende clip comparison" gs in
             let bscale = pow10 (attr_decimals ctx ~otype:botn ~attr:b) in
             let m = max bscale gs in
             let wl = if bscale = m then "WB" else Printf.sprintf "(WB*%d)" (m / bscale) in
@@ -2410,6 +2459,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let l = if op = Verminderd_met then l else coalesce0 ctx ~subject ~subject_ot l in
       let r = coalesce0 ctx ~subject ~subject_ot r in
       let _, tl_raw, s1 = l and _, tr_raw, s2 = r in
+      (* [numeric_ok] above read the wire `type`; the scale is the declaration's *)
+      let s1 = numeric_scale ~what:"an additive join" s1 in
+      let s2 = numeric_scale ~what:"an additive join" s2 in
       let m = max s1 s2 in
       let bindings, tl, tr = harmonised l r in
       let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
@@ -2493,6 +2545,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          range (richting-nul alone matches gringo's native truncation on
          both signs). *)
       let b, t, s = expr_term ctx ~subject ~subject_ot (req "Afgerond.basis" basis) in
+      (* [numeric_ok basis] read the wire `type`; the alignment tests below take
+         [s] as a modulus, so an unscaled basis divides by zero here too *)
+      let s = numeric_scale ~what:"a rounding basis" s in
       let target = pow10 decimalen in
       let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
       let gbody = (base :: ctx.rule_guard) @ b in
@@ -2540,6 +2595,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let basis_e = req "Begrensd.basis" basis in
       numeric_ok basis;
       let b_atoms, b_term, b_scale = expr_term ctx ~subject ~subject_ot basis_e in
+      (* the numeric_ok pair reads the wire `type`; the clamp harmonises base
+         and bounds into the widest scale, dividing by each of the three *)
+      let b_scale = numeric_scale ~what:"a Begrensd base" b_scale in
       let base_unit = eff_unit ctx basis_e in
       let bound name = function
         | None -> None
@@ -2552,7 +2610,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                 "a Begrensd %s bound that is not a ground literal could be empty; ref reads an empty \
                  bound as no bound, which the bare join cannot express (no corpus case)"
                 name;
-            Some (term, scale)
+            Some (term, numeric_scale ~what:"a Begrensd bound" scale)
       in
       let lo = bound "minimum" minimum and hi = bound "maximum" maximum in
       let m = List.fold_left max b_scale (List.filter_map (Option.map snd) [ lo; hi ]) in
@@ -2953,6 +3011,10 @@ and translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding =
   unit_free_ok ctx (Some rechts);
   let bl, tl, sl = expr_term ctx ~subject ~subject_ot links in
   let br, tr, sr = expr_term ctx ~subject ~subject_ot rechts in
+  (* the numeric_ok pair reads the wire `type`; both scales become gcd
+     operands and divisors below, where a 0 is the crash, not a fault *)
+  let sl = numeric_scale ~what:"a division dividend" sl in
+  let sr = numeric_scale ~what:"a division divisor" sr in
   let out_scale =
     match rounding with
     | None -> max (max sl sr) ctx.write_scale
@@ -3071,6 +3133,9 @@ and translate_power ctx ~subject ~subject_ot ~links ~rechts =
   unit_free_ok ctx (Some rechts);
   let e = const_pow_exponent rechts in
   let b, t, s = expr_term ctx ~subject ~subject_ot links in
+  (* [numeric_ok links] read the wire `type`; the range test below divides by
+     the declaration's scale *)
+  let s = numeric_scale ~what:"a power base" s in
   (* the result scale sl^e, fenced like pow10: beyond 10^9 the scaled
      integers themselves leave clingo's range *)
   let out_scale =
@@ -3169,6 +3234,12 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       let l = expr_term ctx ~subject ~subject_ot (req "links" links) in
       let r = expr_term ctx ~subject ~subject_ot (req "rechts" rechts) in
       let b1, t1, s1 = l and b2, t2, s2 = r in
+      (* the sum/struct/symbolic arms above route by the wire `type`; the scale
+         is the declaration's, so it catches what an absent or lying annotation
+         let through — the numeric equality arm cannot harmonise a ground
+         constructor term against an integer *)
+      let s1 = numeric_scale ~what:"a numeric equality" s1 in
+      let s2 = numeric_scale ~what:"a numeric equality" s2 in
       let m = max s1 s2 in
       let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
       range_guard ctx ~subject
@@ -3193,6 +3264,13 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       let l = expr_term ctx ~subject ~subject_ot (req "links" links) in
       let r = expr_term ctx ~subject ~subject_ot (req "rechts" rechts) in
       let b1, t1, s1 = l and b2, t2, s2 = r in
+      (* an ORDERING over a ground constructor term has no meaning: clingo's
+         term order would answer where ref faults the unordered comparison.
+         Both scales are 0 there, so nothing divides and the divergence would
+         be SILENT rather than a crash — the one site the fence saves from a
+         wrong answer instead of from an exception *)
+      let s1 = numeric_scale ~what:"an ordering comparison" s1 in
+      let s2 = numeric_scale ~what:"an ordering comparison" s2 in
       let m = max s1 s2 in
       let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
       range_guard ctx ~subject
@@ -3778,6 +3856,11 @@ and body_condition ctx ~guard_body ~witness (c : conditie) : string list * strin
   | Vergelijking { op; links; rechts; periode = None; _ } ->
       let la, lt, ls = closed_term ctx ~guard_body ~witness (req "links" links) in
       let ra, rt, rs = closed_term ctx ~guard_body ~witness (req "rechts" rechts) in
+      (* no numeric_ok stands in front of this arm at all, and a Construct is a
+         first-class closed-body term (scale 0): mixed, it divided by zero;
+         both-symbolic, it silently ordered constructor terms *)
+      let ls = numeric_scale ~what:"a closed-body comparison" ls in
+      let rs = numeric_scale ~what:"a closed-body comparison" rs in
       let m = max ls rs in
       let sc t s = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
       let lt = sc lt ls and rt = sc rt rs in
@@ -3840,6 +3923,10 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
       numeric_ok rechts;
       let bl, tl, sl = closed_term ctx ~guard_body ~witness (req "Binair.links" links) in
       let br, tr, sr = closed_term ctx ~guard_body ~witness (req "Binair.rechts" rechts) in
+      (* the numeric_ok pair reads the wire `type` (and passes an unannotated
+         binder); the scale is what the harmonisation actually divides by *)
+      let sl = numeric_scale ~what:"a closed-body additive join" sl in
+      let sr = numeric_scale ~what:"a closed-body additive join" sr in
       let m = max sl sr in
       let sc t s = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
       let tl' = sc tl sl and tr' = sc tr sr in
@@ -3936,6 +4023,9 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
       unit_free_ok ctx rechts;
       let e = const_pow_exponent (req "Binair.rechts" rechts) in
       let bl, tl, sl = closed_term ctx ~guard_body ~witness (req "Binair.links" links) in
+      (* the range test below divides by the base scale; [numeric_ok links] only
+         read the wire `type` *)
+      let sl = numeric_scale ~what:"a closed-body power base" sl in
       if e = 0 then ([], "1", 1)
       else begin
         let rec go acc_term acc_scale k =
@@ -4152,6 +4242,10 @@ and closed_division ctx ~guard_body ~witness ~rounding ~links ~rechts : string l
   unit_free_ok ctx (Some rechts);
   let bl, tl, sl = closed_term ctx ~guard_body ~witness links in
   let br, tr, sr = closed_term ctx ~guard_body ~witness rechts in
+  (* both scales become gcd operands and divisors below — the
+     [translate_division] fence, on the closed-body sibling *)
+  let sl = numeric_scale ~what:"a closed-body division dividend" sl in
+  let sr = numeric_scale ~what:"a closed-body division divisor" sr in
   let out_scale =
     match rounding with None -> max (max sl sr) ctx.write_scale | Some (_, d) -> pow10 d
   in
@@ -4317,6 +4411,10 @@ and value_condition ctx ~subject ~subject_ot (c : conditie) : string list * stri
       operand_ok rechts;
       let la, lt, ls = expr_term ctx ~subject ~subject_ot (req "Vergelijking.links" links) in
       let ra, rt, rs = expr_term ctx ~subject ~subject_ot (req "Vergelijking.rechts" rechts) in
+      (* [operand_ok] admits a bare BinderRef, whose scale is the binder's own —
+         0 for a sum/struct binder; the body_condition sibling *)
+      let ls = numeric_scale ~what:"a value-position IfThenElse comparison" ls in
+      let rs = numeric_scale ~what:"a value-position IfThenElse comparison" rs in
       let m = max ls rs in
       let sc t s = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
       let lt = sc lt ls and rt = sc rt rs in
@@ -4336,22 +4434,32 @@ and value_condition ctx ~subject ~subject_ot (c : conditie) : string list * stri
    witness (never silently truncated; ref would write it exactly, a
    recorded loud asymmetry like non-exact division). [body] is the
    write rule's full body, so the fence fires only where the rule
-   fires. Returns the fitted term plus guard atoms for the write rule. *)
+   fires. Returns the fitted term plus guard atoms for the write rule.
+
+   The identity case comes FIRST on purpose: [scale = target] passes an
+   unscaled pair through untouched, which is the legitimate route for a
+   sum/struct value whose target is equally unscaled. Only past it does a
+   scale become a modulus, and only there is scale 0 the divide-by-zero — a
+   record term aimed at a numeric target, which is exactly the write the
+   declaration says must not happen. *)
 let fitted ctx ~subject ~what ~body term scale target =
   if scale = target then (term, [])
-  else if target > scale && target mod scale = 0 then begin
-    range_guard ctx ~subject ~body [ (term, max_int31 / (target / scale)) ];
-    (Printf.sprintf "((%s)*%d)" term (target / scale), [])
-  end
-  else if scale > target && scale mod target = 0 then begin
-    let k = scale / target in
-    emit ctx "viol(\"result of %s does not fit its declared decimals\",%s) :- %s, (%s) \\ %d != 0."
-      (norm what) subject
-      (String.concat ", " body)
-      term k;
-    (Printf.sprintf "((%s)/%d)" term k, [ Printf.sprintf "(%s) \\ %d == 0" term k ])
-  end
-  else fault "value scale %d does not align with target scale %d for %S" scale target what
+  else
+    let scale = numeric_scale ~what:(Printf.sprintf "the write to %S" what) scale in
+    if target > scale && target mod scale = 0 then begin
+      range_guard ctx ~subject ~body [ (term, max_int31 / (target / scale)) ];
+      (Printf.sprintf "((%s)*%d)" term (target / scale), [])
+    end
+    else if scale > target && scale mod target = 0 then begin
+      let k = scale / target in
+      emit ctx
+        "viol(\"result of %s does not fit its declared decimals\",%s) :- %s, (%s) \\ %d != 0."
+        (norm what) subject
+        (String.concat ", " body)
+        term k;
+      (Printf.sprintf "((%s)/%d)" term k, [ Printf.sprintf "(%s) \\ %d == 0" term k ])
+    end
+    else fault "value scale %d does not align with target scale %d for %S" scale target what
 
 (* ch. 3.7: the pro-rata temporal target. The whole calendar is
    compile-time data (the shared Timeline module, like the clip's wu
