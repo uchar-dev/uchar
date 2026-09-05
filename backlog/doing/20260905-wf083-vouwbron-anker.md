@@ -81,3 +81,78 @@ Out of scope: de executors — die weigeren de vormen al luid, en de
 (`backlog/done/20260904-clingo-setfold-armen.md`); ref's foutmelding
 verfijnen (`unsupported instance-fold source shape` noemt de vorm niet,
 maar hij is luid en dat is een eigen kaartje).
+
+## Hermeten op de actuele stand (2026-09-05, `15d0df4`)
+
+De kaart mat deels op `73b824a`; de wart-versmalling en de vijfde golf
+zitten ertussen. Alles hermeten op eigen bron, gebouwd op de
+declaraties van `corpus/golden/jutterswet-tempototaal` (feittype
+`bewaring`: `bewarende jutter` — Jutter, `vondst`/`vondsten` — Vondst).
+
+**1. Het anker.** Dezelfde set-vouw (Jutter-subject, `elementObjecttype`
+Vondst), dezelfde `navigatieRol: "vondst"`, alleen het
+operand-`objecttype` gedraaid:
+
+```
+objecttype "Vondst" : verifier PASS
+objecttype "Jutter" : WF-083 FAIL … navigatieRol 'vondst' … is filled by
+                      'Jutter' itself  (+ WF-034: Jutter declareert het
+                      attribuut niet)
+ref     : in BEIDE gevallen EVALUATION FAULT: unsupported instance-fold
+          source shape
+clingo  : in BEIDE gevallen TRANSLATION FAULT: expression kind not
+          translated
+Drools  : speelt BEIDE en antwoordt de vastgepinde 19
+```
+
+Eén wire-veld kantelt de verifier; geen executor beweegt — en de derde
+executor antwoordt waar de eerste twee weigeren.
+
+**2. De ontbrekende kruising (niet-set).** Vondst-subject, temporele
+`TOTAAL`, `elementObjecttype` Vondst, operand
+`bewaarvergoeding per maand` met `objecttype: "Jutter"`, geen navigatie:
+
+```
+verifier : PASS
+ref      : EVALUATION FAULT: unsupported instance-fold source shape
+clingo   : TRANSLATION FAULT: the temporal total of "bewaarvergoeding per
+           maand" is declared on "Jutter", not on the subject type
+           "Vondst" …
+Drools   : vuurt en antwoordt 10 — de maandvergoeding van de Jutter,
+           gelezen op een Vondst-subject
+```
+
+**3. Ref ≢ clingo onder een welgevormd document (set).** Jutter-subject,
+niet-temporele set-`TOTAAL` over `elementObjecttype` Vondst, operand
+`kistgeld` met `objecttype: "Jutter"`:
+
+```
+verifier : PASS
+ref      : oracle PASS — bergloon = 0
+clingo   : TRANSLATION FAULT: unknown attribute "kistgeld" on "Vondst"
+Drools   : ERROR ConstraintEvaluationException
+```
+
+Afwijking van de kaart: clingo's melding is niet meer
+`expression kind not translated` maar de attribuutopzoeking op het
+elementtype — de vijfde golf draagt de set-vouw inmiddels, en weigert
+één veld verderop. De divergentie zelf staat.
+
+**4. Het gat dat de ankerverplaatsing alléén zou OPENEN** (niet in de
+kaart, gemeten omdat de fix het moest afdekken): dezelfde set-vouw met
+`navigatieRol: "bewarende jutter"` — een rol die het SUBJECT vervult.
+Vandaag WF-083 FAIL, maar op het verkeerde anker (`'Vondst'` vervult die
+rol niet); met het anker op het subject zou hij verifier-clean worden
+terwijl ref en clingo hem weigeren en Drools hem speelt. Vandaar de
+tweede helft van clausule (b): de geschreven rol hoort bij de wrat
+alleen.
+
+**Census van de regressiegrens** (504 documenten: 154 golden + 22 rood +
+298 negatief + 30 parity): 122 vouwbron-`AttribuutRef`-operanden onder
+een `elementObjecttype`, waarvan **110** de enkelvoudige
+instantievouwbron en 12 operanden van een gelede vouw met een vestigiaal
+`elementObjecttype`. Alle 122 kloppen vandaag met hun anker; alle 4
+operanden die überhaupt een `navigatieRol` dragen zijn wratten. Verdeling
+van de 110: 50 wrat-`AANTAL` (set=false), 32 `SOM` set, 14 `TOTAAL`
+set=false (de eigen temporele totalen), 4 `MAXIMUM` set, 4 `EERSTE` set,
+3 `TOTAAL` set, 3 `MINIMUM` set. Gebonden vormen (`bronRol`): 84.
