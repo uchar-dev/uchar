@@ -1,0 +1,311 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "ijkloon": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Munt",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    },
+    "Vondst": {
+      "node": "Objecttype",
+      "naam": "Vondst",
+      "attributen": {
+        "meldloon": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Munt",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "sluitsom": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Munt",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Vondsten"
+    },
+    "Baken": {
+      "node": "Objecttype",
+      "naam": "Baken",
+      "attributen": {
+        "bakenloon": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Munt",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Bakens"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {
+    "Munt": {
+      "node": "Eenheidstelsel",
+      "naam": "Munt",
+      "eenheden": {
+        "EUR": {
+          "node": "Eenheid",
+          "afkorting": "EUR",
+          "stelsel": "Munt",
+          "canoniek": "EUR",
+          "factorNaarCanoniek": 1,
+          "noemer": null
+        },
+        "\u20ac": {
+          "node": "Eenheid",
+          "afkorting": "EUR",
+          "stelsel": "Munt",
+          "canoniek": "EUR",
+          "factorNaarCanoniek": 1,
+          "noemer": null
+        }
+      },
+      "aliassen": {
+        "euro": {
+          "node": "Eenheid",
+          "afkorting": "EUR",
+          "stelsel": "Munt",
+          "canoniek": "EUR",
+          "factorNaarCanoniek": 1,
+          "noemer": null
+        },
+        "euros": {
+          "node": "Eenheid",
+          "afkorting": "EUR",
+          "stelsel": "Munt",
+          "canoniek": "EUR",
+          "factorNaarCanoniek": 1,
+          "noemer": null
+        }
+      }
+    }
+  },
+  "feittypen": {
+    "bewaring": {
+      "node": "Feittype",
+      "naam": "bewaring",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "bewarende jutter",
+          "objecttypeNaam": "Jutter",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "vondst",
+          "objecttypeNaam": "Vondst",
+          "meervoud": "vondsten",
+          "meervoudig": true
+        }
+      ]
+    }
+  },
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "sluitsom van een vondst",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "sluitsom van een vondst",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "sluitsom",
+        "objecttype": "Vondst",
+        "onderwerpBron": "een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Munt",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "bron": "De sluitsom van een Vondst",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "MAXIMUM",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "meldloon",
+            "objecttype": "Vondst",
+            "onderwerpBron": "haar",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "EUR",
+                "stelsel": "Munt",
+                "canoniek": "EUR",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            },
+            "bron": "haar meldloon",
+            "set": false,
+            "navigatiePad": []
+          },
+          {
+            "node": "AttribuutRef",
+            "attribuut": "bakenloon",
+            "objecttype": "Baken",
+            "onderwerpBron": "het Baken",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "EUR",
+                "stelsel": "Munt",
+                "canoniek": "EUR",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            },
+            "bron": "het bakenloon van het Baken",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": "Vondst",
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Munt",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "bron": "het maximum van haar meldloon en het bakenloon van het Baken",
+        "granulariteit": null
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}
