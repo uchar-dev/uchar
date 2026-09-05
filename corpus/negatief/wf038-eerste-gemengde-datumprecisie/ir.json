@@ -1,0 +1,196 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Getijdendag": {
+      "node": "Objecttype",
+      "naam": "Getijdendag",
+      "attributen": {
+        "ochtendhoogwater": {
+          "node": "DatumTijd"
+        },
+        "avondhoogwater": {
+          "node": "DatumInDagen"
+        },
+        "eerstehoogwater": {
+          "node": "DatumTijd"
+        },
+        "laatstehoogwater": {
+          "node": "DatumTijd"
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Getijdendagen"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "eerste hoogwater van een getijdendag",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "laatste hoogwater van een getijdendag",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "eerste hoogwater van een getijdendag",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "eerstehoogwater",
+        "objecttype": "Getijdendag",
+        "onderwerpBron": "een Getijdendag",
+        "navigatieRol": null,
+        "type": {
+          "node": "DatumTijd"
+        },
+        "bron": "Het eerstehoogwater van een Getijdendag",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "EERSTE",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "ochtendhoogwater",
+            "objecttype": "Getijdendag",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "DatumTijd"
+            },
+            "bron": "zijn ochtendhoogwater",
+            "set": false,
+            "navigatiePad": []
+          },
+          {
+            "node": "AttribuutRef",
+            "attribuut": "avondhoogwater",
+            "objecttype": "Getijdendag",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "DatumInDagen"
+            },
+            "bron": "zijn avondhoogwater",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": null,
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "DatumTijd"
+        },
+        "bron": "de eerste van zijn ochtendhoogwater en zijn avondhoogwater",
+        "granulariteit": null
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "laatste hoogwater van een getijdendag",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "laatstehoogwater",
+        "objecttype": "Getijdendag",
+        "onderwerpBron": "een Getijdendag",
+        "navigatieRol": null,
+        "type": {
+          "node": "DatumTijd"
+        },
+        "bron": "Het laatstehoogwater van een Getijdendag",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "LAATSTE",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "ochtendhoogwater",
+            "objecttype": "Getijdendag",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "DatumTijd"
+            },
+            "bron": "zijn ochtendhoogwater",
+            "set": false,
+            "navigatiePad": []
+          },
+          {
+            "node": "AttribuutRef",
+            "attribuut": "avondhoogwater",
+            "objecttype": "Getijdendag",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "DatumInDagen"
+            },
+            "bron": "zijn avondhoogwater",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": null,
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "DatumTijd"
+        },
+        "bron": "de laatste van zijn ochtendhoogwater en zijn avondhoogwater",
+        "granulariteit": null
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}
