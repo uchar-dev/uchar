@@ -110,9 +110,10 @@ combinaties (twee lexemen x twee takken x twee modellen) `PLAYED 1`.
 DATUMdeel nu door `parseDatum` lezen, dat sinds WF-084 al ISO-eerst,
 dan-dag-eerst leest; de tijdlezer en de milli->nano-schaal blijven
 ongewijzigd. De EMITTER is onaangeraakt: `ExpressieBouwer:379` schrijft
-voor `DatumTijd` nog steeds het snippet (r. 385 schrijft voor een
-dagdatum wél ISO) — gemeten status quo, genoteerd als open flank in de
-spec-passage.
+voor `DatumTijd` nog steeds het snippet (r. 386 schrijft voor een
+dagdatum wél ISO; r. 385 berekent alleen het ISO-lexeem — regelnummer
+gecorrigeerd in de fixronde) — gemeten status quo, genoteerd als open
+flank in de spec-passage.
 
 **BIJVANGST, expliciet:** de doorval in `DrlTranspiler.literal` is
 terminaal gemaakt — een onleesbaar `DatumTijd`-lexeem markert nu
@@ -141,7 +142,7 @@ een gepinde probe in de backend-suite"); die route is genomen.
 
 **5. De getuige die er wél is.**
 `backends/drools/src/test/java/io/github/yhavinga/regelspraak/cases/DatumTijdLexeemWitnessTest.java`
-(NIEUW, additief, 5 tests): beide lexemen x beide takken op een
+(NIEUW, additief, 5 tests; 8 na de fixronde): beide lexemen x beide takken op een
 subdag-drempel, plus een millisecondenmodel en de weigering van een
 onleesbaar lexeem. Rood-eerst bewezen tegen de ONgefixte bron in een
 /tmp-kopie: `Tests run: 5, Failures: 2, Errors: 2` — de vijfde
@@ -217,3 +218,125 @@ dus na de merge is een herpin MET re-vendor nodig richting de
 toolchain-repo. Niet zelf gemerged; de branch blijft staan voor de
 lensronde. `spec/IR-SPEC.md` is een beschermd pad: de passage is een
 VOORSTEL.
+
+---
+
+## Fixronde (2026-09-06, na twee adversariële lenzen)
+
+**F1. De lezer accepteerde stil wat de eigen passage verbood.** De
+landing hierboven maakte `parseDatumTijd` breder maar niet strenger: hij
+zocht met `find()` een datum en een tijd ERGENS in de waarde. Gemeten op
+de ongefixte lezer (2026-09-06): `"…T12:00:00Z"` en `"…T12:00:00+01:00"`
+werden geparst met zone/offset weggegooid, `"2024-01-31 12:00:00"`
+(spatie i.p.v. `T`) werd geparst, `"2024-1-31T09:00:00"` en
+`"2024-01-31T9:00:00"` werden geparst, `"rommel …T12:00:00 x"` werd
+geparst, `".1"` las als één milliseconde en `".1234"` werd stil AFGEKAPT
+tot 123 ms. Vormen die vóór de landing een luide EXCLUDE gaven (de oude
+lezer kende alleen het dag-eerste snippet) speelden erna stil mee — de
+lens telde er twee; zelf gemeten is de zone-vorm, die op de
+exec-model-tak PLAYED gaf waar hij nu een EXCLUDE geeft. Dat is precies
+het faalpad dat deze kaart heette te sluiten, één laag hoger.
+
+De fix: twee whole-string-armen in plaats van twee losse zoekpatronen —
+het canonieke ISO-lexeem met vaste breedtes (`T` verplicht, geen
+zone/offset, fractie exact drie cijfers indien aanwezig) en het §13.2.21
+bronsnippet (dag-eerst). `parseDatum` is NIET aangeraakt: het datumdeel
+door `parseDatum` laten lezen was juist de bron van de doorlaatbaarheid
+(die werkt zelf met `find()`), dus de verankering hoort in
+`parseDatumTijd` zelf. Na de fix gemeten: alle acht vormen hierboven
+geven `null`; beide geldige lexemen, `.500` = 500 ms, de de-dato-prefix
+en de brontoken-breedte parsen.
+
+**AFWIJKING van de opdracht, bewust.** De snippetarm kreeg GEEN vaste
+breedtes voor dag/maand. De §13.2.21-brontoken schrijft daar `DIGIT+`,
+dus een geldig bronprogramma kan `1-3-2025 09:00:00.000` bevatten, en de
+eigen emitter zet die tekst ongewijzigd in `waarde`. Vaste breedtes
+zouden de lezer STRENGER maken dan de producent die haar voedt — dat is
+dezelfde klasse fout als het gat dat deze kaart sloot, alleen omgekeerd.
+De arm klemt dus wél whole-string, wél de tijdvelden op twee cijfers
+(zoals de token) en wél de fractie op exact drie; de dag/maand-breedte
+volgt de token. Gepind in de getuige (`"1-3-2025 09:00:00"` parst,
+`"2024-1-31T09:00:00"` niet). Corpusimpact van de hele vernauwing: nul —
+corpus en parityzone bevatten samen NUL `DatumTijd`-literals (gemeten).
+
+**F2. De vernauwing van de eerste landing, alsnog benoemd (lens L1-5).**
+De landing hierboven meldde de doorval-fix als bijvangst maar niet als
+vernauwing: een `DatumTijd`-literal met een datum ZONDER tijddeel viel
+vroeger door naar de kale `LocalDate`-lezer en werd tegen middernacht
+vergeleken; sinds die landing markert hij, en een golden die zo'n
+literal draagt wordt in zijn geheel geëxcludeerd. Corpusimpact nul. De
+lezer van die landing was verder strikt monotoon-permissief: geen
+bestaande parse veranderde van waarde. **Deze fixronde is dat
+uitdrukkelijk NIET** — zij haalt acht vormen weg die eerder een waarde
+gaven. Dat is het punt: elk van die acht gaf een instant die de
+schrijver niet had geschreven.
+
+**F3. Dodingsmatrix (lensmeting 2026-09-06).** Vijf mutanten in de lezer
+en de takken, alle vijf gedood door de getuige, en elke test doodt er
+minstens één — geen test is decoratief. Even belangrijk: geen van de
+dertien gates bewoog onder één van die mutanten. De VANGBREEDTE van deze
+kaart is dus exact deze suite; buiten haar is er geen net. Dat is de
+reden dat de nieuwe weigerpins hier staan en niet "ergens later".
+
+**F4. Het semantische anker staat op één executor (lens K6).** De pins
+van de getuige zijn met de hand berekend en bevestigd door `ref` op de
+literaalvrije tweeling. Dat is ÉÉN executor. De ASP-backend kan die
+tweeling niet dragen — gemeten 2026-09-06: een document dat twee
+`DatumTijd`-attributen met `EERDER` vergelijkt (geen literal in zicht)
+geeft `TRANSLATION FAULT: unscalable datatype in the ASP translation`,
+terwijl ref er `oracle: PASS` op geeft. Er is dus geen tweede stem op de
+betekenis van een `DatumTijd`-ordening. Dat is een echte zwakte van deze
+kaart, geen formaliteit, en het is de kern van de nieuwe kaart
+`backlog/new/20260906-datumtijd-differentiaaldekking.md`.
+
+**F5. K5: de weigerreden is onderscheidend gemaakt.** Het etiket
+`datumtijdliteral` van de DRL-tak bereikte de rapportage nooit — de
+omhullende voorwaarde-marker slikte het — en de exec-model-tak riep elke
+niet-lowerende voorwaarde "buiten Phase-B scope", de verwarring die op de
+WF-036-kaart een beurt kostte. Het bleek klein en lokaal: één gedeeld
+predicaat (`Literalen.onleesbaarDatumTijdLexeem`, zodat de takken nooit
+oneens kunnen zijn over wat leesbaar is) en één regel per tak. Beide
+weigeren nu met dezelfde woorden: "voorwaarde met onleesbaar
+datum-tijd-lexeem". Gepind in de getuige op beide takken. Inert op het
+corpus: gate 12's gegroepeerde redenlijst is ongewijzigd (de bestaande
+`voorwaarde buiten Phase-B scope`-regel staat er nog, want daar zit geen
+lexeem achter). Hiermee vervalt de laatste bullet van §7 hierboven.
+
+**F6. De spec-passage: metingen nu per lezer toegeschreven.** De twaalf
+zinnen zijn stuk voor stuk nagelopen (lens L1-2/L2-1). Onwaar was: "de
+gedeelde case-lezer van de executors" (er is er geen — ref en de
+ASP-backend delen er één, de Drools-backend heeft een eigen, en de
+literal-lezer is een derde) en "weigert een ontbrekend secondenveld"
+(de Drools-case-lezer accepteert `…T12:00`, gemeten). De
+fractiebreedte-zin stond er als één regel voor "beide lezers" en is nu
+een gemeten tabel over drie lezers, met de stille afkapping expliciet
+als vóór-de-fix-gedrag. Nieuw en gemeten: niets op de IR-wire dwingt het
+lexeem af (schema `string|null` zonder patroon, `verifier: PASS` op een
+document met een rommel-lexeem), de ASP-backend faalt ook literaalvrij,
+en de emitter schrijft het snippet in `waarde` ÉN in `bron` — geen
+ISO/snippet-splitsing zoals de dagdatum die heeft (gemeten: een
+bron-literal emitteert beide velden als `31-01-2024 12:00:00.000`). De
+passage blijft beschrijvend zonder MUST.
+
+**F7. Gates na de fixronde (alle dertien groen, vanuit de worktree).**
+1 self-contained PASS; 2 ir-schema PASS (177); 3 verifier PASS (177
+golden clean, 303 negatief afgewezen); 4 case-schema PASS (429);
+5 oracle PASS (407 cases, 2 zonder case); 6 clingo PASS (407);
+7 noop PASS (371 weerleggen, 36 overlevers); 8 rood PASS (22 rode cases;
+Droolsbeen 5 fault-pinned, 17 niet-gedragen); 9 catala PASS (201 checks,
+12 goldens); 10 regelspraak PASS (171 tests, 30 rgs byte-identiek —
+onbewogen; de frontend-suite draait dezelfde verankerde lezer);
+11 toka-pariteit PASS (45 rgs byte-identiek, 27 tests, 29 replays —
+onbewogen); 12 drools PASS — played 109, auto-excluded 43,
+value-divergence 1, no-case 2, exact de basislijn, **JUnit 204 -> 207**
+(zuiver additief; dit vervangt de telling in §8); 13 reftype-derivation
+PASS (68 twists over 14 goldens, 64 replays, 12 door de DRL-teksttak, 0
+overlevers).
+
+**F8. Wat de fixronde NIET deed.** De emitter blijft onaangeraakt
+(eigen kaart). `parseDatum` en elke andere bestaande lezer blijven
+onaangeraakt. De frontend-testbestanden zijn niet aangeraakt — het
+voorstel uit §7 (een eenheidsgetuige voor het canonieke lexeem in
+`LiteralenTest`) staat nog open bij de maintainer; de weigerpins van deze
+ronde staan daarom in de backend-suite, waar deze kaart haar eigen
+getuige al had.
