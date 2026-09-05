@@ -943,7 +943,7 @@ let totaal_operand ~attribuut ~objecttype ~navigatie_rol ~set =
   ^ (if set then "true" else "false")
   ^ {|, "navigatiePad": [] }|}
 
-let totaal_case vondst_attribuut =
+let totaal_case ?(bewaarlast = "10") vondst_attribuut =
   {|{ "format": "uchar-case-v0", "asOfDate": "2026-03-15",
   "input": { "instances": [
     { "label": "J1", "objectType": "Jutter", "attributes": { "bewaartarief": { "number": "10" } },
@@ -955,9 +955,30 @@ let totaal_case vondst_attribuut =
     "parameters": {} },
   "expected": [
     { "kind": "attributeValue", "label": "V1", "attribute": "bewaarlast",
-      "value": { "number": "10" } },
+      "value": { "number": "|}
+  ^ bewaarlast
+  ^ {|" } },
     { "kind": "consistent" } ] }
 |}
+
+let load_pair ~ir ~case_text =
+  let irf = write_temp ".ir.json" ir in
+  let casef = write_temp ".case.json" case_text in
+  let doc = Ir_v0.Loader.load_file irf in
+  let case = Uchar_ref.Case.load_file doc casef in
+  Sys.remove irf;
+  Sys.remove casef;
+  (doc, case)
+
+let ref_matches ~name ~ir ~case_text =
+  let doc, case = load_pair ~ir ~case_text in
+  let env =
+    { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls;
+      as_of = case.as_of; locals = Uchar_ref.World.SMap.empty }
+  in
+  match Uchar_ref.Case.check case (Uchar_ref.Eval.evaluate env case.world) with
+  | [] -> check (name ^ ": ref pins the values") true
+  | ms -> check (name ^ ": ref pins the values (" ^ String.concat "; " ms ^ ")") false
 
 let translates_with ~name ~ir ~case_text =
   let irf = write_temp ".ir.json" ir in
@@ -998,23 +1019,28 @@ let () =
     ;
   (* the §7.1 set operand. Until 2026-09-05 this arm REFUSED the shape
      outright and the pin held that refusal text. The fold is carried
-     now, so what this document still pins is the HORIZON rule inside
-     it: the case gives J1 an asOfDate-bucket scalar, which states no
-     period of its own, and a per-element fold needs each member's own
-     timeline. ref refuses the very same document for the very same
-     reason (EVALUATION FAULT, same sentence), so the two executors
-     still refuse in step — that is what changed, from "clingo cannot"
-     to "neither may guess a horizon". *)
-  faults_with ~name:"§7.1 per-element fold, member with an asOfDate-bucket scalar"
-    ~ir:
-      (totaal_doc ~vondst_attribuut:"vondsttarief"
-         ~operand:
-           (totaal_operand ~attribuut:"bewaartarief" ~objecttype:"Jutter" ~navigatie_rol:None
-              ~set:true))
-    ~case_text:(totaal_case "vondsttarief")
-    ~needle:
-      {|the case supplies an asOfDate-bucket scalar, which carries no period of its own; a set fold needs each member's own timeline|}
-    ;
+     now, so the pin holds what this document actually MEANS.
+
+     On this frame the answer is 0, in BOTH executors. The fold source
+     reads "de bewarende jutter" from a Vondst subject while the link is
+     declared on the Jutter side, so the member walk finds nobody and an
+     empty totaal is 0 unconditionally (§4.20). ref answered that 0 on
+     the merge base already, against a clingo that refused reasonlessly
+     — a measured ref ≢ clingo under a verifier-PASS document. The
+     agreement is what this pin now holds; the refusal texts that had to
+     stay live on the three pins beside it, and the horizon rule has its
+     own pin further down, on a frame whose links do point at the
+     members. *)
+  let setfold_zero =
+    totaal_doc ~vondst_attribuut:"vondsttarief"
+      ~operand:
+        (totaal_operand ~attribuut:"bewaartarief" ~objecttype:"Jutter" ~navigatie_rol:None
+           ~set:true)
+  in
+  translates_with ~name:"§7.1 set operand, no reachable member: translates"
+    ~ir:setfold_zero ~case_text:(totaal_case ~bewaarlast:"0" "vondsttarief");
+  ref_matches ~name:"§7.1 set operand, no reachable member: ref answers 0 (§4.20)"
+    ~ir:setfold_zero ~case_text:(totaal_case ~bewaarlast:"0" "vondsttarief");
   (* no navigation written, but the operand is declared on another type: the
      ci-control the gedurende sister arm has always carried *)
   faults_with ~name:"temporal totaal, foreign-typed operand without navigation"
@@ -1192,15 +1218,6 @@ let v1_timeline =
 
 let v1_bucket_scalar = {|{ "number": "12" }|}
 
-let load_pair ~ir ~case_text =
-  let irf = write_temp ".ir.json" ir in
-  let casef = write_temp ".case.json" case_text in
-  let doc = Ir_v0.Loader.load_file irf in
-  let case = Uchar_ref.Case.load_file doc casef in
-  Sys.remove irf;
-  Sys.remove casef;
-  (doc, case)
-
 (* the program itself is the witness: [needle] must appear in the emitted
    ASP. Used for the ANCHOR, where "does it translate" is not enough — both
    anchors translate, and only one of them integrates timelines. *)
@@ -1211,16 +1228,6 @@ let translates_carrying ~name ~ir ~case_text ~needle =
                  (Uchar_ref.Case.contains ~needle program)
   | exception Uchar_ref.Value.Fault m ->
       check (name ^ ": translates (unexpected fault: " ^ m ^ ")") false
-
-let ref_matches ~name ~ir ~case_text =
-  let doc, case = load_pair ~ir ~case_text in
-  let env =
-    { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls;
-      as_of = case.as_of; locals = Uchar_ref.World.SMap.empty }
-  in
-  match Uchar_ref.Case.check case (Uchar_ref.Eval.evaluate env case.world) with
-  | [] -> check (name ^ ": ref pins the values") true
-  | ms -> check (name ^ ": ref pins the values (" ^ String.concat "; " ms ^ ")") false
 
 let () =
   (* the carried fold, straight: the operand's annotation names the element

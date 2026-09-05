@@ -65,20 +65,21 @@ The strip itself is untouched, and so is every temporal golden: all 28
 `TOTAAL` node before this one carried a unit at all, which is exactly why
 the flank was reachable in valid source and pinned nowhere.
 
-## Why there is no case file
+## Why there was no case file — and when it arrived
 
-This is a **caseless golden** (see the "witness cabinet" section of
-`corpus/golden/README.md`): gate 5 lists it as "NOT replayed, no case
-file yet". That is a true report, and here is the measurement that makes
-it true. Both routes were replayed through all three executors before the
-golden was admitted.
+This was a **caseless golden** (the "witness cabinet" section of
+`corpus/golden/README.md`) from its admission until **2026-09-05**, when
+`backends/clingo` learned the set fold and `case.json` landed. The
+subsections below are the measurement that made the caselessness true —
+recorded as it stood, in the past tense it now belongs to — and the
+closing one records what changed.
 
 **The set route** — `bewaarlast` + `bewaarsom`, with the hand-computed
 absolutes below:
 
 * `ref` — `oracle: PASS`.
 * Drools backend — `PLAYED` on exactly those expectations.
-* `backends/clingo` — refuses, verbatim:
+* `backends/clingo` — refused, verbatim:
   `TRANSLATION FAULT: expression kind not translated (no corpus case exercises it)`.
   The ASP translator carries `Som` with `set = true` (the instance fold)
   and carries `Totaal` **only** for a temporal attribute read; a set-fold
@@ -89,9 +90,9 @@ absolutes below:
   in the document.
 
 Gate 6 has no refusal channel: every case under `corpus/golden` must
-replay through clingo. So a case file here would take gate 6 red, and
-weakening the expectations to suit an executor is not on the table. The
-case waits for the executor, not the other way round.
+replay through clingo. So a case file would have taken gate 6 red, and
+weakening the expectations to suit an executor was never on the table.
+The case waited for the executor, not the other way round.
 
 **The temporal route** — `bewaargeld` — was refused by `ref` as well when
 this golden was admitted, and that refusal is what carded the fix:
@@ -126,8 +127,8 @@ non-unit fence on a case-supplied full timeline under the *no-filter*
 route (the asOfDate-bucket convention carries that total) is older than
 this golden and still stands.
 
-**`ref` and clingo still disagree on which forms they carry**, which is
-why the case file below still waits. Measured on this document after the
+**`ref` and clingo still disagreed on which forms they carry**, which is
+why the case file kept waiting. Measured on this document after the
 fix:
 
 * the whole document, `bewaargeld` bucket case — `ref`: `oracle: PASS`;
@@ -142,8 +143,45 @@ fix:
   `Totaal` only where the write's unit is identical to the value's, and
   the whole point of this fold is that it is not.
 
-So clingo refuses **both** routes of this document, each for its own
-reason, and the golden stays caseless.
+So clingo refused **both** routes of this document, each for its own
+reason, and the golden stayed caseless.
+
+### Closed 2026-09-05: the case arrived
+
+`backends/clingo` now carries both routes, and `case.json` sits beside
+this file. What had to land together, because either alone leaves the
+golden caseless:
+
+* **the set fold**, in one branch with `de som van` — the alias of the
+  first table is an alias in the translator too, and the empty set is
+  the only difference (a totaal is 0 unconditionally, which is the ASP
+  `#sum` over no tuples; a som without a fallback stays underivable, ref's
+  leeg). The same branch carries the **§7.1 per-element timeline fold**
+  for a temporal element attribute: each member's timeline collapses over
+  time first — segment value × whole grid units, the calendar entering as
+  data from the shared timeline algebra — and only those scalars fold over
+  the set. A member that brings only an asOfDate-bucket scalar is refused
+  by name, exactly as `ref` refuses it: the integration runs per member,
+  so every member must bring its own horizon.
+* **the noemer strip at the write**, which is what made the third row
+  translate. The effective unit of a time aggregation is the operand's
+  unit *without its denominator* — the §4.20 Tabel 30 result — so the
+  existing write fence sees `€` against a declared `€` and lets it
+  through, with no unit conversion added anywhere. The strip follows the
+  INTEGRATION, not the operator: the non-temporal set fold of row 1 keeps
+  its `€/mnd`, which is exactly the alias this document pins. Only a
+  denominator identical to the grid unit cancels in the integer encoding;
+  a convertible-but-foreign one (`€/jr` over a month grid, factor 1/12) is
+  refused loudly, naming both units, never rounded.
+
+The case pins the four hand-computed absolutes below plus the temporal
+route this NOTE also measures — `J1.bewaargeld = 10 €` over the
+asOfDate month bucket of a `10 €/mnd` rate, `J2.bewaargeld` leeg (an
+absent timeline totals to leeg) — and `consistent`. Seven expectations,
+replayed identically by `ref`, `backends/clingo` and the Drools backend.
+
+What stays refused, in both executors: a `minimum`/`maximum` over a
+temporal set attribute — a ranking fold has no defined moment to rank at.
 
 ## Hand-computed absolutes, ready for the case
 

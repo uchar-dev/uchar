@@ -1519,12 +1519,25 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              tl fact, which is ref's Empty contributor dropping out. The
              SUBJECT's own fold keeps the opposite convention (the
              asOfDate bucket carries that total) and the asymmetry is
-             deliberate — there the session date IS the horizon. *)
-          Eval.SMap.iter
-            (fun _ (i : Uchar_ref.World.instance) ->
+             deliberate — there the session date IS the horizon.
+
+             The fence walks the ACTUAL MEMBERS, through ref's own
+             [linked], not every instance of the element type: a
+             disconnected instance is no contributor, and ref answers 0
+             (an empty totaal) where a type-wide fence would have
+             refused. Measured on exactly that shape — a Vondst subject
+             folding over "de bewarende jutter" whose link is declared on
+             the Jutter side, so the walk finds no member — ref says 0
+             and this arm must say 0 too. The residual edge is the
+             die/dat FILTER: ref drops a filtered-out member before the
+             integration, and a filter is not decidable at translation
+             time, so a filtered-out member carrying a bucket scalar is
+             refused here where ref would answer. Loud, recorded, and
+             without a corpus case. *)
+          List.iter
+            (fun (i : Uchar_ref.World.instance) ->
               if
-                norm i.otype = norm el
-                && Uchar_ref.World.timeline i a = None
+                Uchar_ref.World.timeline i a = None
                 && Uchar_ref.World.attr i a <> Value.Empty
               then
                 fault
@@ -1532,7 +1545,11 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                    asOfDate-bucket scalar, which carries no period of its own; a set fold needs \
                    each member's own timeline (ch. 3.6/§7.1, ch. 8.4)"
                   a i.label)
-            ctx.case.world.instances;
+            (Eval.SMap.fold
+               (fun _ (self : Uchar_ref.World.instance) acc ->
+                 if norm self.otype <> norm subject_ot then acc
+                 else Eval.linked ?binding:bron_rol env ctx.case.world self ~to_type:el @ acc)
+               ctx.case.world.instances []);
           let spans =
             Eval.SMap.fold
               (fun _ (i : Uchar_ref.World.instance) acc ->
@@ -1631,7 +1648,11 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          ref refuses the form outright (ch. 3.6: only som and totaal carry
          the per-element timeline fold). This arm would rank the asOfDate
          buckets instead — an answer where the other executor refuses.
-         Refuse in step. *)
+         Refuse in step. The guard hangs on [el], the anchor
+         ([fold_operand_otype]) — where it always hung, and where the
+         som/totaal arm above and the temporal-totaal refusal arm below
+         now hang theirs too. This is the one set fold that STAYS refused
+         after 2026-09-05, because ref refuses it. *)
       if attr_temporal ctx ~otype:el ~attr:a then
         fault
           "a minimum/maximum over the temporal attribute %S of a set has no defined moment to \
