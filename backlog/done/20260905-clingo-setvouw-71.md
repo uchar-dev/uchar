@@ -211,24 +211,64 @@ clingo : TRANSLATION FAULT: the noemer strip of the per-element temporal
 
 Luid, beide eenheden bij naam, nooit afgerond.
 
+**Het hek is van clingo alleen — de Drools-tak heeft er geen.** Gemeten
+op precies het striprichting-frame (operand `€/mnd`, doel `€/mnd`):
+verifier WF-091 FAIL, ref `EVALUATION FAULT: incompatible units: EUR/mnd
+vs EUR`, clingo de weigering hierboven, **Drools `PLAYED 1`**. Dat is
+géén tekortkoming van deze arm en hoort haar ook niet aangerekend: het is
+de al gekaarte, pre-existente eenheidsblindheid van de Drools-tak — de
+stille factor-één-terugval die van een naamverschil een verkeerd antwoord
+maakt in plaats van een fout, opgeschreven als vervolgpunt (b) in
+`backlog/done/20260901-eenheden-op-refs.md`. Wat die vorm hier
+tegenhoudt is de VERIFIER (WF-091), niet de executor.
+
 **`total_factor` draagt nu ook MAAND** (`~:402`). Dit was een DERDE
 blokkade die de kaart niet noemt: de temporele route van deze golden is
 maandgranulair en de arm droeg alleen JAAR. Hij kwam pas boven water
 nadat het eenhedenhek loskwam — dat hek vuurt eerder. De bucket van een
 granulariteit ÍS één hele eenheid, en `Timeline.bucket` bestaat alleen
-voor maand en jaar, dus ref weigert de rest in de pas.
+voor maand en jaar.
+
+*Waar die WEEK/DAG/KWARTAAL-weigering vandaan komt — nagemeten
+2026-09-05.* Niet uit deze arm. De GEDEELDE CASELEZER weigert al bij het
+inladen: `Case.timeline_of_json` legt elke segmentgrens op het
+granulariteitsrooster via `Timeline.bucket`, en die bestaat alleen voor
+maand en jaar. Gemeten op een WEEK-gedeclareerd `bewaartarief` met een
+tijdlijn in de case:
+
+```
+verifier : PASS
+ref      : EVALUATION FAULT: bucketing is defined for month and year only (ch. 3.2)
+clingo   : TRANSLATION FAULT: bucketing is defined for month and year only (ch. 3.2)
+```
+
+Beide executors falen dus op DEZELFDE gedeelde regel, vóór de arm. De
+niet-maand/jaar-tak van `total_factor` is daarmee onbereikbare
+redundantie: ze heeft geen eigen getuige en kan er ook geen krijgen zolang
+de caselezer eerder vuurt. Ze blijft staan als vangnet, maar de kaart
+schrijft haar geen discriminerend vermogen toe.
 
 ### Het temporaliteitsanker: `elementObjecttype`
 
-**Gekozen: het `elementObjecttype`**, vastgelegd in
+**Gekozen: het `elementObjecttype`**, uitgeschreven in
 `fold_operand_otype` (`~:283`): bij een SET-lezing de elementsoort, bij
 een gewone lezing het eigen objecttype. Reden: elke lezing in de
 set-armen hangt aan de ELEMENT-variabele en elke declaratie wordt op
 `el` opgezocht — daar staat het attribuut, dus daar staat ook of het een
 tijdlijn is. Het operand-`objecttype` is bij beide executors inert (de
-vorige kaart mat dat). Alle armen hangen er nu aan: de gedeelde
-set-vouw, de MIN/MAX-guard (hing er al), en de temporele
-`Totaal`-weigerarm (`~:1756`, hing aan `aot`).
+vorige kaart mat dat).
+
+*Preciezer dan de eerste formulering.* Niet elke arm ROEPT die helper.
+De gedeelde set-vouw leest `attr_temporal ctx ~otype:el` RECHTSTREEKS
+(`~:1415`): `el` komt uit het patroon, dus daar staat het anker
+uitgeschreven in plaats van aangeroepen. `fold_operand_otype` draagt het
+anker op de twee plekken die het operand-`objecttype` wél in handen
+krijgen: de eenheidsopzoeking van de §4.20-strip in `eff_unit` (`~:349`)
+en de temporele `Totaal`-weigerarm (hing aan `aot`). De MIN/MAX-guard
+hing al aan `el`. Eén anker, drie plekken, twee manieren om het te
+zeggen — en dat de strip er óók aan hangt is precies waarom het
+schrijfhek de verkeerde ankerkeuze NIET vangt (zie de eenheidloze
+getuige hieronder).
 
 **De gemengde annotatie is de gepinde getuige.** Een derde objecttype
 `Kist` declareert `bewaartarief` níét-temporeel; het operand-`objecttype`
@@ -243,11 +283,20 @@ ná   : ref PASS (5)               | clingo PASS (5)
 
 Dat wás dus een ref ≢ clingo onder een verifier-PASS document, precies
 de derde getuige die `backlog/new/20260905-wf083-vouwbron-anker.md`
-opvoert. De suite pint hem twee keer: het geëmitteerde programma moet de
+opvoert. De suite pint hem: het geëmitteerde programma moet de
 `_wu`-feiten van de tijdvouw dragen (alleen de temporele route emitteert
-ze — met het anker op `aot` zou hij scalaire `val/3`-feiten joinen die
-een tijdlijn-case niet heeft, en stil leeg antwoorden), en ref moet
-dezelfde 48 geven.
+ze — met het anker op `aot` joint hij scalaire `val/3`-feiten die een
+tijdlijn-case niet heeft), en ref moet dezelfde 48 geven.
+
+*Wat dat verkeerde anker dan antwoordt, letterlijk nagemeten
+2026-09-05: een **stille 0**, geen stille leeg.* De eerste formulering
+zei "leeg" en dat is onwaar: `TOTAAL` over nul tupels is
+onvoorwaardelijk 0 (§4.20) en dat is precies wat clingo's `#sum` over
+een lege join oplevert. De gemeten omvaller is
+`J1.bewaarlast = [0], expected 48` — een WAARDE die geen enkele
+aanwezigheidsguard tegenhoudt, en dus gevaarlijker dan een leeg. Sinds
+de fixronde staat er ook een `clingo_matches` naast, want "vertaalt het"
+zei niets over die 0.
 
 ### De drie weigerteksten
 
@@ -282,9 +331,35 @@ antwoord op een lege bron, en beide executors geven hem nu.
 **Dat kostte een correctie aan mijn eerste versie.** Het horizonhek liep
 eerst over ELKE instantie van de elementsoort en weigerde dus waar ref
 0 antwoordde. Het wandelt nu via ref's eigen `linked` over de ECHTE
-leden. Eén restrand blijft, luid en genoteerd: een lid dat door het
-`die/dat`-FILTER zou afvallen wordt hier geweigerd waar ref het laat
-vallen — een filter is op vertaaltijd niet beslisbaar. Geen corpusgeval.
+leden.
+
+**De restrand is geen GEVAL maar een KLASSE.** De eerste versie noemde
+alleen het `die/dat`-filter; de klasse is ruimer: ELKE versmalling die op
+vertaaltijd onbeslisbaar is. De vertaler weet niet welke leden de vouw
+werkelijk bereiken, dus weigert hij zodra een lid van de elementsoort een
+bucketscalaar draagt — ook als dat lid er nooit was gekomen. Twee vormen
+nagemeten (2026-09-05), allebei verifier-PASS en allebei
+ref-antwoordt/clingo-weigert:
+
+```
+die/dat-FILTER dat het bucketscalaar-lid uitsluit
+    verifier PASS | ref oracle: PASS | clingo TRANSLATION FAULT (horizonregel)
+REGELVOORWAARDE die elk subject uitsluit
+    verifier PASS | ref oracle: PASS | clingo TRANSLATION FAULT (horizonregel)
+```
+
+Geen corpusgeval, en er kán er ook geen zijn: poort 6 heeft geen
+weigerkanaal en poort 8 vraagt een fout in BEIDE executors, terwijl ref
+gewoon antwoordt.
+
+**Wat er nog aan schort, expliciet genoteerd:** de weigertekst noemt bij
+zo'n versmalde vorm de bucketscalaar ("the case supplies an
+asOfDate-bucket scalar"), en dat is niet de échte reden. De échte reden is
+dat de VERTALER de versmalling niet kan beslissen; het document is niet
+defect. Een tekst die dat zegt hoort erbij. Niet gebouwd in deze ronde —
+de fixronde-opdracht is kaarttekst op dit punt en de kleinste wijziging
+telt — maar hier vastgelegd zodat de volgende ronde hem kan schrijven in
+plaats van hem te moeten herontdekken.
 
 ### WIJZIGINGEN AAN BESTAANDE SUITE-CHECKS (voor de maintainer)
 
@@ -302,11 +377,31 @@ Twee commits raken bestaande checks in
   argument; de vier andere aanroepen zijn ongewijzigd.
 
 Alles daarnaast is additief (het maintainer-akkoord van 2026-09-05):
-acht nieuwe checks, 24 → 33. Ze discrimineren, gemeten: met het anker
-teruggedraaid naar het operand-objecttype en de temporele tak uitgezet
-vallen er vier om, waaronder twee "expected a loud fault, got a model".
+acht nieuwe checks, 24 → 33.
 
-### Poorten (alle dertien groen)
+**De discriminatietelling, rechtgezet (fixronde 2026-09-05).** De twee
+commit-boodschappen `2439aec` en `5bf9211` schrijven het aantal
+omvallers aan de verkeerde knop toe: `5bf9211` zegt "met het anker
+teruggedraaid vallen er 4 om", `2439aec` "met het anker teruggedraaid en
+de temporele tak uitgezet vallen 5 van de 8 om (plus de omgezette pin)".
+De geschiedenis blijft staan; de kaart zet de telling recht. Elke knop
+apart nagemeten op de suite van `33f010d` (33 checks):
+
+| knop | omvallers | wat er omvalt |
+|---|---|---|
+| temporele tak UIT | **4** | twee `_wu`-dragers plus twee "expected a loud fault, got a model" (noemerstrip, horizonregel) |
+| anker alleen terug naar `aot` | **1** | alleen `translates, program carries _wu(` — een structurele pin, dus in de VEILIGE richting: hij merkt het, en er glipt geen antwoord door |
+| beide knoppen | **4** | identiek aan "temporele tak uit" — het anker voegde niets toe |
+
+Dus: de vier omvallers zijn van de TEMPORELE TAK; het anker droeg er
+één, en die was structureel, niet op waarde. Precies dat gat vult de
+fixronde met `clingo_matches` (R2b). Dezelfde meting op de suite ná de
+fixronde (44 checks): temporele tak uit **10**, anker alleen **3**,
+beide **10** — en de drie van het anker bevatten nu twee
+WAARDE-omvallers (`clingo pins the values (J1.bewaarlast = [0],
+expected 48)`).
+
+### Poorten (alle dertien groen — de EERSTE ronde; de fixronde hieronder draait ze opnieuw)
 
 ```
  1 check-self-contained     PASS
@@ -333,6 +428,28 @@ vallen er vier om, waaronder twee "expected a loud fault, got a model".
 Poort 12 speelt de nieuwe golden zonder enige nieuwe weigering of
 divergentie: ref ≡ clingo ≡ Drools op de zeven gepinde waarden. Dat is
 het differentiële vierkant dat deze kaart moest sluiten.
+
+**Eerlijk over wat poort 6 hier wél en niet differentieel is.** De
+vertaler DEELT code met ref: de kalender rijdt als data uit
+`Uchar_ref.Timeline` (de `wu`-feiten, `whole_units`, `bucket`), de
+eenheidsrekenkunde komt uit `Uchar_ref.Arith` (`convertible`,
+`grid_unit`), en de ledenwandeling van het horizonhek is letterlijk
+ref's eigen `Eval.linked`. Dat is met opzet zo — een eigen kalender zou
+van ref kunnen afdrijven en dan meet poort 6 een verschil dat niets over
+de spec zegt — maar de prijs staat er tegenover: **op die assen is poort
+6 geen ONAFHANKELIJK differentieel**. Een fout in `whole_units` of in
+`convertible` slaat in beide executors identiek toe en poort 6 blijft
+groen.
+
+Wat de onafhankelijkheid daar wél draagt: (1) de **Drools-tak**
+(poort 12), die zijn eigen kalender en zijn eigen eenheidslogica heeft en
+de golden op dezelfde waarden speelt; (2) de **handberekende ankers** —
+de 48 en de 0 van de nieuwe golden staan in NOTE.md vóórdat een executor
+draaide, en de goldens onder `corpus/golden/anchor/` zijn per
+constructie handgeschreven. Structureel is dit dezelfde zorg als de
+`ref/`-versus-`spec/verifier/`-scheiding uit CLAUDE.md: gedeelde code is
+geen bewijs, aparte implementaties en met de hand geschreven waarden
+zijn dat wel. Genoteerd, niet weggepoetst.
 
 ### Afwijkingen van de kaart
 
@@ -362,3 +479,222 @@ het differentiële vierkant dat deze kaart moest sluiten.
 7. **Out-of-scope gerespecteerd:** `ref/`, `backends/drools`, de
    frontends, `spec/` en de genavigeerde `Som`/`Min`/`Max`-catch-all zijn
    niet aangeraakt. De `EERSTE`/`LAATSTE`-set-vorm evenmin.
+
+---
+
+## Fixronde (2026-09-05)
+
+Twee lenzen lazen de geland diff terug. Beide bevestigden de zes pins,
+de discriminatiematrix en de poortentabel; beide vonden hetzelfde ENE
+blokkerende punt — de wrap-hek telde verkeerd — plus een compleet, al
+geprototypet recept voor wat de suite miste. Alles hieronder is
+uitgevoerd en opnieuw gemeten.
+
+**Gemandateerde may-touch-verruiming, expliciet gemeld.** De kaartletter
+gaf `backends/clingo/**`, `corpus/golden/jutterswet-tempototaal/**` en
+`backlog/`. De fixronde-opdracht verruimt dat met één nieuwe
+golden-map — `corpus/golden/jutterswet-tempovouw/**` — om de vierde
+lezing van "het totaal van" een corpusgetuige te geven. Verder is er
+niets buiten de oorspronkelijke lijst aangeraakt.
+
+### R1 — de overflow (blokkerend, eerst)
+
+De hektelling liep over `sort_uniq`'te spans terwijl de `#sum` over
+`(lid, van, tot)`-tupels sommeert: leden met een IDENTIEKE periode
+telden één keer. Gemeten op een verifier-PASS-document met alledaagse
+grootheden — 150 leden × 399,99 €/mnd × 360 maanden:
+
+```
+VÓÓR (verwachting op de GEWRAPTE waarde −21.350.212,96)
+  ref    : MISMATCH: J1.bewaarlast = 21599460, expected -21350212.96
+  clingo : clingo: PASS (2 expectations)        exit 0    <- STIL
+  (ruw atoom: val("J1","bewaarlast",-2135021296); 150 × 360 × 39999 =
+   2.159.946.000 en 2.159.946.000 − 2³² = −2.135.021.296.
+   clingo 5.8.2 wrapt zonder een woord, ook bij het gronden.)
+
+VÓÓR (verwachting op de ECHTE waarde 21.599.460,00)
+  ref    : oracle: PASS (2 expectations)
+  clingo : TRANSLATION FAULT: expected value 21599460 exceeds clingo's
+           integer range        <- de VERWACHTING valt om, niet het hek
+
+NÁ
+  clingo : TRANSLATION FAULT: the per-element temporal fold of
+           "bewaartarief" covers 54000 whole units across the case's
+           member timelines, beyond the guarded sum range   exit 1
+           (op BEIDE verwachtingen — het hek vuurt vóór elke waarde)
+```
+
+De telling houdt nu de multipliciteit; de ontdubbeling is de
+FEITEMISSIE'S alleen (`List.sort_uniq` op de emissieplek — `wu`-feiten
+zijn kalenderfeiten, één per onderscheiden span, een herhaalde span zou
+alleen hetzelfde atoom nog eens afleiden). De normatieve eis staat als
+commentaar in de code: `max|g| × Σ n ≤ 2³¹−1` over de
+(lid, segment)-tupels, met beide factoren op 46340 = `isqrt(2³¹−1)` — de
+vloer, één eenheid onder de echte wortel, dus bewust conservatief; die
+grens is ongemoeid gelaten.
+
+**Randgetuige, ΣN = 46340 exact** (20 leden × 2317 hele maanden): speelde
+vóór de patch en speelt erna — `ref oracle: PASS`, `clingo: PASS`. Het hek
+weigert BOVEN de grens, nooit erop.
+
+**Waardegelijkheid vóór/ná, drie temporele frames**, elk vóór en ná
+gemeten met dezelfde binaries: 48 (de suite-vorm), 50 (twee leden die
+één IDENTIEKE span delen — precies de vorm die de ontdubbeling verborg)
+en 43,50 (twee decimalen door dezelfde vouw). Alle drie `ref PASS |
+clingo PASS`, vóór zowel als ná: de patch verandert geen enkele waarde,
+alleen het hek.
+
+**Geen corpus/rood-geval mogelijk, gemeten.** Poort 8 eist een
+waarneembare fout in BEIDE executors; ref speelt het overflowdocument
+gewoon (`oracle: PASS`). De faulttekst is daarom in de suite gepind, met
+de randgetuige ernaast. **Zustercontrole:** de gedurende-clip (`~:1892`)
+en `emit_bucket_calendar` (`~:4329`) ontdubbelen ENDPOINTS en begrenzen
+daarna de ene endpoint-SPAN — nooit een som over ledensegmenten. Beide
+tegen dezelfde eis gehouden en sound as written; dat staat er nu ook bij.
+
+### R2a — de nieuwe golden `jutterswet-tempovouw`
+
+De vierde lezing van "het totaal van": de set-lezing van een TEMPOREEL
+attribuut. `bron.rgs` door de frontend, `bewaartarief` geheel `€/mnd`
+`voor elke maand` op `Vondst`, doel `bewaarlast` `€` op `Jutter` — de
+§4.20-noemerstrip volgt de INTEGRATIE, dus hier valt de noemer weg waar
+`jutterswet-tempototaal` hem juist houdt. De twee goldens zijn elkaars
+tegenvoorbeeld op precies die regel.
+
+Handberekend vóór elke executor: V1 12 €/mnd × 3 hele maanden = 36;
+V2 7 + 5 = 12; V3 zonder tarief valt weg; `J1.bewaarlast` = **48 €**;
+`J2.bewaarlast` = **0** (lege totaal, §4.20); `consistent`.
+
+```
+verifier : PASS
+ref      : oracle: PASS (3 expectations)
+clingo   : clingo: PASS (3 expectations)
+Drools   : PLAYED 1
+frontend : her-emissie byte-identiek aan ir.json
+noop     : weerlegt (twee MISMATCHes, exit 1)
+```
+
+`NOTE.md` is nieuw en volledig geschreven (Engels, self-contained, met
+de handberekening en de §4.20-strip). De NOTE van
+`jutterswet-tempototaal` verwijst er nu naar en draagt de
+restrand-caveat bij "exactly as ref refuses it".
+
+### R2b — de solver in de suite
+
+`run_clingo` staat nu in `backends/clingo/lib/solve.ml`; de
+gate-6-runner importeert hem, zodat poort en suite clingo op DEZELFDE
+manier aanroepen (`unix` erbij in `lib/dune` en `test/dune`). Nieuwe
+helper `clingo_matches`, de spiegel van `ref_matches`: vertaalfout,
+ontbrekende clingo, UNSAT en waardeverschil falen elk luid bij naam.
+Hij staat naast elke bestaande `ref_matches` in het §7.1-blok, plus bij
+de randgetuige van R1, plus bij het nieuwe **eenheidloze** frame.
+
+Dat eenheidloze frame (AN-unitless) is het enige dat de
+anker-eigenschap pint zónder hulp van eender welk eenhedenhek — en dat
+is nodig, want de §4.20-strip in `eff_unit` hangt ZELF aan het anker
+(`fold_operand_otype`), dus met alleen de knop in de vertalende arm
+teruggedraaid blijft het schrijfhek correct geankerd en vangt het niets.
+Gemeten out-of-band op precies dat document: verifier PASS, ref 48,
+clingo 48.
+
+**Rood-eerst, gemeten met de ankerknop op `~:1415` teruggedraaid naar
+het operand-objecttype (de helper ongemoeid):**
+
+```
+FAIL §7.1 anchor: mixed annotation folds on elementObjecttype:
+     translates, program carries _wu(
+FAIL §7.1 anchor: clingo answers the mixed annotation identically:
+     clingo pins the values (J1.bewaarlast = [0], expected 48)
+FAIL §7.1 anchor, unitless: clingo answers 48 (no write fence to help):
+     clingo pins the values (J1.bewaarlast = [0], expected 48)
+test_clingo: 44 checks, 3 FAILURES
+```
+
+Suite 33 → 44 checks. `setvouw_doc`'s `~tarief_noemer` werd
+`~tarief_eenheid` (de HELE eenheid, dus ook `"null"`); mechanisch, geen
+bestaand frame verandert van betekenis.
+
+### R3 — de zes tekstingrepen
+
+Alle zes staan hierboven, in de secties waar ze thuishoren:
+
+1. **De discriminatietelling** — beide commit-boodschappen schreven de
+   omvallers aan de verkeerde knop toe; de matrix per knop staat nu in
+   "WIJZIGINGEN AAN BESTAANDE SUITE-CHECKS". De geschiedenis blijft.
+2. **Het anker** — de gedeelde set-vouw leest `attr_temporal` RECHTSTREEKS
+   op `~:1415`; `fold_operand_otype` draagt het anker voor de
+   eenheidsopzoeking en de weigerarm. En "stil leeg" is "stille **0**"
+   geworden — gemeten, en gevaarlijker dan een leeg.
+3. **De horizonhek-restrand** is een KLASSE, niet één geval: elke op
+   vertaaltijd onbeslisbare versmalling. Twee vormen nagemeten (het
+   `die/dat`-filter en een alles-uitsluitende regelvoorwaarde), beide
+   verifier-PASS, beide ref-antwoordt/clingo-weigert. Met de notitie dat
+   de weigertekst bij zo'n vorm de échte reden hoort te geven.
+4. **De WEEK/DAG/KWARTAAL-zin** — die weigering komt uit de gedeelde
+   CASELEZER (`Timeline.bucket` bij het inladen), niet uit de arm; de
+   niet-maand/jaar-tak van `total_factor` is onbereikbare redundantie
+   zonder eigen getuige. Nagemeten, beide executors falen op dezelfde
+   gedeelde regel.
+5. **De ref-afhankelijkheid** bij het differentieel — `Timeline`, `Arith`
+   en `Eval.linked` zijn gedeeld, dus op die assen is poort 6 geen
+   onafhankelijk differentieel; de Drools-tak en de handberekende ankers
+   dragen daar de onafhankelijkheid. Structureel dezelfde zorg als de
+   `ref/`-versus-`spec/verifier/`-scheiding.
+6. **Het Drools-eenhedenhek** — dat is er niet. Gemeten op het
+   striprichting-frame: verifier WF-091 FAIL, ref fault, clingo fault,
+   **Drools `PLAYED 1`**. Pre-existente eenheidsblindheid met een eigen
+   kaart (`backlog/done/20260901-eenheden-op-refs.md`, vervolgpunt (b));
+   niet aan deze arm toe te schrijven.
+
+**Plus één gemeten Drools-regel.** Op het GEMENGDE-annotatieframe (het
+operand-`objecttype` wijst naar een niet-temporeel `Kist`,
+`elementObjecttype` blijft de temporele `Vondst`) crasht de Drools-tak:
+`ERROR ClassCastException: class java.util.ArrayList cannot be cast to
+class java.math.BigDecimal`. Dat is de ERROR-klasse van poort 12 — géén
+waardeverschil, dus niet lijstbaar — en de poort gaat er rood op zodra
+die vorm ooit in het corpus komt. Vandaag is hij alleen via
+wire-chirurgie bereikbaar (geen frontend emitteert hem), dus er is niets
+te doen; genoteerd zodat de volgende kaart hem niet hoeft te
+herontdekken. Het straight frame speelt gewoon (`PLAYED 1`).
+
+### R4 — de probe: één gemeten lek, gedicht
+
+De vraag: de afgeleide-tijdlijn-weigering scande alleen
+`resolvedRegels` — kan een `prioritizedDefault` of een `verdeling` op
+een temporeel elementattribuut iets in die slot zetten dat `spans` nooit
+zag? **Ja, gemeten.** Twee gerichte probes:
+
+```
+VERDELING (GELIJKE_DELEN, doelAttribuut = het gevouwen temporele
+attribuut; de case levert er GEEN invoer voor)
+  verifier : PASS
+  ref      : EVALUATION FAULT: the per-element temporal total of
+             "bewaartarief" over "V1": the case supplies an
+             asOfDate-bucket scalar ...
+  clingo   : clingo: PASS (2 expectations)          <- STILLE 0
+
+PRIORITIZED DEFAULT op hetzelfde attribuut
+  verifier : WF-086 FAIL (een defaults-groep beslist op één fixpunt en
+             kan geen tijdlijn schrijven)
+  ref      : EVALUATION FAULT: temporal writes are not implemented
+  clingo   : clingo: PASS (2 expectations)          <- STILLE 0
+```
+
+Geen van beide leidt een `tl` af — een verdeling schrijft een SCALAR in
+de temporele slot — maar ref ontmoet daar een lid zónder horizon en
+weigert luid, terwijl deze arm geen `tl`-feit vond en 0 antwoordde. Het
+verdelingsgeval is bovendien verifier-PASS: een echt ref ≢ clingo onder
+een schoon document. De fix is klein en precies wat de opdracht
+voorstelde — dezelfde weigering ook daar: de scan dekt nu elke afgeleide
+schrijver van dat lidattribuut (regel, verdeling, defaults-groep, elk
+met zijn eigen naam in de tekst). De defaults-arm is defense-in-depth,
+want WF-086 weigert die vorm al aan de verifier.
+
+Getuige in de suite, rood-eerst gemeten met de scan terug op alleen
+`resolvedRegels`:
+
+```
+FAIL §7.1 derived writer: an allocation onto the folded member
+     attribute: expected a loud fault, got a model
+test_clingo: 44 checks, 1 FAILURES
+```
