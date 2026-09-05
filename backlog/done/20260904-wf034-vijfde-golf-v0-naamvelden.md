@@ -185,11 +185,16 @@ spelt een **gedeclareerde rol** van de relatie die zijn symbolische
 zuster noemt (`zetVeld` → `feittype`, `joinVeld` → `joinRol`'s,
 `tussenstappen[j].veld` → die `rolBinding`'s); `tussenstappen[j].type`
 kruist tegen de hop zelf (de vuller van de gebonden rol, via dezelfde
-`resolve_binding`). Beide rollen worden toegelaten en geen aangenomen —
-gemeten: drie van de vier creaties spellen `zetVeld` met de ankerrol, het
-zelfgetypeerde `anchor/jutterswet-erflijn` met de doelrol; `joinVeld` is
-drie keer de gebonden en een keer de tegenoverliggende rol. Alleen de
-gedeclareerde naam bindt (het meervoud is presentatie, als bij WF-047).
+`resolve_binding`). Beide rollen worden toegelaten en geen aangenomen.
+*(Beide helften van die laatste zin zijn in de fixronde herzien — zie
+daar. De motivering is weerlegd, en de meting die hem droeg was fout: per
+CREATIE is het **twee en twee**, niet drie en een. `anchor/jutterswet-
+erflijn` draagt twee creaties, beide met de doelrol; `jutterswet-postwacht`
+en `anchor/jutterswet-gemeenteberging` spellen de ankerrol. De zin telde
+documenten voor `zetVeld` en creaties voor `joinVeld`.)* `joinVeld` is
+drie keer de gebonden en een keer de tegenoverliggende rol — dat deel
+klopt. Alleen de gedeclareerde naam bindt (het meervoud is presentatie,
+als bij WF-047).
 
 **Vier getuigen voor R1**, zoals de kaart vroeg, alle vier op
 `jutterswet-postwacht` — de enige van de drie die de beanmodel-poort
@@ -266,3 +271,200 @@ zelf gemeten, zoals de kaart opdroeg. (2) De negatiefzone gaat naar
 WF-053 **plus WF-047** (negen van de tien), niet WF-053 alleen. (4) R3
 levert een derde uitvoerdersgedrag op dat de kaart niet had: de
 beanmodel-transpiler laat de regel vallen.
+
+---
+
+## Fixronde (2026-09-05)
+
+Twee lenzen bevestigden de landing — 7/7 mutanten arm-exact
+gereproduceerd, alle metingen letterlijk — en legden daarnaast één
+concessie, één stil gat en zeven tekstfouten bloot. Alles hieronder is
+zelf hermeten; de negatiefzone gaat **294 → 297**, de vier zones **500 →
+503**.
+
+### 1. De aanscherping: de opslagrichting is wél afleidbaar
+
+De vijfde golf liet *beide* rollen toe met de reden "welke van de twee
+het beanmodel opslaat is een beanmodelbeslissing die de wire niet
+draagt". Die reden is **weerlegd door de backend in deze repo**: hij
+leidt de kant symbolisch af. Een binaire relatie leeft in het
+v0-beanmodel als **één scalair referentieveld**, aan het objecttype dat
+de **to-many** rol vult, genoemd naar de **to-one** rol — §13.3.9
+opslagrichting, wat `FactModelGenerator.leden` rendert en wat de
+transpiler in zijn eigen skip-redenen bij naam citeert.
+
+Drie zij-aan-zij armen, in cascade zodat elk apart falsifieerbaar is:
+
+    A  een GEDECLAREERDE rol van die relatie          (bestaand)
+    B  waar de relatie precies één to-one rol draagt,
+       IS het die rol                                  (nieuw)
+    C  in de GEDECLAREERDE spelling, byte voor byte    (nieuw)
+
+**De ontsnappingstabel, vóór en ná.** Alle beanveld-naamposities over de
+vier zones, geclassificeerd naar de arm die ze zou raken:
+
+    vóór (500 documenten, 36 naamposities)
+      to-one rol genoemd, byte-exact ........ 21
+      gelijke cardinaliteit (arm B staat af) .. 8
+      feittype ontbreekt (WF-028's melding) ... 4
+      arm A (de drie golf-5-getuigen) ......... 3
+      arm B .................................... 0   <- nul kosten
+      arm C .................................... 0   <- nul kosten
+      afwezig .................................. 0   <- nul kosten
+
+    ná (503 documenten, 45 naamposities, 13 type-posities)
+      to-one rol genoemd, byte-exact ........ 27
+      gelijke cardinaliteit ................... 8
+      feittype ontbreekt ...................... 4
+      arm A ................................... 3
+      arm B ................................... 1   <- de eigen getuige
+      arm C ................................... 1   <- de eigen getuige
+      afwezig ................................. 1   <- de eigen getuige
+
+**Bewust niet verder.** De sterkere regel — altijd één kant — zou
+`anchor/jutterswet-erflijn` (feittype `erflijn`, beide rollen to-many) en
+`anchor/jutterswet-gemeenteberging` (join over `aanmelding`, idem)
+**ill-formed** maken. Bij gelijke cardinaliteit leidt het model geen kant
+af (twee to-many rollen: helemaal geen scalair veld; twee to-one rollen:
+één aan elke kant), en daar zijn beide namen toegelaten. De aanscherping
+stopt exact waar de afleiding stopt.
+
+Op `tussenstappen[].type` **geen** byte-arm: die consument vergelijkt per
+gedocumenteerd contract `equalsIgnoreCase`. Een byte-arm daar zou
+strenger zijn dan alle drie uitvoerders en heeft geen getuige. De
+asymmetrie staat in (m) benoemd.
+
+### 2. De nullflank
+
+De golf kruiste de vier beanvelden alleen als ze een naam dróegen. De
+lege helft is nu **één lijstgedreven present-arm** over de vier (pad,
+veld, waarde)-tripels, niet vier losse armen: met één getuige beweegt een
+mutant die één van de vier sub-armen weghaalt **0 van de 503** documenten
+(gemeten, mutant D2) — een clausule zonder tegenvoorbeeld is geen
+clausule. Kosten over het corpus: **0**; alle 36 naamposities en alle 10
+`tussenstappen[].type`-posities van vóór de fixronde zijn aanwezig.
+
+### 3. Drie negatiefs, rood-eerst en arm-exact
+
+Alle drie op `corpus/golden/jutterswet-postwacht` (de enige van de drie
+feitcreatie-goldens die de beanmodel-poort speelt), elk een
+één-regel-diff, elk PASS onder de verifier van de kaart (416b6c4) vóór de
+armen:
+
+| negatief | vorm | verifier vóór | ref | clingo | beanmodel |
+| --- | --- | --- | --- | --- | --- |
+| `wf034-feitcreatie-zusterrol` | `zetVeld: vaksein` (de to-many zusterrol) | PASS | PASS (10) | PASS (10) | ERROR `IllegalStateException: geen getter voor 'vaksein' op …facts.Sein` |
+| `wf034-feitcreatie-hoofdletterveld` | `zetVeld: seinVak` (INTERNE hoofdletter) | PASS | PASS (10) | PASS (10) | ERROR `geen getter voor 'seinVak'` |
+| `wf034-feitcreatie-loos-tussenstapveld` | `tussenstappen[0].veld: null` | PASS | PASS (10) | PASS (10) | ERROR `ConstraintEvaluationException` |
+
+De hoofdletterkeuze is gemeten, niet aangenomen: een **eerste**-letterwissel
+(`Seinvak`) speelt gewoon door (`PLAYED 1`) — de identifier-mapping
+verlaagt de beginletter — en zou de crashclaim vals hebben gemaakt. Dat
+staat in de NOTE, mét de eerlijke keerzijde: de byte-arm wijst `Seinvak`
+wél af en is dus op precies die ene vorm strenger dan de uitvoerder.
+
+Alle vier de null-gedragingen zijn gemeten en staan in de NOTE:
+`tussenstappen[].veld` en `[].type` crashen met **exact** de excepties die
+de twee gevulde-naam-getuigen al pinnen, `zetVeld` en `joinVeld` laten de
+hele creatie vallen als luide transpiler-SKIP — de derde uitvoerdersweg
+opnieuw.
+
+**Mutanten, arm-exact** (elk: eigen build + volledige vier-zone-sweep van
+503 documenten):
+
+    B   de to-one-arm ([ one ]-tak) uit   -> 1 (het eigen)
+    C   de byte-exacte tak uit            -> 1 (het eigen)
+    D   de present-arm uit                -> 1 (het eigen)
+    D2  één van de vier present-tripels   -> 0   (waarom D één arm is)
+
+De zeven golf-5-mutanten zijn **hermeten** op 503 documenten, omdat arm A
+van vorm veranderde. Zes van de zeven blijven één-document-exact. De
+zevende niet meer, en dat staat nu eerlijk in zijn NOTE:
+`wf034-feitcreatie-onbekend-zetveld` is sinds de fixronde de **doorsnede
+van twee mutanten** — de `zetVeld`-positie (die nu drie getuigen draagt)
+en de niet-gedeclareerd-arm (die er ook drie draagt) — en is het enige
+document in beide verzamelingen.
+
+**Byte-sweep.** Over alle **500** documenten die de fixronde voorgingen
+beweegt **geen enkel oordeel en geen enkele melding**; de drie nieuwe
+negatiefs zijn de enige toevoegingen.
+
+### 4. De tekstreparaties
+
+- **Vijf verlopen tellingen gedateerd** in plaats van stil verlopen
+  ("measured at the pre-card state (8 / 28 / 8), N since"), en de inhoud
+  gerepareerd waar die onwaar was geworden: **16** feitcreaties, waarvan
+  **15** de symbolische vorm dragen (de zestiende is de eigen getuige);
+  **30** objectcreaties, waarvan **29** een gedeclareerd subject noemen;
+  **10** `Rollidmaatschap`-knopen — **8** resolveren, **1** is null,
+  **1** resolveert nergens tegen. Plaatsen: IR-SPEC (ch. 3.4 WF-028), de
+  twee commentaarblokken in `checks.ml`, en vier NOTE's.
+- **"Drie van de vier"** was gemeten onwaar. Per **creatie** is het twee
+  en twee: `anchor/jutterswet-erflijn` draagt er twee, beide met de
+  doelrol. De zin telde documenten voor `zetVeld` en creaties voor
+  `joinVeld`. Gecorrigeerd op alle vijf plaatsen (IR-SPEC ch. 4.6 (m), de
+  WF-034-indexrij, het `checks.ml`-commentaar, de zetVeld-NOTE en dit
+  Result). De fout staat ook in twee commit-messages; die geschiedenis
+  blijft staan, en deze kaart zegt het.
+- **Ch. 3.4 had de geciteerde autoriteit niet.** `ref` en clingo weigeren
+  een kale beanvorm met "the symbolic form (IR-SPEC ch. 3.4) is what
+  executes", maar die zin stond er vóór de kaart nergens. Toegevoegd, in
+  één zin: de symbolische vorm is **normatief en verplicht**; de
+  beanvelden zijn een **gesuperseerde spiegel** die een consument
+  bovendien mag lezen, nooit in plaats van. Daarmee is de citatie waar en
+  verdwijnt de spanning met het oude "a consumer may read either".
+- Het **"none, some, all"-drieluik** genuanceerd: de *all*-hoek is de
+  **welgevormde** vorm en krijgt dus nooit een getuige;
+  `wf028-create-along-final-hop` pint een andere clausule (de
+  ketenclausule), niet die derde hoek.
+- **Indexrijkop:** "FOUR waves plus a fix round, eighteen arms" →
+  "FIVE waves plus two fix rounds, twenty-seven arms" (18 + 6 van golf 5
+  + 3 van deze ronde). En de nul-voorkomens-claim is **gesplitst**: hij
+  geldt voor de achttien vormen van golf 1-4, die nul voorkomens in
+  golden/rood dragen; de negen armen van golf 5 + fixronde kruisen
+  posities die het corpus wél draagt (14 beannamen + 4 hop-types, 14
+  objectcreaties, 5 rolchecks over golden+rood) en die alle resolveren —
+  daar is de sweep het bewijs, niet afwezigheid.
+- **Twee exceptiecitaten** zijn Drools-eigen en dragen nu de versie
+  waarop ze zijn waargenomen (`drools.version` 8.44.0.Final); de
+  `IllegalStateException` komt uit de geporte runtime zelf en is van ons.
+- **De open-lijst van ch. 4.6** is gedateerd en uitgebreid met de
+  gemeten restflanken: `VerreRollidmaatschap` (0 dracht — de tweelingzus
+  van (o); een clausule zonder getuige mag niet, dus open-lijstregel),
+  `Kenmerk.eigenaar` (2 van 190 checks, 0 golden), de **916**
+  zijtabelsleutels (0 wezen vandaag), `Eenheid.stelsel` (1292/1292),
+  `Eenheidstelsel.naam` (195/195), de **658** `regels`-stubs die geen
+  enkele check leest, `dagsoortPerEenheid` (60, alle in de
+  pariteitszone) en `anderTeFiller: null`.
+
+### 5. De zesde golf
+
+`backlog/new/20260905-wf034-zesde-golf-restvelden.md`: de restlijst als
+kaart, met per veld de meting, de zijtabelsleutels als voorrangspost (916
+posities, en de enige rest waar de schade een *stille
+semantiekwijziging* is), en het nul-dracht-dilemma expliciet in de
+acceptance — clausule-zonder-getuige tegenover de open-lijstregel, per
+veld te beslissen en op te schrijven. Buiten scope daar: de
+Drools-namencontract-bug (eigen backendkaart: de schrijfkant van de
+feitcreatie mist de luide poort die de case-invoerkant en de vouwkant
+wél hebben), `Rollidmaatschap.rol`, `Eenheid.afkorting`/WF-009, de wrat,
+de 9 argumenttypes en WF-007.
+
+### 6. Afwijkingen van het fixronderecept
+
+1. **Armentelling.** Het recept schreef "twenty-four arms"; dat telt de
+   drie armen van deze ronde niet mee en zou dus meteen weer verlopen —
+   precies de fout die F4 repareert. Geland als **twenty-seven arms,
+   FIVE waves plus TWO fix rounds**.
+2. **De Rollidmaatschap-telling.** Het recept gaf "7 + 1 null + 2
+   gebroken"; per knoop gemeten (met een tijdelijk geïnstrumenteerde
+   arm) is het **8 resolverend + 1 null + 1 onresolveerbaar** — het
+   tweede, intacte rolcheck-document van de getuige zelf resolveert
+   gewoon. Zo opgeschreven.
+3. **De zijtabelsleutels** tellen **916**, niet 910 (acht per-lid-maps,
+   zelf geteld en in de kaart benoemd zodat een hertelling reproduceerbaar
+   is).
+4. **De zeven golf-5-mutanten zijn hermeten** (niet in het recept
+   gevraagd): arm A veranderde van vorm, en dat bleek de
+   zetVeld-getuige's falsifieerbaarheidsclaim te raken — nu een
+   doorsnede van twee mutanten in plaats van één.
