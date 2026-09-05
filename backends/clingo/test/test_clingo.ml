@@ -1037,6 +1037,260 @@ let () =
               ~set:false))
     ~case_text:(totaal_case "bewaartarief")
 
+(* --- the §7.1 per-element set fold, its anchor and its unit fence ---------
+   (the set-fold card, 2026-09-05)
+
+   corpus/golden/jutterswet-tempototaal pins the NON-temporal set fold (the
+   som-alias) through gates 5 and 6. The TEMPORAL per-element fold has no
+   corpus witness — gate 6 has no refusal channel, and the four shapes below
+   that must stay refused would take it red — so the frame is pinned here:
+   one document, five twists.
+
+   The load-bearing one is the ANCHOR. A set fold's attribute declaration is
+   looked up on the ELEMENT type, never on the operand's own objecttype
+   annotation; on every frontend-emitted form the two coincide, and the
+   mixed annotation (a non-temporal aot beside a temporal element type) is
+   the witness that separates them. Anchored on the element type the fold
+   integrates timelines; anchored on the annotation it would sum bare val/3
+   facts that a timeline-carrying case does not have — a silent leeg where
+   ref answers. The pin reads the emitted program for the fold's own
+   calendar facts, which only the temporal route emits. *)
+
+let mnd_eenheid =
+  {|{ "node": "Eenheid", "afkorting": "mnd", "stelsel": "Bewaartijd", "canoniek": "mnd",
+      "factorNaarCanoniek": 1, "noemer": null }|}
+
+let jr_eenheid =
+  {|{ "node": "Eenheid", "afkorting": "jr", "stelsel": "Bewaartijd", "canoniek": "mnd",
+      "factorNaarCanoniek": 12, "noemer": null }|}
+
+let eur noemer =
+  {|{ "node": "Eenheid", "afkorting": "EUR", "stelsel": "Munt", "canoniek": "EUR",
+      "factorNaarCanoniek": 1, "noemer": |} ^ noemer ^ {| }|}
+
+let euro_num eenheid =
+  {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": |}
+  ^ eenheid ^ {| }|}
+
+(* [operand_ot] is the operand's objecttype ANNOTATION: "Vondst" (the
+   element type, temporal) or "Kist" (a third type declaring the same
+   attribute name NON-temporally — the mixed annotation).
+   [tarief_noemer] is the rate's denominator: mnd (the grid unit itself) or
+   jr (convertible, factor 12 — the strip this encoding cannot carry). *)
+let setvouw_doc ~kind ~operand_ot ~tarief_noemer ~doel_eenheid =
+  let tarief = euro_num (eur tarief_noemer) in
+  {|{ "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": { "node": "Objecttype", "naam": "Jutter",
+      "attributen": { "bewaarlast": |}
+  ^ euro_num doel_eenheid
+  ^ {| },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {}, "bezield": true, "meervoud": "Jutters" },
+    "Vondst": { "node": "Objecttype", "naam": "Vondst",
+      "attributen": { "bewaartarief": |}
+  ^ tarief
+  ^ {| },
+      "attribuutMeervoud": { "bewaartarief": "bewaartarieven" }, "attribuutDimensies": {},
+      "attribuutGranulariteit": { "bewaartarief": "MAAND" },
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" },
+    "Kist": { "node": "Objecttype", "naam": "Kist",
+      "attributen": { "bewaartarief": |}
+  ^ tarief
+  ^ {| },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Kisten" } },
+  "domeinen": {}, "parameters": {},
+  "eenheidstelsels": {
+    "Munt": { "node": "Eenheidstelsel", "naam": "Munt",
+      "eenheden": { "EUR": |}
+  ^ eur "null"
+  ^ {| }, "aliassen": {} },
+    "Bewaartijd": { "node": "Eenheidstelsel", "naam": "Bewaartijd",
+      "eenheden": { "mnd": |}
+  ^ mnd_eenheid ^ {|, "jr": |} ^ jr_eenheid
+  ^ {| }, "aliassen": {} } },
+  "feittypen": { "bewaring": { "node": "Feittype", "naam": "bewaring", "wederkerig": false,
+    "rollen": [
+      { "node": "Rol", "naam": "bewarende jutter", "objecttypeNaam": "Jutter",
+        "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
+        "meervoud": "vondsten", "meervoudig": true } ] } },
+  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [ { "node": "Regel", "naam": "bewaarlast van een jutter", "soort": "regel" } ],
+  "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "bewaarlast van een jutter",
+    "soort": "BEREKENING",
+    "doel": { "node": "AttribuutRef", "attribuut": "bewaarlast", "objecttype": "Jutter",
+      "onderwerpBron": "een Jutter", "navigatieRol": null, "type": |}
+  ^ euro_num doel_eenheid
+  ^ {|,
+      "bron": "De bewaarlast van een Jutter", "set": false, "navigatiePad": [] },
+    "waarde": { "node": "Functie", "kind": "|}
+  ^ kind
+  ^ {|", "argumenten": [
+      { "node": "AttribuutRef", "attribuut": "bewaartarief", "objecttype": "|}
+  ^ operand_ot
+  ^ {|",
+        "onderwerpBron": "alle vondsten van de Jutter", "navigatieRol": null, "type": |}
+  ^ tarief
+  ^ {|,
+        "bron": "het bewaartarief van alle vondsten van de Jutter", "set": true,
+        "navigatiePad": [] } ],
+      "elementObjecttype": "Vondst", "leegwaarde": null, "filter": null,
+      "dimensieSelectie": null, "type": |}
+  ^ euro_num doel_eenheid
+  ^ {|,
+      "bron": "het totaal van het bewaartarief van alle vondsten van de Jutter",
+      "granulariteit": null,
+      "bronRol": { "node": "RolBinding", "feittype": "bewaring", "rol": "vondst" } },
+    "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}
+|}
+
+(* V1: 12 EUR/mnd over three whole months = 36; V2: 7 over January plus 5
+   over February = 12; V3 brings no timeline and drops out; J2 keeps no
+   vondsten at all. Totaal over the empty set is 0 (§4.20). Hand-computed,
+   and ref replays them below. *)
+let setvouw_case ~v1 =
+  {|{ "format": "uchar-case-v0", "asOfDate": "2026-03-15",
+  "input": { "instances": [
+    { "label": "J1", "objectType": "Jutter", "attributes": {},
+      "roles": { "vondsten": [ "V1", "V2", "V3" ] }, "characteristics": [] },
+    { "label": "J2", "objectType": "Jutter", "attributes": {}, "roles": {},
+      "characteristics": [] },
+    { "label": "V1", "objectType": "Vondst", "attributes": { "bewaartarief": |}
+  ^ v1
+  ^ {| }, "roles": {}, "characteristics": [] },
+    { "label": "V2", "objectType": "Vondst",
+      "attributes": { "bewaartarief": { "timeline": [
+        { "from": "2026-01-01", "to": "2026-02-01", "value": { "number": "7" } },
+        { "from": "2026-02-01", "to": "2026-03-01", "value": { "number": "5" } } ] } },
+      "roles": {}, "characteristics": [] },
+    { "label": "V3", "objectType": "Vondst", "attributes": {}, "roles": {},
+      "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "bewaarlast",
+      "value": { "number": "48" } },
+    { "kind": "attributeValue", "label": "J2", "attribute": "bewaarlast",
+      "value": { "number": "0" } },
+    { "kind": "consistent" } ] }
+|}
+
+let v1_timeline =
+  {|{ "timeline": [ { "from": "2026-01-01", "to": "2026-04-01",
+                      "value": { "number": "12" } } ] }|}
+
+let v1_bucket_scalar = {|{ "number": "12" }|}
+
+let load_pair ~ir ~case_text =
+  let irf = write_temp ".ir.json" ir in
+  let casef = write_temp ".case.json" case_text in
+  let doc = Ir_v0.Loader.load_file irf in
+  let case = Uchar_ref.Case.load_file doc casef in
+  Sys.remove irf;
+  Sys.remove casef;
+  (doc, case)
+
+(* the program itself is the witness: [needle] must appear in the emitted
+   ASP. Used for the ANCHOR, where "does it translate" is not enough — both
+   anchors translate, and only one of them integrates timelines. *)
+let translates_carrying ~name ~ir ~case_text ~needle =
+  let doc, case = load_pair ~ir ~case_text in
+  match Translate.translate doc case with
+  | program -> check (name ^ ": translates, program carries " ^ needle)
+                 (Uchar_ref.Case.contains ~needle program)
+  | exception Uchar_ref.Value.Fault m ->
+      check (name ^ ": translates (unexpected fault: " ^ m ^ ")") false
+
+let ref_matches ~name ~ir ~case_text =
+  let doc, case = load_pair ~ir ~case_text in
+  let env =
+    { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls;
+      as_of = case.as_of; locals = Uchar_ref.World.SMap.empty }
+  in
+  match Uchar_ref.Case.check case (Uchar_ref.Eval.evaluate env case.world) with
+  | [] -> check (name ^ ": ref pins the values") true
+  | ms -> check (name ^ ": ref pins the values (" ^ String.concat "; " ms ^ ")") false
+
+let () =
+  (* the carried fold, straight: the operand's annotation names the element
+     type, both anchors agree, and the program integrates timelines *)
+  let straight =
+    setvouw_doc ~kind:"TOTAAL" ~operand_ot:"Vondst" ~tarief_noemer:mnd_eenheid
+      ~doel_eenheid:(eur "null")
+  in
+  translates_carrying ~name:"§7.1 per-element fold (element-typed operand)" ~ir:straight
+    ~case_text:(setvouw_case ~v1:v1_timeline) ~needle:"_wu(";
+  ref_matches ~name:"§7.1 per-element fold, 36 + 12 + 0 = 48" ~ir:straight
+    ~case_text:(setvouw_case ~v1:v1_timeline);
+  (* THE ANCHOR. The operand's objecttype annotation now names "Kist", which
+     declares bewaartarief NON-temporally; elementObjecttype stays "Vondst".
+     Anchored on elementObjecttype the fold still integrates (the wu facts
+     are there) and ref answers the same 48. Anchored on the annotation it
+     would emit a scalar val/3 join over a timeline-carrying case — no wu
+     facts, and a silent leeg. Before this card the shape fell into the
+     reasonless catch-all, so ref answered where clingo refused. *)
+  let mixed =
+    setvouw_doc ~kind:"TOTAAL" ~operand_ot:"Kist" ~tarief_noemer:mnd_eenheid
+      ~doel_eenheid:(eur "null")
+  in
+  translates_carrying ~name:"§7.1 anchor: mixed annotation folds on elementObjecttype"
+    ~ir:mixed ~case_text:(setvouw_case ~v1:v1_timeline) ~needle:"_wu(";
+  ref_matches ~name:"§7.1 anchor: ref answers the mixed annotation identically"
+    ~ir:mixed ~case_text:(setvouw_case ~v1:v1_timeline);
+  (* the noemer strip must land EXACTLY: EUR/jr over a month grid cancels by
+     the declared factor 1/12, which this integer encoding cannot carry. ref
+     computes it; refusing loudly, naming both units, is the only honest
+     answer here — never a rounded one. *)
+  faults_with ~name:"§7.1 noemer strip, a convertible but non-1 denominator"
+    ~ir:
+      (setvouw_doc ~kind:"TOTAAL" ~operand_ot:"Vondst" ~tarief_noemer:jr_eenheid
+         ~doel_eenheid:(eur "null"))
+    ~case_text:(setvouw_case ~v1:v1_timeline)
+    ~needle:
+      "restates a EUR/jr value into a mnd grid by a declared factor other than 1, which this \
+       integer encoding does not carry";
+  (* the strip is the AGGREGATION's, so a rate TARGET no longer matches: the
+     integrated value is EUR and the target EUR/mnd. ref refuses the same
+     write (EVALUATION FAULT: incompatible units: EUR/mnd vs EUR). Were the
+     strip missing here, clingo would answer where ref faults. *)
+  faults_with ~name:"§7.1 strip direction: the integrated total no longer fits a rate target"
+    ~ir:
+      (setvouw_doc ~kind:"TOTAAL" ~operand_ot:"Vondst" ~tarief_noemer:mnd_eenheid
+         ~doel_eenheid:(eur mnd_eenheid))
+    ~case_text:(setvouw_case ~v1:v1_timeline)
+    ~needle:{|non-identical units under the write to "bewaarlast"|};
+  (* MIN/MAX over a temporal set has no defined moment to rank at, so it
+     STAYS refused — ref refuses it outright and this arm must not answer
+     from the asOfDate buckets. The rate target keeps the write fence from
+     pre-empting the reason. *)
+  faults_with ~name:"minimum/maximum over a temporal set stays refused"
+    ~ir:
+      (setvouw_doc ~kind:"MAXIMUM" ~operand_ot:"Vondst" ~tarief_noemer:mnd_eenheid
+         ~doel_eenheid:(eur mnd_eenheid))
+    ~case_text:(setvouw_case ~v1:v1_timeline)
+    ~needle:
+      "a minimum/maximum over the temporal attribute \"bewaartarief\" of a set has no defined \
+       moment to fold";
+  (* the horizon rule on this frame too: one member with an asOfDate-bucket
+     scalar instead of a timeline, refused BY NAME — ref's own convention *)
+  faults_with ~name:"§7.1 horizon rule: a member with an asOfDate-bucket scalar (by name)"
+    ~ir:straight
+    ~case_text:(setvouw_case ~v1:v1_bucket_scalar)
+    ~needle:
+      "the per-element temporal fold of \"bewaartarief\" over \"V1\": the case supplies an \
+       asOfDate-bucket scalar"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
