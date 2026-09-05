@@ -1,0 +1,53 @@
+Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6 (p)): a **side-table key** of an
+object type that names no declared member.
+
+    WF-034 FAIL /objecttypen/Vondst/kenmerkGranulariteit/verjaart: kenmerkGranulariteit key 'verjaart' names no
+    declared characteristic of 'Vondst': the side table resolves against no declaration
+
+**What the table is.** An object type declares its members in two places —
+`attributen` (name to datatype) and `kenmerken` (a name list) — and hangs
+eight per-member FACET maps beside them, each keyed by a member name. Nothing
+required those keys to name a declared member, and they are references: every
+one of them is looked up by member name and by nothing else, so a key naming
+no member resolves against no declaration.
+
+**The harm is a silent semantic change, not a missing value.** A key spelled `verjaart` where the declared characteristic is `verjaard` says
+"this characteristic is time-dependent" about a characteristic that does not
+exist, and leaves the declared one silently NON-temporal — the characteristic
+half of the sharpest case, and the one the sixth wave was argued from.
+
+**Who reads this table** (measured 2026-09-05 across the four consumers):
+In the verifier: WF-043's whole-period qualifier in both `walk_expr` and
+`walk_cond`, the temporal prologue of `expression_layer`, and WF-086's
+defaults-target rule. In `ref`: the case loader and the evaluator. In the ASP
+backend: the translator, twice. In the Drools backend: both transpiler branches,
+the contract validator, the fact-model generator and the case runner.
+
+**Measured.** A spurious key added to this table on each of the 205 golden object types in
+turn: **205 of 205** stayed verifier-clean before this card, none does now. The
+renaming instrument does not apply cleanly here and is recorded as such: all
+**9** live golden keys are already refused when renamed (0 of 9 clean), because
+the characteristic's own `gedurende` reads lose their temporal ground and
+WF-043 reports them. The ADDED key is the shape no rule caught.
+
+**Executor observability.** Renaming each live key and replaying every case of its golden gave **27**
+measurements. **26** are loud in both OCaml executors (`CASE ERROR: … a
+characteristic timeline on a non-temporal characteristic`, or a fault on
+`gedurende`). The twenty-seventh **DIVERGES, on an anchor golden**: on
+`corpus/golden/anchor/jutterswet-dubbelwacht` case3, renaming `Jutter.aangesteld`
+makes `ref` fault (`EVALUATION FAULT: gedurende over "aangesteld", which is not a
+temporal characteristic (WF-055)`) while the ASP backend replays the case to its
+pinned expectations. One document, two executors disagreeing about whether it
+can be run at all.
+
+*Measured breadth:* zero documents lose anything. All 24 `kenmerkGranulariteit`
+keys the four zones held before this card name a declared characteristic.
+
+A hand-broken variant of `corpus/golden/jutterswet-vondstverjaring/ir.json` — one key added, a one-line diff;
+schema-valid, since the eight tables are `additionalProperties`-typed maps on
+the v0 wire.
+
+Falsifiable, arm-exact: delete the `orphan otn "kenmerkGranulariteit" ...` line from
+`wf034_zijtabelsleutels` (`spec/verifier/lib/checks.ml`) and this case, alone
+in all four zones, turns clean — 522 documents compared, one verdict moved, no
+report elsewhere.
