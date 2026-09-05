@@ -3416,6 +3416,52 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                                   ("'" ^ Option.value u.afkorting ~default:"?"
                                    ^ "' is not a recognised time unit or declared day kind") ])))
          | _ -> [])
+      (* WF-038, the ordering-fold operand clause (IR-SPEC ch. 4.6,
+         semantics `RUNTIME-SEMANTICS.md` ch. 1.2): EERSTE/LAATSTE/
+         MINIMUM/MAXIMUM keep the least or greatest CONTRIBUTOR, so every
+         operand must come from one comparable family — numbers or dates.
+         Enumeration, SumType, StructType, text and boolean are
+         equality-only (the ch. 2.4 orderability paragraph), and two
+         families have no common order between them.
+
+         Both wire forms are one rule here, because both spell their
+         contributors as this node's operand list: the SET SOURCE is one
+         `set` argument whose type is the element attribute's datatype,
+         the ARTICULATED fold is two or more listed operands. The
+         unknown sentinel and an operand carrying no type at all DEFER —
+         the sentinel is the row-1 wart WF-034 tolerates in a fold
+         source, and it is how v0 spells the one operand shape whose type
+         it never resolved; refusing it here would refuse documents the
+         toolchain emits. *)
+      @ (match List.assoc_opt f.kind passthrough_folds with
+         | None -> []
+         | Some kn ->
+             let family d =
+               if is_number_like d then Some `Num else if is_date d then Some `Date else None
+             in
+             let typed = List.mapi (fun i a -> (i, typ_of_expr a)) f.argumenten in
+             List.concat_map
+               (fun (i, t) ->
+                 match t with
+                 | None | Some (Datatype_onbekend _) -> []
+                 | Some d when family d = None ->
+                     [ v "WF-038"
+                         (Printf.sprintf "%s/argumenten/%d" at i)
+                         ("operand of the " ^ kn ^ " ordering fold is " ^ datatype_kind d
+                        ^ ", must be a number or a date") ]
+                 | Some _ -> [])
+               typed
+             @ (let fams =
+                  List.filter_map
+                    (fun (_, t) -> match t with Some d -> family d | None -> None)
+                    typed
+                in
+                match fams with
+                | f0 :: rest when List.exists (fun x -> x <> f0) rest ->
+                    [ v "WF-038" at
+                        (kn ^ " orders operands of two comparable families, numbers and \
+                              dates, which share no ordering") ]
+                | _ -> []))
       @ (match f.leegwaarde with
          | Some lw -> (
              (match typ_of_expr lw with
