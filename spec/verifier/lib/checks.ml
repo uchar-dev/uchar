@@ -4646,6 +4646,23 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) at (c : conditie) : viola
                if is_date d then []
                else [ v "WF-036" (sub side) ("date-ordering operand is " ^ datatype_kind d) ])
              [ ("links", l); ("rechts", r) ]
+           (* WF-036, the date-ordering precision clause: the two DATE
+              REPRESENTATIONS are two comparable families, exactly as
+              WF-038's ordering fold reads them — a day-precision date
+              names a whole day, a millisecond-precision one a point
+              inside a day, so no order runs between them. Each side is
+              well-formed alone; their combination is not, so it is
+              reported at the comparison node. The sibling equality arm
+              below crosses the same seam ("equality across date
+              precisions"); this arm is its ordering half. An untyped or
+              unknown-typed operand DEFERS through the outer match, as
+              every other arm of this comparison does. *)
+           @ (match l, r with
+              | Datum_in_dagen, Datum_tijd | Datum_tijd, Datum_in_dagen ->
+                  [ v "WF-036" at
+                      "date ordering across two date precisions (day and millisecond), which \
+                       share no order" ]
+              | _ -> [])
        | `Eq, Some l, Some r -> (
            match l, r with
            | Enumeratie { domein = Some d1; _ }, Enumeratie { domein = Some d2; _ }
