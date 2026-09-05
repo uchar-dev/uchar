@@ -698,3 +698,42 @@ FAIL §7.1 derived writer: an allocation onto the folded member
      attribute: expected a loud fault, got a model
 test_clingo: 44 checks, 1 FAILURES
 ```
+
+### Poorten na de fixronde (alle dertien groen)
+
+```
+ 1 check-self-contained     PASS
+ 2 check-ir-schema          PASS (176 bestanden valideren en round-trippen
+                                  — was 175)
+ 3 check-verifier           PASS (176 golden clean; 281 negatief afgewezen
+                                  — was 175)
+ 4 check-case-schema        PASS (427 case-bestanden valideren — was 426)
+ 5 check-oracle             PASS (405 cases exact herspeeld — was 404;
+                                  2 golden zonder case, ongewijzigd:
+                                  seizoenvondst, vormenkabinet)
+ 6 check-clingo             PASS (405 cases exact — was 404; eigen suite
+                                  44 checks, 0 failures — was 33)
+ 7 check-noop               PASS (369 weerleggen — was 368; 36 gepinde
+                                  overlevers, ongewijzigd)
+ 8 check-rood               PASS (22 rode cases; Drools-been 5
+                                  fault-pinned, 17 not-carried)
+ 9 check-catala             PASS (201 checks; 12 catala-golden
+                                  byte-identiek)
+10 check-regelspraak        PASS (171 JUnit-tests; 30 rgs-golden
+                                  byte-identiek — was 29)
+11 check-toka-parity        PASS (ref 29/29, clingo 29/29, Drools 29
+                                  PLAYED; 45 .rgs byte-identiek;
+                                  TOKA-suite 27 tests)
+12 check-drools             PASS (108 played — was 107; 43 auto-excluded;
+                                  1 value-divergence
+                                  (anchor/jutterswet-kustwacht,
+                                  ongewijzigd); JUnit 199)
+13 check-reftype-derivation PASS (64 twists over 13 golden — was 61/12;
+                                  58 replays waarvan 11 door de
+                                  DRL-teksttak — was 54; 0 overlevers)
+```
+
+De nieuwe golden telt overal mee: één document erbij in poort 2/3, één
+case in 4, één replay in 5/6, één weerlegging in 7, één `bron.rgs` in
+10, één PLAYED in 12, en één golden méér in het verdraai-harnas van
+poort 13. Geen enkele bestaande telling daalt.
