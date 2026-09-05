@@ -280,6 +280,29 @@ let attr_datetime_typed ctx ~otype ~attr =
   | Some (Some Datum_tijd) -> true
   | _ -> false
 
+(* THE TEMPORALITY ANCHOR of a fold operand (decision 2026-09-05).
+   A fold operand's declaration is looked up on the ELEMENT type when the
+   read is a SET read — the value is read off each member, and every set
+   arm below anchors its reads at the element variable — and on the
+   operand's own objecttype otherwise, where the read IS the subject's.
+   Before this decision the arms disagreed: the temporal Totaal refusal
+   hung its temporality guard on the operand's [objecttype], the Som and
+   Minimum/Maximum guards on [elementObjecttype]. On every frontend-emitted
+   form the two coincide; on a MIXED annotation they do not, and the set
+   fold then fell reasonlessly into the catch-all. One anchor, all arms. *)
+let fold_operand_otype ~element_objecttype ~set (ot : string option) =
+  if set then element_objecttype else ot
+
+(* temporality WITHOUT [attr_temporal]'s fault: [eff_unit] below runs in
+   pure ANALYSIS positions (comparisons, additive joins, the write fence)
+   where a type it cannot resolve must stay an unknown unit, never a
+   translation fault of its own — the faulting lookup belongs to the arm
+   that actually translates the node. *)
+let attr_temporal_decl ctx ~otype ~attr =
+  match Ir_v0.Checks.find_ci ctx.doc.objecttypen otype with
+  | Some ot -> Ir_v0.Checks.attr_temporal ot attr
+  | None -> false
+
 (* the EFFECTIVE unit of an expression, derived from declarations
    (attribute/parameter datatypes) and the ch. 2.6 join rules — never
    from the node's own static annotation: a composite annotated
@@ -318,6 +341,38 @@ let rec eff_unit ctx (e : expr) : eenheid option =
   | Binair _ -> None
   | Afgerond { basis; _ } | Begrensd { basis; _ } -> Option.bind basis (eff_unit ctx)
   | Temporal_read { basis; _ } -> eff_unit ctx basis
+  | Functie
+      { kind = (Som | Totaal) as kind;
+        argumenten = (Attribuut_ref { attribuut = Some a; objecttype; set; _ } as arg) :: _;
+        element_objecttype; _ }
+    when (kind = Totaal || set)
+         &&
+         match fold_operand_otype ~element_objecttype ~set objecttype with
+         | Some ot -> attr_temporal_decl ctx ~otype:ot ~attr:a
+         | None -> false ->
+      (* the §4.20 Tabel 30 noemer strip, as an EFFECTIVE unit. A TIME
+         aggregation integrates a rate over the grid, so the /tijdseenheid
+         cancels through the declared factors and the total carries the
+         numerator alone (€/mnd over a month grid → €; RUNTIME-SEMANTICS
+         ch. 3.6 "Units", the ref mirror). The write fence below then sees
+         the STRIPPED unit against the declared target and the two are
+         identical — which is what lets the temporal totaal translate at
+         all; before this the fence read €/mnd against € and refused every
+         unit-carrying time aggregation.
+
+         The strip follows the INTEGRATION, not the operator: it fires
+         exactly where ref runs a Timeline.totaal — the own-subject
+         temporal totaal, and the §7.1 per-element fold under BOTH som
+         and totaal (there the members' timelines collapse first, so a
+         som over a temporal set strips just as hard). A NON-temporal
+         set totaal is the som-alias and keeps its rate: the golden pins
+         that row, its set TOTAAL and its SOM carrying the identical
+         €/mnd result type. Whether the strip lands EXACTLY in this
+         integer encoding is the translating arm's fence
+         ([grid_strip_ok]), not this analysis's. *)
+      Option.map
+        (fun (u : eenheid) -> { u with noemer = None })
+        (eff_unit ctx arg)
   | Functie { kind = Som | Totaal | Minimum | Maximum | Eerste | Laatste; argumenten = arg :: _; _ }
     ->
       eff_unit ctx arg
@@ -400,7 +455,44 @@ let lexeme_decimals lex =
    year-granular attribute over the calendar-year bucket the factor is
    exactly 1; other granularities await a corpus case *)
 let total_factor (g : granulariteit) =
-  match g with Jaar -> 1 | _ -> fault "temporal total: only year granularity is exercised"
+  match g with
+  | Jaar | Maand -> 1
+  | _ -> fault "temporal total: only month and year granularity have a calendar bucket (ch. 3.2)"
+
+(* the §4.20 noemer strip, as ARITHMETIC. ref integrates a rate by
+   multiplying the segment value by a duration stated in the GRID's own
+   unit, so the denominator cancels through the DECLARED factors: over a
+   month grid €/mnd multiplies by 1 and €/jr by 1/12 (12 months IS one
+   year by the declared factor). This integer encoding carries no
+   conversion factor, so only the factor-1 case — a denominator identical
+   to the grid unit by declaration — is representable; every other
+   convertible denominator would need a fraction, and a denominator the
+   declarations connect to nothing grid-sized is refused by ref too. Each
+   is refused here by name, never rounded and never silently dropped.
+   [what] names the fold site. *)
+let grid_strip_ok ctx ~what ~(gran : granulariteit) (u : eenheid option) =
+  match u with
+  | Some ({ noemer = Some n; _ } as rate) -> (
+      match Uchar_ref.Timeline.grid_unit ctx.doc gran with
+      | Error why -> fault "the noemer strip of %s: %s" what why
+      | Ok gu ->
+          if not (Uchar_ref.Arith.convertible n gu) then
+            fault
+              "the noemer strip of %s cannot integrate a %s value over a %s grid: the \
+               declarations connect no conversion between its denominator and the grid unit \
+               (ch. 3.6); ref refuses the shape too"
+              what
+              (Uchar_ref.Arith.show_eenheid rate)
+              (Uchar_ref.Arith.show_eenheid gu)
+          else if not (Q.equal (Uchar_ref.Arith.conv_factor gu n) Q.one) then
+            fault
+              "the noemer strip of %s restates a %s value into a %s grid by a declared factor \
+               other than 1, which this integer encoding does not carry (ref applies the exact \
+               factor); only a denominator identical to the grid unit cancels here"
+              what
+              (Uchar_ref.Arith.show_eenheid rate)
+              (Uchar_ref.Arith.show_eenheid gu))
+  | _ -> ()
 
 (* harmonise two scaled terms for comparison *)
 let harmonised (b1, t1, s1) (b2, t2, s2) =
@@ -1307,32 +1399,38 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
      "unknown attribute"), never a silent value. The Aantal arm above is the
      same story one field over: it binds no objecttype at all and mirrors
      ref's role-source arm field for field. *)
-  | Functie { kind = Som; argumenten = [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some el; leegwaarde; bron_rol; filter; _ } ->
+  | Functie { kind = (Som | Totaal) as kind; argumenten = [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some el; leegwaarde; bron_rol; filter; _ } ->
+      (* ONE branch for the two set folds, because ref has one: its
+         contributor gathering is shared and only the empty-set rule
+         differs (agg_som ~fallback vs agg_totaal). The set reading of
+         "het totaal van" IS the som-alias — same operand, same result
+         type on the wire (corpus/golden/jutterswet-tempototaal pins both
+         rows of that table side by side) — so a mirrored pair of arms
+         could only drift. *)
       let a = req "fold attribute" attribuut in
-      (* the §7.1 per-element fold, refused (the sister of the Totaal arm's
-         guard below): over a TEMPORAL element attribute ref folds TWICE —
-         each member's own timeline collapses over time first (ch. 3.6) —
-         while this arm sums bare val/3 facts. On a timeline-carrying case
-         those facts do not exist and the sum answers underived (silently
-         leeg where ref sums the collapsed totals); on a bucket case it
-         would sum un-integrated scalars. Translating the fold is its own
-         card; until then the refusal is loud. *)
-      if attr_temporal ctx ~otype:el ~attr:a then
-        fault
-          "the per-element temporal fold over a set (§7.1) is not translated: %S is a temporal \
-           attribute, whose members' timelines collapse over time before the set fold (ch. 3.6)"
-          a;
-      (* the empty set: #sum over no tuples is clingo's native 0, which is
-         exactly the leegwaarde-0 facet (ref agg_som (Some 0)). A som WITHOUT a
-         fallback yields ref's Empty (agg_som None → Empty), NOT 0, so it needs a
-         presence guard (below) that keeps the term underivable on the empty
-         set. A fallback other than 0 stays loud — ref would add the fallback,
-         which no encoding here carries. *)
+      (* THE TEMPORALITY ANCHOR: [el], the elementObjecttype (see
+         [fold_operand_otype]). Every read below hangs on the element
+         variable and every declaration is looked up on [el], so [el] is
+         the type that decides whether the members carry timelines. *)
+      let temporal = attr_temporal ctx ~otype:el ~attr:a in
+      (* the empty set. TOTAAL is 0 UNCONDITIONALLY (§4.20, ref
+         agg_totaal), which is exactly clingo's native #sum over no
+         tuples — so no presence guard, and a leegwaarde is ignored the
+         way ref ignores it (agg_totaal takes no fallback; the eager
+         `let fallback = … leegwaarde` evaluates and discards it, the
+         same convention the min/max arm below carries). SOM without a
+         fallback is ref's Empty (agg_som None), so it needs the presence
+         guard that keeps the term underivable on the empty set; with a 0
+         fallback the bare #sum is already right. A fallback other than 0
+         stays loud — ref would add it, which no encoding here carries. *)
       let has_fallback =
-        match leegwaarde with
-        | Some (Literal { waarde = Some "0"; _ }) -> true
-        | Some _ -> fault "som fallback other than 0 is not translated yet"
-        | None -> false
+        match kind with
+        | Totaal -> true
+        | _ -> (
+            match leegwaarde with
+            | Some (Literal { waarde = Some "0"; _ }) -> true
+            | Some _ -> fault "som fallback other than 0 is not translated yet"
+            | None -> false)
       in
       (* the connecting role: the node's explicit binding when present,
          else derived the same way ref/ derives it *)
@@ -1350,29 +1448,147 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         | None -> []
         | Some c -> cond_atoms ctx ~subject:x ~subject_ot:el c
       in
-      let contrib_body =
-        Printf.sprintf "rol(%s,%s,%s)" subject (str role_name) x
-        :: Printf.sprintf "val(%s,%s,%s)" x (str a) g
-        :: fatoms
-      in
-      (* the #sum accumulation stays inside 2^31 by bounding both the
-         contributors and their count: 46340 × 46340 < 2^31 *)
       let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
-      range_guard ctx ~subject
-        ~body:((base :: ctx.rule_guard) @ contrib_body)
-        [ (g, 46340) ];
-      emit ctx
-        "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, \
-         46340 < #count { %s : %s }."
-        subject
-        (String.concat ", " (base :: ctx.rule_guard))
-        x
-        (String.concat ", " contrib_body);
+      let contrib_body, sum_shape =
+        if not temporal then begin
+          (* the SCALAR set fold: one val/3 per member, the join IS the
+             empty-skip (an absent member contributes no tuple, ref's
+             [filled]). The #sum accumulation stays inside 2^31 by
+             bounding both the contributors and their count:
+             46340 × 46340 < 2^31. *)
+          let body =
+            Printf.sprintf "rol(%s,%s,%s)" subject (str role_name) x
+            :: Printf.sprintf "val(%s,%s,%s)" x (str a) g
+            :: fatoms
+          in
+          range_guard ctx ~subject ~body:((base :: ctx.rule_guard) @ body) [ (g, 46340) ];
+          emit ctx
+            "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, \
+             46340 < #count { %s : %s }."
+            subject
+            (String.concat ", " (base :: ctx.rule_guard))
+            x
+            (String.concat ", " body);
+          (body, (g, x))
+        end
+        else begin
+          (* §7.1, the PER-ELEMENT timeline fold: a set read of a TEMPORAL
+             attribute folds TWICE — each member's own timeline collapses
+             over time first (ch. 3.6, at that attribute's granularity),
+             and only those scalars fold over the set. Summing over
+             (member × segment) pairs in ONE aggregate is the same number:
+             Σ_members Σ_segments = Σ_pairs, and neither fold can be empty
+             in a way the other hides (an absent member brings no tuple, a
+             leeg segment carries no tl fact).
+
+             Tabel 30 as arithmetic: each segment contributes value ×
+             WHOLE grid units of its own span. The calendar enters as
+             DATA — wu facts computed by the shared Timeline module over
+             the case's own segment bounds — so the logic stays in ASP and
+             the calendar cannot drift from ref/, exactly the gedurende
+             clip's convention below. *)
+          let gran = attr_granularity ctx ~otype:el ~attr:a in
+          grid_strip_ok ctx
+            ~what:(Printf.sprintf "the per-element temporal fold of %S" a)
+            ~gran (attr_unit ctx ~otype:el ~attr:a);
+          (* the segment bounds must be CASE data: a member timeline some
+             rule derives has no bounds at translation time, so the wu
+             facts could not be computed and the join would find nothing —
+             a silent 0 where ref integrates. Refused by name instead. *)
+          if
+            List.exists
+              (fun (r : resolved_regel) ->
+                match r.doel with
+                | Some (Attribuut_ref { attribuut = Some x; objecttype = Some o; _ }) ->
+                    norm x = norm a && norm o = norm el
+                | _ -> false)
+              ctx.doc.resolved_regels
+          then
+            fault
+              "the per-element temporal fold of %S over a DERIVED member timeline is not \
+               translated: a rule writes %S on %S, so its segment bounds are not case data and \
+               the whole-unit facts this fold integrates against cannot be computed (no corpus \
+               case)"
+              a a el;
+          (* the horizon rule (ch. 3.6/§7.1, ch. 8.4), ref's convention
+             verbatim: the integration runs PER MEMBER, so every member
+             must bring its OWN horizon. The asOfDate-bucket SCALAR states
+             no period at all, so a member carrying one is refused BY NAME
+             — never silently bucketed at the session date. An ABSENT
+             member contributes nothing (leeg): its join simply finds no
+             tl fact, which is ref's Empty contributor dropping out. The
+             SUBJECT's own fold keeps the opposite convention (the
+             asOfDate bucket carries that total) and the asymmetry is
+             deliberate — there the session date IS the horizon. *)
+          Eval.SMap.iter
+            (fun _ (i : Uchar_ref.World.instance) ->
+              if
+                norm i.otype = norm el
+                && Uchar_ref.World.timeline i a = None
+                && Uchar_ref.World.attr i a <> Value.Empty
+              then
+                fault
+                  "the per-element temporal fold of %S over %S: the case supplies an \
+                   asOfDate-bucket scalar, which carries no period of its own; a set fold needs \
+                   each member's own timeline (ch. 3.6/§7.1, ch. 8.4)"
+                  a i.label)
+            ctx.case.world.instances;
+          let spans =
+            Eval.SMap.fold
+              (fun _ (i : Uchar_ref.World.instance) acc ->
+                if norm i.otype <> norm el then acc
+                else
+                  match Uchar_ref.World.timeline i a with
+                  | None -> acc
+                  | Some tl ->
+                      List.map
+                        (fun (s : Uchar_ref.Timeline.segment) -> (s.s_van, s.s_tot))
+                        tl
+                      @ acc)
+              ctx.case.world.instances []
+            |> List.sort_uniq compare
+          in
+          ctx.fresh <- ctx.fresh + 1;
+          let p = Printf.sprintf "pe%d" ctx.fresh in
+          (* the wrap fence, compile-time on the calendar side and
+             runtime on the value side: |Σ W×N| ≤ 46340 × Σ N, so
+             bounding Σ N over every candidate segment at 46340 and |W|
+             at 46340 keeps the accumulation inside 2^31. Σ N is taken
+             over ALL members' segments, which over-counts a single
+             subject's share — deliberately conservative, and loud. *)
+          let total_units =
+            List.fold_left
+              (fun acc (van, tot) -> acc + Uchar_ref.Timeline.whole_units gran van tot)
+              0 spans
+          in
+          if total_units > 46340 then
+            fault
+              "the per-element temporal fold of %S covers %d whole units across the case's \
+               member timelines, beyond the guarded sum range"
+              a total_units;
+          List.iter
+            (fun (van, tot) ->
+              emit ctx "%s_wu(%d,%d,%d)." p van tot
+                (Uchar_ref.Timeline.whole_units gran van tot))
+            spans;
+          let n = fresh ctx "N" and vv = fresh ctx "V" and tt = fresh ctx "T" in
+          let body =
+            Printf.sprintf "rol(%s,%s,%s)" subject (str role_name) x
+            :: Printf.sprintf "tl(%s,%s,%s,%s,%s)" x (str a) vv tt g
+            :: Printf.sprintf "%s_wu(%s,%s,%s)" p vv tt n
+            :: fatoms
+          in
+          range_guard ctx ~subject ~body:((base :: ctx.rule_guard) @ body) [ (g, 46340) ];
+          (body, (Printf.sprintf "%s*%s" g n, Printf.sprintf "%s,%s,%s" x vv tt))
+        end
+      in
+      let sum_term, sum_key = sum_shape in
       (* the presence guard for the fallback-less som: a helper keyed by the
          subject holds iff at least one contributor exists; the reading rule
          carries it, so an empty set leaves the whole term underivable (ref's
-         Empty) instead of deriving #sum's 0. With a 0 fallback the bare #sum
-         (native 0 on the empty set) is exactly right, so no guard is added. *)
+         Empty) instead of deriving #sum's 0. With a 0 fallback — and for
+         every totaal — the bare #sum (native 0 on the empty set) is exactly
+         right, so no guard is added. *)
       let guard =
         if has_fallback then []
         else begin
@@ -1382,7 +1598,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           [ Printf.sprintf "%s(%s)" p subject ]
         end
       in
-      ( guard @ [ Printf.sprintf "%s = #sum { %s,%s : %s }" v g x (String.concat ", " contrib_body) ],
+      ( guard
+        @ [ Printf.sprintf "%s = #sum { %s,%s : %s }" v sum_term sum_key
+              (String.concat ", " contrib_body) ],
         v,
         pow10 (attr_decimals ctx ~otype:el ~attr:a) )
   (* element-anchored like the som arm above, and unnarrowed on the
@@ -1540,6 +1758,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               a i.label)
         ctx.case.world.instances;
       let gran = attr_granularity ctx ~otype:aot ~attr:a in
+      grid_strip_ok ctx
+        ~what:(Printf.sprintf "the gedurende-clipped total of %S" a)
+        ~gran (attr_unit ctx ~otype:aot ~attr:a);
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "cl%d" ctx.fresh in
       (* the condition's period atoms, as a function of the variable
@@ -1741,6 +1962,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          navigatie_rol = None ref reads the subject too, so the executors
          agree and a refusal here would be the divergence. *)
       refuse_attr_timeline ctx ~otype:aot ~attr:a;
+      grid_strip_ok ctx
+        ~what:(Printf.sprintf "the temporal total of %S" a)
+        ~gran:(attr_granularity ctx ~otype:aot ~attr:a)
+        (attr_unit ctx ~otype:aot ~attr:a);
       let f = total_factor (attr_granularity ctx ~otype:aot ~attr:a) in
       let v = fresh ctx "T" in
       let term = if f = 1 then v else Printf.sprintf "(%s*%d)" v f in
@@ -1752,19 +1977,35 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         argumenten =
           [ Attribuut_ref
               { attribuut = Some a; objecttype = Some aot; set; navigatie_rol; navigatie_pad; _ } ];
-        _ }
-    when attr_temporal ctx ~otype:aot ~attr:a ->
-      (* every temporal totaal the two arms above deliberately do not
-         carry. Each of these used to fall INTO the arm above and be
+        element_objecttype; _ }
+    when (match fold_operand_otype ~element_objecttype ~set (Some aot) with
+         | Some ot -> attr_temporal ctx ~otype:ot ~attr:a
+         | None -> false) ->
+      (* every temporal totaal the arms above deliberately do not carry.
+         Each of these used to fall INTO the own-subject arm and be
          answered off val(<SUBJECT>,…) — the wrong instance — so each is
          refused here by its own reason instead: never a silent value,
          never a silent leeg. A NON-temporal totaal is not this arm's
-         business and reaches the catch-all below, as it always has. *)
+         business and reaches the catch-all below, as it always has.
+
+         The temporality guard hangs on the ANCHOR ([fold_operand_otype]),
+         not on the operand's own objecttype: a set fold's declaration
+         lives on the element type. Before that decision a MIXED
+         annotation — a non-temporal aot beside a temporal element type —
+         missed this arm and fell reasonlessly into the catch-all; it now
+         reaches the carried set-fold arm above, which folds it as the
+         temporal fold its element type declares. *)
       if set then
+        (* the navigation-free set fold is CARRIED above (§7.1, since
+           2026-09-05); what is left here NAVIGATES, and the carried arm
+           anchors every read at the element variable of a navigation-free
+           source, mirroring ref — whose instance-fold source arm refuses
+           a navigated source outright. *)
         fault
-          "the per-element temporal total over a set (§7.1) is not translated: the carried arm \
-           totals the SUBJECT's own timeline, and %S is read off each set MEMBER — a different \
-           instance even where the element type IS the subject's own type (a self-relation)"
+          "the NAVIGATED per-element temporal total over a set (§7.1) is not translated: the \
+           carried set fold reads %S off each member of a navigation-free source, and ref \
+           refuses a navigated fold source outright (an instance-fold source shape it does not \
+           carry), so this arm must not answer either"
           a;
       if navigatie_rol <> None || navigatie_pad <> [] then
         fault
