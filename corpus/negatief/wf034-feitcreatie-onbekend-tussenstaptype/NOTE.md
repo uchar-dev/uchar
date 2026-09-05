@@ -32,7 +32,8 @@ belongs to WF-028.
 The bean-model executor looks the name up in the object-type table, gets
 nothing back, and dereferences it — the crash is one step further from the
 document than the other three in this family, which is exactly why the type
-half needed its own arm. The family's full measurement table (14 of 14
+half needed its own arm. (A JVM exception surfaced through Drools' fire loop,
+quoted as observed at `drools.version` 8.44.0.Final.) The family's full measurement table (14 of 14
 positions verifier-clean, both OCaml executors clean on all 14) is in the
 sibling NOTE.
 
@@ -46,5 +47,5 @@ field repointed, a one-line diff; schema-valid, since `Tussenstap.type` is
 Falsifiable, arm-exact: negate the guard of the
 `Ok (_, bound, _), Some tn when norm tn <> norm (filler bound)` match in
 `wf034_feitcreatie_beanvelden` (`spec/verifier/lib/checks.ml`) and this case,
-alone in all four zones, turns clean — 500 documents compared, one verdict
+alone in all four zones, turns clean — 503 documents compared, one verdict
 moved, no report elsewhere.

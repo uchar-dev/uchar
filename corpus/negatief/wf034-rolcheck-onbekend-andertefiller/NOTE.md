@@ -42,11 +42,15 @@ catches a dangling reference only where an engine would have caught it anyway
 catches nothing, and the third executor shows the failure mode is not even
 uniform.
 
-*Measured breadth:* zero documents lose anything. Of the 8 `Rollidmaatschap`
-nodes in golden, rood, negatief and the parity zone, seven name a type the
-subject is related to and the eighth carries `anderTeFiller: null`, which this
-arm passes over (the null half is not this arm's question). The four-zone
-sweep (500 documents) moves no other verdict and no other report.
+*Measured breadth:* zero documents lose anything. Measured at the pre-card
+state, of the 8 `Rollidmaatschap` nodes in golden, rood, negatief and the
+parity zone seven named a type the subject is related to and the eighth carried
+`anderTeFiller: null`, which this arm passes over (the null half is not this
+arm's question). Re-measured over the 10 those zones hold since: **8** resolve
+against exactly one connecting role — four golden, one rood, two parity, and
+the second, intact rule of this very document — **1** is the null one, and
+**1** resolves against nothing: the first rule here. The four-zone sweep moves
+no other verdict and no other report.
 
 A hand-broken variant of `corpus/golden/jutterswet-wachtindeling/ir.json` —
 one field repointed, a one-line diff; schema-valid, since
@@ -54,5 +58,5 @@ one field repointed, a one-line diff; schema-valid, since
 
 Falsifiable, arm-exact: negate the guard of the `Rollidmaatschap` arm of
 `walk_cond` (`spec/verifier/lib/checks.ml`) and this case, alone in all four
-zones, turns clean — 500 documents compared, one verdict moved, no report
+zones, turns clean — 503 documents compared, one verdict moved, no report
 elsewhere.

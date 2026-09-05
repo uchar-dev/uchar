@@ -29,8 +29,9 @@ to the flag, and the corpus exercises both settings — `false` here and in
 
 The same nameless engine death as the `joinVeld` sibling, and for the same
 reason: the hop is compiled into a pattern constraint that reads the field
-reflectively, so an absent field takes the constraint down rather than the
-consequence. The family's full measurement table (14 of 14 positions
+reflectively, so an unresolvable field takes the constraint down rather than
+the consequence. (Drools' own exception, quoted as observed at
+`drools.version` 8.44.0.Final.) The family's full measurement table (14 of 14 positions
 verifier-clean, both OCaml executors clean on all 14) is in the sibling NOTE.
 
 *Measured breadth:* zero outside the four `wf034-feitcreatie-onbekend-*`
@@ -42,5 +43,5 @@ field repointed, a one-line diff; schema-valid, since `Tussenstap.veld` is
 
 Falsifiable, arm-exact: replace the `spells_role … (tat ^ "/veld") …` line of
 `wf034_feitcreatie_beanvelden` (`spec/verifier/lib/checks.ml`) by `[]` and
-this case, alone in all four zones, turns clean — 500 documents compared, one
+this case, alone in all four zones, turns clean — 503 documents compared, one
 verdict moved, no report elsewhere.

@@ -50,9 +50,11 @@ ObjectCreatie.subject in IR node", clingo "missing ObjectCreatie.subject").
 That is the empty-reference class of the earlier waves — a different question
 from resolution — and it has no witness yet.
 
-*Measured breadth:* zero documents lose anything. All 28 object creations in
-golden, rood, negatief and the parity zone name a declared subject; the
-four-zone sweep (500 documents) moves no other verdict and no other report.
+*Measured breadth:* zero documents lose anything. Measured at the pre-card
+state, all 28 object creations in golden, rood, negatief and the parity zone
+named a declared subject; of the 30 those zones hold since, 29 do and the
+thirtieth is this document. The four-zone sweep moves no other verdict and no
+other report.
 
 A hand-broken variant of `corpus/golden/anchor/jutterswet-penninguitgifte/ir.json`
 — one field repointed, a one-line diff; schema-valid, since
@@ -60,4 +62,4 @@ A hand-broken variant of `corpus/golden/anchor/jutterswet-penninguitgifte/ir.jso
 
 Falsifiable, clause-exact: make `wf034_objectcreatie_subject`
 (`spec/verifier/lib/checks.ml`) inert and this case, alone in all four zones,
-turns clean — 500 documents compared, one verdict moved, no report elsewhere.
+turns clean — 503 documents compared, one verdict moved, no report elsewhere.

@@ -30,7 +30,10 @@ sitting beside it.
 
 The two OCaml executors replay it to the pinned expectations — they never read
 the field — while the third dies inside the engine on a constraint it cannot
-even name. That is the second of the four crash shapes this family carries;
+even name (that exception is Drools' own, quoted as observed at
+`drools.version` 8.44.0.Final; the `IllegalStateException` the `zetVeld`
+sibling quotes comes from the ported runtime itself and is ours). That is the
+second of the four crash shapes this family carries;
 the family's full measurement table (14 of 14 positions verifier-clean, both
 OCaml executors clean on all 14) is in the sibling NOTE.
 
@@ -43,5 +46,5 @@ field repointed, a one-line diff; schema-valid, since
 
 Falsifiable, arm-exact: replace the `spells_role … (at ^ "/joinVeld") …` line
 of `wf034_feitcreatie_beanvelden` (`spec/verifier/lib/checks.ml`) by `[]` and
-this case, alone in all four zones, turns clean — 500 documents compared, one
+this case, alone in all four zones, turns clean — 503 documents compared, one
 verdict moved, no report elsewhere.
