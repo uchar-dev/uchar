@@ -1218,9 +1218,9 @@ and no target. **They are inert v0 mirror baggage, exactly like the bean
 fields of ch. 3.4, and unlike those they are not even a superseded mirror of
 something checked — they are non-normative: a consumer MUST NOT derive
 meaning from them, and no well-formedness rule crosses them.** *The
-measurement that settles it, over the four zones on 2026-09-05:* the zones
-carry **666** stubs (313 golden, 34 rood, 266 negatief, 53 parity) and
-**zero readers** — no check in `spec/verifier/` reads the array, the
+measurement that settles it, over the 522 documents of the four zones on
+2026-09-05:* the zones carry **691** stubs (313 golden, 34 rood, 291 negatief,
+53 parity) and **zero readers** — no check in `spec/verifier/` reads the array, the
 reference interpreter does not read it, the ASP backend does not read it, and
 the Drools backend's loader parses it into its model record without any
 transpiler, runtime, graph or case-runner code reading that record back. What
@@ -2242,9 +2242,9 @@ is not done, so it is recorded here instead; the MEMBER half of (q), whether
 the type an explicit `eigenaar` names DECLARES the characteristic — the
 declared-characteristic cross is keyed on the subject, and deciding that an
 explicit owner overrides it is a semantics question about which owner is
-authoritative, not a resolution one; `Eenheidstelsel.naam` (204 of 204
-present, 204 of 204 agreeing with the map key they are stored under, and read
-by nothing but one ASP fault message), which is **not a reference** — the
+authoritative, not a resolution one; `Eenheidstelsel.naam` (205 of 205
+present at the end of that wave, 205 of 205 agreeing with the map key they are
+stored under, and read by nothing but one ASP fault message), which is **not a reference** — the
 question there is whether a keyed declaration's redundant self-name must agree
 with its key, a CLASS spanning object types, fact types, dimensions, timelines
 and unit systems alike, of which this is one instance and none of which is
@@ -3305,7 +3305,7 @@ Comparison, Predicate, and CharacteristicCheck only —
   `attribuutDimensies` by WF-004 and WF-040's cell cross; `attribuutMeervoud`
   by WF-057; `attribuutTijdlijnNaam` by WF-003 and WF-005; and
   `kenmerkSoorten` — the largest table by far, 788 of the 924 keys the four
-  zones hold — **by no consumer at all today**: the Drools loader parses it
+  zones held before this card — **by no consumer at all today**: the Drools loader parses it
   and nothing reads it back. That last arm is for the wire, on the same
   argument the wave-3 dimension-cell arm rests on (g): the table is keyed by
   member name in the serialization contract and a conforming consumer may read
