@@ -1,0 +1,53 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-03-15",
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": { "bewaarvergoeding per maand": { "number": "10" } },
+        "roles": { "vondsten": ["V1", "V2", "V3"] },
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": { "bewaartarief": { "number": "12" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": { "bewaartarief": { "number": "7" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "bewaarlast", "value": { "number": "19" } },
+    { "kind": "attributeValue", "label": "J1", "attribute": "bewaarsom", "value": { "number": "19" } },
+    { "kind": "attributeValue", "label": "J1", "attribute": "bewaargeld", "value": { "number": "10" } },
+    { "kind": "attributeValue", "label": "J2", "attribute": "bewaarlast", "value": { "number": "0" } },
+    { "kind": "attributeEmpty", "label": "J2", "attribute": "bewaarsom" },
+    { "kind": "attributeEmpty", "label": "J2", "attribute": "bewaargeld" },
+    { "kind": "consistent" }
+  ]
+}
