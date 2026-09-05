@@ -1550,6 +1550,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                  if norm self.otype <> norm subject_ot then acc
                  else Eval.linked ?binding:bron_rol env ctx.case.world self ~to_type:el @ acc)
                ctx.case.world.instances []);
+          (* one entry PER (member, segment) — the multiplicity is
+             load-bearing for the fence below, which must count the
+             tuples the #sum accumulates, not the distinct calendar
+             spans among them. *)
           let spans =
             Eval.SMap.fold
               (fun _ (i : Uchar_ref.World.instance) acc ->
@@ -1563,16 +1567,34 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                         tl
                       @ acc)
               ctx.case.world.instances []
-            |> List.sort_uniq compare
           in
           ctx.fresh <- ctx.fresh + 1;
           let p = Printf.sprintf "pe%d" ctx.fresh in
           (* the wrap fence, compile-time on the calendar side and
-             runtime on the value side: |Σ W×N| ≤ 46340 × Σ N, so
-             bounding Σ N over every candidate segment at 46340 and |W|
-             at 46340 keeps the accumulation inside 2^31. Σ N is taken
-             over ALL members' segments, which over-counts a single
-             subject's share — deliberately conservative, and loud. *)
+             runtime on the value side. The #sum runs over (member,
+             segment) TUPLES, so the normative requirement is
+
+               max|g| × Σ n ≤ 2^31 − 1   over the (member, segment) tuples,
+
+             and bounding both factors at 46340 = isqrt(2^31 − 1) — the
+             floor, one unit below the real root, so deliberately
+             conservative — gives 46340² = 2_147_395_600 ≤ 2^31 − 1.
+             COUNT WITH MULTIPLICITY: 150 members sharing one 360-month
+             span are 54_000 tuples, not 360, and deduplicating here let
+             a verifier-PASS document wrap silently (measured:
+             150 × 399.99 €/mnd × 360 mnd reported PASS on
+             −21_350_212.96 where ref and Drools give 21_599_460.00).
+             The DEDUPLICATION BELOW IS THE FACT EMISSION'S ALONE — the
+             wu facts are calendar facts, one per distinct span, and a
+             repeated span would only re-derive the same atom. Σ n is
+             taken over ALL instances of the element type, which
+             over-counts a single subject's share — conservative in the
+             safe direction, and loud.
+             The sister calendars (the gedurende clip and
+             [emit_bucket_calendar]) dedupe ENDPOINTS and then bound the
+             single endpoint SPAN, never a sum of per-member segments;
+             both were checked against this requirement and are sound as
+             written. *)
           let total_units =
             List.fold_left
               (fun acc (van, tot) -> acc + Uchar_ref.Timeline.whole_units gran van tot)
@@ -1587,7 +1609,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             (fun (van, tot) ->
               emit ctx "%s_wu(%d,%d,%d)." p van tot
                 (Uchar_ref.Timeline.whole_units gran van tot))
-            spans;
+            (List.sort_uniq compare spans);
           let n = fresh ctx "N" and vv = fresh ctx "V" and tt = fresh ctx "T" in
           let body =
             Printf.sprintf "rol(%s,%s,%s)" subject (str role_name) x

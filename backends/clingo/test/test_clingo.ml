@@ -1212,6 +1212,35 @@ let setvouw_case ~v1 =
     { "kind": "consistent" } ] }
 |}
 
+(* [n] members, each carrying ONE segment over the SAME span — the
+   multiplicity the wrap fence has to count. The #sum runs over (member,
+   segment) tuples, so Σ n is n × the span's whole units, however few
+   DISTINCT spans the case holds. *)
+let fence_case ~n ~van ~tot ~waarde ~verwacht =
+  let labels = String.concat ", " (List.init n (fun i -> Printf.sprintf {|"V%d"|} (i + 1))) in
+  let member i =
+    Printf.sprintf
+      {|{ "label": "V%d", "objectType": "Vondst", "attributes": { "bewaartarief": { "timeline": [
+        { "from": "%s", "to": "%s", "value": { "number": "%s" } } ] } },
+      "roles": {}, "characteristics": [] }|}
+      i van tot waarde
+  in
+  Printf.sprintf
+    {|{ "format": "uchar-case-v0", "asOfDate": "2026-03-15",
+  "input": { "instances": [
+    { "label": "J1", "objectType": "Jutter", "attributes": {},
+      "roles": { "vondsten": [ %s ] }, "characteristics": [] },
+    %s ],
+    "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "bewaarlast",
+      "value": { "number": "%d" } },
+    { "kind": "consistent" } ] }
+|}
+    labels
+    (String.concat ",\n    " (List.init n (fun i -> member (i + 1))))
+    verwacht
+
 let v1_timeline =
   {|{ "timeline": [ { "from": "2026-01-01", "to": "2026-04-01",
                       "value": { "number": "12" } } ] }|}
@@ -1297,6 +1326,50 @@ let () =
     ~needle:
       "the per-element temporal fold of \"bewaartarief\" over \"V1\": the case supplies an \
        asOfDate-bucket scalar"
+
+(* --- the wrap fence counts TUPLES, not distinct spans ---------------------
+   (the fix round, 2026-09-05)
+
+   The #sum accumulates one term per (member, segment) pair, so the fence's
+   normative requirement is max|g| × Σ n ≤ 2^31 − 1 over those TUPLES.
+   Counting over deduplicated spans instead let members sharing one calendar
+   period count once, and an everyday document then wrapped SILENTLY:
+   measured on 150 members × 399.99 €/mnd × 360 months — verifier PASS —
+   clingo reported `clingo: PASS (2 expectations)` with exit 0 against the
+   WRAPPED value −21 350 212.96 (raw atom
+   val("J1","bewaarlast",-2135021296)) where ref and the Drools backend give
+   21 599 460.00. clingo 5.8.2 wraps without a word, at grounding too.
+
+   This cannot become a corpus/rood case: gate 8 demands an OBSERVABLE fault
+   in BOTH executors, and ref simply replays the document (pinned below).
+   So the fault text is pinned here, with the boundary beside it. *)
+let () =
+  let straight =
+    setvouw_doc ~kind:"TOTAAL" ~operand_ot:"Vondst" ~tarief_noemer:mnd_eenheid
+      ~doel_eenheid:(eur "null")
+  in
+  (* 150 members × ONE shared 360-month span = 54 000 tuples. Deduplicated
+     the fence saw 360 and let it through; with multiplicity it refuses. *)
+  let over = fence_case ~n:150 ~van:"2026-01-01" ~tot:"2056-01-01" ~waarde:"12"
+      ~verwacht:648000 in
+  faults_with ~name:"§7.1 wrap fence: identical member spans count with multiplicity"
+    ~ir:straight ~case_text:over
+    ~needle:
+      "the per-element temporal fold of \"bewaartarief\" covers 54000 whole units across the \
+       case's member timelines, beyond the guarded sum range";
+  (* why the pin lives here and not in corpus/rood: ref answers this
+     document, so there is no two-executor fault to declare *)
+  ref_matches ~name:"§7.1 wrap fence: ref replays the refused document (no rood case possible)"
+    ~ir:straight ~case_text:over;
+  (* the BOUNDARY, exact: 20 members × 2317 whole months = 46340 = the
+     guard itself, which must still play — the fence refuses ABOVE the
+     bound, never at it *)
+  let edge = fence_case ~n:20 ~van:"2026-01-01" ~tot:"2219-02-01" ~waarde:"1"
+      ~verwacht:46340 in
+  translates_with ~name:"§7.1 wrap fence: Σn = 46340 exactly still translates" ~ir:straight
+    ~case_text:edge;
+  ref_matches ~name:"§7.1 wrap fence: Σn = 46340 exactly, ref pins 46340" ~ir:straight
+    ~case_text:edge
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
