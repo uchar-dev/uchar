@@ -249,3 +249,210 @@ en gooit waar ref stil 0 antwoordt (getuige 3).
 
 **Beschermd pad.** `spec/verifier/**` en `spec/IR-SPEC.md` zijn
 voorstel; de branch blijft ongemerged tot de maintainer hem beoordeelt.
+
+---
+
+## Fixronde (2026-09-05, dezelfde branch)
+
+Twee lenzen lazen de geland-stand na en bevestigden alle metingen
+hierboven tot op het cijfer. Wat ze daarnaast vonden is één defect met
+twee helften — een REGRESSIE van deze kaart en een gat dat er al zat — en
+dat is hier hersteld. Alles opnieuw gemeten; elke bewering hieronder is
+een meting op deze branch.
+
+### 1. De familie-scope: de hele "een vouwbron navigeert nooit"-familie
+### wordt enkelvoudig-gescoped
+
+De Result-samenvatting hierboven beschrijft de `single`-scope van
+clausule (c) als een SEMANTISCHE keuze: bij ≥2 operanden is de vouw de
+GELESTE waardevouw (§5.8.3), haar operanden zijn gewone lezingen, en een
+vreemd `objecttype` is daar een geldige typenpaar-hop. Dat klopt — en
+precies daar zit de correctie die lens 1 aandroeg en die de samenvatting
+niet maakte: **dezelfde semantiek was niet toegepast op de rest van de
+familie.** De navigatieBindingen-arm, clausule (a) en clausule (b)
+spraken ongescoped over ELKE vouwoperand, terwijl ze alleen over de
+vouwBRON gaan — het enkelvoudige argument dat de gevouwen verzameling
+levert. De vijfde-mutant-alinea hierboven ("de scope staat er om
+semantische reden") is dus juist over (c) en onvolledig over de kaart:
+zij verzweeg dat drie zusterarmen die reden niet volgden.
+
+Gescoped zijn nu alle vier: de bindingen-arm, (a) `navigatiePad`, (b)
+`navigatieRol`, (c) het anker. Bij (a) hoorde één vormdetail: het derde
+patroon van de match moest `navigatie_pad = []` LOSLATEN, anders valt een
+geleste operand mét pad door álle armen heen en bereikt de resolutie
+eronder niet meer.
+
+**De vierkanten die de scope afdwingen** (eigen bron op de
+`bewaring`-declaraties, twee leden):
+
+| vorm | verifier vóór | ref | ASP-backend | Drools exec | Drools DRL |
+|---|---|---|---|---|---|
+| `LAATSTE` met genavigeerde operand 2 | **WF-083 + WF-053 FAIL** | 30 | 30 | 30 | 30 |
+| dezelfde met `navigatiePad` + bindingen | WF-083 + WF-053 FAIL | speelt | speelt | EXCLUDE per vorm | — |
+
+De eerste rij is een REGRESSIE van deze kaart: clausule (b)'s
+wrat-scope-helft is nieuw, en ze weigerde een vorm waar vier
+executor-benen het over eens zijn. De tweede rij is dezelfde klasse maar
+PRE-EXISTENT (de bindingen-arm en (a) stonden er al vóór deze kaart):
+`ref` en de ASP-backend spelen hem allebei, de Drools exec-tak weigert
+hem reden-dragend per vorm.
+
+### 2. De WF-053-herhaling in de vouwbron-tak
+
+Het spiegelbeeld van 1. De vouwtak van `walk_expr` VERVANGT de generieke
+expressiewandeling voor deze argumenten — daarom staan K1's WF-034-armen
+en WF-089/WF-092 daar al herhaald. WF-053 stond er niet. Gevolg: een
+geleste operand was de ENIGE leespositie in de hele IR waarvan de hop
+tegen niets resolveerde. Nu herhaald voor `List.length f.argumenten <> 1`,
+met dezelfde `navigated`-schakelaar als de generieke arm (geschreven rol,
+pad, of onderwerp-mismatch) en dezelfde parameters.
+
+Gemeten effect: een `MAXIMUM` met operand 2 naar een objecttype waarheen
+geen enkel feittype leidt wordt **WF-053 FAIL — `bindingless navigation:
+no fact type relates 'Vondst' to 'Baken'`** — woordelijk wat dezelfde
+lezing buiten een vouw al kreeg; de to-many-hop-in-een-scalairslot komt
+mee.
+
+### 3. De prijs, hermeten
+
+**Byte-sweep over alle 510 documenten** (155 golden + 22 rood + 303
+negatief + 30 parity), rapport voor rapport vergeleken: **0
+oordeelskantelingen, 0 tekstwijzigingen.** De vijf wf083- en zes
+wf053-negatiefs blijven rood met hun eigen regel.
+
+**Mutanten, elk build+meting in één `&&`-keten met harde build-faal**
+(een gebroken build laat een sweep stil op de oude binary draaien):
+
+| mutant | uitschakeling | effect over 510 |
+|---|---|---|
+| X1 | (b)-anker `~otype:otn` i.p.v. `~otype:st` | alleen `wf083-vouwbron-anker-op-operand` groen |
+| X2 | de niet-wrat-arm geeft `[]` | alleen `wf083-vouwbron-navigatierol-buiten-de-wrat` groen |
+| X3 | (c) niet-set-anker `Some otn` | alleen `wf083-vouwbron-vreemd-objecttype` groen |
+| X4 | (c) set-anker `Some otn` | alleen `wf083-vouwbron-vreemd-elementtype` groen |
+| X5 | de WF-053-herhaling uit | alleen `wf053-geleste-vouwoperand-onverbonden-hop` groen |
+| X6 | de hele familie-scope (`when single`) weg | alleen `jutterswet-sluitsom` ROOD (WF-083 + WF-053) |
+| X8 | de twee defer-armen markeren | **0 treffers** |
+
+X6 is de falsificatiegetuige van de scope: de nieuwe golden is het
+ENIGE document van de 510 dat beweegt als je de scope weghaalt — de
+scope verbergt dus niets in het bestaande corpus, en hij is niet
+onbewijsbaar. X8 is de defer-eerlijkheid: de `subject = None`- en
+`anker = None`-armen van (b) en (c) worden over 510 documenten **nul
+keer** bereikt; de spec zegt dat nu hardop in plaats van het te verzwijgen.
+
+### 4. Nieuw materiaal
+
+**Negatief** `corpus/negatief/wf053-geleste-vouwoperand-onverbonden-hop/`
+(303e). Rood-eerst in de gebruikelijke zin kon hier niet — de herhaling
+bestond nog niet — dus in de omgekeerde volgorde bewezen en zo
+gecommit: het document eerst gemeten als verifier-**PASS** op de stand
+vóór de herhaling (het gat), daarna de herhaling, daarna FAIL. `ref`
+faalt er met de zin van de verifier zelf: `EVALUATION FAULT: no fact type
+relates "Vondst" to "Baken"`.
+
+**Golden** `corpus/golden/jutterswet-sluitsom/` — de **gemandateerde
+verruiming van May-touch** van deze fixronde, hier expliciet gemeld: de
+oorspronkelijke kaart noemde `corpus/golden/**` niet. Het is een
+POSITIEVE getuige en daarom mét case en metingen gecommit, niet
+rood-eerst. De vorm: `de laatste van haar meldloon en het ijkloon van de
+bewarende jutter` — geleste waardevouw, operand 2 navigeert één hop, met
+`navigatieRol` én symbolische `navigatieBindingen` (de bond route wordt
+zo ook geraakt). Twee cases, handberekend en daarna door alle benen:
+
+```
+case1  V1 meldloon 12, hop 30 -> 30 (de HOP wint)
+       V2 meldloon 41, hop 30 -> 41 (de EIGEN lezing wint)
+case2  V3 meldloon 7, geen hop -> 7;  V4 alles leeg -> leeg;
+       V5 geen meldloon, hop 30 -> 30
+ref PASS - ASP-backend PASS - Drools exec PLAYED - Drools DRL PLAYED
+--noop: MISMATCH op beide cases (poort 7 weerlegt hem)
+poort 13: 4 draaibare eenheidsannotaties (3x AttribuutRef + Functie/LAATSTE),
+          0 buiten de draaitabel; alle vier benen reproduceren de
+          onverdraaide uitkomst -> geen survivor-regel nodig
+```
+
+Geen frontend-emissie: kort gecheckt en tweemaal onmogelijk. De frontend
+weigert `laatste van` op numerieke expressies (`laatste van vereist
+datumexpressies, kreeg Numeriek`), en op een vorm die hij wél accepteert
+schrijft hij `elementObjecttype: null` voor een geleste vouw en laat de
+voornaamwoord-operand naast een genavigeerde zusteroperand onopgelost —
+juist het vestigiale `elementObjecttype` is wat de vouwbron-arm laat
+lopen en dus de hele getuige. Handgeschreven dus, zoals
+`meldplichtspoor`; de NOTE legt het uit.
+
+### 5. Proza
+
+`spec/IR-SPEC.md` ch. 4.3 (voorstel, beschermd pad):
+
+- de onbegrensde MUST is enkelvoudig-gescoped, met een nieuwe alinea
+  "What a fold SOURCE is" ervóór;
+- de zin "both executors derive the declaration from the anchor and
+  **never from this field**" is VERVANGEN: hij was onhoudbaar. Gemeten:
+  de `fold_operand_otype` van de ASP-backend geeft bij `set = false`
+  precies dat veld terug als anker, en `ref`'s temporele totaal bewaakt
+  `norm aot = norm self.otype`. Beide LEZEN het veld. Wat ze niet doen is
+  het laten KIEZEN. De nieuwe formulering: *it is a guard, not a
+  selector* — en bij `set = true` is het inert in beide, wat geen reden is
+  het vrij te laten maar juist de reden het vast te pinnen;
+- de (b)-motiveringszin krijgt de geleste-operanden-uitzondering; de
+  WF-083-bullet opent met de scope en draagt WF-053 als companion;
+- de flank-alinea draagt nu DRIE flanken in plaats van één: de
+  niet-set/niet-wrat-vorm die er stond; de defer-eerlijkheid (0 van 510);
+  en de **wrat-als-waardevouwbron**-klasse, inclusief de vermelding dat
+  de ankerverplaatsing van deze kaart de `navigatieRol`-dragende SET-
+  spelling ervan NIEUW toelaat (gemeten FAIL→PASS tegen de
+  `15d0df4`-verifier) op een vorm die `ref` en de ASP-backend weigeren en
+  Drools speelt (SOM/TOTAAL 19, MAXIMUM 12, MINIMUM 7);
+- de indexrijen: WF-083 krijgt het `single`-voorvoegsel en
+  `jutterswet-sluitsom` in de golden-kolom, WF-053 het nieuwe negatief.
+
+Nieuw kaartje: `backlog/new/20260905-wrat-waardevouw.md` — de wrat als
+bron van een waardevouw, met beide spellingen gemeten en de te beslechten
+vraag (telbron met een weigerende WF-regel, of geldige setbron die `ref`
+moet dragen).
+
+### 6. Afwijkingen van het recept, en één ding dat niet kon
+
+1. **De commit-titel van `9261e63` klopt niet en is niet te repareren**
+   (history): "vier WF-083-negatiefs die de verifier van vandaag
+   doorlaat" — het waren er DRIE. De vierde,
+   `wf083-vouwbron-navigatierol-buiten-de-wrat`, werd op `15d0df4` al
+   afgewezen, maar op het VERKEERDE ANKER (de rol `bewarende jutter`
+   wordt niet vervuld door het operandtype `Vondst`); met het anker op
+   het onderwerp zou juist die arm hem hebben doorgelaten, en dat is
+   waarom (b)'s scope-helft bestaat. Drie-plus-één-op-het-verkeerde-
+   anker, hier vastgelegd omdat de titel het niet meer kan zeggen.
+2. De pad+bindingen-variant meet bij mij **niet** drie executors op één
+   getal: `ref` en de ASP-backend spelen hem, de Drools exec-tak weigert
+   hem per vorm (`transpiler SKIP … waarde buiten scope`). De klasse
+   (pre-existente over-afwijzing) staat; het aantal instemmende benen is
+   twee, niet drie.
+3. De golden kreeg TWEE cases in plaats van één (de kern plus de lege
+   hoeken), dus de replay-tellers gaan 405 → **407** in plaats van 406,
+   en poort 7 369 → **371**.
+4. De wrat-waardevouw-meting wijkt af van wat de lens rapporteerde: bij
+   mij antwoordt **alleen Drools** met 19/12/7; de ASP-backend weigert de
+   expressiesoort in ALLE spellingen die ik bouwde. Het kaartje draagt
+   mijn getallen.
+
+### 7. Tellingen
+
+**Alle dertien poorten groen**, gemeten na het laatste commit:
+
+| poort | vóór | ná |
+|---|---|---|
+| 2 schema golden+rood | 176 | **177** |
+| 3 golden clean / negatief afgewezen | 176 / 302 | **177 / 303** |
+| 4 case-bestanden | 427 | **429** |
+| 5 ref-replays | 405 | **407** |
+| 6 clingo-replays | 405 | **407** |
+| 7 no-op-weerleggingen | 369 | **371** (36 gepinde survivors) |
+| 8 rood | 22 | 22 (5 fault-gepind, 17 reden-dragend niet gedragen) |
+| 9 catala | 201 checks + 12 goldens | ongewijzigd |
+| 10 regelspraak | 171 tests + 30 rgs-goldens | ongewijzigd |
+| 11 toka-pariteit | 29 cases, 45 rgs, 27 tests | ongewijzigd |
+| 12 Drools gespeeld / JUnit | 108 / 199 | **109** / 199 |
+| 13 draaiingen / goldens | 64 / 13 | **68 / 14** (0 survivors) |
+
+Poort 13's boekhoudklem blijft op nul: 0 annotaties bij een
+vierde-klasse-tak en 0 buiten de draaitabel.
