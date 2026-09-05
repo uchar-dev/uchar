@@ -1216,8 +1216,13 @@ build's own index of the rules it parsed: the resolved forms below carry the
 whole of the executable content, and a stub adds no relation, no expression
 and no target. **They are inert v0 mirror baggage, exactly like the bean
 fields of ch. 3.4, and unlike those they are not even a superseded mirror of
-something checked — they are non-normative: a consumer MUST NOT derive
-meaning from them, and no well-formedness rule crosses them.** *The
+something checked: they are NON-NORMATIVE. Nothing in this specification gives
+a stub a meaning, no well-formedness rule crosses one, and a consumer reading
+one would be reading something this document does not define.** That status is
+stated rather than enforced, deliberately and by maintainer decision: a
+crossing rule here would fence a field with no consequence, and the spec
+discipline of this repository asks for a machine-checkable artifact behind
+every normative MUST rather than a sentence that only sounds like one. *The
 measurement that settles it, over the 522 documents of the four zones on
 2026-09-05:* the zones carry **691** stubs (313 golden, 34 rood, 291 negatief,
 53 parity) and **zero readers** — no check in `spec/verifier/` reads the array, the
