@@ -307,7 +307,7 @@ alleen genoteerd.
 
     check-self-contained: PASS
     check-ir-schema: PASS (schema valid; 175 file(s) validate and round-trip)
-    check-verifier: PASS (175 golden clean; 286 negatief rejected for their declared rule)
+    check-verifier: PASS (175 golden clean; 287 negatief rejected for their declared rule)
     check-case-schema: PASS (schema valid; 425 case file(s) validate)
     check-oracle: PASS (403 cases replayed exactly; 3 goldens without a case file)
     check-clingo: PASS (403 cases replay exactly through clingo)
@@ -317,4 +317,7 @@ alleen genoteerd.
     check-regelspraak: PASS — JUnit suite green (171 tests); 29 rgs goldens byte-identical
     check-toka-parity: PASS (45 .rgs byte-identical, 2 holdouts; 29 ref / 29 clingo / 29 Drools, 0 divergenties; suite 27 tests)
     check-drools: PASS (played 106, auto-excluded 43 with reason, 1 value-divergence, 3 no-case, JUnit 199)
-    check-reftype-derivation: PASS (52 unit annotations twisted over 11 goldens; 50 executor replays; 0 pinned survivors)
+    check-reftype-derivation: PASS (52 unit annotations twisted over 11 goldens; 50 executor replays, 9 via de DRL-tekst-tak; 0 pinned survivors)
+
+Alle dertien opnieuw gedraaid na de fixronde; enige bewogen teller is
+gate 3 (286 → 287 negatiefs). Geen andere gate-uitslag verandert.
