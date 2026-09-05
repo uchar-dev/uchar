@@ -2424,6 +2424,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let bn, tn, sn =
         coalesce0 ctx ~subject ~subject_ot (expr_term ctx ~subject ~subject_ot dur_e)
       in
+      (* [day_time_unit_of] above read the wire `type`; the scale is the
+         DECLARATION's, and this arm never divides in OCaml — it WRITES the
+         divisor into the ASP text. An unfenced 0 therefore grounds as `(T)/0`,
+         which gringo reports as "operation undefined" and then answers the
+         empty model where ref faults: a silent divergence, not a crash. *)
+      let sn = numeric_scale ~what:"a date-arithmetic duration" sn in
       let n_term = if sn = 1 then tn else Printf.sprintf "((%s)/%d)" tn sn in
       let n_term = if minus then Printf.sprintf "(-(%s))" n_term else n_term in
       (match tu with
@@ -2891,6 +2897,10 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
       let bn, tn, sn =
         coalesce0 ctx ~subject ~subject_ot (expr_term ctx ~subject ~subject_ot dur_e)
       in
+      (* [dt_time_unit_of] above read the wire `type`; the scale is the
+         DECLARATION's, and the divisor is WRITTEN into the ASP text — the
+         date-arithmetic sibling, same silent `(T)/0` grounding. *)
+      let sn = numeric_scale ~what:"a datum-tijd duration" sn in
       let n_term = if sn = 1 then tn else Printf.sprintf "((%s)/%d)" tn sn in
       let n_term = if minus then Printf.sprintf "(-(%s))" n_term else n_term in
       (match sub_day_ms tu with
