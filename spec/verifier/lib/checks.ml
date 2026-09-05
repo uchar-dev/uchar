@@ -6015,8 +6015,8 @@ let wf034_feitcreatie_beanvelden ctx =
          in
          present
          @ (match fc.fc_feittype with
-          | Some ftn -> spells_role "created relation's" (at ^ "/zetVeld") ftn fc.zet_veld
-          | None -> [])
+           | Some ftn -> spells_role "created relation's" (at ^ "/zetVeld") ftn fc.zet_veld
+           | None -> [])
          @ (match fc.join_rol with
            | Some rb -> spells_role "final hop's" (at ^ "/joinVeld") rb.rb_feittype fc.join_veld
            | None -> [])

@@ -450,7 +450,37 @@ feitcreatie mist de luide poort die de case-invoerkant en de vouwkant
 wél hebben), `Rollidmaatschap.rol`, `Eenheid.afkorting`/WF-009, de wrat,
 de 9 argumenttypes en WF-007.
 
-### 6. Afwijkingen van het fixronderecept
+### 6. Dertien poorten, uitslagen (fixronde)
+
+     1 check-self-contained        PASS
+     2 check-ir-schema             PASS (176 bestanden valideren + round-trippen)
+     3 check-verifier              PASS (176 golden schoon; 297 negatief afgewezen
+                                        voor hun eigen regel) — was 294
+     4 check-case-schema           PASS (427 casebestanden)
+     5 check-oracle                PASS (405 cases exact; 2 goldens zonder case)
+     6 check-clingo                PASS (405 cases; ref = clingo)
+     7 check-noop                  PASS (369 weerleggen de nietsdoener; 36 gepinde
+                                        overlevers)
+     8 check-rood                  PASS (22 rood; Drools-been 5 fault-pinned,
+                                        17 not-carried met reden)
+     9 check-catala                PASS (suite 201 checks; 12 catala-goldens
+                                        byte-identiek)
+    10 check-regelspraak           PASS (JUnit 171 tests; 30 rgs-goldens
+                                        byte-identiek)
+    11 check-toka-parity           PASS (29 cases: ref 29, clingo 29, Drools 29;
+                                        45 .rgs byte-identiek, TOKA-suite 27 tests)
+    12 check-drools                PASS (played 108; 43 auto-excluded met reden;
+                                        1 value-divergence; 2 no-case;
+                                        JUnit 199 tests)
+    13 check-reftype-derivation    PASS (64 annotaties gedraaid over 13 goldens;
+                                        58 replays, 11 door de DRL-tekst-tak;
+                                        0 gepinde overlevers)
+
+Elke uitslag is identiek aan die van de kaart zelf, op poort 3 na: de
+negatiefzone gaat van 294 naar 297. Geen enkele andere teller beweegt —
+wat de byte-sweep hierboven al voorspelde.
+
+### 7. Afwijkingen van het fixronderecept
 
 1. **Armentelling.** Het recept schreef "twenty-four arms"; dat telt de
    drie armen van deze ronde niet mee en zou dus meteen weer verlopen —
