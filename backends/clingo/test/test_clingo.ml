@@ -659,6 +659,14 @@ let faults_with ~name ~ir ~case_text ~needle =
   | (_ : string) -> check (name ^ ": expected a loud fault, got a model") false
   | exception Uchar_ref.Value.Fault m ->
       check (name ^ " faults loudly (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle m)
+  (* a CRASH is not a fault. Without this arm an uncaught exception —
+     Division_by_zero out of a scale harmonisation was the measured one — walks
+     past the Fault handler, kills the process at the check that raised it and
+     takes every later check with it: the run reports no failure count at all,
+     the loudest possible silence. Named here, so a crash counts as one failure
+     and the suite still finishes and totals. *)
+  | exception e ->
+      check (name ^ ": expected a loud fault, got a CRASH (" ^ Printexc.to_string e ^ ")") false
 
 (* DOOR 1 — a SUBJECT-DEPENDENT fold init over a list PARAMETER. fa/fr are
    keyed by the list id alone; plist(p) drops the subject out of the head, so
@@ -849,6 +857,66 @@ let () =
       "an attribute read inside a closed body has no subject to read from (a lambda or function \
        body and a fold init are subject-free); only a Fold init whose own SHAPE is an attribute \
        read, bare or directly under a Construct, takes the subject-keyed rule-level route"
+
+(* --- the SYMBOLIC OPERAND IN A SCALE HARMONISATION ------------------------
+
+   The articulated ordering fold over two sum-typed operands. Measured before
+   the scale fence (2026-09-05):
+
+       Fatal error: exception Division_by_zero
+       exit 2
+
+   — no rule cited, no file, no line, no fault: a CRASH. The arm harmonises
+   its operands by multiplying each into the widest scale, which divides by
+   the operand's own scale; a sum value is a ground constructor term carrying
+   NO numeric scale (0), and the arm's own operand fence knew Tekst, Booleaan
+   and Enumeratie but not SumType.
+
+   The document is ill-formed since the WF-038 ordering-fold operand clause
+   (2026-09-05): the verifier rejects this very shape twice —
+
+       WF-038 FAIL /resolvedRegels/0/waarde/argumenten/0: operand of the
+       EERSTE ordering fold is sumtype, must be a number or a date
+
+   — so no valid route reaches the arm. That is exactly why the check lives
+   here and not in corpus/rood: a translator must refuse EVERY input with a
+   reason, including input that arrives past the verifier, and the fence is
+   measured where the verifier is not standing in front of it. *)
+let sumfold_doc =
+  door_doc
+    ~attributen:
+      ({|"bakboordstand": |} ^ meldstatus ^ {|, "stuurboordstand": |} ^ meldstatus
+     ^ {|, "meldpositie": |} ^ meldstatus)
+    ~parameters:""
+    ~regel:
+      ({|{ "node": "ResolvedRegel", "naam": "meldpositie van een meldplicht", "soort": "BEREKENING",
+      "doel": |} ^ doel_meldpositie
+     ^ {|,
+      "waarde": { "node": "Functie", "kind": "EERSTE",
+        "argumenten": [ |} ^ aref "bakboordstand" meldstatus ^ {|, |}
+     ^ aref "stuurboordstand" meldstatus
+     ^ {| ],
+        "elementObjecttype": null, "leegwaarde": null, "filter": null, "dimensieSelectie": null,
+        "type": |} ^ meldstatus
+     ^ {|, "bron": "de eerste van zijn bakboordstand en zijn stuurboordstand",
+        "granulariteit": null },
+      "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|})
+
+let sumfold_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+      { "label": "M1", "objectType": "Meldplicht",
+        "attributes": { "bakboordstand": { "constructor": "Vervuld" },
+          "stuurboordstand": { "constructor": "Openstaand", "payload": { "number": "30" } } },
+        "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }
+|}
+
+let () =
+  faults_with ~name:"a sum-typed operand under the articulated ordering fold"
+    ~ir:sumfold_doc ~case_text:sumfold_case
+    ~needle:"carries no numeric scale, so it cannot be harmonised"
 
 (* --- the temporal totaal's SUBJECT anchor (the fold-arm narrowing) ---------
 
