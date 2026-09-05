@@ -156,3 +156,96 @@ operanden die überhaupt een `navigatieRol` dragen zijn wratten. Verdeling
 van de 110: 50 wrat-`AANTAL` (set=false), 32 `SOM` set, 14 `TOTAAL`
 set=false (de eigen temporele totalen), 4 `MAXIMUM` set, 4 `EERSTE` set,
 3 `TOTAAL` set, 3 `MINIMUM` set. Gebonden vormen (`bronRol`): 84.
+
+---
+
+## Result (2026-09-05, `card/wf083-vouwbron-anker`, afgetakt van `15d0df4`)
+
+**Geland.** WF-083 is de ANKERREGEL van de vouwbron geworden: drie
+clausules onder één nummer, geen nieuw nummer. Motivering voor het
+nummer: WF-083's eigen tekst vooronderstelde de identiteit al ongetoetst
+("a role that the argument's object type — **the fold subject** — itself
+fills"), en de ontbrekende kruising is precies die vooronderstelling
+gecontroleerd. Eén claim — "de vouwbron beweegt niet" — met een
+navigatie-helft en een ankerhelft. Het kleinste juiste.
+
+- **(a)** ongewijzigd: een niet-lege `navigatiePad` op een vouwbron is
+  ongeldig.
+- **(b) gewijzigd, twee helften.** De zelfbenoemingstoets ankert op het
+  VOUWSUBJECT (ref: `self_denoting_role ~self_type:self.otype`; de
+  ASP-backend: `~self_type:subject_ot`), en een `navigatieRol` is alleen
+  op de rij-1-wrat toegestaan — op elke andere vouwbron is het navigatie,
+  die ref's set-bronarm en zijn temporele totaal allebei afwezig eisen.
+- **(c) nieuw.** Het `objecttype` van de enkelvoudige vouwbron MOET het
+  anker van de vouw noemen: het `elementObjecttype` bij `set`, anders het
+  vouwsubject. Dat is clingo's `fold_operand_otype` gekruist tegen het
+  subject; ref's armen zeggen hetzelfde veld voor veld.
+
+**Vier negatiefs, vier arm-exacte mutanten** (elk gemeten over alle 508
+documenten van golden + rood + negatief + parity; elk verandert precies
+één rapport en maakt precies één negatief groen):
+
+| negatief | clausule | mutant |
+|---|---|---|
+| `wf083-vouwbron-anker-op-operand` | (b) anker | `~otype:otn` i.p.v. `~otype:st` |
+| `wf083-vouwbron-navigatierol-buiten-de-wrat` | (b) scope | de niet-wrat-arm geeft `[]` |
+| `wf083-vouwbron-vreemd-objecttype` | (c) niet-set | anker `Some otn` i.p.v. `subject` |
+| `wf083-vouwbron-vreemd-elementtype` | (c) set | anker `Some otn` i.p.v. `element_type` |
+
+Een vijfde mutant (de `single`-scope van (c) weggehaald) verandert
+NIETS: de 12 operanden van gelede vouwen kloppen vandaag ook met hun
+anker, dus de scope verbergt geen overtreding — hij staat er om
+semantische reden (bij ≥2 operanden is een vreemd `objecttype` een
+geldige typenpaar-hop, ref's `navigated`-schakelaar).
+
+**Regressiegrens.** Over de 504 documenten die deze kaart voorafgaan
+beweegt **geen enkel oordeel**. De enige verandering in het hele
+sweep-diff is één zin in het bestaande rapport van
+`wf083-fold-source-navigates-away` (`filled by 'Jutter' itself` →
+`filled by the fold subject 'Jutter' itself`) — zijn oordeel is
+anker-onafhankelijk omdat zijn operand het subject al spelt; NOTE
+bijgewerkt met die reden. Expliciet gemeten als grens:
+
+- **de wrat-route**: 50 wrat-bronnen over de vier zones
+  (`jutterswet-kaveltelling`'s gesynthetiseerde meervoud, de
+  gedeclareerde-meervoudsroute van `jutterswet-aanmeldertelling` en
+  `jutterswet-vondsttelling`, en alle andere) — 0 bewegen; alle 50
+  spellen hun subject als `objecttype`, dus (c) raakt ze niet;
+- **de gebonden vormen** (`bronRol`): 84 — 0 bewegen;
+- **de vier `navigatieRol`-dragers**: alle vier zijn wratten, en alle
+  vier houden hun oordeel (`jutterswet-aanmeldertelling` PASS; de
+  bestaande negatief FAIL; de twee parity-documenten PASS — hun operand-
+  objecttype IS hun subject).
+
+**Poort 3**: negatief 298 → **302**. **Alle dertien poorten groen**;
+geen andere teller beweegt (176 golden+rood schema/verifier, 427
+case-bestanden, 405 replays in ref en clingo, 369 no-op-weerleggingen,
+22 rood, 201 catala-checks + 12 byte-identieke goldens, 171 JUnit + 30
+rgs-goldens, 29 toka-cases, Drools 108 gespeeld + 199 JUnit, 64
+type-twists over 13 goldens).
+
+**Bewust open gelaten, gemeten en benoemd** (in de spec als flank
+opgeschreven, niet dichtgeclaimd): een enkelvoudige, niet-set,
+niet-wrat vouwbron over een NIET-temporeel eigen attribuut voldoet aan
+(a)–(c) en blijft verifier-clean terwijl geen van beide OCaml-executors
+hem draagt (ref `unsupported instance-fold source shape`, clingo
+weigert de expressiesoort). Dat is een VORM-regel — welke enkelvoudige
+bronnen er überhaupt bestaan — niet een ankerregel, en hij vraagt zijn
+eigen kaartje.
+
+**Afwijkingen van de kaart.** (1) Getuige 3's clingo-melding is niet
+meer `expression kind not translated` maar `unknown attribute "kistgeld"
+on "Vondst"`: de vijfde golf draagt de set-vouw inmiddels en weigert één
+veld verderop; de ref ≢ clingo-divergentie zelf staat onveranderd.
+(2) De kaart telde ~79 enkelvoudige vouwoperanden op `73b824a`; op
+`15d0df4` zijn het er 110 (plus 12 gelede) — hertellingen in de kaart
+opgenomen. (3) Vier negatiefs in plaats van twee: elke clausulehelft
+heeft er één nodig om arm-exact te zijn. (4) Eén meting die de kaart
+niet had: de ankerverplaatsing zou op zichzelf een gat OPENEN — vandaar
+de scope-helft van (b). (5) Drools is overal meegemeten en is drie keer
+de doorslag: hij SPEELT wat ref en clingo weigeren (getuige 1 en de
+scope-getuige), antwoordt de waarde van het ANDERE object (getuige 2),
+en gooit waar ref stil 0 antwoordt (getuige 3).
+
+**Beschermd pad.** `spec/verifier/**` en `spec/IR-SPEC.md` zijn
+voorstel; de branch blijft ongemerged tot de maintainer hem beoordeelt.
