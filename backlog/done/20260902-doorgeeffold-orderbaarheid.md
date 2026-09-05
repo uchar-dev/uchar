@@ -83,9 +83,11 @@ Result (2026-09-05): **geland — de familie-lezing is geratificeerd en
 machinaal gedekt.** WF-038 draagt sinds deze kaart de
 ordenende-fold-operandclausule: elke operand van
 `EERSTE`/`LAATSTE`/`MINIMUM`/`MAXIMUM` komt uit één vergelijkbare
-familie — getal óf datum — in **beide** wire-vormen, met een defer op de
-onbekend-sentinel en op een operand zonder type. Negatiefzone 281 →
-**286**, vier zones 486 → **491**.
+familie — getal óf datum — ongeacht de wire-vorm, want de regel leest de
+argumentenlijst en niets anders; met een defer op de onbekend-sentinel
+en op een operand zonder type. Negatiefzone 281 → **286**, vier zones
+486 → **491**. (De fixronde hieronder verstrakt de datumhelft naar
+precisie en zet die tellers op 287 resp. 492.)
 
 *Rood eerst, per vorm × fold-soort.* Vijf mutant-documenten, alle vijf
 `verifier: PASS` onder de verifier van de dag ervoor, met de gemeten
@@ -118,7 +120,10 @@ dates, which share no ordering`.
 
 *Mutant-bewijs, per arm, volledige byte-sweep over de vier zones
 (153 golden + 22 rood + 286 negatief + 30 parity = 491 documenten).*
-Clausule aan vs. uit: **10 rapporten, 5 verdicts** — de vijf nieuwe
+Clausule aan vs. uit: **10 documentrapporten, 5 verdicts** — de tellingen
+hieronder zijn documenten, niet regels (in regels: 12 WF-038-regels voor
+de hele clausule, en 11/1/1/5 voor de vier armmutanten in dezelfde
+volgorde) — de vijf nieuwe
 negatiefs, plus één toegestane incidentele WF-038-regel op elk van de
 vijf al-ill-formede doorgeefluik-negatiefs
 (`wf089-aggregatie-doorgeefluik-enum`, `wf089-foldbron-enum`,
@@ -150,9 +155,9 @@ ref≢Drools-waardedocument (`wf038-laatste-enum-geleed`, en gemeten ook de
 `EERSTE`-variant) worden alle drie afgewezen.
 
 *Teksten (voorstel).* De WF-038-clausule in `spec/IR-SPEC.md` ch. 4.6 is
-herschreven naar de familie-lezing, met de twee wire-vormen, de defer, de
-gemeten uitvoerder-asymmetrie en de reden dat het een regel is en geen
-notitie. De tracked deviation in `spec/RUNTIME-SEMANTICS.md` ch. 1.2 is
+herschreven naar de familie-lezing, met de vormonafhankelijke lezing, de
+defer, de gemeten uitvoerder-asymmetrie en de reden dat het een regel is
+en geen notitie. De tracked deviation in `spec/RUNTIME-SEMANTICS.md` ch. 1.2 is
 **geratificeerd** (met twee gewerkte voorbeelden van de grens, waaronder
 de alfabetische `Comparable`-orde die niet geratificeerd is). De
 WF-038-statuskolom noemt de familie-clausule als gate-3-gedekt en de
@@ -172,14 +177,133 @@ clausule onwaar maakt, dus alle vijf zijn hermeten. (3) De oude
 WF-038-tekst eiste bij eerste/laatste datums *van gelijke precisie*. De
 familie-lezing haalt die eis uit de gecontroleerde MUST; hij is daarom —
 naast de eenhedenhelft die de kaart al open liet — **expliciet als OPEN**
-benoemd in tekst én statuskolom, niet stilzwijgend verdwenen. (4)
+benoemd in tekst én statuskolom, niet stilzwijgend verdwenen. *(In de
+fixronde hieronder alsnog gesloten; alleen de eenhedenhelft blijft
+open.)* (4)
 `spec/ASP-TRANSLATION.md` r. 818 noemt de verbreding nog "tracked";
 buiten may-touch, dus niet aangeraakt — een regelbrede opvolgnotitie.
+*(In de fixronde bijgewerkt; may-touch daarvoor verruimd, zie daar.)*
 
 *Prijs.* Nul golden, nul rood, nul parity geraakt; geen pin bewogen; geen
 executor, frontend of bestaande golden aangeraakt.
 
-**Gates** (alle dertien):
+---
+
+**Fixronde (2026-09-05).** Twee lenzen lazen de landing na. Beide
+bevestigden de kern — het mutant-bewijs clausule-exact, alle 32 cellen
+dicht, nul beweging buiten de negatiefs, de vijf hermeten NOTE-zinnen
+waar — en leverden vier punten. Alle vier uitgevoerd, elk hermeten.
+
+*(1) De defer-rechtvaardiging was door de repo weerlegd.* De
+landingstekst rechtvaardigde de sentinel-defer met het parity-document:
+"weigeren zou documenten weigeren die de toolchain emitteert". Gemeten
+is dat onwaar. Dat document is zélf al verifier-afgewezen (33
+overtredingen) en draagt op precies die operandpositie al een
+WF-034-regel (de ch. 4.3-fallback die niet kan invallen); 28 van de 30
+parity-documenten zijn afgewezen; en **geen enkele gate draait de
+verifier over de parity-zone** — gate 3 loopt drie corpuszones, de
+parity-gate roept de verifier niet aan. De defer-mutant zegt hetzelfde
+van de andere kant: 1 rapport, **0** verdicts. Er valt daar dus geen
+document te sparen.
+
+Waar de defer wél draagt is de ándere vorm: de ch. 4.3 row-1-wart in een
+**instance**-fold-bron. Gemeten op een `MINIMUM` over een kale rolbron
+(de sentinel-getypeerde bron van `jutterswet-vondsttelling`, kind
+omgezet): `verifier: PASS` — en geen uitvoerder die hem draagt. ref
+`EVALUATION FAULT: value aggregation over a bare role source`; clingo
+`TRANSLATION FAULT: expression kind not translated (no corpus case
+exercises it)`; Drools `ERROR ConstraintEvaluationException`. In de
+gelede vorm zónder `elementObjecttype` is de defer daarentegen
+**onbereikbaar**: WF-034 weigert de sentinel daar zelf (`unknown-type
+sentinel inside a structured node`, gemeten op een gebroken
+`jutterswet-hoogwaterpaar`; een operand zónder `type`-veld laadt niet
+eens). Spec-zin en spiegelcommentaar in `checks.ml` dragen nu die
+eerlijke vorm: dood waar onbereikbaar, dragend waar bereikbaar — en wat
+hij draagt is een **open flank**, geen gezond verklaarde vorm. Dat is
+als tiende positie toegevoegd aan het bestaande open-vlak van de
+foldbron-tak (naast de negen argumenttypes), met de losse regel over de
+verifier-loze parity-zone erbij.
+
+*(2) De datumprecisie-cel is dicht, en kostte niets.* De familie-functie
+tagt de datumfamilie nu per **representatie** (`Datum_in_dagen` en
+`Datum_tijd` apart), en de kruisingsarm splitst zijn melding: een
+precisiemix leest niet meer als een getal-vs-datum-mix.
+
+- *Rood eerst*, commit `3c4b777`: `wf038-eerste-gemengde-datumprecisie`,
+  een hand-gebroken `jutterswet-hoogwaterpaar` waarin drie velden
+  bewegen (de declaratie `Getijdendag.avondhoogwater` van `DatumTijd`
+  naar `DatumInDagen` plus de twee waarheidsgetrouwe operandannotaties)
+  — één defect, beide foldknopen geweigerd. Vóór de clausule
+  `verifier: PASS`, gate 3 daarop rood; en de drieslag eronder: ref
+  `EVALUATION FAULT: unordered comparison: 2026-06-21 vs
+  @1782022200000ms`, clingo `TRANSLATION FAULT: a non-datum-tijd (or
+  mixed-granularity) operand under a datum-tijd eerste/laatste fold has
+  no order here`, Drools een `ClassCastException` van `LocalDate` naar
+  `ChronoLocalDate`.
+- *Ná*, commit `ff00e3f`: `WF-038 FAIL /resolvedRegels/0/waarde: EERSTE
+  orders dates of two precisions (day and millisecond), which share no
+  order` en dezelfde regel voor `LAATSTE` op knoop 1.
+- *Mutant, clausule-exact*: laat beide datumrepresentaties één familie
+  delen (de vorm die de clausule bij de landing had) → **1 rapport, 1
+  verdict**, precies dit document wordt schoon; geen ander document
+  beweegt.
+- *Volledige byte-sweep* over de vier zones (153 golden + 22 rood + 287
+  negatief + 30 parity = **492** documenten): precies één verschil met
+  de sweep van vóór de verstrakking, namelijk het nieuwe negatief zelf.
+  **Nul golden, nul rood, nul parity, nul ander negatief.** De
+  verstrakking was gratis. Negatiefzone 286 → **287**, vier zones
+  491 → **492**.
+- De RegelSpraak-frontend dwong deze eis al af bij typering
+  (`Typering.datumAggregatie`: "alle datumexpressies moeten dezelfde
+  tijd-precisie hebben"), dus er gaat geen emitteerbare vorm verloren —
+  de verstrakking brengt wire-hek en frontend in overeenstemming. Dat
+  staat nu ook in RS ch. 1.2.
+
+*(3) De WF-036-parenthese was half onwaar.* De landingstekst schreef dat
+WF-036 "beide kruist" voor een vergelijking. Gemeten: WF-036 kruist
+eenheden bij een numerieke ordening en bij gelijkheid, en datumprecisie
+alléén bij **gelijkheid**; zijn datum-ORDENINGsarm kruist geen van beide
+— een `LATER_OF_GELIJK` tussen `DatumInDagen` en `DatumTijd` is
+`verifier: PASS`, met ref `EVALUATION FAULT: unordered comparison:
+2025-03-05 vs @1740816000000ms` en clingo `TRANSLATION FAULT:
+unscalable datatype in the ASP translation`. De zin is herschreven, en
+die arm heeft nu een eigen kaart:
+`backlog/new/20260905-wf036-datumordening-precisie.md`.
+
+*(4) Kleine punten, elk één edit.* (a) `spec/ASP-TRANSLATION.md` r. 818
+noemt de verbreding niet meer "tracked" maar "ratified 2026-09-04" —
+**may-touch verruimd** met `spec/ASP-TRANSLATION.md`, hier gemeld
+(geverifieerd geen beschermd pad). (b) `20260825-fold-geleed.md` kreeg
+een gedateerde `Resolved 2026-09-05`-regel onder zijn
+ratification-pending-vraag. (c) "10 rapporten" heet nu "10
+documentrapporten", met de regeltelling (12/11/1/1/5) als bijzin — de
+twee tellingen waren niet uit elkaar te houden. (d) De
+twee-vormen-dichotomie is uit het proza: de regel leest `argumenten` en
+niets anders, en gemeten dragen **6 van de 14** gelede ordenende folds
+in de vier zones óók `elementObjecttype` — vorm is geen dichotomie om op
+te sturen, en dat de regel er niet op stuurt is haar kracht. (e) De
+"twee negatiefs op deze positie"-zin in ch. 2.4 telt er **drie**
+(`wf089-foldbron-enum` hoort erbij; gemeten in de clausule-mutant). (f)
+Een eerlijke zin dat de `Percentage`-helft van de getalfamilie
+corpus-ongetest is: `Percentage` uit de familie halen beweegt **nul** van
+de 492 rapporten. (g) Een zin dat `jutterswet-peildatum` het enige
+document is waarvan het verdict de oude letter onderscheidt (gemeten: de
+oude-letter-mutant kantelt alleen dat document), dat het geen `bron.rgs`
+draagt en ook niet kan — de verbreding is **wire-first**, de
+frontend-doc-comment draagt nog de v0-letter, genoteerd als flank. (h)
+De lijst-weigeringsmelding gebruikt `datatype_detail`, zodat het
+elementtype meekomt ("is a list of enumeration …") in plaats van een kale
+"list".
+
+*Wat open bleef.* De eenhedenhelft van WF-038 (geen getuige, geen arm) —
+onveranderd open, nu de enige helft. De datum-ORDENINGsarm van WF-036 —
+gemeten, benoemd, eigen kaart. De instance-fold-wart onder een ordenende
+fold — verifier-schoon, door geen uitvoerder gedragen, als open flank
+opgeschreven in spec én commentaar in plaats van weggedefinieerd. En de
+frontend-doc-comment die nog de v0-letter draagt: buiten may-touch, dus
+alleen genoteerd.
+
+**Gates** (alle dertien, na de fixronde):
 
     check-self-contained: PASS
     check-ir-schema: PASS (schema valid; 175 file(s) validate and round-trip)

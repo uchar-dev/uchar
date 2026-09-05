@@ -815,7 +815,8 @@ v0's listed family minimum/maximum/eerste/laatste only — the vestigial
 `elementObjecttype` v0 stamps on a listed fold names no instance
 source, while a multi-operand som/totaal/aantal keeps its loud fault
 in both executors, v0's accumulate consuming the element there; the
-numeric operands are RS ch. 1.2e's tracked v1 widening): one helper
+numeric operands are RS ch. 1.2e's v1 widening, ratified 2026-09-04):
+one helper
 predicate per fold site. Each operand's
 body derives its value, harmonised to the common scale, into the
 shared head — `flN(S,Tᵢ') :- is_a(S,ot), ⟨operand atoms⟩` — and the

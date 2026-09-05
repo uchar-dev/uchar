@@ -84,3 +84,13 @@ narrowed to v0's listed family Eerste/Laatste/Minimum/Maximum
 instance-fold source shape"). Also mirrored the listed-fold tie rule
 exactly (ties take the later operand — value-equal, unobservable
 today).
+
+Resolved 2026-09-05: de openstaande vraag uit (1) is beantwoord —
+**ratificeren**, niet snijden (maintainerbesluit 2026-09-04, geland
+2026-09-05 op kaart `20260902-doorgeeffold-orderbaarheid`). RS ch. 1.2e
+draagt de verbreding niet langer als tracked deviation maar als
+geratificeerde regel, met WF-038's ordenende-fold-clausule als hek op de
+wire: elke operand uit één vergelijkbare familie — getal, of datum van
+één precisie. `jutterswet-peildatum` houdt dus zijn numerieke regels en
+verwachtingen; gemeten is het ook het enige document waarvan het verdict
+de oude letter van de familie-lezing onderscheidt.

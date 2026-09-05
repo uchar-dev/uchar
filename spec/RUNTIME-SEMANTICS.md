@@ -156,15 +156,22 @@ Onbekend-typed operands reach v0's runtime fold, which is itself the
 type-generic ordering above. v1 admits **any single comparable family**
 under that same ordering, and the fence is now written where the wire
 can be checked: WF-038's ordering-fold clause requires every operand of
-`eerste`/`laatste`/`minimum`/`maximum` — in both wire forms, the
-instance fold's one set-valued argument and the articulated fold's
-listed ones — to come from one comparable family, numbers or dates. An
-equality-only operand (`Enumeratie`, `SumType`, `StructType`, `Tekst`,
-`Booleaan`, `ListType`: the ch. 2.4 orderability paragraph of
-`IR-SPEC.md`) is ill-formed, and so is a fold that mixes the two
-families; the unknown sentinel defers, since it is the one operand shape
-v0 never typed and does hand to this very fold at runtime. The delta
-belongs to the `FunctieKind` (aggregations) row of
+`eerste`/`laatste`/`minimum`/`maximum` — read off the operand list, so
+in either wire form, the instance fold's one set-valued argument and the
+articulated fold's listed ones alike — to come from one comparable
+family: numbers, or dates of ONE precision. An equality-only operand
+(`Enumeratie`, `SumType`, `StructType`, `Tekst`, `Booleaan`,
+`ListType`: the ch. 2.4 orderability paragraph of `IR-SPEC.md`) is
+ill-formed, and so is a fold that mixes families — a number against a
+date, and (since 2026-09-05) a `DatumInDagen` against a `DatumTijd`,
+which are two representations with no order between them. That last
+half is where v1 and v0 agree rather than diverge: v0's static typing
+demands one precision too ("alle datumexpressies moeten dezelfde
+tijd-precisie hebben", the same `Typering.datumAggregatie`), so the
+tightening puts the wire fence and the frontend that writes to it in
+agreement. The unknown sentinel defers, since it is the one operand
+shape v0 never typed and does hand to this very fold at runtime. The
+delta belongs to the `FunctieKind` (aggregations) row of
 `spec/CONSTRUCTS.md` at the serial merge update.
 Worked examples (ref tests verbatim; the `jutterswet-peildatum` golden
 pins them through both executors — the numeric pair is the widening's
@@ -179,7 +186,19 @@ number — and is refused at the document layer, not at evaluation. So is
 *was* produced before the fence: the ordering the production runtime
 falls back on there is `Comparable` on the label spelling — alphabetical,
 case-sensitive ASCII, nobody's design — which is why admitting it would
-have meant ratifying an accident.
+have meant ratifying an accident. And so is `eerste van (2026-06-21,
+2026-06-21T06:10:00)`: one operand names a whole day, the other a point
+inside a day, and neither is earlier than the other (ref, before the
+fence: `unordered comparison: 2026-06-21 vs @…ms`).
+*What the widening rests on:* `jutterswet-peildatum` is the only
+document in the corpus whose verdict tells the family reading from the
+v0 letter — measured, restoring that letter refuses its four numeric
+`eerste`/`laatste` operand positions and moves no other document's
+verdict. It carries no `bron.rgs`, and it could not: the frontend still
+refuses a non-date operand at typing, so the widening is **wire-first**,
+and the frontend's own doc comment still states the v0 letter it
+enforces. That gap is a recorded flank, not a claim of agreement — the
+precision half above is where the two DO agree.
 
 **Timelines** carry *two different* empty rules, mirrored as found: the
 per-period arithmetic of §5.1.4 coalesces an empty period to 0, while the

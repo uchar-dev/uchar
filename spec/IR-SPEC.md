@@ -522,7 +522,7 @@ false`, `decimals = 0` (no precision ceiling; §13.3.3 form (c)). The
   succeeded. That is a WF-038 operand question, not a domain-identity
   one, and WF-038's ordering-fold clause (2026-09-05) answers it: every
   operand of an ordering fold comes from one comparable family, numbers
-  or dates. The two negatiefs that pin the domain identity at this
+  or dates. The three negatiefs that pin the domain identity at this
   position over an enumeration therefore now carry two independent
   defects, and their falsifiability notes say so; the domain-identity arm
   stays separately falsifiable by the rule each document is *cited*
@@ -2569,7 +2569,18 @@ Comparison, Predicate, and CharacteristicCheck only —
   21 real survivors: 12 on constructor payloads, which (d) closes, and 9 on
   fold-/aggregation argument types (8 element-passing aggregation operands,
   1 true instance-fold source), which stay open — the aggregation branch
-  replaces the generic walk for those arguments. The second wave's descent
+  replaces the generic walk for those arguments. *A tenth open position at
+  the same branch, recorded 2026-09-05:* WF-038's ordering-fold clause
+  defers on that same sentinel, so an instance ORDERING fold over a bare
+  role source is verifier-clean by construction — and measured, no executor
+  carries it (`ref` faults `value aggregation over a bare role source`, the
+  ASP backend refuses the expression kind, the Drools backend throws a
+  constraint-evaluation exception). Refusing it under WF-038 would refuse
+  the ch. 4.3 wart itself, which is why the defer stands and this is
+  recorded as a flank rather than claimed shut. One bookkeeping line
+  belongs beside it: **no gate runs the verifier over the parity zone** —
+  gate 3 walks the three corpus zones — so every verdict quoted here about
+  a parity document is a measurement, never a pin. The second wave's descent
   covered the sum-in-sum chain only; the CONTAINER half is (h) below.
   *Measured and
   still open at the same twelve positions:* WF-007's precision-form check,
@@ -2797,8 +2808,8 @@ Comparison, Predicate, and CharacteristicCheck only —
 - **WF-038** Aggregation operand typing (mirror, with one ratified v1
   widening): numeric folds' operands MUST be numeric with compatible
   units; **every operand of an ORDERING fold — `first`, `last`,
-  `minimum`, `maximum` — MUST come from one comparable family, numbers
-  or dates**; a totaal operand that is
+  `minimum`, `maximum` — MUST come from one comparable family: numbers,
+  or dates of one precision**; a totaal operand that is
   non-temporal MUST carry a rate unit per time unit; eerste-paasdag MUST
   take a whole, unitless year; the day-precision part extractors
   (jaar-uit, maand-uit, dag-uit) MUST take a date operand — either
@@ -2811,24 +2822,47 @@ Comparison, Predicate, and CharacteristicCheck only —
   millisecond-precision operands.
   **The ordering-fold clause** (maintainer decision 2026-09-04, landed
   2026-09-05) replaces the v0 letter this rule mirrored — "first/last's
-  operands are dates" — with the family reading the runtime semantics
-  already carried as a tracked deviation (`RUNTIME-SEMANTICS.md`
-  ch. 1.2), and ratifies it. The four ordering kinds keep the least or
+  operands are dates of equal precision" — with the family reading the
+  runtime semantics already carried as a tracked deviation
+  (`RUNTIME-SEMANTICS.md` ch. 1.2), and ratifies it. What the widening
+  widens is the TYPE FAMILY, not the precision discipline: that half of
+  the old letter is back inside the checked MUST since 2026-09-05. The four ordering kinds keep the least or
   greatest CONTRIBUTOR, so they need an order over the contributor's
-  type: `Number` and `Date` have one, and the equality-only types of the
-  ch. 2.4 orderability paragraph — `Enumeration`, `SumType`,
-  `StructType`, `Text`, `Boolean`, `ListType` — have none. Two operands
-  from *different* families are equally ill-formed: neither is wrong
-  alone, their combination is, and it is reported at the fold node for
-  that reason. The clause covers **both wire forms in one rule**, because
-  both spell their contributors as the node's operand list: the instance
-  fold's single set-valued argument, whose type is the element
-  attribute's datatype, and the articulated fold's two-or-more listed
-  operands, each deciding for itself. An operand carrying the unknown
-  sentinel, or no type at all, **defers** — the sentinel is the ch. 4.3
-  row-1 wart WF-034 tolerates in a fold source, and one parity document
-  turns on it (an articulated `first` whose second operand v0 never
-  typed). *Why a rule and not a note:* the refused shapes are where the
+  type. `Number` has one. `Date` has one **per precision**, and its two
+  precisions are two of them: a day date names a whole day, a
+  millisecond date a point inside one, so ordering the two against each
+  other is as unanswerable as ordering a number against a date (measured
+  in `ref`: `unordered comparison: 2026-06-21 vs @…ms`). The
+  equality-only types of the ch. 2.4 orderability paragraph —
+  `Enumeration`, `SumType`, `StructType`, `Text`, `Boolean`, `ListType`
+  — have no order at all. Two operands from *different* families are
+  equally ill-formed: neither is wrong alone, their combination is, and
+  it is reported at the fold node for that reason, in two distinct
+  messages — a precision mix is not a number-versus-date mix and does
+  not read as one. The clause is **independent of the wire form**: it
+  reads the node's operand list and nothing else, and both forms spell
+  their contributors there — the instance fold as one set-valued
+  argument, whose type is the element attribute's datatype, the
+  articulated fold as two or more listed operands, each deciding for
+  itself. The two are no dichotomy the rule could have keyed on anyway:
+  6 of the corpus's 14 articulated ordering folds carry
+  `elementObjecttype` besides, and reading the operands is exactly what
+  makes that harmless. An operand carrying the unknown sentinel, or no
+  type at all, **defers** — the sentinel is the ch. 4.3 row-1 wart
+  WF-034 tolerates in a fold source. Where the defer is *unreachable* it
+  is dead weight and where it is reachable it is load-bearing, and only
+  the fold-source branch reaches it: an operand walked as an ordinary
+  expression is already refused by WF-034 (`unknown-type sentinel inside
+  a structured node`, measured). What the defer holds open, then, is the
+  wart itself — an instance ordering fold over a bare role source, which
+  is verifier-clean today and which **no** executor carries (measured:
+  `ref` faults `value aggregation over a bare role source`, the ASP
+  backend refuses the expression kind, the Drools backend throws a
+  constraint-evaluation exception). That is an **open flank recorded
+  here, not a shape claimed sound**; the one parity document that also
+  spells a sentinel at an ordering operand is refused already, on
+  several rules including WF-034 at that very position, so it is not
+  what the defer protects. *Why a rule and not a note:* the refused shapes are where the
   three executors stop agreeing about what a document even is. Measured
   one form at a time on verifier-clean documents, before the clause: the
   instance fold over an enumeration element had `ref` silently succeed
@@ -2843,13 +2877,29 @@ Comparison, Predicate, and CharacteristicCheck only —
   a `ref` ≢ Drools value divergence. Over a sum type the ASP backend does
   not refuse the articulated form but **crashes** translating it. And the
   mixed-family fold had `ref` fault, the ASP backend refuse by name, and
-  Drools throw a cast. Under the clause all four are unreachable through
-  a valid document. *Two halves of this rule stay OPEN,* stated and
-  unchecked, with no witness and no verifier arm — named here rather than
-  left to be found: unit compatibility between the numeric operands of
-  one fold, and precision agreement between its date operands (WF-036
-  crosses both for a comparison; a fold does not). The index row below
-  says so.
+  Drools throw a cast. The mixed-PRECISION fold, measured when the
+  precision half was closed a day later, splits the same three ways:
+  `ref` faults the unordered comparison, the ASP backend refuses ahead of
+  translation, and Drools throws a `LocalDate`-to-`ChronoLocalDate`
+  cast. Under the clause all five are unreachable through a valid
+  document. *One half of this rule stays OPEN,* stated and unchecked,
+  with no witness and no verifier arm — named here rather than left to be
+  found: unit compatibility between the numeric operands of one fold.
+  (Its sister half, precision agreement between date operands, closed on
+  2026-09-05 and cost nothing: over the four verified zones — golden,
+  rood, negatief and parity, 492 documents — the only report that moved
+  was the new negatief's.) WF-036 is no cover for the open half
+  and only half a precedent for the closed one: it crosses units for a
+  numeric ordering and both units and precision for an equality, but its
+  DATE-ORDERING arm crosses neither — measured, a date-ordering
+  comparison between a day date and a millisecond one is verifier-clean,
+  faults in `ref` (`unordered comparison: 2025-03-05 vs @…ms`) and is
+  refused by the ASP backend as an unscalable datatype. That arm is a
+  tracked follow-up of its own, not part of this clause. A second
+  honesty note on what the closed halves are *tested* on: the number
+  family admits `Number` and `Percentage`, and no corpus document
+  exercises the percentage half — dropping `Percentage` out of the family
+  moves zero of those 492 reports. The index row below says so.
 - **WF-039** A written enumeration label MUST belong to the declared
   domain; a numeric literal MUST satisfy the target's sign restriction
   (mirror; also invoked from WF-023).
@@ -3557,7 +3607,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-035 | operator typing (numeric, unitless power, date±duration order/unit/precision, unit compatibility, clamp) | gate 3 (over serialized operand types) | `anchor/jutterswet-wachtersketen` (the numeric Plus, executed by gates 5–6) + `jutterswet-vervaltermijn` (date ± duration, the date-left plus and min forms, executed by gates 5–6) | `wf035-power-with-unit` + `wf035-datum-plus-datum` + `wf035-duur-plus-datum` + `wf035-duur-min-datum` + `wf035-uur-op-dagdatum` |
 | WF-036 | comparison/predicate typing (ordering, precision, family, domain, builtin operands) | gate 3 (over serialized operand types) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondstnummer` (date ordering) | `wf036-order-number-vs-text` |
 | WF-037 | aggregation/builtin shape: facet validity and arity per kind | gate 3 (fixed-arity kinds; date-construction arity OPEN) | `jutterswet-vondsttelling` | `wf037-fallback-on-minimum` |
-| WF-038 | aggregation operand typing (ordering-fold family, units, precision, rate for totaal, year for paasdag, date for the day-precision extractors, tijdsduur operands and node-type unit) | gate 3 (the ordering-fold family clause — both wire forms, per-operand orderability and the cross-operand family, deferring on the unknown sentinel — plus paasdag, day-precision and sub-day extractors, sum fallback, tijdsduur; three halves stay OPEN and unchecked: the totaal rate clause, unit compatibility between a fold's numeric operands, and precision agreement between its date operands) | `jutterswet-vondsttelling` (the sum fallback slice) + `anchor/jutterswet-jutleeftijd` (the tijdsduur slice, executed by gates 5–6) + `jutterswet-paasvondst` (the paasdag and extractor slice, executed by gates 5–6) + `jutterswet-peildatum` (the ordering-fold slice and the widening's own witness: an articulated `first`/`last` pair over dates beside a second pair over numbers, which the v0 letter would refuse; executed by gates 5–6) + `jutterswet-hoogwaterpaar` (the date pair) + `jutterswet-vondstpiek` (the instance-fold `minimum`/`maximum` over a numeric element) | `wf038-paasdag-text` + `wf038-extractor-text` + `wf038-tijdsduur-gemengde-precisie` + `wf038-tijdsduur-zonder-tijdseenheid` + `wf038-tijdsduur-zonder-node-type` + `wf038-minimum-enum-setbron` + `wf038-maximum-somtype-setbron` (the instance-fold form, once per equality-only family) + `wf038-laatste-enum-geleed` + `wf038-eerste-somtype-geleed` (the articulated form, the same two families — the four crossing the two forms with the two families, one per ordering kind) + `wf038-eerste-gemengde-familie` (the cross-operand arm, separately falsifiable) |
+| WF-038 | aggregation operand typing (ordering-fold family, units, precision, rate for totaal, year for paasdag, date for the day-precision extractors, tijdsduur operands and node-type unit) | gate 3 (the ordering-fold family clause — form-independent, per-operand orderability and the cross-operand family with the two date precisions as two families, deferring on the unknown sentinel — plus paasdag, day-precision and sub-day extractors, sum fallback, tijdsduur; two halves stay OPEN and unchecked: the totaal rate clause and unit compatibility between a fold's numeric operands) | `jutterswet-vondsttelling` (the sum fallback slice) + `anchor/jutterswet-jutleeftijd` (the tijdsduur slice, executed by gates 5–6) + `jutterswet-paasvondst` (the paasdag and extractor slice, executed by gates 5–6) + `jutterswet-peildatum` (the ordering-fold slice and the widening's own witness: an articulated `first`/`last` pair over dates beside a second pair over numbers, which the v0 letter would refuse; executed by gates 5–6) + `jutterswet-hoogwaterpaar` (the date pair) + `jutterswet-vondstpiek` (the instance-fold `minimum`/`maximum` over a numeric element) | `wf038-paasdag-text` + `wf038-extractor-text` + `wf038-tijdsduur-gemengde-precisie` + `wf038-tijdsduur-zonder-tijdseenheid` + `wf038-tijdsduur-zonder-node-type` + `wf038-minimum-enum-setbron` + `wf038-maximum-somtype-setbron` (the instance-fold form, once per equality-only family) + `wf038-laatste-enum-geleed` + `wf038-eerste-somtype-geleed` (the articulated form, the same two families — the four crossing the two forms with the two families, one per ordering kind) + `wf038-eerste-gemengde-familie` + `wf038-eerste-gemengde-datumprecisie` (the cross-operand arm's two messages, each separately falsifiable) |
 | WF-039 | enum label in domain; literal sign restriction | gate 3 | `jutterswet-vormenkabinet` (the gaaf label and the sign-restricted aanwas) | `wf039-negative-under-nonneg` |
 | WF-040 | dimension cell pins every dimension; selection labels resolve in order | gate 3 | `jutterswet-vormenkabinet` (the voorjaar cell read) | `wf040-unpinned-cell` |
 | WF-041 | counting-quantifier threshold ≥ 1 | gate 3 | `jutterswet-vormenkabinet` (ten minste 2) | `wf041-threshold-zero` |
