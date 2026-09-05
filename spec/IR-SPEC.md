@@ -2270,42 +2270,102 @@ ss       ::= digit digit               -- 00–59
 fff      ::= digit digit digit         -- milliseconds, exactly three
 ```
 
-Fixed field widths throughout, `T` as the separator (never a space), the
-seconds field always written, no zone suffix, and a fractional part that
-is optional but exactly three digits when present, read as whole
-milliseconds. This is not a fresh invention: it is the form the CASE
-wire already pins (the `dateTime` value of `uchar-case-v0`, gate 4) and
-that the executors' shared case reader accepts, so the two wires name an
-instant the same way.
+Nothing on the IR wire enforces that grammar. The schema types a
+literal's `waarde` as a plain string (or null) with no pattern, and the
+verifier accepts a document whose `DatumTijd` literal reads
+`rommel 2024-01-31 12:00:00Z x` — measured 2026-09-06: schema-valid,
+`verifier: PASS`. The READER is the fence, which is why this paragraph
+describes what readers do rather than what a producer must write.
 
-Every field of that grammar is a measured fence rather than a taste. The
-shared case reader refuses a space in place of `T`, refuses a missing
-seconds field, and refuses a zone suffix — but it does NOT refuse a
-fraction of some other width, and there the readers silently DISAGREE:
-`…T12:00:00.1` is ONE millisecond to both readers (not a tenth of a
-second), while `…T12:00:00.100000` is 100 000 milliseconds — a minute
-and forty seconds later — to the case reader and 100 milliseconds to the
-Drools backend's literal reader. Three digits is the only width every
-reader agrees on, which is why the grammar admits no other.
+Fixed field widths throughout, `T` as the separator (never a space), the
+seconds field always written, no zone suffix and no offset, and a
+fractional part that is optional but exactly three digits when present,
+read as whole milliseconds. The literal reader both Drools branches
+share holds exactly that fence (measured 2026-09-06, each claim
+separately: `…T12:00:00Z`, `…T12:00:00+01:00`,
+`2024-01-31 12:00:00`, `2024-1-31T09:00:00`, `2024-01-31T9:00:00`,
+`…T12:00:00.1`, `…T12:00:00.1234`, `…T12:00` and the lexeme with text
+around it all read as NO VALUE; `2024-01-31T12:00:00` and
+`…T12:00:00.500` read as the instant, the fraction as five hundred
+milliseconds).
+
+The lexeme is not a fresh invention: it is the form the CASE wire
+already pins — the `dateTime` value of `uchar-case-v0`, whose pattern
+(fixed widths, `T`, the seconds field, an optional fraction of exactly
+three digits) gate 4 enforces on every case file — so the two wires name
+an instant the same way. What the case wire does NOT have is ONE reader:
+the reference interpreter and the ASP backend share one (the ASP backend
+links the interpreter's case module rather than reimplementing it) and
+the Drools backend has its own — two case readers, plus the literal
+reader above, which reads the IR wire. Inside the schema's fence all
+three agree; outside it they do not, and the fence is the only reason
+that never shows.
+
+Each field of the grammar is a place where the readers stop agreeing —
+measured 2026-09-06, one row per form:
+
+| form | literal reader (Drools) | case reader (Drools) | case reader (interpreter + ASP) |
+|---|---|---|---|
+| `…T12:00:00.1` | no value | 100 ms | 1 ms |
+| `…T12:00:00.100000` | no value | 100 ms | 100 000 ms (a minute and forty seconds later) |
+| `…T12:00:00.1234` | no value | 123.4 ms | 1 234 ms (1.234 seconds later) |
+| `2024-1-31T09:00:00` | no value | refused | accepted, 09:00 on 31 January |
+| `…T12:00` (no seconds) | no value | accepted, 12:00:00 | refused (`malformed dateTime`) |
+| `…T12:00:00Z` | no value | refused | refused (`malformed dateTime`) |
+
+A zone suffix is the one form all three refuse. The seconds field is
+NOT: the Drools case reader accepts `…T12:00` where the shared
+interpreter/ASP reader faults, so "the executors refuse a missing
+seconds field" would be false of one of them. And the first three rows
+are the same three digits read three ways.
+
+The literal reader's column is that uniform only since this paragraph's
+card. Before it, that reader scanned for a date and a time ANYWHERE in
+the value: it dropped a zone suffix and an offset, took a space for `T`,
+took one-digit fields, read `.1` as ONE millisecond where the Drools
+case reader reads a hundred, and silently TRUNCATED `.1234` to 123
+milliseconds — a different instant, with no diagnostic anywhere
+(measured on that reader before the change). Refusing outright is what
+closed it.
+
+Three digits is the only width every reader agrees on, which is why the
+grammar admits no other. On the CASE wire that agreement is mechanical —
+the schema pattern, gate 4, on every case file. On the IR wire it is
+not: there the literal reader alone holds the line.
 
 *Why this is descriptive and not a numbered MUST.* A normative rule here
 would need the full set this document requires of one — an ID, a
 verifier check, a passing golden, a failing negatief case — and no
-golden can carry a datetime literal yet: the reference interpreter has
-no datetime-literal arm at all (such a literal faults at evaluation, in
-EITHER lexeme) and the ASP backend faults ahead of it, its datum-tijd
-term carrying an own-subject read and datetime ± duration but no
-literal. Only the Drools backend executes one, and it now reads both the
+golden can carry a datetime literal yet. The reference interpreter has
+no datetime-literal arm at all (`EVALUATION FAULT: literal of this
+datatype not implemented`, in EITHER lexeme), and the ASP backend faults
+ahead of it — not only on the literal: it faults on a datetime ORDERING
+that carries no literal at all, comparing two `DatumTijd` attributes
+supplied through the case wire (`TRANSLATION FAULT: unscalable datatype
+in the ASP translation`; the interpreter replays that same document
+exactly — both measured 2026-09-06). "Gaining the literal" therefore
+understates what the ASP backend needs.
+
+Only the Drools backend executes one, and it now reads both the
 canonical lexeme and the day-first source snippet through the one shared
 reader, so the lexeme no longer decides whether a rule survives lowering
 — the gap that made a conforming producer's document lose a whole rule
-on one backend while the snippet played. Two things stand between this
-paragraph and its rule: the other two executors gaining the literal, and
-the emitter writing the canonical lexeme into `waarde` (for a `DatumTijd`
-literal it still writes the day-first snippet, where for a day-precision
-date it writes ISO and keeps the snippet in `bron`). Until then the
-canonical lexeme is what a consumer reads, and the day-first snippet is
-what a v0 producer may still write.
+on one branch, and get a silently wrong answer on the other, where an
+unreadable datetime fell through to the bare DATE reader and compared
+against midnight.
+
+Three things stand between this paragraph and its rule. The other two
+executors gaining the datetime literal — and the ASP backend gaining the
+datetime ordering underneath it. The emitter writing the canonical
+lexeme into `waarde`: for a `DatumTijd` literal it writes the day-first
+snippet, and into `bron` as well — measured 2026-09-06, a source
+datetime literal emits `waarde` and `bron` both as
+`31-01-2024 12:00:00.000`, so unlike a day-precision date (ISO in
+`waarde`, the snippet in `bron`) the datetime literal has no
+canonical/source split on the wire at all. And the wire gaining a fence
+of its own, since schema and verifier declare such a document clean
+either way. Until then the canonical lexeme is what a consumer reads,
+and the day-first snippet is what a v0 producer may still write.
 
 ### 4.1a The navigated read (WF-053)
 
