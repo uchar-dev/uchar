@@ -2643,8 +2643,13 @@ let connecting_role_candidates ctx ~from_type ~to_type =
    Legitimate v0; the row-1 split removes the encoding in v1. Such an
    argument is checked here instead of by the generic walk. [element_type]
    is the fold's declared element type — the far end of the narrowed
-   type-pair fallback (IR-SPEC ch. 4.3). *)
-let aggregation_source_check ctx at ~element_type e =
+   type-pair fallback (IR-SPEC ch. 4.3). [subject] is the fold SUBJECT (the
+   walking type), which is what both executors anchor an instance fold at;
+   [single] says the fold carries exactly ONE argument — the instance-fold
+   source shape, the only one whose operand has an anchor at all (a listed
+   value fold's operands are ordinary reads, and a foreign objecttype there
+   is a legitimate type-pair hop, ref's [navigated]). *)
+let aggregation_source_check ctx at ~element_type ~subject ~single e =
   (* a fold source never navigates: its relation is the fold's bronRol —
      stray navigation bindings in this slot are ill-formed (WF-053) *)
   (match e with
@@ -2660,19 +2665,98 @@ let aggregation_source_check ctx at ~element_type e =
           "a fold source never navigates: a non-empty navigatiePad on a fold-source argument \
            is ill-formed (the fold's relation is bronRol)" ]
   | Attribuut_ref { attribuut = Some a; objecttype = Some otn;
-                    navigatie_rol; navigatie_pad = []; typ; _ } -> (
+                    navigatie_rol; navigatie_pad = []; typ; set; _ } -> (
+      (* the row-1 wart, spelled on the wire as the unknown sentinel on the
+         argument's own type. Hoisted out of the [Some ot] branch below
+         because the self-denotation clause needs it too: only the wart
+         carries a written role name at all. *)
+      let wart = match typ with Some (Datatype_onbekend _) -> true | _ -> false in
       (* the self-denoting fold source (WF-083): navigatieRol here is the
          written form naming the fold subject by its own role name — an
          away-pointing role would be navigation, which a fold source
          never does; the silent fall-through this arm replaces let it
-         pass while both executors fault on it *)
+         pass while both executors fault on it.
+
+         The test anchors on the fold SUBJECT (maintainer decision
+         2026-09-05), which is the type both executors anchor it at:
+         ref's instance-fold source arm guards on
+         [self_denoting_role ~self_type:self.otype], the ASP backend's
+         count arm on [~self_type:subject_ot]. Before this the anchor was
+         the OPERAND's own objecttype — a field neither executor reads
+         here — so one wire field flipped the verdict while no executor
+         moved: measured on the tempototaal shape with navigatieRol
+         "vondst" added, `objecttype: "Vondst"` PASSED and
+         `objecttype: "Jutter"` FAILED, with ref faulting `unsupported
+         instance-fold source shape` and the ASP backend `expression kind
+         not translated` on BOTH spellings.
+
+         And the written role belongs to the WART alone: it is v0's
+         presentation of "het aantal <rol> van de <onderwerp>", the one
+         shape whose source names a role instead of reading an attribute.
+         On any other fold source a navigatieRol is navigation, which a
+         fold source never does — ref's set-source arm and its temporal
+         total both demand [navigatie_rol = None] outright, so every such
+         form faults there. Without this half the re-anchoring would have
+         OPENED a hole it did not have: a set fold carrying a navigatieRol
+         that denotes the SUBJECT (measured: "bewarende jutter" on a
+         Jutter-subject fold over Vondst) is refused by both executors and
+         would have become verifier-clean. *)
       (match navigatie_rol with
-       | Some nr when not (self_denoting_role ctx ~otype:otn nr) ->
+       | None -> []
+       | Some nr when not wart ->
            [ v "WF-083" at
-               ("navigatieRol '" ^ nr ^ "' on a fold source does not denote the fold subject: \
-                 no role named so (declared name or plural, ci) is filled by '" ^ otn
-                ^ "' itself — a fold source never navigates") ]
-       | _ -> [])
+               ("navigatieRol '" ^ nr ^ "' on a fold source that is not the v0 instance-fold \
+                 source (the unknown-typed row-1 wart): the written role is that wart's \
+                 presentation of the fold subject and nothing else — on any other fold source \
+                 a navigatieRol claims navigation, which a fold source never does (its \
+                 relation is bronRol)") ]
+       | Some nr -> (
+           match subject with
+           | Some st when not (self_denoting_role ctx ~otype:st nr) ->
+               [ v "WF-083" at
+                   ("navigatieRol '" ^ nr ^ "' on a fold source does not denote the fold \
+                     subject: no role named so (declared name or plural, ci) is filled by the \
+                     fold subject '" ^ st ^ "' itself — a fold source never navigates") ]
+           | _ -> []))
+      (* WF-083, the ANCHOR cross (maintainer decision 2026-09-05): the
+         instance-fold source's own `objecttype` MUST name the type the
+         executors anchor the read at — the `elementObjecttype` when the
+         source is the set read (every read hangs on the element variable
+         and every declaration is looked up on the element type: ref's
+         set-source arm binds no objecttype at all, and the ASP backend
+         states the same anchor as [fold_operand_otype]), the fold SUBJECT
+         otherwise (ref's temporal total demands [norm aot = norm
+         self.otype] outright, and the wart resolves its written role name
+         from the subject).
+
+         The two forms this closes were both verifier-clean and both
+         measured: a temporal TOTAAL whose operand names another type's
+         temporal attribute (ref `unsupported instance-fold source shape`,
+         the ASP backend `the temporal total of … is declared on "Jutter",
+         not on the subject type "Vondst"`), and a NON-temporal set TOTAAL
+         whose operand names an attribute the element type does not
+         declare — where the two executors DISAGREE under a well-formed
+         document: ref folds every member's absent value and answers 0,
+         the ASP backend faults `unknown attribute … on "Vondst"`.
+
+         Scoped to the single-argument shape: with two or more operands the
+         fold is the listed value fold (§5.8.3) whose operands are ordinary
+         reads, and there a foreign objecttype is a legitimate type-pair
+         hop (ref's [navigated] switch) — not an anchor lie. Measured over
+         the four zones: 110 single-argument fold sources and 12 operands
+         of listed folds carrying a vestigial elementObjecttype; all 122
+         agree with their anchor today, so the scope hides nothing. *)
+      @ (let anchor = if set then Some element_type else subject in
+         match anchor with
+         | Some anc when single && norm otn <> norm anc ->
+             [ v "WF-083" at
+                 ("fold-source objecttype '" ^ otn ^ "' is not the fold's anchor '" ^ anc
+                ^ "' (" ^ (if set then "the set source reads each member of the \
+                                       elementObjecttype"
+                           else "a non-set fold source is read on the fold subject")
+                ^ "): the executors resolve '" ^ a ^ "' against the anchor, never against this \
+                   annotation, so the two spellings name different declarations") ]
+         | _ -> [])
       @
       match objecttype ctx otn with
       | None -> [ v "WF-034" at ("object type '" ^ otn ^ "' is not declared") ]
@@ -2714,7 +2798,6 @@ let aggregation_source_check ctx at ~element_type e =
              synthesized plural; the declared-plural route of
              `jutterswet-aanmeldertelling` and `jutterswet-vondsttelling`)
              are warts and keep both routes. *)
-          let wart = match typ with Some (Datatype_onbekend _) -> true | _ -> false in
           if has_attr ot a || (wart && is_role_name ctx a) then []
           else if has_kenmerk ot a then
             (* WF-080: an aggregation source is a value position — a
@@ -3657,7 +3740,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                        ("fold-source attribute reference '"
                       ^ Option.value attribuut ~default:"?" ^ "'")
                      ~decl:(resolved_attr_datatype ctx a) ~typ
-                   @ aggregation_source_check ctx p ~element_type:el a
+                   @ aggregation_source_check ctx p ~element_type:el ~subject
+                       ~single:(List.length f.argumenten = 1) a
                | _ -> walk_expr ctx ~binders ~subject p a)
              f.argumenten)
       (* WF-055: the gedurende clip — a filter on the temporal total is a

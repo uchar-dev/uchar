@@ -2390,29 +2390,91 @@ Empty-source results differ per kind — the som/totaal split and the
 no-fallback rule for min/max/first/last are `RUNTIME-SEMANTICS.md`
 ch. 1.2, mirrored in the matrix (row on TOTAAL, `CONSTRUCTS.md` ch. 2.1).
 
-**The self-denoting fold source (WF-083).** The written form "het aantal
-`<rol>` van de `<onderwerp>`" may name the fold subject by its
-OWN role name ("het aantal vondsten van de aanmelder", evaluated on the
-Jutter who *is* the aanmelder). The v0 wire then carries that written
-role in the fold-source argument's `navigatieRol` — ch. 4.1a's field,
-but here without its meaning: it is presentation of the written form,
-not navigation. No hop happens, the fold stays anchored on its subject,
-and the v0 production runtime ignores the field on this argument. A
-fold-source argument may therefore carry `navigatieRol` **iff** the name
-denotes the subject: it matches, case-insensitively on declared name or
-declared plural, a role that the argument's object type — the fold
-subject — itself fills in some declared fact type. Anything else on a
-fold-source argument would be navigation, which a fold source never does
-(its relation is `sourceRole`; ch. 4.1a's emitter discipline).
+**The anchored fold source (WF-083).** An instance fold's source does not
+move: it is read at one type, fixed by the fold, and the argument's own
+fields are description of that read, never a second way to choose what is
+read. Two consequences, one rule.
 
-- **WF-083** A fold-source argument MUST NOT navigate: a non-empty
-  `navigatiePad` is ill-formed, and a `navigatieRol`, when present, MUST
-  be self-denoting — it names a role (ci, declared name or declared
-  plural) that the argument's object type itself fills. An away-pointing
-  `navigatieRol` (naming only roles filled by other types, or no
-  declared role at all) is ill-formed. Semantics: `RUNTIME-SEMANTICS.md`
-  ch. 3.4a — the self-denoting count folds the subject's own linked
-  instances exactly as the bare subject-anchored form does.
+*The anchor.* The type at which the source is read is the
+`elementObjecttype` when the argument is the **set** read ("het bewaartarief
+van alle vondsten van de Jutter": each member of the folded set is asked for
+the attribute, and the declaration that answers is the element type's), and
+the fold **subject** otherwise — the non-set source is the subject's own
+read, which is what the ch. 3.6 temporal total totals and what the row-1
+wart's written role name resolves from. The argument's `objecttype` MUST
+name that anchor. It is not a free annotation: both executors derive the
+declaration from the anchor and never from this field, so a spelling that
+disagrees with the anchor names a declaration nobody consults.
+
+*The written role.* The written form "het aantal `<rol>` van de
+`<onderwerp>`" may name the fold subject by its OWN role name ("het aantal
+vondsten van de aanmelder", evaluated on the Jutter who *is* the aanmelder).
+The v0 wire then carries that written role in the fold-source argument's
+`navigatieRol` — ch. 4.1a's field, but here without its meaning: it is
+presentation of the written form, not navigation. No hop happens, the fold
+stays anchored on its subject, and the v0 production runtime ignores the
+field on this argument. That presentation belongs to the **row-1 wart**
+alone — the instance-fold source spelled with the unknown sentinel on its
+own `type`, the one source that names a role instead of reading an
+attribute. There a `navigatieRol` is admissible **iff** the name denotes the
+subject: it matches, case-insensitively on declared name or declared plural,
+a role that the **fold subject** itself fills in some declared fact type.
+On any other fold source a `navigatieRol` is navigation, which a fold source
+never does (its relation is `sourceRole`; ch. 4.1a's emitter discipline).
+
+- **WF-083** A fold-source argument is ANCHORED and MUST NOT navigate.
+  (a) A non-empty `navigatiePad` is ill-formed. (b) A `navigatieRol` is
+  admissible only on the v0 instance-fold source (the row-1 wart, spelled
+  with the unknown sentinel on the argument's own `type`), and there only
+  when it is self-denoting — it names a role (ci, declared name or declared
+  plural) that the **fold subject** itself fills. An away-pointing
+  `navigatieRol` (naming only roles filled by other types, or no declared
+  role at all), and any `navigatieRol` outside the wart, are ill-formed.
+  (c) The single-argument fold source's `objecttype` MUST name the fold's
+  anchor: the `elementObjecttype` when `set`, the fold subject otherwise.
+  Semantics: `RUNTIME-SEMANTICS.md` ch. 3.4a — the self-denoting count
+  folds the subject's own linked instances exactly as the bare
+  subject-anchored form does.
+
+  *Wave note, 2026-09-05.* (b)'s anchor moved from the argument's own
+  `objecttype` to the fold subject, and (c) is new. Both close the same
+  defect from two sides: the verifier read a field neither OCaml executor
+  reads in this position, and crossed nothing against the fields they do.
+  Measured, each with its negatief witness and an arm-exact mutant, over
+  golden + rood + negatief + parity: **not one verdict of the 504 documents
+  predating this card moves** — the sole change is one sentence of the
+  existing `wf083-fold-source-navigates-away` report, whose verdict is
+  anchor-independent because its operand already spells the subject; the
+  four new witnesses take the negatief zone to 302 and the four zones to
+  508. The census behind the boundary: of 122 fold-source
+  `AttributeReference` operands under an `elementObjecttype`, **110** are
+  the single-argument instance-fold source and 12 are operands of a listed
+  value fold carrying the tag vestigially; all 122 agree with their anchor
+  today, and all four operands carrying a `navigatieRol` at all are warts.
+  The scope of (c) is the single-argument shape because a listed value
+  fold's operands are ordinary reads, where a foreign `objecttype` is a
+  legitimate type-pair hop and not an anchor lie. What each half closes was
+  measured on hand-built witnesses: for (b)'s anchor, one wire field
+  (`objecttype` `Vondst` versus `Jutter` at the same `navigatieRol`)
+  flipped the verdict PASS/FAIL while `ref` faulted `unsupported
+  instance-fold source shape` and the ASP backend refused the expression
+  kind on BOTH spellings — and the Drools backend played both and answered;
+  for (b)'s scope, a set source carrying a subject-denoting `navigatieRol`
+  is refused by both OCaml executors and would have become verifier-clean
+  the moment the anchor moved; for (c), a temporal total naming another
+  type's temporal attribute (`ref` faults, the ASP backend refuses by
+  reason, Drools answers the OTHER object's value) and a non-temporal set
+  total naming an attribute the element type does not declare — the sharpest
+  of the four, where the two OCaml executors DISAGREE under a
+  verifier-clean document: `ref` folds every member's absent value and
+  answers 0, the ASP backend faults `unknown attribute … on "Vondst"`, and
+  Drools throws. *Still open at this branch, measured and named:* a
+  single-argument, non-set, non-wart fold source over a NON-temporal
+  attribute of the subject satisfies (a)–(c) and stays verifier-clean while
+  neither OCaml executor carries it (`ref`: `unsupported instance-fold
+  source shape`; the ASP backend refuses the expression kind). That is a
+  SHAPE rule — which single-argument sources exist at all — not an anchor
+  rule, and it is recorded as a flank rather than claimed shut.
 
 **The fold-source role name and the type-pair fallback (WF-034).** The
 v0 instance-fold source (the row-1 wart) writes a role name in its
@@ -3916,7 +3978,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-080 | a value-position `AttribuutRef` resolves to an attribute, not a characteristic (a characteristic is read through a characteristic check, ch. 4.5) — closes the tolerated `has_attr||has_kenmerk` leak in both the generic value walk and the aggregation-source path (a value-yielding fold's source; a count's role source stays in scope of WF-034); the rule TARGET lvalue is out of scope (WF-022) | gate 3 | `jutterswet-vondsttelling` + `anchor/jutterswet-penninguitgifte` (a `SOM` folding an attribute source; gate 3 witnesses none over-rejects) | `wf080-value-position-kenmerk` + `wf080-aggregation-source-kenmerk` |
 | WF-081 | a numeric literal's lexeme is a bare number in the executors' shared grammar — after `,`→`.`: `'-'? digits`, `'-'? digits? '.' digits`, or `'-'? digits '/' digits` with a non-zero denominator (ch. 4.1); unit or currency tokens, whitespace, `+`, exponents and grouping are ill-formed (the unit belongs in the datatype's `eenheid`) — closes the gate blind spot where a unit written into the lexeme passed the verifier while both executors fault on it; date lexemes and `Tekst` literals out of scope | gate 3 | `anchor/jutterswet-tariefstelling` (integer and decimal lexemes through the fence; gate 3 witnesses none over-rejects) | `wf081-unit-in-lexeme` |
 | WF-082 | the `bronAnnotaties` extension field (ch. 3.1): when present a non-empty list of non-empty trimmed statute annotations; a rule without annotations omits the field — absence leaves no trace | gate 3 | `jutterswet-hardheid` (one- and two-annotation rules on the wire, the unannotated rule traceless; replayed by gates 5–6) | `wf082-empty-bron-annotaties` |
-| WF-083 | a fold-source argument never navigates (ch. 4.3): a non-empty `navigatiePad` is ill-formed; a `navigatieRol`, when present, is self-denoting — it names a role (ci, declared name or plural) the argument's object type itself fills; away-pointing is ill-formed — closes the silent fall-through where a navigating fold source passed the verifier while ref faults on it | gate 3 | `jutterswet-aanmeldertelling` (the self-denoting count "het aantal vondsten van de aanmelder" through both executors) | `wf083-fold-source-navigates-away` |
+| WF-083 | a fold-source argument is anchored and never navigates (ch. 4.3): (a) a non-empty `navigatiePad` is ill-formed; (b) a `navigatieRol` is admissible only on the row-1 wart and only when self-denoting — it names a role (ci, declared name or plural) the FOLD SUBJECT itself fills; away-pointing, and any `navigatieRol` outside the wart, are ill-formed; (c) the single-argument fold source's `objecttype` names the fold's anchor — the `elementObjecttype` when `set`, the fold subject otherwise. Closes the silent fall-through where a navigating fold source passed the verifier while ref faults on it, and the anchor gap where one wire field flipped the verdict while no executor moved and two executors disagreed under a clean document | gate 3 | `jutterswet-aanmeldertelling` (the self-denoting count "het aantal vondsten van de aanmelder" through both executors); `jutterswet-tempototaal` (the set anchor and the subject anchor side by side) | `wf083-fold-source-navigates-away`, `wf083-vouwbron-anker-op-operand`, `wf083-vouwbron-navigatierol-buiten-de-wrat`, `wf083-vouwbron-vreemd-objecttype`, `wf083-vouwbron-vreemd-elementtype` |
 | WF-084 | a day-precision date literal's lexeme is the strict ISO form `yyyy-mm-dd` the executors parse (ch. 4.1) — fixed field widths (four-two-two digits), single `-` separators, month 1–12, day 1..days-in-month (leap-aware); the Dutch day-first source snippet is ill-formed, whether the bare `31-01-2024` (silently misread as year 31 → `0036-07-16`, a differential-blind wrong answer both executors agreed on) or the `dd. `-prefixed form (both executors fault) — closes that blind spot, the emitter now writing the bare ISO lexeme and keeping the snippet in `bron`; datetime lexemes out of scope | gate 3 | `jutterswet-vondstverjaring` (an ISO date literal through the fence, replayed by gates 5–6) | `wf084-source-snippet` + `wf084-bare-non-iso` |
 | WF-085 | the day-kind reference graph is acyclic (ch. 5.4 / ch. 3.7): a day-kind condition may reference other day kinds (a `Predicaat` of soort `DAGSOORT`), but mutually recursive definitions have no fixpoint — a loud refusal where the v0 toolchain resolves a cycle to a silent false (the §9.10 recursion prohibition unenforced for day kinds); diverge-from-v0 (v0 neither checks nor documents it) | gate 3 | `jutterswet-schouwkalender` (an acyclic `hoogschouwdag -> schouwdag` reference, verifier-clean, replayed by gates 5–6 over its ordinary rule) | `wf085-dagsoort-verwijzingscyclus` (two mutually referencing day kinds) |
 | WF-086 | a defaults group MUST NOT target a temporal attribute (declared `attribuutGranulariteit`) nor a temporal characteristic (`kenmerkGranulariteit`) — a defaults group decides at one fixpoint and has no timeline coordinate to write (ch. 6); the document-layer fence ahead of the executors (ref faults on both arms — defense-in-depth — and the Drools defaults service skips); temporal defaults targets are unscheduled (PRIORITIZED-DEFAULTS-EVOLUTIE §9 Q12a) | gate 3 (over the prioritized-defaults node via the shared `attr_temporal` helper and the `kenmerkGranulariteit` table) | `anchor/jutterswet-vondstwaardering` (attribute defaults on a non-temporal target — gate 3 witnesses WF-086 does not over-fire) | `wf086-temporele-defaultstarget` (attribute arm), `wf086-temporele-defaultskenmerk` (characteristic arm) |
