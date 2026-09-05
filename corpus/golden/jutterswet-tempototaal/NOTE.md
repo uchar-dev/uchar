@@ -32,7 +32,12 @@ timeline fold (each element's tijdreeks summed over time first, then over
 the set — the Drools transpilers' `rsTijdTotaal` path), so it integrates
 too and keeps the strip. That fourth form is deliberately not in this
 document; `ref` learned it separately (`backlog/done/20260904-ref-tijdtotaal.md`,
-which closed its 0-vs-150 value divergence).
+which closed its 0-vs-150 value divergence). **It has its own golden since
+2026-09-05: `corpus/golden/jutterswet-tempovouw`**, the same operator and the
+same `€/mnd` operand with the attribute declared `voor elke maand`, pinned at
+48 € over three members. The two goldens are each other's counterexample on the
+strip: here the non-temporal set reading keeps `€/mnd`, there the temporal one
+drops to `€`.
 
 That is the maintainer decision of 2026-09-04, and this golden is what
 makes it machine-checkable.
@@ -162,7 +167,14 @@ golden caseless:
   data from the shared timeline algebra — and only those scalars fold over
   the set. A member that brings only an asOfDate-bucket scalar is refused
   by name, exactly as `ref` refuses it: the integration runs per member,
-  so every member must bring its own horizon.
+  so every member must bring its own horizon. One residual edge, and it is
+  a **class**, not a case: any narrowing that is undecidable at translation
+  time. Measured 2026-09-05 on two of them — a `die/dat` filter that drops
+  the bucket-scalar member, and a rule condition that excludes every
+  subject — both verifier-PASS, both `ref: oracle: PASS`, and both refused
+  by the ASP translator, which cannot know at translation time that the
+  member never reaches the fold. The refusal is conservative, not a verdict
+  on the document.
 * **the noemer strip at the write**, which is what made the third row
   translate. The effective unit of a time aggregation is the operand's
   unit *without its denominator* — the §4.20 Tabel 30 result — so the

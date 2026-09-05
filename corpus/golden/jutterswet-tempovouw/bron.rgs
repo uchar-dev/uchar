@@ -1,0 +1,20 @@
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
+Eenheidsysteem Bewaartijd
+    de maand mnd
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de bewaarlast Numeriek (geheel getal) met eenheid €;
+
+Objecttype de Vondst (mv: Vondsten)
+    het bewaartarief (mv: bewaartarieven) Numeriek (geheel getal) met eenheid €/mnd voor elke maand;
+
+Feittype bewaring
+    de bewarende jutter Jutter
+    de vondst (mv: vondsten) Vondst
+Eén bewarende jutter bewaart meerdere vondsten
+
+Regel bewaarlast van een jutter
+    geldig altijd
+        De bewaarlast van een Jutter moet berekend worden als het totaal van het bewaartarief van alle vondsten van de Jutter.
