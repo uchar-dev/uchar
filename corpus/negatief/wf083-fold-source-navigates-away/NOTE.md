@@ -2,7 +2,7 @@
 
 Violates WF-083 (`spec/IR-SPEC.md` ch. 4.3): the fold-source argument of the
 count carries `navigatieRol: "vondst"` — a role filled by `Vondst`, not by the
-argument's object type `Jutter` (the fold subject). An away-pointing
+fold subject `Jutter`. An away-pointing
 `navigatieRol` on a fold source claims a navigation that no executor performs:
 a fold source never navigates; its relation is the fold's `bronRol`.
 
@@ -21,5 +21,13 @@ expression kind not translated`.
 Old verifier: `PASS` (the fold-source arm's silent fall-through admitted any
 `navigatieRol`). New verifier: `WF-083 FAIL /resolvedRegels/0/waarde/argumenten/0:
 navigatieRol 'vondst' on a fold source does not denote the fold subject: no
-role named so (declared name or plural, ci) is filled by 'Jutter' itself — a
-fold source never navigates`.
+role named so (declared name or plural, ci) is filled by the fold subject
+'Jutter' itself — a fold source never navigates`.
+
+The verdict is anchor-independent here and the wording is not: this document's
+operand spells `objecttype: "Jutter"`, which for a non-set source IS the fold
+subject, so the self-denotation test reads the same type either way. The
+sentence names the subject explicitly since 2026-09-05, when the test moved
+from the operand's own `objecttype` to the fold subject — the type both
+executors anchor it at. The case that separates the two anchors is the sibling
+`wf083-vouwbron-anker-op-operand`.
