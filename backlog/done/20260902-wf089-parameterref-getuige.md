@@ -239,9 +239,14 @@ vierde niet — en dát is precies de helft die deze diff veranderde.
   wat waar is: **twee benen van het vierkant** — `ref` en clingo spelen de
   acht casussen exact (poorten 5 en 6), de golden heeft géén frontendbron
   (`bron` is `null`, dus poorten 9 en 10 zien haar nooit), en de
-  Drools-casusloader weigert de lijst-invoervorm met eigen reden, zodat de
-  golden in poort 12 bij de gegroepeerde auto-weigeringen staat en nooit
-  in de gespeelde verzameling.
+  Drools-leg weigert haar. **Afwijking van het recept, na meting:** het
+  recept sprak van een weigering van de lijst-*invoervorm*; de gemeten
+  weigering zit een stap eerder, bij de IR-loader en vóór enige casus —
+  `EXCLUDE loader: form not carried by the v0 Drools backend:
+  Datatype:SumType (unknown datatype node)` (`java -jar …-shaded.jar` op
+  die golden, 2026-09-05). De gelande zin noemt die reden letterlijk. De
+  golden staat in poort 12 bij de gegroepeerde auto-weigeringen en nooit
+  in de gespeelde verzameling (poort 12: played 108).
 - **(b) pariteitbijzin.** Gemeten met dezelfde probe: de 30
   pariteitdocumenten betreden de `ParameterRef`-arm **18 keer over 9
   documenten**, en geen van die referenties noemt een keuzetype (de
@@ -340,3 +345,27 @@ beschreven, wat de getuige van deze kaart weerlegt.
 | 13 | `PASS (64 unit annotations twisted over 13 goldens; 58 executor replays reproduce the untouched outcome, 11 PLAYED by the DRL-text branch; 0 pinned survivors)` |
 
 De kaart raakt geen uitvoerbaar artefact, dus geen enkele telling beweegt.
+
+### De dertien poorten, opnieuw na de fixronde (2026-09-05)
+
+Alle dertien opnieuw gedraaid ná de R1–R5-wijzigingen; alle tellingen
+gelijk aan main.
+
+| # | uitslag |
+|---|---|
+| 1 | `check-self-contained: PASS` |
+| 2 | `PASS (schema valid; 176 file(s) validate and round-trip)` |
+| 3 | `PASS (176 golden clean; 297 negatief rejected for their declared rule)` |
+| 4 | `PASS (schema valid; 427 case file(s) validate)` |
+| 5 | `PASS (405 cases replayed exactly; …)` |
+| 6 | `PASS (405 cases replay exactly through clingo — ref = clingo over the corpus)` |
+| 7 | `PASS (369 cases refute a do-nothing executor; 36 pinned survivors)` |
+| 8 | `PASS (22 red cases fault observably in ref and clingo)`; Drools-been `PASS (5 fault-pinned, 17 not-carried with reason)` |
+| 9 | `PASS — frontend suite green (201 checks); 12 catala golden(s) regenerate byte-identically` |
+| 10 | `PASS — JUnit suite green (171 tests); 30 rgs golden(s) re-emit byte-identically` |
+| 11 | `PASS` — ref 29/29, clingo 29/29, Drools 29 gespeeld |
+| 12 | `PASS` — played 108, auto-excluded 43, value-divergence 1 (met reden), no-case 2, JUnit 199 |
+| 13 | `PASS (64 unit annotations twisted over 13 goldens; 58 executor replays reproduce the untouched outcome, 11 PLAYED by de DRL-tekstarm; 0 pinned survivors)` |
+
+`git diff main -- spec/verifier/lib/checks.ml` is leeg: geen mutant heeft
+de werkkopie ooit geraakt, laat staan een commit.
