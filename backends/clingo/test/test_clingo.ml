@@ -1242,6 +1242,60 @@ let setvouw_case ~v1 =
     { "kind": "consistent" } ] }
 |}
 
+(* --- the ALLOCATION witness (the probe of 2026-09-05) ---------------------
+   The derived-writer refusal used to scan resolvedRegels ALONE. An
+   allocation writes the same slot, and it does so with a SCALAR: measured
+   on a verifier-PASS document, ref met the derived value as a member
+   without a horizon and faulted by name, while the translator found no tl
+   fact and answered a SILENT 0. Injected into the frames above by unique
+   anchors, so every other frame stays literally the document those checks
+   already pin. *)
+let replace_first ~needle ~by s =
+  let n = String.length needle and m = String.length s in
+  let rec at i =
+    if i + n > m then failwith ("replace_first: anchor not found: " ^ needle)
+    else if String.sub s i n = needle then i
+    else at (i + 1)
+  in
+  let i = at 0 in
+  String.sub s 0 i ^ by ^ String.sub s (i + n) (m - i - n)
+
+let with_allocation ~pot_type ir =
+  ir
+  |> replace_first
+       ~needle:{|"attributen": { "bewaarlast": |}
+       ~by:({|"attributen": { "bewaarpot": |} ^ pot_type ^ {|, "bewaarlast": |})
+  |> replace_first ~needle:{|"verdelingen": []|}
+       ~by:
+         {|"verdelingen": [
+    { "node": "ResolvedVerdeling", "naam": "verdeel de bewaarpot van een jutter",
+      "bronType": "Jutter", "bronAttribuut": "bewaarpot",
+      "doelType": "Vondst", "doelAttribuut": "bewaartarief",
+      "methode": "GELIJKE_DELEN", "ratoAttribuut": null, "maximumAttribuut": null,
+      "afrondingDecimalen": 0, "restantAttribuut": null, "groepeerAttribuut": null,
+      "afnemend": false, "voorwaarde": null,
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null },
+      "verbindendeRol": { "node": "RolBinding", "feittype": "bewaring", "rol": "vondst" } } ]|}
+
+(* the allocation frame's case: the pot is input, the fold's own attribute
+   is NOT — so the allocation is the only thing that can put a value in the
+   members' slot *)
+let alloc_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": "2026-03-15",
+  "input": { "instances": [
+    { "label": "J1", "objectType": "Jutter", "attributes": { "bewaarpot": { "number": "20" } },
+      "roles": { "vondsten": [ "V1", "V2" ] }, "characteristics": [] },
+    { "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {},
+      "characteristics": [] },
+    { "label": "V2", "objectType": "Vondst", "attributes": {}, "roles": {},
+      "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "bewaarlast",
+      "value": { "number": "0" } },
+    { "kind": "consistent" } ] }
+|}
+
 (* [n] members, each carrying ONE segment over the SAME span — the
    multiplicity the wrap fence has to count. The #sum runs over (member,
    segment) tuples, so Σ n is n × the span's whole units, however few
@@ -1423,7 +1477,18 @@ let () =
   ref_matches ~name:"§7.1 wrap fence: Σn = 46340 exactly, ref pins 46340" ~ir:straight
     ~case_text:edge;
   clingo_matches ~name:"§7.1 wrap fence: Σn = 46340 exactly, clingo plays it" ~ir:straight
-    ~case_text:edge
+    ~case_text:edge;
+  (* the DERIVED-WRITER refusal, beyond resolvedRegels. An allocation
+     writing the folded member attribute is verifier-PASS and made ref
+     fault by name (a member with no horizon) while this arm answered a
+     silent 0 — measured, and the reason the scan now covers verdelingen
+     and defaults groups too. *)
+  faults_with ~name:"§7.1 derived writer: an allocation onto the folded member attribute"
+    ~ir:(with_allocation ~pot_type:(euro_num (eur mnd_eenheid)) straight)
+    ~case_text:alloc_case
+    ~needle:
+      "an allocation (verdeling) writes \"bewaartarief\" on \"Vondst\", so its segment bounds \
+       are not case data"
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total

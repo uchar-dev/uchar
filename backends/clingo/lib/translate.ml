@@ -1494,22 +1494,56 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           (* the segment bounds must be CASE data: a member timeline some
              rule derives has no bounds at translation time, so the wu
              facts could not be computed and the join would find nothing —
-             a silent 0 where ref integrates. Refused by name instead. *)
-          if
-            List.exists
-              (fun (r : resolved_regel) ->
-                match r.doel with
-                | Some (Attribuut_ref { attribuut = Some x; objecttype = Some o; _ }) ->
-                    norm x = norm a && norm o = norm el
-                | _ -> false)
-              ctx.doc.resolved_regels
-          then
-            fault
-              "the per-element temporal fold of %S over a DERIVED member timeline is not \
-               translated: a rule writes %S on %S, so its segment bounds are not case data and \
-               the whole-unit facts this fold integrates against cannot be computed (no corpus \
-               case)"
-              a a el;
+             a silent 0 where ref integrates. Refused by name instead.
+
+             EVERY derived writer of that member attribute, not just a
+             rule: an ALLOCATION (verdeling) and a DEFAULTS GROUP write
+             into the same slot. Measured 2026-09-05 on a verifier-PASS
+             document — a GELIJKE_DELEN verdeling onto the folded
+             temporal attribute, the case supplying no input for it — ref
+             met the derived value as a member's horizonless scalar and
+             faulted by name, while this arm found no tl fact and answered
+             a silent 0. Both are loud now. The defaults arm is
+             defense-in-depth: WF-086 already rejects a temporal defaults
+             target at the verifier, so no verifier-clean document reaches
+             it, but the silent 0 was measured there too (on a WF-086 FAIL
+             document) and one scan is cheaper than trusting a
+             neighbouring gate. *)
+          let derived_writer =
+            if
+              List.exists
+                (fun (r : resolved_regel) ->
+                  match r.doel with
+                  | Some (Attribuut_ref { attribuut = Some x; objecttype = Some o; _ }) ->
+                      norm x = norm a && norm o = norm el
+                  | _ -> false)
+                ctx.doc.resolved_regels
+            then Some "a rule"
+            else if
+              List.exists
+                (fun (v : resolved_verdeling) ->
+                  (match v.doel_attribuut with Some x -> norm x = norm a | None -> false)
+                  && match v.doel_type with Some o -> norm o = norm el | None -> false)
+                ctx.doc.verdelingen
+            then Some "an allocation (verdeling)"
+            else if
+              List.exists
+                (fun (l : prioritized_defaults) ->
+                  (match l.pd_attribuut with Some x -> norm x = norm a | None -> false)
+                  && norm l.pd_onderwerp = norm el)
+                ctx.doc.prioritized_defaults
+            then Some "a defaults group"
+            else None
+          in
+          (match derived_writer with
+          | None -> ()
+          | Some who ->
+              fault
+                "the per-element temporal fold of %S over a DERIVED member timeline is not \
+                 translated: %s writes %S on %S, so its segment bounds are not case data and \
+                 the whole-unit facts this fold integrates against cannot be computed (no corpus \
+                 case)"
+                a who a el);
           (* the horizon rule (ch. 3.6/§7.1, ch. 8.4), ref's convention
              verbatim: the integration runs PER MEMBER, so every member
              must bring its OWN horizon. The asOfDate-bucket SCALAR states
