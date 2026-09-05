@@ -1121,6 +1121,49 @@ let wf034_verdeling_naamresolutie ctx =
          @ resolve ~side:"target" ~scope:r.doel_type "groepeerAttribuut" r.groepeer_attribuut)
        ctx.doc.verdelingen)
 
+(* WF-034 on an object creation's SUBJECT (maintainer decision 2026-09-04,
+   fifth wave). `subject` names the object type the creation RUNS OVER (ch.
+   5.5): one new instance per subject instance the condition admits, and the
+   member values evaluate on it. It is a reference like any other, spelled in
+   one field, and no rule crossed it against the object-type table. WF-027
+   crosses the CREATED type (`nieuwType`) and nothing else; the subject was
+   reached only by the rules that read THROUGH it — WF-053 when a member value
+   navigates, WF-047 when an explicit `verbindendeRol` names the back-link —
+   and those are incidental cover, not coverage: they stand down the moment a
+   creation has neither.
+
+   Measured over the 11 golden object creations, `subject` pointed at an
+   undeclared name one at a time: 10 of 11 were already refused — all ten by
+   WF-053 (the navigation in a member value loses its scope), nine of them by
+   WF-047 as well — and exactly ONE stayed verifier-CLEAN: the single creation
+   with no `toekenningen` at all (`anchor/jutterswet-penninguitgifte`,
+   creation 1). There the executors do not fault either; they AGREE on a wrong
+   answer, `ref` "MISMATCH: J1.aantal dossiers = 0, expected 1" and clingo
+   "MISMATCH: J1.aantal dossiers = [0], expected 1" — the creation simply runs
+   over an empty population and no object is made. That is the row where the
+   differential square is blind and only the hand-pinned anchor expectation
+   stands between the corpus and the defect.
+
+   One arm, one witness (`wf034-objectcreatie-onbekend-subject`). What it does
+   NOT close, measured the same day and stated so the silence is not mistaken
+   for coverage: `subject: null`, equally verifier-clean on the same document,
+   with both executors loud (`ref` "missing ObjectCreatie.subject in IR node",
+   clingo "missing ObjectCreatie.subject"). That is the empty-reference class
+   of the earlier waves, a different question from resolution, and it has no
+   witness yet. *)
+let wf034_objectcreatie_subject ctx =
+  List.concat
+    (List.mapi
+       (fun i (r : resolved_object_creatie) ->
+         let at = Printf.sprintf "/objectCreaties/%d/subject" i in
+         match r.oc_subject with
+         | Some s when objecttype ctx s = None ->
+             [ v "WF-034" at
+                 ("object creation's subject type '" ^ s
+                ^ "' is not declared: the creation resolves against no declaration") ]
+         | _ -> [])
+       ctx.doc.object_creaties)
+
 (* The type an expression carries, iff it is a value (a Lambda is not). The
    sole nominal source for static typing; WF-027 uses it to admit a
    boolean-TYPED characteristic value, and the expression walk (WF-034..) below
@@ -4774,7 +4817,37 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) at (c : conditie) : viola
                               ^ "'") ]
                        | _ -> [])
                    | None -> [])))
-  | Rollidmaatschap _ | Verre_rollidmaatschap _ -> []
+  | Rollidmaatschap { ander_te_filler; _ } -> (
+      (* WF-034 (widened, maintainer decision 2026-09-04, fifth wave): the
+         near-side role check ("hij is een <rol>") resolves through
+         `anderTeFiller`, not through the written role name — the executors
+         take the connecting role from the SUBJECT to that type and null-test
+         it (ch. 5.8a), so the written `rol` is presentation and this field is
+         the whole of the reference. Nothing crossed it. Measured on all four
+         golden positions (`jutterswet-wachtindeling` 2, `jutterswet-wachtploeg`
+         2) with the field pointed at an undeclared type: 4/4 verifier-CLEAN,
+         while both OCaml executors refuse loudly with the same sentence —
+         `ref` "EVALUATION FAULT: no fact type relates \"Jutter\" to
+         \"Bestaatniet\"", clingo the same as a TRANSLATION FAULT — and the
+         bean-model executor takes a third road again: it stops carrying the
+         rule (a transpiler skip, "voorwaarde buiten Phase-B scope"), so the
+         document neither faults nor answers.
+
+         One cross, against the role fillers: the ch. 4.3 candidate list
+         [connecting_role_candidates], the executors' own derivation. Empty is
+         this arm's report — it is exactly `ref`'s `[]` fault. A candidate
+         list with SEVERAL entries is a different defect (ambiguity, ch. 4.1)
+         and stays WF-048's business; a subject the walk does not know keeps
+         the arm silent. *)
+      match (ander_te_filler, subject) with
+      | Some f, Some st when connecting_role_candidates ctx ~from_type:st ~to_type:f = [] ->
+          [ v "WF-034" (sub "anderTeFiller")
+              (Printf.sprintf
+                 "no fact type relates the subject '%s' to '%s': the role check's anderTeFiller \
+                  resolves against no declaration"
+                 st f) ]
+      | _ -> [])
+  | Verre_rollidmaatschap _ -> []
   | Periode_conditie { vanaf; tot; _ } ->
       (if vanaf = None && tot = None then
          [ v "WF-042" at "time window without any bound" ]
@@ -5593,11 +5666,34 @@ let wf047_048_verdelingen ctx =
              | _ -> []))
        ctx.doc.verdelingen)
 
-(* WF-028 over the symbolic creation form (v1 extension). A bean-field-only
-   v0 record stays uncheckable (its relational content is not on the wire);
-   once any symbolic field is present the form is all-or-nothing, every
-   binding resolves, the ends agree, and the join chain reaches the target
-   through a relation that differs from the created one. *)
+(* WF-028 over the symbolic creation form (v1 extension). The form is
+   all-or-nothing, every binding resolves, the ends agree, and the join chain
+   reaches the target through a relation that differs from the created one.
+
+   The NO-symbolic-field case (maintainer decision 2026-09-04, fifth wave).
+   Until this wave a record carrying only the v0 bean fields — `zetVeld`,
+   `joinVeld`, `tussenstappen[].veld/type` and nothing symbolic — fell through
+   this clause as "uncheckable, its relational content is not on the wire".
+   That was a mis-reading of what the rule is for: the content is not on the
+   wire, and THAT is the defect. Measured on `jutterswet-postwacht` with all
+   five extension keys removed (`feittype`, `ankerRol`, `doelRol`, `joinRol`
+   and the hop's `rolBinding`), the three executors disagree about whether the
+   document exists at all:
+
+     verifier  PASS
+     ref       EVALUATION FAULT: fact creation "…" carries only bean fields;
+               the symbolic form (IR-SPEC ch. 3.4) is what executes
+     clingo    TRANSLATION FAULT: the same sentence
+     Drools    PLAYED 1 — it reads exactly those bean fields, so it runs
+
+   Two executors refuse the document and the third replays it to the pinned
+   expectations. A verifier that admits it makes the IR's meaning depend on
+   which engine reads it, which is the one thing an engine-neutral IR may not
+   do. The arm says the ch. 3.4 requirement out loud instead: the symbolic
+   form is what executes, so a creation must carry it. Its witness is
+   `corpus/negatief/wf028-bean-only-creation`; over the four zones no
+   document loses it — all 8 fact creations in golden, rood, negatief and the
+   parity zone already carry the symbolic form. *)
 let wf028 ctx =
   List.concat
     (List.mapi
@@ -5608,7 +5704,10 @@ let wf028 ctx =
            || fc.join_rol <> None
            || List.exists (fun (t : tussenstap) -> t.ts_rol <> None) fc.tussenstappen
          in
-         if not any_symbolic then []
+         if not any_symbolic then
+           [ v "WF-028" at
+               "fact creation carries only bean fields; the symbolic form (ch. 3.4) is what \
+                executes, and nothing on the wire says which relation is created" ]
          else
            let missing =
              List.filter_map
@@ -5719,6 +5818,116 @@ let wf028 ctx =
                go 0 fc.anker fc.tussenstappen
              in
              created_checks @ chain_checks)
+       ctx.doc.feit_creaties)
+
+(* WF-034 on the four BEAN-field names of a fact creation (maintainer decision
+   2026-09-04, fifth wave): `zetVeld`, `joinVeld`, `tussenstappen[].veld` and
+   `tussenstappen[].type`. These are the v0 half of the node — the fields the
+   bean-model executor navigates and writes — and until this clause not one of
+   them was held against a declaration. WF-028 above crosses only the symbolic
+   sisters (`feittype`, `ankerRol`, `doelRol`, `joinRol`,
+   `tussenstappen[].rolBinding`); the bean fields sat beside them, unchecked,
+   spelling whatever the producer liked.
+
+   What they mean, and therefore what they resolve against. A binary relation
+   lives in the v0 bean model as ONE reference field, on the side that stores
+   it, named after a role of that relation. So each bean field belongs to a
+   relation its symbolic sister already names, and the checkable law is that
+   it spells a DECLARED ROLE of that relation — which of the two roles the
+   bean model stores is a bean-model decision the wire does not carry, so the
+   arm crosses against both and no further:
+
+     zetVeld                the created relation      -> a role of `feittype`
+     joinVeld               the final hop's relation  -> a role of `joinRol`'s
+     tussenstappen[j].veld  hop j's relation          -> a role of that
+                                                         `rolBinding`'s
+
+   The corpus shows why both roles must be admitted and neither may be
+   assumed: three of the four creations spell `zetVeld` with the ANCHOR's role
+   and one (the self-typed `anchor/jutterswet-erflijn`, both ends `Wachter`,
+   both to-many) with the TARGET's; `joinVeld` is the bound role three times
+   and the opposite role once. Only the declared name binds — the plural is
+   presentation, exactly as WF-047 has it for the bindings themselves.
+
+   `tussenstappen[j].type` is not a role name but the intermediate object type
+   the hop lands on, so it crosses against the hop itself: the filler of the
+   role that binding binds, the same [resolve_binding] the chain walk in
+   WF-028 uses. Where the binding does not resolve, this arm stays silent —
+   that report is WF-028's.
+
+   Measured, one field at a time set to a name no declaration carries, over
+   all 14 golden positions (4 `zetVeld`, 4 `joinVeld`, 3 `type`, 3 `veld`,
+   spread over `anchor/jutterswet-erflijn`, `anchor/jutterswet-gemeenteberging`
+   and `jutterswet-postwacht`):
+
+     verifier  14/14 PASS
+     ref       14/14 clean — replays to the pinned expectations
+     clingo    14/14 clean — the same
+
+   Both OCaml executors are BLIND here by construction: they read the symbolic
+   fields and never touch the bean fields, so a nonsense name changes no
+   answer and there is no divergence to catch. The bean-model executor reads
+   them, reflectively, and on `jutterswet-postwacht` (baseline: it plays)
+   every one of the four throws it out of the engine:
+
+     zetVeld                IllegalStateException: no getter for 'bestaatniet'
+                            on the target fact class (via ConsequenceException)
+     joinVeld               ConstraintEvaluationException: Error evaluating
+                            constraint '' in  and in more rules
+     tussenstappen[].veld   ConstraintEvaluationException, the same
+     tussenstappen[].type   NullPointerException: Cannot read field "naam"
+                            because "ot" is null
+
+   That is the sharpest shape this rule family has: a verifier-clean document
+   that two executors replay without a murmur while the third crashes on it.
+   Four arms, four witnesses (`corpus/negatief/wf034-feitcreatie-onbekend-*`);
+   each is arm-exact, and over the four zones the clause costs nothing — all 8
+   fact creations in golden, rood, negatief and the parity zone spell every
+   one of their bean fields against a declared role. *)
+let wf034_feitcreatie_beanvelden ctx =
+  List.concat
+    (List.mapi
+       (fun i (fc : resolved_feit_creatie) ->
+         let at = Printf.sprintf "/feitCreaties/%d" i in
+         let filler (r : rol) = Option.value r.rol_objecttype_naam ~default:"" in
+         let spells_role where path ftn = function
+           | None -> []
+           | Some n -> (
+               match find_ci ctx.doc.feittypen ftn with
+               | None -> [] (* the fact type itself is WF-028's report *)
+               | Some (ft : feittype) ->
+                   if mem_ci (some_names (List.map (fun (r : rol) -> r.rol_naam) ft.rollen)) n then
+                     []
+                   else
+                     [ v "WF-034" path
+                         (Printf.sprintf
+                            "'%s' is not a declared role of '%s': the %s bean field resolves \
+                             against no declaration"
+                            n ftn where) ])
+         in
+         (match fc.fc_feittype with
+          | Some ftn -> spells_role "created relation's" (at ^ "/zetVeld") ftn fc.zet_veld
+          | None -> [])
+         @ (match fc.join_rol with
+           | Some rb -> spells_role "final hop's" (at ^ "/joinVeld") rb.rb_feittype fc.join_veld
+           | None -> [])
+         @ List.concat
+             (List.mapi
+                (fun j (t : tussenstap) ->
+                  let tat = Printf.sprintf "%s/tussenstappen/%d" at j in
+                  match t.ts_rol with
+                  | None -> []
+                  | Some rb ->
+                      (match (resolve_binding ctx rb, t.ts_type) with
+                      | Ok (_, bound, _), Some tn when norm tn <> norm (filler bound) ->
+                          [ v "WF-034" (tat ^ "/type")
+                              (Printf.sprintf
+                                 "the hop over '%s' reaches '%s', but the intermediate bean type \
+                                  names '%s'"
+                                 rb.rb_feittype (filler bound) tn) ]
+                      | _ -> [])
+                      @ spells_role "hop's" (tat ^ "/veld") rb.rb_feittype t.veld)
+                fc.tussenstappen))
        ctx.doc.feit_creaties)
 
 (* WF-050: defaults-group well-formedness (IR-SPEC ch. 6): at least one
@@ -7014,7 +7223,8 @@ let all (doc : document) : violation list =
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx;
       wf034_verdelingen ctx; wf034_verdeling_namen ctx; wf034_verdeling_typen ctx;
-      wf034_verdeling_naamresolutie ctx; wf045_046 ctx;
+      wf034_verdeling_naamresolutie ctx; wf034_objectcreatie_subject ctx;
+      wf034_feitcreatie_beanvelden ctx; wf045_046 ctx;
       wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf079 ctx; wf082 ctx; wf054 ctx;
       wf057 ctx; wf059 ctx; wf060 ctx; wf087 ctx; wf061 ctx; wf088 ctx; wf065 ctx; wf067 ctx;
       wf071 ctx; wf072 ctx; wf075 ctx; wf086 ctx; expression_layer ctx ]
