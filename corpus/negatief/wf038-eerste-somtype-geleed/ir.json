@@ -1,0 +1,257 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Berging": {
+      "node": "Objecttype",
+      "naam": "Berging",
+      "attributen": {
+        "bergstand": {
+          "node": "SumType",
+          "domain": "stand",
+          "constructors": [
+            {
+              "name": "Geborgen",
+              "payload": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "Vermist",
+              "payload": null
+            }
+          ]
+        },
+        "bakboordstand": {
+          "node": "SumType",
+          "domain": "stand",
+          "constructors": [
+            {
+              "name": "Geborgen",
+              "payload": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "Vermist",
+              "payload": null
+            }
+          ]
+        },
+        "stuurboordstand": {
+          "node": "SumType",
+          "domain": "stand",
+          "constructors": [
+            {
+              "name": "Geborgen",
+              "payload": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "Vermist",
+              "payload": null
+            }
+          ]
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": null
+    }
+  },
+  "domeinen": {
+    "stand": {
+      "node": "SumType",
+      "domain": "stand",
+      "constructors": [
+        {
+          "name": "Geborgen",
+          "payload": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          }
+        },
+        {
+          "name": "Vermist",
+          "payload": null
+        }
+      ]
+    }
+  },
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "bergstand van een berging",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "bergstand",
+        "objecttype": "Berging",
+        "onderwerpBron": "de bergstand",
+        "navigatieRol": null,
+        "type": {
+          "node": "SumType",
+          "domain": "stand",
+          "constructors": [
+            {
+              "name": "Geborgen",
+              "payload": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "Vermist",
+              "payload": null
+            }
+          ]
+        },
+        "bron": "de bergstand",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "EERSTE",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "bakboordstand",
+            "objecttype": "Berging",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "SumType",
+              "domain": "stand",
+              "constructors": [
+                {
+                  "name": "Geborgen",
+                  "payload": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "Vermist",
+                  "payload": null
+                }
+              ]
+            },
+            "bron": "zijn bakboordstand",
+            "set": false,
+            "navigatiePad": []
+          },
+          {
+            "node": "AttribuutRef",
+            "attribuut": "stuurboordstand",
+            "objecttype": "Berging",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "SumType",
+              "domain": "stand",
+              "constructors": [
+                {
+                  "name": "Geborgen",
+                  "payload": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "Vermist",
+                  "payload": null
+                }
+              ]
+            },
+            "bron": "zijn stuurboordstand",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": null,
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "SumType",
+          "domain": "stand",
+          "constructors": [
+            {
+              "name": "Geborgen",
+              "payload": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "Vermist",
+              "payload": null
+            }
+          ]
+        },
+        "bron": "de eerste van zijn bakboordstand en zijn stuurboordstand",
+        "granulariteit": null
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

@@ -1,0 +1,251 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Berging": {
+      "node": "Objecttype",
+      "naam": "Berging",
+      "attributen": {
+        "bergstand": {
+          "node": "SumType",
+          "domain": "stand",
+          "constructors": [
+            {
+              "name": "Geborgen",
+              "payload": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "Vermist",
+              "payload": null
+            }
+          ]
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": null
+    },
+    "Schuit": {
+      "node": "Objecttype",
+      "naam": "Schuit",
+      "attributen": {
+        "stand": {
+          "node": "SumType",
+          "domain": "stand",
+          "constructors": [
+            {
+              "name": "Geborgen",
+              "payload": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "Vermist",
+              "payload": null
+            }
+          ]
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": null
+    }
+  },
+  "domeinen": {
+    "stand": {
+      "node": "SumType",
+      "domain": "stand",
+      "constructors": [
+        {
+          "name": "Geborgen",
+          "payload": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          }
+        },
+        {
+          "name": "Vermist",
+          "payload": null
+        }
+      ]
+    }
+  },
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {
+    "ligplaats": {
+      "node": "Feittype",
+      "naam": "ligplaats",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "berging",
+          "objecttypeNaam": "Berging",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "schuit",
+          "objecttypeNaam": "Schuit",
+          "meervoud": "schuiten",
+          "meervoudig": true
+        }
+      ]
+    }
+  },
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "bergstand van een berging",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "bergstand",
+        "objecttype": "Berging",
+        "onderwerpBron": "de bergstand",
+        "navigatieRol": null,
+        "type": {
+          "node": "SumType",
+          "domain": "stand",
+          "constructors": [
+            {
+              "name": "Geborgen",
+              "payload": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "Vermist",
+              "payload": null
+            }
+          ]
+        },
+        "bron": "de bergstand",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "MAXIMUM",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "stand",
+            "objecttype": "Schuit",
+            "onderwerpBron": "de stand van alle schuiten van de Berging",
+            "navigatieRol": null,
+            "type": {
+              "node": "SumType",
+              "domain": "stand",
+              "constructors": [
+                {
+                  "name": "Geborgen",
+                  "payload": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "Vermist",
+                  "payload": null
+                }
+              ]
+            },
+            "bron": "de stand van alle schuiten van de Berging",
+            "set": true,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": "Schuit",
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "SumType",
+          "domain": "stand",
+          "constructors": [
+            {
+              "name": "Geborgen",
+              "payload": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "Vermist",
+              "payload": null
+            }
+          ]
+        },
+        "bron": "het maximum stand van alle schuiten van de Berging",
+        "granulariteit": null,
+        "bronRol": {
+          "node": "RolBinding",
+          "feittype": "ligplaats",
+          "rol": "schuit"
+        }
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}
