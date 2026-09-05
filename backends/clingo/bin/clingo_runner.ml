@@ -11,26 +11,10 @@
    expected fault that does not occur, or a fault report without the
    fragment. Exit 2: load error or clingo unavailable. *)
 
-let read_all ic =
-  let b = Buffer.create 4096 in
-  (try
-     while true do
-       Buffer.add_channel b ic 1
-     done
-   with End_of_file -> ());
-  Buffer.contents b
-
-(* one clingo invocation on [text]; the raw outf2 payload and exit *)
-let run_clingo text =
-  let tmp = Filename.temp_file "uchar-clingo" ".lp" in
-  let oc = open_out tmp in
-  output_string oc text;
-  close_out oc;
-  let ic = Unix.open_process_in (Printf.sprintf "clingo --outf=2 %s" (Filename.quote tmp)) in
-  let out = read_all ic in
-  let status = Unix.close_process_in ic in
-  Sys.remove tmp;
-  (out, status)
+(* the solver invocation itself lives in the library (Clingo_backend.Solve),
+   so this runner and the backend's own suite call clingo the SAME way —
+   one source of truth, or the suite could pin what the gate never runs *)
+let run_clingo = Clingo_backend.Solve.run_clingo
 
 (* the viol/2 witnesses of an UNSAT program: re-run with the global
    integrity constraint stripped and the witnesses shown *)

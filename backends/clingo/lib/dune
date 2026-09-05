@@ -1,3 +1,3 @@
 (library
  (name clingo_backend)
- (libraries uchar-ir-v0 uchar-ref yojson))
+ (libraries uchar-ir-v0 uchar-ref yojson unix))

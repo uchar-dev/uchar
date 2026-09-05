@@ -980,6 +980,32 @@ let ref_matches ~name ~ir ~case_text =
   | [] -> check (name ^ ": ref pins the values") true
   | ms -> check (name ^ ": ref pins the values (" ^ String.concat "; " ms ^ ")") false
 
+(* THE SOLVER IN THE SUITE — the mirror of [ref_matches]. Translate the
+   frame, run clingo through the very [Solve.run_clingo] the gate-6 runner
+   uses, and check the stable model against the frame's own expectations.
+   Without it a frame can only pin "does it translate", which is silent about
+   the VALUE, and the anchor twists below turn precisely on a silent 0.
+
+   Every failure mode is loud and named — a translation fault, a clingo that
+   is not on PATH, an UNSAT, a value mismatch — because a check that quietly
+   skipped when the solver was missing would be a green subset. *)
+let clingo_matches ~name ~ir ~case_text =
+  let label = name ^ ": clingo pins the values" in
+  let doc, case = load_pair ~ir ~case_text in
+  match
+    let program = Translate.translate doc case in
+    match Solve.run_clingo program with
+    | out, Unix.WEXITED (10 | 30) ->
+        Model.check doc case (Model.model_of_outf2 (Yojson.Safe.from_string out))
+    | _, Unix.WEXITED 127 -> [ "clingo NOT FOUND on PATH" ]
+    | _, Unix.WEXITED 20 -> [ "UNSATISFIABLE — a fail-fast guard fired" ]
+    | _, Unix.WEXITED c -> [ Printf.sprintf "clingo exited %d" c ]
+    | _, _ -> [ "clingo killed" ]
+  with
+  | [] -> check label true
+  | ms -> check (label ^ " (" ^ String.concat "; " ms ^ ")") false
+  | exception Uchar_ref.Value.Fault m -> check (label ^ " (fault: " ^ m ^ ")") false
+
 let translates_with ~name ~ir ~case_text =
   let irf = write_temp ".ir.json" ir in
   let casef = write_temp ".case.json" case_text in
@@ -1041,6 +1067,8 @@ let () =
     ~ir:setfold_zero ~case_text:(totaal_case ~bewaarlast:"0" "vondsttarief");
   ref_matches ~name:"§7.1 set operand, no reachable member: ref answers 0 (§4.20)"
     ~ir:setfold_zero ~case_text:(totaal_case ~bewaarlast:"0" "vondsttarief");
+  clingo_matches ~name:"§7.1 set operand, no reachable member: clingo answers 0 too"
+    ~ir:setfold_zero ~case_text:(totaal_case ~bewaarlast:"0" "vondsttarief");
   (* no navigation written, but the operand is declared on another type: the
      ci-control the gedurende sister arm has always carried *)
   faults_with ~name:"temporal totaal, foreign-typed operand without navigation"
@@ -1101,10 +1129,12 @@ let euro_num eenheid =
 (* [operand_ot] is the operand's objecttype ANNOTATION: "Vondst" (the
    element type, temporal) or "Kist" (a third type declaring the same
    attribute name NON-temporally — the mixed annotation).
-   [tarief_noemer] is the rate's denominator: mnd (the grid unit itself) or
-   jr (convertible, factor 12 — the strip this encoding cannot carry). *)
-let setvouw_doc ~kind ~operand_ot ~tarief_noemer ~doel_eenheid =
-  let tarief = euro_num (eur tarief_noemer) in
+   [tarief_eenheid] is the rate's WHOLE unit: [eur mnd_eenheid] (the grid
+   unit itself as denominator), [eur jr_eenheid] (convertible, factor 12 —
+   the strip this encoding cannot carry), or "null" — the UNITLESS frame,
+   where the write fence cannot help the anchor. *)
+let setvouw_doc ~kind ~operand_ot ~tarief_eenheid ~doel_eenheid =
+  let tarief = euro_num tarief_eenheid in
   {|{ "formaat": "regelspraak-ir-v0",
   "objecttypen": {
     "Jutter": { "node": "Objecttype", "naam": "Jutter",
@@ -1262,12 +1292,14 @@ let () =
   (* the carried fold, straight: the operand's annotation names the element
      type, both anchors agree, and the program integrates timelines *)
   let straight =
-    setvouw_doc ~kind:"TOTAAL" ~operand_ot:"Vondst" ~tarief_noemer:mnd_eenheid
+    setvouw_doc ~kind:"TOTAAL" ~operand_ot:"Vondst" ~tarief_eenheid:(eur mnd_eenheid)
       ~doel_eenheid:(eur "null")
   in
   translates_carrying ~name:"§7.1 per-element fold (element-typed operand)" ~ir:straight
     ~case_text:(setvouw_case ~v1:v1_timeline) ~needle:"_wu(";
   ref_matches ~name:"§7.1 per-element fold, 36 + 12 + 0 = 48" ~ir:straight
+    ~case_text:(setvouw_case ~v1:v1_timeline);
+  clingo_matches ~name:"§7.1 per-element fold, 36 + 12 + 0 = 48" ~ir:straight
     ~case_text:(setvouw_case ~v1:v1_timeline);
   (* THE ANCHOR. The operand's objecttype annotation now names "Kist", which
      declares bewaartarief NON-temporally; elementObjecttype stays "Vondst".
@@ -1277,20 +1309,40 @@ let () =
      facts, and a silent leeg. Before this card the shape fell into the
      reasonless catch-all, so ref answered where clingo refused. *)
   let mixed =
-    setvouw_doc ~kind:"TOTAAL" ~operand_ot:"Kist" ~tarief_noemer:mnd_eenheid
+    setvouw_doc ~kind:"TOTAAL" ~operand_ot:"Kist" ~tarief_eenheid:(eur mnd_eenheid)
       ~doel_eenheid:(eur "null")
   in
   translates_carrying ~name:"§7.1 anchor: mixed annotation folds on elementObjecttype"
     ~ir:mixed ~case_text:(setvouw_case ~v1:v1_timeline) ~needle:"_wu(";
   ref_matches ~name:"§7.1 anchor: ref answers the mixed annotation identically"
     ~ir:mixed ~case_text:(setvouw_case ~v1:v1_timeline);
+  clingo_matches ~name:"§7.1 anchor: clingo answers the mixed annotation identically"
+    ~ir:mixed ~case_text:(setvouw_case ~v1:v1_timeline);
+  (* THE ANCHOR WITH NO UNIT MACHINERY IN PLAY AT ALL. The frame above still
+     runs the §4.20 noemer strip and the write-unit fence, and BOTH of those
+     hang on the same anchor ([eff_unit]'s strip guard calls
+     [fold_operand_otype] too) — so turning only the translating arm's knob
+     leaves the fence anchored correctly and it does NOT catch the mismatch:
+     measured, that frame answers the same SILENT 0 rather than a unit fault.
+     Here every unit is gone, so nothing but the fold is left to be right or
+     wrong: anchored on the annotation the read sums val/3 facts a
+     timeline-carrying case does not have and derives 0 where ref derives 48.
+     It needs the solver — "does it translate" is true for both anchors.
+     Measured on the emitted document: verifier PASS, ref 48, clingo 48. *)
+  let mixed_unitless =
+    setvouw_doc ~kind:"TOTAAL" ~operand_ot:"Kist" ~tarief_eenheid:"null" ~doel_eenheid:"null"
+  in
+  ref_matches ~name:"§7.1 anchor, unitless: ref answers 48" ~ir:mixed_unitless
+    ~case_text:(setvouw_case ~v1:v1_timeline);
+  clingo_matches ~name:"§7.1 anchor, unitless: clingo answers 48 (no write fence to help)"
+    ~ir:mixed_unitless ~case_text:(setvouw_case ~v1:v1_timeline);
   (* the noemer strip must land EXACTLY: EUR/jr over a month grid cancels by
      the declared factor 1/12, which this integer encoding cannot carry. ref
      computes it; refusing loudly, naming both units, is the only honest
      answer here — never a rounded one. *)
   faults_with ~name:"§7.1 noemer strip, a convertible but non-1 denominator"
     ~ir:
-      (setvouw_doc ~kind:"TOTAAL" ~operand_ot:"Vondst" ~tarief_noemer:jr_eenheid
+      (setvouw_doc ~kind:"TOTAAL" ~operand_ot:"Vondst" ~tarief_eenheid:(eur jr_eenheid)
          ~doel_eenheid:(eur "null"))
     ~case_text:(setvouw_case ~v1:v1_timeline)
     ~needle:
@@ -1302,7 +1354,7 @@ let () =
      strip missing here, clingo would answer where ref faults. *)
   faults_with ~name:"§7.1 strip direction: the integrated total no longer fits a rate target"
     ~ir:
-      (setvouw_doc ~kind:"TOTAAL" ~operand_ot:"Vondst" ~tarief_noemer:mnd_eenheid
+      (setvouw_doc ~kind:"TOTAAL" ~operand_ot:"Vondst" ~tarief_eenheid:(eur mnd_eenheid)
          ~doel_eenheid:(eur mnd_eenheid))
     ~case_text:(setvouw_case ~v1:v1_timeline)
     ~needle:{|non-identical units under the write to "bewaarlast"|};
@@ -1312,7 +1364,7 @@ let () =
      pre-empting the reason. *)
   faults_with ~name:"minimum/maximum over a temporal set stays refused"
     ~ir:
-      (setvouw_doc ~kind:"MAXIMUM" ~operand_ot:"Vondst" ~tarief_noemer:mnd_eenheid
+      (setvouw_doc ~kind:"MAXIMUM" ~operand_ot:"Vondst" ~tarief_eenheid:(eur mnd_eenheid)
          ~doel_eenheid:(eur mnd_eenheid))
     ~case_text:(setvouw_case ~v1:v1_timeline)
     ~needle:
@@ -1345,7 +1397,7 @@ let () =
    So the fault text is pinned here, with the boundary beside it. *)
 let () =
   let straight =
-    setvouw_doc ~kind:"TOTAAL" ~operand_ot:"Vondst" ~tarief_noemer:mnd_eenheid
+    setvouw_doc ~kind:"TOTAAL" ~operand_ot:"Vondst" ~tarief_eenheid:(eur mnd_eenheid)
       ~doel_eenheid:(eur "null")
   in
   (* 150 members × ONE shared 360-month span = 54 000 tuples. Deduplicated
@@ -1369,6 +1421,8 @@ let () =
   translates_with ~name:"§7.1 wrap fence: Σn = 46340 exactly still translates" ~ir:straight
     ~case_text:edge;
   ref_matches ~name:"§7.1 wrap fence: Σn = 46340 exactly, ref pins 46340" ~ir:straight
+    ~case_text:edge;
+  clingo_matches ~name:"§7.1 wrap fence: Σn = 46340 exactly, clingo plays it" ~ir:straight
     ~case_text:edge
 
 let () =
