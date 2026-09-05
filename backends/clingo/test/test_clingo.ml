@@ -918,6 +918,104 @@ let () =
     ~ir:sumfold_doc ~case_text:sumfold_case
     ~needle:"carries no numeric scale, so it cannot be harmonised"
 
+(* --- THE SAME ABSENT SCALE, WRITTEN INTO THE ASP TEXT ---------------------
+
+   The two date-arithmetic arms do not divide in OCaml at all: they PRINT the
+   divisor into the program — `((T)/sn)` — with sn the duration operand's
+   scale. The counted unit comes from the wire `type` (day_time_unit_of,
+   dt_time_unit_of), the scale from the DECLARATION, so a sum-typed attribute
+   annotated Numeriek{dag} (resp. {uur}) — a lie no loader and no annotation
+   fence catches — walks in as a duration and grounds as `.../0`.
+
+   Measured before the fence (2026-09-05), on exactly these two documents:
+
+       clingo: info: operation undefined: (C.../0)
+       ... and then PASS on the empty model,
+
+   where ref faults `plus: expected a number, got Openstaand(30)`. No
+   exception, no exit 2, no fault: a SILENT ref != clingo — worse than the
+   crash the fold arm gave, because nothing at all reports it. *)
+
+let datum_t = {|{ "node": "DatumInDagen" }|}
+let datumtijd_t = {|{ "node": "DatumTijd" }|}
+
+let num_tijdseenheid afk =
+  {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD",
+      "eenheid": { "node": "Eenheid", "afkorting": "|} ^ afk
+  ^ {|", "stelsel": null, "canoniek": null, "factorNaarCanoniek": null, "noemer": null } }|}
+
+(* day precision: <peildatum> + <meldpositie annotated Numeriek{dag}> *)
+let dagduur_lie_doc =
+  door_doc
+    ~attributen:
+      ({|"peildatum": |} ^ datum_t ^ {|, "meldpositie": |} ^ meldstatus
+     ^ {|, "vervaldatum": |} ^ datum_t)
+    ~parameters:""
+    ~regel:
+      ({|{ "node": "ResolvedRegel", "naam": "vervaldatum van een meldplicht", "soort": "BEREKENING",
+      "doel": |} ^ aref "vervaldatum" datum_t
+     ^ {|,
+      "waarde": { "node": "Binair", "op": "PLUS",
+        "links": |} ^ aref "peildatum" datum_t
+     ^ {|,
+        "rechts": |}
+     ^ aref "meldpositie" (num_tijdseenheid "dag")
+     ^ {|,
+        "type": |} ^ datum_t
+     ^ {|, "bron": "de peildatum plus de meldpositie" },
+      "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|})
+
+let dagduur_lie_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+      { "label": "M1", "objectType": "Meldplicht",
+        "attributes": { "peildatum": { "date": "2026-01-01" },
+          "meldpositie": { "constructor": "Openstaand", "payload": { "number": "30" } } },
+        "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }
+|}
+
+(* millisecond precision: the dt_term sibling, <meldmoment> + {uur} *)
+let dtduur_lie_doc =
+  door_doc
+    ~attributen:
+      ({|"meldmoment": |} ^ datumtijd_t ^ {|, "meldpositie": |} ^ meldstatus
+     ^ {|, "vervalmoment": |} ^ datumtijd_t)
+    ~parameters:""
+    ~regel:
+      ({|{ "node": "ResolvedRegel", "naam": "vervalmoment van een meldplicht", "soort": "BEREKENING",
+      "doel": |} ^ aref "vervalmoment" datumtijd_t
+     ^ {|,
+      "waarde": { "node": "Binair", "op": "PLUS",
+        "links": |} ^ aref "meldmoment" datumtijd_t
+     ^ {|,
+        "rechts": |}
+     ^ aref "meldpositie" (num_tijdseenheid "uur")
+     ^ {|,
+        "type": |} ^ datumtijd_t
+     ^ {|, "bron": "het meldmoment plus de meldpositie" },
+      "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|})
+
+let dtduur_lie_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+      { "label": "M1", "objectType": "Meldplicht",
+        "attributes": { "meldmoment": { "dateTime": "2026-01-01T08:00:00" },
+          "meldpositie": { "constructor": "Openstaand", "payload": { "number": "30" } } },
+        "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }
+|}
+
+let () =
+  faults_with ~name:"a sum-typed duration under date arithmetic (lying annotation)"
+    ~ir:dagduur_lie_doc ~case_text:dagduur_lie_case
+    ~needle:"a symbolic operand reaches a date-arithmetic duration";
+  faults_with ~name:"a sum-typed duration under datum-tijd arithmetic (lying annotation)"
+    ~ir:dtduur_lie_doc ~case_text:dtduur_lie_case
+    ~needle:"a symbolic operand reaches a datum-tijd duration"
+
 (* --- the temporal totaal's SUBJECT anchor (the fold-arm narrowing) ---------
 
    The temporal-total arm emits val(<SUBJECT>,attr,V): it totals the asOfDate
