@@ -49,7 +49,12 @@ Acceptance:
 - Alle twaalf gates groen.
 
 May touch: `spec/IR-SPEC.md` (proposal — maintainer merget),
-`backlog/`.
+`backlog/`. **Verruimd in de fixronde (2026-09-05), met reden in
+R5:** `spec/RUNTIME-SEMANTICS.md` (eveneens beschermd, dus deel van
+hetzelfde voorstel) en `spec/ASP-TRANSLATION.md` (geen beschermd pad).
+Beide beschrijven de vorm die deze kaart als getuige pint — een
+lijstparameter van `SumType`-elementen — als ongedragen; de getuige
+weerlegt dat, dus de zinnen moeten mee.
 
 Out of scope: elke verifier-, schema- of corpuswijziging (de meting
 vraagt er geen: de arm is al correct, alleen haar notitie is verouderd);
@@ -63,12 +68,19 @@ gesplitst: de `ParameterRef`-helft is vervangen door haar getuige
 één-document-mutant met de letterlijke regel), de `DimensieCel`-helft
 blijft staan als open meetgat — nu zelf hermeten en gedateerd — en de
 weerlegde ASP-weigeringszin is geschrapt. De getuigenkolom noemt de golden
-in de vorm van de andere rijen. Geen tweede rij meegenomen: WF-065 en
-WF-070 voeren geen geen-getuige-claim, en de gelijkvormige claim van
-WF-090 gaat over STRUCT-getypeerde gebruiksplekken, die deze golden niet
-draagt (nagemeten: nul in golden+rood). Verifier, schema, corpus en
-scripts ongewijzigd — de mutant was tijdelijk en is vóór elke commit
-hersteld. Alle dertien gates groen, alle tellingen gelijk aan main
+in de vorm van de andere rijen. **Er is wél een tweede rij, en die is in
+de fixronde meegegaan in dezelfde diff**: WF-091's eerlijkheidsnotitie 3
+sloot af met "no golden carries a keuzetype-typed or struct-typed
+`ParameterReference` or `DimensionCellRead`, so the corresponding notes at
+WF-089 and WF-090 stand unchanged" — vier conjuncten waarvan precies één
+onwaar (de keuzetype-`ParameterRef`), en een slotclausule die door deze
+eigen diff werd tegengesproken. Zie de fixronde-paragraaf hieronder.
+WF-065 en WF-070 voeren inderdaad geen geen-getuige-claim, en WF-090's
+claim over STRUCT-getypeerde gebruiksplekken blijft waar (hermeten: nul in
+golden+rood én in de pariteitzone). Verifier, schema, corpus en scripts
+ongewijzigd — de mutanten waren tijdelijk, draaiden in een `git
+archive`-kopie buiten de werkkopie, en `checks.ml` is byte-identiek aan
+main gebleven. Alle dertien gates groen, alle tellingen gelijk aan main
 (176/297, 405/405).
 
 ## Bouwnotitie — de hermeting (2026-09-05)
@@ -145,12 +157,24 @@ $ sh scripts/check-verifier.sh
 check-verifier: PASS (176 golden clean; 297 negatief rejected for their declared rule)
 ```
 
-### Andere rijen met dezelfde claim: geen
+### Andere rijen met dezelfde claim — de leesmiss van deze ronde
+
+*Deze paragraaf stond hier oorspronkelijk als "Andere rijen met dezelfde
+claim: geen". Dat was onwaar en de fixronde heeft het rechtgezet; de
+oorspronkelijke redenering over WF-065/WF-070/WF-090 klopt en blijft
+staan, de conclusie niet.*
 
 Gegrepen op `no positive witness` / `no golden` / `cannot be added` /
 `unpinned` in `spec/IR-SPEC.md`. De enige `no positive witness`-claim in het
-hele document is die van WF-089. De twee rijen die de kaart noemt voeren
-zo'n claim niet:
+hele document is inderdaad die van WF-089 — maar de grepterm `no golden`
+**trof regel 3868 wel degelijk**, de WF-091-rij. Dat is niet gezien: die
+rij is één regel van ruim 25 000 tekens, de treffer stond middenin
+eerlijkheidsnotitie 3, en er is op de trefferlijst afgegaan in plaats van
+op de treffer zelf. De rij voert dezelfde geen-getuige-claim over dezelfde
+twee gebruiksplekken, en is in de fixronde alsnog meegegaan (zie onder).
+
+De twee rijen die de kaart bij naam noemt voeren zo'n claim inderdaad
+niet:
 
 - **WF-065** (lijstelement-`SumType`) draagt geen geen-getuige-zin; haar
   getuigenkolom noemt `anchor/jutterswet-staffelvergoeding` +
@@ -167,6 +191,135 @@ Die claim gaat over STRUCT-getypeerde gebruiksplekken, en deze golden
 draagt een som-getypeerde lijstparameter, geen struct. Nagemeten over
 golden+rood: nul struct-getypeerde `ParameterRef`-knopen. De claim blijft
 waar en blijft ongewijzigd.
+
+## Fixronde (2026-09-05)
+
+Twee lenzen lazen de gelande diff na en bevestigden de kern (de getuige
+klopt, de mutant klopt, de geschrapte ASP-zin was terecht geschrapt). Wat
+ze vonden zit in de tekst eromheen. Vijf punten, elk met een eigen
+hermeting; **elke meting is hier zelf opnieuw gedaan vóór het schrijven**,
+in twee `git archive`-kopieën onder `/tmp`, zodat de werkkopie geen moment
+een mutant droeg (`git diff main -- spec/verifier/lib/checks.ml` is leeg).
+
+### R1 — het blokkerende punt: de slotzin van WF-091's notitie 3
+
+De zin "no golden carries a keuzetype-typed or struct-typed
+`ParameterReference` or `DimensionCellRead`, so the corresponding notes at
+WF-089 and WF-090 stand unchanged" draagt **vier** conjuncten. Precies één
+is onwaar, en de slotclausule ("stand unchanged") werd door deze eigen
+diff tegengesproken — WF-089's notitie veránderde er immers in.
+
+Hermeten met een arm-en-klasse-beperkte over-afwijzende mutant (vuur zodra
+de kruising van díé arm voor díé klasse LEEFT), over alle 176
+golden+rood-documenten en over de 30 pariteitdocumenten:
+
+```
+MUT=pk (ParameterRef × keuzetype) : 176 documenten, 1 rood
+  corpus/golden/jutterswet-meldplichtspoor/ir.json
+  /resolvedRegels/0/waarde/list/type: parameter reference 'meldreeks'
+MUT=ps (ParameterRef × struct)    : 176 documenten, 0 rood
+MUT=ck (DimensieCel  × keuzetype) : 176 documenten, 0 rood
+MUT=cs (DimensieCel  × struct)    : 176 documenten, 0 rood
+pariteitzone (30 documenten): 0 rood bij alle vier
+```
+
+De zin is vier-weg gesplitst: drie paringen leeg (dus WF-090's notitie
+ongewijzigd op beide armen, en WF-089's `DimensieCel`-helft ook), de
+vierde niet — en dát is precies de helft die deze diff veranderde.
+
+### R2 — vijf mini-ingrepen in de WF-089-rij
+
+- **(a) terminologiebotsing.** De getuige-zin zei "whose fold source reads
+  a list PARAMETER". De fold-bron-arm is in deze rijen attribuut-only: ze
+  vuurt alleen voor een `AttribuutRef`-foldargument, elk ander argument
+  valt door naar de gewone expressiewandeling. De getuige zit dus op de
+  **gewone `ParameterRef`-arm**, bereikt via de lijstoperand van de
+  `Fold`. Herschreven, met "an ordinary walked reference on THIS arm, NOT
+  the fold-source arm" erbij. En "carried end to end" is teruggebracht tot
+  wat waar is: **twee benen van het vierkant** — `ref` en clingo spelen de
+  acht casussen exact (poorten 5 en 6), de golden heeft géén frontendbron
+  (`bron` is `null`, dus poorten 9 en 10 zien haar nooit), en de
+  Drools-casusloader weigert de lijst-invoervorm met eigen reden, zodat de
+  golden in poort 12 bij de gegroepeerde auto-weigeringen staat en nooit
+  in de gespeelde verzameling.
+- **(b) pariteitbijzin.** Gemeten met dezelfde probe: de 30
+  pariteitdocumenten betreden de `ParameterRef`-arm **18 keer over 9
+  documenten**, en geen van die referenties noemt een keuzetype (de
+  `pk`-mutant zwijgt er). Dat stond nergens; nu wel.
+- **(c) bereikbaarheid van de DimensieCel-nul.** Het is een BEREIKTE nul,
+  geen onbezochte arm: de celarm wordt betreden en vergelijkt bij precies
+  de twee golden-cellezingen — **2 vergelijkingen over 176 documenten**,
+  tegenover **46 vergelijkingen over 31 documenten** op de
+  `ParameterRef`-arm. De mutant kreeg daar dus zijn twee kansen.
+- **(d) kolomgroepering.** In de getuigenkolom stond
+  `jutterswet-meldplichtspoor` met een `+` áchter de somreferentiegroep,
+  wat haar in die groep trekt. Nu een komma tussen de groepen en `+`
+  alleen binnen een groep, met de eigen omschrijving ("the `ParameterRef`
+  arm … standing as a `Fold`'s list operand — not the fold-source arm").
+- **(e)** "of all 257 negatiefs" → **297**, de stand van vandaag (gemeten:
+  `find corpus/negatief -name ir.json | wc -l` = 297).
+
+### R3 — twee WF-091-punten in dezelfde diff
+
+- **(a) negatiefkolom.** "`wf091-parameterref-eenheid` (the arm without a
+  golden witness)" werd tegengesproken door de goldenkolom én door
+  notitie 3 van diezelfde rij, die beide `jutterswet-aanvoergeld` noemen.
+  Nu: "(the arm whose golden witness, `jutterswet-aanvoergeld`, arrived
+  only on 2026-09-04 — see honesty note 3)".
+- **(b) breedtecijfers van notitie 3.** Die stonden op de 174-stand.
+  Hermeten met de notitie-eigen mutant (vuurt op elke eenheiddragende
+  gebruiksplek op één arm), over de 176:
+
+```
+ARM=target : 17  (was 15; erbij: jutterswet-tempototaal, jutterswet-tempovouw)
+ARM=attr   : 13  (ongewijzigd)
+ARM=binder :  2  (ongewijzigd)
+ARM=fold   :  3  (was 1; jutterswet-vondsttelling + tempototaal + tempovouw)
+ARM=param  :  1  (jutterswet-aanvoergeld)
+ARM=cel    :  1  (jutterswet-seizoenvondst)
+```
+
+  Alleen `target` en `fold` bewogen, en de rij zegt nu ook waaróm: niet de
+  regel maar het corpus groeide — beide temporele goldens dragen zowel een
+  eenheiddragend regeldoel als een eenheiddragende foldbron. Herdateerd op
+  "re-measured 2026-09-05 over the 176".
+
+### R4 — deze kaart
+
+De Results-alinea en de bouwnotitie beweerden "geen tweede rij". Dat was
+onwaar: de eigen grepterm `no golden` trof regel 3868 letterlijk. Beide
+plekken zijn hierboven eerlijk herschreven, mét de reden van de miss (een
+leesmiss in een regel van ruim 25 000 tekens), en met de vermelding dat de
+tweede rij in dezelfde diff is meegegaan.
+
+### R5 — twee verruimingen van *may touch*, met reden
+
+Beide zijn gemeld en beide zijn nodig omdat de nieuw gepinde vorm — een
+lijstparameter van `SumType`-elementen — elders als *ongedragen* wordt
+beschreven, wat de getuige van deze kaart weerlegt.
+
+- **`spec/ASP-TRANSLATION.md` (~S19, r. 2211)** — géén beschermd pad, dus
+  een gewone wijziging; hier gemeld omdat de kaart hem oorspronkelijk niet
+  in *may touch* had. De zin "the ASP case emission scales every parameter
+  through `decimals_of_datatype`" is als **mechanisme** onwaar: de
+  parameterlus neemt haar `ListType`-tak eerst (S15,
+  `element_scale_of`/`reify_list`), die een `SumType`-element als
+  grondconstructorterm op schaal 0 draagt, en pas de doorval schaalt
+  scalair. Nu "every *scalar* parameter" — hetzelfde woord dat de
+  structzusterzin twintig regels verderop al gebruikte — plus één zin over
+  de voorafgaande lijsttak met `jutterswet-meldplichtspoor` als getuige
+  (gemeten: 8 van 8 casussen `clingo: PASS`).
+- **`spec/RUNTIME-SEMANTICS.md` (~r. 3754)** — **wél een beschermd pad**,
+  dus deze wijziging is onderdeel van hetzelfde voorstel als de
+  IR-SPEC-diff; de maintainer merget. De parenthese "(the
+  sum-typed-parameter sibling, ASP-TRANSLATION S19)" suggereerde dat de
+  somkant even ongedragen is als de structkant. De structhelft blíjft waar
+  — gemeten over elke corpuscasus die een parameter aanlevert: de
+  aangeleverde vormen zijn scalair `Numeriek` (65), lijst-van-`Numeriek`
+  (19) en lijst-van-`SumType` (8), en er is **geen enkele** struct-vorm,
+  scalair noch lijst. De somkant niet: de zusterschap geldt alleen voor de
+  **scalaire** somparameter; de lijstvorm ervan wordt door een golden
+  gedragen.
 
 ### De dertien poorten (na de wijziging, alle tellingen gelijk aan main)
 
