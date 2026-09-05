@@ -279,9 +279,13 @@ ratification-pending-vraag. (c) "10 rapporten" heet nu "10
 documentrapporten", met de regeltelling (12/11/1/1/5) als bijzin — de
 twee tellingen waren niet uit elkaar te houden. (d) De
 twee-vormen-dichotomie is uit het proza: de regel leest `argumenten` en
-niets anders, en gemeten dragen **6 van de 14** gelede ordenende folds
-in de vier zones óók `elementObjecttype` — vorm is geen dichotomie om op
-te sturen, en dat de regel er niet op stuurt is haar kracht. (e) De
+niets anders, en gemeten dragen in de vier zones **6 van de 16** gelede
+ordenende folds óók `elementObjecttype` — in de drie corpuszones **4 van
+de 14**, alle vier in `jutterswet-peildatum`, de andere twee in de
+parity-zone (waaronder juist het document met de sentinel-operand). Vorm
+is dus geen dichotomie om op te sturen, en dat de regel er niet op
+stuurt is haar kracht. De spec- en commentaarzinnen dragen de
+corpus-only telling, self-contained. (e) De
 "twee negatiefs op deze positie"-zin in ch. 2.4 telt er **drie**
 (`wf089-foldbron-enum` hoort erbij; gemeten in de clausule-mutant). (f)
 Een eerlijke zin dat de `Percentage`-helft van de getalfamilie

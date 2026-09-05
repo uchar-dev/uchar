@@ -2845,9 +2845,10 @@ Comparison, Predicate, and CharacteristicCheck only —
   argument, whose type is the element attribute's datatype, the
   articulated fold as two or more listed operands, each deciding for
   itself. The two are no dichotomy the rule could have keyed on anyway:
-  6 of the corpus's 14 articulated ordering folds carry
-  `elementObjecttype` besides, and reading the operands is exactly what
-  makes that harmless. An operand carrying the unknown sentinel, or no
+  4 of the corpus's 14 articulated ordering folds carry
+  `elementObjecttype` besides — the tag v0 stamps vestigially
+  (`RUNTIME-SEMANTICS.md` ch. 1.2) — and reading the operands is exactly
+  what makes that harmless. An operand carrying the unknown sentinel, or no
   type at all, **defers** — the sentinel is the ch. 4.3 row-1 wart
   WF-034 tolerates in a fold source. Where the defer is *unreachable* it
   is dead weight and where it is reachable it is load-bearing, and only

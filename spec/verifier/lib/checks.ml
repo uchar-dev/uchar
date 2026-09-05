@@ -3432,10 +3432,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
          The rule reads `argumenten` and nothing else, so it does not
          turn on the wire form: an instance fold spells its contributors
          as one set-valued argument whose type is the element attribute's
-         datatype, an articulated fold as two or more listed ones — and 6
+         datatype, an articulated fold as two or more listed ones — and 4
          of the corpus's 14 articulated ordering folds carry
-         `elementObjecttype` besides, so form is no dichotomy a rule
-         could have keyed on.
+         `elementObjecttype` besides (v0 stamps the tag vestigially), so
+         form is no dichotomy a rule could have keyed on.
 
          The unknown sentinel and an operand carrying no type at all
          DEFER. Where that defer is unreachable it is dead, and where it
