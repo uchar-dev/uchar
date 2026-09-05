@@ -147,9 +147,9 @@ let value_scale = function
 let numeric_scale ~what s =
   if s < 1 then
     fault
-      "a symbolic operand reaches %s: a sum-type or record value carries no numeric scale, so it \
-       cannot be harmonised against one (ref faults the operation; this arm refuses it rather \
-       than divide by the absent scale)"
+      "a symbolic operand reaches %s: a value with no numeric scale (today a sum-type or record \
+       value) cannot be harmonised against one (ref faults the operation; this arm refuses it \
+       rather than divide by the absent scale)"
       what;
   s
 
@@ -3281,9 +3281,12 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       let b1, t1, s1 = l and b2, t2, s2 = r in
       (* an ORDERING over a ground constructor term has no meaning: clingo's
          term order would answer where ref faults the unordered comparison.
-         Both scales are 0 there, so nothing divides and the divergence would
-         be SILENT rather than a crash — the one site the fence saves from a
-         wrong answer instead of from an exception *)
+         With both scales 0 the harmonisation width m is 0 too, and the range
+         guard below divides max_int31 by (m / s1) — 0/0. Measured with the
+         fence removed: `Fatal error: exception Division_by_zero`, exit 2. The
+         two silent siblings, where the same 0/0 never forms because their
+         scaling helper skips the division at s = m, are [body_condition] and
+         [value_condition]. *)
       let s1 = numeric_scale ~what:"an ordering comparison" s1 in
       let s2 = numeric_scale ~what:"an ordering comparison" s2 in
       let m = max s1 s2 in
@@ -4451,12 +4454,12 @@ and value_condition ctx ~subject ~subject_ot (c : conditie) : string list * stri
    write rule's full body, so the fence fires only where the rule
    fires. Returns the fitted term plus guard atoms for the write rule.
 
-   The identity case comes FIRST on purpose: [scale = target] passes an
-   unscaled pair through untouched, which is the legitimate route for a
-   sum/struct value whose target is equally unscaled. Only past it does a
-   scale become a modulus, and only there is scale 0 the divide-by-zero — a
-   record term aimed at a numeric target, which is exactly the write the
-   declaration says must not happen. *)
+   The identity case comes first as BOOKKEEPING, not as semantics: [target] is
+   always [pow10 (attr_decimals ...)] and therefore >= 1, and a sum- or
+   struct-typed target never reaches here at all (its own write arm runs
+   first), so [scale = target = 0] cannot arise. Measured: hoisting the fence
+   ABOVE the identity test changes nothing — suite 47/0, gate 6 405/405. The
+   fence stays where the division is, which is where it reads. *)
 let fitted ctx ~subject ~what ~body term scale target =
   if scale = target then (term, [])
   else

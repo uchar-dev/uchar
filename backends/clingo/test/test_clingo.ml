@@ -921,7 +921,7 @@ let sumfold_case =
 let () =
   faults_with ~name:"a sum-typed operand under the articulated ordering fold"
     ~ir:sumfold_doc ~case_text:sumfold_case
-    ~needle:"carries no numeric scale, so it cannot be harmonised"
+    ~needle:"a value with no numeric scale (today a sum-type or record value) cannot be harmonised"
 
 (* --- THE SAME ABSENT SCALE, WRITTEN INTO THE ASP TEXT ---------------------
 
