@@ -3751,8 +3751,15 @@ Worked (the anchor's `dubbel` iff `dossier` = `{waarde: 120.50, telling:
   admits a **struct-typed parameter**, which ref carries but clingo
   refuses loudly — the ASP case emission scales every scalar parameter and
   a `StructType` has no integer encoding (`unscalable datatype in the ASP
-  translation`), and no corpus case exercises it (the sum-typed-parameter
-  sibling, ASP-TRANSLATION S19). The loaders fail fast on an undeclared
+  translation`), and no corpus case exercises it — in ANY zone, scalar or
+  list-typed (measured 2026-09-05 over every corpus case that supplies a
+  parameter: the declared shapes are scalar `Numeriek`, list-of-`Numeriek`
+  and list-of-`SumType`, and no struct one). The sibling is the SCALAR
+  sum-typed parameter, and only that one (ASP-TRANSLATION S19): the LIST
+  form of a sum-typed parameter is not equally uncarried — it takes the
+  case emission's `ListType` branch ahead of the scalar scaling and is
+  witnessed by a golden (`corpus/golden/jutterswet-meldplichtspoor`, eight
+  cases replaying exactly through clingo). The loaders fail fast on an undeclared
   field, a field against the wrong datatype, or a leeg field (the no-hole
   rule at the boundary — the WF-059/WF-018 backstop, widened); and the
   input-precision fence recurses into record fields and list elements,

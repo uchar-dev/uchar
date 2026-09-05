@@ -2208,11 +2208,20 @@ own-subject attribute read or a `Fold` result (the reduce extraction —
 navigated sum reads await a case); a
 match arm whose result scale disagrees with the match's declared scale;
 a constructor name that does not normalise to a valid ASP functor symbol
-(`ctor_functor`, the sum-side quote backstop). A **sum-typed parameter**
-is ref-only: ref accepts and executes it, but the ASP case emission
-scales every parameter through `decimals_of_datatype` and so faults on a
-`SumType` datatype with the literal reason `unscalable datatype in the
-ASP translation` (a constructor value has no integer encoding). Two
+(`ctor_functor`, the sum-side quote backstop). A **scalar sum-typed
+parameter** is ref-only: ref accepts and executes it, but the ASP case
+emission scales every *scalar* parameter through `decimals_of_datatype`
+and so faults on a `SumType` datatype with the literal reason
+`unscalable datatype in the ASP translation` (a constructor value has no
+integer encoding). *Scalar* is load-bearing and the word the struct
+sibling below already uses: the case emission's parameter loop takes its
+`ListType` branch FIRST and reifies a list parameter as `lpres`/`lelem`
+through `element_scale_of` (S15), which carries a `SumType` element as a
+ground constructor term at scale 0 — so a list-of-`SumType` parameter
+never reaches the scalar scaling and translates. Witness:
+`corpus/golden/jutterswet-meldplichtspoor`, whose `meldreeks` is a
+`ListType` of a declared `SumType` and whose eight cases all replay
+exactly through clingo. Two
 payload **values** WF-060 admits but the ASP value emission does not yet
 carry uniformly: a **nested-sum payload** (a declared-`SumType` payload)
 faults the same way — `ctor_value_term` scales the payload through
