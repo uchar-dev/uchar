@@ -22,5 +22,12 @@ too, so ref is the executor witness here.
 
 Falsifiable, arm-exact: call `wf089_domain_identity` instead of
 `use_site_identity` in the fold-source branch of the argument walk
-(keeping the shape check) and this case alone turns clean, while
-`wf090-doorgeefluik` — whose lie is on the fold node — stays red.
+(keeping the shape check) and the WF-090 line disappears here, while
+`wf090-doorgeefluik` — whose lie is on the fold node — keeps its own.
+Re-measured after the WF-038 ordering-fold clause landed (2026-09-05):
+two reports change under that mutant, this one and one WF-091 line on
+`wf091-foldbron-eenheid` (the same branch carries the unit facet), and
+this document does not turn clean, since a struct contributor under an
+`EERSTE` violates the ordering-fold clause on the same operand. The
+falsification signal is the rule cited: under the mutant it is rejected
+for WF-038 and no longer for the WF-090 its directory declares.

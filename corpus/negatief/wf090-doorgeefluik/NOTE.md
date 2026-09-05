@@ -19,13 +19,20 @@ is faithful. This is the struct twin of
 same `TRANSLATION FAULT: expression kind not translated (no corpus case
 exercises it)` as the faithful twin, so ref is the executor witness.
 
-*Neighbouring gap, named rather than claimed shut:* `EERSTE` is an
-ordering fold in v0 while `StructType` is equality-only (ch. 2.4), so an
-entirely truthful struct `EERSTE` over two contributors is a WF-038
-operand question — recorded on the `doorgeeffold-orderbaarheid` card, not
-this rule's business.
+*Neighbouring gap, closed since:* `EERSTE` is an ordering fold while
+`StructType` is equality-only (ch. 2.4), so an entirely truthful struct
+`EERSTE` was a WF-038 operand question. WF-038's ordering-fold operand
+clause (2026-09-05) answers it — every operand of an ordering fold comes
+from one comparable family, numbers or dates — so this document now
+carries two independent defects, and a truthful struct `EERSTE` is no
+longer reachable through a valid document at all.
 
 Falsifiable, arm-exact: call `wf089_domain_identity` instead of
-`use_site_identity` in the aggregation branch of the `Functie` arm and this
-case alone turns clean, while `wf090-foldbron` — whose lie is one level
-down — stays red.
+`use_site_domain` in the aggregation branch of the `Functie` arm and the
+WF-090 line disappears here — one report changes and no other, so
+`wf090-foldbron`, whose lie is one level down, is untouched. Re-measured
+after the ordering-fold clause (2026-09-05): the document does not turn
+clean under that mutant, since a struct contributor under an `EERSTE`
+violates the new clause on the same operand. The falsification signal is
+the rule cited: under the mutant it is rejected for WF-038 and no longer
+for the WF-090 its directory declares.

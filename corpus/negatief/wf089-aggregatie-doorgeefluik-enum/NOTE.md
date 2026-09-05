@@ -30,6 +30,13 @@ so WF-023 never participates — fires the same arm at
 `/resolvedRegels/0/waarde/scrutinee/type`.
 
 Falsifiable: make the passthrough cross in the verifier's `Functie` arm
-return `[]` and this document passes together with
-`wf089-minimum-doorgeefluik`, while every other wf089 case — the
-reference arms and `wf089-foldbron-enum` — stays red.
+return `[]` and the WF-089 line disappears here, on
+`wf089-minimum-doorgeefluik` and on `wf090-doorgeefluik` — three reports
+change and no other — while every other wf089 case, the reference arms
+and `wf089-foldbron-enum`, is untouched. Re-measured after the WF-038
+ordering-fold clause landed (2026-09-05): the three no longer turn
+*clean* under that mutant, because an `EERSTE` over an enumeration
+contributor violates that clause on the very same operand. The
+falsification signal is the rule this document is filed under, which the
+gate reads: under the mutant it is rejected for WF-038 and no longer for
+the WF-089 its directory declares.

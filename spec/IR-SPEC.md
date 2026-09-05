@@ -510,16 +510,23 @@ false`, `decimals = 0` (no precision ceiling; §13.3.3 form (c)). The
   verifier-clean when its inline copy drifts (WF-061 walks attribute and
   parameter datatypes only) and is recorded as an open flank rather than
   pinned here: every verifier rule that consumes it resolves the *named*
-  domain, never the inline copy. *One neighbouring gap, measured and
-  recorded rather than claimed shut.* **Orderability of the
+  domain, never the inline copy. *One neighbouring gap, recorded here and
+  since closed.* **Orderability of the
   element-passing folds.** This rule makes the fold's domain honest, not
   its kind admissible: `EERSTE`/`LAATSTE`/`MINIMUM`/`MAXIMUM` are
-  *ordering* folds in v0 (ch. 4.3), and Enumeration and SumType are
+  *ordering* folds (ch. 4.3), and Enumeration and SumType are
   equality-only by the orderability paragraph below — so an entirely
-  truthful `EERSTE` over an enumeration attribute is verifier-clean and
-  faults in ref (`unordered comparison: Zeegat vs Wad`) as soon as a
-  second contributor exists, while a single contributor silently
-  succeeds. That is a WF-038 operand question, not a domain-identity one.
+  truthful `EERSTE` over an enumeration attribute was verifier-clean and
+  faulted in ref (`unordered comparison: Zeegat vs Wad`) as soon as a
+  second contributor existed, while a single contributor silently
+  succeeded. That is a WF-038 operand question, not a domain-identity
+  one, and WF-038's ordering-fold clause (2026-09-05) answers it: every
+  operand of an ordering fold comes from one comparable family, numbers
+  or dates. The two negatiefs that pin the domain identity at this
+  position over an enumeration therefore now carry two independent
+  defects, and their falsifiability notes say so; the domain-identity arm
+  stays separately falsifiable by the rule each document is *cited*
+  under.
   The **struct twin** of this rule is no longer a gap: struct domains are
   not keuzetypes (the family term above is Enumeration and SumType), and
   they carry their own identity rule, **WF-090** (the StructType clause
@@ -757,21 +764,25 @@ no-hole/equality semantics are `RUNTIME-SEMANTICS.md` ch. 11.
   TARGET's `type` stays outside that walk, as it does under WF-088; drift
   there is measured harmless, and a value sharing the lie is refused by
   this rule's write half, which crosses the DECLARED datatype —
-  measured). Two neighbouring gaps are recorded
-  rather than claimed shut. First, WF-090's aggregation arm reaches the
+  measured). Two neighbouring gaps were recorded
+  rather than claimed shut; one is still open, one is closed. First — still
+  open — WF-090's aggregation arm reaches the
   **element-passing** folds only, so a COMPUTING fold (`SOM`, `TOTAAL`)
   over struct operands of two domains is verifier-clean. That is a
   WF-038 operand question — `SOM` demands numeric operands — and it is
   no wrong answer: measured, ref faults fail-fast (`plus: expected a
   number, got {waarde: 120.5, telling: 3}`) and the ASP carrier refuses
-  the form ahead of translation. Second, the same **orderability** flank
+  the form ahead of translation. Second — **closed 2026-09-05** — the same
+  **orderability** flank
   WF-089 records: `EERSTE`/`LAATSTE`/`MINIMUM`/`MAXIMUM` are ordering
-  folds in v0 while `StructType` is equality-only (the orderability
+  folds while `StructType` is equality-only (the orderability
   paragraph above), so an entirely truthful struct `EERSTE` with two
-  contributors is verifier-clean and fails observably — measured, ref
+  contributors was verifier-clean and failed observably — measured, ref
   `EVALUATION FAULT: unordered comparison: {waarde: 20, telling: 2} vs
-  {waarde: 10, telling: 1}` and the ASP carrier refuses the form. Also a
-  WF-038 operand question, not a domain-identity one. *v0 mirror note:* `StructType` is a v1
+  {waarde: 10, telling: 1}` and the ASP carrier refuses the form. A
+  WF-038 operand question, not a domain-identity one, and WF-038's
+  ordering-fold clause now refuses it: a struct contributor under an
+  ordering fold is outside both comparable families. *v0 mirror note:* `StructType` is a v1
   extension; unchecked in v0. **Delta (promotion).**
 
 **Deltas (tracked, `CONSTRUCTS.md` row 27):**
@@ -2783,9 +2794,11 @@ Comparison, Predicate, and CharacteristicCheck only —
   first operand is an attribute reference — an artifact the v1 split
   removes; v1 makes the invalid combinations ill-formed. **Delta
   (promotion).**
-- **WF-038** Aggregation operand typing (mirror): numeric folds' operands
-  MUST be numeric with compatible units; date folds' (first/last)
-  operands MUST be dates of equal precision; a totaal operand that is
+- **WF-038** Aggregation operand typing (mirror, with one ratified v1
+  widening): numeric folds' operands MUST be numeric with compatible
+  units; **every operand of an ORDERING fold — `first`, `last`,
+  `minimum`, `maximum` — MUST come from one comparable family, numbers
+  or dates**; a totaal operand that is
   non-temporal MUST carry a rate unit per time unit; eerste-paasdag MUST
   take a whole, unitless year; the day-precision part extractors
   (jaar-uit, maand-uit, dag-uit) MUST take a date operand — either
@@ -2796,6 +2809,47 @@ Comparison, Predicate, and CharacteristicCheck only —
   declared day-kind spelling (the ch. 3.8 table of
   `RUNTIME-SEMANTICS.md`), a sub-day unit demanding
   millisecond-precision operands.
+  **The ordering-fold clause** (maintainer decision 2026-09-04, landed
+  2026-09-05) replaces the v0 letter this rule mirrored — "first/last's
+  operands are dates" — with the family reading the runtime semantics
+  already carried as a tracked deviation (`RUNTIME-SEMANTICS.md`
+  ch. 1.2), and ratifies it. The four ordering kinds keep the least or
+  greatest CONTRIBUTOR, so they need an order over the contributor's
+  type: `Number` and `Date` have one, and the equality-only types of the
+  ch. 2.4 orderability paragraph — `Enumeration`, `SumType`,
+  `StructType`, `Text`, `Boolean`, `ListType` — have none. Two operands
+  from *different* families are equally ill-formed: neither is wrong
+  alone, their combination is, and it is reported at the fold node for
+  that reason. The clause covers **both wire forms in one rule**, because
+  both spell their contributors as the node's operand list: the instance
+  fold's single set-valued argument, whose type is the element
+  attribute's datatype, and the articulated fold's two-or-more listed
+  operands, each deciding for itself. An operand carrying the unknown
+  sentinel, or no type at all, **defers** — the sentinel is the ch. 4.3
+  row-1 wart WF-034 tolerates in a fold source, and one parity document
+  turns on it (an articulated `first` whose second operand v0 never
+  typed). *Why a rule and not a note:* the refused shapes are where the
+  three executors stop agreeing about what a document even is. Measured
+  one form at a time on verifier-clean documents, before the clause: the
+  instance fold over an enumeration element had `ref` silently succeed
+  with one contributor and fault from the second on (`unordered
+  comparison`), the ASP backend refuse at its enum carrier fence, and the
+  Drools backend **throw** on one contributor as readily as on two (its
+  accumulating min/max lowering assumes a number) — a verifier-clean
+  document crashing an engine. The articulated fold over enumeration
+  labels had `ref` fault and the ASP backend refuse while Drools **played
+  it and answered**, the alphabetically extreme label under Java's
+  `Comparable` on the written spelling: not an order anyone designed, and
+  a `ref` ≢ Drools value divergence. Over a sum type the ASP backend does
+  not refuse the articulated form but **crashes** translating it. And the
+  mixed-family fold had `ref` fault, the ASP backend refuse by name, and
+  Drools throw a cast. Under the clause all four are unreachable through
+  a valid document. *Two halves of this rule stay OPEN,* stated and
+  unchecked, with no witness and no verifier arm — named here rather than
+  left to be found: unit compatibility between the numeric operands of
+  one fold, and precision agreement between its date operands (WF-036
+  crosses both for a comparison; a fold does not). The index row below
+  says so.
 - **WF-039** A written enumeration label MUST belong to the declared
   domain; a numeric literal MUST satisfy the target's sign restriction
   (mirror; also invoked from WF-023).
@@ -3503,7 +3557,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-035 | operator typing (numeric, unitless power, date±duration order/unit/precision, unit compatibility, clamp) | gate 3 (over serialized operand types) | `anchor/jutterswet-wachtersketen` (the numeric Plus, executed by gates 5–6) + `jutterswet-vervaltermijn` (date ± duration, the date-left plus and min forms, executed by gates 5–6) | `wf035-power-with-unit` + `wf035-datum-plus-datum` + `wf035-duur-plus-datum` + `wf035-duur-min-datum` + `wf035-uur-op-dagdatum` |
 | WF-036 | comparison/predicate typing (ordering, precision, family, domain, builtin operands) | gate 3 (over serialized operand types) | `corpus/golden/jutterswet-penningdrempel/` (v0 mirror form) + `jutterswet-vondstnummer` (date ordering) | `wf036-order-number-vs-text` |
 | WF-037 | aggregation/builtin shape: facet validity and arity per kind | gate 3 (fixed-arity kinds; date-construction arity OPEN) | `jutterswet-vondsttelling` | `wf037-fallback-on-minimum` |
-| WF-038 | aggregation operand typing (units, precision, rate for totaal, year for paasdag, date for the day-precision extractors, tijdsduur operands and node-type unit) | gate 3 (paasdag, day-precision and sub-day extractors, sum fallback, tijdsduur; the totaal rate clause and fold unit-compatibility are OPEN) | `jutterswet-vondsttelling` (the sum fallback slice) + `anchor/jutterswet-jutleeftijd` (the tijdsduur slice, executed by gates 5–6) + `jutterswet-paasvondst` (the paasdag and extractor slice, executed by gates 5–6) | `wf038-paasdag-text` + `wf038-extractor-text` + `wf038-tijdsduur-gemengde-precisie` + `wf038-tijdsduur-zonder-tijdseenheid` + `wf038-tijdsduur-zonder-node-type` |
+| WF-038 | aggregation operand typing (ordering-fold family, units, precision, rate for totaal, year for paasdag, date for the day-precision extractors, tijdsduur operands and node-type unit) | gate 3 (the ordering-fold family clause — both wire forms, per-operand orderability and the cross-operand family, deferring on the unknown sentinel — plus paasdag, day-precision and sub-day extractors, sum fallback, tijdsduur; three halves stay OPEN and unchecked: the totaal rate clause, unit compatibility between a fold's numeric operands, and precision agreement between its date operands) | `jutterswet-vondsttelling` (the sum fallback slice) + `anchor/jutterswet-jutleeftijd` (the tijdsduur slice, executed by gates 5–6) + `jutterswet-paasvondst` (the paasdag and extractor slice, executed by gates 5–6) + `jutterswet-peildatum` (the ordering-fold slice and the widening's own witness: an articulated `first`/`last` pair over dates beside a second pair over numbers, which the v0 letter would refuse; executed by gates 5–6) + `jutterswet-hoogwaterpaar` (the date pair) + `jutterswet-vondstpiek` (the instance-fold `minimum`/`maximum` over a numeric element) | `wf038-paasdag-text` + `wf038-extractor-text` + `wf038-tijdsduur-gemengde-precisie` + `wf038-tijdsduur-zonder-tijdseenheid` + `wf038-tijdsduur-zonder-node-type` + `wf038-minimum-enum-setbron` + `wf038-maximum-somtype-setbron` (the instance-fold form, once per equality-only family) + `wf038-laatste-enum-geleed` + `wf038-eerste-somtype-geleed` (the articulated form, the same two families — the four crossing the two forms with the two families, one per ordering kind) + `wf038-eerste-gemengde-familie` (the cross-operand arm, separately falsifiable) |
 | WF-039 | enum label in domain; literal sign restriction | gate 3 | `jutterswet-vormenkabinet` (the gaaf label and the sign-restricted aanwas) | `wf039-negative-under-nonneg` |
 | WF-040 | dimension cell pins every dimension; selection labels resolve in order | gate 3 | `jutterswet-vormenkabinet` (the voorjaar cell read) | `wf040-unpinned-cell` |
 | WF-041 | counting-quantifier threshold ≥ 1 | gate 3 | `jutterswet-vormenkabinet` (ten minste 2) | `wf041-threshold-zero` |

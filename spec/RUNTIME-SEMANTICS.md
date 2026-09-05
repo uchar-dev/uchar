@@ -146,22 +146,40 @@ vestigial tag — an instance fold always carries exactly one source
 argument, a listed fold at least two. For som/totaal/aantal the element
 is *load-bearing* (v0's accumulate joins it and reads only the first
 operand), so a multi-operand form of those faults loudly — never a
-silent list fold v0 would compute differently. **Tracked deviation
-(ratification pending):** the numeric half of this fold is a v1
-*widening*, not a mirror. v0's static typing (§4.14/§4.15) admits
-eerste/laatste over date expressions only — a concrete non-date operand
-is a compile-time ERROR ("eerste van vereist datumexpressies, kreeg …",
-`Typering.datumAggregatie`) and the model is refused; only
+silent list fold v0 would compute differently. **Ratified (maintainer
+decision 2026-09-04, landed 2026-09-05):** the numeric half of this fold
+is a v1 *widening*, not a mirror. v0's static typing (§4.14/§4.15)
+admits eerste/laatste over date expressions only — a concrete non-date
+operand is a compile-time ERROR ("eerste van vereist datumexpressies,
+kreeg …", `Typering.datumAggregatie`) and the model is refused; only
 Onbekend-typed operands reach v0's runtime fold, which is itself the
-type-generic ordering above. v1 admits any single comparable family
-under that same ordering; the delta belongs to the `FunctieKind`
-(aggregations) row of `spec/CONSTRUCTS.md` at the serial merge update.
+type-generic ordering above. v1 admits **any single comparable family**
+under that same ordering, and the fence is now written where the wire
+can be checked: WF-038's ordering-fold clause requires every operand of
+`eerste`/`laatste`/`minimum`/`maximum` — in both wire forms, the
+instance fold's one set-valued argument and the articulated fold's
+listed ones — to come from one comparable family, numbers or dates. An
+equality-only operand (`Enumeratie`, `SumType`, `StructType`, `Tekst`,
+`Booleaan`, `ListType`: the ch. 2.4 orderability paragraph of
+`IR-SPEC.md`) is ill-formed, and so is a fold that mixes the two
+families; the unknown sentinel defers, since it is the one operand shape
+v0 never typed and does hand to this very fold at runtime. The delta
+belongs to the `FunctieKind` (aggregations) row of
+`spec/CONSTRUCTS.md` at the serial merge update.
 Worked examples (ref tests verbatim; the `jutterswet-peildatum` golden
 pins them through both executors — the numeric pair is the widening's
 witness): eerste van (5, leeg, 3) = 3 and laatste van
 (5, leeg, 3) = 5; eerste van (2026-06-21, 2026-05-01) = 2026-05-01;
 laatste van (2026-06-21, leeg) = 2026-06-21; eerste van (leeg, leeg) =
-leeg.
+leeg. Worked example of the fence, the same fold one operand family
+further: `eerste van (2026-05-01, 3)` has no answer — 3 is not earlier
+or later than a date and 2026-05-01 is not smaller or greater than a
+number — and is refused at the document layer, not at evaluation. So is
+`laatste van (Zuid, Noord)` over an enumeration domain, where a value
+*was* produced before the fence: the ordering the production runtime
+falls back on there is `Comparable` on the label spelling — alphabetical,
+case-sensitive ASCII, nobody's design — which is why admitting it would
+have meant ratifying an accident.
 
 **Timelines** carry *two different* empty rules, mirrored as found: the
 per-period arithmetic of §5.1.4 coalesces an empty period to 0, while the

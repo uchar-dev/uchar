@@ -20,6 +20,15 @@ enumeration value "Noord"`, clingo refused the translation on its
 pre-existing enum-operand fence.
 
 Falsifiable: drop the `wf089_domain_identity` call from the fold-source
-branch of the argument walk (keeping the shape check) and this case alone
-turns clean, while `wf089-aggregatie-doorgeefluik-enum` and
-`wf089-minimum-doorgeefluik` — whose lie is on the fold node — stay red.
+branch of the argument walk (keeping the shape check) and the WF-089
+line disappears here, while `wf089-aggregatie-doorgeefluik-enum` and
+`wf089-minimum-doorgeefluik` — whose lie is on the fold node — keep
+theirs. Re-measured after the WF-038 ordering-fold clause landed
+(2026-09-05): three reports change under that mutant — this one,
+`wf090-foldbron` (the struct twin, which the same branch carries) and
+one WF-091 line on `wf091-foldbron-eenheid` — and none of them turns
+clean any more, because an `EERSTE` over an enumeration contributor
+violates the ordering-fold clause on the very same operand. The
+falsification signal is the rule cited: under the mutant this document
+is rejected for WF-038 and no longer for the WF-089 its directory
+declares.

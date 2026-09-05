@@ -18,12 +18,24 @@ Verifier-clean before the rule; ref faulted `match has no arm for
 enumeration value "Noord"` at the truthful reader, clingo refused the
 translation on its own carrier fence for enum operands.
 
-Note for the reader: whether an ordering fold over an equality-only
-keuzetype should be ill-formed *by itself* (ch. 2.4 gives Enumeration
-and SumType no ordering) is a separate question, recorded as an open
-point on the card; this case pins only the domain identity.
+Note for the reader, answered since: whether an ordering fold over an
+equality-only keuzetype is ill-formed *by itself* (ch. 2.4 gives
+Enumeration and SumType no ordering) was recorded here as an open point.
+It is closed — WF-038's ordering-fold operand clause (2026-09-05) refuses
+it, so this document now carries two independent defects. This case
+still pins only the domain identity; `wf038-minimum-enum-setbron` pins
+the other one on a document whose domains are truthful throughout.
 
 Falsifiable: shrink `passthrough_folds` in the verifier to `EERSTE`/
-`LAATSTE` and this case alone turns clean while
-`wf089-aggregatie-doorgeefluik-enum` stays red; make the whole
-passthrough cross return `[]` and both turn clean together.
+`LAATSTE` and this case turns clean while
+`wf089-aggregatie-doorgeefluik-enum` stays red. Re-measured after the
+ordering-fold clause, which reads the same list (2026-09-05): that
+mutant now frees three documents together — this one and the two
+set-source ordering-fold negatiefs `wf038-minimum-enum-setbron` and
+`wf038-maximum-somtype-setbron` — so it is a shared-machinery mutant,
+not an arm-exact one. The arm-exact mutant for this document is the
+other sentence: make the whole passthrough cross return `[]` and the
+WF-089 line disappears here and on
+`wf089-aggregatie-doorgeefluik-enum` (and the WF-090 line on
+`wf090-doorgeefluik`), while neither of the two enumeration cases turns
+clean, both being ordering folds over an equality-only contributor.
