@@ -3419,25 +3419,46 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
       (* WF-038, the ordering-fold operand clause (IR-SPEC ch. 4.6,
          semantics `RUNTIME-SEMANTICS.md` ch. 1.2): EERSTE/LAATSTE/
          MINIMUM/MAXIMUM keep the least or greatest CONTRIBUTOR, so every
-         operand must come from one comparable family — numbers or dates.
+         operand must come from one family an order actually runs over.
          Enumeration, SumType, StructType, text and boolean are
-         equality-only (the ch. 2.4 orderability paragraph), and two
-         families have no common order between them.
+         equality-only (the ch. 2.4 orderability paragraph); numbers and
+         dates have no common order between them; and the two DATE
+         REPRESENTATIONS are two families for the same reason — a
+         day-precision date names a whole day, a millisecond-precision
+         one a point inside a day, and ordering the two is what ref
+         faults on (`unordered comparison: 2026-06-21 vs @…ms`). Hence
+         the family tag is per representation, not one `Date` bucket.
 
-         Both wire forms are one rule here, because both spell their
-         contributors as this node's operand list: the SET SOURCE is one
-         `set` argument whose type is the element attribute's datatype,
-         the ARTICULATED fold is two or more listed operands. The
-         unknown sentinel and an operand carrying no type at all DEFER —
-         the sentinel is the row-1 wart WF-034 tolerates in a fold
-         source, and it is how v0 spells the one operand shape whose type
-         it never resolved; refusing it here would refuse documents the
-         toolchain emits. *)
+         The rule reads `argumenten` and nothing else, so it does not
+         turn on the wire form: an instance fold spells its contributors
+         as one set-valued argument whose type is the element attribute's
+         datatype, an articulated fold as two or more listed ones — and 6
+         of the corpus's 14 articulated ordering folds carry
+         `elementObjecttype` besides, so form is no dichotomy a rule
+         could have keyed on.
+
+         The unknown sentinel and an operand carrying no type at all
+         DEFER. Where that defer is unreachable it is dead, and where it
+         is reachable it is load-bearing: an operand walked as an
+         ordinary expression is already refused by WF-034 (`unknown-type
+         sentinel inside a structured node`, measured), so only the
+         fold-source branch reaches this arm — the ch. 4.3 row-1 wart,
+         which WF-034 tolerates by construction. There the defer holds
+         open a shape no executor carries: an instance ordering fold over
+         a bare role source is verifier-clean today and measured ref
+         `value aggregation over a bare role source`, ASP `expression
+         kind not translated`, Drools `ConstraintEvaluationException`.
+         An open flank recorded, not a claim that the shape is sound. *)
       @ (match List.assoc_opt f.kind passthrough_folds with
          | None -> []
          | Some kn ->
              let family d =
-               if is_number_like d then Some `Num else if is_date d then Some `Date else None
+               if is_number_like d then Some `Num
+               else
+                 match d with
+                 | Datum_in_dagen -> Some `Date_day
+                 | Datum_tijd -> Some `Date_ms
+                 | _ -> None
              in
              let typed = List.mapi (fun i a -> (i, typ_of_expr a)) f.argumenten in
              List.concat_map
@@ -3445,9 +3466,14 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                  match t with
                  | None | Some (Datatype_onbekend _) -> []
                  | Some d when family d = None ->
+                     (* a bare "list" names no element, and the element is
+                        what carries the unorderability here *)
+                     let shown =
+                       match d with List_type _ -> datatype_detail d | _ -> datatype_kind d
+                     in
                      [ v "WF-038"
                          (Printf.sprintf "%s/argumenten/%d" at i)
-                         ("operand of the " ^ kn ^ " ordering fold is " ^ datatype_kind d
+                         ("operand of the " ^ kn ^ " ordering fold is " ^ shown
                         ^ ", must be a number or a date") ]
                  | Some _ -> [])
                typed
@@ -3458,9 +3484,18 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                 in
                 match fams with
                 | f0 :: rest when List.exists (fun x -> x <> f0) rest ->
-                    [ v "WF-038" at
-                        (kn ^ " orders operands of two comparable families, numbers and \
-                              dates, which share no ordering") ]
+                    (* two crossings, two different defects: a precision mix
+                       is not a number-versus-date mix and must not be
+                       reported as one *)
+                    let dated = function `Date_day | `Date_ms -> true | `Num -> false in
+                    if List.for_all dated fams then
+                      [ v "WF-038" at
+                          (kn ^ " orders dates of two precisions (day and millisecond), \
+                                which share no order") ]
+                    else
+                      [ v "WF-038" at
+                          (kn ^ " orders operands of two comparable families, numbers and \
+                                dates, which share no ordering") ]
                 | _ -> []))
       @ (match f.leegwaarde with
          | Some lw -> (
