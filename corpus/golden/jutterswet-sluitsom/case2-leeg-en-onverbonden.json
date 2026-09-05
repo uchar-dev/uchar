@@ -1,0 +1,43 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": { "ijkloon": { "number": "30" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": { "meldloon": { "number": "7" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": { "bewarende jutter": ["J1"] },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "V3", "attribute": "sluitsom", "value": { "number": "7" } },
+    { "kind": "attributeEmpty", "label": "V4", "attribute": "sluitsom" },
+    { "kind": "attributeValue", "label": "V5", "attribute": "sluitsom", "value": { "number": "30" } },
+    { "kind": "consistent" }
+  ]
+}
