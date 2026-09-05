@@ -1,0 +1,717 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Wachter": {
+      "node": "Objecttype",
+      "naam": "Wachter",
+      "attributen": {
+        "wachtnummer": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "uitkijkbonus": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "gevarenrang": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "seingerechtigd"
+      ],
+      "kenmerkSoorten": {
+        "seingerechtigd": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Wachters"
+    },
+    "Post": {
+      "node": "Objecttype",
+      "naam": "Post",
+      "attributen": {
+        "hoogte": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "seinaantal": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "seingewicht": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "risicopost"
+      ],
+      "kenmerkSoorten": {
+        "risicopost": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Posten"
+    },
+    "Kustvak": {
+      "node": "Objecttype",
+      "naam": "Kustvak",
+      "attributen": {
+        "gevarenklasse": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "vakseinaantal": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Kustvakken"
+    },
+    "Sein": {
+      "node": "Objecttype",
+      "naam": "Sein",
+      "attributen": {
+        "gewicht": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Seinen"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {
+    "postbezetting": {
+      "node": "Feittype",
+      "naam": "postbezetting",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "wachter",
+          "objecttypeNaam": "Wachter",
+          "meervoud": "wachters",
+          "meervoudig": true
+        },
+        {
+          "node": "Rol",
+          "naam": "post",
+          "objecttypeNaam": "Post",
+          "meervoud": null,
+          "meervoudig": false
+        }
+      ]
+    },
+    "kustligging": {
+      "node": "Feittype",
+      "naam": "kustligging",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "kustvak",
+          "objecttypeNaam": "Kustvak",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "post",
+          "objecttypeNaam": "Post",
+          "meervoud": "posten",
+          "meervoudig": true
+        }
+      ]
+    },
+    "seinvoering": {
+      "node": "Feittype",
+      "naam": "seinvoering",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "post",
+          "objecttypeNaam": "Post",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "sein",
+          "objecttypeNaam": "Sein",
+          "meervoud": "seinen",
+          "meervoudig": true
+        }
+      ]
+    },
+    "vakbeseining": {
+      "node": "Feittype",
+      "naam": "vakbeseining",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "seinvak",
+          "objecttypeNaam": "Kustvak",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "vaksein",
+          "objecttypeNaam": "Sein",
+          "meervoud": "vakseinen",
+          "meervoudig": true
+        }
+      ]
+    }
+  },
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "uitkijkbonus van een wachter",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "gevarenrang van een wachter",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "seingerechtigd bij risicopost",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "seinaantal van een post",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "seingewicht van een post",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "wachtnummer uniek per post",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "vakbeseining door het kustvak",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "vakseinaantal van een kustvak",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "uitkijkbonus van een wachter",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "uitkijkbonus",
+        "objecttype": "Wachter",
+        "onderwerpBron": "een Wachter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De uitkijkbonus van een Wachter",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "AttribuutRef",
+        "attribuut": "hoogte",
+        "objecttype": "Post",
+        "onderwerpBron": "zijn post",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de hoogte van zijn post",
+        "set": false,
+        "navigatiePad": [],
+        "navigatieBindingen": [
+          {
+            "node": "RolBinding",
+            "feittype": "postbezetting",
+            "rol": "post"
+          }
+        ]
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "gevarenrang van een wachter",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "gevarenrang",
+        "objecttype": "Wachter",
+        "onderwerpBron": "een Wachter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De gevarenrang van een Wachter",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "AttribuutRef",
+        "attribuut": "gevarenklasse",
+        "objecttype": "Kustvak",
+        "onderwerpBron": "zijn post",
+        "navigatieRol": "post",
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de gevarenklasse van het kustvak van zijn post",
+        "set": false,
+        "navigatiePad": [
+          "post",
+          "kustvak"
+        ],
+        "navigatieBindingen": [
+          {
+            "node": "RolBinding",
+            "feittype": "postbezetting",
+            "rol": "post"
+          },
+          {
+            "node": "RolBinding",
+            "feittype": "kustligging",
+            "rol": "kustvak"
+          }
+        ]
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "seingerechtigd bij risicopost",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "seingerechtigd",
+        "objecttype": "Wachter",
+        "onderwerpBron": "Een Wachter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Wachter is seingerechtigd",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Kenmerk",
+        "kenmerk": "risicopost",
+        "navigatie": "post",
+        "negatie": false,
+        "eigenaar": null,
+        "periode": null,
+        "bron": "zijn post risicopost is",
+        "navigatieBinding": {
+          "node": "RolBinding",
+          "feittype": "postbezetting",
+          "rol": "post"
+        }
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "seinaantal van een post",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "seinaantal",
+        "objecttype": "Post",
+        "onderwerpBron": "een Post",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het seinaantal van een Post",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "AANTAL",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "seinen",
+            "objecttype": "Post",
+            "onderwerpBron": "de post",
+            "navigatieRol": null,
+            "type": {
+              "node": "Onbekend",
+              "reden": "niet opgelost"
+            },
+            "bron": "seinen van de post",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": "Sein",
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "het aantal seinen van de post",
+        "granulariteit": null,
+        "bronRol": {
+          "node": "RolBinding",
+          "feittype": "seinvoering",
+          "rol": "sein"
+        }
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "seingewicht van een post",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "seingewicht",
+        "objecttype": "Post",
+        "onderwerpBron": "een Post",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het seingewicht van een Post",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "SOM",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "gewicht",
+            "objecttype": "Sein",
+            "onderwerpBron": "alle seinen van de post",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "het gewicht van alle seinen van de post",
+            "set": true,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": "Sein",
+        "leegwaarde": {
+          "node": "Literal",
+          "waarde": "0",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "0"
+        },
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de som van het gewicht van alle seinen van de post of 0 als die er niet zijn",
+        "granulariteit": null,
+        "bronRol": {
+          "node": "RolBinding",
+          "feittype": "seinvoering",
+          "rol": "sein"
+        }
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "vakseinaantal van een kustvak",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "vakseinaantal",
+        "objecttype": "Kustvak",
+        "onderwerpBron": "een Kustvak",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het vakseinaantal van een Kustvak",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "AANTAL",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "vakseinen",
+            "objecttype": "Kustvak",
+            "onderwerpBron": "het kustvak",
+            "navigatieRol": null,
+            "type": {
+              "node": "Onbekend",
+              "reden": "niet opgelost"
+            },
+            "bron": "vakseinen van het kustvak",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": "Sein",
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "het aantal vakseinen van het kustvak",
+        "granulariteit": null,
+        "bronRol": {
+          "node": "RolBinding",
+          "feittype": "vakbeseining",
+          "rol": "vaksein"
+        }
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [
+    {
+      "node": "ResolvedUniciteit",
+      "naam": "wachtnummer uniek per post",
+      "subject": "Wachter",
+      "sleutels": [
+        "wachtnummer"
+      ],
+      "scopeVeld": "post",
+      "bron": "De wachtnummer van alle Wachter van de post moeten uniek zijn.",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      },
+      "scopeRol": {
+        "node": "RolBinding",
+        "feittype": "postbezetting",
+        "rol": "post"
+      }
+    }
+  ],
+  "uniciteitUnies": [],
+  "feitCreaties": [
+    {
+      "node": "ResolvedFeitCreatie",
+      "naam": "vakbeseining door het kustvak",
+      "anker": "Kustvak",
+      "doel": "Sein",
+      "zetVeld": "vaksein",
+      "joinVeld": "post",
+      "tussenstappen": [
+        {
+          "node": "Tussenstap",
+          "type": "Post",
+          "veld": "kustvak",
+          "viaOuderVeld": false,
+          "rolBinding": {
+            "node": "RolBinding",
+            "feittype": "kustligging",
+            "rol": "post"
+          }
+        }
+      ],
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      },
+      "feittype": "vakbeseining",
+      "ankerRol": "seinvak",
+      "doelRol": "vaksein",
+      "joinRol": {
+        "node": "RolBinding",
+        "feittype": "seinvoering",
+        "rol": "sein"
+      }
+    }
+  ],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}
