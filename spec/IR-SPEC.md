@@ -2254,9 +2254,58 @@ evaluation (ref) or translation (the ASP backend) time on anything
 outside it; WF-084 makes such a document ill-formed at verification
 time, ahead of any executor. The emitter writes the bare ISO lexeme and
 keeps the source snippet in `bron`. Scope: day-precision date literals;
-datetime lexemes (`DatumTijd`, millisecond precision) carry their own
-ISO discipline, tracked separately (they are not exercised by any corpus
-literal yet).
+datetime lexemes (`DatumTijd`, millisecond precision) are the paragraph
+below — the same ISO discipline, not yet the same normative standing.
+
+**The datetime-literal lexeme (descriptive; not a WF rule yet).** A
+`Literal` whose `type` is `DatumTijd` carries the canonical **ISO
+datetime lexeme**: the date lexeme above, the separator `T`, and a time
+of day.
+
+```
+datetime ::= date 'T' hh ':' mm ':' ss ( '.' fff )?
+hh       ::= digit digit               -- 00–23
+mm       ::= digit digit               -- 00–59
+ss       ::= digit digit               -- 00–59
+fff      ::= digit digit digit         -- milliseconds, exactly three
+```
+
+Fixed field widths throughout, `T` as the separator (never a space), the
+seconds field always written, no zone suffix, and a fractional part that
+is optional but exactly three digits when present, read as whole
+milliseconds. This is not a fresh invention: it is the form the CASE
+wire already pins (the `dateTime` value of `uchar-case-v0`, gate 4) and
+that the executors' shared case reader accepts, so the two wires name an
+instant the same way.
+
+Every field of that grammar is a measured fence rather than a taste. The
+shared case reader refuses a space in place of `T`, refuses a missing
+seconds field, and refuses a zone suffix — but it does NOT refuse a
+fraction of some other width, and there the readers silently DISAGREE:
+`…T12:00:00.1` is ONE millisecond to both readers (not a tenth of a
+second), while `…T12:00:00.100000` is 100 000 milliseconds — a minute
+and forty seconds later — to the case reader and 100 milliseconds to the
+Drools backend's literal reader. Three digits is the only width every
+reader agrees on, which is why the grammar admits no other.
+
+*Why this is descriptive and not a numbered MUST.* A normative rule here
+would need the full set this document requires of one — an ID, a
+verifier check, a passing golden, a failing negatief case — and no
+golden can carry a datetime literal yet: the reference interpreter has
+no datetime-literal arm at all (such a literal faults at evaluation, in
+EITHER lexeme) and the ASP backend faults ahead of it, its datum-tijd
+term carrying an own-subject read and datetime ± duration but no
+literal. Only the Drools backend executes one, and it now reads both the
+canonical lexeme and the day-first source snippet through the one shared
+reader, so the lexeme no longer decides whether a rule survives lowering
+— the gap that made a conforming producer's document lose a whole rule
+on one backend while the snippet played. Two things stand between this
+paragraph and its rule: the other two executors gaining the literal, and
+the emitter writing the canonical lexeme into `waarde` (for a `DatumTijd`
+literal it still writes the day-first snippet, where for a day-precision
+date it writes ISO and keeps the snippet in `bron`). Until then the
+canonical lexeme is what a consumer reads, and the day-first snippet is
+what a v0 producer may still write.
 
 ### 4.1a The navigated read (WF-053)
 

@@ -35,16 +35,21 @@ public final class Literalen {
         catch (RuntimeException e) { return null; }
     }
 
-    /** Parse a §13.2.21 datum-tijd literal ("dd-m-yyyy hh:mm:ss[.SSS]") to a LocalDateTime — the captured
-     *  millisecondes scale ×1e6 to nanoOfSecond. null when the date or time part is absent. */
+    /** Parse a datum-tijd literal to a LocalDateTime. Its DATE part goes through {@link #parseDatum}, so the
+     *  same two forms carry here as there: the canonical uchar IR lexeme — ISO {@code yyyy-mm-ddThh:mm:ss[.SSS]}
+     *  (IR-SPEC ch. 4.1) — and the §13.2.21 RegelSpraak source snippet ({@code "dd. d-m-yyyy hh:mm:ss[.SSS]"}).
+     *  Reading only the snippet made the canonical lexeme unreadable, and a null here is never inert: the
+     *  exec-model branch drops the whole rule and the DRL branch used to fall back on the bare date, silently
+     *  comparing against midnight. The captured millisecondes scale ×1e6 to nanoOfSecond. null when the date or
+     *  time part is absent. */
     public static java.time.LocalDateTime parseDatumTijd(String waarde) {
-        java.util.regex.Matcher d = DATUM.matcher(waarde);
-        if (!d.find()) return null;
+        java.time.LocalDate d = parseDatum(waarde);
+        if (d == null) return null;
         java.util.regex.Matcher tm = TIJD.matcher(waarde);
         if (!tm.find()) return null;
         try {
             int nanos = (tm.group(4) == null ? 0 : Integer.parseInt(tm.group(4))) * 1_000_000;
-            return java.time.LocalDateTime.of(Integer.parseInt(d.group(3)), Integer.parseInt(d.group(2)), Integer.parseInt(d.group(1)),
+            return java.time.LocalDateTime.of(d.getYear(), d.getMonthValue(), d.getDayOfMonth(),
                     Integer.parseInt(tm.group(1)), Integer.parseInt(tm.group(2)), Integer.parseInt(tm.group(3)), nanos);
         } catch (RuntimeException e) { return null; }
     }

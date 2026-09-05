@@ -3714,10 +3714,15 @@ public final class DrlTranspiler {
             // DECIMAL ints (a raw "08"/"09" would be an invalid octal literal in mvel/Java, §13.2.19).
             if (t instanceof Datatype.DatumTijd) {
                 java.time.LocalDateTime dt = Literalen.parseDatumTijd(lit.waarde());
-                if (dt != null)
-                    return Frag.ok("java.time.LocalDateTime.of(" + dt.getYear() + ", " + dt.getMonthValue() + ", "
-                            + dt.getDayOfMonth() + ", " + dt.getHour() + ", " + dt.getMinute() + ", "
-                            + dt.getSecond() + ", " + dt.getNano() + ")");
+                // TERMINAL: an unreadable datum-tijd literal markers here, it never falls through to the bare
+                // date below. That fall-through matched the ISO lexeme's DATE PREFIX and compared a
+                // datum-tijd against midnight — a silent wrong answer (measured 2026-09-05: the sub-day
+                // witness fired "verwacht aanwezig, werkelijk afwezig") where the exec-model branch at
+                // least dropped the rule loudly.
+                if (dt == null) return Frag.todo("datumtijdliteral", lit.waarde());
+                return Frag.ok("java.time.LocalDateTime.of(" + dt.getYear() + ", " + dt.getMonthValue() + ", "
+                        + dt.getDayOfMonth() + ", " + dt.getHour() + ", " + dt.getMinute() + ", "
+                        + dt.getSecond() + ", " + dt.getNano() + ")");
             }
             java.time.LocalDate d = Literalen.parseDatum(lit.waarde());
             if (d == null) return Frag.todo("datumliteral", lit.waarde());
