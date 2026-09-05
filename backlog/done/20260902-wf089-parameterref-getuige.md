@@ -56,6 +56,21 @@ vraagt er geen: de arm is al correct, alleen haar notitie is verouderd);
 de `DimensieCel`-getuige (die vraagt celinvoer in het casusformaat — een
 eigen kaart); `scripts/**`.
 
+Result (2026-09-05): geland als **voorstel** op `spec/IR-SPEC.md`
+(beschermd pad — de maintainer merget). De WF-089-eerlijkheidsnotitie is
+gesplitst: de `ParameterRef`-helft is vervangen door haar getuige
+(`jutterswet-meldplichtspoor`, de `ListType`-doorkijk, de hermeten
+één-document-mutant met de letterlijke regel), de `DimensieCel`-helft
+blijft staan als open meetgat — nu zelf hermeten en gedateerd — en de
+weerlegde ASP-weigeringszin is geschrapt. De getuigenkolom noemt de golden
+in de vorm van de andere rijen. Geen tweede rij meegenomen: WF-065 en
+WF-070 voeren geen geen-getuige-claim, en de gelijkvormige claim van
+WF-090 gaat over STRUCT-getypeerde gebruiksplekken, die deze golden niet
+draagt (nagemeten: nul in golden+rood). Verifier, schema, corpus en
+scripts ongewijzigd — de mutant was tijdelijk en is vóór elke commit
+hersteld. Alle dertien gates groen, alle tellingen gelijk aan main
+(176/297, 405/405).
+
 ## Bouwnotitie — de hermeting (2026-09-05)
 
 De kaartcijfers hierboven zijn een gedateerde meting (169 golden / 206
@@ -152,3 +167,23 @@ Die claim gaat over STRUCT-getypeerde gebruiksplekken, en deze golden
 draagt een som-getypeerde lijstparameter, geen struct. Nagemeten over
 golden+rood: nul struct-getypeerde `ParameterRef`-knopen. De claim blijft
 waar en blijft ongewijzigd.
+
+### De dertien poorten (na de wijziging, alle tellingen gelijk aan main)
+
+| # | uitslag |
+|---|---|
+| 1 | `check-self-contained: PASS` |
+| 2 | `PASS (schema valid; 176 file(s) validate and round-trip)` |
+| 3 | `PASS (176 golden clean; 297 negatief rejected for their declared rule)` |
+| 4 | `PASS (schema valid; 427 case file(s) validate)` |
+| 5 | `PASS (405 cases replayed exactly; …)` |
+| 6 | `PASS (405 cases replay exactly through clingo — ref = clingo over the corpus)` |
+| 7 | `PASS (369 cases refute a do-nothing executor; 36 pinned survivors)` |
+| 8 | `PASS (22 red cases fault observably in ref and clingo)`; Drools-been `PASS (5 fault-pinned, 17 not-carried with reason)` |
+| 9 | `PASS — frontend suite green (201 checks); 12 catala golden(s) regenerate byte-identically` |
+| 10 | `PASS — JUnit suite green (171 tests); 30 rgs golden(s) re-emit byte-identically` |
+| 11 | `PASS` — ref 29/29, clingo 29/29, Drools 29 gespeeld |
+| 12 | `PASS` — played 108, value-divergence 1 (met reden), no-case 2, JUnit 199 |
+| 13 | `PASS (64 unit annotations twisted over 13 goldens; 58 executor replays reproduce the untouched outcome, 11 PLAYED by the DRL-text branch; 0 pinned survivors)` |
+
+De kaart raakt geen uitvoerbaar artefact, dus geen enkele telling beweegt.
