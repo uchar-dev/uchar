@@ -2651,21 +2651,36 @@ let connecting_role_candidates ctx ~from_type ~to_type =
    is a legitimate type-pair hop, ref's [navigated]). *)
 let aggregation_source_check ctx at ~element_type ~subject ~single e =
   (* a fold source never navigates: its relation is the fold's bronRol —
-     stray navigation bindings in this slot are ill-formed (WF-053) *)
+     stray navigation bindings in this slot are ill-formed (WF-053). Scoped
+     to the single-argument shape with the rest of the family (see the
+     navigatiePad arm below): only there is the argument a fold SOURCE. *)
   (match e with
-   | Attribuut_ref { navigatie_bindingen = Some _; _ } ->
+   | Attribuut_ref { navigatie_bindingen = Some _; _ } when single ->
        [ v "WF-053" at
            "navigation bindings on a fold source are ill-formed (the fold's relation is \
             bronRol)" ]
    | _ -> [])
   @
   match e with
-  | Attribuut_ref { navigatie_pad = _ :: _; _ } ->
+  (* WF-083 (a). Single-scoped with the whole "a fold source never
+     navigates" family (maintainer decision 2026-09-05, the fix round):
+     with two or more arguments the node is the listed value fold
+     (§5.8.3) and its operands are ORDINARY READS — ref evaluates each
+     one through the same expression evaluator that navigates anywhere
+     else, so a navigating operand there is a legitimate read, not an
+     anchored source that moved. Measured on a hand-built LAATSTE whose
+     second operand navigates: ref 30, the ASP backend 30, Drools 30 —
+     three executors agreeing on a form this arm refused unscoped. *)
+  | Attribuut_ref { navigatie_pad = _ :: _; _ } when single ->
       [ v "WF-083" at
           "a fold source never navigates: a non-empty navigatiePad on a fold-source argument \
            is ill-formed (the fold's relation is bronRol)" ]
+  (* the [navigatie_pad] constraint the arm above used to carry is
+     deliberately absent here: with (a) scoped, a nested operand with a
+     path must still reach the resolution below instead of falling
+     through every arm into silence. *)
   | Attribuut_ref { attribuut = Some a; objecttype = Some otn;
-                    navigatie_rol; navigatie_pad = []; typ; set; _ } -> (
+                    navigatie_rol; typ; set; _ } -> (
       (* the row-1 wart, spelled on the wire as the unknown sentinel on the
          argument's own type. Hoisted out of the [Some ot] branch below
          because the self-denotation clause needs it too: only the wart
@@ -2700,24 +2715,31 @@ let aggregation_source_check ctx at ~element_type ~subject ~single e =
          OPENED a hole it did not have: a set fold carrying a navigatieRol
          that denotes the SUBJECT (measured: "bewarende jutter" on a
          Jutter-subject fold over Vondst) is refused by both executors and
-         would have become verifier-clean. *)
-      (match navigatie_rol with
-       | None -> []
-       | Some nr when not wart ->
-           [ v "WF-083" at
-               ("navigatieRol '" ^ nr ^ "' on a fold source that is not the v0 instance-fold \
-                 source (the unknown-typed row-1 wart): the written role is that wart's \
-                 presentation of the fold subject and nothing else — on any other fold source \
-                 a navigatieRol claims navigation, which a fold source never does (its \
-                 relation is bronRol)") ]
-       | Some nr -> (
-           match subject with
-           | Some st when not (self_denoting_role ctx ~otype:st nr) ->
-               [ v "WF-083" at
-                   ("navigatieRol '" ^ nr ^ "' on a fold source does not denote the fold \
-                     subject: no role named so (declared name or plural, ci) is filled by the \
-                     fold subject '" ^ st ^ "' itself — a fold source never navigates") ]
-           | _ -> []))
+         would have become verifier-clean.
+
+         Single-scoped with the rest of the family: on a listed value
+         fold the operands are ordinary reads and a navigatieRol there is
+         an ordinary written hop, governed by WF-053 in the sibling
+         branch. *)
+      (if not single then []
+       else
+         match navigatie_rol with
+         | None -> []
+         | Some nr when not wart ->
+             [ v "WF-083" at
+                 ("navigatieRol '" ^ nr ^ "' on a fold source that is not the v0 instance-fold \
+                   source (the unknown-typed row-1 wart): the written role is that wart's \
+                   presentation of the fold subject and nothing else — on any other fold \
+                   source a navigatieRol claims navigation, which a fold source never does \
+                   (its relation is bronRol)") ]
+         | Some nr -> (
+             match subject with
+             | Some st when not (self_denoting_role ctx ~otype:st nr) ->
+                 [ v "WF-083" at
+                     ("navigatieRol '" ^ nr ^ "' on a fold source does not denote the fold \
+                       subject: no role named so (declared name or plural, ci) is filled by \
+                       the fold subject '" ^ st ^ "' itself — a fold source never navigates") ]
+             | _ -> []))
       (* WF-083, the ANCHOR cross (maintainer decision 2026-09-05): the
          instance-fold source's own `objecttype` MUST name the type the
          executors anchor the read at — the `elementObjecttype` when the
@@ -3742,6 +3764,46 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                      ~decl:(resolved_attr_datatype ctx a) ~typ
                    @ aggregation_source_check ctx p ~element_type:el ~subject
                        ~single:(List.length f.argumenten = 1) a
+                   (* WF-053 rides along for the same reason WF-089 and
+                      WF-092 do, and for the operands WF-083 no longer
+                      speaks about: with two or more arguments the fold is
+                      the listed value fold (§5.8.3) and its operands are
+                      ORDINARY READS, which navigate like any other read —
+                      but this branch replaces [walk_expr], so without the
+                      repetition a nested operand is the one read position
+                      whose hop resolves against nothing. Measured: a
+                      MAXIMUM whose second operand names a type no fact
+                      type relates to the subject was verifier-clean and is
+                      now WF-053 `bindingless navigation: no fact type
+                      relates …` — exactly what the same read is outside a
+                      fold — and the to-many hop in a scalar slot comes with
+                      it. *)
+                   @ (match a with
+                      | Attribuut_ref
+                          { objecttype = Some otn; navigatie_rol; navigatie_pad;
+                            navigatie_bindingen; set; _ }
+                        when List.length f.argumenten <> 1 -> (
+                          let navigated =
+                            navigatie_rol <> None || navigatie_pad <> []
+                            || (match subject with
+                                | Some st -> norm st <> norm otn
+                                | None -> false)
+                          in
+                          if not navigated then
+                            match navigatie_bindingen with
+                            | Some _ ->
+                                [ v "WF-053" p
+                                    "navigation bindings on a reference that does not \
+                                     navigate" ]
+                            | None -> []
+                          else
+                            match subject with
+                            | None -> [] (* no subject type anchors the walk *)
+                            | Some st ->
+                                wf053_attribuut_ref ctx p ~subject:st ~set
+                                  ~bindings:navigatie_bindingen ~navigatie_rol ~navigatie_pad
+                                  ~endpoint:(Some otn))
+                      | _ -> [])
                | _ -> walk_expr ctx ~binders ~subject p a)
              f.argumenten)
       (* WF-055: the gedurende clip — a filter on the temporal total is a
