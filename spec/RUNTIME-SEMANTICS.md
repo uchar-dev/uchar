@@ -3759,7 +3759,8 @@ Worked (the anchor's `dubbel` iff `dossier` = `{waarde: 120.50, telling:
   form of a sum-typed parameter is not equally uncarried — it takes the
   case emission's `ListType` branch ahead of the scalar scaling and is
   witnessed by a golden (`corpus/golden/jutterswet-meldplichtspoor`, eight
-  cases replaying exactly through clingo). The loaders fail fast on an undeclared
+  cases replaying exactly through clingo). The loaders fail fast on an
+  undeclared
   field, a field against the wrong datatype, or a leeg field (the no-hole
   rule at the boundary — the WF-059/WF-018 backstop, widened); and the
   input-precision fence recurses into record fields and list elements,
