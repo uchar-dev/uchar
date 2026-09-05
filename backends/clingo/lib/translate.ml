@@ -102,6 +102,11 @@ let str_raw s = quote s (* labels keep their case-sensitive spelling *)
 let max_int31 = 2147483647
 
 let pow10 n =
+  (* [go] counts n DOWN to 0, so a NEGATIVE n never terminates: measured as a
+     hang with no output at all (killed at 10 s), where 10^12 faults cleanly one
+     line below. The schema puts no lower bound on `decimalen`, so the floor is
+     this executor's to state. *)
+  if n < 0 then fault "a negative decimal count reaches a scale (10^%d)" n;
   if n > 9 then fault "a scale of 10^%d exceeds clingo's integer range" n;
   let rec go acc n = if n = 0 then acc else go (acc * 10) (n - 1) in
   go 1 n
