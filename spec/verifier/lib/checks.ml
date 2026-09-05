@@ -5691,9 +5691,11 @@ let wf047_048_verdelingen ctx =
    which engine reads it, which is the one thing an engine-neutral IR may not
    do. The arm says the ch. 3.4 requirement out loud instead: the symbolic
    form is what executes, so a creation must carry it. Its witness is
-   `corpus/negatief/wf028-bean-only-creation`; over the four zones no
-   document loses it — all 8 fact creations in golden, rood, negatief and the
-   parity zone already carry the symbolic form. *)
+   `corpus/negatief/wf028-bean-only-creation`; over the four zones no document
+   loses it — measured at the pre-card state, all 8 fact creations in golden,
+   rood, negatief and the parity zone carried the symbolic form; of the 16
+   those zones hold since (the fifth wave's four witnesses, its WF-028 witness
+   and the fix round's three), 15 do, and the sixteenth is this arm's own. *)
 let wf028 ctx =
   List.concat
     (List.mapi
@@ -5830,24 +5832,65 @@ let wf028 ctx =
    spelling whatever the producer liked.
 
    What they mean, and therefore what they resolve against. A binary relation
-   lives in the v0 bean model as ONE reference field, on the side that stores
-   it, named after a role of that relation. So each bean field belongs to a
-   relation its symbolic sister already names, and the checkable law is that
-   it spells a DECLARED ROLE of that relation — which of the two roles the
-   bean model stores is a bean-model decision the wire does not carry, so the
-   arm crosses against both and no further:
+   lives in the v0 bean model as ONE SCALAR reference field, on the object type
+   that fills the TO-MANY role, named after the TO-ONE role. That is the
+   §13.3.9 storage direction: the Drools backend's `FactModelGenerator` derives
+   exactly that field and its transpiler cites the same law by name in its own
+   skip reasons ("§13.3.9 opslagrichting"). So each bean field belongs to a
+   relation its symbolic sister already names —
 
      zetVeld                the created relation      -> a role of `feittype`
      joinVeld               the final hop's relation  -> a role of `joinRol`'s
      tussenstappen[j].veld  hop j's relation          -> a role of that
                                                          `rolBinding`'s
 
-   The corpus shows why both roles must be admitted and neither may be
-   assumed: three of the four creations spell `zetVeld` with the ANCHOR's role
-   and one (the self-typed `anchor/jutterswet-erflijn`, both ends `Wachter`,
-   both to-many) with the TARGET's; `joinVeld` is the bound role three times
-   and the opposite role once. Only the declared name binds — the plural is
-   presentation, exactly as WF-047 has it for the bindings themselves.
+   — and three arms hold it there, in cascade so each is separately
+   falsifiable (an undeclared name would otherwise trip A and B at once, and
+   no single mutant would free its witness):
+
+     A  the name is a DECLARED role of that relation
+     B  where the relation carries exactly ONE to-one role, it is THAT role
+     C  it is that role's DECLARED SPELLING, byte for byte
+
+   Arm B stops where the derivation stops (fix round, 2026-09-05). At EQUAL
+   cardinality the model derives no side — two to-many roles imply no scalar
+   field at all, two to-one roles imply one on each bean — and there both names
+   are admissible. That is not a hedge but the corpus: `anchor/jutterswet-
+   erflijn` creates `erflijn`, whose roles are both to-many, and
+   `anchor/jutterswet-gemeenteberging` joins over `aanmelding`, likewise; a
+   rule that picked a side there would make two anchor goldens ill-formed for a
+   choice no model makes. The fifth wave admitted BOTH roles everywhere, with
+   the reason "which side the bean model stores is a bean-model decision the
+   wire does not carry" — refuted by the backend in this repository, which
+   derives the side from cardinality alone. Its corpus evidence was also
+   mis-counted: read PER CREATION, two of the four golden creations spell
+   `zetVeld` with the anchor's role (`jutterswet-postwacht`,
+   `anchor/jutterswet-gemeenteberging`) and two with the target's
+   (`anchor/jutterswet-erflijn` carries two creations, both target-spelled) —
+   two and two, not three and one. The anchor/target framing predicts nothing
+   anyway: `jutterswet-postwacht` spells `joinVeld` with the OPPOSITE of its
+   bound role, and it is precisely the to-one role. The to-one reading explains
+   all eleven golden positions at once.
+
+   Arm C is the one place in this rule where the ch. 2.4 case-insensitive name
+   identity is not enough, and the reason is not a naming rule but what the
+   name becomes: a bean-model executor turns the role name into a Java PROPERTY
+   name and reaches it by getter, and that lookup is case-sensitive (measured:
+   an internal capital throws "geen getter voor 'seinVak'"; a first-letter
+   change is harmless, because the identifier mapping lower-cases the initial).
+   Deliberate asymmetry: `tussenstappen[j].type` gets NO byte arm, because its
+   consumer resolves object types with `equalsIgnoreCase` by documented
+   contract — a byte arm there would be stricter than all three executors and
+   would have no witness.
+
+   The EMPTY half of the same class is one list-driven presence arm over the
+   four (path, field, value) triples rather than four sub-arms: with one
+   witness, three of four sub-arms move no document at all (measured, 0 of
+   503), and a clause with no counterexample is not a clause. All four absences
+   were measured on `jutterswet-postwacht`: `tussenstappen[].veld` and
+   `tussenstappen[].type` crash the bean-model executor with exactly the
+   exceptions the two filled-name witnesses already pin, `zetVeld` and
+   `joinVeld` drop the whole creation as a loud transpiler skip.
 
    `tussenstappen[j].type` is not a role name but the intermediate object type
    the hop lands on, so it crosses against the hop itself: the filler of the
@@ -5880,32 +5923,98 @@ let wf028 ctx =
 
    That is the sharpest shape this rule family has: a verifier-clean document
    that two executors replay without a murmur while the third crashes on it.
-   Four arms, four witnesses (`corpus/negatief/wf034-feitcreatie-onbekend-*`);
-   each is arm-exact, and over the four zones the clause costs nothing — all 8
-   fact creations in golden, rood, negatief and the parity zone spell every
-   one of their bean fields against a declared role. *)
+   Seven witnesses in all — four on the undeclared name
+   (`corpus/negatief/wf034-feitcreatie-onbekend-*`), and, from the fix round,
+   `wf034-feitcreatie-zusterrol` (arm B: a DECLARED role of the created
+   relation, still a getter that does not exist), `wf034-feitcreatie-
+   hoofdletterveld` (arm C) and `wf034-feitcreatie-loos-tussenstapveld` (the
+   presence arm) — each arm-exact against the full four-zone sweep.
+
+   Over the four zones the clause costs nothing. Measured at the pre-card
+   state: all 8 fact creations in golden, rood, negatief and the parity zone
+   spelled every bean field against a declared role. Re-measured over the 45
+   bean name positions the 503 documents hold since (11 golden, 3 rood, 28
+   negatief, 3 parity): 27 sit on a relation with exactly one to-one role and
+   every one names it byte-exactly, 8 sit at equal cardinality where arm B
+   stands down, 4 sit on a fact type WF-028 already reports missing, and the
+   remaining 6 are this family's own witnesses. Every one of the 13
+   `tussenstappen[].type` positions is present. *)
 let wf034_feitcreatie_beanvelden ctx =
   List.concat
     (List.mapi
        (fun i (fc : resolved_feit_creatie) ->
          let at = Printf.sprintf "/feitCreaties/%d" i in
          let filler (r : rol) = Option.value r.rol_objecttype_naam ~default:"" in
+         (* Three arms, in cascade so each is separately falsifiable: an
+            UNDECLARED name never reaches the to-one arm (it would trip both
+            and no single mutant would free its witness), and a name the
+            to-one arm rejects never reaches the spelling arm. *)
          let spells_role where path ftn = function
            | None -> []
            | Some n -> (
                match find_ci ctx.doc.feittypen ftn with
                | None -> [] (* the fact type itself is WF-028's report *)
-               | Some (ft : feittype) ->
-                   if mem_ci (some_names (List.map (fun (r : rol) -> r.rol_naam) ft.rollen)) n then
-                     []
-                   else
+               | Some (ft : feittype) -> (
+                   let declared = some_names (List.map (fun (r : rol) -> r.rol_naam) ft.rollen) in
+                   let to_one =
+                     List.filter_map
+                       (fun (r : rol) -> if r.rol_meervoudig then None else r.rol_naam)
+                       ft.rollen
+                   in
+                   if not (mem_ci declared n) then
                      [ v "WF-034" path
                          (Printf.sprintf
                             "'%s' is not a declared role of '%s': the %s bean field resolves \
                              against no declaration"
-                            n ftn where) ])
+                            n ftn where) ]
+                   else
+                     match to_one with
+                     | [ one ] when norm n <> norm one ->
+                         [ v "WF-034" path
+                             (Printf.sprintf
+                                "'%s' is a to-many role of '%s': the %s bean field names the side \
+                                 the v0 bean model stores the reference under, so it must name \
+                                 '%s'"
+                                n ftn where one) ]
+                     | _ ->
+                         if List.mem n declared then []
+                         else
+                           [ v "WF-034" path
+                               (Printf.sprintf
+                                  "'%s' is not the declared spelling of the role '%s' of '%s': the \
+                                   %s bean field is a bean PROPERTY name, which is case-sensitive"
+                                  n
+                                  (List.find (fun d -> norm d = norm n) declared)
+                                  ftn where) ]))
          in
-         (match fc.fc_feittype with
+         (* The EMPTY half of the same class, as ONE list-driven arm over the
+            four (path, field, value) triples: four separate sub-arms would
+            need four witnesses to be falsifiable, and with one witness three
+            of them move no document at all. *)
+         let present =
+           List.filter_map
+             (fun (path, where, value) ->
+               if value = None then
+                 Some
+                   (v "WF-034" path
+                      (Printf.sprintf
+                         "the %s bean field is absent: the v0 half of a fact creation is what a \
+                          bean-model executor navigates and writes, and an absent field names \
+                          nothing"
+                         where))
+               else None)
+             ([ (at ^ "/zetVeld", "created relation's", fc.zet_veld);
+                (at ^ "/joinVeld", "final hop's", fc.join_veld) ]
+             @ List.concat
+                 (List.mapi
+                    (fun j (t : tussenstap) ->
+                      let tat = Printf.sprintf "%s/tussenstappen/%d" at j in
+                      [ (tat ^ "/veld", "hop's", t.veld);
+                        (tat ^ "/type", "hop's intermediate-type", t.ts_type) ])
+                    fc.tussenstappen))
+         in
+         present
+         @ (match fc.fc_feittype with
           | Some ftn -> spells_role "created relation's" (at ^ "/zetVeld") ftn fc.zet_veld
           | None -> [])
          @ (match fc.join_rol with
