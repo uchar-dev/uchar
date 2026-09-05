@@ -17,8 +17,10 @@ verklaard en geannoteerd als `DatumTijd`, `aanmelddatum` blijft
 `DatumInDagen`, in de bestaande `LATER_OF_GELIJK`-consistentie):
 
     verifier: PASS
-    ref     : EVALUATION FAULT: unordered comparison: 2025-03-05 vs @1740816000000ms
-    clingo  : TRANSLATION FAULT: unscalable datatype in the ASP translation
+    ref     : EVALUATION FAULT: unordered comparison:
+              2025-03-05 vs @1740816000000ms
+    clingo  : TRANSLATION FAULT: unscalable datatype in the ASP
+              translation
 
 Dus: verifier-schoon, en géén uitvoerder die het beantwoordt — dezelfde
 vorm van gat dat de fold-kant net gesloten heeft. De Drools-kant is nog
@@ -88,17 +90,22 @@ Drie afwijkingen van de kaart, alle drie meetresultaten:
    `dateTime` — en het gekozen tijdstip (`2025-03-01T00:00:00`) bepaalt
    het getal. De vorm van de getuige is dezelfde; alleen het lexeem
    verschilt.
-2. **Drools werpt geen ClassCastException.** De kaart verwachtte de
-   fold-zusters `LocalDate`→`ChronoLocalDate`-cast. Gemeten: de backend
-   komt er niet aan toe. Hij weigert de vorm per document, vóór het
-   vuren. Apart nagemeten, zodat de weigering niet voor dekking
-   doorgaat: dezelfde fout in een regelvoorwaarde (een handgebroken
-   `corpus/golden/jutterswet-vondstverjaring`) levert `EXCLUDE
-   transpiler SKIP: regel (voorwaarde buiten Phase-B scope)`, en de
-   gelijk-precieze `DatumTijd`-controle óók — de backend draagt
-   überhaupt geen millisecondeprecieze datumvergelijking. De drieslag
-   blijft daarmee intact in zijn kern: geen enkele uitvoerder
-   beantwoordt dit document.
+2. **Drools werpt geen ClassCastException — hij weigert de kruising
+   gericht.** De kaart verwachtte de fold-zusters
+   `LocalDate`→`ChronoLocalDate`-cast. Gemeten: de backend komt er niet
+   aan toe, want hij skipt dit document vóór het vuren. Dat is geen
+   gebrek maar zijn eigen hek: de gelijk-precieze `DatumTijd`-ordening
+   SPEELT wél — in deze consistentie én in een regelvoorwaarde — en
+   discrimineert tot op de milliseconde (de omgekeerde verwachting op
+   dezelfde invoer faalt, dus er wordt echt geëvalueerd). Alleen het
+   gemengde paar wordt geweigerd, bij de expliciete
+   `sameDatumKind`-bewaker, wiens eigen commentaar het een §5.3 Tabel
+   36-mismatch noemt die nooit lossy gecoerceerd mag worden. De
+   drieslag blijft intact in zijn kern (geen uitvoerder beantwoordt dit
+   document) — en de derde uitvoerder trekt onafhankelijk exact de
+   grens die deze clausule trekt. De zin die hier eerst stond ("de
+   backend draagt überhaupt geen millisecondeprecieze
+   datumvergelijking") was onwaar; zie de fixronde hieronder.
 3. **De RegelSpraak-frontend weigert deze vorm níét.** Anders dan bij de
    fold-zuster: `Typering.vergelijk` laat `EERDER`/`LATER`/… de
    precisiegrens met opzet kruisen, met een test die dat vastlegt, en
@@ -165,5 +172,88 @@ bestaande pin bewoog.
   parenthese zegt dat nu ook, en noemt de datum-ordeningsarm gesloten.
 - Op de datum-ordeningsarm zelf blijft niets open: een datum draagt geen
   eenheid, dus de eenhedenhelft heeft daar geen tegenhanger.
-- De frontend-kant van afwijking 3 hierboven: `Typering.vergelijk` laat
-  de kruising nog toe. Kandidaat voor een eigen kaart.
+- **De frontend-flank** (afwijking 3 hierboven): `Typering.vergelijk`
+  laat de vier ordeningsoperatoren de precisienaad met opzet kruisen —
+  het commentaar erbij noemt Tabellen 45–52, die anders dan
+  tijdsduur/eerste/laatste géén precisie-eis stellen. Eerlijk gezegd:
+  dit is **de eerste plek in deze spec waar het draadhek vóór de
+  frontend uit loopt**. Er is geen precedent — de zusterhekken worden
+  door de frontend juist gevangen (WF-035's `datum + datum` valt in
+  `Typering.reken` op `numeriekBinair` stuk). Praktische bijtkracht:
+  een geschreven datumliteraal ZONDER tijddeel is dag-precisie (de
+  DATE-token draagt het tijddeel optioneel), dus een
+  `DatumTijd`-attribuut vergeleken met een gewoon geschreven datum ís
+  de kruising die deze clausule nu weigert — de schrijver moet de tijd
+  uitspellen om op één precisie te blijven.
+  Voorgestelde deltarij voor `spec/CONSTRUCTS.md` (de `— Operator`-rij,
+  r. 109, laatste kolom; **de rij zelf landt de hoofdsessie serieel** —
+  CONSTRUCTS is voor deze kaart een verboden pad):
+
+      EERDER/LATER are date-typed ordering — v1 may unify under typed
+      ordering. **v1 delta (2026-09-05, WF-036):** the date-ordering
+      arm is per REPRESENTATION — a day-precision and a
+      millisecond-precision operand share no order and are refused at
+      the wire, while `Typering.vergelijk` still admits the crossing
+      (§5.7–5.10 Tabellen 45–52 impose no precision restriction). The
+      first place the wire fence runs AHEAD of the frontend; bringing
+      the frontend along is tracked work, not a silent divergence.
+
+- **De ontbrekende ms-getuige.** Alle zeven datum-ordeningen in golden
+  en rood zijn dag×dag; de toegelaten milliseconde-helft óók laten
+  weigeren beweegt nul van de 504 rapporten. De helft rust dus op de
+  uitvoerders, niet op het corpus: een golden met een gelijk-precieze
+  `DatumTijd`-ordening is de ontbrekende regressiegetuige. Genoteerd in
+  de spec-passage, de indexrij en de NOTE.
+- `backlog/new/20260905-drools-datumtijd-iso-lexeem.md` — het
+  wire-neutraliteitsgat dat de fixronde onderweg opgroef (zie hieronder).
+
+### Fixronde (2026-09-05)
+
+Twee lenzen lazen het geland werk na. De **kern hield**: de mutant
+beweegt precies één van 504 rapporten, de sweep vóór/ná de clausule is
+byte-identiek op de overige 503, en het rood-eerst is echt. Twee
+tekstclaims waren **onwaar gemeten** en zijn hier vervangen; alles
+hieronder is in deze ronde zelf opnieuw gemeten.
+
+1. **"Drools draagt geen millisecondeprecieze datumvergelijking."**
+   Onwaar. Hermeten met één gelijk-precieze attribuut-vs-attribuut-probe
+   (beide operanden `DatumTijd`, invoer één milliseconde uit elkaar):
+   consistentie `PLAYED 2`, regelvoorwaarde `PLAYED 1`, en op dezelfde
+   invoer met omgekeerde verwachting `FAIL: verwacht consistent,
+   werkelijk inconsistent` resp. `FAIL: kenmerk verjaard: verwacht
+   afwezig, werkelijk aanwezig` — de discriminator, want een
+   dag-lezing zou beide paren gelijk noemen. Alleen het gemengde paar
+   wordt geskipt, en de bewaker die dat doet staat expliciet in de
+   bron. Wat de bouwer voor "de backend kan het niet" aanzag was een
+   **literal-pad-artefact**: `Literalen.parseDatumTijd` leest alleen
+   `dd-mm-yyyy hh:mm:ss` en geeft op het canonieke ISO-lexeem `null`,
+   waardoor een `DatumTijd`-literalprobe skipt om een heel andere reden.
+   Dat gat is nu een eigen kaart (restpunt hierboven).
+2. **"Deze arm defert op de onbekend-sentinel."** Onwaar op alle drie
+   de plekken die het beweerden (proza, indexrij, codecommentaar).
+   Hermeten, één sentinel-variant per arm: datum-ordening →
+   `WF-036 FAIL …/rechts: date-ordering operand is unknown`; gelijkheid
+   → `WF-036 FAIL …: equality across families: date-day vs unknown`;
+   numerieke ordening → `WF-036 FAIL …/rechts: ordering operand is
+   unknown` (steeds naast WF-034's `unknown-type sentinel inside a
+   structured node`). Alléén `type: null` defert echt, en dan vangt
+   WF-034 het (`value node without a static type`). De asymmetrie met
+   WF-038's fold-arm — die wél expliciet defert — is bewust: daar
+   bereikt alleen de rij-1-wrat de arm.
+
+Twee meetresultaten die de tekst nu draagt en die er nog niet stonden:
+
+- **Clingo weigert op vormniveau.** `decimals_of_datatype` geeft
+  `DatumTijd` geen schaal, dus dezelfde `TRANSLATION FAULT: unscalable
+  datatype in the ASP translation` komt óók op de SCHONE gelijk-precieze
+  ordening — het is geen oordeel over dit defect. Dat het datatype zelf
+  wél doorkomt, laat `corpus/golden/jutterswet-hoogwaterpaar` zien (een
+  `DatumTijd`-ordeningsfold: `clingo: PASS`, drie cases). Het gat zit in
+  het schaalpad van de vergelijking. `ref` is daarmee het enige been dat
+  het defect zélf ontmoet: het speelt de gelijk-precieze ordening
+  (`oracle: PASS`) en faalt alleen op het gemengde paar.
+- **De toegelaten helft heeft geen getuige.** Alle zeven
+  datum-ordeningen in golden+rood zijn dag×dag; een mutant die de
+  `DatumTijd`×`DatumTijd`-helft óók weigert beweegt **nul van 504**
+  rapporten (mutant leeft: hij vuurt op de probe). Het Percentage-
+  patroon van WF-038, gespiegeld — en genoteerd op alle drie de plekken.
