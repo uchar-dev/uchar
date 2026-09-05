@@ -381,7 +381,7 @@ public final class ExecModelTranspiler {
                         || doel.objecttype().kenmerkGranulariteit.containsKey(doel.attribuut())))
                 return skip("regel (periodevergelijking op tijdsafhankelijk doel — §8.4.3 clip): " + r.naam());
             Gate gate = voorwaarde(r.voorwaarde(), pattern, doel.objecttype(), sVar);
-            if (gate == null) return skip("regel (voorwaarde buiten Phase-B scope): " + r.naam());
+            if (gate == null) return skip("regel (" + voorwaardeSkipReden(r.voorwaarde()) + "): " + r.naam());
             pattern = gate.pattern();
             extra.addAll(gate.extra());
         }
@@ -6352,6 +6352,15 @@ public final class ExecModelTranspiler {
             throw new IllegalStateException("Drools accumulate-functie " + simpleName + " ontbreekt op het classpath"
                     + " (drools-core is een RUNTIME-afhankelijkheid van de uitvoerende engine)", e);
         }
+    }
+
+    /** Why a voorwaarde did not lower. "buiten Phase-B scope" is the honest default, but it was not the only
+     *  cause: an UNREADABLE datum-tijd lexeme (IR-SPEC ch. 4.1) also lowers to nothing, and blaming a construct
+     *  scope for it sent one earlier session hunting a millisecond bug that did not exist. The DRL branch labels
+     *  the same cause in the same words, so a producer reads one diagnosis from either branch. */
+    private static String voorwaardeSkipReden(Conditie c) {
+        return Conditie.bevatOperand(c, Literalen::onleesbaarDatumTijdLexeem)
+                ? "voorwaarde met onleesbaar datum-tijd-lexeem" : "voorwaarde buiten Phase-B scope";
     }
 
     private Rule skip(String reason) { overgeslagen.add(reason); return null; }

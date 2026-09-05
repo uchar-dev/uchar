@@ -3224,7 +3224,13 @@ public final class DrlTranspiler {
             // always-false marker instead. (Checked BEFORE the unit restatement, which a marker operand must
             // never reach — its .multiply would wrap the placeholder.)
             Frag lo = operand(acc, v.links(), subject), ro = operand(acc, v.rechts(), subject);
-            if (lo.marker() || ro.marker()) return LoweredConditie.marker("voorwaarde", v.bron());
+            if (lo.marker() || ro.marker()) {
+                // The label is the manifest reason a reader sees. A bare "voorwaarde" cannot distinguish a
+                // construct this back-end does not carry from an UNREADABLE datum-tijd lexeme (IR-SPEC ch. 4.1) —
+                // a document defect the producer can fix. Name that one, in the exec branch's words.
+                boolean lexeem = Literalen.onleesbaarDatumTijdLexeem(v.links()) || Literalen.onleesbaarDatumTijdLexeem(v.rechts());
+                return LoweredConditie.marker(lexeem ? "voorwaarde met onleesbaar datum-tijd-lexeem" : "voorwaarde", v.bron());
+            }
             // §5.5.5 a comparison with a TO-ONE navigated operand: mvel's `!.` (from operand()) short-circuits the whole
             // constraint to a non-match on a null relation — spec-correct for ordering/GELIJK (a leeg operand is onwaar)
             // but WRONG for ONGELIJK (Tabel 44: a leeg-vs-gevuld "ongelijk aan" is WAAR). Read the comparison leegwaarde-

@@ -2,10 +2,13 @@ package io.github.yhavinga.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.github.yhavinga.regelspraak.kern.Literalen;
+
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -95,12 +98,77 @@ class DatumTijdLexeemWitnessTest {
         // match its prefix — which is exactly the fall-through that made a wrong answer look played — so the
         // pin is that BOTH branches refuse the rule instead of quietly comparing against 2024-01-31T00:00:00.
         String kapot = model("2024-01-31T12:00");
-        assertThrows(CaseRunner.Excluded.class, () -> speel(kapot, SUBDAG_CASE),
+        CaseRunner.Excluded ex = assertThrows(CaseRunner.Excluded.class, () -> speel(kapot, SUBDAG_CASE),
                 "the exec-model branch refuses the rule");
+        assertTrue(ex.getMessage().contains("datum-tijd-lexeem"),
+                "and says WHY, not 'outside Phase-B scope': " + ex.getMessage());
         CaseRunner.Result r = drl(kapot, SUBDAG_CASE);
         assertEquals("EXCLUDE", r.status(), "the DRL-text branch refuses instead of degrading to the bare date");
         assertTrue(r.reason().contains("Kenmerktoekenning verjaard"),
                 "the refusal names the construct it dropped: " + r.reason());
+        assertTrue(r.reason().contains("datum-tijd-lexeem"),
+                "and names the cause in the same words as the other branch: " + r.reason());
+    }
+
+    // ---------------- the lexeme FENCE itself (unit pins on the shared reader) ----------------
+
+    /**
+     * What the reader must REFUSE. Every form below was silently ACCEPTED before the anchoring fix
+     * (measured 2026-09-06 against the pre-fix reader): the pattern matched with {@code find()}, so a
+     * zone suffix, an offset, surrounding text and any surplus fraction digit were simply not looked at,
+     * and one-digit fields passed because the widths were {@code \d{1,2}}. Each of these is a document a
+     * conforming producer might write believing it was understood; a reader that answers one of them is a
+     * reader that guesses. Refusing is never inert here — both branches drop the construct LOUDLY (the
+     * end-to-end pin below), which is the whole point: the alternative is a wrong instant, silently.
+     */
+    @Test void de_lezer_weigert_elke_vorm_buiten_het_lexeem() {
+        assertNull(Literalen.parseDatumTijd("2024-01-31T12:00:00Z"), "no zone suffix — a Z is not dropped");
+        assertNull(Literalen.parseDatumTijd("2024-01-31T12:00:00+01:00"), "no offset — an offset is not dropped");
+        assertNull(Literalen.parseDatumTijd("2024-01-31 12:00:00"),
+                "a space is not the canonical separator, and 2024-01-31 is not the day-first snippet either");
+        assertNull(Literalen.parseDatumTijd("2024-01-31 12:00:00.000"), "idem, with the fraction written");
+        assertNull(Literalen.parseDatumTijd("2024-1-31T09:00:00"), "fixed widths: a one-digit month is not the lexeme");
+        assertNull(Literalen.parseDatumTijd("2024-01-31T9:00:00"), "fixed widths: a one-digit hour is not the lexeme");
+        assertNull(Literalen.parseDatumTijd("2024-01-31T12:00:00.1"),
+                "a one-digit fraction is the width the readers disagree on (IR-SPEC ch. 4.1) — refused, not guessed");
+        assertNull(Literalen.parseDatumTijd("2024-01-31T12:00:00.1234"),
+                "a four-digit fraction was TRUNCATED to 123 ms before the fix — silently a different instant");
+        assertNull(Literalen.parseDatumTijd("2024-01-31T12:00"), "the seconds field is always written");
+        assertNull(Literalen.parseDatumTijd("rommel 2024-01-31T12:00:00 x"), "whole-string: the lexeme is the value, not a substring in it");
+        assertNull(Literalen.parseDatumTijd("2024-01-31"), "a date without a time of day is not a datum-tijd");
+        assertNull(Literalen.parseDatumTijd("2024-02-30T12:00:00"), "a real day of a real month (the calendar still decides)");
+    }
+
+    /** What the reader must keep READING — the two lexemes this card is about, plus the two source-token
+     *  shapes the frontend itself can emit into {@code waarde}: the §13.2.19 {@code dd. } de-dato prefix and
+     *  the token's variable-width day/month ({@code DIGIT+}). The anchoring above may not make the reader
+     *  stricter than the producer that feeds it, or the fix would re-open the very gap it closes. */
+    @Test void de_lezer_leest_beide_lexemen_en_het_millisecondeveld() {
+        assertEquals(LocalDateTime.of(2024, 1, 31, 12, 0, 0), Literalen.parseDatumTijd(ISO_MIDDAG));
+        assertEquals(LocalDateTime.of(2024, 1, 31, 12, 0, 0), Literalen.parseDatumTijd(SNIPPET_MIDDAG));
+        assertEquals(LocalDateTime.of(2024, 1, 31, 12, 0, 0, 500_000_000), Literalen.parseDatumTijd(ISO_HALVE),
+                ".500 is five hundred milliseconds, scaled to nanoOfSecond");
+        assertEquals(LocalDateTime.of(2024, 1, 31, 12, 0, 0, 500_000_000), Literalen.parseDatumTijd(SNIPPET_HALVE));
+        assertEquals(LocalDateTime.of(2024, 12, 25, 10, 30, 0, 500_000_000),
+                Literalen.parseDatumTijd("dd. 25-12-2024 10:30:00.500"), "the de-dato prefix stays readable");
+        assertEquals(LocalDateTime.of(2025, 3, 1, 9, 0, 0),
+                Literalen.parseDatumTijd("1-3-2025 09:00:00"), "the source token writes day/month as DIGIT+");
+    }
+
+    /** End-to-end, per branch, for a form that PLAYED before the fix: the zone-suffixed lexeme. It is not the
+     *  canonical lexeme (uchar pins a local instant, no zone), yet the pre-fix reader dropped the {@code Z} and
+     *  answered as if it were — the exec-model branch played it, the DRL branch played it. Both must now refuse,
+     *  and the refusal must NAME the lexeme rather than blame a construct scope it never was. */
+    @Test void het_zone_lexeem_wordt_op_beide_takken_luid_geweigerd() throws Exception {
+        String zone = model("2024-01-31T12:00:00Z");
+        CaseRunner.Excluded ex = assertThrows(CaseRunner.Excluded.class, () -> speel(zone, SUBDAG_CASE),
+                "the exec-model branch must refuse the rule, not play a zone-stripped instant");
+        assertTrue(ex.getMessage().contains("datum-tijd-lexeem"),
+                "the exec-model refusal names the unreadable lexeme: " + ex.getMessage());
+        CaseRunner.Result r = drl(zone, SUBDAG_CASE);
+        assertEquals("EXCLUDE", r.status(), "the DRL-text branch must refuse it too");
+        assertTrue(r.reason().contains("datum-tijd-lexeem"),
+                "the DRL refusal names the unreadable lexeme: " + r.reason());
     }
 
     // ---------------- helpers: replay ----------------
