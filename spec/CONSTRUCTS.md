@@ -106,7 +106,7 @@ row it belongs to. Discriminator enums are listed under their node.
 | Node | Meaning (own words) | Spec § | Verdict (v1) | Row | Delta / notes |
 |---|---|---|---|---|---|
 | `Vergelijking` | binary comparison | §13.4.13–.15 | core | 1 | — |
-| — `Operator` | KLEINER(_OF_GELIJK), GROTER(_OF_GELIJK), GELIJK, ONGELIJK, EERDER(_OF_GELIJK), LATER(_OF_GELIJK) | §5.1–5.10 | core | 1 | EERDER/LATER are date-typed ordering — v1 may unify under typed ordering |
+| — `Operator` | KLEINER(_OF_GELIJK), GROTER(_OF_GELIJK), GELIJK, ONGELIJK, EERDER(_OF_GELIJK), LATER(_OF_GELIJK) | §5.1–5.10 | core | 1 | EERDER/LATER are date-typed ordering. **Tightened (2026-09-05):** the four date-ordering operators require ONE date representation per comparison — `DatumInDagen` and `DatumTijd` share no order (WF-036, witness `wf036-datumordening-precisie`; the third executor fences the same seam independently). A v1 unification under typed ordering must therefore unify ACROSS the representation seam, not beneath it |
 | `Predicaat` | unary test on one operand | §5.11–5.16 | split | 1 | see `Predicaatsoort` |
 | — `Predicaatsoort` | LEEG, GEVULD | §5.13/.14 | core | 18 | kernel emptiness tests, tied to the row-18 decision |
 | — `Predicaatsoort` (variants) | ELFPROEF, NUMERIEK_MET_EXACT, DAGSOORT | §5.15/.16, §3.12 | dialect | 1, 23 | builtin predicates |
