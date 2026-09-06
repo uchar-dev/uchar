@@ -1,0 +1,60 @@
+# wf034-sentinel-gelest-wratoperand
+
+Violates WF-034 (`spec/IR-SPEC.md` ch. 4.3, the sentinel fence): the same
+position as `wf034-sentinel-gelest-vouwoperand` — a LISTED fold operand — but
+the OTHER subform, the one that behaves differently in the third executor.
+Here the operand is the row-1 wart spelled VERBATIM: a declared ROLE plural
+in the `attribuut` slot, `set: false`, no `navigatieRol`, the unknown
+sentinel on its own `type`. The wart is the fold SOURCE's spelling; a listed
+value fold has no source, so there is nothing for it to be.
+
+    WF-034 FAIL /resolvedRegels/0/waarde/argumenten/1/type: unknown-type
+    sentinel on a listed fold operand: a fold with two or more arguments is
+    the listed value fold, whose operands are ordinary reads — the sentinel is
+    admissible on the SINGLE-argument instance-fold source alone (the v0 row-1
+    wart, ch. 4.3)
+
+The document. A `MAXIMUM` with two arguments and an `elementObjecttype`;
+operand 0 an ordinary read of `drempelgewicht` with its declared type,
+operand 1 `attribuut: "vondsten"` (the declared plural of the role `vondst`)
+on `objecttype: "Jutter"` under the sentinel. One fault, and the reason it
+was the LAST shape standing: ch. 4.3's role-name exception is keyed on the
+sentinel and lives in this very branch, so the name resolution half ADMITS
+`vondsten` here — no other rule fires. Without this clause the document is
+clean outright.
+
+This is not a hand form. Measured 2026-09-06: the RegelSpraak frontend emits
+exactly this document, with **no diagnostic at all**, from
+"… als de maximale waarde van het drempelgewicht van de Jutter en de
+vondsten van de Jutter" — the reference builder finds no attribute datatype
+and falls back to the sentinel, and the fold branch's role exception then
+admits the name. The sibling spelling, where the unresolved name matches no
+declared role, always co-fires WF-034's resolution arm and was never clean;
+this one, where the name happens to coincide with a declared role name or
+plural, is the whole open flank.
+
+Rood-eerst, measured on this document. Pre-rule verifier
+(md5 `2ab63519d103a0abee721296973a61d7`): `verifier: PASS`. With the clause
+(md5 `8660a9ef58134b0aaea1f8947fff6bcf`): the rejection above.
+
+Executors, on this document (case: one Jutter of drempelgewicht 12.00 kg
+linked to two Vondsten of 12.00 and 7.00 kg):
+
+    ref         : EVALUATION FAULT: unsupported AttribuutRef shape
+                  (set/sentinel outside a fold)
+    ASP backend : TRANSLATION FAULT: expression kind not translated (no
+                  corpus case exercises it)
+    Drools      : ERROR ConsequenceException … java.lang.IllegalStateException:
+                  geen getter voor 'vondsten' op … .facts.Jutter
+
+The third executor READS that role name after all — it reaches for a getter
+and throws. That is exactly where the two subforms part company: its sibling
+(`wf034-sentinel-gelest-vouwoperand`) it plays and answers. One rule refuses
+both, and the spec says why the difference does not split it: neither is a
+read any executor can carry, and the wire is the one place both can be
+stopped.
+
+Falsifiable, arm-exact: drop the sentinel clause at the head of the
+fold-argument branch's reference arm (`spec/verifier/lib/checks.ml`); this
+case turns clean along with its two siblings and nothing else moves over the
+537 documents of the four zones.
