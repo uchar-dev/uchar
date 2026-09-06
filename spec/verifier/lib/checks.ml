@@ -318,6 +318,66 @@ let wf002 ctx =
              v "WF-002" p (Printf.sprintf "characteristics '%s' and '%s' collide case-insensitively" a b))))
     ctx.doc.objecttypen
 
+(* WF-094: a keyed declaration's redundant SELF-NAME is its map key, spelled
+   VERBATIM (IR-SPEC ch. 2.1's carriage rule, ch. 4.6's naming class).
+
+   The v0 wire stores five declaration kinds as a MAP — object types,
+   parameters, unit systems, fact types, dimensions — and every value repeats
+   its own name in a `naam` field. That field is not a reference: it is the
+   declaration's identity written a second time, the denormalisation of the
+   ONE name a v1 declaration carries on its node (ch. 2.2/2.5/2.6/2.7/2.10).
+   So the question this rule answers is not "does this name resolve" but "is
+   the document a faithful spelling of one declaration" — ch. 2.1's carriage
+   rule, not its matching rule, which is why the comparison is byte-exact and
+   not `norm`.
+
+   FIVE ARMS, one per table, because they are five independent readerships and
+   each has its own witness (`wf094-zelfnaam-<kind>`); a mutant that drops one
+   arm frees exactly one document, and a mutant that relaxes the comparison to
+   `norm` frees all five (every witness is a one-character recapitalisation).
+
+   The harm is a silently DIFFERENT program, not a missing value: the OCaml
+   consumers key everything off the map key and never read the self-name at
+   all (`ref` reads none of the five; the ASP backend reads `es_naam` only to
+   NAME a system inside a fault message it would raise anyway), while the
+   bean-model executor loads the self-name AS the declaration's name and reads
+   it at 105 (object type), 32 (parameter), 3 (fact type) and 1 (dimension)
+   sites. Measured 2026-09-06, one self-name twisted at a time over every
+   golden: a parameter self-name differing from its key in ONE CAPITAL leaves
+   the verifier, `ref` and the ASP backend passing on 11 of the goldens' 34
+   parameter positions while the third executor answers with WRONG VALUES
+   (`jutterswet-aanvoergeld`: 322.50 becomes 310.00), because the case binds
+   its globals by the written name and the transpiler registers them under the
+   self-name. Cost over the four zones: none — all 1919 entries the five
+   tables hold spell their key byte for byte.
+
+   Scope: the PRESENT self-name. `naam: null` is the empty half of the same
+   field and a different question (the (n)/(o) precedent of ch. 4.6); no
+   document in any zone carries one, so a clause there would have no witness
+   and it stays in ch. 4.6's open list. *)
+let wf094 ctx =
+  let arm table kind self entries =
+    List.filter_map
+      (fun (key, x) ->
+        match self x with
+        | Some n when n <> key ->
+            Some
+              (v "WF-094"
+                 ("/" ^ table ^ "/" ^ key ^ "/naam")
+                 (Printf.sprintf
+                    "%s self-name '%s' is not the key '%s' it is stored under: a keyed \
+                     declaration carries its own name verbatim"
+                    kind n key))
+        | _ -> None)
+      entries
+  in
+  arm "objecttypen" "object type" (fun (o : objecttype) -> o.ot_naam) ctx.doc.objecttypen
+  @ arm "parameters" "parameter" (fun (p : parameter) -> p.par_naam) ctx.doc.parameters
+  @ arm "eenheidstelsels" "unit system" (fun (s : eenheidstelsel) -> s.es_naam)
+      ctx.doc.eenheidstelsels
+  @ arm "feittypen" "fact type" (fun (f : feittype) -> f.ft_naam) ctx.doc.feittypen
+  @ arm "dimensies" "dimension" (fun (d : dimensie) -> d.dim_naam) ctx.doc.dimensies
+
 let wf003 ctx =
   (* Model-layer resolution: no Onbekend datatype on attributes/domains;
      enumeration domains resolve; role filler types resolve; named-timeline
@@ -7788,7 +7848,7 @@ let wf086 ctx =
 let all (doc : document) : violation list =
   let ctx = { doc } in
   List.concat
-    [ wf001 ctx; wf002 ctx; wf003 ctx; wf004 ctx; wf005 ctx; wf006 ctx;
+    [ wf001 ctx; wf002 ctx; wf094 ctx; wf003 ctx; wf004 ctx; wf005 ctx; wf006 ctx;
       wf007_model ctx; wf009 ctx; wf092 ctx; wf011 ctx; wf012 ctx; wf013 ctx; wf014 ctx;
       wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf020 ctx; wf021 ctx;
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
