@@ -22,7 +22,7 @@ annotations. One fault, at that operand, and no other rule.
 
 Rood-eerst, measured on this document. Pre-clause verifier
 (md5 `c95650b1ab993c8a8b370e5b0617b0e6`, the seventh wave as first landed):
-`verifier: PASS`. With the twin arm (md5 `2237a9524ea35c7663dad97a8635f91f`):
+`verifier: PASS`. With the twin arm (md5 `8ea45e866dddcf861b357b430d50b4d1`):
 the rejection above.
 
 Executors, on this document with the source golden's own first case (five
@@ -88,7 +88,7 @@ thing some of them read.
 Falsifiable, arm-exact: delete the `| None when not source_exempt ->` arm at
 the head of the fold-argument branch's reference arm
 (`spec/verifier/lib/checks.ml`). Swept over golden + rood + negatief + parity
-(540 documents) exactly this one case turns clean and nothing else moves.
+(546 documents) exactly this one case turns clean and nothing else moves.
 Deleting the whole clause instead frees six documents — this one, the three
 `wf034-sentinel-gelest-*`/`-geleste-*` cases and the two
 `wf034-sentinel-builtin-*` cases — and removes one line from the parity zone's

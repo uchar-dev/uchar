@@ -32,7 +32,10 @@ that operand — the self-served exemption every WF-034 wave closes.
 
 Rood-eerst, measured on this document. Pre-rule verifier
 (md5 `2ab63519d103a0abee721296973a61d7`): `verifier: PASS`. With the clause
-(md5 `c95650b1ab993c8a8b370e5b0617b0e6`): the rejection above.
+(md5 `c95650b1ab993c8a8b370e5b0617b0e6`): the rejection above. Both md5s are
+the wave's own, 2026-09-06, before the branch was rebased onto the datum-tijd
+card and before the fix round reworded the message; the verifier of the head
+this document lands on is `8ea45e866dddcf861b357b430d50b4d1`.
 
 Executors, on this document (case: one Jutter, drempelgewicht 12.00 kg,
 bergingsgewicht 7.00 kg; the pinned answer would be 12.00):
@@ -49,7 +52,7 @@ at all is.
 
 Falsifiable, arm-exact: drop the sentinel clause at the head of the
 fold-argument branch's reference arm (`spec/verifier/lib/checks.ml`). Swept
-over golden + rood + negatief + parity (540 documents) exactly the six
+over golden + rood + negatief + parity (546 documents) exactly the six
 `wf034-sentinel-gelest-*`/`-geleste-*`/`-null-*`/`-builtin-*` cases turn
 clean, one report line disappears in the parity zone, and nothing else moves.
 Inverting the ARITY half of the guard instead (`= 1` for `<> 1`) frees this

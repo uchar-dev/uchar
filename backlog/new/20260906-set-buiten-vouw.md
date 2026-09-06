@@ -53,7 +53,7 @@ lezing én operandpositie**, precies zoals golf 7 er één was voor het
 onbekend-type.
 
 **De regressiegrens is nul.** Over golden + rood + negatief + pariteit
-(540 documenten) draagt **geen enkel** document vandaag een `AttribuutRef`
+(546 documenten) draagt **geen enkel** document vandaag een `AttribuutRef`
 met `set: true` buiten een vouwargument. Een weigerende clausule kan dus per
 constructie niets over-afwijzen; een dragende arm heeft per constructie geen
 bestaande getuige en moet er een meebrengen.

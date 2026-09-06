@@ -38,7 +38,7 @@ is why one decision covers both positions.
 
 Falsifiable, arm-exact: make the expression walk's type prologue return no
 violation on `Datatype_onbekend` (`spec/verifier/lib/checks.ml`). Swept over
-golden + rood + negatief + parity (540 documents) exactly this case turns
+golden + rood + negatief + parity (546 documents) exactly this case turns
 clean — plus three report lines in the parity zone, which stays rejected
 either way — and nothing else moves. Before this case existed the same
 mutation freed nothing at all in the three gated zones.

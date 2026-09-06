@@ -29,7 +29,10 @@ decides and `set` only describes.
 
 Rood-eerst, measured on this document. Pre-rule verifier
 (md5 `2ab63519d103a0abee721296973a61d7`): `verifier: PASS`. With the clause
-(md5 `c95650b1ab993c8a8b370e5b0617b0e6`): the rejection above.
+(md5 `c95650b1ab993c8a8b370e5b0617b0e6`): the rejection above. Both md5s are
+the wave's own, 2026-09-06, before the rebase and before the fix round
+reworded the message; the verifier of the head this document lands on is
+`8ea45e866dddcf861b357b430d50b4d1`.
 
 Executors, on this document (case: one Jutter of drempelgewicht 12.00 kg
 linked to two Vondsten of 12.00 and 7.00 kg):
@@ -50,4 +53,4 @@ wire rather than in three places.
 Falsifiable, arm-exact: drop the sentinel clause at the head of the
 fold-argument branch's reference arm (`spec/verifier/lib/checks.ml`); this
 case turns clean along with the five other `wf034-sentinel-*` operand
-witnesses and nothing else moves over the 540 documents of the four zones.
+witnesses and nothing else moves over the 546 documents of the four zones.

@@ -302,7 +302,7 @@ type" ]`, dezelfde zin als de prologue. Negatief
 `wf034-sentinel-null-vouwoperand` (`jutterswet-peildatum` met
 `/resolvedRegels/0/waarde/argumenten/1/type := null`). **Rood-eerst:**
 verifier vóór md5 `c95650b1ab993c8a8b370e5b0617b0e6` → `verifier: PASS`;
-ná md5 `2237a9524ea35c7663dad97a8635f91f` → `WF-034 FAIL … value node
+ná md5 `8ea45e866dddcf861b357b430d50b4d1` → `WF-034 FAIL … value node
 without a static type`. Uitvoerders, zelf gemeten: **`ref` PASS (5
 expectations)** — hij SPEELT, en antwoordt 2026-05-01; clingo
 `TRANSLATION FAULT: mixed date/non-date operands under an eerste/laatste
@@ -350,29 +350,37 @@ operands are ordinary reads, and at a non-aggregation kind there is no source
 at all"*. De drie bestaande NOTEs citeren hem verbatim en zijn bijgewerkt.
 
 **Mutanten** (alle: `/tmp` via `git archive HEAD | tar -x`, harde build-faal,
-`test -x`, binary-md5, volle vier-zone-sweep over 540 documenten; vergeleken
-tegen de gefixte verifier `2237a952…`):
+`test -x`, binary-md5, volle vier-zone-sweep over 546 documenten; vergeleken
+tegen de gefixte verifier `8ea45e86…`. Alle zeven zijn ná de rebase op main
+`2634463` opnieuw gebouwd en gedraaid; elke uitslag reproduceert getal voor
+getal, de md5's hieronder zijn die van de gerebasede kop):
 
 | mutant | receptuur (op `checks.ml`) | md5 | uitslag |
 |---|---|---|---|
-| M1 | de hele golf-7-clausule (beide armen + `source_exempt`) vervangen door `[]` | `dca92f65f9ded3efee350d329a3a5b58` | **6** getuigen vrij (3 gelest + null + 2 builtin), 0 nieuw afgewezen, 1 pariteitsregel weg — arm-exact |
-| M2 | ariteitshelft omgekeerd: `= 1` → `<> 1` in `source_exempt` | `ac3dfa0707fdf5c916732df995510dd9` | 4 vrij (3 gelest + null) EN **12** nieuw afgewezen (10 goldens, 5 anchors, 2 rood) + 29 rapporten met bijvangst |
-| M4 | uitzondering versmald: `= 1 && f.kind = Aantal` | `ccf364951ca21dd3699ef7298bbaf3ab` | 0 vrij, 0 nieuw; precies de vier `wf093-wratvouw-*` krijgen een tweede citaat — de doorkruising die de soortenset vermijdt |
-| M5 | prologue-arm: `Some (Datatype_onbekend _) -> []` | `1269c4c21bf280d7f063d71932edea0e` | precies `wf034-sentinel-kale-lezing` vrij + 1 pariteitsregel — herbewijs |
-| M6 | SOORT-helft terug: `source_exempt = List.length f.argumenten = 1` | `4c53fcdbbda4ce3a10974cbff18a80c5` | **precies** de twee `wf034-sentinel-builtin-*` vrij, geen ander verdict en geen andere rapportregel — de dichtgemaakte kier op ware grootte |
-| M7 | de `| None when not source_exempt ->`-arm geschrapt | `f4064f701ed435c1dcb984962746f172` | **precies** `wf034-sentinel-null-vouwoperand` vrij, verder niets |
-| (ref) | golf-7-clausule weg op de branch-kop, vóór de fixronde | `3a447d8a8253b0d80d47921635ce6723` | injectieproef "vóór arm (r)" |
+| M1 | de hele golf-7-clausule (beide armen + `source_exempt`) vervangen door `[]` | `2df57a7ba7a1213bf0d8f0cfad71e3aa` | **6** getuigen vrij (3 gelest + null + 2 builtin), 0 nieuw afgewezen, 1 pariteitsregel weg — arm-exact |
+| M2 | ariteitshelft omgekeerd: `= 1` → `<> 1` in `source_exempt` | `5364407a1710872c7933c56b10d1a8dd` | 4 vrij (3 gelest + null) EN **12** nieuw afgewezen (10 goldens, 5 anchors, 2 rood) + 29 rapporten met bijvangst |
+| M4 | uitzondering versmald: `= 1 && f.kind = Aantal` | `4681ec43f4821d5ba9e3ed6c97fde47c` | 0 vrij, 0 nieuw; precies de vier `wf093-wratvouw-*` krijgen een tweede citaat — de doorkruising die de soortenset vermijdt |
+| M5 | prologue-arm: `Some (Datatype_onbekend _) -> []` | `b613bf5749d0f8e55f89e04665ee67bc` | precies `wf034-sentinel-kale-lezing` vrij + 1 pariteitsregel — herbewijs |
+| M6 | SOORT-helft terug: `source_exempt = List.length f.argumenten = 1` | `97c9e7499171247e5955a28d293f1cd2` | **precies** de twee `wf034-sentinel-builtin-*` vrij, geen ander verdict en geen andere rapportregel — de dichtgemaakte kier op ware grootte |
+| M7 | de `| None when not source_exempt ->`-arm geschrapt | `c0db8ab71724082af799e240068dfe50` | **precies** `wf034-sentinel-null-vouwoperand` vrij, verder niets |
 
-**Injectieproef, herschreven recept en hermeten.** 156 goldens; elke
+M1 dient tegelijk als de "vóór arm (r)"-verifier van de injectieproef: hij
+haalt beide armen weg, en de proef injecteert alleen sentinels, dus de
+None-arm doet daar niet mee.
+
+**Injectieproef, herschreven recept en hermeten** (getallen van de
+gerebasede kop, 2026-09-06)**.** 157 goldens; elke
 JSON-knoop met `node` ∈ de elf datatype-soorten (`Numeriek`, `Percentage`,
 `Tekst`, `Booleaan`, `DatumInDagen`, `DatumTijd`, `Enumeratie`, `Onbekend`,
 `SumType`, `ListType`, `StructType`) één tegelijk vervangen door
 `{"node":"Onbekend","reden":"niet opgelost"}`; overlever = exit 0; de 15
 no-ops (posities die het sentinel per constructie al dragen) apart geteld.
-**2804 injecties. Vóór arm (r): 10 overlevers**, alle geleste vouwoperanden —
+**2813 injecties. Vóór arm (r): 10 overlevers**, alle geleste vouwoperanden —
 acht in `jutterswet-peildatum` (vier vouwen × twee operanden) en twee in
 `jutterswet-sluitsom`. **Ná: 0.** De eerdere telling (6 over 2701) kwam van
-een smaller instrument; noemer én teller zijn nu allebei genoemd.
+een smaller instrument; noemer én teller zijn nu allebei genoemd. Vóór de
+rebase gemeten als 2804 over 156 goldens; main's nieuwe golden voegt er negen
+posities aan toe en geen enkele overlever.
 
 **Nulcensus en builtin-census, vier zones.** Waardeknopen met een expliciete
 `null` op `type`: **drie**, alle in al-afgewezen negatiefs (één
@@ -381,12 +389,19 @@ op een vouwargument. Niet-aggregatie-`Functie` mét `elementObjecttype`:
 **nul** vóór de twee nieuwe getuigen. Beide helften van de fixronde bereiken
 dus niets wat er al stond.
 
-**Regressiegrens van de fixronde.** Gesweept over alle **540** documenten
-(156 golden + 22 rood + 332 negatief + 30 pariteit) vóór en ná: **zeven
-rapporten** bewegen — drie nieuwe getuigen PASS → FAIL, drie bestaande
-`wf034-sentinel-*` die één melding herformuleren, en de pariteitscasus die
-diezelfde melding op dezelfde pointer herformuleert bij een ONVERANDERD
-overtredingsaantal (34). Nul goldens, nul rood, geen ander negatief.
+**Regressiegrens van de fixronde.** Gesweept over alle **546** documenten
+(157 golden + 22 rood + 337 negatief + 30 pariteit) vóór en ná: **zeven
+rapporten en drie verdicts** bewegen, en de twee helften zijn apart gemeten.
+De SEMANTISCHE helft — de verbrede garde plus de tweelingarm, tegen de golf
+precies zoals die eerst landde (mutant PRE,
+md5 `7fc1c77686f022e96d30ee6d51733f65`; receptuur: `source_exempt` terug naar
+`List.length f.argumenten = 1` én de `| None when not source_exempt ->`-arm
+geschrapt) — beweegt **drie documenten en verder niets**, alle drie een
+verdict en alle drie een eigen nieuwe getuige. De overige vier rapporten zijn
+de MELDINGSherschrijving: drie bestaande `wf034-sentinel-*` en de
+pariteitscasus herformuleren één regel, geen verdict, en het
+overtredingsaantal van de pariteitscasus blijft 34. Nul goldens, nul rood,
+geen ander negatief.
 
 **Spec-meebewegingen** (alle in `spec/IR-SPEC.md`, beschermd pad): "refused
 alike" wordt waar en zegt sinds wanneer; ch. 4.3 flank (4) op de nieuwe grens
@@ -415,7 +430,7 @@ mét `diagnostics: []`; verifier PASS; `ref` FAULT
 Drie weigeringen, geen antwoord om te vergelijken — dus geen enkele
 differentiaalpoort vangt hem. Twee posities (hele regelwaarde, operand van
 een `Binair`) gemeten IDENTIEK, dus één beslissing voor beide. Nul
-voorkomens in alle 540 documenten.
+voorkomens in alle 546 documenten.
 
 **Precisering.** "de frontend emitteert exact dit document" (NOTE van
 `wf034-sentinel-gelest-wratoperand`) is nagemeten blad voor blad: de emissie
@@ -438,3 +453,55 @@ commentaarblokken), drie nieuwe negatiefs + vier bijgewerkte NOTEs,
 `spec/CONSTRUCTS.md`, `spec/PLAN.md`, `ref/**`, `backends/**`, `scripts/**`,
 `toka/**`; `frontends/**` alleen gelezen en één keer gedraaid voor de
 producentmeting (`make compile` + `--ir`, alles in gitignored build-mappen).
+
+---
+
+Rebase op main `2634463` (2026-09-06, dezelfde worktree, ná de fixronde):
+
+**De rebase liep CONFLICTVRIJ.** Twaalf commits opnieuw toegepast, geen
+enkele conflicthunk. De twee voorziene raakvlakken bleken disjunct in de
+regels die ze aanraken: in `spec/IR-SPEC.md` staat mijn WF-034-indexrij
+(r. 5136) los van de nieuwe WF-095-rij (r. 5192) en zijn mijn ch.-4.3/4.6-
+passages disjunct van hun ch.-4.1-passage; in `spec/verifier/lib/checks.ml`
+zit hun WF-095-arm in de Literal-walk (r. ~239 en ~3743) en zitten mijn
+golf-7-armen in de vouwargument-tak (r. ~4205-4230). Repo-breed op
+conflictmarkers gegrepen ná afloop: de enige treffers zijn de decoratieve
+`====`-linialen in `LICENSE-CC-BY-4.0`, geen conflictmarkers. Rijvolgorde
+in de index blijft WF-034 vóór WF-093/094/095, zoals gevraagd.
+
+**Hermeten na de rebase.**
+
+- De noemer van de indexrij is **onveranderd 43** `v "WF-034"`-emissieplekken
+  — de datumtijd-branch raakte WF-034 niet, en dat is gemeten, niet aangenomen.
+- De vier zones zijn **157 golden + 22 rood + 337 negatief + 30 pariteit =
+  546**. Alle plekken waar mijn teksten een corpusstand claimen zijn
+  bijgewerkt en gedateerd: de NOTEs (546), ch. 4.3 flank (4) en (5), de
+  K5-kaart, en het zonegroei-grootboek in de indexrij, dat nu de stand noemt
+  waarop deze golf LANDT (negatief 330 → 337, vier zones 539 → 546) en de
+  pre-rebase-stand (325 → 329, 533 → 537) als historische regel houdt.
+- **Injectieproef hermeten**: 157 goldens, **2813** injecties, 15 no-ops,
+  **0** overlevers ná arm (r) en **10** ervóór — dezelfde tien geleste
+  operanden in dezelfde twee goldens. Main's nieuwe golden voegt negen
+  posities toe en geen enkele overlever.
+- **Sentinel-census hergeteld**: 71 `type`-posities (was 65), 66 op een
+  vouwargument (was 61), 62 enkelvoudige wratten (was 60) en **4** geleste —
+  de drie getuigen van deze golf plus dat ENE pariteitsoperand. Die
+  invariant, niet de totalen, draagt de claim.
+- **Nulcensus en builtin-census onveranderd**: drie waardeknopen met een
+  expliciete `null` op `type`, alle in al-afgewezen negatiefs, **nul** op een
+  vouwargument; **nul** niet-aggregatie-`Functie` met `elementObjecttype`
+  buiten de twee eigen getuigen.
+
+**De drie rood-eerst-getuigen en alle zeven mutanten opnieuw gedraaid op de
+gerebasede kop.** Elke uitslag reproduceert getal voor getal (M1 zes vrij /
+0 nieuw / 1 pariteitsregel; M2 vier vrij / 12 nieuw / 29 bijvangst; M4 nul /
+nul / vier tweede-citaten; M5 één vrij / 1 pariteitsregel; M6 precies twee
+vrij; M7 precies één vrij; PRE precies drie). Alle md5's in de NOTEs en in
+de mutantentabel hierboven zijn die van de gerebasede kop; de PASS-vóór-md5's
+(`2ab63519…` voor de golf, `c95650b1…` voor de fixronde) blijven staan als
+HISTORISCHE meting met datum, want een md5 verschuift bij elke
+commentaarwijziging in `checks.ml` en zegt alleen iets samen met de kop
+waarop hij gemeten is.
+
+**Nieuwe verifier-md5 op de gerebasede kop:
+`8ea45e866dddcf861b357b430d50b4d1`.**

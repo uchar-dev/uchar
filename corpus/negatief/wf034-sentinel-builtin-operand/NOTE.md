@@ -43,7 +43,7 @@ sentinel instead of that declaration. One fault, at that operand.
 Rood-eerst, measured on this document. Pre-fix verifier
 (md5 `c95650b1ab993c8a8b370e5b0617b0e6`, the seventh wave with the arity-only
 guard): `verifier: PASS`. With the widened guard
-(md5 `2237a9524ea35c7663dad97a8635f91f`): the rejection above.
+(md5 `8ea45e866dddcf861b357b430d50b4d1`): the rejection above.
 
 Executors, on this document (case: one Jutter, drempelgewicht 12.00 kg; the
 pinned answer would be 12.00):
@@ -61,7 +61,7 @@ stand.
 
 Falsifiable, arm-exact: revert the KIND half of the guard, leaving
 `List.length f.argumenten = 1` alone (`spec/verifier/lib/checks.ml`). Swept
-over golden + rood + negatief + parity (540 documents), exactly this case and
+over golden + rood + negatief + parity (546 documents), exactly this case and
 `wf034-sentinel-builtin-wratoperand` turn clean and **nothing else moves at
 all** — no verdict, no report line. Inverting the arity half instead frees the
 listed-operand witnesses and newly rejects 12 documents (10 goldens, 5 of them
