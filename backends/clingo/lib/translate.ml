@@ -1912,6 +1912,19 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let rec cond_fn c : string -> string -> string =
         match c with
         | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; _ } ->
+            if
+              not
+                (List.exists
+                   (fun (n, _) -> norm n = norm k)
+                   (objecttype ctx aot).kenmerk_granulariteit)
+            then
+              (* mirror ref's fault, as the two sister folds already do
+                 (pro rata WF-056, day count WF-058) — ktl facts come from
+                 the case's characteristic timelines alone, which a
+                 non-temporal characteristic can never carry, so the
+                 intersection below would be empty and the clipped total a
+                 silent 0 (a hunted gap) *)
+              fault "gedurende over %S, which is not a temporal characteristic (WF-055)" k;
             fun v t -> Printf.sprintf "ktl(S,%s,%s,%s)" (str k) v t
         | Kenmerk_check { negatie = true; _ } ->
             fault

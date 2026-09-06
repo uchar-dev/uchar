@@ -1661,6 +1661,123 @@ let () =
       "an allocation (verdeling) writes \"bewaartarief\" on \"Vondst\", so its segment bounds \
        are not case data"
 
+(* --- the ch. 3.6 CLIP'S OWN TEMPORALITY GATE (WF-055) ---------------------
+   (the clip-gate card, 2026-09-06)
+
+   The clip's characteristic arm emits ktl(S,k,V,T), and ktl facts exist for
+   ONE reason: the case's characteristic timelines. Over a characteristic
+   that is not temporal — no kenmerkGranulariteit entry — no case may carry a
+   timeline at all, so the join finds nothing, the intersection is empty and
+   the #sum answers 0 without a word. Measured on the renamed-key twist of
+   corpus/golden/anchor/jutterswet-dubbelwacht: ref faults WF-055 on
+   case3-een-leeg while clingo reported `PASS (2 expectations)` against that
+   silent 0 — ref ≢ clingo. The two sister folds (pro rata WF-056, day count
+   WF-058) have carried this very gate all along; the clip is the third
+   sister and had not.
+
+   It cannot become a corpus case in EITHER zone: the verifier refuses the
+   shape outright (WF-055), and corpus/rood must be verifier-clean (gate 3),
+   so no document carrying it can live in the corpus. The gate is pinned
+   here, with its own over-rejection control beside it: the SAME frame with
+   the characteristic temporal must still translate. *)
+
+let clip_kenmerk k =
+  {|{ "node": "Kenmerk", "kenmerk": "|} ^ k
+  ^ {|", "navigatie": null, "negatie": false, "eigenaar": null, "periode": null,
+      "bron": "gedurende de tijd dat hij |} ^ k ^ {| is" }|}
+
+(* [kenmerk_gran] is the kenmerkGranulariteit map body — what makes a
+   characteristic temporal — and [filter] the clip itself. *)
+let clip_doc ~kenmerk_gran ~filter =
+  {|{ "formaat": "regelspraak-ir-v0",
+  "objecttypen": { "Jutter": {
+    "node": "Objecttype", "naam": "Jutter",
+    "attributen": { "wachtvergoeding per maand": |} ^ num0 ^ {|, "dubbelwachtsom": |} ^ num0
+  ^ {| },
+    "attribuutMeervoud": {}, "attribuutDimensies": {},
+    "attribuutGranulariteit": { "wachtvergoeding per maand": "MAAND" },
+    "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+    "kenmerken": [ "borgplichtig", "aangesteld" ],
+    "kenmerkSoorten": { "borgplichtig": "BIJVOEGLIJK", "aangesteld": "BIJVOEGLIJK" },
+    "kenmerkGranulariteit": { |} ^ kenmerk_gran
+  ^ {| },
+    "kenmerkTijdlijnAantal": {}, "bezield": true, "meervoud": "Jutters" } },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {},
+  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "dubbelwachtsom van een jutter",
+    "soort": "BEREKENING",
+    "doel": { "node": "AttribuutRef", "attribuut": "dubbelwachtsom", "objecttype": "Jutter",
+      "onderwerpBron": "De dubbelwachtsom van een Jutter", "navigatieRol": null,
+      "type": |} ^ num0
+  ^ {|, "bron": "De dubbelwachtsom van een Jutter", "set": false, "navigatiePad": [] },
+    "waarde": { "node": "Functie", "kind": "TOTAAL",
+      "argumenten": [ { "node": "AttribuutRef", "attribuut": "wachtvergoeding per maand",
+        "objecttype": "Jutter", "onderwerpBron": "zijn", "navigatieRol": null, "type": |}
+  ^ num0
+  ^ {|, "bron": "zijn wachtvergoeding per maand", "set": false, "navigatiePad": [] } ],
+      "elementObjecttype": "Jutter", "leegwaarde": null,
+      "filter": |} ^ filter
+  ^ {|,
+      "dimensieSelectie": null, "type": |} ^ num0
+  ^ {|,
+      "bron": "het totaal van zijn wachtvergoeding per maand gedurende die tijd",
+      "granulariteit": null },
+    "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}
+|}
+
+(* the anchor's case3-een-leeg shape: a full value timeline, and a
+   characteristic timeline for the temporal "borgplichtig" only — the case
+   the loader lets through in both executors, and the one clingo answered 0
+   on. The pinned 0 is what the silent path produced; the gate must fault
+   before any answer is reached. *)
+let clip_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+      { "label": "J1", "objectType": "Jutter",
+        "attributes": { "wachtvergoeding per maand": { "timeline": [
+            { "from": "2024-01-01", "to": "2025-01-01", "value": { "number": "10" } } ] } },
+        "roles": {}, "characteristics": [],
+        "characteristicTimelines": {
+          "borgplichtig": [ { "from": "2024-01-01", "to": "2025-01-01" } ] } } ],
+    "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "dubbelwachtsom",
+      "value": { "number": "0" } },
+    { "kind": "consistent" } ] }
+|}
+
+let () =
+  let needle = {|gedurende over "aangesteld", which is not a temporal characteristic (WF-055)|} in
+  (* the bare arm: one non-temporal characteristic IS the whole clip *)
+  faults_with ~name:"gedurende clip over a non-temporal characteristic"
+    ~ir:
+      (clip_doc ~kenmerk_gran:{|"borgplichtig": "MAAND"|}
+         ~filter:(clip_kenmerk "aangesteld"))
+    ~case_text:clip_case ~needle;
+  (* the same characteristic reached through the ALLE composite — the
+     measured anchor twist's own shape, and a second route into the arm *)
+  faults_with ~name:"gedurende clip, non-temporal member of the ALLE composite"
+    ~ir:
+      (clip_doc ~kenmerk_gran:{|"borgplichtig": "MAAND"|}
+         ~filter:
+           ({|{ "node": "Samengesteld", "kwantor": "ALLE", "drempel": 0, "onderdelen": [ |}
+           ^ clip_kenmerk "borgplichtig" ^ {|, |} ^ clip_kenmerk "aangesteld"
+           ^ {| ], "bron": "gedurende de tijd dat hij borgplichtig en aangesteld is" }|}))
+    ~case_text:clip_case ~needle;
+  (* the over-rejection control: make "aangesteld" temporal and the very
+     same document must translate again — the gate refuses the shape, not
+     the clip *)
+  translates_with ~name:"gedurende clip over a temporal characteristic still translates"
+    ~ir:
+      (clip_doc ~kenmerk_gran:{|"borgplichtig": "MAAND", "aangesteld": "MAAND"|}
+         ~filter:(clip_kenmerk "aangesteld"))
+    ~case_text:clip_case
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
