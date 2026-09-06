@@ -520,3 +520,33 @@ zijn opgenomen omdat ze de zwakste twee beweringen van §2 dragen:
   brondocument mee; en **1937** over de **533** van de gerebasede kop, waar één
   golden bijkwam die dezelfde dag landde. Alle drie de getallen dragen hun
   peildatum.
+
+### De dertien gates op de gerebasede kop (2026-09-06)
+
+Rebase op `main` = `a44b2b5` (drie landingen: de golden
+`jutterswet-schouwrooster` met een ch.-4.6-postwijziging, een
+clingo-backendwijziging, en de gate-12-kanaalvloer). **Geen conflicten** — de
+`dagsoortPerEenheid`-post en de `Eenheidstelsel.naam`-post zijn per post
+disjunct en git heeft ze zelf naast elkaar gezet; repo-breed nul
+conflictmarkers na afloop.
+
+| gate | uitslag (exitcode 0, elk apart gemeten) |
+| --- | --- |
+| 1 `check-self-contained` | PASS |
+| 2 `check-ir-schema` | PASS (schema valid; **178** files validate and round-trip) |
+| 3 `check-verifier` | PASS (**178** golden clean; **325** negatief rejected for their declared rule) |
+| 4 `check-case-schema` | PASS (schema valid; **431** case files) |
+| 5 `check-oracle` | PASS (**409** cases replayed exactly; 2 goldens zonder case) |
+| 6 `check-clingo` | PASS (**409** cases replay exactly — ref ≡ clingo) |
+| 7 `check-noop` | PASS (**373** cases refute a do-nothing executor; **36** survivors) |
+| 8 `check-rood` | PASS (**22** red cases; Drools-been 5 fault-pinned, 17 not-carried) |
+| 9 `check-catala` | PASS (**201** checks; **12** catala goldens byte-identiek) |
+| 10 `check-regelspraak` | PASS (**173** tests; **31** rgs goldens byte-identiek) |
+| 11 `check-toka-parity` | PASS (45 rgs re-emit, 2 holdouts, 27 tests, 29 replays ref/clingo/Drools, 0 divergenties) |
+| 12 `check-drools` | PASS (played **110** / kanaalvloer **46** gepinde niet-spelers / auto-excluded **43** / value-divergence **1** / no-case **2** / JUnit **207**) |
+| 13 `check-reftype-derivation` | PASS (**74** annotaties over **15** goldens; **0** survivors) |
+
+Elke telling staat op de waarde die de nieuwe hoofdlijn voorschrijft; deze
+branch voegt alleen negatiefs toe, dus gate 3 is de enige die door deze kaart
+beweegt (320 → 325). De kanaalvloer is geland en telt 110 spelers — ongewijzigd
+door deze branch, precies zoals verwacht.
