@@ -186,15 +186,19 @@ walk) is not translated"*. Dat is geen stilte en geen dichte deur maar een
 deze kaart — nu met een eigen kaartvoorstel,
 `backlog/new/20260906-gedurende-complementwandeling.md`.
 
-De twee vette rijen zijn **echte ongecontroleerde vooronderstellingen, maar
-gedeeld met de norm**: `eigenaar` en `periode` op de `Kenmerk`-node worden
-door ref én clingo stilzwijgend genegeerd (`ref/lib/eval.ml` r. 1000 matcht
-ze weg met `_`, net als deze arm). Een `gedurende ... gedurende het gehele
-jaar` verliest zijn periode-kwalificatie in beide uitvoerders zonder één
-woord. Dat eenzijdig in clingo dichtzetten zou een divergentie *maken* waar er
-nu geen is (clingo weigert waar ref antwoordt), dus het valt buiten deze
-kaart — het is een eigen kaart, en de gedeelde flank hoort daar bij ref +
-verifier tegelijk gesloten te worden. Gemeten, niet gesloten.
+De eigenaar- en de periode-rij zijn **echte ongecontroleerde
+vooronderstellingen, maar gedeeld met de norm**: beide velden op de
+`Kenmerk`-node worden door ref én clingo stilzwijgend genegeerd
+(`ref/lib/eval.ml` r. 1000 matcht ze weg met `_`, net als deze arm). Een
+`gedurende ... gedurende het gehele jaar` verliest zijn periode-kwalificatie
+in beide uitvoerders zonder één woord — en dat geldt voor alle vier de
+`GeheelPeriode`-vormen, ook `niet: true` (fixronde: 20 metingen, 20×
+ononderscheidbaar van `periode: null`). Dat eenzijdig in clingo dichtzetten
+zou een divergentie *maken* waar er nu geen is (clingo weigert waar ref
+antwoordt), dus het valt buiten deze kaart — het is een eigen kaart, en de
+gedeelde flank hoort daar bij ref + verifier tegelijk gesloten te worden:
+`backlog/new/20260906-gedurende-kwalificatie-stiltes.md`. Gemeten, niet
+gesloten.
 
 Twee dingen die géén gat bleken: de `ktl`-sleutel is aan beide kanten
 `str = quote ∘ norm`, dus de hoofdletterongevoelige join kan niet stil
@@ -226,7 +230,7 @@ gemeten — de zin hierboven zei eerst te veel). Vier lezers beslissen
 | --- | --- | --- |
 | verifier WF-055 | `checks.ml` r. 4057-4068 | **sleutelbestaan** in `kenmerkGranulariteit` |
 | `ref` | `eval.ml` r. 80-81 (`kenmerk_temporal`), gebruikt r. 1001-1003 | **sleutelbestaan** |
-| de nieuwe poort | `translate.ml` r. 1914-1928 | **sleutelbestaan** |
+| de nieuwe poort | `translate.ml` r. 1914-1936 | **sleutelbestaan** |
 | de case-lader | `case.ml` r. 317-331 (`Some (_, Some g) -> g`) | de **waarde** |
 
 `kenmerkGranulariteit: { "aangesteld": null }` is schema-legaal (de enum
@@ -297,7 +301,8 @@ rekent ref door en weigert clingo (zie de negatie-rij hierboven en
 
 Recept: `git show <claim-commit>:backends/clingo/lib/translate.ml >
 backends/clingo/lib/translate.ml` in de /tmp-kopie — de enige
-`translate.ml`-hunk van deze kaart teruggedraaid, de 13 poortregels weg, de
+`translate.ml`-hunk van deze kaart teruggedraaid, de poortregels weg (13 bij
+de eerste meting, 23 bij de herdraai ná de commentaarherschrijving), de
 arm weer `-> fun v t -> ...`. `dune build ref backends/clingo` in één
 &&-keten, harde faal, `test -x` op beide exe's, md5 vóór/na verschillend
 (`04b3da77…` → `36274cb0…` voor de runner; na herstel weer `04b3da77…` —
