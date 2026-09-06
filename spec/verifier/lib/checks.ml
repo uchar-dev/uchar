@@ -2816,6 +2816,19 @@ let connecting_role_candidates ctx ~from_type ~to_type =
       | _ -> [])
     ctx.doc.feittypen
 
+(* The six aggregation kinds that read a VALUE per contributor — every fold
+   kind except AANTAL, which reads the contributors themselves (ch. 1.2e: a
+   count is never empty because it never looks inside a member). WF-093's
+   discriminator; the wire spelling is the message's. *)
+let value_fold_name = function
+  | Som -> Some "SOM"
+  | Totaal -> Some "TOTAAL"
+  | Minimum -> Some "MINIMUM"
+  | Maximum -> Some "MAXIMUM"
+  | Eerste -> Some "EERSTE"
+  | Laatste -> Some "LAATSTE"
+  | _ -> None
+
 (* The v0 instance-fold source wart (`CONSTRUCTS.md` row 1): a count/fold
    over a fact-type relation encodes its source as a pseudo-AttribuutRef
    naming a ROLE (usually the plural), typed with the unknown sentinel.
@@ -2828,7 +2841,41 @@ let connecting_role_candidates ctx ~from_type ~to_type =
    source shape, the only one whose operand has an anchor at all (a listed
    value fold's operands are ordinary reads, and a foreign objecttype there
    is a legitimate type-pair hop, ref's [navigated]). *)
-let aggregation_source_check ctx at ~element_type ~subject ~single e =
+let aggregation_source_check ctx at ~element_type ~subject ~single ~kind e =
+  (* WF-093, the wart's KIND law (maintainer decision 2026-09-06): the row-1
+     wart is a COUNT source and nothing else. It carries no datatype because
+     it names a ROLE, not a value — it is v0's presentation of "het aantal
+     <rol> van de <onderwerp>" — so it yields the linked INSTANCES, which is
+     exactly what AANTAL consumes and what every other fold kind cannot: those
+     read a value per contributor and the wart hands them members.
+
+     Keyed on the unknown sentinel, which is how the wart is spelled on the
+     wire (ch. 4.3's normative discriminator) and how ref keys its own arm:
+     [Attribuut_ref { typ = Some (Datatype_onbekend _); ... }] is ref's FIRST
+     fold-source arm, matched before the set arm and regardless of [set], so
+     it takes BOTH spellings — the bare wart and the set wart — and yields
+     `Instances, which its [values ()] refuses with `value aggregation over a
+     bare role source`. That fault is now unreachable on a well-formed
+     document; it stays as the second line of defence, never a dead branch.
+
+     Single-scoped with the rest of the family: with two or more arguments the
+     node is the listed value fold (§5.8.3), whose operands are ordinary reads
+     — and one such operand carries the sentinel today because v0 degraded its
+     type, not because it names a role (measured: one EERSTE over two listed
+     operands in the parity zone). Kind-scoped to the aggregations because the
+     rule is about folding; a builtin carrying an elementObjecttype is a
+     different malformation and no document has one (measured: 0 of 523). *)
+  (match (e, value_fold_name kind) with
+   | Attribuut_ref { typ = Some (Datatype_onbekend _); set; _ }, Some kn when single ->
+       [ v "WF-093" at
+           ("the v0 instance-fold source (the row-1 wart, spelled with the unknown sentinel on \
+             the argument's own type) is a COUNT source: it names a role and yields the linked \
+             instances, never a value per contributor — so it cannot be the source of this " ^ kn
+          ^ " aggregation"
+          ^ (if set then " (the set spelling reads it no differently: the sentinel decides)"
+             else "")) ]
+   | _ -> [])
+  @
   (* a fold source never navigates: its relation is the fold's bronRol —
      stray navigation bindings in this slot are ill-formed (WF-053). Scoped
      to the single-argument shape with the rest of the family (see the
@@ -3942,7 +3989,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                       ^ Option.value attribuut ~default:"?" ^ "'")
                      ~decl:(resolved_attr_datatype ctx a) ~typ
                    @ aggregation_source_check ctx p ~element_type:el ~subject
-                       ~single:(List.length f.argumenten = 1) a
+                       ~single:(List.length f.argumenten = 1) ~kind:f.kind a
                    (* WF-053 rides along for the same reason WF-089 and
                       WF-092 do, and for the operands WF-083 no longer
                       speaks about: with two or more arguments the fold is
