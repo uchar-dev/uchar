@@ -4132,16 +4132,55 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                        ("attribute reference on '" ^ otn
                       ^ "' without an attribute name: it resolves against no declaration") ]
                | Attribuut_ref { attribuut; typ; _ }, Some el ->
-                   (* the fold source never reaches [walk_expr] (this branch
-                      replaces it), so WF-089's AttribuutRef arm has to be
-                      applied here too — otherwise a fold source is the one
-                      reference position that may lie about the attribute it
-                      reads. WF-092 rides along for exactly the same reason:
-                      without it the fold source's own `type` is the one
-                      walked expression type at which the unit shape law does
-                      not hold. Measured: 27 of the goldens' 2161 datatype
-                      positions were unreachable through this arm. *)
+                   (* WF-034's SENTINEL FENCE, the seventh wave (maintainer
+                      decision 2026-09-06): [walk_expr]'s type prologue refuses
+                      the v0 unknown sentinel on every value node, and this
+                      branch REPLACES that prologue — so the sentinel survived
+                      at exactly the positions the branch reaches. One
+                      exemption, and it is the branch's whole reason for
+                      existing: the SINGLE argument of a fold is the fold
+                      SOURCE, the ch. 4.3 row-1 wart, which carries the
+                      sentinel by construction (a written role name has no
+                      datatype to give) and whose kind WF-093 governs. With two
+                      or more arguments the node is the listed value fold
+                      (§5.8.3): its operands are ORDINARY READS — no source, no
+                      role name — and the sentinel is as ill-formed there as it
+                      is anywhere else the walk reaches. The boundary is the
+                      ARITY and nothing else, which is what keeps this arm off
+                      WF-093's ground: WF-093 refuses a non-AANTAL kind over
+                      the SINGLE-argument sentinel source, this arm refuses the
+                      sentinel where there is no source at all, and the two
+                      conditions are disjoint by construction — no position is
+                      reported twice and none falls between them.
+
+                      Measured 2026-09-06 over the four zones (533 documents,
+                      65 sentinel `type` positions): 61 sit at a fold argument,
+                      60 of them the single-argument wart and exactly ONE a
+                      listed operand — in the parity zone, on a document that
+                      already carries a co-firing WF-034 at the same pointer.
+                      No golden, rood or negatief document moves. What the
+                      shape bought itself while it was clean is the familiar
+                      self-served exemption: [use_site_identity] defers on the
+                      sentinel and [composite_expectation]'s MINIMUM/MAXIMUM
+                      arm defers when any operand type is unknown, so one
+                      degraded annotation switched off the whole identity
+                      family at that operand. And no executor carries it:
+                      `ref` faults `unsupported AttribuutRef shape
+                      (set/sentinel outside a fold)`, the ASP backend refuses
+                      the expression kind, while the Drools backend PLAYS the
+                      degraded-read spelling and answers, and THROWS on the
+                      wart-verbatim spelling (it reaches for a getter of the
+                      role name) — one-answers-two-refuse, the class PLAN §6
+                      calls a spec bug, cut off at the wire. *)
                    (match typ with
+                    | Some (Datatype_onbekend _) when List.length f.argumenten <> 1 ->
+                        [ v "WF-034" (p ^ "/type")
+                            ("unknown-type sentinel on a listed fold operand: a fold with two or \
+                              more arguments is the listed value fold, whose operands are ordinary \
+                              reads — the sentinel is admissible on the SINGLE-argument \
+                              instance-fold source alone (the v0 row-1 wart, ch. 4.3)") ]
+                    | _ -> [])
+                   @ (match typ with
                     | Some d -> check_datatype_units ~stelsels:(stelsel_namen ctx) (p ^ "/type") d
                     | None -> [])
                    @ use_site_identity (p ^ "/type")
