@@ -357,7 +357,7 @@ ongewijzigd op de door de kaart verwachte waarden.
   construct, niet op gemeten schade op de kapitalisatieflank. Dat staat zo in
   de clausule en in de drie NOTEs; wie het anders weegt, weegt precies die drie
   armen, niet de regel.
-- `naam: null` is **niet** gesloten (nul voorkomens over 1935 entries; de
+- `naam: null` is **niet** gesloten (nul voorkomens over 1937 entries; de
   clausulevorm is de open vraag, niet de prijs). De belofte "eigen kaart" is
   ingelost in de fixronde: `backlog/new/20260906-zelfnaam-null-flank.md`.
 - `spec/CONSTRUCTS.md` en `spec/PLAN.md` zijn niet aangeraakt; de
@@ -393,7 +393,8 @@ topniveau geldt, en met de €/EUR-vorm expliciet als een EENHEIDidentiteitsvraa
 naast WF-009 — eigen kaart, mocht die ooit worden gesloten.
 `dagsoortPerEenheid` is bij `domeinen` gezet als map zonder zelfnaam (zijn
 waarde noemt iets anders; 30 van de 60 entries wijken van hun sleutel af omdat
-de meervoudsleutel naar een enkelvoudige dagsoort wijst) — de open-lijst-post
+de meervoudsleutel naar een enkelvoudige dagsoort wijst; op de gerebasede kop
+32 van 64, want de dagsoortlanding bracht er vier bij) — de open-lijst-post
 zelf is ongemoeid.
 
 **F2 — de `naam: null`-motivering was geleend en intern inconsistent.** Er
@@ -450,7 +451,9 @@ lees — wat de 105 oplevert. Genoteerd in de clausule en in de NOTE. De noemers
 zijn gesplitst naar uitvoerbaar/totaal met dezelfde eerlijkheid als de
 dimensies-nul: **203/205** objecttypenposities, **34/34** parameters,
 **53/53** feittypen, **20/21** eenheidstelsels, **0/2** dimensies —
-**310/315** per instrument.
+**310/315** per instrument. (Op de gerebasede kop is dat 204/206, 35/35,
+53/53, 20/21, 0/2 — **312/317**; de sweep zelf is niet herhaald over de golden
+die dezelfde dag landde, en de clausule zegt dat.)
 
 **F8 — de drachtregel is verscherpt en dat staat nu op één plek.** Ch. 2.1 zegt
 "carried verbatim (whitespace-collapsed, case preserved)"; WF-094 én ch. 4.6
@@ -458,7 +461,7 @@ dimensies-nul: **203/205** objecttypenposities, **34/34** parameters,
 twee botsen niet — de collapse is wat een PRODUCENT eenmaal doet, deze twee
 regels vragen of een al gecollapste naam daarna ongewijzigd is GEKOPIEERD —
 en het gat is gemeten leeg en onbeschrijfbaar: **0** whitespace-afwijkingen
-over **1935** entries, terwijl **603** van die sleutels wél interne whitespace
+over **1937** entries, terwijl **603** van die sleutels wél interne whitespace
 dragen (de flank wordt dus bereikt), en elke emitter schrijft sleutel en veld
 uit één string. De verscherping staat één keer in ch. 2.1 en wordt vanuit
 WF-094 en vanuit ch. 4.6 (p) aangewezen.
@@ -480,7 +483,7 @@ staan.
 identifier-contract als WF-094's schadekanaal; de terugvalgrens 233/255/268
 tegen 250/276; weglaatflank dubbel dicht), twee routes met prijs — een
 WF-094-clausule (d) die null weigert (smal op de twee terugvalloze tabellen óf
-consistent op alle vijf, prijs nul want 0 voorkomens over 1935) en de loader
+consistent op alle vijf, prijs nul want 0 voorkomens over 1937) en de loader
 die de terugval leert (een backend-fix die route 1 NIET vervangt: daarna zegt
 de spec nog steeds niets en is het verschil onzichtbaar in plaats van luid) —,
 de (n)/(o)-verwantschap met zijn omkering (daar waren beide OCaml-uitvoerders
@@ -514,4 +517,6 @@ zijn opgenomen omdat ze de zwakste twee beweringen van §2 dragen:
 - **Twee totalen staan naast elkaar en dat is geen tegenspraak.** **1919**
   gesleutelde declaraties zijn er over de **527** documenten van vóór deze
   kaart; **1935** over de **532** erna, want de vijf getuigen brengen hun hele
-  brondocument mee. Beide getallen dragen nu hun peildatum.
+  brondocument mee; en **1937** over de **533** van de gerebasede kop, waar één
+  golden bijkwam die dezelfde dag landde. Alle drie de getallen dragen hun
+  peildatum.

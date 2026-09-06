@@ -357,7 +357,8 @@ let wf002 ctx =
    its globals by the written name and the transpiler registers them under the
    self-name. Cost over the four zones: none — all 1919 entries the five
    tables held before this rule spell their key byte for byte (1935 after it,
-   the five witnesses bringing their whole source documents along).
+   the five witnesses bringing their whole source documents along; 1937 in the
+   corpus as it now stands).
 
    Scope: the PRESENT self-name. `naam: null` is the empty half of the same
    field and a different question (the (n)/(o) precedent of ch. 4.6). It is

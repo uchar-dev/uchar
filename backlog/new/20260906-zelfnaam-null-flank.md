@@ -14,11 +14,12 @@ een naam die er niet is.
 
 Deze kaart begint niet blanco. De volgende cijfers zijn gemeten op de
 branch-kop van `card/zelfnaam-mapsleutel`, over de vier zones (155 golden +
-22 rood + 325 negatief + 30 pariteit = 532 documenten, 1935 gesleutelde
-declaraties in de vijf tabellen samen) en met een handgebroken kopie van
+22 rood + 325 negatief + 30 pariteit; na de rebase op de dagsoortlanding
+156 golden, 533 documenten en 1937 gesleutelde declaraties in de vijf tabellen
+samen) en met een handgebroken kopie van
 `corpus/golden/jutterswet-penningdrempel` via `git archive`.
 
-**1. Voorkomens: nul.** Geen van de 1935 entries draagt `naam: null`. De prijs
+**1. Voorkomens: nul.** Geen van de 1937 entries draagt `naam: null`. De prijs
 van sluiten is dus nul, en de open vraag is de VORM van de clausule, niet zijn
 kosten. (Een getuige is één bewerking ver — precies zoals WF-094's vijf
 getuigen handgebroken kopieën van goldens zijn. "Geen getuige mogelijk" is
@@ -97,7 +98,7 @@ snitten, elk met een eigen prijs:
   eerlijke grond die WF-094 al voor drie van zijn vijf armen opschrijft, en die
   per arm in de NOTE moet staan.
 
-In beide snitten is de prijs in documenten **nul**: 0 voorkomens over 1935
+In beide snitten is de prijs in documenten **nul**: 0 voorkomens over 1937
 entries, dus geen golden, rood, negatief of pariteitsdocument beweegt.
 
 **Route 2 — de loader leert de terugval (backend).** `:250` en `:276` krijgen

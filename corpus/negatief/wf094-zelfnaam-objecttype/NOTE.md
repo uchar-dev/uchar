@@ -44,8 +44,9 @@ one-character change:
 
 *So the capitalisation flank of THIS table has no executor harm today, and the
 clause says so.* Over all **205** golden object-type positions — **203** of
-them in a golden that has a case file and can be replayed at all — one
-self-name
+them in a golden that has a case file and can be replayed at all; one further
+golden landed the same day and takes the corpus to 206/204, outside the sweep
+and verifier-clean under this rule — one self-name
 recapitalised at a time, three reports move and **no verdict does** — and the
 three are exclusion MESSAGES on goldens the backend already declines. What the
 same instrument shows one step further out, with the self-name made
