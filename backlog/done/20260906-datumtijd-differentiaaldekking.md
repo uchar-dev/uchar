@@ -97,12 +97,31 @@ WF-036-kaart).
 
 ---
 
-Result (2026-09-06, branch `card/datumtijd-dekking`, op `main` 8fb95ee).
+Result (2026-09-06, branch `card/datumtijd-dekking`, **gerebased op `main`
+44b393c**; oorspronkelijk gebouwd op 8fb95ee).
 **Alle vier de acceptatiepunten gehaald, plus de wire-vraag: de
 beschrijvende ch.-4.1-passage is WF-095 geworden** (maintainerbesluit
-2026-09-06, genummerde vraag). Dertien gates groen vanuit de worktree.
-De branch blijft ONGEMERGED — hij raakt beschermde paden
-(`spec/IR-SPEC.md`, `spec/verifier/`) en is dus een voorstel.
+2026-09-06, genummerde vraag). Dertien gates groen vanuit de worktree op de
+gerebasede kop. De branch blijft ONGEMERGED — hij raakt beschermde paden
+(`spec/IR-SPEC.md`, `spec/verifier/`, `scripts/`) en is dus een voorstel.
+
+**Nummerbotsing en hernoeming (rebase, 2026-09-06).** Deze regel landde in
+de sessie als WF-094 — op 8fb95ee liep de index tot WF-093 en 094/095
+kwamen nergens voor. Terwijl deze kaart liep landde de zelfnaam-kaart op
+`main` en die claimde WF-094 (ch. 2.1, vijf armen, vijf
+`corpus/negatief/wf094-zelfnaam-*`-getuigen, eigen indexrij). Bij de rebase
+is deze regel daarom **WF-094 → WF-095** hernoemd, overal: de verifier-arm
+en zijn melding, de ch.-4.1-passage en de indexrij, de vijf negatief-mappen
+(`git mv`) en hun NOTEs, de golden-NOTE, de ASP-vertaalnotitie, beide
+suites en dit Result. De rebase gaf **één** conflict — de indexrijregel,
+waar beide kaarten een rij op `WF-094` toevoegden — deterministisch opgelost
+door **beide** rijen te behouden, zelfnaam (094) vóór lexeem (095);
+`spec/verifier/lib/checks.ml` merge-de automatisch (de zelfnaam-arm zit in
+`wf094 ctx` bij de modeltabellen, de lexeem-arm in de `Literal`-walk).
+Controle na de sweep: elke resterende `WF-094`/`wf094` in de repo hoort bij
+de zelfnaam-regel (9 in `IR-SPEC.md`, 5 in `checks.ml`, plus haar eigen
+kaarten en getuigen), en `WF-095`/`wf095` dekt deze regel volledig (60
+voorkomens over 15 bestanden).
 
 **1. Ref draagt de DatumTijd-literal.** Rood-eerst gemeten op een
 document met een `EERDER` tegen een canonieke `DatumTijd`-literal:
@@ -181,8 +200,8 @@ bevestigd tegen ref. Uitslag: `ref ≡ clingo ≡ Drools` op absolute waarden
 — gates 5, 6 en 12, en gate 12 telt hem als PLAYED (110 → 111). Gate 13
 beweegt niet: het document draagt geen enkele eenheid-dragende annotatie.
 
-**5. WF-095** (het volgende vrije nummer; de index liep tot WF-093, en
-094/095 kwamen nergens voor). De MUST laat BEIDE gedragen lexemen toe —
+**5. WF-095** (bij aanvang WF-094 — het toen volgende vrije nummer; na de
+rebase hernummerd, zie de nummerbotsing hierboven). De MUST laat BEIDE gedragen lexemen toe —
 canoniek ISO `yyyy-mm-ddThh:mm:ss[.fff]` én het bronsnippet
 `[dd. ]d-m-yyyy hh:mm:ss[.SSS]` — en weigert al het andere. Reden expliciet
 in de spec: de eigen emitter schrijft voor een `DatumTijd`-literal nog het
@@ -191,17 +210,25 @@ zou de eigen producent onconform maken. Vijf negatiefs, één geweigerde
 veldklasse per stuk (`wf095-zone-suffix`, `wf095-spatie-scheider`,
 `wf095-fractiebreedte`, `wf095-ontbrekende-seconden`,
 `wf095-omringende-tekst`), alle vijf ROOD-EERST: `verifier: PASS` onder de
-verifier van de branch-kop (md5 `957d3eeb5667188e33d5468b80f21b71`),
-`WF-095 FAIL` onder de arm (md5 `45a9c588ebf79d17b897654d6332df6c`), elk
-met exact één regel in het rapport.
+verifier van de branch-kop vóór de arm (md5
+`957d3eeb5667188e33d5468b80f21b71`, gemeten 2026-09-06 op 8fb95ee — een
+historische meting die de rebase niet ongedaan maakt), `WF-095 FAIL` onder
+de arm, elk met exact één regel in het rapport en geen tweede bevinding.
+Op de GEREBASEDE kop hermeten: de gewapende verifier is md5
+`4c82d1c9f9ab5168421503ea5f7b7f77` en weigert alle vijf met `WF-095 FAIL`.
 
-*Armexacte mutant.* Arm uitgeschakeld (md5
-`5095773359e43fd017d419eed8802d3f`), volle vier-zone-sweep over **534**
-documenten (golden 157, rood 22, negatief 325, pariteitszone 30 — de stand
-was 528 vóór deze kaart): precies vijf regels veranderen, en dat zijn deze
-vijf negatiefs. **Nul over-afwijzing**, nul onder-dekking. Boundary
-geteld: over de vier zones bestaan exact 2 `DatumTijd`-literals en beide
-zijn van deze kaarts eigen golden, dus niets van vóór de regel beweegt.
+*Armexacte mutant, hergedraaid op de gerebasede kop.* Arm uitgeschakeld
+(md5 `79c77bbe9728e9d938344532af7d448a`) tegenover gewapend (md5
+`4c82d1c9f9ab5168421503ea5f7b7f77`), volle vier-zone-sweep over **539**
+documenten (golden 157, rood 22, negatief 330, pariteitszone 30 — 534 op de
+pre-rebase kop, 528 vóór deze kaart): precies vijf regels veranderen, en
+dat zijn deze vijf negatiefs. **Nul over-afwijzing**, nul onder-dekking; na
+het terugdraaien staat de md5 weer op `4c82d1c9f9ab5168421503ea5f7b7f77`.
+Boundary geteld: de enige WELGEVORMDE `DatumTijd`-literals over de vier
+zones zijn de twee van deze kaarts eigen golden (naast de vijf van haar
+negatiefs), dus de regel treft geen enkel document van vóór zichzelf. Op de
+case-wire staan nu 30 `dateTime`-waarden (25 publiek + 5 pariteitszone),
+alle canoniek — de klemmingen bewegen er nul van.
 Bovendien 29 lexemen kruislings getoetst: de ref-lezer en het
 verifier-predicaat zijn het over alle 29 eens (beide spellingen,
 kalendergeldigheid, voorloop-/naloopspatie).
@@ -223,22 +250,29 @@ de CASE-wire smaller is dan de literal-wire); `backends/clingo/test`
 de millisecondegrens én op de dagrand, en de drie luide flanken). Geen
 bestaande test gewijzigd.
 
-**Gates, alle dertien vanuit de worktree.** 1 PASS · 2 PASS (179 files,
-was 178) · 3 PASS (179 golden clean, 325 negatief, was 320) · 4 PASS (434
-casebestanden, was 431) · 5 PASS (412 cases, was 409) · 6 PASS (412 cases)
-· 7 PASS (376 weerleggen de no-op, 36 gepinde survivors — GEEN nieuwe
-survivor: elk van de drie nieuwe cases draagt minstens één aanwezige
-verwachting) · 8 PASS (22 rode cases) · 9 PASS (201 checks, 12 catala
-goldens) · 10 PASS (173 tests, 31 rgs-goldens) · 11 PASS (45 .rgs
-byte-identiek, 27 tests, 29 replays, nul divergenties) · 12 PASS (played
-111, auto-excluded 43, value-divergence 1, no-case 2, JUnit 207) · 13 PASS
-(74 twists over 15 goldens, ongewijzigd).
+**Gate-12 speelvloer (gesanctioneerde may-touch, één regel).** Sinds de
+speelvloer-landing pint `scripts/check-drools.sh` `EXPECTED_PLAYED` naast
+de kanaallijst. `jutterswet-meldstip` is een **speler**, dus hoort hij per
+ontwerp NIET in de kanaallijst en beweegt alleen het getal: 110 → 111. Geen
+andere regel van het script is aangeraakt.
+
+**Gates, alle dertien vanuit de worktree op de gerebasede kop.** 1 PASS ·
+2 PASS (179 files) · 3 PASS (179 golden clean, **330** negatief — 325 van
+`main` plus deze kaarts vijf) · 4 PASS (434 casebestanden) · 5 PASS (412
+cases) · 6 PASS (412 cases) · 7 PASS (376 weerleggen de no-op, 36 gepinde
+survivors — GEEN nieuwe survivor: elk van de drie nieuwe cases draagt
+minstens één aanwezige verwachting) · 8 PASS (22 rode cases) · 9 PASS (201
+checks, 12 catala goldens) · 10 PASS (173 tests, 31 rgs-goldens) · 11 PASS
+(45 .rgs byte-identiek, 2 holdouts, 27 tests, 29 replays, nul divergenties
+— onbewogen) · 12 PASS (played **111**, kanaalvloer 46, auto-excluded 43,
+value-divergence 1, no-case 2, JUnit 207) · 13 PASS (74 twists over 15
+goldens, 0 survivors — ongewijzigd).
 
 **Eerlijk over wat NIET gedekt is.**
 - De Drools-case-lezer-klem heeft GEEN artefact in de suite. Het weiger-half
   is gemeten door de jar zelf (acht vormen, hierboven), maar geen
   JUnit-getuige legt hem vast; het niet-over-afwijzen wordt wél mechanisch
-  bewaakt (gates 11 en 12 lezen 24 conforme waarden). De ref/ASP-kant kreeg
+  bewaakt (gates 11 en 12 lezen 30 conforme waarden). De ref/ASP-kant kreeg
   zijn getuige in `ref/test`. Voorstel voor een eigen kaartje: een
   Java-getuige naast `DatumTijdLexeemWitnessTest`.
 - Datum-tijd (on)gelijk-aan blijft in de ASP-vertaling een luide flank met
