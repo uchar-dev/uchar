@@ -440,11 +440,12 @@ zelf (0 tegen 2). De wratoperand zelf is byte-identiek, en de eigen emissie
 van de frontend wordt door dezelfde clausule op dezelfde pointer met dezelfde
 melding geweigerd.
 
-**Dertien gates, alle groen** (vanuit deze worktree, ná commit): 1 PASS;
-2 = 178; 3 = **178 golden / 332 negatief**; 4 = 431; 5 = 409 (2 zonder case);
-6 = 409; 7 = 373/36; 8 = 22 (Drools-leg 5/17); 9 = 201/12; 10 = 173/31;
-11 = 45/2/27/29 **onbewogen**; 12 = played 110 / channel floor 46 /
-auto-excluded 43 / value-divergence 1 / no-case 2 / JUnit 207; 13 = 74/15/0.
+**Dertien gates, alle groen** (gemeten vóór de rebase, op de toenmalige
+corpusstand van 540 documenten): 1 PASS; 2 = 178; 3 = **178 golden / 332
+negatief**; 4 = 431; 5 = 409 (2 zonder case); 6 = 409; 7 = 373/36; 8 = 22
+(Drools-leg 5/17); 9 = 201/12; 10 = 173/31; 11 = 45/2/27/29 **onbewogen**;
+12 = played 110 / channel floor 46 / auto-excluded 43 / value-divergence 1 /
+no-case 2 / JUnit 207; 13 = 74/15/0. De stand ná de rebase staat onderaan.
 
 **Aangeraakt in de fixronde:** `spec/IR-SPEC.md`,
 `spec/verifier/lib/checks.ml` (één predicaat, één arm, drie
@@ -505,3 +506,14 @@ waarop hij gemeten is.
 
 **Nieuwe verifier-md5 op de gerebasede kop:
 `8ea45e866dddcf861b357b430d50b4d1`.**
+
+**Dertien gates op de gerebasede kop, alle groen** (vanuit deze worktree, ná
+commit; `sh`/`bash` per shebang, `eval $(opam env)`, gates 12 en 13 hebben de
+jar herbouwd): 1 PASS; 2 = **179**; 3 = **179 golden / 337 negatief**;
+4 = **434**; 5 = **412** (2 zonder case: `jutterswet-seizoenvondst`,
+`jutterswet-vormenkabinet`); 6 = **412**; 7 = **376**/36; 8 = 22 (Drools-leg
+5/17); 9 = 201/12; 10 = 173/31; 11 = 45/2/27/29 **onbewogen**;
+12 = played **111** / channel floor 46 / auto-excluded 43 /
+value-divergence 1 / no-case 2 / JUnit 207; 13 = 74/15/0. Daarnaast:
+`test_ref` 445 gewerkte voorbeelden, `test_clingo` 80 checks, beide groen.
+`git status --short` leeg; de branch blijft ONGEMERGED (beschermde paden).
