@@ -1679,12 +1679,19 @@ let () =
    shape outright (WF-055), and corpus/rood must be verifier-clean (gate 3),
    so no document carrying it can live in the corpus. The gate is pinned
    here, with its own over-rejection control beside it: the SAME frame with
-   the characteristic temporal must still translate. *)
+   the characteristic temporal must still ANSWER — a pinned 60 through both
+   executors, on both routes into the arm, because "it translates" is silent
+   about the very value this gate exists to protect. *)
 
 let clip_kenmerk k =
   {|{ "node": "Kenmerk", "kenmerk": "|} ^ k
   ^ {|", "navigatie": null, "negatie": false, "eigenaar": null, "periode": null,
       "bron": "gedurende de tijd dat hij |} ^ k ^ {| is" }|}
+
+let clip_alle k1 k2 =
+  {|{ "node": "Samengesteld", "kwantor": "ALLE", "drempel": 0, "onderdelen": [ |}
+  ^ clip_kenmerk k1 ^ {|, |} ^ clip_kenmerk k2
+  ^ {| ], "bron": "gedurende de tijd dat hij |} ^ k1 ^ {| en |} ^ k2 ^ {| is" }|}
 
 (* [kenmerk_gran] is the kenmerkGranulariteit map body — what makes a
    characteristic temporal — and [filter] the clip itself. *)
@@ -1730,26 +1737,46 @@ let clip_doc ~kenmerk_gran ~filter =
 }
 |}
 
-(* the anchor's case3-een-leeg shape: a full value timeline, and a
-   characteristic timeline for the temporal "borgplichtig" only — the case
-   the loader lets through in both executors, and the one clingo answered 0
-   on. The pinned 0 is what the silent path produced; the gate must fault
-   before any answer is reached. *)
-let clip_case =
+(* the anchor's case3-een-leeg shape: a full value timeline (10 per month
+   across 2024) plus characteristic timelines. [ctls] is the
+   characteristicTimelines body, [expected] the pinned dubbelwachtsom. *)
+let clip_case_with ~ctls ~expected =
   {|{ "format": "uchar-case-v0", "asOfDate": null,
   "input": { "instances": [
       { "label": "J1", "objectType": "Jutter",
         "attributes": { "wachtvergoeding per maand": { "timeline": [
             { "from": "2024-01-01", "to": "2025-01-01", "value": { "number": "10" } } ] } },
         "roles": {}, "characteristics": [],
-        "characteristicTimelines": {
-          "borgplichtig": [ { "from": "2024-01-01", "to": "2025-01-01" } ] } } ],
+        "characteristicTimelines": { |}
+  ^ ctls
+  ^ {| } } ],
     "parameters": {} },
   "expected": [
     { "kind": "attributeValue", "label": "J1", "attribute": "dubbelwachtsom",
-      "value": { "number": "0" } },
+      "value": { "number": "|}
+  ^ expected
+  ^ {|" } },
     { "kind": "consistent" } ] }
 |}
+
+let borg_tl = {|"borgplichtig": [ { "from": "2024-01-01", "to": "2025-01-01" } ]|}
+let aangesteld_tl = {|"aangesteld": [ { "from": "2024-01-01", "to": "2024-07-01" } ]|}
+
+(* the LIVE case, for the frames where BOTH characteristics are temporal:
+   borgplichtig covers all of 2024, aangesteld its first six months, so the
+   clip over aangesteld and the ALLE composite both intersect to six months
+   at 10 per month — 60. Measured equal in ref and clingo; a pinned VALUE,
+   not merely "it translates", so a future silent 0 on this path is caught
+   by an expectation and not by nobody. *)
+let clip_case = clip_case_with ~ctls:(borg_tl ^ ", " ^ aangesteld_tl) ~expected:"60"
+
+(* the refusal frames' case. Their document does NOT declare "aangesteld"
+   temporal, and the case loader refuses a characteristic timeline on a
+   non-temporal characteristic outright — so those frames must carry the
+   borgplichtig timeline alone, or the refusal under test would be the
+   LOADER's and never reach the translator. Its expectations are never
+   compared: the translation faults first. *)
+let clip_case_bare = clip_case_with ~ctls:borg_tl ~expected:"0"
 
 let () =
   let needle = {|gedurende over "aangesteld", which is not a temporal characteristic (WF-055)|} in
@@ -1758,24 +1785,33 @@ let () =
     ~ir:
       (clip_doc ~kenmerk_gran:{|"borgplichtig": "MAAND"|}
          ~filter:(clip_kenmerk "aangesteld"))
-    ~case_text:clip_case ~needle;
+    ~case_text:clip_case_bare ~needle;
   (* the same characteristic reached through the ALLE composite — the
      measured anchor twist's own shape, and a second route into the arm *)
   faults_with ~name:"gedurende clip, non-temporal member of the ALLE composite"
     ~ir:
       (clip_doc ~kenmerk_gran:{|"borgplichtig": "MAAND"|}
-         ~filter:
-           ({|{ "node": "Samengesteld", "kwantor": "ALLE", "drempel": 0, "onderdelen": [ |}
-           ^ clip_kenmerk "borgplichtig" ^ {|, |} ^ clip_kenmerk "aangesteld"
-           ^ {| ], "bron": "gedurende de tijd dat hij borgplichtig en aangesteld is" }|}))
-    ~case_text:clip_case ~needle;
+         ~filter:(clip_alle "borgplichtig" "aangesteld"))
+    ~case_text:clip_case_bare ~needle;
   (* the over-rejection control: make "aangesteld" temporal and the very
-     same document must translate again — the gate refuses the shape, not
-     the clip *)
-  translates_with ~name:"gedurende clip over a temporal characteristic still translates"
-    ~ir:
-      (clip_doc ~kenmerk_gran:{|"borgplichtig": "MAAND", "aangesteld": "MAAND"|}
-         ~filter:(clip_kenmerk "aangesteld"))
+     same document must not merely translate but ANSWER — the gate refuses
+     the shape, not the clip. Both executors pin 60 (six covered months at
+     10), so an over-firing gate and a silently emptied intersection are
+     distinguishable failures here, and neither can pass. *)
+  let temporal_gran = {|"borgplichtig": "MAAND", "aangesteld": "MAAND"|} in
+  let bare_ok = clip_doc ~kenmerk_gran:temporal_gran ~filter:(clip_kenmerk "aangesteld") in
+  ref_matches ~name:"gedurende clip over a temporal characteristic still answers"
+    ~ir:bare_ok ~case_text:clip_case;
+  clingo_matches ~name:"gedurende clip over a temporal characteristic still answers"
+    ~ir:bare_ok ~case_text:clip_case;
+  (* and the composite's own positive control: the second route into the
+     arm, both members temporal, intersecting to the same six months *)
+  let alle_ok =
+    clip_doc ~kenmerk_gran:temporal_gran ~filter:(clip_alle "borgplichtig" "aangesteld")
+  in
+  ref_matches ~name:"gedurende ALLE composite, both members temporal" ~ir:alle_ok
+    ~case_text:clip_case;
+  clingo_matches ~name:"gedurende ALLE composite, both members temporal" ~ir:alle_ok
     ~case_text:clip_case
 
 let () =

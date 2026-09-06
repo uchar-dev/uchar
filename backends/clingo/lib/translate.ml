@@ -1919,11 +1919,19 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                    (objecttype ctx aot).kenmerk_granulariteit)
             then
               (* mirror ref's fault, as the two sister folds already do
-                 (pro rata WF-056, day count WF-058) — ktl facts come from
-                 the case's characteristic timelines alone, which a
-                 non-temporal characteristic can never carry, so the
-                 intersection below would be empty and the clipped total a
-                 silent 0 (a hunted gap) *)
+                 (pro rata WF-056, day count WF-058). "Temporal" is decided
+                 exactly as ref decides it — KEY EXISTENCE in
+                 kenmerkGranulariteit, ref/lib/eval.ml:80-81 — and WF-055
+                 reads the same predicate, so the three walk in step. ktl
+                 facts come from the case's characteristic timelines alone,
+                 and a characteristic with no granularity KEY is refused a
+                 timeline at case load, so the join finds nothing, the
+                 intersection is empty and the clipped total a silent 0 (a
+                 hunted gap). A key present with a NULL value is the other
+                 half of that class: all three readers pass it while the
+                 case loader still refuses the timeline (on the value), so
+                 the silent 0 survives there — a recorded flank with its own
+                 card, deliberately not this gate's business. *)
               fault "gedurende over %S, which is not a temporal characteristic (WF-055)" k;
             fun v t -> Printf.sprintf "ktl(S,%s,%s,%s)" (str k) v t
         | Kenmerk_check { negatie = true; _ } ->
