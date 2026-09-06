@@ -3976,9 +3976,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
          DEFER. Where that defer is unreachable it is dead, and where it
          is reachable it is load-bearing: an operand walked as an
          ordinary expression is already refused by WF-034 (`unknown-type
-         sentinel inside a structured node`, measured), so only the
-         fold-source branch reaches this arm — the ch. 4.3 row-1 wart,
-         which WF-034 tolerates by construction. There the defer holds
+         sentinel inside a structured node`, measured) and, since WF-034's
+         seventh wave (2026-09-06), so is a LISTED operand carrying it —
+         so only the SINGLE-argument fold source reaches this arm: the
+         ch. 4.3 row-1 wart, which WF-034 tolerates by construction. There the defer holds
          open a shape no executor carries: an instance ordering fold over
          a bare role source is verifier-clean today and measured ref
          `value aggregation over a bare role source`, ASP `expression

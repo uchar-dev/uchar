@@ -31,7 +31,7 @@ that operand — the self-served exemption every WF-034 wave closes.
 
 Rood-eerst, measured on this document. Pre-rule verifier
 (md5 `2ab63519d103a0abee721296973a61d7`): `verifier: PASS`. With the clause
-(md5 `8660a9ef58134b0aaea1f8947fff6bcf`): the rejection above.
+(md5 `c95650b1ab993c8a8b370e5b0617b0e6`): the rejection above.
 
 Executors, on this document (case: one Jutter, drempelgewicht 12.00 kg,
 bergingsgewicht 7.00 kg; the pinned answer would be 12.00):
