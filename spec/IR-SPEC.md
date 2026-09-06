@@ -2262,9 +2262,14 @@ with its key, a CLASS spanning object types, fact types, dimensions, timelines
 and unit systems alike, of which this is one instance and none of which is
 crossed today; WF-009's own question, whether a unit's `afkorting` is one the
 system it names declares, which (r) deliberately leaves alone;
-`dagsoortPerEenheid`, whose 60 entries sit entirely in the parity zone, so no
-golden witness is available today and a negatief built on a form no golden
-carries would give a clause no real document ever passes; and WF-007's
+`dagsoortPerEenheid`, whose 60 parity-zone entries are no longer the whole
+population — since 2026-09-06 the golden `jutterswet-schouwrooster` carries
+four in the public corpus (two day kinds, each registering its singular and
+its plural spelling), one of those spellings load-bearing as a declared
+`eenheid` the executed arithmetic runs with, so the witness the crossing arm
+needs now exists; the post stays OPEN because writing that arm — every
+entry's VALUE must name a declared day kind — is a follow-up card's work,
+with the golden's own field to twist for its negatief; and WF-007's
 precision-form check, which has the identical blind spot
 in containers and is its walk to make, not this rule's. (The unresolved
 `regels` **stubs** left this list by maintainer decision on 2026-09-05: they
