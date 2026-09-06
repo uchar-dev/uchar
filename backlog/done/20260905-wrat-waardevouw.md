@@ -286,3 +286,121 @@ value-divergence 1, no-case 2, JUnit **207**); 13 PASS (68 annotaties over
 
 Beschermd pad (`spec/IR-SPEC.md`, `spec/verifier/`): de tak blijft staan als
 voorstel, NIET gemerged.
+
+## Appendix — fixronde 2026-09-06 (na twee lezingen)
+
+Het GEDRAG van de kaart houdt volledig: census, rood-eerst, arm-exactheid en
+de uitvoerdersuitslagen zijn alle onafhankelijk gereproduceerd. Alle
+correcties zijn TEKST plus één nieuw kaartvoorstel; geen enkele mutatie in
+`ref/**`, `backends/**` of `frontends/**`. De regel zelf — het PATROON in
+`aggregation_source_check` — is ongewijzigd.
+
+**De routekeuze, met motivering.** WF-093 blijft gesleuteld op het
+SENTINEL. Lens 2 vond een deelklasse waarop de verifier-weigering strenger
+is dan de uitvoerders: een set-bron met het sentinel op een ECHTE
+elementattribuut-lezing en ZONDER `navigatieRol`. Daar antwoorden clingo én
+Drools het juiste getal, terwijl `ref` weigert. Die deelklasse hoort BEWUST
+binnen de regel: `ref` is de norm en weigert de hele sentinel-klasse
+uniform, dus een verifier-schone versie van die deelvorm zou een LEVENDE
+`ref` ≢ clingo/Drools-divergentie zijn onder een welgevormd document —
+precies de klasse die deze kaart sluit. De setbron-kant (`ref` leren dragen)
+was al door de maintainer afgewezen. De door lens 2 aangedragen "derde
+optie" — sleutelen op "het `attribuut`-slot resolveert naar een rol" —
+heropent de divergentie zolang `ref` niet meebeweegt en is daarom NIET
+doorgevoerd; ze wordt gewogen in het nieuwe kaartvoorstel
+`backlog/new/20260906-sentinel-op-leespositie.md`.
+
+**De deelklasse, zelf gemeten (2026-09-06).** Grond in de code: de set-armen
+van de ASP-backend (`backends/clingo/lib/translate.ml`, som/totaal op :1444
+en minimum/maximum op :1723) matchen `typ` als WILDCARD en eisen
+`navigatie_rol = None` — de weigering op de vier getuigen komt dus van de
+`navigatieRol`, niet van het sentinel. Drie metingen:
+
+| document | verifier | `ref` | clingo |
+|---|---|---|---|
+| `wf093-wratvouw-set-som` zónder `navigatieRol` | WF-093 FAIL (alleen) | FAULT | **PASS — 19.00** |
+| `wf093-wratvouw-set-maximum` zónder `navigatieRol` | WF-093 FAIL (alleen) | FAULT | **PASS — 12.00** |
+| `jutterswet-vondsttelling` met het `type` van zijn echte set-bron gedegradeerd naar het sentinel | WF-093 + WF-047 FAIL | FAULT | **PASS — alle 7 gepinde verwachtingen, de 3.75 inbegrepen** |
+
+Twee tegen één, onder documenten die zonder deze regel schoon zouden zijn.
+
+**Getuige B2 — de frontend produceert de vorm wél.** De claim "geen enkele
+frontend produceert hem" is onjuist en is vervangen door het gemeten feit.
+De KENMERK-route ontsnapt aan de Onopgelost-poort: `heeftLid`
+(`frontends/regelspraak/src/main/java/io/github/yhavinga/regelspraak/model/RegelSpraakModel.java:620`)
+is waar voor een attribuut **of een kenmerk**, dus de poort
+(`…/resolver/ExpressieBouwer.java:470-481`) vuurt niet, en de
+referentiebouwer valt terug op het sentinel (`…/ExpressieBouwer.java:1663`,
+`if (dt == null) dt = onbekend();`). Zelf geëmitteerd en geverifieerd met
+`de som van het waardevol van alle vondsten van de Jutter` op een eigen
+Jutterswet-bron: de frontend levert `attribuut: "waardevol"`, `set: true`,
+`navigatieRol: null`, sentinel — **zonder één diagnostic** — en de verifier
+meldt er DRIE regels op: WF-034 (het sentinel op het eigen `type` van de
+vouw), WF-093 en WF-080 (kenmerk-eindpunt in een aggregatiebron). De vorm
+heeft dus een producent, maar er bestaat geen document waarin WF-093 de
+enige fout is. Dat is het argument dat de oude formulering zocht.
+
+**Tweede deelvorm op de LEESpositie (ch.-4.3-flank 4), zelf gemeten.** Op
+een handgebouwde `MAXIMUM` met twee argumenten en een `elementObjecttype`
+(die combinatie stuurt de operanden door de vouwargument-tak, die
+`walk_expr` vervangt — daarom bereikt WF-034's sentinel-prologue ze niet):
+
+| deelvorm | verifier | `ref` | clingo | Drools |
+|---|---|---|---|---|
+| sentinel op een ECHTE attribuutlezing | PASS | FAULT `unsupported AttribuutRef shape (set/sentinel outside a fold)` | FAULT `expression kind not translated (no corpus case exercises it)` | **PLAYED 1** |
+| de wrat VERBATIM als gelest operand | PASS | idem | idem | **ERROR** `IllegalStateException: geen getter voor 'vondsten'` |
+
+De derde uitvoerder LEEST de rolnaam dus wel degelijk — hij zoekt er een
+getter voor. Dat is de reden dat WF-093 niet naar deze positie is verbreed:
+hij zou twee vormen met twee uitvoerdersprofielen onder één reden weigeren.
+
+**Wat er in de tekst is rechtgezet.** In `spec/IR-SPEC.md` ch. 4.3: de
+ASP-weigering beperkt tot de gemeten getuigen mét de deelklasse en de
+routekeuze-motivering erbij; de valse implicatie "it names a ROLE, and a
+role has no value to give" vervangen door de sleutel op het sentinel met de
+drie gemeten gedaanten (rol / elementattribuut / kenmerk); de frontend-claim
+vervangen door B2; flank (4) herschreven naar de gemeten positie mét de
+tweede deelvorm; "three such positions" → "three such READ positions" (de
+vierde sentinel zit op een regelDOEL in
+`corpus/negatief/wf034-onbekend-regeldoel`, de vijfde op het eigen `type`
+van de `Binair` die door een van die lezingen wordt gevoed — gemeten: 63
+sentinel-`type`-posities over de vier zones, 59 daarvan vouwargumenten); de
+tweede clausule van de ch.-3.4a-verwijzing geschrapt (dat hoofdstuk is
+tel-only; `RUNTIME-SEMANTICS.md` is niet aangeraakt); "a source that names
+no attribute" beperkt tot de kale spelling; de indexrij gelijkgetrokken. In
+`spec/verifier/lib/checks.ml`: melding en armcommentaar sleutelen nu op wat
+de arm sleutelt. In de vier NOTE's: het nieuwe meldingscitaat, de nieuwe
+md5, het clingo-citaat voluit, en de `bronRol`-bijvangst ook bij de
+MAXIMUM-sibling. In twee negatief-`ir.json`'s: de `bron`-string van de
+vouwknoop zei "de som van vondsten van alle vondsten…" waar het operand
+al "het gewicht van alle vondsten…" zei — gecorrigeerd; **gemeten dat
+verdict én rapport van beide documenten byte-identiek blijven**.
+
+**Hermeten defertelling.** De ch.-4.3-notitie "0 times in 510 documents"
+(WF-083's twee defer-armen) is opnieuw gemeten met dezelfde
+markeringsmutant over de huidige 527 documenten: **nog steeds 0**, beide
+armen (probe-binary `3b85ce1d45a8d960f92742cce96cca6c`).
+
+**Mutanten herdraaid.** De meldingstring veranderde de binary, dus de basis
+en alle vijf mutant-md5's verschoven; ze staan hierboven in de tabel. Basis
+mét WF-093 na de fixronde: `957d3eeb5667188e33d5468b80f21b71` (daarvóór
+`945642482a4183057a3c5194a11749ce`, exact gereproduceerd uit
+`git archive HEAD` — het protocol is herhaalbaar). De pre-regel-binary
+`924f0e3cfb69e9e8d9be7aa916a9bfe7` veranderde niet, dus de
+rood-eerst-claim staat ongewijzigd. De sweep basis-vóór/basis-ná over alle
+527 documenten verschilt in **nul verdicten** en **vier rapporten** — de
+vier getuigen, alleen hun meldingszin. Elke mutant via
+`git archive HEAD | tar -x` naar /tmp, build+meting in één `&&`-keten, harde
+build-faal (m1 faalde eerst op warning 27 en is pas gemeten toen hij bouwde),
+`test -x` vóór de sweep, md5 per sweep.
+
+**Alle dertien gates opnieuw groen** op de fixronde-eindstand, vanuit de
+worktree: 1 PASS; 2 PASS (177 bestanden); 3 PASS (177 golden schoon, 320
+negatief afgewezen voor hun eigen regel); 4 PASS (429 case-bestanden);
+5 PASS (407 cases); 6 PASS (407 cases); 7 PASS (371 weerleggingen, 36
+overlevers); 8 PASS (22 rode cases; Drools-been 5 fault-pinned, 17
+not-carried); 9 PASS (201 checks, 12 catala-goldens); 10 PASS (173 tests,
+30 rgs-goldens); 11 PASS (29 pariteitscases door drie uitvoerders, nul
+divergenties); 12 PASS (played 109, auto-excluded 43, value-divergence 1,
+no-case 2, JUnit 207); 13 PASS (68 annotaties over 14 goldens, 0
+overlevers).
