@@ -330,3 +330,27 @@ registerconstante-bezwaar uit (b).
 - `CLAUDE.md`, gate-12-alinea: "a golden that LOSES its PLAYED status" →
   "a golden that **SHIFTS CHANNEL and loses** its PLAYED status", zodat de
   belofte exact scopet op wat het script waarmaakt.
+
+### (f) Dertien gates opnieuw groen ná de fixronde
+
+Herdraaid op dezelfde basis `f0161ad`, in de worktree, `eval $(opam env)`.
+Alle tellingen identiek aan de kop hierboven — de twee wachten zijn additief
+en veranderen geen enkele bestaande uitkomst:
+
+1. `check-self-contained: PASS`
+2. `check-ir-schema: PASS (schema valid; 177 file(s) validate and round-trip)`
+3. `check-verifier: PASS (177 golden clean; 320 negatief rejected for their declared rule)`
+4. `check-case-schema: PASS (schema valid; 429 case file(s) validate)`
+5. `check-oracle: PASS (407 cases replayed exactly; geen case: seizoenvondst, vormenkabinet)`
+6. `check-clingo: PASS (407 cases replay exactly through clingo)`
+7. `check-noop: PASS (371 cases refute a do-nothing executor; 36 pinned survivors)`
+8. `check-rood: PASS (22 red cases fault observably in ref and clingo)`; Drools-leg 5/17
+9. `check-catala: PASS — frontend suite green (201 checks); 12 catala golden(s) byte-identical`
+10. `check-regelspraak: PASS — JUnit suite green (173 tests); 30 rgs golden(s) byte-identical`
+11. `check-toka-parity: PASS` (45 .rgs, TOKA-suite 27 tests; 29 cases: ref 29/0, clingo 29/0/0, Drools 29 PLAYED/0/0)
+12. `check-drools: PASS` (109 / 43 / 1 / 2 / channel floor 46 / JUnit 207)
+13. `check-reftype-derivation: PASS (68 twists over 14 goldens; 64 replays; 0 pinned survivors)`
+
+De tak blijft **onvermenigd** en **ongerebased** op `f0161ad`: rebasen zou hier
+de 110-bump uitlokken zonder dat `card/dagsoort-golden` er is, en dan is gate
+12 rood. Zie (a).

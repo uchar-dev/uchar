@@ -215,8 +215,7 @@ green. Current gates:
     newly arrived player. The gate rebuilds the jar and runs the
     backend's own JUnit suite, which must pass with a non-zero, zero-skip
     test count (maintainer decision 2026-08-30). An empty played set is
-    a failure.
-    CI leg unconditional and blocking.
+    a failure. CI leg unconditional and blocking.
 
 13. `scripts/check-reftype-derivation.sh` — the annotation-indifference
     harness (maintainer decision 2026-09-04). For every golden with case
