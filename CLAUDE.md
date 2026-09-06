@@ -207,14 +207,15 @@ green. Current gates:
     golden whose fired outcome differs from ref/clingo and FAILS WHEN
     STALE. Since 2026-09-06 an expected-channel floor IN THE SCRIPT pins
     the played channel itself: every NON-played golden is listed by name
-    with its reason (played is the default), so a golden that LOSES its
-    PLAYED status fails the gate by name instead of being silently
-    counted among the refusals, and a stale pin — a listed golden that
-    plays again, or is gone — fails too. A pinned played count closes the
-    one direction a played-by-default list cannot see: a newly arrived
-    player. The gate rebuilds the jar and runs the backend's own JUnit
-    suite, which must pass with a non-zero, zero-skip test count
-    (maintainer decision 2026-08-30). An empty played set is a failure.
+    with its reason (played is the default), so a golden that SHIFTS
+    CHANNEL and loses its PLAYED status fails the gate by name instead of
+    being silently counted among the refusals, and a stale pin — a listed
+    golden that plays again, or is gone — fails too. A pinned played
+    count closes the one direction a played-by-default list cannot see: a
+    newly arrived player. The gate rebuilds the jar and runs the
+    backend's own JUnit suite, which must pass with a non-zero, zero-skip
+    test count (maintainer decision 2026-08-30). An empty played set is
+    a failure.
     CI leg unconditional and blocking.
 
 13. `scripts/check-reftype-derivation.sh` — the annotation-indifference
