@@ -1849,7 +1849,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       List.iter
         (fun (atoms, t, s) ->
           let body = base :: atoms in
-          if m / s > 1 then range_guard ctx ~subject ~body [ (t, 1073741823 / (m / s)) ];
+          (* the fence carries [rule_guard] like its siblings in the min/max
+             folds; the fold's own value rule keeps the bare body, which is the
+             sibling convention exactly *)
+          if m / s > 1 then
+            range_guard ctx ~subject ~body:((base :: ctx.rule_guard) @ atoms)
+              [ (t, 1073741823 / (m / s)) ];
           let t' = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
           emit ctx "%s(%s,%s) :- %s." pred subject t' (String.concat ", " body))
         ops;
@@ -3354,8 +3359,13 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       let s2 = numeric_scale ~what:"a numeric equality" s2 in
       let m = max s1 s2 in
       let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      (* [rule_guard] rides the fence body: inside a composite it carries the
+         ch. 5.10 prefix, so a member the outcome no longer reads cannot fire
+         this range viol either (S7's claim is about EVERY emission, not only
+         the arithmetic ones). Outside a composite the guard is empty and the
+         body is unchanged. *)
       range_guard ctx ~subject
-        ~body:((base :: b1) @ b2)
+        ~body:((base :: ctx.rule_guard) @ b1 @ b2)
         [ (t1, max_int31 / (m / s1)); (t2, max_int31 / (m / s2)) ];
       let bindings, tl, tr = harmonised l r in
       ctx.fresh <- ctx.fresh + 1;
@@ -3388,8 +3398,11 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       let s2 = numeric_scale ~what:"an ordering comparison" s2 in
       let m = max s1 s2 in
       let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      (* [rule_guard] rides the fence body — the ch. 5.10 prefix inside a
+         composite, empty and behaviour-neutral outside one (see the equality
+         arm above) *)
       range_guard ctx ~subject
-        ~body:((base :: b1) @ b2)
+        ~body:((base :: ctx.rule_guard) @ b1 @ b2)
         [ (t1, max_int31 / (m / s1)); (t2, max_int31 / (m / s2)) ];
       let bindings, tl, tr = harmonised l r in
       let sym = match op with Gelijk -> "==" | op -> vergelijk_sym op in
@@ -3538,11 +3551,16 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       emit ctx "%s_h0(%s,0) :- %s." p subject base;
       List.iteri
         (fun i c ->
-          (* [i] members already read, [n - i] still unread; member 1 is always
-             read, so it carries no prefix guard at all *)
+          (* [i] members already read, [n - i] still unread. The guard is the
+             ch. 5.10 stop triggers NEGATED over the prefix count, and it is
+             built for EVERY i — member 1 included. Member 1 is not always
+             read: at TEN MINSTE / PRECIES with a threshold ABOVE the member
+             count the out-of-reach trigger fires on the EMPTY prefix, and ref
+             then reads nothing at all. Reading cq*_h0(S,0) — the chain's own
+             base, derivable for every subject — makes that case fall out of
+             the same comparison as every later one (H = 0, so `H >= d - n`
+             holds exactly when d <= n) instead of needing its own arm. *)
           let unsettled =
-            if i = 0 then []
-            else
               let h = fresh ctx "H" in
               let left = n - i in
               let cmp =

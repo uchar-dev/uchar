@@ -179,6 +179,45 @@ SURVIVORS=''
 # here.
 DRL_BASIS_UIT=''
 
+# --- the DRL-text branch's ch. 5.10 divergence (registered here; fails when stale) -----------
+# This is the gate that owns the DRL-TEXT branch, so this is where the branch's one KNOWN
+# departure from RUNTIME-SEMANTICS ch. 5.10 is recorded rather than left in a card.
+#
+# THE FACT, measured 2026-09-07 on a TEN HOOGSTE 1 composite over ONE member that divides by
+# zero: ref, clingo and the exec-model Drools branch all FAULT (the member is read — ch. 5.10
+# boundary 1 excludes at-most's vacuous-true direction on purpose); the DRL-text branch ANSWERS
+# `1`. The cause is structural: the branch renders `at most d` as `!(minstens(members, d+1))`,
+# and `minstens` with k ABOVE the member count expands to the literal `false`, so NO member ever
+# reaches the DRL at all. The branch therefore IMPLEMENTS the trigger ch. 5.10 excludes.
+#
+# The class is exactly TEN_HOOGSTE with d >= n, and only there: measured exhaustively over n <= 6,
+# 636 combinations, 258 with d < n — all of which agree. The other four quantifiers never diverge,
+# truth values agree everywhere, and the DANGEROUS direction (reading a member the norm skips) is
+# closed. What can happen is the reverse: an answer where the norm faults.
+#
+# WHY THIS IS A REGISTRATION AND NOT A FAILURE TODAY: no corpus GOLDEN carries an at-most composite
+# whose threshold covers every member, so the divergence is unreachable through every gate. The
+# scan below is the staleness guard — the day such a golden lands, the class becomes reachable and
+# this gate fails by name instead of the golden quietly recording the wrong answer. The faithful
+# form (a runtime helper over member suppliers instead of a text expansion) is its own card:
+# backlog/new/20260907-drl-tekst-kortsluiting.md.
+atmost_bereik=$(python3 - <<'PY'
+import glob, json
+raak = []
+def loop(o, f):
+    if isinstance(o, dict):
+        if o.get('node') == 'Samengesteld' and o.get('kwantor') == 'TEN_HOOGSTE' \
+           and o.get('drempel', 0) >= len(o.get('onderdelen', [])):
+            raak.append(f)
+        for v in o.values(): loop(v, f)
+    elif isinstance(o, list):
+        for v in o: loop(v, f)
+for f in sorted(glob.glob('corpus/golden/**/ir.json', recursive=True)):
+    loop(json.load(open(f)), f)
+print(' '.join(sorted(set(raak))))
+PY
+) || exit 2
+
 RUNNER_REF=_build/default/ref/bin/runner.exe
 RUNNER_CLINGO=_build/default/backends/clingo/bin/clingo_runner.exe
 
@@ -620,7 +659,25 @@ if [ "$n_onbekend" -gt 0 ]; then
     status=1
 fi
 
+if [ -n "$atmost_bereik" ]; then
+    echo 'FAIL: a corpus golden now carries an at-most composite whose threshold covers every member,' >&2
+    echo '      which is exactly the class where the DRL-TEXT branch departs from RUNTIME-SEMANTICS' >&2
+    echo '      ch. 5.10 boundary 1: it renders `at most d` as !(minstens(members, d+1)), and minstens' >&2
+    echo '      with k above the member count expands to the literal `false`, so NO member is read and' >&2
+    echo '      the branch ANSWERS where ref, clingo and the exec-model branch FAULT. The registration' >&2
+    echo '      above says this is unreachable through the corpus; that is no longer true:' >&2
+    for f in $atmost_bereik; do echo "  $f" >&2; done
+    echo '      Fix the branch (backlog card 20260907-drl-tekst-kortsluiting) or say here why this' >&2
+    echo '      golden cannot reach the branch.' >&2
+    status=1
+fi
+
 if [ "$status" -eq 0 ]; then
+    echo '  NOTE (ch. 5.10, registered): the DRL-TEXT branch implements at-most'"'"'s vacuous-true direction —'
+    echo '       the trigger ch. 5.10 boundary 1 excludes — so on a TEN HOOGSTE composite whose threshold'
+    echo '       covers every member it ANSWERS where ref, clingo and the exec-model branch FAULT'
+    echo '       (measured 2026-09-07). Corpus-unreachable today: 0 goldens carry that shape, and the scan'
+    echo '       above fails the gate the day one does. Faithful form: backlog card 20260907-drl-tekst-kortsluiting.'
     printf 'check-reftype-derivation: PASS (%s unit annotations twisted over %s goldens; %s executor replays reproduce the untouched outcome, %s of them PLAYED by the DRL-text branch; %s pinned survivors)\n' \
         "$n_twists" "$n_goldens" "$n_gecontroleerd" "$n_drl" "$n_survivors"
     printf '  corpus-wide accounting: %s unit-bearing annotations = %s twistable + %s exempt (the annotation IS the source) + %s without a convertible sister + %s at a §2.10 fourth-class branch (v0 derives no result unit) + %s outside the twist table\n' \

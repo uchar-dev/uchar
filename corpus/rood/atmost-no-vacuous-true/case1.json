@@ -1,0 +1,24 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B1",
+        "objectType": "Bakenwacht",
+        "attributes": {
+          "ploegomvang": { "number": "0" },
+          "vangstwaarde": { "number": "100" }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "division by numeric zero",
+    "clingo": "division by numeric zero",
+    "drools": "deling door 0"
+  }
+}

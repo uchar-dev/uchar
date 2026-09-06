@@ -112,13 +112,25 @@ vorm om statisch af te keuren. WF-096 blijft dus vrij.
 **Bewust NIET gedaan / open voor de lensronde.**
 
 1. **De DRL-tekst-tak** (de slapende tweede transpilertak, alleen door
-   gate 13 aangeraakt) is ongewijzigd. Zijn telkwantoren zijn een
-   tekstuele k-deelverzameling-OR-vouw; Java's `||`/`&&` maken die
-   *luier dan of gelijk aan* ch. 5.10 — hij kan een lid overslaan dat de
-   normatieve volgorde wél leest (TEN HOOGSTE 1 over drie leden waarvan
-   het eerste faalt), nooit andersom. Een getrouwe vorm vergt een
-   runtime-helper met suppliers in plaats van een tekstexpansie: een
-   eigen kaart. Corpusbreed meet gate 13 vandaag geen verschil.
+   gate 13 aangeraakt) is ongewijzigd. **Klassebeschrijving gecorrigeerd
+   in de fixronde (2026-09-07)** — de bouwronde had hem twee keer mis:
+   * *Fout gezegd:* "luier dan of gelijk aan ch. 5.10 — hij kan een lid
+     overslaan dat de norm wél leest". *Werkelijk:* de tak is niet luier
+     maar **onjuist waar**. `ten hoogste d` wordt
+     `!(minstens(leden, d+1))`, en `minstens` met `k` boven het ledental
+     expandeert naar het letterlijke `false` — dus komt er géén enkel lid
+     in de DRL en ANTWOORDT de tak waar ref, clingo én de exec-tak
+     FAULTEN. Hij past precies de vacuüm-waar-trigger toe die ch. 5.10
+     grens 1 uitsluit.
+   * *Fout voorbeeld:* "TEN HOOGSTE 1 over drie leden waarvan het eerste
+     faalt" divergeert zelf niet. De echte klasse is exact
+     **TEN_HOOGSTE met drempel ≥ ledental**, uitputtend gemeten over
+     n ≤ 6 (636 combinaties, 258 met d < n — alle eens); de andere vier
+     kwantoren divergeren nooit en de gevaarlijke richting is dicht.
+   Vandaag corpus-onbereikbaar (0 goldens dragen die vorm); dat feit
+   staat nu reden-dragend en falend-wanneer-stale geregistreerd in
+   `scripts/check-reftype-derivation.sh`, en de getrouwe vorm is
+   `backlog/new/20260907-drl-tekst-kortsluiting.md`.
 2. **`at-most`'s waar-richting** (*h* + *r* ≤ *d*) is géén stoptrigger —
    het besluit noemt hem niet, en met *d* ≥ *n* zou hij vóór het eerste
    lid stoppen. Vastgelegd in ch. 5.10 als grens, niet stilzwijgend.

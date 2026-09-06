@@ -13,12 +13,35 @@ open Uchar_ref
 let failures = ref 0
 let total = ref 0
 
+(* The last worked example that REPORTED. A fault raised while computing the
+   next example's value escapes before its own [check] ever runs, so the binary
+   used to die on a bare "Fatal error: exception Value.Fault" with no clue which
+   example was in flight — measured on the mutant harness, which killed two
+   mutants with zero report lines. The handler below turns that into a named
+   report. Nothing here changes an assertion or its verdict: [laatste] is a
+   write-only breadcrumb and the handler runs only on the way out. *)
+let laatste = ref "<nog geen voorbeeld gerapporteerd>"
+
 let check name ok =
   incr total;
+  laatste := name;
   if not ok then begin
     incr failures;
     Printf.printf "FAIL %s\n" name
   end
+
+let () =
+  Printexc.set_uncaught_exception_handler (fun e bt ->
+      (match e with
+      | Value.Fault m ->
+          Printf.printf
+            "FAIL <onafgevangen fault> na het laatst gerapporteerde voorbeeld %S\n  fault: %s\n"
+            !laatste m
+      | e ->
+          Printf.printf "FAIL <onafgevangen uitzondering> na het laatst gerapporteerde voorbeeld %S\n  %s\n"
+            !laatste (Printexc.to_string e));
+      Printexc.print_raw_backtrace stdout bt;
+      flush stdout)
 
 let q = Q.of_string
 let n s = Value.Num (Value.q_of_lexeme s, Value.Unitless)
@@ -2584,7 +2607,52 @@ let () =
      first does not hold can no longer reach 2, so member 2 stays unread even
      though no hit has been counted *)
   let minste2 = doc_of Ten_minste 2 Ongelijk in
-  expect_leeg "WV-5.10-tenminste-2-onhaalbaar-geen-fault" (run minste2 "0" "100")
+  expect_leeg "WV-5.10-tenminste-2-onhaalbaar-geen-fault" (run minste2 "0" "100");
+  (* ---- one example per trigger row, each pinning the FAULT's absence or
+     presence rather than only the verdict. Without these the trigger table is
+     spec text with no artifact: an executor may drop, add or defer a row and
+     every gate still passes. Each row below was measured against an arm-exact
+     ref mutant that changes exactly that row. ---- *)
+  let doc_leden kwantor drempel onderdelen : Ir_v0.Ast.document =
+    { empty_doc with
+      objecttypen =
+        [ ot "Wacht"
+            [ ("ploegomvang", Some num0); ("vangstwaarde", Some num0); ("merk", Some num0) ] [] ];
+      resolved_regels =
+        [ rr "merk" Gelijkstelling
+            (Some (aref "merk" "Wacht" num0))
+            (Some (litv "1" num0))
+            (Some (Samengesteld { kwantor; drempel; onderdelen; bron = None }));
+        ];
+    }
+  in
+  let waar_ploeg0 = lid1 Gelijk in
+  let waar_vangst = cmp Groter (aref "vangstwaarde" "Wacht" num0) (litv "0" num0) in
+  let faultend = lid2 in
+  (* THE STOP IS CHECKED BEFORE THE MEMBER, NOT AFTER. At TEN MINSTE with a
+     threshold ABOVE the member count the out-of-reach trigger fires on the
+     EMPTY prefix, so NOTHING is read — a checker that evaluates first and asks
+     afterwards reads the faulting member 1 and dies. *)
+  expect_leeg "WV-5.10-drempel-boven-ledental-leest-niets"
+    (run (doc_leden Ten_minste 3 [ faultend; waar_ploeg0 ]) "0" "100");
+  (* AT-MOST'S TRUE DIRECTION IS NOT A TRIGGER (ch. 5.10 boundary 1). With
+     d >= n the outcome can no longer become false, yet every member is still
+     read — so the faulting member 1 DOES fault. Adding the trigger would
+     answer "true" here without reading anything. *)
+  expect_fault "WV-5.10-atmost-geen-vacuum-waar" (fun () ->
+      run (doc_leden Ten_hoogste 2 [ faultend; waar_ploeg0 ]) "0" "100");
+  (* AT-MOST'S FALSE DIRECTION IS a trigger: two hits past a threshold of 1
+     settle the outcome, and the faulting third member is never read. *)
+  expect_leeg "WV-5.10-atmost-overschrijding-stopt"
+    (run (doc_leden Ten_hoogste 1 [ waar_ploeg0; waar_vangst; faultend ]) "0" "100");
+  (* PRECIES' OVER-THRESHOLD TRIGGER, likewise: hits 2 against a threshold of 1
+     settle it false and the faulting third member stays unread. *)
+  expect_leeg "WV-5.10-precies-overschrijding-stopt"
+    (run (doc_leden Precies 1 [ waar_ploeg0; waar_vangst; faultend ]) "0" "100");
+  (* PRECIES' OUT-OF-REACH TRIGGER: a threshold above the member count settles
+     it false on the empty prefix, so nothing is read. *)
+  expect_leeg "WV-5.10-precies-onhaalbaar-leest-niets"
+    (run (doc_leden Precies 3 [ faultend; waar_ploeg0 ]) "0" "100")
 
 let () =
   if !failures > 0 then begin

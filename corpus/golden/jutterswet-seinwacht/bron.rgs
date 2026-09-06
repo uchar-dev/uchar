@@ -1,0 +1,35 @@
+Objecttype de Seinwacht (mv: Seinwachten)
+    de ploegomvang Numeriek (geheel getal);
+    de vangstwaarde Numeriek (geheel getal);
+    het hoogsteteken Numeriek (geheel getal);
+    het preciesteken Numeriek (geheel getal);
+    het minsteteken Numeriek (geheel getal);
+
+Regel hoogsteteken van een seinwacht
+    geldig altijd
+        Het hoogsteteken van een Seinwacht moet gesteld worden op 1
+        indien hij aan ten hoogste één van de volgende voorwaarden voldoet:
+        - zijn ploegomvang is gelijk aan 0
+        - zijn vangstwaarde is groter dan 0
+        - het aandeel is groter dan 0.
+        Daarbij geldt:
+            het aandeel is de vangstwaarde van de Seinwacht gedeeld door de ploegomvang van de Seinwacht naar beneden afgerond op 0 decimalen.
+
+Regel preciesteken van een seinwacht
+    geldig altijd
+        Het preciesteken van een Seinwacht moet gesteld worden op 1
+        indien hij aan precies één van de volgende voorwaarden voldoet:
+        - zijn ploegomvang is gelijk aan 0
+        - zijn vangstwaarde is groter dan 0
+        - het aandeel is groter dan 0.
+        Daarbij geldt:
+            het aandeel is de vangstwaarde van de Seinwacht gedeeld door de ploegomvang van de Seinwacht naar beneden afgerond op 0 decimalen.
+
+Regel minsteteken van een seinwacht
+    geldig altijd
+        Het minsteteken van een Seinwacht moet gesteld worden op 1
+        indien hij aan ten minste drie van de volgende voorwaarden voldoet:
+        - het aandeel is groter dan 0
+        - zijn ploegomvang is gelijk aan 0.
+        Daarbij geldt:
+            het aandeel is de vangstwaarde van de Seinwacht gedeeld door de ploegomvang van de Seinwacht naar beneden afgerond op 0 decimalen.
