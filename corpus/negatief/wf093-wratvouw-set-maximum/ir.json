@@ -202,7 +202,7 @@
             "noemer": null
           }
         },
-        "bron": "het maximum van vondsten van alle vondsten van de aanmelder",
+        "bron": "het maximum van het gewicht van alle vondsten van de aanmelder",
         "granulariteit": null
       },
       "voorwaarde": null,

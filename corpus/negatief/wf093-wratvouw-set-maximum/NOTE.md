@@ -6,10 +6,10 @@ row-1 wart under a RANKING kind, where the arithmetic sibling
 
     WF-093 FAIL /resolvedRegels/0/waarde/argumenten/0: the v0 instance-fold
     source (the row-1 wart, spelled with the unknown sentinel on the
-    argument's own type) is a COUNT source: it names a role and yields the
-    linked instances, never a value per contributor — so it cannot be the
-    source of this MAXIMUM aggregation (the set spelling reads it no
-    differently: the sentinel decides)
+    argument's own type) is a COUNT source: a fold source whose own type is
+    the unknown sentinel yields the linked instances, which only AANTAL
+    reads — so it cannot be the source of this MAXIMUM aggregation (the set
+    spelling reads it no differently: the sentinel decides)
 
 The document. A `MAXIMUM` over `elementObjecttype: "Vondst"` whose single
 source argument carries `set: true`, `objecttype: "Vondst"` (= the
@@ -17,18 +17,22 @@ source argument carries `set: true`, `objecttype: "Vondst"` (= the
 role the fold subject `Jutter` fills: WF-083 (b) satisfied), and the
 unknown sentinel on its own `type`. No `leegwaarde` — that field is
 sum-only. Built from the carried set-source fold of
-`corpus/golden/jutterswet-vondsttelling` exactly as the `SOM` sibling is.
+`corpus/golden/jutterswet-vondsttelling` exactly as the `SOM` sibling is,
+including the dropped `bronRol` the wart spelling has no room for (WF-047's
+fold-source detector does not recognise a navigating source, so a binding
+there would be a second, unrelated fault).
 One fault; the verifier reports WF-093 and no other rule.
 
 Rood-eerst, measured on this document. Pre-rule verifier
 (md5 `924f0e3cfb69e9e8d9be7aa916a9bfe7`): `verifier: PASS`. With WF-093
-(md5 `945642482a4183057a3c5194a11749ce`): the rejection above.
+(md5 `957d3eeb5667188e33d5468b80f21b71`): the rejection above.
 
 Executors, on this document (case: one Jutter linked to two Vondsten whose
 gewicht is 12 kg and 7 kg):
 
     ref         : EVALUATION FAULT: value aggregation over a bare role source
-    ASP backend : TRANSLATION FAULT: expression kind not translated
+    ASP backend : TRANSLATION FAULT: expression kind not translated (no
+                  corpus case exercises it)
     Drools      : PLAYED — it fires and answers 12.00
 
 The ranking kinds behave no differently from the computing ones here, which

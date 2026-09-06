@@ -6,10 +6,10 @@ sharpest of the four: here one executor ANSWERS while the other two refuse.
 
     WF-093 FAIL /resolvedRegels/0/waarde/argumenten/0: the v0 instance-fold
     source (the row-1 wart, spelled with the unknown sentinel on the
-    argument's own type) is a COUNT source: it names a role and yields the
-    linked instances, never a value per contributor — so it cannot be the
-    source of this SOM aggregation (the set spelling reads it no
-    differently: the sentinel decides)
+    argument's own type) is a COUNT source: a fold source whose own type is
+    the unknown sentinel yields the linked instances, which only AANTAL
+    reads — so it cannot be the source of this SOM aggregation (the set
+    spelling reads it no differently: the sentinel decides)
 
 The document. A `SOM` over `elementObjecttype: "Vondst"` whose single
 source argument carries `set: true`, `objecttype: "Vondst"` (= the
@@ -27,13 +27,14 @@ no other rule.
 
 Rood-eerst, measured on this document. Pre-rule verifier
 (md5 `924f0e3cfb69e9e8d9be7aa916a9bfe7`): `verifier: PASS`. With WF-093
-(md5 `945642482a4183057a3c5194a11749ce`): the rejection above.
+(md5 `957d3eeb5667188e33d5468b80f21b71`): the rejection above.
 
 Executors, on this document (case: one Jutter linked to two Vondsten whose
 gewicht is 12 kg and 7 kg):
 
     ref         : EVALUATION FAULT: value aggregation over a bare role source
-    ASP backend : TRANSLATION FAULT: expression kind not translated
+    ASP backend : TRANSLATION FAULT: expression kind not translated (no
+                  corpus case exercises it)
     Drools      : PLAYED — it fires and answers 19.00
 
 `ref`'s first fold-source arm matches the sentinel BEFORE its set arm and
