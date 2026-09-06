@@ -1,0 +1,53 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Aanmelding": {
+      "node": "Objecttype",
+      "naam": "Aanmelding",
+      "attributen": { "meldstip": { "node": "DatumTijd" } },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Aanmeldingen"
+    }
+  },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {}, "dimensies": {},
+  "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [ { "node": "Regel", "naam": "meldstip", "soort": "regel" } ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "meldstip",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "meldstip",
+        "objecttype": "Aanmelding",
+        "onderwerpBron": "een Aanmelding",
+        "navigatieRol": null,
+        "type": { "node": "DatumTijd" },
+        "bron": "De meldstip van een Aanmelding",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "2026-03-15T12:00:00.1",
+        "type": { "node": "DatumTijd" },
+        "bron": "2026-03-15T12:00:00.1"
+      },
+      "voorwaarde": null,
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null }
+    }
+  ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}

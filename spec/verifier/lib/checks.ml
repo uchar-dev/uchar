@@ -217,15 +217,16 @@ let lexeme_bare_number s =
    bare form the executors misparsed as year 31 (→ 0036-07-16), the prefixed
    form they fault on; the verifier refuses both up front. Mirror of the
    ref/clingo date_of_iso fence (ref/lib/value.ml). *)
+let is_leap y = (y mod 4 = 0 && y mod 100 <> 0) || y mod 400 = 0
+
+let days_in_month y m =
+  match m with
+  | 1 | 3 | 5 | 7 | 8 | 10 | 12 -> 31
+  | 4 | 6 | 9 | 11 -> 30
+  | 2 -> if is_leap y then 29 else 28
+  | _ -> 0
+
 let lexeme_iso_date s =
-  let is_leap y = (y mod 4 = 0 && y mod 100 <> 0) || y mod 400 = 0 in
-  let days_in_month y m =
-    match m with
-    | 1 | 3 | 5 | 7 | 8 | 10 | 12 -> 31
-    | 4 | 6 | 9 | 11 -> 30
-    | 2 -> if is_leap y then 29 else 28
-    | _ -> 0
-  in
   let digits str = str <> "" && String.for_all (fun c -> c >= '0' && c <= '9') str in
   match String.split_on_char '-' s with
   | [ y; m; d ]
@@ -234,6 +235,75 @@ let lexeme_iso_date s =
       let y = int_of_string y and m = int_of_string m and d = int_of_string d in
       m >= 1 && m <= 12 && d >= 1 && d <= days_in_month y m
   | _ -> false
+
+(* WF-094: the executors' shared datum-tijd literal lexeme grammar (IR-SPEC
+   ch. 4.1). TWO spellings name one instant and every reader in the house
+   admits exactly these two — the canonical ISO form
+   yyyy-mm-ddThh:mm:ss[.fff] (fixed field widths, 'T' as the separator and
+   never a space, the seconds field always written, no zone suffix and no
+   offset, a fraction that is optional but exactly three digits, read as
+   whole milliseconds) and the RegelSpraak source snippet
+   [dd. ]d-m-yyyy hh:mm:ss[.SSS] (day-first, the token's variable-width day
+   and month), which a v0 emitter still writes into `waarde`.
+
+   Anything else is ill-formed on the wire. Outside these two the readers of
+   a datum-tijd lexeme stop agreeing — the same three digits ".1" read as
+   ONE millisecond, as a HUNDRED, and refused; a missing seconds field taken
+   by one reader and refused by another — and until this rule the wire had
+   no fence of its own at all: a literal reading `rommel 2024-01-31
+   12:00:00Z x` was schema-valid and verifier-clean (measured 2026-09-06).
+   Mirror of the ref/Drools datum-tijd readers, which now refuse identically. *)
+let lexeme_datum_tijd s =
+  let n = String.length s in
+  let digit i = i < n && s.[i] >= '0' && s.[i] <= '9' in
+  let digits_at i k =
+    let rec go j = j = k || (digit (i + j) && go (j + 1)) in
+    go 0
+  in
+  let int_at i k = int_of_string (String.sub s i k) in
+  let rec skip_spaces i = if i < n && s.[i] = ' ' then skip_spaces (i + 1) else i in
+  (* hh:mm:ss[.fff], ending EXACTLY at the end of the lexeme: the anchor is
+     what keeps a zone suffix, an offset and trailing text out *)
+  let time_ok i =
+    (n - i = 8 || n - i = 12)
+    && digits_at i 2 && s.[i + 2] = ':' && digits_at (i + 3) 2 && s.[i + 5] = ':'
+    && digits_at (i + 6) 2
+    && (n - i = 8 || (s.[i + 8] = '.' && digits_at (i + 9) 3))
+    && int_at i 2 <= 23
+    && int_at (i + 3) 2 <= 59
+    && int_at (i + 6) 2 <= 59
+  in
+  let date_ok ~y ~m ~d = m >= 1 && m <= 12 && d >= 1 && d <= days_in_month y m in
+  let iso =
+    n >= 19 && digits_at 0 4 && s.[4] = '-' && digits_at 5 2 && s.[7] = '-' && digits_at 8 2
+    && s.[10] = 'T' && time_ok 11
+    && date_ok ~y:(int_at 0 4) ~m:(int_at 5 2) ~d:(int_at 8 2)
+  in
+  let snippet () =
+    (* the optional de-dato prefix "dd." takes at least one space after it;
+       "dd." alone is not the lexeme (i0 = n then fails every digit test) *)
+    let i0 =
+      if n >= 4 && String.sub s 0 3 = "dd." && s.[3] = ' ' then skip_spaces 3
+      else if n >= 3 && String.sub s 0 3 = "dd." then n
+      else 0
+    in
+    let width i = if digits_at i 2 then 2 else if digits_at i 1 then 1 else 0 in
+    let dw = width i0 in
+    dw > 0
+    && i0 + dw < n
+    && s.[i0 + dw] = '-'
+    &&
+    let i1 = i0 + dw + 1 in
+    let mw = width i1 in
+    mw > 0 && i1 + mw < n && s.[i1 + mw] = '-'
+    &&
+    let i2 = i1 + mw + 1 in
+    digits_at i2 4 && i2 + 4 < n && s.[i2 + 4] = ' '
+    &&
+    let i3 = skip_spaces (i2 + 4) in
+    time_ok i3 && date_ok ~y:(int_at i2 4) ~m:(int_at i1 mw) ~d:(int_at i0 dw)
+  in
+  iso || snippet ()
 
 (* --- document context --------------------------------------------------- *)
 
@@ -3667,6 +3737,13 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
           [ v "WF-084" at
               ("date literal lexeme '" ^ w
                ^ "' is not the ISO form yyyy-mm-dd (fixed field widths, valid ranges — ch. 4.1)") ]
+      | Some Datum_tijd, Some w when not (lexeme_datum_tijd w) ->
+          [ v "WF-094" at
+              ("datum-tijd literal lexeme '" ^ w
+               ^ "' is neither the canonical ISO form yyyy-mm-ddThh:mm:ss[.fff] nor the source \
+                  snippet form [dd. ]d-m-yyyy hh:mm:ss[.SSS] (fixed field widths, 'T' never a \
+                  space, the seconds field written, no zone or offset, a fraction of exactly \
+                  three digits — ch. 4.1)") ]
       | Some (Enumeratie { waarden; _ }), Some w when not (mem_ci (some_names waarden) w) ->
           [ v "WF-039" at ("enumeration label '" ^ w ^ "' is not in the declared domain") ]
       | Some (Numeriek { teken = Some t; _ }), Some w -> (
