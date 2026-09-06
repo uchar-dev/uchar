@@ -330,8 +330,9 @@ witness" bestaat nu: `jutterswet-meldstip`).
 hele milliseconden, elke geweigerde veldklasse, de kalendercontrole, en dat
 de CASE-wire smaller is dan de literal-wire); `backends/clingo/test`
 53 → 70 (de literaalvrije ordening, de lege operand, de literaalordening op
-de millisecondegrens én op de dagrand, en de drie luide flanken). Geen
-bestaande test gewijzigd.
+de millisecondegrens én op de dagrand, en de drie luide flanken), en in de
+fixronde door naar **80** (de OF_GELIJK-familie exact op de drempel, F4;
+beide operanden leeg, F13). Geen bestaande test gewijzigd.
 
 **Gate-12 speelvloer (gesanctioneerde may-touch, één regel).** Sinds de
 speelvloer-landing pint `scripts/check-drools.sh` `EXPECTED_PLAYED` naast
@@ -430,3 +431,31 @@ het verslag — elk hier hermeten):
   onder `EERDER` geven afwezigheid in beide uitvoerders — geen `#sup`/`#inf`
   die als waarde ontsnapt, geen hulpatoom dat op een lege body afleidt. Nu
   ook vastgelegd (F13) in plaats van beredeneerd.
+
+**De F11-pinmeting.** De golden draagt zes stringwijzigingen (twee
+`onderwerpBron`, vier `bron`). Vóór en ná, op alle drie de casebestanden:
+`oracle: PASS (4/6/4)` en `clingo: PASS (4/6/4)` — byte-identiek gedift.
+`verifier: PASS`; gate 2 round-tript de 179 bestanden ongewijzigd; gate 12
+speelt `jutterswet-meldstip` onveranderd (`PLAYED`, played 111). Nul pins
+bewegen; het zijn presentatievelden en ze gedragen zich ernaar.
+
+**De `waarde: null`-flank, hermeten met de jar erbij.** Eén bewerking op
+deze kaarts eigen golden: `verifier: PASS`, ref
+`EVALUATION FAULT: missing Literal.waarde in IR node`, clingo
+`TRANSLATION FAULT: missing Literal.waarde`, en de bean-modeluitvoerder
+`ERROR NullPointerException: Cannot invoke
+"java.lang.CharSequence.length()" because "this.text" is null`. Twee
+benoemde weigeringen en één dereferentie onder een document dat de wire
+toelaat — benoemd in ch. 4.1 en in de indexrij, niet gesloten.
+
+**Gates ná de fixronde, alle dertien vanuit de worktree.** 1 PASS · 2 PASS
+(179 files) · 3 PASS (179 golden clean, 330 negatief) · 4 PASS (434
+casebestanden) · 5 PASS (412 cases) · 6 PASS (412 cases) · 7 PASS (376
+weerleggen de no-op, 36 gepinde survivors) · 8 PASS (22 rode cases) ·
+9 PASS (201 checks, 12 catala goldens) · 10 PASS (173 tests, 31
+rgs-goldens) · 11 PASS (45 .rgs byte-identiek, 2 holdouts, 27 tests, 29
+replays, nul divergenties) · 12 PASS (played 111, kanaalvloer 46,
+auto-excluded 43, value-divergence 1, no-case 2, JUnit 207) · 13 PASS (74
+twists over 15 goldens, 0 survivors). Elk cijfer gelijk aan de landing; de
+enige teller die beweegt is de clingo-suite, **70 → 80** (acht armen voor
+F4, twee voor F13). `ref/test` blijft 445.
