@@ -9,10 +9,11 @@ sentinel on its own `type`. The wart is the fold SOURCE's spelling; a listed
 value fold has no source, so there is nothing for it to be.
 
     WF-034 FAIL /resolvedRegels/0/waarde/argumenten/1/type: unknown-type
-    sentinel on a listed fold operand: a fold with two or more arguments is
-    the listed value fold, whose operands are ordinary reads — the sentinel is
-    admissible on the SINGLE-argument instance-fold source alone (the v0 row-1
-    wart, ch. 4.3)
+    sentinel on a fold operand that is not a fold SOURCE: the sentinel is
+    admissible on the single argument of an AGGREGATION alone (the v0 row-1
+    wart, ch. 4.3) — with two or more arguments the node is the listed value
+    fold, whose operands are ordinary reads, and at a non-aggregation kind
+    there is no source at all
 
 The document. A `MAXIMUM` with two arguments and an `elementObjecttype`;
 operand 0 an ordinary read of `drempelgewicht` with its declared type,
@@ -56,5 +57,5 @@ stopped.
 
 Falsifiable, arm-exact: drop the sentinel clause at the head of the
 fold-argument branch's reference arm (`spec/verifier/lib/checks.ml`); this
-case turns clean along with its two siblings and nothing else moves over the
-537 documents of the four zones.
+case turns clean along with the five other `wf034-sentinel-*` operand
+witnesses and nothing else moves over the 540 documents of the four zones.

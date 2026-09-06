@@ -8,10 +8,11 @@ together: the sentinel over a read that DOES resolve, v0's failed typing of a
 real attribute.
 
     WF-034 FAIL /resolvedRegels/0/waarde/argumenten/1/type: unknown-type
-    sentinel on a listed fold operand: a fold with two or more arguments is
-    the listed value fold, whose operands are ordinary reads — the sentinel is
-    admissible on the SINGLE-argument instance-fold source alone (the v0 row-1
-    wart, ch. 4.3)
+    sentinel on a fold operand that is not a fold SOURCE: the sentinel is
+    admissible on the single argument of an AGGREGATION alone (the v0 row-1
+    wart, ch. 4.3) — with two or more arguments the node is the listed value
+    fold, whose operands are ordinary reads, and at a non-aggregation kind
+    there is no source at all
 
 The document. A `MAXIMUM` with TWO arguments and an `elementObjecttype` —
 that combination is the whole point: with an `elementObjecttype` the
@@ -48,9 +49,11 @@ at all is.
 
 Falsifiable, arm-exact: drop the sentinel clause at the head of the
 fold-argument branch's reference arm (`spec/verifier/lib/checks.ml`). Swept
-over golden + rood + negatief + parity (537 documents) exactly the three new
-`wf034-sentinel-gelest-*`/`-geleste-*` cases turn clean, one report line
-disappears in the parity zone, and nothing else moves. Inverting the arity
-guard instead (`= 1` for `<> 1`) frees these three and newly rejects 12
-documents — 10 goldens, 5 of them anchors, and 2 red cases — which is what
-pins the boundary at the arity.
+over golden + rood + negatief + parity (540 documents) exactly the six
+`wf034-sentinel-gelest-*`/`-geleste-*`/`-null-*`/`-builtin-*` cases turn
+clean, one report line disappears in the parity zone, and nothing else moves.
+Inverting the ARITY half of the guard instead (`= 1` for `<> 1`) frees this
+case, its two siblings and the null twin, and newly rejects 12 documents —
+10 goldens, 5 of them anchors, and 2 red cases — which is what pins that
+half where it is; reverting the KIND half frees only the two
+`wf034-sentinel-builtin-*` cases and moves nothing else.
