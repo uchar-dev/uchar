@@ -132,16 +132,25 @@ ontleedt), het regelnummer niet.
 het al bij executie: zijn EERSTE vouwbron-arm matcht op het sentinel — vóór
 de set-arm en ongeacht `set` — dus beide spellingen leveren instances op en
 beide worden geweigerd met `value aggregation over a bare role source`; de
-ASP-backend weigert de expressiesoort. Het setbron-antwoord (ii) had gekost:
+ASP-backend weigert de expressiesoort **op deze vier getuigen** — en niet om
+het sentinel, maar om de `navigatieRol` die ze dragen (zie de fixronde-
+appendix: zijn set-armen lezen `type` als wildcard). Het setbron-antwoord
+(ii) had gekost:
 een vouwarm in `ref` die moet beslissen wat "per lid" betekent voor een bron
-die geen attribuut noemt, een vertaling in de ASP-backend, en een golden met
-handberekende absolute pins — én het had een vorm gecanoniseerd **die geen
-enkele frontend produceert**. Dat laatste is gemeten, niet aangenomen: de
+die — in de KALE spelling — geen attribuut noemt, een vertaling in de
+ASP-backend, en een golden met
+handberekende absolute pins — én het had een vorm gecanoniseerd **die de
+frontend wél produceert, maar nooit als een documents enige defect**. Dat is
+gemeten, niet aangenomen: de
 RegelSpraak-frontend leidt het elementtype van een waardevouw af uit
 `a.objecttype()` (een echte attribuutlezing) en neemt de geschreven-rolroute
 uitsluitend op de `AANTAL`-tak (`ExpressieBouwer.aggregatieElement` /
-`aantalElement`); de Catala-frontend construeert het sentinel nergens. Wat
-de vraag levend hield was geen producent maar een derde uitvoerder.
+`aantalElement`) en de Catala-frontend construeert het sentinel nergens —
+maar één route ontsnapt daaraan: een set-aggregatie over een KENMERK van het
+elementtype (zie de appendix, getuige B2). Daar co-vuren WF-034 en WF-080
+altijd mee. Wat
+de vraag levend hield was dus nog steeds geen producent maar een derde
+uitvoerder.
 
 **Hermeten census (2026-09-06, stand `64bdb32`, 523 documenten over golden
 155 + rood 22 + negatief 316 + pariteit 30).** **54** enkelvoudige
@@ -164,7 +173,9 @@ een `elementObjecttype` (dus de soort-scoping kost vandaag niets).
 
 **Rood-eerst, per negatief.** Verifier van de takkop vóór de regel:
 md5 `924f0e3cfb69e9e8d9be7aa916a9bfe7`. Verifier mét WF-093:
-md5 `945642482a4183057a3c5194a11749ce`.
+md5 `957d3eeb5667188e33d5468b80f21b71` (fixronde 2026-09-06; vóór de
+meldingstring-correctie was dat `945642482a4183057a3c5194a11749ce` — de
+PASS-vóór stond en staat tegen de pre-regel-binary, die niet veranderde).
 
 | negatief | vorm | vóór | ná |
 |---|---|---|---|
@@ -198,13 +209,21 @@ MELDING. Bewezen per weggenomen deelconditie, elke mutant via
 `git archive HEAD | tar -x` naar /tmp, build+meting in één `&&`-keten, volle
 vier-zone-sweep (527 documenten):
 
-| mutant | weggenomen | binary-md5 | uitslag |
-|---|---|---|---|
-| m1 | de hele arm | `7ada9d5bea9a503f31aeba727cc24512` | precies de 4 getuigen worden schoon; nul andere verdicten, nul rapportzinnen |
-| m2 | de enkelvoudig-scope | `25b203a8d036e57c3a74d85b1069efbd` | 1 document extra geweigerd: de geleste EERSTE in de pariteitszone, waar de melding ("het noemt een rol") onwaar zou zijn |
-| m3 | de soortbeperking (AANTAL mee) | `2b106dabc8f1e69d41c361d7970cad07` | 35 documenten extra geweigerd, waaronder 10 goldens — de hele gedragen telpopulatie |
-| m4 | het sentinel-onderscheid | `a84536b4abfa5381de15cc981eda27ab` | 55 documenten extra geweigerd — elke gedragen set-bron-waardevouw |
-| m5 | de `set`-helft van de MELDING | `cec85ff3a1a9aa94e88aba5c25319427` | 2 rapportteksten wijzigen, **nul** verdicten: `set` is presentatie, geen tweede arm |
+*(md5's en getallen herdraaid in de fixronde van 2026-09-06 op de gefixte
+takkop; de meldingstring veranderde de binary, dus alle zes md5's
+verschoven. De uitslagen zelf zijn identiek gereproduceerd. Twee kolommen
+in plaats van één: de oorspronkelijke tabel telde "documenten extra
+geweigerd" waar het getal in werkelijkheid documenten met een gewijzigd
+RAPPORT telde — een negatief dat al viel en er een WF-093-regel bij krijgt
+verandert geen verdict.)*
+
+| mutant | weggenomen | binary-md5 | nieuwe verdicts | docs met gewijzigd rapport | uitslag |
+|---|---|---|---|---|---|
+| m1 | de hele arm | `d71c075329201211a3cc4e088267ca0b` | **4** (negatief 4, alle vier SCHOON) | 4 (negatief 4) | precies de 4 getuigen worden schoon; nul andere verdicten, nul andere rapporten |
+| m2 | de enkelvoudig-scope | `65e34530bf1d44fea6b4f1f06a1a7f8d` | **0** | 1 (pariteit 1) | de geleste EERSTE in de pariteitszone krijgt er een WF-093-regel bij op een document dat al viel; de melding zou daar onwaar zijn — het scope-argument blijft staan |
+| m3 | de soortbeperking (AANTAL mee) | `4d272d89a1be02d485dbe6bee91f3794` | **12** (golden 10 + rood 2) | 35 (golden 10 + negatief 20 + rood 2 + pariteit 3) | de hele gedragen telpopulatie valt om |
+| m4 | het sentinel-onderscheid | `0b33907fb163664bde5ddbb329a24bed` | **20** (golden 19 + rood 1) | 55 (golden 19 + negatief 32 + rood 1 + pariteit 3) | elke gedragen set-bron-waardevouw valt om |
+| m5 | de `set`-helft van de MELDING | `851f9149c9055de4ab5c0681a8b232a2` | **0** | 2 (negatief 2) | 2 rapportteksten wijzigen, **nul** verdicten: `set` is presentatie, geen tweede arm |
 
 Nul over-afwijzing elders: de sweep vóór/ná de regel over alle 527
 documenten verschilt in exact 4 regels.
@@ -252,7 +271,8 @@ Drools-backend antwoordde (19/12/7); grens gemeten op 2026-09-06: van 58
 wrat-vouwbronnen over de vier zones zijn de 54 die de regel voorgingen alle
 `AANTAL` en beweegt er geen. Het setbron-antwoord is expliciet verworpen —
 het had `ref`s vouwarm, clingo's vertaling en een handberekende golden
-gekost voor een vorm die geen frontend produceert."
+gekost voor een vorm die de frontend alleen produceert met co-vurende
+WF-034/WF-080, nooit als een documents enige defect."
 
 **Alle dertien gates groen** op de eindstand, vanuit de worktree: 1 PASS;
 2 PASS (177 bestanden); 3 PASS (177 golden schoon, **320** negatief
