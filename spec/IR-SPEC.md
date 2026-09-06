@@ -2952,7 +2952,8 @@ fold.
   listed operands the fold branch used to skip.
 
   *Still open at this branch, measured and named — two flanks, neither
-  claimed shut; the third is closed below, and a fourth is named.* (1) A
+  claimed shut; the third and the fourth are closed below, and a fifth is
+  named.* (1) A
   single-argument, non-set, non-wart fold source over
   a NON-temporal attribute of the subject satisfies (a)–(c) and stays
   verifier-clean while neither OCaml executor carries it (`ref`:
@@ -3207,6 +3208,32 @@ fold.
   unchanged at 34. No golden, no red case, no other negatief moves a
   sentence; gate 11 is untouched for the same reason it was untouched by the
   wave.
+
+  *(5) — `set: true` at an ordinary read OUTSIDE a fold, OPEN and named
+  (2026-09-06).* Flank (4) settled the unknown TYPE at a read position, in
+  both spellings; it did not settle the other field of the same node. An
+  `AttributeReference` with `set: true`, a REAL datatype and no enclosing
+  fold is verifier-CLEAN today — WF-093 does not reach it (it keys on the
+  sentinel, and this one carries a genuine type) and the seventh wave does
+  not either (that is about the type, not about `set`) — while **no executor
+  carries it**: `ref` faults `unsupported AttribuutRef shape (set/sentinel
+  outside a fold)`, the ASP backend refuses the expression kind, and the
+  Drools backend drops the rule as a transpiler skip (`waarde buiten scope`).
+  Three refusals, three kinds, one clean document — the PLAN §6 class in its
+  other guise: not a divergence about the ANSWER but a well-formed document
+  nothing can execute, which no differential gate can catch because there is
+  no answer to differ about. Measured at both positions and identically: as
+  the whole rule value and as a composite's operand. And it is a LIVE
+  producer route, not a hand form — from "… als het gewicht van **alle**
+  vondsten van de Jutter" the RegelSpraak frontend emits exactly that node,
+  with a real `Numeriek` type, a `navigatieBindingen` role binding and
+  `diagnostics: []`. The regression boundary is nil in the other direction
+  too: of the 540 documents in the four zones, **zero** carry an
+  `AttributeReference` with `set: true` outside a fold argument. Recorded
+  here as an open flank and cut as its own card (`backlog/new/`
+  `20260906-set-buiten-vouw.md`), one decision for both positions, because
+  the two questions are measured ORTHOGONAL: this shape's type is real, so
+  the unknown-type fence never had jurisdiction over it.
 
 **The wart is a COUNT source (WF-093).** The row-1 wart — the source of a
 **single-argument** instance fold, spelled with the unknown sentinel on the
