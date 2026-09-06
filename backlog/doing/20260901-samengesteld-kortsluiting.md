@@ -131,9 +131,16 @@ vorm om statisch af te keuren. WF-096 blijft dus vrij.
    staat nu reden-dragend en falend-wanneer-stale geregistreerd in
    `scripts/check-reftype-derivation.sh`, en de getrouwe vorm is
    `backlog/new/20260907-drl-tekst-kortsluiting.md`.
-2. **`at-most`'s waar-richting** (*h* + *r* ≤ *d*) is géén stoptrigger —
-   het besluit noemt hem niet, en met *d* ≥ *n* zou hij vóór het eerste
-   lid stoppen. Vastgelegd in ch. 5.10 als grens, niet stilzwijgend.
+2. **`at-most`'s waar-richting** (*h* + *r* ≤ *d*) is géén stoptrigger.
+   **Motivering herschreven in de fixronde (2026-09-07):** de bouwronde
+   gaf als reden "vuurt op bewijs dat niet gelezen is" en "zou vóór lid 1
+   stoppen" — allebei onjuist als onderscheid, want ze gelden óók voor de
+   WEL opgenomen onhaalbaarheidstriggers van at-least/exactly, die
+   inderdaad vóór lid 1 stoppen (zie blokkerend 1). Het echte onderscheid
+   is **levendheid**: een at-least-/exactly-drempel boven het ledental is
+   een dode voorwaarde, een at-most-drempel die alle leden dekt is gewone
+   praktijk. Nu ook gepind in plaats van alleen beweerd:
+   `corpus/rood/atmost-no-vacuous-true`.
 3. **De ch. 3.6 gedurende-clip** (`eval.ml` ~1029, `translate.ml` ~1967)
    blijft álle leden lezen: hij vouwt periodeverzamelingen, geen
    waarheidswaarde, dus er is geen moment waarop "de uitkomst vaststaat".
