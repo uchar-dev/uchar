@@ -45,6 +45,24 @@ non-date operand beside a date one, and refuses to translate. The verdicts
 disagree because the wire form is underspecified, which is precisely what
 well-formedness is for.
 
+**A second spelling of this same arm, measured but not given its own
+document.** Nulling the type of a listed operand that is UNIT-BEARING —
+`wf034-sentinel-gelest-vouwoperand`'s numeric `MAXIMUM`, with `"type": null`
+in place of the sentinel — is refused by this same clause with this same
+message, and the executors then read:
+
+    ref         : PASS (1 expectation) — it plays, answering 12.00
+    ASP backend : TRANSLATION FAULT: expression kind not translated
+    Drools      : ERROR ConsequenceException … java.lang.NullPointerException:
+                  Cannot invoke "…Datatype.eenheidOf()" because "van" is null
+
+The same twin, one operand family over, stops being an answer and becomes a
+CRASH: the bean-model executor reaches for the unit of a datatype that is not
+there. A verifier-clean document taking an engine down is the sharpest form
+of the class, and it is why this arm is not bookkeeping. The shape shares this
+witness's clause, pointer and message exactly, so it is recorded here rather
+than duplicated as an eighth negatief.
+
 **Where the twin comes from, measured.** Not from a producer in this repo:
 `IrEmitter.datatype` writes JSON `null` only when the model hands it a null
 datatype, and the reference builder substitutes the sentinel first

@@ -25,11 +25,20 @@ sentinel and lives in this very branch, so the name resolution half ADMITS
 clean outright.
 
 This is not a hand form. Measured 2026-09-06: the RegelSpraak frontend emits
-exactly this document, with **no diagnostic at all**, from
+this document, with **no diagnostic at all**, from
 "… als de maximale waarde van het drempelgewicht van de Jutter en de
 vondsten van de Jutter" — the reference builder finds no attribute datatype
 and falls back to the sentinel, and the fold branch's role exception then
-admits the name. The sibling spelling, where the unresolved name matches no
+admits the name. Re-measured leaf by leaf in the fix round, the emitted
+document and this one differ in **exactly three leaves**, none of them the
+defect: the two `bron` provenance strings (the frontend writes the article,
+`de vondsten van de Jutter`, and phrases the fold as `de maximale waarde
+van …`) and the fold node's OWN `decimalen`, which the frontend derives as 0
+where this document carries 2. The wart operand — `attribuut`, `objecttype`,
+`set`, `navigatieRol`, `navigatiePad` and the sentinel `type` — is
+byte-identical, which is the claim that matters, and the frontend's own
+emission is refused by the same clause at the same pointer with the same
+message. The sibling spelling, where the unresolved name matches no
 declared role, always co-fires WF-034's resolution arm and was never clean;
 this one, where the name happens to coincide with a declared role name or
 plural, is the whole open flank.
