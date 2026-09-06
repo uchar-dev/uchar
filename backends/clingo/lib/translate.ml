@@ -3474,36 +3474,102 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
         let n = fresh ctx "N" in
         [ Printf.sprintf "rol(%s,%s,%s)" subject (str canonical) n ]
   | Samengesteld { kwantor = Alle | De; onderdelen; _ } ->
-      List.concat_map (cond_atoms ctx ~subject ~subject_ot) onderdelen
+      (* the conjunctive short circuit (RUNTIME-SEMANTICS ch. 5.10): member i is
+         read only where members 1..i-1 all held, so the accumulated PREFIX
+         atoms are exactly the "outcome does not stand yet" guard. Threading
+         them through [rule_guard] makes every fence, viol and §9.5 deposit the
+         member emits prefix-aware — a divisor test in member 1 now gates the
+         division in member 2, ref's ch. 5.10 laziness on the wire. The
+         returned conjunction is the same list as before, so the composite's
+         TRUTH VALUE is untouched; only what the unread members deposit is. *)
+      let saved = ctx.rule_guard in
+      let atoms =
+        List.fold_left
+          (fun prefix c ->
+            ctx.rule_guard <- saved @ prefix;
+            let a = cond_atoms ctx ~subject ~subject_ot c in
+            prefix @ a)
+          [] onderdelen
+      in
+      ctx.rule_guard <- saved;
+      atoms
   | Samengesteld
       { kwantor = (Geen | Ten_minste | Ten_hoogste | Precies) as kwantor; drempel; onderdelen; _ }
     ->
       (* the counting quantifiers (ref eval_cond: hits over the member list —
          GEEN hits = 0, TEN MINSTE hits >= d, TEN HOOGSTE hits <= d, PRECIES
          hits = d; the decision-table desugar's disjunctive row is TEN_MINSTE
-         1). Each member becomes its own indexed helper rule — cqN(S,i) :-
+         1). Each member becomes its own helper rule — cqK_m<i>(S) :-
          is_a(S,ot), ⟨member atoms⟩, derivable exactly where ref counts the
          member as a hit (an unbound operand fails the positive join: a leeg
-         member counts false, Tabel 38 for free) — and one aggregate rule
-         binds the hit count per subject. The composite itself contributes
-         only plain atoms (the count read plus its comparison), so it serves
-         every position cond_atoms serves, aggregate elements included, where
-         a body aggregate could not. Soundness of the non-monotone
-         quantifiers rides the verifier's conservative dependency edges
-         (GEEN/TEN_HOOGSTE/PRECIES members are negative in the WF-045/046
-         stratification walk), which keep the ground program stratified. *)
+         member counts false, Tabel 38 for free) — and a PREFIX CHAIN
+         cqK_h<i>(S,H) carries the hits among the first i members, link by
+         link, so the composite itself contributes only plain atoms (the count
+         read plus its comparison): it serves every position cond_atoms serves,
+         aggregate elements included, where a body aggregate could not.
+
+         The chain replaces the earlier single #count aggregate because the
+         ch. 5.10 SHORT CIRCUIT needs the prefix count as a GUARD on member i's
+         own emissions ("the outcome does not stand yet after the first i-1
+         members" — the stop triggers, negated), and a guard reading a count
+         over one shared cq(S,I) predicate would close a predicate-level loop
+         through the chain's negative link. Naming every link and every member
+         after its index keeps each guard edge pointing at a strictly smaller
+         index, so the dependency graph is acyclic by construction and the
+         ground program stays stratified — as does the counted value: the chain
+         over cqK_m<i> counts exactly what #count over cq(S,I) counted.
+
+         Suppressing a settled member's emissions cannot move the verdict.
+         Writing h_k for the hits after k members and r = n - k for the unread
+         rest, every trigger below is stable under later members: h only grows
+         and h + r only shrinks, so h_k ≥ d, h_k > d, h_k > 0 and h_k + r < d
+         each already decide the final comparison. A member the guard silences
+         therefore only ever loses a hit the verdict no longer reads.
+         Soundness of the non-monotone quantifiers rides the verifier's
+         conservative dependency edges (GEEN/TEN_HOOGSTE/PRECIES members are
+         negative in the WF-045/046 stratification walk). *)
       if onderdelen = [] then
         fault "a counting composite without members is not translated (no corpus case)";
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "cq%d" ctx.fresh in
       let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      let n = List.length onderdelen in
+      let saved = ctx.rule_guard in
+      emit ctx "%s_h0(%s,0) :- %s." p subject base;
       List.iteri
         (fun i c ->
+          (* [i] members already read, [n - i] still unread; member 1 is always
+             read, so it carries no prefix guard at all *)
+          let unsettled =
+            if i = 0 then []
+            else
+              let h = fresh ctx "H" in
+              let left = n - i in
+              let cmp =
+                match kwantor with
+                | Geen -> [ Printf.sprintf "%s == 0" h ]
+                | Ten_minste ->
+                    [ Printf.sprintf "%s < %d" h drempel;
+                      Printf.sprintf "%s >= %d" h (drempel - left) ]
+                | Ten_hoogste -> [ Printf.sprintf "%s <= %d" h drempel ]
+                | Precies ->
+                    [ Printf.sprintf "%s <= %d" h drempel;
+                      Printf.sprintf "%s >= %d" h (drempel - left) ]
+                | Alle | De ->
+                    fault "unreachable: a conjunctive quantifier in the counting branch"
+              in
+              Printf.sprintf "%s_h%d(%s,%s)" p i subject h :: cmp
+          in
+          ctx.rule_guard <- saved @ unsettled;
           let atoms = cond_atoms ctx ~subject ~subject_ot c in
-          emit ctx "%s(%s,%d) :- %s." p subject (i + 1) (String.concat ", " (base :: atoms)))
+          emit ctx "%s_m%d(%s) :- %s." p (i + 1) subject (String.concat ", " (base :: atoms));
+          emit ctx "%s_h%d(%s,H1) :- %s_h%d(%s,H0), %s_m%d(%s), H1 = H0+1." p (i + 1) subject p i
+            subject p (i + 1) subject;
+          emit ctx "%s_h%d(%s,H0) :- %s_h%d(%s,H0), not %s_m%d(%s)." p (i + 1) subject p i subject
+            p (i + 1) subject)
         onderdelen;
+      ctx.rule_guard <- saved;
       let h = fresh ctx "H" in
-      emit ctx "%s_n(%s,%s) :- %s, %s = #count { I : %s(%s,I) }." p subject h base h p subject;
       let compare =
         match kwantor with
         | Geen -> Printf.sprintf "%s == 0" h
@@ -3512,7 +3578,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
         | Precies -> Printf.sprintf "%s == %d" h drempel
         | Alle | De -> fault "unreachable: a conjunctive quantifier in the counting branch"
       in
-      [ Printf.sprintf "%s_n(%s,%s)" p subject h; compare ]
+      [ Printf.sprintf "%s_h%d(%s,%s)" p n subject h; compare ]
   | Predicaat { soort = Gevuld; operand; negatie = false; dagsoort = None; periode = None; _ } ->
       (* the gevuld gate (ref eval: value <> leeg): the operand's binding atoms
          as a positive join. A struct operand rides struct_term (its val atom),

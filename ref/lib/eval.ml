@@ -1324,15 +1324,46 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
           Value.fault "to-one role %S links more than one instance on %S (ch. 5.5)"
             (Option.value role.rol_naam ~default:"?")
             self.label)
-  | Samengesteld { kwantor; drempel; onderdelen; _ } -> (
-      let hits = List.length (List.filter (eval_cond env world self ~err) onderdelen) in
+  | Samengesteld { kwantor; drempel; onderdelen; _ } ->
+      (* ch. 5.10, the composite's SHORT CIRCUIT: the members are evaluated
+         left to right in WIRE order and evaluation stops at the first member
+         after which the outcome stands. A member never reached produces no
+         fault and no §9.5 channel fact — which is the whole point: an earlier
+         member gates a later one that would otherwise fault. The truth value
+         is never affected; [settled] only reports an outcome the members still
+         unread can no longer change. *)
       let n = List.length onderdelen in
-      match kwantor with
-      | De | Alle -> hits = n
-      | Geen -> hits = 0
-      | Ten_minste -> hits >= drempel
-      | Ten_hoogste -> hits <= drempel
-      | Precies -> hits = drempel)
+      let verdict hits =
+        match kwantor with
+        | De | Alle -> hits = n
+        | Geen -> hits = 0
+        | Ten_minste -> hits >= drempel
+        | Ten_hoogste -> hits <= drempel
+        | Precies -> hits = drempel
+      in
+      (* [hits] over the [n - left] members already read, [left] still unread *)
+      let settled ~hits ~left =
+        match kwantor with
+        | De | Alle -> if hits < n - left then Some false else None
+        | Geen -> if hits > 0 then Some false else None
+        | Ten_minste ->
+            if hits >= drempel then Some true
+            else if hits + left < drempel then Some false
+            else None
+        | Ten_hoogste -> if hits > drempel then Some false else None
+        | Precies -> if hits > drempel || hits + left < drempel then Some false else None
+      in
+      let rec read hits left parts =
+        match settled ~hits ~left with
+        | Some v -> v
+        | None -> (
+            match parts with
+            | [] -> verdict hits
+            | c :: rest ->
+                let hit = eval_cond env world self ~err c in
+                read (if hit then hits + 1 else hits) (left - 1) rest)
+      in
+      read 0 n onderdelen
   | Regelversie { regel; inconsistent = true; _ } ->
       World.channel_has world ~rule:(req "Regelversie.regel" regel)
   | Regelversie { inconsistent = false; _ } ->
