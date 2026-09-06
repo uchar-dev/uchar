@@ -101,8 +101,17 @@ May touch: `backends/clingo/**`, `backlog/`, en bij een corpusgetuige
 ## Result (2026-09-06)
 
 **Geland.** De poort staat, de getuige staat, de reproductie geeft
-`ref ≡ clingo`, nul over-afwijzing, dertien gates groen. Twee bestanden
-geraakt, allebei binnen `backends/clingo/**`.
+`ref ≡ clingo` op de positieve arm, nul over-afwijzing over het corpus,
+dertien gates groen. Twee bestanden geraakt, allebei binnen
+`backends/clingo/**`.
+
+*Fixronde 2026-09-06.* Twee lezersrondes bevestigden de poort tweemaal
+(mutant, reproductie, 407-identiteit) en leverden een gelokaliseerde
+correctielijst op dit Result op; de correcties staan hieronder in de secties
+waar ze thuishoren, elk met een eigen meting. De ronde raakte de poort niet
+inhoudelijk aan — alleen het commentaar erboven (dat meer claimde dan het
+predicaat toetst) en de getuige (die "het vertaalt" pinde in plaats van de
+waarde). Er kwamen twee kaartvoorstellen bij in `backlog/new/`.
 
 ### De poort
 
@@ -341,7 +350,7 @@ strengheid geen prijs heeft.
     3  check-verifier            PASS (177 golden clean; 320 negatief rejected)
     4  check-case-schema         PASS (schema valid; 429 case files validate)
     5  check-oracle              PASS (407 cases replayed exactly; 2 goldens without case file)
-    6  check-clingo              PASS (407 cases replay — ref = clingo)   [suite: 50 checks]
+    6  check-clingo              PASS (407 cases replay — ref = clingo)   [suite: 53 checks]
     7  check-noop                PASS (371 refute a do-nothing executor; 36 pinned survivors)
     8  check-rood                PASS (22 red cases; Drools leg 5 fault-pinned / 17 not-carried)
     9  check-catala              PASS (frontend suite 201 checks; 12 catala goldens byte-identical)
@@ -351,7 +360,10 @@ strengheid geen prijs heeft.
     13 check-reftype-derivation  PASS (68 twists over 14 goldens; 0 pinned survivors)
 
 Alle omgevingsverwachtingen uit de opdracht kloppen; de enige beweging is de
-eigen clingo-suite, 47 → 50.
+eigen clingo-suite, 47 → 50 → **53** (de fixronde van 2026-09-06 verzwaarde de
+over-afwijzingscontrole tot een waardepin en gaf het samenstel een eigen
+positieve controle). Alle dertien opnieuw gedraaid ná de fixronde, met
+identieke tellingen op elke andere gate.
 
 ### Wat bewust bleef liggen
 
