@@ -161,16 +161,20 @@ known_reason() { local n="$1"; for e in "${EXCLUDE_KNOWN[@]}"; do [ "${e%%|*}" =
 # and may be reworded without tripping the gate.
 #
 # SILENCE IS EXCLUDED IN EVERY DIRECTION:
-#   - a golden that LEAVES the played channel is unlisted, measures non-PLAYED, and fails BY NAME
-#     (the card's finding: this was the silent one);
+#   - a golden that leaves the played channel BUT STAYS IN THE CORPUS is unlisted, measures
+#     non-PLAYED, and fails BY NAME (the card's finding: this was the silent one);
 #   - a listed golden that starts playing, or changes channel, fails BY NAME — the list is stale;
 #   - a listed golden that is GONE (deleted, renamed) fails BY NAME — likewise stale;
 #   - a NEW golden arriving in the played channel is invisible to a played-by-default list, so
 #     EXPECTED_PLAYED below pins the count and fails on it. That one failure names no golden, and
 #     that is the accepted asymmetry: the session that ADDS a golden knows which one it just added,
 #     whereas the decay this floor exists for — a player quietly dropping out — is exactly the case
-#     where nobody knows the name, and there the list names it. An arrival and a departure in one
-#     session do not cancel out either: the count stays put, but the departure still trips the list.
+#     where nobody knows the name, and there the list names it. Be precise about the reach: the
+#     played SET is pinned by CARDINALITY, never per name. The list therefore names only departures
+#     that STAY IN THE CORPUS; a player that is DELETED or RENAMED leaves no measured golden to
+#     compare against its (absent) pin, so an arrival in the same session masks it and the count
+#     never moves (measured 2026-09-06: a renamed player PASSES). That trade is deliberate —
+#     pinning all 109 players by name was weighed and rejected right above.
 EXPECTED_CHANNEL=(
   "anchor/jutterswet-aanmeldquotum|EXCLUDE|loader Refusal: Expr:TemporalRead — the v0 backend has no temporal-read lowering"
   "anchor/jutterswet-aanspraaktelling|EXCLUDE|loader Refusal: functionDefs — no function section in the v0 backend"
@@ -224,6 +228,33 @@ EXPECTED_CHANNEL=(
 # AND raises this number by one.
 EXPECTED_PLAYED=109
 
+# --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
+# The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
+# floor without any golden noticing. Both holes were measured GREEN before these guards existed:
+#   (a) DUPLICATES — expected_channel() returns the FIRST match, so a second entry is dead text. An
+#       exact duplicate and a CONTRADICTORY one (the same golden pinned EXCLUDE *and* NOCASE) both
+#       passed, while the report line counted one pin more than the list actually holds.
+#   (b) A PLAYED ENTRY — the list holds only NON-players (PLAYED is the default), so pinning a
+#       player is not a pin at all: it agrees with whatever that golden measures.
+declare -a _seen_pin=()
+for _e in "${EXPECTED_CHANNEL[@]}"; do
+  _n="${_e%%|*}"; _rest="${_e#*|}"; _ch="${_rest%%|*}"; _why="${_rest#*|}"
+  for _p in "${_seen_pin[@]:-}"; do
+    if [ "$_p" = "$_n" ]; then
+      fail "duplicate channel pin: '$_n' appears more than once in EXPECTED_CHANNEL — the first entry silently wins and the rest is dead text (a contradictory second pin would never be read)"
+    fi
+  done
+  _seen_pin+=("$_n")
+  case "$_ch" in
+    EXCLUDE|DIVERGE|NOCASE) ;;
+    *) fail "malformed channel pin: '$_n' is pinned '$_ch' — the list holds only NON-players (EXCLUDE / DIVERGE / NOCASE); PLAYED is the default, so pinning it exempts the golden from the floor instead of fixing it" ;;
+  esac
+  if [ -z "$_why" ] || [ "$_why" = "$_rest" ]; then
+    fail "channel pin without a reason: '$_n' — every entry is '<golden>|<channel>|<why it is not PLAYED>'"
+  fi
+done
+unset _e _n _rest _ch _why _p _seen_pin
+
 expected_channel() {
   local n="$1" rest
   for e in "${EXPECTED_CHANNEL[@]}"; do
@@ -252,6 +283,13 @@ while IFS= read -r ir; do
       if reason=$(known_reason "$name"); then
         fail "stale exclusion: '$name' is in EXCLUDE_KNOWN ($reason) but now PLAYS+PASSES — remove it"
       fi
+      # PLAYED is a token, not a witness. A golden whose every case carries expectedFault replays
+      # NOTHING and still prints PLAYED (the runner skips red-path cases in a green zone), so it
+      # would be counted a full member of the differential square on zero replays. Gate 4's zone
+      # discipline keeps that shape out of corpus/golden, so the route is closed crosswise — but the
+      # token itself was hollow-able, and this floor is about what THIS gate can still be told.
+      n_played=${out#PLAYED }
+      [ "${n_played:-0}" -gt 0 ] || fail "'$name' reports PLAYED 0 — counted as a player but replayed no case at all"
       played=$((played + 1)); SEEN+=("$name|PLAYED") ;;
     EXCLUDE)
       if known_reason "$name" >/dev/null; then
@@ -302,6 +340,7 @@ if [ ${#DRIFT[@]} -gt 0 ]; then
   for d in "${DRIFT[@]}"; do echo "    $d" >&2; done
   echo "  A golden that LOST its PLAYED status is out of the differential square — fix the cause, or," >&2
   echo "  if the loss is intended, pin it in EXPECTED_CHANNEL with the reason and drop EXPECTED_PLAYED by one." >&2
+  echo "  (A NEWLY ADDED golden that does not play was never counted: pin it and leave EXPECTED_PLAYED alone.)" >&2
   echo "  A golden that GAINED it must leave EXPECTED_CHANNEL and raise EXPECTED_PLAYED by one." >&2
   exit 1
 fi
