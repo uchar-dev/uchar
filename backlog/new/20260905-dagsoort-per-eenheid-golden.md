@@ -9,8 +9,10 @@ zodat de zesde WF-034-golf haar kruisingsarm alsnog kan krijgen.
 
 De zesde golf (`backlog/done/20260905-wf034-zesde-golf-restvelden.md`) heeft
 `dagsoortPerEenheid` **gemeten en bewust open gelaten**, en dat is genoteerd in
-de open-lijst van `spec/IR-SPEC.md` ch. 4.6. De meting, 2026-09-05 over de vier
-zones (155 golden + 22 rood + 303 negatief + 30 pariteit):
+de open-lijst van `spec/IR-SPEC.md` ch. 4.6. De meting, hermeten 2026-09-06 over de vier
+zones in hun huidige stand (155 golden + 22 rood + 316 negatief + 30 pariteit =
+523 documenten; de oorspronkelijke telling van 2026-09-05 stond op 303 negatief
+/ 510 documenten en gaf hetzelfde getal):
 
     dagsoortPerEenheid   60 ingangen — ALLE 60 in de pariteitszone,
                           0 in golden, 0 in rood, 0 in negatief

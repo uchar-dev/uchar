@@ -929,25 +929,37 @@ let wf026 ctx =
    members in two places — `attributen` (name -> datatype) and `kenmerken` (a
    name list) — and then hangs eight per-member FACET maps beside them, each
    keyed by a member name. Nothing required those keys to name a declared
-   member. They are references: every one of them is looked up by member name
-   and by nothing else, so a key that names no member is a reference resolving
-   against no declaration.
+   member. They are references, and they are more than that: a side-table key
+   is the v0 DENORMALISATION of a facet v1 carries on the member node itself
+   (IR-SPEC ch. 2.2 / `CONSTRUCTS.md` row 11 — "each v0 map entry folds into
+   the corresponding member node"), so the key IS that member's identity,
+   written out beside the declaration instead of on it. A key that names no
+   member resolves against no declaration; a key that MISSPELLS one carries an
+   identity nobody declared.
 
    The harm is a SILENT SEMANTIC CHANGE, not a missing value, and that is what
    separates this arm from the empty-field class of the earlier waves. A key in
    `kenmerkGranulariteit` spelled `verjaart` where the declared characteristic
    is `verjaard` says "this characteristic is time-dependent" about a
    characteristic that does not exist — and leaves the declared one
-   NON-temporal, silently. No consumer complains: every reader looks the facet
-   up BY the declared member's name, finds nothing, and takes the default. That
-   is a different program, not a fault.
+   NON-temporal, silently. No consumer complains: a case-insensitive reader
+   looks the facet up by the declared member's name, finds nothing, and takes
+   the default. The CASE-SENSITIVE half of the readership (below) reaches the
+   same silence by the other road — it does not find the key at all. That is a
+   different program, not a fault.
 
    EIGHT arms, not one, because the eight tables are eight independent readers
    and a mutant that removes one must free exactly one document. Measured over
    the four zones (2026-09-05): the readers per table are
 
-     attribuutMeervoud       WF-057 (target-text-safety of the plural); the
-                             Drools loader reads it and no consumer consults it
+     attribuutMeervoud       NO wire consumer of the KEY. WF-057 walks this
+                             table but reads the VALUE — the plural's
+                             target-text-safety — and discards the key; the
+                             Drools loader stores the map and nothing reads it
+                             back. The key's only reader is the EMITTER side
+                             (the frontend's `MeervoudMatcher`, off its own
+                             in-memory model), which is not a consumer of the
+                             wire
      attribuutDimensies      WF-004 (the dimension list) and WF-040's
                              label/dimension cross inside [walk_expr]
      attribuutGranulariteit  [attr_temporal], WF-005's named-timeline
@@ -957,8 +969,15 @@ let wf026 ctx =
                              translator, the Drools transpiler + contract
                              validator + fact-model generator)
      attribuutTijdlijnAantal WF-005; the two Drools transpiler branches
-     attribuutTijdlijnNaam   WF-003 (the timeline reference) and WF-005; the
-                             Drools loader reads it and no consumer consults it
+     attribuutTijdlijnNaam   the KEY is a CROSS-TABLE JOIN key in WF-005, which
+                             carries it into [attribuut_granulariteit] and
+                             [attribuut_tijdlijn_aantal] to compare the adopted
+                             facets against the declaration ([find_ci], so ci
+                             on this side); WF-003 reads the VALUE only. The
+                             Drools loader stores the map and nothing reads it
+                             back; the RegelSpraak frontend reads it
+                             case-sensitively at two sites off its own model —
+                             the emitter again, not the wire
      kenmerkSoorten          NO reader in any of the four consumers — the
                              Drools loader parses it and stops there
      kenmerkGranulariteit    WF-043 in [walk_expr] and [walk_cond],
@@ -967,17 +986,57 @@ let wf026 ctx =
      kenmerkTijdlijnAantal   WF-005; the two Drools transpiler branches
 
    so the arms differ in how much they switch off, from "everything a temporal
-   member has" down to `kenmerkSoorten`, which today no consumer reads at all
-   and which is here for the wire: the table is keyed by member name in the
-   serialization contract, and a conforming consumer may read it tomorrow.
-   Cost: none. All 924 keys the four zones hold (24 + 9 + 74 + 2 + 2 + 788 + 24
-   + 1) resolve against a declared member today; the only orphans anywhere are
-   this wave's own eight witnesses.
+   member has" down to `kenmerkSoorten` and `attribuutMeervoud`, whose KEYS no
+   wire consumer reads at all and which are here for the wire: the tables are
+   keyed by member name in the serialization contract, and a conforming
+   consumer may read them tomorrow.
+   Cost: none. All 924 keys the four zones held before this wave (24 + 9 + 74 +
+   2 + 2 + 788 + 24 + 1) resolve against a declared member; the only orphans
+   anywhere are this wave's own eight witnesses.
 
-   Identity is the ch. 2.4 name identity — whitespace-collapsed,
-   case-insensitive — because that is how every reader looks the facet up
-   ([find_ci] / [norm]); a key that differs from the declared member only in
-   case is the same key to all of them and is not an orphan. *)
+   Identity is BYTE-EXACT: the key MUST be the member's declared spelling,
+   whitespace and case included (fix round 2026-09-06). That is ch. 2.1's
+   CARRIAGE rule, not its matching rule — "Declared names are carried verbatim
+   (whitespace-collapsed, case preserved). Name matching is case-insensitive."
+   A side-table key is not a matching site: it is the member's denormalised
+   identity (the paragraph above), and an identity is carried verbatim, so this
+   arm asks the same question of the key that the v1 member node would answer
+   by construction.
+
+   The ground is MEASURED, not stylistic. The consumers do not agree on how
+   they look these facets up. The verifier ([find_ci] / [norm]), `ref` and the
+   ASP translator are case-insensitive; the bean-model executor is NOT. The
+   Drools backend reaches these maps through raw [Map.get] / [Map.containsKey]
+   at 108 sites across four of the eight tables (attribuutGranulariteit 64,
+   kenmerkGranulariteit 20, attribuutTijdlijnAantal 17, kenmerkTijdlijnAantal
+   7), against five case-insensitive lookups through its own [Namen.bevatNaam]
+   helper. Under a case-INsensitive arm, therefore, a key differing from its
+   declaration in capitalisation alone is no orphan and the document stays
+   verifier-clean, ref-clean and clingo-clean while the third executor drops
+   the golden out of the differential in silence. Measured 2026-09-06 on
+   `corpus/golden/synth2-clip-over-prorata`, `kenmerkGranulariteit` key
+   `borgplichtig` capitalised (a one-character diff): verifier PASS, `ref` PASS
+   (3 expectations), clingo PASS (3 expectations), and Drools PLAYED -> EXCLUDE
+   (a transpiler SKIP: the assignment is no longer temporal), which takes gate
+   12 from played 109 to played 108 and leaves it GREEN — its only floor is
+   played > 0. The wire has to catch what no gate catches; the witness is
+   `corpus/negatief/wf034-zijtabel-kapitalisatiewees`.
+
+   Cost of the byte rule: none. Of the 943 keys the four zones held after the
+   sixth wave and before this round, ZERO differ from the declared member in
+   byte while resolving case-insensitively; before the wave, likewise zero of
+   924.
+
+   SCOPE is exactly these eight keys. The neighbouring arms stay
+   case-insensitive on purpose: a characteristic check's `eigenaar` and a
+   unit's `stelsel` are ordinary NAME RESOLUTION — a name pointing AT a
+   declaration, not a declaration's identity written out — and every reader of
+   those resolves case-insensitively ([find_ci] here, the ASP translator, and
+   the Drools loader's exact-then-`equalsIgnoreCase` object-type lookup).
+   `corpus/negatief/wf091-attribuutref-eenheid-kast` pins that boundary
+   deliberately, carrying `stelsel: "GEWICHT"` against a declared `Gewicht`:
+   name RESOLUTION is case-insensitive, copy FIDELITY is a different question,
+   and a byte rule on `stelsel` would make that witness say something else. *)
 let wf034_zijtabelsleutels ctx =
   let orphan otn tab kind present table =
     List.filter_map
@@ -995,7 +1054,11 @@ let wf034_zijtabelsleutels ctx =
   in
   List.concat_map
     (fun (otn, ot) ->
-      let a = has_attr ot and k = has_kenmerk ot in
+      (* BYTE-EXACT, and passed per table so a ci-relapse on ONE table is an
+         arm-exact mutant: the key IS the member's identity, and an identity is
+         carried verbatim (ch. 2.1's carriage rule — see the block above). *)
+      let a n = List.exists (fun (dk, _) -> dk = n) ot.attributen
+      and k n = List.exists (fun x -> x = Some n) ot.kenmerken in
       orphan otn "attribuutMeervoud" "attribute" a ot.attribuut_meervoud
       @ orphan otn "attribuutDimensies" "attribute" a ot.attribuut_dimensies
       @ orphan otn "attribuutGranulariteit" "attribute" a ot.attribuut_granulariteit

@@ -5,14 +5,14 @@ zijn mapsleutel moet overeenkomen, en dat als één regel over de hele klasse
 sluiten of met een gemeten argument open verklaren. Vandaag kruist niets ze,
 in geen enkele tabel.
 
-## De meting (2026-09-05, vier zones: 155 golden + 22 rood + 303 negatief + 30 pariteit)
+## De meting (hermeten 2026-09-06, vier zones: 155 golden + 22 rood + 316 negatief + 30 pariteit = 523 documenten)
 
 De v0-wire slaat vijf declaratiesoorten op als **map**, en elke waarde herhaalt
 zijn eigen naam in een `naam`-veld:
 
 | tabel | zelfnaam aanwezig | mee eens met de sleutel | wie leest de zelfnaam |
 | --- | --- | --- | --- |
-| `eenheidstelsels` | 204 van 204 | 204 van 204 | alleen de foutregel van de ASP-normalisatie (`unit stelsel %S declares no plain base unit`) |
+| `eenheidstelsels` | 205 van 205 | 205 van 205, byte voor byte | alleen de foutregel van de ASP-normalisatie (`unit stelsel %S declares no plain base unit`) |
 | `objecttypen` | te meten | te meten | WF-057 (tekstveiligheid), verder niets |
 | `feittypen` | te meten | te meten | WF-057 |
 | `dimensies` | te meten | te meten | WF-057 |
@@ -31,7 +31,12 @@ onverkort:
 
 - Het veld is **geen referentie**. WF-034 gaat over verwijzingen die moeten
   resolven; hier is de vraag of een spiegelveld met zijn sleutel overeenkomt.
-  Dat is de naam-identiteit van ch. 2.1, WF-001/WF-003's buurt.
+  Dat is de naam-identiteit van ch. 2.1, WF-001/WF-003's buurt. *Sinds de
+  fixronde van 2026-09-06 heeft die buurt een werktuig:* ch. 2.1 draagt twee
+  regels, een **dracht**regel (namen worden verbatim gedragen) en een
+  **matching**regel (matchen is hoofdletterongevoelig), en ch. 4.6 (p) laat
+  zien hoe je per positie kiest welke geldt. Deze kaart moet die keuze per
+  tabel expliciet maken in plaats van "ci" als vanzelfsprekend te nemen.
 - Het is één instantie van een **klasse**. Alleen `eenheidstelsels` sluiten is
   willekeurig: dezelfde vorm zit op objecttypen, feittypen en dimensies, en
   een regel die er één pakt laat de andere drie precies zo open als ze waren.

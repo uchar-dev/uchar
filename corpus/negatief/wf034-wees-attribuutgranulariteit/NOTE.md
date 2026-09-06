@@ -7,9 +7,14 @@ object type that names no declared member.
 **What the table is.** An object type declares its members in two places —
 `attributen` (name to datatype) and `kenmerken` (a name list) — and hangs
 eight per-member FACET maps beside them, each keyed by a member name. Nothing
-required those keys to name a declared member, and they are references: every
-one of them is looked up by member name and by nothing else, so a key naming
-no member resolves against no declaration.
+required those keys to name a declared member. Every key is a reference, and it
+is more than that: it is the v0 DENORMALISATION of a facet that v1 carries on
+the member node itself (`spec/CONSTRUCTS.md` row 11 — "each v0 map entry folds
+into the corresponding member node"), so the key IS that member's identity,
+written out beside the declaration instead of on it. A key naming no member
+resolves against no declaration; and because an identity is carried VERBATIM
+(ch. 2.1's carriage rule, not its matching rule), the key must be the member's
+declared spelling, case and whitespace included.
 
 **The harm is a silent semantic change, not a missing value.** This is the sharpest of the eight. A key spelled `vondstdatum` where the
 declared attribute is `vondstdag` says "this attribute is time-dependent" about
@@ -53,5 +58,14 @@ the v0 wire.
 
 Falsifiable, arm-exact: delete the `orphan otn "attribuutGranulariteit" ...` line from
 `wf034_zijtabelsleutels` (`spec/verifier/lib/checks.ml`) and this case, alone
-in all four zones, turns clean — 522 documents compared, one verdict moved, no
+in all four zones, turns clean — 523 documents compared, one verdict moved, no
 report elsewhere.
+
+**Why the spelling and not just the name** (measured 2026-09-06). The consumers
+do not agree on how they look this facet up: the verifier, `ref` and the ASP
+backend resolve the key case-insensitively, the bean-model executor does not —
+it reaches this table through raw case-sensitive map lookups at **64** sites.
+So a key differing from its declaration in capitalisation alone is found by
+three consumers and missed by the fourth, which drops the document out of the
+differential without a word. The witness for that flank is
+`corpus/negatief/wf034-zijtabel-kapitalisatiewees`, on this table.

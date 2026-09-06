@@ -50,12 +50,18 @@ day before this card, and none does now.
 Whether the unit's `afkorting` is a unit that system declares is WF-009's
 question and stays out of scope (ch. 4.6, and the open list says so).
 
-*Measured breadth:* zero documents lose anything. Of the **2442** unit records
-the four zones held before this card, **2309** carry a `stelsel` and every one
+*Measured breadth:* zero documents lose anything. Of the **2377** unit records
+the four zones hold, **2244** carry a `stelsel` and every one
 of them resolves; the remaining 133 carry `stelsel: null` — the percentage
 unit and the bare calendar units, which belong to no declared system and which
 this arm passes over by construction. The four-zone sweep moves no other
-verdict and no other report.
+verdict and no other report. (*Recounted 2026-09-06.* The figures first
+recorded here were **2442** and **2309**: the instrument counted the **73**
+denominator units of composite rates twice — once in their own right and once
+under the enclosing record — and 2369 + 73 = 2442, 2236 + 73 = 2309. The count
+above is the corrected total over the four zones as they now stand. A denominator
+is a unit record and is walked as one; anything that counts unit records must
+descend into `noemer` exactly once.)
 
 A hand-broken variant of `corpus/golden/jutterswet-sleepbaan/ir.json` — the
 system name misspelt at every use OUTSIDE the declaration, a six-line diff;

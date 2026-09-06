@@ -7,9 +7,14 @@ object type that names no declared member.
 **What the table is.** An object type declares its members in two places —
 `attributen` (name to datatype) and `kenmerken` (a name list) — and hangs
 eight per-member FACET maps beside them, each keyed by a member name. Nothing
-required those keys to name a declared member, and they are references: every
-one of them is looked up by member name and by nothing else, so a key naming
-no member resolves against no declaration.
+required those keys to name a declared member. Every key is a reference, and it
+is more than that: it is the v0 DENORMALISATION of a facet that v1 carries on
+the member node itself (`spec/CONSTRUCTS.md` row 11 — "each v0 map entry folds
+into the corresponding member node"), so the key IS that member's identity,
+written out beside the declaration instead of on it. A key naming no member
+resolves against no declaration; and because an identity is carried VERBATIM
+(ch. 2.1's carriage rule, not its matching rule), the key must be the member's
+declared spelling, case and whitespace included.
 
 **The harm is a silent semantic change, not a missing value.** A key spelled `verjaart` where the declared characteristic is `verjaard` says
 "this characteristic is time-dependent" about a characteristic that does not
@@ -40,6 +45,16 @@ temporal characteristic (WF-055)`) while the ASP backend replays the case to its
 pinned expectations. One document, two executors disagreeing about whether it
 can be run at all.
 
+*With one caveat, recorded 2026-09-06 rather than left implied:* the carrying
+document is ill-formed independently of this clause, and already was before the
+card — WF-055 refuses a `gedurende` over a non-temporal characteristic, which is
+exactly why this table's rename instrument reads 0 of 9. So the divergence sits
+behind a door the verifier already holds shut: it is a second-line finding, not
+this arm's justification. The asymmetry underneath it — the ASP translator's
+ch. 3.6 clip arm lacking the temporality gate its pro-rata and day-count sisters
+carry — is its own card,
+`backlog/new/20260906-clingo-gedurende-spiegelpoort.md`.
+
 *Measured breadth:* zero documents lose anything. All 24 `kenmerkGranulariteit`
 keys the four zones held before this card name a declared characteristic.
 
@@ -49,5 +64,14 @@ the v0 wire.
 
 Falsifiable, arm-exact: delete the `orphan otn "kenmerkGranulariteit" ...` line from
 `wf034_zijtabelsleutels` (`spec/verifier/lib/checks.ml`) and this case, alone
-in all four zones, turns clean — 522 documents compared, one verdict moved, no
+in all four zones, turns clean — 523 documents compared, one verdict moved, no
 report elsewhere.
+
+**Why the spelling and not just the name** (measured 2026-09-06). The consumers
+do not agree on how they look this facet up: the verifier, `ref` and the ASP
+backend resolve the key case-insensitively, the bean-model executor does not —
+it reaches this table through raw case-sensitive map lookups at **20** sites.
+So a key differing from its declaration in capitalisation alone is found by
+three consumers and missed by the fourth, which drops the document out of the
+differential without a word. The witness for that flank is
+`corpus/negatief/wf034-zijtabel-kapitalisatiewees`, on this table.
