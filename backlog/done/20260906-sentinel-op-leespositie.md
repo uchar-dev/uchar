@@ -277,3 +277,164 @@ injectieproef; twee ripple-zinnen bij WF-038's defer),
 deze kaart. **Niet aangeraakt:** `spec/CONSTRUCTS.md` en `spec/PLAN.md`
 (rijvoorstel apart doorgegeven), `ref/**`, `backends/**`, `frontends/**`
 (alleen gelezen en gedraaid), `scripts/**`, `toka/**` (alleen gelezen).
+
+---
+
+Fixronde (2026-09-06, zelfde branch, ná twee lenzen — de kern hield, één
+BLOKKERENDE vondst en één tussenklasse):
+
+**De routekeuzes, uit het maintainerbesluit (i) afgeleid — "één beslissing
+voor ALLE leesposities".** (a) **B1 gesloten met de None-arm.** De golf
+herhaalde op de vouwargument-tak alleen de GESPELDE helft van de prologue;
+de ongespelde tweeling (`"type": null`) bleef staan op precies dezelfde
+posities. Eén regel die twee spellingen van hetzelfde gebrek verschillend
+behandelt is geen omheining. (b) **MF2 gesloten door de garde te verbreden
+naar ariteit ∧ soort.** Open boeken zou een LEVENDE
+één-antwoordt-twee-weigeren mét crash hebben laten staan achter een grens
+die net exact was verklaard; sluiten beweegt gemeten NUL documenten.
+(c) **K5 (`set: true` met een echt type buiten een vouw) blijft een EIGEN
+kaart** — gemeten orthogonaal: die vorm draagt een ECHT type, dus de
+onbekend-type-omheining had er nooit rechtsmacht over.
+
+**B1 — de ongespelde tweeling.** `checks.ml`: `| None when not
+source_exempt -> [ v "WF-034" (p ^ "/type") "value node without a static
+type" ]`, dezelfde zin als de prologue. Negatief
+`wf034-sentinel-null-vouwoperand` (`jutterswet-peildatum` met
+`/resolvedRegels/0/waarde/argumenten/1/type := null`). **Rood-eerst:**
+verifier vóór md5 `c95650b1ab993c8a8b370e5b0617b0e6` → `verifier: PASS`;
+ná md5 `2237a9524ea35c7663dad97a8635f91f` → `WF-034 FAIL … value node
+without a static type`. Uitvoerders, zelf gemeten: **`ref` PASS (5
+expectations)** — hij SPEELT, en antwoordt 2026-05-01; clingo
+`TRANSLATION FAULT: mixed date/non-date operands under an eerste/laatste
+fold are not translated`; Drools **PLAYED**, óók 2026-05-01 (geverifieerd
+met een opzettelijk foute pin). Twee antwoorden die het EENS zijn, één
+weigering — de klasse van de andere kant gelezen. En één spelling verder:
+dezelfde `null` op een EENHEIDDRAGENDE numerieke operand laat `ref` spelen
+(1 expectation, 12.00) terwijl Drools **crasht**
+(`NullPointerException: Cannot invoke "…Datatype.eenheidOf()"`). Die
+tweede spelling deelt clausule, pointer en melding en staat in de NOTE, niet
+als achtste negatief.
+
+**De producentvraag, gemeten.** NEE: de frontend kan `type: null` niet
+emitteren. `IrEmitter.datatype` schrijft JSON-`null` alleen als het model een
+null-datatype aanreikt, en `ExpressieBouwer` vervangt dat eerst door het
+sentinel. Direct gemeten: 73 van de 78 `.rgs`-bronnen van de repo emitteren
+(de andere 5 zijn fragmenten die niet zelfstandig resolveren), **0
+voorkomens** van `"type": null` in welk geëmitteerd document dan ook. B1
+snijdt dus een WIRE-vorm af, geen producentroute — anders dan de gespelde
+helft, die er wél een afsnijdt. Beide worden gelijk geweigerd omdat geen
+consument ze onderscheidt.
+
+**MF2 — de grens is ariteit ÉN soort.** `source_exempt = List.length
+f.argumenten = 1 && (value_fold_name f.kind <> None || f.kind = Aantal)` —
+letterlijk WF-093's eigen paar, zodat de twee regels rand aan rand liggen
+over vier kwadranten: enkelvoudig+AANTAL → beide af; enkelvoudig+waardevouw
+→ alleen WF-093; enkelvoudig+builtin → arm (r); ariteit ≥2 → arm (r).
+Zelfde predicaat op beide armen. De oude claim "none falls between them"
+was FALS: een enkelvoudige builtin mét `elementObjecttype` viel er precies
+tussen. Zes builtin-spellingen handgebouwd en gemeten: **drie omheind** en
+reproduceren nog steeds (WF-048, WF-083 (c), WF-047 — de laatste met
+`bronRol`), **drie niet** (gedegradeerde eigen lezing, wrat verbatim, de
+`set`-lezing). Twee negatiefs, rood-eerst met dezelfde twee md5's:
+`wf034-sentinel-builtin-operand` (Drools **PLAYED 12.00**, geverifieerd met
+een foute pin: `verwacht 99.00, werkelijk 12.00`) en
+`wf034-sentinel-builtin-wratoperand` (Drools **ERROR
+`IllegalStateException: geen getter voor 'vondsten' op …Jutter`**); de
+`set`-spelling is Drools-**EXCLUDE** en deelt melding en reden.
+
+**Meldingstekst herschreven** zodat hij beide uitgangen noemt: *"unknown-type
+sentinel on a fold operand that is not a fold SOURCE: the sentinel is
+admissible on the single argument of an AGGREGATION alone (the v0 row-1 wart,
+ch. 4.3) — with two or more arguments the node is the listed value fold, whose
+operands are ordinary reads, and at a non-aggregation kind there is no source
+at all"*. De drie bestaande NOTEs citeren hem verbatim en zijn bijgewerkt.
+
+**Mutanten** (alle: `/tmp` via `git archive HEAD | tar -x`, harde build-faal,
+`test -x`, binary-md5, volle vier-zone-sweep over 540 documenten; vergeleken
+tegen de gefixte verifier `2237a952…`):
+
+| mutant | receptuur (op `checks.ml`) | md5 | uitslag |
+|---|---|---|---|
+| M1 | de hele golf-7-clausule (beide armen + `source_exempt`) vervangen door `[]` | `dca92f65f9ded3efee350d329a3a5b58` | **6** getuigen vrij (3 gelest + null + 2 builtin), 0 nieuw afgewezen, 1 pariteitsregel weg — arm-exact |
+| M2 | ariteitshelft omgekeerd: `= 1` → `<> 1` in `source_exempt` | `ac3dfa0707fdf5c916732df995510dd9` | 4 vrij (3 gelest + null) EN **12** nieuw afgewezen (10 goldens, 5 anchors, 2 rood) + 29 rapporten met bijvangst |
+| M4 | uitzondering versmald: `= 1 && f.kind = Aantal` | `ccf364951ca21dd3699ef7298bbaf3ab` | 0 vrij, 0 nieuw; precies de vier `wf093-wratvouw-*` krijgen een tweede citaat — de doorkruising die de soortenset vermijdt |
+| M5 | prologue-arm: `Some (Datatype_onbekend _) -> []` | `1269c4c21bf280d7f063d71932edea0e` | precies `wf034-sentinel-kale-lezing` vrij + 1 pariteitsregel — herbewijs |
+| M6 | SOORT-helft terug: `source_exempt = List.length f.argumenten = 1` | `4c53fcdbbda4ce3a10974cbff18a80c5` | **precies** de twee `wf034-sentinel-builtin-*` vrij, geen ander verdict en geen andere rapportregel — de dichtgemaakte kier op ware grootte |
+| M7 | de `| None when not source_exempt ->`-arm geschrapt | `f4064f701ed435c1dcb984962746f172` | **precies** `wf034-sentinel-null-vouwoperand` vrij, verder niets |
+| (ref) | golf-7-clausule weg op de branch-kop, vóór de fixronde | `3a447d8a8253b0d80d47921635ce6723` | injectieproef "vóór arm (r)" |
+
+**Injectieproef, herschreven recept en hermeten.** 156 goldens; elke
+JSON-knoop met `node` ∈ de elf datatype-soorten (`Numeriek`, `Percentage`,
+`Tekst`, `Booleaan`, `DatumInDagen`, `DatumTijd`, `Enumeratie`, `Onbekend`,
+`SumType`, `ListType`, `StructType`) één tegelijk vervangen door
+`{"node":"Onbekend","reden":"niet opgelost"}`; overlever = exit 0; de 15
+no-ops (posities die het sentinel per constructie al dragen) apart geteld.
+**2804 injecties. Vóór arm (r): 10 overlevers**, alle geleste vouwoperanden —
+acht in `jutterswet-peildatum` (vier vouwen × twee operanden) en twee in
+`jutterswet-sluitsom`. **Ná: 0.** De eerdere telling (6 over 2701) kwam van
+een smaller instrument; noemer én teller zijn nu allebei genoemd.
+
+**Nulcensus en builtin-census, vier zones.** Waardeknopen met een expliciete
+`null` op `type`: **drie**, alle in al-afgewezen negatiefs (één
+`AttribuutRef` — een regelDOEL —, één `Literal`, één `Functie`) en **nul**
+op een vouwargument. Niet-aggregatie-`Functie` mét `elementObjecttype`:
+**nul** vóór de twee nieuwe getuigen. Beide helften van de fixronde bereiken
+dus niets wat er al stond.
+
+**Regressiegrens van de fixronde.** Gesweept over alle **540** documenten
+(156 golden + 22 rood + 332 negatief + 30 pariteit) vóór en ná: **zeven
+rapporten** bewegen — drie nieuwe getuigen PASS → FAIL, drie bestaande
+`wf034-sentinel-*` die één melding herformuleren, en de pariteitscasus die
+diezelfde melding op dezelfde pointer herformuleert bij een ONVERANDERD
+overtredingsaantal (34). Nul goldens, nul rood, geen ander negatief.
+
+**Spec-meebewegingen** (alle in `spec/IR-SPEC.md`, beschermd pad): "refused
+alike" wordt waar en zegt sinds wanneer; ch. 4.3 flank (4) op de nieuwe grens
+(vier kwadranten, de zes gemeten builtin-spellingen, "none falls between
+them" nu waar); de deelvormentabel uitgebreid naar **zes** rijen met een
+CONTROLEREGEL per rij (rij 1: de ASP-kolom is niet toerekenbaar — de
+omhullende vouw weigert ook mét echt type; rij 3: pint de
+set-buiten-vouw-flank, niet het sentinel; rij 6: `ref` staat aan de
+ANTWOORDENDE kant); "Three kinds of dead end" → **vier**, met de twee throws
+bij naam (`IllegalStateException` op de getter, `NullPointerException` op
+`eenheidOf`); de "SAME fault, which is the norm"-zin herzien (waar voor rij
+1–5, ONWAAR voor rij 6); de nulcensus en de builtin-census; de producentmeting
+van de tweeling; ch. 4.6 golf 7 herschreven mét het injectierecept; WF-038's
+defer-scope symmetrisch gemaakt; de indexrij krijgt een golf-7-paragraaf, de
+fixrondetelling wordt **vijf** (één per golf vanaf de derde) en "forty arms"
+wordt vervangen door een controleerbare noemer: **43** `v "WF-034"`-emissie-
+plekken in `checks.ml`, na te tellen met één grep.
+
+**K5 als eigen kaart:** `backlog/new/20260906-set-buiten-vouw.md`, en
+ch. 4.3 krijgt flank **(5)**. Gemeten grondslag: de frontend emitteert uit
+"… het gewicht van **alle** vondsten van de Jutter" een `AttribuutRef` met
+`set: true`, een ECHT `Numeriek`-type en een `navigatieBindingen`-rolbinding,
+mét `diagnostics: []`; verifier PASS; `ref` FAULT
+(`unsupported AttribuutRef shape (set/sentinel outside a fold)`), ASP
+`expression kind not translated`, Drools **EXCLUDE** (`waarde buiten scope`).
+Drie weigeringen, geen antwoord om te vergelijken — dus geen enkele
+differentiaalpoort vangt hem. Twee posities (hele regelwaarde, operand van
+een `Binair`) gemeten IDENTIEK, dus één beslissing voor beide. Nul
+voorkomens in alle 540 documenten.
+
+**Precisering.** "de frontend emitteert exact dit document" (NOTE van
+`wf034-sentinel-gelest-wratoperand`) is nagemeten blad voor blad: de emissie
+en het gepinde document verschillen in **exact drie bladeren**, geen ervan het
+gebrek — de twee `bron`-provenance-strings en de `decimalen` van de vouwknoop
+zelf (0 tegen 2). De wratoperand zelf is byte-identiek, en de eigen emissie
+van de frontend wordt door dezelfde clausule op dezelfde pointer met dezelfde
+melding geweigerd.
+
+**Dertien gates, alle groen** (vanuit deze worktree, ná commit): 1 PASS;
+2 = 178; 3 = **178 golden / 332 negatief**; 4 = 431; 5 = 409 (2 zonder case);
+6 = 409; 7 = 373/36; 8 = 22 (Drools-leg 5/17); 9 = 201/12; 10 = 173/31;
+11 = 45/2/27/29 **onbewogen**; 12 = played 110 / channel floor 46 /
+auto-excluded 43 / value-divergence 1 / no-case 2 / JUnit 207; 13 = 74/15/0.
+
+**Aangeraakt in de fixronde:** `spec/IR-SPEC.md`,
+`spec/verifier/lib/checks.ml` (één predicaat, één arm, drie
+commentaarblokken), drie nieuwe negatiefs + vier bijgewerkte NOTEs,
+`backlog/new/20260906-set-buiten-vouw.md`, deze kaart. **Niet aangeraakt:**
+`spec/CONSTRUCTS.md`, `spec/PLAN.md`, `ref/**`, `backends/**`, `scripts/**`,
+`toka/**`; `frontends/**` alleen gelezen en één keer gedraaid voor de
+producentmeting (`make compile` + `--ir`, alles in gitignored build-mappen).
