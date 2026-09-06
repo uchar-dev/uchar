@@ -100,11 +100,19 @@ differentiaalvierkant, voor alle 109 dezelfde. Een per-golden speellijst zou
 honderd regels zijn die één ding zeggen, en zou bij elke corpusuitbreiding
 net zo hard schuiven als één getal. Alleen het KANAAL wordt vergeleken; de
 reden is documentatie (net als in `EXCLUDE_KNOWN`) en mag herschreven worden
-zonder de gate te laten vallen. Stilte is in alle vier de richtingen
-uitgesloten:
+zonder de gate te laten vallen.
 
-- een golden die het speelkanaal VERLAAT staat niet in de lijst, meet
-  niet-PLAYED, en valt **met naam**;
+Eerlijk over de prijs: de naamlijst zou wél vangen wat het getal niet ziet —
+een speler die VERDWIJNT (verwijderd of hernoemd) terwijl in dezelfde sessie
+een nieuwe speler aankomt, laat de kardinaliteit onbewogen en er blijft geen
+gemeten golden over om tegen een (afwezige) pin te leggen. Gemeten 2026-09-06:
+een hernoemde speler geeft `PASS`, `played 109`. Die ruil is bewust ten gunste
+van het getal gemaakt — honderd regels onderhoud tegen één maskeringsgeval dat
+zelf een corpuskaart is, en zo'n kaart weet welke golden hij aanraakt. Binnen
+die reikwijdte is stilte in alle vier de richtingen uitgesloten:
+
+- een golden die het speelkanaal VERLAAT maar IN DE CORPUS BLIJFT staat niet
+  in de lijst, meet niet-PLAYED, en valt **met naam**;
 - een genoteerde golden die weer speelt (of van kanaal wisselt) valt **met
   naam** — verouderd;
 - een genoteerde golden die WEG is valt **met naam** — idem;
@@ -113,8 +121,9 @@ uitgesloten:
   melding noemt bewust geen naam: wie een golden TOEVOEGT weet welke, terwijl
   het verval waar deze vloer voor bestaat — een speler die stilletjes
   wegvalt — juist het geval is waar niemand de naam kent; dáár noemt de lijst
-  hem wel. Aankomst en vertrek in één sessie heffen elkaar niet op: het getal
-  blijft staan, maar het vertrek trapt de lijst.
+  hem wel. Aankomst en vertrek in één sessie heffen elkaar wél op zodra het
+  vertrek een VERDWIJNING is (zie de prijs hierboven): het getal blijft staan
+  en er is geen gemeten golden meer om te noemen.
 
 **De boobytrap** (gelijkwaardig aan de kapitalisatievorm uit de vondst, die op
 de wire dicht is): in een /tmp-kopie (`git archive HEAD | tar -x`) in
@@ -153,6 +162,7 @@ Ná (`/tmp/g12B`, script mét vloer + dezelfde boobytrap):
 
     check-drools: FAIL — 1 golden(s) changed channel (the expected-channel floor):
         jutterswet-bergloon :: pinned EXCLUDE, measured PLAYED
+      …  (gevolgd door dezelfde adviesregels als in het blok hierboven)
     EXIT=1
 
 **Op de onaangeroerde kop** (worktree): `check-drools: PASS`, `played 109`,
@@ -176,7 +186,147 @@ pinned 109`, `JUnit 207 tests`.
 12. `check-drools: PASS` (109 / 43 / 1 / 2 / channel floor 46 / JUnit 207)
 13. `check-reftype-derivation: PASS (68 unit annotations twisted over 14 goldens; … 0 pinned survivors)`
 
-Bestaande faalcondities ongemoeid; de vloer is er additief bij gezet (drie
-regels in de lus, twee controles ná de bestaande stale-guard, één rapportregel).
+Bestaande faalcondities ongemoeid; de vloer is er additief bij gezet: één
+`declare -a SEEN=()`, vier `SEEN+=(…)`-plaatsen in de lus (één per kanaalarm:
+no-case, PLAYED, EXCLUDE, DIVERGE), en drie controles ná de bestaande
+stale-guard — (a) de kanaaldrift-lus, (b) de stale-pin-lus, (c) de
+`EXPECTED_PLAYED`-vergelijking — plus één rapportregel.
 `CLAUDE.md`: alleen de gate-12-alinea, twee zinnen. Beide bestanden zijn
 beschermde paden — deze tak blijft **onvermenigd** als voorstel.
+
+## Fixronde (2026-09-06, na twee lenzen — zelfde tak, niet gemerged)
+
+Twee lenzen hebben de tak gelezen. Het schild houdt op de kernflanken; wat
+volgt is de gelokaliseerde fixlijst die eruit kwam.
+
+### (a) De merge-volgorde: `EXPECTED_PLAYED` wordt 110
+
+Deze tak blijft bewust op basis `f0161ad` staan, waar `EXPECTED_PLAYED=109`
+klopt en gate 12 groen is. Kaart `card/dagsoort-golden` voegt een golden toe
+die **speelt** (daar gemeten: `PLAYED 2`). Wie van de twee als **tweede**
+landt, zet `EXPECTED_PLAYED` op `110` — en dat is precies de melding die de
+vloer dan geeft (`played 110, but EXPECTED_PLAYED pins 109`), dus de bump is
+niet te vergeten. De hoofdsessie regelt de mergevolgorde; de bump gebeurt bij
+de rebase, met een herdraai van gate 12 na afloop. Deze sessie doet hem
+**niet**: op deze basis zou 110 de gate meteen rood maken.
+
+Dit is meteen het eerste levensechte geval van de eigenschap onder (b): een
+kaart die alleen een corpusgolden toevoegt, raakt nu een beschermd
+gate-script.
+
+### (b) `EXPECTED_PLAYED` is de eerste absolute corpusregisterconstante
+
+Vaststelling van lens 2, mechanisch nagemeten:
+
+    $ grep -nE '^[A-Z_]+=[0-9]+' scripts/*.sh
+    scripts/check-drools.sh:229:EXPECTED_PLAYED=109
+
+Eén treffer in de hele gate-set. Alle andere pins in het huis zijn
+**naam-gedragen** (de overleverslijst van gate 7, `EXCLUDE_KNOWN` en
+`EXPECTED_CHANNEL` in gate 12, de holdoutlijst van gate 11, de
+overleverslijst van gate 13); de tellingen die gates 2/3/4/5/6/7/9/10/11/13
+kennen zijn allemaal **niet-leeg**-vloeren (`-eq 0` / `-gt 0`), nooit een
+absoluut aantal. Met deze vloer wordt `scripts/check-drools.sh` dus óók een
+**registerbestand van `corpus/golden`**: elke kaart die een golden toevoegt of
+weghaalt raakt voortaan impliciet dit beschermde pad. Bewust aanvaard — dat is
+de prijs van de enige richting die een PLAYED-default-lijst niet kan zien —
+maar het hoort genoteerd, want het is een nieuw soort koppeling in deze repo.
+De bredere vraag (moeten er méér tellingvloeren komen, en wat kost dat aan
+koppeling?) staat in de vervolgkaart
+`backlog/new/20260906-case-telling-vloeren.md`.
+
+### (c) Twee schildversterkingen, rood eerst gemeten
+
+Beide zitten in `scripts/check-drools.sh`; beide zijn gemeten in een
+/tmp-harnas (`git archive <rev> | tar -x`, de jar meegekopieerd, en een
+`mvn`-stub op `PATH` die alleen de suite-samenvattingsregel afdrukt — het
+gate-script zélf draait ongewijzigd).
+
+**1. De lijstwacht** (direct ná `EXPECTED_PLAYED`). De vloer vergelijkt elke
+GEMETEN golden met ZIJN pin, dus een misvormde lijst kon de vloer verzwakken
+zonder dat één golden dat merkte. `expected_channel()` geeft de EERSTE
+treffer terug, en de lijst hoort alleen NIET-spelers te bevatten. Drie
+probes, elk vóór de wacht **groen**:
+
+    b_dup     (dubbele entry voor jutterswet-seizoenvondst, identiek)
+      check-drools: PASS … channel floor 47 non-PLAYED goldens pinned by name;
+                          played matches the pinned 109
+      EXIT=0
+    b_contra  (jutterswet-seizoenvondst als NOCASE én als EXCLUDE)
+      check-drools: PASS … channel floor 47 …
+      EXIT=0
+    b_player  (jutterswet-berging — een SPELER — als "…|PLAYED|…" in de lijst)
+      check-drools: PASS … channel floor 47 …
+      EXIT=0
+
+Let op de tegenstrijdige probe: twee pins die elkaar uitsluiten passeren
+groen, en de rapportregel telt er één méér dan de lijst werkelijk draagt.
+Met de wacht, alle drie **rood met naam** (en fail-fast, vóór de replay):
+
+    a_dup / a_contra
+      check-drools: FAIL — duplicate channel pin: 'jutterswet-seizoenvondst'
+      appears more than once in EXPECTED_CHANNEL — the first entry silently
+      wins and the rest is dead text (a contradictory second pin would never
+      be read)
+      EXIT=1
+    a_player
+      check-drools: FAIL — malformed channel pin: 'jutterswet-berging' is
+      pinned 'PLAYED' — the list holds only NON-players (EXCLUDE / DIVERGE /
+      NOCASE); PLAYED is the default, so pinning it exempts the golden from
+      the floor instead of fixing it
+      EXIT=1
+
+Een entry zonder kanaalveld viel al rood, maar met een onleesbare melding;
+die valt nu onder dezelfde vormwacht. Met de wacht erboven mag de
+rapportregel "`${#EXPECTED_CHANNEL[@]} non-PLAYED goldens pinned by name`"
+blijven staan: het aantal entries ís nu het aantal gepinde goldens.
+
+**2. De PLAYED-0-wacht** (in de PLAYED-arm). `PLAYED` is een *token*, geen
+getuige: de runner slaat `expectedFault`-cases over in een groene zone
+(`CaseRunner.java:101`), dus een golden waarvan élke case `expectedFault`
+draagt drukt `PLAYED 0` af en telde als volwaardig lid van het
+differentiaalvierkant op nul replays. De route is kruislings dicht — gate 4
+verbiedt `expectedFault` in `corpus/golden` — maar het token was van binnenuit
+uitholbaar, en deze vloer gaat over wat déze gate nog kan worden wijsgemaakt.
+Probe: `corpus/golden/jutterswet-berging/case.json` (een 1-case-speler) een
+`expectedFault` geven.
+
+    b_played0  (script vóór de wacht)
+      check-drools: PASS
+        played 109 … channel floor 46 … JUnit 207 tests
+      EXIT=0
+    a_played0  (script mét de wacht)
+      check-drools: FAIL — 'jutterswet-berging' reports PLAYED 0 — counted as
+      a player but replayed no case at all
+      EXIT=1
+
+### (d) MF2 gesplitst: de wacht nu, de telling naar een vervolgkaart
+
+De PLAYED-0-wacht sluit het holle token. De aangrenzende vraag — pin ook het
+*aantal cases* dat gate 12 werkelijk speelt — is bewust **niet** hier gedaan.
+Gate 12 speelt vandaag 283 van de 407 golden-cases; een `EXPECTED_CASES` in
+gate 12 alleen zou een deelvloer zijn, en de vraag is repo-breed. Ze staat in
+`backlog/new/20260906-case-telling-vloeren.md`, mét het
+registerconstante-bezwaar uit (b).
+
+### (e) Tekstcorrecties (beide lenzen)
+
+- `scripts/check-drools.sh`, de vier-richtingen-alinea: "a golden that LEAVES
+  the played channel" is nu gescoopt tot "**leaves the played channel BUT
+  STAYS IN THE CORPUS**", en de zin "an arrival and a departure in one session
+  do not cancel out either" is **onwaar** voor verwijdering/hernoeming en
+  vervangen door de eerlijke vorm (kardinaliteit, niet per naam; gemeten:
+  een hernoemde speler geeft `PASS`, `played 109`).
+- De DRIFT-adviesboodschap kreeg een vierde regel: "(A NEWLY ADDED golden
+  that does not play was never counted: pin it and leave EXPECTED_PLAYED
+  alone.)" — het bestaande advies "drop `EXPECTED_PLAYED` by one" is fout
+  voor een nieuwkomer die niet speelt, want die is nooit meegeteld. (De
+  transcripten in het B/C-blok hierboven zijn met het script van vóór deze
+  regel gemeten en tonen er dus drie.)
+- Deze kaart: de rechtvaardiging is eerlijk gemaakt (de naamlijst zou wél
+  vangen wat het getal niet ziet), de additiviteitsopsomming klopt nu (één
+  `declare`, vier `SEEN+=`-plaatsen, drie controles), en de elisie in het
+  C-blok is gemarkeerd.
+- `CLAUDE.md`, gate-12-alinea: "a golden that LOSES its PLAYED status" →
+  "a golden that **SHIFTS CHANNEL and loses** its PLAYED status", zodat de
+  belofte exact scopet op wat het script waarmaakt.
