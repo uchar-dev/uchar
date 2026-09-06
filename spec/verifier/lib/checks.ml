@@ -2771,8 +2771,10 @@ let rec enum_use_site ctx at (d : datatype) : violation list =
    `StructType` field that is NOT under a payload is caught by the
    declaration and identity rules (measured — of the goldens' datatype
    positions only the payload chain and the fold-/aggregation argument
-   types ever survived sentinel injection), and the 9 fold-/aggregation
-   survivors belong to the aggregation branch, not to this descent. *)
+   types ever survived sentinel injection), and the fold-/aggregation
+   survivors belong to the aggregation branch, not to this descent: 10 of
+   them before that branch grew its own sentinel fence (WF-034's seventh
+   wave), 0 after. *)
 let rec payload_sentinel at (d : datatype) : violation list =
   match d with
   | Sum_type { constructoren; _ } ->
@@ -3976,15 +3978,22 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
          DEFER. Where that defer is unreachable it is dead, and where it
          is reachable it is load-bearing: an operand walked as an
          ordinary expression is already refused by WF-034 (`unknown-type
-         sentinel inside a structured node`, measured) and, since WF-034's
-         seventh wave (2026-09-06), so is a LISTED operand carrying it —
-         so only the SINGLE-argument fold source reaches this arm: the
-         ch. 4.3 row-1 wart, which WF-034 tolerates by construction. There the defer holds
-         open a shape no executor carries: an instance ordering fold over
-         a bare role source is verifier-clean today and measured ref
-         `value aggregation over a bare role source`, ASP `expression
-         kind not translated`, Drools `ConstraintEvaluationException`.
-         An open flank recorded, not a claim that the shape is sound. *)
+         sentinel inside a structured node` for the sentinel, `value node
+         without a static type` for the twin, both measured) and, since
+         WF-034's seventh wave (2026-09-06), so is a fold operand that is
+         not a fold SOURCE — in BOTH spellings, the sentinel and the
+         null, on the same guard. What still reaches this arm is
+         therefore only the single argument of an AGGREGATION: the
+         ch. 4.3 row-1 wart, which WF-034 tolerates by construction, plus
+         the same position spelled with no type at all, which no producer
+         in this repo emits (measured) and which the wart's own exemption
+         covers because the guard is one predicate for both. There the
+         defer holds open a shape no executor carries: an instance
+         ordering fold over a bare role source is verifier-clean today
+         and measured ref `value aggregation over a bare role source`,
+         ASP `expression kind not translated`, Drools
+         `ConstraintEvaluationException`. An open flank recorded, not a
+         claim that the shape is sound. *)
       @ (match List.assoc_opt f.kind passthrough_folds with
          | None -> []
          | Some kn ->
@@ -4134,33 +4143,45 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                       ^ "' without an attribute name: it resolves against no declaration") ]
                | Attribuut_ref { attribuut; typ; _ }, Some el ->
                    (* WF-034's SENTINEL FENCE, the seventh wave (maintainer
-                      decision 2026-09-06): [walk_expr]'s type prologue refuses
-                      the v0 unknown sentinel on every value node, and this
-                      branch REPLACES that prologue — so the sentinel survived
-                      at exactly the positions the branch reaches. One
-                      exemption, and it is the branch's whole reason for
-                      existing: the SINGLE argument of a fold is the fold
-                      SOURCE, the ch. 4.3 row-1 wart, which carries the
-                      sentinel by construction (a written role name has no
-                      datatype to give) and whose kind WF-093 governs. With two
-                      or more arguments the node is the listed value fold
-                      (§5.8.3): its operands are ORDINARY READS — no source, no
-                      role name — and the sentinel is as ill-formed there as it
-                      is anywhere else the walk reaches. The boundary is the
-                      ARITY and nothing else, which is what keeps this arm off
-                      WF-093's ground: WF-093 refuses a non-AANTAL kind over
-                      the SINGLE-argument sentinel source, this arm refuses the
-                      sentinel where there is no source at all, and the two
-                      conditions are disjoint by construction — no position is
-                      reported twice and none falls between them.
+                      decision 2026-09-06, boundary widened in its fix round
+                      2026-09-06): [walk_expr]'s type prologue refuses the v0
+                      unknown sentinel on every value node — and its unspelled
+                      twin, a value node with no static type at all — and this
+                      branch REPLACES that prologue, so both survived at
+                      exactly the positions the branch reaches. One exemption,
+                      and it is the branch's whole reason for existing: the
+                      SINGLE argument of an AGGREGATION is the fold SOURCE, the
+                      ch. 4.3 row-1 wart, which carries the sentinel by
+                      construction (a written role name has no datatype to
+                      give) and whose kind WF-093 governs. Everything else the
+                      branch reaches is an ORDINARY READ — no source, no role
+                      name — and the sentinel is as ill-formed there as it is
+                      anywhere else the walk reaches.
 
-                      Measured 2026-09-06 over the four zones (533 documents,
+                      The boundary is the ARITY *and the KIND*, drawn on
+                      exactly the pair WF-093 keys on, so the two rules meet
+                      edge to edge with nothing between them and nothing
+                      doubled: single+AANTAL is the count source both leave
+                      alone; single+value-fold is WF-093's alone (it refuses a
+                      non-AANTAL kind over the sentinel source); two or more
+                      arguments is the listed value fold (§5.8.3), this arm's;
+                      and a single argument at a NON-aggregation kind — a
+                      builtin carrying an `elementObjecttype`, which has no
+                      source either — is this arm's too. That last exit is the
+                      fix round's: with the guard drawn on the arity alone,
+                      three builtin spellings stayed verifier-clean (the
+                      degraded own read, the wart verbatim and the set
+                      reading), and the second of them CRASHES the third
+                      executor.
+
+                      Measured 2026-09-06 over the four zones (537 documents,
                       65 sentinel `type` positions): 61 sit at a fold argument,
                       60 of them the single-argument wart and exactly ONE a
                       listed operand — in the parity zone, on a document that
                       already carries a co-firing WF-034 at the same pointer.
-                      No golden, rood or negatief document moves. What the
-                      shape bought itself while it was clean is the familiar
+                      No golden, rood or negatief document moves, and neither
+                      half of the fix round moves one either. What the shape
+                      bought itself while it was clean is the familiar
                       self-served exemption: [use_site_identity] defers on the
                       sentinel and [composite_expectation]'s MINIMUM/MAXIMUM
                       arm defers when any operand type is unknown, so one
@@ -4172,14 +4193,39 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                       degraded-read spelling and answers, and THROWS on the
                       wart-verbatim spelling (it reaches for a getter of the
                       role name) — one-answers-two-refuse, the class PLAN §6
-                      calls a spec bug, cut off at the wire. *)
-                   (match typ with
-                    | Some (Datatype_onbekend _) when List.length f.argumenten <> 1 ->
+                      calls a spec bug, cut off at the wire. The unspelled twin
+                      is the same fence on the same positions and is measured
+                      the other way round: no frontend in this repo emits a
+                      null `type` (73 of the repo's 78 `.rgs` sources emit, 0
+                      occurrences), so that half closes a WIRE form rather than
+                      a producer route — but the ONE listed null operand built
+                      by hand is answered by `ref` (all 5 pinned expectations)
+                      and by Drools while the ASP backend refuses, which is the
+                      same class read from the other side. *)
+                   (let source_exempt =
+                      (* The ch. 4.3 wart and exactly it. The exemption is
+                         drawn on the SAME pair WF-093 keys on — a SINGLE
+                         argument, and a kind that folds (the six value folds
+                         of [value_fold_name] plus AANTAL) — so the two rules
+                         meet edge to edge: single+AANTAL is the count source
+                         both leave alone, single+value-fold is WF-093's
+                         alone, and everything else is this arm's. *)
+                      List.length f.argumenten = 1
+                      && (value_fold_name f.kind <> None || f.kind = Aantal)
+                    in
+                    match typ with
+                    | Some (Datatype_onbekend _) when not source_exempt ->
                         [ v "WF-034" (p ^ "/type")
-                            ("unknown-type sentinel on a listed fold operand: a fold with two or \
-                              more arguments is the listed value fold, whose operands are ordinary \
-                              reads — the sentinel is admissible on the SINGLE-argument \
-                              instance-fold source alone (the v0 row-1 wart, ch. 4.3)") ]
+                            ("unknown-type sentinel on a fold operand that is not a fold SOURCE: \
+                              the sentinel is admissible on the single argument of an AGGREGATION \
+                              alone (the v0 row-1 wart, ch. 4.3) — with two or more arguments the \
+                              node is the listed value fold, whose operands are ordinary reads, \
+                              and at a non-aggregation kind there is no source at all") ]
+                    | None when not source_exempt ->
+                        (* the unspelled twin, refused symmetrically — the same
+                           sentence [walk_expr]'s type prologue speaks, on the
+                           positions this branch took away from it *)
+                        [ v "WF-034" (p ^ "/type") "value node without a static type" ]
                     | _ -> [])
                    @ (match typ with
                     | Some d -> check_datatype_units ~stelsels:(stelsel_namen ctx) (p ^ "/type") d
