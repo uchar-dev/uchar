@@ -756,10 +756,45 @@ outcome stands, so a member the outcome no longer reads must raise no
 fault and deposit no §9.5 fact. A conjunction of body atoms is
 order-free, so the ordering has to be carried by the *guards*: while a
 member is translated it runs with `rule_guard` extended by the atoms
-that say "the outcome does not stand yet", and every fence, `viol` and
-`inconsistent(…)` the member emits picks those up in its body (S6, S13).
-The returned atom list is unchanged, so the composite's **truth value**
-is untouched — only its fault surface is.
+that say "the outcome does not stand yet", and the fences, `viol`s and
+`inconsistent(…)`s the member emits pick those up in their bodies (S6,
+S13). The returned atom list is unchanged, so the composite's **truth
+value** is untouched — only its fault surface is.
+
+*Which emissions, exactly.* "Every fence" is a claim, so it is swept
+rather than asserted. Of the emission sites reachable from `cond_atoms`:
+
+- **Subject-keyed, and all of them carry `rule_guard`** — the date
+  pre-epoch fence and its year `viol`; the min/max folds; the
+  eerste/laatste fold; the date-difference and date-arithmetic fences;
+  the rounding fences and their negative-operand `viol`; the division's
+  range fence, its empty-divisor `inconsistent(…)` and both its `viol`s;
+  the scalar range fence; and the numeric equality and ordering arms.
+  The last three were **added in the fix round of 2026-09-07**: the
+  equality arm, the ordering arm and the eerste/laatste fold built their
+  fence bodies without the guard, which made a range `viol` fire out of a
+  member the outcome had already settled away — measured as a ref ≡
+  clingo split on an `all` and on a `none` composite alike.
+- **Element-keyed, and deliberately not** — the closed-body family
+  (`closed_term` under `body_branches`: the fold/lambda/function-def
+  bodies). These are keyed by a per-element `witness` and carry their own
+  `guard_body` chain, not the subject. Threading a subject-keyed prefix
+  into an element-keyed body would be a scoping error, not a fix. The
+  shape is reachable in the IR type structure (a fold or an invocation
+  inside a member's operand), but **no corpus golden carries one inside a
+  composite member** (measured 2026-09-07: 0), and the one source-level
+  route that reaches it — an aggregation over a computed expression —
+  is refused by this translation outright (`expression kind not
+  translated`, S19), so it cannot produce a silent divergence. If that
+  refusal is ever lifted, the prefix question must be settled with it.
+- **Out of scope by construction** — the `gedurende` clip's fence
+  (ch. 3.6). Its members yield period sets, it is keyed on the clip's own
+  subject variable, and RUNTIME-SEMANTICS ch. 5.10 boundary 2 keeps its
+  members fully evaluated.
+
+Sites outside `cond_atoms` — the write boundary's fit fence, the
+to-one-filler `viol`, and the allocation's `viol`/`inconsistent` family —
+are not part of this claim and carry no prefix.
 
 For **ALLE / DE** the guard needs nothing new: member *i* is read exactly
 where members 1…*i*−1 all held, so the accumulated **prefix atoms are the
@@ -796,8 +831,21 @@ before, for the short circuit's sake: member *i*'s guard is the ch. 5.10
 stop triggers **negated** over the prefix count, i.e. `cqK_h<i-1>(S,H)`
 plus ground comparisons on `H` (`H == 0` for GEEN; `H < d, H ≥ d−r` for
 TEN MINSTE; `H ≤ d` for TEN HOOGSTE; `H ≤ d, H ≥ d−r` for PRECIES, with
-*r* = *n* − (*i*−1) the unread rest, ground at translation time). Member 1
-carries no guard at all. Reading that count over one shared `cq(S,I)`
+*r* = *n* − (*i*−1) the unread rest, ground at translation time).
+
+**Member 1 is guarded too**, against the chain's own base `cqK_h0(S,0)`.
+It is tempting to special-case it as always-read, and this translation
+did until the fix round of 2026-09-07 — wrongly: at TEN MINSTE and
+PRECIES with a threshold ABOVE the member count the out-of-reach trigger
+fires on the EMPTY prefix (ch. 5.10), so ref reads nothing while a
+translation that skipped the guard read member 1 and emitted its fence.
+Measured as a ref ≡ clingo split on `TEN MINSTE 5` over two members and
+on `PRECIES 3` over two, nested and unnested, and reachable from ordinary
+source — the grammar does not tie the numeral to the bullet count. With
+`H` bound to 0 the ordinary comparison decides it: `H ≥ d − n` holds
+exactly when *d* ≤ *n*.
+
+Reading that count over one shared `cq(S,I)`
 predicate would put `cq` on both ends of the chain's negative link and
 close a predicate-level loop; naming every member and every link after
 its index makes each guard edge point at a **strictly smaller** index, so
