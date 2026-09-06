@@ -60,18 +60,24 @@ let field kvs k = match List.assoc_opt k kvs with Some v -> v | None -> fail "mi
 
 (* --- typed values against a declared datatype -------------------------- *)
 
+(* The `dateTime` value of uchar-case-v0: the CANONICAL ISO lexeme and
+   nothing else — fixed field widths, 'T', the seconds field written, a
+   fraction that is optional but exactly three digits. Gate 4 enforces that
+   pattern on every case FILE; this reader holds the same fence ITSELF, so a
+   case that reaches the loader another way (a generator, a hand run, a
+   second producer) is refused rather than guessed at.
+
+   It is not a theoretical fence. The reader here used to scan with
+   "%4d-%2d-%2dT%2d:%2d:%2d%s" and then [int_of_string] the fraction at ANY
+   width: ".1" read as ONE millisecond where the Drools case reader reads a
+   hundred, ".100000" as a hundred THOUSAND (a minute and forty seconds
+   later), ".1234" as 1 234 (1.234 seconds later), and "2026-3-15T09:00:00"
+   as a valid instant the Drools reader refuses. Three readers, three
+   answers, and the schema was the only reason it never showed. *)
 let ms_of_datetime s =
-  (* YYYY-MM-DDThh:mm:ss(.mmm)? *)
-  Scanf.sscanf_opt s "%4d-%2d-%2dT%2d:%2d:%2d%s"
-    (fun y m d hh mm ss rest ->
-      let ms =
-        match rest with
-        | "" -> 0
-        | r -> ( try int_of_string (String.sub r 1 (String.length r - 1)) with _ -> fail "malformed dateTime %S" s)
-      in
-      let days = Value.days_from_civil ~y ~m ~d in
-      (((((days * 24) + hh) * 60) + mm) * 60 + ss) * 1000 + ms)
-  |> function Some v -> v | None -> fail "malformed dateTime %S" s
+  match Value.read_iso_datetime s with
+  | Ok ms -> ms
+  | Error why -> fail "malformed dateTime %S (%s)" s why
 
 let rec value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t =
   let kvs = obj j in
