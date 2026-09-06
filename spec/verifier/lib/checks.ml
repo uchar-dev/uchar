@@ -4179,6 +4179,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                       60 of them the single-argument wart and exactly ONE a
                       listed operand — in the parity zone, on a document that
                       already carries a co-firing WF-034 at the same pointer.
+                      Re-counted the same day on the rebased head (546
+                      documents, main's datum-tijd card in the base): 71
+                      sentinel `type` positions, 66 at a fold argument, 62 of
+                      them the single-argument wart and 4 listed — the three
+                      witnesses this arm brought plus that same ONE parity
+                      operand, which is the invariant that carries the claim.
                       No golden, rood or negatief document moves, and neither
                       half of the fix round moves one either. What the shape
                       bought itself while it was clean is the familiar
