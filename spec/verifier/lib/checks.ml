@@ -1122,7 +1122,7 @@ let wf034_verdelingen ctx =
    field that is present must name something.
 
    Emptiness is decided by the verifier's own name identity (whitespace
-   collapsed, lowercased, ch. 2.4): a blank spelling is the same empty name and
+   collapsed, lowercased, ch. 2.1): a blank spelling is the same empty name and
    resolves against the same nothing.
 
    Measured on the golden allocations, one field emptied to "" at a time, every

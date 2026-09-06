@@ -464,9 +464,14 @@ was "the one place the case-insensitive identity is not enough". Het zijn er nu
 twee, op verschillende grond — daar een naam die als property moet overleven,
 in (p) een sleutel die een gedragen identiteit is.
 
-Nog gevonden en **niet** aangeraakt, buiten de opdracht: `checks.ml` r. 1062 en
-r. 6218 en twee plekken in de WF-034-indexrij dragen dezelfde mis-citatie. Ter
-beoordeling van de maintainer.
+De twee tweelingen van deze zinnen in de WF-034-**indexrij** dragen dezelfde
+mis-citatie en zijn meegecorrigeerd, want een half gecorrigeerd document
+spreekt zichzelf tegen: de indexrij zei óók "the one place". Hetzelfde geldt
+voor de tweelingzin in `checks.ml` bij de lege verdelingsnamen.
+
+Nog gevonden en **niet** aangeraakt, want een andere regel en door deze ronde
+niet weersproken: `checks.ml` r. ~6281, "Arm C is the one place in this rule
+where the ch. 2.4 case-insensitive name …". Ter beoordeling van de maintainer.
 
 ### 6. Het divergentie-voorbehoud
 
