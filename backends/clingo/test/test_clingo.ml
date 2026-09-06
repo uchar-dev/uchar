@@ -1814,6 +1814,192 @@ let () =
   clingo_matches ~name:"gedurende ALLE composite, both members temporal" ~ir:alle_ok
     ~case_text:clip_case
 
+(* --- the datum-tijd ORDERING (S6a, 2026-09-06) ---------------------------
+   Golden `jutterswet-meldstip` pins the ordering against a LITERAL, which is
+   the shape a producer writes. Two neighbours of it cannot be corpus
+   documents and are pinned here: the LITERAL-FREE ordering (two DatumTijd
+   attributes, the document that used to fault `unscalable datatype` while
+   ref replayed it exactly), and the loud flanks — a mixed-precision pair and
+   datum-tijd equality — which WF-036 and the arm's own reason keep out of
+   the golden zone. *)
+
+let dt_doc ~attributen ~kenmerken ~kenmerk_soorten ~regels =
+  Printf.sprintf
+    {|{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Wachtpost": {
+      "node": "Objecttype", "naam": "Wachtpost",
+      "attributen": { %s },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [ %s ], "kenmerkSoorten": { %s },
+      "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
+      "bezield": false, "meervoud": "Wachtposten"
+    }
+  },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {}, "dimensies": {},
+  "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [ { "node": "Regel", "naam": "tijdig", "soort": "regel" } ],
+  "resolvedRegels": [ %s ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}|}
+    attributen kenmerken kenmerk_soorten regels
+
+let dt_attr naam =
+  Printf.sprintf
+    {|{ "node": "AttribuutRef", "attribuut": "%s", "objecttype": "Wachtpost",
+       "onderwerpBron": "zijn", "navigatieRol": null, "type": { "node": "DatumTijd" },
+       "bron": "zijn %s", "set": false, "navigatiePad": [] }|}
+    naam naam
+
+let dag_attr naam =
+  Printf.sprintf
+    {|{ "node": "AttribuutRef", "attribuut": "%s", "objecttype": "Wachtpost",
+       "onderwerpBron": "zijn", "navigatieRol": null, "type": { "node": "DatumInDagen" },
+       "bron": "zijn %s", "set": false, "navigatiePad": [] }|}
+    naam naam
+
+let dt_lit lex =
+  Printf.sprintf
+    {|{ "node": "Literal", "waarde": "%s", "type": { "node": "DatumTijd" }, "bron": "%s" }|}
+    lex lex
+
+let dt_regel ~op ~links ~rechts =
+  Printf.sprintf
+    {|{ "node": "ResolvedRegel", "naam": "tijdig", "soort": "KENMERKTOEKENNING",
+      "doel": { "node": "AttribuutRef", "attribuut": "tijdig", "objecttype": "Wachtpost",
+        "onderwerpBron": "Een Wachtpost", "navigatieRol": null,
+        "type": { "node": "Booleaan" }, "bron": "Een Wachtpost is tijdig",
+        "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Literal", "waarde": "waar", "type": { "node": "Booleaan" },
+        "bron": "waar" },
+      "voorwaarde": { "node": "Vergelijking", "op": "%s", "links": %s, "rechts": %s,
+        "periode": null, "bron": "de ordening" },
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|}
+    op links rechts
+
+let dt_case ~attrs ~expected =
+  Printf.sprintf
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "W1", "objectType": "Wachtpost",
+      "attributes": { %s }, "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ %s ] }|}
+    attrs expected
+
+let () =
+  let paar_attributen =
+    {|"aanvangstip": { "node": "DatumTijd" }, "sluitingstip": { "node": "DatumTijd" }|}
+  in
+  (* 1. the LITERAL-FREE ordering: two DatumTijd attributes under EERDER.
+     Before the pair-term ordering arm this document faulted
+     `unscalable datatype in the ASP translation` while ref replayed it
+     exactly (measured 2026-09-06) — a one-executor answer, which is no
+     differential at all. *)
+  let paar_ir =
+    dt_doc ~attributen:paar_attributen ~kenmerken:{|"tijdig"|}
+      ~kenmerk_soorten:{|"tijdig": "BIJVOEGLIJK"|}
+      ~regels:(dt_regel ~op:"EERDER" ~links:(dt_attr "aanvangstip")
+                 ~rechts:(dt_attr "sluitingstip"))
+  in
+  let paar_case vroeg laat aanwezig =
+    dt_case
+      ~attrs:
+        (Printf.sprintf {|"aanvangstip": { "dateTime": "%s" }, "sluitingstip": { "dateTime": "%s" }|}
+           vroeg laat)
+      ~expected:
+        (Printf.sprintf
+           {|{ "kind": "characteristic%s", "label": "W1", "characteristic": "tijdig" }|}
+           (if aanwezig then "Present" else "Absent"))
+  in
+  let vooruit = paar_case "2026-03-15T06:00:00.000" "2026-03-15T18:00:00.000" true in
+  let achteruit = paar_case "2026-03-15T18:00:00.000" "2026-03-15T06:00:00.000" false in
+  (* the SAME civil day both times, so only the ms-of-day tie-break can
+     answer — a day-only reading would call them equal and fire neither *)
+  ref_matches ~name:"datum-tijd ordening zonder literal, vooruit" ~ir:paar_ir
+    ~case_text:vooruit;
+  clingo_matches ~name:"datum-tijd ordening zonder literal, vooruit" ~ir:paar_ir
+    ~case_text:vooruit;
+  ref_matches ~name:"datum-tijd ordening zonder literal, achteruit" ~ir:paar_ir
+    ~case_text:achteruit;
+  clingo_matches ~name:"datum-tijd ordening zonder literal, achteruit" ~ir:paar_ir
+    ~case_text:achteruit;
+  (* 2. the ORDERING'S EMPTY OPERAND: a positive join, so leeg is false in
+     both directions — the ch. 1.2d date row, which the helper gets for free *)
+  let leeg_case =
+    dt_case ~attrs:{|"aanvangstip": { "dateTime": "2026-03-15T06:00:00.000" }|}
+      ~expected:{|{ "kind": "characteristicAbsent", "label": "W1", "characteristic": "tijdig" }|}
+  in
+  ref_matches ~name:"datum-tijd ordening met lege operand" ~ir:paar_ir ~case_text:leeg_case;
+  clingo_matches ~name:"datum-tijd ordening met lege operand" ~ir:paar_ir ~case_text:leeg_case;
+  (* 3. the ordering against a LITERAL, at the millisecond boundary: the
+     literal enters as a GROUND pair term, never as an absolute ms integer
+     (which gringo would wrap at 32 bits, silently) *)
+  let lit_ir =
+    dt_doc ~attributen:{|"aanvangstip": { "node": "DatumTijd" }|} ~kenmerken:{|"tijdig"|}
+      ~kenmerk_soorten:{|"tijdig": "BIJVOEGLIJK"|}
+      ~regels:
+        (dt_regel ~op:"EERDER" ~links:(dt_attr "aanvangstip")
+           ~rechts:(dt_lit "2026-03-15T12:00:00.000"))
+  in
+  let lit_case stip aanwezig =
+    dt_case
+      ~attrs:(Printf.sprintf {|"aanvangstip": { "dateTime": "%s" }|} stip)
+      ~expected:
+        (Printf.sprintf
+           {|{ "kind": "characteristic%s", "label": "W1", "characteristic": "tijdig" }|}
+           (if aanwezig then "Present" else "Absent"))
+  in
+  List.iter
+    (fun (stip, aanwezig, wat) ->
+      let c = lit_case stip aanwezig in
+      ref_matches ~name:("datum-tijd literal-ordening, " ^ wat) ~ir:lit_ir ~case_text:c;
+      clingo_matches ~name:("datum-tijd literal-ordening, " ^ wat) ~ir:lit_ir ~case_text:c)
+    [ ("2026-03-15T11:59:59.999", true, "een ms ervoor");
+      ("2026-03-15T12:00:00.000", false, "exact erop (strikt)");
+      ("2026-03-15T12:00:00.001", false, "een ms erna");
+      (* the civil day decides over the ms-of-day: this instant is a whole
+         day EARLIER while its ms-of-day is far LATER *)
+      ("2026-03-14T23:59:59.999", true, "een dag ervoor met latere ms-van-de-dag") ];
+  (* 4. the loud flanks. A mixed-precision pair: one instant, one
+     representation (WF-036 refuses the document too, so this is the
+     executor's own last line). *)
+  let gemengd_ir =
+    dt_doc ~attributen:{|"aanvangstip": { "node": "DatumTijd" }, "ijkdag": { "node": "DatumInDagen" }|}
+      ~kenmerken:{|"tijdig"|} ~kenmerk_soorten:{|"tijdig": "BIJVOEGLIJK"|}
+      ~regels:(dt_regel ~op:"EERDER" ~links:(dt_attr "aanvangstip") ~rechts:(dag_attr "ijkdag"))
+  in
+  faults_with ~name:"gemengde datumprecisie in een ordening" ~ir:gemengd_ir
+    ~case_text:
+      (dt_case ~attrs:{|"aanvangstip": { "dateTime": "2026-03-15T06:00:00.000" }, "ijkdag": { "date": "2026-03-15" }|}
+         ~expected:{|{ "kind": "characteristicAbsent", "label": "W1", "characteristic": "tijdig" }|})
+    ~needle:"a datum-tijd comparison against a non-datum-tijd operand";
+  (* datum-tijd equality: a different shape, not a tighter one — no corpus
+     case, so a named refusal rather than an untested encoding *)
+  let gelijk_ir =
+    dt_doc ~attributen:paar_attributen ~kenmerken:{|"tijdig"|}
+      ~kenmerk_soorten:{|"tijdig": "BIJVOEGLIJK"|}
+      ~regels:(dt_regel ~op:"GELIJK" ~links:(dt_attr "aanvangstip")
+                 ~rechts:(dt_attr "sluitingstip"))
+  in
+  faults_with ~name:"datum-tijd gelijk-aan is een luide flank" ~ir:gelijk_ir
+    ~case_text:vooruit ~needle:"datum-tijd (on)gelijk-aan is not translated";
+  (* 5. an ill-formed literal lexeme reaches the translator only when the
+     verifier is bypassed (WF-094 refuses the document); the arm must still
+     refuse it by name rather than answer some other instant *)
+  let stuk_ir =
+    dt_doc ~attributen:{|"aanvangstip": { "node": "DatumTijd" }|} ~kenmerken:{|"tijdig"|}
+      ~kenmerk_soorten:{|"tijdig": "BIJVOEGLIJK"|}
+      ~regels:
+        (dt_regel ~op:"EERDER" ~links:(dt_attr "aanvangstip")
+           ~rechts:(dt_lit "2026-03-15T12:00:00.1"))
+  in
+  faults_with ~name:"onleesbaar datum-tijd-literal-lexeem in de vertaling" ~ir:stuk_ir
+    ~case_text:(lit_case "2026-03-15T06:00:00.000" true)
+    ~needle:"malformed datum-tijd lexeme"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
