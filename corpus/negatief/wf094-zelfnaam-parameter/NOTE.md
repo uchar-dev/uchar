@@ -37,7 +37,7 @@ simply never arrives and the rule computes on nothing.
 
 *Measured breadth of that harm, one parameter self-name recapitalised at a
 time over every golden:* **11 of the 34** golden parameter positions move, all
-of them to a wrong value, over six documents — `jutterswet-aanvoergeld`
+of them to a wrong value, over seven documents — `jutterswet-aanvoergeld`
 (`aanvoergeld` 322.50 → 310.00), `jutterswet-penningdrempel`,
 `jutterswet-penningjaar`, `jutterswet-schouwkalender`, `jutterswet-sleeprest`,
 `synth3-drempelheffing`, `synth3-takbarriere`. The verifier, `ref` and the ASP
