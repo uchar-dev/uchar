@@ -22,6 +22,14 @@ OPEN precies tot deze kaart hem sluit.
 
 ## De meting (2026-09-06, na de golden-kaart)
 
+**Meetstempel: 2026-09-06, op `f0161ad` + deze golden. HERMEET VÓÓR HET
+SCHRIJVEN.** De tellingen hieronder verlopen terwijl deze kaart in `new/`
+ligt: `card/zelfnaam-mapsleutel` brengt de negatiefzone naar ~325 en de vier
+zones naar ~533 (gemeten op die branch: 155 golden + 22 rood + 325 negatief +
+30 pariteit, plus deze golden). Andere kaarten kunnen er nog bij komen. Neem
+de getallen dus niet over — draai de telling opnieuw en dateer haar, want de
+Acceptance hieronder eist juist *hertelde en gedateerde* aantallen.
+
 | zone | documenten | `dagsoortPerEenheid`-ingangen | `dagsoorten`-declaraties |
 | --- | --- | --- | --- |
 | golden | 156 | **4** (in 1 document) | 5 |
@@ -36,9 +44,18 @@ een verdraaide ingang een verdict verplaatst. (2) De verifier LEEST de map al,
 maar alleen aan de **sleutelkant**: `day_kind_unit` in `spec/verifier/lib/checks.ml`
 vraagt of een eenheidsspelling als sleutel voorkomt, om hem naast de negen
 tijdseenheden toe te laten in datumrekenkunde en tijdsduur (WF-035/WF-038). De
-**waarde** wordt nergens tegen `dagsoorten` gekruist: een ingang die naar een
-niet-gedeclareerde dagsoort wijst, laat vandaag een eenheidsspelling door die
-naar niets verwijst, en de datumrekenkunde erachter is dan wél toegestaan en
+**waarde** kent vandaag **geen verdict-dragende kruising**: verifier, ref en
+clingo kruisen hem op nul posities. De Drools-backend kruist hem wél — beide
+transpilerbranches lopen `model.dagsoortVoorEenheid(...)` → `dagsoortGlobaal`
+→ de gedeelde `Dagsoorten`-predikaatcompiler, in de §6.11-datumrekenkunde
+(`DrlTranspiler.java:1771`) en in de §6.10-tijdsduur
+(`DrlTranspiler.java:2026`) — maar bij een waarde die `dagsoorten` niet
+declareert levert `dagsoortGlobaal` `null` en zet de transpiler een **marker**
+neer, geen verdict: de vorm wordt stilletjes niet gedragen in plaats van
+afgewezen. Eén consument verdedigt zich dus al ad hoc, op één van de vier, en
+alleen op de twee duurposities. Een ingang die naar een niet-gedeclareerde
+dagsoort wijst, laat vandaag dus nog steeds een eenheidsspelling door die naar
+niets verwijst; de datumrekenkunde erachter is toegestaan door de verifier en
 door geen enkele uitvoerder uit te rekenen.
 
 ## De arm
@@ -60,6 +77,18 @@ Open bij het schrijven te beslissen, en de keuze opschrijven:
 - WF-017 (ch. 2.9) verbiedt al botsing met de ingebouwde kalendereenheden en
   met de spellingen van een andere dagsoort. Deze arm is de derde kant van
   dezelfde driehoek; controleer dat hij WF-017 niet dubbelt.
+- **De zusterpost `Constante.naam`** — meenemen of expliciet doorschuiven naar
+  een eigen kaart, maar niet stilzwijgend overslaan. Gemeten 2026-09-06 op de
+  golden van deze kaart: het veld is **ongecontroleerd**. `spec/IR-SPEC.md`
+  ch. 4.1 somt in de rij ContextValue twee namen op (`Rekendatum`,
+  `Rekenjaar`); de wire draagt er sinds `jutterswet-schouwrooster` **drie**
+  (`de dag`, de dagsoortverwijzing). Verifier, ref en clingo lezen de naam
+  niet; de Drools-dagsoortcompiler leest hem als **magische string**
+  (`equalsIgnoreCase` op `"de dag"`) — één consument, één letterlijke
+  vergelijking. `de dag` → `de dagX` laat alle vier consumenten groen op
+  dezelfde waarden. Dat is dezelfde vorm van lek als de arm hierboven — een
+  naam op de wire die niets kruist — en of hij hierbij hoort is een
+  scope-beslissing die opgeschreven moet worden.
 
 ## Acceptance
 
@@ -96,3 +125,12 @@ May touch: `spec/verifier/**` (voorstel), `spec/IR-SPEC.md` (voorstel),
   zone en wacht op een frontend die de vorm kan emitteren.
 - De `Eenheidstelsel.naam`-klasse (de zelfnaam-tegen-mapsleutel-vraag) en
   WF-009's `afkorting`-vraag: eigen posten, eigen kaarten.
+
+## Eén koppeling om te kennen (geen scope, wel een valkuil)
+
+`scripts/check-drools.sh` krijgt via `card/gate12-speelvloer` een
+`EXPECTED_PLAYED`-pin op de speelvloer van gate 12. De golden van deze kaart
+tilt die vloer met één (109 → 110). Een negatief verandert de vloer **niet**
+(gate 12 loopt de goldens), dus deze kaart raakt de pin normaal gesproken
+niet — maar als er onderweg toch een golden bijkomt, moet het getal mee, en
+`scripts/` is een beschermd pad: dat is een onderhouders-edit, geen sessie-edit.
