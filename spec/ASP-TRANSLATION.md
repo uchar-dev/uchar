@@ -626,8 +626,18 @@ and this backend); declared factors and stelsel never enter.
     returns the winning VALUE, so a civil-day tie is value-neutral (ref's
     `agg_eerste`/`agg_laatste` over `scalar_cmp`). A non-datum-tijd or
     mixed-granularity operand faults loudly (ref faults the unordered
-    comparison); a set-typed datum-tijd fold, a navigated datum-tijd read
-    and the `DATUM_MET` constructor stay the dt_term catch-all's loud flank.
+    comparison); a set-typed datum-tijd fold, a navigated datum-tijd read,
+    the `DATUM_MET`/`DATUMTIJD_MET` constructor, a datum-tijd **parameter**
+    read and a **`Let`/`BinderRef`-bound** datum-tijd (with the residual
+    `VariabeleRef`) stay the dt_term catch-all's loud flank. The last two
+    were measured on 2026-09-06 and are each a live shape, not a
+    hypothetical: a document whose ordering reads a declared `DatumTijd`
+    parameter, and one whose left operand is a `Let` binding the datum-tijd
+    attribute and reading it back as a `BinderRef`, are both
+    `verifier: PASS` and both replay in ref (`oracle: PASS`), while clingo
+    answers `TRANSLATION FAULT` at this catch-all. That is this backend
+    declining a form the wire admits — one executor short of a
+    differential, recorded rather than hidden.
   - **the datum-tijd ORDERING comparison** (ch. 1.2e, 2026-09-06). Before
     it, a datetime ordering carrying no literal at all — two `DatumTijd`
     attributes under `EERDER` — faulted `unscalable datatype in the ASP
@@ -2084,7 +2094,22 @@ instead, since 2026-08-28, and the scalar ORDERING plus the datum-tijd
 literal joined them 2026-09-06 through the `dtcmpN` helper),
 and for text/enum/boolean **parameters**, which ref executes but the
 ASP parameter emission scales through `decimals_of_datatype` —
-ref-only until a corpus case demands a symbolic parameter carriage);
+ref-only until a corpus case demands a symbolic parameter carriage,
+and with a **`DatumTijd` parameter** as their sibling: a declared
+datum-tijd parameter that the case SUPPLIES A VALUE FOR faults in the
+same parameter emission with the same words even when **no rule reads
+it at all** (measured 2026-09-06: `verifier: PASS`, ref
+`oracle: PASS (6 expectations)`, clingo
+`TRANSLATION FAULT: unscalable datatype in the ASP translation`; drop
+the case value from the very same pair and clingo replays all six).
+So the emission scales what the case gives it, not what the rules use
+— the declaration alone is free. **Consequence for the message:**
+`unscalable datatype in the ASP translation` now has two senses, and
+the report does not distinguish them — a datum-tijd reaching
+`expr_term`'s scalar encoding (above) and a datum-tijd parameter
+VALUE reaching the parameter emission (here). Named rather than
+papered over: the two are found by where the fault fires, not by
+what it says);
 characteristic attribution with a non-waar value;
 the allocation's remaining scale-shape fences — since 2026-08-25
 all three methods, the voorwaarde and misaligned pot/target/cap/rest

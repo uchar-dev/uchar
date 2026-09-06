@@ -40,9 +40,15 @@ plus 14 leap days (1972, 1976, …, 2024) = **20 454** for 2026-01-01; plus
 | `2026-03-15T12:00:00.000` (the literal) | 20 527 | 43 200 000 | 1 773 576 000 000 |
 | `2026-03-15T11:59:59.999` (A1) | 20 527 | 43 199 999 | 1 773 575 999 999 |
 | `2026-03-15T12:00:00.001` (A2) | 20 527 | 43 200 001 | 1 773 576 000 001 |
+| `2026-03-15T12:00:00.000` (A3) | 20 527 | 43 200 000 | 1 773 576 000 000 |
 | `2026-03-15T09:30:00.000` (A5) | 20 527 | 34 200 000 | 1 773 567 000 000 |
 | `2026-03-14T23:59:59.999` (A6) | 20 526 | 86 399 999 | 1 773 532 799 999 |
 | `2026-03-16T00:00:00.000` (A7) | 20 528 | 0 | 1 773 619 200 000 |
+
+A3 gets its own row although its numbers repeat the literal's: that
+repetition IS the case. Both components equal, so the lexicographic order
+has no tie-break left and the strictness of the two comparisons is the only
+thing that can decide — see the outcome table below.
 
 `MS` of 12:00:00.000 is 12 × 3 600 000 = 43 200 000; of 23:59:59.999 it is
 23 × 3 600 000 + 59 × 60 000 + 59 × 1 000 + 999 = 86 399 999. The absolute
@@ -83,3 +89,18 @@ Both lexemes are admitted by WF-095 and by every reader, and they name the
 same instant: `15-03-2026 12:00:00.000` in this document's literal replays
 identically (measured). The canonical one is written here because the wire
 rule exists to make the canonical form the one a new producer targets.
+
+**What that leaves uncovered, said plainly.** WF-095 admits TWO grammars
+and the corpus witnesses only ONE. Counted over the four zones: seven
+`DatumTijd` literals exist anywhere — this golden's two, both canonical,
+and the five its negatiefs carry, all five ill-formed by construction. The
+second admitted grammar, the day-first source snippet, has **no wire
+witness at all**: not in `corpus/golden`, not in `corpus/negatief`. It is
+pinned in `ref/test` (both spellings read to the same millisecond, the
+de-dato prefix included) and in the Drools witness suite, and it is what
+this repository's own emitter writes today — so the grammar is exercised
+and the WIRE is not. That is a gap in the corpus, not in the readers, and
+the natural place to close it is the emitter-canonicalisation card: once
+the emitter writes the canonical lexeme into `waarde` and keeps the snippet
+in `bron`, a re-pinned emitter golden carries the snippet on the wire as a
+by-product, which is a better witness than one hand-broken for the purpose.

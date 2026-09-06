@@ -2996,10 +2996,19 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
           Printf.sprintf "%s = %s { %s : %s(%s,%s,%s) }" dm agg lm pred subject dd lm ],
         dd, dm )
   | _ ->
+      (* The reason names BOTH sides, because a reader of this line needs to
+         know what it may write as well as what it may not. Carried: the
+         literal, an own-subject read, datetime ± duration, and the
+         eerste/laatste fold over listed operands. Every flank below is a
+         SHAPE with no corpus case, each measured verifier-clean and replayed
+         by ref (2026-09-06) — so the refusal here is this backend declining a
+         form the wire admits, never a claim the form is ill-formed. *)
       fault
-        "datum-tijd here is not the pair term's arithmetic (an own-subject read or datetime \
-         \xc2\xb1 duration); a set-typed fold (eerste/laatste), a datum-met constructor or a \
-         navigated datum-tijd read is a loud flank, no corpus case"
+        "datum-tijd here is not the pair term's arithmetic. Carried: a datum-tijd literal, an \
+         own-subject read, datetime \xc2\xb1 duration, and eerste/laatste over listed operands. \
+         A loud flank, no corpus case: a datum-tijd PARAMETER read, a Let/BinderRef-bound \
+         datum-tijd (and the residual VariabeleRef), a set-typed fold, a datum-met or \
+         datumtijd-met constructor, and a navigated datum-tijd read"
 
 (* datetime + n sub-day units: linear on the ms value with the carry across
    the day boundary. The absolute ms value never forms — the step rides the

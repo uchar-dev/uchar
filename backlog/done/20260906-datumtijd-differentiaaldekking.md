@@ -133,10 +133,12 @@ Drools-literal-lezer, één betekenis, twee spellingen — en weigert al het
 andere MET DE POSITIE, bv.
 `at offset 20: expected exactly three fraction digits` voor `.1`,
 `at offset 10: expected 'T'` voor de spatie-variant, en
-`hour 25 is out of range` voor een onmogelijk veld. Alle drie de toegelaten
-spellingen (`2026-03-15T12:00:00.000`, `2026-03-15T12:00:00`,
-`15-03-2026 12:00:00.000`, `dd. 15-03-2026 12:00:00.000`) spelen exact
-hetzelfde document na.
+`hour 25 is out of range` voor een onmogelijk veld. Beide toegelaten
+grammatica's, in alle vier de spellingen (`2026-03-15T12:00:00.000` en
+`2026-03-15T12:00:00` — canoniek ISO, met en zonder fractie;
+`15-03-2026 12:00:00.000` en `dd. 15-03-2026 12:00:00.000` — het
+bronsnippet, met en zonder de-dato-prefix), spelen exact hetzelfde document
+na.
 
 **2. De ASP-vertaling draagt de ordening én de literal.** Rood-eerst op het
 LITERAALVRIJE ordeningsdocument (twee `DatumTijd`-attributen onder
@@ -165,6 +167,37 @@ datum-tijd (on)gelijk-aan (de `eqN`-harmonisatie vraagt een schaal die het
 paar niet heeft, en Tabel 44's één-leeg-waar-cel de negatieroute erover;
 geen corpuscase).
 
+*Twee luide flanken erbij, gemeten in de fixronde (2026-09-06).* De
+catch-all van `dt_term` noemde zijn weigergrond te smal. Twee vormen die de
+wire toelaat en die ref gewoon speelt, vallen erin:
+
+| vorm | verifier | ref | clingo |
+|---|---|---|---|
+| ordening tegen een gedeclareerde `DatumTijd`-**parameter** | PASS | `oracle: PASS` | `TRANSLATION FAULT` (dt_term-catch-all) |
+| linkeroperand is een `Let` die het attribuut bindt en als `BinderRef` teruggeleest wordt | PASS | `oracle: PASS` | `TRANSLATION FAULT` (dt_term-catch-all) |
+
+Beide melden nu met naam en toenaam in de catch-all, samen met de
+residuele `VariabeleRef`, de set-getypeerde vouw, de
+`DATUM_MET`/`DATUMTIJD_MET`-constructor en de genavigeerde lezing; de
+DRAAG-kant van dezelfde melding noemt voortaan óók de literal en de
+eerste/laatste over opgesomde operanden, zodat een lezer aan één regel
+genoeg heeft. Alleen de MELDINGSTEKST beweegt: sweep vóór en ná over alle
+434 casebestanden geeft een byte-identieke verdictset (geen enkele
+`expectedFault` in `corpus/rood` pint deze tekst — geteld: nul).
+
+*De twee-plekken-twee-meldingen-observatie.* Eén en dezelfde
+`DatumTijd`-parameter faalt op TWEE plekken met TWEE verschillende
+meldingen, en welke je krijgt hangt niet af van de parameter maar van wie
+hem aanraakt. Leest een regel hem, dan valt hij in de `dt_term`-catch-all
+hierboven. Leest GEEN regel hem, maar geeft de case hem een waarde, dan
+faalt de parameter-emissie met `unscalable datatype in the ASP
+translation` — dezelfde woorden die een datum-tijd in `expr_term`'s
+scalaire codering krijgt (gemeten: ref `oracle: PASS (6 expectations)`,
+clingo TRANSLATION FAULT; laat de case-waarde weg en clingo speelt
+diezelfde zes). De declaratie alleen kost dus niets; de case-waarde wel.
+Beide observaties staan nu in `spec/ASP-TRANSLATION.md`, inclusief dat
+"unscalable datatype" daarmee tweeduidig is geworden.
+
 **3. De drie lezers klemmen zelf.** Rood-eerst, per lezer gemeten, precies
 de vormen uit de kaarttabel:
 
@@ -175,7 +208,24 @@ de vormen uit de kaarttabel:
 | `…T12:00:00.1234` | weigerde al | 123,4 ms → weigering | 1 234 ms → weigering |
 | `2026-3-15T09:00:00` | weigerde al | parse-crash → weigering die de vorm noemt | 09:00 op 15 maart → weigering |
 | `…T12:00` (geen seconden) | weigerde al | 12:00:00 → weigering | weigering → weigering met positie |
-| `…T12:00:00Z` / `+01:00` / spatie / rommel | weigerde al | weigering | weigering |
+| `2026-02-30T12:00:00.000` | weigerde al | parse-exceptie → weigering die de kalender noemt | **2 maart** → weigering, `day 30 is out of range` |
+| `2026-03-15T25:00:00.000` | weigerde al | parse-exceptie → weigering die de kalender noemt | **01:00 de volgende dag** → weigering, `hour 25 is out of range` |
+| `…T12:00:00Z` / `+01:00` / spatie / rommel | weigerde al | weigering → weigering die de vorm noemt | weigering |
+
+De twee kalenderrijen zijn erbij gekomen in de fixronde en maken de claim
+BREDER dan de kaart hem adverteerde: het hek zit niet alleen op de
+veldbreedtes maar ook op de kalender. De gedeelde lezer rekende de
+burgerlijke dag zuiver rekenkundig (`days_from_civil` zonder
+geldigheidstoets), dus 30 februari rolde door naar 2 maart en uur 25 naar
+01:00 de dag erna — hermeten: die twee lexemen leverden identiek dezelfde
+ms-waarde als `2026-03-02T12:00:00` respectievelijk
+`2026-03-16T01:00:00`. Dat is dezelfde klasse als de fractierijen (een
+antwoord dat niemand geschreven heeft) via een andere deur, en beide deuren
+zijn nu dicht. De Z-rij toont de andere helft van dezelfde reparatie: hij
+werd al door alle drie geweigerd, maar de Drools-lezer weigerde hem als
+kale `DateTimeParseException`; nu noemt de melding de vorm die hij
+verwachtte. Een weigering die niet zegt wat hij wilde, is een weigering
+waar een producent niets mee kan.
 
 De gedeelde lezer (`ref/lib/case.ml`) deelt nu de canonieke ISO-arm van
 `Value`; de Drools-lezer (`CaseRunner.waardeNaarArg`) klemt op het
@@ -183,8 +233,14 @@ schema-patroon met de vorm in de melding, als HARDE fout en nooit een
 `Excluded` (dat zou de golden stil uitsluiten). Gate 4 blijft staan — het
 schema is nu het tweede hek. **Nul bestaande cases bewegen:** alle 24
 `dateTime`-waarden (19 publiek + 5 in de pariteitszone) zijn
-schema-conform drie-cijferig, geteld en getoetst; gate 11 draait onbewogen
-(29 replays door ref, clingo en Drools, nul divergenties).
+schema-conform (fractie afwezig, of exact drie cijfers), geteld en
+getoetst. Hertelling in de fixronde, want "drie-cijferig" was te sterk
+gezegd: van de 19 publieke waarden van vóór deze kaart draagt er **nul** een
+fractie — 19 van 19 fractieloos — en alleen de 5 waarden in de
+pariteitszone zijn drie-cijferig. Het schemapatroon maakt de fractie
+optioneel en dat is precies waarom beide vormen conform zijn; geen enkele
+waarde in welke zone dan ook draagt een andere breedte. Gate 11 draait
+onbewogen (29 replays door ref, clingo en Drools, nul divergenties).
 
 **4. De golden: `corpus/golden/jutterswet-meldstip`.** Eén
 `DatumTijd`-attribuut, twee ordeningen (`EERDER` → `tijdig`, `LATER` →
@@ -224,6 +280,33 @@ documenten (golden 157, rood 22, negatief 330, pariteitszone 30 — 534 op de
 pre-rebase kop, 528 vóór deze kaart): precies vijf regels veranderen, en
 dat zijn deze vijf negatiefs. **Nul over-afwijzing**, nul onder-dekking; na
 het terugdraaien staat de md5 weer op `4c82d1c9f9ab5168421503ea5f7b7f77`.
+
+*Het recept, want de md5 alleen pint niets.* Die md5's zijn van het
+GEBOUWDE binary, en dune bakt het buildpad erin: dezelfde broncode in een
+andere map geeft een andere md5. Een md5 is dus een vingerafdruk van één
+draai, geen reproduceerbaar artefact — hij pint alleen iets samen met het
+recept dat hem maakte. Het recept hier is één snede in
+`spec/verifier/lib/checks.ml`, in de `Literal`-arm van de expressiewandeling
+(~r. 3740–3746): de tak
+`| Some Datum_tijd, Some w when not (lexeme_datum_tijd w) -> [ v "WF-095" … ]`
+verdwijnt, zodat een datum-tijd-literal doorvalt naar de `| _ -> []` eronder.
+Wat blijft staan: het predicaat `lexeme_datum_tijd` zelf op r. 256 — het
+heeft na de snede nul aanroepers, en de build accepteert dat (hermeten in
+de fixronde: `dune build spec/verifier` slaagt zonder een tweede bewerking,
+anders dan de `rec`-val die WF-092's mutant-notitie beschrijft) — plus de
+WF-081-tak voor het getallexeem en de WF-084-tak voor het datumlexeem er
+direct boven, en de rest van de `Literal`-arm (enumeratielabel,
+tekenrestrictie). Eén tak eruit, geen tweede regel geraakt. Dat is
+falsifieerbaar en overdraagbaar; de md5 is dat niet. Bewijs uit eigen huis:
+lens 1 deed dezelfde arm-exacte snede in een andere checkout en kreeg md5
+`e8f56085…` — een ANDER getal, met exact dezelfde vijf-regel-uitslag. Twee
+md5's, één recept, één uitkomst: het recept is wat de meting draagt.
+De fixronde heeft het recept zelf hergedraaid, in een `git archive
+HEAD`-kopie: gewapend tegenover gemuteerd over dezelfde **539** documenten
+van de vier zones geeft **exact vijf** gewijzigde regels — `WF-095 FAIL` →
+`verifier: PASS` op precies de vijf `wf095-*`-negatiefs, en geen enkel ander
+document beweegt.
+
 Boundary geteld: de enige WELGEVORMDE `DatumTijd`-literals over de vier
 zones zijn de twee van deze kaarts eigen golden (naast de vijf van haar
 negatiefs), dus de regel treft geen enkel document van vóór zichzelf. Op de
@@ -273,8 +356,8 @@ goldens, 0 survivors — ongewijzigd).
   is gemeten door de jar zelf (acht vormen, hierboven), maar geen
   JUnit-getuige legt hem vast; het niet-over-afwijzen wordt wél mechanisch
   bewaakt (gates 11 en 12 lezen 30 conforme waarden). De ref/ASP-kant kreeg
-  zijn getuige in `ref/test`. Voorstel voor een eigen kaartje: een
-  Java-getuige naast `DatumTijdLexeemWitnessTest`.
+  zijn getuige in `ref/test`. Uitgeschreven als eigen kaartje:
+  `backlog/new/20260906-drools-caselezer-getuige.md`.
 - Datum-tijd (on)gelijk-aan blijft in de ASP-vertaling een luide flank met
   eigen reden (geen corpuscase); ref draagt hem wel.
 - De emitterkant is onaangeraakt (`frontends/**` niet aangeraakt): een
@@ -283,3 +366,67 @@ goldens, 0 survivors — ongewijzigd).
   is een eigen kaart met een herpin van de emitter-goldens.
 - `spec/CONSTRUCTS.md` en `spec/PLAN.md` niet aangeraakt (rijvoorstel in het
   sessierapport).
+
+---
+
+## Fixronde (2026-09-06, na twee lenzen)
+
+Twee lezingen over de landing heen; de landing houdt volledig — alles
+reproduceert, dertien gates cijfer-exact. Wat de fixronde deed was
+uitsluitend claims bijstellen die te sterk of te smal waren gezegd, plus
+twee additieve suite-blokken en één presentatiecorrectie in de golden. Geen
+productiesemantiek gewijzigd; de enige codewijziging buiten de suites is
+een MELDINGSTEKST.
+
+| # | wat | waar |
+|---|---|---|
+| F1 | het EDIT-RECEPT naast de mutant-md5's, met de les dat een md5 alleen mét recept pint (lens 1's arm-exacte snede gaf een ánder getal en dezelfde vijf regels) | deze kaart, §5 |
+| F2a | de `dt_term`-catch-all-melding herschreven: de DRAAG-kant noemt nu ook de literal en de eerste/laatste over opgesomde operanden, de FLANK-kant noemt alle zes vormen bij naam | `backends/clingo/lib/translate.ml` |
+| F2b | de flankenlijst uitgebreid met de parameter-lezing en de `Let`/`BinderRef`-vorm, mét meting | `spec/ASP-TRANSLATION.md` |
+| F2c | de datum-tijd-parameter als zusje bij de parameter-carriage-passage, en "unscalable datatype" benoemd als tweeduidig | `spec/ASP-TRANSLATION.md` |
+| F2d | beide nieuwe luide flanken + de twee-plekken-twee-meldingen-observatie | deze kaart, §2 |
+| F3 | de scopezin naar WF-094-model: `waarde: null` BENOEMD, niet gesloten | `spec/IR-SPEC.md` (ch. 4.1 + indexrij) |
+| F4 | de OF_GELIJK-familie op de literaalordening, exact op de drempel, incl. de KLEINER/GROTER-aliassen — acht armen ref ≡ clingo | `backends/clingo/test/test_clingo.ml` |
+| F5 | "alle drie de toegelaten spellingen" gevolgd door vier vormen → beide grammatica's, vier spellingen | deze kaart, §1 |
+| F6 | "schema-conform drie-cijferig" → "fractie afwezig, of exact drie cijfers", met de hertelling | deze kaart, §3 |
+| F7 | twee kalenderrijen bij de VOOR → NA-tabel: de fix is breder dan geadverteerd | `spec/IR-SPEC.md` + deze kaart, §3 |
+| F8 | de Z-rij krijgt zijn →-pijl in de Drools-kolom (kale exceptie → melding die de vorm noemt) | `spec/IR-SPEC.md` |
+| F10 | de javadoc-claim "geen golden kan dit dragen" afgedateerd — `jutterswet-meldstip` IS die golden | `…/cases/DatumTijdLexeemWitnessTest.java` (uitsluitend javadoc) |
+| F11 | `onderwerpBron`/`bron`: "zijn" → "haar" (de aanmelding is vrouwelijk; het corpus draagt de vorm al bij `Vondst`) | `corpus/golden/jutterswet-meldstip/ir.json` |
+| F12 | A3 als eigen rij in de handberekening; en eerlijk gezegd dat de tweede grammatica geen wire-getuige heeft | `corpus/golden/jutterswet-meldstip/NOTE.md` |
+| F13 | BEIDE operanden leeg onder EERDER → afwezig in beide | `backends/clingo/test/test_clingo.ml` |
+
+**De familie-uitbreiding (F4).** De literaalordening was gepind op de
+STRIKTE armen: een ms ervoor, exact erop, een ms erna, en de dagrand. Die
+vier pinnen het DAG-symbool van de lexicografische helper en zeggen niets
+over het ms-symbool op gelijke dagen, want zodra de dagen verschillen vuurt
+de eerste regel en komt de tweede er niet aan te pas. De niet-strikte
+familie zet precies daar zijn getuige: op de drempel zijn beide componenten
+gelijk, dus alleen de tweede regel kan vuren en alleen zijn ms-symbool
+beslist. Schrijf `<` waar `<=` hoort en alle vier de bestaande checks
+blijven groen terwijl de grens stil omklapt. Vier spellingen —
+`EERDER_OF_GELIJK`, `LATER_OF_GELIJK` en hun `KLEINER`/`GROTER`-aliassen,
+die de wire op een datum-getypeerde vergelijking toelaat en die geen tweede
+semantiek mogen zijn — elk in ref én clingo: acht armen, alle acht
+ref ≡ clingo.
+
+**Bevestigde niet-bevindingen** (lens 2 keek, vond niets, en dat versterkt
+het verslag — elk hier hermeten):
+
+- **WF-091 vangt de liegende annotatie.** Zet op de `AttribuutRef` van deze
+  golden de annotatie `DatumInDagen` terwijl de declaratie `DatumTijd` is,
+  en de verifier weigert het document met twee regels: `WF-036 FAIL` (date
+  ordering across two date precisions) én `WF-091 FAIL … soort mismatch:
+  attribute reference 'meldstip' is typed date-day, but the declaration it
+  reads from is date-ms`. De annotatie-onverschilligheid van gate 13 rust
+  dus hier op een regel die de leugen apart benoemt, niet alleen op de
+  precisiebotsing.
+- **De gelijkstelling draagt.** Een `GELIJKSTELLING` die een
+  `DatumTijd`-attribuut SCHRIJFT vanaf een `DatumTijd`-literal is
+  `verifier: PASS`, `oracle: PASS (1 expectations)` en
+  `clingo: PASS (1 expectations)`. De landing dekt dus niet alleen de
+  LEESkant van `DatumTijd`; de schrijfkant valt er zonder extra werk onder.
+- **Beide-leeg is consistent met ch. 1.2d.** Twee lege datum-tijd-operanden
+  onder `EERDER` geven afwezigheid in beide uitvoerders — geen `#sup`/`#inf`
+  die als waarde ontsnapt, geen hulpatoom dat op een lege body afleidt. Nu
+  ook vastgelegd (F13) in plaats van beredeneerd.

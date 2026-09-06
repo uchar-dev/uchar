@@ -1934,6 +1934,19 @@ let () =
   in
   ref_matches ~name:"datum-tijd ordening met lege operand" ~ir:paar_ir ~case_text:leeg_case;
   clingo_matches ~name:"datum-tijd ordening met lege operand" ~ir:paar_ir ~case_text:leeg_case;
+  (* BOTH operands empty. The one-empty row above leaves the other side
+     bound, so it cannot tell "the join failed" from "the bound side lost";
+     with neither bound, the only thing that can answer is the ch. 1.2d rule
+     itself. A #sup/#inf escaping into an unbound pair component, or a
+     helper deriving on a vacuous body, would fire here and nowhere else. *)
+  let beide_leeg_case =
+    dt_case ~attrs:""
+      ~expected:{|{ "kind": "characteristicAbsent", "label": "W1", "characteristic": "tijdig" }|}
+  in
+  ref_matches ~name:"datum-tijd ordening met BEIDE operanden leeg" ~ir:paar_ir
+    ~case_text:beide_leeg_case;
+  clingo_matches ~name:"datum-tijd ordening met BEIDE operanden leeg" ~ir:paar_ir
+    ~case_text:beide_leeg_case;
   (* 3. the ordering against a LITERAL, at the millisecond boundary: the
      literal enters as a GROUND pair term, never as an absolute ms integer
      (which gringo would wrap at 32 bits, silently) *)
@@ -1963,6 +1976,32 @@ let () =
       (* the civil day decides over the ms-of-day: this instant is a whole
          day EARLIER while its ms-of-day is far LATER *)
       ("2026-03-14T23:59:59.999", true, "een dag ervoor met latere ms-van-de-dag") ];
+  (* 3b. the OF_GELIJK family, ON the threshold — the one instant that tells
+     the two halves of the lexicographic helper apart. The strict forms above
+     pin the day symbol; here the days are EQUAL, so only the second rule can
+     fire and only its ms symbol decides. Get that symbol wrong (`<` where
+     `<=` belongs) and every check above still passes while the boundary
+     silently flips. All four spellings are ONE family: EERDER_OF_GELIJK and
+     LATER_OF_GELIJK, plus their KLEINER/GROTER aliases, which the wire
+     admits on a date-typed comparison and which must not be a second
+     semantics. Eight arms, each pinned in ref AND clingo. *)
+  List.iter
+    (fun (op, wat) ->
+      let ir =
+        dt_doc ~attributen:{|"aanvangstip": { "node": "DatumTijd" }|} ~kenmerken:{|"tijdig"|}
+          ~kenmerk_soorten:{|"tijdig": "BIJVOEGLIJK"|}
+          ~regels:
+            (dt_regel ~op ~links:(dt_attr "aanvangstip")
+               ~rechts:(dt_lit "2026-03-15T12:00:00.000"))
+      in
+      let c = lit_case "2026-03-15T12:00:00.000" true in
+      ref_matches ~name:("datum-tijd literal-ordening exact op de drempel, " ^ wat) ~ir ~case_text:c;
+      clingo_matches ~name:("datum-tijd literal-ordening exact op de drempel, " ^ wat) ~ir
+        ~case_text:c)
+    [ ("EERDER_OF_GELIJK", "EERDER_OF_GELIJK");
+      ("LATER_OF_GELIJK", "LATER_OF_GELIJK");
+      ("KLEINER_OF_GELIJK", "de KLEINER-alias");
+      ("GROTER_OF_GELIJK", "de GROTER-alias") ];
   (* 4. the loud flanks. A mixed-precision pair: one instant, one
      representation (WF-036 refuses the document too, so this is the
      executor's own last line). *)

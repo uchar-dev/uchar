@@ -23,12 +23,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * frontend: a conforming producer writing the canonical lexeme may not be answered differently from one
  * writing the snippet.
  *
- * <p><b>Why this lives in the suite and not in the corpus.</b> No golden can carry a datum-tijd literal
- * today, measured 2026-09-05: {@code ref}'s {@code literal_value} has no {@code Datum_tijd} arm at all
- * ("EVALUATION FAULT: literal of this datatype not implemented", in EITHER lexeme) and the ASP backend
- * faults before it ("unscalable datatype in the ASP translation" — its {@code dt_term} carries an
- * own-subject read and datetime &plusmn; duration, no literal). Gates 5 and 6 would therefore go red on such
- * a golden, so gate 12 cannot be the fence here; this witness is.
+ * <p><b>Why this lived in the suite and not in the corpus — and what changed.</b> Measured 2026-09-05, no
+ * golden could carry a datum-tijd literal at all: {@code ref}'s {@code literal_value} had no
+ * {@code Datum_tijd} arm ("EVALUATION FAULT: literal of this datatype not implemented", in EITHER lexeme)
+ * and the ASP backend faulted before it ("unscalable datatype in the ASP translation" — its
+ * {@code dt_term} carried an own-subject read and datetime &plusmn; duration, no literal). Gates 5 and 6
+ * would have gone red on such a golden, so gate 12 could not be the fence and this witness was.
+ * <b>That is history since 2026-09-06:</b> {@code ref} carries the literal and the ASP translation carries
+ * both the datum-tijd ordering and the literal, and {@code corpus/golden/jutterswet-meldstip} IS the golden
+ * this paragraph said could not exist — replayed by gates 5, 6 and 12 against hand-computed values. What
+ * this witness keeps is what the golden still cannot say: the golden carries ONE lexeme (the canonical
+ * one), while the pins below hold BOTH spellings against each other on BOTH Drools branches, and hold the
+ * refusals a corpus golden may not contain.
  *
  * <p><b>Red before the fix</b> (measured through the backend CLI on these exact models):
  * <ul>

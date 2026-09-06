@@ -81,12 +81,12 @@
           "node": "AttribuutRef",
           "attribuut": "meldstip",
           "objecttype": "Aanmelding",
-          "onderwerpBron": "zijn",
+          "onderwerpBron": "haar",
           "navigatieRol": null,
           "type": {
             "node": "DatumTijd"
           },
-          "bron": "zijn meldstip",
+          "bron": "haar meldstip",
           "set": false,
           "navigatiePad": []
         },
@@ -99,7 +99,7 @@
           "bron": "15-03-2026 12:00:00.000"
         },
         "periode": null,
-        "bron": "zijn meldstip eerder is dan 15-03-2026 12:00:00.000"
+        "bron": "haar meldstip eerder is dan 15-03-2026 12:00:00.000"
       },
       "geldigheid": {
         "node": "Geldigheid",
@@ -139,12 +139,12 @@
           "node": "AttribuutRef",
           "attribuut": "meldstip",
           "objecttype": "Aanmelding",
-          "onderwerpBron": "zijn",
+          "onderwerpBron": "haar",
           "navigatieRol": null,
           "type": {
             "node": "DatumTijd"
           },
-          "bron": "zijn meldstip",
+          "bron": "haar meldstip",
           "set": false,
           "navigatiePad": []
         },
@@ -157,7 +157,7 @@
           "bron": "15-03-2026 12:00:00.000"
         },
         "periode": null,
-        "bron": "zijn meldstip later is dan 15-03-2026 12:00:00.000"
+        "bron": "haar meldstip later is dan 15-03-2026 12:00:00.000"
       },
       "geldigheid": {
         "node": "Geldigheid",
