@@ -1,0 +1,23 @@
+Objecttype de Wacht (mv: Wachten)
+    de ploegomvang Numeriek (geheel getal);
+    de vangstwaarde Numeriek (geheel getal);
+    het geenteken Numeriek (geheel getal);
+    het minsteteken Numeriek (geheel getal);
+
+Regel geenteken van een wacht
+    geldig altijd
+        Het geenteken van een Wacht moet gesteld worden op 1
+        indien hij aan geen van de volgende voorwaarden voldoet:
+        - zijn ploegomvang is gelijk aan 0
+        - het aandeel is groter dan 0.
+        Daarbij geldt:
+            het aandeel is de vangstwaarde van de Wacht gedeeld door de ploegomvang van de Wacht naar beneden afgerond op 0 decimalen.
+
+Regel minsteteken van een wacht
+    geldig altijd
+        Het minsteteken van een Wacht moet gesteld worden op 1
+        indien hij aan ten minste één van de volgende voorwaarden voldoet:
+        - zijn ploegomvang is gelijk aan 0
+        - het aandeel is groter dan 0.
+        Daarbij geldt:
+            het aandeel is de vangstwaarde van de Wacht gedeeld door de ploegomvang van de Wacht naar beneden afgerond op 0 decimalen.

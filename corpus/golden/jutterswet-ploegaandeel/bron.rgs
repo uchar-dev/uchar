@@ -1,0 +1,13 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de ploegomvang Numeriek (geheel getal);
+    de vangstwaarde Numeriek (geheel getal);
+    het bergingsaandeel Numeriek (geheel getal);
+
+Regel bergingsaandeel van een jutter
+    geldig altijd
+        Het bergingsaandeel van een Jutter moet gesteld worden op 1
+        indien hij aan alle volgende voorwaarden voldoet:
+        - zijn ploegomvang is ongelijk aan 0
+        - het aandeel is groter dan 0.
+        Daarbij geldt:
+            het aandeel is de vangstwaarde van de Jutter gedeeld door de ploegomvang van de Jutter naar beneden afgerond op 0 decimalen.

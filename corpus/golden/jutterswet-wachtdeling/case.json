@@ -1,0 +1,47 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W1",
+        "objectType": "Wacht",
+        "attributes": {
+          "ploegomvang": { "number": "0" },
+          "vangstwaarde": { "number": "100" }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W2",
+        "objectType": "Wacht",
+        "attributes": {
+          "ploegomvang": { "number": "4" },
+          "vangstwaarde": { "number": "100" }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W3",
+        "objectType": "Wacht",
+        "attributes": {
+          "ploegomvang": { "number": "7" },
+          "vangstwaarde": { "number": "3" }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeEmpty", "label": "W1", "attribute": "geenteken" },
+    { "kind": "attributeValue", "label": "W1", "attribute": "minsteteken", "value": { "number": "1" } },
+    { "kind": "attributeEmpty", "label": "W2", "attribute": "geenteken" },
+    { "kind": "attributeValue", "label": "W2", "attribute": "minsteteken", "value": { "number": "1" } },
+    { "kind": "attributeValue", "label": "W3", "attribute": "geenteken", "value": { "number": "1" } },
+    { "kind": "attributeEmpty", "label": "W3", "attribute": "minsteteken" }
+  ]
+}

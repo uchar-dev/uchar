@@ -1,0 +1,44 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "ploegomvang": { "number": "0" },
+          "vangstwaarde": { "number": "100" }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "ploegomvang": { "number": "4" },
+          "vangstwaarde": { "number": "100" }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "ploegomvang": { "number": "7" },
+          "vangstwaarde": { "number": "3" }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeEmpty", "label": "J1", "attribute": "bergingsaandeel" },
+    { "kind": "attributeValue", "label": "J2", "attribute": "bergingsaandeel", "value": { "number": "1" } },
+    { "kind": "attributeEmpty", "label": "J3", "attribute": "bergingsaandeel" }
+  ]
+}
