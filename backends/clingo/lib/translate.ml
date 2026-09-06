@@ -2890,6 +2890,23 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
    exactly the day-precision date rule. *)
 and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string =
   match e with
+  | Literal { waarde; typ = Some Datum_tijd; _ } ->
+      (* WF-094 (ch. 4.1): the lexeme reads through the SHARED datum-tijd
+         reader — one grammar, one instant, no second opinion — and the
+         instant enters as the GROUND pair term dt(D, MS), the very split
+         [datetime_term] emits for a case value. It is never an absolute ms
+         integer, and that is not a stylistic choice: 2026-03-15T12:00:00.000
+         is 1 773 576 000 000 ms, which gringo grounds as -245 493 248 (it
+         wraps at 32 bits, silently), and two instants 27.7 days apart then
+         compare BACKWARDS. The pair keeps both components inside the range,
+         so no fence is needed here at all. *)
+      let ms =
+        match Value.datetime_of_lexeme (req "Literal.waarde" waarde) with
+        | Value.Date_time t -> t
+        | v -> fault "datum-tijd literal did not read as an instant: %s" (Value.to_string v)
+      in
+      let d, msod = split_datetime ms in
+      ([], string_of_int d, string_of_int msod)
   | Attribuut_ref
       { attribuut = Some a; objecttype = Some ot; navigatie_rol = None; navigatie_pad = [];
         navigatie_bindingen = None; set = false; _ }
@@ -3247,6 +3264,56 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       let rr, tr = symbolic_term ctx ~subject ~subject_ot (req "rechts" rechts) in
       if op = Gelijk then ll @ rr @ [ Printf.sprintf "%s == %s" tl tr ]
       else neq_helper ctx ~subject ~subject_ot (ll, tl) (rr, tr)
+  | Vergelijking { op; links; rechts; periode = None; _ }
+    when is_datetime_operand links || is_datetime_operand rechts ->
+      (* THE DATUM-TIJD ORDERING (RUNTIME-SEMANTICS ch. 1.2e + ch. 3.8).
+         Every other comparison arm below harmonises INTEGER SCALES; a
+         datum-tijd has none — [decimals_of_datatype] refuses it, which is
+         why a datetime ordering carrying no literal at all used to fault
+         `unscalable datatype` here while ref replayed the same document
+         exactly. The scale question has one answer and the pair term
+         already gives it: an instant rides dt(D, MS), the civil day beside
+         the ms-of-day, because the absolute ms value does not fit gringo's
+         32-bit grounding (see the [dt_term] Literal arm for the measured
+         wrap). So the ordering is LEXICOGRAPHIC over the pair: the civil
+         day decides, the ms-of-day breaks the tie — exactly ref's total
+         order on Date_time.
+
+         A disjunction cannot stand in an ASP body, so the two cases become
+         two rules for one helper atom. Both are POSITIVE joins over the
+         operands' own binding atoms, so an empty operand simply fails to
+         bind and the comparison is false — the ch. 1.2d date row, for free,
+         the same way the day-precision ordering below gets it. *)
+      let le = req "Vergelijking.links" links and re = req "Vergelijking.rechts" rechts in
+      if not (is_datetime_operand (Some le) && is_datetime_operand (Some re)) then
+        fault
+          "a datum-tijd comparison against a non-datum-tijd operand has no order here (WF-036: \
+           one instant, one representation; ref faults the unordered comparison)";
+      let day_sym, ms_sym =
+        match op with
+        | Eerder | Kleiner -> ("<", "<")
+        | Eerder_of_gelijk | Kleiner_of_gelijk -> ("<", "<=")
+        | Later | Groter -> (">", ">")
+        | Later_of_gelijk | Groter_of_gelijk -> (">", ">=")
+        | Gelijk | Ongelijk ->
+            (* the equality row is a different shape, not a tighter one: the
+               numeric arm's eqN helper harmonises scales the pair term does
+               not have, and Tabel 44's one-empty-true cell needs the
+               negation route over it. No corpus case, so it is a loud flank
+               rather than an untested encoding. *)
+            fault
+              "datum-tijd (on)gelijk-aan is not translated (the pair term carries no scale for \
+               the eqN harmonisation; no corpus case exercises it)"
+      in
+      let a1, d1, m1 = dt_term ctx ~subject ~subject_ot le in
+      let a2, d2, m2 = dt_term ctx ~subject ~subject_ot re in
+      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      let body = String.concat ", " ((base :: a1) @ a2) in
+      ctx.fresh <- ctx.fresh + 1;
+      let p = Printf.sprintf "dtcmp%d" ctx.fresh in
+      emit ctx "%s(%s) :- %s, %s %s %s." p subject body d1 day_sym d2;
+      emit ctx "%s(%s) :- %s, %s == %s, %s %s %s." p subject body d1 d2 m1 ms_sym m2;
+      [ Printf.sprintf "%s(%s)" p subject ]
   | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ }
     when not (op = Gelijk && (is_date_operand links || is_date_operand rechts)) ->
       (* the ch. 1.2d NUMERIC equality asymmetry (arith.compare_op):
