@@ -901,12 +901,41 @@ public final class CaseRunner {
             return new BigDecimal(s);
         }
         if (w.has("date")) return LocalDate.parse(w.get("date").asText());
-        if (w.has("dateTime")) return LocalDateTime.parse(w.get("dateTime").asText());
+        if (w.has("dateTime")) return datumTijdVanCaseWire(w.get("dateTime").asText(), veld);
         if (w.has("boolean")) return w.get("boolean").asBoolean();
         if (w.has("text")) return w.get("text").asText();
         if (w.has("enumeration")) return w.get("enumeration").asText();
         if (w.has("timeline")) throw new Excluded("timeline value on '" + veld + "' is not carried by the v0 backend");
         throw new Excluded("value form on '" + veld + "' is not carried by the v0 backend: " + w);
+    }
+
+    /* The uchar-case-v0 {@code dateTime} lexeme, matched WHOLE: fixed field widths, {@code T} as the
+     * separator, the seconds field always written, a fraction that is optional but EXACTLY three digits
+     * (whole milliseconds). It is the schema's own pattern, held here as well — gate 4 checks case FILES,
+     * this reader checks every case value that reaches the backend by any route. */
+    private static final java.util.regex.Pattern CASE_DATUM_TIJD =
+            java.util.regex.Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?");
+
+    /** The instant a case {@code dateTime} names — or a loud refusal naming the FORM, never a guess.
+     *  <p>{@link LocalDateTime#parse} is laxer than the wire it reads: it accepts {@code …T12:00} without a
+     *  seconds field, and a fraction of ANY width, which it reads POSITIONALLY — {@code .1} as a hundred
+     *  milliseconds and {@code .1234} as 123.4. The shared interpreter/ASP case reader read those same three
+     *  digits differently ({@code .1} as ONE millisecond, {@code .100000} as a hundred THOUSAND), and the
+     *  literal reader refused them outright: one wire, three answers. Inside the schema's fence all three
+     *  agree, and that fence was the only reason the divergence never showed. Each reader now holds it
+     *  itself, so a case reaching a reader by another route (a generator, a hand run, a second producer) is
+     *  refused rather than answered three ways. A malformed lexeme is a document defect, not a form this
+     *  backend does not carry, so it is a hard error and never an {@link Excluded}. */
+    private static LocalDateTime datumTijdVanCaseWire(String lexeem, String veld) {
+        if (!CASE_DATUM_TIJD.matcher(lexeem).matches())
+            throw new IllegalArgumentException("malformed dateTime '" + lexeem + "' on '" + veld
+                    + "': the uchar-case-v0 lexeme is yyyy-mm-ddThh:mm:ss[.fff] — fixed field widths, 'T',"
+                    + " the seconds field written, no zone or offset, a fraction of exactly three digits");
+        try { return LocalDateTime.parse(lexeem); }
+        catch (java.time.format.DateTimeParseException e) {
+            throw new IllegalArgumentException("malformed dateTime '" + lexeem + "' on '" + veld
+                    + "': the field widths are right but the calendar is not (" + e.getMessage() + ")");
+        }
     }
 
     private static Class<?> argType(Datatype dt) {
