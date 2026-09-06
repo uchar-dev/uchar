@@ -336,12 +336,19 @@ let wf002 ctx =
    arm frees exactly one document, and a mutant that relaxes the comparison to
    `norm` frees all five (every witness is a one-character recapitalisation).
 
-   The harm is a silently DIFFERENT program, not a missing value: the OCaml
-   consumers key everything off the map key and never read the self-name at
-   all (`ref` reads none of the five; the ASP backend reads `es_naam` only to
-   NAME a system inside a fault message it would raise anyway), while the
-   bean-model executor loads the self-name AS the declaration's name and reads
-   it at 105 (object type), 32 (parameter), 3 (fact type) and 1 (dimension)
+   The harm is a silently DIFFERENT program, not a missing value: every
+   consumer that RESOLVES anything keys off the map key, and no consumer
+   crosses the two. What each does read, exactly (the spec clause says the
+   same): `ref` reads none of the five self-names; the ASP backend reads
+   `es_naam` only to NAME a system inside a fault message it would raise
+   anyway; and THIS verifier reads three of the five — `ot_naam`, `ft_naam`
+   and `dim_naam`, each once, in WF-057's target-text-safety walk, which also
+   walks all five KEYS and never puts a self-name beside its key. The
+   parameter and unit-system self-names it does not read at all, which is why
+   those two arms below have no reader in this binary other than themselves.
+   The bean-model executor is the one that loads the self-name AS the
+   declaration's name and reads it back at 105 (object type), 32 (parameter),
+   3 (fact type) and 1 (dimension)
    sites. Measured 2026-09-06, one self-name twisted at a time over every
    golden: a parameter self-name differing from its key in ONE CAPITAL leaves
    the verifier, `ref` and the ASP backend passing on 11 of the goldens' 34
@@ -349,12 +356,19 @@ let wf002 ctx =
    (`jutterswet-aanvoergeld`: 322.50 becomes 310.00), because the case binds
    its globals by the written name and the transpiler registers them under the
    self-name. Cost over the four zones: none — all 1919 entries the five
-   tables hold spell their key byte for byte.
+   tables held before this rule spell their key byte for byte (1935 after it,
+   the five witnesses bringing their whole source documents along).
 
    Scope: the PRESENT self-name. `naam: null` is the empty half of the same
-   field and a different question (the (n)/(o) precedent of ch. 4.6); no
-   document in any zone carries one, so a clause there would have no witness
-   and it stays in ch. 4.6's open list. *)
+   field and a different question (the (n)/(o) precedent of ch. 4.6). It is
+   NOT held open for want of a witness — a null one is one edit from any
+   golden, as the five below are — but because its shape is its own: `naam` is
+   `required` on the wire, so the OMISSION is already refused twice over (gate
+   2 and this loader), while `naam: null` is schema-valid and passes this
+   verifier, `ref` and the ASP backend while crashing the bean-model executor
+   in its identifier contract, on exactly the two tables whose loader has no
+   fall-back to the key. Measured 2026-09-06, recorded in the spec clause,
+   carded, and left in ch. 4.6's open list until then. *)
 let wf094 ctx =
   let arm table kind self entries =
     List.filter_map
