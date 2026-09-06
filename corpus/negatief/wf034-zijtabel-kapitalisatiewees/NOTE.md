@@ -65,4 +65,8 @@ Falsifiable, arm-exact: give the `kenmerkGranulariteit` call site in
 `wf034_zijtabelsleutels` (`spec/verifier/lib/checks.ml`) its case-insensitive
 predicate back — `has_kenmerk ot` for the byte-exact `k` — and this case, alone
 in all four zones, turns clean: 523 documents compared, one verdict moved, no
-report elsewhere.
+report elsewhere. The predicates are passed **per table** for exactly this
+reason: a relapse on one table is measurable on one table. Removing the whole
+arm frees this case *and* `corpus/negatief/wf034-wees-kenmerkgranulariteit`,
+the orphan witness on the same table, and nothing else — the two witnesses
+share an arm and separate under the narrower mutant.

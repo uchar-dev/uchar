@@ -62,10 +62,16 @@ A hand-broken variant of `corpus/golden/jutterswet-vondstverjaring/ir.json` — 
 schema-valid, since the eight tables are `additionalProperties`-typed maps on
 the v0 wire.
 
-Falsifiable, arm-exact: delete the `orphan otn "kenmerkGranulariteit" ...` line from
-`wf034_zijtabelsleutels` (`spec/verifier/lib/checks.ml`) and this case, alone
-in all four zones, turns clean — 523 documents compared, one verdict moved, no
-report elsewhere.
+Falsifiable, arm-exact: delete the `orphan otn "kenmerkGranulariteit" ...` line
+from `wf034_zijtabelsleutels` (`spec/verifier/lib/checks.ml`) and this case
+turns clean — 523 documents compared, no report elsewhere. Since 2026-09-06
+this arm carries **two** witnesses and the mutant frees both: this one, the
+orphan that names nothing, and
+`corpus/negatief/wf034-zijtabel-kapitalisatiewees`, the key that names the
+right characteristic in the wrong spelling. They separate under the narrower
+mutant: give this one call site its case-insensitive predicate back
+(`has_kenmerk ot`) and the capitalisation witness turns clean **alone**, this
+one staying red — 523 documents compared, one verdict moved.
 
 **Why the spelling and not just the name** (measured 2026-09-06). The consumers
 do not agree on how they look this facet up: the verifier, `ref` and the ASP

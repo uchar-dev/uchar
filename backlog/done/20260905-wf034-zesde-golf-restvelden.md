@@ -292,3 +292,233 @@ Niets buiten de "may touch" veranderd: `spec/verifier/**`, `spec/IR-SPEC.md`,
 onaangeroerd; geen bestaand testbestand en geen golden gewijzigd. De branch
 blijft onverwerkt staan als voorstel — `spec/IR-SPEC.md` en `spec/verifier/`
 zijn beschermde paden.
+
+---
+
+## Fixronde-appendix (2026-09-06, zelfde branch `card/wf034-zesde-golf`)
+
+Twee adversariële lenzen zijn over het Result hierboven gegaan. Het
+oorspronkelijke Result blijft staan zoals het geland is; wat hieronder staat
+corrigeert en vult aan. **De eerste vondst was blokkerend en is uitgevoerd.**
+
+### 1. De verstrakking: de zijtabelsleutel is een gedragen identiteit
+
+Bijvangst-punt 4 hierboven ("Ci-identiteit, geen byte-exactheid") **is
+ingetrokken en vervangen.** Het argument dat er stond — "de acht armen
+gebruiken de naam-identiteit van ch. 2.4, want dat is hoe elke lezer de facet
+opzoekt" — is onwaar, en gemeten onwaar.
+
+**De meting (2026-09-06, over de bronbestanden van de vier consumenten).** De
+consumenten zijn het *niet* eens over hoe ze deze facetten opzoeken. Verifier
+(`find_ci` / `norm`), `ref` en de ASP-vertaler zijn ci; de
+bean-model-uitvoerder is dat niet. De Drools-backend bereikt deze maps met
+rauwe `Map.get` / `Map.containsKey` op **108** plekken over **vier** van de
+acht tabellen — `attribuutGranulariteit` 64, `kenmerkGranulariteit` 20,
+`attribuutTijdlijnAantal` 17, `kenmerkTijdlijnAantal` 7 — tegenover **vijf**
+hoofdletterongevoelige lookups via zijn eigen `Namen.bevatNaam`. De overige
+vier tabellen (`attribuutMeervoud`, `attribuutDimensies`,
+`attribuutTijdlijnNaam`, `kenmerkSoorten`) worden door de backend alleen
+gelaad en nooit teruggelezen; `attribuutTijdlijnNaam` wordt wél
+hoofdlettergevoelig gelezen door de RegelSpraak-**frontend**, op twee plekken,
+maar dat is de emitter op zijn eigen model en geen wire-consument. *(De
+lensmeting sprak van 110 plekken over vijf tabellen met `attribuutTijdlijnNaam`
+2; die twee zitten in de frontend, niet in de backend. De getallen hierboven
+zijn zelf gemeten en zijn de getallen die in de spec, de code en de NOTE's
+staan.)*
+
+**Het gevolg, per consument gemeten** op `corpus/golden/synth2-clip-over-prorata`
+met de `kenmerkGranulariteit`-sleutel `borgplichtig` → `Borgplichtig` (één
+teken):
+
+    verifier (branchkop vóór de verstrakking)  PASS
+    ref        case1                            PASS (3 expectations)
+    clingo     case1                            PASS (3 expectations)
+    Drools     case1                            PLAYED -> EXCLUDE
+                                                (transpiler SKIP: temporele
+                                                 toekenning buiten Phase-F scope)
+
+Gate 12 zakt daarmee van `played 109` naar `played 108` en meldt **PASS**: zijn
+enige speelvloer is `played > 0` (`scripts/check-drools.sh:197`). Geen gate
+wordt rood. De golden valt uit de differentiaal en niets merkt het — dus moet
+de wire het vangen.
+
+**De houdbare grond is de dracht-regel, niet de matching-regel.** Ch. 2.1 draagt
+er twee: "Declared names are carried verbatim (whitespace-collapsed, case
+preserved)" én "Name matching is case-insensitive". Een zijtabelsleutel is geen
+matching-plek. Hij is de **v0-denormalisatie** van een facet dat v1 op de
+lidknoop zelf draagt (ch. 2.2 / `CONSTRUCTS.md` rij 11: "each v0 map entry
+folds into the corresponding member node"), dus de sleutel *is* de identiteit
+van dat lid, naast de declaratie geschreven in plaats van erop — en een
+identiteit wordt verbatim gedragen. Huisprecedent:
+`corpus/negatief/wf091-attribuutref-eenheid-kast` ("Name RESOLUTION is
+case-insensitive; copy FIDELITY is a different question") en de golf-5-passage
+over de byte-exacte rolnaam in ch. 4.6 (m).
+
+**Kosten: nul, gemeten over de vier zones.** Van de **943** sleutels die de
+vier zones ná golf 6 en vóór deze ronde droegen wijkt er **nul** in byte af
+terwijl hij ci resolveert; vóór golf 6 evenzo nul van **924** (24 + 9 + 74 + 2
++ 2 + 788 + 24 + 1 — de spec-uitsplitsing, onafhankelijk nagerekend). De volle
+523-documenten-sweep vóór/na de verstrakking verplaatst **precies één** regel:
+de nieuwe getuige.
+
+### 2. Rood-eerst en de mutanten
+
+**Het nieuwe negatief** `corpus/negatief/wf034-zijtabel-kapitalisatiewees`
+(drager `synth2-clip-over-prorata`, `kenmerkGranulariteit`-sleutel
+`borgplichtig` → `Borgplichtig`, één-regel- en één-teken-diff):
+
+    verifier branchkop  bfa76f6   md5 a22b5bda655aaf4727b6b3805d6e2053   PASS
+    verifier na de verstrakking   md5 924f0e3cfb69e9e8d9be7aa916a9bfe7   WF-034 FAIL
+      WF-034 FAIL /objecttypen/Jutter/kenmerkGranulariteit/Borgplichtig:
+      kenmerkGranulariteit key 'Borgplichtig' names no declared characteristic
+      of 'Jutter': the side table resolves against no declaration
+
+Negatiefzone 315 → **316**, vier zones 522 → **523**.
+
+**De ci-terugdraai-mutant** (alleen de `kenmerkGranulariteit`-aanroepplek
+krijgt `has_kenmerk ot` terug; verse `git archive` in `/tmp`, harde build-faal,
+`test -x`, md5 in de keten):
+
+    md5 19b4aac4b6503d5f63f1badbd42ab28b
+    523 documenten vergeleken -> 1 oordeel beweegt:
+      wf034-zijtabel-kapitalisatiewees  FAIL -> PASS
+    de overige 522 rapporten byte-identiek
+
+Dat is waarom de predicaten **per tabel** worden doorgegeven: een ci-terugval
+op één tabel is op één tabel meetbaar.
+
+**De acht arm-weg-mutanten, herbewezen op de nieuwe code** (zelfde regime,
+zelfde vorm; `orphan otn "<tabel>" …` → `[]`, 523 documenten vergeleken):
+
+    arm weggehaald            binary md5                          bewogen oordelen
+    attribuutMeervoud         c7c7786168d3fe4d31d083a1579d0433    1  (eigen getuige)
+    attribuutDimensies        61869e7b7bf67091cc02afe925f5485a    1  (eigen getuige)
+    attribuutGranulariteit    513707535f5817f5004f5cef5d1fbc83    1  (eigen getuige)
+    attribuutTijdlijnAantal   7daffcc6adf631c99d2c9e3cbd9b66bd    1  (eigen getuige)
+    attribuutTijdlijnNaam     b4d9d745bf9ff6e66b188447a120cd49    1  (eigen getuige)
+    kenmerkSoorten            af3c04e7db4f19e9c3b9f21005aa252f    1  (eigen getuige)
+    kenmerkGranulariteit      c31809dec803995148b4706e748641b2    2  (zie hieronder)
+    kenmerkTijdlijnAantal     61770bf0c7c614f7ce74bfc411e11d38    1  (eigen getuige)
+
+De `kenmerkGranulariteit`-arm draagt sinds deze ronde **twee** getuigen — de
+wees die niets noemt en de sleutel die het juiste kenmerk verkeerd spelt — en
+zijn arm-weg-mutant bevrijdt ze allebei en verder niets. Ze scheiden onder de
+smallere mutant hierboven. Beide NOTE's zeggen dat nu met zoveel woorden; de
+oude formulering "this case, alone in all four zones" was in de
+`wees-kenmerkgranulariteit`-NOTE onwaar geworden en is gecorrigeerd.
+
+**De vier ongewijzigde armen** — `Kenmerk.eigenaar`, `Eenheid.stelsel`,
+`objectCreaties[].subject: null`, `anderTeFiller: null` — zijn niet geraakt
+door deze ronde en zijn **niet opnieuw gedraaid**. Hun bewijs uit het Result
+hierboven staat onverkort; hun NOTE's noemen daarom nog 522 documenten, wat de
+sweepgrootte was waarop dat bewijs is gedraaid.
+
+### 3. Tellingcorrecties (met de oorzaak, zodat het instrument niet terugkomt)
+
+De eenheidsrecord-tellingen in het Result hierboven (r. 178, r. 259) en in de
+spec waren **te hoog**: het telinstrument daalde in `noemer` af en telde de
+denominator-eenheid van een samengesteld tarief **twee keer** — één keer op
+eigen titel en één keer onder het omvattende record. Er zijn 73 zulke noemers,
+en 2369 + 73 = 2442, 2236 + 73 = 2309.
+
+    r. 178  "2442 eenheidsrecords … 2309 een stelsel"   -> pre-kaart 2369 / 2236
+    r. 259  "2309 stelseldragende eenheden"             -> 2236
+
+De **post-kaart-stand**, gemeten 2026-09-06 over de 523 documenten van de vier
+zones, is **2377** eenheidsrecords waarvan **2244** een `stelsel` dragen (de
+overige 133 dragen `null`). Dat zijn de getallen die nu in
+`spec/IR-SPEC.md` ch. 4.6 (r), in de WF-034-indexrij en in
+`corpus/negatief/wf034-eenheid-onbekend-stelsel/NOTE.md` staan, met de oorzaak
+in één bijzin erbij. *Wie unit-records telt moet precies één keer in `noemer`
+afdalen.*
+
+### 4. MF3 — `attribuutMeervoud` is de tweede lezerloze tabel
+
+De lezerskolom zei "`attribuutMeervoud` | WF-057". WF-057 loopt die tabel wel
+af, maar leest de **waarde** (de tekstveiligheid van het meervoud) en gooit de
+sleutel weg (`fun (_, m) -> …`, `checks.ml`). De **sleutel** heeft geen enkele
+wire-consument: de Drools-lader zet hem in een map die niemand terugleest, en
+de enige lezer van de sleutel is de emitterkant (de meervoudsmatcher van de
+frontend, op zijn eigen model). `attribuutMeervoud` staat daarom nu naast
+`kenmerkSoorten` in de wire-argument-zin, in de spec en in de code.
+
+Tegelijk gepreciseerd: de **sleutel** van `attribuutTijdlijnNaam` wordt wél
+gelezen, als **kruistabel-join** in WF-005, die hem meeneemt naar
+`attribuutGranulariteit` en `attribuutTijdlijnAantal` om de overgenomen
+facetten met de declaratie te vergelijken. WF-003 leest van die tabel alleen de
+waarde.
+
+### 5. K5 — `ch. 2.4` waar `ch. 2.1` bedoeld is
+
+Ch. 2.4 is *Datatype*; de naam-identiteit staat in ch. 2.1, *Names and
+identity*. Gecorrigeerd op de plekken die de lens noemde:
+`spec/IR-SPEC.md` r. 2943 (de lege-naam-identiteit van de verdelingsvelden),
+r. 3069 (de byte-exacte rolnaam) en de (p)-passage r. 3179, en `checks.ml`
+r. 977 (die alinea is in zijn geheel herschreven). In dit kaartbestand staat
+dezelfde mis-citatie op r. 116 en r. 242; het oorspronkelijke Result wordt niet
+herschreven, dus zij worden hier genoemd in plaats van stilzwijgend gewijzigd —
+lees daar ch. 2.1.
+
+Bij r. 3069 is meteen een claim rechtgezet die door deze ronde onwaar werd: dat
+was "the one place the case-insensitive identity is not enough". Het zijn er nu
+twee, op verschillende grond — daar een naam die als property moet overleven,
+in (p) een sleutel die een gedragen identiteit is.
+
+Nog gevonden en **niet** aangeraakt, buiten de opdracht: `checks.ml` r. 1062 en
+r. 6218 en twee plekken in de WF-034-indexrij dragen dezelfde mis-citatie. Ter
+beoordeling van de maintainer.
+
+### 6. Het divergentie-voorbehoud
+
+De ankerdivergentie uit het Result (`kenmerkGranulariteit`,
+`anchor/jutterswet-dubbelwacht` case3: `ref` faalt op `gedurende` met WF-055
+terwijl clingo de case schoon speelt) is **2026-09-06 opnieuw gereproduceerd**,
+met een voorbehoud dat er niet stond: het dragende document is *onafhankelijk
+van deze clausule* ill-formed, en was dat al vóór de kaart. Dezelfde verifier
+die de hernoemde sleutel afwijst, wijst het document ook af op **WF-055**
+(`gedurende over 'aangesteld', which is not a temporal characteristic of
+'Jutter'`) — precies de reden dat het hernoem-instrument op die tabel 0 van 9
+scoort. De divergentie zit dus achter een al-dichte deur: tweede
+verdedigingslinie, geen rechtvaardiging van de arm. Het voorbehoud staat nu in
+ch. 4.6 (p), in de indexrij en in de NOTE.
+
+De reproductie zelf, alle vier cases van het anker met de sleutel hernoemd:
+
+    case1-overlap    ref CASE ERROR   =  clingo CASE ERROR
+    case2-disjunct   ref CASE ERROR   =  clingo CASE ERROR
+    case4-gespleten  ref CASE ERROR   =  clingo CASE ERROR
+    case3-een-leeg   ref EVALUATION FAULT (WF-055)  vs  clingo PASS (2 expectations)
+
+### 7. Twee kaartvoorstellen
+
+- `backlog/new/20260906-clingo-gedurende-spiegelpoort.md` — de ch. 3.6-clip van
+  de ASP-backend mist de temporaliteitspoort die zijn twee zusters wél dragen
+  (`translate.ml` r. 1912-1915 tegen r. 4548-4556 en r. 4620-4625, die laatste
+  met "mirror ref's fault" in het commentaar). Bij een niet-temporeel kenmerk
+  levert de clip-arm nul `ktl`-feiten en een lege doorsnede — som 0, zonder één
+  woord — waar `ref` faalt. Op welgevormde documenten onbereikbaar, dus tweede
+  verdedigingslinie: het WF-092-eerlijkheidspatroon.
+- `backlog/new/20260906-gate-12-speelvloer.md` — elke golden kan vandaag stil
+  uit de Drools-differentiaal vallen; de enige vloer is `played > 0`. Voorstel:
+  het check-noop-overleverspatroon, een reden-dragende verwachte-speellijst of
+  een gepinde teller die faalt wanneer een golden zijn PLAYED-status verliest.
+  Raakt `scripts/` — beschermd pad, dus een voorstel.
+
+### 8. De scope-keuze, expliciet: eigenaar en stelsel blijven ci
+
+Byte-exactheid hoort **uitsluitend** op de acht zijtabelsleutels. De twee
+naburige armen van deze kaart blijven hoofdletterongevoelig, en dat is een
+keuze met een grond en een getuige:
+
+- Het zijn gewone **naamresoluties** — een naam die *naar* een declaratie wijst
+  — en niet een identiteit die gedragen wordt. Al hun lezers resolven ci: de
+  verifier via `find_ci`, de ASP-vertaler, en de Drools-lader met
+  exact-dan-`equalsIgnoreCase` op de objecttypetabel.
+- Byte-exact op `stelsel` zou `corpus/negatief/wf091-attribuutref-eenheid-kast`
+  breken. Dat document draagt met opzet `stelsel: "GEWICHT"` tegen een
+  gedeclareerde `Gewicht` — het is dé getuige van "resolutie ci, kopie byte" —
+  en zou er een WF-034-regel bij krijgen, waarmee zijn eigen
+  arm-exactheidsclaim onwaar wordt.
+
+Die grens staat nu met zoveel woorden in ch. 4.6 (q) en (r) en in de
+codecommentaar.
