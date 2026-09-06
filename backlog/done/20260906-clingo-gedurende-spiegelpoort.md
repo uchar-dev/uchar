@@ -106,9 +106,10 @@ geraakt, allebei binnen `backends/clingo/**`.
 
 ### De poort
 
-`backends/clingo/lib/translate.ml`, één hunk van 13 regels in de
-`cond_fn`-arm van de gedurende-clip — de `kenmerk_granulariteit`-kruising
-van de twee zusters, hun `fault`-vorm, het WF-nummer van de clip:
+`backends/clingo/lib/translate.ml`, één hunk in de `cond_fn`-arm van de
+gedurende-clip (r. 1914-1936 in de eindstand, waarin de fixronde het
+commentaar herschreef) — de `kenmerk_granulariteit`-kruising van de twee
+zusters, hun `fault`-vorm, het WF-nummer van de clip:
 
     | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; _ } ->
         if not (List.exists (fun (n, _) -> norm n = norm k)
@@ -121,10 +122,20 @@ van de twee zusters, hun `fault`-vorm, het WF-nummer van de clip:
 even vroeg als de zusters die bovenaan hun functie faulten vóór één emissie.
 Beide plaatsingen zijn hier vertaaltijd (elke gebouwde closure wordt ook
 toegepast), maar deze is de strengere: hij vuurt ook als de closure nooit werd
-toegepast, en nooit halverwege een emissiereeks. De arm wordt langs twee
-routes betreden — kaal, en als lid van het `ALLE`-samenstel via `member_fn` —
-en beide zijn gepind. `aot` (niet `subject_ot`) is de opzoekbasis, zoals ref
-zijn `ot_decl` bindt; de `when`-clausule maakt ze gelijk.
+toegepast. De arm wordt langs twee routes betreden — kaal, en als lid van het
+`ALLE`-samenstel via `member_fn` — en beide zijn gepind. `aot` (niet
+`subject_ot`) is de opzoekbasis, zoals ref zijn `ot_decl` bindt; de
+`when`-clausule maakt ze gelijk.
+
+*Preciezer over "vóór één emissie"* (fixronde 2026-09-06, gemeten): dat geldt
+voor de kale arm en voor het twee-lids samenstel. Bij **drie of meer** leden
+vouwt `List.fold_left` paarsgewijs (r. 1980-1988) en staan de
+`emit_period_and`-regels van elk eerder paar al in `ctx` wanneer de poort op
+een later lid vuurt. Onschadelijk: de `fault` breekt de vertaling af, dus er
+komt nooit een half programma naar buiten. Gemeten op een drie-lids variant
+van het anker (`case3-een-leeg`, `aangesteld` niet-temporeel) met het
+niet-temporele lid op positie 1, 2 en 3: alle drie luid, met **woordelijk
+dezelfde** fault-tekst, en `ref ≡ clingo` in alle drie.
 
 ### Vooronderstellingen-check (gemeten, niet beredeneerd)
 
@@ -136,11 +147,35 @@ Elke buur van de arm gedraaid op het anker en door beide uitvoerders gehaald
 | `navigatie: "de meester"` | luid, WF-055-vangnet | luid, **zelfde tekst** | al dicht |
 | `kenmerk: null` | luid, WF-055-vangnet | luid, **zelfde tekst** | al dicht |
 | `kwantor: "SOMMIGE"` | IR LOAD ERROR | IR LOAD ERROR | dicht op de wire |
-| `eigenaar: "de Jutter"` | PASS (30) | PASS (30) | **beide negeren het** |
+| `eigenaar: "Jutter"` | PASS (30) | PASS (30) | **beide negeren het** |
 | `periode: GeheelPeriode{jaar}` | PASS (30) | PASS (30) | **beide negeren het** |
 | `drempel: 1` bij `ALLE` | PASS (30) | PASS (30) | beide negeren het |
-| `negatie: true` | PASS (30) | luide weigering | out of scope (kaart) |
+| `negatie: true` | PASS (30); **120** op `case3-een-leeg` | luide weigering | **levende ref ≢ clingo** |
 | kale `Kenmerk`-clip i.p.v. samenstel | 90 | 90 | eens; de arm is echt bereikbaar |
+
+*De eigenaar-rij, gecorrigeerd (fixronde 2026-09-06).* De eerste getuige was
+`eigenaar: "de Jutter"`, en dat document is **geen geldige getuige**: de
+verifier wijst het af — `WF-034 FAIL /resolvedRegels/0/waarde/filter/
+onderdelen/0/eigenaar: characteristic check's owner 'de Jutter' is not a
+declared object type` (`checks.ml` r. 5141-5145, de eigenaar-kruising sinds
+golf 6) — terwijl beide uitvoerders er onverstoord 30 op antwoordden. De
+getuige moet dus een *verklaarde typenaam* dragen. Hermeten met
+`eigenaar: "Jutter"`: **verifier PASS**, en ref én clingo `PASS (2
+expectations)`. De vooronderstelling staat daarmee overeind op een
+welgevormd document: het veld wordt door beide uitvoerders stil genegeerd.
+(Wat WF-034 níet sluit — of het genoemde type het kenmerk *verklaart* —
+staat in `checks.ml` r. 5136-5142 al als open helft opgeschreven.)
+
+*De negatie-rij, versterkt (fixronde 2026-09-06).* "Luide weigering"
+onderschatte wat hier staat. Het negatie-document is **verifier PASS** (geen
+enkele WF-regel raakt het), en dan rekent `ref` de complementklip gewoon uit:
+op `case3-een-leeg` — waar het kenmerk géén tijdlijn heeft en de positieve
+vorm 0 geeft — antwoordt ref **120** (de complementwandeling dekt het hele
+jaar), terwijl clingo weigert met *"the negated gedurende clip (the complement
+walk) is not translated"*. Dat is geen stilte en geen dichte deur maar een
+**levende `ref ≢ clingo` op een welgevormde vorm**, pre-existent en buiten
+deze kaart — nu met een eigen kaartvoorstel,
+`backlog/new/20260906-gedurende-complementwandeling.md`.
 
 De twee vette rijen zijn **echte ongecontroleerde vooronderstellingen, maar
 gedeeld met de norm**: `eigenaar` en `periode` op de `Kenmerk`-node worden
@@ -161,9 +196,9 @@ alleen op topniveau staan, want `member_fn` weigert alles wat geen
 
 ### De getuige
 
-Geen corpusgetuige mogelijk — gemeten, niet geredeneerd. Gate 3 check 2 eist
-dat élke `corpus/golden|rood/**/ir.json` verifier-clean is, en de verifier
-weigert deze vorm per definitie:
+Geen corpusgetuige mogelijk **voor de vorm die de poort vangt** — gemeten,
+niet geredeneerd. Gate 3 check 2 eist dat élke `corpus/golden|rood/**/ir.json`
+verifier-clean is, en de verifier weigert precies die vorm per definitie:
 
     WF-055 FAIL /resolvedRegels/0/waarde/filter: gedurende over 'aangesteld',
       which is not a temporal characteristic of 'Jutter'
@@ -174,6 +209,28 @@ document komt er WF-034 bij). Dus: drie checks in
 lid van het `ALLE`-samenstel, en een over-afwijzingscontrole (hetzelfde
 document met het kenmerk wél temporeel moet blijven vertalen).
 
+**Maar de stille-0-*klasse* is wél corpus-draagbaar** (fixronde 2026-09-06,
+gemeten — de zin hierboven zei eerst te veel). Vier lezers beslissen
+"temporeel", en niet allemaal op hetzelfde:
+
+| lezer | plek | beslist op |
+| --- | --- | --- |
+| verifier WF-055 | `checks.ml` r. 4057-4068 | **sleutelbestaan** in `kenmerkGranulariteit` |
+| `ref` | `eval.ml` r. 80-81 (`kenmerk_temporal`), gebruikt r. 1001-1003 | **sleutelbestaan** |
+| de nieuwe poort | `translate.ml` r. 1914-1928 | **sleutelbestaan** |
+| de case-lader | `case.ml` r. 317-331 (`Some (_, Some g) -> g`) | de **waarde** |
+
+`kenmerkGranulariteit: { "aangesteld": null }` is schema-legaal (de enum
+draagt `null` expliciet) en **verifier PASS** — gemeten. Drie lezers zien de
+sleutel en laten door; de case-lader weigert op de waarde de kenmerktijdlijn.
+Levert een case dan géén tijdlijn voor dat kenmerk, dan is de doorsnede leeg
+en antwoorden **ref én clingo 0, zonder één woord** — gemeten op het anker.
+De poort sluit dus de ene helft van de klasse (sleutel afwezig); de andere
+helft (sleutel aanwezig, waarde `null`) blijft open en gaat naar
+`backlog/new/20260906-gedurende-kwalificatie-stiltes.md`. Die helft ligt
+buiten deze kaart: hem sluiten is een keuze tussen vier artefacten
+tegelijk, geen eenzijdige backend-poort.
+
 Rood-eerst gemeten, vóór de poort:
 
     FAIL gedurende clip over a non-temporal characteristic: expected a loud fault, got a model
@@ -181,6 +238,29 @@ Rood-eerst gemeten, vóór de poort:
     test_clingo: 50 checks, 2 FAILURES
 
 Na de poort: `test_clingo: 50 checks, 0 failures` (was 47).
+
+**De getuige verzwaard (fixronde 2026-09-06).** De over-afwijzingscontrole
+was `translates_with`, en "het vertaalt" is stil over precies de waarde die
+deze poort beschermt. Hij is nu `ref_matches` + `clingo_matches` met een
+**gepinde 60** (borgplichtig heel 2024, aangesteld de eerste zes maanden,
+10 per maand), en het `ALLE`-samenstel kreeg zijn eigen positieve controle
+langs dezelfde twee routes. De twee weigeringsframes kregen een kale
+case-variant: hun document verklaart `aangesteld` niet temporeel, en de
+case-lader weigert dan een kenmerktijdlijn nog vóór de vertaler eraan
+toekomt — anders was de geteste weigering die van de *lader* geweest.
+Suite: **53 checks, 0 failures** (was 50).
+
+Twee mutanten gedraaid, om te laten zien wat elke helft van de getuige
+bewaakt:
+
+| mutant | uitslag |
+| --- | --- |
+| poort-hunk terug naar de claim-commit (poort weg) | `53 checks, 2 FAILURES` — precies de twee weigeringsframes; de 60-pin **houdt stand** (die frames zijn temporeel verklaard, de poort vuurt er nooit) |
+| poort aanwezig, de `aangesteld`-tijdlijn uit de case gehaald met de 60-pin intact (stille-0-injectie) | `53 checks, 4 FAILURES` — `ref` én `clingo`, beide routes, elk `= 0, expected 60`; onder de oude `translates_with` was dit **groen** |
+
+De twee helften vangen dus verschillende dingen: de weigeringsframes de
+ontbrekende poort, de waardepin de stil leeggelopen doorsnede. Geen van beide
+vervangt de ander.
 
 ### De reproductie
 
@@ -199,6 +279,11 @@ Na de poort: `test_clingo: 50 checks, 0 failures` (was 47).
 `ref ≡ clingo` op alle vier, en op `case3-een-leeg` woordelijk dezelfde
 fault-tekst. Vóór de poort stond daar `clingo: PASS (2 expectations)`, exit 0.
 
+Die woordelijke gelijkheid geldt voor de **positieve** arm — de arm die deze
+kaart sluit. De `negatie: true`-tak wijkt er wél af, ook na deze kaart: daar
+rekent ref door en weigert clingo (zie de negatie-rij hierboven en
+`backlog/new/20260906-gedurende-complementwandeling.md`).
+
 ### De mutant
 
 Recept: `git show <claim-commit>:backends/clingo/lib/translate.ml >
@@ -212,6 +297,7 @@ reproduceerbare build).
 | meting | met poort | mutant |
 | --- | --- | --- |
 | eigen suite | 50 checks, 0 failures | **50 checks, 2 FAILURES** (precies de twee nieuwe) |
+| eigen suite, herdraaid ná de fixronde | 53 checks, 0 failures | **53 checks, 2 FAILURES** (dezelfde twee) |
 | gate 6 (script) | PASS (407) | **FAIL (backend unit suite)** — struikelt op zijn eigen getuige |
 | gate-6 sweep-lus, 407 cases | 407 spelen | **407 spelen** |
 | reproductie `case3-een-leeg` | luid ≡ ref | **`clingo: PASS (2 expectations)`, exit 0** |
@@ -223,9 +309,30 @@ De mutant maakt dus precies zijn eigen getuige schoon en verder niets.
 
 ### Over-afwijzing
 
-Nul. Gate 6 speelt 407 cases, hetzelfde aantal als vóór de kaart, met
-identieke per-case uitslagen (de diff hierboven). De poort vuurt alleen waar
-vandaag stilte heerst — een corpusdocument kán de vorm niet dragen (WF-055).
+**Nul over het corpus.** Gate 6 speelt 407 cases, hetzelfde aantal als vóór de
+kaart, met identieke per-case uitslagen (de diff hierboven). Een
+corpusdocument kán de gevangen vorm niet dragen (WF-055).
+
+Buiten het corpus is de poort wél strenger dan `ref`, en dat is een **geërfde
+over-approximatie**, geen ongeluk: hij vuurt op **vertaaltijd**, terwijl ref
+pas faalt als hij de clip daadwerkelijk uitrekent. Gemeten met een case zonder
+één instantie, op een document met een niet-temporele clip:
+
+    nul instanties   ref    oracle: PASS (1 expectations)     <-- de regel draait nooit
+                     clingo TRANSLATION FAULT: gedurende over "aangesteld", ... (WF-055)
+
+De twee zusters faulten precies even vroeg — bovenaan hun eigen
+vertaalfunctie (`translate.ml` r. 4569-4577 en r. 4638-4646) — dus deze arm
+erft hun fase, niet een nieuwe. Een backend die pas bij het eerste passende
+feit weigert, weigert bij nul feiten nooit; dat is de keuze die het huis op
+de twee zusters al gemaakt heeft.
+
+**En dat maakt geen nieuw gat in de gate-set.** De divergentieklasse die
+hierdoor ontstaat (clingo weigert, ref antwoordt) is volledig
+**WF-055-geschaduwd**: het is exact hetzelfde predicaat, dus élk document in
+die klasse is verifier-FAIL en kan geen enkele corpuszone in — gate 3 houdt
+het buiten voordat gate 6 het ziet. De schaduw is de reden dat deze
+strengheid geen prijs heeft.
 
 ### Gates (alle dertien, vanuit de worktree)
 
@@ -250,6 +357,19 @@ eigen clingo-suite, 47 → 50.
 
 - `eigenaar` en `periode` op de `Kenmerk`-node in de clip: gedeelde
   ongecontroleerde vooronderstelling met ref (zie tabel) — nieuwe kaart, ref +
-  clingo + verifier samen.
-- De `negatie: true`-tak: weigert luid met reden, out of scope per kaart.
+  clingo + verifier samen: `backlog/new/20260906-gedurende-kwalificatie-stiltes.md`.
+- **`Predicaat.periode`** — dezelfde vraag één node verderop, en dáár lopen de
+  twee uitvoerders al uiteen: `ref` matcht het veld weg met `_`
+  (`eval.ml` r. 1258-1266, de `Leeg`/`Gevuld`-armen), clingo poort het
+  (`translate.ml` r. 3440 eist `periode = None`). Op de `Vergelijking` weigert
+  ref luid (`eval.ml` r. 1257). Meegenomen in dezelfde kaart.
+- **De null-granulariteit-splitsing**: `kenmerkGranulariteit: {"k": null}` is
+  schema-legaal en verifier-PASS; drie lezers beslissen op sleutelbestaan, de
+  case-lader op de waarde. De stille 0 overleeft daar — de andere helft van de
+  klasse die deze poort sluit. Zelfde kaart.
+- De `negatie: true`-tak: weigert luid met reden, out of scope per kaart —
+  maar bij nameten géén dichte deur: op een **verifier-PASS** document rekent
+  ref de complementklip uit (120 waar de positieve vorm 0 geeft) en weigert
+  clingo. Eigen kaart:
+  `backlog/new/20260906-gedurende-complementwandeling.md`.
 - Geen regel in `spec/verifier/`, `spec/`, `ref/` of het corpus aangeraakt.
