@@ -23,6 +23,13 @@
 #      always fails the gate. The list is the check-noop survivor pattern: it FAILS WHEN STALE — a
 #      listed golden that now plays+passes, or a listed golden that is gone, trips the gate.
 #
+# The PLAYED channel itself is pinned by the EXPECTED-CHANNEL FLOOR (2026-09-06, card
+# gate-12-speelvloer). Before it, `played` had exactly ONE floor — "> 0" — so a golden that LOST its
+# PLAYED status was silently added to channel 1 and the gate still said PASS: the differential shrank
+# by one, loud about the FORM and mute about the LOSS. "Not-carried forms never vanish silently" was
+# therefore true of the reasons and false of the players. The floor pins every NON-PLAYED golden by
+# name (PLAYED is the default) and fails in both directions, exactly as the two lists above do.
+#
 # An empty played set is a FAILURE, never silently green. Report: played N, auto-excluded M,
 # value-divergence K (per reason), no-case L.
 #
@@ -139,7 +146,94 @@ EXCLUDE_KNOWN=(
 
 known_reason() { local n="$1"; for e in "${EXCLUDE_KNOWN[@]}"; do [ "${e%%|*}" = "$n" ] && { echo "${e#*|}"; return 0; }; done; return 1; }
 
+# --- the expected-channel floor: which channel each golden BELONGS to (fails in both directions) ----
+# Entry: "<golden-relative-path>|<channel>|<reason it is not PLAYED>", channels:
+#   EXCLUDE  a per-form auto-refusal (channel 1) — the reason below names the form
+#   DIVERGE  a value-divergence (channel 2) — the golden ALSO carries its full reason in EXCLUDE_KNOWN
+#   NOCASE   a golden with no case file — nothing to replay
+#
+# FORM — the check-noop survivor pattern, compacted (card gate-12-speelvloer, 2026-09-06):
+# PLAYED IS THE DEFAULT. A golden that is not listed here MUST play. Only the NON-PLAYED goldens are
+# listed, each with its reason. That asymmetry is deliberate: a player's "reason" is the differential
+# square itself, identical for all 109 of them, so a per-golden played list would be a hundred lines
+# that say one thing — and it would churn on every corpus addition without ever saying more than a
+# count does. Only the CHANNEL is compared; the reason is documentation (as in EXCLUDE_KNOWN above)
+# and may be reworded without tripping the gate.
+#
+# SILENCE IS EXCLUDED IN EVERY DIRECTION:
+#   - a golden that LEAVES the played channel is unlisted, measures non-PLAYED, and fails BY NAME
+#     (the card's finding: this was the silent one);
+#   - a listed golden that starts playing, or changes channel, fails BY NAME — the list is stale;
+#   - a listed golden that is GONE (deleted, renamed) fails BY NAME — likewise stale;
+#   - a NEW golden arriving in the played channel is invisible to a played-by-default list, so
+#     EXPECTED_PLAYED below pins the count and fails on it. That one failure names no golden, and
+#     that is the accepted asymmetry: the session that ADDS a golden knows which one it just added,
+#     whereas the decay this floor exists for — a player quietly dropping out — is exactly the case
+#     where nobody knows the name, and there the list names it. An arrival and a departure in one
+#     session do not cancel out either: the count stays put, but the departure still trips the list.
+EXPECTED_CHANNEL=(
+  "anchor/jutterswet-aanmeldquotum|EXCLUDE|loader Refusal: Expr:TemporalRead — the v0 backend has no temporal-read lowering"
+  "anchor/jutterswet-aanspraaktelling|EXCLUDE|loader Refusal: functionDefs — no function section in the v0 backend"
+  "anchor/jutterswet-bergingstoezicht|EXCLUDE|transpiler SKIP: the aggregation join has no bean field — the to-one role 'toezichthouder' derives no reference field (§13.3.9 storage direction)"
+  "anchor/jutterswet-beschikkingsom|EXCLUDE|loader Refusal: Datatype:SumType"
+  "anchor/jutterswet-erflijn|EXCLUDE|transpiler SKIP: aggregation join with BOTH sides plural — neither side stores a bean field (§13.3.9)"
+  "anchor/jutterswet-gemeenteberging|EXCLUDE|transpiler SKIP: one bean field necessarily carries BOTH directions, so the directed reading is inexpressible (§13.3.9)"
+  "anchor/jutterswet-kustwacht|DIVERGE|the one value-divergence — full reason in EXCLUDE_KNOWN above (negation-as-failure is not stratified)"
+  "anchor/jutterswet-penninguitgifte|EXCLUDE|transpiler SKIP: AANTAL over a to-one element role whose sister role is plural — inexpressible in the v0 bean model (§13.3.9)"
+  "anchor/jutterswet-penningvintage|EXCLUDE|loader Refusal: Expr:TemporalRead"
+  "anchor/jutterswet-staffelvergoeding|EXCLUDE|loader Refusal: Datatype:ListType"
+  "anchor/jutterswet-toelagegronden|EXCLUDE|transpiler SKIP: the kenmerk target shares its name with an attribute — the bean carries one field per name (v0 bean-model limit, not a defaults divergence)"
+  "anchor/jutterswet-vindersloon|EXCLUDE|transpiler SKIP: regel — waarde buiten scope"
+  "anchor/jutterswet-vondstdossier|EXCLUDE|loader Refusal: Datatype:StructType"
+  "jutterswet-dossierrecht-catala|EXCLUDE|loader Refusal: Datatype:StructType"
+  "jutterswet-dossierspelling|EXCLUDE|loader Refusal: Datatype:StructType"
+  "jutterswet-kamerheffing-catala|EXCLUDE|loader Refusal: functionDefs"
+  "jutterswet-kamerhuishouden-catala|EXCLUDE|loader Refusal: functionDefs"
+  "jutterswet-keurstaat|EXCLUDE|transpiler SKIP: regel — voorwaarde buiten Phase-B scope"
+  "jutterswet-kinderdeler|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-kinderfoldheffing|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-kinderkap|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-kinderkwart|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-kinderlet|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-kindermacht|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-kinderprocent|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-meldplichtspoor|EXCLUDE|loader Refusal: Datatype:SumType"
+  "jutterswet-meldtermijnen|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-penningbeschikking-catala|EXCLUDE|loader Refusal: Datatype:SumType"
+  "jutterswet-penningstaffel-catala|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-postenheffing|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-seizoenvondst|NOCASE|a golden with no case file — nothing to replay"
+  "jutterswet-vaarwaterspelling|EXCLUDE|loader Refusal: Expr:Match"
+  "jutterswet-vaarwatertoeslag-catala|EXCLUDE|loader Refusal: Expr:Match"
+  "jutterswet-vangstwaardering|EXCLUDE|loader Refusal: Datatype:StructType"
+  "jutterswet-vondsttarief|EXCLUDE|transpiler SKIP: regel — waarde buiten scope"
+  "jutterswet-vormenkabinet|NOCASE|a golden with no case file — nothing to replay"
+  "jutterswet-waarderingsinvoer|EXCLUDE|loader Refusal: Datatype:StructType"
+  "synth2-afrondingscombinaties|EXCLUDE|transpiler SKIP: regel — waarde buiten scope"
+  "synth3-besluitschakel|EXCLUDE|loader Refusal: Datatype:SumType"
+  "synth3-keuringtal|EXCLUDE|loader Refusal: Datatype:ListType"
+  "synth3-letbeslag|EXCLUDE|loader Refusal: Datatype:SumType"
+  "synth3-metingtal|EXCLUDE|loader Refusal: Datatype:ListType"
+  "synth3-nestwaarde|EXCLUDE|loader Refusal: Datatype:StructType"
+  "synth3-standtarief|EXCLUDE|loader Refusal: Datatype:SumType"
+  "synth3-vangstsom|EXCLUDE|loader Refusal: Datatype:ListType"
+  "synth3-vondststaat|EXCLUDE|loader Refusal: Datatype:StructType"
+)
+# The count that closes the one direction a played-by-default list cannot see. It moves ONLY with a
+# corpus change, and it moves TOGETHER with the list: a golden that starts playing leaves the list
+# AND raises this number by one.
+EXPECTED_PLAYED=109
+
+expected_channel() {
+  local n="$1" rest
+  for e in "${EXPECTED_CHANNEL[@]}"; do
+    if [ "${e%%|*}" = "$n" ]; then rest="${e#*|}"; echo "${rest%%|*}"; return 0; fi
+  done
+  echo PLAYED
+}
+
 declare -a KNOWN_HIT=()
+declare -a SEEN=()
 played=0; auto_excl=0; div_excl=0; nocase=0
 declare -a AUTO_REASONS=()
 declare -a FAILED=()
@@ -148,7 +242,8 @@ while IFS= read -r ir; do
   dir=$(dirname "$ir"); name=${dir#corpus/golden/}
   cases=$(find "$dir" -maxdepth 1 -name 'case*.json' | sort)
   if [ -z "$cases" ]; then
-    nocase=$((nocase + 1)); echo "  no-case  $name (a golden without a case file — not playable)"; continue
+    nocase=$((nocase + 1)); SEEN+=("$name|NOCASE")
+    echo "  no-case  $name (a golden without a case file — not playable)"; continue
   fi
   out=$(java -jar "$JAR" "$ir" $cases 2>/dev/null | tail -1)
   tok=${out%% *}
@@ -157,17 +252,17 @@ while IFS= read -r ir; do
       if reason=$(known_reason "$name"); then
         fail "stale exclusion: '$name' is in EXCLUDE_KNOWN ($reason) but now PLAYS+PASSES — remove it"
       fi
-      played=$((played + 1)) ;;
+      played=$((played + 1)); SEEN+=("$name|PLAYED") ;;
     EXCLUDE)
       if known_reason "$name" >/dev/null; then
         fail "double-listed: '$name' auto-excludes per form AND sits in EXCLUDE_KNOWN — drop the static entry"
       fi
-      auto_excl=$((auto_excl + 1)); AUTO_REASONS+=("${out#EXCLUDE }") ;;
+      auto_excl=$((auto_excl + 1)); SEEN+=("$name|EXCLUDE"); AUTO_REASONS+=("${out#EXCLUDE }") ;;
     FAIL)
       # A value-divergence is a VALUE difference (FAIL: verwacht X, werkelijk Y) — the exec-model genuinely
       # differs from ref/clingo. It must be listed with a reason; an unlisted FAIL breaks the square.
       if reason=$(known_reason "$name"); then
-        div_excl=$((div_excl + 1)); KNOWN_HIT+=("$name")
+        div_excl=$((div_excl + 1)); KNOWN_HIT+=("$name"); SEEN+=("$name|DIVERGE")
       else
         FAILED+=("$name :: $out")
       fi ;;
@@ -194,7 +289,32 @@ for e in "${EXCLUDE_KNOWN[@]}"; do
   [ $hit -eq 1 ] || fail "stale exclusion: '$n' is listed but did not diverge (gone, or now carried) — remove it"
 done
 
+# --- the expected-channel floor ---------------------------------------------------------------
+# (a) every measured golden must sit in the channel it is pinned to (unlisted == pinned PLAYED)
+declare -a DRIFT=()
+for s in "${SEEN[@]:-}"; do
+  [ -n "$s" ] || continue
+  n="${s%%|*}"; actual="${s#*|}"; want=$(expected_channel "$n")
+  [ "$actual" = "$want" ] || DRIFT+=("$n :: pinned $want, measured $actual")
+done
+if [ ${#DRIFT[@]} -gt 0 ]; then
+  echo "check-drools: FAIL — ${#DRIFT[@]} golden(s) changed channel (the expected-channel floor):" >&2
+  for d in "${DRIFT[@]}"; do echo "    $d" >&2; done
+  echo "  A golden that LOST its PLAYED status is out of the differential square — fix the cause, or," >&2
+  echo "  if the loss is intended, pin it in EXPECTED_CHANNEL with the reason and drop EXPECTED_PLAYED by one." >&2
+  echo "  A golden that GAINED it must leave EXPECTED_CHANNEL and raise EXPECTED_PLAYED by one." >&2
+  exit 1
+fi
+# (b) a pin whose golden no longer exists is stale (the check-noop survivor pattern)
+for e in "${EXPECTED_CHANNEL[@]}"; do
+  n="${e%%|*}"; seen=0
+  for s in "${SEEN[@]:-}"; do [ "${s%%|*}" = "$n" ] && seen=1; done
+  [ $seen -eq 1 ] || fail "stale channel pin: '$n' is pinned in EXPECTED_CHANNEL but no such golden was measured (gone, or renamed) — remove it"
+done
+
 [ "$played" -gt 0 ] || fail "empty played set — no golden replayed through Drools (an empty played set is a failure)"
+# (c) the count closes the direction the played-by-default list cannot see: a NEW golden that plays
+[ "$played" -eq "$EXPECTED_PLAYED" ] || fail "played $played, but EXPECTED_PLAYED pins $EXPECTED_PLAYED — a golden entered or left the played channel without the list noticing (a new golden plays: raise the number; a golden went away: the corpus lost a player)"
 
 echo ""
 echo "check-drools: PASS"
@@ -207,4 +327,5 @@ if [ ${#AUTO_REASONS[@]} -gt 0 ]; then
 fi
 echo "  value-divergence $div_excl  (listed with reason — the exec-model differs from ref/clingo)"
 echo "  no-case $nocase  (goldens without a case file)"
+echo "  channel floor ${#EXPECTED_CHANNEL[@]} non-PLAYED goldens pinned by name; played matches the pinned $EXPECTED_PLAYED"
 echo "  JUnit $tests tests  (the backend's own suite, green with a non-zero count)"
