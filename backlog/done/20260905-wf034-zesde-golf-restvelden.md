@@ -522,3 +522,29 @@ keuze met een grond en een getuige:
 
 Die grens staat nu met zoveel woorden in ch. 4.6 (q) en (r) en in de
 codecommentaar.
+
+### 9. Gates na de fixronde (gerebased op `main` 9bd377c, 2026-09-06)
+
+De rebase liep zonder conflict: `main` bracht `frontends/`, `backends/drools`
+en ch. 4.1 van de spec; deze kaart zit in ch. 2, ch. 3, ch. 4.6 en de indexrij.
+Repo-breed nul conflictmarkers.
+
+    1  check-self-contained        PASS
+    2  check-ir-schema             PASS  (schema geldig; 177 bestanden valideren en round-trippen)
+    3  check-verifier              PASS  (177 golden schoon; 316 negatief afgewezen voor hun eigen regel)
+    4  check-case-schema           PASS  (schema geldig; 429 case-bestanden)
+    5  check-oracle                PASS  (407 cases exact herspeeld; 2 golden zonder case)
+    6  check-clingo                PASS  (407 cases; ref = clingo over het corpus)
+    7  check-noop                  PASS  (371 cases weerleggen een niets-doener; 36 gepinde overlevers)
+    8  check-rood                  PASS  (22 rode cases; Drools-been 5 fault-pinned / 17 niet-gedragen met reden)
+    9  check-catala                PASS  (201 checks; 12 catala-goldens byte-identiek)
+    10 check-regelspraak           PASS  (173 tests; 30 rgs-goldens byte-identiek)
+    11 check-toka-parity           PASS  (45 .rgs byte-identiek, 2 holdouts; TOKA-suite 27 tests; ref/clingo/Drools elk 29)
+    12 check-drools                PASS  (109 played; 43 auto-excluded; 1 waardedivergentie met reden; 2 zonder case; JUnit 207)
+    13 check-reftype-derivation    PASS  (68 twists over 14 goldens; 64 replays; 0 gepinde overlevers)
+
+Niets buiten de "may touch" van de kaart veranderd: `spec/verifier/**`,
+`spec/IR-SPEC.md`, `corpus/negatief/**`, `backlog/`. `spec/CONSTRUCTS.md` en
+`spec/PLAN.md` onaangeroerd; geen testbestand en geen golden gewijzigd. De
+branch blijft onverwerkt staan als voorstel — `spec/IR-SPEC.md` en
+`spec/verifier/` zijn beschermde paden.
