@@ -1,0 +1,16 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "S4", "objectType": "Strandmeester",
+        "attributes": { "vaste schouwlast": { "number": "9" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": { "schouwdrempel": { "number": "20" } }
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "S4", "attribute": "schouwplicht", "value": { "number": "9" } },
+    { "kind": "characteristicPresent", "label": "S4", "characteristic": "schouwvrij" }
+  ]
+}

@@ -1,0 +1,29 @@
+Dagsoort de schouwdag (mv: schouwdagen);
+Dagsoort de stormdag (mv: stormdagen);
+
+Objecttype de Strandmeester (mv: Strandmeesters) (bezield)
+    de vaste schouwlast Numeriek (niet-negatief geheel getal) met eenheid schouwdagen;
+    de extra schouwlast Numeriek (niet-negatief geheel getal) met eenheid schouwdagen;
+    de schouwplicht Numeriek (niet-negatief geheel getal) met eenheid schouwdagen;
+    is schouwvrij kenmerk (bijvoeglijk);
+
+Parameter de schouwdrempel : Numeriek (geheel getal) met eenheid schouwdagen
+
+Regel Dagsoortdefinitie schouwdag
+    geldig altijd
+        Een dag is een schouwdag
+        indien de dag eerder is dan 01-10-2026.
+
+Regel Dagsoortdefinitie stormdag
+    geldig altijd
+        Een dag is een stormdag
+        indien de dag later is dan 30-09-2026.
+
+Regel schouwplicht van een strandmeester
+    geldig altijd
+        De schouwplicht van een Strandmeester moet berekend worden als zijn vaste schouwlast plus zijn extra schouwlast.
+
+Regel Kenmerktoekenning schouwvrij
+    geldig altijd
+        Een Strandmeester is schouwvrij
+        indien zijn schouwplicht kleiner is dan de schouwdrempel.

@@ -1,0 +1,27 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "S1", "objectType": "Strandmeester",
+        "attributes": { "vaste schouwlast": { "number": "12" }, "extra schouwlast": { "number": "3" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "S2", "objectType": "Strandmeester",
+        "attributes": { "vaste schouwlast": { "number": "18" }, "extra schouwlast": { "number": "6" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "S3", "objectType": "Strandmeester",
+        "attributes": { "vaste schouwlast": { "number": "20" }, "extra schouwlast": { "number": "0" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": { "schouwdrempel": { "number": "20" } }
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "S1", "attribute": "schouwplicht", "value": { "number": "15" } },
+    { "kind": "attributeValue", "label": "S2", "attribute": "schouwplicht", "value": { "number": "24" } },
+    { "kind": "attributeValue", "label": "S3", "attribute": "schouwplicht", "value": { "number": "20" } },
+    { "kind": "characteristicPresent", "label": "S1", "characteristic": "schouwvrij" },
+    { "kind": "characteristicAbsent", "label": "S2", "characteristic": "schouwvrij" },
+    { "kind": "characteristicAbsent", "label": "S3", "characteristic": "schouwvrij" },
+    { "kind": "consistent" }
+  ]
+}
