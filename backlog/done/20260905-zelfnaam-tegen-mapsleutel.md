@@ -313,6 +313,11 @@ Alle dertien met hun echte exitcode gemeten (niet door een `tail` heen).
 Gate 3 gaat van 320 naar **325** negatiefs; alle andere tellingen staan
 ongewijzigd op de door de kaart verwachte waarden.
 
+*Deze tabel is de stand van de branchkop vóór de rebase.* De fixronde heeft de
+dertien opnieuw gedraaid op de gerebasede kop; die tabel staat onderaan dit
+bestand en verschilt precies waar `main` intussen bewoog (golden 177 → 178,
+cases 407 → 409, rgs 30 → 31, played 109 → 110, gate 13 68/14 → 74/15).
+
 ### 6. Bijvangst, expliciet
 
 1. **`parameters` is de vijfde map, niet `tijdlijnen`.** De kaart en de
