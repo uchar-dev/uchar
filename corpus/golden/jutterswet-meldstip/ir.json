@@ -1,0 +1,179 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Aanmelding": {
+      "node": "Objecttype",
+      "naam": "Aanmelding",
+      "attributen": {
+        "meldstip": {
+          "node": "DatumTijd"
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "tijdig",
+        "verlaat"
+      ],
+      "kenmerkSoorten": {
+        "tijdig": "BIJVOEGLIJK",
+        "verlaat": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Aanmeldingen"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "Kenmerktoekenning tijdig",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "Kenmerktoekenning verlaat",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "Kenmerktoekenning tijdig",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "tijdig",
+        "objecttype": "Aanmelding",
+        "onderwerpBron": "Een Aanmelding",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Aanmelding is tijdig",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "EERDER",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "meldstip",
+          "objecttype": "Aanmelding",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumTijd"
+          },
+          "bron": "zijn meldstip",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "2026-03-15T12:00:00.000",
+          "type": {
+            "node": "DatumTijd"
+          },
+          "bron": "15-03-2026 12:00:00.000"
+        },
+        "periode": null,
+        "bron": "zijn meldstip eerder is dan 15-03-2026 12:00:00.000"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "Kenmerktoekenning verlaat",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "verlaat",
+        "objecttype": "Aanmelding",
+        "onderwerpBron": "Een Aanmelding",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Aanmelding is verlaat",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "LATER",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "meldstip",
+          "objecttype": "Aanmelding",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumTijd"
+          },
+          "bron": "zijn meldstip",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "2026-03-15T12:00:00.000",
+          "type": {
+            "node": "DatumTijd"
+          },
+          "bron": "15-03-2026 12:00:00.000"
+        },
+        "periode": null,
+        "bron": "zijn meldstip later is dan 15-03-2026 12:00:00.000"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

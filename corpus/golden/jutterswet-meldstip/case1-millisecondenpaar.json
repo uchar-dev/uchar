@@ -1,0 +1,29 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "A1",
+        "objectType": "Aanmelding",
+        "attributes": { "meldstip": { "dateTime": "2026-03-15T11:59:59.999" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "A2",
+        "objectType": "Aanmelding",
+        "attributes": { "meldstip": { "dateTime": "2026-03-15T12:00:00.001" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "characteristicPresent", "label": "A1", "characteristic": "tijdig" },
+    { "kind": "characteristicAbsent", "label": "A1", "characteristic": "verlaat" },
+    { "kind": "characteristicAbsent", "label": "A2", "characteristic": "tijdig" },
+    { "kind": "characteristicPresent", "label": "A2", "characteristic": "verlaat" }
+  ]
+}
