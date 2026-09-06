@@ -1,5 +1,6 @@
+// Bron: art. 3b-3c Jutterswet
 Dagsoort de schouwdag (mv: schouwdagen);
-Dagsoort de stormdag (mv: stormdagen);
+Dagsoort de stormvloeddag (mv: stormvloeddagen);
 
 Objecttype de Strandmeester (mv: Strandmeesters) (bezield)
     de vaste schouwlast Numeriek (niet-negatief geheel getal) met eenheid schouwdagen;
@@ -12,12 +13,16 @@ Parameter de schouwdrempel : Numeriek (geheel getal) met eenheid schouwdagen
 Regel Dagsoortdefinitie schouwdag
     geldig altijd
         Een dag is een schouwdag
-        indien de dag eerder is dan 01-10-2026.
+        indien er aan alle volgende voorwaarden wordt voldaan:
+        - de dag later is dan 28-02-2026
+        - de dag eerder is dan 01-10-2026.
 
-Regel Dagsoortdefinitie stormdag
+Regel Dagsoortdefinitie stormvloeddag
     geldig altijd
-        Een dag is een stormdag
-        indien de dag later is dan 30-09-2026.
+        Een dag is een stormvloeddag
+        indien er aan alle volgende voorwaarden wordt voldaan:
+        - de dag later is dan 30-09-2026
+        - de dag eerder is dan 01-03-2027.
 
 Regel schouwplicht van een strandmeester
     geldig altijd

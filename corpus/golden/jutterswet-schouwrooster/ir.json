@@ -93,13 +93,13 @@
   "tijdlijnen": [],
   "dagsoorten": [
     "schouwdag",
-    "stormdag"
+    "stormvloeddag"
   ],
   "dagsoortPerEenheid": {
     "schouwdag": "schouwdag",
     "schouwdagen": "schouwdag",
-    "stormdag": "stormdag",
-    "stormdagen": "stormdag"
+    "stormvloeddag": "stormvloeddag",
+    "stormvloeddagen": "stormvloeddag"
   },
   "regels": [
     {
@@ -109,7 +109,7 @@
     },
     {
       "node": "Regel",
-      "naam": "Dagsoortdefinitie stormdag",
+      "naam": "Dagsoortdefinitie stormvloeddag",
       "soort": "regel"
     },
     {
@@ -312,26 +312,56 @@
       "node": "ResolvedDagsoort",
       "naam": "schouwdag",
       "voorwaarde": {
-        "node": "Vergelijking",
-        "op": "EERDER",
-        "links": {
-          "node": "Constante",
-          "naam": "de dag",
-          "type": {
-            "node": "DatumInDagen"
+        "node": "Samengesteld",
+        "kwantor": "ALLE",
+        "drempel": 0,
+        "onderdelen": [
+          {
+            "node": "Vergelijking",
+            "op": "LATER",
+            "links": {
+              "node": "Constante",
+              "naam": "de dag",
+              "type": {
+                "node": "DatumInDagen"
+              },
+              "bron": "de dag"
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "2026-02-28",
+              "type": {
+                "node": "DatumInDagen"
+              },
+              "bron": "28-02-2026"
+            },
+            "periode": null,
+            "bron": "de dag later is dan 28-02-2026"
           },
-          "bron": "de dag"
-        },
-        "rechts": {
-          "node": "Literal",
-          "waarde": "2026-10-01",
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "01-10-2026"
-        },
-        "periode": null,
-        "bron": "de dag eerder is dan 01-10-2026"
+          {
+            "node": "Vergelijking",
+            "op": "EERDER",
+            "links": {
+              "node": "Constante",
+              "naam": "de dag",
+              "type": {
+                "node": "DatumInDagen"
+              },
+              "bron": "de dag"
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "2026-10-01",
+              "type": {
+                "node": "DatumInDagen"
+              },
+              "bron": "01-10-2026"
+            },
+            "periode": null,
+            "bron": "de dag eerder is dan 01-10-2026"
+          }
+        ],
+        "bron": "er aan alle volgende voorwaarden wordt voldaan: - de dag later is dan 28-02-2026 - de dag eerder is dan 01-10-2026."
       },
       "geldigheid": {
         "node": "Geldigheid",
@@ -341,28 +371,58 @@
     },
     {
       "node": "ResolvedDagsoort",
-      "naam": "stormdag",
+      "naam": "stormvloeddag",
       "voorwaarde": {
-        "node": "Vergelijking",
-        "op": "LATER",
-        "links": {
-          "node": "Constante",
-          "naam": "de dag",
-          "type": {
-            "node": "DatumInDagen"
+        "node": "Samengesteld",
+        "kwantor": "ALLE",
+        "drempel": 0,
+        "onderdelen": [
+          {
+            "node": "Vergelijking",
+            "op": "LATER",
+            "links": {
+              "node": "Constante",
+              "naam": "de dag",
+              "type": {
+                "node": "DatumInDagen"
+              },
+              "bron": "de dag"
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "2026-09-30",
+              "type": {
+                "node": "DatumInDagen"
+              },
+              "bron": "30-09-2026"
+            },
+            "periode": null,
+            "bron": "de dag later is dan 30-09-2026"
           },
-          "bron": "de dag"
-        },
-        "rechts": {
-          "node": "Literal",
-          "waarde": "2026-09-30",
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "30-09-2026"
-        },
-        "periode": null,
-        "bron": "de dag later is dan 30-09-2026"
+          {
+            "node": "Vergelijking",
+            "op": "EERDER",
+            "links": {
+              "node": "Constante",
+              "naam": "de dag",
+              "type": {
+                "node": "DatumInDagen"
+              },
+              "bron": "de dag"
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "2027-03-01",
+              "type": {
+                "node": "DatumInDagen"
+              },
+              "bron": "01-03-2027"
+            },
+            "periode": null,
+            "bron": "de dag eerder is dan 01-03-2027"
+          }
+        ],
+        "bron": "er aan alle volgende voorwaarden wordt voldaan: - de dag later is dan 30-09-2026 - de dag eerder is dan 01-03-2027."
       },
       "geldigheid": {
         "node": "Geldigheid",
