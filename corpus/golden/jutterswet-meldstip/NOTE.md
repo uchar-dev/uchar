@@ -77,9 +77,9 @@ emitter side is its own card (it needs a re-pin of the emitter goldens).
 Until then this golden is hand-written wire, the pattern the Catala and
 `jutterswet-getijdenpaar` goldens already follow, and it carries the
 CANONICAL lexeme deliberately: that is the form the wire's own rule
-(WF-094) names first and the one a consumer reads.
+(WF-095) names first and the one a consumer reads.
 
-Both lexemes are admitted by WF-094 and by every reader, and they name the
+Both lexemes are admitted by WF-095 and by every reader, and they name the
 same instant: `15-03-2026 12:00:00.000` in this document's literal replays
 identically (measured). The canonical one is written here because the wire
 rule exists to make the canonical form the one a new producer targets.

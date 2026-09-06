@@ -99,7 +99,7 @@ WF-036-kaart).
 
 Result (2026-09-06, branch `card/datumtijd-dekking`, op `main` 8fb95ee).
 **Alle vier de acceptatiepunten gehaald, plus de wire-vraag: de
-beschrijvende ch.-4.1-passage is WF-094 geworden** (maintainerbesluit
+beschrijvende ch.-4.1-passage is WF-095 geworden** (maintainerbesluit
 2026-09-06, genummerde vraag). Dertien gates groen vanuit de worktree.
 De branch blijft ONGEMERGED — hij raakt beschermde paden
 (`spec/IR-SPEC.md`, `spec/verifier/`) en is dus een voorstel.
@@ -181,18 +181,18 @@ bevestigd tegen ref. Uitslag: `ref ≡ clingo ≡ Drools` op absolute waarden
 — gates 5, 6 en 12, en gate 12 telt hem als PLAYED (110 → 111). Gate 13
 beweegt niet: het document draagt geen enkele eenheid-dragende annotatie.
 
-**5. WF-094** (het volgende vrije nummer; de index liep tot WF-093, en
+**5. WF-095** (het volgende vrije nummer; de index liep tot WF-093, en
 094/095 kwamen nergens voor). De MUST laat BEIDE gedragen lexemen toe —
 canoniek ISO `yyyy-mm-ddThh:mm:ss[.fff]` én het bronsnippet
 `[dd. ]d-m-yyyy hh:mm:ss[.SSS]` — en weigert al het andere. Reden expliciet
 in de spec: de eigen emitter schrijft voor een `DatumTijd`-literal nog het
 snippet in `waarde` én `bron`, dus een enkel-lexeem-regel (zoals WF-084)
 zou de eigen producent onconform maken. Vijf negatiefs, één geweigerde
-veldklasse per stuk (`wf094-zone-suffix`, `wf094-spatie-scheider`,
-`wf094-fractiebreedte`, `wf094-ontbrekende-seconden`,
-`wf094-omringende-tekst`), alle vijf ROOD-EERST: `verifier: PASS` onder de
+veldklasse per stuk (`wf095-zone-suffix`, `wf095-spatie-scheider`,
+`wf095-fractiebreedte`, `wf095-ontbrekende-seconden`,
+`wf095-omringende-tekst`), alle vijf ROOD-EERST: `verifier: PASS` onder de
 verifier van de branch-kop (md5 `957d3eeb5667188e33d5468b80f21b71`),
-`WF-094 FAIL` onder de arm (md5 `45a9c588ebf79d17b897654d6332df6c`), elk
+`WF-095 FAIL` onder de arm (md5 `45a9c588ebf79d17b897654d6332df6c`), elk
 met exact één regel in het rapport.
 
 *Armexacte mutant.* Arm uitgeschakeld (md5
@@ -209,7 +209,7 @@ kalendergeldigheid, voorloop-/naloopspatie).
 *De herschreven passage.* Elke claim die "wordt waar na de fixronde" was,
 is hermeten en herschreven: de lezerstabel draagt nu VOOR → NA per rij;
 "Nothing on the IR wire enforces that grammar" is vervangen door de
-WF-094-formulering met de meting die hem rechtvaardigde; "the reference
+WF-095-formulering met de meting die hem rechtvaardigde; "the reference
 interpreter has no datetime-literal arm" en "the ASP backend faults ahead
 of it" staan er nu als geschiedenis, met datum. Ook bijgetrokken: WF-084's
 scope-zin, WF-036's prozaclausule en indexrij (de "missing regression
@@ -245,7 +245,7 @@ byte-identiek, 27 tests, 29 replays, nul divergenties) · 12 PASS (played
   eigen reden (geen corpuscase); ref draagt hem wel.
 - De emitterkant is onaangeraakt (`frontends/**` niet aangeraakt): een
   `DatumTijd`-literal krijgt nog het dag-eerste snippet in `waarde` én
-  `bron`. WF-094 laat dat toe, dus de emitter is conform; de canonicalisatie
+  `bron`. WF-095 laat dat toe, dus de emitter is conform; de canonicalisatie
   is een eigen kaart met een herpin van de emitter-goldens.
 - `spec/CONSTRUCTS.md` en `spec/PLAN.md` niet aangeraakt (rijvoorstel in het
   sessierapport).

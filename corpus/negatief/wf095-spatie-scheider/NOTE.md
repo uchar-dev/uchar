@@ -1,4 +1,4 @@
-# Violates WF-094 — a space where the canonical lexeme writes `T`
+# Violates WF-095 — a space where the canonical lexeme writes `T`
 
 The Gelijkstelling assigns the datum-tijd literal
 `"2026-03-15 12:00:00"`: the canonical field widths, but a **space** for

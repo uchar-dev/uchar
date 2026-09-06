@@ -2891,7 +2891,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
 and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string =
   match e with
   | Literal { waarde; typ = Some Datum_tijd; _ } ->
-      (* WF-094 (ch. 4.1): the lexeme reads through the SHARED datum-tijd
+      (* WF-095 (ch. 4.1): the lexeme reads through the SHARED datum-tijd
          reader — one grammar, one instant, no second opinion — and the
          instant enters as the GROUND pair term dt(D, MS), the very split
          [datetime_term] emits for a case value. It is never an absolute ms

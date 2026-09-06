@@ -383,7 +383,7 @@ let literal_value (waarde : string option) (typ : datatype option) =
   | Some Tekst -> Value.Text lex
   | Some (Enumeratie _) -> Value.Enum lex
   | Some Datum_in_dagen -> Value.date_of_iso lex
-  (* WF-094 (ch. 4.1): a datum-tijd literal reads into the SAME millisecond
+  (* WF-095 (ch. 4.1): a datum-tijd literal reads into the SAME millisecond
      layer the case wire reads its `dateTime` into, through the same two
      admitted spellings — the canonical ISO lexeme and the day-first source
      snippet. An unreadable lexeme faults with the position, never silently

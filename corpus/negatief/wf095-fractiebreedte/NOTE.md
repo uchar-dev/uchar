@@ -1,4 +1,4 @@
-# Violates WF-094 — a fraction that is not three digits
+# Violates WF-095 — a fraction that is not three digits
 
 The Gelijkstelling assigns the datum-tijd literal
 `"2026-03-15T12:00:00.1"`. The fractional part is optional, but when it

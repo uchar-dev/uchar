@@ -1987,7 +1987,7 @@ let () =
   faults_with ~name:"datum-tijd gelijk-aan is een luide flank" ~ir:gelijk_ir
     ~case_text:vooruit ~needle:"datum-tijd (on)gelijk-aan is not translated";
   (* 5. an ill-formed literal lexeme reaches the translator only when the
-     verifier is bypassed (WF-094 refuses the document); the arm must still
+     verifier is bypassed (WF-095 refuses the document); the arm must still
      refuse it by name rather than answer some other instant *)
   let stuk_ir =
     dt_doc ~attributen:{|"aanvangstip": { "node": "DatumTijd" }|} ~kenmerken:{|"tijdig"|}

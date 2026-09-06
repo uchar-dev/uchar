@@ -644,7 +644,7 @@ and this backend); declared factors and stelsel never enter.
     ch. 1.2d date row, for free, exactly as the day-precision ordering
     below gets it. Mixed precision faults (WF-036: one instant, one
     representation).
-  - **the datum-tijd LITERAL** (2026-09-06, WF-094). A `Literal` typed
+  - **the datum-tijd LITERAL** (2026-09-06, WF-095). A `Literal` typed
     `DatumTijd` lowers to the GROUND pair `(⟨⟩, D, MS)` — no atoms — its
     lexeme read by ref's shared datum-tijd reader (one grammar for both
     admitted spellings, IR-SPEC ch. 4.1) and split by the same

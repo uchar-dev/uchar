@@ -236,7 +236,7 @@ let lexeme_iso_date s =
       m >= 1 && m <= 12 && d >= 1 && d <= days_in_month y m
   | _ -> false
 
-(* WF-094: the executors' shared datum-tijd literal lexeme grammar (IR-SPEC
+(* WF-095: the executors' shared datum-tijd literal lexeme grammar (IR-SPEC
    ch. 4.1). TWO spellings name one instant and every reader in the house
    admits exactly these two — the canonical ISO form
    yyyy-mm-ddThh:mm:ss[.fff] (fixed field widths, 'T' as the separator and
@@ -3738,7 +3738,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
               ("date literal lexeme '" ^ w
                ^ "' is not the ISO form yyyy-mm-dd (fixed field widths, valid ranges — ch. 4.1)") ]
       | Some Datum_tijd, Some w when not (lexeme_datum_tijd w) ->
-          [ v "WF-094" at
+          [ v "WF-095" at
               ("datum-tijd literal lexeme '" ^ w
                ^ "' is neither the canonical ISO form yyyy-mm-ddThh:mm:ss[.fff] nor the source \
                   snippet form [dd. ]d-m-yyyy hh:mm:ss[.SSS] (fixed field widths, 'T' never a \

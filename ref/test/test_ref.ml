@@ -2443,7 +2443,7 @@ let () =
   expect_fault "WV-5.8a-naar-veel-refuseert" (fun () ->
       Eval.eval_cond (env_of doc_mm) w (World.get w "j1") ~err:no_err (rolcheck false))
 
-(* --- WF-094: the datum-tijd lexeme (IR-SPEC ch. 4.1) --------------------
+(* --- WF-095: the datum-tijd lexeme (IR-SPEC ch. 4.1) --------------------
    The corpus golden pins what the READER answers; these pin the reader's
    own fence, which no corpus document can reach — a case file that carries
    an ill-formed lexeme cannot exist inside gate 4, and an ill-formed
@@ -2460,50 +2460,50 @@ let () =
      43 200 000 ms into it (jutterswet-meldstip's NOTE.md carries the
      derivation) *)
   let noon = (20527 * 86_400_000) + 43_200_000 in
-  check "WF-094-anchor-is-1773576000000" (noon = 1_773_576_000_000);
+  check "WF-095-anchor-is-1773576000000" (noon = 1_773_576_000_000);
   (* ONE instant, TWO spellings — every reader in the house admits both *)
-  dt_ms "WF-094-canoniek-met-fractie" "2026-03-15T12:00:00.000" noon;
-  dt_ms "WF-094-canoniek-zonder-fractie" "2026-03-15T12:00:00" noon;
-  dt_ms "WF-094-snippet" "15-03-2026 12:00:00.000" noon;
-  dt_ms "WF-094-snippet-zonder-fractie" "15-03-2026 12:00:00" noon;
-  dt_ms "WF-094-snippet-dedato-prefix" "dd. 15-03-2026 12:00:00.000" noon;
-  dt_ms "WF-094-snippet-smalle-velden" "5-3-2026 12:00:00"
+  dt_ms "WF-095-canoniek-met-fractie" "2026-03-15T12:00:00.000" noon;
+  dt_ms "WF-095-canoniek-zonder-fractie" "2026-03-15T12:00:00" noon;
+  dt_ms "WF-095-snippet" "15-03-2026 12:00:00.000" noon;
+  dt_ms "WF-095-snippet-zonder-fractie" "15-03-2026 12:00:00" noon;
+  dt_ms "WF-095-snippet-dedato-prefix" "dd. 15-03-2026 12:00:00.000" noon;
+  dt_ms "WF-095-snippet-smalle-velden" "5-3-2026 12:00:00"
     ((20517 * 86_400_000) + 43_200_000);
   (* the fraction is WHOLE MILLISECONDS, never a positional fraction *)
-  dt_ms "WF-094-fractie-is-milliseconden" "2026-03-15T12:00:00.500" (noon + 500);
-  dt_ms "WF-094-fractie-001" "2026-03-15T12:00:00.001" (noon + 1);
+  dt_ms "WF-095-fractie-is-milliseconden" "2026-03-15T12:00:00.500" (noon + 500);
+  dt_ms "WF-095-fractie-001" "2026-03-15T12:00:00.001" (noon + 1);
   (* and everything outside the two spellings is refused, per field class *)
   let refuses name lex = expect_fault name (fun () -> Value.datetime_of_lexeme lex) in
-  refuses "WF-094-weigert-zone" "2026-03-15T12:00:00Z";
-  refuses "WF-094-weigert-offset" "2026-03-15T12:00:00+01:00";
-  refuses "WF-094-weigert-spatie-scheider" "2026-03-15 12:00:00";
-  refuses "WF-094-weigert-eencijferige-maand" "2026-3-15T12:00:00";
-  refuses "WF-094-weigert-eencijferig-uur" "2026-03-15T9:00:00";
-  refuses "WF-094-weigert-fractie-1" "2026-03-15T12:00:00.1";
-  refuses "WF-094-weigert-fractie-4" "2026-03-15T12:00:00.1234";
-  refuses "WF-094-weigert-fractie-6" "2026-03-15T12:00:00.100000";
-  refuses "WF-094-weigert-ontbrekende-seconden" "2026-03-15T12:00";
-  refuses "WF-094-weigert-omringende-tekst" "rommel 2026-03-15T12:00:00 x";
-  refuses "WF-094-weigert-lege-tekst" "";
-  refuses "WF-094-weigert-naijlende-spatie" "2026-03-15T12:00:00 ";
+  refuses "WF-095-weigert-zone" "2026-03-15T12:00:00Z";
+  refuses "WF-095-weigert-offset" "2026-03-15T12:00:00+01:00";
+  refuses "WF-095-weigert-spatie-scheider" "2026-03-15 12:00:00";
+  refuses "WF-095-weigert-eencijferige-maand" "2026-3-15T12:00:00";
+  refuses "WF-095-weigert-eencijferig-uur" "2026-03-15T9:00:00";
+  refuses "WF-095-weigert-fractie-1" "2026-03-15T12:00:00.1";
+  refuses "WF-095-weigert-fractie-4" "2026-03-15T12:00:00.1234";
+  refuses "WF-095-weigert-fractie-6" "2026-03-15T12:00:00.100000";
+  refuses "WF-095-weigert-ontbrekende-seconden" "2026-03-15T12:00";
+  refuses "WF-095-weigert-omringende-tekst" "rommel 2026-03-15T12:00:00 x";
+  refuses "WF-095-weigert-lege-tekst" "";
+  refuses "WF-095-weigert-naijlende-spatie" "2026-03-15T12:00:00 ";
   (* the calendar is checked, not only the shape *)
-  refuses "WF-094-weigert-29-februari-buiten-schrikkeljaar" "2026-02-29T12:00:00";
-  dt_ms "WF-094-laat-29-februari-in-schrikkeljaar-toe" "2024-02-29T00:00:00"
+  refuses "WF-095-weigert-29-februari-buiten-schrikkeljaar" "2026-02-29T12:00:00";
+  dt_ms "WF-095-laat-29-februari-in-schrikkeljaar-toe" "2024-02-29T00:00:00"
     (19782 * 86_400_000);
-  refuses "WF-094-weigert-uur-24" "2026-03-15T24:00:00";
-  refuses "WF-094-weigert-minuut-60" "2026-03-15T12:60:00";
+  refuses "WF-095-weigert-uur-24" "2026-03-15T24:00:00";
+  refuses "WF-095-weigert-minuut-60" "2026-03-15T12:60:00";
   (* the CASE wire is narrower than the literal wire: uchar-case-v0 carries
      the canonical spelling only (its schema pattern), so the shared case
      reader takes that arm alone — the snippet is a LITERAL form *)
-  check "WF-094-casewire-neemt-canoniek"
+  check "WF-095-casewire-neemt-canoniek"
     (Value.read_iso_datetime "2026-03-15T12:00:00.000" = Ok noon);
-  check "WF-094-casewire-weigert-snippet"
+  check "WF-095-casewire-weigert-snippet"
     (match Value.read_iso_datetime "15-03-2026 12:00:00.000" with
      | Error _ -> true
      | Ok _ -> false);
   (* a refusal names the POSITION at which the grammar diverges, so a
      producer can act on it; a bare "malformed" could not *)
-  check "WF-094-weigering-noemt-de-positie"
+  check "WF-095-weigering-noemt-de-positie"
     (match Value.read_iso_datetime "2026-03-15T12:00:00.1" with
      | Error why -> why = "at offset 20: expected exactly three fraction digits"
      | Ok _ -> false)

@@ -105,7 +105,7 @@ let iso_of_date z =
   let y, m, d = civil_from_days z in
   Printf.sprintf "%04d-%02d-%02d" y m d
 
-(* --- datum-tijd lexemes (WF-094, IR-SPEC ch. 4.1) ---------------------- *)
+(* --- datum-tijd lexemes (WF-095, IR-SPEC ch. 4.1) ---------------------- *)
 
 (* Two lexemes name a millisecond-precision instant, and every reader in the
    house admits exactly these two: the canonical ISO form
