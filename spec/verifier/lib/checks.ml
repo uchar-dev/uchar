@@ -2842,12 +2842,15 @@ let value_fold_name = function
    value fold's operands are ordinary reads, and a foreign objecttype there
    is a legitimate type-pair hop, ref's [navigated]). *)
 let aggregation_source_check ctx at ~element_type ~subject ~single ~kind e =
-  (* WF-093, the wart's KIND law (maintainer decision 2026-09-06): the row-1
-     wart is a COUNT source and nothing else. It carries no datatype because
-     it names a ROLE, not a value — it is v0's presentation of "het aantal
-     <rol> van de <onderwerp>" — so it yields the linked INSTANCES, which is
-     exactly what AANTAL consumes and what every other fold kind cannot: those
-     read a value per contributor and the wart hands them members.
+  (* WF-093, the wart's KIND law (maintainer decision 2026-09-06): a
+     single-argument instance-fold source carrying the unknown sentinel on its
+     OWN type is a COUNT source and nothing else. The rule keys on the
+     SENTINEL, which is the one thing all its guises share: v0 writes it over
+     a ROLE name (the bare spelling, "het aantal <rol> van de <onderwerp>"),
+     over an element ATTRIBUTE (the set spelling), and — the frontend's own
+     route — over a CHARACTERISTIC. Under the sentinel the source hands the
+     fold linked INSTANCES instead of a value per contributor, which is
+     exactly what AANTAL consumes and what every other fold kind cannot read.
 
      Keyed on the unknown sentinel, which is how the wart is spelled on the
      wire (ch. 4.3's normative discriminator) and how ref keys its own arm:
@@ -2860,17 +2863,23 @@ let aggregation_source_check ctx at ~element_type ~subject ~single ~kind e =
 
      Single-scoped with the rest of the family: with two or more arguments the
      node is the listed value fold (§5.8.3), whose operands are ordinary reads
-     — and one such operand carries the sentinel today because v0 degraded its
-     type, not because it names a role (measured: one EERSTE over two listed
-     operands in the parity zone). Kind-scoped to the aggregations because the
-     rule is about folding; a builtin carrying an elementObjecttype is a
-     different malformation and no document has one (measured: 0 of 523). *)
+     — and in the ONE listed position the four zones carry today the sentinel
+     is v0's failed typing of a real attribute read (measured: one EERSTE over
+     two listed operands in the parity zone). The wart VERBATIM in that
+     position is a second shape again, and no executor carries it — the third
+     one reaches for the getter of the ROLE name and throws — so widening this
+     rule there would refuse two different shapes under one reason; the
+     sentinel-at-an-ordinary-read question is tracked on its own. Kind-scoped
+     to the aggregations because the rule is about folding; a builtin carrying
+     an elementObjecttype is a different malformation and no document has one
+     (measured: 0 of 523). *)
   (match (e, value_fold_name kind) with
    | Attribuut_ref { typ = Some (Datatype_onbekend _); set; _ }, Some kn when single ->
        [ v "WF-093" at
            ("the v0 instance-fold source (the row-1 wart, spelled with the unknown sentinel on \
-             the argument's own type) is a COUNT source: it names a role and yields the linked \
-             instances, never a value per contributor — so it cannot be the source of this " ^ kn
+             the argument's own type) is a COUNT source: a fold source whose own type is the \
+             unknown sentinel yields the linked instances, which only AANTAL reads — so it \
+             cannot be the source of this " ^ kn
           ^ " aggregation"
           ^ (if set then " (the set spelling reads it no differently: the sentinel decides)"
              else "")) ]
