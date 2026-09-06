@@ -2508,6 +2508,84 @@ let () =
      | Error why -> why = "at offset 20: expected exactly three fraction digits"
      | Ok _ -> false)
 
+(* WV-5.10: the composite condition short-circuits. The members are read left to
+   right in WIRE order and evaluation stops at the first member after which the
+   outcome stands, so a member the outcome no longer reads raises NO fault. Both
+   ch. 5.10 tables verbatim (corpus goldens jutterswet-ploegaandeel and
+   jutterswet-wachtdeling): member 1 tests the divisor, member 2 divides by it. *)
+let () =
+  let deling : Ir_v0.Ast.expr =
+    Afgerond
+      { basis =
+          Some
+            (Binair
+               { op = Gedeeld_door;
+                 links = Some (aref "vangstwaarde" "Wacht" num0);
+                 rechts = Some (aref "ploegomvang" "Wacht" num0);
+                 typ = Some num0; bron = None });
+        modus = Naar_beneden; decimalen = 0; typ = Some num0; bron = None }
+  in
+  let cmp op links rechts : Ir_v0.Ast.conditie =
+    Vergelijking { op; links = Some links; rechts = Some rechts; periode = None; bron = None }
+  in
+  let lid1 op = cmp op (aref "ploegomvang" "Wacht" num0) (litv "0" num0) in
+  let lid2 = cmp Groter deling (litv "0" num0) in
+  let doc_of kwantor drempel op1 : Ir_v0.Ast.document =
+    { empty_doc with
+      objecttypen =
+        [ ot "Wacht"
+            [ ("ploegomvang", Some num0); ("vangstwaarde", Some num0); ("merk", Some num0) ] [] ];
+      resolved_regels =
+        [ rr "merk" Gelijkstelling
+            (Some (aref "merk" "Wacht" num0))
+            (Some (litv "1" num0))
+            (Some (Samengesteld { kwantor; drempel; onderdelen = [ lid1 op1; lid2 ]; bron = None }));
+        ];
+    }
+  in
+  let run doc ploeg vangst =
+    let w =
+      World.add_instance World.empty
+        (inst "w" "Wacht" [ ("ploegomvang", n ploeg); ("vangstwaarde", n vangst) ])
+    in
+    World.attr (World.get (Eval.evaluate (env_of doc) w) "w") "merk"
+  in
+  (* table 1 — ALLE, member 1 "ploegomvang ongelijk aan 0" *)
+  let alle = doc_of Alle 0 Ongelijk in
+  expect_leeg "WV-5.10-alle-deler-0-geen-fault" (run alle "0" "100");
+  expect_num "WV-5.10-alle-deler-4" (run alle "4" "100") "1";
+  expect_leeg "WV-5.10-alle-deler-7-lid2-beslist" (run alle "7" "3");
+  (* table 2 — the SAME two members, member 1 "ploegomvang gelijk aan 0",
+     under GEEN (the stop fixes the outcome false) and TEN MINSTE 1 (the same
+     stop fixes it true): one trigger, opposite verdicts *)
+  let geen = doc_of Geen 0 Gelijk and minste = doc_of Ten_minste 1 Gelijk in
+  expect_leeg "WV-5.10-geen-deler-0-geen-fault" (run geen "0" "100");
+  expect_leeg "WV-5.10-geen-deler-4" (run geen "4" "100");
+  expect_num "WV-5.10-geen-deler-7" (run geen "7" "3") "1";
+  expect_num "WV-5.10-tenminste-deler-0-geen-fault" (run minste "0" "100") "1";
+  expect_num "WV-5.10-tenminste-deler-4" (run minste "4" "100") "1";
+  expect_leeg "WV-5.10-tenminste-deler-7" (run minste "7" "3");
+  (* the clause is load-bearing: WITHOUT the stop, member 2 is read on a zero
+     divisor and the evaluation faults instead of answering. The one-member
+     composite isolates that member: no prefix can settle the outcome, so it IS
+     read, and the fault is the pre-clause behaviour of every table row above. *)
+  let bloot : Ir_v0.Ast.document =
+    { (doc_of Alle 0 Ongelijk) with
+      resolved_regels =
+        [ rr "merk" Gelijkstelling
+            (Some (aref "merk" "Wacht" num0))
+            (Some (litv "1" num0))
+            (Some (Samengesteld { kwantor = Alle; drempel = 0; onderdelen = [ lid2 ]; bron = None }));
+        ];
+    }
+  in
+  expect_fault "WV-5.10-ongepoort-lid-fault-wel" (fun () -> run bloot "0" "100");
+  (* the OUT-OF-REACH trigger stops too: TEN MINSTE 2 over two members whose
+     first does not hold can no longer reach 2, so member 2 stays unread even
+     though no hit has been counted *)
+  let minste2 = doc_of Ten_minste 2 Ongelijk in
+  expect_leeg "WV-5.10-tenminste-2-onhaalbaar-geen-fault" (run minste2 "0" "100")
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

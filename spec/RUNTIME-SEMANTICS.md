@@ -2301,6 +2301,111 @@ duplicate). Two kavels with etiket 5 in ONE gemeente → both marked
 kavel duplicating a scoped one, and an empty vondstnummer all stay
 consistent (case 1 — the three exclusions).
 
+### 5.10 The composite condition short-circuits
+
+A composite condition (`Compound`) applies a quantifier to an **ordered**
+list of members. Reading it is not a set operation. The members are
+evaluated **left to right in wire order**, and evaluation **stops at the
+first member after which the outcome stands**. A member that is never
+reached raises no fault and deposits no §9.5 channel fact.
+
+One rule covers all five quantifiers. Write *h* for the hits among the
+members already read and *r* for the members still unread. Evaluation
+stops as soon as one of these holds:
+
+| quantifier | stop trigger | outcome |
+|------------|--------------|---------|
+| `all` / `the` | a member read does not hold | **false** |
+| `none` | a member read holds (*h* > 0) | **false** |
+| `at-least` *d* | *h* ≥ *d* | **true** |
+| `at-least` *d* | *h* + *r* < *d* (the threshold is out of reach) | **false** |
+| `at-most` *d* | *h* > *d* | **false** |
+| `exactly` *d* | *h* > *d* | **false** |
+| `exactly` *d* | *h* + *r* < *d* | **false** |
+
+If no trigger fires, every member is read and the verdict is the plain
+comparison over the total hits *h* against the member count *n*: `all`
+and `the` need *h* = *n*, `none` needs *h* = 0, `at-least` *h* ≥ *d*,
+`at-most` *h* ≤ *d*, `exactly` *h* = *d*.
+
+**The short circuit never changes a truth value.** Every trigger is
+stable under the members it skips: as reading proceeds *h* only grows and
+*h* + *r* only shrinks, so a trigger that has fired already decides the
+final comparison whatever the unread members would have done. What the
+short circuit changes is exactly one thing: *which faults and which §9.5
+channel facts come into being.* That is why it is semantics and not an
+optimisation — a member that would fault decides, by being reached or
+not, whether the evaluation has an answer at all.
+
+**Nested composites recurse under the same rule.** A member that is
+itself a composite counts as one member of its parent — it holds or it
+does not — and its own members are read left to right under its own
+quantifier's triggers.
+
+*Mirror note.* The source language states the ordering as a generic
+drafting rule (§11.1: conditions are checked left to right, and variables
+are not computed unnecessarily) and §10.2/§11.1 give the composite its
+form. The two executors realised it unevenly before this clause: a
+conjunction lowered to a chain of pattern constraints short-circuits by
+construction, while a counting quantifier folded into one counting pass
+does not, and a translation whose fault fences are order-free fires them
+all. **Delta (promoted):** v1 makes the rule uniform, explicit, and
+identical across quantifiers and executors.
+
+**Two boundaries, recorded rather than left implicit.**
+
+1. `at-most`'s complementary direction — *h* + *r* ≤ *d*, after which the
+   outcome stands **true** — is deliberately **not** a trigger. Every
+   trigger in the table fires on evidence that has been *read*; this one
+   would fire on evidence that has not been, and whenever *d* ≥ *n* it
+   would stop before the first member, evaluating nothing at all. The
+   trigger set above is the whole of it (maintainer decision, 2026-09-06).
+2. The ch. 3.6 composite **gedurende clip** is a different construct: its
+   members yield period sets that are intersected, and an intersection
+   has no moment at which "the outcome stands" in the sense above. Its
+   members stay fully evaluated, and their WF-055 shape faults stay
+   data-independent.
+
+Worked example (absolute; the `jutterswet-ploegaandeel` corpus golden,
+verbatim in gates 5–6). Member 1 tests the divisor; member 2 divides by
+it:
+
+```
+bergingsaandeel ← 1  indien  ALLE [
+    ploegomvang ongelijk aan 0 ;
+    ⌊vangstwaarde ÷ ploegomvang⌋ groter dan 0 ]
+```
+
+| ploegomvang | vangstwaarde | member 1 | member 2 | `bergingsaandeel` |
+|-------------|--------------|----------|----------|-------------------|
+| 0 | 100 | **false** | *never read* | **leeg** |
+| 4 | 100 | true | ⌊100/4⌋ = 25 > 0 → true | **1** |
+| 7 | 3 | true | ⌊3/7⌋ = 0 > 0 → false | **leeg** |
+
+Row 1 is the clause: without it, member 2 divides by zero and the whole
+evaluation faults instead of answering. Rows 2 and 3 are the control —
+member 2 *is* read whenever member 1 holds, and decides both ways.
+
+Worked example (absolute; the `jutterswet-wachtdeling` corpus golden,
+verbatim in gates 5–6) — the same two members, in the same order, under
+two counting quantifiers, showing a stop that fixes the outcome **false**
+and a stop that fixes it **true**:
+
+```
+geenteken   ← 1  indien  GEEN        [ ploegomvang gelijk aan 0 ; ⌊vangstwaarde ÷ ploegomvang⌋ groter dan 0 ]
+minsteteken ← 1  indien  TEN MINSTE 1 [ ploegomvang gelijk aan 0 ; ⌊vangstwaarde ÷ ploegomvang⌋ groter dan 0 ]
+```
+
+| ploegomvang | vangstwaarde | member 1 | member 2 | `geenteken` | `minsteteken` |
+|-------------|--------------|----------|----------|-------------|---------------|
+| 0 | 100 | **true** | *never read* | **leeg** (*h* = 1 > 0) | **1** (*h* = 1 ≥ 1) |
+| 4 | 100 | false | ⌊100/4⌋ = 25 > 0 → true | **leeg** | **1** |
+| 7 | 3 | false | ⌊3/7⌋ = 0 > 0 → false | **1** | **leeg** |
+
+Row 1 stops at the same member for both rules and yields opposite
+verdicts: the stop follows from the quantifier's own trigger, never from
+a special case for the conjunction.
+
 ---
 
 ## 6. Stratification

@@ -1459,8 +1459,13 @@ public final class ExecModelTranspiler {
                 }
             }
             final List<Predicate2<Object, BigDecimal>> fTellers = tellers;
-            Predicate2<Object, BigDecimal> fold = (e, gv) -> {
-                int t = 0; for (Predicate2<Object, BigDecimal> p : fTellers) if (p.test(e, gv)) t++;
+            Predicate2<Object, BigDecimal> fold = (e, gv) -> {   // ch. 5.10 short circuit (see vastgesteld)
+                int t = 0;
+                for (int i = 0; i < fTellers.size(); i++) {
+                    Boolean vast = vastgesteld(kw, n, t, i, fTellers.size() - i);
+                    if (vast != null) return vast;
+                    if (fTellers.get(i).test(e, gv)) t++;
+                }
                 return switch (kw) {
                     case GEEN -> t == 0; case TEN_MINSTE -> t >= n; case TEN_HOOGSTE -> t <= n; case PRECIES -> t == n;
                     default -> false;   // ALLE/DE handled above
@@ -1508,8 +1513,15 @@ public final class ExecModelTranspiler {
             kids.add(lp);
         }
         final List<Predicate1<Object>> fk = kids;
+        // ch. 5.10 short circuit, here for ALL FIVE quantifiers: this fold is a plain lambda, so even ALLE/DE
+        // must stop explicitly (the top-level conjunctive arm gets it from the alpha chain instead).
         return e -> {
-            int t = 0; for (Predicate1<Object> p : fk) if (p.test(e)) t++;
+            int t = 0;
+            for (int i = 0; i < fk.size(); i++) {
+                Boolean vast = vastgesteld(kw, n, t, i, fk.size() - i);
+                if (vast != null) return vast;
+                if (fk.get(i).test(e)) t++;
+            }
             return switch (kw) {
                 case ALLE, DE -> t == fk.size();
                 case GEEN -> t == 0; case TEN_MINSTE -> t >= n; case TEN_HOOGSTE -> t <= n; case PRECIES -> t == n;
@@ -2608,6 +2620,24 @@ public final class ExecModelTranspiler {
      *  Coverage: §13.4.14 ALLE/DE (AND), GEEN/TEN_MINSTE/TEN_HOOGSTE/PRECIES (counting), §8.1.7 near- and far-side
      *  rolcheck, §8.1.8 own + to-one navigated kenmerkcheck, §8.1.2 LEEG/GEVULD, §8.1.1 comparison vs global/literal. */
     @SuppressWarnings({"unchecked", "rawtypes"})
+    /** RUNTIME-SEMANTICS ch. 5.10, the composite's stop triggers: the verdict once {@code gelezen} members have
+     *  been read of which {@code hits} hold and {@code rest} are still unread, or {@code null} while the unread
+     *  members can still change it. ALLE/DE stop at the first member that does not hold; GEEN at the first that
+     *  does; TEN MINSTE once the threshold is reached OR out of reach; TEN HOOGSTE once the threshold is
+     *  exceeded; PRECIES on either side. Shared by both places that fold members into ONE lambda — the counting
+     *  quantifiers of {@link #voorwaarde} and the nested {@link #leafCompound} (where ALLE/DE fold too, unlike
+     *  the top-level conjunctive arm, which is an alpha chain and short-circuits by construction). */
+    private static Boolean vastgesteld(Conditie.Kwantor kw, int drempel, int hits, int gelezen, int rest) {
+        return switch (kw) {
+            case ALLE, DE    -> hits < gelezen ? Boolean.FALSE : null;
+            case GEEN        -> hits > 0 ? Boolean.FALSE : null;
+            case TEN_MINSTE  -> hits >= drempel ? Boolean.TRUE
+                              : (hits + rest < drempel ? Boolean.FALSE : null);
+            case TEN_HOOGSTE -> hits > drempel ? Boolean.FALSE : null;
+            case PRECIES     -> (hits > drempel || hits + rest < drempel) ? Boolean.FALSE : null;
+        };
+    }
+
     private Gate voorwaarde(Conditie c, PatternDSL.PatternDef pattern, Objecttype subject, Variable subjectVar) {
         if (c instanceof Conditie.Samengesteld s) {
             // §13.4.14 ALLE / DE: AND its parts as successive in-pattern constraints; carry up far-side joins.
@@ -2642,9 +2672,22 @@ public final class ExecModelTranspiler {
             }
             final Conditie.Kwantor kw = s.kwantor();
             final int n = s.drempel();
+            final int leden = kinderen.size();
+            // RUNTIME-SEMANTICS ch. 5.10: read the members left to right in WIRE order and stop at
+            // the first one after which the outcome stands. The conjunctive arm above gets this for
+            // free (successive in-pattern constraints are an alpha chain), so the counting fold is
+            // the only place the backend has to spell it out — and it must, because a member the
+            // outcome no longer reads may be exactly the one that would throw (a division by the
+            // zero an earlier member tested for). Skipping a settled member can never move the
+            // verdict: hits only grows and hits+rest only shrinks, so every trigger below already
+            // decides the comparison. Witness: corpus golden jutterswet-wachtdeling.
             Predicate1<Object> combined = sObj -> {
                 int telling = 0;
-                for (Predicate1<Object> p : kinderen) if (p.test(sObj)) telling++;
+                for (int i = 0; i < leden; i++) {
+                    Boolean vast = vastgesteld(kw, n, telling, i, leden - i);
+                    if (vast != null) return vast;
+                    if (kinderen.get(i).test(sObj)) telling++;
+                }
                 return switch (kw) {
                     case GEEN        -> telling == 0;
                     case TEN_MINSTE  -> telling >= n;
@@ -6628,8 +6671,13 @@ public final class ExecModelTranspiler {
             final Conditie.Kwantor kw = sam.kwantor();
             final int n = sam.drempel();
             final List<Predicate1<Object>> fk = kids;
-            return s -> {
-                int t = 0; for (Predicate1<Object> p : fk) if (p.test(s)) t++;
+            return s -> {   // ch. 5.10 short circuit, all five quantifiers (see vastgesteld)
+                int t = 0;
+                for (int i = 0; i < fk.size(); i++) {
+                    Boolean vast = vastgesteld(kw, n, t, i, fk.size() - i);
+                    if (vast != null) return vast;
+                    if (fk.get(i).test(s)) t++;
+                }
                 return switch (kw) {
                     case ALLE, DE -> t == fk.size();
                     case GEEN -> t == 0; case TEN_MINSTE -> t >= n; case TEN_HOOGSTE -> t <= n; case PRECIES -> t == n;

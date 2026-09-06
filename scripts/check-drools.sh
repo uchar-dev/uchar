@@ -226,7 +226,7 @@ EXPECTED_CHANNEL=(
 # The count that closes the one direction a played-by-default list cannot see. It moves ONLY with a
 # corpus change, and it moves TOGETHER with the list: a golden that starts playing leaves the list
 # AND raises this number by one.
-EXPECTED_PLAYED=111
+EXPECTED_PLAYED=113
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the

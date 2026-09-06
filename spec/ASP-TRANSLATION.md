@@ -750,25 +750,72 @@ form), refused loudly. Witness `jutterswet-wachtindeling`.
 concatenation of the parts' atoms — both quantifiers are conjunctions
 over their parts. Other condition kinds fault (S19).
 
+**Composite, and the short circuit** (RUNTIME-SEMANTICS ch. 5.10). A
+composite's members are read left to right and evaluation stops once the
+outcome stands, so a member the outcome no longer reads must raise no
+fault and deposit no §9.5 fact. A conjunction of body atoms is
+order-free, so the ordering has to be carried by the *guards*: while a
+member is translated it runs with `rule_guard` extended by the atoms
+that say "the outcome does not stand yet", and every fence, `viol` and
+`inconsistent(…)` the member emits picks those up in its body (S6, S13).
+The returned atom list is unchanged, so the composite's **truth value**
+is untouched — only its fault surface is.
+
+For **ALLE / DE** the guard needs nothing new: member *i* is read exactly
+where members 1…*i*−1 all held, so the accumulated **prefix atoms are the
+guard**. Translating member *i* with `rule_guard = ⟨saved⟩ ∪ atoms(1…i−1)`
+turns the §11.1 pattern into ASP for free — `ploegomvang ≠ 0` in member 1
+appears in the body of the divide-by-zero `viol` that member 2 emits, so
+the constraint cannot fire on the very instances member 1 excluded.
+Witness `jutterswet-ploegaandeel`.
+
 **Composite, counting** (samengesteld — GEEN, TEN MINSTE, TEN
 HOOGSTE, PRECIES; the decision-table desugar's disjunctive row is
 TEN MINSTE 1): ref counts the members that evaluate true (its hits)
 and compares against the threshold — GEEN hits = 0, TEN MINSTE
 hits >= d, TEN HOOGSTE hits <= d, PRECIES hits = d. Encoded per
-composite: each member i becomes its own indexed helper rule
-`cqN(S,i) :- is_a(S,ot), ⟨member atoms⟩` — derivable exactly where
+composite: each member *i* becomes its own helper rule
+`cqK_m<i>(S) :- is_a(S,ot), ⟨member atoms⟩` — derivable exactly where
 ref counts a hit, so a leeg member operand counts false through the
-unbound positive join (Tabel 38 for free) — and one aggregate rule
-`cqN_n(S,H) :- is_a(S,ot), H = #count { I : cqN(S,I) }` binds the
-hit count per subject (0 included). The composite itself contributes
-only the plain atoms `cqN_n(S,H)` plus the threshold comparison, so
-it serves every position `cond_atoms` serves — aggregate elements
-included, where a body aggregate literal could not appear. The
-non-monotone quantifiers (GEEN / TEN HOOGSTE / PRECIES behave like
-negation) stay sound because the verifier's WF-045/046 dependency
-walk conservatively marks their members as negative edges, keeping
-the ground program stratified. A counting composite without members
-faults, and every member kind keeps its own fault (S19).
+unbound positive join (Tabel 38 for free) — and a **prefix chain**
+carries the hit count link by link:
+
+```
+cqK_h0(S,0)  :- is_a(S,ot).
+cqK_h<i>(S,H1) :- cqK_h<i-1>(S,H0), cqK_m<i>(S),     H1 = H0+1.
+cqK_h<i>(S,H0) :- cqK_h<i-1>(S,H0), not cqK_m<i>(S).
+```
+
+The composite itself contributes only the plain atoms `cqK_h<n>(S,H)`
+plus the threshold comparison, so it serves every position `cond_atoms`
+serves — aggregate elements included, where a body aggregate literal
+could not appear.
+
+The chain replaces the single `#count` aggregate this branch used
+before, for the short circuit's sake: member *i*'s guard is the ch. 5.10
+stop triggers **negated** over the prefix count, i.e. `cqK_h<i-1>(S,H)`
+plus ground comparisons on `H` (`H == 0` for GEEN; `H < d, H ≥ d−r` for
+TEN MINSTE; `H ≤ d` for TEN HOOGSTE; `H ≤ d, H ≥ d−r` for PRECIES, with
+*r* = *n* − (*i*−1) the unread rest, ground at translation time). Member 1
+carries no guard at all. Reading that count over one shared `cq(S,I)`
+predicate would put `cq` on both ends of the chain's negative link and
+close a predicate-level loop; naming every member and every link after
+its index makes each guard edge point at a **strictly smaller** index, so
+the dependency graph is acyclic by construction and the ground program
+stays stratified. The counted value is identical either way — the chain
+over `cqK_m<i>` counts exactly what `#count` over `cq(S,I)` counted.
+
+Silencing a settled member cannot move the verdict: *h* only grows and
+*h* + *r* only shrinks, so any trigger that fired already decides the
+comparison, and a member the guard silences only ever loses a hit the
+verdict no longer reads (the ch. 5.10 stability argument, in the
+translation's own terms). The non-monotone quantifiers (GEEN / TEN
+HOOGSTE / PRECIES behave like negation) stay sound because the verifier's
+WF-045/046 dependency walk conservatively marks their members as negative
+edges. A counting composite without members faults, and every member
+kind keeps its own fault (S19). Witness `jutterswet-wachtdeling` (GEEN
+and TEN MINSTE 1 over the same two members: a stop that fixes the
+outcome false and one that fixes it true).
 
 Witnesses (gate 6): `jutterswet-rubriektabel` (TEN MINSTE 1 — the
 disjunctive decision-table row over text equalities — and TEN MINSTE
