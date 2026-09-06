@@ -203,11 +203,14 @@ dat, dan faalt gate 12 met
 `scripts/`, een beschermd pad — dus de correctie is sowieso een
 onderhouders-edit, niet iets wat deze kaart eenzijdig kan doen.
 
-*Baselines onafhankelijk hermeten (2026-09-06, fixronde).* De vóór-getallen in
-de kolom "beweging" zijn niet uit een eerdere kaart overgeschreven maar op
-`f0161ad` opnieuw gemeten: gate 12 played **109** met JUnit **207** tests
-(0 skipped), gate 13 **68** twists over **14** goldens met **0** survivors.
-De na-getallen in de tabel zijn op de branch-kop gemeten.
+*Baselines onafhankelijk hermeten (2026-09-06).* De vóór-getallen in de kolom
+"beweging" zijn niet uit een eerdere kaart overgeschreven: gate 12 played
+**109** met JUnit **207** tests (0 skipped) en gate 13 **68** twists over
+**14** goldens met **0** survivors, op `f0161ad`. De fixronde heeft ze langs
+de na-kant nagerekend — deze branch voegt precies één golden toe, die één
+speler en zes twists over één golden bijdraagt, dus 110 − 1 = 109 en
+74 − 6 / 15 − 1 = 68 / 14 — en JUnit 207 met 0 skips zelf gedraaid. De
+na-getallen in de tabel zijn op de branch-kop gemeten.
 
 Gate 13 kreeg zes twists bij: de frontend geeft een dagsoort-eenheid
 `canoniek: "schouwdagen"` + `factorNaarCanoniek: 1`, dus er bestaat een
