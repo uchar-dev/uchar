@@ -288,3 +288,104 @@ nergens voorkomt, weerlegt zichzelf).
 0 survivors, plus de nieuwe ch.-5.10-registratie. Suites: ref 461
 gewerkte voorbeelden (was 456), clingo 80 checks, backend-JUnit 210.
 `EXPECTED_PLAYED` 113 → 114.
+
+## Fixronde 2 (2026-09-07) — lens 2
+
+Lens 2 bevestigde fixronde 1 en weerlegde de kop op twee blokkerende en
+drie ernstige punten. Alle metingen opnieuw in deze worktree
+gereproduceerd.
+
+**BLOKKEREND 1 — de gedurende-clip splitste ref ≢ clingo,
+frontend-bereikbaar.** De clip is een EXPRESSIE (een getotaliseerde
+`Functie` met filter), dus hij kan als OPERAND in een lid van een ánder
+samengesteld staan. ch. 5.10 grens 2 dekt de EIGEN leden van de clip;
+S7 rekende de hele clip buiten scope en dat was te grof.
+
+| probe | ref | clingo VOOR | clingo NA |
+|-------|-----|-------------|-----------|
+| P_clip_in_lid | PASS | UNSAT `viol("arithmetic range exceeded …","J1")` | PASS |
+| Q_clip_rule_guard (clip in het resultaat, onware regelconditie) | PASS | UNSAT idem | PASS |
+| R_clip_frontend (uit gewone bron) | PASS | UNSAT idem | PASS |
+| **jutterswet-klipwacht** (mijn eigen getuige) | PASS | UNSAT `…,"K1"` | PASS |
+
+**TWEE** fences waren fout, niet één. De lens vond de
+vergelijkingsfence; de tweede — de segmentfence `|W| > 46340` — kwam pas
+boven toen ik het programma van mijn eigen getuige dumpte en de
+resterende ongeguarde `viol`-regels las. Na de eerste fix bleef
+klipwacht namelijk gewoon divergeren. Beide waren gesleuteld op de
+helper-eigen vrije `S` in plaats van op het regelsubject en droegen noch
+de `is_a`-basis noch `ctx.rule_guard`; de eerste grondde daardoor over
+een kruisproduct van elk clipsubject met elk grenssubject. Beide dragen
+nu de basis, de prefix én het juiste subject. ch. 5.10 grens 2 en S7
+onderscheiden nu expliciet *de eigen leden van de clip* van *de clip als
+operand*.
+
+**BLOKKEREND 2 — de DRL-tekst-scan was te smal en zijn klasse stond op
+z'n kop.** Ik had 636 gelezen als "gemeten combinaties waarvan 258 het
+eens zijn"; het is **636 DIVERGERENDE** combinaties (n ≤ 6) en de **258
+met d < n zijn de gevaarlijke meerderheid**. De klasse is dus heel
+`TEN_HOOGSTE`, niet de rand `d ≥ n`. Mijn scan matchte bovendien
+`drempel >= len(onderdelen)` (dekte 378/636), globde alleen
+`corpus/golden` en zag de twee bestaande `d<n`-dragers structureel niet.
+Herbouwd als **reden-dragende naamlijst** (`ATMOST_WACHT`, het
+check-noop-survivorpatroon) over elke `TEN_HOOGSTE`-drager in
+`corpus/golden` **én** `corpus/rood` — vandaag drie, elk met de reden.
+Een golden kán de divergentie zelf niet dragen (de divergerende gevallen
+zijn precies die waar de norm FAULT, en dat is geen golden), dus de lijst
+is een waakhond over de VORM. Beide faalrichtingen aantoonbaar getest:
+
+```
+ongelijste drager : FAIL … carries a TEN HOOGSTE composite that the ch. 5.10 watchlist
+                    above does not name → corpus/golden/jutterswet-sluimerwacht/ir.json
+stale regel       : FAIL … a stale entry hides the next real one. Drop it:
+                    → corpus/golden/verzonnen-drager/ir.json
+```
+
+Klassebeschrijving gecorrigeerd in het script, in openpunt 1 hierboven en
+in de vervolgkaart.
+
+**ERNSTIG 3 — vijf mutanten hadden nul corpusdekking.** Nieuwe
+artefacten: `jutterswet-randwacht` (gelijkheids- én orderingsarm met een
+range-gevoelige vergelijking ná een stoppend lid — doodt C2 en C3),
+`jutterswet-vouwrand` (de eerste/laatste-vouw; **IR-geauthord**, want de
+frontend weigert `eerste van` over numeriek en de fence vuurt alleen bij
+gemengde schalen — doodt C4) en een vierde regel `randteken` op
+`jutterswet-seinwacht` (PRECIES drempel 3 over 2 leden, de `d = n+1`-rand
+— doodt C5c in clingo én D2 in de Drools-exec-tak, en pint daarmee de
+"exactly, out of reach"-rij over alle drie executors in plaats van alleen
+ref).
+
+**Volledige mutanttabel (18 recepten, alle gedood, baseline leeft):**
+
+| set | recepten | uitkomst |
+|-----|----------|----------|
+| ref (M1–M6, kill: ref-suite of gate 5) | 6 | **6/6 GEDOOD** (M4 via de ref-suite; zijn corpusartefact is de rode case, gate 8) |
+| clingo (C1–C7 incl. C5a/b/c, kill: gate 6) | 9 | **9/9 GEDOOD** |
+| Drools exec-model (D1–D3, kill: gate 12) | 3 | **3/3 GEDOOD** |
+| baseline | 1 | leeft |
+
+**KLEIN 6 / OBSERVATIE 7.** De zin die een testnaam spelde om te zeggen
+dat hij nergens voorkomt is herschreven zonder die naam. Het bronblok in
+`corpus/rood/atmost-no-vacuous-true/NOTE.md` is expliciet als illustratie
+gemarkeerd; de case zelf is niet aangeraakt.
+
+**Bevroren tot het maintainerbesluit.** Grens 1, de rode case
+`corpus/rood/atmost-no-vacuous-true` en de levendheidsmotivering zijn
+NIET aangeraakt (uitstaande vraag over het duale paar
+`ten hoogste d` ≡ `niet ten minste d+1`). De nieuwe artefacten zijn
+besluit-onafhankelijk gekozen: de PRECIES/TEN_MINSTE-getuigen raken de
+at-most-vraag niet, en het enige nieuwe TEN_HOOGSTE-materiaal
+(`hoogsteteken` op seinwacht) zit in de OVERSCHRIJDINGSrichting, die
+onder beide uitkomsten een trigger blijft.
+
+**Alle dertien gates groen** (fixronde 2, 2026-09-07): 1 PASS ·
+2 186 bestanden · 3 186 golden / 337 negatief · 4 441 cases · 5 418 ·
+6 418 · 7 382 (36 survivors, ongewijzigd) · 8 23 rood · 9 201 checks /
+12 catala-goldens · 10 173 tests / 36 rgs-goldens · 11 PASS ·
+12 played 116 / JUnit 210 / 1 value-divergence (de bestaande) / vloer 47 ·
+13 74 twists, 3 waakhonddragers. Suites: ref 461, clingo 80/0,
+backend-JUnit 210. `EXPECTED_PLAYED` 114 → 116; `EXPECTED_CHANNEL` +1:
+`jutterswet-klipwacht` speelt NIET in Drools (transpiler SKIP — de clip
+als samengesteld LID valt buiten de Phase-B-conditiescope), reden-dragend
+gepind; zijn ch. 5.10-inhoud is een clingo-eigenschap die gates 5+6
+pinnen.

@@ -196,6 +196,7 @@ EXPECTED_CHANNEL=(
   "jutterswet-keurstaat|EXCLUDE|transpiler SKIP: regel — voorwaarde buiten Phase-B scope"
   "jutterswet-kinderdeler|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-kinderfoldheffing|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-klipwacht|EXCLUDE|transpiler SKIP: regel 'klipteken van een kustwacht' — the gedurende-CLIP as a composite MEMBER is outside the Phase-B condition scope (the exec-model branch lowers a clipped total in a rule VALUE, not inside a voorwaarde). Its ch. 5.10 content — the clip fences carrying the prefix — is a clingo-side property that gates 5+6 pin; the Drools square carries the same golden as a refusal, not a wrong answer."
   "jutterswet-kinderkap|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-kinderkwart|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-kinderlet|EXCLUDE|loader Refusal: Datatype:ListType"
@@ -226,7 +227,7 @@ EXPECTED_CHANNEL=(
 # The count that closes the one direction a played-by-default list cannot see. It moves ONLY with a
 # corpus change, and it moves TOGETHER with the list: a golden that starts playing leaves the list
 # AND raises this number by one.
-EXPECTED_PLAYED=114
+EXPECTED_PLAYED=116
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
