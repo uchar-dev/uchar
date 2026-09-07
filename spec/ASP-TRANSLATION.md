@@ -840,8 +840,14 @@ The chain replaces the single `#count` aggregate this branch used
 before, for the short circuit's sake: member *i*'s guard is the ch. 5.10
 stop triggers **negated** over the prefix count, i.e. `cqK_h<i-1>(S,H)`
 plus ground comparisons on `H` (`H == 0` for GEEN; `H < d, H ≥ d−r` for
-TEN MINSTE; `H ≤ d` for TEN HOOGSTE; `H ≤ d, H ≥ d−r` for PRECIES, with
-*r* = *n* − (*i*−1) the unread rest, ground at translation time).
+TEN MINSTE; `H ≤ d, H ≥ d−r+1` for TEN HOOGSTE; `H ≤ d, H ≥ d−r` for
+PRECIES, with *r* = *n* − (*i*−1) the unread rest, ground at translation
+time). TEN HOOGSTE's guard is **two-sided** since its true-side trigger
+landed (maintainer decision 2026-09-07): member *i* is read only while
+the hits have not exceeded *d* **and** the unread rest can still push
+them past it — `H + r > d`, written `H ≥ d − r + 1`. At *i* = 1 with
+*d* ≥ *n* that second half already fails against `H` = 0, so a vacuously
+true at-most emits nothing at all.
 
 **Member 1 is guarded too**, against the chain's own base `cqK_h0(S,0)`.
 It is tempting to special-case it as always-read, and this translation

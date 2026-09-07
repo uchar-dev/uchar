@@ -2623,8 +2623,11 @@ public final class ExecModelTranspiler {
     /** RUNTIME-SEMANTICS ch. 5.10, the composite's stop triggers: the verdict once {@code gelezen} members have
      *  been read of which {@code hits} hold and {@code rest} are still unread, or {@code null} while the unread
      *  members can still change it. ALLE/DE stop at the first member that does not hold; GEEN at the first that
-     *  does; TEN MINSTE once the threshold is reached OR out of reach; TEN HOOGSTE once the threshold is
-     *  exceeded; PRECIES on either side. Shared by both places that fold members into ONE lambda — the counting
+     *  does; TEN MINSTE once the threshold is reached OR out of reach; TEN HOOGSTE once it is exceeded OR can no
+     *  longer be exceeded (the TRUE side, maintainer decision 2026-09-07); PRECIES on either side. One rule, no
+     *  exception: each arm marks the moment the outcome can no longer change, and a threshold that already covers
+     *  the whole member list settles on the EMPTY prefix — so a TEN HOOGSTE with d &gt;= n reads nothing at all,
+     *  exactly as TEN MINSTE and PRECIES above n do. Shared by both places that fold members into ONE lambda — the counting
      *  quantifiers of {@link #voorwaarde} and the nested {@link #leafCompound} (where ALLE/DE fold too, unlike
      *  the top-level conjunctive arm, which is an alpha chain and short-circuits by construction). */
     private static Boolean vastgesteld(Conditie.Kwantor kw, int drempel, int hits, int gelezen, int rest) {
@@ -2633,7 +2636,8 @@ public final class ExecModelTranspiler {
             case GEEN        -> hits > 0 ? Boolean.FALSE : null;
             case TEN_MINSTE  -> hits >= drempel ? Boolean.TRUE
                               : (hits + rest < drempel ? Boolean.FALSE : null);
-            case TEN_HOOGSTE -> hits > drempel ? Boolean.FALSE : null;
+            case TEN_HOOGSTE -> hits > drempel ? Boolean.FALSE
+                              : (hits + rest <= drempel ? Boolean.TRUE : null);
             case PRECIES     -> (hits > drempel || hits + rest < drempel) ? Boolean.FALSE : null;
         };
     }

@@ -179,67 +179,30 @@ SURVIVORS=''
 # here.
 DRL_BASIS_UIT=''
 
-# --- the DRL-text branch's ch. 5.10 divergence (a reason-carrying WATCHLIST; fails when stale) ---
-# This is the gate that owns the DRL-TEXT branch, so this is where the branch's KNOWN departure
-# from RUNTIME-SEMANTICS ch. 5.10 is recorded rather than left in a card.
+# --- the DRL-text branch and ch. 5.10: the divergence class is EMPTY (measured 2026-09-07) ---
+# This gate owns the DRL-TEXT branch, so it records the branch's relationship to
+# RUNTIME-SEMANTICS ch. 5.10. Until 2026-09-07 that relationship was a divergence, and this file
+# carried a watchlist over every TEN_HOOGSTE carrier in the corpus.
 #
-# THE FACT, measured 2026-09-07 end-to-end. Smallest case: TEN HOOGSTE 1 over TWO members, member 1
-# false, member 2 divides by zero. ref, clingo and the exec-model Drools branch all FAULT (ch. 5.10
-# reads member 2 — the at-most stop is "hits EXCEED the threshold", and one hit does not exceed 1).
-# The DRL-text branch WRITES 1. The branch therefore ANSWERS WHERE THE NORM FAULTS.
+# THE MAINTAINER DECISION OF 2026-09-07 CLOSED IT. Including at-most's TRUE trigger (`at most d`
+# stops once h + r <= d, not only once h > d) made ch. 5.10 exactly the dual of at-least — which is
+# what the text branch computes: it renders `at most d` as `!(minstens(members, d+1))`, and
+# at-least's own two triggers map one-to-one onto at-most's two sides. The branch had been
+# implementing the dual all along; the norm now says the same thing.
 #
-# THE CAUSE is structural: the branch renders `at most d` as `!(minstens(members, d+1))`, a TEXTUAL
-# expansion into an OR over (d+1)-subsets. Java's ||/&& then give that expansion a laziness of its
-# own, which is not ch. 5.10's: it can skip a member the norm reads.
+# REMEASURED over the whole read-set model, both directions, all five quantifiers, every threshold
+# (including d > n) and every truth assignment, n = 1..7 — 6646 combinations:
+#     verdict divergences vs ch. 5.10 ................. 0
+#     executor reads a member ch. 5.10 skips .......... 0   (would be a fault the norm does not have)
+#     executor skips a member ch. 5.10 reads .......... 0   (would be an answer where the norm faults)
+# for the DRL-text branch AND for clingo. Confirmed end-to-end on the very probe that used to be
+# the smoking gun (TEN HOOGSTE 1 over one member that divides by zero): ref, clingo, the exec-model
+# branch and the DRL-text branch now all write 1 — they agree, where three of them used to fault
+# and the fourth answered.
 #
-# THE CLASS, corrected 2026-09-07 (the earlier note in this file had it backwards). Measured
-# exhaustively over n <= 6: 636 combinations DIVERGE, of which 258 have d < n. So d < n is not the
-# safe region — it is the bulk of the dangerous one. The divergence is confined to TEN_HOOGSTE;
-# the other four quantifiers never diverge and truth values agree everywhere. What differs is the
-# FAULT SURFACE, in the one direction that matters: an answer where the norm faults.
-#
-# WHY A WATCHLIST AND NOT A DIVERGENCE LIST. A golden cannot itself carry this divergence: the
-# divergent cases are exactly those where the norm FAULTS, and a case where the norm faults is not
-# a golden (it is red corpus, which this gate does not replay). So no entry below is "a golden that
-# answers wrongly" — every entry is "a golden that carries the SHAPE", i.e. a place where a future
-# case could walk into the divergence. The list is a watchdog over the shape, and it fails BOTH
-# ways: an unlisted carrier means the shape spread without anyone noticing, a listed non-carrier
-# means the entry is stale. Entries are "<ir.json path>|<reason>".
-#
-# The faithful form (a runtime helper over member suppliers instead of a text expansion) is its own
-# card: backlog/new/20260907-drl-tekst-kortsluiting.md.
-ATMOST_WACHT='
-corpus/golden/jutterswet-seinwacht/ir.json|TEN HOOGSTE 1 over 3 (d<n) — the ch. 5.10 at-most OVERSHOOT witness; its own case stops on the overshoot, so it does not reach the divergence, but the shape is here
-corpus/golden/jutterswet-sluimerwacht/ir.json|TEN HOOGSTE 1 over 3 (d<n) — the pre-existing at-most golden (hits 1/2/3 around the threshold); values agree in both branches
-corpus/rood/atmost-no-vacuous-true/ir.json|TEN HOOGSTE 2 over 2 (d>=n) — the ch. 5.10 boundary-1 red case; it is RED precisely because the norm faults there, which is the direction the text branch answers
-'
-atmost_dragers=$(python3 - <<'PY'
-import glob, json
-raak = set()
-def loop(o, f):
-    if isinstance(o, dict):
-        if o.get('node') == 'Samengesteld' and o.get('kwantor') == 'TEN_HOOGSTE':
-            raak.add(f)
-        for v in o.values(): loop(v, f)
-    elif isinstance(o, list):
-        for v in o: loop(v, f)
-for f in sorted(glob.glob('corpus/golden/**/ir.json', recursive=True)) \
-       + sorted(glob.glob('corpus/rood/**/ir.json', recursive=True)):
-    loop(json.load(open(f)), f)
-print('\n'.join(sorted(raak)))
-PY
-) || exit 2
-n_atmost_wacht=$(printf '%s\n' "$ATMOST_WACHT" | grep -c '|')
-atmost_ongelijst=''
-atmost_stale=''
-for f in $atmost_dragers; do
-    printf '%s\n' "$ATMOST_WACHT" | grep -q "^$f|" || atmost_ongelijst="$atmost_ongelijst $f"
-done
-printf '%s\n' "$ATMOST_WACHT" | while IFS= read -r regel; do
-    [ -n "$regel" ] || continue
-    printf '%s\n' "$atmost_dragers" | grep -qx "${regel%%|*}" || printf '%s\n' "${regel%%|*}"
-done > "${TMPDIR:-/tmp}/atmost_stale.$$"
-atmost_stale=$(cat "${TMPDIR:-/tmp}/atmost_stale.$$"); rm -f "${TMPDIR:-/tmp}/atmost_stale.$$"
+# So there is no shape left to watch, and the watchlist that stood here is gone rather than left to
+# rot. The live check on this branch is the DRL_BASIS_UIT baseline above, which still requires the
+# text branch to PLAY or EXCLUDE per twistable golden.
 
 RUNNER_REF=_build/default/ref/bin/runner.exe
 RUNNER_CLINGO=_build/default/backends/clingo/bin/clingo_runner.exe
@@ -682,34 +645,13 @@ if [ "$n_onbekend" -gt 0 ]; then
     status=1
 fi
 
-if [ -n "$atmost_ongelijst" ]; then
-    echo 'FAIL: a corpus document carries a TEN HOOGSTE composite that the ch. 5.10 watchlist above does' >&2
-    echo '      not name. That shape is where the DRL-TEXT branch departs from ch. 5.10 — it renders' >&2
-    echo '      `at most d` as !(minstens(members, d+1)), a textual subset expansion whose laziness is' >&2
-    echo '      not ch. 5.10'"'"'s, so it can skip a member the norm reads and ANSWER where ref, clingo and' >&2
-    echo '      the exec-model branch FAULT. Add the document to ATMOST_WACHT with the reason it is safe,' >&2
-    echo '      or fix the branch (backlog card 20260907-drl-tekst-kortsluiting):' >&2
-    for f in $atmost_ongelijst; do echo "  $f" >&2; done
-    status=1
-fi
-if [ -n "$atmost_stale" ]; then
-    echo 'FAIL: the ch. 5.10 watchlist names a document that no longer carries a TEN HOOGSTE composite —' >&2
-    echo '      a stale entry hides the next real one. Drop it:' >&2
-    for f in $atmost_stale; do echo "  $f" >&2; done
-    status=1
-fi
-
 if [ "$status" -eq 0 ]; then
-    printf '  NOTE (ch. 5.10, registered): the DRL-TEXT branch renders `at most d` as a TEXTUAL subset\n'
-    printf '       expansion, whose laziness is not ch. 5.10'"'"'s: it can skip a member the norm reads and so\n'
-    printf '       ANSWER where ref, clingo and the exec-model branch FAULT. Measured 2026-09-07 end-to-end\n'
-    printf '       on TEN HOOGSTE 1 over two members (member 1 false, member 2 divides by zero): the three\n'
-    printf '       agree on a fault, the text branch writes 1. Exhaustively over n <= 6: 636 combinations\n'
-    printf '       diverge, 258 of them with d < n — d < n is the bulk of the dangerous region, not the safe\n'
-    printf '       one. Confined to TEN HOOGSTE; the other four quantifiers never diverge.\n'
-    printf '       %s corpus document(s) carry the shape and are named in ATMOST_WACHT above; the watchlist\n' "$n_atmost_wacht"
-    printf '       fails on an unlisted carrier AND on a stale entry. Faithful form: backlog card\n'
-    printf '       20260907-drl-tekst-kortsluiting.\n'
+    printf '  NOTE (ch. 5.10): the DRL-TEXT branch no longer diverges from ch. 5.10. The maintainer\n'
+    printf '       decision of 2026-09-07 added at-most'"'"'s TRUE trigger, which makes the norm the exact dual\n'
+    printf '       of at-least — and that dual is what the branch already computed. Remeasured over the full\n'
+    printf '       read-set model (n = 1..7, 6646 combinations, both directions, all five quantifiers):\n'
+    printf '       0 verdict divergences, 0 extra reads, 0 skipped reads, for the text branch and for clingo.\n'
+    printf '       The former watchlist is retired; see the comment above.\n'
     printf 'check-reftype-derivation: PASS (%s unit annotations twisted over %s goldens; %s executor replays reproduce the untouched outcome, %s of them PLAYED by the DRL-text branch; %s pinned survivors)\n' \
         "$n_twists" "$n_goldens" "$n_gecontroleerd" "$n_drl" "$n_survivors"
     printf '  corpus-wide accounting: %s unit-bearing annotations = %s twistable + %s exempt (the annotation IS the source) + %s without a convertible sister + %s at a §2.10 fourth-class branch (v0 derives no result unit) + %s outside the twist table\n' \

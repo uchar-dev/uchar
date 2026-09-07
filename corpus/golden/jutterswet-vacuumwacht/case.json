@@ -1,0 +1,26 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "B1", "objectType": "Vacuumwacht",
+        "attributes": { "ploegomvang": { "number": "0" }, "vangstwaarde": { "number": "100" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "B2", "objectType": "Vacuumwacht",
+        "attributes": { "ploegomvang": { "number": "200" }, "vangstwaarde": { "number": "200000" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "B3", "objectType": "Vacuumwacht",
+        "attributes": { "ploegomvang": { "number": "200" }, "vangstwaarde": { "number": "0" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "B1", "attribute": "vacuumteken", "value": { "number": "1" } },
+    { "kind": "attributeValue", "label": "B1", "attribute": "stopteken",   "value": { "number": "1" } },
+    { "kind": "attributeValue", "label": "B2", "attribute": "vacuumteken", "value": { "number": "1" } },
+    { "kind": "attributeEmpty", "label": "B2", "attribute": "stopteken" },
+    { "kind": "attributeValue", "label": "B3", "attribute": "vacuumteken", "value": { "number": "1" } },
+    { "kind": "attributeValue", "label": "B3", "attribute": "stopteken",   "value": { "number": "1" } }
+  ]
+}

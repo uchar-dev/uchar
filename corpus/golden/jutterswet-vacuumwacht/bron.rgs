@@ -1,0 +1,25 @@
+Objecttype de Vacuumwacht (mv: Vacuumwachten)
+    de ploegomvang Numeriek (geheel getal);
+    de vangstwaarde Numeriek (geheel getal);
+    het vacuumteken Numeriek (geheel getal);
+    het stopteken Numeriek (geheel getal);
+
+Regel vacuumteken van een vacuumwacht
+    geldig altijd
+        Het vacuumteken van een Vacuumwacht moet gesteld worden op 1
+        indien hij aan ten hoogste twee van de volgende voorwaarden voldoet:
+        - het aandeel is groter dan 0
+        - zijn ploegomvang is gelijk aan 0.
+        Daarbij geldt:
+            het aandeel is de vangstwaarde van de Vacuumwacht gedeeld door de ploegomvang van de Vacuumwacht naar beneden afgerond op 0 decimalen.
+
+Regel stopteken van een vacuumwacht
+    geldig altijd
+        Het stopteken van een Vacuumwacht moet gesteld worden op 1
+        indien hij aan ten hoogste twee van de volgende voorwaarden voldoet:
+        - zijn ploegomvang is groter dan 100
+        - zijn vangstwaarde is groter dan 100000
+        - het aandeel is groter dan 0
+        - zijn ploegomvang is gelijk aan 0.
+        Daarbij geldt:
+            het aandeel is de vangstwaarde van de Vacuumwacht gedeeld door de ploegomvang van de Vacuumwacht naar beneden afgerond op 0 decimalen.

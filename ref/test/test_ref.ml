@@ -2635,12 +2635,18 @@ let () =
      afterwards reads the faulting member 1 and dies. *)
   expect_leeg "WV-5.10-drempel-boven-ledental-leest-niets"
     (run (doc_leden Ten_minste 3 [ faultend; waar_ploeg0 ]) "0" "100");
-  (* AT-MOST'S TRUE DIRECTION IS NOT A TRIGGER (ch. 5.10 boundary 1). With
-     d >= n the outcome can no longer become false, yet every member is still
-     read — so the faulting member 1 DOES fault. Adding the trigger would
-     answer "true" here without reading anything. *)
-  expect_fault "WV-5.10-atmost-geen-vacuum-waar" (fun () ->
-      run (doc_leden Ten_hoogste 2 [ faultend; waar_ploeg0 ]) "0" "100");
+  (* AT-MOST'S TRUE DIRECTION IS A TRIGGER (maintainer decision 2026-09-07;
+     this replaces the earlier boundary that excluded it). With d >= n the
+     outcome can no longer become false, so it STANDS on the empty prefix and
+     NOTHING is read — the faulting member 1 included. Vacuously true. *)
+  expect_num "WV-5.10-atmost-vacuum-waar-leest-niets"
+    (run (doc_leden Ten_hoogste 2 [ faultend; waar_ploeg0 ]) "0" "100") "1";
+  (* the same trigger below the member count: after two non-holding members of
+     four, two remain and the threshold is 2, so hits can no longer EXCEED it
+     and the outcome stands true — the faulting third member stays unread *)
+  expect_num "WV-5.10-atmost-waar-stop-onder-ledental"
+    (run (doc_leden Ten_hoogste 2 [ lid1 Groter; lid1 Groter; faultend; waar_ploeg0 ]) "0" "100")
+    "1";
   (* AT-MOST'S FALSE DIRECTION IS a trigger: two hits past a threshold of 1
      settle the outcome, and the faulting third member is never read. *)
   expect_leeg "WV-5.10-atmost-overschrijding-stopt"

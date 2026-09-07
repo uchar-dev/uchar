@@ -1341,7 +1341,13 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
         | Ten_hoogste -> hits <= drempel
         | Precies -> hits = drempel
       in
-      (* [hits] over the [n - left] members already read, [left] still unread *)
+      (* [hits] over the [n - left] members already read, [left] still unread.
+         One rule, no exception: every arm marks the moment the outcome can no
+         longer change, and the arms together are the exhaustive list of those
+         moments per quantifier (maintainer decision 2026-09-07). A threshold
+         that already covers the whole member list therefore settles on the
+         EMPTY prefix and reads nothing at all — vacuously true for at-most at
+         d >= n, vacuously false for at-least and exactly above n. *)
       let settled ~hits ~left =
         match kwantor with
         | De | Alle -> if hits < n - left then Some false else None
@@ -1350,7 +1356,10 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
             if hits >= drempel then Some true
             else if hits + left < drempel then Some false
             else None
-        | Ten_hoogste -> if hits > drempel then Some false else None
+        | Ten_hoogste ->
+            if hits > drempel then Some false
+            else if hits + left <= drempel then Some true
+            else None
         | Precies -> if hits > drempel || hits + left < drempel then Some false else None
       in
       let rec read hits left parts =

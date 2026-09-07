@@ -2320,6 +2320,7 @@ stops as soon as one of these holds:
 | `at-least` *d* | *h* ≥ *d* | **true** |
 | `at-least` *d* | *h* + *r* < *d* (the threshold is out of reach) | **false** |
 | `at-most` *d* | *h* > *d* | **false** |
+| `at-most` *d* | *h* + *r* ≤ *d* (the threshold can no longer be exceeded) | **true** |
 | `exactly` *d* | *h* > *d* | **false** |
 | `exactly` *d* | *h* + *r* < *d* | **false** |
 
@@ -2328,16 +2329,28 @@ comparison over the total hits *h* against the member count *n*: `all`
 and `the` need *h* = *n*, `none` needs *h* = 0, `at-least` *h* ≥ *d*,
 `at-most` *h* ≤ *d*, `exactly` *h* = *d*.
 
+The table is **one rule with no exception**: each row marks a moment at
+which the outcome can no longer change, and the rows together are the
+exhaustive list of those moments per quantifier. There is no further
+criterion — nothing is weighed about how a threshold was *meant*; a
+trigger fires exactly when the arithmetic says the verdict is fixed
+(maintainer decision, 2026-09-07).
+
 **The triggers are tested before each member, the empty prefix
-included.** With *h* = 0 and *r* = *n* the out-of-reach rows of
-`at-least` and `exactly` already fire whenever ***d* > *n***: such a
-composite reads **no member at all** and is **false**. That is not an
-edge case bolted on — it is the same rule applied to the prefix of
-length zero, and it is observable, because the members it does not read
-are exactly the members whose faults do not happen. A threshold above
-the member count is a condition that can never hold whatever the data;
-the wire admits it (WF-041 constrains only *d* ≥ 1) and this clause
-fixes what it means.
+included.** With *h* = 0 and *r* = *n* three rows can already fire on the
+empty prefix, and then the composite reads **no member at all**:
+
+- `at-least` and `exactly` with ***d* > *n***: the threshold is out of
+  reach from the start, so the composite is **false**;
+- `at-most` with ***d* ≥ *n***: the threshold can never be exceeded, so
+  the composite is **vacuously true**.
+
+That is not an edge case bolted on — it is the same rule applied to the
+prefix of length zero. It is observable, because the members it does not
+read are exactly the members whose faults do not happen: a vacuously true
+`at-most` over a member that would divide by zero **answers**, and does
+not fault. The wire admits all three shapes (WF-041 constrains only
+*d* ≥ 1) and this clause fixes what they mean.
 
 **The short circuit never changes a truth value.** Every trigger is
 stable under the members it skips: as reading proceeds *h* only grows and
@@ -2363,45 +2376,21 @@ does not, and a translation whose fault fences are order-free fires them
 all. **Delta (promoted):** v1 makes the rule uniform, explicit, and
 identical across quantifiers and executors.
 
-**Two boundaries, recorded rather than left implicit.**
+**One boundary, recorded rather than left implicit.**
 
-1. `at-most`'s complementary direction — *h* + *r* ≤ *d*, after which the
-   outcome stands **true** — is deliberately **not** a trigger. The
-   distinction is **liveness**, not read-versus-unread evidence: the
-   out-of-reach rows above fire on the empty prefix too, so "it would
-   stop before the first member" cannot be the reason.
+The ch. 3.6 composite **gedurende clip** is a different construct —
+but only on its **inside**. Its own members yield period sets that are
+intersected, and an intersection has no moment at which "the outcome
+stands" in the sense above, so **the clip's own members stay fully
+evaluated** and their WF-055 shape faults stay data-independent.
 
-   An `at-least` or `exactly` threshold *above* the member count is
-   **degenerate**: the condition can never hold on any data, so reading
-   its members could only ever raise faults on behalf of a rule that
-   cannot fire. Stopping costs nothing.
-
-   An `at-most` threshold at or above the member count is **ordinary,
-   meaningfully written drafting** — a generous cap over a short list is
-   normal legal text, and it is a condition that genuinely holds. Making
-   the vacuous-true direction a trigger would silently turn every such
-   composite into a construct that evaluates **nothing**: no member read,
-   no fault raised, no §9.5 fact deposited, on text a drafter wrote to be
-   checked. That loss is the reason the row is absent.
-
-   The trigger set above is therefore the whole of it (maintainer
-   decision, 2026-09-06). It is pinned, not merely asserted: the red case
-   `corpus/rood/atmost-no-vacuous-true` fixes that an `at-most` composite
-   whose threshold covers every member still reads member 1 and still
-   faults.
-2. The ch. 3.6 composite **gedurende clip** is a different construct —
-   but only on its **inside**. Its own members yield period sets that are
-   intersected, and an intersection has no moment at which "the outcome
-   stands" in the sense above, so **the clip's own members stay fully
-   evaluated** and their WF-055 shape faults stay data-independent.
-
-   That exemption reaches no further. A totalled clip is an
-   **expression**, so it can appear as an operand of a comparison that is
-   itself a member of an ordinary composite — and *there* it is read like
-   any other operand: if the prefix has settled the outcome, the clip is
-   not evaluated and none of its fences or channel facts arise. The two
-   readings are easy to conflate and were: `jutterswet-klipwacht` is the
-   witness that separates them.
+That exemption reaches no further. A totalled clip is an
+**expression**, so it can appear as an operand of a comparison that is
+itself a member of an ordinary composite — and *there* it is read like
+any other operand: if the prefix has settled the outcome, the clip is
+not evaluated and none of its fences or channel facts arise. The two
+readings are easy to conflate and were: `jutterswet-klipwacht` is the
+witness that separates them.
 
 Worked example (absolute; the `jutterswet-ploegaandeel` corpus golden,
 verbatim in gates 5–6). Member 1 tests the divisor; member 2 divides by
@@ -2456,10 +2445,11 @@ fault — measured against a mutant that changes exactly that row:
 | `at-least`, threshold reached | `jutterswet-wachtdeling` (`minsteteken`, row 1) |
 | `at-least`, out of reach | `jutterswet-seinwacht` (`minsteteken`, *d* = 3 > *n* = 2) |
 | `at-most`, threshold exceeded | `jutterswet-seinwacht` (`hoogsteteken`, `S1`) |
+| `at-most`, can no longer be exceeded (*d* < *n*) | `jutterswet-vacuumwacht` (`stopteken`, `B1`) |
+| `at-most`, vacuously true (*d* ≥ *n*) | `jutterswet-vacuumwacht` (`vacuumteken`, every row) |
 | `exactly`, threshold exceeded | `jutterswet-seinwacht` (`preciesteken`, `S1`) |
-| `exactly`, out of reach | ref worked example `WV-5.10-precies-onhaalbaar-leest-niets` |
+| `exactly`, out of reach | `jutterswet-seinwacht` (`randteken`, *d* = 3 > *n* = 2) |
 | triggers tested *before* the member | `jutterswet-seinwacht` (`minsteteken`): a check made afterwards reads the faulting member 1 |
-| boundary 1 (`at-most` has no vacuous true) | `corpus/rood/atmost-no-vacuous-true` |
 
 ---
 

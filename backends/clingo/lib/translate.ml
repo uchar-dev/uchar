@@ -3603,7 +3603,16 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
                 | Ten_minste ->
                     [ Printf.sprintf "%s < %d" h drempel;
                       Printf.sprintf "%s >= %d" h (drempel - left) ]
-                | Ten_hoogste -> [ Printf.sprintf "%s <= %d" h drempel ]
+                | Ten_hoogste ->
+                    (* two-sided since the at-most TRUE trigger landed
+                       (maintainer decision 2026-09-07): read member i only
+                       while the outcome can still go BOTH ways — hits have not
+                       exceeded d, and the unread rest can still push them past
+                       it. H + left > d is written H >= d - left + 1. At i = 0
+                       with d >= n that second half already fails, so a
+                       vacuously-true at-most reads nothing. *)
+                    [ Printf.sprintf "%s <= %d" h drempel;
+                      Printf.sprintf "%s >= %d" h (drempel - left + 1) ]
                 | Precies ->
                     [ Printf.sprintf "%s <= %d" h drempel;
                       Printf.sprintf "%s >= %d" h (drempel - left) ]
