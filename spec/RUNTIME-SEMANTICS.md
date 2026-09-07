@@ -2389,11 +2389,19 @@ identical across quantifiers and executors.
    `corpus/rood/atmost-no-vacuous-true` fixes that an `at-most` composite
    whose threshold covers every member still reads member 1 and still
    faults.
-2. The ch. 3.6 composite **gedurende clip** is a different construct: its
-   members yield period sets that are intersected, and an intersection
-   has no moment at which "the outcome stands" in the sense above. Its
-   members stay fully evaluated, and their WF-055 shape faults stay
-   data-independent.
+2. The ch. 3.6 composite **gedurende clip** is a different construct —
+   but only on its **inside**. Its own members yield period sets that are
+   intersected, and an intersection has no moment at which "the outcome
+   stands" in the sense above, so **the clip's own members stay fully
+   evaluated** and their WF-055 shape faults stay data-independent.
+
+   That exemption reaches no further. A totalled clip is an
+   **expression**, so it can appear as an operand of a comparison that is
+   itself a member of an ordinary composite — and *there* it is read like
+   any other operand: if the prefix has settled the outcome, the clip is
+   not evaluated and none of its fences or channel facts arise. The two
+   readings are easy to conflate and were: `jutterswet-klipwacht` is the
+   witness that separates them.
 
 Worked example (absolute; the `jutterswet-ploegaandeel` corpus golden,
 verbatim in gates 5–6). Member 1 tests the divisor; member 2 divides by

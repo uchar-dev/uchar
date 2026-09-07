@@ -787,10 +787,20 @@ rather than asserted. Of the emission sites reachable from `cond_atoms`:
   is refused by this translation outright (`expression kind not
   translated`, S19), so it cannot produce a silent divergence. If that
   refusal is ever lifted, the prefix question must be settled with it.
-- **Out of scope by construction** — the `gedurende` clip's fence
-  (ch. 3.6). Its members yield period sets, it is keyed on the clip's own
-  subject variable, and RUNTIME-SEMANTICS ch. 5.10 boundary 2 keeps its
-  members fully evaluated.
+- **The `gedurende` clip — in scope, and it was not** (fixed 2026-09-07).
+  RUNTIME-SEMANTICS ch. 5.10 boundary 2 exempts the clip's **own
+  members**; it does not exempt the clip as an **operand**, and a totalled
+  clip is an expression that can sit inside a member of an ordinary
+  composite. Both of its fences — the comparison fence and the segment
+  fence `|W| > 46340` — were keyed on the clip helper's own free `S`
+  instead of the rule subject, and carried neither the `is_a` base nor
+  `rule_guard`. The first left the fence grounded over a cross product of
+  every clip subject with every bound subject; together they fired a range
+  `viol` out of a member the outcome had already settled away, and out of
+  a rule whose own condition was false. Measured ref PASS vs clingo
+  UNSATISFIABLE from ordinary frontend source; witness
+  `jutterswet-klipwacht`. Both now key on the subject and carry the base
+  and the guard.
 
 Sites outside `cond_atoms` — the write boundary's fit fence, the
 to-one-filler `viol`, and the allocation's `viol`/`inconsistent` family —

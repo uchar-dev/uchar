@@ -1,0 +1,59 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Kustwacht",
+        "attributes": {
+          "ploegomvang": { "number": "0" },
+          "wachtvergoeding per maand": {
+            "timeline": [
+              { "from": "2023-01-01", "to": "2024-01-01", "value": { "number": "30000000" } }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {}
+      },
+      {
+        "label": "K2",
+        "objectType": "Kustwacht",
+        "attributes": {
+          "ploegomvang": { "number": "4" },
+          "wachtvergoeding per maand": {
+            "timeline": [
+              { "from": "2023-01-01", "to": "2024-01-01", "value": { "number": "100" } }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {}
+      },
+      {
+        "label": "K3",
+        "objectType": "Kustwacht",
+        "attributes": {
+          "ploegomvang": { "number": "4" },
+          "wachtvergoeding per maand": {
+            "timeline": [
+              { "from": "2023-01-01", "to": "2024-01-01", "value": { "number": "5" } }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {}
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeEmpty", "label": "K1", "attribute": "klipteken" },
+    { "kind": "attributeValue", "label": "K2", "attribute": "klipteken", "value": { "number": "1" } },
+    { "kind": "attributeEmpty", "label": "K3", "attribute": "klipteken" }
+  ]
+}

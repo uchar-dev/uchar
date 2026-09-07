@@ -1958,8 +1958,32 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             let m = max bscale gs in
             let wl = if bscale = m then "WB" else Printf.sprintf "(WB*%d)" (m / bscale) in
             let gl = if gs = m then gt else Printf.sprintf "(%s*%d)" gt (m / gs) in
-            range_guard ctx ~subject:"S"
-              ~body:(Printf.sprintf "tl(S,%s,V2,T2,WB)" (str b) :: gb)
+            (* The FENCE is keyed on the caller's subject, not on the clip
+               helper's own "S". Two reasons, and the second is a ch. 5.10
+               correctness bug the first hides:
+
+               1. The body already mixed the two — `tl(S,…)` binds the helper
+                  variable while [gb] (the bound's own atoms) speaks of the
+                  CALLER's subject, so the fence grounded over a cross product
+                  of every clip subject with every bound subject.
+               2. The clip is an EXPRESSION (a totalled Functie with a filter),
+                  so it can sit in an operand of a member of some OTHER
+                  composite — and then this fence must carry that composite's
+                  prefix like every sibling does. ch. 5.10 boundary 2 exempts
+                  the clip's OWN members; it says nothing about the clip as an
+                  operand, which is an ordinary read. Without the guard a range
+                  viol fires out of a member the outcome had already settled
+                  away: measured ref PASS vs clingo UNSATISFIABLE, from
+                  ordinary frontend source (jutterswet-klipwacht).
+
+               Substituting [subject] for "S" and adding the is_a base gives
+               the fence the same shape every other site has. *)
+            let sub_base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+            range_guard ctx ~subject
+              ~body:
+                (((sub_base :: ctx.rule_guard)
+                 @ [ Printf.sprintf "tl(%s,%s,V2,T2,WB)" subject (str b) ])
+                @ gb)
               [ ("WB", max_int31 / (m / bscale)); (gt, max_int31 / (m / gs)) ];
             ctx.fresh <- ctx.fresh + 1;
             let q = Printf.sprintf "cl%d_cond" ctx.fresh in
@@ -2091,10 +2115,20 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* W×N inside the #sum is an emitted multiplication: guard the
          segment value like every other product operand (the wu factor
          is a compile-time constant bounded at emission above) *)
+      (* keyed on the CALLER's subject with the is_a base and [rule_guard], for
+         the same reason as the clip's comparison fence above: the clip is an
+         expression, so it can sit in an operand of a member of some other
+         composite, and then a member the outcome has already settled away must
+         not fire this fence. Keying it on the helper's own free "S" also left
+         it ungrounded by anything but the seg atom. Witness:
+         corpus/golden/jutterswet-klipwacht. *)
       emit ctx
-        "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S) :- \
-         %s_seg(S,V,T,W), |W| > 46340."
-        p;
+        "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, \
+         %s_seg(%s,V,T,W), |W| > 46340."
+        subject
+        (String.concat ", "
+           (Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) :: ctx.rule_guard))
+        p subject;
       emit ctx "%s_tot(S,%s) :- is_a(S,%s), %s = #sum { W*N,V,T : %s_seg(S,V,T,W), %s_wu(V,T,N) }."
         p q (str subject_ot) q p p;
       ( [ Printf.sprintf "%s_tot(%s,%s)" p subject q ],

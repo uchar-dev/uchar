@@ -123,13 +123,20 @@ vorm om statisch af te keuren. WF-096 blijft dus vrij.
      FAULTEN. Hij past precies de vacuüm-waar-trigger toe die ch. 5.10
      grens 1 uitsluit.
    * *Fout voorbeeld:* "TEN HOOGSTE 1 over drie leden waarvan het eerste
-     faalt" divergeert zelf niet. De echte klasse is exact
-     **TEN_HOOGSTE met drempel ≥ ledental**, uitputtend gemeten over
-     n ≤ 6 (636 combinaties, 258 met d < n — alle eens); de andere vier
-     kwantoren divergeren nooit en de gevaarlijke richting is dicht.
-   Vandaag corpus-onbereikbaar (0 goldens dragen die vorm); dat feit
-   staat nu reden-dragend en falend-wanneer-stale geregistreerd in
-   `scripts/check-reftype-derivation.sh`, en de getrouwe vorm is
+     faalt" divergeert zelf niet.
+   **En de klassebeschrijving die de eerste fixronde ervoor in de plaats
+   zette was óók fout** (gecorrigeerd in fixronde 2): ik las 636 als "het
+   aantal gemeten combinaties waarvan er 258 met d < n het eens zijn".
+   Het is omgekeerd: **636 is het aantal DIVERGERENDE combinaties**
+   (n ≤ 6), en de 258 met **d < n zijn de gevaarlijke**, niet de veilige.
+   De klasse is dus niet "d ≥ n" maar **heel TEN_HOOGSTE**; kleinste
+   end-to-end tegenvoorbeeld: TEN HOOGSTE 1 over twee leden, lid 1 onwaar,
+   lid 2 deelt door nul — ref, clingo en de exec-tak faulten, de
+   tekst-tak schrijft 1. De registratie in
+   `scripts/check-reftype-derivation.sh` is navenant herbouwd als
+   reden-dragende naamlijst over álle TEN_HOOGSTE-dragers in
+   `corpus/golden` én `corpus/rood` (vandaag drie), die faalt bij een
+   ongelijste drager én bij een stale regel. Getrouwe vorm:
    `backlog/new/20260907-drl-tekst-kortsluiting.md`.
 2. **`at-most`'s waar-richting** (*h* + *r* ≤ *d*) is géén stoptrigger.
    **Motivering herschreven in de fixronde (2026-09-07):** de bouwronde
@@ -265,10 +272,12 @@ betekenis hebben; ik heb ze niet verwerkt in plaats van er getallen bij
 te verzinnen. (a) "jouw harnas bereikt 3 van de 15 Let-dragende goldens":
 deze repo draagt inderdaad 15 Let-goldens, maar dit werk heeft geen
 replay-harnas over Let-dragers — dat is het regelspraak-java-harnas.
-(b) "`make test` is 549 geslaagd + 1 pre-existente omgevings-abort
-(`corpus_drl_bevat_geen_enkele_function_definitie`)": uchar heeft geen
-top-level `Makefile`, en dat testtoken komt in deze repo nergens voor
-(gecontroleerd).
+(b) de suite-formulering "549 geslaagd + 1 pre-existente omgevings-abort",
+met de naam van die ene abortende test erbij: uchar heeft geen top-level
+`Makefile`, en de genoemde testnaam bestaat in deze repo niet — dat is
+gecontroleerd met een grep op de letterlijke naam, die hier bewust niet
+wordt overgeschreven (een zin die een naam spelt om te zeggen dat hij
+nergens voorkomt, weerlegt zichzelf).
 
 **Alle dertien gates groen** (fixronde, 2026-09-07): 1 PASS ·
 2 183 bestanden · 3 183 golden / 337 negatief · 4 438 cases · 5 415 ·

@@ -1,0 +1,230 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Randwacht": {
+      "node": "Objecttype",
+      "naam": "Randwacht",
+      "attributen": {
+        "ploegomvang": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "grootgetal": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bedrag": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "vouwteken": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Randwachten"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "vouwteken van een randwacht",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "vouwteken van een randwacht",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "vouwteken",
+        "objecttype": "Randwacht",
+        "onderwerpBron": "een Randwacht",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het vouwteken van een Randwacht",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "1",
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "1"
+      },
+      "voorwaarde": {
+        "node": "Samengesteld",
+        "kwantor": "ALLE",
+        "drempel": 0,
+        "onderdelen": [
+          {
+            "node": "Vergelijking",
+            "op": "GELIJK",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "ploegomvang",
+              "objecttype": "Randwacht",
+              "onderwerpBron": "zijn",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "zijn ploegomvang",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "0",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "0"
+            },
+            "periode": null,
+            "bron": "zijn ploegomvang is gelijk aan 0"
+          },
+          {
+            "node": "Vergelijking",
+            "op": "GROTER",
+            "links": {
+              "node": "Functie",
+              "kind": "EERSTE",
+              "argumenten": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "grootgetal",
+                  "objecttype": "Randwacht",
+                  "onderwerpBron": "zijn",
+                  "navigatieRol": null,
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "zijn grootgetal",
+                  "set": false,
+                  "navigatiePad": []
+                },
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "bedrag",
+                  "objecttype": "Randwacht",
+                  "onderwerpBron": "zijn",
+                  "navigatieRol": null,
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "zijn bedrag",
+                  "set": false,
+                  "navigatiePad": []
+                }
+              ],
+              "elementObjecttype": null,
+              "leegwaarde": null,
+              "filter": null,
+              "dimensieSelectie": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de eerste van zijn grootgetal en zijn bedrag",
+              "granulariteit": null
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "0",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "0"
+            },
+            "periode": null,
+            "bron": "de eerste van zijn grootgetal en zijn bedrag is groter dan 0"
+          }
+        ],
+        "bron": "hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - zijn grootgetal is groter dan zijn bedrag."
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

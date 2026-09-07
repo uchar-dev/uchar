@@ -39,6 +39,13 @@
           "decimalen": 0,
           "teken": "ONBEPAALD",
           "eenheid": null
+        },
+        "randteken": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
         }
       },
       "attribuutMeervoud": {},
@@ -76,6 +83,11 @@
     {
       "node": "Regel",
       "naam": "minsteteken van een seinwacht",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "randteken van een seinwacht",
       "soort": "regel"
     }
   ],
@@ -620,6 +632,165 @@
           }
         ],
         "bron": "hij aan ten minste drie van de volgende voorwaarden voldoet: - het aandeel is groter dan 0 - zijn ploegomvang is gelijk aan 0."
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "randteken van een seinwacht",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "randteken",
+        "objecttype": "Seinwacht",
+        "onderwerpBron": "een Seinwacht",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het randteken van een Seinwacht",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "1",
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "1"
+      },
+      "voorwaarde": {
+        "node": "Samengesteld",
+        "kwantor": "PRECIES",
+        "drempel": 3,
+        "onderdelen": [
+          {
+            "node": "Vergelijking",
+            "op": "GROTER",
+            "links": {
+              "node": "Afgerond",
+              "basis": {
+                "node": "Binair",
+                "op": "GEDEELD_DOOR",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "vangstwaarde",
+                  "objecttype": "Seinwacht",
+                  "onderwerpBron": "de Seinwacht",
+                  "navigatieRol": null,
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "de vangstwaarde van de Seinwacht",
+                  "set": false,
+                  "navigatiePad": []
+                },
+                "rechts": {
+                  "node": "AttribuutRef",
+                  "attribuut": "ploegomvang",
+                  "objecttype": "Seinwacht",
+                  "onderwerpBron": "de Seinwacht",
+                  "navigatieRol": null,
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "de ploegomvang van de Seinwacht",
+                  "set": false,
+                  "navigatiePad": []
+                },
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "de vangstwaarde van de Seinwacht gedeeld door de ploegomvang van de Seinwacht"
+              },
+              "modus": "NAAR_BENEDEN",
+              "decimalen": 0,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de vangstwaarde van de Seinwacht gedeeld door de ploegomvang van de Seinwacht naar beneden afgerond op 0 decimalen"
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "0",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "0"
+            },
+            "periode": null,
+            "bron": "het aandeel is groter dan 0"
+          },
+          {
+            "node": "Vergelijking",
+            "op": "GELIJK",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "ploegomvang",
+              "objecttype": "Seinwacht",
+              "onderwerpBron": "zijn",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "zijn ploegomvang",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "0",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "0"
+            },
+            "periode": null,
+            "bron": "zijn ploegomvang is gelijk aan 0"
+          }
+        ],
+        "bron": "hij aan precies drie van de volgende voorwaarden voldoet: - het aandeel is groter dan 0 - zijn ploegomvang is gelijk aan 0."
       },
       "geldigheid": {
         "node": "Geldigheid",

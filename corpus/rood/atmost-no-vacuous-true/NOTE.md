@@ -5,6 +5,11 @@ The red witness of **boundary 1** of `RUNTIME-SEMANTICS.md` ch. 5.10:
 
 ## What it pins
 
+The block below is an **illustrative rendering** of what this case's
+`ir.json` denotes — it is not a checked-in source file, and nothing
+re-emits from it (this directory carries `ir.json` only, as the red
+corpus does throughout):
+
 ```
 Het teken van een Bakenwacht moet gesteld worden op 1
 indien hij aan ten hoogste twee van de volgende voorwaarden voldoet:

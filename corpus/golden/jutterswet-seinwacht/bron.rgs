@@ -4,6 +4,7 @@ Objecttype de Seinwacht (mv: Seinwachten)
     het hoogsteteken Numeriek (geheel getal);
     het preciesteken Numeriek (geheel getal);
     het minsteteken Numeriek (geheel getal);
+    het randteken Numeriek (geheel getal);
 
 Regel hoogsteteken van een seinwacht
     geldig altijd
@@ -29,6 +30,15 @@ Regel minsteteken van een seinwacht
     geldig altijd
         Het minsteteken van een Seinwacht moet gesteld worden op 1
         indien hij aan ten minste drie van de volgende voorwaarden voldoet:
+        - het aandeel is groter dan 0
+        - zijn ploegomvang is gelijk aan 0.
+        Daarbij geldt:
+            het aandeel is de vangstwaarde van de Seinwacht gedeeld door de ploegomvang van de Seinwacht naar beneden afgerond op 0 decimalen.
+
+Regel randteken van een seinwacht
+    geldig altijd
+        Het randteken van een Seinwacht moet gesteld worden op 1
+        indien hij aan precies drie van de volgende voorwaarden voldoet:
         - het aandeel is groter dan 0
         - zijn ploegomvang is gelijk aan 0.
         Daarbij geldt:

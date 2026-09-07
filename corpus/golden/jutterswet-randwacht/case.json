@@ -1,0 +1,26 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "R1", "objectType": "Randwacht",
+        "attributes": { "ploegomvang": { "number": "1" }, "grootgetal": { "number": "30000000" }, "bedrag": { "number": "1.00" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "R2", "objectType": "Randwacht",
+        "attributes": { "ploegomvang": { "number": "0" }, "grootgetal": { "number": "5" }, "bedrag": { "number": "1.00" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "R3", "objectType": "Randwacht",
+        "attributes": { "ploegomvang": { "number": "0" }, "grootgetal": { "number": "1" }, "bedrag": { "number": "1.00" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeEmpty", "label": "R1", "attribute": "gelijkteken" },
+    { "kind": "attributeEmpty", "label": "R1", "attribute": "ordeteken" },
+    { "kind": "attributeEmpty", "label": "R2", "attribute": "gelijkteken" },
+    { "kind": "attributeValue", "label": "R2", "attribute": "ordeteken", "value": { "number": "1" } },
+    { "kind": "attributeValue", "label": "R3", "attribute": "gelijkteken", "value": { "number": "1" } },
+    { "kind": "attributeEmpty", "label": "R3", "attribute": "ordeteken" }
+  ]
+}

@@ -7,8 +7,12 @@
         "label": "S1",
         "objectType": "Seinwacht",
         "attributes": {
-          "ploegomvang": { "number": "0" },
-          "vangstwaarde": { "number": "100" }
+          "ploegomvang": {
+            "number": "0"
+          },
+          "vangstwaarde": {
+            "number": "100"
+          }
         },
         "roles": {},
         "characteristics": []
@@ -17,8 +21,12 @@
         "label": "S2",
         "objectType": "Seinwacht",
         "attributes": {
-          "ploegomvang": { "number": "7" },
-          "vangstwaarde": { "number": "3" }
+          "ploegomvang": {
+            "number": "7"
+          },
+          "vangstwaarde": {
+            "number": "3"
+          }
         },
         "roles": {},
         "characteristics": []
@@ -27,11 +35,51 @@
     "parameters": {}
   },
   "expected": [
-    { "kind": "attributeEmpty", "label": "S1", "attribute": "hoogsteteken" },
-    { "kind": "attributeEmpty", "label": "S1", "attribute": "preciesteken" },
-    { "kind": "attributeEmpty", "label": "S1", "attribute": "minsteteken" },
-    { "kind": "attributeValue", "label": "S2", "attribute": "hoogsteteken", "value": { "number": "1" } },
-    { "kind": "attributeValue", "label": "S2", "attribute": "preciesteken", "value": { "number": "1" } },
-    { "kind": "attributeEmpty", "label": "S2", "attribute": "minsteteken" }
+    {
+      "kind": "attributeEmpty",
+      "label": "S1",
+      "attribute": "hoogsteteken"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S1",
+      "attribute": "preciesteken"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S1",
+      "attribute": "minsteteken"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "hoogsteteken",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "preciesteken",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S2",
+      "attribute": "minsteteken"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S1",
+      "attribute": "randteken"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S2",
+      "attribute": "randteken"
+    }
   ]
 }

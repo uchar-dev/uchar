@@ -1,0 +1,21 @@
+Objecttype de Randwacht (mv: Randwachten)
+    de ploegomvang Numeriek (geheel getal);
+    het grootgetal Numeriek (geheel getal);
+    het bedrag Numeriek (getal met 2 decimalen);
+    het gelijkteken Numeriek (geheel getal);
+    het ordeteken Numeriek (geheel getal);
+
+Regel gelijkteken van een randwacht
+    geldig altijd
+        Het gelijkteken van een Randwacht moet gesteld worden op 1
+        indien hij aan alle volgende voorwaarden voldoet:
+        - zijn ploegomvang is gelijk aan 0
+        - zijn grootgetal is gelijk aan zijn bedrag.
+
+Regel ordeteken van een randwacht
+    geldig altijd
+        Het ordeteken van een Randwacht moet gesteld worden op 1
+        indien hij aan alle volgende voorwaarden voldoet:
+        - zijn ploegomvang is gelijk aan 0
+        - zijn grootgetal is groter dan zijn bedrag.
+

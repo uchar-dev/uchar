@@ -1,0 +1,23 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "V1", "objectType": "Randwacht",
+        "attributes": { "ploegomvang": { "number": "1" }, "grootgetal": { "number": "30000000" }, "bedrag": { "number": "1.00" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "V2", "objectType": "Randwacht",
+        "attributes": { "ploegomvang": { "number": "0" }, "grootgetal": { "number": "5" }, "bedrag": { "number": "1.00" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "V3", "objectType": "Randwacht",
+        "attributes": { "ploegomvang": { "number": "0" }, "grootgetal": { "number": "0" }, "bedrag": { "number": "1.00" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeEmpty", "label": "V1", "attribute": "vouwteken" },
+    { "kind": "attributeValue", "label": "V2", "attribute": "vouwteken", "value": { "number": "1" } },
+    { "kind": "attributeEmpty", "label": "V3", "attribute": "vouwteken" }
+  ]
+}
