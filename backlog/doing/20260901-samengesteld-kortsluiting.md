@@ -389,3 +389,113 @@ backend-JUnit 210. `EXPECTED_PLAYED` 114 → 116; `EXPECTED_CHANNEL` +1:
 als samengesteld LID valt buiten de Phase-B-conditiescope), reden-dragend
 gepind; zijn ch. 5.10-inhoud is een clingo-eigenschap die gates 5+6
 pinnen.
+
+## Besluitronde (maintainerbesluit 2026-09-07; gemeten 2026-09-09)
+
+**Het besluit** (genummerde vraag 3, bindend): de at-most-WAAR-trigger
+wordt OPGENOMEN. Eén regel zonder uitzondering — de evaluatie stopt zodra
+de uitkomst vaststaat. `ten hoogste d` stopt dus óók zodra
+hits + resterend ≤ drempel. **Grens 1 vervalt**, en met haar de
+levendheidsmotivering uit fixronde 1.
+
+**Spec.** ch. 5.10 draagt de nieuwe rij; de motivering is nu de simpele
+volledige ("elke rij markeert het moment waarop de uitkomst vaststaat; de
+tabel is de uitputtende opsomming van die momenten per kwantor"). De
+vacuüm-klasse staat naast de bestaande d > n-tekst: bij **at-most met
+d ≥ n** staat de uitkomst al vóór het eerste lid vast en wordt er NIETS
+gelezen — dezelfde clausule als ten-minste/precies boven het ledental,
+alleen met uitkomst *waar*. S7 volgt met de tweezijdige at-most-guard.
+
+**Executors.** ref: `settled` krijgt de waar-zijde. clingo: de
+at-most-prefixguard wordt tweezijdig, `H ≤ d` **én** `H ≥ d − r + 1`; bij
+d ≥ n faalt die tweede helft al op de lege prefix, dus emitteert een
+vacuüm-ware at-most niets. Drools-exec: `vastgesteld()` idem.
+
+**Artefact-omkering.** `corpus/rood/atmost-no-vacuous-true` pinde precies
+het tegendeel en faultte niet meer:
+
+```
+ref    : EXPECTED FAULT DID NOT OCCUR: evaluation succeeded
+clingo : EXPECTED FAULT DID NOT OCCUR: clingo found a model
+```
+
+Een rode case die niet meer fault is geen rode case. Vervangen door
+`corpus/golden/jutterswet-vacuumwacht`, met beide interessante punten van
+de nieuwe rij: `vacuumteken` (TEN HOOGSTE 2 van 2 — de vacuüm, leest
+niets, ook het delende lid niet) en `stopteken` (TEN HOOGSTE 2 van 4 met
+leden [onwaar, onwaar, faultend, x] — de waar-stop ONDER het ledental).
+Handberekend, in één keer door ref en clingo bevestigd. Rood 23 → 22.
+
+**Een tweede vondst van deze ronde.** De mutant die de clip-VERGELIJKINGS-
+fence zijn guard afneemt (`C8`) OVERLEEFDE eerst alle dertien gates:
+`jutterswet-klipwacht` raakte alleen de segmentfence. De
+vergelijkingsfence vuurt namelijk pas bij VERSCHILLENDE schalen. Daarom
+draagt klipwacht nu een tweede regel `randklipteken`, die de temporele
+gehele attribuutwaarde tegen een 2-decimalen `drempelbedrag` vergelijkt:
+de harmonisatie ×100 verlaagt de bound tot max_int31/100, K1's 30 000 000
+gaat eroverheen, en dat alles achter een stoppend lid 1. Daarna sterft
+`C8` — en zijn zusje `C9` (segmentfence) ook.
+
+**Volledige mutanttabel (20 recepten, alle gedood, baseline leeft),
+gemeten op de eindkop:**
+
+| set | recept | kill-gate | uitkomst |
+|-----|--------|-----------|----------|
+| ref | baseline | — | **leeft** |
+| ref | M1 stopcheck ná i.p.v. vóór | ref-suite + gate 5 | GEDOOD |
+| ref | M2 ten-minste-onhaalbaarheid weg | ref-suite + gate 5 | GEDOOD |
+| ref | M3 ten-minste-triggers weg | ref-suite + gate 5 | GEDOOD |
+| ref | **M4′ at-most-WAAR weg** (de nieuwe rij) | ref-suite + gate 5 | GEDOOD |
+| ref | M5 at-most-ONWAAR weg | ref-suite + gate 5 | GEDOOD |
+| ref | M6 precies-triggers weg | ref-suite + gate 5 | GEDOOD |
+| clingo | C1 i=0-uitzondering terug | gate 6 | GEDOOD |
+| clingo | C2 gelijkheidsarm zonder guard | gate 6 | GEDOOD |
+| clingo | C3 orderingsarm zonder guard | gate 6 | GEDOOD |
+| clingo | C4 eerste/laatste-vouw zonder guard | gate 6 | GEDOOD |
+| clingo | C5a ten-minste-guard één te los | gate 6 | GEDOOD |
+| clingo | C5c precies-guard één te los | gate 6 | GEDOOD |
+| clingo | C6 ALLE-prefix weg | gate 6 | GEDOOD |
+| clingo | **C7′ at-most-guard eenzijdig** (de C-variant van M4′) | gate 6 | GEDOOD |
+| clingo | C8 clip-vergelijkingsfence zonder guard | gate 6 | GEDOOD |
+| clingo | C9 clip-segmentfence zonder guard | gate 6 | GEDOOD |
+| Drools-exec | D1 at-most-ONWAAR weg | gate 12 | GEDOOD |
+| Drools-exec | D2 precies-onhaalbaarheid weg | gate 12 | GEDOOD |
+| Drools-exec | D3 stopcheck ná i.p.v. vóór | gate 12 | GEDOOD |
+| Drools-exec | **D4 at-most-WAAR weg** (de D-variant van M4′) | gate 12 | GEDOOD |
+
+**Waakhond-hermeting — de DRL-tekst-divergentie is VERDWENEN.** Het
+leesverzamelingsmodel is aangepast aan de nieuwe norm en opnieuw
+uitputtend gedraaid (beide richtingen, alle vijf kwantoren, elke drempel
+inclusief d > n, elke waarheidstoekenning), **n = 1..7, 6646
+combinaties**:
+
+| meting | DRL-tekst | clingo |
+|--------|-----------|--------|
+| waarde-divergenties t.o.v. ch. 5.10 | **0** | **0** |
+| leest een lid dat ch. 5.10 overslaat | **0** | **0** |
+| slaat een lid over dat ch. 5.10 leest | **0** | **0** |
+
+De reden is structureel: met de waar-trigger is `ten hoogste d` precies
+`niet ten minste d+1`, en dát is wat de tekst-tak berekent — hij
+implementeerde de duale al. End-to-end bevestigd op de getuige die vóór
+het besluit de smoking gun was (TEN HOOGSTE 1 over één delend lid): ref
+`1`, clingo `[1]`, Drools-exec `1`, Drools-DRL-tekst `1` — vier
+executors, één antwoord, waar de eerste drie eerder faultten.
+`jutterswet-vacuumwacht` speelt in **beide** Drools-takken.
+
+Gevolg: de waakhond-naamlijst in `scripts/check-reftype-derivation.sh` is
+**opgeheven** (er is geen vorm meer om te bewaken); de meting staat er
+reden-dragend voor in de plaats. De vervolgkaart
+`backlog/new/20260907-drl-tekst-kortsluiting.md` **stelt voor zichzelf te
+laten vervallen** — met de drie voorbehouden die eerlijkheidshalve tegen
+"0 divergenties" pleiten (het model abstraheert de tak; n ≤ 7 is de
+gemeten grens; de tak blijft een tweede vertaling) en een smaller
+alternatief. Niet zelf verwijderd: dat is een maintainerbesluit.
+
+**Alle dertien gates groen** (besluitronde, gemeten 2026-09-09): 1 PASS ·
+2 186 bestanden · 3 186 golden / 337 negatief · 4 441 cases · 5 419 ·
+6 419 · 7 383 (36 survivors, ongewijzigd) · 8 **22 rood** · 9 201 checks /
+12 catala-goldens · 10 173 tests / **37 rgs-goldens** · 11 PASS ·
+12 **played 117** / JUnit 210 / 1 value-divergence (de bestaande) /
+vloer 47 · 13 74 twists, 0 survivors. Suites: ref **462**, clingo 80/0,
+backend-JUnit 210. `EXPECTED_PLAYED` 116 → 117.
