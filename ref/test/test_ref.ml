@@ -2821,7 +2821,85 @@ let () =
         condition = cmp Groter tak (litv "0" num0); bron = None }
   in
   expect_msg "WV-5.11-filterlist-element0-eerst" (run_v (zeef (paar "1" "0"))) bm;
-  expect_msg "WV-5.11-filterlist-element1-later" (run_v (zeef (paar "0" "1"))) pm
+  expect_msg "WV-5.11-filterlist-element1-later" (run_v (zeef (paar "0" "1"))) pm;
+  (* row: the aggregation's INSTANCE fold — the filter per member, members in
+     fold order. The listed-`argumenten` branch above cannot reach this: an
+     instance fold takes its contributors from a role, and its `filter` runs
+     once per MEMBER with that member as the condition's subject. So the
+     branching trick moves into the filter and the members carry the switch —
+     `merk` = 1 selects the division, `merk` = 0 the marker, and which member
+     runs first decides which fault survives. Both filtered walks are pinned:
+     the `Instances` one an `aantal` takes, and the `Values` one a `som` over
+     a set-read takes. Measured: without this pair, reversing BOTH member
+     walks passes every gate and every other example here. *)
+  let ftn : (string * Ir_v0.Ast.feittype) list =
+    [ ( "deelname",
+        { ft_naam = Some "deelname"; wederkerig = false;
+          rollen =
+            [ { rol_naam = Some "vangst"; rol_objecttype_naam = Some "Vangst";
+                rol_meervoud = None; rol_meervoudig = false };
+              { rol_naam = Some "deelvangst"; rol_objecttype_naam = Some "Deelvangst";
+                rol_meervoud = Some "deelvangsten"; rol_meervoudig = true } ]; } ) ]
+  in
+  let leden_doc : Ir_v0.Ast.document =
+    { empty_doc with
+      objecttypen =
+        [ ot "Vangst" [ ("teller", Some num0); ("uitkomst", Some num0) ] [];
+          ot "Deelvangst" [ ("merk", Some num0); ("bedrag", Some num0) ] [] ];
+      feittypen = ftn }
+  in
+  (* the filter faults one way on a member with merk > 0 and the other way on
+     a member with merk = 0 *)
+  let lid_filter : Ir_v0.Ast.conditie =
+    cmp Groter
+      (If_then_else
+         { typ = Some num0;
+           condition = cmp Groter (aref "merk" "Deelvangst" num0) (litv "0" num0);
+           then_ = boom; else_ = pit; bron = None })
+      (litv "0" num0)
+  in
+  let leden_wereld m1 m2 =
+    List.fold_left World.add_instance World.empty
+      [ { (inst "v" "Vangst" []) with
+          links = World.SMap.add "deelvangsten" [ "d1"; "d2" ] World.SMap.empty };
+        inst "d1" "Deelvangst" [ ("merk", n m1); ("bedrag", n "1") ];
+        inst "d2" "Deelvangst" [ ("merk", n m2); ("bedrag", n "1") ] ]
+  in
+  let run_leden e m1 m2 () =
+    let w = leden_wereld m1 m2 in
+    ignore (Eval.eval_expr (env_of leden_doc) w (World.get w "v") ~err:no_err e)
+  in
+  (* the `Instances` walk: an aantal over the bare role *)
+  let telling : Ir_v0.Ast.expr =
+    Functie
+      { kind = Aantal;
+        argumenten =
+          [ Attribuut_ref
+              { attribuut = Some "deelvangsten"; objecttype = Some "Vangst";
+                onderwerp_bron = None; navigatie_rol = None;
+                typ = Some (Datatype_onbekend { reden = None }); bron = None; set = false;
+                navigatie_pad = []; navigatie_bindingen = None } ];
+        element_objecttype = Some "Deelvangst"; leegwaarde = None; filter = Some lid_filter;
+        dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = None;
+        bron_rol = None }
+  in
+  expect_msg "WV-5.11-instantiefold-lid0-eerst" (run_leden telling "1" "0") bm;
+  expect_msg "WV-5.11-instantiefold-lid1-later" (run_leden telling "0" "1") pm;
+  (* the `Values` walk: a som over the members' set-read attribute *)
+  let ledensom : Ir_v0.Ast.expr =
+    Functie
+      { kind = Som;
+        argumenten =
+          [ Attribuut_ref
+              { attribuut = Some "bedrag"; objecttype = Some "Deelvangst"; onderwerp_bron = None;
+                navigatie_rol = None; typ = Some num0; bron = None; set = true;
+                navigatie_pad = []; navigatie_bindingen = None } ];
+        element_objecttype = Some "Deelvangst"; leegwaarde = None; filter = Some lid_filter;
+        dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = None;
+        bron_rol = None }
+  in
+  expect_msg "WV-5.11-instantiesom-lid0-eerst" (run_leden ledensom "1" "0") bm;
+  expect_msg "WV-5.11-instantiesom-lid1-later" (run_leden ledensom "0" "1") pm
 
 let () =
   if !failures > 0 then begin

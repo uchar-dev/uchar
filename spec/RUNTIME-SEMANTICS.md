@@ -2472,11 +2472,16 @@ unevaluated:
   the `Let` that bound it;
 - the **ch. 5.10 short circuit** — a composite stops at the member after
   which its outcome stands;
-- **leeg propagation** — a node whose earlier operand is leeg answers
-  leeg without reading its later ones. `Fold` is the plain case: a leeg
-  `list` is the whole fold's answer, so its `init` is never evaluated
-  (ch. 10.2), and `Invoke` propagates the same way once all its arguments
-  are in.
+- **leeg propagation — at exactly one node.** `Fold`: a leeg `list` is
+  the whole fold's answer, so its `init` is never evaluated (ch. 10.2).
+  That is the *only* place where leegte ends the walk early. The other
+  leeg-propagating forms — `ListLiteral`, `StructLiteral`, `Invoke`,
+  `MapList` — evaluate **every** operand first and test for leegte
+  afterwards, so a leeg operand costs its successors nothing: they still
+  run, still fault, still deposit. The distinction is easy to smooth
+  over and only the second half is what the reference interpreter does,
+  so it is written out: leeg propagates in the **result**, not through
+  the **walk**.
 
 An operand that is never reached raises no fault and deposits no channel
 fact. A deposit already made **stands**: channel facts are keyed by
@@ -2488,12 +2493,29 @@ list-valued slot the list's own order, for named slots the order the
 **schema** gives them — `spec/schema/regelspraak-ir-v0.schema.json`,
 `$defs/Begrensd` (`node`, `basis`, `minimum`, `maximum`), `$defs/Functie`
 (`argumenten` before `leegwaarde`), `$defs/Fold` (`list` before `init`).
-The schema is named here rather than `IR-SPEC.md` on purpose: gate 2
-round-trips every corpus document byte-identically against it, so that
-slot order is a **machine-checked** fact rather than prose, and
-`IR-SPEC.md` calls the clamp node `Clamp` where the wire calls it
-`Begrensd`. For the tijdsduur family the slot is a list: argument 0 is
-`van`, argument 1 is `tot`.
+For the tijdsduur family the slot is a list: argument 0 is `van`,
+argument 1 is `tot`.
+
+The schema is named here rather than `IR-SPEC.md` because the naming
+split is systematic, not incidental: `IR-SPEC.md` writes the metamodel in
+English — `Clamp`, `Rounding`, `TextComposition` — where the wire writes
+`Begrensd`, `Afgerond`, `TekstReeks`. A clause about *slot* order has to
+name the slots as a document carries them.
+
+**How far that is checked, stated exactly.** JSON Schema has no ordering
+vocabulary, and gate 2's round-trip re-emits each document in *its own*
+key order — so a document that writes `maximum` before `minimum`
+validates and round-trips green. Measured: swapping the two keys in a
+golden leaves gates 2, 3 and 5 passing. What the schema gives is the
+**convention** that spells the order, and what pins it mechanically is
+narrower: gates 9 and 10 re-emit 50 of the corpus's 192 documents (38
+`bron.rgs`, 12 `bron.catala_en`) byte-identically from source, so for
+those the emitter's slot order is fixed. For the remaining 142
+hand-written documents nothing checks it. This does not weaken the
+clause — the order that matters here is the order a consumer **reads
+operands in**, and that is pinned by the artifact table below, in every
+executor, for every visible row. It does mean the wire convention itself
+rests on the emitters and on review.
 
 Nothing here is left to the executor. A consumer that evaluates
 `Begrensd`'s `maximum` before its `minimum` is **wrong**, not merely
@@ -2520,6 +2542,12 @@ reference interpreter declines a form today that is noted, and the
 normative order still stands, because the spec is engine-neutral and the
 next consumer may carry it.
 
+Node names below are the **wire's**, as the schema spells them. The one
+family that is not a node per name is the `Functie` family: it is a single
+wire node discriminated by its `kind`, so its rows are named by kind
+(`som`, tijdsduur, `concatenatie`, …) in the source language's spelling
+rather than by a node name it does not have.
+
 | node | evaluated operands | verdict | normative order |
 |------|--------------------|---------|-----------------|
 | `Binair` (all operators) | `links`, `rechts` | **visible** | `links`, then `rechts` |
@@ -2529,6 +2557,7 @@ next consumer may carry it.
 | tijdsduur / absolute tijdsduur | argument 0 (`van`), argument 1 (`tot`) | **visible** | `van`, then `tot` |
 | `datum met` / `datum-tijd met` | the `argumenten` list (WF-037 leaves its arity open) | **visible** | argument order. *ref declines the form; the order is stated, not yet exercised* |
 | aggregation (`som`, `totaal`, `aantal`, `minimum`, `maximum`, `eerste`, `laatste`) | the contributors — the listed `argumenten`, or the instance fold's members each gated by the `filter` — then the `leegwaarde` | **visible** | the contributors in wire order (an instance fold: the filter per member, members in fold order), then the `leegwaarde` (WF-037 confines it to the som) |
+| aggregation over a `dimensieSelectie` (the third contributor source; WF-037 admits it on `som`, `minimum`, `maximum`) | the selected cells, then the `leegwaarde` | **visible** | the cells in the selection's own label order, then the `leegwaarde`. *ref declines the form; the order is stated, not yet exercised* |
 | `concatenatie`, `TekstReeks` | the inserted parts | **visible** | part order |
 | `ListLiteral` | `elements` | **visible** | element order |
 | `StructLiteral` | `velden` | **visible** | declared field order (WF-073) |
@@ -2547,8 +2576,8 @@ next consumer may carry it.
 | `TemporalRead` | `datum` only — `basis` **names** the timeline and is never evaluated (ch. 3.3) | invisible | — |
 | `Predicaat` — leeg / gevuld | `operand` | invisible | — |
 | `Predicaat` — elfproef / numeriek met exact / dagsoort | `operand` | invisible | — *(ref declines them)* |
-| `KenmerkCheck`, `Rollidmaatschap`, `VerreRollidmaatschap`, `Regelversie` | none | invisible | — *(ref declines `VerreRollidmaatschap`)* |
-| `Literal`, `AttribuutRef`, `ParameterRef`, `VariabeleRef`, `Constante`, `BinderRef`, `Onopgelost` | none | invisible | — (a `BinderRef` forces its ch. 10.6 need **at its own position** in the parent's order) |
+| `Kenmerk`, `Rollidmaatschap`, `VerreRollidmaatschap`, `Regelversie` | none | invisible | — *(ref declines `VerreRollidmaatschap`)* |
+| `Literal`, `AttribuutRef`, `ParameterRef`, `VariabeleRef`, `Constante`, `BinderRef`, `ExprOnopgelost`, `ConditieOnopgelost` | none | invisible | — (a `BinderRef` forces its ch. 10.6 need **at its own position** in the parent's order) |
 | `Lambda` | — | not an operand position | never a value (WF-069): it is only the `functie` slot of a `Fold`/`MapList`, applied once per element under that node's row |
 
 **The som's `leegwaarde` is evaluated unconditionally.** It is an
@@ -2655,22 +2684,40 @@ it faults on the document where ref does not). It is listed with that
 reason in the red gate's exclusion list, and correcting it is a card of
 its own.
 
-**The v0 pin diverges too, and on three rows, until it follows.** Its
-static trace walk — the bookkeeping that decides which companion
-preconditions and which hoists the emitted rules carry — runs
+**The v0 pin, measured row by row — two of the three already agree.**
+The pin's *static trace walk* (the bookkeeping that decides which
+companion preconditions and which hoists the emitted rules carry) runs
 `Begrensd` maximum-first, the tijdsduur operands in reverse, and the
-aggregation's `leegwaarde` before the contributors: the mirror image of
-this clause on exactly the three rows this clause changed. Its arbiter
-test pins that order with absolute channel-fact counts, and cites the
-*reference interpreter's host-language argument order* as its evidence —
-which is the inversion this clause exists to end. Two things are worth
-recording with it, because they narrow the divergence rather than widen
-it: the pin's **emitted** clamp term already evaluates its bounds left to
-right, so the divergence lives in the static bookkeeping and not in what
-runs; and a **second walk in the same pinned file** already uses this
-clause's three orders, so the correction also removes a contradiction the
-pin carries internally. Until it lands there, the pin is a measured
-deviation on the channel-fact order, not a second reading of the norm.
+aggregation's `leegwaarde` before the contributors, and an arbiter test
+pins that with absolute channel-fact counts, citing the *reference
+interpreter's host-language argument order* as its evidence — the
+inversion this clause exists to end. But what the pin **emits** is a
+different question from what it walks, and it splits the three rows:
+
+- **clamp** — the emitted term applies the clamp to its base, minimum
+  and maximum in that order, and the host evaluates a call's arguments
+  left to right. At fire time the pin is **already** ch. 5.11.
+- **tijdsduur** — likewise: the emitted term takes `van` then `tot`.
+  Already ch. 5.11 at fire time.
+- **the aggregation's `leegwaarde`** — **not** already, and this is the
+  row that matters. The pin emits a *conditional*: the stand-in is
+  evaluated only when the contributors turn out empty (in one lowering a
+  ternary, in another a fold that reaches its stand-in only at a zero
+  count; a third flattens the test to a compile-time constant). That is
+  exactly the laziness the **unconditional** clause above forbids, and
+  it is a runtime divergence, not bookkeeping: a stand-in that faults or
+  deposits does so in ref and not in the pin, on any document whose
+  contributors are filled. `som-fallback-always-evaluated` is the case
+  that separates them.
+
+So the correction owed there is of two kinds, and the second is the
+substantive one: turn the static walk around on three rows, and make the
+emitted stand-in **unconditional**. A **second, live walk in the same
+pinned component** already uses this clause's orders, so the first kind
+also removes a contradiction the pin carries internally. Until both
+land, the pin is a measured deviation — on the channel-fact order for
+two rows, and on channel facts and faults alike for the third — not a
+second reading of the norm.
 
 **Each visible row carries an artifact.** A row without one is spec text
 an executor may quietly walk the other way, so the table below is the
@@ -2690,6 +2737,7 @@ what reaches the rows a barrier cannot, because a closed fold body
 | composite members, wire order + short circuit | ch. 5.10's own witness table |
 | `Vergelijking` `links` before `rechts` | `ref/` `WV-5.11-vergelijking-…` (pair) |
 | aggregation contributors, in wire order | `ref/` `WV-5.11-som-bijdrager…` (pair) |
+| the **instance** fold: the filter per member, members in fold order | `ref/` `WV-5.11-instantiefold-…` and `WV-5.11-instantiesom-…` (two pairs — the `Instances` walk an `aantal` takes and the `Values` walk a set-read `som` takes) |
 | aggregation contributors **before** the `leegwaarde` | `ref/` `WV-5.11-som-…-leegwaarde` (pair) |
 | the `leegwaarde` evaluates unconditionally | `som-fallback-always-evaluated` (gate 8) + `ref/` `WV-5.11-som-leegwaarde-onvoorwaardelijk` |
 | `concatenatie` and `TekstReeks` part order | `ref/` `WV-5.11-concat-…`, `WV-5.11-tekstreeks-…` (pairs) |

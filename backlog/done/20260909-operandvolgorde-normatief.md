@@ -85,13 +85,16 @@ Drools-sessies en pint de nu-foute volgorde met absolute
 kanaalfeit-tellingen (1 en 0), met in zijn javadoc `ref/lib/eval.ml` als
 bewijs aangevoerd: precies het bewijs dat deze kaart wegneemt.
 
-Twee dingen die de afwijking VERKLEINEN, ook nagemeten: de uitgestoten
-term is al `rsBegrens(basis, min, max)` en Java/mvel evalueren van links
-naar rechts, dus op vuurmoment loopt de toolchain-clamp al goed — de
-afwijking zit in de statische boekhouding; en een tweede walk in
-hetzelfde bestand (`DrlTranspiler.leesVolgorde`, `:2313-2333`) loopt de
-drie ch.-5.11-volgordes al, zodat de correctie ook een interne
-tegenspraak opheft.
+Twee dingen die de afwijking verkleinen, ook nagemeten — **maar zie
+fixronde 2 (F1/F4): beide waren te ruim geformuleerd.** De uitgestoten
+`rsBegrens(basis, min, max)` en `rsTijdsduur(van, tot)` lopen op
+vuurmoment al goed, dus voor DIE TWEE rijen zit de afwijking in de
+statische boekhouding; de aggregatierij is op vuurtijd echter LUI en
+wijkt daar wél op runtime af. En de tweede walk die al goed loopt is niet
+`leesVolgorde` (dode code, nul aanroepers sinds `118b771`) maar
+`DrlTranspiler.verzamelBinderDefinities:1611-1635`, die wél levend is —
+de interne tegenspraak bestaat dus, alleen tussen andere functies dan ik
+eerst schreef.
 
 Gevolg: `backlog/new/20260909-toolchain-spoorwandeling-ch511.md`
 geschreven, met de vier plekken, de om te keren arbitertest, de
@@ -127,7 +130,7 @@ evalueert ooit.
 | `Afgerond`, wortel, absolute waarde, jaar/maand/dag uit, eerste paasdag, `ListLength`, `FieldAccess`, `Construct`, `DimensieCel` | onzichtbaar | één operand |
 | `TemporalRead` | onzichtbaar | alleen `datum`; `basis` NOEMT de tijdlijn en evalueert nooit (ch. 3.3) |
 | `Predicaat` (leeg/gevuld) | onzichtbaar | één operand |
-| `Literal`, `AttribuutRef`, `ParameterRef`, `VariabeleRef`, `Constante`, `BinderRef`, `KenmerkCheck`, `Regelversie`, `Rollidmaatschap`, `Onopgelost` | onzichtbaar | geen operanden |
+| `Literal`, `AttribuutRef`, `ParameterRef`, `VariabeleRef`, `Constante`, `BinderRef`, `Kenmerk`, `Regelversie`, `Rollidmaatschap`, `ExprOnopgelost`, `ConditieOnopgelost` | onzichtbaar | geen operanden |
 
 **Aangevuld in de fixronde (E4) — de sweep was niet uitputtend tegen zijn
 eigen kop.** Negen ontbrekende knopen alsnog beoordeeld; ref-geweigerde
@@ -137,6 +140,7 @@ engine-neutraal:
 | knoop | oordeel | norm |
 |---|---|---|
 | `Periode` (de periodeconditie: `vanaf`, `tot`) | **zichtbaar** | `vanaf`, dan `tot`. Corpusaanwezig (`jutterswet-vormenkabinet` plus twee negatief-gevallen); ref weigert de vorm bij evaluatie, dus gesteld maar nog niet uitgevoerd |
+| aggregatie over een `dimensieSelectie` (de DERDE bijdragerbron; WF-037 laat hem toe op SOM/MINIMUM/MAXIMUM) — toegevoegd in fixronde 2 | **zichtbaar** | de cellen in de labelvolgorde van de selectie, dan de `leegwaarde`; ref weigert de vorm |
 | `datum met` / `datum-tijd met` | **zichtbaar** | argumentvolgorde; WF-037 laat de ariteit open. ref weigert de vorm |
 | `tijdsevenredig deel` | onzichtbaar | WF-056 beperkt de basis tot een KALE temporele attribuutverwijzing, dus alleen het filter is datagevoelig — één foutdragende positie |
 | `aantal dagen in` | onzichtbaar | geen expressieargumenten; het filter draagt de conditie |
@@ -282,6 +286,104 @@ sleutelvolgorde delegeert nu naar het SCHEMA (`$defs/Begrensd`:
 plaats van naar `IR-SPEC.md`, dat de knoop `Clamp` noemt waar de wire
 `Begrensd` zegt.
 
+### Fixronde 2 2026-09-09 (lens 2)
+
+Lens 2 bevestigde code, corpus en alle dertien gates (beide
+mutanttellingen exact, nul rebase-conflicten met main `3777c20`) en
+weerlegde vier zinnen plus twee ongepinde deelclaims. Alle zes verwerkt.
+
+**F1 — de divergentie-alinea klopte niet op de rij die het hardst
+spreekt.** Ik schreef dat de toolchain-afwijking "in de statische
+boekhouding zit en niet in wat draait". Dat geldt voor twee van de drie
+rijen, niet voor de derde. Gemeten: de clamp- én de tijdsduurrij stoten
+`rsBegrens(basis, min, max)` en `rsTijdsduur(van, tot)` uit en lopen op
+vuurtijd dus al in de norm-volgorde — een STERKER argument dan ik maakte.
+Maar de aggregatierij is op vuurtijd **lui**: vier plekken evalueren de
+leegwaarde alleen bij lege bijdragers (twee ternaries, een
+transpile-time platgeklapte boolean, en een fold die zijn stand-in
+alleen bij `cnt == 0` bereikt). Dat is precies de luiheid die ch. 5.11's
+onvoorwaardelijke clausule verbiedt en die mijn rode geval bestaat om te
+weerleggen — een RUNTIME-afwijking, geen boekhouding. Alinea per rij
+herschreven; de vervolgkaart heeft nu een acceptance-punt dat **de TERM
+onvoorwaardelijk maakt**, niet alleen de wandeling omdraait, en noemt dat
+het zwaarste punt.
+
+**F2 — "gate 2 maakt de sleutelvolgorde een machinaal gecontroleerd
+feit" was onwaar, en experimenteel gebroken.** De lens zette `maximum`
+vóór `minimum` in een golden; gates 2, 3 en 5 bleven groen, want
+`check-ir-schema` her-emitteert in de sleutelvolgorde van het document
+zelf en JSON Schema kent geen ordeningsvocabulaire. Teruggebracht tot
+wat waar is: het schema is de **conventie** die de volgorde spelt; wat
+haar machinaal pint is smaller — gates 9 en 10 her-emitteren 50 van de
+192 documenten (38 `bron.rgs`, 12 `bron.catala_en`) byte-identiek uit
+bron; voor de overige 142 handgeschreven documenten controleert niets
+het. De clausule zelf lijdt er niet onder: de volgorde die ertoe doet is
+die waarin een consument operanden LEEST, en die is per zichtbare rij
+gepind. **Open vraag voor de maintainer, geen bouwplicht:** hoort een
+sleutelvolgorde-check bij gate 2? Vandaag rust de wire-conventie op de
+emitters en op review.
+
+**F3 — de leeg-propagatie-bullet was onwaar zoals geschreven.** Alleen
+`Fold` beëindigt vroeg (een lege `list` is het antwoord, `init` draait
+niet). Bij `ListLiteral`, `StructLiteral`, `Invoke` en `MapList`
+evalueert ref ALLE operanden en toetst daarna op leegte — een leeg
+operand kost zijn opvolgers niets. De bullet sprak zichzelf al tegen
+("once all its arguments are in"). Herschreven naar wat ref doet: leeg
+propageert in het RESULTAAT, niet door de WANDELING. Lens-mutant E (de
+bullet letterlijk implementeren) passeert daarmee terecht: gates 5/6/7
+groen bij de lens, `test_ref` 489 groen bij mij — na de herschrijving is
+dat correct gedrag van de tekst, geen gat.
+
+**F4 — de vervolgkaart citeerde dode code.** `leesVolgorde`/
+`forceerVolgorde` heeft nul aanroepers sinds `118b771`; ik voerde hem op
+als de levende tegenhanger. De LEVENDE tegen-geordende wandeling is
+`DrlTranspiler.verzamelBinderDefinities:1611-1635` (min→max op `:1622`,
+argumenten→leegwaarde op `:1625-1626`). Vervangen, `leesVolgorde`
+expliciet als dode code benoemd, de pin bijgewerkt (`SPEC_REV` staat op
+`3777c20`, niet `3023b40`), en de negen-rijen-acceptance teruggeschaald:
+zes vormen vallen al onder de uitsluitingszin op `:2218-2221`, `datum
+met` onder de bestaande `Functie`-rij, en `Vergelijking`/`Periode`
+hebben daar geen `Expr`-vorm.
+
+**F5 — ongepinde deelclaim: de instantiefold.** "the filter per member,
+members in fold order" had geen artefact: alle 23 voorbeelden gebruikten
+de gelijste-argumenten-tak, dus lens-mutant C (de twee
+`filter_in_order`-plekken en de temporele set-map omgekeerd) passeerde
+alles. Nu twee voorbeeldparen erbij over een instantiefold met twee
+leden wier filter verschillend faalt (`merk` = 1 kiest de deling,
+`merk` = 0 de marker), voor BEIDE gefilterde wandelingen — de
+`Instances`-tak die een `aantal` neemt en de `Values`-tak die een
+set-lezende `som` neemt. Mutant C in de exacte lensvorm doodt nu
+**precies die 4** voorbeelden en niets anders; een strakkere variant
+(`filter_in_order` zelf omgekeerd) doodt er 6, de twee
+`FilterList`-voorbeelden erbij.
+
+**F6 — `dimensieSelectie` ontbrak** als derde bijdragerbron (WF-037 laat
+hem toe op SOM/MINIMUM/MAXIMUM). Toegevoegd, met het oordeel én de
+ref-weigering erbij, zoals bij elke andere geweigerde vorm.
+
+**Redactie.** `KenmerkCheck` → `Kenmerk` en `Onopgelost` →
+`ExprOnopgelost`/`ConditieOnopgelost` (de wire-namen); een inleidende zin
+benoemt nu dat de tabel wire-namen gebruikt en dat de `Functie`-familie
+één wire-knoop is die op `kind` onderscheidt, dus met kleine letters in
+de brontaalspelling. De motivering voor het schema boven `IR-SPEC.md` is
+versterkt: de naamsplitsing is systematisch — `Clamp`/`Begrensd`,
+`Rounding`/`Afgerond`, `TextComposition`/`TekstReeks` — en een clausule
+over SLEUTELvolgorde moet de sleutels noemen zoals een document ze
+draagt. "22 voorbeelden" was fout: het waren er 23 (18 + 4 + 1), nu 27.
+
+**Commitmarkering, eerlijk gemeld.** De markering is inconsistent en dat
+is mijn inconsistentie: de commit die `spec/RUNTIME-SEMANTICS.md` raakte
+draagt "(voorstel, beschermd pad)" in zijn onderwerp, maar de twee
+commits die `scripts/` raakten — óók een beschermd pad — dragen dat
+label niet. Binnen de bestanden idem: de `EXPECTED_PLAYED`-wijziging in
+`check-drools.sh` kreeg een gedateerd herkomstcommentaar, de drie
+uitsluitingsregels in `check-rood.sh` alleen een reden zonder datum (de
+lijst daar is daarin zelf gemengd). Niet met terugwerkende kracht
+herschreven — de geschiedenis is lineair en de hele branch is een
+voorstel — maar de maintainer leest het hier in plaats van het te moeten
+afleiden.
+
 ### Gatestand op de kop (alle DERTIEN groen)
 
 Vanuit de worktree; `sh`/`bash` per shebang; `eval $(opam env)`; gates
@@ -296,13 +398,14 @@ fault-pinned / 20 met reden) · 9 = 201 checks / 12 catala-goldens ·
 10 = 173 tests / 38 rgs-goldens · 11 = 45 / 2 holdouts / 27 / 29 —
 **onbewogen** · 12 = played **119** / channel floor 47 /
 value-divergence 1 / no-case 2 / JUnit **223** · 13 = **74** twists /
-15 goldens / 0 survivors. Daarnaast `test_ref` **485** gewerkte
-voorbeelden groen (462 → 485: 22 volgordevoorbeelden + 1
-onvoorwaardelijkheid).
+15 goldens / 0 survivors. Daarnaast `test_ref` **489** gewerkte
+voorbeelden groen (462 → 489: 26 volgordevoorbeelden + 1
+onvoorwaardelijkheid; 23 in fixronde 1, 4 in fixronde 2 voor de
+instantiefold).
 
 Stand t.o.v. aanvang: golden+rood 188 → 192, negatief 339 → 339, cases
 448 → 453, replays 425 → 427, rood 23 → 26, played 118 → 119, JUnit 223
-→ 223, twists 74 → 74, test_ref 462 → 485.
+→ 223, twists 74 → 74, test_ref 462 → 489.
 
 `git status --short` leeg; de branch blijft **ONGEMERGED**. Beschermd
 pad: `spec/RUNTIME-SEMANTICS.md`. May-touch-verbredingen, expliciet
