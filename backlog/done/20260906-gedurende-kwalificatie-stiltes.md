@@ -172,10 +172,14 @@ binary ís: zes één-veld-verdraaiingen van `anchor/jutterswet-borgdeel` en
 onveranderd. Samen **96 replays, 96 onveranderde antwoorden**.
 
 *Gedeelde helper, als eis en niet als notitie.* Elk van de drie artefacten
-implementeert de afscherming **eenmaal** en roept hem van drie plekken aan
-(verifier `wf097_clip_qualifications`, ref en clingo
-`clip_member_qualifications`). Drie kopieën lopen uiteen — dat is precies wat
-hier gebeurde — dus staat de eis in de clausule zelf.
+implementeert de afscherming **eenmaal** — verifier `wf097_clip_qualifications`,
+ref en clingo `clip_member_qualifications` — en bereikt de drie clips vanaf
+**twee of drie aanroepplekken**, al naar gelang hoe dat artefact ze zelf al
+onderscheidt: de verifier heeft er **twee** (zijn pro-rata- en dagentellingarm
+zijn één kind-gestuurde tak, dus één aanroep dekt beide; de totaal-clip, die op
+VORM wordt herkend, roept dezelfde helper apart aan), ref en clingo elk
+**drie**. Wat de regel eist is de gedéélde helper, niet een bepaald aantal
+aanroepen: losse kopieën lopen uiteen, en dat is precies wat hier gebeurde.
 
 *Negatiefs, zeven.* Drie op de totaal-clip (composiet-lid met eigenaar; vlak lid
 met periode, beide polariteiten) en vier nieuwe: per resterende clip één per arm
@@ -246,7 +250,10 @@ Elk recept is één treffer in zijn bestand (machinaal gecontroleerd vóór gebr
 | M7 | `checks.ml` | `clip_cond_ok c @ wf097_clip_qualifications (sub "filter") c)` → `clip_cond_ok c)` | **precies de drie totaal-clip-getuigen** |
 
 M1/M2 bewijzen dat de arm écht gedeeld is (één armbewerking beweegt alle drie de
-clips); M5/M6/M7 bewijzen dat elke aanroepplek apart gepind is. Na herstel is
+clips); M5/M6/M7 bewijzen dat elke clip apart bereikbaar-en-gepind is — M5 en M6
+door de kind-gestuurde tak te **versmallen** tot één van de twee folds (er valt
+daar geen aanroep te schrappen zonder beide te raken), M7 door de aanroep van de
+totaal-clip wél te schrappen. Na herstel is
 `git status` leeg.
 
 *Over de md5-pin (K3).* De pin `14fc9dfc56e3a067f586a48d08d36604` uit de eerste
@@ -337,7 +344,8 @@ Drools-uitsluitingslijst in `scripts/check-rood.sh` blijft zoals hij was).
   **niet** flank 4's klasse is: er is geen stil verkeerd antwoord. Wel: een
   `CASE ERROR` die het document tegenspreekt, en — bij scalaire levering — twee
   uitvoerders met twee verschillende diagnoses (`ref` "without a granularity"
-  tegen `clingo` "needs the full timeline"). 0 van 568 documenten draagt er een.
+  tegen `clingo` "needs the full timeline"). 0 van de 572 documenten (vier zones
+  plus de pariteitszone, geteld 2026-09-10 op de eindkop) draagt er een.
 - **De `negatie: true`-tak van de clip** — eigen kaart, ongemoeid.
 - **`ref/test/test_ref.ml` draait door geen enkele gate.** Opgemerkt, niet
   opgelost (buiten deze snit): de suite is groen (489), maar een regressie erin
@@ -347,7 +355,27 @@ Drools-uitsluitingslijst in `scripts/check-rood.sh` blijft zoals hij was).
 
 `git status --short` leeg; de branch blijft **ONGEMERGED**. Beschermde paden
 aangeraakt als **voorstel**: `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`,
-`spec/verifier/`, `spec/schema/`. May touch is niet verbreed:
-`backends/drools` bleef beperkt tot de CaseRunner-leesklem (transpiler en loader
-onaangeroerd, zoals de parallelle kaart `card/onopgelost-zijkanaal` vereist),
-plus één additief JUnit-bestand.
+`spec/verifier/`, `spec/schema/`.
+
+**May touch IS verbreed, op twee punten.** De kaart hierboven noemt
+`ref/**`, `backends/clingo/**`, `spec/verifier/**`, `spec/IR-SPEC.md`,
+`spec/RUNTIME-SEMANTICS.md`, `corpus/golden/**`, `corpus/negatief/**` en
+`backlog/`. Daarbuiten geraakt, beide op instructie van de vier
+maintainerbesluiten van 2026-09-09 die deze kaart uitvoerde:
+
+- **`backends/drools/**`** — besluit 3 eist dat de lader luid weigert "in alle
+  drie de lezers", en de derde lezer is de Drools-CaseRunner. Aangeraakt:
+  `cases/CaseRunner.java` (uitsluitend de leesklem: één `Excluded` werd een
+  harde fout) plus één additief testbestand. Transpiler en loader **niet**
+  aangeraakt, zoals de parallel lopende kaart `card/onopgelost-zijkanaal`
+  vereist — nagegaan op de diff, en de merge-boom is conflictvrij.
+- **`spec/schema/**`** — besluit 4 eist "SCHEMA ÉN VERIFIER sluiten de null".
+  Aangeraakt: `regelspraak-ir-v0.schema.json` (de enum) en, voor de
+  vastlegging die besluit 3 vroeg, één `description` in
+  `uchar-case-v0.schema.json`. Beide als **voorstel** — beschermd pad.
+
+`corpus/rood/**` was in de opdracht eveneens vrijgegeven maar is **niet**
+gebruikt: een rode case moet zijn case-bestand kunnen LADEN vóór de
+expected-fault-tak, en flank 3's getuige faalt juist bij het laden, dus die
+zone kon hem niet dragen. Geen enkel gate-script gewijzigd; geen golden- of
+rood-bestand gewijzigd.

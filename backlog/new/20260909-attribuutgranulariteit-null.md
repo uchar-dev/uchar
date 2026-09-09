@@ -65,9 +65,9 @@ Twee uitvoerders, twee verschillende diagnoses van hetzelfde wire-defect.
 stond, in beide uitvoerders identiek. Hier sterft elk pad luid. Vandaar de lage
 prioriteit — dit is een diagnose- en wire-hygiënekwestie, geen correctheidsgat.
 
-**Corpusdekking:** 0 van de 568 documenten over de vier zones én de
-pariteitszone draagt een `attribuutGranulariteit` met waarde `null` (gemeten
-2026-09-10). De sluiting kost dus, net als bij de zuster, geen enkele regressie
+**Corpusdekking:** 0 van de 572 documenten over de vier zones én de
+pariteitszone draagt een `attribuutGranulariteit` met waarde `null` (geteld
+2026-09-10 op de kop van `card/gedurende-kwalificatie-stiltes`). De sluiting kost dus, net als bij de zuster, geen enkele regressie
 — dat moet bij het landen opnieuw geteld worden, niet overgeschreven.
 
 ## De vraag

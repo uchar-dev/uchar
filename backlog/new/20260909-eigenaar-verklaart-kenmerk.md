@@ -9,9 +9,10 @@ zijn); de tweede helft staat als een uitdrukkelijke stilte in de verifier
 opgeschreven en is nooit beslist.
 
 Deze kaart is afgesplitst van `20260906-gedurende-kwalificatie-stiltes` (geland
-2026-09-09). Die kaart sloot de eigenaar op één positie — het clip-lid, waar de
-lezer helemaal geen eigenaar raadpleegt (WF-097) — en liet deze helft
-uitdrukkelijk liggen, omdat hij een *semantische* vraag is en geen
+2026-09-10). Die kaart sloot de eigenaar op één soort positie — het lid van een
+`gedurende`-clip, waar de lezer helemaal geen eigenaar raadpleegt (WF-097, dat
+in de fixronde van 2026-09-10 alle drie de clips ging dekken) — en liet deze
+helft uitdrukkelijk liggen, omdat hij een *semantische* vraag is en geen
 resolutievraag.
 
 ## Wat er vandaag staat
@@ -28,23 +29,30 @@ verklaart, kruist de verifier vandaag het kenmerk tegen het **onderwerp** en zeg
 niets over het veld. Een bean-model-uitvoerder die de eigenaar wél als
 aanhechtingspunt leest, leest daar dus een ander document dan de verifier.
 
-## De meting (2026-09-09, bij het landen van de moederkaart)
+## De meting (2026-09-10, op de eindkop van de moederkaart)
 
-Over de vier zones (`corpus/golden`, `corpus/rood`, `corpus/negatief`):
+Over de drie zones (`corpus/golden`, `corpus/rood`, `corpus/negatief`):
 
-    Kenmerk-nodes totaal                       205
-    daarvan met een expliciete eigenaar          4   (alle vier in corpus/negatief)
+    Kenmerk-nodes totaal                       213
+    daarvan met een expliciete eigenaar          6   (alle zes in corpus/negatief)
 
-De vier, met per stuk de stand van de open vraag:
+De zes, met per stuk de stand van de open vraag:
 
 | document | positie | eigenaar | kenmerk | type verklaard | verklaart het kenmerk |
 | --- | --- | --- | --- | --- | --- |
 | `wf031-dagsoort-leest-kenmerk` | `/resolvedDagsoorten/0/voorwaarde` | `Jutter` | `penninggerechtigd` | ja | **ja** |
 | `wf034-kenmerkcheck-onbekende-eigenaar` | `/resolvedRegels/0/voorwaarde` | `Bestaatniet` | `gemeld` | nee | n.v.t. (WF-034 vangt hem) |
 | `wf046-negated-read-in-recursive-cycle` | `/objectCreaties/0/voorwaarde` | `Persoon` | `volwassen` | ja | **ja** |
-| `wf097-clip-kenmerk-eigenaar` | `/resolvedRegels/0/waarde/filter/onderdelen/0` | `Jutter` | `borgplichtig` | ja | **ja** (maar de positie is nu WF-097-verboden) |
+| `wf097-clip-kenmerk-eigenaar` | `/resolvedRegels/0/waarde/filter/onderdelen/0` | `Jutter` | `borgplichtig` | ja | **ja** (positie nu WF-097-verboden) |
+| `wf097-prorata-kenmerk-eigenaar` | `/resolvedRegels/0/waarde/filter` | `Jutter` | `borgplichtig` | ja | **ja** (positie nu WF-097-verboden) |
+| `wf097-dagentelling-kenmerk-eigenaar` | `/resolvedRegels/0/waarde/filter` | `Jutter` | `borgplichtig` | ja | **ja** (positie nu WF-097-verboden) |
 
-**Er is dus geen enkele tegenvoorbeeld-getuige in het corpus** — geen document
+De onderste drie zijn getuigen van de moederkaart zelf en staan op posities die
+WF-097 inmiddels verbiedt; voor DEZE kaart tellen ze niet mee als vindplaats,
+alleen als verklaring waarom het getal van 4 naar 6 liep. De scalaire posities
+die er werkelijk toe doen zijn de bovenste drie, ongewijzigd sinds 2026-09-09.
+
+**Er is geen enkele tegenvoorbeeld-getuige in het corpus** — geen document
 waarin de genoemde eigenaar het kenmerk niet verklaart. Wie deze kaart doet,
 maakt zijn eerste getuige zelf, en de kaart is daarmee expliciet een
 *ontwerp*beslissing op een lege verzameling, niet het opruimen van gemeten
@@ -103,8 +111,9 @@ May touch: `spec/verifier/**` (**voorstel** — beschermd pad), `spec/IR-SPEC.md
 
 ## Out of scope
 
-- Het clip-lid: WF-097 (geland 2026-09-09) weigert daar zowel de eigenaar als
-  de periode.
+- Het clip-lid: WF-097 (geland 2026-09-09 op de totaal-clip, 2026-09-10
+  verbreed tot alle drie de clips) weigert daar zowel de eigenaar als de
+  periode.
 - De `periode` op de scalaire kenmerkcheck. Dat is de §8.2-familie, een eigen
   vraag met een eigen prijs (de RegelSpraak-frontend produceert die vorm uit de
   bron), uitdrukkelijk buiten de snit van de moederkaart gehouden.

@@ -4541,7 +4541,9 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
          under WF-055's guard; the same field otherwise carries the die/dat
          instance subselection, which is NOT a clip and is deliberately not
          fenced), so it calls the same helper from inside that guard. One
-         helper, three call sites, no room for the three to drift. *)
+         helper, two call sites here — this kind-keyed branch covers both
+         folds at once — and three clips behind them, with no second copy
+         of the test to drift. *)
       @ (match (f.kind, f.filter) with
          | (Tijdsevenredig_deel | Aantal_dagen_in), Some c ->
              wf097_clip_qualifications (sub "filter") c
@@ -7791,11 +7793,19 @@ let wf057 ctx =
    SCOPE is the characteristic map. `attribuutGranulariteit` admits null
    on the wire to this day and is NOT touched here. The same seam is
    structurally present — [attr_temporal] above reads KEY EXISTENCE while
-   the case loader's attribute arm reads the VALUE — and 0 of the 568
-   documents across the four zones and the parity zone carry one. What is
-   missing is the EXECUTED measurement, and rejecting it on the strength
-   of a sister table's measurement would be over-rejection. A named and
-   ready next step, not an unknown. *)
+   the case loader's attribute arm reads the VALUE — and 0 of the 572
+   documents across the four zones and the parity zone carry one
+   (2026-09-10).
+
+   That seam has been MEASURED (2026-09-10) and is a DIFFERENT CLASS, which
+   is why this arm stops here rather than widening: nulling an attribute
+   granularity yields no silent wrong answer anywhere. Every path dies
+   loudly, but misworded and not with one voice — a delivered timeline is
+   refused as "a timeline value on a non-temporal attribute" (contradicting
+   a document that declares it temporal), while a scalar delivery draws
+   "temporal attribute ... without a granularity" from ref and "needs the
+   full timeline" from the ASP backend. Diagnostic hygiene, not
+   correctness. Its own card carries the measurement in full. *)
 let wf059 ctx =
   List.concat_map
     (fun (key, (ot : objecttype)) ->

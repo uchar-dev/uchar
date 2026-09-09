@@ -2,10 +2,12 @@ Violates WF-097 (`spec/IR-SPEC.md`): a `gedurende` clip member carries
 an `eigenaar`. The clip reads the subject's own characteristic timeline over the whole
 span it ranges over, so the owner names a subject no reader consults.
 
-This is the **pro-rata fold (ch. 3.7, the WF-056 clip)** — one of the three clips WF-097 fences. The rule is one
-shared helper called from three sites in each of the verifier, the reference
-interpreter and the ASP backend; this witness is what fails if that clip's call
-site is dropped.
+This is the **pro-rata fold (ch. 3.7, the WF-056 clip)** — one of the three clips WF-097 fences. The rule lives in
+ONE shared helper per artifact, reached from two or three call sites depending on
+how that artifact discriminates the clips: this witness is what stops being
+rejected if the reach to THIS clip is lost — in the verifier that means narrowing
+the kind-keyed branch that covers both folds, elsewhere dropping the call
+outright.
 
 A minimal hand-broken variant of
 `corpus/golden/anchor/jutterswet-borgdeel/ir.json`: one field on one node —

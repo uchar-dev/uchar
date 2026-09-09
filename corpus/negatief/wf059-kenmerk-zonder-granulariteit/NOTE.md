@@ -31,5 +31,9 @@ is not schema-validated (gate 2 covers `corpus/golden` and `corpus/rood`), which
 is what lets this document exist here to exercise the verifier arm.
 
 `attribuutGranulariteit` still admits `null` on the wire — the same seam one side
-table over, deliberately left alone because no measurement of its reader split
-exists yet.
+table over, deliberately left alone. Its reader split HAS been measured since
+(2026-09-10) and turns out to be a different class from this one: no silent wrong
+answer anywhere, but loud refusals that are misworded and that the two executors
+phrase differently. Diagnostic hygiene rather than correctness, and so its own
+card (`backlog/new/20260909-attribuutgranulariteit-null.md`, low priority) rather
+than a third arm here.
