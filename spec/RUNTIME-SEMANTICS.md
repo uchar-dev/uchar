@@ -1013,7 +1013,13 @@ characteristic (its case-supplied periods; a gap means the
 characteristic does not hold and clips away; negation takes the
 complement within the value segments) or from a per-segment comparison
 of an own temporal attribute against a scalar bound
-(piecewise-constant, never per day). A fully clipped-away — or
+(piecewise-constant, never per day). Both readings are about **the
+subject** and about the **whole span** of the timeline being clipped,
+and WF-097 (`IR-SPEC.md` ch. 4.5) holds the wire to it: a clip member
+carrying an owner or a whole-period qualifier — the negated qualifier
+included — is ill-formed, and both executors fault on it by name rather
+than answer the unqualified question the fields were silently reduced
+to before 2026-09-09. A fully clipped-away — or
 absent — value timeline totals 0, never leeg: the clip's presence
 turns absence into 0 (the mirrored v0 nuance; the unfiltered total of
 an absent timeline stays leeg). Worked example (the
@@ -3011,6 +3017,21 @@ the one and finds the other faults — never guesses (the ch. 4.3a
 rule) — and both executors implement the session-start check
 identically (`ref/` at evaluation entry; the ASP backend at
 translation time, before emitting a program).
+
+A **characteristic** has the same two conventions and the same
+apartness (maintainer decision 2026-09-09): the flat `characteristics`
+list asserts a scalar truth, `characteristicTimelines` supplies
+periods, and every temporal reader — this chapter's clip, ch. 3.7's
+pro-rata fold, the day count — consults the timelines and nothing
+else. A characteristic the document declares TIME-DEPENDENT therefore
+has exactly one admissible delivery, and asserting it in the static
+list is refused **at load**, by name and with the reason, in all three
+case readers. It is not a form an executor may decline to carry: it is
+a defective case, and until that decision it was accepted and answered
+from an empty period set — 0 where the golden pinned 30, in both
+executors, without a word. The case schema cannot enforce this (it
+validates the case document alone and never sees the declarations), so
+each reader holds it itself.
 
 Point reads at a *non*-evaluation-date index (the art. 1 shape,
 ch. 3.3) are deliberately **outside** this check: their index is
