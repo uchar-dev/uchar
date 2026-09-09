@@ -287,16 +287,20 @@ wire-arm op het wave-6-`kenmerkSoorten`-argument.
 
 ### De drie open beslispunten
 
-**(a) De sleutelkant blijft VRIJ — een beslissing, geen weglating.** Reden,
-gemeten: 32 van de 64 sleutels zijn meervoudsspellingen, en de v0-wire draagt
-**geen** `plural`-veld voor een dagsoort — ch. 2.9's `plural` staat op de
-v1-knoop, en op de wire bestáát het meervoud alleen als tweede sleutel van
-precies deze map. Een sleutel heeft dus niets om tegen gekruist te worden, en
-een afleiding verzinnen (`-en` erachter) zou een taalspecifieke
-morfologieregel in een engine-neutrale IR zetten. Daarbij moet een producent
-vrij blijven een derde spelling (een afkorting) te registreren. Wat een sleutel
-niet mag is bótsen, en dat is WF-017. Opgeschreven in ch. 4.6 (s), in ch. 2.9
-en in de NOTE van het negatief.
+**(a) De sleutelkant blijft VRIJ — een beslissing, geen weglating.** Het
+dragende argument is dat van de brontaal (herschreven in de fixronde, klein
+punt a): het meervoud is een **optioneel auteursveld** (§3.12) en afleiding bij
+afwezigheid is expliciet buiten de taal verklaard, dus geen conforme producent
+is een bepaalde spelling verschuldigd en een sleutelregel zou morfologie moeten
+verzinnen die de taal bewust openlaat — een taalspecifieke regel in een
+engine-neutrale IR. De wire volgt die vorm: hij draagt het meervoud als tweede
+SLEUTEL van deze map en niet als eigen veld (ch. 2.9's `plural` staat op de
+v1-knoop). Daarbij moet een producent vrij blijven een verdere spelling (een
+afkorting) te registreren. Gemeten op de landed-stand: **35 van de 70**
+sleutels zijn géén gedeclareerde dagsoortnaam. Wat een sleutel niet mag is
+bótsen — en dat is WF-017, die op de v0-wire alleen de gedeclareerde naam
+bereikt (zie (b)). Opgeschreven in ch. 4.6 (s), in ch. 2.9 en in de NOTE van
+het negatief.
 
 **(b) De arm dubbelt WF-017 niet — en WF-017 dekt minder dan zijn eigen tekst
 zegt.** Gecontroleerd in de bron en in de positie. WF-017 (`checks.ml`) loopt
