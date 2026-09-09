@@ -7767,9 +7767,13 @@ let wf057 ctx =
    hand-built or future-emitted document that never met the schema.
 
    SCOPE is the characteristic map. `attribuutGranulariteit` admits null
-   on the wire to this day and is NOT touched here: no card measured its
-   reader split, and rejecting it on the strength of a sister table's
-   measurement would be over-rejection. It is the named next step. *)
+   on the wire to this day and is NOT touched here. The same seam is
+   structurally present — [attr_temporal] above reads KEY EXISTENCE while
+   the case loader's attribute arm reads the VALUE — and 0 of the 568
+   documents across the four zones and the parity zone carry one. What is
+   missing is the EXECUTED measurement, and rejecting it on the strength
+   of a sister table's measurement would be over-rejection. A named and
+   ready next step, not an unknown. *)
 let wf059 ctx =
   List.concat_map
     (fun (key, (ot : objecttype)) ->

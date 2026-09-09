@@ -137,3 +137,157 @@ May touch: `ref/**`, `backends/clingo/**`, `spec/verifier/**` (als
 - De temporaliteitspoort zelf: die staat en spiegelt `ref` exact.
 - De §8.2-`Vergelijking`-vorm herbouwen. Die leeft en werkt; deze kaart gaat
   over de **kenmerk**-arm ernaast.
+
+---
+
+## Result (geland 2026-09-09)
+
+Alle vier de flanken beslist en uitgevoerd volgens de vier
+maintainerbesluiten van 2026-09-09. **Alle dertien gates groen.**
+
+### Per flank
+
+**Flank 1+2 — WF-097, één regel met twee armen: WEIGEREN.** Een
+`Kenmerk`-node die als (of in) de conditie van een `gedurende`-clip staat,
+mag geen `eigenaar` en geen `periode` dragen, de **ontkende** periode
+inbegrepen. *Rood eerst*, op de pre-arm binary (md5
+`5111932e2d1e51de144290ab16abab00`): drie één-veld-verdraaiingen van
+`jutterswet-tegenwacht` waren verifier-PASS én gaven in **36 van de 36**
+replays (3 verdraaiingen × 6 cases × {ref, clingo}) het ONVERDRAAIDE
+antwoord — de kaartmeting van 20, bevestigd en verbreed. Groen erna: één
+falende regel per document, en beide uitvoerders spiegelen de weigering
+**woordelijk**, zodat gate 6 er niet op kan splitsen. Negatiefs:
+`wf097-clip-kenmerk-eigenaar` (composiet-lid), `wf097-clip-kenmerk-periode`
+en `wf097-clip-kenmerk-periode-ontkend` (vlak clip-lid, beide polariteiten).
+De scalaire kenmerk-periode buiten de clip blijft **buiten de snit** — de
+frontend produceert die vorm uit de bron — en de §8.2-`Vergelijking`-vorm
+eveneens (7 corpusnodes nu, waarvan 5 bestaand: hij leeft). WF-043's
+kenmerk-arm is niet verbreed.
+
+**Flank 3 — de lader weigert luid, in alle drie de lezers.** *Rood eerst*
+(binary van commit `1907380`), de kaartmeting exact gereproduceerd:
+
+    ref     MISMATCH: J1.dubbelwachtsom = 0, expected 30
+    clingo  MISMATCH: J1.dubbelwachtsom = [0], expected 30
+
+plus de zuster op `jutterswet-tegenwacht` (`tegenwachtsom = 0, expected
+30`). De Drools-CaseRunner gaf `EXCLUDE` — erger dan het klinkt: dat
+archiveert een kapotte case onder "een vorm die de backend niet draagt".
+Groen erna: `CASE ERROR` in ref en in de gedeelde clingo-caselezer (het is
+één lezer — `backends/clingo` hangt aan `uchar-ref` en roept
+`Uchar_ref.Case.load_file` aan), en een harde
+`IllegalArgumentException` in de Drools-CaseRunner, zoals zijn spiegelarm
+er al een had. Elke melding noemt het kenmerk én de reden. Kosten: **0 van
+482** cases (golden + rood + toka) leverde een temporeel kenmerk statisch.
+
+Dit is case-formaat-semantiek, geen WF-regel. Het case-schema **kan** de
+vorm niet uitsluiten — het valideert het case-document alleen en ziet de
+IR-declaraties nooit, dus welke namen temporeel zijn is daar onkenbaar; dat
+staat nu bij het veld `characteristics` in
+`spec/schema/uchar-case-v0.schema.json` en in `RUNTIME-SEMANTICS.md` naast
+de alinea over de twee case-conventies.
+
+**Flank 4 — schema én verifier, dubbel dicht.** Eerst gemeten, zoals
+gevraagd: **0** corpusdocumenten droegen een `kenmerkGranulariteit` met
+waarde `null`, de RegelSpraak-emitter bewaakt zijn `put` met een expliciete
+`if (gk != null)` en de Catala-emitter zou `Null` schrijven maar zijn map is
+door constructie leeg (`kenmerk_granulariteit = []`). Er bewoog dus niets.
+`null` is uit de enum verdwenen én WF-059 kreeg een tweede arm.
+
+De arm zit onder **WF-059**, niet onder WF-097 — gemotiveerd: WF-059's
+eerste arm is *exact dezelfde vorm* één zijtabel verderop ("de wire laat
+`null` toe in de attribuutmap, maar een datatype-loze declaratie splitst de
+uitvoerders op verder schoon invoerdocument"), inclusief dezelfde dubbele
+structuur van regel + caselezer-als-vangnet. WF-097's onderwerp is de stille
+kwalificatie op een clip-lid; die twee bundelen zou van WF-097 twee
+onverwante regels maken.
+
+De meting is **scherper dan de kaart aannam**: het is geen stille 0. Met de
+tijdlijn geleverd sterft de case bij het laden met een melding die zijn
+eigen document tegenspreekt; zonder de tijdlijn loopt hij dóór en antwoordt
+**60 en 120 waar 30 en 30 gepind staat** — identiek fout in beide
+uitvoerders (één van de twee clips is ontkend; zonder perioden om te
+complementeren degenereert hij naar de hele span). Negatief:
+`wf059-kenmerk-zonder-granulariteit`.
+
+**Flank-overstijgend.** `backlog/new/20260909-eigenaar-verklaart-kenmerk.md`
+geschreven, met de hertelde meting als basis en de vraag veld-of-onderwerp
+als genummerde open vraag met drie antwoorden en hun prijs.
+
+### Arm-exacte mutanten (edit-recept in de tekst, elk één treffer)
+
+| # | recept | gevolg |
+| --- | --- | --- |
+| M1 | `checks.ml`: `@ (match eigenaar with` → `@ (match (if true then None else eigenaar) with` | **alleen** `wf097-clip-kenmerk-eigenaar` wordt PASS |
+| M2 | `checks.ml`: `@ (match periode with` → `@ (match (if true then None else periode) with` | **alleen** de twee periode-negatiefs worden PASS |
+| M3 | `checks.ml`: de arm-2-bron `ot.kenmerk_granulariteit)` → `[])` | **alleen** `wf059-kenmerk-zonder-granulariteit` wordt PASS |
+| M4 | `case.ml`: `if List.exists (fun (k, _) -> norm k = norm c) ot.kenmerk_granulariteit then` → `if false then` | de flank-3-getuige valt terug op `= 0, expected 30`; de clingo-suite faalt **1** check |
+
+Elk mutant liet de andere drie getuigen ongemoeid; na herstel md5
+`14fc9dfc56e3a067f586a48d08d36604` en `git status` leeg. (M1 en M2
+compileerden in eerste opzet niet — `unused variable` — waardoor de meting
+op de oude binary viel; opnieuw gedaan met een recept dat wél bouwt. De
+eerste, mislukte poging is hierboven niet als bewijs geteld.)
+
+### Hertelde regressiegrens (2026-09-09, bij het landen)
+
+Bij aftakking → na het landen, over `corpus/golden` + `corpus/rood` +
+`corpus/negatief`:
+
+    ir.json-documenten            534 → 538   (+4 negatiefs)
+    Functie met filter (clips)     39 →  47   in 25 → 29 bestanden
+    Kenmerk BINNEN een clip        37 →  49   eigenaar 0 → 1, periode 0 → 2
+    Kenmerk corpusbreed           193 → 205   eigenaar 3 → 4, periode 0 → 2
+    Predicaat met periode           0 →   0
+    GeheelPeriode-nodes             5 →   7
+    kenmerkGranulariteit null       0 →   1
+
+Elk nieuw exemplaar is een **eigen getuige**: er is geen bestaand document
+dat een van de vier vormen droeg, dus **nul over-afwijzing** over de vier
+zones. De kaart telde 2026-09-06 nog 497/34/33/189; de clip-telling is sinds
+toen door `jutterswet-tegenwacht` gegroeid, zoals de opdracht voorzag.
+
+### Gates (aanvang → eindkop)
+
+1 PASS · 2 **192** → **192** (de schema-aanscherping kost geen document) ·
+3 192 golden / **342 → 346** negatief · 4 **453** → 453 · 5 **427** → 427
+(2 zonder case) · 6 **427** → 427, suite 83 checks (3 nieuwe) · 7 391 / 36
+survivors — onbewogen · 8 **26** rood — onbewogen · 9 201 checks / 12
+catala-goldens — onbewogen · 10 173 tests / 38 rgs-goldens — onbewogen ·
+11 29 PLAYED / 0 EXCLUDE — onbewogen · 12 played **119 → 119**, channel
+floor 47, JUnit **237 → 239** · 13 74 twists / 15 goldens / 0 survivors —
+onbewogen. Daarnaast `test_ref` 489 gewerkte voorbeelden groen.
+
+**Geen enkele gate-script is gewijzigd.** Dat was de aangekondigde
+mogelijkheid en hij deed zich niet voor: er is geen nieuwe golden (dus
+`EXPECTED_PLAYED` blijft 119 en de kanaallijst onaangeroerd) en geen nieuwe
+rode case (dus de Drools-uitsluitingslijst in `scripts/check-rood.sh` blijft
+zoals hij was).
+
+### Wat niet gedaan is, expliciet
+
+- **De scalaire kenmerk-`periode` buiten de clip** — de §8.2-familie. Buiten
+  de snit per besluit; de RegelSpraak-frontend produceert die vorm uit de
+  bron, dus weigeren is een producent-snijdende beslissing met een eigen
+  kaart. Gemeten: 2 corpusnodes, allebei mijn eigen clip-getuigen; buiten de
+  clip nul.
+- **`attribuutGranulariteit` met waarde `null`.** Dezelfde naad één zijtabel
+  verderop, en die naad is er structureel écht (`attr_temporal` leest de
+  SLEUTEL, de attribuut-arm van de caselezer leest de WAARDE). Gemeten: 0 van
+  568 documenten (incl. `toka/`) draagt er een. Wat ontbreekt is de
+  **uitgevoerde** meting; op het bewijs van een zustertabel weigeren zou
+  over-afwijzing zijn. Benoemd in de spec-clausule, de registerrij en het
+  verifier-commentaar als klaarliggende volgende stap.
+- **De `negatie: true`-tak van de clip** — eigen kaart, ongemoeid.
+- **`ref/test/test_ref.ml` draait door geen enkele gate.** Opgemerkt, niet
+  opgelost (buiten deze snit): de suite is groen (489), maar een regressie
+  erin zou geen gate rood maken. De flank-3-getuige is daarom in de
+  **clingo**-suite gezet, die gate 6 wél draait — en dat is geen omweg: de
+  lezer is gedeeld, dus het is even goed de bewijslast van die backend.
+
+`git status --short` leeg; de branch blijft **ONGEMERGED**. Beschermde
+paden aangeraakt als **voorstel**: `spec/IR-SPEC.md`,
+`spec/RUNTIME-SEMANTICS.md`, `spec/verifier/`, `spec/schema/`. May
+touch is niet verbreed: `backends/drools` bleef beperkt tot de
+CaseRunner-leesklem (transpiler en loader onaangeroerd, zoals de parallelle
+kaart `card/onopgelost-zijkanaal` vereist), plus één additief JUnit-bestand.
