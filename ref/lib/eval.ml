@@ -106,6 +106,31 @@ let function_def env name : function_def =
 let kenmerk_temporal (ot : objecttype) name =
   List.exists (fun (k, _) -> norm k = norm name) ot.kenmerk_granulariteit
 
+(* WF-097: the two qualifications a gedurende clip member has no reading for.
+   Both were matched away with `_` in every clip arm until 2026-09-09, so a
+   document carrying either got the UNQUALIFIED answer with nothing said.
+
+   ONE helper for the THREE clips — the temporal total (ch. 3.6), the pro-rata
+   fold (ch. 3.7) and the day count (ch. 3.8) — because it is the same node in
+   the same field, and three copies could drift apart one edit at a time. That
+   is not hypothetical: the rule first landed on the total alone and the other
+   two kept answering silently for a day. The verifier and the ASP backend each
+   hold the same fence in one shared place, for the same reason. *)
+let rec clip_member_qualifications (c : conditie) =
+  match c with
+  | Kenmerk_check { kenmerk; eigenaar; periode; _ } ->
+      let naam = Option.value kenmerk ~default:"?" in
+      if eigenaar <> None then
+        Value.fault
+          "owner on the gedurende clip member %S: the clip reads the subject's own \
+           characteristic timeline (WF-097)" naam;
+      if periode <> None then
+        Value.fault
+          "whole-period qualifier on the gedurende clip member %S: the clip already ranges \
+           over the whole timeline (WF-097)" naam
+  | Samengesteld { onderdelen; _ } -> List.iter clip_member_qualifications onderdelen
+  | _ -> ()
+
 (* the grid a temporal attribute declares (ch. 3.6): both temporal-total
    routes — the subject's own timeline and the §7.1 per-element fold —
    need it, and a temporal attribute without one is a wire defect the
@@ -1040,24 +1065,10 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
           let span = List.map (fun (s : Timeline.segment) -> (s.s_van, s.s_tot)) tl in
           let rec true_periods_of_cond (c : conditie) =
             match c with
-            | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie; eigenaar; periode; _ } ->
+            | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie; _ } ->
                 if not (kenmerk_temporal ot_decl k) then
                   Value.fault
                     "gedurende over %S, which is not a temporal characteristic (WF-055)" k;
-                (* WF-097: the two qualifications this arm has no reading for.
-                   Both were matched away with `_` until 2026-09-09, so a
-                   document carrying either got the UNQUALIFIED answer with
-                   nothing said. Refusing keeps the wire honest, and clingo's
-                   sister arm refuses on the same two fields so the pair never
-                   diverges. *)
-                if eigenaar <> None then
-                  Value.fault
-                    "owner on the gedurende clip member %S: the clip reads the subject's own \
-                     characteristic timeline (WF-097)" k;
-                if periode <> None then
-                  Value.fault
-                    "whole-period qualifier on the gedurende clip member %S: the clip already \
-                     ranges over the whole timeline (WF-097)" k;
                 let periods =
                   Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]
                 in
@@ -1109,6 +1120,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                    characteristic, a per-segment comparison of an own temporal attribute, \
                    or an ALLE composite of such shapes)"
           in
+          clip_member_qualifications c;
           let true_periods = true_periods_of_cond c in
           Timeline.totaal ~grid_unit:grid gran (Timeline.clip tl true_periods))
       | None -> (
@@ -1521,6 +1533,7 @@ let run_pro_rata env w (self : World.instance) ~ot ~attr waarde =
              not executed here; refuse rather than prorate factor-free *)
           Value.fault "pro-rata over a unit-carrying base is not executed (no corpus case)"
       | _ -> ());
+      clip_member_qualifications c;
       let true_periods =
         match c with
         | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; _ } ->
@@ -1560,6 +1573,7 @@ let run_pro_rata env w (self : World.instance) ~ot ~attr waarde =
       if target_gran <> g then
         Value.fault
           "day-count bucket granularity differs from the target's declared granularity (WF-058)";
+      clip_member_qualifications c;
       let true_periods =
         match c with
         | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; _ } ->

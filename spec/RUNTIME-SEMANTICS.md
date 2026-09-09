@@ -1019,7 +1019,14 @@ and WF-097 (`IR-SPEC.md` ch. 4.5) holds the wire to it: a clip member
 carrying an owner or a whole-period qualifier — the negated qualifier
 included — is ill-formed, and both executors fault on it by name rather
 than answer the unqualified question the fields were silently reduced
-to before 2026-09-09. A fully clipped-away — or
+to before 2026-09-09. The rule covers all THREE clips — this chapter's
+temporal total, ch. 3.7's pro-rata fold and ch. 3.8's day count — and
+each executor implements the fence once, shared between them. The two
+fault with the same words but not at the same moment: this interpreter
+is lazy and the ASP translation eager, so a violation behind a false
+rule condition is refused there and never reached here. That split is
+inherited from WF-055, and the verifier bounds it by rejecting the
+document either way. A fully clipped-away — or
 absent — value timeline totals 0, never leeg: the clip's presence
 turns absence into 0 (the mirrored v0 nuance; the unfiltered total of
 an absent timeline stays leeg). Worked example (the

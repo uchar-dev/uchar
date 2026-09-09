@@ -3778,6 +3778,56 @@ let wf077_condition at (c : conditie) : violation list =
   in
   walk at c
 
+(* WF-097 (maintainer decision 2026-09-09; widened to all three clips
+   2026-09-10). A `gedurende` clip member's characteristic check resolves
+   against exactly ONE subject and over the WHOLE span the clip ranges over,
+   and every clip reader says so by construction: each matches `eigenaar` and
+   `periode` away with `_`. A qualifier no reader honours must not be written.
+
+   ONE helper for THREE clips, deliberately: the wire form is the same node in
+   the same field (`Functie.filter`) at the temporal total (ch. 3.6, WF-055),
+   the pro-rata fold (ch. 3.7, WF-056) and the day count (ch. 3.8, WF-058).
+   Three copies of this test could drift apart one careless edit at a time —
+   which is exactly how the second and third clip came to be missed when the
+   rule first landed on the total alone. `ref` and the ASP backend each hold
+   the same fence in one shared place for the same reason.
+
+   Measured on the pre-arm binaries, one field twisted at a time and nothing
+   else changed: the total's three twists on `jutterswet-tegenwacht` were
+   verifier-clean and reproduced the untwisted answer in 36 of 36 executor
+   replays; the six twists on `anchor/jutterswet-borgdeel` (pro rata) and
+   `anchor/jutterswet-dagentelling` (day count) were verifier-clean and
+   reproduced it in 60 of 60. `niet: true` was indistinguishable from an
+   absent qualifier in all of them, so both polarities are refused.
+
+   The composite ALLE clip recurses through the same arm, so a member of a
+   composite is fenced exactly as a plain member is. *)
+let wf097_clip_qualifications at (c : conditie) : violation list =
+  let rec walk (c : conditie) =
+    match c with
+    | Kenmerk_check { kenmerk; eigenaar; periode; _ } ->
+        let naam = Option.value kenmerk ~default:"?" in
+        (match eigenaar with
+         | Some e ->
+             [ v "WF-097" at
+                 ("owner '" ^ e
+                ^ "' on a gedurende clip member: the clip reads the SUBJECT's characteristic \
+                   timeline, so an owner here names a subject no reader consults") ]
+         | None -> [])
+        @ (match periode with
+           | Some p ->
+               [ v "WF-097" at
+                   (Printf.sprintf
+                      "whole-period qualifier (%s) on the gedurende clip member '%s': the clip \
+                       already ranges over the whole timeline, so the qualifier — negated or not \
+                       — names no reading the clip has"
+                      (if p.gp_niet then "negated" else "affirmative") naam) ]
+           | None -> [])
+    | Samengesteld { onderdelen; _ } -> List.concat_map walk onderdelen
+    | _ -> []
+  in
+  walk c
+
 let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : violation list =
   let sub p = at ^ "/" ^ p in
   let typ_checks =
@@ -4435,51 +4485,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
              in
              let rec clip_cond_ok c =
                match c with
-               | Kenmerk_check { kenmerk = Some k; navigatie = None; eigenaar; periode; _ } ->
-                   (if temporal_char k then []
-                    else
-                      [ v "WF-055" (sub "filter")
-                          ("gedurende over '" ^ k
-                         ^ "', which is not a temporal characteristic of '" ^ aot ^ "'") ])
-                   (* WF-097 (maintainer decision 2026-09-09), two arms. A clip
-                      member's characteristic check resolves against exactly ONE
-                      subject and over its WHOLE timeline, and the clip readers
-                      say so by construction: every one of them matches
-                      `eigenaar` and `periode` away with `_`. Measured on the
-                      pre-arm binary (md5 5111932e2d1e51de144290ab16abab00): a
-                      one-field twist of `jutterswet-tegenwacht` setting either
-                      field is verifier-PASS and reproduces the untwisted answer
-                      in 36 of 36 executor replays — 3 twists x 6 cases x
-                      {ref, clingo}. A qualifier no reader honours must not be
-                      written; refusing it is the only reading that cannot be
-                      silently wrong. Both executors mirror this fault, as they
-                      already mirror WF-055's, so the two stay in step (gate 6).
-
-                      SCOPE is exactly the clip member. The SCALAR characteristic
-                      check outside a clip keeps both fields: `eigenaar` is
-                      ordinary name resolution there (WF-034's arm), and a
-                      scalar `periode` is the frontend-reachable §8.2 family this
-                      rule deliberately does not reach. The §8.2 qualifier on a
-                      COMPARISON is likewise untouched — it is implemented, it
-                      lives in the corpus, and widening WF-043 to swallow it
-                      would be over-rejection. *)
-                   @ (match eigenaar with
-                      | Some e ->
-                          [ v "WF-097" (sub "filter")
-                              ("owner '" ^ e
-                             ^ "' on a gedurende clip member: the clip reads the SUBJECT's \
-                                characteristic timeline, so an owner here names a subject no \
-                                reader consults") ]
-                      | None -> [])
-                   @ (match periode with
-                      | Some p ->
-                          [ v "WF-097" (sub "filter")
-                              (Printf.sprintf
-                                 "whole-period qualifier (%s) on the gedurende clip member '%s': \
-                                  the clip already ranges over the whole timeline, so the \
-                                  qualifier — negated or not — names no reading the clip has"
-                                 (if p.gp_niet then "negated" else "affirmative") k) ]
-                      | None -> [])
+               | Kenmerk_check { kenmerk = Some k; navigatie = None; _ } ->
+                   if temporal_char k then []
+                   else
+                     [ v "WF-055" (sub "filter")
+                         ("gedurende over '" ^ k
+                        ^ "', which is not a temporal characteristic of '" ^ aot ^ "'") ]
                | Vergelijking
                    { links = Some (Attribuut_ref
                        { attribuut = Some b; objecttype = Some botn; navigatie_rol = None;
@@ -4519,11 +4530,22 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                         per-segment comparison of an own temporal attribute against a scalar \
                         bound, or an ALLE composite of characteristic checks" ]
              in
-             clip_cond_ok c)
+             clip_cond_ok c @ wf097_clip_qualifications (sub "filter") c)
          | _ -> [])
       (* WF-056: the pro-rata fold (tijdsevenredig-deel) MUST carry a
          gedurende condition, and its base MUST be a temporal source as
          coarse as or coarser than the bucket *)
+      (* WF-097 at the two KIND-KEYED clips — the pro-rata fold (ch. 3.7) and
+         the day count (ch. 3.8). The third clip, the temporal total's, is
+         identified by SHAPE rather than by kind (its filter is a clip only
+         under WF-055's guard; the same field otherwise carries the die/dat
+         instance subselection, which is NOT a clip and is deliberately not
+         fenced), so it calls the same helper from inside that guard. One
+         helper, three call sites, no room for the three to drift. *)
+      @ (match (f.kind, f.filter) with
+         | (Tijdsevenredig_deel | Aantal_dagen_in), Some c ->
+             wf097_clip_qualifications (sub "filter") c
+         | _ -> [])
       @ (if f.kind <> Tijdsevenredig_deel then []
          else
            (match f.filter with

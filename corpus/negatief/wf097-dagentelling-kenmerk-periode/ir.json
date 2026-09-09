@@ -1,0 +1,189 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "borgdagen": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "jaardagen": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {
+        "borgdagen": "MAAND",
+        "jaardagen": "JAAR"
+      },
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "borgplichtig"
+      ],
+      "kenmerkSoorten": {
+        "borgplichtig": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {
+        "borgplichtig": "MAAND"
+      },
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "borgdagen van een jutter",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "jaardagen van een jutter",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "borgdagen van een jutter",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "borgdagen",
+        "objecttype": "Jutter",
+        "onderwerpBron": "De borgdagen van een Jutter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "De borgdagen van een Jutter",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "AANTAL_DAGEN_IN",
+        "argumenten": [],
+        "elementObjecttype": null,
+        "leegwaarde": null,
+        "filter": {
+          "node": "Kenmerk",
+          "kenmerk": "borgplichtig",
+          "navigatie": null,
+          "negatie": false,
+          "eigenaar": null,
+          "periode": {
+            "node": "GeheelPeriode",
+            "jaar": true,
+            "niet": false
+          },
+          "bron": "gedurende de tijd dat hij borgplichtig is"
+        },
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "granulariteit": "MAAND",
+        "bron": "het aantal dagen in de maand dat hij borgplichtig is"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "jaardagen van een jutter",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "jaardagen",
+        "objecttype": "Jutter",
+        "onderwerpBron": "De jaardagen van een Jutter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "De jaardagen van een Jutter",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "AANTAL_DAGEN_IN",
+        "argumenten": [],
+        "elementObjecttype": null,
+        "leegwaarde": null,
+        "filter": {
+          "node": "Kenmerk",
+          "kenmerk": "borgplichtig",
+          "navigatie": null,
+          "negatie": false,
+          "eigenaar": null,
+          "periode": null,
+          "bron": "gedurende de tijd dat hij borgplichtig is"
+        },
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "granulariteit": "JAAR",
+        "bron": "het aantal dagen in de jaar dat hij borgplichtig is"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

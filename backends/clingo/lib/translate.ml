@@ -60,6 +60,36 @@ module Eval = Uchar_ref.Eval
 
 let norm = Ir_v0.Checks.norm
 let fault = Value.fault
+
+(* WF-097: the two qualifications a gedurende clip member has no reading for.
+   Every clip arm here matched `eigenaar` and `periode` away with `_`, so a
+   document carrying either was translated as if it said nothing.
+
+   ONE helper for the THREE clips — the temporal total (ch. 3.6), the pro-rata
+   fold (ch. 3.7) and the day count (ch. 3.8) — mirroring ref's [clip_member_
+   qualifications] name for name and message for message. Three copies could
+   drift apart one edit at a time; the rule first landed on the total alone and
+   the other two kept translating silently for a day.
+
+   Same WORDS, not the same TIME: this translator is EAGER where ref is lazy,
+   so a violation behind a false rule condition is refused here while ref
+   replays clean. Measured 2026-09-10 and inherited — WF-055 splits identically
+   on the identical construction — and bounded by the verifier, which rejects
+   any such document before a gate can compare the two. *)
+let rec clip_member_qualifications (c : conditie) =
+  match c with
+  | Kenmerk_check { kenmerk; eigenaar; periode; _ } ->
+      let naam = Option.value kenmerk ~default:"?" in
+      if eigenaar <> None then
+        fault
+          "owner on the gedurende clip member %S: the clip reads the subject's own \
+           characteristic timeline (WF-097)" naam;
+      if periode <> None then
+        fault
+          "whole-period qualifier on the gedurende clip member %S: the clip already ranges \
+           over the whole timeline (WF-097)" naam
+  | Samengesteld { onderdelen; _ } -> List.iter clip_member_qualifications onderdelen
+  | _ -> ()
 (* a declared name or case label lands between double-quotes in the
    generated ASP. gringo's string syntax escapes an embedded
    double-quote as backslash-quote and a backslash as doubled, so both
@@ -1916,7 +1946,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       in
       let rec cond_fn c : string -> string -> string =
         match c with
-        | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie; eigenaar; periode; _ } ->
+        | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie; _ } ->
             if
               not
                 (List.exists
@@ -1941,18 +1971,6 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                  key existence and value existence now coincide and this
                  predicate is exact again. *)
               fault "gedurende over %S, which is not a temporal characteristic (WF-055)" k;
-            (* WF-097, mirrored from ref's clip arm: the clip has no reading
-               for either qualification and used to match both away with `_`.
-               ref faults on the same two fields in the same order, so the
-               pair cannot diverge over a document carrying one. *)
-            if eigenaar <> None then
-              fault
-                "owner on the gedurende clip member %S: the clip reads the subject's own \
-                 characteristic timeline (WF-097)" k;
-            if periode <> None then
-              fault
-                "whole-period qualifier on the gedurende clip member %S: the clip already \
-                 ranges over the whole timeline (WF-097)" k;
             if not negatie then fun v t -> Printf.sprintf "ktl(S,%s,%s,%s)" (str k) v t
             else begin
               (* ch. 3.6, the NEGATED clip: the complement of the
@@ -2081,6 +2099,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                characteristic, a per-segment comparison of an own temporal attribute, or \
                an ALLE composite of such shapes)"
       in
+      clip_member_qualifications c;
       let cond_atom = cond_fn c "V2" "T2" in
       (* four-case integer intersection: V = max(V1,V2), T = min(T1,T2) *)
       List.iter
@@ -5083,9 +5102,10 @@ let translate_regel ctx (r : resolved_regel) =
                        filter =
                          Some
                            (Kenmerk_check
-                              { kenmerk = Some k; navigatie = None; negatie = false; _ });
+                              { kenmerk = Some k; navigatie = None; negatie = false; _ } as fc);
                        granulariteit = Some g; leegwaarde = None; dimensie_selectie = None; _ })
                 when norm bot = norm ot ->
+                  clip_member_qualifications fc;
                   translate_pro_rata ctx ~subject ~ot ~a ~cond ~b ~k ~g
               | Some
                   (Functie
@@ -5093,8 +5113,9 @@ let translate_regel ctx (r : resolved_regel) =
                        filter =
                          Some
                            (Kenmerk_check
-                              { kenmerk = Some k; navigatie = None; negatie = false; _ });
+                              { kenmerk = Some k; navigatie = None; negatie = false; _ } as fc);
                        granulariteit = Some g; leegwaarde = None; dimensie_selectie = None; _ }) ->
+                  clip_member_qualifications fc;
                   translate_aantal_dagen ctx ~subject ~ot ~a ~cond ~k ~g
               | _ ->
                   fault

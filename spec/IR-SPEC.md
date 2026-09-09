@@ -517,9 +517,22 @@ settled shape.
   from the enum, so the wire refuses the shape at gate 2; this arm
   refuses it in the verifier for any document that never met the
   schema. Cost: none — 0 of the 534 documents in the four zones carried
-  a null there, the RegelSpraak emitter guards its write with an
-  explicit non-null test, and the Catala emitter's map is empty by
-  construction. **Scope is the characteristic map:**
+  a null there, and neither emitter can produce one today: the
+  RegelSpraak emitter guards its write with an explicit non-null test,
+  and the Catala emitter's map is empty by construction.
+
+  One consequence of tightening the enum, recorded rather than left to
+  be discovered. The Catala emitter writes `null` for **every** entry of
+  this map (its value expression is a constant `null`), and what made
+  that harmless was only that the map it maps over is always empty. That
+  dead branch has changed character: before, it would have emitted a
+  document with a real SEMANTIC defect; now it would emit one that is
+  simply **schema-invalid**, and gate 2 fails on it the moment the
+  Catala frontend ever models a temporal characteristic. That is the
+  loud, defensible failure — the wire refusing a producer that has not
+  caught up — but it is a latent conformance defect in a frontend rather
+  than a live one, and it is named here so the eventual gate-2 red is
+  read as expected rather than as a regression. **Scope is the characteristic map:**
   `attribuutGranulariteit` still admits `null` on the wire, deliberately
   untouched. The same seam is structurally there — `attr_temporal` reads
   KEY EXISTENCE while the case loader's attribute arm reads the VALUE
@@ -3721,12 +3734,37 @@ Comparison, Predicate, and CharacteristicCheck only —
 attachment, and one field beside it, by WF-097 below.
 
 - **WF-097** A **`gedurende` clip member** — a CharacteristicCheck
-  standing as the condition of a temporal total's `filter`, whether
-  directly or as a member of the flat ALLE composite (the WF-055 shapes,
-  `RUNTIME-SEMANTICS.md` ch. 3.6) — MUST carry **neither an owner
-  (`eigenaar`) nor a whole-period qualifier**, the negated qualifier
-  included. Two arms of one rule, both closing the same thing: a
-  qualification the reading has no room for.
+  standing as the condition of a `Function`'s `filter` where that filter
+  is a **clip**, whether directly or as a member of the flat ALLE
+  composite — MUST carry **neither an owner (`eigenaar`) nor a
+  whole-period qualifier**, the negated qualifier included. Two arms of
+  one rule, both closing the same thing: a qualification the reading has
+  no room for.
+
+  **All THREE clips, exhaustively.** The same node sits in the same
+  field at each, so the rule names them as a closed list:
+
+  | clip | kind | its own shape rule | `RUNTIME-SEMANTICS.md` |
+  |---|---|---|---|
+  | the temporal total | `TOTAAL` over an own temporal attribute | WF-055 | ch. 3.6 |
+  | the pro-rata fold | `TIJDSEVENREDIG_DEEL` | WF-056 | ch. 3.7 |
+  | the day count | `AANTAL_DAGEN_IN` | WF-058 | ch. 3.8 |
+
+  The **fourth** reading of `Function.filter` — the die/dat instance
+  subselection — is **not** a clip and is deliberately **not** fenced:
+  there the condition is a per-contributor truth test, where an owner
+  and a qualifier are ordinary condition fields with the ordinary
+  meaning. That is why the total's clip is identified by SHAPE (WF-055's
+  guard) rather than by kind, while the other two are identified by kind
+  alone.
+
+  Each of the three artifacts that reads a clip — the verifier, the
+  reference interpreter and the ASP backend — implements this fence
+  **once**, in one shared helper called from its three clip sites. That
+  is a requirement of the rule and not an implementation note: the rule
+  first landed on the temporal total alone (2026-09-09) and the pro-rata
+  fold and the day count went on answering silently for a day, which is
+  precisely the drift three copies invite.
 
   The clip is not a truth test on a subject at an instant; it is a
   timeline operation that reads THE SUBJECT's own characteristic
@@ -3735,14 +3773,19 @@ attachment, and one field beside it, by WF-097 below.
   re-states the span the clip already ranges over — which is why every
   reader matched both fields away and none of them ever said so.
 
-  Measured 2026-09-09, one field twisted at a time on
-  `jutterswet-tegenwacht` and nothing else changed: each twist was
-  verifier-clean and reproduced the untwisted answer in **36 of 36**
-  executor replays (3 twists × 6 cases × {reference interpreter, ASP
-  backend}). `negated: true` was indistinguishable from an absent
-  qualifier in all of them, so the arm refuses both polarities and both
-  are pinned; a reader that honoured the affirmative form and dropped
-  the negation would still be silently wrong.
+  Measured on the pre-rule binaries, one field twisted at a time and
+  nothing else changed. At the temporal total (2026-09-09,
+  `jutterswet-tegenwacht`): 3 twists, each verifier-clean, each
+  reproducing the untwisted answer in **36 of 36** executor replays (3 ×
+  6 cases × {reference interpreter, ASP backend}). At the other two clips
+  (2026-09-10, `anchor/jutterswet-borgdeel` for pro rata and
+  `anchor/jutterswet-dagentelling` for the day count): 6 twists, all six
+  verifier-clean, reproducing the untwisted answer in **60 of 60**
+  replays. Ninety-six replays, ninety-six unchanged answers.
+  `negated: true` was indistinguishable from an absent qualifier in all
+  of them, so the arm refuses both polarities; a reader that honoured the
+  affirmative form and dropped the negation would still be silently
+  wrong.
 
   **Scope is exactly the clip member**, and the three neighbouring
   positions are left standing deliberately, each for its own reason.
@@ -3759,11 +3802,27 @@ attachment, and one field beside it, by WF-097 below.
   characteristic, and WF-055 already requires a time-dependent one
   there. That unreachability is what left this position unguarded.
 
-  Cost: none. Counted over the four zones at landing (534 documents):
-  39 clip filters across 25 documents holding 37 characteristic checks,
-  of which **0** carry an owner and **0** carry a qualifier;
-  corpus-wide 193 characteristic checks, 3 with an owner (all three
-  outside a clip, in the negatief zone) and 0 with a qualifier.
+  Cost: none. Counted over the four zones before the rule (534
+  documents): 39 clip filters across 25 documents holding 37
+  characteristic checks, of which **0** carried an owner and **0** a
+  qualifier; corpus-wide 193 characteristic checks, 3 with an owner (all
+  three OUTSIDE a clip, all in the negatief zone) and 0 with a
+  qualifier. The §8.2 qualifier on a **Comparison** counted 5 nodes
+  before the rule and counts 5 after it: that family is untouched, and
+  every `GeheelPeriode` node added since is on the now-forbidden
+  characteristic position, in this rule's own witnesses.
+
+  **What the two executors do NOT guarantee.** They fault on the same
+  document with the same words, but they do not fault at the same TIME:
+  the reference interpreter is lazy and the ASP translation eager. Put a
+  violation inside a rule whose condition is false and the reference
+  interpreter never reaches it — `oracle: PASS` — while the ASP backend
+  refuses at translation. Measured 2026-09-10, and measured to be
+  **inherited**: WF-055 splits identically on the identical construction,
+  so this is a standing lazy-versus-eager property of the pair and not
+  something this rule introduces. It is bounded, not resolved: the
+  verifier rejects any such document, so it can never enter a gated
+  zone, and gate 6 only ever compares verifier-clean documents.
 
 ### 4.6 Well-formedness
 
@@ -5607,7 +5666,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-094 | a keyed declaration's SELF-NAME is its map key, verbatim (ch. 2.1, maintainer decision 2026-09-06): the five map-shaped declaration tables — `objecttypen`, `parameters`, `eenheidstelsels`, `feittypen`, `dimensies` — repeat the declared name inside each value, and that `naam` MUST spell the key byte for byte, case included. Not a reference and not a matching site: it is the v0 denormalisation of the ONE name a v1 declaration carries on its node, so ch. 2.1's carriage rule governs it, as at the side-table keys of ch. 4.6 (p). Five arms, one per table, five readerships: `ref` reads no self-name at all, the verifier only through WF-057's text-safety walk (three of five, never against the key), the ASP backend only to name a unit system inside a fault message (no `expectedFault` pins it), and the bean-model executor at **105** sites for an object type, **32** for a parameter, **3** for a fact type, **1** for a dimension and **0** for a unit system (the enumeration order of the sites, which is not the order the five tables are listed in above), having loaded the self-name AS the declaration's name. Measured 2026-09-06, one self-name recapitalised at a time over every golden: 11 of 34 parameter positions leave verifier, `ref` and clingo passing while the bean-model executor answers WRONG VALUES (322.50 → 310.00) over seven documents; under a ci-different name 4 of 205 object-type positions move verdict as well (3 drop-outs from gate 12's played set — silent when this was measured, named by the expected-channel floor that landed the same day — and 1 crash). What it does NOT close is stated in the clause: `naam: null` (schema-valid, carded), and the `eenheden`/`aliassen` maps inside a unit system, where the key is not the value's own name. Cost: none — all 1919 entries the five tables held before this rule (1935 after its witnesses, 1937 as the corpus now stands) already spell their key byte-exactly, and over all 532 documents nothing but the five witnesses moves | gate 3 | every golden satisfies it; `jutterswet-penningdrempel` (the parameter position whose recapitalisation the third executor answers wrong), `anchor/jutterswet-maatschap`, `jutterswet-berging`, `jutterswet-vondsttelling`, `jutterswet-seizoenvondst` (the five sources the witnesses are broken from) | `wf094-zelfnaam-objecttype`, `wf094-zelfnaam-parameter`, `wf094-zelfnaam-eenheidstelsel`, `wf094-zelfnaam-feittype`, `wf094-zelfnaam-dimensie` (one per arm; each is a ONE-CHARACTER recapitalisation, so a ci relapse frees all five and a dropped arm frees exactly one) |
 | WF-095 | a datum-tijd literal's lexeme is one of the TWO spellings every reader admits, each matched whole (ch. 4.1): the canonical ISO `yyyy-mm-ddThh:mm:ss[.fff]` — fixed field widths, `T` never a space, the seconds field always written, no zone suffix and no offset, a fraction that is optional but exactly three digits, the date half calendar-valid — or the day-first source snippet `[dd. ]d-m-yyyy hh:mm:ss[.SSS]`, whose variable-width day and month are the RegelSpraak token's. The second spelling is admitted because the repository's own emitter still writes it: for a `DatumTijd` literal it emits the snippet into `waarde` AND `bron` (measured 2026-09-06), unlike a day-precision date, so WF-084's single-lexeme narrowing would make the producer non-conforming. Everything else is refused — precisely the forms every reader already refused, and the wire refused none of them: `rommel 2024-01-31 12:00:00Z x` was schema-valid and verifier-clean (measured 2026-09-06). It is the wire half of a three-reader fence closed on the same day: the shared interpreter/ASP case reader read `.1` as ONE millisecond and `.100000` as a hundred THOUSAND where the Drools case reader read a hundred and the literal reader refused, and gate 4's schema pattern was the ONLY reason that never showed. Boundary counted 2026-09-06 over the four zones (539 documents): the only WELL-FORMED `DatumTijd` literals anywhere are this rule's own golden's two, beside the five its negatiefs carry — the rule finds no document predating it, so nothing of the corpus moves. The 30 `dateTime` values on the CASE wire (25 public, 5 in the parity zone) were all already canonical, so the readers' own fences move none of them either. **Scope: the PRESENT lexeme.** `waarde: null` is the empty half of the same field and a different question (the (n)/(o) precedent of ch. 4.6), left open with its shape stated rather than for want of a witness: the schema types `waarde` as `["string", "null"]`, so a null LEXEME is schema-valid where a MISSING `waarde` is refused by gate 2, and this rule's arm reads the present lexeme only. Measured 2026-09-06 on a one-edit twist of this rule's own golden: `verifier: PASS`, while the executors split — `ref` and the ASP backend both fault BY NAME (`missing Literal.waarde`) and the bean-model executor DEREFERENCES it (`NullPointerException: Cannot invoke "java.lang.CharSequence.length()" because "this.text" is null` — the shared datum-tijd reader matches its patterns against the handed value with no null guard). Two named refusals and one dereference under a document the wire admits: the same three-reader shape this rule closes for the non-null half | gate 3 | `jutterswet-meldstip` (a canonical-lexeme literal ordered against a `DatumTijd` attribute at a sub-day threshold, replayed by gates 5, 6 and 12 — the first `DatumTijd` coverage of the differential) | `wf095-zone-suffix`, `wf095-spatie-scheider`, `wf095-fractiebreedte`, `wf095-ontbrekende-seconden`, `wf095-omringende-tekst` |
 | WF-096 | the set reading is the fold SOURCE's field (ch. 4.3, maintainer decision 2026-09-09): an `AttributeReference` with `set: true` is admissible ONLY as the source of a SINGLE-argument instance fold — the one node that consumes a collection is the fold that owns the source. At every other position the document is ill-formed: as a whole rule value, as an operand of a composite node, inside a condition, and as an operand of the listed value fold (§5.8.3), whose operands are ordinary reads with no source. The admissible position is the same pair WF-093 keys on (a single argument under a folding kind — the six value folds plus `AANTAL`), so three rules divide one boundary: at the source the sentinel decides the KIND and `set` only describes; away from it the sentinel is WF-034's and `set` is this rule's. Closes ch. 4.3 flank (5), and closes it as a WIRE question rather than an executor question: the shape was verifier-clean while NO executor carried it — `ref` faults `unsupported AttribuutRef shape (set/sentinel outside a fold)`, the ASP backend refuses the expression kind, Drools drops the rule as a transpiler skip — three refusals under one clean document, which no differential gate can catch because there is no answer to differ about. Measured identically at BOTH read positions, which is why it is one rule; and both are LIVE producer routes, re-emitted from source on 2026-09-09 with `diagnostics: []` and committed verbatim as the first two negatiefs, so the rule cuts a producer route and the frontend follow-up is spec-first on its own card. Boundary counted 2026-09-09 over the four zones (560 documents): exactly ONE document predating the rule carries the shape — the already-rejected `wf034-sentinel-geleste-setlezing`, whose verdict does not move and whose report gains one co-firing line — while the 16 LEGITIMATE set fold sources across 14 goldens are untouched. **Scope: the READ.** `set: true` on a rule TARGET is a write position, is not reached by this clause and stays verifier-clean, left open on evidence: zero documents carry it and all three executors ignore the field and write the scalar (measured), which is three-way agreement on an inert annotation rather than this rule's class | gate 3 | `jutterswet-vondsttelling` (its `SOM` over "alle vondsten" is a legitimate set fold source — the position the rule leaves alone, replayed by gates 5, 6 and 12) | `wf096-setlezing-regelwaarde`, `wf096-setlezing-operand`, `wf096-setlezing-geleste-operand` |
-| WF-097 | a `gedurende` clip member carries NEITHER an owner NOR a whole-period qualifier (ch. 4.5, maintainer decision 2026-09-09): a CharacteristicCheck standing as the condition of a temporal total's `filter` — directly or as a member of the flat ALLE composite, the WF-055 shapes — is refused an `eigenaar` and refused a `periode`, the NEGATED qualifier included. Two arms, one reason: the clip is a timeline operation reading THE SUBJECT's own characteristic periods over the WHOLE span it clips, so an owner names a subject no reader consults and a whole-period demand re-states the span the clip already ranges over. Every reader matched both fields away with `_` and none of them said so. Measured 2026-09-09, one field twisted at a time on `jutterswet-tegenwacht`: each twist was verifier-clean AND reproduced the untwisted answer in 36 of 36 executor replays (3 twists x 6 cases x {ref, clingo}) — `negated: true` indistinguishable from an absent qualifier in all of them, which is why both polarities are refused and both are pinned. Both executors mirror the refusal verbatim, so the rule moves the verifier and the pair together and gate 6 cannot split on it. **Scope is the clip member.** The SCALAR check outside a clip keeps its `eigenaar` (name resolution, WF-034 (q)) and keeps its qualifier (the frontend produces that form from source — a producer-cutting decision with its own card); the qualifier on a **Comparison** is implemented, carried by 5 corpus nodes, and untouched, a widened WF-043 being over-rejection. WF-043's own characteristic arm cannot reach inside a clip: it fires only on a NON-time-dependent characteristic and WF-055 already requires a time-dependent one there — that unreachability is what left the position unguarded. Cost: none — counted over the four zones at landing (534 documents), 39 clip filters across 25 documents hold 37 characteristic checks, 0 with an owner and 0 with a qualifier; corpus-wide 193 characteristic checks, 3 with an owner (all outside a clip, all in the negatief zone), 0 with a qualifier | gate 3 | `jutterswet-tegenwacht` (the source both witnesses are broken from: its composite ALLE clip and its plain negated clip stay clean and are replayed by gates 5, 6 and 12) | `wf097-clip-kenmerk-eigenaar` (the composite-member path), `wf097-clip-kenmerk-periode` and `wf097-clip-kenmerk-periode-ontkend` (the plain-clip path, both polarities — a dropped arm frees exactly its own witnesses) |
+| WF-097 | a `gedurende` clip member carries NEITHER an owner NOR a whole-period qualifier (ch. 4.5, maintainer decision 2026-09-09; widened to all three clips 2026-09-10): a CharacteristicCheck standing as the condition of a clip `filter` — directly or as a member of the flat ALLE composite — is refused an `eigenaar` and refused a `periode`, the NEGATED qualifier included. The rule names its three clips as a CLOSED list: the temporal total (`TOTAAL` over an own temporal attribute, WF-055, ch. 3.6), the pro-rata fold (`TIJDSEVENREDIG_DEEL`, WF-056, ch. 3.7) and the day count (`AANTAL_DAGEN_IN`, WF-058, ch. 3.8); the FOURTH reading of the same field, the die/dat instance subselection, is NOT a clip and is deliberately not fenced — there an owner and a qualifier are ordinary condition fields. Two arms, one reason: a clip reads THE SUBJECT's own characteristic periods over the WHOLE span it clips, so an owner names a subject no reader consults and a whole-period demand re-states the span the clip already ranges over. Every reader matched both fields away with `_` and none said so. Measured on the pre-rule binaries, one field twisted at a time: 3 twists at the total (`jutterswet-tegenwacht`) verifier-clean and unchanged in 36 of 36 replays, plus 6 twists at the other two clips (`anchor/jutterswet-borgdeel`, `anchor/jutterswet-dagentelling`) verifier-clean and unchanged in 60 of 60 — 96 replays, 96 unchanged answers, `negated: true` indistinguishable from absent throughout, which is why both polarities are refused. Each of the three artifacts implements the fence ONCE, in a shared helper called from its three clip sites: that is required by the rule, not an implementation note — the rule first landed on the total alone and the other two clips answered silently for a day. The two executors fault with the same words but NOT at the same time (ref lazy, ASP eager): behind a false rule condition ref replays clean while the ASP backend refuses at translation — measured, and measured to be INHERITED from WF-055, which splits identically; bounded by the verifier rejecting any such document, so no gated zone can hold one. **Scope is the clip member.** The SCALAR check outside a clip keeps its `eigenaar` (name resolution, WF-034 (q)) and keeps its qualifier (the frontend produces that form from source — a producer-cutting decision with its own card); the qualifier on a **Comparison** is implemented, carried by 5 corpus nodes before the rule and 5 after, and untouched, a widened WF-043 being over-rejection. WF-043's own characteristic arm cannot reach inside a clip: it fires only on a NON-time-dependent characteristic and WF-055 already requires a time-dependent one there — that unreachability is what left the position unguarded. Cost: none — counted over the four zones before the rule (534 documents), 39 clip filters across 25 documents hold 37 characteristic checks, 0 with an owner and 0 with a qualifier; corpus-wide 193 characteristic checks, 3 with an owner (all outside a clip, all in the negatief zone), 0 with a qualifier | gate 3 | `jutterswet-tegenwacht` (total), `anchor/jutterswet-borgdeel` (pro rata), `anchor/jutterswet-dagentelling` (day count) — the three sources the witnesses are broken from, each staying clean and replayed by gates 5, 6 and 12 | `wf097-clip-kenmerk-eigenaar` (composite member), `wf097-clip-kenmerk-periode` and `wf097-clip-kenmerk-periode-ontkend` (plain member, both polarities), `wf097-prorata-kenmerk-eigenaar`, `wf097-prorata-kenmerk-periode`, `wf097-dagentelling-kenmerk-eigenaar`, `wf097-dagentelling-kenmerk-periode` — one per clip per arm, so a dropped ARM frees its three or four and a dropped CLIP SITE frees exactly that clip's |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is
