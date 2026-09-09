@@ -91,7 +91,7 @@
           }
         },
         "characteristics": {
-          "description": "Characteristics asserted true on input; every other characteristic starts false.",
+          "description": "Characteristics asserted true on input; every other characteristic starts false. A characteristic the IR declares TIME-DEPENDENT (a 'kenmerkGranulariteit' entry) is NOT delivered here — its truth is periods, and it belongs in 'characteristicTimelines'; every temporal reader consults that field and nothing else. This schema CANNOT enforce that: it validates the case document alone and never sees the IR's declarations, so which names are time-dependent is unknowable here. The three case readers therefore hold the rule themselves and refuse the static delivery at load, by name and with the reason (maintainer decision 2026-09-09); before that they accepted it and answered from an empty period set without a word.",
           "type": "array",
           "items": { "type": "string", "minLength": 1 }
         }

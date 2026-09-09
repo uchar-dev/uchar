@@ -445,11 +445,20 @@ public final class CaseRunner {
         }
         JsonNode kenmerken = i.get("characteristics");
         if (kenmerken != null) for (JsonNode k : kenmerken) {
-            // a TEMPORAL kenmerk's bean member is a List<Segment>, so the scalar-true form has no setter here;
-            // refuse with the reason rather than crash on the missing setBoolean overload
+            // A CASE defect, not an uncarried form (maintainer decision 2026-09-09) — the sister arm below has
+            // said so about the mirror-image mistake since it was written, and this arm is the same seam from
+            // the other side. A TEMPORAL kenmerk's bean member is a List<Segment>, so a scalar-true assertion
+            // reaches no reader here; in the interpreter and the ASP backend it reached none either, and BOTH
+            // answered 0 where the golden pins 30 rather than saying anything (measured 2026-09-09 on
+            // jutterswet-tegenwacht and anchor/jutterswet-dubbelwacht). All three readers refuse it at load
+            // since that decision. It stayed an Excluded until then, which filed a broken case under "a form
+            // the v0 backend does not carry" — a counted, reasoned refusal in the gate report for a case that
+            // is simply wrong, and the one classification that could keep it out of sight.
             if (ot.kenmerkGranulariteit.containsKey(k.asText()))
-                throw new Excluded("scalar characteristic input '" + k.asText() + "' on a temporal kenmerk is "
-                        + "not carried by the v0 backend — the bean holds a List<Segment> true-period timeline");
+                throw new IllegalArgumentException("scalar characteristic input '" + k.asText() + "' on the "
+                        + "time-dependent kenmerk of " + ot.naam + ": deliver it as a characteristicTimelines "
+                        + "entry — the static characteristics list asserts a scalar truth no temporal reader "
+                        + "consults");
             roep(bean, Namen.setter(k.asText()), boolean.class, Boolean.TRUE);
         }
         JsonNode ctls = i.get("characteristicTimelines");

@@ -290,8 +290,33 @@ let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
     List.map
       (fun cj ->
         let c = str cj in
-        if Ir_v0.Checks.mem_ci (Ir_v0.Checks.some_names ot.kenmerken) c then norm c
-        else fail "characteristic %S is not declared on %S" c otype_name)
+        if not (Ir_v0.Checks.mem_ci (Ir_v0.Checks.some_names ot.kenmerken) c) then
+          fail "characteristic %S is not declared on %S" c otype_name;
+        (* The two deliveries are NOT interchangeable, and until 2026-09-09
+           this arm asked only whether the name was declared. A characteristic
+           the document declares TIME-DEPENDENT has a timeline, and every
+           temporal reader looks for one: the gedurende clip, the pro-rata fold
+           and the day count all read the case's characteristic timelines and
+           nothing else. Asserting such a characteristic in the flat
+           `characteristics` list therefore delivered a fact no temporal reader
+           ever consults, and the clip intersected against an EMPTY period set
+           without a word — measured on the golden that pins 30: ref answered
+           0, clingo answered 0, both silently.
+
+           So it is refused here, at load, where the case is still nameable.
+           The sister arm below already refuses the mirror-image mistake — a
+           timeline on a non-temporal characteristic — and the two now cover
+           the seam from both sides. The predicate is KEY EXISTENCE in
+           kenmerkGranulariteit, the same one the three clip readers use;
+           WF-059's second arm makes key and value coincide for any document
+           that passed the verifier. *)
+        if List.exists (fun (k, _) -> norm k = norm c) ot.kenmerk_granulariteit then
+          fail
+            "%s.%s: characteristic %S is declared time-dependent on %S, so it is delivered as a \
+             \"characteristicTimelines\" entry — the static \"characteristics\" list asserts a \
+             scalar truth no temporal reader consults"
+            label c c otype_name;
+        norm c)
       (match field kvs "characteristics" with `List l -> l | _ -> fail "characteristics: expected a list")
   in
   let links =

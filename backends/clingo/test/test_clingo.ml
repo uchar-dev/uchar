@@ -2039,6 +2039,91 @@ let () =
     ~case_text:(lit_case "2026-03-15T06:00:00.000" true)
     ~needle:"malformed datum-tijd lexeme"
 
+(* THE STATIC DELIVERY OF A TIME-DEPENDENT CHARACTERISTIC (maintainer decision
+   2026-09-09). The case format has two deliveries for a characteristic and
+   they are not interchangeable: the flat `characteristics` list asserts a
+   scalar truth, `characteristicTimelines` supplies periods. Every temporal
+   reader — the gedurende clip, the pro-rata fold, the day count — reads the
+   timelines and nothing else, so a time-dependent characteristic asserted in
+   the static list delivered a fact no reader consulted: the clip intersected
+   against an empty period set and both executors answered 0 where the golden
+   pins 30, saying nothing (measured on `jutterswet-tegenwacht` and
+   `anchor/jutterswet-dubbelwacht`).
+
+   The reader is SHARED — the ASP backend loads its cases through
+   `Uchar_ref.Case`, so the refusal is this backend's proof obligation as much
+   as the interpreter's. It belongs here rather than in the corpus for the
+   reason this suite exists: no corpus witness can hold it. A case that must be
+   REJECTED cannot live in `corpus/golden` (gate 5 replays it) and cannot live
+   in `corpus/rood` either — both runners load the case BEFORE reaching their
+   expected-fault branch, so a load-time refusal exits 2 and gate 8 reads that
+   as a failure, never as the pinned fault.
+
+   The third check is the over-rejection guard: a NON-temporal characteristic
+   keeps its static delivery, which is the only delivery it has. *)
+let kenmerklevering_doc =
+  {|{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Wachtpost": {
+      "node": "Objecttype", "naam": "Wachtpost",
+      "attributen": { "bezetting": { "node": "Numeriek", "geheel": true, "decimalen": 0,
+                                     "teken": "ONBEPAALD", "eenheid": null } },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [ "dienstdoend", "gemeentelijk" ],
+      "kenmerkSoorten": { "dienstdoend": "BIJVOEGLIJK", "gemeentelijk": "BIJVOEGLIJK" },
+      "kenmerkGranulariteit": { "dienstdoend": "MAAND" },
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false, "meervoud": "Wachtposten"
+    }
+  },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {}, "dimensies": {},
+  "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [], "resolvedRegels": [],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}|}
+
+let kenmerklevering_case ~statisch ~tijdlijnen =
+  Printf.sprintf
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "W1", "objectType": "Wachtpost",
+      "attributes": { "bezetting": { "number": "1" } }, "roles": {},
+      "characteristics": [ %s ], "characteristicTimelines": { %s } } ], "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }|}
+    statisch tijdlijnen
+
+let laadt_case ~name ~case_text ~needle =
+  let irf = write_temp ".ir.json" kenmerklevering_doc in
+  let casef = write_temp ".case.json" case_text in
+  let doc = Ir_v0.Loader.load_file irf in
+  let outcome =
+    match Uchar_ref.Case.load_file doc casef with
+    | (_ : Uchar_ref.Case.t) -> Ok ()
+    | exception Uchar_ref.Case.Error m -> Error m
+  in
+  Sys.remove irf;
+  Sys.remove casef;
+  match (needle, outcome) with
+  | Some n, Error m -> check (name ^ " refused at load (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle:n m)
+  | Some _, Ok () -> check (name ^ ": expected a loud refusal, the case loaded") false
+  | None, Ok () -> check (name ^ " loads") true
+  | None, Error m -> check (name ^ ": expected a clean load, got a refusal (" ^ m ^ ")") false
+
+let () =
+  let dienstdoend_tl = {|"dienstdoend": [ { "from": "2024-01-01", "to": "2024-07-01" } ]|} in
+  laadt_case ~name:"een temporeel kenmerk in de statische lijst"
+    ~case_text:(kenmerklevering_case ~statisch:{|"dienstdoend"|} ~tijdlijnen:"")
+    ~needle:(Some "is declared time-dependent");
+  laadt_case ~name:"hetzelfde kenmerk als tijdlijn"
+    ~case_text:(kenmerklevering_case ~statisch:"" ~tijdlijnen:dienstdoend_tl)
+    ~needle:None;
+  laadt_case ~name:"een NIET-temporeel kenmerk in de statische lijst"
+    ~case_text:(kenmerklevering_case ~statisch:{|"gemeentelijk"|} ~tijdlijnen:dienstdoend_tl)
+    ~needle:None
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
