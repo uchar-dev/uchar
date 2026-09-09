@@ -232,7 +232,7 @@ public final class CaseRunner {
         try {
             if (viaDrl) return drlTak(model, loaded, cl);
             ExecModelTranspiler et = ExecModelTranspiler.build(model, cl, loaded.prioritizedDefaults(),
-                    loaded.rolBindingen(), loaded.letVormen());
+                    loaded.rolBindingen(), loaded.lets(), loaded.keuzes());
             // every construct must LOWER — a marker means the exec KieBase silently omits it,
             // so the case's expectations could not be produced; that golden is not carried.
             for (Dekking d : et.dekking())

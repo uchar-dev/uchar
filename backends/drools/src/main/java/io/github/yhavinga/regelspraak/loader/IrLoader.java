@@ -98,10 +98,12 @@ public final class IrLoader {
      *  is a RECORD with VALUE equality, so two structurally identical nodes in one document would collapse into
      *  one entry and the second would silently inherit the first's binding. */
     private final Map<Object, RolBindingRef> rolBindingen = new java.util.IdentityHashMap<>();
-    /** The ch. 4.10 Let cluster, keyed by its {@link Expr.Onopgelost} carrier — see {@link Loaded#letVormen()}.
-     *  IDENTITY-keyed for the same reason as {@link #rolBindingen}, and more sharply so: two carriers of one
-     *  datatype and one bron are VALUE-equal records, and a Let chain produces exactly such twins. */
-    private final Map<Object, LetVorm> letVormen = new java.util.IdentityHashMap<>();
+    /** ch. 4.10: every {@link Expr.Let} this document carries, in parse order — see {@link Loaded#lets()}. */
+    private final List<Expr.Let> lets = new ArrayList<>();
+    /** The ch. 4.10 {@code IfThenElse}, keyed by its {@link Expr.Onopgelost} carrier — see
+     *  {@link Loaded#keuzes()}. IDENTITY-keyed for the same reason as {@link #rolBindingen}, and more sharply so:
+     *  two carriers of one datatype and one bron are VALUE-equal records. */
+    private final Map<Object, Keuze> keuzes = new java.util.IdentityHashMap<>();
 
     private IrLoader() {}
 
@@ -125,13 +127,36 @@ public final class IrLoader {
      *         </ul>
      *         In both cases the SIBLING role — the one the anchor (subject) plays — is the bean field on the other
      *         end. Absent for a node whose wire record carries no binding; the by-pair derivation then stands.
-     *  @param letVormen the IR-SPEC ch. 4.10 {@link LetVorm} per {@link Expr.Onopgelost} CARRIER, by IDENTITY —
-     *         the third side channel: {@link Expr} is a sealed union in the vendored frontend slice, which carries
-     *         {@code Let} and {@code BinderRef} but not {@code IfThenElse}, and this backend keeps ONE shape for the
-     *         whole ch. 4.10 cluster rather than half a union and half a channel (see {@link LetVorm}). Empty for a
-     *         document that carries none. */
+     *  @param lets an INDEX of the {@link Expr.Let} nodes in the document, in parse order — not a channel: the Lets
+     *         themselves sit in the expression trees as ordinary union nodes, and every consumer lowers and walks
+     *         them there. The index exists for the one consumer that must start a walk at a Let without holding the
+     *         tree it came from ({@code EffectieveEenheid}'s binder-read table, which answers the unit of a
+     *         {@link Expr.BinderRef} asked in isolation). Empty for a document that carries no Let.
+     *  @param keuzes the IR-SPEC ch. 4.10 {@code IfThenElse} per {@link Expr.Onopgelost} CARRIER, by IDENTITY — the
+     *         one Let-cluster node the vendored {@link Expr} union does NOT carry (it grew {@code Let} and
+     *         {@code BinderRef} with the RegelSpraak emitter's §13.4.2.10 lowering, but {@code IfThenElse} is
+     *         emitter-free, IR-SPEC ch. 4.10). Extending that union would mean editing the shared frontend slice the
+     *         toolchain consumes at a pin, so this one form still parses into a carrier plus its shape here (see
+     *         {@link Keuze}). Empty for a document that carries none. */
     public record Loaded(RegelSpraakModel model, List<PrioritizedDefaults> prioritizedDefaults,
-                         Map<Object, RolBindingRef> rolBindingen, Map<Object, LetVorm> letVormen) {}
+                         Map<Object, RolBindingRef> rolBindingen, List<Expr.Let> lets,
+                         Map<Object, Keuze> keuzes) {}
+
+    /**
+     * IR-SPEC ch. 4.10's {@code IfThenElse} (semantics {@code RUNTIME-SEMANTICS.md} ch. 10.2): the value-level
+     * conditional — evaluate the condition under the ordinary comparison discipline (its operands disciplined to
+     * bound-non-leeg reads by WF-077), then evaluate EXACTLY the chosen branch, strict, no coalesce.
+     *
+     * <p>Its two siblings, {@code Let} and {@code BinderRef}, are ordinary {@link Expr} union nodes, so they need no
+     * shape here and no channel: they ride in the tree and every generic walk descends them. This one cannot, for
+     * the reason given at {@link Loaded#keuzes()} — so it keeps a carrier, and what that costs is stated where the
+     * cost lands: a carrier is an opaque LEAF to a generic {@link Expr} walk, so a walk that must see through it
+     * takes {@code ExecModelTranspiler.letKinderen}, which descends both branches and every Expr operand of the
+     * condition. A walk that does not descend under-reports in SILENCE. On the VALUE paths the carrier is safe by
+     * construction — nothing lowers an {@code Onopgelost}, so a missed consultation degrades to a LOUD,
+     * reason-carrying skip in the gate report.
+     */
+    public record Keuze(Conditie conditie, Expr dan, Expr anders, Datatype type) {}
 
     /** Parse a {@code regelspraak-ir-v0} tree into a resolved model, or throw {@link Refusal} for a form
      *  the v0 backend does not carry. The prioritized-defaults extension (if any) is parsed but not returned —
@@ -147,7 +172,7 @@ public final class IrLoader {
     public static Loaded loadAll(JsonNode root) {
         IrLoader l = new IrLoader();
         RegelSpraakModel model = l.model(root);
-        return new Loaded(model, l.prioritizedDefaults, l.rolBindingen, l.letVormen);
+        return new Loaded(model, l.prioritizedDefaults, l.rolBindingen, l.lets, l.keuzes);
     }
 
     private RegelSpraakModel model(JsonNode root) {
@@ -341,19 +366,20 @@ public final class IrLoader {
             case "VariabeleRef" -> new Expr.VariabeleRef(text(n, "naam"), datatype(n.get("type")), bron(n));
             case "Constante" -> new Expr.Constante(text(n, "naam"), datatype(n.get("type")), bron(n));
             case "Onopgelost" -> new Expr.Onopgelost(datatype(n.get("type")), bron(n));
-            // IR-SPEC ch. 4.10 the Let cluster. The sealed, VENDORED Expr union cannot grow these three nodes, so
-            // each parses into an Onopgelost CARRIER plus its real shape in the letVormen side channel (see
-            // {@link LetVorm}). Note the wire's field names: a BinderRef's is "name", an IfThenElse's are
-            // "condition"/"then"/"else" — the condition reuses the ordinary conditie union.
-            case "Let" -> letDrager(n, new LetVorm.Binding(
+            // IR-SPEC ch. 4.10 the Let cluster. Let and BinderRef are ORDINARY union nodes — the vendored Expr
+            // slice grew both when the RegelSpraak emitter learned to lower a §13.4.2.10 variabelendeel — so they
+            // are built here and nothing rides beside them. IfThenElse is emitter-free and has no union record, so
+            // it alone keeps a carrier (see Loaded#keuzes). Note the wire's field names: a BinderRef's is "name",
+            // an IfThenElse's are "condition"/"then"/"else" — the condition reuses the ordinary conditie union.
+            case "Let" -> let(new Expr.Let(
                     verplicht("Let", "binder", text(n, "binder")),
                     verplicht("Let", "value", expr(n.get("value"))),
                     verplicht("Let", "body", expr(n.get("body"))),
-                    verplicht("Let", "type", datatype(n.get("type")))));
-            case "BinderRef" -> letDrager(n, new LetVorm.Lezing(
+                    verplicht("Let", "type", datatype(n.get("type"))), bron(n)));
+            case "BinderRef" -> new Expr.BinderRef(
                     verplicht("BinderRef", "name", text(n, "name")),
-                    verplicht("BinderRef", "type", datatype(n.get("type")))));
-            case "IfThenElse" -> letDrager(n, new LetVorm.Keuze(
+                    verplicht("BinderRef", "type", datatype(n.get("type"))), bron(n));
+            case "IfThenElse" -> keuzeDrager(n, new Keuze(
                     verplicht("IfThenElse", "condition", conditie(n.get("condition"))),
                     verplicht("IfThenElse", "then", expr(n.get("then"))),
                     verplicht("IfThenElse", "else", expr(n.get("else"))),
@@ -365,19 +391,25 @@ public final class IrLoader {
     /** Assert that a ch. 4.10 Let-cluster node carries a field the shape REQUIRES (WF-076/WF-064/WF-069), naming
      *  both the form and the field. Without it a malformed document fails downstream and namelessly: a null
      *  {@code value}/{@code body}/branch throws an unattributed NPE out of the transpiler's {@code List.of}
-     *  child accessor, and a missing {@code type} silently produces a carrier typed null — a leaf every walk
-     *  then mis-reads. Fail fast, with the form and the field in the message. */
+     *  child accessor, and a missing {@code type} silently produces a node typed null, which every walk that reads
+     *  a datatype then mis-reads. Fail fast, with the form and the field in the message. */
     private static <T> T verplicht(String vorm, String veld, T waarde) {
         if (waarde == null) throw new Refusal(vorm, "malformed node: missing required field '" + veld + "'");
         return waarde;
     }
 
-    /** Register one ch. 4.10 Let-cluster node beside the model and return its carrier — a fresh
+    /** Index one {@link Expr.Let} (see {@link Loaded#lets()}) and return it — the node itself goes into the tree. */
+    private Expr let(Expr.Let l) {
+        lets.add(l);
+        return l;
+    }
+
+    /** Register one ch. 4.10 {@code IfThenElse} beside the model and return its carrier — a fresh
      *  {@link Expr.Onopgelost} typed with the node's own datatype, so a consumer that never consults
-     *  {@link Loaded#letVormen()} sees an unresolved leaf and refuses loudly rather than guessing. */
-    private Expr letDrager(JsonNode n, LetVorm vorm) {
-        Expr drager = new Expr.Onopgelost(vorm.type(), bron(n));
-        letVormen.put(drager, vorm);
+     *  {@link Loaded#keuzes()} sees an unresolved leaf and refuses loudly rather than guessing. */
+    private Expr keuzeDrager(JsonNode n, Keuze keuze) {
+        Expr drager = new Expr.Onopgelost(keuze.type(), bron(n));
+        keuzes.put(drager, keuze);
         return drager;
     }
 

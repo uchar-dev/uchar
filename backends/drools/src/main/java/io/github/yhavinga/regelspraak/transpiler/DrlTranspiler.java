@@ -55,9 +55,10 @@ public final class DrlTranspiler {
     private final RegelSpraakModel model;
     /** RUNTIME-SEMANTICS ch. 2.10: the §4 EFFECTIVE-unit derivation — declarations plus the ch. 2.6 join rules,
      *  the ONE source every unit restatement below consults instead of a node's own wire annotation. The DRL
-     *  back-end consumes the v0 model alone (no ch. 4.10 Let side channel), so the derivation gets an empty one. */
+     *  back-end consumes the v0 model alone: it lowers no ch. 4.10 node (a Let in a value is a TODO marker), so
+     *  it hands the derivation neither a Let index nor an IfThenElse carrier map. */
     private final io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid eff =
-            new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(java.util.Map.of());
+            new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(java.util.List.of(), java.util.Map.of());
     /** §9.2: the salience derivation over the declared kenmerk graph, shared with ExecModelTranspiler. */
     private final Stratificatie strat;
 

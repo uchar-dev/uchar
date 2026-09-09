@@ -114,17 +114,18 @@ public final class ExecModelTranspiler {
      *  nodes are records with value equality). Empty by default — every node then uses the by-pair derivation,
      *  which is exactly the pre-2026-08-30 behaviour. */
     private Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen = new java.util.IdentityHashMap<>();
-    /** IR-SPEC ch. 4.10: the Let cluster per {@link Expr.Onopgelost} CARRIER, riding beside the model
-     *  ({@code IrLoader.Loaded.letVormen}) because the vendored, sealed {@link Expr} union cannot grow the three
-     *  wire nodes. Keyed by IDENTITY (the carriers are value-equal records). Empty by default — every carrier is
-     *  then an ordinary unresolved leaf and every value path refuses it loudly, the pre-2026-09-01 behaviour. */
-    private Map<Object, io.github.yhavinga.regelspraak.loader.LetVorm> letVormen = new java.util.IdentityHashMap<>();
+    /** IR-SPEC ch. 4.10: the {@code IfThenElse} per {@link Expr.Onopgelost} CARRIER, riding beside the model
+     *  ({@code IrLoader.Loaded.keuzes}) because that ONE cluster node has no record in the vendored, sealed
+     *  {@link Expr} union — its two siblings, {@link Expr.Let} and {@link Expr.BinderRef}, are ordinary union nodes
+     *  and are matched in the tree. Keyed by IDENTITY (the carriers are value-equal records). Empty by default —
+     *  every carrier is then an ordinary unresolved leaf and every value path refuses it loudly. */
+    private Map<Object, io.github.yhavinga.regelspraak.loader.IrLoader.Keuze> keuzes = new java.util.IdentityHashMap<>();
     /** RUNTIME-SEMANTICS ch. 2.10: the §4 EFFECTIVE-unit derivation — declarations plus the ch. 2.6 join rules.
      *  Every unit restatement below takes its datatypes from here; a bare {@code e.type()} at a restatement site
      *  reads the wire's REPETITION of a declaration instead of the declaration, which is what made this backend
      *  answer 3.750,00 where ref and clingo answer 3,75 on a unit-lying aggregation result type. */
     private io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid eff =
-            new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(java.util.Map.of());
+            new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(java.util.List.of(), java.util.Map.of());
     private final List<String> overgeslagen = new ArrayList<>();
     /** Build-time-only gate: true WHILE lowering a scalar consequence value (the THEN-waarde), the single
      *  context where a §13.4.1 multi-hop navigation chain may lower ({@link #navKetenReader}) — mirroring
@@ -177,17 +178,17 @@ public final class ExecModelTranspiler {
      *  decide a fixture is "not yet migrated" rather than a divergence). Fact beans resolve against
      *  {@code beanLoader}; null routes to this transpiler's own loader. */
     public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader) {
-        return build(m, beanLoader, List.of(), java.util.Map.of(), java.util.Map.of());
+        return build(m, beanLoader, List.of(), java.util.Map.of(), List.of(), java.util.Map.of());
     }
     /** As {@link #build(RegelSpraakModel, ClassLoader)} but also consumes what the loader carries BESIDE the model
      *  (see {@code IrLoader.Loaded}): the ch. 7 prioritized-defaults extension — each group lowers to one
-     *  reduce-rule, a port of ref's {@code run_defaults_group} — the symbolic role bindings, and the IR-SPEC
-     *  ch. 4.10 Let cluster. An empty/null defaults list is the flat v0 case; an empty {@code rolBindingen} is the
-     *  by-pair-derivation-only case; an empty {@code letVormen} leaves every carrier an unresolved leaf, i.e. a
-     *  loud per-form refusal. */
+     *  reduce-rule, a port of ref's {@code run_defaults_group} — the symbolic role bindings, the ch. 4.10 Let index
+     *  and the ch. 4.10 {@code IfThenElse} carriers. An empty/null defaults list is the flat v0 case; an empty
+     *  {@code rolBindingen} is the by-pair-derivation-only case; an empty {@code keuzes} leaves every carrier an
+     *  unresolved leaf, i.e. a loud per-form refusal. */
     public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
-            Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen,
-            Map<Object, io.github.yhavinga.regelspraak.loader.LetVorm> letVormen) {
+            Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen, List<Expr.Let> lets,
+            Map<Object, io.github.yhavinga.regelspraak.loader.IrLoader.Keuze> keuzes) {
         ExecModelTranspiler t = new ExecModelTranspiler(m, beanLoader);
         t.prioritizedDefaults = defaults == null ? List.of() : defaults;
         if (rolBindingen != null && !rolBindingen.isEmpty()) {
@@ -196,12 +197,13 @@ public final class ExecModelTranspiler {
             t.rolBindingen = new java.util.IdentityHashMap<>();
             t.rolBindingen.putAll(rolBindingen);
         }
-        if (letVormen != null && !letVormen.isEmpty()) {
-            t.letVormen = new java.util.IdentityHashMap<>();   // identity, for the same reason as rolBindingen
-            t.letVormen.putAll(letVormen);
+        if (keuzes != null && !keuzes.isEmpty()) {
+            t.keuzes = new java.util.IdentityHashMap<>();   // identity, for the same reason as rolBindingen
+            t.keuzes.putAll(keuzes);
         }
-        // after letVormen: the derivation reads a binder's unit through that side channel (ch. 4.10).
-        t.eff = new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(t.letVormen);
+        // after keuzes: the derivation descends an IfThenElse through that carrier map (ch. 4.10).
+        t.eff = new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(
+                lets == null ? List.of() : lets, t.keuzes);
         t.model0 = t.run();
         return t;
     }
@@ -3611,11 +3613,11 @@ public final class ExecModelTranspiler {
     /** Scalar value: Literal | own-attr read | Parameter-global read | a {@code +} of those (rsNul leegwaarde).
      *  null -> skip. The global read pulls its value from the consequence-bound map (see {@link #regel}). */
     private WaardeFn scalarWaarde(Objecttype valueSubject, Expr e) {
-        geenUnieLet(e);
-        // IR-SPEC ch. 4.10: a Let-cluster CARRIER (an Onopgelost registered in the letVormen side channel).
-        // Asked FIRST so no later arm can mistake the carrier for an ordinary unresolved leaf.
-        io.github.yhavinga.regelspraak.loader.LetVorm letVorm = e == null ? null : letVormen.get(e);
-        if (letVorm != null) return letWaarde(valueSubject, letVorm);
+        // IR-SPEC ch. 4.10: the Let cluster — the two union nodes, and an IfThenElse CARRIER (an Onopgelost
+        // registered in the keuzes map). Asked FIRST so no later arm can mistake a carrier for an ordinary
+        // unresolved leaf.
+        if (e instanceof Expr.Let || e instanceof Expr.BinderRef || (e != null && keuzes.containsKey(e)))
+            return letWaarde(valueSubject, e);
         if (e instanceof Expr.Literal lit && lit.type().isNumeriek()) {
             // §13.2.5/§389: a non-terminating rational literal (1/3) becomes an EXACT Breuk so downstream +,-,×,÷
             // stay exact (9 maal 1/3 = 3); a terminating one (4/2, 3/2) stays a plain BigDecimal (fast path).
@@ -3776,7 +3778,7 @@ public final class ExecModelTranspiler {
             return new WaardeFn((s, gm) -> {
                 // Evaluation ORDER mirrors ref, measured (ref/lib/eval.ml, the Begrensd arm: a let-bound basis,
                 // then `Arith.clamp ~min_:(bound minimum) ~max_:(bound maximum) v`, whose labelled arguments OCaml
-                // applies right to left): basis, then MAXIMUM, then minimum. Under a ch. 4.10 carrier that order
+                // applies right to left): basis, then MAXIMUM, then minimum. Under a ch. 4.10 node that order
                 // decides whether a binder read in one bound raises the barrier before a §6.5 site in the other
                 // bound runs (CompanionPadWitnessTest (i)) — and, on the value side, whether a division by numeric
                 // zero there is reached at all. Java's left-to-right argument order would invert it.
@@ -3843,14 +3845,14 @@ public final class ExecModelTranspiler {
     }
 
     /**
-     * The §6.5/§6.6 fout-companion's <b>path probe</b>. A division or wortel that sits under a ch. 4.10 carrier
-     * (a Let, an IfThenElse) faults only if its site is actually EVALUATED, and under ch. 10.2 (exactly one
+     * The §6.5/§6.6 fout-companion's <b>path probe</b>. A division or wortel that sits under a ch. 4.10 node
+     * (a {@link Expr.Let}, or an IfThenElse carrier) faults only if its site is actually EVALUATED, and under ch. 10.2 (exactly one
      * branch runs) and ch. 10.6 (call-by-need; the leeg-barrier at the read) that depends on which branch the
      * guard takes, which reads force which needs, and in what ORDER — a read left of the site can end the Let
      * before the site is reached, a read right of it cannot. No static predicate over the operands can say
      * that; the value lowering can, because it IS that operational semantics ({@link #letWaarde}: the
      * {@link Binderslot} thunk, the per-evaluation {@link Barriere}, the branch guard). So such a companion
-     * re-evaluates the OUTERMOST carrier's own {@link WaardeFn} on the subject with a probe planted in the
+     * re-evaluates the OUTERMOST such node's own {@link WaardeFn} on the subject with a probe planted in the
      * environment map under {@link #SLEUTEL}, and every §6.5/§6.6 site that faults while running reports
      * itself here (the division arm of {@link #scalarWaarde}, the wortel arm of {@link #scalarWrapper}). A site
      * on a path that does not run — the branch not taken, a value no read forces, anything behind a read that
@@ -3862,16 +3864,16 @@ public final class ExecModelTranspiler {
      * fabricated and missed on the two Begrensd flanks). A form whose child order differs from ref's makes the
      * probe wrong on exactly the flank where a barrier read and a site sit in different children.
      *
-     * <p>The outermost carrier is the right unit to probe: every non-carrier form the companion walks descend
+     * <p>The outermost ch. 4.10 node is the right unit to probe: every other form the companion walks descend
      * (Binair, Afgerond, Begrensd, a Functie's arguments) evaluates ALL its children unconditionally, here and
-     * in ref, and a barrier never escapes the Let that raised it — so a carrier at the top of its path runs
-     * exactly when the host value runs, and a site with no carrier above it keeps its static leeg/negatief
+     * in ref, and a barrier never escapes the Let that raised it — so a ch. 4.10 node at the top of its path runs
+     * exactly when the host value runs, and a site with no such node above it keeps its static leeg/negatief
      * predicate (unchanged v0 behaviour, DRL parity). The aggregation-arithmetic path ({@link #lowerVal})
-     * lowers no carrier at all (a host with one there skips, and skips its companions with it), so every
-     * carrier-hosted site is under {@link #scalarWaarde}, which is what the probe re-lowers.
+     * lowers no ch. 4.10 node at all (a host with one there skips, and skips its companions with it), so every
+     * path-probed site is under {@link #scalarWaarde}, which is what the probe re-lowers.
      *
      * <p><b>What the gate asks, and what it therefore does and does not guarantee.</b> The companion fires when
-     * SOME §6.5/§6.6 site under this carrier ran and faulted — not when the one syntactic site the companion is
+     * SOME §6.5/§6.6 site under this node ran and faulted — not when the one syntactic site the companion is
      * named after did. Measured, fix round 2 of the companion-onder-drager card: on
      * {@code Let d = deler in ((inkomen ÷ tweede) plus (5,00 ÷ leegding))} with {@code leegding} absent, ref says
      * INCONSISTENT and a per-site gate says consistent in SILENCE — the second site has a Literal dividend, so it
@@ -3881,11 +3883,11 @@ public final class ExecModelTranspiler {
      * (both candidates measured; the structural one leaves the flank red and would additionally conflate two
      * structurally equal sites). What the wide gate keeps is the no-fabrication half — every report is a real
      * fault on a path that really ran, so a barrier that cuts the sites off fires nothing (the twin of (a'')).
-     * What it gives up is per-site attribution: two qualifying sites under one carrier make two companions that
+     * What it gives up is per-site attribution: two qualifying sites under one node make two companions that
      * both fire on either one's fault. That is not observable — the inserted Inconsistentie carries the HOST
      * rule name and subject, never the companion name, and {@link #companionRule}'s §9.5 idempotency guard
      * collapses them to one fact — but a case pin cannot see it either, so it is stated here rather than
-     * witnessed. The remaining coverage limit is unchanged: a carrier with NO qualifying site gets no companion
+     * witnessed. The remaining coverage limit is unchanged: a ch. 4.10 node with NO qualifying site gets no companion
      * at all, so a lone non-qualifying site under it still misses its fault.
      *
      * <p>Session-safe for the same reason {@link Binderslot} is: created inside the companion's consequence,
@@ -3905,7 +3907,7 @@ public final class ExecModelTranspiler {
             if (gm.get(SLEUTEL) instanceof Sonde sonde) sonde.gemeld = true;
         }
 
-        /** Whether a §6.5/§6.6 site under the probed carrier ran and faulted (see the class comment on why this
+        /** Whether a §6.5/§6.6 site under the probed node ran and faulted (see the class comment on why this
          *  is not per-site). */
         boolean heeftFoutGemeld() { return gemeld; }
     }
@@ -3969,8 +3971,8 @@ public final class ExecModelTranspiler {
      * call-by-need the value's OWN globals stay in that union even though the value may never run: the thunk is
      * built from the enclosing map, so every name it could read must still be bound on the consequence.
      */
-    private WaardeFn letWaarde(Objecttype valueSubject, io.github.yhavinga.regelspraak.loader.LetVorm vorm) {
-        if (vorm instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Lezing lz) {
+    private WaardeFn letWaarde(Objecttype valueSubject, Expr e) {
+        if (e instanceof Expr.BinderRef lz) {
             // WF-064: the nearest enclosing binder of this name. "Nearest" is exactly what the map gives —
             // an inner Let's put SHADOWS the outer one in the copy the body sees. ch. 10.6 clause 1+2: the read
             // FORCES the need (once) and, if that value is leeg, raises the owning Let's barrier rather than
@@ -3986,7 +3988,7 @@ public final class ExecModelTranspiler {
                 return need.lees();
             }, Set.of(sleutel));
         }
-        if (vorm instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Binding b) {
+        if (e instanceof Expr.Let b) {
             // ch. 10.6: [value] is evaluated in the ENCLOSING scope (WF-076 — the binder is not visible in its
             // own value), so it compiles against the untouched incoming map.
             WaardeFn vf = scalarWaarde(valueSubject, b.value());
@@ -4017,7 +4019,7 @@ public final class ExecModelTranspiler {
                 }
             }, g);
         }
-        io.github.yhavinga.regelspraak.loader.LetVorm.Keuze k = (io.github.yhavinga.regelspraak.loader.LetVorm.Keuze) vorm;
+        io.github.yhavinga.regelspraak.loader.IrLoader.Keuze k = keuzes.get(e);
         LetConditie c = letConditie(valueSubject, k.conditie());
         if (c == null) return null;
         WaardeFn dan = scalarWaarde(valueSubject, k.dan());
@@ -4064,41 +4066,47 @@ public final class ExecModelTranspiler {
     }
 
     /**
-     * ch. 4.10: the UNION forms {@link Expr.Let} and {@link Expr.BinderRef} — which the shared frontend slice grew
-     * when the RegelSpraak emitter learned to lower a §13.4.2.10 variabelendeel — MUST NOT occur in this backend.
-     * {@link io.github.yhavinga.regelspraak.loader.IrLoader} parses every wire Let cluster into an
-     * {@link Expr.Onopgelost} CARRIER plus the {@code letVormen} side channel (see
-     * {@link io.github.yhavinga.regelspraak.loader.LetVorm}), and nothing here builds an Expr tree of its own, so
-     * the union forms are unreachable by construction. One that DID arrive would mean the loader changed under this
-     * backend — and every walk below treats an unrecognised node as an opaque LEAF, i.e. it would under-report in
-     * SILENCE (a missing §6.5/§6.6 companion reads as "consistent"; a missing read reads as "nothing to watch"),
-     * exactly the failure mode the carrier design exists to prevent. So: fail fast, never a quiet skip.
+     * ALL {@link Expr} children a ch. 4.10 node carries for the tree walks in this file: a {@link Expr.Let}'s
+     * value+body, and — for the {@code IfThenElse} CARRIER, which a generic walk reads as an opaque Onopgelost
+     * leaf — its two branches and EVERY Expr operand of its condition. Empty for anything else. This is the
+     * POSSIBLY-evaluated set — which children actually run is a fire-time question (ch. 10.2/10.6), and the one
+     * walk whose output is an ANSWER rather than a refusal or registration (the §6.5/§6.6 companions) settles it
+     * at fire time through the path probe ({@link Sonde}), never by seeing less here.
+     *
+     * <p>The walks below are hand-written over concrete v0 node shapes, so they descend a Let only by taking this
+     * accessor — a walk that does not silently under-reports and answers wrong. The full inventory, so the next
+     * addition sees it:
+     *
+     * <p><b>(a) Descend, output a REFUSAL or a REGISTRATION</b>, where seeing more than actually runs is still a
+     * correct answer: {@link #foutplekSoort} (the ch. 7 defaults division/wortel fence — refuses more often),
+     * {@link #navRefs} (far-side reactivity — watches more), {@link #exprLeesnamen} (defaults salience — sinks
+     * further), {@link #kanBreukOpleveren} (exact-comparison routing — at worst takes the exact path where the
+     * plain one would also have served; blind, it takes a {@code (BigDecimal)} cast that throws).
+     *
+     * <p><b>(b) Descend, output an ANSWER</b> — a §6.5/§6.6 fout-companion, which is WRONG (inconsistent where ref
+     * says consistent) if built off a path that never runs: {@link #verzamelDelingen} and {@link #verzamelWortels}.
+     * They see every site that MAY run, and a companion of a site under a Let or an IfThenElse carrier carries the PATH: its
+     * condition re-evaluates the outermost such node on the subject with a probe ({@link Sonde}) and fires only
+     * when a §6.5/§6.6 site under it actually ran and faulted.
+     *
+     * <p><b>(c) Deliberately do NOT descend</b>, each for a checked reason: {@link #startpuntCompanions} (§6.8 —
+     * ref carries no leeg-anchor check at all, so descending would ADD a ref-divergence; recorded at that method);
+     * {@code parityOnveilig}, {@code containsAggregatie}, {@code isDatumRekenExpr} and {@link #lowerVal}, which
+     * pattern-match concrete v0 node shapes, so a Let matches none and the answer is "not that shape" — none can
+     * fabricate a fault, because what a Let holds is lowered, or refused loudly, by {@link #scalarWaarde}, and
+     * {@code lowerVal}'s own fall-through is a null, i.e. an honest skip; {@code companionOperand}, the STATIC
+     * leeg/vol predicate over a site's operands, which stays a walk over {@code AttribuutRef} only (DRL parity) —
+     * the scope question moved one level up, to {@link #kwalificeertOperand}; and
+     * {@code transpiler.Stratificatie.verzamelReads} (§9.2), a {@code Conditie} walk over a rule's voorwaarde only,
+     * which a Keuze's condition (living in the VALUE) never reaches.
      */
-    private static void geenUnieLet(Expr e) {
-        if (e instanceof Expr.Let || e instanceof Expr.BinderRef)
-            throw new IllegalStateException("IR-SPEC ch. 4.10: a union " + e.getClass().getSimpleName()
-                    + " reached the Drools transpiler; the loader must deliver a carrier + letVormen entry — bron: "
-                    + e.bron());
-    }
-
-    /** ALL {@link Expr} children a ch. 4.10 CARRIER hides from the generic tree walks: a Let's value+body, an
-     *  IfThenElse's two branches and EVERY Expr operand of its condition. Empty for a non-carrier. This is the
-     *  POSSIBLY-evaluated set — which children actually run is a fire-time question (ch. 10.2/10.6), and the
-     *  one walk whose output is an ANSWER rather than a refusal or registration (the §6.5/§6.6 companions)
-     *  settles it at fire time through the path probe ({@link Sonde}), never by seeing less here. The
-     *  inventory of walks is enumerated on {@code LetVorm}; a walk that does not consult this silently
-     *  under-reports and answers wrong. */
     private List<Expr> letKinderen(Expr e) {
-        geenUnieLet(e);
-        io.github.yhavinga.regelspraak.loader.LetVorm lv = e == null ? null : letVormen.get(e);
-        if (lv == null) return List.of();
-        if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Binding b) return List.of(b.value(), b.body());
-        if (lv instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Keuze k) {
-            List<Expr> uit = new ArrayList<>(List.of(k.dan(), k.anders()));
-            conditieOperanden(k.conditie(), uit);
-            return uit;
-        }
-        return List.of();   // a BinderRef reads only the environment
+        if (e instanceof Expr.Let b) return List.of(b.value(), b.body());
+        io.github.yhavinga.regelspraak.loader.IrLoader.Keuze k = e == null ? null : keuzes.get(e);
+        if (k == null) return List.of();   // a BinderRef reads only the environment
+        List<Expr> uit = new ArrayList<>(List.of(k.dan(), k.anders()));
+        conditieOperanden(k.conditie(), uit);
+        return uit;
     }
 
     /**
@@ -4113,7 +4121,7 @@ public final class ExecModelTranspiler {
      * from such a shape never reach a rule that plays. It is emphatically NOT an "extra fault is harmless"
      * argument: an extra §6.5/§6.6 companion is a WRONG ANSWER (inconsistent where ref says consistent), not a
      * refusal. The two companion walks therefore never decide from this collection alone: a site they find
-     * under a carrier gets a companion whose condition is the path probe ({@link Sonde}), which fires only
+     * under a ch. 4.10 node gets a companion whose condition is the path probe ({@link Sonde}), which fires only
      * when the site actually ran.
      */
     private static void conditieOperanden(Conditie c, List<Expr> uit) {
@@ -4610,7 +4618,7 @@ public final class ExecModelTranspiler {
      *  NON-terminating rational literal can be. */
     private boolean kanBreukOpleveren(Expr e) {
         if (e == null) return false;
-        // ch. 4.10: descend THROUGH a Let-cluster carrier first. A carrier is an Onopgelost leaf to the
+        // ch. 4.10: descend THROUGH a Let (and an IfThenElse carrier) first. Neither matches the concrete
         // pattern matches below, so a Breuk-producing division behind a Let read "cannot be a Breuk" and the
         // caller took the (BigDecimal) cast path — which THROWS a ConstraintEvaluationException on the Breuk
         // the value side actually computes (an unexplained crash, not a refusal). See letKinderen.
@@ -6015,33 +6023,41 @@ public final class ExecModelTranspiler {
         return navReader(a, subject);   // own attribute or to-one navigated (null for to-many / absent / unresolvable)
     }
 
-    /** Whether a §6.5/§6.6 site's operand lets the site QUALIFY for a companion. Outside a carrier that is
+    /** Whether a §6.5/§6.6 site's operand lets the site QUALIFY for a companion. Outside a ch. 4.10 node that is
      *  {@link #companionOperand} — a re-readable own or to-one attribute for the static predicate (DRL parity).
-     *  UNDER a carrier the companion's condition is the path probe, which observes the site's evaluation instead
+     *  UNDER one the companion's condition is the path probe, which observes the site's evaluation instead
      *  of re-reading its operands, so a ch. 4.10 binder READ qualifies too: the "Daarbij geldt" variabelendeel
      *  shape the RegelSpraak emitter produces ({@code Let n = teller in n gedeeld door deler}) — a read that,
      *  under ch. 10.6, either answers the bound value or raises the barrier before the site runs, exactly as ref
-     *  evaluates it (CompanionPadWitnessTest (j)). Everything else stays out, bare and under a carrier alike, and
+     *  evaluates it (CompanionPadWitnessTest (j)). Everything else stays out, bare and under a ch. 4.10 node alike, and
      *  raises no Inconsistentie in this backend where ref may: a Literal, a ParameterRef, a to-MANY navigation, a
      *  temporal or dimensioned attribute, and any compound operand (a nested Binair, a Functie, a Let node as the
-     *  operand of a site that itself sits ABOVE every carrier — there the site has no probe unit). */
+     *  operand of a site that itself sits ABOVE every ch. 4.10 node — there the site has no probe unit). */
     private boolean kwalificeertOperand(Expr e, Expr drager, Objecttype subject) {
         if (companionOperand(e, subject) != null) return true;
-        return drager != null && e != null && letVormen.get(e) instanceof io.github.yhavinga.regelspraak.loader.LetVorm.Lezing;
+        return drager != null && e instanceof Expr.BinderRef;
     }
 
-    /** A §6.5 division or §6.6 wortel SITE in a rule value, with the OUTERMOST ch. 4.10 carrier on the path from
+    /** Whether {@code e} is a ch. 4.10 node the §6.5/§6.6 path probe can be planted on — a {@link Expr.Let}, a
+     *  {@link Expr.BinderRef} or an {@code IfThenElse} carrier. The BinderRef arm never selects a probe host in
+     *  practice (it has no {@link #letKinderen}, so no site is ever collected under one) and is named for
+     *  completeness of the cluster, not for an effect. */
+    private boolean isLetKnoop(Expr e) {
+        return e instanceof Expr.Let || e instanceof Expr.BinderRef || (e != null && keuzes.containsKey(e));
+    }
+
+    /** A §6.5 division or §6.6 wortel SITE in a rule value, with the OUTERMOST ch. 4.10 node on the path from
      *  the value root down to it — null when there is none, in which case the site runs whenever the value does
      *  and its companion keeps the static leeg/negatief predicate; otherwise the companion's condition is the
-     *  path probe over that carrier ({@link Sonde}). */
+     *  path probe over that node ({@link Sonde}). */
     private record Plek<T extends Expr>(T site, Expr drager) {}
 
     /** §6.5 Tabel 12 "waarde gedeeld door leeg" companion: the value side already degrades the division to leeg
      *  (rsGedeeld), so this surfaces the Fout via the §9.5 Inconsistentie channel — a SEPARATE insert-only rule per
      *  division that fires when the dividend is present and the divisor is empty (and the host voorwaarde holds),
-     *  and — for a division under a ch. 4.10 carrier — only when the division's path actually RAN ({@link Sonde}).
+     *  and — for a division under a ch. 4.10 node — only when the division's path actually RAN ({@link Sonde}).
      *  Scope: each operand is the subject's OWN attribute or one reached by a to-ONE navigation (companionOperand),
-     *  or — under a carrier only — a binder read ({@link #kwalificeertOperand}). Mirrors DrlTranspiler.deelDoorLeegFout. */
+     *  or — under such a node only — a binder read ({@link #kwalificeertOperand}). Mirrors DrlTranspiler.deelDoorLeegFout. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private List<Rule> delingCompanions(ResolvedRegel r) {
         if (!(r.doel() instanceof Expr.AttribuutRef doel) || doel.objecttype() == null) return List.of();
@@ -6056,15 +6072,15 @@ public final class ExecModelTranspiler {
         // indexes over the SAME filtered list in BOTH back-ends. Indexing over the raw `delingen` count diverged from
         // DRL when a rule mixes qualifying and non-qualifying divisions (e.g. a §11 division variable inlined next to a
         // parameter division): DRL named the lone qualifier "(deling door leeg)", the model "(deling door leeg 1)".
-        // A carrier-hosted division counts in the SAME index, which BREAKS that suffix parity for a rule mixing
-        // bare and carrier-hosted qualifiers. Measured with both transpilers on one model (fix round 2 of the
+        // A path-probed division counts in the SAME index, which BREAKS that suffix parity for a rule mixing
+        // bare and path-probed qualifiers. Measured with both transpilers on one model (fix round 2 of the
         // companion-onder-drager card), "(inkomen ÷ deler) plus (Let d = leegding in d plus (inkomen ÷ tweede))":
         // DRL emits one companion, "(deling door leeg)", this back-end two, "(deling door leeg 1)" and
         // "(deling door leeg 2)". DRL lowers no Let, true — but DrlTranspiler.deelDoorLeegFout returns early only
         // on a voorwaardeMarker, so it still emits the companion of the BARE site while its own verzamelDelingen
         // never descends into the Let; there IS a name to keep in step, and this does not keep it. Accepted, not
         // worked around: the companion NAME is not observable — the Inconsistentie both back-ends insert carries
-        // the HOST rule name and the subject — and a separate suffix space for carrier-hosted sites would make a
+        // the HOST rule name and the subject — and a separate suffix space for path-probed sites would make a
         // bare site's name depend on which OTHER sites lower. Recorded as an open point on the card.
         List<Plek<Expr.Binair>> kwalificeren = new ArrayList<>();
         for (Plek<Expr.Binair> p : delingen)
@@ -6078,7 +6094,7 @@ public final class ExecModelTranspiler {
             // null-safe readers for the dividend/divisor — own attribute or a to-one navigated read (a null relation
             // collapses to leeg, exactly as DRL's root-guarded "(partner != null && partner.x != null)" / "partner.x" forms).
             // Consulted by the STATIC predicate only, i.e. for a bare site, where both are non-null by
-            // kwalificeertOperand; a carrier-hosted site (a binder operand has no reader) decides by the probe.
+            // kwalificeertOperand; a path-probed site (a binder operand has no reader) decides by the probe.
             java.util.function.Function<Object, Object> dividend = companionOperand(d.links(), subject);
             java.util.function.Function<Object, Object> divisor = companionOperand(d.rechts(), subject);
             // dividend present AND divisor empty (an empty LEFT short-circuits to 0 -> no fout, so guard the dividend too).
@@ -6093,9 +6109,9 @@ public final class ExecModelTranspiler {
 
     /** §6.6 "wortel van een negatief getal" companion: the value side degrades a negative-radicand root to leeg
      *  (rsWortel), so this surfaces the Fout via the §9.5 Inconsistentie channel — a SEPARATE insert-only rule per
-     *  wortel whose radicand (own attribute or a to-ONE navigation, companionOperand; under a carrier also a
+     *  wortel whose radicand (own attribute or a to-ONE navigation, companionOperand; under a ch. 4.10 node also a
      *  binder read, {@link #kwalificeertOperand}) is &lt; 0 (and the host voorwaarde holds), and — for a wortel
-     *  under a ch. 4.10 carrier — only when its path actually RAN ({@link Sonde}). Mirrors
+     *  under a ch. 4.10 node — only when its path actually RAN ({@link Sonde}). Mirrors
      *  DrlTranspiler.wortelNegatiefFout. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private List<Rule> wortelCompanions(ResolvedRegel r) {
@@ -6137,13 +6153,13 @@ public final class ExecModelTranspiler {
      *  parameter or function anchor still degrades to a leeg write but raises no Inconsistentie (the same
      *  scope limit as the §6.5/§6.6 companions). Mirrors DrlTranspiler.startpuntLeegFout.
      *
-     *  <p><b>Why the leftmost peel below does NOT descend through a ch. 4.10 Let carrier</b> (unlike
+     *  <p><b>Why the leftmost peel below does NOT descend through a ch. 4.10 node</b> (unlike
      *  {@link #verzamelDelingen} / {@link #verzamelWortels} / {@link #kanBreukOpleveren}). Measured, not
      *  assumed: on a two-flank pair — a startpunt-lid rule whose anchor is a leeg own attribute, once bare and
      *  once wrapped in {@code Let d = basis in d} — ref answers CONSISTENT on BOTH (it has no §6.8
      *  leeg-anchor check at all; the fault is production-RegelSpraak semantics this port carries and the spec
      *  does not). The bare flank therefore already diverges — Drools inconsistent, ref consistent — and the
-     *  carrier-blindness of the peel is what makes the WRAPPED flank agree with ref. So this walk does NOT
+     *  ch.-4.10-blindness of the peel is what makes the WRAPPED flank agree with ref. So this walk does NOT
      *  share the §6.5/§6.6/§Breuk gap class (blind walk → missing fault → silently wrong); descending would
      *  ADD a ref-divergence rather than remove one. Left as is deliberately: the §6.8-vs-ref question is a
      *  spec matter, out of this card's scope, and no corpus golden writes a startpunt lid by rule. */
@@ -6221,16 +6237,16 @@ public final class ExecModelTranspiler {
     }
 
     /** Collect the WORTEL nodes through the arithmetic-wrapper layers of a value (for the §6.6 fout), each with
-     *  the outermost ch. 4.10 carrier above it. Mirrors DrlTranspiler.verzamelWortels over the shared v0 forms; the
-     *  CARRIER descent is additional — the DRL back-end lowers no Let: it writes a TODO-expressie marker for the
-     *  carrier INSIDE the host rule's value and still emits the companions of the sites OUTSIDE it (measured;
+     *  the outermost ch. 4.10 node above it. Mirrors DrlTranspiler.verzamelWortels over the shared v0 forms; the
+     *  ch. 4.10 descent is additional — the DRL back-end lowers no Let: it writes a TODO-expressie marker for the
+     *  node INSIDE the host rule's value and still emits the companions of the sites OUTSIDE it (measured;
      *  the companion-name consequence is at {@link #delingCompanions}). Without the descent a Let-wrapped
      *  wortel loses its §9.5 companion while ref still raises the fault: silently consistent. The descent takes the FULL
      *  {@link #letKinderen} — every child that MAY run — because a companion is an ANSWER and which child DID
-     *  run is decided at fire time by the path probe over the carrier ({@link Sonde}), never by this walk. */
+     *  run is decided at fire time by the path probe over that node ({@link Sonde}), never by this walk. */
     private void verzamelWortels(Expr e, Expr drager, List<Plek<Expr.Functie>> uit) {
-        // the OUTERMOST carrier on the path is fixed once entered; a nested carrier stays under it
-        Expr onder = drager != null ? drager : (e != null && letVormen.containsKey(e) ? e : null);
+        // the OUTERMOST ch. 4.10 node on the path is fixed once entered; a nested one stays under it
+        Expr onder = drager != null ? drager : (isLetKnoop(e) ? e : null);
         for (Expr k : letKinderen(e)) verzamelWortels(k, onder, uit);
         if (e instanceof Expr.Functie f) {
             if (f.kind() == Expr.FunctieKind.WORTEL) uit.add(new Plek<>(f, drager));
@@ -6247,9 +6263,9 @@ public final class ExecModelTranspiler {
     }
 
     /** One §6.5/§6.6 companion rule over the host's own gate (voorwaarde + §4.2 window). A site OUTSIDE every
-     *  carrier gets {@code statisch} — the static leeg/negatief predicate on its re-readable operands, the
-     *  unchanged v0 companion (DRL parity); a site UNDER a carrier gets the path probe instead: the companion
-     *  fires when re-evaluating that carrier on the subject reports a §6.5/§6.6 fault ({@link Sonde}), which is
+     *  node gets {@code statisch} — the static leeg/negatief predicate on its re-readable operands, the
+     *  unchanged v0 companion (DRL parity); a site UNDER one gets the path probe instead: the companion
+     *  fires when re-evaluating that node on the subject reports a §6.5/§6.6 fault ({@link Sonde}), which is
      *  ref's own condition under ch. 10.2/10.6. null when the host gate does not lower (DRL: voorwaardeMarker
      *  -> no companion). */
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -6270,7 +6286,7 @@ public final class ExecModelTranspiler {
         String naam = r.naam();
         if (plek.drager() == null)
             return companionRule(compNaam, naam, incClass, sVar, statisch.apply(pattern), gateExtra);
-        // The probe decides in the CONSEQUENCE, which binds the carrier's Parameter globals the way the host
+        // The probe decides in the CONSEQUENCE, which binds the node's Parameter globals the way the host
         // binds its own (a pattern expr hosts one global at most). The opaque always-true expr keeps the pattern
         // class-reactive (the freshness idiom), so the probe re-runs whenever the subject is updated and the
         // insert-only companion still lands once a producer fills what the path reads; the §9.5 idempotency
@@ -6280,11 +6296,11 @@ public final class ExecModelTranspiler {
                 sondeConsequentie(compNaam, naam, subject, sVar, plek));
     }
 
-    /** The consequence of a carrier-hosted companion: re-evaluate the outermost carrier on the subject with a
+    /** The consequence of a path-probed companion: re-evaluate the outermost ch. 4.10 node on the subject with a
      *  {@link Sonde} planted in the environment, and insert the host's Inconsistentie iff the probe reports a
-     *  §6.5/§6.6 fault under that carrier (not per site — see {@link Sonde}). The carrier lowers through the same
+     *  §6.5/§6.6 fault under that node (not per site — see {@link Sonde}). The node lowers through the same
      *  {@link #scalarWaarde} the host lowered it with (under the same
-     *  §13.4.1 keten flag), so its globals are a subset of the host's; a carrier that does not lower here, or a
+     *  §13.4.1 keten flag), so its globals are a subset of the host's; a node that does not lower here, or a
      *  global the host could not have bound, is an invariant violation and fails fast — never a silently missing
      *  companion. */
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -6358,17 +6374,17 @@ public final class ExecModelTranspiler {
         return PatternDSL.rule(kop(compNaam)).build(items.toArray(new RuleItemBuilder[0]));
     }
     /** Collect the GEDEELD_DOOR / GEDEELD_DOOR_ABS nodes through the arithmetic-wrapper layers of a value (for the
-     *  §6.5 fout), each with the outermost ch. 4.10 carrier above it — byte-identical to DrlTranspiler.verzamelDelingen
-     *  over the shared v0 forms; the CARRIER descent is additional — the DRL back-end lowers no Let: it writes a
-     *  TODO-expressie marker for the carrier INSIDE the host rule's value and still emits the companions of the
+     *  §6.5 fout), each with the outermost ch. 4.10 node above it — byte-identical to DrlTranspiler.verzamelDelingen
+     *  over the shared v0 forms; the ch. 4.10 descent is additional — the DRL back-end lowers no Let: it writes a
+     *  TODO-expressie marker for the node INSIDE the host rule's value and still emits the companions of the
      *  sites OUTSIDE it (measured; the companion-name consequence is at {@link #delingCompanions}). Without the
      *  descent a Let-wrapped division loses its §6.5/§9.5 companion while ref still raises the fault: silently
      *  consistent. The descent
      *  takes the FULL {@link #letKinderen} — every child that MAY run — because a companion is an ANSWER and which
-     *  child DID run is decided at fire time by the path probe over the carrier ({@link Sonde}), never by this walk. */
+     *  child DID run is decided at fire time by the path probe over that node ({@link Sonde}), never by this walk. */
     private void verzamelDelingen(Expr e, Expr drager, List<Plek<Expr.Binair>> uit) {
-        // the OUTERMOST carrier on the path is fixed once entered; a nested carrier stays under it
-        Expr onder = drager != null ? drager : (e != null && letVormen.containsKey(e) ? e : null);
+        // the OUTERMOST ch. 4.10 node on the path is fixed once entered; a nested one stays under it
+        Expr onder = drager != null ? drager : (isLetKnoop(e) ? e : null);
         for (Expr k : letKinderen(e)) verzamelDelingen(k, onder, uit);
         if (e instanceof Expr.Binair b) {
             // §6.5 "gedeeld door" AND "gedeeld door (ABS)" both lower to a leeg-divisor fout (mirror DRL).
@@ -6936,7 +6952,8 @@ public final class ExecModelTranspiler {
         return uit;
     }
     private void eigenReads(Expr e, Objecttype subject, java.util.Set<String> uit) {
-        // ch. 4.10: a Let-cluster carrier hides its reads from this walk. Missing them would leave a chained
+        // ch. 4.10: a Let hides its reads from this walk (and an IfThenElse carrier hides them twice over).
+        // Missing them would leave a chained
         // berekening ("het gewogen inkomen is (Let ink = inkomen in ink maal de factor)") with an EMPTY
         // reactivity mask — computed once against a leeg factor and never recomputed. See letKinderen.
         for (Expr k : letKinderen(e)) eigenReads(k, subject, uit);
@@ -6968,7 +6985,7 @@ public final class ExecModelTranspiler {
      *  re-fires on the FAR fact's update. Each is turned into a far-side JOIN pattern (see {@link #navReactiviteit})
      *  so the rule reacts to the navigated fact's mutation. Walks the SAME tree shape as {@link #eigenReads}. */
     private void navRefs(Expr e, Objecttype subject, java.util.List<Expr.AttribuutRef> uit) {
-        for (Expr k : letKinderen(e)) navRefs(k, subject, uit);   // ch. 4.10: see through a Let-cluster carrier
+        for (Expr k : letKinderen(e)) navRefs(k, subject, uit);   // ch. 4.10: see into a Let / IfThenElse carrier
         if (e instanceof Expr.AttribuutRef a) {
             if (a.navigatieRol() != null || (a.objecttype() != null && a.objecttype() != subject)) uit.add(a);
         } else if (e instanceof Expr.Binair b) {

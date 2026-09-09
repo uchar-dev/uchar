@@ -2,10 +2,11 @@ package io.github.yhavinga.regelspraak.transpiler.kern;
 
 import io.github.yhavinga.regelspraak.ir.Conditie;
 import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.loader.LetVorm;
+import io.github.yhavinga.regelspraak.loader.IrLoader;
 import io.github.yhavinga.regelspraak.model.Datatype;
 import io.github.yhavinga.regelspraak.model.Eenheid;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -65,19 +66,27 @@ public final class EffectieveEenheid {
 
     private static final Map<String, Eenheid> LEEG = Map.of();
 
-    /** The ch. 4.10 Let cluster per {@link Expr.Onopgelost} CARRIER, by identity — the same side channel
-     *  {@code ExecModelTranspiler} lowers from. Empty for a consumer without one (the DRL back-end). */
-    private final Map<Object, LetVorm> letVormen;
+    /** ch. 4.10: every {@link Expr.Let} the document carries ({@code IrLoader.Loaded.lets}). Only
+     *  {@link #bouwLezingen} needs it: the derivation itself meets a Let as an ordinary node in the tree it is
+     *  walking, but the binder-read table must START at bindings, and a {@link Expr.BinderRef} asked in isolation
+     *  carries no route back up to its own. Empty for a document without a Let. */
+    private final Collection<Expr> lets;
 
-    /** The derived unit of every binder READ (a {@code Lezing} carrier), by identity — precomputed, because a
-     *  restatement site deep inside a Let body asks for a binder's unit without the binding in hand. Built by
-     *  walking each {@code Binding} with a proper scope, so shadowing resolves the way WF-064 says (nearest
-     *  enclosing binder wins). Null until first use. A recorded NULL value means "bound to a unitless value" —
-     *  membership, not the value, is what separates a bound read from an unbound one. */
+    /** The ch. 4.10 {@code IfThenElse} per {@link Expr.Onopgelost} CARRIER, by identity — the one cluster node with
+     *  no record in the vendored {@link Expr} union, so the same carrier map {@code ExecModelTranspiler} lowers
+     *  from. Empty for a consumer without one (the DRL back-end). */
+    private final Map<Object, IrLoader.Keuze> keuzes;
+
+    /** The derived unit of every binder READ, by identity — precomputed, because a restatement site deep inside a
+     *  Let body asks for a binder's unit without the binding in hand. Built by walking each {@link Expr.Let} with a
+     *  proper scope, so shadowing resolves the way WF-064 says (nearest enclosing binder wins). Null until first
+     *  use. A recorded NULL value means "bound to a unitless value" — membership, not the value, is what separates
+     *  a bound read from an unbound one. */
     private Map<Object, Eenheid> lezingEenheden;
 
-    public EffectieveEenheid(Map<Object, LetVorm> letVormen) {
-        this.letVormen = letVormen == null ? Map.of() : letVormen;
+    public EffectieveEenheid(Collection<? extends Expr> lets, Map<Object, IrLoader.Keuze> keuzes) {
+        this.lets = lets == null ? List.of() : List.copyOf(lets);
+        this.keuzes = keuzes == null ? Map.of() : keuzes;
     }
 
     /** The datatype every §4 restatement site must use in place of {@code e.type()}: the node's own annotation
@@ -108,8 +117,8 @@ public final class EffectieveEenheid {
         Eenheid annotatie = t == null ? null : t.eenheidOf();
         if (diepte > MAX_DIEPTE) return annotatie;
 
-        LetVorm lv = letVormen.get(e);
-        if (lv != null) return letEenheid(e, lv, omgeving, diepte, annotatie);
+        if (e instanceof Expr.Let || e instanceof Expr.BinderRef || keuzes.containsKey(e))
+            return letEenheid(e, omgeving, diepte, annotatie);
 
         if (e instanceof Expr.AttribuutRef a) {
             // the declaration is the source; there is none to consult when the resolver left the objecttype
@@ -307,23 +316,23 @@ public final class EffectieveEenheid {
         return AFGELEIDE_PRODUCTEN.size();
     }
 
-    private Eenheid letEenheid(Expr drager, LetVorm lv, Map<String, Eenheid> omgeving, int diepte, Eenheid annotatie) {
-        if (lv instanceof LetVorm.Binding b) return eenheid(b.body(), metBinder(omgeving, b, diepte), diepte + 1);
-        if (lv instanceof LetVorm.Lezing lz) {
+    private Eenheid letEenheid(Expr e, Map<String, Eenheid> omgeving, int diepte, Eenheid annotatie) {
+        if (e instanceof Expr.Let b) return eenheid(b.body(), metBinder(omgeving, b, diepte), diepte + 1);
+        if (e instanceof Expr.BinderRef lz) {
             // BOUND (to a unit, or to a unitless value) and UNBOUND are different facts, so both tables are asked
             // with containsKey: a binder bound to a unitless value HAS a source and the annotation may not speak
-            // over it; only a read no Binding anywhere binds falls back. Both maps hold nulls for exactly this.
+            // over it; only a read no Let anywhere binds falls back. Both maps hold nulls for exactly this.
             if (omgeving.containsKey(sleutel(lz.naam()))) return omgeving.get(sleutel(lz.naam()));
             if (lezingEenheden == null) bouwLezingen();
-            return lezingEenheden.containsKey(drager) ? lezingEenheden.get(drager) : annotatie;
+            return lezingEenheden.containsKey(e) ? lezingEenheden.get(e) : annotatie;
         }
         // ch. 10.2: exactly one branch runs; both must agree on the unit, so either arm derives it.
-        LetVorm.Keuze k = (LetVorm.Keuze) lv;
+        IrLoader.Keuze k = keuzes.get(e);
         Eenheid dan = eenheid(k.dan(), omgeving, diepte + 1);
         return dan != null ? dan : eenheid(k.anders(), omgeving, diepte + 1);
     }
 
-    private Map<String, Eenheid> metBinder(Map<String, Eenheid> omgeving, LetVorm.Binding b, int diepte) {
+    private Map<String, Eenheid> metBinder(Map<String, Eenheid> omgeving, Expr.Let b, int diepte) {
         Map<String, Eenheid> binnen = new HashMap<>(omgeving);
         // WF-076: the value is derived in the ENCLOSING scope (the binder is not visible in its own value).
         // A UNITLESS value binds null (HashMap carries it) rather than removing the key: removing would report
@@ -336,31 +345,30 @@ public final class EffectieveEenheid {
     // --- the binder-read table ------------------------------------------------------------------
 
     /**
-     * Record the derived unit of every binder READ, by walking each {@code Binding} with a scope. Walking from
-     * EVERY binding (not only the outermost) is deliberate and conflict-free: a walk started at an inner binding
-     * simply does not bind the outer names, so it records nothing for their reads; a walk started at an enclosing
-     * one shadows correctly and records both. A read whose binder no walk ever binds keeps its own annotation.
+     * Record the derived unit of every binder READ, by walking each {@link Expr.Let} with a scope. Walking from
+     * EVERY Let (not only the outermost) is deliberate and conflict-free: a walk started at an inner Let simply
+     * does not bind the outer names, so it records nothing for their reads; a walk started at an enclosing one
+     * shadows correctly and records both. A read whose binder no walk ever binds keeps its own annotation.
      */
     private void bouwLezingen() {
         lezingEenheden = new IdentityHashMap<>();
-        for (Map.Entry<Object, LetVorm> e : letVormen.entrySet())
-            if (e.getValue() instanceof LetVorm.Binding) noteer((Expr) e.getKey(), LEEG, 0);
+        for (Expr l : lets) noteer(l, LEEG, 0);
     }
 
     private void noteer(Expr e, Map<String, Eenheid> omgeving, int diepte) {
         if (e == null || diepte > MAX_DIEPTE) return;
-        LetVorm lv = letVormen.get(e);
-        if (lv instanceof LetVorm.Lezing lz) {
+        if (e instanceof Expr.BinderRef lz) {
             String k = sleutel(lz.naam());
             if (omgeving.containsKey(k)) lezingEenheden.put(e, omgeving.get(k));
             return;
         }
-        if (lv instanceof LetVorm.Binding b) {
+        if (e instanceof Expr.Let b) {
             noteer(b.value(), omgeving, diepte + 1);
             noteer(b.body(), metBinder(omgeving, b, diepte), diepte + 1);
             return;
         }
-        if (lv instanceof LetVorm.Keuze k) {
+        IrLoader.Keuze k = keuzes.get(e);
+        if (k != null) {
             for (Expr x : conditieOperanden(k.conditie())) noteer(x, omgeving, diepte + 1);
             noteer(k.dan(), omgeving, diepte + 1);
             noteer(k.anders(), omgeving, diepte + 1);

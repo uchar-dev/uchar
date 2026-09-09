@@ -219,7 +219,7 @@ class EenheidsconflictWitnessTest {
 
     private static Bron bron() { return Bron.synthetisch("witness"); }
 
-    private static EffectieveEenheid kaal() { return new EffectieveEenheid(Map.of()); }
+    private static EffectieveEenheid kaal() { return new EffectieveEenheid(List.of(), Map.of()); }
 
     /** "het totaal van het tarief van alle vondsten" over {@code ot} — the §7.1 fold shape. */
     private static Expr.Functie totaalOver(Objecttype ot) {
@@ -472,7 +472,7 @@ class EenheidsconflictWitnessTest {
         Thread.currentThread().setContextClassLoader(cl);
         try {
             assertNotNull(ExecModelTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(),
-                    loaded.rolBindingen(), loaded.letVormen()));
+                    loaded.rolBindingen(), loaded.lets(), loaded.keuzes()));
         } finally {
             Thread.currentThread().setContextClassLoader(vorige);
         }

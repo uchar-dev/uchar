@@ -2,7 +2,7 @@ package io.github.yhavinga.regelspraak.transpiler.kern;
 
 import io.github.yhavinga.regelspraak.ir.Bron;
 import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.loader.LetVorm;
+import io.github.yhavinga.regelspraak.loader.IrLoader;
 import io.github.yhavinga.regelspraak.model.Datatype;
 import io.github.yhavinga.regelspraak.model.Eenheid;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
@@ -52,7 +52,7 @@ class EffectieveEenheidWitnessTest {
 
     private static Bron bron() { return Bron.synthetisch("witness"); }
 
-    private static EffectieveEenheid kaal() { return new EffectieveEenheid(Map.of()); }
+    private static EffectieveEenheid kaal() { return new EffectieveEenheid(List.of(), Map.of()); }
 
     /** A Vondst declaring "gewicht" in kg — the source every reference to it must read. */
     private static Objecttype vondst() {
@@ -174,30 +174,35 @@ class EffectieveEenheidWitnessTest {
                 new Expr.Begrensd(liegendeRef(ot), null, null, bron())));
     }
 
-    // ---------------- the ch. 4.10 Let cluster (carrier + side channel) ----------------
+    // ---------------- the ch. 4.10 Let cluster ----------------
+    // Let and BinderRef are ORDINARY Expr union nodes, so a test builds them directly; the derivation needs the
+    // Let INDEX beside them for one reason only — a BinderRef asked in isolation carries no route up to its own
+    // binding (see EffectieveEenheid#lets). IfThenElse has no union record and keeps a carrier.
 
-    /** A Let carrier plus its side-channel shape, the way {@code IrLoader} delivers them. */
-    private record Cluster(Expr drager, Map<Object, LetVorm> vormen) {}
+    /** The derivation as {@code ExecModelTranspiler} builds it, over the given Lets and no IfThenElse. */
+    private static EffectieveEenheid overLets(Expr... lets) {
+        return new EffectieveEenheid(List.of(lets), Map.of());
+    }
 
-    private static Expr drager(Datatype t, Map<Object, LetVorm> vormen, LetVorm vorm) {
+    private static Expr keuzeDrager(Datatype t, Map<Object, IrLoader.Keuze> keuzes, IrLoader.Keuze keuze) {
         Expr d = new Expr.Onopgelost(t, bron());
-        vormen.put(d, vorm);
+        keuzes.put(d, keuze);
         return d;
     }
 
     @Test void een_binderlezing_diep_in_de_body_leest_de_gebonden_waarde() {
         // Let g = <Vondst.gewicht, annotated t> in (<read g, annotated t> plus <read g, annotated t>)
-        Map<Object, LetVorm> vormen = new IdentityHashMap<>();
         Objecttype ot = vondst();
-        Expr lezing1 = drager(num(TON), vormen, new LetVorm.Lezing("g", num(TON)));
-        Expr lezing2 = drager(num(TON), vormen, new LetVorm.Lezing("g", num(TON)));
+        // two DISTINCT reads that are record-EQUAL: the table is identity-keyed, so both must be recorded
+        Expr lezing1 = new Expr.BinderRef("g", num(TON), bron());
+        Expr lezing2 = new Expr.BinderRef("g", num(TON), bron());
         Expr.Binair body = new Expr.Binair(Expr.BinOp.PLUS, lezing1, lezing2, num(TON), bron());
-        Expr let = drager(num(TON), vormen, new LetVorm.Binding("g", liegendeRef(ot), body, num(TON)));
-        EffectieveEenheid eff = new EffectieveEenheid(vormen);
+        Expr let = new Expr.Let("g", liegendeRef(ot), body, num(TON), bron());
+        EffectieveEenheid eff = overLets(let);
 
         assertEquals(KG, eff.eenheidVan(let), "de Let draagt haar body (WF-076)");
         // the boundary the harness caught: a restatement site INSIDE the body asks about a read with no
-        // binding in hand, so the derivation must have recorded it (identity table over the side channel).
+        // binding in hand, so the derivation must have recorded it (identity table over the Let index).
         assertEquals(KG, eff.eenheidVan(lezing1), "een losse binderlezing leest haar binding");
         assertEquals(KG, eff.eenheidVan(lezing2));
     }
@@ -205,13 +210,13 @@ class EffectieveEenheidWitnessTest {
     @Test void een_binnenste_binder_overschaduwt_de_buitenste() {
         // Let g = <gewicht in kg> in (Let g = <literal in t> in <read g>) — WF-064: the NEAREST binder wins,
         // so the read is tonnes here and the outer kg must not leak in.
-        Map<Object, LetVorm> vormen = new IdentityHashMap<>();
         Objecttype ot = vondst();
-        Expr lezing = drager(num(TON), vormen, new LetVorm.Lezing("g", num(KG)));
+        Expr lezing = new Expr.BinderRef("g", num(KG), bron());
         Expr.Literal inTonnen = new Expr.Literal("2", num(TON), bron());
-        Expr binnen = drager(num(KG), vormen, new LetVorm.Binding("g", inTonnen, lezing, num(KG)));
-        Expr buiten = drager(num(KG), vormen, new LetVorm.Binding("g", liegendeRef(ot), binnen, num(KG)));
-        EffectieveEenheid eff = new EffectieveEenheid(vormen);
+        Expr binnen = new Expr.Let("g", inTonnen, lezing, num(KG), bron());
+        Expr buiten = new Expr.Let("g", liegendeRef(ot), binnen, num(KG), bron());
+        // both, in the loader's own (post-)order: the inner Let is built before the outer one wraps it
+        EffectieveEenheid eff = overLets(binnen, buiten);
 
         assertEquals(TON, eff.eenheidVan(lezing), "de nabijste binder (t) wint van de buitenste (kg)");
         assertEquals(TON, eff.eenheidVan(binnen));
@@ -221,12 +226,11 @@ class EffectieveEenheidWitnessTest {
     @Test void een_binder_op_een_eenheidloze_waarde_leest_eenheidloos() {
         // "Gebonden aan een eenheidloze waarde" and "ongebonden" are two different facts and must stay apart: the
         // first HAS a source (a unitless one) and the annotation may not speak over it; only the second falls back.
-        // Let n = <2, unitless> in <read n, annotated t> — both the read AND the carrier lie about tonnes.
-        Map<Object, LetVorm> vormen = new IdentityHashMap<>();
+        // Let n = <2, unitless> in <read n, annotated t> — both the read AND the Let lie about tonnes.
         Expr.Literal getal = new Expr.Literal("2", num(null), bron());
-        Expr lezing = drager(num(TON), vormen, new LetVorm.Lezing("n", num(TON)));
-        Expr let = drager(num(TON), vormen, new LetVorm.Binding("n", getal, lezing, num(TON)));
-        EffectieveEenheid eff = new EffectieveEenheid(vormen);
+        Expr lezing = new Expr.BinderRef("n", num(TON), bron());
+        Expr let = new Expr.Let("n", getal, lezing, num(TON), bron());
+        EffectieveEenheid eff = overLets(let);
 
         assertNull(eff.eenheidVan(lezing), "de binding is eenheidloos; de annotatie (t) is haar leugen");
         assertNull(eff.eenheidVan(let), "en de Let draagt haar body");
@@ -234,19 +238,18 @@ class EffectieveEenheidWitnessTest {
     }
 
     @Test void een_ongebonden_binderlezing_houdt_haar_annotatie() {
-        // No Binding of that name anywhere: there is nothing to derive from, so the annotation stands —
+        // No Let of that name anywhere: there is nothing to derive from, so the annotation stands —
         // the same honest fallback as an AttribuutRef without a declaration.
-        Map<Object, LetVorm> vormen = new IdentityHashMap<>();
-        Expr lezing = drager(num(TON), vormen, new LetVorm.Lezing("onbekend", num(TON)));
-        assertEquals(TON, new EffectieveEenheid(vormen).eenheidVan(lezing));
+        Expr lezing = new Expr.BinderRef("onbekend", num(TON), bron());
+        assertEquals(TON, overLets().eenheidVan(lezing));
     }
 
     @Test void een_keuze_leest_de_tak_niet_haar_eigen_claim() {
-        Map<Object, LetVorm> vormen = new IdentityHashMap<>();
+        Map<Object, IrLoader.Keuze> keuzes = new IdentityHashMap<>();
         Objecttype ot = vondst();
-        Expr keuze = drager(num(TON), vormen,
-                new LetVorm.Keuze(null, liegendeRef(ot), liegendeRef(ot), num(TON)));
-        assertEquals(KG, new EffectieveEenheid(vormen).eenheidVan(keuze));
+        Expr keuze = keuzeDrager(num(TON), keuzes,
+                new IrLoader.Keuze(null, liegendeRef(ot), liegendeRef(ot), num(TON)));
+        assertEquals(KG, new EffectieveEenheid(List.of(), keuzes).eenheidVan(keuze));
     }
 
     // ---------------- the three reason-carrying exceptions ----------------
