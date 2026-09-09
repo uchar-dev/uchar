@@ -264,3 +264,41 @@ uit (2b). Beslissing en eventuele klem staan in dat kaartje, niet hier.
 played 117, kanaalvloer 47, auto-excluded 44, value-divergence 1, no-case 2
 — elke telling gelijk aan die vóór de fixronde. Gate 1 groen met het nieuwe
 kaartje erbij. Productiecode nog steeds byte-identiek aan `main`.
+
+## Slotronde (2026-09-09, na lens 2 — zelfde tak, niet gemerged)
+
+**(1) Fractiebreedte 2 stond niet gepind.** De getuige pinde de breedtes 1,
+3, 4 en 6, maar niet 2 — en dat is precies de breedte die het patroon zelf
+kan opslokken. Lens 2 verruimde `{3}` naar `{2,3}`; hier gereproduceerd:
+**13 tests waren er toen nog niet, de twaalf bestaande gaven 0 failures**,
+en gate 12 bleef groen. De klem las `2026-03-15T12:00:00.12` dan als 120
+milliseconden, waar `ref` hem weigert — dezelfde
+één-wire-drie-antwoorden-klasse als de fractiebreedtes waarvoor de klem is
+neergezet. Eén nieuwe test toegevoegd
+(`een_fractie_van_twee_cijfers_wordt_geweigerd`, apart gehouden omdat hij
+de ondergrens van het patroon vastlegt in plaats van de bovengrens); met
+die test geeft dezelfde sabotage **13 tests, 1 failure, 0 skipped**, en de
+melding draagt de gemeten waarde: *the reader ACCEPTED it and read
+2026-03-15T12:00:00.120*. Sabotage teruggedraaid met `git checkout`:
+`git diff main -- backends/drools/src/main` weer leeg, suite 13/13 groen.
+De klem is nu van BEIDE kanten gepind — een verruiming valt, een
+versmalling ook.
+
+**(2) Het date-kaartje ging over één route en het zijn er drie.**
+`backlog/new/20260909-date-caselezer-klem.md` is herschreven: naast r. 903
+(de `date`-waarde) lezen ook r. 600 (`asOfDatum` — de `asOfDate` van de
+case) en r. 721 (`grensDatum` — de `from`/`to` van een tijdlijnsegment) met
+een kale `LocalDate.parse`. Die twee zijn de ernstige: gemeten in lens 2
+met `+012026-03-15` als `asOfDate` op `jutterswet-penningjaar` en
+`-0500-01-01` als segmentgrens op `jutterswet-bakenmeester` weigert `ref`
+allebei hard (`EVALUATION FAULT`) terwijl de Drools-backend `PLAYED 1`
+meldt — de golden passeert, stil. Het voorbehoud "uit de code gelezen, niet
+gedraaid" bij `ref`'s `date_of_iso` is geschrapt: lens 2 draaide ref echt
+en bevestigde beide weigeringen. De out-of-scope-zin is gecorrigeerd: hij
+suggereerde dat de overige parses BINNEN `backends/drools` al gedekt zijn,
+en dat zijn ze niet — ze zijn alleen niet geïnventariseerd.
+
+**Na de slotronde.** Gate 12 **JUnit 223 tests, nul skips**, played 117,
+kanaalvloer 47, auto-excluded 44, value-divergence 1, no-case 2 — de
+JUnit-teller is opnieuw de enige die beweegt. Gate 1 groen.
+Productiecode byte-identiek aan `main`.

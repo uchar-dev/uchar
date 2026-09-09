@@ -108,6 +108,15 @@ class CaseWireDatumTijdWitnessTest {
         weigertOpVorm("2026-03-15T12:00:00.100000", "a six-digit fraction was read as a hundred ms here");
     }
 
+    @Test void een_fractie_van_twee_cijfers_wordt_geweigerd() throws Exception {
+        // Width TWO gets its own case because it is the one width the pattern's own quantifier can absorb
+        // without any other case noticing: widening {3} to {2,3} leaves every assertion above green (the
+        // one-, four- and six-digit fractions stay refused) while this reader starts reading .12 as 120
+        // milliseconds — and the interpreter/ASP reader refuses it. That is the one-wire-three-answers class
+        // this whole fence exists for, so the boundary is pinned from BOTH sides, not only from above.
+        weigertOpVorm("2026-03-15T12:00:00.12", "a two-digit fraction is not the case lexeme either");
+    }
+
     @Test void een_ontbrekend_secondenveld_wordt_geweigerd() throws Exception {
         // accepted before the fence, as 12:00:00 — a guess that happens to be right only when the
         // producer meant the whole minute, and there is no way to know that it did.
