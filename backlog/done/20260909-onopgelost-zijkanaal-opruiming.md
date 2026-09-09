@@ -85,14 +85,16 @@ herhaald:
   `IrLoader.loadAll` + `DrlTranspiler.build` — **alle 165 dumps
   byte-identiek**.
 
-Dat de meting de wijziging ook echt raakt: elf van de vijftien goldens met
-een `Let` op de wire spelen door de nieuwe constructie
+Dat de meting de wijziging ook echt raakt: **twaalf van de zestien** goldens
+met een `Let` op de wire spelen door de nieuwe constructie
 (`anchor/jutterswet-tariefstelling`, `jutterswet-bergingstoeslag`,
 `jutterswet-drempelvangst`, `jutterswet-kinderweging`,
 `jutterswet-lichterloon`, `jutterswet-tariefrecht-catala`,
 `jutterswet-vondstrecht`, `synth3-barrierebezit`, `synth3-conditielezing`,
-`synth3-drempelheffing`, `synth3-takbarriere`); de andere vier weigert de
-loader al op een ListType/SumType/functionDefs.
+`synth3-drempelheffing`, `synth3-operandvolgorde`, `synth3-takbarriere`); de
+andere vier weigert de loader al op een ListType/SumType/functionDefs. Vóór
+de rebase waren het er elf van de vijftien — `synth3-operandvolgorde` kwam
+met main mee.
 
 **Het gemeten risico — en het kwam WEL uit, op de rode corpus.** Een echte
 `Expr.Let` is voor de gevendorde `Expr.bevat` géén blad meer: die daalt af in

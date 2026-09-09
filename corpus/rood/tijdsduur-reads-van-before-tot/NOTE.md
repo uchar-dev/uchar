@@ -49,7 +49,23 @@ prefix, and a tijdsduur's two operands have no such structure.
 
 ## Drools
 
-Not carried: the reaching rule does not lower — a transpiler SKIP, the
-`THEN` value referring to an unregistered `rekendatum` global — so fire
-is never reached and the van/tot order is not Drools-observable here.
-Listed with that reason in `scripts/check-rood.sh`.
+Not carried, but the rule DOES run: the backend enforces no van/tot
+**order** on a tijdsduur, so the ch. 10.6 barrier this witness plants
+never becomes a fault and the session reaches a model — `NOFAULT`,
+exactly as its `begrensd-reads-bounds-in-order` twin. Listed with that
+reason in `scripts/check-rood.sh`.
+
+Until 2026-09-09 this paragraph read the other way — "the reaching rule
+does not lower, a transpiler SKIP on an unregistered `rekendatum`
+global, so fire is never reached" — and that was true of the backend of
+the day for a reason that has nothing to do with the order: the
+`Rekendatum` above sits **inside a `Let` body**, and while the Drools
+loader parsed a `Let` into an opaque `Onopgelost` carrier, the generic
+`Expr.bevat` scan read that carrier as a leaf, never saw the constant,
+and left the §4.2 `rekendatum` global unregistered — so the rule was
+skipped whole. The ch. 4.10 side-channel cleanup made `Let` an ordinary
+union node; the scan now descends into value and body, the global is
+registered, and the rule lowers and fires. What stays not-carried is the
+order itself, which is a narrower and more honest verdict than the old
+one — and it leaves the two pinned legs untouched: this case still pins
+`expectedFault {ref, clingo}`, and both still fault.
