@@ -214,3 +214,53 @@ staat gelijk aan de meting vóór deze kaart.
 **Wat bewust bleef liggen.** De klem zelf en elke andere productiecode; de
 LITERAL-lezer (heeft zijn eigen getuige, hier alleen aangeraakt in de
 asymmetrietest); de emitterkant; de `waarde: null`-flank van WF-095.
+
+## Fixronde (2026-09-09, na lens 1 — zelfde tak, niet gemerged)
+
+**(1) De spiegelassertie in `weigertOpVorm`.** Lens 1 mat een blinde vlek:
+`weigertOpKalender` eist dat de kalendertak de vormformulering NIET draagt,
+maar `weigertOpVorm` eiste niets over de kalenderformulering. Sabotage 6 —
+de vormtak houdt zijn lexeem én krijgt de kalenderformulering erbij — is
+hier gereproduceerd en gaf **12 tests, 0 failures**: de getuige zag het
+niet. Eén regel toegevoegd (`assertFalse(melding.contains(KALENDER), …)`),
+en dezelfde sabotage geeft nu **12 tests, 9 failures, 0 skipped** — precies
+de negen tests die door `weigertOpVorm` lopen (acht patroonklassen plus de
+asymmetrietest). Sabotage teruggedraaid met `git checkout`:
+`git diff main -- backends/drools/src/main` is weer leeg en de suite staat
+op 12/12 groen. De assertie slaagt dus ongewijzigd op de echte klem, en
+valt op de gesaboteerde — beide gemeten, niet beredeneerd.
+
+**(2a) De korrel van deze getuige, expliciet.** Vastgelegd is de
+ATTRIBUUTROUTE: `CaseRunner.java` r. 444, bereikt via `invoerBeans`. De
+drie andere routes — global/parameter (r. 588), tijdlijnsegmentwaarde
+(r. 711) en de verwachte waarde van een read-back (r. 767) — delen
+aantoonbaar dezelfde klemfunctie, want alle vier gaan door de ene aanroep
+op r. 904 in `waardeNaarArg`, maar ze dragen géén eigen assertie in dit
+bestand. Dat is de gekozen korrel: de klem is één functie met één
+aanroepplaats, en die is gepind; wie die aanroepplaats zou verplaatsen naar
+één route in plaats van naar `waardeNaarArg` zelf, wordt door deze getuige
+niet gestopt.
+
+**(2b) Er is een vijfde, dode parse.** `engine/ParametersetLader.java:303`
+leest een datumtijd met een kale `LocalDateTime.parse`. Hij hoort niet bij
+de vier routes hierboven: hij wordt alleen aangeroepen vanaf r. 237 in
+diezelfde klasse, en die klasse heeft in heel `backends/drools/src` geen
+enkele gebruiker (main noch test), en hij leest bovendien een ander
+document — een parameterset, geen `uchar-case-v0`-casewaarde. Genoemd
+zodat "alle routes lopen door de klem" niet ruimer gelezen wordt dan het
+is.
+
+**(3) Vervolgkaartje.** `backlog/new/20260909-date-caselezer-klem.md`: de
+`date`-tak op r. 903 leest met een kale `LocalDate.parse`, zonder klem.
+Gemeten: die parse weigert het meeste wat de wire ook weigert (smal veld,
+zonesuffix, basisformaat, kalender), maar accepteert twee vormen die het
+schemapatroon uitsluit — `+012026-03-15` (jaar +12026) en `-0500-03-15`
+(jaar −500) — terwijl `ref`'s `date_of_iso` (`ref/lib/value.ml:92`, uit de
+code gelezen) ze allebei weigert. Dezelfde weigerklasse-vraag die deze
+kaart voor `dateTime` beantwoordde, plus de opruimvraag over de dode parse
+uit (2b). Beslissing en eventuele klem staan in dat kaartje, niet hier.
+
+**Na de fixronde.** Suite groen: gate 12 **JUnit 222 tests, nul skips**,
+played 117, kanaalvloer 47, auto-excluded 44, value-divergence 1, no-case 2
+— elke telling gelijk aan die vóór de fixronde. Gate 1 groen met het nieuwe
+kaartje erbij. Productiecode nog steeds byte-identiek aan `main`.

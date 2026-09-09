@@ -198,11 +198,16 @@ class CaseWireDatumTijdWitnessTest {
         throw new AssertionError(waarom + " — but the reader ACCEPTED it and read " + gelezen);
     }
 
-    /** Refused by the pattern, with the expected FORM in the message. */
+    /** Refused by the pattern, with the expected FORM in the message and the calendar left out of it. The
+     *  negative half is the mirror of the one below, and it is load-bearing for the same reason: without it a
+     *  form branch that ALSO carries the calendar wording passes every case here (measured), and the two
+     *  branches this reader deliberately splits become indistinguishable to a producer reading the message. */
     private static void weigertOpVorm(String lexeem, String waarom) throws Exception {
         String melding = weigering(lexeem, waarom);
         assertTrue(melding.contains(LEXEEM_VORM),
                 waarom + " — a refusal a producer can act on states the form it expected: " + melding);
+        assertFalse(melding.contains(KALENDER),
+                waarom + " — and does not also blame the calendar, which was never read here: " + melding);
     }
 
     /** Refused by the calendar, with the calendar in the message and the field widths left alone. */
