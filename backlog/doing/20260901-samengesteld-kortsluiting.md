@@ -499,3 +499,64 @@ alternatief. Niet zelf verwijderd: dat is een maintainerbesluit.
 12 **played 117** / JUnit 210 / 1 value-divergence (de bestaande) /
 vloer 47 · 13 74 twists, 0 survivors. Suites: ref **462**, clingo 80/0,
 backend-JUnit 210. `EXPECTED_PLAYED` 116 → 117.
+
+## Slotronde (gemeten 2026-09-09) — eindverificatie: MERGEN, met twee reparaties
+
+**F1 — de te-gretige richting kreeg haar wacht terug.** De
+rood→golden-omkering van de besluitronde nam één bewaakte richting mee:
+een at-most-stop die **één lid te vroeg** vuurt leest MINDER dan ch. 5.10
+en antwoordt dus waar de norm fault. Structureel kan een groene golden
+dat niet zien — de leden zijn gewone joins, dus een strengere guard haalt
+niets uit de waarheidswaarde weg en raakt alleen het **faultoppervlak**.
+Gemeten, en dat is meteen de vóór/ná in één tabel:
+
+| mutant | gate 5 | gate 6 | gate 8 | uitkomst |
+|--------|--------|--------|--------|----------|
+| C10 at-most-guard één te gretig (`+1` → `+2`) | LEEFT | LEEFT | **DOOD** | GEDOOD |
+| C11b guard met een extra `H >= 1` | LEEFT | LEEFT | **DOOD** | GEDOOD |
+
+Beide overleven de groene gates en sterven op gate 8 — precies het bewijs
+dat alleen een RODE case deze richting kan pinnen. Nieuwe rode case
+`corpus/rood/atmost-reads-until-settled`: ten hoogste 2 van 4 met de
+deling op **lid 2**. Na lid 1 is *h* = 0 en *r* = 3, dus 0 + 3 ≤ 2 houdt
+niet en lid 2 hóórt gelezen te worden. De deling staat bewust op lid 2:
+lid 1 wordt door geen enkele guard weggenomen en zou daar niets pinnen.
+Rood 22 → 23.
+
+**F2 — bungelende kruisverwijzing.** Sinds grens 1 verviel heet de
+overgebleven grens "One boundary" zonder nummer; `ASP-TRANSLATION` S7 en
+de clip-fence-comment in `translate.ml` noemden nog "boundary 2". Beide
+vegen naar "ch. 5.10's one boundary".
+
+**F3 — de voorbehouden hebben een vaste drager.** Het
+waakhond-vervangende commentaar in `scripts/check-reftype-derivation.sh`
+verwijst nu naar déze Results, zodat de voorbehouden het eventuele verval
+van de vervolgkaart overleven. Ze staan hier:
+
+Wat "0 divergenties" wél en niet koopt — met wat de eindlens ervan
+ontkrachtte:
+
+1. *"Het model abstraheert de tekst-tak."* — **grotendeels ontkracht.**
+   De eindlens bouwde een onafhankelijk model, reproduceerde de 6646
+   combinaties exact, en het duale argument (`ten hoogste d` ≡ `niet ten
+   minste d+1`) is structureel sluitend voor **alle** n via de
+   `minstens`/combineer-code, niet alleen voor de gemeten n.
+2. *"n ≤ 7 is de gemeten grens."* — **grotendeels ontkracht:** het
+   onafhankelijke model loopt schoon door tot n = 10, en punt 1 maakt de
+   grens hoe dan ook niet het bindende bezwaar.
+3. *"De tekst-tak blijft een tweede, structureel andere vertaling."* —
+   **blijft staan.** Dat hij vandaag samenvalt is geen garantie dat een
+   volgende ch.-5.10-wijziging hem meeneemt. Dit is het reële restrisico,
+   en het smalle alternatief in de vervolgkaart (een eigen
+   ch.-5.10-getuige in de backend-JUnit-suite) dekt precies dit af.
+
+**Alle dertien gates groen** (slotronde, gemeten 2026-09-09): 1 PASS ·
+2 **187 bestanden** · 3 **187 golden** / 337 negatief · 4 **442 cases** ·
+5 419 · 6 419 · 7 383 (36 survivors, ongewijzigd) · 8 **23 rood**
+(Drools-been 6 fault-pinned) · 9 201 checks / 12 catala-goldens ·
+10 173 tests / 37 rgs-goldens · 11 PASS · 12 played 117 / JUnit 210 /
+1 value-divergence (de bestaande) / vloer 47 · 13 74 twists, 0 survivors.
+Suites: ref 462, clingo 80/0, backend-JUnit 210.
+
+**Eindstand van de mutantdekking: 22 recepten, alle dood, baseline leeft**
+— 6 ref, 12 clingo (incl. C10 en C11b), 4 Drools-exec.
