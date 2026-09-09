@@ -1041,10 +1041,10 @@ intersect to April–July → 3×10 = 30; disjoint members → 0; one member
 without periods → 0; split periods (January–March + June–September
 against February–August) → (February–March) + (June–August) = 3
 months → 30. *Executed-note:* a **negated member** clips through its
-complement in the reference interpreter, exactly like the single
-negated clip, and shares that shape's standing executor asymmetry
-(the ASP side faults loudly; no anchor can pin it differentially
-yet). The **ten-minste-1 union** (v0 clips to the union of member
+complement, exactly like the single negated clip. Both executors carry
+the shape since 2026-09-09; `corpus/golden/jutterswet-tegenwacht` pins
+both forms differentially (gates 5–6), including the ch. 3.6 negated
+worked example below. The **ten-minste-1 union** (v0 clips to the union of member
 regions) stays a loud, recorded flank in both executors, and WF-055
 does not admit it until an executor carries it with an anchor.
 

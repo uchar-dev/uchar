@@ -1,0 +1,70 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "wachtvergoeding per maand": {
+            "timeline": [
+              {
+                "from": "2023-01-01",
+                "to": "2024-01-01",
+                "value": {
+                  "number": "10"
+                }
+              },
+              {
+                "from": "2024-01-01",
+                "to": "2024-07-01",
+                "value": {
+                  "number": "11"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "borgplichtig": [
+            {
+              "from": "2023-01-01",
+              "to": "2024-07-01"
+            }
+          ],
+          "aangesteld": [
+            {
+              "from": "2023-07-01",
+              "to": "2024-02-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "tegenwachtsom",
+      "value": {
+        "number": "115"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "stilwachtsom",
+      "value": {
+        "number": "115"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

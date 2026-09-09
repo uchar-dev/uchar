@@ -960,6 +960,50 @@ clip's presence turns absence into 0 (the mirrored v0 nuance, RS
 ch. 3.6). Fences: |W| ≤ 46340, the endpoint span at 46340 whole
 units (segments are disjoint slices of one timeline, so |ΣW×N| ≤
 46340² holds), and the comparison harmonisation bounds of S6.
+
+**The negated clip member** (`negatie: true` on a characteristic
+check, either as the whole condition or as a member of the composite
+ALLE — carried since 2026-09-09, maintainer decision; before that the
+form was refused here while ref answered, which was a live ref ≢
+clingo on a verifier-clean document): the complement of the
+characteristic's periods within the clip horizon. ref takes that
+horizon to be the clipped attribute's *own* value timeline and walks
+the gaps per value segment (ch. 3.6), so the encoding derives one
+`clN_not(S,X,Y)` atom per maximal uncovered stretch inside a single
+`tl/5` segment. A gap edge can only be a value-segment edge or the
+edge of a covered period — ref's walk emits no other number — so two
+candidate predicates supply them:
+
+    clN_not_lo(S,X) :- tl(S,"a",X,_,_).
+    clN_not_lo(S,X) :- ktl(S,"k",V,X), V < X.
+    clN_not_hi(S,Y) :- tl(S,"a",_,Y,_).
+    clN_not_hi(S,Y) :- ktl(S,"k",Y,T), Y < T.
+    clN_not_cov(S,X,Y) :- clN_not_lo(S,X), clN_not_hi(S,Y), X < Y,
+                          ktl(S,"k",V,T), V < Y, X < T.
+    clN_not(S,X,Y) :- tl(S,"a",SV,ST,_), clN_not_lo(S,X),
+                      clN_not_hi(S,Y), SV <= X, X < Y, Y <= ST,
+                      not clN_not_cov(S,X,Y).
+
+`clN_not` then feeds `clN_and` and `clN_seg` like any other condition
+predicate. Maximality needs no aggregate: a left edge is the segment
+start or the end of a period that began before it, a right edge is the
+segment end or the start of a period that runs past it, so extending
+an uncovered pair in either direction always meets a period and
+`clN_not_cov` refuses it; value-timeline segments are disjoint, so no
+other segment's edge sits strictly inside `(SV,ST)` to offer a
+shorter, non-maximal pair. The characteristic with **no timeline at
+all** is the sharp case: no `ktl/4` atom exists, nothing is covered,
+and the complement is the whole horizon — a clip that totals 0 in its
+positive form totals the entire span when negated. The negation is
+stratified: `clN_not_cov` is defined by `ktl/4` case facts and `tl/5`
+and never reads this helper back. A document that could break that is
+refused before it reaches the backend — a negated characteristic check
+inside a filter is a NEGATIVE edge in the dependency walk
+(`RUNTIME-SEMANTICS.md` ch. 6.1), so a cycle through it fails WF-046
+(`corpus/negatief/wf046-negated-clip-kenmerk-cycle`). The complement's
+edges are exactly the endpoints the `clN_wu` cutset already carried, so
+the calendar facts are unchanged by the negation.
+
 **Temporal total, unclipped**: the asOfDate-bucket convention — the
 case supplies the bucket scalar as a plain `val/3` and the total
 reads it (×year factor; only year granularity is exercised); the
@@ -1002,6 +1046,13 @@ source by `jutterswet-aanmeldertelling`; sum by
 `jutterswet-penninguitgifte`, `synth2-budgetgrens-onder`; the clip by
 `jutterswet-getijdenwacht`, `jutterswet-penningjaar`,
 `synth2-clip-over-prorata`, `synth2-clip-cond-over-prorata`; the
+negated clip by `jutterswet-tegenwacht` (both forms from one source —
+the bare negated check and the ALLE composite with one negated member
+— over six cases: the overlap, the disjoint pair, the characteristic
+with no timeline at all, the split periods, a value timeline with a
+gap and two values which pins the per-segment walk, and the ch. 3.6
+negated worked example of `RUNTIME-SEMANTICS.md`, whose 115 is now
+pinned differentially rather than in `ref/` alone); the
 WF-055 negatiefs pin the clip's admissible condition shapes; the
 articulated eerste/laatste fold by `jutterswet-peildatum` (a date pair
 and a numeric pair, the ordering-vs-positional pin, the empty-skip and
@@ -2131,9 +2182,7 @@ translation would apply outside its window) — while windows on rules,
 defaults members and both creation forms now translate (S1's validity
 gate, `jutterswet-vensterheffing`), including the time-free refusal
 both executors share; temporal targets
-outside the ch. 3.7/3.8 fold shapes; the negated gedurende clip (the
-complement walk — also as a composite member; ref carries both, the
-standing executor asymmetry); the ten-minste-1 composite union (v0
+outside the ch. 3.7/3.8 fold shapes; the ten-minste-1 composite union (v0
 clips to the union of member regions; loud in both executors); the
 static-comparison composite member (v0 partitions it into a
 value-side guard; loud in both executors) and the nested composite
