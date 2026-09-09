@@ -11,6 +11,7 @@ import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Parameter;
 import io.github.yhavinga.regelspraak.transpiler.kern.Dagsoorten;
 import io.github.yhavinga.regelspraak.transpiler.kern.Dekking;
+import io.github.yhavinga.regelspraak.transpiler.kern.Eenheidsconflict;
 import io.github.yhavinga.regelspraak.kern.Literalen;
 import io.github.yhavinga.regelspraak.transpiler.kern.Operatoren;
 import io.github.yhavinga.regelspraak.kern.Tijdrekening;
@@ -3789,6 +3790,7 @@ public final class DrlTranspiler {
      *  {leftOut, rightOut}. */
     private String[] vergelijkingsOperanden(String l, Datatype lt, String r, Datatype rt) {
         io.github.yhavinga.regelspraak.model.Eenheid el = lt.eenheidOf(), er = rt.eenheidOf();
+        Eenheidsconflict.eisHerschaalbaar(el, er, "een §5.1 vergelijking (DRL)");
         if (el == null || er == null || !el.convertibleNaar(er) || !el.vereistOmrekening(er))
             return new String[]{l, r};
         if (el.noemer() == null && er.noemer() == null)
@@ -3816,6 +3818,7 @@ public final class DrlTranspiler {
      *  the identity. One null-safe form for BOTH sides: the imported {@code rsHerschaalExact} runtime helper. */
     private String herschaalExact(String expr, Datatype van, Datatype naar) {
         io.github.yhavinga.regelspraak.model.Eenheid ev = van.eenheidOf(), en = naar.eenheidOf();
+        Eenheidsconflict.eisHerschaalbaar(ev, en, "een §4-herschaling (DRL)");
         if (ev == null || en == null || !ev.convertibleNaar(en) || !ev.vereistOmrekening(en)) return expr;
         java.math.BigDecimal[] f = ev.exacteHerschaalFactoren(en);
         if (f == null)   // an opaque product unit (no canonical) / unknown factor: keep the single (lossy) ratio
@@ -3829,6 +3832,7 @@ public final class DrlTranspiler {
      *  null} when no conversion applies (either side unitless, not convertible, or already the same unit). */
     private static java.math.BigDecimal omrekenFactor(Datatype van, Datatype naar) {
         io.github.yhavinga.regelspraak.model.Eenheid ev = van.eenheidOf(), en = naar.eenheidOf();
+        Eenheidsconflict.eisHerschaalbaar(ev, en, "een §4-omrekening (DRL)");
         if (ev == null || en == null || !ev.convertibleNaar(en) || !ev.vereistOmrekening(en)) return null;
         return ev.omrekenfactorNaar(en);
     }
@@ -3864,6 +3868,7 @@ public final class DrlTranspiler {
     private Frag herschaalConditie(Frag expr, Datatype van, Datatype naar) {
         if (expr.marker()) return expr;
         io.github.yhavinga.regelspraak.model.Eenheid ev = van.eenheidOf(), en = naar.eenheidOf();
+        Eenheidsconflict.eisHerschaalbaar(ev, en, "een §4-herschaling in een voorwaarde (DRL)");
         if (ev == null || en == null || !ev.convertibleNaar(en) || !ev.vereistOmrekening(en)) return expr;   // no conversion -> identity
         if (ev.exacteHerschaalFactoren(en) == null)   // an opaque product unit (no exact factors) -> honest marker
             return Frag.todo("eenheidconversie in een rekenkundige voorwaarde (niet-herschaalbare samengestelde eenheid)", expr.text());

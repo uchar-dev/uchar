@@ -19,6 +19,7 @@ import io.github.yhavinga.regelspraak.runtime.RuleFired;
 import io.github.yhavinga.regelspraak.runtime.RegelSpraakRuntime;
 import io.github.yhavinga.regelspraak.transpiler.kern.Dagsoorten;
 import io.github.yhavinga.regelspraak.transpiler.kern.Dekking;
+import io.github.yhavinga.regelspraak.transpiler.kern.Eenheidsconflict;
 import io.github.yhavinga.regelspraak.kern.Literalen;
 import io.github.yhavinga.regelspraak.transpiler.kern.Namen;
 import io.github.yhavinga.regelspraak.transpiler.kern.Operatoren;
@@ -3598,6 +3599,9 @@ public final class ExecModelTranspiler {
         /** A copy whose NUMERIC result is restated from unit {@code van} into {@code naar} via the §4 EXACT-or-lossy
          *  {@link #herschaalWaarde} (a non-number passes through; a leeg stays leeg). Self-noops when no conversion is due. */
         WaardeFn herschaald(Datatype van, Datatype naar) {
+            // At BUILD time, so an irreconcilable pair faults while the KieBase is assembled rather than from
+            // inside a fired consequence: the lambda below reaches herschaalWaarde only at fire.
+            Eenheidsconflict.eisHerschaalbaar(van.eenheidOf(), naar.eenheidOf(), "een §4-waardeherschaling");
             BiFunction<Object, Map<String, BigDecimal>, Object> inner = fn;
             return new WaardeFn((s, gm) -> { Object v = inner.apply(s, gm);
                 return (v instanceof BigDecimal || v instanceof io.github.yhavinga.regelspraak.runtime.Breuk) ? herschaalWaarde(v, van, naar) : v; }, globals);
@@ -4460,6 +4464,7 @@ public final class ExecModelTranspiler {
      *  DrlTranspiler.omrekenFactor. Restates the value expression in the doel attribute's unit before assignment. */
     private static BigDecimal valueFactor(Datatype van, Datatype naar) {
         Eenheid ev = van.eenheidOf(), en = naar.eenheidOf();
+        Eenheidsconflict.eisHerschaalbaar(ev, en, "een §4-waardeherschaling");
         if (ev == null || en == null || !ev.convertibleNaar(en) || !ev.vereistOmrekening(en)) return null;
         return ev.omrekenfactorNaar(en);
     }
@@ -4488,6 +4493,7 @@ public final class ExecModelTranspiler {
      *  unit — the caller then falls back to the lossy {@link #valueFactor}). Mirrors DRL herschaalExact. */
     private static BigDecimal[] exactHerschaalFactoren(Datatype van, Datatype naar) {
         Eenheid ev = van.eenheidOf(), en = naar.eenheidOf();
+        Eenheidsconflict.eisHerschaalbaar(ev, en, "een §4-waardeherschaling");
         if (ev == null || en == null || !ev.convertibleNaar(en) || !ev.vereistOmrekening(en)) return null;
         return ev.exacteHerschaalFactoren(en);   // {num, den}: simple OR rate (the inverted denominator) — exact ×÷
     }
@@ -4679,6 +4685,7 @@ public final class ExecModelTranspiler {
      *  right in the left's unit. The factors are the DECLARED exact factors, so the multiply is lossless. */
     private static BigDecimal[] restatement(Datatype lt, Datatype rt) {
         Eenheid el = lt.eenheidOf(), er = rt.eenheidOf();
+        Eenheidsconflict.eisHerschaalbaar(el, er, "een §5.1 vergelijking");
         if (el == null || er == null || !el.convertibleNaar(er) || !el.vereistOmrekening(er))
             return new BigDecimal[]{BigDecimal.ONE, BigDecimal.ONE};
         if (el.noemer() == null && er.noemer() == null)
