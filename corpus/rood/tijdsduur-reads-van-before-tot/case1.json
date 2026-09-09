@@ -1,0 +1,20 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vaart",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "the Rekendatum constant needs an evaluation date",
+    "clingo": "the Rekendatum constant needs an evaluation date"
+  }
+}

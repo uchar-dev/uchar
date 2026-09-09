@@ -127,6 +127,7 @@ if command -v java >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
         # <rood-case-dir>|<reason the v0 Drools backend does not fault-pin this red form>
         cat > "$excl" <<'EOF'
 ambiguous-fold-role-name|NOFAULT the v0 backend resolves the fold role without detecting the cross-type ambiguity ref/clingo reject; it runs to a model
+begrensd-reads-bounds-in-order|NOFAULT the v0 backend evaluates a Begrensd's MAXIMUM bound BEFORE its MINIMUM — the reverse of the ch. 5.11 wire order — so the ch. 10.6 barrier sitting in the maximum fires before the minimum's division is ever reached, and the fault never happens; it runs to a model. Measured both ways on this exact shape: with the division in the MAXIMUM instead, Drools DOES fault ("Breuk deling door 0") on the very document where ref and clingo do not. This is the operand-order divergence the witness exists to expose; the Drools-side correction is a card of its own
 closed-nonexact-division|EXCLUDE the v0 loader refuses the model's list datatype (ListType) — the fold-over-a-list form is not carried
 closed-runtime-division-by-zero|EXCLUDE the v0 loader refuses the model's list datatype (ListType) — the fold-over-a-list form is not carried
 closed-runtime-nonexact-division|EXCLUDE the v0 loader refuses the model's list datatype (ListType) — the fold-over-a-list form is not carried
@@ -138,6 +139,7 @@ input-overprecision-param|NOFAULT the v0 case runner does not enforce declared p
 list-element-overprecision|EXCLUDE the v0 loader refuses the model's record datatype (StructType) before any list-element precision is reached — the record/struct form is not carried
 near-side-rolcheck-to-many|EXCLUDE the rolcheck rule (bemand met jutter) does not lower — a transpiler SKIP (voorwaarde buiten Phase-B scope); fire is never reached
 struct-field-overprecision|EXCLUDE the v0 loader refuses the model's record datatype (StructType) — the record/struct form is not carried
+tijdsduur-reads-van-before-tot|EXCLUDE the reaching rule (vaartduur van een vaart) does not lower — a transpiler SKIP (THEN-waarde refereert niet-geregistreerde global rekendatum); fire is never reached, so the van/tot order is not Drools-observable here
 to-one-second-filler|EXCLUDE the case's role (aangemelde vondsten) has no uniquely derivable reference field in the v0 bean model — the role input is refused before the second-filler violation is reached
 uni-temporal-key-scalar|EXCLUDE the case sets a temporal attribute (kavelnummer) as a scalar while carrying NO asOfDate — the bucket convention (corpus/golden/README.md) gives that scalar no evaluation date to sit in, so the input is not carried and the ever-unique key is never reached
 uu-temporal-key-scalar|EXCLUDE the case sets a temporal attribute (vondstnummer) as a scalar while carrying NO asOfDate — the bucket convention (corpus/golden/README.md) gives that scalar no evaluation date to sit in, so the input is not carried and the ever-unique key is never reached

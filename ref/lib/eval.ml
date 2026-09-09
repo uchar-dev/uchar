@@ -1246,14 +1246,20 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
     | `Values vs -> vs
     | `Instances _ -> Value.fault "value aggregation over a bare role source"
   in
-  let fallback = Option.map (eval_expr env world self ~err) leegwaarde in
   match kind with
   | Aantal -> (
       (* a count, never empty (ch. 1.2e) *)
       match contributors () with
       | `Instances is -> Arith.agg_aantal is
       | `Values vs -> Arith.agg_aantal (Arith.filled vs))
-  | Som -> Arith.agg_som ~fallback (values ())
+  | Som ->
+      (* ch. 5.11, wire order: `argumenten` stands before `leegwaarde` in the
+         node, so the contributors evaluate first and the stand-in after them.
+         WF-037 confines a leegwaarde to the som, so this is the only arm that
+         ever evaluates one. *)
+      let vs = values () in
+      let fallback = Option.map (eval_expr env world self ~err) leegwaarde in
+      Arith.agg_som ~fallback vs
   | Totaal -> Arith.agg_totaal (values ())
   | Minimum -> Arith.agg_min (values ())
   | Maximum -> Arith.agg_max (values ())

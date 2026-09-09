@@ -1,0 +1,34 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vangst",
+        "attributes": {
+          "teller": { "number": "4" }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vangst",
+        "attributes": {
+          "deelvangst": { "number": "5" },
+          "teller": { "number": "4" },
+          "noemer": { "number": "2" }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeEmpty", "label": "V1", "attribute": "vangstsom" },
+    { "kind": "attributeValue", "label": "V3", "attribute": "vangstsom", "value": { "number": "7" } },
+    { "kind": "consistent" }
+  ]
+}
