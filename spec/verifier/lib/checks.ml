@@ -1080,20 +1080,26 @@ let wf026 ctx =
    not exist.
 
    The value is a REFERENCE and the only one this map carries, which is what
-   separates this arm from WF-017 (ch. 2.9) next door: WF-017 asks whether two
-   spellings COLLIDE — a day kind against a built-in calendar unit, or against
-   another day kind — and resolves nothing; this arm asks whether one name
-   RESOLVES, and compares nothing. They cannot double: WF-017 walks the
-   declared names in `/dagsoorten`, this arm the values under
-   `/dagsoortPerEenheid`.
+   separates this arm from WF-017 (ch. 2.9): WF-017 asks whether two spellings
+   COLLIDE — a day kind against a built-in calendar unit, or against another
+   day kind — and resolves nothing; this arm asks whether one name RESOLVES,
+   and compares nothing. They cannot double: `wf017` above walks the declared
+   names in `/dagsoorten` and never reads this map at all, while this arm reads
+   only the values under `/dagsoortPerEenheid`. Measured 2026-09-09: a declared
+   day kind `dagen` is WF-017 FAIL, the same spelling as a registry KEY is
+   verifier-clean — the collision half is checked for the declared name and
+   for nothing else, which is WF-017's own gap and not this arm's business.
 
-   The KEY side stays deliberately FREE, and that is a decision, not an
-   omission. Half the entries are plural spellings by construction (32 of the
-   64 the four zones hold on 2026-09-09), and the v0 wire carries no `plural`
-   field for a day kind — ch. 2.9's `plural` exists on the v1 node only — so a
-   key has nothing on the wire to be crossed against, and an engine-neutral IR
-   must leave a producer free to register a third spelling (an abbreviation)
-   besides.
+   The KEY side stays FREE, and that is a decision, not an omission. In the
+   source language the plural is an OPTIONAL author field (§3.12) and
+   derivation when it is absent is declared outside the language, so there is
+   no spelling a conforming producer OWES for a given day kind; the v0 wire
+   carries the plural as a second KEY of this map and as no field of its own
+   (ch. 2.9's `plural` exists on the v1 node). A key rule would therefore have
+   to invent the morphology the language deliberately does not fix, and an
+   engine-neutral IR must leave a producer free to register a further spelling
+   — an abbreviation among them. Half the keys are already not the declared
+   name: 35 of the 70 entries the four zones hold on 2026-09-09.
 
    Observability, measured 2026-09-09 on the twist this arm's witness carries:
    NO consumer notices. The verifier, `ref`, the ASP backend and the Drools
@@ -1108,13 +1114,25 @@ let wf026 ctx =
    argument: a name that crosses nothing in any executor still points at a
    declaration that has to exist for the document to mean what it says.
 
-   Both spellings of the defect are ONE arm with one guard, not two: a value
-   naming an undeclared day kind and a `null` value both fail to name a
-   declared day kind, and the one reader collapses them (its loader reads the
-   value with `asText()`, which turns a JSON null into the string "null" and
-   then fails the same lookup). The null half has NO witness and moves no
-   document — zero of the 64 entries carry it — and it is folded in here for
-   that reason rather than given a clause of its own. *)
+   THREE spellings of the defect, ONE arm with one guard: a value naming an
+   undeclared day kind, a `null` value, and the empty string — none of the
+   three names a declared day kind. The schema types the value
+   `["string", "null"]`, so the null is schema-valid, and the one reader
+   collapses null onto the naming case (its loader reads the value with
+   `asText()`, which turns a JSON null into the string "null" and then fails
+   the same lookup). Only the naming spelling has a corpus witness; of the 70
+   entries the four zones hold, zero are null and zero are empty. Both silent
+   spellings are folded into this arm rather than given clauses of their own,
+   the wave-5-fix-round precedent (one list-driven arm where a sub-arm has no
+   counterexample of its own).
+
+   The IDENTITY the arm compares with is `norm` — collapse whitespace, lower
+   case — the same one `day_kind_unit` applies to the key, and it is pinned:
+   `corpus/golden/jutterswet-vormenkabinet` carries two entries that resolve
+   ONLY through it (`SchouwDag` and a padded `  schouwdag  ` against a declared
+   `schouwdag`). Replacing `mem_ci` here with a byte-exact `List.mem` takes
+   gate 3 down on that golden. Before those two entries existed the
+   normalisation half moved no document at all. *)
 let wf034_dagsoort_eenheden ctx =
   List.filter_map
     (fun (spelling, dk) ->

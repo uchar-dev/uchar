@@ -5,7 +5,8 @@ cabinet" section of `corpus/golden/README.md`). It exists to witness,
 positively and verifier-clean, the well-formedness rules whose constructs
 no *executing* corpus document carries yet — closing the Golden column of
 the WF index for WF-004/006/014/016/017/021/031/032/039/040/041/042/043
-(and the enum-assignment slice of WF-023). It deliberately carries no
+(and the enum-assignment slice of WF-023, and since 2026-09-09 the name
+identity of WF-034 arm (s) — the section below). It deliberately carries no
 `case*.json`, so gate 5 (the oracle) lists it as "NOT replayed, no case
 file yet". This NOTE records *why* that is a true report and not a gap to
 be filled with a manufactured case, and the exact condition under which it
@@ -47,6 +48,50 @@ translates every rule body **statically**, independent of instance count, so
 exercises and pins nothing real: it is exactly the manufactured "make the
 report go away" case this cabinet must not carry. Executable expectations
 belong to executing goldens, not to a scaffold.
+
+## The day-kind unit registry: WF-034 (s)'s IDENTITY witness (2026-09-09)
+
+Beside the rules above, this cabinet now carries the **name identity** half of
+WF-034 arm (s) (`spec/IR-SPEC.md` ch. 4.6): *every value of
+`dagsoortPerEenheid` must name a day kind `dagsoorten` declares*, compared
+under the ch. 2.1 identity — collapse whitespace, lower case.
+
+The document already declared the day kind `schouwdag` and registered no
+spelling for it. It now registers two, and **neither value is byte-identical
+to the declaration**:
+
+    "dagsoortPerEenheid": {
+      "schouwdag":   "SchouwDag",
+      "schouwdagen": "  schouwdag  "
+    }
+
+One entry per half of the identity: capitalisation, and collapsible
+whitespace. Both resolve, so the document stays verifier-clean, and that is
+the point — this is a POSITIVE witness, which is why it belongs in the
+cabinet and not in `corpus/negatief/`.
+
+**Why it had to exist.** Measured 2026-09-09, before these two entries: every
+`dagsoortPerEenheid` value in all four zones was byte-identical to its
+declaration, so replacing the arm's case-insensitive comparison with a
+byte-exact one moved **0 of 555** documents and gate 3 stayed green. The words
+"trimmed and case-insensitive" in the rule were unfalsifiable. With these two
+entries the same mutant reports both of them here and takes **gate 3 down**:
+
+    WF-034 FAIL /dagsoortPerEenheid/schouwdag: day-kind unit 'schouwdag' names
+    day kind 'SchouwDag', which no declaration carries: …
+    WF-034 FAIL /dagsoortPerEenheid/schouwdagen: day-kind unit 'schouwdagen'
+    names day kind '  schouwdag  ', which no declaration carries: …
+
+The RESOLUTION half of the same arm is pinned from the other side by
+`corpus/negatief/wf034-dagsoorteenheid-onbekende-dagsoort`.
+
+**Why here and not in a golden of its own.** The witness needs no executor: it
+pins a verifier comparison. A new golden would have arrived in the
+differential gate's channel floor and would have had to be pinned there by
+name; this cabinet is already pinned `NOCASE` and already exists for exactly
+this purpose, so the witness costs no executor channel and no pin. It also
+changes no rule of this document — the registry is read by no rule here, and
+the four consumers' behaviour on this IR is unchanged.
 
 ## Reproduction
 

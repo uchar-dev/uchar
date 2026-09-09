@@ -154,6 +154,9 @@ gebruikt). Vier artefacten:
 - `spec/IR-SPEC.md` — arm (s) in ch. 4.6, de open-lijstpost dicht en verhuisd
   naar de verlaten-lijst, ch. 2.1 (3) en ch. 2.9 mee, en de WF-index-rij
   (regelzin, denominator, getuigen).
+- `corpus/golden/jutterswet-vormenkabinet/` — de getuige voor de
+  NORMALISATIE-helft van de arm (fixronde), twee map-ingangen die alleen onder
+  `norm` resolveren, plus NOTE-sectie.
 - `backlog/new/20260909-constante-naam-gesloten-verzameling.md` — de zusterpost,
   doorgeschoven met eigen meting.
 
@@ -162,17 +165,39 @@ gebruikt). Vier artefacten:
 De kaartmeting van 2026-09-06 is **niet** overgenomen; alles hieronder is
 opnieuw geteld op de aftakking.
 
+Twee toestanden, apart benoemd — dat was het tweede ernstige lenspunt: mijn
+eerste Results gaven de BASELINE-getallen in de tegenwoordige tijd, terwijl het
+negatief zelf een ingang toevoegt die bewust niet resolveert.
+
+**BASELINE — de stand die aan de kaart voorafgaat (554 documenten):**
+
 | zone | documenten | `dagsoortPerEenheid`-ingangen | `dagsoorten`-declaraties |
 | --- | --- | --- | --- |
-| golden | 164 (38 anchor) | **4** (in 1 document) | 5 (in 3 documenten) |
+| golden | 164 (38 anchor) | 4 (in 1 document) | 5 (in 3 documenten) |
 | rood | 23 | 0 | 0 |
-| negatief | 337 → 338 | 0 → 1 document | 8 (in 7 documenten) |
+| negatief | 337 | 0 | 8 (in 7 documenten) |
 | pariteit | 30 | 60 (in 30 documenten) | 30 |
-| **vier zones** | **554 → 555** | **64** (in 31 documenten) | 43 |
+| **vier zones** | **554** | **64** (in 31 documenten) | **43** |
 
-Alle 64 waarden resolveren; **0** dragen `null`. **32 van de 64** sleutels zijn
-géén gedeclareerde dagsoortnaam (de meervoudsspellingen). `v "WF-034"`
-emissiepunten in `checks.ml`: 43 → **45**.
+Op die baseline resolveerden **alle 64** waarden, waren er **0** nul- en **0**
+lege waarden, en waren **32 van de 64** sleutels géén gedeclareerde
+dagsoortnaam.
+
+**LANDED — de stand waarop deze kaart neerkomt (555 documenten, 2026-09-09):**
+
+| zone | documenten | ingangen | declaraties |
+| --- | --- | --- | --- |
+| golden | 164 | **6** (in 2 documenten) | 7 |
+| rood | 23 | 0 | 0 |
+| negatief | **338** | **4** (in 1 document) | 10 |
+| pariteit | 30 | 60 (in 30 documenten) | 30 |
+| **vier zones** | **555** | **70** (in 33 documenten) | **45** |
+
+Daarvan resolveren er **69 van de 70**; de ene die dat niet doet is de getuige
+van deze kaart, daar neergezet om afgewezen te worden. **0** nul, **0** leeg,
+**35 van de 70** sleutels géén gedeclareerde dagsoortnaam, en **2 van de 70**
+resolveren uitsluitend via normalisatie (de nieuwe identiteitsgetuige).
+`v "WF-034"` emissiepunten in `checks.ml`: 43 → **45**.
 
 *Kanttekening bij de kaartgetallen:* de kaart noemde 156 golden en 528
 vier-zone-documenten; de gates tellen golden en rood samen (gate 2/3 melden
@@ -186,7 +211,7 @@ Verifier van vóór de arm (md5 `8ea45e866dddcf861b357b430d50b4d1`):
     verifier: PASS
     exit=0
 
-Verifier mét de arm (md5 `6591e4da76602a4be81c704d051104de`):
+Verifier mét de arm (md5 `3f177f7c867b7c47a010dfd8758ef040` na de fixronde):
 
     $ verifier.exe corpus/negatief/wf034-dagsoorteenheid-onbekende-dagsoort/ir.json
     WF-034 FAIL /dagsoortPerEenheid/schouwdagen: day-kind unit 'schouwdagen' names
@@ -214,26 +239,33 @@ Volledige rapporten (stdout+stderr+exitcode) van beide binaries over alle
 
 Eén verdict beweegt — dat van het nieuwe negatief — en **nul** andere
 verdicts. Bewegende rapportregels apart geteld: **nul**. Geen enkel bestaand
-document krijgt zelfs maar een incidentele regel erbij.
+document krijgt zelfs maar een incidentele regel erbij. De golden die de
+fixronde aanpast, `jutterswet-vormenkabinet`, is onder **beide** binaries
+`verifier: PASS` — de twee toegevoegde ingangen resolveren, en dat is precies
+wat de identiteitsgetuige moet doen.
 
 ### De arm-exacte mutant
 
-Recept (de pin, want OCaml-builds zijn niet commentaar-invariant en het
-buildpad zit in de binary): verwijder de letterlijke tekst
-`wf034_dagsoort_eenheden ctx; ` uit `let all` in `spec/verifier/lib/checks.ml`
-en bouw met `dune build --root spec/verifier`. Mutant-md5:
-`0aaabcf9a3696817cd6b0827f264aebb`.
+OCaml-builds zijn niet commentaar-invariant en het buildpad zit in de binary,
+dus het RECEPT is de pin en de md5 alleen de bevestiging. Alle drie de mutanten
+zijn na de fixronde opnieuw gebouwd tegen de gewapende binary
+`3f177f7c867b7c47a010dfd8758ef040` (die md5 verschilde van de eerste ronde
+alléén door de commentaarwijziging — precies het punt).
 
-Over dezelfde 555 documenten tegen de gewapende binary: **exact één** document
-wordt weer schoon — `corpus/negatief/wf034-dagsoorteenheid-onbekende-dagsoort`
-— en geen enkele andere verdict- of rapportregel verandert. Na herstel is de
-binary weer byte-identiek aan de gewapende (`6591e4da…`).
+| mutant | recept in `spec/verifier/lib/checks.ml` | md5 | documenten die bewegen | gate 3 |
+| --- | --- | --- | --- | --- |
+| 1 — arm weg | verwijder de tekst `wf034_dagsoort_eenheden ctx; ` uit `let all` | `2edc880fc37d1bcbb367c4459e12c055` | **1**: het negatief wordt schoon | exit 1 |
+| 2 — nul-tak inert | vervang de `\| None ->`-tak door `\| None -> None` | `c8b4068bb840e82c7c5efdc6f7de8a36` | **0** | exit 0 |
+| 3 — byte-exacte identiteit | vervang `mem_ci (some_names ctx.doc.dagsoorten) d` door `List.mem d (some_names ctx.doc.dagsoorten)` | `5850549eee799eb245ea2ebe5676c2b6` | **1**: `jutterswet-vormenkabinet` wordt vuil | exit 1 |
 
-Tweede mutant, de nul-tak alleen (`| None -> None`), md5
-`0b4698d31a62b12b899411e0d5487009`: over de 555 documenten beweegt **niets** —
-de nul-spelling heeft geen corpusgetuige. Wel falsifieerbaar buiten het corpus:
-één veld van de gastheer-golden op `null` is PASS onder die mutant en wordt
-door de arm geweigerd (`day-kind unit 'schouwdagen' names no day kind at all`).
+Mutant 1 is de arm-exactheid die de kaart eist: exact één document wordt weer
+schoon en geen enkele andere verdict- of rapportregel verandert. Mutant 3 is
+het derde ernstige lenspunt, opgelost — zie hieronder. Mutant 2 beweegt niets
+en dat is een eerlijk gemeten nul: de nul-spelling heeft geen corpusgetuige,
+maar is buiten het corpus wel falsifieerbaar (één veld van de gastheer-golden
+op `null` is PASS onder die mutant en wordt door de arm geweigerd met
+`day-kind unit 'schouwdagen' names no day kind at all`). Na elk herstel is de
+binary weer byte-identiek aan `3f177f7c…`.
 
 ### Observability van de verdraaiing: geen enkele consument merkt het
 
@@ -266,16 +298,33 @@ vrij blijven een derde spelling (een afkorting) te registreren. Wat een sleutel
 niet mag is bótsen, en dat is WF-017. Opgeschreven in ch. 4.6 (s), in ch. 2.9
 en in de NOTE van het negatief.
 
-**(b) De arm dubbelt WF-017 niet.** Gecontroleerd in de bron en in de
-positie. WF-017 (`checks.ml`) loopt `ctx.doc.dagsoorten` en vraagt of een
-gedeclareerde dagsoortnaam een ingebouwde kalendereenheid schaduwt; de
-dagsoort/dagsoort-botsing zit in WF-001's `ns "dagsoorten"`. Beide zijn
-**botsingsregels** die niets resolveren; (s) is een **resolutieregel** die
-niets vergelijkt. De posities zijn disjunct: `/dagsoorten` tegenover
-`/dagsoortPerEenheid/<sleutel>`. Het negatief draagt één regel, geen tweede
-citatie. (Terzijde, opgemerkt maar niet in scope: WF-017's ingebouwde-eenheid-arm
-loopt alleen over `dagsoorten`, dus een sleutel `dagen` zou vandaag geen
-WF-017-verdict opleveren. Dat is WF-017's sleutelkant, niet die van (s).)
+**(b) De arm dubbelt WF-017 niet — en WF-017 dekt minder dan zijn eigen tekst
+zegt.** Gecontroleerd in de bron en in de positie. WF-017 (`checks.ml`) loopt
+`ctx.doc.dagsoorten` en vraagt of een gedeclareerde dagsoortnaam een ingebouwde
+kalendereenheid schaduwt; de dagsoort/dagsoort-botsing zit in WF-001's
+`ns "dagsoorten"`. Beide zijn **botsingsregels** die niets resolveren; (s) is
+een **resolutieregel** die niets vergelijkt. De posities zijn disjunct:
+`/dagsoorten` tegenover `/dagsoortPerEenheid/<sleutel>`. Het negatief draagt
+één regel, geen tweede citatie.
+
+Het eerste ernstige lenspunt zat in wat ik hierover in ch. 2.9 schréén: mijn
+eerste alinea eindigde met "Colliding is what a key may not do, and that is
+WF-017" — een claim over de SLEUTELS die de verifier niet waarmaakt. Gemeten
+2026-09-09 met de gewapende binary:
+
+    $ verifier.exe e14 (map-sleutel "dagen": "schouwdag")
+    verifier: PASS
+    $ verifier.exe e15 (gedeclareerde dagsoort "dagen")
+    WF-017 FAIL /dagsoorten: day-kind 'dagen' shadows a built-in calendar unit
+
+`wf017` leest de map nergens. De botsingshelft is dus gecontroleerd voor de
+gedeclareerde naam en voor géén andere geregistreerde spelling. De
+RegelSpraak-frontend handhaaft de sleutelregel wél — `registreerDagsoortEenheid`
+weigert een spelling die met een ingebouwde tijdseenheid samenvalt en geeft een
+waarschuwing — dus de IR is hier **zwakker dan zijn eigen producent**. ch. 2.9
+is herschreven tot een v0-mirror-alinea die de werkelijke dekking spelt en dat
+gat bij WF-017 legt, niet bij (s). Dezelfde meting staat nu ook in ch. 4.6 (s)
+en in de NOTE van het negatief, zodat (s) niet breder gelezen wordt dan hij is.
 
 **(c) `Constante.naam` is expliciet DOORGESCHOVEN**, met een eigen kaartje
 (`backlog/new/20260909-constante-naam-gesloten-verzameling.md`) en met de post
@@ -306,16 +355,108 @@ twee spellingen (`de dag` 11, `Rekendatum` 2), terwijl ch. 4.1 `Rekendatum` en
 `Rekenjaar` opsomt — de wire draagt een naam die de rij niet noemt, en de rij
 noemt een naam die geen document draagt.
 
-### De nul-waarde: gedekt, één arm, zonder corpusgetuige
+### DRIE spellingen, één arm, twee zonder corpusgetuige
 
-De arm dekt beide spellingen — een waarde die een niet-gedeclareerde dagsoort
-noemt én een `null`-waarde — met één guard. Reden: het schema typeert de waarde
-`["string","null"]`, dus de nul is schema-geldig, en de énige lezer laat ze
-samenvallen (zijn loader leest de waarde met `asText()`, wat een JSON-null in de
-string `"null"` verandert en dan dezelfde lookup mist). De nul-helft heeft geen
-corpusgetuige (0 van 64) en is daarom in dezelfde arm gevouwen in plaats van een
-eigen clausule te krijgen — het precedent van de fix-ronde van golf 5. Dat staat
-zo in ch. 4.6 (s) en in de NOTE.
+De arm dekt **drie** spellingen met één guard — dat was het kleine lenspunt (b),
+want mijn eerste tekst telde er twee. Een waarde die een niet-gedeclareerde
+dagsoort noemt; een `null`-waarde; en de **lege string**, die de lens als e05
+liet zien:
+
+    WF-034 FAIL /dagsoortPerEenheid/schouwdagen: day-kind unit 'schouwdagen'
+    names day kind '', which no declaration carries: …
+
+Reden voor één arm: het schema typeert de waarde `["string","null"]`, dus de nul
+is schema-geldig; de lege string is een gewone string die tegen niets resolveert;
+en de énige lezer laat de nul met de naamgeving samenvallen (zijn loader leest de
+waarde met `asText()`, wat een JSON-null in de string `"null"` verandert en dan
+dezelfde lookup mist). Van de 70 ingangen is er **0** nul en **0** leeg, dus
+beide stille spellingen zijn in dezelfde arm gevouwen in plaats van eigen
+clausules te krijgen — het precedent van de fix-ronde van golf 5. Dat staat zo in
+ch. 4.6 (s) en in beide NOTEs.
+
+### De normalisatiehelft: van ongepind naar gepind (fixronde)
+
+Het derde ernstige lenspunt. De arm vergelijkt onder `norm` (whitespace
+inklappen, kleine letters) en ch. 4.6 (s) zegt dat ook — maar **niets in het
+corpus oefende dat**. Alle 64 baseline-waarden waren byte-identiek aan hun
+declaratie, dus de lens-mutant (byte-exacte `List.mem` in plaats van `mem_ci`)
+bewoog 0 van 555 documenten en gate 3 bleef groen. Een normatieve zin zonder
+machinaal controleerbaar artefact is niet af.
+
+**Wat er is bijgekomen.** `corpus/golden/jutterswet-vormenkabinet` — de
+verifier-only getuigenkast van het corpus, die per NOTE al bestaat om
+WF-regels positief te getuigen die geen uitvoerend document draagt (WF-017
+staat er al in) — declareerde de dagsoort `schouwdag` en registreerde er geen
+enkele spelling voor. Nu twee, allebei alleen via `norm` oplosbaar:
+
+    "dagsoortPerEenheid": {
+      "schouwdag":   "SchouwDag",
+      "schouwdagen": "  schouwdag  "
+    }
+
+Eén ingang per helft van de identiteit: kapitalisatie en inklapbare
+whitespace. Beide resolveren, dus het document blijft verifier-schoon — het is
+een POSITIEVE getuige, en daarom hoort hij in de kast en niet in
+`corpus/negatief/`.
+
+**Hermeting van de lens-mutant.** Recept: vervang in
+`wf034_dagsoort_eenheden` de tekst
+`mem_ci (some_names ctx.doc.dagsoorten) d` door
+`List.mem d (some_names ctx.doc.dagsoorten)`; md5
+`5850549eee799eb245ea2ebe5676c2b6`. Vóór de getuige: 0 van 555 documenten
+bewogen, gate 3 groen. Ná de getuige:
+
+    WF-034 FAIL /dagsoortPerEenheid/schouwdag: day-kind unit 'schouwdag' names
+    day kind 'SchouwDag', which no declaration carries: …
+    WF-034 FAIL /dagsoortPerEenheid/schouwdagen: day-kind unit 'schouwdagen'
+    names day kind '  schouwdag  ', which no declaration carries: …
+
+    check-verifier exit: 1   (FAIL: corpus/golden/jutterswet-vormenkabinet is
+                              not verifier-clean)
+
+Exact één document beweegt en gate 3 gaat om. De mutant is dood.
+
+**Waarom in de kast en niet in een eigen golden.** Een NIEUWE golden zou in de
+kanaalvloer van gate 12 zijn aangekomen en had daar bij naam gepind moeten
+worden (`NOCASE`), en met cases zou `EXPECTED_PLAYED` mee moeten — beide in
+`scripts/`, een beschermd pad en een onderhouders-edit. De kast is al
+`NOCASE`-gepind, bestaat al voor precies dit doel, en de getuige raakt geen
+enkel uitvoerderkanaal. Gate 5 rapporteert zijn no-case-status ongewijzigd:
+`NOT replayed, no case file yet: corpus/golden/jutterswet-seizoenvondst
+corpus/golden/jutterswet-vormenkabinet`. Gate 12 telt hem ongewijzigd als
+`no-case`, gate 13 raakt hem niet (die draait op goldens mét cases). Geen pin
+aangepast.
+
+### De sleutelkant-motivering, herschreven (klein punt a)
+
+Mijn eerste formulering ("a key has nothing on the wire to be crossed
+against") was te sterk: je zóú een meervoud kunnen afleiden. Het dragende
+argument is dat van de brontaal zelf — het meervoud is een **optioneel
+auteursveld** (§3.12) en afleiding bij afwezigheid is expliciet buiten de taal
+verklaard, dus geen conforme producent is een bepaalde spelling verschuldigd
+en een sleutelregel zou morfologie moeten verzinnen die de taal bewust
+openlaat. De wire volgt die vorm: het meervoud staat er als tweede SLEUTEL van
+deze map en niet als eigen veld. Zo staat het nu in ch. 4.6 (s), in ch. 2.9 en
+in de NOTE van het negatief.
+
+### Gemeten sleutelkant-asymmetrie (klein punt d, observatie)
+
+Bij het herschrijven kwam een tweede sleutelkant-bevinding boven die de
+verifier vandaag toelaat en die geen enkele regel raakt. De verifier vergelijkt
+sleutels onder `norm` (`day_kind_unit`: `norm k = norm a`), maar de
+Drools-kant is asymmetrisch: `IrLoader` zet de sleutel **verbatim** weg
+(`m.dagsoortPerEenheid.put(k, v.asText())`) terwijl `RegelSpraakModel`
+opzoekt met `dagsoortPerEenheid.get(afkorting.trim().toLowerCase())`. Een
+document van de wire met sleutel `Schouwdagen` landt dus verbatim en wordt
+nooit gevonden. De frontend zelf normaliseert bij het registreren
+(`spelling.trim().toLowerCase()`), dus alleen een wire-document kan die vorm
+dragen.
+
+Vandaag is dat **inert** en gemeten: e16 (`Schouwdagen` als sleutel) is
+`verifier: PASS` en Drools `PLAYED 2` — de opzoeking wordt alleen vanuit de
+twee duurvormen (§6.10/§6.11) aangeroepen en dit document draagt die niet.
+Buiten scope van deze kaart, hier vastgelegd als observatie: het is een
+sleutelkant-vraag, dezelfde familie als het WF-017-gat hierboven.
 
 ### Dertien gates groen (2026-09-09)
 
@@ -325,22 +466,34 @@ zo in ch. 4.6 (s) en in de NOTE.
 | 2 check-ir-schema | PASS (schema geldig; 187 bestanden valideren en round-trippen) |
 | 3 check-verifier | PASS (187 golden schoon; **338** negatief afgewezen op hun eigen regel) |
 | 4 check-case-schema | PASS (schema geldig; 442 casebestanden) |
-| 5 check-oracle | PASS (419 cases exact herspeeld) |
+| 5 check-oracle | PASS (419 cases exact herspeeld; NOT replayed, no case file: `jutterswet-seizoenvondst`, `jutterswet-vormenkabinet` — de identiteitsgetuige is verifier-only en gate 5 rapporteert dat ongewijzigd) |
 | 6 check-clingo | PASS (419 cases; ref ≡ clingo) |
 | 7 check-noop | PASS (383 cases weerleggen een niets-doende uitvoerder; 36 gepinde overlevers) |
 | 8 check-rood | PASS (23 rode cases falen waarneembaar in ref én clingo; Drools-been 6 fault-pinned, 17 not-carried) |
 | 9 check-catala | PASS (suite 201 checks; 12 catala-goldens byte-identiek) |
 | 10 check-regelspraak | PASS (JUnit 173 tests; 37 rgs-goldens byte-identiek) |
 | 11 check-toka-parity | PASS (29 cases: ref 29 PASS, clingo 29 PASS, Drools 29 PLAYED, nul stille divergenties) |
-| 12 check-drools | PASS (**played 117**, kanaalvloer 47 niet-gespeelde goldens bij naam; JUnit 210 tests) |
+| 12 check-drools | PASS (**played 117**, **no-case 2**, kanaalvloer 47 niet-gespeelde goldens bij naam; JUnit 210 tests) |
 | 13 check-reftype-derivation | PASS (74 annotaties gedraaid over 15 goldens; 70 replays; 13 PLAYED door de DRL-tekstbranche; 0 gepinde overlevers) |
 
 Gate 12's speelvloer bewoog **niet**: een negatief raakt de goldens niet, en er
-is geen golden bijgekomen. `EXPECTED_PLAYED` is dus niet aangeraakt (en
-`scripts/` is een beschermd pad).
+is geen golden bíjgekomen — de identiteitsgetuige is in een golden gezet die
+al bestond en die al `NOCASE` gepind was, dus hij telt nog steeds als één van
+de twee `no-case`-goldens en `played` blijft 117. `EXPECTED_PLAYED` en de
+kanaalvloer zijn niet aangeraakt (en `scripts/` is een beschermd pad).
 
-### Niet aangeraakt
+Alle dertien draaiden na de fixronde opnieuw, alle dertien exit 0.
 
-`spec/CONSTRUCTS.md`, `spec/PLAN.md`, `toka/`, `scripts/`, alle bestaande
-tests en pins. Er is niets gemerged; de branch blijft als voorstel staan
-(`spec/IR-SPEC.md` en `spec/verifier/` zijn beschermde paden).
+### Scope-uitbreiding in de fixronde, en wat niet aangeraakt is
+
+De kaart noemde als may-touch: `spec/verifier/**`, `spec/IR-SPEC.md`,
+`corpus/negatief/**`, `backlog/`. De fixronde voegt daar één bestand aan toe —
+`corpus/golden/jutterswet-vormenkabinet/` (twee map-ingangen plus een
+NOTE-sectie) — omdat de coördinator daar expliciet om vroeg: de
+normalisatiehelft heeft een POSITIEVE getuige nodig en die kan per definitie
+niet in `corpus/negatief/` staan. Het is geen anchor, dus geen beschermd pad.
+
+Niet aangeraakt: `spec/CONSTRUCTS.md`, `spec/PLAN.md`, `toka/`, `scripts/`
+(dus ook `EXPECTED_PLAYED` en de kanaalvloer van gate 12 niet), alle bestaande
+tests, en alle bestaande pins. Er is niets gemerged; de branch blijft als
+voorstel staan (`spec/IR-SPEC.md` en `spec/verifier/` zijn beschermde paden).

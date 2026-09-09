@@ -18,7 +18,7 @@ duration unit beside the nine calendar units — in date arithmetic (WF-035) and
 in a tijdsduur (WF-038). The VALUE was crossed against nothing. So the
 admission could rest on a name no declaration carries: the spelling is let
 through as a day-kind unit while the day kind it names does not exist. This
-document is that shape, on the entry where it bites hardest — `schouwdagen` is
+document is that shape, on the entry with the largest reach: `schouwdagen` is
 the declared `eenheid` of three `Strandmeester` attributes and of the
 `schouwdrempel` parameter, so the spelling reaches evaluation while its
 registry entry points at nothing.
@@ -52,36 +52,62 @@ declaration that has to exist for the document to say what it says.
 **Not WF-017.** WF-017 (ch. 2.9) asks whether two spellings COLLIDE — a day
 kind against a built-in calendar unit, or against another day kind — and
 resolves nothing. This arm asks whether one name RESOLVES, and compares
-nothing. The positions are disjoint too: WF-017 walks the declared names under
-`/dagsoorten`, this arm the values under `/dagsoortPerEenheid`. This document
-carries no WF-017 defect and the report shows one line.
+nothing. The positions are disjoint too: WF-017's check walks the declared
+names under `/dagsoorten` and reads this registry at no point, while this arm
+reads only the values under `/dagsoortPerEenheid`. This document carries no
+WF-017 defect and the report shows one line. *Measured 2026-09-09, so the
+boundary is not read wider than it is:* a registry KEY that shadows a built-in
+calendar unit (`"dagen": "schouwdag"`) is verifier-clean, while the same
+spelling DECLARED is `WF-017 FAIL`. WF-017's check reaches the declared name
+only — its own gap, recorded in ch. 2.9, and not this arm's to close.
 
-**The key side stays free, deliberately.** Half the entries are plural
-spellings by construction — 32 of the 64 the four zones hold — and the v0 wire
-carries no `plural` field for a day kind (ch. 2.9's `plural` is on the v1 node
-only), so a key has nothing on the wire to be crossed against. An
-engine-neutral IR must leave a producer free to register a third spelling, an
-abbreviation among them, besides.
+**The key side stays free, deliberately.** The carrying argument is the source
+language's own: the plural is an OPTIONAL author field (§3.12) and deriving one
+when the author omits it is declared outside the language, so no conforming
+producer owes a particular spelling for a given day kind, and a key rule would
+have to invent morphology the language leaves unfixed. The wire matches that
+shape — it carries the plural as a second KEY of this map and as no field of
+its own (ch. 2.9's `plural` is on the v1 node) — and an engine-neutral IR must
+leave a producer free to register a further spelling, an abbreviation among
+them. Measured: 35 of the 70 entries the four zones now hold are keyed on
+something other than the declared name.
 
-**Measured 2026-09-09, four zones (164 golden + 23 rood + 337 negatief + 30
-parity = 554 documents predating this witness).** The map holds **64** entries
-over **31** documents — 4 in the one golden `jutterswet-schouwrooster`, 60 in
-the 30 parity fragments, none in rood and none in negatief before this one —
-and every one of the 64 values resolves against a declared day kind; **0**
-carry `null`. So the arm costs nothing: the before/after sweep over all 555
-documents moves this document's verdict and not one other verdict, and not one
-report line anywhere else.
+**Measured 2026-09-09, four zones on the BASELINE that predates this witness
+(164 golden + 23 rood + 337 negatief + 30 parity = 554 documents).** The map
+held **64** entries over **31** documents — 4 in the one golden
+`jutterswet-schouwrooster`, 60 in the 30 parity fragments, none in rood and
+none in negatief before this one — and every one of those 64 values resolved
+against a declared day kind; **0** were null. So the arm costs nothing: the
+before/after sweep over all 555 documents (the 554 plus this witness) moves
+this document's verdict and not one other verdict, and not one report line
+anywhere else.
 
-**Both spellings, one arm.** A value naming an undeclared day kind and a
-`null` value both fail to name a declared day kind (the schema types the value
-`["string", "null"]`, so the null is schema-valid), and the one reader
-collapses them — its loader reads the value with `asText()`, which turns a
-JSON null into the string `"null"` and then fails the same lookup. The null
-half has no corpus witness: zero of the 64 entries carry it, and making that
-branch alone inert moves **0** of the 555 documents. It is folded into this
-arm for that reason rather than given a clause and a witness of its own; off
-corpus it is one edit from the host golden and is refused —
-`day-kind unit 'schouwdagen' names no day kind at all`.
+**On the state the card LANDS on** the same four zones hold **70** entries over
+**33** documents against **45** declared day kinds, of which **69** resolve —
+the one that does not is this document, put here to be refused. The extra six
+over the baseline are this file's four and the two identity entries in
+`jutterswet-vormenkabinet`.
+
+**Three spellings, one arm.** A value naming an undeclared day kind, a `null`
+value and the EMPTY STRING all fail to name a declared day kind (the schema
+types the value `["string", "null"]`, so the null is schema-valid; the empty
+string is an ordinary string that resolves against nothing and is reported as
+`names day kind ''`), and the one reader collapses null onto the naming case —
+its loader reads the value with `asText()`, which turns a JSON null into the
+string `"null"` and then fails the same lookup. Only the naming spelling has a
+corpus witness: of the 70 entries the four zones now hold, **zero** are null
+and **zero** are empty, and making the null branch alone inert moves **0** of
+the 555 documents. Both silent spellings are folded into this arm for that
+reason rather than given clauses and witnesses of their own; off corpus each is
+one edit from the host golden and is refused by its own message
+(`day-kind unit 'schouwdagen' names no day kind at all`).
+
+**The identity the arm compares with has its own witness, elsewhere.** This
+document pins the RESOLUTION half. The `norm` half — collapse whitespace, lower
+case — is pinned by `corpus/golden/jutterswet-vormenkabinet`, which carries two
+entries that resolve only through normalisation; before those existed,
+replacing `mem_ci` with a byte-exact comparison moved 0 of 555 documents and
+gate 3 stayed green.
 
 A hand-broken variant of `corpus/golden/jutterswet-schouwrooster/ir.json`: one
 field, `"schouwdagen": "schouwdag"` → `"schouwdagen": "havendag"`, a one-line
