@@ -101,3 +101,92 @@ May touch: `backends/clingo/**`, `ref/**`, `spec/verifier/**` (als
   kaart: `20260906-gedurende-kwalificatie-stiltes.md`.
 - De temporaliteitspoort op de positieve arm: die staat en spiegelt `ref`
   exact.
+
+## Result (2026-09-09)
+
+**Keuze: A** — de backend leert de complementwandeling (maintainerbesluit
+2026-09-09, genummerde vraag 4). Reden: de vorm is welgevormd, de verifier
+laat hem door, ref geeft er een niet-triviaal antwoord op, en de frontend
+draagt hem uit gewone RegelSpraak-bron. Inperken zou een vorm weigeren die
+de toolchain gewoon schrijft.
+
+**Rood eerst.** `corpus/golden/jutterswet-tegenwacht` (nieuw, eigen
+Jutterswet-materiaal naast het gepinde anker) draagt beide vormen die de
+kaart mat: het `ALLE`-samenstel met één ontkend lid (`tegenwachtsom`) en de
+kale ontkende `Kenmerk`-clip (`stilwachtsom`). Op het definitieve artefact,
+vóór de wijziging: verifier PASS, ref PASS op alle cases, clingo
+`TRANSLATION FAULT: the negated gedurende clip (the complement walk) is not
+translated` op alle cases. Na de wijziging: alles PASS.
+
+**De vertaling.** `backends/clingo/lib/translate.ml`: de weigeringstekst is
+weg. De ontkende arm leidt per waardesegment het complement af met twee
+kandidaatpredicaten (`clN_not_lo`/`clN_not_hi`: een segmentrand of de rand
+van een gedekte periode), een dekkingspredicaat `clN_not_cov` en een regel
+die een niet-gedekt paar binnen één segment aanneemt. Maximaliteit volgt uit
+de kandidaatregels, niet uit een aggregaat. De complementranden zaten al in
+de `clN_wu`-cutset, dus de kalenderfeiten veranderen niet. De vorm staat in
+`spec/ASP-TRANSLATION.md` S8; de weigering is uit de S19-inventaris.
+
+**Pins — eerst met de hand, daarna door de uitvoerders bevestigd.** Zes
+cases, twee attributen per case, twaalf absolute waarden. De 30 (case1) en
+120 (case3) uit de kaart zijn nagerekend en kloppen.
+
+| case | tegenwachtsom (ALLE, één lid ontkend) | stilwachtsom (kale ontkende clip) |
+| --- | --- | --- |
+| `case1-overlap` | 30 | 30 |
+| `case2-disjunct` | 30 | 90 |
+| `case3-een-leeg` | 120 | 120 |
+| `case4-gespleten` | 20 | 60 |
+| `case5-gaten` | 70 | 100 |
+| `case6-ch36-voorbeeld` | 115 | 115 |
+
+`case5-gaten` is nieuw ten opzichte van de vier anker-cases: een
+waardetijdlijn met een gat en twee verschillende waarden, die de wandeling
+per segment vastlegt. `case6-ch36-voorbeeld` is het uitgewerkte voorbeeld
+van `RUNTIME-SEMANTICS.md` ch. 3.6 zelf (de ontkende vorm, 115): dat stond
+alleen in `ref/` en is nu ook door clingo en Drools gepind.
+
+**Stratificatie — onderzocht en vastgelegd.** Een ontkende kenmerkcheck in
+een clip is wel degelijk een **negatieve rand** in de WF-045/046-wandeling:
+de verifier loopt het `Functie`-filter in (`dep_cond ... ~neg:false`) en een
+lid met `negatie: true` levert `Dep_neg`. Een cyclus erdoorheen wordt
+geweigerd — nieuwe getuige
+`corpus/negatief/wf046-negated-clip-kenmerk-cycle`, die zowel WF-046 als
+WF-045 laat vuren (de cyclus loopt niet door een recursieve creatie; de
+bestaande `wf046-negated-read-in-recursive-cycle` isoleert de regel zelf).
+Het geëmitteerde programma blijft daarmee gestratificeerd: `clN_not_cov`
+leest alleen `ktl/4`-casusfeiten en `tl/5` en leest deze helper niet terug.
+Los nagemeten op het nagebouwde fragment: clingo geeft precies één stabiel
+model (`Models : 1` onder `--models=0`).
+
+**Gate 12.** De nieuwe getuige **speelt** in Drools: loader en transpiler
+droegen de vorm al, en de gepinde waarden klopten meteen. `EXPECTED_PLAYED`
+117 → 118, geen kanaalregel nodig. Daarmee staat het volle vierkant op deze
+vorm: ref ≡ clingo ≡ Drools.
+
+**Regressiegrens, hermeten 2026-09-09** (de meting van 2026-09-06 was
+verlopen): 526 `ir.json` in `corpus/golden` + `corpus/rood` +
+`corpus/negatief` (was 497); 39 `Functie`-nodes met een filter over 25
+bestanden (was 34 over 22); 37 `Kenmerk`-nodes bínnen zo'n clip (was 33),
+waarvan **3 met `negatie: true`** (was 0) — de eerste dragers: twee in de
+nieuwe golden, één in de nieuwe negatief-getuige.
+
+**Dertien gates groen** (2026-09-09): 1 PASS; 2 PASS (188 bestanden); 3 PASS
+(188 golden schoon, 338 negatief); 4 PASS (448 cases); 5 PASS (425 replays);
+6 PASS (425 replays, ref = clingo); 7 PASS (389 cases, 36 survivors); 8 PASS
+(23 rode cases); 9 PASS (201 checks, 12 catala-goldens); 10 PASS (173 JUnit,
+38 rgs-goldens); 11 PASS (29 PLAYED); 12 PASS (played 118, kanaalvloer 47,
+JUnit 210); 13 PASS (74 twists over 15 goldens).
+
+**Bewust buiten scope gelaten:** de vier stille kwalificaties op dezelfde
+`Kenmerk`-node (eigen kaart `20260906-gedurende-kwalificatie-stiltes`), en
+de temporaliteitspoort op de positieve arm. Eén nevenwerking, niet
+teruggedraaid: een ontkende kenmerkcheck mét navigatie viel vroeger in de
+weigering van deze arm en valt nu in de algemene
+"unsupported gedurende condition shape"-weigering — dezelfde tekst die ref
+er al voor gaf, dus de twee uitvoerders lopen daar nu gelijk.
+
+**Beschermd pad, als voorstel:** `spec/RUNTIME-SEMANTICS.md` — de
+executed-note bij het ontkende samenstel-lid beweerde dat de ASP-kant luid
+faalt en dat geen anker het differentieel kan pinnen. Dat is nu onwaar; de
+zin noemt de getuige. Twee regels, zo klein mogelijk gehouden.
