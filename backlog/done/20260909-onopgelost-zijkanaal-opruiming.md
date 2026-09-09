@@ -20,6 +20,10 @@ Acceptance:
 - Alle dertien gates groen.
 
 May touch: backends/drools/**, backlog/.
+*Uitgebreid bij de fixronde (onderhoudersbesluit 2026-09-09) met één regel in
+`scripts/check-rood.sh` — een redencategorie die door deze kaart onwaar werd;
+zie de bevinding in het Resultaat. Beschermd pad, dus voorstel op een
+ongemergede branch.*
 
 Out of scope: gedragswijzigingen (dit is een pure
 constructie-opruiming); spec-tekst; de andere executors;
@@ -126,16 +130,12 @@ dumps**. De nieuwe golden `synth3-operandvolgorde` speelt met 2 cases en
 draagt zélf een `Let` én een `BinderRef`, dus de meting raakt de wijziging
 opnieuw en scherper dan vóór de rebase.
 
-**Gates op de gerebasede kop:** 1 PASS; 2 = **192**; 3 = **192 golden / 342
-negatief**; 4 = **453**; 5 = **427** (2 zonder case:
-`jutterswet-seizoenvondst`, `jutterswet-vormenkabinet`); 6 = **427**;
-7 = 391/36; **8 = FAIL, één punt (hieronder)**; 9 = 201/12; 10 = 173/38;
-11 = 45/2/27/29 **onbewogen**; 12 = played **119** / kanaalvloer 47 /
-JUnit **237**; 13 = **74** twists over 15 goldens / 70 replays / 13 PLAYED
-door de DRL-tekst-tak / 0 survivors. Twaalf van de dertien groen met exact
-de verwachte tellingen.
+De eerste gate-ronde op die kop gaf twaalf groen en **gate 8 rood op precies
+één punt** — de bevinding hieronder. De eindtelling van alle dertien staat
+onderaan.
 
-**BEVINDING (gate 8, blokkeert deze kaart).** `check-rood` meldt:
+**BEVINDING (gate 8) — een gedocumenteerde blinde vlek die wegviel, en een
+rode corpus die hem binnen een dag ving.** `check-rood` meldde eerst:
 
 > `FAIL: reason drift — tijdsduur-reads-van-before-tot is listed as EXCLUDE
 > but Drools now reports NOFAULT`
@@ -157,30 +157,46 @@ werd bereikt. Met een echte `Expr.Let` daalt die scan af, de global wordt
 geregistreerd, de regel lowert en vuurt. Wat de backend dán niet draagt is de
 van/tot-ORDE zelf, dus hij loopt door tot een model.
 
-Dit is dus geen regressie maar het wegvallen van een blinde vlek die
-`LetVorm` zélf al als gat documenteerde ("een §5.3 Rekendatum achter een
-drager laat de rekendatum-global ongeregistreerd"). De rode corpus ving het
-binnen een dag na het landen van de nieuwe getuige.
+**Dit is geen regressie maar het wegvallen van een blinde vlek die de oude
+constructie ZÉLF al als gat documenteerde.** `LetVorm` benoemde het met zoveel
+woorden onder de kop "walks die deliberately NIET afdalen": een §5.3
+Rekendatum achter een drager laat de rekendatum-global ongeregistreerd, en de
+waarde-lowering die hem nodig heeft slaat dan LUID over. Het gat stond dus
+opgeschreven, met reden, als geaccepteerde prijs van de drager. Zodra de
+drager weg is, is de prijs weg. Wat overblijft is een smallere en eerlijker
+uitspraak: de backend handhaaft de van/tot-orde niet, dus hij loopt door tot
+een model — precies wat zijn Begrensd-tweeling al zei.
 
-**Wat het kost: één redencategorie in een BESCHERMD pad.** `scripts/` valt
-buiten de may-touch van deze kaart én is een beschermd pad, en de opdracht
-zegt uitdrukkelijk pins niet te verzetten — dus dit is NIET doorgevoerd. De
-voorgestelde wijziging is regel 143 van `scripts/check-rood.sh`, waarmee de
-case het exacte spiegelbeeld wordt van zijn Begrensd-tweeling op regel 130
-(`begrensd-reads-bounds-in-order|NOFAULT …`), die uit dezelfde kaart komt:
+Het aardige is hoe het gevonden werd. Mijn eigen byte-gelijkheidsmeting dekte
+`corpus/golden` en niet `corpus/rood`; over de gouden corpus verschoof
+niets, dus mijn meting zei "neutraal" en dat was op zijn eigen as waar. De
+rode corpus wees de rest aan, één dag nadat de operandvolgorde-kaart de
+getuige had geland die het gat raakt. Geen mens die aan deze kaart werkte
+wist dat die case bestond. Dat is het gate-stelsel dat doet waarvoor het er
+is: een as die de sessie niet gekozen had, ving wat de gekozen as niet kon
+zien.
 
-```
-tijdsduur-reads-van-before-tot|NOFAULT de v0-backend handhaaft geen van/tot-ORDE
-op een TIJDSDUUR, dus de ch. 10.6-barrière die deze getuige plant wordt nooit een
-fout; hij loopt door tot een model — het spiegelbeeld van begrensd-reads-bounds-in-order
-hierboven. Tot de ch. 4.10-zijkanaalopruiming (2026-09-09) las deze case EXCLUDE om een
-ANDERE reden: de bereikende regel (vaartduur van een vaart) lowerde in het geheel niet,
-omdat een Rekendatum ín een Let-body onzichtbaar was voor Expr.bevat zolang een Let een
-Onopgelost-drager was, zodat de §4.2 rekendatum-global ongeregistreerd bleef. Nu Let een
-echte unie-knoop is daalt die scan af, wordt de global geregistreerd en bereikt de regel
-het vuren
-```
+**De reparatie: één redencategorie, na maintainer-besluit doorgevoerd.** Regel
+143 van `scripts/check-rood.sh` gaat van `EXCLUDE …` naar `NOFAULT …`, met de
+gemeten reden en de datum in de regel, waarmee de case het spiegelbeeld wordt
+van zijn Begrensd-tweeling op regel 130 (`begrensd-reads-bounds-in-order`),
+die uit dezelfde operandvolgorde-kaart komt. Het is registratie-onderhoud van
+de reden-dragende lijst, geen pin-verzwakking: de case blijft
+`expectedFault {ref, clingo}` eisen en die twee benen blijven groen; alleen de
+Drools-been-reden volgt de gemeten werkelijkheid. De regel is in het Engels
+gesteld, zoals elke andere regel in die lijst. `scripts/` is een BESCHERMD pad
+en viel buiten de oorspronkelijke may-touch, dus de wijziging staat hier als
+voorstel op een ongemergede branch; de onderhouder heeft haar bij de
+fixronde besloten. Het afgewezen alternatief — `heeftTijdgebonden` opnieuw
+blind maken voor een Let — zou de gedocumenteerde blinde vlek hebben
+teruggezet om een verouderde reden te laten kloppen.
 
-**Status: de kaart is NIET af** en blijft in `doing/`. Twaalf gates groen,
-één rood op precies dit punt; het besluit over die ene regel ligt bij de
-onderhouder. `git status --short` leeg; de branch blijft ONGEMERGED.
+**Dertien gates groen op de kop** (vanuit deze worktree, ná commit; `sh`/`bash`
+per shebang, `eval $(opam env)` vóór 9; 8, 11, 12 en 13 hebben de jar
+herbouwd): 1 PASS; 2 = **192**; 3 = **192 golden / 342 negatief**; 4 = **453**;
+5 = **427**; 6 = **427**; 7 = 391/36; 8 = **26** rode cases (Drools-been 6
+fault-pinned / 20 not-carried met reden); 9 = 201/12; 10 = 173/38;
+11 = 45/2/27/29 **onbewogen**; 12 = played **119** / kanaalvloer 47 /
+JUnit **237**; 13 = **74** twists over 15 goldens / 70 replays / 13 PLAYED
+door de DRL-tekst-tak / 0 survivors. Geen andere pin verplaatst.
+`git status --short` leeg; de branch blijft ONGEMERGED.
