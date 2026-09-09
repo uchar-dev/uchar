@@ -176,3 +176,40 @@ negatief (339 → 342); gate 4 448; gates 5/6 425; gate 7 389 + 36 survivors;
 gate 8 23; gate 9 201 checks / 12 catala-goldens; gate 10 173 tests / 38
 rgs-goldens; gate 11 45 re-emissies / 27 tests; gate 12 played 118 / vloer 47
 / JUnit 223; gate 13 74 twists.
+
+**Fixronde na lens 1 (2026-09-09), tekst-only in `spec/IR-SPEC.md`.** Lens 1
+reproduceerde de kaart volledig — beide producent-negatiefs byte-identiek uit
+zelf-gereconstrueerde bronzinnen, de rood-eerst-md5's exact, beide mutanten
+arm-exact, de kwadranten rand aan rand, en de hijsing van de bronpositie-grens
+gedragsneutraal (0 verschillen over 560 documenten). Drie tekstpunten
+verwerkt, geen gedragswijziging, verifier-binary ongemoeid:
+
+1. *Flank (5), de oorzaak van 0 → 1 gecorrigeerd.* De zin schreef het aan het
+   corpus toe; onjuist. `wf034-sentinel-geleste-setlezing` bestond al toen de
+   flank nul telde. Wat veranderde is het PREDICAAT: de flank telde
+   setlezingen buiten een vouw-ARGUMENT, WF-096 weigert ze buiten een
+   vouw-BRON, en een operand van de geleste waardevouw is wél argument en
+   géén bron. Herschreven naar die oorzaak.
+2. *De normatieve MUST valt nu samen met zijn verifier-check.* "At every
+   other position" → "at every other **READ** position", met één zin die
+   zegt waarom het woord de scope is en geen slag om de arm: een regelDOEL
+   is een schrijfpositie, de clausule bereikt hem niet, en een MUST die
+   verder reikt dan zijn check is de spec-variant van "een groene deelverzameling
+   is niet groen".
+3. *WF-083 wijst nu door.* De registerrij zei nog dat de operanden van de
+   geleste waardevouw "ordinary reads governed by WF-053" zijn; daar staat nu
+   WF-053 **en** WF-096 bij. Dezelfde veroudering zat in de Companion-regel
+   van WF-083's normatieve bullet — dat is precies het pad dat een lezer
+   volgt die de omheining vanaf WF-083 naleest — dus die is meegenomen, met
+   `wf096-setlezing-geleste-operand` als getuige. Dit is één regel méér dan
+   gevraagd, hier expliciet gemeld.
+
+Eén meetverschil opgehelderd in plaats van overgenomen: lens 1 telde 357
+regeldoel-posities, deze kaart 783. Beide kloppen onder hun eigen predicaat —
+357 is golden + rood (de twee zones die schoon moeten blijven), 783 is alle
+vier de zones. Geen van beide draagt `set: true`. De scope-alinea noemt nu
+beide getallen mét hun predicaat, wat precies de fout is die punt 1 corrigeert.
+
+Sanity na de fixronde: gate 1 PASS, gate 3 PASS (188 golden schoon / 342
+negatief afgewezen voor hun gedeclareerde regel). Tekst-only, dus de overige
+elf gates zijn onberoerd en niet opnieuw gedraaid.

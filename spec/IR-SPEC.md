@@ -2959,7 +2959,9 @@ fold.
   fold branch of the walk replaces the generic expression walk there, so
   without the repetition a listed operand is the one read position in the
   IR whose hop resolves against nothing
-  (`wf053-geleste-vouwoperand-onverbonden-hop`).
+  (`wf053-geleste-vouwoperand-onverbonden-hop`). WF-096 is repeated there
+  for the same reason and refuses a SET reading at a listed operand: it is
+  an argument without being a source (`wf096-setlezing-geleste-operand`).
   Semantics: `RUNTIME-SEMANTICS.md` ch. 3.4a — the self-denoting count
   folds the subject's own linked instances exactly as the bare
   subject-anchored form does.
@@ -3304,9 +3306,13 @@ fold.
   rules now divide the position — WF-034 refuses the TYPE, WF-096 the FIELD.
   What the flank recorded as "the regression boundary is nil in the other
   direction too" was re-counted when the rule landed and is now one document
-  rather than zero, for a reason internal to the corpus: the seventh wave's
-  own `wf034-sentinel-geleste-setlezing` carries a set reading at a listed
-  operand, is already rejected for its sentinel, and gains one co-firing line.
+  rather than zero — not because the corpus moved but because the PREDICATE
+  narrowed. The flank counted set readings outside a fold ARGUMENT; WF-096
+  refuses them outside a fold SOURCE, and a listed value fold's operand is an
+  argument without being a source. The one document the narrower predicate
+  reaches, `wf034-sentinel-geleste-setlezing`, was already in the corpus when
+  the flank counted zero, is already rejected for its sentinel, and gains one
+  co-firing line.
 
 **The wart is a COUNT source (WF-093).** The row-1 wart — the source of a
 **single-argument** instance fold, spelled with the unknown sentinel on the
@@ -3455,10 +3461,14 @@ entered the semantics.
 
 - **WF-096** An `AttributeReference` with `set: true` is admissible ONLY as
   the SOURCE of a single-argument instance fold — the argument that IS the
-  folded set's source (ch. 4.3). At every other position the document is
+  folded set's source (ch. 4.3). At every other READ position the document is
   ill-formed: as a whole rule value, as an operand of a composite node,
   inside a condition, and as an operand of the listed value fold (§5.8.3,
-  whose operands are ordinary reads with no source). The admissible position
+  whose operands are ordinary reads with no source). The word READ is the
+  rule's scope and not a hedge: a rule TARGET is a WRITE position, this
+  clause does not reach it, and the scope note below states what is measured
+  there instead — a normative MUST that outran its verifier check would be
+  the spec-level "a green subset is not green". The admissible position
   is the SAME pair WF-093 keys on — a single argument under a folding kind
   (the six value folds plus `AANTAL`) — so three rules divide one boundary
   with nothing between them and nothing doubled: at the source the sentinel
@@ -3512,9 +3522,12 @@ witness and that one co-firing line, and nothing else.
 (2026-09-09).* The rule TARGET: `set: true` on a rule's `doel` is
 verifier-CLEAN and stays so — the target is a write position, reached by the
 target clause and not by the expression walk. It is left open on evidence
-rather than fenced without a witness: zero of the 560 documents carry it, and
-on a hand-built twist all THREE executors IGNORE the field and write the
-scalar (12.00 from `ref`, from the ASP backend and from Drools alike). That
+rather than fenced without a witness, and the population is counted with its
+predicate stated: the four zones hold **783** rule-target positions — **357**
+of them in the two zones that must stay clean (golden and rood) — and not one
+carries `set: true`. On a hand-built twist all THREE executors IGNORE the
+field and write the scalar (12.00 from `ref`, from the ASP backend and from
+Drools alike). That
 is three-way agreement on an inert annotation, not the one-refuses-two-answer
 class this rule closes — it is WF-083 (c)'s question instead ("a field nobody
 reads is a field that can say anything"), and it belongs to whoever asks it.
@@ -5482,7 +5495,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-080 | a value-position `AttribuutRef` resolves to an attribute, not a characteristic (a characteristic is read through a characteristic check, ch. 4.5) — closes the tolerated `has_attr||has_kenmerk` leak in both the generic value walk and the aggregation-source path (a value-yielding fold's source; a count's role source stays in scope of WF-034); the rule TARGET lvalue is out of scope (WF-022) | gate 3 | `jutterswet-vondsttelling` + `anchor/jutterswet-penninguitgifte` (a `SOM` folding an attribute source; gate 3 witnesses none over-rejects) | `wf080-value-position-kenmerk` + `wf080-aggregation-source-kenmerk` |
 | WF-081 | a numeric literal's lexeme is a bare number in the executors' shared grammar — after `,`→`.`: `'-'? digits`, `'-'? digits? '.' digits`, or `'-'? digits '/' digits` with a non-zero denominator (ch. 4.1); unit or currency tokens, whitespace, `+`, exponents and grouping are ill-formed (the unit belongs in the datatype's `eenheid`) — closes the gate blind spot where a unit written into the lexeme passed the verifier while both executors fault on it; date lexemes and `Tekst` literals out of scope | gate 3 | `anchor/jutterswet-tariefstelling` (integer and decimal lexemes through the fence; gate 3 witnesses none over-rejects) | `wf081-unit-in-lexeme` |
 | WF-082 | the `bronAnnotaties` extension field (ch. 3.1): when present a non-empty list of non-empty trimmed statute annotations; a rule without annotations omits the field — absence leaves no trace | gate 3 | `jutterswet-hardheid` (one- and two-annotation rules on the wire, the unannotated rule traceless; replayed by gates 5–6) | `wf082-empty-bron-annotaties` |
-| WF-083 | a SINGLE-argument fold source is anchored and never navigates (ch. 4.3; a fold with two or more arguments is the listed value fold, whose operands are ordinary reads governed by WF-053): (a) a non-empty `navigatiePad` is ill-formed; (b) a `navigatieRol` is admissible only on the row-1 wart and only when self-denoting — it names a role (ci, declared name or plural) the FOLD SUBJECT itself fills; away-pointing, and any `navigatieRol` outside the wart, are ill-formed; (c) the fold source's `objecttype` names the fold's anchor — the `elementObjecttype` when `set`, the fold subject otherwise. Closes the silent fall-through where a navigating fold source passed the verifier while ref faults on it, and the anchor gap where one wire field flipped the verdict while no executor moved and two executors disagreed under a clean document | gate 3 | `jutterswet-aanmeldertelling` (the self-denoting count "het aantal vondsten van de aanmelder" through both executors); `jutterswet-tempototaal` (the set anchor and the subject anchor side by side); `jutterswet-sluitsom` (the SCOPE: a listed value fold whose operand navigates, played by ref, the ASP backend and both Drools branches) | `wf083-fold-source-navigates-away`, `wf083-vouwbron-anker-op-operand`, `wf083-vouwbron-navigatierol-buiten-de-wrat`, `wf083-vouwbron-vreemd-objecttype`, `wf083-vouwbron-vreemd-elementtype` |
+| WF-083 | a SINGLE-argument fold source is anchored and never navigates (ch. 4.3; a fold with two or more arguments is the listed value fold, whose operands are ordinary reads governed by WF-053 and — since 2026-09-09 — by WF-096, which refuses a set reading there because a listed operand is an argument without being a source): (a) a non-empty `navigatiePad` is ill-formed; (b) a `navigatieRol` is admissible only on the row-1 wart and only when self-denoting — it names a role (ci, declared name or plural) the FOLD SUBJECT itself fills; away-pointing, and any `navigatieRol` outside the wart, are ill-formed; (c) the fold source's `objecttype` names the fold's anchor — the `elementObjecttype` when `set`, the fold subject otherwise. Closes the silent fall-through where a navigating fold source passed the verifier while ref faults on it, and the anchor gap where one wire field flipped the verdict while no executor moved and two executors disagreed under a clean document | gate 3 | `jutterswet-aanmeldertelling` (the self-denoting count "het aantal vondsten van de aanmelder" through both executors); `jutterswet-tempototaal` (the set anchor and the subject anchor side by side); `jutterswet-sluitsom` (the SCOPE: a listed value fold whose operand navigates, played by ref, the ASP backend and both Drools branches) | `wf083-fold-source-navigates-away`, `wf083-vouwbron-anker-op-operand`, `wf083-vouwbron-navigatierol-buiten-de-wrat`, `wf083-vouwbron-vreemd-objecttype`, `wf083-vouwbron-vreemd-elementtype` |
 | WF-084 | a day-precision date literal's lexeme is the strict ISO form `yyyy-mm-dd` the executors parse (ch. 4.1) — fixed field widths (four-two-two digits), single `-` separators, month 1–12, day 1..days-in-month (leap-aware); the Dutch day-first source snippet is ill-formed, whether the bare `31-01-2024` (silently misread as year 31 → `0036-07-16`, a differential-blind wrong answer both executors agreed on) or the `dd. `-prefixed form (both executors fault) — closes that blind spot, the emitter now writing the bare ISO lexeme and keeping the snippet in `bron`; datetime lexemes out of scope | gate 3 | `jutterswet-vondstverjaring` (an ISO date literal through the fence, replayed by gates 5–6) | `wf084-source-snippet` + `wf084-bare-non-iso` |
 | WF-085 | the day-kind reference graph is acyclic (ch. 5.4 / ch. 3.7): a day-kind condition may reference other day kinds (a `Predicaat` of soort `DAGSOORT`), but mutually recursive definitions have no fixpoint — a loud refusal where the v0 toolchain resolves a cycle to a silent false (the §9.10 recursion prohibition unenforced for day kinds); diverge-from-v0 (v0 neither checks nor documents it) | gate 3 | `jutterswet-schouwkalender` (an acyclic `hoogschouwdag -> schouwdag` reference, verifier-clean, replayed by gates 5–6 over its ordinary rule) | `wf085-dagsoort-verwijzingscyclus` (two mutually referencing day kinds) |
 | WF-086 | a defaults group MUST NOT target a temporal attribute (declared `attribuutGranulariteit`) nor a temporal characteristic (`kenmerkGranulariteit`) — a defaults group decides at one fixpoint and has no timeline coordinate to write (ch. 6); the document-layer fence ahead of the executors (ref faults on both arms — defense-in-depth — and the Drools defaults service skips); temporal defaults targets are unscheduled (PRIORITIZED-DEFAULTS-EVOLUTIE §9 Q12a) | gate 3 (over the prioritized-defaults node via the shared `attr_temporal` helper and the `kenmerkGranulariteit` table) | `anchor/jutterswet-vondstwaardering` (attribute defaults on a non-temporal target — gate 3 witnesses WF-086 does not over-fire) | `wf086-temporele-defaultstarget` (attribute arm), `wf086-temporele-defaultskenmerk` (characteristic arm) |
