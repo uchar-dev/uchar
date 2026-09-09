@@ -43,6 +43,32 @@ type env = {
 
 let req what = function Some x -> x | None -> Value.fault "missing %s in IR node" what
 
+(* --- operand order (ch. 5.11) ------------------------------------------
+   The order in which a node's operands are evaluated is normative, because
+   it is observable: a fault and a §9.5 channel fact come into being — or
+   do not — depending on what ran before them, and a ch. 10.6 barrier ends
+   the enclosing Let where it fires. So ref never lets the compiler decide
+   it. OCaml leaves the evaluation order of an application's arguments
+   UNSPECIFIED (this build evaluates them right to left), and [List.map]
+   documents its result, not its application order (only [List.iter] and
+   [List.fold_left] fix theirs). Every operand list whose mapping can
+   fault, deposit or raise therefore runs through these two explicitly
+   sequenced walks, and every multi-operand node sequences its operands
+   with [let]. ------------------------------------------------------- *)
+
+let rec map_in_order f = function
+  | [] -> []
+  | x :: xs ->
+      let y = f x in
+      y :: map_in_order f xs
+
+let rec filter_in_order p = function
+  | [] -> []
+  | x :: xs ->
+      let keep = p x in
+      let rest = filter_in_order p xs in
+      if keep then x :: rest else rest
+
 (* --- validity gate (ch. 3.10 / 5.6): a version whose window excludes the
    evaluation date simply does not apply --------------------------------- *)
 
@@ -585,9 +611,16 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       | _ ->
           Arith.round_v modus decimalen (eval_expr env world self ~err (req "Afgerond.basis" basis)))
   | Begrensd { basis; minimum; maximum; _ } ->
+      (* ch. 5.11, wire order: basis, then minimum, then maximum. The [let]s
+         carry the semantics, not the style — written as two labelled
+         arguments this build evaluates the MAXIMUM first, which runs the
+         node's operands against the direction ch. 2.7 applies its bounds in.
+         An absent bound evaluates nothing. *)
       let v = eval_expr env world self ~err (req "Begrensd.basis" basis) in
       let bound = function None -> Value.Empty | Some b -> eval_expr env world self ~err b in
-      Arith.clamp ~min_:(bound minimum) ~max_:(bound maximum) v
+      let min_ = bound minimum in
+      let max_ = bound maximum in
+      Arith.clamp ~min_ ~max_ v
   | Functie { kind = (Tijdsduur | Absolute_tijdsduur) as kind; argumenten; filter; typ; _ } -> (
       (* tijdsduur van A tot B (ch. 3.8), routed on the node-type unit:
          the counted unit is the node's own declared unit, resolved by
@@ -617,18 +650,22 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                 Value.fault "tijdsduur without a recognised time unit on its node type \
                              (WF-038)"
           in
+          (* ch. 5.11, wire order: "van" (argument 0) before "tot"
+             (argument 1). Written as two positional arguments this build
+             evaluates "tot" first — the reverse of the phrase. *)
+          let van = eval_expr env world self ~err a in
+          let tot = eval_expr env world self ~err b in
           Arith.tijdsduur
             ~absolute:(kind = Absolute_tijdsduur)
             ~unit_ ~result_unit:(unit_of_datatype typ)
-            (eval_expr env world self ~err a)
-            (eval_expr env world self ~err b)
+            van tot
       | _ -> Value.fault "tijdsduur expects two arguments")
   | Functie { kind; argumenten; element_objecttype; leegwaarde; filter; dimensie_selectie; granulariteit; bron_rol; typ = _; bron = _ } ->
       eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leegwaarde ~filter
         ~dimensie_selectie ~granulariteit ~bron_rol
   | Tekst_reeks { delen; _ } ->
       Arith.concat
-        (List.map
+        (map_in_order
            (function
              | Letterlijk { tekst } -> Value.Text (Option.value tekst ~default:"")
              | Ingevoegd { expr = e } -> eval_expr env world self ~err (req "Ingevoegd.expr" e))
@@ -799,7 +836,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       (* ch. 11.1: a record value; a field evaluating leeg propagates — the
          whole literal evaluates leeg (a record carries no hole). The field
          order is the wire's declaration order (WF-073). *)
-      let fs = List.map (fun (n, e) -> (n, eval_expr env world self ~err e)) velden in
+      let fs = map_in_order (fun (n, e) -> (n, eval_expr env world self ~err e)) velden in
       if List.exists (fun (_, v) -> v = Value.Empty) fs then Value.Empty else Value.Record fs
   | Field_access { base; veld; _ } -> (
       (* ch. 11.1: read one declared field; a leeg base propagates leeg
@@ -862,7 +899,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
   | List_literal { elements; _ } ->
       (* ch. 10.1: a list value; an element evaluating leeg propagates —
          the whole literal evaluates leeg (a list carries no hole) *)
-      let vs = List.map (eval_expr env world self ~err) elements in
+      let vs = map_in_order (eval_expr env world self ~err) elements in
       if List.exists (fun v -> v = Value.Empty) vs then Value.Empty else Value.Lijst vs
   | Lambda _ ->
       (* WF-069: a Lambda is position-restricted — only the [function] operand
@@ -883,7 +920,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       if List.length arguments <> List.length fd.fd_parameters then
         Value.fault "function %S invoked with %d arguments, expected %d (WF-068)" functie
           (List.length arguments) (List.length fd.fd_parameters);
-      let args = List.map (eval_expr env world self ~err) arguments in
+      let args = map_in_order (eval_expr env world self ~err) arguments in
       if List.exists (fun v -> v = Value.Empty) args then Value.Empty
       else eval_closed_body env world self ~err fd.fd_parameters fd.fd_body args)
   | Fold { list; functie; init; _ } -> (
@@ -902,7 +939,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       match eval_expr env world self ~err list with
       | Value.Empty -> Value.Empty
       | Value.Lijst xs ->
-          let ys = List.map (fun x -> apply_fold_fn env world self ~err functie [ x ]) xs in
+          let ys = map_in_order (fun x -> apply_fold_fn env world self ~err functie [ x ]) xs in
           if List.exists (fun v -> v = Value.Empty) ys then Value.Empty else Value.Lijst ys
       | v -> Value.fault "map-list operand is %s, not a list value" (Value.to_string v))
   | Filter_list { list; binder; condition; _ } -> (
@@ -913,7 +950,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       | Value.Empty -> Value.Empty
       | Value.Lijst xs ->
           Value.Lijst
-            (List.filter
+            (filter_in_order
                (fun x ->
                  let locals = SMap.add (norm binder) (Now x) env.locals in
                  eval_cond { env with locals } world self ~err condition)
@@ -1128,13 +1165,13 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                    stays unmirrored (tracked delta) *)
                 let (_ : rol) = connecting_role env ~from_type:self.otype ~to_type:el in
                 ()));
-        `Instances (List.filter keep (linked ?binding:bron_rol env world self ~to_type:el))
+        `Instances (filter_in_order keep (linked ?binding:bron_rol env world self ~to_type:el))
     | ( Some el,
         [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]
       ) ->
         let name = req "fold attribute" attribuut in
         let el_decl = objecttype env el in
-        let members = List.filter keep (linked ?binding:bron_rol env world self ~to_type:el) in
+        let members = filter_in_order keep (linked ?binding:bron_rol env world self ~to_type:el) in
         (* §7.1: a set read of a TEMPORAL attribute folds TWICE — each
            member's own timeline collapses over time first (ch. 3.6, at
            that attribute's granularity), and only those scalars fold over
@@ -1168,7 +1205,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
              the asOfDate bucket carries that total — and the asymmetry is
              deliberate: there the session date IS the horizon. *)
           `Values
-            (List.map
+            (map_in_order
                (fun (i : World.instance) ->
                  match World.timeline i name with
                  | Some tl -> Timeline.totaal ~grid_unit:grid gran tl
@@ -1196,12 +1233,12 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
         if filter <> None then
           Value.fault "a filter on a listed-operand fold has no v0 form (the subselection \
                        ranges over instances)";
-        `Values (List.map (eval_expr env world self ~err) args)
+        `Values (map_in_order (eval_expr env world self ~err) args)
     | None, args ->
         if filter <> None then
           Value.fault "a filter on a listed-operand fold has no v0 form (the subselection \
                        ranges over instances)";
-        `Values (List.map (eval_expr env world self ~err) args)
+        `Values (map_in_order (eval_expr env world self ~err) args)
     | Some _, _ -> Value.fault "unsupported instance-fold source shape"
   in
   let values () =
@@ -1230,7 +1267,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
       match argumenten with
       | [ a ] -> Arith.abs_ (eval_expr env world self ~err a)
       | _ -> Value.fault "absolute waarde expects one argument")
-  | Concatenatie -> Arith.concat (List.map (eval_expr env world self ~err) argumenten)
+  | Concatenatie -> Arith.concat (map_in_order (eval_expr env world self ~err) argumenten)
   | Jaar_uit -> (
       match argumenten with
       | [ a ] -> Arith.jaar_uit (eval_expr env world self ~err a)

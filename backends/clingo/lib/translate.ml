@@ -2728,7 +2728,15 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                 name;
             Some (term, numeric_scale ~what:"a Begrensd bound" scale)
       in
-      let lo = bound "minimum" minimum and hi = bound "maximum" maximum in
+      (* ch. 5.11, wire order: the minimum is visited before the maximum. The
+         two [let]s carry that; written as one [let … and …] the order would be
+         OCaml's unspecified choice, and [bound] is effectful — it faults, it
+         mutates [ctx.fresh] and it can emit — so on a node whose two bounds are
+         both refusable the reported reason would be whichever the compiler
+         happened to run. The visiting order is now the spec's, and the rood
+         witness pins it. *)
+      let lo = bound "minimum" minimum in
+      let hi = bound "maximum" maximum in
       let m = List.fold_left max b_scale (List.filter_map (Option.map snd) [ lo; hi ]) in
       let scale_to t s = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
       let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
