@@ -34,8 +34,17 @@ records `Binding`, `Lezing` en `Keuze` — is als bestand weg (101 regels). In
 `IrLoader` is `letDrager` weg en daarmee de drager voor Let en BinderRef: de
 wire-knopen `Let` en `BinderRef` worden nu als `Expr.Let` respectievelijk
 `Expr.BinderRef` in de boom gebouwd. In `ExecModelTranspiler` is
-`geenUnieLet` weg — de fail-fast die de unievormen júist verbood, zes regels
-die nu de normale gang zijn — en werken `letWaarde`, `letKinderen`,
+`geenUnieLet` weg. Die assertie is niet versoepeld maar INGETROKKEN omdat ze
+haar doel bereikt heeft: ze is geïnstalleerd bij commit 6fba057 ("de sealed
+union groeit met Let en BinderRef — emitter + Drools fail-fast"), toen de
+unie de twee records kreeg en de drools-port de omschakeling nog niet had
+gemaakt. Haar taak was precies dát vast te leggen — een unie-`Let` die tóch
+binnenkwam betekende dat de loader onder de port was veranderd, en elke
+wandeling hier zou hem als blad hebben gelezen en dus in stilte
+onder-rapporteren. Deze kaart ÍS die omschakeling: de loader levert de
+unievormen nu bewust, elke wandeling matcht erop, en een assertie die het
+tegendeel eist is daarmee uitgewerkt. In hetzelfde bestand werken
+`letWaarde`, `letKinderen`,
 `kwalificeertOperand`, `scalarWaarde` en de twee companion-walks
 (`verzamelDelingen`, `verzamelWortels`) op de knopen zelf in plaats van op
 `letVormen.get(e)`. `EffectieveEenheid` leidt de Let en de binder-lezing af
@@ -54,9 +63,10 @@ spelende goldens uit het kanaal duwen (`anchor/jutterswet-tariefstelling`,
 `jutterswet-tariefrecht-catala`, `synth3-conditielezing`,
 `synth3-drempelheffing`, `synth3-takbarriere`) en dus een gedragswijziging
 zijn; de unie uitbreiden valt buiten de kaart. **Acceptatiepunt 1 is dus
-gehaald voor de Let en niet voor de IfThenElse.** Het restant is één
-kandidaat-kaartje waard: `IfThenElse` in de gedeelde `Expr`-unie, spec-first
-langs gate 10 en de toolchain-pin.
+gehaald voor de Let en niet voor de IfThenElse.** Het restant is
+uitgeschreven als `backlog/new/20260909-ifthenelse-in-de-unie.md`:
+`IfThenElse` als echt record in de gedeelde `Expr`-unie, spec-first langs
+gate 10 en de toolchain-pin, met de vijf spelende goldens als meting.
 
 **De byte-gelijkheidsmeting.** Twee onafhankelijke assen, beide vóór en ná
 gemeten op dezelfde 165 goldens, en de ná-meting is op de definitieve kop
