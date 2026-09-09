@@ -184,18 +184,28 @@ droegen de vorm al, en de gepinde waarden klopten meteen. `EXPECTED_PLAYED`
 vorm: ref ≡ clingo ≡ Drools.
 
 **Regressiegrens, hermeten 2026-09-09** (de meting van 2026-09-06 was
-verlopen): 526 `ir.json` in `corpus/golden` + `corpus/rood` +
-`corpus/negatief` (was 497); 39 `Functie`-nodes met een filter over 25
+verlopen): op de gerebasede kop 527 `ir.json` in `corpus/golden` +
+`corpus/rood` + `corpus/negatief` (was 497; 526 vóór de rebase — het
+verschil is het negatief dat met `main` meekwam); 39 `Functie`-nodes met
+een filter over 25
 bestanden (was 34 over 22); 37 `Kenmerk`-nodes bínnen zo'n clip (was 33),
 waarvan **3 met `negatie: true`** (was 0) — de eerste dragers: twee in de
 nieuwe golden, één in de nieuwe negatief-getuige.
 
-**Dertien gates groen** (2026-09-09): 1 PASS; 2 PASS (188 bestanden); 3 PASS
-(188 golden schoon, 338 negatief); 4 PASS (448 cases); 5 PASS (425 replays);
-6 PASS (425 replays, ref = clingo); 7 PASS (389 cases, 36 survivors); 8 PASS
-(23 rode cases); 9 PASS (201 checks, 12 catala-goldens); 10 PASS (173 JUnit,
-38 rgs-goldens); 11 PASS (29 PLAYED); 12 PASS (played 118, kanaalvloer 47,
-JUnit 210); 13 PASS (74 twists over 15 goldens).
+**Dertien gates groen — gemeten op de gerebasede kop** (2026-09-09, branch
+op `main` = `76c11e2`, waarop de caselezer- en dagsoortkaart al geland
+waren; het tweede-merge-regime): 1 PASS; 2 PASS (188 bestanden); 3 PASS
+(188 golden schoon, **339** negatief); 4 PASS (448 cases); 5 PASS (425
+replays); 6 PASS (425 replays, ref = clingo); 7 PASS (389 cases, 36
+survivors); 8 PASS (23 rode cases); 9 PASS (201 checks, 12 catala-goldens);
+10 PASS (173 JUnit, 38 rgs-goldens); 11 PASS (29 PLAYED); 12 PASS (played
+118, kanaalvloer 47, **JUnit 223**); 13 PASS (74 twists over 15 goldens).
+
+De rebase verliep zonder conflict. Twee tellingen verschoven ten opzichte
+van de meting vóór de rebase, beide door `main` en niet door deze kaart:
+gate 3 van 338 naar 339 (het negatief van de dagsoortkaart komt bovenop de
+337 van vóór en de mijne), en gate 12 van JUnit 210 naar 223 (de suite van
+de Drools-backend groeide op `main`). Verder week geen enkele telling af.
 
 **Bewust buiten scope gelaten:** de vier stille kwalificaties op dezelfde
 `Kenmerk`-node (eigen kaart `20260906-gedurende-kwalificatie-stiltes`), en
@@ -245,3 +255,15 @@ een eigen uitbreiding van de scope.
   die meespeelt de gate anders rood laat lopen — precies zoals de gate is
   bedoeld. De opdracht vroeg de teller mee te bewegen op deze branch. Geen
   kanaalregel toegevoegd; de getuige speelt.
+
+**Slotronde (2026-09-09).** Branch gerebased op `main` = `76c11e2`
+(caselezer- en dagsoortkaart), zonder conflict; de volledige dertien gates
+zijn daarna op de gerebasede kop gedraaid, met de twee verschuivingen
+hierboven en geen andere afwijking. Twee Results-correcties verwerkt: de
+plaatsing van de golden buiten `anchor/` steunt op de beschermde-padenregel
+en niet op de kaarttekst (de "May touch" sluit `anchor/` juist in), en de
+may-touch-boekhouding geldt voor alle drie de geraakte paden, niet alleen
+voor `scripts/`. Eén nieuw kaartje geschreven:
+`backlog/new/20260909-beschermde-paden-lijsten-gelijk.md`, over de
+uiteenlopende dekking van de prozalijst in `CLAUDE.md` en de `/spec/`-claim
+in `.github/CODEOWNERS`.
