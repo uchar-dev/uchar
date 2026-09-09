@@ -227,7 +227,10 @@ EXPECTED_CHANNEL=(
 # The count that closes the one direction a played-by-default list cannot see. It moves ONLY with a
 # corpus change, and it moves TOGETHER with the list: a golden that starts playing leaves the list
 # AND raises this number by one.
-EXPECTED_PLAYED=117
+# 2026-09-09: 117 -> 118, jutterswet-tegenwacht (the negated gedurende clip). The Drools loader and
+# transpiler already carried the form, so the golden arrived playing and matched the pinned values
+# on the first run — the square holds on it without a backend change.
+EXPECTED_PLAYED=118
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
