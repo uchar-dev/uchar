@@ -1090,16 +1090,32 @@ let wf026 ctx =
    verifier-clean — the collision half is checked for the declared name and
    for nothing else, which is WF-017's own gap and not this arm's business.
 
-   The KEY side stays FREE, and that is a decision, not an omission. In the
-   source language the plural is an OPTIONAL author field (§3.12) and
-   derivation when it is absent is declared outside the language, so there is
-   no spelling a conforming producer OWES for a given day kind; the v0 wire
-   carries the plural as a second KEY of this map and as no field of its own
-   (ch. 2.9's `plural` exists on the v1 node). A key rule would therefore have
-   to invent the morphology the language deliberately does not fix, and an
-   engine-neutral IR must leave a producer free to register a further spelling
-   — an abbreviation among them. Half the keys are already not the declared
-   name: 35 of the 70 entries the four zones hold on 2026-09-09.
+   The KEY side stays FREE, and that is a decision, not an omission. The
+   carrying argument is what the WIRE carries: a day kind's plural arrives as a
+   FURTHER KEY of this same map and as no field of its own (ch. 2.9's `plural`
+   exists on the v1 node), so nothing here distinguishes a DECLARED plural from
+   a DERIVED one or from an abbreviation — all three are ordinary keys. A key
+   rule would have to reconstruct that distinction by fixing Dutch morphology
+   inside an engine-neutral IR, and would bind every producer to one language's
+   plural formation. (The source language does make the plural an optional
+   author field, §3.12; that is not the ground, and it does not mean a plural
+   is absent when the author omits one — the reference frontend derives a `-en`
+   plural in that case and cites §3.12 for it. The wire cannot tell the two
+   apart, which is the ground.)
+
+   Measured on the LANDED state (2026-09-09, 555 documents): 35 of the 70
+   entries are keyed on something other than the declared name. That counts
+   entries, not independent cases — the 70 entries carry four distinct
+   (registry, declarations) shapes, one repeated byte-identically over 30
+   parity fragments, and the 35 keys spell three distinct words, 34 of them the
+   plain `<declared name>en` form the frontend itself derives. The corpus has
+   zero abbreviation and zero irregular-plural witnesses.
+
+   Neither conjunct of WF-017 reaches a key, measured: a registry key that
+   shadows a built-in calendar unit is verifier-clean, and two day kinds whose
+   spellings collide emit and verify clean while the second loses its own
+   singular to the first (`putIfAbsent`, first-wins). Both are WF-017's gaps,
+   carded 2026-09-09; neither is this arm's.
 
    Observability, measured 2026-09-09 on the twist this arm's witness carries:
    NO consumer notices. The verifier, `ref`, the ASP backend and the Drools

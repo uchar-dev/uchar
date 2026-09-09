@@ -159,6 +159,8 @@ gebruikt). Vier artefacten:
   `norm` resolveren, plus NOTE-sectie.
 - `backlog/new/20260909-constante-naam-gesloten-verzameling.md` — de zusterpost,
   doorgeschoven met eigen meting.
+- `backlog/new/20260909-wf017-sleutel-en-spellingsbotsing.md` — het kaartje dat
+  ch. 2.9 belooft (slotronde), met de twee gemeten WF-017-gaten.
 
 ### De hermeting (2026-09-09, op `4acc6cb` + deze kaart)
 
@@ -211,7 +213,7 @@ Verifier van vóór de arm (md5 `8ea45e866dddcf861b357b430d50b4d1`):
     verifier: PASS
     exit=0
 
-Verifier mét de arm (md5 `3f177f7c867b7c47a010dfd8758ef040` na de fixronde):
+Verifier mét de arm (md5 `8e07cdc5515ec6b29bd6de42e750de54` na de slotronde):
 
     $ verifier.exe corpus/negatief/wf034-dagsoorteenheid-onbekende-dagsoort/ir.json
     WF-034 FAIL /dagsoortPerEenheid/schouwdagen: day-kind unit 'schouwdagen' names
@@ -249,14 +251,15 @@ wat de identiteitsgetuige moet doen.
 OCaml-builds zijn niet commentaar-invariant en het buildpad zit in de binary,
 dus het RECEPT is de pin en de md5 alleen de bevestiging. Alle drie de mutanten
 zijn na de fixronde opnieuw gebouwd tegen de gewapende binary
-`3f177f7c867b7c47a010dfd8758ef040` (die md5 verschilde van de eerste ronde
-alléén door de commentaarwijziging — precies het punt).
+`8e07cdc5515ec6b29bd6de42e750de54`. Die md5 is intussen drie keer verschoven —
+eerste ronde, fixronde, slotronde — élke keer alléén door commentaarwijziging.
+Dat is precies waarom het RECEPT de pin is en de md5 alleen de bevestiging.
 
 | mutant | recept in `spec/verifier/lib/checks.ml` | md5 | documenten die bewegen | gate 3 |
 | --- | --- | --- | --- | --- |
-| 1 — arm weg | verwijder de tekst `wf034_dagsoort_eenheden ctx; ` uit `let all` | `2edc880fc37d1bcbb367c4459e12c055` | **1**: het negatief wordt schoon | exit 1 |
-| 2 — nul-tak inert | vervang de `\| None ->`-tak door `\| None -> None` | `c8b4068bb840e82c7c5efdc6f7de8a36` | **0** | exit 0 |
-| 3 — byte-exacte identiteit | vervang `mem_ci (some_names ctx.doc.dagsoorten) d` door `List.mem d (some_names ctx.doc.dagsoorten)` | `5850549eee799eb245ea2ebe5676c2b6` | **1**: `jutterswet-vormenkabinet` wordt vuil | exit 1 |
+| 1 — arm weg | verwijder de tekst `wf034_dagsoort_eenheden ctx; ` uit `let all` | `1698c8a3b5963e116f53cbc504b13850` | **1**: het negatief wordt schoon | exit 1 |
+| 2 — nul-tak inert | vervang de `\| None ->`-tak door `\| None -> None` | `012532f3f8a3ae14523381e4b7fda8e7` | **0** | exit 0 |
+| 3 — byte-exacte identiteit | vervang `mem_ci (some_names ctx.doc.dagsoorten) d` door `List.mem d (some_names ctx.doc.dagsoorten)` | `0f5588b44228eb815201e433cded6819` | **1**: `jutterswet-vormenkabinet` wordt vuil | exit 1 |
 
 Mutant 1 is de arm-exactheid die de kaart eist: exact één document wordt weer
 schoon en geen enkele andere verdict- of rapportregel verandert. Mutant 3 is
@@ -265,7 +268,7 @@ en dat is een eerlijk gemeten nul: de nul-spelling heeft geen corpusgetuige,
 maar is buiten het corpus wel falsifieerbaar (één veld van de gastheer-golden
 op `null` is PASS onder die mutant en wordt door de arm geweigerd met
 `day-kind unit 'schouwdagen' names no day kind at all`). Na elk herstel is de
-binary weer byte-identiek aan `3f177f7c…`.
+binary weer byte-identiek aan `8e07cdc5…`.
 
 ### Observability van de verdraaiing: geen enkele consument merkt het
 
@@ -407,7 +410,7 @@ een POSITIEVE getuige, en daarom hoort hij in de kast en niet in
 `wf034_dagsoort_eenheden` de tekst
 `mem_ci (some_names ctx.doc.dagsoorten) d` door
 `List.mem d (some_names ctx.doc.dagsoorten)`; md5
-`5850549eee799eb245ea2ebe5676c2b6`. Vóór de getuige: 0 van 555 documenten
+`0f5588b44228eb815201e433cded6819`. Vóór de getuige: 0 van 555 documenten
 bewogen, gate 3 groen. Ná de getuige:
 
     WF-034 FAIL /dagsoortPerEenheid/schouwdag: day-kind unit 'schouwdag' names
@@ -487,6 +490,85 @@ de twee `no-case`-goldens en `played` blijft 117. `EXPECTED_PLAYED` en de
 kanaalvloer zijn niet aangeraakt (en `scripts/` is een beschermd pad).
 
 Alle dertien draaiden na de fixronde opnieuw, alle dertien exit 0.
+
+### Slotronde (2026-09-09): het WF-017-kaartje en de vervangen grond
+
+**1. Het beloofde WF-017-kaartje is er:**
+`backlog/new/20260909-wf017-sleutel-en-spellingsbotsing.md`. ch. 2.9 zei sinds
+de fixronde "Closing it is WF-017's own card" zonder dat die kaart bestond. Hij
+draagt nu **beide** gemeten gaten, met reproductiepaden:
+
+*Gat (a), de registry-sleutel.* Een wire-document met `"dagen": "schouwdag"` is
+`verifier: PASS`, terwijl dezelfde spelling als gedeclareerde naam
+`WF-017 FAIL` geeft. De producent is hier strenger dan de IR — en sterker dan
+ik in de fixronde schreef: de ingebouwde eenheidsnamen zijn
+grammaticasleutelwoorden, dus de brontaal kan de vorm niet eens uitdrukken.
+Gemeten: `Dagsoort de vaardag (mv: weken);` levert zowel de WARNING
+("valt samen met een ingebouwde tijdseenheid en wordt niet geregistreerd") als
+een syntaxfout, en er komt géén ir uit. De vorm is dus **wire-only**.
+
+*Gat (b), de tweede conjunct — nieuw, en end-to-end aangetoond.* WF-017's
+tweede helft ("botst niet met de spellingen van een ándere dagsoort") is een
+gepromoveerde MUST **zonder enige check**. Zelf gereproduceerd met de eigen
+frontend uit
+
+    Dagsoort de schouwdag (mv: schouwdagen);
+    Dagsoort de schouwdagen (mv: schouwdagens);
+
+    frontend exit=0        ← geen WARNING, geen ERROR
+    dagsoorten:         ["schouwdag", "schouwdagen"]
+    dagsoortPerEenheid: {"schouwdag": "schouwdag",
+                         "schouwdagen": "schouwdag",     ← eigen enkelvoud, fout gebonden
+                         "schouwdagens": "schouwdagen"}
+    verifier: PASS
+
+De tweede dagsoort verliest haar eigen enkelvoudsspelling aan het meervoud van
+de eerste (`putIfAbsent`, first-wins, stil), dus `5 schouwdagen` rekent met de
+verkeerde dagsoortdefinitie. WF-001 raakt het niet — de twee gedeclareerde
+namen botsen niet.
+
+**2. ch. 2.9 gescoopt.** Mijn fixronde-zin "de IR is zwakker dan zijn
+producent" gold alleen voor de ingebouwde-eenheidshelft. Voor de
+dagsoort-tegen-dagsoorthelft is de producent precies even zwak. De alinea
+benoemt de twee conjuncten nu apart, met de meting per conjunct, en verwijst
+naar het kaartje.
+
+**3. Het §3.12-argument vervangen — mijn premisse was onjuist.** Ik schreef dat
+afleiding bij een ontbrekend meervoud "buiten de taal verklaard" is. De eigen
+frontend spreekt dat tegen: `DefinitionResolver` leidt bij een ontbrekend
+meervoud `enkelvoud + "en"` af en citeert daarvoor §3.12 zelf. De CONCLUSIE
+(sleutel vrij) blijft staan, maar nu op de grond die ik eerst als bijzin had en
+die wél draagt: **de wire draagt geen meervoudsveld** — een meervoud komt aan
+als nóg een sleutel van dezelfde map — dus niets op de wire onderscheidt een
+gedeclareerd meervoud van een afgeleid meervoud of van een afkorting, en een
+sleutelregel zou die verdwenen onderscheiding moeten reconstrueren door
+Nederlandse morfologie in een engine-neutrale IR vast te leggen. Die grond is
+nu dragend in ch. 4.6 (s), in `checks.ml` en in de NOTE van het negatief; de
+afleidingsclaim is geschrapt en vervangen door een expliciete correctie.
+
+**4. Twee kleine.** (a) De "35 van de 70" is overal als **landed** gelabeld
+(ch. 2.1 (3), `checks.ml`, ch. 4.6 (s), de NOTE) — het jaartal alleen
+onderscheidde baseline en landed niet. (b) Eén zin toegevoegd tegen het lezen
+van "35 van de 70" als 35 onafhankelijke gevallen. Gemeten: de 70 ingangen
+dragen **vier** verschillende (registry, declaraties)-vormen, waarvan er één
+**byte-identiek over 30 pariteitsfragmenten** herhaald is; de 35 afwijkende
+sleutels spellen **drie** verschillende woorden; **34 van de 35** zijn de
+kale `<gedeclareerde naam> + en`-vorm die de frontend zelf afleidt, en de ene
+uitzondering is de verdraaide waarde van deze kaart zelf. Afkortingen en
+onregelmatige meervouden hebben corpusbreed **nul** getuigen — de vrijheid die
+beslispunt (a) bewaart, is beargumenteerd vanuit de vorm van de wire en niet
+gedemonstreerd door een document.
+
+**Mutanten opnieuw gepind.** De slotronde raakte alleen commentaar, en de
+gewapende md5 verschoof dáárdoor opnieuw (derde keer). Alle drie de mutanten
+zijn hertest tegen `8e07cdc5515ec6b29bd6de42e750de54`; de uitkomsten zijn
+ongewijzigd (1 / 0 / 1 document, gate 3 exit 1 / 0 / 1) en de md5's in de
+tabel hierboven zijn de nieuwe.
+
+**Sanity na de slotronde:** gate 1 `check-self-contained: PASS`, gate 3
+`check-verifier: PASS (187 golden clean; 338 negatief rejected for their
+declared rule)`. De dertien gates draaiden volledig aan het eind van de
+fixronde; de slotronde wijzigt alleen commentaar, prozateksten en `backlog/`.
 
 ### Scope-uitbreiding in de fixronde, en wat niet aangeraakt is
 

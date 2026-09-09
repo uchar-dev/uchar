@@ -59,18 +59,30 @@ WF-017 defect and the report shows one line. *Measured 2026-09-09, so the
 boundary is not read wider than it is:* a registry KEY that shadows a built-in
 calendar unit (`"dagen": "schouwdag"`) is verifier-clean, while the same
 spelling DECLARED is `WF-017 FAIL`. WF-017's check reaches the declared name
-only — its own gap, recorded in ch. 2.9, and not this arm's to close.
+only, in BOTH its conjuncts: two day kinds whose spellings collide (one's
+plural being the other's singular) also emit and verify clean, the second
+losing its own singular to the first. Those are WF-017's gaps, recorded in
+ch. 2.9 and carded, and not this arm's to close.
 
-**The key side stays free, deliberately.** The carrying argument is the source
-language's own: the plural is an OPTIONAL author field (§3.12) and deriving one
-when the author omits it is declared outside the language, so no conforming
-producer owes a particular spelling for a given day kind, and a key rule would
-have to invent morphology the language leaves unfixed. The wire matches that
-shape — it carries the plural as a second KEY of this map and as no field of
-its own (ch. 2.9's `plural` is on the v1 node) — and an engine-neutral IR must
-leave a producer free to register a further spelling, an abbreviation among
-them. Measured: 35 of the 70 entries the four zones now hold are keyed on
-something other than the declared name.
+**The key side stays free, deliberately.** The carrying argument is what the
+WIRE carries. A day kind's plural arrives as a FURTHER KEY of this same map and
+as no field of its own (ch. 2.9's `plural` is on the v1 node), so nothing here
+distinguishes a DECLARED plural from a DERIVED one or from an abbreviation —
+all three are ordinary keys. A key rule would have to reconstruct that
+distinction by fixing Dutch morphology inside an engine-neutral IR, and would
+bind every producer to one language's plural formation. (The source language
+does make the plural an optional author field, §3.12; that is not the ground,
+and it does not mean a plural is absent when the author omits one — the
+reference frontend derives a `-en` plural in exactly that case and cites §3.12
+for it. The wire cannot tell the two apart, which is the ground.)
+
+Measured on the LANDED state: 35 of the 70 entries are keyed on something other
+than the declared name — entries, not independent cases. The 70 carry four
+distinct (registry, declarations) shapes, one repeated byte-identically over 30
+parity fragments; the 35 keys spell three distinct words, 34 of them the plain
+`<declared name>` + `en` form the frontend derives, and the one exception is
+this document's own twisted value. Abbreviations and irregular plurals have
+**zero** witnesses in the corpus.
 
 **Measured 2026-09-09, four zones on the BASELINE that predates this witness
 (164 golden + 23 rood + 337 negatief + 30 parity = 554 documents).** The map

@@ -390,8 +390,10 @@ to re-normalise inside it.
   `domeinen` maps a name to a datatype, whose value carries no name at all; and
   `dagsoortPerEenheid` maps a written unit spelling to a day-kind NAME — a
   value that names something ELSE, which is why half its entries differ from
-  their key by design (35 of the 70 the four zones hold on 2026-09-09 are keyed
-  on something other than the declared name, the plurals among them) and why it
+  their key by design (on the LANDED state of 2026-09-09, 35 of the 70 the four
+  zones hold are keyed on something other than the declared name, the plurals
+  among them — entries, not independent cases: 30 of them are byte-identical
+  copies of one parity fragment, see ch. 4.6 (s)) and why it
   is a reference question, closed since
   2026-09-09 by ch. 4.6 (s) — which crosses the VALUE against `dagsoorten` and
   leaves the key free for exactly the reason stated here — rather than this
@@ -1327,11 +1329,31 @@ WF-017's check runs over `dagsoorten` and reads that registry at no point.
 /dagsoorten: day-kind 'dagen' shadows a built-in calendar unit`), while the
 same spelling as a registry key — `"dagen": "schouwdag"` — is verifier-clean.
 So the collision half of this rule is checked for the DECLARED NAME and for no
-other registered spelling. That is a v0 mirror gap, and one where the IR is
-weaker than its own producer: the RegelSpraak frontend refuses at registration
-time to register a spelling that collides with a built-in calendar unit and
-warns instead, so a document it emits cannot carry the shape the wire admits.
-Closing it is WF-017's own card.
+other registered spelling — a v0 mirror gap in BOTH conjuncts, and the two
+stand differently against the producer, which is why they are stated apart.
+
+*Built-in-unit conjunct:* here the IR is weaker than its own producer. The
+RegelSpraak frontend refuses at registration time to register a spelling that
+collides with a built-in calendar unit and warns instead — and the built-in
+unit names are grammar keywords besides, so the source language cannot even
+express the shape. No document that frontend emits can carry what the wire
+admits; the shape is wire-only.
+
+*Day-kind-against-day-kind conjunct:* here the producer is exactly as weak, and
+nothing checks it anywhere. The registration is `putIfAbsent` — first-wins,
+silently — so a second day kind whose own SINGULAR name is already registered
+as the first one's plural loses its own spelling without a diagnostic.
+*Measured end-to-end 2026-09-09* on two day kinds `schouwdag` (plural
+`schouwdagen`) and `schouwdagen` (plural `schouwdagens`): the frontend emits
+with no warning and no error, the registry binds `schouwdagen` to `schouwdag`,
+and the verifier reports PASS — so `5 schouwdagen` reckons with the wrong
+day-kind definition. WF-001 does not reach it either: the two DECLARED names
+differ. The v0 mirror note above already said this collision is "silently
+first-wins"; what was missing was the measurement of what that silence costs.
+
+Closing both is WF-017's own card
+(`backlog/new/20260909-wf017-sleutel-en-spellingsbotsing.md`), which carries
+the two measurements and the reproduction paths.
 
 The registry's other half is a different rule and a different question. Its
 VALUES are crossed by WF-034 (ch. 4.6 (s)): every value MUST name a day kind
@@ -1340,10 +1362,10 @@ table — where WF-017 is COLLISION — two spellings against each other. Neithe
 doubles the other: the first compares nothing, the second resolves nothing,
 and they read disjoint positions (`/dagsoortPerEenheid/<key>` against
 `/dagsoorten`). The registry's KEYS carry no resolution rule at all,
-deliberately, for the reason given with (s): the plural is an optional author
-field in the source language (§3.12) and the wire carries it as a second key
-rather than as a field, so there is no declared spelling for a key to be held
-to.
+deliberately, for the reason given with (s): the wire carries no plural FIELD,
+only further keys of this same map, so nothing on the wire distinguishes a
+declared plural from a derived one or from an abbreviation, and a key rule
+would have to fix Dutch morphology inside an engine-neutral IR.
 
 ### 2.10 Parameter
 
@@ -4294,19 +4316,35 @@ Comparison, Predicate, and CharacteristicCheck only —
   therefore checked for the declared name only; that is WF-017's gap, stated
   in ch. 2.9, and (s) does not close it.
   *The KEY side stays FREE, by decision and not by omission.* The carrying
-  argument is what the source language does with the plural: it is an OPTIONAL
-  author field (§3.12), and deriving one when the author omits it is declared
-  outside the language. So there is no spelling a conforming producer OWES for
-  a given day kind, and a key rule would have to invent the morphology the
-  language deliberately leaves unfixed — a language-specific rule inside an
-  engine-neutral IR. The wire agrees with that shape: it carries the plural as
-  a second KEY of this map and as no field of its own (ch. 2.9's `plural`
-  lives on the v1 node), so a key has no declared spelling to be held to
-  either. A producer must stay free to register a further spelling — an
-  abbreviation among them — for the same day kind. Measured: **35 of the 70**
+  argument is what the WIRE carries, not what the source language does. A day
+  kind's plural reaches v0 as a FURTHER KEY of this same map and as no field of
+  its own (ch. 2.9's `plural` lives on the v1 node), so nothing on the wire
+  distinguishes a DECLARED plural from a DERIVED one or from an abbreviation —
+  all three arrive as an ordinary key. A key rule would therefore have to
+  reconstruct the missing distinction by fixing Dutch morphology inside an
+  engine-neutral IR, and it would bind every producer to one language's plural
+  formation. A producer must instead stay free to register a further spelling,
+  an abbreviation among them, for the same day kind. *(The source language does
+  make the plural an optional author field, §3.12 — but that is not what
+  carries this decision, and it must not be read as saying that a plural is
+  absent when the author omits one: the reference frontend derives a `-en`
+  plural in exactly that case and cites §3.12 for doing so. The wire cannot see
+  which of the two it is holding, and that is the point.)*
+  *Measured on the state this card lands on (2026-09-09):* **35 of the 70**
   entries the four zones hold are keyed on something other than the declared
-  name. What a key must not do is COLLIDE, and that is WF-017's clause; on the
-  v0 wire that check reaches the declared name only (ch. 2.9).
+  name. That figure is a count of ENTRIES and not of independent cases, and the
+  difference matters here: the 70 entries carry only **four** distinct
+  (registry, declarations) shapes, one of which is repeated byte-identically
+  across **30** parity fragments, and the 35 non-declaring keys spell only
+  **three** distinct words. **34 of those 35 are the plain `<declared name>` +
+  `en` form** — the very shape the frontend derives — and the one exception is
+  this card's own witness, twisted on purpose. So the corpus has **zero**
+  witnesses for an abbreviation and **zero** for an irregular plural: the
+  freedom this decision preserves is argued from the wire's shape, not
+  demonstrated by a document.
+  What a key must not do is COLLIDE, and that is WF-017's clause; on the v0
+  wire that check reaches the declared name only, in both of its conjuncts
+  (ch. 2.9, measured, with its own card).
   *Cost: none, measured directly, with both states named.* **On the BASELINE
   that predates this card** — 554 documents of golden + rood + negatief +
   parity (164 + 23 + 337 + 30) — the map held **64** entries over **31**
