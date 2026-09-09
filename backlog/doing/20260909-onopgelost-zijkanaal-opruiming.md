@@ -90,14 +90,13 @@ een `Let` op de wire spelen door de nieuwe constructie
 `synth3-drempelheffing`, `synth3-takbarriere`); de andere vier weigert de
 loader al op een ListType/SumType/functionDefs.
 
-**Het gemeten risico dat niet uitkwam.** Een echte `Expr.Let` is voor de
-gevendorde `Expr.bevat` géén blad meer — die daalt af in value én body,
-waar de `Onopgelost`-drager een blad was. Daarmee zien `heeftTijdgebonden`
-(§4.2/§5.3 Rekendatum), `PeriodeDekking.parameterNamen` en
-`ProducentConsument` in beginsel méér dan voorheen. Over de hele corpus
-verandert dat geen enkele uitslag en geen byte DRL — maar het is de plek
-waar een toekomstige golden met een Rekendatum ín een Let-waarde het
-verschil wél zou laten zien, en dan is het een verbetering, geen regressie.
+**Het gemeten risico — en het kwam WEL uit, op de rode corpus.** Een echte
+`Expr.Let` is voor de gevendorde `Expr.bevat` géén blad meer: die daalt af in
+value én body, waar de `Onopgelost`-drager een blad was. Daarmee zien
+`heeftTijdgebonden` (§4.2/§5.3 Rekendatum), `PeriodeDekking.parameterNamen`
+en `ProducentConsument` méér dan voorheen. Over de hele GOUDEN corpus
+verschuift dat geen uitslag en geen byte DRL. Over de RODE corpus wél, op
+precies één case — en dat is de bevinding van deze kaart.
 
 **Tests die bewogen (twee bestanden, allebei constructie-volgend, geen
 assertie gewijzigd).** `EffectieveEenheidWitnessTest`: de vijf
@@ -110,14 +109,78 @@ is meegegaan. `EenheidsconflictWitnessTest`: twee aanroepregels volgen de
 gewijzigde constructor/`build`-signatuur. Suite onveranderd **237 tests,
 nul skips**.
 
-**Dertien gates groen** (vanuit deze worktree, ná commit; `sh`/`bash` per
-shebang, `eval $(opam env)` vóór 9; 11, 12 en 13 hebben de jar herbouwd):
-1 PASS; 2 = **188**; 3 = **188 golden / 339 negatief**; 4 = **448**;
-5 = **425** (2 zonder case: `jutterswet-seizoenvondst`,
-`jutterswet-vormenkabinet`); 6 = **425**; 7 = 389/36; 8 = 23 (Drools-leg
-6/17); 9 = 201/12; 10 = 173/38; 11 = 45/2/27/29 **onbewogen**;
-12 = played **118** / kanaalvloer 47 / auto-excluded 44 /
-value-divergence 1 / no-case 2 / JUnit **237**; 13 = **74** twists over 15
-goldens / 70 replays / 13 PLAYED door de DRL-tekst-tak / 0 survivors.
-**Geen pin verplaatst.** `git status --short` leeg; de branch blijft
-ONGEMERGED.
+## Rebase op main 196ccea, en de bevinding op gate 8
+
+De branch is gerebased van aftakpunt f141ac8 op main 196ccea: **nul
+conflicten**, en main raakte in die reeks geen enkel bestand in
+`backends/drools/` (wel `scripts/check-drools.sh` en `scripts/check-rood.sh`,
+plus de nieuwe golden `synth3-operandvolgorde` en drie rode cases van de
+operandvolgorde-kaart).
+
+**De byte-gelijkheids-as opnieuw gemeten op de gerebasede kop**, nu als
+main's constructie tegen de mijne over identiek dezelfde corpus (main's boom
+uitgepakt naar een tijdelijke map en daar gebouwd, zodat alleen de
+constructie verschilt): de gate-12-uitslagregel per naam is **identiek voor
+alle 166 goldens**, en de geëmitteerde DRL is **byte-identiek voor alle 166
+dumps**. De nieuwe golden `synth3-operandvolgorde` speelt met 2 cases en
+draagt zélf een `Let` én een `BinderRef`, dus de meting raakt de wijziging
+opnieuw en scherper dan vóór de rebase.
+
+**Gates op de gerebasede kop:** 1 PASS; 2 = **192**; 3 = **192 golden / 342
+negatief**; 4 = **453**; 5 = **427** (2 zonder case:
+`jutterswet-seizoenvondst`, `jutterswet-vormenkabinet`); 6 = **427**;
+7 = 391/36; **8 = FAIL, één punt (hieronder)**; 9 = 201/12; 10 = 173/38;
+11 = 45/2/27/29 **onbewogen**; 12 = played **119** / kanaalvloer 47 /
+JUnit **237**; 13 = **74** twists over 15 goldens / 70 replays / 13 PLAYED
+door de DRL-tekst-tak / 0 survivors. Twaalf van de dertien groen met exact
+de verwachte tellingen.
+
+**BEVINDING (gate 8, blokkeert deze kaart).** `check-rood` meldt:
+
+> `FAIL: reason drift — tijdsduur-reads-van-before-tot is listed as EXCLUDE
+> but Drools now reports NOFAULT`
+
+Gemeten met beide jars op dezelfde case, dus vastgesteld en niet afgeleid:
+
+| constructie | uitslag |
+|---|---|
+| main 196ccea (drager + registry) | `EXCLUDE transpiler SKIP: regel: vaartduur van een vaart — regel (THEN-waarde refereert niet-geregistreerde global rekendatum)` |
+| deze kaart (echte unie-knopen) | `NOFAULT ran to a model without faulting` |
+
+Oorzaak, exact: `corpus/rood/tijdsduur-reads-van-before-tot/ir.json` draagt een
+`Constante Rekendatum` **binnen de Let-body**
+(`/resolvedRegels[0]/waarde/body/argumenten[0]`). Zolang een Let een
+`Onopgelost`-drager was, was dat voor `Expr.bevat` een blad, zag
+`heeftTijdgebonden` de Rekendatum niet, bleef de §4.2 rekendatum-global
+ongeregistreerd en werd de regel LUID overgeslagen — waardoor het vuren nooit
+werd bereikt. Met een echte `Expr.Let` daalt die scan af, de global wordt
+geregistreerd, de regel lowert en vuurt. Wat de backend dán niet draagt is de
+van/tot-ORDE zelf, dus hij loopt door tot een model.
+
+Dit is dus geen regressie maar het wegvallen van een blinde vlek die
+`LetVorm` zélf al als gat documenteerde ("een §5.3 Rekendatum achter een
+drager laat de rekendatum-global ongeregistreerd"). De rode corpus ving het
+binnen een dag na het landen van de nieuwe getuige.
+
+**Wat het kost: één redencategorie in een BESCHERMD pad.** `scripts/` valt
+buiten de may-touch van deze kaart én is een beschermd pad, en de opdracht
+zegt uitdrukkelijk pins niet te verzetten — dus dit is NIET doorgevoerd. De
+voorgestelde wijziging is regel 143 van `scripts/check-rood.sh`, waarmee de
+case het exacte spiegelbeeld wordt van zijn Begrensd-tweeling op regel 130
+(`begrensd-reads-bounds-in-order|NOFAULT …`), die uit dezelfde kaart komt:
+
+```
+tijdsduur-reads-van-before-tot|NOFAULT de v0-backend handhaaft geen van/tot-ORDE
+op een TIJDSDUUR, dus de ch. 10.6-barrière die deze getuige plant wordt nooit een
+fout; hij loopt door tot een model — het spiegelbeeld van begrensd-reads-bounds-in-order
+hierboven. Tot de ch. 4.10-zijkanaalopruiming (2026-09-09) las deze case EXCLUDE om een
+ANDERE reden: de bereikende regel (vaartduur van een vaart) lowerde in het geheel niet,
+omdat een Rekendatum ín een Let-body onzichtbaar was voor Expr.bevat zolang een Let een
+Onopgelost-drager was, zodat de §4.2 rekendatum-global ongeregistreerd bleef. Nu Let een
+echte unie-knoop is daalt die scan af, wordt de global geregistreerd en bereikt de regel
+het vuren
+```
+
+**Status: de kaart is NIET af** en blijft in `doing/`. Twaalf gates groen,
+één rood op precies dit punt; het besluit over die ene regel ligt bij de
+onderhouder. `git status --short` leeg; de branch blijft ONGEMERGED.
