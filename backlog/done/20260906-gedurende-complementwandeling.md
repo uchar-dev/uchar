@@ -146,6 +146,17 @@ per segment vastlegt. `case6-ch36-voorbeeld` is het uitgewerkte voorbeeld
 van `RUNTIME-SEMANTICS.md` ch. 3.6 zelf (de ontkende vorm, 115): dat stond
 alleen in `ref/` en is nu ook door clingo en Drools gepind.
 
+**Waarom naast het anker en niet erin.** `corpus/golden/anchor/` is gepind
+en de kaart schreef een nieuwe golden náást het anker voor, dus
+`jutterswet-tegenwacht` staat in `corpus/golden/`. Dat heeft één gevolg dat
+benoemd hoort te worden: het uitgewerkte ch. 3.6-voorbeeld (115) is nu in
+een gewone golden gepind, niet in de anker-deelverzameling met haar
+permanente pin. Daar staat tegenover dat deze golden een `bron.rgs` draagt
+en het anker niet: gate 10 bewaakt hem byte-identiek vanaf de bron, wat
+anker-goldens juist niet krijgen. Als de maintainer het ch. 3.6-voorbeeld
+liever in `anker`-status heeft, is dat een aparte, bewuste verplaatsing —
+niet iets wat deze kaart eenzijdig moest doen.
+
 **Stratificatie — onderzocht en vastgelegd.** Een ontkende kenmerkcheck in
 een clip is wel degelijk een **negatieve rand** in de WF-045/046-wandeling:
 de verifier loopt het `Functie`-filter in (`dep_cond ... ~neg:false`) en een
@@ -154,6 +165,11 @@ geweigerd — nieuwe getuige
 `corpus/negatief/wf046-negated-clip-kenmerk-cycle`, die zowel WF-046 als
 WF-045 laat vuren (de cyclus loopt niet door een recursieve creatie; de
 bestaande `wf046-negated-read-in-recursive-cycle` isoleert de regel zelf).
+Die getuige pint de **route**, niet een nieuwe regel: de verifier is door
+deze kaart niet aangeraakt en wees hetzelfde document op `main` al identiek
+af. Wat vastligt is dat een filterconditie de afhankelijkheidswandeling
+bereikt en dat `negatie: true` er als negatieve rand in gaat — het feit
+waarop de stratificatie-uitspraak hieronder steunt.
 Het geëmitteerde programma blijft daarmee gestratificeerd: `clN_not_cov`
 leest alleen `ktl/4`-casusfeiten en `tl/5` en leest deze helper niet terug.
 Los nagemeten op het nagebouwde fragment: clingo geeft precies één stabiel
@@ -186,7 +202,34 @@ weigering van deze arm en valt nu in de algemene
 "unsupported gedurende condition shape"-weigering — dezelfde tekst die ref
 er al voor gaf, dus de twee uitvoerders lopen daar nu gelijk.
 
-**Beschermd pad, als voorstel:** `spec/RUNTIME-SEMANTICS.md` — de
-executed-note bij het ontkende samenstel-lid beweerde dat de ASP-kant luid
-faalt en dat geen anker het differentieel kan pinnen. Dat is nu onwaar; de
-zin noemt de getuige. Twee regels, zo klein mogelijk gehouden.
+**Gemeten nevenklasse, niet door deze kaart geïntroduceerd.** Op een
+document waar het ontkende kenmerk door een regel wordt afgeleid (een
+temporele KENMERKTOEKENNING, zónder cyclus, dus verifier PASS) faalt `ref`
+met `temporal writes are not implemented` terwijl clingo nu rekent; die
+divergentie bestond op `main` al precies zo op de **positieve** arm, die
+deze kaart niet raakt (gemeten: ontkend 90, positief 30, ref faalt in beide
+gevallen), dus de ontkende arm gedraagt zich voortaan als de positieve in
+plaats van een eigen klasse te openen. De flank hoort bij
+`20260906-gedurende-kwalificatie-stiltes`; reproductie:
+`/tmp/probe-strat/no-cycle*.json`.
+
+**Beschermde paden — alle drie als VOORSTEL, alleen de maintainer merget.**
+
+- `spec/RUNTIME-SEMANTICS.md`: de executed-note bij het ontkende
+  samenstel-lid beweerde dat de ASP-kant luid faalt en dat geen anker het
+  differentieel kan pinnen. Dat is nu onwaar; de zin noemt de getuige. Eén
+  hunk, 6 regels uit en 6 in, waarvan 3 pure herafbreking van ongewijzigd
+  proza (de ten-minste-1-zin) om binnen de regelbreedte van de alinea te
+  blijven.
+- `spec/ASP-TRANSLATION.md`: de S8-vertaalvorm van de ontkende clip en het
+  schrappen van de weigering uit de S19-inventaris. De opdracht wees dit
+  document expliciet aan als de plek voor de ASP-vorm; het staat niet in de
+  beschermde lijst van `CLAUDE.md`, maar het is normatieve spec-tekst en
+  wordt hier voor de zekerheid onder dezelfde kwalificatie gemeld.
+- `scripts/check-drools.sh`: `EXPECTED_PLAYED` 117 → 118 met
+  reden-commentaar. `scripts/` is een beschermd pad én viel buiten de
+  "May touch" van de oorspronkelijke kaart; de bump was onvermijdelijk
+  omdat gate 12 de speelvloer bij naam en getal pint en een nieuwe golden
+  die meespeelt de gate anders rood laat lopen — precies zoals de gate is
+  bedoeld. De opdracht vroeg de teller mee te bewegen op deze branch. Geen
+  kanaalregel toegevoegd; de getuige speelt.

@@ -1044,9 +1044,9 @@ months → 30. *Executed-note:* a **negated member** clips through its
 complement, exactly like the single negated clip. Both executors carry
 the shape since 2026-09-09; `corpus/golden/jutterswet-tegenwacht` pins
 both forms differentially (gates 5–6), including the ch. 3.6 negated
-worked example below. The **ten-minste-1 union** (v0 clips to the union of member
-regions) stays a loud, recorded flank in both executors, and WF-055
-does not admit it until an executor carries it with an anchor.
+worked example below. The **ten-minste-1 union** (v0 clips to the union
+of member regions) stays a loud, recorded flank in both executors, and
+WF-055 does not admit it until an executor carries it with an anchor.
 
 "Het totaal van" a timeline over time collapses it to one scalar:
 
