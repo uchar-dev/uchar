@@ -1916,7 +1916,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       in
       let rec cond_fn c : string -> string -> string =
         match c with
-        | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; _ } ->
+        | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie; _ } ->
             if
               not
                 (List.exists
@@ -1938,11 +1938,56 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                  the silent 0 survives there — a recorded flank with its own
                  card, deliberately not this gate's business. *)
               fault "gedurende over %S, which is not a temporal characteristic (WF-055)" k;
-            fun v t -> Printf.sprintf "ktl(S,%s,%s,%s)" (str k) v t
-        | Kenmerk_check { negatie = true; _ } ->
-            fault
-              "the negated gedurende clip (the complement walk) is not translated \
-               (no corpus case exercises it)"
+            if not negatie then fun v t -> Printf.sprintf "ktl(S,%s,%s,%s)" (str k) v t
+            else begin
+              (* ch. 3.6, the NEGATED clip: the complement of the
+                 characteristic's periods within the clip horizon. ref takes
+                 that horizon to be the clipped attribute's OWN value
+                 timeline and walks the gaps per value segment
+                 (ref/lib/eval.ml, `span`; ref/lib/timeline.ml,
+                 `complement`), so these rules derive one atom per maximal
+                 uncovered stretch INSIDE a single tl/5 segment. Deriving it
+                 over the union of the segments would land on the same
+                 fold — the value intersection below re-cuts on tl anyway —
+                 but the per-segment form is what ref states, so it is what
+                 is translated.
+
+                 A gap's two edges can only be a value-segment edge or the
+                 edge of a covered period: ref's walk emits `sv`, `st` and
+                 the clipped `v`/`t` of a period, and nothing else. Both
+                 sources already sit in the wu cutset below, so the calendar
+                 facts the complement segments need are emitted unchanged —
+                 the negation adds no endpoint.
+
+                 Maximality is carried by the two candidate rules rather
+                 than by an aggregate. A left edge X is either the segment
+                 start or the end of a period that began before X, and a
+                 right edge Y is either the segment end or the start of a
+                 period that runs past Y; extending an uncovered (X,Y) in
+                 either direction therefore always meets a period and is
+                 refused by _cov. Value-timeline segments are disjoint, so
+                 no other segment's edge can sit strictly inside (SV,ST) and
+                 offer a shorter, non-maximal pair.
+
+                 The negation is stratified: _cov is defined by ktl/4 case
+                 facts and the two candidate predicates over tl/5, none of
+                 which reads this helper back. clingo grounds one stable
+                 model, as everywhere else in this translation. *)
+              ctx.fresh <- ctx.fresh + 1;
+              let q = Printf.sprintf "cl%d_not" ctx.fresh in
+              emit ctx "%s_lo(S,X) :- tl(S,%s,X,_,_)." q (str a);
+              emit ctx "%s_lo(S,X) :- ktl(S,%s,V,X), V < X." q (str k);
+              emit ctx "%s_hi(S,Y) :- tl(S,%s,_,Y,_)." q (str a);
+              emit ctx "%s_hi(S,Y) :- ktl(S,%s,Y,T), Y < T." q (str k);
+              emit ctx
+                "%s_cov(S,X,Y) :- %s_lo(S,X), %s_hi(S,Y), X < Y, ktl(S,%s,V,T), V < Y, X < T." q q
+                q (str k);
+              emit ctx
+                "%s(S,X,Y) :- tl(S,%s,SV,ST,_), %s_lo(S,X), %s_hi(S,Y), SV <= X, X < Y, Y <= ST, \
+                 not %s_cov(S,X,Y)."
+                q (str a) q q q;
+              fun v t -> Printf.sprintf "%s(S,%s,%s)" q v t
+            end
         | Vergelijking
             { op; links = Some (Attribuut_ref
                 { attribuut = Some b; objecttype = Some botn; navigatie_rol = None;

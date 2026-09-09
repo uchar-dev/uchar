@@ -75,12 +75,12 @@
     {
       "node": "ResolvedRegel",
       "naam": "tegenwachtsom van een jutter",
-      "soort": "BEREKENING",
+      "soort": "GELIJKSTELLING",
       "doel": {
         "node": "AttribuutRef",
         "attribuut": "tegenwachtsom",
         "objecttype": "Jutter",
-        "onderwerpBron": "De tegenwachtsom van een Jutter",
+        "onderwerpBron": "een Jutter",
         "navigatieRol": null,
         "type": {
           "node": "Numeriek",
@@ -120,7 +120,7 @@
         "filter": {
           "node": "Samengesteld",
           "kwantor": "ALLE",
-          "drempel": 0,
+          "drempel": 1,
           "onderdelen": [
             {
               "node": "Kenmerk",
@@ -129,7 +129,7 @@
               "negatie": false,
               "eigenaar": null,
               "periode": null,
-              "bron": "gedurende de tijd dat hij borgplichtig is"
+              "bron": "hij borgplichtig is"
             },
             {
               "node": "Kenmerk",
@@ -138,10 +138,10 @@
               "negatie": true,
               "eigenaar": null,
               "periode": null,
-              "bron": "gedurende de tijd dat hij niet aangesteld is"
+              "bron": "hij niet aangesteld is"
             }
           ],
-          "bron": "gedurende de tijd dat hij borgplichtig en niet aangesteld is"
+          "bron": "gedurende de tijd dat hij aan alle volgende voorwaarden voldoet: - hij borgplichtig is - hij niet aangesteld is"
         },
         "dimensieSelectie": null,
         "type": {
@@ -151,7 +151,7 @@
           "teken": "ONBEPAALD",
           "eenheid": null
         },
-        "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij borgplichtig en niet aangesteld is",
+        "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij aan alle volgende voorwaarden voldoet: - hij borgplichtig is - hij niet aangesteld is",
         "granulariteit": null
       },
       "voorwaarde": null,
@@ -164,12 +164,12 @@
     {
       "node": "ResolvedRegel",
       "naam": "stilwachtsom van een jutter",
-      "soort": "BEREKENING",
+      "soort": "GELIJKSTELLING",
       "doel": {
         "node": "AttribuutRef",
         "attribuut": "stilwachtsom",
         "objecttype": "Jutter",
-        "onderwerpBron": "De stilwachtsom van een Jutter",
+        "onderwerpBron": "een Jutter",
         "navigatieRol": null,
         "type": {
           "node": "Numeriek",
