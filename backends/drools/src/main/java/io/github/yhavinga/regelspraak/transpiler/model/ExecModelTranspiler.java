@@ -3616,8 +3616,7 @@ public final class ExecModelTranspiler {
         // IR-SPEC ch. 4.10: the Let cluster — the two union nodes, and an IfThenElse CARRIER (an Onopgelost
         // registered in the keuzes map). Asked FIRST so no later arm can mistake a carrier for an ordinary
         // unresolved leaf.
-        if (e instanceof Expr.Let || e instanceof Expr.BinderRef || (e != null && keuzes.containsKey(e)))
-            return letWaarde(valueSubject, e);
+        if (isLetKnoop(e)) return letWaarde(valueSubject, e);
         if (e instanceof Expr.Literal lit && lit.type().isNumeriek()) {
             // §13.2.5/§389: a non-terminating rational literal (1/3) becomes an EXACT Breuk so downstream +,-,×,÷
             // stay exact (9 maal 1/3 = 3); a terminating one (4/2, 3/2) stays a plain BigDecimal (fast path).
@@ -6038,10 +6037,11 @@ public final class ExecModelTranspiler {
         return drager != null && e instanceof Expr.BinderRef;
     }
 
-    /** Whether {@code e} is a ch. 4.10 node the §6.5/§6.6 path probe can be planted on — a {@link Expr.Let}, a
-     *  {@link Expr.BinderRef} or an {@code IfThenElse} carrier. The BinderRef arm never selects a probe host in
-     *  practice (it has no {@link #letKinderen}, so no site is ever collected under one) and is named for
-     *  completeness of the cluster, not for an effect. */
+    /** Whether {@code e} is a ch. 4.10 node: a {@link Expr.Let}, a {@link Expr.BinderRef} or an {@code IfThenElse}
+     *  carrier. Two callers — {@link #scalarWaarde}, which routes it to {@link #letWaarde}, and the two companion
+     *  walks, which take the OUTERMOST such node as their §6.5/§6.6 path-probe host. For the probe the BinderRef
+     *  arm is inert (a BinderRef has no {@link #letKinderen}, so no site is ever collected under one); it is named
+     *  for completeness of the cluster, and because scalarWaarde does need it. */
     private boolean isLetKnoop(Expr e) {
         return e instanceof Expr.Let || e instanceof Expr.BinderRef || (e != null && keuzes.containsKey(e));
     }

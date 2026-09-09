@@ -377,7 +377,8 @@ public final class EffectieveEenheid {
         for (Expr kind : kinderen(e)) noteer(kind, omgeving, diepte + 1);
     }
 
-    /** Every Expr-carrying component of an ordinary v0 node (the {@code Expr.bevat} inventory). */
+    /** Every Expr-carrying component of an ordinary v0 node (the {@code Expr.bevat} inventory minus its ch. 4.10
+     *  arm — {@link #noteer} matches a Let and a BinderRef itself, because both need a SCOPE this cannot carry). */
     private static List<Expr> kinderen(Expr e) {
         if (e instanceof Expr.Binair b) return kinderenVan(b.links(), b.rechts());
         if (e instanceof Expr.Afgerond a) return kinderenVan(a.basis());
