@@ -203,6 +203,11 @@ DRL_BASIS_UIT=''
 # So there is no shape left to watch, and the watchlist that stood here is gone rather than left to
 # rot. The live check on this branch is the DRL_BASIS_UIT baseline above, which still requires the
 # text branch to PLAY or EXCLUDE per twistable golden.
+#
+# WHAT "0 divergences" DOES AND DOES NOT BUY: the reservations against reading this as a proof — and
+# what a second, independent model did and did not confirm — are recorded with the measurement in
+# backlog/done/20260901-samengesteld-kortsluiting.md (card Results, the decision round). They live
+# there rather than here so they survive the follow-up card being withdrawn.
 
 RUNNER_REF=_build/default/ref/bin/runner.exe
 RUNNER_CLINGO=_build/default/backends/clingo/bin/clingo_runner.exe

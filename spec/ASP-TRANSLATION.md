@@ -788,7 +788,7 @@ rather than asserted. Of the emission sites reachable from `cond_atoms`:
   translated`, S19), so it cannot produce a silent divergence. If that
   refusal is ever lifted, the prefix question must be settled with it.
 - **The `gedurende` clip — in scope, and it was not** (fixed 2026-09-07).
-  RUNTIME-SEMANTICS ch. 5.10 boundary 2 exempts the clip's **own
+  RUNTIME-SEMANTICS ch. 5.10's one boundary exempts the clip's **own
   members**; it does not exempt the clip as an **operand**, and a totalled
   clip is an expression that can sit inside a member of an ordinary
   composite. Both of its fences — the comparison fence and the segment
