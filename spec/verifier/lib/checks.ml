@@ -1069,6 +1069,74 @@ let wf026 ctx =
   in
   pairs named
 
+(* WF-034 on the VALUE half of the day-kind unit registry (maintainer decision
+   2026-09-09; IR-SPEC ch. 4.6 (s)). `dagsoortPerEenheid` couples a written
+   UNIT SPELLING (the key) to the NAME of a day kind (the value). The key side
+   is already read here — `day_kind_unit` above asks whether a spelling occurs
+   as a key, and admits it beside the nine calendar units in date arithmetic
+   (WF-035) and in a tijdsduur (WF-038). The value was crossed against nothing,
+   so that admission could rest on a name `dagsoorten` never declares: the
+   spelling is let through as a day-kind unit while the day kind it names does
+   not exist.
+
+   The value is a REFERENCE and the only one this map carries, which is what
+   separates this arm from WF-017 (ch. 2.9) next door: WF-017 asks whether two
+   spellings COLLIDE — a day kind against a built-in calendar unit, or against
+   another day kind — and resolves nothing; this arm asks whether one name
+   RESOLVES, and compares nothing. They cannot double: WF-017 walks the
+   declared names in `/dagsoorten`, this arm the values under
+   `/dagsoortPerEenheid`.
+
+   The KEY side stays deliberately FREE, and that is a decision, not an
+   omission. Half the entries are plural spellings by construction (32 of the
+   64 the four zones hold on 2026-09-09), and the v0 wire carries no `plural`
+   field for a day kind — ch. 2.9's `plural` exists on the v1 node only — so a
+   key has nothing on the wire to be crossed against, and an engine-neutral IR
+   must leave a producer free to register a third spelling (an abbreviation)
+   besides.
+
+   Observability, measured 2026-09-09 on the twist this arm's witness carries:
+   NO consumer notices. The verifier, `ref`, the ASP backend and the Drools
+   backend all reproduce the host golden's pinned outcomes (PASS, PASS, PASS,
+   PLAYED 2). `ref` and the ASP backend never read the map. The Drools backend
+   reads it at exactly two positions, the §6.10 tijdsduur and the §6.11 date
+   arithmetic, and defends itself there ad hoc: an unresolvable name yields a
+   null day-kind global and the transpiler emits a MARKER, so the form is
+   silently not carried rather than refused — and no golden can carry those two
+   forms, because `ref` and the ASP backend both refuse day-kind durations
+   outright. So this is an arm for the wire, on the wave-6 `kenmerkSoorten`
+   argument: a name that crosses nothing in any executor still points at a
+   declaration that has to exist for the document to mean what it says.
+
+   Both spellings of the defect are ONE arm with one guard, not two: a value
+   naming an undeclared day kind and a `null` value both fail to name a
+   declared day kind, and the one reader collapses them (its loader reads the
+   value with `asText()`, which turns a JSON null into the string "null" and
+   then fails the same lookup). The null half has NO witness and moves no
+   document — zero of the 64 entries carry it — and it is folded in here for
+   that reason rather than given a clause of its own. *)
+let wf034_dagsoort_eenheden ctx =
+  List.filter_map
+    (fun (spelling, dk) ->
+      let at = "/dagsoortPerEenheid/" ^ spelling in
+      match dk with
+      | Some d when mem_ci (some_names ctx.doc.dagsoorten) d -> None
+      | Some d ->
+          Some
+            (v "WF-034" at
+               (Printf.sprintf
+                  "day-kind unit '%s' names day kind '%s', which no declaration carries: the \
+                   registry entry resolves against no day kind"
+                  spelling d))
+      | None ->
+          Some
+            (v "WF-034" at
+               (Printf.sprintf
+                  "day-kind unit '%s' names no day kind at all: the registry entry resolves \
+                   against no day kind"
+                  spelling)))
+    ctx.doc.dagsoort_per_eenheid
+
 (* WF-034 on the EIGHT SIDE-TABLE KEYS of an object type (maintainer decision
    2026-09-05, sixth wave; IR-SPEC ch. 4.6 (p)). An object type declares its
    members in two places — `attributen` (name -> datatype) and `kenmerken` (a
@@ -8037,7 +8105,7 @@ let all (doc : document) : violation list =
       wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf020 ctx; wf021 ctx;
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx;
-      wf034_zijtabelsleutels ctx;
+      wf034_dagsoort_eenheden ctx; wf034_zijtabelsleutels ctx;
       wf034_verdelingen ctx; wf034_verdeling_namen ctx; wf034_verdeling_typen ctx;
       wf034_verdeling_naamresolutie ctx; wf034_objectcreatie_subject ctx;
       wf034_feitcreatie_beanvelden ctx; wf045_046 ctx;
