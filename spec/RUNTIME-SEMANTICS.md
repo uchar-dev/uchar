@@ -2463,7 +2463,7 @@ best-known instance, not an exception to it.
 
 The order is semantics for exactly the reason ch. 5.10 gives for the
 short circuit: it never changes a value, and it decides **which faults
-and which §9.5 channel facts come into being**. Three things end an
+and which §9.5 channel facts come into being**. Four things end an
 evaluation part-way, and each leaves every operand after it in the order
 unevaluated:
 
@@ -2471,7 +2471,12 @@ unevaluated:
 - the **ch. 10.6 barrier** — a read of a binder whose need is leeg ends
   the `Let` that bound it;
 - the **ch. 5.10 short circuit** — a composite stops at the member after
-  which its outcome stands.
+  which its outcome stands;
+- **leeg propagation** — a node whose earlier operand is leeg answers
+  leeg without reading its later ones. `Fold` is the plain case: a leeg
+  `list` is the whole fold's answer, so its `init` is never evaluated
+  (ch. 10.2), and `Invoke` propagates the same way once all its arguments
+  are in.
 
 An operand that is never reached raises no fault and deposits no channel
 fact. A deposit already made **stands**: channel facts are keyed by
@@ -2479,14 +2484,22 @@ fact. A deposit already made **stands**: channel facts are keyed by
 outcome writes nothing and retracts nothing (ch. 5.6).
 
 **Wire order** is the order the node declares its operands in: for a
-list-valued slot the list's own order, for named slots the order
-`IR-SPEC.md` gives them (`Begrensd`: `basis`, `minimum`, `maximum`;
-tijdsduur: argument 0 = `van`, argument 1 = `tot`). Nothing here is left
-to the executor. A consumer that evaluates `Begrensd`'s `maximum` before
-its `minimum` is **wrong**, not merely different — and this clause is
-written because that is precisely what an executor does when its host
-language leaves the argument order of an application unspecified and
-nobody chose.
+list-valued slot the list's own order, for named slots the order the
+**schema** gives them — `spec/schema/regelspraak-ir-v0.schema.json`,
+`$defs/Begrensd` (`node`, `basis`, `minimum`, `maximum`), `$defs/Functie`
+(`argumenten` before `leegwaarde`), `$defs/Fold` (`list` before `init`).
+The schema is named here rather than `IR-SPEC.md` on purpose: gate 2
+round-trips every corpus document byte-identically against it, so that
+slot order is a **machine-checked** fact rather than prose, and
+`IR-SPEC.md` calls the clamp node `Clamp` where the wire calls it
+`Begrensd`. For the tijdsduur family the slot is a list: argument 0 is
+`van`, argument 1 is `tot`.
+
+Nothing here is left to the executor. A consumer that evaluates
+`Begrensd`'s `maximum` before its `minimum` is **wrong**, not merely
+different — and this clause is written because that is precisely what an
+executor does when its host language leaves the argument order of an
+application unspecified and nobody chose.
 
 Two consequences the rule is chosen to give, rather than accidents it
 inherits: within `Begrensd` the operands are now evaluated in the same
@@ -2496,25 +2509,31 @@ names them.
 
 #### The sweep
 
-Every expression and condition node, with its verdict. **Visible** means
-two or more operand positions can each fault, deposit a §9.5 fact, or
-force a ch. 10.6 need, so which runs first is observable. **Forced**
-means the data dependency already fixes the order — there is no freedom
-to spend. **Invisible** means at most one operand position is ever
-evaluated, so there is no order to see.
+Every expression and condition node of the wire, with its verdict.
+**Visible** means two or more operand positions are each capable, on some
+input, of faulting, depositing a §9.5 fact or forcing a ch. 10.6 need —
+so which runs first is observable. **Forced** means the data dependency
+already fixes the order; there is no freedom to spend. **Invisible**
+means at most one such position exists, so there is no order to see. The
+verdict is a property of the **form**, not of any one executor: where the
+reference interpreter declines a form today that is noted, and the
+normative order still stands, because the spec is engine-neutral and the
+next consumer may carry it.
 
 | node | evaluated operands | verdict | normative order |
 |------|--------------------|---------|-----------------|
 | `Binair` (all operators) | `links`, `rechts` | **visible** | `links`, then `rechts` |
 | `Vergelijking` | `links`, `rechts` | **visible** | `links`, then `rechts` |
+| `Periode` (the period condition) | `vanaf`, `tot` | **visible** | `vanaf`, then `tot`. *ref declines the form at evaluation; the order is stated, not yet exercised* |
 | `Begrensd` | `basis`, `minimum`, `maximum` | **visible** | `basis`, then `minimum`, then `maximum`; an absent bound evaluates nothing |
 | tijdsduur / absolute tijdsduur | argument 0 (`van`), argument 1 (`tot`) | **visible** | `van`, then `tot` |
+| `datum met` / `datum-tijd met` | the `argumenten` list (WF-037 leaves its arity open) | **visible** | argument order. *ref declines the form; the order is stated, not yet exercised* |
 | aggregation (`som`, `totaal`, `aantal`, `minimum`, `maximum`, `eerste`, `laatste`) | the contributors — the listed `argumenten`, or the instance fold's members each gated by the `filter` — then the `leegwaarde` | **visible** | the contributors in wire order (an instance fold: the filter per member, members in fold order), then the `leegwaarde` (WF-037 confines it to the som) |
 | `concatenatie`, `TekstReeks` | the inserted parts | **visible** | part order |
 | `ListLiteral` | `elements` | **visible** | element order |
 | `StructLiteral` | `velden` | **visible** | declared field order (WF-073) |
 | `Invoke` | `arguments`, then the body | **visible** | argument order, then the body (a leeg argument propagates without entering it) |
-| `Fold` | `list`, `init`, the body per element | **visible** | `list`, then `init`, then the elements in list order |
+| `Fold` | `list`, `init`, the body per element | **visible** | `list`, then `init`, then the elements in list order (a leeg `list` answers before `init` is read) |
 | `MapList` | `list`, the body per element | **visible** | `list`, then element order |
 | `FilterList` | `list`, the condition per element | **visible** | `list`, then element order |
 | `Samengesteld` | the members | **visible** | ch. 5.10: wire order, with the short circuit |
@@ -2522,9 +2541,24 @@ evaluated, so there is no order to see.
 | `Match` | `scrutinee`, one arm body | forced | the scrutinee selects the arm |
 | `IfThenElse` | `condition`, one branch | forced | the condition selects the branch; the other branch evaluates nothing |
 | `Afgerond`, `wortel`, `absolute waarde`, `jaar uit`, `maand uit`, `dag uit`, `eerste paasdag`, `ListLength`, `FieldAccess`, `Construct`, `DimensieCel` | one | invisible | — |
+| `uur uit`, `minuut uit`, `seconde uit`, `milliseconde uit` | one | invisible | — *(ref declines them; a single operand carries no order either way)* |
+| `tijdsevenredig deel` | the base, and the `filter` | invisible | WF-056 restricts the base to a **bare** temporal attribute reference, so only the filter is data-dependent — one fault-capable position, no order |
+| `aantal dagen in` | none in `argumenten`; the `filter` carries the condition | invisible | — |
 | `TemporalRead` | `datum` only — `basis` **names** the timeline and is never evaluated (ch. 3.3) | invisible | — |
-| `Predicaat` (leeg / gevuld) | `operand` | invisible | — |
-| `Literal`, `AttribuutRef`, `ParameterRef`, `VariabeleRef`, `Constante`, `BinderRef`, `KenmerkCheck`, `Regelversie`, `Rollidmaatschap`, `Onopgelost` | none | invisible | — (a `BinderRef` forces its ch. 10.6 need **at its own position** in the parent's order) |
+| `Predicaat` — leeg / gevuld | `operand` | invisible | — |
+| `Predicaat` — elfproef / numeriek met exact / dagsoort | `operand` | invisible | — *(ref declines them)* |
+| `KenmerkCheck`, `Rollidmaatschap`, `VerreRollidmaatschap`, `Regelversie` | none | invisible | — *(ref declines `VerreRollidmaatschap`)* |
+| `Literal`, `AttribuutRef`, `ParameterRef`, `VariabeleRef`, `Constante`, `BinderRef`, `Onopgelost` | none | invisible | — (a `BinderRef` forces its ch. 10.6 need **at its own position** in the parent's order) |
+| `Lambda` | — | not an operand position | never a value (WF-069): it is only the `functie` slot of a `Fold`/`MapList`, applied once per element under that node's row |
+
+**The som's `leegwaarde` is evaluated unconditionally.** It is an
+operand of the node, not a lazy alternative: it runs every time the node
+runs, whether or not the contributors leave its value to be used. Its
+faults and its §9.5 deposits therefore happen on documents where the
+value is discarded — the row above orders it, and this sentence says that
+ordering it is not the same as skipping it. Witness:
+`som-fallback-always-evaluated` (gate 8), which stops failing the moment
+an executor makes the stand-in lazy.
 
 Rule- and form-level order — which rule fires first, which member of a
 defaults group is tried — is **not** this clause's subject: ch. 5.2 makes
@@ -2621,15 +2655,51 @@ it faults on the document where ref does not). It is listed with that
 reason in the red gate's exclusion list, and correcting it is a card of
 its own.
 
-**Each visible row carries an artifact.**
+**The v0 pin diverges too, and on three rows, until it follows.** Its
+static trace walk — the bookkeeping that decides which companion
+preconditions and which hoists the emitted rules carry — runs
+`Begrensd` maximum-first, the tijdsduur operands in reverse, and the
+aggregation's `leegwaarde` before the contributors: the mirror image of
+this clause on exactly the three rows this clause changed. Its arbiter
+test pins that order with absolute channel-fact counts, and cites the
+*reference interpreter's host-language argument order* as its evidence —
+which is the inversion this clause exists to end. Two things are worth
+recording with it, because they narrow the divergence rather than widen
+it: the pin's **emitted** clamp term already evaluates its bounds left to
+right, so the divergence lives in the static bookkeeping and not in what
+runs; and a **second walk in the same pinned file** already uses this
+clause's three orders, so the correction also removes a contradiction the
+pin carries internally. Until it lands there, the pin is a measured
+deviation on the channel-fact order, not a second reading of the norm.
+
+**Each visible row carries an artifact.** A row without one is spec text
+an executor may quietly walk the other way, so the table below is the
+clause's completeness check, not a courtesy. The corpus witnesses use the
+§9.5 **channel count** — a barrier in the earlier position makes the
+later position's deposit not happen — and the `ref/` examples use two
+**distinguishable faults**, one per position, swapped between a pair: the
+surviving message names the position that ran first. The fault device is
+what reaches the rows a barrier cannot, because a closed fold body
+(WF-069) has no enclosing binder in scope.
 
 | what is pinned | witness |
 |----------------|---------|
-| `Binair` `links` before `rechts`, by channel count | `synth3-operandvolgorde` (gates 5–6, both executors) |
+| `Binair` `links` before `rechts`, by channel count | `synth3-operandvolgorde` (gates 5–6, and Drools: the full square) |
 | `Begrensd` `minimum` before `maximum` | `begrensd-reads-bounds-in-order` (gate 8; ref by which fault, clingo by which bound is refused first) |
 | tijdsduur `van` before `tot` | `tijdsduur-reads-van-before-tot` (gate 8; the ref leg — clingo carries the form and fails, but does not order it) |
 | composite members, wire order + short circuit | ch. 5.10's own witness table |
-| `Fold` element order | the ch. 10.3 `jutterswet-staffelvergoeding` anchor |
+| `Vergelijking` `links` before `rechts` | `ref/` `WV-5.11-vergelijking-…` (pair) |
+| aggregation contributors, in wire order | `ref/` `WV-5.11-som-bijdrager…` (pair) |
+| aggregation contributors **before** the `leegwaarde` | `ref/` `WV-5.11-som-…-leegwaarde` (pair) |
+| the `leegwaarde` evaluates unconditionally | `som-fallback-always-evaluated` (gate 8) + `ref/` `WV-5.11-som-leegwaarde-onvoorwaardelijk` |
+| `concatenatie` and `TekstReeks` part order | `ref/` `WV-5.11-concat-…`, `WV-5.11-tekstreeks-…` (pairs) |
+| `ListLiteral` element order | `ref/` `WV-5.11-listliteral-…` (pair) |
+| `StructLiteral` field order | `ref/` `WV-5.11-structliteral-…` (pair) |
+| `Invoke` argument order | `ref/` `WV-5.11-invoke-…` (pair) |
+| `Fold` `list` before `init` | `ref/` `WV-5.11-fold-…` (pair) |
+| `MapList` element order | `ref/` `WV-5.11-maplist-…` (pair) |
+| `FilterList` element order | `ref/` `WV-5.11-filterlist-…` (pair) |
+| `Periode`, `datum met` / `datum-tijd met` | **none** — the reference interpreter declines both forms, so there is nothing to run. The order is stated for the consumer that carries them first, and lands with it |
 
 ---
 

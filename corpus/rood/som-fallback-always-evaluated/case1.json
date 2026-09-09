@@ -1,0 +1,30 @@
+{
+ "format": "uchar-case-v0",
+ "asOfDate": null,
+ "input": {
+  "instances": [
+   {
+    "label": "V1",
+    "objectType": "Vangst",
+    "attributes": {
+     "deelvangst": {
+      "number": "5"
+     },
+     "teller": {
+      "number": "1"
+     },
+     "noemer": {
+      "number": "0"
+     }
+    },
+    "roles": {},
+    "characteristics": []
+   }
+  ],
+  "parameters": {}
+ },
+ "expectedFault": {
+  "ref": "division by numeric zero",
+  "clingo": "expression kind not translated"
+ }
+}

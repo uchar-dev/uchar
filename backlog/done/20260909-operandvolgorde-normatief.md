@@ -66,10 +66,41 @@ argumenten van een applicatie van rechts naar links, en `List.map`
 documenteert zijn resultaat maar niet zijn toepassingsvolgorde (alleen
 `List.iter`/`fold_left` leggen die vast). De spec spelt nu; ref bewijst.
 
-**Kosten, expliciet.** De statische spoorwandeling in de toolchain heeft
-de oude feitelijke volgorde gepind; die moet bij de eerstvolgende
-conformance-cyclus mee (buiten scope per de kaart). Op het corpus kost
-de keuze niets — zie de meting.
+**Kosten, expliciet — gecorrigeerd in de fixronde.** Een eerdere versie
+van deze Results zei dat de spoorwandeling in de toolchain "vanzelf
+volgt bij de eerstvolgende conformance-cyclus". Dat was ONWAAR, en het
+is nagemeten: `scripts/uchar-conformance.sh` daar vergelijkt alleen
+gevendorde bronbytes tegen `SPEC_REV` en emitter-goldens byte-voor-byte,
+en zegt zelf dat het uchars gates "trusts, and does not re-run". Er
+draait geen enkele casus. Een semantische wijziging is voor dat script
+onzichtbaar; er volgt niets vanzelf.
+
+Het zijn bovendien DRIE gepinde plekken, niet twee, elk in twee
+transpilers: `Begrensd` max-eerst (`DrlTranspiler.java:2267`), de
+tijdsduur-lus omgekeerd (`:2276`) en `leegwaarde` vóór de bijdragers
+(`:2278-2279`), gespiegeld in `ExecModelTranspiler.java:5169-5190`. Een
+arbitertest — `ch_10_6_begrensd_evalueert_maximum_voor_minimum`,
+`ExecModelDifferentialTest.java:5737-5769` — vuurt echte
+Drools-sessies en pint de nu-foute volgorde met absolute
+kanaalfeit-tellingen (1 en 0), met in zijn javadoc `ref/lib/eval.ml` als
+bewijs aangevoerd: precies het bewijs dat deze kaart wegneemt.
+
+Twee dingen die de afwijking VERKLEINEN, ook nagemeten: de uitgestoten
+term is al `rsBegrens(basis, min, max)` en Java/mvel evalueren van links
+naar rechts, dus op vuurmoment loopt de toolchain-clamp al goed — de
+afwijking zit in de statische boekhouding; en een tweede walk in
+hetzelfde bestand (`DrlTranspiler.leesVolgorde`, `:2313-2333`) loopt de
+drie ch.-5.11-volgordes al, zodat de correctie ook een interne
+tegenspraak opheft.
+
+Gevolg: `backlog/new/20260909-toolchain-spoorwandeling-ch511.md`
+geschreven, met de vier plekken, de om te keren arbitertest, de
+volgordetabel op `record Pad` (`DrlTranspiler.java:2192-2217`) en de
+acceptance. Ch. 5.11 draagt de bijbehorende notitie: tot die kaart landt
+is de pin een **gemeten normafwijking op de kanaalfeit-volgorde**, geen
+tweede lezing van de norm.
+
+Op het corpus kost de keuze niets — zie de meting.
 
 ### De sweep (RUNTIME-SEMANTICS ch. 5.11)
 
@@ -97,6 +128,22 @@ evalueert ooit.
 | `TemporalRead` | onzichtbaar | alleen `datum`; `basis` NOEMT de tijdlijn en evalueert nooit (ch. 3.3) |
 | `Predicaat` (leeg/gevuld) | onzichtbaar | één operand |
 | `Literal`, `AttribuutRef`, `ParameterRef`, `VariabeleRef`, `Constante`, `BinderRef`, `KenmerkCheck`, `Regelversie`, `Rollidmaatschap`, `Onopgelost` | onzichtbaar | geen operanden |
+
+**Aangevuld in de fixronde (E4) — de sweep was niet uitputtend tegen zijn
+eigen kop.** Negen ontbrekende knopen alsnog beoordeeld; ref-geweigerde
+vormen krijgen hun oordeel mét de weigering genoemd, want de spec is
+engine-neutraal:
+
+| knoop | oordeel | norm |
+|---|---|---|
+| `Periode` (de periodeconditie: `vanaf`, `tot`) | **zichtbaar** | `vanaf`, dan `tot`. Corpusaanwezig (`jutterswet-vormenkabinet` plus twee negatief-gevallen); ref weigert de vorm bij evaluatie, dus gesteld maar nog niet uitgevoerd |
+| `datum met` / `datum-tijd met` | **zichtbaar** | argumentvolgorde; WF-037 laat de ariteit open. ref weigert de vorm |
+| `tijdsevenredig deel` | onzichtbaar | WF-056 beperkt de basis tot een KALE temporele attribuutverwijzing, dus alleen het filter is datagevoelig — één foutdragende positie |
+| `aantal dagen in` | onzichtbaar | geen expressieargumenten; het filter draagt de conditie |
+| uur/minuut/seconde/milliseconde uit | onzichtbaar | één operand; ref weigert ze |
+| `Predicaat` elfproef / numeriek met exact / dagsoort | onzichtbaar | één operand; ref weigert ze |
+| `VerreRollidmaatschap` | onzichtbaar | geen expressieoperanden; ref weigert de vorm |
+| `Lambda` | geen operandpositie | nooit een waarde (WF-069): alleen de `functie`-sleuf van een `Fold`/`MapList`, per element toegepast onder díe rij |
 
 Regel- en vormniveau (welke regel eerst vuurt, welk lid van een
 defaults-groep) valt hier NIET onder: ch. 5.2 maakt het fixpunt
@@ -176,26 +223,92 @@ lichaamsbrede bewaking uiteenlopen zodra een deponering vóór een
 barrière staat — ch. 5.11 legt die grens nu vast, S18 zwijgt erover;
 (b) de Drools-Begrensd-volgorde.
 
+### Fixronde 2026-09-09 (lens 1)
+
+De lens reproduceerde de gates en alle getuigen en weerlegde de kaart op
+één blokkerend en drie ernstige punten. Alle vier verwerkt.
+
+**B1 — de toolchain-consequentie.** Zie "Kosten, expliciet" hierboven: de
+zin was onwaar, is nagemeten en gecorrigeerd, en er ligt een vervolgkaart
+`backlog/new/20260909-toolchain-spoorwandeling-ch511.md`. Twee dingen die
+de lens niet had en die de verificatie opleverde, staan er in: de
+uitgestoten `rsBegrens(basis, min, max)` loopt op vuurmoment al goed, en
+een tweede walk in hetzelfde bestand (`leesVolgorde`) draagt de drie
+ch.-5.11-volgordes al — de correctie heft dus ook een interne tegenspraak
+op.
+
+**E2 — de artefactbelofte dekte 5 van 13 zichtbare rijen.** Terecht: de
+lens keerde beide geordende wandelingen in `eval.ml` om en élke gate
+bleef groen. Nu draagt **elke** zichtbare rij een artefact. Twee gewerkte
+voorbeelden per knoopsoort in `ref/test/test_ref.ml`, met een ander
+device dan de corpusgetuigen: twee operandposities die elk MET EEN EIGEN
+BOODSCHAP falen (`1 ÷ 0` tegen een `Onopgelost`-knoop), gewisseld tussen
+het paar — de overlevende boodschap noemt de positie die eerst liep.
+Waarom niet de kanaaltelling: een insert is idempotent per (regel ×
+subject), dus twee deponeringen uit één knoop vallen samen tot één feit
+en kunnen de posities niet uit elkaar houden. Waarom niet de barrière:
+een gesloten foldlichaam (WF-069) heeft geen omsluitende binder in scope,
+en juist die rijen moesten erbij.
+
+Twee mutanten gedraaid, en ze sterven nu:
+
+| mutant | gevolg |
+|---|---|
+| beide wandelingen rechts-naar-links (resultaatvolgorde intact) — de mutant van de lens — plus `leegwaarde` vóór de bijdragers | **18 falende voorbeelden**: som-bijdragers, som-leegwaarde, concat, tekstreeks, listliteral, structliteral, invoke, maplist, filterlist — beide richtingen elk |
+| `Vergelijking` rechts-eerst + `Fold` init-eerst | **4 falende voorbeelden** |
+
+Vóór de fixronde bleef élke gate groen onder de eerste mutant.
+
+**E3 — de som-leegwaarde-flip had geen getuige, en de tekst verzweeg de
+onvoorwaardelijkheid.** Beide gerepareerd. De ordehelft (bijdragers vóór
+leegwaarde) staat in `ref/test` als paar. De onvoorwaardelijkheid — de
+leegwaarde evalueert ook mét gevulde bijdragers, vóór én na deze kaart —
+is nu een rood corpusgeval, `corpus/rood/som-fallback-always-evaluated`,
+handberekend: bijdragers 5 en 1 geven som 6, en de ongebruikte
+`1 ÷ 0` faalt er toch overheen. Gemeten tegen de luiheidsmutant (de
+leegwaarde alleen evalueren als geen bijdrager gevuld is): `EXPECTED
+FAULT DID NOT OCCUR` in gate 8 én een falend voorbeeld in `test_ref`.
+Ch. 5.11 draagt er nu een eigen alinea over, want "de bijdragers, dan de
+leegwaarde" leest anders dan het is.
+
+**E4 — de sweep was niet uitputtend.** Negen knopen aangevuld; zie de
+tabel hierboven.
+
+**Klein.** (a) `corpus/rood/**` staat hieronder als may-touch-verbreding.
+(b) Leeg-propagatie is als VIERDE vroegtijdige beëindiging opgenomen (een
+lege `list` maakt een `Fold` af zonder zijn `init` te lezen). (c) De
+sleutelvolgorde delegeert nu naar het SCHEMA (`$defs/Begrensd`:
+`node`, `basis`, `minimum`, `maximum` — byte-gepind door gate 2) in
+plaats van naar `IR-SPEC.md`, dat de knoop `Clamp` noemt waar de wire
+`Begrensd` zegt.
+
 ### Gatestand op de kop (alle DERTIEN groen)
 
-Vanuit de worktree, ná commit; `sh`/`bash` per shebang; `eval $(opam
-env)`; gates 8/12/13 hebben de jar herbouwd.
+Vanuit de worktree; `sh`/`bash` per shebang; `eval $(opam env)`; gates
+8/12/13 hebben de jar herbouwd.
 
-1 PASS · 2 = **191** · 3 = **191 golden / 339 negatief** · 4 = **452** ·
+1 PASS · 2 = **192** · 3 = **192 golden / 339 negatief** · 4 = **453** ·
 5 = **427** (2 zonder case: `jutterswet-seizoenvondst`,
 `jutterswet-vormenkabinet`) · 6 = **427** · 7 = **391** / 36 survivors
 (GEEN nieuwe: beide golden-cases pinnen een positieve waarde, dus een
-no-op executor faalt ze) · 8 = **25** rode gevallen (Drools-leg 6
-fault-pinned / 19 met reden) · 9 = 201 checks / 12 catala-goldens ·
+no-op executor faalt ze) · 8 = **26** rode gevallen (Drools-leg 6
+fault-pinned / 20 met reden) · 9 = 201 checks / 12 catala-goldens ·
 10 = 173 tests / 38 rgs-goldens · 11 = 45 / 2 holdouts / 27 / 29 —
 **onbewogen** · 12 = played **119** / channel floor 47 /
 value-divergence 1 / no-case 2 / JUnit **223** · 13 = **74** twists /
-15 goldens / 0 survivors. Daarnaast `test_ref` **462** gewerkte
-voorbeelden groen.
+15 goldens / 0 survivors. Daarnaast `test_ref` **485** gewerkte
+voorbeelden groen (462 → 485: 22 volgordevoorbeelden + 1
+onvoorwaardelijkheid).
 
-Stand t.o.v. aanvang: golden+rood 188 → 191, negatief 339 → 339, cases
-448 → 452, replays 425 → 427, played 118 → 119, JUnit 223 → 223, twists
-74 → 74.
+Stand t.o.v. aanvang: golden+rood 188 → 192, negatief 339 → 339, cases
+448 → 453, replays 425 → 427, rood 23 → 26, played 118 → 119, JUnit 223
+→ 223, twists 74 → 74, test_ref 462 → 485.
 
-`git status --short` leeg; de branch blijft **ONGEMERGED** (beschermd
-pad: `spec/RUNTIME-SEMANTICS.md`, plus voorgestelde pins in `scripts/`).
+`git status --short` leeg; de branch blijft **ONGEMERGED**. Beschermd
+pad: `spec/RUNTIME-SEMANTICS.md`. May-touch-verbredingen, expliciet
+gemeld: `scripts/` (de kaart voorzag EXPECTED_PLAYED en een kanaalregel
+met reden — het werden `check-drools.sh` en twee, nu drie, regels in
+`check-rood.sh`) en `corpus/rood/**` (de kaart noemde alleen
+`corpus/golden/**` bij de getuige, maar schreef "rood-eerst waar een
+getuige landt", en drie van de vier getuigen bleken alleen rood te
+kunnen).

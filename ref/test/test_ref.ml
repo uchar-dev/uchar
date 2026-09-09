@@ -2660,6 +2660,169 @@ let () =
   expect_leeg "WV-5.10-precies-onhaalbaar-leest-niets"
     (run (doc_leden Precies 3 [ faultend; waar_ploeg0 ]) "0" "100")
 
+(* --- ch. 5.11: operand order — one pinned pair per visible sweep row ----
+   Each row below is TWO worked examples over one shape: two operand
+   positions, each carrying an expression that FAULTS with a message of its
+   own, swapped between the pair. Which message surfaces is decided by the
+   evaluation order and by nothing else — both positions are reachable under
+   either order, both faults are available, and no value is ever produced. An
+   executor that walks the node's operands the other way fails BOTH examples
+   of the row, which is what the corpus witnesses alone did not give: the
+   golden and the two red cases pin `Binair`, `Begrensd` and tijdsduur, and
+   every other visible row of ch. 5.11's sweep table was spec text with no
+   artifact until this battery (measured: reversing both ordered walks in
+   Eval left every gate green).
+
+   The order is pinned by FAULT here, not by §9.5 count, and deliberately: a
+   channel insert is idempotent per (rule × subject), so two deposits from one
+   node collapse into one fact and cannot tell the two positions apart. The
+   corpus witnesses can use the channel because there a ch. 10.6 barrier makes
+   the second deposit not happen at all. A barrier needs a binder in scope,
+   which a closed fold body (WF-069) does not have — the fault device reaches
+   every row uniformly, including those. *)
+let () =
+  let contains hay needle =
+    let nl = String.length needle and hl = String.length hay in
+    let rec go i = i + nl <= hl && (String.sub hay i nl = needle || go (i + 1)) in
+    nl = 0 || go 0
+  in
+  let expect_msg name f frag =
+    match f () with
+    | exception Value.Fault m -> check (name ^ " (got: " ^ m ^ ")") (contains m frag)
+    | _ -> check (name ^ " (no fault at all)") false
+  in
+  (* the two distinguishable faults *)
+  let boom : Ir_v0.Ast.expr =
+    Binair
+      { op = Gedeeld_door; links = Some (litv "1" num0); rechts = Some (litv "0" num0);
+        typ = Some num0; bron = None }
+  in
+  let pit : Ir_v0.Ast.expr = Expr_onopgelost { typ = Some num0; bron = None } in
+  let bm = "division by numeric zero" and pm = "Onopgelost reached in evaluation" in
+  let lijst : Ir_v0.Ast.datatype = List_type { element = num0 } in
+  let paardom : Ir_v0.Ast.datatype =
+    Struct_type { domein = "paar"; velden = [ ("een", num0); ("twee", num0) ] }
+  in
+  let doc_of fds cond waarde : Ir_v0.Ast.document =
+    { empty_doc with
+      objecttypen = [ ot "Vangst" [ ("teller", Some num0); ("uitkomst", Some num0) ] [] ];
+      function_defs = fds;
+      resolved_regels =
+        [ rr "uitkomst van een vangst" Gelijkstelling
+            (Some (aref "uitkomst" "Vangst" num0))
+            (Some waarde) cond ];
+    }
+  in
+  let wereld () = World.add_instance World.empty (inst "v" "Vangst" [ ("teller", n "4") ]) in
+  let run_v waarde () = ignore (Eval.evaluate (env_of (doc_of [] None waarde)) (wereld ())) in
+  let run_f fds waarde () = ignore (Eval.evaluate (env_of (doc_of fds None waarde)) (wereld ())) in
+  let run_c cond () =
+    ignore (Eval.evaluate (env_of (doc_of [] (Some cond) (litv "1" num0))) (wereld ()))
+  in
+  (* row: Vergelijking — links before rechts *)
+  let cmp op l r : Ir_v0.Ast.conditie =
+    Vergelijking { op; links = Some l; rechts = Some r; periode = None; bron = None }
+  in
+  expect_msg "WV-5.11-vergelijking-links-eerst" (run_c (cmp Gelijk boom pit)) bm;
+  expect_msg "WV-5.11-vergelijking-rechts-later" (run_c (cmp Gelijk pit boom)) pm;
+  (* row: aggregation — the contributors in wire order, and BEFORE the
+     leegwaarde. The stand-in is the LAST operand of the node, not the first. *)
+  let som args leeg : Ir_v0.Ast.expr =
+    Functie
+      { kind = Som; argumenten = args; element_objecttype = None; leegwaarde = leeg;
+        filter = None; dimensie_selectie = None; typ = Some num0; bron = None;
+        granulariteit = None; bron_rol = None }
+  in
+  expect_msg "WV-5.11-som-bijdrager0-eerst" (run_v (som [ boom; pit ] None)) bm;
+  expect_msg "WV-5.11-som-bijdrager1-later" (run_v (som [ pit; boom ] None)) pm;
+  expect_msg "WV-5.11-som-bijdragers-voor-leegwaarde" (run_v (som [ boom ] (Some pit))) bm;
+  expect_msg "WV-5.11-som-leegwaarde-na-bijdragers" (run_v (som [ pit ] (Some boom))) pm;
+  (* and the leegwaarde is evaluated UNCONDITIONALLY: a filled contributor
+     leaves the stand-in unused, never unevaluated. Its faults and its §9.5
+     deposits happen whether or not its value is read (ch. 5.11). *)
+  expect_msg "WV-5.11-som-leegwaarde-onvoorwaardelijk"
+    (run_v (som [ litv "5" num0 ] (Some boom))) bm;
+  (* row: concatenatie and TekstReeks — part order *)
+  let concat args : Ir_v0.Ast.expr =
+    Functie
+      { kind = Concatenatie; argumenten = args; element_objecttype = None; leegwaarde = None;
+        filter = None; dimensie_selectie = None; typ = Some Tekst; bron = None;
+        granulariteit = None; bron_rol = None }
+  in
+  expect_msg "WV-5.11-concat-deel0-eerst" (run_v (concat [ boom; pit ])) bm;
+  expect_msg "WV-5.11-concat-deel1-later" (run_v (concat [ pit; boom ])) pm;
+  let reeks a b : Ir_v0.Ast.expr =
+    Tekst_reeks
+      { delen = [ Ingevoegd { expr = Some a }; Ingevoegd { expr = Some b } ];
+        typ = Some Tekst; bron = None }
+  in
+  expect_msg "WV-5.11-tekstreeks-deel0-eerst" (run_v (reeks boom pit)) bm;
+  expect_msg "WV-5.11-tekstreeks-deel1-later" (run_v (reeks pit boom)) pm;
+  (* row: ListLiteral — element order *)
+  let lijstlit a b : Ir_v0.Ast.expr =
+    List_literal { typ = Some lijst; elements = [ a; b ]; bron = None }
+  in
+  expect_msg "WV-5.11-listliteral-element0-eerst" (run_v (lijstlit boom pit)) bm;
+  expect_msg "WV-5.11-listliteral-element1-later" (run_v (lijstlit pit boom)) pm;
+  (* row: StructLiteral — declared field order (WF-073) *)
+  let structlit a b : Ir_v0.Ast.expr =
+    Struct_literal { typ = Some paardom; velden = [ ("een", a); ("twee", b) ]; bron = None }
+  in
+  expect_msg "WV-5.11-structliteral-veld0-eerst" (run_v (structlit boom pit)) bm;
+  expect_msg "WV-5.11-structliteral-veld1-later" (run_v (structlit pit boom)) pm;
+  (* row: Invoke — argument order (the body runs only after all of them) *)
+  let fds =
+    [ ({ fd_naam = "kies"; fd_parameters = [ ("een", num0); ("twee", num0) ]; fd_result = num0;
+         fd_body = litv "1" num0; fd_bron = None } : Ir_v0.Ast.function_def) ]
+  in
+  let roep a b : Ir_v0.Ast.expr =
+    Invoke { typ = Some num0; functie = "kies"; arguments = [ a; b ]; bron = None }
+  in
+  expect_msg "WV-5.11-invoke-arg0-eerst" (run_f fds (roep boom pit)) bm;
+  expect_msg "WV-5.11-invoke-arg1-later" (run_f fds (roep pit boom)) pm;
+  (* row: Fold — the `list` operand before the `init` operand *)
+  let vouw lst ini : Ir_v0.Ast.expr =
+    Fold
+      { typ = Some num0; list = lst; init = ini;
+        functie =
+          Fn_lambda
+            { parameters = [ ("acc", num0); ("x", num0) ];
+              body = Binder_ref { naam = "acc"; typ = Some num0; bron = None }; bron = None };
+        bron = None }
+  in
+  expect_msg "WV-5.11-fold-list-voor-init" (run_v (vouw boom pit)) bm;
+  expect_msg "WV-5.11-fold-init-na-list" (run_v (vouw pit boom)) pm;
+  (* row: MapList and FilterList — the elements in list order. A fold body is
+     CLOSED (WF-069), so no binder from an enclosing Let is in scope and the
+     barrier device is unavailable; the body branches on the element instead,
+     so the two elements fault differently and the surviving message names the
+     element that ran first. *)
+  let tak : Ir_v0.Ast.expr =
+    If_then_else
+      { typ = Some num0;
+        condition =
+          cmp Groter (Binder_ref { naam = "x"; typ = Some num0; bron = None }) (litv "0" num0);
+        then_ = boom; else_ = pit; bron = None }
+  in
+  let paar a b : Ir_v0.Ast.expr =
+    List_literal { typ = Some lijst; elements = [ litv a num0; litv b num0 ]; bron = None }
+  in
+  let kaart l : Ir_v0.Ast.expr =
+    Map_list
+      { typ = Some lijst; list = l;
+        functie = Fn_lambda { parameters = [ ("x", num0) ]; body = tak; bron = None };
+        bron = None }
+  in
+  expect_msg "WV-5.11-maplist-element0-eerst" (run_v (kaart (paar "1" "0"))) bm;
+  expect_msg "WV-5.11-maplist-element1-later" (run_v (kaart (paar "0" "1"))) pm;
+  let zeef l : Ir_v0.Ast.expr =
+    Filter_list
+      { typ = Some lijst; list = l; binder = "x";
+        condition = cmp Groter tak (litv "0" num0); bron = None }
+  in
+  expect_msg "WV-5.11-filterlist-element0-eerst" (run_v (zeef (paar "1" "0"))) bm;
+  expect_msg "WV-5.11-filterlist-element1-later" (run_v (zeef (paar "0" "1"))) pm
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;
