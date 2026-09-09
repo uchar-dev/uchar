@@ -404,11 +404,11 @@ tarief-verdraaiingen zijn rood-eerst aangetoond met de mutantmeting hierboven
 | 9 catala | PASS (201 checks; 12 goldens) | = |
 | 10 regelspraak | PASS (173 tests; 37 rgs-goldens) | = |
 | 11 toka-parity | PASS (45 .rgs; 27 tests; 29 cases) | = |
-| 12 drools | PASS — played **117**, kanaalvloer **47**, auto-excluded **44**, value-divergence **1**, no-case **2**, JUnit **232** | alleen JUnit 223 → 232 |
+| 12 drools | PASS — played **117**, kanaalvloer **47**, auto-excluded **44**, value-divergence **1**, no-case **2**, JUnit **234** | alleen JUnit 223 → 234 |
 | 13 reftype-derivation | PASS — **74** twists over **15** goldens, **13** DRL-gespeeld, **0** survivors | = |
 
-Geen enkele pin aangepast; de diff is puur additief (412 regels erbij, 0 eraf)
-en raakt alleen `backends/drools/**` en `backlog/`.
+Geen enkele pin aangepast; de wijziging raakt alleen `backends/drools/**` en
+`backlog/`.
 
 ### Bewust niet gedaan
 
