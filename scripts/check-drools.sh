@@ -230,7 +230,14 @@ EXPECTED_CHANNEL=(
 # 2026-09-09: 117 -> 118, jutterswet-tegenwacht (the negated gedurende clip). The Drools loader and
 # transpiler already carried the form, so the golden arrived playing and matched the pinned values
 # on the first run — the square holds on it without a backend change.
-EXPECTED_PLAYED=118
+# 2026-09-09: 118 -> 119, synth3-operandvolgorde (the ch. 5.11 operand-order witness). It arrived
+# playing: the backend reads a Binair's links before its rechts, so the ch. 10.6 barrier in the left
+# operand suppresses the right operand's §9.5 deposit exactly as ref and clingo have it, and the
+# runner verifies the channel count itself (consistent = no Inconsistentie fact at all). The square
+# holds on it. NB the SAME backend does NOT hold ch. 5.11 for a Begrensd's two bounds — it evaluates
+# the maximum first — which is why that order is witnessed in the red corpus with a reason-carrying
+# entry in check-rood.sh rather than here.
+EXPECTED_PLAYED=119
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the

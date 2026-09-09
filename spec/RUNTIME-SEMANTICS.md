@@ -445,7 +445,10 @@ van nul* are sign-symmetric.
 
 `begrensd(x, min, max)`: if x < min then min, else if x > max then max,
 else x — minimum applied first, comparisons exact, an absent bound is no
-bound. A trailing rounding applies to the **whole** clamped result:
+bound. The three operands are **evaluated** in the same direction the
+bounds are applied in — `basis`, `minimum`, `maximum` — which is
+ch. 5.11's wire-order rule and is observable whenever a bound faults or
+deposits. A trailing rounding applies to the **whole** clamped result:
 `(X met een minimum van 0) afgerond op 0 naar beneden` rounds the clamped
 value. Example: begrensd(150, 0, 100) = 100; begrensd(−5, 0, 100) = 0;
 (begrensd(2/3, 0, 1)) afgerond op 2 rekenkundig = 0,67.
@@ -1270,7 +1273,8 @@ whole; the anchored (variable-startpunt) form stays unexecuted, loud.
 
 **tijdsduur van A tot B** counts *whole* declared units between two
 dates, signed (negative when B < A); any leeg operand → leeg, never 0
-(ch. 1.2). The absolute variant drops the sign. "hele" in the surface
+(ch. 1.2). A is **evaluated** before B, in the order the phrase names
+them (ch. 5.11). The absolute variant drops the sign. "hele" in the surface
 phrase only types the *result* as a whole number — the count is always
 whole units, written "hele" or not. The calendar is the **proleptic
 Gregorian calendar in zoneless civil time**: no time zones, no DST, no
@@ -2450,6 +2454,182 @@ fault — measured against a mutant that changes exactly that row:
 | `exactly`, threshold exceeded | `jutterswet-seinwacht` (`preciesteken`, `S1`) |
 | `exactly`, out of reach | `jutterswet-seinwacht` (`randteken`, *d* = 3 > *n* = 2) |
 | triggers tested *before* the member | `jutterswet-seinwacht` (`minsteteken`): a check made afterwards reads the faulting member 1 |
+
+### 5.11 Operand order
+
+A node's operands are evaluated **left to right in wire order**. One
+rule, for the whole expression language; ch. 5.10's composite is its
+best-known instance, not an exception to it.
+
+The order is semantics for exactly the reason ch. 5.10 gives for the
+short circuit: it never changes a value, and it decides **which faults
+and which §9.5 channel facts come into being**. Three things end an
+evaluation part-way, and each leaves every operand after it in the order
+unevaluated:
+
+- a **fault** (ch. 5.7) — the rule's evaluation fails observably;
+- the **ch. 10.6 barrier** — a read of a binder whose need is leeg ends
+  the `Let` that bound it;
+- the **ch. 5.10 short circuit** — a composite stops at the member after
+  which its outcome stands.
+
+An operand that is never reached raises no fault and deposits no channel
+fact. A deposit already made **stands**: channel facts are keyed by
+(rule × subject) and inserted whatever the rule goes on to do — a leeg
+outcome writes nothing and retracts nothing (ch. 5.6).
+
+**Wire order** is the order the node declares its operands in: for a
+list-valued slot the list's own order, for named slots the order
+`IR-SPEC.md` gives them (`Begrensd`: `basis`, `minimum`, `maximum`;
+tijdsduur: argument 0 = `van`, argument 1 = `tot`). Nothing here is left
+to the executor. A consumer that evaluates `Begrensd`'s `maximum` before
+its `minimum` is **wrong**, not merely different — and this clause is
+written because that is precisely what an executor does when its host
+language leaves the argument order of an application unspecified and
+nobody chose.
+
+Two consequences the rule is chosen to give, rather than accidents it
+inherits: within `Begrensd` the operands are now evaluated in the same
+direction ch. 2.7 **applies** the bounds in (minimum first), and
+"tijdsduur van A tot B" evaluates A before B, in the order the phrase
+names them.
+
+#### The sweep
+
+Every expression and condition node, with its verdict. **Visible** means
+two or more operand positions can each fault, deposit a §9.5 fact, or
+force a ch. 10.6 need, so which runs first is observable. **Forced**
+means the data dependency already fixes the order — there is no freedom
+to spend. **Invisible** means at most one operand position is ever
+evaluated, so there is no order to see.
+
+| node | evaluated operands | verdict | normative order |
+|------|--------------------|---------|-----------------|
+| `Binair` (all operators) | `links`, `rechts` | **visible** | `links`, then `rechts` |
+| `Vergelijking` | `links`, `rechts` | **visible** | `links`, then `rechts` |
+| `Begrensd` | `basis`, `minimum`, `maximum` | **visible** | `basis`, then `minimum`, then `maximum`; an absent bound evaluates nothing |
+| tijdsduur / absolute tijdsduur | argument 0 (`van`), argument 1 (`tot`) | **visible** | `van`, then `tot` |
+| aggregation (`som`, `totaal`, `aantal`, `minimum`, `maximum`, `eerste`, `laatste`) | the contributors — the listed `argumenten`, or the instance fold's members each gated by the `filter` — then the `leegwaarde` | **visible** | the contributors in wire order (an instance fold: the filter per member, members in fold order), then the `leegwaarde` (WF-037 confines it to the som) |
+| `concatenatie`, `TekstReeks` | the inserted parts | **visible** | part order |
+| `ListLiteral` | `elements` | **visible** | element order |
+| `StructLiteral` | `velden` | **visible** | declared field order (WF-073) |
+| `Invoke` | `arguments`, then the body | **visible** | argument order, then the body (a leeg argument propagates without entering it) |
+| `Fold` | `list`, `init`, the body per element | **visible** | `list`, then `init`, then the elements in list order |
+| `MapList` | `list`, the body per element | **visible** | `list`, then element order |
+| `FilterList` | `list`, the condition per element | **visible** | `list`, then element order |
+| `Samengesteld` | the members | **visible** | ch. 5.10: wire order, with the short circuit |
+| `Let` | `value`, `body` | forced | ch. 10.6: the `body` drives; the `value` is evaluated at the **first read**, so it takes that read's position in the enclosing order |
+| `Match` | `scrutinee`, one arm body | forced | the scrutinee selects the arm |
+| `IfThenElse` | `condition`, one branch | forced | the condition selects the branch; the other branch evaluates nothing |
+| `Afgerond`, `wortel`, `absolute waarde`, `jaar uit`, `maand uit`, `dag uit`, `eerste paasdag`, `ListLength`, `FieldAccess`, `Construct`, `DimensieCel` | one | invisible | — |
+| `TemporalRead` | `datum` only — `basis` **names** the timeline and is never evaluated (ch. 3.3) | invisible | — |
+| `Predicaat` (leeg / gevuld) | `operand` | invisible | — |
+| `Literal`, `AttribuutRef`, `ParameterRef`, `VariabeleRef`, `Constante`, `BinderRef`, `KenmerkCheck`, `Regelversie`, `Rollidmaatschap`, `Onopgelost` | none | invisible | — (a `BinderRef` forces its ch. 10.6 need **at its own position** in the parent's order) |
+
+Rule- and form-level order — which rule fires first, which member of a
+defaults group is tried — is **not** this clause's subject: ch. 5.2 makes
+the fixpoint independent of it, and ch. 7.1 fixes the defaults chain by
+priority rather than by evaluation.
+
+**Worked example — `Begrensd` (absolute; the `begrensd-reads-bounds-in-order`
+red case verbatim, gate 8).** A `Jutter` with `teller` = 1, `noemer` = 0
+and `grens` **absent**:
+
+```
+begrenswaarde := Let grenswaarde = zijn grens
+                 in (100 met een minimum van zijn teller gedeeld door zijn noemer
+                         en een maximum van de grenswaarde)
+```
+
+`basis` = 100 evaluates first. `minimum` = 1 ÷ 0 evaluates second and
+**faults** — division by a numeric zero (ch. 1.2). `maximum` is never
+reached. Pinned outcome: the rule **fails observably** with *"division
+by numeric zero"*.
+
+Under the reverse order the `maximum` would run first, its read of
+`grenswaarde` would raise the ch. 10.6 barrier, the whole `Let` would be
+leeg, the division would never happen, and the same document would
+quietly write nothing. The two orders do not differ in a value; one has
+an answer and the other does not.
+
+**Worked example — tijdsduur (absolute; the
+`tijdsduur-reads-van-before-tot` red case verbatim, gate 8).** A `Vaart`
+with `vertrek` **absent**, in a session with no evaluation date:
+
+```
+vaartduur := Let vertrekdatum = zijn vertrek
+             in de tijdsduur van de rekendatum tot de vertrekdatum in hele dagen
+```
+
+`van` = the `Rekendatum` constant evaluates first and **faults** — there
+is no evaluation date to read (ch. 8.2). `tot` is never reached. Pinned
+outcome: the rule **fails observably**. Under the reverse order the read
+of `vertrekdatum` would raise the barrier first and there would be no
+fault at all.
+
+**Worked example — the channel count (absolute; the
+`synth3-operandvolgorde` golden verbatim, gates 5–6).** A `Vangst` with
+
+```
+vangstsom := Let deel = zijn deelvangst
+             in (het deel  plus  zijn teller gedeeld door zijn noemer)
+```
+
+`links` is a read of `deel` — the barrier, when `deelvangst` is absent.
+`rechts` is a division with a filled dividend and an absent divisor — a
+§9.5 producer (ch. 5.6). The value cannot separate the two orders,
+because `leeg plus …` coalesces either way; the channel can:
+
+| case | `deelvangst` | `teller` | `noemer` | `vangstsom` | channel facts |
+|------|--------------|----------|----------|-------------|---------------|
+| barrier | *absent* | 4 | *absent* | **leeg** | **0** — `links` barriers, `rechts` is never reached |
+| companion | 5 | 4 | *absent* | 5 + leeg = **5** | **1** (`vangstsom van een vangst`, that instance) |
+| filled | 5 | 4 | 2 | 5 + 2 = **7** | 0 |
+
+The first row is the order pin and the second is its control: without a
+case in which the division *is* reached, a zero count would also be
+satisfied by a division that never deposits under any circumstance.
+
+**What the executors can and cannot witness — recorded, not glossed.**
+
+The ASP encoding has **no** operand evaluation order: a body is a
+conjunctive set of atoms, and the one order-derived construct it carries
+is ch. 5.10's prefix guard, which exists only because that short
+circuit's triggers are monotone in the prefix. Nothing analogous is
+available for a clamp's two bounds or a duration's two dates. Two
+consequences, both measured:
+
+- Its `Begrensd` order *is* pinned, but on the **translation** side: a
+  bound that is not a ground literal is refused (an empty bound is ref's
+  *no* bound, which the bare join cannot express), and the red case
+  above pins which bound is refused first. That is the translator's
+  visiting order, not an evaluation order — and it is enough to catch a
+  reversal.
+- Its `Let` guards the **whole body** with the need's atoms, where ref
+  stops at the read **positionally**. The two coincide on every shape in
+  which the barrier position precedes the depositing position — which is
+  every shape the corpus carries. They part company on the mirror image,
+  where ref's already-made deposit stands (the paragraph above: deposits
+  are not retracted) and the ASP side's never arises. That boundary is
+  recorded here rather than papered over; it is the reason no golden in
+  this corpus places a deposit before a barrier in wire order.
+
+The third executor is a **known divergence**, not a gap: it evaluates a
+`Begrensd`'s maximum **before** its minimum, measured in both
+directions on the red case above (move the division to the maximum and
+it faults on the document where ref does not). It is listed with that
+reason in the red gate's exclusion list, and correcting it is a card of
+its own.
+
+**Each visible row carries an artifact.**
+
+| what is pinned | witness |
+|----------------|---------|
+| `Binair` `links` before `rechts`, by channel count | `synth3-operandvolgorde` (gates 5–6, both executors) |
+| `Begrensd` `minimum` before `maximum` | `begrensd-reads-bounds-in-order` (gate 8; ref by which fault, clingo by which bound is refused first) |
+| tijdsduur `van` before `tot` | `tijdsduur-reads-van-before-tot` (gate 8; the ref leg — clingo carries the form and fails, but does not order it) |
+| composite members, wire order + short circuit | ch. 5.10's own witness table |
+| `Fold` element order | the ch. 10.3 `jutterswet-staffelvergoeding` anchor |
 
 ---
 
