@@ -1,71 +1,74 @@
-# De DRL-tekst-tak krijgt de getrouwe ch.-5.10-kortsluiting
+# De DRL-tekst-tak en ch. 5.10 — VOORSTEL: laten vervallen
 
-Goal: De slapende DRL-TEKST-tak van de Drools-backend
-(`DrlTranspiler`) vertaalt de telkwantoren als een TEKSTUELE
-k-deelverzameling-vouw: `ten hoogste d` wordt
-`!(minstens(leden, d+1))`, `ten minste d` wordt een OR over alle
-d-deelverzamelingen. Java's `&&`/`||` geven die vouw *een* luiheid,
-maar niet DE luiheid die `RUNTIME-SEMANTICS.md` ch. 5.10 voorschrijft.
-Deze kaart geeft de tak de getrouwe vorm: de leden worden in
-wire-volgorde gelezen en de evaluatie stopt op precies de
-triggertabel van ch. 5.10.
+**Status: kandidaat om te vervallen (2026-09-07). Niet zelf verwijderd —
+dat is een maintainerbesluit.**
 
-**De gemeten klasse (2026-09-07, gecorrigeerd na lens 2).** De
-divergentie beslaat **heel `TEN_HOOGSTE`**, niet alleen de rand:
+Goal (oorspronkelijk): de slapende DRL-TEKST-tak van de Drools-backend
+(`DrlTranspiler`) de getrouwe ch.-5.10-kortsluiting geven. Hij vertaalt
+de telkwantoren als een TEKSTUELE k-deelverzameling-vouw — `ten hoogste
+d` wordt `!(minstens(leden, d+1))` — en die vouw week af van de norm.
 
-* Uitputtend gemeten over n ≤ 6: **636 combinaties DIVERGEREN**, waarvan
-  **258 met d < n** — d < n is dus het leeuwendeel van de gevaarlijke
-  klasse, niet het veilige gebied. (Een eerdere formulering las 636 als
-  "gemeten combinaties waarvan 258 het eens zijn"; dat was precies
-  omgekeerd.)
-* De oorzaak is de TEKSTUELE expansie: `ten hoogste d` wordt
-  `!(minstens(leden, d+1))`, een OR over (d+1)-deelverzamelingen.
-  Java's `||`/`&&` geven die expansie een eigen luiheid die NIET die van
-  ch. 5.10 is — hij kan een lid overslaan dat de norm wél leest. Bij
-  `k` boven het ledental expandeert `minstens` bovendien naar het
-  letterlijke `false`, en dan komt er geen enkel lid in de DRL.
-* Het waarneembare gedrag is één en hetzelfde in de hele klasse: de tak
-  **ANTWOORDT waar de norm FAULT**. Waarheidswaarden kloppen overal; de
-  andere vier kwantoren divergeren nooit.
-* Kleinste end-to-end getuige: `TEN HOOGSTE 1` over TWEE leden, lid 1
-  onwaar, lid 2 deelt door nul. ref `EVALUATION FAULT: division by
-  numeric zero`, clingo `UNSATISFIABLE … viol("division by numeric
-  zero")`, Drools-exec `ERROR ConstraintEvaluationException`,
-  Drools-DRL-tekst: schrijft `1`.
+## Waarom deze kaart vermoedelijk overbodig is geworden
 
-**Correctie op de bouwronde-Results.** Die noemden als voorbeeld "TEN
-HOOGSTE 1 over drie leden waarvan het eerste faalt" en beschreven de
-tak als *luier dan of gelijk aan* ch. 5.10. Beide zijn onjuist: dat
-voorbeeld divergeert zelf niet, en "luier" is de verkeerde richting —
-de tak is niet luier maar **onjuist waar**, want hij past een
-stoptrigger toe die de norm niet kent.
+Het **maintainerbesluit van 2026-09-07** (genummerde vraag 3) nam
+at-most's WAAR-trigger op: `ten hoogste d` stopt óók zodra
+hits + resterend ≤ drempel. Daarmee is ch. 5.10 precies de duale van
+`ten minste` — en dat is exact wat de tekst-tak al berekende:
+`!(minstens(leden, d+1))` ís de at-most-lezing als "niet ten minste
+d+1", en at-least's twee triggers (bereikt / onbereikbaar) vallen
+één-op-één samen met at-most's twee zijden. De tak implementeerde de
+duale al; de norm zegt nu hetzelfde.
 
-Een golden kan de divergentie zelf niet DRAGEN: de divergerende gevallen
-zijn precies die waar de norm FAULT, en een case waar de norm fault is
-geen golden. `scripts/check-reftype-derivation.sh` (gate 13) draagt
-daarom een reden-dragende NAAMLIJST over elke TEN_HOOGSTE-drager in
-`corpus/golden` én `corpus/rood` — een waakhond over de VORM, die faalt
-bij een ongelijste drager én bij een stale regel. Vandaag staan er drie
-dragers op.
+**Hermeten over het volledige leesverzamelingsmodel** (beide richtingen,
+alle vijf kwantoren, elke drempel inclusief d > n, elke
+waarheidstoekenning), n = 1..7, 6646 combinaties:
 
-Acceptance:
-- De tak leest de leden in wire-volgorde en stopt op de ch.-5.10-
-  triggertabel; vorm vrij, maar een tekstexpansie kan het niet — het
-  wordt vermoedelijk een runtime-helper over lid-*suppliers*
-  (`RegelSpraakRuntime`), zodat de stop in Java gebeurt en niet in de
-  gegenereerde tekst.
-- De getuige hierboven (TEN HOOGSTE 1 over één faultend lid) faultet
-  ná de kaart óók in de DRL-tekst-tak — additieve test in de
-  backend-JUnit-suite.
-- De naamlijst in `scripts/check-reftype-derivation.sh` verdwijnt: zodra
-  de tak ch. 5.10 haalt is er geen vorm meer om te bewaken. Tot dan
-  groeit de lijst mee met elke nieuwe TEN_HOOGSTE-drager.
-- Alle dertien gates groen.
+| meting | DRL-tekst | clingo |
+|--------|-----------|--------|
+| waarde-divergenties t.o.v. ch. 5.10 | **0** | **0** |
+| leest een lid dat ch. 5.10 overslaat (fault die de norm niet heeft) | **0** | **0** |
+| slaat een lid over dat ch. 5.10 leest (antwoord waar de norm fault) | **0** | **0** |
 
-May touch: `backends/drools/**` (DrlTranspiler + runtime + tests),
-`corpus/golden/**` (de nieuwe getuige), `scripts/check-reftype-derivation.sh`
-(de registratie opheffen), `scripts/check-drools.sh` (tellingen), `backlog/`.
+End-to-end bevestigd op precies de getuige die vóór het besluit de
+smoking gun was — `TEN HOOGSTE 1` over ÉÉN lid dat door nul deelt:
 
-Out of scope: de exec-model-tak (draagt ch. 5.10 al), ref, clingo,
-`spec/RUNTIME-SEMANTICS.md` ch. 5.10 zelf (de norm staat; dit is een
-consument die hem nog niet haalt), `toka/`.
+```
+ref         : W1.geenteken = 1
+clingo      : W1.geenteken = [1]
+drools exec : 1
+drools DRL  : 1
+```
+
+Vier executors, één antwoord. Vóór het besluit faultten de eerste drie
+en antwoordde de vierde.
+
+Ook `corpus/golden/jutterswet-vacuumwacht` (de vacuüm-vorm d ≥ n mét een
+faultend lid, plus de waar-stop onder het ledental) speelt in **beide**
+Drools-takken: `PLAYED` / `PLAYED`.
+
+De waakhond-naamlijst die deze kaart in
+`scripts/check-reftype-derivation.sh` had staan is daarmee opgeheven; er
+is geen vorm meer om te bewaken. De meting staat wél reden-dragend in
+dat script vastgelegd.
+
+## Wat er nog zou pleiten vóór doorgaan
+
+Eerlijkheidshalve, want "0 divergenties" is een MODEL-uitspraak plus een
+handvol end-to-end-metingen, geen bewijs:
+
+* het model abstraheert de tak tot "k-deelverzameling-OR met Java-luiheid";
+  een implementatiedetail dat het model niet kent kan alsnog afwijken;
+* n ≤ 7 is uitputtend, daarboven niet gemeten;
+* de tekst-tak blijft een tweede, structureel andere vertaling van
+  dezelfde norm — dat hij vandaag samenvalt is geen garantie dat een
+  volgende ch.-5.10-wijziging hem meeneemt.
+
+Wie die risico's wil afdekken kan de kaart smaller herformuleren: niet
+"maak de tak getrouw" (hij ís het) maar "geef de tak een eigen
+ch.-5.10-getuige in de backend-JUnit-suite, zodat een toekomstige
+normwijziging hem niet stil achterlaat".
+
+## Voorstel
+
+Laten vervallen, óf herformuleren tot de smalle getuige-kaart hierboven.
+Beide zijn maintainerbesluiten; deze kaart blijft tot dan in `new/`.

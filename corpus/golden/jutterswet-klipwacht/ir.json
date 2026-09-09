@@ -19,7 +19,21 @@
           "teken": "ONBEPAALD",
           "eenheid": null
         },
+        "drempelbedrag": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
         "klipteken": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "randklipteken": {
           "node": "Numeriek",
           "geheel": true,
           "decimalen": 0,
@@ -54,6 +68,11 @@
     {
       "node": "Regel",
       "naam": "klipteken van een kustwacht",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "randklipteken van een kustwacht",
       "soort": "regel"
     }
   ],
@@ -221,6 +240,181 @@
           }
         ],
         "bron": "hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan 10) is groter dan 0."
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "randklipteken van een kustwacht",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "randklipteken",
+        "objecttype": "Kustwacht",
+        "onderwerpBron": "een Kustwacht",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het randklipteken van een Kustwacht",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "1",
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "1"
+      },
+      "voorwaarde": {
+        "node": "Samengesteld",
+        "kwantor": "ALLE",
+        "drempel": 0,
+        "onderdelen": [
+          {
+            "node": "Vergelijking",
+            "op": "ONGELIJK",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "ploegomvang",
+              "objecttype": "Kustwacht",
+              "onderwerpBron": "zijn",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "zijn ploegomvang",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "0",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "0"
+            },
+            "periode": null,
+            "bron": "zijn ploegomvang is ongelijk aan 0"
+          },
+          {
+            "node": "Vergelijking",
+            "op": "GROTER",
+            "links": {
+              "node": "Functie",
+              "kind": "TOTAAL",
+              "argumenten": [
+                {
+                  "node": "AttribuutRef",
+                  "attribuut": "wachtvergoeding per maand",
+                  "objecttype": "Kustwacht",
+                  "onderwerpBron": "zijn",
+                  "navigatieRol": null,
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "zijn wachtvergoeding per maand",
+                  "set": false,
+                  "navigatiePad": []
+                }
+              ],
+              "elementObjecttype": "Kustwacht",
+              "leegwaarde": null,
+              "filter": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "wachtvergoeding per maand",
+                  "objecttype": "Kustwacht",
+                  "onderwerpBron": "zijn",
+                  "navigatieRol": null,
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "zijn wachtvergoeding per maand",
+                  "set": false,
+                  "navigatiePad": []
+                },
+                "rechts": {
+                  "node": "AttribuutRef",
+                  "attribuut": "drempelbedrag",
+                  "objecttype": "Kustwacht",
+                  "onderwerpBron": "zijn",
+                  "navigatieRol": null,
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "zijn drempelbedrag",
+                  "set": false,
+                  "navigatiePad": []
+                },
+                "periode": null,
+                "bron": "gedurende de tijd dat zijn wachtvergoeding per maand groter is dan zijn drempelbedrag"
+              },
+              "dimensieSelectie": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan zijn drempelbedrag",
+              "granulariteit": null
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "0",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "0"
+            },
+            "periode": null,
+            "bron": "(het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan zijn drempelbedrag) is groter dan 0"
+          }
+        ],
+        "bron": "hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan zijn drempelbedrag) is groter dan 0."
       },
       "geldigheid": {
         "node": "Geldigheid",

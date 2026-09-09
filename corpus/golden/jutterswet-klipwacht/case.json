@@ -7,11 +7,22 @@
         "label": "K1",
         "objectType": "Kustwacht",
         "attributes": {
-          "ploegomvang": { "number": "0" },
+          "ploegomvang": {
+            "number": "0"
+          },
           "wachtvergoeding per maand": {
             "timeline": [
-              { "from": "2023-01-01", "to": "2024-01-01", "value": { "number": "30000000" } }
+              {
+                "from": "2023-01-01",
+                "to": "2024-01-01",
+                "value": {
+                  "number": "30000000"
+                }
+              }
             ]
+          },
+          "drempelbedrag": {
+            "number": "1.00"
           }
         },
         "roles": {},
@@ -22,11 +33,22 @@
         "label": "K2",
         "objectType": "Kustwacht",
         "attributes": {
-          "ploegomvang": { "number": "4" },
+          "ploegomvang": {
+            "number": "4"
+          },
           "wachtvergoeding per maand": {
             "timeline": [
-              { "from": "2023-01-01", "to": "2024-01-01", "value": { "number": "100" } }
+              {
+                "from": "2023-01-01",
+                "to": "2024-01-01",
+                "value": {
+                  "number": "100"
+                }
+              }
             ]
+          },
+          "drempelbedrag": {
+            "number": "1.00"
           }
         },
         "roles": {},
@@ -37,11 +59,22 @@
         "label": "K3",
         "objectType": "Kustwacht",
         "attributes": {
-          "ploegomvang": { "number": "4" },
+          "ploegomvang": {
+            "number": "4"
+          },
           "wachtvergoeding per maand": {
             "timeline": [
-              { "from": "2023-01-01", "to": "2024-01-01", "value": { "number": "5" } }
+              {
+                "from": "2023-01-01",
+                "to": "2024-01-01",
+                "value": {
+                  "number": "5"
+                }
+              }
             ]
+          },
+          "drempelbedrag": {
+            "number": "10.00"
           }
         },
         "roles": {},
@@ -52,8 +85,41 @@
     "parameters": {}
   },
   "expected": [
-    { "kind": "attributeEmpty", "label": "K1", "attribute": "klipteken" },
-    { "kind": "attributeValue", "label": "K2", "attribute": "klipteken", "value": { "number": "1" } },
-    { "kind": "attributeEmpty", "label": "K3", "attribute": "klipteken" }
+    {
+      "kind": "attributeEmpty",
+      "label": "K1",
+      "attribute": "klipteken"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K2",
+      "attribute": "klipteken",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "K3",
+      "attribute": "klipteken"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "K1",
+      "attribute": "randklipteken"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K2",
+      "attribute": "randklipteken",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "K3",
+      "attribute": "randklipteken"
+    }
   ]
 }

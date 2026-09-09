@@ -1,7 +1,9 @@
 Objecttype de Kustwacht (mv: Kustwachten) (bezield)
     de wachtvergoeding per maand Numeriek (geheel getal) voor elke maand;
     de ploegomvang Numeriek (geheel getal);
+    het drempelbedrag Numeriek (getal met 2 decimalen);
     het klipteken Numeriek (geheel getal);
+    het randklipteken Numeriek (geheel getal);
 
 Regel klipteken van een kustwacht
     geldig altijd
@@ -9,3 +11,10 @@ Regel klipteken van een kustwacht
         indien hij aan alle volgende voorwaarden voldoet:
         - zijn ploegomvang is ongelijk aan 0
         - (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan 10) is groter dan 0.
+
+Regel randklipteken van een kustwacht
+    geldig altijd
+        Het randklipteken van een Kustwacht moet gesteld worden op 1
+        indien hij aan alle volgende voorwaarden voldoet:
+        - zijn ploegomvang is ongelijk aan 0
+        - (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan zijn drempelbedrag) is groter dan 0.
