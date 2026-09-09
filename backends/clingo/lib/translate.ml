@@ -1916,7 +1916,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       in
       let rec cond_fn c : string -> string -> string =
         match c with
-        | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie; _ } ->
+        | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie; eigenaar; periode; _ } ->
             if
               not
                 (List.exists
@@ -1926,18 +1926,33 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               (* mirror ref's fault, as the two sister folds already do
                  (pro rata WF-056, day count WF-058). "Temporal" is decided
                  exactly as ref decides it — KEY EXISTENCE in
-                 kenmerkGranulariteit, ref/lib/eval.ml:80-81 — and WF-055
-                 reads the same predicate, so the three walk in step. ktl
-                 facts come from the case's characteristic timelines alone,
-                 and a characteristic with no granularity KEY is refused a
-                 timeline at case load, so the join finds nothing, the
-                 intersection is empty and the clipped total a silent 0 (a
-                 hunted gap). A key present with a NULL value is the other
-                 half of that class: all three readers pass it while the
-                 case loader still refuses the timeline (on the value), so
-                 the silent 0 survives there — a recorded flank with its own
-                 card, deliberately not this gate's business. *)
+                 kenmerkGranulariteit (ref/lib/eval.ml, [kenmerk_temporal]) —
+                 and WF-055 reads the same predicate, so the three walk in
+                 step. ktl facts come from the case's characteristic
+                 timelines alone, and a characteristic with no granularity
+                 KEY is refused a timeline at case load, so the join finds
+                 nothing, the intersection is empty and the clipped total a
+                 silent 0 (a hunted gap). The other half of that class — a
+                 key present with a NULL VALUE, where the three readers
+                 passed while the case loader refused the timeline on the
+                 value — is closed since 2026-09-09 at the two ends that
+                 create it: the schema drops `null` from the
+                 kenmerkGranulariteit enum and WF-034 refuses the value, so
+                 key existence and value existence now coincide and this
+                 predicate is exact again. *)
               fault "gedurende over %S, which is not a temporal characteristic (WF-055)" k;
+            (* WF-097, mirrored from ref's clip arm: the clip has no reading
+               for either qualification and used to match both away with `_`.
+               ref faults on the same two fields in the same order, so the
+               pair cannot diverge over a document carrying one. *)
+            if eigenaar <> None then
+              fault
+                "owner on the gedurende clip member %S: the clip reads the subject's own \
+                 characteristic timeline (WF-097)" k;
+            if periode <> None then
+              fault
+                "whole-period qualifier on the gedurende clip member %S: the clip already \
+                 ranges over the whole timeline (WF-097)" k;
             if not negatie then fun v t -> Printf.sprintf "ktl(S,%s,%s,%s)" (str k) v t
             else begin
               (* ch. 3.6, the NEGATED clip: the complement of the

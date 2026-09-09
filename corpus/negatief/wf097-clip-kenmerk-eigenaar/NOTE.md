@@ -1,0 +1,16 @@
+Violates WF-097 (`spec/IR-SPEC.md`): a `gedurende` clip member carries an
+`eigenaar`. The clip reads the subject's own characteristic timeline, so an
+owner names a subject no reader consults.
+
+A minimal hand-broken variant of `corpus/golden/jutterswet-tegenwacht/ir.json`:
+one field on one node — `resolvedRegels[0].waarde.filter.onderdelen[0].eigenaar`
+goes from `null` to `"Jutter"`. The name is a DECLARED object type on purpose,
+so WF-034's owner arm (which only asks whether the name resolves) stays silent
+and this document is rejected by WF-097 alone.
+
+The member sits inside the flat `ALLE` composite, so this witness also pins the
+recursive path: the clip walk reaches composite members through the same arm.
+
+Before the rule existed the document was verifier-PASS and both executors
+replayed all six of the golden's cases with the untwisted answers — the silence
+this negatief closes.

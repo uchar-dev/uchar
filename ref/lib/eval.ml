@@ -1040,10 +1040,24 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
           let span = List.map (fun (s : Timeline.segment) -> (s.s_van, s.s_tot)) tl in
           let rec true_periods_of_cond (c : conditie) =
             match c with
-            | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie; _ } ->
+            | Kenmerk_check { kenmerk = Some k; navigatie = None; negatie; eigenaar; periode; _ } ->
                 if not (kenmerk_temporal ot_decl k) then
                   Value.fault
                     "gedurende over %S, which is not a temporal characteristic (WF-055)" k;
+                (* WF-097: the two qualifications this arm has no reading for.
+                   Both were matched away with `_` until 2026-09-09, so a
+                   document carrying either got the UNQUALIFIED answer with
+                   nothing said. Refusing keeps the wire honest, and clingo's
+                   sister arm refuses on the same two fields so the pair never
+                   diverges. *)
+                if eigenaar <> None then
+                  Value.fault
+                    "owner on the gedurende clip member %S: the clip reads the subject's own \
+                     characteristic timeline (WF-097)" k;
+                if periode <> None then
+                  Value.fault
+                    "whole-period qualifier on the gedurende clip member %S: the clip already \
+                     ranges over the whole timeline (WF-097)" k;
                 let periods =
                   Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]
                 in

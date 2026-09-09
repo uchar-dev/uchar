@@ -2576,10 +2576,10 @@
               "WEEK",
               "MAAND",
               "KWARTAAL",
-              "JAAR",
-              null
+              "JAAR"
             ]
-          }
+          },
+          "description": "Presence of a key declares the characteristic time-dependent; the value is its grid. A null value is NOT admitted (maintainer decision 2026-09-09): three readers decide temporality on key existence and the case loader on the value, so a null splits them on otherwise clean input. WF-059's second arm closes the same shape in the verifier."
         },
         "kenmerkTijdlijnAantal": {
           "type": "object",

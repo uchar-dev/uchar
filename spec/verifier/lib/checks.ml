@@ -4435,12 +4435,51 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
              in
              let rec clip_cond_ok c =
                match c with
-               | Kenmerk_check { kenmerk = Some k; navigatie = None; _ } ->
-                   if temporal_char k then []
-                   else
-                     [ v "WF-055" (sub "filter")
-                         ("gedurende over '" ^ k
-                        ^ "', which is not a temporal characteristic of '" ^ aot ^ "'") ]
+               | Kenmerk_check { kenmerk = Some k; navigatie = None; eigenaar; periode; _ } ->
+                   (if temporal_char k then []
+                    else
+                      [ v "WF-055" (sub "filter")
+                          ("gedurende over '" ^ k
+                         ^ "', which is not a temporal characteristic of '" ^ aot ^ "'") ])
+                   (* WF-097 (maintainer decision 2026-09-09), two arms. A clip
+                      member's characteristic check resolves against exactly ONE
+                      subject and over its WHOLE timeline, and the clip readers
+                      say so by construction: every one of them matches
+                      `eigenaar` and `periode` away with `_`. Measured on the
+                      pre-arm binary (md5 5111932e2d1e51de144290ab16abab00): a
+                      one-field twist of `jutterswet-tegenwacht` setting either
+                      field is verifier-PASS and reproduces the untwisted answer
+                      in 36 of 36 executor replays — 3 twists x 6 cases x
+                      {ref, clingo}. A qualifier no reader honours must not be
+                      written; refusing it is the only reading that cannot be
+                      silently wrong. Both executors mirror this fault, as they
+                      already mirror WF-055's, so the two stay in step (gate 6).
+
+                      SCOPE is exactly the clip member. The SCALAR characteristic
+                      check outside a clip keeps both fields: `eigenaar` is
+                      ordinary name resolution there (WF-034's arm), and a
+                      scalar `periode` is the frontend-reachable §8.2 family this
+                      rule deliberately does not reach. The §8.2 qualifier on a
+                      COMPARISON is likewise untouched — it is implemented, it
+                      lives in the corpus, and widening WF-043 to swallow it
+                      would be over-rejection. *)
+                   @ (match eigenaar with
+                      | Some e ->
+                          [ v "WF-097" (sub "filter")
+                              ("owner '" ^ e
+                             ^ "' on a gedurende clip member: the clip reads the SUBJECT's \
+                                characteristic timeline, so an owner here names a subject no \
+                                reader consults") ]
+                      | None -> [])
+                   @ (match periode with
+                      | Some p ->
+                          [ v "WF-097" (sub "filter")
+                              (Printf.sprintf
+                                 "whole-period qualifier (%s) on the gedurende clip member '%s': \
+                                  the clip already ranges over the whole timeline, so the \
+                                  qualifier — negated or not — names no reading the clip has"
+                                 (if p.gp_niet then "negated" else "affirmative") k) ]
+                      | None -> [])
                | Vergelijking
                    { links = Some (Attribuut_ref
                        { attribuut = Some b; objecttype = Some botn; navigatie_rol = None;
@@ -7701,7 +7740,36 @@ let wf057 ctx =
    verifier-clean input: ref reads case input against it as a bare
    unitless number while the integer-scaling translation cannot scale
    it. The shared case loader refuses such input as the last-line
-   backstop. *)
+   backstop.
+
+   SECOND ARM (maintainer decision 2026-09-09): the same shape one side
+   table over. A `kenmerkGranulariteit` entry declares its characteristic
+   TIME-DEPENDENT by the presence of its KEY and names the grid in its
+   VALUE — and the readers split on exactly that seam. Three of them
+   (this file's WF-055 clip check, ref's [kenmerk_temporal], the ASP
+   translator's clip arm) decide temporality on KEY EXISTENCE; the shared
+   case loader decides on the VALUE. A null value therefore declares a
+   characteristic temporal to the clip and non-temporal to the loader.
+
+   Measured 2026-09-09 on `jutterswet-tegenwacht` with
+   `kenmerkGranulariteit.aangesteld` set to null and nothing else changed
+   (pre-arm verifier md5 5111932e2d1e51de144290ab16abab00): the document
+   was schema-valid AND verifier-PASS, and then
+     - a case DELIVERING the timeline died at load in both executors with
+       "a characteristic timeline on a non-temporal characteristic" — a
+       message that contradicts the document it was given;
+     - a case OMITTING it ran to completion and answered
+       tegenwachtsom = 60 and stilwachtsom = 120 where the golden pins 30
+       and 30 — silently wrong, and wrong IDENTICALLY in ref and clingo,
+       so no differential gate could see it.
+   The schema drops null from the enum in the same change, so the wire and
+   the verifier close it together; this arm is what still catches a
+   hand-built or future-emitted document that never met the schema.
+
+   SCOPE is the characteristic map. `attribuutGranulariteit` admits null
+   on the wire to this day and is NOT touched here: no card measured its
+   reader split, and rejecting it on the strength of a sister table's
+   measurement would be over-rejection. It is the named next step. *)
 let wf059 ctx =
   List.concat_map
     (fun (key, (ot : objecttype)) ->
@@ -7713,7 +7781,18 @@ let wf059 ctx =
                   ("/objecttypen/" ^ key ^ "/attributen/" ^ an)
                   "declared attribute carries no datatype" ]
           | Some _ -> [])
-        ot.attributen)
+        ot.attributen
+      @ List.concat_map
+          (fun (kn, gran) ->
+            match gran with
+            | None ->
+                [ v "WF-059"
+                    ("/objecttypen/" ^ key ^ "/kenmerkGranulariteit/" ^ kn)
+                    "characteristic declared time-dependent carries no granularity: the key \
+                     makes the clip readers temporal while the case loader reads the value and \
+                     refuses the timeline" ]
+            | Some _ -> [])
+          ot.kenmerk_granulariteit)
     ctx.doc.objecttypen
 
 (* The composite domains a declared domain directly references — the sum-type
