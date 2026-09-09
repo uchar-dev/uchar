@@ -27,7 +27,9 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -126,6 +128,30 @@ class EenheidsconflictWitnessTest {
         assertThrows(Eenheidsconflict.class, () -> Eenheidsconflict.eisHerschaalbaar(EUR, naamgenoot, "witness"));
     }
 
+    @Test void twee_VERSCHILLENDE_afgeleide_producten_stellen_elkaar_ook_vrij() {
+        // The exemption is carried by ONE side, so €·kg against €·m passes too — not only a product against a
+        // concrete unit. Same ch. 2.10 stance (neither side has a canonical, so no factor is invented either
+        // way), and the cost is a diagnosis rather than a wrong number. Pinned so the breadth is a statement.
+        Eenheid eurKg = afgeleidProduct();
+        Eenheid eurM = afgeleidProduct(new Eenheid("m", "Lengte", "m", BigDecimal.ONE));
+        assertNotEquals(eurKg, eurM, "twee verschillende producten, allebei zonder canoniek");
+        Eenheidsconflict.eisHerschaalbaar(eurKg, eurM, "witness");
+        Eenheidsconflict.eisHerschaalbaar(eurM, eurKg, "witness");
+    }
+
+    @Test void de_herkomsttabel_groeit_per_afleiding_niet_per_document() {
+        // The growth law the class doc states, as a checked claim: Eenheid.product allocates a fresh instance
+        // every time, so deriving the SAME product twice adds TWO entries. The table is monotone for the JVM's
+        // lifetime and never cleared — a bounded strong-reference leak, recorded rather than glossed.
+        int voor = EffectieveEenheid.aantalAfgeleideProducten();
+        Eenheid een = afgeleidProduct();
+        Eenheid twee = afgeleidProduct();
+        assertEquals(voor + 2, EffectieveEenheid.aantalAfgeleideProducten(),
+                "elke maalEenheid-evaluatie voegt een eigen entry toe");
+        assertEquals(een, twee, "de twee zijn waarde-gelijk");
+        assertNotSame(een, twee, "en toch verschillende instanties — daarom groeit de tabel");
+    }
+
     @Test void een_tarief_tegen_zijn_eigen_teller_is_een_fout() {
         // €/jr against € was EXEMPT until 2026-09-09, to keep two §7.1 goldens green — and that exemption was
         // place-blind, so an additive join, a write boundary and a comparison between a rate and its numerator
@@ -155,6 +181,21 @@ class EenheidsconflictWitnessTest {
         Objecttype zonderTijdlijn = new Objecttype("Vondst");
         zonderTijdlijn.attributen.put("tarief", num(tarief));
         assertEquals(tarief, kaal().eenheidVan(totaalOver(zonderTijdlijn)), "zonder tijdlijn blijft het een tarief");
+    }
+
+    @Test void een_SOM_over_een_tijdlijn_tarief_levert_ook_de_teller() {
+        // SOM carries the per-element timeline fold exactly as TOTAAL does — both consumers say so: the
+        // exec-model instance-fold guard admits those two kinds and skips a temporal operand for every other,
+        // and ref faults on the others in as many words. Restricting the collapse to TOTAAL left SOM answering
+        // the rate for an already-folded value: measured 576 for 48 into a €/jr doel (the mnd->jr factor applied
+        // twice over), where ref faults. Same declaration, same shape, only the operator differs.
+        Eenheid tarief = Eenheid.samengesteld(EUR, JR);
+        Objecttype ot = new Objecttype("Vondst");
+        ot.attributen.put("tarief", num(tarief));
+        ot.attribuutGranulariteit.put("tarief", RegelSpraakModel.Granulariteit.MAAND);
+        Expr.AttribuutRef ref = new Expr.AttribuutRef("tarief", ot, "alle vondsten", null, num(tarief), bron());
+        Expr.Functie som = new Expr.Functie(Expr.FunctieKind.SOM, List.of(ref), ot, null, null, num(tarief), bron());
+        assertEquals(EUR, kaal().eenheidVan(som), "de noemer is door de vouwing verbruikt");
     }
 
     @Test void een_MINIMUM_over_een_tijdlijn_tarief_houdt_het_tarief() {
@@ -190,14 +231,17 @@ class EenheidsconflictWitnessTest {
     /** An opaque product carrying this backend's own provenance mark: obtained through the DERIVATION (a §4.4
      *  MAAL of two unit-bearing reads), never by calling the constructor, because the mark is set where the
      *  product is built and a value-equal copy does not carry it. */
-    private static Eenheid afgeleidProduct() {
+    private static Eenheid afgeleidProduct() { return afgeleidProduct(KG); }
+
+    /** As above, with the second factor chosen — so two DISTINCT derived products can be put side by side. */
+    private static Eenheid afgeleidProduct(Eenheid tweede) {
         Objecttype ot = new Objecttype("Vracht");
         ot.attributen.put("prijs", num(EUR));
-        ot.attributen.put("gewicht", num(KG));
+        ot.attributen.put("factor", num(tweede));
         Expr.AttribuutRef prijs = new Expr.AttribuutRef("prijs", ot, "een vracht", null, num(EUR), bron());
-        Expr.AttribuutRef gewicht = new Expr.AttribuutRef("gewicht", ot, "een vracht", null, num(KG), bron());
-        Eenheid uit = kaal().eenheidVan(new Expr.Binair(Expr.BinOp.MAAL, prijs, gewicht, num(EUR), bron()));
-        assertEquals(Eenheid.product(EUR, KG), uit, "de afleiding levert het §4.4 opake product");
+        Expr.AttribuutRef ander = new Expr.AttribuutRef("factor", ot, "een vracht", null, num(tweede), bron());
+        Eenheid uit = kaal().eenheidVan(new Expr.Binair(Expr.BinOp.MAAL, prijs, ander, num(EUR), bron()));
+        assertEquals(Eenheid.product(EUR, tweede), uit, "de afleiding levert het §4.4 opake product");
         return uit;
     }
 

@@ -48,7 +48,14 @@ import io.github.yhavinga.regelspraak.model.Eenheid;
  *       divergence on a shape the corpus does not carry and no frontend can emit — and faulting on it here
  *       would make that recorded sentence false. The exemption keys on PROVENANCE (identity), not on the
  *       abbreviation: a wire-declared unit that merely LOOKS like a product ("appel·peer", no canonical, no
- *       factor) is not one, {@code ref} faults on it, and so does this fence.</li>
+ *       factor) is not one, {@code ref} faults on it, and so does this fence.
+ *       <p>It is one side that carries the exemption, so it also covers TWO DIFFERENT derived products meeting
+ *       each other — "€·kg" against "€·m" passes, not only a product against a concrete unit. That is the same
+ *       ch. 2.10 stance and not a wider one: neither side has a canonical, so there is no factor to invent
+ *       either way, and the value stands in the unit it was computed in. What it costs is a diagnosis — two
+ *       products that could never be reconciled are not reported as such — and that limit is named here rather
+ *       than left to be discovered. Reaching it needs a document carrying two distinct two-unit MAAL results at
+ *       one restatement site, which no frontend emits and the corpus does not hold.</li>
  * </ul>
  *
  * <p><b>What is NOT exempt, and used to be.</b> A rate against a plain unit with convertible numerators

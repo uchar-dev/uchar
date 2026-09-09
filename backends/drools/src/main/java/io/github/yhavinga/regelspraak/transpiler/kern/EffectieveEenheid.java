@@ -146,7 +146,7 @@ public final class EffectieveEenheid {
                     List<Expr> args = f.argumenten();
                     if (args == null || args.isEmpty()) yield annotatie;
                     Eenheid u = eenheid(args.get(0), omgeving, diepte + 1);
-                    yield f.kind() == Expr.FunctieKind.TOTAAL ? naTijdvouwing(args.get(0), u) : u;
+                    yield vouwtDeTijdlijn(f.kind()) ? naTijdvouwing(args.get(0), u) : u;
                 }
                 default -> annotatie;
             };
@@ -170,12 +170,20 @@ public final class EffectieveEenheid {
      * because the restatement silently degraded to the identity. {@code ref} derives the numerator and never
      * reaches a restatement at all; this is that same derivation.
      *
-     * <p><b>Scope, measured rather than assumed.</b> The collapse is restricted to TOTAAL: over the whole corpus
-     * the only folds whose operand is timeline-declared are TOTAAL (19, of which 4 carry a rate — the two goldens
-     * above plus two {@code corpus/negatief} documents the verifier rejects). A MINIMUM or an EERSTE over a
-     * timeline selects a value rather than summing one, so no denominator is consumed and none is dropped. If a
-     * summing fold of another kind ever arrives over a timeline-declared rate, it keeps the rate and the
-     * restatement fence names it — loudly, which is the outcome to want from an unmeasured case.
+     * <p><b>Scope: exactly the two kinds that fold.</b> SOM and TOTAAL, because those are exactly the kinds both
+     * consumers admit into the per-element timeline fold, and the scope is taken from them rather than from the
+     * corpus. {@code ExecModelTranspiler}'s instance-fold guard skips a temporal operand for every other kind;
+     * {@code ref}'s {@code eval.ml} faults on it in as many words ("only som and totaal carry the per-element
+     * timeline fold"). A MINIMUM or an EERSTE over a timeline has no defined moment to rank, so neither consumer
+     * folds it, no denominator is consumed, and none may be dropped.
+     *
+     * <p>Restricting this to TOTAAL alone — which it was until 2026-09-09 — left SOM answering the rate for a
+     * value that had already been folded. Measured on a copy of {@code jutterswet-tempovouw} with the fold's kind
+     * set to SOM: into a plain € doel this backend faulted where ref computes, and into a €/jr doel it silently
+     * produced 576 for 48, the mnd→jr factor applied to an already-folded value, where ref faults with
+     * "incompatible units: EUR/jr vs EUR". Both are now right. The corpus itself carries no SOM over a
+     * timeline-declared attribute (all 19 such folds are TOTAAL, 4 of them over a rate), which is precisely why
+     * the corpus could not have been the source of this rule.
      *
      * <p>What this does NOT check, deliberately: that the denominator is the grid's own unit ("€/kg" on a MAAND
      * timeline). {@code ref} does check it; doing so here would need a granularity→unit mapping this class has no
@@ -183,6 +191,11 @@ public final class EffectieveEenheid {
      * been bitten by. The shape is absent from the corpus (all four rate cases are €/mnd on MAAND), and it is a
      * question about the FOLD's value, which the verifier and ref own, not about a restatement.
      */
+    /** The fold kinds that carry the §7.1 per-element timeline fold — the same two both consumers admit. */
+    private static boolean vouwtDeTijdlijn(Expr.FunctieKind kind) {
+        return kind == Expr.FunctieKind.TOTAAL || kind == Expr.FunctieKind.SOM;
+    }
+
     private static Eenheid naTijdvouwing(Expr operand, Eenheid u) {
         if (u == null || u.noemer() == null) return u;
         if (!(operand instanceof Expr.AttribuutRef a) || a.objecttype() == null) return u;
@@ -256,10 +269,24 @@ public final class EffectieveEenheid {
      *
      * <p>A marker field on {@code Eenheid} itself would be the smaller encoding, but that record lives in the
      * frontend module and is outside this card's reach; this table is the same statement made from the one place
-     * in the backend that builds such a product. It grows by at most one entry per MAAL node with two
-     * unit-bearing operands per model transpiled — zero over the whole corpus today — so its footprint is a
-     * handful of references in a transpiler process, not a leak worth a weak-reference scheme that the JDK has
-     * no identity-keyed form of anyway.
+     * in the backend that builds such a product.
+     *
+     * <p><b>Its growth, measured rather than assumed.</b> One entry per {@link #maalEenheid} EVALUATION — not
+     * per node and not per model: {@link Eenheid#product} allocates a fresh instance every time, so transpiling
+     * one document three times in a JVM adds three sets of entries (measured 0 → 2 → 4 → 6 on a document with
+     * two such nodes). The table is monotone for the lifetime of the JVM and is never cleared, so it is a
+     * STRONG-REFERENCE LEAK, stated plainly. Two things bound the damage and neither is a correctness argument
+     * about the leak: the corpus produces ZERO entries (no golden carries a two-unit MAAL), and each entry is
+     * one small record.
+     *
+     * <p>Correctness is unaffected by the growth: a stale entry can never mark a NEW unit, because
+     * {@code Eenheid.product} never returns an existing instance, so no aliasing is possible however long the
+     * table lives. Clearing it per transpilation was considered and rejected this round: it would need a
+     * guarantee that no other derivation instance is live, and nothing in the build route provides one — the
+     * two transpiler branches each construct their own {@code EffectieveEenheid}, and a clear on construction
+     * would silently unmark a product the other branch is still holding. That turns a bounded leak into a wrong
+     * answer, which is the wrong trade. Bounding it properly wants a weak IDENTITY set, which the JDK has no
+     * form of; it is carded rather than improvised here.
      */
     private static final java.util.Set<Eenheid> AFGELEIDE_PRODUCTEN =
             java.util.Collections.synchronizedSet(java.util.Collections.newSetFromMap(new IdentityHashMap<>()));
@@ -273,6 +300,11 @@ public final class EffectieveEenheid {
     /** Whether {@code e} is an opaque product THIS derivation built (identity, never the name). */
     static boolean isAfgeleidProduct(Eenheid e) {
         return e != null && AFGELEIDE_PRODUCTEN.contains(e);
+    }
+
+    /** The table's current size — so the growth law above is a CHECKED claim rather than a comment. */
+    static int aantalAfgeleideProducten() {
+        return AFGELEIDE_PRODUCTEN.size();
     }
 
     private Eenheid letEenheid(Expr drager, LetVorm lv, Map<String, Eenheid> omgeving, int diepte, Eenheid annotatie) {
