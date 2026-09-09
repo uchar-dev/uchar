@@ -112,3 +112,67 @@ alleen gelezen en gedraaid; een frontend-wijziging is een eigen kaart ná deze.
 ONBEKEND-type is beslecht door WF-034 golf 7 en wordt hier niet heropend: deze
 kaart gaat over een lezing met een ECHT type, wat precies de reden is dat de
 twee vragen orthogonaal zijn en apart gesneden zijn.
+
+---
+
+Result (2026-09-09): antwoord **(i)** — de vorm is ill-formed op de wire.
+**WF-096** (eigen nummer; motivering hieronder) landt in `spec/verifier/` en
+in `spec/IR-SPEC.md` ch. 4.3: een `AttribuutRef` met `set: true` is alleen
+toegestaan als BRON van een eenargument-instantievouw. Eén beslissing voor
+beide posities, want beide meten identiek (dezelfde drie weigeringen, woord
+voor woord).
+
+*Waarom een eigen nummer en niet WF-034 of WF-083.* WF-083 is normatief
+gescopeerd op de vouwBRON — "the argument of a single-argument instance
+fold", en de tekst zegt uitdrukkelijk dat de regel niets zegt over een vouw
+met twee of meer argumenten; het domein van deze regel is precies het
+complement daarvan (elke andere positie), dus WF-083 verbreden zou zijn eigen
+scope-zin moeten breken, en die zin is met een golden door vier uitvoerders
+gepind. WF-034 gaat over RESOLUTIE tegen declaraties (naam, objecttype,
+sentinel-type); `set` resolveert niets. Vandaar WF-096, edge-to-edge met de
+twee: bij de bron beslist de sentinel de KIND (WF-093) en beschrijft `set`
+alleen; weg van de bron is de sentinel WF-034's zevende golf en is `set` deze
+regel.
+
+Geleverd: drie negatiefs (`wf096-setlezing-regelwaarde`,
+`wf096-setlezing-operand`, `wf096-setlezing-geleste-operand`), de eerste twee
+BYTE VOOR BYTE de emissie van de RegelSpraak-frontend zelf uit twee bronzinnen
+met `diagnostics: []` — daarmee is ook de OPERANDpositie een levende
+producentroute, niet alleen de hele regelwaarde, wat de kaart nog als
+handgebouwd noteerde. De derde is een één-veld-verdraaiing van
+`wf034-sentinel-geleste-setlezing` (sentinel → het gedeclareerde type) en pint
+de tweede walk (de vouwargumenttak vervangt de generieke expressiewalk).
+
+Rood-eerst: alle drie PASS op de binary van vóór de clausule
+(md5 `8e07cdc5515ec6b29bd6de42e750de54`), alle drie precies één falende regel
+die WF-096 en de positie noemt op de kop (md5
+`5111932e2d1e51de144290ab16abab00`).
+
+Mutant, gemeten over de vier zones (560 documenten — hermeten, gegroeid sinds
+de kaart): de hele clausule weg → precies VIER documenten bewegen, de drie
+getuigen (elk een verdict) plus één mee-vurende regel op het al afgewezen
+`wf034-sentinel-geleste-setlezing`, waarvan het verdict niet beweegt. Elke
+helft apart gemuteerd is op zichzelf arm-exact. Over-afwijzing: de 16
+legitieme set-vouwbronnen in 14 goldens bewegen niet; geen golden, rood of
+pariteitsdocument verandert een zin.
+
+Twee posities die de clausule NIET bereikt, gemeten en benoemd: `set: true` op
+een regel-DOEL blijft verifier-schoon (nul documenten dragen het, en alle drie
+de uitvoerders NEGEREN het veld en schrijven de scalar — drie-op-drie
+overeenstemming op een inerte annotatie, niet deze klasse), en een
+vouwargument met een incompleet resolutiepaar meldt WF-034 (de setclausule
+staat vóór die armen zodat het veld niet ongemeld blijft).
+
+`ref`'s fout, de ASP-weigering en de Drools-SKIP blijven staan als tweede
+verdedigingslinie — de vorm bereikt ze niet meer via een welgevormd document.
+`spec/RUNTIME-SEMANTICS.md` is niet aangeraakt: er is geen semantiekclausule
+die correspondeert, precies zoals bij WF-093.
+
+Frontend-vervolg: `backlog/new/20260909-frontend-alle-zonder-vouw.md`
+(spec-first; de emissie is hier bewijsmateriaal en blijft ongewijzigd).
+
+Dertien gates groen op `41b0bb2`: gate 2 188; gate 3 188 golden / **342**
+negatief (339 → 342); gate 4 448; gates 5/6 425; gate 7 389 + 36 survivors;
+gate 8 23; gate 9 201 checks / 12 catala-goldens; gate 10 173 tests / 38
+rgs-goldens; gate 11 45 re-emissies / 27 tests; gate 12 played 118 / vloer 47
+/ JUnit 223; gate 13 74 twists.
