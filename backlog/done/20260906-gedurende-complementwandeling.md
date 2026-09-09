@@ -146,9 +146,12 @@ per segment vastlegt. `case6-ch36-voorbeeld` is het uitgewerkte voorbeeld
 van `RUNTIME-SEMANTICS.md` ch. 3.6 zelf (de ontkende vorm, 115): dat stond
 alleen in `ref/` en is nu ook door clingo en Drools gepind.
 
-**Waarom naast het anker en niet erin.** `corpus/golden/anchor/` is gepind
-en de kaart schreef een nieuwe golden náást het anker voor, dus
-`jutterswet-tegenwacht` staat in `corpus/golden/`. Dat heeft één gevolg dat
+**Waarom naast het anker en niet erin.** `corpus/golden/anchor/` is een
+beschermd pad: een sessie stelt er hooguit een diff voor en merget hem
+nooit zelf. Daarom staat `jutterswet-tegenwacht` in `corpus/golden/` en niet
+in de anker-deelverzameling. (De "May touch" van de kaart sluit
+`corpus/golden/**` in en dus ook `anchor/`; het is de beschermde-padenregel
+die de plaatsing bepaalt, niet de kaarttekst.) Dat heeft één gevolg dat
 benoemd hoort te worden: het uitgewerkte ch. 3.6-voorbeeld (115) is nu in
 een gewone golden gepind, niet in de anker-deelverzameling met haar
 permanente pin. Daar staat tegenover dat deze golden een `bron.rgs` draagt
@@ -214,6 +217,13 @@ plaats van een eigen klasse te openen. De flank hoort bij
 `/tmp/probe-strat/no-cycle*.json`.
 
 **Beschermde paden — alle drie als VOORSTEL, alleen de maintainer merget.**
+Boekhouding vooraf: **alle drie vallen buiten de "May touch" van de kaart.**
+Die noemt van `spec/` alleen `spec/verifier/**`, dus zowel
+`spec/RUNTIME-SEMANTICS.md` als `spec/ASP-TRANSLATION.md` staat erbuiten, en
+`scripts/` wordt er helemaal niet genoemd. Alle drie zijn door de opdracht
+aangewezen (de ASP-vorm hoort in `ASP-TRANSLATION.md`, RUNTIME-SEMANTICS
+alleen als klein voorstel, de speelvloer moest meebewegen); geen ervan is
+een eigen uitbreiding van de scope.
 
 - `spec/RUNTIME-SEMANTICS.md`: de executed-note bij het ontkende
   samenstel-lid beweerde dat de ASP-kant luid faalt en dat geen anker het
@@ -223,9 +233,11 @@ plaats van een eigen klasse te openen. De flank hoort bij
   blijven.
 - `spec/ASP-TRANSLATION.md`: de S8-vertaalvorm van de ontkende clip en het
   schrappen van de weigering uit de S19-inventaris. De opdracht wees dit
-  document expliciet aan als de plek voor de ASP-vorm; het staat niet in de
-  beschermde lijst van `CLAUDE.md`, maar het is normatieve spec-tekst en
-  wordt hier voor de zekerheid onder dezelfde kwalificatie gemeld.
+  document expliciet aan als de plek voor de ASP-vorm. Het staat níét in de
+  beschermde-padenlijst van `CLAUDE.md`, maar wél binnen de `/spec/`-claim
+  van `.github/CODEOWNERS` — die twee lopen uiteen. Het wordt hier daarom
+  onder dezelfde voorstel-kwalificatie gemeld; het verschil zelf is
+  opgeschreven als `backlog/new/20260909-beschermde-paden-lijsten-gelijk.md`.
 - `scripts/check-drools.sh`: `EXPECTED_PLAYED` 117 → 118 met
   reden-commentaar. `scripts/` is een beschermd pad én viel buiten de
   "May touch" van de oorspronkelijke kaart; de bump was onvermijdelijk
