@@ -463,6 +463,20 @@ basisvrij() {
     [ -n "$treffer" ]
 }
 
+# --- monotone floors (maintainer decision 2026-09-09) --------------------------------------------
+# Lower bounds, never equalities: they catch SHRINK — the harness that quietly probes half — while
+# growth needs no bump, so an ordinary corpus card touches no protected script. Raised deliberately,
+# at an occasion. Accepted weakness, recorded rather than hidden: a count that stays equal while its
+# content shifted passes; the name-carrying lists are what cover that direction. A deliberate
+# removal lowers the floor in the same commit.
+# Both counts are this harness's discriminating power, not a file count: the twist total is what
+# the twist TABLE meets in the corpus, so a narrowed table would shrink it with every corpus file
+# still in place, and no other gate would see it. The DRL floor extends the "-eq 0" bottom below,
+# whose own comment records the measured mutant that dropped the leg from 9 played goldens to 0:
+# that mutant would today be caught at 8, not only at 0.
+EXPECTED_MIN_TWISTS=74      # 2026-09-10: measured 74 annotations twisted over 15 goldens
+EXPECTED_MIN_DRL_PLAYED=13  # 2026-09-10: measured 13 goldens PLAYED by the DRL-text branch
+
 status=0
 n_goldens=0
 n_twists=0
@@ -611,6 +625,10 @@ if [ "$n_twists" -eq 0 ]; then
     echo 'FAIL: no annotation was twisted — the harness probed nothing (an empty twist set is never green)' >&2
     exit 1
 fi
+if [ "$n_twists" -lt "$EXPECTED_MIN_TWISTS" ]; then
+    echo "FAIL: $n_twists annotation(s) twisted, but EXPECTED_MIN_TWISTS pins at least $EXPECTED_MIN_TWISTS — the probe shrank (a deliberate removal lowers the floor in the same commit)" >&2
+    exit 1
+fi
 
 # The same bottom for the DRL leg, and it is NOT implied by the baseline clamp above. That clamp demands
 # PLAYED or EXCLUDE per golden, so a text branch that REFUSED EVERY golden would satisfy it for all of
@@ -623,6 +641,10 @@ fi
 # to lean on it.
 if [ "$n_drl" -eq 0 ]; then
     echo 'FAIL: the DRL-text branch PLAYED no golden — the leg measured nothing (an empty played set is never green)' >&2
+    exit 1
+fi
+if [ "$n_drl" -lt "$EXPECTED_MIN_DRL_PLAYED" ]; then
+    echo "FAIL: the DRL-text branch PLAYED $n_drl golden(s), but EXPECTED_MIN_DRL_PLAYED pins at least $EXPECTED_MIN_DRL_PLAYED — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
     exit 1
 fi
 
@@ -657,8 +679,9 @@ if [ "$status" -eq 0 ]; then
     printf '       read-set model (n = 1..7, 6646 combinations, both directions, all five quantifiers):\n'
     printf '       0 verdict divergences, 0 extra reads, 0 skipped reads, for the text branch and for clingo.\n'
     printf '       The former watchlist is retired; see the comment above.\n'
-    printf 'check-reftype-derivation: PASS (%s unit annotations twisted over %s goldens; %s executor replays reproduce the untouched outcome, %s of them PLAYED by the DRL-text branch; %s pinned survivors)\n' \
-        "$n_twists" "$n_goldens" "$n_gecontroleerd" "$n_drl" "$n_survivors"
+    printf 'check-reftype-derivation: PASS (%s unit annotations twisted over %s goldens, floor %s; %s executor replays reproduce the untouched outcome, %s of them PLAYED by the DRL-text branch, floor %s; %s pinned survivors)\n' \
+        "$n_twists" "$n_goldens" "$EXPECTED_MIN_TWISTS" "$n_gecontroleerd" "$n_drl" \
+        "$EXPECTED_MIN_DRL_PLAYED" "$n_survivors"
     printf '  corpus-wide accounting: %s unit-bearing annotations = %s twistable + %s exempt (the annotation IS the source) + %s without a convertible sister + %s at a §2.10 fourth-class branch (v0 derives no result unit) + %s outside the twist table\n' \
         "$n_eenheid" "$((n_eenheid - n_vrijgesteld - n_zonderzusje - n_ongedekt))" \
         "$n_vrijgesteld" "$n_zonderzusje" "$n_vierde" "$n_onbekend"

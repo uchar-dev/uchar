@@ -18,6 +18,18 @@ cd "$(dirname "$0")/.."
 
 fail() { echo "check-regelspraak: FAIL — $*" >&2; exit 1; }
 
+# --- monotone floors (maintainer decision 2026-09-09) --------------------------------------------
+# Lower bounds, never equalities: they catch SHRINK — the suite that quietly runs half — while
+# growth needs no bump, so an ordinary corpus card touches no protected script. Raised deliberately,
+# at an occasion. Accepted weakness, recorded rather than hidden: a count that stays equal while its
+# content shifted passes; the name-carrying lists are what cover that direction. A deliberate
+# removal lowers the floor in the same commit.
+# Both counts are unseen elsewhere: the JUnit suite is not corpus files at all, and the golden count
+# is the number of bron.rgs sources, which no other gate reads (gate 2 floors the ir.json beside
+# them, so a deleted source would otherwise cost frontend coverage in silence).
+EXPECTED_MIN_TESTS=173    # 2026-09-10: measured 173 (frontends/regelspraak, `make test`)
+EXPECTED_MIN_GOLDENS=38   # 2026-09-10: measured 38 (corpus/golden/**/bron.rgs)
+
 command -v java  >/dev/null 2>&1 || fail "java not found (the frontend needs JDK 21+)"
 command -v javac >/dev/null 2>&1 || fail "javac not found (the frontend needs JDK 21+, not a bare JRE)"
 command -v make  >/dev/null 2>&1 || fail "make not found"
@@ -38,6 +50,8 @@ fi
 tests=$(printf '%s\n' "$suite_out" | sed -n 's/^\[ *\([0-9][0-9]*\) tests successful *\]$/\1/p' | tail -1)
 [ -n "$tests" ] || fail "the suite produced no '[ N tests successful ]' line — it did not run"
 [ "$tests" -gt 0 ] || fail "the suite ran zero tests (an empty test set is a failure)"
+[ "$tests" -ge "$EXPECTED_MIN_TESTS" ] \
+  || fail "the suite ran $tests tests, but EXPECTED_MIN_TESTS pins at least $EXPECTED_MIN_TESTS — the suite shrank (a deliberately dropped test lowers the floor in the same commit)"
 
 JAR=$(ls "$FE"/lib/antlr-*-complete.jar 2>/dev/null | head -1)
 [ -n "$JAR" ] || fail "no ANTLR jar under $FE/lib after the build"
@@ -72,4 +86,6 @@ done < <(find corpus/golden -name bron.rgs | sort)
 if [ $diffcount -gt 0 ] || [ $emitfail -gt 0 ]; then
   fail "$pass identical, $diffcount diverging, $emitfail emit failures"
 fi
-echo "check-regelspraak: PASS — JUnit suite green ($tests tests); $pass rgs golden(s) re-emit byte-identically"
+[ "$pass" -ge "$EXPECTED_MIN_GOLDENS" ] \
+  || fail "$pass rgs golden(s) re-emitted, but EXPECTED_MIN_GOLDENS pins at least $EXPECTED_MIN_GOLDENS — the frontend's golden coverage shrank (a deliberate removal lowers the floor in the same commit)"
+echo "check-regelspraak: PASS — JUnit suite green ($tests tests, floor $EXPECTED_MIN_TESTS); $pass rgs golden(s) re-emit byte-identically (floor $EXPECTED_MIN_GOLDENS)"

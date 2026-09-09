@@ -51,6 +51,18 @@ fi
 
 status=0
 
+# --- monotone floor (maintainer decision 2026-09-09) ---------------------------------------------
+# A lower bound, never an equality: it catches SHRINK — the negatief corpus that quietly halves —
+# while growth needs no bump, so an ordinary corpus card touches no protected script. Raised
+# deliberately, at an occasion. Accepted weakness, recorded rather than hidden: a count that stays
+# equal while its content shifted passes; the name-carrying lists are what cover that direction. A
+# deliberate removal lowers the floor in the same commit.
+# The negatief cases are floored HERE because this is the only gate that sees them at all: a
+# vanished wf###-case takes a MUST's failing witness with it (CLAUDE.md, Spec discipline) and no
+# other check would notice. NO floor on n_golden: that is byte-for-byte the file set gate 2 already
+# floors (both scan corpus/golden + corpus/rood for ir.json), and one quantity wants one floor.
+EXPECTED_MIN_NEGATIEF=350   # 2026-09-10: measured 350 (corpus/negatief/**/ir.json)
+
 # check 2: golden dumps — and the red corpus's documents, whose faults
 # are behavioural, never well-formedness — are verifier-clean.
 list=$(mktemp) || exit 2
@@ -97,9 +109,12 @@ fi
 if [ "$n_neg" -eq 0 ]; then
     echo 'FAIL: no negatief cases — every implemented WF check needs a failing case (spec discipline)' >&2
     status=1
+elif [ "$n_neg" -lt "$EXPECTED_MIN_NEGATIEF" ]; then
+    echo "FAIL: $n_neg negatief case(s) rejected, but EXPECTED_MIN_NEGATIEF pins at least $EXPECTED_MIN_NEGATIEF — the negatief corpus shrank (a deliberate removal lowers the floor in the same commit)" >&2
+    status=1
 fi
 
 if [ "$status" -eq 0 ]; then
-    echo "check-verifier: PASS ($n_golden golden clean; $n_neg negatief rejected for their declared rule)"
+    echo "check-verifier: PASS ($n_golden golden clean; $n_neg negatief rejected for their declared rule, floor $EXPECTED_MIN_NEGATIEF)"
 fi
 exit "$status"

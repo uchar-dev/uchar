@@ -43,10 +43,21 @@ if ! dune build backends 2>&1; then
     exit 1
 fi
 
+# --- monotone floor (maintainer decision 2026-09-09) ---------------------------------------------
+# A lower bound, never an equality: it catches SHRINK — the suite that quietly runs half — while
+# growth needs no bump, so an ordinary corpus card touches no protected script. Raised deliberately,
+# at an occasion. Accepted weakness, recorded rather than hidden: a count that stays equal while its
+# content shifted passes; the name-carrying lists are what cover that direction. A deliberate
+# removal lowers the floor in the same commit.
+# The suite is floored because nothing else counts it — it is not corpus files, so no other gate
+# would notice it halving. NO floor on the replayed-case count: that is byte-for-byte the file set
+# gate 5 already floors (both scan corpus/golden for case*.json), and one quantity wants one floor.
+EXPECTED_MIN_SUITE_CHECKS=83   # 2026-09-10: measured 83 (backends/clingo/test/test_clingo.ml)
+
 # The backend's own unit suite carries the fault-mode proof obligations of the
 # normalisation pass (no-finest stelsel, inexact factor) that no corpus witness
 # can exercise — an un-run suite is a silent green, so the gate runs it and
-# demands a non-zero check count (the gate-9 zero-checks discipline).
+# demands a non-zero, floored check count (the gate-9 zero-checks discipline).
 SUITE_BIN=_build/default/backends/clingo/test/test_clingo.exe
 SUITE_OUT=$("$SUITE_BIN" 2>&1)
 if [ $? -ne 0 ]; then
@@ -58,6 +69,10 @@ SUITE_CHECKS=$(printf '%s' "$SUITE_OUT" | grep -Eo '[0-9]+ checks' | grep -Eo '[
 if [ -z "$SUITE_CHECKS" ] || [ "$SUITE_CHECKS" -eq 0 ]; then
     echo "$SUITE_OUT" >&2
     echo 'check-clingo: FAIL (backend unit suite ran zero checks — a silent green is not green)' >&2
+    exit 1
+fi
+if [ "$SUITE_CHECKS" -lt "$EXPECTED_MIN_SUITE_CHECKS" ]; then
+    echo "FAIL: the backend unit suite ran $SUITE_CHECKS checks, but EXPECTED_MIN_SUITE_CHECKS pins at least $EXPECTED_MIN_SUITE_CHECKS — the suite shrank (a deliberately dropped check lowers the floor in the same commit)" >&2
     exit 1
 fi
 BIN=_build/default/backends/clingo/bin/clingo_runner.exe
@@ -92,6 +107,6 @@ if [ "$n_cases" -eq 0 ]; then
 fi
 
 if [ "$status" -eq 0 ]; then
-    echo "check-clingo: PASS ($n_cases cases replay exactly through clingo — ref = clingo over the corpus)"
+    echo "check-clingo: PASS (backend suite $SUITE_CHECKS checks, floor $EXPECTED_MIN_SUITE_CHECKS; $n_cases cases replay exactly through clingo — ref = clingo over the corpus)"
 fi
 exit "$status"

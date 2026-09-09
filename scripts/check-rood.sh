@@ -36,6 +36,19 @@ fi
 REF=_build/default/ref/bin/runner.exe
 CLINGO=_build/default/backends/clingo/bin/clingo_runner.exe
 
+# --- monotone floor (maintainer decision 2026-09-09) ---------------------------------------------
+# A lower bound, never an equality: it catches SHRINK — the red fence that quietly halves — while
+# growth needs no bump, so an ordinary corpus card touches no protected script. Raised deliberately,
+# at an occasion. Accepted weakness, recorded rather than hidden: a count that stays equal while its
+# content shifted passes; the name-carrying lists are what cover that direction. A deliberate
+# removal lowers the floor in the same commit.
+# This is the red zone's own floor; gate 5 carries the green zone's. Gate 4 sees the sum of the two
+# and therefore floors neither: a golden case traded for a red one keeps a sum equal.
+# NO second floor on the Drools leg's fault count: its not-carried cases are each pinned by name in
+# the reason-carrying exclusion list below, so the leg's fault total is the case count minus a
+# name-pinned set, both of which are already held.
+EXPECTED_MIN_ROOD_CASES=26   # 2026-09-10: measured 26 (corpus/rood/**/case*.json)
+
 status=0
 n_cases=0
 list=$(mktemp) || exit 2
@@ -61,6 +74,10 @@ done < "$list"
 
 if [ "$n_cases" -eq 0 ]; then
     echo 'FAIL: no case files under corpus/rood — the red fence is empty, never silently green' >&2
+    exit 1
+fi
+if [ "$n_cases" -lt "$EXPECTED_MIN_ROOD_CASES" ]; then
+    echo "FAIL: $n_cases red case(s) replayed, but EXPECTED_MIN_ROOD_CASES pins at least $EXPECTED_MIN_ROOD_CASES — the red fence shrank (a deliberate removal lowers the floor in the same commit)" >&2
     exit 1
 fi
 
@@ -230,6 +247,7 @@ else
 fi
 
 if [ "$status" -eq 0 ]; then
-    printf 'check-rood: PASS (%s red cases fault observably in ref and clingo)\n' "$n_cases"
+    printf 'check-rood: PASS (%s red cases fault observably in ref and clingo, floor %s)\n' \
+        "$n_cases" "$EXPECTED_MIN_ROOD_CASES"
 fi
 exit "$status"

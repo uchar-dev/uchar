@@ -18,6 +18,18 @@ cd "$(dirname "$0")/.."
 
 fail() { echo "check-catala: FAIL — $*" >&2; exit 1; }
 
+# --- monotone floors (maintainer decision 2026-09-09) --------------------------------------------
+# Lower bounds, never equalities: they catch SHRINK — the suite that quietly runs half — while
+# growth needs no bump, so an ordinary corpus card touches no protected script. Raised deliberately,
+# at an occasion. Accepted weakness, recorded rather than hidden: a count that stays equal while its
+# content shifted passes; the name-carrying lists are what cover that direction. A deliberate
+# removal lowers the floor in the same commit.
+# Both counts are unseen elsewhere: the suite is not corpus files at all, and the golden count is
+# the number of bron.catala_en sources, which no other gate reads (gate 2 floors the ir.json beside
+# them, so a deleted source would otherwise cost frontend coverage in silence).
+EXPECTED_MIN_CHECKS=201   # 2026-09-10: measured 201 (frontends/catala/test, the runtest alias)
+EXPECTED_MIN_GOLDENS=12   # 2026-09-10: measured 12 (corpus/golden/**/bron.catala_en)
+
 command -v dune >/dev/null 2>&1 || fail "dune not found (run: eval \$(opam env))"
 command -v catala >/dev/null 2>&1 \
   || fail "the catala compiler is not installed — the frontend gate cannot run (never silently green)"
@@ -38,6 +50,8 @@ fi
 checks=$(printf '%s\n' "$suite_out" | sed -n 's/^\([0-9][0-9]*\) checks, 0 failures$/\1/p' | tail -1)
 [ -n "$checks" ] || fail "the suite produced no '<N> checks, 0 failures' line — it did not run (an empty runtest alias is a silent greenlight)"
 [ "$checks" -gt 0 ] || fail "the suite ran zero checks (an empty program list is a failure)"
+[ "$checks" -ge "$EXPECTED_MIN_CHECKS" ] \
+  || fail "the suite ran $checks checks, but EXPECTED_MIN_CHECKS pins at least $EXPECTED_MIN_CHECKS — the suite shrank (a deliberately dropped check lowers the floor in the same commit)"
 
 BIN=_build/default/frontends/catala/bin/catala_frontend.exe
 [ -x "$BIN" ] || fail "plugin binary missing at $BIN after build"
@@ -82,4 +96,6 @@ done < <(find corpus/golden -name bron.catala_en | sort)
 if [ $diffcount -gt 0 ] || [ $genfail -gt 0 ]; then
   fail "$pass identical, $diffcount diverging, $genfail generate failures"
 fi
-echo "check-catala: PASS — frontend suite green ($checks checks); $pass catala golden(s) regenerate byte-identically"
+[ "$pass" -ge "$EXPECTED_MIN_GOLDENS" ] \
+  || fail "$pass catala golden(s) regenerated, but EXPECTED_MIN_GOLDENS pins at least $EXPECTED_MIN_GOLDENS — the frontend's golden coverage shrank (a deliberate removal lowers the floor in the same commit)"
+echo "check-catala: PASS — frontend suite green ($checks checks, floor $EXPECTED_MIN_CHECKS); $pass catala golden(s) regenerate byte-identically (floor $EXPECTED_MIN_GOLDENS)"

@@ -116,7 +116,11 @@ green. Current gates:
    and replays every `corpus/golden/**/case*.json` with exact expectation
    match (the oracle guard of PLAN §8); goldens without a case file are
    listed explicitly; an empty case set is a failure, never silently
-   green.
+   green. Since 2026-09-10 it also runs `ref/`'s own worked-example suite
+   (`ref/test/`) — the executable form of the `RUNTIME-SEMANTICS.md`
+   examples, which until then no gate ran at all — demanding its count
+   line and holding it to a floor, exactly as gate 6 runs the clingo
+   backend's own suite.
 6. `scripts/check-clingo.sh` — the differential: `backends/clingo`
    translates every corpus case to ASP-Core-2 and clingo's stable model
    must match the same absolute expectations gate 5 pins for `ref/`
@@ -237,6 +241,20 @@ green. Current gates:
     reason-carrying survivor list fails when stale (the check-noop
     pattern). An empty twist set is a failure, never silently green. CI
     leg unconditional and blocking.
+
+**Counting floors (maintainer decision 2026-09-09).** Beside the non-empty
+checks and the name-carrying lists, every gate whose count could shrink unseen
+carries an `EXPECTED_MIN_<name>` constant in its own script, with its reason
+and its measurement date, and fails naming both the measured number and the
+floor. They are lower bounds, not equalities: they catch shrink — a suite that
+quietly runs half, a corpus zone that quietly halves — while growth needs no
+bump, so an ordinary corpus card touches no protected script. Raising a floor
+is a deliberate act, done at an occasion; a deliberate removal lowers it in the
+same commit. The accepted weakness, recorded rather than hidden: a count that
+stays equal while its content shifted passes, and the name-carrying lists are
+what cover that direction. Gate 12's `EXPECTED_PLAYED` stays an equality
+(decision 2026-09-06) — this regime generalised from it and does not reopen it.
+A gate that gets no floor carries one sentence in its script saying why.
 
 ## Repo relationships
 

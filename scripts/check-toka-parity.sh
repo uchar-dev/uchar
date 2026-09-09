@@ -63,6 +63,20 @@ TOKA=toka
 [ -d "$FE" ]   || fail "$FE is missing"
 [ -d "$TOKA" ] || fail "$TOKA is missing (the parity zone)"
 
+# --- monotone floors (maintainer decision 2026-09-09) --------------------------------------------
+# Lower bounds, never equalities: they catch SHRINK — the suite that quietly runs half — while
+# growth needs no bump, so an ordinary corpus card touches no protected script. Raised deliberately,
+# at an occasion. Accepted weakness, recorded rather than hidden: a count that stays equal while its
+# content shifted passes; the name-carrying lists are what cover that direction. A deliberate
+# removal lowers the floor in the same commit.
+# The three counts are unseen elsewhere: this zone is outside corpus/, so no other gate reads a
+# single file of it. The casus-dump count is deliberately NOT floored — it is 1, and the existing
+# "-gt 0" is already that floor. These constants leave the gate set WITH this gate, at the zone's
+# removal (CLAUDE.md gate 11: the one documented exception to gate-set monotonicity).
+EXPECTED_MIN_TESTS=27       # 2026-09-10: measured 27 (the zone's own JUnit suite)
+EXPECTED_MIN_FRAGMENTS=45   # 2026-09-10: measured 45 (.rgs fragments re-emitted byte-identical)
+EXPECTED_MIN_CASES=29       # 2026-09-10: measured 29 (manifest-pinned replay cases)
+
 HOLDOUTS=(
   'toka-23-regel-bevestigingstijdstip-vlucht.rgs'   # §4.1 datum+datum casus-quirk
   'toka-45-regel-belasting-op-basis-van-afstand.rgs' # dimensioneel inconsistent (16Y): unitless Bedrag min km-product
@@ -103,6 +117,8 @@ fi
 tests=$(printf '%s\n' "$suite_out" | sed -n 's/^\[ *\([0-9][0-9]*\) tests successful *\]$/\1/p' | tail -1)
 [ -n "$tests" ] || fail "the suite produced no '[ N tests successful ]' line — it did not run"
 [ "$tests" -gt 0 ] || fail "the suite ran zero tests (an empty test set is a failure)"
+[ "$tests" -ge "$EXPECTED_MIN_TESTS" ] \
+  || fail "the suite ran $tests tests, but EXPECTED_MIN_TESTS pins at least $EXPECTED_MIN_TESTS — the suite shrank (a deliberately dropped test lowers the floor in the same commit)"
 
 # 3. re-emit every pinned casus dump and require byte-identity. The per-scenario
 #    slice dumps under toka/cases/ (part 4's replay fixtures) carry no sibling
@@ -131,6 +147,8 @@ while IFS= read -r dump; do
 done < <(find "$TOKA" -name ir.json -not -path "$TOKA/cases/*" | sort)
 
 [ "$casus_n" -gt 0 ] || fail "no toka/**/ir.json parity dumps found (an empty fixture set is a failure)"
+[ "$frag_n" -ge "$EXPECTED_MIN_FRAGMENTS" ] \
+  || fail "$frag_n .rgs fragment(s) re-emitted, but EXPECTED_MIN_FRAGMENTS pins at least $EXPECTED_MIN_FRAGMENTS — the parity coverage shrank (a deliberate removal, or a new holdout, lowers the floor in the same commit)"
 # stale-holdout guard: every reason-carrying holdout must still be present.
 for h in "${HOLDOUTS[@]}"; do
   find "$TOKA" -name "$h" | grep -q . || fail "holdout '$h' not found under $TOKA — the reason-carrying list is stale"
@@ -228,6 +246,8 @@ while IFS='|' read -r scen ref clingo cfrag drools dfrag; do
 done < "$MANIFEST"
 
 [ "$cases_n" -gt 0 ] || fail "the parity manifest pins zero toka cases (an empty replay set is a failure)"
+[ "$cases_n" -ge "$EXPECTED_MIN_CASES" ] \
+  || fail "$cases_n replay case(s) pinned, but EXPECTED_MIN_CASES pins at least $EXPECTED_MIN_CASES — the manifest shrank (a deliberate removal lowers the floor in the same commit)"
 
 # every toka case dir must be covered by the manifest — no silent skip.
 while IFS= read -r cdir; do
@@ -244,9 +264,9 @@ fi
 
 echo ""
 echo "check-toka-parity: PASS"
-echo "  re-emission: $casus_n casus dump(s), $frag_n .rgs re-emitted byte-identical (holdouts: ${HOLDOUTS[*]}); TOKA suite $tests tests"
+echo "  re-emission: $casus_n casus dump(s), $frag_n .rgs re-emitted byte-identical, floor $EXPECTED_MIN_FRAGMENTS (holdouts: ${HOLDOUTS[*]}); TOKA suite $tests tests, floor $EXPECTED_MIN_TESTS"
 echo "  schema: $slice_n replay slice(s) metaschema-valid + byte-round-trip (gate-2 discipline, explicit mode)"
-echo "  differential replay: $cases_n toka cases through ref, clingo, Drools (slices under $TOKA/cases/), ZERO silent divergences"
+echo "  differential replay: $cases_n toka cases (floor $EXPECTED_MIN_CASES) through ref, clingo, Drools (slices under $TOKA/cases/), ZERO silent divergences"
 echo "    ref    : $ref_pass PASS / 0 diverge  (the 100% oracle carries every toka case)"
 echo "    clingo : $clingo_pass PASS / $clingo_fault loud translation-fault / 0 silent diverge"
 echo "    Drools : $drools_play PLAYED / $drools_excl loud per-form EXCLUDE / 0 FAIL-or-ERROR"

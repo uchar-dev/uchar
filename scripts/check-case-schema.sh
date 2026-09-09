@@ -10,6 +10,12 @@
 #      `expectedFault`), a rood case carries `expectedFault` — a red
 #      case can never hide inside the green corpus, or vice versa.
 # An empty case set is reported explicitly, never silently green.
+#
+# NO monotone floor here (maintainer decision 2026-09-09, the counting-floors
+# regime): this gate's count is the disjoint union of the two zone counts that
+# gates 5 and 8 each floor separately, and a floor on the SUM is the weaker
+# instrument — a golden case traded for a red one keeps the total equal while
+# both zone floors would see it.
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 

@@ -17,6 +17,12 @@
 #      exists, is a stale entry and also a failure.
 #   4. an empty case set is a failure, never silently green.
 #
+# NO monotone floor here (maintainer decision 2026-09-09, the counting-floors
+# regime): the refuted count is n_cases minus the survivors, and both terms are
+# already held — the case files by gate 5's floor, and every survivor by name in
+# the reason-carrying list below, which fails when stale. A floor would pin a
+# difference whose two operands are each pinned harder.
+#
 # Survivors, each with the standing it pins:
 #   - jutterswet-vondstwaardering/case5-input-blijft.json: a
 #     non-deciding defaults group leaves the input standing (ch. 7.1).

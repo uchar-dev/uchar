@@ -61,6 +61,19 @@ command -v java >/dev/null 2>&1 || fail "java not found (the Drools runtime need
 # and skipped tests fail the gate: a skipped witness is a green subset, and a green subset is not
 # green. CI already builds through mvn; locally mvn is a hard requirement of the gate, deliberately.
 command -v mvn >/dev/null 2>&1 || fail "mvn not found — gate 12 builds the jar and runs the backend's JUnit suite (a skipped suite is a silent greenlight)"
+
+# --- monotone floor (maintainer decision 2026-09-09) ---------------------------------------------
+# A lower bound, never an equality: it catches SHRINK — the suite that quietly runs half — while
+# growth needs no bump, so an ordinary corpus card touches no protected script. Raised deliberately,
+# at an occasion. Accepted weakness, recorded rather than hidden: a count that stays equal while its
+# content shifted passes; the name-carrying lists are what cover that direction. A deliberate
+# removal lowers the floor in the same commit.
+# ONE floor here, on the JUnit suite: nothing else counts it, so it is the one number of this gate
+# that could halve unseen. The gate's OTHER counts stay as they are — the played set keeps its
+# EQUALITY pin (EXPECTED_PLAYED below, the precedent this regime generalised from, deliberately not
+# reopened), and the replayed-case total is the played goldens' case files, i.e. a subset of the
+# file set gate 5 floors, held per name here by EXPECTED_CHANNEL.
+EXPECTED_MIN_TESTS=239   # 2026-09-10: measured 239 (backends/drools, the surefire run)
 suite_out=$(mvn -o -f backends/drools/pom.xml package 2>&1)
 suite_status=$?
 if [ $suite_status -ne 0 ]; then
@@ -71,6 +84,8 @@ summary=$(printf '%s\n' "$suite_out" | sed -n 's/^\[[A-Z]*\] Tests run: \([0-9][
 [ -n "$summary" ] || fail "the suite produced no 'Tests run: N' summary — it did not run"
 tests=${summary%% *}; skipped=${summary##* }
 [ "$tests" -gt 0 ] || fail "the suite ran zero tests (an empty test set is a failure, never silently green)"
+[ "$tests" -ge "$EXPECTED_MIN_TESTS" ] \
+  || fail "the suite ran $tests tests, but EXPECTED_MIN_TESTS pins at least $EXPECTED_MIN_TESTS — the suite shrank (a deliberately dropped test lowers the floor in the same commit)"
 [ "$skipped" -eq 0 ] || fail "the suite skipped $skipped test(s) — a skipped witness is a silent greenlight"
 
 JAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | head -1)
@@ -378,4 +393,4 @@ fi
 echo "  value-divergence $div_excl  (listed with reason — the exec-model differs from ref/clingo)"
 echo "  no-case $nocase  (goldens without a case file)"
 echo "  channel floor ${#EXPECTED_CHANNEL[@]} non-PLAYED goldens pinned by name; played matches the pinned $EXPECTED_PLAYED"
-echo "  JUnit $tests tests  (the backend's own suite, green with a non-zero count)"
+echo "  JUnit $tests tests, floor $EXPECTED_MIN_TESTS  (the backend's own suite, green with a non-zero count)"

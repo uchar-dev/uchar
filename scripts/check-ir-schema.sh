@@ -32,14 +32,24 @@ else
     exit 2
 fi
 
+# --- monotone floor (maintainer decision 2026-09-09) ---------------------------------------------
+# A lower bound, never an equality: it catches SHRINK — the corpus that quietly halves — while
+# growth needs no bump, so an ordinary corpus card touches no protected script. Raised deliberately,
+# at an occasion. Accepted weakness, recorded rather than hidden: a count that stays equal while its
+# content shifted passes; the name-carrying lists are what cover that direction. A deliberate
+# removal lowers the floor in the same commit. Corpus mode only — explicit mode checks a dump.
+# This is the document floor for BOTH artifact zones; gate 3 scans the same set and therefore
+# floors only its own, unshared quantity (the negatief cases).
+EXPECTED_MIN_DOCS=192   # 2026-09-10: measured 192 (corpus/golden + corpus/rood ir.json)
+
 if [ "$#" -gt 0 ]; then
     MODE='explicit'
-    set -- "$SCHEMA" "$MODE" "$@"
+    set -- "$SCHEMA" "$MODE" "$EXPECTED_MIN_DOCS" "$@"
 else
     MODE='corpus'
     files=$(find corpus/golden corpus/rood -name ir.json 2>/dev/null | sort)
     # shellcheck disable=SC2086
-    set -- "$SCHEMA" "$MODE" $files
+    set -- "$SCHEMA" "$MODE" "$EXPECTED_MIN_DOCS" $files
 fi
 
 # shellcheck disable=SC2086
@@ -55,7 +65,8 @@ except Exception as exc:  # pragma: no cover
 
 schema_path = sys.argv[1]
 mode = sys.argv[2]
-files = sys.argv[3:]
+floor = int(sys.argv[3])
+files = sys.argv[4:]
 
 with open(schema_path, encoding="utf-8") as fh:
     schema = json.load(fh)
@@ -187,6 +198,13 @@ if failed:
     sys.stderr.write("check-ir-schema: FAIL (%d of %d file(s) bad)\n" % (failed, n))
     sys.exit(1)
 
-print("check-ir-schema: PASS (schema valid; %d file(s) validate and round-trip)" % n)
+if mode == "corpus" and n < floor:
+    sys.stderr.write("FAIL: %d document(s) validated, but EXPECTED_MIN_DOCS pins at least %d — "
+                     "the corpus shrank (a deliberate removal lowers the floor in the same "
+                     "commit)\n" % (n, floor))
+    sys.exit(1)
+
+print("check-ir-schema: PASS (schema valid; %d file(s) validate and round-trip, floor %d)"
+      % (n, floor))
 sys.exit(0)
 PY

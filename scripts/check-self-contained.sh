@@ -12,6 +12,11 @@
 # its first real delivery. The normative documents spec/IR-SPEC.md and
 # spec/RUNTIME-SEMANTICS.md graduated into ZONES at the Phase-1 exit
 # (2026-08-19): they must read stand-alone.
+#
+# NO monotone floor here (maintainer decision 2026-09-09, the counting-floors
+# regime): this gate has no subject count to floor. It is a tripwire over every
+# tracked file, so its work is defined by the repository itself; there is no
+# suite whose size could quietly halve and no fixture set of its own.
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
