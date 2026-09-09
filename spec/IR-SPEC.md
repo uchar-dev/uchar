@@ -3518,7 +3518,7 @@ its own: removing the read half moves exactly the two producer-authored
 witnesses and nothing else; removing the fold half moves exactly the listed
 witness and that one co-firing line, and nothing else.
 
-*Two positions this clause does NOT reach, both measured rather than assumed
+*Three classes this clause does NOT reach, all measured rather than assumed
 (2026-09-09).* The rule TARGET: `set: true` on a rule's `doel` is
 verifier-CLEAN and stays so — the target is a write position, reached by the
 target clause and not by the expression walk. It is left open on evidence
@@ -3534,7 +3534,19 @@ reads is a field that can say anything"), and it belongs to whoever asks it.
 The fold argument whose RESOLVING PAIR is incomplete: there `attribuut` or
 `objecttype` is absent and WF-034 reports the missing name; the set clause is
 computed ahead of those arms precisely so the field's rule cannot hide behind
-the name's, and no document in the four zones carries the combination.
+the name's, and no document in the four zones carries the combination. And the
+EXEMPTION itself: this rule fences the POSITION, never the fold KIND, so a set
+source under `EERSTE`, `LAATSTE` or `AANTAL` passes the exemption and remains
+verifier-clean while the executors split on it — measured 2026-09-09 with the
+kind as the only variable: `SOM`, `TOTAAL`, `MINIMUM` and `MAXIMUM` are
+carried and agree, `EERSTE` and `LAATSTE` are answered by `ref` alone (the ASP
+backend refuses the expression kind, Drools skips the rule) from a LIVE
+producer route, and `AANTAL` is answered by `ref` and Drools alike while the
+ASP backend refuses. That is the PLAN §6 class one door further in and it is
+NOT a regression of this rule — the boundary is WF-093's pre-existing pair —
+so it is cut as its own card
+(`backlog/new/20260909-eerste-laatste-setvouw-kloof.md`) rather than settled
+here, where the decision was about the position.
 
 **The fold-source role name and the type-pair fallback (WF-034).** The
 v0 instance-fold source (the row-1 wart) writes a role name in its

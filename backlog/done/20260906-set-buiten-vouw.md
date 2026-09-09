@@ -171,11 +171,8 @@ die correspondeert, precies zoals bij WF-093.
 Frontend-vervolg: `backlog/new/20260909-frontend-alle-zonder-vouw.md`
 (spec-first; de emissie is hier bewijsmateriaal en blijft ongewijzigd).
 
-Dertien gates groen op `41b0bb2`: gate 2 188; gate 3 188 golden / **342**
-negatief (339 → 342); gate 4 448; gates 5/6 425; gate 7 389 + 36 survivors;
-gate 8 23; gate 9 201 checks / 12 catala-goldens; gate 10 173 tests / 38
-rgs-goldens; gate 11 45 re-emissies / 27 tests; gate 12 played 118 / vloer 47
-/ JUnit 223; gate 13 74 twists.
+Dertien gates groen op de eerste kop (`41b0bb2`, vóór de rebase); de
+definitieve tellingen staan hieronder bij de rebase-ronde.
 
 **Fixronde na lens 1 (2026-09-09), tekst-only in `spec/IR-SPEC.md`.** Lens 1
 reproduceerde de kaart volledig — beide producent-negatiefs byte-identiek uit
@@ -213,3 +210,37 @@ beide getallen mét hun predicaat, wat precies de fout is die punt 1 corrigeert.
 Sanity na de fixronde: gate 1 PASS, gate 3 PASS (188 golden schoon / 342
 negatief afgewezen voor hun gedeclareerde regel). Tekst-only, dus de overige
 elf gates zijn onberoerd en niet opnieuw gedraaid.
+
+**Rebase-ronde na lens 2 (2026-09-09).** Lens 2 oordeelde mergen en
+reproduceerde alles (md5's exact, mutant 4/2/2, 357/783 nageteld, dertien
+gates groen, nul collisie). Branch gerebased op `main` `f141ac8` (de
+eenheidskaart): schoon, geen conflict, geen handmatige hunk. Eén controle die
+er bij een rebase toe doet: de nieuwe basis raakt `spec/verifier/`, `ref/` en
+`backends/clingo/` NIET (lege diff), en de verifier-binary op de gerebasede
+kop heeft dezelfde md5 `5111932e2d1e51de144290ab16abab00` als vóór de rebase
+— dus elke md5 in dit kaartje en in de drie NOTE's blijft exact, en de
+rood-eerst-binary `8e07cdc5515ec6b29bd6de42e750de54` blijft ook op de nieuwe
+basis "de binary van vóór de clausule".
+
+Dertien gates groen op de gerebasede kop, VOLLEDIG gedraaid (het
+tweede-merge-regime), alle tellingen exact zoals verwacht en geen enkele
+afwijking: gate 2 188; gate 3 188 golden schoon / **342** negatief; gate 4
+448; gates 5/6 425; gate 7 389 + 36 survivors; gate 8 23; gate 9 201 checks /
+12 catala-goldens; gate 10 173 tests / 38 rgs-goldens; gate 11 45 re-emissies
+/ 27 tests; gate 12 played 118 / vloer 47 / **JUnit 237** (223 → 237 door de
+eenheidskaart in de basis, niet door deze kaart); gate 13 74 twists.
+
+**F1-kaartje uit lens 2's meting.** WF-096 fencet de POSITIE, niet de
+vouwSOORT, en die exemptie laat een producentroute door waarop de uitvoerders
+uiteenlopen. Nagemeten in deze sessie met de soort als enige variabele over
+twee families: SOM/TOTAAL/MINIMUM/MAXIMUM worden gedragen en stemmen overeen;
+`EERSTE` en `LAATSTE` worden door `ref` ALLEEN beantwoord (ASP-backend
+`TRANSLATION FAULT`, Drools transpiler-SKIP) uit een levende producentroute
+met `diagnostics: []`; `AANTAL` wordt door `ref` én Drools beantwoord (allebei
+2) terwijl alleen de ASP-backend weigert. Dat zijn TWEE ondervormen, niet één
+— en de verifier-schone AANTAL-getuige is handgebouwd (de mechanische
+soortwissel is om andere redenen ill-formed, WF-091 respectievelijk WF-037),
+dus voor AANTAL is géén producentroute gemeten. Geen regressie: de grens is
+WF-093's bestaande paar. Gecut als
+`backlog/new/20260909-eerste-laatste-setvouw-kloof.md`, met één zin in ch. 4.3
+die deze derde niet-bereikte klasse benoemt en doorverwijst.
