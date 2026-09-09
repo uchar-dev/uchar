@@ -3278,14 +3278,14 @@ fold.
   moves a sentence; gate 11 is untouched for the same reason it was
   untouched by the wave.
 
-  *(5) — `set: true` at an ordinary read OUTSIDE a fold, OPEN and named
-  (2026-09-06).* Flank (4) settled the unknown TYPE at a read position, in
-  both spellings; it did not settle the other field of the same node. An
-  `AttributeReference` with `set: true`, a REAL datatype and no enclosing
-  fold is verifier-CLEAN today — WF-093 does not reach it (it keys on the
-  sentinel, and this one carries a genuine type) and the seventh wave does
+  *(5) — `set: true` at an ordinary read OUTSIDE a fold: CLOSED by WF-096
+  below (maintainer decision 2026-09-09).* Flank (4) settled the unknown TYPE
+  at a read position, in both spellings; it did not settle the other field of
+  the same node. An `AttributeReference` with `set: true`, a REAL datatype and
+  no enclosing fold was verifier-CLEAN — WF-093 did not reach it (it keys on
+  the sentinel, and this one carries a genuine type) and the seventh wave did
   not either (that is about the type, not about `set`) — while **no executor
-  carries it**: `ref` faults `unsupported AttribuutRef shape (set/sentinel
+  carried it**: `ref` faults `unsupported AttribuutRef shape (set/sentinel
   outside a fold)`, the ASP backend refuses the expression kind, and the
   Drools backend drops the rule as a transpiler skip (`waarde buiten scope`).
   Three refusals, three kinds, one clean document — the PLAN §6 class in its
@@ -3296,13 +3296,17 @@ fold.
   producer route, not a hand form — from "… als het gewicht van **alle**
   vondsten van de Jutter" the RegelSpraak frontend emits exactly that node,
   with a real `Numeriek` type, a `navigatieBindingen` role binding and
-  `diagnostics: []`. The regression boundary is nil in the other direction
-  too: of the 546 documents in the four zones, **zero** carry an
-  `AttributeReference` with `set: true` outside a fold argument. Recorded
-  here as an open flank and cut as its own card (`backlog/new/`
-  `20260906-set-buiten-vouw.md`), one decision for both positions, because
-  the two questions are measured ORTHOGONAL: this shape's type is real, so
-  the unknown-type fence never had jurisdiction over it.
+  `diagnostics: []`; re-emitted from source on 2026-09-09 and committed as
+  WF-096's first two negatiefs verbatim, the second of them the same node
+  under a `Binair`, which makes the OPERAND position a live producer route
+  too. The two questions stayed ORTHOGONAL to the end: this shape's type is
+  real, so the unknown-type fence never had jurisdiction over it, and the two
+  rules now divide the position — WF-034 refuses the TYPE, WF-096 the FIELD.
+  What the flank recorded as "the regression boundary is nil in the other
+  direction too" was re-counted when the rule landed and is now one document
+  rather than zero, for a reason internal to the corpus: the seventh wave's
+  own `wf034-sentinel-geleste-setlezing` carries a set reading at a listed
+  operand, is already rejected for its sentinel, and gains one co-firing line.
 
 **The wart is a COUNT source (WF-093).** The row-1 wart — the source of a
 **single-argument** instance fold, spelled with the unknown sentinel on the
@@ -3409,6 +3413,115 @@ wart anywhere in the corpus; the form is hand-built by construction. Swept
 before and after over all 527 documents of the four zones, exactly the four
 new witnesses change verdict and not one existing report changes a
 sentence.
+
+**The set reading is the SOURCE's field (WF-096).** `set: true` on an
+`AttributeReference` says the read yields the members' values, one per
+member — a COLLECTION, where every other read yields one value. Exactly one
+node consumes a collection: the instance fold that OWNS the source. So the
+field has exactly one admissible position, and it is the one ch. 4.3 has
+described all along — the SINGLE argument of an aggregation, the set fold
+source ("het bewaartarief van alle vondsten van de Jutter": each member is
+asked for the attribute, and the fold collapses the values). At every other
+position the wire states a collection into a slot that takes one value, and
+the document says nothing about which value that is. **Maintainer decision,
+2026-09-09: the shape is ill-formed on the wire.**
+
+*One decision for two positions, and what the other answer would have cost.*
+The question was measured at both — the whole rule value and an operand of a
+composite node — and the two came back identical, the same three refusals
+word for word from the same three readers: `ref` faults `unsupported
+AttribuutRef shape (set/sentinel outside a fold)`, the ASP backend refuses
+the expression kind, the Drools backend drops the rule as a transpiler skip
+(`waarde buiten scope`). Three refusals, three kinds of refusal, one document
+the wire admitted — and no differential gate can catch it, because there is
+no answer to differ about: gates 5 and 6 never see a document without a
+golden case, and gate 12 counts the form among its auto-exclusions. Two
+positions that measure identically are one question, so splitting them would
+have produced two rules with one boundary and a defect answered by a
+different number for no reason a reader could state.
+
+The other answer — the set reading as a legitimate scalar read — would have
+had to say what the value IS, and every arm of that answer is new: a
+semantics clause in `RUNTIME-SEMANTICS.md` fixing the one-member case and
+then the zero and many cases (a fault? the empty value? a first pick?), an
+arm in `ref`, a translation in the ASP backend, a golden with hand-computed
+absolute pins to anchor it, and a Drools decision to carry or refuse with a
+reason. It would also have canonised a collapse the language does not
+otherwise perform: in v0 a set reaches a scalar slot through a FOLD and
+nowhere else, and the fold is what NAMES the collapse. The cheap half of that
+argument — "one member, so take it" — is exactly the half that has no answer
+at zero and at more than one, which is where a silent first pick would have
+entered the semantics.
+
+- **WF-096** An `AttributeReference` with `set: true` is admissible ONLY as
+  the SOURCE of a single-argument instance fold — the argument that IS the
+  folded set's source (ch. 4.3). At every other position the document is
+  ill-formed: as a whole rule value, as an operand of a composite node,
+  inside a condition, and as an operand of the listed value fold (§5.8.3,
+  whose operands are ordinary reads with no source). The admissible position
+  is the SAME pair WF-093 keys on — a single argument under a folding kind
+  (the six value folds plus `AANTAL`) — so three rules divide one boundary
+  with nothing between them and nothing doubled: at the source the sentinel
+  decides the KIND (WF-093) and `set` only describes; away from the source
+  the sentinel is WF-034's seventh wave and `set` is this rule's. No
+  semantics clause corresponds: `RUNTIME-SEMANTICS.md` says nothing about a
+  collection in a scalar slot in either direction, which is why this is a
+  well-formedness rule and not a semantics clause — the same reason WF-093
+  gives.
+
+*The producer route this cuts.* Not a hand form. From "Het maatgevend gewicht
+van een Jutter moet berekend worden als het gewicht van **alle** vondsten van
+de Jutter." the RegelSpraak frontend emits exactly this node — a real
+`Numeriek` type, a `navigatieBindingen` role binding, `set: true` — with
+`diagnostics: []`; and from "… als het gewicht van alle vondsten van de
+Jutter **plus** het drempelgewicht van de Jutter." it emits the same node as
+the LEFT OPERAND of a `Binair`, again with no diagnostic. Both were
+re-emitted from source while this rule was written and are committed verbatim
+as its first two negatiefs. So the rule cuts a live producer route and the
+frontend must move; what it should diagnose or emit instead is spec-first
+work on its own card (`backlog/new/20260909-frontend-alle-zonder-vouw.md`).
+The emission is deliberately unchanged here — it is this rule's evidence.
+`ref`'s fault, the ASP refusal and the Drools skip stay where they are, a
+second line of defence rather than dead code, on the house pattern: the form
+no longer reaches them through a well-formed document.
+
+*The regression boundary, counted 2026-09-09 over golden + rood + negatief +
+parity (560 documents).* Exactly **one** document predating this rule carries
+an `AttributeReference` with `set: true` outside a fold source: the negatief
+`wf034-sentinel-geleste-setlezing`, whose listed operand is already rejected
+for its sentinel. Its verdict does not move and its report gains one
+co-firing line, which the register admits ("incidental extra violations are
+allowed"). The position the rule LEAVES ALONE is populated and pinned: **16**
+legitimate set fold sources across **14** goldens, `jutterswet-vondsttelling`
+among them, replayed by gates 5, 6 and 12 — none of them moves. Swept before
+and after with the arm-exact mutant (the clause removed from both walk paths,
+verifier md5 `022b856c82718077d52c0e4cb1ac973d`, against the head's
+`5111932e2d1e51de144290ab16abab00`): **four** documents differ in total — the
+three new witnesses, each a verdict, and that one existing line. No golden,
+no red case and no parity document changes a sentence. Gate 3 does not run
+the verifier over the parity zone, so the parity half is measurement and
+never a pin. The clause is stated in TWO places — the generic expression walk
+and the fold-argument branch, which replaces it for a fold's arguments
+exactly as it replaces the type prologue WF-034's seventh wave had to repeat
+there — and the two halves were mutated SEPARATELY as well, each arm-exact on
+its own: removing the read half moves exactly the two producer-authored
+witnesses and nothing else; removing the fold half moves exactly the listed
+witness and that one co-firing line, and nothing else.
+
+*Two positions this clause does NOT reach, both measured rather than assumed
+(2026-09-09).* The rule TARGET: `set: true` on a rule's `doel` is
+verifier-CLEAN and stays so — the target is a write position, reached by the
+target clause and not by the expression walk. It is left open on evidence
+rather than fenced without a witness: zero of the 560 documents carry it, and
+on a hand-built twist all THREE executors IGNORE the field and write the
+scalar (12.00 from `ref`, from the ASP backend and from Drools alike). That
+is three-way agreement on an inert annotation, not the one-refuses-two-answer
+class this rule closes — it is WF-083 (c)'s question instead ("a field nobody
+reads is a field that can say anything"), and it belongs to whoever asks it.
+The fold argument whose RESOLVING PAIR is incomplete: there `attribuut` or
+`objecttype` is absent and WF-034 reports the missing name; the set clause is
+computed ahead of those arms precisely so the field's rule cannot hide behind
+the name's, and no document in the four zones carries the combination.
 
 **The fold-source role name and the type-pair fallback (WF-034).** The
 v0 instance-fold source (the row-1 wart) writes a role name in its
@@ -5382,6 +5495,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-093 | the row-1 wart is a COUNT source (ch. 4.3, maintainer decision 2026-09-06): a SINGLE-argument instance fold whose source carries the unknown sentinel on its own `type` MUST be of kind `AANTAL` — under the sentinel the source yields the linked instances, which only `AANTAL` reads, and `set` does not enter the rule (both wire spellings are refused). The rule keys on the SENTINEL, never on what the `attribuut` slot spells: a ROLE in the bare spelling, an element ATTRIBUTE in the set spelling, a CHARACTERISTIC on the frontend's own route — three measured guises of one wire shape. A fold of two or more arguments is the listed value fold (§5.8.3) and is out of scope, the same scope WF-083's family carries. Closes the flank where four kinds stayed verifier-clean while `ref` faulted `value aggregation over a bare role source`, the ASP backend refused the expression kind on those four witnesses (its set arms fence on `navigatieRol` and read `type` as a wildcard, so a sentinel source WITHOUT that field translates and answers 19.00/12.00 with Drools — measured 2026-09-06, a sub-class this rule covers on purpose, since `ref` refuses the whole sentinel class and a clean version of it would be a live divergence), and the Drools backend ANSWERED (19/12/7). Boundary counted 2026-09-06: of 58 wart fold sources over the four zones, the 54 predating the rule are all `AANTAL` and none moves | gate 3 | `jutterswet-vondsttelling` (the bare wart under `AANTAL` beside a real set-source `SOM` in one document — the pair this rule separates); `jutterswet-aanmeldertelling` (the self-denoting count) | `wf093-wratvouw-kale-som`, `wf093-wratvouw-kale-eerste`, `wf093-wratvouw-set-som`, `wf093-wratvouw-set-maximum` |
 | WF-094 | a keyed declaration's SELF-NAME is its map key, verbatim (ch. 2.1, maintainer decision 2026-09-06): the five map-shaped declaration tables — `objecttypen`, `parameters`, `eenheidstelsels`, `feittypen`, `dimensies` — repeat the declared name inside each value, and that `naam` MUST spell the key byte for byte, case included. Not a reference and not a matching site: it is the v0 denormalisation of the ONE name a v1 declaration carries on its node, so ch. 2.1's carriage rule governs it, as at the side-table keys of ch. 4.6 (p). Five arms, one per table, five readerships: `ref` reads no self-name at all, the verifier only through WF-057's text-safety walk (three of five, never against the key), the ASP backend only to name a unit system inside a fault message (no `expectedFault` pins it), and the bean-model executor at **105** sites for an object type, **32** for a parameter, **3** for a fact type, **1** for a dimension and **0** for a unit system (the enumeration order of the sites, which is not the order the five tables are listed in above), having loaded the self-name AS the declaration's name. Measured 2026-09-06, one self-name recapitalised at a time over every golden: 11 of 34 parameter positions leave verifier, `ref` and clingo passing while the bean-model executor answers WRONG VALUES (322.50 → 310.00) over seven documents; under a ci-different name 4 of 205 object-type positions move verdict as well (3 drop-outs from gate 12's played set — silent when this was measured, named by the expected-channel floor that landed the same day — and 1 crash). What it does NOT close is stated in the clause: `naam: null` (schema-valid, carded), and the `eenheden`/`aliassen` maps inside a unit system, where the key is not the value's own name. Cost: none — all 1919 entries the five tables held before this rule (1935 after its witnesses, 1937 as the corpus now stands) already spell their key byte-exactly, and over all 532 documents nothing but the five witnesses moves | gate 3 | every golden satisfies it; `jutterswet-penningdrempel` (the parameter position whose recapitalisation the third executor answers wrong), `anchor/jutterswet-maatschap`, `jutterswet-berging`, `jutterswet-vondsttelling`, `jutterswet-seizoenvondst` (the five sources the witnesses are broken from) | `wf094-zelfnaam-objecttype`, `wf094-zelfnaam-parameter`, `wf094-zelfnaam-eenheidstelsel`, `wf094-zelfnaam-feittype`, `wf094-zelfnaam-dimensie` (one per arm; each is a ONE-CHARACTER recapitalisation, so a ci relapse frees all five and a dropped arm frees exactly one) |
 | WF-095 | a datum-tijd literal's lexeme is one of the TWO spellings every reader admits, each matched whole (ch. 4.1): the canonical ISO `yyyy-mm-ddThh:mm:ss[.fff]` — fixed field widths, `T` never a space, the seconds field always written, no zone suffix and no offset, a fraction that is optional but exactly three digits, the date half calendar-valid — or the day-first source snippet `[dd. ]d-m-yyyy hh:mm:ss[.SSS]`, whose variable-width day and month are the RegelSpraak token's. The second spelling is admitted because the repository's own emitter still writes it: for a `DatumTijd` literal it emits the snippet into `waarde` AND `bron` (measured 2026-09-06), unlike a day-precision date, so WF-084's single-lexeme narrowing would make the producer non-conforming. Everything else is refused — precisely the forms every reader already refused, and the wire refused none of them: `rommel 2024-01-31 12:00:00Z x` was schema-valid and verifier-clean (measured 2026-09-06). It is the wire half of a three-reader fence closed on the same day: the shared interpreter/ASP case reader read `.1` as ONE millisecond and `.100000` as a hundred THOUSAND where the Drools case reader read a hundred and the literal reader refused, and gate 4's schema pattern was the ONLY reason that never showed. Boundary counted 2026-09-06 over the four zones (539 documents): the only WELL-FORMED `DatumTijd` literals anywhere are this rule's own golden's two, beside the five its negatiefs carry — the rule finds no document predating it, so nothing of the corpus moves. The 30 `dateTime` values on the CASE wire (25 public, 5 in the parity zone) were all already canonical, so the readers' own fences move none of them either. **Scope: the PRESENT lexeme.** `waarde: null` is the empty half of the same field and a different question (the (n)/(o) precedent of ch. 4.6), left open with its shape stated rather than for want of a witness: the schema types `waarde` as `["string", "null"]`, so a null LEXEME is schema-valid where a MISSING `waarde` is refused by gate 2, and this rule's arm reads the present lexeme only. Measured 2026-09-06 on a one-edit twist of this rule's own golden: `verifier: PASS`, while the executors split — `ref` and the ASP backend both fault BY NAME (`missing Literal.waarde`) and the bean-model executor DEREFERENCES it (`NullPointerException: Cannot invoke "java.lang.CharSequence.length()" because "this.text" is null` — the shared datum-tijd reader matches its patterns against the handed value with no null guard). Two named refusals and one dereference under a document the wire admits: the same three-reader shape this rule closes for the non-null half | gate 3 | `jutterswet-meldstip` (a canonical-lexeme literal ordered against a `DatumTijd` attribute at a sub-day threshold, replayed by gates 5, 6 and 12 — the first `DatumTijd` coverage of the differential) | `wf095-zone-suffix`, `wf095-spatie-scheider`, `wf095-fractiebreedte`, `wf095-ontbrekende-seconden`, `wf095-omringende-tekst` |
+| WF-096 | the set reading is the fold SOURCE's field (ch. 4.3, maintainer decision 2026-09-09): an `AttributeReference` with `set: true` is admissible ONLY as the source of a SINGLE-argument instance fold — the one node that consumes a collection is the fold that owns the source. At every other position the document is ill-formed: as a whole rule value, as an operand of a composite node, inside a condition, and as an operand of the listed value fold (§5.8.3), whose operands are ordinary reads with no source. The admissible position is the same pair WF-093 keys on (a single argument under a folding kind — the six value folds plus `AANTAL`), so three rules divide one boundary: at the source the sentinel decides the KIND and `set` only describes; away from it the sentinel is WF-034's and `set` is this rule's. Closes ch. 4.3 flank (5), and closes it as a WIRE question rather than an executor question: the shape was verifier-clean while NO executor carried it — `ref` faults `unsupported AttribuutRef shape (set/sentinel outside a fold)`, the ASP backend refuses the expression kind, Drools drops the rule as a transpiler skip — three refusals under one clean document, which no differential gate can catch because there is no answer to differ about. Measured identically at BOTH read positions, which is why it is one rule; and both are LIVE producer routes, re-emitted from source on 2026-09-09 with `diagnostics: []` and committed verbatim as the first two negatiefs, so the rule cuts a producer route and the frontend follow-up is spec-first on its own card. Boundary counted 2026-09-09 over the four zones (560 documents): exactly ONE document predating the rule carries the shape — the already-rejected `wf034-sentinel-geleste-setlezing`, whose verdict does not move and whose report gains one co-firing line — while the 16 LEGITIMATE set fold sources across 14 goldens are untouched. **Scope: the READ.** `set: true` on a rule TARGET is a write position, is not reached by this clause and stays verifier-clean, left open on evidence: zero documents carry it and all three executors ignore the field and write the scalar (measured), which is three-way agreement on an inert annotation rather than this rule's class | gate 3 | `jutterswet-vondsttelling` (its `SOM` over "alle vondsten" is a legitimate set fold source — the position the rule leaves alone, replayed by gates 5, 6 and 12) | `wf096-setlezing-regelwaarde`, `wf096-setlezing-operand`, `wf096-setlezing-geleste-operand` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

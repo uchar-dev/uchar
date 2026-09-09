@@ -4214,10 +4214,46 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                       ~what:(Printf.sprintf "the %s aggregation" kn)
                       ~decl:(typ_of_expr a) ~typ:f.typ)
                   f.argumenten))
-      @ List.concat
+      @ (let source_exempt =
+           (* The ch. 4.3 fold SOURCE position, and exactly it. Drawn on the
+              SAME pair WF-093 keys on — a SINGLE argument, and a kind that
+              folds (the six value folds of [value_fold_name] plus AANTAL) —
+              so the rules that fence this branch meet edge to edge:
+              single+AANTAL is the count source they leave alone,
+              single+value-fold is WF-093's alone, and everything else is an
+              ordinary read. Hoisted because TWO rules need the identical
+              boundary — WF-034's sentinel fence below and WF-096's set
+              fence — and a boundary written twice is a boundary that
+              drifts. *)
+           List.length f.argumenten = 1
+           && (value_fold_name f.kind <> None || f.kind = Aantal)
+         in
+         List.concat
           (List.mapi
              (fun i a ->
                let p = Printf.sprintf "%s/argumenten/%d" at i in
+               (* WF-096 (maintainer decision 2026-09-09): the set reading is
+                  the fold SOURCE's field, so it is ill-formed at every fold
+                  argument that is not a source. Computed ahead of the arms
+                  rather than inside one of them because it must not depend on
+                  which of them answers: two of the three refuse an argument
+                  whose resolving pair is incomplete and return, so a set
+                  reading there would go unreported only because the name
+                  check answered first. Scoped to
+                  `element_objecttype = Some` because that is exactly the
+                  branch's own scope: without one the argument falls to
+                  [walk_expr], whose own arm speaks the same sentence, and
+                  reporting here as well would say it twice. *)
+               (match a, f.element_objecttype with
+                | Attribuut_ref { set = true; _ }, Some _ when not source_exempt ->
+                    [ v "WF-096" p
+                        "set reading on a fold operand that is not a fold SOURCE: a set \
+                         reading is admissible on the single argument of an AGGREGATION alone \
+                         (ch. 4.3) — with two or more arguments the node is the listed value \
+                         fold, whose operands are ordinary reads, and at a non-aggregation \
+                         kind there is no source at all" ]
+                | _ -> [])
+               @
                match a, f.element_objecttype with
                | Attribuut_ref { attribuut; objecttype = None; _ }, Some _ ->
                    (* WF-034 (widened, maintainer decision 2026-09-04): K1's
@@ -4310,18 +4346,9 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                       by hand is answered by `ref` (all 5 pinned expectations)
                       and by Drools while the ASP backend refuses, which is the
                       same class read from the other side. *)
-                   (let source_exempt =
-                      (* The ch. 4.3 wart and exactly it. The exemption is
-                         drawn on the SAME pair WF-093 keys on — a SINGLE
-                         argument, and a kind that folds (the six value folds
-                         of [value_fold_name] plus AANTAL) — so the two rules
-                         meet edge to edge: single+AANTAL is the count source
-                         both leave alone, single+value-fold is WF-093's
-                         alone, and everything else is this arm's. *)
-                      List.length f.argumenten = 1
-                      && (value_fold_name f.kind <> None || f.kind = Aantal)
-                    in
-                    match typ with
+                   (* the exemption is [source_exempt], hoisted above the
+                      argument walk: the ch. 4.3 wart and exactly it. *)
+                   (match typ with
                     | Some (Datatype_onbekend _) when not source_exempt ->
                         [ v "WF-034" (p ^ "/type")
                             ("unknown-type sentinel on a fold operand that is not a fold SOURCE: \
@@ -4386,7 +4413,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                                   ~endpoint:(Some otn))
                       | _ -> [])
                | _ -> walk_expr ctx ~binders ~subject p a)
-             f.argumenten)
+             f.argumenten))
       (* WF-055: the gedurende clip — a filter on the temporal total is a
          timeline operation; its condition is an own temporal
          characteristic check or a per-segment comparison of an own
@@ -4573,6 +4600,34 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
       use_site_identity (sub "type")
         ~what:("attribute reference '" ^ Option.value attribuut ~default:"?" ^ "'")
         ~decl:(resolved_attr_datatype ctx e) ~typ
+      (* WF-096 (maintainer decision 2026-09-09): `set` says the read yields
+         the members' values, one per member — a COLLECTION. Every position
+         this walk reaches wants ONE value, so the field has nothing here to
+         be consumed by: the only node that consumes a collection is the fold
+         that owns the source, and a source is reached by the aggregation
+         branch above, never by this one. Placed beside the type prologue and
+         before the resolution below deliberately, and for the same reason the
+         fold branch computes its half ahead of its arms: the endpoint arm at
+         the bottom returns WF-034 alone on a reference whose object type is
+         absent, so a set reading there would go unreported only because the
+         name check answered first.
+
+         Stated as a field rule rather than as an arm of WF-053: the walk's
+         to-many clause does read `set`, and reads it as an ESCAPE
+         ([wf053_attribuut_ref]'s `if set then []`) — a set reading is
+         precisely how a to-many hop is admitted in a slot that would
+         otherwise demand to-one. That escape is what made the shape clean:
+         one field switched off the rule that would have caught the hop.
+         After this clause the escape is unreachable through a well-formed
+         document and stays as the second line of defence, never a dead
+         branch. *)
+      @ (if set then
+           [ v "WF-096" at
+               "set reading at an ordinary read position: a set reading names the members' \
+                values, one per member, and is admissible only as the SOURCE of a \
+                single-argument instance fold (ch. 4.3) — here nothing consumes the \
+                collection and the slot wants one value" ]
+         else [])
       @
       match otn with
       | Some otn -> (
