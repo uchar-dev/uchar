@@ -164,16 +164,17 @@ DRL-tekst:  ERROR Eenheidsconflict: onverenigbare eenheden bij een §4-herschali
 
 De ongemuteerde golden speelt onveranderd `PLAYED 2` in béide takken.
 
-### De ontwerpkeuze: falen, luid, op bouwtijd
+### De ontwerpkeuze: falen, luid
 
 Gekozen is **falen** (de CLI's `ERROR`, exit 3), niet weigeren en niet markeren.
 Drie redenen:
 
-1. **Het register van ref.** Ref verzoent op precies deze plekken — additieve
-   join, vergelijking, schrijfgrens, tijdlijnherschaling — via één
-   `restate_into`, en faalt als het paar niet converteert. Clingo faalt vóór
-   vertaling. Een derde been dat hetzelfde document met een getal beantwoordt,
-   maakt het differentiële vierkant onleesbaar.
+1. **Het register van ref.** Ref stuurt elke verzoening door één
+   `restate_into`, aangeroepen vanaf **zeven** plekken: de drie additieve
+   joins (`add`, `sub`, `sub_min`), een grens, de vergelijking, de schrijfgrens
+   en de tijdlijnherschaling. Hij faalt als het paar niet converteert. Clingo
+   faalt vóór vertaling. Een derde been dat hetzelfde document met een getal
+   beantwoordt, maakt het differentiële vierkant onleesbaar.
 2. **Weigeren zou het verkeerde kanaal zijn.** Gate 12's kanaal 1 betekent "een
    *vorm* die de v0-backend niet draagt". Een onverenigbare optelling is geen
    niet-gedragen vorm — de backend lowert `PLUS` over twee attribuutlezingen
@@ -188,14 +189,31 @@ De grens staat aan de *kop* van elke herschaalhelper, vóór diens eigen
 "geen omrekening nodig"-test, zodat de twee feiten gescheiden blijven:
 
 - exec-model: `valueFactor`, `exactHerschaalFactoren`, `restatement`,
-  `WaardeFn.herschaald` (die laatste op bouwtijd, zodat de melding uit de
-  KieBase-bouw komt en niet uit een vurende consequentie);
+  `WaardeFn.herschaald`;
 - DRL-tekst: `herschaalExact`, `omrekenFactor`, `vergelijkingsOperanden`,
   `herschaalConditie`.
 
-De overige herschaalplekken (`schaalTijd`, `schaalbaarNaarDoel`,
-`tijdreeksSomAlleSet`, `grensOnveilig`, `parityOnveilig`) weigeren al met een
-marker/skip; die zijn ongemoeid gelaten.
+**Waar de melding vandaan komt.** De meeste plekken vragen het op *bouwtijd*,
+waar het paar al bekend is, en dan faalt de KieBase-bouw. Twee doen dat niet:
+`valueFactor` en `exactHerschaalFactoren` worden óók vanuit een vurende
+consequentie bereikt, dus een document waarvan het enige onverenigbare paar op
+dat pad ligt faalt tijdens het vuren en de CLI meldt het verpakt in een
+`ConsequenceException`. Dat is geen zwakkere uitkomst en de keuze is niet
+bouwtijd-of-niets: voor de gate is een `ERROR` uit een consequentie precies zo
+hard als één uit de bouw — beide zijn exit 3, die gate 12 niet kan wegsorteren.
+Bouwtijd verdient de voorkeur omdat de melding dan onverpakt aankomt en de plek
+noemt. Elk hek draagt daarom zijn **eigen** plek-tekst, zodat het rapport zegt
+wélke vuurde in plaats van dat er drie één regel delen.
+
+De overige herschaalplekken zijn ongemoeid gelaten, met twee verschillende
+redenen: `schaalTijd`, `schaalbaarNaarDoel` en `tijdreeksSomAlleSet` weigeren
+zelf al met een marker/skip. `grensOnveilig` en `parityOnveilig` doen dat
+**niet** — ze vragen `vereistOmrekening`, en dat is voor een onverenigbaar paar
+`onwaar`, dus hun antwoord is "veilig" en de constructie vuurt gewoon. Wat ze
+onaangetast laat is dat de eigenlijke herschaling van diezelfde grens
+stroomafwaarts wél door een hek gaat (`herschaald` / `omrekenWaarde`), waar het
+paar alsnog omvalt. Ze zijn dus geen tweede weigerplek maar een predicaat dat
+het conflict niet ziet; het hek erachter ziet het wel.
 
 ### Waarom gate 13's 74 twists hier niet op stuk lopen
 
@@ -207,60 +225,169 @@ elke twist van die gate geweigerd. Dat is expliciet geasserteerd in de
 getuige-test (`een_liegende_annotatie_boven_een_kloppende_declaratie_verandert_niets`:
 zelfde positie, zelfde vreemde eenheid, byte-identieke DRL-tekst).
 
-### Echte vondst onderweg: de §7.1 afgetopte noemer
+### Echte vondst onderweg: de §7.1 tijdvouwing was een afleidingsfout
 
 Bij de eerste, strengere versie van de grens vielen **twee ongemuteerde
 corpusgoldens** om — een echte vondst, met meting:
 
 ```
-jutterswet-tempototaal [exec] ERROR Eenheidsconflict: 'EUR/mnd' (canoniek EUR)
-                                    herschaalt niet naar 'EUR' (canoniek EUR)
-jutterswet-tempovouw   [exec] idem (en beide ook in de DRL-tak)
+jutterswet-tempototaal [exec] ERROR Eenheidsconflict: onverenigbare eenheden bij een
+    §7.1 tijdlijn-TOTAAL naar het doel: 'EUR/mnd' (canoniek EUR) herschaalt niet naar
+    'EUR' (canoniek EUR) — er bestaat geen omrekenfactor
+jutterswet-tempovouw   [exec] ERROR ConsequenceException: … Eenheidsconflict: onverenigbare
+    eenheden bij een §4-waardeherschaling …
 ```
+(en beide ook in de DRL-tak).
 
-Oorzaak: bij een §7.1 TOTAAL over een `EUR/mnd`-attribuut naar een kaal
-`EUR`-doel verbruikt de sommatie over de maand-granulariteit de noemer al. Ref
-leidt de uitkomsteenheid daarom af als de *teller* en komt nooit bij een
-herschaling. Deze backend leidt haar af als operand 0's eenheid (§4.6
-*Eenheid1*, wat `EffectieveEenheid` implementeert) en houdt het tarief dus nog
-vast als de schrijfgrens erom vraagt — waarna de stille identiteit toevallig het
-juiste getal opleverde.
+Oorzaak, en het is een **afleidingsfout, geen uitzonderingsgeval**: bij een §7.1
+TOTAAL over een tijdlijn-gedeclareerd attribuut vouwt eerst de tijdlijn van dat
+attribuut zelf, op zijn eigen granulariteit, waarbij elk segment *waarde × het
+hele aantal roostereenheden van zijn spanne* bijdraagt (§4.20 Tabel 30). Een
+`EUR/mnd` wordt daar dus vermenigvuldigd met een **aantal maanden**, en wat
+overblijft is de teller: `EUR`. De noemer wordt vóór de vouwing werkelijk
+verbruikt. Ref leidt om die reden de teller af en komt nooit bij een
+herschaling; deze backend leidde operand 0's eenheid ongewijzigd af (de kale
+§4.6 *Eenheid1*-regel) en hield het tarief dus nog vast als de schrijfgrens
+erom vroeg — waarna de stille identiteit toevallig het juiste getal opleverde.
 
-De afleiding echt repareren vergt onderscheid tussen een **tijdlijn**-totaal en
-een **verzameling**-totaal, en die twee zijn in de expressie alleen niet uit
-elkaar te houden: dezelfde golden draagt een verzamelings-TOTAAL van hetzelfde
-`EUR/mnd`-attribuut naar een `EUR/mnd`-doel, en beide vormen komen voor met
-`set` waar én onwaar. Die context zit in de transpiler, niet in de
-expressiewandelaar. Daarom is de vorm **uitgezonderd en hardop opgeschreven**
-(`Eenheidsconflict.afgetopteNoemer`, met de meting en beide goldens bij naam) in
-plaats van beantwoord met een fout die het corpus tegenspreekt. Dit is een
-kandidaat voor een eigen kaart.
+De reparatie zit daarom in `EffectieveEenheid.naTijdvouwing`: een `TOTAAL`
+waarvan operand 0 een tijdlijn-gedeclareerd attribuut is, levert de **teller**.
+Beide takken profiteren zonder één aanroepplek te wijzigen, de DRL-tekst blijft
+byte-identiek (identiteit vóór én ná), en het paar bereikt het hek niet meer.
 
-De uitzondering is smal: ze eist converteerbare tellers, dus `EUR/mnd` tegen
-`kg` faalt gewoon. Geasserteerd in beide richtingen.
+De reikwijdte is **gemeten, niet geraden**: over het hele corpus zijn álle folds
+met een tijdlijn-gedeclareerde operand `TOTAAL` (19, waarvan 4 een tarief
+dragen — de twee goldens plus twee `corpus/negatief`-documenten die de verifier
+sowieso afwijst). Een `MINIMUM` of `EERSTE` over een tijdlijn kiest een waarde
+in plaats van te sommeren, verbruikt dus geen noemer en mag er geen laten
+vallen; dat is apart geasserteerd. Wat bewust **niet** gecontroleerd wordt: dat
+de noemer de eenheid van het rooster zélf is (`€/kg` op een MAAND-tijdlijn). Ref
+controleert dat wel; hier zou het een granulariteit→eenheid-afbeelding vergen
+waarvoor deze klasse geen eerlijke bron heeft, en die uit afkortingen raden is
+precies de naamtest waar dit werk al één keer door gebeten is. De vorm ontbreekt
+in het corpus (alle vier de tariefgevallen zijn `€/mnd` op MAAND) en het is een
+vraag over de *waarde* van de vouwing, die de verifier en ref bezitten, niet
+over een herschaling.
 
-### De drie benoemde uitzonderingen
+### De twee benoemde uitzonderingen
 
 1. een **eenheidloze zijde** — ch. 2.6 laat die de andere overnemen; ref ook;
 2. een **opaak product** (`€·kg`) — ch. 2.10 legt de behoudende no-op van deze
    backend expliciet vast ("no restatement site will scale it by an invented
-   factor"); erop falen zou die vastgelegde zin onwaar maken;
-3. de **§7.1 afgetopte noemer** hierboven.
+   factor"); erop falen zou die vastgelegde zin onwaar maken.
 
-### Getuige-test (additief, 9 tests)
+### Fixronde na lens 1 — twee restgaten gesloten
+
+Lens 1 reproduceerde alle claims en dertien gates, en vond twee gaten van
+precies de soort die deze kaart sluit. Beide zijn nu dicht; hieronder vóór/ná
+met echte output (mutanten uit `/tmp/lens-eenheid1-work/mut/`).
+
+**Gat 1 — de §7.1-uitzondering was plaats-blind.** De eerste versie hing de
+vrijstelling aan het *eenhedenpaar* (tarief tegen kale eenheid met
+converteerbare tellers) en niet aan de plek die haar motiveerde, dus ze gold op
+alle acht hekposities. Gemeten: `I` (declaratie-noemer op een additieve join),
+`L` (schrijfgrens), `M` (§5.1-vergelijking) en `K` (schone tariefvariant) gaven
+ref `EVALUATION FAULT` en clingo `TRANSLATION FAULT`, maar Drools `PLAYED 2` in
+beide takken. Ná de reparatie — de afleiding hierboven vervangt de uitzondering,
+dus het hek is weer streng — noemt elke mutant zijn eigen positie:
+
+```
+I  exec: ERROR Eenheidsconflict: … bij een additieve operandgrens:
+        'schouwdagen/mnd' (canoniek schouwdagen) herschaalt niet naar 'schouwdagen' …
+L  exec: ERROR Eenheidsconflict: … bij een §4 schrijfgrens naar het doel:
+        'schouwdagen' herschaalt niet naar 'schouwdagen/mnd' …
+M  exec: ERROR Eenheidsconflict: … bij een §5.1 vergelijking:
+        'schouwdagen' herschaalt niet naar 'schouwdagen/mnd' …
+```
+(alle drie ook in de DRL-tak, met hun eigen DRL-plekteksten).
+
+**Gat 2 — de opaak-productvrijstelling was naam-gebaseerd.** Ze testte op
+`afkorting().contains("·")` plus lege canoniek/factor. Een op de wire
+gedeclareerde eenheid die toevallig zo heet kreeg de vrijstelling zonder ooit
+door `Eenheid.product` gebouwd te zijn: mutant `H` (`appel·peer` als declaratie)
+en `J` (dezelfde eenheid, welgevormd geannoteerd) gaven ref FAULT en Drools
+`PLAYED 2`.
+
+De reparatie is **structureel**: de vrijstelling hangt nu aan de *herkomst*, via
+een identiteitstabel van elk opaak product dat deze afleiding zelf bouwde
+(`EffectieveEenheid.isAfgeleidProduct`). Waarde-gelijkheid helpt niet — de wire
+kan exact dezelfde vier velden dragen — dus alleen identiteit scheidt de twee.
+Een markerveld op `Eenheid` zelf was de kleinere codering, maar dat record ligt
+in de frontend-module en valt buiten het may-touch van deze kaart; de tabel is
+dezelfde uitspraak, gedaan vanaf de enige plek in de backend die zo'n product
+bouwt. Ze groeit met hooguit één verwijzing per MAAL-knoop met twee
+eenheid-dragende operanden per model — over het hele corpus nul. Ná:
+
+```
+H  exec: ERROR Eenheidsconflict: … bij een additieve operandgrens:
+        'appel·peer' (canoniek null) herschaalt niet naar 'schouwdagen' …
+J  exec: idem
+```
+Geasserteerd in de getuige-test met een **waarde-gelijk** paar: het afgeleide
+product blijft vrijgesteld, de wire-naamgenoot valt om.
+
+**Controle op de andere kant.** Mutant `O` (de gate-13-twist: alleen de
+annotatie liegt, de declaratie klopt) speelt onveranderd `PLAYED 2` in beide
+takken, en de ongemuteerde golden `PLAYED 2`. De twee §7.1-goldens spelen weer
+`PLAYED 1` in beide takken. Corpusbrede scan: **0** goldens raken het hek.
+
+### De vondst die de kaart sterker maakt: een verifier-SCHONE vorm
+
+Mutant `N` is het interessantste geval dat lens 1 bouwde: een `Begrensd` over
+twee `EUR`-attributen met een `Literal`-ondergrens geannoteerd in `kg`.
+
+| consument | uitkomst |
+|---|---|
+| **verifier** | **PASS** — geen WF-regel omheint deze positie |
+| ref | `EVALUATION FAULT: incompatible units: EUR vs kg` |
+| clingo | `TRANSLATION FAULT: non-identical units under a Begrensd bound are not translated` |
+| Drools **vóór** het hek | `PLAYED` |
+| Drools **ná** het hek | `ERROR Eenheidsconflict: … bij een §6.1.4 begrenzing-ondergrens: 'kg' … herschaalt niet naar 'EUR' …` |
+
+De grens is een `Literal`, en dat is juist één van de drie
+ch. 2.10-posities waar de annotatie de **bron** is — er valt dus niets te
+kruisen tegen een declaratie, en WF-091 kan hier niet redden. De andere drie
+posities zijn wél omheind (`WF-035` additieve join, `WF-036`
+vergelijkingsoperanden, `WF-023` toekenning); deze valt ertussen. Het hek sluit
+daarmee niet alleen documenten die de verifier al afwijst, maar ook één die hij
+doorlaat. Of de verifier die omheining hoort te krijgen is een spec-vraag op
+beschermde paden en staat als kandidaat-kaart klaar:
+`backlog/new/20260909-begrensd-grens-verifier-omheining.md`.
+
+### Getuige-test (additief, 11 tests)
 
 `EenheidsconflictWitnessTest` — de spiegel van
 `scripts/check-reftype-derivation.sh`, één richting verder: die verdraait een
 annotatie en houdt declaraties byte-identiek; deze verdraait een **declaratie**
-en houdt de annotaties byte-identiek. Ze bouwt de mutant uit de dan-geldende
-goldens (wandelt het corpus, vindt de additieve join tussen twee
-eenheid-dragende attribuutdeclaraties) en eist dat **beide** takken falen; een
-leeg probeersel is zelf de fout, per tak apart geteld.
+en houdt de annotaties byte-identiek. Ze bouwt de mutanten uit de dan-geldende
+goldens (wandelt het corpus, vindt de vorm) en eist dat **beide** takken falen;
+een verdraaiing die geen enkele golden vindt is zelf de fout, per tak apart
+geteld.
 
-Rood-eerst bewezen: met de grens tijdelijk uitgeschakeld gaat ze rood op
-3 van de 9 tests en noemt beide goldens in beide takken —
+**Vier declaratieverdraaiingen, één per hekpositie** — de laatste drie zijn de
+tarief-tegen-eigen-teller-vorm, en die zijn per positie gepind juist omdat het
+gat een plaats-blindheid was en een pin op één positie de andere twee niet zou
+hebben gezien:
+
+| verdraaiing | positie |
+|---|---|
+| additieve operand → vreemde eenheid | additieve operandgrens |
+| additieve operand → tarief met dezelfde teller | additieve operandgrens |
+| schrijfgrens → doel als tarief | §4 schrijfgrens |
+| §5.1 vergelijking → parameter als tarief | §5.1 vergelijking |
+
+Daarnaast: het afgeleide opake product blijft vrijgesteld terwijl zijn
+**waarde-gelijke** wire-naamgenoot omvalt; de §7.1-tijdvouwing levert de teller
+en een `MINIMUM` over dezelfde tijdlijn niet; en de omgekeerde richting
+(liegende annotatie boven kloppende declaratie) laat de DRL-tekst
+byte-identiek.
+
+Rood-eerst bewezen: met de grens tijdelijk uitgeschakeld ging de eerste versie
+rood op 3 van de 9 tests en noemde beide goldens in beide takken —
 `jutterswet-schouwrooster (exec-model)`, `(DRL-tekst)`, `synth-grensrand
-(exec-model)`, `(DRL-tekst)`: "het document lowerde zonder melding".
+(exec-model)`, `(DRL-tekst)`: "het document lowerde zonder melding". De drie
+tarief-verdraaiingen zijn rood-eerst aangetoond met de mutantmeting hierboven
+(vóór: `PLAYED 2`; ná: `ERROR`, elk met zijn eigen positie).
 
 ### Gates — alle dertien groen
 
@@ -285,10 +412,16 @@ en raakt alleen `backends/drools/**` en `backlog/`.
 
 ### Bewust niet gedaan
 
-- **De afleiding van een §7.1 TOTAAL over een tarief** — zie hierboven; vergt
-  transpilercontext en verdient een eigen kaart.
+- **De WF-omheining van de `Begrensd`-grens** (mutant N): een spec-vraag op
+  beschermde paden, weggeschreven als
+  `backlog/new/20260909-begrensd-grens-verifier-omheining.md`.
+- **De controle dat de noemer de roostereenheid is** bij de §7.1-tijdvouwing —
+  zie de reikwijdte-alinea hierboven; vergt een granulariteit→eenheid-afbeelding
+  zonder eerlijke bron, en de vorm ontbreekt in het corpus.
 - **De vier ch. 2.10-annotatielezingen** (WF-035 duur-operand, WF-038
   tijdsduur): dat zijn de benoemde posities waar de annotatie de bron *is*.
 - **De verifier, ref, clingo** en elke uitbreiding van gate 13 — out of scope
   per de kaart.
-- **De reeds weigerende herschaalplekken** (marker/skip): die zijn al luid.
+- **`grensOnveilig` / `parityOnveilig`**: predicaten die het conflict niet zien
+  (zie hierboven); het hek stroomafwaarts ziet het wel, dus ze zijn niet
+  aangeraakt.

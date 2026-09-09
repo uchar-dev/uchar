@@ -144,12 +144,49 @@ public final class EffectieveEenheid {
             return switch (f.kind()) {
                 case SOM, TOTAAL, MINIMUM, MAXIMUM, EERSTE, LAATSTE -> {
                     List<Expr> args = f.argumenten();
-                    yield args == null || args.isEmpty() ? annotatie : eenheid(args.get(0), omgeving, diepte + 1);
+                    if (args == null || args.isEmpty()) yield annotatie;
+                    Eenheid u = eenheid(args.get(0), omgeving, diepte + 1);
+                    yield f.kind() == Expr.FunctieKind.TOTAAL ? naTijdvouwing(args.get(0), u) : u;
                 }
                 default -> annotatie;
             };
         }
         return annotatie;
+    }
+
+    /**
+     * §7.1 / ch. 3.6 — the unit a TOTAAL leaves behind when its operand is a <b>timeline-declared</b> attribute.
+     *
+     * <p>Such a fold runs in two steps, and the first is what this rule is about: each element's own timeline
+     * collapses at that attribute's declared granularity, every segment contributing <i>value × the whole grid
+     * units of its span</i> (§4.20 Tabel 30). A RATE operand is therefore multiplied by a COUNT of its
+     * denominator's grid units, and what survives is the rate's NUMERATOR — "€/mnd getotaliseerd over maanden
+     * is €". Only then does a set fold (when there is one) sum those per-element scalars.
+     *
+     * <p>Deriving operand 0's unit unchanged here (the plain §4.6 <i>Eenheid1</i> rule) would answer €/mnd for a
+     * result that is €, and every restatement downstream would then be handed a pair with no conversion factor.
+     * Measured 2026-09-09: that is exactly what {@code jutterswet-tempototaal} ("bewaargeld") and
+     * {@code jutterswet-tempovouw} ("bewaarlast") produced, and both only replayed against their pinned values
+     * because the restatement silently degraded to the identity. {@code ref} derives the numerator and never
+     * reaches a restatement at all; this is that same derivation.
+     *
+     * <p><b>Scope, measured rather than assumed.</b> The collapse is restricted to TOTAAL: over the whole corpus
+     * the only folds whose operand is timeline-declared are TOTAAL (19, of which 4 carry a rate — the two goldens
+     * above plus two {@code corpus/negatief} documents the verifier rejects). A MINIMUM or an EERSTE over a
+     * timeline selects a value rather than summing one, so no denominator is consumed and none is dropped. If a
+     * summing fold of another kind ever arrives over a timeline-declared rate, it keeps the rate and the
+     * restatement fence names it — loudly, which is the outcome to want from an unmeasured case.
+     *
+     * <p>What this does NOT check, deliberately: that the denominator is the grid's own unit ("€/kg" on a MAAND
+     * timeline). {@code ref} does check it; doing so here would need a granularity→unit mapping this class has no
+     * honest source for, and guessing one from abbreviations is the kind of name test this backend has already
+     * been bitten by. The shape is absent from the corpus (all four rate cases are €/mnd on MAAND), and it is a
+     * question about the FOLD's value, which the verifier and ref own, not about a restatement.
+     */
+    private static Eenheid naTijdvouwing(Expr operand, Eenheid u) {
+        if (u == null || u.noemer() == null) return u;
+        if (!(operand instanceof Expr.AttribuutRef a) || a.objecttype() == null) return u;
+        return a.objecttype().attribuutGranulariteit.containsKey(a.attribuut()) ? u.teller() : u;
     }
 
     /**
@@ -203,7 +240,39 @@ public final class EffectieveEenheid {
         if (er == null) return el;
         if (el.noemer() != null && er.noemer() == null && er.convertibleNaar(el.noemer())) return el.teller();
         if (er.noemer() != null && el.noemer() == null && el.convertibleNaar(er.noemer())) return er.teller();
-        return Eenheid.product(el, er);
+        return opaakProduct(el, er);
+    }
+
+    /**
+     * The identity table of every opaque product THIS derivation built — the provenance mark
+     * {@link Eenheidsconflict} keys its exemption on.
+     *
+     * <p><b>Why identity and not the value.</b> {@link Eenheid#product} builds "€·kg" as a plain
+     * {@code Eenheid} with no canonical, no factor and no denominator, and the wire can declare a unit with
+     * exactly those four fields and a "·" in its name. The two are therefore value-indistinguishable, and a
+     * test on the ABBREVIATION hands a wire-declared "appel·peer" the exemption meant for a derived product —
+     * measured 2026-09-09: {@code ref} faults on such a document, this backend replayed it. Only WHERE the unit
+     * came from separates them, and provenance is identity.
+     *
+     * <p>A marker field on {@code Eenheid} itself would be the smaller encoding, but that record lives in the
+     * frontend module and is outside this card's reach; this table is the same statement made from the one place
+     * in the backend that builds such a product. It grows by at most one entry per MAAL node with two
+     * unit-bearing operands per model transpiled — zero over the whole corpus today — so its footprint is a
+     * handful of references in a transpiler process, not a leak worth a weak-reference scheme that the JDK has
+     * no identity-keyed form of anyway.
+     */
+    private static final java.util.Set<Eenheid> AFGELEIDE_PRODUCTEN =
+            java.util.Collections.synchronizedSet(java.util.Collections.newSetFromMap(new IdentityHashMap<>()));
+
+    private static Eenheid opaakProduct(Eenheid a, Eenheid b) {
+        Eenheid p = Eenheid.product(a, b);
+        AFGELEIDE_PRODUCTEN.add(p);
+        return p;
+    }
+
+    /** Whether {@code e} is an opaque product THIS derivation built (identity, never the name). */
+    static boolean isAfgeleidProduct(Eenheid e) {
+        return e != null && AFGELEIDE_PRODUCTEN.contains(e);
     }
 
     private Eenheid letEenheid(Expr drager, LetVorm lv, Map<String, Eenheid> omgeving, int diepte, Eenheid annotatie) {

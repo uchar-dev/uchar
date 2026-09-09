@@ -23,12 +23,22 @@ import io.github.yhavinga.regelspraak.model.Eenheid;
  * The same copy with a CONVERTIBLE sister declaration (factor 0,5) moved the outcome from 15 to 13,5 — proof
  * that the declaration WAS consulted, and that the silence was this collapsed guard alone, not a wire read.
  *
- * <p><b>The register is ref's.</b> ref reconciles at exactly these sites — an additive join, a comparison, the
- * write boundary, a timeline restatement — through one {@code restate_into}, and faults when the pair does not
- * convert. This backend now faults at the same sites, so the third leg of the differential square answers a
- * broken document the way the other two do instead of answering it with a number.
+ * <p><b>The register is ref's.</b> ref funnels every reconciliation through one {@code restate_into}, called
+ * from SEVEN sites: the three additive joins (add, sub, sub_min), a bound, the comparison, the write boundary,
+ * and the timeline restatement. It faults when the pair does not convert. This backend now faults across the
+ * same span, so the third leg of the differential square answers a broken document the way the other two do
+ * instead of answering it with a number.
  *
- * <p><b>The three exemptions</b>, each because there is genuinely nothing to reconcile:
+ * <p><b>Where the fault is raised.</b> Most sites ask at BUILD time, where the pair is already known, and the
+ * KieBase assembly is what fails. Two do not: {@code valueFactor} and {@code exactHerschaalFactoren} are also
+ * reached from inside a fired consequence, so a document whose only irreconcilable pair sits on that path
+ * faults during fire and the CLI reports it wrapped in a {@code ConsequenceException}. That is not a weaker
+ * outcome and the choice is not build-time-or-nothing: for the gate an ERROR out of a consequence is exactly as
+ * hard as one out of the build — both are the CLI's exit 3, which gate 12 refuses to classify away. Build time
+ * is preferred only because the message arrives unwrapped and names the site. Each fence therefore carries its
+ * OWN {@code plek} text, so the report says which of them fired rather than three of them sharing one line.
+ *
+ * <p><b>The two exemptions</b>, each because there is genuinely nothing to reconcile:
  * <ul>
  *   <li>a UNITLESS side ({@code null}): ch. 2.6 lets it adopt the other unit, value unchanged — ref does the
  *       same, and no factor is due;</li>
@@ -36,13 +46,18 @@ import io.github.yhavinga.regelspraak.model.Eenheid;
  *       canonical by construction, so no factor is invented and the value simply stands in the unit it was
  *       computed in. RUNTIME-SEMANTICS ch. 2.10 records that stance for this backend explicitly — a silent
  *       divergence on a shape the corpus does not carry and no frontend can emit — and faulting on it here
- *       would make that recorded sentence false. A bare wire unit whose abbreviation happens to contain "·"
- *       and which declares neither canonical nor factor falls in the same class and is treated the same way:
- *       conservative, never rescaled.</li>
- *   <li>the §7.1 CANCELLATION shape — a rate against its own numerator unit, "€/mnd" against "€" — where a
- *       total over the denominator's granularity has already consumed that denominator. See
- *       {@link #afgetopteNoemer}, which carries the measurement and names the two corpus goldens.</li>
+ *       would make that recorded sentence false. The exemption keys on PROVENANCE (identity), not on the
+ *       abbreviation: a wire-declared unit that merely LOOKS like a product ("appel·peer", no canonical, no
+ *       factor) is not one, {@code ref} faults on it, and so does this fence.</li>
  * </ul>
+ *
+ * <p><b>What is NOT exempt, and used to be.</b> A rate against a plain unit with convertible numerators
+ * ("€/mnd" against "€") was exempted here until 2026-09-09, to keep two §7.1 goldens green. That exemption was
+ * place-blind: it applied at all eight fence positions, so an additive join, a write boundary and a comparison
+ * between a rate and its own numerator all stayed silent while {@code ref} and clingo faulted. The repair is a
+ * derivation, not an exemption — {@link EffectieveEenheid#naTijdvouwing} makes a TOTAAL over a
+ * timeline-declared operand yield the numerator, which is what the fold actually produces — so the pair never
+ * reaches this fence on those goldens, and everywhere else it faults.
  * A unit that declares a canonical but no factor is NOT exempt: {@link Eenheid#omrekenfactorNaar} already
  * faults there (the WF-092 wire form), and it must keep doing so.
  */
@@ -72,41 +87,13 @@ public final class Eenheidsconflict extends RuntimeException {
         if (van == null || naar == null) return;              // a unitless side adopts the other (ch. 2.6)
         if (van.convertibleNaar(naar)) return;                // a factor exists (or the two are the same unit)
         if (opaakProduct(van) || opaakProduct(naar)) return;   // ch. 2.10's recorded conservative no-op
-        if (afgetopteNoemer(van, naar)) return;                // the §7.1 cancellation, see below
         throw new Eenheidsconflict(van, naar, plek);
     }
 
-    /**
-     * The §7.1 CANCELLATION shape: exactly one side is a rate, the other is plain, and their NUMERATORS
-     * inter-convert — "€/mnd" against "€". A total over the denominator's granularity consumes that
-     * denominator, so the restatement that follows lands on the identity BY DESIGN and is not a mismatch.
-     *
-     * <p>This is an exemption rather than a derivation because of WHERE the two consumers disagree. {@code ref}
-     * derives the fold's result unit as the numerator and never reaches a restatement at all; this backend
-     * derives it as operand 0's unit (§4.6 <i>Eenheid1</i>, what {@link EffectieveEenheid} implements) and so
-     * still holds the rate when the write boundary asks. Measured 2026-09-09, the two corpus goldens that
-     * exercise it: {@code jutterswet-tempototaal} ("bewaargeld", a TOTAAL of a €/mnd attribute into a plain €
-     * doel) and {@code jutterswet-tempovouw} ("bewaarlast"). Both replay against their pinned values today
-     * precisely because the restatement degrades to the identity.
-     *
-     * <p>Narrowing the derivation instead — the honest repair — needs to tell a TIMELINE total from a SET total,
-     * and the two are indistinguishable in the expression alone: the same golden carries a set TOTAAL of the
-     * same €/mnd attribute into a €/mnd doel, and both shapes occur with {@code set} true and false. That
-     * context lives in the transpiler, not in the expression walker, so it is a separate card. Until then the
-     * shape is exempt and said out loud here rather than answered with a fault the corpus contradicts.
-     *
-     * <p>The exemption is narrow: it requires convertible numerators, so "€/mnd" against "kg" still faults.
-     */
-    private static boolean afgetopteNoemer(Eenheid van, Eenheid naar) {
-        return (van.noemer() == null) != (naar.noemer() == null)
-                && van.teller().convertibleNaar(naar.teller());
-    }
-
-    /** An opaque product as {@link Eenheid#product} builds it: no canonical, no factor, no denominator, and an
-     *  abbreviation that is the "·"-join of its factors. */
+    /** An opaque product THIS backend's derivation built — provenance, by identity, never the abbreviation.
+     *  See {@link EffectieveEenheid#isAfgeleidProduct} for why the name cannot carry this. */
     private static boolean opaakProduct(Eenheid e) {
-        return e.canoniek() == null && e.factorNaarCanoniek() == null && e.noemer() == null
-                && e.afkorting() != null && e.afkorting().contains("·");
+        return EffectieveEenheid.isAfgeleidProduct(e);
     }
 
     public Eenheid van() { return van; }

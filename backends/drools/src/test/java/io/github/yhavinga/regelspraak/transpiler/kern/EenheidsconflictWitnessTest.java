@@ -5,8 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.github.yhavinga.regelspraak.engine.BeanCompiler;
+import io.github.yhavinga.regelspraak.ir.Bron;
+import io.github.yhavinga.regelspraak.ir.Expr;
 import io.github.yhavinga.regelspraak.loader.IrLoader;
+import io.github.yhavinga.regelspraak.model.Datatype;
 import io.github.yhavinga.regelspraak.model.Eenheid;
+import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
+import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
 import io.github.yhavinga.regelspraak.schema.FactModelGenerator;
 import io.github.yhavinga.regelspraak.transpiler.DrlTranspiler;
 import io.github.yhavinga.regelspraak.transpiler.model.ExecModelTranspiler;
@@ -18,10 +23,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -59,6 +66,10 @@ class EenheidsconflictWitnessTest {
             {"node":"Eenheid","afkorting":"uchar-vreemd","stelsel":null,
              "canoniek":"uchar-vreemd-canoniek","factorNaarCanoniek":3600,"noemer":null}""";
 
+    /** A plain denominator, to turn a declared unit into a RATE with the very same numerator. */
+    private static final String NOEMER = """
+            {"node":"Eenheid","afkorting":"mnd","stelsel":null,"canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}""";
+
     // ---------------- the guard itself: what it refuses and what it lets through ----------------
 
     private static final Eenheid KG = new Eenheid("kg", "Gewicht", "kg", BigDecimal.ONE);
@@ -93,63 +104,152 @@ class EenheidsconflictWitnessTest {
         Eenheidsconflict.eisHerschaalbaar(null, null, "witness");
     }
 
-    @Test void een_opaak_product_blijft_de_behoudende_no_op() {
+    @Test void een_AFGELEID_opaak_product_blijft_de_behoudende_no_op() {
         // RUNTIME-SEMANTICS ch. 2.10 records this backend's stance on "€·kg": no canonical, so no factor is
         // invented and the value stands in the unit it was computed in. Faulting here would make that recorded
-        // sentence false, so the exemption is deliberate and named.
-        Eenheid opaak = Eenheid.product(EUR, KG);
-        assertEquals(null, opaak.canoniek(), "een opaak product draagt per constructie geen canoniek");
+        // sentence false. The unit must come from the DERIVATION — that is where the provenance mark is set.
+        Eenheid opaak = afgeleidProduct();
+        assertNull(opaak.canoniek(), "een opaak product draagt per constructie geen canoniek");
         Eenheidsconflict.eisHerschaalbaar(opaak, EUR, "witness");
         Eenheidsconflict.eisHerschaalbaar(EUR, opaak, "witness");
     }
 
-    @Test void een_tarief_tegen_zijn_eigen_teller_is_de_afgetopte_noemer() {
-        // The §7.1 cancellation: a €/mnd quantity totalled over months lands in €, so the restatement that
-        // follows is the identity by design. Measured on jutterswet-tempototaal and jutterswet-tempovouw,
-        // which both replay against their pinned values only because of it. Symmetric in both directions.
-        Eenheid tarief = Eenheid.samengesteld(EUR, JR);
-        Eenheidsconflict.eisHerschaalbaar(tarief, EUR, "witness");
-        Eenheidsconflict.eisHerschaalbaar(EUR, tarief, "witness");
+    @Test void een_op_de_wire_gedeclareerd_naamgenoot_krijgt_de_vrijstelling_NIET() {
+        // The hole a name test leaves: a wire-declared unit can carry exactly the four fields Eenheid.product
+        // produces — no canonical, no factor, no denominator, a "·" in the abbreviation — without ever having
+        // been derived. ref faults on such a document; so must this. Value-equal to the derived one, and still
+        // treated differently, which is the whole point: provenance is not a property of the value.
+        Eenheid afgeleid = afgeleidProduct();
+        Eenheid naamgenoot = new Eenheid(afgeleid.afkorting(), afgeleid.stelsel(), null, null, null);
+        assertEquals(afgeleid, naamgenoot, "de twee zijn waarde-gelijk — alleen hun herkomst verschilt");
+        assertThrows(Eenheidsconflict.class, () -> Eenheidsconflict.eisHerschaalbaar(naamgenoot, EUR, "witness"));
+        assertThrows(Eenheidsconflict.class, () -> Eenheidsconflict.eisHerschaalbaar(EUR, naamgenoot, "witness"));
     }
 
-    @Test void een_tarief_tegen_een_vreemde_kale_eenheid_blijft_een_fout() {
-        // The exemption above is narrow: it needs CONVERTIBLE numerators. €/jr against kg shares nothing, so
-        // the fence must still fire — otherwise every composite would buy itself a free pass.
+    @Test void een_tarief_tegen_zijn_eigen_teller_is_een_fout() {
+        // €/jr against € was EXEMPT until 2026-09-09, to keep two §7.1 goldens green — and that exemption was
+        // place-blind, so an additive join, a write boundary and a comparison between a rate and its numerator
+        // all stayed silent while ref and clingo faulted. The repair is the derivation (see the §7.1 test
+        // below), not an exemption, so this pair faults again everywhere. Both directions.
         Eenheid tarief = Eenheid.samengesteld(EUR, JR);
+        assertThrows(Eenheidsconflict.class, () -> Eenheidsconflict.eisHerschaalbaar(tarief, EUR, "witness"));
+        assertThrows(Eenheidsconflict.class, () -> Eenheidsconflict.eisHerschaalbaar(EUR, tarief, "witness"));
         assertThrows(Eenheidsconflict.class, () -> Eenheidsconflict.eisHerschaalbaar(tarief, KG, "witness"));
-        assertThrows(Eenheidsconflict.class, () -> Eenheidsconflict.eisHerschaalbaar(KG, tarief, "witness"));
+    }
+
+    // ---------------- the §7.1 derivation that replaces the exemption ----------------
+
+    @Test void een_TOTAAL_over_een_tijdlijn_tarief_levert_de_teller() {
+        // §7.1 / ch. 3.6: the operand's own timeline collapses first, each segment contributing value x whole
+        // grid units of its span, so a €/mnd rate is multiplied by a COUNT of months and what survives is €.
+        // Without this the fold would answer €/mnd for a result that is €, and every restatement downstream
+        // would be handed a pair with no factor — which is exactly what the two corpus goldens did.
+        Eenheid tarief = Eenheid.samengesteld(EUR, JR);
+        Objecttype metTijdlijn = new Objecttype("Vondst");
+        metTijdlijn.attributen.put("tarief", num(tarief));
+        metTijdlijn.attribuutGranulariteit.put("tarief", RegelSpraakModel.Granulariteit.MAAND);
+        assertEquals(EUR, kaal().eenheidVan(totaalOver(metTijdlijn)), "de noemer is door de vouwing verbruikt");
+
+        // and NOT when the operand carries no timeline: a plain set TOTAAL of rates is still a rate. The same
+        // corpus golden carries both readings side by side, which is why the rule keys on the declaration.
+        Objecttype zonderTijdlijn = new Objecttype("Vondst");
+        zonderTijdlijn.attributen.put("tarief", num(tarief));
+        assertEquals(tarief, kaal().eenheidVan(totaalOver(zonderTijdlijn)), "zonder tijdlijn blijft het een tarief");
+    }
+
+    @Test void een_MINIMUM_over_een_tijdlijn_tarief_houdt_het_tarief() {
+        // A selecting fold sums nothing, so no denominator is consumed and none may be dropped. Measured over
+        // the corpus: every fold whose operand is timeline-declared is a TOTAAL, so this is the boundary of a
+        // rule that was scoped by measurement rather than by guess.
+        Eenheid tarief = Eenheid.samengesteld(EUR, JR);
+        Objecttype ot = new Objecttype("Vondst");
+        ot.attributen.put("tarief", num(tarief));
+        ot.attribuutGranulariteit.put("tarief", RegelSpraakModel.Granulariteit.MAAND);
+        Expr.AttribuutRef ref = new Expr.AttribuutRef("tarief", ot, "alle vondsten", null, num(tarief), bron());
+        Expr.Functie f = new Expr.Functie(Expr.FunctieKind.MINIMUM, List.of(ref), ot, null, null, num(tarief), bron());
+        assertEquals(tarief, kaal().eenheidVan(f));
+    }
+
+    // ---------------- authored-model helpers ----------------
+
+    private static Datatype num(Eenheid e) {
+        return new Datatype.Numeriek(false, 2, Datatype.Teken.ONBEPAALD, e);
+    }
+
+    private static Bron bron() { return Bron.synthetisch("witness"); }
+
+    private static EffectieveEenheid kaal() { return new EffectieveEenheid(Map.of()); }
+
+    /** "het totaal van het tarief van alle vondsten" over {@code ot} — the §7.1 fold shape. */
+    private static Expr.Functie totaalOver(Objecttype ot) {
+        Datatype t = ot.attributen.get("tarief");
+        Expr.AttribuutRef ref = new Expr.AttribuutRef("tarief", ot, "alle vondsten", null, t, bron());
+        return new Expr.Functie(Expr.FunctieKind.TOTAAL, List.of(ref), ot, null, null, t, bron());
+    }
+
+    /** An opaque product carrying this backend's own provenance mark: obtained through the DERIVATION (a §4.4
+     *  MAAL of two unit-bearing reads), never by calling the constructor, because the mark is set where the
+     *  product is built and a value-equal copy does not carry it. */
+    private static Eenheid afgeleidProduct() {
+        Objecttype ot = new Objecttype("Vracht");
+        ot.attributen.put("prijs", num(EUR));
+        ot.attributen.put("gewicht", num(KG));
+        Expr.AttribuutRef prijs = new Expr.AttribuutRef("prijs", ot, "een vracht", null, num(EUR), bron());
+        Expr.AttribuutRef gewicht = new Expr.AttribuutRef("gewicht", ot, "een vracht", null, num(KG), bron());
+        Eenheid uit = kaal().eenheidVan(new Expr.Binair(Expr.BinOp.MAAL, prijs, gewicht, num(EUR), bron()));
+        assertEquals(Eenheid.product(EUR, KG), uit, "de afleiding levert het §4.4 opake product");
+        return uit;
     }
 
     // ---------------- the mutant, rebuilt from whatever goldens carry its shape ----------------
 
     /**
-     * For every golden whose rule adds two unit-bearing attribute reads: move ONE DECLARATION to a foreign unit,
-     * leave every annotation untouched, and demand that BOTH transpiler branches fault instead of lowering.
+     * FOUR declaration twists, one per restatement position the fence guards, each applied to every golden that
+     * carries the shape: leave every annotation untouched, move ONE DECLARATION, and demand that BOTH transpiler
+     * branches fault instead of lowering. Each twist must have been probed at least once in each branch.
+     *
+     * <p>The last three are the {@code rate against its own numerator} shape, which was EXEMPT here until
+     * 2026-09-09 at all eight fence positions at once. They are pinned per position because the hole was a
+     * place-blindness, and a pin at one position would not have seen it at the other two.
      */
     @Test void een_tegensprekende_declaratie_wordt_door_geen_van_beide_takken_stil_doorgespeeld() throws Exception {
-        int execGezien = 0, drlGezien = 0;
-        List<String> stil = new ArrayList<>();
-        for (Path ir : goldens()) {
-            JsonNode eerlijk = JSON.readTree(Files.readString(ir));
-            JsonNode liegend = metVerdraaideDeclaratie(eerlijk);
-            if (liegend == null) continue;                       // this golden does not carry the shape
+        Map<String, Verdraaiing> twists = new java.util.LinkedHashMap<>();
+        twists.put("additieve operand -> vreemde eenheid", EenheidsconflictWitnessTest::metVerdraaideDeclaratie);
+        twists.put("additieve operand -> tarief met dezelfde teller", EenheidsconflictWitnessTest::metTariefOpAddend);
+        twists.put("schrijfgrens -> doel als tarief", EenheidsconflictWitnessTest::metTariefOpDoel);
+        twists.put("§5.1 vergelijking -> parameter als tarief", EenheidsconflictWitnessTest::metTariefOpParameter);
 
-            if (lowertExec(eerlijk)) {
-                execGezien++;
-                if (!(vangExec(liegend) instanceof Eenheidsconflict))
-                    stil.add(naam(ir) + " (exec-model): " + omschrijf(vangExec(liegend)));
+        List<String> stil = new ArrayList<>();
+        List<String> ongeprobeerd = new ArrayList<>();
+        for (Map.Entry<String, Verdraaiing> t : twists.entrySet()) {
+            int execGezien = 0, drlGezien = 0;
+            for (Path ir : goldens()) {
+                JsonNode eerlijk = JSON.readTree(Files.readString(ir));
+                JsonNode liegend = t.getValue().pas(eerlijk);
+                if (liegend == null) continue;                   // this golden does not carry the shape
+                if (lowertExec(eerlijk)) {
+                    execGezien++;
+                    if (!(vangExec(liegend) instanceof Eenheidsconflict))
+                        stil.add(t.getKey() + " | " + naam(ir) + " (exec-model): " + omschrijf(vangExec(liegend)));
+                }
+                if (lowertDrl(eerlijk)) {
+                    drlGezien++;
+                    if (!(vangDrl(liegend) instanceof Eenheidsconflict))
+                        stil.add(t.getKey() + " | " + naam(ir) + " (DRL-tekst): " + omschrijf(vangDrl(liegend)));
+                }
             }
-            if (lowertDrl(eerlijk)) {
-                drlGezien++;
-                if (!(vangDrl(liegend) instanceof Eenheidsconflict))
-                    stil.add(naam(ir) + " (DRL-tekst): " + omschrijf(vangDrl(liegend)));
-            }
+            // never silently green: a twist no golden carries would make its whole row vacuous, so an unprobed
+            // twist is itself the failure — per branch, because the two lower different subsets of the corpus.
+            if (execGezien == 0) ongeprobeerd.add(t.getKey() + " (exec-model)");
+            if (drlGezien == 0) ongeprobeerd.add(t.getKey() + " (DRL-tekst)");
         }
-        // never silently green: a corpus without the shape would make every assertion above vacuous, so the
-        // empty probe is itself the failure — and each branch must have been probed on its own.
-        assertTrue(execGezien > 0, "geen enkele golden bood de exec-model-tak een additieve eenheidsjoin");
-        assertTrue(drlGezien > 0, "geen enkele golden bood de DRL-tekst-tak een additieve eenheidsjoin");
+        assertEquals(List.of(), ongeprobeerd, "een verdraaiing vond geen enkele golden om op te staan");
         assertEquals(List.of(), stil, "een verdraaide declaratie werd stil gelowered in plaats van gemeld");
+    }
+
+    /** One declaration twist: returns the mutated document, or null when the golden does not carry the shape. */
+    private interface Verdraaiing {
+        JsonNode pas(JsonNode ir) throws Exception;
     }
 
     /**
@@ -187,6 +287,76 @@ class EenheidsconflictWitnessTest {
         return kopie;
     }
 
+    /** A copy whose right addend's DECLARED unit gains a denominator — "schouwdagen" becomes "schouwdagen/mnd",
+     *  the rate-against-its-own-numerator shape, at the ADDITIVE operand boundary. */
+    private static JsonNode metTariefOpAddend(JsonNode ir) throws Exception {
+        JsonNode kopie = ir.deepCopy();
+        ObjectNode ref = additieveRechterRef(kopie);
+        if (ref == null) return null;
+        return metNoemer(kopie, declaratieVan(kopie, ref));
+    }
+
+    /** A copy whose additive rule's DOEL declaration gains a denominator — the same shape at the WRITE boundary. */
+    private static JsonNode metTariefOpDoel(JsonNode ir) throws Exception {
+        JsonNode kopie = ir.deepCopy();
+        JsonNode regel = additieveRegel(kopie);
+        if (regel == null) return null;
+        return metNoemer(kopie, declaratieVan(kopie, regel.get("doel")));
+    }
+
+    /** A copy in which the declaration of a parameter READ IN A COMPARISON against a unit-bearing attribute
+     *  gains a denominator — the same rate/plain shape at the §5.1 restatement position. The parameter must be
+     *  the one the comparison actually reads; twisting an unrelated declaration probes nothing. */
+    private static JsonNode metTariefOpParameter(JsonNode ir) throws Exception {
+        JsonNode kopie = ir.deepCopy();
+        String naam = vergelekenParameter(kopie);
+        if (naam == null) return null;
+        JsonNode p = kopie.path("parameters").get(naam);
+        return p == null ? null : metNoemer(kopie, (ObjectNode) p.get("datatype"));
+    }
+
+    /** The name of the first parameter compared against a unit-bearing attribute read, anywhere in the document. */
+    private static String vergelekenParameter(JsonNode ir) {
+        List<String> uit = new ArrayList<>();
+        zoekVergelijking(ir, ir, uit);
+        return uit.isEmpty() ? null : uit.get(0);
+    }
+
+    private static void zoekVergelijking(JsonNode wortel, JsonNode x, List<String> uit) {
+        if (!uit.isEmpty()) return;
+        if (x.isArray()) {
+            for (JsonNode k : x) zoekVergelijking(wortel, k, uit);
+            return;
+        }
+        if (!x.isObject()) return;
+        if ("Vergelijking".equals(x.path("node").asText())) {
+            JsonNode l = x.get("links"), r = x.get("rechts");
+            String naam = parameterMetEenheid(wortel, l) != null && declaratieVan(wortel, r) != null
+                    ? parameterMetEenheid(wortel, l)
+                    : (parameterMetEenheid(wortel, r) != null && declaratieVan(wortel, l) != null
+                       ? parameterMetEenheid(wortel, r) : null);
+            if (naam != null) { uit.add(naam); return; }
+        }
+        for (var it = x.fields(); it.hasNext(); ) zoekVergelijking(wortel, it.next().getValue(), uit);
+    }
+
+    /** The parameter name behind a unit-bearing, denominator-free {@code ParameterRef}; else null. */
+    private static String parameterMetEenheid(JsonNode ir, JsonNode ref) {
+        if (ref == null || !"ParameterRef".equals(ref.path("node").asText())) return null;
+        String naam = ref.path("parameter").asText(null);
+        if (naam == null) return null;
+        JsonNode e = ir.path("parameters").path(naam).path("datatype").path("eenheid");
+        return e.isObject() && e.path("noemer").isNull() ? naam : null;
+    }
+
+    /** Give {@code houder}'s unit a "mnd" denominator; null when there is no plain unit to give one to. */
+    private static JsonNode metNoemer(JsonNode kopie, ObjectNode houder) throws Exception {
+        if (houder == null || !(houder.get("eenheid") instanceof ObjectNode e)) return null;
+        if (e.get("noemer") == null || !e.get("noemer").isNull()) return null;    // already a rate
+        e.set("noemer", JSON.readTree(NOEMER));
+        return kopie;
+    }
+
     /** A copy whose right addend's ANNOTATED unit is foreign — the declaration untouched. */
     private static JsonNode metVerdraaideAnnotatie(JsonNode ir) throws Exception {
         JsonNode kopie = ir.deepCopy();
@@ -202,15 +372,21 @@ class EenheidsconflictWitnessTest {
      * document carries none. Deterministic: rules are visited in document order and the first hit wins.
      */
     private static ObjectNode additieveRechterRef(JsonNode ir) {
+        JsonNode regel = additieveRegel(ir);
+        return regel == null ? null : (ObjectNode) regel.get("waarde").get("rechts");
+    }
+
+    /** The FIRST rule whose value is an additive join of two attribute reads that BOTH resolve to a unit-bearing
+     *  declaration. Deterministic: rules are visited in document order and the first hit wins. */
+    private static JsonNode additieveRegel(JsonNode ir) {
         JsonNode regels = ir.get("resolvedRegels");
         if (regels == null) return null;
         for (JsonNode r : regels) {
             JsonNode w = r.get("waarde");
             if (w == null || !"Binair".equals(w.path("node").asText())
                     || !List.of("PLUS", "MIN", "VERMINDERD_MET").contains(w.path("op").asText())) continue;
-            JsonNode links = w.get("links"), rechts = w.get("rechts");
-            if (declaratieVan(ir, links) == null || declaratieVan(ir, rechts) == null) continue;
-            return (ObjectNode) rechts;
+            if (declaratieVan(ir, w.get("links")) == null || declaratieVan(ir, w.get("rechts")) == null) continue;
+            return r;
         }
         return null;
     }

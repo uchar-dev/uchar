@@ -507,7 +507,7 @@ public final class ExecModelTranspiler {
         } else if (dimAgg != null) {
             // §5.8.5 a dimensie-fold (SOM/MIN/MAX over a gedimensioneerd attribuut's selected labels) collapses a
             // Map<label,value> to a SCALAR — a fixed fold, NOT an instance accumulate, reading no globals.
-            dimAgg = dimAgg.herschaald(effType(r.waarde()), effType(doel));   // §4 EXACT restate the fold into the doel unit
+            dimAgg = dimAgg.herschaald(effType(r.waarde()), effType(doel), "een dimensie-fold naar het doel");   // §4 EXACT restate the fold into the doel unit
             BiFunction<Object, Map<String, BigDecimal>, Object> fn = dimAgg.fn();
             consequence = DSL.on(sVar).execute((Block2<org.drools.model.Drools, Object>) (drools, s) ->
                     werkBij(drools, s, doelGetter, doelSetter, fn.apply(s, Map.of()), staandScalairDoel));
@@ -516,7 +516,7 @@ public final class ExecModelTranspiler {
             // navigated List<Segment>, optionally gedurende-clipped) — NOT an instance accumulate. It reads no globals
             // EXCEPT a §7.1 EUR71 gedurende-comparison vs a Parameter grens ("... groter is dan de grens"), which the
             // WaardeFn surfaces; bind those like the scalar path so the consequence reads them from the global map.
-            tijdTotaal = tijdTotaal.herschaald(effType(r.waarde()), effType(doel));   // §4 EXACT restate the totaal into the doel unit
+            tijdTotaal = tijdTotaal.herschaald(effType(r.waarde()), effType(doel), "een §7.1 tijdlijn-TOTAAL naar het doel");   // §4 EXACT restate the totaal into the doel unit
             BiFunction<Object, Map<String, BigDecimal>, Object> fn = tijdTotaal.fn();
             List<String> gnames = new ArrayList<>(tijdTotaal.globals());
             List<Variable> vars = new ArrayList<>();
@@ -633,7 +633,7 @@ public final class ExecModelTranspiler {
             extra.addAll(navReactiviteit(r.waarde(), doel.objecttype(), sVar));
             // §4 value-side unit restatement, EXACT (a kenmerk value is Boolean, no unit). Mirrors DrlTranspiler.omrekenWaarde.
             if (r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING)
-                wf = wf.herschaald(effType(r.waarde()), effType(doel));
+                wf = wf.herschaald(effType(r.waarde()), effType(doel), "een §4 schrijfgrens naar het doel");
             // resolve the referenced globals; an unregistered one (e.g. a temporal parameter) -> honest skip. The
             // consequence binds [subject, g0, g1, ...] via consequenceOf (up to Block10 = 9 vars); the body rebuilds
             // the name->value map. >1 distinct global is now supported (e.g. a value of two parameters).
@@ -2484,7 +2484,7 @@ public final class ExecModelTranspiler {
                 }
                 if (g == null) return null;
             }
-            if (crossUnit) g = g.herschaald(effType(ander), effType(tijd));   // §4 EXACT restate the grens into the timeline's unit
+            if (crossUnit) g = g.herschaald(effType(ander), effType(tijd), "een §8.2 tijdlijngrens");   // §4 EXACT restate the grens into the timeline's unit
             return new Gp82(tl, code, g, gran, gp.niet());
         }
         if (c instanceof Conditie.Predicaat p && p.soort() == Conditie.Predicaatsoort.GEVULD
@@ -2540,7 +2540,7 @@ public final class ExecModelTranspiler {
                 return null;
             WaardeFn g = scalarWaarde(null, ander);
             if (g == null) return null;   // unlowerable grens -> skip (symmetric marker)
-            if (crossUnit) g = g.herschaald(effType(ander), effType(tijd));
+            if (crossUnit) g = g.herschaald(effType(ander), effType(tijd), "een §8.2 tijdlijngrens");
             toets = code; grensFn = g; tijdType = tijd.type();
         } else if (c instanceof Conditie.Predicaat p && p.soort() == Conditie.Predicaatsoort.GEVULD
                 && p.operand() instanceof Expr.AttribuutRef pa && pa.set() && isTemporeelSet82(pa)) {
@@ -3598,10 +3598,10 @@ public final class ExecModelTranspiler {
         }
         /** A copy whose NUMERIC result is restated from unit {@code van} into {@code naar} via the §4 EXACT-or-lossy
          *  {@link #herschaalWaarde} (a non-number passes through; a leeg stays leeg). Self-noops when no conversion is due. */
-        WaardeFn herschaald(Datatype van, Datatype naar) {
-            // At BUILD time, so an irreconcilable pair faults while the KieBase is assembled rather than from
-            // inside a fired consequence: the lambda below reaches herschaalWaarde only at fire.
-            Eenheidsconflict.eisHerschaalbaar(van.eenheidOf(), naar.eenheidOf(), "een §4-waardeherschaling");
+        WaardeFn herschaald(Datatype van, Datatype naar, String plek) {
+            // Asked HERE, where the pair is known at build time, so this site's fault is raised while the KieBase is
+            // assembled rather than from the lambda below, which reaches herschaalWaarde only at fire.
+            Eenheidsconflict.eisHerschaalbaar(van.eenheidOf(), naar.eenheidOf(), plek);
             BiFunction<Object, Map<String, BigDecimal>, Object> inner = fn;
             return new WaardeFn((s, gm) -> { Object v = inner.apply(s, gm);
                 return (v instanceof BigDecimal || v instanceof io.github.yhavinga.regelspraak.runtime.Breuk) ? herschaalWaarde(v, van, naar) : v; }, globals);
@@ -3760,12 +3760,12 @@ public final class ExecModelTranspiler {
             if (bg.minimum() != null) {
                 minF = scalarWaarde(valueSubject, bg.minimum());
                 if (minF == null) return null;
-                minF = minF.herschaald(effType(bg.minimum()), bt);   // §4 EXACT restate the bound into the basis unit
+                minF = minF.herschaald(effType(bg.minimum()), bt, "een §6.1.4 begrenzing-ondergrens");   // §4 EXACT restate the bound into the basis unit
             }
             if (bg.maximum() != null) {
                 maxF = scalarWaarde(valueSubject, bg.maximum());
                 if (maxF == null) return null;
-                maxF = maxF.herschaald(effType(bg.maximum()), bt);   // §4 EXACT restate the bound into the basis unit
+                maxF = maxF.herschaald(effType(bg.maximum()), bt, "een §6.1.4 begrenzing-bovengrens");   // §4 EXACT restate the bound into the basis unit
             }
             BiFunction<Object, Map<String, BigDecimal>, Object> bfn = baseF.fn();
             BiFunction<Object, Map<String, BigDecimal>, Object> mnfn = minF == null ? null : minF.fn();
@@ -3796,7 +3796,7 @@ public final class ExecModelTranspiler {
             if (lf == null || rf == null) return null;
             Expr.BinOp op = b.op();
             if (op == Expr.BinOp.PLUS || op == Expr.BinOp.MIN || op == Expr.BinOp.VERMINDERD_MET)
-                rf = rf.herschaald(effType(b.rechts()), effType(b.links()));   // §4 EXACT restate rhs into lhs unit (self-noops if same)
+                rf = rf.herschaald(effType(b.rechts()), effType(b.links()), "een additieve operandgrens");   // §4 EXACT restate rhs into lhs unit (self-noops if same)
             BiFunction<Object, Map<String, BigDecimal>, Object> lfn = lf.fn(), rfn = rf.fn();
             Set<String> g = new LinkedHashSet<>(lf.globals()); g.addAll(rf.globals());
             return new WaardeFn((s, gm) -> {
@@ -4258,7 +4258,7 @@ public final class ExecModelTranspiler {
             Expr arg = f.argumenten().get(i);
             WaardeFn wf = scalarWaarde(valueSubject, arg);
             if (wf == null) return null;   // a set/instance-aggregation or unlowerable operand -> skip (DRL markers too)
-            if (i > 0) wf = wf.herschaald(effType(arg), doel);   // §4 EXACT restate operand i into the result unit (Eenheid1)
+            if (i > 0) wf = wf.herschaald(effType(arg), doel, "een §4.6 Eenheid1 fold-operand");   // §4 EXACT restate operand i into the result unit (Eenheid1)
             fns.add(wf.fn());
             g.addAll(wf.globals());
         }
@@ -4464,7 +4464,7 @@ public final class ExecModelTranspiler {
      *  DrlTranspiler.omrekenFactor. Restates the value expression in the doel attribute's unit before assignment. */
     private static BigDecimal valueFactor(Datatype van, Datatype naar) {
         Eenheid ev = van.eenheidOf(), en = naar.eenheidOf();
-        Eenheidsconflict.eisHerschaalbaar(ev, en, "een §4-waardeherschaling");
+        Eenheidsconflict.eisHerschaalbaar(ev, en, "een §4-waardeherschaling (enkelvoudige factor)");
         if (ev == null || en == null || !ev.convertibleNaar(en) || !ev.vereistOmrekening(en)) return null;
         return ev.omrekenfactorNaar(en);
     }
@@ -4493,7 +4493,7 @@ public final class ExecModelTranspiler {
      *  unit — the caller then falls back to the lossy {@link #valueFactor}). Mirrors DRL herschaalExact. */
     private static BigDecimal[] exactHerschaalFactoren(Datatype van, Datatype naar) {
         Eenheid ev = van.eenheidOf(), en = naar.eenheidOf();
-        Eenheidsconflict.eisHerschaalbaar(ev, en, "een §4-waardeherschaling");
+        Eenheidsconflict.eisHerschaalbaar(ev, en, "een §4-waardeherschaling (exacte factoren)");
         if (ev == null || en == null || !ev.convertibleNaar(en) || !ev.vereistOmrekening(en)) return null;
         return ev.exacteHerschaalFactoren(en);   // {num, den}: simple OR rate (the inverted denominator) — exact ×÷
     }
@@ -6654,7 +6654,7 @@ public final class ExecModelTranspiler {
             // §4 EXACT restate into the target unit. The TARGET side already reads the declaration
             // (onderwerp.attribuut); the SOURCE side is a consequence VALUE — an ordinary composite position, so it
             // takes the ch. 2.10 derivation like every other restatement site in this file.
-            wf = wf.herschaald(effType(r.consequentie()), onderwerp.attribuut(doel));
+            wf = wf.herschaald(effType(r.consequentie()), onderwerp.attribuut(doel), "een §4 consequentie naar het doel");
             conseq = wf;
         }
         List<List<GecompileerdeDefault>> exc = null;
