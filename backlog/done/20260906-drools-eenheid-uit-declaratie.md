@@ -331,6 +331,59 @@ annotatie liegt, de declaratie klopt) speelt onveranderd `PLAYED 2` in beide
 takken, en de ongemuteerde golden `PLAYED 2`. De twee §7.1-goldens spelen weer
 `PLAYED 1` in beide takken. Corpusbrede scan: **0** goldens raken het hek.
 
+### Slotronde na lens 2 — de tijdvouwing dekt ook SOM
+
+Lens 2 oordeelde mergen (gates groen op de kop én na een proefmerge met `main`;
+DRL corpusbreed byte-identiek 130/130; alle mutanten reproduceren) en vond één
+gedragsfout van één token, plus twee documentatiepunten.
+
+**De afleiding was tot `TOTAAL` beperkt, en dat is te smal.** `SOM` draagt
+dezelfde per-element tijdlijnvouwing, en beide consumenten zeggen dat met zoveel
+woorden: de instance-fold-guard van `ExecModelTranspiler` laat `SOM` én `TOTAAL`
+toe en slaat een temporele operand voor élke andere soort over; `ref`'s
+`eval.ml` faalt op de andere met "only som and totaal carry the per-element
+timeline fold". De reikwijdte hoorde dus van de consumenten te komen, niet van
+het corpus — en het corpus kón haar ook niet leveren, want het draagt geen
+enkele `SOM` over een tijdlijn-gedeclareerd attribuut (alle 19 zulke folds zijn
+`TOTAAL`).
+
+Gemeten gevolg van de te smalle regel, en de reparatie:
+
+| mutant | ref | Drools vóór | Drools ná |
+|---|---|---|---|
+| `P1` SOM, tijdlijn-tarief, doel `EUR` | MISMATCH `J2.bewaarlast = leeg, expected 0` | `ERROR Eenheidsconflict` | **FAIL met exact dezelfde ene J2-afwijking** |
+| `P2` SOM, tijdlijn-tarief, doel `EUR/jr` | `EVALUATION FAULT: incompatible units: EUR/jr vs EUR` | `FAIL … verwacht 48, werkelijk 576` | **`ERROR Eenheidsconflict`** |
+| `P3` TOTAAL, tijdlijn-tarief, doel `EUR/jr` | idem | `ERROR Eenheidsconflict` | ongewijzigd luid |
+
+`P2` is het punt: 576 is 48 × 12, de `mnd→jr`-factor toegepast op een waarde die
+de vouwing al had opgeleverd. Dat was een **stil verkeerd getal** op precies het
+faalpatroon dat deze kaart sluit. Ná de uitbreiding faalt hij luid, en `P1`
+speelt met dezelfde afwijking die ref en clingo ook geven — dus de backend volgt
+ref weer.
+
+**De groeigrens van de herkomsttabel stond fout opgeschreven.** Ik claimde "ten
+hoogste één entry per MAAL-knoop per getranspileerd model". Gemeten is dat
+onwaar: `Eenheid.product` newt élke keer, dus drie transpilaties van hetzelfde
+document in één JVM geven 0 → 2 → 4 → 6. De werkelijke grens is **één entry per
+`maalEenheid`-evaluatie**, monotoon voor de JVM-levensduur, nooit geschoond —
+een sterk-referentielek, nu zo opgeschreven en met een getuige gepind
+(`de_herkomsttabel_groeit_per_afleiding_niet_per_document`). Correctheid staat
+er los van: geen enkele oude entry kan een nieuwe eenheid markeren, want er
+wordt nooit een bestaande instantie teruggegeven. Per transpilatie legen is
+overwogen en afgewezen: dat vergt een garantie dat geen andere afleiding leeft,
+en die geeft de bouwroute niet — beide transpilertakken bouwen hun eigen
+`EffectieveEenheid`, dus een clear-bij-constructie zou een product ontmarkeren
+dat de andere tak nog vasthoudt. Dat ruilt een begrensd lek voor een verkeerd
+antwoord. Een echte begrenzing wil een zwakke *identiteits*-set, die de JDK niet
+kent; dat is een kaartje waard, geen improvisatie hier.
+
+**Product-tegen-product.** De vrijstelling wordt door één zijde gedragen, dus
+twee **verschillende** afgeleide producten stellen elkaar ook vrij (`€·kg` tegen
+`€·m`), niet alleen een product tegen een concrete eenheid. Dat is dezelfde
+ch. 2.10-houding en geen bredere — geen van beide zijden heeft een canoniek, dus
+er valt hoe dan ook geen factor te verzinnen. Wat het kost is een *diagnose*,
+geen verkeerd getal. Bijzin toegevoegd aan de klassendoc en gepind.
+
 ### De vondst die de kaart sterker maakt: een verifier-SCHONE vorm
 
 Mutant `N` is het interessantste geval dat lens 1 bouwde: een `Begrensd` over
@@ -354,7 +407,7 @@ doorlaat. Of de verifier die omheining hoort te krijgen is een spec-vraag op
 beschermde paden en staat als kandidaat-kaart klaar:
 `backlog/new/20260909-begrensd-grens-verifier-omheining.md`.
 
-### Getuige-test (additief, 11 tests)
+### Getuige-test (additief, 14 tests)
 
 `EenheidsconflictWitnessTest` — de spiegel van
 `scripts/check-reftype-derivation.sh`, één richting verder: die verdraait een
@@ -377,10 +430,11 @@ hebben gezien:
 | §5.1 vergelijking → parameter als tarief | §5.1 vergelijking |
 
 Daarnaast: het afgeleide opake product blijft vrijgesteld terwijl zijn
-**waarde-gelijke** wire-naamgenoot omvalt; de §7.1-tijdvouwing levert de teller
-en een `MINIMUM` over dezelfde tijdlijn niet; en de omgekeerde richting
-(liegende annotatie boven kloppende declaratie) laat de DRL-tekst
-byte-identiek.
+**waarde-gelijke** wire-naamgenoot omvalt; twee verschillende afgeleide
+producten stellen elkaar vrij; de herkomsttabel groeit per afleiding en niet per
+document; de §7.1-tijdvouwing levert de teller voor `TOTAAL` én `SOM` en niet
+voor een `MINIMUM` over dezelfde tijdlijn; en de omgekeerde richting (liegende
+annotatie boven kloppende declaratie) laat de DRL-tekst byte-identiek.
 
 Rood-eerst bewezen: met de grens tijdelijk uitgeschakeld ging de eerste versie
 rood op 3 van de 9 tests en noemde beide goldens in beide takken —
@@ -404,17 +458,25 @@ tarief-verdraaiingen zijn rood-eerst aangetoond met de mutantmeting hierboven
 | 9 catala | PASS (201 checks; 12 goldens) | = |
 | 10 regelspraak | PASS (173 tests; 37 rgs-goldens) | = |
 | 11 toka-parity | PASS (45 .rgs; 27 tests; 29 cases) | = |
-| 12 drools | PASS — played **117**, kanaalvloer **47**, auto-excluded **44**, value-divergence **1**, no-case **2**, JUnit **234** | alleen JUnit 223 → 234 |
+| 12 drools | PASS — played **117**, kanaalvloer **47**, auto-excluded **44**, value-divergence **1**, no-case **2**, JUnit **237** | alleen JUnit 223 → 237 |
 | 13 reftype-derivation | PASS — **74** twists over **15** goldens, **13** DRL-gespeeld, **0** survivors | = |
 
 Geen enkele pin aangepast; de wijziging raakt alleen `backends/drools/**` en
 `backlog/`.
+
+**Rebase-notitie.** Bovenstaande tellingen zijn gemeten op de branchkop, afgetakt
+van `ee45dca`. `main` is intussen doorgelopen; lens 2 heeft de proefmerge al
+groen gemeten. Ná de merge gelden **425 cases** en **played 118** — de merge
+brengt een golden mee die speelt. De rebase en de hermeting van deze tabel horen
+bij de merge, niet bij deze kaart.
 
 ### Bewust niet gedaan
 
 - **De WF-omheining van de `Begrensd`-grens** (mutant N): een spec-vraag op
   beschermde paden, weggeschreven als
   `backlog/new/20260909-begrensd-grens-verifier-omheining.md`.
+- **Een echte begrenzing van de herkomsttabel** (een zwakke identiteits-set):
+  zie de slotronde hierboven; het lek is begrensd, gemeten en opgeschreven.
 - **De controle dat de noemer de roostereenheid is** bij de §7.1-tijdvouwing —
   zie de reikwijdte-alinea hierboven; vergt een granulariteit→eenheid-afbeelding
   zonder eerlijke bron, en de vorm ontbreekt in het corpus.
