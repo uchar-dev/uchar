@@ -464,8 +464,10 @@ let wf094 ctx =
    clause above asks whether the second spelling of the ONE name agrees, and
    this one asks whether it is there at all. The OMISSION flank needs no clause
    — `naam` is `required` on the wire, so gate 2 rejects a missing field and
-   all three OCaml loaders refuse it with a load error naming the path — but
-   the field is typed ["string", "null"], so `naam: null` is schema-valid,
+   the shared OCaml loader (this library's own, consumed by the verifier, `ref`
+   and the ASP backend alike, so it is ONE refusal reached three times rather
+   than three independent ones) refuses it with a load error naming the path —
+   but the field is typed ["string", "null"], so `naam: null` is schema-valid,
    round-trips, and passed this verifier, `ref` and the ASP backend cleanly
    while KILLING the bean-model executor: a NullPointerException inside the
    identifier contract, which trims the name before splitting it. That is the

@@ -10,7 +10,8 @@ under the key `vondstdrempel`.
 the second spelling of the one name AGREES with its key; this one asks whether
 it is there at all. The OMISSION flank needs no rule — `naam` is `required` in
 `spec/schema/regelspraak-ir-v0.schema.json`, so gate 2 rejects a missing field
-and all three OCaml loaders refuse it with a load error naming the path. The
+and the shared OCaml loader — one `loader.ml`, consumed by the verifier, `ref`
+and the ASP backend alike — refuses it with a load error naming the path. The
 NULL flank is different: the field is typed `["string", "null"]`, so
 `naam: null` is schema-valid, round-trips byte-identically, and passed the
 verifier.
@@ -47,11 +48,13 @@ consumer decides again what it means, and the disagreement becomes invisible
 rather than audible. The fall-back is pinned additively by
 `ZelfnaamTerugvalWitnessTest` in the Drools backend's own suite.
 
-**Measured cost: none.** Over the four zones (2026-09-10: 577 documents) the
-five map-shaped tables hold **2000** keyed declarations — `objecttypen` 798,
-`parameters` 657, `eenheidstelsels` 222, `feittypen` 311, `dimensies` 12 — and
-not one carries `naam: null`. The five `wf094-zelfnaam-null-*` witnesses are
-the only documents anywhere that do.
+**Measured cost: none.** Over the four zones **as they stood before these
+witnesses** (2026-09-10: 572 documents) the five map-shaped tables held **2000**
+keyed declarations — `objecttypen` 798, `parameters` 657, `eenheidstelsels` 222,
+`feittypen` 311, `dimensies` 12 — and not one carried `naam: null`. The five `wf094-zelfnaam-null-*` witnesses are
+the only documents anywhere that do (2016 entries over 577 documents once they
+landed, each bringing its whole source document with it — this document among
+them).
 
 A hand-broken variant of `corpus/golden/jutterswet-penningdrempel/ir.json` —
 one line, `"naam": "vondstdrempel",` becomes `"naam": null,`; schema-valid,

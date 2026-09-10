@@ -167,7 +167,12 @@ documenten waar dan ook die de vorm dragen.
 
 Pre-clausule-binary **md5 `83ce827aba9fab4e369debe8f5f1dd93`** (na de sweep
 bit-exact opnieuw gebouwd, zelfde md5): alle vijf getuigen `verifier: PASS`.
-Post-clausule **md5 `8ef3920f82ca129e2a8c384f6218318e`**: elk faalt met precies
+Post-clausule **md5 `f55fdba98ccd5ac68bb99492519aa580`** (de binary van de
+branch-kop; de eerste meting draaide op `8ef3920f82ca129e2a8c384f6218318e`, de
+binary vóór de prozafixronde van de slotronde — die ronde wijzigde alléén
+commentaar in `checks.ml`, wat de hash meebeweegt, en alle drie de metingen
+hieronder zijn op de kop-binary opnieuw gedaan met bit-identieke uitkomst):
+elk faalt met precies
 één regel die de positie noemt, bijvoorbeeld
 
     WF-094 FAIL /parameters/vondstdrempel/naam: parameter under the key
@@ -220,8 +225,9 @@ dezelfde `!= null ? … : sleutel`-vorm als hun drie zusters.
 | `feittypen` | PLAYED 1 | PLAYED 1 | PLAYED 1 |
 | `dimensies` | *(geen case — niet speelbaar)* | — | — |
 
-`ref` en clingo bewegen op geen van de vier speelbare armen (3, 7, 5 en 7
-verwachtingen, vóór en ná).
+`ref` en clingo bewegen op geen van de vier speelbare armen, elk met zijn eigen
+aantal verwachtingen vóór en ná: `objecttypen` 7, `parameters` 3,
+`eenheidstelsels` 5, `feittypen` 7.
 
 **De dimensie-arm heeft geen speelbare getuige** — de enige twee goldens met
 een `dimensies`-tabel (`jutterswet-seizoenvondst`, `jutterswet-vormenkabinet`)
@@ -271,3 +277,47 @@ de negatiefs spelen niet.
 - De gevulde helft van WF-094: niet heropend.
 - Een speelbare dimensie-getuige: bestaat niet zolang geen uitvoerder een
   dimensiecel leest; de arm rust op de wire-clausule plus de loader-pin.
+
+### Slotronde vóór de merge (2026-09-10, lens 1) — vijf prozafixes
+
+Lens 1 oordeelde mergen na twee prozafixes; vijf punten geland, alle vijf
+tekst, geen enkele regelwijziging:
+
+1. **De census in de getuige-NOTEs was verkeerd gescoopt.** Alle vijf droegen
+   "over the four zones (577 documents) ... 2000 keyed declarations ... not one
+   carries `naam: null`" — maar 2000 is de census van vóór de getuigen
+   (572 documenten), en op 577 dragen precies de vijf getuigen — het eigen
+   document van elke NOTE incluis — wél null. Nu in alle vijf gescoopt naar
+   "as they stood before these witnesses (572 documents) ... held 2000 ... not
+   one carried", met de slotzin die zegt wat er ná staat (2016 over 577).
+   De dimensie-NOTE's "12 dimension declarations" is op dezelfde manier
+   gedateerd (13 mét de getuige).
+2. **De 58/639-zin brak op mijn eigen artefact.** De eenheidstelsel-getuige is
+   een kopie van `jutterswet-berging` en draagt het `€`/`EUR`-paar mee, dus de
+   `eenheden`-telling in WF-094's niet-gesloten-lijst werd onwaar. Herteld en
+   gedateerd: **59 van 654 over 59 documenten, 10 golden** (vóór de getuige
+   58 van 648 over 58 — de noemer 639 was al vóór deze kaart verlopen), met de
+   reden erbij dat een regel over ZELFnamen een telling over EENHEIDnamen
+   verschoof. De alias-tellers waren ook verlopen: **710 van 740** (was 682 van
+   712), met dezelfde 30 die overeenkomen bij elke hertelling.
+3. **"All three OCaml loaders" suggereerde drie onafhankelijke bevestigingen.**
+   Nagemeten: er is precies één `loader.ml` (bibliotheek `uchar-ir-v0`), en
+   verifier, `ref` én de clingo-backend hangen er alle drie aan — dus één
+   weigering die drie keer bereikt wordt. Herformuleerd op alle zeven plekken
+   die mijn diff toevoegde (spec-clausule, verifier-commentaar, vijf NOTEs);
+   pre-bestaande formuleringen elders in de spec zijn niet aangeraakt.
+4. **"(3, 7, 5 en 7 verwachtingen)" stond onder een tabel in andere volgorde.**
+   Nu met tabelnaam: `objecttypen` 7, `parameters` 3, `eenheidstelsels` 5,
+   `feittypen` 7.
+5. **De registerrij droeg de kale "Clause (d)".** De lettering-toelichting die
+   ch. 2.1 al had (het label is de nummering van het besluit; het is de tweede
+   clausule van de regel) staat nu ook daar.
+
+**Gevolg voor de binary-hash, en de hermeting.** Punt 3 raakt commentaar in
+`spec/verifier/lib/checks.ml`, en dat beweegt de hash mee: de post-clausule
+binary is nu `f55fdba98ccd5ac68bb99492519aa580`. Alle drie de metingen zijn op
+die kop-binary opnieuw gedaan en reproduceren bit-identiek: vijf getuigen falen
+met precies één WF-094-regel; over-afwijzing 577 vergeleken, 5 bewogen; vijf
+arm-exacte mutanten met vijf verschillende hashes
+(`6486cb79…`, `fb3f21ec…`, `189db2be…`, `6af05bb6…`, `8cdb8fce…`), elk precies
+zijn eigen getuige schoon en niets anders.

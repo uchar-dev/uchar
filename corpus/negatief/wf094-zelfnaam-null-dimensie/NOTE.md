@@ -10,7 +10,8 @@ under the key `seizoen`.
 spelling of the one name agrees with its key; this one asks whether it is there
 at all. The OMISSION flank needs no rule — `naam` is `required` in
 `spec/schema/regelspraak-ir-v0.schema.json`, so gate 2 rejects a missing field
-and all three OCaml loaders refuse it with a load error naming the path. The
+and the shared OCaml loader — one `loader.ml`, consumed by the verifier, `ref`
+and the ASP backend alike — refuses it with a load error naming the path. The
 NULL flank is different: the field is typed `["string", "null"]`, so
 `naam: null` is schema-valid, round-trips byte-identically, and passed the
 verifier.
@@ -29,7 +30,8 @@ be taken, and the reason is structural rather than an omission:
 | ASP backend | *(no case file — the shape is not executable)* | — |
 | bean-model executor | *(no case file — the shape is not executable)* | — |
 
-Measured 2026-09-10: the four zones hold **12** dimension declarations and the
+Measured 2026-09-10, before this witness: the four zones held **12** dimension
+declarations (13 with it) and the
 only two goldens carrying a `dimensies` table — `jutterswet-seizoenvondst`
 (this document's source) and `jutterswet-vormenkabinet` — are the two
 **verifier-only** witness-cabinet documents, with no `case*.json`, because no
@@ -47,10 +49,13 @@ own suite pins it for `dimensies` too — the one place this arm's fall-back is
 observable at all. Against the loader as it stood before that fix, that test
 fails with `expected: <seizoen> but was: <null>`.
 
-**Measured cost: none.** Over the four zones (2026-09-10: 577 documents) the
-five map-shaped tables hold **2000** keyed declarations — `objecttypen` 798,
-`parameters` 657, `eenheidstelsels` 222, `feittypen` 311, `dimensies` 12 — and
-not one carries `naam: null`.
+**Measured cost: none.** Over the four zones **as they stood before these
+witnesses** (2026-09-10: 572 documents) the five map-shaped tables held **2000**
+keyed declarations — `objecttypen` 798, `parameters` 657, `eenheidstelsels` 222,
+`feittypen` 311, `dimensies` 12 — and not one carried `naam: null`. The five `wf094-zelfnaam-null-*` witnesses are
+the only documents anywhere that do (2016 entries over 577 documents once they
+landed, each bringing its whole source document with it — this document among
+them).
 
 A hand-broken variant of `corpus/golden/jutterswet-seizoenvondst/ir.json` — one
 line, `"naam": "seizoen",` becomes `"naam": null,`; schema-valid, since the
