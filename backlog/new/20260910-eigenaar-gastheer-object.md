@@ -74,14 +74,24 @@ Drie mogelijke antwoorden, elk met een prijs:
    evalueert de voorwaarde vandaag vóór de doelen bekend zijn), en de
    ASP-vertaling moet de literal op de doelvariabele zetten in plaats van op
    het onderwerp.
-2. **De vorm blijft geweigerd, en de verifier weigert hem ook.** Dan wordt de
-   weigering van ch. 5.8b een WF-regel (de eigenaar MOET het onderwerptype
-   zijn, behalve in een feitcreatie waar hij het doeltype mag zijn), en de
-   frontend-vorm wordt afgesneden. Prijs: dat snijdt een producentroute af —
-   te meten hoeveel bronnen hem produceren.
+2. **De verifier weigert de vorm ook.** De weigering van ch. 5.8b wordt een
+   WF-regel: de eigenaar MOET het type van het omvattende onderwerp zijn, zonder
+   uitzondering. Dan bestaat de producentvorm niet meer op de wire — de
+   frontend-route wordt afgesneden en de frontend moet iets anders emitteren of
+   de guard onopgelost laten. Prijs: precies dat afsnijden, plus de meting
+   hoeveel bronnen de vorm produceren; en de reparatie die WF-100 net leverde
+   (de vorm werd conform) wordt weer ingetrokken, nu op een andere grond.
+   *Let op: een variant met een feitcreatie-UITZONDERING — de eigenaar mag het
+   doeltype zijn zodra de vorm een feitcreatie-guard is — is GEEN antwoord 2.
+   Die uitzondering laat de producentvorm juist toe, en omdat `ref` en de
+   ASP-backend hem dan nog steeds niet kunnen lezen, valt hij samen met
+   antwoord 3: verifier-schoon, één uitvoerder die speelt, twee die weigeren.
+   Wie die variant wil, kiest 3 en schrijft de uitzondering op als de vorm
+   waarin 3 geldt.*
 3. **De vorm blijft geweigerd in `ref`/ASP en gedragen in Drools.** De stand
    van vandaag, expliciet als besluit vastgelegd. Prijs: een verifier-schoon
-   document dat één uitvoerder speelt en twee weigeren, permanent.
+   document dat één uitvoerder speelt en twee weigeren, permanent — en het
+   vierkant sluit daar dus nooit.
 
 ## Wat er eerst gemeten moet worden
 

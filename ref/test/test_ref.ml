@@ -2480,7 +2480,25 @@ let () =
    an owner that is not the subject's type is not a decoration to be read past.
    Measured before the rule, on this document: the check answered `true` — V1's
    value under J1's name. The corpus cannot hold this witness because the
-   document it needs is exactly the one both executors now refuse. *)
+   document it needs is exactly the one both executors now refuse.
+
+   Six owners in the block below, not three: each of the three is also read from
+   the OTHER subject, and the last pair is the NAVIGATED form. The navigated
+   check is where the two halves of the field could be mistaken for each other:
+   WF-100's declaration cross does NOT reach it (the characteristic lives on the
+   type the hop reaches, which WF-053 crosses there), while the HOSTING refusal
+   does — the owner is a statement about the pattern the constraint hangs on,
+   and that is the subject's on a navigated check exactly as on a scalar one.
+   The refusal therefore fires BEFORE the hop is resolved, which is why the
+   message and not merely the fault is asserted here: a bare `expect_fault`
+   would also pass on an unresolvable role. Measured on the postwacht shape with
+   the reached type in the field (`risicopost` via `post`, owner `Post`, subject
+   `Wachter`): verifier PASS before AND after — the cross is correctly out of
+   scope — `ref` and the ASP backend PASS (10) before and faulting after, and
+   both Drools branches refusing all along (a transpiler SKIP on one branch, a
+   `TODO kenmerk 'risicopost' hoort bij Post` marker on the other). So after
+   this rule that form has NO answering executor at all. That is deliberate, and
+   this is its machine-checked witness. *)
 
 let () =
   let doc =
@@ -2503,7 +2521,19 @@ let () =
   check "WV-5.8b-eigenaar-afwezig-j1-onwaar" (not (ec "j1" (kc None)));
   expect_fault "WV-5.8b-vreemde-eigenaar-weigert" (fun () -> ec "v1" (kc (Some "Jutter")));
   expect_fault "WV-5.8b-vreemde-eigenaar-weigert-ook-omgekeerd" (fun () ->
-      ec "j1" (kc (Some "Vondst")))
+      ec "j1" (kc (Some "Vondst")));
+  (* the navigated form: the hosting refusal reaches it too, and precedes the
+     hop — so the SENTENCE is asserted, not merely the fault *)
+  let kc_nav eigenaar : Ir_v0.Ast.conditie =
+    Kenmerk_check
+      { kenmerk = Some "gekeurd"; navigatie = Some "vinder"; negatie = false; eigenaar;
+        periode = None; bron = None; navigatie_binding = None }
+  in
+  match ec "v1" (kc_nav (Some "Jutter")) with
+  | exception Value.Fault m ->
+      check ("WV-5.8b-genavigeerde-vreemde-eigenaar-weigert (got: " ^ m ^ ")")
+        (Case.contains ~needle:"is hosted on \"Jutter\" while the subject is \"Vondst\"" m)
+  | _ -> check "WV-5.8b-genavigeerde-vreemde-eigenaar-weigert (no fault at all)" false
 
 (* --- WF-095: the datum-tijd lexeme (IR-SPEC ch. 4.1) --------------------
    The corpus golden pins what the READER answers; these pin the reader's

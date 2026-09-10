@@ -2284,11 +2284,12 @@ decides what the check resolves against. The rules:
    interpreter is lazy and faults when the condition is evaluated, the ASP
    backend is eager and faults at translation, exactly as they split on
    WF-055.
-3. **In the two readers this chapter norms, the object read is always the
-   subject.** Rule 2 is a refusal, not a redirection: the reference interpreter
-   and the ASP backend never read the owner's instances, so where THEY answer,
-   they answer about the subject. This is a statement about them and not about
-   every executor. A bean-model executor **does** read the owner's instances on
+3. **In the two readers this RULE binds directly — the reference interpreter
+   and the ASP backend — the object read is always the subject.** Rule 2 is a
+   refusal, not a redirection: those two never read the owner's instances, so
+   where THEY answer, they answer about the subject. The delimitation belongs to
+   the rule and not to the chapter: this chapter norms every executor, and what
+   is scoped here is which readers this particular sentence fixes. A bean-model executor **does** read the owner's instances on
    the producer shape, measured: both Drools branches play a fact creation whose
    guard names a characteristic of the doel and both compute an answer that
    depends on which DOEL instances carry it, not on the anker. Which of the two
@@ -2311,8 +2312,13 @@ Jutter that does not. Over the subject V1:
 | `de Vondst is gekeurd` | `Jutter` | **fault** — never J1's value, and never V1's |
 
 and over the subject J1 the mirror holds: owner absent gives **onwaar** (J1
-does not carry it), owner `Vondst` faults. The corpus carries the answering
-half as the golden `jutterswet-keurhouder`. The refusing half lives in the two
+does not carry it), owner `Vondst` faults. A navigated check with the same
+foreign owner faults too, and faults BEFORE the hop is resolved (rule 1's
+closing sentence), which is why both suites assert the sentence and not merely
+the fault. The corpus carries no document with these four rows in it: the golden
+`jutterswet-keurhouder` carries row 2 alone — the owner naming the subject's own
+type, over a different characteristic — which is the one row a replayed case can
+hold. The refusing half lives in the two
 executors' own gated suites rather than in a corpus zone, and the reason is a
 zone rule and not an impossibility: a golden must replay, so the refusing shape
 is not one; and a red case must fault in every executor that CARRIES its form,

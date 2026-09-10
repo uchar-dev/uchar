@@ -262,16 +262,40 @@ falen, en de Drools-backend laat zo'n regel vallen als transpiler-skip in plaats
 van te falen (dat zou een reden-dragende regel in het beschermde
 `scripts/check-rood.sh` vergen, dat niet in de may-touch-set staat). De getuigen
 staan daarom in de eigen, gegatete suites van de twee uitvoerders.
-`ref/test/test_ref.ml` krijgt ch. 5.8b met zes voorbeelden — eigenaar afwezig,
-eigenaar = onderwerptype, eigenaar in andere kapitalisatie, het onwaar-geval en
-twee weigeringen in beide richtingen — gate 5, suite **489 -> 495**.
-`backends/clingo/test/test_clingo.ml` krijgt vijf checks — twee keer ref ≡
-clingo op de dragende vorm en één weigering met gepinde zin — gate 6, suite
-**86 -> 91**. Let op het verschil tussen gemeten stand en vloer: 489 is bij
+`ref/test/test_ref.ml` krijgt ch. 5.8b met zeven voorbeelden — eigenaar
+afwezig, eigenaar = onderwerptype, eigenaar in andere kapitalisatie, het
+onwaar-geval, twee weigeringen in beide richtingen en de GENAVIGEERDE weigering
+— gate 5, suite **489 -> 496**.
+`backends/clingo/test/test_clingo.ml` krijgt zes checks — twee keer ref ≡
+clingo op de dragende vorm en twee weigeringen met gepinde zin — gate 6, suite
+**86 -> 92**. Let op het verschil tussen gemeten stand en vloer: 489 is bij
 `ref` toevallig allebei, bij clingo is 86 de gemeten stand vóór de kaart en 83
 de vloer, en die vloer beweegt niet. De 86 is gemeten door de suite van vóór de
 kaart terug te halen en te draaien, niet uit het gate-script afgelezen. Beide
 vloeren zijn ondergrenzen, dus groei vergt geen scriptwijziging.
+
+**Het artefactgat op de GENAVIGEERDE vorm, gedicht.** WF-100's kruising raakt
+de genavigeerde check bewust niet — daar leeft het kenmerk op het BEREIKTE type,
+dat WF-053 al kruist — maar de HOSTING-weigering van de uitvoerders loopt er
+wél door: de eigenaar noemt het patroon waar de constraint aan hangt, en dat is
+het onderwerp, of de check daarna hopt of niet. De consequentie is scherp en is
+op de postwacht-vorm gemeten (`risicopost` via `post`, eigenaar `Post`,
+onderwerp `Wachter`):
+
+| lezer | vóór | ná |
+| --- | --- | --- |
+| verifier | PASS | **PASS** (de kruising is terecht buiten bereik) |
+| `ref` | `PASS (10)` | **fault** |
+| ASP-backend | `PASS (10)` | **fault** |
+| Drools exec-model | `EXCLUDE transpiler SKIP … voorwaarde buiten Phase-B scope` | ongewijzigd |
+| Drools DRL-tekst | `EXCLUDE drl-transpiler MARKER: TODO kenmerk 'risicopost' hoort bij Post` | ongewijzigd |
+
+Ná deze kaart heeft die vorm dus **nul antwoordende uitvoerders**. Dat is
+bedoeld, maar het stond alleen in proza. Nu draagt elke uitvoerder er een
+machinaal gecontroleerde getuige voor, en beide asserteren de ZIN en niet enkel
+de fout — de weigering gaat aan de hop vooraf, dus een kale fout-check zou ook
+slagen op een onoplosbare rol. De bijzin staat nu ook in (q1)'s Scope-alinea en
+in de WF-100-registerrij, zodat het niet alleen in ch. 5.8b te vinden is.
 
 **Wat de golden wel en niet pint (eerlijk afgebakend).** De acceptance vraagt
 "bij een gewijzigde lezing een golden met absolute verwachtingen die beide
@@ -323,8 +347,8 @@ restkaartje.
 **Gate-uitkomsten.** Alle dertien groen, elk met zijn eigen exitcode gemeten
 (niet die van een pipe). Gemeten getallen die bewogen: gate 2 192 -> 193
 bestanden, gate 3 golden 192 -> 193 en negatief 359 -> 360, gate 4 453 -> 454
-casebestanden, gate 5 427 -> 428 cases en suite 489 -> 495, gate 6 427 -> 428
-cases en suite **86 -> 91** (vloer 83, ongewijzigd), gate 7 391 -> 392
+casebestanden, gate 5 427 -> 428 cases en suite 489 -> 496, gate 6 427 -> 428
+cases en suite **86 -> 92** (vloer 83, ongewijzigd), gate 7 391 -> 392
 weerleggende cases, gate 12 played
 119 -> 120 en JUnit 244 (vloer 239). Gates 1, 8, 9, 10, 11 en 13 bewegen geen
 enkel getal: gate 8 blijft 26 rode cases (geen rood document draagt een

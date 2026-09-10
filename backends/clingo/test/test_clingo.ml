@@ -2232,7 +2232,7 @@ let () =
    evaluation of the condition, the ASP backend eagerly, at translation. Both
    say the same sentence, and neither answers from the subject any more. *)
 
-let eigenaar_doc ~eigenaar =
+let eigenaar_doc ?(navigatie = "null") ~eigenaar () =
   Printf.sprintf
     {|{
   "formaat": "regelspraak-ir-v0",
@@ -2262,7 +2262,7 @@ let eigenaar_doc ~eigenaar =
         "bron": "De afslag van een Vondst", "set": false, "navigatiePad": [] },
       "waarde": { "node": "Literal", "waarde": "zeeveiling", "type": { "node": "Tekst" },
         "bron": "'zeeveiling'" },
-      "voorwaarde": { "node": "Kenmerk", "kenmerk": "gekeurd", "navigatie": null,
+      "voorwaarde": { "node": "Kenmerk", "kenmerk": "gekeurd", "navigatie": %s,
         "negatie": false, "eigenaar": %s, "periode": null, "bron": "de Vondst gekeurd is" },
       "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
   ],
@@ -2271,7 +2271,7 @@ let eigenaar_doc ~eigenaar =
   "regelGroepen": [], "diagnostics": []
 }
 |}
-    eigenaar
+    navigatie eigenaar
 
 let eigenaar_case =
   {|{
@@ -2293,17 +2293,30 @@ let eigenaar_case =
 let () =
   (* the field absent, and the field naming the subject's own type: the same
      answer, and it is the answer ref pins *)
-  ref_matches ~name:"WF-100 eigenaar afwezig" ~ir:(eigenaar_doc ~eigenaar:"null")
+  ref_matches ~name:"WF-100 eigenaar afwezig" ~ir:(eigenaar_doc ~eigenaar:"null" ())
     ~case_text:eigenaar_case;
-  clingo_matches ~name:"WF-100 eigenaar afwezig" ~ir:(eigenaar_doc ~eigenaar:"null")
+  clingo_matches ~name:"WF-100 eigenaar afwezig" ~ir:(eigenaar_doc ~eigenaar:"null" ())
     ~case_text:eigenaar_case;
   ref_matches ~name:"WF-100 eigenaar is het onderwerptype"
-    ~ir:(eigenaar_doc ~eigenaar:{|"Vondst"|}) ~case_text:eigenaar_case;
+    ~ir:(eigenaar_doc ~eigenaar:{|"Vondst"|} ()) ~case_text:eigenaar_case;
   clingo_matches ~name:"WF-100 eigenaar is het onderwerptype"
-    ~ir:(eigenaar_doc ~eigenaar:{|"Vondst"|}) ~case_text:eigenaar_case;
+    ~ir:(eigenaar_doc ~eigenaar:{|"Vondst"|} ()) ~case_text:eigenaar_case;
   (* a foreign owner: refused, where before 2026-09-10 the same document
      translated and answered V1's own value under J1's name *)
-  faults_with ~name:"WF-100 vreemde eigenaar" ~ir:(eigenaar_doc ~eigenaar:{|"Jutter"|})
+  faults_with ~name:"WF-100 vreemde eigenaar" ~ir:(eigenaar_doc ~eigenaar:{|"Jutter"|} ())
+    ~case_text:eigenaar_case
+    ~needle:"is hosted on \"Jutter\" while the subject is \"Vondst\"";
+  (* the NAVIGATED form: WF-100's declaration cross does not reach it (the
+     characteristic lives on the type the hop reaches, WF-053's business), but
+     the HOSTING refusal does — the owner names the pattern the constraint hangs
+     on, and that is the subject's here too. It fires BEFORE the hop is
+     resolved, which the pinned sentence is what proves. Measured on the
+     postwacht shape (`risicopost` via `post`, owner `Post`, subject `Wachter`):
+     verifier PASS before and after, this backend PASS (10) before and faulting
+     after, both Drools branches refusing throughout — so after the rule that
+     form has no answering executor at all, deliberately. *)
+  faults_with ~name:"WF-100 vreemde eigenaar op de genavigeerde check"
+    ~ir:(eigenaar_doc ~navigatie:{|"vinder"|} ~eigenaar:{|"Jutter"|} ())
     ~case_text:eigenaar_case
     ~needle:"is hosted on \"Jutter\" while the subject is \"Vondst\""
 
