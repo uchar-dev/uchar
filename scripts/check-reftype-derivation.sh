@@ -89,6 +89,19 @@
 # reaches at all. A leg that stops PLAYING entirely fails the floor below; a leg that merely shrinks
 # stays green and only the printed count moves.
 #
+# THE BEGRENSD ITEM OF THAT LIST LAPSED ON 2026-09-11 and is corrected rather than left to rot. The
+# corpus gained jutterswet-vangstklem, its first UNIT-BEARING clamp (a `t` bound over a `kg` base, one
+# declared system, factor 1000), so DrlTranspiler's clamp arm —
+# `omrekenWaarde(waarde(bound), effType(bound), effType(basis))` — now restates where it used to no-op.
+# Measured on that golden and not read off the code: the untouched document PLAYS in the DRL-text
+# branch, and relabelling its minimum bound `t` -> `kg` in the IR moves the DRL-text answer from
+# 1000,00 to 250,00. So the always-UNITLESS group is one smaller and that arm rests on a golden now,
+# not on the JUnit witnesses alone. The four counts of the paragraph above (12 reached, 3 ever
+# overriding, 9 unitless, 14 unreached) are NOT restated here: they came from a StackWalker probe run
+# on 2026-09-04 over an 11-golden twistable set, and which bucket the clamp arm moved INTO — an
+# overriding site, or a reached-but-non-overriding one — was not re-probed. Read them as that dated
+# measurement, with this correction on top, and re-probe before quoting them as current.
+#
 # The DRL leg is NOT a repetition of the exec one. It reaches a golden the exec branch cannot play
 # at all (jutterswet-vondsttarief, which the exec transpiler SKIPs as "waarde buiten scope" while the
 # text branch lowers and plays it), and its three live sites are different code. Measured by mutation
