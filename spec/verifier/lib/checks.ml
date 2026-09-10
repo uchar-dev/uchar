@@ -78,7 +78,13 @@ let mem_ci l name = List.exists (fun k -> norm k = norm name) l
 let some_names l = List.filter_map (fun x -> x) l
 
 (* Interval overlap over ISO date strings; None = open bound; both bounds
-   inclusive (IR-SPEC ch. 3.10 Validity). ISO dates compare lexicographically. *)
+   inclusive (IR-SPEC ch. 3.10 Validity). ISO dates compare lexicographically
+   — an assumption WF-101 (below) turns into a demand on the document: every
+   non-null bound is the strict yyyy-mm-dd lexeme and a real calendar day, so
+   `<=` on the raw string IS calendar order here. Without that rule the
+   assumption held of nothing: a sign-prefixed extended year sorts before
+   every four-digit year and a non-date sorts after every one of them, both
+   silently (measured 2026-09-11). *)
 let validity_overlaps (a : geldigheid option) (b : geldigheid option) =
   let bounds = function
     | None -> (None, None)
@@ -1123,6 +1129,62 @@ let wf020 ctx =
       arrays
   in
   cross @ within
+
+(* WF-101: a validity window's bounds carry WF-084's date lexeme (IR-SPEC
+   ch. 4.1). Every non-null `vanaf`/`tot` on every Geldigheid — the nine
+   carriers below — is the strict ISO form yyyy-mm-dd AND a real calendar
+   day, checked by the very predicate WF-084 uses on a date literal.
+
+   It exists to make the assumption stated at validity_overlaps above TRUE
+   before that function relies on it: three readers (this verifier, ref and
+   the ASP backend) hold a bound as an OPAQUE STRING and order it with `<=`,
+   and lexicographic order agrees with calendar order only INSIDE this
+   lexeme. Measured 2026-09-11 on jutterswet-vensterheffing with one bound
+   twisted, no reader faulting anywhere: `+012026-01-01` and `-0500-01-01`
+   sort before every four-digit year, so the window silently opens at the
+   start and both executors applied a rule version outside it (125 where the
+   pinned answer is leeg); `niet-een-datum` sorts after every date, closing
+   the window over its own casus (leeg where the pinned answer is 125).
+   Every one of those is a silent wrong answer, not a fault.
+
+   The calendar half is the layer the schema pattern on these two fields
+   cannot reach: `2026-02-30` matches that pattern, orders correctly, and
+   names a day that does not exist — a reader that PARSES the bound refuses
+   it where the three opaque-string readers do not. *)
+let wf101 ctx =
+  let bounds at (g : geldigheid option) =
+    match g with
+    | None -> []
+    | Some g ->
+        List.filter_map
+          (fun (field, w) ->
+            match w with
+            | Some w when not (lexeme_iso_date w) ->
+                Some
+                  (v "WF-101"
+                     (at ^ "/geldigheid/" ^ field)
+                     ("validity bound '" ^ w
+                      ^ "' is not the ISO form yyyy-mm-dd (fixed field widths, valid ranges \
+                         — ch. 4.1)"))
+            | _ -> None)
+          [ ("vanaf", g.geld_vanaf); ("tot", g.geld_tot) ]
+  in
+  List.concat_map (fun (_, entries) -> List.concat_map (fun (_, g, at) -> bounds at g) entries)
+    (form_arrays ctx)
+  (* The two carriers form_arrays does not list. A day-kind window is refused
+     outright by WF-031 (it must be ALTIJD), so on a conforming document this
+     arm is unreachable; it is here so the rule holds of every Geldigheid on
+     the wire rather than of seven of nine. *)
+  @ List.concat
+      (List.mapi
+         (fun i (r : resolved_dagsoort) ->
+           bounds (Printf.sprintf "/resolvedDagsoorten/%d" i) r.rd_geldigheid)
+         ctx.doc.resolved_dagsoorten)
+  @ List.concat
+      (List.mapi
+         (fun i (r : prioritized_defaults) ->
+           bounds (Printf.sprintf "/prioritizedDefaults/%d" i) r.pd_geldigheid)
+         ctx.doc.prioritized_defaults)
 
 let wf021 ctx =
   List.concat_map
@@ -8580,7 +8642,7 @@ let all (doc : document) : violation list =
   List.concat
     [ wf001 ctx; wf002 ctx; wf094 ctx; wf094_null ctx; wf003 ctx; wf004 ctx; wf005 ctx; wf006 ctx;
       wf007_model ctx; wf009 ctx; wf092 ctx; wf011 ctx; wf012 ctx; wf013 ctx; wf014 ctx;
-      wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf020 ctx; wf021 ctx;
+      wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf020 ctx; wf101 ctx; wf021 ctx;
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx;
       wf034_dagsoort_eenheden ctx; wf034_zijtabelsleutels ctx;
