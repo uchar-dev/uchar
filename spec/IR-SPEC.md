@@ -578,30 +578,66 @@ settled shape.
   loud, defensible failure — the wire refusing a producer that has not
   caught up — but it is a latent conformance defect in a frontend rather
   than a live one, and it is named here so the eventual gate-2 red is
-  read as expected rather than as a regression. **Scope is the characteristic map:**
-  `attribuutGranulariteit` still admits `null` on the wire, deliberately
-  untouched. The same seam is structurally there — `attr_temporal` reads
-  KEY EXISTENCE while the case loader's attribute arm reads the VALUE
-  (`Some (Some gran)`) — and 0 of the 572 documents across the four zones
-  and the parity zone carry a null there (2026-09-10).
+  read as expected rather than as a regression. The same consequence now
+  holds for the attribute map as well — see the third arm.
 
-  That sister seam has now been MEASURED (2026-09-10), and the
-  measurement is the reason this arm stops where it does rather than an
-  admission that it was never looked at: it is a **different class**.
-  Nulling one attribute granularity produces no silent wrong answer
-  anywhere. Every path dies loudly — but wrongly worded, and not with
-  one voice: a delivered timeline is refused with "a timeline value on a
-  non-temporal attribute", a message that contradicts the document that
-  declares the attribute temporal; a scalar delivery is refused by the
-  reference interpreter as "temporal attribute … without a granularity"
-  and by the ASP backend as "the gedurende clip … needs the full
-  timeline" — two diagnoses of one defect. On a pro-rata base WF-056
-  catches the document already, for a reason that says something else
-  again. So the defect is diagnostic hygiene, not correctness, and
-  refusing it on THIS table's evidence would be over-rejection of a
-  different kind of fault. It carries its own card,
-  `backlog/new/20260909-attribuutgranulariteit-null.md`, with the
-  measurement in full and a low priority stated on its face.
+  **Third arm (maintainer decision 2026-09-10): every
+  `attribuutGranulariteit` entry MUST carry a granularity.** The same
+  shape on the attribute side table. The seam is structurally identical —
+  the verifier's `attr_temporal`, the reference interpreter's evaluator
+  and the ASP translator read KEY EXISTENCE while the shared case
+  loader's attribute arm reads the VALUE (`Some (Some gran)`) — but the
+  fault it produces is a **different class**, and this arm closes on its
+  own measurement rather than on the characteristic table's. There is no
+  silent wrong answer anywhere: every path dies. What is wrong is the
+  DIAGNOSIS.
+
+  Measured 2026-09-10 with one granularity value nulled and nothing else
+  changed (pre-arm verifier md5 `f55fdba98ccd5ac68bb99492519aa580`):
+
+  - on a pro-rata base (`anchor/jutterswet-borgdeel`, `borgtarief`) the
+    document is schema-valid and the verifier does catch it — but as
+    **WF-056**, "pro-rata base 'borgtarief' is not a temporal attribute",
+    which names a defect other than the one present;
+  - on an ordinary clip base (`jutterswet-tegenwacht`, `wachtvergoeding
+    per maand`), where WF-056 does not reach, the document is
+    schema-valid **and verifier-PASS** — silent — and a case delivering
+    the attribute's timeline then dies at load in both executors with "a
+    timeline value on a non-temporal attribute", a message that
+    contradicts the document that declares the attribute temporal;
+  - the same document with the attribute delivered **scalar** — the shape
+    the loader does accept — draws two different diagnoses of one defect:
+    the reference interpreter's "temporal attribute … without a
+    granularity" and the ASP backend's "the gedurende clip … needs the
+    full timeline".
+
+  Closed the same way as the second arm: the schema drops `null` from
+  this enum too, so the wire refuses the shape at gate 2, and this arm
+  refuses it in the verifier for any document that never met the schema.
+  The case loader's contradicting message is corrected in the same
+  change — with the enum shut, only a hand-built document can reach that
+  arm, and it must then name the real reason: "the attribute is declared
+  time-dependent but its granularity is null: the timeline has no grid to
+  sit on (WF-059)". Both executors share that loader, so they speak with
+  one voice there. The third measurement's divergence — scalar delivery,
+  two diagnoses — is deliberately NOT touched: both messages are true of
+  the document and both are loud, and unifying them is a separate
+  question about where a missing timeline is diagnosed, not about this
+  declaration rule.
+
+  Cost: none — 0 of the 577 documents across the four zones and the
+  parity zone carried a null there before this arm (on the branch head
+  the count is 1: this arm's own negatief witness,
+  `wf059-attribuut-zonder-granulariteit`), and neither emitter can
+  produce one today: the RegelSpraak emitter guards its write with an
+  explicit non-null test on this table as well, and the Catala emitter's
+  map is empty by construction. That Catala emitter writes a constant
+  `null` for **every** entry of the attribute map too, so the latent
+  conformance defect recorded above for the characteristic map now
+  applies to both side tables: gate 2 fails on that frontend's output the
+  moment it ever models a temporal attribute, which is the loud,
+  defensible failure and is named here so the eventual red reads as
+  expected.
 
 - **WF-004** A dimensioned attribute's `dimensions` list MUST be non-empty,
   duplicate-free, and every entry MUST resolve to a declared Dimension
@@ -5703,7 +5739,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-056 | the pro-rata fold (tijdsevenredig-deel) MUST carry a gedurende condition and one temporal source argument (a temporal attribute or granular parameter) as coarse as or coarser than its bucket; on a temporal target the bucket granularity MUST equal the target's declared granularity | gate 3 | `anchor/jutterswet-borgdeel` (the ch. 3.7 fold, executed by gates 5–6) | `wf056-no-gedurende-condition` + `wf056-scalar-base` + `wf056-bucket-target-mismatch` |
 | WF-057 | declared names are target-text-safe: no double quote, backslash or control character in any declared/form name (ch. 2.1) | gate 3 | every golden (a universal name-safety property: no single legal name exercises the boundary more than another; gate 3 witnesses none over-rejects) | `wf057-quote-in-attribute` + `wf057-backslash-in-kenmerk` + `wf057-newline-in-rule-name` |
 | WF-058 | the day count (aantal-dagen-in, `RUNTIME-SEMANTICS.md` ch. 3.8) MUST carry a gedurende condition over an own temporal characteristic, takes no arguments, and its stated bucket MUST equal the target's declared granularity | gate 3 | `anchor/jutterswet-dagentelling` (the ch. 3.8 worked example verbatim, executed by gates 5–6) | `wf058-no-gedurende-condition` + `wf058-bucket-target-mismatch` + `wf058-with-argument` |
-| WF-059 | two declaration arms, one shape (ch. 2.2). (1) every declared attribute carries a datatype — the attribute pendant of WF-018's datatype clause; a null datatype splits the executors on otherwise clean input. (2) every `kenmerkGranulariteit` entry carries a granularity (maintainer decision 2026-09-09): the entry declares its characteristic time-dependent by the presence of its KEY and names the grid in its VALUE, and the readers split on that seam — the WF-055 clip check, `ref` and the ASP translator all decide temporality on KEY EXISTENCE while the shared case loader decides on the VALUE, so a null declares one characteristic temporal to three readers and non-temporal to the fourth. Measured 2026-09-09 on `jutterswet-tegenwacht` with one value nulled: schema-valid AND verifier-clean, after which a case DELIVERING the timeline died at load in both executors with a message contradicting its own document ("a characteristic timeline on a non-temporal characteristic") while a case OMITTING it ran to completion and answered 60 and 120 where the golden pins 30 and 30 — silently wrong, and wrong IDENTICALLY in both, so no differential gate could see it. Closed twice: the schema drops `null` from the enum (gate 2) and this arm refuses it in the verifier for any document that never met the schema. Cost: none — 0 of the 534 documents the four zones held BEFORE the rule carried it (1 on the branch head: this rule's own witness), the RegelSpraak emitter guards its write with a non-null test and the Catala emitter's map is empty by construction — though with `null` gone from the enum that emitter's dead constant-`null` branch becomes a latent CONFORMANCE defect, gate-2-invalid the moment its map ever fills, which is loud and defensible but is named so the eventual red reads as expected. Scope is the characteristic map; `attribuutGranulariteit` still admits `null`, untouched — the same key-vs-value seam is structurally present there (`attr_temporal` reads the key, the case loader's attribute arm reads the value) and 0 of 572 documents carry one (2026-09-10). That seam is now MEASURED and is a DIFFERENT CLASS: no silent wrong answer anywhere, but loud refusals that are misworded (a delivered timeline draws "a timeline value on a non-temporal attribute", contradicting the document) and that the two executors phrase differently (ref "without a granularity" against clingo "needs the full timeline"). Diagnostic hygiene, not correctness — hence its own low-priority card rather than a third arm here | gate 3 | every golden (a universal declaration property; gate 3 witnesses none over-rejects) — arm 2's clip witnesses are `jutterswet-tegenwacht` and `anchor/jutterswet-dubbelwacht` | `wf059-attribute-without-datatype`, `wf059-kenmerk-zonder-granulariteit` (one per arm) |
+| WF-059 | three declaration arms, one shape (ch. 2.2). (1) every declared attribute carries a datatype — the attribute pendant of WF-018's datatype clause; a null datatype splits the executors on otherwise clean input. (2) every `kenmerkGranulariteit` entry carries a granularity (maintainer decision 2026-09-09): the entry declares its characteristic time-dependent by the presence of its KEY and names the grid in its VALUE, and the readers split on that seam — the WF-055 clip check, `ref` and the ASP translator all decide temporality on KEY EXISTENCE while the shared case loader decides on the VALUE, so a null declares one characteristic temporal to three readers and non-temporal to the fourth. Measured 2026-09-09 on `jutterswet-tegenwacht` with one value nulled: schema-valid AND verifier-clean, after which a case DELIVERING the timeline died at load in both executors with a message contradicting its own document ("a characteristic timeline on a non-temporal characteristic") while a case OMITTING it ran to completion and answered 60 and 120 where the golden pins 30 and 30 — silently wrong, and wrong IDENTICALLY in both, so no differential gate could see it. Closed twice: the schema drops `null` from the enum (gate 2) and this arm refuses it in the verifier for any document that never met the schema. Cost: none — 0 of the 534 documents the four zones held BEFORE the rule carried it (1 on the branch head: this rule's own witness), the RegelSpraak emitter guards its write with a non-null test and the Catala emitter's map is empty by construction — though with `null` gone from the enum that emitter's dead constant-`null` branch becomes a latent CONFORMANCE defect, gate-2-invalid the moment its map ever fills, which is loud and defensible but is named so the eventual red reads as expected. (3) every `attribuutGranulariteit` entry carries a granularity (maintainer decision 2026-09-10): the same key-vs-value seam one side table back (`attr_temporal` reads the key, the shared case loader's attribute arm reads the value), but a DIFFERENT CLASS of fault, closed on its own measurement. Measured 2026-09-10 on the pre-arm binary (verifier md5 f55fdba98ccd5ac68bb99492519aa580) with one value nulled: no silent wrong answer anywhere — every path dies — but the DIAGNOSIS is wrong. On a pro-rata base the verifier catches it as WF-056 ("pro-rata base 'borgtarief' is not a temporal attribute"), naming another defect; on an ordinary clip base, where WF-056 does not reach, the document is schema-valid AND verifier-PASS and a delivered timeline then draws "a timeline value on a non-temporal attribute", contradicting the document that declares the attribute temporal; the same document with the attribute delivered SCALAR draws two diagnoses of one defect (ref "temporal attribute … without a granularity" against clingo "the gedurende clip … needs the full timeline"). Closed like arm 2: `null` leaves this enum too and this arm refuses it for any document that never met the schema, while the case loader's message is corrected in the same change to "the attribute is declared time-dependent but its granularity is null: the timeline has no grid to sit on (WF-059)" — one voice, since both executors share that loader. The scalar-delivery divergence is deliberately left: both messages are true and loud. Cost: none — 0 of 577 documents over the four zones and the parity zone carried one before the arm (1 on the branch head: its own witness), the RegelSpraak emitter guards this table's write with a non-null test too, and the Catala emitter's constant-`null` branch over this map is the same latent CONFORMANCE defect recorded for arm 2, now on both side tables | gate 3 | every golden (a universal declaration property; gate 3 witnesses none over-rejects) — arm 2's clip witnesses are `jutterswet-tegenwacht` and `anchor/jutterswet-dubbelwacht`; arm 3's is `jutterswet-tegenwacht` again, with `anchor/jutterswet-borgdeel` as the WF-056 flank | `wf059-attribute-without-datatype`, `wf059-kenmerk-zonder-granulariteit`, `wf059-attribuut-zonder-granulariteit` (one per arm) |
 | WF-060 | SumType declaration: ≥ 1 constructor, unique names (ci), admissible payload datatypes (Number, day-precision Date, declared SumType), acyclic payload graph (ch. 2.4) | gate 3 | `anchor/jutterswet-beschikkingsom` (executed by gates 5–6) | `wf060-duplicate-constructor` + `wf060-text-payload` + `wf060-recursive-sumtype` |
 | WF-061 | SumType use site agrees with its declaring domain; two sum-typed comparison operands name the same domain (the nominal rule, ch. 2.4) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf061-use-site-drift` + `wf061-cross-sumtype-equality` + `wf061-undeclared-domain` |
 | WF-062 | Construct: sum-typed node; declared constructor; argument present iff unary; argument type matches the declared payload (ch. 4.7) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf062-nullary-with-argument` + `wf062-payload-type-mismatch` + `wf062-construct-on-enum` (the asymmetry the 2026-09-01 widening left standing: `Match` widened to enumeration scrutinees, `Construct` deliberately did not — an enumeration value is a `Literal`) |

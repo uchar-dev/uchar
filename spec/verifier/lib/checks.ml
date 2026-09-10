@@ -7841,22 +7841,39 @@ let wf057 ctx =
    the verifier close it together; this arm is what still catches a
    hand-built or future-emitted document that never met the schema.
 
-   SCOPE is the characteristic map. `attribuutGranulariteit` admits null
-   on the wire to this day and is NOT touched here. The same seam is
-   structurally present — [attr_temporal] above reads KEY EXISTENCE while
-   the case loader's attribute arm reads the VALUE — and 0 of the 572
-   documents across the four zones and the parity zone carry one
-   (2026-09-10).
+   THIRD ARM (maintainer decision 2026-09-10): the same shape on the
+   ATTRIBUTE side table, `attribuutGranulariteit`. Structurally identical —
+   [attr_temporal] above reads KEY EXISTENCE, the shared case loader's
+   attribute arm reads the VALUE (`Some (Some gran)`) — but a measurably
+   DIFFERENT CLASS of fault, which is why it closes on its own evidence
+   rather than on the characteristic table's.
 
-   That seam has been MEASURED (2026-09-10) and is a DIFFERENT CLASS, which
-   is why this arm stops here rather than widening: nulling an attribute
-   granularity yields no silent wrong answer anywhere. Every path dies
-   loudly, but misworded and not with one voice — a delivered timeline is
-   refused as "a timeline value on a non-temporal attribute" (contradicting
-   a document that declares it temporal), while a scalar delivery draws
-   "temporal attribute ... without a granularity" from ref and "needs the
-   full timeline" from the ASP backend. Diagnostic hygiene, not
-   correctness. Its own card carries the measurement in full. *)
+   Measured 2026-09-10 on the pre-arm binary (md5
+   f55fdba98ccd5ac68bb99492519aa580), one granularity value nulled and
+   nothing else changed. There is no silent wrong answer anywhere; every
+   path dies. What is wrong is the DIAGNOSIS.
+     - On a pro-rata base (`anchor/jutterswet-borgdeel`, `borgtarief`) the
+       document was schema-valid and the verifier caught it — but as
+       WF-056, "pro-rata base 'borgtarief' is not a temporal attribute",
+       which names a different defect than the one present.
+     - On an ordinary clip base (`jutterswet-tegenwacht`,
+       `wachtvergoeding per maand`), where WF-056 does not reach, the
+       document was schema-valid AND verifier-PASS — silent here — while a
+       case DELIVERING the timeline died at load in both executors with "a
+       timeline value on a non-temporal attribute", a message that
+       contradicts the document that declares the attribute temporal.
+     - The same document with the attribute delivered SCALAR — the shape
+       the loader does accept — drew two different diagnoses of one
+       defect: ref "temporal attribute ... without a granularity", the ASP
+       backend "the gedurende clip ... needs the full timeline".
+   Closed the same way as arm 2: the schema drops null from this enum too,
+   and this arm refuses it for any document that never met the schema. The
+   case loader's contradicting message is corrected in the same change —
+   with the enum shut that path is reachable only for a hand-built
+   document, and then it must name the real reason. Cost: none — 0 of the
+   577 documents across the four zones and the parity zone carried a null
+   there before this arm (1 on the branch head: this arm's own witness).
+   Witness: `corpus/negatief/wf059-attribuut-zonder-granulariteit`. *)
 let wf059 ctx =
   List.concat_map
     (fun (key, (ot : objecttype)) ->
@@ -7879,7 +7896,18 @@ let wf059 ctx =
                      makes the clip readers temporal while the case loader reads the value and \
                      refuses the timeline" ]
             | Some _ -> [])
-          ot.kenmerk_granulariteit)
+          ot.kenmerk_granulariteit
+      @ List.concat_map
+          (fun (an, gran) ->
+            match gran with
+            | None ->
+                [ v "WF-059"
+                    ("/objecttypen/" ^ key ^ "/attribuutGranulariteit/" ^ an)
+                    "attribute declared time-dependent carries no granularity: the key makes \
+                     the temporal readers treat it as a timeline while the case loader reads \
+                     the value and refuses that timeline" ]
+            | Some _ -> [])
+          ot.attribuut_granulariteit)
     ctx.doc.objecttypen
 
 (* The composite domains a declared domain directly references — the sum-type

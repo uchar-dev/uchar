@@ -2525,10 +2525,10 @@
               "WEEK",
               "MAAND",
               "KWARTAAL",
-              "JAAR",
-              null
+              "JAAR"
             ]
-          }
+          },
+          "description": "Presence of a key declares the attribute time-dependent; the value is its grid. A null value is NOT admitted (maintainer decision 2026-09-10): the verifier's temporality predicate and both executors' evaluators decide temporality on key existence and the shared case loader on the value, so a null splits them on otherwise clean input. Measured: no silent wrong answer — every path dies — but the refusals contradict the document or differ between the executors. WF-059's third arm closes the same shape in the verifier."
         },
         "attribuutTijdlijnAantal": {
           "type": "object",

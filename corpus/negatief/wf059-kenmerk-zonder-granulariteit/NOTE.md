@@ -30,10 +30,9 @@ it in the verifier for any document that never met the schema. The negatief zone
 is not schema-validated (gate 2 covers `corpus/golden` and `corpus/rood`), which
 is what lets this document exist here to exercise the verifier arm.
 
-`attribuutGranulariteit` still admits `null` on the wire — the same seam one side
-table over, deliberately left alone. Its reader split HAS been measured since
-(2026-09-10) and turns out to be a different class from this one: no silent wrong
-answer anywhere, but loud refusals that are misworded and that the two executors
-phrase differently. Diagnostic hygiene rather than correctness, and so its own
-card (`backlog/new/20260909-attribuutgranulariteit-null.md`, low priority) rather
-than a third arm here.
+`attribuutGranulariteit` — the same seam one side table over — was closed the
+same way on 2026-09-10 as WF-059's THIRD arm, on its own measurement rather than
+on this one's, because the fault it produces is a different class: no silent
+wrong answer anywhere, but loud refusals that are misworded and that the two
+executors phrase differently. Its witness is
+`corpus/negatief/wf059-attribuut-zonder-granulariteit`, on this same golden.

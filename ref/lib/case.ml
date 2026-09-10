@@ -280,7 +280,22 @@ let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
               match Ir_v0.Checks.find_ci ot.attribuut_granulariteit name with
               | Some (Some gran) ->
                   (attrs, SMap.add (norm name) (timeline_of_json ~at ~gran decl vj) tls)
-              | _ -> fail "%s: a timeline value on a non-temporal attribute" at)
+              | Some None ->
+                  (* The KEY is present, so the document declares this attribute
+                     time-dependent — every other reader (the verifier's
+                     attr_temporal, this interpreter's evaluator, the ASP
+                     translator) already treats it as such. Only the grid is
+                     missing. Until 2026-09-10 this fell into the arm below and
+                     was refused as "non-temporal", contradicting the document
+                     that produced it. The schema enum and WF-059's third arm
+                     now shut the shape on the wire, so only a hand-built
+                     document reaches here — and it must be told the real
+                     reason. *)
+                  fail
+                    "%s: the attribute is declared time-dependent but its granularity is null: \
+                     the timeline has no grid to sit on (WF-059)"
+                    at
+              | None -> fail "%s: a timeline value on a non-temporal attribute" at)
             else (SMap.add (norm name) (value_of_json ~at decl vj) attrs, tls)
         | None -> fail "attribute %S is not declared on %S" name otype_name)
       (SMap.empty, SMap.empty)
