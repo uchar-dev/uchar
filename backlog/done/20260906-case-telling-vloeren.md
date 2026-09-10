@@ -145,7 +145,7 @@ weerleggingen, 26 rood, 239 JUnit, 74 twists).
 
 | gate | vloer(en) | motivering |
 |---|---|---|
-| 1 `check-self-contained` | **geen** | heeft geen eigen telling: een tripwire over élk getrackt bestand, dus geen suite die kan halveren en geen eigen fixtureset |
+| 1 `check-self-contained` | **geen vloer, wel een naampin** | heeft geen telling om te vloeren: een tripwire over élk getrackt bestand, dus geen suite die kan halveren. Zijn fixtureset — de `ZONES`-lijst — is bij **naam** gepind (slotronde F3): een verdwenen of hernoemde zone faalde niet maar werd stil overgeslagen, en faalt nu bij naam |
 | 2 `check-ir-schema` | `EXPECTED_MIN_DOCS=192` | de documenttelling van beide artefactzones; alleen in corpusmodus |
 | 3 `check-verifier` | `EXPECTED_MIN_NEGATIEF=350` | de enige gate die de negatieven überhaupt ziet — een verdwenen `wf###`-case neemt de falende getuige van een MUST mee. **Geen** vloer op `n_golden`: dat is byte-voor-byte de verzameling die gate 2 al vloert |
 | 4 `check-case-schema` | **geen** | zijn telling is de disjuncte som van de twee zonetellingen die gates 5 en 8 elk apart vloeren; een vloer op de sóm is het zwakkere instrument (een groene case geruild tegen een rode houdt de som gelijk) |
@@ -236,6 +236,10 @@ in het commentaarblok van elk gevloerd script.
 | 12 | één getuigetestklasse tijdelijk niet meegecompileerd | `check-drools: FAIL — the suite ran 238 tests, but EXPECTED_MIN_TESTS pins at least 239` |
 | 13 | de casebestanden van één twistbare golden opzij | `FAIL: 72 annotation(s) twisted, but EXPECTED_MIN_TWISTS pins at least 74` |
 
+| 2 (nulpad) | alle corpuszones hernoemd (n = 0) | `FAIL: 0 document(s) validated, but EXPECTED_MIN_DOCS pins at least 192` |
+| 3 (nulpad) | alle corpuszones hernoemd (n = 0) | `FAIL: 0 negatief case(s) rejected, but EXPECTED_MIN_NEGATIEF pins at least 350` |
+| 1 (naampin) | één artefactzone hernoemd | `FAIL: artifact zone 'spec/schema' is missing — a vanished or renamed zone stops being swept ...` |
+
 Elke verlaging is onmiddellijk teruggedraaid; de werkboom was na elke meting
 schoon (`git status --porcelain` leeg). Niet apart rood getoond, met dezelfde
 vergelijkingsvorm en dezelfde melding: gate 9's checks-vloer, gate 10's
@@ -259,3 +263,43 @@ niet gemerged. `CLAUDE.md` krijgt twee wijzigingen, beide binnen de
 gate-set-beschrijving: één alinea "Counting floors" na gate 13, en één zin bij
 gate 5 over de ref-suite. Verder is niets aangeraakt — geen `CONSTRUCTS.md`,
 geen `PLAN.md`, geen `toka/`, geen pin, geen `EXPECTED_PLAYED`.
+
+---
+
+## Slotronde vóór de merge (2026-09-10, lens 1)
+
+Vijf punten, alle vijf uitgevoerd; geen nieuwe constanten, dus nog steeds
+zestien vloeren over tien scripts.
+
+- **F1 — de vloer stond achter de leeg-corpus-tak.** Gates 2 en 3 hadden hun
+  `n == 0 → exit 0`-tak ("corpus not yet populated") vóór de vloerevaluatie
+  staan, dus met de zones opzij gaven ze PASS bij nul — precies het geval
+  waarvoor de vloer bestaat. De vloer staat nu ervóór; de leeg-corpus-tak is
+  alleen nog bereikbaar zolang de vloer nul is. In gate 3 gaat de vloer ook
+  vóór de bestaande "geen negatieven"-melding, zodat het nulgeval met **beide**
+  getallen wordt gemeld in plaats van met de zwakkere niet-leeg-tekst. Nulpad
+  gemeten: zie de twee nieuwe rijen in de roodtabel hierboven.
+- **F2 — één formulering.** Gate 4's afwezigheidsmotivering zei dat bij een
+  geruilde case "both zone floors would see it". Gemeten vangt er precies één:
+  die van de zone die **verloor**; een ondergrens zegt niets over een zone die
+  groeide. Herformuleerd, met die reden erbij.
+- **F3 — gate 1 claimde te veel.** De zin "no fixture set of its own" was
+  onwaar: de `ZONES`-lijst is er een, en `[ -e "$zone" ] || continue` sloeg een
+  verdwenen zone stil over (gemeten: `spec/schema` opzij gaf PASS). Gekozen voor
+  de route die de zin wáár maakt in plaats van hem af te zwakken: een
+  ontbrekende zone faalt nu bij naam, waarmee de lijst de naampin van het huis
+  wordt. Geen legitiem pad breekt — alle tien zones bestaan, `toka/` staat
+  bewust niet in de lijst, en gate 1 is groen op de onaangeroerde kop. De twee
+  latere lussen houden hun stille `continue`, met de reden erbij: het bestaan is
+  één lus eerder al bij naam vastgesteld, dus één luide melding in plaats van drie.
+- **F4 — de verwijzing klopte niet.** De gate-5-zin in `CLAUDE.md` verwees naar
+  "exactly as gate 6 runs the clingo backend's own suite", terwijl de
+  gate-6-alinea die suite niet noemde. Gate 6's beschrijving noemt nu zijn eigen
+  unit-suite en diens vloer.
+- **F5 — de tweeargumentvorm betaalde de hele suite.** Het suiteblok stond boven
+  de `exec`, dus wie één paar wilde naspelen draaide eerst 489 voorbeelden.
+  Verplaatst naar onder de `exec`: de debugvorm keert nu in 0,04 s terug, de
+  gate draait de suite onverminderd. (Gate 6 houdt zijn eigen volgorde; dat
+  script is deze ronde niet geopend.)
+
+Herdraaid na de wijzigingen: gates 1, 2, 3, 4 en 5 — alle groen.
