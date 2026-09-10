@@ -2124,6 +2124,94 @@ let () =
     ~case_text:(kenmerklevering_case ~statisch:{|"gemeentelijk"|} ~tijdlijnen:dienstdoend_tl)
     ~needle:None
 
+(* THE HAND-BUILT NULL ATTRIBUTE GRANULARITY (maintainer decision 2026-09-10,
+   WF-059's THIRD arm). `attribuutGranulariteit` declares its attribute
+   time-dependent by the presence of its KEY and names the grid in its VALUE.
+   Since 2026-09-10 the schema no longer admits a null value and WF-059's third
+   arm refuses it, so the WIRE cannot carry the shape at all — which is exactly
+   why the loader arm behind it needs pinning HERE and can have no corpus
+   witness. A document that reaches it is hand-built and schema-invalid by
+   construction, so it fits in no zone: gate 2 schema-gates golden and rood,
+   and a load-time refusal exits 2, which gate 8 reads as a failure rather than
+   as the pinned fault — the same argument the characteristic block above
+   makes, one side table over.
+
+   The reader is SHARED: the ASP backend loads its cases through
+   `Uchar_ref.Case`, so this is this backend's proof obligation as much as the
+   interpreter's — the two speak this refusal with one voice or they diverge.
+
+   What is being pinned is the WORDING, and it is pinned because
+   `spec/IR-SPEC.md` (WF-059, third arm) quotes it verbatim: a silent
+   rewording would decouple the spec from the code with no gate noticing. The
+   needle is the stable clause of the message, not the whole sentence.
+
+   Three checks. The third is what keeps the two arms apart: an attribute with
+   NO granularity key is genuinely non-temporal and the OLDER message is true
+   of it. Fold the arms back into one catch-all and that check fails. *)
+let attribuutlevering_doc ~granulariteit =
+  Printf.sprintf
+    {|{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Wachtpost": {
+      "node": "Objecttype", "naam": "Wachtpost",
+      "attributen": { "wachtvergoeding": { "node": "Numeriek", "geheel": true, "decimalen": 0,
+                                           "teken": "ONBEPAALD", "eenheid": null } },
+      "attribuutMeervoud": {}, "attribuutDimensies": {},
+      "attribuutGranulariteit": { %s },
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false, "meervoud": "Wachtposten"
+    }
+  },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {}, "dimensies": {},
+  "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [], "resolvedRegels": [],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}|}
+    granulariteit
+
+let attribuutlevering_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "W1", "objectType": "Wachtpost",
+      "attributes": { "wachtvergoeding": { "timeline": [
+        { "from": "2024-01-01", "to": "2025-01-01", "value": { "number": "10" } } ] } },
+      "roles": {}, "characteristics": [], "characteristicTimelines": {} } ], "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }|}
+
+let laadt_ir_case ~name ~ir ~case_text ~needle =
+  let irf = write_temp ".ir.json" ir in
+  let casef = write_temp ".case.json" case_text in
+  let doc = Ir_v0.Loader.load_file irf in
+  let outcome =
+    match Uchar_ref.Case.load_file doc casef with
+    | (_ : Uchar_ref.Case.t) -> Ok ()
+    | exception Uchar_ref.Case.Error m -> Error m
+  in
+  Sys.remove irf;
+  Sys.remove casef;
+  match (needle, outcome) with
+  | Some n, Error m -> check (name ^ " refused at load (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle:n m)
+  | Some _, Ok () -> check (name ^ ": expected a loud refusal, the case loaded") false
+  | None, Ok () -> check (name ^ " loads") true
+  | None, Error m -> check (name ^ ": expected a clean load, got a refusal (" ^ m ^ ")") false
+
+let () =
+  laadt_ir_case ~name:"een tijdlijn op een attribuut met granulariteit null"
+    ~ir:(attribuutlevering_doc ~granulariteit:{|"wachtvergoeding": null|})
+    ~case_text:attribuutlevering_case
+    ~needle:(Some "declared time-dependent but its granularity is null");
+  laadt_ir_case ~name:"hetzelfde attribuut met een echte granulariteit"
+    ~ir:(attribuutlevering_doc ~granulariteit:{|"wachtvergoeding": "MAAND"|})
+    ~case_text:attribuutlevering_case ~needle:None;
+  laadt_ir_case ~name:"een tijdlijn op een attribuut zonder granulariteitssleutel"
+    ~ir:(attribuutlevering_doc ~granulariteit:"")
+    ~case_text:attribuutlevering_case
+    ~needle:(Some "a timeline value on a non-temporal attribute")
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

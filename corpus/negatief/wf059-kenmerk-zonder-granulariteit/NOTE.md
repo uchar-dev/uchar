@@ -30,9 +30,19 @@ it in the verifier for any document that never met the schema. The negatief zone
 is not schema-validated (gate 2 covers `corpus/golden` and `corpus/rood`), which
 is what lets this document exist here to exercise the verifier arm.
 
-`attribuutGranulariteit` — the same seam one side table over — was closed the
-same way on 2026-09-10 as WF-059's THIRD arm, on its own measurement rather than
-on this one's, because the fault it produces is a different class: no silent
-wrong answer anywhere, but loud refusals that are misworded and that the two
-executors phrase differently. Its witness is
+`attribuutGranulariteit` — the same seam one side table over — was closed on
+2026-09-10 as WF-059's THIRD arm, on its own measurement rather than on this
+one's, because the fault it produces is a different class: no silent wrong
+answer anywhere, but loud refusals that are misworded and that the two executors
+phrase differently. Its witness is
 `corpus/negatief/wf059-attribuut-zonder-granulariteit`, on this same golden.
+
+The two arms match on the WF closure — schema enum and verifier — and NOT yet on
+the message. That third arm also repaired its case-loader wording; this one's
+was left as it is. Measured on THIS document with a case delivering
+`aangesteld`'s timeline: both executors still say "a characteristic timeline on
+a non-temporal characteristic", because the `characteristicTimelines` arm folds
+"key present, value null" and "no key at all" into one catch-all. The wire no
+longer carries the shape, so only a hand-built document meets that wording — the
+same position the attribute side was in before its arm, and reported rather than
+fixed because `kenmerkGranulariteit` was out of that card's scope.

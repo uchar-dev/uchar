@@ -260,22 +260,75 @@ geen enkele plek gemist wordt):
 | 3 `check-verifier` | PASS (192 golden clean; 355 negatief, floor 350) | PASS (192 golden clean; **356** negatief, floor 350) |
 | 4 `check-case-schema` | — | PASS (453 case file(s) validate) |
 | 5 `check-oracle` | — | PASS (ref suite 489 worked examples, floor 489; 427 cases replayed exactly, floor 427) |
-| 6 `check-clingo` | — | PASS (backend suite 83 checks, floor 83; 427 cases replay exactly) |
+| 6 `check-clingo` | PASS (backend suite 83 checks, floor 83) | PASS (backend suite **86** checks, floor 83; 427 cases replay exactly) |
 | 7 `check-noop` | — | PASS (391 cases refute a do-nothing executor; 36 pinned survivors) |
 | 8 `check-rood` | — | PASS (26 red cases fault observably in ref and clingo, floor 26) |
+| 9 `check-catala` | — | PASS (201 checks, 12 catala-goldens) |
+| 10 `check-regelspraak` | — | PASS (173 tests, 38 rgs-goldens) |
+| 11 `check-toka-parity` | — | PASS (29/29/29) |
+| 12 `check-drools` | — | PASS (kanaal 47 gepind, played 119, JUnit 244) |
+| 13 `check-reftype-derivation` | — | PASS (74 twists, 70 replays, 13 DRL-text) |
 
 Gate 2 is vóór én ná gemeten zoals de kaart eist: **onveranderd 192** — de
 getuige leeft in `corpus/negatief`, dat gate 2 niet schema-valideert. Gate 3
-gaat met de getuige mee omhoog (355 → 356), ruim boven de vloer van 350. Geen
-enkele vloer hoefde te bewegen.
+gaat met de getuige mee omhoog (355 → 356), ruim boven de vloer van 350. Gate 6
+gaat van 83 naar 86 checks door de drie nieuwe ladertests hieronder; de vloer
+van 83 blijft staan, want groei hoeft geen bump. Geen enkele vloer hoefde te
+bewegen.
 
-Poorten 9–13 (catala, regelspraak, toka-pariteit, drools, reftype-derivation)
-zijn in deze sessie **niet** gedraaid — die vragen catala, JDK/Maven-jars en de
-volle differentiaal; de hoofdsessie draait de volle set. Wel een signaal: gate 8
-draaide zijn Drools-been mee en gaf PASS (6 fault-pinned, 20 not-carried), en
-geen enkele test in de repo pint de oude meldingstekst (volledige grep op de
-string over alle zones gedaan; de enige treffers zijn proza:
+**Herkomst van de cijfers.** Poorten 1–8 zijn in deze sessie zelf gedraaid, in
+deze worktree. Poorten 9–13 vragen catala, JDK/Maven-jars en de volle
+differentiaal en zijn hier **niet** gedraaid; hun cijfers komen uit de
+review-ronde van de hoofdsessie (lens 1), die alle dertien op deze branchkop
+groen draaide — inclusief een hertest van rood-groen, een armchirurgie-meting
+(één regel verschil over 356 negatiefs) en een over-afwijzingsveeg over 578
+documenten met nul beweging. Ze staan hier als bronvermelding, niet als eigen
+meting. Wel eigen signaal: gate 8 draaide zijn Drools-been mee en gaf PASS
+(6 fault-pinned, 20 not-carried), en geen enkele test in de repo pinde de oude
+meldingstekst (volledige grep over alle zones; de enige treffers waren proza:
 `wf034-wees-attribuutgranulariteit/NOTE.md`, deze kaart, en de nieuwe NOTE).
+
+### De nieuwe ladertak is nu gepind (gate 6)
+
+De `Some None`-arm in `ref/lib/case.ml` was door geen enkele poort gedekt
+terwijl `spec/IR-SPEC.md` de meldingstekst **letterlijk citeert** — een
+herformulering zou spec en code geruisloos ontkoppelen. Drie additieve checks in
+`backends/clingo/test/test_clingo.ml`, in de huisvorm van het
+`kenmerklevering`-blok ernaast (document in geheugen, tempfile, laden via
+`Uchar_ref.Case.load_file`, needle op het stabiele deel van de melding):
+
+1. tijdlijn op een attribuut met granulariteit `null` → needle
+   `declared time-dependent but its granularity is null`;
+2. hetzelfde attribuut met een echte granulariteit (`MAAND`) → laadt schoon
+   (de over-afwijzingsklem);
+3. tijdlijn op een attribuut **zonder** granulariteitssleutel → needle
+   `a timeline value on a non-temporal attribute` — die check is wat de twee
+   armen uit elkaar houdt.
+
+Geen corpusgetuige kan dit dragen: met de enum dicht is zo'n document
+schema-ongeldig, dus het past in geen zone (gate 2 schema-poort op golden en
+rood; een weigering bij het LADEN geeft exit 2, wat gate 8 als falen leest en
+niet als de gepinde fout). Precies het argument dat het kenmerkblok ernaast al
+maakt.
+
+**Mutantbewijs, arm-exact.** De arm teruggevouwen tot de catch-all van vóór deze
+kaart (`| _ -> fail "… non-temporal attribute"`), herbouwd en de suite gedraaid:
+
+    FAIL een tijdlijn op een attribuut met granulariteit null refused at load (W1.wachtvergoeding: a timeline value on a non-temporal attribute)
+    test_clingo: 86 checks, 1 FAILURES
+
+Eén genoemde check valt om, de andere 85 blijven staan; hersteld en weer
+86/0.
+
+**Correctie op punt 2 van de review.** De zusterklem van 2026-09-09
+(`ref/lib/case.ml:327-333`, statische levering van een temporeel verklaard
+kenmerk) is **niet** ongepind: dezelfde suite draagt hem al, in het blok
+`kenmerklevering_doc` / `laadt_case` — drie checks, met needle
+`is declared time-dependent` en een eigen over-afwijzingsklem. Er is dus niets
+toegevoegd voor (b); de bewering waarop dat deel van het verzoek rustte, klopt
+niet. Wat op de kenmerkkant wél ongepind is, is de tak uit punt 3 hieronder, en
+die pin ik bewust niet: hij zou de tegensprekende tekst vastleggen die een
+volgende kaart juist moet vervangen.
 
 ### Kernwaarschuwing 2 — benoemd, NIET gefixt
 
@@ -310,10 +363,52 @@ dezelfde garantie als bij `kenmerkGranulariteit`.
   dus geen verouderde bewering om te herstellen (en het staat ook niet in May
   touch).
 - `spec/CONSTRUCTS.md` en `spec/PLAN.md`: niet aangeraakt (hoofdsessie-serieel).
-  **Er is geen CONSTRUCTS-rij nodig**: dit is geen v0→v1-delta maar een
-  verstrakking van een bestaande WF-regel, en de zuster-arm van 2026-09-09 heeft
-  om dezelfde reden geen rij gekregen. Het register in `spec/IR-SPEC.md` draagt
-  de arm (rij WF-059, nu "three declaration arms").
+  Er is **wél** rij-1-tekst nodig; de voorgestelde tekst staat hieronder.
+
+### Voorgestelde rij-1-tekst voor `spec/CONSTRUCTS.md` (hoofdsessie landt serieel)
+
+Correctie op een eerdere versie van deze Result, die beweerde dat een
+CONSTRUCTS-rij niet nodig was omdat de zusterarm er ook geen had gekregen. Dat
+klopt niet: commit `e269233` heet letterlijk "CONSTRUCTS: rij 1 draagt WF-097 …,
+WF-059 arm 2 (null-granulariteit schema+verifier) en de luide laderklem", en
+`spec/CONSTRUCTS.md:37` draagt die tekst. Het precedent voor een verstrakking
+van een bestaande WF is er ook: WF-094 clausule (d) kreeg een eigen
+Landed-clausule in dezelfde rij (`45157e8`). Twee wijzigingen, beide in rij 1
+("Typed expression trees"):
+
+**(i) De bestaande zin die verouderd is.** De arm-2-clausule sluit nu af met:
+
+> The scalar §8.2 Kenmerk-periode outside the clips and the
+> `attribuutGranulariteit` seam stay open, each carded with its measurement.
+
+Die naad is met deze branch dicht. Voorgestelde vervanging:
+
+> The scalar §8.2 Kenmerk-periode outside the clips stays open, carded with its
+> measurement.
+
+**(ii) De nieuwe Landed-clausule**, in de stijl van de zuster, aan te hechten na
+de WF-094-clausule (d):
+
+> **Landed (2026-09-10):** WF-059 gained its THIRD arm: `attribuutGranulariteit`
+> value `null` is closed at schema AND verifier, exactly as the second arm
+> closed the characteristic table one side table over (the enum no longer admits
+> it; re-measured 0 carriers over the 577 documents of the four zones and the
+> parity zone, and the RegelSpraak emitter guards this table's write with a
+> non-null test too). It closes on its OWN measurement, because the fault is a
+> different class from its sister's: no silent wrong answer anywhere — every
+> path dies — but the DIAGNOSIS is wrong. A pro-rata base is caught already, as
+> WF-056, naming another defect; an ordinary clip base was schema-valid AND
+> verifier-PASS, and a delivered timeline then drew "a timeline value on a
+> non-temporal attribute", contradicting the document that declares the
+> attribute temporal; a scalar delivery draws two different diagnoses from ref
+> and clingo. The shared case loader's message moved with the arm — "the
+> attribute is declared time-dependent but its granularity is null: the timeline
+> has no grid to sit on (WF-059)" — and is pinned by three checks in the clingo
+> backend's own suite, because with the enum shut the shape reaches no corpus
+> zone at all. Witness `wf059-attribuut-zonder-granulariteit`. What stays open on
+> this seam is the sister's MESSAGE side: a hand-built `kenmerkGranulariteit`
+> null still draws "a characteristic timeline on a non-temporal characteristic",
+> the contradicting wording this arm repaired on the attribute side.
 
 ### Gemeld, niet gekaart
 
@@ -323,3 +418,19 @@ een reeks spaties midden in de zin, uit een OCaml-stringvervolg zonder
 `\`-continuatie in `backends/clingo/lib/translate.ml:1922`. Cosmetisch, en het
 raakt een melding die deze kaart meet, maar niet wat de kaart vraagt; hier
 gemeld in plaats van meegenomen.
+
+**De zusterasymmetrie in de meldingen.** Wat deze kaart op de attribuutkant
+repareert, staat op de kenmerkkant nog open. `ref/lib/case.ml`, de
+`characteristicTimelines`-arm, vouwt `Some (_, None)` en `None` samen in één
+catch-all, dus een handgebouwd document met `kenmerkGranulariteit`-sleutel
+aanwezig en waarde `null` krijgt nog steeds de tegensprekende tekst. Gemeten op
+`corpus/negatief/wf059-kenmerk-zonder-granulariteit/ir.json` met
+`corpus/golden/jutterswet-tegenwacht/case1-overlap.json`:
+
+    CASE ERROR: J1.aangesteld: a characteristic timeline on a non-temporal characteristic   (ref én clingo)
+
+Dat is precies de klasse fout die deze kaart aan de attribuutkant herstelt, en
+`kenmerkGranulariteit` staat in Out of scope, dus hier alleen gemeten en
+gemeld. De symmetrie tussen de twee armen is dus **WF-sluiting ja,
+meldingstekst nog niet**; de NOTE van de zustergetuige is daarop bijgesteld
+zodat hij geen symmetrie claimt die er niet is.
