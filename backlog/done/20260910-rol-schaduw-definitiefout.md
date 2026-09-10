@@ -305,9 +305,11 @@ Spec-first, in deze volgorde. Het meeste werk zit in stap 2.
   van de vier ongemeten laat.
 - **Nul over-afwijzing, gemeten.** De legale tegenvorm (naar-veel-rolnaam gelijk
   aan een attribuut aan de één-zijde) blijft PLAYED, en de volledige
-  golden-sweep van gate 12 houdt `EXPECTED_PLAYED` op 119 zonder wijziging aan
+  golden-sweep van gate 12 houdt `EXPECTED_PLAYED` op 120 zonder wijziging aan
   `EXPECTED_CHANNEL`. `EXPECTED_MIN_TESTS` (239) is een vloer en hoeft bij groei
-  niet mee.
+  niet mee. *(Deze regel droeg 119 toen de kaart in `new/` geschreven werd —
+  het kanaal stond toen op 119. Bij het claimen stond de pin al op 120;
+  gecorrigeerd bij het afronden, en de Result meet 120 ongewijzigd.)*
 - **Beide Drools-takken opnieuw gemeten** op de zes probevormen hierboven, met
   de exitcodes in de commit; de exec-model-tak levert op geen enkele daarvan nog
   exit 1.
@@ -553,13 +555,15 @@ na WF-013, in de WF-002/WF-012-buurt. Geen nieuw WF-nummer. Letterlijk:
 > affected construct per form, loudly and naming the displaced reference,
 > rather than reading the displacing member in the role's place. The
 > Drools backend does exactly that in both of its transpiler branches, at
-> every reader that touches the field: the navigated single-hop, chain,
-> comparison and reactivity reads, and the ch. 8.1.7 role-membership
-> check, which does not navigate but null-tests the same field. Those
-> refusals are pinned by that backend's own test suite and by gate 12, not
-> by `spec/verifier/` — a verifier that enforced them would be enforcing
-> one target format's shape on every consumer. Its remaining unaudited
-> readers of that field are carded in
+> each of the readers audited so far: the case's role input, the object
+> creation's back-link and the aggregation join (2026-08-30), and the
+> navigated single-hop, chain, comparison and reactivity reads plus the
+> ch. 8.1.7 role-membership check — which does not navigate but null-tests
+> the same field — since 2026-09-10. Those refusals are pinned by that
+> backend's own test suite and by gate 12, not by `spec/verifier/` — a
+> verifier that enforced them would be enforcing one target format's shape
+> on every consumer. That list is an audit trail, not a closed set: its
+> remaining unaudited readers of the field are carded in
 > `backlog/new/20260910-drools-ongepoorte-rollezers.md`.
 
 De 555 is de **publiek verifieerbare** helft van de sweep (golden 167 + rood 26
@@ -762,6 +766,16 @@ contract (reference-field assumption)" zegt.
   `navReden` verdringt nooit een bestaande scherpe reden; hij vervangt alleen de
   generieke scope-notitie op de vier plekken waar een gepoorte lezer null kan
   hebben teruggegeven.
+- **Twee dode spec→backlog-verwijzingen meegenomen** (nieuwe werklijn: gevonden
+  binnen bereik, dus in dezelfde kaart gerepareerd in plaats van gekaart).
+  `spec/ASP-TRANSLATION.md` wees naar
+  `backlog/new/20260825-closed-body-enclosing-binder.md` en `spec/IR-SPEC.md`
+  naar `backlog/new/20260906-clingo-gedurende-spiegelpoort.md`; beide kaarten
+  staan in `done/`. Paden bijgewerkt, doelbestanden gecontroleerd.
+- **Gemeld, niet zelf gerepareerd:** `spec/PLAN.md` (~487) draagt een derde dode
+  verwijzing — `backlog/new/20260820-input-precision-fence.md`, ook in `done/`.
+  `spec/PLAN.md` is hoofdsessie-serieel (WAY-OF-WORKING §4: een kaartsessie
+  raakt PLAN niet), dus die regel is voor de hoofdsessie bij de merge.
 - **Geen nieuw WF-nummer, ook niet voor het consumentgedrag.** De drie
   normatieve MUSTs die de eerste versie van de spec-alinea droeg zijn
   teruggeschreven naar beschrijvend proza: `IR-SPEC.md`'s bindende conventie

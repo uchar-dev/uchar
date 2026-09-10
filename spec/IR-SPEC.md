@@ -1437,13 +1437,15 @@ executors compute. What such a consumer does instead is refuse the
 affected construct per form, loudly and naming the displaced reference,
 rather than reading the displacing member in the role's place. The
 Drools backend does exactly that in both of its transpiler branches, at
-every reader that touches the field: the navigated single-hop, chain,
-comparison and reactivity reads, and the ch. 8.1.7 role-membership
-check, which does not navigate but null-tests the same field. Those
-refusals are pinned by that backend's own test suite and by gate 12, not
-by `spec/verifier/` — a verifier that enforced them would be enforcing
-one target format's shape on every consumer. Its remaining unaudited
-readers of that field are carded in
+each of the readers audited so far: the case's role input, the object
+creation's back-link and the aggregation join (2026-08-30), and the
+navigated single-hop, chain, comparison and reactivity reads plus the
+ch. 8.1.7 role-membership check — which does not navigate but null-tests
+the same field — since 2026-09-10. Those refusals are pinned by that
+backend's own test suite and by gate 12, not by `spec/verifier/` — a
+verifier that enforced them would be enforcing one target format's shape
+on every consumer. That list is an audit trail, not a closed set: its
+remaining unaudited readers of the field are carded in
 `backlog/new/20260910-drools-ongepoorte-rollezers.md`.
 
 ### 2.7 Dimension
@@ -4732,7 +4734,7 @@ attachment, and one field beside it, by WF-097 below.
   behind an already-closed door, so it is a second-line finding and not this
   clause's justification; the underlying asymmetry — clingo's ch. 3.6 clip arm
   missing the temporality gate its pro-rata sisters carry — is its own card
-  (`backlog/new/20260906-clingo-gedurende-spiegelpoort.md`).* Cost over the
+  (`backlog/done/20260906-clingo-gedurende-spiegelpoort.md`).* Cost over the
   four zones: none. All **924** keys the four zones held before this card
   (24 + 9 + 74 + 2 + 2 + 788 + 24 + 1) name a declared member; the only orphans
   anywhere are the eight witnesses.

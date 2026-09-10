@@ -2508,7 +2508,7 @@ reading still refused is a binder bound **outside** the body: `closed_term`
 would drop its binding atoms into an unsafe rule, so it faults cleanly (`the
 closed body reads binder "…" bound by a Let OUTSIDE it …`) — ref faults there
 too (`unbound binder`), and the parallel verifier card makes the shape
-WF-064-ill-formed (`backlog/new/20260825-closed-body-enclosing-binder.md`);
+WF-064-ill-formed (`backlog/done/20260825-closed-body-enclosing-binder.md`);
 until it merges the fence is the clean backstop in place of gringo's grounding
 crash. A **named FunctionDef
 as a `Fold`/`MapList` operand** is no longer a shape-without-a-case: it is

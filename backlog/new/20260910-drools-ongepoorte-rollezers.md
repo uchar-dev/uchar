@@ -16,9 +16,13 @@ gedeclareerd attribuut of kenmerk dat de naam van een to-één rol deelt
 alleen een `BigDecimal` of een `boolean`. Elke lezer die alleen de NAAM vraagt
 krijgt daardoor een niet-null waarde terug waar de relatie afwezig is.
 
-`spec/IR-SPEC.md` §2.6 legt vast dat zo'n document **welgevormd** is en dat een
-bean-vormige consument hem per constructie luid moet weigeren. Gepoort zijn
-inmiddels, alle via de gedeelde `FactModelGenerator.heeftReferentieVeld` plus
+`spec/IR-SPEC.md` §2.6 legt vast dat zo'n document **welgevormd** is en
+beschrijft wat een bean-vormige consument in plaats daarvan doet: de betrokken
+constructie per vorm luid weigeren, met het verdrongen referentieveld erbij, in
+plaats van het verdringende lid in de plaats te lezen. Geen MUST en geen
+WF-nummer — het gedrag wordt gepind door de eigen JUnit-suite van deze backend
+en door gate 12, niet door `spec/verifier/`. Gepoort zijn inmiddels, alle via de
+gedeelde `FactModelGenerator.heeftReferentieVeld` plus
 `geenReferentieveldReden`:
 
 | lezer | sinds |
@@ -72,13 +76,14 @@ geen bewering.
    `navigatieKenmerkTijdreeks`): `get(s, rol)` en dan `get(rel, kenmerk)` —
    dezelfde twee-staps-lezing als `navReader`, maar op de tijdlijn-arm en met een
    eigen resolutie.
-4. **De verdeling** (~5388–5603, `verdeling(...)`): `join` komt uit
+4. **De verdeling** (~5388–5611, `verdeling(...)`): `join` komt uit
    `model.verbindendeRol(doel, bron)` en wordt daarna op zes plekken met
-   `RegelSpraakRuntime.get(..., join)` gelezen (~5488, ~5503, ~5552, ~5559 …).
+   `RegelSpraakRuntime.get(..., join)` gelezen (~5488, ~5503, ~5552, ~5559, ~5590,
+   ~5608).
    Geen enkele vraagt of dat veld de referentie draagt.
 5. **De feitcreatie** (~5996, `feitCreatie(...)`): schrijft rolvelden langs een
    pad; de objectcreatie-arm is gepoort, deze niet.
-6. **De naam-kopie in `toOneAantalReader`** (~5109–5111): die lezer test de
+6. **De naam-kopie in `toOneAantalReader`** (~5114): die lezer test de
    naamdeling **zelf**, met `subject.heeftLid(a.attribuut())`, in plaats van de
    gedeelde vraag te stellen. Het antwoord is vandaag toevallig hetzelfde, maar
    het is een tweede afleiding van dezelfde wet — precies wat "één afleiding, één
@@ -100,7 +105,7 @@ Per lezer, in deze volgorde:
    `heeftVeld(<lezer>, …)` in de exec-tak en `navVeld(<lezer>, …)` in de
    DRL-tak — geen nieuwe afleiding, geen nieuwe redenzin.
 3. **Rood eerst** per gepoorte lezer: een assertie in
-   `OpslagrichtingWitnessTest` sectie 3, in de vorm van de zes die er staan,
+   `OpslagrichtingWitnessTest` sectie 3, in de vorm van de zeven die er staan,
    met de verwachting eerst door `ref/` gehaald.
 4. **Onbereikbaar** is ook een uitkomst — dan één zin in de code die zegt waarom,
    zoals `navReactiviteit` die vandaag draagt, en geen poort.
