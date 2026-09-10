@@ -572,8 +572,11 @@ settled shape.
   the value null the shared loader now says "the characteristic is
   declared time-dependent but its granularity is null: the timeline has
   no grid to sit on (WF-059)" (that whole sentence pinned additively in
-  the backend's own suite, since no corpus zone can hold a document
-  carrying the shape). The wording quoted in the measurement above stays
+  the backend's own suite, because no CASE-REPLAYING zone can pin it:
+  gate 2 schema-gates `corpus/golden` and `corpus/rood`, so the shape
+  cannot sit there, while `corpus/negatief` — which does hold this arm's
+  own witness — carries no case files at all and therefore pins no
+  message). The wording quoted in the measurement above stays
   for the case it is true of — a characteristic with no granularity key
   at all, delivered as a timeline — and both executors share that loader,
   so they speak either sentence with one voice. The two side tables now

@@ -49,13 +49,24 @@ case delivering `aangesteld`'s timeline, identically in both executors:
   its granularity is null: the timeline has no grid to sit on (WF-059)
 
 The old wording stays for the case it is true of — a characteristic with no
-granularity key at all, delivered as a timeline. Only the FIRST shape is off the
-wire: the enum no longer admits a null value, so a hand-built IR is the only one
-that reaches the new sentence. The second is no wire defect at all — an IR with
-an empty `kenmerkGranulariteit` is schema-valid AND verifier-PASS as long as no
-`gedurende` reads the characteristic (measured 2026-09-11 on exactly the
-document the third pin uses); what oversteps is the CASE. What keeps
-both out of a corpus zone is the refusal itself: it happens at LOAD time and
-exits 2, which gate 8 reads as a failure rather than as the pinned fault, and
-gate 2 schema-gates golden and rood besides. Both sentences are therefore pinned
-in the ASP backend's own suite, the only place that can hold them.
+granularity key at all, delivered as a timeline. The two sentences answer two
+different documents:
+
+  (1) the NULL-VALUE document, this witness. Both the schema enum and the
+      verifier refuse it, so an IR carrying it is hand-built by definition, and
+      it is the new sentence it draws.
+  (2) the KEY-ABSENT document, which is no IR defect at all: an IR with an empty
+      `kenmerkGranulariteit` is schema-valid AND verifier-PASS as long as no
+      `gedurende` reads the characteristic (measured 2026-09-11 on exactly the
+      document the third pin uses). There the CASE is what oversteps, by
+      delivering a timeline the declaration never promised.
+
+Neither SENTENCE can be pinned in a corpus zone, for the one reason they share:
+the refusal falls at LOAD time and exits 2, so the case that draws it fits in no
+case-replaying zone — `corpus/golden` replays cases for their expected values,
+and `corpus/rood` reaches its expected-fault branch only AFTER the case has
+loaded, which is why gate 8 reads a load-time exit as a failure rather than as
+the pinned fault. Gate 2 adds a second, independent bar, but for (1) alone: it
+schema-gates golden and rood, so THAT IR cannot sit there either. Document (2)
+is welcome in any zone; only its case is not. Both sentences are therefore
+pinned in the ASP backend's own suite, the only place that can hold them.

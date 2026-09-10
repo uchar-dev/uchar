@@ -2255,11 +2255,15 @@ let () =
    `characteristicTimelines` arm folded "key present, value null" together with
    "no key at all" into one catch-all, so a document that declares the
    characteristic temporal was refused for being non-temporal. WF-059's SECOND
-   arm (2026-09-09) shut the enum, so the wire cannot carry the shape and only a
-   hand-built document reaches the arm — which is why the pin lives here and can
-   have no corpus witness: gate 2 schema-gates golden and rood, and a load-time
-   refusal exits 2, which gate 8 reads as a failure rather than as the pinned
-   fault.
+   arm (2026-09-09) shut the enum, so a null value reaches this arm only from a
+   hand-built document.
+
+   Neither message can be pinned in a corpus zone, for the ground they share:
+   the refusal falls at LOAD time and exits 2, which gate 8 reads as a failure
+   rather than as the pinned fault, so no case-replaying zone can hold the case
+   that draws it. Gate 2 bars the null-value IR from golden and rood on top of
+   that; check 3's key-absent document is schema-valid and verifier-PASS
+   (measured 2026-09-11), and only its case oversteps.
 
    The reader is SHARED — the ASP backend loads its cases through
    `Uchar_ref.Case` — so both executors speak this refusal with one voice or
