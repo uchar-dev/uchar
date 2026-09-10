@@ -14,9 +14,14 @@
 # (2026-08-19): they must read stand-alone.
 #
 # NO monotone floor here (maintainer decision 2026-09-09, the counting-floors
-# regime): this gate has no subject count to floor. It is a tripwire over every
-# tracked file, so its work is defined by the repository itself; there is no
-# suite whose size could quietly halve and no fixture set of its own.
+# regime): this gate has no subject count to floor — it is a tripwire over every
+# tracked file, so its work is defined by the repository itself and there is no
+# suite whose size could quietly halve. It does have a fixture set, $ZONES, and
+# that one is pinned by NAME instead: a zone that vanished or was renamed used to
+# be skipped by the [ -e ] guard and stop being swept in silence (measured
+# 2026-09-10: spec/schema moved aside still gave PASS), so a missing zone now
+# fails by name. A name beats a count here — the list is short, deliberate, and
+# every entry must exist.
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
@@ -43,7 +48,11 @@ for doc in spec/IR-SPEC.md spec/RUNTIME-SEMANTICS.md; do
 done
 
 for zone in $ZONES; do
-    [ -e "$zone" ] || continue
+    if [ ! -e "$zone" ]; then
+        echo "FAIL: artifact zone '$zone' is missing — a vanished or renamed zone stops being swept for machine-local paths, private-repo names and TOKA material (rename it AND this gate together)" >&2
+        status=1
+        continue
+    fi
     if git grep -nIiE "$PRIVATE" -- "$zone" $EXCEPTIONS; then
         echo "FAIL: machine-local or private-repo reference in artifact zone '$zone' (WAY-OF-WORKING.md section 6)" >&2
         status=1
@@ -58,6 +67,9 @@ done
 # ported Drools backend is an artifact zone and a comment quoting a TOKA/
 # RegelSpraak-spec excerpt is a leak). toka/ is deliberately absent from $ZONES
 # — it is NOT swept — and is asserted separately to carry no machine-local paths.
+# The [ -e ] guard here and in the no-share loop below stays a plain skip on purpose: the
+# existence of every $ZONES entry is already asserted, by name, in the first loop above, so a
+# missing zone is reported once instead of three times.
 for zone in $ZONES; do
     [ -e "$zone" ] || continue
     if git grep -nIiE '(^|[^[:alpha:]])toka([^[:alpha:]]|$)' -- "$zone"; then

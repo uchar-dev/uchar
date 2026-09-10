@@ -52,11 +52,17 @@ BIN=_build/default/ref/bin/runner.exe
 EXPECTED_MIN_EXAMPLES=489   # 2026-09-10: measured 489 (ref/test/test_ref.ml worked examples)
 EXPECTED_MIN_CASES=427      # 2026-09-10: measured 427 (corpus/golden/**/case*.json)
 
+if [ "$#" -eq 2 ]; then
+    exec "$BIN" "$1" "$2"
+fi
+
 # check 2: ref/'s own test suite. Until 2026-09-10 NO gate ran it, while it carries the worked
 # examples RUNTIME-SEMANTICS.md owes each of its clauses (CLAUDE.md, Spec discipline) — spec
 # artifacts whose executor was unguarded. It is run here, in the gate that already owns ref/ and
 # already builds it, exactly the way gate 6 runs the clingo backend's own suite: run it, demand a
 # count line, floor the count. `dune build ref` above already produces the exe.
+# It sits BELOW the two-argument branch on purpose: that form replays one pair for a person
+# debugging it, and making that pay for the whole suite is a cost with no gate value.
 SUITE_BIN=_build/default/ref/test/test_ref.exe
 [ -x "$SUITE_BIN" ] || { echo "FAIL: ref suite binary missing at $SUITE_BIN after the build" >&2; exit 1; }
 if ! SUITE_OUT=$("$SUITE_BIN" 2>&1); then
@@ -73,10 +79,6 @@ fi
 if [ "$SUITE_N" -lt "$EXPECTED_MIN_EXAMPLES" ]; then
     echo "FAIL: the ref suite ran $SUITE_N worked examples, but EXPECTED_MIN_EXAMPLES pins at least $EXPECTED_MIN_EXAMPLES — the suite shrank (a deliberately dropped example lowers the floor in the same commit)" >&2
     exit 1
-fi
-
-if [ "$#" -eq 2 ]; then
-    exec "$BIN" "$1" "$2"
 fi
 
 status=0

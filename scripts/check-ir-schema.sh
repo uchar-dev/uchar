@@ -190,19 +190,24 @@ for path in files:
                          % (path, line, want, got))
         failed += 1
 
-if mode == "corpus" and n == 0:
-    print("check-ir-schema: schema valid; 0 corpus files (corpus not yet populated)")
-    sys.exit(0)
-
 if failed:
     sys.stderr.write("check-ir-schema: FAIL (%d of %d file(s) bad)\n" % (failed, n))
     sys.exit(1)
 
+# The floor is evaluated BEFORE the unpopulated-corpus exit below, or that exit
+# would answer the very case the floor exists for: with the zones moved aside n
+# is 0, and a floor that sits after an "n == 0 -> exit 0" branch never runs.
+# Measured 2026-09-10, before this order: both zones aside gave PASS at 0.
 if mode == "corpus" and n < floor:
     sys.stderr.write("FAIL: %d document(s) validated, but EXPECTED_MIN_DOCS pins at least %d — "
                      "the corpus shrank (a deliberate removal lowers the floor in the same "
                      "commit)\n" % (n, floor))
     sys.exit(1)
+
+# Only reachable while no floor is pinned yet (floor 0) — the genuinely empty corpus.
+if mode == "corpus" and n == 0:
+    print("check-ir-schema: schema valid; 0 corpus files (corpus not yet populated)")
+    sys.exit(0)
 
 print("check-ir-schema: PASS (schema valid; %d file(s) validate and round-trip, floor %d)"
       % (n, floor))

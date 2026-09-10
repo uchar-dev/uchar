@@ -102,15 +102,20 @@ while IFS= read -r f; do
     fi
 done < "$list"
 
-if [ "$n_golden" -eq 0 ] && [ "$n_neg" -eq 0 ]; then
+# The floor is evaluated BEFORE the unpopulated-corpus exit, or that exit would answer the very
+# case the floor exists for: with the zones moved aside both counts are 0 and an "all zero -> exit
+# 0" branch placed first never lets the floor run. Measured 2026-09-10, before this order: both
+# zones aside gave PASS at 0. The floor also precedes the no-negatief check, so the zero case is
+# reported with BOTH numbers rather than by the weaker non-empty message.
+if [ "$n_neg" -lt "$EXPECTED_MIN_NEGATIEF" ]; then
+    echo "FAIL: $n_neg negatief case(s) rejected, but EXPECTED_MIN_NEGATIEF pins at least $EXPECTED_MIN_NEGATIEF — the negatief corpus shrank (a deliberate removal lowers the floor in the same commit)" >&2
+    status=1
+elif [ "$n_golden" -eq 0 ] && [ "$n_neg" -eq 0 ]; then
+    # Only reachable while no floor is pinned yet (floor 0) — the genuinely empty corpus.
     echo 'check-verifier: build OK; 0 corpus files (corpus not yet populated)'
     exit 0
-fi
-if [ "$n_neg" -eq 0 ]; then
+elif [ "$n_neg" -eq 0 ]; then
     echo 'FAIL: no negatief cases — every implemented WF check needs a failing case (spec discipline)' >&2
-    status=1
-elif [ "$n_neg" -lt "$EXPECTED_MIN_NEGATIEF" ]; then
-    echo "FAIL: $n_neg negatief case(s) rejected, but EXPECTED_MIN_NEGATIEF pins at least $EXPECTED_MIN_NEGATIEF — the negatief corpus shrank (a deliberate removal lowers the floor in the same commit)" >&2
     status=1
 fi
 

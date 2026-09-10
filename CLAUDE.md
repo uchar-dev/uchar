@@ -125,7 +125,11 @@ green. Current gates:
    translates every corpus case to ASP-Core-2 and clingo's stable model
    must match the same absolute expectations gate 5 pins for `ref/`
    (ref ≡ Clingo over the corpus, anchored to hand-written values); an
-   empty case set is a failure, never silently green.
+   empty case set is a failure, never silently green. It also runs the
+   backend's own unit suite — the normalisation fault modes no corpus
+   witness can exercise — demanding its check-count line and holding
+   that count to a floor; an un-run or shrunken suite is a silent green,
+   so neither is allowed.
 7. `scripts/check-noop.sh` — the no-op guard (PLAN §8: an identity
    transpiler must fail): every golden case run through the reference
    runner's `--noop` mode (expectations against the raw input, no

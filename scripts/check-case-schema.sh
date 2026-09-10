@@ -15,7 +15,8 @@
 # regime): this gate's count is the disjoint union of the two zone counts that
 # gates 5 and 8 each floor separately, and a floor on the SUM is the weaker
 # instrument — a golden case traded for a red one keeps the total equal while
-# both zone floors would see it.
+# the floor of whichever zone LOST it fires. (Only that one: the gaining zone's
+# floor is a lower bound and says nothing about a zone that grew.)
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
