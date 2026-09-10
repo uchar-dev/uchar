@@ -114,18 +114,12 @@ public final class ExecModelTranspiler {
      *  nodes are records with value equality). Empty by default — every node then uses the by-pair derivation,
      *  which is exactly the pre-2026-08-30 behaviour. */
     private Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen = new java.util.IdentityHashMap<>();
-    /** IR-SPEC ch. 4.10: the {@code IfThenElse} per {@link Expr.Onopgelost} CARRIER, riding beside the model
-     *  ({@code IrLoader.Loaded.keuzes}) because that ONE cluster node has no record in the vendored, sealed
-     *  {@link Expr} union — its two siblings, {@link Expr.Let} and {@link Expr.BinderRef}, are ordinary union nodes
-     *  and are matched in the tree. Keyed by IDENTITY (the carriers are value-equal records). Empty by default —
-     *  every carrier is then an ordinary unresolved leaf and every value path refuses it loudly. */
-    private Map<Object, io.github.yhavinga.regelspraak.loader.IrLoader.Keuze> keuzes = new java.util.IdentityHashMap<>();
     /** RUNTIME-SEMANTICS ch. 2.10: the §4 EFFECTIVE-unit derivation — declarations plus the ch. 2.6 join rules.
      *  Every unit restatement below takes its datatypes from here; a bare {@code e.type()} at a restatement site
      *  reads the wire's REPETITION of a declaration instead of the declaration, which is what made this backend
      *  answer 3.750,00 where ref and clingo answer 3,75 on a unit-lying aggregation result type. */
     private io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid eff =
-            new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(java.util.List.of(), java.util.Map.of());
+            new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(java.util.List.of());
     private final List<String> overgeslagen = new ArrayList<>();
     /** Build-time-only gate: true WHILE lowering a scalar consequence value (the THEN-waarde), the single
      *  context where a §13.4.1 multi-hop navigation chain may lower ({@link #navKetenReader}) — mirroring
@@ -178,17 +172,15 @@ public final class ExecModelTranspiler {
      *  decide a fixture is "not yet migrated" rather than a divergence). Fact beans resolve against
      *  {@code beanLoader}; null routes to this transpiler's own loader. */
     public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader) {
-        return build(m, beanLoader, List.of(), java.util.Map.of(), List.of(), java.util.Map.of());
+        return build(m, beanLoader, List.of(), java.util.Map.of(), List.of());
     }
     /** As {@link #build(RegelSpraakModel, ClassLoader)} but also consumes what the loader carries BESIDE the model
      *  (see {@code IrLoader.Loaded}): the ch. 7 prioritized-defaults extension — each group lowers to one
-     *  reduce-rule, a port of ref's {@code run_defaults_group} — the symbolic role bindings, the ch. 4.10 Let index
-     *  and the ch. 4.10 {@code IfThenElse} carriers. An empty/null defaults list is the flat v0 case; an empty
-     *  {@code rolBindingen} is the by-pair-derivation-only case; an empty {@code keuzes} leaves every carrier an
-     *  unresolved leaf, i.e. a loud per-form refusal. */
+     *  reduce-rule, a port of ref's {@code run_defaults_group} — the symbolic role bindings, and the ch. 4.10 Let
+     *  index. An empty/null defaults list is the flat v0 case; an empty {@code rolBindingen} is the
+     *  by-pair-derivation-only case. */
     public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
-            Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen, List<Expr.Let> lets,
-            Map<Object, io.github.yhavinga.regelspraak.loader.IrLoader.Keuze> keuzes) {
+            Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen, List<Expr.Let> lets) {
         ExecModelTranspiler t = new ExecModelTranspiler(m, beanLoader);
         t.prioritizedDefaults = defaults == null ? List.of() : defaults;
         if (rolBindingen != null && !rolBindingen.isEmpty()) {
@@ -197,13 +189,8 @@ public final class ExecModelTranspiler {
             t.rolBindingen = new java.util.IdentityHashMap<>();
             t.rolBindingen.putAll(rolBindingen);
         }
-        if (keuzes != null && !keuzes.isEmpty()) {
-            t.keuzes = new java.util.IdentityHashMap<>();   // identity, for the same reason as rolBindingen
-            t.keuzes.putAll(keuzes);
-        }
-        // after keuzes: the derivation descends an IfThenElse through that carrier map (ch. 4.10).
         t.eff = new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(
-                lets == null ? List.of() : lets, t.keuzes);
+                lets == null ? List.of() : lets);
         t.model0 = t.run();
         return t;
     }
@@ -3662,9 +3649,7 @@ public final class ExecModelTranspiler {
     /** Scalar value: Literal | own-attr read | Parameter-global read | a {@code +} of those (rsNul leegwaarde).
      *  null -> skip. The global read pulls its value from the consequence-bound map (see {@link #regel}). */
     private WaardeFn scalarWaarde(Objecttype valueSubject, Expr e) {
-        // IR-SPEC ch. 4.10: the Let cluster — the two union nodes, and an IfThenElse CARRIER (an Onopgelost
-        // registered in the keuzes map). Asked FIRST so no later arm can mistake a carrier for an ordinary
-        // unresolved leaf.
+        // IR-SPEC ch. 4.10: the Let cluster — all three union nodes.
         if (isLetKnoop(e)) return letWaarde(valueSubject, e);
         if (e instanceof Expr.Literal lit && lit.type().isNumeriek()) {
             // §13.2.5/§389: a non-terminating rational literal (1/3) becomes an EXACT Breuk so downstream +,-,×,÷
@@ -3894,7 +3879,7 @@ public final class ExecModelTranspiler {
 
     /**
      * The §6.5/§6.6 fout-companion's <b>path probe</b>. A division or wortel that sits under a ch. 4.10 node
-     * (a {@link Expr.Let}, or an IfThenElse carrier) faults only if its site is actually EVALUATED, and under ch. 10.2 (exactly one
+     * (a {@link Expr.Let} or an {@link Expr.IfThenElse}) faults only if its site is actually EVALUATED, and under ch. 10.2 (exactly one
      * branch runs) and ch. 10.6 (call-by-need; the leeg-barrier at the read) that depends on which branch the
      * guard takes, which reads force which needs, and in what ORDER — a read left of the site can end the Let
      * before the site is reached, a read right of it cannot. No static predicate over the operands can say
@@ -4067,7 +4052,7 @@ public final class ExecModelTranspiler {
                 }
             }, g);
         }
-        io.github.yhavinga.regelspraak.loader.IrLoader.Keuze k = keuzes.get(e);
+        Expr.IfThenElse k = (Expr.IfThenElse) e;
         LetConditie c = letConditie(valueSubject, k.conditie());
         if (c == null) return null;
         WaardeFn dan = scalarWaarde(valueSubject, k.dan());
@@ -4115,8 +4100,8 @@ public final class ExecModelTranspiler {
 
     /**
      * ALL {@link Expr} children a ch. 4.10 node carries for the tree walks in this file: a {@link Expr.Let}'s
-     * value+body, and — for the {@code IfThenElse} CARRIER, which a generic walk reads as an opaque Onopgelost
-     * leaf — its two branches and EVERY Expr operand of its condition. Empty for anything else. This is the
+     * value+body, and an {@link Expr.IfThenElse}'s two branches plus EVERY Expr operand of its condition.
+     * Empty for anything else. This is the
      * POSSIBLY-evaluated set — which children actually run is a fire-time question (ch. 10.2/10.6), and the one
      * walk whose output is an ANSWER rather than a refusal or registration (the §6.5/§6.6 companions) settles it
      * at fire time through the path probe ({@link Sonde}), never by seeing less here.
@@ -4133,7 +4118,7 @@ public final class ExecModelTranspiler {
      *
      * <p><b>(b) Descend, output an ANSWER</b> — a §6.5/§6.6 fout-companion, which is WRONG (inconsistent where ref
      * says consistent) if built off a path that never runs: {@link #verzamelDelingen} and {@link #verzamelWortels}.
-     * They see every site that MAY run, and a companion of a site under a Let or an IfThenElse carrier carries the PATH: its
+     * They see every site that MAY run, and a companion of a site under a Let or an IfThenElse carries the PATH: its
      * condition re-evaluates the outermost such node on the subject with a probe ({@link Sonde}) and fires only
      * when a §6.5/§6.6 site under it actually ran and faulted.
      *
@@ -4146,12 +4131,11 @@ public final class ExecModelTranspiler {
      * leeg/vol predicate over a site's operands, which stays a walk over {@code AttribuutRef} only (DRL parity) —
      * the scope question moved one level up, to {@link #kwalificeertOperand}; and
      * {@code transpiler.Stratificatie.verzamelReads} (§9.2), a {@code Conditie} walk over a rule's voorwaarde only,
-     * which a Keuze's condition (living in the VALUE) never reaches.
+     * which an IfThenElse's guard (living in the VALUE) never reaches.
      */
     private List<Expr> letKinderen(Expr e) {
         if (e instanceof Expr.Let b) return List.of(b.value(), b.body());
-        io.github.yhavinga.regelspraak.loader.IrLoader.Keuze k = e == null ? null : keuzes.get(e);
-        if (k == null) return List.of();   // a BinderRef reads only the environment
+        if (!(e instanceof Expr.IfThenElse k)) return List.of();   // a BinderRef reads only the environment
         List<Expr> uit = new ArrayList<>(List.of(k.dan(), k.anders()));
         conditieOperanden(k.conditie(), uit);
         return uit;
@@ -4165,7 +4149,7 @@ public final class ExecModelTranspiler {
      * again with nothing to notice it.
      *
      * <p>Being form-complete here is SAFE because of what a refused form does: a condition shape letConditie
-     * will not lower makes its Keuze lower to null, which skips the whole rule LOUDLY — so operands collected
+     * will not lower makes its IfThenElse lower to null, which skips the whole rule LOUDLY — so operands collected
      * from such a shape never reach a rule that plays. It is emphatically NOT an "extra fault is harmless"
      * argument: an extra §6.5/§6.6 companion is a WRONG ANSWER (inconsistent where ref says consistent), not a
      * refusal. The two companion walks therefore never decide from this collection alone: a site they find
@@ -4666,7 +4650,7 @@ public final class ExecModelTranspiler {
      *  NON-terminating rational literal can be. */
     private boolean kanBreukOpleveren(Expr e) {
         if (e == null) return false;
-        // ch. 4.10: descend THROUGH a Let (and an IfThenElse carrier) first. Neither matches the concrete
+        // ch. 4.10: descend THROUGH a Let (and an IfThenElse) first. Neither matches the concrete
         // pattern matches below, so a Breuk-producing division behind a Let read "cannot be a Breuk" and the
         // caller took the (BigDecimal) cast path — which THROWS a ConstraintEvaluationException on the Breuk
         // the value side actually computes (an unexplained crash, not a refusal). See letKinderen.
@@ -6088,13 +6072,13 @@ public final class ExecModelTranspiler {
         return drager != null && e instanceof Expr.BinderRef;
     }
 
-    /** Whether {@code e} is a ch. 4.10 node: a {@link Expr.Let}, a {@link Expr.BinderRef} or an {@code IfThenElse}
-     *  carrier. Two callers — {@link #scalarWaarde}, which routes it to {@link #letWaarde}, and the two companion
+    /** Whether {@code e} is a ch. 4.10 node: a {@link Expr.Let}, a {@link Expr.BinderRef} or an
+     *  {@link Expr.IfThenElse}. Two callers — {@link #scalarWaarde}, which routes it to {@link #letWaarde}, and the two companion
      *  walks, which take the OUTERMOST such node as their §6.5/§6.6 path-probe host. For the probe the BinderRef
      *  arm is inert (a BinderRef has no {@link #letKinderen}, so no site is ever collected under one); it is named
      *  for completeness of the cluster, and because scalarWaarde does need it. */
     private boolean isLetKnoop(Expr e) {
-        return e instanceof Expr.Let || e instanceof Expr.BinderRef || (e != null && keuzes.containsKey(e));
+        return e instanceof Expr.Let || e instanceof Expr.BinderRef || e instanceof Expr.IfThenElse;
     }
 
     /** A §6.5 division or §6.6 wortel SITE in a rule value, with the OUTERMOST ch. 4.10 node on the path from
@@ -7003,7 +6987,7 @@ public final class ExecModelTranspiler {
         return uit;
     }
     private void eigenReads(Expr e, Objecttype subject, java.util.Set<String> uit) {
-        // ch. 4.10: a Let hides its reads from this walk (and an IfThenElse carrier hides them twice over).
+        // ch. 4.10: a Let and an IfThenElse hide their reads from this walk (it matches concrete v0 shapes only).
         // Missing them would leave a chained
         // berekening ("het gewogen inkomen is (Let ink = inkomen in ink maal de factor)") with an EMPTY
         // reactivity mask — computed once against a leeg factor and never recomputed. See letKinderen.
@@ -7036,7 +7020,7 @@ public final class ExecModelTranspiler {
      *  re-fires on the FAR fact's update. Each is turned into a far-side JOIN pattern (see {@link #navReactiviteit})
      *  so the rule reacts to the navigated fact's mutation. Walks the SAME tree shape as {@link #eigenReads}. */
     private void navRefs(Expr e, Objecttype subject, java.util.List<Expr.AttribuutRef> uit) {
-        for (Expr k : letKinderen(e)) navRefs(k, subject, uit);   // ch. 4.10: see into a Let / IfThenElse carrier
+        for (Expr k : letKinderen(e)) navRefs(k, subject, uit);   // ch. 4.10: see into a Let / IfThenElse
         if (e instanceof Expr.AttribuutRef a) {
             if (a.navigatieRol() != null || (a.objecttype() != null && a.objecttype() != subject)) uit.add(a);
         } else if (e instanceof Expr.Binair b) {

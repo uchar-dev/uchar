@@ -72,11 +72,6 @@ public final class EffectieveEenheid {
      *  carries no route back up to its own. Empty for a document without a Let. */
     private final Collection<Expr> lets;
 
-    /** The ch. 4.10 {@code IfThenElse} per {@link Expr.Onopgelost} CARRIER, by identity — the one cluster node with
-     *  no record in the vendored {@link Expr} union, so the same carrier map {@code ExecModelTranspiler} lowers
-     *  from. Empty for a consumer without one (the DRL back-end). */
-    private final Map<Object, IrLoader.Keuze> keuzes;
-
     /** The derived unit of every binder READ, by identity — precomputed, because a restatement site deep inside a
      *  Let body asks for a binder's unit without the binding in hand. Built by walking each {@link Expr.Let} with a
      *  proper scope, so shadowing resolves the way WF-064 says (nearest enclosing binder wins). Null until first
@@ -84,9 +79,8 @@ public final class EffectieveEenheid {
      *  a bound read from an unbound one. */
     private Map<Object, Eenheid> lezingEenheden;
 
-    public EffectieveEenheid(Collection<? extends Expr> lets, Map<Object, IrLoader.Keuze> keuzes) {
+    public EffectieveEenheid(Collection<? extends Expr> lets) {
         this.lets = lets == null ? List.of() : List.copyOf(lets);
-        this.keuzes = keuzes == null ? Map.of() : keuzes;
     }
 
     /** The datatype every §4 restatement site must use in place of {@code e.type()}: the node's own annotation
@@ -117,7 +111,7 @@ public final class EffectieveEenheid {
         Eenheid annotatie = t == null ? null : t.eenheidOf();
         if (diepte > MAX_DIEPTE) return annotatie;
 
-        if (e instanceof Expr.Let || e instanceof Expr.BinderRef || keuzes.containsKey(e))
+        if (e instanceof Expr.Let || e instanceof Expr.BinderRef || e instanceof Expr.IfThenElse)
             return letEenheid(e, omgeving, diepte, annotatie);
 
         if (e instanceof Expr.AttribuutRef a) {
@@ -327,7 +321,7 @@ public final class EffectieveEenheid {
             return lezingEenheden.containsKey(e) ? lezingEenheden.get(e) : annotatie;
         }
         // ch. 10.2: exactly one branch runs; both must agree on the unit, so either arm derives it.
-        IrLoader.Keuze k = keuzes.get(e);
+        Expr.IfThenElse k = (Expr.IfThenElse) e;
         Eenheid dan = eenheid(k.dan(), omgeving, diepte + 1);
         return dan != null ? dan : eenheid(k.anders(), omgeving, diepte + 1);
     }
@@ -367,8 +361,7 @@ public final class EffectieveEenheid {
             noteer(b.body(), metBinder(omgeving, b, diepte), diepte + 1);
             return;
         }
-        IrLoader.Keuze k = keuzes.get(e);
-        if (k != null) {
+        if (e instanceof Expr.IfThenElse k) {
             for (Expr x : conditieOperanden(k.conditie())) noteer(x, omgeving, diepte + 1);
             noteer(k.dan(), omgeving, diepte + 1);
             noteer(k.anders(), omgeving, diepte + 1);
@@ -378,7 +371,8 @@ public final class EffectieveEenheid {
     }
 
     /** Every Expr-carrying component of an ordinary v0 node (the {@code Expr.bevat} inventory minus its ch. 4.10
-     *  arm — {@link #noteer} matches a Let and a BinderRef itself, because both need a SCOPE this cannot carry). */
+     *  arms — {@link #noteer} matches all three cluster nodes itself, because each needs a SCOPE this cannot
+     *  carry). */
     private static List<Expr> kinderen(Expr e) {
         if (e instanceof Expr.Binair b) return kinderenVan(b.links(), b.rechts());
         if (e instanceof Expr.Afgerond a) return kinderenVan(a.basis());
@@ -407,8 +401,11 @@ public final class EffectieveEenheid {
         return uit;
     }
 
-    /** The Expr operands a condition carries, collected through the shared {@code Conditie.bevatOperand} scan
-     *  (which never descends UNDER a ch. 4.10 carrier — the carrier itself is what {@link #noteer} needs). */
+    /** The Expr operands a condition carries, collected through the shared {@code Conditie.bevatOperand} scan.
+     *  That scan is a FULL pre-order walk, so the list holds each operand and then its descendants; {@link #noteer}
+     *  re-walks the ones it already reached through the operand itself. Recording a binder read is idempotent, and
+     *  the cluster nodes carry their own scope in {@link #noteer}, so the repetition costs work and nothing else —
+     *  the same shape this list has carried for a {@code Let} operand since {@code Expr.bevat} grew its Let arm. */
     private static List<Expr> conditieOperanden(Conditie c) {
         if (c == null) return List.of();
         java.util.List<Expr> uit = new java.util.ArrayList<>();

@@ -2,7 +2,6 @@ package io.github.yhavinga.regelspraak.transpiler.kern;
 
 import io.github.yhavinga.regelspraak.ir.Bron;
 import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.loader.IrLoader;
 import io.github.yhavinga.regelspraak.model.Datatype;
 import io.github.yhavinga.regelspraak.model.Eenheid;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
@@ -11,9 +10,7 @@ import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Parameter;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -52,7 +49,7 @@ class EffectieveEenheidWitnessTest {
 
     private static Bron bron() { return Bron.synthetisch("witness"); }
 
-    private static EffectieveEenheid kaal() { return new EffectieveEenheid(List.of(), Map.of()); }
+    private static EffectieveEenheid kaal() { return new EffectieveEenheid(List.of()); }
 
     /** A Vondst declaring "gewicht" in kg — the source every reference to it must read. */
     private static Objecttype vondst() {
@@ -175,19 +172,13 @@ class EffectieveEenheidWitnessTest {
     }
 
     // ---------------- the ch. 4.10 Let cluster ----------------
-    // Let and BinderRef are ORDINARY Expr union nodes, so a test builds them directly; the derivation needs the
+    // All three are ORDINARY Expr union nodes, so a test builds them directly; the derivation needs the
     // Let INDEX beside them for one reason only — a BinderRef asked in isolation carries no route up to its own
-    // binding (see EffectieveEenheid#lets). IfThenElse has no union record and keeps a carrier.
+    // binding (see EffectieveEenheid#lets).
 
-    /** The derivation as {@code ExecModelTranspiler} builds it, over the given Lets and no IfThenElse. */
+    /** The derivation as {@code ExecModelTranspiler} builds it, over the given Lets. */
     private static EffectieveEenheid overLets(Expr... lets) {
-        return new EffectieveEenheid(List.of(lets), Map.of());
-    }
-
-    private static Expr keuzeDrager(Datatype t, Map<Object, IrLoader.Keuze> keuzes, IrLoader.Keuze keuze) {
-        Expr d = new Expr.Onopgelost(t, bron());
-        keuzes.put(d, keuze);
-        return d;
+        return new EffectieveEenheid(List.of(lets));
     }
 
     @Test void een_binderlezing_diep_in_de_body_leest_de_gebonden_waarde() {
@@ -245,11 +236,9 @@ class EffectieveEenheidWitnessTest {
     }
 
     @Test void een_keuze_leest_de_tak_niet_haar_eigen_claim() {
-        Map<Object, IrLoader.Keuze> keuzes = new IdentityHashMap<>();
         Objecttype ot = vondst();
-        Expr keuze = keuzeDrager(num(TON), keuzes,
-                new IrLoader.Keuze(null, liegendeRef(ot), liegendeRef(ot), num(TON)));
-        assertEquals(KG, new EffectieveEenheid(List.of(), keuzes).eenheidVan(keuze));
+        Expr keuze = new Expr.IfThenElse(null, liegendeRef(ot), liegendeRef(ot), num(TON), bron());
+        assertEquals(KG, overLets().eenheidVan(keuze));
     }
 
     // ---------------- the three reason-carrying exceptions ----------------
