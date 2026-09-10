@@ -1,0 +1,21 @@
+Eenheidsysteem Gewicht
+    het kilogram (mv: kilogrammen) kg
+    de ton (mv: tonnen) t = 1000 kg
+
+Objecttype de Vangst (mv: Vangsten)
+    het ruwgewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+    het ondergewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+    het bovengewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+    het bandgewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+
+Regel ondergewicht van een vangst
+    geldig altijd
+        Het ondergewicht van een Vangst moet berekend worden als het ruwgewicht van de Vangst, met een minimum van 1 t.
+
+Regel bovengewicht van een vangst
+    geldig altijd
+        Het bovengewicht van een Vangst moet berekend worden als het ruwgewicht van de Vangst, met een maximum van 2,50 t.
+
+Regel bandgewicht van een vangst
+    geldig altijd
+        Het bandgewicht van een Vangst moet berekend worden als het ruwgewicht van de Vangst, met een minimum van 1 t en een maximum van 2500 kg.

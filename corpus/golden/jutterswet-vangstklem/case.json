@@ -1,0 +1,100 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vangst",
+        "attributes": { "ruwgewicht": { "number": "250.00" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vangst",
+        "attributes": { "ruwgewicht": { "number": "4200.00" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vangst",
+        "attributes": { "ruwgewicht": { "number": "1750.50" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vangst",
+        "attributes": { "ruwgewicht": { "number": "999.99" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V5",
+        "objectType": "Vangst",
+        "attributes": { "ruwgewicht": { "number": "1000.01" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V6",
+        "objectType": "Vangst",
+        "attributes": { "ruwgewicht": { "number": "2499.99" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V7",
+        "objectType": "Vangst",
+        "attributes": { "ruwgewicht": { "number": "2500.01" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V8",
+        "objectType": "Vangst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "V1", "attribute": "ondergewicht", "value": { "number": "1000.00" } },
+    { "kind": "attributeValue", "label": "V1", "attribute": "bovengewicht", "value": { "number": "250.00" } },
+    { "kind": "attributeValue", "label": "V1", "attribute": "bandgewicht", "value": { "number": "1000.00" } },
+
+    { "kind": "attributeValue", "label": "V2", "attribute": "ondergewicht", "value": { "number": "4200.00" } },
+    { "kind": "attributeValue", "label": "V2", "attribute": "bovengewicht", "value": { "number": "2500.00" } },
+    { "kind": "attributeValue", "label": "V2", "attribute": "bandgewicht", "value": { "number": "2500.00" } },
+
+    { "kind": "attributeValue", "label": "V3", "attribute": "ondergewicht", "value": { "number": "1750.50" } },
+    { "kind": "attributeValue", "label": "V3", "attribute": "bovengewicht", "value": { "number": "1750.50" } },
+    { "kind": "attributeValue", "label": "V3", "attribute": "bandgewicht", "value": { "number": "1750.50" } },
+
+    { "kind": "attributeValue", "label": "V4", "attribute": "ondergewicht", "value": { "number": "1000.00" } },
+    { "kind": "attributeValue", "label": "V4", "attribute": "bovengewicht", "value": { "number": "999.99" } },
+    { "kind": "attributeValue", "label": "V4", "attribute": "bandgewicht", "value": { "number": "1000.00" } },
+
+    { "kind": "attributeValue", "label": "V5", "attribute": "ondergewicht", "value": { "number": "1000.01" } },
+    { "kind": "attributeValue", "label": "V5", "attribute": "bovengewicht", "value": { "number": "1000.01" } },
+    { "kind": "attributeValue", "label": "V5", "attribute": "bandgewicht", "value": { "number": "1000.01" } },
+
+    { "kind": "attributeValue", "label": "V6", "attribute": "ondergewicht", "value": { "number": "2499.99" } },
+    { "kind": "attributeValue", "label": "V6", "attribute": "bovengewicht", "value": { "number": "2499.99" } },
+    { "kind": "attributeValue", "label": "V6", "attribute": "bandgewicht", "value": { "number": "2499.99" } },
+
+    { "kind": "attributeValue", "label": "V7", "attribute": "ondergewicht", "value": { "number": "2500.01" } },
+    { "kind": "attributeValue", "label": "V7", "attribute": "bovengewicht", "value": { "number": "2500.00" } },
+    { "kind": "attributeValue", "label": "V7", "attribute": "bandgewicht", "value": { "number": "2500.00" } },
+
+    { "kind": "attributeEmpty", "label": "V8", "attribute": "ondergewicht" },
+    { "kind": "attributeEmpty", "label": "V8", "attribute": "bovengewicht" },
+    { "kind": "attributeEmpty", "label": "V8", "attribute": "bandgewicht" },
+
+    { "kind": "consistent" }
+  ]
+}
