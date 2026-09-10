@@ -108,23 +108,30 @@ Opnieuw gebouwd (een `Begrensd` over `EUR`-attributen met `kg`-grenzen, 10 en
 | verifier (vóór de check) | `verifier: PASS` |
 | ref | `EVALUATION FAULT: incompatible units: EUR vs kg` |
 | clingo | `TRANSLATION FAULT: non-identical units under a Begrensd bound are not translated` |
-| Drools | `PLAYED 1` |
+| Drools, jar van vóór de omheining | `PLAYED 1` |
+| Drools, jar herbouwd (post-omheining) | `ERROR Eenheidsconflict: onverenigbare eenheden bij een §6.1.4 begrenzing-ondergrens: 'kg' (canoniek kg) herschaalt niet naar 'EUR' (canoniek EUR) — er bestaat geen omrekenfactor` |
 
-De kaartmeting van 2026-09-09 is dus gereproduceerd voor verifier, ref en
-clingo. **De Drools-rij is de PRE-omheining-rij van de kaart, en dat is te
-verklaren:** de beschikbare read-only jar is gebouwd op 2026-09-09 18:11:20,
-en de commit die de begrenzing-grens omheint (`2841f4e`) is van diezelfde dag
-20:27:57 — de jar dateert van vóór de omheining. De jar is *niet* herbouwd
-(buiten may-touch). Wat de post-omheining-tak doet is uit de bron gelezen en
-staat vast: `ExecModelTranspiler` herschaalt elke grens met
-`herschaald(effType(grens), effType(basis), "een §6.1.4 begrenzing-{onder,boven}grens")`
-en `DrlTranspiler` doet hetzelfde via `omrekenWaarde` — allebei door
-`Eenheidsconflict.eisHerschaalbaar`, waarvan de eigen getuigetest `kg`/`t`
-als herschaalbaar en `jr`/`kg` als fout vastpint. Beide Drools-takken toetsen
-dus **herschaalbaarheid = convertibiliteit**.
+**Alle drie de uitvoerders weigeren de getuige.** De eerste Drools-rij was een
+artefact van de jar-datering: de aanvankelijk beschikbare jar was gebouwd op
+2026-09-09 18:11:20, terwijl de commit die de begrenzing-grens omheint
+(`2841f4e`) van diezelfde dag 20:27:57 is. Lens 1 heeft de jar herbouwd en de
+weigering gemeten; in deze fixronde is dat hier nagedaan met de uitvoer
+hierboven. De dateringsslag om de arm vervalt dus. Gate 12 herbouwt de jar
+onvoorwaardelijk en is groen op deze branch (lens 1).
 
-Wat de PLAYED-rij laat zien is trouwens erger dan "stil": de jar van vóór de
-omheining paste de `kg`-grenzen gewoon toe op een `EUR`-basis en klemde door.
+**De twee Drools-takken zijn niet één omheining; dat gladstrijken zou
+onnauwkeurig zijn.** De exec-model-tak heeft een **klem-specifieke** poort per
+grens — `herschaald(effType(grens), effType(basis), "een §6.1.4
+begrenzing-{onder,boven}grens")` — en die reden staat letterlijk in de
+foutboodschap hierboven. De DRL-tekst-tak heeft zo'n klem-specifieke poort
+niet en vangt hetzelfde defect via de **generieke §4-waardeherschaling**
+(`omrekenWaarde`). Ze komen wel op dezelfde plek uit:
+`Eenheidsconflict.eisHerschaalbaar`, waarvan de eigen getuigetest `kg`/`t` als
+herschaalbaar en `jr`/`kg` als fout vastpint. Beide takken toetsen dus
+**herschaalbaarheid = convertibiliteit**, langs twee verschillende routes.
+
+Wat de oude PLAYED-rij liet zien is trouwens erger dan "stil": de jar van vóór
+de omheining paste de `kg`-grenzen gewoon toe op een `EUR`-basis en klemde door.
 
 ### 3. De convertibel-meting — er is géén divergentie, en dat is bepalend
 
@@ -160,13 +167,31 @@ Doorgemeten voorbij de kaartvraag, want de keuze raakt ze:
 |---|---|---|---|
 | grens `t` met canoniek `ton` op een `kg`-basis | FAULT | **geeft een model** | **FAIL** — dicht |
 | grens `kg` omgelabeld naar stelsel `Munt`, op een `EUR`-basis | FAULT | **geeft een model, met de ongewijzigde waarden** | **FAIL** — dicht |
-| grens `t` omgelabeld naar het niet-gedeclareerde stelsel `Massa`, op `kg` | herschaalt | **FAULT** | PASS — **blijft open** |
+| grens `t` in een VOLLEDIG gedeclareerd zusterstelsel `Massa`, op een `kg`-basis in `Gewicht` | **10000** | **FAULT** | PASS — **blijft open** |
 
-De tweede rij is de scherpste: clingo rekende daar kilogrammen als euro's en
-gaf de vastgepinde antwoorden terug. Convertibiliteit weigert beide (de
-canonieke namen verschillen), identiteit-per-stelsel niet. De derde rij is een
-eenheid die een stelsel noemt dat het document niet declareert — een andere
-positie, opgeschreven in de clausule en niet hier beslist.
+De tweede rij is de scherpste van de twee gedichte: clingo rekende daar
+kilogrammen als euro's en gaf de vastgepinde antwoorden terug.
+Convertibiliteit weigert beide (de canonieke namen verschillen),
+identiteit-per-stelsel niet.
+
+**De derde rij is in de fixronde gecorrigeerd, en de correctie is inhoudelijk.**
+Aanvankelijk stond hier de vorm "grens `t` in een NIET-gedeclareerd stelsel
+`Massa`". Die is nagemeten en blijkt al dicht: WF-034 weigert hem, één melding
+per grens — `unit 't' declares unit system 'Massa', which no declaration
+carries: the unit resolves against no conversion table`. Op die vorm bestaat
+dus geen conform document en valt er niets open te laten.
+
+De wérkelijk open vorm is het **kruis-stelsel**-geval met een volledig
+gedeclareerd zusterstelsel: `Massa` naast `Gewicht`, met `kg` (factor 1) en `t`
+(factor 1000), allebei canoniek `kg`; de basis in `Gewicht`-`kg`, de grenzen in
+`Massa`-`t`. Zelf nagebouwd en gemeten 2026-09-10: **verifier PASS**, `ref`
+10000, **Drools 10000 op beide takken**, clingo `TRANSLATION FAULT`. Een levende
+twee-tegen-één-divergentie op een verifier-schoon document. Oorzaak: clingo's
+`Normalise.document` canonicaliseert **per stelsel**, dus twee stelsels
+normaliseren onafhankelijk en `units_identical_ok` ziet stelsel-overschrijdend
+geen identiteit; `ref` en Drools kijken naar de canonieke naam en negeren het
+stelsel. Gekaart als `backlog/new/20260910-kruis-stelsel-eenheid-divergentie.md`
+— gemeld én gekaart, niet alleen gemeld.
 
 ### 5. Rood eerst, dan groen — met echte uitvoer
 
@@ -192,9 +217,10 @@ de maximum-melding. De twee grensposities vallen dus onafhankelijk.
 
 ### 6. Arm-exactheid
 
-De check verwijderd via een edit, herbouwd, en de **volle sweep over alle 551
-`ir.json` van de vier zones** vergeleken met de sweep mét check. Precies één
-document verandert van verdict:
+De check verwijderd via een edit, herbouwd, en de **volle sweep over alle
+verifier-gegatete zones — golden 166, negatief 359, rood 26, samen 551
+`ir.json`** — vergeleken met de sweep mét check. Precies één document verandert
+van verdict:
 
     < corpus/negatief/wf099-begrensd-grens-eenheid/ir.json  rc=0  verifier: PASS|
     > corpus/negatief/wf099-begrensd-grens-eenheid/ir.json  rc=1  WF-099 FAIL …
@@ -204,15 +230,16 @@ Geen enkele andere regelmelding beweegt, in geen enkele zone.
 ### 7. Over-afwijzing
 
 Gate 3 groen: **192 golden clean**, 359 negatief afgewezen om hun eigen regel.
-Eigen sweep over álle 581 `ir.json` (vier zones plus de pariteitszone) met de
-nieuwe binary: WF-099 meldt op **drie** documenten.
+Eigen sweep over álle 581 `ir.json` — de verifier-gegatete zones (golden 166,
+negatief 359, rood 26 = 551) plus de 30 documenten van de pariteitszone — met
+de nieuwe binary: WF-099 meldt op **drie** documenten.
 
 - `corpus/negatief/wf099-begrensd-grens-eenheid` — de getuige.
-- `toka/casus` en `toka/cases/scenario-toka-24-te-betalen-belasting` — allebei
-  in de **ongegatete** pariteitszone (gate 11 draait de verifier niet, gemeten:
-  het woord "verifier" komt in `scripts/check-toka-parity.sh` niet voor), en
-  allebei al niet-conform vóór deze regel (`toka/casus` had 34 andere
-  meldingen, het scenario had WF-016).
+- Twee documenten in de **ongegatete** pariteitszone: de casusbundel en één
+  scenariodocument. Gate 11 draait de verifier niet (gemeten: het woord
+  "verifier" komt in `scripts/check-toka-parity.sh` niet voor), en allebei
+  waren ze al niet-conform vóór deze regel — de casusbundel met 34 andere
+  meldingen, het scenariodocument met één eerdere WF-016-bevinding.
 
 Die twee zijn geen toevalstreffer maar een **eenzijdig eenheidspaar**: een
 eenheidloze `Binair`-basis met een `0 €`-literal als ondergrens. Alle drie de
@@ -226,15 +253,17 @@ unitless side is not an adopting literal"). Die klasse verbreden is één beslui
 voor WF-023, WF-035, WF-036 en WF-099 samen — geen divergentie om hier bij één
 van de vier in te voeren. Ch. 4.1 noteert nu dat WF-099 zich erbij voegt.
 
-In de vier gegatete zones is de over-afwijzing dus **nul**.
+In de verifier-gegatete zones (golden 166, negatief 359, rood 26) is de
+over-afwijzing dus **nul**.
 
 ### 8. De aangewezen golden
 
 `corpus/golden/jutterswet-grensbedrag` — de **enige** `Begrensd`-drager in
-`corpus/golden` (gemeten over alle 130 goldens; de andere dragers zijn
-`corpus/negatief/wf091-begrensd-eenheid`, `corpus/rood/begrensd-reads-bounds-in-order`
-en twee toka-documenten). Er is dus een bestaande drager en er is geen nieuwe
-golden gebouwd, precies zoals de kaart voorschrijft.
+`corpus/golden` (gemeten over alle **166** golden-`ir.json`; de andere dragers
+zijn `corpus/negatief/wf091-begrensd-eenheid`,
+`corpus/rood/begrensd-reads-bounds-in-order` en twee documenten in de
+pariteitszone). Er is dus een bestaande drager en er is geen nieuwe golden
+gebouwd, precies zoals de kaart voorschrijft.
 
 **Eerlijk erbij, want het is een zwakte:** die golden is op basis én op beide
 grenzen eenheidloos, dus hij pint de toegelaten allebei-eenheidloos-lezing en
@@ -243,8 +272,10 @@ is niet stiekem gelaten: zo'n golden erbij zetten verplaatst **gate 12's
 `EXPECTED_PLAYED=119` (een gelijkheid)** en **gate 13's twist-tabel-boekhouding**
 (die in zoveel woorden vastlegt dat de `Begrensd` "on this corpus always
 UNITLESS" is), en die twee staan in `scripts/`, een beschermd pad buiten deze
-kaart. Voorgesteld als aparte corpuskaart; de clausule en de registerrij
-zeggen het allebei hardop.
+kaart. Aangemaakt als `backlog/new/20260910-begrensd-eenheid-golden.md`, met
+allebei die scriptbewegingen expliciet als voorstel benoemd; de clausule en de
+registerrij verwijzen er bij bestandsnaam naar, zodat het gat gekaart is en
+niet alleen gemeld.
 
 ### 9. Wat er landde
 
@@ -282,12 +313,22 @@ expliciet op rij 1 (`| `Begrensd` | clamp to min/max | §13.4.17.27–.30 | suga
 > `Begrensd`-grens wordt tegen die van haar BASIS gekruist, door hetzelfde
 > predicaat dat WF-035 op een additief paar en WF-036 op een vergelijking
 > gebruikt, zodat de regel een positie toevoegt en geen vierde begrip van
-> verenigbaarheid; elke grens kruist de basis en niet haar zustergrens, wat de
-> herschaling is die RUNTIME-SEMANTICS ch. 2.7 uitvoert en waaruit
-> min-tegen-max vanzelf volgt. Rood eerst op deze HEAD: een klem over een
-> `EUR`-basis met beide grenzen in `kg` was verifier-PASS terwijl `ref`
-> faalde (`incompatible units: EUR vs kg`) en de ASP-backend de vertaling
-> weigerde — de verifier liet door wat elke uitvoerder weigert. De lijn is
+> verenigbaarheid; elke grens kruist de basis en niet haar zustergrens, omdat
+> de basis is waar een grens IN wordt herschaald — RUNTIME-SEMANTICS ch. 2.7
+> is enkel de teruggeefwet (basis, minimum of maximum, minimum eerst,
+> vergelijkingen exact) en draagt geen eenhedenzin, ch. 2.10 geeft de klem als
+> composiete positie het effectieve type van haar BASIS, en ch. 2.6 draagt de
+> herschaling zelf (een operand herschaald in de eenheid van de ander met
+> exacte factoren, een vergelijking over eenheden heen die BEIDE zijden
+> herformuleert) — en omdat elke vergelijking van een klem
+> basis-tegen-grens is, volgt min-tegen-max daaruit vanzelf. Rood eerst op deze
+> HEAD: een klem over een `EUR`-basis met beide grenzen in `kg` was
+> verifier-PASS terwijl `ref` faalde (`incompatible units: EUR vs kg`), de
+> ASP-backend de vertaling weigerde en de Drools-backend
+> `Eenheidsconflict: … 'kg' … herschaalt niet naar 'EUR'` gaf — de verifier
+> liet door wat alle drie de uitvoerders weigeren; de twee Drools-takken komen
+> daar langs verschillende routes (een klem-specifieke §6.1.4-poort in de
+> exec-model-tak, de generieke §4-waardeherschaling in de DRL-tak). De lijn is
 > CONVERTIBILITEIT en is gemeten in plaats van uit de boodschappen afgelezen,
 > want die spreken elkaar tegen (`ref` zegt incompatible en toetst
 > convertibiliteit; de ASP-backend zegt non-identical maar toetst identiteit
@@ -298,23 +339,30 @@ expliciet op rij 1 (`| `Begrensd` | clamp to min/max | §13.4.17.27–.30 | suga
 > die alle drie spelen. De keuze sluit bovendien twee gemeten
 > ref/ASP-divergenties (een grens waarvan de `canoniek` het stelsel dat ze
 > noemt tegenspreekt; een grens omgelabeld naar het stelsel van de basis,
-> waar de ASP-backend stilzwijgend de ongewijzigde waarden teruggaf) en laat
-> een derde open en opgeschreven (een grens omgelabeld naar een
-> NIET-gedeclareerd stelsel). Arm-exact en kosteloos: de check weghalen
-> verplaatst precies één verdict over alle 551 documenten van de vier zones.
+> waar de ASP-backend stilzwijgend de ongewijzigde waarden teruggaf). Wat ze
+> NIET sluit is niet de vorm die er eerst voor werd aangezien: een grens die
+> een NIET-gedeclareerd stelsel noemt weigert WF-034 al. Open blijft de
+> KRUIS-STELSEL-grens met een volledig gedeclareerd zusterstelsel — `Massa`
+> naast `Gewicht`, allebei canoniek `kg` — waar `ref` en Drools 10000 rekenen
+> en de ASP-backend weigert te vertalen: een levende twee-tegen-één-divergentie
+> op een verifier-schoon document, gekaart als
+> `backlog/new/20260910-kruis-stelsel-eenheid-divergentie.md`. Arm-exact en
+> kosteloos: de check weghalen verplaatst precies één verdict over de
+> verifier-gegatete zones (golden 166, negatief 359, rood 26 — 551 documenten).
 > Getuige `wf099-begrensd-grens-eenheid`; positieve kant
 > `jutterswet-grensbedrag`, de enige klem-drager van de corpus en overal
-> eenheidloos — géén golden draagt een eenheid-dragende klem, wat gekaart is
-> in plaats van binnengesmokkeld, omdat er één gate 12's
-> `EXPECTED_PLAYED`-gelijkheid en gate 13's twist-tabel-boekhouding verplaatst.
+> eenheidloos — géén golden draagt een eenheid-dragende klem, gekaart als
+> `backlog/new/20260910-begrensd-eenheid-golden.md` in plaats van
+> binnengesmokkeld, omdat er één gate 12's `EXPECTED_PLAYED`-gelijkheid en
+> gate 13's twist-tabel-boekhouding verplaatst.
 
 ### 12. Wat bewust niet bewoog
 
-- **`ref/`, `backends/clingo/`, `backends/drools/`** — onaangeraakt. Ze
-  weigeren de vorm al; dat is de kaarttekst zelf. De Drools-jar is niet
-  herbouwd (buiten may-touch), waardoor de Drools-rij van de hermeting de
-  pre-omheining-stand toont; de post-omheining-tak is uit de bron gelezen en
-  in §2 vastgelegd.
+- **`ref/`, `backends/clingo/`, `backends/drools/`** — geen bronbestand
+  aangeraakt. Ze weigeren de vorm alle drie al; dat is de kaarttekst zelf. De
+  Drools-jar is wél herbouwd (alleen build-uitvoer in `target/`, geen
+  getrackt bestand) om de post-omheining-weigering zelf te kunnen meten in
+  plaats van hem uit de bron af te leiden — zie §2.
 - **`scripts/`** — onaangeraakt. Geen enkele teller of gepinde lijst hoefde
   te bewegen: de negatief-vloer is 350 en staat nu op 359, gate 2's
   golden-telling is ongewijzigd op 192, en gate 12/13 zien geen nieuwe golden.
@@ -323,7 +371,41 @@ expliciet op rij 1 (`| `Begrensd` | clamp to min/max | §13.4.17.27–.30 | suga
 - **`corpus/golden/`** — onaangeraakt; er is een bestaande drager (§8).
 - **De open klasse van het eenzijdige eenheidspaar** — niet hier beslist; ze
   is één besluit voor vier regels samen en staat nu in ch. 4.1 genoteerd.
-- **De niet-gedeclareerd-stelsel-divergentie** (§4, derde rij) — gemeten,
-  opgeschreven in de clausule, niet gedicht: dat is een andere positie.
-- **De twee toka-documenten** — niet gerepareerd; de zone is ongegatet voor de
-  verifier en beide documenten waren al niet-conform.
+- **De kruis-stelsel-divergentie** (§4, derde rij) — gemeten, opgeschreven in
+  clausule én registerrij, en gekaart als
+  `backlog/new/20260910-kruis-stelsel-eenheid-divergentie.md`; niet hier
+  gedicht, want de keuze raakt WF-023/035/036/099 tegelijk.
+- **De twee pariteitszone-documenten** — niet gerepareerd; die zone gaat niet
+  door de verifier en beide documenten waren al niet-conform.
+
+### 13. Fixronde (2026-09-10)
+
+Verwerkt na de terugkoppeling van lens 1, die alle metingen reproduceerde en
+vier correcties vond:
+
+1. **Grondslagcitatie hersteld** in clausule én registerrij. RUNTIME-SEMANTICS
+   ch. 2.7 draagt geen eenhedenzin — het is enkel de teruggeefwet. De
+   herschaling staat in ch. 2.6 en het effectieve type van de klem in ch. 2.10.
+   Alle drie worden nu apart en juist geciteerd; de dubbele bepaler in "the
+   restating the runtime performs" is weg.
+2. **De open-passage gecorrigeerd** — inhoudelijk, niet redactioneel: de
+   niet-gedeclareerd-stelsel-vorm is al dicht (WF-034, zelf nagemeten), en de
+   werkelijke open klasse is de kruis-stelsel-grens met een volledig
+   gedeclareerd zusterstelsel. Zelf nagebouwd en gemeten (§4).
+3. **Twee kaartjes aangemaakt**, zodat "gemeld maar niet gekaart" dicht is:
+   `20260910-begrensd-eenheid-golden.md` en
+   `20260910-kruis-stelsel-eenheid-divergentie.md`. Clausule, registerrij en
+   Result verwijzen er bij bestandsnaam naar.
+4. **Tellingen uitgeschreven** in plaats van als "de vier zones" gelabeld
+   (golden 166 + negatief 359 + rood 26 = 551, pariteitszone 30 apart), de
+   praktijk die ch. 4.1 voorschrijft; en "130 goldens" in §8 gecorrigeerd naar
+   166.
+5. **Jar-datering vervallen**: de jar is herbouwd en Drools weigert de getuige
+   met `Eenheidsconflict`. Alle drie de uitvoerders weigeren hem dus. Gate 12
+   herbouwt onvoorwaardelijk en is groen op deze branch (lens 1).
+6. **De twee Drools-takken niet langer gladgestreken**: klem-specifieke
+   §6.1.4-poort in de exec-model-tak, generieke §4-waardeherschaling in de
+   DRL-tak, allebei uitkomend in `Eenheidsconflict.eisHerschaalbaar`.
+7. **Het pariteitszone-scenario-ID uit de Result gehaald** en vervangen door
+   een klasse-aanduiding (beheerdersafspraak; oudere done-kaarten die het
+   patroon dragen blijven staan als historie).
