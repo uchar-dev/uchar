@@ -129,10 +129,15 @@ geen `PLAYED n` verandert van n, geen weigerreden verandert van tekst.
 
 **Het aandachtspunt van de kaart — gemeten; er zijn DRIE verschuivingen, en de
 derde was een echte fout.** Corpusbreed staat er onder een `IfThenElse` (guard
-plus beide takken):
+plus beide takken, plus zijn eigen type-annotatie):
 51 `BinderRef`, 15 `Vergelijking`, 15 `Binair`, 12 `Literal`,
-9 `ParameterRef`, 6 `Construct`, 6 `SumType`, 2 `Afgerond` — en
-**nul `AttribuutRef`** en **nul `Rekendatum`/`Rekenjaar`**. Dus:
+9 `ParameterRef`, 9 `SumType`, 6 `Construct`, 2 `Afgerond` — en
+**nul `AttribuutRef`** en **nul `Rekendatum`/`Rekenjaar`**. (De grens telt mee:
+laat je de eigen type-annotatie van de knoop weg, dan zijn het 6 `SumType`
+in plaats van 9 — `jutterswet-meldplichtspoor` 3 en
+`jutterswet-meldtermijnen` 6 met, 2 en 4 zonder. Geen van de andere getallen
+verandert ervan, en de drie consumenten tellen alleen `Expr`-knopen, die de
+grens niet raakt.) Dus:
 
 - `ProducentConsument` (zoekt `AttribuutRef`): nul knopen extra zichtbaar —
   nul verschuiving, zoals bij de `Let`.
@@ -227,7 +232,7 @@ verwachting `KG` en de boodschap ongewijzigd) en `EenheidsconflictWitnessTest`
 | 7 | check-noop | PASS (392 cases; 36 gepinde survivors) |
 | 8 | check-rood | PASS (26 rode cases, vloer 26; Drools-leg 6 fault-pinned, 20 not-carried) |
 | 9 | check-catala | PASS (201 checks, vloer 201; 12 catala-goldens, vloer 12) |
-| 10 | check-regelspraak | PASS (173 tests, vloer 173; 38 rgs-goldens byte-identiek, vloer 38) |
+| 10 | check-regelspraak | PASS (174 tests, vloer 173; 38 rgs-goldens byte-identiek, vloer 38) |
 | 11 | check-toka-parity | PASS (45 .rgs byte-identiek, vloer 45; 27 tests; 29 replays, nul divergenties) |
 | 12 | check-drools | PASS (**played 120**, kanaalvloer 47; JUnit 271, vloer 239) |
 | 13 | check-reftype-derivation | PASS (74 twists, vloer 74; 70 replays, 13 DRL-tekst, vloer 13; 0 survivors) |
@@ -235,8 +240,33 @@ verwachting `KG` en de boodschap ongewijzigd) en `EenheidsconflictWitnessTest`
 Geen pin verplaatst. `EXPECTED_PLAYED` blijft 120, de kanaalvloer blijft 47
 namen, `EXPECTED_MIN_TESTS` blijft 239 (de suite groeide van 266 naar 271 —
 drie unie-getuigen plus de twee scope-getuigen van de fixronde; groei hoeft de
-vloer niet te verzetten). Gate 10's suite blijft 173 tests: er is geen
-frontend-test bijgekomen.
+vloer niet te verzetten). Gate 10's suite gaat van 173 naar 174: de
+emitter-weigering is daar gepind, want `IrEmitter` is de enige plek waar zij
+bestaat en de Drools-build sluit `**/regelspraak/emit/**` bewust uit.
+
+**Twee vastleggingen uit de slotronde.**
+
+- *`kinderen` is dragend geworden, en dat is nu een compileerfout in plaats van
+  een opmerking.* Zolang `conditieOperanden` een vlakke lijst gaf, werd een
+  knoopsoort die `kinderen` niet kende toegedekt: haar afstammelingen stonden
+  toch in de lijst. Nu alleen wortels teruggaan, levert een onbekende soort
+  géén kinderen en verdwijnt elke binderlezing eronder stil. De keuze is
+  daarom de zwaardere van de twee die openstonden: `kinderen` is een
+  **exhaustieve `switch`** over de verzegelde unie geworden, zonder
+  `default` — dezelfde constructie en dezelfde reden als `Expr.bevat`. De zes
+  echte bladeren staan uitgeschreven; de drie ch. 4.10-knopen zijn
+  onbereikbaar (`noteer` vangt ze af) en **weigeren** in plaats van te
+  antwoorden, want hun kinderen teruggeven vanaf een plek zonder scope ís het
+  defect. Gedragsneutraal: die drie armen vielen voorheen door naar
+  `List.of()` en worden nooit bereikt — gate 12 draait de hele corpus zonder
+  er één te raken.
+- *De aliasing-eigenschap staat er, in plaats van impliciet te blijven.* Komt
+  één instantie zowel als kale operand als als afstammeling voor, dan valt zij
+  als afstammeling weg en wint de **binnenste** scope. Dat is de onschadelijke
+  richting: de lezingentabel is identity-gesleuteld, dus die twee posities zijn
+  voor haar toch al niet te onderscheiden en één van beide antwoorden moet hoe
+  dan ook vervallen. Geen corpusvorm bereikt het — de loader bouwt per
+  wire-knoop een vers record, dus alleen een handgebouwde boom kan delen.
 
 **Gemeld, niet aangeraakt.** `scripts/check-drools.sh:76` draagt
 `EXPECTED_MIN_TESTS=239   # 2026-09-10: measured 239`, terwijl de suite op de
@@ -248,12 +278,26 @@ hoofdsessie.
 **Wat bewust niet bewoog.** Het schema (`IfThenElse` stond er al, inclusief de
 notitie "never emitter-produced"), `RUNTIME-SEMANTICS.md` ch. 10.2 en WF-069,
 elke corpusbron en elk `ir.json`, `spec/CONSTRUCTS.md` en `spec/PLAN.md` (per
-opdracht), en alle gate-scripts. De pre-existente eigenschap dat
-`EffectieveEenheid.conditieOperanden` een operand én zijn afstammelingen
-oplevert (`Conditie.bevatOperand` is een volledige pre-order-wandeling) is
-gelaten zoals hij is — hij geldt sinds `Expr.bevat` zijn Let-arm kreeg, en hem
-repareren zou een gedragswijziging zijn in een gedragsneutrale kaart; de
-toelichting ter plaatse zegt nu wat er feitelijk gebeurt.
+opdracht), en alle gate-scripts.
+
+**Wat wél bewoog en aanvankelijk niet zou bewegen.** In de bouwronde stond hier
+dat de pre-order-eigenschap van `EffectieveEenheid.conditieOperanden` gelaten
+werd zoals zij was, omdat repareren een gedragswijziging zou zijn in een
+gedragsneutrale kaart. Dat oordeel is in de fixronde herzien en die alinea is
+vervangen door deze: de eigenschap is geen onschuldige dubbeling maar een
+scope-bres, en zij is **bij de wortel gerepareerd** (zie "Een derde
+verschuiving" hierboven), met twee rood-eerst gepinde getuigen en een
+per-golden-vergelijking die dezelfde MD5 houdt. De reparatie is dus
+corpusneutraal én een echte correctie — niet het een ten koste van het ander.
+
+De slotronde mat bovendien dat zij **breder dicht dan de kaart claimde**: omdat
+de wortels worden afgeleid uit de gedeelde `Conditie.bevatOperand`-wandeling in
+plaats van uit nagetekende `Conditie`-armen, geldt de reparatie voor **elke**
+conditie-arm en ook voor de tweede aanroeper, het `Functie`-filterpad in
+`kinderen`. Acht sondes over die vlakken meten nul verloren lezingen: de
+dekkingssonde vindt geen enkele binderlezing die vóór de reparatie werd
+opgenomen en erna niet meer. Er is dus geen arm en geen pad dat de smallere
+formulering per ongeluk buitensloot.
 
 **Herpin-relevantie.** `frontends/regelspraak` beweegt: `ir/Expr.java` en
 `emit/IrEmitter.java`. **`Expr.java` zit in de gevendorde slice**, dus de

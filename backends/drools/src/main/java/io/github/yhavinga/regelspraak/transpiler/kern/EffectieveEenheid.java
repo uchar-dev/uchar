@@ -370,29 +370,58 @@ public final class EffectieveEenheid {
         for (Expr kind : kinderen(e)) noteer(kind, omgeving, diepte + 1);
     }
 
-    /** Every Expr-carrying component of an ordinary v0 node (the {@code Expr.bevat} inventory minus its ch. 4.10
-     *  arms — {@link #noteer} matches all three cluster nodes itself, because each needs a SCOPE this cannot
-     *  carry). */
+    /**
+     * Every Expr-carrying component of an ordinary v0 node (the {@code Expr.bevat} inventory minus its ch. 4.10
+     * arms — {@link #noteer} matches all three cluster nodes itself, because each needs a SCOPE this cannot
+     * carry).
+     *
+     * <p><b>This accessor became LOAD-BEARING with the root repair at {@link #conditieOperanden}.</b> While that
+     * method handed back a flat pre-order list, a node kind missing here was papered over: its descendants were
+     * in the list anyway and got walked directly (with the wrong scope, which is the defect that was repaired).
+     * Now that only ROOTS are handed back, a kind this method does not know contributes NO children at all and
+     * every binder read beneath it silently loses its recorded unit — falling back to the annotation this class
+     * exists to not read. So the {@code switch} below is EXHAUSTIVE over the sealed union, with no
+     * {@code default}: the next node the union grows is a COMPILE ERROR here rather than a silent gap, exactly
+     * as {@code Expr.bevat} is written for the same reason. The six genuine leaves are spelled out; the three
+     * ch. 4.10 nodes are unreachable — {@link #noteer} intercepts each before it gets here — and they REFUSE
+     * rather than answering, because handing back their children from a place that carries no scope is the
+     * defect, not the fix.
+     */
     private static List<Expr> kinderen(Expr e) {
-        if (e instanceof Expr.Binair b) return kinderenVan(b.links(), b.rechts());
-        if (e instanceof Expr.Afgerond a) return kinderenVan(a.basis());
-        if (e instanceof Expr.Begrensd b) return kinderenVan(b.basis(), b.minimum(), b.maximum());
-        if (e instanceof Expr.DimensieCel c) return kinderenVan(c.attribuut());
-        if (e instanceof Expr.Functie f) {
-            java.util.List<Expr> uit = new java.util.ArrayList<>();
-            if (f.argumenten() != null) uit.addAll(f.argumenten());
-            if (f.leegwaarde() != null) uit.add(f.leegwaarde());
-            uit.addAll(conditieOperanden(f.filter()));
-            return uit;
-        }
-        if (e instanceof Expr.TekstReeks t) {
-            java.util.List<Expr> uit = new java.util.ArrayList<>();
-            if (t.delen() != null)
-                for (Expr.TekstReeks.Deel d : t.delen())
-                    if (d instanceof Expr.TekstReeks.Ingevoegd i) uit.add(i.expr());
-            return uit;
-        }
-        return List.of();
+        return switch (e) {
+            case Expr.Binair b      -> kinderenVan(b.links(), b.rechts());
+            case Expr.Afgerond a    -> kinderenVan(a.basis());
+            case Expr.Begrensd b    -> kinderenVan(b.basis(), b.minimum(), b.maximum());
+            case Expr.DimensieCel c -> kinderenVan(c.attribuut());
+            case Expr.Functie f -> {
+                java.util.List<Expr> uit = new java.util.ArrayList<>();
+                if (f.argumenten() != null) uit.addAll(f.argumenten());
+                if (f.leegwaarde() != null) uit.add(f.leegwaarde());
+                uit.addAll(conditieOperanden(f.filter()));
+                yield uit;
+            }
+            case Expr.TekstReeks t -> {
+                java.util.List<Expr> uit = new java.util.ArrayList<>();
+                if (t.delen() != null)
+                    for (Expr.TekstReeks.Deel d : t.delen())
+                        if (d instanceof Expr.TekstReeks.Ingevoegd i) uit.add(i.expr());
+                yield uit;
+            }
+            case Expr.Literal ignored      -> List.of();
+            case Expr.AttribuutRef ignored -> List.of();
+            case Expr.ParameterRef ignored -> List.of();
+            case Expr.VariabeleRef ignored -> List.of();
+            case Expr.Constante ignored    -> List.of();
+            case Expr.Onopgelost ignored   -> List.of();
+            case Expr.Let ignored        -> throw clusterknoop();
+            case Expr.BinderRef ignored  -> throw clusterknoop();
+            case Expr.IfThenElse ignored -> throw clusterknoop();
+        };
+    }
+
+    private static IllegalStateException clusterknoop() {
+        return new IllegalStateException("een ch. 4.10-knoop hoort nooit bij kinderen() te komen: noteer() vangt "
+                + "hem af, omdat hij een scope draagt die deze accessor niet kan meegeven");
     }
 
     private static List<Expr> kinderenVan(Expr... xs) {
@@ -416,7 +445,15 @@ public final class EffectieveEenheid {
      * <p>The roots are derived FROM the shared scan rather than by re-listing {@code Conditie}'s own arms: an
      * entry that another entry contains is a descendant by definition, and what is left is exactly the operand
      * roots. That keeps one source of truth for which conditions carry operands — a {@code Conditie} arm added
-     * later is covered here the moment the shared walk covers it, with nothing to keep in step.
+     * later is covered here the moment the shared walk covers it, with nothing to keep in step. The same
+     * derivation serves {@link #kinderen}'s {@code Functie} filter, so both callers gained the repair at once.
+     *
+     * <p><b>Aliasing, stated rather than left implicit.</b> Should ONE instance appear both as a bare operand and
+     * as a descendant of another operand, the containment test drops it as a descendant and only the enclosing
+     * walk reaches it — so the INNER scope wins. That is the harmless direction: {@link #lezingEenheden} is
+     * identity-keyed, so the two positions are indistinguishable to it anyway and one of the two answers must be
+     * discarded regardless. No corpus shape reaches it either: the loader builds a fresh record per wire node, so
+     * a shared instance can only come from a hand-built tree.
      */
     private static List<Expr> conditieOperanden(Conditie c) {
         if (c == null) return List.of();
