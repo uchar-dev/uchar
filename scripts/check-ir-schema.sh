@@ -1,8 +1,12 @@
 #!/bin/sh
 # Gate 2: IR JSON schema (spec/schema/regelspraak-ir-v0.schema.json).
 #
-# Three checks:
+# Four checks:
 #   1. the schema is itself a valid draft 2020-12 schema (metaschema);
+#  1b. the schema's patterns are held against a fixed lexeme table, in both
+#      polarities, with no corpus document involved — without it, deleting a
+#      pattern is a silent green (measured 2026-09-11). A clamp fails when a
+#      pattern appears at a position the table does not carry;
 #   2. every corpus/golden/**/ir.json validates against it;
 #   3. every such file round-trips: parsed with raw number lexemes preserved and
 #      re-emitted canonically, the output is byte-identical to the input (this is
@@ -79,6 +83,88 @@ except SchemaError as exc:
                      % (schema_path, exc.message))
     sys.exit(1)
 validator = Draft202012Validator(schema)
+
+# --- check 1b: the pattern self-test (maintainer decision 2026-09-11) -----------------------------
+# A schema pattern is a MUST with no failing witness of its own: taking it out leaves every gate
+# green. Measured 2026-09-11 with both Geldigheid patterns deleted and the schema re-serialised —
+# this gate reported PASS at 194 files and the Drools witness stayed 18/18. No CORPUS document can
+# close that: this gate validates corpus/golden and corpus/rood only, and a document that VIOLATES a
+# pattern cannot sit in either zone without turning the gate permanently red, while one in
+# corpus/negatief is never validated here at all. So the witness is held HERE, against the schema
+# itself, with no corpus document involved — the mechanism decided on the geldigheidsgrens card.
+#
+# SCOPE is this schema's WHOLE pattern surface, which is these two positions and nothing else. The
+# clamp below fails when a pattern turns up at a position the table does not carry, so a new pattern
+# arrives with its own rows or not at all. Named rather than silently omitted: the ten patterns of
+# uchar-case-v0 stand in exactly the same position and are gate 4's to close, on a card of its own.
+PATTERN_POSITIONS = {
+    "/$defs/Geldigheid/properties/vanaf",
+    "/$defs/Geldigheid/properties/tot",
+}
+
+# (lexeme, must the schema accept it, why this row is here)
+BOUND_LEXEMES = [
+    (None,                  True,  "the open bound: null is the declared way to leave a side open"),
+    ("2026-01-01",          True,  "the strict lexeme itself"),
+    ("2028-02-29",          True,  "a leap day: the pattern is a shape test and admits it"),
+    ("2026-02-30",          True,  "THE LAYER BOUNDARY, pinned deliberately: a pattern cannot check "
+                                   "a calendar, so this one is admitted here and refused by WF-101 "
+                                   "in the verifier. Making the pattern reject it is a change to "
+                                   "the split between the two layers; this row is where you say so"),
+    ("+012026-01-01",       False, "sign-prefixed extended year: sorts below every four-digit year, "
+                                   "so an opaque-string reader silently opens the window"),
+    ("-0500-01-01",         False, "the same defect with the other sign"),
+    ("niet-een-datum",      False, "not a date at all: sorts above every date, silently closing "
+                                   "the window"),
+    ("2026-1-1",            False, "variable field widths: orders wrongly against a padded lexeme"),
+    ("26-01-01",            False, "a two-digit year"),
+    ("2026-01-01T00:00:00", False, "a datetime where a day is called for"),
+    ("2026-01-01 ",         False, "a trailing space: the anchors are what keep it out"),
+    ("",                    False, "the empty string"),
+]
+
+_positions = []
+
+
+def _scan(node, path):
+    if isinstance(node, dict):
+        if isinstance(node.get("pattern"), str):
+            _positions.append(path)
+        for k, val in node.items():
+            _scan(val, path + "/" + str(k))
+    elif isinstance(node, list):
+        for i, val in enumerate(node):
+            _scan(val, path + "/" + str(i))
+
+
+_scan(schema, "")
+if set(_positions) != PATTERN_POSITIONS:
+    stray = sorted(set(_positions) - PATTERN_POSITIONS)
+    gone = sorted(PATTERN_POSITIONS - set(_positions))
+    sys.stderr.write("FAIL: the schema's pattern surface moved and the self-test did not follow.\n")
+    for p in stray:
+        sys.stderr.write("  pattern with no self-test row: %s\n" % p)
+    for p in gone:
+        sys.stderr.write("  self-test row with no pattern:  %s\n" % p)
+    sys.exit(1)
+
+_bound = Draft202012Validator({"$defs": schema["$defs"], "$ref": "#/$defs/Geldigheid"})
+selftest_bad = 0
+for field in ("vanaf", "tot"):
+    for lexeme, want_ok, why in BOUND_LEXEMES:
+        probe = {"node": "Geldigheid", "vanaf": None, "tot": None}
+        probe[field] = lexeme
+        got_ok = not list(_bound.iter_errors(probe))
+        if got_ok != want_ok:
+            selftest_bad += 1
+            sys.stderr.write(
+                "FAIL: pattern self-test, Geldigheid.%s = %r: schema %s it, expected %s\n  %s\n"
+                % (field, lexeme, "accepts" if got_ok else "refuses",
+                   "accept" if want_ok else "refuse", why))
+if selftest_bad:
+    sys.stderr.write("check-ir-schema: FAIL (%d pattern self-test row(s) bad)\n" % selftest_bad)
+    sys.exit(1)
+n_selftest = 2 * len(BOUND_LEXEMES)
 
 
 # NOTE: gate 9 (scripts/check-catala.sh) executes the slice of this
@@ -206,10 +292,11 @@ if mode == "corpus" and n < floor:
 
 # Only reachable while no floor is pinned yet (floor 0) — the genuinely empty corpus.
 if mode == "corpus" and n == 0:
-    print("check-ir-schema: schema valid; 0 corpus files (corpus not yet populated)")
+    print("check-ir-schema: schema valid; %d pattern self-test row(s); "
+          "0 corpus files (corpus not yet populated)" % n_selftest)
     sys.exit(0)
 
-print("check-ir-schema: PASS (schema valid; %d file(s) validate and round-trip, floor %d)"
-      % (n, floor))
+print("check-ir-schema: PASS (schema valid; %d pattern self-test row(s); "
+      "%d file(s) validate and round-trip, floor %d)" % (n_selftest, n, floor))
 sys.exit(0)
 PY
