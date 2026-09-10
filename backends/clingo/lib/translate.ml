@@ -3528,19 +3528,23 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       let bindings, tl, tr = harmonised l r in
       let sym = match op with Gelijk -> "==" | op -> vergelijk_sym op in
       bindings @ [ Printf.sprintf "%s %s %s" tl sym tr ]
-  | Kenmerk_check { kenmerk; navigatie = None; negatie; navigatie_binding; eigenaar = _; _ } ->
+  | Kenmerk_check { kenmerk; navigatie = None; negatie; navigatie_binding; eigenaar; _ } ->
       (match navigatie_binding with
       | Some _ ->
           fault "navigation binding on a characteristic check that does not navigate (WF-053)"
       | None -> ());
+      Eval.owner_hosts ~otype:subject_ot ~kenmerk eigenaar;
       let k = req "kenmerk" kenmerk in
       [ (if negatie then "not " else "") ^ Printf.sprintf "heeft(%s,%s)" subject (str k) ]
-  | Kenmerk_check { kenmerk; navigatie = Some nav; negatie; navigatie_binding; eigenaar = _; _ }
+  | Kenmerk_check { kenmerk; navigatie = Some nav; negatie; navigatie_binding; eigenaar; _ }
     ->
       (* the navigated check (ch. 5.8): the hop is a POSITIVE literal;
          only the characteristic sits under the negation. An absent link
          therefore fails the positive and the negated form alike — the
          deliberate v0 asymmetry, encoded for free. *)
+      (* WF-100, keyed on the SUBJECT here too: the owner is a hosting
+         statement about the pattern, not about the reached type *)
+      Eval.owner_hosts ~otype:subject_ot ~kenmerk eigenaar;
       let k = req "kenmerk" kenmerk in
       let env =
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;

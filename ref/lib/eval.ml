@@ -106,6 +106,35 @@ let function_def env name : function_def =
 let kenmerk_temporal (ot : objecttype) name =
   List.exists (fun (k, _) -> norm k = norm name) ot.kenmerk_granulariteit
 
+(* WF-100 / IR-SPEC ch. 4.6 (q1), maintainer decision 2026-09-10: on a
+   characteristic check the `eigenaar` is AUTHORITATIVE. It names the object
+   type the check is HOSTED on — the v0 producer sets it on exactly one shape,
+   the fact-creation guard that names a characteristic of the DOEL, so that a
+   bean-model transpiler attaches the constraint to the doel pattern "and never
+   the anker, even when the anker declares a same-named kenmerk".
+
+   ref reads exactly one object per condition, the enclosing form's subject. So
+   where the owner is not that object's type there is no object here for the
+   check to be about, and answering from the subject anyway is precisely the
+   reading the decision rejected (the subject would then be authoritative after
+   all). It faults instead. Measured on this document before the rule
+   (2026-09-10): verifier PASS, `ref` and the ASP backend both answered from the
+   subject, while the Drools backend dropped the whole rule as a transpiler skip
+   — one verifier-clean document, three executors, two readings. The refusal
+   puts the two OCaml executors where the third already was.
+
+   Where the field is ABSENT, or names the subject's own type, nothing changes:
+   the declaration consulted and the object read coincide, which is every
+   document the corpus holds. *)
+let owner_hosts ~(otype : string) ~(kenmerk : string option) (eigenaar : string option) =
+  match eigenaar with
+  | Some e when norm e <> norm otype ->
+      Value.fault
+        "characteristic check %S is hosted on %S while the subject is %S: the owner names the \
+         object the check is about (WF-100), and this reader has no other object to read"
+        (Option.value kenmerk ~default:"?") e otype
+  | _ -> ()
+
 (* WF-097: the two qualifications a gedurende clip member has no reading for.
    Both were matched away with `_` in every clip arm until 2026-09-09, so a
    document carrying either got the UNQUALIFIED answer with nothing said.
@@ -1339,22 +1368,27 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       let is_filled = v <> Value.Empty in
       if negatie then not is_filled else is_filled
   | Predicaat _ -> Value.fault "predicate kind not implemented in this card"
-  | Kenmerk_check { kenmerk; navigatie = None; negatie; navigatie_binding; _ } ->
+  | Kenmerk_check { kenmerk; navigatie = None; negatie; navigatie_binding; eigenaar; _ } ->
       (match navigatie_binding with
       | Some _ ->
           Value.fault
             "navigation binding on a characteristic check that does not navigate (WF-053)"
       | None -> ());
+      owner_hosts ~otype:self.otype ~kenmerk eigenaar;
       let k = req "KenmerkCheck.kenmerk" kenmerk in
       if kenmerk_temporal (objecttype env self.otype) k then
         Value.fault "temporal characteristic %S in a scalar condition is refused (ch. 3.3)" k;
       let has = World.has_char self k in
       if negatie then not has else has
-  | Kenmerk_check { kenmerk; navigatie = Some nav; negatie; navigatie_binding; _ } -> (
+  | Kenmerk_check { kenmerk; navigatie = Some nav; negatie; navigatie_binding; eigenaar; _ } -> (
       (* the navigated check (ch. 5.8): one to-one hop. The v0 asymmetry,
          mirrored deliberately: an ABSENT link makes the check false for
          the positive AND the negated form — unlike comparison and
          leeg/gevuld, which treat the absent relation as a leegwaarde. *)
+      (* the owner is a HOSTING statement about the pattern, not about the
+         reached type, so it is crossed against the subject here exactly as on
+         the scalar arm — the characteristic itself still lives on the far side *)
+      owner_hosts ~otype:self.otype ~kenmerk eigenaar;
       let k = req "KenmerkCheck.kenmerk" kenmerk in
       let role =
         match navigatie_binding with

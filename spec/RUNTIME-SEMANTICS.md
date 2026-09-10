@@ -2244,6 +2244,67 @@ J1 **is wachtdoend** and **is not vrijgesteld**; J2's reference is absent,
 so J2 **is not wachtdoend** and **is vrijgesteld**. The reference and the ASP
 run agree on all four (link × {positive, negation}).
 
+### 5.8b The characteristic check's owner
+
+A characteristic check may carry an **owner** (the IR's `eigenaar`). It is
+**authoritative** (maintainer decision 2026-09-10; `IR-SPEC.md` ch. 4.6 (q1),
+WF-100): where the field is present it, and not the enclosing form's subject,
+decides what the check resolves against. The rules:
+
+1. **The owner is the declaration key.** Every declaration a reader consults
+   for the characteristic is the one the NAMED type carries: whether the type
+   declares the characteristic at all (WF-100 crosses it before execution),
+   whether it is time-dependent — which is what decides between the scalar
+   read of this chapter and the timeline read of ch. 3.3 — and the node key
+   `char:<owner>:<name>` of the dependency edge the check contributes to
+   ch. 6.1's graph. Where the field is **absent** the subject's own type is
+   that key, exactly as before. An absent owner and an owner naming the
+   subject's own type are the **same reading**; a difference in spelling is
+   not a difference (the name resolves case-insensitively, `IR-SPEC.md`
+   ch. 4.6 (q)).
+2. **The owner is also a hosting statement, and a reader that cannot honour
+   it refuses.** The field names the type whose PATTERN the constraint is
+   attached to — the v0 producer emits it on exactly one shape, the guard of a
+   fact creation that names a characteristic of the DOEL, so that the
+   constraint lands on the doel pattern and never on the anker, even when the
+   anker declares a characteristic of the same name. A bean-model executor has
+   both patterns and honours it. The reference interpreter and the ASP backend
+   read **one** object per condition, the enclosing form's subject; so where
+   the owner is not that object's type there is no object here for the check
+   to be about, and they **fault**. They do not fall back to the subject:
+   that is the reading the decision rejected, and it is the reading that
+   answered before 2026-09-10 — measured on a verifier-clean document, both
+   OCaml executors returned the subject's own value under the other type's
+   name while the third executor carried no rule at all. The two fault at
+   different moments, and that is inherited rather than new: the reference
+   interpreter is lazy and faults when the condition is evaluated, the ASP
+   backend is eager and faults at translation, exactly as they split on
+   WF-055.
+3. **The object read is always the subject.** Rule 2 is a refusal, not a
+   redirection: no reader of this specification reads the owner's instances.
+   Where the check answers, it answers about the subject.
+
+Worked example (`ref/test/test_ref.ml` ch. 5.8b verbatim; its ASP mirror in
+`backends/clingo/test/test_clingo.ml`). Two object types, `Vondst` and
+`Jutter`, each declaring a characteristic named `gekeurd`, neither
+time-dependent. The world holds V1, a Vondst carrying `gekeurd`, and J1, a
+Jutter that does not. Over the subject V1:
+
+| check | owner | outcome |
+|---|---|---|
+| `de Vondst is gekeurd` | absent | **waar** — V1 carries it |
+| `de Vondst is gekeurd` | `Vondst` | **waar** — the same reading |
+| `de Vondst is gekeurd` | `vondst` | **waar** — resolution is case-insensitive |
+| `de Vondst is gekeurd` | `Jutter` | **fault** — never J1's value, and never V1's |
+
+and over the subject J1 the mirror holds: owner absent gives **onwaar** (J1
+does not carry it), owner `Vondst` faults. The corpus carries the answering
+half as the golden `jutterswet-keurhouder`; the refusing half cannot live in
+a corpus zone at all — a golden must replay, a red case must fault in every
+executor that carries its form, and the bean-model executor drops such a rule
+as a transpiler skip rather than faulting — so it lives in the two executors'
+own gated suites.
+
 ### 5.9 Uniqueness: the union and the scope
 
 Both uniqueness forms fire at the fixpoint of their stratum and deposit

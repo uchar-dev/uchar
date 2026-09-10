@@ -1,0 +1,70 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "gekeurd"
+        ]
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "penninggerechtigd"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "afslag",
+      "value": {
+        "text": "zeeveiling"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "keurstatus"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "afslag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "keurstatus",
+      "value": {
+        "text": "onbekeurd"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "penninggerechtigd"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

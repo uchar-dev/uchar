@@ -2223,6 +2223,90 @@ let () =
     ~case_text:attribuutlevering_case
     ~needle:(Some "a timeline value on a non-temporal attribute")
 
+(* --- WF-100: the characteristic check's owner (IR-SPEC ch. 4.6 (q1)) -----
+   The ASP mirror of ref's ch. 5.8b worked example. `Vondst` and `Jutter` both
+   declare a characteristic named `gekeurd`, so the owner names a real
+   declaration either way and the document is verifier-clean either way — the
+   corpus therefore cannot hold the refusing half, and this is where it lives.
+   The two executors split on WHEN, not on WHAT: `ref` faults lazily, at
+   evaluation of the condition, the ASP backend eagerly, at translation. Both
+   say the same sentence, and neither answers from the subject any more. *)
+
+let eigenaar_doc ~eigenaar =
+  Printf.sprintf
+    {|{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Vondst": { "node": "Objecttype", "naam": "Vondst",
+      "attributen": { "afslag": { "node": "Tekst" } },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [ "gekeurd" ], "kenmerkSoorten": { "gekeurd": "BIJVOEGLIJK" },
+      "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
+      "bezield": false, "meervoud": "Vondsten" },
+    "Jutter": { "node": "Objecttype", "naam": "Jutter",
+      "attributen": {},
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [ "gekeurd" ], "kenmerkSoorten": { "gekeurd": "BIJVOEGLIJK" },
+      "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
+      "bezield": true, "meervoud": "Jutters" }
+  },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {},
+  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [ { "node": "Regel", "naam": "afslag", "soort": "regel" } ],
+  "resolvedRegels": [
+    { "node": "ResolvedRegel", "naam": "afslag", "soort": "GELIJKSTELLING",
+      "doel": { "node": "AttribuutRef", "attribuut": "afslag", "objecttype": "Vondst",
+        "onderwerpBron": "een Vondst", "navigatieRol": null, "type": { "node": "Tekst" },
+        "bron": "De afslag van een Vondst", "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Literal", "waarde": "zeeveiling", "type": { "node": "Tekst" },
+        "bron": "'zeeveiling'" },
+      "voorwaarde": { "node": "Kenmerk", "kenmerk": "gekeurd", "navigatie": null,
+        "negatie": false, "eigenaar": %s, "periode": null, "bron": "de Vondst gekeurd is" },
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
+  ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}
+|}
+    eigenaar
+
+let eigenaar_case =
+  {|{
+  "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+      { "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {},
+        "characteristics": [ "gekeurd" ] },
+      { "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": {},
+        "characteristics": [] }
+    ], "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "V1", "attribute": "afslag",
+      "value": { "text": "zeeveiling" } },
+    { "kind": "consistent" }
+  ]
+}
+|}
+
+let () =
+  (* the field absent, and the field naming the subject's own type: the same
+     answer, and it is the answer ref pins *)
+  ref_matches ~name:"WF-100 eigenaar afwezig" ~ir:(eigenaar_doc ~eigenaar:"null")
+    ~case_text:eigenaar_case;
+  clingo_matches ~name:"WF-100 eigenaar afwezig" ~ir:(eigenaar_doc ~eigenaar:"null")
+    ~case_text:eigenaar_case;
+  ref_matches ~name:"WF-100 eigenaar is het onderwerptype"
+    ~ir:(eigenaar_doc ~eigenaar:{|"Vondst"|}) ~case_text:eigenaar_case;
+  clingo_matches ~name:"WF-100 eigenaar is het onderwerptype"
+    ~ir:(eigenaar_doc ~eigenaar:{|"Vondst"|}) ~case_text:eigenaar_case;
+  (* a foreign owner: refused, where before 2026-09-10 the same document
+     translated and answered V1's own value under J1's name *)
+  faults_with ~name:"WF-100 vreemde eigenaar" ~ir:(eigenaar_doc ~eigenaar:{|"Jutter"|})
+    ~case_text:eigenaar_case
+    ~needle:"is hosted on \"Jutter\" while the subject is \"Vondst\""
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

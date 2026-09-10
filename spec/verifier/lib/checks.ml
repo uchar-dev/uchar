@@ -5697,11 +5697,11 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) at (c : conditie) : viola
          and `wf046-negated-read-in-recursive-cycle` (where it repeats the
          subject). No golden carries the form.
 
-         What this arm does NOT close, stated so the silence is not mistaken
-         for coverage: whether the named type DECLARES the characteristic. The
-         cross below is keyed on `subject`, and making an explicit `eigenaar`
-         override the subject for it decides which owner is authoritative —
-         a semantics question, not a resolution one, and not this card's. *)
+         Which owner is AUTHORITATIVE was settled on 2026-09-10 (maintainer
+         decision, IR-SPEC ch. 4.6 (q1)): the FIELD is. The declared-
+         characteristic cross below is therefore keyed on `eigenaar` where the
+         field is present and on `subject` only where it is absent, and an
+         owner that does not declare the named characteristic is WF-100. *)
       (match eigenaar with
        | Some e when objecttype ctx e = None ->
            [ v "WF-034" (sub "eigenaar")
@@ -5724,22 +5724,37 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) at (c : conditie) : viola
                "characteristic check without a characteristic name: it resolves against no \
                 declaration" ]
        | Some _ -> [])
-      @ (match kenmerk, navigatie, subject with
+      @ (* THE DECLARATION KEY (WF-100, maintainer decision 2026-09-10). Both
+           crosses below resolve the characteristic against ONE object type,
+           and which one is the whole content of "the field is authoritative":
+           `eigenaar` where the field is present, the enclosing form's subject
+           only where it is absent. Two numbers because they are two
+           obligations — WF-034 keeps the subject-keyed resolution it always
+           had, WF-100 is the owner's own — and one key, computed once, so the
+           existence cross and WF-043's time-dependence cross can never drift
+           apart. Scoped to the NON-navigated check: on a navigated one the
+           characteristic lives on the REACHED type (the WF-053 arm below
+           crosses it there), so an owner is not that type and crossing it
+           would reject a form nothing has decided. *)
+      (let decl_key = match eigenaar with Some _ as e -> e | None -> subject in
+       let keyed_wf = match eigenaar with Some _ -> "WF-100" | None -> "WF-034" in
+       let keyed_at = match eigenaar with Some _ -> sub "eigenaar" | None -> at in
+       (match kenmerk, navigatie, decl_key with
         | Some k, None, Some otn -> (
             match objecttype ctx otn with
             | Some ot when not (has_kenmerk ot k) ->
-                [ v "WF-034" at
+                [ v keyed_wf keyed_at
                     ("'" ^ k ^ "' is not a declared characteristic of '" ^ otn ^ "'") ]
             | _ -> [])
         | _ -> [])
-      @ (match periode, kenmerk, navigatie, subject with
-         | Some _, Some k, None, Some otn -> (
-             match objecttype ctx otn with
-             | Some ot
-               when not (List.exists (fun (n, _) -> norm n = norm k) ot.kenmerk_granulariteit) ->
-                 [ v "WF-043" at "whole-period qualifier on a non-time-dependent characteristic" ]
-             | _ -> [])
-         | _ -> [])
+       @ (match periode, kenmerk, navigatie, decl_key with
+          | Some _, Some k, None, Some otn -> (
+              match objecttype ctx otn with
+              | Some ot
+                when not (List.exists (fun (n, _) -> norm n = norm k) ot.kenmerk_granulariteit) ->
+                  [ v "WF-043" at "whole-period qualifier on a non-time-dependent characteristic" ]
+              | _ -> [])
+          | _ -> []))
       @ (* WF-053: the navigated characteristic check — one hop, bound or
            uniquely derivable by the written role name; to-one only (the
            v0 resolver's NAAR_VEEL marker, lifted); the characteristic

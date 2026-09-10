@@ -2466,6 +2466,45 @@ let () =
   expect_fault "WV-5.8a-naar-veel-refuseert" (fun () ->
       Eval.eval_cond (env_of doc_mm) w (World.get w "j1") ~err:no_err (rolcheck false))
 
+(* --- ch. 5.8b: the characteristic check's owner (WF-100) ----------------
+   The RUNTIME-SEMANTICS ch. 5.8b worked example, verbatim. `Vondst` and
+   `Jutter` both declare a characteristic named `gekeurd`; V1 carries it and
+   J1 does not, so the two readings are distinguishable by value and not only
+   by name. Three owners over the same subject:
+
+     eigenaar absent    -> reads V1's own `gekeurd`  = true
+     eigenaar "Vondst"  -> the same, the field naming the subject's own type
+     eigenaar "Jutter"  -> FAULT, never J1's value and never V1's
+
+   The third line is the decision (2026-09-10): the field is authoritative, so
+   an owner that is not the subject's type is not a decoration to be read past.
+   Measured before the rule, on this document: the check answered `true` — V1's
+   value under J1's name. The corpus cannot hold this witness because the
+   document it needs is exactly the one both executors now refuse. *)
+
+let () =
+  let doc =
+    { empty_doc with
+      objecttypen = [ ot "Vondst" [] [ "gekeurd" ]; ot "Jutter" [] [ "gekeurd" ] ] }
+  in
+  let w =
+    List.fold_left World.add_instance World.empty
+      [ { (inst "v1" "Vondst" []) with chars = [ "gekeurd" ] }; inst "j1" "Jutter" [] ]
+  in
+  let kc eigenaar : Ir_v0.Ast.conditie =
+    Kenmerk_check
+      { kenmerk = Some "gekeurd"; navigatie = None; negatie = false; eigenaar; periode = None;
+        bron = None; navigatie_binding = None }
+  in
+  let ec label c = Eval.eval_cond (env_of doc) w (World.get w label) ~err:no_err c in
+  check "WV-5.8b-eigenaar-afwezig" (ec "v1" (kc None));
+  check "WV-5.8b-eigenaar-is-onderwerptype" (ec "v1" (kc (Some "Vondst")));
+  check "WV-5.8b-eigenaar-kapitalisatie" (ec "v1" (kc (Some "vondst")));
+  check "WV-5.8b-eigenaar-afwezig-j1-onwaar" (not (ec "j1" (kc None)));
+  expect_fault "WV-5.8b-vreemde-eigenaar-weigert" (fun () -> ec "v1" (kc (Some "Jutter")));
+  expect_fault "WV-5.8b-vreemde-eigenaar-weigert-ook-omgekeerd" (fun () ->
+      ec "j1" (kc (Some "Vondst")))
+
 (* --- WF-095: the datum-tijd lexeme (IR-SPEC ch. 4.1) --------------------
    The corpus golden pins what the READER answers; these pin the reader's
    own fence, which no corpus document can reach — a case file that carries
