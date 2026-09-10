@@ -2141,13 +2141,22 @@ let () =
    interpreter's — the two speak this refusal with one voice or they diverge.
 
    What is being pinned is the WORDING, and it is pinned because
-   `spec/IR-SPEC.md` (WF-059, third arm) quotes it verbatim: a silent
-   rewording would decouple the spec from the code with no gate noticing. The
-   needle is the stable clause of the message, not the whole sentence.
+   `spec/IR-SPEC.md` (WF-059, third arm) quotes it verbatim. The needle is
+   therefore the WHOLE cited sentence, `(WF-059)` included, not its opening
+   clause: with only the opening clause pinned, the tail could be reworded and
+   this suite stayed green — measured 2026-09-10 — which is exactly the silent
+   spec/code decoupling the pin exists to prevent.
 
-   Three checks. The third is what keeps the two arms apart: an attribute with
-   NO granularity key is genuinely non-temporal and the OLDER message is true
-   of it. Fold the arms back into one catch-all and that check fails. *)
+   Three checks, and BOTH mutant directions are named, because the pair is what
+   keeps the two arms apart (measured 2026-09-10, one direction at a time):
+     - fold the arms back into the pre-card catch-all (the OLD message for both
+       key-absent and value-null) and check 1 fails — check 3 survives, because
+       that catch-all is exactly what check 3 expects;
+     - give the NEW message to the `None` arm as well and check 3 fails —
+       check 1 survives for the mirror-image reason.
+   Neither check alone sees both; the arm boundary is the thing they pin
+   together. Check 2 is the over-rejection guard: a real granularity still
+   loads. *)
 let attribuutlevering_doc ~granulariteit =
   Printf.sprintf
     {|{
@@ -2203,7 +2212,9 @@ let () =
   laadt_ir_case ~name:"een tijdlijn op een attribuut met granulariteit null"
     ~ir:(attribuutlevering_doc ~granulariteit:{|"wachtvergoeding": null|})
     ~case_text:attribuutlevering_case
-    ~needle:(Some "declared time-dependent but its granularity is null");
+    ~needle:
+      (Some
+         {|the attribute is declared time-dependent but its granularity is null: the timeline has no grid to sit on (WF-059)|});
   laadt_ir_case ~name:"hetzelfde attribuut met een echte granulariteit"
     ~ir:(attribuutlevering_doc ~granulariteit:{|"wachtvergoeding": "MAAND"|})
     ~case_text:attribuutlevering_case ~needle:None;

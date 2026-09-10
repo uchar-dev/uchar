@@ -44,5 +44,6 @@ was left as it is. Measured on THIS document with a case delivering
 a non-temporal characteristic", because the `characteristicTimelines` arm folds
 "key present, value null" and "no key at all" into one catch-all. The wire no
 longer carries the shape, so only a hand-built document meets that wording — the
-same position the attribute side was in before its arm, and reported rather than
-fixed because `kenmerkGranulariteit` was out of that card's scope.
+same position the attribute side was in before its arm. Out of that card's
+scope, so measured and carded rather than fixed: backlog card
+`20260910-kenmerk-null-caselezer-melding`.

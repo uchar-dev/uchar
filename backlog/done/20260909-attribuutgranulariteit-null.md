@@ -279,11 +279,15 @@ bewegen.
 **Herkomst van de cijfers.** Poorten 1–8 zijn in deze sessie zelf gedraaid, in
 deze worktree. Poorten 9–13 vragen catala, JDK/Maven-jars en de volle
 differentiaal en zijn hier **niet** gedraaid; hun cijfers komen uit de
-review-ronde van de hoofdsessie (lens 1), die alle dertien op deze branchkop
-groen draaide — inclusief een hertest van rood-groen, een armchirurgie-meting
-(één regel verschil over 356 negatiefs) en een over-afwijzingsveeg over 578
-documenten met nul beweging. Ze staan hier als bronvermelding, niet als eigen
-meting. Wel eigen signaal: gate 8 draaide zijn Drools-been mee en gaf PASS
+review-ronde van de hoofdsessie (lens 1) — inclusief een hertest van rood-groen,
+een armchirurgie-meting (één regel verschil over 356 negatiefs) en een
+over-afwijzingsveeg over 578 documenten met nul beweging. Ze staan hier als
+bronvermelding, niet als eigen meting. **Precies gezegd: lens 1 draaide 9–13 op
+`dfd2f4c`, niet op de kop ná de fixronde.** De fixronde-commit `4a86e59` raakt
+alleen `backends/clingo/test/**` en proza, en geen van de poorten 9–13 draait
+die suite, dus die cijfers blijven staan — maar ze zijn niet op deze kop
+gemeten en worden hier niet als zodanig gepresenteerd. Wel eigen signaal: gate 8
+draaide zijn Drools-been mee en gaf PASS
 (6 fault-pinned, 20 not-carried), en geen enkele test in de repo pinde de oude
 meldingstekst (volledige grep over alle zones; de enige treffers waren proza:
 `wf034-wees-attribuutgranulariteit/NOTE.md`, deze kaart, en de nieuwe NOTE).
@@ -295,15 +299,24 @@ terwijl `spec/IR-SPEC.md` de meldingstekst **letterlijk citeert** — een
 herformulering zou spec en code geruisloos ontkoppelen. Drie additieve checks in
 `backends/clingo/test/test_clingo.ml`, in de huisvorm van het
 `kenmerklevering`-blok ernaast (document in geheugen, tempfile, laden via
-`Uchar_ref.Case.load_file`, needle op het stabiele deel van de melding):
+`Uchar_ref.Case.load_file`), met de needle op de **volle geciteerde zin**:
 
 1. tijdlijn op een attribuut met granulariteit `null` → needle
-   `declared time-dependent but its granularity is null`;
+   `the attribute is declared time-dependent but its granularity is null: the timeline has no grid to sit on (WF-059)`
+   — precies de string die `spec/IR-SPEC.md` citeert, `(WF-059)` inbegrepen;
 2. hetzelfde attribuut met een echte granulariteit (`MAAND`) → laadt schoon
    (de over-afwijzingsklem);
 3. tijdlijn op een attribuut **zonder** granulariteitssleutel → needle
-   `a timeline value on a non-temporal attribute` — die check is wat de twee
-   armen uit elkaar houdt.
+   `a timeline value on a non-temporal attribute` — de armgrens.
+
+De needle dekte eerst alleen de kopzin
+(`declared time-dependent but its granularity is null`). Gemeten: de staart
+herformuleren liet de suite dan gewoon groen — precies de stille spec/code-
+ontkoppeling waarvoor de pin bestaat. Nu de volle zin, en dat is falsifieerbaar:
+
+    (staart gewijzigd naar "the timeline has nothing to sit on")
+    FAIL een tijdlijn op een attribuut met granulariteit null refused at load (W1.wachtvergoeding: the attribute is declared time-dependent but its granularity is null: the timeline has nothing to sit on)
+    test_clingo: 86 checks, 1 FAILURES
 
 Geen corpusgetuige kan dit dragen: met de enum dicht is zo'n document
 schema-ongeldig, dus het past in geen zone (gate 2 schema-poort op golden en
@@ -311,14 +324,26 @@ rood; een weigering bij het LADEN geeft exit 2, wat gate 8 als falen leest en
 niet als de gepinde fout). Precies het argument dat het kenmerkblok ernaast al
 maakt.
 
-**Mutantbewijs, arm-exact.** De arm teruggevouwen tot de catch-all van vóór deze
-kaart (`| _ -> fail "… non-temporal attribute"`), herbouwd en de suite gedraaid:
+**Mutantbewijs, beide richtingen** (elk apart gemeten, telkens herbouwd en
+hersteld). Een eerdere versie van dit blok — en van de comment in de suite —
+beweerde dat check 3 omvalt bij terugvouwen. Dat is gemeten onjuist; de twee
+richtingen raken elk een ándere check, en dát is waarom de armgrens twee checks
+nodig heeft:
 
-    FAIL een tijdlijn op een attribuut met granulariteit null refused at load (W1.wachtvergoeding: a timeline value on a non-temporal attribute)
-    test_clingo: 86 checks, 1 FAILURES
+- **arm teruggevouwen** tot de catch-all van vóór deze kaart
+  (`| _ -> fail "… non-temporal attribute"`) → **check 1** valt om; check 3
+  blijft staan, want die catch-all is exact wat check 3 verwacht:
 
-Eén genoemde check valt om, de andere 85 blijven staan; hersteld en weer
-86/0.
+      FAIL een tijdlijn op een attribuut met granulariteit null refused at load (W1.wachtvergoeding: a timeline value on a non-temporal attribute)
+      test_clingo: 86 checks, 1 FAILURES
+
+- **nieuwe melding óók op de `None`-tak** → **check 3** valt om, check 1 blijft
+  staan om de spiegelreden:
+
+      FAIL een tijdlijn op een attribuut zonder granulariteitssleutel refused at load (W1.wachtvergoeding: the attribute is declared time-dependent but its granularity is null: the timeline has no grid to sit on (WF-059))
+      test_clingo: 86 checks, 1 FAILURES
+
+Telkens één genoemde check om, de andere 85 overeind; na herstel weer 86/0.
 
 **Correctie op punt 2 van de review.** De zusterklem van 2026-09-09
 (`ref/lib/case.ml:327-333`, statische levering van een temporeel verklaard
@@ -344,8 +369,8 @@ gemeld en in de IR-SPEC-clausule vastgelegd zodat het latere rood als verwacht
 gelezen wordt, niet als regressie.
 
 De andere emitter is nagemeten en veilig:
-`resolver/DefinitionResolver.java:144` schrijft alleen bij
-`if (g != null)`, dus de RegelSpraak-frontend kan de vorm niet produceren —
+`resolver/DefinitionResolver.java:145` klemt met `if (g != null)` en de write
+staat op 146, dus de RegelSpraak-frontend kan de vorm niet produceren —
 dezelfde garantie als bij `kenmerkGranulariteit`.
 
 ### Wat bewust niet bewoog
@@ -393,7 +418,8 @@ de WF-094-clausule (d):
 > value `null` is closed at schema AND verifier, exactly as the second arm
 > closed the characteristic table one side table over (the enum no longer admits
 > it; re-measured 0 carriers over the 577 documents of the four zones and the
-> parity zone, and the RegelSpraak emitter guards this table's write with a
+> parity zone before this arm — the witness makes it 578/1 after — and the
+> RegelSpraak emitter guards this table's write with a
 > non-null test too). It closes on its OWN measurement, because the fault is a
 > different class from its sister's: no silent wrong answer anywhere — every
 > path dies — but the DIAGNOSIS is wrong. A pro-rata base is caught already, as
@@ -403,12 +429,15 @@ de WF-094-clausule (d):
 > attribute temporal; a scalar delivery draws two different diagnoses from ref
 > and clingo. The shared case loader's message moved with the arm — "the
 > attribute is declared time-dependent but its granularity is null: the timeline
-> has no grid to sit on (WF-059)" — and is pinned by three checks in the clingo
-> backend's own suite, because with the enum shut the shape reaches no corpus
-> zone at all. Witness `wf059-attribuut-zonder-granulariteit`. What stays open on
-> this seam is the sister's MESSAGE side: a hand-built `kenmerkGranulariteit`
-> null still draws "a characteristic timeline on a non-temporal characteristic",
-> the contradicting wording this arm repaired on the attribute side.
+> has no grid to sit on (WF-059)" — that whole sentence pinned — with its arm
+> boundary and an over-rejection guard — by three checks in the clingo backend's
+> own suite, because with the enum shut the shape reaches no corpus
+> zone at all. Witness `wf059-attribuut-zonder-granulariteit`. The sister's
+> MESSAGE side is not part of this arm and is CARDED: a hand-built
+> `kenmerkGranulariteit` null still draws "a characteristic timeline on a
+> non-temporal characteristic", the contradicting wording this arm repaired on
+> the attribute side, and splitting that arm the same way is
+> `backlog/new/20260910-kenmerk-null-caselezer-melding.md`.
 
 ### Gemeld, niet gekaart
 
@@ -419,18 +448,24 @@ een reeks spaties midden in de zin, uit een OCaml-stringvervolg zonder
 raakt een melding die deze kaart meet, maar niet wat de kaart vraagt; hier
 gemeld in plaats van meegenomen.
 
-**De zusterasymmetrie in de meldingen.** Wat deze kaart op de attribuutkant
-repareert, staat op de kenmerkkant nog open. `ref/lib/case.ml`, de
-`characteristicTimelines`-arm, vouwt `Some (_, None)` en `None` samen in één
-catch-all, dus een handgebouwd document met `kenmerkGranulariteit`-sleutel
-aanwezig en waarde `null` krijgt nog steeds de tegensprekende tekst. Gemeten op
+### Gemeld én gekaart: de zusterasymmetrie in de meldingen
+
+Wat deze kaart op de attribuutkant repareert, staat op de kenmerkkant nog open.
+`ref/lib/case.ml` r. 371-379, de `characteristicTimelines`-arm, vouwt
+`Some (_, None)` en `None` samen in één catch-all, dus een handgebouwd document
+met `kenmerkGranulariteit`-sleutel aanwezig en waarde `null` krijgt nog steeds
+de tegensprekende tekst. Gemeten 2026-09-10 op
 `corpus/negatief/wf059-kenmerk-zonder-granulariteit/ir.json` met
-`corpus/golden/jutterswet-tegenwacht/case1-overlap.json`:
+`corpus/golden/jutterswet-tegenwacht/case1-overlap.json`, identiek in beide
+uitvoerders:
 
     CASE ERROR: J1.aangesteld: a characteristic timeline on a non-temporal characteristic   (ref én clingo)
 
 Dat is precies de klasse fout die deze kaart aan de attribuutkant herstelt, en
-`kenmerkGranulariteit` staat in Out of scope, dus hier alleen gemeten en
-gemeld. De symmetrie tussen de twee armen is dus **WF-sluiting ja,
-meldingstekst nog niet**; de NOTE van de zustergetuige is daarop bijgesteld
-zodat hij geen symmetrie claimt die er niet is.
+`kenmerkGranulariteit` staat in Out of scope. Dus niet hier gefixt maar
+**gekaart**: `backlog/new/20260910-kenmerk-null-caselezer-melding.md`, met de
+meting, de aanpak (arm splitsen zoals hier, additieve pin op de volle zin, beide
+mutantrichtingen) en dezelfde lage prioriteit. De symmetrie tussen de twee armen
+is daarmee **WF-sluiting ja, meldingstekst gekaart**; de NOTE van de
+zustergetuige is daarop bijgesteld zodat hij geen symmetrie claimt die er niet
+is.
