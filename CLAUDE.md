@@ -35,6 +35,20 @@ Mechanism: `.github/CODEOWNERS` plus branch protection (note: on the free org
 plan branch protection requires a public repo). A change to a protected path
 without maintainer review must not land.
 
+**The CODEOWNERS claim is wider on purpose** (recorded 2026-09-10, existing
+practice). `.github/CODEOWNERS` claims `/spec/` whole — a safety net,
+deliberately broader than the list above: too much review beats too little.
+Within that claim, per item:
+
+- `spec/PLAN.md` and `spec/CONSTRUCTS.md` are the card protocol's
+  bookkeeping channel. Sessions update them as part of finishing a card (the
+  tracked deltas in CONSTRUCTS; PLAN only when scope changed), and that
+  update lands with the card's merge under the mandate the maintainer gave
+  the session — no separate review up front.
+- The remaining `spec/` items outside the list — `spec/ASP-TRANSLATION.md`,
+  `spec/IR-REVIEW.md`, `spec/proposals/` — follow the net: a change is a
+  proposal unless the card grants mandate for it explicitly.
+
 ## Spec discipline
 
 - Every normative MUST carries an ID (`WF-###`) with a verifier check, at
