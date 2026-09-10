@@ -46,6 +46,21 @@ voorwaarde die geen enkele lezer afdwingt.
 `ref`, clingo en de verifier houden nog steeds geen eigen hek, en de verifier
 is de plek waar een WF-regel hoort: hij weigert vóór elke executor.
 
+**En er is een derde gat, dat op deze kaart kan meeliften: het schemapatroon
+zelf wordt door niets bewaakt.** Gemeten 2026-09-11 — beide `pattern`-sleutels
+uit `$defs/Geldigheid` verwijderd, het schema schoon geherserialiseerd — meldt
+gate 2 `PASS (schema valid; 194 file(s) validate and round-trip, floor 192)` en
+blijft de Drools-getuige 18/18 groen. Het patroon verwijderen is dus een stille
+groen; zijn beet staat alleen in kaartproza. Dat is niet nieuw en niet
+bijzonder voor deze twee sleutels: **de tien patronen van
+`uchar-case-v0` staan in precies dezelfde positie**, dus dit is de bestaande
+huistoestand van het hele schemapark, geen regressie van de kaart die het
+patroon voorstelde. De vorm van de bewaking ligt voor de hand zodra deze kaart
+tóch een `corpus/negatief/`-getuige oplevert: één document waarvan de grens
+buiten het patroon valt, dat door gate 2 wordt geweigerd, wordt daarmee ook de
+getuige die een verwijderd patroon laat opvallen. Beslis expliciet of dat hier
+meegaat of een eigen kaart wordt; het is geen reden om die keuze weg te laten.
+
 ## De vraag die beslist moet worden
 
 WF-084 normeert deze grammatica al, letterlijk, voor de andere datumpositie op
@@ -73,6 +88,10 @@ case-wire-klemmen zijn neergezet.
 - Bij "geen WF-regel": de reden staat in het Result én als commentaar bij
   `validity_overlaps`, zodat de volgende lezer de onafgedwongen aanname niet
   opnieuw hoeft te ontdekken.
+- De bewakingsvraag hierboven is expliciet beantwoord: óf de
+  negatief-getuige bewaakt het schemapatroon mee (en het Result laat zien dat
+  het verwijderen van het patroon dan rood wordt), óf er staat waarom dat een
+  eigen kaart is. Stilzwijgend overslaan telt als niet gedaan.
 - Gates 3 en 2 groen; geen telling beweegt behalve de negatief-teller bij
   "WF-regel".
 

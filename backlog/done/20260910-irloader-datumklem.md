@@ -191,9 +191,15 @@ Het IR-schema droeg **nul** `pattern`-sleutels; het case-schema draagt er tien.
 Dat is de asymmetrie waar de kaart naar wees, en ze is breder dan de twee
 posities: het is de eerste `pattern` in dit schema überhaupt.
 
-Alle **62 string-getypeerde eigenschapsnamen** van het schema (144 posities,
-`const`/`enum` uitgezonderd) zijn langsgelopen. Datumdragend zijn er precies
-twee soorten:
+Alle string-toelatende posities van het schema zijn langsgelopen: **146
+benoemde** (62 distincte eigenschapsnamen; 144 die hun `string` rechtstreeks in
+hun eigen `type` dragen, plus `Fold.function` en `MapList.function`, die het
+via een `oneOf`-tak naast een `Lambda` toelaten — die twee ontbraken in de
+eerste telling van 144 en zijn hier nagemeten) **plus 15 anonieme**
+(map-waarden en array-items: dagsoortnamen, enumeratiewaarden, navigatiepad-
+stappen, dimensielabels, sleutel- en ledenlijsten, bronannotaties). Geen van
+die 15 is datumdragend, en de twee `oneOf`-posities evenmin — het zijn
+functienamen. Datumdragend zijn er precies twee soorten:
 
 | positie | vorm | besluit |
 | --- | --- | --- |
@@ -204,8 +210,9 @@ twee soorten:
 percentages, 5 enumeratiewaarden, 18 datums en 2 datumtijden. Eén patroon per
 positie kan dat niet dekken, en het hoeft ook niet: WF-084 en WF-095 normeren
 die twee lexemen al, met kalendercontrole, in de verifier. `TemporalRead.datum`
-klinkt als een datumpositie maar is een `expr`, geen string. Verder draagt geen
-enkele string-positie een datum. De sweep is daarmee volledig, niet steekproef.
+klinkt als een datumpositie maar is een `expr`, geen string. Over alle 161
+posities samen draagt verder geen enkele een datum; de sweep is daarmee
+volledig en geen steekproef.
 
 **Hertelling vóór de wijziging** (de kaart telde 846/836/10; main is sinds die
 meting doorgelopen): **848** `vanaf`/`tot`-posities over 194 documenten in
@@ -228,6 +235,19 @@ niet-een-datum  REJECTED  (idem)
 
 De meldingstekst hierboven is die van `best_match`, wat gate 2 zelf gebruikt:
 pad en patroon staan er precies in.
+
+**Maar: het patroon zelf wordt door niets bewaakt.** Gemeten door de
+gebundelde lens en hier gereproduceerd — beide `pattern`-sleutels uit
+`$defs/Geldigheid` verwijderd, het schema schoon geherserialiseerd: gate 2
+meldt `PASS (schema valid; 194 file(s) validate and round-trip, floor 192)` en
+de getuige van deze kaart blijft 18/18 groen. **Het patroon verwijderen is dus
+een stille groen**, en zijn beet staat alleen in kaartproza — in de vijf regels
+hierboven en nergens in een gate. Dat is niet uniek voor deze twee sleutels: de
+tien patronen van `uchar-case-v0` staan in precies dezelfde positie, dus dit is
+de bestaande huistoestand en geen regressie die deze kaart introduceert. De
+bewakingsvraag is meegegeven aan
+`backlog/new/20260911-geldigheidsgrens-verifierhek.md`, waar hij kan meeliften
+op de negatief-getuige die de verifier-arm daar wél oplevert.
 
 ### Rood eerst
 
@@ -302,7 +322,13 @@ Drie lagen, elk met een eigen bereik, en geen ervan maakt de andere overbodig:
 
 1. **Het schemapatroon (gate 2)** is de VORM en dekt elk document dat langs de
    gate komt, voor alle lezers tegelijk. Het kan de kalender niet kennen:
-   `2026-02-30` matcht en passeert.
+   `2026-02-30` matcht en passeert. En het is één lexeemklasse ruimer dan de
+   klem: Python's `re`, waarmee `jsonschema` en dus gate 2 draait, laat `$` ook
+   matchen vóór één afsluitende newline, dus `"2026-01-01\n"` passeert het
+   patroon terwijl `matches()` in Java het hele lexeem eist en hem weigert
+   (beide gemeten; `"\n2026-01-01"` en `"2026-01-01\n\n"` vallen in allebei af).
+   Die klasse faalt dus luid bij de eerstvolgende lezer in plaats van stil door
+   te lopen — en de acht datumpatronen van `uchar-case-v0` delen hem.
 2. **De klem in de Drools-lezer** is de vorm PLUS de kalender, op de drempel
    van één executor. Zijn bereik is precies wat het patroon niet ziet: het
    met de hand gebouwde of gegenereerde document dat rechtstreeks een executor
