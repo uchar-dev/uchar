@@ -4704,6 +4704,30 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                 @ walk_expr ctx ~binders ~subject ~body (sub n) e
             | None -> [])
           [ ("basis", basis); ("minimum", minimum); ("maximum", maximum) ]
+      (* WF-099 (maintainer decision 2026-09-10): a clamp RESTATES each bound
+         into the BASE's unit before it compares magnitudes, so the two units
+         must be compatible — the very demand WF-035 makes of an additive join
+         one arm up, and WF-036 of a comparison. Read exactly as they read it:
+         [units_compatible_adopting] over the operands' own types, so
+         convertibility (not identity) is the line and a unitless numeric
+         literal still adopts the base's unit. Each bound is crossed against
+         the BASE and not against its sibling: that is the restating ref
+         performs, and it makes min-vs-max compatibility fall out for free.
+         Skipped unless both sides are number-like — a non-numeric operand is
+         the WF-035 arm directly above, and one node should not report the same
+         defect twice. *)
+      @ (match Option.bind basis typ_of_expr with
+         | Some bt when is_number_like bt ->
+             List.concat_map
+               (fun (n, e) ->
+                 match Option.bind e typ_of_expr with
+                 | Some d
+                   when is_number_like d
+                        && not (units_compatible_adopting basis e (unit_of bt) (unit_of d)) ->
+                     [ v "WF-099" (sub n) ("clamp " ^ n ^ " and base have incompatible units") ]
+                 | _ -> [])
+               [ ("minimum", minimum); ("maximum", maximum) ]
+         | _ -> [])
   | Attribuut_ref
       { attribuut; objecttype = otn; navigatie_rol; navigatie_pad; navigatie_bindingen;
         set; typ; _ } -> (
