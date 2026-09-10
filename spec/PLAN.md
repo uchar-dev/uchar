@@ -634,15 +634,18 @@ the corpus, weaken an assertion, or edit the verifier. The defenses are
 therefore policy, *mechanized*, not optimism. A held-out corpus split exists
 **in a separate private repository, pulled only by the CI acceptance job** —
 held-out material inside the working repo would be theater for a repo-reading
-agent — and acceptance is measured on it. `IR-SPEC.md`,
-`RUNTIME-SEMANTICS.md`, the schema, the verifier, the anchor corpus, and the
-CI configuration are protected paths: sessions may propose diffs to them,
-never merge them — enforced by CODEOWNERS plus branch protection and a CI
-check on protected paths, not by convention. The oracle and no-op checks run
+agent — and acceptance is measured on it. The protected paths — the
+authoritative list lives in `CLAUDE.md` (Protected paths), with
+`.github/CODEOWNERS` as its mechanical mirror — take proposals from
+sessions, never merges: enforced by CODEOWNERS plus branch protection once
+the repository is public; until then the mandate-and-review protocol of
+`WAY-OF-WORKING.md` carries it, and no separate CI check exists (recorded
+2026-09-10). The oracle and no-op checks run
 on every change, so a weakened harness fails loudly rather than silently. And
 because the agent is stateless, the repository is the state: `CLAUDE.md`
 carries the invariants and the protected-path list; every session ends by
-updating the issue it worked and — only when scope changed — this plan;
+updating the issue it worked, and a scope change reaches this plan through
+the main session's serial bookkeeping (`CLAUDE.md`, Protected paths);
 `CLAUDE.md` itself changes only when an invariant or protected path changes,
 so it stays a constitution rather than a logbook.
 
