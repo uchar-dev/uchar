@@ -221,10 +221,15 @@ over-afwijzing nul, direct gemeten over alle vijf zones.
 → een `norm`-vergelijking) en **alleen** de kapitalisatiegetuige wordt weer
 schoon; de andere blijft afgewezen. De twee getuigen vallen dus onafhankelijk.
 
-**Bereik:** alle **14** `Constante`-posities zijn één voor één getwist; de
-check vuurt op alle 14, met de positie in de melding — in het platte
-`ALLE`-samenstel van een dagsoortdefinitie, in een genest samenstel, als
-functie-argument, als datumindex van een `TemporalRead` en in een `Let`-body.
+**Bereik — structureel, niet als steekproef.** De arm rijdt op `walk_expr` en
+bereikt daarmee elke expressiepositie die die walk bereikt. Beide uiteinden
+gemeten: alle **14** `Constante`-posities zijn één voor één getwist en de check
+vuurt op alle 14, met de positie in de melding (plat `ALLE`-samenstel van een
+dagsoortdefinitie, genest samenstel, functie-argument, datumindex van een
+`TemporalRead`, `Let`-body); en van de **329** corpuspad-skeletten vuren er
+**320** onder een geïnjecteerde contextwaarde — de 9 die dat niet doen zijn
+slots die structureel geen `Constante` kunnen dragen of waar een andere regel
+het document al afwijst (gemeten in de fixronde-lens, 2026-09-10).
 
 ### De vier besluiten, met de motivering die in de spec staat
 
@@ -294,6 +299,18 @@ krijgen.
 - **`corpus/golden/**`** — onder besluit 2 was geen drager nodig; geen golden
   is aangeraakt.
 
+### Gemeld, niet gekaart
+
+- **`RUNTIME-SEMANTICS.md` ch. 8 kent `de dag` niet.** De runtime-betekenis van
+  `de dag` is de dagsoortevaluatie van ch. 3.7 — de dag waarop het predicaat
+  van de definitie wordt toegepast — maar ch. 8 (tijdselectie) noemt alleen
+  `Rekendatum` en `Rekenjaar`: ch. 8.2 schrijft dat de evaluatiedatum
+  "available to expressions solely as the v0 execution-date constant" is. Dat
+  is een **bestaande** kloof, niet door deze kaart geopend; hij werd zichtbaar
+  doordat de ch. 4.1-rij `de dag` nu benoemt. De rij verwijst er expliciet
+  naar. `spec/RUNTIME-SEMANTICS.md` is **niet aangeraakt** — dichten hoort bij
+  de dagsoort-semantiekkaart (§6.10/§6.11, out of scope van deze kaart).
+
 ### Eén vondst die de kaart niet voorzag: de `hij`-producentroute
 
 De RegelSpraak-frontend bouwt een `Constante` met de naam **`hij`** voor het
@@ -303,7 +320,10 @@ en geen van hun `ir.json`-bestanden draagt ook maar één `Constante`. Hij kan
 wél lekken — gemeten 2026-09-10, de bron `indien hij gelijk is aan hij` emitteert
 er twee met `diagnostics: []` — maar hij lekt met het **onbekend-type-sentinel**
 (`Onbekend`, "niet opgelost"), en dat wijst WF-034's typeproloog al af op
-dezelfde knoop:
+dezelfde knoop. Dat is structureel, geen steekproef: de frontend heeft precies
+**drie** `Constante`-constructieplekken (`ExpressieBouwer` r. 392/394/398) en
+de `hij`-plek hard-codeert `onbekend()`, dus een `hij` kan de wire nooit
+goedgetypeerd bereiken:
 
     verifier ZONDER WF-098:
     WF-034 FAIL /resolvedRegels/0/voorwaarde/links/type: unknown-type sentinel …

@@ -40,7 +40,7 @@ across them.
 acceptance criterion this card started from asked for a golden that Drools
 actually plays carrying a recapitalised `Rekendatum`. There can be no such
 document, and the reason is structural rather than a gap to be filled: of the
-three `Rekendatum` carriers the corpus holds, the anchor golden is EXCLUDEd by
+three `Rekendatum` carriers the corpus holds, the anchor golden is excluded by
 the Drools loader for an unrelated reason (`Expr:TemporalRead`) and the other
 two are red-corpus documents, which are required to fail. Admitting a
 purpose-built player would mean shipping a document whose whole content is a
@@ -61,8 +61,8 @@ these two witnesses, 580 after — the wire carries **14** `Constante` nodes ove
 both admissible verbatim. Not one document predating the rule moves.
 
 A hand-broken variant of `corpus/golden/anchor/jutterswet-penningvintage/ir.json`
-— one character recapitalised, a one-line diff; schema-valid, since `naam` is a
-plain string on the v0 wire.
+— one character recapitalised, a one-line diff; schema-valid, since `naam` is
+typed `["string", "null"]` on the v0 wire.
 
 Falsifiable, arm-exact: replace the `| Constante { naam; _ } -> (…)` branch of
 `walk_expr` in `spec/verifier/lib/checks.ml` with `| Constante _ -> []` and this

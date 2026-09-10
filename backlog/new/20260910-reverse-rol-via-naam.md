@@ -275,10 +275,12 @@ WF-clausule of een caselezer-regel die een eenzijdige levering afwijst wanneer
 de andere richting GELEZEN wordt, plus negatiefs; en gate 12 krijgt er op de
 1:N-vorm een reden-dragende weigeringsklasse bij in plaats van een divergentie.
 
-*Nummerkandidaat:* WF-098 (WF-097 is het hoogste bestaande), nadrukkelijk als
-KANDIDAAT. Dezelfde kandidaat wordt genoemd door
-`20260910-geneste-aggregatie-rolketen.md` voor de padregel van een meerstaps
-aggregatiebereik. Wie het eerst landt gebruikt het nummer, de ander schuift op.
+*Nummerkandidaat:* WF-099, nadrukkelijk als KANDIDAAT (bijgewerkt 2026-09-10:
+WF-098 is inmiddels bezet door de contextwaarde-namenregel, ch. 4.1, kaart
+`20260909-constante-naam-gesloten-verzameling`). Dezelfde kandidaat wordt
+genoemd door `20260910-geneste-aggregatie-rolketen.md` voor de padregel van een
+meerstaps aggregatiebereik. Wie het eerst landt gebruikt het nummer, de ander
+schuift op.
 
 **De onbeheerde naad: de case-invoerlaag moet dan schrijven.** Onder antwoord
 (i) volgt de 1:1-vorm niet vanzelf. Om Drools daar met `ref` te laten
