@@ -74,20 +74,36 @@ als voorstel**: de branch blijft ongemerged tot de maintainer hem beoordeelt.
 `/spec/`-claim van `.github/CODEOWNERS` is bedoeld als vangnet — liever te
 veel review dan te weinig — en blijft daarom staan. `CLAUDE.md` zegt dat nu
 met zoveel woorden en maakt de status per `spec/`-item uit dat ene document
-afleesbaar. Dit is vastlegging van de gevestigde praktijk, geen nieuwe regel.
+afleesbaar. Vastlegging van de gevestigde praktijk, geen nieuwe regel — dat
+geldt voor het vangnet en voor de drie voorstel-plichtige items. Voor
+`PLAN.md` en `CONSTRUCTS.md` geldt het pas in de vorm die de fixronde
+hieronder erin heeft gezet: het register is werk van de HOOFDsessie, niet
+van de kaartsessie.
 
 ### Wat gewijzigd is
 
 - `CLAUDE.md`, sectie "Protected paths — propose, never merge": één alinea
-  plus twee bullets, direct na de `Mechanism:`-alinea. De bestaande lijst
-  zelf is ONGEWIJZIGD. De toevoeging zegt (a) dat CODEOWNERS `/spec/` in
-  zijn geheel claimt, bewust breder dan de lijst; (b) dat `spec/PLAN.md` en
-  `spec/CONSTRUCTS.md` binnen die claim het boekhoudkanaal van het
-  kaartprotocol zijn — sessies werken ze bij als onderdeel van het afronden
-  van een kaart, en die update landt met de kaartmerge onder het mandaat dat
-  de maintainer de sessie gaf, zonder afzonderlijke review vooraf; (c) dat
-  de overige `spec/`-items buiten de lijst het vangnet volgen: wijziging is
-  voorstel, tenzij de kaart er expliciet mandaat voor geeft.
+  plus twee bullets, direct na de `Mechanism:`-alinea. Die zegt (a) dat
+  CODEOWNERS `/spec/` in zijn geheel claimt, bewust breder dan de lijst;
+  (b) dat `spec/PLAN.md` en `spec/CONSTRUCTS.md` binnen die claim het
+  boekhoudkanaal van het kaartprotocol zijn dat de HOOFDsessie bijhoudt — de
+  CONSTRUCTS-delta's, en PLAN bij scopewijziging, landen serieel bij de
+  kaartafronding (met de merge of in een commit direct erna), zonder
+  afzonderlijke review vooraf; een kaartsessie raakt ze niet tenzij haar
+  kaart dat expliciet zegt, en zet voorgestelde rijtekst in haar
+  `Result:`-notitie; (c) dat al het overige onder `spec/` — vandaag
+  `ASP-TRANSLATION.md`, `IR-REVIEW.md`, `proposals/` — datzelfde vangnet
+  volgt: wijziging is voorstel, tenzij de maintainer er mandaat voor geeft,
+  normaal in de kaart.
+- `CLAUDE.md`, de opsomming van beschermde paden: "(once it exists)" achter
+  `spec/verifier/` geschrapt. De verifier bestaat en gate 3 bouwt hem; dit
+  is de kaart die over de juistheid van die lijst gaat. Verder is aan de
+  opsomming niets gewijzigd.
+- `CLAUDE.md`, sectie "The repository is the state": de bronzin van de
+  tegenspraak bijgewerkt. Een sessie sluit haar taak af, en een
+  scopewijziging bereikt `spec/PLAN.md` via de seriële boekhouding van de
+  hoofdsessie. Die zin droeg sessies eerder op PLAN zelf bij te werken en
+  was daarmee de scherpste helft van de tegenspraak die deze kaart aanwees.
 - `.github/CODEOWNERS`: **bewust onaangeraakt.** Versmallen tot de vier
   prozalijst-items zou de dekking verkleinen op het moment dat handhaving
   nog niet eens actief is (branch protection vraagt een publieke repo op het
@@ -102,31 +118,34 @@ hetzelfde antwoord: **negen items op topniveau**, precies dezelfde negen als
 bij de meting van 2026-09-09. De lijst is dus niet gegroeid. Geen verborgen
 bestanden, geen ongetrackte items.
 
-| `spec/`-item | in prozalijst | mag een sessie het mergen? |
+| `spec/`-item | in prozalijst | wie wijzigt het, en hoe |
 | --- | --- | --- |
-| `IR-SPEC.md` | ja | nee — voorstel |
-| `RUNTIME-SEMANTICS.md` | ja | nee — voorstel |
-| `schema/` | ja | nee — voorstel |
-| `verifier/` | ja | nee — voorstel |
-| `PLAN.md` | nee | ja — sessiewerk binnen het kaartprotocol (alleen bij scopewijziging) |
-| `CONSTRUCTS.md` | nee | ja — sessiewerk binnen het kaartprotocol (tracked delta's) |
-| `ASP-TRANSLATION.md` | nee | nee — voorstel via het vangnet |
-| `IR-REVIEW.md` | nee | nee — voorstel via het vangnet |
-| `proposals/` (9 documenten) | nee | nee — voorstel via het vangnet |
+| `IR-SPEC.md` | ja | kaartsessie stelt voor; de maintainer merget |
+| `RUNTIME-SEMANTICS.md` | ja | kaartsessie stelt voor; de maintainer merget |
+| `schema/` | ja | kaartsessie stelt voor; de maintainer merget |
+| `verifier/` | ja | kaartsessie stelt voor; de maintainer merget |
+| `PLAN.md` | nee | HOOFDsessie, serieel bij de kaartafronding, alleen bij scopewijziging; de kaartsessie raakt het niet |
+| `CONSTRUCTS.md` | nee | HOOFDsessie, serieel bij de kaartafronding, de tracked delta's; de kaartsessie raakt het niet |
+| `ASP-TRANSLATION.md` | nee | voorstel via het vangnet, tenzij de kaart mandaat geeft |
+| `IR-REVIEW.md` | nee | voorstel via het vangnet, tenzij de kaart mandaat geeft |
+| `proposals/` (9 documenten) | nee | voorstel via het vangnet, tenzij de kaart mandaat geeft |
 
 Vier in de prozalijst, vijf erbuiten maar binnen de `/spec/`-claim —
 onveranderd t.o.v. 2026-09-09. Van die vijf gaan er twee naar het
-sessiekanaal en drie naar het vangnet.
+registerkanaal van de hoofdsessie en drie naar het vangnet.
 
 ### De beslechting van de tegenspraak
 
-`spec/PLAN.md` en `spec/CONSTRUCTS.md` zijn **sessiewerk binnen het
-kaartprotocol**. `CLAUDE.md` droeg sessies al op ze bij te werken bij het
-afsluiten van een kaart; die opdracht is het mandaat, en de kaartmerge is
-het reviewmoment. Er komt dus geen afzonderlijke review vooraf, en de
-CODEOWNERS-claim blijft er als vangnet overheen liggen voor het geval
-branch protection ooit aangaat — dan is een expliciet mandaat in de kaart
-wat de sessie ervoor nodig heeft. De rest van `spec/` buiten de vier
+`spec/PLAN.md` en `spec/CONSTRUCTS.md` zijn **het register, en de hoofdsessie
+houdt het bij**. De CONSTRUCTS-delta's en, bij scopewijziging, PLAN landen
+serieel bij de kaartafronding — met de merge of in een commit direct erna —
+en er komt geen afzonderlijke review vooraf. Een kaartsessie raakt ze niet
+tenzij haar kaart dat expliciet zegt; zij levert voorgestelde rijtekst in
+haar `Result:`. Dat is precies wat `WAY-OF-WORKING.md` §1 vraagt: parallelle
+kaarten mogen geen registerbestand delen waaraan ze allebei aanvullen. De
+CODEOWNERS-claim blijft er als vangnet overheen liggen voor het geval branch
+protection aangaat; de seriële hoofdsessie-boekhouding is dan het kanaal
+waarlangs die twee bestanden landen. De rest van `spec/` buiten de vier
 genoemde items (`ASP-TRANSLATION.md`, `IR-REVIEW.md`, `proposals/`) is
 voorstel-plichtig; de aanleiding van deze kaart — de complementwandeling die
 niet kon afleiden onder welk regime `ASP-TRANSLATION.md` viel, en het
@@ -142,12 +161,46 @@ en raakt geen zone die zij lezen. De hoofdsessie draait de volledige dertien
 vóór de merge — dat is waar de acceptance van deze kaart op afgetekend
 wordt, niet hier.
 
+**De acceptance-aanname van de kaart klopt niet, en dat is nagemeten.** De
+kaarttekst schrijft "gate 1 draait over `CLAUDE.md` en `WAY-OF-WORKING.md`".
+Dat is onwaar: `$ZONES` in `scripts/check-self-contained.sh` is
+`corpus/golden corpus/negatief corpus/rood spec/schema spec/verifier ref
+backends frontends spec/IR-SPEC.md spec/RUNTIME-SEMANTICS.md` — `CLAUDE.md`
+staat er niet in, en `WAY-OF-WORKING.md` §6 rekent beide juist tot de
+werkproza die de privérepo's mág noemen. De PASS hierboven zegt dus alleen
+dat elders niets geregresseerd is; hij toetst geen letter van de nieuwe
+alinea. Er is geen gate die dat doet — deze wijziging steunt volledig op de
+review van de maintainer.
+
 ### Buiten de scope gebleven
 
 De inhoud van de beschermde documenten zelf, en branch protection /
 PLAN §9 beslissing 10 — beide expliciet out of scope. Ook niet aangeraakt:
 `spec/PLAN.md` en `spec/CONSTRUCTS.md` zelf; deze kaart beschrijft alleen
 onder welk regime ze vallen.
+
+### Fixronde (2026-09-10)
+
+De eerste versie van de `CLAUDE.md`-bullet en van deze Results schreef de
+PLAN/CONSTRUCTS-update aan de **kaartsessie** toe: "sessies werken ze bij als
+onderdeel van het afronden van een kaart", en de tabel zei bij beide items
+"ja — sessiewerk". Dat was ONWAAR als beschrijving van de gevestigde
+praktijk, en het kwam uit de bouwopdracht, niet uit de repo. De praktijk is
+dat de hoofdsessie het register serieel bijwerkt. Nagemeten in deze
+worktree: 20 van de 230 done-kaarten noemen CONSTRUCTS samen met de
+hoofdsessie of het seriële regime, waarvan 7 met de letterlijke frase
+"HOOFDSESSIE serieel" (`backlog/done/20260901-let-lowering-spec-first.md`
+regel 67: "HOOFDSESSIE serieel — nooit een agent"); van de laatste 40
+commits op `spec/CONSTRUCTS.md` raken er 3 óók `backlog/done/`, dus 37 zijn
+losse registercommits naast de kaartlanding, verscheidene met
+"hoofdsessie-serieel", "maintainer-serieel" of "serial registry step at
+landing" in de boodschap zelf. De reden is `WAY-OF-WORKING.md` §1: parallelle
+kaarten mogen geen registerbestand delen waaraan ze allebei aanvullen —
+precies wat CONSTRUCTS.md is. `CLAUDE.md` had de fout in vastgelegde vorm
+gezet en de tegenspraak de verkeerde kant op beslecht. De bullet, de
+tabelrijen, de beslechting en de openingsalinea zijn daarop herschreven; in
+dezelfde ronde landden de bronzin in "The repository is the state" en het
+schrappen van "(once it exists)".
 
 **Beschermd pad: `CLAUDE.md`.** De branch is een VOORSTEL en blijft
 ongemerged tot de maintainer hem beoordeelt.
