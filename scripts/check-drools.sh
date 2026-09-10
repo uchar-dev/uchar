@@ -252,7 +252,14 @@ EXPECTED_CHANNEL=(
 # holds on it. NB the SAME backend does NOT hold ch. 5.11 for a Begrensd's two bounds — it evaluates
 # the maximum first — which is why that order is witnessed in the red corpus with a reason-carrying
 # entry in check-rood.sh rather than here.
-EXPECTED_PLAYED=119
+# 2026-09-10: 119 -> 120, jutterswet-keurhouder (the WF-100 owner witness, IR-SPEC ch. 4.6 (q1)).
+# It arrived playing: both of its checks name the SUBJECT's own type as owner, and on that shape the
+# transpiler's owner test (`eigenaar != null && eigenaar != subject`) does not fire, so the two rules
+# lower and fire exactly as an owner-free pair would. The square holds on it. NB the REFUSING shape —
+# an owner that is a declared type OTHER than the subject's — never reaches this gate at all: the
+# backend drops such a rule as a transpiler SKIP rather than faulting, so it is neither a player nor
+# a red-corpus case, and its witnesses are the two OCaml executors' own gated suites.
+EXPECTED_PLAYED=120
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the

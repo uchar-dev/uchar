@@ -57,9 +57,11 @@ Drie mogelijke antwoorden, elk met een prijs:
   werkelijk? (Vandaag: **nul** in golden/rood/negatief buiten de getuigen die
   voor de regels zelf gebouwd zijn.) Zonder producent is (2) goedkoop en (1)
   een implementatie zonder gebruiker.
-- Wat doet de pariteitszone? Daar staan casusbestanden die de originele
-  toolchain wél door deze route stuurt; als die de vorm dragen, is (1) het
-  enige antwoord dat pariteit haalt.
+- Wat doet de pariteitszone? Gemeten 2026-09-10: 30 documenten, **9**
+  kenmerkchecks, **0** met een eigenaar. De toolchain-gepinde ©-casus draagt de
+  vorm dus evenmin. Dat maakt (2) goedkoop en haalt het pariteitsargument onder
+  (1) weg — maar het is een momentopname van de zone zoals hij nu is, niet van
+  wat de producent kán maken.
 - Doet de Drools-backend het in de feitcreatie-route werkelijk goed, of is de
   anker→doel-terugval een toevalstreffer die op de meerstaps-tussenstappen
   breekt?
