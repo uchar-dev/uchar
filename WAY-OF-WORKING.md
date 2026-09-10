@@ -62,9 +62,11 @@ commit. Done = the merge moves the card to `done/` and appends a short
 3. Report honestly: what passed (with real output), what is a marker or gap,
    what stayed out of scope. A green subset is not green.
 4. End: fast-forward merge with the card moved to `done/`; for protected
-   paths, leave the branch as the proposal. Update `spec/PLAN.md` only if
-   the plan's scope itself changed; touch `CLAUDE.md` only if an invariant
-   changed.
+   paths, leave the branch as the proposal. A card session does not update
+   `spec/PLAN.md` or `spec/CONSTRUCTS.md` itself: proposed row or plan text
+   goes in the `Result:` note, and the main session lands the registry
+   serially at the card's landing (`CLAUDE.md`, Protected paths). Touch
+   `CLAUDE.md` only if an invariant changed.
 
 ## 5. Source material: the private repositories
 
@@ -90,11 +92,11 @@ without access to the maintainer's machine or private repositories.
   `CLAUDE.md`, this file, top-level READMEs — may reference the private
   repos by name during development.
 - **Artifact zones** — `corpus/golden/`, `corpus/negatief/`,
-  `corpus/rood/`, `spec/schema/`,
-  `spec/verifier/`, `ref/`, `backends/` — are self-contained **from their
-  first commit**: no machine-local paths, no private-repo names, no
-  file:line citations into private code. Code and data never carry
-  provenance; git history and the plan do.
+  `corpus/rood/`, `spec/schema/`, `spec/verifier/`, `ref/`, `backends/`,
+  `frontends/` — are self-contained **from their first commit**: no
+  machine-local paths, no private-repo names, no file:line citations into
+  private code. Code and data never carry provenance; git history and the
+  plan do.
 - **Graduation.** Placeholder READMEs inside still-empty zones may name the
   private toolchain; they are listed as explicit exceptions in
   `scripts/check-self-contained.sh`, and that list only shrinks — sweeping a

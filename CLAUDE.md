@@ -42,12 +42,16 @@ deliberately broader than the list above: too much review beats too little.
 Within that claim, per item:
 
 - `spec/PLAN.md` and `spec/CONSTRUCTS.md` are the card protocol's
-  bookkeeping channel, and the MAIN session keeps it: the tracked CONSTRUCTS
-  deltas, and PLAN when scope changed, land serially at the card's landing —
-  in the merge commit or right after it — with no separate review up front.
-  A card session does not touch them unless its card says so explicitly; it
-  puts proposed row text in its `Result:` note. (They are the registry
-  `WAY-OF-WORKING.md` §1 keeps parallel cards out of.)
+  bookkeeping channel, and the MAIN session keeps it — the maintainer's own
+  serial session on `main`, not a card session, so that landing IS the
+  maintainer's hand and the rule above holds. The tracked CONSTRUCTS deltas,
+  and PLAN when scope changed, land at the card's landing: in the commit
+  that moves the card to `done/`, or in one right after it (merges are
+  fast-forward; there is no merge commit). No separate review up front. A
+  card session does not touch them unless its card says so explicitly; it
+  puts proposed row text in its `Result:` note. `WAY-OF-WORKING.md` §1
+  forbids parallel cards to share a registry; these two are exactly that,
+  and serial main-session bookkeeping is how they satisfy it.
 - Everything else under `spec/` — today `spec/ASP-TRANSLATION.md`,
   `spec/IR-REVIEW.md`, `spec/proposals/` — follows that net: a change is a
   proposal unless the maintainer grants mandate for it, normally in the
@@ -62,8 +66,8 @@ Within that claim, per item:
 - **A spec sentence without a machine-checkable artifact is not done** — the
   spec-level "a green subset is not green".
 - Mirror, then diverge: v0 is the faithful dump of `regelspraak-java`'s IR;
-  every v1 deviation is a tracked delta in `spec/CONSTRUCTS.md`, never a
-  silent rewrite.
+  every v1 deviation is a tracked delta in `spec/CONSTRUCTS.md` (landed by
+  the main session — see Protected paths), never a silent rewrite.
 
 ## Corpus rules
 
