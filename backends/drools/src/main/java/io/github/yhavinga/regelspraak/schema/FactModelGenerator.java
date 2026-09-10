@@ -155,6 +155,27 @@ public final class FactModelGenerator {
     }
 
     /**
+     * WHY {@link #heeftReferentieVeld} said no — the precise §13.3.9 reason, so a per-form refusal names the
+     * bean-model limit instead of a generic scope note. The two causes are DIFFERENT and are named apart: a
+     * declared member of the same name DISPLACED the reference ({@link #leden}'s dedup), or the model derives
+     * no unique field for that role at all.
+     *
+     * <p>It lives HERE, beside the derivation it explains, because BOTH transpiler branches and every reader
+     * refuse the same shapes and must say so in the same words — a producer reading the gate report gets one
+     * diagnosis whichever branch produced it. Callers prefix the READER ("genavigeerde lezing",
+     * "rollidmaatschapscheck", "objectcreatie", the fold join) and, where it is not already in their sentence,
+     * the §13.3.9 pointer; the body is this one string.
+     */
+    public static String geenReferentieveldReden(Objecttype ot, String rol, Objecttype doel) {
+        return ot.heeftLid(rol)
+                ? "de rol '" + rol + "' op " + ot.naam + " deelt haar naam met een gedeclareerd lid — het beanveld"
+                  + " draagt dat attribuut/kenmerk en niet de referentie (leden(): attribuut > kenmerk >"
+                  + " referentie), dus de koppeling naar " + doel.naam + " heeft geen veld"
+                : "het beanmodel leidt voor de enkelvoudige rol '" + rol + "' op " + ot.naam
+                  + " geen referentieveld naar " + doel.naam + " af";
+    }
+
+    /**
      * §13.3.9.2 — the scalar to-one SELF-PAIR role a wederkerig feittype implies on {@code ot} (the role name,
      * hence the bean field name), or null when the model implies none.
      *

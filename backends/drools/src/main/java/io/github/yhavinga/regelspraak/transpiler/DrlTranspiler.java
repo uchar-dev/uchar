@@ -1643,7 +1643,7 @@ public final class DrlTranspiler {
             if (!ok) return new NaviRef(NaviSoort.ONOPGELOST, null);
             Objecttype cur = subject;
             for (int i = 0; i < a.navigatiePad().size(); i++) {   // EVERY hop needs a field of its own
-                if (!navVeld(cur, a.navigatiePad().get(i), bereikt.get(i)))
+                if (!navVeld("genavigeerde lezing", cur, a.navigatiePad().get(i), bereikt.get(i)))
                     return new NaviRef(NaviSoort.ONOPGELOST, null);
                 cur = bereikt.get(i);
             }
@@ -1652,27 +1652,26 @@ public final class DrlTranspiler {
         String rol = naviRol(subject, a);
         if (EIGEN.equals(rol))          return new NaviRef(NaviSoort.EIGEN, null);
         if (naarVeel(subject, a, rol))  return new NaviRef(NaviSoort.NAAR_VEEL, rol);
-        if (rol != null)                return navVeld(subject, rol, a.objecttype())
+        if (rol != null)                return navVeld("genavigeerde lezing", subject, rol, a.objecttype())
                                             ? new NaviRef(NaviSoort.GENAVIGEERD, rol)
                                             : new NaviRef(NaviSoort.ONOPGELOST, null);
         return new NaviRef(NaviSoort.ONOPGELOST, null);
     }
 
-    /** Whether a navigated hop from {@code ot} over {@code rol} to {@code doel} has a bean field to read, asked of
-     *  the ONE member derivation {@link FactModelGenerator#leden} renders — the SAME question the exec-model branch
-     *  asks, so the two branches refuse the same shapes. Until 2026-09-10 this branch asked nothing: a role name a
-     *  declared member had displaced still emitted {@code $subject.getWerf().getTarief()}, and the whole KieBase
-     *  build then died on a BARE compiler error ({@code Unable to Analyse Expression …}) that named neither the
-     *  role, the member, nor the limit. Loud, but not a diagnosis. Now the hop markers instead, with
-     *  {@link #navReden} carrying the reason into the manifest. */
-    private boolean navVeld(Objecttype ot, String rol, Objecttype doel) {
+    /** Whether a hop from {@code ot} over {@code rol} to {@code doel} has a bean field to read or null-test, asked of
+     *  the ONE member derivation {@link FactModelGenerator#leden} renders — the SAME question, in the SAME words
+     *  ({@link FactModelGenerator#geenReferentieveldReden}), that the exec-model branch asks, so the two branches
+     *  refuse the same shapes and diagnose them identically. {@code lezer} names which reader asked.
+     *  <p>Until 2026-09-10 this branch asked nothing. A role name a declared member had displaced still emitted
+     *  {@code $subject.getWerf().getTarief()}, and the whole KieBase build then died on a BARE compiler error
+     *  ({@code Unable to Analyse Expression …}) that named neither the role, the member, nor the limit — loud, but
+     *  not a diagnosis. The §8.1.7 rolcheck was worse than loud: {@code werf != null} compiled fine and read the
+     *  displacing attribute's VALUE as proof of role membership. Now both marker instead, with {@link #navReden}
+     *  carrying the reason into the manifest. */
+    private boolean navVeld(String lezer, Objecttype ot, String rol, Objecttype doel) {
         if (FactModelGenerator.heeftReferentieVeld(model, ot, rol, doel)) return true;
-        navReden = "genavigeerde lezing: " + (ot.heeftLid(rol)
-                ? "de rol '" + rol + "' op " + ot.naam + " deelt haar naam met een gedeclareerd lid — het beanveld"
-                  + " draagt dat attribuut/kenmerk en niet de referentie (leden(): attribuut > kenmerk >"
-                  + " referentie), dus de koppeling naar " + doel.naam + " heeft geen veld"
-                : "het beanmodel leidt voor de enkelvoudige rol '" + rol + "' op " + ot.naam
-                  + " geen referentieveld naar " + doel.naam + " af") + " (§13.3.9 opslagrichting)";
+        navReden = lezer + ": " + FactModelGenerator.geenReferentieveldReden(ot, rol, doel)
+                + " (§13.3.9 opslagrichting)";
         return false;
     }
 
@@ -3365,8 +3364,12 @@ public final class DrlTranspiler {
         if (c instanceof Conditie.Rollidmaatschap r) {
             String veld = subject != null ? model.verbindendeRol(subject, r.anderTeFiller()) : null;
             // the subject fills the role iff its reference to the other end is set; the §8.1.7 "is geen" negation
-            // is the inverse null-test. The far-side / to-many case has no in-pattern reference -> marker.
-            if (veld != null && !model.naarVeelRol(subject, r.anderTeFiller(), veld))
+            // is the inverse null-test. The far-side / to-many case has no in-pattern reference -> marker. And the
+            // field must be the REFERENCE: a declared member that took the role's name is non-null whenever it holds
+            // a value, so the null-test would read that VALUE as proof of membership — measured 2026-09-10, both
+            // branches identically ("FAIL verwacht leeg, werkelijk 8"). Same shared question the exec branch asks.
+            if (veld != null && !model.naarVeelRol(subject, r.anderTeFiller(), veld)
+                    && navVeld("rollidmaatschapscheck", subject, veld, r.anderTeFiller()))
                 return LoweredConditie.van(ident(veld, false) + (r.negatie() ? " == null" : " != null"));
             return LoweredConditie.marker("rollidmaatschap '" + r.rol() + "'", c.bron());
         }

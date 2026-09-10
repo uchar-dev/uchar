@@ -380,9 +380,10 @@ frontend hem emitteert. Frontend: exit 0, **nul bytes stderr**,
 
 ### Wat er landde
 
-**1. De poort, in beide takken.** Elke genavigeerde hop vraagt nu de gedeelde
-`FactModelGenerator.heeftReferentieVeld` — één afleiding, één vraag, precies
-zoals de drie eerder gesloten lezers.
+**1. De poort, in beide takken.** Elke lezer die het referentieveld **aanraakt**
+vraagt nu de gedeelde `FactModelGenerator.heeftReferentieVeld` — één afleiding,
+één vraag, precies zoals de drie eerder gesloten lezers. Niet alleen de
+navigerende lezers: zie punt 1b.
 
 - exec-model (`ExecModelTranspiler`): `navReader`'s GENAVIGEERD-tak,
   `navKetenReader` op **elke** hop, `navComparisonRole`, en
@@ -394,6 +395,51 @@ zoals de drie eerder gesloten lezers.
 - DRL-tekst (`DrlTranspiler`): centraal in `naviResolve`, de ene plek waar die
   tak navigatie oplost — GENAVIGEERD en elke KETEN-hop. `meet(...)` geeft de
   reden voorrang boven de tekst van de TODO-markering.
+
+De **redentekst** staat op één plek: `FactModelGenerator.geenReferentieveldReden`,
+naast de afleiding die hij uitlegt. Beide takken en alle lezers halen hem daar,
+zodat één limiet nooit twee bewoordingen krijgt; de asserties pinnen fragmenten,
+niet de hele zin.
+
+**1b. Er bleek een VIJFDE lezer, en die was óók stil fout.** De
+§8.1.7-rollidmaatschapscheck **navigeert niet** — hij null-test hetzelfde veld om
+te beslissen of het subject een rol vervult (`werf != null`). Daarom viel hij
+buiten de vier navigatie-lezers, en daarom was hij de ergste van de familie: een
+verdringend attribuut is niet-null zodra het een waarde draagt, dus de check las
+die waarde als bewijs van rolvervulling. Gemeten op een verifier-schoon,
+ref-schoon model (dezelfde `Schuit`/`werf`-schaduw, voorwaarde "de Schuit een
+schuit is", case zonder rolinvoer):
+
+    verifier: PASS
+    ref     : oracle: PASS (1 expectations)     — S1.toeslag blijft leeg
+    clingo  : clingo: PASS (1 expectations)     — idem
+    Drools exec-model : FAIL  verwacht leeg, werkelijk 8
+    Drools DRL-tekst  : FAIL  verwacht leeg, werkelijk 8
+
+Beide takken identiek, en **pre-existent**: de navigatiepoort raakte hem niet.
+Nu gepoort op beide plekken met dezelfde gedeelde vraag — de exec-tak in de
+`Conditie.Rollidmaatschap`-arm, de DRL-tak in dezelfde arm die anders de
+`rollidmaatschap`-marker geeft — en met een eigen reden-prefix, zodat de twee
+soorten lezers in het gate-rapport uit elkaar te houden zijn:
+
+    EXCLUDE transpiler SKIP: regel: toeslag van een schuit — regel
+      (rollidmaatschapscheck: de rol 'werf' op Schuit deelt haar naam met een
+      gedeclareerd lid — …): toeslag van een schuit
+    EXCLUDE drl-transpiler MARKER: regel: toeslag van een schuit —
+      rollidmaatschapscheck: de rol 'werf' op Schuit deelt haar naam met een
+      gedeclareerd lid — …
+
+**Eerlijke populatietelling.** Gepoort zijn nu: de vier navigatie-lezers **en**
+de rollidmaatschapscheck, naast de drie die 2026-08-30 al gesloten werden.
+**Ongepoort én ongemeten** blijven: de far-side rollidmaatschap-join, de twee
+aggregatie-bronbindingen buiten de al gepoorte join, de genavigeerde
+kenmerk-tijdreeks, de verdeling (zes leesplekken op één afgeleide `join`), de
+feitcreatie, en de naam-kopie in `toOneAantalReader` — die laatste test de
+naamdeling met een eigen `heeftLid`-afleiding in plaats van de gedeelde vraag te
+stellen. Alle zeven met regelnummers gekaart in
+`backlog/new/20260910-drools-ongepoorte-rollezers.md`. Dat de vijfde lezer pas
+bij een tweede lezing gevonden werd, is in die kaart het bewijsstuk dat de klasse
+echt stil fout kán zijn.
 
 Uitkomst, gemeten na de poort, op alle acht de probevormen: geen enkele
 exit 1 meer in de exec-model-tak, geen `ConstraintEvaluationException` meer, en
@@ -411,7 +457,7 @@ in **beide** takken dezelfde zin:
 De controle en de legale tegenvorm blijven PLAYED in beide takken: nul
 over-afwijzing.
 
-**2. Rood eerst, met echte testuitvoer.** Drie nieuwe asserties in
+**2. Rood eerst, met echte testuitvoer.** Vier nieuwe asserties in
 `OpslagrichtingWitnessTest` sectie 3, elk op een eigen lezer, elk op een
 in-memory variant van `synth-navigatiepremie` waarvan de verwachting eerst door
 `ref/` is gehaald. Op de code zónder poort:
@@ -429,6 +475,15 @@ Met de poort: `Tests run: 14, Failures: 0, Errors: 0, Skipped: 0`. De twee
 "nothing was thrown" zijn precies de stille waarde-afwijking (`speelCase` gaf
 de mismatchregel terug in plaats van te weigeren); de derde is de
 ongeclassificeerde fire-fout van de vergelijkingskant.
+
+De **vierde** assertie, voor de vijfde lezer, is in een eigen ronde rood
+getoond — de drie poorten van hierboven raakten hem niet:
+
+    Tests run: 15, Failures: 1, Errors: 0, Skipped: 0
+      de_rollidmaatschapscheck_weigert_hetzelfde_veld:264
+        Expected …CaseRunner.Excluded to be thrown, but nothing was thrown.
+
+en daarna groen: `Tests run: 15, Failures: 0, Errors: 0, Skipped: 0`.
 
 **Per lezer**, zoals de acceptance eist:
 
@@ -449,37 +504,63 @@ ongeclassificeerde fire-fout van de vergelijkingskant.
   omdat een stil weggelaten far-side watch een **verouderde waarde** oplevert
   in plaats van een weigering — het enige gevolg dat die methode juist moet
   voorkomen. Ze weigert de constructie dus, in plaats van de hop over te slaan.
+- `Conditie.Rollidmaatschap` (de §8.1.7-check) — getuige
+  `de_rollidmaatschapscheck_weigert_hetzelfde_veld`, apart rood getoond.
 
-JUnit-teller: 262 → **265**, nul skips. Vloer `EXPECTED_MIN_TESTS` (239)
+JUnit-teller: 262 → **266**, nul skips. Vloer `EXPECTED_MIN_TESTS` (239)
 ongemoeid.
 
 **3. De spec-alinea (voorstel, beschermd pad).** `spec/IR-SPEC.md` §2.6, direct
 na WF-013, in de WF-002/WF-012-buurt. Geen nieuw WF-nummer. Letterlijk:
 
-> **Roles and object-type members are separate namespaces.** WF-002 states that
-> attributes and characteristics are separate namespaces; roles are a third. A
-> to-one role MAY share its name, case-insensitively, with an attribute or a
-> characteristic of the object type on the many side of the same fact type —
-> the object type that a bean-shaped consumer would give the reference field.
-> Such a document is **well-formed**, and no rule above narrows it. The reason
-> is structural: a navigated read names its role hop and its attribute in
-> *different* fields — `navigationPath` (plus the `roleBindings` extension)
-> against `attribute` — so a role name and a member name never compete for one
-> wire position. The reference interpreter and the ASP backend both answer such
-> a document correctly today, with no special case. It is a REACHABLE but
-> UNINHABITED shape: swept 2026-09-10 over every corpus zone — 555 documents —
-> the collision occurs zero times, so no existing case pins this and the
-> paragraph is what states it.
+> **Roles and object-type members are separate namespaces.** WF-002 states
+> that attributes and characteristics are separate namespaces; roles are a
+> third. A role MAY share its name, case-insensitively, with an attribute
+> or a characteristic of an object type the same fact type relates. Such a
+> document is **well-formed**, and no rule above narrows it. The reason is
+> structural: a navigated read names its role hop and its attribute in
+> *different* fields — `navigatiePad`, plus the `navigatieBindingen`
+> extension of ch. 4.1a, against `attribuut` (in v1 the unified `path`
+> against `attribute`, row 4) — so a role name and a member name never
+> compete for one wire position. The reference interpreter and the ASP
+> backend both answer such a document correctly today, with no special
+> case. It is a REACHABLE but UNINHABITED shape: swept 2026-09-10 over
+> every corpus zone — 555 documents — the collision occurs zero times, so
+> no existing case pins this and the paragraph is what states it.
 >
-> *Consumer note, recorded rather than hidden.* A consumer that materialises
-> each object type as a record with **one property per identifier** — a Java
-> bean, a struct, a row — cannot hold that shape: it has one slot where the
-> document has two names, so one of the two is displaced. Such a consumer MUST
-> refuse the affected construct per form, loudly and naming the displaced
-> reference; it MUST NOT read the displacing member in the role's place, and it
-> MUST NOT reject the document as ill-formed. This is a limit of that target
-> format, not a well-formedness rule: refusing the document would deny a
-> program that has exactly one meaning, which the other executors compute.
+> The neighbouring shape — one written name matching *several* reachable
+> roles — is a different question and keeps its own answer: a loud executor
+> fault, never a guess (ch. 4.3). Its two arms are pinned unevenly. The
+> navigation arm is refused statically by WF-053. The case-input arm, where
+> a case supplies links under a role key that resolves to two roles, is
+> refused identically by both executors but while LOADING the case, which
+> the red corpus's expected-fault contract does not reach; that gap is
+> carded in `backlog/new/20260910-rood-zone-laadfouten.md`.
+>
+> *Consumer note, recorded rather than hidden.* A consumer that
+> materialises each object type as a record with **one property per
+> identifier** — a Java bean, a struct, a row — cannot hold that shape: it
+> has one slot where the document has two names, so one of the two is
+> displaced. This bites wherever the relation's scalar reference lands,
+> which is at the end whose *connecting role is to-one* — not only the many
+> side of a one-to-many fact type, but each end of a one-to-one one, and a
+> self-typed pair on the single bean it has.
+>
+> That is a limit of the target format, not a well-formedness rule, and
+> this specification does not lift it into one: rejecting the document
+> would deny a program that has exactly one meaning, which the other
+> executors compute. What such a consumer does instead is refuse the
+> affected construct per form, loudly and naming the displaced reference,
+> rather than reading the displacing member in the role's place. The
+> Drools backend does exactly that in both of its transpiler branches, at
+> every reader that touches the field: the navigated single-hop, chain,
+> comparison and reactivity reads, and the ch. 8.1.7 role-membership
+> check, which does not navigate but null-tests the same field. Those
+> refusals are pinned by that backend's own test suite and by gate 12, not
+> by `spec/verifier/` — a verifier that enforced them would be enforcing
+> one target format's shape on every consumer. Its remaining unaudited
+> readers of that field are carded in
+> `backlog/new/20260910-drools-ongepoorte-rollezers.md`.
 
 De 555 is de **publiek verifieerbare** helft van de sweep (golden 167 + rood 26
 + negatief 362); de parity-zone telt in de kaart mee (585) maar wordt in het
@@ -494,6 +575,11 @@ gedaan. De tak is niet data-afhankelijk: hij viel op **elke** schaduwvorm om,
 ook met het verdringende attribuut leeg, en doet dat nu ook als
 reden-dragende MARKER. Gate 13 draait beide takken en beweegt niet: 13
 DRL-tekst-replays PLAYED, vloer 13.
+
+De vijfde lezer (punt 1b) zit in dezelfde tak op een **tweede** plek — de
+`Rollidmaatschap`-arm die anders de `rollidmaatschap`-marker geeft — omdat die
+lezer niet door `naviResolve` loopt. Dat is precies de vorm van het gat: de
+centrale navigatiepoort dekt navigatie, niet elke aanraking van het veld.
 
 ### De rode getuige: NIET geland, met de meting erbij
 
@@ -516,16 +602,23 @@ kandidaat-map in `corpus/rood/`:
       the expected fault:
     FAIL: corpus/rood/ambiguous-case-role-key/case1.json — clingo did not observe
       the expected fault:
+    FAIL: ambiguous-case-role-key carries no drools fragment and is not in the
+      Drools exclusion list — pin a fragment or list it with a reason:
+
+**Drie** van de drie benen vallen dus om, niet twee: de twee uitvoerderbenen op
+de exitcode, en het Drools-been omdat de case noch een `drools`-fragment noch
+een reden-regel in `scripts/check-rood.sh` draagt.
 
 Dit is geen bug maar de **contractgrens van de zone**, en die staat zwart op
 wit in het case-schema: *"The red-path alternative to `expected`
 (corpus/rood): **evaluation** of this case MUST fail observably in every
 executor that carries its form."* Een laadfout valt daar per definitie buiten.
-Hem toelaten vergt drie dingen die alle drie **buiten de may-touch van deze
-kaart** vallen: `spec/schema/uchar-case-v0.schema.json` (beschermd pad),
-`ref/bin/runner.ml` en `backends/clingo/bin/clingo_runner.ml` (allebei
-uitdrukkelijk out of scope op deze kaart). De kandidaat-map is daarom
-**verwijderd**; gate 8 staat op 26, vloer 26.
+Hem toelaten vergt **vier** artefacten, waarvan er twee beschermd zijn en twee
+uitdrukkelijk out of scope op deze kaart:
+`spec/schema/uchar-case-v0.schema.json` (**beschermd**), `ref/bin/runner.ml`,
+`backends/clingo/bin/clingo_runner.ml`, en `scripts/check-rood.sh`
+(**beschermd**) voor de reden-regel of het fragment van het Drools-been. De
+kandidaat-map is daarom **verwijderd**; gate 8 staat op 26, vloer 26.
 
 Wat de kaart als "de tweede helft van ch. 4.3's wet" beschreef, is daarmee
 preciezer geworden: de **navigatie**-arm van de rol-vs-rol-ambiguïteit is niet
@@ -534,12 +627,17 @@ is ambiguous from 'Schuit'; name the hop with an explicit role binding`, gepind
 door `corpus/negatief/wf053-bindingless-ambiguous`. Alleen de **case-sleutel**
 -arm is ongepind, en die is met de zone zoals ze vandaag is niet te pinnen.
 
-**Voorgestelde vervolgkaart:** de rode zone een laadfout-arm geven — de
-schema-zin verbreden van *evaluation* naar *loading or evaluation*, beide
-runners `expectedFault` laten lezen vóór de wereld wordt geladen, en deze
-getuige als eerste bewoner. Dat raakt een beschermd pad en twee
-out-of-scope-zones, dus het hoort in een eigen kaart met een eigen
-onderhoudersbesluit.
+**Vervolgkaart aangemaakt:** `backlog/new/20260910-rood-zone-laadfouten.md` —
+de rode zone een laadfout-arm geven (schema-zin verbreden van *evaluation* naar
+*loading or evaluation*, beide runners `expectedFault` laten lezen vóór de
+wereld wordt geladen, het Drools-been een reden-regel geven, en deze getuige
+als eerste bewoner), of uitdrukkelijk niet-doen en dat in
+`corpus/rood/README.md` vastleggen. De kaart draagt de gemeten gate-8-uitvoer
+en de vier artefacten met hun beschermingsstatus. Het bredere belang staat er
+ook in: de hele klasse case-laadfouten — onbekende labels, verkeerd getypeerde
+rolvullers, dubbelzinnige rolsleutels, scalaire levering op een temporeel
+attribuut — is vandaag in **geen enkele** zone gepind, want de negatief-zone
+dekt alleen `ir.json`.
 
 ### Besluit 5 — de frontend-stilte
 
@@ -581,7 +679,7 @@ staan in de eigen JUnit-suite van de backend, die gate 12 draait.
 | 9 catala | PASS (frontend-suite 201 checks, vloer 201; 12 catala-goldens byte-identiek) |
 | 10 regelspraak | PASS (JUnit 173 tests, vloer 173; 38 rgs-goldens byte-identiek, vloer 38) |
 | 11 toka-parity | PASS (45 .rgs byte-identiek, vloer 45; TOKA-suite 27 tests; ref 29 PASS, clingo 29 PASS, Drools 29 PLAYED / 0 EXCLUDE / 0 FAIL-or-ERROR) |
-| 12 drools | PASS (**played 120**, ongewijzigd; JUnit **265**, vloer 239; 44 auto-excluded, 1 value-divergence, 2 no-case; kanaalvloer 47 met naam gepind) |
+| 12 drools | PASS (**played 120**, ongewijzigd; JUnit **266**, vloer 239; 44 auto-excluded, 1 value-divergence, 2 no-case; kanaalvloer 47 met naam gepind) |
 | 13 reftype-derivation | PASS (74 twists over 15 goldens, vloer 74; 70 replays, 13 door de DRL-tekst-tak PLAYED, vloer 13; 0 survivors) |
 
 Gates 12 en 13 zijn apart gedraaid, zoals de acceptance eist. Gate 13 raakt de
@@ -601,26 +699,40 @@ contract (reference-field assumption)" zegt.
 
 > **Landed (2026-09-10):** rolnamen en objecttypeledennamen zijn gescheiden
 > naamruimten op de v0-wire (`IR-SPEC.md` §2.6, in de WF-002/WF-012-buurt,
-> zonder nieuw WF-nummer): een to-één rol die zijn naam deelt met een attribuut
-> of kenmerk van het objecttype aan de veel-zijde is **welgevormd**, want een
-> genavigeerde lezing noemt haar rolhop (`navigatiePad`/`navigatieBindingen`)
-> en haar attribuut in verschillende velden. Weigeren zou over-afwijzing zijn:
-> `ref` en de ASP-backend voeren de vorm gemeten correct uit. De
-> **bean-vormige** consument is de uitzondering en die is nu ook zo
-> geïmplementeerd: `backends/drools` weigert de vorm per constructie in
+> zonder nieuw WF-nummer): een rol die zijn naam deelt met een attribuut of
+> kenmerk van een objecttype dat hetzelfde feittype relateert is **welgevormd**,
+> want een genavigeerde lezing noemt haar rolhop
+> (`navigatiePad`/`navigatieBindingen`) en haar attribuut in verschillende
+> velden. Weigeren zou over-afwijzing zijn: `ref` en de ASP-backend voeren de
+> vorm gemeten correct uit. De **bean-vormige** consument is de uitzondering —
+> het scalaire referentieveld landt aan het einde wiens verbindende rol to-één
+> is, dus niet alleen aan de veel-zijde maar ook op beide einden van een
+> 1:1-feittype en op de ene bean van een zelfgetypeerd paar — en die is nu ook
+> zo geïmplementeerd: `backends/drools` weigert de vorm per constructie in
 > **beide** takken, met het verdrongen referentieveld erbij, waar de
 > exec-model-tak tot 2026-09-10 stil `leeg` las (gemeten: `verwacht 0,
 > werkelijk leeg` op een verifier-schoon, ref-schoon document) en de DRL-tak op
-> een blote compilerfout omviel. Vier lezers gepoort (`navReader`,
-> `navKetenReader`, `navComparisonRole`, `navReactiviteit`; de DRL-tak centraal
-> in `naviResolve`), drie rood-eerst-getuigen in
-> `OpslagrichtingWitnessTest`; nul over-afwijzing gemeten (gate 12 `played 120`
-> ongewijzigd, `EXPECTED_CHANNEL` ongemoeid). De vorm is bereikbaar maar
-> onbewoond: 585 documenten over vier zones, nul botsingen. Ongepind blijft de
-> **case-sleutel**-arm van de rol-vs-rol-ambiguïteit — beide uitvoerders
-> weigeren hem identiek (`role key "ligger" is ambiguous from "Schuit"`), maar
-> bij het LADEN van de case, en het rode zonecontract dekt alleen
-> evaluatiefouten; gekaart.
+> een blote compilerfout omviel. **Vijf** lezers gepoort: de vier navigerende
+> (`navReader`, `navKetenReader`, `navComparisonRole`, `navReactiviteit`; de
+> DRL-tak centraal in `naviResolve`) en de §8.1.7-rollidmaatschapscheck, die
+> niet navigeert maar hetzelfde veld null-test en tot deze kaart in **beide**
+> takken een regel vuurde die ref en clingo ongevuurd laten (`verwacht leeg,
+> werkelijk 8`). Vier rood-eerst-getuigen in `OpslagrichtingWitnessTest`, de
+> redenzin gedeeld in `FactModelGenerator.geenReferentieveldReden`; nul
+> over-afwijzing gemeten (gate 12 `played 120` ongewijzigd,
+> `EXPECTED_CHANNEL` ongemoeid; gate 11 29/29 TOKA-cases PLAYED). De vorm is
+> bereikbaar maar onbewoond: 585 documenten over vier zones, nul botsingen.
+> **Twee gaten blijven open en zijn gekaart, niet gedicht:** de overige lezers
+> van dat veld (far-side rolcheck, twee aggregatie-bronbindingen, kenmerk-
+> tijdreeks, verdeling, feitcreatie, plus de tweede afleiding in
+> `toOneAantalReader`) zijn ongepoort én ongemeten —
+> `backlog/new/20260910-drools-ongepoorte-rollezers.md`; en de
+> **case-sleutel**-arm van de rol-vs-rol-ambiguïteit heeft geen rode getuige,
+> want beide uitvoerders weigeren hem identiek (`role key "ligger" is ambiguous
+> from "Schuit"`) maar bij het LADEN van de case, en het rode zonecontract dekt
+> alleen evaluatiefouten — `backlog/new/20260910-rood-zone-laadfouten.md`. De
+> navigatie-arm van diezelfde ambiguïteit is wél gepind: WF-053,
+> `corpus/negatief/wf053-bindingless-ambiguous`.
 
 ### Wat bewust niet bewoog
 
@@ -636,9 +748,24 @@ contract (reference-field assumption)" zegt.
 - **`spec/CONSTRUCTS.md` en `spec/PLAN.md`**: niet aangeraakt; de rij-4-zin
   staat hierboven als voorstel.
 - **De aggregatie-lezer en de case-invoerpoort**: ongewijzigd. De nieuwe poort
-  zit uitsluitend op de navigatie-lezers; de drie eerder gesloten lezers vragen
-  dezelfde gedeelde functie en zijn niet verplaatst.
+  zit op de vier navigatie-lezers en op de rollidmaatschapscheck; de drie eerder
+  gesloten lezers vragen dezelfde gedeelde functie en zijn niet verplaatst.
+  Alleen hun redenzin verhuisde naar `FactModelGenerator`, letterlijk gelijk.
+- **De zeven ongepoorte lezers.** Bewust NIET meegenomen: ze zijn ongemeten, en
+  meten kost per lezer een eigen model plus vier uitvoerderruns. Ze zijn met
+  regelnummer en met een aanpak per lezer gekaart in
+  `backlog/new/20260910-drools-ongepoorte-rollezers.md`, samen met de
+  §8.1.7-meting als bewijs dat de klasse echt stil fout kan zijn. Dat is een
+  bekende, benoemde restlacune — geen groene deelverzameling die als groen wordt
+  gepresenteerd.
 - **De generieke skip-teksten** van de aggregatie- en globals-armen: ongemoeid.
   `navReden` verdringt nooit een bestaande scherpe reden; hij vervangt alleen de
-  generieke scope-notitie op de vier plekken waar een navigatie-lezer null kan
+  generieke scope-notitie op de vier plekken waar een gepoorte lezer null kan
   hebben teruggegeven.
+- **Geen nieuw WF-nummer, ook niet voor het consumentgedrag.** De drie
+  normatieve MUSTs die de eerste versie van de spec-alinea droeg zijn
+  teruggeschreven naar beschrijvend proza: `IR-SPEC.md`'s bindende conventie
+  eist bij elke MUST een `WF-###` met verifier-check, golden en negatief, en dit
+  gedrag hoort niet in `spec/verifier/` thuis — een verifier die het afdwong,
+  zou één doelformaat aan elke consument opleggen. De pinnende artefacten zijn
+  de JUnit-suite van de backend en gate 12, en de alinea zegt dat nu ook.

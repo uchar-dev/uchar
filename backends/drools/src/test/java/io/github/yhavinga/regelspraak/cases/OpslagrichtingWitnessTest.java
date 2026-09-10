@@ -250,6 +250,25 @@ class OpslagrichtingWitnessTest {
         assertTrue(e.getMessage().contains("de rol 'werf' op Schuit deelt haar naam met een gedeclareerd lid"), e.getMessage());
     }
 
+    @Test void de_rollidmaatschapscheck_weigert_hetzelfde_veld() throws Exception {
+        // The FIFTH reader, and the one that does NOT navigate: the §8.1.7 near-side rolcheck decides whether the
+        // subject fills a role by NULL-TESTING that same reference field ("is een schuit" -> `werf != null`). That
+        // is why it sat outside the navigated four — and why it is the worst of the family: a displacing attribute
+        // is non-null whenever it holds a value, so the check reads that VALUE as proof of role membership and
+        // fires a rule ref and clingo leave unfired. Measured on the pre-gate jar, on a verifier-clean and
+        // ref-clean model, in BOTH transpiler branches identically:
+        //     ref / clingo : S1.toeslag leeg   (S1 fills no role — no link was written)
+        //     Drools       : FAIL "verwacht leeg, werkelijk 8"   (the attribute's 5 read as a filled role)
+        // Not a navigation bug and not fixed by gating the navigated readers: it needs the SAME shared question,
+        // asked at the null-test.
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(naamdelendeRolcheck(), JSON.readTree(schuitZonderRol(null, null))));
+        assertTrue(e.getMessage().contains("toeslag van een schuit"), e.getMessage());
+        assertTrue(e.getMessage().contains("rollidmaatschapscheck"), e.getMessage());
+        assertTrue(e.getMessage().contains("de rol 'werf' op Schuit deelt haar naam met een gedeclareerd lid"), e.getMessage());
+        assertTrue(e.getMessage().contains("§13.3.9 opslagrichting"), e.getMessage());
+    }
+
     // navReactiviteit — the fourth hop reader — gets the same gate but NO witness of its own, and the reason is
     // structural: it is reached only from the scalar value path AFTER that path's own reader lowered, and both
     // readers now gate every hop they walk, so a hop without a field cannot arrive there. The gate stays because
@@ -404,6 +423,29 @@ class OpslagrichtingWitnessTest {
         regel.set("waarde", eigen);
         regel.put("soort", "GELIJKSTELLING");
         return tijdelijk("schuit-naamdeling-vergelijking", ir);
+    }
+
+    /** The same collision under a §8.1.7 NEAR-SIDE ROLCHECK: the `toeslag` rule keeps its own-attribute value and
+     *  its voorwaarde becomes "de Schuit een schuit is", whose lowering null-tests Schuit's `werf` reference —
+     *  the field the attribute displaced. Verifier-clean and ref-clean (ref: toeslag stays leeg). */
+    private static Path naamdelendeRolcheck() throws Exception {
+        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(NAVIGATIEPREMIE)));
+        ((ObjectNode) ir.get("objecttypen").get("Schuit").get("attributen")).set("werf", numeriek());
+        houdRegel(ir, "toeslag van een schuit");
+        ObjectNode regel = (ObjectNode) ir.get("resolvedRegels").get(0);
+        ObjectNode check = JSON.createObjectNode();
+        check.put("node", "Rollidmaatschap").put("rol", "schuit").put("anderTeFiller", "Werf")
+             .put("negatie", false).put("bron", "de Schuit een schuit is");
+        regel.set("voorwaarde", check);
+        ObjectNode eigen = JSON.createObjectNode();
+        eigen.put("node", "AttribuutRef").put("attribuut", "lengte").put("objecttype", "Schuit")
+             .put("onderwerpBron", "de Schuit").putNull("navigatieRol");
+        eigen.set("type", numeriek());
+        eigen.put("bron", "de lengte van de Schuit").put("set", false);
+        eigen.putArray("navigatiePad");
+        regel.set("waarde", eigen);
+        regel.put("soort", "GELIJKSTELLING");
+        return tijdelijk("schuit-naamdeling-rolcheck", ir);
     }
 
     /** Reduce a model to ONE named rule, in both the declaration list and the resolved list — so each arm below

@@ -929,23 +929,26 @@ public final class ExecModelTranspiler {
         return io.github.yhavinga.regelspraak.schema.FactModelGenerator.heeftReferentieVeld(model, ot, rol, doel);
     }
 
-    /** The same question on the READ side: whether a navigated hop from {@code ot} over {@code rol} to {@code doel}
-     *  has a bean field to read at all. Every navigated reader asks THIS — {@link #navReader}'s GENAVIGEERD case,
-     *  {@link #navKetenReader}'s hops, {@link #navComparisonRole} and {@link #navReactiviteit}'s far-side joins — so
-     *  the read can never drift from what {@code leden()} renders, exactly as the case-input, creation and fold-join
-     *  readers already do. On a refusal it records {@link #navReden}; the caller returns null and the construct's
-     *  skip carries that reason instead of a scope note.
+    /** The same question on the READ side: whether a hop from {@code ot} over {@code rol} to {@code doel} has a bean
+     *  field to read at all, asked by every reader that TOUCHES that field — {@link #navReader}'s GENAVIGEERD case,
+     *  {@link #navKetenReader}'s hops, {@link #navComparisonRole}, {@link #navReactiviteit}'s far-side joins, and
+     *  the §8.1.7 near-side rolcheck, which does not navigate but null-TESTS the very same field. {@code lezer}
+     *  names which one, because the reasons end up side by side in the gate report. On a refusal it records
+     *  {@link #navReden}; the caller returns null and the construct's skip carries that reason instead of a scope
+     *  note.
      *
      *  <p>Why it must be asked HERE and not left to the getter: a displaced field still EXISTS, holding a
-     *  {@code BigDecimal} or a {@code boolean}. The hop then reads a non-null NUMBER where the relation is absent,
-     *  the chain's leeg short-circuit does not fire, and the attribute read off that number yields null — which the
-     *  arithmetic treats as an unset value rather than as ch. 1.2's absent relation. Measured on a verifier-clean,
-     *  ref-clean model (2026-09-10): {@code 20% van het tarief van de werf} answered LEEG where ref and clingo
-     *  write 0, with no ERROR and no reason — a plain value-divergence. On the comparison side the same read
-     *  aborted the fire ({@code ConstraintEvaluationException}). Both are now per-form refusals. */
-    private boolean navVeld(Objecttype ot, String rol, Objecttype doel) {
+     *  {@code BigDecimal} or a {@code boolean}. A navigated hop then reads a non-null NUMBER where the relation is
+     *  absent, the chain's leeg short-circuit does not fire, and the attribute read off that number yields null —
+     *  which the arithmetic treats as an unset value rather than as ch. 1.2's absent relation. Measured on
+     *  verifier-clean, ref-clean models (2026-09-10): {@code 20% van het tarief van de werf} answered LEEG where
+     *  ref and clingo write 0; the same read on the comparison side aborted the fire
+     *  ({@code ConstraintEvaluationException}); and the rolcheck's {@code veld != null} read that displacing number
+     *  as PROOF OF MEMBERSHIP and fired a rule ref and clingo leave unfired ("verwacht leeg, werkelijk 8"). All
+     *  three are now per-form refusals. */
+    private boolean heeftVeld(String lezer, Objecttype ot, String rol, Objecttype doel) {
         if (heeftReferentieVeld(ot, rol, doel)) return true;
-        navReden = "genavigeerde lezing: " + geenReferentieveldReden(ot, rol, doel) + " (§13.3.9 opslagrichting)";
+        navReden = lezer + ": " + geenReferentieveldReden(ot, rol, doel) + " (§13.3.9 opslagrichting)";
         return false;
     }
 
@@ -959,15 +962,11 @@ public final class ExecModelTranspiler {
     /** Why {@code ot}'s bean carries no reference field for the to-ONE role {@code rol} toward {@code doel} — the
      *  precise §13.3.9 reason, so a per-form refusal names the bean-model limit instead of the generic scope note
      *  (the {@code schendingReden} pattern, and the defaults arm's kenmerktarget SKIP, applied to the reference
-     *  fields). The two causes are DIFFERENT and are named apart: a declared member of the same name DISPLACED the
-     *  reference (leden()'s dedup), or the model derives no unique field for that role at all. */
-    private String geenReferentieveldReden(Objecttype ot, String rol, Objecttype doel) {
-        return ot.heeftLid(rol)
-                ? "de rol '" + rol + "' op " + ot.naam + " deelt haar naam met een gedeclareerd lid — het beanveld"
-                  + " draagt dat attribuut/kenmerk en niet de referentie (leden(): attribuut > kenmerk >"
-                  + " referentie), dus de koppeling naar " + doel.naam + " heeft geen veld"
-                : "het beanmodel leidt voor de enkelvoudige rol '" + rol + "' op " + ot.naam
-                  + " geen referentieveld naar " + doel.naam + " af";
+     *  fields). The sentence itself lives beside the derivation it explains
+     *  ({@link io.github.yhavinga.regelspraak.schema.FactModelGenerator#geenReferentieveldReden}), so this branch
+     *  and the DRL-text branch cannot drift into two wordings for one limit. */
+    private static String geenReferentieveldReden(Objecttype ot, String rol, Objecttype doel) {
+        return io.github.yhavinga.regelspraak.schema.FactModelGenerator.geenReferentieveldReden(ot, rol, doel);
     }
 
     /** Why the last {@link #aggregatie} call returned null, when the cause is a §13.3.9 bean-MODEL limit rather
@@ -1766,7 +1765,7 @@ public final class ExecModelTranspiler {
             if (rol == null) return null;   // ONOPGELOST
         }
         if (subject != null && model.naarVeelRol(subject, a.objecttype(), rol)) return null;   // NAAR_VEEL
-        if (!navVeld(subject, rol, a.objecttype())) return null;   // §13.3.9 no bean field to read (name-dedup)
+        if (!heeftVeld("genavigeerde lezing", subject, rol, a.objecttype())) return null;   // §13.3.9 no bean field to read (name-dedup)
         // GENAVIGEERD: read the relation field on the subject, then the attribute on the (known) target type — both
         // typed (Accessors LMF) when the fact class is known at build time. Null relation -> leeg (null-safe).
         java.util.function.Function<Object, Object> roleGet = typedGetter(factClass(subject), rol);
@@ -1788,7 +1787,7 @@ public final class ExecModelTranspiler {
         Objecttype cur = subject;
         for (int i = 0; i < a.navigatiePad().size(); i++) {
             // EVERY hop, not just the first: a chain is only readable where each of its links has a field.
-            if (!navVeld(cur, a.navigatiePad().get(i), bereikt.get(i))) return null;   // §13.3.9 name-dedup
+            if (!heeftVeld("genavigeerde lezing", cur, a.navigatiePad().get(i), bereikt.get(i))) return null;   // §13.3.9 name-dedup
             hops.add(typedGetter(factClass(cur), a.navigatiePad().get(i)));
             cur = bereikt.get(i);
         }
@@ -1836,7 +1835,7 @@ public final class ExecModelTranspiler {
                 List<java.util.function.Function<Object, Object>> hops = new ArrayList<>();
                 Objecttype cur = subject;
                 for (int i = 0; i < a.navigatiePad().size(); i++) {
-                    if (!navVeld(cur, a.navigatiePad().get(i), bereikt.get(i))) return null;   // §13.3.9 name-dedup
+                    if (!heeftVeld("genavigeerde lezing", cur, a.navigatiePad().get(i), bereikt.get(i))) return null;   // §13.3.9 name-dedup
                     hops.add(typedGetter(factClass(cur), a.navigatiePad().get(i)));
                     cur = bereikt.get(i);
                 }
@@ -1850,7 +1849,7 @@ public final class ExecModelTranspiler {
                 if (rol == null) rol = model.verbindendeRol(subject, far);
                 if (rol == null) continue;                     // ONOPGELOST
                 if (model.naarVeelRol(subject, far, rol)) continue;   // NAAR_VEEL -> aggregate path, not a scalar join
-                if (!navVeld(subject, rol, far)) return null;   // §13.3.9 no bean field to join on (name-dedup)
+                if (!heeftVeld("genavigeerde lezing", subject, rol, far)) return null;   // §13.3.9 no bean field to join on (name-dedup)
                 java.util.function.Function<Object, Object> roleGet = typedGetter(factClass(subject), rol);
                 reachFar = roleGet;
                 key = far.naam + "|" + rol;
@@ -1892,7 +1891,7 @@ public final class ExecModelTranspiler {
         String rol = model.verbindendeRolViaNaam(subject, a.objecttype(), a.navigatieRol());
         if (rol == null) return null;
         if (subject != null && model.naarVeelRol(subject, a.objecttype(), rol)) return null;   // NAAR_VEEL
-        if (!navVeld(subject, rol, a.objecttype())) return null;   // §13.3.9 no bean field to read (name-dedup)
+        if (!heeftVeld("genavigeerde lezing", subject, rol, a.objecttype())) return null;   // §13.3.9 no bean field to read (name-dedup)
         return rol;
     }
 
@@ -3559,6 +3558,12 @@ public final class ExecModelTranspiler {
         if (c instanceof Conditie.Rollidmaatschap r) {
             String veld = subject != null ? model.verbindendeRol(subject, r.anderTeFiller()) : null;
             if (veld == null || model.naarVeelRol(subject, r.anderTeFiller(), veld)) return null;
+            // ...and the field must be the REFERENCE, not a declared member that took its name. This reader does not
+            // navigate — it null-TESTS the field — which is exactly why it was missed with the four navigated ones:
+            // a displaced BigDecimal/boolean is non-null, so the check reads the attribute's VALUE as proof that the
+            // subject fills the role. Measured 2026-09-10 on a verifier-clean, ref-clean model, both branches:
+            // "FAIL verwacht leeg, werkelijk 8" — the rule fired where ref and clingo leave it unfired.
+            if (!heeftVeld("rollidmaatschapscheck", subject, veld, r.anderTeFiller())) return null;
             boolean gevuldWanted = !r.negatie();
             return s -> (RegelSpraakRuntime.get(s, veld) != null) == gevuldWanted;
         }

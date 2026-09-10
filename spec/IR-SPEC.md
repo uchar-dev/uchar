@@ -1399,29 +1399,52 @@ types keep the loud rejection.
 
 **Roles and object-type members are separate namespaces.** WF-002 states
 that attributes and characteristics are separate namespaces; roles are a
-third. A to-one role MAY share its name, case-insensitively, with an
-attribute or a characteristic of the object type on the many side of the
-same fact type — the object type that a bean-shaped consumer would give
-the reference field. Such a document is **well-formed**, and no rule
-above narrows it. The reason is structural: a navigated read names its
-role hop and its attribute in *different* fields — `navigationPath` (plus
-the `roleBindings` extension) against `attribute` — so a role name and a
-member name never compete for one wire position. The reference interpreter and the
-ASP backend both answer such a document correctly today, with no special
+third. A role MAY share its name, case-insensitively, with an attribute
+or a characteristic of an object type the same fact type relates. Such a
+document is **well-formed**, and no rule above narrows it. The reason is
+structural: a navigated read names its role hop and its attribute in
+*different* fields — `navigatiePad`, plus the `navigatieBindingen`
+extension of ch. 4.1a, against `attribuut` (in v1 the unified `path`
+against `attribute`, row 4) — so a role name and a member name never
+compete for one wire position. The reference interpreter and the ASP
+backend both answer such a document correctly today, with no special
 case. It is a REACHABLE but UNINHABITED shape: swept 2026-09-10 over
 every corpus zone — 555 documents — the collision occurs zero times, so
 no existing case pins this and the paragraph is what states it.
+
+The neighbouring shape — one written name matching *several* reachable
+roles — is a different question and keeps its own answer: a loud executor
+fault, never a guess (ch. 4.3). Its two arms are pinned unevenly. The
+navigation arm is refused statically by WF-053. The case-input arm, where
+a case supplies links under a role key that resolves to two roles, is
+refused identically by both executors but while LOADING the case, which
+the red corpus's expected-fault contract does not reach; that gap is
+carded in `backlog/new/20260910-rood-zone-laadfouten.md`.
 
 *Consumer note, recorded rather than hidden.* A consumer that
 materialises each object type as a record with **one property per
 identifier** — a Java bean, a struct, a row — cannot hold that shape: it
 has one slot where the document has two names, so one of the two is
-displaced. Such a consumer MUST refuse the affected construct per form,
-loudly and naming the displaced reference; it MUST NOT read the
-displacing member in the role's place, and it MUST NOT reject the
-document as ill-formed. This is a limit of that target format, not a
-well-formedness rule: refusing the document would deny a program that
-has exactly one meaning, which the other executors compute.
+displaced. This bites wherever the relation's scalar reference lands,
+which is at the end whose *connecting role is to-one* — not only the many
+side of a one-to-many fact type, but each end of a one-to-one one, and a
+self-typed pair on the single bean it has.
+
+That is a limit of the target format, not a well-formedness rule, and
+this specification does not lift it into one: rejecting the document
+would deny a program that has exactly one meaning, which the other
+executors compute. What such a consumer does instead is refuse the
+affected construct per form, loudly and naming the displaced reference,
+rather than reading the displacing member in the role's place. The
+Drools backend does exactly that in both of its transpiler branches, at
+every reader that touches the field: the navigated single-hop, chain,
+comparison and reactivity reads, and the ch. 8.1.7 role-membership
+check, which does not navigate but null-tests the same field. Those
+refusals are pinned by that backend's own test suite and by gate 12, not
+by `spec/verifier/` — a verifier that enforced them would be enforcing
+one target format's shape on every consumer. Its remaining unaudited
+readers of that field are carded in
+`backlog/new/20260910-drools-ongepoorte-rollezers.md`.
 
 ### 2.7 Dimension
 
