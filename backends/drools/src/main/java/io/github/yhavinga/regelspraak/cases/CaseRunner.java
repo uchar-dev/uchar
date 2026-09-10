@@ -491,8 +491,13 @@ public final class CaseRunner {
                 // cross-type pair derives no bean field at all, so resolving it by name would call a setter no
                 // bean has. Where the by-pair search already succeeds the outcome is unchanged — a by-name hit is
                 // always one of the by-pair candidates, so a unique pair resolves to the same role either way.
+                // The self-typed guard is the same one the sister test below carries, for the same reason and
+                // with the same measured reach: zelfpaarRollen derives fields ONLY for a self-typed pair, so
+                // cross-type it could at best fire on a name coincidence. Stated on both tests rather than on
+                // one, so the pair reads as one rule.
                 String viaNaam = model.verbindendeRolViaNaam(tI, tL, e.getKey());
-                boolean zelfpaar = viaNaam != null && FactModelGenerator.zelfpaarRollen(model, tI).contains(viaNaam);
+                boolean zelfpaar = viaNaam != null && tI.naam.equalsIgnoreCase(tL.naam)
+                        && FactModelGenerator.zelfpaarRollen(model, tI).contains(viaNaam);
                 // the field on THIS bean (to-one from here): the written self-pair role, else the type pair
                 String rolIL = zelfpaar ? viaNaam : model.verbindendeRol(tI, tL);
                 // The SISTER role — the one THIS instance fills — whose reference field lives on the TARGET

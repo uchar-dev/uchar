@@ -420,8 +420,9 @@ penningen, TO-MANY) → 1:N. `dossiervoering` = dossierhouder (Jutter, to-one) /
 dossier (Dossier, mv dossiers, to-one) → 1:1. Objectcreatie 1 mint per
 penninggerechtigde Jutter een Penning (bedrag := vondstwaarde, kenmerk
 uitgereikt) met terugkoppeling over penningbezit; objectcreatie 2 mint een
-Dossier, geblokkeerd als het subject de to-one rol `dossier` in de
-invoermomentopname al vult. Consistenties: `penningcontrole` (elke Penning is
+Dossier, geblokkeerd als de to-one rol `dossier` in de invoermomentopname al
+NAAR HET SUBJECT TOE gevuld is (het subject vervult de andere rol,
+`dossierhouder`). Consistenties: `penningcontrole` (elke Penning is
 uitgereikt) en `houderscontrole` (het aantal houder van de Penning ≥ 1).
 
 Invoer zoals gepind: J3 (vondstwaarde 7, penninggerechtigd) met
@@ -450,12 +451,16 @@ kaart voorspelde. Gemeten, letterlijk:
 "vuurt NIET"-vorm:
 
 1. `case2` houdt zijn vier andere verwachtingen ongewijzigd en krijgt een
-   VIERDE instantie: **P2** (Penning, bedrag 3, geen rollen, geen kenmerken,
-   door geen enkele Jutter genoemd). `houderscontrole` heeft daarmee weer een
-   vurende getuige, en die vuurt nu waar de relatie werkelijk niet bestaat.
-   Handberekend: P2 verandert niets aan J3's drie waarden (P2 is niet aan J3
-   gekoppeld) en voegt `penningcontrole × P2` en `houderscontrole × P2` aan het
-   kanaal toe. De pin verhuist van `houderscontrole × P1` naar
+   VIERDE instantie: **P2** (Penning, bedrag 3, geen rollen, door geen enkele
+   Jutter genoemd, en — sinds de fixronde, punt K1 hieronder — met kenmerk
+   `uitgereikt`). `houderscontrole` heeft daarmee weer een vurende getuige, en
+   die vuurt nu waar de relatie werkelijk niet bestaat. Handberekend: P2
+   verandert niets aan J3's drie waarden (P2 is niet aan J3 gekoppeld) en voegt
+   `houderscontrole × P2` aan het kanaal toe — en dankzij dat kenmerk NIET ook
+   `penningcontrole × P2`, zodat het kanaal exact de twee gepinde feiten draagt
+   (`penningcontrole × P1; houderscontrole × P2`, gemeten) en er niets
+   ongepinds meerijdt onder de existentiële match van een
+   `inconsistent`-verwachting. De pin verhuist van `houderscontrole × P1` naar
    `houderscontrole × P2`. Deze case is **besluitONafhankelijk**: hij slaagt
    onder beide lezingen. Gemeten: `oracle: PASS (5 expectations)` in beide.
 2. Nieuwe **`case3`**, die het besluit zelf pint langs de enige route die
@@ -656,8 +661,9 @@ draagt de omzetting met de gemeten rode uitvoer op zijn eigen plek:
    → **`…_blokkeert_de_creatie_ook`**. Dit derde blok — in een ánder bestand —
    pinde dezelfde lezing via de **objectcreatie-guard**: de ch. 5.5-1:1-guard
    vroeg "welk EIND is geschreven", en met de link alleen op de gemunte zijde
-   muntte hij door (heffing 150). Onder ch. 5.7a vraagt de guard of het subject
-   de rol VERVULT, en dat doet het na één geleverde poot, welke dan ook.
+   muntte hij door (heffing 150). Onder ch. 5.7a vraagt de guard of de
+   gemunte-zijde-rol al NAAR HET SUBJECT TOE gevuld is, en dat is ze na één
+   geleverde poot, welke van de twee dan ook.
    **Beide uitvoerders zijn het eens en beide armen landen nu op 6.**
    `ref` hermeten op precies dat model en die case:
    `MISMATCH: J1.heffing = 6, expected 150` en, met 6 verwacht,
@@ -922,3 +928,77 @@ bereikt die tak, dus dit sluit oppervlak in plaats van gedrag te veranderen.
 examples / 433 casussen), 7 PASS (397 weerleggers / 36 overlevers), 12 PASS
 (played 121, JUnit 271, auto-excluded 44, value-divergence 1). Ongewijzigd ten
 opzichte van de vervolgronde — de fixronde raakt geen enkele telling.
+
+---
+
+## Slotronde (2026-09-10, na lens 2)
+
+Lens 2 hermat alles en vond één middelzware fix plus poetswerk. Tak eerst
+gerebased op main `0b624db` — conflictvrij.
+
+**[MIDDEL] De "fills"-omkering.** De in de fixronde herschreven ch. 5.5-zin
+vroeg of het subject de created-side rol **fills**, maar de code
+(`role_links world0 i0 new_role`) leest of die rol GEVULD IS RICHTING het
+subject — en het document definieert "fills" tweemaal andersom (ch. 5.8a: het
+subject vervult de rol als zijn referentie naar de ándere kant staat; ch. 5.7a,
+deze kaart zelf: de zusterrol is "the role `a` itself fills"). Kruistypisch was
+de zin zelfs onmogelijk: J1 vervult nooit `rekenkamer`, alleen
+`opdrachtgever`. Rechtgezet met de constructie die ch. 5.7a al draagt —
+"already **filled toward** the subject" — en dezelfde omkering meelopend
+gecorrigeerd in `anchor/jutterswet-penninguitgifte/NOTE.md` (drie plekken),
+`ExecModelTranspiler` (twee commentaarplekken) en deze Result (twee plekken).
+
+**[LAAG] "no case line writes anything on W2".** Onwaar: case 2 schrijft wel
+degelijk `rangnummer` op W2. Nu "no case ROLE line names W2", met de
+verduidelijking erbij dat het de RELATIE is die eenzijdig gespeld wordt, niet
+de instantie. Zowel in ch. 5.7a als in de ketenband-`NOTE.md`.
+
+**[LAAG] De spiegel-en-lege-lijst-claim, hermeten.** "the mirror only adds a
+list where a side had none" was te sterk. Gemeten met een tijdelijke
+instrumentatie over de hele groene zone: de pass vult in **zes** goldens een al
+niet-lege lijst aan — `anchor/jutterswet-gemeenteberging/case1`,
+`jutterswet-ketenband/case3`, `jutterswet-postwacht/case`,
+`jutterswet-sluitsom/case1-genavigeerde-operand`,
+`anchor/jutterswet-strandregister/case3`, `jutterswet-wachtploeg/case` — en in
+elk daarvan is die lijst er één die de pass ZELF eerder in dezelfde wandeling
+bouwde. Nagerekend per geval: geen van de zes doelen schrijft die sleutel in
+zijn eigen case-invoer. Het preciezere feit staat nu in ch. 5.7a: de twee
+ordeningen komen nooit in één lijst samen. Ook "label order" is scherper:
+**oplopende lexicografische volgorde over het rauwe label**
+(`Map.Make(String)`), niet bestandsvolgorde.
+
+**[LAAG] Result "De prijs".** De beschrijving van P2 dateerde van vóór K1 —
+bijgewerkt: P2 draagt `uitgereikt`, dus `penningcontrole` vuurt er NIET op en
+het kanaal is exact de twee gepinde feiten.
+
+**[LAAG] Zusterkaart.** "moet vooral niet route (b) nemen" wees nergens meer
+heen na het schrappen van de routes; nu zelfstandig geformuleerd, met wat (b)
+was (de spiegel in de lees-/vergelijkingslaag in plaats van in de invoerlaag)
+en waarom dat de verkeerde plek is: de invoerlaag schrijft het tweede beanveld
+één keer, waarna elke lezer hem ziet; een leeslaag-spiegel moet per lezer
+herhaald worden en de eerste vergeten lezer is een stille divergentie. De
+dekkingstabel had `jutterswet-ketenband` nog niet — toegevoegd, gedateerd, met
+de aantekening dat juist die rij het gat grotendeels dicht.
+
+**[LAAG] `WederkerigZelfpaarWitnessTest`:** `materialise_reciprocal` →
+`materialise_relations`, "§4.1" → "ch. 4.1", met de vermelding dat de
+wederkerige clausule sinds 2026-09-10 het bijzondere geval van ch. 5.7a is. En
+de VOORWAARTSE zelfpaar-toets in `CaseRunner` krijgt dezelfde
+zelfgetypeerd-guard als de zustertoets, zodat het paar als één regel leest
+(beide takken gemeten onbereikbaar).
+
+**[INFO] De WF-013-laadfout noemde de OPSLAGSLEUTEL**, en die is de
+meervoudsvorm waar de rol er een declareert — "the to-one role
+\"voorliggers\"" leest dan als een tegenspraak. De zin spelt de gedeclareerde
+naam nu uit zodra hij van de sleutel verschilt, en zwijgt erover als ze gelijk
+zijn. Beide vormen gemeten:
+
+    role "opvolgers": "W2" already links W1 under the to-one role "voorliggers"
+      (the storage spelling of the declared role "voorligger"); the reverse leg
+      of "W3" -> "W2" conflicts (WF-013 to-one)
+
+    role "opvolgers": "W2" already links W3 under the to-one role "voorligger";
+      the reverse leg of "W1" -> "W2" conflicts (WF-013 to-one)
+
+**Gates na de slotronde:** 1 PASS, 3 PASS (194 / 362), 5 PASS (515 / 433),
+12 PASS (played 121, JUnit 271). Geen telling beweegt.

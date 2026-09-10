@@ -12,7 +12,7 @@ case 2.
 | `penningbezit` | `houder` (Jutter, **to-one**) / `penning` (Penning, plural `penningen`, **to-many**) → **1:N** |
 | `dossiervoering` | `dossierhouder` (Jutter, to-one) / `dossier` (Dossier, plural `dossiers`, **to-one**) → **1:1** |
 | creation 1 | per penninggerechtigde Jutter a Penning: `bedrag := vondstwaarde`, characteristic `uitgereikt` set; back-link over `penningbezit` |
-| creation 2 | per penninggerechtigde Jutter a Dossier; back-link over `dossiervoering`, and **blocked** when the subject already fills the to-one `dossier` role in the input world |
+| creation 2 | per penninggerechtigde Jutter a Dossier; back-link over `dossiervoering`, and **blocked** when the to-one `dossier` role is already filled TOWARD the subject in the input world (the subject fills the other role, `dossierhouder`) |
 | rules | `aantal penningen` = AANTAL(penningen); `penningtotaal` = SOM(bedrag of all penningen) or 0; `aantal dossiers` = AANTAL(dossiers) |
 | consistenties | `penningcontrole`: every Penning is `uitgereikt`. `houderscontrole`: `aantal houder` of the Penning ≥ 1 |
 
@@ -32,8 +32,8 @@ Evaluation:
 1. Creation 1 fires on J3 (penninggerechtigd). The created-side role `penning`
    is to-many, so the linked-instance guard does not apply: a Penning is
    minted with `bedrag = 7`, `uitgereikt` set, and `houder = J3`.
-2. Creation 2 is **blocked**: the created-side role `dossier` is to-one and J3
-   already fills it (D1) in the input world.
+2. Creation 2 is **blocked**: the created-side role `dossier` is to-one and it
+   is already filled toward J3 by D1 in the input world.
 3. `aantal penningen` of J3 = |{P1, mint}| = **2** — input and mint mixing in
    one fold.
 4. `penningtotaal` of J3 = 5 + 7 = **12**.
@@ -70,7 +70,8 @@ Input: **J1** (vondstwaarde 4, penninggerechtigd) with `penningen: [P1]`;
 Mirror: `J1.penningen = [P1]` → `P1.houder = [J1]`.
 
 1. Creation 1 mints a Penning: `bedrag = 4`, uitgereikt, `houder = J1`.
-2. Creation 2 is **not** blocked (J1 fills no `dossier` role) → a Dossier is
+2. Creation 2 is **not** blocked (no Dossier fills the `dossier` role toward
+   J1) → a Dossier is
    minted and linked.
 3. `aantal penningen` = |{P1, mint}| = **2**.
 4. `penningtotaal` = 6 + 4 = **10**.

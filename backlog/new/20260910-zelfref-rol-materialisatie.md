@@ -235,6 +235,7 @@ tegenhanger van het buurgat dat de werkbank-commit zelf als openstaand noemt.
 | document | vorm | rolvulling | gate-12-kanaal |
 | --- | --- | --- | --- |
 | `corpus/golden/anchor/jutterswet-erflijn` | TWEE zelfgetypeerde feittypen: `erflijn` (beide rollen meervoudig) én `opvolging` (beide to-one) | case-invoer; `case.json` vult de to-one rol `opvolger` op W1/W2/W3 | EXCLUDE (`transpiler SKIP: aggregation join with BOTH sides plural`) |
+| `corpus/golden/jutterswet-ketenband` | `voorligger` to-one, `opvolger` meervoudig (1:N) | **case-invoer**; `case1`/`case3` vullen de to-one rol `voorligger`, en twee regels navigeren over beide rollen | PLAYED (alle drie de cases) — *toegevoegd 2026-09-10 door `20260910-reverse-rol-via-naam.md`; dit is de rij die het gat hieronder grotendeels dicht* |
 | `corpus/golden/anchor/jutterswet-wachtersketen` | beide to-one | **objectcreatie**, `roles: {}` | PLAYED |
 | `corpus/golden/synth2-budgetgrens-onder` | beide to-one | **objectcreatie**, `roles: {}` | PLAYED |
 | `corpus/rood/finite-chain-over-budget` | beide to-one | — | rode zone |
@@ -295,7 +296,14 @@ geen schemawijziging.
      `20260910-reverse-rol-via-naam.md`, samen met de drie assertieblokken die
      de gerichte lezing pinden (twee in `OpslagrichtingWitnessTest`, één in
      `ObjectCreatieWitnessTest`). Een volgende sessie hoeft daar niets meer te
-     bouwen en moet vooral niet route (b) nemen.
+     bouwen — en zeker niet het alternatief dat hier eerder als route (b)
+     stond: de spiegel alsnog in de LEES-/vergelijkingslaag leggen (de
+     verwachting bij het uitlezen omdraaien) in plaats van in de INVOERLAAG.
+     Dat is precies de plek waar hij niet hoort: de invoerlaag schrijft het
+     tweede beanveld één keer, waarna elke lezer — fold, navigatie,
+     creatieguard — hem vanzelf ziet; een leeslaag-spiegel zou per lezer
+     herhaald moeten worden en de eerste vergeten lezer is een stille
+     divergentie.
 
      Gemeten op precies deze bron, eenzijdige levering, verwachting
      `W2.voorgangerrang = 10`:

@@ -39,8 +39,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * a scalar hop and {@code Jutter( maat == $subject )} for the reverse aggregation scope. Here the name is
  * derived SYMBOLICALLY from the role — the wire's inert v0 schema-field baggage is never read.
  *
- * <p>The FILL is mirrored, which the field alone does not imply: RUNTIME-SEMANTICS §4.1 makes one reciprocal
- * entry hold in BOTH directions, and ref's {@code Case.materialise_reciprocal} writes the reverse leg at load
+ * <p>The FILL is mirrored, which the field alone does not imply: RUNTIME-SEMANTICS ch. 4.1 makes one reciprocal
+ * entry hold in BOTH directions — since 2026-09-10 the reciprocal case of ch. 5.7a's general law — and ref's
+ * {@code Case.materialise_relations} writes the reverse leg at load
  * so a one-sided case supply reads identically in every executor. Both goldens pin precisely that (a partner
  * that declares no roles of its own still reads its side), so the mirror is load-bearing, not cosmetic.
  */

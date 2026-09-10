@@ -5725,8 +5725,9 @@ public final class ExecModelTranspiler {
      *        subject updated. A to-many end has no field at all (it is stored as the other end's), so it is left
      *        alone; only a pair with NO writable end is refused.</li>
      *    <li>The <b>1:1 idempotence guard</b> reads the SUBJECT-side stored link (the forward field) rather than
-     *        the created object's back-reference — the field that answers "does the subject FILL the created-side
-     *        role", which is the question ch. 5.5 poses and how the interpreter reads it. Since ch. 5.7a the two
+     *        the created object's back-reference — the field that answers ch. 5.5's question, "is the
+     *        created-side role already FILLED TOWARD the subject" (the subject fills the other role), and the
+     *        one the interpreter reads. Since ch. 5.7a the two
      *        ends carry the same relation (the case-input layer writes both on a 1:1 shape), so this is a choice
      *        of field, no longer a choice of reading.</li>
      *    <li>A <b>kenmerkwaardetoekenning</b> (§13.4.6.4) sets the mark only when its value is true; false or
@@ -5890,9 +5891,10 @@ public final class ExecModelTranspiler {
         if (eenOpEen) {
             // ch. 5.5, the 1:1 linked-instance guard read as the interpreter reads it: the SUBJECT-side stored
             // link on the created-side role (ref's role_links over new_role), i.e. the forward field the
-            // consequence below writes. That field answers ch. 5.5's actual question — does the subject FILL the
-            // created-side role — and reading it also makes the write below safe: it can never hand an
-            // already-filled to-one role a second filler.
+            // consequence below writes. That field answers ch. 5.5's actual question — is the created-side
+            // role already FILLED TOWARD the subject (the subject itself fills the OTHER role, §8.1.7's sense)
+            // — and reading it also makes the write below safe: it can never hand an already-filled to-one
+            // role a second filler.
             // NB this is a choice of FIELD, not of reading. Until 2026-09-10 it was also the latter: a case
             // delivering the link solely on the created side did not block, recorded in the spec as the
             // storage-direction narrowing. ch. 5.7a WITHDREW that narrowing — a supplied link establishes the

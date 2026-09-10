@@ -1985,8 +1985,10 @@ linked-instance guard: an already linked instance — a case-supplied
 one included — blocks the creation; the executed guard reads the
 **input world** (a snapshot: v0's live fact-base negation is narrowed,
 recorded — cross-form blocking through links laid during evaluation is
-not mirrored), and asks whether the subject **fills** the created-side
-role in it. It does not ask which **leg** the case spelled: by ch. 5.7a
+not mirrored), and asks whether the created-side role is already
+**filled toward the subject** in it — the subject fills the *other*
+role, the one this chapter's back-link writes on the mint (ch. 5.8a's
+sense of "fills"). It does not ask which **leg** the case spelled: by ch. 5.7a
 a supplied link establishes the relation itself, so a delivery solely on
 the created side blocks exactly as a subject-side delivery does — the
 reverse leg the loader materialises is a link like any other, and the
@@ -2178,16 +2180,19 @@ Two consequences, both mechanical:
 
    *Recorded residue — member ORDER.* A supplied to-many list carries
    the order the case wrote it in; a materialised one accumulates its
-   members in **label order**, that being the order the pass walks the
-   input in. The two need not coincide, so a construct that exposes
-   member order — an ordered allocation's tie group, a first/last fold —
-   can see the difference between the two spellings. Nothing this
-   chapter decides is affected (membership and cardinality are
-   order-free, and ch. 4.2 makes a tie group simultaneous), so this is a
-   residue rather than a divergence; it is written down instead of left
-   to be discovered. No corpus case observes it — the mirror only adds a
-   list where a side had none, and every pinned value replays unchanged
-   in both executors.
+   members in **ascending label order** — plain lexicographic order over
+   the raw labels, that being the order the pass walks the input in, not
+   the order the case file lists them in. The two need not coincide, so
+   a construct that exposes member order — an ordered allocation's tie
+   group, a first/last fold — can see the difference between the two
+   spellings. Nothing this chapter decides is affected (membership and
+   cardinality are order-free, and ch. 4.2 makes a tie group
+   simultaneous), so this is a residue rather than a divergence; it is
+   written down instead of left to be discovered. The two orders never
+   meet in one list: measured over the whole corpus, the pass extends an
+   already non-empty list in six goldens, and in every one of them that
+   list is one the pass itself built earlier in the same walk — no
+   case-written list is ever appended to.
 2. **A reference-field fact model writes what it can hold.** Where an
    executor stores one scalar reference per to-one role, a **1:N**
    relation has exactly ONE field and that field already serves both
@@ -2214,9 +2219,10 @@ three different ways:
 The three rows are identical, and that identity is the law: how a case
 spells a relation does not change what the model computes from it. The
 values naming the *unsupplied* direction carry the weight — row 2 reads
-`W2.voorliggerrang = 10` although no case line writes anything on W2 at
-all, and row 3 reads `W1.opvolgeraantal = 2` although no case line
-writes anything on W1. W1's own `voorliggerrang` is **leeg** in every
+`W2.voorliggerrang = 10` although no case ROLE line names W2 at all,
+and row 3 reads `W1.opvolgeraantal = 2` although no case role line names
+W1. (Each instance still carries its own `rangnummer`; it is the
+relation, not the instance, that is spelled from one side only.) W1's own `voorliggerrang` is **leeg** in every
 row, and that is the flank: nothing fills `voorligger` toward W1, so the
 absent-link rule of ch. 5.8 reads leeg — establishing a relation in both
 directions is not the same as inventing one.

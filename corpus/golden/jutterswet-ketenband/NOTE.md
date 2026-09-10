@@ -51,9 +51,10 @@ the voorligger of both W2 and W3.** Each case spells it differently.
 The identity of the three rows IS the law: how a case spells a relation
 does not change what the model computes from it. The load-bearing
 entries are the ones naming the direction the case did not supply — case
-2 reads `W2.voorliggerrang = 10` although no case line writes anything
-on W2 at all, and case 3 reads `W1.opvolgeraantal = 2` although no case
-line writes anything on W1.
+2 reads `W2.voorliggerrang = 10` although no case ROLE line names W2 at
+all, and case 3 reads `W1.opvolgeraantal = 2` although no case role line
+names W1. (Every instance still carries its own `rangnummer`; it is the
+relation, not the instance, that is spelled from one side only.)
 
 `W1.voorliggerrang` is **leeg** in every case, and that is the flank:
 nothing fills `voorligger` toward W1, so ch. 5.8 rule 1 reads leeg.

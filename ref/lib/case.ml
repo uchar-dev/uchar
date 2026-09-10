@@ -475,12 +475,23 @@ let materialise_relations (doc : document) (world : World.t) =
                   in
                   if List.mem i.label existing then w
                   else if (not sister.rol_meervoudig) && existing <> [] then
+                    (* [store_key] is the STORAGE spelling, which is the role's
+                       PLURAL where it declares one (the plural-then-name
+                       preference above) — so a to-one role can be reported
+                       under a plural key. That reads like a contradiction, so
+                       the declared name is spelled out whenever it differs. *)
+                    let hoe =
+                      match sister.rol_naam with
+                      | Some n when norm n <> norm store_key ->
+                          Printf.sprintf " (the storage spelling of the declared role %S)" n
+                      | _ -> ""
+                    in
                     fail
-                      "role %S: %S already links %s under the to-one role %S; the reverse leg of \
+                      "role %S: %S already links %s under the to-one role %S%s; the reverse leg of \
                        %S -> %S conflicts (WF-013 to-one)"
                       key t
                       (String.concat ", " existing)
-                      store_key i.label t
+                      store_key hoe i.label t
                   else
                     {
                       w with
