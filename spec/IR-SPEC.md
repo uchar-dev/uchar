@@ -1397,6 +1397,32 @@ types keep the loud rejection.
   cardinality segments fail-open (an unmatched role silently stays
   to-one). **Delta (promotion)** for the fail-open part.
 
+**Roles and object-type members are separate namespaces.** WF-002 states
+that attributes and characteristics are separate namespaces; roles are a
+third. A to-one role MAY share its name, case-insensitively, with an
+attribute or a characteristic of the object type on the many side of the
+same fact type — the object type that a bean-shaped consumer would give
+the reference field. Such a document is **well-formed**, and no rule
+above narrows it. The reason is structural: a navigated read names its
+role hop and its attribute in *different* fields — `navigationPath` (plus
+the `roleBindings` extension) against `attribute` — so a role name and a
+member name never compete for one wire position. The reference interpreter and the
+ASP backend both answer such a document correctly today, with no special
+case. It is a REACHABLE but UNINHABITED shape: swept 2026-09-10 over
+every corpus zone — 555 documents — the collision occurs zero times, so
+no existing case pins this and the paragraph is what states it.
+
+*Consumer note, recorded rather than hidden.* A consumer that
+materialises each object type as a record with **one property per
+identifier** — a Java bean, a struct, a row — cannot hold that shape: it
+has one slot where the document has two names, so one of the two is
+displaced. Such a consumer MUST refuse the affected construct per form,
+loudly and naming the displaced reference; it MUST NOT read the
+displacing member in the role's place, and it MUST NOT reject the
+document as ill-formed. This is a limit of that target format, not a
+well-formedness rule: refusing the document would deny a program that
+has exactly one meaning, which the other executors compute.
+
 ### 2.7 Dimension
 
 | Field | Type | Meaning |
