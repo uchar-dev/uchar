@@ -1476,10 +1476,10 @@ places.* On the v0 wire the singular name stands in the `dagsoorten` list, and
 every REGISTERED spelling — singular and plural alike — stands as a KEY of the
 `dagsoortPerEenheid` registry. Until 2026-09-10 the check read the first place
 only, so both conjuncts held for the declared name and for no other registered
-spelling. The rule now runs over both, as three clauses in two positions
-(maintainer decision 2026-09-10 — the key-space clauses are ARMS of WF-017 and
-not a rule of their own: it is the same promoted MUST, checked wherever a
-spelling is registered):
+spelling. The rule now runs over both. Four subcases, covered by three clauses
+of this rule plus WF-001's (maintainer decision 2026-09-10 — the key-space
+clauses are ARMS of WF-017 and not a rule of their own: it is the same promoted
+MUST, checked wherever a spelling is registered):
 
 | # | collision | clause |
 |---|---|---|
@@ -1488,12 +1488,29 @@ spelling is registered):
 | 3 | declared name × declared name | **WF-001** (the `dagsoorten` namespace, ch. 2.1 identity) |
 | 4 | registered spelling × another day kind's spelling | **WF-017 arm (b)**, over `/dagsoortPerEenheid/<key>` — in the one form the wire can see: a DECLARED name registered as another day kind's spelling. The collision as such leaves no trace (one value per key), so no clause can reach it |
 
-*Arm (a) — a key that shadows a calendar unit.* The key space is what a
-consumer consults to decide whether a unit spelling is a day-kind unit; a
-spelling occurring as a key is admitted as a duration unit beside the calendar
-units (WF-035, WF-038). *Measured 2026-09-10:* before this arm, `"dagen":
-"schouwdag"` beside the ordinary entries was verifier-clean, so `datum + 5
-dagen` could read as day-kind arithmetic, while the same spelling DECLARED was
+*Arm (a) — a key that shadows a calendar unit.* Such a key makes the document
+contradict itself. `RUNTIME-SEMANTICS.md` ch. 1.2 settles the reading
+normatively: a duration's unit is recognised by spelling through the calendar
+table, and "a spelling outside the table is a declared day kind". A registry
+key says *this spelling is a day-kind unit*; a spelling the table carries says
+*this spelling is a calendar unit*. Both at once is not a reading a consumer
+can hold, and it is not a defect any one consumer must notice for the wire to
+be wrong.
+
+Two of them do not, and one does — *measured 2026-09-10, and it is the second
+reason the arm exists.* The verifier (WF-035, WF-038), `ref` and the ASP
+backend all consult the calendar table FIRST and reach the day-kind registry
+only where the table has nothing, so on those three a key `dagen` changes
+nothing at all: `datum + 5 dagen` stays calendar arithmetic. The Drools backend
+reverses the order at all four of its day-kind positions — it asks the registry
+before the table — so on the same document it reads day-kind arithmetic where
+the other three read calendar arithmetic. The executors SPLIT, which is what
+makes this a wire question rather than a taste. (The lookup order itself
+contradicts the normative sentence above; correcting it is the backend's own
+change, and it does not remove the contradiction on the wire.)
+
+*Measured 2026-09-10:* before this arm, `"dagen": "schouwdag"` beside the
+ordinary entries was verifier-clean, while the same spelling DECLARED was
 already refused by clause 1. Here the IR was weaker than its own producer, and
 what carries that is the REGISTRATION GUARD rather than the grammar: the
 RegelSpraak frontend refuses to register a spelling that coincides with any of
@@ -1507,6 +1524,23 @@ its warning surfaces in the emitted document's `diagnostics` array instead of
 on the console. Either way no document this frontend emits can carry the shape;
 it is wire-only, which is exactly why it must be a wire rule or nothing.
 Witness: `corpus/negatief/wf017-eenheidsleutel-schaduwt-kalendereenheid`.
+
+*What arm (a) does not reach: the ABBREVIATIONS, and it is a real flank.* Arm
+(a) and clause 1 both compare against the eighteen names the frontend's
+registration guard knows — the singular and plural of the nine units. The
+calendar table of `RUNTIME-SEMANTICS.md` ch. 1.2 recognises **thirty**
+spellings; the twelve that are neither singular nor plural (`jr`, `mnd`, `kw`,
+`wk`, `dg`, `u`, `min`, `sec`, `s`, `ms`, `secondes`, `millisecondes`) fall
+through both. *Measured 2026-09-10:* all twelve are verifier-clean as registry
+keys, and unlike the eighteen this flank is NOT wire-only — the frontend emits
+`Dagsoort de wk (mv: wks)` with exit 0, an empty `diagnostics` array and the
+registry key `wk`, and it admits `wk` as a declared name as well. Goldens
+carry the abbreviations as live calendar units (`jutterswet-vervaltermijn`
+uses `wk`, `mnd` and `kw`), so with the executors' lookup-order divergence
+above such a document splits them in earnest. Widening the comparison to the
+thirty-spelling table is not a free edit — the frontend's guard would have to
+widen with it, which is the conformance side of the pin — and it is carded:
+`backlog/new/20260910-dagsoort-afkortingssleutels.md`.
 
 *Arm (b) — a declared name that binds to another day kind.* Here the producer
 is exactly as weak as the wire. Registration is `putIfAbsent` — first-wins,
@@ -5029,9 +5063,9 @@ attachment, and one field beside it, by WF-097 below.
   *The key side carries no RESOLUTION rule, by decision and not by omission*
   (it does carry WF-017's collision arms since 2026-09-10; the two questions are
   independent). The carrying argument is what the WIRE carries, not what the
-  source language does. A day
-  kind's plural reaches v0 as a FURTHER KEY of this same map and as no field of
-  its own (ch. 2.9's `plural` lives on the v1 node), so nothing on the wire
+  source language does. A day kind's plural reaches v0 as a FURTHER KEY of this
+  same map and as no field of its own (ch. 2.9's `plural` lives on the v1
+  node), so nothing on the wire
   distinguishes a DECLARED plural from a DERIVED one or from an abbreviation —
   all three arrive as an ordinary key. A key rule would therefore have to
   reconstruct the missing distinction by fixing Dutch morphology inside an
@@ -5043,7 +5077,8 @@ attachment, and one field beside it, by WF-097 below.
   absent when the author omits one: the reference frontend derives a `-en`
   plural in exactly that case and cites §3.12 for doing so. The wire cannot see
   which of the two it is holding, and that is the point.)*
-  *Measured on the state this card lands on (2026-09-09):* **35 of the 70**
+  *Measured 2026-09-09, on the state THIS ARM's own card landed on — not on any
+  later one; the corpus has grown since:* **35 of the 70**
   entries the four zones hold are keyed on something other than the declared
   name. That figure is a count of ENTRIES and not of independent cases, and the
   difference matters here: the 70 entries carry only **four** distinct
@@ -6101,7 +6136,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-014 | dimension labels non-empty, duplicate-free, ordered | gate 3 | `jutterswet-vormenkabinet` (the seizoen labels) | `wf014-empty-labels` |
 | WF-015 | one timeline declaration per normalized name; references resolve | gate 3 | `jutterswet-penningjaar` | `wf015-timeline-collision` |
 | WF-016 | variable-start timeline is anchored (rule-layer check) | gate 3 (existence of the determination; the anchor-write typing is WF-032/WF-023) | `jutterswet-vormenkabinet` (the variable-start boekjaar with its start point) | `wf016-unanchored-variable-start` |
-| WF-017 | day-kind spellings shadow no built-in unit and no other day-kind | gate 3, three clauses over the two wire positions a spelling can occupy (ch. 2.9): the DECLARED name against the built-ins, plus **arm (a)** a registry KEY against the built-ins and **arm (b)** a declared name registered as a DIFFERENT day kind's unit spelling — the wire-visible form of the silent first-wins collision, whose losing registration the wire cannot show (one value per key). A key that is not a declared name stays free: no plural field exists on the v0 wire (the (s) argument, ch. 4.6) | `jutterswet-vormenkabinet` (two day kinds, each bound to itself — one of them only through the ch. 2.1 identity — and a plural key that collides with nothing) | `wf017-daykind-shadows-builtin` + `wf017-eenheidsleutel-schaduwt-kalendereenheid` (arm (a)) + `wf017-dagsoortnaam-bindt-vreemde-dagsoort` (arm (b), the frontend's own emission) |
+| WF-017 | day-kind spellings shadow no built-in unit and no other day-kind | gate 3, three clauses over the two wire positions a spelling can occupy (ch. 2.9): the DECLARED name against the built-ins, plus **arm (a)** a registry KEY against the built-ins and **arm (b)** a declared name registered as a DIFFERENT day kind's unit spelling — the wire-visible form of the silent first-wins collision, whose losing registration the wire cannot show (one value per key). A key that is not a declared name stays free: no plural field exists on the v0 wire (the (s) argument, ch. 4.6) | `jutterswet-vormenkabinet` (two day kinds, each bound to itself — one of them only through the ch. 2.1 identity — and two plural keys, `schouwdagen` and `stormvloeddagen`, each binding to its own day kind and colliding with no declaration) | `wf017-daykind-shadows-builtin` + `wf017-eenheidsleutel-schaduwt-kalendereenheid` (arm (a)) + `wf017-dagsoortnaam-bindt-vreemde-dagsoort` (arm (b), the frontend's own emission) |
 | WF-018 | parameter datatype resolves; timeline facet well-formed | gate 3 (datatype clause; the facet clause carries the WF-005 caveat) | `jutterswet-penningjaar` | `wf018-parameter-onbekend` |
 | WF-019 | serialization preserves declaration order | `scripts/check-ir-schema.sh` (byte-identical round-trip) | `jutterswet-vondsttelling` (multi-element ordered lists round-trip) | OPEN (no data-shaped counterexample exists: the canonical re-emit is a serializer property, so a reordering fault lives in a consumer, never in admissible data — recorded) |
 | WF-020 | rule names unique across all rule forms (ci) | gate 3 (via the v0 " #i" strip-and-group migration reading) | `jutterswet-vondstnummer` | `wf020-crossform-collision` |

@@ -927,12 +927,21 @@ let builtin_units =
    registered spelling. The two arms below read the second place; the clause
    over `/dagsoorten` above them is unchanged.
 
-   ARM (a) — a registry KEY that shadows a built-in calendar unit. The key
-   space is what `day_kind_unit` consults: a spelling occurring as a key is
-   admitted as a duration unit beside the calendar units in date arithmetic
-   (WF-035) and in a tijdsduur (WF-038). A key `dagen` therefore turns
-   `datum + 5 dagen` from ordinary calendar arithmetic into day-kind
-   arithmetic. Measured 2026-09-10 on the pre-arm binary (md5
+   ARM (a) — a registry KEY that shadows a built-in calendar unit. Such a key
+   makes the document contradict itself: `RUNTIME-SEMANTICS.md` ch. 1.2 states
+   normatively that a duration's unit is recognised by spelling through the
+   calendar table and that "a spelling outside the table is a declared day
+   kind", while a registry key declares exactly that spelling to be a day-kind
+   unit. Note what this arm does NOT claim, measured 2026-09-10: `day_kind_unit`
+   is consulted here (WF-035, WF-038) only in the None branch of
+   `time_unit_of_eenheid`, and `ref` and the ASP backend resolve in the same
+   order, so on those three a key `dagen` changes nothing — `datum + 5 dagen`
+   stays calendar arithmetic. The Drools backend reverses the order at all four
+   of its day-kind positions (it asks the registry before the table), so the
+   same document reads as day-kind arithmetic there. That divergence — the
+   executors splitting on one document — is the arm's second reason; the
+   backend's lookup order is its own conformance question and does not remove
+   the contradiction on the wire. Measured 2026-09-10 on the pre-arm binary (md5
    67becaba23c6d3364a9f1a080355541e), `jutterswet-schouwrooster` with one
    entry added and nothing else changed: `"dagen": "schouwdag"` beside the four
    ordinary entries was `verifier: PASS`, while the same spelling DECLARED is
@@ -950,6 +959,20 @@ let builtin_units =
    frontend emits carries the shape, so the arm is wire-only, and that is
    precisely why it must be a wire rule or nothing.
    Witness: `corpus/negatief/wf017-eenheidsleutel-schaduwt-kalendereenheid`.
+
+   The FLANK this arm leaves open, named because it is not small: the guard's
+   eighteen names are the singulars and plurals, while the calendar table
+   recognises THIRTY spellings. The twelve abbreviations (`jr`, `mnd`, `kw`,
+   `wk`, `dg`, `u`, `min`, `sec`, `s`, `ms`, `secondes`, `millisecondes`) pass
+   both this arm and the clause above. Measured 2026-09-10: all twelve are
+   verifier-clean as registry keys, and this flank is NOT wire-only — the
+   frontend emits `Dagsoort de wk (mv: wks)` with exit 0 and an empty
+   `diagnostics`, registering `wk`. Goldens use the abbreviations as live
+   calendar units (`jutterswet-vervaltermijn`: `wk`, `mnd`, `kw`), so with the
+   Drools lookup order above such a document splits the executors in earnest.
+   Widening to the thirty-spelling table would have to move the frontend's
+   guard with it; carded as
+   `backlog/new/20260910-dagsoort-afkortingssleutels.md`.
 
    ARM (b) — a DECLARED day-kind name that occurs as a key must bind to
    ITSELF. This is the wire-visible form of the day-kind/day-kind collision.

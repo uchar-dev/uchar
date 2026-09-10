@@ -178,10 +178,9 @@ ingang, verder niets gewijzigd):
     $ verifier.exe corpus/negatief/wf017-eenheidsleutel-schaduwt-kalendereenheid/ir.json
     verifier: PASS
 
-De ingang is `"dagen": "schouwdag"` naast de vier gewone ingangen; de sleutel
-wordt daarmee door de dagsoort-eenheidslezing toegelaten als duureenheid naast
-de kalendereenheden (WF-035/WF-038). Dezelfde spelling als GEDECLAREERDE naam
-was al `WF-017 FAIL`. Ook de producentkant hermeten:
+De ingang is `"dagen": "schouwdag"` naast de vier gewone ingangen. Dezelfde
+spelling als GEDECLAREERDE naam was al `WF-017 FAIL`. Ook de producentkant
+hermeten:
 
     $ make ir FILE=builtin.rgs        # Dagsoort de vaardag (mv: weken);
       WARNING (line 0): dagsoort-eenheid 'weken' valt samen met een ingebouwde
@@ -200,12 +199,18 @@ console maar in het `diagnostics`-veld van het geëmitteerde document:
     $ make ir FILE=bi-uren.rgs        # Dagsoort de vaardag (mv: uren);
     ir: … geschreven naar bi-uren.json        frontend exit=0
     dagsoortPerEenheid: {"vaardag": "vaardag"}    <- 'uren' niet geregistreerd
-    diagnostics: [{"severity":"WARNING","message":"dagsoort-eenheid 'uren' valt
-                   samen met een ingebouwde tijdseenheid en wordt niet als
-                   dagsoort-eenheid geregistreerd","line":0}]
+    diagnostics: [
+      {
+        "node": "Diagnostic",
+        "severity": "WARNING",
+        "message": "dagsoort-eenheid 'uren' valt samen met een ingebouwde tijdseenheid en wordt niet als dagsoort-eenheid geregistreerd",
+        "line": 0
+      }
+    ]
 
 Geen enkel door deze frontend geëmitteerd document draagt de vorm dus, en dat
-is wat wire-only draagt.
+is wat wire-only draagt — voor déze achttien namen. De twaalf afkortingen die
+de kalendertabel óók kent, zijn wél produceerbaar; zie §11.
 
 **Gat (b)**, end-to-end door de eigen frontend (jars in het gitignored `lib/`;
 de bron van `frontends/` is niet aangeraakt):
@@ -390,8 +395,10 @@ Aan te vullen achter de bestaande "**Landed (2026-09-09, WF-034 arm (s) …)**":
 > `wf017-eenheidsleutel-schaduwt-kalendereenheid` en
 > `wf017-dagsoortnaam-bindt-vreemde-dagsoort` (de eigen emissie van de
 > frontend), goede binding positief gepind in `jutterswet-vormenkabinet`. De
-> sleutelkant houdt geen RESOLUTIE-regel; de producent-diagnostiek op de stille
-> `putIfAbsent` staat nog open aan de frontendkant.
+> sleutelkant houdt geen RESOLUTIE-regel; open blijven de producent-diagnostiek
+> op de stille `putIfAbsent` (frontendkant) en de twaalf afkortingen die de
+> kalendertabel wél en de achttien-lijst niet kent
+> (`20260910-dagsoort-afkortingssleutels`).
 
 De zinsnede "the two measured WF-017 key/spelling gaps are carded (backlog
 20260909-wf017-sleutel-en-spellingsbotsing)" in dezelfde rij is daarmee
@@ -454,3 +461,56 @@ openstaat is alleen de frontend-diagnostiek).
 
 `spec/CONSTRUCTS.md` bleef ook in deze ronde onaangeraakt: de rij-23-achterblijver
 en de §8-zin landen serieel bij de merge, zoals het registerkanaal voorschrijft.
+
+### 11. Slotronde (2026-09-10)
+
+Een tweede lezer bevestigde de check zelf volledig (het randgeval
+"gedeclareerde sleutel bindt vreemd" vuurt, de achttien-lijst is gelijk aan de
+registratiewacht van de frontend, canoniciteit en gates in orde) en vond twee
+middelzware tekstpunten. Beide zelf nagemeten voordat de tekst bewoog.
+
+**1. De schadeclaim van arm (a) was onwaar voor drie van de vier lezers.**
+De verifier roept `day_kind_unit` in WF-035/WF-038 uitsluitend aan in de
+`None`-tak van de kalendertabel-opzoeking; `ref` (`eval.ml`) en de ASP-backend
+resolven in dezelfde volgorde. Een spelling die de tabel kent bereikt de
+dagsoort-opzoeking daar dus nooit. Discriminerend nagemeten op
+`jutterswet-vervaltermijn` (een golden die `wk`, `mnd` en `kw` als levende
+kalendereenheid draagt), met dagsoort `schouwdag` en die drie spellingen als
+dagsoortsleutel toegevoegd:
+
+    verifier: PASS
+    ref: oracle: PASS (7) / PASS (7) / PASS (8)   <- identiek aan de golden
+
+De Drools-backend zet de dagsoort-opzoeking wél vóór de kalendertabel, op alle
+vier zijn dagsoortposities (`ExecModelTranspiler` §6.10 en §6.11,
+`DrlTranspiler` §6.10 en §6.11). Dat botst met de normatieve zin in
+`RUNTIME-SEMANTICS.md` ch. 1.2 ("a spelling outside the table is a declared day
+kind"). De eerlijke grond van arm (a) is daarmee tweeledig en staat nu zo in
+ch. 2.9, in de arm-comment en in de getuige-NOTE: (i) het document spreekt
+zichzelf tegen — een registersleutel verklaart een spelling tot dagsoorteenheid
+die de tabel als kalendereenheid kent; (ii) de uitvoerders SPLITSEN erop, en
+dat is gemeten. De bewering dat `datum + 5 dagen` in de OCaml-lezers
+dagsoortrekenkunde zou worden, is geschrapt.
+
+**2. De afkortingenflank benoemd en gekaart.** Arm (a) en de
+gedeclareerde-naam-clausule vergelijken met de achttien namen van de
+registratiewacht; de kalendertabel kent er dertig. De twaalf afkortingen (`jr`,
+`mnd`, `kw`, `wk`, `dg`, `u`, `min`, `sec`, `s`, `ms`, `secondes`,
+`millisecondes`) passeren beide. Gemeten 2026-09-10: alle twaalf zijn
+verifier-schoon als registersleutel, en anders dan de achttien is deze vorm
+**niet wire-only** — `Dagsoort de wk (mv: wks);` levert exit 0, een leeg
+`diagnostics` en de sleutel `wk`. Met de Drools-volgorde hierboven splijt zo'n
+document de uitvoerders echt. ch. 2.9 draagt nu een expliciete grens-alinea
+(naast die van arm (b)), en het kaartje staat er:
+`backlog/new/20260910-dagsoort-afkortingssleutels.md` — met de meting, de
+Drools-volgorde als eigenlijke divergentiebron met zijn vier codeplekken, en de
+twee te beslissen vragen (arm (a) verbreden naar de dertig-tabel, waarbij de
+frontend-wacht mee moet; en/of de Drools-opzoekvolgorde conformeren).
+
+Nits: het `diagnostics`-fragment in §1 staat er nu byte-getrouw (met
+`"node": "Diagnostic"`), de weesregel in ch. 4.6 is herwikkeld, de
+tabel-inleiding in ch. 2.9 spreekt niet langer van "drie clausules in twee
+posities" boven een vier-rijen-tabel maar van vier subgevallen gedekt door drie
+clausules van deze regel plus die van WF-001, de registerrij noemt beide
+meervoudssleutels, en de 70-entries-meting in ch. 4.6 (s) is ondubbelzinnig aan
+haar eigen kaart en datum gebonden.

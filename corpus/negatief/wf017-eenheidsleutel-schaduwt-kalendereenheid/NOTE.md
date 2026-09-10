@@ -11,12 +11,24 @@ singular and plural alike — as a key of `dagsoortPerEenheid`. WF-017's check
 read the first place only, so its built-in conjunct held for the declared name
 and for no other registered spelling.
 
-**What the key does.** The key space is what the verifier consults when it asks
-whether a unit spelling is a day-kind unit: a spelling occurring as a key is
-admitted as a duration unit beside the calendar units, in date arithmetic
-(WF-035) and in a tijdsduur (WF-038). With `"dagen": "schouwdag"` registered,
-`datum + 5 dagen` stops being ordinary calendar arithmetic and becomes day-kind
-arithmetic over the definition of `schouwdag`.
+**What is wrong with this key: the document contradicts itself.**
+`RUNTIME-SEMANTICS.md` ch. 1.2 settles the reading normatively — a duration's
+unit is recognised by spelling through the calendar table, and "a spelling
+outside the table is a declared day kind". This document registers `dagen` as a
+day-kind unit while the table carries it as the plural of `dag`. Both readings
+at once is not a reading any consumer can hold.
+
+**And the consumers do not hold one reading — measured 2026-09-10.** The
+verifier (WF-035, WF-038), `ref` and the ASP backend all resolve a duration
+unit through the calendar table FIRST and consult the day-kind registry only
+where the table has nothing; on those three this entry changes NOTHING, and
+`datum + 5 dagen` stays ordinary calendar arithmetic. The Drools backend asks
+the registry BEFORE the table at all four of its day-kind positions, so on this
+same document it reads day-kind arithmetic over the definition of `schouwdag`.
+That split — one document, two readings across the executors — is the second
+reason the arm exists. (The backend's lookup order is a conformance question of
+its own against the normative sentence above; correcting it there would not
+make this document consistent.)
 
 **The IR was weaker than its own producer, and the REGISTRATION GUARD is what
 carries that.** The RegelSpraak frontend (`frontends/regelspraak`) refuses to
@@ -46,6 +58,16 @@ document reads the new key.
 **One line, and it is this arm's.** The document carries no other defect: its
 four ordinary entries all bind a declared name to itself, so arm (b) is silent,
 and every value resolves, so WF-034 (s) is silent.
+
+**The flank this witness does not cover.** The arm compares against the
+eighteen names the frontend's registration guard knows — the nine units'
+singulars and plurals — while the calendar table recognises thirty spellings.
+The twelve abbreviations (`jr`, `mnd`, `kw`, `wk`, `dg`, `u`, `min`, `sec`,
+`s`, `ms`, `secondes`, `millisecondes`) pass this arm; measured 2026-09-10, all
+twelve are verifier-clean as registry keys and, unlike the eighteen, this flank
+is producible — the frontend emits `Dagsoort de wk (mv: wks)` with exit 0 and
+an empty `diagnostics`. Carded as
+`backlog/new/20260910-dagsoort-afkortingssleutels.md`.
 
 Falsifiable, arm-exact: make the arm (a) guard in `wf017`
 (`spec/verifier/lib/checks.ml`) inert and this case, alone in all four zones
