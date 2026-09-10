@@ -37,13 +37,20 @@ answer anywhere, but loud refusals that are misworded and that the two executors
 phrase differently. Its witness is
 `corpus/negatief/wf059-attribuut-zonder-granulariteit`, on this same golden.
 
-The two arms match on the WF closure — schema enum and verifier — and NOT yet on
-the message. That third arm also repaired its case-loader wording; this one's
-was left as it is. Measured on THIS document with a case delivering
-`aangesteld`'s timeline: both executors still say "a characteristic timeline on
-a non-temporal characteristic", because the `characteristicTimelines` arm folds
-"key present, value null" and "no key at all" into one catch-all. The wire no
-longer carries the shape, so only a hand-built document meets that wording — the
-same position the attribute side was in before its arm. Out of that card's
-scope, so measured and carded rather than fixed: backlog card
-`20260910-kenmerk-null-caselezer-melding`.
+The two arms match on the WF closure — schema enum and verifier — and, since
+2026-09-11, on the message as well. The third arm repaired its case-loader
+wording; this one's followed one card later, because the
+`characteristicTimelines` arm folded "key present, value null" and "no key at
+all" into one catch-all and so refused this document for being non-temporal
+while it declares the characteristic temporal. Measured on THIS document with a
+case delivering `aangesteld`'s timeline, identically in both executors:
+
+  CASE ERROR: J1.aangesteld: the characteristic is declared time-dependent but
+  its granularity is null: the timeline has no grid to sit on (WF-059)
+
+The old wording stays for the case it is true of — a characteristic with no
+granularity key at all, delivered as a timeline. The wire carries neither shape
+any more, so only a hand-built document meets either sentence; both are pinned
+in the ASP backend's own suite, which is the only place that can hold them
+(gate 2 schema-gates golden and rood, and a load-time refusal exits 2, which
+gate 8 reads as a failure rather than as the pinned fault).

@@ -2248,6 +2248,82 @@ let () =
     ~case_text:attribuutlevering_case
     ~needle:(Some "a timeline value on a non-temporal attribute")
 
+(* THE HAND-BUILT NULL CHARACTERISTIC GRANULARITY (2026-09-11). The same three
+   checks one side table over, on the arm the third arm's card left standing:
+   `kenmerkGranulariteit` also declares its characteristic time-dependent by the
+   presence of its KEY and names the grid in its VALUE, and its
+   `characteristicTimelines` arm folded "key present, value null" together with
+   "no key at all" into one catch-all, so a document that declares the
+   characteristic temporal was refused for being non-temporal. WF-059's SECOND
+   arm (2026-09-09) shut the enum, so the wire cannot carry the shape and only a
+   hand-built document reaches the arm — which is why the pin lives here and can
+   have no corpus witness: gate 2 schema-gates golden and rood, and a load-time
+   refusal exits 2, which gate 8 reads as a failure rather than as the pinned
+   fault.
+
+   The reader is SHARED — the ASP backend loads its cases through
+   `Uchar_ref.Case` — so both executors speak this refusal with one voice or
+   they diverge, and this backend owes the proof as much as the interpreter.
+
+   The needle is again the WHOLE sentence, `(WF-059)` included, because
+   `spec/IR-SPEC.md` quotes it verbatim; an opening clause alone would let the
+   tail be reworded under a green suite.
+
+   Both mutant directions, measured 2026-09-11 one at a time:
+     - fold the two arms back into the pre-card catch-all and check 1 fails,
+       while check 3 survives — that catch-all is what check 3 expects;
+     - give the NEW message to the `None` arm as well and check 3 fails, while
+       check 1 survives.
+   Check 2 is the over-rejection guard: a real granularity still loads. *)
+let kenmerkgranulariteit_doc ~granulariteit =
+  Printf.sprintf
+    {|{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Wachtpost": {
+      "node": "Objecttype", "naam": "Wachtpost",
+      "attributen": {},
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [ "dienstdoend" ],
+      "kenmerkSoorten": { "dienstdoend": "BIJVOEGLIJK" },
+      "kenmerkGranulariteit": { %s },
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false, "meervoud": "Wachtposten"
+    }
+  },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {}, "dimensies": {},
+  "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [], "resolvedRegels": [],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}|}
+    granulariteit
+
+let kenmerkgranulariteit_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "W1", "objectType": "Wachtpost",
+      "attributes": {}, "roles": {}, "characteristics": [],
+      "characteristicTimelines": {
+        "dienstdoend": [ { "from": "2024-01-01", "to": "2024-07-01" } ] } } ], "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }|}
+
+let () =
+  laadt_ir_case ~name:"een tijdlijn op een kenmerk met granulariteit null"
+    ~ir:(kenmerkgranulariteit_doc ~granulariteit:{|"dienstdoend": null|})
+    ~case_text:kenmerkgranulariteit_case
+    ~needle:
+      (Some
+         {|the characteristic is declared time-dependent but its granularity is null: the timeline has no grid to sit on (WF-059)|});
+  laadt_ir_case ~name:"hetzelfde kenmerk met een echte granulariteit"
+    ~ir:(kenmerkgranulariteit_doc ~granulariteit:{|"dienstdoend": "MAAND"|})
+    ~case_text:kenmerkgranulariteit_case ~needle:None;
+  laadt_ir_case ~name:"een tijdlijn op een kenmerk zonder granulariteitssleutel"
+    ~ir:(kenmerkgranulariteit_doc ~granulariteit:"")
+    ~case_text:kenmerkgranulariteit_case
+    ~needle:(Some "a characteristic timeline on a non-temporal characteristic")
+
 (* --- WF-100: the characteristic check's owner (IR-SPEC ch. 4.6 (q1)) -----
    The ASP mirror of ref's ch. 5.8b worked example. `Vondst` and `Jutter` both
    declare a characteristic named `gekeurd`, so the owner names a real

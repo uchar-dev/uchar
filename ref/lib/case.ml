@@ -378,7 +378,23 @@ let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
                 List.find_opt (fun (k, _) -> norm k = norm cname) ot.kenmerk_granulariteit
               with
               | Some (_, Some g) -> g
-              | _ ->
+              | Some (_, None) ->
+                  (* The KEY is present, so the document declares this
+                     characteristic time-dependent — the verifier's WF-055 clip
+                     check, this interpreter's evaluator and the ASP translator
+                     all read that key and nothing else. Only the grid is
+                     missing. Until 2026-09-11 this fell into the arm below and
+                     was refused as "non-temporal", contradicting the document
+                     that produced it — the same fold the attribute arm above
+                     carried until 2026-09-10. The schema enum and WF-059's
+                     second arm shut the shape on the wire, so only a hand-built
+                     document reaches here, and it must be told the real
+                     reason. *)
+                  fail
+                    "%s.%s: the characteristic is declared time-dependent but its granularity is \
+                     null: the timeline has no grid to sit on (WF-059)"
+                    label cname
+              | None ->
                   fail "%s.%s: a characteristic timeline on a non-temporal characteristic"
                     label cname
             in
