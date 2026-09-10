@@ -275,11 +275,13 @@ WF-clausule of een caselezer-regel die een eenzijdige levering afwijst wanneer
 de andere richting GELEZEN wordt, plus negatiefs; en gate 12 krijgt er op de
 1:N-vorm een reden-dragende weigeringsklasse bij in plaats van een divergentie.
 
-*Nummerkandidaat:* WF-100, nadrukkelijk als KANDIDAAT (bijgewerkt 2026-09-10:
+*Nummerkandidaat:* WF-101, nadrukkelijk als KANDIDAAT (bijgewerkt 2026-09-10:
 WF-098 is inmiddels bezet door de contextwaarde-namenregel, ch. 4.1, kaart
-`20260909-constante-naam-gesloten-verzameling`, en WF-099 door de
+`20260909-constante-naam-gesloten-verzameling`, WF-099 door de
 begrenzing-grenseenheidsregel, ch. 4.6, kaart
-`20260909-begrensd-grens-verifier-omheining`). Dezelfde kandidaat wordt
+`20260909-begrensd-grens-verifier-omheining`, en WF-100 door de
+kenmerkeigenaar-regel, ch. 4.6 (q1), kaart
+`20260909-eigenaar-verklaart-kenmerk`). Dezelfde kandidaat wordt
 genoemd door `20260910-geneste-aggregatie-rolketen.md` voor de padregel van een
 meerstaps aggregatiebereik. Wie het eerst landt gebruikt het nummer, de ander
 schuift op.
