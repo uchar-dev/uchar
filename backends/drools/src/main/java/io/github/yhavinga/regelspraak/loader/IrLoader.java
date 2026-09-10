@@ -186,10 +186,10 @@ public final class IrLoader {
         // declarations first: the resolved lists reference them by name.
         forEachField(root.get("objecttypen"), (naam, n) -> m.objecttypen.put(naam, objecttype(naam, n)));
         forEachField(root.get("domeinen"), (naam, n) -> m.domeinen.put(naam, datatype(n)));
-        forEachField(root.get("parameters"), (naam, n) -> m.parameters.put(naam, parameter(n)));
+        forEachField(root.get("parameters"), (naam, n) -> m.parameters.put(naam, parameter(naam, n)));
         forEachField(root.get("eenheidstelsels"), (naam, n) -> m.eenheidstelsels.put(naam, eenheidstelsel(naam, n)));
         forEachField(root.get("feittypen"), (naam, n) -> m.feittypen.put(naam, feittype(naam, n)));
-        forEachField(root.get("dimensies"), (naam, n) -> m.dimensies.put(naam, dimensie(n)));
+        forEachField(root.get("dimensies"), (naam, n) -> m.dimensies.put(naam, dimensie(naam, n)));
         forEach(root.get("tijdlijnen"), n -> m.tijdlijnen.add(tijdlijn(n)));
         forEach(root.get("dagsoorten"), n -> m.dagsoorten.add(n.asText()));
         forEachField(root.get("dagsoortPerEenheid"), (k, v) -> m.dagsoortPerEenheid.put(k, v.asText()));
@@ -271,8 +271,12 @@ public final class IrLoader {
         return ot;
     }
 
-    private Parameter parameter(JsonNode n) {
-        return new Parameter(text(n, "naam"), datatype(n.get("datatype")),
+    // The self-name is the declaration's name; where it is absent the MAP KEY is, as at the three
+    // sister tables. Without this fall-back a `naam: null` reaches the identifier contract as null
+    // and kills the load — WF-094 clause (d) now refuses such a document on the wire, but documents
+    // written before that rule still have to load.
+    private Parameter parameter(String naam, JsonNode n) {
+        return new Parameter(text(n, "naam") != null ? text(n, "naam") : naam, datatype(n.get("datatype")),
                 enumOf(Granulariteit.class, text(n, "granulariteit")));
     }
 
@@ -297,8 +301,10 @@ public final class IrLoader {
         return ft;
     }
 
-    private Dimensie dimensie(JsonNode n) {
-        return new Dimensie(text(n, "naam"), text(n, "naamMeervoud"), text(n, "voorzetsel"), stringList(n.get("waarden")));
+    // Same fall-back as `parameter` above: the key stands in for an absent self-name.
+    private Dimensie dimensie(String naam, JsonNode n) {
+        return new Dimensie(text(n, "naam") != null ? text(n, "naam") : naam, text(n, "naamMeervoud"),
+                text(n, "voorzetsel"), stringList(n.get("waarden")));
     }
 
     private Tijdlijn tijdlijn(JsonNode n) {
