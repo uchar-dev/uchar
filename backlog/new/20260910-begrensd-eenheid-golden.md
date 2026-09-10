@@ -20,19 +20,26 @@ Gemeten 2026-09-10 spelen `ref`, de ASP-backend en beide Drools-takken die vorm
 en geven ze alle drie dezelfde waarde, dus de golden hoort speelbaar te zijn in
 het volle vierkant.
 
-**Twee beschermde scripts bewegen mee — expliciet als voorstel, nooit als
-merge.** Dit is de reden dat de WF-099-kaart deze golden niet zelf heeft
-gebouwd:
+**Eén beschermd script beweegt mee — expliciet als voorstel, nooit als merge.**
+Dit is de reden dat de WF-099-kaart deze golden niet zelf heeft gebouwd:
 
 - `scripts/check-drools.sh` — `EXPECTED_PLAYED` is een **gelijkheid**
-  (beheerdersbesluit 2026-09-06, bewust geen vloer). Een nieuwe golden die
-  speelt verhoogt hem met één; een die niet speelt hoort met reden in
-  `EXPECTED_CHANNEL`. Beide kanten falen vandaag bij een ongewijzigd script.
-- `scripts/check-reftype-derivation.sh` — de twist-boekhouding van gate 13
-  draagt de vastlegging dat de `Begrensd` op deze corpus altijd eenheidloos is,
-  en de klem van stap 6 FAALT zodra een unit-dragende annotatie opduikt op een
-  knoopklasse buiten de twist-tabel. Een unit-dragende klem-golden is precies
-  dat geval, dus de tabel of de vrijstellingsredenering moet mee.
+  (beheerdersbesluit 2026-09-06, bewust geen vloer), dus **119 → 120**. Gemeten
+  2026-09-10 op een klem met `kg`-basis en `kg`-grenzen: `PLAYED 1` in **beide**
+  Drools-takken (exec-model én `--drl`), dus de vorm speelt en de gelijkheid
+  hoort omhoog. Speelt een gekozen vorm tóch niet, dan hoort ze met reden in
+  `EXPECTED_CHANNEL` in plaats van in de bump.
+
+**Gate 13 beweegt niets mechanisch** — dit stond in een eerdere versie van deze
+kaart verkeerd en is nagemeten. `Begrensd` staat gewoon **in** de twist-tabel
+van `scripts/check-reftype-derivation.sh` (`KLASSE`, met exponent 9), dus de
+klem van stap 6 raakt hem niet: die schrijft alleen `vierde`- en
+`ongedekt`-regels, en dat zijn de knoopklassen die de tabel **niet** draagt of
+die niets afleiden. `EXPECTED_MIN_TWISTS` is bovendien een **vloer**, geen
+gelijkheid, dus extra twists zijn groei en geen breuk. Wat wél veroudert is
+proza: de scriptkop noteert dat de `Begrensd`-waarde-arm van de DRL-tak "on
+this corpus always UNITLESS" is, en die zin klopt niet meer zodra deze golden
+er ligt. Dat is een commentaarregel, geen gate-beweging.
 
 Acceptance:
 - de nieuwe golden ligt in `corpus/golden/` met `ir.json` + `case*.json` en
@@ -45,12 +52,16 @@ Acceptance:
   (of, als de vorm niet speelt, een reden-dragende `EXPECTED_CHANNEL`-regel);
 - `bash scripts/check-noop.sh` groen — de golden hoort onder `--noop` te FALEN
   en dus niet op de survivor-lijst te komen; als hij overleeft, met reden erop;
-- `bash scripts/check-reftype-derivation.sh` groen met de voorgestelde
-  aanpassing van de twist-tabel/boekhouding;
-- de Result noteert welke twee scriptregels bewogen en waarom, zodat de
-  beheerder ze los kan beoordelen.
+- `bash scripts/check-reftype-derivation.sh` groen **zonder scriptwijziging**:
+  `Begrensd` zit in de twist-tabel en `EXPECTED_MIN_TWISTS` is een vloer, dus
+  het twist-aantal hoort te groeien en de gate hoort groen te blijven. Blijkt
+  hij tóch te bewegen, dan is dat een bevinding en niet een bump;
+- de Result noteert welke scriptregel bewoog (naar verwachting alleen
+  `EXPECTED_PLAYED`) en of het verouderde prozacommentaar op de
+  `Begrensd`-arm van de DRL-tak is bijgewerkt.
 
-May touch: `corpus/golden/`, en als **voorstel** `scripts/check-drools.sh` en
+May touch: `corpus/golden/`, en als **voorstel** `scripts/check-drools.sh` (de
+`EXPECTED_PLAYED`-bump) en hooguit het prozacommentaar in
 `scripts/check-reftype-derivation.sh`. Eventueel `spec/IR-SPEC.md` om de zin
 "no golden carries a UNIT-BEARING clamp" in WF-099's registerrij bij te werken
 zodra hij niet meer waar is.
