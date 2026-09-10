@@ -4904,7 +4904,32 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
               "parameter reference without a parameter name: it resolves against no declaration"
           ])
   | Variabele_ref _ -> [] (* binding sites are not serialized in v0 — OPEN *)
-  | Constante _ -> []
+  | Constante { naam; _ } -> (
+      (* WF-098 (maintainer decision 2026-09-10): the context-value name is a
+         CLOSED SET, not a reference. Nothing in the document declares it, so
+         there is no table to resolve against — the three admissible names are
+         fixed by ch. 4.1 and this arm enumerates them.
+
+         The comparison is BYTE-EXACT, and that is the decision the arm carries:
+         the readers below the wire disagree about case (`ref` and the ASP
+         backend normalise, the Drools backend's constant reader uses `equals`
+         while its day-kind reader uses `equalsIgnoreCase`), so a ci-different
+         spelling is a name three consumers accept and one does not. Refusing it
+         here makes that divergence unreachable through a verifier-clean
+         document instead of leaving it to be discovered per executor.
+
+         Scope: the PRESENT name. A `naam` of null is schema-valid (the field is
+         typed ["string", "null"]) and is the empty half of the same field —
+         its own question, recorded in ch. 4.1 with its measurement, not folded
+         in here. *)
+      match naam with
+      | None -> []
+      | Some n when List.mem n [ "Rekendatum"; "Rekenjaar"; "de dag" ] -> []
+      | Some n ->
+          [ v "WF-098" (sub "naam")
+              ("context value '" ^ n
+             ^ "' is not one of the three admissible names Rekendatum, Rekenjaar, de dag: the \
+                context-value name is a closed set, spelled byte for byte") ])
   | Expr_onopgelost _ -> [] (* honest marker; WF-044 is behavioural *)
   | Temporal_read { basis; datum; typ; _ } ->
       (* WF-049: the point-in-time read (extension node, row 11) *)
