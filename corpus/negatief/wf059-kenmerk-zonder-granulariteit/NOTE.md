@@ -49,8 +49,13 @@ case delivering `aangesteld`'s timeline, identically in both executors:
   its granularity is null: the timeline has no grid to sit on (WF-059)
 
 The old wording stays for the case it is true of — a characteristic with no
-granularity key at all, delivered as a timeline. The wire carries neither shape
-any more, so only a hand-built document meets either sentence; both are pinned
-in the ASP backend's own suite, which is the only place that can hold them
-(gate 2 schema-gates golden and rood, and a load-time refusal exits 2, which
-gate 8 reads as a failure rather than as the pinned fault).
+granularity key at all, delivered as a timeline. Only the FIRST shape is off the
+wire: the enum no longer admits a null value, so a hand-built IR is the only one
+that reaches the new sentence. The second is no wire defect at all — an IR with
+an empty `kenmerkGranulariteit` is schema-valid AND verifier-PASS as long as no
+`gedurende` reads the characteristic (measured 2026-09-11 on exactly the
+document the third pin uses); what oversteps is the CASE. What keeps
+both out of a corpus zone is the refusal itself: it happens at LOAD time and
+exits 2, which gate 8 reads as a failure rather than as the pinned fault, and
+gate 2 schema-gates golden and rood besides. Both sentences are therefore pinned
+in the ASP backend's own suite, the only place that can hold them.
