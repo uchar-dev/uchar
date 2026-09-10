@@ -132,6 +132,21 @@ Het onderscheid zelfreferentieel/niet-zelfreferentieel maakt in uchar dus
 **geen verschil** — precies het verschil dat in de toolchain vóór `ccdf58f`
 het onderscheid tussen bouwen en niet-bouwen was.
 
+> **ACHTERHAALD DOOR HET BESLUIT VAN 2026-09-10 — flank A en flank B hieronder
+> zijn gemeten op de GERICHTE lezing en moeten opnieuw gemeten worden.** De
+> maintainer heeft vraag 13 van `20260910-reverse-rol-via-naam.md` beantwoord
+> met **(i): een relatie is symmetrisch — één geleverde poot vestigt hem, en de
+> tegenrol leest hem** (`RUNTIME-SEMANTICS.md` ch. 5.7a). `ref` en de
+> ASP-backend spiegelen sindsdien elke tweerollige relatie op de zusterrol, en
+> de Drools-case-invoer lost de zusterrol via de geschreven naam op. Wat dat
+> met deze twee flanken doet: flank A wordt in `ref`/clingo **10** in plaats
+> van leeg, terwijl Drools op de 1:1-vorm nog leeg leest (de spiegelende
+> schrijfactie voor 1:1 is niet geland — zie de javadoc bij
+> `CaseRunner.spiegelWederkerigeRollen`), dus flank A is nu een **echte
+> ref ≢ Drools-divergentie**, geen drievoudige overeenstemming. Flank B's
+> Drools-weigering is vervallen: de naam-route bereikt daar het veld van de
+> to-one zusterrol. Hermeet beide voordat er iets van gepind wordt.
+
 **Flank A — de omgekeerde poot wordt niet afgeleid, in geen van de drie.**
 Alleen de heenpoot geschreven (W1.opvolger = W2), en dan `W2.voorgangerrang`
 gevraagd:
@@ -218,24 +233,39 @@ geen schemawijziging.
    - `case1.json` — beide poten geschreven, `opvolgerrang` en
      `voorgangerrang` gepind op absolute waarden (20 en 10). Dit is de
      hoofdgetuige.
-   - `case2.json` — alleen de heenpoot geschreven, met `attributeEmpty` op de
-     zusterrol. Dit pint dat een gewoon zelfpaar **niet** spiegelt, en scheidt
-     hem daarmee van de wederkerige vorm die dat wél doet.
+   - `case2.json` — alleen de heenpoot geschreven. **De vraag is beantwoord:
+     hij pint de SPIEGEL, niet de afwezigheid ervan** (zie hieronder).
 
-   **Besluitafhankelijkheid: de twee cases staan niet gelijk.** `case1.json` is
-   besluitonafhankelijk — beide poten zijn geleverd, dus welke lezing er ook
-   wint, de waarden zijn 20 en 10. `case2.json` niet: met `attributeEmpty` pint
-   hij dat één geleverde poot de relatie NIET vestigt, en dat is precies de
-   vraag die de zusterkaart `20260910-reverse-rol-via-naam.md` OPEN stelt
-   ("vestigt één geleverde poot de relatie?"). Werkwijze: **case2 pas na (of
-   tegelijk met) het besluit op die zusterkaart.** Landt hij eerder, dan pint
-   hij de huidige stand vooruit op een open vraag, en dat moet dan expliciet in
-   de commit staan — met de zusterkaart bij bestandsnaam genoemd — zodat het
-   besluit daar hem kan omkeren zonder dat het als regressie leest.
-2. **Gate 12** — de golden komt PLAYED binnen, dus `EXPECTED_CHANNEL` in
-   `scripts/check-drools.sh` blijft ongewijzigd en `EXPECTED_PLAYED` gaat van
-   119 naar 120. Dat is een **beschermd pad**: als voorstel indienen, niet
-   mergen.
+   **Besluitafhankelijkheid: BESLIST (maintainer, 2026-09-10, vraag 13 van
+   `20260910-reverse-rol-via-naam.md`).** Het antwoord is **(i): een relatie is
+   symmetrisch — één geleverde poot vestigt hem, en de tegenrol leest hem**,
+   normatief in `RUNTIME-SEMANTICS.md` ch. 5.7a. Wat dat voor deze twee cases
+   betekent:
+
+   - `case1.json` blijft besluitonafhankelijk: beide poten geleverd, 20 en 10.
+   - `case2.json` draait om. Hij pint niet langer `attributeEmpty` op de
+     zusterrol maar de **waarde die door de niet-geleverde richting komt**:
+     alleen `W1.opvolger = W2` geleverd geeft `W2.voorgangerrang = 10`. Hij is
+     daarmee de **spiegel-pinnende** case en de regressiedetector van het
+     besluit, niet zijn tegendeel. De wachttijd is voorbij; hij mag landen.
+   - **Maar niet zomaar groen in alle vier de lenzen.** Deze bron is de
+     **1:1-vorm** (twee to-one rollen, dus twee beanvelden). `ref` en clingo
+     spiegelen sinds het besluit; de **Drools-case-invoer doet de tweede
+     schrijfactie nog niet**, dus daar leest `voorgangerrang` leeg. Zolang die
+     schrijfactie er niet is, valt deze golden met zo'n case2 uit het
+     PLAYED-kanaal (een waarde-divergentie, geen weigering). Twee routes,
+     kies er één en zeg welke: **(a)** de spiegelende schrijfactie in
+     `CaseRunner.zetRollen` erbij bouwen — dan bewegen twee assertieplekken in
+     `OpslagrichtingWitnessTest` mee (`de_gewone_zelfpaarkoppeling_spiegelt_niet`
+     en `dezelfde_telling_negeert_een_levering_aan_de_elementkant`, beide pinnen
+     de gerichte lezing), en dat bestand is van DEZE kaart; of **(b)** case2
+     voorlopig niet leveren en alleen case1 landen, met de reden hier.
+2. **Gate 12** — met alleen `case1.json` komt de golden PLAYED binnen:
+   `EXPECTED_CHANNEL` ongewijzigd, `EXPECTED_PLAYED` één omhoog vanaf de dan
+   geldende stand (**121** sinds `20260910-reverse-rol-via-naam.md`, niet 119).
+   Met een spiegel-pinnende `case2.json` erbij hangt het kanaal aan route (a)
+   of (b) hierboven — meet het, neem het niet aan. Beide zijn een **beschermd
+   pad**: als voorstel indienen, niet mergen.
 3. **De overige gates bewegen niet.** Gate 5's `EXPECTED_MIN_CASES` (427) en
    gate 6's telling zijn ondergrenzen — groei vraagt geen bijstelling. Gate 7
    is gemeten: beide cases falen onder `--noop`, dus geen overlever-regel.
@@ -261,12 +291,16 @@ geen schemawijziging.
   waarden: verifier PASS, ref PASS, clingo PASS, Drools PLAYED — en de
   mutatieproef (één verwachting verdraaid) faalt aantoonbaar in de
   Drools-replay, zodat PLAYED geen lege groenheid is.
-- `scripts/check-drools.sh`: `EXPECTED_PLAYED` 119 → 120, `EXPECTED_CHANNEL`
-  ongewijzigd — **als voorstel** ingediend (beschermd pad).
-- De besluitafhankelijkheid van `case2.json` is belegd: hij landt na (of
-  tegelijk met) het besluit op `20260910-reverse-rol-via-naam.md`, of hij landt
-  eerder met die kaart bij naam genoemd in de commit als vooruitgeschoven pin
-  van de huidige stand. `case1.json` draagt de kaart ook zonder hem.
+- `scripts/check-drools.sh`: `EXPECTED_PLAYED` één omhoog vanaf de dan
+  geldende stand (121 sinds `20260910-reverse-rol-via-naam.md`),
+  `EXPECTED_CHANNEL` ongewijzigd — **als voorstel** ingediend (beschermd pad).
+  Met een spiegel-pinnende `case2.json` erbij: eerst meten, zie punt 1.
+- De besluitafhankelijkheid van `case2.json` is BESLIST en verwerkt: het
+  antwoord is (i) (symmetrisch, `RUNTIME-SEMANTICS.md` ch. 5.7a), dus case2 is
+  de **spiegel-pinnende** case en pint `W2.voorgangerrang = 10` op een
+  eenzijdige levering. Deze kaart zegt expliciet welke van de twee routes uit
+  punt 1 ze neemt voor de Drools-kant van die case, en `OpslagrichtingWitnessTest`
+  is bijgewerkt of niet aangeraakt volgens die keuze.
 - De gate-13-keuze uit punt 4 staat met reden in de commit of in de golden.
 - Alle dertien gates groen.
 

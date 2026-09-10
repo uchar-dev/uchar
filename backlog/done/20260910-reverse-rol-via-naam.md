@@ -382,3 +382,343 @@ May touch: `spec/RUNTIME-SEMANTICS.md`, `spec/IR-SPEC.md`, `spec/verifier/**`,
 - De frontend: de emissie is hier bewijsmateriaal. Ze draagt de vorm al en
   bindt bij naam; er is niets te repareren.
 - WF-053 zelf: de bindingsregel doet wat ze belooft en wordt niet heropend.
+
+---
+
+## Result (2026-09-10)
+
+### Het besluit
+
+**Maintainerbesluit op vraag 13, gesteld én expliciet bevestigd 2026-09-10:
+antwoord (i) — een relatie is symmetrisch. Eén geleverde poot vestigt de
+relatie, en de tegenrol leest hem.** Deze kaart voert dat besluit uit; ze
+herbeslist niets.
+
+Het besluit spreekt zich uit over BEIDE vormen van de discriminant:
+
+- **1:N** (één rol to-one, de zusterrol to-many). `ref` en de ASP-backend
+  spiegelden niet en lazen de niet-geleverde richting leeg; Drools las hem vol
+  omdat het bonenmodel daar één veld draagt dat noodzakelijk beide richtingen
+  bedient. Onder (i) is Drools' gedrag de norm en volgen `ref` en de
+  ASP-backend. **Gemeten: de divergentie is weg** — de nieuwe getuige-golden
+  speelt in alle drie de uitvoerders met dezelfde waarden, in alle drie de
+  leveringsvormen.
+- **1:1** (beide rollen to-one). Daar draagt het bonenmodel twee velden en
+  spiegelt Drools uit zichzelf niet. Onder (i) moet de case-invoerlaag het
+  tweede veld schrijven. **Die schrijfactie is NIET geland** — zie
+  "onbeheerde naad" hieronder. De twee onder (i) voorspelde nieuwe
+  divergenties (a) zelfgetypeerd 1:1 en (b) kruistypisch 1:1 staan dus open,
+  benoemd en met een aanwijsbare plek, niet weggewerkt.
+
+### De prijs, uitgeschreven
+
+**Ankerpunt 1 — `anchor/jutterswet-penninguitgifte/case2`, handberekend.**
+
+Model: `penningbezit` = houder (Jutter, to-one) / penning (Penning, mv
+penningen, TO-MANY) → 1:N. `dossiervoering` = dossierhouder (Jutter, to-one) /
+dossier (Dossier, mv dossiers, to-one) → 1:1. Objectcreatie 1 mint per
+penninggerechtigde Jutter een Penning (bedrag := vondstwaarde, kenmerk
+uitgereikt) met terugkoppeling over penningbezit; objectcreatie 2 mint een
+Dossier, geblokkeerd als het subject de to-one rol `dossier` in de
+invoermomentopname al vult. Consistenties: `penningcontrole` (elke Penning is
+uitgereikt) en `houderscontrole` (het aantal houder van de Penning ≥ 1).
+
+Invoer zoals gepind: J3 (vondstwaarde 7, penninggerechtigd) met
+`penningen: [P1]` en `dossier: [D1]`; P1 (bedrag 5) zonder rollen en zonder
+kenmerken; D1 zonder rollen.
+
+Bij het laden spiegelt de lezer onder (i) op de ZUSTERROL:
+`J3.penningen = [P1]` → **`P1.houder = [J3]`**; `J3.dossier = [D1]` →
+`D1.dossierhouder = [J3]`.
+
+| grootheid | gericht (oud) | symmetrisch (i) | reden |
+|---|---|---|---|
+| J3 aantal penningen | 2 | **2** | P1 plus de mint; de spiegel raakt J3's eigen links niet |
+| J3 penningtotaal | 12 | **12** | 5 (P1) + 7 (mint) |
+| J3 aantal dossiers | 1 | **1** | de creatie blijft geblokkeerd — de blokkade leest J3's eigen links |
+| penningcontrole × P1 | vuurt | **vuurt** | P1 is niet uitgereikt |
+| houderscontrole × P1 | vuurt (aantal 0) | **vuurt NIET (aantal 1)** | P1.houder leest J3 door de terugpoot |
+
+De inconsistentie verdwijnt dus precies één keer, op precies de plek die de
+kaart voorspelde. Gemeten, letterlijk:
+
+    MISMATCH: expected inconsistent (a channel fact from rule "houderscontrole"
+    on "P1"), but the channel carries: penningcontrole × P1
+
+**Wat ervoor terugkomt.** Twee dingen, want de verwachtingstaal kent geen
+"vuurt NIET"-vorm:
+
+1. `case2` houdt zijn vier andere verwachtingen ongewijzigd en krijgt een
+   VIERDE instantie: **P2** (Penning, bedrag 3, geen rollen, geen kenmerken,
+   door geen enkele Jutter genoemd). `houderscontrole` heeft daarmee weer een
+   vurende getuige, en die vuurt nu waar de relatie werkelijk niet bestaat.
+   Handberekend: P2 verandert niets aan J3's drie waarden (P2 is niet aan J3
+   gekoppeld) en voegt `penningcontrole × P2` en `houderscontrole × P2` aan het
+   kanaal toe. De pin verhuist van `houderscontrole × P1` naar
+   `houderscontrole × P2`. Deze case is **besluitONafhankelijk**: hij slaagt
+   onder beide lezingen. Gemeten: `oracle: PASS (5 expectations)` in beide.
+2. Nieuwe **`case3`**, die het besluit zelf pint langs de enige route die
+   afwezigheid kan uitdrukken — `consistent` (het kanaal is leeg).
+   Invoer: J1 (vondstwaarde 4, penninggerechtigd) met `penningen: [P1]`;
+   P1 (bedrag 6) met kenmerk `uitgereikt` en zonder rollen. Handberekend onder
+   (i): de Penningcreatie mint een tweede, uitgereikte Penning met bedrag 4 en
+   `houder = J1`; de Dossiercreatie is niet geblokkeerd (J1 vult de to-one rol
+   `dossier` niet) en mint er één. Dus **aantal penningen 2, penningtotaal
+   6 + 4 = 10, aantal dossiers 1**, `penningcontrole` vuurt nergens (beide
+   Penningen zijn uitgereikt) en `houderscontrole` vuurt nergens
+   (P1.houder = [J1] door de terugpoot, mint.houder = [J1] door de creatie) →
+   **kanaal leeg → `consistent`**.
+
+   Rood-eerst, gemeten op dezelfde wire met de gerichte lezing:
+
+       MISMATCH: expected consistent, but the channel carries: houderscontrole × P1
+
+   Groen onder (i): `oracle: PASS (4 expectations)`.
+
+**Ankerpunt 2 — de kosten van het NIET-gekozen antwoord (ii), gemeten.**
+
+Antwoord (ii) ("een link is gericht") had `ref` en de ASP-backend ongemoeid
+gelaten en `anchor/jutterswet-penninguitgifte/case2` niet aangeraakt. De prijs
+stond aan de andere kant:
+
+- **De 1:N-vorm is in het bonenmodel niet gericht te lezen.** Eén veld bedient
+  beide richtingen, dus geen enkele Drools-lezing kan onderscheiden welke kant
+  de case leverde. (ii) had daar een WF-clausule of een caselezer-regel geëist
+  die een eenzijdige levering AFWIJST zodra de andere richting gelezen wordt —
+  plus negatiefs — en gate 12 had er een reden-dragende weigeringsklasse bij
+  gekregen in plaats van een divergentie. Concreet: de drie casussen van de
+  nieuwe getuige-golden waren dan twee weigeringen en één speler gebleven, en
+  de vorm was uit het vierkant gevallen in plaats van erin gekomen.
+- **De vorm is niet zeldzaam.** Twee goldens staan vandaag al buiten gate 12
+  met LETTERLIJK deze reden — "dat feittype heeft ÉÉN beanveld en dat draagt
+  noodzakelijk BEIDE richtingen, dus de gerichte lezing … is in het v0
+  beanmodel niet uit te drukken (§13.3.9 opslagrichting)":
+  `anchor/jutterswet-gemeenteberging` (regel "aantal bergende gemeenten van
+  een vondst") en `anchor/jutterswet-penninguitgifte` (consistentie
+  "houderscontrole"). Onder (ii) waren dat permanente uitsluitingen geworden —
+  de gerichte lezing is daar niet uit te drukken, punt. Onder (i) zijn het
+  transpiler-beperkingen die een latere kaart kan opheffen zonder dat de
+  semantiek in de weg staat: het ENE veld dat er is, draagt precies wat (i)
+  vraagt.
+- **Wat (ii) wél had bespaard:** de 1:1-schrijfactie hieronder was dan niet
+  nodig geweest, en de ankerverwachting was blijven staan.
+
+### Wat er is geland, rood-groen per onderdeel
+
+**1. Spec (VOORSTEL — beschermd pad).** `spec/RUNTIME-SEMANTICS.md` krijgt een
+eigen case-invoersectie: **ch. 5.7a "The case input: what a supplied role link
+establishes"**, geplaatst achter ch. 5.7 (de evaluatiesessie, waarvan stap 3
+"insert the input facts" is). Dat is plekoptie (a) uit de kaart; ch. 4.1 blijft
+over verdeling gaan en verwijst voor de algemene wet naar 5.7a, met de
+wederkerige vorm als bijzonder geval. De sectie draagt de normzin, twee
+mechanische gevolgen (de lezer spiegelt op de zusterrol; een
+referentieveld-bonenmodel schrijft wat het kan dragen) en het gewerkte
+voorbeeld met concrete uitkomsten voor de niet-geleverde richting.
+
+**2. De gedeelde caselezer.** `ref/lib/case.ml`: `resolve_role_ft` levert nu
+het drietal (feittype, VERRE rol, ZUSTERROL); `materialise_reciprocal` heet
+`materialise_relations` en spiegelt elke tweerollige relatie, gesleuteld op de
+zusterrol, in dezelfde leesvoorkeursvolgorde die `Eval.role_keys` en
+`World.add_link` gebruiken. Aparte pass over de oorspronkelijke links, dus
+volgorde-onafhankelijk en niet zelf-voedend; idempotent; een botsende
+terugpoot op een to-one zusterrol is een laadfout (WF-013). De ASP-backend
+deelt deze lezer.
+
+Corpusgevolg, gemeten over de hele groene zone: **428 casussen, 1 mislukking**
+— exact de ankerverwachting hierboven, en verder niets. (De kaart mat 427/1;
+de zone is sindsdien met één casus gegroeid.) De 496 worked examples bleven
+alle slagen.
+
+**3. De getuige-golden `corpus/golden/jutterswet-ketenband/`.** De bron uit de
+kaart, ongewijzigd: zelfreferentieel feittype `ketenband` met `voorligger`
+(to-one) en `opvolger` (mv `opvolgers`, to-many), twee regels die elk via de
+ANDERE rol navigeren. Frontend: `objecttypen=1 feittypen=1 resolvedRegels=2`,
+`navigatieBindingen [{ketenband, voorligger}]` en `bronRol {ketenband,
+opvolger}`; `verifier: PASS`. Drie casussen, W1/W2/W3 met rangnummer 10/20/30,
+één relatie (W1 is voorligger van W2 en W3), drie leveringsvormen:
+
+| casus | levert | `voorliggerrang` W1/W2/W3 | `opvolgeraantal` W1/W2/W3 |
+|---|---|---|---|
+| 1 | beide poten | leeg / 10 / 10 | 2 / 0 / 0 |
+| 2 | alleen de naar-veel-poot | leeg / 10 / 10 | 2 / 0 / 0 |
+| 3 | alleen de naar-één-poten | leeg / 10 / 10 | 2 / 0 / 0 |
+
+Handberekend vóór het draaien. De asymmetrie A→B ≠ B→A die de kaart eiste zit
+in de rijen zelf: `voorliggerrang` en `opvolgeraantal` lopen tegengesteld, en
+`W1.voorliggerrang` blijft leeg — niemand vult `voorligger` naar W1 toe, dus
+ch. 5.8 regel 1 leest leeg. Dat is de flank die een te ruime spiegel zou
+breken.
+
+Rood-eerst, gemeten op de gerichte lezing:
+
+    case1  oracle: PASS (6 expectations)      besluitonafhankelijk
+    case2  MISMATCH: W2.voorliggerrang = leeg, expected 10
+           MISMATCH: W3.voorliggerrang = leeg, expected 10
+    case3  MISMATCH: W1.opvolgeraantal = 0, expected 2
+
+**4. Het gewerkte voorbeeld verbatim in `ref/test/`.** WV-5.7a: de drie
+leveringsvormen door `Case.materialise_relations` heen, elk zes waarden, plus
+de WF-013-botsflank. De suite gaat van 496 naar **515** worked examples.
+
+**5. De Drools-case-invoer (`cases/CaseRunner.java`, `zetRollen`).**
+
+- **(a) de tegenrol via de geschreven NAAM.** `verbindendeRolViaElementnaam`
+  levert de zusterrol uit de geschreven rolnaam; die wordt alleen aanvaard als
+  `FactModelGenerator.zelfpaarRollen` het veld werkelijk heeft afgeleid —
+  dezelfde twee-autoriteitsvorm die de heenrichting al gebruikte. Een
+  by-pair-AMBIGU kruistypisch paar houdt dus zijn by-pair-antwoord en zijn
+  naamdelingsweigering.
+- **(c) de 1:N-weigering vervalt waar de naam-route hem draagbaar maakt.**
+  Gemeten per vorm op de nieuwe golden:
+
+      vóór:  case1 EXCLUDE   case2 EXCLUDE   case3 PLAYED 1
+      na:    case1 PLAYED 1  case2 PLAYED 1  case3 PLAYED 1
+
+  De weigeringstekst die verdwijnt is letterlijk die uit de kaart ("role
+  'opvolgers' (Wachter -> Wachter) reaches no to-one reference field … neither
+  direction of the type pair derives a to-one role"). De weigering die BLIJFT
+  is de dubbelmeervoudige zelfrelatie (`erflijn`): daar is de zusterrol ook
+  to-many, dus geen van beide kanten draagt een veld — gemeten, de bestaande
+  pin daarop staat ongewijzigd.
+- **(b) de spiegelende schrijfactie voor 1:1 — NIET GELAND, met reden.** Zie
+  hieronder.
+- Nieuw: `ZusterrolInvoerWitnessTest` (5 tests, additief) pint het veld op het
+  doel, de drie spellingen op boonniveau, de gepinde waarden, de mutatieproef
+  (één verwachting verdraaid → gemeld verschil) en de WF-013-botsing. `ref`
+  weigert diezelfde case bij het laden, letterlijk gemeten:
+  `role "opvolgers": "W2" already links W3 under the to-one role "voorligger";
+  the reverse leg of "W1" -> "W2" conflicts (WF-013 to-one)`.
+
+**6. De ASP-backend-suite.** Eén frame stageerde zijn onbereikbaarheid door de
+link aan de VERRE kant te schrijven ("§7.1 set operand, no reachable member").
+Dat is onder (i) geen onbereikbaarheid meer: het lid wordt bereikt en de
+per-element temporele vouw meldt luid dat de case een asOfDate-bucketscalair
+levert. Het frame levert nu GEEN relatie (dat is wat het bedoelde), en de oude
+levering krijgt een eigen, additieve pin die precies dat nieuwe gedrag
+vastlegt. Suite 92 → **93** checks.
+
+### De onbeheerde naad: belegd, niet overgeslagen
+
+De spiegelende schrijfactie voor **1:1**-vormen (het tweede beanveld vullen bij
+eenzijdige levering) is **ontworpen en niet geland**, om één aanwijsbare reden:
+
+`backends/drools/src/test/java/.../cases/OpslagrichtingWitnessTest.java` pint
+de GERICHTE lezing op twee plekken, en die twee assertie-blokken keren om zodra
+de schrijfactie er is:
+
+- `de_gewone_zelfpaarkoppeling_spiegelt_niet` — `assertNull(get(W2,
+  "voorganger"))` na `W1{opvolger:[W2]}`; met de schrijfactie is dat W1.
+- `dezelfde_telling_negeert_een_levering_aan_de_elementkant` — de 1:1-telling
+  met de link aan de elementkant geleverd, gepind op 0/0; met de schrijfactie
+  wordt dat 1/2.50, en de tweede assertie (dat 1/2.50 een verschil is) draait
+  mee om.
+
+Dat bestand is het werkterrein van de zusterkaart die in review is; deze
+sessie heeft het opdracht-conform **niet aangeraakt**. Wat er wél in staat:
+de javadoc bij `CaseRunner.spiegelWederkerigeRollen` zei tot nu toe dat een
+gewoon zelfpaar NIET mag spiegelen en beriep zich daarvoor op `ref`. Die zin
+is nu onwaar en is vervangen door de vastgelegde gap: 1:N heeft geen tweede
+schrijfactie nodig (één veld bedient beide richtingen), 1:1 wel, die staat er
+niet, en het gevolg is dat `ref` daar W1 leest waar Drools null leest. Geen
+enkele corpusgolden levert een 1:1-relatie eenzijdig, dus geen gate ziet het;
+`OpslagrichtingWitnessTest` is de plek waar die flank hangt.
+
+**Twee andere assertieblokken in dat bestand blijven staan en zijn gemeten
+groen** — de spiegel schrijft de ZUSTERROL, niet dezelfde rol, dus
+`de_gerichte_koppeling_beslist_de_gelezen_waarde` (W1 telt 1 opvolger, W2 telt
+0) klopt ook onder (i), in `ref` én in Drools. Dat was vooraf niet vanzelf
+duidelijk en is expliciet nagerekend.
+
+### Voorstellen op beschermde paden
+
+| pad | wijziging |
+|---|---|
+| `spec/RUNTIME-SEMANTICS.md` | nieuwe ch. 5.7a; ch. 4.1 verwijst ernaar |
+| `corpus/golden/anchor/jutterswet-penninguitgifte/case2.json` | vierde Penning P2; de `houderscontrole`-pin verhuist van P1 naar P2 |
+| `corpus/golden/anchor/jutterswet-penninguitgifte/case3.json` | nieuw; pint het besluit via `consistent` |
+| `corpus/golden/anchor/README.md` | de rij voor deze anker bijgewerkt |
+| `scripts/check-drools.sh` | `EXPECTED_PLAYED` 120 → **121**, met reden en meting; `EXPECTED_CHANNEL` ONGEWIJZIGD |
+| `scripts/check-noop.sh` | **niet aangeraakt** — gemeten: alle vier de nieuwe casussen weerleggen een niets-doende uitvoerder, dus geen overleverregel nodig (392 → 396 weerleggers, 36 overlevers ongewijzigd) |
+
+### Gate-uitkomsten (alle dertien, op de kop van deze tak)
+
+| gate | uitkomst |
+|---|---|
+| 1 self-contained | PASS |
+| 2 ir-schema | PASS (194 bestanden, vloer 192) |
+| 3 verifier | PASS (194 golden schoon; 362 negatief, vloer 350) |
+| 4 case-schema | PASS (458 casebestanden) |
+| 5 oracle | PASS (515 worked examples, vloer 489; 432 casussen, vloer 427) |
+| 6 clingo | PASS (93 checks, vloer 83; 432 casussen — ref ≡ clingo) |
+| 7 noop | PASS (396 weerleggers; 36 gepinde overlevers) |
+| 8 rood | PASS (26 rode casussen, vloer 26) |
+| 9 catala | PASS (201 checks, vloer 201; 12 catala-goldens byte-identiek) |
+| 10 regelspraak | PASS (173 tests, vloer 173; 39 rgs-goldens byte-identiek, vloer 38) |
+| 11 toka-pariteit | PASS (29 toka-casussen, ref 29 / clingo 29 / Drools 29 PLAYED) |
+| 12 drools | PASS (played **121**; auto-excluded 44; value-divergence 1; JUnit **267**, vloer 239) |
+| 13 reftype-derivatie | PASS (74 twists over 15 goldens, vloer 74; 70 replays, 13 DRL-tak, vloer 13) |
+
+Beginstand ter vergelijking (main @17e5254): gate 5 496/428, gate 6 92/428,
+gate 7 392/36, gate 12 played 120 / JUnit 262.
+
+### Voorgestelde CONSTRUCTS-zin (rij 4, "Fact types and role navigation")
+
+Gewogen: rij 5 gaat over rolLIDMAATSCHAP (de existentiële check) en rij 22 over
+FEITcreatie; geen van beide draagt de case-invoer. Rij 4 draagt `RolBinding`,
+`navigatieBindingen` en WF-053 en is daarmee de rij waar navigatie over rollen
+thuishoort. Voorstel, additief aan die rij:
+
+> **Landed (2026-09-10, maintainer decision on the case-input reading):** a
+> supplied case role link ESTABLISHES the relation instance and both roles read
+> it — the symmetric reading, `RUNTIME-SEMANTICS.md` ch. 5.7a, generalising the
+> reciprocal both-directions clause of ch. 4.1 to every two-role fact type. The
+> shared case loader materialises the reverse leg on the SISTER role
+> (`Case.materialise_relations`), a conflicting to-one reverse leg is a load
+> error (WF-013), and the Drools case-input arm resolves that sister role by
+> the WRITTEN role name, so a self-typed 1:N relation supplied from either end
+> now replays identically in all three executors (golden
+> `jutterswet-ketenband`, three case files, one outcome). Tracked delta inside
+> the mirror: on a **1:1** relation a reference-field fact model owns two
+> fields and the Drools case-input arm still writes only the supplied one — a
+> named, gate-invisible ref ≢ Drools flank, pinned in the backend's own suite,
+> not in the corpus.
+
+### Zusterkaart bijgewerkt
+
+`backlog/new/20260910-zelfref-rol-materialisatie.md`: de
+besluitafhankelijkheidspassage is herschreven — het besluit is (i), `case2`
+wordt de **spiegel-pinnende** case (hij pint `W2.voorgangerrang = 10` op een
+eenzijdige levering, niet `attributeEmpty`), de wachttijd is voorbij. Erbij:
+een waarschuwingsblok boven flank A en B dat die twee metingen op de gerichte
+lezing zijn gedaan en hermeten moeten worden (flank A is nu een echte
+ref ≢ Drools-divergentie op de 1:1-vorm; flank B's Drools-weigering is
+vervallen door de naam-route), en twee routes voor de Drools-kant van case2 —
+de spiegelende schrijfactie erbij bouwen (dan bewegen de twee genoemde
+`OpslagrichtingWitnessTest`-plekken mee, en dat bestand is van die kaart) of
+alleen `case1` landen met de reden erbij. `EXPECTED_PLAYED` in die kaart is
+van 119→120 naar "één omhoog vanaf 121" gecorrigeerd.
+
+### Wat bewust niet is bewogen
+
+- **`spec/IR-SPEC.md`** — gezocht: het document draagt geen zin over
+  caselink-semantiek. Het noemt de case-invoer alleen als de laag waar de
+  gedeelde lezer, niet een WF-regel, een onbekend label of een onbekende
+  constructor weigert. De wet hoort dus in RUNTIME-SEMANTICS en nergens anders.
+- **`spec/verifier/**` en een WF-nummer** — gewogen en NIET nodig. Symmetrie is
+  SEMANTIEK, geen vormregel: ze zegt wat een geleverde link BETEKENT, niet
+  welke documenten welgevormd zijn. Er is niets aan de wire dat een verifier
+  hierop zou kunnen afwijzen; de enige nieuwe weigering zit in de caselezer
+  (de botsende terugpoot) en die valt onder de bestaande WF-013-lezing, precies
+  zoals de wederkerige variant dat al deed. De WF-101-kandidaat uit de kaart
+  hoort dus bij antwoord (ii) en vervalt met dat antwoord; het nummer blijft
+  vrij voor `20260910-geneste-aggregatie-rolketen.md`.
+- **`spec/schema/uchar-case-v0.schema.json` en zijn README** — de schemavorm
+  verandert niet (een rollink is nog steeds rolnaam → labels). De README-zin
+  "role links point at labels" is niet onwaar geworden; een verwijzing naar
+  ch. 5.7a daar is een nette toevoeging maar viel buiten de opdracht.
+- **`spec/CONSTRUCTS.md` en `spec/PLAN.md`** — niet aangeraakt, conform
+  WAY-OF-WORKING §4: de voorgestelde rij-4-zin staat hierboven.
+- **`DrlTranspiler`, `ExecModelTranspiler`, `OpslagrichtingWitnessTest`** — niet
+  aangeraakt (zusterkaart in review).
+- **De frontend** — draagt de vorm al en bindt bij naam; er viel niets te
+  repareren. Gate 10 bevestigt: de nieuwe golden her-emitteert byte-identiek.
