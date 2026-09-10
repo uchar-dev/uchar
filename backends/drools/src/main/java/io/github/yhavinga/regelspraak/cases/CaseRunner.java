@@ -606,7 +606,7 @@ public final class CaseRunner {
     /** The case's {@code asOfDate}, or null when it carries none. */
     private static LocalDate asOfDatum(JsonNode c) {
         JsonNode asOf = c.get("asOfDate");
-        return asOf == null || asOf.isNull() ? null : LocalDate.parse(asOf.asText());
+        return asOf == null || asOf.isNull() ? null : datumVanCaseWire(asOf.asText(), "asOfDate");
     }
 
     private static void setGlobalVeilig(KieSession sessie, String naam, Object waarde) {
@@ -727,7 +727,9 @@ public final class CaseRunner {
         JsonNode d = seg == null ? null : seg.get(veld);
         if (d == null || !d.isTextual())
             throw new IllegalArgumentException("segment op '" + waar + "' mist een '" + veld + "'-datum");
-        return LocalDate.parse(d.asText());
+        // the field name carries BOTH coordinates: a case may hold many timelines and each holds two
+        // boundaries, so "onderhoudstarief.from" is the only form a producer can act on
+        return datumVanCaseWire(d.asText(), waar + "." + veld);
     }
 
     /** One {@code Segment} fact of the generated bean model, built through the runtime's own reflective
@@ -909,13 +911,45 @@ public final class CaseRunner {
             if (s.contains("/")) throw new Excluded("rational value on '" + veld + "' is not carried by the v0 backend");
             return new BigDecimal(s);
         }
-        if (w.has("date")) return LocalDate.parse(w.get("date").asText());
+        if (w.has("date")) return datumVanCaseWire(w.get("date").asText(), veld);
         if (w.has("dateTime")) return datumTijdVanCaseWire(w.get("dateTime").asText(), veld);
         if (w.has("boolean")) return w.get("boolean").asBoolean();
         if (w.has("text")) return w.get("text").asText();
         if (w.has("enumeration")) return w.get("enumeration").asText();
         if (w.has("timeline")) throw new Excluded("timeline value on '" + veld + "' is not carried by the v0 backend");
         throw new Excluded("value form on '" + veld + "' is not carried by the v0 backend: " + w);
+    }
+
+    /* The uchar-case-v0 {@code date} lexeme, matched WHOLE: four-two-two digit fields, digits only, no sign
+     * and no extended year. It is the schema's own pattern, held here as well, for the same reason as the
+     * dateTime one below — gate 4 checks case FILES, this reader checks every case date that reaches the
+     * backend by any route. */
+    private static final java.util.regex.Pattern CASE_DATUM =
+            java.util.regex.Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
+
+    /** The calendar day a case {@code date} names — or a loud refusal naming the FORM, never a guess.
+     *  <p>{@link LocalDate#parse} is laxer than the wire it reads: beside the four-digit year it also accepts
+     *  the ISO forms with a SIGNED, extended year, which the schema pattern excludes and the interpreter
+     *  refuses — {@code +012026-03-15} is year 12026 and {@code -0500-01-01} is year −500. Measured
+     *  2026-09-10 on the three positions a date reaches this reader (a value, the case's {@code asOfDate}, a
+     *  timeline segment's boundary): with such a lexeme in the {@code asOfDate} of one golden and in a
+     *  segment boundary of another, this backend replayed both as PLAYED while the interpreter faulted on the
+     *  same two documents. That is a divergence the differential gate cannot see, since a case evaluated at
+     *  the wrong date or bucketed on the wrong grid may still satisfy every pinned expectation. Each reader
+     *  holds its own fence (IR-SPEC ch. 4.1), so the fence sits here rather than only in the schema, which
+     *  sees files and not the values a generator or a hand run hands this backend directly. A malformed
+     *  lexeme is a document defect, not a form this backend does not carry, so it is a hard error and never
+     *  an {@link Excluded}. */
+    private static LocalDate datumVanCaseWire(String lexeem, String veld) {
+        if (!CASE_DATUM.matcher(lexeem).matches())
+            throw new IllegalArgumentException("malformed date '" + lexeem + "' on '" + veld
+                    + "': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only,"
+                    + " no sign and no extended year");
+        try { return LocalDate.parse(lexeem); }
+        catch (java.time.format.DateTimeParseException e) {
+            throw new IllegalArgumentException("malformed date '" + lexeem + "' on '" + veld
+                    + "': the field widths are right but the calendar is not (" + e.getMessage() + ")");
+        }
     }
 
     /* The uchar-case-v0 {@code dateTime} lexeme, matched WHOLE: fixed field widths, {@code T} as the
