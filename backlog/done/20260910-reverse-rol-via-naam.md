@@ -728,7 +728,7 @@ die (niet-uitputtende) tabel.
 | `corpus/golden/anchor/jutterswet-penninguitgifte/case3.json` | nieuw; pint het besluit via `consistent` |
 | `corpus/golden/anchor/README.md` | de rij voor deze anker bijgewerkt |
 | `scripts/check-drools.sh` | `EXPECTED_PLAYED` 120 → **121**, met reden en meting; `EXPECTED_CHANNEL` ONGEWIJZIGD |
-| `scripts/check-noop.sh` | **niet aangeraakt** — gemeten: alle vier de nieuwe casussen weerleggen een niets-doende uitvoerder, dus geen overleverregel nodig (392 → 396 weerleggers, 36 overlevers ongewijzigd) |
+| `scripts/check-noop.sh` | **niet aangeraakt** — gemeten: alle VIJF de nieuwe casebestanden (drie bij `jutterswet-ketenband`, `penninguitgifte/case3`, `rekenkamer/case4`) weerleggen een niets-doende uitvoerder, dus geen overleverregel nodig (392 → 397 weerleggers, 36 overlevers ongewijzigd) |
 
 ### Gate-uitkomsten (alle dertien, op de kop van deze tak)
 
@@ -768,13 +768,15 @@ thuishoort. Voorstel, additief aan die rij:
 > shared case loader materialises the reverse leg on the SISTER role
 > (`Case.materialise_relations`), a conflicting to-one reverse leg is a load
 > error (WF-013), and the Drools case-input arm resolves that sister role by
-> the WRITTEN role name, so a self-typed 1:N relation supplied from either end
-> now replays identically in all three executors (golden
-> `jutterswet-ketenband`, three case files, one outcome). Tracked delta inside
-> the mirror: on a **1:1** relation a reference-field fact model owns two
-> fields and the Drools case-input arm still writes only the supplied one — a
-> named, gate-invisible ref ≢ Drools flank, pinned in the backend's own suite,
-> not in the corpus.
+> the WRITTEN role name — and, where the sister role is to-one as well, writes
+> the SECOND bean field the 1:1 shape owns. Both cardinalities therefore replay
+> identically in every executor: the self-typed **1:N** shape supplied from
+> either end (golden `jutterswet-ketenband`, three case files, one outcome) and
+> the **1:1** shape supplied one-sidedly (anchor `jutterswet-rekenkamer`
+> case 4, where the ch. 5.5 creation guard reads the materialised leg and
+> blocks). Consequence recorded at ch. 5.5: the storage-direction narrowing —
+> only subject-side stored links block a 1:1 creation — is WITHDRAWN by this
+> decision.
 
 ### Zusterkaart bijgewerkt
 
@@ -811,7 +813,112 @@ van 119→120 naar "één omhoog vanaf 121" gecorrigeerd.
   ch. 5.7a daar is een nette toevoeging maar viel buiten de opdracht.
 - **`spec/CONSTRUCTS.md` en `spec/PLAN.md`** — niet aangeraakt, conform
   WAY-OF-WORKING §4: de voorgestelde rij-4-zin staat hierboven.
-- **`DrlTranspiler`, `ExecModelTranspiler`, `OpslagrichtingWitnessTest`** — niet
-  aangeraakt (zusterkaart in review).
+- **`DrlTranspiler`** — niet aangeraakt. `ExecModelTranspiler` en
+  `OpslagrichtingWitnessTest` wél, maar pas in de vervolgronde en pas nadat de
+  zusterkaart gemerged was: in de eerste ronde bleven ze opdracht-conform
+  buiten schot. Wat er in de vervolgronde bewoog: in
+  `OpslagrichtingWitnessTest` drie assertieblokken onder mandaat omgezet plus
+  de klassejavadoc (per saldo 121 regels gewijzigd), in `ExecModelTranspiler`
+  uitsluitend COMMENTAAR en twee SKIP-redenstrings — geen regel uitvoerende
+  code. `ObjectCreatieWitnessTest` bewoog ook, buiten het letterlijke mandaat;
+  dat staat hierboven apart verantwoord.
 - **De frontend** — draagt de vorm al en bindt bij naam; er viel niets te
   repareren. Gate 10 bevestigt: de nieuwe golden her-emitteert byte-identiek.
+
+---
+
+## Fixronde (2026-09-10, na lens 1)
+
+Lens 1 draaide alle dertien gates zelf groen en reproduceerde elke meting. Eén
+blokkerend punt, vijf correcties, vier directe verbeteringen.
+
+**[BLOKKEREND] `spec/RUNTIME-SEMANTICS.md` ch. 5.5 droeg de ingetrokken
+lezing.** De clausule bij de 1:1-creatieguard zei nog dat alleen
+subject-zijdige links blokkeren en dat een levering op de gemunte zijde
+doorlaat — onwaar in drie richtingen: ch. 5.7a zegt het omgekeerde, de
+implementatie blokkeert nu wél (de terugpoot staat in `world0`), en
+`anchor/jutterswet-rekenkamer/case4` pint het omgekeerde met absolute waarden.
+Herschreven; de storage-direction-narrowing staat er nu historisch, met de
+datum en de intrekkingsgrond. Letterlijke tekst in het rapport.
+
+**[M1]** De voorgestelde CONSTRUCTS-zin eindigde op de 1:1-flank als
+"gate-invisible ref ≢ Drools flank" — achterhaald door de vervolgronde. De zin
+draagt nu beide cardinaliteiten als geland, met hun getuige, plus de
+ch. 5.5-consequentie (de narrowing is ingetrokken).
+
+**[M2]** "OpslagrichtingWitnessTest onaangeraakt" sprak de vervolgronde tegen.
+Gecorrigeerd en gespecificeerd: `DrlTranspiler` niet aangeraakt;
+`OpslagrichtingWitnessTest` 121 regels onder mandaat; `ExecModelTranspiler`
+uitsluitend commentaar en twee redenstrings, geen uitvoerende code;
+`ObjectCreatieWitnessTest` apart verantwoord.
+
+**[M3]** Zusterkaart: de aanpaksectie bood nog routes (a)/(b) voor de tweede
+schrijfactie. Route (a) is gelopen — herschreven zodat een volgende sessie daar
+niets bouwt en zeker niet route (b) neemt, met de gemeten viervoudige stand
+erbij.
+
+**[M4]** `corpus/golden/anchor/README.md`: "a fourth Penning" → "a second input
+Penning (uitgereikt, named by no jutter)". Eén juiste formulering, en de rij
+verwijst nu naar de nieuwe `NOTE.md`.
+
+**[M5]** "alle vier de nieuwe casussen (392 → 396)" → **vijf** casebestanden bij
+naam en **397**, in overeenstemming met de gate-tabel.
+
+**[K1] Anker case2 pinde twee van drie kanaalfeiten.** `penningcontrole × P2`
+reed onzichtbaar mee onder de existentiële match van een
+`inconsistent`-verwachting. Eenregelsfix: P2 krijgt `"characteristics":
+["uitgereikt"]`. Handherberekend: `penningcontrole` vuurt dan alleen op P1
+(P2 en de mint zijn uitgereikt), `houderscontrole` alleen op P2 (P1.houder
+leest J3 door de terugpoot, de mint heeft J3), dus het kanaal is **exact** de
+twee pins. Gemeten:
+
+    kanaalinhoud   penningcontrole × P1; houderscontrole × P2
+    symmetrisch    case1 PASS (7)  case2 PASS (5)  case3 PASS (4)
+    gericht        case2 PASS (5)  — besluitonafhankelijk, ongewijzigd
+                   case3 MISMATCH: expected consistent, but the channel
+                         carries: houderscontrole × P1
+
+De drie waarden van J3 (2 / 12 / 1) bewegen niet: P2 is aan geen enkele Jutter
+gekoppeld. Nieuw `NOTE.md` bij die anker met de handberekening van alle drie de
+cases voluit.
+
+**[K2/K3] De ingetrokken redenering stond ook in de backend.**
+`ExecModelTranspiler` argumenteerde op twee plekken vanuit de gerichte lezing —
+in commentaar bij de 1:1-creatieguard en in twee SKIP-redenstrings ("ref telt /
+leest de eigen links van het subject"). De code blijft; de grond is bijgewerkt.
+De redenstrings zeggen nu wat de weigering werkelijk nog is: **conservatief**,
+met haar oorspronkelijke grond ingetrokken door ch. 5.7a, en het opheffen ervan
+een eigen gemeten kaart omdat het gate-12-kanalen verschuift. Dezelfde
+correctie in de twee `EXPECTED_CHANNEL`-redenregels van `scripts/check-drools.sh`
+(voorstel; de gate vergelijkt alleen het KANAAL, de reden is documentatie). De
+grote commentaarblok bij de aggregatie-arm draagt nu de hermeten stand: ref
+antwoordt op die probe 2 / 3.75, dus de divergentie die het blok beschreef is
+weg en de backend had gelijk.
+
+**[K4]** `case.ml`-commentaar: "same read-preference order" was te sterk. De
+VOLGORDE is dezelfde (meervoud, dan naam), het PREDICAAT verschilt
+(`SMap.mem` versus een niet-lege waarde). Ze kunnen alleen uiteenlopen op een
+sleutel die aanwezig is met een lege labellijst, die geen toelaatbare case
+draagt — `load_instance` weigert hem op een to-one rol, het caseschema
+(`minItems: 1`, gate 4) op de rest. Vastgelegd in plaats van aangenomen.
+
+**[K5]** Ch. 5.7a draagt nu één alinea over volgorde-determinisme: een
+geleverde naar-veel-lijst staat op caseschrijfvolgorde, een gespiegelde op
+labelvolgorde. Constructies die ledenvolgorde blootleggen (een
+verdeling-op-volgorde-gelijkspelgroep, een eerste/laatste-vouw) kunnen dat
+verschil zien. Niets wat het hoofdstuk beslist hangt ervan af (lidmaatschap en
+kardinaliteit zijn volgordevrij, en ch. 4.2 maakt een gelijkspelgroep
+gelijktijdig), dus het is een residu, geen divergentie — opgeschreven in plaats
+van later ontdekt. Geen corpuscase raakt het.
+
+**[K6]** `CaseRunner` ±511: de zusterZelfpaar-toets krijgt een expliciete
+zelfgetypeerd-conditie. `zelfpaarRollen` leidt alleen velden af voor een
+zelfgetypeerd paar, dus kruistypisch kon de toets hoogstens een
+naamtoevalligheid vangen en dan de eerlijke by-pair-weigering een veld van een
+ANDERE relatie in handen geven. Gemeten: geen model in corpus of fixtures
+bereikt die tak, dus dit sluit oppervlak in plaats van gedrag te veranderen.
+
+**Gates na de fixronde:** 1 PASS, 3 PASS (194 / 362), 5 PASS (515 worked
+examples / 433 casussen), 7 PASS (397 weerleggers / 36 overlevers), 12 PASS
+(played 121, JUnit 271, auto-excluded 44, value-divergence 1). Ongewijzigd ten
+opzichte van de vervolgronde — de fixronde raakt geen enkele telling.

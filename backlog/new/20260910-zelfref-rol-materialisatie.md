@@ -288,24 +288,30 @@ geen schemawijziging.
      alleen `W1.opvolger = W2` geleverd geeft `W2.voorgangerrang = 10`. Hij is
      daarmee de **spiegel-pinnende** case en de regressiedetector van het
      besluit, niet zijn tegendeel. De wachttijd is voorbij; hij mag landen.
-   - **Maar niet zomaar groen in alle vier de lenzen.** Deze bron is de
-     **1:1-vorm** (twee to-one rollen, dus twee beanvelden). `ref` en clingo
-     spiegelen sinds het besluit; de **Drools-case-invoer doet de tweede
-     schrijfactie nog niet**, dus daar leest `voorgangerrang` leeg. Zolang die
-     schrijfactie er niet is, valt deze golden met zo'n case2 uit het
-     PLAYED-kanaal (een waarde-divergentie, geen weigering). Twee routes,
-     kies er één en zeg welke: **(a)** de spiegelende schrijfactie in
-     `CaseRunner.zetRollen` erbij bouwen — dan bewegen twee assertieplekken in
-     `OpslagrichtingWitnessTest` mee (`de_gewone_zelfpaarkoppeling_spiegelt_niet`
-     en `dezelfde_telling_negeert_een_levering_aan_de_elementkant`, beide pinnen
-     de gerichte lezing), en dat bestand is van DEZE kaart; of **(b)** case2
-     voorlopig niet leveren en alleen case1 landen, met de reden hier.
-2. **Gate 12** — met alleen `case1.json` komt de golden PLAYED binnen:
-   `EXPECTED_CHANNEL` ongewijzigd, `EXPECTED_PLAYED` één omhoog vanaf de dan
-   geldende stand (**121** sinds `20260910-reverse-rol-via-naam.md`, niet 119).
-   Met een spiegel-pinnende `case2.json` erbij hangt het kanaal aan route (a)
-   of (b) hierboven — meet het, neem het niet aan. Beide zijn een **beschermd
-   pad**: als voorstel indienen, niet mergen.
+   - **De Drools-kant is AL GEBOUWD — er is geen keuze meer te maken.** Deze
+     bron is de **1:1-vorm** (twee to-one rollen, dus twee beanvelden), en de
+     twee routes die hier eerder stonden zijn ingehaald: route (a) — de
+     spiegelende schrijfactie in `CaseRunner.zetRollen` — is gelopen op
+     `20260910-reverse-rol-via-naam.md`, samen met de drie assertieblokken die
+     de gerichte lezing pinden (twee in `OpslagrichtingWitnessTest`, één in
+     `ObjectCreatieWitnessTest`). Een volgende sessie hoeft daar niets meer te
+     bouwen en moet vooral niet route (b) nemen.
+
+     Gemeten op precies deze bron, eenzijdige levering, verwachting
+     `W2.voorgangerrang = 10`:
+
+         verifier PASS
+         ref                oracle: PASS (4 expectations)
+         Drools exec-model  PLAYED 1
+         Drools DRL-tekst   PLAYED 1
+
+     `case2.json` hoort dus gewoon in het PLAYED-kanaal thuis, met de waarde
+     die door de niet-geleverde richting komt.
+2. **Gate 12** — de golden komt PLAYED binnen, met `case1.json` én met de
+   spiegel-pinnende `case2.json`: `EXPECTED_CHANNEL` ongewijzigd,
+   `EXPECTED_PLAYED` één omhoog vanaf de dan geldende stand (**121** sinds
+   `20260910-reverse-rol-via-naam.md`, niet 119). Meet het, neem het niet aan.
+   Beschermd pad: als voorstel indienen, niet mergen.
 3. **De overige gates bewegen niet.** Gate 5's `EXPECTED_MIN_CASES` (427) en
    gate 6's telling zijn ondergrenzen — groei vraagt geen bijstelling. Gate 7
    is gemeten: beide cases falen onder `--noop`, dus geen overlever-regel.
@@ -338,9 +344,10 @@ geen schemawijziging.
 - De besluitafhankelijkheid van `case2.json` is BESLIST en verwerkt: het
   antwoord is (i) (symmetrisch, `RUNTIME-SEMANTICS.md` ch. 5.7a), dus case2 is
   de **spiegel-pinnende** case en pint `W2.voorgangerrang = 10` op een
-  eenzijdige levering. Deze kaart zegt expliciet welke van de twee routes uit
-  punt 1 ze neemt voor de Drools-kant van die case, en `OpslagrichtingWitnessTest`
-  is bijgewerkt of niet aangeraakt volgens die keuze.
+  eenzijdige levering. De Drools-kant daarvan is al gebouwd op
+  `20260910-reverse-rol-via-naam.md` (de spiegelende schrijfactie plus de
+  omgezette assertieblokken), dus deze kaart bouwt daar niets meer en pint
+  alleen — PLAYED in beide Drools-takken, gemeten.
 - De gate-13-keuze uit punt 4 staat met reden in de commit of in de golden.
 - Alle dertien gates groen.
 

@@ -1013,19 +1013,20 @@ public final class ExecModelTranspiler {
         // A to-one element role is only FAITHFUL, though, when its sibling is to-one as well: then each direction
         // owns a field and a one-sided supply stays one-sided, exactly as ref stores it. With a TO-MANY sibling the
         // relation has exactly ONE field, which necessarily serves both directions, so a link supplied from the far
-        // end reads here as this end's own — where ref reads nothing. That shape is refused, not silently counted.
+        // end reads here as this end's own. That shape is refused, not silently counted.
         //
-        // HONEST SCOPE (card lens 2026-08-30). "Refused, not silently counted" is a claim about THIS arm only. The
-        // one-shared-field hazard is not created by the to-one element role: it is inherent to the SHAPE, so it
-        // holds unchanged for the to-many backref arm above — and THERE the far-end supply IS silently counted.
-        // Measured on jutterswet-vondsttelling (element role `vondst` to-many, the single field Vondst.aanmelder),
-        // a case supplying the link from the ELEMENT end (V1{aanmelder:[J1]}, V2{aanmelder:[J1]}) reads in
-        //   ref:    J1 aantal 0, gewicht 0   (ref keys the set on the SUBJECT's own links — nothing was written there)
-        //   Drools: J1 aantal 2, gewicht 3.75 (the backref join probes the one shared field and folds both)
-        // A KNOWN, PRE-EXISTING divergence with NO corpus witness: every golden supplies a to-many relation from
-        // the ONE side, where both executors agree, so the corpus never looks at it and no gate can see it. It is
-        // NOT closed here — closing it would mean tracking WHICH end a link was supplied from, which changes the
-        // storage model under every existing aggregation. Carded as a residual gap, not as a regression.
+        // WHY THE REFUSAL STILL STANDS — and on which ground (updated 2026-09-10). It used to rest on ref reading
+        // the same link as NOTHING: measured on jutterswet-vondsttelling (element role `vondst` to-many, the single
+        // field Vondst.aanmelder), a case supplying from the ELEMENT end (V1{aanmelder:[J1]}, V2{aanmelder:[J1]})
+        // read ref 0 / 0 against Drools 2 / 3.75 — a divergence with no corpus witness, since every golden supplies
+        // such a relation from the ONE side where the two agreed.
+        // RUNTIME-SEMANTICS ch. 5.7a WITHDREW that ground: a supplied link establishes the relation and both roles
+        // read it, so ref now answers 2 / 3.75 on that very case (remeasured) — the divergence is gone, and the
+        // backend's numbers were the right ones all along. What remains is therefore NOT a correctness claim but a
+        // CONSERVATIVE one: this arm keeps refusing, because deciding it is now expressible is a measured change
+        // with gate-12 channel consequences and belongs to its own card, not to a comment.
+        // The sister arm above (to-many backref) never refused and needs no revisiting: it computed the reading
+        // ch. 5.7a decided.
         // NB the by-NAME lookup only for a COUNT: there arg.attribuut() IS the written element role (the same
         // reading verbindendeRolViaElementnaam applies above); for a sum/min/max it is an ATTRIBUTE name, which
         // must never be matched against role names.
@@ -1039,8 +1040,10 @@ public final class ExecModelTranspiler {
         if (voorwaarts && model.naarVeelRol(elem, subject, backref)) {              // one shared field, both directions
             aggregatieReden = "aggregatie over de enkelvoudige elementrol '" + elemRol + "' wiens zusterrol '"
                     + backref + "' meervoudig is: dat feittype heeft ÉÉN beanveld en dat draagt noodzakelijk BEIDE"
-                    + " richtingen, dus de gerichte lezing — ref leest de eigen links van het subject onder de"
-                    + " elementrol — is in het v0 beanmodel niet uit te drukken (§13.3.9 opslagrichting)";
+                    + " richtingen. Deze weigering staat CONSERVATIEF: haar oorspronkelijke grond — de gerichte"
+                    + " lezing van de case-invoer — is per RUNTIME-SEMANTICS ch. 5.7a ingetrokken, en of ze"
+                    + " daarmee overbodig is geworden vergt een eigen, gemeten kaart (het opheffen verschuift"
+                    + " gate-12-kanalen) (§13.3.9 opslagrichting)";
             return null;
         }
         // ...and the join field must actually EXIST. Both arms above derive a ROLE, which is not the same as a bean
@@ -5109,9 +5112,11 @@ public final class ExecModelTranspiler {
         if (zuster == null) return new Telling(null, generiek);
         if (model.naarVeelRol(elem, subject, zuster))
             return new Telling(null, "AANTAL over de enkelvoudige rol '" + rol + "' wiens zusterrol '" + zuster
-                    + "' meervoudig is: dat feittype heeft ÉÉN beanveld en dat draagt noodzakelijk BEIDE richtingen,"
-                    + " dus een gerichte telling — ref telt de eigen links van het subject onder de elementrol — is in"
-                    + " het v0 beanmodel niet uit te drukken (§13.3.9 opslagrichting)");
+                    + "' meervoudig is: dat feittype heeft ÉÉN beanveld en dat draagt noodzakelijk BEIDE richtingen."
+                    + " Deze weigering staat CONSERVATIEF: haar oorspronkelijke grond — de gerichte telling van de"
+                    + " case-invoer — is per RUNTIME-SEMANTICS ch. 5.7a ingetrokken, en of ze daarmee overbodig is"
+                    + " geworden vergt een eigen, gemeten kaart (het opheffen verschuift gate-12-kanalen)"
+                    + " (§13.3.9 opslagrichting)");
         final String veld = rol;
         return new Telling(s -> RegelSpraakRuntime.get(s, veld) == null ? BigDecimal.ZERO : BigDecimal.ONE, null);
     }
@@ -5720,8 +5725,10 @@ public final class ExecModelTranspiler {
      *        subject updated. A to-many end has no field at all (it is stored as the other end's), so it is left
      *        alone; only a pair with NO writable end is refused.</li>
      *    <li>The <b>1:1 idempotence guard</b> reads the SUBJECT-side stored link (the forward field) rather than
-     *        the created object's back-reference, which is how the interpreter reads it and what the spec's
-     *        storage-direction narrowing records.</li>
+     *        the created object's back-reference — the field that answers "does the subject FILL the created-side
+     *        role", which is the question ch. 5.5 poses and how the interpreter reads it. Since ch. 5.7a the two
+     *        ends carry the same relation (the case-input layer writes both on a 1:1 shape), so this is a choice
+     *        of field, no longer a choice of reading.</li>
      *    <li>A <b>kenmerkwaardetoekenning</b> (§13.4.6.4) sets the mark only when its value is true; false or
      *        empty leaves it unset, instead of unboxing a leeg into the primitive boolean field.</li>
      *  </ul>
@@ -5883,10 +5890,15 @@ public final class ExecModelTranspiler {
         if (eenOpEen) {
             // ch. 5.5, the 1:1 linked-instance guard read as the interpreter reads it: the SUBJECT-side stored
             // link on the created-side role (ref's role_links over new_role), i.e. the forward field the
-            // consequence below writes. Deliberately NOT the created object's back-reference: a case that
-            // delivers the link solely on the created side must NOT block (the storage-direction narrowing the
-            // spec records), and reading the subject side also makes the write below safe — it can never hand
-            // an already-filled to-one role a second filler.
+            // consequence below writes. That field answers ch. 5.5's actual question — does the subject FILL the
+            // created-side role — and reading it also makes the write below safe: it can never hand an
+            // already-filled to-one role a second filler.
+            // NB this is a choice of FIELD, not of reading. Until 2026-09-10 it was also the latter: a case
+            // delivering the link solely on the created side did not block, recorded in the spec as the
+            // storage-direction narrowing. ch. 5.7a WITHDREW that narrowing — a supplied link establishes the
+            // relation and the case-input layer writes both fields on a 1:1 shape — so both ends now carry the
+            // same relation and either field would answer the same. The anchor jutterswet-rekenkamer case 4
+            // pins it: a created-side delivery blocks, in ref, clingo and here.
             // Only the DIRECTION follows ref; the MOMENT does not. RUNTIME-SEMANTICS.md r1673-1680 notes the two
             // narrowings apart: ref reads the world0 SNAPSHOT (a link written during the run is invisible to its
             // guard), this predicate reads the LIVE fact base. Deliberate — a Drools LHS has no world0 to read.

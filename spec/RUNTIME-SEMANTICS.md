@@ -1985,9 +1985,20 @@ linked-instance guard: an already linked instance — a case-supplied
 one included — blocks the creation; the executed guard reads the
 **input world** (a snapshot: v0's live fact-base negation is narrowed,
 recorded — cross-form blocking through links laid during evaluation is
-not mirrored), and only the **subject-side stored links** (a case that
-delivers the link solely on the created side does not block — the
-storage-direction narrowing, recorded). Minted instances live in a
+not mirrored), and asks whether the subject **fills** the created-side
+role in it. It does not ask which **leg** the case spelled: by ch. 5.7a
+a supplied link establishes the relation itself, so a delivery solely on
+the created side blocks exactly as a subject-side delivery does — the
+reverse leg the loader materialises is a link like any other, and the
+guard reads it. *(Until 2026-09-10 this clause read the other way: only
+subject-side stored links blocked, and a created-side delivery minted
+anyway. That was recorded here as the storage-direction narrowing, and
+the ch. 5.7a decision **withdraws** it — the narrowing described a
+question the case input no longer poses. The anchor
+`jutterswet-rekenkamer` case 4 pins the symmetric reading with absolute
+values: the subject's own attribute reads through the SUPPLIED
+counterpart, not through a mint, in ref, clingo and the Drools backend
+alike.)* Minted instances live in a
 reserved label namespace (`::`), refused for case labels at load, and
 are keyed by the creation's index — never its nullable name — so two
 name-less creations can never collide. The to-many and linkless shapes realise the marker as
@@ -2164,6 +2175,19 @@ Two consequences, both mechanical:
    idempotent: a case that supplies both legs describes one relation,
    not two. A conflicting reverse leg on a **to-one** sister role is a
    load error (WF-013), never a silent overwrite.
+
+   *Recorded residue — member ORDER.* A supplied to-many list carries
+   the order the case wrote it in; a materialised one accumulates its
+   members in **label order**, that being the order the pass walks the
+   input in. The two need not coincide, so a construct that exposes
+   member order — an ordered allocation's tie group, a first/last fold —
+   can see the difference between the two spellings. Nothing this
+   chapter decides is affected (membership and cardinality are
+   order-free, and ch. 4.2 makes a tie group simultaneous), so this is a
+   residue rather than a divergence; it is written down instead of left
+   to be discovered. No corpus case observes it — the mirror only adds a
+   list where a side had none, and every pinned value replays unchanged
+   in both executors.
 2. **A reference-field fact model writes what it can hold.** Where an
    executor stores one scalar reference per to-one role, a **1:N**
    relation has exactly ONE field and that field already serves both

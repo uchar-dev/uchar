@@ -442,8 +442,19 @@ let materialise_relations (doc : document) (world : World.t) =
         (fun key targets w ->
           let _, _, sister = resolve_role_ft doc ~otype:i.otype ~key in
           (* the keys the sister role's links may sit under, in the same
-             read-preference order Eval.role_keys and World.add_link use,
-             so a materialised leg lands where every reader looks *)
+             ORDER Eval.role_keys and World.add_link use (plural first,
+             then name), so a materialised leg lands where every reader
+             looks. The PREDICATE is deliberately not identical: here
+             "the target already keys this role" is key PRESENCE
+             (SMap.mem), in add_link it is a NON-EMPTY value. They can
+             only diverge on a key that is present with an empty label
+             list, which no admissible case carries — load_instance
+             refuses it on a to-one role (exactly one label), and the
+             case schema's minItems of 1 refuses it on the rest (gate 4).
+             Were one to reach here anyway, both would still pick the
+             plural, the first key in the list; the readings differ only
+             if the SINGULAR key were the empty-but-present one. Stated
+             rather than assumed, and not worth a third predicate. *)
           let sister_keys =
             List.filter_map (fun k -> k) [ sister.rol_meervoud; sister.rol_naam ]
           in

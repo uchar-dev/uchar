@@ -507,8 +507,16 @@ public final class CaseRunner {
                 // pair keeps its by-pair answer and its name-sharing refusal instead of reaching a setter no
                 // bean carries. Where the by-pair search already succeeds, a by-name hit is one of its
                 // candidates, so a unique pair resolves to the same role either way.
+                //
+                // The self-typed guard states the reach rather than relying on it: zelfpaarRollen only ever
+                // derives fields for a SELF-typed pair, so on a cross-type pair the membership test could at
+                // best fire on a NAME COINCIDENCE — the target type happening to carry a self-pair role of the
+                // same name — and would then hand the by-pair route's honest refusal a field belonging to a
+                // different relation. Measured: no corpus or fixture model reaches it either way, so this
+                // closes surface rather than changing behaviour.
                 String zuster = model.verbindendeRolViaElementnaam(tI, e.getKey());
-                boolean zusterZelfpaar = zuster != null && FactModelGenerator.zelfpaarRollen(model, tL).contains(zuster);
+                boolean zusterZelfpaar = zuster != null && tI.naam.equalsIgnoreCase(tL.naam)
+                        && FactModelGenerator.zelfpaarRollen(model, tL).contains(zuster);
                 String rolLI = zusterZelfpaar ? zuster : model.verbindendeRol(tL, tI);
                 if (rolIL != null && !model.naarVeelRol(tI, tL, rolIL)) {
                     naamdelingsPoort(tI, rolIL, tL, e.getKey());
