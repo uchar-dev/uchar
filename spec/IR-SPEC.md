@@ -2166,7 +2166,7 @@ the schema when it does.
 | AttributeReference | `attribute`, `subjectType`, `path` (role steps), `type`, `source` | **Delta (row 4):** v0 splits navigation over `navigatieRol` + `navigatiePad` + a `set` flag (with the invariant that a non-empty path implies a role) and keeps the transpiler-facing `onderwerpBron`; v1 unifies into one explicit path of role steps, with result cardinality derived from the declared role cardinalities. **Landed (2026-08-18):** the symbolic path rides the v0 wire as the `navigatieBindingen` extension field (ch. 4.1a, WF-053); the anchor `jutterswet-kustwacht` executes all three navigated shapes through both executors. *Migration:* the v1 unification drops the written-name fields the bindings supersede |
 | ParameterReference | `parameter` (name ref), `type`, `source` | the v0 wire form is already symbolic (the emitter writes the name) — the "embed the model object" wart is in-memory only |
 | VariableReference | `name`, `type`, `source` | a rule-local let-binding (§13.4.2.10); binding is frontend scope resolution |
-| ContextValue | `name` ∈ evaluation-date, evaluation-year | **Delta (row 25):** split from v0's `Constante` grab-bag; the pronoun referents that shared that node are surface forms the frontend resolves away. *v0 mirror note:* the wire carries `Constante` named `Rekendatum` (typed day-precision) or `Rekenjaar` (whole number); `Rekendatum` is the ch. 8.2 execution-date constant and the index of the ch. 8.3 vintage read (`RUNTIME-SEMANTICS.md`); `Rekenjaar` has no corpus witness yet — executors fault on it |
+| ContextValue | `name` ∈ evaluation-date, evaluation-year, day-kind day | **WF-098 (below):** the name is a CLOSED SET of exactly three — `Rekendatum`, `Rekenjaar`, `de dag` — crossed BYTE-EXACTLY. Nothing in the document declares a context value, so this is an enumeration, not a resolution. **Delta (row 25):** split from v0's `Constante` grab-bag; the pronoun referents that shared that node are surface forms the frontend resolves away. *v0 mirror note:* the wire carries `Constante` named `Rekendatum` (typed day-precision), `Rekenjaar` (whole number) or `de dag` (typed day-precision); `Rekendatum` is the ch. 8.2 execution-date constant and the index of the ch. 8.3 vintage read (`RUNTIME-SEMANTICS.md`); **`de dag`** is semantically the BOUND DAY of a day-kind definition (ch. 3.7) — the arbitrary day the definition is about, not a session value — spelled as a context value because v0 has no node kind of its own for it; whether v1 gives it one is an open point, deliberately not decided with this row. `Rekenjaar` is admitted-and-unexecuted: no document carries it and the reference interpreter faults on it by name, which is the honest answer, so it stays in the set without a carrier |
 
 **Domain identity (WF-089, ch. 2.4).** An `AttributeReference`'s or
 `ParameterReference`'s `type` is a use site of the declaration it
@@ -2636,23 +2636,7 @@ declared-characteristic cross is keyed on the subject, and deciding that an
 explicit owner overrides it is a semantics question about which owner is
 authoritative, not a resolution one; WF-009's own
 question, whether a unit's `afkorting` is one the
-system it names declares, which (r) deliberately leaves alone;
-**`Constante.naam`** — the name a `ContextValue` node carries, which nothing
-crosses against anything: measured 2026-09-09, the four zones hold **13**
-`Constante` occurrences over 5 documents in exactly **two** spellings,
-`Rekendatum` (2) and `de dag` (11), while the ch. 4.1 ContextValue row
-enumerates `Rekendatum` and `Rekenjaar`, so the wire's commonest name is one
-that row does not name and one of the row's two names is carried by no
-document at all. The verifier never reads the field; the three executors each
-read it as a MAGIC STRING with a fall-through of its own (`ref` faults on any
-third name, the ASP backend refuses, the Drools backend has two independent
-readers — a case-sensitive `equals` on `Rekendatum` and a case-insensitive one
-on `de dag` — and degrades an unknown name to an unrecognised operand, not to
-a diagnosis). It stays here rather than joining (s) because it is a
-CLOSED-SET question and not a resolution one — the admissible names are fixed
-by the spec, not by a declaration table the document carries — so the clause
-to write is an enumeration, which decides which spellings v1 admits;
-carded 2026-09-09. And WF-007's
+system it names declares, which (r) deliberately leaves alone; and WF-007's
 precision-form check, which has the identical blind spot
 in containers and is its walk to make, not this rule's. (The unresolved
 `regels` **stubs** left this list by maintainer decision on 2026-09-05: they
@@ -2680,7 +2664,18 @@ splits the executors the other way round from (n)/(o), two passing silently and
 correctly while the bean-model executor crashed in the identifier contract, and
 that shape needed a decision of its own. It got one; what the clause did NOT
 also do is settle the two maps inside a unit system, which are recorded there,
-not here.)
+not here. **`Constante.naam` left it on 2026-09-10**: WF-098 (ch. 4.1) writes
+the ENUMERATION this entry said the position needed — the three admissible
+context-value names, crossed byte-exactly — so the field that crossed against
+nothing now crosses against a set the spec fixes. Two of the three things this
+entry recorded held up and one did not. It was right that the ch. 4.1 row
+failed to name `de dag`, and right that `Rekenjaar` is carried by no document;
+the row settles both, the first by following the wire and the second by
+admitting a name no executor implements. It was wrong about the count: 13
+occurrences over 5 documents was measured before a rood document arrived, and
+the re-measurement of 2026-09-10 finds **14** over **6**. What the clause does
+NOT take is the EMPTY half, `naam: null`, which is recorded with WF-098 and its
+measurement rather than here.)
 
 **The numeric-literal lexeme (WF-081).** A `Literal` whose `type` is
 numeric (`Numeriek` or `Percentage`) MUST carry as its value a **bare
@@ -2899,6 +2894,115 @@ What this rule deliberately does NOT do: it does not force the emitter to
 write the canonical lexeme. That is the remaining open flank, recorded
 here so the next producer knows which form to target — the canonical one
 is what this rule names first and what a consumer reads.
+
+**The context-value name (WF-098).** A `Constante` — the v0 spelling of a
+ContextValue — MUST carry as its `naam` one of exactly **three** names, and
+MUST spell it **byte for byte**:
+
+```
+Rekendatum   -- the ch. 8.2 execution date, and the index of the ch. 8.3
+                vintage read (day precision)
+Rekenjaar    -- the execution year (whole number)
+de dag       -- the bound day of a day-kind definition (ch. 3.7): the
+                arbitrary day the definition is about (day precision)
+```
+
+Nothing else is a context value. Not a fourth name, not a recapitalisation of
+one of these three.
+
+**This is an enumeration, not a resolution.** No table in the document declares
+a context value, so there is nothing for the name to resolve against and
+WF-034's class does not reach it: what has to be written here is the closed set
+itself, and writing it decides what v1 admits at this node. That is why the
+clause carries its own number rather than joining WF-034 — WF-034 crosses a
+name against declarations the document carries, this one against a set the
+spec fixes.
+
+**Why byte-exact.** The consumers below the wire do not agree about case, and
+the disagreement is not between them alone but inside one of them. The
+reference interpreter and the ASP backend both compare a normalised name
+(whitespace collapsed, lower-cased) and so accept `rekendatum`; the Drools
+backend's constant reader compares with `equals` and would not recognise it,
+while its day-kind reader compares `de dag` with `equalsIgnoreCase` and would.
+Measured 2026-09-10, one character recapitalised on the anchor golden
+`jutterswet-penningvintage` (`Rekendatum` → `rekendatum`): `verifier: PASS`,
+`ref` PASS on 2 expectations, the ASP backend PASS on the same 2 — three
+consumers agreeing on the twisted document, and a fourth that reads the field
+differently. The rule takes the byte-exact side and closes the question ON THE
+WIRE: with the name pinned at verification time a document carrying
+`rekendatum` never reaches an executor, which makes the normalisation inside
+the two OCaml consumers unreachable on any conforming document and leaves the
+Drools readers as they are. The corpus cannot show that divergence as a
+differential — of the three `Rekendatum` carriers, the anchor golden is
+excluded by the Drools loader for an unrelated reason and the other two are red
+documents, required to fail — and a purpose-built player would be a document
+whose entire content is the defect. Closing the wire is the route taken instead
+of adding one, and the residue is stated rather than hidden: a HAND-BUILT
+document that skips the verifier still reaches the executors with a
+non-canonical name and still splits them. The rule bounds conforming documents,
+not every input a runner can be handed.
+
+**Why the set holds three and not two.** The row above enumerated `Rekendatum`
+and `Rekenjaar` while the wire's commonest context value is `de dag` — measured
+2026-09-10, the four zones plus the parity zone hold **14** `Constante` nodes
+over **6** documents in exactly **two** spellings, `de dag` (11, in 3
+documents) and `Rekendatum` (3, in 3 documents). Mirror-then-diverge decides
+that: the wire is the v0 fact, so the row follows it and the set admits `de
+dag`. What `de dag` IS remains what ch. 3.7 says — the bound day of a day-kind
+definition, not a session value — and giving it a node kind of its own is a v1
+question this clause does not answer.
+
+**`Rekenjaar` stays in the set without a carrier.** No document in any zone
+carries it, and the reference interpreter faults on it by name ("not exercised
+by any corpus case"). That fault is the honest answer for a name the spec
+admits and no executor implements, so the name is admitted-and-unexecuted
+rather than dropped: removing it from the set would make a document ill-formed
+for using a construct ch. 8.2 defines.
+
+**Observability before the rule: none, in either direction.** Measured
+2026-09-10 on the state that predates this clause, one field at a time:
+`de dag` → `de dagX` on `jutterswet-schouwrooster` left the verifier, `ref` and
+the ASP backend on exactly the untwisted answers (PASS on 7 and 3 expectations
+in both executors), because no executor evaluates a day-kind definition today;
+`Rekendatum` → `rekendatum` left all three passing as shown above. The one
+twist that is loud, `Rekendatum` → `RekendatumX`, is loud with the WRONG
+message: `ref` says `expression kind not implemented in this card` and the ASP
+backend `expression kind not translated`, which is each one's fall-through, not
+a diagnosis about a name. So the wire admitted a name nothing recognised, and
+the executors either answered as if nothing had happened or refused without
+saying what was wrong.
+
+**Scope: the PRESENT name.** A `naam` of `null` is schema-valid — the field is
+typed `["string", "null"]` — and is the empty half of the same field, the
+(n)/(o) precedent of ch. 4.6. This clause reads the present name only. Measured
+2026-09-10 on a one-edit twist of `anchor/jutterswet-penningvintage`: the
+verifier passes it, `ref` and the ASP backend both fall through to their
+generic refusal (`expression kind not implemented` / `not translated`), and the
+Drools readers compare a null against their literals and reach neither branch,
+degrading the operand to a marker. Three fall-throughs and no dereference —
+unlike WF-095's null lexeme, which one reader dereferences — so the shape is
+recorded here with its measurement rather than folded in. No document in any
+zone carries it.
+
+**The one producer route that emits a fourth name was already ill-formed.**
+The RegelSpraak frontend constructs a `Constante` named `hij` for the animate
+pronoun, and the resolver normally resolves it away: over the 38 goldens with a
+committed source, and the 14 whose source writes `hij`, not one emits a
+`Constante` at all. It can leak — measured 2026-09-10, `indien hij gelijk is
+aan hij` emits two of them with `diagnostics: []` — but it leaks carrying the
+UNKNOWN-TYPE SENTINEL (`Onbekend`, "niet opgelost"), which WF-034's type
+prologue already refuses at the same node. So this clause cuts no conforming
+producer route: it adds a second, name-level line at a position the verifier
+rejected already, and the frontend's own pronoun handling is untouched by it.
+
+**Cost: none.** Over the 578 documents of the four zones plus the parity zone
+that predate this clause, all 14 context values spell an admissible name
+verbatim; the two witnesses are the only documents anywhere that do not. The
+before/after sweep over all 580 moves exactly those two verdicts and not one
+report line elsewhere. The check reaches every position the wire uses: all 14
+nodes were twisted one at a time and the rule fires at each, inside a day-kind
+definition's flat composite, inside a nested composite, as a function argument,
+as the date index of a temporal read and inside a `Let` body.
 
 ### 4.1a The navigated read (WF-053)
 
@@ -5780,6 +5884,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-095 | a datum-tijd literal's lexeme is one of the TWO spellings every reader admits, each matched whole (ch. 4.1): the canonical ISO `yyyy-mm-ddThh:mm:ss[.fff]` — fixed field widths, `T` never a space, the seconds field always written, no zone suffix and no offset, a fraction that is optional but exactly three digits, the date half calendar-valid — or the day-first source snippet `[dd. ]d-m-yyyy hh:mm:ss[.SSS]`, whose variable-width day and month are the RegelSpraak token's. The second spelling is admitted because the repository's own emitter still writes it: for a `DatumTijd` literal it emits the snippet into `waarde` AND `bron` (measured 2026-09-06), unlike a day-precision date, so WF-084's single-lexeme narrowing would make the producer non-conforming. Everything else is refused — precisely the forms every reader already refused, and the wire refused none of them: `rommel 2024-01-31 12:00:00Z x` was schema-valid and verifier-clean (measured 2026-09-06). It is the wire half of a three-reader fence closed on the same day: the shared interpreter/ASP case reader read `.1` as ONE millisecond and `.100000` as a hundred THOUSAND where the Drools case reader read a hundred and the literal reader refused, and gate 4's schema pattern was the ONLY reason that never showed. Boundary counted 2026-09-06 over the four zones (539 documents): the only WELL-FORMED `DatumTijd` literals anywhere are this rule's own golden's two, beside the five its negatiefs carry — the rule finds no document predating it, so nothing of the corpus moves. The 30 `dateTime` values on the CASE wire (25 public, 5 in the parity zone) were all already canonical, so the readers' own fences move none of them either. **Scope: the PRESENT lexeme.** `waarde: null` is the empty half of the same field and a different question (the (n)/(o) precedent of ch. 4.6), left open with its shape stated rather than for want of a witness: the schema types `waarde` as `["string", "null"]`, so a null LEXEME is schema-valid where a MISSING `waarde` is refused by gate 2, and this rule's arm reads the present lexeme only. Measured 2026-09-06 on a one-edit twist of this rule's own golden: `verifier: PASS`, while the executors split — `ref` and the ASP backend both fault BY NAME (`missing Literal.waarde`) and the bean-model executor DEREFERENCES it (`NullPointerException: Cannot invoke "java.lang.CharSequence.length()" because "this.text" is null` — the shared datum-tijd reader matches its patterns against the handed value with no null guard). Two named refusals and one dereference under a document the wire admits: the same three-reader shape this rule closes for the non-null half | gate 3 | `jutterswet-meldstip` (a canonical-lexeme literal ordered against a `DatumTijd` attribute at a sub-day threshold, replayed by gates 5, 6 and 12 — the first `DatumTijd` coverage of the differential) | `wf095-zone-suffix`, `wf095-spatie-scheider`, `wf095-fractiebreedte`, `wf095-ontbrekende-seconden`, `wf095-omringende-tekst` |
 | WF-096 | the set reading is the fold SOURCE's field (ch. 4.3, maintainer decision 2026-09-09): an `AttributeReference` with `set: true` is admissible ONLY as the source of a SINGLE-argument instance fold — the one node that consumes a collection is the fold that owns the source. At every other position the document is ill-formed: as a whole rule value, as an operand of a composite node, inside a condition, and as an operand of the listed value fold (§5.8.3), whose operands are ordinary reads with no source. The admissible position is the same pair WF-093 keys on (a single argument under a folding kind — the six value folds plus `AANTAL`), so three rules divide one boundary: at the source the sentinel decides the KIND and `set` only describes; away from it the sentinel is WF-034's and `set` is this rule's. Closes ch. 4.3 flank (5), and closes it as a WIRE question rather than an executor question: the shape was verifier-clean while NO executor carried it — `ref` faults `unsupported AttribuutRef shape (set/sentinel outside a fold)`, the ASP backend refuses the expression kind, Drools drops the rule as a transpiler skip — three refusals under one clean document, which no differential gate can catch because there is no answer to differ about. Measured identically at BOTH read positions, which is why it is one rule; and both are LIVE producer routes, re-emitted from source on 2026-09-09 with `diagnostics: []` and committed verbatim as the first two negatiefs, so the rule cuts a producer route and the frontend follow-up is spec-first on its own card. Boundary counted 2026-09-09 over the four zones (560 documents): exactly ONE document predating the rule carries the shape — the already-rejected `wf034-sentinel-geleste-setlezing`, whose verdict does not move and whose report gains one co-firing line — while the 16 LEGITIMATE set fold sources across 14 goldens are untouched. **Scope: the READ.** `set: true` on a rule TARGET is a write position, is not reached by this clause and stays verifier-clean, left open on evidence: zero documents carry it and all three executors ignore the field and write the scalar (measured), which is three-way agreement on an inert annotation rather than this rule's class | gate 3 | `jutterswet-vondsttelling` (its `SOM` over "alle vondsten" is a legitimate set fold source — the position the rule leaves alone, replayed by gates 5, 6 and 12) | `wf096-setlezing-regelwaarde`, `wf096-setlezing-operand`, `wf096-setlezing-geleste-operand` |
 | WF-097 | a `gedurende` clip member carries NEITHER an owner NOR a whole-period qualifier (ch. 4.5, maintainer decision 2026-09-09; widened to all three clips 2026-09-10): a CharacteristicCheck standing as the condition of a clip `filter` — directly or as a member of the flat ALLE composite — is refused an `eigenaar` and refused a `periode`, the NEGATED qualifier included. The rule names its three clips as a CLOSED list: the temporal total (`TOTAAL` over an own temporal attribute, WF-055, ch. 3.6), the pro-rata fold (`TIJDSEVENREDIG_DEEL`, WF-056, ch. 3.7) and the day count (`AANTAL_DAGEN_IN`, WF-058, ch. 3.8); the FOURTH reading of the same field, the die/dat instance subselection, is NOT a clip and is deliberately not fenced — there an owner and a qualifier are ordinary condition fields. Two arms, one reason: a clip reads THE SUBJECT's own characteristic periods over the WHOLE span it clips, so an owner names a subject no reader consults and a whole-period demand re-states the span the clip already ranges over. Every reader matched both fields away with `_` and none said so. Measured on the pre-rule binaries, one field twisted at a time: 3 twists at the total (`jutterswet-tegenwacht`) verifier-clean and unchanged in 36 of 36 replays, plus 6 twists at the other two clips (`anchor/jutterswet-borgdeel`, `anchor/jutterswet-dagentelling`) verifier-clean and unchanged in 60 of 60 — 96 replays, 96 unchanged answers, `negated: true` indistinguishable from absent throughout, which is why both polarities are refused. Each of the three artifacts implements the fence ONCE, in a single shared helper reached from TWO OR THREE call sites depending on how that artifact already discriminates the clips (the verifier needs two — its two folds are one kind-keyed branch — while ref and the ASP backend carry three): what the rule requires is the SHARED helper, not a call count, and it is required rather than noted because the rule first landed on the total alone and the other two clips answered silently for a day. The two executors fault with the same words but NOT at the same time (ref lazy, ASP eager): behind a false rule condition ref replays clean while the ASP backend refuses at translation — measured, and measured to be INHERITED from WF-055, which splits identically; bounded by the verifier rejecting any such document, so no gated zone can hold one. **Scope is the clip member.** The SCALAR check outside a clip keeps its `eigenaar` (name resolution, WF-034 (q)) and keeps its qualifier (the frontend produces that form from source — a producer-cutting decision with its own card); the qualifier on a **Comparison** is implemented, carried by 5 corpus nodes before the rule and 5 after, and untouched, a widened WF-043 being over-rejection. WF-043's own characteristic arm cannot reach inside a clip: it fires only on a NON-time-dependent characteristic and WF-055 already requires a time-dependent one there — that unreachability is what left the position unguarded. Cost: none — counted over the four zones before the rule (534 documents), 39 clip filters across 25 documents hold 37 characteristic checks, 0 with an owner and 0 with a qualifier; corpus-wide 193 characteristic checks, 3 with an owner (all outside a clip, all in the negatief zone), 0 with a qualifier | gate 3 | `jutterswet-tegenwacht` (total), `anchor/jutterswet-borgdeel` (pro rata), `anchor/jutterswet-dagentelling` (day count) — the three sources the witnesses are broken from, each staying clean and replayed by gates 5, 6 and 12 | `wf097-clip-kenmerk-eigenaar` (composite member), `wf097-clip-kenmerk-periode` and `wf097-clip-kenmerk-periode-ontkend` (plain member, both polarities), `wf097-prorata-kenmerk-eigenaar`, `wf097-prorata-kenmerk-periode`, `wf097-dagentelling-kenmerk-eigenaar`, `wf097-dagentelling-kenmerk-periode` — one per clip per arm, so a dropped ARM frees its three or four and a dropped CLIP SITE frees exactly that clip's |
+| WF-098 | the context-value name is a CLOSED SET of three, spelled byte for byte (ch. 4.1, maintainer decision 2026-09-10): a `Constante`'s `naam` is `Rekendatum`, `Rekenjaar` or `de dag`, and nothing else — not a fourth name and not a recapitalisation of one of the three. It is an ENUMERATION and not a resolution, which is why it carries its own number rather than an arm of WF-034: no table in the document declares a context value, so what has to be written is the set itself, and writing it decides what v1 admits at this node. The set holds THREE because the wire does: measured 2026-09-10 over the four zones plus the parity zone (578 documents), 14 `Constante` nodes over 6 documents in exactly two spellings — `de dag` (11, in 3 documents) and `Rekendatum` (3, in 3 documents) — while the ch. 4.1 row named `Rekendatum` and `Rekenjaar` only, so the commonest name on the wire was one the row did not name. Mirror-then-diverge settles that in the wire's favour; what `de dag` IS stays ch. 3.7's bound day of a day-kind definition, spelled as a context value because v0 has no node kind for it, and whether v1 gives it one is left open. `Rekenjaar` stays in the set with no carrier at all: the reference interpreter faults on it by name, which is the honest answer for a construct ch. 8.2 defines and no executor implements. **Byte-exact is the decision the rule carries.** The consumers disagree about case, and one disagrees with itself: `ref` and the ASP backend compare a NORMALISED name, the Drools constant reader compares with `equals` and its day-kind reader with `equalsIgnoreCase`. Measured 2026-09-10, `Rekendatum` -> `rekendatum` on `anchor/jutterswet-penningvintage`: verifier PASS, `ref` PASS (2 expectations), ASP PASS (2) — three consumers accepting what the fourth would not recognise. No differential can pin it, and that is structural rather than a gap: of the three `Rekendatum` carriers the anchor golden is EXCLUDEd by the Drools loader for an unrelated reason and the other two are red documents, so the only carrier Drools could play would be one built for the purpose, whose whole content is the defect. The rule closes the WIRE instead — a document carrying `rekendatum` never reaches an executor, which makes the normalisation inside `ref` and the ASP backend unreachable on any conforming document and leaves all three executors untouched by this card. Residue, stated rather than hidden: a HAND-BUILT document that skips the verifier still splits them. **Observability before the rule: none in either direction** — `de dag` -> `de dagX` left verifier, `ref` and the ASP backend on exactly the untwisted answers (PASS 7 and 3 in both), because no executor evaluates a day-kind definition today; `Rekendatum` -> `RekendatumX` is loud in both OCaml executors but with each one's FALL-THROUGH message (`expression kind not implemented` / `not translated`), which names no defect. **Scope: the PRESENT name.** A `naam` of `null` is schema-valid (the field is typed `["string", "null"]`), carried by no document, and splits nothing: measured 2026-09-10, verifier PASS and both OCaml executors falling through to their generic refusal with no dereference anywhere — unlike WF-095's null lexeme — so it is recorded in ch. 4.1 with its measurement instead of folded in. **The one producer route that emits a fourth name was already ill-formed**: the RegelSpraak frontend builds a `Constante` named `hij` for the animate pronoun and normally resolves it away (of the 38 goldens with a committed source, the 14 whose source writes `hij` emit no `Constante` at all), and where it does leak — measured, `indien hij gelijk is aan hij`, `diagnostics: []` — it leaks carrying the UNKNOWN-TYPE SENTINEL, which WF-034's type prologue refuses at the same node. This rule adds a second, name-level line there and cuts no conforming producer route. Cost: none — all 14 context values predating the rule spell an admissible name verbatim; the before/after sweep over all 580 documents moves exactly the two witnesses' verdicts and not one report line elsewhere, and all 14 positions were twisted one at a time to show the check reaches each (flat and nested composites, a function argument, a temporal read's date index, a `Let` body) | gate 3 | `jutterswet-schouwrooster` (the four `de dag` positions of two day-kind definitions) and `anchor/jutterswet-penningvintage` (the `Rekendatum` index of a vintage read) — the two sources the witnesses are broken from, each staying clean and replayed by gates 5 and 6 | `wf098-onbekende-contextwaarde-naam` (a name outside the set), `wf098-contextwaarde-naam-kapitalisatie` (a recapitalisation of one inside it) — the two fall independently: dropping the whole arm frees both, relaxing only the byte-exactness frees the second alone |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is
