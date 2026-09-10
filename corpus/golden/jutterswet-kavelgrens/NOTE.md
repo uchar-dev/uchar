@@ -73,18 +73,40 @@ zuidbuur, so ch. 5.8 rule 1 reads leeg. Establishing a relation in both
 directions is not inventing one — a mirror that over-fired would find a
 kavelbreedte at the ends of the chain.
 
+Each case carries a seventh expectation, `{"kind": "consistent"}`: the
+§9.5 error channel is empty. Hand-confirmed from the wire rather than
+from a run — the document declares `consistenties`, `uniciteiten`,
+`uniciteitUnies`, `verdelingen`, `objectCreaties`, `feitCreaties` and
+`regelGroepen` all EMPTY and carries no prioritized defaults, and its
+two rules are plain navigated attribute assignments, so no construct
+that deposits an error fact is present at all. It is pinned anyway,
+because without the pin a spurious channel deposit — the one class of
+wrong answer that changes no attribute — would be invisible here.
+
 ## Red-first
 
-1. **The values were pinned nowhere before.** Measured over the whole
-   corpus: four documents besides this one carry a non-reciprocal
-   self-typed fact type with both roles to-one
-   (`anchor/jutterswet-erflijn`, `anchor/jutterswet-wachtersketen`,
-   `synth2-budgetgrens-onder`, and two red documents). Not one of them
-   both supplies that fact type's role from **case input** and
-   **navigates** over it: erflijn supplies `opvolger` but every binding
-   in its rules names the other fact type, and the rest supply no role
-   keys at all (object creation, or no relation read). This golden is
-   the first corpus document that does both, in both directions.
+1. **The values were pinned nowhere before.** Measured over the
+   replayable zones: **five** documents besides this one carry a
+   non-reciprocal self-typed fact type with both roles to-one —
+   `anchor/jutterswet-erflijn`, `anchor/jutterswet-wachtersketen`,
+   `synth2-budgetgrens-onder`, `corpus/rood/finite-chain-over-budget`
+   and `corpus/rood/runaway-recursion`. (Two more carry the shape in
+   `corpus/negatief` — `wf012-ambiguous-roles`,
+   `wf033-no-creation-member` — and fall **outside** this count by
+   construction: the negatief zone holds no case files at all and is
+   rejected at the verifier, so nothing there can pin a replayed
+   value.)
+
+   What separates this golden from all five is narrower than "supplies
+   and reads", and worth stating exactly. `anchor/jutterswet-erflijn`
+   does supply `opvolging.opvolger` from case input **and** read that
+   relation — not from a rule, but through its fact creation's join
+   (`feitCreaties[0].joinRol = {opvolging, opvolger}`). It reads the
+   role the case **supplied**, though. The other four supply no role
+   keys at all (object creation, or no relation read). So the property
+   no corpus document had before is this one: **reading the direction
+   the case did not supply**, on a self-typed 1:1 relation. Cases 2 and
+   3 do exactly that, in opposite directions.
 2. **The directed reading is refuted, in all four lenses.** Re-run
    cases 2 and 3 with the expectations a non-mirroring loader would
    produce — the unsupplied direction reading leeg:
@@ -114,8 +136,8 @@ kavelbreedte at the ends of the chain.
 
 ## The differential square
 
-verifier PASS; `ref` PASS (6 expectations per case) ≡ `clingo` PASS
-(6 per case) over all 18, anchored to the hand-written absolutes above;
+verifier PASS; `ref` PASS (7 expectations per case) ≡ `clingo` PASS
+(7 per case) over all 21, anchored to the hand-written absolutes above;
 Drools PLAYS all three cases in BOTH branches — the exec-model path
 (gate 12) and the classic DRL-text path (`--drl`, the branch gate 13
 also drives). ref ≡ clingo ≡ Drools, the first corpus witness for which

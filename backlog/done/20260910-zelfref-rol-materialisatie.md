@@ -456,8 +456,16 @@ de cases: K1 is de noordbuur van K2, K2 is de noordbuur van K3.
 | K2 | 20 | 10 | 30 |
 | K3 | 30 | 20 | leeg |
 
-Zes verwachtingen per case, achttien in totaal, in alle drie de cases
-identiek — die identiteit IS de wet. De dragende regels noemen de richting die
+Zes waardeverwachtingen per case plus `{"kind": "consistent"}` — zeven per
+case, eenentwintig in totaal — in alle drie de cases identiek, en die
+identiteit IS de wet. De consistentiepin is handbevestigd op de wire in plaats
+van uit een draai afgelezen: het document declareert `consistenties`,
+`uniciteiten`, `uniciteitUnies`, `verdelingen`, `objectCreaties`,
+`feitCreaties` en `regelGroepen` alle leeg en draagt geen prioritized
+defaults, en zijn twee regels zijn kale genavigeerde toekenningen — er is dus
+geen construct aanwezig dat een §9.5-feit kan afzetten. Hij staat er toch,
+omdat zonder hem een spurieuze kanaalafzetting — de enige klasse fout antwoord
+die geen attribuut verandert — hier onzichtbaar zou zijn. De dragende regels noemen de richting die
 de case niet leverde: `case2` (alleen de `zuidbuur`-poten) leest
 `K2.noordbuurbreedte = 10` en `K3.noordbuurbreedte = 20` terwijl geen enkele
 rolregel in dat bestand `noordbuur` noemt; `case3` (alleen de
@@ -466,16 +474,26 @@ rolregel in dat bestand `noordbuur` noemt; `case3` (alleen de
 
 ### Rood-eerst
 
-**(a) De verwachtingen waren nergens gepind.** Machinale telling over
-`corpus/golden` + `corpus/rood`: vier documenten dragen naast dit nieuwe een
-niet-wederkerig zelfgetypeerd feittype met beide rollen to-one
-(`anchor/jutterswet-erflijn`, `anchor/jutterswet-wachtersketen`,
-`synth2-budgetgrens-onder`, en de twee rode). Geen daarvan vult die rol vanuit
-case-invoer **én** navigeert erover: erflijn vult `opvolger`, maar elke binding
-in zijn regels noemt het ándere feittype (`erflijn`/`erfvolger`), en de rest
-draagt in het geheel geen case-rolsleutels (objectcreatie, of geen
-relatielezing). `jutterswet-kavelgrens` is het eerste document dat beide doet,
-in beide richtingen.
+**(a) De verwachtingen waren nergens gepind.** Machinale telling over de
+afspeelbare zones `corpus/golden` + `corpus/rood`: **vijf** documenten dragen
+naast dit nieuwe een niet-wederkerig zelfgetypeerd feittype met beide rollen
+to-one — `anchor/jutterswet-erflijn`, `anchor/jutterswet-wachtersketen`,
+`synth2-budgetgrens-onder`, `corpus/rood/finite-chain-over-budget` en
+`corpus/rood/runaway-recursion`. Twee dragers meer staan in `corpus/negatief`
+(`wf012-ambiguous-roles`, `wf033-no-creation-member`) en vallen per constructie
+**buiten** deze telling: die zone draagt geen enkel casebestand en wordt bij de
+verifier afgewezen, dus daar kan niets een afgespeelde waarde pinnen.
+
+Wat dit document van die vijf scheidt is smaller dan "vult én leest", en het is
+de moeite waard het precies te zeggen. `anchor/jutterswet-erflijn` vult
+`opvolging.opvolger` wél vanuit case-invoer **en** leest die relatie ook — niet
+vanuit een regel, maar via de join van zijn feitcreatie
+(`feitCreaties[0].joinRol = {opvolging, opvolger}`). Alleen: hij leest de rol
+die de case zelf leverde. De andere vier dragen in het geheel geen
+case-rolsleutels (objectcreatie, of geen relatielezing). De eigenschap die geen
+enkel corpusdocument eerder had is dus deze: **de richting lezen die de case
+NIET leverde**, op een zelfgetypeerde 1:1-relatie. Cases 2 en 3 doen precies
+dat, in tegengestelde richting.
 
 **(b) De gerichte lezing wordt weerlegd, in alle vier de lenzen.** Cases 2 en 3
 herdraaid met de verwachtingen die een niet-spiegelende lader zou opleveren
@@ -507,12 +525,12 @@ overlever-regel nodig; gate 7 bleef op 36 gepinde overlevers staan.
 ### De uitvoerders
 
     verifier                 verifier: PASS
-    ref     case1/2/3        oracle: PASS (6 expectations) x3
-    clingo  case1/2/3        clingo: PASS (6 expectations) x3
+    ref     case1/2/3        oracle: PASS (7 expectations) x3
+    clingo  case1/2/3        clingo: PASS (7 expectations) x3
     Drools exec-model        PLAYED 3
     Drools DRL-tekst (--drl) PLAYED 3
 
-ref ≡ clingo ≡ Drools over alle achttien verwachtingen, verankerd aan de
+ref ≡ clingo ≡ Drools over alle eenentwintig verwachtingen, verankerd aan de
 handberekening hierboven. Her-emissie door de frontend: `cmp` groen
 (gate 10's eis).
 

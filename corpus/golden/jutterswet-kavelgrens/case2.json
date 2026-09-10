@@ -89,6 +89,9 @@
       "kind": "attributeEmpty",
       "label": "K3",
       "attribute": "zuidbuurbreedte"
+    },
+    {
+      "kind": "consistent"
     }
   ]
 }
