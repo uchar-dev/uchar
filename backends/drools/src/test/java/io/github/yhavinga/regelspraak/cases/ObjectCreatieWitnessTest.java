@@ -112,13 +112,27 @@ class ObjectCreatieWitnessTest {
     }
 
     // ---------------- 1b. WHICH end of the link the 1:1 wait reads ----------------
+    //
+    // CONVERTED 2026-09-10, maintainer decision on the case-input reading (RUNTIME-SEMANTICS ch. 5.7a). This
+    // pair was written when ch. 5.5's 1:1 creation guard was a STORAGE-DIRECTION narrowing whose direction was
+    // free — twelve green gates did not hold it — and the two arms fixed that direction by disagreeing: the
+    // subject-end supply blocked the mint (heffing 6), the created-end supply did not (heffing 150), and
+    // "neither reading passes both".
+    //
+    // ch. 5.7a removes the question rather than answering it. A supplied link ESTABLISHES the relation and
+    // BOTH roles read it, so the guard no longer asks which END was written — it asks whether the subject
+    // FILLS the role, and after one supplied leg it does, whichever leg that was. Both arms therefore block
+    // and both land on 6, and THAT is now what they are for: two spellings of one relation must compute the
+    // same thing. REMEASURED through ref on this exact model, created-end supply:
+    //     heffing 150 -> MISMATCH: J1.heffing = 6, expected 150
+    //     heffing 6   -> oracle: PASS (2 expectations)
+    // The arms still refuse a real mistake — a guard that read the CREATED side would mint here and land on
+    // 150, and the negative assertion below names that.
 
     @Test void een_koppeling_op_de_subjectzijde_blokkeert_de_creatie() throws Exception {
-        // ch. 5.5's 1:1 guard is a STORAGE-DIRECTION narrowing, and the direction is free — twelve green gates
-        // do not hold it — until a case delivers the link on ONE end only. Subject end: an existing Rekenkamer
-        // already fills the jutter's `rekenkamer` field, so nothing is minted and the navigated read reaches
-        // the SUPPLIED kamer. ref on this exact model+case: J1.heffing = 6 (10 - 4, the supplied kamer's own
-        // rule). Read the created side instead and this arm mints anyway and lands on 150.
+        // Subject end: an existing Rekenkamer already fills the jutter's `rekenkamer` field, so nothing is
+        // minted and the navigated read reaches the SUPPLIED kamer. ref: J1.heffing = 6 (10 - 4, the supplied
+        // kamer's own rule).
         CaseRunner.NaFire na = CaseRunner.naFire(ir(REKENKAMER), koppelingOpSubject("6"));
         assertTrue(mints(na).isEmpty(), "an already-linked 1:1 subject mints nothing: " + mints(na));
         assertSame(na.invoer().get("R1"), RegelSpraakRuntime.get(na.invoer().get("J1"), "rekenkamer"),
@@ -126,17 +140,19 @@ class ObjectCreatieWitnessTest {
         assertNull(CaseRunner.speelCase(ir(REKENKAMER), koppelingOpSubject("6")));
     }
 
-    @Test void een_koppeling_op_de_gemunte_zijde_blokkeert_de_creatie_niet() throws Exception {
-        // The other end, which the created-side reading gets wrong in the OPPOSITE direction: the same relation
-        // delivered solely on the Rekenkamer bean leaves the subject's to-one field empty, so ch. 5.5 still
-        // mints — and the MINT, not the supplied kamer, is what the jutter then navigates to. ref: J1.heffing
-        // = 150 (240 - 90). Read the created side and this arm blocks, leaving the heffing leeg. Together the
-        // two arms fix the direction: neither reading passes both.
-        CaseRunner.NaFire na = CaseRunner.naFire(ir(REKENKAMER), koppelingOpGemunteZijde("150"));
-        assertEquals(1, mints(na).size(), "a created-side link does not block the mint: " + mints(na));
-        assertSame(mints(na).get(0), RegelSpraakRuntime.get(na.invoer().get("J1"), "rekenkamer"),
-                "and the forward field points at the mint, not at the supplied kamer");
-        assertNull(CaseRunner.speelCase(ir(REKENKAMER), koppelingOpGemunteZijde("150")));
+    @Test void een_koppeling_op_de_gemunte_zijde_blokkeert_de_creatie_ook() throws Exception {
+        // The other end, RENAMED from `..._blokkeert_de_creatie_niet`: the same relation delivered solely on
+        // the Rekenkamer bean now reaches the subject too (the ch. 5.7a mirror write), so the jutter FILLS the
+        // to-one role and ch. 5.5 mints nothing. The navigated read lands on the SUPPLIED kamer, exactly as in
+        // the arm above — one relation, one outcome, two spellings.
+        CaseRunner.NaFire na = CaseRunner.naFire(ir(REKENKAMER), koppelingOpGemunteZijde("6"));
+        assertTrue(mints(na).isEmpty(), "the relation reaches the subject through its far leg too: " + mints(na));
+        assertSame(na.invoer().get("R1"), RegelSpraakRuntime.get(na.invoer().get("J1"), "rekenkamer"),
+                "and the forward field points at the SUPPLIED kamer, not at a mint");
+        assertNull(CaseRunner.speelCase(ir(REKENKAMER), koppelingOpGemunteZijde("6")));
+        assertNotNull(CaseRunner.speelCase(ir(REKENKAMER), koppelingOpGemunteZijde("150")),
+                "and the minting reading — a guard that read the created side — is a named mismatch, not a "
+                        + "silent pass");
     }
 
     // ---------------- 2. the §13.4.6.4 kenmerkwaardetoekenning ----------------

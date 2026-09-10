@@ -404,11 +404,12 @@ Het besluit spreekt zich uit over BEIDE vormen van de discriminant:
   speelt in alle drie de uitvoerders met dezelfde waarden, in alle drie de
   leveringsvormen.
 - **1:1** (beide rollen to-one). Daar draagt het bonenmodel twee velden en
-  spiegelt Drools uit zichzelf niet. Onder (i) moet de case-invoerlaag het
-  tweede veld schrijven. **Die schrijfactie is NIET geland** — zie
-  "onbeheerde naad" hieronder. De twee onder (i) voorspelde nieuwe
-  divergenties (a) zelfgetypeerd 1:1 en (b) kruistypisch 1:1 staan dus open,
-  benoemd en met een aanwijsbare plek, niet weggewerkt.
+  spiegelt Drools uit zichzelf niet, dus moet de case-invoerlaag het tweede
+  veld schrijven. **Die schrijfactie is in de vervolgronde geland** (zie
+  "onbeheerde naad" hieronder), en daarmee zijn de twee onder (i) voorspelde
+  nieuwe divergenties — (a) zelfgetypeerd 1:1 en (b) kruistypisch 1:1 — beide
+  gemeten dicht in `ref` én in BEIDE Drools-takken. Het besluit verplaatst de
+  divergentie dus niet; ze is weg.
 
 ### De prijs, uitgeschreven
 
@@ -580,7 +581,8 @@ de WF-013-botsflank. De suite gaat van 496 naar **515** worked examples.
   is de dubbelmeervoudige zelfrelatie (`erflijn`): daar is de zusterrol ook
   to-many, dus geen van beide kanten draagt een veld — gemeten, de bestaande
   pin daarop staat ongewijzigd.
-- **(b) de spiegelende schrijfactie voor 1:1 — NIET GELAND, met reden.** Zie
+- **(b) de spiegelende schrijfactie voor 1:1 — GELAND in de vervolgronde**, na
+  de merge van de zusterkaart. Zie het hoofdstuk "de onbeheerde naad"
   hieronder.
 - Nieuw: `ZusterrolInvoerWitnessTest` (5 tests, additief) pint het veld op het
   doel, de drie spellingen op boonniveau, de gepinde waarden, de mutatieproef
@@ -597,37 +599,125 @@ levert. Het frame levert nu GEEN relatie (dat is wat het bedoelde), en de oude
 levering krijgt een eigen, additieve pin die precies dat nieuwe gedrag
 vastlegt. Suite 92 → **93** checks.
 
-### De onbeheerde naad: belegd, niet overgeslagen
+### De onbeheerde naad: GELAND (vervolgronde, na de merge van de zusterkaart)
 
-De spiegelende schrijfactie voor **1:1**-vormen (het tweede beanveld vullen bij
-eenzijdige levering) is **ontworpen en niet geland**, om één aanwijsbare reden:
+De spiegelende schrijfactie voor **1:1**-vormen — besluitonderdeel (b) — is in
+een vervolgronde alsnog geland, nadat de zusterkaart (rol-schaduw) was gemerged
+en `OpslagrichtingWitnessTest` daarmee vrijkwam. De tak is gerebased op main
+`5661fde`: **geen conflicten**, en de backend-suite draaide meteen groen op 271
+tests (266 van de zusterkaart + 5 van deze kaart).
 
-`backends/drools/src/test/java/.../cases/OpslagrichtingWitnessTest.java` pint
-de GERICHTE lezing op twee plekken, en die twee assertie-blokken keren om zodra
-de schrijfactie er is:
+**De ingreep.** In `CaseRunner.zetRollen`, direct achter de heenwaartse
+schrijfactie: als de zusterrol óók to-one is — dus twee beanvelden, één per
+richting — wordt het tweede veld op het doel geschreven, onder dezelfde
+naamdelingspoort als de heenrichting. De 1:N-vorm doet niet mee (daar is één
+veld dat beide richtingen al bedient) en de **wederkerige** vorm evenmin: die
+herken je aan `rolLI == rolIL` (één rol die zijn eigen tegenrol is) en blijft
+bij zijn eigen aparte pass, zodat het volgorde-onafhankelijkheidsargument en de
+eigen conflictboodschap van `spiegelWederkerigeRollen` intact blijven.
 
-- `de_gewone_zelfpaarkoppeling_spiegelt_niet` — `assertNull(get(W2,
-  "voorganger"))` na `W1{opvolger:[W2]}`; met de schrijfactie is dat W1.
-- `dezelfde_telling_negeert_een_levering_aan_de_elementkant` — de 1:1-telling
-  met de link aan de elementkant geleverd, gepind op 0/0; met de schrijfactie
-  wordt dat 1/2.50, en de tweede assertie (dat 1/2.50 een verschil is) draait
-  mee om.
+**De gedichte divergentie, gemeten.** Getuige: de bron `beide` uit de
+kaartmetingen — zelfgetypeerd feittype `opvolging` met `voorganger` en
+`opvolger` **beide to-one** — via de frontend geëmitteerd
+(`objecttypen=1 feittypen=1 resolvedRegels=2`, `verifier: PASS`), met een
+casus die alleen de heenpoot levert (W1.opvolger = W2, rangnummers 10/20) en
+`W2.voorgangerrang = 10` verwacht:
 
-Dat bestand is het werkterrein van de zusterkaart die in review is; deze
-sessie heeft het opdracht-conform **niet aangeraakt**. Wat er wél in staat:
-de javadoc bij `CaseRunner.spiegelWederkerigeRollen` zei tot nu toe dat een
-gewoon zelfpaar NIET mag spiegelen en beriep zich daarvoor op `ref`. Die zin
-is nu onwaar en is vervangen door de vastgelegde gap: 1:N heeft geen tweede
-schrijfactie nodig (één veld bedient beide richtingen), 1:1 wel, die staat er
-niet, en het gevolg is dat `ref` daar W1 leest waar Drools null leest. Geen
-enkele corpusgolden levert een 1:1-relatie eenzijdig, dus geen gate ziet het;
-`OpslagrichtingWitnessTest` is de plek waar die flank hangt.
+| | vóór (b) | na (b) |
+|---|---|---|
+| `ref` | `oracle: PASS (4 expectations)` | `oracle: PASS (4 expectations)` |
+| Drools exec-model | `FAIL … voorgangerrang: verwacht 10, werkelijk leeg` | `PLAYED 1` |
+| Drools DRL-tekst | `FAIL … voorgangerrang: verwacht 10, werkelijk leeg` | `PLAYED 1` |
 
-**Twee andere assertieblokken in dat bestand blijven staan en zijn gemeten
-groen** — de spiegel schrijft de ZUSTERROL, niet dezelfde rol, dus
-`de_gerichte_koppeling_beslist_de_gelezen_waarde` (W1 telt 1 opvolger, W2 telt
-0) klopt ook onder (i), in `ref` én in Drools. Dat was vooraf niet vanzelf
-duidelijk en is expliciet nagerekend.
+Beide Drools-takken, dezelfde meting, dezelfde uitkomst. Daarmee is de laatste
+ref ≢ Drools-flank van het besluit weg.
+
+**De assertie-omzettingen, onder mandaat, rood-eerst.** Drie blokken pinden de
+gerichte lezing. Elk is omgezet, hernoemd waar de naam de oude lezing droeg, en
+draagt de omzetting met de gemeten rode uitvoer op zijn eigen plek:
+
+1. `OpslagrichtingWitnessTest.de_gewone_zelfpaarkoppeling_spiegelt_niet` →
+   **`…_spiegelt_op_de_zusterrol`**. `assertNull(get(W2,"voorganger"))` wordt
+   `assertSame(W1, …)`. Rood-eerst gemeten met (b) er weer uit:
+   `expected: <io.github.yhavinga.regelspraak.facts.Wachter@…> but was: <null>`.
+   De twee resterende `assertNull`s blijven: de spiegel schrijft de
+   **zusterrol**, nooit de geschreven rol.
+2. `OpslagrichtingWitnessTest.dezelfde_telling_negeert_een_levering_aan_de_elementkant`
+   → **`…_leest_een_levering_aan_de_elementkant_ook`**. 0/0 wordt 1/2.50, met
+   meedraaiende tegenassertie. Rood-eerst:
+   `case: attribuut aantal aangemelde vondsten: verwacht 1, werkelijk 0;
+   attribuut aangemeld gewicht: verwacht 2.50, werkelijk 0`. `ref` op precies
+   dat model en die case: **1 / 2.50 vanaf BEIDE einden** (`oracle: PASS (2
+   expectations)` op beide spellingen; de oude 0/0 is daar nu een gemelde
+   MISMATCH). Dat maakt het paar met de test erboven tot wat het nu is: twee
+   spellingen van één relatie moeten hetzelfde uitrekenen.
+3. **Buiten het letterlijke mandaat, gevonden door de suite:**
+   `ObjectCreatieWitnessTest.een_koppeling_op_de_gemunte_zijde_blokkeert_de_creatie_niet`
+   → **`…_blokkeert_de_creatie_ook`**. Dit derde blok — in een ánder bestand —
+   pinde dezelfde lezing via de **objectcreatie-guard**: de ch. 5.5-1:1-guard
+   vroeg "welk EIND is geschreven", en met de link alleen op de gemunte zijde
+   muntte hij door (heffing 150). Onder ch. 5.7a vraagt de guard of het subject
+   de rol VERVULT, en dat doet het na één geleverde poot, welke dan ook.
+   **Beide uitvoerders zijn het eens en beide armen landen nu op 6.**
+   `ref` hermeten op precies dat model en die case:
+   `MISMATCH: J1.heffing = 6, expected 150` en, met 6 verwacht,
+   `oracle: PASS (2 expectations)`. De arm blijft een echte fout weigeren: een
+   guard die de GEMUNTE zijde zou lezen munt hier wél en landt op 150, en die
+   lezing is nu de expliciet gepinde tegenassertie.
+
+Twee blokken die ik vooraf verdacht had, blijven **ongewijzigd groen** —
+nagerekend, niet aangenomen: `de_gerichte_koppeling_beslist_de_gelezen_waarde`
+(hernoemd naar `de_telling_leest_de_genoemde_rol_niet_de_zusterrol`, waarden
+1/0 onveranderd, want de telling leest de GENOEMDE rol en de spiegel vult de
+zusterrol) en `de_een_op_een_telling_leest_het_veld_van_het_subject`.
+
+Eén blok verloor zijn onderwerp:
+`de_meervoudige_zusterrol_telt_de_elementkant_wel_mee_bekende_restlacune` →
+**`…_mee_en_ref_nu_ook`**. Het karakteriseerde een ref ≢ Drools-divergentie op
+de 1:N-vorm (ref 0/0, Drools 2/3.75) en schreef erbij "it FAILS WHEN THE GAP
+CLOSES". Het gat is gesloten — van de SPECKANT: de getallen van de backend
+waren de juiste, want op een 1:N-vorm kan geen enkele engine op dit feitmodel
+zo'n link gericht lezen. `ref` hermeten: `oracle: PASS (2 expectations)` op
+2 / 3.75. De assertie faalt dus niet; alleen zijn commentaar was onwaar
+geworden, en dat is vervangen.
+
+De javadoc bij `CaseRunner.spiegelWederkerigeRollen` draagt niet langer een
+vastgelegde gap maar de geland-melding, met de drie vormen (1:N, 1:1,
+wederkerig) en waar elk gepind is.
+
+### Corpusdekking van de 1:1-spiegel — afweging en keuze
+
+Overwogen zoals gevraagd: een corpuscase die de 1:1-spiegel in het GESPEELDE
+kanaal pint, maar alleen als hij PLAYED wordt zonder nieuwe kanaalpin-lasten.
+
+- **Een vierde case bij `jutterswet-ketenband` — afgewezen.** Die golden is
+  1:N (`voorligger` to-one, `opvolger` to-many); er is daar geen tweede
+  beanveld, dus geen enkele case op die wire kan de 1:1-spiegel raken.
+- **Een nieuwe golden op de bron `beide` — afgewezen.** Dat is precies het
+  artefact dat de zusterkaart `20260910-zelfref-rol-materialisatie.md`
+  voorstelt (`jutterswet-wachterschakel`). Hem hier landen zou die kaart haar
+  deliverable afnemen; hij blijft daar.
+- **Gekozen: een vierde case bij `anchor/jutterswet-rekenkamer`.** Die golden
+  SPEELT al, dus een extra casebestand kost **geen kanaalpin en geen
+  `EXPECTED_PLAYED`-beweging** — gate 12 telt goldens, niet casussen. Het
+  feittype `taxatieopdracht` is kruistypisch **1:1** (`opdrachtgever` en
+  `rekenkamer` allebei to-one), precies de vorm.
+
+`case4-koppeling-op-de-gemunte-zijde.json`, handberekend: J1 (grondslag 240,
+aftrek 90) zonder rollen; R1 (grondslag 10, aftrek 4) met
+`opdrachtgever: [J1]`. De spiegel schrijft `J1.rekenkamer = R1`; de
+1:1-creatieguard ziet het subject de rol vervullen en **munt niets**;
+`R1.heffing = 10 − 4 = 6`; `J1.heffing` = de heffing van haar rekenkamer =
+**6**; kanaal leeg → `consistent`.
+
+    rood-eerst (gerichte lezing)  MISMATCH: J1.heffing = 150, expected 6
+    ref                           oracle: PASS (3 expectations)
+    Drools exec-model             PLAYED 1
+    Drools DRL-tekst              PLAYED 1
+    --noop                        MISMATCH: R1.heffing = leeg, expected 6 …
+
+De anker-README krijgt hier geen rij bij: `jutterswet-rekenkamer` staat niet in
+die (niet-uitputtende) tabel.
 
 ### Voorstellen op beschermde paden
 
@@ -647,19 +737,22 @@ duidelijk en is expliciet nagerekend.
 | 1 self-contained | PASS |
 | 2 ir-schema | PASS (194 bestanden, vloer 192) |
 | 3 verifier | PASS (194 golden schoon; 362 negatief, vloer 350) |
-| 4 case-schema | PASS (458 casebestanden) |
-| 5 oracle | PASS (515 worked examples, vloer 489; 432 casussen, vloer 427) |
-| 6 clingo | PASS (93 checks, vloer 83; 432 casussen — ref ≡ clingo) |
-| 7 noop | PASS (396 weerleggers; 36 gepinde overlevers) |
+| 4 case-schema | PASS (459 casebestanden) |
+| 5 oracle | PASS (515 worked examples, vloer 489; 433 casussen, vloer 427) |
+| 6 clingo | PASS (93 checks, vloer 83; 433 casussen — ref ≡ clingo) |
+| 7 noop | PASS (397 weerleggers; 36 gepinde overlevers) |
 | 8 rood | PASS (26 rode casussen, vloer 26) |
 | 9 catala | PASS (201 checks, vloer 201; 12 catala-goldens byte-identiek) |
 | 10 regelspraak | PASS (173 tests, vloer 173; 39 rgs-goldens byte-identiek, vloer 38) |
 | 11 toka-pariteit | PASS (29 toka-casussen, ref 29 / clingo 29 / Drools 29 PLAYED) |
-| 12 drools | PASS (played **121**; auto-excluded 44; value-divergence 1; JUnit **267**, vloer 239) |
+| 12 drools | PASS (played **121**; auto-excluded 44; value-divergence 1; JUnit **271**, vloer 239) |
 | 13 reftype-derivatie | PASS (74 twists over 15 goldens, vloer 74; 70 replays, 13 DRL-tak, vloer 13) |
 
 Beginstand ter vergelijking (main @17e5254): gate 5 496/428, gate 6 92/428,
-gate 7 392/36, gate 12 played 120 / JUnit 262.
+gate 7 392/36, gate 12 played 120 / JUnit 262. Na de rebase op main `5661fde`
+(de gemergede zusterkaart) stond de backend-suite op 266 + de 5 van deze kaart
+= 271; de vervolgronde voegde geen tests toe maar zette er drie om.
+Alle dertien gates hierboven zijn op de KOP van de vervolgronde gemeten.
 
 ### Voorgestelde CONSTRUCTS-zin (rij 4, "Fact types and role navigation")
 

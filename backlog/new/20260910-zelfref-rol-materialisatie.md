@@ -15,6 +15,32 @@ Geen WF-kandidaat: dit is een backend-drachtvraag, geen
 welgevormdheidseigenschap van de wire. De verifier heeft hier niets te
 weigeren.
 
+> **HET DEKKINGSGAT IS GROTENDEELS GEDICHT (2026-09-10) — deze kaart is nog een
+> RESTKAART.** De kern hierboven ("geen enkele PLAYED golden vult een gewone
+> zelfgetypeerde to-one rol vanuit case-invoer en navigeert erover") is
+> ingehaald door `20260910-reverse-rol-via-naam.md`. Gemeten op de kop van die
+> tak:
+>
+> - `corpus/golden/jutterswet-ketenband` — zelfgetypeerd feittype `ketenband`,
+>   rol `voorligger` **to-one**, in `case1` en `case3` vanuit **case-invoer**
+>   gevuld en door de regel `voorliggerrang` **genavigeerd**. Alle drie de
+>   casussen PLAYED in gate 12, `ref` ≡ clingo ≡ Drools. Dat is precies de
+>   vorm die deze kaart wilde bewaken, in het gespeelde kanaal.
+> - `corpus/golden/anchor/jutterswet-rekenkamer/case4-koppeling-op-de-gemunte-zijde.json`
+>   — een **1:1**-relatie (twee to-one rollen, twee beanvelden) eenzijdig
+>   geleverd, PLAYED, en de spiegelende schrijfactie is er de reden van.
+>   Kruistypisch.
+>
+> **Wat er overblijft — de reden dat de kaart niet dicht kan:** een
+> **ZELFGETYPEERDE 1:1**-relatie, eenzijdig geleverd, in het corpus. De
+> ketenband-golden is 1:N; de rekenkamer-case is kruistypisch. De
+> zelfgetypeerde 1:1-vorm (de bron `beide` hieronder) hangt vandaag alleen in
+> `OpslagrichtingWitnessTest` — een backend-eigen unittest op een in-memory
+> modelvariant, buiten de wire om. Dát is nog steeds ongepind in gates 5, 6 en
+> 12. Voorstel aan de hoofdsessie: de kaart behouden en versmallen tot precies
+> dat ene punt, of hem sluiten als de restdekking het niet waard wordt geacht.
+> De hoofdsessie beslist bij de merge.
+
 ## Probleem
 
 **Wat de werkbank-fix doet.** In de toolchain leidde de fact-bean-generator
@@ -133,19 +159,33 @@ Het onderscheid zelfreferentieel/niet-zelfreferentieel maakt in uchar dus
 het onderscheid tussen bouwen en niet-bouwen was.
 
 > **ACHTERHAALD DOOR HET BESLUIT VAN 2026-09-10 — flank A en flank B hieronder
-> zijn gemeten op de GERICHTE lezing en moeten opnieuw gemeten worden.** De
+> zijn gemeten op de GERICHTE lezing; de uitkomsten zijn OMGEKEERD.** De
 > maintainer heeft vraag 13 van `20260910-reverse-rol-via-naam.md` beantwoord
 > met **(i): een relatie is symmetrisch — één geleverde poot vestigt hem, en de
 > tegenrol leest hem** (`RUNTIME-SEMANTICS.md` ch. 5.7a). `ref` en de
 > ASP-backend spiegelen sindsdien elke tweerollige relatie op de zusterrol, en
-> de Drools-case-invoer lost de zusterrol via de geschreven naam op. Wat dat
-> met deze twee flanken doet: flank A wordt in `ref`/clingo **10** in plaats
-> van leeg, terwijl Drools op de 1:1-vorm nog leeg leest (de spiegelende
-> schrijfactie voor 1:1 is niet geland — zie de javadoc bij
-> `CaseRunner.spiegelWederkerigeRollen`), dus flank A is nu een **echte
-> ref ≢ Drools-divergentie**, geen drievoudige overeenstemming. Flank B's
-> Drools-weigering is vervallen: de naam-route bereikt daar het veld van de
-> to-one zusterrol. Hermeet beide voordat er iets van gepind wordt.
+> de Drools-case-invoer doet hetzelfde: hij lost de zusterrol via de geschreven
+> naam op (1:N) én schrijft het tweede beanveld (1:1).
+>
+> **Flank A pint voortaan de SYMMETRISCHE lezing.** Hermeten op de bron
+> `beide` met alleen de heenpoot geschreven (W1.opvolger = W2, rangnummers
+> 10/20), verwachting `W2.voorgangerrang = 10`:
+>
+>     verifier PASS
+>     ref                   oracle: PASS (4 expectations)
+>     Drools exec-model     PLAYED 1
+>     Drools DRL-tekst      PLAYED 1
+>
+> Drie uitvoerders, hetzelfde antwoord — maar het OMGEKEERDE van wat hieronder
+> staat. Vóór de spiegelende schrijfactie was ditzelfde drietal
+> `ref PASS / exec-model FAIL … verwacht 10, werkelijk leeg / DRL-tekst idem`;
+> die divergentie is gemeten dicht. Wat de flank nog steeds scheidt is de
+> ZUSTERROL van de geschreven rol: de spiegel vult `W2.voorganger`, nooit
+> `W2.opvolger` (`OpslagrichtingWitnessTest`, omgezet bij het besluit).
+>
+> **Flank B's Drools-weigering is vervallen**: de naam-route bereikt daar het
+> veld van de to-one zusterrol. Hermeet die regel voordat er iets van gepind
+> wordt.
 
 **Flank A — de omgekeerde poot wordt niet afgeleid, in geen van de drie.**
 Alleen de heenpoot geschreven (W1.opvolger = W2), en dan `W2.voorgangerrang`

@@ -1,0 +1,62 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "grondslag": {
+            "number": "240"
+          },
+          "aftrek": {
+            "number": "90"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "R1",
+        "objectType": "Rekenkamer",
+        "attributes": {
+          "grondslag": {
+            "number": "10"
+          },
+          "aftrek": {
+            "number": "4"
+          }
+        },
+        "roles": {
+          "opdrachtgever": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "R1",
+      "attribute": "heffing",
+      "value": {
+        "number": "6"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "heffing",
+      "value": {
+        "number": "6"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

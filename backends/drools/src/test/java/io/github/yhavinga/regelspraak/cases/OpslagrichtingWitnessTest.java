@@ -22,12 +22,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The §13.3.9 STORAGE-DIRECTION witness: WHERE a relation's single scalar bean field lives, WHICH end a
  * case-supplied link lands on, and which end an aggregation then reads.
  *
- * <p>ref keys links per instance per role key, so a relation is DIRECTED at the storage layer: the side that
- * wrote it reads it, the far side reads nothing. The bean model has no such key — it has one scalar field per
- * to-one role — so the two only agree where the field derivation and the case-input write agree with ref's
- * keying. Gate 12 cannot see any of that: every corpus golden supplies its relations from the end where both
+ * <p>ref keys links per instance per role key; the bean model has no such key — one scalar field per to-one
+ * role, and at 1:N that single field necessarily serves both directions. The two therefore only agree where
+ * the field derivation and the case-input write agree with ref's keying. Until 2026-09-10 they did NOT agree,
+ * and this file pinned ref's DIRECTED reading as the arbiter; RUNTIME-SEMANTICS ch. 5.7a then decided the
+ * other way — a supplied role link ESTABLISHES the relation and BOTH roles read it — so ref's loader mirrors
+ * on the sister role and {@code CaseRunner.zetRollen} writes the second field on a 1:1 shape. The three tests
+ * that carried the old reading were converted at that decision and say so at their own site.
+ *
+ * <p>Gate 12 cannot see any of this: every corpus golden supplies its relations from the end where all
  * executors agree, so the seams below are exactly the ones a wrong storage decision gets wrong while every
- * pinned total still lands.
+ * pinned total still lands. What is pinned here is now agreement, not a characterised divergence — except
+ * where a bean-model limit genuinely refuses a form, and those refusals carry their reason.
  *
  * <p>Every expectation was replayed through {@code ref/} on this exact model and case FIRST. The models are
  * corpus goldens' {@code ir.json} off the wire, or an in-memory variant of one; every case is authored here,
@@ -66,27 +72,47 @@ class OpslagrichtingWitnessTest {
                 "the written key 'opvolger' resolves by NAME to the opvolging role and lands on ITS field");
     }
 
-    @Test void de_gewone_zelfpaarkoppeling_spiegelt_niet() throws Exception {
-        // The flank that separates an ordinary self-pair from the §13.3.9.2 WEDERKERIG one, which DOES mirror.
-        // ref's Case.materialise_reciprocal is gated on ft.wederkerig, so W1 -> W2 over `opvolging` leaves W2's
-        // voorganger reading EMPTY. Measured on this model: the counting probe reads 1 opvolger on W1 and 0
-        // voorgangers on W2, and the mirrored hypothesis MISMATCHes in ref.
+    @Test void de_gewone_zelfpaarkoppeling_spiegelt_op_de_zusterrol() throws Exception {
+        // CONVERTED 2026-09-10, maintainer decision on the case-input reading (RUNTIME-SEMANTICS ch. 5.7a):
+        // a supplied link ESTABLISHES the relation and BOTH roles read it. This test used to be
+        // `de_gewone_zelfpaarkoppeling_spiegelt_niet` and asserted the opposite — that W2's `voorganger` stays
+        // null after W1 -> W2 over `opvolging` — on the then-true ground that ref's mirror was gated on
+        // ft.wederkerig. That gate is gone: ref's Case.materialise_relations mirrors EVERY two-role relation on
+        // the SISTER role, and the 1:1 arm of CaseRunner.zetRollen writes the second bean field to match.
+        // RED FIRST — this assertion measured on this model and case with that write removed again:
+        //     expected: <io.github.yhavinga.regelspraak.facts.Wachter@…> but was: <null>
+        //
+        // What the test still separates is the SISTER role from the WRITTEN one: the mirror fills
+        // W2.voorganger, NOT W2.opvolger. A mirror that wrote the same role would make W2 its own successor's
+        // predecessor, and the two remaining nulls are what refuse that reading.
         Map<String, Object> beans = beans(tellingOverOpvolgers(), keten("\"opvolger\": [\"W2\"]", ""));
-        assertNull(RegelSpraakRuntime.get(beans.get("W2"), "voorganger"),
-                "a mirrored write would fill the sibling field — ref reads nothing there");
-        assertNull(RegelSpraakRuntime.get(beans.get("W1"), "voorganger"));
-        assertNull(RegelSpraakRuntime.get(beans.get("W2"), "opvolger"));
+        assertSame(beans.get("W1"), RegelSpraakRuntime.get(beans.get("W2"), "voorganger"),
+                "the reverse leg lands on the SISTER role's field: W1 is W2's voorganger");
+        assertNull(RegelSpraakRuntime.get(beans.get("W1"), "voorganger"),
+                "and no more than the relation given: nobody is W1's voorganger");
+        assertNull(RegelSpraakRuntime.get(beans.get("W2"), "opvolger"),
+                "the mirror writes the sister role, never the written one");
     }
 
-    @Test void de_gerichte_koppeling_beslist_de_gelezen_waarde() throws Exception {
-        // and its end-to-end consequence, which the bean-level assertions above do not imply: the fold starts at
-        // the written end only. Model: the erflijn golden with its count rewired onto the TO-ONE `opvolgers`
-        // (an in-memory variant; the corpus ir.json is untouched). ref on exactly this model and case: W1 counts
-        // 1 opvolger, W2 counts 0 — a mirrored fill would make both 1, and ref rejects that (MISMATCH on W2).
+    @Test void de_telling_leest_de_genoemde_rol_niet_de_zusterrol() throws Exception {
+        // The end-to-end consequence the bean-level assertions above do not imply, RENAMED 2026-09-10: its old
+        // name (`de_gerichte_koppeling_beslist_de_gelezen_waarde`) carried the DIRECTED reading that
+        // RUNTIME-SEMANTICS ch. 5.7a replaced, and its old comment explained the numbers by "a mirrored fill
+        // would make both 1". That explanation was wrong even then, and the VALUES are unchanged under the
+        // symmetric reading — which is exactly what makes this test worth keeping. Model: the erflijn golden
+        // with its count rewired onto the TO-ONE `opvolgers` (an in-memory variant; the corpus ir.json is
+        // untouched); the fold counts the role `opvolger`.
+        //
+        // The mirror fills the SISTER field (W2.voorganger), so W2's `opvolger` is still empty and W2 still
+        // counts 0. REMEASURED through ref under ch. 5.7a, on exactly this model and case:
+        //     1 / 0  ->  oracle: PASS (2 expectations)
+        //     1 / 1  ->  MISMATCH: W2.erfvolgeraantal = 0, expected 1
+        // A mirror that wrote the WRITTEN role instead of the sister one would make both 1 — that is the
+        // reading this pair refuses, and it refuses it in ref and in the backend alike.
         Path ir = tellingOverOpvolgers();
         assertNull(CaseRunner.speelCase(ir, JSON.readTree(ketenMetVerwachting("1", "0"))), "ref agrees: W1 1, W2 0");
         assertNotNull(CaseRunner.speelCase(ir, JSON.readTree(ketenMetVerwachting("1", "1"))),
-                "and the mirrored reading is a named mismatch, not a silent pass");
+                "counting the sister role instead would be a named mismatch, not a silent pass");
     }
 
     @Test void de_dubbelmeervoudige_zelfrelatie_heeft_geen_veld_en_wordt_overgeslagen() throws Exception {
@@ -129,33 +155,44 @@ class OpslagrichtingWitnessTest {
                 "ref agrees: 1 / 2.50");
     }
 
-    @Test void dezelfde_telling_negeert_een_levering_aan_de_elementkant() throws Exception {
-        // The flank that proves the forward arm reads the subject's field and not just "whichever end was
-        // filled": the SAME 1:1 model with the link supplied from the ELEMENT side (V1 names its aanmelder)
-        // leaves the subject's own field empty, so the fold finds nothing. ref agrees exactly — it keys the
-        // link on V1 and reads none on J1 — and rejects the 1 / 2.50 reading on this case.
+    @Test void dezelfde_telling_leest_een_levering_aan_de_elementkant_ook() throws Exception {
+        // CONVERTED 2026-09-10 (RUNTIME-SEMANTICS ch. 5.7a). This test used to be
+        // `dezelfde_telling_negeert_een_levering_aan_de_elementkant` and pinned 0 / 0: the SAME 1:1 model with
+        // the link supplied from the ELEMENT side (V1 names its aanmelder) left the subject's own field empty,
+        // so the fold found nothing — and ref, which keyed links per instance per role key, agreed.
+        //
+        // Under the decided reading the case names ONE LEG of a relation that has two, so J1's own `vondst`
+        // field is written too and the fold reads 1 / 2.50 — the same numbers the subject-side supply gives in
+        // `de_een_op_een_telling_leest_het_veld_van_het_subject` above. That pair is now the point: on a 1:1
+        // relation the two spellings of one relation must compute the same thing. RED FIRST — the 1 / 2.50
+        // assertion measured on this model and case with the 1:1 mirror write removed again:
+        //     case: attribuut aantal aangemelde vondsten: verwacht 1, werkelijk 0;
+        //           attribuut aangemeld gewicht: verwacht 2.50, werkelijk 0
+        // and ref, remeasured under ch. 5.7a on exactly this model and case, answers 1 / 2.50 from EITHER end
+        // (`oracle: PASS (2 expectations)` on both spellings; the old 0 / 0 is a named MISMATCH there now).
         Path ir = vondstRolNaarToOne();
-        assertNull(CaseRunner.speelCase(ir, JSON.readTree(telling("", "\"aanmelder\": [\"J1\"]", "", "0", "0"))),
-                "ref agrees: 0 / 0");
-        assertNotNull(CaseRunner.speelCase(ir, JSON.readTree(telling("", "\"aanmelder\": [\"J1\"]", "", "1", "2.50"))),
-                "and the subject-side reading is a named mismatch here, not a silent pass");
+        assertNull(CaseRunner.speelCase(ir, JSON.readTree(telling("", "\"aanmelder\": [\"J1\"]", "", "1", "2.50"))),
+                "ref agrees: 1 / 2.50 — the element-side supply establishes the same relation");
+        assertNotNull(CaseRunner.speelCase(ir, JSON.readTree(telling("", "\"aanmelder\": [\"J1\"]", "", "0", "0"))),
+                "and the old directed reading is a named mismatch now, not a silent pass");
     }
 
-    @Test void de_meervoudige_zusterrol_telt_de_elementkant_wel_mee_bekende_restlacune() throws Exception {
-        // CHARACTERISATION of a KNOWN, PRE-EXISTING divergence — not an endorsement. With a TO-MANY element
-        // role the relation has exactly ONE field (Vondst.aanmelder) and it necessarily serves both directions,
-        // so the backref join folds a link supplied from the ELEMENT end as if the subject had written it.
-        // Measured on the UNCLIPPED vondsttelling golden, element-end supply:
+    @Test void de_meervoudige_zusterrol_telt_de_elementkant_mee_en_ref_nu_ook() throws Exception {
+        // RETIRED AS A DIVERGENCE 2026-09-10 — the gap this test was written to keep visible is CLOSED, and it
+        // closed from the SPEC side rather than the backend side. It used to read
+        // `de_meervoudige_zusterrol_telt_de_elementkant_wel_mee_bekende_restlacune` and characterise:
         //     ref    -> J1 aantal 0, gewicht 0     (nothing was keyed on J1)
         //     Drools -> J1 aantal 2, gewicht 3.75  (both elements fold in)
-        // The to-one arm REFUSES exactly this shape (ExecModelTranspiler: "one shared field, both directions");
-        // the to-many arm does not, and closing it means tracking WHICH end supplied a link — a change under
-        // every existing aggregation, so it is carded, not smuggled in here. No corpus golden supplies a
-        // to-many relation from the element end, so no gate can see it; this test is that visibility. It FAILS
-        // WHEN THE GAP CLOSES, which is the point: the fix must come here to retire it.
+        // with the note "it FAILS WHEN THE GAP CLOSES". It does not fail, because the backend's numbers were
+        // the RIGHT ones: with a TO-MANY element role the relation has exactly ONE field (Vondst.aanmelder) and
+        // it necessarily serves both directions, so no engine on this fact model can read such a link as
+        // directed. RUNTIME-SEMANTICS ch. 5.7a decided the reading that way — a supplied link establishes the
+        // relation, both roles read it — and ref's loader now mirrors on the sister role. REMEASURED on the
+        // UNCLIPPED vondsttelling golden, element-end supply: ref `oracle: PASS (2 expectations)` on 2 / 3.75.
+        // Three executors, one answer; what is left to pin is that agreement.
         assertNull(CaseRunner.speelCase(ir(VONDSTTELLING),
                         JSON.readTree(telling("", "\"aanmelder\": [\"J1\"]", "\"aanmelder\": [\"J1\"]", "2", "3.75"))),
-                "the backend still folds the far-end supply; ref reads 0 / 0 on this case");
+                "ref agrees: 2 / 3.75 — one field, both directions, one reading");
     }
 
     // ---------------- 3. the name-sharing displacement: a role name a declared member already owns ----------------

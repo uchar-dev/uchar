@@ -513,6 +513,25 @@ public final class CaseRunner {
                 if (rolIL != null && !model.naarVeelRol(tI, tL, rolIL)) {
                     naamdelingsPoort(tI, rolIL, tL, e.getKey());
                     zetToOne(bean, rolIL, doel);
+                    // RUNTIME-SEMANTICS ch. 5.7a, the 1:1 arm: a supplied link ESTABLISHES the relation and
+                    // BOTH roles read it. With the sister role ALSO to-one the relation owns TWO bean fields —
+                    // one per direction — so the forward write above leaves the far side reading a spuriously
+                    // empty relation unless the second field is written too. That second write is the whole of
+                    // the difference between a 1:1 and a 1:N shape here: at 1:N there is exactly ONE field and
+                    // it already serves both directions (the else-branch below writes it), so nothing is left
+                    // to mirror. ref's Case.materialise_relations makes the same write on the same role.
+                    //
+                    // rolLI == rolIL is the WEDERKERIG shape (§13.3.9.2: one role that is its own opposite),
+                    // whose mirror is spiegelWederkerigeRollen's separate pass — untouched here, so its
+                    // order-independence argument and its own conflict message keep holding.
+                    if (rolLI != null && !rolLI.equalsIgnoreCase(rolIL) && !model.naarVeelRol(tL, tI, rolLI)) {
+                        // The far field must really exist: a declared member of the same name displaces it
+                        // (leden()'s dedup), and then this backend cannot hold the far direction at all. Under
+                        // ch. 5.7a that is a per-form refusal with its reason, never a silently one-directional
+                        // relation — the same standard the forward write is held to one line up.
+                        naamdelingsPoort(tL, rolLI, tI, e.getKey());
+                        zetToOne(doel, rolLI, bean);
+                    }
                 } else {
                     // the field lives on the target (this is the one side)
                     if (rolLI == null || model.naarVeelRol(tL, tI, rolLI))
@@ -577,20 +596,23 @@ public final class CaseRunner {
      *  (a case supplying both legs means one relation), and a CONFLICTING leg on the to-one role is hard — ref
      *  refuses that case at load (WF-013), so overwriting it here would file a broken case under a green replay.
      *
-     *  <p>Scoped to the WEDERKERIG shape — and since 2026-09-10 that scope is a RECORDED GAP, not the law it
-     *  used to state. RUNTIME-SEMANTICS ch. 5.7a (maintainer decision) makes EVERY supplied link establish its
-     *  relation in both directions, and ref's {@code Case.materialise_relations} mirrors on the SISTER role
-     *  accordingly. Two shapes, two answers here:
+     *  <p>Scoped to the WEDERKERIG shape, and since 2026-09-10 that scope is a DIVISION OF LABOUR rather than
+     *  the law it used to state. RUNTIME-SEMANTICS ch. 5.7a (maintainer decision) makes EVERY supplied link
+     *  establish its relation in both directions, and ref's {@code Case.materialise_relations} mirrors on the
+     *  SISTER role accordingly. Three shapes, three answers, all landed:
      *  <ul>
      *    <li><b>1:N</b> — the relation has exactly ONE reference field and it necessarily serves both
-     *        directions, so no second write exists to make. {@link #zetRollen} lands the case's write on that
+     *        directions, so there is no second write to make. {@link #zetRollen} lands the case's write on that
      *        field through the sister role's NAME, and the three spellings of one relation give one fact base
      *        ({@code ZusterrolInvoerWitnessTest}, over the {@code jutterswet-ketenband} golden).</li>
-     *    <li><b>1:1</b> — each direction owns a field, so ch. 5.7a needs a SECOND write on the target bean,
-     *        which this backend does NOT yet make: a case writing {@code W1{opvolger:[W2]}} over a
-     *        to-one/to-one self-pair leaves W2's {@code voorganger} null here while ref reads W1. No corpus
-     *        golden supplies a 1:1 relation one-sidedly, so no gate sees it; {@code OpslagrichtingWitnessTest}
-     *        is where that flank is pinned, and closing the gap means moving its pins with the write.</li>
+     *    <li><b>1:1</b> — each direction owns its own field, so ch. 5.7a needs a SECOND write on the target
+     *        bean. {@link #zetRollen} makes it, right after the forward write, on the sister role and under the
+     *        same name-sharing gate. That closed the last ref ≢ Drools flank of the decision: a case writing
+     *        {@code W1{opvolger:[W2]}} over a to-one/to-one self-pair now reads W1 as W2's voorganger here, as
+     *        it does in ref ({@code OpslagrichtingWitnessTest}, converted at that decision).</li>
+     *    <li><b>wederkerig</b> (§13.3.9.2, one role that is its own opposite) — THIS pass, and deliberately
+     *        still a separate one: its order-independence argument above is the reason, and the 1:1 arm skips
+     *        the shape (it fires only when the sister role is a DIFFERENT role) so the two never collide.</li>
      *  </ul> */
     private void spiegelWederkerigeRollen() {
         for (Object bean : labelNaarBean.values()) {
