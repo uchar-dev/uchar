@@ -431,15 +431,8 @@ let wf002 ctx =
    corpus as it now stands).
 
    Scope: the PRESENT self-name. `naam: null` is the empty half of the same
-   field and a different question (the (n)/(o) precedent of ch. 4.6). It is
-   NOT held open for want of a witness — a null one is one edit from any
-   golden, as the five below are — but because its shape is its own: `naam` is
-   `required` on the wire, so the OMISSION is already refused twice over (gate
-   2 and this loader), while `naam: null` is schema-valid and passes this
-   verifier, `ref` and the ASP backend while crashing the bean-model executor
-   in its identifier contract, on exactly the two tables whose loader has no
-   fall-back to the key. Measured 2026-09-06, recorded in the spec clause,
-   carded, and left in ch. 4.6's open list until then. *)
+   field; it is closed by clause (d) below, which is why this comparison may
+   pass over the absent name without leaving a hole. *)
 let wf094 ctx =
   let arm table kind self entries =
     List.filter_map
@@ -454,6 +447,62 @@ let wf094 ctx =
                      declaration carries its own name verbatim"
                     kind n key))
         | _ -> None)
+      entries
+  in
+  arm "objecttypen" "object type" (fun (o : objecttype) -> o.ot_naam) ctx.doc.objecttypen
+  @ arm "parameters" "parameter" (fun (p : parameter) -> p.par_naam) ctx.doc.parameters
+  @ arm "eenheidstelsels" "unit system" (fun (s : eenheidstelsel) -> s.es_naam)
+      ctx.doc.eenheidstelsels
+  @ arm "feittypen" "fact type" (fun (f : feittype) -> f.ft_naam) ctx.doc.feittypen
+  @ arm "dimensies" "dimension" (fun (d : dimensie) -> d.dim_naam) ctx.doc.dimensies
+
+(* WF-094 clause (d): the EMPTY half of the same field — a keyed declaration
+   whose `naam` is `null` rather than disagreeing with its key (maintainer
+   decision 2026-09-09).
+
+   Same class, same field, same five tables, so the same rule number: the
+   clause above asks whether the second spelling of the ONE name agrees, and
+   this one asks whether it is there at all. The OMISSION flank needs no clause
+   — `naam` is `required` on the wire, so gate 2 rejects a missing field and
+   all three OCaml loaders refuse it with a load error naming the path — but
+   the field is typed ["string", "null"], so `naam: null` is schema-valid,
+   round-trips, and passed this verifier, `ref` and the ASP backend cleanly
+   while KILLING the bean-model executor: a NullPointerException inside the
+   identifier contract, which trims the name before splitting it. That is the
+   shape the ch. 4.6 (n)/(o) pair does not have — there both OCaml executors
+   were loud — and it is why the wire, not one loader, has to answer.
+
+   FIVE ARMS again, one per table, one witness each
+   (`wf094-zelfnaam-null-<kind>`), so a mutant dropping one arm frees exactly
+   one document and no other — including its non-null sister above, which is a
+   separate function for exactly that reason.
+
+   The honest ground per arm, since it differs and the clause does not pretend
+   otherwise: on `parameters` and `dimensies` the harm is MEASURED — those two
+   are the loader's terugval-less tables, where the self-name goes straight
+   into the identifier contract. On `objecttypen`, `eenheidstelsels` and
+   `feittypen` the same loader falls back to the map key, so those three arms
+   rest on the CONSTRUCT — a declaration carries its own name — and not on a
+   crash. Three of five on the construct is the same split the clause above
+   writes down for its own arms, and each witness's NOTE.md states which of the
+   two grounds it stands on. (The Drools loader learned the fall-back on all
+   five at this card as well: route 2, so a document written before this rule
+   stops crashing. That fix does not make the arms superfluous — it removes the
+   one LOUD reader, and without a wire rule the next consumer chooses again.) *)
+let wf094_null ctx =
+  let arm table kind self entries =
+    List.filter_map
+      (fun (key, x) ->
+        match self x with
+        | None ->
+            Some
+              (v "WF-094"
+                 ("/" ^ table ^ "/" ^ key ^ "/naam")
+                 (Printf.sprintf
+                    "%s under the key '%s' carries no self-name (naam is null): a keyed \
+                     declaration carries its own name, and an absent name is not one"
+                    kind key))
+        | Some _ -> None)
       entries
   in
   arm "objecttypen" "object type" (fun (o : objecttype) -> o.ot_naam) ctx.doc.objecttypen
@@ -8304,7 +8353,7 @@ let wf086 ctx =
 let all (doc : document) : violation list =
   let ctx = { doc } in
   List.concat
-    [ wf001 ctx; wf002 ctx; wf094 ctx; wf003 ctx; wf004 ctx; wf005 ctx; wf006 ctx;
+    [ wf001 ctx; wf002 ctx; wf094 ctx; wf094_null ctx; wf003 ctx; wf004 ctx; wf005 ctx; wf006 ctx;
       wf007_model ctx; wf009 ctx; wf092 ctx; wf011 ctx; wf012 ctx; wf013 ctx; wf014 ctx;
       wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf020 ctx; wf021 ctx;
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
