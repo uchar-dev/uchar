@@ -338,3 +338,307 @@ pad), `corpus/rood/**`, `frontends/regelspraak/**` (alleen bij besluit 5),
 - De sleutel- en spellingsbotsingen van dagsoorten: eigen kaart,
   `20260909-wf017-sleutel-en-spellingsbotsing.md`. Verwant alleen in vorm (een
   naam die een andere naam verdringt), niet in laag.
+
+## Result (2026-09-10)
+
+### Hermeting op deze kop
+
+De kaart mat op `45157e8`; alles hieronder is opnieuw gemeten op
+`17e5254` + de claim, met een verse jar, de frontend uit
+`frontends/regelspraak` (jar-only), de OCaml-verifier, `ref/` en
+`backends/clingo`. De matrix reproduceert **exact**, inclusief de twee rijen
+die het gedrag dragen:
+
+| vorm | ref | clingo | exec-model | DRL-tekst |
+| --- | --- | --- | --- | --- |
+| controle (geen schaduw), met link | 0 | 0 | PLAYED | PLAYED |
+| controle (geen schaduw), zonder link | 0 | 0 | PLAYED | PLAYED |
+| naar-veel-naamdeling (legaal) | 0 | 0 | PLAYED | PLAYED |
+| attribuutschaduw, met link | 0 | 0 | EXCLUDE | EXCLUDE |
+| attribuutschaduw, zonder link, attribuut gevuld | 0 | 0 | **FAIL (1)** | EXCLUDE |
+| attribuutschaduw, zonder link, attribuut leeg | 0 | 0 | PLAYED | EXCLUDE |
+| kenmerkschaduw, met link | 0 | 0 | EXCLUDE | EXCLUDE |
+| kenmerkschaduw, zonder link, kenmerk gezet | 0 | 0 | **FAIL (1)** | EXCLUDE |
+| rol-vs-rol (handgeschreven wire) | 2 | 2 | EXCLUDE | EXCLUDE |
+
+Letterlijk, uit de hermeting:
+
+    FAIL attr-geenlink-gevuld.case.json: attribuut premie: verwacht 0, werkelijk leeg
+    EXCLUDE role 'werf' resolves to the to-one role 'werf' on Schuit, which shares
+      its name with a declared member — the bean cannot carry the reference field
+      (name-sharing bean limit: attribute > characteristic > reference)
+    EXCLUDE drl compile: [Message [id=1, … level=ERROR, path=file0.drl, line=10 …
+      text=Unable to Analyse Expression …
+    CASE ERROR: role key "ligger" is ambiguous from "Schuit"      ← ref én clingo, exit 2
+
+De drie luide lezers staan ongewijzigd (`OpslagrichtingWitnessTest` sectie 3,
+groen). Verifier: PASS op alle vier de schaduwdocumenten en op de
+handgeschreven rol-vs-rol-wire; FAIL (WF-034/WF-035) op de rol-vs-rol zoals de
+frontend hem emitteert. Frontend: exit 0, **nul bytes stderr**,
+`diagnostics: []`. De corpussweep is opnieuw gedraaid op deze kop: 167 golden +
+26 rood + 362 negatief + 30 parity = **585 documenten, nul botsingen**.
+
+### Wat er landde
+
+**1. De poort, in beide takken.** Elke genavigeerde hop vraagt nu de gedeelde
+`FactModelGenerator.heeftReferentieVeld` — één afleiding, één vraag, precies
+zoals de drie eerder gesloten lezers.
+
+- exec-model (`ExecModelTranspiler`): `navReader`'s GENAVIGEERD-tak,
+  `navKetenReader` op **elke** hop, `navComparisonRole`, en
+  `navReactiviteit`'s hopketen én enkelvoudige join. De weigering draagt de
+  reden via het veld `navReden` (het `aggregatieReden`-patroon, gereset in
+  `meet(...)` zodat een reden nooit in een andere constructie belandt) en wordt
+  gelezen op de vier generieke skip-plekken: regel-waarde, regel-voorwaarde en
+  de twee objectcreatie-armen.
+- DRL-tekst (`DrlTranspiler`): centraal in `naviResolve`, de ene plek waar die
+  tak navigatie oplost — GENAVIGEERD en elke KETEN-hop. `meet(...)` geeft de
+  reden voorrang boven de tekst van de TODO-markering.
+
+Uitkomst, gemeten na de poort, op alle acht de probevormen: geen enkele
+exit 1 meer in de exec-model-tak, geen `ConstraintEvaluationException` meer, en
+in **beide** takken dezelfde zin:
+
+    EXCLUDE transpiler SKIP: regel: premie van een schuit — regel (genavigeerde
+      lezing: de rol 'werf' op Schuit deelt haar naam met een gedeclareerd lid —
+      het beanveld draagt dat attribuut/kenmerk en niet de referentie (leden():
+      attribuut > kenmerk > referentie), dus de koppeling naar Werf heeft geen
+      veld (§13.3.9 opslagrichting)): premie van een schuit
+
+    EXCLUDE drl-transpiler MARKER: regel: premie van een schuit — genavigeerde
+      lezing: de rol 'werf' op Schuit deelt haar naam met een gedeclareerd lid — …
+
+De controle en de legale tegenvorm blijven PLAYED in beide takken: nul
+over-afwijzing.
+
+**2. Rood eerst, met echte testuitvoer.** Drie nieuwe asserties in
+`OpslagrichtingWitnessTest` sectie 3, elk op een eigen lezer, elk op een
+in-memory variant van `synth-navigatiepremie` waarvan de verwachting eerst door
+`ref/` is gehaald. Op de code zónder poort:
+
+    Tests run: 14, Failures: 3, Errors: 0, Skipped: 0
+      de_genavigeerde_waardelezing_weigert_het_verdrongen_veld:222
+        Expected …CaseRunner.Excluded to be thrown, but nothing was thrown.
+      de_enkelvoudige_hoplezing_weigert_hetzelfde_veld:234
+        Expected …CaseRunner.Excluded to be thrown, but nothing was thrown.
+      de_genavigeerde_vergelijking_weigert_hetzelfde_veld:246
+        Unexpected exception type thrown, expected: <…CaseRunner.Excluded>
+        but was: <org.drools.modelcompiler.constraints.ConstraintEvaluationException>
+
+Met de poort: `Tests run: 14, Failures: 0, Errors: 0, Skipped: 0`. De twee
+"nothing was thrown" zijn precies de stille waarde-afwijking (`speelCase` gaf
+de mismatchregel terug in plaats van te weigeren); de derde is de
+ongeclassificeerde fire-fout van de vergelijkingskant.
+
+**Per lezer**, zoals de acceptance eist:
+
+- `navKetenReader` — getuige `de_genavigeerde_waardelezing_weigert_het_verdrongen_veld`
+  (de ref zoals de frontend hem emitteert, `navigatiePad ["werf"]`).
+- `navReader` — getuige `de_enkelvoudige_hoplezing_weigert_hetzelfde_veld`
+  (hetzelfde model en dezelfde case met het pad leeg en de hop bij haar rol
+  genoemd; `ref` is onverschillig voor het verschil, de twee lezers moeten dat
+  ook zijn).
+- `navComparisonRole` — getuige `de_genavigeerde_vergelijking_weigert_hetzelfde_veld`
+  (de voorwaarde-operand genavigeerd, de waarde teruggebracht tot een eigen
+  attribuut, zodat de weigering alleen van de vergelijkingslezer kan komen).
+- `navReactiviteit` — **poort zonder eigen getuige**, met de reden: die methode
+  wordt alleen bereikt vanaf het scalaire waardepad *nadat* dat pad zelf
+  lowerde, en beide waardelezers poorten nu elke hop die ze lopen, dus een
+  veldloze hop kan er niet aankomen. De poort blijft staan omdat `navRefs`
+  argumentposities loopt die het waardepad niet noodzakelijk zelf lowert, en
+  omdat een stil weggelaten far-side watch een **verouderde waarde** oplevert
+  in plaats van een weigering — het enige gevolg dat die methode juist moet
+  voorkomen. Ze weigert de constructie dus, in plaats van de hop over te slaan.
+
+JUnit-teller: 262 → **265**, nul skips. Vloer `EXPECTED_MIN_TESTS` (239)
+ongemoeid.
+
+**3. De spec-alinea (voorstel, beschermd pad).** `spec/IR-SPEC.md` §2.6, direct
+na WF-013, in de WF-002/WF-012-buurt. Geen nieuw WF-nummer. Letterlijk:
+
+> **Roles and object-type members are separate namespaces.** WF-002 states that
+> attributes and characteristics are separate namespaces; roles are a third. A
+> to-one role MAY share its name, case-insensitively, with an attribute or a
+> characteristic of the object type on the many side of the same fact type —
+> the object type that a bean-shaped consumer would give the reference field.
+> Such a document is **well-formed**, and no rule above narrows it. The reason
+> is structural: a navigated read names its role hop and its attribute in
+> *different* fields — `navigationPath` (plus the `roleBindings` extension)
+> against `attribute` — so a role name and a member name never compete for one
+> wire position. The reference interpreter and the ASP backend both answer such
+> a document correctly today, with no special case. It is a REACHABLE but
+> UNINHABITED shape: swept 2026-09-10 over every corpus zone — 555 documents —
+> the collision occurs zero times, so no existing case pins this and the
+> paragraph is what states it.
+>
+> *Consumer note, recorded rather than hidden.* A consumer that materialises
+> each object type as a record with **one property per identifier** — a Java
+> bean, a struct, a row — cannot hold that shape: it has one slot where the
+> document has two names, so one of the two is displaced. Such a consumer MUST
+> refuse the affected construct per form, loudly and naming the displaced
+> reference; it MUST NOT read the displacing member in the role's place, and it
+> MUST NOT reject the document as ill-formed. This is a limit of that target
+> format, not a well-formedness rule: refusing the document would deny a
+> program that has exactly one meaning, which the other executors compute.
+
+De 555 is de **publiek verifieerbare** helft van de sweep (golden 167 + rood 26
++ negatief 362); de parity-zone telt in de kaart mee (585) maar wordt in het
+spec-document niet genoemd, omdat dat document zelfstandig moet lezen.
+
+### De DRL-tak: gemeten, en dezelfde poort gegeven
+
+De kaart liet de keuze open. Gemeten: dezelfde vraag vervangt de blote
+compilerfout wél door dezelfde reden, en het kost één poort op één plek
+(`naviResolve`) plus de voorrangsregel in `meet(...)` — de goedkope helft, dus
+gedaan. De tak is niet data-afhankelijk: hij viel op **elke** schaduwvorm om,
+ook met het verdringende attribuut leeg, en doet dat nu ook als
+reden-dragende MARKER. Gate 13 draait beide takken en beweegt niet: 13
+DRL-tekst-replays PLAYED, vloer 13.
+
+### De rode getuige: NIET geland, met de meting erbij
+
+De kaart vroeg een rood-getuige voor de **case-sleutel**-arm. Die is
+**geblokkeerd**, en de blokkade is met een echte gate-run gemeten, niet
+beredeneerd. Het document en de case zijn gebouwd (twee feittypen die `Schuit`
+allebei een to-één `ligger` geven; de case biedt beide links onder één sleutel
+aan). Verifier PASS, en beide uitvoerders weigeren identiek:
+
+    CASE ERROR: role key "ligger" is ambiguous from "Schuit"     ref  exit 2
+    CASE ERROR: role key "ligger" is ambiguous from "Schuit"     clingo exit 2
+
+Maar de fout valt bij het **laden van de case**, niet bij de evaluatie:
+`Case.load_file` lost elke rolsleutel op (`resolve_role_ft`) voordat
+`expectedFault` überhaupt uit het bestand wordt gelezen. Beide runners gooien
+dan `Case.Error` en eindigen op exit 2, waar gate 8 exit 0 eist. Gemeten met de
+kandidaat-map in `corpus/rood/`:
+
+    FAIL: corpus/rood/ambiguous-case-role-key/case1.json — ref did not observe
+      the expected fault:
+    FAIL: corpus/rood/ambiguous-case-role-key/case1.json — clingo did not observe
+      the expected fault:
+
+Dit is geen bug maar de **contractgrens van de zone**, en die staat zwart op
+wit in het case-schema: *"The red-path alternative to `expected`
+(corpus/rood): **evaluation** of this case MUST fail observably in every
+executor that carries its form."* Een laadfout valt daar per definitie buiten.
+Hem toelaten vergt drie dingen die alle drie **buiten de may-touch van deze
+kaart** vallen: `spec/schema/uchar-case-v0.schema.json` (beschermd pad),
+`ref/bin/runner.ml` en `backends/clingo/bin/clingo_runner.ml` (allebei
+uitdrukkelijk out of scope op deze kaart). De kandidaat-map is daarom
+**verwijderd**; gate 8 staat op 26, vloer 26.
+
+Wat de kaart als "de tweede helft van ch. 4.3's wet" beschreef, is daarmee
+preciezer geworden: de **navigatie**-arm van de rol-vs-rol-ambiguïteit is niet
+ongepind — de verifier wijst hem statisch af met `WF-053 … role name 'ligger'
+is ambiguous from 'Schuit'; name the hop with an explicit role binding`, gepind
+door `corpus/negatief/wf053-bindingless-ambiguous`. Alleen de **case-sleutel**
+-arm is ongepind, en die is met de zone zoals ze vandaag is niet te pinnen.
+
+**Voorgestelde vervolgkaart:** de rode zone een laadfout-arm geven — de
+schema-zin verbreden van *evaluation* naar *loading or evaluation*, beide
+runners `expectedFault` laten lezen vóór de wereld wordt geladen, en deze
+getuige als eerste bewoner. Dat raakt een beschermd pad en twee
+out-of-scope-zones, dus het hoort in een eigen kaart met een eigen
+onderhoudersbesluit.
+
+### Besluit 5 — de frontend-stilte
+
+**Geen frontend-wijziging.** Vastgelegd als **bekende stilte**: bij rol-vs-rol
+emitteert de frontend exit 0, nul bytes stderr en `diagnostics: []` op een
+document dat de eigen verifier afwijst (WF-034/WF-035 op de sentinel-typen). De
+reden om hem te laten staan: dit is WF-012's v0-fail-safe die zich gedraagt
+zoals `IR-SPEC.md` hem beschrijft ("v0 resolves navigation fail-safe (a
+non-unique match returns 'no navigation' downstream); v1 moves the guarantee to
+declaration time"), en de wal staat er al — gate 3 vangt het document. De
+strenge lezing (een WARNING met de niet-geresolveerde navigatie erin) is een
+**conformance**-kwestie tussen frontend en verifier, niet een wire- of
+semantiekkwestie, en ze kost een `frontends/regelspraak`-wijziging met een
+JUnit-getuige. Buiten deze kaart gehouden, hier genoteerd.
+
+### Besluit 6 — geen golden
+
+Bevestigd, en de prijs is nu gemeten in plaats van geschat: elke golden van
+deze vorm valt na de poort uit het PLAYED-kanaal in **beide** takken, en kost
+dus een naam met reden in `EXPECTED_CHANNEL` in `scripts/check-drools.sh` — een
+beschermd pad — voor een vorm waarvan de weigering het gewenste antwoord is.
+`EXPECTED_PLAYED` blijft 120, `EXPECTED_CHANNEL` ongewijzigd. De getuigen
+staan in de eigen JUnit-suite van de backend, die gate 12 draait.
+
+### Gates
+
+**Alle dertien**, zelf gedraaid op deze kop, na de wijziging:
+
+| gate | uitkomst |
+| --- | --- |
+| 1 self-contained | PASS |
+| 2 ir-schema | PASS (193 bestanden valideren en round-trippen, vloer 192) |
+| 3 verifier | PASS (193 golden schoon; 362 negatief afgewezen, vloer 350) |
+| 4 case-schema | PASS (454 case-bestanden valideren) |
+| 5 oracle | PASS (ref-suite 496 worked examples, vloer 489; 428 cases exact, vloer 427) |
+| 6 clingo | PASS (backend-suite 92 checks, vloer 83; 428 cases ref ≡ clingo) |
+| 7 no-op | PASS (392 cases weerleggen een niets-doende uitvoerder; 36 gepinde survivors) |
+| 8 rood | PASS (26 rode cases, vloer 26; Drools-been 6 fault-pinned, 20 not-carried) |
+| 9 catala | PASS (frontend-suite 201 checks, vloer 201; 12 catala-goldens byte-identiek) |
+| 10 regelspraak | PASS (JUnit 173 tests, vloer 173; 38 rgs-goldens byte-identiek, vloer 38) |
+| 11 toka-parity | PASS (45 .rgs byte-identiek, vloer 45; TOKA-suite 27 tests; ref 29 PASS, clingo 29 PASS, Drools 29 PLAYED / 0 EXCLUDE / 0 FAIL-or-ERROR) |
+| 12 drools | PASS (**played 120**, ongewijzigd; JUnit **265**, vloer 239; 44 auto-excluded, 1 value-divergence, 2 no-case; kanaalvloer 47 met naam gepind) |
+| 13 reftype-derivation | PASS (74 twists over 15 goldens, vloer 74; 70 replays, 13 door de DRL-tekst-tak PLAYED, vloer 13; 0 survivors) |
+
+Gates 12 en 13 zijn apart gedraaid, zoals de acceptance eist. Gate 13 raakt de
+poort niet: de twist verandert eenheidsannotaties, nooit rolnamen of
+ledennamen, dus `heeftReferentieVeld` beantwoordt op elk getwist document
+dezelfde vraag met hetzelfde antwoord — gemeten en niet alleen beredeneerd, de
+tellers zijn identiek aan de vorige kop. Gate 11 is het onafhankelijkste
+signaal voor over-afwijzing naast gate 12: 29 van 29 TOKA-cases blijven PLAYED
+in de Drools-backend, nul nieuwe per-vorm-weigeringen.
+
+### Voorgestelde CONSTRUCTS-zin
+
+Er is er één, en hij hoort op **rij 4** (*Fact types and role navigation*) —
+niet op een eigen rij: dit is geen nieuw construct maar een grens van de
+bestaande navigatiecontract-rij, precies waar rij 4 al "fix the navigation
+contract (reference-field assumption)" zegt.
+
+> **Landed (2026-09-10):** rolnamen en objecttypeledennamen zijn gescheiden
+> naamruimten op de v0-wire (`IR-SPEC.md` §2.6, in de WF-002/WF-012-buurt,
+> zonder nieuw WF-nummer): een to-één rol die zijn naam deelt met een attribuut
+> of kenmerk van het objecttype aan de veel-zijde is **welgevormd**, want een
+> genavigeerde lezing noemt haar rolhop (`navigatiePad`/`navigatieBindingen`)
+> en haar attribuut in verschillende velden. Weigeren zou over-afwijzing zijn:
+> `ref` en de ASP-backend voeren de vorm gemeten correct uit. De
+> **bean-vormige** consument is de uitzondering en die is nu ook zo
+> geïmplementeerd: `backends/drools` weigert de vorm per constructie in
+> **beide** takken, met het verdrongen referentieveld erbij, waar de
+> exec-model-tak tot 2026-09-10 stil `leeg` las (gemeten: `verwacht 0,
+> werkelijk leeg` op een verifier-schoon, ref-schoon document) en de DRL-tak op
+> een blote compilerfout omviel. Vier lezers gepoort (`navReader`,
+> `navKetenReader`, `navComparisonRole`, `navReactiviteit`; de DRL-tak centraal
+> in `naviResolve`), drie rood-eerst-getuigen in
+> `OpslagrichtingWitnessTest`; nul over-afwijzing gemeten (gate 12 `played 120`
+> ongewijzigd, `EXPECTED_CHANNEL` ongemoeid). De vorm is bereikbaar maar
+> onbewoond: 585 documenten over vier zones, nul botsingen. Ongepind blijft de
+> **case-sleutel**-arm van de rol-vs-rol-ambiguïteit — beide uitvoerders
+> weigeren hem identiek (`role key "ligger" is ambiguous from "Schuit"`), maar
+> bij het LADEN van de case, en het rode zonecontract dekt alleen
+> evaluatiefouten; gekaart.
+
+### Wat bewust niet bewoog
+
+- **Geen WF-regel, geen definitiefout.** De kaart schreef de redenering uit; de
+  hermeting bevestigt haar grond: `ref` en clingo geven op elke schaduwvorm het
+  juiste antwoord, en de wire heeft geen positie waarop rol en lid botsen.
+- **`ref/`, `backends/clingo`, `spec/verifier/**`, `spec/schema/**`,
+  `frontends/regelspraak/**`**: niet aangeraakt. De frontend is alleen
+  read-only gebruikt om de meetdocumenten te emitteren.
+- **`scripts/check-rood.sh`**: niet aangeraakt. Er was geen reden-regel nodig,
+  want de rode case landde niet — en zou hij geland zijn, dan was die regel als
+  voorstel gemarkeerd.
+- **`spec/CONSTRUCTS.md` en `spec/PLAN.md`**: niet aangeraakt; de rij-4-zin
+  staat hierboven als voorstel.
+- **De aggregatie-lezer en de case-invoerpoort**: ongewijzigd. De nieuwe poort
+  zit uitsluitend op de navigatie-lezers; de drie eerder gesloten lezers vragen
+  dezelfde gedeelde functie en zijn niet verplaatst.
+- **De generieke skip-teksten** van de aggregatie- en globals-armen: ongemoeid.
+  `navReden` verdringt nooit een bestaande scherpe reden; hij vervangt alleen de
+  generieke scope-notitie op de vier plekken waar een navigatie-lezer null kan
+  hebben teruggegeven.
