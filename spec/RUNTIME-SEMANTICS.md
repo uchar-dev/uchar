@@ -2261,7 +2261,11 @@ decides what the check resolves against. The rules:
    that key, exactly as before. An absent owner and an owner naming the
    subject's own type are the **same reading**; a difference in spelling is
    not a difference (the name resolves case-insensitively, `IR-SPEC.md`
-   ch. 4.6 (q)).
+   ch. 4.6 (q)). The key is the owner's on a **non-navigated** check only. On a
+   NAVIGATED one the characteristic lives on the type the hop REACHES and is
+   crossed there (WF-053), and the owner names neither that type nor a second
+   declaration to consult; it stays what rule 2 makes of it, a statement about
+   the host pattern, and nothing about the reached type's declarations moves.
 2. **The owner is also a hosting statement, and a reader that cannot honour
    it refuses.** The field names the type whose PATTERN the constraint is
    attached to — the v0 producer emits it on exactly one shape, the guard of a
@@ -2280,9 +2284,18 @@ decides what the check resolves against. The rules:
    interpreter is lazy and faults when the condition is evaluated, the ASP
    backend is eager and faults at translation, exactly as they split on
    WF-055.
-3. **The object read is always the subject.** Rule 2 is a refusal, not a
-   redirection: no reader of this specification reads the owner's instances.
-   Where the check answers, it answers about the subject.
+3. **In the two readers this chapter norms, the object read is always the
+   subject.** Rule 2 is a refusal, not a redirection: the reference interpreter
+   and the ASP backend never read the owner's instances, so where THEY answer,
+   they answer about the subject. This is a statement about them and not about
+   every executor. A bean-model executor **does** read the owner's instances on
+   the producer shape, measured: both Drools branches play a fact creation whose
+   guard names a characteristic of the doel and both compute an answer that
+   depends on which DOEL instances carry it, not on the anker. Which of the two
+   is the OBJECT the construct is about is the open half of this field —
+   `IR-SPEC.md` ch. 4.6 (q1) records it as open and
+   `backlog/new/20260910-eigenaar-gastheer-object.md` carries the question. This
+   rule fixes what the two OCaml readers do; it does not settle that.
 
 Worked example (`ref/test/test_ref.ml` ch. 5.8b verbatim; its ASP mirror in
 `backends/clingo/test/test_clingo.ml`). Two object types, `Vondst` and
@@ -2299,11 +2312,15 @@ Jutter that does not. Over the subject V1:
 
 and over the subject J1 the mirror holds: owner absent gives **onwaar** (J1
 does not carry it), owner `Vondst` faults. The corpus carries the answering
-half as the golden `jutterswet-keurhouder`; the refusing half cannot live in
-a corpus zone at all — a golden must replay, a red case must fault in every
-executor that carries its form, and the bean-model executor drops such a rule
-as a transpiler skip rather than faulting — so it lives in the two executors'
-own gated suites.
+half as the golden `jutterswet-keurhouder`. The refusing half lives in the two
+executors' own gated suites rather than in a corpus zone, and the reason is a
+zone rule and not an impossibility: a golden must replay, so the refusing shape
+is not one; and a red case must fault in every executor that CARRIES its form,
+which the bean-model executor does not do here — on a plain rule it drops the
+rule as a transpiler skip, and on the producer shape it plays and answers
+without faulting. Either way the case would need a reason-carrying NOFAULT
+entry in the protected gate script that owns the red corpus, which the card
+that wrote this clause had no mandate to touch.
 
 ### 5.9 Uniqueness: the union and the scope
 

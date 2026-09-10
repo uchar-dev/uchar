@@ -30,6 +30,38 @@ implementatie: ze zegt dat het document niet gelezen kan worden, niet wat het
 betekent. Dat is bewust zo gelaten — het alternatief was de hosting-semantiek
 implementeren, en dat is deze kaart.
 
+## De uitgangsmeting (2026-09-10, op de producentvorm zelf)
+
+Gebouwd uit de golden `jutterswet-postwacht`: feitcreatie met anker `Kustvak`
+en doel `Sein`, het kenmerk `gehesen` op het DOEL gedeclareerd, guard
+`eigenaar: "Sein"` — precies wat `RuleChecker.doelVoorwaarde` emitteert. Case:
+S1 draagt `gehesen`, S2 niet.
+
+| lezer | vóór WF-100 | ná WF-100 |
+| --- | --- | --- |
+| verifier | `WF-034 FAIL /feitCreaties/0/voorwaarde: 'gehesen' is not a declared characteristic of 'Kustvak'` | **PASS** |
+| `ref` | antwoordt `vakseinaantal = 0` (leest de ANKER, die `gehesen` nooit draagt, dus vuurt de guard nooit) | **fault** (ch. 5.8b regel 2) |
+| ASP-backend | idem, `0` | **fault** (bij vertaling) |
+| Drools exec-model | speelt, `vakseinaantal = 1` | ongewijzigd: speelt, `1` |
+| Drools DRL-tekst | speelt, `vakseinaantal = 1` | ongewijzigd: speelt, `1` |
+
+Twee dingen die deze meting vaststelt en die de kaart hierboven aannam:
+
+1. **De Drools-backend leest de eigenaar-INSTANTIES werkelijk.** De uitkomst 1
+   volgt uit welke `Sein`-instanties `gehesen` dragen (één van twee) en niet uit
+   de anker. Beide takken, dezelfde waarde. Het is dus geen aanhechtings-*hint*
+   die toevallig hetzelfde antwoord geeft; het is een andere lezing.
+2. **De stand van vandaag ÍS antwoord 3 hieronder**, ongekozen. Een
+   verifier-schoon document dat één uitvoerder speelt en twee weigeren bestaat
+   nu — WF-100 heeft die vorm conform gemaakt en de weigering heeft hem
+   onspeelbaar gehouden. De weigering is een capaciteitsgrens van `ref` en de
+   ASP-backend (één object per conditie), geen verkapte "eigenaar moet het
+   onderwerptype zijn"-regel: de verifier zegt daar niets over en zou zo'n
+   document toelaten.
+
+Wie deze kaart doet begint dus niet bij nul: de vorm, de case en de vijf
+metingen liggen er, en het werk is de keuze plus haar artefacten.
+
 ## De vraag
 
 Wat betekent een kenmerkcheck met een vreemde eigenaar in een **feitcreatie**?

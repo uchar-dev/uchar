@@ -148,8 +148,10 @@ ervan verzwegen:
    een implementatie, en dat is als restant genoteerd en gekaart, niet
    weggeschreven.
 3. *Er is geen tegenvoorbeeld in de corpus.* Dit is een ONTWERPbesluit op een
-   lege verzameling; de eerste getuige is voor de regel geschreven. De kaart
-   waarschuwde daarvoor en de meting bevestigt het.
+   lege CORPUS-verzameling; de eerste getuige is voor de regel geschreven. De
+   kaart waarschuwde daarvoor en de meting bevestigt het — maar "geen gemeten
+   schade" geldt alleen binnen de corpus. Buiten de corpus wees de verifier de
+   enige emissievorm van de frontend af; zie de reparatiemeting verderop.
 
 **Hertelling op deze HEAD (opnieuw geteld, niet overgeschreven).** Over
 `corpus/golden` (166), `corpus/rood` (26) en `corpus/negatief` (359):
@@ -259,19 +261,71 @@ herspelen, een rood-case moet in ELKE uitvoerder die de vorm draagt observeerbaa
 falen, en de Drools-backend laat zo'n regel vallen als transpiler-skip in plaats
 van te falen (dat zou een reden-dragende regel in het beschermde
 `scripts/check-rood.sh` vergen, dat niet in de may-touch-set staat). De getuigen
-staan daarom in de eigen, gegatete suites van de twee uitvoerders:
-`ref/test/test_ref.ml` (ch. 5.8b, zes voorbeelden: eigenaar afwezig, eigenaar =
-onderwerptype, eigenaar in andere kapitalisatie, het onwaar-geval, en twee
-weigeringen in beide richtingen — gate 5, suite 489 -> 495) en
-`backends/clingo/test/test_clingo.ml` (vijf checks: twee keer ref ≡ clingo op de
-dragende vorm en één weigering met gepinde zin — gate 6, suite 83 -> 91). Beide
+staan daarom in de eigen, gegatete suites van de twee uitvoerders.
+`ref/test/test_ref.ml` krijgt ch. 5.8b met zes voorbeelden — eigenaar afwezig,
+eigenaar = onderwerptype, eigenaar in andere kapitalisatie, het onwaar-geval en
+twee weigeringen in beide richtingen — gate 5, suite **489 -> 495**.
+`backends/clingo/test/test_clingo.ml` krijgt vijf checks — twee keer ref ≡
+clingo op de dragende vorm en één weigering met gepinde zin — gate 6, suite
+**86 -> 91**. Let op het verschil tussen gemeten stand en vloer: 489 is bij
+`ref` toevallig allebei, bij clingo is 86 de gemeten stand vóór de kaart en 83
+de vloer, en die vloer beweegt niet. De 86 is gemeten door de suite van vóór de
+kaart terug te halen en te draaien, niet uit het gate-script afgelezen. Beide
 vloeren zijn ondergrenzen, dus groei vergt geen scriptwijziging.
+
+**Wat de golden wel en niet pint (eerlijk afgebakend).** De acceptance vraagt
+"bij een gewijzigde lezing een golden met absolute verwachtingen die beide
+uitvoerders halen". `jutterswet-keurhouder` levert dat, maar het pint het
+BESLUIT niet: op de PRE-binaries geeft hij identiek `PASS (6)`, omdat de
+declaratiesleutel daar samenvalt — de eigenaar IS het onderwerptype. Wat de
+golden pint is dat de vorm laadt, lowert en in alle drie de uitvoerders
+identiek herspeelt, en dat het vierkant erop sluit. Het besluit zelf wordt
+gepind door de negatief-getuige (de verifier-helft) en door de twee
+uitvoerderssuites (de uitvoerdershelft) — precies zoals de NOTE bij de golden
+het zegt.
+
+**De gemeten reparatie buiten de corpus, en haar keerzijde.** De zin "geen
+gemeten schade" geldt voor de corpuszones en NIET voor de producent. De
+frontend emitteert dit veld op precies één vorm — de §13.4.7 doel-guard met
+`eigenaar = doel` en doel ≠ anker — en juist die vorm wees de verifier vóór
+deze kaart af, omdat de kruising op het ONDERWERP (de anker) gesleuteld was.
+Gemeten 2026-09-10 op de feitcreatie van `jutterswet-postwacht` (anker
+`Kustvak`, doel `Sein`, kenmerk `gehesen` op het doel, guard
+`eigenaar: "Sein"`, case S1 gehesen / S2 niet):
+
+| lezer | vóór | ná |
+| --- | --- | --- |
+| verifier | `WF-034 FAIL /feitCreaties/0/voorwaarde: 'gehesen' is not a declared characteristic of 'Kustvak'` | **PASS** |
+| `ref` | `vakseinaantal = 0` (leest de anker, die het kenmerk nooit draagt) | **fault** |
+| ASP-backend | idem, `0` | **fault** (bij vertaling) |
+| Drools exec-model | speelt, `vakseinaantal = 1` | ongewijzigd |
+| Drools DRL-tekst | speelt, `vakseinaantal = 1` | ongewijzigd |
+
+Er wás dus schade, buiten de corpus, en die is weg: de enige emissievorm van de
+producent is nu conform. De keerzijde staat er in dezelfde meting: die vorm is
+nu conform **én** onspeelbaar in `ref` en de ASP-backend, terwijl beide
+Drools-takken hem spelen en de uitkomst van de DOEL-instanties laten afhangen
+(1 van de 2 Seinen). Dat is exact optie 3 van het restkaartje, ongekozen; de
+meting staat nu ook ín dat kaartje als uitgangspositie. En het corrigeert een
+aanname: de Drools-backend leest de eigenaar-instanties werkelijk, dus de
+weigering in `ref`/ASP is een capaciteitsgrens van die twee lezers (één object
+per conditie) en geen verkapte "de eigenaar moet het onderwerptype zijn"-regel
+— de verifier zegt daar niets over en laat zo'n document toe.
+
+**Restant dat hierbij hoort.** De enige eigenaar-vorm die overal herspeelt
+(eigenaar = onderwerptype) schrijft de v0-producent nooit — `RuleChecker` zet
+het veld alleen waar doel ≠ anker — en de vorm die de producent wél schrijft
+kan onder dit besluit geen golden worden, want twee van de drie uitvoerders
+faulten erop. Herspeelbare eigenaar-vorm en geproduceerde eigenaar-vorm zijn
+voorlopig disjunct. Genoteerd in de golden-NOTE, in IR-SPEC (q1) en in het
+restkaartje.
 
 **Gate-uitkomsten.** Alle dertien groen, elk met zijn eigen exitcode gemeten
 (niet die van een pipe). Gemeten getallen die bewogen: gate 2 192 -> 193
 bestanden, gate 3 golden 192 -> 193 en negatief 359 -> 360, gate 4 453 -> 454
 casebestanden, gate 5 427 -> 428 cases en suite 489 -> 495, gate 6 427 -> 428
-cases en suite 83 -> 91, gate 7 391 -> 392 weerleggende cases, gate 12 played
+cases en suite **86 -> 91** (vloer 83, ongewijzigd), gate 7 391 -> 392
+weerleggende cases, gate 12 played
 119 -> 120 en JUnit 244 (vloer 239). Gates 1, 8, 9, 10, 11 en 13 bewegen geen
 enkel getal: gate 8 blijft 26 rode cases (geen rood document draagt een
 eigenaar), gate 13 blijft 74 twists over 15 goldens met 0 annotaties buiten de
@@ -347,7 +401,12 @@ het eerst landt gebruikt WF-101, de ander schuift opnieuw.
 verandert wat een lezer met het veld DOET, en dat hoort in het normatieve
 runtime-document met een gewerkt voorbeeld dat verbatim de ref-suite in gaat
 (`CLAUDE.md`, Spec discipline). Toegevoegd als **voorstel**: ch. 5.8b, drie
-regels en een gewerkt voorbeeld. Idem `scripts/check-drools.sh`, uitsluitend als
+regels en een gewerkt voorbeeld. Regel 3 is uitdrukkelijk beperkt tot de twee
+lezers die dat hoofdstuk normeert — `ref` en de ASP-backend lezen de
+eigenaar-instanties nooit — en zegt met zoveel woorden dat een bonenmodel dat
+op de producentvorm wél doet, met verwijzing naar de open objecthelft. Een
+algemene "geen enkele lezer"-zin zou gemeten onwaar zijn en zou bovendien de
+vraag dichttimmeren die IR-SPEC (q1) en het restkaartje juist open verklaren. Idem `scripts/check-drools.sh`, uitsluitend als
 kanaal-voorstel.
 
 **Beschermde paden — dit blijft een VOORSTEL.** `spec/IR-SPEC.md`,
