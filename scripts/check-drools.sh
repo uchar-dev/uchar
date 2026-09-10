@@ -280,7 +280,21 @@ EXPECTED_CHANNEL=(
 # absolutes. Measured 2026-09-11 on this branch: PLAYED 3 in the exec-model branch and PLAYED 3
 # under --drl, with the mutation probe (10 -> 99) failing observably in both — so the count is a
 # value comparison, not a token.
-EXPECTED_PLAYED=122
+#
+# 2026-09-11: 122 -> 123, jutterswet-vangstklem (the corpus's first UNIT-BEARING clamp, WF-099's
+# convertible half). Until now the only Begrensd carrier was unitless on base and on both bounds,
+# so the played channel pinned the both-unitless reading only. This golden clamps a `kg` base with
+# bounds in the sister unit `t` (one system Gewicht, factor 1000): a `1 t` minimum, a fractional
+# `2,50 t` maximum, and a mixed clamp whose `2500 kg` maximum is the same weight the `2,50 t` arm
+# reaches by restating, so the document checks its own conversion. The card that ordered it wrote
+# 119 -> 120; the channel moved twice under it while it sat in the backlog (ketenband, kavelgrens),
+# so the bump shifts up to what was measured on this branch rather than to what the card typed.
+# Measured 2026-09-11: PLAYED 1 in the exec-model branch and PLAYED 1 under --drl, with two
+# mutation probes failing observably in BOTH and in ref and clingo — an expectation twisted
+# (1000,00 -> 999,00) and the minimum bound relabelled `t` -> `kg`, which removes the restating and
+# moves V1 to 250,00 — so the count is a value comparison, and the restating is load-bearing on
+# every leg.
+EXPECTED_PLAYED=123
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
