@@ -1,0 +1,101 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Duinkavel",
+        "attributes": {
+          "kavelbreedte": {
+            "number": "10"
+          }
+        },
+        "roles": {
+          "zuidbuur": [
+            "K2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "K2",
+        "objectType": "Duinkavel",
+        "attributes": {
+          "kavelbreedte": {
+            "number": "20"
+          }
+        },
+        "roles": {
+          "noordbuur": [
+            "K1"
+          ],
+          "zuidbuur": [
+            "K3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "K3",
+        "objectType": "Duinkavel",
+        "attributes": {
+          "kavelbreedte": {
+            "number": "30"
+          }
+        },
+        "roles": {
+          "noordbuur": [
+            "K2"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "K1",
+      "attribute": "noordbuurbreedte"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K2",
+      "attribute": "noordbuurbreedte",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K3",
+      "attribute": "noordbuurbreedte",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "zuidbuurbreedte",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K2",
+      "attribute": "zuidbuurbreedte",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "K3",
+      "attribute": "zuidbuurbreedte"
+    }
+  ]
+}

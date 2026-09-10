@@ -1,0 +1,17 @@
+Objecttype het Duinkavel (mv: Duinkavels)
+    de kavelbreedte Numeriek (niet-negatief geheel getal);
+    de noordbuurbreedte Numeriek (niet-negatief geheel getal);
+    de zuidbuurbreedte Numeriek (niet-negatief geheel getal);
+
+Feittype kavelgrens
+    de noordbuur (mv: noordburen) Duinkavel
+    de zuidbuur (mv: zuidburen) Duinkavel
+Eén noordbuur heeft één zuidbuur
+
+Regel noordbuurbreedte
+    geldig altijd
+        De noordbuurbreedte van een Duinkavel moet berekend worden als de kavelbreedte van de noordbuur van het Duinkavel.
+
+Regel zuidbuurbreedte
+    geldig altijd
+        De zuidbuurbreedte van een Duinkavel moet berekend worden als de kavelbreedte van de zuidbuur van het Duinkavel.

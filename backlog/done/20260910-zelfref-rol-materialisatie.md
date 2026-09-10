@@ -40,6 +40,11 @@ weigeren.
 > 12. Voorstel aan de hoofdsessie: de kaart behouden en versmallen tot precies
 > dat ene punt, of hem sluiten als de restdekking het niet waard wordt geacht.
 > De hoofdsessie beslist bij de merge.
+>
+> **BESLIST EN UITGEVOERD (hoofdsessie 2026-09-11): behouden en afgemaakt.** De
+> restvorm heeft zijn golden — `corpus/golden/jutterswet-kavelgrens`, drie
+> cases, PLAYED in beide Drools-takken. Zie het `Result`-blok onderaan; de
+> kaart is dicht.
 
 ## Probleem
 
@@ -376,3 +381,212 @@ beschermd pad), `backlog/`.
   rol (flank B): luide weigering aan de Drools-kant, `leeg` in ref en clingo,
   geen divergentie — een eigen kaart waard als iemand die vorm nodig heeft,
   niet deze.
+
+## Result (2026-09-11)
+
+De kaart is AFGEMAAKT, niet gesloten. Wat overbleef is geleverd:
+`corpus/golden/jutterswet-kavelgrens`, de eerste corpusgetuige voor een
+**zelfgetypeerde 1:1**-relatie die vanuit case-invoer **eenzijdig** wordt
+geleverd en in **beide** richtingen wordt gelezen. Daarmee is het dekkingsgat
+dicht en is de kaart definitief af.
+
+### De banner-historie, samengevat
+
+Drie eerdere rondes hebben deze kaart versmald, en elke versmalling staat
+hierboven nog in haar eigen bannerblok. Kort:
+
+1. **De uitgangsmeting (2026-09-10, vier bronnen).** Conclusie **(b)**: de
+   Drools-poort draagt de zelfreferentiële to-one materialisatie al, met
+   dezelfde drie tegenpinnen als de werkbank-fix. Er viel aan de dracht niets
+   te bouwen; wat ontbrak was corpusdekking.
+2. **Het dekkingsgat grotendeels gedicht (banner 1).**
+   `20260910-reverse-rol-via-naam.md` leverde `jutterswet-ketenband` — een
+   zelfgetypeerd feittype, to-one rol vanuit case-invoer gevuld en
+   genavigeerd, alle drie de cases PLAYED. Dat is de 1:**N**-vorm. Restant:
+   de zelfgetypeerde 1:**1**-vorm.
+3. **Flank A en B omgekeerd door het caselink-besluit (banner 2).** Vraag 13
+   beantwoord met (i) — een relatie is symmetrisch, `RUNTIME-SEMANTICS.md`
+   ch. 5.7a. `case2` draaide daarmee om: hij pint niet de afwezigheid van de
+   spiegel maar de **spiegel zelf**. De Drools-kant daarvan was al gebouwd,
+   dus deze kaart bouwde daar niets meer en pint alleen.
+
+Deze ronde levert precies punt 3 van de "Voorgestelde aanpak" op: één golden,
+verder niets. Geen backendwijziging, geen specwijziging, geen schemawijziging.
+
+### De golden
+
+`corpus/golden/jutterswet-kavelgrens/` — `bron.rgs` (frontend-invoer),
+`ir.json` (emitteruitvoer, byte-identiek her-uitgestoten), `NOTE.md`, en
+**drie** casebestanden. De kaart vroeg er twee (beide poten; heenpoot alleen);
+de derde — de andere leveringsrichting — kost niets en maakt de rij compleet,
+zoals ketenband hem voor 1:N heeft.
+
+Model: één zelfgetypeerd feittype `kavelgrens` op `Duinkavel` met twee
+verschillend genoemde rollen, **beide to-one** (`Eén noordbuur heeft één
+zuidbuur`), en twee regels die elk over de ANDERE rol navigeren. De wire draagt
+`wederkerig: false`, `meervoudig: false` op beide rollen naast een gedeclareerd
+`meervoud` (`noordburen`/`zuidburen`) — het gedeclareerde meervoud maakt een rol
+niet naar-veel — en bindt beide lezingen **op naam**
+(`navigatieBindingen [{kavelgrens, noordbuur}]` respectievelijk
+`[{kavelgrens, zuidbuur}]`).
+
+Waarom een keten van DRIE en niet een paar van twee: K2 draagt tegelijk een
+noordbuur én een zuidbuur, dus beide beanvelden zijn op één instantie bezet en
+een verwisselde resolutie kan niet tegen elkaar wegvallen.
+
+### Handberekening, vóór het draaien opgeschreven
+
+K1, K2, K3 met `kavelbreedte` 10, 20, 30. Twee relatie-instanties in alle drie
+de cases: K1 is de noordbuur van K2, K2 is de noordbuur van K3.
+
+`noordbuurbreedte` van d := de `kavelbreedte` van de noordbuur van d.
+- K1 vult in geen enkele `kavelgrens` de zuidbuur-rol ⇒ geen noordbuur ⇒ **leeg**
+  (ch. 5.8 regel 1).
+- K2 is de zuidbuur in `kavelgrens(K1,K2)` ⇒ noordbuur = K1 ⇒ **10**.
+- K3 is de zuidbuur in `kavelgrens(K2,K3)` ⇒ noordbuur = K2 ⇒ **20**.
+
+`zuidbuurbreedte` van d := de `kavelbreedte` van de zuidbuur van d.
+- K1 is de noordbuur in `kavelgrens(K1,K2)` ⇒ zuidbuur = K2 ⇒ **20**.
+- K2 is de noordbuur in `kavelgrens(K2,K3)` ⇒ zuidbuur = K3 ⇒ **30**.
+- K3 is in geen enkele `kavelgrens` de noordbuur ⇒ **leeg**.
+
+| Duinkavel | `kavelbreedte` | `noordbuurbreedte` | `zuidbuurbreedte` |
+|---|---|---|---|
+| K1 | 10 | leeg | 20 |
+| K2 | 20 | 10 | 30 |
+| K3 | 30 | 20 | leeg |
+
+Zes verwachtingen per case, achttien in totaal, in alle drie de cases
+identiek — die identiteit IS de wet. De dragende regels noemen de richting die
+de case niet leverde: `case2` (alleen de `zuidbuur`-poten) leest
+`K2.noordbuurbreedte = 10` en `K3.noordbuurbreedte = 20` terwijl geen enkele
+rolregel in dat bestand `noordbuur` noemt; `case3` (alleen de
+`noordbuur`-poten) leest `K1.zuidbuurbreedte = 20` en
+`K2.zuidbuurbreedte = 30` terwijl geen rolregel `zuidbuur` noemt.
+
+### Rood-eerst
+
+**(a) De verwachtingen waren nergens gepind.** Machinale telling over
+`corpus/golden` + `corpus/rood`: vier documenten dragen naast dit nieuwe een
+niet-wederkerig zelfgetypeerd feittype met beide rollen to-one
+(`anchor/jutterswet-erflijn`, `anchor/jutterswet-wachtersketen`,
+`synth2-budgetgrens-onder`, en de twee rode). Geen daarvan vult die rol vanuit
+case-invoer **én** navigeert erover: erflijn vult `opvolger`, maar elke binding
+in zijn regels noemt het ándere feittype (`erflijn`/`erfvolger`), en de rest
+draagt in het geheel geen case-rolsleutels (objectcreatie, of geen
+relatielezing). `jutterswet-kavelgrens` is het eerste document dat beide doet,
+in beide richtingen.
+
+**(b) De gerichte lezing wordt weerlegd, in alle vier de lenzen.** Cases 2 en 3
+herdraaid met de verwachtingen die een niet-spiegelende lader zou opleveren
+(de niet-geleverde richting leest leeg):
+
+    case2  ref     MISMATCH: K2.noordbuurbreedte = 10, expected leeg
+                   MISMATCH: K3.noordbuurbreedte = 20, expected leeg
+           clingo  MISMATCH: K2.noordbuurbreedte = [10], expected leeg
+                   MISMATCH: K3.noordbuurbreedte = [20], expected leeg
+           Drools exec-model  FAIL: verwacht leeg, werkelijk 10; verwacht leeg, werkelijk 20
+           Drools DRL-tekst   FAIL: verwacht leeg, werkelijk 10; verwacht leeg, werkelijk 20
+    case3  ref     MISMATCH: K1.zuidbuurbreedte = 20, expected leeg
+                   MISMATCH: K2.zuidbuurbreedte = 30, expected leeg
+           clingo, beide Drools-takken  idem
+
+**(c) Een do-nothing weerlegt elke case** (gate 7): onder `--noop` mist elk van
+de drie vier berekende waarden —
+`MISMATCH: K2.noordbuurbreedte = leeg, expected 10` en drie soortgelijke. Geen
+overlever-regel nodig; gate 7 bleef op 36 gepinde overlevers staan.
+
+**(d) PLAYED is een echte waardevergelijking.** Eén verwachting verdraaid
+(10 → 99) op case 2:
+
+    Drools exec-model  FAIL case_mut.json: attribuut noordbuurbreedte: verwacht 99, werkelijk 10
+    Drools DRL-tekst   idem
+    ref                MISMATCH: K2.noordbuurbreedte = 10, expected 99
+    clingo             MISMATCH: K2.noordbuurbreedte = [10], expected 99
+
+### De uitvoerders
+
+    verifier                 verifier: PASS
+    ref     case1/2/3        oracle: PASS (6 expectations) x3
+    clingo  case1/2/3        clingo: PASS (6 expectations) x3
+    Drools exec-model        PLAYED 3
+    Drools DRL-tekst (--drl) PLAYED 3
+
+ref ≡ clingo ≡ Drools over alle achttien verwachtingen, verankerd aan de
+handberekening hierboven. Her-emissie door de frontend: `cmp` groen
+(gate 10's eis).
+
+### Gate-bewegingen
+
+Alle dertien gates gedraaid en groen op deze tak.
+
+| gate | uitkomst | beweging |
+|---|---|---|
+| 1 self-contained | PASS | — |
+| 2 ir-schema | PASS, 195 bestanden (vloer 192) | +1 |
+| 3 verifier | PASS, 195 golden schoon; 362 negatief (vloer 350) | +1 golden |
+| 4 case-schema | PASS, 462 casebestanden | +3 |
+| 5 oracle | PASS, ref-suite 515 (vloer 489); 436 cases exact (vloer 427) | +3 cases |
+| 6 clingo | PASS, backend-suite 93 checks (vloer 83); 436 cases | +3 cases |
+| 7 noop | PASS, 400 cases weerleggen; 36 gepinde overlevers | +3 weerleggers, overleverlijst ongewijzigd |
+| 8 rood | PASS, 26 rode cases (vloer 26) | — |
+| 9 catala | PASS, 201 checks (vloer 201); 12 catala-goldens (vloer 12) | — |
+| 10 regelspraak | PASS, 174 tests (vloer 173); 40 rgs-goldens (vloer 38) | +1 rgs-golden |
+| 11 toka-pariteit | PASS, 29/29 in ref, clingo en Drools | — |
+| 12 drools | PASS, played **122**, kanaalvloer 47 met naam gepind; JUnit 276 (vloer 239) | **+1 speler** |
+| 13 reftype-derivatie | PASS, 74 annotaties over 15 goldens (vloer 74); 13 DRL-tak PLAYED (vloer 13) | **geen** |
+
+De vloeren zijn ondergrenzen: groei vraagt geen bijstelling, dus geen enkele
+vloer is aangeraakt.
+
+### De kanaalbump — VOORSTEL, beschermd pad
+
+`scripts/check-drools.sh`: `EXPECTED_PLAYED` **121 → 122**, met redenblok en
+meetdatum in het script zelf, in de vorm van de twee voorgaande bumps.
+`EXPECTED_CHANNEL` ongewijzigd — de golden komt PLAYED binnen en hoort dus niet
+in de niet-spelerslijst. `EXPECTED_MIN_TESTS` ongewijzigd (276 gemeten tegen
+vloer 239). Dit is de enige aanraking van een beschermd pad; de tak blijft als
+voorstel staan.
+
+### Gate 13, de expliciete keuze uit punt 4
+
+Elke `Numeriek` in deze bron draagt `eenheid: null`, dus de golden valt buiten
+de twistverzameling: gate 13 noemt `kavelgrens` nul keer en geen enkele
+gate-13-telling beweegt (74/74, 13/13). `kavelbreedte` een eenheid geven zou
+hem in de verzameling trekken en een hermeting van de DRL-takvloer afdwingen —
+extra werk zonder aangetoond risico. De reden staat in `NOTE.md`.
+
+### Wat bewust niet bewoog
+
+- **`backends/drools/**`** — niets aangeraakt. De dracht is gemeten aanwezig en
+  de spiegelende schrijfactie is op `20260910-reverse-rol-via-naam.md` geland;
+  er hoorde geen test bij deze golden, want de vier `OpslagrichtingWitnessTest`-
+  getuigen dekken de eenheidkant al en dit is juist de corpuskant.
+- **`ref/`, `backends/clingo/`, `spec/schema/`, `spec/verifier/`** — geen regel.
+  Alle drie de uitvoerders leverden het juiste antwoord op deze vorm zonder
+  wijziging. (Parallelle sporen op `ref/lib/case.ml`,
+  `backends/clingo/test/test_clingo.ml` en `backends/drools/loader` zijn niet
+  aangeraakt.)
+- **Flank B** — een case die de to-many rol vanaf de veel-houder schrijft, blijft
+  buiten het corpus (punt 5 van de aanpak). Deze golden heeft geen to-many rol.
+- **`spec/CONSTRUCTS.md` en `spec/PLAN.md`** — niet aangeraakt, per opdracht.
+
+### CONSTRUCTS — gewogen, één zin voorgesteld
+
+Rij 4 draagt de vorm al: haar **Landed (2026-09-10)**-blok formuleert ch. 5.7a
+en noemt beide cardinaliteiten. Wat die zin als 1:1-getuige noemt is echter
+`anchor/jutterswet-rekenkamer` case 4 — **kruistypisch**, en gelezen door de
+ch. 5.5-creatiewachter, niet door een gewone genavigeerde lezing. De cel die
+deze kaart vult is een andere: **zelfgetypeerd** × 1:1 × eenzijdig geleverd ×
+gewone navigatie in beide richtingen. Geen nieuw besluit, geen nieuwe rij —
+alleen de getuigeopsomming die het 2×2 sluit. Voorgestelde toevoeging, in te
+voegen in dezelfde opsomming van rij 4:
+
+> *…and the 1:1 shape supplied one-sidedly, both cross-typed (anchor
+> `jutterswet-rekenkamer` case 4, where the ch. 5.5 creation guard reads the
+> materialised leg and blocks) and **self-typed** (golden
+> `jutterswet-kavelgrens`, three case files, one outcome — two to-one roles,
+> hence two bean fields, so the second-field write of consequence 2 is what
+> the pinned values rest on).*
+
+De hoofdsessie beslist of die zin het waard is; de golden staat ook zonder hem.

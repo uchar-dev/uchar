@@ -269,7 +269,18 @@ EXPECTED_CHANNEL=(
 # shape the forward write already used), so the field the bean model really carries is written and
 # all three spellings of the one relation replay with the same pinned values — ref = clingo = Drools
 # on a self-typed 1:N relation supplied from either end, which no golden could witness before.
-EXPECTED_PLAYED=121
+#
+# 2026-09-11: 121 -> 122, jutterswet-kavelgrens (the ch. 5.7a witness on the OTHER shape). Where
+# ketenband is 1:N — one stored reference that necessarily serves both directions — this one is the
+# self-typed 1:1: two to-one roles, hence TWO bean fields, one per direction, so nothing in the
+# model forces a one-sided delivery to be visible from the far end. It arrived playing, on the
+# already-landed case-input arm: the loader materialises the reverse leg and CaseRunner.zetRollen
+# writes the SECOND field (ch. 5.7a consequence 2), so all three spellings of one chain
+# (both legs; the zuidbuur legs only; the noordbuur legs only) replay with the same pinned
+# absolutes. Measured 2026-09-11 on this branch: PLAYED 3 in the exec-model branch and PLAYED 3
+# under --drl, with the mutation probe (10 -> 99) failing observably in both — so the count is a
+# value comparison, not a token.
+EXPECTED_PLAYED=122
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the

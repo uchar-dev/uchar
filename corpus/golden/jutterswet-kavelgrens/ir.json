@@ -1,0 +1,205 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Duinkavel": {
+      "node": "Objecttype",
+      "naam": "Duinkavel",
+      "attributen": {
+        "kavelbreedte": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "noordbuurbreedte": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "zuidbuurbreedte": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Duinkavels"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {
+    "kavelgrens": {
+      "node": "Feittype",
+      "naam": "kavelgrens",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "noordbuur",
+          "objecttypeNaam": "Duinkavel",
+          "meervoud": "noordburen",
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "zuidbuur",
+          "objecttypeNaam": "Duinkavel",
+          "meervoud": "zuidburen",
+          "meervoudig": false
+        }
+      ]
+    }
+  },
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "noordbuurbreedte",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "zuidbuurbreedte",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "noordbuurbreedte",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "noordbuurbreedte",
+        "objecttype": "Duinkavel",
+        "onderwerpBron": "een Duinkavel",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "De noordbuurbreedte van een Duinkavel",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "AttribuutRef",
+        "attribuut": "kavelbreedte",
+        "objecttype": "Duinkavel",
+        "onderwerpBron": "het Duinkavel",
+        "navigatieRol": "Duinkavel",
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "de kavelbreedte van de noordbuur van het Duinkavel",
+        "set": false,
+        "navigatiePad": [
+          "noordbuur"
+        ],
+        "navigatieBindingen": [
+          {
+            "node": "RolBinding",
+            "feittype": "kavelgrens",
+            "rol": "noordbuur"
+          }
+        ]
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "zuidbuurbreedte",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "zuidbuurbreedte",
+        "objecttype": "Duinkavel",
+        "onderwerpBron": "een Duinkavel",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "De zuidbuurbreedte van een Duinkavel",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "AttribuutRef",
+        "attribuut": "kavelbreedte",
+        "objecttype": "Duinkavel",
+        "onderwerpBron": "het Duinkavel",
+        "navigatieRol": "Duinkavel",
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "de kavelbreedte van de zuidbuur van het Duinkavel",
+        "set": false,
+        "navigatiePad": [
+          "zuidbuur"
+        ],
+        "navigatieBindingen": [
+          {
+            "node": "RolBinding",
+            "feittype": "kavelgrens",
+            "rol": "zuidbuur"
+          }
+        ]
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}
