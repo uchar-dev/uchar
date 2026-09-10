@@ -245,16 +245,19 @@ desuikering te presenteren.
    te beslissen, met argument). Plus de aanpassing van WF-083's
    ankerregel (c): het anker van de bron is het elementtype, maar het
    TUSSENTYPE is nu ook een positie die de regel moet kennen. Een
-   KANDIDAAT-nummer voor de padregel is WF-101 (bijgewerkt 2026-09-10:
+   KANDIDAAT-nummer voor de padregel is WF-102 (bijgewerkt 2026-09-11:
    WF-098 is inmiddels bezet door de contextwaarde-namenregel, ch. 4.1, kaart
    `20260909-constante-naam-gesloten-verzameling`, WF-099 door de
    begrenzing-grenseenheidsregel, ch. 4.6, kaart
-   `20260909-begrensd-grens-verifier-omheining`, en WF-100 door de
+   `20260909-begrensd-grens-verifier-omheining`, WF-100 door de
    kenmerkeigenaar-regel, ch. 4.6 (q1), kaart
-   `20260909-eigenaar-verklaart-kenmerk`); niet reserveren voordat de
-   vorm vaststaat. **Let op de dubbeling:** `20260910-reverse-rol-via-naam.md`
-   noemt WF-101 óók als kandidaat, voor haar eenzijdige-leveringsregel. Wie het
-   eerst landt gebruikt het nummer, de ander schuift op.
+   `20260909-eigenaar-verklaart-kenmerk`, en WF-101 door de
+   geldigheidsgrens-lexeemregel, ch. 4.1, kaart
+   `20260911-geldigheidsgrens-verifierhek`); niet reserveren voordat de
+   vorm vaststaat. De dubbeling met `20260910-reverse-rol-via-naam.md` is
+   weg: die kaart is geland met antwoord (ii) en heeft haar WF-kandidaat
+   laten vervallen, dus deze kaart is de enige wachter op het volgende
+   nummer.
 2. `spec/RUNTIME-SEMANTICS.md`: de gewerkte voorbeelden, inclusief de drie
    leeg-hoeken (leeg binnenbereik, leeg buitenbereik, leeg elementattribuut)
    en de `leegwaarde`-vraag bij SOM.
