@@ -186,7 +186,9 @@ gedeclareerd zusterstelsel: `Massa` naast `Gewicht`, met `kg` (factor 1) en `t`
 (factor 1000), allebei canoniek `kg`; de basis in `Gewicht`-`kg`, de grenzen in
 `Massa`-`t`. Zelf nagebouwd en gemeten 2026-09-10: **verifier PASS**, `ref`
 10000, **Drools 10000 op beide takken**, clingo `TRANSLATION FAULT`. Een levende
-twee-tegen-één-divergentie op een verifier-schoon document. Oorzaak: clingo's
+divergentie op een verifier-schoon document — en preciezer dan "twee tegen één",
+want `ref` deelt het predicaat letterlijk met de verifier
+(`ref/lib/arith.ml:80`): de onafhankelijke stem is Drools. Oorzaak: clingo's
 `Normalise.document` canonicaliseert **per stelsel**, dus twee stelsels
 normaliseren onafhankelijk en `units_identical_ok` ziet stelsel-overschrijdend
 geen identiteit; `ref` en Drools kijken naar de canonieke naam en negeren het
@@ -267,15 +269,26 @@ gebouwd, precies zoals de kaart voorschrijft.
 
 **Eerlijk erbij, want het is een zwakte:** die golden is op basis én op beide
 grenzen eenheidloos, dus hij pint de toegelaten allebei-eenheidloos-lezing en
-niet de convertibele helft. Géén golden draagt een eenheid-dragende klem. Dat
-is niet stiekem gelaten: zo'n golden erbij zetten verplaatst **gate 12's
-`EXPECTED_PLAYED=119` (een gelijkheid)** en **gate 13's twist-tabel-boekhouding**
-(die in zoveel woorden vastlegt dat de `Begrensd` "on this corpus always
-UNITLESS" is), en die twee staan in `scripts/`, een beschermd pad buiten deze
-kaart. Aangemaakt als `backlog/new/20260910-begrensd-eenheid-golden.md`, met
-allebei die scriptbewegingen expliciet als voorstel benoemd; de clausule en de
-registerrij verwijzen er bij bestandsnaam naar, zodat het gat gekaart is en
-niet alleen gemeld.
+niet de convertibele helft. Géén golden draagt een eenheid-dragende klem.
+
+**Eén beschermd script beweegt mee, niet twee — in de slotronde gecorrigeerd.**
+`scripts/check-drools.sh` draagt `EXPECTED_PLAYED=119` als **gelijkheid**, en
+die moet naar **120**: gemeten 2026-09-10 speelt een klem met `kg`-basis en
+`kg`-grenzen `PLAYED 1` in **beide** Drools-takken (exec-model én `--drl`).
+
+Wat ik eerder over gate 13 schreef was **onjuist** en is nagemeten.
+`Begrensd` staat gewoon **in** de twist-tabel van
+`scripts/check-reftype-derivation.sh` (`KLASSE`, exponent 9), en de klem van
+stap 6 schrijft alleen `vierde`- en `ongedekt`-regels — knoopklassen die de
+tabel niet draagt of die niets afleiden. Een `Begrensd` valt daar dus niet in.
+`EXPECTED_MIN_TWISTS` is bovendien een **vloer**, geen gelijkheid, dus meer
+twists is groei. Gate 13 beweegt mechanisch **niets**; alleen een
+prozacommentaar in de scriptkop — dat de `Begrensd`-waarde-arm van de DRL-tak
+"on this corpus always UNITLESS" is — veroudert.
+
+Gekaart als `backlog/new/20260910-begrensd-eenheid-golden.md`, met de
+gecorrigeerde scriptanalyse erin; de clausule en de registerrij verwijzen er
+bij bestandsnaam naar, zodat het gat gekaart is en niet alleen gemeld.
 
 ### 9. Wat er landde
 
@@ -344,17 +357,21 @@ expliciet op rij 1 (`| `Begrensd` | clamp to min/max | §13.4.17.27–.30 | suga
 > een NIET-gedeclareerd stelsel noemt weigert WF-034 al. Open blijft de
 > KRUIS-STELSEL-grens met een volledig gedeclareerd zusterstelsel — `Massa`
 > naast `Gewicht`, allebei canoniek `kg` — waar `ref` en Drools 10000 rekenen
-> en de ASP-backend weigert te vertalen: een levende twee-tegen-één-divergentie
-> op een verifier-schoon document, gekaart als
-> `backlog/new/20260910-kruis-stelsel-eenheid-divergentie.md`. Arm-exact en
+> en de ASP-backend weigert te vertalen: een levende divergentie op een
+> verifier-schoon document — `ref` deelt zijn predicaat letterlijk met de
+> verifier, dus de onafhankelijke stem is Drools — gekaart als
+> `backlog/new/20260910-kruis-stelsel-eenheid-divergentie.md`, waar ze gemeten
+> op alle VIER de eenheidsposities identiek blijkt te splitsen. Arm-exact en
 > kosteloos: de check weghalen verplaatst precies één verdict over de
 > verifier-gegatete zones (golden 166, negatief 359, rood 26 — 551 documenten).
 > Getuige `wf099-begrensd-grens-eenheid`; positieve kant
 > `jutterswet-grensbedrag`, de enige klem-drager van de corpus en overal
 > eenheidloos — géén golden draagt een eenheid-dragende klem, gekaart als
 > `backlog/new/20260910-begrensd-eenheid-golden.md` in plaats van
-> binnengesmokkeld, omdat er één gate 12's `EXPECTED_PLAYED`-gelijkheid en
-> gate 13's twist-tabel-boekhouding verplaatst.
+> binnengesmokkeld, omdat er één gate 12's `EXPECTED_PLAYED`-gelijkheid
+> verplaatst (119 → 120; gemeten: de vorm SPEELT in beide Drools-takken),
+> terwijl gate 13 mechanisch niets beweegt — `Begrensd` staat in haar
+> twist-tabel en `EXPECTED_MIN_TWISTS` is een vloer.
 
 ### 12. Wat bewust niet bewoog
 
@@ -378,10 +395,11 @@ expliciet op rij 1 (`| `Begrensd` | clamp to min/max | §13.4.17.27–.30 | suga
 - **De twee pariteitszone-documenten** — niet gerepareerd; die zone gaat niet
   door de verifier en beide documenten waren al niet-conform.
 
-### 13. Fixronde (2026-09-10)
+### 13. Fix- en slotronde (2026-09-10)
 
-Verwerkt na de terugkoppeling van lens 1, die alle metingen reproduceerde en
-vier correcties vond:
+Verwerkt na de terugkoppeling van lens 1 en lens 2, die allebei alle metingen
+reproduceerden en samen **zeven** correcties vonden. Lens 1 leverde 1 t/m 7,
+lens 2 de punten 8 t/m 11:
 
 1. **Grondslagcitatie hersteld** in clausule én registerrij. RUNTIME-SEMANTICS
    ch. 2.7 draagt geen eenhedenzin — het is enkel de teruggeefwet. De
@@ -409,3 +427,41 @@ vier correcties vond:
 7. **Het pariteitszone-scenario-ID uit de Result gehaald** en vervangen door
    een klasse-aanduiding (beheerdersafspraak; oudere done-kaarten die het
    patroon dragen blijven staan als historie).
+8. **De gate-13-bewering was onjuist** en stond op drie plekken (golden-kaartje,
+   §8, registerrij). Nagemeten: `Begrensd` staat **in** de twist-tabel
+   (`KLASSE`, exponent 9), de klem van stap 6 schrijft alleen `vierde`/
+   `ongedekt` en raakt hem dus niet, en `EXPECTED_MIN_TWISTS` is een vloer. Een
+   unit-dragende klem-golden beweegt in gate 13 **niets mechanisch**; alleen
+   het prozacommentaar over de `Begrensd`-arm van de DRL-tak veroudert. Alle
+   drie de plekken gecorrigeerd. Gemeten dat de vorm `PLAYED 1` geeft in
+   **beide** Drools-takken, dus `EXPECTED_PLAYED` 119 → 120.
+9. **"the four verified zones" in de ch. 4.1-toevoeging** was verkeerd gelabeld
+   — het zijn er drie. Telling uitgeschreven, zoals clausule en registerrij al
+   deden.
+10. **De min-tegen-max-bijzin klopte niet**: het predicaat levert geen
+    transitiviteit. Nagemeten met een eenheidloze literal-basis, een `kg`-
+    ondergrens en een `EUR`-bovengrens naast elkaar: verifier **PASS**, en alle
+    drie de uitvoerders rekenen 50 zonder fout. Geen semantisch defect, want een
+    klem vergelijkt minimum nooit tegen maximum — maar "volgt eruit" was de
+    verkeerde grond. Vervangen door "a clamp never compares them", in clausule
+    en registerrij.
+11. **De onafhankelijkheidsnuance** in het divergentiekaartje: `ref` deelt het
+    convertibiliteitspredicaat letterlijk met de verifier
+    (`ref/lib/arith.ml:80` roept `Ir_v0.Checks.units_convertible` aan), dus
+    "twee tegen één" is preciezer `ref` (zelfde predicaatcode als de verifier)
+    plus Drools (onafhankelijk) tegenover de ASP-backend.
+
+**Gratis winst van lens 2, zelf nagemeten en in het kaartje opgenomen:**
+dezelfde kruis-stelsel-vorm splitst **identiek op alle vier de
+eenheidsposities** — WF-099 klem-grens, WF-035 additieve join (`ref` 10005,
+clingo `… under an additive join …`), WF-036 vergelijking, WF-023 toekenning —
+en zelfs **zonder omrekenfactor** (`Massa`-`kg` factor 1 op een
+`Gewicht`-`kg`-basis: verifier PASS, `ref` `oracle: PASS (5 expectations)`,
+clingo `TRANSLATION FAULT`). Het kaartje is daarmee een **eenheden-kaart**, geen
+klem-kaart; Goal en titelduiding zijn aangepast (bestandsnaam blijft) en
+acceptance-punt 2 is van "meten" naar "bevestigen" gezet, want de meting ligt er
+al. Oorzaakverfijning meegenomen: `units_identical_ok` vergelijkt hele
+eenheid-records structureel (`stelsel` is een veld), en `Normalise.document`
+herschaalt alleen binnen het stelsel van het schrijfdoel — een
+kruis-stelsel-literal wordt nooit aangeraakt, wat verklaart waarom ook de
+factorloze vorm splitst.
