@@ -165,13 +165,20 @@ public final class FactModelGenerator {
      * diagnosis whichever branch produced it. Callers prefix the READER ("genavigeerde lezing",
      * "rollidmaatschapscheck", "objectcreatie", the fold join) and, where it is not already in their sentence,
      * the §13.3.9 pointer; the body is this one string.
+     *
+     * <p>The second cause states no CARDINALITY (2026-09-11, card drools-ongepoorte-rollezers). It used to read
+     * "de enkelvoudige rol", which held only because every caller then checked {@code naarVeelRol} before asking.
+     * The readers gated since — the verdeling's recipient join, the far-side rolcheck, the temporal set fold, the
+     * feitcreatie's three positions — do NOT, and a to-many role is exactly the shape they meet: measured on a
+     * verifier-clean, ref-clean model the verdeling's join over a to-many recipient role died at first fire.
+     * Naming it "enkelvoudig" there would assert of the document the very thing that is false about it.
      */
     public static String geenReferentieveldReden(Objecttype ot, String rol, Objecttype doel) {
         return ot.heeftLid(rol)
                 ? "de rol '" + rol + "' op " + ot.naam + " deelt haar naam met een gedeclareerd lid — het beanveld"
                   + " draagt dat attribuut/kenmerk en niet de referentie (leden(): attribuut > kenmerk >"
                   + " referentie), dus de koppeling naar " + doel.naam + " heeft geen veld"
-                : "het beanmodel leidt voor de enkelvoudige rol '" + rol + "' op " + ot.naam
+                : "het beanmodel leidt voor de rol '" + rol + "' op " + ot.naam
                   + " geen referentieveld naar " + doel.naam + " af";
     }
 

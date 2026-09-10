@@ -783,6 +783,17 @@ public final class DrlTranspiler {
                 .render());
             return;
         }
+        // §13.3.9: `join` is a derived ROLE, and every recipient pattern below reads it as a FIELD. Measured
+        // 2026-09-11 on a verifier-clean, ref-clean model whose recipient role is to-many (the storage sits at the
+        // source end): this branch emitted `berging == $src` and the package died on "Unable to Analyse Expression
+        // berging == $src". The exec branch refuses the same shape by name; both must say the same words.
+        if (!navVeld("verdeling", doel, join, bron)) {
+            out.append(new Regel(v.naam())
+                .clausule("// onopgelost verdeling (opslagrichting): " + commentVeilig(v.naam()))
+                .clausule("eval(true)")
+                .render());
+            return;
+        }
         // §13.4.10: the verdeling voorwaarde gates the WHOLE lowered family (the share rule, the §9.7.5 onverdeelde
         // rest AND the §9.7.6 Fout companions) — a false gate must write NOTHING (not a share, not a rest). Lower it
         // to an in-pattern bron constraint spliced into every rule's bron pattern. A voorwaarde that needs a hoisted
@@ -1045,6 +1056,32 @@ public final class DrlTranspiler {
     private void feitCreatie(io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie fc) {
         Acc acc = new Acc();
         Objecttype anker = fc.anker(), doel = fc.doel();
+        // §13.3.9 STORAGE DIRECTION, at all THREE positions this construct touches a role field (2026-09-11): each
+        // hop's join, the doel's join onto the last hop, and the zetVeld the modify WRITES. Measured on
+        // verifier-clean, ref-clean models, this branch sank the whole package with a bare compiler error at each —
+        // "Unable to Analyse Expression $doel.setSeinvak( $subject )" for the write,
+        // "Unable to Analyse Expression this == $subject.gemeenteVanInschrijving" for a hop — naming neither the
+        // role, the displacing member, nor the limit. The exec branch refuses the same three by name.
+        if (anker != null && doel != null && fc.zetVeld() != null && fc.joinVeld() != null) {
+            Objecttype vorigeType = anker;
+            String reden = null;
+            for (io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie.Tussenstap stap : fc.tussenstappen()) {
+                if (stap.type() == null || stap.veld() == null) break;
+                Objecttype drager = stap.viaOuderVeld() ? vorigeType : stap.type();
+                Objecttype hopDoel = stap.viaOuderVeld() ? stap.type() : vorigeType;
+                if (!navVeld("feitcreatie", drager, stap.veld(), hopDoel)) { reden = navReden; break; }
+                vorigeType = stap.type();
+            }
+            if (reden == null && !navVeld("feitcreatie", doel, fc.joinVeld(), vorigeType)) reden = navReden;
+            if (reden == null && !navVeld("feitcreatie", doel, fc.zetVeld(), anker)) reden = navReden;
+            if (reden != null) {
+                out.append(new Regel(fc.naam())
+                    .clausule("// onopgelost feitcreatie (opslagrichting): " + commentVeilig(fc.naam()))
+                    .clausule("eval(true)")
+                    .render());
+                return;
+            }
+        }
         // The voorwaarde selects which objects get the relation: a guard on the anker (the houder) stays on
         // the anker pattern; a guard on the doel (the elements) hosts on the $doel pattern. A guard that
         // lowers to NEITHER must NOT be silently dropped — dropping it makes the rule fire unconditionally
@@ -2517,6 +2554,10 @@ public final class DrlTranspiler {
         if (elem == null || subject == null) return null;
         String rol = model.verbindendeRol(elem, subject);
         if (rol == null) return null;                                  // unresolvable join -> marker
+        // §13.3.9: this fold resolves its own join, so it asks the shared question itself. Measured 2026-09-11 on a
+        // verifier-clean model whose element role is to-many (the field lives at the far end): the emitted
+        // `bewarendeJutter == $subject` sank the package. Mirrors the exec branch's gate on the same fold.
+        if (!navVeld("temporele set-sommatie", elem, rol, subject)) return null;
         int n = ++acc.n;
         String ev = "$e" + n, var = "$tl" + n;
         String filterScope = ident(rol, false) + " == " + SUBJECT;
@@ -2695,6 +2736,11 @@ public final class DrlTranspiler {
         Objecttype doel = model.rolDoeltypeNaarSubject(subject, k.navigatie());
         if (doel == null || !doel.kenmerkGranulariteit.containsKey(k.kenmerk())
                 || doel.kenmerkTijdlijnAantal.containsKey(k.kenmerk())) return null;
+        // §13.3.9: the two-step hop on the timeline arm reads the same reference field naviResolve gates on the
+        // scalar arm. Measured 2026-09-11 on a verifier-clean, ref-clean model where a declared member displaces the
+        // role name: ref and clingo PASS with the target left leeg, while this branch emitted
+        // `$subject.getWerf().getBedrijvig()` and the package died on "Unable to Analyse Expression rsGeheelPeriode(…".
+        if (!navVeld("genavigeerde kenmerktijdreeks", subject, k.navigatie(), doel)) return null;
         String root = SUBJECT + "." + getter(k.navigatie()) + "()";
         return "(" + root + " == null ? null : " + root + "." + getter(k.kenmerk()) + "())";
     }
@@ -2844,6 +2890,12 @@ public final class DrlTranspiler {
         if (elem == null || subject == null) return null;
         String rol = model.verbindendeRol(elem, subject);
         if (rol == null) return null;
+        // §13.3.9: no storage-direction gate here, and the reason is measured, not assumed — the same finding the
+        // exec branch's twin carries. Every caller enters on a `set` reading, and WF-096 (2026-09-09) admits a set
+        // reading ONLY as the source of a single-argument instance fold; a §8.2 operand is an ordinary read
+        // position. The document this gate would protect is not well-formed: built and pushed through, the verifier
+        // answers "WF-096 FAIL … set reading at an ordinary read position" and ref "whole-period comparison is
+        // ch. 3 scope". Should WF-096 ever admit it, this is the line that grows a navVeld call.
         String ev = "$el" + bindVar.substring(3);   // $tlN -> $elN (distinct element bind, no lexical-prefix overlap)
         return "accumulate( " + ev + " : " + ident(elem.naam, true) + "( " + ident(rol, false) + " == " + SUBJECT + " ) ; "
                 + bindVar + " : collectList( " + ev + "." + getter(a.attribuut()) + "() ) )";
@@ -3404,8 +3456,15 @@ public final class DrlTranspiler {
         // — a separate when-clause that CANNOT live inside the subject pattern's inline constraint. It rides out as
         // an extra clause (empty inline); regel() appends it after the subject pattern, and a pure-conjunction
         // compound carries it up. Any caller without a place to host it (conditieInline) degrades it to a marker.
-        if (c instanceof Conditie.VerreRollidmaatschap vr)
+        if (c instanceof Conditie.VerreRollidmaatschap vr) {
+            // §13.3.9: the exists-join reads the FILLER's reference field back at the subject, so it asks the same
+            // shared question the near-side rolcheck asks of its own end. Measured 2026-09-11 on a verifier-clean
+            // model with no field at either end of the pair: this branch emitted `Schuit( werf == $subject )` and the
+            // whole KieBase build died on "Unable to Analyse Expression werf == $subject" — loud, and no diagnosis.
+            if (subject == null || !navVeld("verre rollidmaatschapscheck", vr.filler(), vr.backref(), subject))
+                return LoweredConditie.marker("§8.1.7 verre rolcheck zonder beanveld", c.bron());
             return new LoweredConditie("", List.of(verreRolClausule(vr)), false);
+        }
         if (c instanceof Conditie.Samengesteld s) {
             // §8.4.3 a periodevergelijking-bullet under a COUNTING quantifier (geen/ten minste/ten hoogste/
             // precies): the exec back-end's counting fold is fact-only (it cannot bind the rekendatum global),

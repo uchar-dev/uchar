@@ -480,7 +480,11 @@ public final class ExecModelTranspiler {
             java.util.function.Function<Object, Object> ankerReader =
                     ankerLid == null ? null : s -> RegelSpraakRuntime.get(s, ankerLid);
             TemporeleWaarde tw = temporeleWaarde(r.waarde(), doel.objecttype(), doelGran, effType(doel), ankerReader);
-            if (tw == null) return skip("regel (temporele toekenning buiten Phase-F scope): " + r.naam());
+            // the sharpened §13.3.9 reason where the set fold's join refused (navReden), else the honest scope note —
+            // the same distinction the scalar arms above and below make, extended here because the temporal set
+            // sommatie is one of the readers that can now refuse for the bean-model reason (2026-09-11).
+            if (tw == null) return skip("regel (" + (navReden != null ? navReden
+                    : "temporele toekenning buiten Phase-F scope") + "): " + r.naam());
             BiFunction<Object, Object, Object> twf = tw.fn();
             // IDEMPOTENT timeline write (mirror DRL): the §9.9 freshness expr above makes this pattern class-reactive
             // whenever the value reads an own attribute, and an unconditional update ping-pongs with a sibling temporal
@@ -1167,6 +1171,13 @@ public final class ExecModelTranspiler {
         if (elemClass == null) return null;
         String rol = model.verbindendeRol(elem, subject);
         if (rol == null) return null;
+        // §13.3.9: this fold has its OWN join, resolved apart from the one {@link #aggregatie} gates, so it must ask
+        // the shared question apart too. Measured 2026-09-11 on a verifier-clean model whose element role is to-many
+        // (so the bean field lives at the far end and this end derives none): ERROR ConstraintEvaluationException at
+        // first fire in this branch, a bare "Unable to Analyse Expression bewarendeJutter == $subject" in the DRL
+        // one. The shape reaches no differential either way — ref and clingo refuse a TEMPORAL target outright
+        // ("temporal writes are not implemented") — so, as with the far-side rolcheck, the gate buys the diagnosis.
+        if (!heeftVeld("temporele set-sommatie", elem, rol, subject)) return null;
         // §4.1 the per-element unit restatement factor (equal unit -> no scale; incompatible -> not this fold).
         Datatype aType = effType(a);
         Eenheid eu = aType.eenheidOf(), du = doelType == null ? null : doelType.eenheidOf();
@@ -2432,6 +2443,13 @@ public final class ExecModelTranspiler {
         Objecttype doel = model.rolDoeltypeNaarSubject(subject, k.navigatie());
         if (doel == null || !doel.kenmerkGranulariteit.containsKey(k.kenmerk())
                 || doel.kenmerkTijdlijnAantal.containsKey(k.kenmerk())) return null;
+        // §13.3.9: the hop is a two-step read like navReader's, on the timeline arm and with its own resolution —
+        // so it needs the same question. Measured 2026-09-11 on a verifier-clean, ref-clean model (a Schuit with a
+        // Numeriek `werf` beside the to-one role of that name, a §8.2 "de werf van de Schuit gedurende het gehele
+        // jaar bedrijvig is"): ref and clingo both PASS with toeslag leeg, while this branch died at first fire
+        // (ERROR ConstraintEvaluationException — the kenmerk getter read off a BigDecimal) and the DRL branch sank
+        // the package on "Unable to Analyse Expression rsGeheelPeriode(($subject.getWerf() == null ? …".
+        if (!heeftVeld("genavigeerde kenmerktijdreeks", subject, k.navigatie(), doel)) return null;
         String rol = k.navigatie(), kenmerk = k.kenmerk();
         return s -> { Object rel = RegelSpraakRuntime.get(s, rol); return rel == null ? null : (List<?>) RegelSpraakRuntime.get(rel, kenmerk); };
     }
@@ -2591,6 +2609,15 @@ public final class ExecModelTranspiler {
         if (elemClass == null || subject == null) return null;
         String rol = model.verbindendeRol(elem, subject);
         if (rol == null) return null;
+        // §13.3.9: this join gets NO storage-direction gate, and the reason is that it is UNREACHABLE through a
+        // well-formed document — measured 2026-09-11, not assumed. Every arm above enters on `a.set()`
+        // (isTemporeelSet82), and WF-096 (2026-09-09) refuses a set reading at every position except the SOURCE of a
+        // single-argument instance fold; a §8.2 comparison operand and a gevuld/leeg operand are ordinary read
+        // positions. Built anyway and pushed through the four executors, the shape reads:
+        //     verifier: WF-096 FAIL /resolvedRegels/0/voorwaarde/links: set reading at an ordinary read position
+        //     ref     : EVALUATION FAULT: whole-period comparison is ch. 3 scope
+        // so the document the gate would protect cannot exist. Adding one would be an unmeasurable branch; if WF-096
+        // ever admits a set operand under a periode qualifier, THIS is the line that has to grow a heeftVeld call.
         final String backref = rol, attr = tijd.attribuut();
         Variable elemVar = DSL.declarationOf(elemClass, "$ge_" + (seq++));
         PatternDSL.PatternDef src = PatternDSL.pattern(elemVar).expr(nextId("join"), (Variable) subjectVar,
@@ -2829,6 +2856,17 @@ public final class ExecModelTranspiler {
             Class<?> fillerClass = factClass(vr.filler());
             if (fillerClass == null) return null;
             String backref = vr.backref();
+            // §13.3.9: the exists-join READS the filler's reference field back at the subject, so it must ask the
+            // same question the near-side rolcheck asks of its own end — the backref is a role NAME, and a name is
+            // not yet a field. Measured 2026-09-11 on a verifier-clean model whose ligplaats has BOTH roles to-many
+            // (no field at either end): the exec branch built the join and died at first fire
+            // (ERROR ConstraintEvaluationException), the DRL branch sank the whole package on a bare
+            // "Unable to Analyse Expression werf == $subject". Neither names the limit; both must.
+            // What this reader can NOT be measured against is a value: ref and clingo carry no far-side rolcheck at
+            // all ("condition kind not implemented in this card" / "condition kind not translated"), so no golden of
+            // this shape can enter the corpus and the differential square can never arbitrate it. The refusal is
+            // therefore about the DIAGNOSIS, not about a divergence — which is exactly why it must carry one.
+            if (subject == null || !heeftVeld("verre rollidmaatschapscheck", vr.filler(), backref, subject)) return null;
             Variable fVar = DSL.declarationOf(fillerClass, "$filler_" + (seq++));
             PatternDSL.PatternDef fp = PatternDSL.pattern(fVar).expr(nextId("br"), (Variable) subjectVar,
                     (Predicate2) (f, subj) -> RegelSpraakRuntime.get(f, backref) == subj);
@@ -5087,9 +5125,8 @@ public final class ExecModelTranspiler {
      *        and a link supplied from the far end reads here as this end's own, where ref (which stores links per
      *        instance per role key) reads nothing. A presence count over a shared field is not a directional count;
      *        refuse it rather than assert a violation that is not there — or, worse, miss one that is;</li>
-     *    <li>a filter, a navigated argument, a multi-operand count, or a name the subject also declares as a member
-     *        (the bean would then carry the ATTRIBUTE under that name, per {@code leden}'s name-dedup, and this
-     *        would read it instead of the reference).</li>
+     *    <li>a filter, a navigated argument, a multi-operand count, or a role whose bean field the model does not
+     *        carry — asked of {@link #heeftReferentieVeld}, the ONE shared question, AFTER the role resolves.</li>
      *  </ul> */
     private Telling toOneAantalReader(Expr.Functie f, Objecttype subject) {
         String generiek = "AANTAL-assertie buiten Phase-D scope";
@@ -5098,9 +5135,6 @@ public final class ExecModelTranspiler {
             return new Telling(null, generiek);
         Objecttype elem = f.elementObjecttype();
         if (elem == null || a.attribuut() == null) return new Telling(null, generiek);
-        if (subject.heeftLid(a.attribuut()))                               // a declared member displaces the reference field
-            return new Telling(null, "'" + a.attribuut() + "' is ook een gedeclareerd lid van " + subject.naam
-                    + ", dus het beanveld draagt het attribuut/kenmerk en niet de referentie");
         String rol = model.verbindendeRolViaNaam(subject, elem, a.attribuut());
         if (rol == null) rol = model.verbindendeRol(subject, elem);
         if (rol == null) return new Telling(null, generiek);
@@ -5117,6 +5151,19 @@ public final class ExecModelTranspiler {
                     + " case-invoer — is per RUNTIME-SEMANTICS ch. 5.7a ingetrokken, en of ze daarmee overbodig is"
                     + " geworden vergt een eigen, gemeten kaart (het opheffen verschuift gate-12-kanalen)"
                     + " (§13.3.9 opslagrichting)");
+        // §13.3.9: and the field this counter null-tests must really be the REFERENCE. Until 2026-09-11 this reader
+        // derived that itself — `subject.heeftLid(a.attribuut())`, asked BEFORE the role resolved — which is a second
+        // reading of leden()'s law and reads the WRONG NAME whenever the two differ. They differ in the ordinary case:
+        // the AANTAL's argument is the ELEMENT role as WRITTEN ("het aantal penningen"), which resolves through the
+        // role's meervoud to the field name ("penning"). Measured on a verifier-clean, ref-clean model — a 1:1
+        // penningbezit, a Jutter declaring a Numeriek `penning` beside it, a consistentie "het aantal penningen van de
+        // Jutter is groter of gelijk aan 1", no link supplied:
+        //     verifier: PASS   ref: PASS   clingo: PASS       (the consistentie is VIOLATED — J1 holds no penning)
+        //     Drools  : FAIL  verwacht inconsistent, werkelijk consistent
+        // The copy passed (Jutter declares no `penningen`) while the read took the attribute's 5 for a filled
+        // reference and reported a violated consistentie as satisfied. The shared question, asked HERE, sees it.
+        if (!heeftReferentieVeld(subject, rol, elem))
+            return new Telling(null, geenReferentieveldReden(subject, rol, elem) + " (§13.3.9 opslagrichting)");
         final String veld = rol;
         return new Telling(s -> RegelSpraakRuntime.get(s, veld) == null ? BigDecimal.ZERO : BigDecimal.ONE, null);
     }
@@ -5391,6 +5438,21 @@ public final class ExecModelTranspiler {
                 && (v.ratoAttribuut() == null || (gewichtType != null && gewichtType.isGetalachtig()));
         if (!gelijk && !rato && !opVolgorde)
             return skipList("verdeling (onopgelost " + (bron == null || doel == null ? "referentie" : methode.name().toLowerCase()) + "): " + v.naam());
+        // §13.3.9: `join` is the recipient's reference back at the source, and every one of the six reads below
+        // ({@code get(recipient, join) == $src} in the share, rest, ordering and Fout rules) touches THAT field.
+        // verbindendeRol derives a ROLE; leden() derives a FIELD only where the role is to-one AND its name is not
+        // taken by a declared member — the two differ, and the difference is reachable. Measured 2026-09-11 on a
+        // verifier-clean, ref-clean model (bergingsdeelname flipped so the recipient role is to-many, i.e. the
+        // storage sits at the source end and the recipient derives nothing):
+        //     verifier: PASS   ref: PASS (2 expectations)   clingo: PASS (2 expectations)
+        //     Drools exec-model : ERROR ConstraintEvaluationException          (unclassified, at first fire)
+        //     Drools DRL-tekst  : EXCLUDE drl compile: Unable to Analyse Expression berging == $src
+        // Both loud, neither a diagnosis. The name-DISPLACED half of the same limit is not reachable with a live
+        // relation — CaseRunner.naamdelingsPoort refuses to write the link at all — so the allocation then simply
+        // finds no recipients, which is what ref computes for a relation that is not there; that half was measured
+        // too and agrees.
+        if (!heeftReferentieVeld(doel, join, bron))
+            return skipList("verdeling (" + geenReferentieveldReden(doel, join, bron) + "): " + v.naam());
         // TWO verdelingen writing the SAME recipient (doelType, doelAttribuut) infinite-loop in the model — the
         // reflective share rules are class-reactive, so each update(r) re-activates the SIBLING (NO_LOOP blocks only
         // self-retrigger). Adding .watch(join) to the Deelnemer patterns DOES break the loop (empirically verified),
@@ -6023,15 +6085,34 @@ public final class ExecModelTranspiler {
         if (inert) return null;
 
         // §9.4 multi-hop: bind each intermediate object, joining to the previous; $prev starts at the anker.
+        // §13.3.9 STORAGE DIRECTION, at all THREE positions this construct touches a role field (2026-09-11): each
+        // hop's join, the doel's join onto the last hop, and the zetVeld the consequence WRITES. The objectcreatie
+        // arm has asked this since 2026-08-30; the feitcreatie asked nothing, and each position was measured on a
+        // verifier-clean, ref-clean model:
+        //     zetVeld displaced by a declared member -> ERROR ConsequenceException: ClassCastException: Cannot cast
+        //         …facts.Kustvak to java.math.BigDecimal      (DRL branch: "Unable to Analyse Expression
+        //         $doel.setSeinvak( $subject )")
+        //     a hop whose field the parent's bean does not carry -> ERROR ConstraintEvaluationException at first
+        //         fire  (DRL branch: "Unable to Analyse Expression this == $subject.gemeenteVanInschrijving")
+        //     joinVeld displaced -> the join never matches, so the creation makes nothing; ref makes nothing there
+        //         either, because the only routes that could establish the relation it reads (the case input, a
+        //         sibling creation) are themselves refused. Gated with the other two all the same: it is the same
+        //         field, the same question, and the UNDERIVED half of it is the crashing one.
         List<RuleItemBuilder<?>> items = new ArrayList<>();
         items.add(ankerPat);
         items.addAll(ankerExtra);
         Variable vorige = sVar;
+        Objecttype vorigeType = anker;
         for (io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie.Tussenstap stap : fc.tussenstappen()) {
             Class<?> stapClass = factClass(stap.type());
             if (stapClass == null) return skip("feitcreatie (geen fact-class tussenstap): " + fc.naam());
             String veld = stap.veld();
             boolean viaOuder = stap.viaOuderVeld();
+            // the hop's field lives on the PARENT for a to-one hop (viaOuderVeld) and on the CHILD otherwise —
+            // exactly the two sides the predicate below reads, so the question is asked of the side that is read.
+            Objecttype hopDrager = viaOuder ? vorigeType : stap.type(), hopDoel = viaOuder ? stap.type() : vorigeType;
+            if (!heeftReferentieVeld(hopDrager, veld, hopDoel))
+                return skip("feitcreatie (" + geenReferentieveldReden(hopDrager, veld, hopDoel) + "): " + fc.naam());
             Variable stapVar = DSL.declarationOf(stapClass, "$t_" + (seq++));
             Variable prev = vorige;
             // a to-one hop reads the PARENT's forward ref (this == $prev.veld); a to-many hop reads the CHILD's backref (veld == $prev).
@@ -6039,9 +6120,14 @@ public final class ExecModelTranspiler {
                     (Predicate2) (o, p) -> viaOuder ? RegelSpraakRuntime.get(p, veld) == o : RegelSpraakRuntime.get(o, veld) == p);
             items.add(stapPat);
             vorige = stapVar;
+            vorigeType = stap.type();
         }
 
         String joinVeld = fc.joinVeld(), zetVeld = fc.zetVeld();
+        if (!heeftReferentieVeld(doel, joinVeld, vorigeType))
+            return skip("feitcreatie (" + geenReferentieveldReden(doel, joinVeld, vorigeType) + "): " + fc.naam());
+        if (!heeftReferentieVeld(doel, zetVeld, anker))
+            return skip("feitcreatie (" + geenReferentieveldReden(doel, zetVeld, anker) + "): " + fc.naam());
         Variable doelVar = DSL.declarationOf(doelClass, "$doel");
         Variable laatste = vorige;
         PatternDSL.PatternDef doelPat = PatternDSL.pattern(doelVar).expr(nextId("djoin"), (Variable) laatste,
