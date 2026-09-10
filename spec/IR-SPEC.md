@@ -1471,52 +1471,81 @@ Spelling lookup is trimmed and case-insensitive.
   skips; the day-kind/day-kind collision is silently first-wins. **Delta
   (promotion).**
 
-*What the wire actually checks, spelled out because the rule above is wider
-than its check.* On the v0 wire a day kind's spellings live in two places: the
-singular name in the `dagsoorten` list, and every REGISTERED spelling —
-singular and plural alike — as a KEY of the `dagsoortPerEenheid` registry.
-WF-017's check runs over `dagsoorten` and reads that registry at no point.
-*Measured 2026-09-09:* a declared day kind `dagen` is refused (`WF-017 FAIL
-/dagsoorten: day-kind 'dagen' shadows a built-in calendar unit`), while the
-same spelling as a registry key — `"dagen": "schouwdag"` — is verifier-clean.
-So the collision half of this rule is checked for the DECLARED NAME and for no
-other registered spelling — a v0 mirror gap in BOTH conjuncts, and the two
-stand differently against the producer, which is why they are stated apart.
+*What the wire checks, spelled out because a day kind's spellings live in two
+places.* On the v0 wire the singular name stands in the `dagsoorten` list, and
+every REGISTERED spelling — singular and plural alike — stands as a KEY of the
+`dagsoortPerEenheid` registry. Until 2026-09-10 the check read the first place
+only, so both conjuncts held for the declared name and for no other registered
+spelling. The rule now runs over both, as three clauses in two positions
+(maintainer decision 2026-09-10 — the key-space clauses are ARMS of WF-017 and
+not a rule of their own: it is the same promoted MUST, checked wherever a
+spelling is registered):
 
-*Built-in-unit conjunct:* here the IR is weaker than its own producer. The
+| # | collision | clause |
+|---|---|---|
+| 1 | declared name × built-in calendar unit | **WF-017**, over `/dagsoorten` |
+| 2 | registered spelling (a registry key) × built-in calendar unit | **WF-017 arm (a)**, over `/dagsoortPerEenheid/<key>` |
+| 3 | declared name × declared name | **WF-001** (the `dagsoorten` namespace, ch. 2.1 identity) |
+| 4 | registered spelling × another day kind's spelling | **WF-017 arm (b)**, over `/dagsoortPerEenheid/<key>`, in the one form the wire can see |
+
+*Arm (a) — a key that shadows a calendar unit.* The key space is what a
+consumer consults to decide whether a unit spelling is a day-kind unit; a
+spelling occurring as a key is admitted as a duration unit beside the calendar
+units (WF-035, WF-038). *Measured 2026-09-10:* before this arm, `"dagen":
+"schouwdag"` beside the ordinary entries was verifier-clean, so `datum + 5
+dagen` could read as day-kind arithmetic, while the same spelling DECLARED was
+already refused by clause 1. Here the IR was weaker than its own producer: the
 RegelSpraak frontend refuses at registration time to register a spelling that
-collides with a built-in calendar unit and warns instead — and the built-in
-unit names are grammar keywords besides, so the source language cannot even
-express the shape. No document that frontend emits can carry what the wire
-admits; the shape is wire-only.
+coincides with a built-in calendar unit and warns instead, and the built-in
+unit names are grammar keywords besides, so the source language cannot express
+the shape at all — a source with plural `weken` fails to parse. The shape is
+wire-only, which is exactly why it must be a wire rule or nothing.
+Witness: `corpus/negatief/wf017-eenheidsleutel-schaduwt-kalendereenheid`.
 
-*Day-kind-against-day-kind conjunct:* here the producer is exactly as weak, and
-nothing checks it anywhere. The registration is `putIfAbsent` — first-wins,
+*Arm (b) — a declared name that binds to another day kind.* Here the producer
+is exactly as weak as the wire. Registration is `putIfAbsent` — first-wins,
 silently — so a second day kind whose own SINGULAR name is already registered
 as the first one's plural loses its own spelling without a diagnostic.
-*Measured end-to-end 2026-09-09* on two day kinds `schouwdag` (plural
+*Measured end-to-end 2026-09-10* on two day kinds `schouwdag` (plural
 `schouwdagen`) and `schouwdagen` (plural `schouwdagens`): the frontend emits
-with no warning and no error, the registry binds `schouwdagen` to `schouwdag`,
-and the verifier reports PASS — so `5 schouwdagen` reckons with the wrong
-day-kind definition. WF-001 does not reach it either: the two DECLARED names
-differ. The v0 mirror note above already said this collision is "silently
-first-wins"; what was missing was the measurement of what that silence costs.
+with no warning and no error, the registry binds `"schouwdagen": "schouwdag"`,
+and the verifier of the day before reported PASS — so `5 schouwdagen` reckons
+with the definition of `schouwdag`. WF-001 does not reach it: the two DECLARED
+names differ. What the wire can see is not the collision itself — the map holds
+one value per key, so the losing registration is simply absent — but the shape
+it leaves behind: a DECLARED day-kind name registered as the unit spelling of a
+DIFFERENT day kind. That is the arm: a declared name occurring as a key MUST
+bind to itself. Witness:
+`corpus/negatief/wf017-dagsoortnaam-bindt-vreemde-dagsoort`, the frontend's own
+emission of that source. The producer half — a diagnostic on the silent
+`putIfAbsent` — belongs to the frontend and lands there, spec-first.
 
-Closing both is WF-017's own card
-(`backlog/new/20260909-wf017-sleutel-en-spellingsbotsing.md`), which carries
-the two measurements and the reproduction paths.
+*Identity.* All three clauses compare under the ch. 2.1 identity (collapse
+whitespace, lower case), the same one a consumer applies when it looks a
+spelling up in the registry, so the three positions agree on what "the same
+spelling" means. It is pinned from the positive side by
+`corpus/golden/jutterswet-vormenkabinet`, which registers a declared
+`schouwdag` as `"schouwdag": "SchouwDag"`: that entry binds to itself only
+through the identity, and a byte-exact arm (b) reports it.
+
+*What arm (b) does not reach.* A registry key that is NOT a declared name and
+belongs to another day kind's spelling set stays admissible, for the reason
+given with WF-034 (s) below: the wire carries no plural FIELD, only further
+keys of this same map, so nothing distinguishes a declared plural from a
+derived one or from an abbreviation, and a key rule of that width would have to
+fix Dutch morphology inside an engine-neutral IR.
 
 The registry's other half is a different rule and a different question. Its
 VALUES are crossed by WF-034 (ch. 4.6 (s)): every value MUST name a day kind
 `dagsoorten` declares. That is RESOLUTION — one name against a declaration
 table — where WF-017 is COLLISION — two spellings against each other. Neither
-doubles the other: the first compares nothing, the second resolves nothing,
-and they read disjoint positions (`/dagsoortPerEenheid/<key>` against
-`/dagsoorten`). The registry's KEYS carry no resolution rule at all,
-deliberately, for the reason given with (s): the wire carries no plural FIELD,
-only further keys of this same map, so nothing on the wire distinguishes a
-declared plural from a derived one or from an abbreviation, and a key rule
-would have to fix Dutch morphology inside an engine-neutral IR.
+doubles the other: the first compares nothing, the second resolves nothing, and
+they read disjoint positions of the same entry (WF-017 the key, (s) the value).
+Arm (b) steps back where the two would meet: it fires only when the value names
+a day kind that IS declared, because an unresolvable value, a null value and
+the empty string name no second day kind to collide with and are (s)'s single
+diagnosis. The registry's KEYS carry no RESOLUTION rule, deliberately, for the
+reason stated with (s).
 
 ### 2.10 Parameter
 
@@ -4979,16 +5008,17 @@ attachment, and one field beside it, by WF-097 below.
   *This arm is not WF-017's* (ch. 2.9). WF-017 asks whether two spellings
   COLLIDE — a day kind against a built-in calendar unit, or against another
   day kind — and resolves nothing; (s) asks whether one name RESOLVES, and
-  compares nothing. Their positions are disjoint as well: WF-017's check walks
-  the declared names under `/dagsoorten` and reads the registry at no point,
-  (s) reads only the values under `/dagsoortPerEenheid`, and no document can be
-  reported twice for one defect. *Measured 2026-09-09, and recorded here
-  because it bounds what (s) may be read to cover:* a registry KEY that
-  shadows a built-in calendar unit (`"dagen": "schouwdag"`) is verifier-clean,
-  while the same spelling DECLARED is WF-017 FAIL. The collision half is
-  therefore checked for the declared name only; that is WF-017's gap, stated
-  in ch. 2.9, and (s) does not close it.
-  *The KEY side stays FREE, by decision and not by omission.* The carrying
+  compares nothing. Their positions stay disjoint at the entry's own seam:
+  since 2026-09-10 WF-017 also reads this map, but only its KEYS (ch. 2.9,
+  arms (a) and (b)), where (s) reads only the VALUES. Where the two could meet —
+  a declared name as key whose value names no declared day kind — arm (b) steps
+  back by construction and leaves the single diagnosis to (s), so no document is
+  reported twice for one defect. *Measured 2026-09-10:*
+  `corpus/negatief/wf034-dagsoorteenheid-onbekende-dagsoort` reports exactly one
+  line, and it is (s)'s.
+  *The key side carries no RESOLUTION rule, by decision and not by omission*
+  (it does carry WF-017's collision arms since 2026-09-10; the two questions are
+  independent). The carrying
   argument is what the WIRE carries, not what the source language does. A day
   kind's plural reaches v0 as a FURTHER KEY of this same map and as no field of
   its own (ch. 2.9's `plural` lives on the v1 node), so nothing on the wire
@@ -5015,9 +5045,10 @@ attachment, and one field beside it, by WF-097 below.
   witnesses for an abbreviation and **zero** for an irregular plural: the
   freedom this decision preserves is argued from the wire's shape, not
   demonstrated by a document.
-  What a key must not do is COLLIDE, and that is WF-017's clause; on the v0
-  wire that check reaches the declared name only, in both of its conjuncts
-  (ch. 2.9, measured, with its own card).
+  What a key must not do is COLLIDE, and that is WF-017's clause; since
+  2026-09-10 that check reaches the keys of this map as well — a key that is a
+  built-in calendar unit, and a key that is a declared day-kind name bound to a
+  different day kind (ch. 2.9, arms (a) and (b), each with its witness).
   *Cost: none, measured directly, with both states named.* **On the BASELINE
   that predates this card** — 554 documents of golden + rood + negatief +
   parity (164 + 23 + 337 + 30) — the map held **64** entries over **31**
@@ -6060,7 +6091,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-014 | dimension labels non-empty, duplicate-free, ordered | gate 3 | `jutterswet-vormenkabinet` (the seizoen labels) | `wf014-empty-labels` |
 | WF-015 | one timeline declaration per normalized name; references resolve | gate 3 | `jutterswet-penningjaar` | `wf015-timeline-collision` |
 | WF-016 | variable-start timeline is anchored (rule-layer check) | gate 3 (existence of the determination; the anchor-write typing is WF-032/WF-023) | `jutterswet-vormenkabinet` (the variable-start boekjaar with its start point) | `wf016-unanchored-variable-start` |
-| WF-017 | day-kind spellings shadow no built-in unit and no other day-kind | gate 3 (day-kind names vs built-ins; duration-spelling collisions are pre-filtered by v0 before emission) | `jutterswet-vormenkabinet` (schouwdag) | `wf017-daykind-shadows-builtin` |
+| WF-017 | day-kind spellings shadow no built-in unit and no other day-kind | gate 3, three clauses over the two wire positions a spelling can occupy (ch. 2.9): the DECLARED name against the built-ins, plus **arm (a)** a registry KEY against the built-ins and **arm (b)** a declared name registered as a DIFFERENT day kind's unit spelling — the wire-visible form of the silent first-wins collision, whose losing registration the wire cannot show (one value per key). A key that is not a declared name stays free: no plural field exists on the v0 wire (the (s) argument, ch. 4.6) | `jutterswet-vormenkabinet` (two day kinds, each bound to itself — one of them only through the ch. 2.1 identity — and a plural key that collides with nothing) | `wf017-daykind-shadows-builtin` + `wf017-eenheidsleutel-schaduwt-kalendereenheid` (arm (a)) + `wf017-dagsoortnaam-bindt-vreemde-dagsoort` (arm (b), the frontend's own emission) |
 | WF-018 | parameter datatype resolves; timeline facet well-formed | gate 3 (datatype clause; the facet clause carries the WF-005 caveat) | `jutterswet-penningjaar` | `wf018-parameter-onbekend` |
 | WF-019 | serialization preserves declaration order | `scripts/check-ir-schema.sh` (byte-identical round-trip) | `jutterswet-vondsttelling` (multi-element ordered lists round-trip) | OPEN (no data-shaped counterexample exists: the canonical re-emit is a serializer property, so a reordering fault lives in a consumer, never in admissible data — recorded) |
 | WF-020 | rule names unique across all rule forms (ci) | gate 3 (via the v0 " #i" strip-and-group migration reading) | `jutterswet-vondstnummer` | `wf020-crossform-collision` |

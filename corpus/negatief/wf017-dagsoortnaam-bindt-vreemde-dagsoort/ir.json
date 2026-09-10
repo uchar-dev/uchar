@@ -1,0 +1,105 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {},
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [
+    "schouwdag",
+    "schouwdagen"
+  ],
+  "dagsoortPerEenheid": {
+    "schouwdag": "schouwdag",
+    "schouwdagen": "schouwdag",
+    "schouwdagens": "schouwdagen"
+  },
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "Dagsoortdefinitie schouwdag",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "Dagsoortdefinitie schouwdagen",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [],
+  "resolvedDagsoorten": [
+    {
+      "node": "ResolvedDagsoort",
+      "naam": "schouwdag",
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "LATER",
+        "links": {
+          "node": "Constante",
+          "naam": "de dag",
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "de dag"
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "2026-02-28",
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "28-02-2026"
+        },
+        "periode": null,
+        "bron": "de dag later is dan 28-02-2026"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedDagsoort",
+      "naam": "schouwdagen",
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "LATER",
+        "links": {
+          "node": "Constante",
+          "naam": "de dag",
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "de dag"
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "2026-09-30",
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "30-09-2026"
+        },
+        "periode": null,
+        "bron": "de dag later is dan 30-09-2026"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

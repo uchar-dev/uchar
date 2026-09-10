@@ -52,20 +52,20 @@ declaration that has to exist for the document to say what it says.
 **Not WF-017.** WF-017 (ch. 2.9) asks whether two spellings COLLIDE — a day
 kind against a built-in calendar unit, or against another day kind — and
 resolves nothing. This arm asks whether one name RESOLVES, and compares
-nothing. The positions are disjoint too: WF-017's check walks the declared
-names under `/dagsoorten` and reads this registry at no point, while this arm
-reads only the values under `/dagsoortPerEenheid`. This document carries no
-WF-017 defect and the report shows one line. *Measured 2026-09-09, so the
-boundary is not read wider than it is:* a registry KEY that shadows a built-in
-calendar unit (`"dagen": "schouwdag"`) is verifier-clean, while the same
-spelling DECLARED is `WF-017 FAIL`. WF-017's check reaches the declared name
-only, in BOTH its conjuncts: two day kinds whose spellings collide (one's
-plural being the other's singular) also emit and verify clean, the second
-losing its own singular to the first. Those are WF-017's gaps, recorded in
-ch. 2.9 and carded, and not this arm's to close.
+nothing. The positions stay disjoint at the entry's own seam: since 2026-09-10
+WF-017 reads this map too, but only its KEYS (arms (a) and (b)), where this arm
+reads only the VALUES. Where the two could meet — a declared name as key whose
+value names no declared day kind — arm (b) steps back by construction, so the
+single diagnosis stays this arm's. *Measured 2026-09-10:* this document reports
+exactly one line, and it is WF-034's; the two shapes that were verifier-clean
+on 2026-09-09 (a registry key `"dagen": "schouwdag"` shadowing a calendar unit,
+and a declared day kind whose own singular is already the first one's plural)
+are now refused by those arms, each with its own witness under
+`corpus/negatief/wf017-*`.
 
-**The key side stays free, deliberately.** The carrying argument is what the
-WIRE carries. A day kind's plural arrives as a FURTHER KEY of this same map and
+**The key side carries no RESOLUTION rule, deliberately** (WF-017's collision
+arms are a different question and do read the keys). The carrying argument is
+what the WIRE carries. A day kind's plural arrives as a FURTHER KEY of this map and
 as no field of its own (ch. 2.9's `plural` is on the v1 node), so nothing here
 distinguishes a DECLARED plural from a DERIVED one or from an abbreviation —
 all three are ordinary keys. A key rule would have to reconstruct that

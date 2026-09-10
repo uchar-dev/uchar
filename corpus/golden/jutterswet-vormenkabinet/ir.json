@@ -118,11 +118,14 @@
     }
   ],
   "dagsoorten": [
-    "schouwdag"
+    "schouwdag",
+    "stormvloeddag"
   ],
   "dagsoortPerEenheid": {
     "schouwdag": "SchouwDag",
-    "schouwdagen": "  schouwdag  "
+    "schouwdagen": "  schouwdag  ",
+    "stormvloeddag": "stormvloeddag",
+    "stormvloeddagen": "stormvloeddag"
   },
   "regels": [
     {
@@ -548,6 +551,37 @@
         },
         "periode": null,
         "bron": "voor de najaarsschouw"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedDagsoort",
+      "naam": "stormvloeddag",
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "LATER",
+        "links": {
+          "node": "Literal",
+          "waarde": "2026-10-01",
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "2026-10-01"
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "2026-03-01",
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "2026-03-01"
+        },
+        "periode": null,
+        "bron": "na de najaarsschouw"
       },
       "geldigheid": {
         "node": "Geldigheid",

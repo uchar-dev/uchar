@@ -57,16 +57,17 @@ WF-034 arm (s) (`spec/IR-SPEC.md` ch. 4.6): *every value of
 under the ch. 2.1 identity — collapse whitespace, lower case.
 
 The document already declared the day kind `schouwdag` and registered no
-spelling for it. It now registers two, and **neither value is byte-identical
-to the declaration**:
+spelling for it. It now registers two for that day kind, and **neither value is
+byte-identical to the declaration**:
 
     "dagsoortPerEenheid": {
       "schouwdag":   "SchouwDag",
       "schouwdagen": "  schouwdag  "
     }
 
-One entry per half of the identity: capitalisation, and collapsible
-whitespace. Both resolve, so the document stays verifier-clean, and that is
+(The map's two further entries, and the second day kind they belong to, arrived
+with the WF-017 section below.) One entry per half of the identity:
+capitalisation, and collapsible whitespace. Both resolve, so the document stays verifier-clean, and that is
 the point — this is a POSITIVE witness, which is why it belongs in the
 cabinet and not in `corpus/negatief/`.
 
@@ -92,6 +93,57 @@ name; this cabinet is already pinned `NOCASE` and already exists for exactly
 this purpose, so the witness costs no executor channel and no pin. It also
 changes no rule of this document — the registry is read by no rule here, and
 the four consumers' behaviour on this IR is unchanged.
+
+## The registry KEY space: WF-017's positive witness (2026-09-10)
+
+WF-017 (ch. 2.9) gained two arms over the same map's KEYS: a key must not be a
+built-in calendar unit (arm (a)), and a key that IS a declared day-kind name
+must bind to that same day kind (arm (b)). Both are refusals; a refusal pins a
+rejection and never a non-rejection, so the good binding needs a positive
+witness, and this is it.
+
+The cabinet declared exactly ONE day kind, which made arm (b) vacuous here: with
+one declaration every resolvable value is the own one, so nothing could be
+distinguished. It now declares a second, with its own definition and both its
+spellings registered:
+
+    "dagsoorten": ["schouwdag", "stormvloeddag"],
+    "dagsoortPerEenheid": {
+      "schouwdag":       "SchouwDag",
+      "schouwdagen":     "  schouwdag  ",
+      "stormvloeddag":   "stormvloeddag",
+      "stormvloeddagen": "stormvloeddag"
+    }
+
+Three positive facts in four entries: a declared name bound to itself byte for
+byte (`stormvloeddag`), a declared name bound to itself only through the
+normalised identity (`schouwdag` → `SchouwDag`), and a PLURAL key that binds to
+its own day kind and collides with no other declaration (`stormvloeddagen`,
+`schouwdagen`). No key is a built-in calendar unit, so arm (a) is silent too.
+The document stays verifier-clean, which is the point.
+
+What it pins, measured 2026-09-10 over 585 documents (four zones plus the
+read-only parity zone):
+
+- arm (b) compared byte-exactly instead of under the ch. 2.1 identity reports
+  `/dagsoortPerEenheid/schouwdag` here and takes gate 3 down — the same
+  normalisation entries the WF-034 section above installed, now load-bearing for
+  a second rule;
+- arm (b) comparing against the FIRST declared day kind instead of the key's OWN
+  reports `/dagsoortPerEenheid/stormvloeddag` here. That mutant is caught by
+  `corpus/golden/jutterswet-schouwrooster` as well — the cabinet is not its only
+  pin, and is not claimed to be. What the second declaration buys is that the
+  document the WF index names in WF-017's Golden column carries the arm's
+  positive form itself, instead of witnessing a rule it cannot exercise.
+
+The refusing side is pinned from the other end by
+`corpus/negatief/wf017-eenheidsleutel-schaduwt-kalendereenheid` (arm (a)) and
+`corpus/negatief/wf017-dagsoortnaam-bindt-vreemde-dagsoort` (arm (b)).
+
+Cost, same sweep: adding the second day kind moves no verdict and no report line
+anywhere — the four consumers read this document exactly as before, and the
+cabinet still carries no `case*.json`, so gate 5 keeps listing it as "NOT
+replayed" and gate 12 keeps it `NOCASE`.
 
 ## Reproduction
 

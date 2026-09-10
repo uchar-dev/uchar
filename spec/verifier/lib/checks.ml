@@ -916,7 +916,74 @@ let builtin_units =
     "jaar"; "jaren"; "uur"; "uren"; "minuut"; "minuten"; "seconde"; "seconden";
     "milliseconde"; "milliseconden" ]
 
+(* WF-017 over the whole SPELLING SPACE of a day kind (maintainer decision
+   2026-09-10; IR-SPEC ch. 2.9). The rule is one promoted MUST with two
+   conjuncts — a day-kind spelling collides with no built-in calendar unit and
+   with no other day kind's spelling — and on the v0 wire a day kind's
+   spellings live in TWO places: the singular in `dagsoorten`, and every
+   REGISTERED spelling, singular and plural alike, as a KEY of
+   `dagsoortPerEenheid`. Until this change the check read the first place only,
+   so both conjuncts were checked for the declared name and for no other
+   registered spelling. The two arms below read the second place; the clause
+   over `/dagsoorten` above them is unchanged.
+
+   ARM (a) — a registry KEY that shadows a built-in calendar unit. The key
+   space is what `day_kind_unit` consults: a spelling occurring as a key is
+   admitted as a duration unit beside the calendar units in date arithmetic
+   (WF-035) and in a tijdsduur (WF-038). A key `dagen` therefore turns
+   `datum + 5 dagen` from ordinary calendar arithmetic into day-kind
+   arithmetic. Measured 2026-09-10 on the pre-arm binary (md5
+   67becaba23c6d3364a9f1a080355541e), `jutterswet-schouwrooster` with one
+   entry added and nothing else changed: `"dagen": "schouwdag"` beside the four
+   ordinary entries was `verifier: PASS`, while the same spelling DECLARED is
+   refused by the clause above. Here the IR is weaker than its own producer:
+   the reference frontend refuses to register such a spelling and warns, and
+   the built-in unit names are grammar keywords besides, so no source text can
+   express the shape — this arm is wire-only by construction, and that is
+   precisely why it must be a wire rule or nothing.
+   Witness: `corpus/negatief/wf017-eenheidsleutel-schaduwt-kalendereenheid`.
+
+   ARM (b) — a DECLARED day-kind name that occurs as a key must bind to
+   ITSELF. This is the wire-visible form of the day-kind/day-kind collision.
+   The collision itself is NOT visible on the wire: the map holds one value per
+   key, so the losing registration is simply absent. What remains visible is
+   the shape it leaves behind — a declared name registered as the unit spelling
+   of a DIFFERENT day kind. Measured end-to-end 2026-09-10 with the reference
+   frontend on two day kinds `schouwdag` (plural `schouwdagen`) and
+   `schouwdagen` (plural `schouwdagens`): the frontend emits with no warning
+   and no error (`registreerDagsoortEenheid` uses `putIfAbsent` — first-wins,
+   silently), the registry binds `"schouwdagen": "schouwdag"`, and the pre-arm
+   verifier reported PASS. So `5 schouwdagen` reckons with the definition of
+   `schouwdag` while a reader of `dagsoorten` sees a day kind `schouwdagen`
+   declared. WF-001 does not reach it: the two DECLARED names differ. Here the
+   producer is exactly as weak as the wire, which is why the conformance side
+   of the pin needs a frontend diagnostic of its own; this arm is the wire half.
+   Witness: `corpus/negatief/wf017-dagsoortnaam-bindt-vreemde-dagsoort`, the
+   frontend's own emission of that source.
+
+   IDENTITY. Both arms compare under `norm` — collapse whitespace, lower case —
+   the identity `day_kind_unit` already applies to the key and the clause above
+   already applies to the declared name, so the three positions agree on what
+   "the same spelling" means. It is pinned from the positive side:
+   `corpus/golden/jutterswet-vormenkabinet` registers the declared `schouwdag`
+   as `"schouwdag": "SchouwDag"`, which points to itself only through `norm`;
+   a byte-exact arm (b) reports that entry and takes gate 3 down.
+
+   BOUNDARY against WF-034 arm (s) (ch. 4.6), which reads the VALUES of this
+   same map. That arm asks whether one name RESOLVES against `dagsoorten` and
+   compares nothing; these arms COMPARE two spellings and resolve nothing. Arm
+   (b) therefore fires only when the value names a day kind that IS declared —
+   an unresolvable value, a null value and the empty string name no second day
+   kind to collide with, and are WF-034 (s)'s single diagnosis, the same
+   discipline WF-085 keeps for undeclared references. Measured on the landed
+   state: `corpus/negatief/wf034-dagsoorteenheid-onbekende-dagsoort` still
+   reports exactly one line, and it is WF-034's.
+
+   COST, measured 2026-09-10 over all four zones plus the read-only parity zone
+   (582 documents): the two arms move the two witnesses above and not one other
+   verdict, and add no report line anywhere else. *)
 let wf017 ctx =
+  let declared = some_names ctx.doc.dagsoorten in
   List.concat_map
     (fun d ->
       match d with
@@ -925,6 +992,30 @@ let wf017 ctx =
               ("day-kind '" ^ d ^ "' shadows a built-in calendar unit") ]
       | _ -> [])
     ctx.doc.dagsoorten
+  @ List.filter_map
+      (fun (spelling, _) ->
+        if List.mem (norm spelling) builtin_units then
+          Some
+            (v "WF-017"
+               ("/dagsoortPerEenheid/" ^ spelling)
+               (Printf.sprintf
+                  "registered day-kind unit spelling '%s' shadows a built-in calendar unit"
+                  spelling))
+        else None)
+      ctx.doc.dagsoort_per_eenheid
+  @ List.filter_map
+      (fun (spelling, dk) ->
+        match List.find_opt (fun d -> norm d = norm spelling) declared, dk with
+        | Some own, Some d when norm d <> norm own && mem_ci declared d ->
+            Some
+              (v "WF-017"
+                 ("/dagsoortPerEenheid/" ^ spelling)
+                 (Printf.sprintf
+                    "declared day kind '%s' is registered as a unit spelling of day kind '%s': \
+                     its own spelling binds to another day kind"
+                    own d))
+        | _ -> None)
+      ctx.doc.dagsoort_per_eenheid
 
 let wf018 ctx =
   List.concat_map
@@ -1134,14 +1225,16 @@ let wf026 ctx =
    separates this arm from WF-017 (ch. 2.9): WF-017 asks whether two spellings
    COLLIDE — a day kind against a built-in calendar unit, or against another
    day kind — and resolves nothing; this arm asks whether one name RESOLVES,
-   and compares nothing. They cannot double: `wf017` above walks the declared
-   names in `/dagsoorten` and never reads this map at all, while this arm reads
-   only the values under `/dagsoortPerEenheid`. Measured 2026-09-09: a declared
-   day kind `dagen` is WF-017 FAIL, the same spelling as a registry KEY is
-   verifier-clean — the collision half is checked for the declared name and
-   for nothing else, which is WF-017's own gap and not this arm's business.
+   and compares nothing. They cannot double: since 2026-09-10 `wf017` above
+   reads this map too, but only its KEYS (arms (a) and (b)), while this arm
+   reads only the VALUES. Where the two could meet — a declared name as key
+   whose value names no declared day kind — arm (b) steps back by construction
+   and leaves the single diagnosis here. Measured 2026-09-10:
+   `corpus/negatief/wf034-dagsoorteenheid-onbekende-dagsoort` reports exactly
+   one line, and it is this arm's.
 
-   The KEY side stays FREE, and that is a decision, not an omission. The
+   The KEY side carries no RESOLUTION rule, and that is a decision, not an
+   omission (WF-017's collision arms are a different question). The
    carrying argument is what the WIRE carries: a day kind's plural arrives as a
    FURTHER KEY of this same map and as no field of its own (ch. 2.9's `plural`
    exists on the v1 node), so nothing here distinguishes a DECLARED plural from
@@ -1162,11 +1255,10 @@ let wf026 ctx =
    plain `<declared name>en` form the frontend itself derives. The corpus has
    zero abbreviation and zero irregular-plural witnesses.
 
-   Neither conjunct of WF-017 reaches a key, measured: a registry key that
-   shadows a built-in calendar unit is verifier-clean, and two day kinds whose
-   spellings collide emit and verify clean while the second loses its own
-   singular to the first (`putIfAbsent`, first-wins). Both are WF-017's gaps,
-   carded 2026-09-09; neither is this arm's.
+   Both conjuncts of WF-017 reach a key since 2026-09-10: a registry key that
+   shadows a built-in calendar unit, and a declared day kind whose own singular
+   is registered as another day kind's spelling (`putIfAbsent`, first-wins)
+   are refused there, each with its own witness. Neither is this arm's.
 
    Observability, measured 2026-09-09 on the twist this arm's witness carries:
    NO consumer notices. The verifier, `ref`, the ASP backend and the Drools
