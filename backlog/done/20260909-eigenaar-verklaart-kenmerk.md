@@ -267,11 +267,16 @@ weigeringen in beide richtingen — gate 5, suite 489 -> 495) en
 dragende vorm en één weigering met gepinde zin — gate 6, suite 83 -> 91). Beide
 vloeren zijn ondergrenzen, dus groei vergt geen scriptwijziging.
 
-**Gate-uitkomsten.** Alle dertien groen. Gemeten getallen die bewogen: gate 2
-192 -> 193 bestanden, gate 3 golden 192 -> 193 en negatief 359 -> 360, gate 4
-453 -> 454 casebestanden, gate 5 427 -> 428 cases en suite 489 -> 495, gate 6
-427 -> 428 cases en suite 83 -> 91, gate 7 391 -> 392 weerleggende cases, gate 12
-played 119 -> 120.
+**Gate-uitkomsten.** Alle dertien groen, elk met zijn eigen exitcode gemeten
+(niet die van een pipe). Gemeten getallen die bewogen: gate 2 192 -> 193
+bestanden, gate 3 golden 192 -> 193 en negatief 359 -> 360, gate 4 453 -> 454
+casebestanden, gate 5 427 -> 428 cases en suite 489 -> 495, gate 6 427 -> 428
+cases en suite 83 -> 91, gate 7 391 -> 392 weerleggende cases, gate 12 played
+119 -> 120 en JUnit 244 (vloer 239). Gates 1, 8, 9, 10, 11 en 13 bewegen geen
+enkel getal: gate 8 blijft 26 rode cases (geen rood document draagt een
+eigenaar), gate 13 blijft 74 twists over 15 goldens met 0 annotaties buiten de
+twist-tabel — de nieuwe golden draagt bewust geen enkele eenheid, dus levert hij
+er geen.
 
 **Scriptwijziging als VOORSTEL (beschermd pad).** Eén, en alleen als
 kanaal-voorstel: `scripts/check-drools.sh`, `EXPECTED_PLAYED` 119 -> 120 met de
