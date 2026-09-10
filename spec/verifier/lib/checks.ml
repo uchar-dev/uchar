@@ -936,10 +936,18 @@ let builtin_units =
    67becaba23c6d3364a9f1a080355541e), `jutterswet-schouwrooster` with one
    entry added and nothing else changed: `"dagen": "schouwdag"` beside the four
    ordinary entries was `verifier: PASS`, while the same spelling DECLARED is
-   refused by the clause above. Here the IR is weaker than its own producer:
-   the reference frontend refuses to register such a spelling and warns, and
-   the built-in unit names are grammar keywords besides, so no source text can
-   express the shape — this arm is wire-only by construction, and that is
+   refused by the clause above. Here the IR is weaker than its own producer,
+   and what carries that is the REGISTRATION GUARD, not the grammar: the
+   reference frontend refuses to register a spelling that coincides with any of
+   the eighteen built-in time-unit names, warns, and drops the entry. The
+   grammar helps for most of them but not all — measured 2026-09-10 over all
+   eighteen as a day-kind plural, FOURTEEN fail to parse (the names are
+   keywords, no IR is emitted at all) and FOUR parse cleanly: `uren`,
+   `minuten`, `seconden`, `milliseconden`. For those four the frontend emits
+   with exit 0 and the guard alone does the work — the registry comes out
+   without the spelling and the warning lands in the emitted document's
+   `diagnostics` array rather than on the console. Either way no document this
+   frontend emits carries the shape, so the arm is wire-only, and that is
    precisely why it must be a wire rule or nothing.
    Witness: `corpus/negatief/wf017-eenheidsleutel-schaduwt-kalendereenheid`.
 
@@ -975,12 +983,18 @@ let builtin_units =
    (b) therefore fires only when the value names a day kind that IS declared —
    an unresolvable value, a null value and the empty string name no second day
    kind to collide with, and are WF-034 (s)'s single diagnosis, the same
-   discipline WF-085 keeps for undeclared references. Measured on the landed
-   state: `corpus/negatief/wf034-dagsoorteenheid-onbekende-dagsoort` still
-   reports exactly one line, and it is WF-034's.
+   discipline WF-085 keeps for undeclared references. NO corpus document
+   instantiates that touch point, so it is measured by construction: a declared
+   name as key whose value is an undeclared day kind, a null, or the empty
+   string — three documents built for the measurement, each reporting exactly
+   one line, and each time WF-034's. (The corpus witness
+   `corpus/negatief/wf034-dagsoorteenheid-onbekende-dagsoort` does NOT
+   instantiate it: its offending key is not a declared name, so arm (b) is
+   silent there through the declared-name lookup and never reaches the
+   step-back.)
 
    COST, measured 2026-09-10 over all four zones plus the read-only parity zone
-   (582 documents): the two arms move the two witnesses above and not one other
+   (585 documents): the two arms move the two witnesses above and not one other
    verdict, and add no report line anywhere else. *)
 let wf017 ctx =
   let declared = some_names ctx.doc.dagsoorten in
@@ -1228,10 +1242,12 @@ let wf026 ctx =
    and compares nothing. They cannot double: since 2026-09-10 `wf017` above
    reads this map too, but only its KEYS (arms (a) and (b)), while this arm
    reads only the VALUES. Where the two could meet — a declared name as key
-   whose value names no declared day kind — arm (b) steps back by construction
-   and leaves the single diagnosis here. Measured 2026-09-10:
-   `corpus/negatief/wf034-dagsoorteenheid-onbekende-dagsoort` reports exactly
-   one line, and it is this arm's.
+   whose value names no declared day kind — arm (b) steps back and leaves the
+   single diagnosis here. No corpus document instantiates that touch point (the
+   witness below does not: its offending key is not a declared name), so it is
+   measured by construction — the three shapes of a declared name as key with
+   an unresolvable, null and empty value each report exactly one line on
+   2026-09-10, and each time it is this arm's.
 
    The KEY side carries no RESOLUTION rule, and that is a decision, not an
    omission (WF-017's collision arms are a different question). The

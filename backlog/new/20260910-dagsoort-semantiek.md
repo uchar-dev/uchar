@@ -16,7 +16,7 @@ contextwaarde-kaart van 2026-09-10 heeft gemeld maar niet gesloten.
 - `backlog/done/20260906-dagsoort-kruisingsarm.md` (Out of scope): de
   duurvormen zijn "een gemeten drie-uitvoerder-asymmetrie en een eigen
   semantiekkaart".
-- `backlog/new/20260909-wf017-sleutel-en-spellingsbotsing.md` (Out of scope):
+- `backlog/done/20260909-wf017-sleutel-en-spellingsbotsing.md` (Out of scope):
   "De dagsoort-duurvormen zelf (§6.10/§6.11) — eigen semantiekkaart."
 - `backlog/done/20260909-constante-naam-gesloten-verzameling.md` (Out of scope
   én "Gemeld, niet gekaart"): dezelfde regel, plus de twee kloven hieronder.
@@ -108,9 +108,14 @@ May touch: `spec/RUNTIME-SEMANTICS.md` (**voorstel** — beschermd pad),
 - **De sleutelkant van `dagsoortPerEenheid`.** Bewust vrij gelaten met de
   motivering in `IR-SPEC.md` ch. 2.9 en ch. 4.6 (s); de waardehelft is dicht
   sinds 2026-09-09.
-- **WF-017's eigen gaten** (een registersleutel die een ingebouwde
-  kalendereenheid schaduwt; twee dagsoortspellingen die botsen) — die staan op
-  `20260909-wf017-sleutel-en-spellingsbotsing.md`.
+- **WF-017's sleutelgaten** (een registersleutel die een ingebouwde
+  kalendereenheid schaduwt; twee dagsoortspellingen die botsen) — **gesloten
+  2026-09-10**, WF-017 armen (a) en (b), ch. 2.9, met twee negatief-getuigen en
+  de positieve binding in `jutterswet-vormenkabinet`
+  (`backlog/done/20260909-wf017-sleutel-en-spellingsbotsing.md`). Wat van
+  WF-017 nog openstaat is alleen de PRODUCENTKANT: een frontend-diagnostiek op
+  de stille `putIfAbsent` in `registreerDagsoortEenheid` — zie de
+  conformance-notitie in die done-kaart. Deze kaart draagt hem niet.
 - **De contextwaarde-naam zelf.** WF-098 is geland (2026-09-10, byte-exact,
   gesloten verzameling van drie); deze kaart raakt de spelling niet, alleen de
   betekenis en de positie.

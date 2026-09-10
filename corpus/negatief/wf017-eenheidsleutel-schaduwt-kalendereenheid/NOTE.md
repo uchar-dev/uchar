@@ -18,14 +18,20 @@ admitted as a duration unit beside the calendar units, in date arithmetic
 `datum + 5 dagen` stops being ordinary calendar arithmetic and becomes day-kind
 arithmetic over the definition of `schouwdag`.
 
-**The IR was weaker than its own producer.** The RegelSpraak frontend
-(`frontends/regelspraak`) refuses at registration time to register a spelling
-that coincides with a built-in time unit, warns, and drops the entry; and the
-built-in unit names are grammar keywords besides, so the source language cannot
-even express the shape — a source declaring a day kind with plural `weken`
-fails to parse. No document that frontend emits can carry this. That is exactly
-why the arm has to be a WIRE rule or nothing: a hand-built or foreign-produced
-document is the only way in, and it was walking straight through.
+**The IR was weaker than its own producer, and the REGISTRATION GUARD is what
+carries that.** The RegelSpraak frontend (`frontends/regelspraak`) refuses to
+register a spelling that coincides with any of the eighteen built-in time-unit
+names, warns, and drops the entry. The grammar helps for most of those names
+but not all: *measured 2026-09-10 over all eighteen as a day-kind plural,*
+FOURTEEN do not parse — they are keywords, and the frontend exits non-zero
+without emitting anything (`Dagsoort de vaardag (mv: weken)`) — while FOUR
+parse cleanly: `uren`, `minuten`, `seconden`, `milliseconden`. For those four
+the frontend emits with exit 0 and the guard alone does the work; the emitted
+registry holds only the singular, and the warning lands in the document's own
+`diagnostics` array rather than on the console. Either way no document that
+frontend emits can carry this shape. That is exactly why the arm has to be a
+WIRE rule or nothing: a hand-built or foreign-produced document is the only way
+in, and it was walking straight through.
 
 **Measured 2026-09-10** on the binary of the day before this card (md5
 67becaba23c6d3364a9f1a080355541e): this document was `verifier: PASS`, while

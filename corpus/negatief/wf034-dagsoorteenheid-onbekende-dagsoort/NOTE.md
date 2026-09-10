@@ -55,13 +55,18 @@ resolves nothing. This arm asks whether one name RESOLVES, and compares
 nothing. The positions stay disjoint at the entry's own seam: since 2026-09-10
 WF-017 reads this map too, but only its KEYS (arms (a) and (b)), where this arm
 reads only the VALUES. Where the two could meet — a declared name as key whose
-value names no declared day kind — arm (b) steps back by construction, so the
-single diagnosis stays this arm's. *Measured 2026-09-10:* this document reports
-exactly one line, and it is WF-034's; the two shapes that were verifier-clean
-on 2026-09-09 (a registry key `"dagen": "schouwdag"` shadowing a calendar unit,
-and a declared day kind whose own singular is already the first one's plural)
-are now refused by those arms, each with its own witness under
-`corpus/negatief/wf017-*`.
+value names no declared day kind — arm (b) steps back, so the single diagnosis
+stays this arm's. **This document does not instantiate that touch point**: its
+offending key, `schouwdagen`, is not a declared name, so arm (b) is silent here
+through the declared-name lookup and never reaches the step-back. The step-back
+is therefore *measured by construction, 2026-09-10* — a declared key with an
+unresolvable value, with a null and with the empty string, three documents built
+for the measurement, each reporting exactly one line and each time this arm's.
+*Measured on this document, same day:* one line, and it is WF-034's. The two
+shapes that were verifier-clean on 2026-09-09 (a registry key
+`"dagen": "schouwdag"` shadowing a calendar unit, and a declared day kind whose
+own singular is already the first one's plural) are now refused by those arms,
+each with its own witness under `corpus/negatief/wf017-*`.
 
 **The key side carries no RESOLUTION rule, deliberately** (WF-017's collision
 arms are a different question and do read the keys). The carrying argument is

@@ -1486,7 +1486,7 @@ spelling is registered):
 | 1 | declared name × built-in calendar unit | **WF-017**, over `/dagsoorten` |
 | 2 | registered spelling (a registry key) × built-in calendar unit | **WF-017 arm (a)**, over `/dagsoortPerEenheid/<key>` |
 | 3 | declared name × declared name | **WF-001** (the `dagsoorten` namespace, ch. 2.1 identity) |
-| 4 | registered spelling × another day kind's spelling | **WF-017 arm (b)**, over `/dagsoortPerEenheid/<key>`, in the one form the wire can see |
+| 4 | registered spelling × another day kind's spelling | **WF-017 arm (b)**, over `/dagsoortPerEenheid/<key>` — in the one form the wire can see: a DECLARED name registered as another day kind's spelling. The collision as such leaves no trace (one value per key), so no clause can reach it |
 
 *Arm (a) — a key that shadows a calendar unit.* The key space is what a
 consumer consults to decide whether a unit spelling is a day-kind unit; a
@@ -1494,12 +1494,18 @@ spelling occurring as a key is admitted as a duration unit beside the calendar
 units (WF-035, WF-038). *Measured 2026-09-10:* before this arm, `"dagen":
 "schouwdag"` beside the ordinary entries was verifier-clean, so `datum + 5
 dagen` could read as day-kind arithmetic, while the same spelling DECLARED was
-already refused by clause 1. Here the IR was weaker than its own producer: the
-RegelSpraak frontend refuses at registration time to register a spelling that
-coincides with a built-in calendar unit and warns instead, and the built-in
-unit names are grammar keywords besides, so the source language cannot express
-the shape at all — a source with plural `weken` fails to parse. The shape is
-wire-only, which is exactly why it must be a wire rule or nothing.
+already refused by clause 1. Here the IR was weaker than its own producer, and
+what carries that is the REGISTRATION GUARD rather than the grammar: the
+RegelSpraak frontend refuses to register a spelling that coincides with any of
+the eighteen built-in time-unit names, warns, and drops the entry. *Measured
+2026-09-10 over all eighteen as a day-kind plural:* fourteen do not even parse
+— the names are grammar keywords, and the frontend exits non-zero without
+emitting (`Dagsoort de vaardag (mv: weken)`) — while four parse cleanly,
+`uren`, `minuten`, `seconden` and `milliseconden`. For those four the frontend
+emits with exit 0, the guard alone keeps the spelling out of the registry, and
+its warning surfaces in the emitted document's `diagnostics` array instead of
+on the console. Either way no document this frontend emits can carry the shape;
+it is wire-only, which is exactly why it must be a wire rule or nothing.
 Witness: `corpus/negatief/wf017-eenheidsleutel-schaduwt-kalendereenheid`.
 
 *Arm (b) — a declared name that binds to another day kind.* Here the producer
@@ -5012,14 +5018,18 @@ attachment, and one field beside it, by WF-097 below.
   since 2026-09-10 WF-017 also reads this map, but only its KEYS (ch. 2.9,
   arms (a) and (b)), where (s) reads only the VALUES. Where the two could meet —
   a declared name as key whose value names no declared day kind — arm (b) steps
-  back by construction and leaves the single diagnosis to (s), so no document is
-  reported twice for one defect. *Measured 2026-09-10:*
-  `corpus/negatief/wf034-dagsoorteenheid-onbekende-dagsoort` reports exactly one
-  line, and it is (s)'s.
+  back and leaves the single diagnosis to (s), so no document is reported twice
+  for one defect. NO corpus document instantiates that touch point, so it is
+  *measured by construction, 2026-09-10:* the three shapes of a declared name as
+  key with an unresolvable value, a null and the empty string each report
+  exactly one line, and each time it is (s)'s. (The witness
+  `corpus/negatief/wf034-dagsoorteenheid-onbekende-dagsoort` does not
+  instantiate it — its offending key is not a declared name, so arm (b) never
+  reaches the step-back there.)
   *The key side carries no RESOLUTION rule, by decision and not by omission*
   (it does carry WF-017's collision arms since 2026-09-10; the two questions are
-  independent). The carrying
-  argument is what the WIRE carries, not what the source language does. A day
+  independent). The carrying argument is what the WIRE carries, not what the
+  source language does. A day
   kind's plural reaches v0 as a FURTHER KEY of this same map and as no field of
   its own (ch. 2.9's `plural` lives on the v1 node), so nothing on the wire
   distinguishes a DECLARED plural from a DERIVED one or from an abbreviation —

@@ -58,18 +58,21 @@ under the ch. 2.1 identity — collapse whitespace, lower case.
 
 The document already declared the day kind `schouwdag` and registered no
 spelling for it. It now registers two for that day kind, and **neither value is
-byte-identical to the declaration**:
+byte-identical to the declaration** — they are the first two entries of the map
+as it stands today (the last two, and the second day kind they belong to,
+arrived with the WF-017 section below):
 
     "dagsoortPerEenheid": {
-      "schouwdag":   "SchouwDag",
-      "schouwdagen": "  schouwdag  "
+      "schouwdag":       "SchouwDag",
+      "schouwdagen":     "  schouwdag  ",
+      "stormvloeddag":   "stormvloeddag",
+      "stormvloeddagen": "stormvloeddag"
     }
 
-(The map's two further entries, and the second day kind they belong to, arrived
-with the WF-017 section below.) One entry per half of the identity:
-capitalisation, and collapsible whitespace. Both resolve, so the document stays verifier-clean, and that is
-the point — this is a POSITIVE witness, which is why it belongs in the
-cabinet and not in `corpus/negatief/`.
+One entry per half of the identity: capitalisation, and collapsible whitespace.
+Both resolve, so the document stays verifier-clean, and that is the point —
+this is a POSITIVE witness, which is why it belongs in the cabinet and not in
+`corpus/negatief/`.
 
 **Why it had to exist.** Measured 2026-09-09, before these two entries: every
 `dagsoortPerEenheid` value in all four zones was byte-identical to its
@@ -102,10 +105,9 @@ must bind to that same day kind (arm (b)). Both are refusals; a refusal pins a
 rejection and never a non-rejection, so the good binding needs a positive
 witness, and this is it.
 
-The cabinet declared exactly ONE day kind, which made arm (b) vacuous here: with
-one declaration every resolvable value is the own one, so nothing could be
-distinguished. It now declares a second, with its own definition and both its
-spellings registered:
+The cabinet declared exactly ONE day kind, so the only positive fact it could
+show was that one declaration's key resolving to itself. It now declares a
+second, with its own definition and both its spellings registered:
 
     "dagsoorten": ["schouwdag", "stormvloeddag"],
     "dagsoortPerEenheid": {
@@ -122,19 +124,23 @@ its own day kind and collides with no other declaration (`stormvloeddagen`,
 `schouwdagen`). No key is a built-in calendar unit, so arm (a) is silent too.
 The document stays verifier-clean, which is the point.
 
-What it pins, measured 2026-09-10 over 585 documents (four zones plus the
-read-only parity zone):
+**Why the entries are here — index hygiene, and that is the whole claim.** The
+WF index names this cabinet in WF-017's Golden column, so this is the document a
+reader of the index opens to see what the rule ADMITS. Before these entries it
+could not show the arm's positive form at all. It is deliberately not claimed
+that the cabinet is the only pin: the two mutants below are each caught
+elsewhere as well.
+
+Measured 2026-09-10 over 585 documents (four zones plus the read-only parity
+zone):
 
 - arm (b) compared byte-exactly instead of under the ch. 2.1 identity reports
-  `/dagsoortPerEenheid/schouwdag` here and takes gate 3 down — the same
-  normalisation entries the WF-034 section above installed, now load-bearing for
-  a second rule;
+  `/dagsoortPerEenheid/schouwdag` here and takes gate 3 down — but on the
+  document's PRE-CARD state too, since that entry came in with the WF-034
+  section above;
 - arm (b) comparing against the FIRST declared day kind instead of the key's OWN
-  reports `/dagsoortPerEenheid/stormvloeddag` here. That mutant is caught by
-  `corpus/golden/jutterswet-schouwrooster` as well — the cabinet is not its only
-  pin, and is not claimed to be. What the second declaration buys is that the
-  document the WF index names in WF-017's Golden column carries the arm's
-  positive form itself, instead of witnessing a rule it cannot exercise.
+  reports `/dagsoortPerEenheid/stormvloeddag` here, and is caught by
+  `corpus/golden/jutterswet-schouwrooster` as well.
 
 The refusing side is pinned from the other end by
 `corpus/negatief/wf017-eenheidsleutel-schaduwt-kalendereenheid` (arm (a)) and

@@ -189,8 +189,23 @@ was al `WF-017 FAIL`. Ook de producentkant hermeten:
       ERROR (line 1): syntaxfout: mismatched input 'weken' expecting {UPPER_ID, LOWER_ID}
     frontend exit != 0, geen ir geëmitteerd
 
-Dus wire-only, precies zoals de kaart mat: de frontend weigert de registratie
-én de brontaal kan de vorm niet uitdrukken.
+Dus wire-only — maar de grond is de REGISTRATIEWACHT, niet de grammatica. In de
+fixronde alle achttien ingebouwde namen als dagsoort-meervoud gemeten:
+**veertien** geven een parse-fout (exit ≠ 0, geen IR), **vier** parsen
+probleemloos — `uren`, `minuten`, `seconden`, `milliseconden` — en komen er met
+exit 0 door, waarna de wacht in `registreerDagsoortEenheid` (die alle achttien
+dekt) de ingang alsnog laat vallen. Voor die vier landt de WARNING niet op de
+console maar in het `diagnostics`-veld van het geëmitteerde document:
+
+    $ make ir FILE=bi-uren.rgs        # Dagsoort de vaardag (mv: uren);
+    ir: … geschreven naar bi-uren.json        frontend exit=0
+    dagsoortPerEenheid: {"vaardag": "vaardag"}    <- 'uren' niet geregistreerd
+    diagnostics: [{"severity":"WARNING","message":"dagsoort-eenheid 'uren' valt
+                   samen met een ingebouwde tijdseenheid en wordt niet als
+                   dagsoort-eenheid geregistreerd","line":0}]
+
+Geen enkel door deze frontend geëmitteerd document draagt de vorm dus, en dat
+is wat wire-only draagt.
 
 **Gat (b)**, end-to-end door de eigen frontend (jars in het gitignored `lib/`;
 de bron van `frontends/` is niet aangeraakt):
@@ -310,8 +325,19 @@ De grens tussen (s) en WF-017 is scherper geworden in plaats van vager: (s)
 leest de WAARDEN, de armen lezen de SLEUTELS, en arm (b) treedt terug waar ze
 elkaar zouden raken — hij vuurt alleen als de waarde een WÉL gedeclareerde
 dagsoort noemt, zodat een onoplosbare, lege of null-waarde de enkele diagnose
-van (s) blijft. Gemeten: dat negatief-document meldt nog steeds precies één
-regel, en die is van WF-034.
+van (s) blijft. **Geen corpusdocument instantieert dat raakpunt** — de
+bestaande WF-034-getuige niet: zijn foute sleutel `schouwdagen` is geen
+gedeclareerde naam, dus arm (b) zwijgt daar via de gedeclareerde-naam-opzoeking
+en komt aan de terugtred niet toe. Het terugtreden is daarom in de fixronde per
+constructie gemeten — gedeclareerde sleutel `schouwdag` met waarde `havendag`,
+met `null` en met `""`, drie voor de meting gebouwde documenten:
+
+    WF-034 FAIL /dagsoortPerEenheid/schouwdag: … names day kind 'havendag', …
+    WF-034 FAIL /dagsoortPerEenheid/schouwdag: … names no day kind at all: …
+    WF-034 FAIL /dagsoortPerEenheid/schouwdag: … names day kind '', …
+
+telkens precies één regel, en telkens WF-034's. De bestaande getuige is
+ongewijzigd gebleven; zijn NOTE zegt nu wat hij wél en niet instantieert.
 
 ### 6. Conformance-kant: een frontend-diagnostiek, spec-first
 
@@ -340,6 +366,13 @@ Gate 5 is meegedraaid omdat deze kaart een golden wijzigt; zijn
 NOT-replayed-melding voor de kast is onveranderd. Geen tellingsvloer geraakt,
 geen beschermd script aangepast.
 
+De gates 9, 11, 12 en 13 kunnen op deze kaart structureel niet bewegen: de
+gewijzigde golden krijgt geen case-bestand (dus geen kanaal in 12 — hij blijft
+`NOCASE` — en geen twistpositie in 13, dat alleen goldens mét cases aanraakt),
+hij draagt geen `bron.catala_en` (9) en geen fixture in de pariteitszone (11);
+de negatief-getuigen liggen in een zone die alleen gate 3 leest. De fixronde-lens
+draaide er negen groen.
+
 ### 8. Voorgestelde CONSTRUCTS-zin (rij 23, Day-kind definitions)
 
 Aan te vullen achter de bestaande "**Landed (2026-09-09, WF-034 arm (s) …)**":
@@ -347,9 +380,10 @@ Aan te vullen achter de bestaande "**Landed (2026-09-09, WF-034 arm (s) …)**":
 > **Landed (2026-09-10, WF-017 armen (a) en (b), IR-SPEC ch. 2.9):** de
 > botsings-MUST loopt nu overal waar een spelling GEREGISTREERD staat, niet
 > alleen over de gedeclareerde naam — arm (a): geen sleutel van
-> `dagsoortPerEenheid` valt samen met een ingebouwde kalendereenheid (wire-only:
-> de frontend weigert die registratie en de ingebouwde namen zijn
-> grammaticasleutelwoorden, dus geen bron kan de vorm uitdrukken); arm (b): een
+> `dagsoortPerEenheid` valt samen met een ingebouwde kalendereenheid (wire-only,
+> gedragen door de registratiewacht die alle achttien namen dekt; de grammatica
+> weigert er veertien, `uren`/`minuten`/`seconden`/`milliseconden` parsen wél en
+> worden door de wacht gedropt met de waarschuwing in `diagnostics`); arm (b): een
 > gedeclareerde dagsoortnaam die als sleutel voorkomt MOET aan zichzelf binden —
 > de wire-zichtbare vorm van de stille first-wins-botsing die de map zelf
 > verbergt (één waarde per sleutel). Beide onder de WF-001-identiteit; negatief
@@ -380,3 +414,43 @@ verouderd en kan vervallen.
   gate 12 en geen nieuwe verplichting in gate 5.
 - **`corpus/negatief/wf017-daykind-shadows-builtin`** is onveranderd gebleven:
   hij pint clausule 1 en die is niet gewijzigd.
+
+### 10. Fixronde (2026-09-10)
+
+Een tweede lezer reproduceerde alles (beide sweeps, de mutanten, de
+byte-identieke emissie inclusief canoniciteit, negen gates groen) en vond vier
+tekstuele fouten. Wat daarop is gecorrigeerd, met de meting die het draagt:
+
+1. **De grammatica-premisse was te sterk.** "De ingebouwde eenheidsnamen zijn
+   grammaticasleutelwoorden, dus de brontaal kan de vorm niet uitdrukken" geldt
+   voor **veertien** van de achttien namen. `uren`, `minuten`, `seconden` en
+   `milliseconden` parsen als dagsoort-meervoud probleemloos (exit 0, IR
+   geëmitteerd) en worden pas door de registratiewacht gedropt; hun WARNING
+   staat in het `diagnostics`-veld van het geëmitteerde document, niet op de
+   console. De wire-only-conclusie blijft staan maar rust nu op de wacht, die
+   alle achttien dekt. Gecorrigeerd in ch. 2.9, in de arm-(a)-comment in
+   `checks.ml` en in de NOTE van de arm-(a)-getuige.
+2. **De terugtred-meting citeerde het verkeerde document.**
+   `wf034-dagsoorteenheid-onbekende-dagsoort` instantieert het raakpunt niet
+   (zijn foute sleutel is geen gedeclareerde naam), dus zijn schone
+   één-regel-rapport bewijst de terugtred niet. Het terugtreden is per
+   constructie gemeten (§5 hierboven). Gecorrigeerd in ch. 4.6 (s), in de
+   (s)-comment in `checks.ml` en in de NOTE van die getuige — de getuige zelf
+   is niet aangeraakt.
+3. **De positieve-golden-motivering claimde te veel.** De twee mutanten worden
+   elk óók elders gevangen (de byte-exacte al door de pre-kaart-toestand van de
+   kast zelf, de eerste-declaratie-mutant door `jutterswet-schouwrooster`). De
+   NOTE noemt nu de eerlijke en voldoende grond: index-hygiëne — het document
+   dat de WF-index in WF-017's Golden-kolom noemt draagt de positieve vorm zelf.
+4. **Eén telling week af** ("582 documents" in een comment) — nu 585, gelijk aan
+   alle andere plekken.
+
+Kleiner: het verouderde twee-ingangen-fragment in de kast-NOTE toont nu eenmalig
+de vier ingangen, de weesregel in ch. 4.6 is herwikkeld, de kwalificatie bij
+tabelrij 4 van ch. 2.9 staat nu in de cel zelf, en
+`backlog/new/20260910-dagsoort-semantiek.md` is bijgewerkt (het pad wijst naar
+`done/`, en de sleutelgaten heten daar niet langer open — wat van WF-017
+openstaat is alleen de frontend-diagnostiek).
+
+`spec/CONSTRUCTS.md` bleef ook in deze ronde onaangeraakt: de rij-23-achterblijver
+en de §8-zin landen serieel bij de merge, zoals het registerkanaal voorschrijft.
