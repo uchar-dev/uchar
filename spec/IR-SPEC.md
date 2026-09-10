@@ -2672,8 +2672,13 @@ entry recorded held up and one did not. It was right that the ch. 4.1 row
 failed to name `de dag`, and right that `Rekenjaar` is carried by no document;
 the row settles both, the first by following the wire and the second by
 admitting a name no executor implements. It was wrong about the count: 13
-occurrences over 5 documents was measured before a rood document arrived, and
-the re-measurement of 2026-09-10 finds **14** over **6**. What the clause does
+occurrences over 5 documents was measured before the rood document
+`tijdsduur-reads-van-before-tot` arrived, and the re-measurement of 2026-09-10
+finds **14** over **6**. Both figures cover the same set — golden, rood,
+negatief and the parity zone — which this document names two ways ("the four
+zones" and "the four zones and the parity zone", the same 577 documents at
+2026-09-10); WF-098 and its witnesses spell the set out rather than rely on
+either label. What the clause does
 NOT take is the EMPTY half, `naam: null`, which is recorded with WF-098 and its
 measurement rather than here.)
 
@@ -2952,6 +2957,18 @@ dag`. What `de dag` IS remains what ch. 3.7 says — the bound day of a day-kind
 definition, not a session value — and giving it a node kind of its own is a v1
 question this clause does not answer.
 
+The set is **flat**: any of the three names at any expression position the walk
+reaches, with no position rule beside it. That flatness has a measured flank —
+a `Rekendatum` inside a day-kind CONDITION is verifier-clean (measured
+2026-09-10, one field of `jutterswet-schouwrooster` turned), because WF-031's
+purity list (ch. 3.7) names dates, date-components, eerste-paasdag, literals,
+parameters and day kinds but no context value at all, and its walk reads a
+`Constante` name-blind. This clause does not open that flank — the arm it
+replaced was inert there too — but it makes it visible, and it is recorded for
+the day-kind semantics card rather than closed here: whether a session value
+may enter a stratum-0 predicate (ch. 5.4) is a semantics question, not a
+spelling one.
+
 **`Rekenjaar` stays in the set without a carrier.** No document in any zone
 carries it, and the reference interpreter faults on it by name ("not exercised
 by any corpus case"). That fault is the honest answer for a name the spec
@@ -2992,10 +3009,11 @@ committed source, and the 14 whose source writes `hij`, not one emits a
 aan hij` emits two of them with `diagnostics: []` — but it leaks carrying the
 UNKNOWN-TYPE SENTINEL (`Onbekend`, "niet opgelost"), which WF-034's type
 prologue already refuses at the same node. That is structural, not a sample:
-the frontend has exactly THREE `Constante` construction sites, and the `hij`
-one hard-codes the unknown type, so no `hij` can reach the wire well-typed. So this clause cuts no conforming
-producer route: it adds a second, name-level line at a position the verifier
-rejected already, and the frontend's own pronoun handling is untouched by it.
+the frontend has exactly THREE `Constante` construction sites and the `hij`
+one hard-codes the unknown type, so no `hij` reaches the wire well-typed.
+This clause therefore cuts no conforming producer route: it adds a second,
+name-level line at a position the verifier rejected already, and the
+frontend's own pronoun handling is untouched by it.
 
 **Cost: none.** Over the 578 documents of the four zones plus the parity zone
 that predate this clause, all 14 context values spell an admissible name
@@ -3003,13 +3021,14 @@ verbatim; the two witnesses are the only documents anywhere that do not. The
 before/after sweep over all 580 moves exactly those two verdicts and not one
 report line elsewhere. The check reaches every position the wire uses, and it
 does so structurally rather than by sample: the arm rides the expression walk,
-so it reaches every expression position that walk reaches. Both ends measured —
-all 14 corpus nodes twisted one at a time fire (a day-kind definition's flat
-composite, a nested composite, a function argument, the date index of a
-temporal read, a `Let` body), and so do **320 of 329** corpus path skeletons
-under an injected context value, the 9 that do not being slots that cannot
-structurally carry a `Constante` or where another rule already rejects the
-document.
+so it reaches every expression position that walk reaches. Both ends measured
+2026-09-10 — all 14 corpus nodes twisted one at a time fire (a day-kind
+definition's flat composite, a nested composite, a function argument, the date
+index of a temporal read, a `Let` body), and so do **320 of the 329** distinct
+expression-slot shapes the corpus exhibits, under an injected context value.
+The 9 that do not split into two measured classes: **7** are slots that cannot
+structurally carry a `Constante` at all, and **2** are slots where another
+rule already rejects the document.
 
 ### 4.1a The navigated read (WF-053)
 

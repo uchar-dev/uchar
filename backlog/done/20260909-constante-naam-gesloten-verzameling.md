@@ -226,10 +226,11 @@ bereikt daarmee elke expressiepositie die die walk bereikt. Beide uiteinden
 gemeten: alle **14** `Constante`-posities zijn één voor één getwist en de check
 vuurt op alle 14, met de positie in de melding (plat `ALLE`-samenstel van een
 dagsoortdefinitie, genest samenstel, functie-argument, datumindex van een
-`TemporalRead`, `Let`-body); en van de **329** corpuspad-skeletten vuren er
-**320** onder een geïnjecteerde contextwaarde — de 9 die dat niet doen zijn
-slots die structureel geen `Constante` kunnen dragen of waar een andere regel
-het document al afwijst (gemeten in de fixronde-lens, 2026-09-10).
+`TemporalRead`, `Let`-body); en van de **329** onderscheiden expressie-slot-
+vormen die het corpus vertoont vuren er **320** onder een geïnjecteerde
+contextwaarde. De 9 die dat niet doen vallen in twee gemeten klassen: **7**
+slots die structureel geen `Constante` kunnen dragen, en **2** waar een andere
+regel het document al afwijst (gemeten in de lensrondes, 2026-09-10).
 
 ### De vier besluiten, met de motivering die in de spec staat
 
@@ -293,23 +294,56 @@ krijgen.
   één lezer dereferencet. Vastgelegd met zijn meting in ch. 4.1 (de
   (n)/(o)-precedent), niet stilzwijgend meegenomen: de kaart besliste over
   spelling, niet over aanwezigheid.
-- **De positie van `de dag`.** De verzameling is plat: `de dag` is overal
-  toelaatbaar, niet alleen in een dagsoortdefinitie. Een positieregel is een
-  aparte clausule met een eigen beslissing en een eigen getuige.
+- **De positie van de drie namen.** De verzameling is plat: elk van de drie is
+  overal toelaatbaar, `de dag` niet alleen in een dagsoortdefinitie en
+  `Rekendatum` niet alleen erbuiten. Een positieregel is een aparte clausule
+  met een eigen beslissing en een eigen getuige — en de andere kant van die
+  vlakheid is de gemeten flank (b) hieronder, geadresseerd op
+  `backlog/new/20260910-dagsoort-semantiek.md`.
 - **`corpus/golden/**`** — onder besluit 2 was geen drager nodig; geen golden
   is aangeraakt.
 
-### Gemeld, niet gekaart
+### Gemeld, niet gekaart → **wél geadresseerd**
 
-- **`RUNTIME-SEMANTICS.md` ch. 8 kent `de dag` niet.** De runtime-betekenis van
-  `de dag` is de dagsoortevaluatie van ch. 3.7 — de dag waarop het predicaat
+Beide kloven hieronder zijn gemeld door deze kaart en niet door haar gesloten.
+Ze hebben nu een adres: **`backlog/new/20260910-dagsoort-semantiek.md`**, in
+deze sessie aangemaakt. Dat kaartje bestond nog niet terwijl er al **vier**
+kaarten naar doorverwezen (`20260905-dagsoort-per-eenheid-golden`,
+`20260906-dagsoort-kruisingsarm`, `20260909-wf017-sleutel-en-spellingsbotsing`
+en deze); het verzamelt die doorverwijzingen én draagt de twee kloven.
+
+- **(a) `RUNTIME-SEMANTICS.md` ch. 8 kent `de dag` niet.** De runtime-betekenis
+  van `de dag` is de dagsoortevaluatie van ch. 3.7 — de dag waarop het predicaat
   van de definitie wordt toegepast — maar ch. 8 (tijdselectie) noemt alleen
   `Rekendatum` en `Rekenjaar`: ch. 8.2 schrijft dat de evaluatiedatum
   "available to expressions solely as the v0 execution-date constant" is. Dat
   is een **bestaande** kloof, niet door deze kaart geopend; hij werd zichtbaar
   doordat de ch. 4.1-rij `de dag` nu benoemt. De rij verwijst er expliciet
-  naar. `spec/RUNTIME-SEMANTICS.md` is **niet aangeraakt** — dichten hoort bij
-  de dagsoort-semantiekkaart (§6.10/§6.11, out of scope van deze kaart).
+  naar. `spec/RUNTIME-SEMANTICS.md` is **niet aangeraakt**. Bijbehorende
+  meting, uit `IR-SPEC.md` ch. 5.4: **geen enkele uitvoerder evalueert vandaag
+  een dagsoortpredicaat** — de predikaatsoort wordt geweigerd in `ref/` én
+  `backends/clingo` — dus er is vandaag ook geen uitvoerder die de betekenis
+  zou kunnen dragen.
+- **(b) Een `Rekendatum` BINNEN een dagsoortvoorwaarde is verifier-PASS.** De
+  verzameling van WF-098 is **plat**: elk van de drie namen op elke
+  expressiepositie, zonder positieregel ernaast. Zelf gemeten 2026-09-10, één
+  veld van `corpus/golden/jutterswet-schouwrooster` omgezet (`de dag` →
+  `Rekendatum`, binnen `resolvedDagsoorten[0]/voorwaarde`):
+
+      verifier: PASS
+      ref:      oracle: PASS (7 expectations)
+
+  De sessie-evaluatiedatum staat dus in een **stratum-0**-predicaat en niets
+  weigert het. Twee redenen, allebei gecontroleerd: WF-031's eigen
+  toelatingslijst (`IR-SPEC.md` ch. 3.7) noemt "dates, date-components,
+  eerste-paasdag, literals, parameters and other day-kind names" en **geen
+  enkele contextwaarde**; en de zuiverheidswandeling in
+  `spec/verifier/lib/checks.ml` (±r. 2581) matcht `Constante _` **naamblind**
+  en telt hem als puur. **Niet door deze kaart veroorzaakt** — de arm die
+  WF-098 verving gaf daar ook `[]` — wel door haar zichtbaar. De vraag eronder
+  is een semantiekvraag, geen spellingsvraag: mag een sessiewaarde een
+  stratum-0-predicaat binnen? Half benoemd in de clausule zelf (ch. 4.1, waar
+  de platte verzameling wordt vastgesteld), voluit in het nieuwe kaartje.
 
 ### Eén vondst die de kaart niet voorzag: de `hij`-producentroute
 
@@ -363,18 +397,52 @@ toelaatbaar zijn en onaangeraakt blijven.
 
 ### Voorgestelde CONSTRUCTS-tekst (hoofdsessie, serieel — niet aangeraakt)
 
-Rij 25 (ContextValue) draagt de nieuwe clausule. Voorstel voor de
-Landed-zin op die rij:
+Rij 25 draagt de nieuwe clausule, en **twee delen van de rij zijn na WF-098
+onwaar**. De rij luidt vandaag:
 
-> **Landed (2026-09-10):** WF-098 (`IR-SPEC.md` ch. 4.1) maakt de v0-`naam`
-> een GESLOTEN VERZAMELING van drie — `Rekendatum`, `Rekenjaar`, `de dag` —
+> `| 25 | Evaluation-context globals (rekendatum/rekenjaar) | §4.2, §5.3 | core | kernel | split v0's `Constante` grab-bag: the evaluation-date globals are a kernel context reference; subject/pronoun referents ("hij", "de dag") are surface forms the frontend resolves away | … |`
+
+Vier voorgestelde wijzigingen, (a)–(d):
+
+**(a) `de dag` verlaat de voornaamwoord-opsomming.** "subject/pronoun referents
+("hij", "de dag") are surface forms the frontend resolves away" wordt
+`… referents ("hij") are surface forms the frontend resolves away`. `hij` staat
+daar terecht — gemeten: van de 38 goldens met een bron schrijven er 14 `hij` en
+geen draagt een `Constante`, en waar hij wél lekt draagt hij het
+onbekend-type-sentinel dat WF-034 al afwijst. `de dag` niet: de frontend
+**bouwt** hem (`ExpressieBouwer.java:398`, een eigen constructieplek met
+`Datatype.DatumInDagen`) en de wire draagt er **11 van de 14**.
+
+**(b) De rijtitel wordt incompleet en moet de derde naam meekrijgen.**
+"Evaluation-context globals (rekendatum/rekenjaar)" →
+`Evaluation-context globals (rekendatum/rekenjaar/de dag)`. Voorstel om
+"globals" te laten staan met de kanttekening in de cel dat `de dag` geen
+sessieglobal is maar een gebonden dag — de titel is een index, niet de
+definitie.
+
+**(c) De splitsingsclaim moet worden bijgesteld.** Het eerdere voorstel zei "de
+v1-splitsing wordt er niet door verlegd"; dat is onjuist. Voor `hij` verschuift
+er niets, maar **voor `de dag` verschuift de splitsing wél**: hij ging in rij 25
+naar de "surface form"-helft en gaat nu naar de kernelhelft, als toegelaten
+contextwaarde. Wat v1 met hem doet (eigen knoopsoort of niet) blijft open.
+
+**(d) Voorgestelde Landed-zin**, met elke verwijzing documentdragend
+(CONSTRUCTS-conventie):
+
+> **Landed (2026-09-10):** WF-098 (`IR-SPEC.md` ch. 4.1) maakt de v0-`naam` een
+> GESLOTEN VERZAMELING van drie — `Rekendatum`, `Rekenjaar`, `de dag` —
 > byte-exact gekruist. Dat is geen resolutie maar een opsomming: geen tabel in
-> het document verklaart een contextwaarde. De v1-splitsing die deze rij
-> beschrijft wordt er niet door verlegd, maar de rij krijgt er wel een derde
-> naam bij: `de dag`, de gebonden dag van een dagsoortdefinitie (ch. 3.7), die
-> de wire draagt en die v0 als ContextValue spelt omdat er geen knoopsoort voor
-> is. **Of v1 er een eigen knoopsoort van maakt is een open punt** — deze kaart
-> beslist het niet en de rij noteert het. Byte-exact is de tweede helft van de
+> het document verklaart een contextwaarde. De landing **verlegt de splitsing
+> van deze rij voor één van de twee genoemde voornaamwoordreferenten**: `de dag`
+> is géén surface form die de frontend wegwerkt — de frontend bouwt hem
+> (`ExpressieBouwer.java:398`) en de wire draagt er 11 van de 14 — maar de
+> gebonden dag van een dagsoortdefinitie (`IR-SPEC.md` ch. 3.7), die v0 als
+> ContextValue spelt omdat er geen knoopsoort voor is. `hij` blijft wél een
+> surface form: waar hij lekt draagt hij het onbekend-type-sentinel dat WF-034
+> al afwijst. **Of v1 van `de dag` een eigen knoopsoort maakt is een open
+> punt** — deze kaart beslist het niet en `IR-SPEC.md` ch. 4.1 noteert het,
+> samen met de vaststelling dat `RUNTIME-SEMANTICS.md` ch. 8 zijn
+> runtime-betekenis nog niet draagt. Byte-exact is de tweede helft van de
 > landing: `ref` en de ASP-backend normaliseerden, de twee Drools-lezers van
 > hetzelfde veld zijn het onderling oneens (`equals` versus
 > `equalsIgnoreCase`), en met de naam op de wire vastgezet is die divergentie
@@ -383,6 +451,17 @@ Landed-zin op die rij:
 ### Nummerverschuiving: WF-098 is vergeven
 
 Deze kaart landt eerder dan twee latere kaarten die **WF-098** als
-kandidaat-nummer noemen. Die schuiven op naar **WF-099** en verder. De
-hoofdsessie corrigeert dat bij die kaarten; hier is alleen vastgelegd dat het
-nummer nu bezet is.
+kandidaat-nummer noemden. Die schuiven op naar **WF-099** en verder, en dat is
+**in deze kaart al doorgevoerd** — niet doorgeschoven naar de hoofdsessie: de
+fixronde-commit `289448e` werkte beide kaarten zelf bij. Kandidaat-status en
+schuifafspraak ("wie het eerst landt gebruikt het nummer, de ander schuift op")
+staan er ongewijzigd in.
+
+**Buiten de oorspronkelijke May-touch-formulering, geregistreerd.** Die twee
+bestanden — `backlog/new/20260910-geneste-aggregatie-rolketen.md` en
+`backlog/new/20260910-reverse-rol-via-naam.md` — vallen wél binnen `backlog/`,
+dat de kaart mag aanraken, maar niet binnen wat de kaart ermee bedoelde (de
+eigen kaart verplaatsen). Ze zijn gewijzigd **op instructie van de
+hoofdsessie**, en de wijziging is **puur de nummercorrectie**: het
+kandidaat-nummer plus één regel die zegt waarom. Geen inhoud, geen scope, geen
+acceptance van die kaarten geraakt.
