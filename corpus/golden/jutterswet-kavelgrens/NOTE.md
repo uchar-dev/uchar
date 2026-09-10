@@ -93,15 +93,19 @@ wrong answer that changes no attribute — would be invisible here.
    and `corpus/rood/runaway-recursion`. (Two more carry the shape in
    `corpus/negatief` — `wf012-ambiguous-roles`,
    `wf033-no-creation-member` — and fall **outside** this count by
-   construction: the negatief zone holds no case files at all and is
-   rejected at the verifier, so nothing there can pin a replayed
-   value.)
+   construction. The criterion is REPLAY, not the presence of pinned
+   values: golden and rood are both replayed — golden pins values, rood
+   pins the fault it must raise, and neither of the red zone's 26 cases
+   carries an `expected` at all — whereas a negatief document is only
+   ever READ, by the verifier, and never executed. A shape that is
+   never run cannot witness what an executor does with it.)
 
    What separates this golden from all five is narrower than "supplies
    and reads", and worth stating exactly. `anchor/jutterswet-erflijn`
    does supply `opvolging.opvolger` from case input **and** read that
-   relation — not from a rule, but through its fact creation's join
-   (`feitCreaties[0].joinRol = {opvolging, opvolger}`). It reads the
+   relation — not from a rule, but through the joins of its two fact
+   creations, both of which carry the same
+   `joinRol = {opvolging, opvolger}`. It reads the
    role the case **supplied**, though. The other four supply no role
    keys at all (object creation, or no relation read). So the property
    no corpus document had before is this one: **reading the direction

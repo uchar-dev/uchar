@@ -465,7 +465,19 @@ van uit een draai afgelezen: het document declareert `consistenties`,
 defaults, en zijn twee regels zijn kale genavigeerde toekenningen — er is dus
 geen construct aanwezig dat een §9.5-feit kan afzetten. Hij staat er toch,
 omdat zonder hem een spurieuze kanaalafzetting — de enige klasse fout antwoord
-die geen attribuut verandert — hier onzichtbaar zou zijn. De dragende regels noemen de richting die
+die geen attribuut verandert — hier onzichtbaar zou zijn. Hij staat als laatste
+verwachting, de plaatsing die het hele corpus aanhoudt.
+
+*Correctie op de historie:* de commit-boodschap van `48f5595` vatte die
+plaatsingstelling verkeerd samen als "379 van de 383 dragers doen dat zo". Het
+juiste beeld is sterker: **alle** 383 dragers zetten `consistent` als laatste,
+nul uitzonderingen; 379 was het aantal dragers met méér dan één verwachting
+(de overige vier dragen `consistent` als hun enige verwachting, waar eerste en
+laatste samenvallen). Het getal is nooit in een artefact terechtgekomen —
+alleen in die boodschap, en boodschappen zijn historie — dus deze zin is de
+correctie.
+
+De dragende regels noemen de richting die
 de case niet leverde: `case2` (alleen de `zuidbuur`-poten) leest
 `K2.noordbuurbreedte = 10` en `K3.noordbuurbreedte = 20` terwijl geen enkele
 rolregel in dat bestand `noordbuur` noemt; `case3` (alleen de
@@ -481,14 +493,18 @@ to-one — `anchor/jutterswet-erflijn`, `anchor/jutterswet-wachtersketen`,
 `synth2-budgetgrens-onder`, `corpus/rood/finite-chain-over-budget` en
 `corpus/rood/runaway-recursion`. Twee dragers meer staan in `corpus/negatief`
 (`wf012-ambiguous-roles`, `wf033-no-creation-member`) en vallen per constructie
-**buiten** deze telling: die zone draagt geen enkel casebestand en wordt bij de
-verifier afgewezen, dus daar kan niets een afgespeelde waarde pinnen.
+**buiten** deze telling. Het criterium is AFSPELEN, niet het dragen van gepinde
+waarden: golden en rood worden allebei afgespeeld — golden pint waarden, rood
+pint de fout die moet vallen, en géén van de 26 rode cases draagt een
+`expected` — terwijl een negatief-document alleen wordt GELEZEN, door de
+verifier, en nooit uitgevoerd. Een vorm die nooit draait kan niet getuigen van
+wat een uitvoerder ermee doet.
 
 Wat dit document van die vijf scheidt is smaller dan "vult én leest", en het is
 de moeite waard het precies te zeggen. `anchor/jutterswet-erflijn` vult
 `opvolging.opvolger` wél vanuit case-invoer **en** leest die relatie ook — niet
-vanuit een regel, maar via de join van zijn feitcreatie
-(`feitCreaties[0].joinRol = {opvolging, opvolger}`). Alleen: hij leest de rol
+vanuit een regel, maar via de joins van zijn twee feitcreaties, die allebei
+dezelfde `joinRol = {opvolging, opvolger}` dragen. Alleen: hij leest de rol
 die de case zelf leverde. De andere vier dragen in het geheel geen
 case-rolsleutels (objectcreatie, of geen relatielezing). De eigenschap die geen
 enkel corpusdocument eerder had is dus deze: **de richting lezen die de case
