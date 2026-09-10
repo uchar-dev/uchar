@@ -196,10 +196,22 @@ benoemde** (62 distincte eigenschapsnamen; 144 die hun `string` rechtstreeks in
 hun eigen `type` dragen, plus `Fold.function` en `MapList.function`, die het
 via een `oneOf`-tak naast een `Lambda` toelaten — die twee ontbraken in de
 eerste telling van 144 en zijn hier nagemeten) **plus 15 anonieme**
-(map-waarden en array-items: dagsoortnamen, enumeratiewaarden, navigatiepad-
-stappen, dimensielabels, sleutel- en ledenlijsten, bronannotaties). Geen van
-die 15 is datumdragend, en de twee `oneOf`-posities evenmin — het zijn
-functienamen. Datumdragend zijn er precies twee soorten:
+(map-waarden en array-items). Die vijftien, voluit, want een opsomming die er
+elf noemt wekt dezelfde volledigheidsindruk zonder hem waar te maken:
+dagsoortnamen (`dagsoorten`-items en `dagsoortPerEenheid`-map-waarden),
+enumeratie- en dimensiewaarden (`Enumeratie.waarden`, `Dimensie.waarden`),
+navigatiepad-stappen (`AttribuutRef.navigatiePad`), dimensielabels
+(`DimensieCel.labels`, `DimensieSelectie.labels`), vier `Objecttype`-tabellen
+(`attribuutMeervoud` en `attribuutTijdlijnNaam` als map-waarden,
+`attribuutDimensies` als map-waarden die zelf lijsten van dimensienamen zijn,
+en `kenmerken` als items), sleutellijsten (`ResolvedUniciteit.sleutels`,
+`UniciteitUnieBron.sleutels`), de ledenlijst (`ResolvedRegelGroep.leden`) en
+de bronannotaties (`ResolvedRegel.bronAnnotaties`). Geen van die 15 is
+datumdragend — het zijn zonder uitzondering namen, labels en sleutels — en de
+twee `oneOf`-posities evenmin: dat zijn functienamen. Het schema kent geen
+`patternProperties`, geen `prefixItems` en geen `additionalProperties: true`,
+dus er is geen vierde categorie waar een string zich kan verbergen.
+Datumdragend zijn er precies twee soorten:
 
 | positie | vorm | besluit |
 | --- | --- | --- |
@@ -252,7 +264,9 @@ op de negatief-getuige die de verifier-arm daar wél oplevert.
 ### Rood eerst
 
 De getuige is
-`backends/drools/src/test/java/io/github/yhavinga/regelspraak/loader/IrWireDatumWitnessTest.java`,
+`backends/drools/src/test/java/io/github/yhavinga/regelspraak/loader/IrWireDatumWitnessTest.java`
+(18 gevallen bij deze rood-groen-meting; de klasse telt er nu 19 — de
+naamloze-drager-getuige kwam er in de slotronde bij),
 een nieuwe klasse in de loader-testmap, in de vorm van `CaseWireDatumWitnessTest`
 (zelfde helperopzet, zelfde twee-takken-assertie, zelfde uitsluiting van het
 "niet gedragen"-kanaal — daar `Excluded`, hier `IrLoader.Refusal`). Een eigen
@@ -322,13 +336,19 @@ Drie lagen, elk met een eigen bereik, en geen ervan maakt de andere overbodig:
 
 1. **Het schemapatroon (gate 2)** is de VORM en dekt elk document dat langs de
    gate komt, voor alle lezers tegelijk. Het kan de kalender niet kennen:
-   `2026-02-30` matcht en passeert. En het is één lexeemklasse ruimer dan de
-   klem: Python's `re`, waarmee `jsonschema` en dus gate 2 draait, laat `$` ook
-   matchen vóór één afsluitende newline, dus `"2026-01-01\n"` passeert het
-   patroon terwijl `matches()` in Java het hele lexeem eist en hem weigert
-   (beide gemeten; `"\n2026-01-01"` en `"2026-01-01\n\n"` vallen in allebei af).
-   Die klasse faalt dus luid bij de eerstvolgende lezer in plaats van stil door
-   te lopen — en de acht datumpatronen van `uchar-case-v0` delen hem.
+   `2026-02-30` matcht en passeert. Er is nog één lexeemklasse waar laag 1
+   vandaag ruimer is dan de klem, en die is een **validator-divergentie, geen
+   eigenschap van de laag zelf**: Python's `re`, waarmee `jsonschema` en dus
+   gate 2 draait, laat `$` ook matchen vóór één afsluitende newline, dus
+   `"2026-01-01\n"` passeert daar terwijl `matches()` in Java het hele lexeem
+   eist en hem weigert. Onder ECMA-262 — het regexdialect dat JSON Schema
+   normatief noemt — matcht `^…$` daar NIET vóór een newline; gemeten met node:
+   `false`. Een conforme validator sluit de klasse dus, en de laagverhouding
+   verschuift dan: het verschil zit niet tussen patroon en klem maar tussen
+   twee validators. (`"\n2026-01-01"` en `"2026-01-01\n\n"` vallen in alle drie
+   de engines af.) Zolang gate 2 op Python draait faalt de klasse luid bij de
+   eerstvolgende lezer in plaats van stil door te lopen — en de acht
+   datumpatronen van `uchar-case-v0` staan er precies zo in.
 2. **De klem in de Drools-lezer** is de vorm PLUS de kalender, op de drempel
    van één executor. Zijn bereik is precies wat het patroon niet ziet: het
    met de hand gebouwde of gegenereerde document dat rechtstreeks een executor
@@ -357,7 +377,7 @@ negatief-getuige daarbij en niet hier.
 | 2 `check-ir-schema.sh` | PASS | 194 documenten valideren en round-trippen, vloer 192 |
 | 3 `check-verifier.sh` | PASS | 194 golden clean; 362 negatief geweigerd, vloer 350 |
 | 8 `check-rood.sh` | PASS | 26 rode cases falen zichtbaar in ref én clingo, vloer 26; Drools-poot 6 fault-pinned, 20 not-carried |
-| 12 `check-drools.sh` | PASS | **JUnit 294, vloer 239**; de getuige draagt er 18 blijkens zijn surefire-XML, dus de suite stond vóór deze kaart op 276 (afgeleid uit die twee metingen, niet apart gedraaid). played **121** = `EXPECTED_PLAYED`, ongewijzigd. auto-excluded 44, channel floor 47 op naam gepinde niet-gespeelde goldens, value-divergence 1, no-case 2 — en die vier bewegen niet ongezien: het kanaalpin faalt op naam zodra een golden van kanaal wisselt, en de gelijkheid op played faalt zodra er een bijkomt |
+| 12 `check-drools.sh` | PASS | **JUnit 295, vloer 239**; de getuige draagt er 19 blijkens zijn surefire-XML (18 bij de eerste ronde, plus de naamloze-drager-getuige uit de slotronde), dus de suite stond vóór deze kaart op 276 (afgeleid uit die twee metingen, niet apart gedraaid). played **121** = `EXPECTED_PLAYED`, ongewijzigd. auto-excluded 44, channel floor 47 op naam gepinde niet-gespeelde goldens, value-divergence 1, no-case 2 — en die vier bewegen niet ongezien: het kanaalpin faalt op naam zodra een golden van kanaal wisselt, en de gelijkheid op played faalt zodra er een bijkomt |
 | 13 `check-reftype-derivation.sh` | PASS | 74 annotaties getwist over 15 goldens (vloer 74), 70 replays reproduceren de ongetwiste uitkomst, 13 PLAYED via de DRL-tekst-tak (vloer 13), 0 survivors |
 
 Geen vloer verhoogd, geen `EXPECTED_PLAYED` aangeraakt, geen gate-script
@@ -395,3 +415,13 @@ pad — en hoort bij de volle set die vóór de merge draait.
   zonder `feittype`) en alle vier de corpusgetuigen dragen een `feittype`, dus
   de tweede tak is gedekt door constructie — één gedeelde helper — en niet
   door een document.
+- **De naamprefix van de melding heeft een terugval, en die is nu benoemd én
+  bewaakt.** `naam` is `["string","null"]` op alle negen dragers, dus een
+  naamloze drager is een geldig wire-document; de eerste versie van de klem
+  degradeerde de melding daar stil tot een kaal `'geldigheid.vanaf'`, wat in
+  een document met honderden vensters niets aanwijst. Gemeten: **0 van de 424
+  dragers** in golden plus rood is naamloos, dus geen enkele bestaande meting
+  raakte dit. De klem noemt nu de knoopsoort — `<unnamed ResolvedRegel>` —
+  en `een_naamloze_drager_valt_terug_op_zijn_knoopsoort` pint het; tegen de
+  oude terugval valt die getuige met precies de gedegradeerde melding, dus de
+  assertie bijt (gemeten, niet aangenomen).

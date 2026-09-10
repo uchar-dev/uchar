@@ -223,6 +223,23 @@ class IrWireDatumWitnessTest {
         assertTrue(boven.contains(VENSTERREGEL), "and names its carrier too: " + boven);
     }
 
+    @Test void een_naamloze_drager_valt_terug_op_zijn_knoopsoort() throws Exception {
+        // A carrier's `naam` is ["string","null"] on all nine kinds, so a nameless carrier is a legal wire
+        // document — no corpus document is one (0 of 424 measured 2026-09-11), which is why the fall-back
+        // would otherwise never be exercised and could silently degrade to a bare "geldigheid.vanaf" that
+        // locates nothing. The refusal names the node kind instead, and still names the bound.
+        JsonNode root = wire(VENSTER);
+        JsonNode regel = root.path("resolvedRegels").path(0);
+        ((ObjectNode) regel).putNull("naam");
+        ((ObjectNode) regel.path("geldigheid")).put("vanaf", "+012026-01-01");
+
+        String melding = weigering(() -> IrLoader.load(root), "+012026-01-01", "a bound on a nameless carrier");
+        assertTrue(melding.contains("ResolvedRegel"), "the refusal names the node kind: " + melding);
+        assertTrue(melding.contains("geldigheid.vanaf"), "and still names the bound: " + melding);
+        assertFalse(melding.contains("'geldigheid.vanaf'"),
+                "and never degrades to the bare field, which locates nothing: " + melding);
+    }
+
     // ---------------- the reach: every node kind that carries a window ----------------
 
     @Test void elke_geldigheidsdrager_wordt_langs_dezelfde_klem_gelezen() throws Exception {

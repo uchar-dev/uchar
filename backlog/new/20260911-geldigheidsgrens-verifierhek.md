@@ -55,11 +55,29 @@ groen; zijn beet staat alleen in kaartproza. Dat is niet nieuw en niet
 bijzonder voor deze twee sleutels: **de tien patronen van
 `uchar-case-v0` staan in precies dezelfde positie**, dus dit is de bestaande
 huistoestand van het hele schemapark, geen regressie van de kaart die het
-patroon voorstelde. De vorm van de bewaking ligt voor de hand zodra deze kaart
-tóch een `corpus/negatief/`-getuige oplevert: één document waarvan de grens
-buiten het patroon valt, dat door gate 2 wordt geweigerd, wordt daarmee ook de
-getuige die een verwijderd patroon laat opvallen. Beslis expliciet of dat hier
-meegaat of een eigen kaart wordt; het is geen reden om die keuze weg te laten.
+patroon voorstelde.
+
+**Let op welke bewaking hier NIET werkt**, want de voor de hand liggende is de
+verkeerde. Een `corpus/negatief/`-document bewaakt het patroon niet: gate 2
+valideert uitsluitend `corpus/golden` en `corpus/rood`
+(`check-ir-schema.sh:50`) en ziet de negatief-zone nooit; zo'n document wordt
+door gate 3 geweigerd, om zijn WF-regel, en het patroon verwijderen blijft dan
+nog steeds een stille groen. De andere kant werkt evenmin: een golden- of
+rood-document kan het patroon niet bewaken zonder er zelf buiten te vallen, en
+dan faalt gate 2 altijd in plaats van alleen na verwijdering.
+
+De patroonbewaking vergt dus een eigen mechanismekeuze, en die staat open:
+
+- een **negatiefzone voor gate 2** — documenten die tegen het schema MOETEN
+  falen. Gate 2 kent vandaag geen zone die moet falen (gates 3 en 8 wel), dus
+  dit is een gate-uitbreiding en daarmee een voorstel op een beschermd script;
+- een **zelftest in gate 2** die het patroon tegen een vaste lexeemlijst
+  houdt, zonder corpusdocument;
+- **niets**, met de reden opgeschreven — de huistoestand blijft dan gelijk
+  voor alle elf patronen in het schemapark, wat verdedigbaar is zolang het
+  expliciet is.
+
+Beslis welke; het is geen reden om de keuze weg te laten.
 
 ## De vraag die beslist moet worden
 
@@ -88,10 +106,10 @@ case-wire-klemmen zijn neergezet.
 - Bij "geen WF-regel": de reden staat in het Result én als commentaar bij
   `validity_overlaps`, zodat de volgende lezer de onafgedwongen aanname niet
   opnieuw hoeft te ontdekken.
-- De bewakingsvraag hierboven is expliciet beantwoord: óf de
-  negatief-getuige bewaakt het schemapatroon mee (en het Result laat zien dat
-  het verwijderen van het patroon dan rood wordt), óf er staat waarom dat een
-  eigen kaart is. Stilzwijgend overslaan telt als niet gedaan.
+- De bewakingsvraag hierboven is expliciet beantwoord met één van de drie
+  genoemde mechanismen, en bij "wel bewaken" laat het Result zien dat het
+  verwijderen van het patroon dan rood wordt. Stilzwijgend overslaan telt als
+  niet gedaan.
 - Gates 3 en 2 groen; geen telling beweegt behalve de negatief-teller bij
   "WF-regel".
 

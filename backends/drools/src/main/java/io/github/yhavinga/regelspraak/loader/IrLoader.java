@@ -505,12 +505,18 @@ public final class IrLoader {
      *  malformed bound can be reported against the declaration that carries it. A document holds hundreds of
      *  windows (848 across the corpus as it stands) and nine node kinds carry one, so "vanaf" alone does not
      *  locate the defect. This mirrors {@link #bron(JsonNode)} one method below, which reads its own field
-     *  the same way. */
+     *  the same way.
+     *  <p>The prefix falls back to the NODE KIND where a carrier has none: {@code naam} is
+     *  {@code ["string","null"]} on all nine carrying node kinds, so a nameless carrier is a legal wire
+     *  document, and a bare "geldigheid.vanaf" would locate nothing among the hundreds. No corpus document
+     *  exercises this today (measured 2026-09-11: 0 of 424 carriers in golden plus rood), which is exactly
+     *  why it is written down and asserted rather than left to be discovered. */
     private Geldigheid geldigheid(JsonNode eigenaar) {
         JsonNode n = eigenaar.get("geldigheid");
         if (n == null || n.isNull()) return null;
-        String naam = text(eigenaar, "naam");
-        String plek = (naam == null ? "" : naam + ".") + "geldigheid";
+        String naam = text(eigenaar, "naam"), soort = text(eigenaar, "node");
+        String plek = (naam != null ? naam : "<unnamed " + (soort == null ? "carrier" : soort) + ">")
+                + ".geldigheid";
         String vanaf = text(n, "vanaf"), tot = text(n, "tot");
         return new Geldigheid(vanaf == null ? null : datumVanIrWire(vanaf, plek + ".vanaf"),
                 tot == null ? null : datumVanIrWire(tot, plek + ".tot"));
