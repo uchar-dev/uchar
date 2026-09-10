@@ -8,11 +8,10 @@ whether or not its value is ever **read**.
 
 Ch. 5.11 orders the som as "the contributors, then the `leegwaarde`".
 Read quickly, that suggests the stand-in only runs when the contributors
-leave nothing — which is when its *value* is used. It is not what
-happens, in ref or in the toolchain, before or after the operand-order
-card: the stand-in is an ordinary operand of the node and it evaluates
-every time the node does. Its faults and its §9.5 deposits therefore
-happen on documents where its value is discarded.
+leave nothing — which is when its *value* is used. That is not this
+witness's reading: the stand-in is an ordinary operand of the node and it
+evaluates every time the node does. Its faults and its §9.5 deposits
+therefore happen on documents where its value is discarded.
 
 ## The shape
 

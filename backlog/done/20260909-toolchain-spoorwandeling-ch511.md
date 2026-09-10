@@ -142,3 +142,67 @@ uchar-Drools-backend, die zijn eigen, apart gemeten Begrensd-afwijking heeft
 (zie `corpus/rood/begrensd-reads-bounds-in-order/NOTE.md`) en een eigen
 kaart verdient; `scripts/uchar-conformance.sh` uitbreiden naar
 uitvoerende conformance — een terechte wens, maar een andere kaart.
+
+---
+
+## Result (2026-09-10)
+
+Geland in de toolchain als vier commits, ff-gemerged op `7357284` en gepusht.
+
+- **De walks.** De drie operandvolgordes in `DrlTranspiler.Spoor.loop` en hun
+  byte-spiegel in `ExecModelTranspiler.padLoop` lopen ch. 5.11 (Begrensd
+  basis→minimum→maximum; TIJDSDUUR van→tot; Functie argumenten→leegwaarde),
+  plus een VIERDE, door de kaart niet genoemde runtime-plek (de
+  exec-model-Begrensd-locals, max-eerst → min-eerst). `verzamelBinderDefinities`
+  was al conform en is ongewijzigd vastgesteld; de dode
+  `leesVolgorde`/`forceerVolgorde`-cyclus (nul aanroepers sinds `118b771`,
+  gemeten) is verwijderd. De arbitertest is omgekeerd en hernoemd
+  (`ch_5_11_begrensd_evalueert_minimum_voor_maximum`, verwachtingen 1/0 → 0/1)
+  en citeert ch. 5.11 in plaats van OCamls argumentvolgorde.
+- **De leegwaarde, onder het verbrede mandaat (vraag 14).** Alle luie
+  leegwaarde-plekken (3 DRL, 7 observeerbare exec; de achtste is
+  Literal-only en gedocumenteerd onobserveerbaar) zijn omgebouwd naar
+  waarde-dragende aanroepvormen (`rsSomLeeg`, `rsLeegwaarde`;
+  `rsTijdSomAlle` boolean→waarde-parameter). Daarmee is de
+  waarde-weggooibug (`of 7 als die er niet zijn` emitteerde als 0) per
+  constructie dicht — rood-eerst: expected 7 but was 0. De gepinde
+  DrlTest-asserties zijn onder het mandaat omgezet naar de aanroepvorm met
+  een assertFalse tegen terugkeer van de ternary. Nieuwe uitvoerende
+  getuigen: de som-leegwaarde-arbiter (rood: waarde=6 fouten=0 waar ref
+  fault; vuurt beide takken), het TIJDSDUUR-spiegelpaar (via `datum met`;
+  rood: FOUT verwacht, waarde=null gemeten), en de ZEVEN-fixture. Suite
+  969 → 973; `make uchar-conformance` PASS op de pin.
+- **Eerlijke getuigenstatus per rij.** De Pad-tabel draagt per rij wat
+  gemeten is: Begrensd in beide walks gepind; TIJDSDUUR gepind op de
+  DRL-walk (de exec-arm krijgt de volgorde uit Javas argumentvolgorde en
+  stuurt alleen companion-precondities — niets pint hem, vastgelegd); de
+  Functie-leegwaarde-rij en de vierde plek zijn structureel
+  onfalsifieerbaar met reden; `rsLeegwaarde` wordt door geen test bereikt
+  (ch. 5.11's eigen "the order is stated, not yet exercised" geciteerd).
+- **De §9.5-depositieclaim teruggebracht.** Op acht plekken (zeven in de
+  fixronde, de achtste — een DrlTest-commentaar — in de slotronde) claimde
+  het proza dat de stand-in ook zijn deposities doet; deze toolchain bouwt
+  in aggregatie-operanden geen companion-deposities (de walks dalen daar
+  niet af — alleen niet in de leegwaarde; `verzamelWortels` daalt wél in
+  argumenten, de eerdere bredere zin is versmald). Geleverd is de
+  fout-helft; de depositie-helft is een vastgelegde toolchain-beperking.
+- **Bewuste nieuwe asymmetrie.** De exec-tak weigert een globale
+  set-som-stand-in die de DRL-tak sinds de ombouw correct draagt
+  (vóór de kaart gooide de boolean-vlag de waarde stil weg) — weigeren
+  boven stil 0, in het commentaar vastgelegd met de meting.
+- **Latent, niet gedaan.** Het Acc-lek op de marker-return
+  (`DrlTranspiler` ±3006) is vastgelegd: geen bereikbare getuige gemeten,
+  en herordening draagt eigen LHS-volgorde-risico zonder pin.
+- **uchar-kant.** De NOTE van `corpus/rood/som-fallback-always-evaluated`
+  droeg een onware toolchain-zin ("It is not what happens … in the
+  toolchain, before or after the operand-order card" — de toolchain had
+  tot deze kaart de luie ternary, gemeten aan de geëmitteerde DRL); de
+  zin is ontdaan van die helft en zelfdragend geformuleerd. De
+  check-rood-regel voor die case blijft: uchars eigen Drools-backend
+  weigert op een andere grond (aggregatie-lowering), onberoerd door dit
+  toolchain-werk.
+- **SPEC_REV.** De acceptance-regel "pin-bump naar de revisie waarop
+  ch. 5.11 landt" was al vervuld (de pin droeg ch. 5.11 al); de gewone
+  herpin-cyclus loopt door bij de volgende normatieve uchar-landing.
+- **Regime.** Bouw → lens 1 → fixronde (verbreed mandaat) → lens 2 →
+  slotronde; elke lensbevinding gemeten hersteld of expliciet vastgelegd.
