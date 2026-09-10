@@ -170,7 +170,7 @@ public final class IrLoader {
 
         forEach(root.get("resolvedRegels"), n -> m.resolvedRegels.add(resolvedRegel(n)));
         forEach(root.get("resolvedDagsoorten"), n -> m.resolvedDagsoorten.add(
-                new ResolvedDagsoort(text(n, "naam"), conditie(n.get("voorwaarde")), geldigheid(n.get("geldigheid")))));
+                new ResolvedDagsoort(text(n, "naam"), conditie(n.get("voorwaarde")), geldigheid(n))));
         forEach(root.get("objectCreaties"), n -> m.objectCreaties.add(objectCreatie(n)));
         forEach(root.get("verdelingen"), n -> m.verdelingen.add(verdeling(n)));
         forEach(root.get("consistenties"), n -> m.consistenties.add(consistentie(n)));
@@ -202,7 +202,7 @@ public final class IrLoader {
         List<Default> defaults = new ArrayList<>();
         forEach(n.get("defaults"), r -> defaults.add(dflt(r)));
         return new PrioritizedDefaults(text(n, "naam"), onderwerp, kenmerk, attribuut, bool(n, "ongeordend"),
-                defaults, text(n, "bron"), geldigheid(n.get("geldigheid")));
+                defaults, text(n, "bron"), geldigheid(n));
     }
 
     private Default dflt(JsonNode n) {
@@ -436,7 +436,7 @@ public final class IrLoader {
         List<String> bronAnnotaties = n.has("bronAnnotaties") ? stringList(n.get("bronAnnotaties")) : List.of();
         return new ResolvedRegel(text(n, "naam"), enumOf(ResolvedRegel.Soort.class, text(n, "soort")),
                 expr(n.get("doel")), expr(n.get("waarde")), conditie(n.get("voorwaarde")),
-                geldigheid(n.get("geldigheid")), bronAnnotaties);
+                geldigheid(n), bronAnnotaties);
     }
 
     private ResolvedObjectCreatie objectCreatie(JsonNode n) {
@@ -444,7 +444,7 @@ public final class IrLoader {
         forEach(n.get("toekenningen"), t -> tk.add(new ResolvedObjectCreatie.Toekenning(
                 text(t, "attribuut"), expr(t.get("waarde")), bool(t, "kenmerk"))));
         ResolvedObjectCreatie oc = new ResolvedObjectCreatie(text(n, "naam"), ot(text(n, "nieuwType")),
-                ot(text(n, "subject")), tk, conditie(n.get("voorwaarde")), geldigheid(n.get("geldigheid")));
+                ot(text(n, "subject")), tk, conditie(n.get("voorwaarde")), geldigheid(n));
         // IR-SPEC ch. 3.3: the symbolic verbindendeRol is NOT a field of the (vendored, pinned)
         // ResolvedObjectCreatie record, so it cannot be reconstructed INTO the model the way a feitcreatie's
         // joinRol can. It is not emitter-derived either — ch. 5.5 makes it AUTHORITATIVE (the reference
@@ -461,24 +461,24 @@ public final class IrLoader {
                 enumOf(ResolvedVerdeling.Methode.class, text(n, "methode")), text(n, "ratoAttribuut"),
                 text(n, "maximumAttribuut"), integerOf(n, "afrondingDecimalen"), text(n, "restantAttribuut"),
                 text(n, "groepeerAttribuut"), bool(n, "afnemend"), conditie(n.get("voorwaarde")),
-                geldigheid(n.get("geldigheid")));
+                geldigheid(n));
     }
 
     private ResolvedConsistentie consistentie(JsonNode n) {
         return new ResolvedConsistentie(text(n, "naam"), ot(text(n, "subject")), conditie(n.get("assertie")),
-                bron(n), intOf(n, "line"), geldigheid(n.get("geldigheid")));
+                bron(n), intOf(n, "line"), geldigheid(n));
     }
 
     private ResolvedUniciteit uniciteit(JsonNode n) {
         return new ResolvedUniciteit(text(n, "naam"), ot(text(n, "subject")), stringList(n.get("sleutels")),
-                text(n, "scopeVeld"), bron(n), geldigheid(n.get("geldigheid")), rolBinding(n.get("scopeRol")));
+                text(n, "scopeVeld"), bron(n), geldigheid(n), rolBinding(n.get("scopeRol")));
     }
 
     private ResolvedUniciteitUnie uniciteitUnie(JsonNode n) {
         List<ResolvedUniciteitUnie.Bron> bronnen = new ArrayList<>();
         forEach(n.get("bronnen"), b -> bronnen.add(new ResolvedUniciteitUnie.Bron(
                 ot(text(b, "type")), stringList(b.get("sleutels")))));
-        return new ResolvedUniciteitUnie(text(n, "naam"), bronnen, bron(n), geldigheid(n.get("geldigheid")));
+        return new ResolvedUniciteitUnie(text(n, "naam"), bronnen, bron(n), geldigheid(n));
     }
 
     private ResolvedFeitCreatie feitCreatie(JsonNode n) {
@@ -488,12 +488,12 @@ public final class IrLoader {
         if (n.has("feittype") && !n.get("feittype").isNull()) {
             return new ResolvedFeitCreatie(text(n, "naam"), ot(text(n, "anker")), ot(text(n, "doel")),
                     text(n, "zetVeld"), text(n, "joinVeld"), ts, conditie(n.get("voorwaarde")),
-                    geldigheid(n.get("geldigheid")), text(n, "feittype"), text(n, "ankerRol"), text(n, "doelRol"),
+                    geldigheid(n), text(n, "feittype"), text(n, "ankerRol"), text(n, "doelRol"),
                     rolBinding(n.get("joinRol")));
         }
         return new ResolvedFeitCreatie(text(n, "naam"), ot(text(n, "anker")), ot(text(n, "doel")),
                 text(n, "zetVeld"), text(n, "joinVeld"), ts, conditie(n.get("voorwaarde")),
-                geldigheid(n.get("geldigheid")));
+                geldigheid(n));
     }
 
     private RolBindingRef rolBinding(JsonNode n) {
@@ -501,11 +501,52 @@ public final class IrLoader {
         return new RolBindingRef(text(n, "feittype"), text(n, "rol"));
     }
 
-    private Geldigheid geldigheid(JsonNode n) {
+    /** The validity window of {@code eigenaar} — read from ITS node, not from a detached child, so a
+     *  malformed bound can be reported against the declaration that carries it. A document holds hundreds of
+     *  windows (848 across the corpus as it stands) and nine node kinds carry one, so "vanaf" alone does not
+     *  locate the defect. This mirrors {@link #bron(JsonNode)} one method below, which reads its own field
+     *  the same way. */
+    private Geldigheid geldigheid(JsonNode eigenaar) {
+        JsonNode n = eigenaar.get("geldigheid");
         if (n == null || n.isNull()) return null;
+        String naam = text(eigenaar, "naam");
+        String plek = (naam == null ? "" : naam + ".") + "geldigheid";
         String vanaf = text(n, "vanaf"), tot = text(n, "tot");
-        return new Geldigheid(vanaf == null ? null : java.time.LocalDate.parse(vanaf),
-                tot == null ? null : java.time.LocalDate.parse(tot));
+        return new Geldigheid(vanaf == null ? null : datumVanIrWire(vanaf, plek + ".vanaf"),
+                tot == null ? null : datumVanIrWire(tot, plek + ".tot"));
+    }
+
+    /* The regelspraak-ir-v0 validity-bound lexeme, matched WHOLE: four-two-two digit fields, digits only, no
+     * sign and no extended year. It is WF-084's date-literal grammar (IR-SPEC ch. 4.1) applied to the other
+     * date position on this wire — where, unlike the case wire, the schema carried no pattern at all. */
+    private static final java.util.regex.Pattern IR_DATUM =
+            java.util.regex.Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
+
+    /** The calendar day a validity bound names — or a loud refusal naming the FORM, never a guess.
+     *  <p>The three other readers of this wire hold a bound as an OPAQUE STRING and order it
+     *  lexicographically (the verifier states the assumption in as many words beside its overlap check:
+     *  "ISO dates compare lexicographically"). That ordering is only sound INSIDE this lexeme, and nothing
+     *  enforced it: measured 2026-09-11 on a hand-edited copy of a two-version golden, the verifier reported
+     *  PASS on {@code +012026-01-01}, {@code -0500-01-01}, {@code 2026-02-30} and {@code niet-een-datum}
+     *  alike. On {@code +012026-01-01} the interpreter and the ASP backend then applied the version (the
+     *  signed lexeme sorts before every four-digit one) while this reader did not (year 12026) — one
+     *  document, two answers, and the differential gate sees it only when a pinned expectation happens to
+     *  move. So each reader holds its own fence (IR-SPEC ch. 4.1), and this is that fence, one field deeper
+     *  than the schema pattern proposed alongside it: the pattern is the form and cannot know the calendar,
+     *  which is the second branch here. A malformed bound is a document defect, not a form this backend does
+     *  not carry, so it is a hard error and never an {@link Refusal} — a Refusal would file the document
+     *  under the differential gate's auto-excluded channel and leave the gate green over a document nobody
+     *  read. */
+    private static java.time.LocalDate datumVanIrWire(String lexeem, String veld) {
+        if (!IR_DATUM.matcher(lexeem).matches())
+            throw new IllegalArgumentException("malformed validity date '" + lexeem + "' on '" + veld
+                    + "': the regelspraak-ir-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only,"
+                    + " no sign and no extended year");
+        try { return java.time.LocalDate.parse(lexeem); }
+        catch (java.time.format.DateTimeParseException e) {
+            throw new IllegalArgumentException("malformed validity date '" + lexeem + "' on '" + veld
+                    + "': the field widths are right but the calendar is not (" + e.getMessage() + ")");
+        }
     }
 
     // --- helpers -----------------------------------------------------------
