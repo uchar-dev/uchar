@@ -182,7 +182,10 @@ juist.
 ### Gates
 
 Gate 1 (`bash scripts/check-self-contained.sh`) op de kop van deze branch:
-`check-self-contained: PASS`, exit 0. De overige twaalf gates zijn door deze
+`check-self-contained: PASS`, exit 0. Eén keer rood onderweg, in de
+slotronde: de hernoem-tripwire sloeg aan op deze Results-notitie zelf (zie
+"Gemeld, niet gekaart"). Opgelost in het proza, niet in het script. De
+overige twaalf gates zijn door deze
 sessie **niet** gedraaid; de wijziging is tekst in `CLAUDE.md` en `backlog/`
 en raakt geen zone die zij lezen. De hoofdsessie draait de volledige dertien
 vóór de merge — dat is waar de acceptance van deze kaart op afgetekend
@@ -303,10 +306,15 @@ gewijzigd:
   "the constitution's index" noemt. Datzelfde bestand zegt op r. 39-40
   "**Five** gates run on every change" en somt er vijf op; het zijn er
   dertien.
-- `HERNOEM_LADDER_20260829.md` op de root draagt een **vierde**
-  padopsomming (r. 7-9 "vrijwel elk protected path ..."), een historisch
-  werkdocument van de hernoemronde. Geen index, geen norm — maar wel de
-  vierde lijst in de repo die paden opsomt.
+- Het werkdocument van de hernoemronde van 2026-08-29 op de root — het
+  vierde `.md` daar, naast `README.md`, `CLAUDE.md` en `WAY-OF-WORKING.md` —
+  draagt op r. 7-9 een **vierde** padopsomming ("vrijwel elk protected path
+  ..."). Historisch, geen index en geen norm, maar wel de vierde lijst in de
+  repo die paden opsomt. Zijn bestandsnaam staat hier niet uitgeschreven:
+  die draagt de voor-hernoem-woordenschat, en gate 1's hernoem-tripwire
+  laat die alleen in dat bestand zelf toe. Deze notitie liet de gate
+  daarmee eerst rood lopen — gezien, prozafix, weer groen; de tripwire doet
+  precies wat hij moet doen en is niet aangepast.
 
 **Beschermde paden: `CLAUDE.md` en `WAY-OF-WORKING.md`.** De branch is een
 VOORSTEL en blijft ongemerged tot de maintainer hem beoordeelt.
