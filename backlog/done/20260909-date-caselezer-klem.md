@@ -183,19 +183,19 @@ Tegen de kale `LocalDate.parse`, vóór de klem:
 ```
 
 De dertien die vallen zijn precies de weiger-asserties; de vijf die al groen
-zijn, zijn de tegenmetingen (de canonieke vorm, de twee jaarranden, de
-schrikkeldag, de geldige `asOfDate` en de geldige periode) — die moeten vóór
-én na de klem groen zijn.
+zijn, zijn de tegenmetingen: de canonieke vorm, de twee jaarranden (samen
+één testmethode), de schrikkeldag, de geldige `asOfDate` en de geldige
+periode — die moeten vóór én na de klem groen zijn.
 
 De dertien splitsen in **vier die `ACCEPTED it` meldden** en negen die
 `let it through to a bare java.time.format.DateTimeParseException` meldden.
-Die vier zijn de eigenlijke lekken, en twee ervan zijn precies de twee
-hoofdlekken van deze kaart:
+Die vier zijn de eigenlijke gaten, en twee ervan zitten op de twee
+ernstigste routes van deze kaart:
 
 | getuige | wat de lezer ervan maakte |
 | --- | --- |
-| `de_asOfDate_weigert_dezelfde_vormen_en_noemt_zijn_veld` | `+012026-03-15` geslikt als jaar 12026, en het emmersegment eromheen gebouwd: `ACCEPTED it and read [Segment@…]` |
-| `een_segmentgrens_weigert_dezelfde_vormen_en_noemt_zijn_plek` | `-0500-01-01` als `from` geslikt, segment eromheen gebouwd: `ACCEPTED it and read [Segment@…]` |
+| `de_asOfDate_weigert_dezelfde_vormen_en_noemt_zijn_veld` | `+012026-03-15` aanvaard als jaar 12026, en het emmersegment eromheen gebouwd: `ACCEPTED it and read [Segment@…]` |
+| `een_segmentgrens_weigert_dezelfde_vormen_en_noemt_zijn_plek` | `-0500-01-01` als `from` aanvaard, segment eromheen gebouwd: `ACCEPTED it and read [Segment@…]` |
 | `een_getekend_uitgebreid_jaar_wordt_geweigerd` | `+012026-06-21` gelezen als `+12026-06-21` |
 | `een_negatief_jaar_wordt_geweigerd` | `-0500-01-01` gelezen als jaar −500 |
 
@@ -217,7 +217,13 @@ staat hier in deze Result en nergens anders meer.
 
 Elke vorm is door `ref` gedraaid (als `asOfDate` op `jutterswet-penningjaar`,
 met de echte runner), niet uit de code afgelezen. De kolom "klem" is wat de
-getuige pint.
+getuige pint — met deze precisering: voor 10 van de 17 vormen pint de
+getuige exact hetzelfde lexeem, voor de overige 7 pint hij dezelfde
+vormklasse op een andere dag (de getuige werkt op `jutterswet-jutdatum` en
+schrijft 21 juni waar deze tabel 15 maart schrijft: `2026-6-21` naast
+`2026-3-15`, `20260621` naast `20260315`, enzovoort). De vormklasse is wat
+de klem beslist — de klem leest de dagcijfers niet vóór het patroon — maar
+lexeem-voor-lexeem-identiek is de kolom dus voor 10 rijen, niet voor 17.
 
 | vorm | schemapatroon | `ref` | klem |
 | --- | --- | --- | --- |
@@ -241,8 +247,8 @@ getuige pint.
 
 Identiek op alle zeventien vormen. De kale `LocalDate.parse` week op precies
 twee af — `+012026-03-15` en `-0500-01-01`, allebei aanvaard — en op geen
-enkele andere; dat is de hele lekklasse, gemeten met een los JDK-programma
-over dezelfde lijst.
+enkele andere; dat is de hele afwijkingsklasse, gemeten met een los
+JDK-programma over dezelfde lijst.
 
 **Wat de klem volgt.** `ref`. Dat spoort met het schemapatroon omdat beide
 dezelfde veldgrammatica beschrijven: `^[0-9]{4}-[0-9]{2}-[0-9]{2}$` is
@@ -254,7 +260,7 @@ schema maar dezelfde, één veld dieper.
 
 ### De klem is aan beide kanten vastgelegd — gemeten met mutanten
 
-Vier saboteurs op de klem, elk met de getuige erop. De vallende gevallen
+Vier mutanten op de klem, elk met de getuige erop. De vallende gevallen
 zijn per mutant uit de surefire-XML gelezen, niet uit de consoleregels:
 
 | mutant | uitslag | wie valt |
@@ -276,12 +282,17 @@ waarna B, C en D tegen de ONGEKLEMDE basislijn maten en netjes 13 failures
 meldden — een getal dat er plausibel uitziet en niets zegt. Opnieuw gedaan
 tegen de gecommitte klem; de cijfers in de tabel hierboven zijn die tweede,
 geldige ronde. Bij de fixronde bleek dezelfde tabel bovendien uit de
-consoleregels te zijn samengevat met een `grep`-patroon `[a-z_0-9]+`, dat de
-getuige `de_asOfDate_…` met zijn hoofdletter stil oversloeg: rijen B en D
-noemden daardoor minder gevallen dan hun eigen telling. Vandaar de
-XML-hermeting. Het patroon is in beide gevallen hetzelfde: een meting die
-stil iets anders meet dan ze zegt, en die alleen opvalt als je de telling
-tegen de opsomming legt.
+consoleregels te zijn samengevat: rijen B en D noemden minder gevallen dan
+hun eigen telling. Een `grep`-patroon `[a-z_0-9]+` over die consoleregels
+verklaart een deel daarvan — het sloeg de getuige `de_asOfDate_…` met zijn
+hoofdletter over — maar niet alles: de toenmalige rij C noemde een
+hoofdletter-D-naam gewoon voluit, en rij D miste óók
+`een_jaarveld_van_vijf_cijfers`, dat volledig uit kleine letters bestaat.
+Die tweede omissie heeft een andere oorzaak, die niet is achterhaald;
+vermoedelijk een fout in het overschrijven naar proza. Vandaar de
+XML-hermeting van alle vier de rijen. De les staat los van de oorzaak: een
+telling die stil iets anders meet dan de opsomming ernaast beweert, valt
+alleen op als je telling en opsomming tegen elkaar legt.
 
 ### De dode parse
 
@@ -320,12 +331,27 @@ de twee coördinaten is niet genoeg om de plek terug te vinden.
 
 ### Gates
 
-| gate | uitslag | tellingen |
-| --- | --- | --- |
-| 12 `check-drools.sh` | PASS (exit 0) | **JUnit 262, vloer 239** (was 244; +18 door de getuige, exact het aantal in de surefire-XML). played **120** = `EXPECTED_PLAYED` 120, ongewijzigd. auto-excluded 44, channel floor 47, value-divergence 1, no-case 2 — alle vier gelijk aan de stand vóór de kaart. |
-| 8 `check-rood.sh` | PASS (exit 0) | 26 rode cases falen zichtbaar in ref én clingo, vloer 26; Drools-poot 6 fault-pinned, 20 not-carried |
-| 13 `check-reftype-derivation.sh` | PASS (exit 0) | 74 annotaties getwist over 15 goldens (vloer 74), 70 replays reproduceren de ongetwiste uitkomst, 13 PLAYED via de DRL-tekst-tak (vloer 13), 0 survivors |
-| 1 `check-self-contained.sh` | PASS | — |
+| gate | uitslag | door | tellingen |
+| --- | --- | --- | --- |
+| 12 `check-drools.sh` | PASS (exit 0) | bouwsessie | **JUnit 262, vloer 239** (was 244; +18 door de getuige, exact het aantal in de surefire-XML). played **120** = `EXPECTED_PLAYED` 120, ongewijzigd. auto-excluded 44, channel floor 47, value-divergence 1, no-case 2 — alle vier gelijk aan de stand vóór de kaart. |
+| 8 `check-rood.sh` | PASS (exit 0) | bouwsessie | 26 rode cases falen zichtbaar in ref én clingo, vloer 26; Drools-poot 6 fault-pinned, 20 not-carried |
+| 13 `check-reftype-derivation.sh` | PASS (exit 0) | bouwsessie | 74 annotaties getwist over 15 goldens (vloer 74), 70 replays reproduceren de ongetwiste uitkomst, 13 PLAYED via de DRL-tekst-tak (vloer 13), 0 survivors |
+| 1 `check-self-contained.sh` | PASS | bouwsessie, elke ronde | — |
+| 11 `check-toka-parity.sh` | PASS | lens 2 | de jar wordt daar ONVOORWAARDELIJK herbouwd en 29 TOKA-cases replayen erdoorheen, dus de klem zit op het pad; gemeten: geen enkele TOKA-case draagt een buiten-patroon-datumlexeem, dus de klem kón geen enkele uitkomst raken — nu gemeten in plaats van aangenomen |
+| 2, 3, 4, 5, 6 | PASS | lens 1 | onderdeel van de negen die lens 1 draaide |
+
+**Wie wat draaide, en waarom de rest buiten bereik viel.** De bouwsessie
+draaide de vier gates die deze wijziging direct raken: 12 (de backend zelf),
+8 (de rode zone mag niet bewegen), 13 (de twist-uitkomsten mogen niet
+bewegen) en 1 bij elke commit. Lens 1 draaide er negen, inclusief 2, 3, 4, 5
+en 6 — de schema-, verifier-, case-schema-, oracle- en clingo-gates, die
+allemaal ongevoelig zijn voor een Java-lezer maar samen aantonen dat de
+corpus- en spec-kant onbewogen is. Lens 2 draaide 11, de enige gate die
+buiten gate 12 om de backend-jar herbouwt en dus de klem echt uitvoert;
+daar zat de laatste open vraag, want de TOKA-zone draagt cases die het
+publieke corpus niet kent. Gates 9 en 10 (Catala- en RegelSpraak-frontend)
+raken geen backend-jar en zijn daarom buiten bereik gelaten. De volle set
+draait de hoofdsessie vóór de merge.
 
 Geen vloer verhoogd, geen `EXPECTED_PLAYED` aangeraakt, geen gate-script
 aangeraakt. De vloer 239 is een ondergrens; groei hoeft niet gepind te
@@ -340,13 +366,18 @@ worden.
   `/tmp`-werk.
 - **`spec/CONSTRUCTS.md` en `spec/PLAN.md`**: niet aangeraakt, en er is naar
   mijn oordeel **geen registerrij nodig**. Dit is backend-hygiëne zonder
-  wire-wijziging: geen constructie verandert, geen IR-vorm verandert, geen
-  executor geeft een ander antwoord op een document dat de wire toelaat. Wat
-  verandert is uitsluitend dat documenten die de wire NIET toelaat nu
-  geweigerd worden in plaats van stil beantwoord.
+  wire-wijziging: geen constructie verandert, geen IR-vorm verandert, en
+  **geen gepinde verwachting beweegt** — gate 12 speelt dezelfde 120
+  goldens met dezelfde uitkomsten. Wat wél verandert is de FOUTVORM op
+  documenten die toch al faalden: een lexeem dat het schemapatroon
+  toelaat maar de kalender niet (`2026-02-30`) faalde eerst met een kale
+  `DateTimeParseException` en faalt nu met de kalendertak van de klem.
+  Zelfde verdict, andere melding. En documenten die het schemapatroon NIET
+  toelaat worden nu geweigerd in plaats van stil beantwoord.
 - **`IrLoader` r. 545–546**: de IR-wire, door de kaart buiten scope gelaten.
-  Ongemeten gebleven; verdient een eigen kaartje als iemand dezelfde vraag
-  daar wil beantwoorden.
+  Ongemeten gebleven — en na deze kaart de enige kale date-parses in
+  `backends/drools/src/main` naast de kalendertak-parses binnen de klemmen
+  zelf. Nu gekaart: `backlog/new/20260910-irloader-datumklem.md`.
 - **De grofheid van de getuige**, expliciet: geasserteerd is één helper met
   drie aanroepplaatsen, en alle drie de plaatsen dragen een eigen assertie
   (waarde, `asOfDate`, segmentgrens). Wie een vierde `date`-positie zou

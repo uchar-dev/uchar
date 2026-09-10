@@ -54,6 +54,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   2026-13-01                                        ref: month out of range — CALENDAR branch
  * </pre>
  *
+ * <p>Read that table by FORM CLASS, not lexeme for lexeme: the ref runs above used {@code asOfDate} values
+ * on 15 March, while the cases below mostly work on {@code jutterswet-jutdatum} and write 21 June, so 10 of
+ * the 17 forms are asserted here on the identical lexeme and the other 7 on the same form one day apart
+ * ({@code 2026-6-21} for {@code 2026-3-15}, {@code 20260621} for {@code 20260315}, and so on). The clamp
+ * decides on the form and never reads the day digits before the pattern, so the classes are what carry —
+ * but the agreement is lexeme-identical for 10 rows, not for all 17.
+ *
  * The two year edges the pattern DOES admit ({@code 0000-01-01}, {@code 9999-12-31}) are pinned as read, so
  * a clamp narrowed from below — a year range, a "no year zero" rule — fails here instead of passing
  * unnoticed: no corpus case sits near either edge.
