@@ -2223,6 +2223,128 @@ let () =
   expect_num "WV-3.4a-zelfbron-nul" (ev "j2" (aantal "aanmelder")) "0";
   expect_fault "WV-3.4a-zelfbron-weg" (fun () -> ev "j1" (aantal "vondst"))
 
+(* --- ch. 5.7a: what a supplied role link establishes -------------------- *)
+
+(* WV-5.7a: the `jutterswet-ketenband` worked example, verbatim (the
+   golden's cases 1-3, replayed by gates 5 and 6). The fact type
+   `ketenband` relates Wachter to Wachter through two distinct roles:
+   `voorligger` (to-one) and `opvolger` (plural `opvolgers`, to-many).
+   Three Wachters with rangnummer 10, 20, 30 and ONE relation — W1 is
+   the voorligger of both W2 and W3 — spelled three ways: both legs, the
+   to-many leg only, the to-one legs only. All three read identically,
+   and that identity IS the law: a supplied link establishes the
+   relation instance, and both roles read it.
+
+   The values naming the UNSUPPLIED direction carry the weight — row 2
+   reads W2.voorliggerrang = 10 though no case line writes anything on
+   W2, row 3 reads W1.opvolgeraantal = 2 though no case line writes
+   anything on W1. W1's own voorliggerrang stays leeg in every row: no
+   one fills `voorligger` toward W1, and ch. 5.8 rule 1 reads leeg
+   there — establishing a relation in both directions is not the same
+   as inventing one. *)
+let () =
+  let doc =
+    {
+      empty_doc with
+      objecttypen =
+        [ ot "Wachter"
+            [ ("rangnummer", Some num0); ("voorliggerrang", Some num0);
+              ("opvolgeraantal", Some num0) ]
+            [] ];
+      feittypen =
+        [ ( "ketenband",
+            {
+              ft_naam = Some "ketenband";
+              wederkerig = false;
+              rollen =
+                [
+                  { rol_naam = Some "voorligger"; rol_objecttype_naam = Some "Wachter";
+                    rol_meervoud = Some "voorliggers"; rol_meervoudig = false };
+                  { rol_naam = Some "opvolger"; rol_objecttype_naam = Some "Wachter";
+                    rol_meervoud = Some "opvolgers"; rol_meervoudig = true };
+                ];
+            } ) ];
+    }
+  in
+  let voorliggerrang : Ir_v0.Ast.expr =
+    Attribuut_ref
+      {
+        attribuut = Some "rangnummer";
+        objecttype = Some "Wachter";
+        onderwerp_bron = None;
+        navigatie_rol = None;
+        typ = Some num0;
+        bron = None;
+        set = false;
+        navigatie_pad = [ Some "voorligger" ];
+        navigatie_bindingen = Some [ { rb_feittype = "ketenband"; rb_rol = "voorligger" } ];
+      }
+  in
+  let opvolgeraantal : Ir_v0.Ast.expr =
+    Functie
+      {
+        kind = Aantal;
+        argumenten =
+          [ Attribuut_ref
+              { attribuut = Some "opvolgers"; objecttype = Some "Wachter";
+                onderwerp_bron = None; navigatie_rol = None;
+                typ = Some (Datatype_onbekend { reden = None }); bron = None; set = false;
+                navigatie_pad = []; navigatie_bindingen = None } ];
+        element_objecttype = Some "Wachter"; leegwaarde = None; filter = None;
+        dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = None;
+        bron_rol = Some { rb_feittype = "ketenband"; rb_rol = "opvolger" };
+      }
+  in
+  let env = env_of doc in
+  let wachter label rang links =
+    { (inst label "Wachter" [ ("rangnummer", n rang) ]) with
+      World.links =
+        List.fold_left (fun m (k, v) -> World.SMap.add k v m) World.SMap.empty links }
+  in
+  (* the loader's own pass, on the links a case supplies *)
+  let geleverd supplies =
+    Case.materialise_relations doc (List.fold_left World.add_instance World.empty supplies)
+  in
+  let beide =
+    geleverd
+      [ wachter "W1" "10" [ ("opvolgers", [ "W2"; "W3" ]) ];
+        wachter "W2" "20" [ ("voorligger", [ "W1" ]) ];
+        wachter "W3" "30" [ ("voorligger", [ "W1" ]) ] ]
+  in
+  let naar_veel =
+    geleverd
+      [ wachter "W1" "10" [ ("opvolgers", [ "W2"; "W3" ]) ];
+        wachter "W2" "20" []; wachter "W3" "30" [] ]
+  in
+  let naar_een =
+    geleverd
+      [ wachter "W1" "10" [];
+        wachter "W2" "20" [ ("voorligger", [ "W1" ]) ];
+        wachter "W3" "30" [ ("voorligger", [ "W1" ]) ] ]
+  in
+  let ev w label e = Eval.eval_expr env w (World.get w label) ~err:no_err e in
+  List.iter
+    (fun (rij, w) ->
+      expect_leeg (rij ^ "-voorliggerrang-W1") (ev w "W1" voorliggerrang);
+      expect_num (rij ^ "-voorliggerrang-W2") (ev w "W2" voorliggerrang) "10";
+      expect_num (rij ^ "-voorliggerrang-W3") (ev w "W3" voorliggerrang) "10";
+      expect_num (rij ^ "-opvolgeraantal-W1") (ev w "W1" opvolgeraantal) "2";
+      expect_num (rij ^ "-opvolgeraantal-W2") (ev w "W2" opvolgeraantal) "0";
+      expect_num (rij ^ "-opvolgeraantal-W3") (ev w "W3" opvolgeraantal) "0")
+    [ ("WV-5.7a-beide", beide); ("WV-5.7a-naar-veel", naar_veel);
+      ("WV-5.7a-naar-een", naar_een) ];
+  (* the WF-013 flank: a reverse leg that collides with a supplied to-one
+     link is a load error, never a silent overwrite *)
+  check "WV-5.7a-botsende-terugpoot"
+    (try
+       ignore
+         (geleverd
+            [ wachter "W1" "10" [ ("opvolgers", [ "W2" ]) ];
+              wachter "W2" "20" [ ("voorligger", [ "W3" ]) ];
+              wachter "W3" "30" [] ]);
+       false
+     with Case.Error m -> Case.contains ~needle:"WF-013" m)
+
 (* --- ch. 5.8 rule 4: the zero-hop self-reference (WF-053) --------------- *)
 
 (* WV-5.8-4: the `jutterswet-aanmelderkrediet` worked example. Jutters

@@ -1114,11 +1114,18 @@ let totaal_operand ~attribuut ~objecttype ~navigatie_rol ~set =
   ^ (if set then "true" else "false")
   ^ {|, "navigatiePad": [] }|}
 
-let totaal_case ?(bewaarlast = "10") vondst_attribuut =
+(* [gekoppeld:false] supplies NO relation at all. Since the ch. 5.7a
+   decision (2026-09-10) a link supplied from the Jutter side is read from
+   the Vondst side too, so "the fold reaches no member" can no longer be
+   staged by writing the link on the far end — it has to be staged by
+   there being no link. *)
+let totaal_case ?(bewaarlast = "10") ?(gekoppeld = true) vondst_attribuut =
   {|{ "format": "uchar-case-v0", "asOfDate": "2026-03-15",
   "input": { "instances": [
     { "label": "J1", "objectType": "Jutter", "attributes": { "bewaartarief": { "number": "10" } },
-      "roles": { "vondsten": [ "V1" ] }, "characteristics": [] },
+      "roles": { |}
+  ^ (if gekoppeld then {|"vondsten": [ "V1" ]|} else "")
+  ^ {| }, "characteristics": [] },
     { "label": "V1", "objectType": "Vondst", "attributes": { "|}
   ^ vondst_attribuut
   ^ {|": { "number": "99" } },
@@ -1218,16 +1225,22 @@ let () =
      outright and the pin held that refusal text. The fold is carried
      now, so the pin holds what this document actually MEANS.
 
-     On this frame the answer is 0, in BOTH executors. The fold source
-     reads "de bewarende jutter" from a Vondst subject while the link is
-     declared on the Jutter side, so the member walk finds nobody and an
-     empty totaal is 0 unconditionally (§4.20). ref answered that 0 on
-     the merge base already, against a clingo that refused reasonlessly
-     — a measured ref ≢ clingo under a verifier-PASS document. The
-     agreement is what this pin now holds; the refusal texts that had to
-     stay live on the three pins beside it, and the horizon rule has its
-     own pin further down, on a frame whose links do point at the
-     members. *)
+     On this frame the answer is 0, in BOTH executors: the fold source
+     reads "de bewarende jutter" from a Vondst subject and the case
+     supplies NO relation, so the member walk finds nobody and an empty
+     totaal is 0 unconditionally (§4.20). ref answered that 0 on the
+     merge base already, against a clingo that refused reasonlessly — a
+     measured ref ≢ clingo under a verifier-PASS document. The agreement
+     is what this pin now holds; the refusal texts that had to stay live
+     on the three pins beside it, and the horizon rule has its own pin
+     further down, on a frame whose links do point at the members.
+
+     Until the ch. 5.7a decision (2026-09-10) this frame staged its
+     unreachability by supplying the link on the JUTTER side only — the
+     to-many `vondsten` key — and reading it from the Vondst end, which
+     then found nothing. A supplied link now establishes the relation in
+     both directions, so that staging reaches J1 and is no longer this
+     frame's subject; it is pinned as its own frame directly below. *)
   let setfold_zero =
     totaal_doc ~vondst_attribuut:"vondsttarief"
       ~operand:
@@ -1235,11 +1248,23 @@ let () =
            ~set:true)
   in
   translates_with ~name:"§7.1 set operand, no reachable member: translates"
-    ~ir:setfold_zero ~case_text:(totaal_case ~bewaarlast:"0" "vondsttarief");
+    ~ir:setfold_zero ~case_text:(totaal_case ~bewaarlast:"0" ~gekoppeld:false "vondsttarief");
   ref_matches ~name:"§7.1 set operand, no reachable member: ref answers 0 (§4.20)"
-    ~ir:setfold_zero ~case_text:(totaal_case ~bewaarlast:"0" "vondsttarief");
+    ~ir:setfold_zero ~case_text:(totaal_case ~bewaarlast:"0" ~gekoppeld:false "vondsttarief");
   clingo_matches ~name:"§7.1 set operand, no reachable member: clingo answers 0 too"
-    ~ir:setfold_zero ~case_text:(totaal_case ~bewaarlast:"0" "vondsttarief");
+    ~ir:setfold_zero ~case_text:(totaal_case ~bewaarlast:"0" ~gekoppeld:false "vondsttarief");
+  (* ch. 5.7a, the same document with the relation SUPPLIED from the far
+     (Jutter) end: the Vondst reaches J1 through the reverse leg the case
+     never wrote, so the set fold now has a member — and that member's
+     `bewaartarief` came in as an asOfDate-bucket scalar, which carries no
+     period of its own. The per-element temporal fold says so by name
+     instead of folding an empty member set to 0. This is the decision's
+     consequence in one frame: the reachability, not the fault, is what
+     moved. *)
+  faults_with ~name:"§7.1 set operand, member reached through the reverse leg (ch. 5.7a)"
+    ~ir:setfold_zero ~case_text:(totaal_case ~bewaarlast:"0" "vondsttarief")
+    ~needle:
+      {|the case supplies an asOfDate-bucket scalar, which carries no period of its own|};
   (* no navigation written, but the operand is declared on another type: the
      ci-control the gedurende sister arm has always carried *)
   faults_with ~name:"temporal totaal, foreign-typed operand without navigation"

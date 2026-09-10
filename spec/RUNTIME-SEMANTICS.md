@@ -1707,12 +1707,12 @@ the non-unique case as marker/skip, and the executors fault on it). In
 v1 the binding is required and the derivation retires. The reciprocal
 shape (one role relating a type to itself, WF-011/013) participates in
 both routes: its single role is bound and opposite at once, and it
-counts as the connecting candidate for a self-typed pair. A reciprocal
-relation entry holds in **both directions** — the pinned runtime
-writes both to-one legs so navigation never reads a spuriously empty
-side; the shared case loader materialises the reverse leg of every
-reciprocal link at load, and a conflicting reverse leg on the to-one
-role (WF-013) is a load error.
+counts as the connecting candidate for a self-typed pair. That a
+reciprocal relation entry holds in **both directions** — the pinned
+runtime writes both to-one legs, so navigation never reads a spuriously
+empty side — is no peculiarity of allocation: it is the reciprocal case
+of the general case-input law, which **ch. 5.7a** states for every fact
+type and which the shared case loader implements at load.
 
 ### 4.2 The distribution equations
 
@@ -2132,6 +2132,70 @@ evaluation date absent (the model is time-free); parameters
 Jutter j2: aantal aangemelde vondsten 3}. Fixpoint after one pass: j1
 **penninggerechtigd**, j2 not; no channel entries; end state = the two
 instances plus nothing else.
+
+### 5.7a The case input: what a supplied role link establishes
+
+Step 3 of the session inserts the input facts. Attribute and
+characteristic input is per instance and needs no further law. A **role
+link** does, because it names one end of a relation that has two, and
+the reader that arrives from the other end must be told what it sees.
+
+**A supplied role link establishes the relation instance itself, and
+both roles read it.** A relation is symmetric: the case names one leg,
+and the reader navigating from the side the case did NOT name reaches
+the same relation instance the naming side reaches — never a spuriously
+empty far side. This holds for **every** fact type; the reciprocal shape
+(one role that is its own opposite, WF-011/013, ch. 4.1) is the special
+case in which the two legs are one and the same role. *(Decided by the
+maintainer 2026-09-10, on the numbered question the measurement round
+required: the alternative reading — a link is directed, and the
+unsupplied direction reads leeg — makes the same relation compute
+different answers depending on which end the case happened to spell,
+and no engine can hold that reading on a 1:N fact model, where one
+stored reference necessarily serves both directions.)*
+
+Two consequences, both mechanical:
+
+1. **The loader materialises the reverse leg.** For every supplied link
+   from instance `a` under a key naming role `far`, the loader adds `a`
+   to each target's links under the **sister role** — the role `a`
+   itself fills. It runs as a separate pass over the finished input, so
+   the outcome cannot depend on the order instances appear in, and it is
+   idempotent: a case that supplies both legs describes one relation,
+   not two. A conflicting reverse leg on a **to-one** sister role is a
+   load error (WF-013), never a silent overwrite.
+2. **A reference-field fact model writes what it can hold.** Where an
+   executor stores one scalar reference per to-one role, a **1:N**
+   relation has exactly ONE field and that field already serves both
+   directions; a **1:1** relation has TWO, and the case-input layer must
+   fill the second one itself. An executor whose model cannot hold a
+   direction refuses the form with its reason — it never reads a
+   spuriously empty side and calls that an answer.
+
+Worked example (`ref/` test verbatim; the golden `jutterswet-ketenband`,
+cases 1–3, replayed by gates 5 and 6). The fact type `ketenband` relates
+`Wachter` to `Wachter` through two distinct roles: `voorligger` (to-one)
+and `opvolger` (plural `opvolgers`, to-many). Two rules: `voorliggerrang`
+is the `rangnummer` of the `voorligger`; `opvolgeraantal` is the number
+of `opvolgers`. Three Wachters W1, W2, W3 with `rangnummer` 10, 20, 30,
+and ONE relation — W1 is the voorligger of both W2 and W3 — spelled
+three different ways:
+
+| the case supplies | `voorliggerrang` W1/W2/W3 | `opvolgeraantal` W1/W2/W3 |
+|---|---|---|
+| both legs: `W1{opvolgers:[W2,W3]}`, `W2{voorligger:[W1]}`, `W3{voorligger:[W1]}` | leeg / 10 / 10 | 2 / 0 / 0 |
+| the to-many leg only: `W1{opvolgers:[W2,W3]}` | leeg / 10 / 10 | 2 / 0 / 0 |
+| the to-one legs only: `W2{voorligger:[W1]}`, `W3{voorligger:[W1]}` | leeg / 10 / 10 | 2 / 0 / 0 |
+
+The three rows are identical, and that identity is the law: how a case
+spells a relation does not change what the model computes from it. The
+values naming the *unsupplied* direction carry the weight — row 2 reads
+`W2.voorliggerrang = 10` although no case line writes anything on W2 at
+all, and row 3 reads `W1.opvolgeraantal = 2` although no case line
+writes anything on W1. W1's own `voorliggerrang` is **leeg** in every
+row, and that is the flank: nothing fills `voorligger` toward W1, so the
+absent-link rule of ch. 5.8 reads leeg — establishing a relation in both
+directions is not the same as inventing one.
 
 ### 5.8 The navigated read
 

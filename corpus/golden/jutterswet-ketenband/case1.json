@@ -1,0 +1,102 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W1",
+        "objectType": "Wachter",
+        "attributes": {
+          "rangnummer": {
+            "number": "10"
+          }
+        },
+        "roles": {
+          "opvolgers": [
+            "W2",
+            "W3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "W2",
+        "objectType": "Wachter",
+        "attributes": {
+          "rangnummer": {
+            "number": "20"
+          }
+        },
+        "roles": {
+          "voorligger": [
+            "W1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "W3",
+        "objectType": "Wachter",
+        "attributes": {
+          "rangnummer": {
+            "number": "30"
+          }
+        },
+        "roles": {
+          "voorligger": [
+            "W1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "W1",
+      "attribute": "voorliggerrang"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W2",
+      "attribute": "voorliggerrang",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W3",
+      "attribute": "voorliggerrang",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W1",
+      "attribute": "opvolgeraantal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W2",
+      "attribute": "opvolgeraantal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W3",
+      "attribute": "opvolgeraantal",
+      "value": {
+        "number": "0"
+      }
+    }
+  ]
+}

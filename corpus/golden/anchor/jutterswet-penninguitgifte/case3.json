@@ -1,0 +1,29 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": { "vondstwaarde": { "number": "4" } },
+        "roles": { "penningen": ["P1"] },
+        "characteristics": ["penninggerechtigd"]
+      },
+      {
+        "label": "P1",
+        "objectType": "Penning",
+        "attributes": { "bedrag": { "number": "6" } },
+        "roles": {},
+        "characteristics": ["uitgereikt"]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "aantal penningen", "value": { "number": "2" } },
+    { "kind": "attributeValue", "label": "J1", "attribute": "penningtotaal", "value": { "number": "10" } },
+    { "kind": "attributeValue", "label": "J1", "attribute": "aantal dossiers", "value": { "number": "1" } },
+    { "kind": "consistent" }
+  ]
+}

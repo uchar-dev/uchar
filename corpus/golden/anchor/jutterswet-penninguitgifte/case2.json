@@ -18,6 +18,13 @@
         "characteristics": []
       },
       {
+        "label": "P2",
+        "objectType": "Penning",
+        "attributes": { "bedrag": { "number": "3" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
         "label": "D1",
         "objectType": "Dossier",
         "attributes": {},
@@ -32,6 +39,6 @@
     { "kind": "attributeValue", "label": "J3", "attribute": "penningtotaal", "value": { "number": "12" } },
     { "kind": "attributeValue", "label": "J3", "attribute": "aantal dossiers", "value": { "number": "1" } },
     { "kind": "inconsistent", "rule": "penningcontrole", "label": "P1" },
-    { "kind": "inconsistent", "rule": "houderscontrole", "label": "P1" }
+    { "kind": "inconsistent", "rule": "houderscontrole", "label": "P2" }
   ]
 }

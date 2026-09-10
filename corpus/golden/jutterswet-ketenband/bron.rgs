@@ -1,0 +1,17 @@
+Objecttype de Wachter (mv: Wachters) (bezield)
+    het rangnummer Numeriek (niet-negatief geheel getal);
+    de voorliggerrang Numeriek (niet-negatief geheel getal);
+    het opvolgeraantal Numeriek (niet-negatief geheel getal);
+
+Feittype ketenband
+    de voorligger (mv: voorliggers) Wachter
+    de opvolger (mv: opvolgers) Wachter
+Eén voorligger heeft meerdere opvolgers
+
+Regel voorliggerrang
+    geldig altijd
+        De voorliggerrang van een Wachter moet berekend worden als het rangnummer van de voorligger van de Wachter.
+
+Regel opvolgeraantal
+    geldig altijd
+        Het opvolgeraantal van een Wachter moet berekend worden als het aantal opvolgers van de Wachter.
