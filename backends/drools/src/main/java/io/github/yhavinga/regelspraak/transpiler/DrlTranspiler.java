@@ -9,6 +9,7 @@ import io.github.yhavinga.regelspraak.model.Rationaal;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Parameter;
+import io.github.yhavinga.regelspraak.schema.FactModelGenerator;
 import io.github.yhavinga.regelspraak.transpiler.kern.Dagsoorten;
 import io.github.yhavinga.regelspraak.transpiler.kern.Dekking;
 import io.github.yhavinga.regelspraak.transpiler.kern.Eenheidsconflict;
@@ -201,10 +202,12 @@ public final class DrlTranspiler {
      *  WARNING (a semantically inert rule must never be silent). */
     private void meet(String soort, String naam, Runnable emitter) {
         int start = out.length();
+        navReden = null;   // a reason belongs to the construct that produced it; never carried into the next one
         emitter.run();
         String tekst = zonderStrings(out.substring(start));
         boolean marker = tekst.contains("/* TODO") || tekst.contains("// onopgelost");
-        Dekking d = marker ? Dekking.marker(soort, naam, markerReden(tekst)) : Dekking.lowered(soort, naam);
+        Dekking d = marker ? Dekking.marker(soort, naam, navReden != null ? navReden : markerReden(tekst))
+                : Dekking.lowered(soort, naam);
         dekking.add(d);
         d.meld(model);
     }
@@ -1637,14 +1640,47 @@ public final class DrlTranspiler {
             // that declares the attribute (volgKeten) — a chain resolved against another subject markers.
             List<Objecttype> bereikt = model.volgKeten(subject, a.navigatiePad());
             boolean ok = bereikt != null && bereikt.get(bereikt.size() - 1) == a.objecttype();
-            return new NaviRef(ok ? NaviSoort.KETEN : NaviSoort.ONOPGELOST, null);
+            if (!ok) return new NaviRef(NaviSoort.ONOPGELOST, null);
+            Objecttype cur = subject;
+            for (int i = 0; i < a.navigatiePad().size(); i++) {   // EVERY hop needs a field of its own
+                if (!navVeld(cur, a.navigatiePad().get(i), bereikt.get(i)))
+                    return new NaviRef(NaviSoort.ONOPGELOST, null);
+                cur = bereikt.get(i);
+            }
+            return new NaviRef(NaviSoort.KETEN, null);
         }
         String rol = naviRol(subject, a);
         if (EIGEN.equals(rol))          return new NaviRef(NaviSoort.EIGEN, null);
         if (naarVeel(subject, a, rol))  return new NaviRef(NaviSoort.NAAR_VEEL, rol);
-        if (rol != null)                return new NaviRef(NaviSoort.GENAVIGEERD, rol);
+        if (rol != null)                return navVeld(subject, rol, a.objecttype())
+                                            ? new NaviRef(NaviSoort.GENAVIGEERD, rol)
+                                            : new NaviRef(NaviSoort.ONOPGELOST, null);
         return new NaviRef(NaviSoort.ONOPGELOST, null);
     }
+
+    /** Whether a navigated hop from {@code ot} over {@code rol} to {@code doel} has a bean field to read, asked of
+     *  the ONE member derivation {@link FactModelGenerator#leden} renders — the SAME question the exec-model branch
+     *  asks, so the two branches refuse the same shapes. Until 2026-09-10 this branch asked nothing: a role name a
+     *  declared member had displaced still emitted {@code $subject.getWerf().getTarief()}, and the whole KieBase
+     *  build then died on a BARE compiler error ({@code Unable to Analyse Expression …}) that named neither the
+     *  role, the member, nor the limit. Loud, but not a diagnosis. Now the hop markers instead, with
+     *  {@link #navReden} carrying the reason into the manifest. */
+    private boolean navVeld(Objecttype ot, String rol, Objecttype doel) {
+        if (FactModelGenerator.heeftReferentieVeld(model, ot, rol, doel)) return true;
+        navReden = "genavigeerde lezing: " + (ot.heeftLid(rol)
+                ? "de rol '" + rol + "' op " + ot.naam + " deelt haar naam met een gedeclareerd lid — het beanveld"
+                  + " draagt dat attribuut/kenmerk en niet de referentie (leden(): attribuut > kenmerk >"
+                  + " referentie), dus de koppeling naar " + doel.naam + " heeft geen veld"
+                : "het beanmodel leidt voor de enkelvoudige rol '" + rol + "' op " + ot.naam
+                  + " geen referentieveld naar " + doel.naam + " af") + " (§13.3.9 opslagrichting)";
+        return false;
+    }
+
+    /** Why a navigated read markered, when the cause is the §13.3.9 bean-model limit rather than an arm nobody has
+     *  built yet. Set by {@link #navVeld} and RESET at every construct entry ({@link #meet}), which is also the only
+     *  place it is read — and only for a construct that DID marker, so a reason can never be attached to a lowered
+     *  rule. It sharpens the placeholder's own text, which says "navigatie" and cannot name the displacing member. */
+    private String navReden;
 
     /** Whether {@code a} reads a §13.3.7 gedimensioneerd attribuut (its field is a Map&lt;label,value&gt;).
      *  Such a read is only valid through an {@link Expr.DimensieCel} (which pins the label) or as the source

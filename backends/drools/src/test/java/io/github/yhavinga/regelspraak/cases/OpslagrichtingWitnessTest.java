@@ -49,6 +49,9 @@ class OpslagrichtingWitnessTest {
     /** The SELF-TYPED creation: a Wachter creates a Wachter over `opvolging` (roles `voorganger`/`opvolger`,
      *  both to-one), reads the fold over its opvolgers, and carries a consistentie. */
     private static final String WACHTERSKETEN = "anchor/jutterswet-wachtersketen";
+    /** A to-ONE NAVIGATED value read: `ligplaats` pairs the to-one `werf` with the to-many `schuit`, so the
+     *  reference field lives on Schuit, named after the role — the field every navigated read walks. */
+    private static final String NAVIGATIEPREMIE = "synth-navigatiepremie";
 
     // ---------------- 1. the case-input write on an ordinary self-typed pair ----------------
 
@@ -200,6 +203,60 @@ class OpslagrichtingWitnessTest {
         assertTrue(e.getMessage().contains("deelt haar naam met een gedeclareerd lid"), e.getMessage());
     }
 
+    // The FOURTH reader of that same field — the ordinary navigated VALUE read — asked for the name only until
+    // 2026-09-10, and it is the one arm that produced no ERROR at all. Its shape is the quiet one: the case
+    // writes NO role (so the case-input gate above is never reached) while a rule navigates over the displaced
+    // name. The hop then reads a BigDecimal/boolean instead of a fact, the chain's leeg short-circuit does not
+    // fire because that value is NOT null, and the attribute read off it yields null — which the arithmetic
+    // treats as an unset value rather than as ch. 1.2's absent relation. Measured on the pre-gate jar, on a
+    // verifier-clean and ref-clean model:
+    //     ref / clingo : S1.premie = 0        (20% van leeg coalesces, RUNTIME-SEMANTICS ch. 1.2)
+    //     Drools       : FAIL "attribuut premie: verwacht 0, werkelijk leeg"     (value-divergence, no reason)
+    // A value-divergence is exactly what gate 12's played channel is meant to catch — but a golden of this shape
+    // with the displacing attribute LEFT EMPTY plays green, so the corpus can carry the broken model unseen. Both
+    // hop readers (single-hop navReader, chain navKetenReader) are witnessed apart: they differ only in whether
+    // the ref carries a navigatiePad, and each lowered the same wrong read on its own.
+
+    @Test void de_genavigeerde_waardelezing_weigert_het_verdrongen_veld() throws Exception {
+        // navKetenReader — the ref as the frontend emits it: navigatiePad ["werf"].
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(naamdelendeSchuit(true), JSON.readTree(schuitZonderRol("premie", "0"))));
+        assertTrue(e.getMessage().contains("premie van een schuit"), e.getMessage());
+        assertTrue(e.getMessage().contains("genavigeerde lezing"), e.getMessage());
+        assertTrue(e.getMessage().contains("de rol 'werf' op Schuit deelt haar naam met een gedeclareerd lid"), e.getMessage());
+        assertTrue(e.getMessage().contains("§13.3.9 opslagrichting"), e.getMessage());
+    }
+
+    @Test void de_enkelvoudige_hoplezing_weigert_hetzelfde_veld() throws Exception {
+        // navReader's GENAVIGEERD case — the SAME model and case with the pad cleared and the hop named by the
+        // role (the shape synth3-kamerheffing carries). ref is indifferent to which of the two the wire uses (it
+        // resolves the hop either way and answers 0), so the two readers must be too.
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(naamdelendeSchuit(false), JSON.readTree(schuitZonderRol("premie", "0"))));
+        assertTrue(e.getMessage().contains("genavigeerde lezing"), e.getMessage());
+        assertTrue(e.getMessage().contains("de rol 'werf' op Schuit deelt haar naam met een gedeclareerd lid"), e.getMessage());
+    }
+
+    @Test void de_genavigeerde_vergelijking_weigert_hetzelfde_veld() throws Exception {
+        // navComparisonRole — the CONDITION side, which reads the relation field itself (§5.5.5: a null relation
+        // is a leegwaarde). On the pre-gate jar this arm did not even reach a wrong value: the constraint
+        // evaluated a BigDecimal as a fact and aborted the fire with an unclassified
+        // ERROR ConstraintEvaluationException, which gate 12 refuses to excuse. ref on exactly this model and
+        // case: toeslag stays leeg (leeg > 5 is onwaar, Tabel 33-44), `oracle: PASS (1 expectations)`.
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(navigerendeVergelijking(), JSON.readTree(schuitZonderRol(null, null))));
+        assertTrue(e.getMessage().contains("toeslag van een schuit"), e.getMessage());
+        assertTrue(e.getMessage().contains("genavigeerde lezing"), e.getMessage());
+        assertTrue(e.getMessage().contains("de rol 'werf' op Schuit deelt haar naam met een gedeclareerd lid"), e.getMessage());
+    }
+
+    // navReactiviteit — the fourth hop reader — gets the same gate but NO witness of its own, and the reason is
+    // structural: it is reached only from the scalar value path AFTER that path's own reader lowered, and both
+    // readers now gate every hop they walk, so a hop without a field cannot arrive there. The gate stays because
+    // navRefs walks argument positions the value path does not necessarily lower through (a Functie's arguments),
+    // and a silently DROPPED far-side watch is a stale value, not a refusal — the one outcome that method exists
+    // to prevent. It refuses the construct rather than continuing past the hop.
+
     // ---------------- fixtures ----------------
 
     private static Path ir(String golden) {
@@ -301,6 +358,82 @@ class OpslagrichtingWitnessTest {
         ir.putArray("objectCreaties"); ir.putArray("resolvedRegels"); ir.putArray("regels");
         ir.putArray("consistenties"); ir.putArray("regelGroepen");
         return tijdelijk("wachter-naamdeling-invoer", ir);
+    }
+
+    /** The navigatiepremie golden with a Numeriek attribute that SHARES the to-one role name `werf`, so leden()'s
+     *  name-dedup displaces Schuit's reference field, reduced to its `premie` rule (`20% van het tarief van de
+     *  werf van de Schuit`). {@code ketenPad} keeps the ref as the frontend emits it — navigatiePad ["werf"],
+     *  lowered by navKetenReader; without it the pad is cleared and the hop is named by the role, which is
+     *  navReader's GENAVIGEERD case. Verifier-clean and ref-clean in BOTH shapes; the corpus ir.json is untouched. */
+    private static Path naamdelendeSchuit(boolean ketenPad) throws Exception {
+        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(NAVIGATIEPREMIE)));
+        ((ObjectNode) ir.get("objecttypen").get("Schuit").get("attributen")).set("werf", numeriek());
+        houdRegel(ir, "premie van een schuit");
+        if (!ketenPad) {
+            ObjectNode nav = (ObjectNode) ir.get("resolvedRegels").get(0).get("waarde").get("rechts");
+            nav.putArray("navigatiePad");
+            nav.put("navigatieRol", "werf");
+        }
+        return tijdelijk("schuit-naamdeling-" + (ketenPad ? "keten" : "enkelvoudig"), ir);
+    }
+
+    /** The same collision on the CONDITION side: the `toeslag` rule with its voorwaarde operand replaced by the
+     *  navigated read (`het tarief van de werf van de Schuit groter is dan 5`) and its VALUE reduced to an own
+     *  attribute, so the refusal can only come from the comparison's hop reader. Verifier-clean and ref-clean. */
+    private static Path navigerendeVergelijking() throws Exception {
+        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(NAVIGATIEPREMIE)));
+        ((ObjectNode) ir.get("objecttypen").get("Schuit").get("attributen")).set("werf", numeriek());
+        houdRegel(ir, "toeslag van een schuit");
+        ObjectNode regel = (ObjectNode) ir.get("resolvedRegels").get(0);
+        ObjectNode nav = JSON.createObjectNode();
+        nav.put("node", "AttribuutRef").put("attribuut", "tarief").put("objecttype", "Werf")
+           .put("onderwerpBron", "de werf").put("navigatieRol", "werf");
+        nav.set("type", numeriek());
+        nav.put("bron", "het tarief van de werf van de Schuit").put("set", false);
+        nav.putArray("navigatiePad");
+        nav.putArray("navigatieBindingen").addObject()
+           .put("node", "RolBinding").put("feittype", "ligplaats").put("rol", "werf");
+        ((ObjectNode) regel.get("voorwaarde")).set("links", nav);
+        ((ObjectNode) regel.get("voorwaarde")).put("bron", "het tarief van de werf van de Schuit groter is dan 5");
+        ObjectNode eigen = JSON.createObjectNode();
+        eigen.put("node", "AttribuutRef").put("attribuut", "lengte").put("objecttype", "Schuit")
+             .put("onderwerpBron", "de Schuit").putNull("navigatieRol");
+        eigen.set("type", numeriek());
+        eigen.put("bron", "de lengte van de Schuit").put("set", false);
+        eigen.putArray("navigatiePad");
+        regel.set("waarde", eigen);
+        regel.put("soort", "GELIJKSTELLING");
+        return tijdelijk("schuit-naamdeling-vergelijking", ir);
+    }
+
+    /** Reduce a model to ONE named rule, in both the declaration list and the resolved list — so each arm below
+     *  is witnessed on its own refusal and not on a sibling rule that refuses first. */
+    private static void houdRegel(ObjectNode ir, String naam) {
+        for (String veld : new String[] { "regels", "resolvedRegels" }) {
+            com.fasterxml.jackson.databind.node.ArrayNode houd = JSON.createArrayNode();
+            for (JsonNode r : ir.get(veld)) if (naam.equals(r.get("naam").asText())) houd.add(r);
+            ir.set(veld, houd);
+        }
+    }
+
+    /** One Werf (tarief 312) and one Schuit that fills the DISPLACING attribute (werf 5) and lengte 8, with NO
+     *  role written — the shape that never reaches the case-input gate. {@code attribuut} null pins the toeslag
+     *  as leeg instead of a value. */
+    private static String schuitZonderRol(String attribuut, String waarde) {
+        return """
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [
+                      { "label": "W1", "objectType": "Werf", "attributes": { "tarief": { "number": "312" } },
+                        "roles": {}, "characteristics": [] },
+                      { "label": "S1", "objectType": "Schuit",
+                        "attributes": { "lengte": { "number": "8" }, "werf": { "number": "5" } },
+                        "roles": {}, "characteristics": [] } ],
+                    "parameters": {} },
+                  "expected": [ %s ] }
+                """.formatted(attribuut == null
+                ? "{ \"kind\": \"attributeEmpty\", \"label\": \"S1\", \"attribute\": \"toeslag\" }"
+                : "{ \"kind\": \"attributeValue\", \"label\": \"S1\", \"attribute\": \"" + attribuut
+                  + "\", \"value\": { \"number\": \"" + waarde + "\" } }");
     }
 
     private static ObjectNode numeriek() {

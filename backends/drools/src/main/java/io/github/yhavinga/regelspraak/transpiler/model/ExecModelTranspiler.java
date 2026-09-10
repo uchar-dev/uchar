@@ -223,6 +223,7 @@ public final class ExecModelTranspiler {
      *  so it stays LOWERED. A SKIP also raises a deduplicated WARNING (never silent). */
     private <T> T meet(String soort, String naam, java.util.function.Supplier<T> emitter) {
         int voor = overgeslagen.size();
+        navReden = null;   // a reason belongs to the construct that produced it; never carried into the next one
         T res = emitter.get();
         Dekking d = overgeslagen.size() == voor ? Dekking.lowered(soort, naam)
                 : Dekking.skip(soort, naam, String.join("; ", overgeslagen.subList(voor, overgeslagen.size())));
@@ -384,7 +385,9 @@ public final class ExecModelTranspiler {
                         || doel.objecttype().kenmerkGranulariteit.containsKey(doel.attribuut())))
                 return skip("regel (periodevergelijking op tijdsafhankelijk doel — §8.4.3 clip): " + r.naam());
             Gate gate = voorwaarde(r.voorwaarde(), pattern, doel.objecttype(), sVar);
-            if (gate == null) return skip("regel (" + voorwaardeSkipReden(r.voorwaarde()) + "): " + r.naam());
+            // the sharpened §13.3.9 reason where a navigated hop refused (navReden), else the honest scope note
+            if (gate == null) return skip("regel (" + (navReden != null ? navReden
+                    : voorwaardeSkipReden(r.voorwaarde())) + "): " + r.naam());
             pattern = gate.pattern();
             extra.addAll(gate.extra());
         }
@@ -628,11 +631,13 @@ public final class ExecModelTranspiler {
             } finally {
                 ketenWaardePad = false;
             }
-            if (wf == null) return skip("regel (waarde buiten scope): " + r.naam());
+            if (wf == null) return skip("regel (" + (navReden != null ? navReden : "waarde buiten scope") + "): " + r.naam());
             // Navigated-read reactivity: a to-one navigated value read makes the rule stale on the FAR fact's update
             // (property/class reactivity is per fact TYPE). Add a far-side JOIN per distinct navigation so the spiegel
             // re-fires when the navigated fact lands (the order-fragility fix). The consequence's read stays as-is.
-            extra.addAll(navReactiviteit(r.waarde(), doel.objecttype(), sVar));
+            List<RuleItemBuilder<?>> navWatch = navReactiviteit(r.waarde(), doel.objecttype(), sVar);
+            if (navWatch == null) return skip("regel (" + navReden + "): " + r.naam());
+            extra.addAll(navWatch);
             // §4 value-side unit restatement, EXACT (a kenmerk value is Boolean, no unit). Mirrors DrlTranspiler.omrekenWaarde.
             if (r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING)
                 wf = wf.herschaald(effType(r.waarde()), effType(doel), "een §4 schrijfgrens naar het doel");
@@ -923,6 +928,33 @@ public final class ExecModelTranspiler {
     private boolean heeftReferentieVeld(Objecttype ot, String rol, Objecttype doel) {
         return io.github.yhavinga.regelspraak.schema.FactModelGenerator.heeftReferentieVeld(model, ot, rol, doel);
     }
+
+    /** The same question on the READ side: whether a navigated hop from {@code ot} over {@code rol} to {@code doel}
+     *  has a bean field to read at all. Every navigated reader asks THIS — {@link #navReader}'s GENAVIGEERD case,
+     *  {@link #navKetenReader}'s hops, {@link #navComparisonRole} and {@link #navReactiviteit}'s far-side joins — so
+     *  the read can never drift from what {@code leden()} renders, exactly as the case-input, creation and fold-join
+     *  readers already do. On a refusal it records {@link #navReden}; the caller returns null and the construct's
+     *  skip carries that reason instead of a scope note.
+     *
+     *  <p>Why it must be asked HERE and not left to the getter: a displaced field still EXISTS, holding a
+     *  {@code BigDecimal} or a {@code boolean}. The hop then reads a non-null NUMBER where the relation is absent,
+     *  the chain's leeg short-circuit does not fire, and the attribute read off that number yields null — which the
+     *  arithmetic treats as an unset value rather than as ch. 1.2's absent relation. Measured on a verifier-clean,
+     *  ref-clean model (2026-09-10): {@code 20% van het tarief van de werf} answered LEEG where ref and clingo
+     *  write 0, with no ERROR and no reason — a plain value-divergence. On the comparison side the same read
+     *  aborted the fire ({@code ConstraintEvaluationException}). Both are now per-form refusals. */
+    private boolean navVeld(Objecttype ot, String rol, Objecttype doel) {
+        if (heeftReferentieVeld(ot, rol, doel)) return true;
+        navReden = "genavigeerde lezing: " + geenReferentieveldReden(ot, rol, doel) + " (§13.3.9 opslagrichting)";
+        return false;
+    }
+
+    /** Why a navigated READ did not lower, when the cause is the §13.3.9 bean-model limit rather than an arm nobody
+     *  has built yet — the {@link #aggregatieReden} distinction, on the read side. Set by {@link #navVeld} and RESET
+     *  at every construct entry ({@link #meet}), so a reason can only ever be attached to the construct whose own
+     *  lowering produced it. It SHARPENS an otherwise generic skip note and never invents one: it is set only where
+     *  a hop this construct walks really has no field, which is by itself enough to make the construct not-carried. */
+    private String navReden;
 
     /** Why {@code ot}'s bean carries no reference field for the to-ONE role {@code rol} toward {@code doel} — the
      *  precise §13.3.9 reason, so a per-form refusal names the bean-model limit instead of the generic scope note
@@ -1734,6 +1766,7 @@ public final class ExecModelTranspiler {
             if (rol == null) return null;   // ONOPGELOST
         }
         if (subject != null && model.naarVeelRol(subject, a.objecttype(), rol)) return null;   // NAAR_VEEL
+        if (!navVeld(subject, rol, a.objecttype())) return null;   // §13.3.9 no bean field to read (name-dedup)
         // GENAVIGEERD: read the relation field on the subject, then the attribute on the (known) target type — both
         // typed (Accessors LMF) when the fact class is known at build time. Null relation -> leeg (null-safe).
         java.util.function.Function<Object, Object> roleGet = typedGetter(factClass(subject), rol);
@@ -1754,6 +1787,8 @@ public final class ExecModelTranspiler {
         List<java.util.function.Function<Object, Object>> hops = new ArrayList<>();
         Objecttype cur = subject;
         for (int i = 0; i < a.navigatiePad().size(); i++) {
+            // EVERY hop, not just the first: a chain is only readable where each of its links has a field.
+            if (!navVeld(cur, a.navigatiePad().get(i), bereikt.get(i))) return null;   // §13.3.9 name-dedup
             hops.add(typedGetter(factClass(cur), a.navigatiePad().get(i)));
             cur = bereikt.get(i);
         }
@@ -1778,7 +1813,10 @@ public final class ExecModelTranspiler {
      *  NULL-relation subject (which reads leeg and never goes stale, but MUST still fire, §6.9 — e.g. a broken chain
      *  whose value still adds an OWN attribute). The two alternatives are mutually exclusive, so no subject
      *  double-fires. The consequence keeps its OWN null-safe navigated read. Unresolvable / to-many navigations are
-     *  skipped (they lower elsewhere / stay a marker). Mirrors the DRL back-end navReactiviteitClausules. */
+     *  skipped (they lower elsewhere / stay a marker). Mirrors the DRL back-end navReactiviteitClausules.
+     *  <p>null (never an empty list) when a hop has NO bean field: the join would probe a displaced member and bind
+     *  the wrong fact, so the whole construct is refused with {@link #navReden}. A {@code continue} would drop the
+     *  watch silently and leave the rule stale — the one direction this method exists to prevent. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private List<RuleItemBuilder<?>> navReactiviteit(Expr waarde, Objecttype subject, Variable subjectVar) {
         List<Expr.AttribuutRef> refs = new ArrayList<>();
@@ -1797,7 +1835,11 @@ public final class ExecModelTranspiler {
                 if (bereikt == null || bereikt.get(bereikt.size() - 1) != a.objecttype()) continue;
                 List<java.util.function.Function<Object, Object>> hops = new ArrayList<>();
                 Objecttype cur = subject;
-                for (int i = 0; i < a.navigatiePad().size(); i++) { hops.add(typedGetter(factClass(cur), a.navigatiePad().get(i))); cur = bereikt.get(i); }
+                for (int i = 0; i < a.navigatiePad().size(); i++) {
+                    if (!navVeld(cur, a.navigatiePad().get(i), bereikt.get(i))) return null;   // §13.3.9 name-dedup
+                    hops.add(typedGetter(factClass(cur), a.navigatiePad().get(i)));
+                    cur = bereikt.get(i);
+                }
                 reachFar = s -> { Object o = s; for (var h : hops) { o = h.apply(o); if (o == null) return null; } return o; };
                 key = far.naam + "|" + String.join(".", a.navigatiePad());
             } else {
@@ -1808,6 +1850,7 @@ public final class ExecModelTranspiler {
                 if (rol == null) rol = model.verbindendeRol(subject, far);
                 if (rol == null) continue;                     // ONOPGELOST
                 if (model.naarVeelRol(subject, far, rol)) continue;   // NAAR_VEEL -> aggregate path, not a scalar join
+                if (!navVeld(subject, rol, far)) return null;   // §13.3.9 no bean field to join on (name-dedup)
                 java.util.function.Function<Object, Object> roleGet = typedGetter(factClass(subject), rol);
                 reachFar = roleGet;
                 key = far.naam + "|" + rol;
@@ -1849,6 +1892,7 @@ public final class ExecModelTranspiler {
         String rol = model.verbindendeRolViaNaam(subject, a.objecttype(), a.navigatieRol());
         if (rol == null) return null;
         if (subject != null && model.naarVeelRol(subject, a.objecttype(), rol)) return null;   // NAAR_VEEL
+        if (!navVeld(subject, rol, a.objecttype())) return null;   // §13.3.9 no bean field to read (name-dedup)
         return rol;
     }
 
@@ -5821,7 +5865,8 @@ public final class ExecModelTranspiler {
                     tks.add(new TkLower(t.attribuut(), null, eval, off, tAccVars.size(), effType(t.waarde()), naar, t.kenmerk()));
                 } else {
                     WaardeFn wf = scalarWaarde(subject, t.waarde());
-                    if (wf == null) return skip("objectcreatie (toekenning-waarde buiten scope): " + oc.naam());
+                    if (wf == null) return skip("objectcreatie ("
+                            + (navReden != null ? navReden : "toekenning-waarde buiten scope") + "): " + oc.naam());
                     gNames.addAll(wf.globals());
                     tks.add(new TkLower(t.attribuut(), wf.fn(), null, 0, 0, effType(t.waarde()), naar, t.kenmerk()));
                 }
@@ -5835,7 +5880,8 @@ public final class ExecModelTranspiler {
         List<RuleItemBuilder<?>> extra = new ArrayList<>();
         if (oc.voorwaarde() != null) {
             Gate gate = voorwaarde(oc.voorwaarde(), pattern, subject, sVar);
-            if (gate == null) return skip("objectcreatie (voorwaarde buiten scope): " + oc.naam());
+            if (gate == null) return skip("objectcreatie ("
+                    + (navReden != null ? navReden : "voorwaarde buiten scope") + "): " + oc.naam());
             pattern = gate.pattern();
             extra.addAll(gate.extra());
         }
