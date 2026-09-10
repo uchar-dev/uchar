@@ -39,6 +39,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * before the division, and a read evaluated after it does not. This backend mirrors each measured order
  * (fix round 1 of the companion-onder-drager card: the Begrensd arm evaluated minimum first and fabricated
  * on one Begrensd flank while missing its mirror).
+ *
+ * <p><b>"Drager" / "carrier" below means the probe's HOST</b> — the OUTERMOST ch. 4.10 node on the path from
+ * the value root down to the site, which the companion's condition re-evaluates
+ * ({@code ExecModelTranspiler.Plek.drager}). It does NOT mean the {@code Expr.Onopgelost} carrier the loader
+ * once built for an {@code IfThenElse}: since the union card (2026-09-10) all three cluster nodes are
+ * ordinary {@code Expr} union nodes and nothing rides beside them.
  */
 class CompanionPadWitnessTest {
 

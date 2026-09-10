@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       (WF-077) — a one-sided implementation fails one of the two;</li>
  *   <li>a {@code Let} inside a ch. 7 prioritizedDefaults CONSEQUENCE — the defaults lowering compiles its
  *       values through the same path, so the deciding default and the leeg fall-through are both pinned;</li>
- *   <li>the reads the CARRIER hides from the generic {@code Expr} walks: a Let-wrapped read must still put
+ *   <li>the reads a ch. 4.10 node hides from the HAND-WRITTEN walks: a Let-wrapped read must still put
  *       its attribute in the freshness watch, or the rule computes once against a leeg producer and never
  *       recomputes. The producer's turn is forced by stratification, so the witness is deterministic.</li>
  * </ul>
@@ -137,18 +137,19 @@ class LetClusterWitnessTest {
                 waarde("toeslag", "0.00"))));
     }
 
-    // ---------------- 6. the reads a carrier hides: the freshness watch ----------------
+    // ---------------- 6. the reads a ch. 4.10 node hides: the freshness watch ----------------
 
     @Test void een_letgewikkelde_lezing_houdt_de_regel_reactief_op_zijn_producent() throws Exception {
-        // A carrier is an Onopgelost LEAF to every generic Expr walk, so the freshness watch (the DRL @watch
-        // mirror) would see NO reads for `gewogen := Let x = inkomen in x maal factor` — and a pattern without
+        // The freshness watch (the DRL @watch mirror) is a HAND-WRITTEN walk over concrete v0 node shapes: a
+        // Let matches none of them, so without taking letKinderen it sees NO reads for
+        // `gewogen := Let x = inkomen in x maal factor` — and a pattern without
         // constraints has an EMPTY reactivity mask: the rule computes ONCE, here against a leeg `factor`
         // (maal coalesces it to 0), and never recomputes when its producer lands.
         //
         // The order is FORCED, not left to agenda luck: `factor`'s rule reads a NEGATED kenmerk whose producer
         // exists, so §9.2 stratification gives it salience -1 and it fires AFTER this rule. ref on this exact
-        // model+case: factor 3.0000, gewogen 3000.000000 (the fixpoint). Without the walk seeing through the
-        // carrier the replay writes 0.00 — verified by mutation.
+        // model+case: factor 3.0000, gewogen 3000.000000 (the fixpoint). Without the walk descending the Let
+        // the replay writes 0.00 — verified by mutation.
         assertNull(speel(reactiviteitModel(), jutter("\"inkomen\": { \"number\": \"1000.00\" }",
                 waarde("factor", "3.0000") + ", " + waarde("gewogen", "3000.000000"))));
     }
@@ -323,7 +324,7 @@ class LetClusterWitnessTest {
 
     /** A Let-wrapped read of an attribute whose producer is FORCED to fire later (§9.2 stratification: its
      *  rule reads a negated kenmerk that has a producer, so its salience is -1). Only a freshness watch that
-     *  sees THROUGH the carrier keeps the consumer reactive on that producer's write. */
+     *  descends the Let keeps the consumer reactive on that producer's write. */
     private static String reactiviteitModel() {
         String inkomen = attr("inkomen", 2, false, "NIET_NEGATIEF");
         String vermistDoel = ("{\"node\":\"AttribuutRef\",\"attribuut\":\"vermist\",\"objecttype\":\"Jutter\","

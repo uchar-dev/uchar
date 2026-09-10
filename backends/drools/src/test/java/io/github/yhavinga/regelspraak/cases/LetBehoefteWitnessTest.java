@@ -16,8 +16,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * three clauses that separate L from the strict binding this backend carried before, witnessed through
  * {@link CaseRunner#speelCase} over models authored HERE (no corpus file is read, moved or touched).
  *
- * <p>The two sibling files pin what the cluster computes ({@code LetClusterWitnessTest}) and what its carrier
- * hides from the structural walks ({@code LetDragerWandelingWitnessTest}); both keep their pins under L,
+ * <p>The two sibling files pin what the cluster computes ({@code LetClusterWitnessTest}) and what a ch. 4.10
+ * node hides from the hand-written walks ({@code LetDragerWandelingWitnessTest}); both keep their pins under L,
  * because every binder they bind is read on every path. This file is the other half: the models on which
  * strict and call-by-need DISAGREE, so a backend that quietly kept the strict binding fails here and nowhere
  * else. <b>Every pinned value was produced by {@code ref/} on this exact model+case first</b> — ref carries the

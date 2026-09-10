@@ -401,16 +401,38 @@ public final class EffectieveEenheid {
         return uit;
     }
 
-    /** The Expr operands a condition carries, collected through the shared {@code Conditie.bevatOperand} scan.
-     *  That scan is a FULL pre-order walk, so the list holds each operand and then its descendants; {@link #noteer}
-     *  re-walks the ones it already reached through the operand itself. Recording a binder read is idempotent, and
-     *  the cluster nodes carry their own scope in {@link #noteer}, so the repetition costs work and nothing else —
-     *  the same shape this list has carried for a {@code Let} operand since {@code Expr.bevat} grew its Let arm. */
+    /**
+     * The ROOT of every Expr operand a condition carries — the nodes {@link #noteer} may start a walk at.
+     *
+     * <p><b>Roots, never descendants.</b> The shared {@code Conditie.bevatOperand} scan is a FULL pre-order walk:
+     * asked with a predicate that never short-circuits it yields each operand AND every node beneath it. Handing
+     * that flat list to {@link #noteer} makes it RE-ENTER each operand tree midway, carrying the enclosing scope
+     * into a place that scope does not govern. For a SHADOWING inner {@code Let} that is not redundant work but a
+     * wrong answer: the correct recording is made first, through the Let, and the mid-tree re-entry then
+     * overwrites it with the outer binder's unit (measured kg where WF-064 demands t, in both shapes
+     * {@code EffectieveEenheidWitnessTest} now pins). Scope is a property of the PATH to a node, so a walk may
+     * only ever begin where a path begins.
+     *
+     * <p>The roots are derived FROM the shared scan rather than by re-listing {@code Conditie}'s own arms: an
+     * entry that another entry contains is a descendant by definition, and what is left is exactly the operand
+     * roots. That keeps one source of truth for which conditions carry operands — a {@code Conditie} arm added
+     * later is covered here the moment the shared walk covers it, with nothing to keep in step.
+     */
     private static List<Expr> conditieOperanden(Conditie c) {
         if (c == null) return List.of();
-        java.util.List<Expr> uit = new java.util.ArrayList<>();
-        Conditie.bevatOperand(c, x -> { uit.add(x); return false; });
-        return uit;
+        java.util.List<Expr> vlak = new java.util.ArrayList<>();
+        Conditie.bevatOperand(c, x -> { vlak.add(x); return false; });
+        java.util.List<Expr> wortels = new java.util.ArrayList<>();
+        for (Expr kandidaat : vlak) {
+            boolean onderEenAndere = false;
+            for (Expr mogelijkeOuder : vlak) {
+                // identity, not equality: two operands can be value-equal records and still be separate roots
+                if (mogelijkeOuder == kandidaat) continue;
+                if (Expr.bevat(mogelijkeOuder, x -> x == kandidaat)) { onderEenAndere = true; break; }
+            }
+            if (!onderEenAndere) wortels.add(kandidaat);
+        }
+        return wortels;
     }
 
     private static String sleutel(String naam) {

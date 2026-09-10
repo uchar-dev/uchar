@@ -1,6 +1,7 @@
 package io.github.yhavinga.regelspraak.transpiler.kern;
 
 import io.github.yhavinga.regelspraak.ir.Bron;
+import io.github.yhavinga.regelspraak.ir.Conditie;
 import io.github.yhavinga.regelspraak.ir.Expr;
 import io.github.yhavinga.regelspraak.model.Datatype;
 import io.github.yhavinga.regelspraak.model.Eenheid;
@@ -240,6 +241,49 @@ class EffectieveEenheidWitnessTest {
         Expr keuze = new Expr.IfThenElse(null, liegendeRef(ot), liegendeRef(ot), num(TON), bron());
         assertEquals(KG, overLets().eenheidVan(keuze));
     }
+
+    // WF-064 inside a ch. 10.2 GUARD. The binder-read table is built by walking each Let with a scope, and a
+    // guard's operands are reached through the shared Conditie walk. That walk is a FULL pre-order scan, so it
+    // used to hand back every node of every operand — the operand AND its descendants — and the table walk then
+    // re-entered each subtree MIDWAY, with the enclosing scope instead of the one the node actually sits in. For
+    // a shadowing inner Let that is not extra work but a WRONG ANSWER: the correct recording (t) is made first
+    // through the Let, and the mid-tree re-entry overwrites it with the outer binding (kg). The two shapes below
+    // are the two ways an operand can hold that Let; both must read t.
+
+    @Test void een_schaduwende_let_in_een_guard_operand_houdt_haar_eigen_binding() {
+        // vorm A — the shadowing Let sits DIRECTLY in the guard:
+        //   Let g = <2 kg> in (als (Let g = <2 t> in <read g>) groter dan <2 kg> dan … anders …)
+        // WF-064: the read sits under the INNER binder, so it is tonnes. Measured kg before the repair.
+        Expr lezing = new Expr.BinderRef("g", num(KG), bron());
+        Expr binnen = new Expr.Let("g", getal(TON), lezing, num(KG), bron());
+        Conditie guard = new Conditie.Vergelijking(Conditie.Operator.GROTER, binnen, getal(KG), bron());
+        Expr keuze = new Expr.IfThenElse(guard, getal(KG), getal(KG), num(KG), bron());
+        Expr buiten = new Expr.Let("g", getal(KG), keuze, num(KG), bron());
+
+        assertEquals(TON, overLets(binnen, buiten).eenheidVan(lezing),
+                "de nabijste binder (t) wint, ook wanneer haar Let in een ch. 10.2-guard staat");
+    }
+
+    @Test void een_schaduwende_let_onder_een_geneste_keuze_in_een_guard_houdt_haar_binding() {
+        // vorm B — the same Let one level deeper, in the DAN-branch of a nested IfThenElse that is itself the
+        // guard operand. Before the union landing this shape read t by accident: the nested node was an opaque
+        // Onopgelost carrier, so the pre-order scan could not reach into it and there was nothing to re-enter.
+        // Making it a union node exposed the same break here — the one measured behaviour difference of the
+        // union card, repaired at its root rather than pinned as a divergence.
+        Expr lezing = new Expr.BinderRef("g", num(KG), bron());
+        Expr binnen = new Expr.Let("g", getal(TON), lezing, num(KG), bron());
+        Conditie binnenGuard = new Conditie.Vergelijking(Conditie.Operator.GROTER, getal(KG), getal(KG), bron());
+        Expr genesteldeKeuze = new Expr.IfThenElse(binnenGuard, binnen, getal(KG), num(KG), bron());
+        Conditie guard = new Conditie.Vergelijking(Conditie.Operator.GROTER, genesteldeKeuze, getal(KG), bron());
+        Expr keuze = new Expr.IfThenElse(guard, getal(KG), getal(KG), num(KG), bron());
+        Expr buiten = new Expr.Let("g", getal(KG), keuze, num(KG), bron());
+
+        assertEquals(TON, overLets(binnen, buiten).eenheidVan(lezing),
+                "ook onder een geneste keuze in de guard wint de nabijste binder (t)");
+    }
+
+    /** A unit-bearing literal — the value a shadowing binder binds to. */
+    private static Expr getal(Eenheid e) { return new Expr.Literal("2", num(e), bron()); }
 
     // ---------------- the three reason-carrying exceptions ----------------
 

@@ -12,15 +12,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * IR-SPEC ch. 4.10 — the FENCES a Let-cluster CARRIER must keep, the structural WALKS that must see through
+ * IR-SPEC ch. 4.10 — the FENCES a Let-cluster node must keep, the structural WALKS that must descend into
  * it, and the two paths on which a companion must NOT FIRE, witnessed via {@link CaseRunner#speelCase} over
  * models authored HERE (no corpus file is read, moved or touched).
  *
  * <p>The sibling {@code LetClusterWitnessTest} pins what the Let cluster COMPUTES. This file pins the other
- * half — what the carrier HIDES. To every generic {@code Expr} tree walk the carrier is an opaque
- * {@code Onopgelost} leaf, so a walk that does not descend under-reports in SILENCE: a missing §9.5
+ * half — what a walk that stops at a cluster node MISSES. All three of them ({@code Let},
+ * {@code BinderRef}, {@code IfThenElse}) are ordinary {@code Expr} union nodes, so the generic
+ * {@code Expr.bevat} descends them by construction; the walks pinned here are the HAND-WRITTEN ones in
+ * {@code ExecModelTranspiler}, which match concrete v0 node shapes and therefore reach a cluster node's
+ * children only by taking {@code letKinderen}. One that does not under-reports in SILENCE: a missing §9.5
  * fout-companion reads as "consistent", a missing read reads as "nothing to watch". Each witness below is a
- * model on which the walk's blindness is OBSERVABLE, and each was measured against {@code ref/} on this exact
+ * model on which that blindness is OBSERVABLE, and each was measured against {@code ref/} on this exact
  * model+case before it was pinned here — ref is the arbiter, this backend the third executor.
  *
  * <ul>
@@ -41,7 +44,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       descend into both — a STATIC walk cannot know which ch. 10.2 branch will run, and under call-by-need a
  *       Let body is always ENTERED (ch. 10.6 clauses 1+3; clause 2 may still cut it short at a read) — so
  *       blindness there would MISS a real fault, and what keeps the companion silent is its path probe, which
- *       re-evaluates the carrier and deposits only when a §6.5/§6.6 site under it really ran. A companion
+ *       re-evaluates the outermost ch. 4.10 node on the path and deposits only when a §6.5/§6.6 site under it
+ *       really ran (that node is the probe's HOST — {@code ExecModelTranspiler.Plek.drager}). A companion
  *       fired for code that never executed is INCONSISTENT where ref says consistent, which is a wrong ANSWER, not an
  *       over-cautious refusal. Each is pinned beside the flank where the fault IS real.</li>
  * </ul>
@@ -68,8 +72,8 @@ class LetDragerWandelingWitnessTest {
     @Test void het_defaults_delingshek_vuurt_door_een_let_heen() throws Exception {
         // The ch. 7 defaults lowering refuses a consequence that can DEPOSIT in the §6.5 fout channel, because
         // a default that is evaluated and then discarded would leave the Inconsistentie behind. The division
-        // here sits behind a Let ("Let d = deler in inkomen gedeeld door d"), so a carrier-blind bevatDeling
-        // would let the group through and the fence would be a dead letter on every Let-carrying default.
+        // here sits behind a Let ("Let d = deler in inkomen gedeeld door d"), so a bevatDeling that does not take
+        // letKinderen would let the group through and the fence would be a dead letter on every such default.
         // ref on this model+case: toeslag = 5.0000 (kindertal 3, inkomen 10.00, deler 2.00) — a value this
         // backend deliberately does NOT produce; the honest outcome here is the refusal, and it names the fence.
         CaseRunner.Excluded weigering = assertThrows(CaseRunner.Excluded.class,
@@ -81,13 +85,13 @@ class LetDragerWandelingWitnessTest {
                 "de weigering noemt het delingshek: " + weigering.getMessage());
     }
 
-    // ---------------- 2. the walks that must see through the carrier ----------------
+    // ---------------- 2. the walks that must descend into a ch. 4.10 node ----------------
 
     @Test void een_letverborgen_genavigeerde_lezing_houdt_de_verre_zijde_reactief() throws Exception {
         // "uit := Let k = het afgeleid van zijn strandmaat in k maal 2,00" — the read is NAVIGATED, so the
         // consumer's reactivity depends on navRefs seeing it. Its producer ("afgeleid") is FORCED into a lower
         // stratum (§9.2: it reads a negated kenmerk that has a producer, salience -1), so it fires AFTER this
-        // rule. Carrier-blind, the far-side pattern carries no constraint on `afgeleid`, the rule computes once
+        // rule. Without descending the Let, the far-side pattern carries no constraint on `afgeleid`, the rule computes once
         // against a leeg partner value (maal coalesces it to 0) and never recomputes.
         // ref on this exact model+case: J1.afgeleid 30.0000, J2.afgeleid 60.0000, J1.uit 120.000000,
         // J2.uit 60.000000 (the fixpoint; the strandmaatschap is wederkerig, so J2 reads J1 back).
@@ -103,7 +107,7 @@ class LetDragerWandelingWitnessTest {
         // TWO defaults members over one target, declared unordered — a conflict-capable ch. 7 group, whose
         // members must fire only after everything they READ is derived. Member A's consequence hides its read
         // of the RULE-DERIVED `grondslag` behind a Let ("Let g = grondslag in g"); its producer is again forced
-        // into a lower stratum. Carrier-blind, exprLeesnamen reports no read, the group's salience does not
+        // into a lower stratum. Without descending the Let, exprLeesnamen reports no read, the group's salience does not
         // sink below the producer, and member A decides on a leeg grondslag.
         // ref on this exact model+case: grondslag = 200.00, toeslag = 200.00 (the conflict resolves to the
         // literal member — which it can only do once member A has a REAL value to lose with).
@@ -117,7 +121,7 @@ class LetDragerWandelingWitnessTest {
 
     @Test void een_letomhulde_deling_door_leeg_is_even_inconsistent_als_de_kale() throws Exception {
         // §6.5 Tabel 12: a filled dividend over a LEEG divisor degrades the value to leeg AND deposits a Fout.
-        // The value side is carrier-agnostic (the Let body is ordinary arithmetic), so ONLY the companion —
+        // The value side lowers the Let itself (its body is ordinary arithmetic), so ONLY the companion —
         // verzamelDelingen — can go missing, and it goes missing SILENTLY: "consistent" instead of a fault.
         // ref on both models with `deler` absent: uit leeg, INCONSISTENT. Pinned bare AND wrapped, in that
         // order: an implementation that raises neither fault fails on the bare twin first.
@@ -143,11 +147,14 @@ class LetDragerWandelingWitnessTest {
         // ch. 10.2 evaluates EXACTLY the chosen branch. The DAN branch divides by `deler`, which is absent; the
         // condition is false (a = 1,00, not > 100), so that division never runs. The walk DOES descend into the
         // branch — the §9.5 companion for that division exists — and what keeps it silent is its path probe:
-        // the companion re-evaluates the carrier (a ch. 10.2 Keuze is one) and deposits only when a §6.5 site
-        // under it really ran. A companion deciding on the static "dividend present, divisor leeg" predicate
-        // alone cannot see which branch ran and would answer INCONSISTENT where ref answers consistent.
+        // the companion re-evaluates the outermost ch. 4.10 node on the path (here the IfThenElse itself) and
+        // deposits only when a §6.5 site under it really ran. A companion deciding on the static "dividend
+        // present, divisor leeg" predicate alone cannot see which branch ran and would answer INCONSISTENT
+        // where ref answers consistent.
         // ref on BOTH models with `deler` absent: uit = 7.0000, CONSISTENT. Pinned bare (the IfThenElse as the
-        // rule value) AND inside a Let body, because the carrier hides the branches in both shapes.
+        // rule value) AND inside a Let body, because those two shapes give the probe a DIFFERENT host — the
+        // IfThenElse itself, and the Let above it — and only one of the two would break if the host were
+        // picked wrong.
         // NB what this method pins is the OUTCOME; it would also pass under a never-fabricating walk. The probe
         // MECHANISM is pinned by the sister {@code CompanionPadWitnessTest} —
         // een_deling_in_de_genomen_tak_is_inconsistent_en_in_de_niet_genomen_niet — which drives both flanks
@@ -191,7 +198,8 @@ class LetDragerWandelingWitnessTest {
     @Test void een_breuk_achter_een_let_vergelijkt_exact_in_plaats_van_te_crashen() throws Exception {
         // "als (Let x = a gedeeld door 3 in x) groter is dan b plus 0,00 dan uit := 1,00", a = 10.00, b = 1.00.
         // 10/3 does not terminate, so the value side produces an EXACT Breuk. kanBreukOpleveren decides whether
-        // the comparison routes through the Breuk-aware helper or through a raw (BigDecimal) cast; carrier-blind
+        // the comparison routes through the Breuk-aware helper or through a raw (BigDecimal) cast; without
+        // descending the ch. 4.10 node
         // it answers "no Breuk here" and the cast throws a ConstraintEvaluationException at fire — an
         // unexplained crash, which gate 12 counts as a not-carried form rather than a value.
         // ref on both models: uit = 1.00, consistent (10/3 = 3.33… > 1.00).

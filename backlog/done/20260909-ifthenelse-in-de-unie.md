@@ -127,8 +127,9 @@ alle 167 goldens: **identiek, dezelfde MD5 over het hele bestand**
 (`0302dacf9fa8a32cbab1f2838e159e0b`). Geen golden verandert van kanaal,
 geen `PLAYED n` verandert van n, geen weigerreden verandert van tekst.
 
-**Het aandachtspunt van de kaart — gemeten, en er is één verschuiving.**
-Corpusbreed staat er onder een `IfThenElse` (guard plus beide takken):
+**Het aandachtspunt van de kaart — gemeten; er zijn DRIE verschuivingen, en de
+derde was een echte fout.** Corpusbreed staat er onder een `IfThenElse` (guard
+plus beide takken):
 51 `BinderRef`, 15 `Vergelijking`, 15 `Binair`, 12 `Literal`,
 9 `ParameterRef`, 6 `Construct`, 6 `SumType`, 2 `Afgerond` — en
 **nul `AttribuutRef`** en **nul `Rekendatum`/`Rekenjaar`**. Dus:
@@ -156,8 +157,48 @@ dus hoe dan ook `null` en er kan geen byte DRL verschuiven. Gate 13 bevestigt
 het: het rapport is woordelijk identiek aan de meting op de schone boom,
 inclusief de DRL-tekst-telling 13.
 
-**De rode corpus en de `toka/`-zone dragen geen enkele `IfThenElse`** — de
-flank waar de zusterkaart haar bevinding vond, is hier leeg.
+**Een derde verschuiving — een echte fout, gevonden in de fixronde en hier
+gerepareerd (2026-09-10).** `EffectieveEenheid.conditieOperanden` leverde de
+guard-operanden aan via de gedeelde `Conditie.bevatOperand`-wandeling met een
+predicaat dat nooit kortsluit. Die wandeling is een VOLLEDIGE pre-order-scan,
+dus de lijst bevatte elke operand én alles eronder, en `noteer` liep elke
+boom daardoor MIDDENIN opnieuw in — met de omhullende scope. Voor een
+schaduwende `Let` is dat geen dubbel werk maar een verkeerd antwoord: de
+juiste opname (t) wordt eerst gemaakt via de `Let`, en de herintrede
+overschrijft haar met de buitenste binding (kg). Twee vormen, allebei gemeten:
+
+- **vorm A** — de schaduwende `Let` rechtstreeks in de guard: op de basis al
+  fout (kg). Pre-existent, sinds `Expr.bevat` zijn `Let`-arm kreeg.
+- **vorm B** — dezelfde `Let` in de dan-tak van een GENESTE `IfThenElse` in de
+  guard: op de basis per ongeluk **goed** (t — de geneste knoop was daar een
+  ondoorzichtige `Onopgelost`-drager, dus er viel niets te herbetreden) en op
+  de bouwronde-kop **fout** (kg). **Dit is het gemeten gedragsverschil dat de
+  bouwronde had moeten melden en niet meldde.** De per-golden-vergelijking zag
+  het niet omdat geen enkele golden de vorm draagt; alleen een gerichte probe
+  bereikt haar.
+
+De reparatie zit bij de wortel: `conditieOperanden` levert nu alleen de
+operand-WORTELS — een invoer die een andere invoer bevat is per definitie een
+afstammeling — zodat `noteer` elke boom zelf met de juiste scope wandelt. Dat
+dicht A én B in één keer. De wortels worden AFGELEID uit dezelfde gedeelde
+wandeling in plaats van `Conditie`'s armen na te tekenen, dus er is niets bij
+gekomen dat mee moet bewegen als die unie groeit. Rood-eerst gepind met twee
+getuigen in `EffectieveEenheidWitnessTest`
+(`een_schaduwende_let_in_een_guard_operand_houdt_haar_eigen_binding`,
+`een_schaduwende_let_onder_een_geneste_keuze_in_een_guard_houdt_haar_binding`):
+vóór de reparatie meten beide `kg`, erna `t`. Corpusneutraal — de
+per-golden-vergelijking blijft na de reparatie dezelfde MD5 als de
+basismeting.
+
+**De flankveegronde, compleet.** De rode corpus en de `toka/`-zone dragen geen
+enkele `IfThenElse` — de flank waar de zusterkaart haar bevinding vond, is
+hier leeg. `corpus/negatief` draagt er wél drie:
+`wf069-ifthenelse-outside-body`, `wf077-attribute-in-condition` en
+`wf077-fieldaccess-in-condition`. Onschadelijk, en daarom eerder over het
+hoofd gezien: die zone wordt alleen door de OCaml-verifier (gate 3) gelezen,
+die geen regel Java van deze kaart raakt — gate 1 leest haar als tekst, niet
+als IR. De eerdere "leeg"-formulering was niettemin onvolledig en staat hier
+recht.
 
 **De getuige** (additief, één nieuw bestand):
 `backends/drools/src/test/java/io/github/yhavinga/regelspraak/loader/IfThenElseUnieWitnessTest.java`,
@@ -188,13 +229,21 @@ verwachting `KG` en de boodschap ongewijzigd) en `EenheidsconflictWitnessTest`
 | 9 | check-catala | PASS (201 checks, vloer 201; 12 catala-goldens, vloer 12) |
 | 10 | check-regelspraak | PASS (173 tests, vloer 173; 38 rgs-goldens byte-identiek, vloer 38) |
 | 11 | check-toka-parity | PASS (45 .rgs byte-identiek, vloer 45; 27 tests; 29 replays, nul divergenties) |
-| 12 | check-drools | PASS (**played 120**, kanaalvloer 47; JUnit 269, vloer 239) |
+| 12 | check-drools | PASS (**played 120**, kanaalvloer 47; JUnit 271, vloer 239) |
 | 13 | check-reftype-derivation | PASS (74 twists, vloer 74; 70 replays, 13 DRL-tekst, vloer 13; 0 survivors) |
 
 Geen pin verplaatst. `EXPECTED_PLAYED` blijft 120, de kanaalvloer blijft 47
-namen, `EXPECTED_MIN_TESTS` blijft 239 (de suite groeide van 266 naar 269 —
-groei hoeft de vloer niet te verzetten). Gate 10's suite blijft 173 tests: er
-is geen frontend-test bijgekomen.
+namen, `EXPECTED_MIN_TESTS` blijft 239 (de suite groeide van 266 naar 271 —
+drie unie-getuigen plus de twee scope-getuigen van de fixronde; groei hoeft de
+vloer niet te verzetten). Gate 10's suite blijft 173 tests: er is geen
+frontend-test bijgekomen.
+
+**Gemeld, niet aangeraakt.** `scripts/check-drools.sh:76` draagt
+`EXPECTED_MIN_TESTS=239   # 2026-09-10: measured 239`, terwijl de suite op de
+basis 266 mat. De vloer zelf is geldig (een ondergrens mag lager liggen); de
+annotatie "measured 239" klopt niet met de meting van die dag. Het is een
+beschermd script en een pre-existente fout, dus hier alleen gemeld, voor de
+hoofdsessie.
 
 **Wat bewust niet bewoog.** Het schema (`IfThenElse` stond er al, inclusief de
 notitie "never emitter-produced"), `RUNTIME-SEMANTICS.md` ch. 10.2 en WF-069,
@@ -230,7 +279,17 @@ aan rij 10:
 > emitter, en daalt elke generieke `Expr`-wandeling er per constructie in af in
 > plaats van hem als ondoorzichtig blad te lezen. Gedragsneutraal gemeten: de
 > gate-12-uitslagregel is byte-identiek per golden over alle 167, en gate 13
-> woordelijk identiek. Eén gemeten verschuiving in wat een consument *ziet*:
-> `PeriodeDekking.parameterNamen` bereikt negen `ParameterRef`s onder een
-> `IfThenElse` die eerder onzichtbaar waren — zonder waarneembaar gevolg, want
-> die analyse heeft in deze repo geen aanroeper.
+> woordelijk identiek. Drie gemeten verschuivingen in wat een consument *ziet*,
+> alle drie benoemd in plaats van samengevat: (1) `PeriodeDekking.
+> parameterNamen` bereikt negen `ParameterRef`s onder een `IfThenElse` die
+> eerder onzichtbaar waren — zonder waarneembaar gevolg, want die analyse heeft
+> in deze repo geen aanroeper; (2) de eenheidsafleiding van de DRL-tekst-tak
+> daalt nu ook in de vorm af, waar zij eerder op de annotatie van de drager
+> bleef staan — corpusbreed antwoordt zij hoe dan ook `null`, want geen
+> `IfThenElse` en geen knoop eronder draagt een eenheid; (3) de scope-bres in
+> `EffectieveEenheid.conditieOperanden`, waar een vlakke pre-order-lijst een
+> guard-operand middenin liet herbetreden en de WF-064-opname van een
+> schaduwende `Let` overschreef — pre-existent voor een `Let` in de guard,
+> door de unie-landing ook bereikbaar onder een geneste `IfThenElse`, en in
+> deze kaart bij de wortel gerepareerd (de lijst levert nu alleen operand-
+> wortels) met twee rood-eerst gepinde getuigen.

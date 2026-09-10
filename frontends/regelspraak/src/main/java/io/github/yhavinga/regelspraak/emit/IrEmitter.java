@@ -513,7 +513,7 @@ public final class IrEmitter {
             // serialising: an emit path nothing exercises could carry a wrong key order or a wrong field name
             // (the wire spells them condition/then/else) and no gate would ever read those bytes. A loud
             // refusal cannot be silently wrong; a dead serialiser can.
-            case Expr.IfThenElse ignored -> throw new IllegalStateException(
+            case Expr.IfThenElse ignored -> throw new UnsupportedOperationException(
                     "IfThenElse is never emitter-produced (IR-SPEC ch. 4.10): the resolver builds none, "
                             + "so this emitter has no verified wire shape for it");
             case Expr.Onopgelost o -> {
