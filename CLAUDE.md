@@ -16,8 +16,9 @@ Sessions are stateless; what accumulates is artifacts — the spec, the corpus,
 the verifier, the gate set, the plan. Therefore:
 
 - Every session works one defined task with acceptance criteria stated up
-  front, and ends by updating that task and — only if scope changed —
-  `spec/PLAN.md`.
+  front, and ends by updating that task; a scope change reaches
+  `spec/PLAN.md` through the main session's serial bookkeeping (see
+  Protected paths).
 - Update THIS file only when an invariant or protected path changes. It is
   the constitution's index, not a logbook.
 
@@ -26,7 +27,7 @@ the verifier, the gate set, the plan. Therefore:
 Sessions may propose diffs to these; only the maintainer merges them:
 
 - `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`, `spec/schema/`,
-  `spec/verifier/` (once it exists)
+  `spec/verifier/`
 - `corpus/golden/anchor/` (hand-written cases with absolute expected values)
 - `.github/` (CI configuration, CODEOWNERS)
 - `scripts/` (gate scripts), `WAY-OF-WORKING.md`, and this file
@@ -41,13 +42,16 @@ deliberately broader than the list above: too much review beats too little.
 Within that claim, per item:
 
 - `spec/PLAN.md` and `spec/CONSTRUCTS.md` are the card protocol's
-  bookkeeping channel. Sessions update them as part of finishing a card (the
-  tracked deltas in CONSTRUCTS; PLAN only when scope changed), and that
-  update lands with the card's merge under the mandate the maintainer gave
-  the session — no separate review up front.
-- The remaining `spec/` items outside the list — `spec/ASP-TRANSLATION.md`,
-  `spec/IR-REVIEW.md`, `spec/proposals/` — follow the net: a change is a
-  proposal unless the card grants mandate for it explicitly.
+  bookkeeping channel, and the MAIN session keeps it: the tracked CONSTRUCTS
+  deltas, and PLAN when scope changed, land serially at the card's landing —
+  in the merge commit or right after it — with no separate review up front.
+  A card session does not touch them unless its card says so explicitly; it
+  puts proposed row text in its `Result:` note. (They are the registry
+  `WAY-OF-WORKING.md` §1 keeps parallel cards out of.)
+- Everything else under `spec/` — today `spec/ASP-TRANSLATION.md`,
+  `spec/IR-REVIEW.md`, `spec/proposals/` — follows that net: a change is a
+  proposal unless the maintainer grants mandate for it, normally in the
+  card.
 
 ## Spec discipline
 
