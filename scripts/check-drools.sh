@@ -259,7 +259,17 @@ EXPECTED_CHANNEL=(
 # an owner that is a declared type OTHER than the subject's — never reaches this gate at all: the
 # backend drops such a rule as a transpiler SKIP rather than faulting, so it is neither a player nor
 # a red-corpus case, and its witnesses are the two OCaml executors' own gated suites.
-EXPECTED_PLAYED=120
+#
+# 2026-09-10: 120 -> 121, jutterswet-ketenband (the ch. 5.7a case-input witness). It did NOT arrive
+# playing: on the merge base its case1 and case2 were per-form refusals ("role 'opvolgers'
+# (Wachter -> Wachter) reaches no to-one reference field … neither direction of the type pair derives
+# a to-one role"), because a TO-MANY written role stores its links in the far end's field and the
+# by-pair search that used to name that field counts both same-typed siblings and derives null. The
+# case-input arm now resolves that sister role BY NAME (CaseRunner.zetRollen, the same two-authority
+# shape the forward write already used), so the field the bean model really carries is written and
+# all three spellings of the one relation replay with the same pinned values — ref = clingo = Drools
+# on a self-typed 1:N relation supplied from either end, which no golden could witness before.
+EXPECTED_PLAYED=121
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the

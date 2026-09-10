@@ -495,11 +495,26 @@ public final class CaseRunner {
                 boolean zelfpaar = viaNaam != null && FactModelGenerator.zelfpaarRollen(model, tI).contains(viaNaam);
                 // the field on THIS bean (to-one from here): the written self-pair role, else the type pair
                 String rolIL = zelfpaar ? viaNaam : model.verbindendeRol(tI, tL);
+                // The SISTER role — the one THIS instance fills — whose reference field lives on the TARGET
+                // bean, and which is where a TO-MANY written role stores its links. Resolved BY NAME first,
+                // exactly as rolIL is: the written role name names one feittype and its OTHER role is the
+                // back-reference (verbindendeRolViaElementnaam). That is the only route on a SELF-TYPED pair,
+                // where the by-pair search below counts both same-typed siblings and derives null by
+                // construction — the shape that made W1{opvolgers:[…]} a per-form refusal although the field
+                // (Wachter.voorligger) exists and the case-input arm two lines down could write it.
+                // Accepted only when the name lands on a field FactModelGenerator really derived
+                // (zelfpaarRollen, the same membership test rolIL uses), so a by-pair-AMBIGUOUS cross-type
+                // pair keeps its by-pair answer and its name-sharing refusal instead of reaching a setter no
+                // bean carries. Where the by-pair search already succeeds, a by-name hit is one of its
+                // candidates, so a unique pair resolves to the same role either way.
+                String zuster = model.verbindendeRolViaElementnaam(tI, e.getKey());
+                boolean zusterZelfpaar = zuster != null && FactModelGenerator.zelfpaarRollen(model, tL).contains(zuster);
+                String rolLI = zusterZelfpaar ? zuster : model.verbindendeRol(tL, tI);
                 if (rolIL != null && !model.naarVeelRol(tI, tL, rolIL)) {
                     naamdelingsPoort(tI, rolIL, tL, e.getKey());
                     zetToOne(bean, rolIL, doel);
                 } else {
-                    String rolLI = model.verbindendeRol(tL, tI);  // the field lives on the target (this is the one side)
+                    // the field lives on the target (this is the one side)
                     if (rolLI == null || model.naarVeelRol(tL, tI, rolLI))
                         // NOT UNIQUE and UNIQUE BUT TO-MANY are different failures and are reported apart (lens 2,
                         // 2026-08-30): the erflijn shape resolves `erfvolger` by name PERFECTLY, and what stops it
@@ -553,21 +568,30 @@ public final class CaseRunner {
     }
 
     /** §13.3.9.2 mirrored: ONE reciprocal entry holds in BOTH directions, so every self-pair leg the case wrote
-     *  gets its reverse materialised — exactly what {@code Case.materialise_reciprocal} does in ref, and what
-     *  RUNTIME-SEMANTICS §4.1 requires ("the pinned runtime writes both to-one legs so navigation never reads a
-     *  spuriously empty side"). Both goldens pin it: a partner that declares no roles of its own still reads its
+     *  gets its reverse materialised — exactly what {@code Case.materialise_relations} does in ref, and what
+     *  RUNTIME-SEMANTICS ch. 4.1 requires ("the pinned runtime writes both to-one legs so navigation never reads
+     *  a spuriously empty side"). Both goldens pin it: a partner that declares no roles of its own still reads its
      *  side, and the reverse read {@code Jutter( maat == $subject )} an aggregation lowers to needs the leg
      *  present. Run as a SEPARATE PASS over the finished links, like ref's, so the outcome cannot depend on the
      *  order instances appear in: a conflict must be seen wherever the colliding leg was written. Idempotent
      *  (a case supplying both legs means one relation), and a CONFLICTING leg on the to-one role is hard — ref
      *  refuses that case at load (WF-013), so overwriting it here would file a broken case under a green replay.
      *
-     *  <p>Scoped to the WEDERKERIG shape on purpose, and ref-arbitrated: an ORDINARY self-typed pair (two distinct
-     *  sibling roles, {@code voorganger}/{@code opvolger}) must NOT mirror. ref's {@code Case.materialise_reciprocal}
-     *  mirrors only when {@code ft.wederkerig}, so a case writing {@code W1{opvolger:[W2]}} leaves W2's voorganger
-     *  reading EMPTY — measured on the erflijn shape (card lens 2026-08-30: the counting probe reads 1 opvolger on
-     *  W1 and 0 voorgangers on W2; the mirrored hypothesis MISMATCHes in ref). {@link #zetRollen} therefore writes
-     *  that leg directed, on the written role's field only. */
+     *  <p>Scoped to the WEDERKERIG shape — and since 2026-09-10 that scope is a RECORDED GAP, not the law it
+     *  used to state. RUNTIME-SEMANTICS ch. 5.7a (maintainer decision) makes EVERY supplied link establish its
+     *  relation in both directions, and ref's {@code Case.materialise_relations} mirrors on the SISTER role
+     *  accordingly. Two shapes, two answers here:
+     *  <ul>
+     *    <li><b>1:N</b> — the relation has exactly ONE reference field and it necessarily serves both
+     *        directions, so no second write exists to make. {@link #zetRollen} lands the case's write on that
+     *        field through the sister role's NAME, and the three spellings of one relation give one fact base
+     *        ({@code ZusterrolInvoerWitnessTest}, over the {@code jutterswet-ketenband} golden).</li>
+     *    <li><b>1:1</b> — each direction owns a field, so ch. 5.7a needs a SECOND write on the target bean,
+     *        which this backend does NOT yet make: a case writing {@code W1{opvolger:[W2]}} over a
+     *        to-one/to-one self-pair leaves W2's {@code voorganger} null here while ref reads W1. No corpus
+     *        golden supplies a 1:1 relation one-sidedly, so no gate sees it; {@code OpslagrichtingWitnessTest}
+     *        is where that flank is pinned, and closing the gap means moving its pins with the write.</li>
+     *  </ul> */
     private void spiegelWederkerigeRollen() {
         for (Object bean : labelNaarBean.values()) {
             String rol = FactModelGenerator.zelfpaarRol(model, objecttypeVanBean(bean));
