@@ -185,15 +185,33 @@ Tegen de kale `LocalDate.parse`, vóór de klem:
 De dertien die vallen zijn precies de weiger-asserties; de vijf die al groen
 zijn, zijn de tegenmetingen (de canonieke vorm, de twee jaarranden, de
 schrikkeldag, de geldige `asOfDate` en de geldige periode) — die moeten vóór
-én na de klem groen zijn. Twee van de dertien meldden `ACCEPTED it`
-(`+012026-06-21` gelezen als `+12026-06-21`, `-0500-01-01` als jaar −500),
-de rest `let it through to a bare java.time.format.DateTimeParseException`.
+én na de klem groen zijn.
+
+De dertien splitsen in **vier die `ACCEPTED it` meldden** en negen die
+`let it through to a bare java.time.format.DateTimeParseException` meldden.
+Die vier zijn de eigenlijke lekken, en twee ervan zijn precies de twee
+hoofdlekken van deze kaart:
+
+| getuige | wat de lezer ervan maakte |
+| --- | --- |
+| `de_asOfDate_weigert_dezelfde_vormen_en_noemt_zijn_veld` | `+012026-03-15` geslikt als jaar 12026, en het emmersegment eromheen gebouwd: `ACCEPTED it and read [Segment@…]` |
+| `een_segmentgrens_weigert_dezelfde_vormen_en_noemt_zijn_plek` | `-0500-01-01` als `from` geslikt, segment eromheen gebouwd: `ACCEPTED it and read [Segment@…]` |
+| `een_getekend_uitgebreid_jaar_wordt_geweigerd` | `+012026-06-21` gelezen als `+12026-06-21` |
+| `een_negatief_jaar_wordt_geweigerd` | `-0500-01-01` gelezen als jaar −500 |
+
+De negen andere weigerden al, maar met een kale
+`DateTimeParseException` die noch het veld noch de verwachte vorm noemt —
+de tweede helft van wat de klem repareert.
 
 Na de klem:
 
 ```
 tests="18" errors="0" skipped="0" failures="0"
 ```
+
+De aparte rood-commit is door de hoofdsessie in de klem-commit gesquasht,
+zodat elke commit op `main` een groene suite draagt; de rood-bewijsvoering
+staat hier in deze Result en nergens anders meer.
 
 ### Randbreedtes: de klem volgt `ref`, vorm voor vorm
 
@@ -236,19 +254,34 @@ schema maar dezelfde, één veld dieper.
 
 ### De klem is aan beide kanten vastgelegd — gemeten met mutanten
 
-Vier saboteurs op de klem, elk met de getuige erop:
+Vier saboteurs op de klem, elk met de getuige erop. De vallende gevallen
+zijn per mutant uit de surefire-XML gelezen, niet uit de consoleregels:
 
 | mutant | uitslag | wie valt |
 | --- | --- | --- |
-| A: de VORM-tak draagt óók de kalenderformulering | 10 failures | alle acht vormgevallen + de `asOfDate`- en segmentgrens-weigering |
-| B: patroon verruimd tot `[+-]?\d{4,}` | 5 failures | de drie tekenjaar/vijfcijfer-gevallen + de segmentgrens |
+| A: de VORM-tak draagt óók de kalenderformulering | 10 failures | alle acht vormgevallen + beide routegetuigen (`asOfDate` en segmentgrens) |
+| B: patroon verruimd tot `[+-]?\d{4,}` | 5 failures | de drie tekenjaar/vijfcijfer-vormgevallen (`een_getekend_uitgebreid_jaar`, `een_negatief_jaar`, `een_jaarveld_van_vijf_cijfers`) + beide routegetuigen (`asOfDate` en segmentgrens) |
 | C: patroon vernauwd tot `[1-9]\d{3}` (geen jaar 0000) | 2 errors | `de_jaarranden_die_het_patroon_toelaat_worden_gelezen` en `de_asOfDate_leest_een_geldige_datum_nog_steeds`, beide op `malformed date '0000-01-01'` |
-| D: `find()` in plaats van `matches()` | 8 failures | omringende tekst, zonesuffix, `dateTime`-lexeem, de tekenjaren, de segmentgrens |
+| D: `find()` in plaats van `matches()` | 8 failures | omringende tekst, zonesuffix, `dateTime`-lexeem, de twee tekenjaren, het vijfcijferige jaar + beide routegetuigen |
 
 A is de spiegelassertie die de kaart eist. C is de kant die een klem die
 alleen van bovenaf is vastgelegd niet ziet: geen corpuscase zit in de buurt
 van jaar 0000 of 9999, dus zonder die twee asserties passeert een vernauwing
 elke andere test én elke gate.
+
+**Kanttekening bij de meting zelf, voor het record.** De eerste mutantloop
+draaide `git checkout --` op het bronbestand ná elke mutant, terwijl de klem
+op dat moment nog niet gecommit was; die revert nam dus ook de klem mee,
+waarna B, C en D tegen de ONGEKLEMDE basislijn maten en netjes 13 failures
+meldden — een getal dat er plausibel uitziet en niets zegt. Opnieuw gedaan
+tegen de gecommitte klem; de cijfers in de tabel hierboven zijn die tweede,
+geldige ronde. Bij de fixronde bleek dezelfde tabel bovendien uit de
+consoleregels te zijn samengevat met een `grep`-patroon `[a-z_0-9]+`, dat de
+getuige `de_asOfDate_…` met zijn hoofdletter stil oversloeg: rijen B en D
+noemden daardoor minder gevallen dan hun eigen telling. Vandaar de
+XML-hermeting. Het patroon is in beide gevallen hetzelfde: een meting die
+stil iets anders meet dan ze zegt, en die alleen opvalt als je de telling
+tegen de opsomming legt.
 
 ### De dode parse
 
