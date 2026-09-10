@@ -484,7 +484,7 @@ it against hand-authored IR tests no production path) *(scheduled
 2026-08-29: the deferral premise is met by the Catala plugin —
 `PRIORITIZED-DEFAULTS-EVOLUTIE.md` Q3)*; temporal standing
 targets stay fenced (scalar-first, RS ch. 7.8); and one latent, non-defaults
-loader divergence is carded (`backlog/new/20260820-input-precision-fence.md`:
+loader divergence is carded (`backlog/done/20260820-input-precision-fence.md`:
 ref accepts over-precise case input clingo faults — no corpus case exercises
 it, so the gates-5–6 agreement above is corpus-scoped, as every such claim
 is).
