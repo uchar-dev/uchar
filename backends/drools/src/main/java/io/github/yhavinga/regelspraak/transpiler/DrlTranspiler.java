@@ -1056,31 +1056,42 @@ public final class DrlTranspiler {
     private void feitCreatie(io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie fc) {
         Acc acc = new Acc();
         Objecttype anker = fc.anker(), doel = fc.doel();
+        // An UNRESOLVED feitcreatie — a null anker, doel, zetVeld or joinVeld, all four nullable on the wire —
+        // is refused here UNCONDITIONALLY, exactly as ExecModelTranspiler.feitCreatie refuses it
+        // ("feitcreatie (onopgelost)"). Until 2026-09-11 this branch asked the §13.3.9 questions below only when
+        // all four were present and let a null one fall through to the emission, where ident(null) / setter(null) /
+        // anker.naam threw a NullPointerException that named no construct and took the WHOLE transpile down with
+        // it: one construct, two answers — a per-form reason there, an unattributed crash here.
+        if (anker == null || doel == null || fc.zetVeld() == null || fc.joinVeld() == null) {
+            out.append(new Regel(fc.naam())
+                .clausule("// onopgelost feitcreatie (onopgelost): " + commentVeilig(fc.naam()))
+                .clausule("eval(true)")
+                .render());
+            return;
+        }
         // §13.3.9 STORAGE DIRECTION, at all THREE positions this construct touches a role field (2026-09-11): each
         // hop's join, the doel's join onto the last hop, and the zetVeld the modify WRITES. Measured on
         // verifier-clean, ref-clean models, this branch sank the whole package with a bare compiler error at each —
         // "Unable to Analyse Expression $doel.setSeinvak( $subject )" for the write,
         // "Unable to Analyse Expression this == $subject.gemeenteVanInschrijving" for a hop — naming neither the
         // role, the displacing member, nor the limit. The exec branch refuses the same three by name.
-        if (anker != null && doel != null && fc.zetVeld() != null && fc.joinVeld() != null) {
-            Objecttype vorigeType = anker;
-            String reden = null;
-            for (io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie.Tussenstap stap : fc.tussenstappen()) {
-                if (stap.type() == null || stap.veld() == null) break;
-                Objecttype drager = stap.viaOuderVeld() ? vorigeType : stap.type();
-                Objecttype hopDoel = stap.viaOuderVeld() ? stap.type() : vorigeType;
-                if (!navVeld("feitcreatie", drager, stap.veld(), hopDoel)) { reden = navReden; break; }
-                vorigeType = stap.type();
-            }
-            if (reden == null && !navVeld("feitcreatie", doel, fc.joinVeld(), vorigeType)) reden = navReden;
-            if (reden == null && !navVeld("feitcreatie", doel, fc.zetVeld(), anker)) reden = navReden;
-            if (reden != null) {
-                out.append(new Regel(fc.naam())
-                    .clausule("// onopgelost feitcreatie (opslagrichting): " + commentVeilig(fc.naam()))
-                    .clausule("eval(true)")
-                    .render());
-                return;
-            }
+        Objecttype vorigeType = anker;
+        String reden = null;
+        for (io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie.Tussenstap stap : fc.tussenstappen()) {
+            if (stap.type() == null || stap.veld() == null) break;
+            Objecttype drager = stap.viaOuderVeld() ? vorigeType : stap.type();
+            Objecttype hopDoel = stap.viaOuderVeld() ? stap.type() : vorigeType;
+            if (!navVeld("feitcreatie", drager, stap.veld(), hopDoel)) { reden = navReden; break; }
+            vorigeType = stap.type();
+        }
+        if (reden == null && !navVeld("feitcreatie", doel, fc.joinVeld(), vorigeType)) reden = navReden;
+        if (reden == null && !navVeld("feitcreatie", doel, fc.zetVeld(), anker)) reden = navReden;
+        if (reden != null) {
+            out.append(new Regel(fc.naam())
+                .clausule("// onopgelost feitcreatie (opslagrichting): " + commentVeilig(fc.naam()))
+                .clausule("eval(true)")
+                .render());
+            return;
         }
         // The voorwaarde selects which objects get the relation: a guard on the anker (the houder) stays on
         // the anker pattern; a guard on the doel (the elements) hosts on the $doel pattern. A guard that
@@ -3077,7 +3088,18 @@ public final class DrlTranspiler {
         if (subject != null && arg != null && f.kind() == Expr.FunctieKind.AANTAL)
             rol = model.verbindendeRolViaElementnaam(subject, arg.attribuut());
         if (rol == null && subject != null) rol = model.verbindendeRol(elem, subject);
-        if (rol != null) return Frag.ok(ident(rol, false) + " == " + SUBJECT);
+        // §13.3.9 STORAGE DIRECTION: a resolved ROLE is not yet a bean FIELD. FactModelGenerator.leden derives a
+        // scalar reference only where the role is to-one, uniquely reachable, and its name is not taken by a
+        // declared member — so both arms above can hand back a role the beans do not carry. The join emitted
+        // below reads `<rol>` ON THE ELEMENT, which is therefore the side the shared question is asked of. The
+        // exec counterpart has asked it since 2026-08-30; this branch asked nothing and emitted a getter nobody
+        // has, sinking the whole KieBase on a bare compiler error that named neither role nor member. A refusal
+        // falls through to the marker route below, where navReden sharpens the placeholder's generic text.
+        // NOT mirrored from exec: its SEPARATE, conservative refusal of a to-one element role whose sister role
+        // is to-many (aggregatieReden) — lifting or copying that one shifts gate-12 channels and needs its own
+        // measurement.
+        if (rol != null && navVeld("aggregatie-join", elem, rol, subject))
+            return Frag.ok(ident(rol, false) + " == " + SUBJECT);
         // No join resolvable: emit a TODO marker, so accumulate() returns null and the aggregation
         // becomes a visible no-op — never a silently-wrong count over EVERY instance (§5.8.1: a count
         // ranges over the subject's related instances). Consistent with the resolver's "unresolvable
