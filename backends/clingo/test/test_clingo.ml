@@ -2533,6 +2533,80 @@ let heel_2026 = {|{ "from": "2026-01-01", "to": "2027-01-01" }|}
 let jan_jul = {|{ "from": "2026-01-01", "to": "2026-07-01" }|}
 let half_jan = {|{ "from": "2026-01-15", "to": "2026-03-01" }|}
 
+(* the OWN form: no fact type, no hop — the qualifier reads the subject's own
+   characteristic timeline. Two rules, the qualifier and its negation, so one
+   case decides both attributes. *)
+let gp_eigen_doc =
+  {|{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Werf": { "node": "Objecttype", "naam": "Werf",
+      "attributen": {
+        "opslag": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+        "aftrek": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null } },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [ "bedrijvig" ], "kenmerkSoorten": { "bedrijvig": "BIJVOEGLIJK" },
+      "kenmerkGranulariteit": { "bedrijvig": "MAAND" }, "kenmerkTijdlijnAantal": {},
+      "bezield": false, "meervoud": "Werven" }
+  },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {},
+  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [ { "node": "Regel", "naam": "opslag", "soort": "regel" },
+              { "node": "Regel", "naam": "aftrek", "soort": "regel" } ],
+  "resolvedRegels": [
+    { "node": "ResolvedRegel", "naam": "opslag", "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "opslag", "objecttype": "Werf",
+        "onderwerpBron": "een Werf", "navigatieRol": null,
+        "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+        "bron": "De opslag van een Werf", "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Literal", "waarde": "7",
+        "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+        "bron": "7" },
+      "voorwaarde": { "node": "Kenmerk", "kenmerk": "bedrijvig", "navigatie": null,
+        "negatie": false, "eigenaar": null,
+        "periode": { "node": "GeheelPeriode", "jaar": true, "niet": false },
+        "bron": "de Werf gedurende het gehele jaar bedrijvig is" },
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } },
+    { "node": "ResolvedRegel", "naam": "aftrek", "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "aftrek", "objecttype": "Werf",
+        "onderwerpBron": "een Werf", "navigatieRol": null,
+        "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+        "bron": "De aftrek van een Werf", "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Literal", "waarde": "7",
+        "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+        "bron": "7" },
+      "voorwaarde": { "node": "Kenmerk", "kenmerk": "bedrijvig", "navigatie": null,
+        "negatie": false, "eigenaar": null,
+        "periode": { "node": "GeheelPeriode", "jaar": true, "niet": true },
+        "bron": "de Werf niet gedurende het gehele jaar bedrijvig is" },
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
+  ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}
+|}
+
+(* W1 is bedrijvig the whole of 2026 — 365 of 365 days in the touched year
+   bucket — so the qualifier holds (opslag 7) and its negation does not
+   (aftrek leeg). *)
+let gp_eigen_case =
+  {|{
+  "format": "uchar-case-v0", "asOfDate": "2026-03-15",
+  "input": { "instances": [
+      { "label": "W1", "objectType": "Werf", "attributes": {}, "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": { "bedrijvig": [ { "from": "2026-01-01", "to": "2027-01-01" } ] } }
+    ], "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "W1", "attribute": "opslag", "value": { "number": "7" } },
+    { "kind": "attributeEmpty", "label": "W1", "attribute": "aftrek" },
+    { "kind": "consistent" }
+  ]
+}
+|}
+
 let () =
   let beide ~name ~ir ~case_text =
     ref_matches ~name ~ir ~case_text;
@@ -2557,6 +2631,15 @@ let () =
      granularity: six whole months pass where the year bucket failed *)
   rij ~name:"ch3.9 maand-d" ~jaar:"false" ~link:true ~tijdlijn:jan_jul ~waar:true ();
   rij ~name:"ch3.9 maand-deelmaand" ~jaar:"false" ~link:true ~tijdlijn:half_jan ~waar:false ();
+  (* the OWN form — the same qualifier without a hop. Every row above
+     navigates, and so does the corpus golden, so this row is what gives the
+     "own and navigated" of the ch. 3.12 delta line its artefact on this
+     side. One document, two rules — the qualifier and its negation — so a
+     single case pins both directions: an arm that answered a constant would
+     move one of the two. `ref` holds the mirror of this row in its own suite
+     (`WV-3.9-kenmerk-eigen-vorm`). *)
+  clingo_matches ~name:"ch3.9 eigen vorm (heel jaar, beide richtingen)"
+    ~ir:gp_eigen_doc ~case_text:gp_eigen_case;
   (* the fence WF-043 does not reach on the navigated form. The case carries
      NO timeline: one on a non-temporal characteristic is refused by the case
      loader first, and the fence under test is a static property of the

@@ -198,8 +198,10 @@ dezelfde randen.
   bucket een FALEN uit de `ktl`-feiten, via de kalender die de pro-rata al
   legt; de vouw wordt NIET uit `ref` aangeroepen — deze clausule is juist wat
   het differentieel moet vergelijken). `emit_bucket_calendar` en
-  `emit_true_days` zijn ongewijzigd omhoog verplaatst omdat de
-  conditie-recursie eerder in het bestand staat.
+  `emit_true_days` zijn omhoog verplaatst omdat de conditie-recursie eerder
+  in het bestand staat — `emit_true_days` byte-identiek,
+  `emit_bucket_calendar` met één wijziging in zijn lege geval (zie de bullet
+  hieronder).
 - **De overige stille cellen in dezelfde clausule zijn dicht.** `ref`'s
   `Predicaat` met een `periode` negeerde de kwalificator stil; clingo deed
   dat voor `Vergelijking` én `Predicaat` (ze vielen in de catch-all, luid maar
@@ -211,6 +213,14 @@ dezelfde randen.
   zonder poort zou een niet-temporeel kenmerk over een altijd-lege
   periodeverzameling vacuüm slagen. Beide uitvoerders houden die poort nu
   zelf.
+- **De weigeringszin van de vergelijkingsvorm noemt nu de clausule.** Hij
+  zei "whole-period comparison is ch. 3 scope" — het hele tijdlijnhoofdstuk,
+  waar zijn zuster de ene clausule noemt. Beide uitvoerders zeggen nu
+  "whole-period comparison is ch. 3.9 scope, not executed here". De enige
+  levende pin is `corpus/golden/jutterswet-vormenkabinet/NOTE.md`, die de
+  zin op twee plaatsen citeert; die is meegegaan. De citaten in
+  `backlog/done/**` en in `backends/drools`-commentaar zijn
+  meetverslagen-van-toen en blijven staan.
 - `emit_bucket_calendar`'s **lege geval** veranderde van `()` naar
   `#defined <p>_b/3.` — geen atoom erbij, geen semantiek erbij, wel het einde
   van een info-regel op stderr die als defect leest. Zonder tijdlijn in de
@@ -257,14 +267,25 @@ load-bearing is en niet netjes.
 
 ### Pins
 
-`ref/test/test_ref.ml`: 19 checks `WV-3.9-kenmerk-*`/`WV-3.9-fold-*` (suite
-515 → 534 gemeten, vloer 489 ongemoeid). `backends/clingo/test/test_clingo.ml`:
-23 checks, waarvan 11 rijen die ELK door `ref_matches` én `clingo_matches`
-gaan (suite 96 → 119, vloer 83 ongemoeid). Beide fixtures dragen de
-spurieuze sleutel niet meer en beide suites zijn erna hermeten: 534 en 119,
+`ref/test/test_ref.ml`: 20 checks `WV-3.9-kenmerk-*`/`WV-3.9-fold-*` (suite
+515 → 535 gemeten, vloer 489 ongemoeid). `backends/clingo/test/test_clingo.ml`:
+24 checks, waarvan 11 rijen die ELK door `ref_matches` én `clingo_matches`
+gaan (suite 96 → 120, vloer 83 ongemoeid). Beide fixtures dragen de
+spurieuze sleutel niet meer en beide suites zijn erna hermeten: 535 en 120,
 onveranderd groen. De binnenste negatie blijft suite-werk en gaat niet het
 corpus in: Drools weigert die bij naam, dus een golden zou het vierkant niet
 sluiten.
+
+**De eigen (niet-genavigeerde) vorm heeft sinds de slotronde zijn eigen
+artefact.** Alle 19 eerdere ref-checks, alle 11 clingo-rijen en de golden
+navigeren, terwijl het rij-29-voorstel en de ch. 3.12-deltarij "eigen en
+genavigeerd" beweren. Eén rij per uitvoerder erbij, en het woord heeft zijn
+getuige: `WV-3.9-kenmerk-eigen-vorm` in `ref/test` (heel jaar waar, half jaar
+onwaar, geen tijdlijn vacuüm-waar — in één check, want een arm die een
+constante antwoordt verschuift precies één van de drie) en `ch3.9 eigen vorm
+(heel jaar, beide richtingen)` in de clingo-suite (één document, twee regels
+— de kwalificator en zijn negatie — zodat één case beide richtingen pint;
+verifier-schoon nagemeten). 534 → 535 en 119 → 120; beide vloeren ongemoeid.
 
 ### Registerwerk voor de hoofdsessie (serieel, beschermde paden)
 
@@ -280,10 +301,25 @@ sluiten.
   beide Drools-takken bij naam geweigerd; de toetsen ordering/equality en
   leeg/gevuld blijven gespecificeerd-maar-door-geen-OCaml-uitvoerder-
   uitgevoerd, nu met een weigering die de clausule noemt."*
-- **`spec/CONSTRUCTS.md` rij 4 draagt een dode verwijzing**: de slotzin noemt
-  het prioriteitssignaal als `backlog/new/20260911-leegrelatie-ch39-
-  divergentie.md`; dat pad wordt `backlog/done/…`. Meenemen in dezelfde
-  seriële ronde.
+- **`spec/CONSTRUCTS.md` rij 4: de slotzin is na deze kaart op BEIDE helften
+  onjuist, en de hoofdsessie past hem als ÉÉN bewerking toe.** De eerste
+  helft (de twee tak-ongelijkheden) is kaart B's vervanging. De tweede helft
+  is de mijne: vandaag staat er dat de §8.2-lezing van een lege relatie "ook
+  zonder verdringing van `ref` en clingo afwijkt terwijl
+  `RUNTIME-SEMANTICS.md` §3.9 die norm al schrijft", met een verwijzing naar
+  `backlog/new/20260911-leegrelatie-ch39-divergentie.md`. Twee dingen deugen
+  daar niet meer: ze wijken niet meer af, en dat pad wordt `done/`.
+  Voorgestelde vervangende tekst voor de tweede helft:
+
+  > de §8.2-lezing van een LEGE relatie, die van `ref` en clingo afweek
+  > terwijl `RUNTIME-SEMANTICS.md` §3.9 die norm al schreef, is
+  > uitgevoerd (`backlog/done/20260911-leegrelatie-ch39-divergentie.md`):
+  > de kwalificator is geen scalaire conditie maar de tweede van ch. 3.3's
+  > twee genoemde collapses, beide OCaml-uitvoerders dragen hem nu (eigen
+  > en genavigeerd, beide rasters, de kwalificator-negatie), en
+  > `backends/drools` droeg hem al in beide takken — de drie uitvoerders
+  > zijn het op de vier cellen eens, met
+  > `corpus/golden/synth-gehelejaarkenmerk` als getuige.
 - **Verbreding van de May touch**: `spec/IR-SPEC.md` stond niet in de
   "May touch" van deze kaart en is toch aangeraakt (WF-043 krijgt de
   opgetekende scope-beperking tot de niet-genavigeerde vorm). Hier

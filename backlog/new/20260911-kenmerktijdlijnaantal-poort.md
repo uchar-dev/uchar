@@ -36,9 +36,33 @@ waarde dan 1 —
 if (aantal != 1) ot.kenmerkTijdlijnAantal.put(naam, aantal);
 ```
 
-Een frontend-document draagt hem dus nooit bij 1, en het corpus evenmin. De
-poort is daarmee onbereikbaar via de toolchain en volledig bereikbaar via de
-hand — precies de asymmetrie die een latente fout oplevert.
+Een frontend-document draagt hem dus nooit bij 1. **Het corpus wél**, en dat
+maakt de zaak sterker in plaats van zwakker (geteld 2026-09-11):
+
+| zone | bestand | veld | waarde |
+|---|---|---|---|
+| negatief | `wf034-wees-kenmerktijdlijnaantal` | `kenmerkTijdlijnAantal` `Vondst.verjaart` | 1 |
+| negatief | `wf055-navigated-clip-condition` | `kenmerkTijdlijnAantal` `Post.wachtplichtig` | 1 |
+| **golden** | `jutterswet-vormenkabinet` | `attribuutTijdlijnAantal` `Schouwveld.waterstand` | **1** |
+| negatief | `wf034-wees-attribuutdimensies` | `attribuutTijdlijnAantal` `Schouwveld.waterstand` | 1 |
+| negatief | `wf034-wees-attribuuttijdlijnaantal` | `attribuutTijdlijnAantal` `Vondst.vondstdatum` | 1 |
+| negatief | `wf005-count-zero` | `attribuutTijdlijnAantal` `Jutter.aantal aangemelde vondsten` | 0 |
+
+De praktische conclusie overleeft ongeschonden: de negatieve zone bereikt
+gate 12 nooit (gate 3 wijst die documenten juist af), en `vormenkabinet` is
+het verifier-only kabinet zónder case, dus geen van deze zes speelt vandaag.
+Maar twee dingen veranderen. Ten eerste is de sleutel-bij-1 dus een vorm die
+in dit repository al geschreven wordt, niet alleen een hypothetische
+handbouw. Ten tweede heeft de spiegelvraag hieronder (punt 3) daarmee een
+**levende corpusgetuige**: `jutterswet-vormenkabinet` draagt
+`attribuutTijdlijnAantal: 1` op precies het attribuut waarover het een
+§8.2-gehele-periode-vergelijking stelt. Zodra dat kabinet ooit een case
+krijgt — de NOTE beschrijft de voorwaarde — loopt het in de attribuut-kant
+van dezelfde poort.
+
+De poort is daarmee onbereikbaar via de toolchain, bereikbaar via de hand, en
+al aanwezig in de zones die vandaag niet spelen — precies de asymmetrie die
+een latente fout oplevert.
 
 ## Hoe het gemeten is (2026-09-11)
 
@@ -73,7 +97,13 @@ Eén sleutel, één waarde, geen semantisch verschil, twee uitvoerders minder.
    raster (`count` >= 2) OPEN — dus "1" is juist de enige gedefinieerde
    waarde, wat voor lezing 1 pleit.
 3. Dezelfde `containsKey`-vorm bestaat op de *attribuut*-kant
-   (`attribuutTijdlijnAantal`) — meenemen in dezelfde meting, niet aannemen.
+   (`attribuutTijdlijnAantal`), op zes plaatsen in `DrlTranspiler` —
+   meenemen in dezelfde meting, niet aannemen. Hier ligt de getuige al
+   klaar: `corpus/golden/jutterswet-vormenkabinet` draagt
+   `attribuutTijdlijnAantal: {"waterstand": 1}` op het attribuut waarover
+   het een §8.2-vergelijking stelt. Dat kabinet heeft bewust geen case, dus
+   de poort wordt daar vandaag niet aangeraakt; wie de attribuut-kant meet
+   heeft aan dat document genoeg om de vraag scherp te stellen.
 
 ## Acceptance
 

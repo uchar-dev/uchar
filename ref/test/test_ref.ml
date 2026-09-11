@@ -2761,6 +2761,24 @@ let () =
   check "WV-3.9-kenmerk-maand-deelmaand"
     (not (ec ~link:true half_jan (cond ~jaar:false ())));
   check "WV-3.9-kenmerk-jaar-deelmaand" (not (ec ~link:true half_jan (cond ())));
+  (* the OWN form — the same qualifier without a hop, read on the Werf
+     itself. Every row above navigates, and so does the corpus golden, so
+     without this row the "own and navigated" of the ch. 3.12 delta line and
+     the CONSTRUCTS register would be a word with no artefact. Both
+     directions in one check: the full year passes, the half year does not,
+     which is what separates the own arm from a constant. *)
+  let eigen_cond : Ir_v0.Ast.conditie =
+    Kenmerk_check
+      { kenmerk = Some "bedrijvig"; navigatie = None; negatie = false; eigenaar = None;
+        periode = Some { gp_jaar = true; gp_niet = false }; bron = None;
+        navigatie_binding = None }
+  in
+  let ec_eigen perioden =
+    let w = wereld ~link:false perioden in
+    Eval.eval_cond (env_of doc) w (World.get w "W1") ~err:no_err eigen_cond
+  in
+  check "WV-3.9-kenmerk-eigen-vorm"
+    (ec_eigen heel_2026 && (not (ec_eigen jan_jul)) && ec_eigen []);
   (* the fence WF-043 does not reach on the navigated form: a non-temporal
      characteristic would fold over an always-empty period set and pass *)
   let doc_niet_temporeel =

@@ -3417,7 +3417,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
      node. Named here so the two executors refuse the same form in the same
      words; the characteristic-holds test is built (the arm further down). *)
   | Vergelijking { periode = Some _; _ } ->
-      fault "whole-period comparison is ch. 3 scope"
+      fault "whole-period comparison is ch. 3.9 scope, not executed here"
   | Predicaat { soort = Leeg | Gevuld; periode = Some _; _ } ->
       fault "whole-period leeg/gevuld test is ch. 3.9 scope, not executed here"
   | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ }

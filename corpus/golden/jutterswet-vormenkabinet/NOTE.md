@@ -26,7 +26,7 @@ this IR faults before a single expectation can be checked:
 |---|---|---|
 | `vakcijfer uit voorjaarsopbrengst` | dimension-cell read of the dimensioned `opbrengst` (WF-004/014/040) | `expression kind not implemented in this card` |
 | `peiling bij dubbele borging` | counting quantifier with a time-window (`Periode`) member (WF-041/042) | `condition kind not implemented in this card` |
-| `doorwaadbaar bij lage stand #1`/`#2` | whole-period comparison over the temporal `waterstand` (WF-043) | `whole-period comparison is ch. 3 scope` |
+| `doorwaadbaar bij lage stand #1`/`#2` | whole-period comparison over the temporal `waterstand` (WF-043) | `whole-period comparison is ch. 3.9 scope, not executed here` |
 
 The ASP backend mirrors these same refusals by construction
 (`backends/clingo/lib/translate.ml`: everything outside the
@@ -167,9 +167,10 @@ faults in the table above — with one wrinkle for the temporal row:
   (`#1 tot 2025-12-31`, `#2 vanaf 2026-01-01`), so filtering to them with a
   null `asOfDate` faults *first* with `a validity-bounded form needs an
   evaluation date; this session is time-free` — not the whole-period fault.
-  The whole-period-comparison refusal (`whole-period comparison is ch. 3
-  scope`) surfaces only once the case also carries an `asOfDate` inside a
-  rule's window — for example `#2` with `asOfDate 2026-06-01`.
+  The whole-period-comparison refusal (`whole-period comparison is
+  ch. 3.9 scope, not executed here`) surfaces only once the case also
+  carries an `asOfDate` inside a rule's window — for example `#2` with
+  `asOfDate 2026-06-01`.
 
 ## When this cabinet shrinks
 

@@ -1407,7 +1407,10 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       let r = eval_expr env world self ~err re in
       Arith.compare_op ?static_numeric:(static_numeric le re) ~static_date:(static_date le re) op l
         r
-  | Vergelijking _ -> Value.fault "whole-period comparison is ch. 3 scope"
+  (* the sister of the leeg/gevuld refusal below, and worded like it since
+     2026-09-11: it used to say "ch. 3", which reads as the whole timeline
+     chapter rather than as the one clause that specifies this test *)
+  | Vergelijking _ -> Value.fault "whole-period comparison is ch. 3.9 scope, not executed here"
   | Predicaat { soort = Leeg | Gevuld; periode = Some _; _ } ->
       (* ch. 3.9's leeg/gevuld tests over a timeline. Both arms below matched
          `periode` away with `_` until 2026-09-11, so the qualifier was
