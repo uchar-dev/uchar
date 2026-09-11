@@ -7,3 +7,56 @@ Acceptance: de use-case-golden bestaat in dialectvorm en speelt groen door de fr
 May touch: `frontends/regelspraak/` (grammatica, lowering, fixtures), `grammar/DIVERGENCES.md`, `corpus/` (de dialect-golden), en de eigen kaart.
 
 Out of scope: kernel- of executor-wijzigingen (voorganger-kaart); GegevensSpraak-spec-wijzigingen richting de officiële arbiter (wij registreren divergentie, wij herschrijven de arbiter niet); de F-logic-frontend; meervoudige overerving.
+
+## Aangescherpt door de onderzoekskaart (2026-09-11)
+
+`spec/proposals/SUBTYPING.md` §9.2 is bindend; hieronder de
+uitvoerbare neerslag.
+
+**Kopvorm, positie beslist.** `is een <supertype>` staat **tussen de
+gedeclareerde naam en de haakjesgroepen**:
+
+```
+Objecttype het Wrakrecht is een Strandrecht (mv: Wrakrechten)
+```
+
+De corpuskoppen luiden vandaag `Objecttype de Jutter (mv: Jutters)
+(bezield)`; de nieuwe frase bezet een positie die in elk v2.3.0-document
+leeg is, dus `bezield` en `mv:` verschuiven niet en hun onderlinge
+volgorde blijft vrij zoals nu. Nieuw heelfrase-token `IS_EEN`.
+Registratie in `frontends/regelspraak/grammar/DIVERGENCES.md` naast de
+prioritized-defaults-extensie, onder hetzelfde
+inert-op-officiële-documenten-argument.
+
+**Golden.** `corpus/golden/jutterswet-wrakrecht` — dezelfde use case
+als de kernel-anchor `anchor/jutterswet-strandrechtketen`, nu met
+`bron.rgs`, dus onder gate 10's byte-identieke heremissie. Samen met
+`corpus/golden/jutterswet-wrakrecht-flogic` (F-logic-kaart) vormt dit
+het frontend-diff-paar.
+
+**Weigeringslijst, elk met een fixture.** (1) twee `is een`-clausules op
+één kop, of `is een A en B` — de tweede ouder, met de twee CGM-gevallen
+`RechtOpUitkeringWazo` en `RechtUitkeringZw` bij naam in de melding;
+(2) zelfverwijzing `X is een X`; (3) onbekend supertype — resolutie is
+documentbreed en volgordevrij, dus een voorwaartse verwijzing is géén
+fout, alleen een ongedeclareerde naam is dat; (4) `is een` dat iets
+benoemt dat geen objecttype is (een domein, een parameter); (5) een
+geshadowd lid — de frontend weigert vóór de verifier, want zij heeft de
+keten bij de hand (kernel: WF-105).
+
+**Expliciete niet-weigering.** Een doel dat op twee niveaus regels
+draagt is geen fout: opdrachtbesluit 3 heeft het eerdere blanket-verbod
+ingetrokken, en de kernelgetuigen zijn de semantische maat.
+
+**Twee gevolgen die de kaart moet meenemen.**
+
+- **Emitteer rolbindingen zodra je een subtype emitteert.** WF-048's
+  uniciteit wordt over de ketengesloten typeparen berekend, dus een
+  bindingloze navigatie die vandaag welgevormd is kan door het
+  toevoegen van een subtype dubbel verbonden raken en luid omvallen.
+  `verbindendeRol` / `bronRol` meegeven neemt dat weg.
+- **De laaggrensordening heeft een oppervlak nodig.** De kernel
+  introduceert `geerfdeUitzonderingen` ∈ `boven` | `onder` |
+  `ongeordend` (WF-106) op de defaults-groep; de dialect-extensie is de
+  eerste producent ervan en moet er een schrijfwijze voor kiezen in het
+  `Uitzondering op` / `Uitzonderingen ongeordend`-blok.
