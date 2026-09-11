@@ -326,6 +326,18 @@ public final class IrLoader {
                         ot(text(n, "elementObjecttype")), expr(n.get("leegwaarde")), conditie(n.get("filter")),
                         dimensieSelectie(n.get("dimensieSelectie")), datatype(n.get("type")), bron(n),
                         enumOf(Granulariteit.class, text(n, "granulariteit")));
+                // IR-SPEC ch. 4.3 / WF-102: a MULTI-STEP fold-source range. This backend has no lowering for it
+                // — the accumulate source joins the element to $subject through ONE role — and the refusal must
+                // be EXPLICIT rather than inherited from a failing join derivation. Every other extension this
+                // loader ignores is one the transpiler RE-DERIVES from the model; a bronPad is the opposite: the
+                // model cannot re-derive it, and the by-pair search would happily bind a coincidental direct
+                // relation between subject and element type and fold the WRONG set, with the two OCaml executors
+                // agreeing on the right one. That silent misbinding is the defect the field exists to close, so
+                // dropping the field here would reintroduce it in this executor alone. A named per-form Refusal
+                // puts the golden in gate 12's channel floor by reason instead.
+                if (n.hasNonNull("bronPad"))
+                    throw new Refusal("Functie.bronPad",
+                            "a multi-step fold-source range (WF-102); the accumulate source carries one join role");
                 // the aggregation's symbolic bronRol — see Loaded#rolBindingen. It stays OUT of the record (that
                 // one is vendored) and the transpiler still re-derives the join by pair FIRST; the binding is the
                 // fallback for the pair no by-pair search can disambiguate, a SELF-TYPED one.

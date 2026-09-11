@@ -10,21 +10,42 @@
           "geheel": false,
           "decimalen": 2,
           "teken": "ONBEPAALD",
-          "eenheid": null
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "kg",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
         },
         "totaal vondstgewicht": {
           "node": "Numeriek",
           "geheel": false,
           "decimalen": 2,
           "teken": "ONBEPAALD",
-          "eenheid": null
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "kg",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
         },
         "laagste kistgewicht": {
           "node": "Numeriek",
           "geheel": false,
           "decimalen": 2,
           "teken": "ONBEPAALD",
-          "eenheid": null
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "kg",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
         }
       },
       "attribuutMeervoud": {},
@@ -64,7 +85,14 @@
           "geheel": false,
           "decimalen": 2,
           "teken": "ONBEPAALD",
-          "eenheid": null
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "kg",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
         }
       },
       "attribuutMeervoud": {},
@@ -88,7 +116,14 @@
           "geheel": false,
           "decimalen": 2,
           "teken": "ONBEPAALD",
-          "eenheid": null
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "kg",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
         }
       },
       "attribuutMeervoud": {},
@@ -106,7 +141,64 @@
   },
   "domeinen": {},
   "parameters": {},
-  "eenheidstelsels": {},
+  "eenheidstelsels": {
+    "Gewicht": {
+      "node": "Eenheidstelsel",
+      "naam": "Gewicht",
+      "eenheden": {
+        "kg": {
+          "node": "Eenheid",
+          "afkorting": "kg",
+          "stelsel": "Gewicht",
+          "canoniek": "kg",
+          "factorNaarCanoniek": 1,
+          "noemer": null
+        },
+        "t": {
+          "node": "Eenheid",
+          "afkorting": "t",
+          "stelsel": "Gewicht",
+          "canoniek": "kg",
+          "factorNaarCanoniek": 1000,
+          "noemer": null
+        }
+      },
+      "aliassen": {
+        "kilogram": {
+          "node": "Eenheid",
+          "afkorting": "kg",
+          "stelsel": "Gewicht",
+          "canoniek": "kg",
+          "factorNaarCanoniek": 1,
+          "noemer": null
+        },
+        "kilogrammen": {
+          "node": "Eenheid",
+          "afkorting": "kg",
+          "stelsel": "Gewicht",
+          "canoniek": "kg",
+          "factorNaarCanoniek": 1,
+          "noemer": null
+        },
+        "ton": {
+          "node": "Eenheid",
+          "afkorting": "t",
+          "stelsel": "Gewicht",
+          "canoniek": "kg",
+          "factorNaarCanoniek": 1000,
+          "noemer": null
+        },
+        "tonnen": {
+          "node": "Eenheid",
+          "afkorting": "t",
+          "stelsel": "Gewicht",
+          "canoniek": "kg",
+          "factorNaarCanoniek": 1000,
+          "noemer": null
+        }
+      }
+    }
+  },
   "feittypen": {
     "bemanning": {
       "node": "Feittype",
@@ -209,7 +301,14 @@
           "geheel": false,
           "decimalen": 2,
           "teken": "ONBEPAALD",
-          "eenheid": null
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "kg",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
         },
         "bron": "Het laagste vondstgewicht van een Jutter",
         "set": false,
@@ -230,7 +329,14 @@
               "geheel": false,
               "decimalen": 2,
               "teken": "ONBEPAALD",
-              "eenheid": null
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "kg",
+                "stelsel": "Gewicht",
+                "canoniek": "kg",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
             },
             "bron": "het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter",
             "set": true,
@@ -246,7 +352,14 @@
           "geheel": false,
           "decimalen": 2,
           "teken": "ONBEPAALD",
-          "eenheid": null
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "kg",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
         },
         "bron": "de minimale waarde van het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter",
         "granulariteit": null,
@@ -285,7 +398,14 @@
           "geheel": false,
           "decimalen": 2,
           "teken": "ONBEPAALD",
-          "eenheid": null
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "kg",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
         },
         "bron": "Het totaal vondstgewicht van een Jutter",
         "set": false,
@@ -306,7 +426,14 @@
               "geheel": false,
               "decimalen": 2,
               "teken": "ONBEPAALD",
-              "eenheid": null
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "kg",
+                "stelsel": "Gewicht",
+                "canoniek": "kg",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
             },
             "bron": "het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter",
             "set": true,
@@ -319,8 +446,8 @@
           "waarde": "0",
           "type": {
             "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
+            "geheel": true,
+            "decimalen": 0,
             "teken": "ONBEPAALD",
             "eenheid": null
           },
@@ -333,7 +460,14 @@
           "geheel": false,
           "decimalen": 2,
           "teken": "ONBEPAALD",
-          "eenheid": null
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "kg",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
         },
         "bron": "de som van het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter of 0 als die er niet zijn",
         "granulariteit": null,
@@ -372,7 +506,14 @@
           "geheel": false,
           "decimalen": 2,
           "teken": "ONBEPAALD",
-          "eenheid": null
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "kg",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
         },
         "bron": "Het laagste kistgewicht van een Jutter",
         "set": false,
@@ -393,7 +534,14 @@
               "geheel": false,
               "decimalen": 2,
               "teken": "ONBEPAALD",
-              "eenheid": null
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "kg",
+                "stelsel": "Gewicht",
+                "canoniek": "kg",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
             },
             "bron": "het inhoudsgewicht van alle ingepakte kisten van alle geborgen vondsten van alle gevoerde boten van de Jutter",
             "set": true,
@@ -409,7 +557,14 @@
           "geheel": false,
           "decimalen": 2,
           "teken": "ONBEPAALD",
-          "eenheid": null
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "kg",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
         },
         "bron": "de minimale waarde van het inhoudsgewicht van alle ingepakte kisten van alle geborgen vondsten van alle gevoerde boten van de Jutter",
         "granulariteit": null,
