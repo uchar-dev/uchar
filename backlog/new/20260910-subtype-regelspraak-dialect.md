@@ -13,18 +13,40 @@ Out of scope: kernel- of executor-wijzigingen (voorganger-kaart); GegevensSpraak
 `spec/proposals/SUBTYPING.md` §9.2 is bindend; hieronder de
 uitvoerbare neerslag.
 
-**Kopvorm, positie beslist.** `is een <supertype>` staat **tussen de
-gedeclareerde naam en de haakjesgroepen**:
+**Kopvorm, positie beslist.** De productie luidt vandaag
+(`frontends/regelspraak/grammar/RegelSpraak.g4:311`):
+
+```
+objectTypeDefinition
+    : OBJECTTYPE bepaaldLidwoord? objectTypeNaam
+      ( MV_START meervoudsvorm RPAREN )? BEZIELD?
+      objectTypeMember*
+```
+
+De onderlinge volgorde van de annotaties **ligt dus al vast in de
+grammatica** — de `mv:`-groep gaat vóór `(bezield)`, er is geen
+alternatief — en `Objecttype de Jutter (mv: Jutters) (bezield)` is die
+volgorde, geen vrije keuze. De extensie voegt één optioneel element toe
+ná `objectTypeNaam` en vóór de `mv:`-groep:
 
 ```
 Objecttype het Wrakrecht is een Strandrecht (mv: Wrakrechten)
 ```
 
-De corpuskoppen luiden vandaag `Objecttype de Jutter (mv: Jutters)
-(bezield)`; de nieuwe frase bezet een positie die in elk v2.3.0-document
-leeg is, dus `bezield` en `mv:` verschuiven niet en hun onderlinge
-volgorde blijft vrij zoals nu. Nieuw heelfrase-token `IS_EEN`.
-Registratie in `frontends/regelspraak/grammar/DIVERGENCES.md` naast de
+**Géén nieuw lexertoken.** Een heelfrase-token `IS_EEN : 'is' WSP
+'een'` is hier niet veilig, en het `IS_VAN_HET_TYPE`-precedent gaat
+niet op. Lexen is niet kop-lokaal: onder maximal munch vuurt zo'n token
+overal waar de frase staat, en die staat al in **regeltekst** —
+`corpus/golden/jutterswet-schouwrooster/bron.rgs:15` en `:22` ("Een dag
+is een schouwdag"), `corpus/golden/jutterswet-postwacht/bron.rgs:66`,
+plus zeven `toka/`-bronnen. Dat zou gate 10's byte-identieke
+heremissie breken op documenten die niets met subtypering te maken
+hebben. `IS_VAN_HET_TYPE` (`RegelSpraakLexer.g4:187`) is alleen veilig
+omdat die frase nergens anders voorkomt. De oplossing zit op
+**parserniveau**: de bestaande tokens `IS` (`RegelSpraakLexer.g4:284`)
+en `EEN` (`:378`) achter elkaar op de kopplek, waar de context
+disambigueert. Registratie in
+`frontends/regelspraak/grammar/DIVERGENCES.md` naast de
 prioritized-defaults-extensie, onder hetzelfde
 inert-op-officiële-documenten-argument.
 
@@ -55,8 +77,12 @@ ingetrokken, en de kernelgetuigen zijn de semantische maat.
   bindingloze navigatie die vandaag welgevormd is kan door het
   toevoegen van een subtype dubbel verbonden raken en luid omvallen.
   `verbindendeRol` / `bronRol` meegeven neemt dat weg.
-- **De laaggrensordening heeft een oppervlak nodig.** De kernel
-  introduceert `geerfdeUitzonderingen` ∈ `boven` | `onder` |
-  `ongeordend` (WF-106) op de defaults-groep; de dialect-extensie is de
-  eerste producent ervan en moet er een schrijfwijze voor kiezen in het
-  `Uitzondering op` / `Uitzonderingen ongeordend`-blok.
+- **De laaggrensordening heeft een oppervlak nodig — mits zij er komt.**
+  De kernel stelt `geerfdeUitzonderingen` ∈ `boven` | `onder` |
+  `ongeordend` (WF-106) op de defaults-groep voor; de dialect-extensie
+  zou de eerste producent ervan zijn en moet er dan een schrijfwijze
+  voor kiezen in het `Uitzondering op` / `Uitzonderingen
+  ongeordend`-blok. **Het veld is een aanbeveling, geen geratificeerd
+  besluit:** SUBTYPING §11.2 legt de kleinere variant — laaggrens
+  altijd ongeordend — aan de maintainer voor. Wacht dat punt af voor je
+  oppervlak ontwerpt.

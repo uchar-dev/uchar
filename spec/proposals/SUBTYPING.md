@@ -40,8 +40,9 @@ first real corpus is drawn from uses inheritance functionally — the
 deeper than one level, and exactly 2 entities with two direct
 parents** (`RechtOpUitkeringWazo` and `RechtUitkeringZw`, both with
 parents {`RechtOpUitkering`, `RechtUitkeringZwWazo`}, both outside
-the WW scope). Relations hang on the supertype, and some subtypes
-carry no own attributes at all and exist purely as classification.
+the WW scope). Relations hang on the supertype *almost always* — the
+mandate's own qualification, kept here — and some subtypes carry no
+own attributes at all and exist purely as classification.
 That measurement is the only fact base this document uses about that
 model; nothing about it is invented here.
 
@@ -60,20 +61,23 @@ Every row was re-measured on this branch for this card.
 | `ObjectType` carries no parent: `name`, `animate`, `plural`, `attributes`, `characteristics` | `IR-SPEC.md` ch. 2.2 |
 | the verifier's AST record has 13 fields, none of them a parent | `spec/verifier/lib/ast.ml:302–316` |
 | the wire node `Objecttype` is **closed** (`additionalProperties: false`) with 14 required keys | `spec/schema/regelspraak-ir-v0.schema.json` |
-| `ref/` decides type membership in exactly ONE place, by literal name: `if norm i.otype = norm otype` | `ref/lib/world.ml:52–57` (`of_type`) |
+| `ref/` compares the type name **literally** in at least eleven places, not one: `of_type`, the case loader's instance, role-filler and expectation arms, the navigation endpoint, the channel's declaration lookup and four name guards | `ref/lib/world.ml:52–57`; `ref/lib/case.ml:277–281, 535, 554, 569, 576, 600`; `ref/lib/eval.ml:480, 627, 803, 1108, 1159, 2508` |
 | the instance record holds `otype : string` — one name, no chain | `ref/lib/world.ml:15–29` |
-| clingo emits `is_a(Label,"Type")` as a **fact**, and joins on it | `backends/clingo/lib/translate.ml`; 52 occurrences of `is_a(` in that module |
+| clingo emits `is_a(Label,"Type")` as a **fact** at one site and joins on it everywhere else: 52 lines / 53 occurrences of `is_a(`, of which 2 are comments and 1 is the fact emitter — **49 lines / 50 occurrences** are join sites | `backends/clingo/lib/translate.ml`; emitter at `:6457`, comments at `:1256` and `:3818` |
 | Drools generates ONE JavaBean per object type, emitted as `public class <Name> {` — no `extends` | `backends/drools/src/main/java/io/github/yhavinga/regelspraak/schema/FactModelGenerator.java` (`genereer`) |
 | the exec-model transpiler matches by Java class identity: `DSL.declarationOf(factClass, "$subject")`, 65 `declarationOf` sites | `backends/drools/src/main/java/io/github/yhavinga/regelspraak/transpiler/model/ExecModelTranspiler.java:348` |
 | a case names an instance's type in one wire key: `"objectType": "Jutter"` | `corpus/golden/anchor/jutterswet-aanspraaktelling/case1-gemengd.json` |
-| the model for a new acyclicity check already exists: colour DFS with a named cycle path | `spec/verifier/lib/checks.ml:2859–2912` (WF-085, day-kind cycle) |
+| the model for a new acyclicity check already exists: colour DFS with a named cycle path | `spec/verifier/lib/checks.ml:2859–2915` (WF-085, day-kind cycle) |
 | a new WF rule costs: one `wfNNN ctx` function, one line in the `all` concat, one negatief directory, one normative sentence | `spec/verifier/lib/checks.ml` (`all`), `spec/verifier/bin/verifier.ml` |
-| the highest landed rule is **WF-101**; **WF-102** is taken by the aggregation scope-path rule landing today | `IR-SPEC.md` WF index |
+| the highest rule **in the index on this branch's base** is WF-101; WF-102 does NOT appear there — it is claimed by the parallel aggregation scope-path card (branch `card/geneste-aggregatie-bronpad`), which merges today | `IR-SPEC.md` WF index; the parallel card |
 
 Two properties of that inventory shape everything below. First,
-**type membership is decided in very few places** — one function in
-`ref/`, one predicate in ASP, one class identity in Drools — so the
-kernel change is narrow even though its consequences are wide.
+**type membership is decided through one concept per executor but not
+through one site**: `ref/` compares the type name literally at the
+dozen places listed above, ASP has one predicate that 49 join sites
+read, and Drools has one class identity that the engine itself
+resolves. The number of sites is what separates the three lowering
+answers in §5 and §6, so it is measured rather than assumed.
 Second, **the wire node is closed**, so the supertype field cannot
 arrive silently: it is an additive optional property under the
 Method's extension-field discipline (`IR-SPEC.md` § Method: never
@@ -157,10 +161,14 @@ one name. Which one a reader finds decides the datatype, the
 dimensions and the timeline facet of every read of that name, and
 readers differ in which they find first — exactly the failure class
 `IR-SPEC.md` ch. 2.2 already fences for the side-map keys ("an orphan
-key is not a missing value but a silent change of meaning"). It also
-breaks the one consumer format the repo has measured: the Drools bean
-has one field per identifier (`FactModelGenerator.leden`), so a
-shadowed name is a bean that cannot be generated. Refusing is
+key is not a missing value but a silent change of meaning"). The
+measured consumer consequence is sharper than "it would not compile":
+`FactModelGenerator.leden` **deduplicates silently, first-wins** — it
+guards every member with `gezien.add(...)` and keeps the first
+derivation (attribute before characteristic before reference). A
+shadowed name therefore produces a bean that generates perfectly and
+is quietly **missing one member**, which is the same silent
+change-of-meaning failure one layer down. Refusing is
 therefore both the safe and the cheap answer. Note what is *not*
 refused: a subtype may freely declare names its chain does not
 declare, including names a *sibling* declares.
@@ -169,8 +177,9 @@ declare, including names a *sibling* declares.
 each declare the same member name. ADMITTED, and not a rule at all.**
 Under single inheritance no instance is of two incomparable types, so
 no read is ambiguous: each resolves on its own chain. This is the
-shape the mandate's §1 names in the real data (the two termination
-codes hanging off one right-to-benefit entity), and refusing it would
+shape the mandate's **§3** names in the real data (the two
+termination codes hanging off one right-to-benefit entity, in the
+kernel part's own list of things to decide), and refusing it would
 reject the data the whole exercise exists to express. The consequence
 that must be stated rather than discovered: a read of that name
 anchored at the **common supertype** does not resolve — WF-034
@@ -219,7 +228,7 @@ being highest-first.
 Inheritance resolves **bottom-up along the chain**: the effective
 stack of a type for a target is computed from its parent's effective
 stack, so a three-level chain composes twice, associatively. Four
-rules, exhaustive over the shapes the IR admits:
+rules, covering the shapes decision 3 speaks about:
 
 1. **The parent's stack is an ordered chain and the subtype declares
    its own ordinary rule or defaults group on the target.** The
@@ -232,14 +241,26 @@ rules, exhaustive over the shapes the IR admits:
    the new lowest ordinary default. Discarding a group-default would
    discard its nested exception groups, which is exactly the
    structure amendments edit, so the conservative insert is the only
-   defensible reading.
+   defensible reading. **This rule is a filling-in, not a mandate
+   reading**: decision 3 says "the subtype's rule replaces the
+   inherited base" and is silent about a base that has no own
+   consequence to replace. It is the recommendation, flagged so the
+   maintainer can overrule it without re-opening decision 3.
 3. **The parent's stack is a declared-unordered group**
    (`ongeordend`). There is no "lowest", so base override has nothing
    to bite on. The subtype's own rule **joins the group as one more
-   unordered member**, and it must itself be declared unordered —
+   unordered member**, and it should itself be declared unordered —
    WF-050's "priority is explicit or explicitly absent, never
-   implicit" lifted across the layer boundary. Differing decisions
-   route to ch. 7.2 exactly as today.
+   implicit" read across the layer boundary. Differing decisions
+   route to ch. 7.2 exactly as today. **An enforcement gap, named
+   rather than papered over:** WF-050's multiplicity check keys on
+   the declared subject type (`checks.ml:7392–7394`), so it sees
+   `Strandrecht.uitkering` and `Wrakrecht.uitkering` as two targets
+   and will not demand the marking across the boundary. Making it
+   demand it means lifting that key to the chain-closed set, which is
+   exactly what §4.2 argues against. Either this obligation gets its
+   own rule with a boundary-scoped check, or it stays an unchecked
+   SHOULD; this document does not decide it, and the kernel card must.
 4. **The parent writes the target with no defaults at all** (a bare
    computing rule under the ch. 7.8 standing norm). Its rule is the
    base; case 1 applies.
@@ -250,21 +271,63 @@ ordinary default *is* the base by definition, so the case does not
 arise; the genuine no-base case is the unordered group, and rule 3
 governs it.
 
+**What the four rules do not cover.** They speak about the writer
+forms decision 3 speaks about — ordinary computing rules and defaults
+groups. Three further writer forms can also appear on two levels of
+one chain and get no treatment here: an **allocation** (ch. 3.2,
+fenced by WF-026), an **object-creation initialisation** (ch. 3.3,
+named in WF-050's no-other-writer clause), and a **characteristic
+attribution** as the plain non-defaults form. For the first two the
+conservative reading is that they are *not* bases and do not
+participate in override — a subtype allocation beside an inherited
+allocation on one target stays two allocations and stays refused —
+but that is a reading, not a decision, and the kernel card should
+either carry a witness for it or refuse the combination loudly.
+
 ### 4.2 The single-writer fences are read on the effective stack
 
-This is the load-bearing consequence for the verifier, and it must be
-stated or the kernel card will trip its own anchor.
+This is the load-bearing consequence for the verifier, and the risk it
+guards against runs the **opposite** way from the obvious one. Getting
+that direction right matters, so it is measured rather than argued.
 
-A supertype rule on target T and a subtype rule on target T are, at
-the document level, two writers on one target. WF-026, WF-050's
-no-other-writer clause and WF-079 all fence exactly that. Under
-decision 3 they are **not** two writers: base override means no
-instance ever sees both. **Decided: the single-writer rules are
+**Today the fences do not fire on a supertype/subtype pair at all.**
+All three key on the **declared object-type name**:
+
+- WF-026 (one allocation per target) compares declared type *and*
+  attribute pairwise (`checks.ml:1295–1298`);
+- WF-079 (one unconditional bare writer) compares `ot1 = ot2 && a1 =
+  a2` (`checks.ml:7581`), and its defaults lookup matches
+  `norm l.pd_onderwerp = norm otn` (`:7558`);
+- WF-050 builds its multiplicity key as `"A:" ^ norm
+  l.pd_onderwerp ^ ":" ^ norm tn` (`checks.ml:7392–7394`), and each
+  of its three no-other-writer lifts — rule, object creation,
+  allocation — compares against `l.pd_onderwerp` likewise
+  (`:7423`, `:7442`, `:7469`).
+
+So `Strandrecht.uitkering` and `Wrakrecht.uitkering` are **two
+distinct keys today**, and the §7 anchor cannot trip over them: the
+fences never look at the pair. The earlier claim that the anchor would
+trip its own fences was wrong, and it is withdrawn here.
+
+**The real hazard is the naive repair.** A session implementing
+extensional quantification will be tempted to lift the target key to
+the chain-closed set, so that a group on `Strandrecht.uitkering` is
+seen as also targeting `Wrakrecht.uitkering`. That lift makes the
+fences fire on exactly the shape decision 3 legitimises: a supertype
+base plus a subtype base on one target would become "two writers" and
+be refused, and the whole construct would be unreachable.
+
+**Decided, and the decision is unchanged: the single-writer rules are
 evaluated on the per-type effective stack, after inheritance
-resolution, never on the raw declaration set.** This is a restatement
-of the existing rules under the new resolution, not a new rule, and it
-is the sentence the kernel card must land in `IR-SPEC.md` ch. 6.1 and
-`RUNTIME-SEMANTICS.md` ch. 7.
+resolution, never on the raw declaration set and never on a
+chain-closed target key.** In practice that means the fences keep
+their present per-declared-type keying for the *collision* question,
+and any chain-awareness added to them must ask "do these two writers
+survive into one instance's effective stack" rather than "do these two
+targets close over the same member". This is a **new obligation on
+the verifier**, not merely a restatement — it constrains a change that
+is otherwise the obvious one — and it is the sentence the kernel card
+must land in `IR-SPEC.md` ch. 6.1 and `RUNTIME-SEMANTICS.md` ch. 7.
 
 The ch. 7.8 standing norm follows from the same reading. Where the
 supertype carries a bare single-writer rule and the subtype replaces
@@ -311,6 +374,14 @@ a block position, not a relation between two named rules. It is the
 direct analogue of `ongeordend`, which declares the absence of order
 in the same way.
 
+*This field is a **recommendation**, not a settled decision.* It is
+new wire surface with no producer until the dialect card gives it
+one, and decision 3's phrase "unordered group unless explicitly
+ordered" is what asks for the escape. §11.2 puts the alternative —
+drop `boven`/`onder` and make the layer boundary always unordered —
+to the maintainer, and the kernel card must not treat the field as
+ratified.
+
 - `boven` — the inherited exceptions outrank the subtype's own.
 - `onder` — the subtype's own exceptions outrank the inherited ones.
 - `ongeordend` — no order; two members that decide differently are
@@ -320,12 +391,17 @@ in the same way.
   rule name. Equal decisions are no conflict — ch. 7.2's idempotence
   deviation carries over untouched.
 
-**The conflict key names the DECLARING type**, not the instance's
-concrete type: `Strandrecht.uitkering`, never `Wrakrecht.uitkering`.
-The target is declared once; keying on the concrete type would make
-one target report under as many names as it has subtypes, and the
-ch. 5.6 channel already keys rule × subject, so the subject
-distinguishes the instances.
+**The conflict key names the type that declares the ATTRIBUTE**, not
+the instance's concrete type and not the type whose defaults group
+happened to clash. In §7.2's anchor the target `uitkering` is declared
+on `Strandrecht`; the clash in row 6 arises between an exception
+inherited from `Strandrecht`'s group and an exception in
+`Wrakrecht`'s own group, on a `Wrakrecht` instance — and the fact is
+keyed **`Strandrecht.uitkering`**, because `Strandrecht` is where the
+attribute is declared. The target is declared once; keying on the
+concrete type would make one target report under as many names as it
+has subtypes, and the ch. 5.6 channel already keys rule × subject, so
+the subject distinguishes the instances.
 
 **Nested exception groups (ch. 7.9) ride along unchanged.** An
 inherited default's `exceptions` subtree is part of that default and
@@ -342,18 +418,21 @@ a case or a session will guess it.
 chain by the four rules of §4.1: base override against an ordered
 parent stack, conservative insertion below a group-default, joining as
 an unordered member against an unordered parent group, and the bare
-rule as its own base. The initialisation and virtual input defaults
-are never replaced. The single-writer fences (WF-026, WF-050,
-WF-079) are read on the per-type effective stack, not on the
-declaration set — a restatement, not a new rule, and the sentence the
-kernel card must land. A subtype never edits an inherited exception.
-The layer boundary carries one declaration field,
-`inheritedExceptions` ∈ {boven, onder, ongeordend}, required whenever
-there is an inherited exception block to place; unordered clashes go
-to the existing ch. 7.2 channel with no new machinery, keyed on the
-declaring type and at the root. Reserved: WF-106 (a defaults group
-that inherits a non-empty exception block MUST declare its layer-
-boundary ordering).**
+rule as its own base (rule 2 is a flagged filling-in, and three other
+writer forms are left open — §4.1). The initialisation and virtual
+input defaults are never replaced. The single-writer fences (WF-026,
+WF-050, WF-079) are read on the per-type effective stack, never on a
+chain-closed target key — measured: today they key on the declared
+type name and do NOT fire on a supertype/subtype pair, so the hazard
+is the naive lift that would make them fire on the legitimate form,
+and this is a new obligation on the verifier rather than a
+restatement (§4.2). A subtype never edits an inherited exception.
+**Recommended**, not ratified (§11.2): the layer boundary carries one
+declaration field `inheritedExceptions` ∈ {boven, onder, ongeordend},
+required whenever there is an inherited exception block to place, with
+WF-106 reserved for it; unordered clashes go to the existing ch. 7.2
+channel with no new machinery, keyed on the type that declares the
+attribute and at the root.**
 
 ## 5. Question 3 — the Drools lowering, decided on the differential
 
@@ -390,10 +469,17 @@ resolves a class pattern by `instanceof`:
   precisely the semantics the other two executors have to be taught;
 - `accumulate` over the supertype includes subtype instances for the
   same reason;
-- the contract validator already walks the hierarchy: it resolves
-  getters through `c.getMethods()`
+- the contract validator's *lookup* already walks the hierarchy — it
+  resolves getters through `c.getMethods()`
   (`schema/ContractValidator.java:90–94`), which returns inherited
-  public methods;
+  public methods — but its **expectations follow `leden`**: it
+  iterates `FactModelGenerator.leden(model, ot)`
+  (`ContractValidator.java:34`). So the moment `leden` becomes
+  own-members-only, the validator checks own members only, and the
+  inherited ones are checked when their declaring type is validated.
+  That is the correct behaviour, and it arrives as a **consequence**
+  of the `leden` change rather than for free: the validator is one of
+  the three files that move;
 - the typed accessor path is **already subtype-safe, by anticipation**
   — `runtime/Accessors.java` guards every typed getter and setter with
   `owner.isInstance(o)` and falls back to the reflective bridge
@@ -449,11 +535,14 @@ holding at a third layer.
 
 **Native class-hierarchy subtyping: the generated fact bean of a
 subtype `extends` its supertype's bean, and `leden` emits own members
-only. Both transpiler branches, every pattern site, every accumulate
-and the contract validator need no change, because Drools resolves
-class patterns by `instanceof` and the typed accessor path already
-carries an `owner.isInstance` guard written in anticipation of this
-case. Flat emission with a discriminator is rejected: it costs a
+only. Both transpiler branches, every pattern site and every
+accumulate need no change, because Drools resolves class patterns by
+`instanceof` and the typed accessor path already carries an
+`owner.isInstance` guard written in anticipation of this case; the
+work is three files — the bean generator, the IR loader, and the
+contract validator, whose expectations follow `leden`
+(`ContractValidator.java:34`) and therefore move with it. Flat
+emission with a discriminator is rejected: it costs a
 transitive-closure rewrite at 65 pattern sites plus every accumulate,
 and it forces the typed to-one reference fields to be widened, losing
 static typing the backend deliberately has. The gate-12 obligation —
@@ -475,7 +564,7 @@ that ranges over a type ranges over that set, with no exceptions:
 - a characteristic check's owner type (ch. 4.5);
 - the uniqueness scope (ch. 3.6) and the consistency rule's subject.
 
-**There is no exact-type quantifier in v1.** The mandate's §1 records
+**There is no exact-type quantifier in v1.** The mandate records
 that subtypes with zero own attributes exist purely as
 classification; a non-extensional reading would make those inert, and
 the relation-hangs-on-the-supertype pattern would stop working the
@@ -484,17 +573,41 @@ expressible today without a new quantifier — as a characteristic, or
 as a condition — and adding a second selection axis would cut against
 decision 3's one-axis stance for the same reason.
 
-The executor consequences are small and located. `ref/` changes in
-one function: `World.of_type` (`ref/lib/world.ml:52–57`) replaces
-`norm i.otype = norm otype` with a chain walk. clingo has a genuine
-choice — expand the type set in OCaml before emission, or emit
-`isa_sub("Sub","Super").` facts plus a transitive closure rule and
-rewrite the 52 `is_a(` joins to go through it. **Recommended: the ASP
-closure**, because the closure then lives in the model the solver
-sees, which is what makes the clingo leg an *independent*
-reimplementation rather than a second copy of the OCaml walk; the
-differential is worth more than the smaller diff. Drools needs
-nothing (§5).
+The executor consequences are **located but not small**, and the
+earlier draft understated them. `World.of_type`
+(`ref/lib/world.ml:52–57`) is where quantification is decided, but it
+is not the only literal type comparison in `ref/`, and the §7 anchor
+does not even **load** until the others move too. Measured:
+
+- `ref/lib/case.ml:277–281` — the instance loader resolves each
+  supplied attribute with `find_ci ot.attributen name` against the
+  instance's **own** declared type. `case1` supplies `grondslag` on a
+  `Wrakrecht`, where it is inherited: without a chain walk the case
+  fails at load.
+- `ref/lib/case.ml:554, 569, 576, 600` — the expectation loader
+  refuses an attribute or characteristic not declared on the
+  instance's own type ("expected attribute %S is not declared on %S").
+  Every inherited expectation in all four cases hits this.
+- `ref/lib/case.ml:535` — the role-filler check is literal type
+  equality (`norm target.otype <> norm expect`), so a `Wrakrecht`
+  cannot fill a `Strandrecht` role: §6.2's upper-bound rule lives
+  here.
+- `ref/lib/eval.ml:480` — the navigation endpoint check is literal
+  equality against the declared endpoint.
+- `ref/lib/eval.ml:2508`, plus the name guards at `:627`, `:803`,
+  `:1108`, `:1159` — declaration lookups keyed on the instance's own
+  type.
+
+That is at least eleven sites, and they are the honest cost of the
+`ref` leg. clingo has a genuine choice — expand the type set in OCaml
+before emission, or emit `isa_sub("Sub","Super").` facts plus a
+transitive closure rule and route the **49 join lines (50
+occurrences)** of `is_a(` through it. *Recommended*: the ASP closure,
+because it then lives in the model the solver sees, which keeps the
+clingo leg an independent reimplementation rather than a second copy
+of the OCaml walk. That is a recommendation on design grounds; the
+effort argument runs the other way and the choice is the maintainer's
+(§11.3). Drools needs nothing (§5).
 
 ### 6.2 Role compatibility is upward only
 
@@ -547,11 +660,17 @@ nothing to refuse, only a semantics to state.
 ### 6.4 Decided (question 4)
 
 **Quantification is extensional at every type-ranging position, with
-no exact-type quantifier in v1; `ref/` changes in `World.of_type`
-alone, and clingo should carry the closure in ASP (an `isa_sub/2`
-fact set plus a transitive rule, with the 52 `is_a(` joins routed
-through it) rather than expanding the type set in OCaml, so that the
-clingo leg stays an independent implementation. A role's declared
+no exact-type quantifier in v1. `ref/` changes at eleven measured
+sites, not one — `World.of_type` decides quantification, but the case
+loader's instance, expectation and role-filler arms, the navigation
+endpoint and four name guards all compare the type name literally,
+and the anchor does not load until they move. For clingo the
+*recommendation* is to carry the closure in ASP (an `isa_sub/2` fact
+set plus a transitive rule, with the 49 `is_a(` join lines routed
+through it) rather than expanding the type set in OCaml, so the
+clingo leg stays an independent implementation; the effort argument
+runs the other way and the call is the maintainer's (§11.3). A role's
+declared
 filler type is an upper bound: S ⊑ T fills a T-role, member resolution
 through a role walks upward only, and the downward read is refused by
 the chain-aware WF-034. WF-047's "agree" widens to ⊑-compatibility and
@@ -568,28 +687,40 @@ bindings. A case instance names its concrete type in the existing
 Own-authored Jutterswet material, in the corpus's conventions. Two
 object types in a chain, one aggregating holder:
 
+Datatype spellings are the corpus's own — `Numeriek (…)`, measured
+across every `bron.rgs` (137 occurrences of `Numeriek`, no `Bedrag`
+and no `Getal` anywhere) — and the characteristic form is the
+declared `is <naam> kenmerk (bijvoeglijk);`.
+
 ```
 Objecttype het Strandrecht (mv: Strandrechten)
-    de grondslag            Bedrag
-    de uitkering            Bedrag
-    de registratiekosten    Bedrag
-    het kenmerk betwist
+    de grondslag           Numeriek (niet-negatief getal met 2 decimalen);
+    de uitkering           Numeriek (niet-negatief getal met 2 decimalen);
+    de registratiekosten   Numeriek (niet-negatief getal met 2 decimalen);
+    is betwist kenmerk (bijvoeglijk);
 
 Objecttype het Wrakrecht is een Strandrecht (mv: Wrakrechten)
-    de bergingsdiepte       Getal
+    de bergingsdiepte      Numeriek (niet-negatief geheel getal);
 
 Objecttype de Kustgemeente (mv: Kustgemeenten) (bezield)
-    het totaal aan uitkeringen   Bedrag
-    het aantal strandrechten     Getal
+    het uitkeringstotaal   Numeriek (niet-negatief getal met 2 decimalen);
+    het registertal        Numeriek (niet-negatief geheel getal);
 
 Feittype strandrechtregistratie
     de Kustgemeente registreert meerdere Strandrechten
 ```
 
+The two Kustgemeente attributes are deliberately **not** named after
+the role: an attribute called "aantal strandrechten" beside the role
+`strandrechten` would put the use case on top of the ch. 2.6
+role/member name-sharing shape, which the Drools bean cannot hold and
+which this anchor is not meant to test. `uitkeringstotaal` and
+`registertal` keep the two questions apart.
+
 `Wrakrecht` adds one own attribute and inherits everything else —
-which is also the shape that proves the classification-only subtype of
-the mandate's §1 is expressible, since removing `bergingsdiepte` would
-leave a legal, empty subtype.
+which is also the shape that proves the classification-only subtype
+the mandate records is expressible, since removing `bergingsdiepte`
+would leave a legal, empty subtype.
 
 ### 7.2 The rules and the six cells
 
@@ -600,22 +731,23 @@ leave a legal, empty subtype.
 - a defaults group on `Wrakrecht.uitkering`: base `= de grondslag × 2`,
   exception `= 55, indien de bergingsdiepte groter is dan 20`,
   `geerfdeUitzonderingen: ongeordend`;
-- on the Kustgemeente: `het totaal aan uitkeringen = de som van de
+- on the Kustgemeente: `het uitkeringstotaal = de som van de
   uitkeringen van alle strandrechten van de Kustgemeente` and `het
-  aantal strandrechten = het aantal strandrechten van de
-  Kustgemeente`.
+  registertal = het aantal strandrechten van de Kustgemeente`.
 
 With `grondslag = 10` the six cells separate, which is what makes the
-case a proof rather than an illustration:
+case a proof rather than an illustration. "Inherited" below is said
+from the *`Wrakrecht`* side; on a `Strandrecht` instance rows 1 and 2
+are simply that type's own base and own exception:
 
-| instance | betwist | bergingsdiepte | `uitkering` | what it proves |
-|---|---|---|---|---|
-| Strandrecht | no | — | **10** | the inherited base |
-| Strandrecht | yes | — | **99** | the inherited exception |
-| Wrakrecht | no | 5 | **20** | base override: specific beats general |
-| Wrakrecht | yes | 5 | **99** | the inherited exception still outranks the subtype base |
-| Wrakrecht | no | 25 | **55** | the subtype's own exception over its own base |
-| Wrakrecht | yes | 25 | **no write + one §9.5 fact** | the unordered layer boundary |
+| # | instance | betwist | bergingsdiepte | `uitkering` | what it proves |
+|---|---|---|---|---|---|
+| 1 | Strandrecht | no | — | **10** | the supertype's own base |
+| 2 | Strandrecht | yes | — | **99** | the supertype's own exception |
+| 3 | Wrakrecht | no | 5 | **20** | base override: specific beats general |
+| 4 | Wrakrecht | yes | 5 | **99** | the inherited exception still outranks the subtype base |
+| 5 | Wrakrecht | no | 25 | **55** | the subtype's own exception over its own base |
+| 6 | Wrakrecht | yes | 25 | **no write + one §9.5 fact** | the unordered layer boundary |
 
 Rows 3 and 4 together *are* the penguin test in the mandate's own
 formulation, and they are the two rows a flat lowering cannot produce:
@@ -625,22 +757,35 @@ flattening gives 20 for row 4 (the subtype base wins) or 99 for row 3
 ### 7.3 The cases
 
 `corpus/golden/anchor/jutterswet-strandrechtketen/` — hand-written,
-absolute expected values, permanently pinned:
+absolute expected values, permanently pinned. **Four** case files, so
+that every one of the six cells is covered; the earlier three-case
+sketch left row 5 — the subtype's own exception over its own base —
+with no witness at all:
 
-- `case1-basis.json` — one `Strandrecht` (grondslag 10, not betwist)
-  and one `Wrakrecht` (grondslag 10, bergingsdiepte 5, not betwist),
-  both registered by one `Kustgemeente`. Expected: uitkering **10** and
-  **20**; registratiekosten **5** on *both* (the supertype rule firing
-  for a subtype instance — proof moment 1); totaal **30** and aantal
-  **2** (extensional quantification — proof moment 2; a
+- `case1-basis.json` (**cells 1 and 3**) — one `Strandrecht`
+  (grondslag 10, not betwist) and one `Wrakrecht` (grondslag 10,
+  bergingsdiepte 5, not betwist), both registered by one
+  `Kustgemeente`. Expected: uitkering **10** and **20**;
+  registratiekosten **5** on *both* (the supertype rule firing for a
+  subtype instance — proof moment 1); uitkeringstotaal **30** and
+  registertal **2** (extensional quantification — proof moment 2; a
   non-extensional reading gives 10 and 1, so the case fails loudly
   against a flat implementation); `consistent`.
-- `case2-geerfde-uitzondering.json` — the same two, both betwist.
-  Expected: **99** and **99**, totaal **198** (proof moment 3, the
-  penguin test's second half).
-- `case3-laaggrensconflict.json` — a `Wrakrecht` that is betwist and
-  has bergingsdiepte 25. Expected: `uitkering` **not written** and one
-  §9.5 conflict fact keyed `Strandrecht.uitkering` on that subject;
+- `case2-geerfde-uitzondering.json` (**cells 2 and 4**) — the same
+  two, both betwist, bergingsdiepte still 5. Expected: **99** and
+  **99**, uitkeringstotaal **198** (proof moment 3, the penguin
+  test's second half).
+- `case3-eigen-uitzondering.json` (**cell 5**) — one `Wrakrecht`,
+  not betwist, bergingsdiepte 25. Expected: uitkering **55**,
+  registratiekosten **5**, uitkeringstotaal **55**, registertal
+  **1**; `consistent`. This is the cell that separates "the subtype
+  has an exception at all" from "the inherited exception wins": with
+  only cases 1–2 a lowering that silently dropped the subtype's own
+  exception would still pass.
+- `case4-laaggrensconflict.json` (**cell 6**) — a `Wrakrecht` that is
+  betwist and has bergingsdiepte 25. Expected: `uitkering` **not
+  written** and one §9.5 conflict fact keyed `Strandrecht.uitkering`
+  (the type that declares the attribute, §4.4) on that subject;
   `inconsistent` (proof moment 4).
 
 Negatiefs, one per reserved rule, in the repo's Dutch slug convention:
@@ -663,11 +808,13 @@ frontend-diff pair.
 ### 7.4 Decided (question 5)
 
 **One anchor, `corpus/golden/anchor/jutterswet-strandrechtketen`, with
-`Strandrecht` → `Wrakrecht` and an aggregating `Kustgemeente`, three
-case files, and the six-cell table of §7.2 as its absolute
+`Strandrecht` → `Wrakrecht` and an aggregating `Kustgemeente`, **four**
+case files covering all six cells of the §7.2 table as absolute
 expectations. It carries all four proof moments the kernel card
-demands, and cells 3 and 4 are exactly what a flat lowering cannot
-produce simultaneously. Five negatief directories as listed. The
+demands; cells 3 and 4 are exactly what a flat lowering cannot
+produce simultaneously, and cell 5 is what catches a lowering that
+drops the subtype's own exception. Five negatief directories as
+listed. The
 dialect and F-logic cards re-express the same use case as
 `jutterswet-wrakrecht` and `jutterswet-wrakrecht-flogic`, the
 frontend-diff pair.**
@@ -741,7 +888,12 @@ and is rejected by the 2.2 parser.
 
 ### 8.3 The measurements
 
-All four runs are literal transcripts from the installed system.
+All runs below are transcripts from the installed system, with one
+stated edit: on the two **membership** queries Flora-2 also answers
+with its three built-in classes `\callable`, `\object` and `\symbol`,
+which are noise here, and those three lines are elided — marked at
+each occurrence. The solution counts are given unelided so the
+elision is visible. No value answer is edited anywhere.
 
 **(a) The penguin test.** Source: `vogel[|vliegt -> ja|].
 pinguin::vogel. pinguin[|vliegt -> nee|]. tweety:pinguin. opus:vogel.`
@@ -751,6 +903,8 @@ pinguin::vogel. pinguin[|vliegt -> nee|]. tweety:pinguin. opus:vogel.`
 ?- opus[vliegt->{?V}]            ?V = ja
 ?- pinguin[|vliegt->{?V}|]       ?V = nee
 ?- tweety : ?C                   ?C = pinguin      ?C = vogel
+                                 (5 solutions; \callable, \object,
+                                  \symbol elided)
 ```
 
 Specific beats general, and membership is transitive. This agrees with
@@ -799,6 +953,8 @@ p4:gewondeVogel.`
 ```
 ?- p4[hoogte->{?V}]      (no answer)
 ?- p4 : ?C               ?C = gewondeVogel   ?C = pinguin   ?C = vogel
+                         (6 solutions; \callable, \object,
+                          \symbol elided)
 ```
 
 Membership holds, but the value is **blocked**: `pinguin` and
@@ -877,13 +1033,18 @@ The mandate's §3 fixes the frontend's minimal slice as `c::d`, `o:c`,
 express the use case that is the card's own acceptance criterion**,
 because inheritable class-level defaults are written with the
 instance-level bars — `c[|attr->v|]` and `c[|attr=>type|]` — which
-the slice as written does not contain. The slice must be widened by
-exactly those two forms, and the widening is semantically the right
-one: `c[|attr -> v|]` lowers to a uchar defaults **base** on the
-class's target, which is decision 3's shape exactly. The unbarred
-class-level form `c[attr->v]` should then be a **refusal**, because
-uchar has no class-level attribute value for a type object and
-lowering it silently to an instance default would change its meaning.
+the slice as written does not contain. The finding is a measurement;
+the remedy is not this document's to take. **Recommended: widen the
+slice by exactly those two forms**, because the widening is
+semantically the right one — `c[|attr -> v|]` lowers to a uchar
+defaults **base** on the class's target, which is decision 3's shape
+exactly — and **make the unbarred class-level form `c[attr->v]` a
+refusal**, since uchar has no class-level attribute value for a type
+object and lowering it silently to an instance default would change
+its meaning. The mandate fixed the slice, so widening it is a mandate
+amendment and a maintainer decision (§11.4); the alternative, if he
+declines, is that the F-logic card's use case must be something other
+than the §7 one.
 
 ### 8.7 Decided (question 6)
 
@@ -900,9 +1061,12 @@ inheritance rather than base-only replacement — so decision 3 is
 finer grained than F-logic overriding, not a weaker version of it.
 Flora-2 is admitted as a documented external comparison on the
 inheritance skeleton, never as a gate and never as a fourth leg of the
-differential square. The F-logic frontend's minimal slice must be
-widened by `c[|attr->v|]` and `c[|attr=>type|]` or it cannot express
-its own use case; the unbarred `c[attr->v]` becomes a refusal.**
+differential square. Measured finding, with the remedy left to the
+maintainer (§11.4): the F-logic frontend's minimal slice as the
+mandate fixes it cannot express its own use case, because inheritable
+defaults in Flora-2 carry the bars; the recommendation is to widen it
+by `c[|attr->v|]` and `c[|attr=>type|]` and to make the unbarred
+`c[attr->v]` a refusal.**
 
 ## 9. Question 7 — the three refusal lists
 
@@ -938,22 +1102,42 @@ blanket ban the mandate itself retired.
 
 ### 9.2 RegelSpraak dialect (`is een`)
 
-Head form, fixing the position against the existing annotations —
-measured on the corpus, whose heads read
-`Objecttype de Jutter (mv: Jutters) (bezield)`:
+Head form, fixing the position against the existing annotations. The
+production, measured, is
+`frontends/regelspraak/grammar/RegelSpraak.g4:311`:
+
+```
+objectTypeDefinition
+    : OBJECTTYPE bepaaldLidwoord? objectTypeNaam
+      ( MV_START meervoudsvorm RPAREN )? BEZIELD?
+      objectTypeMember*
+```
+
+So the annotation order is **already fixed by the grammar** — the
+`mv:` group precedes `(bezield)` and there is no alternative — and the
+corpus heads `Objecttype de Jutter (mv: Jutters) (bezield)` are that
+order, not a free choice. The extension therefore inserts one optional
+element after `objectTypeNaam` and before the `mv:` group:
 
 ```
 Objecttype het Wrakrecht is een Strandrecht (mv: Wrakrechten)
 ```
 
-`is een <supertype>` sits **between the declared name and the
-parenthesised annotation groups**, which keeps every existing head
-byte-identical (the annotation groups are unmoved and the new phrase
-occupies a position that is empty in every v2.3.0 document). `bezield`
-and `mv:` are untouched, and their mutual order stays free as it is
-today. New whole-phrase token `IS_EEN`; registered in
-`frontends/regelspraak/grammar/DIVERGENCES.md` beside the
-prioritized-defaults extension, under the same
+**No new lexer token.** A whole-phrase `IS_EEN : 'is' WSP 'een'` is
+*not* safe here, and the `IS_VAN_HET_TYPE` precedent does not carry
+over. Lexing is not head-local: under maximal munch such a token would
+fire wherever the phrase occurs, and it already occurs in **rule
+text** — `corpus/golden/jutterswet-schouwrooster/bron.rgs:15` and
+`:22` ("Een dag is een schouwdag"),
+`corpus/golden/jutterswet-postwacht/bron.rgs:66`, plus seven `toka/`
+sources. That would break gate 10's byte-identical re-emission on
+documents that have nothing to do with subtyping. `IS_VAN_HET_TYPE`
+(`RegelSpraakLexer.g4:187`) is safe only because its phrase occurs
+nowhere else. The solution is at the **parser** level: the existing
+`IS` (`RegelSpraakLexer.g4:284`) and `EEN` (`:378`) tokens in sequence
+at the head position, where the surrounding context disambiguates.
+Registered in `frontends/regelspraak/grammar/DIVERGENCES.md` beside
+the prioritized-defaults extension, under the same
 inert-on-official-documents argument.
 
 Refusals, each with a fixture:
@@ -1001,9 +1185,12 @@ session adds a rule for them.**
 
 ## 10. WF-number reservations
 
-**WF-102 is not available**: it is assigned to the aggregation
-scope-path rule landing today on a parallel card. Subtyping therefore
-reserves **from WF-103**:
+**WF-101 is the highest rule in the WF index on this branch's base.**
+WF-102 does **not** appear in that index; it is claimed by the
+parallel aggregation scope-path card (branch
+`card/geneste-aggregatie-bronpad`), whose merge follows today — so the
+number is spoken for by that card, not by the document. Subtyping
+therefore reserves **from WF-103**:
 
 | Reserved | Statement | Negatief |
 |---|---|---|
@@ -1013,16 +1200,20 @@ reserves **from WF-103**:
 | WF-106 | a defaults group inheriting a non-empty exception block declares its layer-boundary ordering | `wf106-ongeordende-laaggrens` |
 
 **WF-107 is held in reserve** for whatever the kernel card's own lens
-round surfaces; if it is not needed it stays unassigned. Everything
-else in this document is a restatement of an existing rule under the
-chain-aware definition of resolution (WF-034, WF-047, WF-048, WF-050,
-WF-026, WF-079) and takes no new number — those get goldens and, where
-a new shape becomes reachable, a negatief under the existing number.
+round surfaces — the §4.1 rule-3 marking obligation is the most likely
+claimant, since it currently has an obligation and no check. Most of
+the rest of this document adjusts existing rules under the chain-aware
+definition of resolution (WF-034, WF-047, WF-048) and takes no new
+number — those get goldens and, where a new shape becomes reachable, a
+negatief under the existing number. The single-writer fences (WF-026,
+WF-050, WF-079) are the exception to that framing: §4.2 puts a new
+*constraint* on them rather than restating them, and it needs a
+witness even though it needs no number.
 
 These numbers are **reserved, not fixed**: the main session assigns
 the final numbers serially when the kernel card lands, per the card
 protocol in `CLAUDE.md`. WF-104's model implementation is
-`spec/verifier/lib/checks.ml:2859–2912` (WF-085's colour DFS with a
+`spec/verifier/lib/checks.ml:2859–2915` (WF-085's colour DFS with a
 named cycle path).
 
 ## 11. Open points only the maintainer can settle
@@ -1035,8 +1226,14 @@ named cycle path).
    two CGM cases inside the kernel, at the price of a wire shape that
    can represent what the design forbids. The kernel card as written
    assumes the second; this document recommends the first. **This is
-   the one place where the proposal departs from a card's stated
-   acceptance text, and it is flagged rather than quietly executed.**
+   one of two places where the proposal departs from a card's stated
+   acceptance text, and both are flagged rather than quietly
+   executed.** The other is the kernel card's "botsend
+   sibling-attribuut" negatief: §3.3 reinterprets it as the
+   *shadowing* case (a), because the literal sibling case (b) is the
+   shape the real data needs and must be admitted, not refused. If the
+   maintainer reads the card's phrase the other way, §3.3's admission
+   is what has to change, not the negatief.
 2. **The layer-boundary ordering field.** `inheritedExceptions` ∈
    {boven, onder, ongeordend} is one field and one enum, but it is
    still new wire surface with no producer until the dialect card
@@ -1073,7 +1270,11 @@ named cycle path).
    same constraint applies to this document, which is why it describes
    the retired term instead of quoting it.
 
-## 12. Decisions taken in this document
+## 12. Summary of positions — proposed, not ratified
+
+Nothing below is ratified. This document is a proposal; the
+maintainer's reading round is the gate, and §11 lists the six points
+he alone can settle.
 
 1. `ObjectType.supertype: string?`, an additive optional extension
    field; single parenthood by wire shape, not by rule (§3.4).
@@ -1082,21 +1283,26 @@ named cycle path).
    admitted (§3.4).
 3. Inheritance composes effective defaults stacks by the four rules of
    §4.1; the initialisation and virtual input defaults are never
-   replaced (§4.5).
-4. The single-writer fences are read on the per-type effective stack,
-   not on the declaration set — the sentence the kernel card must land
-   (§4.2).
+   replaced. Rule 2 is a flagged filling-in, rule 3 carries a named
+   enforcement gap, and three other writer forms are left open (§4.5).
+4. The single-writer fences are read on the per-type effective stack
+   and never on a chain-closed target key. Measured: today they key on
+   the declared type name and do not fire on a supertype/subtype pair,
+   so the hazard is the naive lift, not the anchor — a new obligation
+   on the verifier, not a restatement (§4.2).
 5. A subtype never edits an inherited exception; the layer boundary
-   carries one declaration field, and unordered clashes use the
-   existing ch. 7.2 channel, keyed on the declaring type, at the root
-   (§4.4).
+   carries one declaration field (recommended, §11.2), and unordered
+   clashes use the existing ch. 7.2 channel, keyed on the type that
+   declares the attribute, at the root (§4.4).
 6. Drools lowers to native class-hierarchy subtyping; flat emission
-   with a discriminator is rejected on the differential (§5.4).
+   with a discriminator is rejected on the differential. Three files
+   move, the contract validator among them (§5.4).
 7. Quantification is extensional everywhere, with no exact-type
-   quantifier; roles are upper bounds; creation is not polymorphic
-   (§6.4).
+   quantifier; roles are upper bounds; creation is not polymorphic.
+   `ref/` changes at eleven measured sites; the clingo closure
+   placement is a recommendation, not a decision (§6.4, §11.3).
 8. The anchor is `jutterswet-strandrechtketen` with the six-cell table
-   and three cases; five negatiefs; the dialect and F-logic goldens
+   and **four** cases; five negatiefs; the dialect and F-logic goldens
    are `jutterswet-wrakrecht` and `jutterswet-wrakrecht-flogic`
    (§7.4).
 9. Flora-2 is installable, was installed and exercised, agrees with
@@ -1104,6 +1310,9 @@ named cycle path).
    three named points, and is admitted as a documented external
    comparison on the inheritance skeleton only — never a gate (§8.7).
 10. The three refusal lists of §9, with the two CGM
-    multiple-inheritance cases named in each (§9.4).
-11. WF-103 to WF-106 reserved, WF-107 held; WF-102 is taken; the main
-    session fixes the numbers at the kernel landing (§10).
+    multiple-inheritance cases named in each; the dialect's `is een`
+    is a parser-position extension over existing tokens, never a new
+    lexer token (§9.2, §9.4).
+11. WF-103 to WF-106 reserved, WF-107 held; WF-101 is the highest in
+    the index on this base and WF-102 is claimed by a parallel card;
+    the main session fixes the numbers at the kernel landing (§10).

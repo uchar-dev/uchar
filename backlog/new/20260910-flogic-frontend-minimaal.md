@@ -13,20 +13,25 @@ Out of scope: kernel- en executor-wijzigingen; ErgoAI-integratie of licentieonde
 `spec/proposals/SUBTYPING.md` §8 is bindend; hieronder de uitvoerbare
 neerslag.
 
-**De snede moet verbreed worden, anders drukt zij haar eigen use case
-niet uit.** In Flora-2 2.2 is de érfbare klasseniveau-waarde
-`c[|attr -> v|]` — mét de balken — en niet `c[attr -> v]`; de JACM-vorm
-`*->` is Flora-1-syntax en wordt door de 2.2-parser geweigerd
-(gemeten). De opdrachtsnede noemt alleen `c[attr=>type]` en
-`o[attr->v]` en kan daarmee geen enkele érfbare default schrijven, dus
-ook de pinguïn-toets niet. Toe te voegen: **`c[|attr -> v|]`** (lowert
+**Gemeten bevinding: de snede zoals de opdracht haar vastlegt kan haar
+eigen use case niet uitdrukken.** In Flora-2 2.2 is de érfbare
+klasseniveau-waarde `c[|attr -> v|]` — mét de balken — en niet
+`c[attr -> v]`; de JACM-vorm `*->` is Flora-1-syntax en wordt door de
+2.2-parser geweigerd (gemeten). De opdrachtsnede noemt alleen
+`c[attr=>type]` en `o[attr->v]` en kan daarmee geen enkele érfbare
+default schrijven, dus ook de pinguïn-toets niet.
+
+*Aanbevolen*, niet beslist: verbreed met **`c[|attr -> v|]`** (lowert
 naar een uchar defaults-**basis** op het doel van de klasse — precies
-de vorm van besluit 3) en **`c[|attr => type|]`** (de instantiesignatuur).
-De ongebalkte klasseniveau-waarde `c[attr -> v]` wordt daarmee een
-**weigering**: uchar kent geen klasseniveau-attribuutwaarde en stil
-lowering naar een instantiedefault zou de betekenis veranderen.
-SUBTYPING §11 punt 4 legt deze verbreding als opdrachtamendement aan
-de maintainer voor.
+de vorm van besluit 3) en **`c[|attr => type|]`** (de
+instantiesignatuur), en maak de ongebalkte klasseniveau-waarde
+`c[attr -> v]` een **weigering**, want uchar kent geen
+klasseniveau-attribuutwaarde en stille lowering naar een
+instantiedefault zou de betekenis veranderen. De opdracht heeft de
+snede vastgelegd, dus verbreden is een **opdrachtamendement en een
+maintainerbesluit** — SUBTYPING §11.4. Begin deze kaart niet voordat
+dat punt beantwoord is; als de maintainer de verbreding afwijst, moet
+de use case van deze kaart een andere zijn dan die van §7.
 
 **Weigeringslijst.** Meervoudige ouders (twee `::`-feiten met
 onvergelijkbare ouders, met `RechtOpUitkeringWazo` en
