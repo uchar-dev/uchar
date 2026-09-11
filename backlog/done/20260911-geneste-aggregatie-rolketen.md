@@ -536,7 +536,7 @@ eigen bewering, geen gevolg van zijn eindpunten. De afhankelijkheidsgraaf
 (ch. 6.1) krijgt een kant per stap, zodat een feitcreatie die een
 TUSSENrelatie vult nog altijd vóór de vouw geordend wordt.
 
-**`corpus/negatief/` — acht getuigen, elk geïsoleerd:**
+**`corpus/negatief/` — negen getuigen, elk geïsoleerd:**
 
 | getuige | arm | valt om |
 |---|---|---|
@@ -572,11 +572,11 @@ omrekenbare zusterzus), zodat gate 13 de vouwbron ONDER een pad echt twist.
 antwoorden 3,00, gate 10 regenereert het byte-identiek.
 
 **`ref/`** — `linked_path`: de vlakke unie over het pad, met een expliciete
-dedup op instantie-LABEL in eerste-bereik-volgorde. Plus de twee vormarmen van
+dedup op instantie-LABEL in eerste-bereik-volgorde. Plus de DRIE vormarmen van
 WF-102 als luide fout, want een document dat een uitvoerder bereikt zonder
 langs de verifier te komen moet BIJ NAAM falen in plaats van als de
-eenstapsvorm met het bereik weggelaten gelezen te worden. 15 nieuwe gewerkte
-voorbeelden (535 → 550).
+eenstapsvorm met het bereik weggelaten gelezen te worden. 18 nieuwe gewerkte
+voorbeelden (535 → 553).
 
 **`backends/clingo`** — `source_join`: één `rol/3`-atoom per stap, met verse
 tussenvariabelen. De dedup is hier GRATIS en dat is een eigenschap van de
@@ -584,8 +584,9 @@ gekozen aggregaat-TERM, niet van de join: de tussenvariabelen zijn
 existentieel gekwantificeerd BINNEN het aggregaat en elke term noemt alleen
 het element (en zijn waarde), dus een element dat via twee tussenexemplaren
 bereikbaar is levert één tupel. De termen zijn daarom letterlijk gelaten zoals
-de eenstaps-armen ze schreven, met een comment dat zegt waaróm. Vier nieuwe
-checks (120 → 124) voor de weigerende kant, die geen corpusdocument kan dragen.
+de eenstaps-armen ze schreven, met een comment dat zegt waaróm. Vijf nieuwe
+checks (120 → 125): vier voor de weigerende kant, die geen corpusdocument kan
+dragen, en één voor de to-één-stap, die geen corpusdocument dráágt.
 
 **`backends/drools`** — één `Refusal("Functie.bronPad", …)` in `IrLoader`,
 plus `BronPadWeigeringWitnessTest` (3 tests, 318 → 321): de weigering is
@@ -610,8 +611,9 @@ wire het draagt) en schrijft het IN PLAATS VAN `bronRol`.
 
 **Gate 11 vooraf gemeten, vóór er iets bewoog** (de kaart eiste het):
 
-    check-toka-parity: PASS   (45 .rgs byte-identiek, vloer 45; 27 tests, vloer 27;
-                               29 cases: ref 29 PASS, clingo 29 PASS, Drools 29 PLAYED)
+    check-toka-parity: PASS   [samengevat, zelfde rechtenreden als hieronder]
+      (45 .rgs byte-identiek, vloer 45; 27 tests, vloer 27;
+       29 cases: ref 29 PASS, clingo 29 PASS, Drools 29 PLAYED)
 
 **Alle dertien op de eindkop** — letterlijke slotregels:
 
@@ -619,16 +621,23 @@ wire het draagt) en schrijft het IN PLAATS VAN `bronRol`.
     check-ir-schema: PASS (schema valid; 24 pattern self-test row(s); 199 file(s) validate and round-trip, floor 192)
     check-verifier: PASS (199 golden clean; 373 negatief rejected for their declared rule, floor 350)
     check-case-schema: PASS (schema valid; 470 case file(s) validate)
-    check-oracle: PASS (ref suite 550 worked examples, floor 489; 444 cases replayed exactly, floor 427; NOT replayed, no case file yet: corpus/golden/jutterswet-seizoenvondst corpus/golden/jutterswet-vormenkabinet)
-    check-clingo: PASS (backend suite 124 checks, floor 83; 444 cases replay exactly through clingo — ref = clingo over the corpus)
+    check-oracle: PASS (ref suite 553 worked examples, floor 489; 444 cases replayed exactly, floor 427; NOT replayed, no case file yet: corpus/golden/jutterswet-seizoenvondst corpus/golden/jutterswet-vormenkabinet)
+    check-clingo: PASS (backend suite 125 checks, floor 83; 444 cases replay exactly through clingo — ref = clingo over the corpus)
     check-noop: PASS (408 cases refute a do-nothing executor; 36 pinned survivors pin defeasible standing)
     check-rood: PASS (26 red cases fault observably in ref and clingo, floor 26)
     check-catala: PASS — frontend suite green (201 checks, floor 201); 12 catala golden(s) regenerate byte-identically (floor 12)
     check-regelspraak: PASS — JUnit suite green (207 tests, floor 173); 42 rgs golden(s) re-emit byte-identically (floor 38)
     check-toka-parity: PASS
-      re-emission: 1 casus dump(s), 45 .rgs re-emitted byte-identical, floor 45 (holdouts: 2); TOKA suite 27 tests, floor 27
-      differential replay: 29 cases through ref, clingo, Drools, ZERO silent divergences
-        ref 29 PASS / clingo 29 PASS / Drools 29 PLAYED
+      [SAMENGEVAT, niet letterlijk — de letterlijke regel noemt de twee holdouts
+       bij bestandsnaam, en die namen mogen dit Result niet in (rechtenregel).
+       De getallen zijn wel letterlijk:]
+      re-emission: 1 casus dump(s), 45 .rgs re-emitted byte-identical, floor 45
+                   (holdouts: 2); TOKA suite 27 tests, floor 27
+      schema: 29 replay slice(s) metaschema-valid + byte-round-trip
+      differential replay: 29 cases (floor 29) through ref, clingo, Drools,
+                           ZERO silent divergences
+        ref 29 PASS / 0 diverge; clingo 29 PASS / 0 fault / 0 diverge;
+        Drools 29 PLAYED / 0 EXCLUDE / 0 FAIL-or-ERROR
     check-drools: PASS
       played 124  (loaded off the wire, wholly lowered, matched the pinned ref≡clingo expectations)
       auto-excluded 46  (per-form refusals: loader / transpiler marker / contract / unsupported input)
@@ -638,11 +647,11 @@ wire het draagt) en schrijft het IN PLAATS VAN `bronRol`.
       channel floor 49 non-PLAYED goldens pinned by name; played matches the pinned 124
       JUnit 321 tests, floor 239  (the backend's own suite, green with a non-zero count)
     check-reftype-derivation: PASS (92 unit annotations twisted over 17 goldens, floor 74; 80 executor replays reproduce the untouched outcome, 14 of them PLAYED by the DRL-text branch, floor 13; 0 pinned survivors)
-      corpus-wide accounting: 128 unit-bearing annotations = 95 twistable + 27 exempt + 6 without a convertible sister + 0 at a fourth-class branch + 0 outside the twist table
+      corpus-wide accounting: 128 unit-bearing annotations = 95 twistable + 27 exempt (the annotation IS the source) + 6 without a convertible sister + 0 at a §2.10 fourth-class branch (v0 derives no result unit) + 0 outside the twist table
 
 Bewegingen, alle groei en geen krimp: gate 2 197 → 199 documenten; gate 3
-golden 197 → 199 en negatief 365 → 373; gate 4 467 → 470 casebestanden; gate 5
-ref-suite 535 → 550 en 441 → 444 replays; gate 6 backend-suite 120 → 124 en
+golden 197 → 199 en negatief 364 → 373 (+9); gate 4 467 → 470 casebestanden; gate 5
+ref-suite 535 → 553 en 441 → 444 replays; gate 6 backend-suite 120 → 125 en
 441 → 444 replays; gate 7 405 → 408; gate 10 suite 205 → 207 en 41 → 42
 byte-identieke re-emissies; gate 12 JUnit 318 → 321 en de kanaalvloer 47 → 49;
 gate 13 83 → 92 getwiste annotaties over 16 → 17 goldens. Geen enkele vloer is
@@ -657,6 +666,65 @@ boekhoudregel: "0 outside the twist table". Wat wél moest gebeuren is dat de
 vouwbron ONDER een pad in de twistset komt, en daarvoor is de ankergolden
 eenheidsdragend gemaakt: 83 → 92 annotaties over 16 → 17 goldens, en ref en
 clingo reproduceren de ongetwiste uitkomsten.
+
+### Fixronde (2026-09-11, na lens 1)
+
+Lens 1 hermat alles — dertien gates, alle 17 ankerverwachtingen zelf
+nagerekend en gefalsifieerd, arm-exactheid 6/6 zonder collateral over 373
+negatiefs — en vond zes punten. Wat er inhoudelijk uit kwam:
+
+**`ref` droeg WF-102 arm (a) niet.** Gemeten op
+`corpus/negatief/wf102-bronpad-naast-bronrol`: `ref` gaf
+`oracle: PASS (2 expectations)` waar de ASP-backend
+`TRANSLATION FAULT: a bronPad beside a bronRol` gaf. Met beide velden
+aanwezig won de padarm stil en werd de binding nooit gelezen — een
+twee-uitvoerder-verschil onder een document dat geen regel in dat bestand
+weigerde, en onzichtbaar voor elke gate, want een negatief wordt nooit
+afgespeeld. Mijn eigen code-comment vroeg erom ("must fault by NAME rather
+than be read as the one-step form with the range dropped"). De arm staat er
+nu, VÓÓR de andere twee zodat een document dat beide spellingen draagt
+daarvoor benoemd wordt en niet voor wat de overlevende spelling toevallig
+nog schendt. Rood-eerst gemeten: met de arm weggehaald faalt precies één
+check (`WV-3.4b-pad-naast-bronrol-faalt`) en geen andere. De NOTE van het
+negatief zegt nu ook WAAROM die zin één ronde onwaar was. De (d)-armen zijn
+nagemeten en divergeren niet — beide vouwen leeg — en zijn niet aangeraakt.
+
+**De to-één-clausule had geen uitvoerdersartefact.** Gemeten: geen enkele
+`bronPad`-stap in het hele repo is to-één (alle 13 dragers volledig
+meervoudig), dus de normatieve zin in ch. 3.4b leunde alleen op een
+frontend-emissietest. Beide uitvoerders krijgen nu een check op hetzelfde
+document, en het is DISCRIMINEREND gekozen in plaats van slechts
+gedefinieerd: Jutter -(`bemanning`/`boot`, BEIDE rollen to-één)→ Boot
+-(`bootvangst`/`vondst`, to-many)→ Vondst, naast een DIRECTE
+`jutterbezit`-relatie. `J1` vaart `B1` (met `V1` 3,00 en `V2` 7,00) en bezit
+daarnaast `V9` (1,00). De unie over het pad is {V1, V2} → **3,00**; wie de
+to-één stap laat vallen en het directe paar vouwt antwoordt **1,00**.
+Gemeten op precies die twist: zonder `bronPad` blijft hetzelfde document
+`verifier: PASS` en antwoorden ref én clingo 1 waar 3 gepind staat. `J2`
+vaart niets: leeg bereik bij de EERSTE stap, minimum leeg.
+
+**De AANTAL-divergentie is nu net zo gemarkeerd als die van SOM** — in
+IR-SPEC ch. 4.3 en in RUNTIME-SEMANTICS ch. 3.4b — met de scherpere reden:
+geen enkele `bronPad`-drager is een AANTAL, en een AANTAL over een SET-bron
+vertaalt de ASP-backend überhaupt niet (de setvouwkloof-kaart). De lezing is
+hier beslist; haar differentiële getuige wacht op die kaart. Er is bewust
+GEEN getuige gebouwd.
+
+**Twee telfouten** in dit Result rechtgezet: "acht getuigen" boven een
+negatief-tabel van negen, en "negatief 365 → 373" waar `git ls-tree` op
+`acc5a4e` **364** telt (dus +9).
+
+**Twee typo's in beschermde bestanden**, op de branch hersteld: een
+verdubbelde "v0" in `spec/IR-SPEC.md` ch. 4.3, en de schema-`description`,
+waar mijn em-dash-uitweiding de komma-lijst van extensievelden brak — de
+lijst is hersteld en de `bronPad`-toelichting staat nu áchter de lijst.
+
+**Twee eerlijkheden in dit Result:** de gate-11-blokken zijn expliciet als
+SAMENGEVAT gemarkeerd met hun reden (de letterlijke regel noemt de twee
+holdouts bij bestandsnaam, en die namen mogen hier niet in), en de gate-13-
+regels staan nu letterlijk. De pre-existente stilte die lens 1 op probe (d)
+vond — een geschreven anker dat NIETS oplost — staat bij "Wat bewust niet
+bewoog".
 
 ### Gewijzigde beschermde bestanden (voorstel — voor de landing)
 
@@ -679,8 +747,12 @@ clingo reproduceren de ongetwiste uitkomsten.
 ### Gewijzigde bestaande tests, met reden per naam
 
 `frontends/regelspraak/.../GenesteVouwbronTest.java` (van de zusterkaart, één
-dag oud). Acht getuigen pinden de WEIGERING van vormen die deze kaart
-uitdrukbaar maakt; ze zijn omgezet, niet geschrapt:
+dag oud). ACHT getuigen pinden de WEIGERING van vormen die deze kaart
+uitdrukbaar maakt en stonden dus rood op mijn kop; ze zijn omgezet, niet
+geschrapt. De tabel telt NEGEN namen in acht rijen: één rij voegt twee
+getuigen samen, en de rolanker-rij is de negende — die stond vóór én ná
+groen en is alleen hernoemd, omdat de deelvraag die zij openhield nu
+beslecht is.
 
 | was | is | reden |
 |---|---|---|
@@ -807,3 +879,18 @@ en alleen deze vijf:
   `elementBinding` eist twee onderscheiden rollen), terwijl WF-047 een
   wederkerige binding wél kent. Conservatief: de wire kan hem dragen, de
   frontend produceert hem niet, en geen zin in het corpus vraagt erom.
+- **Een geschreven anker dat NIETS oplost blijft stil — pre-existent gedrag
+  van vóór deze kaart, hier benoemd omdat het besluit erlangs loopt.** De
+  rolanker-arm in `ExpressieBouwer.keurVouwbron` kent drie uitkomsten: een
+  objecttype ≠ onderwerp weigert, een VERRE rol weigert (nieuw), en een naam
+  met NUL verre treffers valt door — maar die laatste groep bevat twee dingen:
+  de zelfdenoterende naam (terecht, die IS het onderwerp) én een naam die
+  helemaal niets denoteert. Gemeten op een eigen probe: "… van alle
+  aangemelde vondsten van **de zeemeermin**", waarbij `zeemeermin` geen
+  objecttype en geen rol is, geeft `diagnostics: []` en bindt eenstaps via het
+  typepaar (`vondstaanmelding`/`aangemelde vondst`). Dat was vóór deze kaart
+  al zo — de `continue` in die lus stond er als "a role anchor: the wire
+  question, left alone" en dekte beide gevallen — en het staat in de
+  code-comment naast de arm, maar het stond niet in dit Result. Het is
+  strikt genomen geen rolanker-vraag maar de vraag wat een ONBEKEND anker
+  betekent, en die valt onder WF-034's naamresolutie, niet onder ch. 4.3.

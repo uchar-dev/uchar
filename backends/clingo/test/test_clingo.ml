@@ -3039,6 +3039,286 @@ let () =
             "type": { "node": "Onbekend", "reden": "niet opgelost" },|})
     ~case_text:bp_case ~needle:"bronPad on the row-1 wart"
 
+
+(* ch. 3.4b's to-ONE clause: "a step through a to-ONE role is an ordinary
+   step" — multiplicity is a declaration fact and does not enter the
+   reading. It is the one clause of that chapter NO corpus document
+   exercises: every bronPad step in the corpus is to-many. So the check
+   lives here, and the model makes it discriminating rather than merely
+   defined: Jutter -(bemanning/boot, BOTH roles to-one)-> Boot
+   -(bootvangst/vondst, to-many)-> Vondst, beside a DIRECT jutterbezit
+   relation. J1 sails B1 (catching V1 3,00 and V2 7,00) and separately
+   OWNS V9 (1,00). The union over the path is {V1, V2} → 3,00; dropping
+   the to-one step and folding the direct pair answers 1,00. Measured on
+   exactly that twist: with bronPad removed this document stays
+   verifier-clean and both executors answer 1,00 where 3,00 is pinned.
+   J2 sails nothing: the range is empty at the FIRST step and a minimum
+   has no fallback, so it reads leeg. `ref` holds the mirror of this row
+   in its own suite (WV-3.4b-toone-stap / WV-3.4b-toone-leeg-bereik). *)
+let bp_toone_doc =
+  {|{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "laagste vondstgewicht": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    },
+    "Boot": {
+      "node": "Objecttype",
+      "naam": "Boot",
+      "attributen": {},
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Boten"
+    },
+    "Vondst": {
+      "node": "Objecttype",
+      "naam": "Vondst",
+      "attributen": {
+        "gewicht": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Vondsten"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {
+    "bemanning": {
+      "node": "Feittype",
+      "naam": "bemanning",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "schipper",
+          "objecttypeNaam": "Jutter",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "boot",
+          "objecttypeNaam": "Boot",
+          "meervoud": null,
+          "meervoudig": false
+        }
+      ]
+    },
+    "bootvangst": {
+      "node": "Feittype",
+      "naam": "bootvangst",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "vangende boot",
+          "objecttypeNaam": "Boot",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "vondst",
+          "objecttypeNaam": "Vondst",
+          "meervoud": "vondsten",
+          "meervoudig": true
+        }
+      ]
+    },
+    "jutterbezit": {
+      "node": "Feittype",
+      "naam": "jutterbezit",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "bezitter",
+          "objecttypeNaam": "Jutter",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "bezeten vondst",
+          "objecttypeNaam": "Vondst",
+          "meervoud": "bezeten vondsten",
+          "meervoudig": true
+        }
+      ]
+    }
+  },
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "laagste vondstgewicht van een jutter",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "laagste vondstgewicht van een jutter",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "laagste vondstgewicht",
+        "objecttype": "Jutter",
+        "onderwerpBron": "een Jutter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het laagste vondstgewicht van een Jutter",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "MINIMUM",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "gewicht",
+            "objecttype": "Vondst",
+            "onderwerpBron": "alle vondsten van de boot van de Jutter",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "het gewicht van alle vondsten van de boot van de Jutter",
+            "set": true,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": "Vondst",
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de minimale waarde van het gewicht van alle vondsten van de boot van de Jutter",
+        "granulariteit": null,
+        "bronPad": [
+          {
+            "node": "RolBinding",
+            "feittype": "bemanning",
+            "rol": "boot"
+          },
+          {
+            "node": "RolBinding",
+            "feittype": "bootvangst",
+            "rol": "vondst"
+          }
+        ]
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}|}
+
+let bp_toone_case =
+  {|{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": { "boot": ["B1"], "bezeten vondst": ["V9"] }, "characteristics": [] },
+      { "label": "J2", "objectType": "Jutter", "attributes": {}, "roles": {}, "characteristics": [] },
+      { "label": "B1", "objectType": "Boot", "attributes": {}, "roles": { "vondst": ["V1", "V2"] }, "characteristics": [] },
+      { "label": "V1", "objectType": "Vondst", "attributes": { "gewicht": { "number": "3.00" } }, "roles": {}, "characteristics": [] },
+      { "label": "V2", "objectType": "Vondst", "attributes": { "gewicht": { "number": "7.00" } }, "roles": {}, "characteristics": [] },
+      { "label": "V9", "objectType": "Vondst", "attributes": { "gewicht": { "number": "1.00" } }, "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "laagste vondstgewicht", "value": { "number": "3.00" } },
+    { "kind": "attributeEmpty", "label": "J2", "attribute": "laagste vondstgewicht" },
+    { "kind": "consistent" }
+  ]
+}|}
+
+let () =
+  clingo_matches ~name:"ch3.4b een to-één stap op het pad"
+    ~ir:bp_toone_doc ~case_text:bp_toone_case
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

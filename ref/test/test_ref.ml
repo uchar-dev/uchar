@@ -2348,6 +2348,13 @@ let () =
   (* the two shape arms of WF-102, mirrored in the executor: a document that
      reaches ref without passing the verifier must fault by NAME rather than
      be read as the one-step form with the range dropped *)
+  expect_fault "WV-3.4b-pad-naast-bronrol-faalt" (fun () ->
+      ev w1 "J1"
+        (Functie
+           { kind = Minimum; argumenten = [ bron "gewicht" "Vondst" ];
+             element_objecttype = Some "Vondst"; leegwaarde = None; filter = None;
+             dimensie_selectie = None; typ = Some num2; bron = None; granulariteit = None;
+             bron_rol = Some (rb "berging" "geborgen vondst"); bron_pad = Some pad2 }));
   expect_fault "WV-3.4b-eenstaps-pad-faalt"
     (fun () -> ev w1 "J1" (vouw Minimum "gewicht" "Vondst" [ rb "berging" "geborgen vondst" ] None));
   expect_fault "WV-3.4b-pad-op-een-niet-setbron-faalt" (fun () ->
@@ -2363,6 +2370,79 @@ let () =
              element_objecttype = Some "Vondst"; leegwaarde = None; filter = None;
              dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = None;
              bron_rol = None; bron_pad = Some pad2 }))
+
+(* WV-3.4b-toone: the ch. 3.4b clause "a step through a to-ONE role is an
+   ordinary step". Multiplicity is a declaration fact and does not enter
+   the reading — a to-one role contributes its zero-or-one instance to
+   the union like any other — and this is the ONE clause of that chapter
+   no corpus document exercises: every bronPad step in the corpus is
+   to-many, so without this check the sentence has no artefact.
+
+   The model makes the answer discriminating rather than merely defined:
+   Jutter -(bemanning/boot, BOTH roles to-one)-> Boot -(bootvangst/vondst,
+   to-many)-> Vondst, beside a DIRECT jutterbezit relation. J1 sails B1,
+   which catches V1 (3,00) and V2 (7,00), and J1 also owns V9 (1,00)
+   through the direct relation. The union over the path is {V1, V2}, so
+   the minimum is 3,00 — an executor that dropped the to-one step and
+   folded the direct pair would answer 1,00. J2 sails nothing and owns
+   nothing: the range is empty at the FIRST step, and a minimum has no
+   fallback, so it reads leeg. *)
+let () =
+  let num2 : Ir_v0.Ast.datatype =
+    Numeriek { geheel = false; decimalen = 2; teken = None; eenheid = None }
+  in
+  let rol naam otn mv meervoudig : Ir_v0.Ast.rol =
+    { rol_naam = Some naam; rol_objecttype_naam = Some otn; rol_meervoud = mv;
+      rol_meervoudig = meervoudig }
+  in
+  let ft naam rollen = (naam, { Ir_v0.Ast.ft_naam = Some naam; wederkerig = false; rollen }) in
+  let doc =
+    {
+      empty_doc with
+      objecttypen =
+        [ ot "Jutter" [] []; ot "Boot" [] []; ot "Vondst" [ ("gewicht", Some num2) ] [] ];
+      feittypen =
+        [ ft "bemanning"
+            [ rol "schipper" "Jutter" None false; rol "boot" "Boot" None false ];
+          ft "bootvangst"
+            [ rol "vangende boot" "Boot" None false;
+              rol "vondst" "Vondst" (Some "vondsten") true ];
+          ft "jutterbezit"
+            [ rol "bezitter" "Jutter" None false;
+              rol "bezeten vondst" "Vondst" (Some "bezeten vondsten") true ] ];
+    }
+  in
+  let rb f r : Ir_v0.Ast.rol_binding = { rb_feittype = f; rb_rol = r } in
+  let minimum : Ir_v0.Ast.expr =
+    Functie
+      { kind = Minimum;
+        argumenten =
+          [ Attribuut_ref
+              { attribuut = Some "gewicht"; objecttype = Some "Vondst"; onderwerp_bron = None;
+                navigatie_rol = None; typ = Some num2; bron = None; set = true;
+                navigatie_pad = []; navigatie_bindingen = None } ];
+        element_objecttype = Some "Vondst"; leegwaarde = None; filter = None;
+        dimensie_selectie = None; typ = Some num2; bron = None; granulariteit = None;
+        bron_rol = None;
+        bron_pad = Some [ rb "bemanning" "boot"; rb "bootvangst" "vondst" ] }
+  in
+  let env = env_of doc in
+  let links l = List.fold_left (fun m (k, v) -> World.SMap.add k v m) World.SMap.empty l in
+  let i label otn gewicht l =
+    { (inst label otn (match gewicht with None -> [] | Some g -> [ ("gewicht", n g) ])) with
+      World.links = links l }
+  in
+  let w =
+    List.fold_left World.add_instance World.empty
+      [ i "J1" "Jutter" None [ ("boot", [ "B1" ]); ("bezeten vondst", [ "V9" ]) ];
+        i "J2" "Jutter" None [];
+        i "B1" "Boot" None [ ("vondst", [ "V1"; "V2" ]) ];
+        i "V1" "Vondst" (Some "3.00") []; i "V2" "Vondst" (Some "7.00") [];
+        i "V9" "Vondst" (Some "1.00") [] ]
+  in
+  let ev label = Eval.eval_expr env w (World.get w label) ~err:no_err minimum in
+  expect_num "WV-3.4b-toone-stap" (ev "J1") "3.00";
+  expect_leeg "WV-3.4b-toone-leeg-bereik" (ev "J2")
 
 (* --- ch. 5.7a: what a supplied role link establishes -------------------- *)
 

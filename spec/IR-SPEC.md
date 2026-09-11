@@ -4181,7 +4181,12 @@ three places:
   fold, and the flat reading never asks.
 - **COUNT.** They do not coincide at all. A count over the flat union counts
   ELEMENTS; a count of counts counts INTERMEDIATE INSTANCES. On the worked
-  example: three finds against two boats.
+  example: three finds against two boats. Like the sum's below, this
+  divergence is **named and pinned nowhere**, and for a sharper reason: no
+  `sourcePath` carrier is a count, and a count over a SET source is a form
+  the ASP backend does not translate at all (the standing EERSTE/LAATSTE/
+  AANTAL set-fold gap, tracked on its own card). The reading is decided
+  here; its differential witness waits on that card.
 - **SUM with an `emptyFallback`** ("of 0 als die er niet zijn"). The flat
   reading fires the fallback at most once, for a subject that reaches no
   element at all; the nested reading fires it once per empty intermediate
@@ -4226,7 +4231,7 @@ whose filler is some other instance is a HOP, and belongs on the path as a
 step — and the self-denoting reading only at zero far hits, where the name
 matches (ci, declared name or declared plural) a role the SUBJECT TYPE
 itself fills, and then the path simply starts at the subject. The v0
-v0 resolver refuses every role anchor outright, on the ground that a role
+resolver refuses every role anchor outright, on the ground that a role
 whose filler happens to be the subject's own type denotes a DIFFERENT
 instance; that ground is real and it is exactly what far-role-first already
 catches, so uchar refuses the same shape without refusing the shape beside

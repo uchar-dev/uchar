@@ -1127,14 +1127,23 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
      subselection and faults in its own arm *)
   if dimensie_selectie <> None then Value.fault "dimension selection not implemented in this card";
   if granulariteit <> None then Value.fault "granularity-bucketed aggregation not implemented in this card";
-  (* WF-102's two shape arms, mirrored here rather than assumed: a
+  (* WF-102's three shape arms, mirrored here rather than assumed: a
      verifier-clean document cannot reach them, and a document that
      reaches an executor without passing the verifier must fault by name
      instead of being read as the one-step form with the range dropped —
-     which is the silent misbinding this whole field exists to close. *)
+     which is the silent misbinding this whole field exists to close.
+     Arm (a) is the sharpest of the three and was the one initially
+     missed: with both fields present the arm below simply WINS and the
+     binding is never read, so the document replays clean while the ASP
+     backend faults — a two-executor disagreement under a document no
+     rule in this file refused. The order matters too: (a) first, so a
+     document carrying both spellings is named for carrying both rather
+     than for whatever else the surviving one happens to violate. *)
   (match bron_pad with
   | None -> ()
   | Some pad -> (
+      if bron_rol <> None then
+        Value.fault "a bronPad beside a bronRol: the one-step range IS bronRol (WF-102)";
       if List.length pad < 2 then
         Value.fault "a bronPad carries at least TWO steps, found %d (WF-102)"
           (List.length pad);

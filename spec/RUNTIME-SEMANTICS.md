@@ -972,6 +972,11 @@ stating because the nested reading answers differently:
    absorb, so `MINIMUM`/`MAXIMUM`/`EERSTE`/`LAATSTE` — which have no
    fallback — never have to decide what to do with one.
 2. A count over the union counts ELEMENTS, never intermediate instances.
+   (Named here and pinned nowhere, for the same kind of reason as (3): no
+   `sourcePath` carrier is a count, and a count over a SET source is a form
+   the ASP backend does not translate at all — the standing executor
+   asymmetry of the EERSTE/LAATSTE/AANTAL set-fold gap, whose own card owns
+   it. So the divergence is real, stated, and has no differential witness.)
 3. A sum's `emptyFallback` fires at most ONCE, for a subject whose whole
    range is empty — never once per empty intermediate instance. (With a
    zero fallback the two readings agree numerically; with any other they do
