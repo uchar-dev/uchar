@@ -5638,7 +5638,16 @@ attachment, and one field beside it, by WF-097 below.
   MUST be date expressions (mirror; v0 checks date-ness only — either
   precision is admitted, unchecked against the operand).
 - **WF-043** A whole-period qualifier MUST sit on a time-dependent
-  operand (mirror: v0 errors and emits Unresolved).
+  operand (mirror: v0 errors and emits Unresolved). *Recorded scope
+  (2026-09-11):* on a characteristic check the cross resolves against ONE
+  type — the `eigenaar` where present, the enclosing form's subject
+  otherwise (WF-100, ch. 4.6 (q1)) — so it reaches the **non-navigated**
+  form only. On a navigated check the characteristic lives on the reached
+  type, which this rule does not cross; both OCaml executors therefore
+  hold the time-dependence fence themselves at the ch. 3.9 fold, because
+  without it a non-temporal characteristic would fold over an always-empty
+  period set and pass vacuously. Widening the rule to the reached type is
+  a candidate, not a decision.
 - **WF-044** (consumer conformance) A consumer MUST surface Unresolved
   nodes in its output or coverage report; silently lowering or dropping
   one is non-conforming. This is the unsolved-state harness guard

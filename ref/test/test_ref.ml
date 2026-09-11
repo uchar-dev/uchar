@@ -2657,6 +2657,122 @@ let () =
         (Case.contains ~needle:"is hosted on \"Jutter\" while the subject is \"Vondst\"" m)
   | _ -> check "WV-5.8b-genavigeerde-vreemde-eigenaar-weigert (no fault at all)" false
 
+(* --- ch. 3.9: the whole-period qualifier over a characteristic ----------
+   The RUNTIME-SEMANTICS ch. 3.9 worked examples, verbatim: the four rows of
+   the table (a failed to-one hop, a linked target with no periods, a full
+   year, a half year), then the qualifier's own negation, the inner
+   negation, and the month grid beside the year grid.
+
+   These are the four cells the card measured on 2026-09-11, before any
+   change, in three executors: `ref` answered a SILENT false on row a (the
+   unqualified navigated check's absent-link asymmetry, applied under a
+   qualifier that lifts it) and a LOUD ch. 3.3 refusal on b/c/d ("temporal
+   characteristic in a scalar condition"), while ch. 3.3 names ch. 3.9 as
+   one of its own two exits; the ASP backend dropped the qualifier and read
+   a heeft/2 fact a temporal characteristic can never have, answering leeg
+   on a/b/c without a word; both Drools branches refuse the form by name (a
+   transpiler SKIP on one, a "TODO §8.2 gehele-periode" marker on the
+   other), so on rows a, b and c the corpus has no third opinion.
+
+   Row a is the one that cannot be reached through the timeline fold alone —
+   it is about the NAVIGATION, not about any timeline — which is why these
+   run through [Eval.eval_cond] over a document and a world rather than over
+   [Timeline.geheel_periode_kenmerk] directly. *)
+
+let () =
+  let ligplaats : string * Ir_v0.Ast.feittype =
+    ( "ligplaats",
+      {
+        ft_naam = Some "ligplaats";
+        wederkerig = false;
+        rollen =
+          [
+            { rol_naam = Some "werf"; rol_objecttype_naam = Some "Werf"; rol_meervoud = None;
+              rol_meervoudig = false };
+            { rol_naam = Some "schuit"; rol_objecttype_naam = Some "Schuit";
+              rol_meervoud = Some "schuiten"; rol_meervoudig = true };
+          ];
+      } )
+  in
+  let werf = ot "Werf" [] [ "bedrijvig" ] in
+  let werf =
+    ( fst werf,
+      { (snd werf) with
+        kenmerk_granulariteit = [ ("bedrijvig", Some Maand) ];
+        kenmerk_tijdlijn_aantal = [ ("bedrijvig", Some 1) ] } )
+  in
+  let doc =
+    { empty_doc with objecttypen = [ werf; ot "Schuit" [] [] ]; feittypen = [ ligplaats ] }
+  in
+  let dag iso = match Value.date_of_iso iso with Value.Date d -> d | _ -> assert false in
+  let periode van tot = (dag van, dag tot) in
+  (* one world per row: the Werf's true-periods, and whether S1 links to it *)
+  let wereld ~link perioden =
+    let w1 =
+      { (inst "W1" "Werf" []) with
+        ctls =
+          (match perioden with
+          | [] -> World.SMap.empty
+          | ps -> World.SMap.add "bedrijvig" ps World.SMap.empty) }
+    in
+    let s1 =
+      { (inst "S1" "Schuit" []) with
+        links = (if link then World.SMap.add "werf" [ "W1" ] World.SMap.empty else World.SMap.empty) }
+    in
+    List.fold_left World.add_instance World.empty [ w1; s1 ]
+  in
+  let cond ?(jaar = true) ?(niet = false) ?(negatie = false) () : Ir_v0.Ast.conditie =
+    Kenmerk_check
+      { kenmerk = Some "bedrijvig"; navigatie = Some "werf"; negatie; eigenaar = None;
+        periode = Some { gp_jaar = jaar; gp_niet = niet }; bron = None; navigatie_binding = None }
+  in
+  let ec ~link perioden c =
+    let w = wereld ~link perioden in
+    Eval.eval_cond (env_of doc) w (World.get w "S1") ~err:no_err c
+  in
+  let heel_2026 = [ periode "2026-01-01" "2027-01-01" ] in
+  let jan_jul = [ periode "2026-01-01" "2026-07-01" ] in
+  let half_jan = [ periode "2026-01-15" "2026-03-01" ] in
+  (* the table: a null timeline and a segmentless one both touch no bucket *)
+  check "WV-3.9-kenmerk-a-geen-koppeling" (ec ~link:false [] (cond ()));
+  check "WV-3.9-kenmerk-b-geen-tijdlijn" (ec ~link:true [] (cond ()));
+  check "WV-3.9-kenmerk-c-heel-jaar" (ec ~link:true heel_2026 (cond ()));
+  check "WV-3.9-kenmerk-d-half-jaar" (not (ec ~link:true jan_jul (cond ())));
+  (* the QUALIFIER's negation complements each verdict — the clause's
+     "the qualifier's negation then fails" on the two vacuous rows *)
+  check "WV-3.9-kenmerk-niet-a" (not (ec ~link:false [] (cond ~niet:true ())));
+  check "WV-3.9-kenmerk-niet-b" (not (ec ~link:true [] (cond ~niet:true ())));
+  check "WV-3.9-kenmerk-niet-c" (not (ec ~link:true heel_2026 (cond ~niet:true ())));
+  check "WV-3.9-kenmerk-niet-d" (ec ~link:true jan_jul (cond ~niet:true ()));
+  (* the INNER negation: same touched buckets, complementary satisfied days *)
+  check "WV-3.9-kenmerk-neg-a" (ec ~link:false [] (cond ~negatie:true ()));
+  check "WV-3.9-kenmerk-neg-b" (ec ~link:true [] (cond ~negatie:true ()));
+  check "WV-3.9-kenmerk-neg-c" (not (ec ~link:true heel_2026 (cond ~negatie:true ())));
+  check "WV-3.9-kenmerk-neg-d" (not (ec ~link:true jan_jul (cond ~negatie:true ())));
+  (* the MONTH grid: the qualifier's own, never the characteristic's
+     declared granularity — six full months pass where the year bucket failed *)
+  check "WV-3.9-kenmerk-maand-d" (ec ~link:true jan_jul (cond ~jaar:false ()));
+  check "WV-3.9-kenmerk-maand-deelmaand"
+    (not (ec ~link:true half_jan (cond ~jaar:false ())));
+  check "WV-3.9-kenmerk-jaar-deelmaand" (not (ec ~link:true half_jan (cond ())));
+  (* the fence WF-043 does not reach on the navigated form: a non-temporal
+     characteristic would fold over an always-empty period set and pass *)
+  let doc_niet_temporeel =
+    { doc with objecttypen = [ ot "Werf" [] [ "bedrijvig" ]; ot "Schuit" [] [] ] }
+  in
+  (match
+     let w = wereld ~link:true heel_2026 in
+     Eval.eval_cond (env_of doc_niet_temporeel) w (World.get w "S1") ~err:no_err (cond ())
+   with
+  | exception Value.Fault m ->
+      check ("WV-3.9-kenmerk-niet-tijdsafhankelijk (got: " ^ m ^ ")")
+        (Case.contains ~needle:"is not a time-dependent characteristic of \"Werf\"" m)
+  | _ -> check "WV-3.9-kenmerk-niet-tijdsafhankelijk (no fault at all)" false);
+  (* the fold itself, with the chapter's own day counts *)
+  check "WV-3.9-fold-leeg" (Timeline.geheel_periode_kenmerk Jaar ~negatie:false []);
+  check "WV-3.9-fold-vol" (Timeline.geheel_periode_kenmerk Jaar ~negatie:false heel_2026);
+  check "WV-3.9-fold-deel" (not (Timeline.geheel_periode_kenmerk Jaar ~negatie:false jan_jul))
+
 (* --- WF-095: the datum-tijd lexeme (IR-SPEC ch. 4.1) --------------------
    The corpus golden pins what the READER answers; these pin the reader's
    own fence, which no corpus document can reach — a case file that carries

@@ -796,7 +796,10 @@ time-dependent attribute or parameter in a scalar context is refused (the
 only *gates* rules — version validity, the ch. 3.10 period condition — it
 never *indexes* a timeline to a value. The only ways a timeline becomes a
 scalar are the dedicated collapses: the temporal total (ch. 3.6) and the
-whole-period predicate (ch. 3.9).
+whole-period predicate (ch. 3.9). **The refusal ends exactly where those
+collapses begin:** a condition carrying the §8.2 whole-period qualifier is
+not a scalar context at all, and refusing it under this clause refuses the
+exit it names (ch. 3.9, "This qualifier is not a scalar context").
 
 This is the recorded "op dat tijdstip" gap (`ASP-TRANSLATION.md` ch. 5,
 finding 4; `CONSTRUCTS.md` row 11): Jutterswet art. 1 needs the value of
@@ -1551,8 +1554,45 @@ threshold(B) = days(B)          for every toets except the leeg test
   timeline must pass — and an **empty set passes vacuously**; a failed
   to-one navigation contributes a null timeline, which passes vacuously
   (the ch. 1.2 leeg-navigation discipline, lifted).
+- The **grid is the qualifier's own** — "de gehele maand" or "het gehele
+  jaar" — never the tested member's declared granularity. The two are
+  independent: a month-granular characteristic tested "gedurende het
+  gehele jaar" folds over year buckets, and its true-periods stay
+  day-precise either way (ch. 3.1; the pro-rata's whole point, ch. 3.7).
 - Date-valued whole-period comparisons (eerder/later over a date
   timeline) are refused in v0 — recorded, not specified (ch. 3.12).
+
+**This qualifier is not a scalar context, and ch. 3.3's refusal does not
+reach it** (clarified 2026-09-11). ch. 3.3 refuses a time-dependent
+member "in a scalar context" and names its two exits in the same
+sentence: "the only ways a timeline becomes a scalar are the dedicated
+collapses: the temporal total (ch. 3.6) and the whole-period predicate
+(ch. 3.9)". ch. 8.2 states it as the indexing rule ("the only bridges
+from a timeline to a scalar are the dedicated collapses") and ch. 3.11 as
+the write boundary ("a temporal value in a scalar slot is refused
+**except** through the specified collapses"). A condition carrying the
+qualifier **is** the second collapse; refusing it as scalar refuses the
+exit for being the door. The reading is normative for every executor: a
+qualified condition is answered by the fold above, and dropping the
+qualifier to answer the unqualified condition instead is a defect, not an
+executor's choice of scope.
+
+Two consequences follow for the **characteristic-holds** test, and both
+were executor gaps until 2026-09-11:
+
+- The characteristic's truth is its true-period timeline (the ch. 8.2
+  apartness: a time-dependent characteristic is delivered as periods and
+  nothing else), so the fold reads that timeline. A characteristic with
+  no periods at all is the "no segments" case above and passes
+  vacuously — it is not the same thing as the characteristic being false.
+- Under the qualifier a failed to-one navigation passes vacuously, as the
+  fourth bullet says. This **diverges deliberately** from the unqualified
+  navigated characteristic check, whose mirrored v0 asymmetry answers
+  false for the positive and the negated form alike (ch. 5.8): there the
+  absent link decides the check, here the qualifier lifts it to the
+  ch. 1.2 leeg-navigation discipline. An executor that answers the
+  unqualified asymmetry under a qualifier answers the opposite of this
+  clause.
 
 Worked examples (absolute; value timeline per year, tested ≥ 10):
 value 12 on the whole of 2024 → all 366 days of the touched bucket
@@ -1561,6 +1601,32 @@ bucket is touched for 182 days but has 366 → **onwaar** (a July moment
 carries no value); the negated form → waar. Same half-year timeline
 under the **leeg** test → touched days must be leeg, but they carry 12 →
 **onwaar**.
+
+Worked examples — the **characteristic-holds** test over a *navigated*
+characteristic (absolute; `ref/` tests and the ASP backend's suite
+verbatim). Document: a Schuit reaches one Werf over the to-one role
+`werf`; `bedrijvig` is a month-granular characteristic of Werf; the rule
+is *de toeslag van een Schuit is de lengte van de Schuit indien de werf
+van de Schuit gedurende het gehele jaar bedrijvig is*. Session:
+evaluation date 2026-03-15, S1.lengte 8.
+
+| # | link | `bedrijvig` true-periods | fold | toeslag |
+|---|---|---|---|---|
+| a | none written | — | null timeline, no bucket touched → **waar** | 8 |
+| b | W1 | none | no segments, no bucket touched → **waar** | 8 |
+| c | W1 | [2026-01-01, 2027-01-01) | bucket 2026: 365 of 365 → **waar** | 8 |
+| d | W1 | [2026-01-01, 2026-07-01) | bucket 2026: 181 of 365 → **onwaar** | leeg |
+
+The same document under the qualifier's own negation ("**niet** gedurende
+het gehele jaar bedrijvig") complements each verdict: a → onwaar, b →
+onwaar, c → onwaar, d → **waar** (8). Under the inner negation
+("gedurende het gehele jaar **niet** bedrijvig") the touched buckets are
+unchanged and the satisfying days are their complement: a → waar, b →
+waar, c → onwaar (bucket 2026 satisfies 0 of 365), d → onwaar (184 of
+365). Under the **month** grid ("gedurende de gehele maand bedrijvig")
+row d passes — January through June are each touched in full, 181 of 181
+days — while a true-period of [2026-01-15, 2026-03-01) fails it (January
+is touched for 17 of 31 days).
 
 ### 3.10 Period conditions and the §8.4.3 clip
 
@@ -1675,6 +1741,8 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Negated temporal-characteristic condition | **specified (delta) within a clipped span, ch. 3.11**; unbounded complement OPEN; the navigated case stays refused/OPEN |
 | Version-validity window on a temporal write | OPEN — the ch. 8 axis decision |
 | Date-valued whole-period comparison | refused (mirrored) |
+| Whole-period qualifier, the **characteristic-holds** test (own and navigated, both grids, both negations) | **specified and executed, ch. 3.9** — the two OCaml executors carry it since 2026-09-11 |
+| Whole-period qualifier, the **ordering/equality** and **leeg/gevuld** tests | specified (ch. 3.9), **not executed**: both OCaml executors refuse them by name, no corpus case; the Drools backend carries the comparison form |
 | Gap-vs-absent timeline observability (temporal total: 0 vs leeg) | mirrored residual; stays OPEN here — the ch. 1.4 freeze covers the scalar discipline, not this temporal residual |
 | Sorted/non-overlapping input invariant | delta candidate (WF rule, data plane), ch. 3.1 |
 | Non-terminating pro-rata stored at 16 digits | v0 residual (normative: exact fraction), ch. 3.7 |

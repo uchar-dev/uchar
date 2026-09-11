@@ -10,10 +10,10 @@
    month-end clamp (ch. 3.2), cut-merge arithmetic with the
    period-coalescing rule (ch. 3.4), temporal summation with the
    contributor-skipping rule (ch. 3.5), the temporal total with clipping
-   (ch. 3.6). Out of this card's scope, faulting where reached: pro-rata
+   (ch. 3.6), and the whole-period qualifier's characteristic-holds fold
+   (ch. 3.9). Out of this card's scope, faulting where reached: pro-rata
    buckets (ch. 3.7 — the arithmetic core is Arith/WV-2.8), day kinds
-   (ch. 3.8), whole-period qualifiers (ch. 3.9), temporal writes beyond
-   the algebra (ch. 3.11). *)
+   (ch. 3.8), temporal writes beyond the algebra (ch. 3.11). *)
 
 open Value
 
@@ -158,6 +158,45 @@ let aantal_dagen_in (g : Ir_v0.Ast.granulariteit) (true_periods : (int * int) li
       { s_van = bs; s_tot = bn; s_waarde = Value.Num (Q.of_int days, Value.Unitless) } :: segs)
     acc []
   |> List.rev
+
+(* ch. 3.9 "gedurende de gehele maand / het gehele jaar", the
+   CHARACTERISTIC-HOLDS test:
+
+     geheel(tl, grid, toets) = for EVERY bucket B touched by tl:
+                                 satisfied-days(B, toets) >= threshold(B)
+     threshold(B) = days(B)          (every toets except the leeg test)
+
+   A boolean timeline is its true-periods (ch. 3.1), so the buckets it
+   touches and the days satisfying "the characteristic holds" come from
+   one and the same fold — [aantal_dagen_in]'s, which already emits one
+   whole-bucket segment per touched bucket carrying that bucket's true-day
+   count. Reusing it is not thrift: it is what keeps "touched" meaning the
+   same thing in ch. 3.8 and here.
+
+   Two consequences the chapter states outright and this fold gets for
+   free: a timeline with NO segments touches no bucket, so the [for_all]
+   is vacuously true; and a bucket the timeline touches only partly has
+   fewer true days than calendar days, so it fails.
+
+   [negatie] is the inner test's own negation ("gedurende het gehele jaar
+   NIET bedrijvig"): the touched buckets are unchanged — they are still
+   the buckets the characteristic's timeline touches — while the
+   satisfying days become the complement inside each of them. The
+   QUALIFIER's negation ("niet gedurende …") is not here: it complements
+   the folded result, which the caller does. *)
+let geheel_periode_kenmerk (g : Ir_v0.Ast.granulariteit) ~(negatie : bool)
+    (true_periods : (int * int) list) : bool =
+  List.for_all
+    (fun s ->
+      let bucket_days = s.s_tot - s.s_van in
+      let true_days =
+        match s.s_waarde with
+        | Num (q, _) -> Q.to_int q
+        | v -> fault "whole-period day count is not numeric: %s" (Value.to_string v)
+      in
+      let satisfied = if negatie then bucket_days - true_days else true_days in
+      satisfied >= bucket_days)
+    (aantal_dagen_in g true_periods)
 
 (* anchored bucket walls: every wall computed directly from the anchor —
    never by incrementing the previous wall — so a month-end anchor

@@ -2425,6 +2425,139 @@ let () =
     ~case_text:eigenaar_case
     ~needle:"is hosted on \"Jutter\" while the subject is \"Vondst\""
 
+(* ch. 3.9 — the §8.2 whole-period qualifier over a NAVIGATED characteristic.
+
+   The RUNTIME-SEMANTICS ch. 3.9 worked-example table, pinned in BOTH
+   executors from the same document: `ref_matches` and `clingo_matches` on
+   every row, which is what makes these rows the differential and not two
+   separate beliefs. The ASP encoding derives the per-bucket failure from the
+   ktl facts through the pro-rata's own bucket calendar; ref folds the same
+   clause in OCaml. Neither calls the other.
+
+   Measured on 2026-09-11, before the change: this backend dropped the
+   qualifier — both Kenmerk_check arms matched `periode` away — and translated
+   a bare heeft/2 lookup. A time-dependent characteristic is never delivered
+   in the flat `characteristics` list (the ch. 8.2 apartness, refused at load
+   since 2026-09-09), so that fact can never exist: rows a, b and c came back
+   underived, leeg, with nothing said, where the chapter passes all three
+   vacuously. Row d "passed" — for the wrong reason, which is why it is pinned
+   here beside the other three and not trusted alone. *)
+
+let gp_doc ?(jaar = "true") ?(niet = "false") ?(negatie = "false")
+    ?(granulariteit = {|"bedrijvig": "MAAND"|}) () =
+  Printf.sprintf
+    {|{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Werf": { "node": "Objecttype", "naam": "Werf",
+      "attributen": {},
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [ "bedrijvig" ], "kenmerkSoorten": { "bedrijvig": "BIJVOEGLIJK" },
+      "kenmerkGranulariteit": { %s }, "kenmerkTijdlijnAantal": { "bedrijvig": 1 },
+      "bezield": false, "meervoud": "Werven" },
+    "Schuit": { "node": "Objecttype", "naam": "Schuit",
+      "attributen": {
+        "lengte": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+        "toeslag": { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null } },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [], "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
+      "bezield": false, "meervoud": "Schuiten" }
+  },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
+  "feittypen": { "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false,
+    "rollen": [
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true }
+    ] } },
+  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [ { "node": "Regel", "naam": "toeslag van een schuit", "soort": "regel" } ],
+  "resolvedRegels": [
+    { "node": "ResolvedRegel", "naam": "toeslag van een schuit", "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "toeslag", "objecttype": "Schuit",
+        "onderwerpBron": "een Schuit", "navigatieRol": null,
+        "type": { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null },
+        "bron": "De toeslag van een Schuit", "set": false, "navigatiePad": [] },
+      "waarde": { "node": "AttribuutRef", "attribuut": "lengte", "objecttype": "Schuit",
+        "onderwerpBron": "de Schuit", "navigatieRol": null,
+        "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+        "bron": "de lengte van de Schuit", "set": false, "navigatiePad": [] },
+      "voorwaarde": { "node": "Kenmerk", "kenmerk": "bedrijvig", "navigatie": "werf",
+        "negatie": %s, "eigenaar": null,
+        "periode": { "node": "GeheelPeriode", "jaar": %s, "niet": %s },
+        "bron": "de werf van de Schuit gedurende het gehele jaar bedrijvig is" },
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
+  ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}
+|}
+    granulariteit negatie jaar niet
+
+(* [tijdlijn] is the `bedrijvig` true-period list (empty = the key absent),
+   [link] whether S1 names W1 on the to-one role, [toeslag] the pinned
+   outcome — a value or the empty expectation. *)
+let gp_case ~link ~tijdlijn ~waar =
+  Printf.sprintf
+    {|{
+  "format": "uchar-case-v0", "asOfDate": "2026-03-15",
+  "input": { "instances": [
+      { "label": "W1", "objectType": "Werf", "attributes": {}, "roles": {},
+        "characteristics": []%s },
+      { "label": "S1", "objectType": "Schuit",
+        "attributes": { "lengte": { "number": "8" } },
+        "roles": { %s }, "characteristics": [] }
+    ], "parameters": {} },
+  "expected": [ %s, { "kind": "consistent" } ]
+}
+|}
+    (if tijdlijn = "" then ""
+     else {|, "characteristicTimelines": { "bedrijvig": [ |} ^ tijdlijn ^ {| ] }|})
+    (if link then {|"werf": [ "W1" ]|} else "")
+    (if waar then
+       {|{ "kind": "attributeValue", "label": "S1", "attribute": "toeslag", "value": { "number": "8" } }|}
+     else {|{ "kind": "attributeEmpty", "label": "S1", "attribute": "toeslag" }|})
+
+let heel_2026 = {|{ "from": "2026-01-01", "to": "2027-01-01" }|}
+let jan_jul = {|{ "from": "2026-01-01", "to": "2026-07-01" }|}
+let half_jan = {|{ "from": "2026-01-15", "to": "2026-03-01" }|}
+
+let () =
+  let beide ~name ~ir ~case_text =
+    ref_matches ~name ~ir ~case_text;
+    clingo_matches ~name ~ir ~case_text
+  in
+  let rij ~name ?jaar ?niet ?negatie ~link ~tijdlijn ~waar () =
+    beide ~name ~ir:(gp_doc ?jaar ?niet ?negatie ()) ~case_text:(gp_case ~link ~tijdlijn ~waar)
+  in
+  (* the table: a failed hop and a segmentless timeline touch no bucket *)
+  rij ~name:"ch3.9 a geen koppeling" ~link:false ~tijdlijn:"" ~waar:true ();
+  rij ~name:"ch3.9 b koppeling zonder tijdlijn" ~link:true ~tijdlijn:"" ~waar:true ();
+  rij ~name:"ch3.9 c heel 2026" ~link:true ~tijdlijn:heel_2026 ~waar:true ();
+  rij ~name:"ch3.9 d jan-jul 2026" ~link:true ~tijdlijn:jan_jul ~waar:false ();
+  (* the QUALIFIER's negation complements every verdict *)
+  rij ~name:"ch3.9 niet-a" ~niet:"true" ~link:false ~tijdlijn:"" ~waar:false ();
+  rij ~name:"ch3.9 niet-c" ~niet:"true" ~link:true ~tijdlijn:heel_2026 ~waar:false ();
+  rij ~name:"ch3.9 niet-d" ~niet:"true" ~link:true ~tijdlijn:jan_jul ~waar:true ();
+  (* the INNER negation: same touched buckets, complementary satisfied days *)
+  rij ~name:"ch3.9 neg-b" ~negatie:"true" ~link:true ~tijdlijn:"" ~waar:true ();
+  rij ~name:"ch3.9 neg-c" ~negatie:"true" ~link:true ~tijdlijn:heel_2026 ~waar:false ();
+  (* the MONTH grid is the QUALIFIER's, never the characteristic's declared
+     granularity: six whole months pass where the year bucket failed *)
+  rij ~name:"ch3.9 maand-d" ~jaar:"false" ~link:true ~tijdlijn:jan_jul ~waar:true ();
+  rij ~name:"ch3.9 maand-deelmaand" ~jaar:"false" ~link:true ~tijdlijn:half_jan ~waar:false ();
+  (* the fence WF-043 does not reach on the navigated form. The case carries
+     NO timeline: one on a non-temporal characteristic is refused by the case
+     loader first, and the fence under test is a static property of the
+     document that must fire without any data at all. *)
+  faults_with ~name:"ch3.9 kwalificator op een niet-tijdsafhankelijk kenmerk"
+    ~ir:(gp_doc ~granulariteit:"" ())
+    ~case_text:(gp_case ~link:true ~tijdlijn:"" ~waar:true)
+    ~needle:"is not a time-dependent characteristic of \"Werf\""
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

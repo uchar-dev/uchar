@@ -1289,6 +1289,64 @@ let neq_helper ctx ~subject ~subject_ot (ll, tl) (rr, tr) : string list =
   emit ctx "%s(%s) :- %s, not %s_l(%s), not %s_r(%s)." p subject base p subject p subject;
   [ "not " ^ Printf.sprintf "%s(%s)" p subject ]
 
+(* calendar as data: buckets over the case's endpoint span (shared by
+   the ch. 3.7 pro-rata fold, the ch. 3.8 day count and — since
+   2026-09-11 — the ch. 3.9 whole-period qualifier, which is why the two
+   emitters sit here, above the expression/condition recursion, rather
+   than beside the pro-rata that first needed them) *)
+let emit_bucket_calendar ctx ~p ~(g : granulariteit) =
+  let endpoints =
+    Eval.SMap.fold
+      (fun _ (i : Uchar_ref.World.instance) acc ->
+        let tl_pts =
+          Eval.SMap.fold
+            (fun _ (tl : Uchar_ref.Timeline.t) acc ->
+              List.concat_map
+                (fun (s : Uchar_ref.Timeline.segment) -> [ s.s_van; s.s_tot ])
+                tl
+              @ acc)
+            i.tls acc
+        in
+        Eval.SMap.fold
+          (fun _ periods acc -> List.concat_map (fun (v, t) -> [ v; t ]) periods @ acc)
+          i.ctls tl_pts)
+      ctx.case.world.instances []
+    |> List.sort_uniq compare
+  in
+  match endpoints with
+  | [] ->
+      (* no timeline anywhere in the case, so there is no calendar to lay
+         down and every fold over it derives nothing. The consumers still
+         mention the bucket predicate in their bodies, and a body atom with
+         no rule head anywhere makes clingo print an info line on stderr —
+         noise that reads like a defect and is not one. `#defined` says
+         "deliberately empty" and adds no atom. *)
+      emit ctx "#defined %s_b/3." p
+  | lo :: _ ->
+      let hi = List.fold_left max lo endpoints in
+      let rec walk d n =
+        if d < hi then begin
+          if n > 46340 then fault "the bucket endpoint span exceeds the guarded range";
+          let bs, bn = Uchar_ref.Timeline.bucket g d in
+          emit ctx "%s_b(%d,%d,%d)." p bs bn (bn - bs);
+          walk bn (n + 1)
+        end
+      in
+      let first, _ = Uchar_ref.Timeline.bucket g lo in
+      walk first 0
+
+(* true days per (bucket × condition segment): four-case intersection
+   over the gedurende characteristic's timeline (shared likewise) *)
+let emit_true_days ctx ~p ~k =
+  List.iter
+    (fun (vcmp, vpick, tcmp, tpick) ->
+      emit ctx "%s_d(S,B,KV,KT,%s-%s) :- ktl(S,%s,KV,KT), %s_b(B,N,_), %s, %s, %s < %s." p tpick
+        vpick (str k) p vcmp tcmp vpick tpick)
+    [ ("KV >= B", "KV", "KT <= N", "KT");
+      ("KV >= B", "KV", "KT > N", "N");
+      ("KV < B", "B", "KT <= N", "KT");
+      ("KV < B", "B", "KT > N", "N") ]
+
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   match e with
   | Literal { waarde; typ; _ } -> (
@@ -3352,6 +3410,16 @@ and translate_power ctx ~subject ~subject_ot ~links ~rechts =
 
 and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
   match c with
+  (* ch. 3.9's other two value tests. Every Vergelijking and Predicaat arm
+     below guards `periode = None`, so a qualified one already fell through
+     to the catch-all — loud, but under a message that says nothing about
+     the clause it belongs to, and not the message ref gives for the same
+     node. Named here so the two executors refuse the same form in the same
+     words; the characteristic-holds test is built (the arm further down). *)
+  | Vergelijking { periode = Some _; _ } ->
+      fault "whole-period comparison is ch. 3 scope"
+  | Predicaat { soort = Leeg | Gevuld; periode = Some _; _ } ->
+      fault "whole-period leeg/gevuld test is ch. 3.9 scope, not executed here"
   | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ }
     when is_struct_operand links || is_struct_operand rechts ->
       (* ch. 11.2: record equality is POSITIVE ground-term unification, the
@@ -3528,6 +3596,115 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       let bindings, tl, tr = harmonised l r in
       let sym = match op with Gelijk -> "==" | op -> vergelijk_sym op in
       bindings @ [ Printf.sprintf "%s %s %s" tl sym tr ]
+  | Kenmerk_check { kenmerk; navigatie; negatie; navigatie_binding; eigenaar; periode = Some gp; _ }
+    ->
+      (* ch. 3.9, the §8.2 whole-period qualifier over a characteristic —
+         the second of ch. 3.3's two "dedicated collapses", and therefore
+         NOT the scalar context ch. 3.3 refuses. Until 2026-09-11 both arms
+         below matched `periode` away with `_`: a temporal characteristic is
+         never delivered in the flat `characteristics` list (the ch. 8.2
+         apartness, refused at load since 2026-09-09), so the dropped
+         qualifier left a bare heeft/2 lookup over facts that can never
+         exist — the rule simply never fired, and the answer was leeg where
+         the chapter says the vacuous cases pass.
+
+         The fold is encoded in ASP, over the SAME bucket-and-true-day facts
+         the ch. 3.7 pro-rata uses, rather than by calling ref's ch. 3.9
+         fold at translation time: this clause is exactly what the
+         differential has to compare, so the two executors must reach it by
+         two routes. Per touched bucket the rule derives a FAILURE when the
+         satisfied days fall short of the bucket's calendar days; the
+         verdict is its negation, which gives the chapter's three vacuous
+         passes for free — a timeline with no segments derives no _d row and
+         so no failure, and (on the navigated form) so does a hop that
+         reaches nothing. *)
+      Eval.owner_hosts ~otype:subject_ot ~kenmerk eigenaar;
+      let k = req "kenmerk" kenmerk in
+      let env =
+        { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
+          as_of = None; locals = Eval.SMap.empty }
+      in
+      let hop =
+        match navigatie with
+        | None ->
+            (match navigatie_binding with
+            | Some _ ->
+                fault "navigation binding on a characteristic check that does not navigate (WF-053)"
+            | None -> ());
+            None
+        | Some nav ->
+            let role =
+              match navigatie_binding with
+              | Some rb -> Eval.bound_role env rb
+              | None ->
+                  if
+                    Eval.reachable_roles_by_name env ~self_type:subject_ot ~name:nav = []
+                    && Eval.self_denoting_role ctx.doc ~self_type:subject_ot nav
+                  then
+                    fault
+                      "the navigated characteristic check's role %S names a role %S itself fills \
+                       — the zero-hop self-reference does not extend to the characteristic check \
+                       (deferred; WF-053, IR-SPEC ch. 4.1a)"
+                      nav subject_ot
+                  else Eval.role_by_name env ~self_type:subject_ot ~name:nav
+            in
+            if role.rol_meervoudig then
+              fault
+                "the navigated check reaches the to-many role %S in a scalar condition (WF-053)"
+                (Option.value role.rol_naam ~default:"?");
+            Some role
+      in
+      (* the type the characteristic is DECLARED on: the reached type on a
+         navigated check. WF-043 crosses time-dependence for the
+         non-navigated form only, so on the navigated one this fault is the
+         only thing between a non-temporal characteristic and an
+         always-vacuous pass — ref holds the same fence. *)
+      let declared_on =
+        match hop with
+        | None -> subject_ot
+        | Some role -> Option.value role.rol_objecttype_naam ~default:""
+      in
+      if
+        not
+          (List.exists
+             (fun (n, _) -> norm n = norm k)
+             (objecttype ctx declared_on).kenmerk_granulariteit)
+      then
+        fault
+          "whole-period qualifier on %S, which is not a time-dependent characteristic of %S \
+           (WF-043)"
+          k declared_on;
+      let g : granulariteit = if gp.gp_jaar then Jaar else Maand in
+      ctx.fresh <- ctx.fresh + 1;
+      let p = Printf.sprintf "gp%d" ctx.fresh in
+      emit_bucket_calendar ctx ~p ~g;
+      emit_true_days ctx ~p ~k;
+      (* satisfied days per touched bucket: the true days for the positive
+         test, their complement inside the bucket for "gedurende … niet" —
+         the INNER negation, which moves the satisfied days and leaves the
+         touched buckets alone (the qualifier's own negation is below) *)
+      let satisfied = if negatie then "(Tot-TD)" else "TD" in
+      emit ctx
+        "%s(S) :- %s_d(S,B,_,_,_), %s_b(B,_,Tot), TD = #sum { D,KV,KT : %s_d(S,B,KV,KT,D) }, %s \
+         < Tot."
+        p p p p satisfied;
+      let fails =
+        match hop with
+        | None -> Printf.sprintf "%s(%s)" p subject
+        | Some role ->
+            (* the hop is a POSITIVE literal inside the helper, so a subject
+               with no link derives no failure — ch. 3.9's null timeline,
+               and a deliberate divergence from the UNQUALIFIED navigated
+               check, whose absent link answers false either way *)
+            let q = fresh ctx "gpnav" in
+            let n = fresh ctx "N" in
+            emit ctx "%s(%s) :- is_a(%s,%s), rol(%s,%s,%s), %s(%s)." q subject subject
+              (str subject_ot) subject (str (role_canonical role)) n p n;
+            Printf.sprintf "%s(%s)" q subject
+      in
+      (* ch. 3.9: "Negation complements the folded result" — the QUALIFIER's
+         "niet gedurende …", on top of the verdict *)
+      [ (if gp.gp_niet then "" else "not ") ^ fails ]
   | Kenmerk_check { kenmerk; navigatie = None; negatie; navigatie_binding; eigenaar; _ } ->
       (match navigatie_binding with
       | Some _ ->
@@ -4804,54 +4981,6 @@ let fitted ctx ~subject ~what ~body term scale target =
    remainder derives a viol/2 witness (ref computes the exact rational;
    v0 approximates a non-terminating fraction in DECIMAL64 — the
    recorded ch. 3.7 delta), fenced like every division. *)
-(* calendar as data: buckets over the case's endpoint span (shared by
-   the ch. 3.7 pro-rata fold and the ch. 3.8 day count) *)
-let emit_bucket_calendar ctx ~p ~(g : granulariteit) =
-  let endpoints =
-    Eval.SMap.fold
-      (fun _ (i : Uchar_ref.World.instance) acc ->
-        let tl_pts =
-          Eval.SMap.fold
-            (fun _ (tl : Uchar_ref.Timeline.t) acc ->
-              List.concat_map
-                (fun (s : Uchar_ref.Timeline.segment) -> [ s.s_van; s.s_tot ])
-                tl
-              @ acc)
-            i.tls acc
-        in
-        Eval.SMap.fold
-          (fun _ periods acc -> List.concat_map (fun (v, t) -> [ v; t ]) periods @ acc)
-          i.ctls tl_pts)
-      ctx.case.world.instances []
-    |> List.sort_uniq compare
-  in
-  match endpoints with
-  | [] -> ()
-  | lo :: _ ->
-      let hi = List.fold_left max lo endpoints in
-      let rec walk d n =
-        if d < hi then begin
-          if n > 46340 then fault "the bucket endpoint span exceeds the guarded range";
-          let bs, bn = Uchar_ref.Timeline.bucket g d in
-          emit ctx "%s_b(%d,%d,%d)." p bs bn (bn - bs);
-          walk bn (n + 1)
-        end
-      in
-      let first, _ = Uchar_ref.Timeline.bucket g lo in
-      walk first 0
-
-(* true days per (bucket × condition segment): four-case intersection
-   over the gedurende characteristic's timeline (shared likewise) *)
-let emit_true_days ctx ~p ~k =
-  List.iter
-    (fun (vcmp, vpick, tcmp, tpick) ->
-      emit ctx "%s_d(S,B,KV,KT,%s-%s) :- ktl(S,%s,KV,KT), %s_b(B,N,_), %s, %s, %s < %s." p tpick
-        vpick (str k) p vcmp tcmp vpick tpick)
-    [ ("KV >= B", "KV", "KT <= N", "KT");
-      ("KV >= B", "KV", "KT > N", "N");
-      ("KV < B", "B", "KT <= N", "KT");
-      ("KV < B", "B", "KT > N", "N") ]
-
 let translate_pro_rata ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit) =
   let base = Printf.sprintf "is_a(%s,%s)" subject (str ot) in
   if not (attr_temporal ctx ~otype:ot ~attr:b) then

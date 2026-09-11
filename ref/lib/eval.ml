@@ -135,6 +135,55 @@ let owner_hosts ~(otype : string) ~(kenmerk : string option) (eigenaar : string 
         (Option.value kenmerk ~default:"?") e otype
   | _ -> ()
 
+(* ch. 3.9, the §8.2 whole-period qualifier over a CHARACTERISTIC, and the
+   one place ch. 3.3's refusal must not reach.
+
+   ch. 3.3 refuses "a time-dependent attribute or parameter in a scalar
+   context" and names its own two exits in the same breath: "the only ways a
+   timeline becomes a scalar are the dedicated collapses: the temporal total
+   (ch. 3.6) and the whole-period predicate (ch. 3.9)". ch. 8.2 and ch. 3.11
+   say it twice more ("the only bridges … are the dedicated collapses";
+   "refused EXCEPT through the specified collapses"). A condition carrying a
+   GeheelPeriode qualifier is therefore not a scalar context at all — it IS
+   the second collapse — and the refusal below this helper, which fires where
+   the qualifier is ABSENT, may not touch it. Until 2026-09-11 both
+   characteristic-check arms matched `periode` away with `_`, so the
+   qualified form fell into the scalar refusal (loudly, for the wrong reason)
+   or, with no link to follow, into the scalar arm's absent-link `false`
+   (silently, contradicting the clause).
+
+   [inst] is None for a FAILED to-one navigation: ch. 3.9 gives it a null
+   timeline, which touches no bucket and passes vacuously — the ch. 1.2
+   leeg-navigation discipline lifted, and a deliberate divergence from the
+   UNQUALIFIED navigated check, whose v0 asymmetry answers false for the
+   positive and the negated form alike. [ot] is the type the characteristic
+   is declared on (the reached type on a navigated check), never the
+   subject's: the time-dependence cross is a static property of the
+   document, so it is taken from the declaration and fires whether or not a
+   link happens to be there.
+
+   WF-043 covers that cross for the NON-navigated check only (it resolves
+   against the subject); on a navigated one the characteristic lives on the
+   reached type, which the verifier does not cross there — so this fault is
+   the only thing standing between a non-temporal characteristic and a
+   silently vacuous pass from an always-empty period set. *)
+let whole_period_kenmerk env ~(ot : string) ~(inst : World.instance option) ~kenmerk ~negatie
+    (gp : geheel_periode) =
+  if not (kenmerk_temporal (objecttype env ot) kenmerk) then
+    Value.fault
+      "whole-period qualifier on %S, which is not a time-dependent characteristic of %S (WF-043)"
+      kenmerk ot;
+  let g : Ir_v0.Ast.granulariteit = if gp.gp_jaar then Jaar else Maand in
+  let true_periods =
+    match inst with
+    | None -> []
+    | Some (i : World.instance) -> Option.value (SMap.find_opt (norm kenmerk) i.ctls) ~default:[]
+  in
+  let verdict = Timeline.geheel_periode_kenmerk g ~negatie true_periods in
+  (* ch. 3.9: "Negation complements the folded result" — the QUALIFIER's
+     own "niet gedurende …", distinct from the inner test's negation *)
+  if gp.gp_niet then not verdict else verdict
+
 (* WF-097: the two qualifications a gedurende clip member has no reading for.
    Both were matched away with `_` in every clip arm until 2026-09-09, so a
    document carrying either got the UNQUALIFIED answer with nothing said.
@@ -1359,6 +1408,14 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       Arith.compare_op ?static_numeric:(static_numeric le re) ~static_date:(static_date le re) op l
         r
   | Vergelijking _ -> Value.fault "whole-period comparison is ch. 3 scope"
+  | Predicaat { soort = Leeg | Gevuld; periode = Some _; _ } ->
+      (* ch. 3.9's leeg/gevuld tests over a timeline. Both arms below matched
+         `periode` away with `_` until 2026-09-11, so the qualifier was
+         DROPPED and the operand answered its scalar reading — the silent
+         shape this refusal replaces. The characteristic-holds test is built
+         (above); these two are not, and a gap that says so is not a gap that
+         answers the opposite. *)
+      Value.fault "whole-period leeg/gevuld test is ch. 3.9 scope, not executed here"
   | Predicaat { soort = Leeg; operand; negatie; _ } ->
       let v = eval_expr env world self ~err (req "Predicaat.operand" operand) in
       let is_empty = v = Value.Empty in
@@ -1368,7 +1425,8 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       let is_filled = v <> Value.Empty in
       if negatie then not is_filled else is_filled
   | Predicaat _ -> Value.fault "predicate kind not implemented in this card"
-  | Kenmerk_check { kenmerk; navigatie = None; negatie; navigatie_binding; eigenaar; _ } ->
+  | Kenmerk_check { kenmerk; navigatie = None; negatie; navigatie_binding; eigenaar; periode; _ }
+    ->
       (match navigatie_binding with
       | Some _ ->
           Value.fault
@@ -1376,15 +1434,28 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       | None -> ());
       owner_hosts ~otype:self.otype ~kenmerk eigenaar;
       let k = req "KenmerkCheck.kenmerk" kenmerk in
-      if kenmerk_temporal (objecttype env self.otype) k then
-        Value.fault "temporal characteristic %S in a scalar condition is refused (ch. 3.3)" k;
-      let has = World.has_char self k in
-      if negatie then not has else has
-  | Kenmerk_check { kenmerk; navigatie = Some nav; negatie; navigatie_binding; eigenaar; _ } -> (
+      (* [owner_hosts] above has already established that an `eigenaar`, where
+         present, names the subject's own type — so the declaration this
+         resolves against and the instance read are one object *)
+      (match periode with
+      | Some gp ->
+          (* ch. 3.9, the specified collapse — NOT the scalar context
+             ch. 3.3 refuses below *)
+          whole_period_kenmerk env ~ot:self.otype ~inst:(Some self) ~kenmerk:k ~negatie gp
+      | None ->
+          if kenmerk_temporal (objecttype env self.otype) k then
+            Value.fault "temporal characteristic %S in a scalar condition is refused (ch. 3.3)" k;
+          let has = World.has_char self k in
+          if negatie then not has else has)
+  | Kenmerk_check
+      { kenmerk; navigatie = Some nav; negatie; navigatie_binding; eigenaar; periode; _ } -> (
       (* the navigated check (ch. 5.8): one to-one hop. The v0 asymmetry,
          mirrored deliberately: an ABSENT link makes the check false for
          the positive AND the negated form — unlike comparison and
-         leeg/gevuld, which treat the absent relation as a leegwaarde. *)
+         leeg/gevuld, which treat the absent relation as a leegwaarde.
+         Under a ch. 3.9 qualifier that asymmetry does NOT hold: the
+         chapter lifts the ch. 1.2 leeg-navigation discipline there and
+         gives the failed hop a null timeline, which passes vacuously. *)
       (* the owner is a HOSTING statement about the pattern, not about the
          reached type, so it is crossed against the subject here exactly as on
          the scalar arm — the characteristic itself still lives on the far side *)
@@ -1415,14 +1486,24 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
         Value.fault
           "the navigated check reaches the to-many role %S in a scalar condition (WF-053)"
           (Option.value role.rol_naam ~default:"?");
+      (* the reached type, taken from the DECLARATION: on the qualified form
+         the time-dependence cross must fire whether or not a link is there *)
+      let reached = Option.value role.rol_objecttype_naam ~default:"" in
       match role_links world self role with
-      | [] -> false
-      | [ target ] ->
-          if kenmerk_temporal (objecttype env target.otype) k then
-            Value.fault "temporal characteristic %S in a scalar condition is refused (ch. 3.3)"
-              k;
-          let has = World.has_char target k in
-          if negatie then not has else has
+      | [] -> (
+          match periode with
+          | Some gp -> whole_period_kenmerk env ~ot:reached ~inst:None ~kenmerk:k ~negatie gp
+          | None -> false)
+      | [ target ] -> (
+          match periode with
+          | Some gp ->
+              whole_period_kenmerk env ~ot:target.otype ~inst:(Some target) ~kenmerk:k ~negatie gp
+          | None ->
+              if kenmerk_temporal (objecttype env target.otype) k then
+                Value.fault "temporal characteristic %S in a scalar condition is refused (ch. 3.3)"
+                  k;
+              let has = World.has_char target k in
+              if negatie then not has else has)
       | _ ->
           Value.fault "to-one role %S links more than one instance on %S (ch. 5.5)"
             (Option.value role.rol_naam ~default:"?")
