@@ -1,0 +1,26 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+	het laagste vondstgewicht Numeriek (getal met 2 decimalen);
+
+Objecttype de Boot (mv: Boten)
+
+Objecttype de Vondst (mv: Vondsten)
+	het gewicht Numeriek (getal met 2 decimalen);
+
+Feittype bemanning
+	de schipper Jutter
+	de gevoerde boot (mv: gevoerde boten) Boot
+Eén schipper voert meerdere gevoerde boten
+
+Feittype berging
+	de bergende boot (mv: bergende boten) Boot
+	de geborgen vondst (mv: geborgen vondsten) Vondst
+Eén bergende boot bergt meerdere geborgen vondsten
+
+Feittype vondstaanmelding
+	de aanmelder Jutter
+	de aangemelde vondst (mv: aangemelde vondsten) Vondst
+Eén aanmelder meldt meerdere aangemelde vondsten
+
+Regel laagste vondstgewicht van een jutter
+	geldig altijd
+		Het laagste vondstgewicht van een Jutter moet berekend worden als de minimale waarde van het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter.

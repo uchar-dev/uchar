@@ -1,0 +1,19 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": { "gevoerde boot": ["B1", "B2"], "aangemelde vondst": ["V3"] }, "characteristics": [] },
+      { "label": "B1", "objectType": "Boot", "attributes": {}, "roles": { "geborgen vondst": ["V1", "V2"] }, "characteristics": [] },
+      { "label": "B2", "objectType": "Boot", "attributes": {}, "roles": { "geborgen vondst": ["V3"] }, "characteristics": [] },
+      { "label": "V1", "objectType": "Vondst", "attributes": { "gewicht": { "number": "3.00" } }, "roles": {}, "characteristics": [] },
+      { "label": "V2", "objectType": "Vondst", "attributes": { "gewicht": { "number": "7.00" } }, "roles": {}, "characteristics": [] },
+      { "label": "V3", "objectType": "Vondst", "attributes": { "gewicht": { "number": "5.00" } }, "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "laagste vondstgewicht", "value": { "number": "3.00" } },
+    { "kind": "consistent" }
+  ]
+}

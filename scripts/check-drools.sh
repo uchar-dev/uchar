@@ -228,6 +228,7 @@ EXPECTED_CHANNEL=(
   "jutterswet-vaarwatertoeslag-catala|EXCLUDE|loader Refusal: Expr:Match"
   "jutterswet-vangstwaardering|EXCLUDE|loader Refusal: Datatype:StructType"
   "jutterswet-vondsttarief|EXCLUDE|transpiler SKIP: regel — waarde buiten scope"
+  "jutterswet-vondstketen|EXCLUDE|loader Refusal: Functie.bronPad — the EMITTED witness of the same form (WF-102, 2026-09-11): the RegelSpraak frontend resolves the written two-step chain into a path, so this golden is exactly the document on which dropping the field answers 5,00 where the sentence says 3,00 (measured: without bronPad the same document is verifier-clean and ref, clingo AND this backend all answer 5,00). It refuses beside the hand-written anchor and for the same reason"
   "jutterswet-vormenkabinet|NOCASE|a golden with no case file — nothing to replay"
   "jutterswet-waarderingsinvoer|EXCLUDE|loader Refusal: Datatype:StructType"
   "synth2-afrondingscombinaties|EXCLUDE|transpiler SKIP: regel — waarde buiten scope"
