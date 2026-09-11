@@ -23,6 +23,7 @@ import io.github.yhavinga.regelspraak.transpiler.kern.Eenheidsconflict;
 import io.github.yhavinga.regelspraak.kern.Literalen;
 import io.github.yhavinga.regelspraak.transpiler.kern.Namen;
 import io.github.yhavinga.regelspraak.transpiler.kern.Operatoren;
+import io.github.yhavinga.regelspraak.transpiler.kern.Tijdlijnen;
 import io.github.yhavinga.regelspraak.kern.Tijdrekening;
 
 import org.drools.model.DSL;
@@ -317,12 +318,12 @@ public final class ExecModelTranspiler {
         }
         Class<?> factClass = factClass(doel.objecttype());
         if (factClass == null) return skip("regel (geen fact-class " + doel.objecttype().naam + "): " + r.naam());
-        // §13.3.6.7 a MULTI-PERIOD temporal doel ("voor elke N maanden") is a List<Segment> timeline (gran set AND in
-        // attribuutTijdlijnAantal) whose WRITE producer semantics are under-specified. Skip it honestly BEFORE the
+        // §13.3.6.7 a MULTI-PERIOD temporal doel ("voor elke N maanden") is a List<Segment> timeline (gran set AND a
+        // period count above 1) whose WRITE producer semantics are under-specified. Skip it honestly BEFORE the
         // doelSetter — never fall to the scalar value path below, which would silently emit a scalar setter on a
         // List<Segment> field. Mirrors the DRL multi-period marker.
         if (doel.objecttype().attribuutGranulariteit.get(doel.attribuut()) != null
-                && doel.objecttype().attribuutTijdlijnAantal.containsKey(doel.attribuut()))
+                && Tijdlijnen.meerPeriodiek(doel.objecttype().attribuutTijdlijnAantal, doel.attribuut()))
             return skip("regel (meer-periodieke temporele doel — §13.3.6.7, geen producent): " + r.naam());
 
         String doelProp = doel.attribuut();
@@ -357,7 +358,7 @@ public final class ExecModelTranspiler {
         // (§8.4 leaves that under-specified) — both stay a skip below. Mirrors the DRL back-end.
         boolean temporeelKenmerkDoel = r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING
                 && doel.objecttype().kenmerkGranulariteit.containsKey(doel.attribuut())
-                && !doel.objecttype().kenmerkTijdlijnAantal.containsKey(doel.attribuut());
+                && !Tijdlijnen.meerPeriodiek(doel.objecttype().kenmerkTijdlijnAantal, doel.attribuut());
         java.util.function.Function<Object, List<?>> kenmerkTl =
                 temporeelKenmerkDoel && r.voorwaarde() != null && r.geldigheid().altijd()
                         ? conditieTijdreeks(r.voorwaarde(), doel.objecttype()) : null;
@@ -411,7 +412,7 @@ public final class ExecModelTranspiler {
         // §5.1.4 a single-period TEMPORAL doel (a List<Segment> timeline attribute) is WRITTEN a timeline, not a
         // scalar: the value must be a §13.4.17.57/.58 timeline producer (aantal-dagen-in / tijdsevenredig deel).
         RegelSpraakModel.Granulariteit doelGran = doel.objecttype().attribuutGranulariteit.get(doel.attribuut());
-        boolean temporalDoel = doelGran != null && !doel.objecttype().attribuutTijdlijnAantal.containsKey(doel.attribuut());
+        boolean temporalDoel = doelGran != null && !Tijdlijnen.meerPeriodiek(doel.objecttype().attribuutTijdlijnAantal, doel.attribuut());
         // §8.4/§13.4.5 a temporal KENMERK doel (kenmerkGranulariteit — a List<Segment> true-period timeline) cannot
         // be written a scalar boolean: setX(true) on a List field throws at fire time. The DECIDABLE case writes the
         // voorwaarde's TRUE-period timeline (kenmerkTl, the SAME conditieTijdreeks lowering the §7.1 gedurende READ
@@ -1162,7 +1163,7 @@ public final class ExecModelTranspiler {
         if (!(w instanceof Expr.Functie f) || f.kind() != Expr.FunctieKind.SOM || f.argumenten().size() != 1) return null;
         if (!(f.argumenten().get(0) instanceof Expr.AttribuutRef a) || !a.set() || a.objecttype() == null) return null;
         RegelSpraakModel.Granulariteit eg = a.objecttype().attribuutGranulariteit.get(a.attribuut());
-        if (eg == null || a.objecttype().attribuutTijdlijnAantal.containsKey(a.attribuut())) return null;   // non/multi-period -> not this fold
+        if (eg == null || Tijdlijnen.meerPeriodiek(a.objecttype().attribuutTijdlijnAantal, a.attribuut())) return null;   // non/multi-period -> not this fold
         if (eg != doelGran) return null;   // §5.1.4 element tijdlijn must match the doel's (no set-fold gran promotion yet) — mirror DRL
         if (a.type() == null || !a.type().isNumeriek()) return null;
         Objecttype elem = f.elementObjecttype();
@@ -1596,7 +1597,7 @@ public final class ExecModelTranspiler {
         if (a.set()) return null;     // "het totaal van <attr> van een SET" is an instance aggregation, not an own timeline
         RegelSpraakModel.Granulariteit g = a.objecttype().attribuutGranulariteit.get(a.attribuut());
         if (g == null) return null;   // not temporal -> fall through to the instance accumulate
-        if (a.objecttype().attribuutTijdlijnAantal.containsKey(a.attribuut())) return null;   // §13.3.6.7 multi-period -> skip
+        if (Tijdlijnen.meerPeriodiek(a.objecttype().attribuutTijdlijnAantal, a.attribuut())) return null;   // §13.3.6.7 multi-period -> skip
         java.util.function.Function<Object, Object> reader = navReader(a, subject);   // own or to-one navigated, root-guarded
         if (reader == null) return null;
         final String gran = g.name();
@@ -1620,7 +1621,7 @@ public final class ExecModelTranspiler {
             if (segCls == null) return null;
             Objecttype doel = model.rolDoeltypeNaarSubject(subject, kn.navigatie());
             if (doel == null || kn.negatie() || !doel.kenmerkGranulariteit.containsKey(kn.kenmerk())
-                    || doel.kenmerkTijdlijnAantal.containsKey(kn.kenmerk())) return null;   // negated / to-many / non-temporal -> skip
+                    || Tijdlijnen.meerPeriodiek(doel.kenmerkTijdlijnAantal, kn.kenmerk())) return null;   // negated / to-many / non-temporal -> skip
             navRol = kn.navigatie();
             kenmerk = kn.kenmerk();
         } else if (f.filter() instanceof Conditie.Vergelijking vc) {
@@ -1948,14 +1949,14 @@ public final class ExecModelTranspiler {
             BiFunction<Object, Object, List<?>> baseReader = null;   // (subject, globalValue) -> the base List<Segment>
             if (base instanceof Expr.AttribuutRef ba && ba.navigatieRol() == null && !ba.set() && ba.objecttype() == subject
                     && subject.attribuutGranulariteit.containsKey(ba.attribuut())
-                    && !subject.attribuutTijdlijnAantal.containsKey(ba.attribuut())) {
+                    && !Tijdlijnen.meerPeriodiek(subject.attribuutTijdlijnAantal, ba.attribuut())) {
                 baseGran = subject.attribuutGranulariteit.get(ba.attribuut());
                 baseType = effType(ba);
                 String baseAttr = ba.attribuut();
                 baseReader = (s, gv) -> (List<?>) RegelSpraakRuntime.get(s, baseAttr);
             } else if (base instanceof Expr.AttribuutRef ba && ba.navigatieRol() != null && !ba.set()
                     && ba.objecttype() != null && ba.objecttype().attribuutGranulariteit.containsKey(ba.attribuut())
-                    && !ba.objecttype().attribuutTijdlijnAantal.containsKey(ba.attribuut())) {
+                    && !Tijdlijnen.meerPeriodiek(ba.objecttype().attribuutTijdlijnAantal, ba.attribuut())) {
                 // §7.3.2 a TO-ONE NAVIGATED base ("de X van zijn partner"): read the partner's temporal attribute root-guarded
                 // (navReader: null relation -> leeg). The gedurende condition stays over the SUBJECT. Mirrors DRL.
                 java.util.function.Function<Object, Object> nav = navReader(ba, subject);
@@ -2078,7 +2079,7 @@ public final class ExecModelTranspiler {
         // §5.1.4.2 mixed granularity: the operand must be COARSER-OR-EQUAL to the doel (DAG<...<JAAR ordinal). Mirrors DRL.
         RegelSpraakModel.Granulariteit og = ot.attribuutGranulariteit.get(a.attribuut());
         if (og == null || og.ordinal() < gran.ordinal()) return null;
-        if (ot.attribuutTijdlijnAantal.containsKey(a.attribuut())) return null;   // multi-period -> out of scope
+        if (Tijdlijnen.meerPeriodiek(ot.attribuutTijdlijnAantal, a.attribuut())) return null;   // multi-period -> out of scope
         final java.util.function.Function<Object, Object> fr = reader;
         return schaalTijd(s -> (List<?>) fr.apply(s), effType(a), unitTarget);   // §4.1 restate into the sum unit (null -> marker)
     }
@@ -2429,7 +2430,7 @@ public final class ExecModelTranspiler {
     private java.util.function.Function<Object, List<?>> temporeelKenmerkTijdreeks(Conditie.Kenmerk k, Objecttype subject) {
         if (k.navigatie() != null || k.negatie() || subject == null
                 || !subject.kenmerkGranulariteit.containsKey(k.kenmerk())
-                || subject.kenmerkTijdlijnAantal.containsKey(k.kenmerk())) return null;
+                || Tijdlijnen.meerPeriodiek(subject.kenmerkTijdlijnAantal, k.kenmerk())) return null;
         String kenmerk = k.kenmerk();
         return s -> (List<?>) RegelSpraakRuntime.get(s, kenmerk);
     }
@@ -2442,7 +2443,7 @@ public final class ExecModelTranspiler {
         if (k.navigatie() == null || k.negatie() || subject == null) return null;
         Objecttype doel = model.rolDoeltypeNaarSubject(subject, k.navigatie());
         if (doel == null || !doel.kenmerkGranulariteit.containsKey(k.kenmerk())
-                || doel.kenmerkTijdlijnAantal.containsKey(k.kenmerk())) return null;
+                || Tijdlijnen.meerPeriodiek(doel.kenmerkTijdlijnAantal, k.kenmerk())) return null;
         // §13.3.9: the hop is a two-step read like navReader's, on the timeline arm and with its own resolution —
         // so it needs the same question. Measured 2026-09-11 on a verifier-clean, ref-clean model (a Schuit with a
         // Numeriek `werf` beside the to-one role of that name, a §8.2 "de werf van de Schuit gedurende het gehele
@@ -2658,7 +2659,7 @@ public final class ExecModelTranspiler {
      *  {@link #isTemporeel82}, admitting a to-many set element whose objecttype != subject; multi-period excluded. */
     private static boolean isTemporeelSet82(Expr.AttribuutRef a) {
         return a.objecttype() != null && a.objecttype().attribuutGranulariteit.containsKey(a.attribuut())
-                && !a.objecttype().attribuutTijdlijnAantal.containsKey(a.attribuut());
+                && !Tijdlijnen.meerPeriodiek(a.objecttype().attribuutTijdlijnAantal, a.attribuut());
     }
 
     /** A fact-only Predicate1 for "the §8.2 check holds" (the NIET prefix complements the rsGeheelPeriode result), or
