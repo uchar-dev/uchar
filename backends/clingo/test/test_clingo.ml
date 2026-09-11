@@ -2649,6 +2649,396 @@ let () =
     ~case_text:(gp_case ~link:true ~tijdlijn:"" ~waar:true)
     ~needle:"is not a time-dependent characteristic of \"Werf\""
 
+
+(* --- ch. 3.4b / WF-102: the multi-step fold-source range ----------------- *)
+
+(* The corpus carries the PLAYING side of this field (the golden
+   `anchor/jutterswet-bootberging` and the emitted `jutterswet-vondstketen`,
+   both replayed by gates 5 and 6 against hand-computed values). What no
+   corpus document can carry is the REFUSING side: WF-102 makes those shapes
+   ill-formed, so gate 3 keeps them out of every zone this backend replays.
+   They are exactly the class this suite exists for — and they matter here
+   more than most, because the failure mode of an IGNORED bronPad is not a
+   crash but a plausible wrong number: the range collapses to the one-step
+   derivation and the fold ranges over a coincidental direct relation. *)
+(* one literal substring replaced, once — the twist mechanism of every probe
+   below. Written here rather than pulled in from Str so the test executable
+   keeps the library set it had. Fails loudly when the anchor is absent, so a
+   probe can never silently twist nothing and report the untwisted verdict. *)
+let vervang ~waar ~door tekst =
+  let n = String.length waar in
+  let rec zoek i =
+    if i + n > String.length tekst then
+      raise (Uchar_ref.Value.Fault ("test twist: substring not found: " ^ waar))
+    else if String.sub tekst i n = waar then
+      String.sub tekst 0 i ^ door ^ String.sub tekst (i + n) (String.length tekst - i - n)
+    else zoek (i + 1)
+  in
+  zoek 0
+
+let bp_doc =
+  {|{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "laagste vondstgewicht": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    },
+    "Boot": {
+      "node": "Objecttype",
+      "naam": "Boot",
+      "attributen": {},
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Boten"
+    },
+    "Vondst": {
+      "node": "Objecttype",
+      "naam": "Vondst",
+      "attributen": {
+        "gewicht": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Vondsten"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {
+    "bemanning": {
+      "node": "Feittype",
+      "naam": "bemanning",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "schipper",
+          "objecttypeNaam": "Jutter",
+          "meervoud": "schippers",
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "gevoerde boot",
+          "objecttypeNaam": "Boot",
+          "meervoud": "gevoerde boten",
+          "meervoudig": true
+        }
+      ]
+    },
+    "berging": {
+      "node": "Feittype",
+      "naam": "berging",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "bergende boot",
+          "objecttypeNaam": "Boot",
+          "meervoud": "bergende boten",
+          "meervoudig": true
+        },
+        {
+          "node": "Rol",
+          "naam": "geborgen vondst",
+          "objecttypeNaam": "Vondst",
+          "meervoud": "geborgen vondsten",
+          "meervoudig": true
+        }
+      ]
+    }
+  },
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "laagste vondstgewicht van een jutter",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "laagste vondstgewicht van een jutter",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "laagste vondstgewicht",
+        "objecttype": "Jutter",
+        "onderwerpBron": "een Jutter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het laagste vondstgewicht van een Jutter",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "MINIMUM",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "gewicht",
+            "objecttype": "Vondst",
+            "onderwerpBron": "alle geborgen vondsten van alle gevoerde boten van de Jutter",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter",
+            "set": true,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": "Vondst",
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de minimale waarde van het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter",
+        "granulariteit": null,
+        "bronPad": [
+          {
+            "node": "RolBinding",
+            "feittype": "bemanning",
+            "rol": "gevoerde boot"
+          },
+          {
+            "node": "RolBinding",
+            "feittype": "berging",
+            "rol": "geborgen vondst"
+          }
+        ]
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}|}
+
+let bp_case =
+  {|{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "gevoerde boot": [
+            "B1",
+            "B2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "B1",
+        "objectType": "Boot",
+        "attributes": {},
+        "roles": {
+          "geborgen vondst": [
+            "V1",
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "B2",
+        "objectType": "Boot",
+        "attributes": {},
+        "roles": {
+          "geborgen vondst": [
+            "V3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "3.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "7.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "5.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "laagste vondstgewicht",
+      "value": {
+        "number": "3.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}|}
+
+let () =
+  (* the document plays as written: the three refusals below are the FIELD's,
+     not the model's *)
+  clingo_matches ~name:"ch3.4b tweestaps bereik speelt" ~ir:bp_doc ~case_text:bp_case;
+  (* (b) one step is the bronRol spelling, not a path *)
+  faults_with ~name:"ch3.4b een pad van één stap"
+    ~ir:
+      (vervang bp_doc
+         ~waar:
+           {|{
+            "node": "RolBinding",
+            "feittype": "bemanning",
+            "rol": "gevoerde boot"
+          },
+          |}
+         ~door:"")
+    ~case_text:bp_case ~needle:"at least TWO steps";
+  (* (a) a path beside a binding: two spellings of one range *)
+  faults_with ~name:"ch3.4b een pad naast een bronRol"
+    ~ir:
+      (vervang bp_doc ~waar:{|"bronPad": [|}
+         ~door:
+           {|"bronRol": { "node": "RolBinding", "feittype": "berging", "rol": "geborgen vondst" },
+        "bronPad": [|})
+    ~case_text:bp_case ~needle:"bronPad beside a bronRol";
+  (* (c) the row-1 wart hands the fold linked INSTANCES; there is nothing for
+     a range to range over, and reading the wart while dropping the range
+     would answer a count over the wrong relation *)
+  faults_with ~name:"ch3.4b een pad op de wrat"
+    ~ir:
+      (vervang
+         (vervang
+            (vervang bp_doc ~waar:{|"set": true|} ~door:{|"set": false|})
+            ~waar:{|"kind": "MINIMUM"|} ~door:{|"kind": "AANTAL"|})
+         ~waar:
+           {|"attribuut": "gewicht",
+            "objecttype": "Vondst",
+            "onderwerpBron": "alle geborgen vondsten van alle gevoerde boten van de Jutter",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },|}
+         ~door:
+           {|"attribuut": "geborgen vondst",
+            "objecttype": "Jutter",
+            "onderwerpBron": "de Jutter",
+            "navigatieRol": null,
+            "type": { "node": "Onbekend", "reden": "niet opgelost" },|})
+    ~case_text:bp_case ~needle:"bronPad on the row-1 wart"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

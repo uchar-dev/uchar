@@ -2223,6 +2223,147 @@ let () =
   expect_num "WV-3.4a-zelfbron-nul" (ev "j2" (aantal "aanmelder")) "0";
   expect_fault "WV-3.4a-zelfbron-weg" (fun () -> ev "j1" (aantal "vondst"))
 
+(* --- ch. 3.4b: the multi-step fold source, the flat union --------------- *)
+
+(* WV-3.4b: the `anchor/jutterswet-bootberging` worked example, verbatim
+   (both cases, replayed by gates 5 and 6). Jutter -(bemanning/gevoerde
+   boot)-> Boot -(berging/geborgen vondst)-> Vondst.gewicht, plus one
+   step deeper -(inpakking/ingepakte kist)-> Kist.inhoudsgewicht.
+
+   The union spread over TWO intermediate instances is what makes the
+   answer a proof: J1 sails B1 and B2, the minimum 3,00 sits on B1 while
+   B2 contributes 5,00, so an executor that walked only one boat — or
+   that dropped the outer step and folded a direct relation — cannot
+   produce it. The empty corners answer alike at the last step (J3, whose
+   boat salvages nothing) and at the first (J4, who sails nothing): the
+   minimum is leeg because min has no fallback, the sum is the fallback
+   fired ONCE. And the leeg element attribute drops out of a value fold
+   without dropping its instance from the range.
+
+   Case 2 is the UNION pin: V1 salvaged by BOTH boats contributes once,
+   so the sum is 15,00 and not 18,00. The minimum is 3,00 either way,
+   which is why the sum carries it. *)
+let () =
+  let num2 : Ir_v0.Ast.datatype =
+    Numeriek { geheel = false; decimalen = 2; teken = None; eenheid = None }
+  in
+  let rol naam otn mv meervoudig : Ir_v0.Ast.rol =
+    { rol_naam = Some naam; rol_objecttype_naam = Some otn; rol_meervoud = Some mv;
+      rol_meervoudig = meervoudig }
+  in
+  let ft naam rollen = (naam, { Ir_v0.Ast.ft_naam = Some naam; wederkerig = false; rollen }) in
+  let doc =
+    {
+      empty_doc with
+      objecttypen =
+        [ ot "Jutter" [] []; ot "Boot" [] [];
+          ot "Vondst" [ ("gewicht", Some num2) ] [];
+          ot "Kist" [ ("inhoudsgewicht", Some num2) ] [] ];
+      feittypen =
+        [ ft "bemanning"
+            [ rol "schipper" "Jutter" "schippers" false;
+              rol "gevoerde boot" "Boot" "gevoerde boten" true ];
+          ft "berging"
+            [ rol "bergende boot" "Boot" "bergende boten" true;
+              rol "geborgen vondst" "Vondst" "geborgen vondsten" true ];
+          ft "inpakking"
+            [ rol "verpakte vondst" "Vondst" "verpakte vondsten" true;
+              rol "ingepakte kist" "Kist" "ingepakte kisten" true ] ];
+    }
+  in
+  let rb f r : Ir_v0.Ast.rol_binding = { rb_feittype = f; rb_rol = r } in
+  let pad2 = [ rb "bemanning" "gevoerde boot"; rb "berging" "geborgen vondst" ] in
+  let pad3 = pad2 @ [ rb "inpakking" "ingepakte kist" ] in
+  let bron attr otn : Ir_v0.Ast.expr =
+    Attribuut_ref
+      { attribuut = Some attr; objecttype = Some otn; onderwerp_bron = None; navigatie_rol = None;
+        typ = Some num2; bron = None; set = true; navigatie_pad = []; navigatie_bindingen = None }
+  in
+  let vouw kind attr el pad leegwaarde : Ir_v0.Ast.expr =
+    Functie
+      { kind; argumenten = [ bron attr el ]; element_objecttype = Some el; leegwaarde; filter = None;
+        dimensie_selectie = None; typ = Some num2; bron = None; granulariteit = None;
+        bron_rol = None; bron_pad = Some pad }
+  in
+  let minimum = vouw Minimum "gewicht" "Vondst" pad2 None in
+  let som =
+    vouw Som "gewicht" "Vondst" pad2
+      (Some (Literal { waarde = Some "0"; typ = Some num0; bron = None }))
+  in
+  let diep = vouw Minimum "inhoudsgewicht" "Kist" pad3 None in
+  let env = env_of doc in
+  let links l = List.fold_left (fun m (k, v) -> World.SMap.add k v m) World.SMap.empty l in
+  let i label otn gewicht l =
+    { (inst label otn (match gewicht with None -> [] | Some (a, g) -> [ (a, n g) ])) with
+      World.links = links l }
+  in
+  let wereld insts = List.fold_left World.add_instance World.empty insts in
+  let ev w label e = Eval.eval_expr env w (World.get w label) ~err:no_err e in
+  (* case 1 — the range spread over two intermediates, and the three empty corners *)
+  let w1 =
+    wereld
+      [ i "J1" "Jutter" None [ ("gevoerde boot", [ "B1"; "B2" ]) ];
+        i "J2" "Jutter" None [ ("gevoerde boot", [ "B3" ]) ];
+        i "J3" "Jutter" None [ ("gevoerde boot", [ "B4" ]) ];
+        i "J4" "Jutter" None [];
+        i "B1" "Boot" None [ ("geborgen vondst", [ "V1"; "V2" ]) ];
+        i "B2" "Boot" None [ ("geborgen vondst", [ "V3" ]) ];
+        i "B3" "Boot" None [ ("geborgen vondst", [ "V4"; "V5" ]) ];
+        i "B4" "Boot" None [];
+        i "V1" "Vondst" (Some ("gewicht", "3.00")) [ ("ingepakte kist", [ "K1" ]) ];
+        i "V2" "Vondst" (Some ("gewicht", "7.00")) [ ("ingepakte kist", [ "K2"; "K3" ]) ];
+        i "V3" "Vondst" (Some ("gewicht", "5.00")) [];
+        i "V4" "Vondst" (Some ("gewicht", "9.00")) [ ("ingepakte kist", [ "K4" ]) ];
+        i "V5" "Vondst" None [];
+        i "K1" "Kist" (Some ("inhoudsgewicht", "2.50")) [];
+        i "K2" "Kist" (Some ("inhoudsgewicht", "1.25")) [];
+        i "K3" "Kist" (Some ("inhoudsgewicht", "4.00")) [];
+        i "K4" "Kist" (Some ("inhoudsgewicht", "6.00")) [] ]
+  in
+  expect_num "WV-3.4b-vlakke-unie-minimum" (ev w1 "J1" minimum) "3.00";
+  expect_num "WV-3.4b-vlakke-unie-som" (ev w1 "J1" som) "15.00";
+  expect_num "WV-3.4b-vlakke-unie-driestaps" (ev w1 "J1" diep) "1.25";
+  expect_num "WV-3.4b-leeg-element-minimum" (ev w1 "J2" minimum) "9.00";
+  expect_num "WV-3.4b-leeg-element-som" (ev w1 "J2" som) "9.00";
+  expect_num "WV-3.4b-leeg-element-driestaps" (ev w1 "J2" diep) "6.00";
+  expect_leeg "WV-3.4b-leeg-bij-de-laatste-stap-minimum" (ev w1 "J3" minimum);
+  expect_num "WV-3.4b-leeg-bij-de-laatste-stap-som" (ev w1 "J3" som) "0";
+  expect_leeg "WV-3.4b-leeg-bij-de-eerste-stap-minimum" (ev w1 "J4" minimum);
+  expect_num "WV-3.4b-leeg-bij-de-eerste-stap-som" (ev w1 "J4" som) "0";
+  (* case 2 — the shared element contributes ONCE: 15,00, never 18,00 *)
+  let w2 =
+    wereld
+      [ i "J1" "Jutter" None [ ("gevoerde boot", [ "B1"; "B2" ]) ];
+        i "B1" "Boot" None [ ("geborgen vondst", [ "V1"; "V2" ]) ];
+        i "B2" "Boot" None [ ("geborgen vondst", [ "V1"; "V3" ]) ];
+        i "V1" "Vondst" (Some ("gewicht", "3.00")) [ ("ingepakte kist", [ "K1" ]) ];
+        i "V2" "Vondst" (Some ("gewicht", "7.00")) [ ("ingepakte kist", [ "K2" ]) ];
+        i "V3" "Vondst" (Some ("gewicht", "5.00")) [ ("ingepakte kist", [ "K1" ]) ];
+        i "K1" "Kist" (Some ("inhoudsgewicht", "2.50")) [];
+        i "K2" "Kist" (Some ("inhoudsgewicht", "1.25")) [] ]
+  in
+  expect_num "WV-3.4b-gedeeld-som" (ev w2 "J1" som) "15.00";
+  expect_num "WV-3.4b-gedeeld-minimum" (ev w2 "J1" minimum) "3.00";
+  expect_num "WV-3.4b-gedeeld-driestaps" (ev w2 "J1" diep) "1.25";
+  (* the two shape arms of WF-102, mirrored in the executor: a document that
+     reaches ref without passing the verifier must fault by NAME rather than
+     be read as the one-step form with the range dropped *)
+  expect_fault "WV-3.4b-eenstaps-pad-faalt"
+    (fun () -> ev w1 "J1" (vouw Minimum "gewicht" "Vondst" [ rb "berging" "geborgen vondst" ] None));
+  expect_fault "WV-3.4b-pad-op-een-niet-setbron-faalt" (fun () ->
+      ev w1 "J1"
+        (Functie
+           { kind = Aantal;
+             argumenten =
+               [ Attribuut_ref
+                   { attribuut = Some "geborgen vondst"; objecttype = Some "Jutter";
+                     onderwerp_bron = None; navigatie_rol = None;
+                     typ = Some (Datatype_onbekend { reden = None }); bron = None; set = false;
+                     navigatie_pad = []; navigatie_bindingen = None } ];
+             element_objecttype = Some "Vondst"; leegwaarde = None; filter = None;
+             dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = None;
+             bron_rol = None; bron_pad = Some pad2 }))
+
 (* --- ch. 5.7a: what a supplied role link establishes -------------------- *)
 
 (* WV-5.7a: the `jutterswet-ketenband` worked example, verbatim (the
