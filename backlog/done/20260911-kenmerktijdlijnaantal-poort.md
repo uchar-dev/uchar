@@ -415,7 +415,8 @@ Voorgesteld:
     itself was corrected in both branches by
     `backlog/done/20260911-kenmerktijdlijnaantal-poort.md`.
 
-**(c) `spec/verifier/lib/checks.ml` (regels 1500-1503).** Gecorrigeerd na de
+**(c) `spec/verifier/lib/checks.ml` (de zin die van het staarteinde van
+r. 1499 tot de kop van r. 1504 loopt).** Gecorrigeerd na de
 lensronde: mijn eerste versie schreef deze formulering ook aan
 `spec/IR-SPEC.md` ch. 4.6 toe en beweerde dat de telling ongewijzigd blijft.
 Beide onjuist.
@@ -434,9 +435,14 @@ reproduceerbaar. Gemeten met `grep -rhoE "<tabel>\.(get|containsKey)\("` over
     deze branch:  85  (65, 20, 0, 0)
 
 (De 108/64 in de tekst dateert van 2026-09-06; `attribuutGranulariteit` is
-sindsdien met één gegroeid. Dat stond al scheef vóór deze kaart.)
+sindsdien met één gegroeid. Dat stond al scheef vóór deze kaart. Ná
+toepassing zegt `checks.ml` dus 109/65 waar de IR-SPEC-zin — binnen zijn
+eigen meting van 2026-09-06 — 108/64 blijft zeggen: twee gedateerde
+tellingen, bewust niet gelijkgetrokken.)
 
-Staat er nu:
+Staat er nu (hier gereflowed weergegeven; in het bestand is dit ÉÉN
+doorlopende zin over de regelgrenzen heen, dus vervang de zin, niet een
+regelbereik — een letterlijke find/replace op dit blok als regels faalt):
 
        The Drools backend reaches these maps through raw [Map.get] / [Map.containsKey]
        at 108 sites across four of the eight tables (attribuutGranulariteit 64,

@@ -78,7 +78,7 @@ semantically identical edit — flipped both branches from PLAYED to a refusal
 and silently reduced this golden to a two-executor witness. The card
 `backlog/done/20260911-kenmerktijdlijnaantal-poort.md` corrected that gate in
 both branches to the multiplicity test it was meant to be (a period count
-defaults to 1 — IR-SPEC ch. 2.8/2.10 — so a raster starts at 2); it was found
+defaults to 1 — IR-SPEC §2.2/ch. 2.10 — so a raster starts at 2); it was found
 because the presence gate mismeasured this very clause first.
 
 The key stays out of the committed IR all the same: this document is shaped
