@@ -90,6 +90,14 @@ kaart, niet een implementatiekaart.
 
 ## Meting (2026-09-10)
 
+*Deze meting is van VÓÓR de acute-flanklanding van 2026-09-11: de
+frontend-kolommen ("de frontend accepteert de bron met `diagnostics: []`") en
+de verifier/ref/ASP/Drools-rijen van A en B beschrijven de toenmalige kop. De
+huidige uitkomst van A en B staat in
+`backlog/done/20260911-geneste-aggregatie-acute-flank.md`; wat hieronder
+onveranderd geldt is de WIRE-analyse — welke velden de `Functie` draagt, en
+waarom de omweg niet draagt.*
+
 Twee handgeschreven bronnen in Jutterswet-stijl, twee gemeten documenten en
 één handgebouwde omweg. Keten: `Jutter` -(feittype *bemanning*, rol
 *gevoerde boot*, to-many)→ `Boot` -(feittype *berging*, rol *geborgen
@@ -275,17 +283,24 @@ desuikering te presenteren.
 7. Frontend, dan `ref`, dan de ASP-backend, dan Drools (beide takken; gate 13
    twist-tabel nalopen op de nieuwe positie).
 
-**De acute flank kan en moet EERDER landen, als aparte kleine kaart.**
-Onafhankelijk van de wire-verruiming moet de frontend ophouden een
-tweestaps-zin op een éénstaps-relatie af te beelden. De kleinste vorm: waar
-het set-onderwerp zelf weer een set-stap nest, weigert de resolver met een
-gerichte diagnostiek en emitteert de regel niet — dezelfde tweesprong die
-`20260909-frontend-alle-zonder-vouw.md` voor een andere vorm weegt
-(diagnostiek versus andere emissie), en die kaart moet hier meegelezen
-worden. Overweeg daarnaast, in dezelfde kleine kaart, of de emitter de
-type-paar-afleiding van `bronRol` mag doen wanneer de geschreven rolnaam
-GEEN van de rollen van het gevonden feittype is: dat is de tweede helft van
-de stille misbinding en ze staat los van de ketenvraag.
+**De acute flank is GELAND (2026-09-11), als aparte kleine kaart:**
+`backlog/done/20260911-geneste-aggregatie-acute-flank.md`. De frontend beeldt
+een tweestaps-zin niet meer stil af op een éénstaps-relatie, en de
+type-paar-afleiding van `bronRol` bindt niet meer tegen de geschreven rolnaam
+in: de resolver markeert de ledenvouw als `Onopgelost` met een gerichte
+WARNING zodra het set-onderwerp zelf een set-stap nest, of zodra de geschreven
+elementnaam de rol die het type-paar zou binden niet noemt. Document B
+hieronder is daarmee niet meer verifier-schoon-met-fout-antwoord — het is niet
+meer verifier-schoon (WF-034 op het sentinel), en `ref` en de ASP-backend
+falen luid op WF-044. De emitter-regel zelf is bewust NIET gewijzigd: gemeten
+is dat een bindingloze vouw over een uniek verbonden paar verifier-schoon
+blijft en elke uitvoerder dezelfde verkeerde relatie opnieuw afleidt, dus de
+binding weghalen maakt de fout onzichtbaar in plaats van weg. Wat deze kaart
+nog draagt is alleen de WIRE-vraag hieronder. Eén meting uit die landing hoort
+erbij: een gemengde keten met alleen een TO-ÉÉN tussenstap ("alle vondsten van
+de boot van de Jutter", waar *vondst* wél de gebonden rol is) blijft stil en
+verifier-schoon — dezelfde fout langs een derde route, die hier thuishoort
+omdat een bereikPAD zo'n stap gewoon als stap draagt.
 
 ## Acceptance
 
@@ -296,10 +311,10 @@ de stille misbinding en ze staat los van de ketenvraag.
   ongelimiteerd), niet als aanname.
 - Elke nieuwe normatieve MUST draagt een ID, een verifier-check, minstens één
   slagende golden en één negatief-getuige (`CLAUDE.md`, Spec discipline).
-- Document B hierboven is een verplichte getuige: NA de kaart mag het niet
-  meer verifier-schoon-met-fout-antwoord zijn. Óf de frontend weigert de
-  bron, óf de wire draagt de keten en alle drie de uitvoerders antwoorden
-  3.00. Een derde uitkomst — nog steeds stil 5.00 — is een gefaalde kaart.
+- Document B hierboven is een verplichte getuige. De eerste helft daarvan is
+  op 2026-09-11 afgedaan door de acute-flankkaart: de frontend weigert de
+  bron, dus stil 5.00 bestaat niet meer. Wat deze kaart nog moet halen is de
+  tweede: de wire draagt de keten en alle drie de uitvoerders antwoorden 3.00.
 - De ankergolden draagt handgeschreven absolute verwachtingen, niet
   overgenomen uit uitvoer, en de minimum-op-het-ene-tussenexemplaar-vorm.
 - `ref` ≡ ASP-backend ≡ Drools over de nieuwe golden (het volle vierkant);
