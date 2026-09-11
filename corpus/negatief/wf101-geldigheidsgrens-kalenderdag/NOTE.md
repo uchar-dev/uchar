@@ -24,16 +24,17 @@ claim is false without that position. Measured 2026-09-11 on
 `2025-06-01`), one position at a time, `ref` and the ASP backend identical in
 every row and nothing faulting anywhere:
 
-- the LOWER bound of the first version (`vanaf`, window
+- the LOWER bound of the first of its two dated rules (`vanaf`, window
   `[2026-02-30, 2026-12-31]`): both casus replay the pinned expectations
   unchanged — this is the position the ch. 4.1 measurement table substitutes
   at, in every one of its rows;
-- the UPPER bound of the first version (`tot`, window
+- the UPPER bound of that same rule (`tot`, window
   `[2026-01-01, 2026-02-30]`), **the position this witness uses**: the window
-  silently shrinks past the in-window casus and both executors answer
-  `M1.vensterheffing = leeg` where the pinned value is 125;
-- the upper bound of the second version (`tot`, `2025-12-31` → `2026-02-30`):
-  both casus unchanged again.
+  silently shrinks past the in-window casus and both executors leave
+  `M1.vensterheffing` underived where the pinned value is 125 — `ref` reports
+  `= leeg`, the ASP backend `is underived (leeg)`;
+- the upper bound of the second dated rule (`tot`, `2025-12-31` →
+  `2026-02-30`): both casus unchanged again.
 
 So the defect is never reported and only sometimes visible in an answer, and
 it is refused outright by every reader that parses the bound — the same split

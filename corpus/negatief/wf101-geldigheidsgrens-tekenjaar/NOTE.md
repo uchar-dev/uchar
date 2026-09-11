@@ -35,8 +35,10 @@ silent wrong answer.
 Minimal own-authored document (Jutterswet vocabulary), built on the skeleton
 of `corpus/negatief/wf084-source-snippet` with the date LITERAL put back in
 ISO form, so the only defect left is the bound. The well-formed counterpart is
-`corpus/golden/jutterswet-vensterheffing`, whose two rule versions carry
-`2026-01-01`/`2026-12-31` and an open-ended `2025-12-31`.
+`corpus/golden/jutterswet-vensterheffing`, whose two independently dated rules
+carry `2026-01-01`/`2026-12-31` and an open-ended `2025-12-31` (distinct names
+and distinct target attributes — that document exercises the window, not
+version selection).
 
 Note what does NOT guard this. The schema pattern on `Geldigheid.vanaf`/`tot`
 refuses this same lexeme — but gate 2 validates `corpus/golden` and

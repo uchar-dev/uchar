@@ -182,15 +182,18 @@ zijn eigen casus.
 positiegebonden en de eerste formulering liet dat weg. `2026-02-30` op de
 ONDERGRENS van regel 0 beweegt inderdaad niets, maar op de BOVENGRENS van
 regel 0 — de positie die de kalender-getuige zelf gebruikt — krimpt het venster
-tot `[2026-01-01, 2026-02-30]` en antwoorden beide executors
-`M1.vensterheffing = leeg` waar 125 gepind staat; op de bovengrens van regel 1
-beweegt weer niets. Nagemeten en gereproduceerd op deze tak. Het juiste
-onderscheid is dus: de kalenderfout wordt door geen enkele lezer GEMELD, en of
-ze een ANTWOORD verschuift hangt van de positie af. Dat is een sterker argument
-voor de regel dan de oorspronkelijke zin, niet een zwakker: een corpuscasus
-vangt zo'n lexeem alleen waar het verschoven venster toevallig een verwachting
-kruist. De zin in `wf101-geldigheidsgrens-kalenderdag/NOTE.md`, de
-ch. 4.1-clausule en de registerrij dragen de positie nu alle drie. Daarmee is de tweede helft van de kaartvraag ook gemeten en
+tot `[2026-01-01, 2026-02-30]` en laten beide executors `M1.vensterheffing`
+onafgeleid waar 125 gepind staat (`ref` meldt `= leeg`, de ASP-backend
+`is underived (leeg)`); op de bovengrens van regel 1 beweegt weer niets.
+Nagemeten en gereproduceerd op deze tak. Het juiste onderscheid is dus: de
+kalenderfout wordt door geen enkele lezer GEMELD, en of ze een ANTWOORD
+verschuift hangt van de positie af. Dat is een sterker argument voor de regel
+dan de oorspronkelijke zin, niet een zwakker: een corpuscasus vangt zo'n lexeem
+alleen waar het verschoven venster toevallig een verwachting kruist. De zin in
+`wf101-geldigheidsgrens-kalenderdag/NOTE.md`, de ch. 4.1-clausule en de
+registerrij dragen de positie nu alle drie.
+
+Daarmee is de tweede helft van de kaartvraag ook gemeten en
 niet aangenomen: mét het hek is de lexicografische vergelijking in verifier,
 `ref` en clingo *correct zoals ze staat*, en hoeft geen van de drie een grens te
 parseren. Het residu staat in de clausule: een document dat een executor
@@ -240,12 +243,16 @@ grens niet-null.
 Beide getuigen zijn gebouwd op het skelet van `wf084-source-snippet` met het
 datum-LITERAL terug in ISO-vorm, zodat het enige gebrek de grens is. De
 passerende getuigen zijn bestaande goldens, niet nieuwe:
-`jutterswet-vensterheffing` (twee gedateerde versies van één regelnaam, beide
-grenzen geschreven, herspeeld door gates 5 en 6 op een casus binnen en een
-casus vóór het venster — het document waarvan alle metingen hierboven twists
-zijn) en `anchor/jutterswet-jutheffing` (twee aansluitende vensters, absolute
-waarden per venster door beide executors). `jutterswet-vormenkabinet` draagt de
-derde en vierde grens en blijft schoon.
+`jutterswet-vensterheffing` — twee ONAFHANKELIJK gedateerde regels, geen twee
+versies van één naam: verschillende namen, verschillende doelattributen, geen
+regelgroep, en alleen de eerste schrijft beide grenzen (nagemeten in de
+slotronde). Dat document oefent dus het VENSTER en niet de ch.-8-versieselectie;
+het wordt herspeeld door gates 5 en 6 op een casus binnen en een casus vóór het
+eerste venster, en alle metingen hierboven zijn twists ervan. De VERSIE-getuige
+is `anchor/jutterswet-jutheffing`, waar `#1` en `#2` van één naam één
+doelattribuut delen over aansluitende vensters, met absolute waarden per venster
+door beide executors. Samen dekken ze de twee vormen waarin een grens voorkomt.
+`jutterswet-vormenkabinet` draagt de derde en vierde grens en blijft schoon.
 
 ### De clausule en de registerrij
 
