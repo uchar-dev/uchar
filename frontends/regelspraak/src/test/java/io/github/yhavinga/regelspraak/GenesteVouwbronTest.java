@@ -14,12 +14,15 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * A MEMBER fold ("de minimale waarde van &lt;attr&gt; van alle &lt;elem&gt; van &lt;onderwerp&gt;") describes its
  * source on the uchar wire with exactly ONE relation: one {@code elementObjecttype} plus one {@code bronRol}
- * (IR-SPEC ch. 4.3). Two written shapes used to be mapped onto that single relation in silence, and both
- * produced a fold over a DIFFERENT collection than the sentence names:
+ * (IR-SPEC ch. 4.3). Three written shapes used to be mapped onto that single relation in silence, and all
+ * three produced a fold over a DIFFERENT collection than the sentence names:
  *
  * <ol>
  * <li>a NESTED set step — "van alle geborgen vondsten van alle gevoerde boten van de Jutter" — whose outer
  *     step simply disappeared, the fold ranging from the rule subject straight to the innermost element type;
+ * <li>an intermediate TO-ONE step — "van alle vondsten van de boot van de Jutter" — losing its step exactly
+ *     the same way, and invisible to (3) because the written element name may name the subject-side role
+ *     perfectly well;
  * <li>a by-PAIR binding the written name contradicts — {@code verbindendeRolBinding} searches on TYPES only,
  *     so with exactly one fact type joining subject and element it wins whatever role the sentence named.
  * </ol>
@@ -30,7 +33,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * says 3.00 — the differential square agreeing over the wrong set, which no gate can see. Dropping the binding
  * at the emitter does not help: a bindingless fold over a uniquely related pair is verifier-clean and every
  * executor re-derives the same wrong relation. So the RESOLUTION declines, and the fold keeps the visible
- * {@code Onopgelost} marker this resolver already uses for a source it cannot bind.
+ * {@code Onopgelost} marker this resolver already uses for a source it cannot bind — carrying the
+ * aggregation's OWN result type, so the refused document stays WELL-FORMED and faults observably under
+ * WF-044 in every executor (IR-SPEC ch. 2.4: the marker is legal wire content, the fence is behavioural).
  */
 class GenesteVouwbronTest {
 
@@ -117,6 +122,60 @@ class GenesteVouwbronTest {
                 Het laagste vondstgewicht van een Jutter moet berekend worden als de minimale waarde van het gewicht van alle Vondst van de Jutter.
         """;
 
+    /** The to-ONE flank: the chain reaches its elements through a Boot, and the written element name names
+     *  the role of the DIRECT Jutter–Vondst fact type perfectly well — so only the anchor gives it away. */
+    static final String FLANKMODEL = """
+        Eenheidsysteem Gewicht
+            het kilogram (mv: kilogrammen) kg
+
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            het laagste vondstgewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+
+        Objecttype de Boot (mv: Boten)
+
+        Objecttype de Vondst (mv: Vondsten)
+            het gewicht (mv: gewichten) Numeriek (getal met 2 decimalen) met eenheid kg;
+
+        Feittype bemanning
+            de schipper Jutter
+            de boot Boot
+        Eén schipper heeft één boot
+
+        Feittype bootvangst
+            de vangende boot Boot
+            de vondst (mv: vondsten) Vondst
+        Eén vangende boot heeft meerdere vondsten
+
+        Feittype jutterbezit
+            de bezitter Jutter
+            de vondst (mv: vondsten) Vondst
+        Eén bezitter heeft meerdere vondsten
+        """;
+
+    static final String TUSSENSTAPREGEL = """
+
+        Regel laagste vondstgewicht
+            geldig altijd
+                Het laagste vondstgewicht van een Jutter moet berekend worden als de minimale waarde van het gewicht van alle vondsten van de boot van de Jutter.
+        """;
+
+    /** Counter-proof on the SAME model: without the intermediate step the fold binds and emits. */
+    static final String DIRECTE_REGEL = """
+
+        Regel laagste vondstgewicht
+            geldig altijd
+                Het laagste vondstgewicht van een Jutter moet berekend worden als de minimale waarde van het gewicht van alle vondsten van de Jutter.
+        """;
+
+    /** Counter-proof: an anchor that names a ROLE resolves to no object type, so the anchor rule leaves it
+     *  alone — that is the mother card's literal-anchor question and belongs to the wire, not here. */
+    static final String ROLANKERREGEL = """
+
+        Regel laagste vondstgewicht
+            geldig altijd
+                Het laagste vondstgewicht van een Jutter moet berekend worden als de minimale waarde van het gewicht van alle aangemelde vondsten van de aanmelder.
+        """;
+
     /** Counter-proof: the §13.4.17.47 telling, whose element word sits in the ATTRIBUTE position and binds by
      *  the written name already (the Onbekend-typed wart, a different derivation). */
     static final String TELREGEL = """
@@ -142,6 +201,12 @@ class GenesteVouwbronTest {
             + "bronRol) — de buitenste stap zou spoorloos wegvallen, dus de aggregatie blijft onopgelost "
             + "(§13.4.17)";
 
+    static final String TUSSENSTAP_MELDING =
+            "tussenstap in een vouwbron: 'alle vondsten van de boot van de Jutter' bereikt de elementen via "
+            + "Boot, maar een vouwbron draagt precies één relatie vanaf het regelonderwerp Jutter (IR-SPEC "
+            + "ch. 4.3: één elementObjecttype plus één bronRol) — de tussenstap zou spoorloos wegvallen, dus "
+            + "de aggregatie blijft onopgelost (§13.4.1/§13.4.17)";
+
     static final String NAAM_MELDING =
             "vouwbron bindt niet op de geschreven naam: de zin noemt 'geborgen vondsten', maar het enige "
             + "feittype dat Jutter met Vondst verbindt is 'vondstaanmelding' met de rol 'aangemelde vondst' — "
@@ -152,6 +217,7 @@ class GenesteVouwbronTest {
         RegelSpraakModel m = Resolver.resolve(bron);
         return m.diagnostics.stream()
                 .filter(d -> d.message().startsWith("geneste verzamelingsstap in een vouwbron")
+                        || d.message().startsWith("tussenstap in een vouwbron")
                         || d.message().startsWith("vouwbron bindt niet op de geschreven naam"))
                 .toList();
     }
@@ -204,7 +270,47 @@ class GenesteVouwbronTest {
         assertTrue(json.contains("\"node\": \"Onopgelost\""), "de vouw moet een zichtbare markering worden");
     }
 
-    // ---------------- (b) the by-pair binding the written name contradicts ----------------
+    // ---------------- (b) the intermediate to-ONE step ----------------
+
+    /** One set step with a to-ONE step under it. The fold source names one relation from the RULE SUBJECT, so
+     *  "van de boot" disappeared exactly as a nested set step does — and the by-pair binding was RIGHT about
+     *  the role name, so nothing else saw it: measured `diagnostics: []`, verifier PASS, and 5.00 where the
+     *  sentence means 3.00. */
+    @Test
+    void een_tussenstap_in_een_vouwbron_wordt_benoemd() {
+        List<Diagnostic> ds = vouwbronDiagnoses(FLANKMODEL + TUSSENSTAPREGEL);
+        assertEquals(1, ds.size(), () -> "verwacht één vouwbron-diagnose, kreeg " + ds);
+        assertEquals(TUSSENSTAP_MELDING, ds.get(0).message());
+    }
+
+    @Test
+    void de_tussenstap_vouwbron_wordt_niet_gevouwen() {
+        String json = ir(FLANKMODEL + TUSSENSTAPREGEL);
+        assertFalse(json.contains("\"bronRol\""), "een tussenstap mag geen bronRol op de wire zetten");
+        assertFalse(json.contains("\"kind\": \"MINIMUM\""), "de vouw mag niet geëmitteerd worden");
+        assertTrue(json.contains("\"node\": \"Onopgelost\""), "de vouw moet een zichtbare markering worden");
+    }
+
+    /** Same model, same written element name, NO intermediate step: the fold binds and emits. This is what
+     *  keeps the anchor rule off the ordinary one-step form. */
+    @Test
+    void zonder_tussenstap_bindt_dezelfde_zin_gewoon() {
+        assertEquals(List.of(), vouwbronDiagnoses(FLANKMODEL + DIRECTE_REGEL));
+        String json = ir(FLANKMODEL + DIRECTE_REGEL);
+        assertTrue(json.contains("\"kind\": \"MINIMUM\""), "de vouw moet gewoon geëmitteerd worden");
+        assertTrue(json.contains("\"feittype\": \"jutterbezit\""), "de directe relatie hoort op de wire");
+    }
+
+    /** An anchor that names a ROLE ("van de aanmelder") resolves to no object type. Deliberately left alone:
+     *  whether a role anchor may stand for the subject is the wire question of the mother card. */
+    @Test
+    void een_rolnaam_als_anker_blijft_buiten_de_weigering() {
+        assertEquals(List.of(), vouwbronDiagnoses(MODEL_B + ROLANKERREGEL));
+        assertTrue(ir(MODEL_B + ROLANKERREGEL).contains("\"rol\": \"aangemelde vondst\""),
+                "de bestaande binding blijft staan waar het anker een rolnaam is");
+    }
+
+    // ---------------- (c) the by-pair binding the written name contradicts ----------------
 
     /** ONE step, no nesting: the sentence writes "geborgen vondsten", the by-pair search bound the role
      *  "aangemelde vondst" of vondstaanmelding. Verifier-clean and silently wrong before this check. */
@@ -284,6 +390,22 @@ class GenesteVouwbronTest {
         assertEquals(1, ds.size());
         assertEquals(Severity.WARNING, ds.get(0).severity());
         assertTrue(Resolver.resolve(MODEL_B + KETENREGEL).isOk(), "een WARNING mag de emissie niet blokkeren");
+    }
+
+    /** The marker carries the aggregation's OWN result type, never the unknown sentinel. That is what keeps
+     *  the refused document WELL-FORMED — IR-SPEC ch. 2.4 makes Onopgelost a marker with a reason, not a type,
+     *  and WF-044's fence is behavioural — so the failure lands as a loud evaluation fault in every executor
+     *  instead of as an ill-formed document. Measured on all three routes. */
+    @Test
+    void de_markering_draagt_het_eigen_resultaattype() {
+        for (String bron : List.of(MODEL_B + KETENREGEL, MODEL_B + BOTSENDE_EENSTAPSREGEL,
+                FLANKMODEL + TUSSENSTAPREGEL)) {
+            String json = ir(bron);
+            assertTrue(json.contains("\"node\": \"Onopgelost\""), "verwacht een markering");
+            assertFalse(json.contains("\"node\": \"Onbekend\""),
+                    "de markering mag het onbekend-sentinel niet dragen (WF-034 zou het document afkeuren)");
+            assertTrue(json.contains("\"afkorting\": \"kg\""), "het eigen resultaattype hoort erop te staan");
+        }
     }
 
     /** The emitter writes every diagnostic, so the document itself states what is wrong with it. */

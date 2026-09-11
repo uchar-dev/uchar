@@ -482,7 +482,7 @@ final class ExpressieBouwer {
         }
         if (aggregatieKind && argumenten.size() == 1
                 && argumenten.get(0) instanceof Expr.AttribuutRef vb && vb.set()) {
-            Expr geweigerd = keurVouwbron(f, vb);
+            Expr geweigerd = keurVouwbron(f, vb, type);
             if (geweigerd != null) return geweigerd;
         }
         Conditie filter = aggregatieFilter(f, elem, argumenten);
@@ -560,11 +560,16 @@ final class ExpressieBouwer {
     }
 
     /**
-     * The two ways a MEMBER fold ("de som/minimale waarde/… van &lt;attr&gt; van alle &lt;elem&gt; van
-     * &lt;onderwerp&gt;") can bind a DIFFERENT collection than the sentence names. Both end in the honest
-     * marker with a WARNING — the {@link Expr.Onopgelost} idiom this resolver already uses for a fold
-     * source it cannot bind (the unknown-member arm above) — never in a fold over a guessed relation.
-     * Returns the marker, or null when the source binds what it says.
+     * The three ways a MEMBER fold ("de som/minimale waarde/… van &lt;attr&gt; van alle &lt;elem&gt; van
+     * &lt;onderwerp&gt;") can bind a DIFFERENT collection than the sentence names. All three end in the honest
+     * marker with a WARNING — the {@link Expr.Onopgelost} idiom this resolver already uses for a fold source
+     * it cannot bind — never in a fold over a guessed relation. Returns the marker, or null when the source
+     * binds what it says.
+     *
+     * <p>The marker carries the aggregation's OWN result type, not the unknown sentinel: IR-SPEC ch. 2.4
+     * defines Onopgelost as "a well-formed marker with a reason, not a type" and WF-044's fence is
+     * behavioural, so a refused fold must leave a WELL-FORMED document that faults observably (WF-044) in
+     * every executor — the red-zone shape, not an ill-formed one.
      *
      * <p>(a) A NESTED set step ("… van alle X van alle Y van de Z"). The uchar wire describes a fold source
      * with ONE relation: one {@code elementObjecttype} plus one {@code bronRol} (IR-SPEC ch. 4.3). A
@@ -574,14 +579,21 @@ final class ExpressieBouwer {
      * (WF-048); where one happens to exist it is verifier-CLEAN and silently wrong, which is the shape
      * this refusal exists for.
      *
-     * <p>(b) A by-PAIR binding the written name contradicts. {@code verbindendeRolBinding} searches on
+     * <p>(b) An intermediate TO-ONE step ("… van alle X van de Y van de Z"), the same loss along a third
+     * route: the fold source names one relation FROM THE RULE SUBJECT, so an anchor that is not the subject
+     * drops its step just as silently — and here the written element name may legitimately name the
+     * subject-side role, so (c) does not see it either. The anchor must therefore NAME the subject's own
+     * object type, literally. An anchor that resolves to no object type at all (a role name, "alle vondsten
+     * van de aanmelder") is left alone: resolving a role anchor is the wire question, not this refusal.
+     *
+     * <p>(c) A by-PAIR binding the written name contradicts. {@code verbindendeRolBinding} searches on
      * TYPES only; with exactly one fact type joining subject and element it always wins, whatever role the
      * sentence named. Dropping the binding does not help — measured: a bindingless fold over a uniquely
      * related pair is verifier-clean and every executor re-derives the same wrong relation — so the
      * resolution itself must decline. The escape is the case where the author claimed no role at all: a
      * written name that IS the element object type's own name.
      */
-    private Expr keurVouwbron(FunctieAanroepContext f, Expr.AttribuutRef bron) {
+    private Expr keurVouwbron(FunctieAanroepContext f, Expr.AttribuutRef bron, Datatype type) {
         OnderwerpContext o = vouwBronOnderwerp(f);
         if (o == null) return null;
         OnderwerpContext genest = genesteSetStap(o);
@@ -592,15 +604,32 @@ final class ExpressieBouwer {
                             + "één relatie (IR-SPEC ch. 4.3: één elementObjecttype plus één bronRol) — de "
                             + "buitenste stap zou spoorloos wegvallen, dus de aggregatie blijft onopgelost "
                             + "(§13.4.17)", f.getStart().getLine()));
-            return onopgelost(f);
+            return new Expr.Onopgelost(type, bron(f));
         }
         // The emitter derives a bronRol only for a navigation-free member fold over a resolved element type
         // (IrEmitter.bronRolBinding); outside that shape there is no by-pair guess to contradict.
         if (bron.objecttype() == null || huidigSubject == null) return null;
         if (bron.navigatieRol() != null || !bron.navigatiePad().isEmpty()) return null;
-        // The written element name, under every form the element type's own binding was tried with, so a
+        String geschreven = primaireNaam(o);
+        // (b): the anchor the written chain hands the element to — the first hop past the element head,
+        // read with the same name candidates the element type's own binding was tried with.
+        int sp = geschreven == null ? -1 : geschreven.toLowerCase().indexOf(" van ");
+        if (sp > 0)
+            for (String kandidaat : RegelSpraakModel.naamKandidaten(geschreven.substring(sp + 5))) {
+                Objecttype anker = model.objecttypeOpNaam(kandidaat);
+                if (anker == null) continue;             // a role anchor: the wire question, left alone
+                if (anker == huidigSubject) break;       // the chain starts at the subject, as the wire needs
+                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
+                        "tussenstap in een vouwbron: '" + src(o) + "' bereikt de elementen via " + anker.naam
+                                + ", maar een vouwbron draagt precies één relatie vanaf het regelonderwerp "
+                                + huidigSubject.naam + " (IR-SPEC ch. 4.3: één elementObjecttype plus één "
+                                + "bronRol) — de tussenstap zou spoorloos wegvallen, dus de aggregatie blijft "
+                                + "onopgelost (§13.4.1/§13.4.17)", f.getStart().getLine()));
+                return new Expr.Onopgelost(type, bron(f));
+            }
+        // (c): the written element name, under every form the element type's own binding was tried with, so a
         // phrase that bound its type by dropping a leading qualifier is judged by that same form.
-        List<String> namen = RegelSpraakModel.naamKandidaten(primaireNaam(o));
+        List<String> namen = RegelSpraakModel.naamKandidaten(geschreven);
         if (namen.isEmpty()) return null;
         if (namen.stream().anyMatch(n -> model.objecttypeOpNaam(n) != null)) return null;
         RegelSpraakModel.RolBindingRef paar = model.verbindendeRolBinding(huidigSubject, bron.objecttype());
@@ -611,7 +640,7 @@ final class ExpressieBouwer {
                         + " verbindt is '" + paar.feittype() + "' met de rol '" + paar.rol() + "' — de "
                         + "type-paar-afleiding zou een andere verzameling vouwen dan de zin noemt, dus de "
                         + "aggregatie blijft onopgelost (§13.4.1/§13.4.17)", f.getStart().getLine()));
-        return onopgelost(f);
+        return new Expr.Onopgelost(type, bron(f));
     }
 
     /** The set-quantified onderwerp of an aggregation's OWN operand — the fold source as written. Found by
