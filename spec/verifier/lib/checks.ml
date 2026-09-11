@@ -1497,11 +1497,17 @@ let wf034_dagsoort_eenheden ctx =
    The ground is MEASURED, not stylistic. The consumers do not agree on how
    they look these facets up. The verifier ([find_ci] / [norm]), `ref` and the
    ASP translator are case-insensitive; the bean-model executor is NOT. The
-   Drools backend reaches these maps through raw [Map.get] / [Map.containsKey]
-   at 108 sites across four of the eight tables (attribuutGranulariteit 64,
+   Drools backend reaches these maps through raw, CASE-SENSITIVE lookups at
+   109 sites across four of the eight tables (attribuutGranulariteit 65,
    kenmerkGranulariteit 20, attribuutTijdlijnAantal 17, kenmerkTijdlijnAantal
-   7), against five case-insensitive lookups through its own [Namen.bevatNaam]
-   helper. Under a case-INsensitive arm, therefore, a key differing from its
+   7; remeasured 2026-09-11), against five case-insensitive lookups through
+   its own [Namen.bevatNaam] helper. The two GRANULARITY tables are read at
+   the call site with [Map.get] / [Map.containsKey]; the two COUNT tables
+   are read through one shared predicate ([Tijdlijnen.meerPeriodiek],
+   2026-09-11), which does the same raw [Map.get] on the map its caller
+   hands it — so a grep for a table name beside those two methods now finds
+   85, and the remaining 24 positions are the ones that pass the map along.
+   Under a case-INsensitive arm, therefore, a key differing from its
    declaration in capitalisation alone is no orphan and the document stays
    verifier-clean, ref-clean and clingo-clean while the third executor drops
    the golden out of the differential in silence. Measured 2026-09-06 on

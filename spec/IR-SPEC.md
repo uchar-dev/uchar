@@ -4022,10 +4022,14 @@ de Jutter." the RegelSpraak frontend emits exactly this node — a real
 Jutter **plus** het drempelgewicht van de Jutter." it emits the same node as
 the LEFT OPERAND of a `Binair`, again with no diagnostic. Both were
 re-emitted from source while this rule was written and are committed verbatim
-as its first two negatiefs. So the rule cuts a live producer route and the
-frontend must move; what it should diagnose or emit instead is spec-first
-work on its own card (`backlog/new/20260909-frontend-alle-zonder-vouw.md`).
-The emission is deliberately unchanged here — it is this rule's evidence.
+as its first two negatiefs. So the rule cut a live producer route and the
+frontend has moved (2026-09-11,
+`backlog/done/20260909-frontend-alle-zonder-vouw.md`): a resolver after-pass
+diagnoses the shape at every Expr-bearing value and condition slot — eight
+measured routes from that same sentence fragment — at WARNING level, so the
+emitted document now states its own ill-formedness; the ERROR promotion is a
+recorded one-token fork held by the maintainer. The negatief emissions stay
+verbatim from before the diagnostic — they are this rule's evidence.
 `ref`'s fault, the ASP refusal and the Drools skip stay where they are, a
 second line of defence rather than dead code, on the house pattern: the form
 no longer reaches them through a well-formed document.

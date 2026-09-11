@@ -305,13 +305,17 @@ EXPECTED_CHANNEL=(
 # exec-model branch and PLAYED 4 under --drl, matching the pins gates 5 and 6 verify — ref = clingo
 # = Drools on all four cases, which is what this golden exists to close. Both branches already
 # carried the form; what was missing was the OCaml half, which this card built.
-# ONE trap is worth recording at the pin, because it is what made an earlier measurement on this
-# same card report the opposite: the golden's Werf carries NO `kenmerkTijdlijnAantal` entry, and a
-# hand-built document that adds `"bedrijvig": 1` — wire-legal, verifier-clean, semantically
-# identical, and never emitted by the frontend, which writes that key only for a count other than 1
-# — flips BOTH branches to a refusal, because their gate is `containsKey` and not "two or more".
-# A future edit that grows that key silently drops this golden out of the played channel; the
-# over-rejection itself is carded (backlog/new/20260911-kenmerktijdlijnaantal-poort.md).
+# ONE trap WAS worth recording at the pin, and is recorded here as closed: the golden's Werf carries
+# no `kenmerkTijdlijnAantal` entry, and until 2026-09-11 a hand-built document that added
+# `"bedrijvig": 1` — wire-legal, verifier-clean, semantically identical, and never emitted by the
+# frontend, which writes that key only for a count other than 1 — flipped BOTH branches to a refusal,
+# because their gate tested the key's PRESENCE and not "two or more". Card
+# backlog/done/20260911-kenmerktijdlijnaantal-poort.md corrected that gate in both branches (the
+# count defaults to 1 per IR-SPEC §2.2/ch. 2.10, so a raster starts at 2) and pinned it with eight
+# checks in the backend's own suite; an explicit 1 no longer moves this or any other golden.
+# The pin still has a live flank, and it is the OTHER direction: a count of TWO OR MORE on
+# `bedrijvig` is a §13.3.6.7 raster neither branch carries, so it drops this golden out of the
+# played channel exactly as before — measured after the fix, both branches refuse it by name.
 EXPECTED_PLAYED=124
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------

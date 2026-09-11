@@ -2674,14 +2674,15 @@ let () =
    correctly all along, so the corpus golden `synth-gehelejaarkenmerk`
    closes the square on exactly these values.
 
-   The fixture below carries NO `kenmerk_tijdlijn_aantal` entry, and that is
-   load-bearing rather than tidy. The emitter writes that key only for a
-   count OTHER than 1, so a frontend-produced document never carries it at
-   1; a hand-built one that does flips both Drools branches into a refusal
-   (their gate is `containsKey`, not "two or more") and makes the form look
-   unsupported when it is not. That is precisely the mismeasurement this
-   card first reported and then withdrew — see
-   `backlog/new/20260911-kenmerktijdlijnaantal-poort.md`.
+   The fixture below carries NO `kenmerk_tijdlijn_aantal` entry, which is what
+   a frontend-produced document looks like: the emitter writes that key only
+   for a count OTHER than 1. Until 2026-09-11 that absence was load-bearing —
+   a hand-built document that did carry it at 1 flipped both Drools branches
+   into a refusal (their gate tested the key's PRESENCE, not "two or more")
+   and made the form look unsupported when it is not. That is precisely the
+   mismeasurement the ch. 3.9 card first reported and then withdrew; the gate
+   itself was corrected in both branches by
+   `backlog/done/20260911-kenmerktijdlijnaantal-poort.md`.
 
    Row a is the one that cannot be reached through the timeline fold alone —
    it is about the NAVIGATION, not about any timeline — which is why these
