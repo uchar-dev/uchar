@@ -7,13 +7,15 @@ numbered questions in decided form, so that
 `20260910-subtype-kernel`, `20260910-subtype-regelspraak-dialect` and
 `20260910-flogic-frontend-minimaal` can be executed without open
 design questions. The maintainer's mandate
-`OPDRACHT_OBJECTTYPE_HIERARCHIE_20260910.md` — the maintainer's own
-document, deliberately left untracked on this branch because its word
-"typeladder" trips gate 1's rename tripwire the moment it is tracked —
-is BINDING throughout —
-in particular its decision 2 (single inheritance) and its decision 3
+`OPDRACHT_OBJECTTYPE_HIERARCHIE_20260910.md` is BINDING throughout, in
+particular its decision 2 (single inheritance) and its decision 3
 (inheritance is defaults-group inheritance with base override, one
-priority axis). Nothing here changes `IR-SPEC.md`,
+priority axis). That mandate is the maintainer's own document and is
+deliberately left untracked on this branch: it uses one of the terms
+the 2026-08-29 prioritized-defaults rename retired, so gate 1's rename
+tripwire goes red the moment it is tracked, and neither that tripwire
+nor the mandate is in this card's may-touch set (§11 point 6).
+Nothing here changes `IR-SPEC.md`,
 `RUNTIME-SEMANTICS.md`, the schema, the verifier, an executor, a
 frontend or the corpus; every repo claim below carries the file and
 line it was measured at, on this branch. Like
@@ -1059,6 +1061,17 @@ named cycle path).
    here needs a bound, and the measured data has chains deeper than
    one level in 44 cases, so no bound is proposed — recorded only so
    that the absence of a limit is a decision rather than an oversight.
+6. **The mandate document cannot be committed as it stands.** It uses
+   one of the terms the 2026-08-29 prioritized-defaults rename
+   retired, and gate 1's rename tripwire runs `git grep` over tracked
+   files, so tracking the mandate turns gate 1 red. This card left the
+   copy untracked rather than edit the mandate or the tripwire, both
+   of which are outside its may-touch set. Two ways out at landing:
+   rephrase the one word in the mandate, or add the mandate to the
+   tripwire's reason-carrying allowance list in
+   `scripts/check-self-contained.sh`. Both are maintainer moves. The
+   same constraint applies to this document, which is why it describes
+   the retired term instead of quoting it.
 
 ## 12. Decisions taken in this document
 
