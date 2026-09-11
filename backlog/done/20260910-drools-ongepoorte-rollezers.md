@@ -343,12 +343,67 @@ de opdracht is nergens ingegaan.
    > enforcing one target format's shape on every consumer. The audit of that
    > field's readers is complete for the v0 backend.
 
-2. `spec/CONSTRUCTS.md`, de rij-4-zin van de rol-schaduw-kaart ("ongepoort en
-   ongemeten blijven…"): die is nu onwaar. Elke lezer van het referentieveld in
-   `backends/drools` is gemeten; zes dragen de gedeelde poort, één draagt een
-   gemeten zin (WF-096 maakt hem onbereikbaar). Voorgestelde strekking: "sinds
-   2026-09-11 is er geen ongemeten lezer meer; de enige ongepoorte draagt zijn
-   reden in beide takken".
+2. `spec/CONSTRUCTS.md`, rij 4 van de scope-matrix (±r. 40), aan het eind van de
+   **Landed (2026-09-10)**-alinea. **Correctie op een eerdere formulering hier:**
+   die citeerde een zin "ongepoort en ongemeten blijven…" die in dat bestand
+   noch in de historie voorkomt. De zin die er wél staat, en die door deze kaart
+   op twee manieren veroudert — haar eerste gat is gesloten, en haar pad wordt
+   dood zodra deze kaart naar `done/` verhuist — is:
+
+   > Twee gaten blijven open en zijn gekaart: de overige lezers van dat veld
+   > (`backlog/new/20260910-drools-ongepoorte-rollezers.md`) en de
+   > case-sleutel-arm van de rol-vs-rol-ambiguïteit, die geen rode getuige kan
+   > krijgen zolang het rode zonecontract alleen evaluatiefouten dekt
+   > (`backlog/new/20260910-rood-zone-laadfouten.md`); de navigatie-arm is wél
+   > gepind (WF-053, `corpus/negatief/wf053-bindingless-ambiguous`).
+
+   **(b) Voorgestelde vervanging van die ene zin:**
+
+   > Eén gat blijft open en is gekaart: de case-sleutel-arm van de
+   > rol-vs-rol-ambiguïteit, die geen rode getuige kan krijgen zolang het rode
+   > zonecontract alleen evaluatiefouten dekt
+   > (`backlog/new/20260910-rood-zone-laadfouten.md`); de navigatie-arm is wél
+   > gepind (WF-053, `corpus/negatief/wf053-bindingless-ambiguous`). Het tweede
+   > gat — de overige lezers van datzelfde veld — is gesloten; zie de volgende
+   > alinea.
+
+   **(a) Voorgestelde toevoeging, direct daarachter**, in de vorm van de andere
+   Landed-alinea's van deze rij (de 2026-09-10-alinea zelf blijft staan zoals
+   hij is: hij is een gedateerd verslag, en "Vijf lezers gepoort" was toen waar):
+
+   > **Landed (2026-09-11):** de overige lezers van datzelfde veld, elk eerst
+   > gemeten op een verifier-schoon document door `ref`, clingo en beide
+   > Drools-takken (`backlog/done/20260910-drools-ongepoorte-rollezers.md`). Zes
+   > erbij gepoort in beide takken, met dezelfde gedeelde vraag en dezelfde
+   > redenzin: de §8.1.7-rollidmaatschapscheck aan de VERRE kant, de eigen join
+   > van de temporele set-sommatie, de genavigeerde kenmerk-tijdreeks, de
+   > ontvanger-join van de verdeling (zes leesplekken op één veld), de drie
+   > veldposities van de feitcreatie (tussenstap, join, `zetVeld`) en de
+   > aanwezigheidstelling van een to-één rol. Die laatste was geen poort maar
+   > een tweede afleiding: `toOneAantalReader` toetste de GESCHREVEN naam vóór
+   > de rol was opgelost, en las daardoor het verdringende attribuut als een
+   > gevulde referentie — gemeten `verwacht inconsistent, werkelijk consistent`,
+   > een waardeverschil waar de andere vijf een onopgehelderde fout gaven. Eén
+   > lezer blijft ongepoort, met de meting erbij in beide takken: de §8.2-fold
+   > over een genavigeerde VERZAMELING, die alleen op een `set`-lezing
+   > binnenkomt en die WF-096 op elke gewone leespositie weigert — het document
+   > dat een poort zou beschermen is niet welgevormd, dus een poort daar zou
+   > geen getuige kunnen dragen. Acht rood-eerst-getuigen in
+   > `RolveldlezerWitnessTest` (zeven rood zonder de poorten, de achtste is de
+   > tegenproef dat een ongestoorde feitcreatie blijft spelen); nul
+   > over-afwijzing gemeten (gate 12 `played 122` ongewijzigd, gate 11 29/29,
+   > gate 13 ongewijzigd). Daarmee is elke lezer van het referentieveld in
+   > `backends/drools` gemeten. Twee ongelijkheden TUSSEN de takken bleven over
+   > en zijn gekaart (`backlog/new/20260911-drl-scope-en-nulveld-poort.md`); de
+   > §8.2-lezing van een LEGE relatie, die ook zonder verdringing van `ref` en
+   > clingo afwijkt terwijl `RUNTIME-SEMANTICS` §3.9 die norm al schrijft, is
+   > een eigen prioriteitssignaal
+   > (`backlog/new/20260911-leegrelatie-ch39-divergentie.md`).
+
+   Daarmee draagt geen van beide beschermde paden nog een dode verwijzing: deze
+   vervanging ruimt de `new/`-verwijzing in `CONSTRUCTS.md` op, en voorstel 1
+   hierboven laat de gelijkluidende verwijzing in `IR-SPEC.md` §2.6 (r. 1464)
+   helemaal vervallen.
 
 Eén gedeelde zin is wel veranderd, in `FactModelGenerator.geenReferentieveldReden`:
 de tweede oorzaak zei "de **enkelvoudige** rol", wat alleen klopte zolang elke

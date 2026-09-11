@@ -2,10 +2,11 @@
 
 Goal: uitzoeken en sluiten waarom `ref/` en `backends/clingo` een clausule die
 `spec/RUNTIME-SEMANTICS.md` §3.9 **al geschreven heeft** niet uitvoeren, en in
-twee van de vier gemeten gevallen stil het tegenovergestelde antwoorden. Dit is
-uitdrukkelijk **niet** de vraag "welke lezing kiezen we". De norm staat er; de
-vraag is waarom de referentie-implementatie en de ASP-backend hem niet dragen,
-en wat daarvan in v0-scope hoort.
+**drie** van de vier gemeten gevallen stil het tegenovergestelde antwoorden
+(`ref` stil in geval a, clingo stil in a, b en c). Dit is uitdrukkelijk **niet**
+de vraag "welke lezing kiezen we". De norm staat er; de vraag is waarom de
+referentie-implementatie en de ASP-backend hem niet dragen, en wat daarvan in
+v0-scope hoort.
 
 ## De geschreven norm
 
@@ -58,31 +59,39 @@ clingo in a/b/c — leveren een ANTWOORD af dat de geschreven clausule tegenspre
 zonder dat er iets misgaat om te zien. Drools is in alle vier de rijen in
 overeenstemming met §3.9.
 
-## Voorbehoud, expliciet
+## Status van de tabel: vast
+
+De tabel is **niet** meer voorlopig. Hij is drie keer onafhankelijk gebouwd en
+gemeten (2026-09-11) en de drie uitkomsten stemmen overeen. De ene cel waarover
+de eerste en de tweede bouw uiteenliepen — `ref` in geval d — is door de derde
+beslecht: **`ref` geeft daar de luide ch. 3.3-weigering, niet "leeg"**. De
+oorspronkelijk gemelde lezing "alle leeg" voor rij d is daarmee weerlegd en
+staat hier alleen nog als aantekening, zodat niemand hem opnieuw invoert.
+
+Wat wél een voorbehoud blijft:
 
 - Het document is **handgebouwd**. Geen enkele golden draagt deze vorm: een
   §8.2-conditie over een GENAVIGEERD temporeel kenmerk komt in `corpus/golden`
   nul keer voor (gemeten — het enige §8.2-golden, `jutterswet-vormenkabinet`,
-  toetst een EIGEN attribuut en heeft geen feittypen).
-- De relayed vierde rij die deze kaart aanleiding gaf, noemde voor `ref` in geval
-  d "leeg". Hier komt daar een FAULT uit. Dat verschil is niet weggepoetst: het
-  is precies waarom de eerste taak hieronder herafleiden is en niet repareren.
+  toetst een EIGEN attribuut en heeft geen feittypen). Of die vorm corpus-
+  materiaal HOORT te worden hangt af van taak 1 hieronder.
 
-## Eerste taak
+## Taken
 
-1. **Herafleiden**, niet overnemen: bouw het model opnieuw vanaf de norm en
-   meet alle vier de cellen zelf, in beide richtingen van de negatie
-   (`GeheelPeriode.niet`), en met `gedurende de gehele maand` naast
-   `het gehele jaar`.
-2. **Wegen of de vorm in v0-scope valt.** ref weigert een temporeel kenmerk in
+Herafleiden is gedaan; wat overblijft begint bij de weging.
+
+1. **Wegen of de vorm in v0-scope valt.** ref weigert een temporeel kenmerk in
    een scalaire conditie op grond van ch. 3.3. §3.9 beschrijft juist de
    gehele-periode-toets over zo'n kenmerk. Ofwel ch. 3.3's weigering is te breed
    (ze mag de §8.2-gekwalificeerde lezing niet raken), ofwel §3.9's zin over de
    mislukte to-één navigatie beschrijft een vorm die v0 niet aanbiedt. Dat is
    een spec-vraag en hoort vóór elke implementatie beslecht.
-3. Pas daarna: de stille cellen dicht — hetzij door de clausule uit te voeren,
+2. Pas daarna: de stille cellen dicht — hetzij door de clausule uit te voeren,
    hetzij door hem net zo luid te weigeren als ref dat in b/c/d doet. Een stil
    afwijkend antwoord is de enige uitkomst die niet mag blijven staan.
+3. Randen die nog niet gemeten zijn en die de weging kunnen kantelen: beide
+   richtingen van de negatie (`GeheelPeriode.niet`) en `gedurende de gehele
+   maand` naast `het gehele jaar`. Die uitbreiding hoort bij taak 1, niet ervoor.
 
 ## Acceptance
 
