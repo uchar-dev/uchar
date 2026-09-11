@@ -159,9 +159,10 @@ en er is nu een tweede kolom, want het schemapatroon is inmiddels geland:
 Dat is de laagverdeling in één tabel: het patroon vangt drie van de vier en kan
 de vierde niet vangen, en de verifier ving er nul.
 
-**Wat de andere lezers deden**, gemeten op `jutterswet-vensterheffing` met één
-grens vervangen en verder niets aangeraakt, beide casus per rij, `ref` en de
-ASP-backend rij voor rij gelijk:
+**Wat de andere lezers deden**, gemeten op `jutterswet-vensterheffing` met de
+ONDERGRENS van de eerste van de twee regelversies vervangen en verder niets
+aangeraakt, beide casus per rij, `ref` en de ASP-backend rij voor rij gelijk
+(rekendata `2026-06-01` en `2025-06-01`):
 
 | grens | casus BINNEN het venster | casus VÓÓR het venster |
 | --- | --- | --- |
@@ -175,7 +176,21 @@ Geen enkele rij faalt ergens; elk fout antwoord is stil. `+` (0x2B) en `-`
 (0x2D) sorteren onder elk cijfer, dus een tekenjaar is kleiner dan elk
 viercijferig jaar en het venster opent stil aan het begin; `niet-een-datum`
 begint met een letter en sorteert boven elke datum, dus het venster sluit over
-zijn eigen casus. Daarmee is de tweede helft van de kaartvraag ook gemeten en
+zijn eigen casus.
+
+**Correctie (fixronde 2026-09-11, lensmeting nagerekend).** De laatste rij is
+positiegebonden en de eerste formulering liet dat weg. `2026-02-30` op de
+ONDERGRENS van regel 0 beweegt inderdaad niets, maar op de BOVENGRENS van
+regel 0 — de positie die de kalender-getuige zelf gebruikt — krimpt het venster
+tot `[2026-01-01, 2026-02-30]` en antwoorden beide executors
+`M1.vensterheffing = leeg` waar 125 gepind staat; op de bovengrens van regel 1
+beweegt weer niets. Nagemeten en gereproduceerd op deze tak. Het juiste
+onderscheid is dus: de kalenderfout wordt door geen enkele lezer GEMELD, en of
+ze een ANTWOORD verschuift hangt van de positie af. Dat is een sterker argument
+voor de regel dan de oorspronkelijke zin, niet een zwakker: een corpuscasus
+vangt zo'n lexeem alleen waar het verschoven venster toevallig een verwachting
+kruist. De zin in `wf101-geldigheidsgrens-kalenderdag/NOTE.md`, de
+ch. 4.1-clausule en de registerrij dragen de positie nu alle drie. Daarmee is de tweede helft van de kaartvraag ook gemeten en
 niet aangenomen: mét het hek is de lexicografische vergelijking in verifier,
 `ref` en clingo *correct zoals ze staat*, en hoeft geen van de drie een grens te
 parseren. Het residu staat in de clausule: een document dat een executor
