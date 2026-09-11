@@ -162,7 +162,13 @@ public final class DrlTranspiler {
         for (io.github.yhavinga.regelspraak.ir.ResolvedConsistentie c : model.consistenties) meet("consistentie", c.naam(), () -> consistentie(c));
         for (io.github.yhavinga.regelspraak.ir.ResolvedUniciteit u : model.uniciteiten) meet("uniciteit", u.naam(), () -> uniciteit(u));
         for (io.github.yhavinga.regelspraak.ir.ResolvedUniciteitUnie u : model.uniciteitUnies) meet("uniciteit-unie", u.naam(), () -> uniciteitUnie(u));
-        for (io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie f : model.feitCreaties) meet("feitcreatie", f.naam(), () -> feitCreatie(f));
+        // The index rides along ONLY to name a NAMELESS feitcreatie (see feitCreatie): the wire position is the one
+        // distinguisher a null naam leaves, and DRL rule names must be unique within the package.
+        for (int i = 0; i < model.feitCreaties.size(); i++) {
+            io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie f = model.feitCreaties.get(i);
+            final int nr = i;
+            meet("feitcreatie", f.naam(), () -> feitCreatie(f, nr));
+        }
         // Splice the deferred header blocks BACK TO FRONT so the earlier offset stays valid.
         // §8.4.3 periodevergelijking / §5.3 Rekendatum-als-waarde reference the rekendatum global from a rule
         // body; the flag is set EXACTLY where that text is emitted (never an undeclared-global build error, never
@@ -1053,9 +1059,23 @@ public final class DrlTranspiler {
      *  on the doel. A relation instance is a reference field in this fact model (§9.4), so creating one
      *  is a {@code modify}-set; {@code no-loop} keeps the modify from re-triggering the rule, and setting
      *  the field to the same value is idempotent across other rules' fire cycles. */
-    private void feitCreatie(io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie fc) {
+    private void feitCreatie(io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie fc, int nr) {
         Acc acc = new Acc();
         Objecttype anker = fc.anker(), doel = fc.doel();
+        // §13.4.7 `naam` is the FIFTH wire-nullable position of this construct — ["string","null"] AND required,
+        // like the four below — and NO well-formedness rule covers it: WF-034 gates zetVeld, joinVeld and the
+        // tussenstappen, and WF-094 clause (d) gates the five KEYED tables, while feitCreaties is a LIST.
+        // Measured 2026-09-11 on jutterswet-postwacht with naam null: verifier PASS, ref PASS (10 expectations),
+        // clingo PASS (10), exec PLAYED — it hands the null straight to the rule header and the creation still
+        // fires (the case OBSERVES it: V1.vakseinaantal counts the created relation, 2, and a 2->99 probe fails
+        // in both branches) — while THIS branch died with "Cannot invoke String.replace(…) because naam is null",
+        // because every rule name here goes through escapeRegelNaam and every marker comment through
+        // commentVeilig. One nameless fallback serves all three sites, in the shape of the loader's own node-kind
+        // fallback, so a nameless creation is PLAYED exactly as the exec branch plays it instead of taking the
+        // whole transpile down. It carries the WIRE POSITION because a DRL package refuses duplicate rule names:
+        // a flat fallback made TWO nameless creations a "Duplicate rule name" compile error where exec played
+        // them — measured, and a new branch inequality in place of the one being closed.
+        String naam = fc.naam() != null ? fc.naam() : "<unnamed ResolvedFeitCreatie " + nr + ">";
         // An UNRESOLVED feitcreatie — a null anker, doel, zetVeld or joinVeld, all four nullable on the wire —
         // is refused here UNCONDITIONALLY, exactly as ExecModelTranspiler.feitCreatie refuses it
         // ("feitcreatie (onopgelost)"). Until 2026-09-11 this branch asked the §13.3.9 questions below only when
@@ -1063,8 +1083,8 @@ public final class DrlTranspiler {
         // anker.naam threw a NullPointerException that named no construct and took the WHOLE transpile down with
         // it: one construct, two answers — a per-form reason there, an unattributed crash here.
         if (anker == null || doel == null || fc.zetVeld() == null || fc.joinVeld() == null) {
-            out.append(new Regel(fc.naam())
-                .clausule("// onopgelost feitcreatie (onopgelost): " + commentVeilig(fc.naam()))
+            out.append(new Regel(naam)
+                .clausule("// onopgelost feitcreatie (onopgelost): " + commentVeilig(naam))
                 .clausule("eval(true)")
                 .render());
             return;
@@ -1087,8 +1107,8 @@ public final class DrlTranspiler {
         if (reden == null && !navVeld("feitcreatie", doel, fc.joinVeld(), vorigeType)) reden = navReden;
         if (reden == null && !navVeld("feitcreatie", doel, fc.zetVeld(), anker)) reden = navReden;
         if (reden != null) {
-            out.append(new Regel(fc.naam())
-                .clausule("// onopgelost feitcreatie (opslagrichting): " + commentVeilig(fc.naam()))
+            out.append(new Regel(naam)
+                .clausule("// onopgelost feitcreatie (opslagrichting): " + commentVeilig(naam))
                 .clausule("eval(true)")
                 .render());
             return;
@@ -1123,7 +1143,7 @@ public final class DrlTranspiler {
                 }
             }
         }
-        Regel rule = new Regel(fc.naam());
+        Regel rule = new Regel(naam);
         if (!noFire.isEmpty()) rule.clausule(noFire);
         rule.clausule(SUBJECT + " : " + ident(anker.naam, true) + "( " + ankerC + " )")
             .clausules(ankerExtra)        // far-side anker membership: the exists/not join, after $subject is bound

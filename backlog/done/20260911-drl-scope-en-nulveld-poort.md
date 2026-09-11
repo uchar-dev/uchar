@@ -98,9 +98,13 @@ May touch: `backends/drools/**`, `backlog/`.
 ## Result (2026-09-11)
 
 Beide plekken gepoort in `DrlTranspiler`, elk met rood-eerst-getuigen in een
-nieuwe zusterklasse `TakgelijkheidWitnessTest` (vijf tests: twee per poort, plus
-één tegenproef). De DRL-tak stelt nu bij de aggregatie-join dezelfde gedeelde
-vraag als de exec-tak, en weigert een onopgeloste feitcreatie onvoorwaardelijk.
+nieuwe zusterklasse `TakgelijkheidWitnessTest`. De DRL-tak stelt nu bij de
+aggregatie-join dezelfde gedeelde vraag als de exec-tak, en weigert een
+onopgeloste feitcreatie onvoorwaardelijk.
+
+In de fixronde kwam er een DERDE plek bij die dezelfde vorm heeft en die de kaart
+niet kende: de VIJFDE wire-nullable positie van de feitcreatie, `naam` (sectie C).
+Zeven getuigen in totaal: twee per poort, één tegenproef, en twee voor `naam`.
 
 ### De sweep — de nulclaim hermeten op deze HEAD
 
@@ -134,6 +138,13 @@ eerder, bij de aggregatie-join. Beide blijven EXCLUDE. Ze laten wel zien dat de
 nieuwe poort door echt corpusmateriaal wordt geraakt — de getuigen moesten
 synthetisch zijn omdat geen golden de plek met een ONTBREKEND veld bereikt en
 overleeft, niet omdat de plek onbereikbaar is.
+
+Die twee redenwijzigingen raken geen gate-pad: **gate 12 meet de EXEC-tak** (hij
+geeft geen vlag mee) en de DRL-tak komt er niet in voor. `EXPECTED_CHANNEL`
+vergelijkt bovendien alleen het kanaalveld, niet de reden, dus zelfs een
+reden-wijziging in de exec-tak zou de vloer niet bewegen. De sweep hierboven is
+het enige oog dat deze tak überhaupt over de volle corpusbreedte bekijkt; gate 13
+kijkt ernaar op de 14 goldens van zijn eigen twist-verzameling.
 
 ### A. `DrlTranspiler.scope` — de aggregatie-join
 
@@ -238,9 +249,67 @@ geen welgevormd document ze dragen.
                     kustvak — feitcreatie (onopgelost): vakbeseining door het
                     kustvak
 
+### C. De vijfde nullable positie: `naam` (fixronde)
+
+`ResolvedFeitCreatie.naam` is `["string","null"]` **én** required, net als de vier
+van sectie B, en **geen enkele welgevormdheidsregel dekt hem**: WF-034 gaat over
+`zetVeld`, `joinVeld` en de tussenstappen, en WF-094 clausule (d) — die precies
+deze "null in plaats van een naam"-klasse sluit — geldt voor de vijf GESLEUTELDE
+declaratietabellen (`objecttypen`, `parameters`, `eenheidstelsels`, `feittypen`,
+`dimensies`), terwijl `feitCreaties` een LIJST is. Gemeten op
+`jutterswet-postwacht` met `naam: null`:
+
+    verifier: PASS
+    ref     : oracle: PASS (10 expectations)
+    clingo  : clingo: PASS (10 expectations)
+    exec    : PLAYED 1   — de null gaat rechtstreeks de regelkop in
+    DRL vóór: ERROR NullPointerException: Cannot invoke
+              "String.replace(java.lang.CharSequence, java.lang.CharSequence)"
+              because "naam" is null
+
+Drie executors draaien dit document, dus het gelijkgetrokken antwoord is hier
+SPELEN, niet weigeren: een weigering zou een limiet verzinnen die de wire niet
+heeft. De DRL-tak heeft nu één naamloze terugval voor alle drie de plekken waar
+`fc.naam()` langskwam (de twee markerroutes en de regelkop), in de vorm van de
+knoopsoort-terugval van de loader-klem.
+
+**Welk regelgedrag exec vertoont, en dat de tak dat nu ook doet.** `PLAYED` alleen
+zegt niets; de case moet de creatie ZIEN. Dat doet hij: `V1.vakseinaantal` telt de
+seinen van een kustvak via de GECREËERDE `vakbeseining`-relatie, en 2 is alleen
+bereikbaar als de naamloze regel gevuurd heeft. Mutatieprobe 2 → 99:
+
+    exec : FAIL attribuut vakseinaantal: verwacht 99, werkelijk 2
+    DRL  : FAIL attribuut vakseinaantal: verwacht 99, werkelijk 2
+
+**Een flank die de terugval zelf opende, en meteen dicht.** Een DRL-pakket weigert
+dubbele regelnamen, dus één VLAKKE terugvalnaam maakte van twee naamloze
+feitcreaties een nieuwe ongelijkheid:
+
+    DRL (vlakke terugval) : EXCLUDE drl compile: … Duplicate rule name:
+                            <unnamed ResolvedFeitCreatie>
+    exec                  : PLAYED 1
+
+Dat zou de gesloten ongelijkheid door een andere vervangen. De terugval draagt
+daarom de WIRE-POSITIE van de constructie (`<unnamed ResolvedFeitCreatie 0>`), de
+enige onderscheider die een null-naam overlaat; de lus die de feitcreaties emit
+geeft die index mee. Beide takken spelen daarna beide creaties. De sweep vóór en
+ná deze wijziging is **byte-identiek** (`diff`: geen enkel verschil), dus voor een
+feitcreatie mét naam verandert er niets.
+
+**Gemeld, niet gekaart.** `naam: null` op `feitCreaties` valt buiten WF-094
+clausule (d) omdat die clausule de vijf gesleutelde tabellen noemt. Dit is
+dezelfde klasse — schema-geldig, verifier-schoon, ref- en clingo-schoon, en een
+`NullPointerException` in het identifier-contract van de bean-uitvoerder — die
+clausule (d) daar sloot. Een uitbreiding van WF-094 (of een eigen regel) naar de
+naamdragende LIJST-constructies is daarmee een kandidaat voor een latere
+WF-ronde. Deze kaart raakt `spec/` niet aan en kaart het niet; het staat hier
+gemeld.
+
 ### Rood-groen
 
-De vijf getuigen eerst rood gedraaid met `DrlTranspiler.java` teruggezet: **4
+De zeven getuigen eerst rood gedraaid met `DrlTranspiler.java` teruggezet.
+
+**De twee poorten** (vijf getuigen, de `naam`-fix nog niet geschreven): **4
 failures/errors, 1 pass**. De ene die groen bleef is de tegenproef, wat klopt.
 Elke failure is de gemeten fout zelf:
 
@@ -255,7 +324,21 @@ Elke failure is de gemeten fout zelf:
     de_drl_feitcreatie_weigert_een_onopgelost_anker
         NullPointerException: Cannot read field "naam" because "anker" is null
 
-Daarna groen: 5/5. De tegenproef (`de_ongestoorde_aggregatie_speelt_nog`) telt
+**De `naam`-terugval** (de twee nieuwe getuigen, alleen die fix teruggezet, de
+twee poorten blijven staan): **2 errors, 5 pass** — de vijf van hierboven blijven
+groen, wat bevestigt dat de derde plek los staat van de eerste twee:
+
+    de_drl_feitcreatie_speelt_een_naamloze_creatie
+        NullPointerException: Cannot invoke "String.replace(…)" because
+        "naam" is null
+    twee_naamloze_creaties_botsen_niet_op_hun_terugvalnaam
+        NullPointerException: Cannot invoke "String.replace(…)" because
+        "naam" is null
+
+De tweede daarvan is ook rood tegen een VLAKKE terugval, en dan met de andere
+fout (`Duplicate rule name`) — daarom staat hij er.
+
+Daarna groen: 7/7. De tegenproef (`de_ongestoorde_aggregatie_speelt_nog`) telt
 hier zwaarder dan bij de vorige kaart: `scope` ligt op het pad van ELKE
 aggregatie die deze tak verlaagt, dus een vraag die één streepje te streng staat
 zou de tak leegmaken. De ongestoorde golden speelt in beide takken.
@@ -268,15 +351,19 @@ zou de tak leegmaken. De ongestoorde golden speelt in beide takken.
   over-afwijzingssignaal beweegt niet.
 - gate 12: PASS — **played 123, gelijk aan de gepinde `EXPECTED_PLAYED`**; 44
   auto-excluded, 1 waardedivergentie, 2 no-case; kanaalvloer 47 niet-PLAYED
-  goldens bij naam. JUnit **308** tests (was 303), vloer 239 ongemoeid.
-  `scripts/check-drools.sh` is niet aangeraakt.
+  goldens bij naam. JUnit **310** tests (was 303), vloer 239 ongemoeid.
+  `scripts/check-drools.sh` is niet aangeraakt. Deze gate meet de EXEC-tak, dus
+  geen van de drie wijzigingen ligt op zijn pad; hij is hier het
+  over-afwijzingssignaal, niet de meting van het werk.
 - gate 13: PASS — 83 getwiste annotaties over 16 goldens (vloer 74), 74 replays,
   **14 daarvan PLAYED door de DRL-tekst-tak** (vloer 13), 0 survivors. De tak
   speelt er één MEER dan de 13 die de vorige kaart mat; dat komt van de golden
   die er sinds die meting bij is gekomen, niet van deze poorten — de sweep
   hierboven telt vóór en ná even veel PLAYED.
 - De sweep zelf is de brede kanaalcontrole van de DRL-tak, die geen enkele gate
-  draait: verdeling vóór en ná identiek, 0 kale compile-uitkomsten.
+  draait: verdeling vóór en ná identiek, 0 kale compile-uitkomsten. Na de
+  `naam`-terugval is de sweep bovendien byte-identiek aan die van vóór de
+  fixronde.
 
 ### Wat bewust niet bewoog
 
@@ -292,8 +379,16 @@ zou de tak leegmaken. De ongestoorde golden speelt in beide takken.
   `spec/CONSTRUCTS.md`, `spec/PLAN.md`, `spec/IR-SPEC.md`: niet aangeraakt. ref,
   clingo en de verifier zijn alleen GEDRAAID, als meetinstrument.
 - `RolveldlezerWitnessTest` is niet gewijzigd: die klasse is de lezersaudit
-  BINNEN elke tak en die is afgesloten; deze twee zijn ongelijkheden TUSSEN de
+  BINNEN elke tak en die is afgesloten; deze drie zijn ongelijkheden TUSSEN de
   takken en krijgen daarom een eigen klasse.
+- De WF-kant van sectie C: `naam: null` op `feitCreaties` is gemeld en NIET
+  gekaart. Een uitbreiding van WF-094 clausule (d) naar de naamdragende
+  lijst-constructies is een beschermd-padbeslissing en hoort in een WF-ronde, niet
+  in een backend-kaart. De backend is nu null-veilig; dat vervangt de wire-regel
+  niet, precies zoals de loader-terugval van 2026-09-10 clausule (d) niet verving.
+- De exec-tak is op geen enkel punt gewijzigd — ook niet waar hij een null
+  regelnaam rechtstreeks de Drools-regelkop in geeft. Het gelijktrekken is
+  eenzijdig gebeurd, in de tak die crashte.
 
 ### Voorstel op een beschermd pad
 
@@ -305,6 +400,8 @@ zou de tak leegmaken. De ongestoorde golden speelt in beide takken.
 wordt met deze kaart een dode verwijzing. Voorgestelde vervanging (één zin):
 
 > Twee ongelijkheden TUSSEN de takken bleven over en zijn op 2026-09-11 gesloten
-> (`backlog/done/20260911-drl-scope-en-nulveld-poort.md`): de DRL-tak stelt de
-> gedeelde veldvraag nu ook bij de aggregatie-join, en weigert een onopgeloste
-> feitcreatie onvoorwaardelijk zoals de exec-tak dat doet;
+> (`backlog/done/20260911-drl-scope-en-nulveld-poort.md`), met een derde van
+> dezelfde vorm erbij: de DRL-tak stelt de gedeelde veldvraag nu ook bij de
+> aggregatie-join, weigert een onopgeloste feitcreatie onvoorwaardelijk zoals de
+> exec-tak dat doet, en speelt een NAAMLOZE feitcreatie in plaats van erop te
+> crashen;

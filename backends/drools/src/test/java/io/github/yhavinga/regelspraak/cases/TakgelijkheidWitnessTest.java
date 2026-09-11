@@ -150,6 +150,45 @@ class TakgelijkheidWitnessTest {
         assertTrue(drl.contains("onopgelost feitcreatie (onopgelost): vakbeseining door het kustvak"), drl);
     }
 
+    @Test void de_drl_feitcreatie_speelt_een_naamloze_creatie() throws Exception {
+        // `naam` is the FIFTH wire-nullable position of this construct, and the only one of the five that no
+        // well-formedness rule covers at all: WF-034 gates zetVeld, joinVeld and the tussenstappen, and WF-094
+        // clause (d) gates the five KEYED tables while feitCreaties is a LIST. So a nameless creation is a fully
+        // well-formed document that every other executor runs. Measured on the pre-fix jar:
+        //     verifier: PASS
+        //     ref     : oracle: PASS (10 expectations)
+        //     clingo  : clingo: PASS (10 expectations)
+        //     Drools exec-model : PLAYED 1 — the null goes straight into the rule header and the creation FIRES
+        //     Drools DRL-tekst  : ERROR NullPointerException: Cannot invoke "String.replace(…)" because "naam" is null
+        // Here the aligned answer is to PLAY, not to refuse: three executors run this document, so a refusal would
+        // be the DRL branch inventing a limit the wire does not have. That the creation really fires is pinned by
+        // the mutation probe below and not by the bare PLAYED — V1.vakseinaantal counts the CREATED vakbeseining
+        // relation, so 2 is only reachable through the nameless rule.
+        Path ir = feitcreatieZonder("naam"), c = ir(POSTWACHT).resolveSibling("case.json");
+        assertNull(CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))), "exec speelt de naamloze creatie");
+        assertEquals("PLAYED", CaseRunner.viaDrlTekst(ir, List.of(c)).status());
+
+        Path mut = vakseinaantalOp(c, "99");
+        String execFout = CaseRunner.speelCase(ir, JSON.readTree(Files.readString(mut)));
+        assertTrue(execFout != null && execFout.contains("vakseinaantal: verwacht 99, werkelijk 2"),
+                String.valueOf(execFout));
+        CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(mut));
+        assertEquals("FAIL", drl.status(), drl.reason());
+        assertTrue(drl.caseFailures().toString().contains("vakseinaantal: verwacht 99, werkelijk 2"),
+                drl.caseFailures().toString());
+    }
+
+    @Test void twee_naamloze_creaties_botsen_niet_op_hun_terugvalnaam() throws Exception {
+        // The flank the nameless fallback itself opens: a DRL package refuses duplicate rule names, so ONE flat
+        // fallback string turns two nameless creations into "Duplicate rule name: <unnamed ResolvedFeitCreatie>"
+        // — measured — where the exec branch plays them. That would have replaced the inequality this card closes
+        // with another one, so the fallback carries the construct's WIRE POSITION. Both branches play.
+        Path ir = tweeNaamlozeCreaties(), c = ir(POSTWACHT).resolveSibling("case.json");
+        assertNull(CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))), "exec speelt beide creaties");
+        CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(c));
+        assertEquals("PLAYED", drl.status(), drl.reason());
+    }
+
     // ---------------- fixtures ----------------
 
     private static Path ir(String golden) {
@@ -227,10 +266,34 @@ class TakgelijkheidWitnessTest {
                 """;
     }
 
-    /** jutterswet-postwacht with one of the feitcreatie's four wire positions set to null. */
+    /** jutterswet-postwacht with one of the feitcreatie's five wire-nullable positions set to null. */
     private static Path feitcreatieZonder(String positie) throws Exception {
         ObjectNode ir = goldenIr(POSTWACHT);
         ((ObjectNode) ir.get("feitCreaties").get(0)).putNull(positie);
         return model("feitcreatie-zonder-" + positie, ir);
+    }
+
+    /** jutterswet-postwacht carrying the SAME nameless feitcreatie twice — two constructs whose only distinguisher
+     *  is their wire position. Verifier-clean. */
+    private static Path tweeNaamlozeCreaties() throws Exception {
+        ObjectNode ir = goldenIr(POSTWACHT);
+        ObjectNode fc = (ObjectNode) ir.get("feitCreaties").get(0);
+        fc.putNull("naam");
+        ((com.fasterxml.jackson.databind.node.ArrayNode) ir.get("feitCreaties")).add(fc.deepCopy());
+        return model("feitcreatie-twee-naamloos", ir);
+    }
+
+    /** The postwacht case with the ONE expectation that observes the created relation retuned — the mutation probe
+     *  that turns a bare PLAYED into proof the nameless rule fired. */
+    private static Path vakseinaantalOp(Path caseFile, String waarde) throws Exception {
+        ObjectNode c = (ObjectNode) JSON.readTree(Files.readString(caseFile));
+        int geraakt = 0;
+        for (JsonNode e : c.get("expected"))
+            if (e.has("attribute") && "vakseinaantal".equals(e.get("attribute").asText())) {
+                ((ObjectNode) e.get("value")).put("number", waarde);
+                geraakt++;
+            }
+        assertEquals(1, geraakt, "de case draagt precies één vakseinaantal-verwachting");
+        return geval(c.toString());
     }
 }
