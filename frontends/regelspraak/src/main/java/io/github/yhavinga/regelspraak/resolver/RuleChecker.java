@@ -439,18 +439,19 @@ final class RuleChecker {
      *  document states that it is ill-formed and why — where it used to say {@code diagnostics: []}.
      *  ERROR would be the fail-fast level and would stop the document reaching disk at all
      *  ({@link Resolver#irModus} writes nothing when the model carries an error); it is deliberately
-     *  NOT taken here, because one committed expectation in this suite asserts that a rule value of
-     *  exactly this shape resolves error-free, and moving it is the maintainer's call, not this
-     *  check's. Raising the level is a one-token change at the {@link Severity} below.
+     *  NOT taken here, because one committed test expectation —
+     *  {@code IrTest.referenties_lossen_op_via_feittype_rollen}, a third witness of the same producer
+     *  route — asserts that a rule value of exactly this shape resolves error-free, and moving that is
+     *  the maintainer's call. Raising the level is a one-token change at the {@link Severity} below.
      *
      *  <p>Scope: the READ. A rule's {@code doel} is a WRITE position, which WF-096's own scope note
      *  does not reach (it is verifier-clean and all three executors ignore the field), so it is
-     *  deliberately not walked. */
+     *  deliberately not walked. The VALUE slots of the constructs that are not a {@link ResolvedRegel}
+     *  (verdeling amounts, objectcreatie toekenningen, feitcreatie) are not walked either: no producer
+     *  route was measured there, and a refusal without a witness is a guess. Their CONDITIONS are
+     *  covered — see the call in {@link #regelVersies(String, List, List, int)}. */
     private void keurSetlezingen() {
-        for (ResolvedRegel r : model.resolvedRegels) {
-            keurSetlezing(r.waarde(), false);
-            keurSetlezing(r.voorwaarde());
-        }
+        for (ResolvedRegel r : model.resolvedRegels) keurSetlezing(r.waarde(), false);
         for (var c : model.consistenties) keurSetlezing(c.assertie());
     }
 
@@ -555,6 +556,11 @@ final class RuleChecker {
             bouwer.setSubject(subjectVan(rsr.resultaatDeel())); // so "zijn …" resolves against the rule subject
             bouwer.zetVariabelen(rsr.variabeleDeel());          // §11 capture "Daarbij geldt:" vars in BOTH forms (clears per rule)
             Conditie voorwaarde = rsr.voorwaardeDeel() != null ? bouwVoorwaarde(rsr.voorwaardeDeel()) : null;
+            // WF-096 on the CONDITION, here rather than in the naloop: this is the one place every
+            // resultaatdeel kind's voorwaarde passes through, so one call covers the constructs that do
+            // not become a ResolvedRegel (verdeling, objectcreatie, feitcreatie, dagsoort, startpunt)
+            // as well as the ones that do. The naloop then walks the VALUES alone, so nothing is said twice.
+            keurSetlezing(voorwaarde);
             resultaat(naam, versieNaam, rsr.resultaatDeel(), rsr.voorwaardeDeel(), voorwaarde, geldigheid);
             voorwaarden(rsr);   // exhaustive condition type-check (§5), unchanged
         }

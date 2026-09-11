@@ -111,6 +111,19 @@ class SetlezingZonderVouwTest {
                 """).size());
     }
 
+    @Test void setlezing_in_de_voorwaarde_van_een_objectcreatie_wordt_benoemd() {
+        // An objectcreatie never becomes a ResolvedRegel (measured: resolvedRegels 0, objectCreaties 1),
+        // so its voorwaarde is the witness that the condition check sits where EVERY resultaatdeel
+        // kind's voorwaarde passes through — not on the rule carrier alone. The same holds for a
+        // verdeling, a feitcreatie, a dagsoortdefinitie and a startpuntbepaling.
+        assertEquals(List.of(MELDING), meldingen("""
+                Regel nieuwe vondst
+                    geldig altijd
+                        Een Jutter heeft een Vondst met het gewicht gelijk aan 3 kg
+                        indien het gewicht van alle vondsten van de Jutter gelijk is aan 5 kg.
+                """));
+    }
+
     @Test void setlezing_in_een_consistentieregel_wordt_benoemd() {
         // The §13.4.8 assertion is a Conditie in its own carrier; measured verifier-FAIL at
         // /consistenties/0/assertie/links before the check existed.
