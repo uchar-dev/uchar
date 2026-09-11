@@ -166,9 +166,11 @@ draagt en dat de gepinde waarden niet toevallig ook zonder haar kloppen.
 
 - `scripts/check-drools.sh`: `EXPECTED_PLAYED` **122 → 123**, met een gedateerd
   blok in de bestaande stijl. De kaart schreef 119 → 120; het kanaal is onder
-  de kaart door tweemaal opgeschoven (`jutterswet-ketenband` 120 → 121,
-  `jutterswet-kavelgrens` 121 → 122), dus de bump schuift na naar wat op deze
-  tak gemeten is in plaats van naar wat de kaart typte. Rood eerst gemeten:
+  de kaart door **driemaal** opgeschoven — `jutterswet-keurhouder` 119 → 120
+  (commit `5f8b176`), `jutterswet-ketenband` 120 → 121, `jutterswet-kavelgrens`
+  121 → 122 — dus keurhouder nam precies de 119 → 120-sleuf die de kaarttekst
+  impliciet voor zichzelf claimde, en de bump schuift na naar wat op deze tak
+  gemeten is in plaats van naar wat de kaart typte. Rood eerst gemeten:
   vóór de bump `FAIL — played 123, but EXPECTED_PLAYED pins 122`; erna groen.
   Geen `EXPECTED_CHANNEL`-regel nodig — de vorm speelt.
 - `scripts/check-reftype-derivation.sh`: alleen commentaar. De zin dat de
@@ -242,7 +244,9 @@ overal eenheidloos — géén golden draagt een eenheid-dragende klem, gekaart a
 > spelen hem op handberekende absoluten, met de herschaling zelf gemeten:
 > de grens omlabelen naar `kg` verplaatst het antwoord op elk been. Gate 12's
 > `EXPECTED_PLAYED` 122 → 123 (de kaart schreef 119 → 120; het kanaal was
-> intussen tweemaal opgeschoven), en gate 13 bewoog mechanisch niets — de
+> intussen driemaal opgeschoven — `jutterswet-keurhouder` nam de
+> 119 → 120-sleuf, daarna `jutterswet-ketenband` en `jutterswet-kavelgrens`),
+> en gate 13 bewoog mechanisch niets — de
 > twistverzameling groeide 74 → 83 annotaties over 16 in plaats van 15 goldens,
 > vloer 74 ongewijzigd; alleen het prozacommentaar over de `Begrensd`-arm van
 > de DRL-tak verouderde en is gecorrigeerd.
@@ -258,7 +262,10 @@ overal eenheidloos — géén golden draagt een eenheid-dragende klem, gekaart a
 > `2,50 t` arm reaches by restating. ref ≡ clingo ≡ Drools on hand-computed
 > absolutes, and the restating is measured rather than assumed — relabelling a
 > bound to `kg` moves the answer on every leg. Gate 12's `EXPECTED_PLAYED`
-> equality 122 → 123. Gate 13 moved nothing mechanical, as predicted: the twist
+> equality 122 → 123, not the 119 → 120 this row predicted: the channel shifted
+> three times under the card while it sat in the backlog —
+> `jutterswet-keurhouder` took the 119 → 120 slot, then `jutterswet-ketenband`
+> and `jutterswet-kavelgrens`. Gate 13 moved nothing mechanical, as predicted: the twist
 > set grew 74 → 83 annotations over 16 goldens instead of 15 with the floor
 > unchanged; only the script's prose note about the DRL branch's `Begrensd`
 > value arm went stale, and it was corrected in the same commit.
