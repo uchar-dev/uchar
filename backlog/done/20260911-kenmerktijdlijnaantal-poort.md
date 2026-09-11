@@ -137,11 +137,12 @@ gate 12 en 13 ongewijzigd groen met `EXPECTED_PLAYED` op 124.
 
 De spec zegt het op vier plaatsen en de verifier doet het al:
 
-- `IR-SPEC.md` ch. 2.8 stelt de facet als `count | integer >= 1 | periods per
-  segment`;
-- het uitgewerkte voorbeeld daar adopteert `{granularity: year, count: 1,
-  timelineName: "penningjaar"}` — een gewone enkelvoudige facet die de count
-  expliciet als 1 schrijft;
+- `IR-SPEC.md` §2.2's TimelineFacet-tabel stelt hem als `count | integer >= 1
+  | periods per segment; 1 = single-period` — de facet-tabel zelf, niet
+  ch. 2.8, die dezelfde constraint op de Timeline-KNOOP herhaalt;
+- het uitgewerkte voorbeeld in ch. 2.8 adopteert `{granularity: year,
+  count: 1, timelineName: "penningjaar"}` — een gewone enkelvoudige facet die
+  de count expliciet als 1 schrijft;
 - ch. 2.10's v0-migratienoot: "a v0 granularity becomes `{granularity,
   count: 1}`";
 - WF-005 verklaart `count < 1` tot de overtreding, niet `count = 1`; en de
@@ -168,14 +169,14 @@ Gate 12 en 13 op de onaangeroerde tak (de nulmeting):
     branch, floor 13; 0 pinned survivors)
 
 Daarna de eigen meting, breder dan het meetrecept van de kaart: over ELK van
-de 16 goldens met temporele leden én cases, per temporeel lid één expliciete
+de 17 goldens met temporele leden én cases, per temporeel lid één expliciete
 `1` in de bijbehorende telling-tabel, en beide Drools-takken vergeleken met
 hun EIGEN onaangeroerde statusregel (gate-13-patroon — de DRL-tak faalt op
 `anchor/jutterswet-borgdeel` ook onaangeroerd, dus een vergelijking met
 "PLAYED" zou daar liegen).
 
 **32 van de 46 ledenposities kantelden uit het gespeelde kanaal, over 12 van
-de 16 goldens.** In beide takken dezelfde 32. Voorbeelden, letterlijk:
+de 17 goldens.** In beide takken dezelfde 32. Voorbeelden, letterlijk:
 
     synth-gehelejaarkenmerk | Werf.bedrijvig (kenmerk) |
       exec: EXCLUDE transpiler SKIP: regel: toeslag van een schuit — regel (voorwaarde buiten Phase-B scope)
@@ -311,8 +312,10 @@ met de rest gerepareerd. Geen corpusdocument bereikt die arm vandaag.
 ### Wat bewust niet bewoog
 
 - **`spec/schema/` en `spec/verifier/`.** Onder lezing 1 is er niets te
-  weren: `count: 1` is de gedefinieerde wire-vorm en WF-005 dekt `count < 1`
-  al. De acceptatie-eis "het corpus mag de sleutel bij 1 daarna niet stil
+  weren: `count: 1` is de gedefinieerde wire-vorm en WF-005 dekt een
+  AANWEZIGE `count < 1` al. (Een waarde `null` dekt hij niet — zie de open
+  vraag hierboven; ook dat blijft hier onaangeraakt.) De acceptatie-eis
+  "het corpus mag de sleutel bij 1 daarna niet stil
   dragen" is ingevuld aan de backendkant: de sleutel bij 1 wordt nu GELEZEN
   (waarde, niet aanwezigheid) en dat lezen is vastgepind door acht checks in
   de suite die gate 12 draait.
@@ -330,15 +333,36 @@ met de rest gerepareerd. Geen corpusdocument bereikt die arm vandaag.
 
 ### Eén open vraag voor de maintainer (geen edit gedaan)
 
-De loader leest een JSON-`null` als `0` (`v.asInt()`). Het nieuwe predicaat
-leest `0` als ENKELVOUDIG, waar de oude aanwezigheidstoets hem als
-meer-periodiek las. Zo'n document is door WF-005 verworpen en bereikt via geen
-enkele gate een transpiler, dus het verschil is vandaag onwaarneembaar. De
-keuze volgt de kaartformulering ("de WAARDE (> 1)") en legt de weigering bij
-de regel die hem bezit. Wie liever heeft dat de backend zelf hard faalt op een
-count < 1 — fail-fast in plaats van een stille normalisatie naar enkelvoudig —
-kan dat in `Tijdlijnen.meerPeriodiek` in één regel toevoegen; dat is een nieuwe
-weigeringstak en daarom niet in deze kaart genomen.
+**De JSON-`null`, en het gedrag verandert daar écht** — gecorrigeerd na de
+lensronde, want de eerste versie van deze alinea rustte op een onjuiste grond
+("verifier-verworpen, dus onwaarneembaar"). Dat geldt voor een EXPLICIETE `0`,
+niet voor `null`.
+
+Het schema typeert deze waarden `["integer","null"]` en WF-005 vuurt alleen op
+een AANWEZIGE count onder 1 (`Some n when n < 1`) — een `None` ziet hij niet.
+Een entry met waarde `null` is dus verifier-SCHOON. De Drools-loader leest hem
+als `0` (`v.asInt()`), en `0` leest in het nieuwe predicaat enkelvoudig waar de
+aanwezigheidstoets hem als raster las. Gemeten op
+`corpus/golden/synth-gehelejaarkenmerk` met
+`kenmerkTijdlijnAantal {"bedrijvig": null}`:
+
+    verifier: PASS
+    ref: PASS / clingo: PASS   (de vier cases, de vastgepinde waarden)
+    Drools vóór: beide takken EXCLUDE
+    Drools ná:   beide takken PLAYED 4
+
+De nieuwe uitkomst is de default-1-lezing die de verifier zelf hanteert
+(WF-005's named-timeline-adoptie vult een afwezige count aan met 1), dus de
+drie uitvoerders zijn het op deze documentklasse nu eens waar ze het eerder
+oneens waren. Dat is winst, geen verlies — maar het is wel een waarneembare
+gedragswijziging op een verifier-schone klasse, en zo hoort ze genoteerd.
+
+**De openstaande vraag is een andere:** moet de loader een expliciete
+JSON-`null` fail-fast weigeren? Dat zou een nieuwe weigeringstak zijn op een
+documentklasse die de verifier goedkeurt — een maintainerbesluit, geen stille
+toevoeging, en daarom niet in deze kaart genomen. Voor een expliciete `0` ligt
+het anders: die weigering bestaat al en hoort bij WF-005, de regel die hem
+bezit.
 
 ### Voorstellen voor beschermde en vreemde paden (letterlijke tekst)
 
@@ -361,8 +385,11 @@ Voorgesteld:
     # frontend, which writes that key only for a count other than 1 — flipped BOTH branches to a refusal,
     # because their gate tested the key's PRESENCE and not "two or more". Card
     # backlog/done/20260911-kenmerktijdlijnaantal-poort.md corrected that gate in both branches (the
-    # count defaults to 1 per IR-SPEC ch. 2.8/2.10, so a raster starts at 2) and pinned it with eight
+    # count defaults to 1 per IR-SPEC §2.2/ch. 2.10, so a raster starts at 2) and pinned it with eight
     # checks in the backend's own suite; an explicit 1 no longer moves this or any other golden.
+    # The pin still has a live flank, and it is the OTHER direction: a count of TWO OR MORE on
+    # `bedrijvig` is a §13.3.6.7 raster neither branch carries, so it drops this golden out of the
+    # played channel exactly as before — measured after the fix, both branches refuse it by name.
 
 **(b) `ref/test/test_ref.ml`, de alinea bij de ch.-3.9-fixture (rond regel
 2677).** Staat er nu:
@@ -388,16 +415,52 @@ Voorgesteld:
     itself was corrected in both branches by
     `backlog/done/20260911-kenmerktijdlijnaantal-poort.md`.
 
-**(c) `spec/IR-SPEC.md` ch. 4.6 en `spec/verifier/lib/checks.ml`** noemen dat
-de Drools-backend deze tabellen bereikt "through raw `Map.get` /
-`Map.containsKey` at 108 sites … `attribuutTijdlijnAantal` 17,
-`kenmerkTijdlijnAantal` 7". **Die telling en het
-hoofdlettergevoeligheidsargument blijven waar**: de 24 plekken lezen de
-tabellen nog steeds, nu via één gedeeld predicaat dat een rauwe, exacte
-`Map.get` doet. Alleen het woord `containsKey` is voor die 24 niet langer
-letterlijk. Geen wijziging nodig; wie hem toch wil: "raw `Map.get` /
-`Map.containsKey`" → "raw, byte-exact `Map` lookups".
+**(c) `spec/verifier/lib/checks.ml` (regels 1500-1503).** Gecorrigeerd na de
+lensronde: mijn eerste versie schreef deze formulering ook aan
+`spec/IR-SPEC.md` ch. 4.6 toe en beweerde dat de telling ongewijzigd blijft.
+Beide onjuist.
+
+`spec/IR-SPEC.md` r. 4865 zegt "raw case-sensitive map lookups at **108**
+sites across four of the eight tables" — géén methodenamen. **Die zin blijft
+waar en hoeft niet te bewegen**: de 24 posities lezen de tabellen nog steeds,
+hoofdlettergevoelig, alleen via één gedeeld predicaat. Laat hem staan.
+
+`checks.ml` noemt de methoden wél, en die formulering is nu niet meer
+reproduceerbaar. Gemeten met `grep -rhoE "<tabel>\.(get|containsKey)\("` over
+`backends/drools/src/main`:
+
+    main:        109  (attribuutGranulariteit 65, kenmerkGranulariteit 20,
+                       attribuutTijdlijnAantal 17, kenmerkTijdlijnAantal 7)
+    deze branch:  85  (65, 20, 0, 0)
+
+(De 108/64 in de tekst dateert van 2026-09-06; `attribuutGranulariteit` is
+sindsdien met één gegroeid. Dat stond al scheef vóór deze kaart.)
+
+Staat er nu:
+
+       The Drools backend reaches these maps through raw [Map.get] / [Map.containsKey]
+       at 108 sites across four of the eight tables (attribuutGranulariteit 64,
+       kenmerkGranulariteit 20, attribuutTijdlijnAantal 17, kenmerkTijdlijnAantal
+       7), against five case-insensitive lookups through its own [Namen.bevatNaam]
+       helper.
+
+Voorgesteld:
+
+       The Drools backend reaches these maps through raw, CASE-SENSITIVE lookups at
+       109 sites across four of the eight tables (attribuutGranulariteit 65,
+       kenmerkGranulariteit 20, attribuutTijdlijnAantal 17, kenmerkTijdlijnAantal 7;
+       remeasured 2026-09-11), against five case-insensitive lookups through its own
+       [Namen.bevatNaam] helper. The two GRANULARITY tables are read at the call site
+       with [Map.get] / [Map.containsKey]; the two COUNT tables are read through one
+       shared predicate ([Tijdlijnen.meerPeriodiek], 2026-09-11), which does the same
+       raw [Map.get] on the map its caller hands it — so a grep for a table name
+       beside those two methods now finds 85, and the remaining 24 positions are the
+       ones that pass the map along.
+
+Het hoofdlettergevoeligheidsargument dat de alinea draagt — en daarmee de
+WF-034-arm en de `kapitalisatiewees`-getuige — blijft in beide gevallen
+onaangetast.
 
 **Register.** Geen `CONSTRUCTS.md`-rij en geen `PLAN.md`-wijziging
 voorgesteld: dit is een backendfout tegen een reeds geschreven spec-regel
-(ch. 2.8/2.10 + WF-005), geen v1-delta en geen scopewijziging.
+(§2.2/ch. 2.8/2.10 + WF-005), geen v1-delta en geen scopewijziging.

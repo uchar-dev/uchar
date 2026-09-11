@@ -30,8 +30,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * (2026-09-11, card {@code 20260911-kenmerktijdlijnaantal-poort}).
  *
  * <p>Both branches asked "is this member a §13.3.6.7 multi-period raster?" as
- * {@code tijdlijnAantal.containsKey(lid)}, at 24 sites. The wire's count defaults to ONE (IR-SPEC ch. 2.8 states the
- * facet as {@code count >= 1} and its worked example adopts {@code count: 1}; ch. 2.10's v0 migration note reads a bare
+ * {@code tijdlijnAantal.containsKey(lid)}, at 24 sites. The wire's count defaults to ONE (IR-SPEC §2.2's TimelineFacet
+ * table states it as {@code count >= 1}, "1 = single-period", and ch. 2.8's worked example adopts {@code count: 1};
+ * ch. 2.10's v0 migration note reads a bare
  * granularity as {@code count: 1}; the verifier's WF-005 substitutes 1 for an absent entry), so an EXPLICIT 1 is the
  * same facet as no entry at all and a raster starts at 2. The presence test therefore refused a document that says out
  * loud what every other document says by default.
@@ -39,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>It stayed invisible because the RegelSpraak frontend writes the entry only for a count other than 1
  * ({@code DefinitionResolver}), so no frontend-produced document carries it at 1. Measured over the corpus on the
  * PRE-FIX jar — an explicit 1 injected on one temporal member at a time, both branches, against each branch's own
- * untouched status line: 32 of 46 member positions flipped out of the played channel, over 12 of the 16 goldens with
+ * untouched status line: 32 of 46 member positions flipped out of the played channel, over 12 of the 17 goldens with
  * temporal members and case files, while the verifier, {@code ref} and clingo stayed unchanged on the very same
  * documents (verifier PASS; {@code oracle: PASS}; {@code clingo: PASS}, same pinned expectations).
  *
@@ -70,7 +71,7 @@ class MeerPeriodiekePoortWitnessTest {
     @Test void een_aantal_van_een_is_geen_raster() {
         assertFalse(Tijdlijnen.meerPeriodiek(java.util.Map.of(), "waterstand"), "afwezig = enkelvoudig");
         assertFalse(Tijdlijnen.meerPeriodiek(java.util.Map.of("waterstand", 1), "waterstand"),
-                "een expliciete 1 is dezelfde facet als geen sleutel (IR-SPEC ch. 2.8/2.10, WF-005)");
+                "een expliciete 1 is dezelfde facet als geen sleutel (IR-SPEC §2.2/2.8/2.10, WF-005)");
         assertTrue(Tijdlijnen.meerPeriodiek(java.util.Map.of("waterstand", 2), "waterstand"),
                 "een raster begint bij twee");
         assertFalse(Tijdlijnen.meerPeriodiek(java.util.Map.of("waterstand", 0), "waterstand"),

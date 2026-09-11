@@ -87,3 +87,10 @@ backend's gate. That the same document with `"bedrijvig": 1` plays all four
 cases in BOTH branches is pinned in the backend's own suite
 (`MeerPeriodiekePoortWitnessTest`), which builds it in memory and never
 writes here.
+
+One direction is still live, and it is the other one: a count of **two or
+more** is a §13.3.6.7 multi-period raster whose producer semantics neither
+Drools branch carries, so growing the key to 2 drops this golden out of the
+played channel exactly as the presence gate used to do at 1. Gate 12's
+`EXPECTED_PLAYED` would then fail by name, which is the correct report — the
+form really is not carried.
