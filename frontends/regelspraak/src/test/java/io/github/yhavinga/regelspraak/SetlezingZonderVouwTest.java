@@ -27,7 +27,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class SetlezingZonderVouwTest {
 
     /** Two object types related by one fact type (one aanmelder to many vondsten) — the model both
-     *  card witnesses are written against. */
+     *  card witnesses are written against — plus the Rapport the §13.4.6 objectcreatie creates, so the
+     *  toekenning's generic expressie RHS can be exercised on the same sentence fragment. */
     static final String MODEL = """
         Eenheidsysteem Gewicht
             het kilogram (mv: kilogrammen) kg
@@ -41,10 +42,18 @@ class SetlezingZonderVouwTest {
             het gewicht (mv: gewichten) Numeriek (getal met 2 decimalen) met eenheid kg;
             de vondstdatum (mv: vondstdata) Datum in dagen;
 
+        Objecttype het Rapport (mv: Rapporten)
+            het totaalgewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+
         Feittype vondstaanmelding
             de aanmelder Jutter
             de vondst (mv: vondsten) Vondst
         Eén aanmelder heeft meerdere vondsten
+
+        Feittype rapportage
+            de rapporteur Jutter
+            het rapport Rapport
+        Eén rapporteur heeft één rapport
         """;
 
     /** The literal message the check raises on the two card witnesses (both read the same fragment). */
@@ -91,12 +100,23 @@ class SetlezingZonderVouwTest {
                 """));
     }
 
-    @Test void setlezing_als_initialisatiewaarde_wordt_benoemd() {
-        // Same value slot, other assignment form (§13.4.9) — measured WF-096 FAIL at the same pointer.
+    @Test void setlezing_als_gelijkstellingswaarde_wordt_benoemd() {
+        // The same value slot reached by the §13.4.4 gelijkstelling ("moet gesteld worden op", soort
+        // GELIJKSTELLING) instead of the §13.4.2 berekening — measured WF-096 FAIL at the same pointer.
         assertEquals(List.of(MELDING), meldingen("""
                 Regel maatgevend gewicht
                     geldig altijd
                         Het maatgevend gewicht van een Jutter moet gesteld worden op het gewicht van alle vondsten van de Jutter.
+                """));
+    }
+
+    @Test void setlezing_als_initialisatiewaarde_wordt_benoemd() {
+        // And by the §13.4.9 initialisatie proper ("moet geïnitialiseerd worden op", soort
+        // INITIALISATIE) — the third assignment form into the same slot, measured separately.
+        assertEquals(List.of(MELDING), meldingen("""
+                Regel maatgevend gewicht
+                    geldig altijd
+                        Het maatgevend gewicht van een Jutter moet geïnitialiseerd worden op het gewicht van alle vondsten van de Jutter.
                 """));
     }
 
@@ -109,6 +129,26 @@ class SetlezingZonderVouwTest {
                         Het maatgevend gewicht van een Jutter moet berekend worden als het drempelgewicht van de Jutter
                         indien het gewicht van alle vondsten van de Jutter gelijk is aan 5 kg.
                 """).size());
+    }
+
+    @Test void setlezing_als_objectcreatie_toekenning_wordt_benoemd() {
+        // The §13.4.6.3 waardetoekenning is a generic expressie RHS and the third (and last) VALUE slot
+        // this IR has — a live producer route of its own: before the check the verifier reported
+        // WF-096 FAIL /objectCreaties/0/toekenningen/0/waarde as the document's ONLY defect.
+        assertEquals(List.of(MELDING), meldingen("""
+                Regel nieuw rapport
+                    geldig altijd
+                        Een Jutter heeft een Rapport met het totaalgewicht gelijk aan het gewicht van alle vondsten van de Jutter.
+                """));
+    }
+
+    @Test void de_som_in_een_objectcreatie_toekenning_blijft_een_geldige_vouwbron() {
+        // The counter-proof in that same slot: under a fold the reading is the source the fold consumes.
+        geenEnkeleDiagnose("""
+                Regel nieuw rapport
+                    geldig altijd
+                        Een Jutter heeft een Rapport met het totaalgewicht gelijk aan de som van het gewicht van alle vondsten van de Jutter.
+                """);
     }
 
     @Test void setlezing_in_de_voorwaarde_van_een_objectcreatie_wordt_benoemd() {

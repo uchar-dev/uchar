@@ -447,12 +447,18 @@ final class RuleChecker {
      *  <p>Scope: the READ. A rule's {@code doel} is a WRITE position, which WF-096's own scope note
      *  does not reach (it is verifier-clean and all three executors ignore the field), so it is
      *  deliberately not walked. The VALUE slots of the constructs that are not a {@link ResolvedRegel}
-     *  (verdeling amounts, objectcreatie toekenningen, feitcreatie) are not walked either: no producer
-     *  route was measured there, and a refusal without a witness is a guess. Their CONDITIONS are
-     *  covered — see the call in {@link #regelVersies(String, List, List, int)}. */
+     *  <p>The three VALUE slots of this repo's IR are all walked, and that is the whole list rather than
+     *  a sample: a {@link ResolvedRegel}'s waarde, a {@code ResolvedConsistentie}'s assertie, and a
+     *  §13.4.6 {@link ResolvedObjectCreatie.Toekenning}'s waarde — the last a generic expressie RHS and
+     *  a measured producer route of its own. {@link ResolvedVerdeling} and {@link ResolvedFeitCreatie}
+     *  hold no Expr at all (bare attribute/field NAMES plus a condition), so there is nothing to walk
+     *  there; every construct's CONDITION is covered one line after it is built, see the call in
+     *  {@link #regelVersies(String, java.util.List, java.util.List, int)}. */
     private void keurSetlezingen() {
         for (ResolvedRegel r : model.resolvedRegels) keurSetlezing(r.waarde(), false);
         for (var c : model.consistenties) keurSetlezing(c.assertie());
+        for (var oc : model.objectCreaties)
+            for (var t : oc.toekenningen()) keurSetlezing(t.waarde(), false);
     }
 
     /** Walk {@code e} for WF-096 violations. {@code vouwbron} marks the ONE exempt position: the single
