@@ -1,0 +1,9 @@
+# RegelSpraak-dialectextensie: `is een` — objecttype-overerving in de kopvorm
+
+Goal: de kopvorm `Objecttype de RechtOpUitkeringWw is een RechtOpUitkering (mv: …)` als uchar-dialectextensie in `frontends/regelspraak`, naar het stramien van de prioritized-defaults-extensie: strikt additief (alle officiële documenten en het hele bestaande corpus parsen en emitten byte-identiek), lexicaal minimaal, gelowered naar de kernel-subtypering van `20260910-subtype-kernel`, en geregistreerd in `grammar/DIVERGENCES.md` als tracked divergence van de v2.3.0-arbiter. Onderzoek en besluit onderweg: de interactie van `is een` met bestaande kopannotaties (bezield, mv), het gedrag van kwantificatie- en navigatievormen zodra subtypen bestaan, en de frontend-weigeringslijst (tweede ouder, zelfverwijzing, onbekend supertype) — elk met een negatieve getuige; een target dat op twee niveaus regels draagt is géén weigering maar volgt de groepserving van opdrachtbesluit 3, met de kernel-getuigen als semantische maat. Neem in de kaartafronding de notitie op dat de werkbank-generator (`wetsanalyse/herleving-ww/scripts/bouw-gegevensspraak.py`, buiten deze repo) de eerste afnemer is: die emit na landing de 17 gepinde CGM-overervingsparen als `is een` in plaats van platslaan.
+
+Acceptance: de use-case-golden bestaat in dialectvorm en speelt groen door de frontend → verifier → executorreeks; de negatieve getuigen weigeren luid; `grammar/DIVERGENCES.md` draagt de registratie; byte-identieke heremissie van het bestaande corpus is aangetoond; de volledige gate-reeks is groen.
+
+May touch: `frontends/regelspraak/` (grammatica, lowering, fixtures), `grammar/DIVERGENCES.md`, `corpus/` (de dialect-golden), en de eigen kaart.
+
+Out of scope: kernel- of executor-wijzigingen (voorganger-kaart); GegevensSpraak-spec-wijzigingen richting de officiële arbiter (wij registreren divergentie, wij herschrijven de arbiter niet); de F-logic-frontend; meervoudige overerving.
