@@ -1280,7 +1280,7 @@ let () =
                 bron = None; set = true; navigatie_pad = []; navigatie_bindingen = None } ];
         element_objecttype = Some "Vondst"; leegwaarde = None; filter = None;
         dimensie_selectie = None; typ = Some num_eur; bron = None; granulariteit = None;
-        bron_rol = None }
+        bron_rol = None; bron_pad = None }
   in
   let tl_of segs label = { (inst label "Vondst" []) with
                            tls = World.SMap.add "bewaartarief" segs World.SMap.empty } in
@@ -2133,7 +2133,7 @@ let () =
         argumenten = [ aref a "Vondst" typ_a; aref b "Vondst" typ_b ];
         element_objecttype = None; leegwaarde = None; filter = None;
         dimensie_selectie = None; typ = Some num_uur; bron = None;
-        granulariteit = None; bron_rol = None }
+        granulariteit = None; bron_rol = None; bron_pad = None }
   in
   (* the widened WF-035 fence: a datum-tijd operand rides its sub-day unit
      into the ms layer (WV-3.8-dt-uur, through the evaluator) *)
@@ -2204,7 +2204,7 @@ let () =
       { kind = Aantal; argumenten = [ count_source nav ];
         element_objecttype = Some "Vondst"; leegwaarde = None; filter = None;
         dimensie_selectie = None; typ = Some num0; bron = None;
-        granulariteit = None; bron_rol = None }
+        granulariteit = None; bron_rol = None; bron_pad = None }
   in
   let env = env_of doc in
   let w =
@@ -2293,6 +2293,7 @@ let () =
         element_objecttype = Some "Wachter"; leegwaarde = None; filter = None;
         dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = None;
         bron_rol = Some { rb_feittype = "ketenband"; rb_rol = "opvolger" };
+        bron_pad = None;
       }
   in
   let env = env_of doc in
@@ -2497,7 +2498,7 @@ let () =
       { kind = Aantal; argumenten = [ count_source name ];
         element_objecttype = Some el; leegwaarde = None; filter = None;
         dimensie_selectie = None; typ = Some num0; bron = None;
-        granulariteit = None; bron_rol = None }
+        granulariteit = None; bron_rol = None; bron_pad = None }
   in
   let w =
     List.fold_left World.add_instance World.empty
@@ -3063,7 +3064,7 @@ let () =
     Functie
       { kind = Som; argumenten = args; element_objecttype = None; leegwaarde = leeg;
         filter = None; dimensie_selectie = None; typ = Some num0; bron = None;
-        granulariteit = None; bron_rol = None }
+        granulariteit = None; bron_rol = None; bron_pad = None }
   in
   expect_msg "WV-5.11-som-bijdrager0-eerst" (run_v (som [ boom; pit ] None)) bm;
   expect_msg "WV-5.11-som-bijdrager1-later" (run_v (som [ pit; boom ] None)) pm;
@@ -3079,7 +3080,7 @@ let () =
     Functie
       { kind = Concatenatie; argumenten = args; element_objecttype = None; leegwaarde = None;
         filter = None; dimensie_selectie = None; typ = Some Tekst; bron = None;
-        granulariteit = None; bron_rol = None }
+        granulariteit = None; bron_rol = None; bron_pad = None }
   in
   expect_msg "WV-5.11-concat-deel0-eerst" (run_v (concat [ boom; pit ])) bm;
   expect_msg "WV-5.11-concat-deel1-later" (run_v (concat [ pit; boom ])) pm;
@@ -3213,7 +3214,7 @@ let () =
                 navigatie_pad = []; navigatie_bindingen = None } ];
         element_objecttype = Some "Deelvangst"; leegwaarde = None; filter = Some lid_filter;
         dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = None;
-        bron_rol = None }
+        bron_rol = None; bron_pad = None }
   in
   expect_msg "WV-5.11-instantiefold-lid0-eerst" (run_leden telling "1" "0") bm;
   expect_msg "WV-5.11-instantiefold-lid1-later" (run_leden telling "0" "1") pm;
@@ -3228,7 +3229,7 @@ let () =
                 navigatie_pad = []; navigatie_bindingen = None } ];
         element_objecttype = Some "Deelvangst"; leegwaarde = None; filter = Some lid_filter;
         dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = None;
-        bron_rol = None }
+        bron_rol = None; bron_pad = None }
   in
   expect_msg "WV-5.11-instantiesom-lid0-eerst" (run_leden ledensom "1" "0") bm;
   expect_msg "WV-5.11-instantiesom-lid1-later" (run_leden ledensom "0" "1") pm

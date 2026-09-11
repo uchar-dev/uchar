@@ -948,6 +948,70 @@ Jutter to Duinkavel the unresolved written form faults loudly
 (the `wf034-ambigu-typenpaar` rejection at the well-formedness
 layer).
 
+### 3.4b The multi-step fold source — the flat union (WF-102)
+
+A set fold source may describe its range with a PATH of relations rather
+than one (`IR-SPEC.md` ch. 4.3, `sourcePath`; two or more steps, the
+one-step range stays `sourceRole`). The folded set is the **flat union**:
+start at the fold subject, take step 1's linked instances, take step 2's
+linked instances from each of those, and so on; the contributors are the
+instances the last step reaches. It is a SET — an element reachable through
+more than one intermediate instance contributes **once** — and everything
+downstream is unchanged: the element's attribute is read at the
+`elementObjecttype` exactly as in the one-step form, a leeg element
+attribute drops out of a value fold (ch. 1.2), the die/dat subselection
+(ch. 3.4a) still evaluates per contributor with the element as its subject,
+and the empty-source rules (ch. 1.2) apply to the union, not to any
+intermediate step.
+
+Three consequences of "the union, not any intermediate step", each worth
+stating because the nested reading answers differently:
+
+1. An intermediate instance that reaches nothing simply contributes
+   nothing. It never produces an empty inner result for the outer fold to
+   absorb, so `MINIMUM`/`MAXIMUM`/`EERSTE`/`LAATSTE` — which have no
+   fallback — never have to decide what to do with one.
+2. A count over the union counts ELEMENTS, never intermediate instances.
+3. A sum's `emptyFallback` fires at most ONCE, for a subject whose whole
+   range is empty — never once per empty intermediate instance. (With a
+   zero fallback the two readings agree numerically; with any other they do
+   not, and the executors carry only the zero fallback today, so the
+   divergence is named here and pinned nowhere.)
+
+A step through a to-ONE role is an ordinary step: it contributes its
+zero-or-one linked instance to the union. Multiplicity is a declaration
+fact and does not enter this reading.
+
+Worked example (the `anchor/jutterswet-bootberging` golden, verbatim in
+gates 5–6 and as WV-3.4b-vlakke-unie / WV-3.4b-gedeeld in `ref/` tests).
+The model: a Jutter sails `gevoerde boten`, a Boot salvages `geborgen
+vondsten`, a Vondst fills `ingepakte kisten`. Three rules on one Jutter —
+the minimum `gewicht` over the two-step range, the sum of the same with an
+`of 0` fallback, and the minimum `inhoudsgewicht` over the THREE-step range.
+
+*Case 1 — the range spread over two intermediate instances.* `J1` sails
+`B1` and `B2`; `B1` salvages `V1` (3,00) and `V2` (7,00); `B2` salvages
+`V3` (5,00). The union is {V1, V2, V3}, so the minimum is **3,00** — it
+sits on `B1` while `B2` contributes 5,00, which is what makes the answer a
+proof that both intermediate instances are walked — and the sum is
+**15,00**. `V1` holds `K1` (2,50), `V2` holds `K2` (1,25) and `K3` (4,00),
+`V3` holds none: the three-step union is {K1, K2, K3} and the minimum is
+**1,25**. `J2` sails one boat salvaging `V4` (9,00) and `V5` (no gewicht):
+the leeg element drops out of both value folds, so the minimum is **9,00**
+and the sum **9,00**, while the three-step range reaches only `K4` (6,00)
+→ **6,00**. `J3` sails a boat that salvages nothing and `J4` sails no boat
+at all: both ranges are empty, so both minima are **leeg** (no fallback
+exists) and both sums are **0** (the fallback, fired once) — the empty
+range at the LAST step and at the FIRST step answer alike.
+
+*Case 2 — the shared element.* `J1` sails `B1` and `B2`; `B1` salvages
+`V1` (3,00) and `V2` (7,00); `B2` salvages `V1` again and `V3` (5,00).
+`V1` is reachable along two intermediate instances and contributes once,
+so the sum is **15,00** and not 18,00; the minimum is **3,00** either way,
+which is why the sum is the witness. The same holds one step deeper: `V1`
+and `V3` both hold `K1` (2,50) while `V2` holds `K2` (1,25), so the
+three-step union is {K1, K2} and the minimum is **1,25**.
+
 ### 3.5 Temporal summation — the contributor-skipping rule (§5.8.2)
 
 The temporal sum over N timeline contributors (the operands of a temporal

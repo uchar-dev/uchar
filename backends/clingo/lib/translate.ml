@@ -508,6 +508,46 @@ let role_canonical (r : rol) =
   | Some m, None -> m
   | None, None -> fault "role without a name"
 
+(* ch. 3.4b / WF-102: the fold source's range as rol/3 atoms, one per
+   step, ending on the element variable [x]. The one-step form is the
+   node's bronRol (or WF-048's type-pair derivation); a bronPad walks
+   two or more steps through fresh intermediate variables.
+
+   The DEDUP the flat union demands is free here and deliberately so:
+   the intermediate variables are existentially quantified INSIDE the
+   aggregate, and every aggregate below elects a term that names only
+   the element (and its value), so an element reachable along two
+   intermediates contributes one tuple — which is what ref's explicit
+   label dedup produces. Nothing in this function enforces it; the
+   choice of aggregate TERM does, and that is why the terms are left
+   exactly as the one-step arms wrote them. *)
+let source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x =
+  match bron_pad with
+  | None ->
+      let role_name =
+        role_canonical
+          (match bron_rol with
+          | Some rb -> Eval.bound_role env rb
+          | None -> Eval.connecting_role env ~from_type:subject_ot ~to_type:el)
+      in
+      [ Printf.sprintf "rol(%s,%s,%s)" subject (str role_name) x ]
+  | Some pad ->
+      let n = List.length pad in
+      if n < 2 then
+        fault "a bronPad carries at least TWO steps, found %d (WF-102)" n;
+      if bron_rol <> None then
+        fault "a bronPad beside a bronRol: the one-step range IS bronRol (WF-102)";
+      let atoms, _ =
+        List.fold_left
+          (fun (atoms, cur) (i, rb) ->
+            let target = if i = n - 1 then x else fresh ctx "M" in
+            let role = role_canonical (Eval.bound_role env rb) in
+            (atoms @ [ Printf.sprintf "rol(%s,%s,%s)" cur (str role) target ], target))
+          ([], subject)
+          (List.mapi (fun i rb -> (i, rb)) pad)
+      in
+      atoms
+
 let lexeme_decimals lex =
   match String.index_opt lex '.' with
   | Some i -> String.length lex - i - 1
@@ -1466,7 +1506,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           v,
           pow10 (attr_decimals ctx ~otype:ot ~attr:a) )
       end
-  | Functie { kind = Aantal; argumenten = [ Attribuut_ref { attribuut; typ = Some (Datatype_onbekend _); navigatie_rol; navigatie_pad = []; _ } ]; element_objecttype = Some el; bron_rol; filter; _ }
+  | Functie { kind = Aantal; argumenten = [ Attribuut_ref { attribuut; typ = Some (Datatype_onbekend _); navigatie_rol; navigatie_pad = []; _ } ]; element_objecttype = Some el; bron_rol; bron_pad; filter; _ }
     when (match navigatie_rol with
          | None -> true
          | Some nr ->
@@ -1481,6 +1521,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          die/dat subselection joins per contributor: the filter atoms
          range over the element variable (ch. 5.8-family reading — an
          unbound filter operand excludes the contributor for free). *)
+      (* WF-102 (c): the wart hands the fold the subject's LINKED INSTANCES,
+         not a value per contributor, so a range does not apply to it.
+         Faulted by name rather than ignored — a dropped range is the silent
+         misbinding the field exists to close. *)
+      if bron_pad <> None then
+        fault
+          "a bronPad on the row-1 wart (the role-name count source): a range is admissible only \
+           on the SET source of a single-argument instance fold (WF-102)";
       let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty } in
       let role =
         role_canonical
@@ -1529,7 +1577,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
      "unknown attribute"), never a silent value. The Aantal arm above is the
      same story one field over: it binds no objecttype at all and mirrors
      ref's role-source arm field for field. *)
-  | Functie { kind = (Som | Totaal) as kind; argumenten = [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some el; leegwaarde; bron_rol; filter; _ } ->
+  | Functie { kind = (Som | Totaal) as kind; argumenten = [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some el; leegwaarde; bron_rol; bron_pad; filter; _ } ->
       (* ONE branch for the two set folds, because ref has one: its
          contributor gathering is shared and only the empty-set rule
          differs (agg_som ~fallback vs agg_totaal). The set reading of
@@ -1565,14 +1613,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* the connecting role: the node's explicit binding when present,
          else derived the same way ref/ derives it *)
       let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty } in
-      let role_name =
-        role_canonical
-          (match bron_rol with
-          | Some rb -> Eval.bound_role env rb
-          | None -> Eval.connecting_role env ~from_type:subject_ot ~to_type:el)
-      in
       let v = fresh ctx "S" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
+      let join = source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x in
       let fatoms =
         match filter with
         | None -> []
@@ -1586,11 +1629,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              [filled]). The #sum accumulation stays inside 2^31 by
              bounding both the contributors and their count:
              46340 × 46340 < 2^31. *)
-          let body =
-            Printf.sprintf "rol(%s,%s,%s)" subject (str role_name) x
-            :: Printf.sprintf "val(%s,%s,%s)" x (str a) g
-            :: fatoms
-          in
+          let body = join @ (Printf.sprintf "val(%s,%s,%s)" x (str a) g :: fatoms) in
           range_guard ctx ~subject ~body:((base :: ctx.rule_guard) @ body) [ (g, 46340) ];
           emit ctx
             "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, \
@@ -1712,7 +1751,11 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             (Eval.SMap.fold
                (fun _ (self : Uchar_ref.World.instance) acc ->
                  if norm self.otype <> norm subject_ot then acc
-                 else Eval.linked ?binding:bron_rol env ctx.case.world self ~to_type:el @ acc)
+                 else
+                   (match bron_pad with
+                    | Some pad -> Eval.linked_path env ctx.case.world self ~path:pad
+                    | None -> Eval.linked ?binding:bron_rol env ctx.case.world self ~to_type:el)
+                   @ acc)
                ctx.case.world.instances []);
           (* one entry PER (member, segment) — the multiplicity is
              load-bearing for the fence below, which must count the
@@ -1776,10 +1819,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             (List.sort_uniq compare spans);
           let n = fresh ctx "N" and vv = fresh ctx "V" and tt = fresh ctx "T" in
           let body =
-            Printf.sprintf "rol(%s,%s,%s)" subject (str role_name) x
-            :: Printf.sprintf "tl(%s,%s,%s,%s,%s)" x (str a) vv tt g
-            :: Printf.sprintf "%s_wu(%s,%s,%s)" p vv tt n
-            :: fatoms
+            join
+            @ (Printf.sprintf "tl(%s,%s,%s,%s,%s)" x (str a) vv tt g
+               :: Printf.sprintf "%s_wu(%s,%s,%s)" p vv tt n
+               :: fatoms)
           in
           range_guard ctx ~subject ~body:((base :: ctx.rule_guard) @ body) [ (g, 46340) ];
           (body, (Printf.sprintf "%s*%s" g n, Printf.sprintf "%s,%s,%s" x vv tt))
@@ -1808,7 +1851,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         pow10 (attr_decimals ctx ~otype:el ~attr:a) )
   (* element-anchored like the som arm above, and unnarrowed on the
      operand's objecttype for the reason measured there *)
-  | Functie { kind = (Minimum | Maximum) as kind; argumenten = [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some el; bron_rol; filter; _ } ->
+  | Functie { kind = (Minimum | Maximum) as kind; argumenten = [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some el; bron_rol; bron_pad; filter; _ } ->
       (* MAXIMUM/MINIMUM over a set-typed AttribuutRef (RUNTIME-SEMANTICS
          ch. 1.2e, ref agg_max/agg_min = agg_extreme): the same contributor
          gathering as the som arm, aggregated with #max/#min at the element
@@ -1846,12 +1889,6 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
            buckets"
           a;
       let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty } in
-      let role_name =
-        role_canonical
-          (match bron_rol with
-          | Some rb -> Eval.bound_role env rb
-          | None -> Eval.connecting_role env ~from_type:subject_ot ~to_type:el)
-      in
       let v = fresh ctx "M" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
       let fatoms =
@@ -1860,9 +1897,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         | Some c -> cond_atoms ctx ~subject:x ~subject_ot:el c
       in
       let contrib_body =
-        Printf.sprintf "rol(%s,%s,%s)" subject (str role_name) x
-        :: Printf.sprintf "val(%s,%s,%s)" x (str a) g
-        :: fatoms
+        source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x
+        @ (Printf.sprintf "val(%s,%s,%s)" x (str a) g :: fatoms)
       in
       let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
       ctx.fresh <- ctx.fresh + 1;

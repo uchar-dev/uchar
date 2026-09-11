@@ -106,6 +106,10 @@ type expr =
       bron : string option;
       granulariteit : granulariteit option;
       bron_rol : rol_binding option; (* extension: the fold-source role *)
+      bron_pad : rol_binding list option;
+          (* extension: the fold source's multi-step range (WF-102) — the
+             list is carried AS LOADED, empty included, so the arity is a
+             violation the rule reports and never a load failure *)
     }
   | Afgerond of {
       basis : expr option;

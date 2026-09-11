@@ -3410,6 +3410,7 @@ embedded expressions) — sugar verdict (row 31), mirrored; empty coerces to
 | `emptyFallback` | expression? — **sum only**: the §5.8.2 "of … als die er niet zijn" clause |
 | `dimensionSelection` | ? — **sum/min/max only**: fold over an ordered label selection instead of instances (dialect, row 28) |
 | `sourceRole` | RoleBinding? — **extension field** (v0 wire `bronRol`), instance folds only: the connecting relation, with **the role whose filler instances form the folded set bound**; the opposite role's filler is the fold's subject type (WF-047). Absent, WF-048's unique derivability applies; a binding on a non-fold is ill-formed (WF-047) |
+| `sourcePath` | RoleBinding list? — **extension field** (v0 wire `bronPad`), the MULTI-STEP range of a set source: the relations walked subject-outwards, each step spelled exactly as `sourceRole` is. Two or more steps; the one-step range IS `sourceRole` and the two fields are mutually exclusive (WF-102) |
 | `type`, `source` | — |
 
 Empty-source results differ per kind — the som/totaal split and the
@@ -3488,7 +3489,17 @@ fold.
   `navigatieRol` (naming only roles filled by other types, or no declared
   role at all), and any `navigatieRol` outside the wart, are ill-formed.
   (c) The fold source's `objecttype` MUST name the fold's anchor: the
-  `elementObjecttype` when `set`, the fold subject otherwise.
+  `elementObjecttype` when `set`, the fold subject otherwise. **A
+  `sourcePath`'s INTERMEDIATE types are range, never anchor
+  (2026-09-11).** The path (WF-102) introduces a third class of type into
+  this position — the types the walk passes THROUGH — and the anchor is
+  unmoved by them: every member of the folded set is still an
+  `elementObjecttype` instance and every declaration is still looked up
+  there, so a source `objecttype` naming an intermediate type is
+  ill-formed exactly as any other non-anchor name is
+  (`wf083-vouwbron-anker-op-tussentype`). The clause needs no new arm for
+  it; it needs to have CONSIDERED it, because the shape where the anchor
+  and the range diverge did not exist before the path did.
   Companion: WF-053 over the listed fold's operands, applied at the
   aggregation position for the same reason WF-089 and WF-092 are — the
   fold branch of the walk replaces the generic expression walk there, so
@@ -4126,6 +4137,132 @@ loud executor fault, never a guess.
 Semantics: `RUNTIME-SEMANTICS.md` ch. 3.4a; the ASP backend keys the
 count by the connecting role's canonical name, never by the written
 lexeme.
+
+**The fold source's RANGE is a PATH (WF-102).** *(Maintainer decision
+2026-09-11.)* A set source describes its range with ONE relation:
+`elementObjecttype` plus `sourceRole`. A written range that stacks two
+relations — "het gewicht van alle geborgen vondsten van alle gevoerde boten
+van de Jutter" — has no form on that wire, and the two spellings it can
+degrade to are both wrong: dropping the outer step folds a DIFFERENT set
+(and where a fact type happens to relate the subject to the element type
+directly, the degraded document is well-formed and every executor agrees on
+the wrong answer), while a fold nested inside a fold has no binder that
+hands the outer element to the inner source and is refused by WF-047 and by
+both OCaml executors. The range is therefore generalised, not the fold: one
+relation is the one-step case of a PATH.
+
+*The wire form.* `sourcePath` is a list of `RoleBinding`s, subject-outwards:
+step 1's opposite role is filled by the fold subject, each further step's
+opposite role is filled by the type its predecessor's bound role reaches,
+and the LAST step's bound role is filled by the `elementObjecttype`. That is
+the orientation and the discipline of `navigationBindings` (ch. 4.1a) and of
+`sourceRole` itself, so WF-047's resolution is reused step for step rather
+than restated. Two fields, one meaning, so exactly one spelling per meaning:
+a one-step range IS `sourceRole` — the spelling every existing document
+carries and every executor already reads — and `sourcePath` therefore
+carries **two or more** steps and never stands beside `sourceRole`.
+
+*The reading is the FLAT UNION, and it is normative.* The folded set is the
+set of `elementObjecttype` instances REACHABLE from the fold subject along
+the whole path: gather step 1's linked instances, gather step 2's from each
+of those, and so on; the result is a SET — an element reachable through more
+than one intermediate instance contributes ONCE. The alternative reading —
+fold per intermediate instance, then fold the results — is NOT a desugaring
+of this one and is deliberately not offered, because the two disagree in
+three places:
+
+- **MIN/MAX/FIRST/LAST.** They coincide while every inner set is non-empty
+  (minimum is associative over a union) and diverge as soon as one
+  intermediate instance reaches nothing: the flat reading ignores that
+  instance, the nested reading produces an EMPTY inner result for it, and
+  min/max/first/last have no `emptyFallback` to absorb it (ch. 1.2) — so the
+  nested reading must decide what an empty contributor does to the outer
+  fold, and the flat reading never asks.
+- **COUNT.** They do not coincide at all. A count over the flat union counts
+  ELEMENTS; a count of counts counts INTERMEDIATE INSTANCES. On the worked
+  example: three finds against two boats.
+- **SUM with an `emptyFallback`** ("of 0 als die er niet zijn"). The flat
+  reading fires the fallback at most once, for a subject that reaches no
+  element at all; the nested reading fires it once per empty intermediate
+  instance. With a zero fallback the totals coincide numerically, so the
+  divergence is invisible in the corpus today; with any other fallback it is
+  not.
+
+The flat union is what the sentence says ("alle geborgen vondsten van alle
+gevoerde boten") and what a join produces. The nested reading is a different
+construct and would need its own node, not a second reading of this one.
+
+*Depth is UNBOUNDED (two or more steps), decided rather than assumed.* A cap
+would be a constant in a normative rule with nothing behind it: the union is
+defined by induction on the list, every consumer walks the list as a fold,
+and no clause above degrades at three steps. A cap also only ever loosens —
+raising it later turns documents that were ill-formed into well-formed ones,
+which is a wire-format event — so a cap not taken costs nothing and a cap
+taken costs that. The v0 toolchain caps its own chain at two because it
+emits one join PATTERN per step and wanted the code-generation blast radius
+bounded; that is a property of a code generator, not of the range, and uchar
+consumes the list symbolically. The corpus pins two steps and three steps
+(`jutterswet-bootberging`).
+
+*A TO-ONE step is admitted, and that closes the question the acute flank
+left open.* A role's declared multiplicity does not enter the reading: a
+step through a to-one role contributes its zero-or-one linked instance to
+the union exactly as a to-many step contributes its zero-or-more. Refusing
+it would need a new arm keyed on `meervoudig`, which no consumer reads in
+this position, to refuse a shape whose semantics is already fixed by the
+clause above. So "alle vondsten van de boot van de Jutter" — one to-one step
+and one to-many step — is a two-step `sourcePath`, not a refusal.
+
+*The written ANCHOR may be a role name, under the order ch. 4.1a already
+fixes.* The wire never carries the written anchor; it carries the path,
+whose first step starts at the fold subject by WF-102. What a producer must
+decide is whether a written anchor that names a ROLE rather than an object
+type ("de minimale waarde van het gewicht van alle vondsten van **de
+aanmelder**") denotes the subject or another instance. The answer is the
+test that already exists and the ORDER that already governs it (ch. 4.1a,
+WF-083 (b)): far-role resolution FIRST — a role reachable from the subject
+whose filler is some other instance is a HOP, and belongs on the path as a
+step — and the self-denoting reading only at zero far hits, where the name
+matches (ci, declared name or declared plural) a role the SUBJECT TYPE
+itself fills, and then the path simply starts at the subject. The v0
+v0 resolver refuses every role anchor outright, on the ground that a role
+whose filler happens to be the subject's own type denotes a DIFFERENT
+instance; that ground is real and it is exactly what far-role-first already
+catches, so uchar refuses the same shape without refusing the shape beside
+it. Measured over the four zones (2026-09-11): of 56 member folds, **six**
+write an anchor that names no object type — two in the negatief zone
+(`wf093-wratvouw-set-som`, `wf093-wratvouw-set-maximum`, both already
+rejected on their kind) and four in the parity fixtures — and every one of
+them is a one-step range whose anchor is self-denoting, so the decision
+moves no document. The producer's own witness is a frontend test, since the
+form's wire result is the one-step `sourceRole` it already emits.
+
+Semantics and worked examples, including the three empty corners:
+`RUNTIME-SEMANTICS.md` ch. 3.4b.
+
+- **WF-102** A set fold source's multi-step range is a `sourcePath`, and it
+  is a CONNECTED path from the fold subject to the element type (ch. 4.3).
+  (a) `sourcePath` and `sourceRole` MUST NOT both be present — the one-step
+  range is `sourceRole`, and one meaning has one spelling.
+  (b) A present `sourcePath` MUST carry at least TWO steps; the empty list
+  and the single step are ill-formed.
+  (c) `sourcePath` is admissible ONLY at the position `sourceRole` is, and
+  only on the **set** source: the single argument of an instance fold read
+  with `set: true`. On a listed value fold, on a builtin, on a non-set
+  source (the temporal total and the row-1 wart, which hand the fold the
+  subject's own read and the subject's linked instances respectively), it is
+  ill-formed.
+  (d) Every step MUST resolve (WF-047) and the steps MUST JOIN: step 1's
+  opposite role is filled by the fold subject, each further step's opposite
+  role is filled by the object type its predecessor's bound role reaches,
+  and the last step's bound role is filled by the `elementObjecttype`. A
+  path that starts elsewhere, breaks in the middle, or lands on another type
+  is ill-formed — there is no bindingless fallback for a path, because
+  WF-048's unique derivability answers for a type PAIR and a path is not one
+  (its intermediate types are its own claim, not a derivable consequence of
+  its endpoints).
+  Companion: WF-083 (c), whose anchor is unmoved by the path and whose
+  intermediate-type witness is named there.
 
 **BuiltinCall** — scalar, text, and date builtins with plain arguments:
 wortel, absolute-waarde (core kernel); concatenatie (text fold);

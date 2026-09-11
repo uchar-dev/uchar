@@ -4859,6 +4859,97 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                Some (el, `Member)
            | _ -> None
          in
+         (* WF-102 (maintainer decision 2026-09-11): the fold source's range
+            may be a PATH. The path IS the binding, so the bindingless
+            derivability arm below (WF-048) never applies to it: WF-048
+            answers for a type PAIR, and a path's intermediate types are its
+            own claim rather than a derivable consequence of its endpoints.
+            Placed AHEAD of the one-step logic and returning instead of
+            falling through, so exactly one of the two shapes is judged and
+            a document carrying both is reported once, by (a). *)
+         match f.bron_pad with
+         | Some pad ->
+             (* (a) one meaning, one spelling *)
+             (match f.bron_rol with
+             | Some _ ->
+                 [ v "WF-102" (sub "bronPad")
+                     "bronPad beside bronRol: the one-step range IS bronRol, so the two fields \
+                      are mutually exclusive" ]
+             | None -> [])
+             (* (b) the arity: the empty list and the single step are the
+                one-step spelling's territory, not the path's *)
+             @ (if List.length pad >= 2 then []
+                else
+                  [ v "WF-102" (sub "bronPad")
+                      (Printf.sprintf
+                         "a bronPad carries at least TWO steps, found %d — the one-step range is \
+                          spelled bronRol"
+                         (List.length pad)) ])
+             (* (c) the position: the set source of a single-argument
+                instance fold, exactly where bronRol stands. The non-set
+                sources hand the fold something else entirely (the temporal
+                total reads the subject's own timeline, the row-1 wart hands
+                it the subject's linked instances), so a range does not
+                apply to them. *)
+             @ (match fold_source with
+               | Some (_, `Member) -> []
+               | _ ->
+                   [ v "WF-102" (sub "bronPad")
+                       "a bronPad is admissible only on the SET source of a single-argument \
+                        instance fold — the position bronRol stands at" ])
+             (* (d) every step resolves (WF-047) and the steps JOIN: the
+                first step's opposite role is filled by the fold subject,
+                each further step's opposite role by the type its
+                predecessor reaches, and the last step's bound role by the
+                elementObjecttype. A step that does not resolve stops the
+                walk: without its fillers the rest of the chain has nothing
+                to join against, and reporting a cascade of joins off an
+                unresolved step would name the wrong defect. *)
+             @ (let rec chain i from_t = function
+                  | [] -> []
+                  | (rb : rol_binding) :: rest -> (
+                      let step = sub ("bronPad/" ^ string_of_int i) in
+                      match resolve_binding ctx rb with
+                      | Error e -> [ v "WF-047" step e ]
+                      | Ok (_, bound, other) ->
+                          let bound_filler =
+                            Option.value bound.rol_objecttype_naam ~default:""
+                          in
+                          let other_filler =
+                            Option.value other.rol_objecttype_naam ~default:""
+                          in
+                          let joins =
+                            match from_t with
+                            | None -> []
+                            | Some ft when norm other_filler = norm ft -> []
+                            | Some ft ->
+                                [ v "WF-102" step
+                                    (Printf.sprintf
+                                       "the opposite role '%s' fills '%s', but this step starts \
+                                        at '%s' (%s) — a bronPad is a connected walk"
+                                       (Option.value other.rol_naam ~default:"?")
+                                       other_filler ft
+                                       (if i = 0 then "the fold subject"
+                                        else "the type the previous step reaches")) ]
+                          in
+                          let lands =
+                            if rest <> [] then []
+                            else
+                              match f.element_objecttype with
+                              | Some el when norm bound_filler <> norm el ->
+                                  [ v "WF-102" step
+                                      (Printf.sprintf
+                                         "the last step's bound role '%s' fills '%s', but the \
+                                          fold's elementObjecttype is '%s' — the path must land \
+                                          on the element type"
+                                         (Option.value bound.rol_naam ~default:"?")
+                                         bound_filler el) ]
+                              | _ -> []
+                          in
+                          joins @ lands @ chain (i + 1) (Some bound_filler) rest)
+                in
+                chain 0 subject pad)
+         | None -> (
          match (fold_source, f.bron_rol) with
          | None, None -> []
          | None, Some _ ->
@@ -4885,7 +4976,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
          | Some (el, _), None -> (
              match subject with
              | Some st -> wf048_derivable ctx at ~from_type:st ~to_type:el ~site:"instance fold"
-             | None -> []))
+             | None -> [])))
   | Afgerond { basis; _ } ->
       (match basis with Some e -> walk_expr ctx ~binders ~subject ~body (sub "basis") e | None -> [])
   | Begrensd { basis; minimum; maximum; _ } ->
@@ -6401,9 +6492,21 @@ let rec dep_expr ctx ~subject acc (e : expr) =
           | Ingevoegd { expr = None } -> acc)
         acc delen
   | Binair { links; rechts; _ } -> dep_opt ctx ~subject (dep_opt ctx ~subject acc links) rechts
-  | Functie { argumenten; element_objecttype; leegwaarde; filter; bron_rol; _ } ->
+  | Functie { argumenten; element_objecttype; leegwaarde; filter; bron_rol; bron_pad; _ } ->
       let acc =
         match element_objecttype with Some el -> (n_pop el, Dep_pos) :: acc | None -> acc
+      in
+      let acc =
+        (* WF-102: a multi-step range reads EVERY step's link set — the
+           same edge the one-step form draws, once per relation walked, so
+           a creation that fills an intermediate relation still orders
+           before the fold *)
+        match bron_pad with
+        | Some pad ->
+            List.fold_left
+              (fun acc (rb : rol_binding) -> (n_rel rb.rb_feittype, Dep_pos) :: acc)
+              acc pad
+        | None -> acc
       in
       let acc =
         (* a bound fold reads the named relation's link set — the edge a

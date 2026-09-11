@@ -346,6 +346,31 @@ let linked ?binding env world (self : World.instance) ~to_type =
     | Some rb -> bound_role env rb
     | None -> connecting_role env ~from_type:self.otype ~to_type)
 
+(* ch. 3.4b / WF-102: the multi-step fold source. The folded set is the
+   FLAT UNION over the path — walk step 1 from the subject, step 2 from
+   each instance step 1 reached, and so on — and it is a SET: an instance
+   reachable along more than one intermediate contributes ONCE. Dedup is
+   by instance LABEL, keeping first-reach order, which is the order
+   [World.instance] identity is keyed on everywhere else; without it a
+   diamond would double-count in a som and the ASP backend (whose
+   aggregate collapses equal tuples by construction) would disagree.
+   A to-ONE step needs no separate arm: [role_links] yields its
+   zero-or-one instance like any other. *)
+let linked_path env world (self : World.instance) ~path =
+  let step acc rb =
+    let role = bound_role env rb in
+    List.concat_map (fun i -> role_links world i role) acc
+  in
+  let reached = List.fold_left step [ self ] path in
+  let seen = Hashtbl.create 16 in
+  filter_in_order
+    (fun (i : World.instance) ->
+      if Hashtbl.mem seen i.label then false
+      else (
+        Hashtbl.add seen i.label ();
+        true))
+    reached
+
 (* a role reachable from [self]'s type whose name/plural matches [name] —
    the v0 instance-fold source wart: a pseudo-AttribuutRef carrying the
    sentinel type names a role, resolved against declared roles (the
@@ -763,9 +788,9 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
             ~unit_ ~result_unit:(unit_of_datatype typ)
             van tot
       | _ -> Value.fault "tijdsduur expects two arguments")
-  | Functie { kind; argumenten; element_objecttype; leegwaarde; filter; dimensie_selectie; granulariteit; bron_rol; typ = _; bron = _ } ->
+  | Functie { kind; argumenten; element_objecttype; leegwaarde; filter; dimensie_selectie; granulariteit; bron_rol; bron_pad; typ = _; bron = _ } ->
       eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leegwaarde ~filter
-        ~dimensie_selectie ~granulariteit ~bron_rol
+        ~dimensie_selectie ~granulariteit ~bron_rol ~bron_pad
   | Tekst_reeks { delen; _ } ->
       Arith.concat
         (map_in_order
@@ -1094,7 +1119,7 @@ and eval_closed_body env world self ~err (parameters : (string * datatype) list)
   eval_expr { env with locals } world self ~err body
 
 and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leegwaarde ~filter
-    ~dimensie_selectie ~granulariteit ~bron_rol =
+    ~dimensie_selectie ~granulariteit ~bron_rol ~bron_pad =
   (* the die/dat subselection executes on the instance folds below; the
      SAME wire field also carries the §7.1 gedurende timeline clip (a
      filter on the temporal total, where elementObjecttype is the
@@ -1102,6 +1127,25 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
      subselection and faults in its own arm *)
   if dimensie_selectie <> None then Value.fault "dimension selection not implemented in this card";
   if granulariteit <> None then Value.fault "granularity-bucketed aggregation not implemented in this card";
+  (* WF-102's two shape arms, mirrored here rather than assumed: a
+     verifier-clean document cannot reach them, and a document that
+     reaches an executor without passing the verifier must fault by name
+     instead of being read as the one-step form with the range dropped —
+     which is the silent misbinding this whole field exists to close. *)
+  (match bron_pad with
+  | None -> ()
+  | Some pad -> (
+      if List.length pad < 2 then
+        Value.fault "a bronPad carries at least TWO steps, found %d (WF-102)"
+          (List.length pad);
+      match (element_objecttype, argumenten) with
+      | ( Some _,
+          [ Attribuut_ref { set = true; navigatie_rol = None; navigatie_pad = []; _ } ] ) ->
+          ()
+      | _ ->
+          Value.fault
+            "a bronPad is admissible only on the set source of a single-argument instance fold \
+             (WF-102)"));
   match (kind, argumenten) with
   | ( Totaal,
       [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; navigatie_rol = None; navigatie_pad = []; set = false; _ } ] )
@@ -1275,7 +1319,12 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
       ) ->
         let name = req "fold attribute" attribuut in
         let el_decl = objecttype env el in
-        let members = filter_in_order keep (linked ?binding:bron_rol env world self ~to_type:el) in
+        let members =
+          filter_in_order keep
+            (match bron_pad with
+            | Some pad -> linked_path env world self ~path:pad (* ch. 3.4b *)
+            | None -> linked ?binding:bron_rol env world self ~to_type:el)
+        in
         (* §7.1: a set read of a TEMPORAL attribute folds TWICE — each
            member's own timeline collapses over time first (ch. 3.6, at
            that attribute's granularity), and only those scalars fold over

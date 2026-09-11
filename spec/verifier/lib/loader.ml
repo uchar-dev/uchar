@@ -341,7 +341,7 @@ let rec expr path j : expr =
           bron = bron ();
         }
   | "Functie" ->
-      check_keys path kvs ~ext:[ "bronRol" ]
+      check_keys path kvs ~ext:[ "bronRol"; "bronPad" ]
         [ "node"; "kind"; "argumenten"; "elementObjecttype"; "leegwaarde";
           "filter"; "dimensieSelectie"; "type"; "bron"; "granulariteit" ];
       Functie
@@ -361,6 +361,12 @@ let rec expr path j : expr =
           bron = bron ();
           granulariteit = granulariteit_opt (path / "granulariteit") (f "granulariteit");
           bron_rol = ext_field path kvs "bronRol" rol_binding;
+          (* loaded verbatim, empty list included: WF-102 (b) owns the
+             arity, so a defective path is a citable violation and not a
+             load failure with no rule to name *)
+          bron_pad =
+            ext_field path kvs "bronPad" (fun p j ->
+                List.mapi (fun i x -> rol_binding (p / string_of_int i) x) (list_ p j));
         }
   | "Afgerond" ->
       check_keys path kvs [ "node"; "basis"; "modus"; "decimalen"; "type"; "bron" ];
