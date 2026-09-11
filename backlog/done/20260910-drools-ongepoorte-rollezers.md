@@ -207,9 +207,11 @@ regel die moet groeien als WF-096 ooit een set-operand toelaat.
 Deze lezer HEEFT een scheidsrechter: ref en clingo antwoorden allebei. GEPOORT,
 getuige `de_genavigeerde_kenmerktijdreeks_weigert_het_verdrongen_veld`.
 Ernaast vastgelegd, en bewust niet opgelost: dezelfde regel ZONDER verdringing
-divergeert ook — ref/clingo leeg, beide Drools-takken 8 — omdat §8.2 een lege
-relatie als een vacuüm-ware hele periode leest. Dat is een andere vraag dan
-welk veld de hop leest en hoort bij wie de §8.2-leegrelatiesemantiek pakt.
+divergeert ook — ref/clingo leeg, beide Drools-takken 8 — terwijl
+`RUNTIME-SEMANTICS` §3.9 uitdrukkelijk zegt dat een mislukte to-één navigatie
+een null-tijdlijn bijdraagt die vacuüm slaagt. Dat is een andere vraag dan welk
+veld de hop leest, en staat met vier gemeten cellen in
+`backlog/new/20260911-leegrelatie-ch39-divergentie.md`.
 
 **4. De verdeling** (zes leesplekken op één `join`, exec + DRL).
 
@@ -270,11 +272,16 @@ consistentieregel") — gemeten, en door deze kaart onveranderd. Getuige
 
 Alle acht getuigen eerst rood gedraaid met de drie gewijzigde bronbestanden
 gestasht: **7 failures, 1 pass**. De ene die groen bleef is de tegenproef, wat
-klopt. Elke failure was de gemeten fout zelf — `ConsequenceException` met
-`ClassCastException` voor de schrijfrol, `ConstraintEvaluationException` voor de
-vier joins/hops, en "Expected … Excluded to be thrown, but nothing was thrown"
-voor de AANTAL-drift, die immers stil verkeerd antwoordde in plaats van te
-falen. Daarna groen: 8/8.
+klopt. Elke failure was de gemeten fout zelf, en de zeven splitsen 1 + 5 + 1:
+
+- 1x `ConsequenceException` met `ClassCastException` — de schrijfrol van de
+  feitcreatie;
+- 5x `ConstraintEvaluationException` — de tussenstap, de kenmerk-tijdreeks, de
+  temporele set-sommatie, de verdeling en de verre rolcheck;
+- 1x "Expected … Excluded to be thrown, but nothing was thrown" — de
+  AANTAL-drift, die immers stil verkeerd antwoordde in plaats van te falen.
+
+Daarna groen: 8/8.
 
 ### Kanaalcontrole en gates
 
@@ -294,14 +301,24 @@ de opdracht is nergens ingegaan.
 
 - `corpus/golden`, `scripts/`, `spec/verifier/`, `spec/CONSTRUCTS.md`,
   `spec/PLAN.md`: niet aangeraakt.
-- De §8.2-leegrelatiesemantiek (zie lezer 3): een eigen vraag.
-- `DrlTranspiler`'s eigen aggregatie-bereik (`accumulateScope`, de by-name/by-pair
-  join achter `Frag.todo("aggregatie-bereik", …)`) stelt de gedeelde vraag NIET,
-  terwijl de exec-tegenhanger dat sinds 2026-08-30 wel doet. Gemeten:
-  `anchor/jutterswet-erflijn` door de DRL-tak geeft `EXCLUDE drl compile: Unable
-  to Analyse Expression erflater == $subject` waar de exec-tak de §13.3.9-zin
-  drukt. Die lezer stond op geen enkele lijst — ook niet op deze kaart — en is
-  een eigen, kleine kaart waard.
+- De §8.2-leegrelatie (zie lezer 3): eigen kaart,
+  `backlog/new/20260911-leegrelatie-ch39-divergentie.md`. Die draagt de vier
+  gemeten cellen; `RUNTIME-SEMANTICS` §3.9 heeft de norm al geschreven en twee
+  executors spreken hem stil tegen.
+- `DrlTranspiler`'s eigen aggregatie-bereik — de methode heet
+  `scope(Objecttype, Objecttype, Expr.Functie)` (~r. 3071, eindigend op
+  `Frag.todo("aggregatie-bereik", …)`) — stelt de gedeelde vraag NIET, terwijl de
+  exec-tegenhanger dat sinds 2026-08-30 wel doet. **Correctie op een eerdere
+  formulering hier**: die noemde de methode `accumulateScope` (bestaat niet) en
+  wees `anchor/jutterswet-erflijn` aan als getuige. Die getuige reproduceert op
+  déze tak niet meer: erflijn én `anchor/jutterswet-gemeenteberging` worden nu
+  door de nieuwe DRL-feitcreatiepoort eerder geweigerd, mét de §13.3.9-zin. De
+  hele golden-verzameling door de DRL-tak (167 met case-bestanden) geeft nu
+  **0 kale `EXCLUDE drl compile`-uitkomsten**, dus het kanaalrisico is gemeten
+  nul en een rood-eerst-getuige moet synthetisch zijn. Samen met een tweede,
+  gelijksoortige ongelijkheid tussen de takken (de DRL-feitcreatiepoort staat
+  achter `if (anker != null && … )` waar exec onvoorwaardelijk weigert) staat
+  dit in `backlog/new/20260911-drl-scope-en-nulveld-poort.md`.
 
 ### Voorstellen op beschermde paden
 
