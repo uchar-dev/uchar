@@ -3,18 +3,24 @@
 Goal: uchar's vouwbron beschrijft precies ÉÉN relatie — `elementObjecttype`
 plus één `bronRol` (`spec/IR-SPEC.md` ch. 4.3). Een aggregatie waarvan de
 bron TWEE to-many stappen stapelt ("het minimum van X van alle A van alle B
-van het onderwerp") is op die wire niet uitdrukbaar. De RegelSpraak-frontend
-accepteert de zin toch, zonder één diagnostiek, en gooit de buitenste stap
-weg. Waar toevallig een DIRECTE relatie tussen onderwerp en elementtype
-bestaat, vult de emitter die in — en dan is het document verifier-schoon en
-antwoorden `ref`, de ASP-backend én Drools eensluidend over de VERKEERDE
-verzameling. Deze kaart beslist de wire-vorm van een meerstaps
-aggregatiebereik, spec-first, en sluit tegelijk de stille misbinding af.
+van het onderwerp") is op die wire niet uitdrukbaar. Tot 2026-09-11 accepteerde
+de RegelSpraak-frontend de zin toch, zonder één diagnostiek, en gooide ze de
+buitenste stap weg; waar toevallig een DIRECTE relatie tussen onderwerp en
+elementtype bestond vulde de emitter die in, en dan was het document
+verifier-schoon en antwoordden `ref`, de ASP-backend én Drools eensluidend over
+de VERKEERDE verzameling. **Die stille misbinding is dicht** — de
+acute-flankkaart weigert de vorm nu in de resolver
+(`backlog/done/20260911-geneste-aggregatie-acute-flank.md`), zodat er een
+welgevormd document overblijft dat luid faalt (WF-044) in plaats van een fout
+antwoord. Wat deze kaart nog beslist is de wire-vorm van een meerstaps
+aggregatiebereik, spec-first: de zin UITDRUKBAAR maken in plaats van
+weigeren.
 
 Deze kaart is GROOT. Ze raakt spec, schema, verifier, negatief-zone, corpus,
-frontend en alle drie de uitvoerders (Drools in twee takken). Zie
-"Voorgestelde aanpak" voor de voorgestelde splitsing in twee kaarten; de
-eerste helft is klein en sluit de acute flank alleen.
+frontend en alle drie de uitvoerders (Drools in twee takken). Ze is gesplitst:
+de eerste, kleine helft — de acute flank — is op 2026-09-11 geland als
+`backlog/done/20260911-geneste-aggregatie-acute-flank.md`; wat hier ligt is de
+wire-helft.
 
 ## Probleem
 
@@ -143,7 +149,8 @@ aangemeld. Dit is de acute flank. De frontend emitteert opnieuw met
 
 De zin schrijft "geborgen vondsten van alle gevoerde boten"; de wire zegt
 "aangemelde vondsten". De geschreven woorden zijn nooit geraadpleegd. De
-oorzaak staat op één plek: `emit/IrEmitter.java:767` leidt de `bronRol` van
+oorzaak staat op één plek: `emit/IrEmitter.java` r. 776 (767 is de Javadoc,
+768 de methodekop) leidt de `bronRol` van
 een ledenvouw af met een zuivere TYPE-PAAR-zoektocht van het regelonderwerp
 naar het elementtype (`verbindendeRolBinding(huidigSubject,
 elementObjecttype)`).
@@ -285,22 +292,30 @@ desuikering te presenteren.
 
 **De acute flank is GELAND (2026-09-11), als aparte kleine kaart:**
 `backlog/done/20260911-geneste-aggregatie-acute-flank.md`. De frontend beeldt
-een tweestaps-zin niet meer stil af op een éénstaps-relatie, en de
+een meerstaps-zin niet meer stil af op een éénstaps-relatie, en de
 type-paar-afleiding van `bronRol` bindt niet meer tegen de geschreven rolnaam
-in: de resolver markeert de ledenvouw als `Onopgelost` met een gerichte
-WARNING zodra het set-onderwerp zelf een set-stap nest, of zodra de geschreven
-elementnaam de rol die het type-paar zou binden niet noemt. Document B
-hieronder is daarmee niet meer verifier-schoon-met-fout-antwoord — het is niet
-meer verifier-schoon (WF-034 op het sentinel), en `ref` en de ASP-backend
-falen luid op WF-044. De emitter-regel zelf is bewust NIET gewijzigd: gemeten
-is dat een bindingloze vouw over een uniek verbonden paar verifier-schoon
-blijft en elke uitvoerder dezelfde verkeerde relatie opnieuw afleidt, dus de
-binding weghalen maakt de fout onzichtbaar in plaats van weg. Wat deze kaart
-nog draagt is alleen de WIRE-vraag hieronder. Eén meting uit die landing hoort
-erbij: een gemengde keten met alleen een TO-ÉÉN tussenstap ("alle vondsten van
-de boot van de Jutter", waar *vondst* wél de gebonden rol is) blijft stil en
-verifier-schoon — dezelfde fout langs een derde route, die hier thuishoort
-omdat een bereikPAD zo'n stap gewoon als stap draagt.
+in: de resolver markeert de ledenvouw als `Onopgelost` met een gerichte WARNING
+langs drie routes — het set-onderwerp nest zelf een set-stap; er zit een to-één
+tussenstap onder de set-stap, zodat het anker niet het regelonderwerp is; of de
+geschreven elementnaam noemt de rol die het type-paar zou binden niet. De
+markering draagt het EIGEN resultaattype van de aggregatie, niet het
+onbekend-sentinel, dus het geweigerde document is WELGEVORMD (`verifier: PASS`)
+en faalt luid onder WF-044 in `ref` en de ASP-backend, met een Drools-weigering
+ernaast — de rode-zonevorm. Document B hieronder is daarmee niet meer
+verifier-schoon-met-fout-antwoord; er is überhaupt geen antwoord meer. De
+emitter-regel zelf is bewust NIET gewijzigd: gemeten is dat een bindingloze
+vouw over een uniek verbonden paar verifier-schoon blijft en elke uitvoerder
+dezelfde verkeerde relatie opnieuw afleidt, dus de binding weghalen maakt de
+fout onzichtbaar in plaats van weg.
+
+Wat deze kaart nog draagt is de WIRE-vraag hieronder — de zin uitdrukbaar maken
+in plaats van weigeren — plus één deelvraag die de landing expliciet heeft
+laten liggen omdat ze hier thuishoort: het ANKER dat geen objecttype noemt maar
+een ROLNAAM ("alle vondsten van de aanmelder", 2 van de 56 gemeten
+ledenvouwen). De frontend laat die vorm ongewijzigd binden, omdat de ankerregel
+hierboven — "het anker moet het objecttype van het onderwerp letterlijk noemen,
+nooit via een rolnaam oplossen" — een besluit van DEZE kaart is en niet
+vooruitgelopen mag worden.
 
 ## Acceptance
 
@@ -346,7 +361,13 @@ De EERSTE/LAATSTE/AANTAL-setvouwkloof
 vouwSOORT welke uitvoerder draagt bij een ÉÉNstaps bron; deze kaart gaat over
 het BEREIK en laat de soortenvraag ongemoeid. De setlezing BUITEN een vouw
 (`20260909-frontend-alle-zonder-vouw.md`, WF-096) — een andere positie, ander
-besluit. Gemengde ketens waarin een to-one stap voorkomt: benoemen als open
-vraag, niet in deze kaart beslechten tenzij de vlakke-unie-lezing het
-gratis meebrengt. De geneste TELVORM (het aantal-over-een-keten), waarvan de
+besluit. Gemengde ketens waarin een to-one stap voorkomt: de frontend WEIGERT
+ze sinds 2026-09-11 (route 2 van de acute-flankkaart), dus de stille variant
+bestaat niet meer; wat hier open blijft is of de wire zo'n stap moet KUNNEN
+dragen — als de vlakke-unie-lezing het gratis meebrengt is dat hier beslist,
+anders blijft het een eigen vraag. Eén deelvraag ligt hoe dan ook hier: het
+ANKER dat geen objecttype noemt maar een rolnaam ("alle vondsten van de
+aanmelder"), waar de frontend met opzet stil blijft omdat de ankerregel
+hierboven — het anker moet het objecttype letterlijk noemen — deze kaart
+toebehoort. De geneste TELVORM (het aantal-over-een-keten), waarvan de
 elementnaam in de attribuutpositie staat: een andere zinsvorm, eigen kaart.
