@@ -50,17 +50,18 @@ haalt de acceptance volledig — de markering is geen vouw, dus er blijft geen
 fout antwoord over; alle vier de lenzen zijn luid (zie de metingen).
 
 (2) is gemeten en niet genomen, en dat is een maintainerkeuze, geen blokkade:
-met `Severity.ERROR` in de diagnoses is de suite **196 geslaagd / 4 gefaald**,
-en die vier zijn alle vier van mij (drie `ir(...)`-aanroepen in de nieuwe tests
-plus de niveau-assertie; gemeten met twee routes, met de derde erbij lopen de
-`ir(...)`-getuigen mee en blijft het beeld hetzelfde). **Anders dan bij de zusterkaart blokkeert
+met `Severity.ERROR` in de diagnoses is de suite **199 geslaagd / 6 gefaald**
+(nagemeten op de eindkop door lens 2), en die zes zitten alle zes in
+`GenesteVouwbronTest`: de `ir(...)`-routegetuigen, de
+`assertTrue(Resolver.resolve(…).isOk(), …)` op regel 392 en de
+niveau-assertie. **Anders dan bij de zusterkaart blokkeert
 hier GEEN enkele bestaande test.** Onder ERROR schrijft `make ir` op document B
 niets en eindigt non-zero — de letterlijke "frontend weigert de bron".
-Terugdraaibaar in één token plus vier asserties, in twee bestanden:
-`Severity.WARNING` → `Severity.ERROR` in `ExpressieBouwer.keurVouwbron`
-(driemaal), en in `GenesteVouwbronTest` de assertie
-`assertEquals(Severity.WARNING, …)` plus de `assertTrue(m.isOk(), …)` in de
-`ir(...)`-helper.
+Terugdraaibaar in één token plus zes asserties: `Severity.WARNING` →
+`Severity.ERROR` in `ExpressieBouwer.keurVouwbron` (driemaal), en in
+`GenesteVouwbronTest` de assertie `assertEquals(Severity.WARNING, …)`, de
+`assertTrue(m.isOk(), …)` in de `ir(...)`-helper én de losse
+`assertTrue(Resolver.resolve(…).isOk(), …)` op regel 392.
 
 ### Wat er per route gebouwd is
 
@@ -82,7 +83,7 @@ GELDIG document op te leveren dat luid faalt, niet een ill-formed document.
 Gemeten na de omzetting: de emissie draagt `Numeriek(2 decimalen, kg)`,
 `verifier: PASS`, en ref en clingo geven allebei "Onopgelost reached …
 (WF-044)". De bestaande arm één blok hoger (onbekend attribuutlid) en de
-dertien andere `onopgelost(ctx)`-plekken in deze frontend schrijven het
+acht andere `onopgelost(ctx)`-plekken in deze frontend schrijven het
 sentinel nog wel; die zijn niet aangeraakt (pre-existent gedrag, andere
 kaart), maar ch. 2.4 opent daar een bredere vraag — hier gemeld, niet
 gekaart.
@@ -144,12 +145,13 @@ geschreven elementnaam met de rol die het type-paar zou binden:
   noemt `naam` de rol die de binding bindt — gedeclareerd enkelvoud,
   gedeclareerd meervoud, of (alleen als geen meervoud gedeclareerd is) het
   best-effort meervoud, exact `rolMatcht`;
-- drie ontsnappingen, elk met een reden: geen type-paar-binding (dan is er
+- twee ontsnappingen, elk met een reden: geen type-paar-binding (dan is er
   niets stils om tegen te spreken — het document houdt zijn bestaande
-  stroomafwaartse WF-048); een geschreven naam die de OBJECTTYPENAAM zelf is
-  (dan claimt de auteur geen rol en is de type-paar-afleiding de eerlijke
-  terugval); en een genavigeerde bron (`navigatieRol`/`navigatiePad`), waar de
-  emitter sowieso geen `bronRol` afleidt.
+  stroomafwaartse WF-048); en een geschreven naam die de OBJECTTYPENAAM zelf
+  is (dan claimt de auteur geen rol en is de type-paar-afleiding de eerlijke
+  terugval). Een genavigeerde bron (`navigatieRol`/`navigatiePad`) komt bij
+  deze toets niet aan: die guard staat vóór routes (b) en (c) samen — de
+  emitter leidt daar sowieso geen `bronRol` af.
 
 **Eén grensgeval, gemeten.** `keurVouwbron` toetst `bron.objecttype()` (het
 type van de vouwBRON), terwijl de emitter bindt op `f.elementObjecttype()`.
@@ -314,7 +316,10 @@ van die lijn zichtbaar is.
 - **`spec/CONSTRUCTS.md` rij 4** ("Fact types and role navigation" — waar de
   `bronRol`-afleiding en de WF-047/WF-048-discipline wonen). De rij is ÉÉN
   fysieke regel: de zin hieronder gaat als ononderbroken tekst aan het eind
-  van de STATUSkolom (de vijfde kolom), zonder regeleindes, zonder blockquote.
+  van de kolom `v0→v1 delta` (de ZESDE kolom — de tabelkop is `| # |
+  Construct | Origin | Verdict (v1) | Kernel or sugar? | v0→v1 delta |
+  Notes |`), direct achter het huidige slot van die cel, "…is WITHDRAWN by
+  this decision", zonder regeleindes, zonder blockquote.
   Hier alleen voor de leesbaarheid afgebroken:
 
   **Landed (2026-09-11):** de PRODUCENT van `bronRol` bindt niet langer tegen
@@ -359,8 +364,9 @@ van die lijn zichtbaar is.
   twee set-stappen, dus geen wire bewoog (gate 10 41 en gate 11 45
   byte-identiek). Eén ding blijft bewust staan en is gemeten: het niveau is
   WARNING, waar ERROR — die het document helemaal niet naar schijf laat gaan —
-  vrij ligt omdat GEEN bestaande test hem blokkeert, enkel vier asserties van de
-  kaart zelf (`backlog/done/20260911-geneste-aggregatie-acute-flank.md`).
+  vrij ligt omdat GEEN bestaande test hem blokkeert, enkel zes asserties van de
+  kaart zelf, gemeten 199/6 op de eindkop
+  (`backlog/done/20260911-geneste-aggregatie-acute-flank.md`).
 
 - **`spec/PLAN.md`**: geen voorgestelde wijziging. De scope van de moederkaart
   is niet veranderd — de wire-vraag staat er onverkort — en er is geen besluit
@@ -372,7 +378,7 @@ van die lijn zichtbaar is.
   hierboven laat zien dat een fix dáár de fout onzichtbaar maakt in plaats van
   weg.
 - De bestaande `onopgelost(ctx)`-plekken in deze frontend (de arm één blok
-  hoger, plus dertien andere) schrijven nog altijd het `Onbekend`-sentinel, en
+  hoger, plus acht andere) schrijven nog altijd het `Onbekend`-sentinel, en
   de documenten die zij produceren zijn dus ill-formed onder WF-034. Dat is
   pre-existent gedrag en niet van deze kaart; ch. 2.4's definitie van
   `Onopgelost` als "a well-formed marker with a reason, not a type" opent daar

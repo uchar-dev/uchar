@@ -82,9 +82,11 @@ een to-ONE hop en levert het resultaat als `navigatiePad` op de `AttribuutRef`
 (regel 1664). Wat ontbreekt is dus niet ketenresolutie op zich, maar (a) een
 NAAR-VEEL-keten — de wandeling verwerpt elke to-many hop en daarmee de hele
 keten — en (b) de wandeling wordt voor een VOUWBRON helemaal overgeslagen: de
-guard `&& !isSetOnderwerp(onderwerp)` op **regel 1622** sluit een set-onderwerp
-uit voordat de wandeling begint. Dat is de plek waar de acute-flankfix hieronder
-moet landen. Bovendien kan uchar's WIRE de keten helemaal niet noteren, ook niet
+guard `&& !isSetOnderwerp(onderwerp)` sluit een set-onderwerp uit voordat de
+wandeling begint (regelnummers in deze alinea zijn van vóór de
+acute-flanklanding; de guard staat op de gelande kop op r. 1737 en is door die
+landing niet aangeraakt — de flankfix landde stroomopwaarts, in
+`keurVouwbron`, r. 485/596). Bovendien kan uchar's WIRE de keten helemaal niet noteren, ook niet
 als de frontend hem zou oplossen.
 De `Functie`-knoop draagt één `elementObjecttype` (één typenaam) en één
 optionele `bronRol` (één `RolBinding`). Er is geen ketenveld, en de twee
