@@ -426,9 +426,11 @@ final class RuleChecker {
      *  operand of a composite node, inside a condition, and as an operand of the listed value fold.
      *
      *  <p>Measured on this frontend (2026-09-11), all from the one sentence fragment "het gewicht van
-     *  alle vondsten van de Jutter": five routes reached the wire with {@code diagnostics: []} — a
-     *  BEREKENING value, an operand of a {@code Binair}, an INITIALISATIE value, a voorwaarde and a
-     *  §13.4.8 consistentieregel — and the uchar verifier rejects all five under WF-096.
+     *  alle vondsten van de Jutter": eight routes reached the wire with {@code diagnostics: []} — a
+     *  BEREKENING value, an operand of a {@code Binair}, a §13.4.4 GELIJKSTELLING value, a §13.4.9
+     *  INITIALISATIE value, a rule voorwaarde, a §13.4.8 consistentieregel, an objectcreatie
+     *  voorwaarde and a §13.4.6 objectcreatie-toekenning value — and the uchar verifier rejects all
+     *  eight under WF-096.
      *
      *  <p>A NALOOP over the built tree, not a test inside {@link ExpressieBouwer}: the reference is
      *  built before the node that would consume it exists, so "is there a fold around this" is a
@@ -446,7 +448,7 @@ final class RuleChecker {
      *
      *  <p>Scope: the READ. A rule's {@code doel} is a WRITE position, which WF-096's own scope note
      *  does not reach (it is verifier-clean and all three executors ignore the field), so it is
-     *  deliberately not walked. The VALUE slots of the constructs that are not a {@link ResolvedRegel}
+     *  deliberately not walked.
      *  <p>The three VALUE slots of this repo's IR are all walked, and that is the whole list rather than
      *  a sample: a {@link ResolvedRegel}'s waarde, a {@code ResolvedConsistentie}'s assertie, and a
      *  §13.4.6 {@link ResolvedObjectCreatie.Toekenning}'s waarde — the last a generic expressie RHS and
