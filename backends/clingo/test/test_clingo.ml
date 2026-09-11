@@ -2441,7 +2441,15 @@ let () =
    since 2026-09-09), so that fact can never exist: rows a, b and c came back
    underived, leeg, with nothing said, where the chapter passes all three
    vacuously. Row d "passed" — for the wrong reason, which is why it is pinned
-   here beside the other three and not trusted alone. *)
+   here beside the other three and not trusted alone.
+
+   The document below carries `"kenmerkTijdlijnAantal": {}` and must keep
+   doing so. The emitter writes that key only for a count OTHER than 1, so no
+   frontend-produced document has it at 1; a hand-built one that does flips
+   both Drools branches into a refusal, because their gate is `containsKey`
+   and not "two or more". The corpus golden `synth-gehelejaarkenmerk` pins
+   the same four rows in all three executors and is what makes this clause a
+   closed square rather than two OCaml opinions. *)
 
 let gp_doc ?(jaar = "true") ?(niet = "false") ?(negatie = "false")
     ?(granulariteit = {|"bedrijvig": "MAAND"|}) () =
@@ -2454,7 +2462,7 @@ let gp_doc ?(jaar = "true") ?(niet = "false") ?(negatie = "false")
       "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
       "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
       "kenmerken": [ "bedrijvig" ], "kenmerkSoorten": { "bedrijvig": "BIJVOEGLIJK" },
-      "kenmerkGranulariteit": { %s }, "kenmerkTijdlijnAantal": { "bedrijvig": 1 },
+      "kenmerkGranulariteit": { %s }, "kenmerkTijdlijnAantal": {},
       "bezield": false, "meervoud": "Werven" },
     "Schuit": { "node": "Objecttype", "naam": "Schuit",
       "attributen": {

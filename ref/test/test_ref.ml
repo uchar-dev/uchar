@@ -2670,9 +2670,18 @@ let () =
    characteristic in a scalar condition"), while ch. 3.3 names ch. 3.9 as
    one of its own two exits; the ASP backend dropped the qualifier and read
    a heeft/2 fact a temporal characteristic can never have, answering leeg
-   on a/b/c without a word; both Drools branches refuse the form by name (a
-   transpiler SKIP on one, a "TODO §8.2 gehele-periode" marker on the
-   other), so on rows a, b and c the corpus has no third opinion.
+   on a/b/c without a word. The Drools backend answered all four rows
+   correctly all along, so the corpus golden `synth-gehelejaarkenmerk`
+   closes the square on exactly these values.
+
+   The fixture below carries NO `kenmerk_tijdlijn_aantal` entry, and that is
+   load-bearing rather than tidy. The emitter writes that key only for a
+   count OTHER than 1, so a frontend-produced document never carries it at
+   1; a hand-built one that does flips both Drools branches into a refusal
+   (their gate is `containsKey`, not "two or more") and makes the form look
+   unsupported when it is not. That is precisely the mismeasurement this
+   card first reported and then withdrew — see
+   `backlog/new/20260911-kenmerktijdlijnaantal-poort.md`.
 
    Row a is the one that cannot be reached through the timeline fold alone —
    it is about the NAVIGATION, not about any timeline — which is why these
@@ -2696,10 +2705,7 @@ let () =
   in
   let werf = ot "Werf" [] [ "bedrijvig" ] in
   let werf =
-    ( fst werf,
-      { (snd werf) with
-        kenmerk_granulariteit = [ ("bedrijvig", Some Maand) ];
-        kenmerk_tijdlijn_aantal = [ ("bedrijvig", Some 1) ] } )
+    ( fst werf, { (snd werf) with kenmerk_granulariteit = [ ("bedrijvig", Some Maand) ] } )
   in
   let doc =
     { empty_doc with objecttypen = [ werf; ot "Schuit" [] [] ]; feittypen = [ ligplaats ] }

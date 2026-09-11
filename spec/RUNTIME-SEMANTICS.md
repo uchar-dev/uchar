@@ -1702,7 +1702,13 @@ idempotent (ch. 5).
   **within the span the write is clipped to** (ch. 3.10's clip); an
   unbounded complement hits the same time-domain obstacle as (a) and
   stays OPEN outside a clip, and the *navigated* case stays OPEN with
-  no semantics claimed.
+  no semantics claimed. *That last clause is about this section's
+  subject — a condition whose true-periods become a WRITTEN timeline —
+  and says nothing about READING a navigated temporal characteristic,
+  which ch. 3.9's whole-period qualifier specifies and both OCaml
+  executors carry: the qualifier folds the reached timeline to a
+  boolean and produces no timeline at all, so it needs no time domain
+  and meets no part of this obstacle.*
 
 Worked examples (`ref/` tests verbatim):
 
@@ -1738,11 +1744,12 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Scalar broadcast into timeline arithmetic / unconditional temporal characteristic | refused (mirrored); OPEN — both need a time domain for unbounded segments |
 | min/max/eerste/laatste over timelines | refused (mirrored); OPEN — the two readings (per-period vs over-time) must be defined apart |
 | §8.4.3 period condition on a temporal target | **specified (delta): the clip, ch. 3.10** |
-| Negated temporal-characteristic condition | **specified (delta) within a clipped span, ch. 3.11**; unbounded complement OPEN; the navigated case stays refused/OPEN |
+| Negated temporal-characteristic condition | **specified (delta) within a clipped span, ch. 3.11**; unbounded complement OPEN; the navigated case stays refused/OPEN — as a WRITE producer only; the navigated whole-period READ is the row below |
 | Version-validity window on a temporal write | OPEN — the ch. 8 axis decision |
 | Date-valued whole-period comparison | refused (mirrored) |
-| Whole-period qualifier, the **characteristic-holds** test (own and navigated, both grids, both negations) | **specified and executed, ch. 3.9** — the two OCaml executors carry it since 2026-09-11 |
-| Whole-period qualifier, the **ordering/equality** and **leeg/gevuld** tests | specified (ch. 3.9), **not executed**: both OCaml executors refuse them by name, no corpus case; the Drools backend carries the comparison form |
+| Whole-period qualifier, the **characteristic-holds** test (own and navigated, both grids, the qualifier's negation) | **specified and executed, ch. 3.9** — all three executors, witnessed by `corpus/golden/synth-gehelejaarkenmerk`; the two OCaml ones carry it since 2026-09-11, the Drools backend carried it already |
+| Whole-period qualifier over a characteristic, the **inner** negation ("gedurende … NIET") | specified (ch. 3.9's formula), executed by the two OCaml executors; the Drools backend refuses it by name in both branches, so it stays suite-pinned and out of the corpus |
+| Whole-period qualifier, the **ordering/equality** and **leeg/gevuld** tests | specified (ch. 3.9), **not executed** by either OCaml executor — both refuse them by name, no corpus case; the Drools backend carries the comparison form over an OWN operand and markers the navigated one |
 | Gap-vs-absent timeline observability (temporal total: 0 vs leeg) | mirrored residual; stays OPEN here — the ch. 1.4 freeze covers the scalar discipline, not this temporal residual |
 | Sorted/non-overlapping input invariant | delta candidate (WF rule, data plane), ch. 3.1 |
 | Non-terminating pro-rata stored at 16 digits | v0 residual (normative: exact fraction), ch. 3.7 |

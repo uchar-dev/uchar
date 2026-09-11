@@ -298,7 +298,21 @@ EXPECTED_CHANNEL=(
 # (1000,00 -> 999,00) and the minimum bound relabelled `t` -> `kg`, which removes the restating and
 # moves V1 to 250,00 — so the count is a value comparison, and the restating is load-bearing on
 # every leg.
-EXPECTED_PLAYED=123
+#
+# 123 -> 124 (2026-09-11, card leegrelatie-ch39-divergentie): synth-gehelejaarkenmerk, the first
+# corpus witness of the §8.2 whole-period qualifier over a NAVIGATED characteristic (ch. 3.9's
+# characteristic-holds test and its three vacuous passes). Measured on this branch: PLAYED 4 in the
+# exec-model branch and PLAYED 4 under --drl, matching the pins gates 5 and 6 verify — ref = clingo
+# = Drools on all four cases, which is what this golden exists to close. Both branches already
+# carried the form; what was missing was the OCaml half, which this card built.
+# ONE trap is worth recording at the pin, because it is what made an earlier measurement on this
+# same card report the opposite: the golden's Werf carries NO `kenmerkTijdlijnAantal` entry, and a
+# hand-built document that adds `"bedrijvig": 1` — wire-legal, verifier-clean, semantically
+# identical, and never emitted by the frontend, which writes that key only for a count other than 1
+# — flips BOTH branches to a refusal, because their gate is `containsKey` and not "two or more".
+# A future edit that grows that key silently drops this golden out of the played channel; the
+# over-rejection itself is carded (backlog/new/20260911-kenmerktijdlijnaantal-poort.md).
+EXPECTED_PLAYED=124
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the

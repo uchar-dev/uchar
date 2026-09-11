@@ -115,6 +115,7 @@ May touch: `ref/`, `backends/clingo`, `spec/RUNTIME-SEMANTICS.md`
 - De §8.2-fold over een NAVIGEERDE VERZAMELING: WF-096 maakt dat document
   onwelgevormd (gemeten, zelfde kaart).
 
+
 ---
 
 ## Result (2026-09-11)
@@ -143,39 +144,47 @@ doordat beide `Kenmerk_check`-armen `periode` met `_` wegmatchten. Om
 dezelfde reden hoort clingo de clausule **uit te voeren**, niet luid te
 weigeren: niets in de spec maakt de collapse per uitvoerder optioneel.
 
-**Hermeting op deze HEAD (63174ad), vóór elke wijziging.** De kaarttabel
-reproduceert exact voor `ref` en clingo — en NIET voor Drools:
+### De cellen, vóór en ná
 
-| cel | ch. 3.9 | ref vóór | clingo vóór | Drools vóór (beide takken) |
-|---|---|---|---|---|
-| a. geen koppeling | 8 | leeg — STIL | underived/leeg — STIL | EXCLUDE (luid) |
-| b. koppeling, geen tijdlijn | 8 | FAULT ch. 3.3 | underived/leeg — STIL | EXCLUDE (luid) |
-| c. koppeling, heel 2026 | 8 | FAULT ch. 3.3 | underived/leeg — STIL | EXCLUDE (luid) |
-| d. koppeling, jan–jul | leeg | FAULT ch. 3.3 | PASS (leeg) | EXCLUDE (luid) |
+| cel | ch. 3.9 | ref vóór | clingo vóór | Drools vóór | ref ná | clingo ná | Drools ná |
+|---|---|---|---|---|---|---|---|
+| a. geen koppeling | 8 | leeg — STIL | leeg — STIL | **8, beide takken** | 8 | 8 | **8** |
+| b. koppeling, geen tijdlijn | 8 | FAULT ch. 3.3 | leeg — STIL | **8, beide takken** | 8 | 8 | **8** |
+| c. koppeling, heel 2026 | 8 | FAULT ch. 3.3 | leeg — STIL | **8, beide takken** | 8 | 8 | **8** |
+| d. koppeling, jan–jul | leeg | FAULT ch. 3.3 | PASS (leeg) | **leeg, beide takken** | leeg | leeg | **leeg** |
 
-De Drools-kolom van de kaart ("8/8/8/leeg") is op deze HEAD **niet
-gereproduceerd**. Beide takken weigeren de vorm bij naam: de exec-model-tak
-met `transpiler SKIP … (voorwaarde buiten Phase-B scope)`, de DRL-tak met
-`drl-transpiler MARKER … TODO §8.2 gehele-periode`. Dat strookt met de
-meting van `20260906-gedurende-kwalificatie-stiltes`: Drools draagt §8.2 op
-de **Vergelijking**, niet op het kenmerk. De vorm heeft dus vandaag geen
-derde uitvoerder — luid, niet stil.
+De Drools-kolom staat zoals de kaart hem schreef: **PLAYED op alle vier de
+cellen, in beide takken.** De kwalificator-negatie speelt 4/4 en het
+maandraster 2/2. Wat wél bij naam weigert is (i) de **binnenste** negatie
+("gedurende het gehele jaar NIET bedrijvig") en (ii) het **verdrongen veld**
+(een lid dat de rolnaam verdringt). Binnen de VERGELIJKINGSvorm speelt de
+eigen operand en markert de genavigeerde. De vormsplitsing loopt dus **niet**
+langs Vergelijking-versus-kenmerk.
 
-**Ná de conformering** (ref en clingo, zelfde document, zelfde cases):
+**Correctie op een eerdere versie van deze Result (ingetrokken).** Die meldde
+dat beide Drools-takken alle vier de cellen luid weigeren en concludeerde
+"geen derde uitvoerder". Dat was een **meetfout, geen gedragsverschil**: de
+handgebouwde fixture droeg `"kenmerkTijdlijnAantal": {"bedrijvig": 1}`. De
+emitter schrijft die sleutel alleen bij een andere waarde dan 1
+(`DefinitionResolver`), dus geen enkel frontend-document draagt hem bij 1;
+beide takken poorten op `containsKey` en niet op "twee of meer"
+(`navigatieKenmerkTijdreeks`, identiek in `DrlTranspiler` en
+`ExecModelTranspiler`), zodat één wire-legale, verifier-schone, semantisch
+identieke sleutel beide takken omslaat naar precies de twee weigeringen die
+geciteerd werden. Op het wire-echte formaat spelen ze alles. De
+"geen derde uitvoerder"-conclusie **vervalt**; de vormsplitsing is de
+`kenmerkTijdlijnAantal`-poort. Zelf nagemeten op deze HEAD, beide takken,
+vóór en ná het verwijderen van die ene sleutel; de over-afwijzing zelf is
+gekaart als `backlog/new/20260911-kenmerktijdlijnaantal-poort.md`, met het
+meetrecept en de vindplaatsen.
 
-| cel | ref ná | clingo ná | eens met ch. 3.9 |
-|---|---|---|---|
-| a | 8 | 8 | ja (null tijdlijn, geen bucket geraakt) |
-| b | 8 | 8 | ja (geen segmenten, geen bucket geraakt) |
-| c | 8 | 8 | ja (bucket 2026: 365 van 365) |
-| d | leeg | leeg | ja (bucket 2026: 181 van 365) |
+Taak 3's randen zijn meegenomen: **48 metingen** in ref en clingo over beide
+grids, beide richtingen van `GeheelPeriode.niet`, beide richtingen van de
+binnenste `negatie`, vijf tijdlijnvormen en beide koppelingstoestanden —
+`ref ≡ clingo` op alle 48 — plus **12 metingen** in beide Drools-takken over
+dezelfde randen.
 
-Taak 3's randen zijn meegenomen en gemeten: **48 metingen** over beide
-grids (jaar/maand), beide richtingen van `GeheelPeriode.niet`, beide
-richtingen van de binnenste `negatie`, vijf tijdlijnvormen en beide
-koppelingstoestanden — `ref ≡ clingo` op alle 48.
-
-**Wat er is gebouwd.**
+### Wat er is gebouwd
 
 - `ref/lib/timeline.ml`: `geheel_periode_kenmerk` — de ch. 3.9-vouw over de
   waar-periodes, hergebruikt de `aantal_dagen_in`-vouw zodat "touched"
@@ -202,45 +211,93 @@ koppelingstoestanden — `ref ≡ clingo` op alle 48.
   zonder poort zou een niet-temporeel kenmerk over een altijd-lege
   periodeverzameling vacuüm slagen. Beide uitvoerders houden die poort nu
   zelf.
+- `emit_bucket_calendar`'s **lege geval** veranderde van `()` naar
+  `#defined <p>_b/3.` — geen atoom erbij, geen semantiek erbij, wel het einde
+  van een info-regel op stderr die als defect leest. Zonder tijdlijn in de
+  case is er geen kalender, terwijl de consumenten het bucketpredicaat wel
+  noemen; dat is precies de situatie die cellen a en b maken.
 
-**Pins.** `ref/test/test_ref.ml`: 19 checks `WV-3.9-kenmerk-*`/`WV-3.9-fold-*`
-(suite 515 → 534 gemeten, vloer 489 ongemoeid). `backends/clingo/test/test_clingo.ml`:
+### De getuige
+
+`corpus/golden/synth-gehelejaarkenmerk` — handgebouwd, synth-stijl, geen
+`bron.rgs`. Twee regels, dezelfde kwalificator in beide richtingen:
+
+```
+De toeslag van een Schuit is de lengte van de Schuit
+  indien de werf van de Schuit gedurende het gehele jaar bedrijvig is
+De korting van een Schuit is de lengte van de Schuit
+  indien de werf van de Schuit niet gedurende het gehele jaar bedrijvig is
+```
+
+Handberekening — rekendatum 2026-03-15, `S1.lengte` 8, jaarbucket
+[2026-01-01, 2027-01-01) = **365 dagen** (2026 is geen schrikkeljaar):
+
+| case | koppeling | waar-periodes | geraakte bucket | voldaan / nodig | toeslag | korting |
+|---|---|---|---|---|---|---|
+| case1-geen-koppeling | geen | — | geen (null tijdlijn) | vacuüm | **8** | leeg |
+| case2-geen-tijdlijn | W1 | geen | geen (geen segmenten) | vacuüm | **8** | leeg |
+| case3-heel-jaar | W1 | [2026-01-01, 2027-01-01) | 2026 | 365 / 365 | **8** | leeg |
+| case4-half-jaar | W1 | [2026-01-01, 2026-07-01) | 2026 | 181 / 365 | leeg | **8** |
+
+181 = 31 + 28 + 31 + 30 + 31 + 30 (januari t/m juni 2026). `{"kind":
+"consistent"}` sluit elke verwachtingslijst af. De tweede regel is er niet
+voor de sier: zonder hem pint case4 alléén een `attributeEmpty`, wat de
+`--noop`-uitvoerder overleeft (gate 7) en een overlever-regel in een
+beschermd script zou vragen. Nu beslist elke case precies één afgeleide
+waarde en weerlegt alle vier de niets-doen-uitvoerder.
+
+Gemeten: `ref` PASS 4, clingo PASS 4, Drools **PLAYED 4 in beide takken** —
+het vierkant sluit op deze vier waarden. Kanaalgevolg gebouwd:
+`EXPECTED_PLAYED` 123 → 124 in `scripts/check-drools.sh`, met de reden en
+met de `kenmerkTijdlijnAantal`-val bij de pin opgeschreven (beschermd pad,
+dus **voorstel**).
+
+Het `ir.json` draagt de spurieuze sleutel **niet**; de NOTE zegt waarom dat
+load-bearing is en niet netjes.
+
+### Pins
+
+`ref/test/test_ref.ml`: 19 checks `WV-3.9-kenmerk-*`/`WV-3.9-fold-*` (suite
+515 → 534 gemeten, vloer 489 ongemoeid). `backends/clingo/test/test_clingo.ml`:
 23 checks, waarvan 11 rijen die ELK door `ref_matches` én `clingo_matches`
-gaan — dat maakt ze het differentieel en niet twee losse overtuigingen
-(suite 96 → 119, vloer 83 ongemoeid).
+gaan (suite 96 → 119, vloer 83 ongemoeid). Beide fixtures dragen de
+spurieuze sleutel niet meer en beide suites zijn erna hermeten: 534 en 119,
+onveranderd groen. De binnenste negatie blijft suite-werk en gaat niet het
+corpus in: Drools weigert die bij naam, dus een golden zou het vierkant niet
+sluiten.
 
-**Geen corpus-golden, met de meting erbij.** De kaart vroeg een getuige "die
-alle drie spelen". Gemeten: Drools speelt de vorm niet (zie boven), dus het
-vierkant sluit niet en een golden zou een NIET-gespeelde toevoeging zijn die
-een `EXPECTED_CHANNEL`-regel in `scripts/check-drools.sh` (beschermd pad)
-nodig heeft — een regel die meteen muf wordt zodra de Drools-transpilers de
-vorm wél dragen. `EXPECTED_PLAYED` is daarom **niet** bewogen (123 blijft
-123). De vier cellen liggen als getuige vast in de twee suites, wat de kaart
-als tweede optie noemt.
+### Registerwerk voor de hoofdsessie (serieel, beschermde paden)
 
-**Voorstel voor wanneer Drools de vorm draagt** (één kaart, niet deze):
-`corpus/golden/synth-gehelejaarkenmerk` met het document hierboven en vier
-cases (a/b/c/d, `asOfDate` 2026-03-15, S1.lengte 8, verwacht 8/8/8/leeg),
-plus `EXPECTED_PLAYED` 123 → 124.
+- **`spec/CONSTRUCTS.md` rij 29 / de §8.2-rij** — voorstelzin: *"De
+  §8.2-gehele-periode-kwalificator op een kenmerkcheck is sinds 2026-09-11
+  uitgevoerd in `ref` en `backends/clingo` (eigen en genavigeerd, beide
+  grids, de kwalificator-negatie), met de drie vacuüm-passen van ch. 3.9;
+  `backends/drools` droeg de vorm al in beide takken, zodat
+  `corpus/golden/synth-gehelejaarkenmerk` het vierkant sluit op vier
+  handberekende cellen (8/8/8/leeg). ch. 3.3's scalaire weigering is
+  expliciet begrensd tot de vorm ZONDER kwalificator. De binnenste negatie
+  ("gedurende … NIET") draait in de twee OCaml-uitvoerders en wordt door
+  beide Drools-takken bij naam geweigerd; de toetsen ordering/equality en
+  leeg/gevuld blijven gespecificeerd-maar-door-geen-OCaml-uitvoerder-
+  uitgevoerd, nu met een weigering die de clausule noemt."*
+- **`spec/CONSTRUCTS.md` rij 4 draagt een dode verwijzing**: de slotzin noemt
+  het prioriteitssignaal als `backlog/new/20260911-leegrelatie-ch39-
+  divergentie.md`; dat pad wordt `backlog/done/…`. Meenemen in dezelfde
+  seriële ronde.
+- **Verbreding van de May touch**: `spec/IR-SPEC.md` stond niet in de
+  "May touch" van deze kaart en is toch aangeraakt (WF-043 krijgt de
+  opgetekende scope-beperking tot de niet-genavigeerde vorm). Hier
+  geregistreerd zoals de huislijn wil, als voorstel op een beschermd pad —
+  niet stil meegenomen. Idem `scripts/check-drools.sh` (de
+  `EXPECTED_PLAYED`-bump), dat evenmin in de lijst stond.
 
-**Wat bewust niet bewoog.**
+### Wat bewust niet bewoog
 
-- `backends/drools/**` — parallel spoor, niet aangeraakt.
-- `scripts/**` — geen vloer of lijst bewogen; alle groeiende tellingen
-  passeren hun vloer ruim.
+- `backends/drools/**` — parallel spoor, geen regel aangeraakt. De
+  `containsKey`-poort is gekaart, niet gerepareerd.
 - De ch. 3.9-toetsen **ordering/equality** en **leeg/gevuld**: gespecificeerd,
-  niet uitgevoerd. Ze weigeren nu in beide uitvoerders bij naam. Geen
-  corpuscase draagt ze en de enige golden met een `GeheelPeriode` op een
+  door geen OCaml-uitvoerder uitgevoerd. Ze weigeren nu in beide bij naam.
+  Geen corpuscase draagt ze en de enige golden met een `GeheelPeriode` op een
   `Vergelijking` (`jutterswet-vormenkabinet`) heeft bewust geen case.
 - WF-043 verbreden naar het bereikte type: opgeschreven als kandidaat in het
   IR-SPEC-register, niet besloten.
-
-**Voorstelzin voor `spec/CONSTRUCTS.md`** (hoofdsessie, serieel — de rij die
-§8.2 / kenmerk-tijdlijnen draagt): *"De §8.2-gehele-periode-kwalificator op
-een kenmerkcheck is sinds 2026-09-11 uitgevoerd in `ref` en `backends/clingo`
-(eigen en genavigeerd, beide grids, beide negaties), met de drie
-vacuüm-passen van ch. 3.9; ch. 3.3's scalaire weigering is expliciet begrensd
-tot de vorm ZONDER kwalificator. De toetsen ordering/equality en leeg/gevuld
-blijven gespecificeerd-maar-niet-uitgevoerd, nu met een weigering die de
-clausule noemt; de Drools-backend draagt §8.2 alleen op de Vergelijking, dus
-de kenmerkvorm heeft nog geen derde uitvoerder."*
