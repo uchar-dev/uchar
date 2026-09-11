@@ -65,15 +65,25 @@ two independent routes — an OCaml fold over the true-periods in `ref`, an ASP
 derivation over the `ktl` facts and the pro-rata's bucket calendar in the
 backend — so the agreement is a differential, not a shared implementation.
 
-## One key this document must not grow
+## The key this document does not carry
 
-`Werf.kenmerkTijdlijnAantal` is **empty**, and that is load-bearing. The
-frontend emits that key only for a count other than 1
+`Werf.kenmerkTijdlijnAantal` is **empty**, as every frontend-produced
+document's is: the emitter writes that key only for a count other than 1
 (`DefinitionResolver`), so no frontend-produced document carries it at 1.
-Both Drools branches gate the navigated-characteristic timeline read on
-`containsKey` rather than on "two or more", so adding `"bedrijvig": 1` — a
-wire-legal, verifier-clean, semantically identical edit — flips both branches
-from PLAYED to a refusal and silently reduces this golden to a two-executor
-witness. That over-rejection is recorded as its own card
-(`backlog/new/20260911-kenmerktijdlijnaantal-poort.md`); it was found because
-it mismeasured this very clause first.
+
+Until 2026-09-11 that emptiness was load-bearing. Both Drools branches gated
+the navigated-characteristic timeline read on the key's PRESENCE rather than
+on "two or more", so adding `"bedrijvig": 1` — a wire-legal, verifier-clean,
+semantically identical edit — flipped both branches from PLAYED to a refusal
+and silently reduced this golden to a two-executor witness. The card
+`backlog/done/20260911-kenmerktijdlijnaantal-poort.md` corrected that gate in
+both branches to the multiplicity test it was meant to be (a period count
+defaults to 1 — IR-SPEC ch. 2.8/2.10 — so a raster starts at 2); it was found
+because the presence gate mismeasured this very clause first.
+
+The key stays out of the committed IR all the same: this document is shaped
+like what the emitter produces, and a golden pins semantics rather than a
+backend's gate. That the same document with `"bedrijvig": 1` plays all four
+cases in BOTH branches is pinned in the backend's own suite
+(`MeerPeriodiekePoortWitnessTest`), which builds it in memory and never
+writes here.
