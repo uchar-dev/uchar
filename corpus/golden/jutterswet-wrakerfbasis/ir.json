@@ -1,0 +1,230 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Strandrecht": {
+      "node": "Objecttype",
+      "naam": "Strandrecht",
+      "attributen": {
+        "grondslag": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "uitkering": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "betwist"
+      ],
+      "kenmerkSoorten": {
+        "betwist": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Strandrechten"
+    },
+    "Wrakrecht": {
+      "node": "Objecttype",
+      "naam": "Wrakrecht",
+      "supertype": "Strandrecht",
+      "attributen": {},
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Wrakrechten"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "uitkering van een strandrecht",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "uitkering van een wrakrecht",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "uitkering van een strandrecht",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "uitkering",
+        "objecttype": "Strandrecht",
+        "onderwerpBron": "een Strandrecht",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "De uitkering van een Strandrecht",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "MAAL",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "grondslag",
+          "objecttype": "Strandrecht",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "zijn grondslag",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "2",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "2"
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "zijn grondslag maal 2"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": [],
+  "prioritizedDefaults": [
+    {
+      "node": "PrioritizedDefaults",
+      "naam": "uitkering van een wrakrecht",
+      "onderwerp": "Wrakrecht",
+      "kenmerk": null,
+      "attribuut": "uitkering",
+      "defaults": [
+        {
+          "node": "Default",
+          "besluit": null,
+          "voorwaarde": {
+            "node": "Kenmerk",
+            "kenmerk": "betwist",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "het Wrakrecht betwist is"
+          },
+          "consequentie": {
+            "node": "Literal",
+            "waarde": "99.00",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "99.00"
+          },
+          "bron": "99,00 indien het Wrakrecht betwist is"
+        },
+        {
+          "node": "Default",
+          "besluit": null,
+          "voorwaarde": {
+            "node": "Samengesteld",
+            "kwantor": "ALLE",
+            "drempel": 0,
+            "onderdelen": [],
+            "bron": "altijd"
+          },
+          "consequentie": {
+            "node": "AttribuutRef",
+            "attribuut": "grondslag",
+            "objecttype": "Wrakrecht",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            },
+            "bron": "zijn grondslag",
+            "set": false,
+            "navigatiePad": []
+          },
+          "bron": "de grondslag"
+        }
+      ],
+      "bron": "art. 4: de uitkering van een Wrakrecht",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ]
+}

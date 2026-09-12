@@ -1,0 +1,28 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Strandrecht",
+        "attributes": { "grondslag": { "number": "10.00" } },
+        "roles": {},
+        "characteristics": ["betwist"]
+      },
+      {
+        "label": "W1",
+        "objectType": "Wrakrecht",
+        "attributes": { "grondslag": { "number": "10.00" } },
+        "roles": {},
+        "characteristics": ["betwist"]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "S1", "attribute": "uitkering", "value": { "number": "20.00" } },
+    { "kind": "attributeValue", "label": "W1", "attribute": "uitkering", "value": { "number": "99.00" } },
+    { "kind": "consistent" }
+  ]
+}

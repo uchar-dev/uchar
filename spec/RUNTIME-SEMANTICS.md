@@ -4054,11 +4054,25 @@ different instances.
 > ordinary rule in a document without a supertype edge, and every rule in
 > the corpus that predates this chapter.
 
-Two writers on one level are still not a stack: two computing rules on one
-target mean agenda order, which is exactly what prioritized defaults exist
-to replace (ch. 7.7), so a level carrying two refuses by name rather than
-picking one. A rule beside a group the level declares **itself** is WF-050's
-single-writer lift and is refused at the document.
+**On an absorbed target**, two writers on one level are still not a stack:
+two computing rules on one target mean agenda order, which is exactly what
+prioritized defaults exist to replace (ch. 7.7), so a level carrying two
+refuses by name rather than picking one. Outside the gate nothing changes —
+in a flat model two computing rules on one target keep the reading they
+always had, and WF-079 is what speaks about them. A rule beside a group the
+level declares **itself** is likewise not this chapter's business: that is
+WF-050's single-writer lift, refused at the document.
+
+**A rule carrying a VALIDITY WINDOW is not folded**, and is refused by name
+instead. A windowed base would put version selection inside the stack, and
+ch. 7.4 keeps the two apart on purpose — "rule-version selection is
+temporal, not defeasible". The refusal has to be loud rather than a silent
+skip, because absorption takes the rule out of the rule circuit: a fold that
+merely passed over the window would silence the writer without ever making
+it a base. Measured on verifier-clean documents — the target came out
+silently leeg in all three executors, and a windowed rule that was ACTIVE on
+the evaluation date answered from the inherited base instead of its own
+value.
 
 #### An inherited declared-unordered set
 
