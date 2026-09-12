@@ -751,7 +751,7 @@ and conditie path j : conditie =
 let objecttype path j : objecttype =
   let kvs = obj path j in
   expect_node path kvs "Objecttype";
-  check_keys path kvs
+  check_keys path kvs ~ext:[ "supertype" ]
     [ "node"; "naam"; "attributen"; "attribuutMeervoud"; "attribuutDimensies";
       "attribuutGranulariteit"; "attribuutTijdlijnAantal"; "attribuutTijdlijnNaam";
       "kenmerken"; "kenmerkSoorten"; "kenmerkGranulariteit"; "kenmerkTijdlijnAantal";
@@ -759,6 +759,12 @@ let objecttype path j : objecttype =
   let f name = field path kvs name in
   {
     ot_naam = str_opt (path / "naam") (f "naam");
+    (* whole or not at all: the extension field is absent or a string,
+       never null — a null parent would name a type called nothing *)
+    ot_supertype =
+      (match List.assoc_opt "supertype" kvs with
+       | None -> None
+       | Some j -> Some (str (path / "supertype") j));
     attributen = map_ (path / "attributen") (fun p j -> opt p datatype j) (f "attributen");
     attribuut_meervoud = map_ (path / "attribuutMeervoud") str_opt (f "attribuutMeervoud");
     attribuut_dimensies =

@@ -305,6 +305,10 @@ and conditie =
 
 type objecttype = {
   ot_naam : string option;
+  ot_supertype : string option;
+      (* the single direct parent, by declared name; None = a root type.
+         Single parenthood is true by SHAPE — one string, never a list —
+         so WF-106 has nothing on the wire to check (IR-SPEC ch. 2.2). *)
   attributen : (string * datatype option) list;
   attribuut_meervoud : (string * string option) list;
   attribuut_dimensies : (string * string option list) list;

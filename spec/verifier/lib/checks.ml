@@ -315,7 +315,85 @@ let lexeme_datum_tijd s =
 
 type ctx = { doc : document }
 
-let objecttype ctx name = find_ci ctx.doc.objecttypen name
+(* --- the supertype chain (IR-SPEC ch. 2.2) ------------------------------- *)
+
+(* The DECLARED record, exactly as the document writes it. Three rules read
+   this raw view on purpose: WF-002 (duplicates within one declaration),
+   WF-105 (shadowing, which needs to see own and inherited apart) and
+   WF-034's side-map key cross (a facet belongs to the type that declares
+   its member). Reading those on the chain-closed view below would make
+   every inherited member a duplicate of itself. *)
+let declared_objecttype ctx name = find_ci ctx.doc.objecttypen name
+
+(* The chain from [ot] upward, own type first, root last. Cycle-safe by
+   construction — a name already on the path stops the walk — because
+   WF-104 reports the cycle while every other check must still terminate
+   on that same document. *)
+let chain_from ctx (ot : objecttype) =
+  let rec go seen (ot : objecttype) acc =
+    let acc = ot :: acc in
+    match ot.ot_supertype with
+    | None -> List.rev acc
+    | Some s when List.mem (norm s) seen -> List.rev acc
+    | Some s -> (
+        match declared_objecttype ctx s with
+        | None -> List.rev acc
+        | Some p -> go (norm s :: seen) p acc)
+  in
+  go [ norm (Option.value ot.ot_naam ~default:"") ] ot []
+
+(* The EFFECTIVE object type: the declared record with every member list
+   replaced by the chain-closed union, NEAREST DECLARATION FIRST, so
+   [find_ci]'s first-hit answer is exactly the upward resolution of
+   ch. 2.2. Identity on a root type — which is every type in a document
+   without a supertype edge, so the chain-closed view costs nothing where
+   there is no chain. *)
+let effective_objecttype ctx (ot : objecttype) =
+  match ot.ot_supertype with
+  | None -> ot
+  | Some _ ->
+      let types = chain_from ctx ot in
+      let cat f = List.concat_map f types in
+      {
+        ot with
+        attributen = cat (fun t -> t.attributen);
+        attribuut_meervoud = cat (fun t -> t.attribuut_meervoud);
+        attribuut_dimensies = cat (fun t -> t.attribuut_dimensies);
+        attribuut_granulariteit = cat (fun t -> t.attribuut_granulariteit);
+        attribuut_tijdlijn_aantal = cat (fun t -> t.attribuut_tijdlijn_aantal);
+        attribuut_tijdlijn_naam = cat (fun t -> t.attribuut_tijdlijn_naam);
+        kenmerken = cat (fun t -> t.kenmerken);
+        kenmerk_soorten = cat (fun t -> t.kenmerk_soorten);
+        kenmerk_granulariteit = cat (fun t -> t.kenmerk_granulariteit);
+        kenmerk_tijdlijn_aantal = cat (fun t -> t.kenmerk_tijdlijn_aantal);
+      }
+
+(* Resolution walks the chain UPWARD ONLY: this is the one lookup every
+   member cross goes through, so a member declared on a strict subtype and
+   read at the supertype still does not resolve — not every instance of the
+   supertype has it. That refusal is the chain-aware WF-034. *)
+let objecttype ctx name = Option.map (effective_objecttype ctx) (declared_objecttype ctx name)
+
+(* S ⊑ T — the reflexive-transitive closure of the supertype edge. *)
+let is_sub ctx ~sub ~super =
+  norm sub = norm super
+  ||
+  match declared_objecttype ctx sub with
+  | None -> false
+  | Some ot ->
+      List.exists
+        (fun (t : objecttype) ->
+          match t.ot_naam with Some n -> norm n = norm super | None -> false)
+        (chain_from ctx ot)
+
+(* Comparable in one chain, either direction — WF-047's "agree" widened
+   from equality to ⊑-compatibility (IR-SPEC ch. 2.6). The role's declared
+   filler type is an UPPER bound, so a node naming a subtype of it is
+   sound; a node naming a supertype of it reads upward from every filler
+   and is sound too. The unsound direction — reading a strict subtype's
+   member through this position — is refused where it is expressible, by
+   the member cross above. *)
+let type_compatible ctx a b = is_sub ctx ~sub:a ~super:b || is_sub ctx ~sub:b ~super:a
 
 let attr_of ot name = find_ci ot.attributen name
 let has_attr ot name = List.exists (fun (k, _) -> norm k = norm name) ot.attributen
@@ -1279,6 +1357,22 @@ let wf025 ctx =
       | _ -> [])
     (List.mapi (fun i r -> (i, r)) ctx.doc.verdelingen)
 
+(* The single-writer fences (WF-026 here, WF-050 and WF-079 below) key on
+   the DECLARED object-type name, and under subtyping they MUST keep doing
+   so — this is a constraint on the verifier, not an oversight (IR-SPEC
+   ch. 6.1, RUNTIME-SEMANTICS ch. 7). They are read on the per-type
+   EFFECTIVE stack, after inheritance resolution, never on a chain-closed
+   target key. The hazard runs the counter-intuitive way: today the fences
+   do not fire on a supertype/subtype pair at all, because 'Strandrecht.x'
+   and 'Wrakrecht.x' are two keys. Lifting the target key to the
+   chain-closed set — the obvious repair once member resolution walks the
+   chain — would make them fire on exactly the shape inheritance
+   legitimises, a supertype base plus a subtype base on one target, and
+   make the construct unreachable. In the effective stack that pair is ONE
+   writer: the subtype's own base replaces the inherited one. Any
+   chain-awareness added here must ask "do these two writers survive into
+   one instance's effective stack", never "do these two targets close over
+   the same member". *)
 let wf026 ctx =
   let named =
     List.mapi
@@ -3274,22 +3368,30 @@ let self_denoting_role ctx ~otype name =
     ctx.doc.feittypen
 
 (* The ch. 4.1 type-pair derivation, mirrored from the executors: the
-   two-role fact types relating [from_type] to [to_type] (either way). *)
+   two-role fact types relating [from_type] to [to_type] (either way).
+
+   The pair set is CHAIN-CLOSED (IR-SPEC ch. 2.6): a role declaring filler
+   T is filled by every S ⊑ T, so a fact type declared on supertypes
+   relates every subtype pair below it. One consequence is stated here so
+   it is not discovered later — adding a subtype can turn a previously
+   well-formed bindingless navigation into a WF-048 refusal, because a pair
+   that was uniquely connected may become doubly connected once the chain
+   closes. WF-048's text is unchanged and its refusal stays loud; the
+   answer is an explicit role binding. *)
+let fills ctx ~inst ~(role : rol) =
+  is_sub ctx ~sub:inst ~super:(Option.value role.rol_objecttype_naam ~default:"")
+
 let connecting_candidates ctx ~from_type ~to_type =
   List.filter_map
     (fun (fn, (ft : feittype)) ->
-      let ot r = Option.value r.rol_objecttype_naam ~default:"" in
+      let f inst role = fills ctx ~inst ~role in
       match ft.rollen with
       | [ a; b ] ->
-          if
-            (norm (ot a) = norm from_type && norm (ot b) = norm to_type)
-            || (norm (ot b) = norm from_type && norm (ot a) = norm to_type)
-          then Some fn
+          if (f from_type a && f to_type b) || (f from_type b && f to_type a) then Some fn
           else None
       | [ r ] when ft.wederkerig ->
           (* the single reciprocal role relates the type to itself *)
-          if norm (ot r) = norm from_type && norm from_type = norm to_type then Some fn
-          else None
+          if f from_type r && norm from_type = norm to_type then Some fn else None
       | _ -> None)
     ctx.doc.feittypen
 
@@ -3302,16 +3404,13 @@ let connecting_candidates ctx ~from_type ~to_type =
 let connecting_role_candidates ctx ~from_type ~to_type =
   List.concat_map
     (fun (_, (ft : feittype)) ->
-      let ot r = Option.value r.rol_objecttype_naam ~default:"" in
+      let f inst role = fills ctx ~inst ~role in
       match ft.rollen with
       | [ a; b ] ->
-          (if norm (ot a) = norm from_type && norm (ot b) = norm to_type then [ b ]
-           else [])
-          @ (if norm (ot b) = norm from_type && norm (ot a) = norm to_type then [ a ]
-             else [])
+          (if f from_type a && f to_type b then [ b ] else [])
+          @ (if f from_type b && f to_type a then [ a ] else [])
       | [ r ] when ft.wederkerig ->
-          if norm (ot r) = norm from_type && norm from_type = norm to_type then [ r ]
-          else []
+          if f from_type r && norm from_type = norm to_type then [ r ] else []
       | _ -> [])
     ctx.doc.feittypen
 
@@ -3640,11 +3739,16 @@ let wf047_binding ctx at (rb : rol_binding) ~bound_filler ~other_filler =
   match resolve_binding ctx rb with
   | Error e -> [ v "WF-047" at e ]
   | Ok (_, bound, other) ->
+      (* "agree" is ⊑-COMPATIBILITY, not equality (IR-SPEC ch. 2.2/2.6): a
+         role's declared filler type is an UPPER bound, so a fact type
+         declared on a supertype legitimately carries subtype instances and
+         a node may name either end of one chain. Two types in different
+         chains still disagree. *)
       let agree what (r : rol) = function
         | None -> []
         | Some expected ->
             let filler = Option.value r.rol_objecttype_naam ~default:"" in
-            if norm filler = norm expected then []
+            if type_compatible ctx filler expected then []
             else
               [ v "WF-047" at
                   (Printf.sprintf "the %s role '%s' fills '%s', but the node names '%s'" what
@@ -3688,18 +3792,19 @@ let nav_roles_by_name ?endpoint ctx ~from_type ~name =
     &&
     match endpoint with
     | None -> true
-    | Some e -> norm (Option.value r.rol_objecttype_naam ~default:"") = norm e
+    | Some e -> type_compatible ctx (Option.value r.rol_objecttype_naam ~default:"") e
   in
-  let ot r = Option.value r.rol_objecttype_naam ~default:"" in
   List.filter_map
     (fun (fn, (ft : feittype)) ->
+      (* the near side is a FILLER question: an instance of [from_type]
+         fills a role declared at any of its supertypes (ch. 2.6) *)
+      let f role = fills ctx ~inst:from_type ~role in
       match ft.rollen with
       | [ a; b ] ->
-          if norm (ot a) = norm from_type && matches b then Some (fn, b)
-          else if norm (ot b) = norm from_type && matches a then Some (fn, a)
+          if f a && matches b then Some (fn, b)
+          else if f b && matches a then Some (fn, a)
           else None
-      | [ r ] when ft.wederkerig ->
-          if norm (ot r) = norm from_type && matches r then Some (fn, r) else None
+      | [ r ] when ft.wederkerig -> if f r && matches r then Some (fn, r) else None
       | _ -> None)
     ctx.doc.feittypen
 
@@ -3717,18 +3822,17 @@ let nav_role_by_name ?endpoint ctx ~from_type ~name =
    unique fact type relating the pair, and the role [to_type] fills —
    the executors' type-pair derivation (the WF-048 model). *)
 let nav_role_by_pair ctx ~from_type ~to_type =
-  let ot r = Option.value r.rol_objecttype_naam ~default:"" in
   let hits =
     List.filter_map
       (fun (fn, (ft : feittype)) ->
+        let f inst role = fills ctx ~inst ~role in
         match ft.rollen with
         | [ a; b ] ->
-            if norm (ot a) = norm from_type && norm (ot b) = norm to_type then Some (fn, b)
-            else if norm (ot b) = norm from_type && norm (ot a) = norm to_type then Some (fn, a)
+            if f from_type a && f to_type b then Some (fn, b)
+            else if f from_type b && f to_type a then Some (fn, a)
             else None
         | [ r ] when ft.wederkerig ->
-            if norm (ot r) = norm from_type && norm from_type = norm to_type then Some (fn, r)
-            else None
+            if f from_type r && norm from_type = norm to_type then Some (fn, r) else None
         | _ -> None)
       ctx.doc.feittypen
   in
@@ -7492,6 +7596,11 @@ let wf050 ctx =
                (* the group key carries the target KIND: an attribute and a
                   characteristic may share a name (WF-002), and then they
                   are two independent targets, not a group *)
+               (* keyed on the DECLARED subject, deliberately: see the
+                  single-writer note at wf026. A group on 'Strandrecht.x'
+                  and one on 'Wrakrecht.x' are two targets here, because
+                  inheritance folds them into ONE effective stack rather
+                  than putting two writers on one target. *)
                let key =
                  (if l.pd_kenmerk <> None then "K:" else "A:")
                  ^ norm l.pd_onderwerp ^ ":" ^ norm tn
@@ -7653,6 +7762,11 @@ let wf052 ctx =
    their own priority and stay outside: only the bare (unconditional)
    collision is statically over-determined. Mirrors WF-026's version-stripped
    pairing. *)
+(* WF-079 keys on the declared type too — see the single-writer note at
+   wf026. A bare rule on the supertype and a bare rule on the subtype are
+   not two writers: the subtype's rule IS its base and replaces the
+   inherited one, so each type's effective stack still holds a single bare
+   writer and the ch. 7.8 standing norm applies per type, unchanged. *)
 let wf079 ctx =
   let has_defaults otn a =
     List.exists
@@ -8746,10 +8860,136 @@ let wf086 ctx =
          | _ -> [])
        ctx.doc.prioritized_defaults)
 
+(* --- WF-103/104/105: the supertype reference (IR-SPEC ch. 2.2) ------------
+   Three rules on one field. WF-106 — an object type declares at most one
+   direct supertype — is deliberately absent from this file and has no
+   negatief either: `supertype` is a bare string, so a second direct parent
+   is not a document a check could reject but one that cannot be written.
+   Its witnesses live in the frontends that read the language above this
+   wire. *)
+
+(* WF-103: the supertype names a declared object type. WF-003 would call
+   this a dangling reference; it gets its own number because its failure
+   mode is specific — a chain that ends nowhere resolves no member — and
+   because a witness has to be able to name it. *)
+let wf103 ctx =
+  List.filter_map
+    (fun (key, (ot : objecttype)) ->
+      match ot.ot_supertype with
+      | Some s when declared_objecttype ctx s = None ->
+          Some
+            (v "WF-103"
+               ("/objecttypen/" ^ key ^ "/supertype")
+               ("supertype '" ^ s
+              ^ "' is not a declared object type: the chain ends at a name nothing declares, so \
+                 no member resolves through it"))
+      | _ -> None)
+    ctx.doc.objecttypen
+
+(* WF-104: the supertype graph is acyclic, self-reference included. Colour
+   DFS with a named cycle path — WF-085's shape, because the failure is the
+   same: a cycle has no fixpoint. Here it is member resolution that has no
+   root to stop at, and every reader would walk it forever or cut it off at
+   a private depth of its own. *)
+let wf104 ctx =
+  let defs = Array.of_list ctx.doc.objecttypen in
+  let n = Array.length defs in
+  (* keyed by MAP KEY, which is what [declared_objecttype] resolves against *)
+  let index = Hashtbl.create 16 in
+  Array.iteri (fun i (key, _) -> if not (Hashtbl.mem index (norm key)) then Hashtbl.add index (norm key) i) defs;
+  let succ =
+    Array.map
+      (fun (_, (ot : objecttype)) ->
+        match ot.ot_supertype with
+        | None -> []
+        | Some s -> ( match Hashtbl.find_opt index (norm s) with Some j -> [ j ] | None -> []))
+      defs
+  in
+  let color = Array.make (max n 1) 0 in
+  let viols = ref [] in
+  let name i = fst defs.(i) in
+  let rec dfs path i =
+    match color.(i) with
+    | 1 ->
+        let rec take acc = function
+          | [] -> acc
+          | j :: _ when j = i -> j :: acc
+          | j :: rest -> take (j :: acc) rest
+        in
+        let cyc = take [] path in
+        let names = String.concat " -> " (List.map name (cyc @ [ i ])) in
+        viols :=
+          v "WF-104"
+            ("/objecttypen/" ^ name i ^ "/supertype")
+            ("supertype cycle (a type would be its own ancestor, so member resolution has no \
+              root to stop at): " ^ names)
+          :: !viols
+    | 2 -> ()
+    | _ ->
+        color.(i) <- 1;
+        List.iter (fun j -> dfs (i :: path) j) succ.(i);
+        color.(i) <- 2
+  in
+  Array.iteri (fun i _ -> if color.(i) = 0 then dfs [] i) defs;
+  List.rev !viols
+
+(* WF-105: no member name is declared twice along one chain — WF-002's
+   per-kind uniqueness discipline lifted from the declaration to the chain.
+   One instance would otherwise see two declarations of one name, and which
+   one a reader finds decides that name's datatype, dimensions and timeline
+   facet on every read. The measured consumer consequence is sharper than a
+   compile error: the Drools bean generator deduplicates silently,
+   first-wins, so a shadowed name yields a bean that generates perfectly and
+   is quietly missing one member. A SIBLING collision — two incomparable
+   subtypes declaring one name — is admitted and is not this rule: no
+   instance is of two incomparable types, so no read is ambiguous. *)
+let wf105 ctx =
+  List.concat_map
+    (fun (key, (ot : objecttype)) ->
+      match ot.ot_supertype with
+      | None -> []
+      | Some _ ->
+          let ancestors = match chain_from ctx ot with _ :: rest -> rest | [] -> [] in
+          let above ~kind name =
+            List.find_map
+              (fun (a : objecttype) ->
+                let hit =
+                  match kind with
+                  | `Attribute -> List.exists (fun (k, _) -> norm k = norm name) a.attributen
+                  | `Characteristic -> mem_ci (some_names a.kenmerken) name
+                in
+                if hit then Some (Option.value a.ot_naam ~default:"?") else None)
+              ancestors
+          in
+          let report ~kind ~what ~at name =
+            match above ~kind name with
+            | None -> None
+            | Some anc ->
+                Some
+                  (v "WF-105" at
+                     (Printf.sprintf
+                        "%s '%s' is already declared on '%s' further up the chain: a subtype \
+                         never redeclares an inherited name (one instance would carry two \
+                         declarations of it)"
+                        what name anc))
+          in
+          List.filter_map
+            (fun (a, _) ->
+              report ~kind:`Attribute ~what:"attribute"
+                ~at:("/objecttypen/" ^ key ^ "/attributen/" ^ a) a)
+            ot.attributen
+          @ List.filter_map
+              (fun k ->
+                report ~kind:`Characteristic ~what:"characteristic"
+                  ~at:("/objecttypen/" ^ key ^ "/kenmerken") k)
+              (some_names ot.kenmerken))
+    ctx.doc.objecttypen
+
 let all (doc : document) : violation list =
   let ctx = { doc } in
   List.concat
-    [ wf001 ctx; wf002 ctx; wf094 ctx; wf094_null ctx; wf003 ctx; wf004 ctx; wf005 ctx; wf006 ctx;
+    [ wf001 ctx; wf002 ctx; wf103 ctx; wf104 ctx; wf105 ctx;
+      wf094 ctx; wf094_null ctx; wf003 ctx; wf004 ctx; wf005 ctx; wf006 ctx;
       wf007_model ctx; wf009 ctx; wf092 ctx; wf011 ctx; wf012 ctx; wf013 ctx; wf014 ctx;
       wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf020 ctx; wf101 ctx; wf021 ctx;
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
