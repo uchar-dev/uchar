@@ -57,8 +57,15 @@ als de kernel-anchor `anchor/jutterswet-strandrechtketen`, nu met
 het frontend-diff-paar.
 
 **Weigeringslijst, elk met een fixture.** (1) twee `is een`-clausules op
-één kop, of `is een A en B` — de tweede ouder, met de twee CGM-gevallen
-`RechtOpUitkeringWazo` en `RechtUitkeringZw` bij naam in de melding;
+één kop, of `is een A en B` — de tweede ouder, geweigerd onder
+**WF-106** (besluit §11.1, 2026-09-12: het nummer benoemt "een
+objecttype declareert hoogstens één direct supertype"), met de twee
+CGM-gevallen `RechtOpUitkeringWazo` en `RechtUitkeringZw` bij naam in
+de melding. Deze fixture is één van de twéé getuigen die die regel
+heeft: op de wire is een tweede ouder onschrijfbaar, dus er is geen
+verifier-check en geen `corpus/negatief` — de weigering begrenst de
+taal bóven de wire en wordt hier en bij de F-logic-frontend bewezen
+(SUBTYPING §3.1);
 (2) zelfverwijzing `X is een X`; (3) onbekend supertype — resolutie is
 documentbreed en volgordevrij, dus een voorwaartse verwijzing is géén
 fout, alleen een ongedeclareerde naam is dat; (4) `is een` dat iets
@@ -77,12 +84,9 @@ ingetrokken, en de kernelgetuigen zijn de semantische maat.
   bindingloze navigatie die vandaag welgevormd is kan door het
   toevoegen van een subtype dubbel verbonden raken en luid omvallen.
   `verbindendeRol` / `bronRol` meegeven neemt dat weg.
-- **De laaggrensordening heeft een oppervlak nodig — mits zij er komt.**
-  De kernel stelt `geerfdeUitzonderingen` ∈ `boven` | `onder` |
-  `ongeordend` (WF-106) op de defaults-groep voor; de dialect-extensie
-  zou de eerste producent ervan zijn en moet er dan een schrijfwijze
-  voor kiezen in het `Uitzondering op` / `Uitzonderingen
-  ongeordend`-blok. **Het veld is een aanbeveling, geen geratificeerd
-  besluit:** SUBTYPING §11.2 legt de kleinere variant — laaggrens
-  altijd ongeordend — aan de maintainer voor. Wacht dat punt af voor je
-  oppervlak ontwerpt.
+- **De laaggrensordening vraagt geen oppervlak.** Besluit §11.2
+  (2026-09-12) schrapte het voorgestelde `geerfdeUitzonderingen`-veld:
+  de laaggrens is vast geordend — de subtype-eigen uitzonderingen staan
+  boven de geërfde — dus er valt niets te declareren en de extensie
+  hoeft er niets voor te emitteren. Het nummer WF-106 is herbestemd
+  naar de meervoudige-ouderweigering uit de weigeringslijst hierboven.

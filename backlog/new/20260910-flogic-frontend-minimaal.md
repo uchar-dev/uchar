@@ -35,7 +35,15 @@ de use case van deze kaart een andere zijn dan die van §7.
 
 **Weigeringslijst.** Meervoudige ouders (twee `::`-feiten met
 onvergelijkbare ouders, met `RechtOpUitkeringWazo` en
-`RechtUitkeringZw` bij naam); HiLog en meta-programmeren; defeasible
+`RechtUitkeringZw` bij naam) — geweigerd onder **WF-106** (besluit
+§11.1, 2026-09-12: "een objecttype declareert hoogstens één direct
+supertype"). Deze fixture is de scherpste getuige die die regel heeft:
+op de wire is een tweede ouder onschrijfbaar (`supertype` is één
+string), dus er is geen verifier-check en geen `corpus/negatief`,
+terwijl F-logic met twee `::`-feiten wél twee ouders kán schrijven —
+hier wordt de weigering dus echt uitgeoefend en niet alleen
+geconstrueerd (SUBTYPING §3.1, §9.3). Verder: HiLog en
+meta-programmeren; defeasible
 reasoning (argumentatietheorieën, `\overrides`, `\neg`); negatievormen
 (`\naf`, `\neg`); **`setsemantics{inheritance=monotonic}`** — uchar's
 overerving is niet-monotoon per besluit 3 en de twee modi zijn niet

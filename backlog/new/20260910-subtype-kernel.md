@@ -1,23 +1,41 @@
 # Subtypering in de kernel: IR, verifier en de drie executors
 
-Goal: enkelvoudige objecttype-overerving als eersteklas kernel-begrip, uitgevoerd volgens `spec/proposals/SUBTYPING.md` (de onderzoekskaart is de voorganger en haar besluiten zijn bindend): de optionele supertype-verwijzing op het objecttype in IR-SPEC met WF-regels voor acycliciteit, enkelvoudigheid, keten-naamresolutie, sibling-botsingen, rolcompatibiliteit, concrete-type-instantiatie met discriminator in de invoer, en de overervingssemantiek van opdrachtbesluit 3: per target erft het subtype de defaults-stapel van het supertype, subtype-eigen gewone regels vervangen de geërfde basis, geërfde uitzonderingen blijven erboven, en botsende uitzonderingen over de laaggrens volgen de ongeordend/§9.5-route; de lowering in alle drie de executors — ref met subtype-check in de evaluator, clingo met `isa/2` en transitieve sluiting, Drools volgens de in het proposal besliste vorm — plus de minimale jutterswet-use-case uit opdrachtdeel 1.5 als anchor.
+Goal: enkelvoudige objecttype-overerving als eersteklas kernel-begrip, uitgevoerd volgens `spec/proposals/SUBTYPING.md` (de onderzoekskaart is de voorganger en haar besluiten zijn bindend): de optionele supertype-verwijzing op het objecttype in IR-SPEC met WF-regels voor acycliciteit, enkelvoudigheid, keten-naamresolutie, sibling-botsingen, rolcompatibiliteit, concrete-type-instantiatie met discriminator in de invoer, en de overervingssemantiek van opdrachtbesluit 3: per target erft het subtype de defaults-stapel van het supertype, subtype-eigen gewone regels vervangen de geërfde basis, geërfde uitzonderingen blijven erboven, en de subtype-eigen uitzonderingen staan als blok boven de geërfde — bij een botsing over de laaggrens wint de subtype-eigen definitie, deterministisch en zonder conflictfeit (maintainerbesluit 2026-09-12, SUBTYPING §11.2, naar Flora's principe "Method definitions in subclasses override the definitions that appear in the superclasses"); de lowering in alle drie de executors — ref met subtype-check in de evaluator, clingo met `isa_sub/2`-feiten plus een transitieve sluiting in de ASP zelf, Drools volgens de in het proposal besliste vorm — plus de minimale jutterswet-use-case uit opdrachtdeel 1.5 als anchor.
 
-Acceptance: de nieuwe anchor speelt groen door verifier → ref → clingo (→ Drools conform het proposal-besluit) met de vier bewijsmomenten expliciet in de verwachte uitkomsten: een supertype-regel die voor een subtype-instantie vuurt, een supertype-kwantificatie die super- en subtype-instanties samen telt, de pinguïn-toets (een subtype-eigen basis vervangt de geërfde basis terwijl een geërfde uitzondering erboven blijft winnen), en een botsende geërfde-tegen-eigen uitzondering die als §9.5-conflictfeit deponeert in plaats van stil voorrang te krijgen; negatieve getuigen voor cyclus, tweede directe ouder, botsend sibling-attribuut en onbekend supertype weigeren luid met de gereserveerde WF-nummers; het volledige bestaande corpus parseert, verifieert en emit byte-identiek; de volledige gate-reeks van de repo is groen.
+Acceptance: de nieuwe anchor speelt groen door verifier → ref → clingo (→ Drools conform het proposal-besluit) met de vier bewijsmomenten expliciet in de verwachte uitkomsten: een supertype-regel die voor een subtype-instantie vuurt, een supertype-kwantificatie die super- en subtype-instanties samen telt, de pinguïn-toets (een subtype-eigen basis vervangt de geërfde basis terwijl een geërfde uitzondering erboven blijft winnen), en een botsende geërfde-tegen-eigen uitzondering die deterministisch naar de subtype-eigen beslissing gaat — een gewone schrijf, `consistent`, geen conflictfeit; negatieve getuigen voor cyclus, geshadowd attribuut (de kaartfrase "botsend sibling-attribuut" gelezen als SUBTYPING §3.3 geval (a)) en onbekend supertype weigeren luid met de gereserveerde WF-nummers, terwijl de tweede directe ouder per besluit §11.1 een weigering bóven de wire is: WF-106, zonder verifier-check en zonder `corpus/negatief`, met zijn getuigen in de fixtures van de twee frontendkaarten; het volledige bestaande corpus parseert, verifieert en emit byte-identiek; de volledige gate-reeks van de repo is groen.
 
 May touch: `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`, `spec/CONSTRUCTS.md` (nieuwe rij), de verifier, `ref/`, de clingo- en Drools-backends, `corpus/` (nieuwe anchor + negatieven), en de eigen kaart.
 
 Out of scope: elke frontend (RegelSpraak-dialect en F-logic hebben eigen kaarten); meervoudige overerving; een vrije specificiteitsrelatie tussen willekeurige regels (het C2-besluit blijft staan); wijzigingen aan de defaults-machinerie anders dan wat de groepserving van besluit 3 vereist.
 
-## Aangescherpt door de onderzoekskaart (2026-09-11)
+## Aangescherpt door de onderzoekskaart (2026-09-11), bijgewerkt op de maintainerbesluiten (2026-09-12)
 
 `spec/proposals/SUBTYPING.md` is bindend voor deze kaart; wat hieronder
-staat is de uitvoerbare neerslag ervan, niet een tweede besluit.
+staat is de uitvoerbare neerslag ervan, niet een tweede besluit. Drie
+van de zes open §11-punten zijn op 2026-09-12 beslist en hieronder
+verwerkt: het gereserveerde nummer voor de meervoudige-ouderweigering
+(§11.1), de vaste laaggrensordening zonder veld (§11.2) en de
+ASP-sluiting voor clingo (§11.3). §11.4–§11.6 staan nog open, maar
+raken deze kaart niet.
 
 **Wirevorm.** `ObjectType.supertype: string?` — één extensieveld
 (`IR-SPEC.md` § Method: optioneel, nooit `required`, nooit null, heel of
 niet), wire-sleutel `supertype`. De kernelkaart landt het
 emitter-vrij met handgeschreven anchorgetuigen; de dialectkaart maakt
 het daarna emitter-dragend, langs de route die `Let`/`BinderRef` namen.
+
+**Laaggrens: vaste blokorde, geen wire-oppervlak** (besluit §11.2). De
+effectieve stapel per target is, hoog naar laag: de subtype-eigen
+uitzonderingen in gedeclareerde orde, dan de geërfde uitzonderingen in
+geërfde orde, dan de basis (de subtype-eigen als die er is, anders de
+geërfde), en daaronder de initialisatie- en virtueel-input-default, die
+nooit worden vervangen. Er komt géén `geerfdeUitzonderingen`-veld, geen
+enum en geen regel die een declaratie eist. Let op de fijnmazigheid,
+want hier zit het verschil met F-logic: dit is soortsgewijze override,
+geen attribuutbrede annulering — een geërfde uitzondering zonder
+toepasselijke eigen tegenhanger blijft gewoon boven de subtype-basis
+winnen (rij 4 van de zescellige tabel, 99 en niet 20). Alleen bij
+gedeelde toepasselijkheid wint de eigen.
 
 **WF-nummers (gereserveerd vanaf WF-103).** WF-101 is de hoogste regel
 in de WF-index op de basis van deze branch; WF-102 staat daar níet in
@@ -35,22 +53,30 @@ maakt de nummers definitief bij de landing.
 - WF-105 — geen attribuut- of kenmerknaam twee keer op één keten
   (ci; WF-002 opgetild naar de keten). Negatief
   `wf105-hershadowd-attribuut`.
-- WF-106 — een defaults-groep die een niet-lege geërfde
-  uitzonderingsblok erft, declareert zijn laaggrensordening
-  (`geerfdeUitzonderingen` ∈ `boven` | `onder` | `ongeordend`).
-  Negatief `wf106-ongeordende-laaggrens`. **Let op: het veld zelf is
-  een aanbeveling, geen geratificeerd besluit** — SUBTYPING §11.2 legt
-  de kleinere variant (laaggrens altijd ongeordend, `boven`/`onder`
-  laten vallen) aan de maintainer voor. Bouw het niet voordat dat punt
-  beantwoord is.
-- WF-107 — in reserve voor wat de eigen lensronde oplevert. De meest
-  waarschijnlijke gegadigde: de markeringsplicht uit SUBTYPING §4.1
-  regel 3 (een subtype-regel die een ongeordende oudergroep binnenkomt
-  moet zelf ongeordend gemarkeerd zijn). Die plicht heeft nu géén
-  handhaving — WF-050's check is naam-gesleuteld en de optilling die
-  hem zou laten vuren is precies wat §4.2 verbiedt. Deze kaart beslist
-  of het een eigen, grens-gescopete regel wordt of een ongecontroleerde
-  SHOULD blijft.
+- WF-106 — **herbestemd op 2026-09-12** (SUBTYPING §11.1 en §10): het
+  nummer droeg in de vorige revisie de laaggrensordening; besluit
+  §11.2 hief die regel op en het vrijgekomen nummer benoemt nu de
+  weigering die het hele ontwerp draagt — *een objecttype declareert
+  hoogstens één direct supertype*. Struikel niet over het nummer: er
+  bestaat geen `wf106-ongeordende-laaggrens` meer. Deze regel krijgt
+  **geen verifier-check en geen negatief**, en dat is bewust: onder
+  `supertype: string?` is een tweede ouder geen document dat de
+  verifier afkeurt maar een document dat niet te schrijven valt (gate
+  2 weigert de arrayvorm op de gesloten node). De regel begrenst de
+  taal bóven de wire, dus haar getuigen wonen waar die taal gelezen
+  wordt: de fixtures van de dialectkaart (`is een A en B`, twee
+  `is een`-clausules) en van de F-logic-kaart (twee `::`-feiten, die
+  écht twee ouders kunnen schrijven). Die getuigen vallen buiten deze
+  kaart — beide frontends staan in Out of scope — dus wat deze kaart
+  levert is het nummer, de normatieve zin en de melding van het
+  schema; de spec-disciplineafwijking is beargumenteerd in SUBTYPING
+  §3.1 en hoeft hier niet opnieuw afgewogen te worden.
+- WF-107 — in reserve, zonder benoemde gegadigde. De gegadigde die
+  hier eerst stond, de markeringsplicht uit SUBTYPING §4.1 regel 3,
+  verviel met de regel zelf toen besluit §11.2 de laaggrens vast
+  ordende: er valt niets meer te markeren en er staat geen
+  ongehandhaafde SHOULD meer open. Het nummer blijft gereserveerd voor
+  wat de eigen lensronde van deze kaart oplevert.
 
 De meeste andere raakvlakken zijn een **aanpassing van bestaande
 regels** onder de ketenbewuste lezing van "resolveert", zonder nieuw
@@ -99,13 +125,16 @@ geen herformulering.
   accumulate zouden een transpile-time transitieve sluiting nodig
   hebben, en de getypte to-one referentievelden zouden verbreed moeten
   worden.
-- **clingo: aanbeveling, geen besluit** — de sluiting in de ASP
-  (`isa_sub/2`-feiten plus een transitieve regel, met de **49
-  `is_a(`-joinregels / 50 voorkomens** daardoorheen; van de 52 regels /
-  53 voorkomens zijn er 2 commentaar op `:1256` en `:3818` en 1 de
-  feitemitter op `:6457`) houdt het clingo-been een onafhankelijke
-  herimplementatie. Het inspanningsargument wijst de andere kant op;
-  SUBTYPING §11.3 legt de keuze bij de maintainer.
+- **clingo: de sluiting gaat in de ASP — beslist op 2026-09-12**
+  (SUBTYPING §11.3). `isa_sub/2`-feiten plus een transitieve regel,
+  met de **49 `is_a(`-joinregels / 50 voorkomens** daardoorheen; van de
+  52 regels / 53 voorkomens zijn er 2 commentaar op `:1256` en `:3818`
+  en 1 de feitemitter op `:6457`. De grond is dat de sluiting dan in
+  het model zit dat de solver ziet, zodat het clingo-been een
+  onafhankelijke herimplementatie blijft in plaats van een tweede kopie
+  van de OCaml-ketenwandeling. Het inspanningsargument wees de andere
+  kant op en is overruled; een OCaml-zijdige typeset-expansie is
+  daarmee geen optie meer.
 - **ref: elf gemeten plekken, niet één.** `World.of_type`
   (`ref/lib/world.ml:52–57`) beslist de kwantificatie, maar de anchor
   **laadt niet eens** zonder de rest: `case.ml:277–281` (de
@@ -133,10 +162,25 @@ met drie blijft rij 5 ongedekt:
   betwist, bergingsdiepte 25 → 55. Dit is de cel die een lowering
   betrapt die de eigen uitzondering van het subtype stil laat vallen;
   met alleen case 1 en 2 komt die er ongezien doorheen;
-- `case4-laaggrensconflict.json` (cel 6): geen schrijving plus één
-  §9.5-conflictfeit, gesleuteld op `Strandrecht.uitkering` — het type
-  dat het **attribuut** declareert, niet het concrete type en niet het
-  type wiens groep botste — en op de wortel, niet padgesleuteld.
+- `case4-laaggrensvoorrang.json` (cel 6): één `Wrakrecht` dat betwist
+  ís én bergingsdiepte 25 heeft, dus met de geërfde en de eigen
+  uitzondering tegelijk toepasselijk. Verwacht: uitkering **55**,
+  registratiekosten **5**, uitkeringstotaal **55**, registertal **1**,
+  `consistent` — een gewone schrijf. De gepinde waarde scheidt de drie
+  lezingen: kind-wint schrijft 55, ouder-wint zou 99 schrijven, en de
+  ingetrokken ongeordende lezing zou niets schrijven en een
+  §9.5-conflictfeit deponeren. Case 3 en case 4 verwachten dezelfde
+  waarden en verschillen alleen in `betwist`; dat is het punt — case 3
+  toont de eigen uitzondering alleen, case 4 toont haar tegen een
+  levende tegenstander.
+
+De sleutelvorm van een §9.5-conflictfeit — `Strandrecht.uitkering`,
+het type dat het **attribuut** declareert, niet het concrete type, en
+op de wortel in plaats van padgesleuteld — verdwijnt met cel 6 niet
+uit de kaart, maar heeft er geen getuige meer: het restgeval is een
+ch.-7.2-botsing bínnen een geërfd intern-ongeordend blok
+(SUBTYPING §4.4). Zoek er een eigen case bij of meld expliciet dat de
+sleutelvorm ongepind blijft.
 
 Datatypes in de bron volgen de corpusspelling `Numeriek (…)` (137
 voorkomens; `Bedrag` en `Getal` komen nergens voor), en de twee
@@ -145,13 +189,15 @@ níet "aantal strandrechten", want een attribuut dat de rolnaam deelt
 zet de anchor boven op de ch. 2.6-naamdelingsvorm die de Drools-bean
 niet kan dragen.
 
-**Eén afwijking van de acceptatietekst hierboven, expliciet gemeld.**
-De negatieve getuige voor "tweede directe ouder" bestaat niet en kan
-niet bestaan: `supertype` is één string, dus een tweede ouder is geen
-document dat de verifier afkeurt maar een document dat niet te
-schrijven valt (gate 2 weigert de arrayvorm op de gesloten node). De
-weigering ligt bij het schema en bij de twee frontends, met de twee
-CGM-gevallen `RechtOpUitkeringWazo` en `RechtUitkeringZw` bij naam.
-SUBTYPING §11 punt 1 legt het alternatief (`supertypes: [string]` plus
-een "hoogstens één"-regel) aan de maintainer voor; tot hij anders
-beslist geldt de enkele string.
+**De tweede directe ouder: beslist, en de acceptatietekst is erop
+bijgewerkt.** SUBTYPING §11 punt 1 is op 2026-09-12 beantwoord. De
+enkele string staat vast — `supertypes: [string]` plus een "hoogstens
+één"-regel is verworpen, want dat koopt een `corpus/negatief`-getuige
+met een wirevorm die kan uitdrukken wat het ontwerp verbiedt. De
+weigering krijgt wél een nummer: **WF-106**, herbestemd van de
+opgeheven laaggrensregel. Er is daarmee één citeerbare naam over de
+drie lagen heen — de arrayweigering van het schema, de dialectmelding
+en de F-logic-melding zijn zichtbaar dezelfde weigering — en geen
+verifier-check, want er valt niets te checken. De twee CGM-gevallen
+`RechtOpUitkeringWazo` en `RechtUitkeringZw` blijven bij naam in de
+meldingen van de twee frontends staan; daar wonen ook de getuigen.
