@@ -322,7 +322,22 @@ type ctx = { doc : document }
    WF-105 (shadowing, which needs to see own and inherited apart) and
    WF-034's side-map key cross (a facet belongs to the type that declares
    its member). Reading those on the chain-closed view below would make
-   every inherited member a duplicate of itself. *)
+   every inherited member a duplicate of itself. WF-103 is the fourth and
+   is a different reason: a supertype reference must name a DECLARED type,
+   so resolving it through the chain would be circular.
+
+   Every other raw reader in this file is not a name LOOKUP at all but an
+   iteration over the declaration table, checking each record where it is
+   written — WF-001, WF-002, WF-094 (both arms), WF-003, WF-004, WF-005,
+   WF-007, WF-092, WF-034's side maps, WF-057, WF-059, WF-061, WF-065,
+   WF-072, WF-088, WF-104 and WF-105. Those are raw BY CONSTRUCTION and
+   must stay so: their subject is the declaration at that JSON path, and a
+   chain-closed view would report one inherited member once per descendant,
+   at paths where the document says nothing. Swept 2026-09-12 (card
+   subtype-verdeling-keten); every name-keyed member cross — the allocation
+   fields, an object creation's subject and created type, a uniqueness key,
+   a consistency subject, every reference position in the expression walk —
+   already resolves through [objecttype] below. *)
 let declared_objecttype ctx name = find_ci ctx.doc.objecttypen name
 
 (* The chain from [ot] upward, own type first, root last. Cycle-safe by
@@ -3403,7 +3418,23 @@ let self_denoting_role ctx ~otype name =
    well-formed bindingless navigation into a WF-048 refusal, because a pair
    that was uniquely connected may become doubly connected once the chain
    closes. WF-048's text is unchanged and its refusal stays loud; the
-   answer is an explicit role binding. *)
+   answer is an explicit role binding.
+
+   [fills] is also the JOIN test of every walk in this file — "the walk
+   stands at T; does T fill this hop's near role?" — and that is worth
+   saying once, because the two spellings of one hop used to answer it
+   differently. A BINDINGLESS hop resolves through [nav_role_by_name],
+   which has gone through [fills] since the chain landed; a BOUND hop
+   compared the two type NAMES literally, so the same document was
+   admitted without a role binding and refused with one — while ch. 2.6's
+   own advice is to write the binding whenever a subtype is in play.
+   Measured 2026-09-12 (card subtype-verdeling-keten) at five bound-branch
+   sites — WF-053's navigation chain and its characteristic check,
+   WF-102's bronPad step, WF-028's creation chain and WF-054's uniqueness
+   scope — each of which loudly refused a document ch. 2.2 admits. They
+   all go through [fills] now. Its sibling [type_compatible] carries the
+   other half of the class, the "this role fills X, but the node names Y"
+   agreement WF-047 already read as ⊑-compatibility. *)
 let fills ctx ~inst ~(role : rol) =
   is_sub ctx ~sub:inst ~super:(Option.value role.rol_objecttype_naam ~default:"")
 
@@ -3899,7 +3930,7 @@ let nav_hops ctx ~subject ~(bindings : rol_binding list option)
       in
       let endpoint_check cur =
         match (endpoint, cur) with
-        | Some e, Some c when norm c <> norm e ->
+        | Some e, Some c when not (type_compatible ctx c e) ->
             [ Printf.sprintf "the navigation reaches '%s', not the endpoint '%s'" c e ]
         | _ -> []
       in
@@ -3918,7 +3949,7 @@ let nav_hops ctx ~subject ~(bindings : rol_binding list option)
               | Ok (_, bound, opposite) ->
                   let near =
                     match cur with
-                    | Some c when norm (filler opposite) <> norm c ->
+                    | Some c when not (fills ctx ~inst:c ~role:opposite) ->
                         [ Printf.sprintf
                             "hop %d over '%s': the near side fills '%s', but the walk stands \
                              at '%s'"
@@ -5051,7 +5082,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                           let joins =
                             match from_t with
                             | None -> []
-                            | Some ft when norm other_filler = norm ft -> []
+                            | Some ft when fills ctx ~inst:ft ~role:other -> []
                             | Some ft ->
                                 [ v "WF-102" step
                                     (Printf.sprintf
@@ -5066,7 +5097,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                             if rest <> [] then []
                             else
                               match f.element_objecttype with
-                              | Some el when norm bound_filler <> norm el ->
+                              | Some el when not (type_compatible ctx bound_filler el) ->
                                   [ v "WF-102" step
                                       (Printf.sprintf
                                          "the last step's bound role '%s' fills '%s', but the \
@@ -6198,7 +6229,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) at (c : conditie) : viola
                      | Error e -> Error [ e ]
                      | Ok (_, bound, opposite) ->
                          let near =
-                           if norm (filler opposite) <> norm st then
+                           if not (fills ctx ~inst:st ~role:opposite) then
                              [ Printf.sprintf
                                  "the near side of '%s' fills '%s', but the check's subject \
                                   is '%s'"
@@ -7234,7 +7265,7 @@ let wf028 ctx =
                          | Error e -> [ v "WF-028" at e ]
                          | Ok r -> (
                              match expected with
-                             | Some t when norm (filler r) <> norm t ->
+                             | Some t when not (type_compatible ctx (filler r) t) ->
                                  [ v "WF-028" at
                                      (Printf.sprintf "%s '%s' fills '%s', but the node names '%s'"
                                         what name (filler r) t) ]
@@ -7257,7 +7288,7 @@ let wf028 ctx =
                  | Error e -> Error [ v "WF-028" at_step e ]
                  | Ok (_, bound, other) -> (
                      match cur with
-                     | Some cur when norm (filler other) <> norm cur ->
+                     | Some cur when not (fills ctx ~inst:cur ~role:other) ->
                          Error
                            [ v "WF-028" at_step
                                (Printf.sprintf
@@ -7501,7 +7532,7 @@ let wf034_feitcreatie_beanvelden ctx =
                   | None -> []
                   | Some rb ->
                       (match (resolve_binding ctx rb, t.ts_type) with
-                      | Ok (_, bound, _), Some tn when norm tn <> norm (filler bound) ->
+                      | Ok (_, bound, _), Some tn when not (type_compatible ctx tn (filler bound)) ->
                           [ v "WF-034" (tat ^ "/type")
                               (Printf.sprintf
                                  "the hop over '%s' reaches '%s', but the intermediate bean type \
@@ -7752,9 +7783,8 @@ let wf052 ctx =
                     | Some (ft : feittype) when norm st = norm nt && not ft.wederkerig ->
                         None
                     | Some (ft : feittype) -> (
-                        let filler r = Option.value r.rol_objecttype_naam ~default:"" in
                         match
-                          List.find_opt (fun (r : rol) -> norm (filler r) = norm nt) ft.rollen
+                          List.find_opt (fun (r : rol) -> fills ctx ~inst:nt ~role:r) ft.rollen
                         with
                         | Some r when not r.rol_meervoudig -> Some (norm fn, at)
                         | _ -> None)
@@ -7868,7 +7898,7 @@ let wf054 ctx =
                 | Error e -> Error [ e ]
                 | Ok (_, bound, opposite) ->
                     let near =
-                      if norm (filler opposite) <> norm subj then
+                      if not (fills ctx ~inst:subj ~role:opposite) then
                         [ Printf.sprintf
                             "the near side of '%s' fills '%s', but the uniqueness subject is \
                              '%s'"
