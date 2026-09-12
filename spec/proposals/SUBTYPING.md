@@ -124,9 +124,10 @@ The cost of that choice is real and is stated rather than hidden:
 there is no well-formed-but-wrong document to put in one. The
 mandate's decision 2 requires the two known multiple-inheritance
 cases to be a documented, loud refusal; under this shape that
-refusal lives in three places instead of one — the schema (gate 2),
-the RegelSpraak dialect frontend and the F-logic frontend, each with
-its own fixture (§9).
+refusal lives in three places instead of one — the schema, where gate
+2 refuses the array form by shape and there is nothing to put in a
+fixture, and the RegelSpraak dialect and F-logic frontends, which
+carry one fixture each (§9).
 
 **Settled 2026-09-12 (§11.1): the shape stays a single string, and the
 refusal gets a reserved number anyway — WF-106**, repurposed (see §10;
@@ -278,13 +279,21 @@ it the exceptions in descending priority, the wire's `defaults` list
 being highest-first.
 
 Inheritance resolves **bottom-up along the chain**: the effective
-stack of a type for a target is computed from its parent's effective
-stack, so a three-level chain composes twice, associatively. Since the
+stack of a type for a target is computed by folding that type's own
+declarations over its **parent's effective stack**. Over a three-level
+chain the result is the grandchild's own exceptions above the child's,
+above the grandparent's, with the base contributed by the lowest
+declarant that has one. No rule per level is needed for that: because
+the fold reads the parent's *effective* stack and not its
+declarations, slot 2 below already carries the whole chain. Since the
 2026-09-12 amendment the composition has one **fixed block order**,
 highest first, and nothing declares it:
 
 1. the subtype's own exceptions, in their declared order;
-2. the inherited exceptions, in their inherited order;
+2. the inherited exceptions, in their inherited order — an inherited
+   group-default (ch. 7.9: `exceptions`, no own consequence) is not a
+   base and rides at the bottom of this block — the same stack that
+   rule 2 of the four rules below describes;
 3. the base — the subtype's own base if it has one, which *replaces*
    the inherited base, otherwise the inherited base;
 4. the initialisation default (ch. 7.3) and the virtual input default
@@ -886,9 +895,11 @@ with no witness at all:
   `betwist` — which is the point: case 3 shows the own exception
   firing alone, case 4 shows it firing against a live competitor.
 
-Negatiefs, one per reserved rule that a wire document can violate, in
-the repo's Dutch slug convention — **four** entries, five directories
-because WF-104 carries two:
+Negatiefs in the repo's Dutch slug convention — **four** entries, five
+directories because WF-104 carries two: one for each of the three
+reserved rules a wire document can violate (WF-103, WF-104, WF-105),
+plus one for the shape that becomes newly reachable under the existing
+WF-034:
 
 - `corpus/negatief/wf103-onbekend-supertype`
 - `corpus/negatief/wf104-supertype-cyclus` (and the self-reference as
@@ -924,8 +935,8 @@ drops the subtype's own exception, and cell 6 — `uitkering` **55**,
 an ordinary write, `consistent` — is the deterministic child-wins
 decision of the amended layer boundary, replacing the conflict deposit
 the earlier reading expected there. Four negatief entries as listed
-(five directories, WF-104 carrying two); the fifth entry of the
-earlier draft went with the rule it witnessed. The
+(five directories, WF-104 carrying two); the earlier draft's `wf106`
+entry went with the rule it witnessed. The
 dialect and F-logic cards re-express the same use case as
 `jutterswet-wrakrecht` and `jutterswet-wrakrecht-flogic`, the
 frontend-diff pair.**
@@ -1120,10 +1131,13 @@ the fixed block order §4.4 takes from that principle. The agreement is
 one of stated principle, not of measured behaviour everywhere — in
 Flora-2 principle 1 governs *inheritance*, and where both values are
 **derived**, as in case (c), it does not reach them and both stand.
-Where the
-competing sources are genuinely incomparable neither system picks:
-Flora-2 blocks (case d), uchar reports a ch. 7.2 conflict for a clash
-inside one unordered block.
+And neither system arbitrates silently inside its **own** notion of
+incomparability — but the notions differ: Flora-2's is incomparability
+on the class lattice, so it blocks on case (d), while uchar's is
+unorderedness inside one block, so it deposits a ch. 7.2 conflict
+there. On case (d) itself uchar's sources are *not* incomparable —
+the block order ranks them — so uchar answers 99 and the two part
+company, which is divergence (i) below.
 
 Divergences: **(i)** the origin of priority — lattice specificity
 versus stack position, which is exactly mandate decision 3's "no
@@ -1209,7 +1223,8 @@ enforcement at all — on the clashing-exceptions cell it returns both
 values silently, where uchar now answers the single value 55 that lies
 inside that answer set, so what divides them there is determinism
 rather than resolution; and attribute-wide cancellation of
-inheritance rather than base-only replacement — so decision 3 is
+inheritance rather than base-only replacement, which keeps
+non-clashing inherited exceptions alive — so decision 3 is
 finer grained than F-logic overriding, not a weaker version of it.
 Flora-2 is admitted as a documented external comparison on the
 inheritance skeleton, never as a gate and never as a fourth leg of the
@@ -1456,7 +1471,7 @@ the three cards and from the previous revision still land.
    reading the closed relation instead of the raw fact; the
    OCaml-side type-set expansion is rejected. §6.1's design ground —
    an independent reimplementation is worth more than a smaller diff —
-   carries the point over the effort argument (52 join sites). §6.4
+   carries the point over the effort argument (49 join sites). §6.4
    and the kernel card now state it as decided, not recommended.
 
 ### Still open

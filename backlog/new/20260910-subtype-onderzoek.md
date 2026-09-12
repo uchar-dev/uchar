@@ -7,3 +7,38 @@ Acceptance: `spec/proposals/SUBTYPING.md` bestaat met alle zeven vragen beantwoo
 May touch: `spec/proposals/SUBTYPING.md` (nieuw), de drie kaarten `backlog/new/20260910-subtype-kernel.md`, `backlog/new/20260910-subtype-regelspraak-dialect.md`, `backlog/new/20260910-flogic-frontend-minimaal.md` (alleen aanscherping), en een eventuele Flora-2-installatieproef buiten de repo.
 
 Out of scope: elke wijziging aan spec/IR-SPEC.md, verifier, executors, frontends of corpus; meervoudige overerving (gedocumenteerde weigering, geen ontwerp); specificiteit-als-prioriteitsas (later eigen proposal, zie opdrachtbesluit 3).
+
+## Result
+
+Geland als `spec/proposals/SUBTYPING.md`: de zeven vragen in
+Decided-vorm, met §11 als lijst van zes punten die alleen de
+maintainer kon beslissen en §12 als samenvatting "proposed, not
+ratified". De drie vervolgkaarten zijn aangescherpt met de
+gereserveerde WF-nummers, de golden- en casusnamen, de gemeten
+loweringsplekken en de weigeringslijsten. Flora-2 2.2 beta is
+buiten de repo geïnstalleerd en gemeten; de transcripten staan in §8.3.
+Twee lens- plus fixrondes hebben het document nagemeten (de
+enkelschrijver-premisse bleek omgekeerd te staan en is herschreven; de
+naadpunten van de tweede ronde zijn in dezelfde branch verwerkt).
+
+**De maintainer besliste op 2026-09-12 drie van de zes §11-punten, en
+het document is er volledig op doorgetrokken.** Voor deze kaart telt
+vooral dat besluit §11.2 de route vervangt die de Goal hierboven nog
+citeert: geërfde en subtype-eigen uitzonderingen vormen géén
+ongeordende groep met een §9.5-conflictfeit bij botsing, maar staan in
+een vaste blokorde met de subtype-eigen uitzonderingen bovenaan — een
+definitie op het kind wint altijd van een op de parent, deterministisch
+en zonder conflictfeit. Het voorgestelde declaratieveld op de laaggrens
+verviel daarmee, en het vrijgekomen WF-106 is herbestemd naar de
+weigering "een objecttype declareert hoogstens één direct supertype"
+(§11.1; wirevorm blijft één string, dus geen verifier-check en geen
+negatief — de getuigen wonen bij de twee frontends). §11.3 legt de
+clingo-sluiting definitief in de ASP. De Goal-tekst blijft staan zoals
+zij gesteld was: dat is de vraag, niet het antwoord.
+
+Open, en de poort voor het geheel: §11.4 (mag de F-logic-snede
+verbreed worden met de gebalkte klasseniveau-vormen), §11.5 (ketendiepte
+onbegrensd, alleen vastgelegd) en §11.6 (de opdrachtkopie kan niet
+getrackt worden zolang gate 1's hernoem-tripwire hem rood maakt). De
+leesronde door de maintainer blijft de poort voor het document als
+geheel; een beslist punt ratificeert de sectie eromheen niet.
