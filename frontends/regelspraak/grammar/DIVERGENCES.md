@@ -239,8 +239,18 @@ WF-048's uniqueness is computed over the **chain-closed** type-pair set: adding
 a subtype can make a pair that was uniquely connected doubly connected, and a
 fold that went out bindingless yesterday would be refused today. The emitter is
 ahead of it — where the by-pair search goes silent, the fold's `bronRol` falls
-back to the role the sentence WROTE, which still names exactly one. A phrase
-naming no role, or more than one, stays bindingless rather than guessing.
+back to the role the sentence WROTE, which still names exactly one.
+
+That fallback carries one tightening the other role searches do not need, and
+it is what makes it safe. The name candidates are formed by dropping leading
+words, so a truncated phrase can land on a same-named role in **another** fact
+type; the upper-bound filler test that is right everywhere else would wave that
+through, because the element type is a subtype of the other role's filler. The
+reached role must therefore declare **exactly** the element type — identity, not
+`⊑`. A phrase naming no role, naming more than one, or naming one whose filler
+is not the element type itself stays bindingless, and gets the loud WF-048
+refusal. Binding the wrong relation would instead be verifier-clean and
+silently fold the wrong set, which is by far the worse of the two.
 
 ### Scope / limitations of this card
 

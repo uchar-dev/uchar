@@ -365,4 +365,46 @@ class SubtypeDialectTest {
                 () -> "de vouwbron hoort op de GESCHREVEN rol te binden in plaats van bindingloos de wire op te "
                         + "gaan (WF-048 zou die dan weigeren):\n" + c);
     }
+
+    @Test void een_naam_die_een_rol_in_een_ander_feittype_treft_bindt_niet() {
+        // The other side of the fallback, and the one that decides whether it may exist at all. The name
+        // candidates are formed by DROPPING LEADING WORDS, so "alle geborgen wrakrechten" is also tried as
+        // "wrakrechten" — which here names a role in a DIFFERENT fact type, filled by the supertype. An
+        // upper-bound filler test would wave that through (Wrakrecht ⊑ Strandrecht) and the fold would go
+        // out bound to a relation the sentence never named: verifier-clean, and quietly folding the wrong
+        // set. The binding therefore demands the role declare the element type ITSELF, and where it does
+        // not the fold stays bindingless — WF-048 then refuses it loudly, which is the outcome to want.
+        String src = """
+            Objecttype het Strandrecht (mv: Strandrechten)
+                de uitkering Numeriek (niet-negatief getal met 2 decimalen);
+
+            Objecttype het Wrakrecht is een Strandrecht (mv: Wrakrechten)
+                de bergingsdiepte Numeriek (niet-negatief geheel getal);
+
+            Objecttype de Kustgemeente (mv: Kustgemeenten) (bezield)
+                het uitkeringstotaal Numeriek (niet-negatief getal met 2 decimalen);
+
+            Feittype wrakberging
+                de bergende kustgemeente Kustgemeente
+                het geborgen wrakrecht Wrakrecht
+            Eén bergende kustgemeente bergt meerdere geborgen wrakrechten
+
+            Feittype strandbeheer
+                de beherende kustgemeente Kustgemeente
+                het wrakrecht (mv: wrakrechten) Strandrecht
+            Eén beherende kustgemeente beheert meerdere wrakrechten
+
+            Regel uitkeringstotaal van een kustgemeente
+                geldig altijd
+                    Het uitkeringstotaal van een Kustgemeente moet berekend worden als de som van de uitkering van alle geborgen wrakrechten van de Kustgemeente of 0,00 als die er niet zijn.
+            """;
+        RegelSpraakModel m = Resolver.resolve(src);
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        String c = emitCompact(m);
+        assertFalse(c.contains("\"feittype\":\"strandbeheer\""),
+                () -> "de vouwbron bindt op een relatie die de zin niet noemt — stil de verkeerde verzameling:\n" + c);
+        assertFalse(c.contains("\"bronRol\""),
+                () -> "zonder een rol die het elementtype ZELF draagt hoort de vouwbron bindingloos te blijven, "
+                        + "zodat WF-048 haar luid weigert:\n" + c);
+    }
 }
